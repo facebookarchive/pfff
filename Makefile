@@ -567,6 +567,10 @@ visualhead:
 #refactoring:
 # git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
 
+push:
+	git push origin master
+
+
 ##############################################################################
 # Pad specific rules
 ##############################################################################
