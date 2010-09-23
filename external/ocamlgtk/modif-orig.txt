@@ -1,0 +1,2 @@
+added a make clean and modified src/Makefile to not crash
+when running 'make depend'

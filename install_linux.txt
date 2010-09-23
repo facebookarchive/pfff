@@ -1,0 +1,11 @@
+Install pcre-devel, gtk2-devel, atk-devel, pango-devel, cairo-devel.
+redhat: sudo yum install pcre-devel
+ubuntu: sudo apt-get install pcre-devel
+gentoo: emerge pcre
+...
+
+then
+  $ ./configure
+  $ make depend
+  $ make; make opt
+
