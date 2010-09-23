@@ -198,7 +198,7 @@ rule category = parse
   | "m68k"
   | "sparc"
   | "amd64"
-  | "arm"
+  | "/arm/"
   | "hppa"
   (* linux source *)
   | "parisc"
@@ -206,7 +206,7 @@ rule category = parse
   | "blackfin"
   | "/ppc/"
   | "power"
-  | "alpha" 
+  | "/alpha/" 
       { Architecture }
 
   | "/ui/"
