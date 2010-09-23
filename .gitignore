@@ -26,6 +26,7 @@ Makefile.config
 .depend
 commons/features.ml
 globals/config.ml
+config.log
 
 /test.ml
 

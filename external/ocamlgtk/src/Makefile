@@ -542,4 +542,4 @@ ml_panel$(XO): ml_gtk.h ml_gobject.h wrappers.h
 
 varcc.cmo: varcc.ml4
 
-include .depend
+-include .depend

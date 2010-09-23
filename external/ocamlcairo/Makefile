@@ -22,3 +22,5 @@ config.make : config.make.in configure
 include config.make
 
 .PHONY : all opt doc install clean
+
+depend:

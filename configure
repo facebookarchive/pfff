@@ -31,15 +31,17 @@ my $projectcmdline =
 my $prefix="/usr/local";
 
 my $bt=0;
-my $bdb=0;
-my $mpi=0;
-my $pcre=0;
+my $bdb=1;
 my $mysql=0;
-my $irc=0;
 
 my $graphics=0; # X11 graphics.cma
-my $gui=0; # gtk
-my $visual=0; # cairo
+my $gui=1; # gtk
+my $visual=1; # cairo
+
+my $mpi=0;
+my $pcre=1;
+my $irc=0;
+
 
 my $facebook=0; 
 
@@ -98,8 +100,10 @@ pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 my $src="$prefix/share/$project";
 
 # dependencies
+if ($visual) { $gui = 1; }
 #if ($bdb) { $pcre = 1; }
 if ($facebook) { $mysql = 1; }
+
 
 ######################################################################
 # Side effects
@@ -236,6 +240,19 @@ if($pcre) {
 		       "PCRE is present.",
 		       "The PCRE library is missing.",
 		      );
+}
+
+if($gui) {
+    pr2 "";
+    pr2 "Configuring ocamlgtk";
+    system("cd external/ocamlgtk; ./configure");
+}
+
+if($visual) {
+    pr2 "";
+    pr2 "Configuring ocamlcairo";
+    system("cd external/ocamlcairo; 
+            LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk");
 }
 
 ######################################################################

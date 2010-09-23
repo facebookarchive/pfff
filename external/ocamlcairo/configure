@@ -1899,18 +1899,19 @@ fi;
 
 if test $use_gtk = yes ; then
   # Check for LablGTK
-  echo "$as_me:$LINENO: checking lablgtk directory" >&5
-echo $ECHO_N "checking lablgtk directory... $ECHO_C" >&6
-cat > conftest.ml <<EOF
-open Gobject
-EOF
-unset found
-for LABLGTKDIR in $LABLGTKDIR +lablgtk2 +lablgtk ; do
-  if $OCAMLC -c -I "$LABLGTKDIR" conftest.ml > /dev/null 2>&1 ; then
-    found=yes
-    break
-  fi
-done
+#pad:   echo "$as_me:$LINENO: checking lablgtk directory" >&5
+#pad: echo $ECHO_N "checking lablgtk directory... $ECHO_C" >&6
+#pad: cat > conftest.ml <<EOF
+#pad: open Gobject
+#pad: EOF
+#pad: unset found
+#pad: for LABLGTKDIR in $LABLGTKDIR +lablgtk2 +lablgtk ; do
+#pad:   if $OCAMLC -c -I "$LABLGTKDIR" conftest.ml > /dev/null 2>&1 ; then
+#pad:     found=yes
+#pad:     break
+#pad:   fi
+#pad: done
+found=yes
 if test "$found" ; then
   echo "$as_me:$LINENO: result: $LABLGTKDIR" >&5
 echo "${ECHO_T}$LABLGTKDIR" >&6

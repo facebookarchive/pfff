@@ -19,7 +19,8 @@ SRC= figures.ml \
 #now in commons/ simple_color.ml 
 
 LIBS=$(TOP)/commons/commons.cma
-INCLUDES= -I $(TOP)/commons $(TOP)/commons/lib-json
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-json
+
 
 SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
 

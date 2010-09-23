@@ -1,7 +1,7 @@
 # Toplevel makefile for LablGtk2
 
-all opt doc install byte world: config.make
-all opt doc install byte clean depend world:
+all opt doc install byte world:: config.make
+all opt doc install byte clean depend world::
 	$(MAKE) -C src $@
 
 arch-clean:
@@ -27,3 +27,7 @@ headers:
 	find src -name "*.mli" -exec headache -h header {} \;
 	find src -name "*.c" -exec headache -h header {} \;
 	find src -name "*.h" -exec headache -h header {} \;
+
+clean::
+	rm -f test_dynlink.cm*
+	rm -f test_dynlink.o

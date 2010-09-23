@@ -32,8 +32,6 @@ endif
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=pfff_visual
-VISUALINCLUDE=external/ocamlcairo/src
-VISUALDIR=visual
 endif
 
 OPTPROGS= $(PROGS:=.opt)
@@ -69,12 +67,18 @@ endif
 
 # cf also below the target for pfff_browser
 ifeq ($(FEATURE_GUI),1)
-GUICMD= $(MAKE) gui       -C commons 
-GUICMDOPT= $(MAKE) gui.opt       -C commons;
-GUIINCLUDE=external/ocamlgtk/src
-else
-GUICMD=echo "no gui"
-GUICMDOPT=echo "no gui"
+GUIDIR=external/ocamlgtk
+GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui       -C commons 
+GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) gui.opt       -C commons;
+GTKINCLUDE=external/ocamlgtk/src
+endif
+
+# cf also below for target pfff_visual
+ifeq ($(FEATURE_VISUAL),1)
+CAIRODIR=external/ocamlcairo
+CAIROCMD= $(MAKE) -C $(CAIRODIR) 
+CAIROCMDOPT= $(MAKE) -C $(CAIRODIR) 
+CAIROINCLUDE=external/ocamlcairo/src
 endif
 
 ifeq ($(FEATURE_BACKTRACE), 1)
@@ -89,7 +93,7 @@ REGEXPDIR=external/ocamlpcre
 REGEXPCMD= $(MAKE) -C $(REGEXPDIR) &&  $(MAKE) regexp -C commons
 REGEXPCMDOPT= $(MAKE) -C $(REGEXPDIR) &&  $(MAKE) regexp.opt -C commons
 REGEXPCMA=external/ocamlpcre/lib/pcre.cma  commons/commons_regexp.cma
-REGEXPINCLUDE=external/ocamlpcre/lib
+PCREINCLUDE=external/ocamlpcre/lib
 else
 endif
 
@@ -98,9 +102,6 @@ MPIDIR=external/ocamlmpi
 MPICMD=    $(MAKE) all -C $(MPIDIR) && $(MAKE) distribution -C commons
 MPICMDOPT= $(MAKE) all.opt -C $(MPIDIR) && $(MAKE) distribution.opt -C commons
 MPICMA=external/ocamlmpi/mpi.cma commons/commons_mpi.cma
-else
-MPICMD=echo "no mpi"
-MPICMDOPT=echo "no mpi"
 endif
 
 #------------------------------------------------------------------------------
@@ -148,6 +149,9 @@ ANALYZEPHPDIR=\
 else
 endif
 
+ifeq ($(FEATURE_VISUAL),1)
+VISUALDIR=visual
+endif
 
 #------------------------------------------------------------------------------
 # Main variables
@@ -200,6 +204,7 @@ LIBS= commons/commons.cma \
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
   $(GRAPHDIR) \
+  $(GUIDIR) $(CAIRODIR) \
   h_version-control \
   h_visualization \
   h_program-lang \
@@ -224,7 +229,7 @@ MAKESUBDIRS=commons \
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/lib-json commons/lib-xml \
- $(GUIINCLUDE) $(VISUALINCLUDE) $(REGEXPINCLUDE)
+ $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE)
 
 ##############################################################################
 # Generic
@@ -257,6 +262,7 @@ rec:
 	$(MPICMD)
 	$(GRAPHCMD)
 	$(GUICMD)
+	$(CAIROCMD)
 	$(MAKE) features -C commons 
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
 
@@ -268,6 +274,7 @@ rec.opt:
 	$(MPICMDOPT)
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
+	$(CAIROCMDOPT)
 	$(MAKE) features.opt -C commons 
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 
