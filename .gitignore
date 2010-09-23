@@ -8,6 +8,7 @@
 
 *.a
 *.so
+*.o
 
 # binaries
 *.opt
@@ -95,6 +96,8 @@ external/ocamlthrift
 external/ocamlllvm
 /external/ocamlhtree/htree
 ocamltarzan
+
+external/ocamlgtk
 
 /external/ocamlgraph/META
 /external/ocamlgraph/src/dot_lexer.ml

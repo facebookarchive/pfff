@@ -24,3 +24,5 @@ include config.make
 .PHONY : all opt doc install clean
 
 depend:
+
+all.opt: opt

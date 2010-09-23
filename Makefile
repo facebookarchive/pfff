@@ -76,8 +76,6 @@ endif
 # cf also below for target pfff_visual
 ifeq ($(FEATURE_VISUAL),1)
 CAIRODIR=external/ocamlcairo
-CAIROCMD= $(MAKE) -C $(CAIRODIR) 
-CAIROCMDOPT= $(MAKE) -C $(CAIRODIR) 
 CAIROINCLUDE=external/ocamlcairo/src
 endif
 
@@ -262,7 +260,6 @@ rec:
 	$(MPICMD)
 	$(GRAPHCMD)
 	$(GUICMD)
-	$(CAIROCMD)
 	$(MAKE) features -C commons 
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
 
@@ -274,7 +271,6 @@ rec.opt:
 	$(MPICMDOPT)
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
-	$(CAIROCMDOPT)
 	$(MAKE) features.opt -C commons 
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 

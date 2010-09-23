@@ -31,3 +31,5 @@ headers:
 clean::
 	rm -f test_dynlink.cm*
 	rm -f test_dynlink.o
+
+all.opt: opt
