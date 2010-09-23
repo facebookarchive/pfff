@@ -10,38 +10,27 @@ You must first install a recent version of
    if you want the fancy graphics capabilities.
  - Pcre
    if you want stuff I don't remember.
+You will need both the runtime and the development library for
+those packages (e.g. pcre and pcre-devel packages under most Linux
+distributions).
 
-OCaml may be available already on your Linux/Mac/Windows distributions.
-You can also try to do:
- 
-  $ source env.sh 
+Then if you want everything then just type
 
-which setup the PATH and other variables to places where OCaml may
-already be.
+  $ ./configure
+  $ make depend
+  $ make
+  $ make opt
+
+This should generate a few binaries at the toplevel directory such
+as pfff or pfff_visual.
+
+
+
 
 If you just want to compile the parsing frontend, then type 
 
-   $ ./configure
-
+   $ ./configure -nobdb -nogui -novisual
 
 If you want the parsing frontend and the analysis framework then type
 
-  $ ./configure --bdb
-
-You will also need the runtime and development library for berkley db 4.3.
-
-
-If you want everything then just type
-
-  $ ./configure --with-all
-
-You will also need the runtime and development library for gtk2 and cairo.
-
-
-
-Then type:
-
-  $ make depend
-  $ make
-  $ make install
-
+  $ ./configure -nogui -novisual

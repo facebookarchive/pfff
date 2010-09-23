@@ -1,17 +1,15 @@
-port install pcre
+Install macports http://www.macports.org/
+
+Then
+ $ sudo port install pcre
  => can ./configure -bdb
 
-port install cairo; port install gtk
+ $ sudo port install cairo
+ $ sudo port install gtk
  => can configure -visual
 
-port install mysql
+ $ sudo port install mysql
  => can ./configure -facebook
 
-for cairo + gtk don't use the quartz setting. Here are a few problems:
- - problem with current tk package in macports, had to patch it.
- - problem with flags. Had to use +no_x11 in addition to +quartz.
-   Try install first cairo (with the 2 flags), then pango, then
-   gtk2
- - get segfault on text_extent, probably because of pbs with pango ...
-=> have to use cairo + gtk + x11 for now
-
+For cairo and gtk don't use the quartz setting as it is currently
+buggy under macports.
