@@ -47,7 +47,7 @@ Usage for pfff_db_light:
    $ ./pfff_db_light -lang ml ~/pfff
 
 to analyze all the .ml and .mli files under ~/pfff and store metadata
-information (the database) in /tmp/light_db.
+information (the database) in /tmp/light_db.db
 
 Usage for pfff_db:
 -------------------
@@ -66,7 +66,7 @@ do some analysis as in:
 Usage for pfff_visual:
 ------------------------
 
-  $ ./pfff_visual ~/www
+  $ ./pfff_visual -with_info /tmp/light_db.db ~/pfff
 
 This should launch a gtk-based GUI that allows you to visualize
 source code and perform some code search.
