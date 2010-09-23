@@ -1,4 +1,22 @@
 
+val fill_rectangle:
+  cr:Cairo.t -> 
+  x:float -> y:float -> w:float -> h:float ->
+  color:Simple_color.emacs_color -> 
+  unit
+
+val draw_rectangle_figure:
+  cr:Cairo.t -> 
+  color:Simple_color.emacs_color -> 
+  Figures.rectangle -> unit
+
+val draw_rectangle_bis:
+  cr:Cairo.t -> 
+  color:Simple_color.color -> 
+  line_width:float ->
+  Figures.rectangle -> unit
+
+
 val prepare_string : string -> unit
 val origin : Cairo.point
 

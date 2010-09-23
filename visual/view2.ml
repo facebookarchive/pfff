@@ -362,9 +362,9 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   Cairo.save cr_overlay;
   zoom_pan_scale_map cr_overlay dw;
-  Draw.draw_rectangle ~cr:cr_overlay ~color:"white" r.T.tr_rect;
+  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
 
-  Draw.draw_rectangle 
+  CairoH.draw_rectangle_figure
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
   Draw.draw_treemap_rectangle_label_maybe 
     ~cr:cr_overlay ~color:"blue" ~zoom:dw.zoom r_englobing;
@@ -376,7 +376,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
       | 2 -> "grey40"
       | _ -> spf "grey%d" (max 1 (50 -.. (i *.. 10)))
     in
-    Draw.draw_rectangle 
+    CairoH.draw_rectangle_figure
       ~cr:cr_overlay ~color r.T.tr_rect;
     Draw.draw_treemap_rectangle_label_maybe 
       ~cr:cr_overlay ~color ~zoom:dw.zoom r;
@@ -394,7 +394,7 @@ let draw_searched_rectangles ~cr_overlay ~dw =
   zoom_pan_scale_map cr_overlay dw;
 
   dw.current_searched_rectangles +> List.iter (fun r ->
-    Draw.draw_rectangle ~cr:cr_overlay 
+    CairoH.draw_rectangle_figure ~cr:cr_overlay 
       ~color:"yellow" r.T.tr_rect
   );
   (* 

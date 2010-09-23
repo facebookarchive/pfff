@@ -16,6 +16,9 @@
 open Common
 
 module F = Figures
+module Color = Simple_color
+
+open Figures
 
 (* May have to move this in commons/ at some point *)
 
@@ -136,3 +139,49 @@ let is_old_cairo () =
   match () with
   | _ when s =~ "1\\.[89]\\.*" -> false
   | _ -> true
+
+let fill_rectangle ~cr ~x ~y ~w ~h ~color = 
+  (let (r,g,b) = color +> Color.rgbf_of_string in
+  Cairo.set_source_rgb cr r g b;
+  );
+  
+  Cairo.move_to cr x y;
+  Cairo.line_to cr (x+w) y;
+  Cairo.line_to cr (x+w) (y+h);
+  Cairo.line_to cr x (y+h);
+  Cairo.fill cr;
+  ()
+
+let draw_rectangle_figure ~cr ~color r =
+  (let (r,g,b) = color +> Color.rgbf_of_string in
+  Cairo.set_source_rgb cr r g b;
+  );
+ let line_width = device_to_user_size cr 3. in
+
+  Cairo.set_line_width cr line_width; (* ((r.q.y - r.p.y) / 30.); *)
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.line_to cr r.p.x r.p.y;
+  Cairo.stroke cr;
+  ()
+
+(* factorize with draw_rectangle. don't use buggy device_to_user_size !!!
+*)
+let draw_rectangle_bis ~cr ~color ~line_width r =
+  (let (r,g,b) = 
+    color +> Color.rgb_of_color +> Color.rgbf_of_rgb
+    in
+   Cairo.set_source_rgb cr r g b;
+  );
+  Cairo.set_line_width cr line_width;
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.line_to cr r.p.x r.p.y;
+  Cairo.stroke cr;
+  ()

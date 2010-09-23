@@ -86,44 +86,6 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
   Common.profile_code "View.draw_treemap_rectangle" (fun () -> 
     draw_treemap_rectangle2 ~cr ?color ?alpha a)
 
-let draw_rectangle ~cr ~color r =
-  (let (r,g,b) = color +> Color.rgbf_of_string in
-  Cairo.set_source_rgb cr r g b;
-  );
- let line_width = CairoH.device_to_user_size cr 3. in
-
-  Cairo.set_line_width cr line_width; (* ((r.q.y - r.p.y) / 30.); *)
-
-  Cairo.move_to cr r.p.x r.p.y;
-  Cairo.line_to cr r.q.x r.p.y;
-  Cairo.line_to cr r.q.x r.q.y;
-  Cairo.line_to cr r.p.x r.q.y;
-  Cairo.line_to cr r.p.x r.p.y;
-  Cairo.stroke cr;
-  ()
-
-
-(* factorize with draw_rectangle. don't use buggy device_to_user_size !!!
-*)
-let draw_rectangle_bis ~cr ~color ~font_size r =
-  (let (r,g,b) = 
-    color +> Color.rgb_of_color +> Color.rgbf_of_rgb
-    in
-   Cairo.set_source_rgb cr r g b;
-  );
-
-(* let line_width = device_to_user_size cr 3. in *)
-
-  Cairo.set_line_width cr font_size; (* ((r.q.y - r.p.y) / 30.); *)
-
-  Cairo.move_to cr r.p.x r.p.y;
-  Cairo.line_to cr r.q.x r.p.y;
-  Cairo.line_to cr r.q.x r.q.y;
-  Cairo.line_to cr r.p.x r.q.y;
-  Cairo.line_to cr r.p.x r.p.y;
-  Cairo.stroke cr;
-  ()
-
 (*****************************************************************************)
 (* Color of entity *)
 (*****************************************************************************)
@@ -403,7 +365,8 @@ let draw_content2
         ~color:(Some "DarkSlateGray") 
         ~alpha
         rect;
-      draw_rectangle_bis ~cr ~color:(rect.T.tr_color) ~font_size rect.T.tr_rect;
+      CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
+        ~line_width:font_size rect.T.tr_rect;
     end;
 
     tokens_with_categ +> List.iter (fun (s, categ, filepos) ->

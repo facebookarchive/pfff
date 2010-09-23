@@ -1,9 +1,4 @@
 
-val draw_rectangle :
-  cr:Cairo.t -> 
-  color:Simple_color.emacs_color -> 
-  Figures.rectangle -> unit
-
 val draw_treemap_rectangle :
   cr:Cairo.t -> 
   ?color:Simple_color.emacs_color option -> ?alpha:float -> 
