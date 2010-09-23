@@ -1,0 +1,50 @@
+CAMLC=ocamlc.opt
+CAMLOPT=ocamlopt.opt
+OCAMLDOC=ocamldoc
+CAMLMKTOP=ocamlmktop
+CAMLMKLIB=ocamlmklib -ocamlc ocamlc -ocamlopt ocamlopt
+CAMLLEX=ocamllex
+CAMLP4O=camlp4o
+XO=
+USE_GL=
+USE_GNOME=
+USE_GLADE=1
+USE_RSVG=1
+HAVE_SVGZ=
+USE_GNOMECANVAS=
+USE_CC=
+DEBUG=
+CC=
+RANLIB=:
+XA=.lib
+XB=.bat
+XE=.exe
+XO=.obj
+XS=.dll
+TOOLCHAIN=msvc
+LIBDIR=`$(CAMLC) -where | sed "s/ *$$//"`
+THREADS_LIB=system
+HAS_DLL_SUPPORT=yes
+
+# where to install the binaries
+BINDIR=$(LIBDIR)\..\bin
+
+# where to install the man page
+MANDIR=$(LIBDIR)\..\man
+
+INSTALLDIR=$(LIBDIR)\lablgtk2
+DLLDIR=$(LIBDIR)\stublibs
+
+# if using ocaml >= 3.08, add a -D OCAML_308 (for camlp4)
+ODOC_DEF=
+
+GTKROOT=c:/GTK
+#GTKROOT=c:/Home/garrigue/gtk-2.6.8
+GTKINC=$(GTKROOT)/include
+GTKCFLAGS=-I$(GTKINC)/glib-2.0 -I$(GTKROOT)/lib/glib-2.0/include -I$(GTKINC)/gtk-2.0/ -I$(GTKROOT)/lib/gtk-2.0/include -I$(GTKINC)/pango-1.0 -I$(GTKINC)/atk-1.0 -I $(GTKINC)/cairo -I$(GTKINC)/librsvg-2 -I$(GTKINC)/libglade-2.0 -I$(GTKINC) 
+GTKLIBS0=gtk-win32-2.0.lib gdk_pixbuf-2.0.lib gdk-win32-2.0.lib  pango-1.0.lib atk-1.0.lib glib-2.0.lib gobject-2.0.lib
+RSVGLIBS0=rsvg-2.lib
+GLADELIBS0=glade-2.0.lib
+GTKLIBS=-ldopt "-show-imports $(GTKLIBS0)" -cclib "$(GTKLIBS0)"
+RSVGLIBS=-ldopt "$(RSVGLIBS0)" -cclib "$(RSVGLIBS0)"
+GLADELIBS=-ldopt "$(GLADELIBS0)" -cclib "$(GLADELIBS0)"

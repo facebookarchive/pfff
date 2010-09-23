@@ -1,0 +1,330 @@
+
+<<typing_trivial_php.ml>>=
+<<Facebook copyright>>
+
+open Common 
+
+open Ast_php
+
+module Flag = Flag_analyze_php
+module Ast = Ast_php
+
+module V = Visitor_php
+module T = Type_php
+module N = Namespace_php
+
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* 
+ * Some basic helpers used by other typing/infering code (e.g.
+ * union_type, TODO unify_type)
+ * 
+ * Also typing using information from xdebug traces. Mostly trivial :)
+ *)
+
+(*****************************************************************************)
+(* Type normalization *)
+(*****************************************************************************)
+
+(* 
+ * Because we need to do union of types, we have to compare a list of types
+ * to another list of types. We also need to do some unifications of 
+ * union of types, for instance a Union(Int, Bool) with a 
+ * Union(Bool, Float). We need to sort those lists so that the 
+ * code does not have to handle all combinations. To make it efficient, 
+ * it's better to force an ordering, to have a canonical form so we 
+ * don't have to handle cases like Union(Int, Bool) and 
+ * Union(Bool, Int) and do some permutations and so on.
+ * Hence the need to order the phptype constructors. 
+ * 
+ * src: julien verlaguet
+ *)
+
+let index_phptype_constructor = function
+  (* we could probably use Obj to get the actual tag of the constructor but
+   * better not to use too much magic/reflection *)
+
+  | T.Basic basic ->
+      (match basic with
+      | T.Bool   -> 1
+      | T.Int    -> 2
+      | T.Float  -> 3
+      | T.String -> 4
+      | T.Unit   -> 5
+      )
+
+  | T.ArrayFamily array ->
+      (match array with
+      (* no need to go deeper *)
+      | T.Array t  -> 10
+      | T.Hash t   -> 11
+      | T.Record t -> 12
+      )
+
+  | T.Object _   -> 20
+  | T.Resource _ -> 30
+
+  | T.Function _ -> 40
+  | T.Null       -> 50
+
+  | T.TypeVar _ -> 60
+
+  | T.Unknown   -> 70
+  | T.Top       -> 80
+
+let index_phptype ts = 
+  ts +> List.map (fun t -> t, index_phptype_constructor t)
+
+
+
+
+let is_sorted_list ts = 
+  let ys = index_phptype ts in
+
+  let rec aux ys = 
+    match ys with
+    | [] -> raise (T.BadType "no type at all")
+    | [y] -> true
+    | (_t,n1)::(t2,n2)::rest ->
+        if n1 >= n2
+        then raise (T.BadType "not sorted")
+        else aux ((t2,n2)::rest)
+  in
+  aux ys
+
+let rec is_sorted_strings ts =
+  match ts with
+  | [] -> raise (T.BadType "record/object type without any field/class")
+  | [x] -> true
+  | s1::s2::rest ->
+      if s1 >= s2
+      then raise (T.BadType "record/object fieldnames/classnames not sorted")
+      else is_sorted_strings (s2::rest)
+         
+ 
+
+(* Assumes the ts are already sorted. Coupling with index_phptype_constructor
+ * but also union_type as it essentially checks that union_type does not
+ * produce weird unions.
+ *)
+let rec no_weird_union ts = 
+  match ts with 
+  | [] -> raise (T.BadType "no type at all")
+  | [x] -> true
+  | x::y::rest -> 
+      (match x, y with
+      | T.ArrayFamily (T.Array _), T.ArrayFamily (T.Record _) ->
+          raise (T.BadType "can't be Array and Record")
+      | _ -> true
+      ) && 
+      no_weird_union (y::rest)
+
+let rec is_normalized2 ts = 
+  match ts with
+  | [] -> raise (T.BadType "no type at all")
+  | x::xs ->
+      is_sorted_list ts && 
+      ts |> List.for_all (fun t ->
+        match t with
+        | T.Basic _ -> true
+        | T.ArrayFamily array ->
+            (match array with
+            | T.Array t | T.Hash t -> 
+                is_normalized2 t
+            | T.Record (xs) ->
+                let flds = xs |> List.map fst in
+                is_sorted_strings flds &&
+                xs |> List.for_all (fun (s, t) -> is_normalized2 t)
+            )
+        | T.Object xs -> 
+            (match xs with
+            | [] -> raise (T.BadType "no class in Object type")
+            | _ -> is_sorted_strings xs
+            )
+
+        | T.Resource -> true
+        | T.Function (xs, ret) -> 
+            is_normalized2 ret && 
+            xs |> List.for_all (fun topt ->
+              match topt with
+              | None -> true
+              | Some t -> is_normalized2 t
+            )
+        | T.Null -> true
+        | T.TypeVar s -> true
+
+        | T.Unknown -> true
+        | T.Top -> true
+      ) && 
+      no_weird_union ts
+
+let is_normalized a = 
+  Common.profile_code "Type.is_normalized" (fun () -> is_normalized2 a)
+
+(*****************************************************************************)
+(* Union_type *)
+(*****************************************************************************)
+
+let rec union_strings xs ys = 
+  match xs, ys with
+  | [], [] -> []
+  | [], ys -> ys
+  | xs, [] -> xs
+  | x::xs, y::ys -> 
+      (match x <=> y with
+      | Common.Equal -> x::union_strings xs ys
+      | Common.Inf -> x::union_strings (xs) (y::ys)
+      | Common.Sup -> y::union_strings (x::xs) ys
+      )
+
+(* todo? could have a precise_level option that trades precision for efficiency.
+ * Indeed the more we are precise, the longer it will take to do unions
+ * of precise but big types.
+ *)
+let union_type2 t1 t2 = 
+
+  if !Flag.check_normalized 
+  then begin
+    assert(is_normalized t1);
+    assert(is_normalized t2);
+  end;
+
+  let rec aux t1 t2 = 
+    match t1, t2 with
+    | [], [] -> []
+
+    | t1, [] -> t1
+    | [], t2 -> t2
+
+    | x::xs, y::ys ->
+        let n1 = index_phptype_constructor x in
+        let n2 = index_phptype_constructor y in
+        (match n1 <=> n2 with
+        | Common.Equal ->
+            (match x, y with
+            | T.Basic t1, T.Basic t2 -> 
+                assert (t1 = t2);
+                (T.Basic t1)::aux xs ys
+                  
+            | T.ArrayFamily (T.Array t1), T.ArrayFamily (T.Array t2) ->
+                (T.ArrayFamily (T.Array (aux t1 t2)))::aux xs ys
+            | T.ArrayFamily (T.Hash t1), T.ArrayFamily (T.Hash t2) ->
+                (T.ArrayFamily (T.Hash (aux t1 t2)))::aux xs ys
+
+            | T.ArrayFamily (T.Record flds1), T.ArrayFamily (T.Record flds2)->
+                
+                let flds = union_strings flds1 flds2 in
+                (T.ArrayFamily (T.Record flds))::aux xs ys
+
+            | T.Object classes1, T.Object classes2 ->
+                let classes = union_strings classes1 classes2 in
+                (T.Object classes)::aux xs ys
+
+            (* less: have a more precise Resource type *)
+            | T.Resource, T.Resource ->
+                T.Resource::aux xs ys
+
+            (* we lose in precision here *)
+            | T.Function (args1, ret1), T.Function (args2, ret2) ->
+                let ret = aux ret1 ret2 in
+                if List.length args1 = List.length args2
+                then
+                  let args = 
+                    Common.zip args1 args2 |> List.map (fun (t1opt, t2opt) ->
+                      match t1opt, t2opt with
+                      | None, None -> None
+                      | Some _, None 
+                      | None, Some _ ->
+                          failwith 
+                            "union of function types with different default"
+                      | Some t1, Some t2 ->
+                          Some (aux t1 t2)
+                    )
+                  in
+                  T.Function (args, ret)::aux xs ys
+                else
+                  failwith "union of function types with different arities"
+
+            | T.Null, T.Null ->
+                T.Null::aux xs ys
+
+            | T.TypeVar s1, T.TypeVar s2 ->
+                failwith "Todo: typevar and union_type"
+
+            | T.Unknown, T.Unknown -> 
+                T.Unknown::aux xs ys
+            | T.Top, T.Top -> 
+                T.Top::aux xs ys
+
+            | _ -> raise Impossible
+            )
+        | Common.Inf -> 
+            (* TODO renormalized to avoid certain weird_union ? *)
+            x::aux xs (y::ys)
+            
+        | Common.Sup ->
+            y::aux (x::xs) ys
+        )
+  in
+  aux t1 t2
+
+let union_type a b = 
+  Common.profile_code "Type.union_type" (fun () -> union_type2 a b)
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let rec type_of_constant x = 
+  match x with
+  | Int _ -> T.Basic T.Int
+  | Double _ -> T.Basic T.Float
+  | String _ -> T.Basic T.String
+
+  | CName name -> 
+      (match Ast.name name with
+      | "TRUE" -> T.Basic T.Bool
+      | "FALSE" -> T.Basic T.Bool
+
+      | "NULL" -> T.Null
+
+      | "INF" -> T.Basic T.Float
+      | _ -> raise Todo
+      )
+  | PreProcess _ -> 
+      T.Basic T.String
+  | XdebugClass (name, xs) ->
+      (* TODO xs *)
+      T.Object [Ast.name name]
+  | XdebugResource ->
+      T.Resource
+
+let rec type_of_scalar x = 
+  match x with
+  | C cst ->
+      type_of_constant cst
+
+
+  | _ -> raise Todo
+
+let rec (type_of_expr: Ast_php.expr -> Type_php.phptype) = fun e ->
+  match Ast.untype e with
+  | Sc scalar ->
+      [type_of_scalar scalar]
+
+  | ConsArray (_t, xs_paren) ->
+      (* TODO more precise *)
+      [T.ArrayFamily (T.Hash ([T.Unknown]))]
+
+  | Unary ((UnMinus, _), e) -> type_of_expr e
+
+  (* xdebug use sometimes ???, which in xdebug.ml is replaced by ... *)
+  | EDots _ -> 
+      [T.Unknown]
+
+  | _ -> raise Todo
+@ 
+

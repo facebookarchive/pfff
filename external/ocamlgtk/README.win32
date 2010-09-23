@@ -1,0 +1,118 @@
+        Here is a small howto about installing LablGtk2 on Win32
+
+Binary installation
+
+ The binary distribution includes the lablglade, lablrsvg, and
+ lablgnomecanvas libraries.
+
+0) Both MSVC and mingw versions of ocaml 3.11 should work.
+   If you want to do custom linking (either ocamlc -custom, or ocamlopt),
+   get a recent version of flexdll. Standard ocamlc linking only
+   requires dlls.
+
+1) Install the gtk2 libraries and dependencies.
+   This binary distribution was built using the "bundle" package at
+     ftp://ftp.gnome.org/pub/gnome/binaries/win32/gtk+/2.16/
+   (mirrors list at: ftp://ftp.gnome.org/pub/gnome/MIRRORS)
+   Just follow the instructions in the README file inside the package.
+   If you want to use the extension libraries (currently lablglade,
+   lablrsvg and lablgnomecanvas are supported), you must also install
+   the (numerous) dependencies. Here is what was used during
+   compilation:
+    libglade (requires libxml2)
+    libgnomecanvas (requires libart_lgpl)
+    librsvg (requires libcroco and libgsf)
+   If you want to do custom linking, you need also the dev packages.
+   All of these are available in the above win32 and
+   win32/dependencies directories.
+   The distribution was compiled using the gtk+ bundle of 20090911,
+   but other versions should work too.
+
+2) Install lablgtk2 binaries and scripts inside the OCaml distribution
+     bin/lablgtk2.bat             -> bin
+     lib/stublibs/dlllablgtk2.dll -> lib/stublibs
+     lib/lablgtk2                 -> lib/lablgtk2
+
+3) Go to the lib/lablgtk2 directory and execute
+        ocaml build.ml
+   This will compile the ocaml part of the library (the C part is
+   already compiled.)
+   It may fail on the native code version (using ocamlopt) if the
+   assembler is not on your path.  Look in the Objective Caml windows
+   documentation for what is needed, and check that you have a working
+   installation by compiling and linking a trivial program.
+   Note also that the autodection for mingw is not fool-proof
+   (lablgtk2 has to be installed directly under the ocaml library), so
+   if the OCaml port annouced by build.ml is not the right one, you
+   should specify it by hand inside build.ml.
+
+   You must repeat this compilation step every time you upgrade OCaml.
+
+4) Test in examples
+     lablgtk2.bat testgtk.ml
+
+   See also the "Windows port" section of the main LablGtk2 README for
+   important remarks on threads on Windows.
+
+5) For custom linking or native code, you need to use the export
+   libraries in the above DLL package. There is not default place to
+   put them, so you should specify that at link time:
+     ocamlopt -ccopt "-LC:/opt/gtk/lib" -I +lablgtk2 lablgtk.cmxa \
+         gtkInit.cmx testgtk.ml -o testgtk.exe
+   Again, if this fails you must make sure that your ocamlopt really works,
+   and that all paths are correctly specified.
+
+
+Full compilation with MSVC or mingw (for the brave)
+
+0) You will need the MSVC version of ocaml 3.11 or more,
+  and cygwin development tools. You must also install flexdll
+  (at least 0.7) from
+       http://alain.frisch.fr/flexdll.html
+
+1) Install Gtk 2: use the precompiled binaries available at 
+
+     http://gladewin32.sourceforge.net/
+
+  This time you need the developper version.
+  Do NOT even try to compile it yourself from scratch.
+
+  Try to compile a small hello-gtk.c (see the tutorial page on 
+  http://www.gtk.org) before going further.
+
+  You may unzip optional libraries available from 
+    http://ftp.gnome.org/pub/gnome/binaries/win32
+  in c:\GTK.
+  For example to have GtkSourceView 1 support, you have to unzip : 
+   libgnomeprint-dev.xxx.zip
+   libgnomeprint.xxx.zip
+   libart_gpl-dev.xxx.zip
+   libart_gpl-dev.xxx.zip
+   libxml2-dev.xxx.zip
+   libxml2.xxx.zip
+   win_iconv_dll-tml-xxx.zip
+   gtksourceview-dev.1.xxx.zip
+   gtksourceview.1.xxx.zip
+
+  If you need to check that all dependencies are installed, use
+   pkg-config --libs gtksourceview-1.0
+  and see if an error is reported.
+
+3) Copy config.make.msvc or config.make.mingw to config.make, and edit it
+   to set GTKROOT.
+
+   Alternatively, on mingw you may run the configure script.
+	./configure --disable-gtktest
+
+   If you do want to perform configuration time Gtk C tests the define
+   CYGWIN=nobinmode before running ./configure. 
+   The rationale behind CYGWIN=nobinmode is that pkg-config is a
+   native windows program which outputs \r\n instead of usual unix \n.
+   The CYGWIN variable forces the shell to strip down all \r from
+   command answers.
+
+4) Simply do "make" and "make opt" for the native version.
+
+5) Install ("make install") and test.
+
+$Id: README.win32 1488 2009-09-25 13:13:54Z garrigue $

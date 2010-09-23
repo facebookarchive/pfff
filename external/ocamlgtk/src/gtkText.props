@@ -1,0 +1,157 @@
+(* $Id: gtkText.props 1415 2008-09-04 15:59:15Z ben_99_9 $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+boxed {
+  GdkEvent    "GdkEvent.any"
+}
+
+classes {
+  GdkPixbuf "GdkPixbuf.pixbuf"
+  GtkAdjustment "Gtk.adjustment obj"
+  GtkMenu "Gtk.menu obj"
+}
+
+class TextView wrap wrapsig : Container {
+  "editable"             gboolean             : Read / Write / Set
+  "cursor-visible"       gboolean             : Read / Write / Set
+  "indent"               gint                 : Read / Write
+  "justification"        GtkJustification     : Read / Write / Set
+  "left-margin"          gint                 : Read / Write
+  "pixels-above-lines"   gint                 : Read / Write
+  "pixels-below-lines"   gint                 : Read / Write
+  "pixels-inside-wrap"   gint                 : Read / Write
+  "right-margin"         gint                 : Read / Write
+  "tabs"                 PangoTabArray        : Read / Write
+  "wrap-mode"            GtkWrapMode          : Read / Write / Set
+
+  (* API extended in GTK 2.4 *)
+  "accepts-tab"             gboolean             : Read / Write / Set
+
+  signal copy_clipboard
+  signal cut_clipboard
+  signal delete_from_cursor : GtkDeleteType gint
+  signal insert_at_cursor :   gchararray
+  signal move_cursor :        GtkMovementStep gint extend:gboolean
+  signal move_focus :         GtkDirectionType
+  signal page_horizontally :  gint extend:gboolean
+  signal paste_clipboard
+  signal populate_popup :     GtkMenu
+  signal set_anchor
+  signal set_scroll_adjustments : GtkAdjustment_opt GtkAdjustment_opt
+  signal toggle_overwrite
+}
+
+class TextBuffer wrap : GObject {
+  "tag-table"            GtkTextTagTable      : Read / Write / Construct Only
+  "cursor-position"      gint                 : Read
+  "has-selection"        gboolean             : Read
+  signal apply_tag : GtkTextTag GtkTextIter GtkTextIter
+  signal begin_user_action                  / Wrap
+  signal changed                            / Wrap
+  signal delete_range : GtkTextIter GtkTextIter
+  signal end_user_action                    / Wrap
+  signal insert_child_anchor : GtkTextIter GtkTextChildAnchor
+  signal insert_pixbuf : GtkTextIter GdkPixbuf
+  signal insert_text : GtkTextIter string (*len:int*)
+  signal mark_deleted : GtkTextMark         / Wrap
+  signal mark_set : GtkTextIter GtkTextMark
+  signal modified_changed                   / Wrap
+  signal remove_tag : GtkTextTag GtkTextIter GtkTextIter
+}
+
+class TextChildAnchor : GObject {
+  method get_widgets : "widget obj list"
+  method get_deleted : "bool"
+}
+
+class TextMark : GObject {
+  method set_visible : "bool -> unit"
+  method get_visible : "bool"
+  method get_deleted : "bool"
+  method get_name : "string option"
+  method get_buffer : "text_buffer option"
+  method get_left_gravity : "bool"
+}
+
+class TextTag vset : GObject {
+  "background"           gchararray           : Write
+  "background-full-height" gboolean             : Read / Write
+  "background-full-height-set" gboolean             : Read / Write
+  "background-gdk"       GdkColor             : Read / Write
+  "background-set"       gboolean             : Read / Write
+  "background-stipple"   GdkBitmap            : Read / Write
+  "background-stipple-set" gboolean           : Read / Write
+  "direction"            GtkTextDirection     : Read / Write
+  "editable"             gboolean             : Read / Write
+  "editable-set"         gboolean             : Read / Write
+  "family"               gchararray           : Read / Write
+  "family-set"           gboolean             : Read / Write
+  "font"                 gchararray           : Read / Write
+  "font-desc"            PangoFontDescription : Read / Write
+  "foreground"           gchararray           : Write
+  "foreground-gdk"       GdkColor             : Read / Write
+  "foreground-set"       gboolean             : Read / Write
+  "foreground-stipple"   GdkBitmap            : Read / Write
+  "foreground-stipple-set" gboolean           : Read / Write
+  "indent"               gint                 : Read / Write
+  "indent-set"           gboolean             : Read / Write
+  "invisible"            gboolean             : Read / Write
+  "invisible-set"        gboolean             : Read / Write
+  "justification"        GtkJustification     : Read / Write
+  "justification-set"    gboolean             : Read / Write
+  "language"             gchararray           : Read / Write
+  "language-set"         gboolean             : Read / Write
+  "left-margin"          gint                 : Read / Write
+  "left-margin-set"      gboolean             : Read / Write
+  "name"                 gchararray           : Read / Write / Construct Only
+  "pixels-above-lines"   gint                 : Read / Write
+  "pixels-above-lines-set" gboolean           : Read / Write
+  "pixels-below-lines"   gint                 : Read / Write
+  "pixels-below-lines-set" gboolean           : Read / Write
+  "pixels-inside-wrap"   gint                 : Read / Write
+  "pixels-inside-wrap-set" gboolean           : Read / Write
+  "right-margin"         gint                 : Read / Write
+  "right-margin-set"     gboolean             : Read / Write
+  "rise"                 gint                 : Read / Write
+  "rise-set"             gboolean             : Read / Write
+  "scale"                gdouble              : Read / Write
+  "scale-set"            gboolean             : Read / Write
+  "size"                 gint                 : Read / Write
+  "size-points"          gdouble              : Read / Write
+  "size-set"             gboolean             : Read / Write
+  "stretch"              PangoStretch         : Read / Write
+  "stretch-set"          gboolean             : Read / Write
+  "strikethrough"        gboolean             : Read / Write
+  "strikethrough-set"    gboolean             : Read / Write
+  "style"                PangoStyle           : Read / Write
+  "style-set"            gboolean             : Read / Write
+  "tabs"                 PangoTabArray        : Read / Write
+  "tabs-set"             gboolean             : Read / Write
+  "underline"            PangoUnderline       : Read / Write
+  "underline-set"        gboolean             : Read / Write
+  "variant"              PangoVariant         : Read / Write
+  "variant-set"          gboolean             : Read / Write
+  "weight"               gint                 : Read / Write
+  "weight-set"           gboolean             : Read / Write
+  "wrap-mode"            GtkWrapMode          : Read / Write
+  "wrap-mode-set"        gboolean             : Read / Write
+  method get_priority : "int"
+  method set_priority : "int -> unit"
+  method event : "'a obj ->  'b Gdk.event -> text_iter -> bool"
+  signal event : origin:GObject GdkEvent GtkTextIter -> bool
+}
+
+class TextTagTable wrapsig : GObject {
+  method add : "text_tag -> unit"
+  method remove : "text_tag -> unit"
+  method lookup : "string -> text_tag option"
+  method get_size : "int"
+  signal tag_added : GtkTextTag
+  signal tag_changed : GtkTextTag size:bool
+  signal tag_removed : GtkTextTag
+}

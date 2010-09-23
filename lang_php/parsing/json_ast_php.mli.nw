@@ -1,0 +1,115 @@
+\section{Exporting JSON data}
+\label{sec:unparsing-json}
+
+\pfff can also export the JSON representation of a PHP AST,
+programmatically via [[json_ast_php.ml]] or interactively
+via [[pfff -json]].
+One can then import this data in other languages with JSON
+support such as Python (or PHP).
+Here is an excerpt of the exported JSON of [[demos/foo1.php]]:
+
+\begin{verbatim}
+$ ./pfff -json demos/foo1.php
+[
+  [
+    "FuncDef",
+    {
+      "f_tok": {
+        "pinfo": [
+          "OriginTok",
+          {
+            "str": "function",
+            "charpos": 6,
+            "line": 2,
+            "column": 0,
+            "file": "demos/foo1.php"
+          }
+        ],
+        "comments": []
+      },
+      "f_ref": [],
+      "f_name": [
+        "Name",
+        [
+          "'foo'",
+ ...
+\end{verbatim}
+
+The JSON pretty printer is automatically generated from
+[[ast_php.mli]] so there is an exact correspondance between
+the constructor names in the OCaml types and the strings or fields
+in the JSON data. One can thus use the types documentation in 
+this manual to translate that into JSON. For instance here
+is a port of [[show_function_calls.ml]] seen in 
+Section~\ref{sec:show-funcall-ex} in Python:
+
+<<show_function_calls.py>>=
+TODO basic version. Search for nodes with FunCallSimple
+and extract position information from children.
+Is there a visitor library for JSON data in Python or PHP ?
+Is there XPATH for JSON ?
+@ 
+
+While \pfff makes it possible to analyze PHP code in other
+languages, thanks to JSON, we strongly discourage coding complex
+static analysis or transformations in other languages. 
+The big advantage of OCaml (or Haskell) and so of \pfff is its strong
+pattern matching capability and type checking which
+are ideal for such tasks. 
+%The full JSON output for [[demos/foo1.php]]
+%is more than 300 lines of long, has a depth of more than 10,
+%you do not want to analyze it in dynamic languages.
+Moreover \pfff provides more than just an AST manipulation
+library. Indeed [[pfff/analyzis_php]] gives access to more
+services such as 
+control-flow graphs, caller/callee analysis (inluding for
+virtual methods using object aliasing analysis), etc.
+
+
+Here are the functions defined by [[json_ast_php.mli]]:
+
+<<json_ast_php.mli>>=
+
+<<json_ast_php flags>>
+
+val string_of_program:  Ast_php.program  -> string
+val string_of_toplevel: Ast_php.toplevel -> string
+val string_of_expr:     Ast_php.expr     -> string
+
+(* The outputted JSON is not pretty printed, it's more compact,
+ * so less readable, but it's faster. 
+ *)
+val string_of_program_fast:  Ast_php.program  -> string
+@ 
+
+<<json_ast_php flags>>=
+@ 
+
+
+\section{[[pfff -json]]}
+
+<<test_parsing_php actions>>=
+  (* an alias for -sexp_php *)
+  "-json", "   <file> export the AST of file into JSON", 
+    Common.mk_action_1_arg test_json_php;
+  "-json_fast", "   <file> export the AST of file into a compact JSON", 
+    Common.mk_action_1_arg test_json_fast_php;
+@ 
+
+<<test_json_php>>=
+let test_json_php file = 
+  let (ast2,_stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+
+  let s = Json_ast_php.string_of_program ast in
+  pr s;
+  ()
+
+let test_json_fast_php file = 
+  let (ast2,_stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+
+  let s = Json_ast_php.string_of_program_fast ast in
+  pr s;
+  ()
+@ 

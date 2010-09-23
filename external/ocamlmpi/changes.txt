@@ -1,0 +1,6 @@
+Version 1.01:
+- Relicensed under the LGPL
+- Modernized build and installation procedure.
+
+Version 1.00:
+- First public release.

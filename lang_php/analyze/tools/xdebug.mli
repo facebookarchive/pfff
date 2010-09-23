@@ -1,0 +1,49 @@
+(*s: xdebug.mli *)
+
+type call_trace = {
+  f_call: Callgraph_php.kind_call;
+  f_file: Common.filename;
+  f_line: int;
+  f_params: Ast_php.expr list;
+  f_return: Ast_php.expr option;
+
+  (* f_type: *)
+}
+
+type config = {
+  auto_trace: int;
+  trace_options: int;
+
+  trace_format: int;
+  collect_params: params_mode;
+  collect_return: bool;
+
+  var_display_max_children: int;
+  val_display_max_data: int;
+  var_display_max_depth: int;
+}
+ and params_mode = 
+   | NoParam
+   | TypeAndArity
+   | TypeAndArityAndTooltip
+   | FullParam
+   | FullParamAndVar
+
+val default_config: config
+
+val php_has_xdebug_extension: unit -> bool
+
+val iter_dumpfile: 
+  ?config:config ->
+  ?show_progress:bool -> 
+  ?fatal_when_exn:bool ->
+  (call_trace -> unit) -> Common.filename -> unit
+
+val xdebug_main_name: string
+
+val php_cmd_with_xdebug_on: 
+  ?config:config ->
+  trace_file:Common.filename -> unit -> 
+  string
+(*x: xdebug.mli *)
+(*e: xdebug.mli *)

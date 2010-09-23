@@ -1,0 +1,47 @@
+1. Read README.win32 in the OCaml distribution and download the third
+   party software for the native windows distribution.  Prepare a shell
+   with the right PATH; typically create a .bat file containing:
+
+   CALL "C:\Program Files\Microsoft Visual Studio 8\Common7\Tools\vsvars32.bat"
+   CALL "c:\Program Files\Microsoft Platform SDK"\SetEnv.Cmd /SRV32
+   @cmd
+
+   From now on, we assume you use such a shell.
+
+2. Go to <http://www.pcre.org/>, download the latest pcre tarball
+   (tested with 7.2), and unpack it (say in pcre-7.2).
+
+3. Possibly modify make_pcre.ml (in directory pcre_make.win32) to set
+   the paths to your will.  The default is to install in the pcre/
+   subdirectory of the default OCaml library location and should be
+   fine for most cases.  (The C pcre library is small, you should not
+   worry about having multiple copies on your system.)
+
+4. Copy the file make_pcre.ml to pcre-7.2 and execute:
+
+     ocaml make_pcre.ml
+     make
+
+   This will compile and install pcre.
+
+5. Copy make_pcre.ml (yes the same as above!) to the lib/ subdirectory
+   of the directory where you unpacked pcre-ocaml, go into lib/ and
+   type:
+
+     ocaml make_pcre.ml
+     make
+
+   This will compile and install pcre-ocaml.
+
+6. Optionally, go to the any example directory and type
+
+     make
+
+   to compile the example there.
+
+Enjoy!
+
+Christophe Troestler and Markus Mottl
+
+July 12, 2007
+

@@ -1,0 +1,39 @@
+#LIB_PATH=d:\ocaml\libs
+#INC_PATH=d:/ocaml/lib d:/ocaml/includes
+INC_PATH=$(shell ocamlc -where)
+
+
+all: pcre.cma
+opt: pcre.cmxa
+
+pcre.cma: pcre.cmo pcre_stubs.lib
+	ocamlc -a -o pcre.cma pcre.cmo  \
+  		-cclib pcre_stubs.lib -cclib libpcre.lib 
+
+pcre.cmo: pcre.cmi pcre.ml
+	ocamlc -c pcre.ml -o pcre.cmo
+
+pcre.cmi: pcre.mli
+	ocamlc -c pcre.mli -o pcre.cmi
+	
+pcre_stubs.lib: pcre_stubs.c
+	echo $(INC_PATH)
+	cl /nologo /c /MT pcre_stubs.c /Fopcre_stubs.s.obj $(addprefix /I,$(INC_PATH))
+	lib /nologo /debugtype:CV /OUT:pcre_stubs.lib pcre_stubs.s.obj
+
+pcre.cmx: pcre.cmi pcre.ml
+	ocamlopt -c pcre.ml -o pcre.cmx
+
+pcre.cmxa: pcre.cmx pcre_stubs.lib
+	ocamlopt -verbose -a -o pcre.cmxa pcre.cmx \
+  		-cclib pcre_stubs.lib -cclib libpcre.lib 
+
+install:
+	ocamlfind install pcre META pcre.cma pcre.cmxa pcre.cmi pcre.mli \
+		pcre.lib pcre_stubs.lib
+uninstall:
+	ocamlfind remove pcre
+
+clean:
+	rm *.cm* *.lib *.obj
+

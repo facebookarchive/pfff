@@ -1,0 +1,37 @@
+(* $Id: pango_tags.var 1369 2007-09-25 02:56:09Z garrigue $ *)
+
+package "pango"
+prefix "pango_"
+
+type style = "PANGO_STYLE_"
+  [ `NORMAL | `OBLIQUE | `ITALIC ]
+
+type weight = "PANGO_WEIGHT_"
+  [ `ULTRALIGHT | `LIGHT | `NORMAL |`BOLD | `ULTRABOLD |`HEAVY ]
+
+type variant = "PANGO_VARIANT_"
+  [ `NORMAL | `SMALL_CAPS ]
+
+type stretch = "PANGO_STRETCH_"
+ [ `ULTRA_CONDENSED | `EXTRA_CONDENSED | 
+`CONDENSED | 
+`SEMI_CONDENSED | 
+`NORMAL | 
+`SEMI_EXPANDED | 
+`EXPANDED | 
+`EXTRA_EXPANDED | 
+`ULTRA_EXPANDED ]
+
+type noconv scale = "PANGO_SCALE_"
+  [ `XX_SMALL | `X_SMALL | `SMALL | `MEDIUM 
+  | `LARGE | `X_LARGE | `XX_LARGE | `CUSTOM ]
+
+type underline = "PANGO_UNDERLINE_"
+  [ `NONE | `SINGLE | `DOUBLE | `LOW ]
+
+type wrap_mode = "PANGO_WRAP_"
+  [ `WORD | `CHAR | `WORD_CHAR ]
+
+type protect HASGTK26 ellipsize_mode = "PANGO_ELLIPSIZE_"
+  [ `NONE | `START | `MIDDLE | `END ]
+(* this enum was introduced in Pango 1.6 / GTK+ 2.6 *)

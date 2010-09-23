@@ -1,0 +1,39 @@
+
+This short program shows how to write an applet for the GNOME2
+panel. 
+
+Applets are Bonobo components (the component system used in
+GNOME). However, pretty much all of this component stuff is wrapped by
+the panel-applet library. So, when programming the applet we deal with
+a regular GTK+ widget (a subclass of GtkEventBox). This PanelApplet
+widget has a few new signals so that the applet can be notified of
+changes in its environment (mainly size and orientation of the
+panel). The GConf-related functions are not wrapped for a lack of
+GConf/ocaml bindings.
+
+The .server file contains information for the activation server so that
+it can launch the applet executable. Make sure that :
+
+  - the .server file is installed in a place the activation server can
+  find : 
+      - $prefix/lib/bonobo/servers 
+      - some directory mentioned in 
+          $prefix/etc/bonobo-activation/bonobo-activation-config.xml
+      - some directory in the BONOBO_ACTIVATION_PATH env variable.
+
+  - the executable is at the place mentioned in the .server file
+
+  - the activation server can fork a working caml program (so you
+    may have difficulties with CAML_LD_LIBRARY_PATH ; it's probably
+    easier to use an executable compiled with ocamlopt).
+
+If your applet use an external XML file for the UI, it must be
+installed in the right place ($prefix/share/gnome-2.0/ui should work).
+
+To test the applet, launch the executable in a terminal window, then
+right after that, add the applet to the panel using the panel
+menu. The panel should be using the executable you launched and you
+should see whatever messages your applet send to stdout/stderr.
+The gnome-panel package has a panel-test-applets executable that you
+can find useful for testing how your applet reacts to the signals sent
+by the panel (size, orientation, etc.).

@@ -1,0 +1,108 @@
+TOP=..
+#############################################################################
+# Configuration section
+#############################################################################
+
+-include $(TOP)/Makefile.config
+
+##############################################################################
+# Variables
+##############################################################################
+TARGET=lib
+
+SRC= figures.ml \
+     jgraph.ml \
+     treemap.ml treemap_json.ml
+
+# dot.ml gnuplot.ml 
+# html.ml latex.ml 
+#now in commons/ simple_color.ml 
+
+LIBS=$(TOP)/commons/commons.cma
+INCLUDES= -I $(TOP)/commons $(TOP)/commons/lib-json
+
+SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
+
+# graphics is not included by default because it can conflict with
+# applications using lablgtk instead
+ifeq ($(FEATURE_GRAPHICS),1)
+SRC2+=treemap_graphics.ml
+SYSLIBS+=graphics.cma
+PROGS+=treemap_viewer
+endif
+
+
+##############################################################################
+# Generic variables
+##############################################################################
+-include $(TOP)/Makefile.common
+
+##############################################################################
+# Top rules
+##############################################################################
+all:: $(TARGET).cma $(PROGS)
+all.opt: $(TARGET).cmxa $(PROGS:=.opt)
+
+
+$(TARGET).cma: $(OBJS) $(LIBS)
+	$(OCAMLC) -a -o $@ $(OBJS)
+
+$(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
+	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
+
+
+treemap_viewer: $(LIBS) $(EXTRALIBS) $(OBJS) $(SRC2:.ml=.cmo) main_treemap.cmo 
+	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 
+
+treemap_viewer.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) main_treemap.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBSOPT) $(SYSLIBS:.cma=.cmxa) $^ 
+
+clean::
+	rm -f $(PROGS) $(PROGS:=.opt)
+
+##############################################################################
+# Literate Programming rules
+##############################################################################
+
+
+# must be in the same order of the #include for syncweb multi files support
+# to work
+SRCNW=Treemap.tex.nw
+TEXMAIN=Treemap.tex.nw
+TEX=Treemap.tex
+
+# user oriented, public API in some sense + ml that share code with mli
+LPSRC1=treemap.mli treemap.ml treemap_json.mli treemap_json.ml \
+ treemap_graphics.mli treemap_graphics.ml \
+ main_treemap.ml 
+LPSRCSHARED=
+# internal oriented 
+LPSRC2=
+LPSRC=$(LPSRC1) $(LPSRCSHARED) $(LPSRC2)
+
+#------------------------------------------------------------------------------
+SYNCFLAGS=-md5sum_in_auxfile -less_marks
+
+SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
+NOWEB=~/c__syncweb/scripts/noweblatex
+OCAMLDOC=ocamldoc $(INCLUDES)
+
+PDFLATEX=pdflatex --shell-escape 
+
+#------------------------------------------------------------------------------
+sync:
+	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
+
+pdf:
+	$(NOWEB) $(TEXMAIN) > $(TEX)
+	pdflatex $(TEX)
+#	pdflatex $(TEX)
+
+lpclean::
+	rm -f $(TEX)
+
+lpclean2::
+	rm -f $(TEX) $(LPSRC) $(LPSRCOTHER) .md5sum_*
+
+clean::
+	rm -f *.aux *.toc *.log

@@ -1,0 +1,41 @@
+(* $Id: gtkList.props 1001 2003-08-15 11:09:49Z garrigue $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+boxed {
+  GdkEventButton    "GdkEvent.Button.t"
+}
+
+class ListItem : Item { (* omit signals *) }
+
+class List set wrap : Container {
+  "selection-mode"       GtkSelectionMode     : Read / Write
+  signal select_child : GtkWidget
+  signal selection_changed
+  signal unselect_child : GtkWidget
+}
+
+class Clist "GtkCList" set wrap wrapsig abstract : Container {
+  "n-columns"            guint                : Read / Write / Construct Only
+  "sort-type"            GtkSortType          : Read / Write
+  "reorderable"          gboolean             : Read / Write
+  "row-height"           guint                : Read / Write
+  "selection-mode"       GtkSelectionMode     : Read / Write
+  "shadow-type"          GtkShadowType        : Read / Write
+  "titles-active"        gboolean             : Read / Write
+  "use-drag-icons"       gboolean             : Read / Write
+  (* not all signals *)
+  signal click_column :  gint
+  signal resize_column : gint gint
+  signal scroll_horizontal : GtkScrollType pos:gfloat
+  signal scroll_vertical : GtkScrollType pos:gfloat
+  signal select_all
+  signal select_row :    row:gint column:gint event:GdkEventButton_opt
+  signal unselect_all
+  signal unselect_row :  row:gint column:gint event:GdkEventButton_opt
+  
+}

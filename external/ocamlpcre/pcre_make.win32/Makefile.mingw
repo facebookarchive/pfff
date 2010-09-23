@@ -1,0 +1,74 @@
+#
+# MinGW based makefile, adapted by Jeff Henrikson, jehenrik@yahoo.com,
+# November 2003.
+#
+# usage:
+# make -f Makefile.mingw
+# make -f Makefile.mingw opt
+#
+# File is provided as is.  Let the buyer beware!
+
+#LIB_PATH=d:\ocaml\libs
+#INC_PATH=d:/ocaml/lib d:/ocaml/includes
+INC_PATH=$(shell ocamlc -where)
+
+
+all: pcre.cma
+opt: pcre.cmxa
+
+pcre.cmo: pcre.cmi pcre.ml
+	ocamlc -c pcre.ml -o pcre.cmo
+
+pcre.cmi: pcre.mli
+	ocamlc -c pcre.mli -o pcre.cmi
+	
+
+	#These were the MS commands:
+	#cl /nologo /c /MT pcre_stubs.c /Fopcre_stubs.s.obj $(addprefix /I,$(INC_PATH))
+	#lib /nologo /debugtype:CV /OUT:dllpcre_stubs.dll.a pcre_stubs.s.obj
+	#echo $(INC_PATH)
+	# 
+
+# -D__MINGW32__ 
+pcre_stubs.o: pcre_stubs.c
+	gcc -mno-cygwin -I $(INC_PATH) -I/usr/include -I /usr/include/w32api -c pcre_stubs.c
+
+#libpcre_stubs.a: pcre_stubs.o
+#	ar cr libpcre_stubs.a pcre_stubs.o
+#	ranlib libpcre_stubs.a
+
+
+libpcre_stubs.a: pcre_stubs.o
+	ar cr libpcre_stubs.a pcre_stubs.o
+	ranlib libpcre_stubs.a
+
+dllpcre_stubs.dll: pcre_stubs.o
+	gcc -g -mno-cygwin -shared -L `ocamlc -where` -o dllpcre_stubs.dll pcre_stubs.o -L . -lpcre-mingw `ocamlc -where`/ocamlrun.a
+	chmod 777 dllpcre_stubs.dll
+
+pcre.cmx: pcre.cmi pcre.ml
+	ocamlopt -c pcre.ml -o pcre.cmx
+
+pcre.cmxa: pcre.cmx -g libpcre_stubs.a libpcre-mingw.dll
+	ocamlopt -verbose -a -o pcre.cmxa pcre.cmx \
+  		 -cclib -lpcre-mingw -cclib -lpcre_stubs 
+
+pcre.cma: pcre.cmo dllpcre_stubs.dll
+	ocamlc -a -o pcre.cma pcre.cmo  \
+  		-dllib -lpcre_stubs
+#  		-cclib -lpcre_stubs -cclib libpcre-mingw.dll
+#  		-cclib -lpcre_stubs -cclib -lpcre-mingw 
+#try: ocamlc -o test.exe pcre.cma test.ml
+
+
+install:
+	ocamlfind install pcre META pcre.cma pcre.cmxa pcre.cmi pcre.mli \
+		pcre.lib
+uninstall:
+	ocamlfind remove pcre
+
+clean:
+	rm *.cm* *.o libpcre_stubs.dll dllpcre_stubs.dll
+
+
+

@@ -1,0 +1,12 @@
+	CamlIRC --- 
+	   an IRC (Internet Relay Chat) client written in Ocaml
+
+Requirements:
+	ocaml-3.04
+	lablgtk-1.2.3
+	gmake
+	
+How to compile:
+	In this directory, just type 'make'.
+
+$Id: README 588 2002-02-25 07:49:28Z garrigue $

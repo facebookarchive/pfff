@@ -1,0 +1,8 @@
+\section{AST printing for copy-pasting}
+\label{sec:export-ast}
+
+<<export_ast_php.mli>>=
+
+val ml_pattern_string_of_program: 
+  Ast_php.program -> string
+@ 

@@ -1,0 +1,44 @@
+
+<<json_ast_php.ml>>=
+<<Facebook copyright>>
+
+open Common 
+
+module J = Json_type 
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* 
+ * It can be useful for people who don't like OCaml to still benefit 
+ * from pfff parsing by having at least a JSON representation
+ * of the Ast, hence this file. Other parts of pfff generates JSON
+ * data (see flib_navigator/, fb_phpunit/, h_visualization/).
+ *
+ *)
+
+(*****************************************************************************)
+(* Entry points *)
+(*****************************************************************************)
+
+let string_of_expr x = 
+  x |> Meta_ast_php.vof_expr |> Ocaml.json_of_v |> Json_out.string_of_json
+let string_of_toplevel x = 
+  x |> Meta_ast_php.vof_toplevel |> Ocaml.json_of_v |> Json_out.string_of_json
+let string_of_program x = 
+  Common.profile_code "json_of_program" (fun () ->
+    x |> Meta_ast_php.vof_program |> Ocaml.json_of_v |> Json_out.string_of_json
+  )
+
+let string_of_program_fast x = 
+  Common.profile_code "json_of_program_fast" (fun () ->
+    let json = x |> Meta_ast_php.vof_program |> Ocaml.json_of_v 
+    in
+    Common.profile_code "string_of_json" (fun () ->
+      Json_io.string_of_json ~compact:true ~recursive:false json
+    )
+  )
+
+
+@

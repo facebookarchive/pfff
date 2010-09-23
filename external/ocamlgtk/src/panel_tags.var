@@ -1,0 +1,2 @@
+type background_type = "PANEL_" [ `NO_BACKGROUND | `COLOR_BACKGROUND | `PIXMAP_BACKGROUND ]
+type panel_flags = "PANEL_APPLET_" [ `EXPAND_MAJOR | `EXPAND_MINOR | `HAS_HANDLE ]

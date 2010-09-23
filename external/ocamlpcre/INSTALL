@@ -1,0 +1,69 @@
+---------------------------------------------------------------------------
+
+                                  INSTALL
+
+---------------------------------------------------------------------------
+
+  1) Download and install Phil Hazel's PCRE-library (version >=4.5):
+
+       http://www.pcre.org
+
+     Your OS-distribution may already have a pre-compiled package, too.
+
+     If the library is installed in a non-standard place, you may need
+     to set the paths to the include file "pcre.h" and to the static or
+     shared libraries in Makefile.conf (variables INCDIRS and LIBDIRS).
+
+  2) If there is anything non-standard about your OCaml-installation,
+     look at the default settings in "OCamlMakefile" and set them to
+     the values that are valid on your system, you can do this also by
+     setting environment variables. This is greatly simplified if you
+     normally use "OCamlMakefile" and have already configured your shell
+     environment in startup files appropriately.
+
+     You will need Gerd Stolpmann's "findlib"-tool!
+
+       http://www.ocaml-programming.de/programming/download-caml.html
+
+     On some platforms (e.g. Solaris) it may be necessary to use gcc as
+     C-compiler instead of the vendor one, i.e. "CC=gcc".
+
+     If you want to compile the byte-code library without the
+     "-custom"-switch, you will have to supply "NO_CUSTOM=y" to "make".
+
+  3) Don't forget: you will need GNU-make!
+
+     Enter "make" in the top directory to compile the library.
+
+     By default, the library will be compiled to support dynamic
+     linking. This may not necessarily work on all platforms. In case
+     you encounter problems in the following steps, you may uncomment
+     the corresponding line in Makefile.conf or pass "STATIC=1" to "make"
+     on the command line. This will only build and install a statically
+     linkable library.
+
+  4) Enter "make install" to install the library.
+
+  x) If you want to compile the examples, enter "make examples".
+
+     If dynamic linking was allowed, you may only be able to run the
+     examples after installation of this library (step 4 above)!
+
+---------------------------------------------------------------------------
+
+                                 UNINSTALL
+
+---------------------------------------------------------------------------
+
+  1) Easy: just enter "make uninstall". This will remove all files
+     installed by "make install".
+
+---------------------------------------------------------------------------
+
+Enjoy!
+
+Vienna, 2005-06-08
+Markus Mottl
+
+email: markus.mottl@gmail.com
+WWW:   http://www.ocaml.info

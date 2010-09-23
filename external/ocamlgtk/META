@@ -1,0 +1,8 @@
+requires=""
+version="2.12.0"
+archive(byte)="lablgtk.cma"
+archive(byte,init)="lablgtk.cma gtkInit.cmo"
+archive(native)="lablgtk.cmxa"
+archive(native,init)="lablgtk.cmxa gtkInit.cmx"
+linkopts=""
+directory="+lablgtk2"

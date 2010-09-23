@@ -1,0 +1,257 @@
+(* $Id: gtkTree.props 1496 2010-01-14 15:38:03Z ben_99_9 $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+module Internal = struct
+  let tree_path_string = ref (unsafe_pointer : tree_path data_conv)
+end
+}
+
+conversions {
+  GtkTreePathString "!Internal.tree_path_string"
+}
+
+classes {
+  GdkPixbuf "GdkPixbuf.pixbuf"
+  GtkAdjustment "Gtk.adjustment obj"
+  GtkTreeModel "Gtk.tree_model obj"
+}
+
+class TreeView set wrap wrapsig : Container {
+  "enable-search"        gboolean             : Read / Write
+  "expander-column"      GtkTreeViewColumn_opt: Read / Write / NoSet / NoWrap
+  "fixed-height-mode"    gboolean             : Read / Write
+  "hadjustment"          GtkAdjustment        : Read / Write
+  "headers-clickable"    gboolean             : Write
+  "headers-visible"      gboolean             : Read / Write
+  "model"                GtkTreeModel_opt     : Read / Write / NoWrap
+  "reorderable"          gboolean             : Read / Write
+  "rules-hint"           gboolean             : Read / Write
+  "search-column"        gint                 : Read / Write
+  "vadjustment"          GtkAdjustment        : Read / Write
+  (* new properties in GTK+ 2.6 *)
+  "hover-expand"         gboolean              : Read / Write / NoSet
+  "hover-selection"      gboolean              : Read / Write / NoSet
+  (* new properties in GTK+ 2.12 *)
+  "tooltip-column"       gint                 : Read / Write
+  method get_visible_range : "(tree_path * tree_path) option"
+  signal columns_changed
+  signal cursor_changed
+  signal expand_collapse_cursor_row :
+    logical:gboolean expand:gboolean all:gboolean -> gboolean
+  signal move_cursor :   GtkMovementStep gint -> gboolean
+  signal row_activated : GtkTreePath GtkTreeViewColumn          / NoWrap
+  signal row_collapsed : GtkTreeIter GtkTreePath
+  signal row_expanded :  GtkTreeIter GtkTreePath 
+  signal select_all : -> gboolean
+  signal select_cursor_parent : -> gboolean
+  signal select_cursor_row : start_editing:gboolean -> gboolean
+  signal set_scroll_adjustments : GtkAdjustment_opt GtkAdjustment_opt
+  signal start_interactive_search : -> gboolean
+  signal test_collapse_row : GtkTreeIter GtkTreePath -> gboolean
+  signal test_expand_row :   GtkTreeIter GtkTreePath -> gboolean
+  signal toggle_cursor_row : -> gboolean
+  signal unselect_all : -> gboolean
+}
+
+class CellRenderer vset : Object {
+  "cell-background"      gchararray           : Write
+  "cell-background-gdk"  GdkColor             : Read / Write
+  "cell-background-set"  gboolean             : Read / Write
+  "height"               gint                 : Read / Write
+  "is-expanded"          gboolean             : Read / Write
+  "is-expander"          gboolean             : Read / Write
+  "mode"                 GtkCellRendererMode  : Read / Write
+  "visible"              gboolean             : Read / Write
+  "width"                gint                 : Read / Write
+  "xalign"               gfloat               : Read / Write
+  "xpad"                 guint                : Read / Write
+  "yalign"               gfloat               : Read / Write
+  "ypad"                 guint                : Read / Write
+}
+
+class CellRendererPixbuf vset : CellRenderer {
+  "pixbuf"               GdkPixbuf            : Read / Write
+  "pixbuf-expander-closed" GdkPixbuf          : Read / Write
+  "pixbuf-expander-open" GdkPixbuf            : Read / Write
+  "stock-detail"         gchararray           : Read / Write
+  "stock-id"             gchararray           : Read / Write
+  "stock-size"           GtkIconSize          : Read / Write
+}
+
+class CellRendererText vset : CellRenderer {
+  "attributes"           PangoAttrList        : Read / Write
+  "background"           gchararray           : Write
+  "background-gdk"       GdkColor             : Read / Write
+  "background-set"       gboolean             : Read / Write
+  "editable"             gboolean             : Read / Write
+  "editable-set"         gboolean             : Read / Write / NoVSet
+  "family"               gchararray           : Read / Write
+  "family-set"           gboolean             : Read / Write / NoVSet
+  "font"                 gchararray           : Read / Write
+  "font-desc"            PangoFontDescription : Read / Write
+  "foreground"           gchararray           : Write
+  "foreground-gdk"       GdkColor             : Read / Write
+  "foreground-set"       gboolean             : Read / Write
+  "markup"               gchararray           : Write
+  "rise"                 gint                 : Read / Write
+  "rise-set"             gboolean             : Read / Write / NoVSet
+  "scale"                gdouble              : Read / Write
+  "scale-set"            gboolean             : Read / Write / NoVSet
+  "single-paragraph-mode" gboolean            : Read / Write
+  "size"                 gint                 : Read / Write
+  "size-points"          gdouble              : Read / Write
+  "size-set"             gboolean             : Read / Write / NoVSet
+  "stretch"              PangoStretch         : Read / Write
+  "stretch-set"          gboolean             : Read / Write / NoVSet
+  "strikethrough"        gboolean             : Read / Write
+  "strikethrough-set"    gboolean             : Read / Write / NoVSet
+  "style"                PangoStyle           : Read / Write
+  "style-set"            gboolean             : Read / Write / NoVSet
+  "text"                 gchararray           : Read / Write
+  "underline"            PangoUnderline       : Read / Write
+  "underline-set"        gboolean             : Read / Write / NoVSet
+  "variant"              PangoVariant         : Read / Write
+  "variant-set"          gboolean             : Read / Write / NoVSet
+  "weight"               gint                 : Read / Write
+  "weight-set"           gboolean             : Read / Write / NoVSet
+  method set_fixed_height_from_font : "int -> unit"
+  signal edited : GtkTreePathString string
+}
+
+class CellRendererToggle vset : CellRenderer {
+  "activatable"          gboolean             : Read / Write
+  "active"               gboolean             : Read / Write
+  "inconsistent"         gboolean             : Read / Write
+  "radio"                gboolean             : Read / Write
+  signal toggled : GtkTreePathString
+}
+
+class CellRendererProgress vset : CellRenderer {
+  "value"                gint                 : Read / Write
+  "text"                 gchararray_opt       : Read / Write
+}
+
+class CellRendererCombo : CellRendererText {
+  "model"                GtkTreeModel_opt     : Read / Write / NoWrap
+  "text_column"          gint                 : Read / Write / NoWrap
+  "has_entry"            gboolean             : Read / Write
+}
+
+class CellRendererAccel : CellRendererText {
+  "accel-key"            gint                 : Read / Write
+  "accel-mode"           GtkCellRendererAccelMode : Read / Write
+  "accel-mods"           gint                 : Read / Write
+  "keycode"              gint                 : Read / Write
+  signal accel_cleared : GtkTreePathString
+  signal accel_edited  : GtkTreePathString accel_key:int accel_mods:int hardware_keycode:int
+
+}
+
+class CellLayout abstract : Object {
+  method pack_start : "Gtk.cell_renderer Gtk.obj -> expand:bool -> unit"
+  method pack_end   : "Gtk.cell_renderer Gtk.obj -> expand:bool -> unit"
+  method reorder    : "Gtk.cell_renderer Gtk.obj -> int -> unit"
+  method clear
+  method add_attribute : "Gtk.cell_renderer Gtk.obj -> string -> int -> unit"
+  method clear_attributes : "Gtk.cell_renderer Gtk.obj -> unit"
+  method set_cell_data_func : "Gtk.cell_renderer Gtk.obj -> ([`treemodel] obj -> tree_iter -> unit) option -> unit"
+}
+
+class TreeViewColumn wrap : Object {
+  "alignment"            gfloat               : Read / Write
+  "clickable"            gboolean             : Read / Write
+  "fixed-width"          gint                 : Read / Write
+  "max-width"            gint                 : Read / Write
+  "min-width"            gint                 : Read / Write
+  "reorderable"          gboolean             : Read / Write
+  "resizable"            gboolean             : Read / Write
+  "sizing"               GtkTreeViewColumnSizing : Read / Write
+  "sort-indicator"       gboolean             : Read / Write
+  "sort-order"           GtkSortType          : Read / Write
+  "title"                gchararray           : Read / Write 
+  "visible"              gboolean             : Read / Write
+  "widget"               GtkWidget_opt        : Read / Write
+  "width"                gint                 : Read
+  signal clicked
+}
+
+class TreeSelection abstract : GObject {
+  signal changed
+}
+
+class TreeModel abstract wrapsig : GObject {
+  signal row_changed : GtkTreePath GtkTreeIter
+  signal row_deleted : GtkTreePath
+  signal row_has_child_toggled : GtkTreePath GtkTreeIter
+  signal row_inserted : GtkTreePath GtkTreeIter
+  signal rows_reordered : GtkTreePath GtkTreeIter (* gpointer *)
+}
+
+(* class ListStore : TreeModel {} *)
+
+class TreeModelSort : GObject {
+  "model"                GtkTreeModel         : Read / Write / Construct Only
+  method convert_child_path_to_path : "Gtk.tree_path -> Gtk.tree_path"
+  method convert_child_iter_to_iter : "Gtk.tree_iter -> Gtk.tree_iter"
+  method convert_path_to_child_path : "Gtk.tree_path -> Gtk.tree_path"
+  method convert_iter_to_child_iter : "Gtk.tree_iter -> Gtk.tree_iter"
+  method reset_default_sort_func 
+  (* method clear_cache *)
+  method iter_is_valid : "Gtk.tree_iter -> bool"
+}
+
+class TreeSortable abstract wrapsig : GObject {
+  signal sort_column_changed
+  method sort_column_changed
+  method get_sort_column_id : "(int * Gtk.Tags.sort_type) option"
+  method set_sort_column_id : "int -> Gtk.Tags.sort_type -> unit"
+  method set_sort_func : "int -> ([`treemodel] Gobject.obj -> Gtk.tree_iter -> Gtk.tree_iter -> int) -> unit"
+  method set_default_sort_func : "([`treemodel] Gobject.obj -> Gtk.tree_iter -> Gtk.tree_iter -> int) -> unit"
+  method has_default_sort_func : "bool"
+}
+
+class TreeModelFilter : GObject {
+  "child-model"          GtkTreeModel         : Read / Write / Construct Only
+  "virtual-root"         GtkTreePath          : Read / Write / Construct Only
+  method set_visible_func : "([`treemodel] Gobject.obj -> Gtk.tree_iter -> bool) -> unit"
+  method set_visible_column : "int -> unit"
+  method convert_child_path_to_path : "Gtk.tree_path -> Gtk.tree_path"
+  method convert_child_iter_to_iter : "Gtk.tree_iter -> Gtk.tree_iter"
+  method convert_path_to_child_path : "Gtk.tree_path -> Gtk.tree_path"
+  method convert_iter_to_child_iter : "Gtk.tree_iter -> Gtk.tree_iter"
+  method refilter
+  (* method clear_cache *)
+}
+
+
+class IconView set wrap wrapsig : Container {
+  "column-spacing"       gint                  : Read / Write / NoSet
+  "columns"              gint                  : Read / Write
+  "item-width"           gint                  : Read / Write / NoSet
+  "margin"               gint                  : Read / Write / NoSet
+  "markup-column"        gint                  : Read / Write / NoWrap / NoSet
+  "model"                GtkTreeModel_opt      : Read / Write / NoWrap
+  "orientation"          GtkOrientation        : Read / Write
+  "pixbuf-column"        gint                  : Read / Write / NoWrap / NoSet
+  "row-spacing"          gint                  : Read / Write / NoSet
+  "selection-mode"       GtkSelectionMode      : Read / Write
+  "spacing"              gint                  : Read / Write / NoSet
+  "text-column"          gint                  : Read / Write / NoWrap / NoSet
+
+  signal item_activated : GtkTreePath
+  signal selection_changed
+  (* signal set_scroll_adjustments : GtkAdjustment GtkAdjustment *)
+
+  method get_path_at_pos : "int -> int -> Gtk.tree_path"
+  method selected_foreach : "(Gtk.tree_path -> unit) -> unit"
+  method select_path : "Gtk.tree_path -> unit"
+  method unselect_path : "Gtk.tree_path -> unit"
+  method path_is_selected : "Gtk.tree_path -> bool"
+  method get_selected_items : "Gtk.tree_path list"
+  method select_all
+  method unselect_all
+  method item_activated : "Gtk.tree_path -> unit"
+}

@@ -1,0 +1,238 @@
+(* $Id: gtk_tags.var 1455 2009-05-12 10:31:37Z garrigue $ *)
+
+package "gtk"
+
+type anchor_type = "GTK_ANCHOR_"
+  [ `CENTER | `NORTH | `NW | `NE | `SOUTH | `SW | `SE | `WEST | `EAST ]
+
+type arrow_type = "GTK_ARROW_"
+  [ `UP | `DOWN | `LEFT | `RIGHT ]
+
+type attach_options = "GTK_"
+  [ `EXPAND | `SHRINK | `FILL ]
+
+type button_box_style = "GTK_BUTTONBOX_"
+  [ `DEFAULT_STYLE | `SPREAD | `EDGE | `START | `END ]
+
+type curve_type = "GTK_CURVE_TYPE_"
+  [ `LINEAR | `SPLINE | `FREE ]
+
+type delete_type = "GTK_DELETE_"
+  [ `CHARS | `WORD_ENDS | `WORDS
+  | `DISPLAY_LINES | `DISPLAY_LINE_ENDS
+  | `PARAGRAPH_ENDS | `PARAGRAPHS
+  | `WHITESPACE ]
+
+type direction_type = "GTK_DIR_"
+  [ `TAB_FORWARD | `TAB_BACKWARD | `UP | `DOWN | `LEFT | `RIGHT ]
+
+type expander_style = "GTK_EXPANDER_"
+  [ `COLLAPSED | `SEMI_COLLAPSED | `SEMI_EXPANDED | `EXPANDED ]
+
+type icon_size = "GTK_ICON_SIZE_"
+  [ `INVALID | `MENU | `SMALL_TOOLBAR | `LARGE_TOOLBAR
+  | `BUTTON | `DND | `DIALOG ]
+
+type side_type = "GTK_SIDE_"
+  [ `TOP | `BOTTOM | `LEFT | `RIGHT ]
+
+type text_direction = "GTK_TEXT_DIR_"
+  [ `NONE | `LTR | `RTL ]
+
+type justification = "GTK_JUSTIFY_"
+  [ `LEFT | `RIGHT | `CENTER | `FILL ]
+
+type match_type = "GTK_MATCH_"
+  [ `ALL | `ALL_TAIL | `HEAD | `TAIL | `EXACT | `LAST ]
+
+type menu_direction_type = "GTK_MENU_DIR_"
+  [ `PARENT | `CHILD | `NEXT | `PREV ]
+
+type metric_type = "GTK_"
+  [ `PIXELS | `INCHES | `CENTIMETERS ]
+
+type movement_step = "GTK_MOVEMENT_"
+  [ `LOGICAL_POSITIONS | `VISUAL_POSITIONS | `WORDS
+  | `DISPLAY_LINES | `DISPLAY_LINE_ENDS | `PARAGRAPH_ENDS | `PARAGRAPHS
+  | `PAGES | `BUFFER_ENDS ]
+
+type orientation = "GTK_ORIENTATION_"
+  [ `HORIZONTAL | `VERTICAL ]
+
+type corner_type = "GTK_CORNER_"
+  [ `TOP_LEFT | `BOTTOM_LEFT | `TOP_RIGHT | `BOTTOM_RIGHT ]
+
+type pack_type = "GTK_PACK_"
+  [ `START | `END ]
+
+type path_priority = "GTK_PATH_PRIO_"
+  [ `LOWEST | `GTK | `APPLICATION | `THEME | `RC | `HIGHEST ]
+
+type path_type = "GTK_PATH_"
+  [ `WIDGET | `WIDGET_CLASS | `CLASS ]
+
+type policy_type = "GTK_POLICY_"
+  [ `ALWAYS | `AUTOMATIC | `NEVER ]
+
+type position_type = "GTK_POS_"
+  [ `LEFT | `RIGHT | `TOP | `BOTTOM ]
+
+type preview_type = "GTK_PREVIEW_"
+  [ `COLOR | `GRAYSCALE ]
+
+type relief_style = "GTK_RELIEF_"
+  [ `NORMAL | `HALF | `NONE ]
+
+type resize_mode = "GTK_RESIZE_"
+  [ `PARENT | `QUEUE | `IMMEDIATE ]
+
+type signal_run_type = "GTK_RUN_"
+  [ `FIRST | `LAST | `BOTH | `NO_RECURSE | `ACTION | `NO_HOOKS ]
+
+type scroll_type = "GTK_SCROLL_"
+  [ `NONE | `JUMP | `STEP_FORWARD | `STEP_BACKWARD
+  | `PAGE_BACKWARD | `PAGE_FORWARD | `STEP_UP | `STEP_DOWN
+  | `PAGE_UP | `PAGE_DOWN | `STEP_LEFT | `STEP_RIGHT
+  | `PAGE_LEFT | `PAGE_RIGHT | `START | `END ]
+
+type selection_mode = "GTK_SELECTION_"
+  [ `NONE | `SINGLE | `BROWSE | `MULTIPLE ]
+
+type shadow_type = "GTK_SHADOW_"
+  [ `NONE | `IN | `OUT | `ETCHED_IN | `ETCHED_OUT ]
+
+type state_type = "GTK_STATE_"
+  [ `NORMAL | `ACTIVE | `PRELIGHT | `SELECTED | `INSENSITIVE ] 
+
+type submenu_direction = "GTK_DIRECTION_"
+  [ `LEFT | `RIGHT ]
+
+type submenu_placement = "GTK_"
+  [ `TOP_BOTTOM | `LEFT_RIGHT ]
+
+type toolbar_style = "GTK_TOOLBAR_"
+  [ `ICONS | `TEXT | `BOTH | `BOTH_HORIZ ]
+
+type update_type = "GTK_UPDATE_"
+  [ `CONTINUOUS | `DISCONTINUOUS | `DELAYED ]
+
+type visibility = "GTK_VISIBILITY_"
+  [ `NONE | `PARTIAL | `FULL ]
+
+type window_position = "GTK_WIN_POS_"
+  [ `NONE | `CENTER | `MOUSE | `CENTER_ALWAYS | `CENTER_ON_PARENT ]
+
+type window_type = "GTK_WINDOW_"
+  [ `TOPLEVEL | `POPUP ]
+
+type wrap_mode = "GTK_WRAP_"
+  [ `NONE | `CHAR | `WORD ]
+
+type sort_type = "GTK_SORT_"
+  [ `ASCENDING | `DESCENDING ]
+
+
+type cell_type = "GTK_CELL_"
+  [ `EMPTY | `TEXT | `PIXMAP | `PIXTEXT | `WIDGET ]
+
+type toolbar_child = "GTK_TOOLBAR_CHILD_"
+  [ `SPACE | `BUTTON | `TOGGLEBUTTON | `RADIOBUTTON | `WIDGET ]
+
+type toolbar_space_style = "GTK_TOOLBAR_SPACE_"
+  [ `EMPTY | `LINE ]
+
+type spin_type = "GTK_SPIN_"
+  [ `STEP_FORWARD | `STEP_BACKWARD | `PAGE_FORWARD | `PAGE_BACKWARD
+  | `HOME | `END | `USER_DEFINED ]
+
+type accel_flag = "GTK_ACCEL_"
+  [ `VISIBLE | `LOCKED ]
+
+type button_action = "GTK_BUTTON_"
+  [ `SELECTS | `DRAGS | `EXPANDS ]
+
+type calendar_display_options = "GTK_CALENDAR_"
+  [ `SHOW_HEADING | `SHOW_DAY_NAMES | `NO_MONTH_CHANGE | `SHOW_WEEK_NUMBERS
+  | `WEEK_START_MONDAY ]
+
+type progress_bar_style = "GTK_PROGRESS_"
+  [ `CONTINUOUS | `DISCRETE ]
+
+type progress_bar_orientation = "GTK_PROGRESS_"
+  [ `LEFT_TO_RIGHT | `RIGHT_TO_LEFT | `BOTTOM_TO_TOP | `TOP_TO_BOTTOM ]
+
+type dest_defaults = "GTK_DEST_DEFAULT_"
+  [ `MOTION | `HIGHLIGHT | `DROP | `ALL ]
+
+type target_flags = "GTK_TARGET_"
+  [ `SAME_APP | `SAME_WIDGET ]
+
+type spin_button_update_policy = "GTK_UPDATE_"
+  [ `ALWAYS | `IF_VALID ]
+
+type noconv tree_view_mode = "GTK_TREE_VIEW_"
+  [ `LINE | `ITEM ]
+
+type text_window_type = "GTK_TEXT_WINDOW_"
+  [ `PRIVATE | `WIDGET | `TEXT | `LEFT 
+  | `RIGHT | `TOP | `BOTTOM ]
+
+type text_search_flag = "GTK_TEXT_SEARCH_"
+  [ `VISIBLE_ONLY | `TEXT_ONLY ]
+
+type tree_view_column_sizing = "GTK_TREE_VIEW_COLUMN_"
+  [ `GROW_ONLY | `AUTOSIZE | `FIXED ]
+
+type cell_renderer_mode = "GTK_CELL_RENDERER_MODE_"
+  [ `INERT | `ACTIVATABLE | `EDITABLE ]
+
+type message_type = "GTK_MESSAGE_"
+  [ `INFO | `WARNING | `QUESTION | `ERROR ]
+
+type buttons_type = "GTK_BUTTONS_"
+  [ `NONE | `OK | `CLOSE
+  | `CANCEL | `YES_NO | `OK_CANCEL ]
+
+type response = "GTK_RESPONSE_"
+  [ `NONE | `REJECT | `ACCEPT | `DELETE_EVENT
+  | `OK | `CANCEL | `CLOSE  | `YES | `NO | `APPLY | `HELP ]
+
+type widget_flags = "GTK_"
+  [ `IN_DESTRUCTION | `FLOATING
+  | `TOPLEVEL | `NO_WINDOW | `REALIZED | `MAPPED | `VISIBLE
+  | `SENSITIVE | `PARENT_SENSITIVE | `CAN_FOCUS | `HAS_FOCUS
+  | `CAN_DEFAULT | `HAS_DEFAULT | `HAS_GRAB | `RC_STYLE | `COMPOSITE_CHILD
+  | `NO_REPARENT | `APP_PAINTABLE | `RECEIVES_DEFAULT | `DOUBLE_BUFFERED ]
+
+type image_type = "GTK_IMAGE_"
+  [ `EMPTY | `PIXMAP | `IMAGE | `PIXBUF | `STOCK | `ICON_SET | `ANIMATION ]
+
+type size_group_mode = "GTK_SIZE_GROUP_"
+  [ `NONE | `HORIZONTAL | `VERTICAL | `BOTH ]
+
+type protect HASGTK24 file_chooser_action = "GTK_FILE_CHOOSER_ACTION_"
+  [ `OPEN | `SAVE | `SELECT_FOLDER | `CREATE_FOLDER ]
+
+type tree_model_flags = "GTK_TREE_MODEL_"
+  [ `ITERS_PERSIST | `LIST_ONLY ]
+
+type tree_view_drop_position = "GTK_TREE_VIEW_DROP_"
+  [ `BEFORE | `AFTER | `INTO_OR_BEFORE | `INTO_OR_AFTER ]
+
+type protect HASGTK24 file_filter_flags = "GTK_FILE_FILTER_"
+  [ `FILENAME | `URI | `DISPLAY_NAME | `MIME_TYPE ]
+
+type protect HASGTK24 ui_manager_item_type = "GTK_UI_MANAGER_"
+  [ `AUTO | `MENUBAR | `MENU | `TOOLBAR | `PLACEHOLDER
+  | `POPUP | `MENUITEM | `TOOLITEM | `SEPARATOR | `ACCELERATOR ]
+
+type protect HASGTK210 assistant_page_type = "GTK_ASSISTANT_PAGE_"
+  [ `CONTENT | `INTRO | `CONFIRM | `SUMMARY | `PROGRESS ]
+
+type protect HASGTK210 cell_renderer_accel_mode = 
+	"GTK_CELL_RENDERER_ACCEL_MODE_"
+  [ `GTK | `OTHER ]
+
+
+type protect HASGTK28 file_chooser_confirmation = "GTK_FILE_CHOOSER_CONFIRMATION_"
+  [ `CONFIRM | `ACCEPT_FILENAME | `SELECT_AGAIN ]

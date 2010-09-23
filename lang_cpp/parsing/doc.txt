@@ -1,0 +1,25 @@
+(* Cocci: Each token will be decorated in the future by the mcodekind
+ * of cocci. It is the job of the pretty printer to look at this
+ * information and decide to print or not the token (and also the
+ * pending '+' associated sometimes with the token).
+ * 
+ * The first time that we parse the original C file, the mcodekind is
+ * empty, or more precisely all is tagged as a CONTEXT with NOTHING
+ * associated. This is what I call a "clean" expr/statement/....
+ * 
+ * Each token will also be decorated in the future with an environment,
+ * because the pending '+' may contain metavariables that refer to some
+ * C code.
+ * 
+ * Update: Now I use a ref! so take care.
+ * 
+ * Sometimes we want to add someting at the beginning or at the end 
+ * of a construct. For 'function' and 'decl' we want add something
+ * to their left and for 'if' 'while' et 'for' and so on at their right.
+ * We want some kinds of "virtual placeholders" that represent the start or
+ * end of a construct. We use fakeInfo for that purpose.
+ * To identify those cases I have added a fakestart/fakeend comment.
+ * 
+ * convention: I often use 'ii' for the name of a list of info. 
+ * 
+ *)

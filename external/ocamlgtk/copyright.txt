@@ -1,0 +1,43 @@
+This library (files in src directory) is made available under the
+GNU Library General Public License (LGPL). You should have got a
+copy of the LGPL with the current package (see file LGPL).
+
+As a special exception to the GNU Library General Public License, you
+may link, statically or dynamically, a "work that uses the Library"
+with a publicly distributed version of the Library to produce an
+executable file containing portions of the Library, and distribute
+that executable file under terms of your choice, without any of the
+additional requirements listed in clause 6 of the GNU Library General
+Public License.  By "a publicly distributed version of the Library",
+we mean either the unmodified Library as distributed by INRIA, or a
+modified version of the Library that is distributed under the
+conditions defined in clause 3 of the GNU Library General Public
+License.  This exception does not however invalidate any other reasons
+why the executable file might be covered by the GNU Library General
+Public License.
+
+For the examples subdirectory, there is no specific licensing policy,
+but you may freely take inspiration from the code, and copy parts of
+it in your application.
+
+For the applications subdirectory, stricter rules apply:
+
+* You are free to do anything you want with this code as long as it is
+  for personal use.
+
+* Redistribution can only be "as is".  Binary distribution and bug
+  fixes are allowed, but you cannot extensively modify the code
+  without asking the authors.
+
+The authors may choose to remove any of the above restrictions on a
+per request basis.
+
+Authors:
+	Jacques Garrigue <garrigue@kurims.kyoto-u.ac.jp>
+	Benjamin Monate  <Benjamin.Monate@free.fr>
+        Olivier Andrieu  <oandrieu@nerim.net>
+	Jun Furuse       <Jun.Furuse@inria.fr>
+	Hubert Fauque    <hubert.fauque@wanadoo.fr>
+	Koji Kagawa      <kagawa@eng.kagawa-u.ac.jp>
+
+$Id: COPYING 1351 2007-07-02 13:34:54Z ben_99_9 $

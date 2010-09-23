@@ -1,0 +1,3 @@
+OCAML_LIBRARIES = pcre
+
+Subdirs()

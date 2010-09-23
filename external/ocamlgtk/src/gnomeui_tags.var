@@ -1,0 +1,1 @@
+type edge_position = "GNOME_EDGE_" [ `START | `FINISH | `OTHER ]

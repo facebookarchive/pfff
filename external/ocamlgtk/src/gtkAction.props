@@ -1,0 +1,104 @@
+
+prefix "Gtk"
+
+conversions {
+  GtkStockId             "GtkStock.conv"
+}
+
+class Action type "Gtk.action obj" wrap wrapsig gobject {
+  "hide-if-empty"        gboolean             : Read / Write
+  "is-important"         gboolean             : Read / Write
+  "label"                gchararray           : Read / Write
+  "icon-name"            gchararray           : Read / Write
+  "name"                 gchararray           : Read / Write / Construct Only
+  "sensitive"            gboolean             : Read / Write
+  "short-label"          gchararray           : Read / Write
+  "stock-id"             GtkStockId           : Read / Write
+  "tooltip"              gchararray           : Read / Write
+  "visible"              gboolean             : Read / Write
+  "visible-horizontal"   gboolean             : Read / Write
+  "visible-vertical"     gboolean             : Read / Write
+
+  signal activate
+
+  method is_sensitive     : "bool"
+  method is_visible       : "bool"
+
+  method activate
+
+  method connect_proxy    : "Gtk.widget Gtk.obj -> unit"
+  method disconnect_proxy : "Gtk.widget Gtk.obj -> unit"
+  method get_proxies      : "Gtk.widget Gtk.obj list"
+
+  method connect_accelerator
+  method disconnect_accelerator
+  method set_accel_path : "string -> unit"
+  method set_accel_group : "Gtk.accel_group -> unit"
+
+  method block_activate_from : "Gtk.widget Gtk.obj -> unit"
+  method unblock_activate_from : "Gtk.widget Gtk.obj -> unit"
+
+}
+
+class ToggleAction type "Gtk.toggle_action obj" wrap wrapsig gobject : Action {
+  "draw-as-radio"        gboolean             : Read / Write
+
+  signal toggled
+
+  method toggled
+  method set_active : "bool -> unit"
+  method get_active : "bool"
+}
+
+class RadioAction type "Gtk.radio_action obj" wrap gobject : ToggleAction {
+  "group"                GtkRadioAction_opt   : Write
+  "value"                gint                 : Read / Write
+
+  signal changed : GtkRadioAction
+
+  method get_current_value : "int"
+  method set_group : "Gtk.radio_action Gtk.group -> unit"
+}
+
+class UIManager type "Gtk.ui_manager obj" wrap wrapsig gobject {
+  "add-tearoffs"         gboolean             : Read / Write
+  "ui"                   gchararray           : Read
+
+  signal actions_changed
+  signal add_widget : GtkWidget
+  signal connect_proxy    : GtkAction GtkWidget / NoWrap
+  signal disconnect_proxy : GtkAction GtkWidget / NoWrap
+  signal post_activate : GtkAction 		/ NoWrap
+  signal pre_activate  : GtkAction 		/ NoWrap
+
+  method insert_action_group : "Gtk.action_group obj -> int -> unit"
+  method remove_action_group : "Gtk.action_group obj -> unit"
+  method get_action_groups : "Gtk.action_group obj list"
+  method get_accel_group : "Gtk.accel_group"
+  method get_widget : "string -> Gtk.widget Gtk.obj"
+  method get_toplevels : "GtkEnums.ui_manager_item_type list -> Gtk.widget Gtk.obj list"
+  method get_action : "string -> Gtk.action obj"
+  method add_ui_from_string : "string -> int"
+  method add_ui_from_file: "string -> int"
+  method new_merge_id : "int"
+  method add_ui : "int -> path:string -> name:string -> action:string option -> GtkEnums.ui_manager_item_type -> top:bool -> unit"
+  method remove_ui : "int -> unit"
+  method ensure_update 
+}
+
+class ActionGroup type "Gtk.action_group obj" wrap wrapsig gobject {
+  "name"                 gchararray           : Read / Write / Construct Only
+  "sensitive"            gboolean             : Read / Write
+  "visible"              gboolean             : Read / Write
+
+  signal connect_proxy    : GtkAction GtkWidget / NoWrap
+  signal disconnect_proxy : GtkAction GtkWidget / NoWrap
+  signal post_activate : GtkAction              / NoWrap
+  signal pre_activate  : GtkAction              / NoWrap
+
+  method get_action : "string -> Gtk.action obj"
+  method list_actions : "Gtk.action obj list"
+  method add_action : "Gtk.action obj -> unit"
+  method add_action_with_accel : "Gtk.action obj -> string option -> unit"
+  method remove_action : "Gtk.action obj -> unit"
+}

@@ -1,0 +1,63 @@
+--- uigtk2.ml.orig	2010-04-16 02:29:31.000000000 +0900
++++ uigtk2.ml	2010-05-20 17:55:16.000000000 +0900
+@@ -2763,6 +2763,10 @@
+     GList.clist ~columns:5 ~titles_show:true
+       ~selection_mode:`MULTIPLE ~packing:mainWindowSW#add ()
+   in
++  if Gdk.Windowing.platform = `QUARTZ then begin
++    mainWindow#set_row_height 16; (* hard coded for quartz *)
++    mainWindow#misc#grab_focus ();
++  end;
+ (*
+   let cols = new GTree.column_list in
+   let c_replica1 = cols#add Gobject.Data.string in
+@@ -3094,8 +3098,15 @@
+   let yellowPixel = "999900" in
+   let blackPixel  = "000000" in
+ *)
++  toplevelWindow#misc#realize ();
++  let colormap = toplevelWindow#misc#colormap in
+   let buildPixmap p =
+-    GDraw.pixmap_from_xpm_d ~window:toplevelWindow ~data:p () in
++    let pm, mask = Gdk.Pixmap.create_from_xpm_d ~data:p ~colormap
++	~window:toplevelWindow#misc#window
++	~transparent:(mainWindow#misc#style#bg `NORMAL) () in
++    if Gdk.Windowing.platform = `QUARTZ then
++      new GDraw.pixmap pm ~colormap      (* bug in pixmap masking *)
++    else new GDraw.pixmap pm ~colormap ~mask in
+   let buildPixmaps f c1 =
+     (buildPixmap (f c1), buildPixmap (f lightbluePixel)) in
+ 
+@@ -3723,19 +3734,19 @@
+   (*********************************************************************
+     Quit button
+    *********************************************************************)
+-(*  actionBar#insert_space ();
+-  ignore (actionBar#insert_button ~text:"Quit"
++(*  actionBar#insert_space (); *)
++  (* I like to have a quit button... *)
++  ignore (actionBar#insert_button ~text:" Quit "
+             ~icon:((GMisc.image ~stock:`QUIT ())#coerce)
+             ~tooltip:"Exit Unison"
+             ~callback:safeExit ());
+-*)
+ 
+   (*********************************************************************
+     go button
+    *********************************************************************)
+ (*  actionBar#insert_space ();*)
+   grAdd grGo
+-    (actionBar#insert_button ~text:"Go"
++    (actionBar#insert_button ~text:"  Go  "
+        (* tooltip:"Go with displayed actions" *)
+        ~icon:((GMisc.image ~stock:`EXECUTE ())#coerce)
+        ~tooltip:"Perform the synchronization"
+@@ -4288,7 +4299,7 @@
+     Uicommon.Text -> Uitext.Body.start Uicommon.Text
+   | Uicommon.Graphic ->
+       let displayAvailable =
+-        Util.osType = `Win32
++        Gdk.Windowing.platform <> `X11
+           ||
+         try System.getenv "DISPLAY" <> "" with Not_found -> false
+       in

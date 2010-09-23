@@ -1,0 +1,4 @@
+package "gnomeCanvas"
+
+type art_wind_rule = "ART_WIND_RULE_"
+  [ `NONZERO | `INTERSECT | `ODDEVEN | `POSITIVE ]

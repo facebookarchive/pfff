@@ -1,0 +1,6 @@
+Taken from lex stein. Just erase unused file, and patch it to make it
+work (handle badly handled exception).
+
+update:
+ patch it more to be able to handle very big databases (big bug to find).
+ Just add set_lg_max_xxx call in Bdb API.

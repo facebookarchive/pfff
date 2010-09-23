@@ -1,0 +1,16 @@
+(* $Id: gobject_tags.var 1369 2007-09-25 02:56:09Z garrigue $ *)
+
+(* package "gobject" *)
+
+type fundamental_type = "G_TYPE_"
+  [ `INVALID | `NONE | `INTERFACE
+  | `CHAR | `UCHAR | `BOOLEAN
+  | `INT  | `UINT  | `LONG  | `ULONG  | `INT64  | `UINT64
+  | `ENUM | `FLAGS
+  | `FLOAT  | `DOUBLE
+  | `STRING | `POINTER  | `BOXED  | `PARAM
+  | `OBJECT ]
+
+type noconv data =
+  [ `NONE | `CHAR | `CAML | `BOOL | `INT | `FLOAT | `STRING
+  | `OBJECT | `POINTER | `INT64 | `INT32 | `LONG ]

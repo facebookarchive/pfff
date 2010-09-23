@@ -1,0 +1,15 @@
+This directory comes from the svn repo of thrift at
+svn co http://svn.apache.org/repos/asf/incubator/thrift/trunk thrift
+in directory lib/ocaml
+
+I have modified the Makefile, added some .mli, and some debugging
+information.
+
+--------------
+archi:
+Thrift.ml: interfaces
+TSocket/TServerSocket
+TBinaryProtocol
+TChannelTransport
+TServer -> TSimpleServer|TThreadedServer
+

@@ -1,0 +1,13 @@
+	A GUI for Unison
+
+Normally, unison works with LablGTK snapshots.
+You may just compile it after having installed lablgtk.
+
+	http://www.cis.upenn.edu/~bcpierce/unison/
+
+In order to circumvent bugs in GTK+OSX apply those patches to
+unison-2.27.57 and unison-2.40.16 (concerns only users of Quartz GTK).
+
+Jacques Garrigue
+
+$Id: README 1509 2010-05-20 09:03:00Z garrigue $

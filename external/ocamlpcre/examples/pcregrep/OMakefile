@@ -1,0 +1,3 @@
+OCamlMakeProjDefaults(pcregrep.exe)
+
+InstantiateOCamlEnv()

@@ -1,0 +1,21 @@
+(* $Id: gtkgl_tags.var 965 2003-06-20 15:08:14Z garrigue $ *)
+
+(* package "glGtk" *)
+
+type visual_options = "GDK_GL_" [
+  | `USE_GL
+  | `BUFFER_SIZE
+  | `LEVEL
+  | `RGBA
+  | `DOUBLEBUFFER
+  | `STEREO
+  | `AUX_BUFFERS
+  | `RED_SIZE
+  | `GREEN_SIZE
+  | `BLUE_SIZE
+  | `ALPHA_SIZE
+  | `DEPTH_SIZE
+  | `STENCIL_SIZE
+  | `ACCUM_GREEN_SIZE
+  | `ACCUM_ALPHA_SIZE
+]

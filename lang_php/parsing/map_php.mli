@@ -1,0 +1,24 @@
+(*s: map_php.mli *)
+open Ast_php
+(* hooks *)
+type visitor_in = {
+  kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
+  klvalue: (lvalue  -> lvalue) * visitor_out -> lvalue  -> lvalue;
+  kstmt_and_def: 
+    (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def -> stmt_and_def;
+  kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
+  kinfo: (info -> info) * visitor_out -> info -> info;
+                                                                            
+}
+and visitor_out = {
+  vtop: toplevel -> toplevel;
+  vstmt_and_def: stmt_and_def -> stmt_and_def;
+  vprogram: program -> program;
+  vexpr: expr -> expr;
+  vlvalue: lvalue -> lvalue;
+}
+
+val default_visitor: visitor_in
+val mk_visitor: visitor_in -> visitor_out
+
+(*e: map_php.mli *)

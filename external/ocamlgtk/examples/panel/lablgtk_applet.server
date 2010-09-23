@@ -1,0 +1,32 @@
+<oaf_info>
+  <oaf_server 
+    iid="OAFIID:LablGTK_TestApplet" 
+    type="factory" 
+    location="OAFIID:LablGTK_TestApplet_Factory">
+
+    <oaf_attribute name="repo_ids" type="stringv">
+      <item value="IDL:GNOME/Vertigo/PanelAppletShell:1.0"/>
+      <item value="IDL:Bonobo/Control:1.0"/>
+      <item value="IDL:Bonobo/Unknown:1.0"/>
+    </oaf_attribute>
+
+    <oaf_attribute name="name" type="string" value="Caml applet"/>
+    <oaf_attribute name="description" type="string" 
+      value="A demo applet written in caml with LablGTK"/>
+    <oaf_attribute name="panel:category" type="string" value="Amusements"/>
+    <oaf_attribute name="panel:icon" type="string" value="gnome-applets.png"/>
+  </oaf_server>
+
+  <oaf_server 
+    iid="OAFIID:LablGTK_TestApplet_Factory" 
+    type="exe"
+    location="test-lablgtk-applet">
+    
+    <oaf_attribute name="repo_ids" type="stringv">
+      <item value="IDL:Bonobo/GenericFactory:1.0"/>
+      <item value="IDL:Bonobo/Unknown:1.0"/>
+    </oaf_attribute>
+
+    <oaf_attribute name="name" type="string" value="Caml Applet Factory"/>
+  </oaf_server>
+</oaf_info>

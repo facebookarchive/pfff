@@ -1,0 +1,17 @@
+(* $Id: glib_tags.var 1199 2004-09-14 09:47:27Z oandrieu $ *)
+
+(* package "glib" *)
+
+type log_level = "G_LOG_LEVEL_"
+   [ `ERROR | `CRITICAL | `WARNING | `MESSAGE | `INFO | `DEBUG
+   | `FLAG_RECURSION "G_LOG_FLAG_RECURSION"
+   | `FLAG_FATAL "G_LOG_FLAG_FATAL" ]
+
+type io_condition = "G_IO_"
+   [ `IN | `OUT | `PRI | `ERR | `HUP | `NVAL ]
+
+type normalize_mode = "G_NORMALIZE_"
+   [ `DEFAULT | `DEFAULT_COMPOSE | `ALL | `ALL_COMPOSE ]
+
+type locale_category = "LC_"
+    [ `ALL | `COLLATE | `CTYPE | `MESSAGES | `MONETARY | `NUMERIC | `TIME ]

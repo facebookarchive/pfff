@@ -1,0 +1,45 @@
+*** uigtk2.ml~	Sun Jan 20 00:04:13 2008
+--- uigtk2.ml	Fri May  8 18:15:57 2009
+***************
+*** 1560,1567 ****
+    let yellowPixel = "999900" in
+    let lightbluePixel = "8888FF" in
+    let blackPixel  = "000000" in
+    let buildPixmap p =
+!     GDraw.pixmap_from_xpm_d ~window:toplevelWindow ~data:p () in
+    let buildPixmaps f c1 =
+      (buildPixmap (f c1), buildPixmap (f lightbluePixel)) in
+  
+--- 1560,1574 ----
+    let yellowPixel = "999900" in
+    let lightbluePixel = "8888FF" in
+    let blackPixel  = "000000" in
++   toplevelWindow#misc#realize ();
++   let colormap = toplevelWindow#misc#colormap in
+    let buildPixmap p =
+!     let pm, mask = Gdk.Pixmap.create_from_xpm_d ~data:p ~colormap
+! 	~window:toplevelWindow#misc#window
+! 	~transparent:(mainWindow#misc#style#bg `NORMAL) () in
+!     if Gdk.Windowing.platform = `QUARTZ then
+!       new GDraw.pixmap pm ~colormap      (* bug in pixmap masking *)
+!     else new GDraw.pixmap pm ~colormap ~mask in
+    let buildPixmaps f c1 =
+      (buildPixmap (f c1), buildPixmap (f lightbluePixel)) in
+  
+***************
+*** 2466,2472 ****
+      Uicommon.Text -> Uitext.Body.start Uicommon.Text
+    | Uicommon.Graphic ->
+        let displayAvailable =
+!         Util.osType = `Win32
+            ||
+          try Unix.getenv "DISPLAY" <> "" with Not_found -> false
+        in
+--- 2473,2479 ----
+      Uicommon.Text -> Uitext.Body.start Uicommon.Text
+    | Uicommon.Graphic ->
+        let displayAvailable =
+!         Gdk.Windowing.platform <> `X11
+            ||
+          try Unix.getenv "DISPLAY" <> "" with Not_found -> false
+        in

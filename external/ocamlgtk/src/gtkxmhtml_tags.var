@@ -1,0 +1,30 @@
+(* $Id: gtkxmhtml_tags.var 467 2000-11-15 10:25:05Z garrigue $ *)
+
+type string_direction = "TSTRING_DIRECTION_" [
+  | `R_TO_L
+  | `L_TO_R
+]
+
+type alignment = "TALIGNMENT_" [
+  | `END
+  | `CENTER
+  | `BEGINNING
+]
+
+type line_type = "LINE_" [
+  | `SOLID
+  | `DASHED
+  | `SINGLE
+  | `DOUBLE
+  | `STRIKE
+  | `UNDER
+  | `NONE "NO_LINE"
+]
+
+type dither_type = "Xm" [
+  | `QUICK
+  | `BEST
+  | `FAST
+  | `SLOW
+  | `DISABLED
+]

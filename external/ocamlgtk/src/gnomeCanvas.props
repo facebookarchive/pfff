@@ -1,0 +1,289 @@
+(* $Id: gnomeCanvas.props 976 2003-07-02 03:04:12Z garrigue $ *)
+
+header {
+open Gobject
+open Data
+open GtkProps
+
+type canvas = [Gtk.layout|`canvas]
+type item   = [`gtk|`canvasitem]
+type group  = [item|`canvasgroup]
+type clipgroup = [group|`canvasclipgroup]
+type shape  = [item|`canvasshape]
+type r_e    = [shape|`canvasre]
+type rect   = [r_e|`canvasrectangle]
+type ellipse = [r_e|`canvasellipse]
+type bpath  = [shape|`canvasbpath]
+type polygon = [shape|`canvaspolygon]
+type text   = [item|`canvastext]
+type line   = [item|`canvasline]
+type pixbuf = [item|`canvaspixbuf]
+type widget = [item|`canvaswidget]
+type rich_text = [item|`canvasrichtext]
+
+type item_event =
+  [ `BUTTON_PRESS | `TWO_BUTTON_PRESS | `THREE_BUTTON_PRESS | `BUTTON_RELEASE
+  | `MOTION_NOTIFY | `KEY_PRESS | `KEY_RELEASE | `ENTER_NOTIFY | `LEAVE_NOTIFY 
+  | `FOCUS_CHANGE ] Gdk.event
+
+type path_def
+
+module Private = struct
+external convert_points : float array -> Gpointer.boxed
+  = "ml_gnome_canvas_convert_points"
+external convert_dash : float -> float array -> Gpointer.boxed
+  = "ml_gnome_canvas_convert_dash"
+external get_points : Gpointer.boxed -> float array
+  = "ml_gnome_canvas_get_points"
+external get_dash : Gpointer.boxed -> float * float array
+  = "ml_gnome_canvas_get_dash"
+external duplicate_path : path_def -> path_def
+  = "ml_gnome_canvas_path_def_duplicate"
+open Gaux
+open Gobject
+let points =
+  { kind = `BOXED; inj = (fun x -> `POINTER (may_map convert_points x));
+    proj = (fun x -> may_map get_points (Data.boxed.proj x)) }
+let art_vpath_dash =
+  { kind = `POINTER;
+    inj = (fun x -> `POINTER (may_map (fun (x,y) -> convert_dash x y) x));
+    proj = (fun x -> may_map get_dash (Data.pointer.proj x)) }
+let path_def =
+  { kind = `POINTER; inj = Data.unsafe_boxed_option.inj; proj =
+    (fun x -> may_map duplicate_path (Data.unsafe_boxed_option.proj x)) }
+end
+}
+
+oheader {
+open Gobject
+open GnomeCanvas
+}
+
+use "Gtk"
+tagprefix "canvas"
+
+conversions {
+  GtkStock "GtkStock.conv"
+  ArtWindRule "GnomeCanvasEnums.art_wind_rule_conv"
+  ArtVpathDash "Private.art_vpath_dash"
+}
+conversions "GnomeCanvas" "Private" { Points PathDef }
+
+classes {
+  GdkPixbuf "GdkPixbuf.pixbuf"
+  GdkDrawable "[`drawable] obj"
+  GtkWidget "Gtk.widget obj"
+}
+
+class Item abstract vsetrec : GtkObject {
+  "parent"               GnomeCanvasItem      : Read / Write
+  method parent : "group obj"
+  method canvas : "canvas obj"
+  method xform : "[`IDENTITY|`TRANSL of float array|`AFFINE of float array]"
+  method affine_relative : "float array -> unit"
+  method affine_absolute : "float array -> unit"
+  method set : "unit"
+  (* Must call [set] after using [Property.set] *)
+  method move : "x:float -> y:float -> unit"
+  method raise : "int -> unit"
+  method lower : "int -> unit"
+  method raise_to_top : "unit"
+  method lower_to_bottom : "unit"
+  method show : "unit"
+  method hide : "unit"
+  method grab : "Gdk.Tags.event_mask list -> Gdk.cursor -> int32 -> unit"
+  method ungrab : "int32 -> unit"
+  method w2i : "x:float -> y:float -> float * float"
+  method i2w : "x:float -> y:float -> float * float"
+  method i2w_affine : "float array"
+  method i2c_affine : "float array"
+  method reparent : "group obj -> unit"
+  method grab_focus : "unit"
+  method get_bounds : "float array"
+  signal event
+         "(GtkBase.Widget.Signals.Event.marshal : (item_event -> bool) -> _)"
+}
+
+class Shape abstract : Item {
+  "cap-style"            GdkCapStyle          : Read / Write
+  "dash"                 ArtVpathDash         : Read / Write
+  "fill-color"           gchararray           : Write
+  "fill-color-gdk"       GdkColor             : Read / Write
+  "fill-color-rgba"      guint32              : Read / Write
+  "fill-stipple"         GdkDrawable          : Read / Write
+  "join-style"           GdkJoinStyle         : Read / Write
+  "miterlimit"           gdouble              : Read / Write
+  "outline-color"        gchararray           : Write
+  "outline-color-gdk"    GdkColor             : Read / Write
+  "outline-color-rgba"   guint32              : Read / Write
+  "outline-stipple"      GdkDrawable          : Read / Write
+  "width-pixels"         guint                : Read / Write
+  "width-units"          gdouble              : Write
+  "wind"                 ArtWindRule          : Read / Write
+}
+
+class Bpath abstract : Shape {
+  "bpath"                GnomeCanvasPathDef   : Read / Write
+}
+
+class RE abstract : Shape {
+  "x1"                   gdouble              : Read / Write
+  "x2"                   gdouble              : Read / Write
+  "y1"                   gdouble              : Read / Write
+  "y2"                   gdouble              : Read / Write
+}
+
+class Ellipse abstract : RE {}
+class Rect abstract : RE {}
+
+class Polygon abstract : Shape {
+  "points"               GnomeCanvasPoints    : Read / Write
+}
+
+class Group abstract : Item {
+  "x"                    gdouble              : Read / Write
+  "y"                    gdouble              : Read / Write
+  method get_items : "item obj list"
+}
+
+class Clipgroup abstract : Group {
+  "path"                 GnomeCanvasPathDef   : Read / Write
+  "wind"                 ArtWindRule          : Read / Write
+}
+
+class Line abstract : Item {
+  "arrow-shape-a"        gdouble              : Read / Write
+  "arrow-shape-b"        gdouble              : Read / Write
+  "arrow-shape-c"        gdouble              : Read / Write
+  "cap-style"            GdkCapStyle          : Read / Write
+  "fill-color"           gchararray           : Read / Write
+  "fill-color-gdk"       GdkColor             : Read / Write
+  "fill-color-rgba"      guint32              : Read / Write
+  "fill-stipple"         GdkDrawable          : Read / Write
+  "first-arrowhead"      gboolean             : Read / Write
+  "join-style"           GdkJoinStyle         : Read / Write
+  "last-arrowhead"       gboolean             : Read / Write
+  "line-style"           GdkLineStyle         : Read / Write
+  "points"               GnomeCanvasPoints    : Read / Write
+  "smooth"               gboolean             : Read / Write
+  "spline-steps"         guint                : Read / Write
+  "width-pixels"         guint                : Read / Write
+  "width-units"          gdouble              : Read / Write
+}
+
+class Pixbuf abstract : Item {
+  "anchor"               GtkAnchorType        : Read / Write
+  "height"               gdouble              : Read / Write
+  "height-in-pixels"     gboolean             : Read / Write
+  "height-set"           gboolean             : Read / Write
+  "pixbuf"               GdkPixbuf            : Read / Write
+  "width"                gdouble              : Read / Write
+  "width-in-pixels"      gboolean             : Read / Write
+  "width-set"            gboolean             : Read / Write
+  "x"                    gdouble              : Read / Write
+  "x-in-pixels"          gboolean             : Read / Write
+  "y"                    gdouble              : Read / Write
+  "y-in-pixels"          gboolean             : Read / Write
+}
+
+class RichText abstract : Item {
+  "anchor"               GtkAnchorType        : Read / Write
+  "cursor-blink"         gboolean             : Read / Write
+  "cursor-visible"       gboolean             : Read / Write
+  "direction"            GtkDirectionType     : Read / Write
+  "editable"             gboolean             : Read / Write
+  "grow-height"          gboolean             : Read / Write
+  "height"               gdouble              : Read / Write
+  "indent"               gint                 : Read / Write
+  "justification"        GtkJustification     : Read / Write
+  "left-margin"          gint                 : Read / Write
+  "pixels-above-lines"   gint                 : Read / Write
+  "pixels-below-lines"   gint                 : Read / Write
+  "pixels-inside-wrap"   gint                 : Read / Write
+  "right-margin"         gint                 : Read / Write
+  "text"                 gchararray           : Read / Write
+  "visible"              gboolean             : Read / Write
+  "width"                gdouble              : Read / Write
+  "wrap-mode"            GtkWrapMode          : Read / Write
+  "x"                    gdouble              : Read / Write
+  "y"                    gdouble              : Read / Write
+  method cut_clipboard : "unit"
+  method copy_clipboard : "unit"
+  method paste_clipboard : "unit"
+  method get_buffer : "Gtk.text_buffer"
+}
+
+class Text abstract : Item {
+  "anchor"               GtkAnchorType        : Read / Write
+  "attributes"           PangoAttrList        : Read / Write
+  "clip"                 gboolean             : Read / Write
+  "clip-height"          gdouble              : Read / Write
+  "clip-width"           gdouble              : Read / Write
+  "family"               gchararray           : Read / Write
+  "family-set"           gboolean             : Read / Write
+  "fill-color"           gchararray           : Read / Write
+  "fill-color-gdk"       GdkColor             : Read / Write
+  "fill-color-rgba"      guint32              : Read / Write
+  "fill-stipple"         GdkDrawable          : Read / Write
+  "font"                 gchararray           : Read / Write
+  "font-desc"            PangoFontDescription : Read / Write
+  "justification"        GtkJustification     : Read / Write
+  "markup"               gchararray           : Write
+  "rise"                 gint                 : Read / Write
+  "rise-set"             gboolean             : Read / Write
+  "scale"                gdouble              : Read / Write
+  "scale-set"            gboolean             : Read / Write
+  "size"                 gint                 : Read / Write
+  "size-points"          gdouble              : Read / Write
+  "size-set"             gboolean             : Read / Write
+  "stretch"              PangoStretch         : Read / Write
+  "stretch-set"          gboolean             : Read / Write
+  "strikethrough"        gboolean             : Read / Write
+  "strikethrough-set"    gboolean             : Read / Write
+  "style"                PangoStyle           : Read / Write
+  "style-set"            gboolean             : Read / Write
+  "text"                 gchararray           : Read / Write
+  "text-height"          gdouble              : Read / Write
+  "text-width"           gdouble              : Read / Write
+  "underline"            PangoUnderline       : Read / Write
+  "underline-set"        gboolean             : Read / Write
+  "variant"              PangoVariant         : Read / Write
+  "variant-set"          gboolean             : Read / Write
+  "weight"               gint                 : Read / Write
+  "weight-set"           gboolean             : Read / Write
+  "x"                    gdouble              : Read / Write
+  "x-offset"             gdouble              : Read / Write
+  "y"                    gdouble              : Read / Write
+  "y-offset"             gdouble              : Read / Write
+}
+
+class Widget abstract : Item {
+  "anchor"               GtkAnchorType        : Read / Write
+  "height"               gdouble              : Read / Write
+  "size-pixels"          gboolean             : Read / Write
+  "widget"               GtkWidget            : Read / Write
+  "width"                gdouble              : Read / Write
+  "x"                    gdouble              : Read / Write
+  "y"                    gdouble              : Read / Write
+}
+
+class Canvas "GnomeCanvas" tag "canvas" : Layout {
+  "aa"                   gboolean             : Read / Write / Construct Only
+  method root : "group obj"
+  method set_scroll_region :
+    "x1:float -> y1:float -> x2:float -> y2:float -> unit"
+  method get_scroll_region : "float array"
+  method set_center_scroll_region : "bool -> unit"
+  method get_center_scroll_region : "bool"
+  method set_pixels_per_unit : "float -> unit"
+  method scroll_to : "x:int -> y:int -> unit"
+  method get_scroll_offsets : "int * int"
+  method update_now : "unit"
+  method get_item_at : "x:float -> y:float -> item obj"
+  method w2c_affine : "float array"
+  method w2c : "wx:float -> wy:float -> int * int"
+  method w2c_d : "wx:float -> wy:float -> float * float"
+  method c2w : "cx:float -> cy:float -> float * float"
+  method window_to_world : "winx:float -> winy:float -> float * float"
+  method world_to_window : "wox:float -> woy:float -> float * float"
+}

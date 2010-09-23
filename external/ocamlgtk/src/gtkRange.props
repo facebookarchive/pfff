@@ -1,0 +1,59 @@
+(* $Id: gtkRange.props 1253 2005-01-04 00:19:05Z oandrieu $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+classes {
+  GtkAdjustment "Gtk.adjustment obj"
+}
+
+class Ruler hv set wrap : Widget {
+  "lower"                gdouble              : Read / Write
+  "upper"                gdouble              : Read / Write
+  "max-size"             gdouble              : Read / Write
+  "position"             gdouble              : Read / Write
+  method set_metric : "Tags.metric_type -> unit"
+}
+
+class Range abstract set wrap wrapsig : Widget {
+  "adjustment"           GtkAdjustment        : Read / Write / Construct
+  "inverted"             gboolean             : Read / Write
+  "update-policy"        GtkUpdateType        : Read / Write
+  signal adjust_bounds : gdouble
+  signal move_slider : GtkScrollType
+  signal value_changed
+}
+
+class Scale hv set wrap : Range {
+  "digits"               gint                 : Read / Write
+  "draw-value"           gboolean             : Read / Write
+  "value-pos"            GtkPositionType      : Read / Write
+  signal format_value : gdouble -> string
+}
+
+class Scrollbar hv : Range {}
+
+(* deprecated
+class Progress abstract : Widget {
+  "activity-mode"        gboolean             : Read / Write
+  "show-text"            gboolean             : Read / Write
+  "text-xalign"          gfloat               : Read / Write / NoSet
+  "text-yalign"          gfloat               : Read / Write / NoSet
+} *)
+
+class ProgressBar : Widget {
+  "adjustment"           GtkAdjustment        : Read / Write / Wrap
+  "orientation"          GtkProgressBarOrientation : Read / Write / Set / Wrap
+  "activity-blocks"      guint                : Read / Write 
+  "activity-step"        guint                : Read / Write
+  "bar-style"            GtkProgressBarStyle  : Read / Write
+  "discrete-blocks"      guint                : Read / Write
+  "fraction"             gdouble              : Read / Write / Wrap
+  "pulse-step"           gdouble              : Read / Write / Set / Wrap
+  "text"                 gchararray           : Read / Write / Wrap
+  "ellipsize"            PangoEllipsizeMode    : Read / Write / Wrap
+  method pulse
+}

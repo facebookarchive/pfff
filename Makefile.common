@@ -1,0 +1,119 @@
+# -*- makefile -*-
+
+##############################################################################
+# Prelude 
+##############################################################################
+
+# This file assumes the caller will have set a few variables and then do a
+# include Makefile.common. Here are those variables:
+#  - SRC
+#  - INCLUDEDIRS
+
+# For literate programming, also assumes a few variables:
+#  - SRCNW
+#  - TEXMAIN
+#  - TEX
+##############################################################################
+# Generic variables
+##############################################################################
+
+INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
+
+OBJS?=    $(SRC:.ml=.cmo)
+OPTOBJS?= $(SRC:.ml=.cmx)
+
+
+##############################################################################
+# Generic ocaml variables
+##############################################################################
+
+#dont use -custom, it makes the bytecode unportable.
+OCAMLCFLAGS?=-g -dtypes -thread # -w A
+
+# This flag is also used in subdirectories so don't change its name here.
+OPTFLAGS?=-thread
+
+OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES)
+OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES)
+OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
+OCAMLYACC=ocamlyacc -v
+OCAMLDEP=ocamldep $(INCLUDES)
+OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
+
+# can also be set via 'make static'
+STATIC= #-ccopt -static
+
+# can also be unset via 'make purebytecode'
+BYTECODE_STATIC=-custom
+
+##############################################################################
+# Generic Literate programming variables
+##############################################################################
+
+SYNCFLAGS=-md5sum_in_auxfile -less_marks
+
+SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
+NOWEB=~/c__syncweb/scripts/noweblatex
+OCAMLDOC=ocamldoc $(INCLUDES)
+
+PDFLATEX=pdflatex --shell-escape 
+
+##############################################################################
+# Top rules
+##############################################################################
+all::
+
+##############################################################################
+# Developer rules
+##############################################################################
+
+#old: otags -no-mli-tags -r  .  but does not work very well
+# better to use my own tagger :)
+otags:
+	echo "you should use pfff_tags"
+
+ovisual:
+	echo "you should use pfff_visual"
+
+clean::
+	rm -f TAGS
+
+##############################################################################
+# literate rules
+##############################################################################
+lpclean::
+	rm -f *.aux *.toc *.log *.brf *.out
+
+
+##############################################################################
+# Generic ocaml rules
+##############################################################################
+
+.SUFFIXES: .ml .mli .cmo .cmi .cmx
+
+.ml.cmo:
+	$(OCAMLC)  -c $<
+.mli.cmi:
+	$(OCAMLC)  -c $<
+.ml.cmx:
+	$(OCAMLOPT)  -c $<
+
+.ml.mldepend: 
+	$(OCAMLC) -i $<
+
+clean::
+	rm -f *.cm[ioxa] *.o *.a *.cmxa *.annot
+	rm -f *~ .*~ *.exe gmon.out #*#
+
+clean::
+	rm -f *.aux *.toc *.log *.brf *.out
+
+distclean::
+	rm -f .depend
+
+beforedepend::
+
+depend:: beforedepend
+	$(OCAMLDEP) *.mli *.ml > .depend
+
+-include .depend

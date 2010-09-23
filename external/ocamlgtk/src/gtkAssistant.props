@@ -1,0 +1,41 @@
+(* $Id: gtkButton.props 1341 2007-06-07 22:19:31Z monate $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+classes {
+  GdkPixbuf "GdkPixbuf.pixbuf"
+}
+
+conversions {
+  GtkAssistantPageType  "GtkEnums.assistant_page_type_conv"
+}
+
+class Assistant wrapsig wrap : Window {
+  signal apply
+  signal cancel
+  signal close
+  signal leave
+  signal prepare
+  method get_current_page : "int"
+  method set_current_page : "int->unit"
+  method get_n_pages : "int"
+  method get_nth_page : "int -> widget obj"
+  method insert_page : "widget obj -> int -> int"
+  method set_page_type : "widget obj -> GtkEnums.assistant_page_type -> unit"
+  method get_page_type : "widget obj -> GtkEnums.assistant_page_type"
+  method set_page_title : "widget obj -> string -> unit"
+  method get_page_title : "widget obj -> string"
+  method set_page_header_image : "widget obj -> GdkPixbuf.pixbuf -> unit"
+  method get_page_header_image :  "widget obj -> GdkPixbuf.pixbuf"
+  method set_page_side_image :"widget obj -> GdkPixbuf.pixbuf -> unit"
+  method get_page_side_image : "widget obj -> GdkPixbuf.pixbuf"
+  method set_page_complete : "widget obj -> bool -> unit"
+  method get_page_complete : "widget obj -> bool"
+  method add_action_widget : "widget obj -> unit"
+  method remove_action_widget : "widget obj -> unit" 
+  method update_buttons_state : "unit"
+}

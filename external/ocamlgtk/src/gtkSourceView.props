@@ -1,0 +1,89 @@
+(*********************************************************************************)
+(*                                                                               *)
+(*   lablgtksourceview, OCaml binding for the GtkSourceView text widget          *)
+(*                                                                               *)
+(*   Copyright (C) 2005  Stefano Zacchiroli <zack@cs.unibo.it>                   *)
+(*   Copyright (C) 2006  Stefano Zacchiroli <zack@cs.unibo.it>                   *)
+(*                       Maxence Guesdon <maxence.guesdon@inria.fr>              *)
+(*                                                                               *)
+(*   This library is free software; you can redistribute it and/or modify        *)
+(*   it under the terms of the GNU Lesser General Public License as              *)
+(*   published by the Free Software Foundation; either version 2.1 of the        *)
+(*   License, or (at your option) any later version.                             *)
+(*                                                                               *)
+(*   This library is distributed in the hope that it will be useful, but         *)
+(*   WITHOUT ANY WARRANTY; without even the implied warranty of                  *)
+(*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU           *)
+(*   Lesser General Public License for more details.                             *)
+(*                                                                               *)
+(*   You should have received a copy of the GNU Lesser General Public            *)
+(*   License along with this library; if not, write to the Free Software         *)
+(*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307         *)
+(*   USA                                                                         *)
+(*                                                                               *)
+(*********************************************************************************)
+
+prefix "Gtk"
+
+header {
+  open GtkSourceView_types
+}
+
+class SourceStyleScheme type "source_style_scheme obj" set wrapsig : GObject {
+}
+
+class SourceLanguage type "source_language obj" set wrapsig : GObject {
+  signal tag_style_changed: string
+}
+
+class SourceLanguagesManager type "source_languages_manager obj" set wrapsig : GObject {
+(*  "lang-files-dirs"      gpointer             : Read / Write / Construct Only *)
+}
+
+
+class SourceTagStyle type "source_tag_style obj" set  wrapsig : GObject {
+  "foreground"		GdkColor : Read / Write
+  "background"		GdkColor : Read / Write
+  "italic"		gboolean : Read / Write
+  "bold"		gboolean : Read / Write
+  "underline"		gboolean : Read / Write
+  "strikethrough"	gboolean : Read / Write
+}
+
+class SourceTag type "source_tag obj" set  wrapsig : GObject {
+  "id"                   gchararray            : Read / Write / Construct Only
+}
+
+class SourceTagTable type "source_tag_table obj" set  wrapsig : GObject {
+  signal changed
+}
+
+class SourceMarker type "source_marker obj" set wrapsig : GObject {
+}
+
+class SourceBuffer type "source_buffer obj" set wrapsig : GObject {
+  "check-brackets"       gboolean             : Read / Write
+  "escape-char"          guint                : Read / Write
+  "highlight"            gboolean             : Read / Write
+  "language"             GtkSourceLanguage    : Read / Write
+  "max-undo-levels"      gint                 : Read / Write
+  "tag-table"            GtkSourceTagTable    : Read / Write / Construct Only
+  signal can_redo:       gboolean
+  signal can_undo:       gboolean
+  signal highlight_updated: GtkTextIter GtkTextIter
+  signal marker_updated: GtkTextIter
+}
+
+class SourceView type "source_view obj" set wrapsig : Widget {
+  "auto-indent"          gboolean             : Read / Write
+  "highlight-current-line" gboolean           : Read / Write
+  "insert-spaces-instead-of-tabs" gboolean    : Read / Write
+  "margin"               guint                : Read / Write
+  "show-line-markers"    gboolean             : Read / Write
+  "show-line-numbers"    gboolean             : Read / Write
+  "show-margin"          gboolean             : Read / Write
+  "smart-home-end"       gboolean             : Read / Write
+  "tabs-width"           guint                : Read / Write
+  signal redo
+  signal undo
+}

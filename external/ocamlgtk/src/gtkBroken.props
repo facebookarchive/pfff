@@ -1,0 +1,49 @@
+(* $Id: gtkBroken.props 1127 2004-03-18 07:05:30Z garrigue $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+classes {
+  GtkAdjustment "Gtk.adjustment obj"
+}
+
+class TreeItem wrapsig : Item {
+  method set_subtree : "[>`widget] obj -> unit"
+  method remove_subtree
+  method collapse
+  method expand
+  signal collapse
+  signal expand
+}
+
+class Tree : Container {
+  signal select_child : GtkWidget
+  signal selection_changed
+  signal unselect_child : GtkWidget
+}
+
+class OldEditable abstract wrapsig : Editable {
+  "text-position"        gint                 : Read / Write
+  method claim_selection : "claim:bool -> time:int -> unit"
+  method changed
+  signal activate
+  signal copy_clipboard
+  signal cut_clipboard
+  signal paste_clipboard
+  signal move_cursor : int int
+  signal move_word : int
+  signal move_page : int
+  signal move_to_row : int
+  signal move_to_column : int
+}
+
+class Text wrap set : OldEditable {
+  "hadjustment"          GtkAdjustment        : Read / Write
+  "vadjustment"          GtkAdjustment        : Read / Write
+  "editable"             gboolean             : Read / Write / NoWrap
+  "line-wrap"            gboolean             : Read / Write
+  "word_wrap"            gboolean             : Read / Write
+}

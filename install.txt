@@ -1,0 +1,47 @@
+
+You must first install a recent version of 
+ - OCaml (at least 3.11), 
+   see http://caml.inria.fr/download.en.html
+ - Berkeley DB (at least 4.3)
+   if you want the analysis capability
+ - GTK (at least gtk 2.10)
+   if you want the GUI capabilities.
+ - Cairo
+   if you want the fancy graphics capabilities.
+ - Pcre
+   if you want stuff I don't remember.
+
+OCaml may be available already on your Linux/Mac/Windows distributions.
+You can also try to do:
+ 
+  $ source env.sh 
+
+which setup the PATH and other variables to places where OCaml may
+already be.
+
+If you just want to compile the parsing frontend, then type 
+
+   $ ./configure
+
+
+If you want the parsing frontend and the analysis framework then type
+
+  $ ./configure --bdb
+
+You will also need the runtime and development library for berkley db 4.3.
+
+
+If you want everything then just type
+
+  $ ./configure --with-all
+
+You will also need the runtime and development library for gtk2 and cairo.
+
+
+
+Then type:
+
+  $ make depend
+  $ make
+  $ make install
+

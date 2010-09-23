@@ -1,0 +1,128 @@
+(* $Id: gtkEdit.props 1425 2008-10-05 16:21:55Z ben_99_9 $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+module Internal = struct
+  let marshal_insert =
+    ref (fun (_ : string -> pos:int ref -> unit) ->
+           failwith "GtkEditProps.Internal.marshal_insert")
+end
+}
+
+oheader{
+open GtkEditProps
+}
+
+classes {
+  GtkAdjustment "Gtk.adjustment obj"
+  GtkMenu "Gtk.menu obj"
+}
+
+class Editable abstract wrapsig : Widget { (* actually an interface *)
+  method select_region : "start:int -> stop:int -> unit"
+  method get_selection_bounds : "(int * int) option"
+  method insert_text : "string -> pos:int -> int"
+  method delete_text : "start:int -> stop:int -> unit"
+  method get_chars : "start:int -> stop:int -> string"
+  method cut_clipboard
+  method copy_clipboard
+  method paste_clipboard
+  method delete_selection
+  method get_position : "int"
+  method set_position : "int -> unit"
+  method get_editable : "bool"
+  method set_editable : "bool -> unit"
+  signal changed
+  signal delete_text : start:int stop:int
+  signal insert_text "(fun f -> !Internal.marshal_insert f)"
+}
+
+class Entry set wrap wrapsig : Editable {
+  "text"                 gchararray           : Read / Write
+  "visibility"           gboolean             : Read / Write
+  "max-length"           gint                 : Read / Write
+  "activates-default"    gboolean             : Read / Write
+  "cursor-position"      gint                 : Read / NoWrap
+  "editable"             gboolean             : Read / Write / NoWrap
+  "has-frame"            gboolean             : Read / Write
+  "invisible-char"       guint                : Read / Write / NoSet
+  "scroll-offset"        gint                 : Read
+  "selection-bound"      gint                 : Read / NoWrap
+  "width-chars"          gint                 : Read / Write
+  "xalign"		 gfloat		      : Read / Write
+  method append_text : "string -> unit"
+  method prepend_text : "string -> unit"
+  method text_length : "int"
+  method get_completion : "Gtk.entry_completion option"
+  method set_completion : "Gtk.entry_completion -> unit"
+  signal activate
+  signal copy_clipboard
+  signal cut_clipboard
+  signal delete_from_cursor : GtkDeleteType int
+  signal insert_at_cursor : string
+  signal move_cursor : GtkMovementStep gint extend:gboolean
+  signal paste_clipboard
+  signal populate_popup : GtkMenu       / NoWrap
+  signal toggle_overwrite
+}
+
+class SpinButton set wrap wrapsig : Entry {
+  "adjustment"           GtkAdjustment        : Read / Write
+  "climb-rate"(rate)     gdouble              : Read / Write
+  "digits"               guint                : Read / Write
+  "numeric"              gboolean             : Read / Write
+  "snap-to-ticks"        gboolean             : Read / Write
+  "update-policy"        GtkSpinButtonUpdatePolicy : Read / Write
+  "value"                gdouble              : Read / Write
+  "wrap"                 gboolean             : Read / Write
+  method spin : "Tags.spin_type -> unit"
+  method update
+  signal change_value : GtkScrollType
+  signal input : -> int
+  signal output : -> bool
+  signal value_changed
+  signal wrapped (* GTK+ 2.10 *)
+}
+
+class Combo set wrap : Box {
+  "allow-empty"          gboolean             : Read / Write
+  "case-sensitive"       gboolean             : Read / Write
+  "enable-arrow-keys"    gboolean             : Read / Write
+  "enable-arrows-always" gboolean             : Read / Write / NoSet / NoWrap
+  "value-in-list"        gboolean             : Read / Write
+}
+
+class ComboBox set wrap wrapsig : Bin {
+  "model"                GtkTreeModel         : Read / Write         / NoWrap
+  "active"               gint                 : Read / Write
+  "add-tearoffs"         gboolean             : Read / Write                  (* GTK+ 2.6 *)
+  "column-span-column"   gint                 : Read / Write / NoSet / NoWrap
+  "focus-on-click"       gboolean             : Read / Write                  (* GTK+ 2.6 *)
+  "has-frame"            gboolean             : Read / Write                  (* GTK+ 2.6 *)
+  "row-span-column"      gint                 : Read / Write / NoSet / NoWrap
+  "wrap-width"           gint                 : Read / Write
+  signal changed
+  method get_active_iter : "Gtk.tree_iter option"
+  method set_active_iter : "Gtk.tree_iter option -> unit"
+  method set_row_separator_func : "(Gtk.tree_model -> Gtk.tree_iter -> bool) option -> unit" (* GTK+ 2.6 *)
+}
+
+class ComboBoxEntry set : ComboBox {
+  "text-column"          gint                 : Read / Write / NoSet
+}
+
+class EntryCompletion set gobject {
+  "minimum-key-length"   gint                 : Read / Write
+  "model"                GtkTreeModel	      : Read / Write
+  signal action_activated : gint
+  signal match_selected   : GtkTreeModelFilter GtkTreeIter -> gboolean
+  method get_entry : "Gtk.entry obj option"
+  method complete
+  method insert_action_text : "int -> string -> unit"
+  method insert_action_markup : "int -> string -> unit"
+  method delete_action : "int -> unit"
+  method set_text_column : "int -> unit"
+  method set_match_func : "(string -> Gtk.tree_iter -> bool) -> unit"
+}

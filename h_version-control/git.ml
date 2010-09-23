@@ -1,0 +1,412 @@
+(* Yoann Padioleau
+ * 
+ * Copyright (C) 2009 Yoann Padioleau
+ * Copyright (C) 2010 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
+open Common
+
+open Lib_vcs 
+
+(*****************************************************************************)
+(* Types, globals *)
+(*****************************************************************************)
+
+let ext_git_annot_cache = ".git_annot"
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let rec parent_path_with_dotgit subdir = 
+  let subdir = Common.relative_to_absolute subdir in
+  if Sys.file_exists (Filename.concat subdir "/.git")
+  then subdir
+  else 
+    let parent = Common.dirname subdir in
+    parent_path_with_dotgit parent
+
+let cleanup_cache_files dir = 
+  let cache_ext = [ext_git_annot_cache] in
+  cache_ext +> List.iter (fun ext -> 
+    let files = Common.files_of_dir_or_files_no_vcs ext [dir] in
+    files +> List.iter (fun file -> 
+      assert(Common.filesuffix file = ext);
+      pr2 file;
+      Common.command2(spf "rm -f %s" file);
+    ));
+  ()
+
+let clean_git_patch xs = 
+  xs +> Common.exclude (fun s -> 
+    s =~ "^index[ \t]" ||
+    s =~ "^deleted file mode" ||
+    s =~ "^new file mode" ||
+    s =~ "^old mode" ||
+    s =~ "^new mode" ||
+    s =~ ".*No newline at end of file" ||
+    false
+  )
+
+
+(*****************************************************************************)
+(* Single file operations, "command output binding" *)
+(*****************************************************************************)
+(* ex: 
+e7ff626d	(Linus Torvalds	2004-09-23 18:49:25 -0700	1)/*
+^9a235ca        (     pad       2009-11-21 15:50:04 -0800  1) <?php
+
+can use -M and -C to use better tracking algorithm, can detect
+move of lines in same file or accross file in same commit.
+does git annotate follow rename ?
+
+*)
+
+let annotate_regexp = 
+  "^\\([A-Za-z0-9]+\\)[ \t]+" ^ "([ \t]*\\(.*\\)" ^ "[ \t]+" ^ 
+  "\\([0-9]+\\)" ^ "-" ^
+  "\\([0-9]+\\)" ^ "-" ^
+  "\\([0-9]+\\)" ^ "[ \t]" ^ 
+  "[0-9]+" ^ ":" ^
+  "[0-9]+" ^ ":" ^
+  "[0-9]+" ^ "[ \t]" ^ 
+  "[-+]" ^ "[0-9]+" ^ "[ \t]+" ^ 
+  "[0-9]+" ^ ")" ^
+  ".*$" (* the rest is line of code *)
+
+
+(* related?  git blame and git pickaxe ? *)
+let annotate2 ?(basedir="") ?(use_cache=false) filename = 
+
+  let full_filename = Filename.concat basedir filename in
+
+  (* git blame is really slow, so cache its result *)
+  Common.cache_computation ~use_cache full_filename ext_git_annot_cache (fun()->
+
+    (* adding -C leads to better information 
+     * adding HEAD so that can get the full information of a file that
+     * has been modified in the working tree.
+     *)
+    let cmd = (goto_dir basedir ^ "git annotate -C HEAD -- "^filename^" 2>&1")
+    in
+    (* pr2 cmd; *)
+    let xs = Common.cmd_to_list cmd in
+    (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
+
+    let annots = 
+      xs +> Common.map_filter (fun s -> 
+        if s =~ annotate_regexp 
+        then 
+          let (commitid, author, year, month, day) = Common.matched5 s in
+          Some (VersionId commitid, 
+               Author author,
+               Common.mk_date_dmy (s_to_i day) (s_to_i month) (s_to_i year))
+        else begin 
+          pr2 ("git annotate wrong line: " ^ s);
+          None
+        end
+      ) 
+    in
+    (* files lines are 1_based, so add this dummy 0 entry *)
+    Array.of_list (dummy_annotation::annots)
+  )
+  
+let annotate ?basedir ?use_cache a = 
+  Common.profile_code "Git.annotate" (fun () -> annotate2 ?basedir ?use_cache a)
+
+(* ------------------------------------------------------------------------ *)
+let annotate_raw ?(basedir="") filename = 
+
+  let cmd = (goto_dir basedir ^ "git annotate HEAD -- "^filename^" 2>&1") in
+  (* pr2 cmd; *)
+  let xs = Common.cmd_to_list cmd in
+  (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
+
+  let annots = 
+    xs +> Common.map_filter (fun s -> 
+      if s =~ annotate_regexp 
+      then 
+        Some s
+      else begin 
+        (* pr2 ("git annotate wrong line: " ^ s); *)
+        None
+      end
+    ) 
+  in
+  (* files lines are 1_based, so add this dummy 0 entry *)
+  Array.of_list (""::annots)
+
+
+(* ------------------------------------------------------------------------ *)
+(* ex:
+Sat, 31 Dec 2005 15:21:18 +0800
+*)
+
+let date_regexp = 
+  "[A-Za-z]+," ^ "[ \t]+" ^
+  "\\([0-9]+\\)" ^ "[ \t]+" ^
+  "\\([A-Za-z]+\\)" ^ "[ \t]+" ^
+  "\\([0-9]+\\)" ^ "[ \t]+" ^
+  ".*$"
+
+let date_file_creation2 ?(basedir="") file = 
+  (* note: can't use -1 with git log cos it will show only 1 entry, but
+   * the last one, despite the use of --reverse
+   *)
+  let cmd = (goto_dir basedir ^ 
+             "git log --reverse --pretty=format:%aD "^file^" 2>&1")
+  in
+  (* pr2 cmd; *)
+  let xs = Common.cmd_to_list cmd in
+  match xs with
+  | s::xs -> 
+      if s =~ date_regexp
+      then
+        let (day, month_str, year) = matched3 s in
+        DMY (Day (s_to_i day),
+             Common.month_of_string month_str,
+            Year (s_to_i year)
+        )
+      else failwith ("git log wrong line: " ^ s)
+  | _ -> 
+      failwith ("git log wrong output")
+
+
+let date_file_creation ?basedir a = 
+  Common.profile_code "Git.date_file" (fun() -> date_file_creation2 ?basedir a)
+
+(*****************************************************************************)
+(* Repository operations *)
+(*****************************************************************************)
+
+let branches ~basedir = 
+  let cmd = (goto_dir basedir ^
+                "git branch --no-color") in
+  let xs = Common.cmd_to_list cmd in
+  xs +> List.map (fun s ->
+    if s=~ "[ \t]*\\*[ \t]+\\(.*\\)"
+    then matched1 s
+    else if s =~ "[ \t]+\\(.*\\)"
+    then matched1 s
+    else failwith ("wrong line in git branch: " ^ s)
+  )
+
+
+
+let id_and_summary_oneline s = 
+  if s=~ "\\([^ ]+\\) \\(.*\\)"
+  then 
+    let (commit, summary) = Common.matched2 s in
+    VersionId commit, summary
+  else
+    failwith ("wrong line in git log: " ^ s)
+      
+let commits ~basedir = 
+  let cmd = (goto_dir basedir ^
+                "git log --no-color --pretty=oneline") in
+  let xs = Common.cmd_to_list cmd in
+  xs +> List.map id_and_summary_oneline
+
+(*****************************************************************************)
+(* single commit operations  *)
+(*****************************************************************************)
+
+let commit_raw_patch ~basedir commitid = 
+  let (VersionId scommit) = commitid in
+  let cmd = (goto_dir basedir ^
+             (spf "git show --no-color %s" scommit)) in
+  let xs = Common.cmd_to_list cmd in
+  xs
+
+let commit_summary ~basedir commitid = 
+  let (VersionId scommit) = commitid in
+  let cmd = (goto_dir basedir ^
+             (spf "git show --no-color --pretty=oneline %s" scommit)) in
+  let xs = Common.cmd_to_list cmd in
+  List.hd xs +> id_and_summary_oneline +> snd
+
+let commit_patch ~basedir commitid = 
+  let (VersionId scommit) = commitid in
+  let cmd = (goto_dir basedir ^
+             (spf "git show --no-color %s" scommit)) in
+  let xs = Common.cmd_to_list cmd in
+  let xs = clean_git_patch xs in
+
+  Lib_vcs.parse_commit_patch xs
+
+
+let commit_of_relative_time ~basedir relative_data_string = 
+  let cmd = (goto_dir basedir ^
+             (spf "git log --no-color --pretty=oneline --since=\"%s\"" 
+                 relative_data_string
+             )) in
+  let xs = Common.cmd_to_list cmd in
+  let last = Common.last xs in
+  id_and_summary_oneline last +> fst
+
+let commit_info ~basedir vid = 
+  let (VersionId _sid) = vid in
+  raise Todo
+
+
+(*****************************************************************************)
+(* multiple commits operations  *)
+(*****************************************************************************)
+
+let commits_between_commitids ~basedir ~old_id ~recent_id =
+  let cmd = (goto_dir basedir ^
+             (spf "git log --no-color --pretty=oneline %s..%s"
+                 (s_of_versionid old_id)
+                 (s_of_versionid recent_id)
+             )) in
+  let xs = Common.cmd_to_list cmd in
+  xs +> List.map id_and_summary_oneline +> List.map fst +> List.rev
+ 
+
+let file_to_commits ~basedir commits = 
+  let h = Common.hash_with_default (fun() -> []) in
+  let total = List.length commits in
+  commits +> Common.index_list_1 |> List.iter (fun (vid, cnt) ->
+    Common.log2 (spf "patch %d/%d" cnt total);
+    try 
+      let patch = commit_patch ~basedir vid in
+      let (strs, patchinfo) = patch in
+      
+      patchinfo +> List.iter (fun (filename, fileinfo) ->
+        (* TODO use fileinfo *)
+        h#update filename (fun old -> (vid, fileinfo)::old)
+      );
+    with e -> 
+      pr2 (spf "PB with patch: %s, exn = %s" 
+              (Lib_vcs.s_of_versionid vid)
+              (Common.exn_to_s e)
+      );
+      (* TODO *)
+  );
+  h#to_list
+
+(*****************************************************************************)
+(* line level operations, preparing commits *)
+(*****************************************************************************)
+
+let apply_patch ~basedir patch_string_list = 
+  let tmpfile = Common.new_temp_file "git" ".patch" in
+  let s = Common.unlines patch_string_list in
+  Common.write_file ~file:tmpfile s;
+  
+  let cmd = (goto_dir basedir ^ "git apply "^tmpfile^" 2>&1") in
+  let xs = Common.cmd_to_list cmd in
+  xs +> List.iter pr2;
+  ()
+
+(* ------------------------------------------------------------------------ *)
+(* 
+ * Return which person(s) to blame for some deadcode (in fact certain lines).
+ * Do majority, except a whitelist, and if nothing found then
+ * do majority of file, and if nothing found (because of whitelist)
+ * then say "NOBODYTOBLAME"
+ * 
+ * One improvement suggested by sgrimm is to use git annotate -C (or 
+ * git blame -C) which tries to detect move of code and give a more
+ * accurate author. See h_version-control/git.ml.
+ * 
+ * For instance on www/lib/common.php, 
+ * git annotate -C   vs git annotate gives:
+ * 
+ * 138,147c138,147
+ * < 2ea63cc5	(  jwiseman	2007-07-03 01:39:41 +0000	138) *
+ * < d6106bdb	(  jwiseman	2007-07-05 21:58:37 +0000	139) * @param  int       $id       the id of a user or an object
+ * < d6106bdb	(  jwiseman	2007-07-05 21:58:37 +0000	140) * @param  string    $exit_fn  the function to call when the connection fails
+ * < d6106bdb	(  jwiseman	2007-07-05 21:58:37 +0000	141) * @param  array     $args     arguments to $exit_fn
+ * < 2ea63cc5	(  jwiseman	2007-07-03 01:39:41 +0000	142) * @return resource  a write connection to the specified db
+ * < 2ea63cc5	(  jwiseman	2007-07-03 01:39:41 +0000	143) * @author jwiseman
+ * < 2ea63cc5	(  jwiseman	2007-07-03 01:39:41 +0000	144) */
+ * < d6106bdb	(  jwiseman	2007-07-05 21:58:37 +0000	145)function require_write_conn($id, $exit_fn='go_home', $args=null) {
+ * < 2ea63cc5	(  jwiseman	2007-07-03 01:39:41 +0000	146)  $conn_w = id_get_conn($id, 'w');
+ * < 2ea63cc5	(  jwiseman	2007-07-03 01:39:41 +0000	147)  if (!$conn_w) {
+ * ---
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	138) *
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	139) * @param  int       $id       the id of a user or an object
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	140) * @param  string    $exit_fn  the function to call when the connection fails
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	141) * @param  array     $args     arguments to $exit_fn
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	142) * @return resource  a write connection to the specified db
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	143) * @author jwiseman
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	144) */
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	145)function require_write_conn($id, $exit_fn='go_home', $args=null) {
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	146)  $conn_w = id_get_conn($id, 'w');
+ * > effa6f73	(    mcslee	2007-10-18 06:43:09 +0000	147)  if (!$conn_w) {
+ * 
+ * It is clear that the first series of blame is better, as 
+ * it contains multiple commits, and because mcslee was probably just
+ * moving code around and not actually modifying the code.
+ * 
+ * Note that by default git blame does already some analysis such as
+ * detecting renaming of files. But it does not do more than that. For 
+ * intra files moves, you want git annotate -C.
+ * 
+ * With -C it takes 130min to run the deadcode analysis on www.
+ * Fortunately once it's cached, it takes only 2 minutes.
+ * 
+ *)
+let get_2_best_blamers_of_lines
+    ~basedir 
+    ?use_cache 
+    ?(is_valid_author=(fun _ -> true))
+    filename 
+    lines_to_remove 
+  =
+  (* git blame is really slow, so useful to cache its result *)
+  let annots = annotate ~basedir ?use_cache filename in
+
+  let toblame = 
+    lines_to_remove +> List.map (fun i -> 
+      let (version, Lib_vcs.Author author, date) = annots.(i) in
+      author
+    )
+    +> List.filter is_valid_author
+  in
+
+  let hblame = Common.hashset_of_list toblame in
+  let other_authors = 
+    annots +> Array.to_list +> List.map (fun x ->
+      let (version, Lib_vcs.Author author, date) = x in
+      author
+    )
+    +> List.filter (fun x -> 
+      is_valid_author x && not (Common.hmem x hblame)
+    )
+  in
+      
+  let counts = Common.count_elements_sorted_highfirst toblame +> 
+    List.map fst in
+  let counts' = Common.count_elements_sorted_highfirst other_authors +>
+    List.map fst in
+
+  Common.take_safe 2 (counts ++ counts')
+
+
+let max_date_of_lines ~basedir ?use_cache filename lines_to_remove =
+
+  let annots = annotate ~basedir ?use_cache filename in
+
+  (* todo? use only the lines_to_remove or the whole file to
+   * decide of the "date" of the patch ? *)
+  let toblame = 
+    lines_to_remove +> List.map (fun i -> 
+      let (version, Lib_vcs.Author author, date) = annots.(i) in
+      date
+    )
+  in
+  Common.maximum_dmy toblame
+
+

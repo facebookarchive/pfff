@@ -1,0 +1,2162 @@
+
+\section{Overview}
+
+The code in [[parser_php.mly]] is mostly a copy paste of the Yacc
+parser in the PHP source code (in
+[[pfff/docs/official-grammar/5.2.11/zend_language_parser.y]]) adapted
+for [[ocamlyacc]].
+Here is the toplevel structure of [[parser_php.mly]]:
+
+<<parser_php.mly>>=
+<<Facebook copyright2>>
+
+<<GRAMMAR prelude>>
+
+/*(*************************************************************************)*/
+/*(* Tokens *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR tokens declaration>>
+
+<<GRAMMAR tokens priorities>>
+
+/*(*************************************************************************)*/
+/*(* Rules type declaration *)*/
+/*(*************************************************************************)*/
+%start main expr class_declaration_statement
+<<GRAMMAR type of main rule>>
+
+%%
+
+<<GRAMMAR long set of rules>>
+@ 
+
+
+
+% main entry point: 
+
+<<GRAMMAR type of main rule>>=
+%type <Ast_php.toplevel list> main
+%type <Ast_php.expr> expr
+%type <(Ast_php.class_def, Ast_php.interface_def) Common.either> 
+  class_declaration_statement
+@
+
+
+<<GRAMMAR long set of rules>>=
+/*(*************************************************************************)*/
+/*(* toplevel *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR toplevel>>
+
+
+/*(*************************************************************************)*/
+/*(* statement *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR statement>>
+
+/*(*************************************************************************)*/
+/*(* function declaration *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR function declaration>>
+
+/*(*************************************************************************)*/
+/*(* class declaration *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR class declaration>>
+
+/*(*************************************************************************)*/
+/*(* expr and variable *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR expression>>
+
+/*(*************************************************************************)*/
+/*(* namespace *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR namespace>>
+
+
+/*(*************************************************************************)*/
+/*(* class bis *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR class bis>>
+
+/*(*************************************************************************)*/
+/*(* Encaps *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR encaps>>
+
+/*(*************************************************************************)*/
+/*(* xxx_list, xxx_opt *)*/
+/*(*************************************************************************)*/
+<<GRAMMAR xxxlist or xxxopt>>
+
+@ 
+
+%Had to port it to ocamlyacc so needed a few changes.
+%
+%Reordered a few rules: 
+%   - grouped the xxx_list, 
+%   - and make more obvious certain relations
+%   - pub base case first
+
+% repetitive code convention
+
+% * Note that they use T_STRING for actually what should be a TVAR or TIDENT.
+
+
+\section{Toplevel}
+
+<<GRAMMAR toplevel>>=
+main: start EOF { top_statements_to_toplevels $1 $2 }
+
+start: top_statement_list { $1 }
+
+@ 
+
+<<GRAMMAR toplevel>>=
+top_statement:
+ | statement                            { Stmt $1 }
+ | function_declaration_statement	{ FuncDefNested $1 }
+ | class_declaration_statement		{ 
+     match $1 with
+     | Left x -> ClassDefNested x
+     | Right x -> InterfaceDefNested x
+   }
+@ 
+%/*??? | T_HALT_COMPILER TOPAR TCPAR TSEMICOLON   { Halt($1,($2,(),$3),$4)  } */
+
+
+\section{Statement}
+
+<<GRAMMAR statement>>=
+inner_statement: top_statement { $1 }
+statement: unticked_statement { $1 }
+@ 
+
+<<GRAMMAR statement>>=
+unticked_statement:
+ | expr           TSEMICOLON		  { ExprStmt($1,$2) }
+ | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
+ | TOBRACE inner_statement_list TCBRACE   { Block($1,$2,$3) }
+
+ | T_IF TOPAR expr TCPAR statement elseif_list else_single 
+     { If($1,($2,$3,$4),$5,$6,$7) }
+ | T_IF TOPAR expr TCPAR TCOLON 
+     inner_statement_list new_elseif_list new_else_single 
+     T_ENDIF TSEMICOLON 
+     { IfColon($1,($2,$3,$4),$5,$6,$7,$8,$9,$10)  }
+
+ | T_WHILE TOPAR expr  TCPAR while_statement 
+     { While($1,($2,$3,$4),$5) }
+ | T_DO statement T_WHILE TOPAR expr TCPAR TSEMICOLON 
+     { Do($1,$2,$3,($4,$5,$6),$7) }
+ | T_FOR TOPAR
+     for_expr TSEMICOLON 
+     for_expr TSEMICOLON 
+     for_expr 
+     TCPAR 
+     for_statement 
+     { For($1,$2,$3,$4,$5,$6,$7,$8,$9) }
+
+ | T_SWITCH TOPAR expr TCPAR	switch_case_list 
+     { Switch($1,($2,$3,$4),$5) }
+
+ | T_FOREACH TOPAR variable T_AS
+     foreach_variable foreach_optional_arg TCPAR 
+     foreach_statement 
+     { Foreach($1,$2,mk_e (Lv $3),$4,Left $5,$6,$7,$8) }
+ | T_FOREACH TOPAR expr_without_variable T_AS
+     variable foreach_optional_arg TCPAR 
+     foreach_statement 
+     { Foreach($1,$2,$3,$4,Right $5,$6,$7,$8)  }
+
+ | T_BREAK TSEMICOLON       	{ Break($1,None,$2) }
+ | T_BREAK expr TSEMICOLON	{ Break($1,Some $2, $3) }
+ | T_CONTINUE TSEMICOLON	{ Continue($1,None,$2) }
+ | T_CONTINUE expr TSEMICOLON	{ Continue($1,Some $2, $3) }
+
+ | T_RETURN TSEMICOLON		              { Return ($1,None, $2) }
+ | T_RETURN expr_without_variable TSEMICOLON  { Return ($1,Some ($2), $3)}
+ | T_RETURN variable TSEMICOLON		      { Return ($1,Some (mk_e (Lv $2)), $3)}
+
+ | T_TRY  
+     TOBRACE inner_statement_list TCBRACE
+   T_CATCH TOPAR fully_qualified_class_name  T_VARIABLE TCPAR 
+     TOBRACE inner_statement_list TCBRACE 
+     additional_catches 
+     { 
+       let try_block = ($2,$3,$4) in
+       let catch_block = ($10, $11, $12) in
+       let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
+       Try($1, try_block, catch, $13)
+     }
+ | T_THROW expr TSEMICOLON { Throw($1,$2,$3) }
+
+ | T_ECHO echo_expr_list TSEMICOLON     { Echo($1,$2,$3) }
+ | T_INLINE_HTML			{ InlineHtml($1) }
+
+ | T_OPEN_TAG_WITH_ECHO expr T_CLOSE_TAG_OF_ECHO { 
+     (* todo? cheat ..., ugly, the 2 tokens will have a wrong string *)
+     Echo ($1, [Left $2], $3)
+   }
+
+ | T_GLOBAL global_var_list TSEMICOLON { Globals($1,$2,$3) }
+ | T_STATIC static_var_list TSEMICOLON { StaticVars($1,$2,$3) }
+
+ | T_UNSET TOPAR unset_variables TCPAR TSEMICOLON { Unset($1,($2,$3,$4),$5) }
+
+ | T_USE use_filename TSEMICOLON		  { Use($1,$2,$3) }
+ | T_DECLARE  TOPAR declare_list TCPAR declare_statement 
+     { Declare($1,($2,$3,$4),$5) }
+@ 
+
+<<GRAMMAR statement>>=
+/*(*----------------------------*)*/
+/*(* auxillary statements *)*/
+/*(*----------------------------*)*/
+
+for_expr:
+ | /*(*empty*)*/    	{ [] }
+ | non_empty_for_expr	{ $1 }
+
+foreach_optional_arg:
+  | /*(*empty*)*/			{ None }
+  | T_DOUBLE_ARROW foreach_variable	{ Some($1,$2) }
+
+foreach_variable: is_reference variable { ($1, $2) }
+
+
+switch_case_list:
+ | TOBRACE            case_list TCBRACE  { CaseList($1,None,$2,$3) }
+ | TOBRACE TSEMICOLON case_list TCBRACE  { CaseList($1, Some $2, $3, $4) }
+ | TCOLON             case_list T_ENDSWITCH TSEMICOLON	
+     { CaseColonList($1,None,$2, $3, $4) }
+ | TCOLON TSEMICOLON  case_list T_ENDSWITCH TSEMICOLON	
+     { CaseColonList($1, Some $2, $3, $4, $5) }
+
+ | T_XHP_COLONID_DEF { failwith_xhp_ambiguity_colon (snd $1) }
+
+case_list: case_list_rev { List.rev $1 }
+case_list_rev:
+ | /*(*empty*)*/	{ [] } 
+ | case_list_rev    T_CASE expr case_separator inner_statement_list 
+     { Case($2,$3,$4,$5)::$1   }
+ | case_list_rev    T_DEFAULT   case_separator inner_statement_list 
+     { Default($2,$3,$4)::$1 }
+
+case_separator:
+ | TCOLON     { $1 }
+ | TSEMICOLON { $1 }
+
+ | T_XHP_COLONID_DEF { failwith_xhp_ambiguity_colon (snd $1) }
+
+
+
+while_statement:
+ | statement                                         { SingleStmt $1 }
+ | TCOLON inner_statement_list T_ENDWHILE TSEMICOLON { ColonStmt($1,$2,$3,$4) }
+
+for_statement:
+ | statement                                       { SingleStmt $1 }
+ | TCOLON inner_statement_list T_ENDFOR TSEMICOLON { ColonStmt($1,$2,$3,$4) }
+
+foreach_statement:
+ | statement                                           { SingleStmt $1 } 
+ | TCOLON inner_statement_list T_ENDFOREACH TSEMICOLON { ColonStmt($1,$2,$3,$4)}
+
+declare_statement:
+ | statement                                           { SingleStmt $1 }
+ | TCOLON inner_statement_list T_ENDDECLARE TSEMICOLON { ColonStmt($1,$2,$3,$4)}
+
+
+
+elseif_list:
+ | /*(*empty*)*/ { [] }
+ | elseif_list  T_ELSEIF TOPAR expr TCPAR statement { $1 ++ [$2,($3,$4,$5),$6] }
+
+new_elseif_list:
+ | /*(*empty*)*/ { [] }
+ | new_elseif_list    T_ELSEIF TOPAR expr TCPAR TCOLON inner_statement_list 
+     { $1 ++ [$2,($3,$4,$5),$6,$7] }
+
+
+else_single:
+ | /*(*empty*)*/    { None }
+ | T_ELSE statement { Some($1,$2) }
+
+new_else_single:
+ | /*(*empty*)*/                      { None }
+ | T_ELSE TCOLON inner_statement_list { Some($1,$2,$3) }
+
+
+additional_catch:
+ | T_CATCH 
+     TOPAR fully_qualified_class_name T_VARIABLE TCPAR 
+     TOBRACE inner_statement_list TCBRACE 
+     { 
+       let catch_block = ($6, $7, $8) in
+       let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
+       catch
+     }
+@ 
+
+<<GRAMMAR statement>>=
+/*(*----------------------------*)*/
+/*(* auxillary bis *)*/
+/*(*----------------------------*)*/
+
+declare: ident   TEQ static_scalar { Name $1, ($2, $3) }
+
+global_var:
+ | T_VARIABLE			{ GlobalVar (DName $1) }
+ | TDOLLAR r_variable		{ GlobalDollar ($1, $2) }
+ | TDOLLAR TOBRACE expr TCBRACE	{ GlobalDollarExpr ($1, ($2, $3, $4)) }
+
+/*(* can not factorize, otherwise shift/reduce conflict *)*/
+static_var_list: static_var_list_rev { List.rev $1 }
+static_var_list_rev:
+ | T_VARIABLE                   { [Left (DName $1, None)] }
+ | T_VARIABLE TEQ static_scalar { [Left (DName $1, Some ($2, $3)) ] }
+ | static_var_list_rev TCOMMA   T_VARIABLE 
+     { Left (DName $3, None)::Right $2::$1 }
+ | static_var_list_rev TCOMMA   T_VARIABLE TEQ static_scalar 
+     { Left (DName $3, Some ($4, $5))::Right $2::$1 }
+
+unset_variable: variable	{ $1 }
+
+use_filename:
+ |       T_CONSTANT_ENCAPSED_STRING		{ UseDirect $1 }
+ | TOPAR T_CONSTANT_ENCAPSED_STRING TCPAR	{ UseParen ($1, $2, $3) }
+@
+
+
+\section{Expression}
+
+<<GRAMMAR expression>>=
+/*(* a little coupling with non_empty_function_call_parameter_list *)*/
+expr:
+ | r_variable				{ mk_e (Lv $1) }
+ | expr_without_variable		{ $1 }
+
+expr_without_variable: 
+ | expr_without_variable_bis { mk_e $1 }
+
+ /*(* xhp: This extension fix a deficiency in the original PHP grammar
+    * which does not allow to do things like foo()[2]. Array accesses
+    * in PHP were allowed only for variables.
+    *
+    * The rule below generates 3 s/r conflicts. 
+    *
+    * I thought I could remove some conflicts by putting the rule
+    * closer to the funcall_call rule, which does not
+    * generate any conflict, but it then can not handle
+    * code like $o->foo()['foo'].
+    * 
+    * I then thought I could put it closer to variable2, 
+    * but it must be 'variable' not 'variable2' otherwise
+    * it can not process code like foo()['fld1']['fld2'].
+    * 
+    * In fact it can not be put close to 'variable' either because
+    * then it can not parse code like ($this->getAssocData($user))[0];
+    * So the right place is here, in expr_without_variable.
+    *)*/
+  | expr TOBRA dim_offset TCBRA
+   { 
+     match Ast_php.untype $1 with
+     (* Lv corresponds to Lvalue which includes function calls so 
+      * foo()[1] will be translated into a 
+      * VArrayAccess(FunCallSimple(...), 1).
+      *)
+     | Lv v ->
+         let var = mkvar (VArrayAccess (v, ($2, $3, $4))) in
+         mk_e (Lv var)
+
+     (* The 'lvalue' type was originally restricted to variables and 
+      * function/method calls. It could not cope with
+      * VArrayAccess of arbitrary expressions such as 
+      * "array(1,2,3)" which are ConsArray of the 'expr' type.
+      * 
+      * So for the general case we could have transformed
+      * such array access into calls to __xhp_idx(), just like
+      * in the original XHP parser, and introduced some fake tokens
+      * in the Ast. But having fake tokens break some
+      * of the assumptions we have later when we build the database of code
+      * so it's simpler to introduce a new constructor, 
+      * VarrayAccessXhp that can accept expressions. This forces us
+      * to add extra code to handle yet another constructor, but
+      * the __xhp_idx() solution would also force us, to have precise
+      * analysis, to special case such function calls anyway.
+      * 
+      * An alternative would be to rethink ast_php.ml and
+      * merge the 'expr' and 'lvalue' types together.
+      *)
+     | _ ->
+         let var = mkvar (VArrayAccessXhp ($1, ($2, $3, $4))) in
+         mk_e (Lv var)
+   }
+
+@ 
+
+<<GRAMMAR expression>>=
+expr_without_variable_bis:
+ | scalar				{ Sc $1 }
+
+ | TOPAR expr TCPAR 	{ ParenExpr($1,$2,$3) }
+
+ | variable TEQ expr		{ Assign($1,$2,$3) }
+ | variable TEQ TAND variable   { AssignRef($1,$2,$3,$4) }
+ | variable TEQ TAND T_NEW class_name_reference ctor_arguments 
+     { AssignNew($1,$2,$3,$4,$5,$6) }
+
+
+ | variable T_PLUS_EQUAL   expr	{ AssignOp($1,(AssignOpArith Plus,$2),$3) }
+ | variable T_MINUS_EQUAL  expr	{ AssignOp($1,(AssignOpArith Minus,$2),$3) }
+ | variable T_MUL_EQUAL    expr	{ AssignOp($1,(AssignOpArith Mul,$2),$3) }
+ | variable T_DIV_EQUAL    expr	{ AssignOp($1,(AssignOpArith Div,$2),$3) }
+ | variable T_MOD_EQUAL    expr	{ AssignOp($1,(AssignOpArith Mod,$2),$3) }
+ | variable T_AND_EQUAL    expr	{ AssignOp($1,(AssignOpArith And,$2),$3) }
+ | variable T_OR_EQUAL     expr	{ AssignOp($1,(AssignOpArith Or,$2),$3) }
+ | variable T_XOR_EQUAL    expr	{ AssignOp($1,(AssignOpArith Xor,$2),$3) }
+ | variable T_SL_EQUAL     expr	{ AssignOp($1,(AssignOpArith DecLeft,$2),$3) }
+ | variable T_SR_EQUAL     expr	{ AssignOp($1,(AssignOpArith DecRight,$2),$3) }
+
+ | variable T_CONCAT_EQUAL expr	{ AssignOp($1,(AssignConcat,$2),$3) }
+
+ | rw_variable T_INC { Postfix($1, (Inc, $2)) }
+ | rw_variable T_DEC { Postfix($1, (Dec, $2)) }
+ | T_INC rw_variable { Infix((Inc, $1),$2) }
+ | T_DEC rw_variable { Infix((Dec, $1),$2) }
+
+ | expr T_BOOLEAN_OR expr   { Binary($1,(Logical OrBool ,$2),$3) }
+ | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }
+ | expr T_LOGICAL_OR  expr  { Binary($1,(Logical OrLog,  $2),$3) }
+ | expr T_LOGICAL_AND  expr { Binary($1,(Logical AndLog, $2),$3) }
+ | expr T_LOGICAL_XOR expr  { Binary($1,(Logical XorLog, $2),$3) }
+
+ | expr TPLUS expr 	{ Binary($1,(Arith Plus ,$2),$3) }
+ | expr TMINUS expr 	{ Binary($1,(Arith Minus,$2),$3) }
+ | expr TMUL expr	{ Binary($1,(Arith Mul,$2),$3) }
+ | expr TDIV expr	{ Binary($1,(Arith Div,$2),$3) }
+ | expr TMOD expr 	{ Binary($1,(Arith Mod,$2),$3) }
+
+ | expr T_XHP_PERCENTID_DEF 	{ failwith_xhp_ambiguity_percent (snd $2) }
+
+ | expr TAND expr	{ Binary($1,(Arith And,$2),$3) }
+ | expr TOR expr	{ Binary($1,(Arith Or,$2),$3) }
+ | expr TXOR expr	{ Binary($1,(Arith Xor,$2),$3) }
+ | expr T_SL expr	{ Binary($1,(Arith DecLeft,$2),$3) }
+ | expr T_SR expr	{ Binary($1,(Arith DecRight,$2),$3) }
+
+ | expr TDOT expr 	{ Binary($1,(BinaryConcat,$2),$3) }
+
+ | expr T_IS_IDENTICAL        expr { Binary($1,(Logical Identical,$2),$3) }
+ | expr T_IS_NOT_IDENTICAL    expr { Binary($1,(Logical NotIdentical,$2),$3) }
+ | expr T_IS_EQUAL            expr { Binary($1,(Logical Eq,$2),$3) }
+ | expr T_IS_NOT_EQUAL        expr { Binary($1,(Logical NotEq,$2),$3) }
+ | expr TSMALLER              expr { Binary($1,(Logical Inf,$2),$3) }
+ | expr T_IS_SMALLER_OR_EQUAL expr { Binary($1,(Logical InfEq,$2),$3) }
+ | expr TGREATER              expr { Binary($1,(Logical Sup,$2),$3) }
+ | expr T_IS_GREATER_OR_EQUAL expr { Binary($1,(Logical SupEq,$2),$3) }
+
+ | TPLUS  expr    %prec T_INC           { Unary((UnPlus,$1),$2) }
+ | TMINUS expr    %prec T_INC           { Unary((UnMinus,$1),$2) }
+ | TBANG  expr                          { Unary((UnBang,$1),$2) }
+ | TTILDE expr                          { Unary((UnTilde,$1),$2) }
+
+
+ | T_LIST TOPAR assignment_list TCPAR TEQ expr 
+     { AssignList($1,($2,$3,$4),$5,$6) }
+ | T_ARRAY TOPAR array_pair_list TCPAR 
+     { ConsArray($1,($2,$3,$4)) }
+
+ | T_NEW class_name_reference ctor_arguments 
+     { New($1,$2,$3) }
+ | T_CLONE expr { Clone($1,$2) }
+ | expr T_INSTANCEOF class_name_reference 
+     { InstanceOf($1,$2,$3) }
+
+ | expr TQUESTION  expr TCOLON  expr	 { CondExpr($1,$2,$3,$4,$5) }
+
+/*(* I don't parse XHP elements defs in the same way than the original
+   * XHP parser, which simplifies the grammar, but introduce possible
+   * ambiguities. See tests/xhp_pb_but_ok/colon_ambiguity*.php
+   * I don't want to solve those ambiguities but I can at least print a
+   * useful parsing error message with those fake rules.
+   * 
+   * Everywhere in this grammar where we use TCOLON we should add 
+   * an error rule similar to the one below.
+   *)*/
+ | expr TQUESTION  expr T_XHP_COLONID_DEF 
+     { failwith_xhp_ambiguity_colon (snd $4) }
+
+ | T_BOOL_CAST   expr	{ Cast((BoolTy,$1),$2) }
+ | T_INT_CAST    expr 	{ Cast((IntTy,$1),$2) }
+ | T_DOUBLE_CAST expr 	{ Cast((DoubleTy,$1),$2) }
+ | T_STRING_CAST expr	{ Cast((StringTy,$1),$2) }
+ | T_ARRAY_CAST  expr 	{ Cast((ArrayTy,$1),$2) }
+ | T_OBJECT_CAST expr 	{ Cast((ObjectTy,$1),$2) }
+
+
+ | T_UNSET_CAST  expr	{ CastUnset($1,$2) }
+
+ | T_EXIT exit_expr	{ Exit($1,$2) }
+ | T__AT expr           { At($1,$2) }
+ | T_PRINT expr  { Print($1,$2) }
+
+ | TBACKQUOTE encaps_list TBACKQUOTE   { BackQuote($1,$2,$3) }
+ /*(* php 5.3 only *)*/
+ | T_FUNCTION is_reference TOPAR parameter_list TCPAR lexical_vars 
+   TOBRACE inner_statement_list TCBRACE 
+     { 
+       let params = ($3, $4, $5) in
+       let body = ($7, $8, $9) in
+
+       let ldef = {
+         l_tok = $1;
+         l_ref = $2;
+         l_params = params;
+         l_use = $6;
+         l_body = body;
+       }
+       in
+       Lambda ldef
+     }
+         
+ | internal_functions_in_yacc { $1 }
+
+
+ <<exprbis grammar rule hook>>
+@ 
+
+
+<<GRAMMAR expression>>=
+/*(*pad: why this name ? *)*/
+internal_functions_in_yacc:
+ | T_INCLUDE      expr 		       { Include($1,$2) }
+ | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
+ | T_REQUIRE      expr		       { Require($1,$2) }
+ | T_REQUIRE_ONCE expr		       { RequireOnce($1,$2) }
+
+ | T_ISSET TOPAR isset_variables TCPAR { Isset($1,($2,$3,$4)) }
+ | T_EMPTY TOPAR variable TCPAR	       { Empty($1,($2,$3,$4)) }
+
+ | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
+@ 
+
+<<GRAMMAR expression>>=
+/*(*----------------------------*)*/
+/*(* scalar *)*/
+/*(*----------------------------*)*/
+
+<<GRAMMAR scalar>>
+
+/*(*----------------------------*)*/
+/*(* variable *)*/
+/*(*----------------------------*)*/
+
+<<GRAMMAR variable>>
+@
+
+\subsection{Scalar}
+
+<<GRAMMAR scalar>>=
+scalar:
+ | common_scalar		{ C $1 }
+ | ident 			{ C (CName (Name $1)) }
+ | class_constant	        { ClassConstant $1 }
+
+ | TGUIL encaps_list TGUIL 	
+     { Guil ($1, $2, $3)}
+ | T_START_HEREDOC encaps_list T_END_HEREDOC 
+     { HereDoc ($1, $2, $3) }
+
+ /*(* generated by lexer for special case of ${beer}s. So it's really
+    * more a variable than a constant. So I've decided to inline this
+    * special case rule in encaps. Maybe this is too restrictive.
+    *)*/
+  /*(* | T_STRING_VARNAME {  raise Todo } *)*/
+@ 
+
+<<GRAMMAR scalar>>=
+static_scalar: /* compile-time evaluated scalars */
+ | common_scalar	 { StaticConstant $1 }
+ | ident 		 { StaticConstant (CName (Name $1)) }
+ | static_class_constant { StaticClassConstant $1 }
+
+ | TPLUS static_scalar	 { StaticPlus($1,$2) }
+ | TMINUS static_scalar	 { StaticMinus($1,$2) }
+ | T_ARRAY TOPAR static_array_pair_list TCPAR 
+     { StaticArray($1, ($2, $3, $4)) }
+
+ <<static_scalar grammar rule hook>>
+
+
+
+common_scalar:
+ | T_LNUMBER 			{ Int($1) }
+ | T_DNUMBER 			{ Double($1) }
+
+ | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
+
+ | T_LINE 			{ PreProcess(Line, $1) }
+ | T_FILE 			{ PreProcess(File, $1) }
+ | T_CLASS_C			{ PreProcess(ClassC, $1) }
+ | T_METHOD_C			{ PreProcess(MethodC, $1) }
+ | T_FUNC_C			{ PreProcess(FunctionC, $1) }
+
+ <<common_scalar grammar rule hook>>
+
+class_constant: qualifier ident { $1, (Name $2) }
+
+static_class_constant: class_constant { $1 } 
+@ 
+
+<<GRAMMAR scalar>>=
+/*(* can not factorize, otherwise shift/reduce conflict *)*/
+static_array_pair_list: static_array_pair_list_rev { List.rev $1 }
+
+non_empty_static_array_pair_list_rev:
+ | static_scalar                              
+     { [Left (StaticArraySingle $1)] }
+ | static_scalar T_DOUBLE_ARROW static_scalar
+     { [Left (StaticArrayArrow ($1,$2,$3))]}
+
+ <<repetitive non_empty_static_array_pair_list>>
+@
+
+\ifwantrepetitivecode
+<<repetitive non_empty_static_array_pair_list>>=
+ | non_empty_static_array_pair_list_rev TCOMMA
+     static_scalar 
+     { Left (StaticArraySingle $3)::Right $2::$1 }
+ | non_empty_static_array_pair_list_rev TCOMMA
+     static_scalar T_DOUBLE_ARROW static_scalar	
+     { Left (StaticArrayArrow ($3,$4,$5))::Right $2::$1 }
+@
+\fi
+
+
+\subsection{Variable}
+
+In the original grammar they use the term [[variable]] to actually
+refer to what I think would be best described by the term [[lvalue]].
+Indeed function calls or method calls are part of this category, 
+and it would be confusing for the user to consider such entity
+as ``variables''. So I've kept the term [[variable]] in the grammar,
+but in the AST I use a [[lvalue]] type.
+
+<<GRAMMAR variable>>=
+variable: variable2 { variable2_to_lvalue $1 }
+@ 
+
+<<GRAMMAR variable>>=
+variable2:
+ | base_variable_with_function_calls 
+     { Variable ($1,[]) }
+ | base_variable_with_function_calls 
+     T_OBJECT_OPERATOR object_property method_or_not 
+     variable_properties
+     { Variable ($1, ($2, $3, $4)::$5) }
+
+base_variable_with_function_calls:
+ | base_variable {  BaseVar $1 }
+ | function_call {  $1 }
+
+base_variable:
+ |            variable_without_objects                       { None,    $1 }
+ | qualifier  variable_without_objects /*(*static_member*)*/ { Some $1, $2 }
+
+
+variable_without_objects:
+ |                             reference_variable { [], $1 }
+ | simple_indirect_reference   reference_variable { $1, $2 }
+
+reference_variable:
+ | compound_variable			      { $1 }
+ | reference_variable TOBRA dim_offset TCBRA  { VArrayAccess2($1, ($2,$3,$4)) }
+ | reference_variable TOBRACE expr TCBRACE    { VBraceAccess2($1, ($2,$3,$4)) }
+
+compound_variable:
+ | T_VARIABLE			{ Var2 (DName $1, Ast_php.noScope()) }
+ | TDOLLAR TOBRACE expr TCBRACE	{ VDollar2 ($1, ($2, $3, $4)) }
+
+
+@ 
+
+<<GRAMMAR variable>>=
+simple_indirect_reference:
+ | TDOLLAR                           { [Dollar $1] }
+ | simple_indirect_reference TDOLLAR { $1 ++ [Dollar $2] }
+
+dim_offset:
+ | /*(*empty*)*/   { None }
+ | expr		   { Some $1 }
+@ 
+
+<<GRAMMAR variable>>=
+r_variable: variable { $1 }
+w_variable: variable { $1 }
+rw_variable: variable { $1 }
+@ 
+
+
+<<GRAMMAR variable>>=
+/*(*----------------------------*)*/
+/*(* function call *)*/
+/*(*----------------------------*)*/
+function_call: function_head TOPAR function_call_parameter_list TCPAR
+  { FunCall ($1, ($2, $3, $4)) }
+
+ <<function_call grammar rule hook>>
+
+/*(* cant factorize the rule with a qualifier_opt because it leads to
+   * many conflicts :( *)*/
+function_head:
+ | ident                         { FuncName (None, Name $1) }
+ | variable_without_objects      { FuncVar  (None, $1) }
+ | qualifier    ident            { FuncName(Some $1, Name $2) }
+ | qualifier    variable_without_objects  { FuncVar(Some $1, $2) }
+@ 
+
+<<GRAMMAR variable>>=
+/*(* can not factorize, otherwise shift/reduce conflict *)*/
+non_empty_function_call_parameter_list:
+ | variable			{ [Left (Arg (mk_e (Lv $1)))] }
+ | expr_without_variable	{ [Left (Arg ($1))] }
+ | TAND w_variable 		{ [Left (ArgRef($1,$2))] }
+
+ <<repetitive non_empty_function_call_parameter_list>>
+
+@ 
+
+\ifwantrepetitivecode
+<<repetitive non_empty_function_call_parameter_list>>=
+ | non_empty_function_call_parameter_list TCOMMA    variable
+     { $1 ++ [Right $2; Left (Arg (mk_e (Lv $3)))] }
+ | non_empty_function_call_parameter_list TCOMMA    expr_without_variable	
+     { $1 ++ [Right $2; Left (Arg ($3))] }
+ | non_empty_function_call_parameter_list TCOMMA    TAND w_variable
+     { $1 ++ [Right $2; Left (ArgRef($3,$4))] }
+@
+\fi
+
+
+<<GRAMMAR variable>>=
+/*(*----------------------------*)*/
+/*(* list/array *)*/
+/*(*----------------------------*)*/
+
+assignment_list_element:
+ | variable				{ ListVar $1 }
+ | T_LIST TOPAR assignment_list TCPAR	{ ListList ($1, ($2, $3, $4)) }
+ | /*(*empty*)*/			{ ListEmpty }
+@ 
+
+<<GRAMMAR variable>>=
+/*(* can not factorize, otherwise shift/reduce conflict *)*/
+array_pair_list: array_pair_list_rev { List.rev $1 }
+non_empty_array_pair_list_rev:
+ | expr 				{ [Left (ArrayExpr $1)] }
+ | TAND w_variable 			{ [Left (ArrayRef ($1,$2))] }
+ | expr T_DOUBLE_ARROW   expr	        { [Left (ArrayArrowExpr($1,$2,$3))] }
+ | expr T_DOUBLE_ARROW   TAND w_variable  { [Left (ArrayArrowRef($1,$2,$3,$4))] }
+
+ <<repetitive non_empty_array_pair_list>>
+@ 
+
+
+\ifwantrepetitivecode
+<<repetitive non_empty_array_pair_list>>=
+ | non_empty_array_pair_list_rev TCOMMA   expr			
+     { Left (ArrayExpr $3)::Right $2::$1 }
+ | non_empty_array_pair_list_rev TCOMMA   TAND w_variable 
+     { Left (ArrayRef ($3,$4))::Right $2::$1 }
+ | non_empty_array_pair_list_rev TCOMMA   expr T_DOUBLE_ARROW expr	
+     { Left (ArrayArrowExpr($3,$4,$5))::Right $2::$1 }
+ | non_empty_array_pair_list_rev TCOMMA   expr T_DOUBLE_ARROW TAND w_variable 
+     { Left (ArrayArrowRef($3,$4,$5,$6))::Right $2::$1 }
+@
+\fi
+
+
+<<GRAMMAR variable>>=
+
+/*(*----------------------------*)*/
+/*(* XHP embeded html *)*/
+/*(*----------------------------*)*/
+xhp_html:
+ | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG 
+     { Xhp ($1, $2, $3, $4, $5)  }
+ | T_XHP_OPEN_TAG xhp_attributes T_XHP_SLASH_GT
+     { XhpSingleton ($1, $2, $3) }
+
+xhp_child:
+ | T_XHP_TEXT           { XhpText $1 }
+ | xhp_html             { XhpNested $1 }
+ | TOBRACE expr TCBRACE { XhpExpr ($1, $2, $3) }
+
+xhp_attribute:
+ | T_XHP_ATTR TEQ xhp_attribute_value { $1, $2, $3 }
+
+xhp_attribute_value:
+ | TGUIL encaps_list TGUIL { XhpAttrString ($1, $2, $3) }
+ | TOBRACE expr TCBRACE    { XhpAttrExpr ($1, $2, $3) }
+
+
+/*(*----------------------------*)*/
+/*(* auxillary bis *)*/
+/*(*----------------------------*)*/
+
+exit_expr:
+ | /*(*empty*)*/	{ None }
+ | TOPAR TCPAR		{ Some($1, None, $2) }
+ | TOPAR expr TCPAR	{ Some($1, Some $2, $3) }
+
+@
+
+\section{Function declaration}
+
+<<GRAMMAR function declaration>>=
+function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
+
+unticked_function_declaration_statement:
+  T_FUNCTION is_reference ident
+  TOPAR parameter_list TCPAR 
+  TOBRACE inner_statement_list TCBRACE
+  { 
+    let params = ($4, $5, $6) in
+    let body = ($7, $8, $9) in
+    ({
+      f_tok = $1;
+      f_ref = $2;
+      f_name = Name $3;
+      f_params = params;
+      f_body = body;
+      f_type = Ast_php.noFtype();
+    })
+  }
+@ 
+
+<<GRAMMAR function declaration>>=
+/*(* can not factorize, otherwise shift/reduce conflict *)*/
+non_empty_parameter_list:
+ | optional_class_type T_VARIABLE			
+     { let p = mk_param $1 $2 in [Left p] }
+ | optional_class_type TAND T_VARIABLE			
+     { let p = mk_param $1 $3 in [Left {p with p_ref = Some $2}] }
+ | optional_class_type T_VARIABLE         TEQ static_scalar
+     { let p = mk_param $1 $2 in [Left {p with p_default = Some ($3,$4)}] }
+ | optional_class_type TAND T_VARIABLE    TEQ static_scalar
+     { let p = mk_param $1 $3 in 
+       [Left {p with p_ref = Some $2; p_default = Some ($4, $5)}]
+     }
+
+ <<repetitive non_empty_parameter_list>>
+@ 
+
+\ifwantrepetitivecode
+<<repetitive non_empty_parameter_list>>=
+ | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE 	
+     { let p = mk_param $3 $4 in $1 ++ [Right $2; Left p] }
+ | non_empty_parameter_list TCOMMA  optional_class_type TAND T_VARIABLE	
+     { let p = mk_param $3 $5 in $1 ++ [Right $2; Left {p with p_ref = Some $4}] }
+ | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE TEQ static_scalar 	
+     { let p = mk_param $3 $4 in $1 ++ [Right $2; Left {p with p_default = Some ($5,$6)}] }
+ | non_empty_parameter_list TCOMMA  optional_class_type TAND T_VARIABLE	 TEQ static_scalar 
+     { let p = mk_param $3 $5 in 
+       $1 ++ [Right $2; Left {p with p_ref = Some $4; p_default = Some ($6, $7)}]
+     }
+@
+\fi
+
+<<GRAMMAR function declaration>>=
+optional_class_type:
+ | /*(*empty*)*/	{ None }
+ | ident		{ Some (Hint (Name $1)) }
+ | T_ARRAY		{ Some (HintArray $1) }
+
+ | T_XHP_COLONID_DEF    { Some (Hint (XhpName $1)) }
+
+
+is_reference:
+ | /*(*empty*)*/  { None }
+ | TAND		  { Some $1 }
+
+/*(* PHP 5.3 *)*/
+lexical_vars:
+ | /*(*empty*)*/  { None }
+ | T_USE TOPAR lexical_var_list TCPAR { 
+     Some ($1, ($2, ($3 +> List.map (function
+     | Right info -> Right info
+     | Left (a,b) -> Left (LexicalVar (a,b)))), $4)) }
+
+lexical_var_list:
+ | T_VARIABLE				{ [Left (None, DName $1)] }
+ | TAND T_VARIABLE			{ [Left (Some $1, DName $2)] }
+ | lexical_var_list TCOMMA T_VARIABLE       { $1 ++ [Right $2; Left (None, DName $3)]  }
+ | lexical_var_list TCOMMA TAND T_VARIABLE  { $1 ++ [Right $2; Left (Some $3, DName $4)] }
+
+
+@ 
+
+\section{Class declaration}
+
+<<GRAMMAR class declaration>>=
+class_declaration_statement: unticked_class_declaration_statement { $1 }
+
+unticked_class_declaration_statement:
+ | class_entry_type class_name 
+     extends_from implements_list
+     TOBRACE  class_statement_list TCBRACE 
+     { Left { 
+         c_type = $1;
+         c_name = $2;
+         c_extends = $3;
+         c_implements = $4;
+         c_body = $5, $6, $7;
+       }
+     }
+ | interface_entry class_name
+     interface_extends_list
+     TOBRACE class_statement_list TCBRACE 
+     { Right {
+         i_tok = $1;
+         i_name = $2;
+         i_extends = $3;
+         i_body = $4, $5, $6;
+       }
+     }
+@ 
+
+<<GRAMMAR class declaration>>=
+class_name: 
+ | ident { Name $1 }
+ <<class_name grammar rule hook>>
+
+class_entry_type:
+ | T_CLASS  	      { ClassRegular $1 }
+ | T_ABSTRACT T_CLASS { ClassAbstract ($1, $2) }
+ | T_FINAL    T_CLASS { ClassFinal ($1, $2) }
+
+interface_entry: 
+ | T_INTERFACE		{ $1 }
+@ 
+
+<<GRAMMAR class declaration>>=
+extends_from:
+ | /*(*empty*)*/			{ None }
+ | T_EXTENDS fully_qualified_class_name	{ Some ($1, $2) }
+
+interface_extends_list:
+ | /*(*empty*)*/            { None }
+ | T_EXTENDS interface_list { Some($1,$2) }
+
+implements_list:
+ | /*(*empty*)*/               { None }
+ | T_IMPLEMENTS interface_list { Some($1, $2) }
+@ 
+
+
+<<GRAMMAR class declaration>>=
+/*(*----------------------------*)*/
+/*(* class statement *)*/
+/*(*----------------------------*)*/
+
+class_statement:
+ | T_CONST class_constant_declaration            TSEMICOLON 
+     { ClassConstants($1, $2, $3) }
+ | variable_modifiers class_variable_declaration TSEMICOLON 
+     { ClassVariables($1, $2, $3) }
+ | method_modifiers T_FUNCTION is_reference ident  
+     TOPAR parameter_list TCPAR 
+     method_body 
+     { Method {
+         m_modifiers = $1;
+         m_tok = $2;
+         m_ref = $3;
+         m_name = Name $4;
+         m_params = ($5, $6, $7);
+         m_body = $8;
+       }
+     }
+
+ | T_XHP_ATTRIBUTE xhp_attribute_decls TSEMICOLON 
+     { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
+ | T_XHP_CHILDREN  xhp_children_decl  TSEMICOLON 
+     { XhpDecl (XhpChildrenDecl ($1, $2, $3)) }
+ | T_XHP_CATEGORY xhp_category_list TSEMICOLON 
+     { XhpDecl (XhpCategoriesDecl ($1, $2, $3)) }
+
+
+@ 
+
+<<GRAMMAR class declaration>>=
+class_constant_declaration:
+ | ident TEQ static_scalar	
+     { [Left ((Name $1), ($2, $3))] }
+ | class_constant_declaration TCOMMA      ident TEQ static_scalar	
+     { $1 ++ [Right $2; Left ((Name $3, ($4, $5)))] }
+
+
+variable_modifiers:
+ | T_VAR				{ NoModifiers $1 }
+ | non_empty_member_modifiers		{ VModifiers $1 }
+
+
+/*(* can not factorize, otherwise shift/reduce conflict *)*/
+class_variable_declaration:
+ | T_VARIABLE			{ [Left (DName $1, None)] }
+ | T_VARIABLE TEQ static_scalar	{ [Left (DName $1, Some ($2, $3))] }
+
+ <<repetitive class_variable_declaration with comma>>
+@ 
+
+\ifwantrepetitivecode
+<<repetitive class_variable_declaration with comma>>=
+ | class_variable_declaration TCOMMA T_VARIABLE				
+     { $1 ++ [Right $2; Left (DName $3, None)] }
+ | class_variable_declaration TCOMMA T_VARIABLE TEQ static_scalar	
+     { $1 ++ [Right $2; Left (DName $3, Some ($4, $5))] }
+@
+\fi
+
+<<GRAMMAR class declaration>>=
+member_modifier:
+ | T_PUBLIC				{ Public,($1) }
+ | T_PROTECTED				{ Protected,($1) }
+ | T_PRIVATE				{ Private,($1) }
+
+ | T_STATIC				{ Static,($1) }
+
+ | T_ABSTRACT				{ Abstract,($1) }
+ | T_FINAL				{ Final,($1) }
+
+
+method_body:
+ | TSEMICOLON                   	{ AbstractMethod $1 }
+ | TOBRACE inner_statement_list TCBRACE	{ MethodBody ($1, $2, $3) }
+
+/*(*----------------------------*)*/
+/*(* XHP attributes *)*/
+/*(*----------------------------*)*/
+/*(* mostly a copy paste of the original XHP grammar *)*/
+
+xhp_attribute_decl:
+ | T_XHP_COLONID_DEF 
+     { XhpAttrInherit $1 }
+ | xhp_attribute_decl_type xhp_attr_name xhp_attribute_default
+     xhp_attribute_is_required 
+     { XhpAttrDecl ($1, ((Ast_php.str_of_info $2, $2)), $3, $4) }
+
+/*(* In the original grammar each types, e.g. float/string/bool/... 
+   * had their special token. I abuse T_IDENT here, except for 
+   * enum which needs a special grammar rule.
+   *)*/
+xhp_attribute_decl_type:
+ | class_name   { XhpAttrType $1 }
+ | T_VAR        { XhpAttrType (Name (Ast_php.str_of_info $1, $1)) }
+ | T_ARRAY      { XhpAttrType (Name (Ast_php.str_of_info $1, $1)) }
+ | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE 
+     { XhpAttrEnum ($1, ($2, $3, $4)) }
+
+xhp_attribute_default:
+ | /*(*empty*)*/     { None }
+ | TEQ common_scalar { Some ($1, $2) }
+ /*(* for constants, e.g. foo = null *)*/
+ | TEQ T_IDENT       { Some ($1, (CName (Name $2))) }
+
+xhp_attribute_is_required:
+ | /*(*empty*)*/  { None }
+ | T_XHP_REQUIRED { Some $1 }
+
+xhp_enum:
+ | common_scalar { $1 }
+
+/*(* was called xhp_label_pass in original grammar *)*/
+xhp_attr_name:
+ | xhp_attr_name_atom { $1 }
+ /*(* ugly, but harder to lex foo-name as a single token without
+    * introducing lots of ambiguities. It's ok for :foo:bar but not
+    * for attribute name.
+    * 
+    * todo? could check that there is no whitespace between those
+    * tokens.
+    *)*/
+ | xhp_attr_name TMINUS xhp_attr_name_atom 
+     { 
+       let s = Ast_php.str_of_info $1 ^ 
+         Ast_php.str_of_info $2 ^ Ast_php.str_of_info $3
+       in
+       Ast_php.rewrap_str s $1
+     }
+
+xhp_attr_name_atom:
+ /*(* could put T_IDENT but even XHP keywords are accepted as XHP attributes*)*/
+ | ident { snd $1 }
+ /*(* Just like it's ok (but not good IMHO) to use XHP keywords in place
+    * of regular PHP idents, it's ok to use PHP keywords in place
+    * of XHP attribute names (but again not good IMHO).
+    * 
+    * Right now I keep the list of tokens accepted limited to
+    * what I've found in our codebase. In theory I should put
+    * there all keywords mentionned in Lexer_php.keywords_table
+    * that do not introduce any conflict.
+    * 
+    * todo? emit a warning when the user use PHP keywords for XHP attribute ?
+    *)*/
+ | T_LIST { $1 } 
+ | T_ARRAY { $1 } 
+     
+  | T__AT { $1 } 
+  | T_NEW { $1 } 
+  | T_CLONE { $1 } 
+  | T_INSTANCEOF { $1 } 
+  | T_INCLUDE { $1 } 
+  | T_INCLUDE_ONCE { $1 } 
+  | T_REQUIRE { $1 } 
+  | T_REQUIRE_ONCE { $1 } 
+  | T_EVAL { $1 } 
+      
+  | T_ECHO { $1 } 
+  | T_PRINT { $1 } 
+  | T_IF { $1 } 
+  | T_ELSE { $1 } 
+  | T_ELSEIF { $1 } 
+  | T_ENDIF { $1 } 
+  | T_DO { $1 } 
+  | T_WHILE { $1 } 
+  | T_ENDWHILE { $1 } 
+  | T_FOR { $1 } 
+  | T_ENDFOR { $1 } 
+  | T_FOREACH { $1 } 
+  | T_ENDFOREACH { $1 } 
+  | T_SWITCH { $1 } 
+  | T_ENDSWITCH { $1 } 
+  | T_CASE { $1 } 
+  | T_DEFAULT { $1 } 
+  | T_BREAK { $1 } 
+  | T_CONTINUE { $1 } 
+  | T_RETURN { $1 } 
+  | T_TRY { $1 } 
+  | T_CATCH { $1 } 
+  | T_THROW { $1 } 
+  | T_EXIT { $1 } 
+  | T_DECLARE { $1 } 
+  | T_ENDDECLARE { $1 } 
+  | T_USE { $1 } 
+  | T_GLOBAL { $1 } 
+  | T_AS { $1 } 
+  | T_FUNCTION { $1 } 
+  | T_CONST { $1 } 
+  | T_STATIC { $1 } 
+  | T_ABSTRACT { $1 } 
+  | T_FINAL { $1 } 
+  | T_PRIVATE { $1 } 
+  | T_PROTECTED { $1 } 
+  | T_PUBLIC { $1 } 
+  | T_VAR { $1 } 
+  | T_UNSET { $1 } 
+  | T_ISSET { $1 } 
+  | T_EMPTY { $1 } 
+  | T_HALT_COMPILER { $1 } 
+  | T_CLASS { $1 } 
+  | T_INTERFACE { $1 } 
+  | T_EXTENDS { $1 } 
+  | T_IMPLEMENTS { $1 } 
+
+
+
+/*(*----------------------------*)*/
+/*(* XHP children *)*/
+/*(*----------------------------*)*/
+/*(* Mostly a copy paste of the original XHP grammar.
+   * Not sure why it needs to be that complicated. We could factorize
+   * rules for instance for the parenthesis stuff.
+   *)*/
+xhp_children_decl:
+ | T_XHP_ANY { XhpChildAny $1 }
+ | T_EMPTY   { XhpChildEmpty $1 }
+ | xhp_children_paren_expr { $1 }
+
+xhp_children_paren_expr:
+ | TOPAR xhp_children_decl_expr TCPAR 
+     { XhpChildParen ($1, $2, $3) }  
+ | TOPAR xhp_children_decl_expr TCPAR TMUL 
+     { XhpChildMul (XhpChildParen ($1, $2, $3), $4) }  
+ | TOPAR xhp_children_decl_expr TCPAR TQUESTION 
+     { XhpChildOption (XhpChildParen ($1, $2, $3), $4) }  
+ | TOPAR xhp_children_decl_expr TCPAR TPLUS 
+     { XhpChildPlus (XhpChildParen ($1, $2, $3), $4) }  
+
+xhp_children_decl_expr:
+ | xhp_children_paren_expr { $1 }
+ | xhp_children_decl_tag { $1 }
+ | xhp_children_decl_tag TMUL      { XhpChildMul ($1, $2)  }
+ | xhp_children_decl_tag TQUESTION { XhpChildOption ($1, $2) }
+ | xhp_children_decl_tag TPLUS     { XhpChildPlus ($1, $2) }
+
+ | xhp_children_decl_expr TCOMMA xhp_children_decl_expr 
+     { XhpChildSequence ($1, $2, $3) }
+ | xhp_children_decl_expr TOR xhp_children_decl_expr 
+     { XhpChildAlternative ($1, $2, $3) }
+
+xhp_children_decl_tag:
+ | T_XHP_ANY           { XhpChildAny ($1) }
+ | T_XHP_PCDATA        { XhpChildPcdata ($1) }
+ | T_XHP_COLONID_DEF   { XhpChild $1 }
+ | T_XHP_PERCENTID_DEF { XhpChildCategory $1 }
+
+/*(*----------------------------*)*/
+/*(* XHP category *)*/
+/*(*----------------------------*)*/
+
+xhp_category:
+ | T_XHP_PERCENTID_DEF { $1 }
+
+
+
+@ 
+
+\section{Class bis}
+
+<<GRAMMAR class bis>>=
+class_name_reference:
+ | ident			{ ClassNameRefStatic (Name $1) }
+ | dynamic_class_name_reference	{ ClassNameRefDynamic $1 }
+
+ | T_XHP_COLONID_DEF { ClassNameRefStatic (XhpName $1) }
+
+
+
+dynamic_class_name_reference:
+ | base_variable_bis { ($1, []) }
+ | base_variable_bis 
+     T_OBJECT_OPERATOR object_property 
+     dynamic_class_name_variable_properties
+     { ($1, ($2, $3)::$4) }
+
+
+base_variable_bis: base_variable { basevar_to_variable $1 }
+
+method_or_not:
+  | TOPAR function_call_parameter_list TCPAR    { Some ($1, $2, $3) }
+  | /*(*empty*)*/ { None }
+
+ctor_arguments:
+  | TOPAR function_call_parameter_list TCPAR	{ Some ($1, $2, $3) }
+  | /*(*empty*)*/ { None }
+@ 
+
+<<GRAMMAR class bis>>=
+/*(*----------------------------*)*/
+/*(* object property, variable property *)*/
+/*(*----------------------------*)*/
+
+object_property:
+ | object_dim_list          { ObjProp $1 }
+ | variable_without_objects_bis { ObjPropVar $1 }
+
+variable_without_objects_bis: variable_without_objects 
+  { vwithoutobj_to_variable $1 }
+
+/*(* quite similar to reference_variable, but without the '$' *)*/
+object_dim_list:
+ | variable_name { $1 }
+ | object_dim_list TOBRA dim_offset TCBRA	{ OArrayAccess($1, ($2,$3,$4)) }
+ | object_dim_list TOBRACE expr TCBRACE		{ OBraceAccess($1, ($2,$3,$4)) }
+
+variable_name:
+ | T_IDENT		{ OName (Name $1) }
+ | TOBRACE expr TCBRACE	{ OBrace ($1,$2,$3) }
+
+
+
+variable_property: T_OBJECT_OPERATOR object_property method_or_not
+  { $1, $2, $3 }
+
+dynamic_class_name_variable_property: T_OBJECT_OPERATOR object_property
+  { $1, $2 }
+
+@
+
+\section{Namespace}
+
+<<GRAMMAR namespace>>=
+
+ident: 
+ | T_IDENT { $1 }
+
+/*(* xhp: it is ok to use XHP keywords in place where regular PHP names
+   * are expected as in 'function children($x) { ... }'.
+   * 
+   * We extend here the grammar to support those "overloading". An 
+   * alternative would be to extend the lexer to only lex XHP keywords 
+   * in certain context, but this would force to share some states between
+   * the lexer and parser.
+   * 
+   * todo? emit a warning when the user use XHP keywords for regular idents ?
+   *)*/
+ | T_XHP_ATTRIBUTE { Ast_php.str_of_info $1, $1 }
+ | T_XHP_CATEGORY  { Ast_php.str_of_info $1, $1 }
+ | T_XHP_CHILDREN  { Ast_php.str_of_info $1, $1 }
+
+ | T_XHP_ENUM  { Ast_php.str_of_info $1, $1 }
+ | T_XHP_ANY  { Ast_php.str_of_info $1, $1 }
+ | T_XHP_PCDATA  { Ast_php.str_of_info $1, $1 }
+
+qualifier: 
+ | fully_qualified_class_name TCOLCOL { 
+     match $1 with
+     | Name ("self", info) -> Self(info, $2)
+     | Name ("parent", info) -> Parent(info, $2)
+     | _ ->
+         Qualifier ($1, $2) 
+   }
+
+fully_qualified_class_name: 
+ | ident { Name $1 }
+ <<fully_qualified_class_name grammar rule hook>>
+
+@
+
+\section{Encaps}
+
+<<GRAMMAR encaps>>=
+encaps:
+ | T_ENCAPSED_AND_WHITESPACE { EncapsString $1 }
+
+ | T_VARIABLE                                   
+     { 
+       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+       let basevar = None, ([], refvar) in
+       let basevarbis = BaseVar basevar in
+       let var = Variable (basevarbis, []) in
+       EncapsVar (variable2_to_lvalue var)
+     }
+ | T_VARIABLE TOBRA encaps_var_offset TCBRA	
+     { 
+       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+       let dimoffset = Some (mk_e $3) in
+       let refvar = VArrayAccess2(refvar, ($2, dimoffset, $4)) in
+       
+       let basevar = None, ([], refvar) in
+       let basevarbis = BaseVar basevar in
+       let var = Variable (basevarbis, []) in
+       EncapsVar (variable2_to_lvalue var)
+     }
+ | T_VARIABLE T_OBJECT_OPERATOR T_IDENT        
+     { 
+       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+       let basevar = None, ([], refvar) in
+       let basevarbis = BaseVar basevar in
+
+       let prop_string = ObjProp (OName (Name $1)) in
+       let obj_prop = ($2, prop_string, None) in
+       let var = Variable (basevarbis, [obj_prop]) in
+       EncapsVar (variable2_to_lvalue var)
+     }
+
+ /*(* for ${beer}s. Note that this rule does not exist in the original PHP
+    * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
+    * is covered. The case with only a T_STRING_VARNAME is handled 
+    * originally in the scalar rule, but it does not makes sense to me
+    * as it's really more a variable than a scaler. So for now I have
+    * defined this rule. maybe it's too restrictive, we'll see.
+    *)*/
+ | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME TCBRACE 
+     { 
+       (* this is not really a T_VARIABLE, bit it's still conceptually
+        * a variable so we build it almost like above
+        *)
+       let refvar = (Var2 (DName $2, Ast_php.noScope())) in
+       let basevar = None, ([], refvar) in
+       let basevarbis = BaseVar basevar in
+       let var = Variable (basevarbis, []) in
+       EncapsDollarCurly ($1, variable2_to_lvalue var, $3)
+     }
+
+ | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE 
+     {  
+       let refvar = (Var2 (DName $2, Ast_php.noScope())) in
+       let dimoffset = Some ($4) in
+       let refvar = VArrayAccess2(refvar, ($3, dimoffset, $5)) in
+       
+       let basevar = None, ([], refvar) in
+       let basevarbis = BaseVar basevar in
+       let var = Variable (basevarbis, []) in
+       EncapsDollarCurly ($1, variable2_to_lvalue var, $6)
+     }
+
+ /*(* for {$beer}s *)*/
+ | T_CURLY_OPEN variable TCBRACE 
+     { EncapsCurly($1, $2, $3) }
+
+ /*(* for ? *)*/
+ | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE      
+     { EncapsExpr ($1, $2, $3) }
+@ 
+
+<<GRAMMAR encaps>>=
+encaps_var_offset:
+ | T_IDENT	{ 
+     (* It looks like an ident but as we are in encaps_var_offset, 
+      * php allows array access inside strings to omit the quote
+      * around fieldname, so it's actually really a Constant (String)
+      * rather than an ident, as we usually do for other T_IDENT
+      * cases.
+      *)
+     let cst = String $1 in (* will not have enclosing "'"  as usual *)
+     Sc (C cst)
+   }
+ | T_VARIABLE	{ 
+       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+       let basevar = None, ([], refvar) in
+       let basevarbis = BaseVar basevar in
+       let var = Variable (basevarbis, []) in
+       Lv (variable2_to_lvalue var)
+   }
+ | T_NUM_STRING	{
+     (* the original php lexer does not return some numbers for 
+      * offset of array access inside strings. Not sure why ...
+      * TODO?
+      *)
+     let cst = String $1 in (* will not have enclosing "'"  as usual *)
+     Sc (C cst)
+   }
+
+
+@
+
+\section{Pattern extensions}
+
+<<GRAMMAR tokens hook>>=
+%token <Ast_php.info> TDOTS
+@
+
+<<exprbis grammar rule hook>>=
+| TDOTS { EDots $1 }
+
+/*(* xhp: do not put in 'expr', otherwise can't have xhp 
+   * in function arguments
+   *)*/
+| xhp_html { XhpHtml $1 }
+
+@
+
+
+\section{XHP extensions}
+
+<<function_call grammar rule hook>>=
+@
+
+<<GRAMMAR tokens hook>>=
+
+@ 
+
+<<class_name grammar rule hook>>=
+ /*(* xhp: an XHP element def *)*/
+ | T_XHP_COLONID_DEF { XhpName $1 }
+@
+
+<<fully_qualified_class_name grammar rule hook>>=
+ /*(* xhp: an XHP element use *)*/
+ | T_XHP_COLONID_DEF { XhpName $1 }
+@
+
+
+%< <GRAMMAR expression> >=
+% /*(* xhp: *)*/
+% | TSMALLER T_STRING TDIV TGREATER { 
+%     (Scalar (Constant (CName (Name $2)))) 
+%   }
+%@ 
+
+
+\section{Xdebug extensions}
+
+<<static_scalar grammar rule hook>>=
+ /* xdebug TODO AST  */
+ | TDOTS { XdebugStaticDots  }
+@
+
+<<common_scalar grammar rule hook>>=
+ | T_CLASS_XDEBUG class_name TOBRACE class_statement_list TCBRACE { 
+     XdebugClass ($2, $4)
+   }
+ | T_CLASS_XDEBUG class_name TOBRACE TDOTS TCBRACE { 
+     XdebugClass ($2, [])
+
+   }
+ | T_CLASS_XDEBUG class_name TOBRACE TDOTS TSEMICOLON TCBRACE { 
+     XdebugClass ($2, [])
+   }
+ | T_RESOURCE_XDEBUG  { 
+     XdebugResource
+   }
+@
+
+<<GRAMMAR tokens hook>>=
+%token <Ast_php.info> T_CLASS_XDEBUG
+%token <Ast_php.info> T_RESOURCE_XDEBUG
+@
+
+
+\section{Prelude}
+\label{section:grammar-prelude}
+
+<<GRAMMAR prelude>>=
+%{
+(* src: ocamlyaccified from zend_language_parser.y in PHP source code.
+ * 
+ <<Zend copyright>>
+ * 
+ * /* Id: zend_language_parser.y 263383 2008-07-24 11:47:14Z dmitry */
+ * 
+ * LALR shift/reduce conflicts and how they are resolved:
+ *
+ *  - 2 shift/reduce conflicts due to the dangeling elseif/else ambiguity.  
+ *  Solved by shift.
+ * 
+ * %pure_parser
+ * %expect 2
+ * 
+ *)
+open Common
+
+open Ast_php
+open Parser_php_mly_helper
+
+%}
+
+@ 
+
+<<Zend copyright>>=
+ * +----------------------------------------------------------------------+
+ * | Zend Engine                                                          |
+ * +----------------------------------------------------------------------+
+ * | Copyright (c) 1998-2006 Zend Technologies Ltd. (http://www.zend.com) |
+ * +----------------------------------------------------------------------+
+ * | This source file is subject to version 2.00 of the Zend license,     |
+ * | that is bundled with this package in the file LICENSE, and is        |
+ * | available through the world-wide-web at the following url:           |
+ * | http://www.zend.com/license/2_00.txt.                                |
+ * | If you did not receive a copy of the Zend license and are unable to  |
+ * | obtain it through the world-wide-web, please send a note to          |
+ * | license@zend.com so we can mail you a copy immediately.              |
+ * +----------------------------------------------------------------------+
+ * | Authors: Andi Gutmans <andi@zend.com>                                |
+ * |          Zeev Suraski <zeev@zend.com>                                |
+ * +----------------------------------------------------------------------+
+@ 
+
+% this was originally directly included above, but syncweb does not
+% handle well files that requires two different forms of comment so 
+% put the ML code in its own .ml and do the open
+
+<<parser_php_mly_helper.ml>>=
+open Common
+
+open Ast_php
+
+(*****************************************************************************)
+(* Parse helpers functions *)
+(*****************************************************************************)
+<<function top_statements_to_toplevels>>
+
+(*****************************************************************************)
+(* Variable original type *)
+(*****************************************************************************)
+<<type variable2>>
+
+<<variable2 to variable functions>>
+
+(*****************************************************************************)
+(* XHP *)
+(*****************************************************************************)
+let failwith_xhp_ambiguity_colon info =
+  let err = 
+    "XHP: ambiguity on ':', please put a space after the colon in " ^
+      Ast_php.string_of_info info
+  in
+  (*failwith err*)
+  pr2 err;
+  raise (Parsing.Parse_error )
+
+let failwith_xhp_ambiguity_percent info =
+  let err = 
+    "XHP: ambiguity on '%', please put a space after the percent in " ^
+      Ast_php.string_of_info info
+  in
+  (*failwith err*)
+  pr2 err;
+  raise (Parsing.Parse_error )
+
+(*****************************************************************************)
+(* shortcuts *)
+(*****************************************************************************)
+<<AST builder>>
+@ 
+
+
+
+<<type variable2>>=
+(* This type is only used for now during parsing time. It was originally
+ * fully part of the PHP AST but it makes some processing like typing
+ * harder with all the special cases. This type is more precise 
+ * than the one currently in the AST but it's not worthwhile the
+ * extra complexity.
+ *)
+type variable2 =
+  | Variable of base_var_and_funcall * obj_access list
+
+  and base_var_and_funcall = 
+    | BaseVar of base_variable
+    | FunCall of func_head * argument comma_list paren
+
+    and base_variable = qualifier option * var_without_obj
+      and var_without_obj = indirect list * ref_variable
+
+      and ref_variable = 
+        | Var2 of dname * Scope_php.phpscope ref  (* semantic: *)
+        | VDollar2 of tok * expr brace
+        | VArrayAccess2 of ref_variable * expr option bracket
+        | VBraceAccess2 of ref_variable * expr brace
+
+
+    and func_head = 
+      (* static function call (or mostly static because in php
+       * you can redefine functions ...)  *)
+      | FuncName of qualifier option * name
+      (* dynamic function call *)
+      | FuncVar  of qualifier option * var_without_obj
+@ 
+
+<<variable2 to variable functions>>=
+let mkvar var = var, noTypeVar()
+
+let method_object_simple x = 
+  match x with
+  | ObjAccess(var, (t1, obj, argsopt)) ->
+      (match obj, argsopt with
+      | ObjProp (OName name), Some args ->
+          (* todo? do special case when var is a Var ? *)
+          MethodCallSimple (var, t1, name, args)
+      | ObjProp (OName name), None ->
+          ObjAccessSimple (var, t1, name)
+      | _ -> x
+      )          
+  | _ -> 
+      raise Impossible
+
+let rec variable2_to_lvalue var = 
+  match var with
+  | Variable (basevar, objs) -> 
+      let v = basevarfun_to_variable basevar in
+      (* TODO left ? right ? *)
+      objs +> List.fold_left (fun acc obj ->
+        mkvar (method_object_simple (ObjAccess (acc, obj)))
+      ) v
+
+and basevarfun_to_variable basevarfun = 
+  match basevarfun with
+  | BaseVar basevar ->
+      basevar_to_variable basevar
+  | FunCall (head, args) ->
+      let v = 
+      (match head with
+      | FuncName (qopt, name) -> 
+          (match qopt with
+          | None -> 
+              FunCallSimple (name, args)
+          | Some qualifier -> 
+              StaticMethodCallSimple (qualifier, name, args)
+          )
+      | FuncVar (qopt, vwithoutobj) ->
+          FunCallVar (qopt, vwithoutobj_to_variable vwithoutobj, args)
+      )
+      in
+      mkvar v
+
+
+and basevar_to_variable basevar =
+  let (qu_opt, vwithoutobj) = basevar in
+  let v = vwithoutobj_to_variable vwithoutobj in
+  (match qu_opt with
+  | None -> v
+  | Some qu -> mkvar (VQualifier (qu, v))
+  )
+
+and vwithoutobj_to_variable vwithoutobj = 
+  let (indirects, refvar) = vwithoutobj in
+  let v = refvar_to_variable refvar in
+  indirects +> List.fold_left (fun acc indirect ->
+    mkvar (Indirect (acc, indirect))) v
+  
+
+and refvar_to_variable refvar = 
+  let v = 
+    match refvar with
+    | Var2 (name, scope) -> 
+        (match name with
+        | DName ("this", info) -> 
+            This (info)
+        | _ -> 
+            Var(name, scope)
+        )
+
+    | VDollar2 (tok, exprp) -> VBrace(tok, exprp)
+    | VArrayAccess2(refvar, exprb) -> 
+        let v = refvar_to_variable refvar in
+        VArrayAccess(v, exprb)
+    | VBraceAccess2(refvar, exprb) ->
+        let v = refvar_to_variable refvar in
+        VBraceAccess(v, exprb)
+  in
+  mkvar v
+
+@ 
+
+<<AST builder>>=
+let mk_param typ s = 
+  { p_type = typ;
+    p_ref = None;
+    p_name = DName s;
+    p_default = None;
+  }
+
+let mk_e e = (e, Ast_php.noType())
+@ 
+
+
+<<function top_statements_to_toplevels>>=
+(* could have also created some fake Blocks, but simpler to have a 
+ * dedicated constructor for toplevel statements *)
+let rec top_statements_to_toplevels topstatements eofinfo = 
+  match topstatements with
+  | [] -> [FinalDef eofinfo]
+  | x::xs ->
+      let v, rest = 
+        (match x with
+        | FuncDefNested      def -> FuncDef def,  xs
+        | ClassDefNested     def -> ClassDef def, xs
+        | InterfaceDefNested def -> InterfaceDef def, xs
+        | Stmt st -> 
+            let stmts, rest = xs +> Common.span (function 
+              | Stmt st -> true 
+              | _ -> false
+              ) in
+            let stmts' = stmts +> List.map (function 
+              | Stmt st -> st
+              | _ -> raise Impossible
+            ) in
+            StmtList (st::stmts'), rest
+        )
+      in
+      v::top_statements_to_toplevels rest eofinfo
+@ 
+
+
+\section{Tokens declaration and operator priorities}
+\t put it in the lexer_php.ml.nw ?
+
+<<GRAMMAR tokens declaration>>=
+
+/*(*-----------------------------------------*)*/
+/*(* the comment tokens *)*/
+/*(*-----------------------------------------*)*/
+<<GRAMMAR comment tokens>>
+
+/*(*-----------------------------------------*)*/
+/*(* the normal tokens *)*/
+/*(*-----------------------------------------*)*/
+<<GRAMMAR normal tokens>>
+
+/*(*-----------------------------------------*)*/
+/*(* extra tokens: *)*/
+/*(*-----------------------------------------*)*/
+<<GRAMMAR tokens hook>>
+
+/*(*-----------------------------------------*)*/
+/*(* XHP tokens: *)*/
+/*(*-----------------------------------------*)*/
+
+/*(* xhp: token for ':frag:foo' for instance; quite similiar to T_IDENT *)*/
+%token <string list * Ast_php.info> T_XHP_COLONID_DEF
+/*(* xhp: token for '%frag:foo' *)*/
+%token <string list * Ast_php.info> T_XHP_PERCENTID_DEF
+
+/*(* xhp: e.g. for '<x:frag', note that the real end of the tag is
+   * in another token, either T_XHP_GT or T_XHP_SLASH_GT.
+   *)*/
+%token <Ast_php.xhp_tag * Ast_php.info> T_XHP_OPEN_TAG
+
+/*(* ending part of the opening tag *)*/
+%token <Ast_php.info> T_XHP_GT
+%token <Ast_php.info> T_XHP_SLASH_GT
+
+/*(* xhp: e.g. for '</x:frag>'. The 'option' is for closing tags like </> *)*/
+%token <Ast_php.xhp_tag option * Ast_php.info> T_XHP_CLOSE_TAG
+
+%token <string * Ast_php.info> T_XHP_ATTR
+%token <string * Ast_php.info> T_XHP_TEXT
+
+/*(* xhp keywords. If you add one don't forget to update the 'ident' rule. *)*/
+%token <Ast_php.info> T_XHP_ATTRIBUTE T_XHP_CHILDREN T_XHP_CATEGORY
+%token <Ast_php.info> T_XHP_ENUM T_XHP_REQUIRED
+%token <Ast_php.info> T_XHP_ANY /*(* T_XHP_EMPTY is T_EMPTY *)*/
+%token <Ast_php.info> T_XHP_PCDATA
+
+/*(*-----------------------------------------*)*/
+%token <Ast_php.info> TUnknown /*(* unrecognized token *)*/
+%token <Ast_php.info> EOF
+@ 
+\label{sec:token-spec}
+
+Some tokens are not even used in the grammar file because they are filtered
+in some intermediate phases. But they still must be declared because
+\cmd{ocamllex} may generate them, or some intermediate phase may also
+generate them.
+% this is the case for comments:
+
+<<GRAMMAR comment tokens>>=
+/*(* coupling: Token_helpers.is_real_comment *)*/
+%token <Ast_php.info> TCommentSpace TCommentNewline   TComment
+
+/*(* when use preprocessor and want to mark removed tokens as commented *)*/
+%token <Ast_php.info> TCommentPP
+
+/*(* not mentionned in this grammar. preprocessed *)*/
+%token <Ast_php.info> T_COMMENT
+%token <Ast_php.info> T_DOC_COMMENT
+%token <Ast_php.info> T_WHITESPACE
+@ 
+% not filtered !!
+
+
+<<GRAMMAR normal tokens>>=
+%token <string * Ast_php.info> T_LNUMBER
+%token <string * Ast_php.info> T_DNUMBER
+
+/*(* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
+   * Note that with XHP if you want to add a rule using T_IDENT, you should
+   * probably use 'ident' instead.
+   *)*/
+%token <string * Ast_php.info> T_IDENT
+%token <string * Ast_php.info> T_VARIABLE
+
+%token <string * Ast_php.info> T_CONSTANT_ENCAPSED_STRING
+%token <string * Ast_php.info> T_ENCAPSED_AND_WHITESPACE
+
+/*(* used only for offset of array access inside strings *)*/
+%token <string * Ast_php.info> T_NUM_STRING
+
+%token <string * Ast_php.info> T_INLINE_HTML
+
+
+%token <string * Ast_php.info> T_STRING_VARNAME
+
+%token <Ast_php.info> T_CHARACTER
+%token <Ast_php.info> T_BAD_CHARACTER
+
+
+/*(* ugly: because of my hack around the implicit echo when use <?=, 
+   * this T_ECHO might have a string different than "echo"
+   *)*/
+%token <Ast_php.info> T_ECHO 
+%token <Ast_php.info> T_PRINT
+
+%token <Ast_php.info> T_IF
+%token <Ast_php.info> T_ELSE T_ELSEIF T_ENDIF
+%token <Ast_php.info> T_DO 
+%token <Ast_php.info> T_WHILE   T_ENDWHILE 
+%token <Ast_php.info> T_FOR     T_ENDFOR
+%token <Ast_php.info> T_FOREACH T_ENDFOREACH
+%token <Ast_php.info> T_SWITCH  T_ENDSWITCH
+%token <Ast_php.info> T_CASE T_DEFAULT    T_BREAK T_CONTINUE
+%token <Ast_php.info> T_RETURN
+%token <Ast_php.info> T_TRY  T_CATCH T_THROW
+%token <Ast_php.info> T_EXIT
+
+/*(* %token <Ast_php.info> T_SELF T_PARENT *)*/
+
+
+%token <Ast_php.info> T_DECLARE T_ENDDECLARE
+%token <Ast_php.info> T_USE
+%token <Ast_php.info> T_GLOBAL
+%token <Ast_php.info> T_AS
+%token <Ast_php.info> T_FUNCTION
+%token <Ast_php.info> T_CONST
+
+/*(* pad: was declared via right ... ??? mean token ? *)*/
+%token <Ast_php.info> T_STATIC  T_ABSTRACT  T_FINAL 
+%token <Ast_php.info> T_PRIVATE T_PROTECTED T_PUBLIC
+%token <Ast_php.info> T_VAR
+
+%token <Ast_php.info> T_UNSET
+%token <Ast_php.info> T_ISSET
+%token <Ast_php.info> T_EMPTY
+
+%token <Ast_php.info> T_HALT_COMPILER
+
+%token <Ast_php.info> T_CLASS   T_INTERFACE
+%token <Ast_php.info> T_EXTENDS T_IMPLEMENTS
+%token <Ast_php.info> T_OBJECT_OPERATOR
+
+%token <Ast_php.info> T_DOUBLE_ARROW
+
+%token <Ast_php.info> T_LIST T_ARRAY
+
+%token <Ast_php.info> T_CLASS_C T_METHOD_C T_FUNC_C
+%token <Ast_php.info> T_LINE   T_FILE
+
+
+%token <Ast_php.info> T_OPEN_TAG  T_CLOSE_TAG
+%token <Ast_php.info> T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
+
+
+%token <Ast_php.info> T_START_HEREDOC    T_END_HEREDOC
+%token <Ast_php.info> T_DOLLAR_OPEN_CURLY_BRACES
+%token <Ast_php.info> T_CURLY_OPEN
+
+%token <Ast_php.info> TCOLCOL
+
+/*(* pad: was declared as left/right, without a token decl in orig gram *)*/
+%token <Ast_php.info> TCOLON TCOMMA TDOT TBANG TTILDE TQUESTION
+
+%token <Ast_php.info> TOBRA 
+
+%token <Ast_php.info> TPLUS TMINUS TMUL TDIV TMOD
+
+%token <Ast_php.info> TAND TOR TXOR
+%token <Ast_php.info> TEQ
+%token <Ast_php.info> TSMALLER TGREATER
+
+%token <Ast_php.info> T_PLUS_EQUAL  T_MINUS_EQUAL  T_MUL_EQUAL  T_DIV_EQUAL
+%token <Ast_php.info> T_CONCAT_EQUAL  T_MOD_EQUAL 
+%token <Ast_php.info> T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
+%token <Ast_php.info> T_INC    T_DEC
+%token <Ast_php.info> T_BOOLEAN_OR   T_BOOLEAN_AND 
+%token <Ast_php.info> T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
+%token <Ast_php.info> T_SL    T_SR
+%token <Ast_php.info> T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
+
+%token <Ast_php.info> T_BOOL_CAST  T_INT_CAST   T_DOUBLE_CAST  T_STRING_CAST
+%token <Ast_php.info> T_ARRAY_CAST T_OBJECT_CAST 
+%token <Ast_php.info> T_UNSET_CAST
+
+%token <Ast_php.info> T_IS_IDENTICAL T_IS_NOT_IDENTICAL
+%token <Ast_php.info> T_IS_EQUAL     T_IS_NOT_EQUAL
+
+
+%token <Ast_php.info> T__AT
+
+%token <Ast_php.info> T_NEW T_CLONE T_INSTANCEOF
+
+%token <Ast_php.info> T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
+%token <Ast_php.info> T_EVAL 
+
+/*(* was declared implicitely because was using directly the character *)*/
+%token <Ast_php.info> TOPAR TCPAR
+%token <Ast_php.info> TOBRACE TCBRACE
+%token <Ast_php.info> TCBRA
+%token <Ast_php.info> TBACKQUOTE
+/*(* ugly: because of my hack around the implicit ';' when use ?>, 
+   * this TSEMICOLON might have a string different than ';'
+   *)*/
+%token <Ast_php.info> TSEMICOLON
+%token <Ast_php.info> TDOLLAR /*(* see also T_VARIABLE *)*/
+%token <Ast_php.info> TGUIL
+
+
+@
+
+<<GRAMMAR tokens priorities>>=
+/*(*-----------------------------------------*)*/
+/*(* must be at the top so that it has the lowest priority *)*/
+%nonassoc SHIFTHERE
+
+%left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
+%left      TCOMMA
+%left      T_LOGICAL_OR
+%left      T_LOGICAL_XOR
+%left      T_LOGICAL_AND
+%right     T_PRINT
+%left      TEQ T_PLUS_EQUAL T_MINUS_EQUAL T_MUL_EQUAL T_DIV_EQUAL T_CONCAT_EQUAL T_MOD_EQUAL T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
+%left      TQUESTION TCOLON
+%left      T_BOOLEAN_OR
+%left      T_BOOLEAN_AND
+%left      TOR
+%left      TXOR
+%left      TAND
+%nonassoc  T_IS_EQUAL T_IS_NOT_EQUAL T_IS_IDENTICAL T_IS_NOT_IDENTICAL
+%nonassoc  TSMALLER T_IS_SMALLER_OR_EQUAL TGREATER T_IS_GREATER_OR_EQUAL
+%left      T_SL T_SR
+%left      TPLUS TMINUS TDOT
+%left      TMUL TDIV TMOD
+%right     TBANG
+%nonassoc  T_INSTANCEOF
+%right     TTILDE T_INC T_DEC T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST T_BOOL_CAST T_UNSET_CAST 
+%right     T__AT
+%right     TOBRA
+%nonassoc  T_NEW T_CLONE
+%left      T_ELSEIF
+%left      T_ELSE
+%left      T_ENDIF
+
+/*(* xhp: this is used only to remove some shift/reduce ambiguities on the
+   * error-rule trick.
+   *)*/
+%left T_XHP_PERCENTID_DEF
+
+@ 
+
+
+
+\section{Yacc annoyances (EBNF vs BNF)}
+
+<<GRAMMAR xxxlist or xxxopt>>=
+top_statement_list:
+ | top_statement_list  top_statement { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+<<repetitive xxx_list>>
+
+
+additional_catches:
+ | non_empty_additional_catches { $1 }
+ | /*(*empty*)*/ { [] }
+
+non_empty_additional_catches:
+ | additional_catch                              { [$1] }
+ | non_empty_additional_catches additional_catch { $1 ++ [$2] }
+
+<<repetitive xxx and non_empty_xxx>>
+
+
+unset_variables:
+ | unset_variable { [Left $1] }
+ | unset_variables TCOMMA unset_variable { $1 ++ [Right $2; Left $3] }
+
+<<repetitive xxx_list with TCOMMA>>
+
+
+possible_comma:
+ | /*(*empty*)*/ { [] }
+ | TCOMMA        { [Right $1] }
+
+possible_comma2:
+ | /*(*empty*)*/ { [] }
+ | TCOMMA        { [Right $1] }
+
+static_array_pair_list_rev:
+ | /*(*empty*)*/ {  [] }
+ | non_empty_static_array_pair_list_rev possible_comma	{ $2++$1 }
+
+array_pair_list_rev:
+ | /*(*empty*)*/ { [] }
+ | non_empty_array_pair_list_rev possible_comma2	{ $2++$1 }
+
+@
+
+\ifwantrepetitivecode
+<<repetitive xxx_list>>=
+
+inner_statement_list:
+ | inner_statement_list  inner_statement { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+class_statement_list:
+ | class_statement_list class_statement { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+encaps_list:
+ | encaps_list encaps                  { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+variable_properties:
+ | variable_properties variable_property { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+dynamic_class_name_variable_properties:
+ | dynamic_class_name_variable_properties dynamic_class_name_variable_property 
+     { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+xhp_attributes:
+ | xhp_attributes xhp_attribute { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+xhp_children:
+ | xhp_children xhp_child { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+
+@
+
+
+<<repetitive xxx and non_empty_xxx>>=
+
+method_modifiers:
+ | /*(*empty*)*/				{ [] }
+ | non_empty_member_modifiers			{ $1 } 
+
+non_empty_member_modifiers:
+ | member_modifier				{ [$1] }
+ | non_empty_member_modifiers member_modifier	{ $1 ++ [$2] }
+
+
+parameter_list:
+ | non_empty_parameter_list   { $1 }
+ | /*(*empty*)*/              { [] }
+
+function_call_parameter_list:
+ | non_empty_function_call_parameter_list      { $1 }
+ | /*(*empty*)*/			       { [] }
+@
+
+
+
+<<repetitive xxx_list with TCOMMA>>=
+global_var_list:
+ | global_var				{ [Left $1] }
+ | global_var_list TCOMMA global_var	{ $1 ++ [Right $2; Left $3] }
+
+echo_expr_list:
+ | expr				   { [Left $1] }
+ | echo_expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
+
+assignment_list:
+ | assignment_list_element                        { [Left $1] }
+ | assignment_list TCOMMA assignment_list_element { $1 ++ [Right $2; Left $3] }
+
+isset_variables:
+ | variable 			       { [Left $1] }
+ | isset_variables TCOMMA variable     { $1 ++ [Right $2; Left $3] }
+
+interface_list:
+ | fully_qualified_class_name			    { [Left $1] }
+ | interface_list TCOMMA fully_qualified_class_name { $1 ++ [Right $2; Left $3] }
+
+declare_list:
+ | declare                    	{ [Left $1] }
+ | declare_list TCOMMA declare	{ $1 ++ [Right $2; Left $3] }
+
+non_empty_for_expr:
+  | expr      			     { [Left $1] }
+  | non_empty_for_expr TCOMMA	expr { $1 ++ [Right $2; Left $3] }
+
+xhp_attribute_decls:
+ | xhp_attribute_decl { [Left $1] }
+ | xhp_attribute_decls TCOMMA xhp_attribute_decl { $1 ++ [Right $2; Left $3] }
+
+xhp_enum_list:
+ | xhp_enum { [Left $1] }
+ | xhp_enum_list TCOMMA xhp_enum { $1 ++ [Right $2; Left $3] }
+
+xhp_category_list:
+ | xhp_category { [Left $1] }
+ | xhp_category_list TCOMMA xhp_category { $1 ++ [Right $2; Left $3] }
+
+
+@
+\fi

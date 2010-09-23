@@ -1,0 +1,327 @@
+-*- org -*-
+
+* 0.13
+
+public release
+
+* 0.12
+
+Real start of multi-language support.
+
+** introduce source code  navigator/searcher/visualizer using cairo
+
+Show treemap and thumbnails of file content!
+Have also minimap, zoom, labels, alpha for overlapping labels,
+labels in diagonal, anamorphic content showing in bigger fonts
+the important stuff, magnifying glass, clickable content 
+where a click opens the file in your editor at the right place, etc. 
+=> A kind of google maps but on code :)
+
+Support for PHP, Javascript, ML, C++, C, thrift.
+
+For PHP do also URL highlighting which helps understand the control flow
+in webapps. 
+Also highlight local/globals/parameters variables differently.
+Also highlight bad smells (especially security related bad smells)
+
+Integrate other PL artifacts: 
+ - The builtins API reference
+ - PLEAC cookbooks
+=> a single place to query information about the code
+(no need to first grep the code, then google for the function
+ because it turns out to be a builtin).
+
+Can easily go the definition of a function (whether it's a builtin or not,
+thanks to the parsable PHP manual and HPHP idl files).
+
+Can easily go to the example of use of a function (whether it's a builtin
+or not, thanks to PLEAC for the builtin functions).
+
+Far more flexible and powerful than the previous treemap visualizer
+which was using Graphics. Now also render file content!
+
+
+** sgrep
+support linear patterns (e.g. sgrep -e 'X & X')
+and a -pvar option to print matched metavarables instead of matched code
+
+** introduce parsing_ml/
+Allow to use and experiment the treemap code visualizer on the pfff
+source itself; to see if such features are useful.
+
+** introduce parsing_cpp/
+
+** introduce analyze_js/, analyze_cpp/, analyze_ml/ 
+very basic support. Just highlighting
+
+** internals
+
+reorganized the treemap and h_program-lang/ to be less
+facebook and pfff specific. Have a commons/file_type.ml for instance.
+
+introduce database_code.ml, a generic code-information database
+using JSON as support. Will help make pfff less php-specific.
+
+* 0.11
+
+** introduce checker
+
+warn about "unused variable" and "use of undefined variable".
+
+use fast global analysis (bonus: it's flib-aware and desugar
+the require_module_xxx and other flib conventions).
+
+** introduce php_etags
+a more precise TAGS file generator (bonus: it's xhp-aware).
+
+** checkModule part 2
+
+** introduce javascript support, parsing_js/
+
+parsing/unparsing/dumping.
+preliminary refactoring support.
+
+** introduce builtin XHP support
+
+** analysis
+
+introduce PIL, PHP Intermediate Language, a more conveninent AST to work on
+for doing complex analysis such as dataflow, type-inference, tainted
+analysis, etc.
+
+include/require analysis as well as flib-unsugaring. Make it possible
+to grab all the files needed to check one file, in a way similar
+to what gcc does with cpp. Provide a DFS and BFS algo.
+
+* 0.10
+
+** introduce test coverage analysis using xdebug.ml and phpunit.ml
+
+used by arc unit.
+
+rank, filter, parallelize (using MPI), cronize.
+
+** more refactorings with spatch_php
+fix parsing (lexer) and unparsing bugs
+
+introduce the transfo field, mimicing part of coccinelle.
+
+improve support for XHP and refactoring, merging tokens heuristic.
+
+** introduce fixer
+extract and modularize code from reaper
+
+extract code from facebook/qa_code into analyze_php/qa_code
+
+dead variables/typo detection
+
+** analysis
+
+static method calls analysis (with self/parent special cases handling)
+
+more work on include/require, now stored in the database.
+better environment handling (PHP_ROOT, THRIFT_ROOT, etc)
+
+more work on builtins, needed by checkModule
+
+users_of_class, users_of_define, extenders/implementers of class
+
+** parser
+fix bugs in lexer
+
+now can parse <?=  code
+
+** internal
+
+split analyze_php/ in multiple dirs
+moved code from facebook/ to analyze_php/
+
+started to use OUnit.ml !
+
+unit tests for parsing, analysis, deadcode, callgraph, xdebug
+
+** first work on web gui
+
+extract and modularize php highlighting logic from gtk gui.
+
+started integrate treemap and web gui.
+
+** first work on thrift interface to pfff services
+
+
+** misc
+dead sitevars analysis
+
+static arrays lint checks
+
+proto of undeterministic PHP bugs finder using diff and xdebug
+
+proto for flib dependencies display
+
+* 0.9
+
+** introduce facebook/check_code
+
+** introduce facebook/qa_test
+with 
+ - test_rank, 
+ - cyclomatic complexity, 
+ - test_smells, 
+ - email annotations and notifications
+ - output results via R
+
+** introduce facebook/fb_phpunit_wrap 
+and tools/phpunit.ml
+
+** introduce compile_php/
+but for now very rudimentary
+
+** analysis
+
+control flow graph analysis:
+ useful for cyclomatic complexity, and potentially useful or far more
+ things (sgrep, dataflow, etc)
+
+start of dataflow analysis
+
+start of coverage analysis (static and dynamic)
+
+start of include_require static analysis (and flib file dependencies too)
+
+start of type unioning
+
+** phpunit result analysis and parsing
+used by fb_phpunit_wrap
+
+useful to get local regression information on tests.
+
+** bugfixes
+updated the deadcode reaper, fb_phpunit_wrap, and pfff_db
+to analyze the current code
+
+more xdebug parsing
+
+** internals
+
+reorganized facebook/ with fb_common/www.ml, etc
+and fb_org/fb_employee.ml, etc
+
+reorganized json/sexp output, factorize code and use more ocaml.ml
+
+* 0.8 
+
+** xdebug trace parsing
+
+Can now do dynamic analysis! Done for type
+"inference/extraction".
+
+** sgrep: introducing $V special metavar 
+
+** GUI 
+trivial type inference feedback based on xdebug info
+
+** introducing parsing_sql/
+could be useful at some point for better type checking or type inference
+
+
+* 0.7
+
+** introducing ppp, php pre processor, and implement closure
+by source-to-source transformation.
+
+now I can code in PHP :)
+
+** improved pretty printer, and helpers for AST transformation
+with map_php.ml. Used by ppp and closure implemetation. 
+
+** sgrep: 
+
+- a -emacs flag
+- improved -xhp and made it the default operating mode
+
+** deadcode:
+- do fixpoint analysis per file
+
+
+
+* 0.6 
+
+** introducing sgrep_php
+a code matcher working at the AST level
+
+** introducing treemap viewer using Graphics.mli
+
+** introducing code_rank
+
+** introducing checkModule 
+first part (with its literate programming manual)
+
+** introducing flib_navigator
+update: superseded by web gui
+
+* 0.5
+
+** parser 
+
+XHP experimental support. A new -pp option to give opportunity to call
+a preprocessor (eg XHP).
+
+** ffi/meta
+a new -json option and json support
+
+also supported in sgrep.
+
+* 0.4
+
+** doc
+
+programmer manual for parsing_php/
+internals manual for parsing_php/
+
+!!use literate programming method (via noweb/syncweb)!!
+(hence the special marks in the source)
+
+** analysis
+
+callgraph for methods (using weak heuristic), with optimisations
+to scale (partially because use weak heuristic)
+
+* 0.3 
+
+** analysis
+
+deadcode analysis v2, v3, v4
+diffcamp/facebook integration (via mysql and git)
+
+** infrastructure
+
+ORM for mysql (using camlmix)
+Mysql support (with ocamlmysql/)
+
+IRC support (adapting ocamlirc/)
+
+complement git.ml
+
+* 0.2 
+
+** analysis
+
+deadcode analysis v1
+
+* 0.1
+
+** introducing PHP gui (with ocamlgtk/)
+update: superseded by web gui
+
+* beta
+
+** global analysis first draft, PHP database (with ocamlbdb/)
+
+* alpha
+
+** PHP parser first draft !
+reused Zend flex/bison code.
+
+** visitor (using ocamltarzan)
+
+** AST pretty printer (also using ocamltarzan and lib-sexp)

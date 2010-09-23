@@ -1,0 +1,19 @@
+ml_cairo_bigarr.o: ml_cairo_bigarr.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo.o: ml_cairo.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_font.o: ml_cairo_font.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_ft.o: ml_cairo_ft.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_glitz.o: ml_cairo_glitz.c ml_cairo_wrappers.h ml_cairo_glitz.h \
+  glitz.tags ml_cairo.h
+ml_cairo_gtkcairo.o: ml_cairo_gtkcairo.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_lablgtk.o: ml_cairo_lablgtk.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_matrix.o: ml_cairo_matrix.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_path.o: ml_cairo_path.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_pattern.o: ml_cairo_pattern.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_pdf.o: ml_cairo_pdf.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_png.o: ml_cairo_png.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_ps.o: ml_cairo_ps.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_status.o: ml_cairo_status.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_surface.o: ml_cairo_surface.c ml_cairo.h ml_cairo_wrappers.h
+ml_cairo_wrappers.o: ml_cairo_wrappers.c ml_cairo_wrappers.h
+ml_glitz_glx.o: ml_glitz_glx.c ml_cairo_wrappers.h ml_cairo_glitz.h
+ml_svg_cairo.o: ml_svg_cairo.c ml_cairo.h ml_cairo_wrappers.h

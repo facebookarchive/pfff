@@ -1,0 +1,270 @@
+(* $Id: gtkBase.props 1454 2009-05-12 10:19:38Z garrigue $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+module Internal = struct
+  external allocation_at_pointer : Gpointer.boxed -> rectangle
+    = "ml_Val_GtkAllocation"
+  let allocation =
+    {kind=`POINTER;inj=(fun _ -> failwith "GtkProps.Internal.allocation");
+     proj=(function `POINTER(Some p) -> allocation_at_pointer p
+          | _ -> failwith "GtkProps.Internal.allocation")}
+end
+}
+
+oheader{
+open GtkBaseProps
+}
+
+conversions {
+  GtkAllocation "Internal.allocation"
+  GtkSelectionData_nocopy "(unsafe_pointer : Gtk.selection_data data_conv)"
+  GdkGravity "GdkEnums.gravity_conv"
+}
+
+boxed {
+  GdkEvent          "GdkEvent.any"
+  GdkEventButton    "GdkEvent.Button.t"
+  GdkEventMotion    "GdkEvent.Motion.t"
+  GdkEventExpose    "GdkEvent.Expose.t"
+  GdkEventKey       "GdkEvent.Key.t"
+  GdkEventCrossing  "GdkEvent.Crossing.t"
+  GdkEventConfigure "GdkEvent.Configure.t"
+  GdkEventFocus     "GdkEvent.Focus.t"
+  GdkEventProperty  "GdkEvent.Property.t"
+  GdkEventSelection "GdkEvent.Selection.t"
+  GdkEventProximity "GdkEvent.Proximity.t"
+}
+
+classes {
+  GdkPixbuf "GdkPixbuf.pixbuf"
+  GtkStyle "Gtk.style"
+}
+
+class Widget abstract : Object {
+  "app-paintable"        gboolean             : Read / Write
+  "can-default"          gboolean             : Read / Write
+  "can-focus"            gboolean             : Read / Write
+  "composite-child"      gboolean             : Read
+  "events"               GdkEventMask         : Read / Write
+  "extension-events"     GdkExtensionMode     : Read / Write
+  "has-default"          gboolean             : Read / Write
+  "has-focus"            gboolean             : Read / Write
+  "has-tooltip"          gboolean             : Read / Write
+  "height-request"       gint                 : Read / Write
+  "is-focus"             gboolean             : Read / Write
+  "name"                 gchararray           : Read / Write
+  "parent"               GtkContainer_opt     : Read / Write
+  "receives-default"     gboolean             : Read / Write
+  "sensitive"            gboolean             : Read / Write
+  "style"                GtkStyle             : Read / Write
+  "tooltip-markup"       gchararray           : Read / Write
+  "tooltip-text"         gchararray           : Read / Write
+  "visible"              gboolean             : Read / Write
+  "width-request"        gint                 : Read / Write
+  (* misc *)
+  signal show
+  signal hide
+  signal map
+  signal unmap
+  signal query_tooltip : x:int y:int kbd:bool GtkTooltip -> bool
+  signal realize
+  signal unrealize
+  signal state_changed : GtkStateType
+  signal parent_set : GtkWidget_opt
+  signal size_allocate : GtkAllocation
+  signal style_set : GtkStyle_opt
+  (* selection *)
+  signal selection_get : GtkSelectionData_nocopy info:int time:int32
+  signal selection_received : GtkSelectionData time:int32
+  (* dnd *)
+  signal drag_begin : GdkDragContext
+  signal drag_data_delete : GdkDragContext
+  signal drag_data_get :
+    GdkDragContext GtkSelectionData_nocopy info:int time:int32
+  signal drag_data_received :
+    GdkDragContext x:int y:int GtkSelectionData info:int time:int32
+  signal drag_drop : GdkDragContext x:int y:int time:int32 -> bool
+  signal drag_end : GdkDragContext
+  signal drag_leave : GdkDragContext time:int32
+  signal drag_motion : GdkDragContext x:int y:int time:int32 -> bool
+  (* events *)
+  signal event : GdkEvent -> bool
+  signal event_after : GdkEvent
+  (* events share the same marshaller
+  signal button_press_event : GdkEventButton -> bool
+  signal button_release_event : GdkEventButton -> bool
+  signal motion_notify_event : GdkEventMotion -> bool
+  signal delete_event : GdkEvent -> bool
+  signal destroy_event : GdkEvent -> bool
+  signal expose_event : GdkEventExpose -> bool
+  signal key_press_event : GdkEventKey -> bool
+  signal key_release_event : GdkEventKey -> bool
+  signal enter_notify_event : GdkEventCrossing -> bool
+  signal leave_notify_event : GdkEventCrossing -> bool
+  signal configure_event : GdkEventConfigure -> bool
+  signal focus_in_event : GdkEventFocus -> bool
+  signal focus_out_event : GdkEventFocus -> bool
+  signal map_event : GdkEvent -> bool
+  signal unmap_event : GdkEvent -> bool
+  signal property_notify_event : GdkEventProperty -> bool
+  signal selection_clear_event : GdkEventSelection -> bool
+  signal selection_request_event : GdkEventSelection -> bool
+  signal selection_notify_event : GdkEventSelection -> bool
+  signal proximity_in_event : GdkEventProximity -> bool
+  signal proximity_out_event : GdkEventProximity -> bool
+  *)
+  (* methods *)
+  method set_double_buffered : "bool -> unit"
+  method style_get_property : "string -> g_value"
+}
+
+class Container abstract : Widget {
+  "border-width"         guint                : Read / Write / Wrap
+  "child"                GtkWidget            : Write
+  "resize-mode"          GtkResizeMode        : Read / Write / Wrap
+  method check_resize
+  method add : "[>`widget] obj -> unit"
+  method remove : "[>`widget] obj -> unit"
+  method forall : "f:(widget obj -> unit) -> unit"
+  method foreach : "f:(widget obj -> unit) -> unit"
+  (* Called by Widget.grab_focus *)
+  method set_focus_child : "[>`widget] optobj -> unit"
+  method set_focus_vadjustment : "[>`adjustment] optobj -> unit"
+  method set_focus_hadjustment : "[>`adjustment] optobj -> unit"
+  signal add :       GtkWidget   / Wrap
+  signal remove :    GtkWidget   / Wrap
+  signal check_resize
+  signal set_focus : GtkWidget_opt
+}
+
+class Bin abstract : Container {
+  method get_child : "widget obj"
+}
+
+class Item abstract wrapsig : Bin {
+  method select
+  method deselect
+  method toggle
+  signal select
+  signal deselect
+  signal toggle
+}
+
+class Adjustment : Object {
+  signal changed
+  signal value_changed
+}
+
+(* Window and Dialogs *)
+
+class Window set wrap : Bin {
+  "title"                gchararray           : Read / Write
+  "accept-focus"         gboolean             : Read / Write / NoSet
+  "allow-grow"           gboolean             : Read / Write
+  "allow-shrink"         gboolean             : Read / Write
+  "decorated"            gboolean             : Read / Write
+  "default-height"       gint                 : Read / Write / NoSet
+  "default-width"        gint                 : Read / Write / NoSet
+  "deletable"            gboolean             : Read / Write
+  "destroy-with-parent"  gboolean             : Read / Write / NoSet
+  "focus-on-map"         gboolean             : Read / Write
+  "gravity"              GdkGravity           : Read / Write / NoSet
+  "has-toplevel-focus"   gboolean             : Read
+  "icon"                 GdkPixbuf_opt        : Read / Write
+  "icon-name"            gchararray           : Read / Write
+  "is-active"            gboolean             : Read
+  "modal"                gboolean             : Read / Write
+  "window-position"(position) GtkWindowPosition    : Read / Write
+  "opacity"              gdouble              : Read / Write / NoSet
+  "resizable"            gboolean             : Read / Write
+  "role"                 gchararray           : Read / Write / NoSet
+  "screen"               GdkScreen            : Read / Write
+  "skip-pager-hint"      gboolean             : Read / Write / NoSet
+  "skip-taskbar-hint"    gboolean             : Read / Write / NoSet
+  "startup-id"           gchararray           : Write / NoWrap / NoSet
+  "transient-for"        GtkWindow_opt        : Read / Write / NoWrap / NoSet
+  "type"                 GtkWindowType        : Read / Write / Construct Only
+  "type-hint"            GdkWindowTypeHint    : Read / Write
+  "urgency-hint"         gboolean             : Read / Write
+  method present
+  method iconify
+  method deiconify
+  method stick
+  method unstick
+  method maximize
+  method unmaximize
+  method fullscreen
+  method unfullscreen
+  method set_decorated : "bool -> unit"
+  method set_mnemonic_modifier : "Gdk.Tags.modifier list -> unit"
+  method move : "x:int -> y:int -> unit"
+  method parse_geometry : "string -> bool"
+  method reshow_with_initial_size
+  method resize : "width:int -> height:int -> unit"
+  method set_role : "string -> unit"
+  method get_role : "string"
+  signal activate_default
+  signal activate_focus
+  signal frame_event : GdkEvent
+  signal keys_changed
+  signal move_focus : GtkDirectionType
+  signal set_focus :  GtkWidget_opt
+}
+
+class Dialog wrap : Window {
+  "has-separator"        gboolean             : Read / Write
+  signal close
+  signal response : gint
+}
+
+class FileSelection abstract set wrap : Dialog {
+  "filename"             gchararray           : Read / Write
+  "select-multiple"      gboolean             : Read / Write
+  "show-fileops"         gboolean             : Read / Write
+}
+
+class ColorSelectionDialog : Dialog {}
+class FontSelectionDialog : Dialog {}
+(* class InputDialog : Dialog {} *)
+
+class MessageDialog abstract wrap : Dialog {
+  "buttons"              GtkButtonsType       : Write / Construct Only
+  "message-type"         GtkMessageType       : Read / Write / Construct
+}
+
+class AboutDialog abstract set wrap : Dialog {
+  "program-name" (name)  gchararray            : Read / Write / NoWrap / NoSet
+(*  "artists"              GStrv                 : Read / Write *)
+(*  "authors"              GStrv                 : Read / Write *)
+  "comments"             gchararray            : Read / Write
+  "copyright"            gchararray            : Read / Write
+(*  "documenters"          GStrv                 : Read / Write *)
+  "license"              gchararray            : Read / Write
+  "logo"                 GdkPixbuf             : Read / Write
+  "logo-icon-name"       gchararray            : Read / Write
+  "translator-credits"   gchararray            : Read / Write
+  "version"              gchararray            : Read / Write
+  "website"              gchararray            : Read / Write
+  "website-label"        gchararray            : Read / Write
+  "wrap-license"         gboolean             : Read / Write
+
+  method set_artists     : "string list -> unit"
+  method get_artists     : "string list"
+  method set_authors     : "string list -> unit"
+  method get_authors     : "string list"
+  method set_documenters : "string list -> unit"
+  method get_documenters : "string list"
+}
+
+class Plug abstract wrapsig : Bin {
+  signal embedded
+}
+
+class Socket wrapsig : Container {
+  method steal : "Gdk.xid -> unit"
+  signal plug_added
+  signal plug_removed
+}

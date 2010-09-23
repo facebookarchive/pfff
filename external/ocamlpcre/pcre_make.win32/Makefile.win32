@@ -1,0 +1,112 @@
+#########################################################################
+#                                                                       #
+#                            Objective Caml                             #
+#                                                                       #
+#            Xavier Leroy, projet Cristal, INRIA Rocquencourt           #
+#                                                                       #
+#   Copyright 1999 Institut National de Recherche en Informatique et    #
+#   en Automatique.  All rights reserved.  This file is distributed     #
+#   under the terms of the GNU Library General Public License, with     #
+#   the special exception on linking described in file ../LICENSE.      #
+#                                                                       #
+#########################################################################
+
+O=obj
+A=lib
+S=asm
+SO=s.obj
+DO=d.obj
+EXE=.exe
+
+########## Configuration for the bytecode compiler
+
+### Which C compiler to use for the bytecode interpreter.
+CC=cl /nologo
+
+### Additional compile-time options for $(CC).  (For static linking.)
+CCCOMPOPTS=/Ox /MT
+
+### Additional link-time options for $(CC).  (For static linking.)
+CCLINKOPTS=/MT
+
+### Additional compile-time options for $(CC).  (For building a DLL.)
+DLLCCCOMPOPTS=/Ox /MD
+
+### How to build a DLL
+MKDLL=link /nologo /dll /out:$(1) /implib:$(2) $(3)
+
+### How to build a static library
+MKLIB=lib /nologo /debugtype:CV /out:$(1) $(2)
+
+### Canonicalize the name of a system library
+SYSLIB=$(1).lib
+
+
+############# Configuration for the native-code compiler
+
+### Name of architecture for the native-code compiler
+ARCH=i386
+
+### Name of architecture model for the native-code compiler.
+MODEL=default
+
+### Name of operating system family for the native-code compiler.
+SYSTEM=win32
+
+############# Configuration for the contributed libraries
+
+# Compilation options
+CFLAGS= /DSUPPORT_UTF8
+
+COBJS=maketables.$(O) get.$(O) study.$(O) pcre.$(O)
+
+RESULT=pcre
+all: lib$(RESULT).$(A)
+
+dll: dll$(RESULT).dll 
+
+
+dll$(RESULT).dll: $(COBJS:.$(O)=.$(DO))
+	$(call MKDLL,dll$(RESULT).dll,stub$(RESULT).$(A),\
+	  $(COBJS:.$(O)=.$(DO)) $(WIN32LIBS)) /DEF:pcre.def
+
+lib$(RESULT).$(A): $(COBJS:.$(O)=.$(SO))
+	$(call MKLIB,lib$(RESULT).$(A),$(COBJS:.$(O)=.$(SO)))
+
+clean: 
+	rm -f *.$(A) *.dll *.exp *.$(O) *.$(SO) *.$(DO)
+
+
+.SUFFIXES: .$(DO) .$(SO)
+
+.c.$(DO):
+	$(CC) /DPCRE_DL_EXPORTS $(DLLCCCOMPOPTS) $(CFLAGS) -c $< /Fo$*.$(DO)
+
+.c.$(SO):
+	$(CC) /DPCRE_DL_EXPORTS $(CCCOMPOPTS) $(CFLAGS) -c $< /Fo$*.$(SO)
+
+#depend:
+
+pcre.$(DO):         chartables.c pcre.c internal.h pcre.h config.h Makefile
+pcre.$(SO):         chartables.c pcre.c internal.h pcre.h config.h Makefile
+pcreposix.$(DO):    pcreposix.c pcreposix.h internal.h pcre.h config.h Makefile
+pcreposix.$(SO):    pcreposix.c pcreposix.h internal.h pcre.h config.h Makefile
+maketables.$(DO):   maketables.c internal.h pcre.h config.h Makefile
+maketables.$(SO):   maketables.c internal.h pcre.h config.h Makefile
+get.$(DO):          get.c internal.h pcre.h config.h Makefile
+get.$(SO):          get.c internal.h pcre.h config.h Makefile
+study.$(DO):        study.c internal.h pcre.h config.h Makefile
+study.$(SO):        study.c internal.h pcre.h config.h Makefile
+pcretest.$(DO):     pcretest.c internal.h pcre.h config.h Makefile
+pcretest.$(SO):     pcretest.c internal.h pcre.h config.h Makefile
+pcregrep.$(DO):     pcregrep.c pcre.h Makefile config.h
+pcregrep.$(SO):     pcregrep.c pcre.h Makefile config.h
+
+# An auxiliary program makes the default character table source
+
+chartables.c:   dftables$(EXE)
+		./dftables$(EXE) > chartables.c
+
+dftables$(EXE): dftables.c maketables.c internal.h pcre.h config.h Makefile
+		$(CC) -o dftables$(EXE) dftables.c
+

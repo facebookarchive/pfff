@@ -1,0 +1,18 @@
+===============================================================================
+GtkTextIter:
+Il manque : gtk_text_iter_get_attributes
+===============================================================================
+GtkTextMark : FINI
+===============================================================================
+GtkTextBuffer: FINI
+===============================================================================
+GtkTextTag: Il manque les PangoTabs.
+===============================================================================
+GtkTextTagTable: FINI
+===============================================================================
+GtkTextView:
+Manquent les fonctions concernant les PangoTabArray :
+	void gtk_text_view_set_tabs(GtkTextView *text_view,PangoTabArray *tabs);
+	PangoTabArray* gtk_text_view_get_tabs(GtkTextView *text_view);
+	GtkTextAttributes* gtk_text_view_get_default_attributes(GtkTextView *text_view);
+===============================================================================

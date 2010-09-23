@@ -1,0 +1,122 @@
+(* $Id: gtkPack.props 1369 2007-09-25 02:56:09Z garrigue $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+oheader{
+open GtkPackProps
+}
+
+classes {
+  GtkAdjustment "Gtk.adjustment obj"
+}
+
+class Box hv set : Container {
+  "homogeneous"          gboolean             : Read / Write
+  "spacing"              gint                 : Read / Write
+  method pack_start :
+      "[>`widget] obj -> expand:bool -> fill:bool -> padding:int -> unit"
+  method pack_end :
+      "[>`widget] obj -> expand:bool -> fill:bool -> padding:int -> unit"
+  method reorder_child : "[>`widget] obj -> pos:int -> unit"
+  method query_child_packing : "[>`widget] obj -> box_packing"
+  method set_child_packing :
+      "[>`widget] obj -> ?expand:bool -> ?fill:bool ->
+       ?padding:int -> ?from:Tags.pack_type -> unit"
+}
+
+class ButtonBox hv : Box {
+  "layout-style"         GtkButtonBoxStyle    : Read / Write
+  method get_child_secondary : "[>`widget] obj -> bool"
+  method set_child_secondary : "[>`widget] obj -> bool -> unit"
+}
+
+class Fixed : Container {
+  method put : "[>`widget] obj -> x:int -> y:int -> unit"
+  method move : "[>`widget] obj -> x:int -> y:int -> unit"
+  method set_has_window : "bool -> unit"
+  method get_has_window : "bool"
+}
+
+class Paned hv wrap : Container {
+  "position"             gint                 : Read / Write
+  "position-set"         gboolean             : Read / Write / NoWrap
+  "max-position"         gint                 : Read
+  "min-position"         gint                 : Read
+  method add1 : "[>`widget] obj -> unit"
+  method add2 : "[>`widget] obj -> unit"
+  method pack1 : "[>`widget] obj -> resize:bool -> shrink:bool -> unit"
+  method pack2 : "[>`widget] obj -> resize:bool -> shrink:bool -> unit"
+  method child1 : "widget obj"
+  method child2 : "widget obj"
+  (* omit signals *)
+}
+
+class Layout set : Container {
+  "hadjustment"          GtkAdjustment        : Read / Write
+  "height"               guint                : Read / Write
+  "vadjustment"          GtkAdjustment        : Read / Write
+  "width"                guint                : Read / Write
+  method put : "[>`widget] obj -> x:int -> y:int -> unit"
+  method move : "[>`widget] obj -> x:int -> y:int -> unit"
+  method freeze
+  method thaw
+  method bin_window : "Gdk.window"
+}
+
+conversions {
+  Pointer
+}
+
+class Notebook set wrap : Container {
+  "enable-popup"         gboolean             : Read / Write
+  "homogeneous"(homogeneous_tabs) gboolean    : Read / Write
+  "page"                 gint                 : Read / Write / NoSet / NoWrap
+  "scrollable"           gboolean             : Read / Write
+  "show-border"          gboolean             : Read / Write
+  "show-tabs"            gboolean             : Read / Write
+  "tab-border"           guint                : Write
+  "tab-hborder"          guint                : Read / Write / NoSet
+  "tab-pos"              GtkPositionType      : Read / Write
+  "tab-vborder"          guint                : Read / Write / NoSet
+  method insert_page_menu :
+     "[>`widget] obj -> tab_label:[>`widget] optobj ->
+      menu_label:[>`widget] optobj -> ?pos:int -> int"
+      (* default is append to end *)
+  method remove_page : "int -> unit"
+  method get_current_page : "int"
+  method get_nth_page : "int -> widget obj"
+  method page_num : "[>`widget] obj -> int"
+  method next_page
+  method prev_page
+  method get_tab_label : "[>`widget] obj -> widget obj"
+  method set_tab_label : "[>`widget] obj -> [>`widget] obj -> unit"
+  method get_menu_label : "[>`widget] obj -> widget obj"
+  method set_menu_label : "[>`widget] obj -> [>`widget] obj -> unit"
+  method reorder_child : "[>`widget] obj -> int -> unit"
+  signal switch_page : Pointer gint
+  (* omit others *)
+}
+
+class Table set wrap :Container {
+  "n-columns"(columns)   guint                : Read / Write
+  "n-rows"(rows)         guint                : Read / Write
+  "homogeneous"          gboolean             : Read / Write
+  "row-spacing"(row_spacings) guint           : Read / Write
+  "column-spacing"(col_spacings) guint        : Read / Write
+  method attach :
+    "[>`widget] obj -> left:int -> right:int -> top:int -> bottom:int ->
+     xoptions:Tags.attach_options list -> yoptions:Tags.attach_options list ->
+     xpadding:int -> ypadding:int -> unit"
+  method set_row_spacing : "int -> int -> unit"
+  method set_col_spacing : "int -> int -> unit"
+}
+
+class SizeGroup : GObject {
+  "mode"                 GtkSizeGroupMode     : Read / Write
+  method add_widget : "[>`widget] obj -> unit"
+  method remove_widget : "[>`widget] obj -> unit"
+}

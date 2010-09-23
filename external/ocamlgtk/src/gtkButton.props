@@ -1,0 +1,155 @@
+(* $Id: gtkButton.props 1411 2008-08-03 14:43:59Z ben_99_9 $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+oheader{
+open GtkButtonProps
+}
+
+class Button set wrap wrapsig : Bin {
+  "focus-on-click"       gboolean             : Read / Write / NoSet
+  "image"                GtkWidget            : Read / Write / NoSet
+  "image-position"       GtkPositionType      : Read / Write / NoSet
+  "label"                gchararray           : Read / Write / Construct
+  "use-stock"            gboolean             : Read / Write / Construct
+  "use-underline"        gboolean             : Read / Write / Construct
+  "relief"               GtkReliefStyle       : Read / Write
+  "xalign"               gfloat               : Read / Write / NoSet
+  "yalign"               gfloat               : Read / Write / NoSet
+  signal activate        / NoWrap
+  signal clicked
+  signal enter
+  signal leave
+  signal pressed
+  signal released
+}
+
+class ToggleButton set : Button {
+  "active"               gboolean             : Read / Write
+  "draw-indicator"       gboolean             : Read / Write
+  "inconsistent"         gboolean             : Read / Write / NoSet
+  signal toggled
+}
+
+class CheckButton notype : ToggleButton {}
+
+class RadioButton : ToggleButton {
+  "group"                GtkRadioButton_opt   : Write
+}
+
+class ColorButton wrap : Button {
+  "alpha"                guint                : Read / Write
+  "color"                GdkColor             : Read / Write / Set
+  "title"                gchararray           : Read / Write / Set
+  "use-alpha"            gboolean             : Read / Write
+  signal color_set
+}
+
+class FontButton wrap : Button {
+  "font-name"            gchararray           : Read / Write / Set
+  "show-size"            gboolean             : Read / Write
+  "show-style"           gboolean             : Read / Write
+  "title"                gchararray           : Read / Write / Set
+  "use-font"             gboolean             : Read / Write
+  "use-size"             gboolean             : Read / Write
+  signal font_set
+}
+
+class ToolItem wrap : Bin {
+  "is-important"         gboolean             : Read / Write
+  "visible-horizontal"   gboolean             : Read / Write
+  "visible-vertical"     gboolean             : Read / Write
+
+  method set_homogeneous : "bool -> unit"
+  method get_homogeneous : "bool"
+  method set_expand : "bool -> unit"
+  method get_expand : "bool"
+  method set_tooltip : "[>`tooltips] obj -> string -> string -> unit"
+  method set_use_drag_window : "bool -> unit"
+  method get_use_drag_window : "bool"
+
+(* probably only useful when subclassing ToolItem
+
+    signal create_menu_proxy : -> bool
+    signal set_tooltip : GtkTooltips string string -> bool
+    signal toolbar_reconfigured
+    get_icon_size
+    get_orientation
+    get_toolbar_style
+    get_relief_style
+    retrieve_proxy_menu_item
+    get_proxy_menu_item
+    set_proxy_menu_item 
+*)
+}
+
+class SeparatorToolItem : ToolItem {
+  "draw"                 gboolean             : Read / Write
+}
+
+conversions {
+  GtkStockId             "GtkStock.conv"
+}
+
+class ToolButton wrap : ToolItem {
+  "icon-widget"          GtkWidget            : Read / Write
+  "label"                gchararray           : Read / Write
+  "label-widget"         GtkWidget            : Read / Write
+  "stock-id"             GtkStockId           : Read / Write
+  "use-underline"        gboolean             : Read / Write
+  signal clicked
+}
+
+class ToggleToolButton : ToolButton {
+  signal toggled 
+  method set_active : "bool -> unit"
+  method get_active : "bool"
+}
+
+class RadioToolButton : ToggleToolButton {
+  "group"		 GtkRadioToolButton_opt      : Write
+}
+
+classes { GtkMenu "menu obj" }
+
+class MenuToolButton : ToolButton {
+  "menu"                 GtkMenu               : Read / Write
+(*  signal show-menu *)
+  method set_arrow_tooltip : "[>`tooltips] obj -> string -> string -> unit"
+}
+
+
+class Toolbar set wrapsig : Container {
+  "orientation"          GtkOrientation       : Read / Write
+  "toolbar-style"        GtkToolbarStyle      : Read / Write
+  signal orientation_changed : GtkOrientation
+  signal style_changed :       GtkToolbarStyle
+
+  (* API extended in GTK 2.4 *)
+  "show-arrow"           gboolean             : Read / Write
+  signal focus_home_or_end  : bool -> bool
+  signal move_focus         : GtkDirectionType -> bool
+  signal popup_context_menu : int int int -> bool
+}
+
+class LinkButton wrap : LinkButton {
+  "uri"                gchararray           : Read / Write 
+}
+
+(* Not tested yet. For Gtk 2.12. 
+class ScaleButton wrap : ScaleButton {
+  "adjustement"         GtkAdjustment         : Read / Write 
+  "icons"               GStrv                 : Read / Write 
+  "size"                GtkIconSize           : Read / Write 
+  "value"               gdouble               : Read / Write   
+
+  signal popdown  
+  signal popup
+  signal value_changed : float -> unit
+
+}
+*)

@@ -1,0 +1,4 @@
+This directory originally contained code derived from the
+ocaml source in parsing/ for OCaml 3.12 but because of
+licensing issue that complicates the distribution of
+pfff source I have decided to rewrite it from scratch.

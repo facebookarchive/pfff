@@ -1,0 +1,339 @@
+m4trace:/opt/local/share/aclocal/pkg.m4:27: -1- AC_DEFUN([PKG_PROG_PKG_CONFIG], [m4_pattern_forbid([^_?PKG_[A-Z_]+$])
+m4_pattern_allow([^PKG_CONFIG(_PATH)?$])
+AC_ARG_VAR([PKG_CONFIG], [path to pkg-config utility])
+AC_ARG_VAR([PKG_CONFIG_PATH], [directories to add to pkg-config's search path])
+AC_ARG_VAR([PKG_CONFIG_LIBDIR], [path overriding pkg-config's built-in search path])
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=m4_default([$1], [0.9.0])
+	AC_MSG_CHECKING([pkg-config is at least version $_pkg_min_version])
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no])
+		PKG_CONFIG=""
+	fi
+fi[]dnl
+])
+m4trace:/opt/local/share/aclocal/pkg.m4:59: -1- AC_DEFUN([PKG_CHECK_EXISTS], [AC_REQUIRE([PKG_PROG_PKG_CONFIG])dnl
+if test -n "$PKG_CONFIG" && \
+    AC_RUN_LOG([$PKG_CONFIG --exists --print-errors "$1"]); then
+  m4_default([$2], [:])
+m4_ifvaln([$3], [else
+  $3])dnl
+fi])
+m4trace:/opt/local/share/aclocal/pkg.m4:84: -1- AC_DEFUN([_PKG_SHORT_ERRORS_SUPPORTED], [AC_REQUIRE([PKG_PROG_PKG_CONFIG])
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi[]dnl
+])
+m4trace:/opt/local/share/aclocal/pkg.m4:104: -1- AC_DEFUN([PKG_CHECK_MODULES], [AC_REQUIRE([PKG_PROG_PKG_CONFIG])dnl
+AC_ARG_VAR([$1][_CFLAGS], [C compiler flags for $1, overriding pkg-config])dnl
+AC_ARG_VAR([$1][_LIBS], [linker flags for $1, overriding pkg-config])dnl
+
+pkg_failed=no
+AC_MSG_CHECKING([for $1])
+
+_PKG_CONFIG([$1][_CFLAGS], [cflags], [$2])
+_PKG_CONFIG([$1][_LIBS], [libs], [$2])
+
+m4_define([_PKG_TEXT], [Alternatively, you may set the environment variables $1[]_CFLAGS
+and $1[]_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.])
+
+if test $pkg_failed = yes; then
+   	AC_MSG_RESULT([no])
+        _PKG_SHORT_ERRORS_SUPPORTED
+        if test $_pkg_short_errors_supported = yes; then
+	        $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "$2" 2>&1`
+        else 
+	        $1[]_PKG_ERRORS=`$PKG_CONFIG --print-errors "$2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$$1[]_PKG_ERRORS" >&AS_MESSAGE_LOG_FD
+
+	m4_default([$4], [AC_MSG_ERROR(
+[Package requirements ($2) were not met:
+
+$$1_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+_PKG_TEXT])dnl
+        ])
+elif test $pkg_failed = untried; then
+     	AC_MSG_RESULT([no])
+	m4_default([$4], [AC_MSG_FAILURE(
+[The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+_PKG_TEXT
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.])dnl
+        ])
+else
+	$1[]_CFLAGS=$pkg_cv_[]$1[]_CFLAGS
+	$1[]_LIBS=$pkg_cv_[]$1[]_LIBS
+        AC_MSG_RESULT([yes])
+	$3
+fi[]dnl
+])
+m4trace:support/ocaml.m4:20: -1- AC_DEFUN([AC_PROG_OCAML], [dnl
+# checking for ocamlc
+AC_CHECK_PROG(OCAMLC,ocamlc,ocamlc,AC_MSG_ERROR(Cannot find ocamlc.))
+OCAMLVERSION=$($OCAMLC -version)
+AC_MSG_RESULT(OCaml version is $OCAMLVERSION)
+OCAMLLIB=$($OCAMLC -where)
+AC_MSG_RESULT(OCaml library path is $OCAMLLIB)
+# checking for ocamlopt
+AC_CHECK_PROG(OCAMLOPT,ocamlopt,ocamlopt)
+OCAMLBEST=byte
+if test -z "$OCAMLOPT"; then
+	AC_MSG_WARN(Cannot find ocamlopt; bytecode compilation only.)
+else
+	TMPVERSION=$($OCAMLOPT -version)
+	if test "$TMPVERSION" != "$OCAMLVERSION" ; then
+	    AC_MSG_RESULT(versions differs from ocamlc; ocamlopt discarded.)
+	    unset OCAMLOPT
+	else
+	    OCAMLBEST=opt
+	fi
+fi
+# checking for ocamlc.opt
+AC_CHECK_PROG(OCAMLCDOTOPT,ocamlc.opt,ocamlc.opt)
+if test "$OCAMLCDOTOPT"; then
+	TMPVERSION=$($OCAMLCDOTOPT -version)
+	if test "$TMPVERSION" != "$OCAMLVERSION" ; then
+	    AC_MSG_RESULT(versions differs from ocamlc; ocamlc.opt discarded.)
+	else
+	    OCAMLC=$OCAMLCDOTOPT
+	fi
+fi
+# checking for ocamlopt.opt
+if test "$OCAMLOPT" ; then
+    AC_CHECK_PROG(OCAMLOPTDOTOPT,ocamlopt.opt,ocamlopt.opt)
+    if test "$OCAMLOPTDOTOPT"; then
+	TMPVERSION=$($OCAMLOPTDOTOPT -version)
+	if test "$TMPVERSION" != "$OCAMLVERSION" ; then
+	    AC_MSG_RESULT(version differs from ocamlc; ocamlopt.opt discarded.)
+	else
+	    OCAMLOPT=$OCAMLOPTDOTOPT
+	fi
+    fi
+fi
+# checking for ocamldep
+AC_CHECK_PROG(OCAMLDEP,ocamldep,ocamldep,AC_MSG_ERROR(Cannot find ocamldep.))
+
+#checking for ocamlmktop
+AC_CHECK_PROG(OCAMLMKTOP,ocamlmktop,ocamlmktop, AC_MSG_WARN(Cannot find ocamlmktop.))
+#checking for ocamlmklib
+AC_CHECK_PROG(OCAMLMKLIB,ocamlmklib,ocamlmklib, AC_MSG_WARN(Cannot find ocamlmklib.))
+# checking for ocamldoc
+AC_CHECK_PROG(OCAMLDOC,ocamldoc,ocamldoc, AC_MSG_WARN(Cannot find ocamldoc.))
+
+# get the C compiler used by ocamlc
+if test -z "$CC" ; then
+  touch conftest.c
+  CC=$($OCAMLC -verbose conftest.c 2>&1 | awk '/^+/ {print $[]2 ; exit}')
+  echo OCaml uses $CC to compile C files
+fi
+
+AC_SUBST(OCAMLC)
+AC_SUBST(OCAMLOPT)
+AC_SUBST(OCAMLDEP)
+AC_SUBST(OCAMLBEST)
+AC_SUBST(OCAMLVERSION)
+AC_SUBST(OCAMLLIB)
+AC_SUBST(OCAMLMKLIB)
+AC_SUBST(OCAMLMKTOP)
+AC_SUBST(OCAMLDOC)
+])
+m4trace:support/ocaml.m4:97: -1- AC_DEFUN([AC_PROG_OCAML_TOOLS], [dnl
+# checking for ocamllex and ocamlyacc
+AC_CHECK_PROG(OCAMLLEX,ocamllex,ocamllex,AC_MSG_ERROR(Cannot find ocamllex.))
+if test "$OCAMLLEX"; then
+    AC_CHECK_PROG(OCAMLLEXDOTOPT,ocamllex.opt,ocamllex.opt)
+    if test "$OCAMLLEXDOTOPT"; then
+	OCAMLLEX=$OCAMLLEXDOTOPT
+    fi
+else
+	AC_MSG_ERROR(Cannot find ocamllex.)
+fi
+AC_CHECK_PROG(OCAMLYACC,ocamlyacc,ocamlyacc,AC_MSG_ERROR(Cannot find ocamlyacc.))
+AC_SUBST(OCAMLLEX)
+AC_SUBST(OCAMLYACC)
+])
+m4trace:support/ocaml.m4:117: -1- AC_DEFUN([AC_PROG_CAMLP4], [dnl
+AC_REQUIRE([AC_PROG_OCAML])
+# checking for camlp4
+AC_CHECK_PROG(CAMLP4,camlp4,camlp4)
+if test "$CAMLP4"; then
+	TMPVERSION=$($CAMLP4 -v 2>&1| sed -n -e 's|.*version *\(.*\)$|\1|p')
+	if test "$TMPVERSION" != "$OCAMLVERSION" ; then
+	    AC_MSG_ERROR(versions differs from ocamlc)
+ 	else
+	    AC_CHECK_PROG(CAMLP4O,camlp4o,camlp4o)
+	fi
+fi
+AC_SUBST(CAMLP4)
+AC_SUBST(CAMLP4O)
+])
+m4trace:support/ocaml.m4:138: -1- AC_DEFUN([AC_PROG_FINDLIB], [dnl
+AC_ARG_WITH(findlib,[  --with-findlib	  use findlib package system],
+  use_findlib="$withval")
+# checking for ocamlfind
+if test "$use_findlib" = yes ; then 
+	AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind,
+	  AC_MSG_ERROR(ocamlfind not found))
+else
+	unset OCAMLFIND
+fi
+AC_SUBST(OCAMLFIND)
+])
+m4trace:support/ocaml.m4:156: -1- AC_DEFUN([AC_CHECK_OCAML_PKG], [dnl
+AC_REQUIRE([AC_PROG_FINDLIB])
+if test "$use_findlib" = yes ; then 
+	AC_MSG_CHECKING(findlib package $1)
+	if $OCAMLFIND query $1 >/dev/null 2>/dev/null; then
+	AC_MSG_RESULT(found)
+	pkg_$1="$1"
+	else
+	AC_MSG_WARN(not found)
+	unset pkg_$1
+	fi
+fi
+])
+m4trace:support/ocaml.m4:174: -1- AC_DEFUN([AC_ARG_OCAML_INSTALLDIR], [dnl
+AC_ARG_WITH(installdir,[  --with-installdir=DIR	  specify installation directory],INSTALLDIR="$withval")
+if ! test "$INSTALLDIR" -o "$use_findlib" ; then
+    INSTALLDIR='$(OCAMLLIB)/$(NAME)'
+fi
+AC_SUBST(INSTALLDIR)
+])
+m4trace:support/ocaml.m4:190: -1- AC_DEFUN([AC_CHECK_OCAML_MODULE], [dnl
+AC_MSG_CHECKING($1 directory)
+cat > conftest.ml <<EOF
+open $3
+EOF
+unset found
+for $2 in $$2 $4 ; do
+  if $OCAMLC -c -I "$$2" conftest.ml > /dev/null 2>&1 ; then
+    found=yes
+    break
+  fi
+done
+if test "$found" ; then
+  AC_MSG_RESULT($$2)
+else
+  AC_MSG_RESULT(not found)
+  unset $2
+fi
+AC_SUBST($2)])
+m4trace:configure.ac:1: -1- m4_pattern_forbid([^_?A[CHUM]_])
+m4trace:configure.ac:1: -1- m4_pattern_forbid([_AC_])
+m4trace:configure.ac:1: -1- m4_pattern_forbid([^LIBOBJS$], [do not use LIBOBJS directly, use AC_LIBOBJ (see section `AC_LIBOBJ vs LIBOBJS'])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^AS_FLAGS$])
+m4trace:configure.ac:1: -1- m4_pattern_forbid([^_?m4_])
+m4trace:configure.ac:1: -1- m4_pattern_forbid([^dnl$])
+m4trace:configure.ac:1: -1- m4_pattern_forbid([^_?AS_])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^SHELL$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PATH_SEPARATOR$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_NAME$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_TARNAME$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_VERSION$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_STRING$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_BUGREPORT$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_URL$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^exec_prefix$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^prefix$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^program_transform_name$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^bindir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^sbindir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^libexecdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^datarootdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^datadir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^sysconfdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^sharedstatedir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^localstatedir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^includedir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^oldincludedir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^docdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^infodir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^htmldir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^dvidir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^pdfdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^psdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^libdir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^localedir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^mandir$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_NAME$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_TARNAME$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_VERSION$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_STRING$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_BUGREPORT$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^PACKAGE_URL$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^DEFS$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^ECHO_C$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^ECHO_N$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^ECHO_T$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^LIBS$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^build_alias$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^host_alias$])
+m4trace:configure.ac:1: -1- m4_pattern_allow([^target_alias$])
+m4trace:configure.ac:6: -1- AC_PROG_OCAML([])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLC$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLOPT$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLCDOTOPT$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLOPTDOTOPT$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLDEP$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLMKTOP$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLMKLIB$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLDOC$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLC$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLOPT$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLDEP$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLBEST$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLVERSION$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLLIB$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLMKLIB$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLMKTOP$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OCAMLDOC$])
+m4trace:configure.ac:9: -1- PKG_CHECK_MODULES([CAIRO], [cairo >= 1.2 freetype2])
+m4trace:configure.ac:9: -1- PKG_PROG_PKG_CONFIG
+m4trace:configure.ac:9: -1- m4_pattern_forbid([^_?PKG_[A-Z_]+$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^PKG_CONFIG(_PATH)?$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^PKG_CONFIG$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^PKG_CONFIG_PATH$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^PKG_CONFIG_LIBDIR$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^PKG_CONFIG$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^CAIRO_CFLAGS$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^CAIRO_LIBS$])
+m4trace:configure.ac:9: -1- PKG_CHECK_EXISTS([cairo >= 1.2 freetype2], [pkg_cv_[]CAIRO_CFLAGS=`$PKG_CONFIG --[]cflags "cairo >= 1.2 freetype2" 2>/dev/null`], [pkg_failed=yes])
+m4trace:configure.ac:9: -1- PKG_CHECK_EXISTS([cairo >= 1.2 freetype2], [pkg_cv_[]CAIRO_LIBS=`$PKG_CONFIG --[]libs "cairo >= 1.2 freetype2" 2>/dev/null`], [pkg_failed=yes])
+m4trace:configure.ac:9: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:15: -1- m4_pattern_allow([^LABLGTKDIR$])
+m4trace:configure.ac:19: -1- AC_CHECK_OCAML_MODULE([lablgtk], [LABLGTKDIR], [Gobject], [+lablgtk2 +lablgtk])
+m4trace:configure.ac:19: -1- m4_pattern_allow([^LABLGTKDIR$])
+m4trace:configure.ac:23: -1- PKG_CHECK_MODULES([GDK], [cairo gdk-2.0 >= 2.8 gdk-pixbuf-2.0], [:], [use_gtk=no])
+m4trace:configure.ac:23: -1- m4_pattern_allow([^GDK_CFLAGS$])
+m4trace:configure.ac:23: -1- m4_pattern_allow([^GDK_LIBS$])
+m4trace:configure.ac:23: -1- PKG_CHECK_EXISTS([cairo gdk-2.0 >= 2.8 gdk-pixbuf-2.0], [pkg_cv_[]GDK_CFLAGS=`$PKG_CONFIG --[]cflags "cairo gdk-2.0 >= 2.8 gdk-pixbuf-2.0" 2>/dev/null`], [pkg_failed=yes])
+m4trace:configure.ac:23: -1- PKG_CHECK_EXISTS([cairo gdk-2.0 >= 2.8 gdk-pixbuf-2.0], [pkg_cv_[]GDK_LIBS=`$PKG_CONFIG --[]libs "cairo gdk-2.0 >= 2.8 gdk-pixbuf-2.0" 2>/dev/null`], [pkg_failed=yes])
+m4trace:configure.ac:23: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:30: -1- PKG_CHECK_MODULES([LIBSVG_CAIRO], [libsvg-cairo], [use_libsvg_cairo=yes], [use_libsvg_cairo=no])
+m4trace:configure.ac:30: -1- m4_pattern_allow([^LIBSVG_CAIRO_CFLAGS$])
+m4trace:configure.ac:30: -1- m4_pattern_allow([^LIBSVG_CAIRO_LIBS$])
+m4trace:configure.ac:30: -1- PKG_CHECK_EXISTS([libsvg-cairo], [pkg_cv_[]LIBSVG_CAIRO_CFLAGS=`$PKG_CONFIG --[]cflags "libsvg-cairo" 2>/dev/null`], [pkg_failed=yes])
+m4trace:configure.ac:30: -1- PKG_CHECK_EXISTS([libsvg-cairo], [pkg_cv_[]LIBSVG_CAIRO_LIBS=`$PKG_CONFIG --[]libs "libsvg-cairo" 2>/dev/null`], [pkg_failed=yes])
+m4trace:configure.ac:30: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:37: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
+You should run autoupdate.], [])
+m4trace:configure.ac:37: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:37: -1- m4_pattern_allow([^LTLIBOBJS$])

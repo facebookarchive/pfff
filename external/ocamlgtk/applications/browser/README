@@ -1,0 +1,18 @@
+	Browser: the beginning of a port of the OCamlBrowser
+
+Installation:
+
+* make a link from a directory where the O'Caml distribution is
+  compiled to ocaml-src
+	ln -s /path/to/ocaml-3.12 ocaml-src
+  (actually only the directory parsing needs to be compiled)
+
+* just type "make"
+
+Use:
+
+When you run browser, you just get a customized editor with lexical
+coloring. Nothing very fancy.
+In the file menu you can open a shell, running ocaml as subprocess.
+
+Jacques Garrigue

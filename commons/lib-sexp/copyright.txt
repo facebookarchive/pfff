@@ -1,0 +1,19 @@
+Most of this library was written by:
+
+  Markus Mottl          <markus.mottl@gmail.com>
+
+This work is derived from the library "Tywith", version 0.45.  The library
+"Tywith" was written and is distributed by:
+
+  Martin Sandin         <msandin@hotmail.com>
+
+The original license of "Tywith" can be found in the file
+"LICENSE.Tywith".  Files that were derived from "Tywith" contain a
+reference to the original author.
+
+The following company has sponsored and has copyright in part of this work:
+
+  Jane Street Holding, LLC
+  1 New York Plaza, 33rd Floor 
+  New York, NY 10004
+  USA

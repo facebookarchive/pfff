@@ -1,0 +1,86 @@
+(* $Id: gtkMenu.props 1402 2008-03-25 08:55:03Z garrigue $ *)
+
+prefix "Gtk"
+
+header {
+open Gtk
+}
+
+class OptionMenu : Button {
+  "menu"                 GtkMenu              : Read / Write
+  method remove_menu
+  method set_history : "int -> unit"
+  signal changed
+}
+
+class MenuItem : Item {
+  method set_submenu : "[>`menu] obj -> unit"
+  method get_submenu : "widget obj option"
+  method remove_submenu
+  method activate
+  method select
+  method deselect
+  method set_right_justified : "bool -> unit"
+  method get_right_justified : "bool"
+  method set_accel_path : "string -> unit"
+  method toggle_size_request : "int -> unit"
+  method toggle_size_allocate : "int -> unit"
+  signal activate
+  signal activate_item
+(*signal toggle_size_allocate : gint
+  signal toggle_size_request : gintref*)
+}
+
+class CheckMenuItem : MenuItem {
+  "active"               gboolean             : Read / Write
+  "inconsistent"         gboolean             : Read / Write
+  method set_show_toggle : "bool -> unit"
+  method toggled
+  signal toggled
+}
+
+class RadioMenuItem abstract : CheckMenuItem {
+  method set_group : "radio_menu_item group -> unit"
+}
+
+class ImageMenuItem : MenuItem {
+  "image"                GtkWidget            : Read / Write
+}
+
+(*
+class SeparatorMenuItem {}
+class TearoffMenuItem {}
+*)
+
+class MenuShell abstract : Container {
+  method append : "[>`widget] obj -> unit"
+  method prepend : "[>`widget] obj -> unit"
+  method insert : "[>`widget] obj -> pos:int -> unit"
+  method deactivate
+  signal activate_current : gboolean
+  signal cancel
+  signal cycle_focus : GtkDirectionType
+  signal deactivate
+  signal move_current : GtkMenuDirectionType
+  signal selection_done
+}
+class MenuBar : MenuShell {}
+class Menu : MenuShell {
+  "tearoff-title"        gchararray           : Read / Write
+  method popup :
+      "[>`menushell] optobj ->
+       [>`menuitem] optobj -> button:int -> time:int32 -> unit"
+  method popup_at :
+      "?button:int -> ?time:int32 ->
+       (x:int -> y:int -> pushed_in:bool -> int * int * bool) -> unit"
+  method popdown
+  method get_active : "widget obj"
+  method set_active : "int -> unit"
+  method set_accel_group : "accel_group -> unit"
+  method get_accel_group : "accel_group"
+  method set_accel_path : "string -> unit"
+  method attach_to_widget : "[>`widget] obj -> unit"
+  method get_attach_widget : "widget obj"
+  method detach
+  signal move_scroll : GtkScrollType
+}

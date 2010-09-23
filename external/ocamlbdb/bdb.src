@@ -1,0 +1,1222 @@
+/* -*- c -*- */
+/*
+ *
+ * Copyright (C) 2002 Lex Stein (lexstein@post.harvard.edu)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2, or (at
+ * your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA
+ *
+ */
+/* small patch by Yoann Padioleau for error handling, for larger transactions, 
+   and for log_archive and log_checkpoint.
+ */
+
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <assert.h>
+#include <caml/memory.h>
+#include <caml/mlvalues.h>
+#include <caml/callback.h>
+#include <caml/fail.h>
+#include <caml/alloc.h>
+
+#include <assert.h>
+#include <db.h>
+
+//#define DEBUG 1
+/*
+-- (*
+--  * This code is automatically generated from bdb.src
+--  * Copyright (c) 2002 Lex Stein (lexstein@post.harvard.edu)
+--  * See that file for constraints on redistribution and modification,
+--  * (lack of) warranty, and licensing.
+--  *)
+--
+-- exception BDBUnimplemented;;
+-- exception BDBLibFault;;
+-- external test_constr : int -> unit = "test_constr";;
+-- let _ = Callback.register_exception "BDBUnimplemented" BDBUnimplemented;;
+-- let _ = Callback.register_exception "BDBLibFault" BDBLibFault;;
+--
+-- exception BDBSystemError;;
+-- exception BDBError of int;;
+-- let _ = Callback.register_exception "BDBSystemError" BDBSystemError;;
+-- let _ = Callback.register_exception "BDBError" (BDBError 0);;
+--
+-- type dbenv;;
+-- type dbtxn;;
+-- type dbc;; (* db cursor type *)
+-- type db;;
+--
+*/
+
+static void unimplemented (void) {
+	raise_constant (*caml_named_value("BDBUnimplemented"));
+}
+
+static void raise_libfault (char *str) {
+	raise_with_string (*caml_named_value("BDBLibFault"), str);
+}
+
+static char*
+optionval_to_string (v)
+	value v;
+{
+	if (Is_block (v)) {
+		v = Field (v, 0);
+		assert (Tag_val (v) == String_tag);
+		/* XXX where does this memory come from and go to */
+		return String_val (v);
+	} else {
+		return NULL;
+	}
+}
+
+static DB_TXN*
+optionval_to_dbtxn (v)
+	value v;
+{
+	if (Is_block (v)) {
+		v = Field (v, 0);
+		if (Tag_val (v) != Abstract_tag) {
+			fprintf (stderr, "tag val of %d\n", Tag_val (v));
+			assert (0);
+		}
+		return (DB_TXN*) Field (v, 0);
+	} else {
+		return NULL;
+	}
+}
+
+static int 
+optionval_flags_to_int (v, arr)
+	value v;
+	int * arr;
+{
+	if (Is_block (v)) {
+		v = Field (v, 0);
+		return (arr [Int_val (v)]);
+	} else {
+		return 0;
+	}
+}
+
+value get_flags (value flags) {
+	if (Is_block (flags)) {
+		fprintf (stderr, "tag of block is %d\n", Tag_val (flags));
+		fprintf (stderr, "size of block is %d\n", Wosize_val (flags));
+	} else {
+		fprintf (stderr, "this is not a block\n");
+	}
+	return Val_unit;
+}
+
+static void raise_error (int err) {
+	assert (err != 0);
+	if (err < 0) {
+		raise_with_arg (*caml_named_value("BDBError"), Val_int(err));
+	} else {
+		raise_constant (*caml_named_value("BDBSystemError"));
+	}
+}
+
+value test_constr (value arg) {
+/* CAMLparam1 (arg); */
+	int a;
+	a = Int_val (arg);
+	fprintf (stderr, "got val = %d\n", a);
+/*	CAMLreturn (Val_unit); */
+	return Val_unit;
+}
+
+value test (value arg) {
+	CAMLparam1 (arg);
+	int ret = Val_int (arg);
+	CAMLreturn (Int_val(ret));
+}
+
+/* DB_ENV */
+
+//static int env_create_flags[] = {DB_CLIENT};
+static int env_create_flags[] = {DB_RPCCLIENT}; //4.3
+
+/*
+--
+-- module Env =
+-- struct
+-- type create_flags = DB_CLIENT
+-- external create : create_flags list -> dbenv =
+--	"caml_env_create"
+--
+*/
+
+value caml_env_create (value flags) {
+
+	CAMLparam1 (flags);
+	CAMLlocal1 (ret);
+
+	DB_ENV *dbenv = NULL;
+	int err = 0;
+
+	if ((err = db_env_create (&dbenv, 
+			convert_flag_list(flags, env_create_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "env_create: %s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	ret = alloc (sizeof (DB_ENV *), Abstract_tag);
+	Field (ret, 0) = (void*)dbenv;
+	CAMLreturn (ret);
+
+}
+
+static int env_open_flags[] = {DB_JOINENV, DB_INIT_CDB,
+        DB_INIT_LOCK, DB_INIT_LOG, DB_INIT_MPOOL, DB_INIT_TXN,
+        DB_RECOVER, DB_RECOVER_FATAL, DB_USE_ENVIRON, DB_USE_ENVIRON_ROOT,
+        DB_CREATE, DB_LOCKDOWN, DB_PRIVATE, DB_SYSTEM_MEM, DB_THREAD};
+
+/*
+-- type open_flags = DB_JOINENV | DB_INIT_CDB |
+--	DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL |
+-- 	DB_INIT_TXN | DB_RECOVER | DB_RECOVER_FATAL |
+--	DB_USE_ENVIRON | DB_USE_ENVIRON_ROOT | DB_CREATE |
+--	DB_LOCKDOWN | DB_PRIVATE | DB_SYSTEM_MEM | DB_THREAD
+--
+-- external env_open : dbenv -> string -> open_flags list
+--		-> int32 -> unit = "caml_env_open"
+*/
+
+value
+caml_env_open (val_dbenv, home, flags, mode)
+	value val_dbenv;
+	value home;
+	value flags;
+	value mode;
+{
+
+	int err;
+	DB_ENV * dbenv = (DB_ENV*) Field (val_dbenv, 0);
+
+	if ((err = dbenv->open (dbenv, String_val (home), 
+		convert_flag_list (flags, env_open_flags), Int32_val (mode))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s", db_strerror (err));
+#endif
+		raise_error (err);	
+	}
+	return Val_unit;
+
+}
+
+static int env_close_flags[] = {};
+/*
+-- type close_flags
+-- external close : dbenv -> close_flags list -> unit
+--	= "caml_env_close"
+--
+*/
+value
+caml_env_close (value val_dbenv, value flags) {
+
+	int err;
+	DB_ENV * dbenv = (DB_ENV*) Field (val_dbenv, 0);
+
+	if ((err = dbenv->close (dbenv, 
+		convert_flag_list (flags, env_close_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "env_close: %s", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+/*
+-- type dbremove_flags = DB_AUTO_COMMIT
+-- external dbremove : dbenv -> dbtxn -> string -> string ->
+--	dbremove_flags list -> unit = "caml_env_dbremove"
+--
+*/
+value
+caml_env_dbremove (value val_dbenv, value vtxn, 
+	value fname, value dbname, value flags) {
+		unimplemented ();
+}
+
+/*
+-- type dbrename_flags = DB_AUTO_COMMIT
+-- external dbrename : dbenv -> dbtxn -> string -> string ->
+--	string -> dbrename_flags list = "caml_env_dbrename"
+--
+*/
+value
+caml_env_dbrename (value val_dbenv, value vtxn,
+	value fname, value dbname, value newname, value flags) {
+		unimplemented ();
+}
+
+/*
+-- external err : dbenv -> int -> string -> unit
+--	= "caml_env_err"
+*/
+value 
+caml_env_err (value val_dbenv, value error, value fmt) {
+	unimplemented ();
+}
+
+/*
+-- external errx : dbenv -> string -> unit 
+-- 	= "caml_env_errx"
+*/
+value 
+caml_env_errx (value val_dbenv, value fmt) {
+		unimplemented ();
+}
+
+static int env_remove_flags[] = {DB_FORCE, DB_USE_ENVIRON, 
+	DB_USE_ENVIRON_ROOT};
+
+/*
+-- type remove_flags = DB_FORCE | DB_USE_ENVIRON_
+--	| DB_USE_ENVIRON_ROOT_
+-- external remove : dbenv -> string -> remove_flags list 
+--	-> unit = "caml_env_remove"
+*/
+value
+caml_env_remove (value val_dbenv, value db_home, 
+	value flags) {
+		unimplemented ();
+}
+
+/*
+-- external db_strerror : int -> unit = "caml_db_strerror"
+*/
+value
+caml_db_strerror (value error) {
+	unimplemented ();
+}
+
+/*
+-- external db_version : int list -> int list -> int list 
+--	-> string = "caml_db_version"
+*/
+value
+caml_db_version (value major, value minor, value patch) {
+	unimplemented ();
+}
+
+/*
+-- (* environment configuration *)
+-- let set_app_dispatch _ = raise BDBUnimplemented
+-- let set_alloc _ = raise BDBUnimplemented
+-- let set_data_dir _ = raise BDBUnimplemented
+-- let set_encrypt _ = raise BDBUnimplemented
+-- let set_errcall _ = raise BDBUnimplemented
+-- let set_errfile _ = raise BDBUnimplemented
+-- let set_errpfx _ = raise BDBUnimplemented
+-- let set_feedback _ = raise BDBUnimplemented
+-- let set_flags _ = raise BDBUnimplemented
+-- let set_paniccall _ = raise BDBUnimplemented
+-- let set_rpc_server _ = raise BDBUnimplemented
+-- let set_shm_key _ = raise BDBUnimplemented
+-- let set_tas_spins _ = raise BDBUnimplemented
+-- let set_timeout _ = raise BDBUnimplemented
+-- let set_tmp_dir _ = raise BDBUnimplemented
+-- let set_verbose _ = raise BDBUnimplemented
+-- end
+*/
+
+/* DB */
+
+static int dbtype[] = {DB_BTREE, DB_HASH, DB_QUEUE, DB_RECNO, DB_UNKNOWN};
+/*
+--
+-- module Db =
+-- struct
+--  type dbtype = DB_BTREE | DB_HASH | DB_QUEUE | DB_RECNO | DB_UNKNOWN
+--
+*/
+
+static int db_create_flags[] = {DB_XA_CREATE};
+/*
+--  type create_flags = DB_XA_CREATE
+--  external create : dbenv -> create_flags list -> db =
+--		"caml_db_create"
+*/
+value
+caml_db_create (val_dbenv, flags)
+	value val_dbenv;
+	value flags;
+{
+	CAMLparam2 (val_dbenv, flags);
+	CAMLlocal1 (ret);
+  
+	int err;      
+	DB *db = NULL;
+	DB_ENV * dbenv = (DB_ENV *) Field (val_dbenv, 0);
+
+	if ((err = db_create (&db, dbenv,
+		convert_flag_list(flags, env_create_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror(err));
+#endif
+		raise_error (err);
+	}
+  
+	ret = alloc (sizeof (DB *), Abstract_tag);
+	Field (ret, 0) = (void*)db;
+	CAMLreturn (ret);
+
+}
+
+/*
+-- let associate _ = raise BDBUnimplemented
+*/
+
+static int db_close_flags[] = {DB_NOSYNC};
+/*
+-- type close_flags = DB_NOSYNC
+-- external close : db -> close_flags list -> unit = "caml_db_close"
+*/
+value
+caml_db_close (val_db, flags)
+	value val_db;
+	value flags;
+{
+
+	int err;
+	DB* db = (DB *) Field (val_db, 0);
+
+	if ((err = db->close (db, 
+			convert_flag_list (flags, db_close_flags))) != 0) {      
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+static int db_del_flags[] = {};
+/*
+-- type del_flags
+-- external del : db -> dbtxn option -> string -> del_flags list -> unit 
+--		= "caml_db_del"
+*/
+
+value
+caml_db_del (val_db, txn, key, flags) 
+	value val_db;
+	value txn;
+	value key;
+	value flags;
+{
+
+	int err;
+	DB* db = (DB *) Field (val_db, 0);	
+	DBT akey;
+
+	memset (&akey, 0, sizeof (DBT));
+	akey.data = String_val (key);
+	akey.size = string_length (key);
+
+	if ((err = db->del (db, optionval_to_dbtxn (txn), &akey, 
+				convert_flag_list (flags, db_del_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		//PAD: cause a segfault, dont know why raise_error (err);
+		raise_not_found();
+	}
+
+	return Val_unit;
+
+}
+
+/*
+-- let err _ = raise BDBUnimplemented
+-- let errx _ = raise BDBUnimplemented
+-- let fd _ = raise BDBUnimplemented
+*/
+
+static int db_get_flags[] = {DB_CONSUME, DB_CONSUME_WAIT, DB_GET_BOTH,
+	DB_SET_RECNO, DB_DIRTY_READ, DB_MULTIPLE, DB_RMW};
+/*
+-- type get_flags = DB_CONSUME | DB_CONSUME_WAIT | DB_GET_BOTH |
+--	DB_SET_RECNO | DB_DIRTY_READ | DB_MULTIPLE | DB_RMW
+-- external get : db -> dbtxn option -> string -> get_flags list -> string =
+--		"caml_db_get"
+*/
+
+value
+caml_db_get (val_db, val_txn, val_key, val_flags)
+	value val_db;
+	value val_txn;
+	value val_key;
+	value val_flags;
+{
+
+	CAMLparam4 (val_db, val_txn, val_key, val_flags);
+	CAMLlocal1 (ret);
+	int err, i;
+	DB* db = (DB *) Field (val_db, 0);
+	DBT akey, aval;
+	DB_TXN *txn;
+	u_int32_t flags;
+
+	memset (&akey, 0, sizeof (DBT));
+	memset (&aval, 0, sizeof (DBT));
+
+        //        aval.flags = DB_DBT_MALLOC;
+	akey.data = String_val (val_key);
+	akey.size = string_length (val_key);
+
+	txn = optionval_to_dbtxn (val_txn);
+	flags = convert_flag_list (val_flags, db_get_flags);
+#ifdef DEBUG
+	fprintf (stderr, "get: db=%x txn=%x flags=%d\n", db, txn, flags);
+#endif
+
+	if ((err = db->get (db, txn, &akey, &aval, flags)) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "get: %s\n", db_strerror (err));
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		//PAD: cause a segfault, dont know why raise_error (err);
+		raise_not_found();
+	}
+
+#ifdef DEBUG
+	fprintf (stderr, "get: got data of size %d\n", aval.size);
+#endif
+
+	ret = alloc_string (aval.size);
+        memmove (String_val (ret), aval.data, aval.size);
+	CAMLreturn (ret);
+}
+
+/*
+-- let pget _ = raise BDBUnimplemented
+-- let get_byteswapped _ = raise BDBUnimplemented
+-- let get_type _ = raise BDBUnimplemented
+-- let join _ = raise BDBUnimplemented
+-- let key_range _ = raise BDBUnimplemented
+*/
+
+static int db_open_flags[] = {DB_CREATE, DB_DIRTY_READ,
+	DB_EXCL, DB_NOMMAP, DB_RDONLY, DB_THREAD, DB_TRUNCATE};
+/*
+-- type open_flags = DB_CREATE | DB_DIRTY_READ |
+--	DB_EXCL | DB_NOMMAP | DB_RDONLY | DB_THREAD | DB_TRUNCATE
+--
+-- external db_open : db -> dbtxn option -> string -> string -> 
+-- dbtype -> open_flags list -> int -> unit = 
+--  "caml_db_open_bytecode" "caml_db_open_native"
+--
+*/
+
+value
+caml_db_open_native (val_db, val_txn, fname, val_dbname, val_dbtype, flags, mode)
+	value val_db;
+	value val_txn;
+	value fname;
+	value val_dbname;
+	value val_dbtype;
+	value flags;
+	value mode;
+{
+	DBTYPE dbtype;
+	DB_TXN *txn;
+	DB* db = (DB *) Field (val_db, 0);
+	int err, j;
+
+	j = Int_val (val_dbtype);
+	txn = optionval_to_dbtxn (val_txn);
+	if (j == 0) {
+		dbtype = DB_BTREE;
+	} else if (j == 1) {
+		dbtype = DB_HASH;
+	} else if (j == 2) {
+		dbtype = DB_QUEUE;
+	} else if (j == 3) {
+		dbtype = DB_RECNO;
+	} else if (j == 4) {
+		dbtype = DB_UNKNOWN;
+	} else {
+#ifdef DEBUG
+		fprintf (stderr, "db type unknown\n");
+#endif
+		raise_libfault ("db type unknown");
+	}
+
+	if ((err = db->open (db, txn, String_val (fname), NULL,
+		dbtype, (convert_flag_list (flags, db_open_flags)), 
+		(Int_val (mode)))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+        db->set_errfile(db, stderr);
+
+	return Val_unit;
+
+}
+
+value 
+caml_db_open_bytecode (argv, argn)
+	value * argv;
+	int argn;
+{
+	return caml_db_open_native (argv[0], argv[1], argv[2], 
+			argv[3], argv[4], argv[5], argv[6]);
+}
+
+static int db_put_flags[] = {DB_APPEND, DB_NODUPDATA, DB_NOOVERWRITE};
+/*
+-- type put_flags = DB_APPEND | DB_NODUPDATA | DB_NOOVERWRITE
+-- external put : db -> dbtxn option -> string -> string -> put_flags list -> unit =
+--		"caml_db_put" 
+*/
+
+
+value
+caml_db_put (val_db, val_txn, val_key, val_data, val_flags)
+	value val_db;
+	value val_txn;
+	value val_key;
+	value val_data;
+	value val_flags;
+{
+	
+	int err;
+	DB* db = (DB *) Field (val_db, 0);
+	DBT akey, aval;
+	DB_TXN* txn;
+	u_int32_t flags;
+
+	memset (&akey, 0, sizeof (DBT));
+	memset (&aval, 0, sizeof (DBT));
+	assert (Tag_val (val_key) == String_tag);
+	akey.data = (void*) String_val (val_key);
+	akey.size = string_length (val_key);
+	aval.data = (void*) String_val (val_data);
+	aval.size = string_length (val_data);
+#ifdef DEBUG
+	fprintf (stderr, "key length of %d and data length of %d\n",
+		akey.size, aval.size);
+#endif
+
+	txn = optionval_to_dbtxn (val_txn);
+	flags = convert_flag_list (val_flags, db_put_flags);
+#ifdef DEBUG
+	fprintf (stderr, "calling db->put with db=%x txn=%x flags=%d\n",
+		db, txn, flags)	;
+#endif
+	if ((err = db->put (db, txn, &akey, &aval, flags)) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s (error number %d)\n", db_strerror (err), err);
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+static int db_remove_flags[] = {};
+/*
+-- type remove_flags
+-- external remove : db -> string -> string -> 
+--	remove_flags list -> unit = "caml_db_remove"
+*/
+value
+caml_db_remove (val_db, fname, dbname, flags)
+	value val_db;
+	value fname;
+	value dbname;
+	value flags;
+{
+
+	DB* db = (DB *) Field (val_db, 0);	
+	int err;
+
+	if ((err = db->remove (db, String_val (fname), String_val (dbname), 
+		convert_flag_list (flags, db_remove_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+static int db_rename_flags[] = {};
+/*
+-- type rename_flags
+-- external rename : db -> string -> string -> string ->
+--	rename_flags list -> unit = "caml_db_rename"
+*/
+value
+caml_db_rename (val_db, fname, dbname, newname, flags)
+	value val_db;
+	value fname;
+	value dbname;
+	value newname;
+	value flags;
+{
+
+	DB* db = (DB *) Field (val_db, 0);	
+	int err;
+
+	if ((err = db->rename (db, String_val (fname), String_val (dbname), 
+		String_val (newname), convert_flag_list (flags, db_rename_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+/*
+-- let stat _ = raise BDBUnimplemented;;
+*/
+
+static int db_sync_flags[] = {};
+/*
+-- type sync_flags
+-- external sync : db -> sync_flags = "caml_db_sync"
+*/
+
+value
+caml_db_sync (val_db, flags)
+	value val_db;
+	value flags;
+{
+
+	DB* db = (DB *) Field (val_db, 0);
+	int err;
+
+	if ((err = db->sync (db, convert_flag_list (flags, db_sync_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+/*
+-- let truncate _ = raise BDBUnimplemented
+-- let upgrade _ = raise BDBUnimplemented
+-- let verify _ = raise BDBUnimplemented
+-- (* database configuration *)
+-- let set_alloc _ = raise BDBUnimplemented
+-- let set_cache_priority _ = raise BDBUnimplemented
+-- let set_cachesize _ = raise BDBUnimplemented
+-- let set_dup_compare _ = raise BDBUnimplemented
+-- let set_encrypt _ = raise BDBUnimplemented
+-- let set_errcall _ = raise BDBUnimplemented
+-- let set_errfile _ = raise BDBUnimplemented
+-- let set_errpfx _ = raise BDBUnimplemented
+-- let set_feedback _ = raise BDBUnimplemented
+-- let set_flags _ = raise BDBUnimplemented
+-- let set_lorder _ = raise BDBUnimplemented
+-- let set_pagesize _ = raise BDBUnimplemented
+-- let set_paniccall _ = raise BDBUnimplemented
+-- let set_append_recno _ = raise BDBUnimplemented
+-- let set_bt_compare _ = raise BDBUnimplemented
+-- let set_bt_minkey _ = raise BDBUnimplemented
+-- let set_bt_prefix _ = raise BDBUnimplemented
+-- let set_re_delim _ = raise BDBUnimplemented
+-- let set_re_len _ = raise BDBUnimplemented
+-- let set_re_pad _ = raise BDBUnimplemented
+-- let set_re_source _ = raise BDBUnimplemented
+-- let set_h_ffactor _ = raise BDBUnimplemented
+-- let set_h_hash _ = raise BDBUnimplemented
+-- let set_h_nelem _ = raise BDBUnimplemented
+-- let set_q_extentsize _ = raise BDBUnimplemented
+-- end
+*/
+
+/*
+-- module Cursor =
+-- struct
+*/
+
+static int db_cursor_flags[] = {DB_DIRTY_READ, DB_WRITECURSOR};
+
+/*
+-- type db_cursor_flags = DB_DIRTY_READ | DB_WRITECURSOR
+-- external db_cursor : db -> dbtxn option -> db_cursor_flags list
+--	-> dbc = "caml_db_cursor"
+*/
+
+value
+caml_db_cursor (val_db, val_txn, val_flags)
+	value val_db;
+	value val_txn;
+	value val_flags;
+{
+
+	CAMLparam3 (val_db, val_txn, val_flags);
+	CAMLlocal1 (ret);
+
+	DB* db = (DB *) Field (val_db, 0);
+	DB_TXN *txn;
+	DBC *cursorp;
+	u_int32_t flags;
+	int err = 0;
+
+	txn = optionval_to_dbtxn (val_txn);
+	flags = convert_flag_list (val_flags, db_cursor_flags);
+#ifdef DEBUG
+	fprintf (stderr, "calling db->cursor with db=%x txn=%x flags=%d\n",
+		db, txn, flags) ;
+#endif
+
+	if ((err = db->cursor (db, txn, &cursorp, flags)) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "caml_db_cursor: %s\n", db_strerror (err));
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		raise_error (err);
+	}
+
+	ret = alloc (sizeof (DBC *), Abstract_tag);
+	Field (ret, 0) = (void*)cursorp;
+	CAMLreturn (ret);
+
+}
+
+/*
+-- external dbc_close : dbc -> unit = "caml_dbc_close"
+*/
+
+value
+caml_dbc_close (val_dbc)
+	value val_dbc;
+{
+	DBC* dbc = (DBC *) Field (val_dbc, 0);
+	int err;
+
+	if ((err = dbc->c_close (dbc)) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "dbc_close: %s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+/*
+-- let dbc_count _ = raise BDBUnimplemented
+-- let dbc_del _ = raise BDBUnimplemented
+-- let dbc_dup _ = raise BDBUnimplemented
+*/
+
+
+static int dbc_get_flags[] = {DB_CURRENT, DB_FIRST, DB_LAST, DB_GET_BOTH,
+	DB_GET_BOTH_RANGE, DB_GET_RECNO, DB_JOIN_ITEM,
+	DB_NEXT, DB_PREV, DB_NEXT_DUP, DB_NEXT_NODUP, DB_PREV_NODUP,
+	DB_SET, DB_SET_RANGE, DB_SET_RECNO};
+/*
+-- type dbc_get_flags = DB_CURRENT | DB_FIRST | DB_LAST | DB_GET_BOTH |
+--			DB_GET_BOTH_RANGE | DB_GET_RECNO | DB_JOIN_ITEM |
+--			DB_NEXT | DB_PREV | DB_NEXT_DUP | DB_NEXT_NODUP | DB_PREV_NODUP |
+--			DB_SET | DB_SET_RANGE | DB_SET_RECNO
+-- external dbc_get : dbc -> dbc_get_flags list -> (string * string)  = "caml_dbc_get"
+*/
+
+value
+caml_dbc_get (val_dbc, flags)
+	value val_dbc;
+	value flags;
+{
+
+	CAMLparam2 (val_dbc, flags);
+	CAMLlocal3 (ret_key, ret_val, ret);
+	DBC *dbc = (DBC *) Field (val_dbc, 0);
+	DBT akey, aval;
+	int err;
+
+	memset (&akey, 0, sizeof (DBT));
+	memset (&aval, 0, sizeof (DBT));
+	if ((err = dbc->c_get (dbc, &akey, &aval, 
+		convert_flag_list (flags, dbc_get_flags))) != 0) {
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+	  //PAD:raise_error (err);
+	  failwith("ending");
+	}
+
+	ret = alloc (2, 0);
+	/* package it up as a tuple */
+	ret_key = alloc_string (akey.size);
+	memmove (String_val (ret_key), akey.data, akey.size);
+	ret_val = alloc_string (aval.size);
+	memmove (String_val (ret_val), aval.data, aval.size);
+	Field (ret, 0) = (void*)ret_key;
+	Field (ret, 1) = (void*)ret_val;
+	CAMLreturn (ret);
+
+}
+
+/*
+-- let dbc_pget _ = raise BDBUnimplemented
+-- let dbc_put _ = raise BDBUnimplemented
+-- end
+*/
+
+/*
+-- (* lock subsystem *)
+-- let env_set_lk_conflicts _ = raise BDBUnimplemented;;
+-- let env_set_lk_detect _ = raise BDBUnimplemented;;
+-- let env_set_lk_max_lockers _ = raise BDBUnimplemented;;
+-- let env_set_lk_max_locks _ = raise BDBUnimplemented;;
+-- let env_set_lk_max_objects _ = raise BDBUnimplemented;;
+-- (* PAD *)
+-- external env_set_max_stuff : dbenv -> int -> unit = "caml_env_set_max_stuff"
+
+-- let lock_detect _ = raise BDBUnimplemented;;
+-- let lock_get _ = raise BDBUnimplemented;;
+-- let lock_id _ = raise BDBUnimplemented;;
+-- let lock_id_free _ = raise BDBUnimplemented;;
+-- let lock_put _ = raise BDBUnimplemented;;
+-- let lock_stat _ = raise BDBUnimplemented;;
+-- let lock_vec _ = raise BDBUnimplemented;;
+*/
+
+
+//PAD
+value 
+caml_env_set_max_stuff (value val_dbenv, value nb) {
+  int err;
+  DB_ENV * dbenv = (DB_ENV*) Field (val_dbenv, 0);
+
+  //note: this function must be called immediatly after the env_create
+
+  //if use default value of 1000, then LFS cant handle large databases, in particular
+  // cant do in one transaction a pass through all the objetc/proprs/...
+  // and so check_world hang.
+  int NB = Int_val(nb);
+
+  dbenv->set_errfile(dbenv, stderr);
+  dbenv->set_lk_max_lockers(dbenv, NB); 
+  dbenv->set_lk_max_locks(dbenv, NB); 
+  dbenv->set_lk_max_objects(dbenv, NB); 
+
+  return Val_unit;
+
+}
+
+/*
+-- (* log subsystem *)
+-- let env_set_lg_bsize _ = raise BDBUnimplemented;;
+-- let env_set_lg_dir _ = raise BDBUnimplemented;;
+-- let env_set_lg_max _ = raise BDBUnimplemented;;
+-- let env_set_lg_regionmax _ = raise BDBUnimplemented;;
+(* PAD patch *)
+ (* let log_archive _ = raise BDBUnimplemented;; *)
+-- external log_archive : dbenv -> string list = "caml_log_archive"
+
+-- let log_file _ = raise BDBUnimplemented;;
+-- let log_flush _ = raise BDBUnimplemented;;
+-- let log_put _ = raise BDBUnimplemented;;
+-- let log_stat _ = raise BDBUnimplemented;;
+-- let log_cursor _ = raise BDBUnimplemented;;
+-- let logc_close _ = raise BDBUnimplemented;;
+-- let logc_get _ = raise BDBUnimplemented;;
+-- let log_compare _ = raise BDBUnimplemented;;
+*/
+/* PAD */
+value 
+caml_log_archive (value val_dbenv) {
+  int err;
+  DB_ENV * dbenv = (DB_ENV*) Field (val_dbenv, 0);
+
+  char **begin, **list;
+
+  value camllist;
+  value temp;
+
+
+  if ((err = dbenv->log_archive(dbenv, &list, 0 /*DB_ARCH_ABS*/)) != 0) {
+#ifdef DEBUG
+    fprintf (stderr, "caml_log_archive: %s\n", db_strerror (err));
+#endif
+    raise_error (err);
+
+  }
+
+  camllist = Val_emptylist;
+
+  
+
+  if (list != NULL) {
+    for (begin = list; *list != NULL; ++list) {
+
+#ifdef DEBUG
+    fprintf (stderr, "caml_log_archive: %s\n", *list);
+#endif
+    temp = alloc(2, Tag_cons);
+    Field(temp, 0) = copy_string(*list);
+    Field(temp, 1) = camllist;
+    camllist = temp;
+    
+    }
+    free(begin);
+
+  }
+
+  return camllist;
+
+
+}
+
+/*
+-- (* memory pool subsystem *)
+-- let env_set_cachesize _ = raise BDBUnimplemented;;
+-- let env_set_mp_mmapsize _ = raise BDBUnimplemented;;
+-- let memp_register _ = raise BDBUnimplemented;;
+-- let memp_stat _ = raise BDBUnimplemented;;
+-- let memp_sync _ = raise BDBUnimplemented;;
+-- let memp_trickle _ = raise BDBUnimplemented;;
+-- (* memory pool files *)
+-- let memp_fcreate _ = raise BDBUnimplemented;;
+-- let memp_fclose _ = raise BDBUnimplemented;;
+-- let memp_fget _ = raise BDBUnimplemented;;
+-- let memp_fopen _ = raise BDBUnimplemented;;
+-- let memp_fput _ = raise BDBUnimplemented;;
+-- let memp_fset _ = raise BDBUnimplemented;;
+-- let memp_fsync _ = raise BDBUnimplemented;;
+-- let memp_set_clear_len _ = raise BDBUnimplemented;;
+-- let memp_set_fileid _ = raise BDBUnimplemented;;
+-- let memp_set_ftype _ = raise BDBUnimplemented;;
+-- let memp_set_lsn_offset _ = raise BDBUnimplemented;;
+-- let memp_set_pgcookie _ = raise BDBUnimplemented;;
+*/
+
+/*
+-- module Txn = 
+-- struct
+-- (* transaction subsystem *)
+-- let env_set_tx_max _ = raise BDBUnimplemented
+-- let env_set_tx_timestamp _ = raise BDBUnimplemented
+-- (* PAD let checkpoint _ = raise BDBUnimplemented *)
+-- external checkpoint : dbenv -> unit = "caml_txn_checkpoint"
+-- let recover _ = raise BDBUnimplemented
+-- let txn_stat _ = raise BDBUnimplemented
+*/
+
+/* PAD */
+
+
+value 
+caml_txn_checkpoint (value val_dbenv) {
+  int err;
+  DB_ENV * dbenv = (DB_ENV*) Field (val_dbenv, 0);
+  
+  if ((err = dbenv->txn_checkpoint(dbenv, 0, 0, 0))) {
+#ifdef DEBUG
+    fprintf (stderr, "caml_txn_checkpoint: %s\n", db_strerror (err));
+#endif
+    raise_error (err);
+  }
+  
+  return Val_unit;
+}  
+
+
+
+
+static int txn_begin_flags[] = {DB_DIRTY_READ, DB_TXN_NOSYNC,
+	DB_TXN_NOWAIT, DB_TXN_SYNC};
+/*
+-- type txn_begin_flags = DB_DIRTY_READ | DB_TXN_NOSYNC | 
+--	DB_TXN_NOWAIT | DB_TXN_SYNC
+-- external txn_begin : dbenv -> dbtxn option -> txn_begin_flags list -> dbtxn =
+--	"caml_txn_begin"
+*/
+
+value
+caml_txn_begin (val_dbenv, val_txn, flags) 
+	value val_dbenv;
+	value val_txn;
+	value flags;
+{
+
+	CAMLparam3 (val_dbenv, val_txn, flags);
+	CAMLlocal1 (ret);
+	DB_ENV *dbenv = (DB_ENV*) Field (val_dbenv, 0);
+	int err = 0;
+	DB_TXN* txn;
+
+	if ((err = dbenv->txn_begin (dbenv, optionval_to_dbtxn (val_txn),
+			&txn, convert_flag_list (flags, txn_begin_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		raise_error (err);
+	}
+
+	ret = alloc (sizeof (DB_TXN *), Abstract_tag);
+	Field (ret, 0) = (void*)txn;
+	CAMLreturn (ret);
+
+}
+
+/*
+-- external abort : dbtxn -> unit = "caml_txn_abort"
+*/
+value
+caml_txn_abort (val_txn) 
+	value val_txn;
+{
+	int err;
+	DB_TXN* txn = (DB_TXN*) Field (val_txn, 0);
+#ifdef DEBUG
+	fprintf (stderr, "BDB: aborting transaction\n");
+#endif
+	if ((err = txn->abort (txn)) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, "%s\n", db_strerror (err));
+#endif
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+static int commit_flags[] = {DB_TXN_NOSYNC, DB_TXN_SYNC};
+/*
+-- type commit_flags = DB_TXN_NOSYNC | DB_TXN_SYNC
+-- external commit : dbtxn -> commit_flags option -> unit = "caml_txn_commit"
+*/
+value
+caml_txn_commit (val_txn, flags) 
+	value val_txn;
+	value flags;
+{
+	int err;
+	DB_TXN* txn = (DB_TXN*) Field (val_txn, 0);
+	if ((err = txn->commit (txn, 
+			optionval_flags_to_int (flags, commit_flags))) != 0) {
+#ifdef DEBUG
+		fprintf (stderr, db_strerror (err));
+#endif
+                if (err > 0 ) { 
+                  fprintf (stderr, "system error");
+                  exit(0);
+                }
+		raise_error (err);
+	}
+
+	return Val_unit;
+
+}
+
+/*
+-- let discard _ = raise BDBUnimplemented
+*/
+
+/*
+-- external id : dbtxn -> int32 = "caml_txn_id"
+*/
+value
+caml_txn_id (val_txn)
+	value val_txn;
+{
+	CAMLparam1 (val_txn);
+	DB_TXN* txn = (DB_TXN*) Field (val_txn, 0);
+	CAMLreturn (copy_int32 (txn->id (txn)));
+}
+
+/*
+-- let prepare _ = raise BDBUnimplemented
+-- let set_timeout _ = raise BDBUnimplemented
+-- end
+*/
+
+/*
+-- (* replication *)
+-- let set_rep_transport _ = raise BDBUnimplemented;;
+-- let rep_elect _ = raise BDBUnimplemented;;
+-- let rep_limit _ = raise BDBUnimplemented;;
+-- let rep_process_message _ = raise BDBUnimplemented;;
+-- let rep_start _ = raise BDBUnimplemented;;
+-- (* System configuration *)
+-- let set_func_close _ = raise BDBUnimplemented;;
+-- let set_func_dirfree _ = raise BDBUnimplemented;;   
+-- let set_func_dirlist _ = raise BDBUnimplemented;; 
+-- let set_func_exists _ = raise BDBUnimplemented;;
+-- let set_func_free _ = raise BDBUnimplemented;;
+-- let set_func_fsync _ = raise BDBUnimplemented;;
+-- let set_func_ioinfo _ = raise BDBUnimplemented;;
+-- let set_func_malloc _ = raise BDBUnimplemented;;
+-- let set_func_map _ = raise BDBUnimplemented;;
+-- let set_func_open _ = raise BDBUnimplemented;;
+-- let set_func_read _ = raise BDBUnimplemented;;
+-- let set_func_realloc _ = raise BDBUnimplemented;;
+-- let set_func_rename _ = raise BDBUnimplemented;;
+-- let set_func_seek _ = raise BDBUnimplemented;;
+-- let set_func_unlink _ = raise BDBUnimplemented;;
+-- let set_func_unmap _ = raise BDBUnimplemented;;
+-- let set_func_write _ = raise BDBUnimplemented;;
+-- let set_func_yield _ = raise BDBUnimplemented;;
+*/
+
+

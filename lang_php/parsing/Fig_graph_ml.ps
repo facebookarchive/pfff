@@ -1,0 +1,622 @@
+%!PS-Adobe-2.0
+%%Creator: Graphviz version 2.12 (Thu May 24 17:55:05 UTC 2007)
+%%For: (pad) Yoann Padioleau
+%%Title: G
+%%Pages: (atend)
+%%BoundingBox: (atend)
+%%EndComments
+save
+%%BeginProlog
+/DotDict 200 dict def
+DotDict begin
+
+/setupLatin1 {
+mark
+/EncodingVector 256 array def
+ EncodingVector 0
+
+ISOLatin1Encoding 0 255 getinterval putinterval
+EncodingVector 45 /hyphen put
+
+% Set up ISO Latin 1 character encoding
+/starnetISO {
+        dup dup findfont dup length dict begin
+        { 1 index /FID ne { def }{ pop pop } ifelse
+        } forall
+        /Encoding EncodingVector def
+        currentdict end definefont
+} def
+/Times-Roman starnetISO def
+/Times-Italic starnetISO def
+/Times-Bold starnetISO def
+/Times-BoldItalic starnetISO def
+/Helvetica starnetISO def
+/Helvetica-Oblique starnetISO def
+/Helvetica-Bold starnetISO def
+/Helvetica-BoldOblique starnetISO def
+/Courier starnetISO def
+/Courier-Oblique starnetISO def
+/Courier-Bold starnetISO def
+/Courier-BoldOblique starnetISO def
+cleartomark
+} bind def
+
+%%BeginResource: procset graphviz 0 0
+/coord-font-family /Times-Roman def
+/default-font-family /Times-Roman def
+/coordfont coord-font-family findfont 8 scalefont def
+
+/InvScaleFactor 1.0 def
+/set_scale {
+       dup 1 exch div /InvScaleFactor exch def
+       scale
+} bind def
+
+% styles
+/solid { [] 0 setdash } bind def
+/dashed { [9 InvScaleFactor mul dup ] 0 setdash } bind def
+/dotted { [1 InvScaleFactor mul 6 InvScaleFactor mul] 0 setdash } bind def
+/invis {/fill {newpath} def /stroke {newpath} def /show {pop newpath} def} bind def
+/bold { 2 setlinewidth } bind def
+/filled { } bind def
+/unfilled { } bind def
+/rounded { } bind def
+/diagonals { } bind def
+
+% hooks for setting color 
+/nodecolor { sethsbcolor } bind def
+/edgecolor { sethsbcolor } bind def
+/graphcolor { sethsbcolor } bind def
+/nopcolor {pop pop pop} bind def
+
+/beginpage {	% i j npages
+	/npages exch def
+	/j exch def
+	/i exch def
+	/str 10 string def
+	npages 1 gt {
+		gsave
+			coordfont setfont
+			0 0 moveto
+			(\() show i str cvs show (,) show j str cvs show (\)) show
+		grestore
+	} if
+} bind def
+
+/set_font {
+	findfont exch
+	scalefont setfont
+} def
+
+% draw aligned label in bounding box aligned to current point
+/alignedtext {			% width adj text
+	/text exch def
+	/adj exch def
+	/width exch def
+	gsave
+		width 0 gt {
+			text stringwidth pop adj mul 0 rmoveto
+		} if
+		[] 0 setdash
+		text show
+	grestore
+} def
+
+/boxprim {				% xcorner ycorner xsize ysize
+		4 2 roll
+		moveto
+		2 copy
+		exch 0 rlineto
+		0 exch rlineto
+		pop neg 0 rlineto
+		closepath
+} bind def
+
+/ellipse_path {
+	/ry exch def
+	/rx exch def
+	/y exch def
+	/x exch def
+	matrix currentmatrix
+	newpath
+	x y translate
+	rx ry scale
+	0 0 1 0 360 arc
+	setmatrix
+} bind def
+
+/endpage { showpage } bind def
+/showpage { } def
+
+/layercolorseq
+	[	% layer color sequence - darkest to lightest
+		[0 0 0]
+		[.2 .8 .8]
+		[.4 .8 .8]
+		[.6 .8 .8]
+		[.8 .8 .8]
+	]
+def
+
+/layerlen layercolorseq length def
+
+/setlayer {/maxlayer exch def /curlayer exch def
+	layercolorseq curlayer 1 sub layerlen mod get
+	aload pop sethsbcolor
+	/nodecolor {nopcolor} def
+	/edgecolor {nopcolor} def
+	/graphcolor {nopcolor} def
+} bind def
+
+/onlayer { curlayer ne {invis} if } def
+
+/onlayers {
+	/myupper exch def
+	/mylower exch def
+	curlayer mylower lt
+	curlayer myupper gt
+	or
+	{invis} if
+} def
+
+/curlayer 0 def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+14 default-font-family set_font
+1 setmiterlimit
+% /arrowlength 10 def
+% /arrowwidth 5 def
+
+% make sure pdfmark is harmless for PS-interpreters other than Distiller
+/pdfmark where {pop} {userdict /pdfmark /cleartomark load put} ifelse
+% make '<<' and '>>' safe on PS Level 1 devices
+/languagelevel where {pop languagelevel}{1} ifelse
+2 lt {
+    userdict (<<) cvn ([) cvn load put
+    userdict (>>) cvn ([) cvn load put
+} if
+
+%%EndSetup
+setupLatin1
+%%Page: 1 1
+%%PageBoundingBox: 36 36 576 752
+%%PageOrientation: Landscape
+gsave
+36 36 576 752 boxprim clip newpath
+0 0 1 beginpage
+0.985401 0.985401 set_scale 90 rotate 40.5333 -580.533 translate
+0.000 0.000 1.000 graphcolor
+newpath -4 -4 moveto
+-4 544 lineto
+723 544 lineto
+723 -4 lineto
+closepath fill
+0.985401 setlinewidth
+0.000 0.000 1.000 graphcolor
+newpath -4 -4 moveto
+-4 544 lineto
+723 544 lineto
+723 -4 lineto
+closepath stroke
+% Flag_parsing_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+192 122 63.1839 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+192 116 moveto 101.098 -0.5 (Flag_parsing_php) alignedtext
+grestore
+% Scope_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+380 24 44.2421 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+380 18 moveto 62.2118 -0.5 (Scope_php) alignedtext
+grestore
+% Type_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+554 24 41.0196 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+554 18 moveto 56.7672 -0.5 (Type_php) alignedtext
+grestore
+% Ast_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+468 122 36.8571 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+468 116 moveto 47.4418 -0.5 (Ast_php) alignedtext
+grestore
+% Ast_php->Scope_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 453 105 moveto
+439 89 418 66 402 49 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 404.219 46.221 moveto
+395 41 lineto
+398.951 50.8306 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 404.219 46.221 moveto
+395 41 lineto
+398.951 50.8306 lineto
+closepath stroke
+grestore
+% Ast_php->Type_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 483 105 moveto
+496 89 517 66 532 49 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 535.049 50.8306 moveto
+539 41 lineto
+529.781 46.221 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 535.049 50.8306 moveto
+539 41 lineto
+529.781 46.221 lineto
+closepath stroke
+grestore
+% Sexp_ast_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+632 417 51.9106 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+632 411 moveto 78.547 -0.5 (Sexp_ast_php) alignedtext
+grestore
+% Sexp_ast_php->Ast_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 630 399 moveto
+626 375 618 334 602 301 curveto
+573 240 521 179 491 147 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 493.219 144.221 moveto
+484 139 lineto
+487.951 148.831 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 493.219 144.221 moveto
+484 139 lineto
+487.951 148.831 lineto
+closepath stroke
+grestore
+% Visitor_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+278 220 46.0772 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+278 214 moveto 66.8836 -0.5 (Visitor_php) alignedtext
+grestore
+% Visitor_php->Flag_parsing_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 263 203 moveto
+249 187 229 165 214 148 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 216.219 145.221 moveto
+207 140 lineto
+210.951 149.831 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 216.219 145.221 moveto
+207 140 lineto
+210.951 149.831 lineto
+closepath stroke
+grestore
+% Visitor_php->Ast_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 306 206 moveto
+340 189 397 159 433 140 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 434.958 142.916 moveto
+442 135 lineto
+431.559 136.797 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 434.958 142.916 moveto
+442 135 lineto
+431.559 136.797 lineto
+closepath stroke
+grestore
+% Lib_parsing_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+278 319 60.963 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+278 313 moveto 95.6536 -0.5 (Lib_parsing_php) alignedtext
+grestore
+% Lib_parsing_php->Visitor_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 278 301 moveto
+278 286 278 265 278 248 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 281.5 248 moveto
+278 238 lineto
+274.5 248 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 281.5 248 moveto
+278 238 lineto
+274.5 248 lineto
+closepath stroke
+grestore
+% Parser_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+468 220 44.1236 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+468 214 moveto 62.9776 -0.5 (Parser_php) alignedtext
+grestore
+% Parser_php->Ast_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 468 202 moveto
+468 187 468 167 468 150 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 471.5 150 moveto
+468 140 lineto
+464.5 150 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 471.5 150 moveto
+468 140 lineto
+464.5 150 lineto
+closepath stroke
+grestore
+% Lexer_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+73 319 42.9579 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+73 313 moveto 60.6424 -0.5 (Lexer_php) alignedtext
+grestore
+% Lexer_php->Flag_parsing_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 84 302 moveto
+104 267 152 190 176 149 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 179.203 150.441 moveto
+181 140 lineto
+173.084 147.042 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 179.203 150.441 moveto
+181 140 lineto
+173.084 147.042 lineto
+closepath stroke
+grestore
+% Lexer_php->Parser_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 110 310 moveto
+182 292 341 251 420 231 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 420.881 234.393 moveto
+430 229 lineto
+419.508 227.529 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 420.881 234.393 moveto
+430 229 lineto
+419.508 227.529 lineto
+closepath stroke
+grestore
+% Token_helpers_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+525 319 68.2307 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+525 313 moveto 111.192 -0.5 (Token_helpers_php) alignedtext
+grestore
+% Token_helpers_php->Parser_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 515 301 moveto
+506 286 493 264 483 247 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 485.916 245.042 moveto
+478 238 lineto
+479.797 248.441 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 485.916 245.042 moveto
+478 238 lineto
+479.797 248.441 lineto
+closepath stroke
+grestore
+% Parse_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+333 417 41.7972 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+333 411 moveto 58.317 -0.5 (Parse_php) alignedtext
+grestore
+% Parse_php->Lib_parsing_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 323 399 moveto
+315 385 303 363 293 346 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 295.916 344.042 moveto
+288 337 lineto
+289.797 347.441 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 295.916 344.042 moveto
+288 337 lineto
+289.797 347.441 lineto
+closepath stroke
+grestore
+% Parse_php->Lexer_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 301 405 moveto
+254 387 166 354 115 335 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 115.585 331.464 moveto
+105 331 lineto
+112.985 337.964 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 115.585 331.464 moveto
+105 331 lineto
+112.985 337.964 lineto
+closepath stroke
+grestore
+% Parse_php->Token_helpers_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 360 403 moveto
+392 386 447 359 485 340 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 486.958 342.916 moveto
+494 335 lineto
+483.559 336.797 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 486.958 342.916 moveto
+494 335 lineto
+483.559 336.797 lineto
+closepath stroke
+grestore
+% Test_parsing_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 nodecolor
+482 515 62.7943 18 ellipse_path stroke
+0.000 0.000 0.000 nodecolor
+14.00 /Times-Roman set_font
+482 509 moveto 100.313 -0.5 (Test_parsing_php) alignedtext
+grestore
+% Test_parsing_php->Sexp_ast_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 507 498 moveto
+532 482 571 457 599 439 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 601.1 441.8 moveto
+607 433 lineto
+596.9 436.2 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 601.1 441.8 moveto
+607 433 lineto
+596.9 436.2 lineto
+closepath stroke
+grestore
+% Test_parsing_php->Parse_php
+gsave
+0.985401 setlinewidth
+0.000 0.000 0.000 edgecolor
+newpath 457 498 moveto
+432 482 393 456 365 438 curveto
+stroke
+0.000 0.000 0.000 edgecolor
+newpath 366.262 434.635 moveto
+356 432 lineto
+362.379 440.459 lineto
+closepath fill
+0.985401 setlinewidth
+solid
+0.000 0.000 0.000 edgecolor
+newpath 366.262 434.635 moveto
+356 432 lineto
+362.379 440.459 lineto
+closepath stroke
+grestore
+endpage
+showpage
+grestore
+%%PageTrailer
+%%EndPage: 1
+%%Trailer
+%%Pages: 1
+%%BoundingBox: 36 36 576 752
+end
+restore
+%%EOF

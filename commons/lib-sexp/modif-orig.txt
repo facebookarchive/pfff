@@ -1,0 +1,223 @@
+I use in a different way sexplib. I don't like camlp4 but I like the
+metaprogramming facility it offers. So I've found a in-the-middle
+solution where I use camlp4 to generate code (via a small script
+I have written, not included here for the moment), save the generated code
+in a file (e.g commons/sexp_common.ml), which allows then to 
+completely remove the dependency to camlp4. This means among
+other things that the file pa_sexp_conv.ml is not here, as
+I include here only the runtime library for sexp, not the
+camlp4 stuff. As I also didn't like their compilation process,
+with the need for findlib, -pack options, etc, I have rewritten a Makefile.
+
+-- pad 
+
+Here are the modifications I've made to the sexplib lib/ directory.
+
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs -x *.cm[iao] -x *.[oa] -x *.class /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/ /home/pad/c-coccinelle/ocamlsexp
+Only in /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/: META
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs -x '*.cm[iao]' -x '*.[oa]' -x '*.class' /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/Makefile /home/pad/c-coccinelle/ocamlsexp/Makefile
+--- /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/Makefile	2009-03-09 19:52:09.000000000 -0500
++++ /home/pad/c-coccinelle/ocamlsexp/Makefile	2009-04-15 22:04:59.000000000 -0500
+@@ -1,36 +1,166 @@
+-OCAMLMAKEFILE = ../OCamlMakefile
++##############################################################################
++# Variables
++##############################################################################
+ 
+-SOURCES = \
++SRC= \
+   type.ml \
+-  parser.mly \
+-  lexer.mll \
++  parser.ml \
++  lexer.ml \
+   pre_sexp.ml \
+   sexp_intf.ml \
+-  sexp.mli sexp.ml \
+-  path.mli path.ml \
+-  conv.mli conv.ml \
++  sexp.ml \
++  path.ml \
++  conv.ml \
+   conv_error.ml
+-LIB_PACK_NAME = sexplib
+-INCDIRS = +camlp4
+-OCAMLFLAGS = -for-pack Sexplib
+-PACKS = type-conv
+-RESULT = sexplib
+-
+-TRASH = pa_sexp_conv.cmi pa_sexp_conv.cmo pa_sexp_conv.annot
+-
+-all: \
+-	pack-byte-code pack-native-code \
+-	sexplib.cma sexplib.cmxa \
+-	pa_sexp_conv.cmi pa_sexp_conv.cmo
+-
+-LIBINSTALL_FILES = \
+-  sexp.mli path.mli conv.mli \
+-  sexplib.cmi sexplib.cma sexplib.cmxa sexplib.a \
+-  pa_sexp_conv.cmi pa_sexp_conv.cmo
++#SOURCES = \
++#  parser.mly \
++#  lexer.mll \
++# sexp.mli path.mli conv.mli 
+ 
+-install:	libinstall
+-uninstall:	libuninstall
+ 
+-clean::	clean-doc
++TARGET=sexplib1
++TARGETPACK=sexplib
++#LIB_PACK_NAME = sexplib
+ 
+--include $(OCAMLMAKEFILE)
++##############################################################################
++# Generic variables
++##############################################################################
++
++INCLUDES=
++#-I +camlp4
++SYSLIBS= str.cma unix.cma bigarray.cma num.cma
++#INCDIRS = +camlp4
++#pad: take care for bigarray otherwise get some caml_ba_get_1 error msg
++
++##############################################################################
++#OCAMLFLAGS = -for-pack Sexplib
++
++#PACKS = type-conv
++#RESULT = sexplib
++
++#TRASH = pa_sexp_conv.cmi pa_sexp_conv.cmo pa_sexp_conv.annot
++
++#all: \
++#	pack-byte-code pack-native-code \
++#	sexplib.cma sexplib.cmxa \
++#	pa_sexp_conv.cmi pa_sexp_conv.cmo
++#
++#LIBINSTALL_FILES = \
++#  sexp.mli path.mli conv.mli \
++#  sexplib.cmi sexplib.cma sexplib.cmxa sexplib.a \
++#  pa_sexp_conv.cmi pa_sexp_conv.cmo
++#
++#install:	libinstall
++#uninstall:	libuninstall
++#
++#clean::	clean-doc
++#
++#-include $(OCAMLMAKEFILE)
++
++##############################################################################
++
++##############################################################################
++# Generic variables
++##############################################################################
++
++#dont use -custom, it makes the bytecode unportable.
++OCAMLCFLAGS= -g -dtypes # -w A
++#-for-pack Sexplib
++
++# This flag is also used in subdirectories so don't change its name here.
++OPTFLAGS=
++
++
++OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES)  $(SYSINCLUDES) -thread
++OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES) $(SYSINCLUDES) -thread
++OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
++OCAMLYACC=ocamlyacc -v
++OCAMLDEP=ocamldep $(INCLUDES)
++OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
++
++#-ccopt -static
++STATIC=
++
++
++##############################################################################
++# Top rules
++##############################################################################
++
++OBJS = $(SRC:.ml=.cmo)
++OPTOBJS = $(SRC:.ml=.cmx)
++
++all: $(TARGET).cma $(TARGETPACK).cmo
++all.opt: $(TARGET).cmxa
++
++$(TARGET).cma: $(OBJS)
++	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
++
++$(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
++	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
++
++$(TARGET).top: $(OBJS) $(LIBS)
++	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
++
++clean::
++	rm -f $(TARGET).top
++
++
++
++$(TARGETPACK).cmo: $(OBJS)
++	$(OCAMLC) -pack -o $(TARGETPACK).cmo $(OBJS)
++
++# special handling, fun that they use cpp whereas they claim camplp4 can do everything
++pre_sexp.cmo: pre_sexp.ml
++	$(OCAMLC) -pp cpp -c $<
++
++pre_sexp.cmx: pre_sexp.ml
++	$(OCAMLOPT) -pp cpp -c $<
++
++
++
++lexer.ml: lexer.mll
++	$(OCAMLLEX) $<
++clean::
++	rm -f lexer.ml
++beforedepend:: lexer.ml
++
++
++parser.ml parser.mli: parser.mly
++	$(OCAMLYACC) $<
++clean::
++	rm -f parser.ml parser.mli parser.output
++beforedepend:: parser.ml parser.mli
++
++
++
++##############################################################################
++# Generic rules
++##############################################################################
++
++.SUFFIXES: .ml .mli .cmo .cmi .cmx
++
++.ml.cmo:
++	$(OCAMLC) -c $<
++.mli.cmi:
++	$(OCAMLC) -c $<
++.ml.cmx:
++	$(OCAMLOPT) -c $<
++
++.ml.mldepend: 
++	$(OCAMLC) -i $<
++
++clean::
++	rm -f *.cm[ioxa] *.o *.a *.cmxa *.annot
++clean::
++	rm -f *~ .*~ gmon.out #*#
++
++beforedepend::
++
++# need also -pp cpp here
++depend:: beforedepend
++	$(OCAMLDEP) -pp cpp *.mli *.ml    > .depend
++
++distclean:
++	rm -f .depend
++
++-include .depend
+Only in /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/: OMakefile
+Only in /home/pad/c-coccinelle/ocamlsexp: copyright.txt
+Only in /home/pad/c-coccinelle/ocamlsexp: license-tywith.txt
+Only in /home/pad/c-coccinelle/ocamlsexp: license.txt
+Only in /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/: pa_sexp_conv.ml
+Only in /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/: pa_sexp_conv.mli
+
+Diff finished.  Thu Apr 16 10:57:39 2009

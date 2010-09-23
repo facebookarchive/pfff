@@ -1,0 +1,1053 @@
+(* $Id: gtk.props 1419 2008-09-22 13:37:06Z zoggy $ *)
+
+#### OLD STUFF SPLIT SINCE 2003.08.15
+
+header {
+open Gtk
+open Gobject
+open Data
+module Object = struct
+  let cast w : [`gtk] obj = try_cast w "GtkObject"
+  external _ref_and_sink : [>`gtk] obj -> unit
+    = "ml_gtk_object_ref_and_sink"
+  let make ~classe params =
+    let obj = unsafe_create ~classe params in _ref_and_sink obj;
+    obj
+end
+module Internal = struct
+  external allocation_at_pointer : Gpointer.boxed -> rectangle
+    = "ml_Val_GtkAllocation"
+  let allocation =
+    {kind=`POINTER;inj=(fun _ -> failwith "GtkProps.Internal.allocation");
+     proj=(function `POINTER(Some p) -> allocation_at_pointer p
+          | _ -> failwith "GtkProps.Internal.allocation")}
+  let tree_path_string = ref (unsafe_boxed : tree_path data_conv)
+  let marshal_insert =
+    ref (fun (_ : string -> pos:int ref -> unit) ->
+           failwith "GtkProps.Internal.marshal_insert")
+end
+}
+
+oheader{
+open GtkSignal
+open Gobject
+open Data
+open GtkProps
+
+(* Redefining saves space in bytecode! *)
+let set = set
+let get = get
+let param = param
+}
+
+conversions {
+  GtkStock "GtkStock.conv"
+  GtkAllocation "Internal.allocation"
+  GtkTreePathString "!Internal.tree_path_string"
+  GtkSelectionData_nocopy "(unsafe_pointer : Gtk.selection_data data_conv)"
+}
+
+boxed {
+  GdkEvent          "GdkEvent.any"
+  GdkEventButton    "GdkEvent.Button.t"
+  GdkEventMotion    "GdkEvent.Motion.t"
+  GdkEventExpose    "GdkEvent.Expose.t"
+  GdkEventKey       "GdkEvent.Key.t"
+  GdkEventCrossing  "GdkEvent.Crossing.t"
+  GdkEventConfigure "GdkEvent.Configure.t"
+  GdkEventFocus     "GdkEvent.Focus.t"
+  GdkEventProperty  "GdkEvent.Property.t"
+  GdkEventSelection "GdkEvent.Selection.t"
+  GdkEventProximity "GdkEvent.Proximity.t"
+}
+
+classes {
+  GdkPixbuf "GdkPixbuf.pixbuf"
+  GtkTreeModel "Gtk.tree_model obj"
+  GtkStyle "Gtk.style"
+}
+
+
+class Widget abstract : Object {
+  "app-paintable"        gboolean             : Read / Write
+  "can-default"          gboolean             : Read / Write
+  "can-focus"            gboolean             : Read / Write
+  "composite-child"      gboolean             : Read
+  "events"               GdkEventMask         : Read / Write
+  "extension-events"     GdkExtensionMode     : Read / Write
+  "has-default"          gboolean             : Read / Write
+  "has-focus"            gboolean             : Read / Write
+  "height-request"       gint                 : Read / Write
+  "is-focus"             gboolean             : Read / Write
+  "name"                 gchararray           : Read / Write
+  "parent"               GtkContainer_opt     : Read / Write
+  "receives-default"     gboolean             : Read / Write
+  "sensitive"            gboolean             : Read / Write
+  "style"                GtkStyle             : Read / Write
+  "visible"              gboolean             : Read / Write
+  "width-request"        gint                 : Read / Write
+  (* misc *)
+  signal show
+  signal hide
+  signal map
+  signal unmap
+  signal realize
+  signal state_changed : GtkStateType
+  signal parent_set : GtkWidget_opt
+  signal size_allocate : GtkAllocation
+  signal style_set : GtkStyle_opt
+  (* selection *)
+  signal selection_get : GtkSelectionData_nocopy info:int time:int32
+  signal selection_received : GtkSelectionData time:int32
+  (* dnd *)
+  signal drag_begin : GdkDragContext
+  signal drag_data_delete : GdkDragContext
+  signal drag_data_get :
+    GdkDragContext GtkSelectionData_nocopy info:int time:int32
+  signal drag_data_received :
+    GdkDragContext x:int y:int GtkSelectionData info:int time:int32
+  signal drag_drop : GdkDragContext x:int y:int time:int32 -> bool
+  signal drag_end : GdkDragContext
+  signal drag_leave : GdkDragContext time:int32
+  signal drag_motion : GdkDragContext x:int y:int time:int32 -> bool
+  (* events *)
+  signal event : GdkEvent -> bool
+  (* events share the same marshaller
+  signal button_press_event : GdkEventButton -> bool
+  signal button_release_event : GdkEventButton -> bool
+  signal motion_notify_event : GdkEventMotion -> bool
+  signal delete_event : GdkEvent -> bool
+  signal destroy_event : GdkEvent -> bool
+  signal expose_event : GdkEventExpose -> bool
+  signal key_press_event : GdkEventKey -> bool
+  signal key_release_event : GdkEventKey -> bool
+  signal enter_notify_event : GdkEventCrossing -> bool
+  signal leave_notify_event : GdkEventCrossing -> bool
+  signal configure_event : GdkEventConfigure -> bool
+  signal focus_in_event : GdkEventFocus -> bool
+  signal focus_out_event : GdkEventFocus -> bool
+  signal map_event : GdkEvent -> bool
+  signal unmap_event : GdkEvent -> bool
+  signal property_notify_event : GdkEventProperty -> bool
+  signal selection_clear_event : GdkEventSelection -> bool
+  signal selection_request_event : GdkEventSelection -> bool
+  signal selection_notify_event : GdkEventSelection -> bool
+  signal proximity_in_event : GdkEventProximity -> bool
+  signal proximity_out_event : GdkEventProximity -> bool
+  *)
+}
+
+class Misc abstract set wrap : Widget {
+  "xalign"               gfloat               : Read / Write
+  "yalign"               gfloat               : Read / Write
+  "xpad"                 gint                 : Read / Write
+  "ypad"                 gint                 : Read / Write
+}
+
+class Label set wrap : Misc {
+  "label"	         gchararray           : Read / Write
+  "use-markup"           gboolean             : Read / Write
+  "use-underline"        gboolean             : Read / Write
+  "mnemonic-keyval"      guint                : Read
+  "mnemonic-widget"      GtkWidget_opt        : Read / Write
+  "justify"              GtkJustification     : Read / Write
+  "wrap"(line_wrap)      gboolean             : Read / Write
+  "pattern"              gchararray           : Write
+  "selectable"           gboolean             : Read / Write
+  "attributes"           PangoAttrList        : Read / Write
+  "cursor-position"      gint                 : Read
+  "selection-bound"      gint                 : Read
+  method get_text : "string"
+  method set_text : "string -> unit"
+  signal copy_clipboard
+  signal move_cursor : GtkMovementStep gint gboolean
+  signal populate_popup : GtkMenu
+}
+
+class TipsQuery set wrap wrapsig : Label {
+  "caller"               GtkWidget_opt        : Read / Write
+  "emit-always"          gboolean             : Read / Write
+  "label-inactive"       gchararray           : Read / Write
+  "label-no-tip"         gchararray           : Read / Write
+  method start_query
+  method stop_query
+  signal start_query
+  signal stop_query
+  signal widget_entered :  GtkWidget_opt text:string privat:string
+  signal widget_selected :
+    GtkWidget_opt text:string privat:string GdkEventButton -> bool
+}
+
+class Arrow set wrap : Misc {
+  "arrow-type"(kind)     GtkArrowType         : Read / Write
+  "shadow-type"(shadow)  GtkShadowType        : Read / Write
+}
+
+class Image set wrap : Misc {
+  "file"                 gchararray           : Write
+  "image"                GdkImage             : Read / Write
+  "pixbuf"               GdkPixbuf            : Read / Write
+  "pixbuf-animation"     GdkPixbufAnimation   : Read / Write
+  "pixmap"               GdkPixmap            : Read / Write / NoWrap
+  "mask"                 GdkBitmap_opt        : Read / Write
+  "stock"                GtkStock             : Read / Write
+  "icon-set"             GtkIconSet           : Read / Write
+  "icon-size"            GtkIconSize          : Read / Write
+  "storage-type"         GtkImageType         : Read
+}
+
+class Container abstract : Widget {
+  "border-width"         guint                : Read / Write / Wrap
+  "child"                GtkWidget            : Write
+  "resize-mode"          GtkResizeMode        : Read / Write / Wrap
+  method check_resize
+  method add : "[>`widget] obj -> unit"
+  method remove : "[>`widget] obj -> unit"
+  method foreach : "f:(widget obj-> unit) -> unit"
+  (* Called by Widget.grab_focus *)
+  method set_focus_child : "[>`widget] optobj -> unit"
+  method set_focus_vadjustment : "[>`adjustment] optobj -> unit"
+  method set_focus_hadjustment : "[>`adjustment] optobj -> unit"
+  signal add :       GtkWidget   / Wrap
+  signal remove :    GtkWidget   / Wrap
+  signal check_resize
+  signal set_focus : GtkWidget_opt
+}
+
+class Bin abstract : Container {}
+
+class Alignment set wrap : Bin {
+  "xalign"               gfloat               : Read / Write
+  "yalign"               gfloat               : Read / Write
+  "xscale"               gfloat               : Read / Write
+  "yscale"               gfloat               : Read / Write
+}
+
+class Frame set wrap : Bin {
+  "label"                gchararray_opt       : Read / Write
+  "label-widget"         GtkWidget_opt        : Read / Write / NoSet
+  "label-xalign"         gfloat               : Read / Write
+  "label-yalign"         gfloat               : Read / Write
+  "shadow-type"          GtkShadowType        : Read / Write
+}
+
+class AspectFrame set wrap : Frame {
+  "obey-child"           gboolean             : Read / Write
+  "ratio"                gfloat               : Read / Write
+  "xalign"               gfloat               : Read / Write
+  "yalign"               gfloat               : Read / Write
+}
+
+class Button set wrapsig : Bin {
+  "label"                gchararray           : Read / Write / Construct
+  "use-stock"            gboolean             : Read / Write / Construct
+  "use-underline"        gboolean             : Read / Write / Construct
+  "relief"               GtkReliefStyle       : Read / Write
+  signal activate        / NoWrap
+  signal clicked
+  signal enter
+  signal leave
+  signal pressed
+  signal released
+}
+
+class ToggleButton set : Button {
+  "active"               gboolean             : Read / Write
+  "draw-indicator"       gboolean             : Read / Write
+  "inconsistent"         gboolean             : Read / Write / NoSet
+  signal toggled
+}
+
+(* class CheckButton {} *)
+
+class RadioButton : ToggleButton {
+  "group"                GtkRadioButton_opt   : Write
+}
+
+class OptionMenu : Button {
+  "menu"                 GtkMenu              : Read / Write
+  method remove_menu
+  method set_history : "int -> unit"
+  signal changed
+}
+
+class Item abstract wrapsig : Bin {
+  method select
+  method deselect
+  method toggle
+  signal select
+  signal deselect
+  signal toggle
+}
+
+class MenuItem : Item {
+  method set_submenu : "[>`menu] obj -> unit"
+  method get_submenu : "widget obj option"
+  method remove_submenu
+  method activate
+  method select
+  method deselect
+  method set_right_justified : "bool -> unit"
+  method get_right_justified : "bool"
+  method set_accel_path : "string -> unit"
+  method toggle_size_request : "int -> unit"
+  method toggle_size_allocate : "int -> unit"
+  signal activate
+  signal activate_item
+(*signal toggle_size_allocate : gint
+  signal toggle_size_request : gintref*)
+}
+
+class CheckMenuItem : MenuItem {
+  "active"               gboolean             : Read / Write
+  "inconsistent"         gboolean             : Read / Write
+  method set_show_toggle : "bool -> unit"
+  method toggled
+  signal toggled
+}
+
+class RadioMenuItem abstract : CheckMenuItem {
+  method set_group : "radio_menu_item group -> unit"
+}
+
+class ImageMenuItem : MenuItem {
+  "image"                GtkWidget            : Read / Write
+}
+
+(*
+class SeparatorMenuItem {}
+class TearoffMenuItem {}
+*)
+class ListItem : Item { (* omit signals *) }
+class TreeItem wrapsig : Item {
+  method set_subtree : "[>`widget] obj -> unit"
+  method remove_subtree
+  method collapse
+  method expand
+  signal collapse
+  signal expand
+}
+
+class Window set wrap : Bin {
+  "title"                gchararray           : Read / Write
+  "allow-grow"           gboolean             : Read / Write
+  "allow-shrink"         gboolean             : Read / Write
+  "default-height"       gint                 : Read / Write / NoSet
+  "default-width"        gint                 : Read / Write / NoSet
+  "destroy-with-parent"  gboolean             : Read / Write / NoSet
+  "has-toplevel-focus"   gboolean             : Read
+  "icon"                 GdkPixbuf_opt        : Read / Write
+  "is-active"            gboolean             : Read
+  "modal"                gboolean             : Read / Write
+  "resizable"            gboolean             : Read / Write
+  "screen"               GdkScreen            : Read / Write
+  "skip-pager-hint"      gboolean             : Read / Write / NoSet
+  "skip-taskbar-hint"    gboolean             : Read / Write / NoSet
+  "type"                 GtkWindowType        : Read / Write / Construct Only
+  "type-hint"            GdkWindowTypeHint    : Read / Write
+  "window-position"(position) GtkWindowPosition    : Read / Write
+  method present
+  method iconify
+  method deiconify
+  method stick
+  method unstick
+  method maximize
+  method unmaximize
+  method fullscreen
+  method unfullscreen
+  method set_decorated : "bool -> unit"
+  method set_mnemonic_modifier : "Gdk.Tags.modifier list -> unit"
+  method move : "x:int -> y:int -> unit"
+  method parse_geometry : "string -> bool"
+  method reshow_with_initial_size
+  method resize : "width:int -> height:int -> unit"
+  method set_role : "string -> unit"
+  method get_role : "string"
+  signal activate_default
+  signal activate_focus
+  signal frame_event : GdkEvent
+  signal keys_changed
+  signal move_focus : GtkDirectionType
+  signal set_focus :  GtkWidget_opt
+}
+
+class Dialog wrap : Window {
+  "has-separator"        gboolean             : Read / Write
+  signal close
+  signal response : gint
+}
+
+class FileSelection abstract set wrap : Dialog {
+  "filename"             gchararray           : Read / Write
+  "select-multiple"      gboolean             : Read / Write
+  "show-fileops"         gboolean             : Read / Write
+}
+
+class ColorSelectionDialog : Dialog {}
+class FontSelectionDialog : Dialog {}
+(* class InputDialog : Dialog {} *)
+
+class MessageDialog abstract wrap : Dialog {
+  "buttons"              GtkButtonsType       : Write / Construct Only
+  "message-type"         GtkMessageType       : Read / Write / Construct
+}
+
+class Plug abstract : Bin {
+  signal embedded
+}
+class EventBox : Bin {}
+
+class HandleBox set wrap wrapsig : Bin {
+  "handle-position"      GtkPositionType      : Read / Write
+  "snap-edge"            GtkPositionType      : Read / Write
+  "shadow_type"          GtkShadowType        : Read / Write
+  "snap-edge-set"        gboolean             : Read / Write / NoSet / NoWrap
+  signal child_attached : GtkWidget
+  signal child_detached : GtkWidget
+}
+
+class ScrolledWindow set wrap : Bin {
+  "hadjustment"          GtkAdjustment        : Read / Write / Construct
+  "vadjustment"          GtkAdjustment        : Read / Write / Construct
+  "hscrollbar-policy"(hpolicy)  GtkPolicyType : Read / Write
+  "vscrollbar-policy"(vpolicy)  GtkPolicyType : Read / Write
+  "window-placement"(placement) GtkCornerType : Read / Write
+  "shadow-type"          GtkShadowType        : Read / Write
+  method add_with_viewport : "[>`widget] obj -> unit"
+  signal move_focus_out : GtkDirectionType
+  signal scroll_child :   GtkScrollType gboolean
+}
+
+class Viewport set wrap : Bin {
+  "hadjustment"          GtkAdjustment        : Read / Write
+  "vadjustment"          GtkAdjustment        : Read / Write
+  "shadow-type"          GtkShadowType        : Read / Write
+  signal set_scroll_adjustments : GtkAdjustment_opt GtkAdjustment_opt
+}
+
+class Box hv set : Container {
+  "homogeneous"          gboolean             : Read / Write
+  "spacing"              gint                 : Read / Write
+  method pack_start :
+      "[>`widget] obj -> expand:bool -> fill:bool -> padding:int -> unit"
+  method pack_end :
+      "[>`widget] obj -> expand:bool -> fill:bool -> padding:int -> unit"
+  method reorder_child : "[>`widget] obj -> pos:int -> unit"
+  method query_child_packing : "[>`widget] obj -> box_packing"
+  method set_child_packing :
+      "[>`widget] obj -> ?expand:bool -> ?fill:bool ->
+       ?padding:int -> ?from:Tags.pack_type -> unit"
+}
+
+class ButtonBox hv : Box {
+  "layout-style"         GtkButtonBoxStyle    : Read / Write
+}
+
+class ColorSelection set wrap : Box {
+  "current-alpha"(alpha) guint                : Read / Write
+  "current-color"(color) GdkColor             : Read / Write
+  "has-opacity-control"  gboolean             : Read / Write
+  "has-palette"          gboolean             : Read / Write
+  signal color_changed
+}
+
+class FontSelection set wrap : Box {
+  (* bug in Gtk: "font"                 GdkFont_opt          : Read *)
+  "font-name"            gchararray           : Read / Write
+  "preview-text"         gchararray           : Read / Write
+}
+
+class GammaCurve : Box {
+  method get_gamma : "float"
+}
+
+class Combo set wrap : Box {
+  "allow-empty"          gboolean             : Read / Write
+  "case-sensitive"       gboolean             : Read / Write
+  "enable-arrow-keys"    gboolean             : Read / Write
+  "enable-arrows-always" gboolean             : Read / Write / NoSet / NoWrap
+  "value-in-list"        gboolean             : Read / Write
+}
+
+class Statusbar : Box {
+  method get_context_id : "string -> statusbar_context"
+  method push : "statusbar_context -> text:string -> statusbar_message"
+  method pop : "statusbar_context ->  unit"
+  method remove : "statusbar_context -> statusbar_message -> unit"
+  signal text_popped : guint gchararray
+  signal text_pushed : guint gchararray
+}
+
+class StatusIcon : Object {}
+
+class Clist "GtkCList" set wrap wrapsig abstract : Container {
+  "n-columns"            guint                : Read / Write / Construct Only
+  "sort-type"            GtkSortType          : Read / Write
+  "reorderable"          gboolean             : Read / Write
+  "row-height"           guint                : Read / Write
+  "selection-mode"       GtkSelectionMode     : Read / Write
+  "shadow-type"          GtkShadowType        : Read / Write
+  "titles-active"        gboolean             : Read / Write
+  "use-drag-icons"       gboolean             : Read / Write
+  (* not all signals *)
+  signal click_column :  gint
+  signal resize_column : gint gint
+  signal scroll_horizontal : GtkScrollType pos:gfloat
+  signal scroll_vertical : GtkScrollType pos:gfloat
+  signal select_all
+  signal select_row :    row:gint column:gint event:GdkEventButton_opt
+  signal unselect_all
+  signal unselect_row :  row:gint column:gint event:GdkEventButton_opt
+
+}
+
+class Fixed : Container {
+  method put : "[>`widget] obj -> x:int -> y:int -> unit"
+  method move : "[>`widget] obj -> x:int -> y:int -> unit"
+  method set_has_window : "bool -> unit"
+  method get_has_window : "bool"
+}
+
+class Paned hv : Container {
+  "position"             gint                 : Read / Write
+  "position-set"         gboolean             : Read / Write
+  method add1 : "[>`widget] obj -> unit"
+  method add2 : "[>`widget] obj -> unit"
+  method pack1 : "[>`widget] obj -> resize:bool -> shrink:bool -> unit"
+  method pack2 : "[>`widget] obj -> resize:bool -> shrink:bool -> unit"
+  method child1 : "widget obj"
+  method child2 : "widget obj"
+  (* omit signals *)
+}
+
+class Layout set : Container {
+  "hadjustment"          GtkAdjustment        : Read / Write
+  "height"               guint                : Read / Write
+  "vadjustment"          GtkAdjustment        : Read / Write
+  "width"                guint                : Read / Write
+  method put : "[>`widget] obj -> x:int -> y:int -> unit"
+  method move : "[>`widget] obj -> x:int -> y:int -> unit"
+  method freeze
+  method thaw
+}
+
+class List set wrap : Container {
+  "selection-mode"       GtkSelectionMode     : Read / Write
+  signal select_child : GtkWidget
+  signal selection_changed
+  signal unselect_child : GtkWidget
+}
+
+class MenuShell abstract : Container {
+  method append : "[>`widget] obj -> unit"
+  method prepend : "[>`widget] obj -> unit"
+  method insert : "[>`widget] obj -> pos:int -> unit"
+  method deactivate
+  signal activate_current : gboolean
+  signal cancel
+  signal cycle_focus : GtkDirectionType
+  signal deactivate
+  signal move_current : GtkMenuDirectionType
+  signal selection_done
+}
+class MenuBar : MenuShell {}
+class Menu : MenuShell {
+  "tearoff-title"        gchararray           : Read / Write
+  method popup :
+      "[>`menushell] optobj ->
+       [>`menuitem] optobj -> button:int -> time:int32 -> unit"
+  method popdown
+  method get_active : "widget obj"
+  method set_active : "int -> unit"
+  method set_accel_group : "accel_group -> unit"
+  method get_accel_group : "accel_group"
+  method set_accel_path : "string -> unit"
+  method attach_to_widget : "[>`widget] obj -> unit"
+  method get_attach_widget : "widget obj"
+  method detach
+  signal move_scroll : GtkScrollType
+}
+
+class Notebook set wrap : Container {
+  "enable-popup"         gboolean             : Read / Write
+  "homogeneous"(homogeneous_tabs) gboolean    : Read / Write
+  "page"                 gint                 : Read / Write / NoSet / NoWrap
+  "scrollable"           gboolean             : Read / Write
+  "show-border"          gboolean             : Read / Write
+  "show-tabs"            gboolean             : Read / Write
+  "tab-border"           guint                : Write
+  "tab-hborder"          guint                : Read / Write / NoSet
+  "tab-pos"              GtkPositionType      : Read / Write
+  "tab-vborder"          guint                : Read / Write / NoSet
+  method insert_page_menu :
+     "[>`widget] obj -> tab_label:[>`widget] optobj ->
+      menu_label:[>`widget] optobj -> pos:int -> int"
+      (* default is append to end *)
+  method remove_page : "int -> unit"
+  method get_current_page : "int"
+  method get_nth_page : "int -> widget obj"
+  method page_num : "[>`widget] obj -> int"
+  method next_page
+  method prev_page
+  method get_tab_label : "[>`widget] obj -> widget obj"
+  method set_tab_label : "[>`widget] obj -> [>`widget] obj -> unit"
+  method get_menu_label : "[>`widget] obj -> widget obj"
+  method set_menu_label : "[>`widget] obj -> [>`widget] obj -> unit"
+  method reorder_child : "[>`widget] obj -> int -> unit"
+  signal change_current_page : gint
+  (* omit others *)
+}
+
+class Socket wrapsig : Container {
+  method steal : "Gdk.xid -> unit"
+  signal plug_added
+  signal plug_removed
+}
+
+class Table set wrap :Container {
+  "n-columns"(columns)   guint                : Read / Write
+  "n-rows"(rows)         guint                : Read / Write
+  "homogeneous"          gboolean             : Read / Write
+  "row-spacing"(row_spacings) guint           : Read / Write
+  "column-spacing"(col_spacings) guint        : Read / Write
+  method attach :
+    "[>`widget] obj -> left:int -> right:int -> top:int -> bottom:int ->
+     xoptions:Tags.attach_options list -> yoptions:Tags.attach_options list ->
+     xpadding:int -> ypadding:int -> unit"
+  method set_row_spacing : "int -> int -> unit"
+  method set_col_spacing : "int -> int -> unit"
+}
+
+class TextView wrap wrapsig : Container {
+  "editable"             gboolean             : Read / Write / Set
+  "cursor-visible"       gboolean             : Read / Write / Set
+  "indent"               gint                 : Read / Write
+  "justification"        GtkJustification     : Read / Write / Set
+  "left-margin"          gint                 : Read / Write
+  "pixels-above-lines"   gint                 : Read / Write
+  "pixels-below-lines"   gint                 : Read / Write
+  "pixels-inside-wrap"   gint                 : Read / Write
+  "right-margin"         gint                 : Read / Write
+  "tabs"                 PangoTabArray        : Read / Write
+  "wrap-mode"            GtkWrapMode          : Read / Write / Set
+  signal copy_clipboard
+  signal cut_clipboard
+  signal delete_from_cursor : GtkDeleteType gint
+  signal insert_at_cursor :   gchararray
+  signal move_cursor :        GtkMovementStep gint extend:gboolean
+  signal move_focus :         GtkDirectionType
+  signal page_horizontally :  gint extend:gboolean
+  signal paste_clipboard
+  signal populate_popup :     GtkMenu
+  signal set_anchor
+  signal set_scroll_adjustments : GtkAdjustment_opt GtkAdjustment_opt
+  signal toggle_overwrite
+}
+
+class Toolbar set : Container {
+  "orientation"          GtkOrientation       : Read / Write
+  "toolbar-style"        GtkToolbarStyle      : Read / Write
+  signal orientation_changed : GtkOrientation
+  signal style_changed :       GtkToolbarStyle
+}
+
+class Tree : Container {
+  signal select_child : GtkWidget
+  signal selection_changed
+  signal unselect_child : GtkWidget
+}
+
+class TreeView set wrap wrapsig : Container {
+  "model"                GtkTreeModel_opt     : Read / Write / NoWrap
+  "hadjustment"          GtkAdjustment        : Read / Write
+  "vadjustment"          GtkAdjustment        : Read / Write
+  "enable-search"        gboolean             : Read / Write
+  "expander-column"      GtkTreeViewColumn_opt: Read / Write / NoSet / NoWrap
+  "headers-clickable"    gboolean             : Write
+  "headers-visible"      gboolean             : Read / Write
+  "reorderable"          gboolean             : Read / Write
+  "rules-hint"           gboolean             : Read / Write
+  "search-column"        gint                 : Read / Write
+  signal columns_changed
+  signal cursor_changed
+  signal expand_collapse_cursor_row :
+    logical:gboolean expand:gboolean all:gboolean -> gboolean
+  signal move_cursor :   GtkMovementStep gint -> gboolean
+  signal row_activated : GtkTreePath GtkTreeViewColumn          / NoWrap
+  signal row_collapsed : GtkTreeIter GtkTreePath
+  signal row_expanded :  GtkTreeIter GtkTreePath
+  signal select_all : -> gboolean
+  signal select_cursor_parent : -> gboolean
+  signal select_cursor_row : start_editing:gboolean -> gboolean
+  signal set_scroll_adjustments : GtkAdjustment_opt GtkAdjustment_opt
+  signal start_interactive_search : -> gboolean
+  signal test_collapse_row : GtkTreeIter GtkTreePath -> gboolean
+  signal test_expand_row :   GtkTreeIter GtkTreePath -> gboolean
+  signal toggle_cursor_row : -> gboolean
+  signal unselect_all : -> gboolean
+}
+
+class Calendar wrapsig : Widget {
+  method select_month : "month:int -> year:int -> unit"
+  method select_day : "int -> unit"
+  method mark_day : "int -> unit"
+  method unmark_day : "int -> unit"
+  method clear_marks
+  method display_options : "Gtk.Tags.calendar_display_options list -> unit"
+  method get_date : "int * int * int" (* year * month * day *)
+  method freeze
+  method thaw
+  signal day_selected
+  signal day_selected_double_click
+  signal month_changed
+  signal next_month
+  signal next_year
+  signal prev_month
+  signal prev_year
+}
+class DrawingArea : Widget {
+  method size : "width:int -> height:int -> unit"
+}
+
+(*
+class Curve {
+  "curve-type"           GtkCurveType         : Read / Write
+  "max-x"                gfloat               : Read / Write
+  "max-y"                gfloat               : Read / Write
+  "min-x"                gfloat               : Read / Write
+  "min-y"                gfloat               : Read / Write
+}
+*)
+
+class Editable abstract wrapsig : Widget { (* actually an interface *)
+  signal changed
+  signal delete_text : start:int stop:int
+  signal insert_text "(fun f -> !Internal.marshal_insert f)"
+}
+
+class Entry set wrap wrapsig : Editable {
+  "text"                 gchararray           : Read / Write
+  "visibility"           gboolean             : Read / Write
+  "max-length"           gint                 : Read / Write
+  "activates-default"    gboolean             : Read / Write
+  "cursor-position"      gint                 : Read / NoWrap
+  "editable"             gboolean             : Read / Write
+  "has-frame"            gboolean             : Read / Write
+  "invisible-char"       guint                : Read / Write / NoSet
+  "scroll-offset"        gint                 : Read
+  "selection-bound"      gint                 : Read / NoWrap
+  "width-chars"          gint                 : Read / Write
+  method append_text : "string -> unit"
+  method prepend_text : "string -> unit"
+  method text_length : "int"
+  signal activate
+  signal copy_clipboard
+  signal cut_clipboard
+  signal delete_from_cursor : GtkDeleteType int
+  signal insert_at_cursor : string
+  signal move_cursor : GtkMovementStep gint extend:gboolean
+  signal paste_clipboard
+  signal populate_popup : GtkMenu       / NoWrap
+  signal toggle_overwrite
+}
+
+class SpinButton set wrap wrapsig : Entry {
+  "adjustment"           GtkAdjustment        : Read / Write
+  "climb-rate"(rate)     gdouble              : Read / Write
+  "digits"               guint                : Read / Write
+  "numeric"              gboolean             : Read / Write
+  "snap-to-ticks"        gboolean             : Read / Write
+  "update-policy"        GtkSpinButtonUpdatePolicy : Read / Write
+  "value"                gdouble              : Read / Write
+  "wrap"                 gboolean             : Read / Write
+  method spin : "Tags.spin_type -> unit"
+  method update
+  signal change_value : GtkScrollType
+  signal input : -> int
+  signal output : -> bool
+  signal value_changed
+}
+
+class Ruler hv set wrap : Widget {
+  "lower"                gdouble              : Read / Write
+  "upper"                gdouble              : Read / Write
+  "max-size"             gdouble              : Read / Write
+  "position"             gdouble              : Read / Write
+}
+
+class Range abstract set wrap wrapsig : Widget {
+  "adjustment"           GtkAdjustment        : Read / Write / Construct
+  "inverted"             gboolean             : Read / Write
+  "update-policy"        GtkUpdateType        : Read / Write
+  signal adjust_bounds : gdouble
+  signal move_slider : GtkScrollType
+  signal value_changed
+}
+
+class Scale hv set wrap : Range {
+  "digits"               gint                 : Read / Write
+  "draw-value"           gboolean             : Read / Write
+  "value-pos"            GtkPositionType      : Read / Write
+  signal format_value : gdouble -> string
+}
+
+class Scrollbar hv : Range {}
+
+class Separator hv : Widget {}
+
+class Invisible : Widget {
+  "screen"               GdkScreen            : Read / Write
+}
+
+class Preview wrap : Widget {
+  "expand"               gboolean             : Read / Write
+}
+
+(* deprecated
+class Progress abstract : Widget {
+  "activity-mode"        gboolean             : Read / Write
+  "show-text"            gboolean             : Read / Write
+  "text-xalign"          gfloat               : Read / Write / NoSet
+  "text-yalign"          gfloat               : Read / Write / NoSet
+} *)
+
+class ProgressBar : Widget {
+  "adjustment"           GtkAdjustment        : Read / Write / Wrap
+  "orientation"          GtkProgressBarOrientation : Read / Write / Set / Wrap
+  "activity-blocks"      guint                : Read / Write
+  "activity-step"        guint                : Read / Write
+  "bar-style"            GtkProgressBarStyle  : Read / Write
+  "discrete-blocks"      guint                : Read / Write
+  "fraction"             gdouble              : Read / Write / Wrap
+  "pulse-step"           gdouble              : Read / Write / Set / Wrap
+  "text"                 gchararray           : Read / Write / Wrap
+}
+
+class Adjustment : Object {
+  signal changed
+  signal value_changed
+}
+
+class CellRenderer vset : Object {
+  "cell-background"      gchararray           : Write
+  "cell-background-gdk"  GdkColor             : Read / Write
+  "cell-background-set"  gboolean             : Read / Write
+  "height"               gint                 : Read / Write
+  "is-expanded"          gboolean             : Read / Write
+  "is-expander"          gboolean             : Read / Write
+  "mode"                 GtkCellRendererMode  : Read / Write
+  "visible"              gboolean             : Read / Write
+  "width"                gint                 : Read / Write
+  "xalign"               gfloat               : Read / Write
+  "xpad"                 guint                : Read / Write
+  "yalign"               gfloat               : Read / Write
+  "ypad"                 guint                : Read / Write
+}
+
+class CellRendererPixbuf vset : CellRenderer {
+  "pixbuf"               GdkPixbuf            : Read / Write
+  "pixbuf-expander-closed" GdkPixbuf          : Read / Write
+  "pixbuf-expander-open" GdkPixbuf            : Read / Write
+  "stock-detail"         gchararray           : Read / Write
+  "stock-id"             gchararray           : Read / Write
+  "stock-size"           GtkIconSize          : Read / Write
+}
+
+class CellRendererText vset : CellRenderer {
+  "attributes"           PangoAttrList        : Read / Write
+  "background"           gchararray           : Write
+  "background-gdk"       GdkColor             : Read / Write
+  "background-set"       gboolean             : Read / Write
+  "editable"             gboolean             : Read / Write
+  "editable-set"         gboolean             : Read / Write / NoVSet
+  "family"               gchararray           : Read / Write
+  "family-set"           gboolean             : Read / Write / NoVSet
+  "font"                 gchararray           : Read / Write
+  "font-desc"            PangoFontDescription : Read / Write
+  "foreground"           gchararray           : Write
+  "foreground-gdk"       GdkColor             : Read / Write
+  "foreground-set"       gboolean             : Read / Write
+  "markup"               gchararray           : Write
+  "rise"                 gint                 : Read / Write
+  "rise-set"             gboolean             : Read / Write / NoVSet
+  "scale"                gdouble              : Read / Write
+  "scale-set"            gboolean             : Read / Write / NoVSet
+  "size"                 gint                 : Read / Write
+  "size-points"          gdouble              : Read / Write
+  "size-set"             gboolean             : Read / Write / NoVSet
+  "stretch"              PangoStretch         : Read / Write
+  "stretch-set"          gboolean             : Read / Write / NoVSet
+  "strikethrough"        gboolean             : Read / Write
+  "strikethrough-set"    gboolean             : Read / Write / NoVSet
+  "style"                PangoStyle           : Read / Write
+  "style-set"            gboolean             : Read / Write / NoVSet
+  "text"                 gchararray           : Read / Write
+  "underline"            PangoUnderline       : Read / Write
+  "underline-set"        gboolean             : Read / Write / NoVSet
+  "variant"              PangoVariant         : Read / Write
+  "variant-set"          gboolean             : Read / Write / NoVSet
+  "weight"               gint                 : Read / Write
+  "weight-set"           gboolean             : Read / Write / NoVSet
+  method set_fixed_height_from_font : "int -> unit"
+  signal edited : GtkTreePathString string
+}
+
+class CellRendererToggle vset : CellRenderer {
+  "activatable"          gboolean             : Read / Write
+  "active"               gboolean             : Read / Write
+  "inconsistent"         gboolean             : Read / Write
+  "radio"                gboolean             : Read / Write
+  signal toggled : GtkTreePathString
+}
+
+class Tooltips : Object {}
+
+class TreeViewColumn wrap : Object {
+  "alignment"            gfloat               : Read / Write
+  "clickable"            gboolean             : Read / Write
+  "fixed-width"          gint                 : Read / Write
+  "max-width"            gint                 : Read / Write
+  "min-width"            gint                 : Read / Write
+  "reorderable"          gboolean             : Read / Write
+  "resizable"            gboolean             : Read / Write
+  "sizing"               GtkTreeViewColumnSizing : Read / Write
+  "sort-indicator"       gboolean             : Read / Write
+  "sort-order"           GtkSortType          : Read / Write
+  "title"                gchararray           : Read / Write
+  "visible"              gboolean             : Read / Write
+  "widget"               GtkWidget_opt        : Read / Write
+  "width"                gint                 : Read
+  signal clicked
+}
+
+(* class IconFactory : GObject {} *)
+
+class SizeGroup : GObject {
+  "mode"                 GtkSizeGroupMode     : Read / Write
+  method add_widget : "[>`widget] obj -> unit"
+  method remove_widget : "[>`widget] obj -> unit"
+}
+
+class Style abstract : GObject {}
+
+class TextBuffer : GObject {
+  "tag-table"            GtkTextTagTable      : Read / Write / Construct Only
+  signal apply_tag : GtkTextTag GtkTextIter GtkTextIter
+  signal begin_user_action                  / Wrap
+  signal changed                            / Wrap
+  signal delete_range : GtkTextIter GtkTextIter
+  signal end_user_action                    / Wrap
+  signal insert_child_anchor : GtkTextIter GtkTextChildAnchor
+  signal insert_pixbuf : GtkTextIter GdkPixbuf
+  signal insert_text : GtkTextIter string (*len:int*)
+  signal mark_deleted : GtkTextMark         / Wrap
+  signal mark_set : GtkTextIter GtkTextMark
+  signal modified_changed                   / Wrap
+  signal remove_tag : GtkTextTag GtkTextIter GtkTextIter
+}
+
+class TextChildAnchor : GObject {
+  method get_widgets : "widget obj list"
+  method get_deleted : "bool"
+}
+
+class TextMark : GObject {
+  method set_visible : "bool -> unit"
+  method get_visible : "bool"
+  method get_deleted : "bool"
+  method get_name : "string option"
+  method get_buffer : "text_buffer option"
+  method get_left_gravity : "bool"
+}
+
+class TextTag vset : GObject {
+  "background"           gchararray           : Write
+  "background-full-height" gboolean             : Read / Write
+  "background-full-height-set" gboolean             : Read / Write
+  "background-gdk"       GdkColor             : Read / Write
+  "background-set"       gboolean             : Read / Write
+  "background-stipple"   GdkBitmap            : Read / Write
+  "background-stipple-set" gboolean           : Read / Write
+  "direction"            GtkTextDirection     : Read / Write
+  "editable"             gboolean             : Read / Write
+  "editable-set"         gboolean             : Read / Write
+  "family"               gchararray           : Read / Write
+  "family-set"           gboolean             : Read / Write
+  "font"                 gchararray           : Read / Write
+  "font-desc"            PangoFontDescription : Read / Write
+  "foreground"           gchararray           : Write
+  "foreground-gdk"       GdkColor             : Read / Write
+  "foreground-set"       gboolean             : Read / Write
+  "foreground-stipple"   GdkBitmap            : Read / Write
+  "foreground-stipple-set" gboolean           : Read / Write
+  "indent"               gint                 : Read / Write
+  "indent-set"           gboolean             : Read / Write
+  "invisible"            gboolean             : Read / Write
+  "invisible-set"        gboolean             : Read / Write
+  "justification"        GtkJustification     : Read / Write
+  "justification-set"    gboolean             : Read / Write
+  "language"             gchararray           : Read / Write
+  "language-set"         gboolean             : Read / Write
+  "left-margin"          gint                 : Read / Write
+  "left-margin-set"      gboolean             : Read / Write
+  "name"                 gchararray           : Read / Write / Construct Only
+  "pixels-above-lines"   gint                 : Read / Write
+  "pixels-above-lines-set" gboolean           : Read / Write
+  "pixels-below-lines"   gint                 : Read / Write
+  "pixels-below-lines-set" gboolean           : Read / Write
+  "pixels-inside-wrap"   gint                 : Read / Write
+  "pixels-inside-wrap-set" gboolean           : Read / Write
+  "right-margin"         gint                 : Read / Write
+  "right-margin-set"     gboolean             : Read / Write
+  "rise"                 gint                 : Read / Write
+  "rise-set"             gboolean             : Read / Write
+  "scale"                gdouble              : Read / Write
+  "scale-set"            gboolean             : Read / Write
+  "size"                 gint                 : Read / Write
+  "size-points"          gdouble              : Read / Write
+  "size-set"             gboolean             : Read / Write
+  "stretch"              PangoStretch         : Read / Write
+  "stretch-set"          gboolean             : Read / Write
+  "strikethrough"        gboolean             : Read / Write
+  "strikethrough-set"    gboolean             : Read / Write
+  "style"                PangoStyle           : Read / Write
+  "style-set"            gboolean             : Read / Write
+  "tabs"                 PangoTabArray        : Read / Write
+  "tabs-set"             gboolean             : Read / Write
+  "underline"            PangoUnderline       : Read / Write
+  "underline-set"        gboolean             : Read / Write
+  "variant"              PangoVariant         : Read / Write
+  "variant-set"          gboolean             : Read / Write
+  "weight"               gint                 : Read / Write
+  "weight-set"           gboolean             : Read / Write
+  "wrap-mode"            GtkWrapMode          : Read / Write
+  "wrap-mode-set"        gboolean             : Read / Write
+  method get_priority : "int"
+  method set_priority : "int -> unit"
+  method event : "'a obj ->  'b Gdk.event -> text_iter -> bool"
+  signal event : origin:GObject GdkEvent GtkTextIter -> bool
+}
+
+class TextTagTable wrapsig : GObject {
+  method add : "text_tag -> unit"
+  method remove : "text_tag -> unit"
+  method lookup : "string -> text_tag option"
+  method get_size : "int"
+  signal tag_added : GtkTextTag
+  signal tag_changed : GtkTextTag size:bool
+  signal tag_removed : GtkTextTag
+}
+
+class TreeSelection abstract : GObject {
+  signal changed
+}
+
+class TreeModel abstract wrapsig : GObject {
+  signal row_changed : GtkTreePath GtkTreeIter
+  signal row_deleted : GtkTreePath
+  signal row_has_child_toggled : GtkTreePath GtkTreeIter
+  signal row_inserted : GtkTreePath GtkTreeIter
+  signal rows_reordered : GtkTreePath GtkTreeIter (* gpointer *)
+}
+
+(* class ListStore : TreeModel {} *)

@@ -1,0 +1,196 @@
+(* $Id: gdk_tags.var 1452 2009-05-08 10:15:38Z garrigue $ *)
+
+package "gdk"
+
+type noconv platform = [ `X11 | `WIN32 | `QUARTZ ]
+
+type event_type = "GDK_"
+  [ `NOTHING | `DELETE | `DESTROY | `EXPOSE | `MOTION_NOTIFY
+  | `BUTTON_PRESS | `TWO_BUTTON_PRESS "GDK_2BUTTON_PRESS"
+  | `THREE_BUTTON_PRESS "GDK_3BUTTON_PRESS" | `BUTTON_RELEASE
+  | `KEY_PRESS | `KEY_RELEASE
+  | `ENTER_NOTIFY | `LEAVE_NOTIFY | `FOCUS_CHANGE
+  | `CONFIGURE | `MAP | `UNMAP | `PROPERTY_NOTIFY
+  | `SELECTION_CLEAR | `SELECTION_REQUEST | `SELECTION_NOTIFY
+  | `PROXIMITY_IN | `PROXIMITY_OUT
+  | `DRAG_ENTER | `DRAG_LEAVE | `DRAG_MOTION | `DRAG_STATUS
+  | `DROP_START | `DROP_FINISHED | `CLIENT_EVENT | `VISIBILITY_NOTIFY
+  | `NO_EXPOSE | `SCROLL | `WINDOW_STATE | `SETTING ]
+
+type flags event_mask = "GDK_"
+  [ `EXPOSURE
+  | `POINTER_MOTION | `POINTER_MOTION_HINT
+  | `BUTTON_MOTION | `BUTTON1_MOTION | `BUTTON2_MOTION | `BUTTON3_MOTION
+  | `BUTTON_PRESS | `BUTTON_RELEASE
+  | `KEY_PRESS | `KEY_RELEASE
+  | `ENTER_NOTIFY | `LEAVE_NOTIFY | `FOCUS_CHANGE
+  | `STRUCTURE | `PROPERTY_CHANGE | `VISIBILITY_NOTIFY
+  | `PROXIMITY_IN | `PROXIMITY_OUT
+  | `SUBSTRUCTURE | `SCROLL
+  | `ALL_EVENTS ] "_MASK"
+
+type extension_mode = "GDK_EXTENSION_EVENTS_"
+  [ `NONE | `ALL | `CURSOR ]
+
+type visibility_state "gdkVisibilityState" = "GDK_VISIBILITY_"
+  [ `UNOBSCURED | `PARTIAL | `FULLY_OBSCURED ]
+
+type input_source "gdkInputSource" = "GDK_SOURCE_"
+  [ `MOUSE | `PEN | `ERASER | `CURSOR ]
+
+type scroll_direction "gdkScrollDirection" = "GDK_SCROLL_"
+  [ `UP | `DOWN | `LEFT | `RIGHT ]
+
+type crossing_mode "gdkCrossingMode" = "GDK_CROSSING_"
+  [ `NORMAL | `GRAB | `UNGRAB ]
+
+type notify_type "gdkNotifyType" = "GDK_NOTIFY_"
+  [ `ANCESTOR | `VIRTUAL | `INFERIOR | `NONLINEAR | `NONLINEAR_VIRTUAL
+  | `UNKNOWN ]
+
+type setting_action "gdkSettingAction" = "GDK_SETTING_ACTION_"
+  [ `NEW | `CHANGED | `DELETED ]
+
+type window_state "gdkWindowState" = "GDK_WINDOW_STATE_"
+  [ `WITHDRAWN | `ICONIFIED | `MAXIMIZED | `STICKY | `FULLSCREEN ]
+
+type fill_rule = "GDK_"
+  [ `EVEN_ODD_RULE | `WINDING_RULE ]
+
+type overlap_type = "GDK_OVERLAP_RECTANGLE_"
+  [ `IN | `OUT | `PART ]
+
+type function_type = "GDK_"
+  [ `COPY | `INVERT | `XOR ]
+
+type fill = "GDK_"
+  [ `SOLID | `TILED | `STIPPLED | `OPAQUE_STIPPLED ]
+
+type subwindow_mode = "GDK_"
+  [ `CLIP_BY_CHILDREN | `INCLUDE_INFERIORS ]
+
+type line_style = "GDK_LINE_"
+  [ `SOLID | `ON_OFF_DASH | `DOUBLE_DASH ]
+
+type cap_style = "GDK_CAP_"
+  [ `NOT_LAST | `BUTT | `ROUND | `PROJECTING ]
+
+type join_style = "GDK_JOIN_"
+  [ `MITER | `ROUND | `BEVEL ]
+
+type modifier "gdkModifier" = "GDK_"
+  [ `SHIFT | `LOCK | `CONTROL | `MOD1 | `MOD2 | `MOD3 | `MOD4 | `MOD5
+  | `BUTTON1 | `BUTTON2 | `BUTTON3 | `BUTTON4 | `BUTTON5 ] "_MASK"
+
+type image_type "gdkImageType" = "GDK_IMAGE_"
+  [ `NORMAL | `SHARED | `FASTEST ]
+
+type visual_type "gdkVisualType" = "GDK_VISUAL_"
+  [ `STATIC_GRAY | `GRAYSCALE | `STATIC_COLOR | `PSEUDO_COLOR
+  | `TRUE_COLOR | `DIRECT_COLOR ]
+
+type font_type = "GDK_FONT_"
+  [ `FONT | `FONTSET ]
+
+type drag_action "gdkDragAction" = "GDK_ACTION_"
+  [ `DEFAULT | `COPY | `MOVE | `LINK | `PRIVATE | `ASK ]
+
+type rgb_dither "gdkRgbDither" = "GDK_RGB_DITHER_"
+  [ `NONE | `NORMAL | `MAX ]
+
+type xdata =
+  [ `BYTES "8" | `SHORTS "16" | `INT32S "32" | `NONE "0" ]
+
+type property_state = "GDK_PROPERTY_"
+  [ `NEW_VALUE | `DELETE ]
+
+type property_mode = "GDK_PROP_MODE_"
+  [ `REPLACE | `PREPEND | `APPEND ]
+
+type gravity = "GDK_GRAVITY_"
+  [ `NORTH_WEST | `NORTH | `NORTH_EAST | `WEST | `CENTER | `EAST
+  | `SOUTH_WEST | `SOUTH | `SOUTH_EAST | `STATIC ]
+
+type window_type_hint = "GDK_WINDOW_TYPE_HINT_"
+  [ `NORMAL | `DIALOG | `MENU | `TOOLBAR | `SPLASHSCREEN | `UTILITY
+  | `DOCK | `DESKTOP ]
+
+type cursor_type "gdkCursorType" = "GDK_" [
+  | `X_CURSOR
+  | `ARROW
+  | `BASED_ARROW_DOWN
+  | `BASED_ARROW_UP
+  | `BOAT
+  | `BOGOSITY
+  | `BOTTOM_LEFT_CORNER
+  | `BOTTOM_RIGHT_CORNER
+  | `BOTTOM_SIDE
+  | `BOTTOM_TEE
+  | `BOX_SPIRAL
+  | `CENTER_PTR
+  | `CIRCLE
+  | `CLOCK
+  | `COFFEE_MUG
+  | `CROSS
+  | `CROSS_REVERSE
+  | `CROSSHAIR
+  | `DIAMOND_CROSS
+  | `DOT
+  | `DOTBOX
+  | `DOUBLE_ARROW
+  | `DRAFT_LARGE
+  | `DRAFT_SMALL
+  | `DRAPED_BOX
+  | `EXCHANGE
+  | `FLEUR
+  | `GOBBLER
+  | `GUMBY
+  | `HAND1
+  | `HAND2
+  | `HEART
+  | `ICON
+  | `IRON_CROSS
+  | `LEFT_PTR
+  | `LEFT_SIDE
+  | `LEFT_TEE
+  | `LEFTBUTTON
+  | `LL_ANGLE
+  | `LR_ANGLE
+  | `MAN
+  | `MIDDLEBUTTON
+  | `MOUSE
+  | `PENCIL
+  | `PIRATE
+  | `PLUS
+  | `QUESTION_ARROW
+  | `RIGHT_PTR
+  | `RIGHT_SIDE
+  | `RIGHT_TEE
+  | `RIGHTBUTTON
+  | `RTL_LOGO
+  | `SAILBOAT
+  | `SB_DOWN_ARROW
+  | `SB_H_DOUBLE_ARROW
+  | `SB_LEFT_ARROW
+  | `SB_RIGHT_ARROW
+  | `SB_UP_ARROW
+  | `SB_V_DOUBLE_ARROW
+  | `SHUTTLE
+  | `SIZING
+  | `SPIDER
+  | `SPRAYCAN
+  | `STAR
+  | `TARGET
+  | `TCROSS
+  | `TOP_LEFT_ARROW
+  | `TOP_LEFT_CORNER
+  | `TOP_RIGHT_CORNER
+  | `TOP_SIDE
+  | `TOP_TEE
+  | `TREK
+  | `UL_ANGLE
+  | `UMBRELLA
+  | `UR_ANGLE
+  | `WATCH
+  | `XTERM
+  ]

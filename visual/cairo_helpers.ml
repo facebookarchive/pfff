@@ -1,0 +1,138 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2010 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
+open Common
+
+module F = Figures
+
+(* May have to move this in commons/ at some point *)
+
+
+(* work by side effect on the (mutable) string *)
+let prepare_string s = 
+  for i = 0 to String.length s - 1 do
+    let c = String.get s i in
+    if int_of_char c >= 128
+    then String.set s i 'Z';
+  done;
+  ()
+
+let origin = { Cairo. x = 0.; y = 0. }
+
+let device_to_user_distance_x cr deltax = 
+  let pt = Cairo.device_to_user_distance cr { origin with Cairo.x = deltax } in
+  pt.Cairo.x
+let device_to_user_distance_y cr deltay = 
+  let pt = Cairo.device_to_user_distance cr { origin with Cairo.y = deltay } in
+  pt.Cairo.y
+
+let user_to_device_distance_x cr deltax = 
+  let pt = Cairo.user_to_device_distance cr { origin with Cairo.x = deltax } in
+  pt.Cairo.x
+let user_to_device_distance_y cr deltay = 
+  let pt = Cairo.user_to_device_distance cr { origin with Cairo.y = deltay } in
+  pt.Cairo.y
+
+(* TODO: this is buggy, as we can move the map which can led to
+ * some device_to_user to translate to x = 0
+ *)
+let device_to_user_size cr size = 
+  let device = { Cairo.x = size; Cairo.y = 0.; } in
+  let user = Cairo.device_to_user cr device in
+  user.Cairo.x
+
+(* still needed ? can just call device_to_user_size ? *)
+let user_to_device_font_size cr font_size = 
+  let user_dist = { Cairo.x = font_size; Cairo.y = font_size } in
+  let device_dist = Cairo.user_to_device_distance cr user_dist in
+  device_dist.Cairo.x
+
+
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+let cairo_point_to_point p = 
+  { F.x = p.Cairo.x;
+    F.y = p.Cairo.y;
+  }
+
+
+let show_text2 cr s =
+  (* this 'if' is only for compatibility with old versions of cairo
+   * that returns some out_of_memory error when applied to empty strings
+   *)
+  if s = "" then () else 
+  try 
+    prepare_string s;
+    Cairo.show_text cr s
+  with exn ->
+    let status = Cairo.status cr in
+    let s2 = Cairo.string_of_status status in
+    failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
+
+let show_text a b = 
+  Common.profile_code "View.cairo_show_text" (fun () -> show_text2 a b)
+
+let fake_text_extents = 
+  { Cairo.
+    x_bearing   = 0.1; y_bearing   = 0.1;
+    text_width  = 0.1; text_height = 0.1;
+    x_advance   = 0.1; y_advance   = 0.1 ;
+  }
+
+let text_extents2 cr s = 
+  (*if s = ""
+  then fake_text_extents
+  else 
+  *)
+  Cairo.text_extents cr s
+
+let text_extents a b = 
+  Common.profile_code "CairoH.cairo_text_extent" (fun () -> text_extents2 a b)
+
+
+let set_font_size2 cr font_size =
+  Cairo.set_font_size cr font_size
+
+let set_font_size cr font_size =
+  Common.profile_code "CairoH.set_font_size" (fun () ->
+    set_font_size2 cr font_size
+  )
+
+
+
+(* see http://cairographics.org/FAQ/#clear_a_surface *)
+let clear cr =
+  Cairo.set_source_rgba cr 0. 0. 0.   0.;
+  Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
+  Cairo.paint cr;
+  Cairo.set_operator cr Cairo.OPERATOR_OVER;
+  ()
+
+let surface_of_pixmap pm =
+  let cr = Cairo_lablgtk.create pm#pixmap in
+  Cairo.get_target cr
+
+
+let distance_points p1 p2 =
+  abs_float (p2.Cairo.x - p1.Cairo.x) +
+  abs_float (p2.Cairo.y - p1.Cairo.y) +
+    0.
+
+let is_old_cairo () = 
+  let s = Cairo.compile_time_version_string in
+  match () with
+  | _ when s =~ "1\\.[89]\\.*" -> false
+  | _ -> true

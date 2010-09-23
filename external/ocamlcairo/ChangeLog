@@ -1,0 +1,301 @@
+2007-11-04  Olivier Andrieu  <oandrieu@gmail.com>
+
+	* src/ml_cairo.c: fix a C compiler warning
+	* src/cairo.ml, src/ml_cairo_font.c: fix typos
+
+2007-08-27  Olivier Andrieu  <oandrieu@gmail.com>
+
+	* src/ml_cairo_bigarr.c: fix compilation with OCaml 3.10
+
+2006-11-09  Olivier Andrieu  <oandrieu@gmail.com>
+
+	* configure.ac: require cairo 1.2, bump version number to 1.2
+	* src/*: syc with cairo 1.2 
+	* src/ml_cairo_lablgtk.c: require GTK+ 2.8 now
+
+2006-02-09  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo_svg.mli, src/cairo_svg.mli, src/ml_cairo_svg.c:
+	support for the SVG backend.
+
+	* test/basket.ml: test SVG output.
+
+2005-12-13  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo_ps.mli, src/cairo_ps.mli, src/ml_cairo_ps.c: add
+	Cairo_ps.set_dpi 
+
+	* src/Makefile, src*gtkcairo*: drop gtkcairo support.
+
+	* src/*lablgtk*: sync cairo_lablgtk module with the gdk_cairo_*
+	API of GTK+ 2.8.
+	* test/*: adapt
+	
+2005-11-03  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* configure.ac: require cairo 1.0, bump version number to 1.0
+	* src/cairo.ml, src/cairo.mli, src/ml_cairo.c: version information
+	APIs 
+
+2005-11-03  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/ml_cairo_pattern.c, src/ml_cairo_matrix.c, src/ml_cairo.c:
+	fixes for archs with ARCH_ALIGN_DOUBLE (patch from Samuel
+	Mimram). 
+
+2005-09-14  Carl Worth  <cworth@cworth.org>
+
+	* configure.ac: Add freetype2 to PKG_CHECK_MODULES call in
+	addition to cairo.
+	
+	* src/Makefile: Remove .depend as part of make clean.
+
+2005-08-11  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/* : adapt to cairo-0.9.0
+	
+	* configure.ac: bump version number to 0.9.0.0
+
+2005-08-11  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/* : adapt to cairo-0.6.0
+	
+	* Makefile, config.make.in, configure.ac: 
+	specify version number in the configure.ac file
+
+2005-07-18  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo_ft.ml, src/cairo_ft.mli, src/ml_cairo_ft.c: re-enable
+	freetype font backend bindings
+
+	* test/font.ml: adapt
+
+	* src/cairo.mli, src/cairo_png.mli: use `Any surface instead of 'a
+	surface everywhere
+
+2005-07-18  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* configure.ac, README: require cairo 0.5.2
+	
+	* src/*: adapt to cairo 0.5.1 and 0.5.2 API changes (new status
+	values and functions, new pattern functions)
+
+	* test/knockout.ml: adapt to API change
+
+2005-05-27  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo.ml, src/cairo.mli: remove BAD_NESTING error status
+	
+	* src/cairo_pdf.*, src/cairo_ps.*, src/cairo_png.*: surface
+	creation function take an ocaml channel as argument
+
+	* src/ml_cairo.c: new stream functions for ocaml channels support
+
+	* src/ml_cairo_*.c: adapt, some code cleanups
+
+	* test/basket.ml: adapt, some fixes
+
+2005-05-22  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/*: adjust to big API shakeup. Remove Cairo_channel module,
+	add Cairo_ps, Cairo_pdf, Cairo_png. GtkCairo and Cairo_ft disabled
+	for now.
+
+	* test/*: adjust to big API shakeup.
+
+	* configure.ac, README: require cairo 0.5.0
+
+2005-03-08  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/ml_cairo_ft.c, src/cairo_ft.ml, src/cairo_ft.mli:
+	* src/ml_cairo.c, src/cairo.ml, src/cairo.mli: adjust to API changes
+
+	* src/ml_cairo.c (cairo_current_font): adjust reference counting 
+
+2005-03-01  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/ml_svg_cairo.c, src/svg_cairo.ml, src/svg_cairo.mli : add
+	libsvg-cairo bindings
+
+	* test/svg2png.ml : ocaml version of svg2png
+
+	* * : configure stuff
+	
+2005-02-27  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* test/Makefile, test/kapow.ml : add the kapow example program.
+	
+2005-01-26  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* configure.ac: require cairo 0.3.0
+	* support/ocaml.m4 : quote stuff to stop auto* moaning.
+
+	* src/cairo_channel.ml*: add .ml file, add convenience function
+	Cairo_channel.open_out.
+
+	* src/cairo.ml*, src/ml_cairo.c: add PDF backend, add status
+	querying functions, a Cairo.copy convenience function.
+
+	* src/*.c: some tidying.
+
+2004-11-08  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* configure.ac: require Cairo 0.2.0
+
+	* src/ml_cairo.c (ml_cairo_current_font): do not increase the
+	refcount.
+
+2004-11-01  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo.ml, src/cairo.mli, src/ml_cairo.c: use int instead of
+	float for the width and height of the PNG target 
+
+	* src/cairo_ft.ml, src/cairo_ft.mli, src/ml_cairo_ft.c: minimal
+	support for freetype/fontconfig font backend.
+
+	* test/font.ml: example/test program
+
+2004-10-28  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/*.c: beautify code, run it through indent.
+
+	* src/ml_cairo.[ch]: direcly map enums to caml variants.
+
+	* configure.ac: do not fail if GTK+ is missing.
+
+	* test/spline.ml: do not use POINTER_MOTION_HINT, apparently
+	that's evil.
+	
+2004-10-18  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo.ml, src/cairo.mli: s/ct/cr/
+
+	* src/ml_cairo_wrappers.[ch]: add comparison and hash function for
+	custom values.
+
+	* src/cairo.{ml,mli}, src/ml_cairo.[ch], src/ml_cairo_status.[ch]:
+	allow suspending raise of exception on error.
+
+2004-07-06  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo_gtkcairo.ml, src/cairo_gtkcairo.mli: the signal is now
+	"paint" 
+
+2004-06-18  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo.mli: doc formatting
+
+	* src/ml_cairo.c, src/ml_cairo_wrappers.h: silence compiler
+	warnings 
+
+2004-04-16  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo.ml, src/cairo.mli: support patterns 
+	
+	* configure.ac: require Cairo 0.1.21
+
+	* test/knockout.ml: update for pattern
+	
+2004-03-24  Olivier Andrieu  <oliv__a@users.sourceforge.net>
+
+	* src/cairo.ml, src/cairo.mli: add line_to_point and
+	curve_to_point for consistency.
+
+2004-03-24  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/Makefile, src/ocairo*, src/cairo_lablgtk.*,
+	src/cairo_gtkcairo.*: get rid of the mostly useless OO version of
+	the API.
+
+	* test/Makefile, test/oknockout.ml, test/spline.ml, test/cube.ml:
+	update examples accordingly.
+
+2004-02-22  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* Makefile, src/cairo.ml, src/cairo.mli, src/ocairo.ml,
+	src/ocairo.mli, src/ml_cairo.c,	src/ml_cairo_bigarr.c,
+	src/ml_cairo_channel.c, src/ml_cairo_wrappers.h:
+		* make the code safer for exotic archs (WIN32,
+		ARCH_ALIGN_DOUBLE)
+
+		* rename ps_finalise to finalise
+
+	* test/Makefile, test/demo.ml: added a translation of cairo-demo.c
+
+	* src/cairo.ml, src/cairo.mli, src/ml_cairo.c, src/ml_cairo.h,
+	src/ml_cairo_lablgtk.c, src/Makefile, src/ml_cairo_path.c,
+	test/basket.ml: added support for cairo_current_path and
+	cairo_current_path_flat.
+
+2003-12-17 02:15  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* configure.ac, src/cairo.ml, src/cairo.mli, src/ml_cairo.c,
+	src/ml_cairo_bigarr.c, src/ocairo.ml, src/ocairo.mli,
+	test/Makefile, test/text.ml: text API work
+
+2003-12-13 15:10  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* configure.ac, src/ml_cairo.c: optional PS backend
+
+2003-12-05 23:34  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/ml_cairo_lablgtk.c: drop cairo-config.h
+
+2003-12-05 17:54  Carl Worth <cworth@east.isi.edu>
+
+	* configure.ac, src/ml_cairo_lablgtk.c, ChangeLog:
+
+	        * src/ml_cairo_lablgtk.c
+	        (cairo_lablgtk_surface_create_for_drawable): Track cairo
+	        change from CAIRO_HAS_XLIB_BACKEND to
+	CAIRO_HAS_XLIB_SURFACE.
+
+	        * configure.ac: Now depend on cairo >= 0.1.15
+
+2003-12-05 01:02  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/ml_cairo_lablgtk.c: add missing cairo-config include
+
+2003-12-04 19:35  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* configure.ac, src/ml_cairo_lablgtk.c: new xlib backend config
+	stuff
+
+2003-12-03 23:17  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* .cvsignore, src/ocairo_gtkcairo.ml, src/ocairo_gtkcairo.mli,
+	test/cube.ml: support redraw signal of GtkCairo
+
+2003-11-26 20:45  tag cairo-ocaml-0-2
+
+2003-11-26 20:45  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* Makefile, config.make.in, src/Makefile: added dist Makefile
+	target
+
+2003-11-22 16:28  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* support/ocaml.m4: update ocaml.m4
+
+2003-11-22 16:27  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/ml_cairo.c: forgot some Double_array_tag
+
+2003-11-22 16:24  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/: ml_cairo.h, ml_cairo_lablgtk.c: use a Val_cairo_format_t
+
+2003-11-18 20:18  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* configure.ac: check for lablgtk2 specifically
+
+2003-11-18 20:15  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/: cairo.ml, cairo.mli, ocairo.ml, ocairo.mli: add
+	Cairo.move_to_point and changed field names for Cairo.glyph
+
+2003-11-18 20:14  Olivier Andrieu <oliv__a@users.sourceforge.net>
+
+	* src/ml_cairo.c: missing bytecode functions
+
+2003-11-18 20:02  tag cairo-ocaml-0-1

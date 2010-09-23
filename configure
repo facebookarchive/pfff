@@ -1,0 +1,446 @@
+#!/usr/bin/perl
+
+use strict;
+
+use Getopt::Long;
+use Pod::Usage;
+
+######################################################################
+# Prelude
+######################################################################
+
+# Yes I know about autoconf ... and autoconf sux.
+
+# assume standard: binutils, gcc, as, ld, gnu toolchain
+# assume standard: make, sh?, perl?
+# assume standard: diffutils, fileutils, findutils, grep, patchutils, sh-utils
+## assume standard: diff, patch
+## realpath
+
+# sharutils, for obrowser/ocsigen  use of uuencode
+
+my $project = 
+    "pfff";
+my $projectcmdline = 
+    "./pfff -dump_ast demos/foo.php";
+
+######################################################################
+# Options
+######################################################################
+
+my $prefix="/usr/local";
+
+my $bt=0;
+my $bdb=0;
+my $mpi=0;
+my $pcre=0;
+my $mysql=0;
+my $irc=0;
+
+my $graphics=0; # X11 graphics.cma
+my $gui=0; # gtk
+my $visual=0; # cairo
+
+my $facebook=0; 
+
+#my $opt=".opt"; # also set in env.sh
+
+my $man = 0;
+my $help = 0;
+
+# see http://perldoc.perl.org/Getopt/Long.html
+# coupling: if add options here, add an explanation at the bottom of this file
+# too. Later may also add something in the documentation latex file (or use
+# LP)
+GetOptions (
+    "prefix=s" => \$prefix,
+
+    "bt!" => \$bt,
+    "bdb!" => \$bdb,
+    "mysql!" => \$mysql,
+    "pcre!" => \$pcre,
+    "irc!" => \$irc,
+    "mpi!" => \$mpi,
+#            "opt!" => ??? $opt=".opt"
+
+    "gui!" => \$gui,
+    "graphics!" => \$graphics,
+    "visual!" => \$visual,
+
+    "with-all" => sub { 
+        $bdb = 1; $mysql = 1; $irc = 1; $pcre = 1; 
+
+        $facebook = 1;
+        $gui = 1; 
+        $visual = 1; 
+        # conflict when $visual and $graphics!
+
+    },
+
+    "facebook" => sub { 
+        $facebook = 1;
+
+        $bdb = 1; $mysql = 1; $irc = 1;
+        $gui = 0; 
+        $visual = 0; #really ?
+        # was set to 0 because generated segfault when linked with lablgtk+gl
+        $pcre = 1;
+    },
+
+    'help|?' => \$help, 
+    'man' => \$man
+    ) or pod2usage(2);
+    #or die "$0: GetOptions: $!";
+
+pod2usage(1) if $help;
+pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+my $src="$prefix/share/$project";
+
+# dependencies
+#if ($bdb) { $pcre = 1; }
+if ($facebook) { $mysql = 1; }
+
+######################################################################
+# Side effects
+######################################################################
+
+######################################################################
+# Helpers
+######################################################################
+BEGIN { die "need Perl 5 or greater" if $] < 5 ; }
+
+#use Common;
+sub pr2 { print STDERR "@_\n" }
+sub cat { 
+    my ($what) = @_;
+    my @list;
+    open(TMP, $what);
+    while(<TMP>) { push @list, "$_"; }
+    \@list;
+}
+sub notb   { !$_[0] }
+sub mapf   { my ($f, $xs) = @_; [ map { &$f($_) } @{$xs} ] }
+sub plural { my ($e) = @_; if ($e > 1) { "s" } else { "" } }
+
+sub check_config { my ($command, $expect, $msggood, $msgbad) = @_;
+    my $error = 0;
+		   
+    my $full = cat($command);
+    my $res = join(" ", @{$full});
+#	       pr2 $res;
+    if(notb($res =~ $expect)) { $error++; pr2 "!!!! $msgbad !!!!"; }
+    else { pr2 $msggood }
+    return $error;
+}
+######################################################################
+# Let's go
+######################################################################
+
+pr2 "Checking your configuration.\n";
+
+my $error = 0;
+my $error2 = 0;
+
+#---------------------------------------------------------------------
+# Compilers and runtimes
+#---------------------------------------------------------------------
+$error += 
+    check_config("echo \"1;;\\n\" | ocaml |",
+                 "Objective(.*) 3.*",
+                 "OCaml (the wonderful language) is present.",
+                 "The program ocaml is missing or is not a good version. We need at least 3.09",
+                 );
+
+# not really used for now
+#$error2 += check_config("glimpse 2>&1 |",
+#		       "This is glimpse version",
+#		       "glimpse is present.",
+#		       "The program glimpse is missing.",
+#		      );
+
+#---------------------------------------------------------------
+# Developers tools
+#---------------------------------------------------------------
+
+pr2 "";
+
+$error += check_config(
+  "make -v 2>&1 |grep Make|",
+  "GNU Make 3\.[0-9]+", #version 3.81
+  "make (gnu version) is present.",
+  "The program gnu make is missing or is not a good version.
+We need  3.XX",
+);
+
+
+#---------------------------------------------------------------------
+# More developers tools
+#---------------------------------------------------------------------
+
+#---------------------------------------------------------------------
+# Librairies
+#---------------------------------------------------------------------
+my $arch = `uname`;
+
+# if darwin or cygwin then could just modify this variable ? enough ?
+my $prefix_distrib = "/usr";
+
+my $BDB_INCLUDE="$prefix_distrib/include";
+my $BDB_LIBS="$prefix_distrib/lib";
+
+my $PCRE_INCLUDE="$prefix_distrib/include";
+my $PCRE_LIBS="$prefix_distrib/lib";
+
+my $MYSQL_INCLUDE="$prefix_distrib/include";
+my $MYSQL_LIBS="$prefix_distrib/lib/mysql";
+
+
+if($bdb) {
+
+    if($arch =~ /Darwin/) {
+        $BDB_INCLUDE="/opt/local/include/db46";
+        $BDB_LIBS="/opt/local/lib/db46";
+    }
+    
+    $error2 += check_config("grep DB_VERSION_MAJOR  $BDB_INCLUDE/db.h |",
+                            "#define	DB_VERSION_MAJOR	4",
+                            "Berkeley DB is present.",
+                            "The Berkeley DB library is missing.",
+        );
+}
+
+if($mysql) {
+
+    if($arch =~ /Darwin/) {
+        $MYSQL_INCLUDE="/opt/local/include/mysql5";
+        $MYSQL_LIBS="/opt/local/lib/mysql5/mysql";
+    }
+
+    $error2 += check_config("grep MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql/mysql_version.h |",
+		       "#define MYSQL_BASE_VERSION		\"mysqld-5.*\"",
+		       "MySQL is present.",
+		       "The MySQL library is missing.",
+		      );
+}
+
+if($pcre) {
+
+    if($arch =~ /Darwin/) {
+        $PCRE_INCLUDE="/opt/local/include";
+        $PCRE_LIBS="/opt/local/lib";
+    }
+
+    $error2 += check_config("grep PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
+		       "#define PCRE_MAJOR       ",
+		       "PCRE is present.",
+		       "The PCRE library is missing.",
+		      );
+}
+
+######################################################################
+# Generate config files (platform/portability issues)
+######################################################################
+
+######################################################################
+# Generate globals files (features issues)
+######################################################################
+
+######################################################################
+# Diagnostic 
+######################################################################
+
+if($error2) { 
+    pr2 "
+----------------------------------------------------------------------
+!!!! You can try to compile and test $project, 
+but some features or plugins may be missing. !!!!\n
+We have found $error2 missing package" . plural($error2) . ". " . 
+(($error2 > 1) ? "Some of those packages" : "This package") . 
+" may be installed 
+by picking " . ($error2 > 1 ? "them" : "it") . 
+" in $project-dependencies.tgz available on the $project website.
+"; 
+} else {
+    pr2 "
+All seems fine for $project.
+"
+    ;
+}
+
+
+if($error) { 
+    pr2 "
+----------------------------------------------------------------------
+!!!! There seems to have problem, we have found $error missing package" . 
+plural($error) . ".
+" . (($error > 1) ? "Some of those packages" : "This package") . 
+    " may be installed by picking " . ($error > 1 ? "them" : "it") . 
+    " in $project-dependencies.tgz available
+on the $project website. !!!!
+----------------------------------------------------------------------
+";
+} else { 
+
+    pr2 "
+----------------------------------------------------------------------
+To compile $project type:
+  \$ make depend
+  \$ make
+
+Then, to test $project simply type:
+  \$ $projectcmdline
+
+If you want to use the analysis framework and code visualization tool
+see install.txt or type ./configure --help
+----------------------------------------------------------------------
+";
+
+}
+
+
+######################################################################
+# Generating the configuration
+######################################################################
+
+pr2 "$project target prefix: $prefix (you can use --prefix to override it)";
+pr2 "Generating Makefile.config (BDB=$bdb, PCRE=$pcre, MYSQL=$mysql, MPI=$mpi, BT=$bt, GUI=$gui, VISUAL=$visual)";
+pr2 " (see also --help)";
+open(CONFIG, ">Makefile.config");
+print CONFIG "# autogenerated by configure
+
+# Where to install the binary
+BINDIR=$prefix/bin
+
+# Where to install the man pages
+MANDIR=$prefix/man
+
+# Where to install the lib
+LIBDIR=$prefix/lib
+
+# Where to install the configuration files
+SHAREDIR=$src
+
+# Common features, cf Commons/Makefile
+FEATURE_SEXP_BUILTIN_COMMONS=1
+FEATURE_JSON_BUILTIN_COMMONS=1
+FEATURE_XML_BUILTIN_COMMONS=1
+
+# not worth it, because does not work well for native code
+#FEATURE_SYSLIB_BUILTIN_COMMONS=1
+
+# Features
+FEATURE_BACKTRACE=$bt
+FEATURE_BDB=$bdb
+FEATURE_MPI=$mpi
+FEATURE_PCRE=$pcre
+FEATURE_MYSQL=$mysql
+FEATURE_IRC=$irc
+
+FEATURE_GUI=$gui
+FEATURE_GRAPHICS=$graphics
+FEATURE_VISUAL=$visual
+
+FEATURE_FACEBOOK=$facebook
+";
+
+if($bdb) {
+    print CONFIG "
+# Libraries
+BDB_INCLUDE=$BDB_INCLUDE
+BDB_LIBS=$BDB_LIBS
+"
+}
+
+if($mysql) {
+    print CONFIG "
+# Libraries
+MYSQL_INCLUDE=$MYSQL_INCLUDE
+MYSQL_LIBS=$MYSQL_LIBS
+"
+}
+
+if($pcre) {
+    print CONFIG "
+# Libraries
+PCRE_INCLUDE=$PCRE_INCLUDE
+PCRE_LIBS=$PCRE_LIBS
+"
+}
+
+# The OPTBIN variable is here to allow to use ocamlc.opt instead of
+# ocaml, when it is available, which speeds up compilation. So
+# if you want the fast version of the ocaml chain tools, set this var
+# or setenv it to \".opt\" in your startup script.
+#OPTBIN=$opt
+
+pr2 "Generating commons/features.ml";
+`cpp -DFEATURE_GUI=$gui -DFEATURE_MPI=$mpi -DFEATURE_PCRE=$pcre -DFEATURE_BACKTRACE=$bt commons/features.ml.in > commons/features.ml`;
+
+#pr2 "Generating appropriate links in yyy/ (python=$python)";
+
+pr2 "Generating globals/config.ml";
+#old: my $command = "perl -p -i -e 's#Not_found.\*#Not_found->\\\"$src\\\"#' globals/config.ml";
+
+$src="/home/pad/orig-pfff";
+pr2 "WARNING: Using facebook specific stuff for now, src = $src";
+
+my $command = "perl -p -e 's#Not_found.\*#Not_found->\\\"$src\\\"#' globals/config.ml.in > globals/config.ml";
+`$command`;
+
+`touch test.ml`;
+
+######################################################################
+# Documentation
+######################################################################
+
+# TODO add docs for -fb ?
+
+__END__
+
+=head1 NAME
+
+configure - setting compilation options for pfff
+
+=head1 SYNOPSIS
+
+configure [options] [--prefix=/path/to/install]
+
+Options are:
+--prefix
+--[no]bt
+--[no]bdb
+--[no]pcre
+--[no]mysql
+--[no]irc
+--[no]gui
+--[no]visual
+--with-all
+--facebook
+
+=head1 OPTIONS
+
+=over 8
+
+
+
+
+
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read command line options and generate
+a B<Makefile.config> and other files to set the compilation
+environment for pfff.
+
+=cut

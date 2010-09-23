@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language _name="Objective Caml" version="1.0" _section="Sources" mimetypes="text/x-ocaml">
+
+	<escape-char>\</escape-char>
+
+	<block-comment _name = "Comment" style= "Comment" end-at-line-end = "FALSE">
+		<start-regex>\(\*</start-regex>
+		<end-regex>\*\)</end-regex>
+	</block-comment>
+
+	<pattern-item _name = "Decimal" style = "Decimal">
+		<regex>\b[-]?[0-9][0-9_]*[lL]?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Hex Number" style = "Base-N Integer">
+		<regex>\b[-]?0[xX][0-9A-Fa-f][0-9A-Fa-f_]*[lL]?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Octal Number" style = "Base-N Integer">
+		<regex>\b[-]?0[oO][0-7][0-7_]*[lL]?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Binary Number" style = "Base-N Integer">
+		<regex>\b[-]?0[bB][01][01_]*[lL]?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Floating Point Number" style = "Floating Point">
+		<regex>\b[-]?[0-9][0-9_]*(\.[0-9_]*)?([Ee][+-]?[0-9][0-9_]*)?</regex>
+	</pattern-item>
+
+	<string _name = "Character Constant" style = "String" end-at-line-end = "TRUE">
+		<start-regex>&apos;</start-regex>
+		<end-regex>&apos;</end-regex>
+	</string>
+
+	<string _name = "String" style = "String" end-at-line-end = "FALSE">
+		<start-regex>&quot;</start-regex>
+		<end-regex>&quot;</end-regex>
+	</string>
+
+	<keyword-list _name = "Boolean Constant" style = "String" case-sensitive="FALSE">
+		<keyword>true</keyword>
+		<keyword>false</keyword>
+	</keyword-list>
+
+	<pattern-item _name = "Modules" style = "Data Type" case-sensitive="TRUE">
+		<regex>\b[A-Z][A-Za-z0-9_']*</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Labels" style = "Data Type" case-sensitive="TRUE">
+		<regex>[~?][a-z][A-Za-z0-9_']*</regex>
+	</pattern-item>
+
+	<keyword-list _name = "Definition keyword" style = "Keyword" case-sensitive="TRUE">
+		<keyword>and</keyword>
+		<keyword>class</keyword>
+		<keyword>constraint</keyword>
+		<keyword>exception</keyword>
+		<keyword>external</keyword>
+		<keyword>let</keyword>
+		<keyword>fun</keyword>
+		<keyword>function</keyword>
+		<keyword>functor</keyword>
+		<keyword>in</keyword>
+		<keyword>include</keyword>
+		<keyword>inherit</keyword>
+		<keyword>initializer</keyword>
+		<keyword>method</keyword>
+		<keyword>module</keyword>
+		<keyword>mutable</keyword>
+		<keyword>of</keyword>
+		<keyword>open</keyword>
+		<keyword>private</keyword>
+		<keyword>rec</keyword>
+		<keyword>type</keyword>
+		<keyword>val</keyword>
+		<keyword>virtual</keyword>
+	</keyword-list>
+	<keyword-list _name = "Expression keyword" style = "Keyword" case-sensitive="TRUE">
+		<keyword>asr</keyword>
+		<keyword>do</keyword>
+      		<keyword>else</keyword>
+		<keyword>for</keyword>
+		<keyword>if</keyword>
+		<keyword>while</keyword>
+		<keyword>as</keyword>
+		<keyword>assert</keyword>
+		<keyword>begin</keyword>
+		<keyword>do</keyword>
+		<keyword>done</keyword>
+		<keyword>downto</keyword>
+		<keyword>else</keyword>
+		<keyword>end</keyword>
+		<keyword>for</keyword>
+		<keyword>if</keyword>
+		<keyword>land</keyword>
+		<keyword>lazy</keyword>
+		<keyword>lor</keyword>
+		<keyword>lsl</keyword>
+		<keyword>lsr</keyword>
+		<keyword>lxor</keyword>
+		<keyword>match</keyword>
+		<keyword>mod</keyword>
+		<keyword>new</keyword>
+		<keyword>object</keyword>
+		<keyword>or</keyword>
+		<keyword>sig</keyword>
+		<keyword>struct</keyword>
+		<keyword>then</keyword>
+		<keyword>to</keyword>
+		<keyword>try</keyword>
+		<keyword>when</keyword>
+		<keyword>while</keyword>
+		<keyword>with</keyword>
+		<keyword>#</keyword>
+	</keyword-list>
+
+	<pattern-item _name = "Keywordsign" style = "Keyword">
+		<regex>(\||-&gt;)</regex>
+	</pattern-item>
+
+	<keyword-list _name = "Types" style = "Data Type" case-sensitive="TRUE">
+		<keyword>int</keyword>
+		<keyword>string</keyword>
+		<keyword>list</keyword>
+		<keyword>array</keyword>
+		<keyword>float</keyword>
+		<keyword>char</keyword>
+		<keyword>unit</keyword>
+	</keyword-list>
+</language>

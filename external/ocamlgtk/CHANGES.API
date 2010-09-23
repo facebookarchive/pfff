@@ -1,0 +1,61 @@
+API CHANGES
+-----------
+GPack.notebook#append_page and GPack.notebook#insert_page :
+        return int instead of unit
+GAction.action_group#add_action :
+    removed `accel' optional parameter
+GBin.alignment :
+    add `padding' optional parameter
+GEdit.combo_box, combo_box_entry, combo_box_text, combo_box_entry_text :
+    add `active' optional parameter
+GMain.Idle.add, Glib.Idle.add :
+    add a `prio' optional argument
+GMain.Io.add_watch, Glib.Io.add_watch :
+    use a list of `conditions' insted of a single one
+GTree.column_list : 
+    replace method `kinds' by `types'
+GWindow.message_dialog : 
+    add `use_markup' optional argument
+Glib :
+    remove exception `Critical' and Glib.Message.handle_criticals
+    remove Glib.Message.set_print_handler
+    changed type of Glib.Message.set_log_handler
+Gobject.Data :
+    boxed, unsafe_boxed, unsafe_boxed_option : take an additional `g_type' parameter
+    replace `get_fundamental' by `get_type'
+GnoDruid : 
+    replace druid_page by druid_page_skel
+
+API ADDITIONS
+-------------
+Glib.usleep
+GAssistant.*
+GWindow.about_dialog (set_)?wrap_licence
+GSourceView
+GButton.link_button
+GAction.action_skel#set_accel_group
+GAction.action_group#add_action_with_accel
+GAction.ui_manager#new_merge_id
+GAction.ui_manager#add_ui
+GBin.alignment#{set_,}{top,bottom,left,right}_padding
+GMisc.calendar#{set_,}{day,month,year}
+GMisc.calendar#is_day_marked
+GMisc.calendar#num_marked_dates
+GMisc.label_skel#selection_bounds
+GMisc.label_skel#select_region
+GPack.paned#{max_,min_,}position
+GText.buffer#select_range
+GTree.cell_layout#reorder
+GTree.cell_layout#{unset,set}_cell_data_func
+GWindow.message_dialog#set_markup
+GdkPixbuf.from_file_at_size
+GdkPixbuf.save_to_callback
+GdkPixbuf.save_to_buffer
+Glib.int_of_priority
+Glib.Message.log
+Glib.Utf8 : a bunch of unicode-related functions
+Glib.Markup.Error (exception)
+Glib : a couple of misc. utility functions (get_home_dir, find_program_in_path, etc.)
+GtkSignal.override_class_closure
+GtkSignal.chain_from_overridden
+GtkSpell

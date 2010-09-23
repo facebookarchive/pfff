@@ -1,0 +1,13 @@
+
+(* OBDB_BEGIN *)
+
+(* error codes extracted from bdberrs.src *)
+let err_notfound = DB_NOTFOUND;;
+let err_keyempty = DB_KEYEMPTY;;
+let err_keyexist = DB_KEYEXIST;;
+let err_lock_deadlock = DB_LOCK_DEADLOCK;;
+let err_lock_notgranted = DB_LOCK_NOTGRANTED;;
+let err_runrecovery = DB_RUNRECOVERY;;
+
+(* OBDB_END *)
+

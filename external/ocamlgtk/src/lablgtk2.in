@@ -1,0 +1,82 @@
+#!/bin/sh
+
+thread="no"
+localdir="no"
+usedll="@USEDLL@"
+threads_lib="@THREADS_LIB@"
+verbose="no"
+extra="yes"
+init="yes"
+toplevel="ocaml"
+libraries=""
+libpath=""
+lablgtkdir="@INSTALLDIR@"
+initobjs="@INITOBJS@"
+cmd="$0"
+
+if test -n "@LABLGLDIR@"; then
+  libpath="-I @LABLGLDIR@"
+fi
+
+while test -n "$1"; do
+case $1 in
+-help)
+    echo "Usage: lablgtk2 <options> <ocaml options> [script-file]"
+    echo "  -thread   use the threaded version of the toplevel"
+    echo "  -noextra  do not load extensions (i.e. only lablgtk.cma)"
+    echo "  -noinit   do not initialize gtk"
+    echo "  -localdir use libraries in the same directory (before install)"
+    echo "  -verbose  show actions executed"
+    exit 0
+    ;;
+-thread)  thread=yes; shift ;;
+-localdir) localdir=yes; shift ;;
+-noextra) extra=no; shift ;;
+-noinit)  init=no; shift ;;
+-verbose) verbose=yes; shift ;;
+*)  break ;;
+esac
+done
+
+if test $localdir = yes; then
+    lablgtkdir=`dirname "$cmd"`
+    CAML_LD_LIBRARY_PATH=${lablgtkdir}:$CAML_LD_LIBRARY_PATH
+    if test $verbose = yes; then
+        echo CAML_LD_LIBRARY_PATH=$CAML_LD_LIBRARY_PATH
+    fi
+fi
+libpath="-I $lablgtkdir $libpath"
+
+if test $extra = yes; then
+    libraries="@MLLIBS@"
+else
+    libraries="lablgtk.cma"
+fi
+
+if test $thread = yes; then
+    case "$threads_lib" in
+    no)     echo "Threads are not supported on this platform"; exit 2 ;;
+    system) libpath="$libpath -I +threads"
+            libraries="unix.cma threads.cma $libraries @THOBJS@" ;;
+    *)      libpath="$libpath -I +vmthreads"
+            usedll="no" ;; # use different stdlib.cma
+    esac
+    initobjs="$initobjs @THINITOBJS@"
+elif test $extra = yes; then
+    case "$threads_lib" in
+    system) libraries="unix.cma $libraries";;
+    *)      usedll="no";; # some libraries require posix threads
+    esac
+fi
+
+if test $usedll = no; then
+    toplevel="$lablgtkdir/lablgtktop"
+    libraries=""
+fi
+
+if test $init = yes; then
+    libraries="$libraries $initobjs"
+fi
+
+if test $verbose = yes; then echo $toplevel -w s $libpath $libraries $*; fi
+exec $toplevel -w s $libpath $libraries $*

@@ -1,0 +1,94 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2010 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
+open Common
+
+open Ast_php
+
+module Ast = Ast_php
+module V = Visitor_php
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* In PHP many globals are defined in php.ini that can be accessed in 
+ * the program, e.g. PHP_ROOT. It is useful for some static analysis
+ * to work to know the value of those globals, hence this file.
+ * 
+ * related: builtins_php.ml that take care of not global variables but
+ * builtin functions (and extensions)
+ *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+(* todo? could have more general fields for globals containing integers, 
+ * or complex objects. But for now I use this mostly in include_require_php.ml
+ * to know paths, so string hash seems good enough.
+ *)
+type env = { 
+  globals: 
+    (string, string) Hashtbl.t;
+  global_arrays: 
+    (string, (string, string) Hashtbl.t) Hashtbl.t;
+
+  constants:
+    (string, string) Hashtbl.t;
+
+  (* hook. Sometimes some variables like BASE_PATH are not really globals as
+   * different files give different values to it. Hence this hook that 
+   * given some variable and a dir can try to infer what is the value
+   * for this variable in the context of the dir.
+   *)
+  globals_specials: 
+    string -> Common.dirname -> string option;
+}
+
+
+let mk_env ~php_root = {
+  globals = Common.hash_of_list [
+  ];
+  global_arrays = Common.hash_of_list [
+    "_SERVER", Common.hash_of_list [
+      "PHP_ROOT", php_root;
+    ];
+    "GLOBALS", Common.hash_of_list [
+        (* the relevant code should use _SERVER['PHP_ROOT'] *)
+        "PHP_ROOT", php_root;
+    ];
+  ];
+  constants = Common.hash_of_list [
+  ];
+  globals_specials = (fun s dir -> 
+    None
+  );
+}
+    
+
+
+let globals_builtins = [
+  "GLOBALS";
+
+  "_SERVER";
+  "_GET";
+  "_POST";
+  "_SESSION";
+  "_COOKIE";
+  "_REQUEST";
+  "_ENV";
+  "_SESSION";
+]

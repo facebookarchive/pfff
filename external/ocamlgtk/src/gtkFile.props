@@ -1,0 +1,36 @@
+
+prefix "Gtk"
+
+conversions {
+  GtkFileChooserAction  "GtkEnums.file_chooser_action_conv"
+  GtkFileFilter         "(gobject : Gtk.file_filter  Gtk.obj data_conv)"
+  GtkFileChooserDialog  "(gobject : [>`filechooser|`dialog] Gtk.obj data_conv)"
+  GtkFileChooserConfirmation  "GtkEnums.file_chooser_confirmation_conv"
+}
+
+class FileChooser abstract wrap wrapsig {
+  "action"			GtkFileChooserAction	: Read / Write
+  "extra-widget"		GtkWidget		: Read / Write
+  "file-system-backend"		gchararray		: Write / Construct Only
+  "filter"			GtkFileFilter		: Read / Write / NoWrap
+  "local-only"			gboolean		: Read / Write
+  "preview-widget" 		GtkWidget		: Read / Write
+  "preview-widget-active"	gboolean		: Read / Write
+  "select-multiple"		gboolean		: Read / Write
+  "show-hidden"			gboolean		: Read / Write
+  "use-preview-label"		gboolean		: Read / Write
+
+  "do-overwrite-confirmation"   gboolean                : Read / Write
+
+  signal current_folder_changed
+  signal file_activated
+  signal selection_changed
+  signal update_preview
+  signal confirm_overwrite :   -> GtkFileChooserConfirmation
+}
+
+class FileChooserButton wrap : HBox {
+(*  "dialog"               GtkFileChooserDialog  : Write / Construct Only *)
+  "title"                gchararray            : Read / Write
+  "width-chars"          gint                  : Read / Write
+}

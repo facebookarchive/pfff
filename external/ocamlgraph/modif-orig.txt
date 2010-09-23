@@ -1,0 +1,7 @@
+just ran ./configure to get a Makefile
+
+version: 1.3 (cf src/version.ml)
+
+Changed graph.cma to ocamlgraph.cma as it conflict with commmons/graph.ml
+and so changed some open Graph into open Ocamlgraph in some .ml files
+
