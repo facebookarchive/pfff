@@ -309,12 +309,55 @@ let paint_minimap2 dw =
 
   (* draw the zoom rectangle *)
   let user_rect = device_to_user_area dw in
-  Draw.draw_rectangle ~cr ~color:"white" user_rect;
+  CairoH.draw_rectangle_figure ~cr ~color:"white" user_rect;
   ()
 
 
 let paint_minimap dw = 
   Common.profile_code2 "View.paint minimap" (fun () -> paint_minimap2 dw)
+
+let paint_legend ~cr =
+
+  Cairo.select_font_face cr "serif" 
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+  let size = 25.  in
+
+  Cairo.set_font_size cr (size * 0.6);
+
+  Cairo.set_source_rgba cr 0. 0. 0.    1.0;
+  
+  let archis = Archi_code.source_archi_list in
+
+  let grouped_archis = archis +> Common.group_by_mapped_key (fun archi ->
+    let color = Treemap_pl.color_of_source_archi archi in
+    (* I tend to favor the darker variant of the color in treemap_pl.ml hence
+     * the 3 below
+     *)
+    let color = color ^ "3" in
+    color
+  )
+  in
+
+  
+  grouped_archis +> Common.index_list_1 +> List.iter (fun ((color,kinds), i) ->
+    
+    let x = 10. in
+    
+    let y = float_of_int i * size in
+
+    let w = size in
+    let h = size in
+
+    CairoH.fill_rectangle ~cr ~color ~x ~y ~w ~h;
+
+    let s = 
+      kinds +> List.map Archi_code.s_of_source_archi +> Common.join ", " in
+
+    Cairo.set_source_rgba cr 0. 0. 0.    1.0;
+    Cairo.move_to cr (x + size * 2.) (y + size * 0.8);
+    Cairo.show_text cr s;
+  );
+  ()
 
 (*****************************************************************************)
 (* Overlays *)
@@ -645,9 +688,13 @@ let configure_minimap da2 dw_ref ev =
 (* ---------------------------------------------------------------------- *)
 (* The legend *)
 (* ---------------------------------------------------------------------- *)
+let expose_legend da dw_ref ev = 
 
-let configure_legend da3 dw_ref ev = 
+  let gwin = da#misc#window in
+  let cr = Cairo_lablgtk.create gwin in
+  paint_legend ~cr;
   true
+
 
 (*****************************************************************************)
 (* Events *)
@@ -1431,7 +1478,7 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
     da#event#connect#configure ~callback:(configure da dw) +> ignore;
 
-    da3#event#connect#configure ~callback:(configure_legend da3 dw) +> ignore;
+    da3#event#connect#expose ~callback:(expose_legend da3 dw) +> ignore;
 
 (*
     da2#event#connect#expose ~callback:(expose_minimap da2 dw) +> ignore;
