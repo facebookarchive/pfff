@@ -74,3 +74,38 @@ clean::
 ##############################################################################
 # Generic rules
 ##############################################################################
+
+##############################################################################
+# Literate Programming rules
+##############################################################################
+
+# must be in the same order of the #include for syncweb multi files support
+# to work
+
+SRCNW=Visual.tex.nw
+TEXMAIN=Visual.tex.nw
+TEX=Visual.tex
+
+# user oriented, public API in some sense + ml that share code with mli
+LPSRC1=
+LPSRCSHARED=
+LPSRC2=
+LPSRC=$(LPSRC1) $(LPSRCSHARED) $(LPSRC2)
+
+#------------------------------------------------------------------------------
+sync:
+	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
+
+pdf:
+	$(NOWEB) $(TEXMAIN) > $(TEX)
+	pdflatex $(TEX)
+#	pdflatex $(TEX)
+
+lpclean::
+	rm -f $(TEX)
+
+lpclean2::
+	rm -f $(TEX) $(LPSRC) $(LPSRCOTHER) .md5sum_*
+
+clean::
+	rm -f *.aux *.toc *.log
