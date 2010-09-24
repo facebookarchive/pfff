@@ -354,7 +354,7 @@ static int dbtype[] = {DB_BTREE, DB_HASH, DB_QUEUE, DB_RECNO, DB_UNKNOWN};
 --
 */
 
-static int db_create_flags[] = {DB_XA_CREATE};
+static int db_create_flags[] = {DB_CREATE};
 /*
 --  type create_flags = DB_XA_CREATE
 --  external create : dbenv -> create_flags list -> db =
