@@ -90,6 +90,8 @@ type drawing = {
    * Assumes the treemap contains absolute paths.
   *)
   treemap: Treemap.treemap_rendering;
+  (* coupling: = List.length treemap *)
+  nb_rects: int; 
   
   (* to compute zoomed treemap when double click *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
@@ -104,6 +106,8 @@ type drawing = {
   mutable current_query: string;
   mutable current_searched_rectangles: Treemap.treemap_rectangle list;
   mutable current_entity: Database_code.entity option;
+  mutable current_grep_query : 
+    (Common.filename, int) Hashtbl.t;
 
   settings: settings;
 
@@ -176,6 +180,7 @@ let init_drawing
   in
   {
     treemap = treemap;
+    nb_rects = List.length treemap;
     root = root;
     treemap_func = func;
 
@@ -184,6 +189,7 @@ let init_drawing
     current_query = "";
     current_searched_rectangles = [];
     current_entity = None;
+    current_grep_query = Hashtbl.create 0;
 
     pm = pm;
     overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm) 

@@ -29,7 +29,7 @@ module Flag = Flag_visual
 (* TODO: should be automatically computed. Should have instead a
  * wanted_real_font_size_when_incruste_mode = 9.
  *)
-let zoom_factor_incruste_mode = 4. (* was 18 *)
+let zoom_factor_incruste_mode = 10. (* was 18 *)
 
 (* CONFIG *)
 let threshold_draw_dark_background_font_size_real = 1.

@@ -19,6 +19,8 @@ type model = {
 
 type drawing = {
   treemap : Treemap.treemap_rendering;
+  nb_rects: int; (* coupling: = List.length treemap *)
+
   treemap_func : Common.path list -> Treemap.treemap_rendering;
   (* can be a file *)
   root : Common.path;
@@ -28,6 +30,8 @@ type drawing = {
   mutable current_query : string;
   mutable current_searched_rectangles: Treemap.treemap_rectangle list;
   mutable current_entity: Database_code.entity option;
+  mutable current_grep_query : 
+    (Common.filename, int) Hashtbl.t;
 
   settings: settings;
 

@@ -22,8 +22,8 @@ open Common
 open Common.ArithFloatInfix
 
 module Color = Simple_color
-open Figures (* for the fields *)
 
+open Figures (* for the fields *)
 open Model2 (* for the fields *)
 
 module Style = Style2
@@ -48,6 +48,25 @@ module F = Figures
 (* ugly *)
 
 let text_with_user_pos = ref []
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+type draw_content_layout = {
+  font_size: float;
+  split_nb_columns: float;
+  w_per_column:float;
+  space_per_line: float;
+}
+
+(* a slice of Model2.drawing *)
+type context = {
+  model: Model2.model Model2.async;
+  settings:Model2.settings;
+  nb_rects_on_screen: int;
+  current_grep_query: (Common.filename, int) Hashtbl.t;
+}
 
 (*****************************************************************************)
 (* Helpers *)
@@ -204,18 +223,14 @@ let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
 *)
 let threshold_print_summary_entity_users = 10
 
-let draw_summary_content2
-    ~cr 
-    ~font_size ~split_nb_columns ~w_per_column ~space_per_line
-    ~nblines
-    ~file
-    ~model
-    rect
-  =
+let draw_summary_content2 ~cr ~layout ~context ~nblines ~file rect =
+
+  let w_per_column  = layout.w_per_column in
+
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
 
-  let model = Model2.async_get model in
+  let model = Model2.async_get context.model in
 
   let files_entities = model.Model2.hfiles_entities in
   let entities = 
@@ -301,28 +316,37 @@ let draw_summary_content2
 
 
 let draw_summary_content 
- ~cr ~font_size ~split_nb_columns ~w_per_column ~space_per_line
- ~nblines ~file ~model rect =
+ ~cr ~layout ~context ~nblines ~file rect =
   Common.profile_code "View.draw_summary_content" (fun () ->
-    draw_summary_content2 ~cr ~font_size ~split_nb_columns ~w_per_column 
-      ~space_per_line
-      ~nblines ~file ~model rect)
+    draw_summary_content2 ~cr ~layout ~context ~nblines ~file rect)
 
 (*****************************************************************************)
 (* File Content *)
 (*****************************************************************************)
   
-let draw_content2
-    ~cr 
-    ~font_size ~split_nb_columns ~w_per_column ~space_per_line
-    ~nb_rects_on_screen
-    ~nblines
-    ~file
-    ~model
-    rect
-  =
+let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
+
+  let font_size = layout.font_size in
+  let split_nb_columns = layout.split_nb_columns in
+  let w_per_column  = layout.w_per_column in
+  let space_per_line = layout.space_per_line in
+
   let r = rect.T.tr_rect in
   let font_size_real = CairoH.user_to_device_font_size cr font_size in
+
+
+  (* highlighting grep-like queries *)
+  let matching_lines = 
+    try Hashtbl.find_all context.current_grep_query file
+    with Not_found -> []
+  in
+  let hmatching_lines = Common.hashset_of_list matching_lines in
+  let is_matching_line i = 
+    Hashtbl.mem hmatching_lines i
+  in
+  pr2_gen matching_lines;
+
+  let line = ref 1 in
 
   let nblines_per_column = 
     (nblines / split_nb_columns) +> ceil +> int_of_float in
@@ -339,15 +363,15 @@ let draw_content2
     | FT.PL (FT.Thrift)
     ) ->
 
-    let line = ref 1 in
     let column = ref 0 in
+    let line_in_column = ref 1 in
 
     let x = r.p.x + (float_of_int !column) * w_per_column in
-    let y = r.p.y + (space_per_line * (float_of_int !line)) in
+    let y = r.p.y + (space_per_line * (float_of_int !line_in_column)) in
         
     Cairo.move_to cr x y;
 
-    let model = Model2.async_get model in
+    let model = Model2.async_get context.model in
     let entities = model.Model2.hentities in
 
     let tokens_with_categ = 
@@ -356,15 +380,12 @@ let draw_content2
     if font_size_real > Style.threshold_draw_dark_background_font_size_real
     then begin
       let alpha = 
-        match nb_rects_on_screen with
+        match context.nb_rects_on_screen with
         | n when n <= 2 -> 0.8
         | n when n <= 10 -> 0.6
         | _ -> 0.3
       in
-      draw_treemap_rectangle ~cr 
-        ~color:(Some "DarkSlateGray") 
-        ~alpha
-        rect;
+      draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") ~alpha rect;
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
         ~line_width:font_size rect.T.tr_rect;
     end;
@@ -378,6 +399,11 @@ let draw_content2
 
       let final_font_size = 
         final_font_size_of_categ ~font_size ~font_size_real categ in
+      let final_font_size = 
+        if is_matching_line !line 
+        then final_font_size * 1.
+        else final_font_size
+      in
 
       let _alpha_adjust =
         let ratio = final_font_size / font_size in
@@ -388,11 +414,10 @@ let draw_content2
         | _ -> 0.3
       in
 
-      let final_font_size_real = 
-        CairoH.user_to_device_font_size cr final_font_size in
-
       Cairo.set_font_size cr final_font_size;
 
+      let final_font_size_real = 
+        CairoH.user_to_device_font_size cr final_font_size in
 
       attrs |> List.iter (fun attr ->
         match attr with
@@ -431,18 +456,33 @@ let draw_content2
           CairoH.show_text cr s
       | Right () ->
           
+          incr line_in_column;
           incr line;
-          
-          if !line > nblines_per_column
+
+          if !line_in_column > nblines_per_column
           then begin 
             incr column;
-            line := 1;
+            line_in_column := 1;
           end;
 
           let x = r.p.x + (float_of_int !column) * w_per_column in
-          let y = r.p.y + (space_per_line * (float_of_int !line)) in
+          let y = r.p.y + (space_per_line * (float_of_int !line_in_column)) in
+
+          (* must be done before the move_to below ! *)
+          if is_matching_line !line
+          then begin
+            CairoH.fill_rectangle ~cr 
+              ~alpha:0.5
+              ~color:"magenta"
+              ~x 
+              ~y:(y - space_per_line) 
+              ~w:w_per_column 
+              ~h:(space_per_line * 3.)
+              ()
+          end;
           
           Cairo.move_to cr x y;
+          
           
       );
     )
@@ -456,20 +496,22 @@ let draw_content2
       
     let xs = Common.cat file in
     let xxs = Common.pack_safe nblines_per_column xs in
-      
+
     (* I start at 0 for the column because the x displacement
      * is null at the beginning, but at 1 for the line because
      * the y displacement must be more than 0 at the
      * beginning
      *)
     Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
-      Common.index_list_1 xs +> List.iter (fun (s, line) ->
+      Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
       
         let x = r.p.x + (float_of_int column) * w_per_column in
-        let y = r.p.y + (space_per_line * (float_of_int line)) in
+        let y = r.p.y + (space_per_line * (float_of_int line_in_column)) in
         
         Cairo.move_to cr x y;
         CairoH.show_text cr s;
+
+        incr line;
       );
     );
       ()
@@ -477,19 +519,14 @@ let draw_content2
       ()
   )
 
-let draw_content ~cr ~font_size ~split_nb_columns ~w_per_column ~space_per_line
- ~nb_rects_on_screen ~nblines ~file ~model rect =
+let draw_content ~cr ~layout ~context ~nblines ~file rect =
   Common.profile_code "View.draw_content" (fun () ->
-    draw_content2 ~cr ~font_size ~split_nb_columns ~w_per_column ~space_per_line
-      ~nb_rects_on_screen ~nblines ~file ~model rect)
+    draw_content2 ~cr ~layout ~context ~nblines ~file rect)
 
 
 
 
-let draw_treemap_rectangle_content_maybe2 
- ~cr ~clipping ~nb_rects_on_screen ~model ~settings
- rect 
-  =
+let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
 
@@ -560,35 +597,28 @@ let draw_treemap_rectangle_content_maybe2
     let font_size_real = CairoH.user_to_device_font_size cr font_size in
     (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
     
+    let layout = {
+      font_size = font_size;
+      split_nb_columns = split_nb_columns;
+      w_per_column = w_per_column;
+      space_per_line = space_per_line;
+    } 
+    in
+
     if font_size_real > !Flag.threshold_draw_content_font_size_real 
        && not (is_big_file_with_few_lines ~nblines fullpath)
        && nblines < !Flag.threshold_draw_content_nblines
-    then
-      draw_content 
-        ~cr 
-        ~font_size ~split_nb_columns ~w_per_column ~space_per_line
-        ~nb_rects_on_screen
-        ~nblines
-        ~file:fullpath
-        ~model
-        rect
+    then draw_content ~cr ~layout ~context ~nblines ~file:fullpath rect
     else 
-     if settings.draw_summary then
-      draw_summary_content
-        ~cr
-        ~font_size ~split_nb_columns ~w_per_column ~space_per_line
-        ~nblines
-        ~file:fullpath
-        ~model
-        rect
+     if context.settings.draw_summary 
+     then 
+       draw_summary_content ~cr ~layout ~context ~nblines ~file:fullpath  rect
     end
   end
   end
-let draw_treemap_rectangle_content_maybe 
-    ~cr ~clipping ~nb_rects_on_screen ~model ~settings rect = 
+let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->
-    draw_treemap_rectangle_content_maybe2 
-      ~cr ~clipping ~nb_rects_on_screen ~model ~settings  rect)
+    draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
     
 
 (*****************************************************************************)

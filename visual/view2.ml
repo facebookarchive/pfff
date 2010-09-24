@@ -206,15 +206,21 @@ let device_to_user_area dw =
 (* Painting *)
 (*****************************************************************************)
 
-let paint_content_maybe_rect ~nb_rects ~user_rect dw rect =
+let context_of_drawing dw = 
+  { Draw.
+    nb_rects_on_screen = dw.nb_rects;
+    model = dw.model;
+    settings = dw.settings;
+    current_grep_query = dw.current_grep_query;
+  } 
+
+let paint_content_maybe_rect ~user_rect dw rect =
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   zoom_pan_scale_map cr dw;
 
-  Draw.draw_treemap_rectangle_content_maybe ~cr 
-    ~clipping:user_rect 
-    ~nb_rects_on_screen:nb_rects
-    ~model:dw.model
-    ~settings:dw.settings 
+  let context = context_of_drawing dw in
+
+  Draw.draw_treemap_rectangle_content_maybe ~cr  ~clipping:user_rect  ~context
     rect;
 
   (* have to redraw the label *)
@@ -223,7 +229,7 @@ let paint_content_maybe_rect ~nb_rects ~user_rect dw rect =
   ()
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
-let lazy_paint ~nb_rects ~user_rect dw () =
+let lazy_paint ~user_rect dw () =
   pr2 "Lazy Paint";
   let start = Unix.gettimeofday () in
   while Unix.gettimeofday () - start < 0.3 do
@@ -232,7 +238,7 @@ let lazy_paint ~nb_rects ~user_rect dw () =
     | x::xs ->
         current_rects_to_draw := xs;
         pr2 (spf "Drawing: %s" (x.T.tr_label));
-        paint_content_maybe_rect ~nb_rects ~user_rect dw x;
+        paint_content_maybe_rect ~user_rect dw x;
   done;
   !_refresh_da ();
   if !current_rects_to_draw = []
@@ -262,7 +268,7 @@ let paint2 dw =
   zoom_pan_scale_map cr dw;
 
   let rects = dw.treemap in
-  let nb_rects = List.length rects in
+  let nb_rects = dw.nb_rects in
 
   (* phase 1, draw the rectangles *)
   rects +> List.iter (Draw.draw_treemap_rectangle ~cr);
@@ -278,7 +284,7 @@ let paint2 dw =
   then begin
     current_rects_to_draw := rects;
     paint_content_maybe_refresher := 
-      Some (GMain.Idle.add ~prio:3000 (lazy_paint ~nb_rects ~user_rect dw));
+      Some (GMain.Idle.add ~prio:3000 (lazy_paint ~user_rect dw));
   end;
 
   (* also clear the overlay *)
@@ -348,7 +354,7 @@ let paint_legend ~cr =
     let w = size in
     let h = size in
 
-    CairoH.fill_rectangle ~cr ~color ~x ~y ~w ~h;
+    CairoH.fill_rectangle ~cr ~color ~x ~y ~w ~h ();
 
     let s = 
       kinds +> List.map Archi_code.s_of_source_archi +> Common.join ", " in
@@ -503,13 +509,12 @@ let zoomed_surface_of_rectangle dw r =
   (* now have on the surface the same thing we would have got if we had
    * zoomed a lot.
    *)
+
+  let context = context_of_drawing dw in
+  let context = { context with Draw.nb_rects_on_screen = 1 } in
+
   Draw.draw_treemap_rectangle ~cr ~alpha:0.9 r';
-  Draw.draw_treemap_rectangle_content_maybe ~cr
-    ~clipping:user_rect 
-    ~nb_rects_on_screen:1
-    ~model:dw.model
-    ~settings:dw.settings
-    r';
+  Draw.draw_treemap_rectangle_content_maybe ~cr ~context ~clipping:user_rect r';
   sur, device_width, device_height
   )
 
@@ -722,7 +727,9 @@ let go_back dw_ref =
   !_refresh_da();
   ()
 
-let go_dirs_or_file dw_ref paths =
+let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) 
+  dw_ref paths =
+
   let root = Common.common_prefix_of_files_or_dirs paths in
   pr2 (spf "zooming in %s" (Common.join "|" paths));
 
@@ -749,9 +756,97 @@ let go_dirs_or_file dw_ref paths =
       dw.treemap_func 
       dw.model 
       paths;
+  !dw_ref.current_entity <- current_entity;
+  (match current_grep_query with
+  | Some h ->
+      !dw_ref.current_grep_query <- h;
+  | None ->
+      (* wants to propagate the query so when right-click the query
+       * is still there
+       *)
+      !dw_ref.current_grep_query <- dw.current_grep_query;
+  );
   paint !dw_ref;
   !_refresh_da ();
   ()
+
+(* ---------------------------------------------------------------------- *)
+(* Search *)
+(* ---------------------------------------------------------------------- *)
+
+let dialog_search_def model = 
+  let idx = (fun () -> 
+    let model = Model2.async_get model in
+    model.Model2.big_grep_idx 
+  )
+  in
+  let entry = 
+    Completion2.my_entry_completion_eff 
+      ~callback_selected:(fun entry str file e ->
+        true
+      )
+      ~callback_changed:(fun str ->
+        ()
+      )
+      idx
+  in
+
+  let res =
+    G.dialog_ask_generic ~title:"" 
+      (fun vbox -> 
+        vbox#pack (G.with_label "search:" entry#coerce);
+      )
+      (fun () -> 
+        let text = entry#text in 
+        pr2 text;
+        text
+      )
+  in
+  res +> Common.do_option (fun s -> 
+    pr2 ("selected: " ^ s);
+  );
+  res
+
+let run_grep_query ~root s =
+  (* --cached so faster ? use -w ?  
+   * -I means no search for binary files
+   * -n to show also line number
+   *)
+  let git_grep_options = 
+    "-I -n"
+  in
+  let cmd = 
+    spf "cd %s; git grep %s %s" root git_grep_options s
+  in
+  let xs = Common.cmd_to_list cmd in
+  let xs = xs +> List.map (fun s ->
+    if s =~ "\\([^:]*\\):\\([0-9]+\\):.*"
+    then
+      let (filename, lineno) = Common.matched2 s in
+      let lineno = s_to_i lineno in
+      let fullpath = Filename.concat root filename in
+      fullpath, lineno
+    else 
+      failwith ("wrong git grep line: " ^ s)
+  ) in
+  xs
+
+let run_tbgs_query ~root s =
+  let cmd = 
+    spf "cd %s; tbgs --stripdir %s" root s
+  in
+  let xs = Common.cmd_to_list cmd in
+  let xs = xs +> List.map (fun s ->
+    if s =~ "\\([^:]*\\):\\([0-9]+\\):.*"
+    then
+      let (filename, lineno) = Common.matched2 s in
+      let lineno = s_to_i lineno in
+      let fullpath = Filename.concat root filename in
+      fullpath, lineno
+    else 
+      failwith ("wrong tbgs line: " ^ s)
+  ) in
+  xs
 
 
 (* ---------------------------------------------------------------------- *)
@@ -845,14 +940,12 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
            
   zoom_pan_scale_map cr dw;
   let user_rect = device_to_user_area dw in
+
+  let context = context_of_drawing dw in
+  let context = { context with Draw.nb_rects_on_screen = 1 } in
   
   (* does side effect on Draw.text_with_user_pos *)
-  Draw.draw_treemap_rectangle_content_maybe ~cr
-    ~clipping:user_rect 
-    ~nb_rects_on_screen:1
-    ~model:dw.model
-    ~settings:dw.settings
-    r;
+  Draw.draw_treemap_rectangle_content_maybe ~cr ~clipping:user_rect ~context r;
   let xs = !Draw.text_with_user_pos in
 
   let scores = xs
@@ -1253,11 +1346,44 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
                     Model2.readable_to_absolute_filename_under_root file 
                       ~root:!dw.root in
 
-                  !dw.current_entity <- Some e;
-                  go_dirs_or_file dw [final_file];
+                  go_dirs_or_file ~current_entity:(Some e) dw [final_file];
               )
           | _ -> failwith "no entity currently selected or no db"
         ) +> ignore ;
+      );
+
+      factory#add_submenu "_Search" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+
+        (* todo? open Db ? *)
+        fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
+
+          let res = dialog_search_def !dw.model in
+          res +> Common.do_option (fun s ->
+            let root = !dw.root in
+            let matching_files = run_grep_query ~root s in
+            let files = matching_files +> List.map fst +> Common.uniq in
+            let current_grep_query = 
+              Some (Common.hash_of_list matching_files)
+            in
+            go_dirs_or_file ~current_grep_query dw files
+          );
+        ) +> ignore;
+
+        fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
+
+          let res = dialog_search_def !dw.model in
+          res +> Common.do_option (fun s ->
+            let root = !dw.root in
+            let matching_files = run_tbgs_query ~root s in
+            let files = matching_files +> List.map fst +> Common.uniq in
+            let current_grep_query = 
+              Some (Common.hash_of_list matching_files)
+            in
+            go_dirs_or_file ~current_grep_query dw files
+          );
+        ) +> ignore;
+
       );
 
       factory#add_submenu "_Misc" +> (fun menu -> 
@@ -1277,6 +1403,12 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
           go_dirs_or_file dw [current_root];
 
         ) +> ignore;
+
+        fc#add_item "_Zoom" ~key:K._Z ~callback:(fun () -> 
+          !dw.in_zoom_incruste <- not (!dw.in_zoom_incruste);
+          !_refresh_da();
+        ) +> ignore;
+
       );
 
       factory#add_submenu "_Help" +> (fun menu -> 
@@ -1356,14 +1488,8 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
               (Model2.readable_to_absolute_filename_under_root ~root:!dw.root)
           in
 
-          pr2 (spf "e = %s, final_paths = %s" str 
-                  (Common.join "|" final_paths));
-
-
-          go_dirs_or_file dw final_paths;
-
-          (* ugly: has to be done after *)
-          !dw.current_entity <- Some e;
+          pr2 (spf "e= %s, final_paths= %s" str(Common.join "|" final_paths));
+          go_dirs_or_file ~current_entity:(Some e) dw final_paths;
           true
         )
         ~callback_changed:(fun str ->
@@ -1557,7 +1683,7 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
     ()
   );
 
-  (*  GMain.Timeout.add ~ms: 1000 ~callback:(idle dw) +> ignore; *)
+  (* GMain.Idle.add ~prio: 1000 (idle dw) +> ignore; *)
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
