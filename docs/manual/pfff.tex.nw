@@ -127,6 +127,15 @@ Yoann Padioleau\\
 \chapter{Introduction}
 \label{sec:introduction}
 
+%dup: readme.txt and wiki
+pfff is mainly an OCaml API to write static analysis, dynamic
+analysis, code visualizations, code navigations, or style-preserving
+source-to-source transformations such as refactorings on source
+code. For now the effort is focused on PHP but there is preliminary
+support for Javascript, Sql, and C++ code. There is also preliminary
+support for OCaml code so that the framework can be used on the code 
+of pfff itself.
+
 
 source organization
 
@@ -137,6 +146,20 @@ TREEEMAP
 source + version + runtime + org = cool
 
 include toc of 2 other manuals
+
+\section{About OCaml}
+
+OCaml may seem to be a weird choice. It's not a very popular language.
+But actually in the static analysis world, it is the most popular
+langage. Researchers in Berkeley and Stanford are using OCaml for
+performing analysis of C code (e.g. Necula with CIL at Berkeley, Aiken
+with Saturn at Stanford), some type inferers for Ruby are written in
+OCaml (DRuby), the Windows Device verifiers (based on work from
+Microsoft Research by Thomas Ball on SLAM) is written in OCaml, people
+in the Linux kernel are using the Coccinelle tool to perform some
+complex refactoring and to find bugs, also written in OCaml. In fact
+one of the latest programming language of Microsoft, F#, is directly
+inspired (one could say copy) from OCaml.
 
 \begin{figure*}
 \includegraphics[width=15cm]{pfff_treemap_screen}
