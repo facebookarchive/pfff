@@ -176,6 +176,7 @@ let visit_toplevel
 
     | T.TBang ii1::T.TLowerIdent(s2, ii2)::xs ->
         tag ii2 (UseOfRef);
+
         aux_toks xs
 
     | T.TBang ii1::T.TUpperIdent(s, ii)::T.TDot _::T.TLowerIdent(s2, ii2)::xs ->

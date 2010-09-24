@@ -236,6 +236,9 @@ rule token = parse
   (* why -. is mentionned as a keyword and not +. ? *)
   | "-." { TMinusDot(tokinfo lexbuf) }
 
+  (* why ! is not mentionned as a keyword ? *)
+  | "!" { TBang(tokinfo lexbuf) }
+
   | prefix_symbol { TPrefixOperator (tok lexbuf, tokinfo lexbuf) }
   | infix_symbol { TInfixOperator (tok lexbuf, tokinfo lexbuf) }
 
