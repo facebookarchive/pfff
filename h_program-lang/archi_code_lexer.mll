@@ -45,6 +45,8 @@ rule category = parse
 
   (* pad specific, noweb *)
   | ".nw/" 
+      { Doc }
+
   | ".pdf/" 
   | ".rtf/"
       { Doc }

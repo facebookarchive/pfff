@@ -135,8 +135,10 @@ let file_type_of_file2 file =
   | "ps" | "pdf" -> Doc e
   | "ppt" -> Doc e
 
-  | "tex" | "texi"
+  | "tex" | "texi" -> Text e
   | "txt" | "doc" -> Text e
+  | "nw" -> Text e
+
   | "rtf" -> Text e
 
   | "cmi" | "cmo" | "cmx" | "cma" | "cmxa" 
