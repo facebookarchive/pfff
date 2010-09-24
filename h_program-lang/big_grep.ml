@@ -61,7 +61,7 @@ let empty_index () = {
 (*****************************************************************************)
 (* Naive version *)
 (*****************************************************************************)
-(* Just to have a baseline for benchmarks *)
+(* THIS IS THE NAIVE VERSION. Just to have a baseline for benchmarks *)
 
 let naive_top_n_search2 ~top_n ~query xs =
   let re = Str.regexp (".*" ^ query) in
@@ -147,12 +147,24 @@ let find_position_marker_after start_pos str =
   done;
   !pos
 
+(* the query can now contain multipe words *)
 let top_n_search2 ~top_n ~query idx =
 
   let query = 
     if idx.case_sensitive then query else Common.lowercase query
   in
-  let re = Str.regexp query in
+
+  let words = Str.split (Str.regexp "[ \t]+") query in
+  let re =
+    match words with
+    | [q] -> Str.regexp (".*" ^ query)
+    | [a;b] -> 
+        Str.regexp (spf 
+                       ".*\\(%s.*%s\\)\\|\\(%s.*%s\\)"
+                       a b b a)
+    | _ -> 
+        failwith "more-than-2-words query is not supported; give money to pad"
+  in
   
   let rec aux ~n ~pos =
     if n = top_n
