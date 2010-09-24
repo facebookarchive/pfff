@@ -19,6 +19,8 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 
+(* todo: move code for instance Common.parse_info here
+*)
 
 (*****************************************************************************)
 (* Type *)
@@ -73,6 +75,58 @@ type vtoken =
         Common.parse_info * int 
 
    (* with tarzan *)
+
+type info = { 
+  (* contains among other things the position of the token through
+   * the Common.parse_info embedded inside the pinfo type.
+   *)
+  mutable pinfo : vtoken; 
+  comments: unit; (* TODO *)
+  mutable transfo: transformation;
+}
+
+and transformation = 
+  | NoTransfo
+  | Remove 
+  | AddBefore of add
+  | AddAfter of add
+  | Replace of add
+
+  and add = 
+    | AddStr of string
+    | AddNewlineAndIdent
+
+ (* with tarzan *)
+
+(*****************************************************************************)
+(* Lexer helpers *)
+(*****************************************************************************)
+
+let tokinfo_str_pos str pos = 
+  { 
+    pinfo = OriginTok {
+      Common.charpos = pos; 
+      Common.str     = str;
+
+      (* info filled in a post-lexing phase, cf Parse_php.tokens *)
+      Common.line = -1; 
+      Common.column = -1; 
+      Common.file = "";
+    };
+    comments = ();
+    transfo = NoTransfo;
+  }
+
+
+let rewrap_str s ii =  
+  {ii with pinfo =
+    (match ii.pinfo with
+    | OriginTok pi -> OriginTok { pi with Common.str = s;}
+    | FakeTokStr (s, info) -> FakeTokStr (s, info)
+    | Ab -> Ab
+    | ExpandedTok _ -> failwith "rewrap_str: ExpandedTok not allowed here"
+    )
+  }
 
 
 (*****************************************************************************)
