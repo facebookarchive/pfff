@@ -140,9 +140,9 @@ let is_old_cairo () =
   | _ when s =~ "1\\.[89]\\.*" -> false
   | _ -> true
 
-let fill_rectangle ~cr ~x ~y ~w ~h ~color = 
+let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
   (let (r,g,b) = color +> Color.rgbf_of_string in
-  Cairo.set_source_rgb cr r g b;
+  Cairo.set_source_rgba cr r g b alpha;
   );
   
   Cairo.move_to cr x y;

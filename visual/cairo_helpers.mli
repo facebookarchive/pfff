@@ -1,8 +1,10 @@
 
 val fill_rectangle:
+  ?alpha:float ->
   cr:Cairo.t -> 
   x:float -> y:float -> w:float -> h:float ->
   color:Simple_color.emacs_color -> 
+  unit ->
   unit
 
 val draw_rectangle_figure:
