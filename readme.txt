@@ -30,6 +30,10 @@ pfff is also made of few tools:
  - scheck, a bug finder
  - pfff_tags, an Emacs tag generator
 
+For more information, look at the pfff wiki here:
+ http://github.com/facebook/pfff/wiki/Main
+as well as the docs/manual/ directory.
+
 Usage for pfff:
 -----------------
 
