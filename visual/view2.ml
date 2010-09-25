@@ -387,7 +387,6 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
   *)
   ()
 (*e: draw_label_overlay *)
-le
 (* ---------------------------------------------------------------------- *)
 (* The current rectangles *)
 (* ---------------------------------------------------------------------- *)
@@ -419,7 +418,6 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   Cairo.restore cr_overlay;
   ()
 (*e: draw_rectangle_overlay *)
-le
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
 (* ---------------------------------------------------------------------- *)
@@ -979,7 +977,7 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
             
 
 (*s: button_action *)
-t button_action da dw_ref ev =
+let button_action da dw_ref ev =
   let dw = !dw_ref in
 
   let pt = { Cairo. x = GdkEvent.Button.x ev; y = GdkEvent.Button.y ev;} in
@@ -1232,7 +1230,7 @@ let treemap_generator paths =
 (*e: treemap_generator *)
 
 (*s: build_model *)
-t build_model2 root dbfile_opt =   
+let build_model2 root dbfile_opt =   
   let db_opt = dbfile_opt +> Common.fmap (fun file ->
     if file =~ ".*.json"
     then Database_code.load_database file
@@ -1273,7 +1271,6 @@ let build_model a b =
   Common.profile_code2 "View.build_model" (fun () ->
     build_model2 a b)
 (*e: build_model *)
-le
 (*****************************************************************************)
 (* The main UI *)
 (*****************************************************************************)
