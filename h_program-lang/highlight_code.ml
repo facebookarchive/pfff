@@ -257,6 +257,7 @@ type category =
   | CommentSection2
   | CommentEstet
   | CommentCopyright
+  | CommentSyncweb
 
   (* search and match *)
   | MatchGlimpse
@@ -519,6 +520,7 @@ let info_of_category = function
   | CommentSection2 -> [`FOREGROUND "LimeGreen";]
   | CommentEstet -> [`FOREGROUND "gray";]
   | CommentCopyright -> [`FOREGROUND "gray";]
+  | CommentSyncweb -> [`FOREGROUND "DimGray";]
 
 
 

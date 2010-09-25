@@ -82,6 +82,7 @@ type category =
   | CommentSection2
   | CommentEstet
   | CommentCopyright
+  | CommentSyncweb
 
   | MatchGlimpse
   | MatchSmPL

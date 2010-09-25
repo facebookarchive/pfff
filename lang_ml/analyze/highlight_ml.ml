@@ -228,7 +228,11 @@ let visit_toplevel
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
         then
-          tag ii Comment
+          (* a little bit syncweb specific *)
+          let s = Ast.str_of_info ii in
+          if s =~ "(\\*[sex]:" (* yep, s e x are the syncweb markers *)
+          then tag ii CommentSyncweb
+          else tag ii Comment
 
     | T.TCommentMisc ii ->
         tag ii Comment

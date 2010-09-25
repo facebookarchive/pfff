@@ -73,6 +73,8 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.CommentEstet) -> 1.0
     | Some (SH.CommentCopyright) -> 0.5
 
+    | Some (SH.CommentSyncweb) -> 1.
+
 (*
     | Some (SH.Comment) when font_size_real > 7.
           -> 1.5
