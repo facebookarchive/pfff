@@ -139,6 +139,47 @@ instead of a classic hiearchy browser.
 %later: integrate more artifacts. See vision.txt
 \end{verbatim}
 
+
+\begin{verbatim}
+ * Archi: There are different kinds of "drawings":
+ *  - paint, which does the heavy and expensive rendering
+ *  - expose, which assemble the already painted pixmaps/layers and allow
+ *    moving parts such as overlay rectangles
+\end{verbatim}
+
+\begin{verbatim}
+(*
+ * This file is the basis for a new kind of code visualizer, 
+ * with real time zoom on a treemap and partial thumbnails with anamorphic
+ * code; A google maps but on code :)
+ * 
+ * 
+ * By playing with colors, size, fonts, and transparency, can show lots
+ * of stuff.
+ * 
+ * Assumes the treemap contains the absolute paths to existing files/dirs.
+ * 
+ * There is not a single view that can accomodate all 
+ * navigation/code-understanding programmer needs. So we provide multiple
+ * features that can display things at different levels:
+ *  - minimap, for context and quick navigation
+ *  - zoomable/draggable map
+ *  - content thumbnails, with anamorphic text for more important entities
+ *  - magnifying glass on the zoomable map (=> have then 3 layers of zoom
+ *    where can each time see the context)
+ *  - clickable map so redraw treemap on focused dir (focus, but no more
+ *    context, except in the minimap maybe one day)
+ *  - speedbar for view histories
+ *    (could also provide thumbnails on view histories :) )
+ *  - zoom and mouse-follow
+ * 
+ * That's lots of features. In a way tools like Powerpoint also provide
+ * multiple displays on the same data and with zoomable slides, global
+ * view on the set of slides, slides thumnails, etc.
+ *)
+
+\end{verbatim}
+
 \subsection{Getting started}
 
 \subsection{Copyright}
@@ -203,7 +244,111 @@ in your path.
 
 \subsection{Cairo}
 
+<<new_pixmap sig>>=
+val new_pixmap : 
+  width:int -> height:int -> GDraw.pixmap
+@
+
 \section{The Model}
+
+<<type model>>=
+type model = {
+  db: Database_code.database option;
+  (* fast accessors *)
+  hentities : (string, Database_code.entity) Hashtbl.t;
+  hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
+  big_grep_idx: Big_grep.index;
+ }
+@
+
+
+<<type drawing>>=
+type drawing = {
+  treemap : Treemap.treemap_rendering;
+  nb_rects: int; (* coupling: = List.length treemap *)
+
+  treemap_func : Common.path list -> Treemap.treemap_rendering;
+  (* can be a file *)
+  root : Common.path;
+
+  model: model async;
+
+  mutable current_query : string;
+  mutable current_searched_rectangles: Treemap.treemap_rectangle list;
+  mutable current_entity: Database_code.entity option;
+  mutable current_grep_query : 
+    (Common.filename, int) Hashtbl.t;
+
+  settings: settings;
+
+  mutable pm : GDraw.pixmap;
+  mutable overlay : [ `Any ] Cairo.surface;
+
+  mutable width : int;
+  mutable height : int;
+  mutable zoom : float;
+  mutable xtrans : float;
+  mutable ytrans : float;
+
+  mutable drag_pt : Cairo.point;
+  mutable in_dragging : bool;
+
+  mutable in_zoom_incruste : bool;
+
+  mutable pm_minimap : GDraw.pixmap;
+  mutable width_minimap : int;
+  mutable height_minimap : int;
+  mutable drag_pt_minimap : Cairo.point;
+}
+ and settings = {
+   mutable draw_summary: bool;
+   mutable draw_searched_rectangles: bool;
+ }
+@
+
+<<init_drawing sig>>=
+val init_drawing :
+  ?width:int ->
+  ?height:int ->
+  ?width_minimap:int ->
+  ?height_minimap:int ->
+  (Common.path list -> Treemap.treemap_rendering) ->
+  model async ->
+  Common.filename list -> 
+  drawing
+@
+
+<<readable_to_absolute_filename_under_root sig>>=
+val readable_to_absolute_filename_under_root :
+  root:Common.path -> string -> string
+@
+
+<<actual_root_of_db sig>>=
+val actual_root_of_db : 
+  root:Common.path -> Database_code.database -> string
+@
+
+\section{The UI}
+
+\begin{verbatim}
+ * Overall UI organisation:
+ *  - menu
+ *  - toolbar
+ *  - mainview (treemap | minimap/legend)
+ *  - statusbar 
+ * 
+ * Conventions and info: see commons/gui.ml
+\end{verbatim}
+
+<<mk_gui sig>>=
+val mk_gui :
+  screen_size:int ->
+  'a -> Common.filename option -> 'b option -> 
+  Common.filename list -> 
+  unit
+@ 
+
+
 
 \section{Treemap View}
 
@@ -211,13 +356,31 @@ in your path.
 
 \subsection{Color code}
 
+\subsection{Drawing}
+
 \section{Source View}
 
+\subsection{Principles}
+
 \subsection{Color code}
+
+\subsection{Drawing}
 
 \section{Navigation}
 
 \subsection{Zooming In}
+
+<<find_rectangle_at_user_point sig>>=
+val find_rectangle_at_user_point :
+  drawing ->
+  Cairo.point ->
+  (Treemap.treemap_rectangle * 
+   Treemap.treemap_rectangle list * 
+   Treemap.treemap_rectangle
+  )
+  option
+@
+
 
 \subsection{Zooming Fully}
 
@@ -236,6 +399,30 @@ in your path.
 
 % php manual integration!
 \end{verbatim}
+
+<<hentities sig>>=
+val hentities :
+  Common.path -> Database_code.database option -> 
+  (string, Database_code.entity) Hashtbl.t
+@
+
+
+<<hfiles_and_top_entities sig>>=
+val hfiles_and_top_entities :
+  Common.path -> Database_code.database option -> 
+  (string, Database_code.entity list) Hashtbl.t
+@
+
+
+<<all_entities sig>>=
+(* Will generate extra entities for files, dirs, and also generate
+ * an extra entity when have a fullname that is not empty
+ *)
+val all_entities :
+  Database_code.database option ->
+  Database_code.entity list
+@
+
 
 \subsection{Completion}
 
@@ -279,22 +466,11 @@ in your path.
 
 \subsection{Tex/Latex/NoWeb}
 
-\section{Other Features}
+\section{Optimisations}
 
+\subsection{Threads, Idle, Timeouts}
 
-\section{Conclusion}
-
-Hope you like it.
-
-
-\appendix
-
-\section{Extra Code}
-
-\subsection{[[model2.mli]]}
-
-<<model2.mli>>=
-
+<<type async>>=
 type 'a async = {
   m: Mutex.t; 
   c: Condition.t;
@@ -305,149 +481,9 @@ val async_make: unit -> 'a async
 val async_set: 'a -> 'a async -> unit
 
 val locked: (unit -> 'a) -> Mutex.t -> 'a
+@
 
-type model = {
-  db: Database_code.database option;
-  hentities : (string, Database_code.entity) Hashtbl.t;
-  hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
-  big_grep_idx: Big_grep.index;
- }
-
-type drawing = {
-  treemap : Treemap.treemap_rendering;
-  nb_rects: int; (* coupling: = List.length treemap *)
-
-  treemap_func : Common.path list -> Treemap.treemap_rendering;
-  (* can be a file *)
-  root : Common.path;
-
-  model: model async;
-
-  mutable current_query : string;
-  mutable current_searched_rectangles: Treemap.treemap_rectangle list;
-  mutable current_entity: Database_code.entity option;
-  mutable current_grep_query : 
-    (Common.filename, int) Hashtbl.t;
-
-  settings: settings;
-
-  mutable pm : GDraw.pixmap;
-  mutable overlay : [ `Any ] Cairo.surface;
-
-  mutable width : int;
-  mutable height : int;
-  mutable zoom : float;
-  mutable xtrans : float;
-  mutable ytrans : float;
-
-  mutable drag_pt : Cairo.point;
-  mutable in_dragging : bool;
-
-  mutable in_zoom_incruste : bool;
-
-  mutable pm_minimap : GDraw.pixmap;
-  mutable width_minimap : int;
-  mutable height_minimap : int;
-  mutable drag_pt_minimap : Cairo.point;
-}
- and settings = {
-   mutable draw_summary: bool;
-   mutable draw_searched_rectangles: bool;
- }
-
-val init_drawing :
-  ?width:int ->
-  ?height:int ->
-  ?width_minimap:int ->
-  ?height_minimap:int ->
-  (Common.path list -> Treemap.treemap_rendering) ->
-  model async ->
-  Common.filename list -> 
-  drawing
-
-val new_pixmap : 
-  width:int -> height:int -> GDraw.pixmap
-
-
-
-val find_rectangle_at_user_point :
-  drawing ->
-  Cairo.point ->
-  (Treemap.treemap_rectangle * 
-   Treemap.treemap_rectangle list * 
-   Treemap.treemap_rectangle
-  )
-  option
-
-val hentities :
-  Common.path -> Database_code.database option -> 
-  (string, Database_code.entity) Hashtbl.t
-
-val hfiles_and_top_entities :
-  Common.path -> Database_code.database option -> 
-  (string, Database_code.entity list) Hashtbl.t
-
-(* Will generate extra entities for files, dirs, and also generate
- * an extra entity when have a fullname that is not empty
- *)
-val all_entities :
-  Database_code.database option ->
-  Database_code.entity list
-
-
-val readable_to_absolute_filename_under_root :
-  root:Common.path -> string -> string
-val actual_root_of_db : 
-  root:Common.path -> Database_code.database -> string
-
-@ 
-\subsection{[[model2.ml]]}
-
-<<model2.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
-
-open Common
-
-module CairoH = Cairo_helpers
-
-module F = Figures
-module T = Treemap
-
-module Db = Database_code
-
-module Flag = Flag_visual
-
-(*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-
-type model = {
-  db: Database_code.database option;
-  (* fast accessors *)
-  hentities: (string, Database_code.entity) Hashtbl.t;
-  hfiles_entities: (Common.filename, Database_code.entity list) Hashtbl.t;
-  big_grep_idx: Big_grep.index;
- }
-
-type 'a async = { 
-  m: Mutex.t; 
-  c: Condition.t;
-  v: 'a option ref;
-  }
-
+<<async functions>>=
 let async_make () = {
   m = Mutex.create (); 
   c = Condition.create ();
@@ -480,7 +516,75 @@ let async_set v a =
     a.v := Some v;
     Condition.signal a.c;
   ) a.m
+@ 
 
+
+\section{Other Features}
+
+
+\section{Conclusion}
+
+Hope you like it.
+
+
+\appendix
+
+\section{Extra Code}
+
+\subsection{[[model2.mli]]}
+
+<<model2.mli>>=
+
+<<type async>>
+
+<<type model>>
+
+<<type drawing>>
+
+<<init_drawing sig>>
+
+<<new_pixmap sig>>
+
+<<find_rectangle_at_user_point sig>>
+
+<<hentities sig>>
+
+<<hfiles_and_top_entities sig>>>
+
+<<all_entities sig>>
+
+<<readable_to_absolute_filename_under_root sig>>
+
+<<actual_root_of_db sig>>
+
+@ 
+
+\subsection{[[model2.ml]]}
+
+
+<<model2.ml>>=
+<<Facebook copyright>>
+
+open Common
+
+module CairoH = Cairo_helpers
+
+module F = Figures
+module T = Treemap
+
+module Db = Database_code
+
+module Flag = Flag_visual
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+<<type model>>
+
+<<type async>>
+
+<<async functions>>
 
 
 (*****************************************************************************)
@@ -798,33 +902,17 @@ let all_entities db_opt =
 @ 
 \subsection{[[view2.mli]]}
 
+
 <<view2.mli>>=
 
-val mk_gui :
-  screen_size:int ->
-  'a -> Common.filename option -> 'b option -> 
-  Common.filename list -> 
-  unit
+<<mk_gui sig>>
 @ 
 
 \subsection{[[view2.ml]]}
 
 <<view2.ml>>=
 
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
@@ -854,48 +942,6 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(*
- * This file is the basis for a new kind of code visualizer, 
- * with real time zoom on a treemap and partial thumbnails with anamorphic
- * code; A google maps but on code :)
- * 
- * Overall UI organisation:
- *  - menu
- *  - toolbar
- *  - mainview (treemap | minimap/legend)
- *  - statusbar 
- * 
- * Conventions and info: see commons/gui.ml
- * 
- * By playing with colors, size, fonts, and transparency, can show lots
- * of stuff.
- * 
- * Assumes the treemap contains the absolute paths to existing files/dirs.
- * 
- * Archi: There are different kinds of "drawings":
- *  - paint, which does the heavy and expensive rendering
- *  - expose, which assemble the already painted pixmaps/layers and allow
- *    moving parts such as overlay rectangles
- * 
- * There is not a single view that can accomodate all 
- * navigation/code-understanding programmer needs. So we provide multiple
- * features that can display things at different levels:
- *  - minimap, for context and quick navigation
- *  - zoomable/draggable map
- *  - content thumbnails, with anamorphic text for more important entities
- *  - magnifying glass on the zoomable map (=> have then 3 layers of zoom
- *    where can each time see the context)
- *  - clickable map so redraw treemap on focused dir (focus, but no more
- *    context, except in the minimap maybe one day)
- *  - speedbar for view histories
- *    (could also provide thumbnails on view histories :) )
- *  - zoom and mouse-follow
- * 
- * That's lots of features. In a way tools like Powerpoint also provide
- * multiple displays on the same data and with zoomable slides, global
- * view on the set of slides, slides thumnails, etc.
- *)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -2568,20 +2614,7 @@ val text_with_user_pos :
 \subsection{[[draw2.ml]]}
 
 <<draw2.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
@@ -3390,20 +3423,7 @@ val disable_file_in_cache :
 \subsection{[[parsing2.ml]]}
 
 <<parsing2.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
@@ -3724,20 +3744,7 @@ val my_entry_completion_eff :
 \subsection{[[completion2.ml]]}
 
 <<completion2.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
@@ -4057,20 +4064,7 @@ val zoom_factor_incruste_mode : float
 \subsection{[[style2.ml]]}
 
 <<style2.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
@@ -4214,20 +4208,7 @@ val is_old_cairo : unit -> bool
 \subsection{[[cairo_helpers.ml]]}
 
 <<cairo_helpers.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
@@ -4413,20 +4394,7 @@ val open_file_in_current_editor : file:string -> line:int -> unit
 \subsection{[[editor_connection.ml]]}
 
 <<editor_connection.ml>>=
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
+<<Facebook copyright>>
 
 open Common
 
