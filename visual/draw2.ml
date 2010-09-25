@@ -56,13 +56,16 @@ let text_with_user_pos = ref []
 (* Types *)
 (*****************************************************************************)
 
+(*s: type draw_content_layout *)
 type draw_content_layout = {
   font_size: float;
   split_nb_columns: float;
   w_per_column:float;
   space_per_line: float;
 }
+(*e: type draw_content_layout *)
 
+(*s: type context *)
 (* a slice of Model2.drawing *)
 type context = {
   model: Model2.model Model2.async;
@@ -70,6 +73,7 @@ type context = {
   nb_rects_on_screen: int;
   current_grep_query: (Common.filename, int) Hashtbl.t;
 }
+(*e: type context *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -83,6 +87,7 @@ let is_big_file_with_few_lines ~nblines fullpath =
 (* Basics *)
 (*****************************************************************************)
 
+(*s: draw_treemap_rectangle() *)
 let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
   let r = rect.T.tr_rect in
 
@@ -107,6 +112,7 @@ let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
 let draw_treemap_rectangle ~cr ?color ?alpha a =
   Common.profile_code "View.draw_treemap_rectangle" (fun () -> 
     draw_treemap_rectangle2 ~cr ?color ?alpha a)
+(*e: draw_treemap_rectangle() *)
 
 (*****************************************************************************)
 (* Color of entity *)
@@ -116,6 +122,7 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
 (* Anamorphic entities *)
 (*****************************************************************************)
 
+(*s: final_font_size_when_multiplier *)
 let final_font_size_when_multiplier 
     ~multiplier ~size_font_multiplier_multiplier 
     ~font_size ~font_size_real 
@@ -135,7 +142,9 @@ let final_font_size_when_multiplier
     Common.borne ~min:font_size ~max:(font_size * 30.) font_size_adjusted
   in
   final_font_size
+(*e: final_font_size_when_multiplier *)
 
+(*s: final_font_size_of_categ *)
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
   let multiplier = Style.size_font_multiplier_of_categ ~font_size_real categ in
@@ -156,20 +165,22 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     ~size_font_multiplier_multiplier
     ~font_size
     ~font_size_real
-
+(*e: final_font_size_of_categ *)
 
 (*****************************************************************************)
 (* Columns *)
 (*****************************************************************************)
 
+(*s: font_size_when_have_x_columns *)
 let font_size_when_have_x_columns ~nblines ~nbcolumns ~w ~h ~with_n_columns = 
   let size_x = (w / with_n_columns) / nbcolumns in
   let size_y = (h / (nblines / with_n_columns)) in
 
   let min_font = min size_x size_y in
   min_font
+(*e: font_size_when_have_x_columns *)
    
-  
+(*s: optimal_nb_columns *)
 (* Given a file with nblines and nbcolumns (usually 80) and
  * a rectangle of w width and h height, what is the optimal
  * number of columns. The principle is to start at 1 column
@@ -189,9 +200,10 @@ let optimal_nb_columns ~nblines ~nbcolumns ~w ~h =
       current_nb_columns - 1.
   in
   aux 0.0   1.
+(*e: optimal_nb_columns *)
 
 
-
+(*s: draw_column_bars *)
 let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect = 
   let r = rect.T.tr_rect in
   for i = 1 to int_of_float (split_nb_columns - 1.) do
@@ -214,12 +226,14 @@ let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect =
 let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
   Common.profile_code "View.draw_bars" (fun () ->
     draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect)
+(*e: draw_column_bars *)
 
 
 (*****************************************************************************)
 (* File Summary *)
 (*****************************************************************************)
 
+(*s: draw_summary_content *)
 (* todo: should base this on the current max in the current view.
  * Also bad that can not compare function use by just looking
  * at their size :(
@@ -322,11 +336,13 @@ let draw_summary_content
  ~cr ~layout ~context ~nblines ~file rect =
   Common.profile_code "View.draw_summary_content" (fun () ->
     draw_summary_content2 ~cr ~layout ~context ~nblines ~file rect)
+(*e: draw_summary_content *)
 
 (*****************************************************************************)
 (* File Content *)
 (*****************************************************************************)
-  
+
+(*s: draw_content *)
 let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
 
   let font_size = layout.font_size in
@@ -525,10 +541,10 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
 let draw_content ~cr ~layout ~context ~nblines ~file rect =
   Common.profile_code "View.draw_content" (fun () ->
     draw_content2 ~cr ~layout ~context ~nblines ~file rect)
+(*e: draw_content *)
 
 
-
-
+(*s: draw_treemap_rectangle_content_maybe *)
 let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
@@ -622,12 +638,14 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
 let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->
     draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
+(*e: draw_treemap_rectangle_content_maybe *)
     
 
 (*****************************************************************************)
 (* Label *)
 (*****************************************************************************)
 
+(*s: draw_treemap_rectangle_label_maybe *)
 let _hmemo_text_extent = Hashtbl.create 101
 
 (* This can be quite cpu intensive. CairoH.text_extents is quite slow
@@ -795,5 +813,6 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
 let draw_treemap_rectangle_label_maybe ~cr ~zoom ~color rect =
   Common.profile_code "View.draw_label_maybe" (fun () ->
     draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect)
+(*e: draw_treemap_rectangle_label_maybe *)
 
 (*e: draw2.ml *)
