@@ -1,5 +1,4 @@
 Thanks to 
- - Lex Stein for ocamlbdb/ (GPL)
  - Olivier Andrieu for ocamlcairo/ (LGPL)
  - Jacques Garrigue for ocamlgtk/ (LGPL)
  - Martin Jambon, Mika Illouz and Gert Stolpmann for lib-json/ (BSD-like)
@@ -10,6 +9,7 @@ Thanks to
  - Thorsten Ohl for xHTML.ml (GPL)
  - Sylvain Conchon, Jean-Christophe Filliâtre and Julien Signoles for 
    ocamlgraph/ (LGPL)
+ - Lex Stein for ocamlbdb/ (GPL)
  - Xavier Leroy for ocamlmpi/ (LGPL)
  - Markus Mottl for ocamlpcre/ (LGPL)
  - Iain Proctor for ocamlthrift/ (ASF)

@@ -31,7 +31,7 @@ my $projectcmdline =
 my $prefix="/usr/local";
 
 my $bt=0;
-my $bdb=1;
+my $bdb=0;
 my $mysql=0;
 
 my $graphics=0; # X11 graphics.cma
