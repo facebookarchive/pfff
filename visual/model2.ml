@@ -52,11 +52,6 @@ type 'a async = {
   c: Condition.t;
   v: 'a option ref;
   }
-val async_get: 'a async -> 'a
-val async_make: unit -> 'a async
-val async_set: 'a -> 'a async -> unit
-
-val locked: (unit -> 'a) -> Mutex.t -> 'a
 (*e: type async *)
 
 (*s: async functions *)

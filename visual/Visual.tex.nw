@@ -2230,6 +2230,9 @@ type 'a async = {
   c: Condition.t;
   v: 'a option ref;
   }
+@ 
+
+<<async functions sig>>=
 val async_get: 'a async -> 'a
 val async_make: unit -> 'a async
 val async_set: 'a -> 'a async -> unit
@@ -2480,6 +2483,7 @@ Hope you like it.
 <<model2.mli>>=
 
 <<type async>>
+<<async functions sig>>
 
 <<type model>>
 

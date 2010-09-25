@@ -6,12 +6,14 @@ type 'a async = {
   c: Condition.t;
   v: 'a option ref;
   }
+(*e: type async *)
+(*s: async functions sig *)
 val async_get: 'a async -> 'a
 val async_make: unit -> 'a async
 val async_set: 'a -> 'a async -> unit
 
 val locked: (unit -> 'a) -> Mutex.t -> 'a
-(*e: type async *)
+(*e: async functions sig *)
 
 (*s: type model *)
 type model = {
