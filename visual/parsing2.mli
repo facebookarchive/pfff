@@ -1,3 +1,4 @@
+(*s: parsing2.mli *)
 
 val tokens_with_categ_of_file :
   Common.filename ->
@@ -14,3 +15,4 @@ type ast =
 val _hmemo_file : (Common.filename, ast) Hashtbl.t
 val disable_file_in_cache : 
   Common.filename -> unit
+(*e: parsing2.mli *)

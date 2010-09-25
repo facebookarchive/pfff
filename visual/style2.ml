@@ -1,3 +1,4 @@
+(*s: style2.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -99,3 +100,4 @@ let windows_params screen_size =
   width, height, minimap_hpos, minimap_vpos
 
 
+(*e: style2.ml *)

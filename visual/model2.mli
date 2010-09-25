@@ -1,3 +1,4 @@
+(*s: model2.mli *)
 
 type 'a async = {
   m: Mutex.t; 
@@ -103,3 +104,5 @@ val readable_to_absolute_filename_under_root :
   root:Common.path -> string -> string
 val actual_root_of_db : 
   root:Common.path -> Database_code.database -> string
+
+(*e: model2.mli *)

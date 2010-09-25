@@ -1,3 +1,4 @@
+(*s: style2.mli *)
 
 val windows_params : int -> int * int * int * int
 
@@ -7,3 +8,4 @@ val size_font_multiplier_of_categ :
 val threshold_draw_dark_background_font_size_real : float
 
 val zoom_factor_incruste_mode : float
+(*e: style2.mli *)

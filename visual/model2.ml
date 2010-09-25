@@ -1,3 +1,4 @@
+(*s: model2.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -389,3 +390,4 @@ let all_entities db_opt =
       Database_code.files_and_dirs_and_sorted_entities_for_completion
         ~threshold_too_many_entities:!Flag.threshold_too_many_entities
         db
+(*e: model2.ml *)

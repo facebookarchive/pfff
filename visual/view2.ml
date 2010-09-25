@@ -1,3 +1,5 @@
+(*s: view2.ml *)
+
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -1588,8 +1590,8 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
 
     da#misc#set_can_focus true ;
     da#event#add [ `KEY_PRESS;
-		 `BUTTON_MOTION; `POINTER_MOTION;
-		 `BUTTON_PRESS; `BUTTON_RELEASE ];
+   `BUTTON_MOTION; `POINTER_MOTION;
+   `BUTTON_PRESS; `BUTTON_RELEASE ];
 
     da2#misc#set_can_focus true ;
     da2#event#add [ `KEY_PRESS;
@@ -1597,8 +1599,8 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
                   * POINTER_MOTION here, the minimap still
                   * gets an event for mouse over :(
                   *)
-		 `BUTTON_MOTION; `POINTER_MOTION;
-		 `BUTTON_PRESS; `BUTTON_RELEASE ];
+   `BUTTON_MOTION; `POINTER_MOTION;
+   `BUTTON_PRESS; `BUTTON_RELEASE ];
 
 
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
@@ -1707,3 +1709,4 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
   GtkThread.main ();
   ()
   
+(*e: view2.ml *)

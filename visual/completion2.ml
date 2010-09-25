@@ -1,3 +1,4 @@
+(*s: completion2.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -312,3 +313,4 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
   my_entry_completion_eff2 ~callback_selected ~callback_changed x
 
 
+(*e: completion2.ml *)

@@ -1,3 +1,4 @@
+(*s: cairo_helpers.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -185,3 +186,4 @@ let draw_rectangle_bis ~cr ~color ~line_width r =
   Cairo.line_to cr r.p.x r.p.y;
   Cairo.stroke cr;
   ()
+(*e: cairo_helpers.ml *)

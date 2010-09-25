@@ -1,3 +1,4 @@
+(*s: parsing2.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -312,3 +313,4 @@ let tokens_with_categ_of_file file hentities =
 
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"
+(*e: parsing2.ml *)

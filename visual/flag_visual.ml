@@ -1,3 +1,4 @@
+(*s: flag_visual.ml *)
 
 let verbose_visual = ref false
 
@@ -31,3 +32,4 @@ let use_ancient = ref false
 let disable_fonts = ref false
 
 let extra_filter = ref (None: string option) (* regexp *)
+(*e: flag_visual.ml *)

@@ -1,3 +1,4 @@
+(*s: editor_connection.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -48,3 +49,4 @@ let run_emacsclient ~file ~line =
 
 let open_file_in_current_editor ~file ~line =
   run_emacsclient ~file ~line
+(*e: editor_connection.ml *)

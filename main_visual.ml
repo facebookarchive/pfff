@@ -1,3 +1,4 @@
+(*s: main_visual.ml *)
 (*
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
@@ -196,3 +197,5 @@ let _ =
       pr2 (Common.profile_diagnostic ());
       Common.erase_temp_files ();
     )
+
+(*e: main_visual.ml *)

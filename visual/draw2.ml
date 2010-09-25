@@ -1,3 +1,4 @@
+(*s: draw2.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -792,3 +793,5 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
 let draw_treemap_rectangle_label_maybe ~cr ~zoom ~color rect =
   Common.profile_code "View.draw_label_maybe" (fun () ->
     draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect)
+
+(*e: draw2.ml *)

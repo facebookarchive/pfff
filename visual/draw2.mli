@@ -1,3 +1,4 @@
+(*s: draw2.mli *)
 
 (* a slice of Model2.drawing *)
 type context = {
@@ -34,3 +35,5 @@ val draw_treemap_rectangle_label_maybe :
  *)
 val text_with_user_pos :
   (string * Common.filepos * Cairo.point) Common.stack ref
+
+(*e: draw2.mli *)

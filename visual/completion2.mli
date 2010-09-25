@@ -1,3 +1,4 @@
+(*s: completion2.mli *)
 
 val build_completion_defs_index : 
   Database_code.entity list -> Big_grep.index
@@ -8,3 +9,4 @@ val my_entry_completion_eff :
   callback_changed:(string -> unit) -> 
   (unit -> Big_grep.index) ->
   GEdit.entry
+(*e: completion2.mli *)
