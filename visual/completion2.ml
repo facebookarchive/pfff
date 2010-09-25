@@ -53,6 +53,7 @@ let is_prefix a b =
 (*  *)
 (*****************************************************************************)
 
+(*s: build_completion_defs_index *)
 (* I was previously using a prefix-clustering optimisation but it
  * does not allow suffix search. Moreover it was still slow so
  * big_grep is just simpler and better.
@@ -68,7 +69,7 @@ let build_completion_defs_index all_entities =
    * ) ();
    *)
   BG.build_index all_entities
-
+(*e: build_completion_defs_index *)
 
 
 (*****************************************************************************)

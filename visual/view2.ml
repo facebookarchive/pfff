@@ -54,6 +54,8 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
+
+(*s: view globals *)
 (* when some widgets need to access other widgets *)
 
 (* Note that because we use toplevels 'let' for the GUI elements below,
@@ -119,10 +121,13 @@ favourite editor (provided you have M-x server-start
 and have emacsclient in your path).
 
 "
+(*e: view globals *)
+
 (*****************************************************************************)
 (* Scaling *)
 (*****************************************************************************)
 
+(*s: zoom_pan_scale_map *)
 let zoom_pan_scale_map cr dw =
   Cairo.scale cr 
     (dw.zoom * (float_of_int dw.width / T.xy_ratio))
@@ -132,23 +137,32 @@ let zoom_pan_scale_map cr dw =
   Cairo.translate cr dw.xtrans dw.ytrans;
   (* TODO clipping  Cairo.rectangle cr ~x:dw.xtrans ~y: *)
   ()
+(*e: zoom_pan_scale_map *)
 
+(*s: scale_minimap *)
 let scale_minimap cr dw =
   (* no zoom, no pan, no clippnig *)
   Cairo.translate cr 0.0 0.0;
   Cairo.scale cr 
     (1.0 * (float_of_int dw.width_minimap / T.xy_ratio))
     (1.0 * (float_of_int dw.height_minimap))
+(*e: scale_minimap *)
 
+(*s: with_map *)
 let with_map dw f = 
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   zoom_pan_scale_map cr dw;
   f cr
+(*e: with_map *)
+
+(*s: with_minimap *)
 let with_minimap dw f =
   let cr = Cairo_lablgtk.create dw.pm_minimap#pixmap in
   scale_minimap cr dw;
   f cr
+(*e: with_minimap *)
 
+(*s: device_to_user_area *)
 (* still needed ? reuse helper functions above ? *)
 let device_to_user_area dw = 
   with_map dw (fun cr ->
@@ -163,11 +177,13 @@ let device_to_user_area dw =
       F.q = CairoH.cairo_point_to_point user_point2;
     }
   )
+(*e: device_to_user_area *)
 
 (*****************************************************************************)
 (* Painting *)
 (*****************************************************************************)
 
+(*s: paint *)
 let context_of_drawing dw = 
   { Draw.
     nb_rects_on_screen = dw.nb_rects;
@@ -206,7 +222,6 @@ let lazy_paint ~user_rect dw () =
   if !current_rects_to_draw = []
   then false
   else true
-
 
 
 let paint2 dw = 
@@ -257,7 +272,9 @@ let paint2 dw =
 
 let paint dw = 
   Common.profile_code2 "View.paint" (fun () -> paint2 dw)
+(*e: paint *)
 
+(*s: paint_minimap *)
 let paint_minimap2 dw = 
   let cr = Cairo_lablgtk.create dw.pm_minimap#pixmap in
   dw.pm_minimap#rectangle 
@@ -283,7 +300,9 @@ let paint_minimap2 dw =
 
 let paint_minimap dw = 
   Common.profile_code2 "View.paint minimap" (fun () -> paint_minimap2 dw)
+(*e: paint_minimap *)
 
+(*s: paint_legend *)
 let paint_legend ~cr =
 
   Cairo.select_font_face cr "serif" 
@@ -326,6 +345,7 @@ let paint_legend ~cr =
     Cairo.show_text cr s;
   );
   ()
+(*e: paint_legend *)
 
 (*****************************************************************************)
 (* Overlays *)
@@ -335,6 +355,7 @@ let paint_legend ~cr =
 (* The current filename *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: draw_label_overlay *)
 let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   let txt = r.T.tr_label in
@@ -365,11 +386,13 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
   Cairo.stroke cr_overlay;
   *)
   ()
-
+(*e: draw_label_overlay *)
+le
 (* ---------------------------------------------------------------------- *)
 (* The current rectangles *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: draw_rectangle_overlay *)
 let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   Cairo.save cr_overlay;
   zoom_pan_scale_map cr_overlay dw;
@@ -395,11 +418,13 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     
   Cairo.restore cr_overlay;
   ()
-
+(*e: draw_rectangle_overlay *)
+le
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: draw_searched_rectangles *)
 let draw_searched_rectangles ~cr_overlay ~dw =
   Cairo.save cr_overlay;
   zoom_pan_scale_map cr_overlay dw;
@@ -422,11 +447,13 @@ let draw_searched_rectangles ~cr_overlay ~dw =
    *)
   Cairo.restore cr_overlay;
   ()
+(*e: draw_searched_rectangles *)
 
 (* ---------------------------------------------------------------------- *)
 (* The magnifying glass *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: zoomed_surface_of_rectangle *)
 let _hmemo_surface = Hashtbl.create 101
 let zoomed_surface_of_rectangle dw r =
   Common.memoized _hmemo_surface (r.T.tr_label, dw.zoom) (fun () ->
@@ -524,6 +551,7 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
   Cairo.rectangle cr_overlay dest_x dest_y width height;
   Cairo.fill cr_overlay;
   ()
+(*e: zoomed_surface_of_rectangle *)
 
 (*****************************************************************************)
 (* Layering *)
@@ -533,6 +561,7 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
 (* The main-map *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: assemble_layers *)
 (* Composing the "layers". See cairo/tests/knockout.ml example.
  * Each move of the cursor will call assemble_layers which does all
  * those pixels copying but this is fast enough.
@@ -549,8 +578,9 @@ let assemble_layers cr_final dw ~width ~height =
   Cairo.set_source_surface cr_final dw.overlay 0. 0.;
   Cairo.paint cr_final;
   ()
+(*e: assemble_layers *)
 
-
+(*s: expose *)
 let expose2 da dw_ref ev = 
   let dw = !dw_ref in
 
@@ -583,7 +613,9 @@ let expose2 da dw_ref ev =
 
 let expose a b c = 
   Common.profile_code2 "View.expose" (fun () -> expose2 a b c)
+(*e: expose *)
 
+(*s: configure *)
 let configure2_bis da dw_ref ev = 
   let dw = !dw_ref in
 
@@ -615,11 +647,13 @@ let configure2 a b c =
 
 let configure a b c =
   Common.profile_code2 "View.configure" (fun () -> configure2 a b c)
+(*e: configure *)
 
 (* ---------------------------------------------------------------------- *)
 (* The mini-map *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: expose_minimap *)
 let expose_minimap da dw_ref ev = 
   let dw = !dw_ref in
 
@@ -640,8 +674,9 @@ let expose_minimap da dw_ref ev =
       dw.pm_minimap#pixmap;
   );
   true
+(*e: expose_minimap *)
 
-
+(*s: configure_minimap *)
 let configure_minimap da2 dw_ref ev = 
   let dw = !dw_ref in
 
@@ -651,17 +686,19 @@ let configure_minimap da2 dw_ref ev =
   dw.height_minimap <- h;
   dw.pm_minimap <- new_pixmap dw.width_minimap dw.height_minimap;
   true
+(*e: configure_minimap *)
 
 (* ---------------------------------------------------------------------- *)
 (* The legend *)
 (* ---------------------------------------------------------------------- *)
+(*s: expose_legend *)
 let expose_legend da dw_ref ev = 
 
   let gwin = da#misc#window in
   let cr = Cairo_lablgtk.create gwin in
   paint_legend ~cr;
   true
-
+(*e: expose_legend *)
 
 (*****************************************************************************)
 (* Events *)
@@ -671,6 +708,7 @@ let expose_legend da dw_ref ev =
 (* Navigation *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: go_back *)
 let go_back dw_ref = 
 
   (* reset also the motion notifier ? less needed because
@@ -688,7 +726,9 @@ let go_back dw_ref =
 
   !_refresh_da();
   ()
+(*e: go_back *)
 
+(*s: go_dirs_or_file *)
 let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) 
   dw_ref paths =
 
@@ -731,11 +771,13 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   paint !dw_ref;
   !_refresh_da ();
   ()
+(*e: go_dirs_or_file *)
 
 (* ---------------------------------------------------------------------- *)
 (* Search *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: dialog_search_def *)
 let dialog_search_def model = 
   let idx = (fun () -> 
     let model = Model2.async_get model in
@@ -768,7 +810,9 @@ let dialog_search_def model =
     pr2 ("selected: " ^ s);
   );
   res
+(*e: dialog_search_def *)
 
+(*s: run_grep_query *)
 let run_grep_query ~root s =
   (* --cached so faster ? use -w ?  
    * -I means no search for binary files
@@ -792,7 +836,9 @@ let run_grep_query ~root s =
       failwith ("wrong git grep line: " ^ s)
   ) in
   xs
+(*e: run_grep_query *)
 
+(*s: run_tbgs_query *)
 let run_tbgs_query ~root s =
   let cmd = 
     spf "cd %s; tbgs --stripdir %s" root s
@@ -809,12 +855,13 @@ let run_tbgs_query ~root s =
       failwith ("wrong tbgs line: " ^ s)
   ) in
   xs
-
+(*e: run_tbgs_query *)
 
 (* ---------------------------------------------------------------------- *)
 (* The main map *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: key_pressed *)
 let key_pressed (da, da2) dw_ref ev = 
   let dw = !dw_ref in
 
@@ -886,7 +933,9 @@ let key_pressed (da, da2) dw_ref ev =
     GtkBase.Widget.queue_draw da2#as_widget;
   end;
   b
+(*e: key_pressed *)
 
+(*s: find_filepos_in_rectangle_at_user_point *)
 (* Cannot move this to model.ml because we abuse the drawing function
  * and the Draw.text_with_user_pos 100.
  *)
@@ -926,10 +975,11 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
               s filepos.Common.l filepos.Common.c);
       Some filepos
   )
+(*e: find_filepos_in_rectangle_at_user_point *)
             
 
-
-let button_action da dw_ref ev =
+(*s: button_action *)
+t button_action da dw_ref ev =
   let dw = !dw_ref in
 
   let pt = { Cairo. x = GdkEvent.Button.x ev; y = GdkEvent.Button.y ev;} in
@@ -1007,8 +1057,9 @@ let button_action da dw_ref ev =
 
       true
   | _ -> false
+(*e: button_action *)
 
-
+(*s: motion_refresher *)
 (* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
 let motion_refresher ev dw () =
   let cr_overlay = Cairo.create dw.overlay in
@@ -1083,7 +1134,9 @@ let motion_notify (da, da2) dw ev =
       Some (GMain.Idle.add ~prio:100 (motion_refresher ev dw));
     true
   end
+(*e: motion_refresher *)
 
+(*s: idle *)
 let idle dw () = 
   let dw = !dw in
 
@@ -1094,11 +1147,13 @@ let idle dw () =
     then zoomed_surface_of_rectangle dw r +> ignore;
   );
   true
+(*e: idle *)
 
 (* ---------------------------------------------------------------------- *)
 (* The mini-map *)
 (* ---------------------------------------------------------------------- *)
 
+(*s: motion_notify_minimap *)
 let motion_notify_minimap (da, da2) dw ev =
   let dw = !dw in
 
@@ -1133,9 +1188,9 @@ let motion_notify_minimap (da, da2) dw ev =
   end else begin
     true
   end
+(*e: motion_notify_minimap *)
 
-
-
+(*s: button_action_minimap *)
 let button_action_minimap (da,da2) dw ev =
   let dw = !dw in
 
@@ -1162,18 +1217,22 @@ let button_action_minimap (da,da2) dw ev =
       GtkBase.Widget.queue_draw da2#as_widget;
       true
   | _ -> false
+(*e: button_action_minimap *)
 
 (*****************************************************************************)
 (* Heavy Computation *)
 (*****************************************************************************)
+(*s: treemap_generator *)
 let treemap_generator paths = 
   let treemap = Treemap_pl.code_treemap paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
   let rects = Treemap.render_treemap_algo ~algo treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
+(*e: treemap_generator *)
 
-let build_model2 root dbfile_opt =   
+(*s: build_model *)
+t build_model2 root dbfile_opt =   
   let db_opt = dbfile_opt +> Common.fmap (fun file ->
     if file =~ ".*.json"
     then Database_code.load_database file
@@ -1213,7 +1272,8 @@ let build_model2 root dbfile_opt =
 let build_model a b = 
   Common.profile_code2 "View.build_model" (fun () ->
     build_model2 a b)
-
+(*e: build_model *)
+le
 (*****************************************************************************)
 (* The main UI *)
 (*****************************************************************************)
