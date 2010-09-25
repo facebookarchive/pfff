@@ -72,18 +72,19 @@ let rec calltree_callees_of_f ~depth ~preferences id db =
 (* Actions *)
 (*****************************************************************************)
 
+
 let glimpse_query_files_db s dir = 
   Database_php.with_db ~metapath:dir (fun db -> 
     let res = glimpse_get_matching_files s db in
     pr2_gen res;
   )
 
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
+
   "-test_query_glimpse_files", " <s> <dir>",
   Common.mk_action_2_arg glimpse_query_files_db;
 ]

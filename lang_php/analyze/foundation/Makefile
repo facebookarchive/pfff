@@ -21,7 +21,6 @@ LIBS=$(TOP)/commons/commons.cma \
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json $(TOP)/commons/lib-xml \
-   $(TOP)/external/ocamlbdb \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    ../../parsing \

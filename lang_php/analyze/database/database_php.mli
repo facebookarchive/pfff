@@ -160,18 +160,21 @@ val report_error: error -> string
 exception Error of error
 
 (* ---------------------------------------------------------------------- *)
+(* note that the open and closing of the database is now in 
+ * database_backend.ml to make database_php.ml independent
+ * of berkeley DB
+ *
+ * 
+ * note: create_db is in database_php_build.mli 
+ *)
 exception DatabaseAlreadyLocked
 
-(* @Effect: acquire and release file lock *)
-val open_db : metapath:Common.dirname -> database
-val close_db: database -> unit
-val with_db:  metapath:Common.dirname -> (database -> 'a) -> 'a
-
 val check_db: database -> unit
-
 val open_db_mem: project -> database
+val close_db: database -> unit
 
-(* note: create_db is in database_php_build.mli *)
+val _current_open_db_backend: (Common.dirname -> database) ref
+val with_db:  metapath:Common.dirname -> (database -> 'a) -> 'a
 
 (* ---------------------------------------------------------------------- *)
 (* xxx_of_id *)

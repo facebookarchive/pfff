@@ -24,11 +24,10 @@ PROGS+=sgrep
 PROGS+=spatch
 PROGS+=ppp
 
-ifeq ($(FEATURE_BDB),1)
-PROGS+=pfff_db
+# without bdb pfff_db_light will be incomplete regarding PHP
 PROGS+=pfff_db_light
+PROGS+=pfff_db
 PROGS+=scheck
-endif
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=pfff_visual
@@ -105,46 +104,14 @@ endif
 #------------------------------------------------------------------------------
 
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
-ifeq ($(FEATURE_BDB), 1)
 GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/commons_graph.cma
 GRAPHDIR=external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
-else
-endif
+
 
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
-endif
-
-ifeq ($(FEATURE_GUI),1)
-ANALYZEPHPCMA_EXTRA+=lang_php/analyze/finder/lib.cma
-else
-endif
-
-# pfff_misc run the tests and so requires almost all libs
-ifeq ($(FEATURE_BDB),1)
-ANALYZEPHPCMA_EXTRA+= \
- lang_php/analyze/static_analysis/lib.cma \
- lang_php/analyze/qa_test/lib.cma \
-
-else
-endif
-
-
-#make analyze_php toggable
-ifeq ($(FEATURE_BDB), 1)
-ANALYZEPHPCMA= \
- lang_php/analyze/database/lib.cma \
- $(ANALYZEPHPCMA_EXTRA) \
- lang_php/analyze/analyze_php.cma \
-
-ANALYZEPHPDIR=\
- lang_php/analyze/ \
- lang_php/analyze/database \
- lang_php/analyze/static_analysis \
-
-else
 endif
 
 ifeq ($(FEATURE_VISUAL),1)
@@ -157,7 +124,7 @@ endif
 SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 # used for sgrep and other small utilities which I dont want to depend
-# on bdb, even when I did a configure -bdb
+# on too much things
 BASICLIBS=commons/commons.cma \
  globals/globals.cma \
  h_program-lang/lib.cma \
@@ -192,7 +159,11 @@ LIBS= commons/commons.cma \
      lang_php/analyze/checker/lib.cma \
      lang_php/mini/lib.cma \
      lang_php/matcher/lib.cma \
-     $(ANALYZEPHPCMA) \
+     lang_php/analyze/database/lib.cma \
+     lang_php/analyze/finder/lib.cma \
+     lang_php/analyze/static_analysis/lib.cma \
+     lang_php/analyze/qa_test/lib.cma \
+     lang_php/analyze/analyze_php.cma \
     lang_sql/parsing/lib.cma \
     lang_js/parsing/lib.cma \
      lang_js/analyze/lib.cma \
@@ -222,7 +193,8 @@ MAKESUBDIRS=commons \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \
    lang_php/analyze/checker \
-   $(ANALYZEPHPDIR) \
+   lang_php/analyze/database \
+   lang_php/analyze/static_analysis \
   $(VISUALDIR) \
 
 INCLUDEDIRS=$(MAKESUBDIRS) \

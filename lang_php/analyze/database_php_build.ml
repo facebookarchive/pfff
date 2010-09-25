@@ -1308,7 +1308,7 @@ let create_db
                            Database_php.database_tag_filename);
         Common.write_value prj (metapath ^ "/prj.raw");
 
-        let db = open_db metapath in
+        let db = !Database_php._current_open_db_backend metapath in
 
         let logchan = open_out (metapath ^ "/log.log") in
         Common._chan_pr2 := Some logchan;

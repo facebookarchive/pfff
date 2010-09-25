@@ -18,23 +18,13 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=
-
-ifeq ($(FEATURE_BDB),1)
-MAKESUBDIRS+= 
-
 #database \
 # dynamic_analysis static_analysis \
 # qa_test qa_code \
 
-MAYBE_TARGET_CMA=$(TARGET).cma
-MAYBE_TARGET_CMXA=$(TARGET).cmxa
-endif
-
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
-   $(TOP)/external/ocamlbdb \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
@@ -49,8 +39,8 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Top rules
 ##############################################################################
-all:: rec $(MAYBE_TARGET_CMA)
-all.opt:: rec.opt $(MAYBE_TARGET_CMXA)
+all:: rec $(TARGET).cma
+all.opt:: rec.opt $(TARGET).cmxa
 
 rec:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
