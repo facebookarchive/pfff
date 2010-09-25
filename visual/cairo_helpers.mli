@@ -1,5 +1,6 @@
 (*s: cairo_helpers.mli *)
 
+(*s: cairo helpers functions sig *)
 val fill_rectangle:
   ?alpha:float ->
   cr:Cairo.t -> 
@@ -44,4 +45,5 @@ val surface_of_pixmap :
 val distance_points : Cairo.point -> Cairo.point -> float
 
 val is_old_cairo : unit -> bool
+(*e: cairo helpers functions sig *)
 (*e: cairo_helpers.mli *)

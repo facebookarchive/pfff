@@ -1,6 +1,7 @@
 (*s: style2.ml *)
+(*s: Facebook copyright *)
 (* Yoann Padioleau
- *
+ * 
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 
@@ -23,18 +25,21 @@ module Flag = Flag_visual
 (*****************************************************************************)
 (* Visual style *)
 (*****************************************************************************)
-
 (* see also model2.settings *)
 
-
+(*s: zoom_factor_incruste_mode *)
 (* TODO: should be automatically computed. Should have instead a
  * wanted_real_font_size_when_incruste_mode = 9.
  *)
 let zoom_factor_incruste_mode = 10. (* was 18 *)
+(*e: zoom_factor_incruste_mode *)
 
+(*s: threshold_draw_dark_background_font_size_real *)
 (* CONFIG *)
 let threshold_draw_dark_background_font_size_real = 1.
+(*e: threshold_draw_dark_background_font_size_real *)
 
+(*s: size_font_multiplier_of_categ() *)
 let multiplier_use x = 
   match x with
   | SH.HugeUse -> 3.3
@@ -77,8 +82,9 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.UseOfRef) -> 2.
         
     | _ -> 1. 
+(*e: size_font_multiplier_of_categ() *)
 
-
+(*s: windows_params() *)
 let windows_params screen_size =
   let width, height, minimap_hpos, minimap_vpos = 
     match screen_size with
@@ -98,6 +104,6 @@ let windows_params screen_size =
         failwith "not valid screen_size"
   in
   width, height, minimap_hpos, minimap_vpos
-
+(*e: windows_params() *)
 
 (*e: style2.ml *)

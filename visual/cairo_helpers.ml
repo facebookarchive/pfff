@@ -1,6 +1,7 @@
 (*s: cairo_helpers.ml *)
+(*s: Facebook copyright *)
 (* Yoann Padioleau
- *
+ * 
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 
@@ -23,7 +25,7 @@ open Figures
 
 (* May have to move this in commons/ at some point *)
 
-
+(*s: cairo helpers functions *)
 (* work by side effect on the (mutable) string *)
 let prepare_string s = 
   for i = 0 to String.length s - 1 do
@@ -186,4 +188,5 @@ let draw_rectangle_bis ~cr ~color ~line_width r =
   Cairo.line_to cr r.p.x r.p.y;
   Cairo.stroke cr;
   ()
+(*e: cairo helpers functions *)
 (*e: cairo_helpers.ml *)

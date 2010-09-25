@@ -1,6 +1,7 @@
 (*s: draw2.ml *)
+(*s: Facebook copyright *)
 (* Yoann Padioleau
- *
+ * 
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 

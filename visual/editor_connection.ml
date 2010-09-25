@@ -1,6 +1,7 @@
 (*s: editor_connection.ml *)
+(*s: Facebook copyright *)
 (* Yoann Padioleau
- *
+ * 
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 
@@ -24,6 +26,7 @@ open Common
 (* Emacs *)
 (*****************************************************************************)
 
+(*s: emacs configuration *)
 let emacsclient_path_mac =
   "/home/pad/Dropbox/apps/Emacs.app/Contents/MacOS/bin/emacsclient"
 
@@ -35,9 +38,8 @@ let run_emacsclient ~file ~line =
   Common.command2 (spf 
     "%s -e '(with-current-buffer (window-buffer (selected-window)) (goto-line %d))'"
     emacsclient_path line);
-
   ()
-
+(*e: emacs configuration *)
 
 (*****************************************************************************)
 (* Vi *)
@@ -47,6 +49,8 @@ let run_emacsclient ~file ~line =
 (* Wrappers *)
 (*****************************************************************************)
 
+(*s: open_file_in_current_editor() *)
 let open_file_in_current_editor ~file ~line =
   run_emacsclient ~file ~line
+(*e: open_file_in_current_editor() *)
 (*e: editor_connection.ml *)

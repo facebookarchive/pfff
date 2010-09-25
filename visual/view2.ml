@@ -1,7 +1,8 @@
 (*s: view2.ml *)
 
+(*s: Facebook copyright *)
 (* Yoann Padioleau
- *
+ * 
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
@@ -14,6 +15,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 
@@ -43,48 +45,6 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(*
- * This file is the basis for a new kind of code visualizer, 
- * with real time zoom on a treemap and partial thumbnails with anamorphic
- * code; A google maps but on code :)
- * 
- * Overall UI organisation:
- *  - menu
- *  - toolbar
- *  - mainview (treemap | minimap/legend)
- *  - statusbar 
- * 
- * Conventions and info: see commons/gui.ml
- * 
- * By playing with colors, size, fonts, and transparency, can show lots
- * of stuff.
- * 
- * Assumes the treemap contains the absolute paths to existing files/dirs.
- * 
- * Archi: There are different kinds of "drawings":
- *  - paint, which does the heavy and expensive rendering
- *  - expose, which assemble the already painted pixmaps/layers and allow
- *    moving parts such as overlay rectangles
- * 
- * There is not a single view that can accomodate all 
- * navigation/code-understanding programmer needs. So we provide multiple
- * features that can display things at different levels:
- *  - minimap, for context and quick navigation
- *  - zoomable/draggable map
- *  - content thumbnails, with anamorphic text for more important entities
- *  - magnifying glass on the zoomable map (=> have then 3 layers of zoom
- *    where can each time see the context)
- *  - clickable map so redraw treemap on focused dir (focus, but no more
- *    context, except in the minimap maybe one day)
- *  - speedbar for view histories
- *    (could also provide thumbnails on view histories :) )
- *  - zoom and mouse-follow
- * 
- * That's lots of features. In a way tools like Powerpoint also provide
- * multiple displays on the same data and with zoomable slides, global
- * view on the set of slides, slides thumnails, etc.
- *)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -1258,6 +1218,7 @@ let build_model a b =
 (* The main UI *)
 (*****************************************************************************)
 
+(*s: mk_gui() *)
 let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
 
   let root = Common.common_prefix_of_files_or_dirs dirs_or_files in
@@ -1708,5 +1669,6 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
   );
   GtkThread.main ();
   ()
+(*e: mk_gui() *)
   
 (*e: view2.ml *)

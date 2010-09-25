@@ -1,6 +1,7 @@
 (*s: model2.ml *)
+(*s: Facebook copyright *)
 (* Yoann Padioleau
- *
+ * 
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 
@@ -29,20 +31,35 @@ module Flag = Flag_visual
 (* Types *)
 (*****************************************************************************)
 
+(*s: type model *)
 type model = {
   db: Database_code.database option;
-  (* fast accessors *)
-  hentities: (string, Database_code.entity) Hashtbl.t;
-  hfiles_entities: (Common.filename, Database_code.entity list) Hashtbl.t;
-  big_grep_idx: Big_grep.index;
+ 
+  (*s: model fields hook *)
+    (* fast accessors *)
+    hentities : (string, Database_code.entity) Hashtbl.t;
+  (*x: model fields hook *)
+    hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
+  (*x: model fields hook *)
+    big_grep_idx: Big_grep.index;
+  (*e: model fields hook *)
  }
+(*e: type model *)
 
-type 'a async = { 
+(*s: type async *)
+type 'a async = {
   m: Mutex.t; 
   c: Condition.t;
   v: 'a option ref;
   }
+val async_get: 'a async -> 'a
+val async_make: unit -> 'a async
+val async_set: 'a -> 'a async -> unit
 
+val locked: (unit -> 'a) -> Mutex.t -> 'a
+(*e: type async *)
+
+(*s: async functions *)
 let async_make () = {
   m = Mutex.create (); 
   c = Condition.create ();
@@ -75,13 +92,14 @@ let async_set v a =
     a.v := Some v;
     Condition.signal a.c;
   ) a.m
-
+(*e: async functions *)
 
 
 (*****************************************************************************)
 (* The drawing area *)
 (*****************************************************************************)
 
+(*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when
  * explicitely mentioned. All the 'int' are usually device coordinates.
  *)
@@ -103,60 +121,74 @@ type drawing = {
   (* computed lazily *)
   model: model async;
 
-  (* queries *)
-  mutable current_query: string;
-  mutable current_searched_rectangles: Treemap.treemap_rectangle list;
-  mutable current_entity: Database_code.entity option;
-  mutable current_grep_query : 
-    (Common.filename, int) Hashtbl.t;
+  (*s: fields drawing query stuff *)
+    (* queries *)
+    mutable current_query: string;
+    mutable current_searched_rectangles: Treemap.treemap_rectangle list;
+    mutable current_entity: Database_code.entity option;
+    mutable current_grep_query : 
+      (Common.filename, int) Hashtbl.t;
+  (*e: fields drawing query stuff *)
 
   settings: settings;
 
-  (* device coordinates *)
-  mutable pm: GDraw.pixmap;
-  (* todo: going from a point to the enclosing rectangle via pixel color
-     trick. Kind of ugly.
-     mutable pm_color_trick: GDraw.pixmap;
-     mutable pm_color_trick_info: (string) array.
-     alternative: just find pixel by iterating over all the rectangles
-      and check if he's inside
-  *)
-  mutable overlay: [ `Any ] Cairo.surface;
+  (*s: fields drawing main view *)
+    (* device coordinates *)
+    mutable pm: GDraw.pixmap;
+    (* todo: going from a point to the enclosing rectangle via pixel color
+       trick. Kind of ugly.
+       mutable pm_color_trick: GDraw.pixmap;
+       mutable pm_color_trick_info: (string) array.
+       alternative: just find pixel by iterating over all the rectangles
+        and check if he's inside
+    *)
+    mutable overlay: [ `Any ] Cairo.surface;
+  (*e: fields drawing main view *)
 
-  (* viewport, device coordinates *)
-  mutable width: int;
-  mutable height: int;
+  (*s: fields drawing viewport *)
+    (* viewport, device coordinates *)
+    mutable width: int;
+    mutable height: int;
 
-  mutable zoom: float;
+    mutable zoom: float;
 
-  (* in user coordinates *)
-  mutable xtrans: float;
-  mutable ytrans: float;
+    (* in user coordinates *)
+    mutable xtrans: float;
+    mutable ytrans: float;
 
-  mutable drag_pt: Cairo.point;
-  mutable in_dragging: bool;
+    mutable drag_pt: Cairo.point;
+    mutable in_dragging: bool;
 
-  mutable in_zoom_incruste: bool;
+    mutable in_zoom_incruste: bool;
+  (*e: fields drawing viewport *)
 
-  (* minimap *)
-  mutable pm_minimap: GDraw.pixmap;
-  mutable width_minimap: int;
-  mutable height_minimap: int;
+  (*s: fields drawing minimap *)
+    (* minimap *)
+    mutable pm_minimap: GDraw.pixmap;
+    mutable width_minimap: int;
+    mutable height_minimap: int;
 
-  mutable drag_pt_minimap: Cairo.point;
+    mutable drag_pt_minimap: Cairo.point;
+  (*e: fields drawing minimap *)
 }
- and settings = {
-   mutable draw_summary: bool;
-   mutable draw_searched_rectangles: bool;
- }
+  (*s: type settings *)
+   and settings = {
+     mutable draw_summary: bool;
+     mutable draw_searched_rectangles: bool;
+   }
+  (*e: type settings *)
+(*e: type drawing *)
 
+(*s: new_pixmap() *)
 let new_pixmap ~width ~height =
   let drawable = GDraw.pixmap ~width ~height () in
   drawable#set_foreground `WHITE ;
   drawable#rectangle
     ~x:0 ~y:0 ~width ~height ~filled:true () ;
   drawable
+(*e: new_pixmap() *)
 
+(*s: init_drawing() *)
 let init_drawing 
   (* This is a first guess. The first configure ev will force a resize. *)
   ?(width = 600)
@@ -219,12 +251,14 @@ let init_drawing
       draw_searched_rectangles = true;
     };
   }
+(*e: init_drawing() *)
 
 
 (*****************************************************************************)
 (* POINT -> treemap info *)
 (*****************************************************************************)
 
+(*s: find_rectangle_at_user_point() *)
 (* alt: could use Cairo_bigarray and the pixel trick if
  * it takes too long to detect which rectangle is under the cursor.
  * coud also sort the rectangles ... or have some kind of BSP.
@@ -258,12 +292,13 @@ let find_rectangle_at_user_point2 dw user =
 let find_rectangle_at_user_point a b = 
   Common.profile_code "Model.find_rectangle_at_point" (fun () ->
     find_rectangle_at_user_point2 a b)
-
+(*e: find_rectangle_at_user_point() *)
 
 (*****************************************************************************)
 (* Filenames *)
 (*****************************************************************************)
 
+(*s: readable_to_absolute_filename_under_root *)
 (* People may run the visualizer on a subdir of what is mentionned in the
  * database code (e.g. subdir ~/www/flib of ~/www). The light_db
  * contains only readable paths (e.g. flib/foo.php); the reason for
@@ -303,7 +338,9 @@ let rec readable_to_absolute_filename_under_root ~root filename =
   with Not_found ->
     failwith 
       (spf "can't find file %s with root = %s" filename root)
+(*e: readable_to_absolute_filename_under_root *)
 
+(*s: actual_root_of_db *)
 let actual_root_of_db ~root db =
   let a_file = (db.Db.entities.(0)).Db.e_file in
   let absolute_file = 
@@ -313,12 +350,13 @@ let actual_root_of_db ~root db =
   then Common.matched1 absolute_file
   else failwith (spf "Could not find actual_root of %s under %s: "
                     absolute_file root)
-
+(*e: actual_root_of_db *)
 
 (*****************************************************************************)
 (* Entities info *)
 (*****************************************************************************)
 
+(*s: hentities() *)
 (* We want to display very often used functions in bigger size font.
  * Enter database_code.ml which provides a language-independent database of
  * information on source code.
@@ -347,8 +385,11 @@ let hentities root db_opt =
       );
   );
   hentities
+(*e: hentities() *)
 
-let hfiles_and_top_entities root db_opt =
+(*s: hfiles_and_top_entities() *)
+let hfiles_and_top_entities    
+ root db_opt =
 
   let hfiles = Hashtbl.create 1001 in
 
@@ -363,12 +404,13 @@ let hfiles_and_top_entities root db_opt =
     ) ksorted
   );
   hfiles
-    
+(*e: hfiles_and_top_entities() *)
 
 (*****************************************************************************)
 (* Completion data *)
 (*****************************************************************************)
 
+(*s: all_entities *)
 (* We want to provide completion not only for functions/class/methods
  * but also for files and directory themselves.
  * 
@@ -390,4 +432,5 @@ let all_entities db_opt =
       Database_code.files_and_dirs_and_sorted_entities_for_completion
         ~threshold_too_many_entities:!Flag.threshold_too_many_entities
         db
+(*e: all_entities *)
 (*e: model2.ml *)

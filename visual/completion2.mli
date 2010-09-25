@@ -2,6 +2,7 @@
 
 val build_completion_defs_index : 
   Database_code.entity list -> Big_grep.index
+(*x: completion2.mli *)
 
 val my_entry_completion_eff :
   callback_selected:
