@@ -167,7 +167,7 @@ let anamorphic_diviser_of_file ~root file =
   let ftype = file_type_of_file file in
 
   match ftype with
-  | Doc _ -> 25.
+  | Doc _ -> 100.
   | Obj _ -> 500.
 
   | PL (Web Html) -> 25.
