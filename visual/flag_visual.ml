@@ -11,7 +11,7 @@ let threshold_draw_content_font_size_real = ref
 
 (* big and auto-generated files can take too much time to render *)
 let threshold_draw_content_nblines = 
-  ref 10000.
+  ref 20000.
 
 let threshold_draw_label_font_size_real = ref 
   10.

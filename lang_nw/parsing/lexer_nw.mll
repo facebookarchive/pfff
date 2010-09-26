@@ -193,6 +193,10 @@ and verbatim endname = parse
       pop_mode ();
       TEndVerbatim (tokinfo lexbuf)
     }
+  (* note: if end{verbatim} is not alone on its line then
+   * this regexp will take precedence because of the longest-match
+   * behavior of lex. So keep \end{verabatim} alone on its line!
+   *)
   | ([^'\n']+ as line) { TVerbatimLine (line, tokinfo lexbuf) }
   | '\n' { TCommentNewline (tokinfo lexbuf) }
 
