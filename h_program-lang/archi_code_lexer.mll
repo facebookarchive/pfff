@@ -221,7 +221,7 @@ rule category = parse
   | "/media/"
       { Ui }
 
-  | "intern" { Intern }
+  | "/intern/" { Intern }
   (* as in Linux *)
   | "documentation" { Doc }
   (* tofix ? network ? memory ?  so mm/ and net/ are colored *)
