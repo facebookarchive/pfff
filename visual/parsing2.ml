@@ -34,12 +34,32 @@ open Highlight_code
  * disable_file_in_cache below.
  *)
 type ast = 
-  | Php of Parse_php.program2
   | ML  of Parse_ml.program2
+  | Php of Parse_php.program2
   | Cpp of Parse_cpp.program2
   | Js  of Parse_js.program2
 
+  | Noweb of Parse_nw.program2
+
+
 let _hmemo_file = Hashtbl.create 101
+
+let parse_ml2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    ML (Parse_ml.parse file +> fst))
+let parse_ml_cache a = 
+  Common.profile_code "View.parse_ml_cache" (fun () -> 
+    match parse_ml2 a with | ML a -> a | _ -> raise Impossible
+  )
+
+let parse_nw2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Noweb (Parse_nw.parse file +> fst))
+let parse_nw_cache a = 
+  Common.profile_code "View.parse_nw_cache" (fun () -> 
+    match parse_nw2 a with | Noweb a -> a | _ -> raise Impossible
+  )
+
 
 let parse_php2 file = 
   Common.memoized _hmemo_file file (fun () -> 
@@ -55,30 +75,22 @@ let parse_php_cache a =
     match parse_php2 a with | Php a -> a | _ -> raise Impossible
   )
 
-let parse_ml2 file = 
+let parse_js2 file = 
   Common.memoized _hmemo_file file (fun () -> 
-    ML (Parse_ml.parse file +> fst))
-let parse_ml_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
-    match parse_ml2 a with | ML a -> a | _ -> raise Impossible
+    Js (Parse_js.parse file +> fst))
+let parse_js_cache a = 
+  Common.profile_code "View.parse_js_cache" (fun () -> 
+    match parse_js2 a with | Js a -> a | _ -> raise Impossible
   )
-
 
 let parse_cpp2 file = 
   Common.memoized _hmemo_file file (fun () -> 
     Cpp (Parse_cpp.parse_tokens file +> fst))
 let parse_cpp_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
+  Common.profile_code "View.parse_cpp_cache" (fun () -> 
     match parse_cpp2 a with | Cpp a -> a | _ -> raise Impossible
   )
 
-let parse_js2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Js (Parse_js.parse file +> fst))
-let parse_js_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
-    match parse_js2 a with | Js a -> a | _ -> raise Impossible
-  )
 
 
 
@@ -227,7 +239,7 @@ let tokens_with_categ_of_file file hentities =
           let info = Token_helpers_ml.info_of_tok tok in
           let s = Token_helpers_ml.str_of_tok tok in
 
-          if not (Ast_ml.is_origintok info)
+          if not (Parse_info.is_origintok info)
           then None
           else 
             let categ = Common.hfind_option info h in
@@ -242,6 +254,41 @@ let tokens_with_categ_of_file file hentities =
 
         )
       ) +> List.flatten
+
+  | FT.Text ("nw" | "tex") ->
+
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_nw_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_nw.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_nw.info_of_tok tok in
+          let s = Token_helpers_nw.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
 
   | FT.PL (FT.Cplusplus _ | FT.C | FT.Thrift) ->
       let h = Hashtbl.create 101 in
