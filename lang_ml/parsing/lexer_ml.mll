@@ -32,26 +32,10 @@ open Parser_ml
 (*****************************************************************************)
 exception Lexical of string
 
-let tok     lexbuf  = Lexing.lexeme lexbuf
-
-let tokinfo_str_pos str pos = {
-  Ast.pinfo = Ast.OriginTok {
-      Common.charpos = pos; 
-      Common.str     = str;
-
-      (* info filled in a post-lexing phase, cf Parse.tokens *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
-  };
-}
-
+let tok     lexbuf  = 
+  Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
-  tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
-
-let tok_add_s s ii  =
-  Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
-
+  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 (* ---------------------------------------------------------------------- *)
 (* src: http://caml.inria.fr/pub/docs/manual-ocaml/lex.html *)

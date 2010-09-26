@@ -20,6 +20,8 @@ module TH   = Token_helpers_ml
 
 module T = Parser_ml
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -59,20 +61,6 @@ let lexbuf_to_strpos lexbuf     =
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Stat *)
-(*****************************************************************************)
-
-type parsing_stat = {
-  filename: Common.filename;
-  mutable correct: int;
-  mutable bad: int;
-}
-let default_stat file =  { 
-    filename = file;
-    correct = 0; bad = 0;
-}
-
-(*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
@@ -92,12 +80,13 @@ let tokens2 file =
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
-        { ii with Ast.pinfo=
+        { ii with PI.pinfo=
           (* could assert pinfo.filename = file ? *)
-               match Ast.pinfo_of_info ii with
-               | Ast.OriginTok pi ->
-                          Ast.OriginTok 
-                            (Common.complete_parse_info_large file table pi)
+               match PI.pinfo_of_info ii with
+               | PI.OriginTok pi ->
+                   PI.OriginTok 
+                     (Common.complete_parse_info_large file table pi)
+               | _ -> raise Todo
 
         })
         in

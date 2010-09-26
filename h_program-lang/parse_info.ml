@@ -99,6 +99,20 @@ and transformation =
  (* with tarzan *)
 
 (*****************************************************************************)
+(* Stat *)
+(*****************************************************************************)
+
+type parsing_stat = {
+  filename: Common.filename;
+  mutable correct: int;
+  mutable bad: int;
+}
+let default_stat file =  { 
+    filename = file;
+    correct = 0; bad = 0;
+}
+
+(*****************************************************************************)
 (* Lexer helpers *)
 (*****************************************************************************)
 
@@ -127,6 +141,33 @@ let rewrap_str s ii =
     | ExpandedTok _ -> failwith "rewrap_str: ExpandedTok not allowed here"
     )
   }
+
+let parse_info_of_info ii = 
+  match ii.pinfo with
+  | OriginTok pinfo -> pinfo
+  (* TODO ? dangerous ? *)
+  | ExpandedTok (pinfo_pp, pinfo_orig, offset) -> pinfo_pp
+  | FakeTokStr _
+  | Ab 
+    -> failwith "parse_info_of_info: no OriginTok"
+
+
+let str_of_info  ii = (parse_info_of_info ii).Common.str 
+let file_of_info ii = (parse_info_of_info ii).Common.file
+let line_of_info ii = (parse_info_of_info ii).Common.line
+let col_of_info  ii = (parse_info_of_info ii).Common.column
+let pos_of_info  ii = (parse_info_of_info ii).Common.charpos
+
+let pinfo_of_info ii = ii.pinfo
+
+let is_origintok ii = 
+  match ii.pinfo with
+  | OriginTok pi -> true
+  | _ -> false
+
+
+let tok_add_s s ii  =
+  rewrap_str ((str_of_info ii) ^ s) ii
 
 
 (*****************************************************************************)

@@ -26,16 +26,7 @@ open Common
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-
-type pinfo = 
-    (* Present both in the AST and list of tokens *)
-    | OriginTok  of Common.parse_info
-  (* with tarzan *)
-
-type info = { 
-  mutable pinfo : pinfo; 
-  }
-
+type info = Parse_info.info
 and tok = info
 
 (* ------------------------------------------------------------------------- *)
@@ -62,29 +53,7 @@ and toplevel = unit
 (* Wrappers *)
 (*****************************************************************************)
 
-(* todo: should put this generic code in h_program-lang *)
-
-let rewrap_str s ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok pi -> OriginTok { pi with Common.str = s;}
-    )
-  }
-
-let parse_info_of_info ii = 
-  match ii.pinfo with
-  | OriginTok pinfo -> pinfo
-
-let str_of_info  ii = (parse_info_of_info ii).Common.str 
-let file_of_info ii = (parse_info_of_info ii).Common.file
-let line_of_info ii = (parse_info_of_info ii).Common.line
-let col_of_info  ii = (parse_info_of_info ii).Common.column
-let pos_of_info  ii = (parse_info_of_info ii).Common.charpos
-
-let pinfo_of_info ii = ii.pinfo
-
-let is_origintok ii = 
-  match ii.pinfo with
-  | OriginTok pi -> true
-
-
+let str_of_info x = Parse_info.str_of_info x
+let col_of_info x = Parse_info.col_of_info x
+let line_of_info x = Parse_info.line_of_info x
+let pos_of_info x = Parse_info.pos_of_info x
