@@ -103,7 +103,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
               let (d,b,e) = Common.dbe_of_filename file in
               let module_name = String.capitalize b in
 
-              let info' = Ast.rewrap_str (module_name ^ "." ^ s) info in
+              let info' = Parse_info.rewrap_str (module_name ^ "." ^ s) info in
 
               (* I prefer my tags to led me to the .ml file rather than
                * the .mli because the .mli is usually small and

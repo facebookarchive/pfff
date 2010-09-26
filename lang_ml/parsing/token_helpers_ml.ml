@@ -18,6 +18,7 @@ open Common
 open Parser_ml
 
 module Ast = Ast_ml
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Token Helpers *)
@@ -294,10 +295,10 @@ let visitor_info_of_tok f = function
 
 let linecol_of_tok tok =
   let info = info_of_tok tok in
-  Ast.line_of_info info, Ast.col_of_info info
+  PI.line_of_info info, PI.col_of_info info
 
 let col_of_tok x  = snd (linecol_of_tok x)
 let line_of_tok x = fst (linecol_of_tok x)
 
-let str_of_tok  x = Ast.str_of_info  (info_of_tok x)
-let file_of_tok x = Ast.file_of_info (info_of_tok x)
+let str_of_tok  x = PI.str_of_info  (info_of_tok x)
+let file_of_tok x = PI.file_of_info (info_of_tok x)

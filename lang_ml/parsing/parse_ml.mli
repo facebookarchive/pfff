@@ -5,15 +5,9 @@ type program2 = toplevel2 list
      (* the token list contains also the comment-tokens *)
      and info_item = (string * Parser_ml.token list)
 
-type parsing_stat = {
-  filename: Common.filename;
-  mutable correct: int;
-  mutable bad: int;
-}
-
 (* This is the main function *)
 val parse:
-  Common.filename -> (program2 * parsing_stat)
+  Common.filename -> (program2 * Parse_info.parsing_stat)
 
 
 (* internal *)

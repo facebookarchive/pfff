@@ -161,7 +161,7 @@ rule token = parse
   | "(*" { 
       let info = tokinfo lexbuf in 
       let com = comment lexbuf in
-      TComment(info +> tok_add_s com)
+      TComment(info +> Parse_info.tok_add_s com)
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -295,7 +295,7 @@ rule token = parse
       let buf = Buffer.create 100 in
       string buf lexbuf;
       let s = Buffer.contents buf in
-      TString (s, info +> tok_add_s (s ^ "\""))
+      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
     }
 
   (* ----------------------------------------------------------------------- *)

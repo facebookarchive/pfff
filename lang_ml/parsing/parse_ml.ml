@@ -122,7 +122,7 @@ let tokens a =
 
 let parse2 filename =
 
-  let stat = default_stat filename in
+  let stat = PI.default_stat filename in
 
   let toks_orig = tokens filename in
 

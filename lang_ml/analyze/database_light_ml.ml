@@ -146,13 +146,13 @@ let compute_database ?(verbose=false) files_or_dirs =
               let c = Ast.col_of_info info in
 
               let file =
-                Ast.file_of_info info +> 
-                Common.filename_without_leading_path root
+                Parse_info.file_of_info info +> 
+                  Common.filename_without_leading_path root
               in
 
               let module_name = Module_ml.module_name_of_filename file in
 
-              let fullpath = Ast.file_of_info info in
+              let fullpath = Parse_info.file_of_info info in
 
               (* stuff in mli is ok only where there is no .ml, like
                * for the externals/core/ stuff
