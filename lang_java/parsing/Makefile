@@ -1,0 +1,66 @@
+TOP=../..
+##############################################################################
+# Variables
+##############################################################################
+TARGET=lib
+
+SRC= flag_parsing_java.ml \
+     ast_java.ml \
+     visitor_java.ml lib_parsing_java.ml \
+     lexer_helper.ml \
+     parser_java.ml lexer_java.ml \
+     token_helpers_java.ml \
+     parse_java.ml \
+     test_parsing_java.ml
+
+SYSLIBS= str.cma unix.cma 
+
+LIBS= $(TOP)/commons/commons.cma \
+ $(TOP)/h_program-lang/lib.cma \
+
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
+  $(TOP)/h_program-lang \
+
+
+##############################################################################
+# Generic variables
+##############################################################################
+
+-include $(TOP)/Makefile.common
+
+##############################################################################
+# Top rules
+##############################################################################
+all:: $(TARGET).cma
+all.opt:: $(TARGET).cmxa
+
+$(TARGET).cma: $(OBJS)
+	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
+
+$(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
+	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
+
+$(TARGET).top: $(OBJS) $(LIBS)
+	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
+
+clean::
+	rm -f $(TARGET).top
+
+
+lexer_java.ml: lexer_java.mll
+	$(OCAMLLEX) $<
+clean::
+	rm -f lexer_java.ml
+beforedepend:: lexer_java.ml
+
+
+parser_java.ml parser_java.mli: parser_java.mly
+	$(OCAMLYACC) $<
+clean::
+	rm -f parser_java.ml parser_java.mli parser_java.output
+beforedepend:: parser_java.ml parser_java.mli
+
+
+##############################################################################
+# Generic rules
+##############################################################################
