@@ -25,8 +25,41 @@ open Ast_nw
 /*(*************************************************************************)*/
 
 /*(*-----------------------------------------*)*/
+/*(* the comment tokens *)*/
+/*(*-----------------------------------------*)*/
+/*(* coupling: Token_helpers.is_real_comment *)*/
+%token <Ast_nw.info> TComment
+%token <Ast_nw.info> TCommentSpace TCommentNewline   
+
+/*(*-----------------------------------------*)*/
+/*(* the normal tokens *)*/
+/*(*-----------------------------------------*)*/
+
+/*(* tokens with a value *)*/
+
+%token<string * Ast_nw.info> TCommand
+%token<string * Ast_nw.info> TWord
+%token<string * Ast_nw.info> TSymbol
+%token<string * Ast_nw.info> TNumber
+
+/*(* keywords tokens *)*/
+%token<Ast_nw.info> TBeginVerbatim TEndVerbatim
+%token<string * Ast_nw.info> TVerbatimLine
+
+
+%token<Ast_nw.info> TBeginNowebChunk TEndNowebChunk
+%token<string * Ast_nw.info> TNowebChunkLine
+
+/*(* syntax *)*/
+%token <Ast_nw.info>  
+  TOBrace TCBrace
+
+/*(* operators *)*/
+
+/*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
+
 
 /*(* classic *)*/
 %token <Ast_nw.info> TUnknown

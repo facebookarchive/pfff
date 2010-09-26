@@ -57,52 +57,149 @@ let keyword_table = Common.hash_of_list [
 ]
 *)
 
+(* ---------------------------------------------------------------------- *)
+type state_mode = 
+  (* aka TeX mode *)
+  | INITIAL
+  (* started with begin{verbatim} (or variant), finished end{verbatim} *)
+  | IN_VERBATIM of string
+  (* started with <<xxx>>= *)
+  | IN_NOWEB_CHUNK
+
+let default_state = INITIAL
+
+let _mode_stack = 
+  ref [default_state]
+
+let reset () = 
+  _mode_stack := [default_state];
+  ()
+
+let rec current_mode () = 
+  try 
+    Common.top !_mode_stack
+  with Failure("hd") -> 
+    pr2("LEXER: mode_stack is empty, defaulting to INITIAL");
+    reset();
+    current_mode ()
+
+let push_mode mode = Common.push2 mode _mode_stack
+let pop_mode () = ignore(Common.pop2 _mode_stack)
+
 }
 
 (*****************************************************************************)
+let letter = ['a'-'z''A'-'Z']
+let digit = ['0'-'9']
 
 (*****************************************************************************)
 rule tex = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
+  | "%" [^'\n' '\r']* { 
+      TComment(tokinfo lexbuf)
+    }
+  (* actually in lex space and newlines have meaning so should perhaps
+   * rename those tokens
+   *)
+  | [' ''\t'] { TCommentSpace (tokinfo lexbuf) }
+  | "\n" { TCommentNewline (tokinfo lexbuf) }
+
   (* ----------------------------------------------------------------------- *)
   (* Symbols *)
   (* ----------------------------------------------------------------------- *)
+  | "{" { TOBrace (tokinfo lexbuf); }
+  | "}" { TCBrace (tokinfo lexbuf); }
+
+  | '[' { TSymbol (tok lexbuf, tokinfo lexbuf) }
+  | ']' { TSymbol (tok lexbuf, tokinfo lexbuf) }
+  | '(' { TSymbol (tok lexbuf, tokinfo lexbuf) }
+  | ')' { TSymbol (tok lexbuf, tokinfo lexbuf) }
+
+  | ['-' '+' '=' '~' '\'' '\\' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
+     '_' '`' '?' '^' '|' '!' '&' ]+ {
+      TSymbol (tok lexbuf, tokinfo lexbuf) 
+    }
+  (* don't want ~\foo to be tokenized as ~\ *)
+  | "~" { TSymbol (tok lexbuf, tokinfo lexbuf) }
+
+
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
+  | "\\" ((letter+) as cmd) { 
+      TCommand (cmd, tokinfo lexbuf)
+    }
+
+  | letter+ {
+      TWord(tok lexbuf, tokinfo lexbuf)
+    }
+
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
+
+  | digit+ {
+      TNumber(tok lexbuf, tokinfo lexbuf)
+    }
   (* ----------------------------------------------------------------------- *)
-  (* Misc *)
+  (* Noweb *)
   (* ----------------------------------------------------------------------- *)
+
   (* ----------------------------------------------------------------------- *)
-    | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
-    | _ { 
+  (* Special modes *)
+  (* ----------------------------------------------------------------------- *)
+  | "\\begin{verbatim}"
+      {
+        push_mode (IN_VERBATIM ("verbatim"));
+        TBeginVerbatim (tokinfo lexbuf)
+      }
+
+  | "<<" ([^'>']+ as _tagname) ">>=" {
+      push_mode IN_NOWEB_CHUNK;
+      TBeginNowebChunk (tokinfo lexbuf)
+    }
+
+  (* ----------------------------------------------------------------------- *)
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _ { 
         if !Flag.verbose_lexing 
         then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
-      }
+    }
 
 (*****************************************************************************)
 and noweb = parse
+  | "\n@" { 
+      pop_mode ();
+      TEndNowebChunk (tokinfo lexbuf)
+    }
+  | ([^'\n']+ as line) { TNowebChunkLine (line, tokinfo lexbuf) }
+  | '\n' { TCommentNewline (tokinfo lexbuf) }
+
   (* ----------------------------------------------------------------------- *)
-    | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
-    | _ { 
-        if !Flag.verbose_lexing 
-        then pr2_once ("LEXER:unrecognised symbol, in noweb rule:"^tok lexbuf);
-        TUnknown (tokinfo lexbuf)
-      }
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _ { 
+      if !Flag.verbose_lexing 
+      then pr2_once ("LEXER:unrecognised symbol, in noweb rule:"^tok lexbuf);
+      TUnknown (tokinfo lexbuf)
+    }
 
 
 (*****************************************************************************)
 and verbatim endname = parse
+  | "\\end{verbatim}" { 
+      pop_mode ();
+      TEndVerbatim (tokinfo lexbuf)
+    }
+  | ([^'\n']+ as line) { TVerbatimLine (line, tokinfo lexbuf) }
+  | '\n' { TCommentNewline (tokinfo lexbuf) }
+
   (* ----------------------------------------------------------------------- *)
-    | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
-    | _ { 
-        if !Flag.verbose_lexing 
-        then pr2_once ("LEXER:unrecognised symbol, in verbatim rule:"^tok lexbuf);
-        TUnknown (tokinfo lexbuf)
-      }
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _ { 
+      if !Flag.verbose_lexing 
+      then pr2_once ("LEXER:unrecognised symbol, in verbatim rule:"^tok lexbuf);
+      TUnknown (tokinfo lexbuf)
+    }

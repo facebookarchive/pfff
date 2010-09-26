@@ -222,3 +222,8 @@ external/ocamlbdb/libcamlbdb.a
 
 /commons/lib-xml/xml_parser.output
 
+/lang_nw/parsing/lexer_nw.ml
+/lang_nw/parsing/parse_nw.mli
+/lang_nw/parsing/parser_nw.output
+/lang_nw/parsing/parser_nw.mli
+/lang_nw/parsing/parser_nw.ml
