@@ -12,3 +12,7 @@ then
   $ make
   $ make opt
 
+For Ubuntu/Debian you want to install libpcre3-dev,
+libgtk2.0-dev, libcairo2-dev and libpango1.0-dev. These are the
+correct package names (pcre-devel does not exist, and so on).
+
