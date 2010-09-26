@@ -139,6 +139,10 @@ let file_type_of_file2 file =
   | "txt" | "doc" -> Text e
   | "nw" -> Text e
 
+  | "org" 
+  | "md" 
+    -> Text e
+
   | "rtf" -> Text e
 
   | "cmi" | "cmo" | "cmx" | "cma" | "cmxa" 
