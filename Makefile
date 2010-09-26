@@ -129,6 +129,7 @@ BASICLIBS=commons/commons.cma \
  globals/globals.cma \
  h_program-lang/lib.cma \
  lang_ml/parsing/lib.cma \
+ lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
  lang_js/parsing/lib.cma \
  lang_cpp/parsing/lib.cma \
@@ -150,6 +151,8 @@ LIBS= commons/commons.cma \
     globals/globals.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/lib.cma \
+    lang_nw/parsing/lib.cma \
+     lang_nw/analyze/lib.cma \
     lang_php/parsing/lib.cma \
      lang_php/analyze/basic/lib.cma \
      lang_php/analyze/foundation/lib.cma \
@@ -181,6 +184,8 @@ MAKESUBDIRS=commons \
   globals \
   lang_ml/parsing \
    lang_ml/analyze \
+  lang_nw/parsing \
+   lang_nw/analyze \
   lang_php/parsing \
    lang_php/mini \
    lang_php/matcher \
