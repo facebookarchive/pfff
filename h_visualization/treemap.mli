@@ -116,6 +116,10 @@ val tree_of_dirs_or_files:
   Common.path list -> 
   (Common.dirname, Common.filename * 'a) Common.tree
 
+val remove_singleton_subdirs:
+  (Common.dirname, Common.filename * 'a) Common.tree ->
+  (Common.dirname, Common.filename * 'a) Common.tree
+
 
 (* internal functions *)
 (*s: signature treemap accessors *)

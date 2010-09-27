@@ -261,6 +261,9 @@ let code_treemap2 paths =
       ~filter_file:filter_file
       ~file_hook:(fun file -> treemap_file_size_hook ~root file)
   in
+
+  let tree = Treemap.remove_singleton_subdirs tree in
+
   tree +> Treemap.treemap_of_tree
     ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
     ~color_of_leaf:(fun (f, intleaf) -> 

@@ -1078,6 +1078,23 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
   Common.profile_code "Treemap.tree_of_dirs_or_files" (fun () ->
     tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook x
   )
+
+(* Some software, especially java have often a long chain
+ * of single directory, like org/eclipse/...
+ * which then introduce extra depth in the treemap which leads
+ * to overlapping labels and very small labels for the actual
+ * childrens. This function removes those intermediate singleton
+ * sub directories.
+ *)
+let rec remove_singleton_subdirs tree = 
+  match tree with
+  | Leaf x -> tree
+  | Node (x, [Node (y, ys)]) ->
+      (* todo? merge x and y ? *)
+      remove_singleton_subdirs (Node (x, ys))
+  | Node (x, ys) ->
+      Node (x, List.map remove_singleton_subdirs ys)
+
 (*****************************************************************************)
 (* Testing *)
 (*****************************************************************************)
