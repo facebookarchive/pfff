@@ -71,20 +71,15 @@ GetOptions (
 
     "with-all" => sub { 
         $bdb = 1; $mysql = 1; $irc = 1; $pcre = 1; 
-
         $facebook = 1;
-        $gui = 1; 
-        $visual = 1; 
-        # conflict when $visual and $graphics!
-
+        $gui = 1; $visual = 1; 
+        #$graphics = 1; conflict when $visual
     },
 
     "facebook" => sub { 
         $facebook = 1;
-
         $bdb = 1; $mysql = 1; $irc = 1;
-        $gui = 0; 
-        $visual = 0; #really ?
+        $gui = 0; $visual = 0; #really ?
         # was set to 0 because generated segfault when linked with lablgtk+gl
         $pcre = 1;
     },
