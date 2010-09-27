@@ -85,7 +85,7 @@ let parse_js_cache a =
 
 let parse_cpp2 file = 
   Common.memoized _hmemo_file file (fun () -> 
-    Cpp (Parse_cpp.parse_tokens file +> fst))
+    Cpp (Parse_cpp.parse file +> fst))
 let parse_cpp_cache a = 
   Common.profile_code "View.parse_cpp_cache" (fun () -> 
     match parse_cpp2 a with | Cpp a -> a | _ -> raise Impossible
