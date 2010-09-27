@@ -19,17 +19,47 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 
-(* todo: move code for instance Common.parse_info here
-*)
-
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
 
-(* todo: bad name, vtoken for virtual token ? *)
-type vtoken =
+(* 
+ * Currently lexing.ml does not handle the line number position.
+ * Even if there is some fields in the lexing structure, they are not 
+ * maintained by the lexing engine :( So the following code does not work:
+ * 
+ *   let pos = Lexing.lexeme_end_p lexbuf in 
+ *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum  
+ *      (pos.pos_cnum - pos.pos_bol) in 
+ * 
+ * Hence those functions to overcome the previous limitation.
+ *)
+
+type parse_info = {
+    str: string;
+    charpos: int;
+
+    line: int;
+    column: int;
+    file: filename;
+  } 
+  (* with tarzan *)
+
+let fake_parse_info = { 
+  charpos = -1; str = ""; line = -1; column = -1; file = "";
+}
+
+(* 
+ * The token type is used to represent the leaves of ASTs, the token. 
+ *  
+ * To be perfectly correct this is not really a token as a token usually
+ * also have a category, e.g. TNumber or TIdent, but this would
+ * be specific to a programming language and lexer, which is
+ * what we try to avoid here.
+ *)
+type token =
     (* Present both in the AST and list of tokens *)
-    | OriginTok  of Common.parse_info
+    | OriginTok  of parse_info
 
     (* Present only in the AST and generated after parsing. Can be used
      * when building some extra AST elements. *)
@@ -39,7 +69,25 @@ type vtoken =
          * message that involves a fakeToken. The int is a kind of
          * virtual position, an offset. See compare_pos below.
          *)
-        (Common.parse_info * int) option
+        (parse_info * int) option
+
+    (* In the case of a XHP file, we could preprocess it and incorporate
+     * the tokens of the preprocessed code with the tokens from
+     * the original file. We want to mark those "expanded" tokens 
+     * with a special tag so that if someone do some transformation on 
+     * those expanded tokens they will get a warning (because we may have
+     * trouble back-propagating the transformation back to the original file).
+     *)
+    | ExpandedTok of 
+        (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
+        parse_info  *
+       (* kind of virtual position. This info refers to the last token
+        * before a serie of expanded tokens and the int is an offset.
+        * The goal is to be able to compare the position of tokens
+        * between then, even for expanded tokens. See compare_pos 
+        * below.
+        *)
+        parse_info * int 
 
     (* The Ab constructor is (ab)used to call '=' to compare 
      * big AST portions. Indeed as we keep the token information in the AST, 
@@ -56,35 +104,18 @@ type vtoken =
      *)
     | Ab
 
-    (* In the case of a XHP file, we could preprocess it and incorporate
-     * the tokens of the preprocessed code with the tokens from
-     * the original file. We want to mark those "expanded" tokens 
-     * with a special tag so that if someone do some transformation on 
-     * those expanded tokens they will get a warning (because we may have
-     * trouble back-propagating the transformation back to the original file).
-     *)
-    | ExpandedTok of 
-        (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
-        Common.parse_info  *
-       (* kind of virtual position. This info refers to the last token
-        * before a serie of expanded tokens and the int is an offset.
-        * The goal is to be able to compare the position of tokens
-        * between then, even for expanded tokens. See compare_pos 
-        * below.
-        *)
-        Common.parse_info * int 
-
    (* with tarzan *)
 
 type info = { 
   (* contains among other things the position of the token through
    * the Common.parse_info embedded inside the pinfo type.
    *)
-  mutable pinfo : vtoken; 
-  comments: unit; (* TODO *)
+  mutable token : token; 
+  mutable comments: unit; (* TODO *)
   mutable transfo: transformation;
 }
 
+(* poor's man refactoring *)
 and transformation = 
   | NoTransfo
   | Remove 
@@ -118,14 +149,14 @@ let default_stat file =  {
 
 let tokinfo_str_pos str pos = 
   { 
-    pinfo = OriginTok {
-      Common.charpos = pos; 
-      Common.str     = str;
+    token = OriginTok {
+      charpos = pos; 
+      str     = str;
 
       (* info filled in a post-lexing phase, cf Parse_php.tokens *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
+      line = -1; 
+      column = -1; 
+      file = "";
     };
     comments = ();
     transfo = NoTransfo;
@@ -133,41 +164,85 @@ let tokinfo_str_pos str pos =
 
 
 let rewrap_str s ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok pi -> OriginTok { pi with Common.str = s;}
+  {ii with token =
+    (match ii.token with
+    | OriginTok pi -> OriginTok { pi with str = s;}
     | FakeTokStr (s, info) -> FakeTokStr (s, info)
     | Ab -> Ab
-    | ExpandedTok _ -> failwith "rewrap_str: ExpandedTok not allowed here"
+    | ExpandedTok _ -> 
+        (* ExpandedTok ({ pi with Common.str = s;},vpi) *)
+        failwith "rewrap_str: ExpandedTok not allowed here"
     )
   }
 
 let parse_info_of_info ii = 
-  match ii.pinfo with
+  match ii.token with
   | OriginTok pinfo -> pinfo
   (* TODO ? dangerous ? *)
   | ExpandedTok (pinfo_pp, pinfo_orig, offset) -> pinfo_pp
-  | FakeTokStr _
+  | FakeTokStr (_, (Some (pi, _))) -> pi
+
+  | FakeTokStr (_, None)
   | Ab 
     -> failwith "parse_info_of_info: no OriginTok"
 
 
-let str_of_info  ii = (parse_info_of_info ii).Common.str 
-let file_of_info ii = (parse_info_of_info ii).Common.file
-let line_of_info ii = (parse_info_of_info ii).Common.line
-let col_of_info  ii = (parse_info_of_info ii).Common.column
-let pos_of_info  ii = (parse_info_of_info ii).Common.charpos
 
-let pinfo_of_info ii = ii.pinfo
+let str_of_info  ii = (parse_info_of_info ii).str 
+let file_of_info ii = (parse_info_of_info ii).file
+let line_of_info ii = (parse_info_of_info ii).line
+let col_of_info  ii = (parse_info_of_info ii).column
+let pos_of_info  ii = (parse_info_of_info ii).charpos
+
+let pinfo_of_info ii = ii.token
 
 let is_origintok ii = 
-  match ii.pinfo with
+  match ii.token with
   | OriginTok pi -> true
   | _ -> false
 
 
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
+
+(* info about the current location *)
+let get_pi = function
+  | OriginTok pi -> pi
+  | ExpandedTok (_,pi,_) -> pi
+  | FakeTokStr (_,(Some (pi,_))) -> pi
+  | FakeTokStr (_,None) -> 
+      failwith "FakeTokStr None"
+  | Ab -> 
+      failwith "Ab"
+
+(* original info *)
+let get_opi = function
+  | OriginTok pi -> pi
+  | ExpandedTok (pi,_, _) -> pi
+  | FakeTokStr (_,_) -> failwith "no position information"
+  | Ab -> failwith "Ab"
+
+(* used by token_helpers *)
+let get_info f ii =
+  match ii.token with
+  | OriginTok pi -> f pi
+  | ExpandedTok (_,pi,_) -> f pi
+  | FakeTokStr (_,Some (pi,_)) -> f pi
+  | FakeTokStr (_,None) -> 
+      failwith "FakeTokStr None"
+  | Ab -> 
+      failwith "Ab"
+
+let get_orig_info f ii =
+  match ii.token with
+  | OriginTok pi -> f pi
+  | ExpandedTok (pi,_, _) -> f pi
+  | FakeTokStr (_,Some (pi,_)) -> f pi
+  | FakeTokStr (_,None ) -> 
+      failwith "FakeTokStr None"
+  | Ab -> 
+      failwith "Ab"
+
 
 
 (*****************************************************************************)
@@ -387,3 +462,231 @@ let map_pinfo =
   | ExpandedTok _ -> 
       failwith "map: ExpandedTok: TODO"
 *)
+
+
+let sexp_of_parse_info {
+                         str = v_str;
+                         charpos = v_charpos;
+                         line = v_line;
+                         column = v_column;
+                         file = v_file
+                       } =
+  let bnds = [] in
+  let arg = Conv.sexp_of_string v_file in
+  let bnd = Sexp.List [ Sexp.Atom "file:"; arg ] in
+  let bnds = bnd :: bnds in
+  let arg = Conv.sexp_of_int v_column in
+  let bnd = Sexp.List [ Sexp.Atom "column:"; arg ] in
+  let bnds = bnd :: bnds in
+  let arg = Conv.sexp_of_int v_line in
+  let bnd = Sexp.List [ Sexp.Atom "line:"; arg ] in
+  let bnds = bnd :: bnds in
+  let arg = Conv.sexp_of_int v_charpos in
+  let bnd = Sexp.List [ Sexp.Atom "charpos:"; arg ] in
+  let bnds = bnd :: bnds in
+  let arg = Conv.sexp_of_string v_str in
+  let bnd = Sexp.List [ Sexp.Atom "str:"; arg ] in
+  let bnds = bnd :: bnds in Sexp.List bnds
+  
+
+let string_of_parse_info x = 
+  spf "%s at %s:%d:%d" x.str x.file x.line x.column
+let string_of_parse_info_bis x = 
+  spf "%s:%d:%d" x.file x.line x.column
+
+let (info_from_charpos2: int -> filename -> (int * int * string)) = 
+ fun charpos filename ->
+
+  (* Currently lexing.ml does not handle the line number position.
+   * Even if there is some fields in the lexing structure, they are not 
+   * maintained by the lexing engine :( So the following code does not work:
+   *   let pos = Lexing.lexeme_end_p lexbuf in 
+   *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum  
+   *      (pos.pos_cnum - pos.pos_bol) in 
+   * Hence this function to overcome the previous limitation.
+   *)
+  let chan = open_in filename in
+  let linen  = ref 0 in
+  let posl   = ref 0 in
+  let rec charpos_to_pos_aux last_valid =
+    let s =
+      try Some (input_line chan)
+      with End_of_file when charpos =|= last_valid -> None in
+    incr linen;
+    match s with
+      Some s ->
+        let s = s ^ "\n" in
+        if (!posl + slength s > charpos)
+        then begin
+          close_in chan;
+          (!linen, charpos - !posl, s)
+        end
+        else begin
+          posl := !posl + slength s;
+          charpos_to_pos_aux !posl;
+        end
+    | None -> (!linen, charpos - !posl, "\n")
+  in 
+  let res = charpos_to_pos_aux 0 in
+  close_in chan;
+  res
+
+let info_from_charpos a b = 
+  profile_code "Common.info_from_charpos" (fun () -> info_from_charpos2 a b)
+
+
+
+let full_charpos_to_pos2 = fun filename ->
+
+  let size = (filesize filename + 2) in
+
+    let arr = Array.create size  (0,0) in
+
+    let chan = open_in filename in
+
+    let charpos   = ref 0 in
+    let line  = ref 0 in
+
+    let rec full_charpos_to_pos_aux () =
+     try
+       let s = (input_line chan) in
+       incr line;
+
+       (* '... +1 do'  cos input_line dont return the trailing \n *)
+       for i = 0 to (slength s - 1) + 1 do 
+         arr.(!charpos + i) <- (!line, i);
+       done;
+       charpos := !charpos + slength s + 1;
+       full_charpos_to_pos_aux();
+       
+     with End_of_file -> 
+       for i = !charpos to Array.length arr - 1 do
+         arr.(i) <- (!line, 0);
+       done;
+       ();
+    in 
+    begin 
+      full_charpos_to_pos_aux ();
+      close_in chan;
+      arr
+    end
+let full_charpos_to_pos a =
+  profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
+    
+let test_charpos file = 
+  full_charpos_to_pos file +> dump +> pr2
+
+
+
+let complete_parse_info filename table x = 
+  { x with 
+    file = filename;
+    line   = fst (table.(x.charpos));
+    column = snd (table.(x.charpos));
+  }
+
+
+
+let full_charpos_to_pos_large2 = fun filename ->
+
+  let size = (filesize filename + 2) in
+
+    (* old: let arr = Array.create size  (0,0) in *)
+    let arr1 = Bigarray.Array1.create 
+      Bigarray.int Bigarray.c_layout size in
+    let arr2 = Bigarray.Array1.create 
+      Bigarray.int Bigarray.c_layout size in
+    Bigarray.Array1.fill arr1 0;
+    Bigarray.Array1.fill arr2 0;
+
+    let chan = open_in filename in
+
+    let charpos   = ref 0 in
+    let line  = ref 0 in
+
+    let rec full_charpos_to_pos_aux () =
+     try
+       let s = (input_line chan) in
+       incr line;
+
+       (* '... +1 do'  cos input_line dont return the trailing \n *)
+       for i = 0 to (slength s - 1) + 1 do 
+         (* old: arr.(!charpos + i) <- (!line, i); *)
+         arr1.{!charpos + i} <- (!line);
+         arr2.{!charpos + i} <- i;
+       done;
+       charpos := !charpos + slength s + 1;
+       full_charpos_to_pos_aux();
+       
+     with End_of_file -> 
+       for i = !charpos to (* old: Array.length arr *) 
+         Bigarray.Array1.dim arr1 - 1 do
+         (* old: arr.(i) <- (!line, 0); *)
+         arr1.{i} <- !line;
+         arr2.{i} <- 0;
+       done;
+       ();
+    in 
+    begin 
+      full_charpos_to_pos_aux ();
+      close_in chan;
+      (fun i -> arr1.{i}, arr2.{i})
+    end
+let full_charpos_to_pos_large a =
+  profile_code "Common.full_charpos_to_pos_large" 
+    (fun () -> full_charpos_to_pos_large2 a)
+
+
+let complete_parse_info_large filename table x = 
+  { x with 
+    file = filename;
+    line   = fst (table (x.charpos));
+    column = snd (table (x.charpos));
+  }
+
+(*---------------------------------------------------------------------------*)
+(* Decalage is here to handle stuff such as cpp which include file and who 
+ * can make shift.
+ *)
+let (error_messagebis: filename -> (string * int) -> int -> string)=
+ fun filename (lexeme, lexstart) decalage ->
+
+  let charpos = lexstart      + decalage in
+  let tok = lexeme in 
+  let (line, pos, linecontent) =  info_from_charpos charpos filename in
+  sprintf "File \"%s\", line %d, column %d,  charpos = %d
+    around = '%s', whole content = %s"
+    filename line pos charpos tok (chop linecontent)
+
+let error_message = fun filename (lexeme, lexstart) -> 
+  try error_messagebis filename (lexeme, lexstart) 0    
+  with
+    End_of_file ->
+      ("PB in Common.error_message, position " ^ i_to_s lexstart ^
+       " given out of file:" ^ filename)
+
+let error_message_info = fun info -> 
+  let filename = info.file in
+  let lexeme = info.str in
+  let lexstart = info.charpos in
+  try error_messagebis filename (lexeme, lexstart) 0    
+  with
+    End_of_file ->
+      ("PB in Common.error_message, position " ^ i_to_s lexstart ^
+       " given out of file:" ^ filename)
+
+
+
+let error_message_short = fun filename (lexeme, lexstart) -> 
+  try 
+  let charpos = lexstart in
+  let (line, pos, linecontent) =  info_from_charpos charpos filename in
+  sprintf "File \"%s\", line %d"  filename line
+
+  with End_of_file -> 
+    begin
+      ("PB in Common.error_message, position " ^ i_to_s lexstart ^
+          " given out of file:" ^ filename);
+    end
+
+

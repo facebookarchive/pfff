@@ -28,30 +28,6 @@ let sexp_of_hashset _of_a = Conv.sexp_of_hashtbl _of_a Conv.sexp_of_bool
   
 let sexp_of_stack _of_a = Conv.sexp_of_list _of_a
   
-let sexp_of_parse_info {
-                         str = v_str;
-                         charpos = v_charpos;
-                         line = v_line;
-                         column = v_column;
-                         file = v_file
-                       } =
-  let bnds = [] in
-  let arg = sexp_of_filename v_file in
-  let bnd = Sexp.List [ Sexp.Atom "file:"; arg ] in
-  let bnds = bnd :: bnds in
-  let arg = Conv.sexp_of_int v_column in
-  let bnd = Sexp.List [ Sexp.Atom "column:"; arg ] in
-  let bnds = bnd :: bnds in
-  let arg = Conv.sexp_of_int v_line in
-  let bnd = Sexp.List [ Sexp.Atom "line:"; arg ] in
-  let bnds = bnd :: bnds in
-  let arg = Conv.sexp_of_int v_charpos in
-  let bnd = Sexp.List [ Sexp.Atom "charpos:"; arg ] in
-  let bnds = bnd :: bnds in
-  let arg = Conv.sexp_of_string v_str in
-  let bnd = Sexp.List [ Sexp.Atom "str:"; arg ] in
-  let bnds = bnd :: bnds in Sexp.List bnds
-  
 
 
 let sexp_of_score_result =

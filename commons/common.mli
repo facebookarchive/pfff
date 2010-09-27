@@ -983,6 +983,12 @@ val realpath: filename -> filename
 val inits_of_absolute_dir: dirname -> dirname list
 val inits_of_relative_dir: dirname -> dirname list
 
+(* basic file position *)
+type filepos = {
+  l: int;
+  c: int;
+}
+
 (*x: common.mli for basic types *)
 (*****************************************************************************)
 (* i18n *)
@@ -2030,63 +2036,7 @@ val getDoubleParser :
 (*****************************************************************************)
 (* Parsers (cocci) *)
 (*****************************************************************************)
-type filepos = {
-  l: int;
-  c: int;
-}
-
-
-(* Currently lexing.ml does not handle the line number position.
- * Even if there is some fields in the lexing structure, they are not 
- * maintained by the lexing engine :( So the following code does not work:
- * 
- *   let pos = Lexing.lexeme_end_p lexbuf in 
- *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum  
- *      (pos.pos_cnum - pos.pos_bol) in 
- * 
- * Hence those functions to overcome the previous limitation.
- *)
-
-type parse_info = {
-    str: string;
-    charpos: int;
-
-    line: int;
-    column: int;
-    file: filename;
-  } 
-val fake_parse_info : parse_info
-val string_of_parse_info : parse_info -> string
-val string_of_parse_info_bis : parse_info -> string
-
-(* array[i] will contain the (line x col) of the i char position *)
-val full_charpos_to_pos : filename -> (int * int) array
-
-(* fill in the line and column field of parse_info that were not set
- * during lexing because of limitations of ocamllex. *)
-val complete_parse_info : 
-  filename -> (int * int) array -> parse_info -> parse_info
-
-val full_charpos_to_pos_large: 
-  filename -> (int -> (int * int))
-
-val complete_parse_info_large : 
-  filename -> (int -> (int * int))  -> parse_info -> parse_info
-
-(* return line x col x str_line  from a charpos. This function is quite
- * expensive so don't use it to get the line x col from every token in
- * a file. Instead use full_charpos_to_pos.
- *)
-val info_from_charpos : int -> filename -> (int * int * string)
-
-val error_message :       filename -> (string * int) -> string
-val error_message_short : filename -> (string * int) -> string
-val error_message_info :  parse_info -> string
-
-(* add a 'decalage/shift' argument to handle stuff such as cpp which includes 
- * files and who can make shift.
- *)
-val error_messagebis : filename -> (string * int) -> int -> string
+(* now in h_program-lang/parse_info.ml *)
 (*x: common.mli misc *)
 (*****************************************************************************)
 (* Scope managment (cocci) *)
