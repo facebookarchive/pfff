@@ -54,26 +54,18 @@ let pr2 s =
 
 (*****************************************************************************)
 
-
 exception Lexical of string
 
-let tok     lexbuf  = Lexing.lexeme lexbuf
+let tok     lexbuf  = 
+  Lexing.lexeme lexbuf
 
 let tokinfo lexbuf  = 
-  { 
-    pinfo = Ast.OriginTok {
-      Common.charpos = Lexing.lexeme_start lexbuf; 
-      Common.str     = Lexing.lexeme lexbuf;
-      (* info filled in a post-lexing phase *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
-    };
-  }
+  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-let tok_add_s s ii = Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
+let tok_add_s  = Parse_info.tok_add_s
     
 
+(* ---------------------------------------------------------------------- *)
 (* opti: less convenient, but using a hash is faster than using a match *)
 let keyword_table = Common.hash_of_list [
 

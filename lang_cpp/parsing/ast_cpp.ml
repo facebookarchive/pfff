@@ -16,6 +16,8 @@
  *)
 open Common
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* The AST C++ related types *)
 (*****************************************************************************)
@@ -23,30 +25,9 @@ open Common
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-
-type pinfo = 
-  (* Present both in ast and list of tokens *)
-  | OriginTok of Common.parse_info
-  (* Present only in ast and generated after parsing. Used mainly
-   * by Julia, to add stuff at virtual places, beginning of func or decl *)
-  | FakeTok of string * virtual_position
-  (* Present both in ast and list of tokens.  *)
-  | ExpandedTok of Common.parse_info * virtual_position
-  (* Present neither in ast nor in list of tokens
-   * but only in the '+' of the mcode of some tokens. Those kind of tokens
-   * are used to be able to use '=' to compare big ast portions.
-   *)
-  | Ab
-  and virtual_position = Common.parse_info * int (* character offset *)
-
-type info = { 
-  (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
-   *)
-  pinfo : pinfo;
-  (* todo? token_info : sometimes useful to know what token it was *)
-  }
+type info = Parse_info.info
 and tok = info
+
 
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap  = 'a * info list (* TODO CHANGE *)
@@ -753,11 +734,13 @@ let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
  * old: or when don't want 'synchronize' on it in unparse_c.ml
  * (now have other mark for tha matter).
  *)
-let no_virt_pos = ({str="";charpos=0;line=0;column=0;file=""},-1)
+let no_virt_pos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1)
 
 
 let fakeInfo pi  = 
-  { pinfo = FakeTok ("",no_virt_pos);
+  { PI.token = PI.FakeTokStr ("",None);
+    comments = ();
+    transfo = PI.NoTransfo;
   }
 
 let noType () = ref None (* old: None, old: [] *)
@@ -783,72 +766,32 @@ let noInIfdef () =
 (*****************************************************************************)
 let unwrap = fst
 
-
-let rewrap_str s ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok pi -> OriginTok { pi with Common.str = s;}
-    | ExpandedTok (pi,vpi) -> ExpandedTok ({ pi with Common.str = s;},vpi)
-    | FakeTok (_,vpi) -> FakeTok (s,vpi)
-    | Ab -> failwith "should not be rewrapped")}
-
-
-let str_of_info ii =
-  match ii.pinfo with
-  | OriginTok pi -> pi.Common.str
-  | ExpandedTok (pi,_) -> pi.Common.str
-  | FakeTok (s,_) -> s
-  | Ab -> failwith "Ab"
-
-
-(* info about the current location *)
-let get_pi = function
-    OriginTok pi -> pi
-  | ExpandedTok (_,(pi,_)) -> pi
-  | FakeTok (_,(pi,_)) -> pi
-  | Ab -> failwith "Ab"
-
-(* original info *)
-let get_opi = function
-    OriginTok pi -> pi
-  | ExpandedTok (pi,_) -> pi
-  | FakeTok (_,_) -> failwith "no position information"
-  | Ab -> failwith "Ab"
+let rewrap_str = PI.rewrap_str
+let str_of_info = PI.str_of_info
 
 (* used by parsing hacks *)
 let make_expanded ii =
-  {ii with pinfo = ExpandedTok (get_opi ii.pinfo,no_virt_pos)}
+  let (a, b) = no_virt_pos in
+  {ii with PI.token = 
+      PI.ExpandedTok (PI.get_opi ii.PI.token, a, b)}
 
 (* used by token_helpers *)
-let get_info f ii =
-  match ii.pinfo with
-  | OriginTok pi -> f pi
-  | ExpandedTok (_,(pi,_)) -> f pi
-  | FakeTok (_,(pi,_)) -> f pi
-  | Ab -> failwith "Ab"
+let get_info = PI.get_info
 
-let get_orig_info f ii =
-  match ii.pinfo with
-  | OriginTok pi -> f pi
-  | ExpandedTok (pi,_) -> f pi
-  | FakeTok (_,(pi,_)) -> f pi
-  | Ab -> failwith "Ab"
 
-let line_of_info  ii = get_orig_info (function x -> x.Common.line)    ii
-let col_of_info   ii = get_orig_info (function x -> x.Common.column)  ii
-let file_of_info  ii = get_orig_info (function x -> x.Common.file)    ii
+let line_of_info = PI.line_of_info
+let col_of_info = PI.col_of_info
+let file_of_info = PI.file_of_info
 
-let pos_of_info   ii = get_info      (function x -> x.Common.charpos) ii
-let opos_of_info  ii = get_orig_info (function x -> x.Common.charpos) ii
+let pos_of_info  = PI.pos_of_info
+let opos_of_info ii = 
+  PI.get_orig_info (function x -> x.PI.charpos) ii
 
-let pinfo_of_info ii = ii.pinfo
-let parse_info_of_info ii = get_pi ii.pinfo
+let pinfo_of_info = PI.pinfo_of_info
+let parse_info_of_info = PI.parse_info_of_info
 
-let is_origintok ii = 
-  match ii.pinfo with
-  | OriginTok pi -> true
-  | _ -> false
+let is_origintok =  PI.is_origintok
 
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =  
-  {ii with pinfo = pi}
+  {ii with PI.token = pi}

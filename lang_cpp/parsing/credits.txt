@@ -7,7 +7,3 @@ Inspiration:
     lex:  http://www.lysator.liu.se/c/ANSI-C-grammar-l.html
     yacc: http://www.lysator.liu.se/c/ANSI-C-grammar-y.html
 
- - FrontC of hughes casse ?
- - CIL ?
- - EDG ?
-

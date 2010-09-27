@@ -52,7 +52,7 @@ let token_to_strpos tok =
 let error_msg_tok tok = 
   let file = TH.file_of_tok tok in
   if !Flag.verbose_parsing
-  then Common.error_message file (token_to_strpos tok) 
+  then Parse_info.error_message file (token_to_strpos tok) 
   else ("error in " ^ file  ^ "set verbose_parsing for more info")
 
 
@@ -78,8 +78,8 @@ let mk_info_item2 filename toks =
     begin
       toks +> List.iter (fun tok -> 
         match TH.pinfo_of_tok tok with
-        | Ast.OriginTok _ -> Buffer.add_string buf (TH.str_of_tok tok)
-        | Ast.Ab -> raise Impossible
+        | Parse_info.OriginTok _ -> Buffer.add_string buf (TH.str_of_tok tok)
+        | Parse_info.Ab -> raise Impossible
         | _ -> ()
       );
       Buffer.contents buf
@@ -108,19 +108,19 @@ let commentized xs = xs +> Common.map_filter (function
             (match s with
             | s when s =~ "KERN_.*" -> None
             | s when s =~ "__.*" -> None
-            | _ -> Some (ii.Ast.pinfo)
+            | _ -> Some (ii.Parse_info.token)
             )
              
         | Ast.CppDirective | Ast.CppAttr | Ast.CppMacro
             -> None
         | _ -> raise Todo
         )
-      else Some (ii.Ast.pinfo)
+      else Some (ii.Parse_info.token)
       
   | Parser.TCommentMisc ii
   | Parser.TAction ii 
     ->
-      Some (ii.Ast.pinfo)
+      Some (ii.Parse_info.token)
   | _ -> 
       None
  )
@@ -132,14 +132,15 @@ let count_lines_commentized xs =
     commentized xs +>
     List.iter
       (function
-	  Ast.OriginTok pinfo | Ast.ExpandedTok (_,(pinfo,_)) -> 
-	    let newline = pinfo.Common.line in
-	    if newline <> !line
-	    then begin
-              line := newline;
-              incr count
-	    end
-	| _ -> ());
+      | Parse_info.OriginTok pinfo 
+      | Parse_info.ExpandedTok (_,pinfo,_) -> 
+	  let newline = pinfo.Parse_info.line in
+	  if newline <> !line
+	  then begin
+            line := newline;
+            incr count
+	  end
+      | _ -> ());
     !count
   end
 
@@ -152,12 +153,15 @@ let print_commentized xs =
     ys +>
     List.iter
       (function
-	  Ast.OriginTok pinfo | Ast.ExpandedTok (_,(pinfo,_)) -> 
-	    let newline = pinfo.Common.line in
-	    let s = pinfo.Common.str in
-	    let s = Str.global_substitute 
-		(Str.regexp "\n") (fun s -> "") s 
-	    in
+      | Parse_info.OriginTok pinfo 
+      | Parse_info.ExpandedTok (_,pinfo,_) -> 
+
+	  let newline = pinfo.Parse_info.line in
+	  let s = pinfo.Parse_info.str in
+
+	  let s = Str.global_substitute 
+	    (Str.regexp "\n") (fun s -> "") s 
+	  in
 	    if newline = !line
 	    then prerr_string (s ^ " ")
 	    else begin
@@ -180,7 +184,7 @@ let print_commentized xs =
 
 (* called by parse_print_error_heuristic *)
 let tokens2 file = 
- let table     = Common.full_charpos_to_pos file in
+ let table     = Parse_info.full_charpos_to_pos file in
 
  Common.with_open_infile file (fun chan -> 
   let lexbuf = Lexing.from_channel chan in
@@ -189,15 +193,17 @@ let tokens2 file =
       let tok = Lexer.token lexbuf in
       (* fill in the line and col information *)
       let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
-        { ii with Ast.pinfo=
+        { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
-	  match Ast.pinfo_of_info ii with
-	    Ast.OriginTok pi ->
-              Ast.OriginTok (Common.complete_parse_info file table pi)
-	  | Ast.ExpandedTok (pi,vpi) ->
-              Ast.ExpandedTok((Common.complete_parse_info file table pi),vpi)
-	  | Ast.FakeTok (s,vpi) -> Ast.FakeTok (s,vpi)
-	  | Ast.Ab -> failwith "should not occur"
+	  match Parse_info.pinfo_of_info ii with
+	    Parse_info.OriginTok pi ->
+              Parse_info.OriginTok (Parse_info.complete_parse_info file table pi)
+	  | Parse_info.ExpandedTok (pi,vpi, off) ->
+              Parse_info.ExpandedTok(
+                (Parse_info.complete_parse_info file table pi),vpi, off)
+	  | Parse_info.FakeTokStr (s,vpi_opt) -> 
+              Parse_info.FakeTokStr (s,vpi_opt)
+	  | Parse_info.Ab -> failwith "should not occur"
       })
       in
 
@@ -209,7 +215,7 @@ let tokens2 file =
   with
     | Lexer.Lexical s -> 
         failwith ("lexical error " ^ s ^ "\n =" ^ 
-                  (Common.error_message file (lexbuf_to_strpos lexbuf)))
+                  (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
     | e -> raise e
  )
 
@@ -254,7 +260,7 @@ let parse_print_error file =
   let chan = (open_in file) in
   let lexbuf = Lexing.from_channel chan in
 
-  let error_msg () = Common.error_message file (lexbuf_to_strpos lexbuf) in
+  let error_msg () = Parse_info.error_message file (lexbuf_to_strpos lexbuf) in
   try 
     lexbuf +> Parser.main Lexer.token
   with 
@@ -653,12 +659,15 @@ and find_next_synchro_orig next already_passed =
 
 (* used to generate new token from existing one *)
 let new_info posadd str ii =
-  { Ast.pinfo = 
-      Ast.OriginTok { (Ast.parse_info_of_info ii) with 
-        charpos = Ast.pos_of_info ii + posadd;
+  { Parse_info.token = 
+      Parse_info.OriginTok { (Parse_info.parse_info_of_info ii) with 
+        Parse_info.
+        charpos = Parse_info.pos_of_info ii + posadd;
         str     = str;
-        column = Ast.col_of_info ii + posadd;
+        column = Parse_info.col_of_info ii + posadd;
       };
+    comments = ();
+    transfo = Parse_info.NoTransfo;
    }
 
 
@@ -691,7 +700,7 @@ let drop_until_defeol xs =
 (* ------------------------------------------------------------------------- *)
 
 let tokens_include (info, includes, filename, inifdef) = 
-  Parser.TIncludeStart (Ast.rewrap_str includes info, inifdef), 
+  Parser.TIncludeStart (Parse_info.rewrap_str includes info, inifdef), 
   [Parser.TIncludeFilename 
       (filename, (new_info (String.length includes) filename info))
   ]

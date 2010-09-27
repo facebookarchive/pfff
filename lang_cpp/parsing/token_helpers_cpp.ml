@@ -698,10 +698,10 @@ let file_of_tok x = Ast.file_of_info (info_of_tok x)
 let pinfo_of_tok x = Ast.pinfo_of_info (info_of_tok x)
 
 let is_origin x =
-  match pinfo_of_tok x with Ast.OriginTok _ -> true | _ -> false
+  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
 let is_expanded x =
-  match pinfo_of_tok x with Ast.ExpandedTok _ -> true | _ -> false
+  match pinfo_of_tok x with Parse_info.ExpandedTok _ -> true | _ -> false
 let is_fake x =
-  match pinfo_of_tok x with Ast.FakeTok _ -> true | _ -> false
+  match pinfo_of_tok x with Parse_info.FakeTokStr _ -> true | _ -> false
 let is_abstract x =
-  match pinfo_of_tok x with Ast.Ab -> true | _ -> false
+  match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false

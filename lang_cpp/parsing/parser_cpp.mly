@@ -65,7 +65,7 @@ let nullDecl = {
   qualifD = Ast.nullQualif;
   inlineD = false, [];
 }
-let fake_pi = Common.fake_parse_info
+let fake_pi = Parse_info.fake_parse_info
 
 let addStorageD  = function 
   | ((x,ii), ({storageD = (NoSto,[])} as v)) -> { v with storageD = (x, [ii]) }

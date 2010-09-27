@@ -19,11 +19,10 @@ let test_tokens_cpp file =
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
-(*
-let test_parse_js xs  =
-  let ext = ".*\\.\\(js\\|javascript\\)$" in
+let test_parse_cpp xs  =
+  let ext = ".*\\.\\(c\\|cpp\\|h\\)$" in
 
-  (* could now use Lib_parsing_php.find_php_files_of_dir_or_files *)
+  (* could now use Lib_parsing_cpp.find_php_files_of_dir_or_files *)
   let fullxs = Common.files_of_dir_or_files_no_vcs_post_filter ext xs in
 
   let stat_list = ref [] in
@@ -33,18 +32,12 @@ let test_parse_js xs  =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    if file =~ ".*/third_party" || file =~ ".*/wiki/extensions"
-    then pr2 "IGNORING third party directory, bad unicode chars"
-    else begin
-
-      let (xs, stat) = Parse_js.parse file in
-      Common.push2 stat stat_list;
-    end
+    let (xs, stat) = Parse_cpp.parse file in
+    Common.push2 stat stat_list;
   );
-  Parse_js.print_parsing_stat_list !stat_list;
+  Parsing_stat_cpp.print_parsing_stat_list !stat_list;
   ()
 
-*)
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -57,10 +50,8 @@ let test_parse_js xs  =
 
 let actions () = [
 
-(*
     "-parse_cpp", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_cpp;
-*)
 
     "-tokens_cpp", "   <file>", 
     Common.mk_action_1_arg test_tokens_cpp;

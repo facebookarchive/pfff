@@ -95,7 +95,7 @@ let msg_typedef (s,ii) =
       if !Flag.debug_typedef_location
       then 
         pr2_pp ("loc: " ^
-                 Common.string_of_parse_info (Ast.parse_info_of_info ii))
+                 Parse_info.string_of_parse_info (Ast.parse_info_of_info ii))
     )
     s
 
@@ -2211,22 +2211,22 @@ let insert_virtual_positions l =
 	let inject pi =
 	  TH.visitor_info_of_tok (function ii -> Ast.rewrap_pinfo pi ii) x in
 	match Ast.pinfo_of_info ii with
-	  Ast.OriginTok pi ->
+	  Parse_info.OriginTok pi ->
 	    let prev = Ast.parse_info_of_info ii in
 	    x::(loop prev (strlen ii) xs)
-	| Ast.ExpandedTok (pi,_) ->
-	    inject (Ast.ExpandedTok (pi,(prev,offset))) ::
+	| Parse_info.ExpandedTok (pi,_, _) ->
+	    inject (Parse_info.ExpandedTok (pi, prev,offset)) ::
 	    (loop prev (offset + (strlen ii)) xs)
-	| Ast.FakeTok (s,_) ->
-	    inject (Ast.FakeTok (s,(prev,offset))) ::
+	| Parse_info.FakeTokStr (s,_) ->
+	    inject (Parse_info.FakeTokStr (s, (Some (prev,offset)))) ::
 	    (loop prev (offset + (strlen ii)) xs)
-	| Ast.Ab -> failwith "abstract not expected" in
+	| Parse_info.Ab -> failwith "abstract not expected" in
   let rec skip_fake = function
       [] -> []
     | x::xs ->
 	let ii = TH.info_of_tok x in
 	match Ast.pinfo_of_info ii with
-	  Ast.OriginTok pi ->
+	  Parse_info.OriginTok pi ->
 	    let prev = Ast.parse_info_of_info ii in
 	    x::(loop prev (strlen ii) xs)
 	| _ -> x::skip_fake xs in
@@ -2342,10 +2342,14 @@ let fix_tokens_cpp a =
  *)
 let mark_end_define ii = 
   let ii' = 
-    { Ast.pinfo = Ast.OriginTok { (Ast.parse_info_of_info ii) with 
-        Common.str = ""; 
-        Common.charpos = Ast.pos_of_info ii + 1
+    { Parse_info.
+      token = Parse_info.OriginTok { 
+        (Ast.parse_info_of_info ii) with 
+          Parse_info.str = ""; 
+          Parse_info.charpos = Ast.pos_of_info ii + 1
       };
+      transfo = Parse_info.NoTransfo;
+      comments = ();
     } 
   in
   TDefEOL (ii')
