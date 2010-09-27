@@ -399,7 +399,7 @@ pr2 "Generating commons/features.ml";
 pr2 "Generating globals/config.ml";
 #old: my $command = "perl -p -i -e 's#Not_found.\*#Not_found->\\\"$src\\\"#' globals/config.ml";
 
-$src="/home/pad/orig-pfff";
+$src="/home/pad/shared-pfff";
 pr2 "WARNING: Using facebook specific stuff for now, src = $src";
 
 my $command = "perl -p -e 's#Not_found.\*#Not_found->\\\"$src\\\"#' globals/config.ml.in > globals/config.ml";
