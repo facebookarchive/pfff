@@ -39,6 +39,12 @@ let span_close_brace xs =
   | _ -> false
   ) xs
 
+let span_newline xs = 
+  Common.split_when (function 
+  | T.TCommentNewline _ -> true
+  | _ -> false
+  ) xs
+
 let tag_all_tok_with ~tag categ xs = 
   xs +> List.iter (fun tok ->
     let info = TH.info_of_tok tok in
@@ -131,6 +137,22 @@ let visit_toplevel
        aux_toks xs
 
 
+    (* specific to web TeX source: ex: @* \[24] Getting the next token. *)
+    |    T.TSymbol("@*", _)
+      :: T.TCommentSpace _
+      :: T.TSymbol("\\", _)
+      :: T.TSymbol("[", ii1)
+      :: T.TNumber(_, iinum)
+      :: T.TSymbol("]", ii2)
+      :: T.TCommentSpace _
+      :: xs 
+      ->
+       let (before, _, _) = span_newline xs in
+       [ii1;iinum;ii2] +> List.iter (fun ii -> tag ii CommentSection0);
+       tag_all_tok_with ~tag CommentSection0 before;
+       (* repass on tokens, in case there are nested tex commands *)
+       aux_toks xs
+
     | x::xs ->
         aux_toks xs
   in
@@ -155,7 +177,12 @@ let visit_toplevel
         then
           tag ii Comment
 
-    | T.TCommentNewline ii | T.TCommentSpace ii 
+    | T.TCommentSpace ii ->
+        if not (Hashtbl.mem already_tagged ii)
+        then ()
+        else ()
+
+    | T.TCommentNewline ii 
       -> ()
 
     | T.TCommand (s, ii) ->
@@ -185,7 +212,10 @@ let visit_toplevel
     | T.TVerbatimLine (_, ii) ->
         tag ii KeywordModule (* TODO *)
 
-    | T.TNumber (_, ii) -> tag ii Number
+    | T.TNumber (_, ii) -> 
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          tag ii Number
     | T.TSymbol (_, ii) -> tag ii Punctuation
 
 

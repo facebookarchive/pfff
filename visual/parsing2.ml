@@ -255,7 +255,7 @@ let tokens_with_categ_of_file file hentities =
         )
       ) +> List.flatten
 
-  | FT.Text ("nw" | "tex") ->
+  | FT.Text ("nw" | "tex" | "texi" | "web") ->
 
       let h = Hashtbl.create 101 in
 

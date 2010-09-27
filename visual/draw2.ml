@@ -380,7 +380,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
     | FT.PL (FT.ML _)
     | FT.PL (FT.Cplusplus | FT.C)
     | FT.PL (FT.Thrift)
-    | FT.Text ("nw" | "tex")
+    | FT.Text ("nw" | "tex"  | "texi" | "web")
     ) ->
 
     let column = ref 0 in
