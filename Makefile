@@ -118,6 +118,10 @@ ifeq ($(FEATURE_VISUAL),1)
 VISUALDIR=visual
 endif
 
+ifeq ($(FEATURE_FACEBOOK),1)
+FACEBOOKDIR=facebook
+endif
+
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
@@ -206,6 +210,7 @@ MAKESUBDIRS=commons \
    lang_php/analyze/database \
    lang_php/analyze/static_analysis \
   $(VISUALDIR) \
+  $(FACEBOOKDIR)
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/lib-json commons/lib-xml \
