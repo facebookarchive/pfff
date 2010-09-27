@@ -553,6 +553,9 @@ visualhead:
 push:
 	git push origin master
 
+pull:
+	git pull
+	cd facebook; git pull
 
 ##############################################################################
 # Pad specific rules
