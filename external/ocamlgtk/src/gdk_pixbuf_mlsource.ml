@@ -85,6 +85,7 @@ usage: %s [options] [image]
   (!rle, files)
 
 let _ =
+  Gobject.Type.init ();
   GdkPixbuf.set_marshal_use_rle rle ;
   let data =
     List.map

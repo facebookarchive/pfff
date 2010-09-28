@@ -36,7 +36,7 @@ INSTALLDIR=$(LIBDIR)\lablgtk2
 DLLDIR=$(LIBDIR)\stublibs
 
 # if using ocaml >= 3.08, add a -D OCAML_308 (for camlp4)
-ODOC_DEF=
+ODOC_DEF=-D OCAML_308
 
 GTKROOT=c:/GTK
 #GTKROOT=c:/Home/garrigue/gtk-2.6.8
@@ -45,6 +45,6 @@ GTKCFLAGS=-I$(GTKINC)/glib-2.0 -I$(GTKROOT)/lib/glib-2.0/include -I$(GTKINC)/gtk
 GTKLIBS0=gtk-win32-2.0.lib gdk_pixbuf-2.0.lib gdk-win32-2.0.lib  pango-1.0.lib atk-1.0.lib glib-2.0.lib gobject-2.0.lib
 RSVGLIBS0=rsvg-2.lib
 GLADELIBS0=glade-2.0.lib
-GTKLIBS=-ldopt "-show-imports $(GTKLIBS0)" -cclib "$(GTKLIBS0)"
-RSVGLIBS=-ldopt "$(RSVGLIBS0)" -cclib "$(RSVGLIBS0)"
-GLADELIBS=-ldopt "$(GLADELIBS0)" -cclib "$(GLADELIBS0)"
+GTKLIBS=-L$(GTKROOT)/lib -ldopt "-show-imports $(GTKLIBS0)" -cclib "$(GTKLIBS0)"
+RSVGLIBS=-L$(GTKROOT)/lib -ldopt "$(RSVGLIBS0)" -cclib "$(RSVGLIBS0)"
+GLADELIBS=-L$(GTKROOT)/lib -ldopt "$(GLADELIBS0)" -cclib "$(GLADELIBS0)"

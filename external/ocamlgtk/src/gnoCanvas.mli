@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gnoCanvas.mli 1347 2007-06-20 07:40:34Z guesdon $ *)
+(* $Id: gnoCanvas.mli 1515 2010-06-08 08:50:23Z garrigue $ *)
 
 (** [libgnomecanvas] bindings *)
 
@@ -180,9 +180,10 @@ and canvas : GnomeCanvas.canvas Gtk.obj ->
   end
 
 (** @gtkdoc libgnomecanvas GnomeCanvasItem *)
-class ['p] item : [> GnomeCanvas.item] Gtk.obj -> 
+class ['p] item : ([> GnomeCanvas.item] as 'a) Gtk.obj -> 
   object
     inherit base_item
+    val obj : 'a Gtk.obj
     constraint 'p = [< items_properties]
     method set : 'p list -> unit
   end

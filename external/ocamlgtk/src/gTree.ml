@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gTree.ml 1496 2010-01-14 15:38:03Z ben_99_9 $ *)
+(* $Id: gTree.ml 1523 2010-07-25 12:42:26Z garrigue $ *)
 
 open StdLabels
 open Gaux
@@ -561,7 +561,7 @@ class cell_renderer_pixbuf obj = object
 end
 
 class cell_renderer_text_signals obj = object (self)
-  inherit gtkobj_signals_impl (obj:Gtk.cell_renderer_text Gtk.obj)
+  inherit gtkobj_signals_impl (obj : [>Gtk.cell_renderer_text] obj)
   method edited = self#connect CellRendererText.S.edited
 end
 
@@ -590,13 +590,19 @@ class cell_renderer_progress obj = object
   method connect = new gtkobj_signals_impl obj
 end
 
+class cell_renderer_combo_signals obj = object (self)
+  inherit cell_renderer_text_signals obj
+  method changed = self#connect CellRendererCombo.S.changed
+end
+
 class cell_renderer_combo obj = object
   inherit [Gtk.cell_renderer_combo,cell_properties_combo]
       cell_renderer_impl obj
   method private param = cell_renderer_combo_param'
   method set_fixed_height_from_font =
     CellRendererText.set_fixed_height_from_font obj
-  method connect = new cell_renderer_text_signals (obj :> Gtk.cell_renderer_text Gtk.obj)
+  method connect =
+    new cell_renderer_combo_signals (obj :> Gtk.cell_renderer_combo Gtk.obj)
 end
 
 class cell_renderer_accel_signals (obj:Gtk.cell_renderer_accel Gtk.obj) = 

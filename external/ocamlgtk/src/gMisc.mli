@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gMisc.mli 1450 2009-04-20 09:15:35Z garrigue $ *)
+(* $Id: gMisc.mli 1527 2010-09-09 08:02:22Z garrigue $ *)
 
 open Gtk
 open GObj
@@ -169,10 +169,10 @@ val calendar :
 
 (** A widget for custom user interface elements
     @gtkdoc gtk GtkDrawingArea *)
-class drawing_area : Gtk.drawing_area obj ->
+class drawing_area : ([> Gtk.drawing_area] as 'a) obj ->
   object
     inherit GObj.widget_full
-    val obj : Gtk.drawing_area obj
+    val obj : 'a obj
     method event : event_ops
     method set_size : width:int -> height:int -> unit
   end
@@ -182,6 +182,39 @@ val drawing_area :
   ?width:int ->
   ?height:int ->
   ?packing:(widget -> unit) -> ?show:bool -> unit -> drawing_area
+
+(** {3 Curve} *)
+
+(** Allows direct editing of a curve
+    @gtkdoc gtk GtkCurve *)
+class curve : Gtk.curve obj ->
+  object
+    inherit drawing_area
+    val obj : Gtk.curve obj
+    method reset : unit -> unit
+    method set_gamma : int -> unit
+    method set_vector : float array -> unit
+    method get_vector : int -> float array
+    method curve_type : GtkEnums.curve_type
+    method max_x : float
+    method max_y : float
+    method min_x : float
+    method min_y : float
+    method set_curve_type : GtkEnums.curve_type -> unit
+    method set_max_x : float -> unit
+    method set_max_y : float -> unit
+    method set_min_x : float -> unit
+    method set_min_y : float -> unit
+  end
+
+(** @gtkdoc gtk GtkCurve *)
+val curve :
+  ?width:int -> ?height:int ->
+  ?curve_type:GtkEnums.curve_type ->
+  ?max_x:float -> ?max_y:float ->
+  ?min_x:float -> ?min_y:float ->
+  ?packing:(widget -> unit) -> ?show:bool -> unit -> curve
+
 
 (** {3 Misc. Widgets} *)
 

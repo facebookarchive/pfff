@@ -121,7 +121,7 @@ end
 module MODEL=MAKE(L)
 
 let fill_model t =
-  for i= 0 to 100000 do
+  for i= 0 to 10 do
     t#insert {L.lname = "Elt "^string_of_int i; checked=i mod 2 = 0}
   done
 

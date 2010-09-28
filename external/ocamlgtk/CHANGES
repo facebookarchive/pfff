@@ -1,4 +1,32 @@
-$Id: CHANGES 1509 2010-05-20 09:03:00Z garrigue $
+$Id: CHANGES 1528 2010-09-17 08:38:54Z garrigue $
+
+In Lablgtk-2.14.2:
+
+2010.09.09 [Jacques]
+  * add GtkCurve (but it is deprecated since 2.20)
+
+2010.08.16 [Jacques]
+  * rename g_value_{get,set}_variant, as the name is used by recent
+    versions of glib (reported by Florent Monnier)
+
+2010.07.25 [Jacques]
+  * add changed signal to cell_renderer_combo (reported by Dmitry Bely)
+
+2010.07.23 [Jacques]
+  * copy GtkTreePath arguments in callbacks, as reported by Benjamin.
+
+2010.06.25 [Jacques]
+  * remove gtkInit.cmo from gdk_pixbuf_mlsource, no need to
+    initialize Gtk as Gobject is sufficient 
+  * protect GtkThread callbacks against exceptions, and provide a
+    function to process messages inside a different main loop.
+  * add -nothinit option to lablgtk2, since Quartz cannot run the main
+    loop in a different thread (one should just call GtkThread.main).
+    See dialog-thread.ml for an example.
+
+2010.06.08 [Jacques]
+  * correct interfaces due to the fixing of an unsoundness bug in ocaml 3.12
+    (cf. http://caml.inria.fr/mantis/view.php?id=4824) 
 
 In Lablgtk-2.14.1:
 
@@ -1492,4 +1520,4 @@ In lablgtk-1.00:
 1998.11.22
   * added gtkObj.ml and examples/*_obj.ml
   * various modifications in gtk.ml
-				   
+

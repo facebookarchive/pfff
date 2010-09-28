@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gtkTree.ml 1455 2009-05-12 10:31:37Z garrigue $ *)
+(* $Id: gtkTree.ml 1522 2010-07-22 21:57:30Z garrigue $ *)
 
 open Gaux
 open Gtk
@@ -58,7 +58,10 @@ module TreePath = struct
   let () =
     Internal.tree_path_string :=
       {kind=`STRING; inj=(fun x -> string.inj (to_string x));
-       proj=(fun x -> from_string (string.proj x))}
+       proj=(fun x -> from_string (string.proj x))};
+    Internal.tree_path_copy :=
+      {kind=`POINTER; inj=unsafe_pointer.inj;
+       proj=(fun x -> copy (unsafe_pointer.proj x))}
 end
 
 module RowReference = struct

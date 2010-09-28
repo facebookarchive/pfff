@@ -20,7 +20,7 @@
 /*                                                                        */
 /**************************************************************************/
 
-/* $Id: ml_gobject.c 1443 2009-01-20 09:49:48Z ben_99_9 $ */
+/* $Id: ml_gobject.c 1524 2010-08-16 02:50:14Z garrigue $ */
 #include <stdio.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -289,7 +289,7 @@ CAMLprim value Val_gboxed_new(GType t, gpointer p)
 
 #define DATA  (val->data[0])
 
-static value g_value_get_variant (GValue *val)
+static value g_value_get_mlvariant (GValue *val)
 {
     CAMLparam0();
     CAMLlocal1(tmp);
@@ -375,9 +375,9 @@ static value g_value_get_variant (GValue *val)
     CAMLreturn(ret);
 }
 
-ML_1 (g_value_get_variant, GValue_val, ID)
+ML_1 (g_value_get_mlvariant, GValue_val, ID)
 
-static void g_value_set_variant (GValue *val, value arg)
+static void g_value_set_mlvariant (GValue *val, value arg)
 {
     value tag = Field(arg,0);
     value data = Field(arg,1);
@@ -461,7 +461,7 @@ static void g_value_set_variant (GValue *val, value arg)
     return;
 }
 
-ML_2 (g_value_set_variant, GValue_val, ID, Unit)
+ML_2 (g_value_set_mlvariant, GValue_val, ID, Unit)
 
 CAMLprim value ml_g_value_get_nativeint(value arg) {
     GValue *val = GValue_val(arg);
@@ -532,7 +532,7 @@ CAMLprim value ml_g_object_new (value type, value params)
         pspec = g_object_class_find_property (class, param->name);
         if (!pspec) failwith ("Gobject.create");
         g_value_init (&param->value, pspec->value_type);
-        g_value_set_variant (&param->value, Field(Field(cell,0),1));
+        g_value_set_mlvariant (&param->value, Field(Field(cell,0),1));
         param++;
       }
     }
@@ -556,7 +556,7 @@ CAMLprim value ml_g_object_get_property_dyn (value vobj, value prop)
   if (tp == G_TYPE_INVALID) caml_invalid_argument(String_val(prop));
   g_value_init (&val, tp);
   g_object_get_property (obj, String_val(prop), &val);
-  ret = g_value_get_variant (&val);
+  ret = g_value_get_mlvariant (&val);
   g_value_unset (&val);
   return ret;
 }
@@ -568,7 +568,7 @@ CAMLprim value ml_g_object_set_property_dyn (value vobj, value prop, value arg)
   GValue val = {0};
   if (tp == G_TYPE_INVALID) return Val_unit; /* Silently ignore this error */
   g_value_init (&val, tp);
-  g_value_set_variant (&val, arg);
+  g_value_set_mlvariant (&val, arg);
   g_object_set_property (obj, String_val(prop), &val);
   g_value_unset (&val);
   return Val_unit;
@@ -611,7 +611,7 @@ CAMLprim value ml_g_signal_emit_by_name (value obj, value sig, value params)
     for (i = 0; i < query.n_params; i++) {
         g_value_init (&iparams[i+1],
                       query.param_types[i] & ~G_SIGNAL_TYPE_STATIC_SCOPE);
-        g_value_set_variant (&iparams[i+1], Field(params,i));
+        g_value_set_mlvariant (&iparams[i+1], Field(params,i));
     }
     g_signal_emitv (iparams, signal_id, detail, (ret ? GValue_val(ret) : 0));
     for (i = 0; i < query.n_params + 1; i++)

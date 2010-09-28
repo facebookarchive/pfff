@@ -1,4 +1,4 @@
-(* $Id: gtkTree.props 1496 2010-01-14 15:38:03Z ben_99_9 $ *)
+(* $Id: gtkTree.props 1523 2010-07-25 12:42:26Z garrigue $ *)
 
 prefix "Gtk"
 
@@ -6,11 +6,13 @@ header {
 open Gtk
 module Internal = struct
   let tree_path_string = ref (unsafe_pointer : tree_path data_conv)
+  let tree_path_copy = ref (unsafe_pointer : tree_path data_conv)
 end
 }
 
 conversions {
   GtkTreePathString "!Internal.tree_path_string"
+  GtkTreePathCopy "!Internal.tree_path_copy"
 }
 
 classes {
@@ -42,16 +44,16 @@ class TreeView set wrap wrapsig : Container {
   signal expand_collapse_cursor_row :
     logical:gboolean expand:gboolean all:gboolean -> gboolean
   signal move_cursor :   GtkMovementStep gint -> gboolean
-  signal row_activated : GtkTreePath GtkTreeViewColumn          / NoWrap
-  signal row_collapsed : GtkTreeIter GtkTreePath
-  signal row_expanded :  GtkTreeIter GtkTreePath 
+  signal row_activated : GtkTreePathCopy GtkTreeViewColumn          / NoWrap
+  signal row_collapsed : GtkTreeIter GtkTreePathCopy
+  signal row_expanded :  GtkTreeIter GtkTreePathCopy
   signal select_all : -> gboolean
   signal select_cursor_parent : -> gboolean
   signal select_cursor_row : start_editing:gboolean -> gboolean
   signal set_scroll_adjustments : GtkAdjustment_opt GtkAdjustment_opt
   signal start_interactive_search : -> gboolean
-  signal test_collapse_row : GtkTreeIter GtkTreePath -> gboolean
-  signal test_expand_row :   GtkTreeIter GtkTreePath -> gboolean
+  signal test_collapse_row : GtkTreeIter GtkTreePathCopy -> gboolean
+  signal test_expand_row :   GtkTreeIter GtkTreePathCopy -> gboolean
   signal toggle_cursor_row : -> gboolean
   signal unselect_all : -> gboolean
 }
@@ -138,6 +140,7 @@ class CellRendererCombo : CellRendererText {
   "model"                GtkTreeModel_opt     : Read / Write / NoWrap
   "text_column"          gint                 : Read / Write / NoWrap
   "has_entry"            gboolean             : Read / Write
+  signal changed       : GtkTreePathString GtkTreeIter 
 }
 
 class CellRendererAccel : CellRendererText {
@@ -183,11 +186,11 @@ class TreeSelection abstract : GObject {
 }
 
 class TreeModel abstract wrapsig : GObject {
-  signal row_changed : GtkTreePath GtkTreeIter
-  signal row_deleted : GtkTreePath
-  signal row_has_child_toggled : GtkTreePath GtkTreeIter
-  signal row_inserted : GtkTreePath GtkTreeIter
-  signal rows_reordered : GtkTreePath GtkTreeIter (* gpointer *)
+  signal row_changed : GtkTreePathCopy GtkTreeIter
+  signal row_deleted : GtkTreePathCopy
+  signal row_has_child_toggled : GtkTreePathCopy GtkTreeIter
+  signal row_inserted : GtkTreePathCopy GtkTreeIter
+  signal rows_reordered : GtkTreePathCopy GtkTreeIter (* gpointer *)
 }
 
 (* class ListStore : TreeModel {} *)

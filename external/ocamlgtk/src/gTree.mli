@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gTree.mli 1496 2010-01-14 15:38:03Z ben_99_9 $ *)
+(* $Id: gTree.mli 1523 2010-07-25 12:42:26Z garrigue $ *)
 
 open Gobject
 open Gtk
@@ -558,9 +558,10 @@ class cell_renderer_pixbuf : Gtk.cell_renderer_pixbuf obj ->
   end
 
 (** @gtkdoc gtk GtkCellRendererText *)
-class cell_renderer_text_signals : Gtk.cell_renderer_text obj ->
+class cell_renderer_text_signals : ([>Gtk.cell_renderer_text] as 'a) obj ->
   object
     inherit GObj.gtkobj_signals
+    val obj : 'a obj
     method edited : callback:(Gtk.tree_path -> string -> unit) -> GtkSignal.id
   end
 
@@ -596,10 +597,20 @@ class cell_renderer_progress : Gtk.cell_renderer_progress obj ->
 
 (** @since GTK 2.6
     @gtkdoc gtk GtkCellRendererCombo *)
+class cell_renderer_combo_signals : ([>Gtk.cell_renderer_combo] as 'a) obj ->
+  object
+    inherit cell_renderer_text_signals
+    val obj : 'a obj
+    method changed :
+      callback:(Gtk.tree_path -> Gtk.tree_iter -> unit) -> GtkSignal.id
+  end
+
+(** @since GTK 2.6
+    @gtkdoc gtk GtkCellRendererCombo *)
 class cell_renderer_combo : Gtk.cell_renderer_combo obj ->
   object
     inherit[Gtk.cell_renderer_combo,cell_properties_combo] cell_renderer_skel
-    method connect : cell_renderer_text_signals
+    method connect : cell_renderer_combo_signals
     method set_fixed_height_from_font : int -> unit
   end
 

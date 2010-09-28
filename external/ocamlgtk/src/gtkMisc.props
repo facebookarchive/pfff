@@ -1,4 +1,4 @@
-(* $Id: gtkMisc.props 1419 2008-09-22 13:37:06Z zoggy $ *)
+(* $Id: gtkMisc.props 1527 2010-09-09 08:02:22Z garrigue $ *)
 
 header {
 open Gtk
@@ -6,6 +6,7 @@ open Gtk
 
 conversions {
   GtkStock "GtkStock.conv"
+  GtkCurveType "GtkEnums.curve_type_conv"
 }
 
 boxed {
@@ -174,14 +175,16 @@ class DrawingArea : Widget {
   method size : "width:int -> height:int -> unit"
 }
 
-(*
-class Curve {
+class Curve set wrap : DrawingArea {
   "curve-type"           GtkCurveType         : Read / Write
   "max-x"                gfloat               : Read / Write
   "max-y"                gfloat               : Read / Write
   "min-x"                gfloat               : Read / Write
   "min-y"                gfloat               : Read / Write
+  method reset
+  method set_gamma  : "int -> unit"
+  method set_vector : "float array -> unit"
+  method get_vector : "int -> float array"
 }
-*)
 
 class Separator hv : Widget {}

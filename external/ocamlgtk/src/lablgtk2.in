@@ -12,6 +12,7 @@ libraries=""
 libpath=""
 lablgtkdir="@INSTALLDIR@"
 initobjs="@INITOBJS@"
+thinitobjs="@THINITOBJS@"
 cmd="$0"
 
 if test -n "@LABLGLDIR@"; then
@@ -29,13 +30,15 @@ case $1 in
     echo "  -verbose  show actions executed"
     exit 0
     ;;
--thread)  thread=yes; shift ;;
--localdir) localdir=yes; shift ;;
--noextra) extra=no; shift ;;
--noinit)  init=no; shift ;;
--verbose) verbose=yes; shift ;;
+-thread)   thread=yes ;;
+-localdir) localdir=yes ;;
+-noextra)  extra=no ;;
+-noinit)   init=no ;;
+-nothinit) thinitobjs="" ;;
+-verbose)  verbose=yes ;;
 *)  break ;;
 esac
+shift
 done
 
 if test $localdir = yes; then
@@ -61,7 +64,7 @@ if test $thread = yes; then
     *)      libpath="$libpath -I +vmthreads"
             usedll="no" ;; # use different stdlib.cma
     esac
-    initobjs="$initobjs @THINITOBJS@"
+    initobjs="$initobjs $thinitobjs"
 elif test $extra = yes; then
     case "$threads_lib" in
     system) libraries="unix.cma $libraries";;

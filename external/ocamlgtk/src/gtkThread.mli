@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gtkThread.mli 1347 2007-06-20 07:40:34Z guesdon $ *)
+(* $Id: gtkThread.mli 1518 2010-06-25 09:23:44Z garrigue $ *)
 
 (* Basic functions *)
 
@@ -54,3 +54,8 @@ val sync : ('a -> 'b) -> 'a -> 'b
 (** Whether it is safe to call most GTK functions directly from
     the current thread *)
 val gui_safe : unit -> bool
+(** Allow other threads to run, and process the message queue.
+    The following ensures that messages will be processed even
+    if another main loop is running:
+      [Glib.Timeout.add ~ms:100 ~callback:GtkThread.do_jobs] *)
+val do_jobs : unit -> bool

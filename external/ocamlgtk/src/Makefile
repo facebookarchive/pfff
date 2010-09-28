@@ -1,4 +1,4 @@
-# $Id: Makefile 1506 2010-05-20 07:55:54Z garrigue $
+# $Id: Makefile 1518 2010-06-25 09:23:44Z garrigue $
 # Makefile for lablgtk.
 
 COMPILER = $(CAMLC) $(MLFLAGS) $(MLBYTEFLAGS) -w s -c
@@ -104,7 +104,6 @@ MLLIBS += lablgnomeui.cma
 CLIBS += liblablgnomeui$(XA)
 GNOMEUIMLOBJS = gnomeDruid.cmo gnoDruid.cmo
 GNOMEUICOBJS = ml_gnomedruid$(XO)
-endif
 
 ifdef USE_PANEL
 MLLIBS += lablpanel.cma
@@ -112,6 +111,8 @@ CLIBS += liblablpanel$(XA)
 PANELMLOBJS = panel.cmo
 PANELCOBJS = ml_panel$(XO)
 endif
+endif
+
 
 ifdef USE_RSVG
 MLLIBS += lablrsvg.cma
@@ -297,7 +298,7 @@ build.ml: Makefile $(CONFIG) build.ml.in
 	    -e "s|@TOOLCHAIN@|$(TOOLCHAIN)|" \
 	    < build.ml.in > $@
 
-gdk_pixbuf_mlsource$(XE) : lablgtk.cma gtkInit.cmo gdk_pixbuf_mlsource.ml
+gdk_pixbuf_mlsource$(XE) : lablgtk.cma gdk_pixbuf_mlsource.ml
 	$(CAMLC) -o $@ -I . $^
 
 lablgtkopt:: $(MLLIBS:.cma=.cmxa) $(INITOBJS:.cmo=.cmx)

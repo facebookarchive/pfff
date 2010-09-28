@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gButton.mli 1411 2008-08-03 14:43:59Z ben_99_9 $ *)
+(* $Id: gButton.mli 1515 2010-06-08 08:50:23Z garrigue $ *)
 
 open Gtk
 open GObj
@@ -357,9 +357,10 @@ end
 (** @gtkdoc gtk GtkToolItem 
     @since GTK 2.4 *)
 class tool_item : 
-  [> Gtk.tool_item] obj ->
+  ([> Gtk.tool_item] as 'a) obj ->
   object
     inherit tool_item_skel
+    val obj : 'a obj
     method connect : GContainer.container_signals
   end
 
@@ -423,9 +424,10 @@ class tool_button_skel :
 (** @gtkdoc gtk GtkToolButton
     @since GTK 2.4 *)
 class tool_button : 
-  [> Gtk.tool_button] obj ->
+  ([> Gtk.tool_button] as 'a) obj ->
   object
     inherit tool_button_skel
+    val obj : 'a obj
     method connect : tool_button_signals
   end
 

@@ -51,6 +51,19 @@ let pop_callback (State old) =
 
 let user_handler = ref raise
 
+let safe_call ?(where="function call") f x =
+  try f x
+  with exn -> try !user_handler exn
+  with exn ->
+    Printf.eprintf "In %s, uncaught exception: %s\n"
+      where (Printexc.to_string exn);
+IFDEF HAS_PRINTEXC_BACKTRACE 
+THEN
+  if Printexc.backtrace_status () then
+    Printexc.print_backtrace stderr;
+END;
+    flush stderr
+
 external connect_by_name :
   'a obj -> name:string -> callback:g_closure -> after:bool -> id
   = "ml_g_signal_connect_closure"
@@ -59,19 +72,8 @@ external emit_stop_by_name : 'a obj -> name:string -> unit
 let connect  ~(sgn : ('a, _) t) ~callback ?(after=false) (obj : 'a obj) =
   let callback argv =
     let old = push_callback () in
-    begin
-      try sgn.marshaller callback argv
-      with exn -> try !user_handler exn
-      with exn ->
-        Printf.eprintf "In callback for signal %s, uncaught exception: %s\n"
-          sgn.name (Printexc.to_string exn);
-IFDEF HAS_PRINTEXC_BACKTRACE 
-THEN
-  if Printexc.backtrace_status () then
-    Printexc.print_backtrace stderr;
-END;
-        flush stderr
-    end;
+    safe_call (sgn.marshaller callback) argv
+      ~where:("callback for signal " ^ sgn.name);
     if pop_callback old then emit_stop_by_name obj ~name:sgn.name
   in
   connect_by_name obj ~name:sgn.name ~callback:(Closure.create callback) ~after

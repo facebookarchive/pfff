@@ -20,8 +20,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gtkThInit.ml 1347 2007-06-20 07:40:34Z guesdon $ *)
+(* $Id: gtkThInit.ml 1519 2010-06-25 10:52:42Z garrigue $ *)
 
 (* Start the main thread in a threaded toplevel *)
 
+(* When using the Quartz backend, one must init in the same thread *)
 let thread = GtkThread.start ()

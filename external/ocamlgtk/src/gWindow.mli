@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gWindow.mli 1447 2009-03-19 14:41:16Z garrigue $ *)
+(* $Id: gWindow.mli 1515 2010-06-08 08:50:23Z garrigue $ *)
 
 open Gtk
 open GObj
@@ -191,9 +191,10 @@ class ['a] dialog_skel : ([>Gtk.dialog] as 'b) obj ->
 
 (** Create popup windows
    @gtkdoc gtk GtkDialog *)
-class ['a] dialog_ext : [> Gtk.dialog] obj ->
+class ['a] dialog_ext : ([> Gtk.dialog] as 'b) obj ->
   object
     inherit ['a] dialog_skel
+    val obj : 'b obj
     method add_button : string -> 'a -> unit
     method add_button_stock : GtkStock.id -> 'a -> unit
   end
@@ -203,6 +204,7 @@ class ['a] dialog_ext : [> Gtk.dialog] obj ->
 class ['a] dialog : [> Gtk.dialog] obj ->
   object
     inherit ['a] dialog_ext
+    val obj : Gtk.dialog obj
     method connect : 'a dialog_signals
   end
 
@@ -235,7 +237,6 @@ val dialog :
 (** Variation for safe typing *)
 type any_response = [GtkEnums.response | `OTHER of int]
 class dialog_any : [> Gtk.dialog] obj -> [any_response] dialog
-
 
 (** {3 GtkMessageDialog} *)
 

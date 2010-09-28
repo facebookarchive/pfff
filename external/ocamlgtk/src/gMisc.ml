@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gMisc.ml 1450 2009-04-20 09:15:35Z garrigue $ *)
+(* $Id: gMisc.ml 1527 2010-09-09 08:02:22Z garrigue $ *)
 
 open Gaux
 open Gobject
@@ -146,15 +146,33 @@ let calendar ?options ?packing ?show () =
   pack_return (new calendar w) ~packing ~show
 
 class drawing_area obj = object
-  inherit widget_full (obj : Gtk.drawing_area obj)
+  inherit widget_full (obj : [> Gtk.drawing_area] obj)
   method event = new GObj.event_ops obj
   method set_size = DrawingArea.size obj
 end
 
-let drawing_area ?(width=0) ?(height=0) ?packing ?show () =
+let may_set_size ?(width=0) ?(height=0) w =
+  if width <> 0 || height <> 0 then DrawingArea.size w ~width ~height
+
+let drawing_area ?width ?height ?packing ?show () =
   let w = DrawingArea.create [] in
-  if width <> 0 || height <> 0 then DrawingArea.size w ~width ~height;
+  may_set_size w ?width ?height;
   pack_return (new drawing_area w) ~packing ~show
+
+class curve obj = object
+  inherit drawing_area (obj : Gtk.curve obj)
+  inherit curve_props
+  method reset () = Curve.reset obj
+  method set_gamma = Curve.set_gamma obj
+  method set_vector = Curve.set_vector obj
+  method get_vector = Curve.get_vector obj
+end
+
+let curve ?width ?height =
+  Curve.make_params [] ~cont:(fun pl ?packing ?show () ->
+    let w = Curve.create pl in
+    may_set_size w ?width ?height;
+    pack_return (new curve w) ~packing ~show)
 
 class misc obj = object
   inherit ['a] widget_impl obj

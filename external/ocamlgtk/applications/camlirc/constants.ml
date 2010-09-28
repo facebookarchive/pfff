@@ -25,7 +25,7 @@ let doctype = Printf.sprintf "Caml IRC client %d.%d" 1 1
 let software = "CamlIRC"
 let version = "0.01"
 let datestring = 
-  match split (regexp " ") "$Date: 2007-07-20 13:18:38 +0900 (金, 20  7 2007) $" with
+  match split (regexp " ") "$Date: 2007-07-19 21:18:38 -0700 (Thu, 19 Jul 2007) $" with
   | [_;date;time;_] ->
       date^"-"^(global_replace (regexp ":") "-" time) 
   | _ -> "" 

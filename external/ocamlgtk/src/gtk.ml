@@ -20,7 +20,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: gtk.ml 1454 2009-05-12 10:19:38Z garrigue $ *)
+(* $Id: gtk.ml 1525 2010-09-09 06:49:49Z garrigue $ *)
 
 open Gobject
 
@@ -207,6 +207,7 @@ type menu_tool_button = [tool_button|`menutoolbutton]
 type tree = [container|`tree]
 type calendar = [widget|`calendar]
 type drawing_area = [widget|`drawingarea]
+type curve = [drawing_area|`curve]
 type editable = [widget|`editable]
 type entry = [editable|`entry]
 type spin_button = [editable|`entry|`spinbutton]
