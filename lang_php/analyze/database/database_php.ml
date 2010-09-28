@@ -204,7 +204,8 @@ type database = {
      (* the remaining parsing information, the string and tokens *)
      str_of_topid:    (id, string)                Oassoc.oassoc;
      tokens_of_topid: (id, Parser_php.token list) Oassoc.oassoc;
-     range_of_topid: (id, (Common.parse_info * Common.parse_info)) Oassoc.oassoc;
+     range_of_topid: (id, (Parse_info.parse_info * Parse_info.parse_info)) 
+       Oassoc.oassoc;
 
      (* Could have a function_defs, proto_defs, global_defs, struct_def,
       * but this would force for instance in a gui to have different search

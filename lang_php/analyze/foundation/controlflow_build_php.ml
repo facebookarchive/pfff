@@ -693,7 +693,8 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
 let (report_error : error -> unit) = fun err ->
   let error_from_info info = 
     let pinfo = Ast.parse_info_of_info info in
-    Common.error_message_short pinfo.Common.file ("", pinfo.Common.charpos)
+    Parse_info.error_message_short 
+      pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
   in
 
   match err with

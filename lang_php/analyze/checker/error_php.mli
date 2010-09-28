@@ -2,8 +2,8 @@
 val strict: bool ref
 
 type error = 
-  | TooManyArguments of (Common.parse_info * Ast_php.name (* def *))
-  | NotEnoughArguments of (Common.parse_info * Ast_php.name (* def *))
+  | TooManyArguments of (Parse_info.parse_info * Ast_php.name (* def *))
+  | NotEnoughArguments of (Parse_info.parse_info * Ast_php.name (* def *))
 
   | UseOfUndefinedVariable of Ast_php.dname
   | UseOfUndefinedMember of Ast_php.name

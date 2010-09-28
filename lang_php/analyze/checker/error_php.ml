@@ -34,8 +34,8 @@ module Ast = Ast_php
 let strict = ref false
 
 type error = 
-  | TooManyArguments   of (Common.parse_info * name (* def *))
-  | NotEnoughArguments of (Common.parse_info * name (* def *))
+  | TooManyArguments   of (Parse_info.parse_info * name (* def *))
+  | NotEnoughArguments of (Parse_info.parse_info * name (* def *))
   | UseOfUndefinedVariable of Ast_php.dname
   | UseOfUndefinedMember of Ast_php.name
   | UnusedVariable of Ast_php.dname * Scope_php.phpscope
@@ -46,7 +46,8 @@ exception Error of error
 let string_of_error error = 
   let spos info = 
     (* emacs compile-mode compatible output *)
-    spf "%s:%d:%d: " info.file info.line info.column
+    spf "%s:%d:%d: " 
+      info.Parse_info.file info.Parse_info.line info.Parse_info.column
   in
   (match error with
   | TooManyArguments (info, name) ->

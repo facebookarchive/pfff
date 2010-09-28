@@ -174,7 +174,7 @@ let prange_of_origin_tokens toks =
     let (min, max) = Lib_parsing.min_max_ii_by_pos ii in
     Ast.parse_info_of_info min, Ast.parse_info_of_info max
   with _ -> 
-    (Common.fake_parse_info, Common.fake_parse_info)
+    (Parse_info.fake_parse_info, Parse_info.fake_parse_info)
 
 
 let first_comment ast toks =
@@ -185,7 +185,7 @@ let first_comment ast toks =
 
   let toks_before_min = 
     toks +> List.filter (fun tok ->
-      Token_helpers_php.pos_of_tok tok < min.charpos
+      Token_helpers_php.pos_of_tok tok < min.Parse_info.charpos
     ) +> List.rev
   in
   let comment_info = 
@@ -1068,7 +1068,7 @@ let index_db4_2 db =
 
     let tags = ref [] in
     comment_opt +> Common.do_option (fun info ->
-      let str = info.Common.str in
+      let str = info.Parse_info.str in
       let comment_tags = 
         try A.extract_annotations str 
         with exn ->

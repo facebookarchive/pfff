@@ -84,15 +84,16 @@ let parsing_stat_db db =
 
         let (p1, p2) = db.defs.range_of_topid#assoc id in
 
-        let l1 = p1.Common.line in
-        let l2 = p2.Common.line in
+        let l1 = p1.Parse_info.line in
+        let l2 = p2.Parse_info.line in
 
         incr numtoplevel;
 
-        if(p1 <> Common.fake_parse_info && p2 <> Common.fake_parse_info) 
+        if(p1 <> Parse_info.fake_parse_info && 
+           p2 <> Parse_info.fake_parse_info) 
         then begin
           assert (l1 <= l2);
-          assert(p1.Common.file = p2.Common.file);
+          assert(p1.Parse_info.file = p2.Parse_info.file);
 
           let diff = 
             if l2 = l1 

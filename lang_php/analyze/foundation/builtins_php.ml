@@ -191,7 +191,7 @@ let idl_type_of_string (s, info) =
     try idl_type_of_string s
     with Not_found ->
       let pinfo = Ast.parse_info_of_info info in
-      pr2 (Common.error_message_info pinfo);
+      pr2 (Parse_info.error_message_info pinfo);
       failwith ("not a idl type: " ^ s)
 
 (*****************************************************************************)
@@ -349,7 +349,7 @@ let ast_php_to_idl toplevels =
           let ii = Lib_parsing_php.ii_of_stmt stmt in
           let info, _max = Lib_parsing_php.min_max_ii_by_pos ii in
           let pinfo = Ast.parse_info_of_info info in
-          pr2 ("PB:" ^ (Common.error_message_info pinfo));
+          pr2 ("PB:" ^ (Parse_info.error_message_info pinfo));
           raise NotValidIdlPhpEntry
       )
   | _ -> failwith "does not look like a idl.php file"

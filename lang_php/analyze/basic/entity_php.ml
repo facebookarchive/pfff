@@ -146,9 +146,9 @@ and vof_filepos { file = v_file; line = v_line; column = v_column } =
 (* Helpers *)
 (*****************************************************************************)
 
-let (filepos_of_parse_info: Common.parse_info -> filepos) = fun pi -> 
+let (filepos_of_parse_info: Parse_info.parse_info -> filepos) = fun pi -> 
   { 
-    file = pi.Common.file;
-    line = pi.Common.line;
-    column = pi.Common.column;
+    file = pi.Parse_info.file;
+    line = pi.Parse_info.line;
+    column = pi.Parse_info.column;
   }

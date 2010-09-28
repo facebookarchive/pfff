@@ -99,7 +99,8 @@ type database = {
      (* consider also using toks_of_topid_of_id wrapper func *)
      str_of_topid:    (id, string)         Oassoc.oassoc;
      tokens_of_topid: (id, Parser_php.token list) Oassoc.oassoc;
-     range_of_topid: (id, (Common.parse_info * Common.parse_info)) Oassoc.oassoc;
+     range_of_topid: (id, (Parse_info.parse_info * Parse_info.parse_info)) 
+       Oassoc.oassoc;
 
      (* Not all ids have a name; for instance StmtList ASTs 
       * really dont have one (well for now I gave them a __TOPSTMT__ name).

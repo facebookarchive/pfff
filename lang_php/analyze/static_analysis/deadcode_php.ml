@@ -376,7 +376,7 @@ let get_lines_to_remove db ids =
 
     let toks_before_min = 
       toks +> List.filter (fun tok ->
-        Token_helpers_php.pos_of_tok tok < min.charpos
+        Token_helpers_php.pos_of_tok tok < min.Parse_info.charpos
       ) +> List.rev
     in
     let min_comment = 
@@ -385,7 +385,7 @@ let get_lines_to_remove db ids =
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
           if Ast_php.col_of_info i2 = 0 &&
              (* bugfix: dont want comment far away *)
-             Ast_php.line_of_info i1 = min.Common.line - 1
+             Ast_php.line_of_info i1 = min.Parse_info.line - 1
           then Ast_php.parse_info_of_info i2
           else min
 
@@ -415,9 +415,9 @@ let get_lines_to_remove db ids =
       | _ -> min
     in
     
-    let minline = min.line in
-    let maxline = max.line in
-    let minline_comment = min_comment.line in
+    let minline = min.Parse_info.line in
+    let maxline = max.Parse_info.line in
+    let minline_comment = min_comment.Parse_info.line in
     { just_code_lines = enum minline maxline;
       code_and_comment_lines = enum minline_comment maxline
     }

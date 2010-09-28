@@ -238,7 +238,8 @@ let cfg_of_stmts = control_flow_graph_of_stmts
 let (report_error : error -> unit) = fun err ->
   let error_from_info info = 
     let pinfo = Ast_php.parse_info_of_info info in
-    Common.error_message_short pinfo.Common.file ("", pinfo.Common.charpos)
+    Parse_info.error_message_short 
+      pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
   in
 
   match err with

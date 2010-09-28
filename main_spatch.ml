@@ -18,6 +18,8 @@ module V = Visitor_php
 module Ast2 = Ast_js
 module V2 = Visitor_js
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -691,10 +693,10 @@ let event_transfo_func ast =
                   (match Lib_parsing_js.ii_of_expr e with
                   | ii::rest ->
                       was_modified := true;
-                      tok_period.Ast2.transfo <- Ast2.Remove;
-                      info_listen.Ast2.transfo <- Ast2.Remove;
-                      lpar.Ast2.transfo <- Ast2.Replace (Ast2.AddStr ", ");
-                      ii.Ast2.transfo <- Ast2.AddBefore (Ast2.AddStr "Event.listen(");
+                      tok_period.PI.transfo <- PI.Remove;
+                      info_listen.PI.transfo <- PI.Remove;
+                      lpar.PI.transfo <- PI.Replace (PI.AddStr ", ");
+                      ii.PI.transfo <- PI.AddBefore (PI.AddStr "Event.listen(");
                       
                   | [] -> failwith "NO II before ."
                   )

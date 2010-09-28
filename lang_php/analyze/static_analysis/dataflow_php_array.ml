@@ -145,7 +145,7 @@ let info_of_node n =
   let origins = all_infos +> List.filter Ast_php.is_origintok in
   match origins with
   | x::xs -> filepos_of_info x
-  | [] -> Entity_php.filepos_of_parse_info (Common.fake_parse_info)
+  | [] -> Entity_php.filepos_of_parse_info (Parse_info.fake_parse_info)
 
 (*****************************************************************************)
 (* Helpers *)
