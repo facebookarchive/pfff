@@ -60,6 +60,8 @@ let all_actions () =
   Test_parsing_nw.actions()++
   Test_parsing_cpp.actions()++
   Test_mini_php.actions()++
+
+  Test_analyze_cpp.actions () ++
   []
 
 let options () = 

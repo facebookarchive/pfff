@@ -118,6 +118,13 @@ and v_comma_list17 _of_a xs =
     in
     v_my_wrap _of_a x
   )
+and v_comma_list16 _of_a xs = 
+  xs +> List.iter (fun x -> 
+    let v_my_wrap _of_a (v1, v2) = 
+      let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
+    in
+    v_my_wrap _of_a x
+  )
 and v_comma_list15 _of_a xs = 
   xs +> List.iter (fun x -> 
     let v_my_wrap _of_a (v1, v2) = 
@@ -301,14 +308,11 @@ and v_base =
 and v_sign = function | Signed -> () | UnSigned -> ()
 and v_floatType = function | CFloat -> () | CDouble -> () | CLongDouble -> ()
 and v_enumType v =
-  raise Todo
-(*
   v_comma_list16
     (v_wrap34
        (fun (v1, v2) ->
           let v1 = v_string v1 and v2 = v_option v_constExpression v2 in ()))
     v
-*)
 and v_functionType (v1, v2) =
   let v1 = v_fullType v1
   and v2 =
