@@ -4,6 +4,8 @@ open Common
 
 module TH = Token_helpers_java
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -17,7 +19,7 @@ let token_to_strpos tok =
 let error_msg_tok tok = 
   let file = TH.file_of_tok tok in
   if !Flag_parsing_java.verbose_parsing
-  then Common.error_message file (token_to_strpos tok) 
+  then Parse_info.error_message file (token_to_strpos tok) 
   else ("error in " ^ file  ^ "set verbose_parsing for more info")
 
 
@@ -63,7 +65,7 @@ let print_parsing_stat_list statxs =
 
 
 let tokens2 file = 
- let table     = Common.full_charpos_to_pos file in
+ let table     = Parse_info.full_charpos_to_pos_large file in
 
  Common.with_open_infile file (fun chan -> 
   let lexbuf = Lexing.from_channel chan in
@@ -74,12 +76,15 @@ let tokens2 file =
 
       (* fill in the line and col information *)
       let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
-        let pi = ii.Ast_java.pinfo in
-        { ii with Ast_java.pinfo=
+        { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
-          
-            (Common.complete_parse_info file table pi)
+           match PI.pinfo_of_info ii with
+           | PI.OriginTok pi ->
+               PI.OriginTok 
+                 (PI.complete_parse_info_large file table pi)
+           | _ -> raise Todo
         })
+
       in
 
       if TH.is_eof tok
@@ -90,7 +95,7 @@ let tokens2 file =
   with
     | Lexer_java.Lexical s -> 
         failwith ("lexical error " ^ s ^ "\n =" ^ 
-                  (Common.error_message file (lexbuf_to_strpos lexbuf)))
+                  (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
     | e -> raise e
  )
 

@@ -3,17 +3,20 @@
  * Released under the GNU General Public License 
  *)
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* The AST java related types *)
 (*****************************************************************************)
 
 (* forunparser: *)
 
-type info = { 
-  pinfo : Common.parse_info;
+type info = Parse_info.info
+(* todo:
   comments_tag: comments_around ref; (* set in comment_annotater.ml *)
+*)
   (* todo? token_info : sometimes useful to know what token it was *)
-}
+
 and il = info list
 
 (* wrap2 is like wrap, except that I use it often for separator such
@@ -246,7 +249,7 @@ and comments_around = {
 }
   and comment_and_relative_pos = {
 
-   minfo: Common.parse_info;
+   minfo: Parse_info.parse_info;
    (* the int represent the number of lines of difference between the
     * current token and the comment. When on same line, this number is 0.
     * When previous line, -1. In some way the after/before in previous
@@ -259,7 +262,7 @@ and comments_around = {
     *)
  }
 
-and comment = Common.parse_info
+and comment = Parse_info.parse_info
 and com = comment list ref
 
 
@@ -274,30 +277,18 @@ let emptyComments= {
 (*****************************************************************************)
 let unwrap = fst
 
-let pos_of_info   ii = ii.pinfo.Common.charpos
-let str_of_info ii = ii.pinfo.Common.str 
-let file_of_info ii = ii.pinfo.Common.file
-let line_of_info ii = ii.pinfo.Common.line
-let col_of_info ii = ii.pinfo.Common.column
+let pos_of_info  = PI.pos_of_info
+let str_of_info  = PI.str_of_info
+let file_of_info = PI.file_of_info
+let line_of_info = PI.line_of_info
+let col_of_info  = PI.col_of_info
 
-let parse_info_of_info ii = ii.pinfo
+let rewrap_str =  PI.rewrap_str
 
-
-let rewrap_str s ii =  
-  let oldpinfo = ii.pinfo in
-  { ii with pinfo = 
-      { oldpinfo with 
-        Common.str = s 
-      }
-  }
+let compare_pos = PI.compare_pos
 
 let todoii = []
 let noii = []
-
-
-
-let compare_pos ii1 ii2 =
-    compare ii1.pinfo.Common.charpos ii2.pinfo.Common.charpos
 
 (*****************************************************************************)
 (* Some constructors *)

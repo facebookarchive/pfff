@@ -18,28 +18,17 @@ open Lexer_helper
 open Parser_java
 
 (*****************************************************************************)
-let tok     lexbuf  = Lexing.lexeme lexbuf
-
-let tokinfo lexbuf  = 
-  { 
-    Ast_java.pinfo = {
-      Common.charpos = Lexing.lexeme_start lexbuf; 
-      Common.str     = Lexing.lexeme lexbuf;
-      (* info filled in a post-lexing phase *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
-    };
-    comments_tag = ref Ast_java.emptyComments;
-  }
-
 exception Lexical of string
 (*exception Unterminated_comment*)
 
+let tok     lexbuf  = 
+  Lexing.lexeme lexbuf
+let tokinfo lexbuf  = 
+  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-let tok_add_s s ii  =
-  Ast_java.rewrap_str ((Ast_java.str_of_info ii) ^ s) ii
+(*todo:    comments_tag = ref Ast_java.emptyComments; *)
 
+let tok_add_s = Parse_info.tok_add_s
 
 (* Java reserved words. *)
 
