@@ -18,7 +18,7 @@ open Common
 open Ast_cpp
 
 module Ast = Ast_cpp
-(*module V = Visitor_cpp *)
+module V = Visitor_cpp
 
 open Highlight_code
 
@@ -117,6 +117,24 @@ let visit_toplevel
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
+
+  let hooks = { V.default_visitor with
+
+    (* -------------------------------------------------------------------- *)
+    V.kfieldkindbis = (fun (k, vx) x -> 
+      match x with
+      | FieldDecl onedecl ->
+          let (nameopt, ft, sto) = onedecl in
+          nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
+            ii +> List.iter (fun ii -> tag ii (Field (Def)))
+          );
+          k x
+      | _ -> k x
+    );
+  }
+  in
+  let visitor = V.mk_visitor hooks in
+  visitor.V.vtoplevel toplevel;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)

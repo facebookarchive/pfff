@@ -28,7 +28,6 @@ module PI = Parse_info
 type info = Parse_info.info
 and tok = info
 
-
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap  = 'a * info list (* TODO CHANGE *)
 
