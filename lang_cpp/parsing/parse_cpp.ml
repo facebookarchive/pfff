@@ -735,6 +735,9 @@ type program2 = toplevel2 list
      and toplevel2 = Ast.toplevel * info_item
 
 
+let program_of_program2 xs = 
+  xs +> List.map fst
+
 (* The use of local refs (remaining_tokens, passed_tokens, ...) makes
  * possible error recovery. Indeed, they allow to skip some tokens and
  * still be able to call again the ocamlyacc parser. It is ugly code
@@ -1160,3 +1163,8 @@ let parse_tokens2 filename =
 
 let parse_tokens a = 
   Common.profile_code "Parse_cpp.parse_tokens" (fun () -> parse_tokens2 a)
+
+
+let parse_program file = 
+  let (ast2, _stat) = parse file in
+  program_of_program2 ast2

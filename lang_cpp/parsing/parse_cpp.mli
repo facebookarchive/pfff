@@ -14,6 +14,9 @@ type program2 = toplevel2 list
 val parse:  
   Common.filename -> (program2 * Parsing_stat_cpp.parsing_stat)
 
+val parse_program:  
+  Common.filename -> Ast_cpp.program
+
 
 val parse_cpp_define_file : 
   Common.filename -> (string, Parsing_hacks.define_body) Common.assoc

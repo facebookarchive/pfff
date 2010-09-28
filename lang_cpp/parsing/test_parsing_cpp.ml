@@ -39,6 +39,11 @@ let test_parse_cpp xs  =
   ()
 
 
+let test_dump_cpp file =
+  let ast = Parse_cpp.parse_program file in
+  let s = Export_ast_cpp.ml_pattern_string_of_program ast in
+  pr s
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -63,5 +68,9 @@ let actions () = [
     "-json", "   <file> export the AST of file into JSON", 
       Common.mk_action_1_arg test_json_js;
 *)
+
+    "-dump_cpp_ml", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp;
+
 ]
 

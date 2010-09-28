@@ -18,6 +18,10 @@
 open Common
 
 open Ast_cpp
+module M = Meta_ast_generic
+
+
+let _current_precision = ref M.default_precision
 
 let rec vof_info v = Parse_info.vof_info v
 and vof_tok v = vof_info v
@@ -875,5 +879,12 @@ and vof_toplevel =
       let v1 = Ocaml.vof_list vof_tok v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
   | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
-and vof_program v = Ocaml.vof_list vof_toplevel v
+and vof_program_orig v = Ocaml.vof_list vof_toplevel v
   
+(* end auto generation *)
+
+let vof_program precision x = 
+  Common.save_excursion _current_precision precision (fun () ->
+    vof_program_orig x
+  )
+
