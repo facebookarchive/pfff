@@ -8,6 +8,7 @@ TARGET=lib
 
 SRC= flag_parsing_cpp.ml \
      ast_cpp.ml \
+     meta_ast_cpp.ml \
      visitor_cpp.ml \
      semantic_cpp.ml \
      lexer_parser_cpp.ml \
@@ -18,12 +19,10 @@ SRC= flag_parsing_cpp.ml \
      parse_cpp.ml \
      test_parsing_cpp.ml \
 
-#     sexp_ast_php.ml \
-#     json_ast_php.ml \
-#     visitor_php.ml lib_parsing_php.ml \
-#     parser_php_mly_helper.ml \
-#     scope_php.ml \
-#     type_php.ml \
+# lib_parsing_php.ml \
+# parser_php_mly_helper.ml \
+# scope_php.ml \
+# type_php.ml \
 
 
 SYSLIBS= str.cma unix.cma 

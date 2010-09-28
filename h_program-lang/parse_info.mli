@@ -104,16 +104,18 @@ val get_orig_info: (parse_info -> 'a) -> info -> 'a
 
 val compare_pos: info -> info -> int
 
-(* reflection *)
-val vof_vtoken:
+(* meta *)
+val vof_token:
   token -> Ocaml.v
-val vtoken_ofv:
-  Ocaml.v -> token
-
+val vof_info:
+  info -> Ocaml.v
 val vof_parse_info: 
   parse_info -> Ocaml.v
 val vof_transformation:
   transformation -> Ocaml.v
+
+val token_ofv:
+  Ocaml.v -> token
 
 val v_pinfo: 
   token -> unit

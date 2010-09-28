@@ -5,7 +5,7 @@ TOP=..
 TARGET=lib
 
 SRC= programming_language.ml \
-     parse_info.ml ast_generic.ml \
+     parse_info.ml ast_generic.ml meta_ast_generic.ml \
      place_code.ml archi_code.ml highlight_code.ml \
      archi_code_lexer.ml archi_code_parse.ml \
      tags_file.ml \

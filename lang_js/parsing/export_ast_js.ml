@@ -17,7 +17,7 @@ open Common
 
 module J = Json_type 
 
-module M = Meta_ast_js
+module M = Meta_ast_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -55,7 +55,7 @@ let string_json_of_program x =
 
 let ml_pattern_string_of_program ast = 
 
-  let precision = { Meta_ast_js.
+  let precision = { Meta_ast_generic.
     full_info = true;
     token_info = true;
     type_info = true;

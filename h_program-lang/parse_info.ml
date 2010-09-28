@@ -319,7 +319,7 @@ let vof_parse_info {
   let bnd = ("str", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 
-let vof_vtoken =
+let vof_token =
   function
   | OriginTok v1 ->
       let v1 = vof_parse_info v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
@@ -350,6 +350,18 @@ and vof_add =
   | AddStr v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AddStr", [ v1 ]))
   | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
+
+let rec vof_info 
+ { token = v_token; comments = v_comments; transfo = v_transfo } =
+  let bnds = [] in
+  let arg = vof_transformation v_transfo in
+  let bnd = ("transfo", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_unit v_comments in
+  let bnd = ("comments", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_token v_token in
+  let bnd = ("token", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 (*****************************************************************************)
 (* ocaml -> vtoken *)
@@ -480,7 +492,7 @@ let pinfo_ofv__ =
          | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
     | sexp -> Ocaml.unexpected_stag _loc sexp
   
-let vtoken_ofv sexp = pinfo_ofv__ sexp
+let token_ofv sexp = pinfo_ofv__ sexp
 
 
 (*****************************************************************************)
@@ -502,27 +514,22 @@ let rec v_pinfo =
   | ExpandedTok ((v1, v2, v3)) ->
       (* TODO ? not sure what behavior we want about expanded tokens.
       *)
-      let v1 = v_parse_info v1
-      and v2 = v_parse_info v2
-      and v3 = Ocaml.v_int v3
+      let _v1 = v_parse_info v1
+      and _v2 = v_parse_info v2
+      and _v3 = Ocaml.v_int v3
       in ()
 
 let rec v_transformation =
   function
   | NoTransfo -> ()
   | Remove -> ()
-  | AddBefore v1 -> let v1 = v_add v1 in ()
-  | AddAfter v1 -> let v1 = v_add v1 in ()
-  | Replace v1 -> let v1 = v_add v1 in ()
+  | AddBefore v1 -> let _v1 = v_add v1 in ()
+  | AddAfter v1 -> let _v1 = v_add v1 in ()
+  | Replace v1 -> let _v1 = v_add v1 in ()
 and v_add =
   function
-  | AddStr v1 -> let v1 = v_string v1 in ()
+  | AddStr v1 -> let _v1 = v_string v1 in ()
   | AddNewlineAndIdent -> ()
-
-(*
-
-
-*)
 
 (*
 let map_pinfo =

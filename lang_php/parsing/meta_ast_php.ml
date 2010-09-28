@@ -9,13 +9,6 @@ open Ast_php
  * I inlined the vof_of_phptype here and vof_of_phpscope
  * (to avoid having multiple meta_of_xxx.ml files)
  *)
-module Common = struct
-
-let vof_either _of_a _of_b =
-  function
-  | Left v1 -> let v1 = _of_a v1 in Ocaml.VSum (("Left", [ v1 ]))
-  | Right v1 -> let v1 = _of_b v1 in Ocaml.VSum (("Right", [ v1 ]))
-end
 
 module Type_php = struct
     let vof_phptype x = 
@@ -47,7 +40,6 @@ let vof_ref = Ocaml.vof_ref
 
 (* pad: generated code starts here *)
 
-
   
 let rec vof_info { pinfo = v_pinfo; comments = v_comments; transfo = v_transfo } =
   let bnds = [] in
@@ -57,7 +49,7 @@ let rec vof_info { pinfo = v_pinfo; comments = v_comments; transfo = v_transfo }
   let arg = Ocaml.vof_unit v_comments in
   let bnd = ("comments", arg) in
   let bnds = bnd :: bnds in
-  let arg = Parse_info.vof_vtoken v_pinfo in
+  let arg = Parse_info.vof_token v_pinfo in
   let bnd = ("pinfo", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
@@ -79,7 +71,7 @@ and vof_bracket _of_a (v1, v2, v3) =
   in Ocaml.VTuple [ v1; v2; v3 ]
 
 and vof_comma_list _of_a xs = 
-  Ocaml.vof_list (fun x -> Common.vof_either _of_a vof_info x) xs
+  Ocaml.vof_list (fun x -> Ocaml.vof_either _of_a vof_info x) xs
 and vof_transformation =
   function
   | NoTransfo -> Ocaml.VSum (("NoTransfo", []))
@@ -643,7 +635,7 @@ and vof_stmt =
       and v2 = vof_tok v2
       and v3 = vof_expr v3
       and v4 = vof_tok v4
-      and v5 = Common.vof_either vof_foreach_variable vof_variable v5
+      and v5 = Ocaml.vof_either vof_foreach_variable vof_variable v5
       and v6 = vof_option vof_foreach_arrow v6
       and v7 = vof_tok v7
       and v8 = vof_colon_stmt v8
@@ -1182,7 +1174,7 @@ and vof_program v =
 
 (* start of pfff specific stuff *)
 
-let pinfo_ofv x = Parse_info.vtoken_ofv x
+let pinfo_ofv x = Parse_info.token_ofv x
   
 let rec info_ofv__ =
   let _loc = "Xxx.info"

@@ -279,6 +279,10 @@ let vof_option ofa x =
 let vof_ref ofa x =
   match x with
   | {contents = x } -> VRef (ofa x)
+let vof_either _of_a _of_b =
+  function
+  | Left v1 -> let v1 = _of_a v1 in VSum (("Left", [ v1 ]))
+  | Right v1 -> let v1 = _of_b v1 in VSum (("Right", [ v1 ]))
 
 let int_ofv = function
   | VInt x -> x

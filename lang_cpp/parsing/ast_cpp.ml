@@ -50,7 +50,7 @@ and 'a comma_list = 'a wrap list
  * instance converters can not have an associated Qtop. But I prefer
  * to simplify the type again.
  *)
-and name = qtop option * qualifier list * ident  
+type name = qtop option * qualifier list * ident  
 
  and ident = identbis wrap 
    and identbis = 
