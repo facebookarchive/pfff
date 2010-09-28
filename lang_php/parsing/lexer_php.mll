@@ -54,14 +54,14 @@ let tok     lexbuf  = Lexing.lexeme lexbuf
 
 let tokinfo_str_pos str pos = 
   { 
-    Ast.pinfo = Parse_info.OriginTok {
-      Common.charpos = pos; 
-      Common.str     = str;
+    Ast.pinfo = Parse_info.OriginTok { Parse_info.
+      charpos = pos; 
+      str     = str;
 
       (* info filled in a post-lexing phase, cf Parse_php.tokens *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
+      line = -1; 
+      column = -1; 
+      file = "";
     };
     comments = ();
     transfo = Ast.NoTransfo;
@@ -620,7 +620,8 @@ rule st_in_scripting = parse
         let syminfo = rewrap_str sym info in
 
         let parse_info = Ast.parse_info_of_info info in
-        let pos_after_sym   = parse_info.charpos + String.length sym in
+        let pos_after_sym   = 
+          parse_info.Parse_info.charpos + String.length sym in
         let pos_after_white = pos_after_sym + String.length white in
 
         let whiteinfo = tokinfo_str_pos white pos_after_sym in

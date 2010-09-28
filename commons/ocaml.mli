@@ -105,3 +105,14 @@ val map_v:
   v -> 
   v
 
+(* other building blocks, used by code generated using ocamltarzan *)
+val map_of_unit: unit -> unit
+val map_of_bool: bool -> bool
+val map_of_int: int -> int
+val map_of_float: float -> float
+val map_of_char: char -> char
+val map_of_string: string -> string
+val map_of_ref: 'a -> 'b -> 'b
+val map_of_option: ('a -> 'b) -> 'a option -> 'b option
+val map_of_list: ('a -> 'a) -> 'a list -> 'a list
+

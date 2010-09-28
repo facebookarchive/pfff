@@ -15,22 +15,13 @@
 
 open Common
 
+open Ocaml
+
 open Ast_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-let map_of_unit x = ()
-let map_of_string (s:string) = s
-let map_of_ref aref x = x (* dont go into ref *)
-let map_of_option v_of_a v = 
-  match v with
-  | None -> None
-  | Some x -> Some (v_of_a x)
-let map_of_list of_a xs = 
-  List.map of_a xs
-let map_of_int x = x
 
 
 module Common = struct
@@ -41,25 +32,6 @@ let map_either _of_a _of_b =
   | Left v1 -> let v1 = _of_a v1 in Left ((v1))
   | Right v1 -> let v1 = _of_b v1 in Right ((v1))
 
-let map_parse_info {
-                     str = v_str;
-                     charpos = v_charpos;
-                     line = v_line;
-                     column = v_column;
-                     file = v_file
-                   } =
-  let v_file = map_filename v_file in
-  let v_column = map_of_int v_column in
-  let v_line = map_of_int v_line in
-  let v_charpos = map_of_int v_charpos in
-  let v_str = map_of_string v_str in
-  {
-    str = v_str;
-    charpos = v_charpos;
-    line = v_line;
-    column = v_column;
-    file = v_file
-  }
 end 
 
 module Scope_php = struct

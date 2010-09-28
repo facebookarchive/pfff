@@ -65,14 +65,14 @@ let string_of_program2 ast2 =
       V.kinfo = (fun (k, _) info ->
         match info.pinfo with
         | Parse_info.OriginTok p ->
-            let line = p.Common.line in 
+            let line = p.Parse_info.line in 
             if line > !cur_line
             then begin
               (line - !cur_line) +> Common.times (fun () -> pp "\n"); 
               cur_line := line;
             end;
 
-            let s =  p.Common.str in
+            let s =  p.Parse_info.str in
             pp s; pp " ";
         | Parse_info.FakeTokStr (s, _opt) ->
             pp s; pp " ";
@@ -103,7 +103,7 @@ let mk_unparser_visitor pp =
     V.kinfo = (fun (k, _) info ->
       match info.pinfo with
       | Parse_info.OriginTok p ->
-          let s =  p.Common.str in
+          let s =  p.Parse_info.str in
           pp s; (* pp " "; *)
       | Parse_info.FakeTokStr (s, _opt) ->
           pp s; pp " ";

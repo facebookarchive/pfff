@@ -9,7 +9,7 @@ open Common
 (* ------------------------------------------------------------------------- *)
 (*s: AST info *)
 (*s: type pinfo *)
-type pinfo = Parse_info.vtoken
+type pinfo = Parse_info.token
   (*s: pinfo constructors *)
   (*x: pinfo constructors *)
   (*x: pinfo constructors *)
@@ -24,7 +24,6 @@ type info = {
    * the Common.parse_info embedded inside the pinfo type.
    *)
   mutable pinfo : pinfo; 
-
   (*s: type info hook *)
   (*TODO*)
   comments: unit;
@@ -730,7 +729,7 @@ and toplevel =
 (* AST helpers *)
 (*****************************************************************************)
 (*s: AST helpers interface *)
-val parse_info_of_info : info -> Common.parse_info
+val parse_info_of_info : info -> Parse_info.parse_info
 (*x: AST helpers interface *)
 val pinfo_of_info : info -> pinfo
 (*x: AST helpers interface *)
@@ -767,7 +766,7 @@ val get_type : expr -> Type_php.phptype
 val set_type : expr -> Type_php.phptype -> unit
 (*x: AST helpers interface *)
 val rewrap_str : string -> info -> info
-val rewrap_parse_info : parse_info -> info -> info
+val rewrap_parse_info : Parse_info.parse_info -> info -> info
 val is_origintok : info -> bool
 val al_info : info -> info
 val compare_pos : info -> info -> int
@@ -777,6 +776,6 @@ val noTypeVar : unit -> lvalue_info
 val noScope : unit -> Scope_php.phpscope ref
 val noFtype : unit -> Type_php.phptype
 
-val fakeInfo: ?next_to:(Common.parse_info * int) option -> string -> info
+val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
 (*e: AST helpers interface *)
 (*e: ast_php.mli *)

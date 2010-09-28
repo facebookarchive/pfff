@@ -42,7 +42,7 @@ open Parse_info
 (* ------------------------------------------------------------------------- *)
 (*s: AST info *)
 (*s: type pinfo *)
-type pinfo = Parse_info.vtoken
+type pinfo = Parse_info.token
   (*s: pinfo constructors *)
   (*x: pinfo constructors *)
   (*x: pinfo constructors *)
@@ -825,12 +825,12 @@ let parse_info_of_info ii =
     -> failwith "parse_info_of_info: no OriginTok"
 (*x: ast_php.ml *)
 (* todo: return a Real | Virt position ? *)
-let pos_of_info  ii = (parse_info_of_info ii).Common.charpos
+let pos_of_info  ii = (parse_info_of_info ii).Parse_info.charpos
 
-let str_of_info  ii = (parse_info_of_info ii).Common.str 
-let file_of_info ii = (parse_info_of_info ii).Common.file
-let line_of_info ii = (parse_info_of_info ii).Common.line
-let col_of_info  ii = (parse_info_of_info ii).Common.column
+let str_of_info  ii = (parse_info_of_info ii).Parse_info.str 
+let file_of_info ii = (parse_info_of_info ii).Parse_info.file
+let line_of_info ii = (parse_info_of_info ii).Parse_info.line
+let col_of_info  ii = (parse_info_of_info ii).Parse_info.column
 (*x: ast_php.ml *)
 let pinfo_of_info ii = ii.pinfo
 (*x: ast_php.ml *)
@@ -838,7 +838,7 @@ let rewrap_str s ii =
   {ii with pinfo =
     (match ii.pinfo with
     | OriginTok pi -> 
-        OriginTok { pi with Common.str = s;}
+        OriginTok { pi with Parse_info.str = s;}
     | FakeTokStr (s, next_to) -> 
         FakeTokStr (s, next_to)
     | Ab -> Ab
@@ -857,7 +857,7 @@ let rewrap_parse_info pi ii =
 (*x: ast_php.ml *)
 (* for error reporting *) 
 let string_of_info ii = 
-  Common.string_of_parse_info (parse_info_of_info ii)
+  Parse_info.string_of_parse_info (parse_info_of_info ii)
 
 let is_origintok ii = 
   match ii.pinfo with
@@ -866,9 +866,9 @@ let is_origintok ii =
 
 
 type posrv = 
-  | Real of Common.parse_info 
+  | Real of Parse_info.parse_info 
   | Virt of 
-      Common.parse_info (* last real info before expanded tok *) * 
+      Parse_info.parse_info (* last real info before expanded tok *) * 
       int (* virtual offset *)
 
 let compare_pos ii1 ii2 =
@@ -886,18 +886,18 @@ let compare_pos ii1 ii2 =
   let pos2 = get_pos (pinfo_of_info ii2) in
   match (pos1,pos2) with
   | (Real p1, Real p2) ->
-      compare p1.Common.charpos p2.Common.charpos
+      compare p1.Parse_info.charpos p2.Parse_info.charpos
   | (Virt (p1,_), Real p2) ->
-      if (compare p1.Common.charpos p2.Common.charpos) =|= (-1) 
+      if (compare p1.Parse_info.charpos p2.Parse_info.charpos) =|= (-1) 
       then (-1) 
       else 1
   | (Real p1, Virt (p2,_)) ->
-      if (compare p1.Common.charpos p2.Common.charpos) =|= 1 
+      if (compare p1.Parse_info.charpos p2.Parse_info.charpos) =|= 1 
       then 1 
       else (-1)
   | (Virt (p1,o1), Virt (p2,o2)) ->
-      let poi1 = p1.Common.charpos in
-      let poi2 = p2.Common.charpos in
+      let poi1 = p1.Parse_info.charpos in
+      let poi2 = p2.Parse_info.charpos in
       match compare poi1 poi2 with
       |	-1 -> -1
       |	0 -> compare o1 o2

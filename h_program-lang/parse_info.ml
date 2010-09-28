@@ -20,7 +20,7 @@ open Common
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Type *)
+(* Types *)
 (*****************************************************************************)
 
 (* 
@@ -128,10 +128,6 @@ and transformation =
     | AddNewlineAndIdent
 
  (* with tarzan *)
-
-(*****************************************************************************)
-(* Stat *)
-(*****************************************************************************)
 
 type parsing_stat = {
   filename: Common.filename;
@@ -463,6 +459,7 @@ let map_pinfo =
       failwith "map: ExpandedTok: TODO"
 *)
 
+open Ocaml
 
 let sexp_of_parse_info {
                          str = v_str;
@@ -487,12 +484,37 @@ let sexp_of_parse_info {
   let arg = Conv.sexp_of_string v_str in
   let bnd = Sexp.List [ Sexp.Atom "str:"; arg ] in
   let bnds = bnd :: bnds in Sexp.List bnds
+
+let map_parse_info {
+                     str = v_str;
+                     charpos = v_charpos;
+                     line = v_line;
+                     column = v_column;
+                     file = v_file
+                   } =
+  let v_file = map_of_string v_file in
+  let v_column = map_of_int v_column in
+  let v_line = map_of_int v_line in
+  let v_charpos = map_of_int v_charpos in
+  let v_str = map_of_string v_str in
+  {
+    str = v_str;
+    charpos = v_charpos;
+    line = v_line;
+    column = v_column;
+    file = v_file
+  }
+
   
 
 let string_of_parse_info x = 
   spf "%s at %s:%d:%d" x.str x.file x.line x.column
 let string_of_parse_info_bis x = 
   spf "%s:%d:%d" x.file x.line x.column
+
+(*****************************************************************************)
+(* Error location report *)
+(*****************************************************************************)
 
 let (info_from_charpos2: int -> filename -> (int * int * string)) = 
  fun charpos filename ->
