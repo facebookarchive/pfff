@@ -581,7 +581,7 @@ and vof_onedecl (v1, v2, v3) =
     Ocaml.vof_option
       (vof_wrap
          (fun (v1, v2) ->
-            let v1 = Ocaml.vof_string v1
+            let v1 = vof_name v1
             and v2 = Ocaml.vof_option vof_initialiser v2
             in Ocaml.VTuple [ v1; v2 ]))
       v1

@@ -522,6 +522,11 @@ let mk_e e ii = ((e, Ast.noType()), ii)
 %type <Ast_cpp.expression> expr
 %type <Ast_cpp.fullType> type_id
 
+%type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
+   declarator
+%type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
+   declaratorsd
+
 %%
 /*(*************************************************************************)*/
 /*
@@ -1372,7 +1377,12 @@ direct_d:
 /*(*----------------------------*)*/
 declarator_id:
  | tcolcol_opt id_expression 
-     { let _name = ($1, fst $2, snd $2) in "todo",fakeInfo()   (*TODO*) }
+     { let _name = ($1, fst $2, snd $2) in 
+       match snd $2 with
+       | IdIdent s, iis ->
+           s, List.hd iis
+       | _ -> raise Todo
+     }
 /*(* TODO ::opt nested-name-specifieropt type-name*) */
 
 
@@ -1674,7 +1684,10 @@ simple_declaration2:
            in
 	   if fst (unwrap storage) = StoTypedef 
 	   then LP.add_typedef s;
-           (Some ((s, ini), iis::iini), f returnType, unwrap storage),
+
+           (* TODO *)
+           (Some ((semi_fake_name (s, iis), ini), iis ::iini), 
+           f returnType, unwrap storage),
            iivirg 
          )
          ),  ($3::iistart::snd storage))
@@ -1999,7 +2012,8 @@ member_declarator:
  | declaratorsd                    
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
-         let var = Some ((fst name, None), [snd name]) in
+         
+         let var = Some ((semi_fake_name name, None), [snd name]) in
          let onedecl = (var, partialt returnType, unwrap_storage) in
          (FieldDecl onedecl, noii)
        )
@@ -2016,7 +2030,7 @@ member_declarator:
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
          let ini = InitExpr (snd $2), noii in
-         let var = Some ((fst name, Some ini), [snd name;fst $2]) in
+         let var = Some ((semi_fake_name name, Some ini), [snd name;fst $2]) in
          let onedecl = (var, partialt returnType, unwrap_storage) in
          (FieldDecl onedecl, noii)
        )
@@ -2026,7 +2040,8 @@ member_declarator:
  | declaratorsd col const_expr2 
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
-         let var = Some (fst name) in
+         let s = (fst name) in
+         let var = Some (s) in
          BitField (var, returnType, $3), [snd name; $2]
        )
      }

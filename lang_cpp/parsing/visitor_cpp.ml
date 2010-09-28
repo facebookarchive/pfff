@@ -594,7 +594,7 @@ and v_onedecl (v1, v2, v3) =
     v_option
       (v_wrap16
          (fun (v1, v2) ->
-            let v1 = v_string v1 and v2 = v_option v_initialiser v2 in ()))
+            let v1 = v_name v1 and v2 = v_option v_initialiser v2 in ()))
       v1
   and v2 = v_fullType v2
   and v3 = v_storage v3
