@@ -8,6 +8,7 @@ TARGET=lib
 
 SRC= flag_parsing_cpp.ml \
      ast_cpp.ml \
+     visitor_cpp.ml \
      semantic_cpp.ml \
      lexer_parser_cpp.ml \
      parser_cpp.ml lexer_cpp.ml \
@@ -70,6 +71,9 @@ clean::
 	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output
 beforedepend:: parser_cpp.ml parser_cpp.mli
 
+
+visitor_cpp.cmo: visitor_cpp.ml
+	$(OCAMLC) -w y -c $<
 
 ##############################################################################
 # Generic rules

@@ -15,6 +15,8 @@
 
 open Common
 
+open Ocaml (* for v_int, v_bool, etc *)
+
 open Ast_php
 
 (*****************************************************************************)
@@ -45,13 +47,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_php.verbose_visit
  * update: reordered a few things to help unparse_php.ml
  *)
 
-module Common = struct
-    let v_either of_a of_b x = 
-      match x with
-      | Left a -> of_a a
-      | Right b -> of_b b
-end 
-
 module Scope_php = struct
 open Scope_php
 (* TODO ? need visitor for scope ? *)
@@ -64,15 +59,10 @@ open Type_php
 let v_phptype x = ()
 end
 
-let v_unit x = ()
-let v_string (s:string) = ()
+(* todo? why don't use the one in Ocaml.ml ? because it generates
+ * a compilation error :(
+ *)
 let v_ref aref x = () (* dont go into ref *)
-let v_option v_of_a v = 
-  match v with
-  | None -> ()
-  | Some x -> v_of_a x
-let v_list of_a xs = 
-  List.iter of_a xs
 
 
 
@@ -833,7 +823,7 @@ and v_stmt xxx =
       and v2 = v_tok v2
       and v3 = v_expr v3
       and v4 = v_tok v4
-      and v5 = Common.v_either v_foreach_variable v_variable v5
+      and v5 = Ocaml.v_either v_foreach_variable v_variable v5
       and v6 = v_option v_foreach_arrow v6
       and v7 = v_tok v7
       and v8 = v_colon_stmt v8

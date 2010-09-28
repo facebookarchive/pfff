@@ -123,3 +123,7 @@ val v_int: int -> unit
 val v_string: string -> unit
 val v_option: ('a -> unit) -> 'a option -> unit
 val v_list: ('a -> unit) -> 'a list -> unit
+val v_ref: ('a -> unit) -> 'a ref -> unit
+val v_either: 
+  ('a -> unit) -> ('b -> unit) -> 
+  ('a, 'b) Common.either -> unit

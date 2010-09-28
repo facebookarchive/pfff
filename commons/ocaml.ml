@@ -995,6 +995,11 @@ let v_option v_of_a v =
 let v_list of_a xs = 
   List.iter of_a xs
 
+let v_either of_a of_b x = 
+  match x with
+  | Left a -> of_a a
+  | Right b -> of_b b
+
 (*****************************************************************************)
 (* Tests *)
 (*****************************************************************************)
