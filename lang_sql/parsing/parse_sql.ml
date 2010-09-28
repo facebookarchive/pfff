@@ -58,7 +58,7 @@ let parse2 file =
       ()
     with
     | Parsing.Parse_error -> 
-        pr2 (Common.error_message file (lexbuf_to_strpos lexbuf))
+        pr2 (Parse_info.error_message file (lexbuf_to_strpos lexbuf))
   )
 
 let parse a = 

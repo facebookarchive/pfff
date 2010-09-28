@@ -29,19 +29,11 @@ open Parser_sql
 
 exception Lexical of string
 
-let tok     lexbuf  = Lexing.lexeme lexbuf
+let tok     lexbuf  = 
+  Lexing.lexeme lexbuf
+let tokinfo lexbuf  = 
+  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-let tokinfo lexbuf  = { 
-  Ast.pinfo = {
-      Common.charpos = Lexing.lexeme_start lexbuf; 
-      Common.str     = Lexing.lexeme lexbuf;
-
-      (* info filled in a post-lexing phase, cf Parse_sql.tokens *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
-  };
-}
 
 let keyword_table = Common.hash_of_list [
 

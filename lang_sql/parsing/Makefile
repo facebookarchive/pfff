@@ -12,10 +12,9 @@ SRC= flag_parsing_sql.ml \
      parse_sql.ml \
      test_parsing_sql.ml
 
-
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma $(TOP)/h_program-lang/lib.cma
-INCLUDEDIRS= $(TOP)/commons $(TOP/commons/lib-sexp $(TOP)/commons/lib-json \
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
   $(TOP)/h_program-lang
 
 ##############################################################################
