@@ -106,6 +106,12 @@ type token =
 
    (* with tarzan *)
 
+type posrv = 
+  | Real of parse_info 
+  | Virt of 
+      parse_info (* last real info before expanded tok *) * 
+      int (* virtual offset *)
+
 type info = { 
   (* contains among other things the position of the token through
    * the Common.parse_info embedded inside the pinfo type.
@@ -138,6 +144,15 @@ let default_stat file =  {
     filename = file;
     correct = 0; bad = 0;
 }
+
+(*****************************************************************************)
+(* string_of *)
+(*****************************************************************************)
+
+let string_of_parse_info x = 
+  spf "%s at %s:%d:%d" x.str x.file x.line x.column
+let string_of_parse_info_bis x = 
+  spf "%s:%d:%d" x.file x.line x.column
 
 (*****************************************************************************)
 (* Lexer helpers *)
@@ -188,6 +203,8 @@ let str_of_info  ii = (parse_info_of_info ii).str
 let file_of_info ii = (parse_info_of_info ii).file
 let line_of_info ii = (parse_info_of_info ii).line
 let col_of_info  ii = (parse_info_of_info ii).column
+
+(* todo: return a Real | Virt position ? *)
 let pos_of_info  ii = (parse_info_of_info ii).charpos
 
 let pinfo_of_info ii = ii.token
@@ -240,6 +257,38 @@ let get_orig_info f ii =
       failwith "Ab"
 
 
+let compare_pos ii1 ii2 =
+  let get_pos = function
+    | OriginTok pi -> Real pi
+    | FakeTokStr _
+    | Ab  
+      -> failwith "get_pos: Ab or FakeTok"
+    | ExpandedTok (pi_pp, pi_orig, offset) ->
+        Virt (pi_orig, offset)
+  in
+  let pos1 = get_pos (pinfo_of_info ii1) in
+  let pos2 = get_pos (pinfo_of_info ii2) in
+  match (pos1,pos2) with
+  | (Real p1, Real p2) ->
+      compare p1.charpos p2.charpos
+  | (Virt (p1,_), Real p2) ->
+      if (compare p1.charpos p2.charpos) =|= (-1) 
+      then (-1) 
+      else 1
+  | (Real p1, Virt (p2,_)) ->
+      if (compare p1.charpos p2.charpos) =|= 1 
+      then 1 
+      else (-1)
+  | (Virt (p1,o1), Virt (p2,o2)) ->
+      let poi1 = p1.charpos in
+      let poi2 = p2.charpos in
+      match compare poi1 poi2 with
+      |	-1 -> -1
+      |	0 -> compare o1 o2
+      |	1 -> 1
+      | _ -> raise Impossible
+
+
 
 (*****************************************************************************)
 (* vtoken -> ocaml *)
@@ -289,6 +338,18 @@ let vof_vtoken =
       Ocaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
 
 
+let rec vof_transformation =
+  function
+  | NoTransfo -> Ocaml.VSum (("NoTransfo", []))
+  | Remove -> Ocaml.VSum (("Remove", []))
+  | AddBefore v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddBefore", [ v1 ]))
+  | AddAfter v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddAfter", [ v1 ]))
+  | Replace v1 -> let v1 = vof_add v1 in Ocaml.VSum (("Replace", [ v1 ]))
+and vof_add =
+  function
+  | AddStr v1 ->
+      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AddStr", [ v1 ]))
+  | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
 
 (*****************************************************************************)
 (* ocaml -> vtoken *)
@@ -423,25 +484,43 @@ let vtoken_ofv sexp = pinfo_ofv__ sexp
 
 
 (*****************************************************************************)
-(* misc *)
+(* Visitor *)
 (*****************************************************************************)
 
-(*
 let v_parse_info x = ()
 let v_string (s:string) = ()
 
-let rec v_parse_info = function 
-  | OriginTok v1 -> 
-      let _v1 = v_parse_info v1 
-      in () 
-  | Ab -> () 
-  | FakeTokStr (s, opt) -> 
-      v_string s
-
-  | ExpandedTok (pi_pp, pi_orig, offset) -> 
+let rec v_pinfo =
+  function
+  | OriginTok v1 -> let _v1 = v_parse_info v1 in ()
+  | FakeTokStr ((v1, v2)) ->
+      let _v1 = v_string v1 
+      and _v2 = Ocaml.v_option v_parse_info v2 
+      in 
+      ()
+  | Ab -> ()
+  | ExpandedTok ((v1, v2, v3)) ->
       (* TODO ? not sure what behavior we want about expanded tokens.
       *)
-      ()
+      let v1 = v_parse_info v1
+      and v2 = v_parse_info v2
+      and v3 = Ocaml.v_int v3
+      in ()
+
+let rec v_transformation =
+  function
+  | NoTransfo -> ()
+  | Remove -> ()
+  | AddBefore v1 -> let v1 = v_add v1 in ()
+  | AddAfter v1 -> let v1 = v_add v1 in ()
+  | Replace v1 -> let v1 = v_add v1 in ()
+and v_add =
+  function
+  | AddStr v1 -> let v1 = v_string v1 in ()
+  | AddNewlineAndIdent -> ()
+
+(*
+
 
 *)
 
@@ -506,11 +585,6 @@ let map_parse_info {
   }
 
   
-
-let string_of_parse_info x = 
-  spf "%s at %s:%d:%d" x.str x.file x.line x.column
-let string_of_parse_info_bis x = 
-  spf "%s:%d:%d" x.file x.line x.column
 
 (*****************************************************************************)
 (* Error location report *)

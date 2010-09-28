@@ -15,7 +15,10 @@
 
 open Common
 
+open Ocaml
+
 open Ast_js
+
 
 (*****************************************************************************)
 (* Prelude *)
@@ -36,18 +39,6 @@ open Type_js
 let v_jstype x = ()
 end
 
-
-let v_unit x = ()
-let v_bool x = ()
-let v_int x = ()
-let v_string (s:string) = ()
-let v_ref aref x = () (* dont go into ref *)
-let v_option v_of_a v = 
-  match v with
-  | None -> ()
-  | Some x -> v_of_a x
-let v_list of_a xs = 
-  List.iter of_a xs
 
 
 (* hooks *)
@@ -79,23 +70,14 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 (* start of auto generation *)
 
 
-let rec v_pinfo =
-  function
-  | OriginTok v1 -> let v1 = Common.v_parse_info v1 in ()
-  | FakeTokStr ((v1, v2)) ->
-      let v1 = v_string v1 and v2 = v_option Common.v_parse_info v2 in ()
-  | Ab -> ()
-  | ExpandedTok ((v1, v2, v3)) ->
-      let v1 = Common.v_parse_info v1
-      and v2 = Common.v_parse_info v2
-      and v3 = v_int v3
-      in ()
 
-and v_info x =
-  let k x = match x with { pinfo = v_pinfox; comments = v_comments; transfo = v_transfo } ->
-    let arg = v_pinfo v_pinfox in
+let rec v_info x =
+  let k x = match x with { Parse_info.
+     token = v_pinfox; comments = v_comments; transfo = v_transfo 
+    } ->
+    let arg = Parse_info.v_pinfo v_pinfox in
     let arg = v_unit v_comments in 
-    let arg = v_transformation v_transfo in 
+    let arg = Parse_info.v_transformation v_transfo in 
     ()
   in
   vin.kinfo (k, all_functions) x
@@ -188,17 +170,6 @@ and v_comma_list10 _of_a xs =
 
 
 and v_sc v = v_option v_tok v
-and v_transformation =
-  function
-  | NoTransfo -> ()
-  | Remove -> ()
-  | AddBefore v1 -> let v1 = v_add v1 in ()
-  | AddAfter v1 -> let v1 = v_add v1 in ()
-  | Replace v1 -> let v1 = v_add v1 in ()
-and v_add =
-  function
-  | AddStr v1 -> let v1 = v_string v1 in ()
-  | AddNewlineAndIdent -> ()
 
 and v_name v = v_wrap v_string v
   

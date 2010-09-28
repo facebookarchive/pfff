@@ -64,15 +64,15 @@ let mk_info_item2 filename toks =
     begin
       toks +> List.iter (fun tok -> 
         match TH.pinfo_of_tok tok with
-        | Ast.OriginTok _ 
-        | Ast.ExpandedTok _ ->
+        | Parse_info.OriginTok _ 
+        | Parse_info.ExpandedTok _ ->
             Buffer.add_string buf (TH.str_of_tok tok)
 
         (* the virtual semicolon *)
-        | Ast.FakeTokStr _ -> 
+        | Parse_info.FakeTokStr _ -> 
             ()
 
-        | Ast.Ab _  -> raise Impossible
+        | Parse_info.Ab _  -> raise Impossible
       );
       Buffer.contents buf
     end
@@ -105,7 +105,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
           let toks_before_max, toks_after = 
             Common.profile_code "spanning tokens" (fun () ->
               toks +> Common.span_tail_call (fun tok ->
-                match Ast_js.compare_pos (TH.info_of_tok tok) max with
+                match Parse_info.compare_pos (TH.info_of_tok tok) max with
                 | -1 | 0 -> true
                 | 1 -> false
                 | _ -> raise Impossible
@@ -127,7 +127,7 @@ let distribute_info_items_toplevel a b c =
 let error_msg_tok tok = 
   let file = TH.file_of_tok tok in
   if !Flag.verbose_parsing
-  then Common.error_message file (token_to_strpos tok) 
+  then Parse_info.error_message file (token_to_strpos tok) 
   else ("error in " ^ file  ^ "set verbose_parsing for more info")
 
 let print_bad line_error (start_line, end_line) filelines  = 
@@ -190,7 +190,7 @@ let print_parsing_stat_list statxs =
 (*****************************************************************************)
 
 let tokens2 file = 
-  let table     = Common.full_charpos_to_pos_large file in
+  let table     = Parse_info.full_charpos_to_pos_large file in
 
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
@@ -208,15 +208,15 @@ let tokens2 file =
         then Lexer_js._last_non_whitespace_like_token := Some tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
-        { ii with Ast.pinfo=
+        { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
                match Ast.pinfo_of_info ii with
-               | Ast.OriginTok pi ->
-                          Ast.OriginTok 
-                            (Common.complete_parse_info_large file table pi)
-               | Ast.FakeTokStr _
-               | Ast.Ab  
-               | Ast.ExpandedTok _
+               | Parse_info.OriginTok pi ->
+                   Parse_info.OriginTok 
+                     (Parse_info.complete_parse_info_large file table pi)
+               | Parse_info.FakeTokStr _
+               | Parse_info.Ab  
+               | Parse_info.ExpandedTok _
                         -> raise Impossible
                   })
         in
@@ -229,7 +229,7 @@ let tokens2 file =
   with
   | Lexer_js.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                   (Common.error_message file (lexbuf_to_strpos lexbuf)))
+                (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
 

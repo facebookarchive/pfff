@@ -15,6 +15,12 @@ type token =
   | ExpandedTok of parse_info *  parse_info * int 
   | Ab
 
+type posrv = 
+  | Real of parse_info 
+  | Virt of 
+      parse_info (* last real info before expanded tok *) * 
+      int (* virtual offset *)
+
 type info = {
   (* contains among other things the position of the token through
    * the Common.parse_info embedded inside the pinfo type.
@@ -96,8 +102,20 @@ val get_pi: token -> parse_info
 val get_info: (parse_info -> 'a) -> info -> 'a
 val get_orig_info: (parse_info -> 'a) -> info -> 'a
 
+val compare_pos: info -> info -> int
+
 (* reflection *)
 val vof_vtoken:
   token -> Ocaml.v
 val vtoken_ofv:
   Ocaml.v -> token
+
+val vof_parse_info: 
+  parse_info -> Ocaml.v
+val vof_transformation:
+  transformation -> Ocaml.v
+
+val v_pinfo: 
+  token -> unit
+val v_transformation: 
+  transformation -> unit

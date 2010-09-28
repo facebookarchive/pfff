@@ -23,6 +23,8 @@ module Ast = Ast_js
 
 module TH = Token_helpers_js
 
+open Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -59,17 +61,17 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
     *)
    let fake_tok = 
      let info =  {
-       Ast.pinfo = Ast.OriginTok {
-         Common.charpos = 0; 
-         Common.str     = "";
+       Parse_info.token = Parse_info.OriginTok { Parse_info.
+         charpos = 0; 
+         str     = "";
 
          (* info filled in a post-lexing phase, cf Parse_sql.tokens *)
-         Common.line = -1; 
-         Common.column = -1; 
-         Common.file = "";
+         line = -1; 
+         column = -1; 
+         file = "";
        };
        comments = ();
-       transfo = Ast.NoTransfo;
+       transfo = Parse_info.NoTransfo;
      }
      in
      Parser_js.T_SEMICOLON (info)
@@ -82,13 +84,13 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
 
     let pp_tok tok = 
       match TH.pinfo_of_tok tok with
-      | Ast.OriginTok _ -> 
+      | Parse_info.OriginTok _ -> 
           pp (TH.str_of_tok tok);
 
-      | Ast.ExpandedTok _ -> 
+      | Parse_info.ExpandedTok _ -> 
           ()
 
-      | Ast.Ab _ | Ast.FakeTokStr _ -> raise Impossible
+      | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
     in
     let pp_add toadd = 
       match toadd with

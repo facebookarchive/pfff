@@ -39,29 +39,6 @@ let _current_precision = ref default_precision
 module Common2 = struct
 let vof_filename v = Ocaml.vof_string v
 
-let vof_parse_info {
-                     str = v_str;
-                     charpos = v_charpos;
-                     line = v_line;
-                     column = v_column;
-                     file = v_file
-                   } =
-  let bnds = [] in
-  let arg = vof_filename v_file in
-  let bnd = ("file", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_column in
-  let bnd = ("column", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_line in
-  let bnd = ("line", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_charpos in
-  let bnd = ("charpos", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_string v_str in
-  let bnd = ("str", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-
 let vof_either _of_a _of_b =
   function
   | Left v1 -> let v1 = _of_a v1 in Ocaml.VSum (("Left", [ v1 ]))
@@ -75,24 +52,10 @@ module Type_js = struct
 end
 
 
-let vof_pinfo =
-  function
-  | OriginTok v1 ->
-      let v1 = Common2.vof_parse_info v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
-  | FakeTokStr ((v1, v2)) ->
-      let v1 = Ocaml.vof_string v1
-      and v2 = Ocaml.vof_option Common2.vof_parse_info v2
-      in Ocaml.VSum (("FakeTokStr", [ v1; v2 ]))
-  | Ab -> Ocaml.VSum (("Ab", []))
-  | ExpandedTok ((v1, v2, v3)) ->
-      let v1 = Common2.vof_parse_info v1
-      and v2 = Common2.vof_parse_info v2
-      and v3 = Ocaml.vof_int v3
-      in Ocaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
-  
+ 
 let rec
   vof_info x = 
-  let { pinfo = v_pinfo; comments = v_comments; transfo = v_transfo } = x 
+  let { PI.token = v_pinfo; comments = v_comments; transfo = v_transfo } = x 
   in
   
   if not !_current_precision.full_info
@@ -103,13 +66,13 @@ let rec
     ]
   else 
   let bnds = [] in
-  let arg = vof_transformation v_transfo in
+  let arg = Parse_info.vof_transformation v_transfo in
   let bnd = ("transfo", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_unit v_comments in
   let bnd = ("comments", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_pinfo v_pinfo in
+  let arg = Parse_info.vof_vtoken v_pinfo in
   let bnd = ("pinfo", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
@@ -141,18 +104,6 @@ and vof_comma_list _of_a xs =
   else Ocaml.vof_list _of_a (Ast.uncomma xs)
 
 and vof_sc v = Ocaml.vof_option vof_tok v
-and vof_transformation =
-  function
-  | NoTransfo -> Ocaml.VSum (("NoTransfo", []))
-  | Remove -> Ocaml.VSum (("Remove", []))
-  | AddBefore v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddBefore", [ v1 ]))
-  | AddAfter v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddAfter", [ v1 ]))
-  | Replace v1 -> let v1 = vof_add v1 in Ocaml.VSum (("Replace", [ v1 ]))
-and vof_add =
-  function
-  | AddStr v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AddStr", [ v1 ]))
-  | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
   
 let vof_name v = vof_wrap Ocaml.vof_string v
   

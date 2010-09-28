@@ -15,6 +15,8 @@
 
 open Common
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -26,60 +28,8 @@ open Common
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
-type pinfo = 
-    (* Present both in the AST and list of tokens *)
-    | OriginTok  of Common.parse_info
-
-    (* Present only in the AST and generated after parsing. Can be used
-     * when building some extra AST elements. *)
-    | FakeTokStr of string (* to help the generic pretty printer *)
-        * Common.parse_info option (* close token *)
-
-    (* The Ab constructor is (ab)used to call '=' to compare 
-     * big AST portions. Indeed as we keep the token information in the AST, 
-     * if we have an expression in the code like "1+1" and want to test if
-     * it's equal to another code like "1+1" located elsewhere, then
-     * the Pervasives.'=' of OCaml will not return true because 
-     * when it recursively goes down to compare the leaf of the AST, that is
-     * the parse_info, there will be some differences of positions. If instead
-     * all leaves use Ab, then there is no position information and we can 
-     * use '='. See also the 'al_info' function below.
-     * 
-     * Ab means AbstractLineTok. Use a short name to not
-     * polluate in debug mode.
-     *)
-    | Ab
-
-    (* In the case of a preprocessing phase, we can incorporate
-     * the tokens of the preprocessed code with the tokens from
-     * the original file. We want to mark those "expanded" tokens 
-     * with a special tag so that if someone do some transformation on 
-     * those expanded tokens they will get a warning (because we may have
-     * trouble back-propagating the transformation back to the original file).
-     *)
-    | ExpandedTok of 
-        (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
-        Common.parse_info  *
-       (* kind of virtual position. This info refers to the last token
-        * before a serie of expanded tokens and the int is an offset.
-        * The goal is to be able to compare the position of tokens
-        * between then, even for expanded tokens. See compare_pos 
-        * below.
-        *)
-        Common.parse_info * int 
-
-  (* with tarzan *)
-
-type info = { 
-  (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
-   *)
-  mutable pinfo : pinfo; 
-  comments: unit; (* TODO *)
-
-  mutable transfo: transformation;
-  }
-
+type pinfo = Parse_info.token
+type info = Parse_info.info
 and tok = info
 
 (* a shortcut to annotate some information with token/position information *)
@@ -92,17 +42,6 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 
 (* semicolon. Can be None when was implicitely inserted during parsing *)
 and sc = tok option
-
-and transformation = 
-  | NoTransfo
-  | Remove 
-  | AddBefore of add
-  | AddAfter of add
-  | Replace of add
-
-  and add = 
-    | AddStr of string
-    | AddNewlineAndIdent
 
  (* with tarzan *)
 
@@ -292,9 +231,9 @@ and toplevel =
 (*****************************************************************************)
 
 let fakeInfo () = 
-  { 
-    pinfo = FakeTokStr ("FAKE", None);
-    transfo = NoTransfo;
+  { PI.
+    token = PI.FakeTokStr ("FAKE", None);
+    transfo = PI.NoTransfo;
     comments = ();
   }
 
@@ -327,36 +266,18 @@ let map_comma_list f xs = List.map (fun x ->
 
 let untype (e, xinfo) = e
 
-let parse_info_of_info ii = 
-  match ii.pinfo with
-  | OriginTok pinfo -> pinfo
-  (* TODO ? dangerous ? *)
-  | ExpandedTok (pinfo_pp, pinfo_orig, offset) -> pinfo_pp
-  | FakeTokStr (s, Some pinfo) -> pinfo
-
-  | FakeTokStr (_, None)
-  | Ab 
-    -> failwith "parse_info_of_info: no OriginTok"
-
+let parse_info_of_info = PI.parse_info_of_info
 (* todo: return a Real | Virt position ? *)
-let pos_of_info  ii = (parse_info_of_info ii).Common.charpos
+let pos_of_info  = PI.pos_of_info
+let str_of_info  = PI.str_of_info
+let file_of_info = PI.file_of_info
+let line_of_info = PI.line_of_info
+let col_of_info  = PI.col_of_info
 
-let str_of_info  ii = (parse_info_of_info ii).Common.str 
-let file_of_info ii = (parse_info_of_info ii).Common.file
-let line_of_info ii = (parse_info_of_info ii).Common.line
-let col_of_info  ii = (parse_info_of_info ii).Common.column
+let pinfo_of_info = PI.pinfo_of_info
 
-let pinfo_of_info ii = ii.pinfo
-
-let rewrap_str s ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok pi -> OriginTok { pi with Common.str = s;}
-    | FakeTokStr (s, info) -> FakeTokStr (s, info)
-    | Ab -> Ab
-    | ExpandedTok _ -> failwith "rewrap_str: ExpandedTok not allowed here"
-    )
-  }
+let rewrap_str =  PI.rewrap_str
+(*
 let rewrap_parse_info pi ii =  
   {ii with pinfo =
     (match ii.pinfo with
@@ -365,53 +286,15 @@ let rewrap_parse_info pi ii =
         failwith "rewrap_parseinfo: no OriginTok"
     )
   }
+*)
 
 (* for error reporting *) 
 let string_of_info ii = 
-  Common.string_of_parse_info (parse_info_of_info ii)
+  Parse_info.string_of_parse_info (parse_info_of_info ii)
 
-let is_origintok ii = 
-  match ii.pinfo with
-  | OriginTok pi -> true
-  | FakeTokStr _ | Ab | ExpandedTok _ -> false
+let is_origintok = Parse_info.is_origintok
 
 
-type posrv = 
-  | Real of Common.parse_info 
-  | Virt of 
-      Common.parse_info (* last real info before expanded tok *) * 
-      int (* virtual offset *)
-
-let compare_pos ii1 ii2 =
-  let get_pos = function
-    | OriginTok pi -> Real pi
-    | FakeTokStr _
-    | Ab  
-      -> failwith "get_pos: Ab or FakeTok"
-    | ExpandedTok (pi_pp, pi_orig, offset) ->
-        Virt (pi_orig, offset)
-  in
-  let pos1 = get_pos (pinfo_of_info ii1) in
-  let pos2 = get_pos (pinfo_of_info ii2) in
-  match (pos1,pos2) with
-  | (Real p1, Real p2) ->
-      compare p1.Common.charpos p2.Common.charpos
-  | (Virt (p1,_), Real p2) ->
-      if (compare p1.Common.charpos p2.Common.charpos) =|= (-1) 
-      then (-1) 
-      else 1
-  | (Real p1, Virt (p2,_)) ->
-      if (compare p1.Common.charpos p2.Common.charpos) =|= 1 
-      then 1 
-      else (-1)
-  | (Virt (p1,o1), Virt (p2,o2)) ->
-      let poi1 = p1.Common.charpos in
-      let poi2 = p2.Common.charpos in
-      match compare poi1 poi2 with
-      |	-1 -> -1
-      |	0 -> compare o1 o2
-      |	1 -> 1
-      | _ -> raise Impossible
 
 let get_type (e: expr) = (snd e).t
 let set_type (e: expr) (ty: Type_js.jstype) = 
@@ -429,7 +312,7 @@ let set_type (e: expr) (ty: Type_js.jstype) =
  *)
 
 let al_info x = 
-  { x with pinfo = Ab }
+  { x with PI.token = PI.Ab }
 
 (*****************************************************************************)
 (* Views *)
@@ -447,9 +330,9 @@ let al_info x =
 let fakeInfoAttach info = 
   let info = rewrap_str "FAKE" info in
   let pinfo = parse_info_of_info info in
-  { 
-    pinfo = FakeTokStr ("FAKE", Some pinfo);
-    transfo = NoTransfo;
+  { PI.
+    token = PI.FakeTokStr ("FAKE", Some (pinfo, -1));
+    transfo = PI.NoTransfo;
     comments = ();
   }
 

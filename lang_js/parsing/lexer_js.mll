@@ -39,23 +39,10 @@ let yyless n lexbuf =
     Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
   }
 
-let tok     lexbuf  = Lexing.lexeme lexbuf
-
-let tokinfo_str_pos str pos = {
-  Ast.pinfo = Ast.OriginTok {
-      Common.charpos = pos; 
-      Common.str     = str;
-
-      (* info filled in a post-lexing phase, cf Parse_sql.tokens *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
-  };
-  comments = ();
-  transfo = Ast.NoTransfo;
-}
+let tok     lexbuf  = 
+  Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
-  tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let tok_add_s s ii  =
   Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii

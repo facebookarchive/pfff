@@ -116,3 +116,10 @@ val map_of_ref: 'a -> 'b -> 'b
 val map_of_option: ('a -> 'b) -> 'a option -> 'b option
 val map_of_list: ('a -> 'a) -> 'a list -> 'a list
 
+
+val v_unit: unit -> unit
+val v_bool: bool -> unit
+val v_int: int -> unit
+val v_string: string -> unit
+val v_option: ('a -> unit) -> 'a option -> unit
+val v_list: ('a -> unit) -> 'a list -> unit
