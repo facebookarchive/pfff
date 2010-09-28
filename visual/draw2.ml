@@ -675,10 +675,10 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
     | 1 -> 0.1, 0.8
     | 2 -> 0.05, 0.2
     | 3 -> 0.03, 0.4
-    | 4 -> 0.02, 0.6
-    | 5 -> 0.01, 0.7
-    | 6 -> 0.005, 0.8
-    | _ -> 0.003, 0.9
+    | 4 -> 0.02, 0.5
+    | 5 -> 0.02, 0.65
+    | 6 -> 0.02, 0.7
+    | _ -> 0.02, 0.8
     )
   in
   let font_size = font_size / (zoom) (* use zoom factor inversely *) in

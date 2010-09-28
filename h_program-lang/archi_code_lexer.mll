@@ -47,6 +47,9 @@ rule category = parse
   | ".nw/" 
       { Doc }
 
+  | ".texi/" 
+      { Doc }
+
   | ".pdf/" 
   | ".rtf/"
       { Doc }
@@ -81,6 +84,8 @@ rule category = parse
   | "/copying/" 
   | "/about-nls/" 
   | "/shtool/"
+  | "/texinfo.tex/"
+  | "/ltmain.sh/"
       { BoilerPlate }
 
 
@@ -195,6 +200,7 @@ rule category = parse
   (* as in OCaml asmcomp/ directory *)
   | "x86"
   | "i386"
+  | "/386/"
   | "ia64"
   | "mips"
   | "m68k"
@@ -209,6 +215,14 @@ rule category = parse
   | "/ppc/"
   | "power"
   | "/alpha/" 
+      { Architecture }
+
+  (* plan9 source *)
+  | "/pc/" 
+  | "/alphapc/" 
+      { Architecture }
+
+  | "/arch/" 
       { Architecture }
 
   | "/ui/"
