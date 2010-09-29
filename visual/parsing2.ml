@@ -163,6 +163,12 @@ let rewrite_categ_using_entities s categ file entities =
           Method (Def2 arity)
       | StaticMethod (Def2 _) ->
           StaticMethod (Def2 arity)
+      | Field (Def2 _) ->
+          Field (Def2 arity)
+      | MacroVar (Def2 _) ->
+          MacroVar (Def2 arity)
+      | Macro (Def2 _) ->
+          Macro (Def2 arity)
       | _ -> categ
       )
   | x::y::xs ->
