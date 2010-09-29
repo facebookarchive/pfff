@@ -25,6 +25,8 @@ open Highlight_code
 module T = Parser_cpp
 module TH = Token_helpers_cpp
 
+module S = Scope_code
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -198,7 +200,7 @@ let visit_toplevel
       let (ebis, aref), ii = x in
       match ebis with
 
-      | Ident name ->
+      | Ident (name, idinfo) ->
           let ii = Ast.info_of_name_tmp name in
           let s = Ast.str_of_info ii in
           if s =~ "[A-Z][A-Z_]*" &&
@@ -207,12 +209,24 @@ let visit_toplevel
           then 
             tag ii (MacroVar (Use2 fake_no_use2))
           else 
-            ()
+            (match idinfo.Ast.i_scope with
+            | S.Local -> 
+                tag ii (Local Use)
+            | S.Param ->
+                tag ii (Parameter Use)
+            | S.Global ->
+                tag ii (Global (Use2 fake_no_use2));
+            | S.NoScope ->
+                ()
+            | 
+              (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class)
+                -> failwith "scope not handled"
+            )
           
 
       | FunCall (e, args) ->
           (match Ast.untype (Ast.unwrap e) with
-          | Ident name ->
+          | Ident (name, _) ->
               let ii = Ast.info_of_name_tmp name in
               let s = Ast.str_of_info ii in
               if Hashtbl.mem h_debug_functions s

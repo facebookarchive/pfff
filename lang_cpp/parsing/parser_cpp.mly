@@ -895,17 +895,29 @@ primary_cplusplus_id:
  | TColCol TIdent  
      { let qtop = Some (QTop, [$1]) in
        let qid = IdIdent (fst $2), [snd $2] in 
-       let name = (qtop, noQscope, qid) in mk_e(Ident name) [] }
+       let name = (qtop, noQscope, qid) in 
+       let idinfo = Ast.noIdentInfo () in
+       mk_e(Ident (name, idinfo)) [] 
+     }
  | TColCol operator_function_id 
      { let qtop = Some (QTop, [$1]) in
        let qop = $2 in
-       let name = (qtop, noQscope, qop) in mk_e(Ident name) [] }
+       let name = (qtop, noQscope, qop) in 
+       let idinfo = Ast.noIdentInfo () in
+       mk_e(Ident (name, idinfo)) [] 
+     }
  | TColCol qualified_id 
      { let qtop = Some (QTop, [$1]) in
-       let name = (qtop, fst $2, snd $2) in mk_e(Ident name) [] }
+       let name = (qtop, fst $2, snd $2) in 
+       let idinfo = Ast.noIdentInfo () in
+       mk_e(Ident (name, idinfo)) [] 
+     }
  | id_expression 
      { let qtop = None in 
-       let name = (qtop, fst $1, snd $1) in mk_e(Ident name) [] }
+       let name = (qtop, fst $1, snd $1) in 
+       let idinfo = Ast.noIdentInfo () in
+       mk_e(Ident (name, idinfo)) [] 
+     }
 
 
 

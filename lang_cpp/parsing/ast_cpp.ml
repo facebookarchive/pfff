@@ -44,7 +44,7 @@ and 'a comma_list = 'a wrap list
  * In C++ ident can have a complex form like A::B::list<int>::size.
  * I use Q for qualified. I also have a special type to make the difference
  * between intermediate idents (the classname or template_id) and final ident, 
- * but note that sometimes final ident are also classname and can have final
+ * but note that sometimes final idents are also classnames and can have final
  * template_id.
  * Sometimes some elements are not allowed at certain places, for 
  * instance converters can not have an associated Qtop. But I prefer
@@ -140,48 +140,51 @@ and typeCbis =
 
   (* c++ext: only to disambiguate I think *)
   | TypenameKwd of fullType (* in practice either TypeName of TemplateName *)
+
   (* forunparser: *)
   | ParenType of fullType 
 
       
-(* -------------------------------------- *)    
-     and  baseType = Void 
-                   | IntType   of intType 
-		   | FloatType of floatType
+  (* -------------------------------------- *)    
+  and  baseType = 
+    | Void 
+    | IntType   of intType 
+    | FloatType of floatType
 
 
-	  (* stdC: type section 
-           * add  a | SizeT ?
-           * note: char and signed char are semantically different!! 
-           *)
-          and intType   = CChar (* obsolete? | CWchar  *)
-	                | Si of signed
-                        (* c++ext: maybe could be put in baseType instead ? *)
-                        | CBool
-                        | WChar_t 
+     (* stdC: type section 
+      * add  a | SizeT ?
+      * note: char and signed char are semantically different!! 
+      *)
+      and intType   = 
+        | CChar (* obsolete? | CWchar  *)
+	| Si of signed
+         (* c++ext: maybe could be put in baseType instead ? *)
+        | CBool
+        | WChar_t 
 
-           and signed = sign * base
-            and base = CChar2 | CShort | CInt | CLong | CLongLong (* gccext: *)
-            and sign = Signed | UnSigned
+        and signed = sign * base
+         and base = CChar2 | CShort | CInt | CLong | CLongLong (* gccext: *)
+         and sign = Signed | UnSigned
 
-          and floatType = CFloat | CDouble | CLongDouble
+         and floatType = CFloat | CDouble | CLongDouble
 
 
-     (* -------------------------------------- *)    
-     (* c++ext: and structType, cf now below *)
+   (* -------------------------------------- *)    
+   (* c++ext: and structType, cf now below *)
 
-     (* -------------------------------------- *)    
-     and enumType = (string * constExpression option) wrap (* s = *) 
-                    comma_list
+   (* -------------------------------------- *)    
+   and enumType = (string * constExpression option) wrap (* s = *) 
+                  comma_list
                    (* => string * int list *)
 
 
-     (* -------------------------------------- *)    
-     (* return * (params * has "...") 
-      * c++ext: todo now const, throw spec, etc
-     *)
-     and functionType = fullType * (parameterType comma_list * bool wrap)
-        and parameterType = (bool * string option * fullType) wrap (* reg s *)
+   (* -------------------------------------- *)    
+   (* return * (params * has "...") 
+    * c++ext: todo now const, throw spec, etc
+   *)
+   and functionType = fullType * (parameterType comma_list * bool wrap)
+      and parameterType = (bool * string option * fullType) wrap (* reg s *)
               (* => (bool (register) * fullType) list * bool *)
 
 
@@ -201,7 +204,7 @@ and expressionbis =
    * With c++ Ident is now a 'name' instead of a 'string' and can correspond 
    * to an operator name.
    *)
-  | Ident          of name  (* todo? more semantic info such as LocalFunc *)
+  | Ident          of name * (* semantic: *) ident_info
   | Constant       of constant                                  
   (* c++ext: *)
   | This 
@@ -255,7 +258,9 @@ and expressionbis =
   (* forunparser: *)
   | ParenExpr of expression 
 
-
+  and ident_info = {
+    mutable i_scope: Scope_code.scope;
+  }
 
   (* cppext: normmally just expression *)
   and argument = (expression, wierd_argument) Common.either
@@ -272,14 +277,15 @@ and expressionbis =
    * 
    * note: that -2 is not a constant, it is the unary operator '-'
    * applied to constant 2. So the string must represent a positive
-   * integer only. *)
-
+   * integer only. 
+   *)
   and constant = 
     | String of (string * isWchar) 
     | MultiString  (* can contain MacroString *)
     | Char   of (string * isWchar) (* normally it is equivalent to Int *)
     | Int    of (string  (* * intType*)) 
     | Float  of (string * floatType)
+
     (* c++ext: *)
     | Bool of bool
 
@@ -335,7 +341,8 @@ and expressionbis =
  * wonderful C langage.
  * 
  * note: I use 'and' for type definition cos gccext allow statement as
- * expression, so need mutual recursive type definition. *)
+ * expression, so need mutual recursive type definition. 
+ *)
 
 and statement = statementbis wrap 
 and statementbis = 
@@ -421,7 +428,6 @@ and block_declaration = block_declarationbis wrap
 
   (* gccext: *)
   | Asm of asmbody
-
 
 
   (* gccext: *)
@@ -673,10 +679,10 @@ and includ = inc_file wrap (* #include s *) *
  * prefixes a/b/c; a/b/; a/ ; <empty> 
  * 
  * This is set after parsing, in cocci.ml, in update_rel_pos.
- and include_rel_pos = { 
-  first_of : string list list;
-  last_of :  string list list;
- }
+ * and include_rel_pos = { 
+ * first_of : string list list;
+ * last_of :  string list list;
+ * }
  *)
 
 (* ------------------------------------------------------------------------- *)
@@ -721,7 +727,6 @@ type cppcommentkind =
   | CppOther
 
 
-
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
@@ -737,7 +742,6 @@ let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
  *)
 let no_virt_pos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1)
 
-
 let fakeInfo pi  = 
   { PI.token = PI.FakeTokStr ("",None);
     comments = ();
@@ -745,6 +749,7 @@ let fakeInfo pi  =
   }
 
 let noType () = ref None (* old: None, old: [] *)
+let noIdentInfo () = { i_scope = Scope_code.NoScope; }
 
 let noii = []
 
@@ -760,7 +765,6 @@ let noRelPos () =
 
 let noInIfdef () = 
   ref false
-
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -781,19 +785,16 @@ let make_expanded ii =
 (* used by token_helpers *)
 let get_info = PI.get_info
 
-
 let line_of_info = PI.line_of_info
 let col_of_info = PI.col_of_info
 let file_of_info = PI.file_of_info
-
 let pos_of_info  = PI.pos_of_info
-let opos_of_info ii = 
-  PI.get_orig_info (function x -> x.PI.charpos) ii
-
 let pinfo_of_info = PI.pinfo_of_info
 let parse_info_of_info = PI.parse_info_of_info
-
 let is_origintok =  PI.is_origintok
+
+let opos_of_info ii = 
+  PI.get_orig_info (function x -> x.PI.charpos) ii
 
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =  
@@ -821,7 +822,5 @@ let (info_of_name_tmp: name -> info) = fun name ->
   | _ -> raise Todo
 
 
-      
 let (semi_fake_name: (string * info) -> name) = fun (s, iis) ->
   None, [], (IdIdent s, [iis])
-

@@ -205,7 +205,10 @@ and vof_expression v =
     v
 and vof_expressionbis =
   function
-  | Ident v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Ident", [ v1 ]))
+  | Ident ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = vof_ident_info v2
+      in Ocaml.VSum (("Ident", [ v1; v2 ]))
   | Constant v1 ->
       let v1 = vof_constant v1 in Ocaml.VSum (("Constant", [ v1 ]))
   | This -> Ocaml.VSum (("This", []))
@@ -306,6 +309,12 @@ and vof_expressionbis =
       in Ocaml.VSum (("Throw", [ v1 ]))
   | ParenExpr v1 ->
       let v1 = vof_expression v1 in Ocaml.VSum (("ParenExpr", [ v1 ]))
+
+and vof_ident_info { i_scope = v_i_scope } =
+  let bnds = [] in
+  let arg = Scope_code.vof_scope v_i_scope in
+  let bnd = ("i_scope", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
 and vof_argument v = Ocaml.vof_either vof_expression vof_wierd_argument v
 and vof_wierd_argument =
   function

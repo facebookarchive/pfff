@@ -17,6 +17,7 @@ val parse:
 val parse_program:  
   Common.filename -> Ast_cpp.program
 
+val program_of_program2: program2 -> Ast_cpp.program
 
 val parse_cpp_define_file : 
   Common.filename -> (string, Parsing_hacks.define_body) Common.assoc

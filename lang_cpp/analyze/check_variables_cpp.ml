@@ -136,11 +136,31 @@ let visit_prog prog =
     (* 1: scoping management *)
 
     (* 2: adding defs of name in environment *)
+    V.kparameterType = (fun (k, vx) x ->
+      let name = 
+        raise Todo 
+      in
+      add_binding name (S.Param, ref 0);
+      k x
+    );
 
     (* 3: checking uses *)
 
     V.kexpr = (fun (k, vx) x ->
-      k x
+      match Ast.untype (Ast.unwrap x) with
+      | Ident (name, idinfo) ->
+          (* assert scope_ref = S.Unknown ? *)
+
+          let s = Ast.string_of_name_tmp name in
+
+          (match lookup_env_opt s !_scoped_env with
+          | None -> 
+              idinfo.i_scope <- S.Global;
+          | Some (scope, _) ->
+              idinfo.i_scope <- scope;
+          );
+          k x
+      | _ -> k x
     );
   }
   in

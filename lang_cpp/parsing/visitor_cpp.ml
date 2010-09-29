@@ -359,7 +359,10 @@ and v_expression v =
 
 and v_expressionbis =
   function
-  | Ident v1 -> let v1 = v_name v1 in ()
+  | Ident (v1, _ident_info) -> 
+      (* visiting ident_info ? *)
+      let v1 = v_name v1 in ()
+
   | Constant v1 -> let v1 = v_constant v1 in ()
   | This -> ()
   | FunCall ((v1, v2)) ->
