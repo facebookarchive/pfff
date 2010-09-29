@@ -98,10 +98,12 @@ type entity_kind =
   | Type
   | Constant
   | Global
+  | Macro
 
   (* nested entities *)
   | Method
   | StaticMethod
+  | Field
 
   (* when we use the database for completion purpose, then files/dirs
    * are also useful "entities" to get completion for.
@@ -224,8 +226,10 @@ let string_of_entity_kind e =
   | Type -> "Type"
   | Constant -> "Constant"
   | Global -> "Global"
+  | Macro -> "Macro"
   | Method -> "Method"
   | StaticMethod -> "StaticMethod"
+  | Field -> "Field"
   | File -> "File"
   | Dir -> "Dir"
   | MultiDirs -> "MultiDirs"
@@ -238,8 +242,10 @@ let entity_kind_of_string s =
   | "Type" -> Type
   | "Constant" -> Constant
   | "Global" -> Global
+  | "Macro" -> Macro
   | "Method" -> Method
   | "StaticMethod" -> StaticMethod
+  | "Field" -> Field
   | "File" -> File
   | "Dir" -> Dir
   | "MultiDirs" -> MultiDirs
@@ -273,9 +279,11 @@ let int_of_entity_kind e =
   | Global -> 6
   | Method -> 7
   | StaticMethod -> 8
-  | File -> 9
-  | Dir -> 10
-  | MultiDirs -> 11
+  | Field -> 9
+  | File -> 10
+  | Dir -> 11
+  | MultiDirs -> 12
+  | Macro -> 13
 
 let entity_kind_of_int i = 
   match i with
@@ -287,8 +295,11 @@ let entity_kind_of_int i =
   | 6 -> Global
   | 7 -> Method
   | 8 -> StaticMethod
-  | 9 -> File
-  | 10 -> Dir
+  | 9 -> Field
+  | 10 -> File
+  | 11 -> Dir
+  | 12 -> MultiDirs
+  | 13 -> Macro
   | _ -> failwith "wrong entity number"
 
 
@@ -300,8 +311,10 @@ let string_short_of_entity_kind e =
   | Type -> "T"
   | Constant -> "Co"
   | Global -> "G"
+  | Macro -> "Mc"
   | Method -> "Me"
   | StaticMethod -> "SM"
+  | Field -> "Fld"
   | File -> "Fi"
   | Dir -> "Di"
   | MultiDirs -> "Md"
@@ -497,7 +510,10 @@ let entity_kind_of_highlight_category categ =
   | HC.Module HC.Def -> Module
   | HC.TypeDef HC.Def -> Type
   | HC.Global (HC.Def2 _) -> Global
+  | HC.MacroVar (HC.Def2 _) -> Macro
+  | HC.Macro (HC.Def2 _) -> Macro (* todo? want agglomerate ? *)
   | HC.Method (HC.Def2 _) -> Method
+  | HC.Field (HC.Def2 _) -> Field
   | HC.StaticMethod (HC.Def2 _) -> StaticMethod
   | HC.FunctionDecl _ -> Function
 
@@ -676,17 +692,17 @@ let files_and_dirs_and_sorted_entities_for_completion
 
 (* The e_number_external_users count is not always very accurate for methods
  * when we do very trivial class/methods analysis for some languages.
- * This helper function can composente back this approximation.
+ * This helper function can compensate back this approximation.
  *)
 
-let adjust_method_external_users entities =
+let adjust_method_or_field_external_users entities =
   (* phase1: collect all method counts *)
   let h_method_def_count = Common.hash_with_default (fun () -> 0) in
   
   entities +> Array.iter (fun e ->
     match e.e_kind with
     (* do also for staticMethods ? hmm should be less needed *)
-    | Method ->
+    | Method | Field ->
         let k = e.e_name in
         h_method_def_count#update k (Common.add1)
     | _ -> ()
@@ -695,7 +711,7 @@ let adjust_method_external_users entities =
   (* phase2: adjust *)
   entities +> Array.iter (fun e ->
     match e.e_kind with
-    | Method ->
+    | Method | Field ->
         let k = e.e_name in
         let nb_defs = h_method_def_count#assoc k in
         if nb_defs > 1

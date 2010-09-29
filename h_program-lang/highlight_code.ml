@@ -189,6 +189,7 @@ type category =
 
   | Class of usedef2
   | Method of usedef2
+  | Field of usedef2
   | StaticMethod of usedef2
 
   | Macro of usedef2
@@ -198,7 +199,6 @@ type category =
   | Struct
   | StructName of usedef (* place def_arity * use_arity *)
 
-  | Field of usedef
   (* ClassName of place ... *)
 
   | EnumName of usedef
@@ -705,7 +705,13 @@ let info_of_category = function
 
   | Struct -> [`FOREGROUND "OliveDrab";]
   | StructName usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
-  | Field usedef ->    [`FOREGROUND "MediumPurple1";] ++ info_of_usedef usedef
+
+  | Field (Def2 _) -> 
+      [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Def)
+
+  | Field (Use2 _) -> 
+      [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Use)
+
 
   | TypeDef usedef -> [`FOREGROUND "ForestGreen"] ++ info_of_usedef usedef 
 

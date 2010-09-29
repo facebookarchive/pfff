@@ -1,7 +1,8 @@
 
 type entity_kind = 
-  | Function | Class | Module | Type | Constant | Global
-  | Method | StaticMethod
+  | Function | Class | Module | Type | Constant | Global | Macro
+
+  | Method | StaticMethod | Field
   | File | Dir | MultiDirs
 
 type entity_id = int
@@ -52,7 +53,7 @@ val build_top_k_sorted_entities_per_file:
 val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
 
-val adjust_method_external_users: 
+val adjust_method_or_field_external_users: 
   entity array -> unit
 
 val entity_kind_of_highlight_category: 

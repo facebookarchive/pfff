@@ -39,13 +39,13 @@ type category =
   | Global of usedef2
   | Class of usedef2
   | Method of usedef2
+  | Field of usedef2
   | StaticMethod of usedef2
   | Macro of usedef2
   | MacroVar of usedef2
 
   | Struct
   | StructName of usedef
-  | Field of usedef
   | EnumName of usedef
   | EnumValue of usedef
   | TypeDef of usedef
