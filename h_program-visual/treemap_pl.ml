@@ -184,8 +184,9 @@ let anamorphic_diviser_of_file ~root file =
   | Text "nw" -> 3.
   | Binary _ -> 1000.
    
-  (* C code is at lease 3x times more verbose than ml :) *)
+  (* C code is at lease 3x times more verbose than ml :) 
   | PL (C | Cplusplus | Java) -> 5.
+  *)
 
   | Media (Picture _) -> 100.
 
