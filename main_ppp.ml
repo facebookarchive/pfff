@@ -5,6 +5,8 @@ open Ast_php
 module Ast = Ast_php
 module V = Visitor_php
 
+module S = Scope_code
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -171,7 +173,7 @@ let mk_new_anon_class_call s
              else
                (Var
                    (fkdname closed_var,
-                   {contents = Scope_php.NoScope}),
+                   {contents = S.NoScope}),
                {tlval = [Type_php.Unknown]})
            in        
            (* todo: should introduce some comma with Right too *)
@@ -242,7 +244,7 @@ let mk_aliasing_for_member_in_body () =
           (DName
             ("this",
              fkt "$this"),
-          {contents = Scope_php.NoScope}),
+          {contents = S.NoScope}),
          {tlval = [Type_php.Unknown]}),
        {t = [Type_php.Unknown]}),
       fkt "as",
@@ -252,7 +254,7 @@ let mk_aliasing_for_member_in_body () =
           (DName
             ("p",
              fkt "$p"),
-          {contents = Scope_php.NoScope}),
+          {contents = S.NoScope}),
          {tlval = [Type_php.Unknown]})),
       Some
        (fkt "=>",
@@ -262,7 +264,7 @@ let mk_aliasing_for_member_in_body () =
            (DName
              ("v",
               fkt "$v"),
-           {contents = Scope_php.NoScope}),
+           {contents = S.NoScope}),
           {tlval = [Type_php.Unknown]}))),
       fkt ")",
       SingleStmt
@@ -276,7 +278,7 @@ let mk_aliasing_for_member_in_body () =
                        (DName
                          ("p",
                           fkt "$p"),
-                       {contents = Scope_php.NoScope}),
+                       {contents = S.NoScope}),
                       {tlval = [Type_php.Unknown]}),
                     Dollar
                      (fkt "$")),
@@ -287,7 +289,7 @@ let mk_aliasing_for_member_in_body () =
                    (DName
                      ("v",
                       fkt "$v"),
-                   {contents = Scope_php.NoScope}),
+                   {contents = S.NoScope}),
                   {tlval = [Type_php.Unknown]})),
                 {t = [Type_php.Unknown]}),
               fkt ";"))],

@@ -24,7 +24,7 @@ module V = Visitor_php
 
 module E = Error_php
 
-module S = Scope_php
+module S = Scope_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -89,7 +89,7 @@ module S = Scope_php
 
 (* the ref is for the number of uses *)
 type environment = 
-  (dname * (S.phpscope * int ref)) list list 
+  (dname * (Scope_code.scope * int ref)) list list 
 
 
 

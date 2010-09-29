@@ -22,7 +22,7 @@ module V = Visitor_php
 
 open Highlight_code
 
-module S = Scope_php
+module S = Scope_code
 
 module Db = Database_php
 
