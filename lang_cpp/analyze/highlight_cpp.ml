@@ -205,7 +205,7 @@ let visit_toplevel
             (* the FunCall case might have already tagged it with something *)
             not (Hashtbl.mem already_tagged ii)
           then 
-            tag ii (Macro (Use2 fake_no_use2))
+            tag ii (MacroVar (Use2 fake_no_use2))
           else 
             ()
           
@@ -366,6 +366,8 @@ let visit_toplevel
     (* pp *)
     | T.TDefine ii -> 
         tag ii Define
+
+    (* todo: could be also a MacroFunc *)
     | T.TIdentDefine (_, ii) ->
         tag ii (MacroVar (Def2 NoUse))
 

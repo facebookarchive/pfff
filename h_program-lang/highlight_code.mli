@@ -12,25 +12,13 @@ type usedef2 =
   | Def2 of def_info
 
 type category =
-  | Comment
-  | String
-  | Punctuation
-  | Number
-  | Boolean
-  | Null
+  | Comment | String | Punctuation | Number | Boolean | Null
+  | Keyword | Operator | Builtin
 
-  | Keyword
-  | Operator
-  | Builtin
+  | BuiltinCommentColor | BuiltinBoolean
 
-  | BuiltinCommentColor
-  | BuiltinBoolean
-
-  | KeywordConditional
-  | KeywordLoop
-  | KeywordExn
-  | KeywordObject
-  | KeywordModule
+  | KeywordConditional | KeywordLoop 
+  | KeywordExn | KeywordObject | KeywordModule
 
   | BadSmell
 
@@ -61,40 +49,26 @@ type category =
   | Parameter of usedef
   | IdentUnknown
 
-  | TypeVoid
-  | TypeInt
-  | TypeMisc
+  | TypeVoid | TypeInt | TypeMisc
 
-  | Ifdef
-  | Include
-  | IncludeFilePath
-  | Define
-  | CppOther
+  | Ifdef | Include | IncludeFilePath | Define | CppOther
 
   | EmbededHtml (* e.g. xhp *)
   | EmbededUrl (* e.g. xhp *)
 
-  | CommentWordImportantNotion
-  | CommentWordImportantModal
+  | CommentWordImportantNotion | CommentWordImportantModal
 
-  | CommentSection0
-  | CommentSection1
-  | CommentSection2
-  | CommentEstet
-  | CommentCopyright
-  | CommentSyncweb
+  | CommentSection0 | CommentSection1 | CommentSection2
+  | CommentEstet | CommentCopyright | CommentSyncweb
 
-  | MatchGlimpse
-  | MatchSmPL
+  | MatchGlimpse | MatchSmPL
   | MatchParent
-  | MatchSmPLPositif
-  | MatchSmPLNegatif
+  | MatchSmPLPositif | MatchSmPLNegatif
 
   | BackGround | ForeGround
 
   | NotParsed | Passed | Expanded | Error
   | NoType
-
 
   | Normal
 
@@ -105,14 +79,7 @@ type highlighter_preferences = {
 val default_highlighter_preferences: highlighter_preferences
 val legend_color_codes : string
 
-(* use the same polymorphic variants than in ocamlgtk *)
-val info_of_usedef : 
-  usedef -> 
-  [> `STYLE of [> `ITALIC ] ] list
-val info_of_def_arity :
-  def_arity ->
-  [> `STRIKETHROUGH of bool | `UNDERLINE of [> `DOUBLE | `SINGLE ] ] list
-val info_of_place : 'a -> 'b
+(* main entry point *)
 val info_of_category :
   category ->
   [> `BACKGROUND of string
@@ -123,5 +90,16 @@ val info_of_category :
    | `UNDERLINE of [> `DOUBLE | `SINGLE ]
    | `WEIGHT of [> `BOLD ] ]
   list
+
+
+
+(* use the same polymorphic variants than in ocamlgtk *)
+val info_of_usedef : 
+  usedef -> 
+  [> `STYLE of [> `ITALIC ] ] list
+val info_of_def_arity :
+  def_arity ->
+  [> `STRIKETHROUGH of bool | `UNDERLINE of [> `DOUBLE | `SINGLE ] ] list
+val info_of_place : 'a -> 'b
 
 val arity_ids : 'a list -> def_arity

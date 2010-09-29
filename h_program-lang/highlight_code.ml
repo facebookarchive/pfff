@@ -23,7 +23,7 @@ open Common
  * Emacs-like (font-lock) mode, or Source-insight like display.
  * 
  * This file contains the generic part that is programming language
- * independent. See source_xxx.ml for the code specific to the xxx
+ * independent. See highlight_xxx.ml for the code specific to the xxx
  * programming language.
  * 
  * This source code viewer is based on good semantic information, 
@@ -68,23 +68,18 @@ open Common
  *  - variable size parens depending on depth of nestedness
  *  - do same for curly braces ?
  * 
- * estet: separate highligher code ? return list of tags
- * and associated info and then have code that colorize that ?
- * 
- * 
  * TODO estet: I often revisit in very similar way the code, and do
  * some matching to know if pointercall, methodcall, to know if
  * prototype or decl extern, to know if typedef inside, or structdef 
  * inside. Could
  * perhaps define helpers so not redo each time same things ?
  * 
- * 
  * estet?: redundant with - place_code ?  - entity_c ?
  *)
 
 
 (*****************************************************************************)
-(* Types *)
+(* Types helpers *)
 (*****************************************************************************)
 
 (* will be italic vs non-italic (could be large vs small ? or bolder ? *)
@@ -99,6 +94,10 @@ type place =
   | PlaceExternal
   (* | ReallyExternal   | PlaceCloseHeader *)
 
+  (* will be in a lighter color, almost like wheat, so know we don't have
+   * information on it. Could highlight in Red because it's
+   * quite similar to an error.
+   *)
   | NoInfoPlace
 
 
@@ -127,6 +126,9 @@ type usedef2 =
   | Use2 of use_info
   | Def2 of def_info
 
+(*****************************************************************************)
+(* Main type *)
+(*****************************************************************************)
 
 (* coupling: if add constructor, don't forget to add its handling in 2 places
  * below, for its color and associated string representation.
@@ -477,6 +479,9 @@ let info_of_place defplace =
   raise Todo
 
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 (* pad taste *)
 let info_of_category = function
@@ -585,7 +590,7 @@ let info_of_category = function
           | UniqueUse -> [`FOREGROUND "yellow"]
           | NoUse -> [`FOREGROUND "IndianRed";]
           )
-      | NoInfoPlace -> [`FOREGROUND "tomato";]
+      | NoInfoPlace -> [`FOREGROUND "LightGoldenrod";]
       ) ++ info_of_def_arity def_arity
 
 
@@ -618,9 +623,10 @@ let info_of_category = function
           | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
 
           | UniqueUse -> [`FOREGROUND "yellow"]
+
           | NoUse -> [`FOREGROUND "IndianRed";]
           )
-      | NoInfoPlace -> [`FOREGROUND "tomato";]
+      | NoInfoPlace -> [`FOREGROUND "pink1";]
 
       ) ++ info_of_def_arity def_arity
 
@@ -640,7 +646,7 @@ let info_of_category = function
           | UniqueUse -> [`FOREGROUND "yellow"]
           | NoUse -> [`FOREGROUND "IndianRed";]
           )
-      | NoInfoPlace -> [`FOREGROUND "tomato";]
+      | NoInfoPlace -> [`FOREGROUND "pink1";]
 
       ) ++ info_of_def_arity def_arity
 
