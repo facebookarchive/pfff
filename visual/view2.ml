@@ -265,7 +265,7 @@ let paint2 dw =
   then begin
     current_rects_to_draw := rects;
     paint_content_maybe_refresher := 
-      Some (GMain.Idle.add ~prio:3000 (lazy_paint ~user_rect dw));
+      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
   end;
 
   (* also clear the overlay *)

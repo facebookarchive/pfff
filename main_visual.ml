@@ -25,6 +25,8 @@ module Flag = Flag_visual
 (* Flags *)
 (*****************************************************************************)
 
+(* See also Gui.synchronous_actions *)
+
 let test_mode = ref (None: string option)
 let proto = ref false
 let screen_size = ref 2
@@ -125,6 +127,8 @@ let options () = [
   "-verbose" , Arg.Set Flag.verbose_visual,
   " ";
   "-debug_gc", Arg.Set Flag.debug_gc,
+  " ";
+  "-debug_handlers", Arg.Set Gui.synchronous_actions,
   " ";
  "-disable_ancient", Arg.Clear Flag.use_ancient,
   " ";

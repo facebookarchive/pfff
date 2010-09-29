@@ -768,6 +768,30 @@ let create_menu m label =
 (* (G.mk (GMisc.label ~text:"other") (fun x -> ())); *)
 
 (*****************************************************************************)
+(* Interactivity *)
+(*****************************************************************************)
+
+(* This is useful to debug. lablgtk does not give complete report
+ * when an exception is thrown from a idle or timeout handler.
+ * By setting this global you make those handles synchronous
+ * in which case you will have proper diagnostic information
+ * in case of failure.
+ *)
+let synchronous_actions = ref false
+
+
+let gmain_idle_add ~prio callback =
+  if not !synchronous_actions
+  then
+    GMain.Idle.add ~prio callback
+  else begin
+    while callback () do
+      ()
+    done;
+    GMain.Idle.add ~prio (fun () -> false)
+  end
+
+(*****************************************************************************)
 (* Main widget and loop *)
 (*****************************************************************************)
   
