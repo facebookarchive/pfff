@@ -49,20 +49,21 @@ let multiplier_use x =
   | SH.UniqueUse -> 1.3
   | SH.NoUse -> 0.9
 
+(* coupling: rewrite_categ_using_entities in parsing2.ml *)
 let size_font_multiplier_of_categ ~font_size_real categ =
     match categ with
-    | Some (SH.Class SH.Def2 use) -> 6. *. multiplier_use use
-    | Some (SH.Module SH.Def) -> 6.
+    | Some (SH.Class SH.Def2 use) -> 5. *. multiplier_use use
+    | Some (SH.Module SH.Def) -> 5.
     | Some (SH.Function (SH.Def2 use)) -> 3.5 *. multiplier_use use
-    | Some (SH.TypeDef SH.Def) -> 6.
-    | Some (SH.Global (SH.Def2 _)) -> 3.
+    | Some (SH.TypeDef SH.Def) -> 5.
+    | Some (SH.Global (SH.Def2 use)) -> 3. *. multiplier_use use
     | Some (SH.FunctionDecl use) -> 2.5 *. multiplier_use use
-    | Some (SH.Macro (SH.Def2 _)) -> 2.
-    | Some (SH.MacroVar (SH.Def2 _)) -> 2.
+    | Some (SH.Macro (SH.Def2 use)) -> 2. *. multiplier_use use
+    | Some (SH.MacroVar (SH.Def2 use)) -> 2. *. multiplier_use use
     | Some (SH.Method (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
+    | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
         
-
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
         
