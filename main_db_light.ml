@@ -66,6 +66,9 @@ let rec light_db_of_files_or_dirs lang xs =
 
   let db = 
     match lang with
+    | "ml" ->
+        Database_light_ml.compute_database ~verbose xs
+
     | "php" ->
         (match xs with
         | [_x] ->
@@ -84,8 +87,9 @@ let rec light_db_of_files_or_dirs lang xs =
         )
     | "js" ->
         Database_light_js.compute_database ~verbose xs
-    | "ml" ->
-        Database_light_ml.compute_database ~verbose xs
+
+    | "cpp" ->
+        Database_light_cpp.compute_database ~verbose xs
 
 
     | "web" ->

@@ -6,6 +6,7 @@ TARGET=lib
 
 SRC= \
      highlight_cpp.ml \
+     database_light_cpp.ml \
      test_analyze_cpp.ml
 
 -include $(TOP)/Makefile.config
