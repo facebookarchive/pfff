@@ -4,7 +4,10 @@ open Ast_cpp
 (* the hooks *)
 type visitor_in = {
   kexpr: expression vin;
-  kfieldkindbis: fieldkindbis vin;
+  kfieldkind: fieldkind vin;
+  kparameterType: parameterType vin;
+  ktypeC: typeC vin;
+  kvar_declaration: var_declaration vin;
 }
 and visitor_out = {
   vexpr: expression vout;

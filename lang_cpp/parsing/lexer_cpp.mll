@@ -246,8 +246,12 @@ rule token = parse
    *)
 
   (* cf also TCppEscapedNewline below *)
-  | [' ' '\t' '\n' '\r' '\011' '\012' ]+  
+  | [' ' '\t' ]+  
       { TCommentSpace (tokinfo lexbuf) }
+
+  | [ '\n' '\r' '\011' '\012']
+      { TCommentNewline (tokinfo lexbuf) }
+
   | "/*" 
       { let info = tokinfo lexbuf in 
         let com = comment lexbuf in

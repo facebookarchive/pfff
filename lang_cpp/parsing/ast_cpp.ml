@@ -766,6 +766,8 @@ let noInIfdef () =
 (* Wrappers *)
 (*****************************************************************************)
 let unwrap = fst
+let uncomma xs = List.map fst xs
+let untype = fst
 
 let rewrap_str = PI.rewrap_str
 let str_of_info = PI.str_of_info

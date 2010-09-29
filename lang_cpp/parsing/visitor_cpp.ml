@@ -31,7 +31,10 @@ open Ast_cpp
 (* hooks *)
 type visitor_in = {
   kexpr: expression vin;
-  kfieldkindbis: fieldkindbis vin;
+  kfieldkind: fieldkind vin;
+  kparameterType: parameterType vin;
+  ktypeC: typeC vin;
+  kvar_declaration: var_declaration vin;
 }
 and visitor_out = {
   vexpr: expression vout;
@@ -43,7 +46,10 @@ and 'a vout = 'a -> unit
 
 let default_visitor = 
   { kexpr    = (fun (k,_) x -> k x);
-    kfieldkindbis = (fun (k,_) x -> k x);
+    kfieldkind = (fun (k,_) x -> k x);
+    kparameterType = (fun (k,_) x -> k x);
+    ktypeC = (fun (k,_) x -> k x);
+    kvar_declaration  = (fun (k,_) x -> k x);
   }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -263,7 +269,10 @@ and v_enum_name v = v_name v
 and v_ident_name v = v_name v
 and v_fullType (v1, v2) =
   let v1 = v_typeQualifier v1 and v2 = v_typeC v2 in ()
-and v_typeC v = v_wrap35 v_typeCbis v
+and v_typeC v = 
+ let k v = v_wrap35 v_typeCbis v in
+ vin.ktypeC (k, all_functions) v
+
 and v_typeCbis =
   function
   | BaseType v1 -> let v1 = v_baseType v1 in ()
@@ -323,6 +332,7 @@ and v_functionType (v1, v2) =
         in ()
   in ()
 and v_parameterType v =
+  let k v = 
   v_wrap32
     (fun (v1, v2, v3) ->
        let v1 = v_bool v1
@@ -330,16 +340,23 @@ and v_parameterType v =
        and v3 = v_fullType v3
        in ())
     v
+  in
+  vin.kparameterType (k, all_functions) v
+
 and v_typeQualifier v = v_wrap31 v_typeQualifierbis v
 and v_typeQualifierbis { const = v_const; volatile = v_volatile } =
   let arg = v_bool v_const in let arg = v_bool v_volatile in ()
 and v_expression v =
+ let k v = 
   v_wrap30
     (fun (v1, v2) ->
        let v1 = v_expressionbis v1
        and v2 = v_ref (v_option v_fullType) v2
        in ())
     v
+ in
+ vin.kexpr (k, all_functions) v
+
 and v_expressionbis =
   function
   | Ident v1 -> let v1 = v_name v1 in ()
@@ -579,8 +596,9 @@ and v_colon =
 and v_colon_option v = v_wrap19 v_colon_optionbis v
 and v_colon_optionbis =
   function | ColonMisc -> () | ColonExpr v1 -> let v1 = v_expression v1 in ()
-and v_var_declaration =
-  function
+and v_var_declaration x =
+  let rec k v =
+    match v with
   | DeclList v1 -> let v1 = v_wrap18 (v_comma_list9 v_onedecl) v1 in ()
   | MacroDecl v1 ->
       let v1 =
@@ -589,6 +607,8 @@ and v_var_declaration =
              let v1 = v_string v1 and v2 = v_comma_list8 v_argument v2 in ())
           v1
       in ()
+  in
+  vin.kvar_declaration (k, all_functions) x
 and v_onedecl (v1, v2, v3) =
   let v1 =
     v_option
@@ -673,9 +693,13 @@ and v_field_declaration =
   function
   | FieldDeclList v1 ->
       let v1 = v_wrap10 (v_comma_list4 v_fieldkind) v1 in ()
-and v_fieldkind v = v_wrap9 v_fieldkindbis v
+and v_fieldkind v = 
+  let rec k x = 
+    v_wrap9 v_fieldkindbis v
+  in
+  vin.kfieldkind (k, all_functions) v
 and v_fieldkindbis x =
-  let rec k x = match x with
+  match x with
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
   | MethodDecl ((v1, v2)) -> let v1 = v_onedecl v1 and v2 = v_bool v2 in ()
   | BitField ((v1, v2, v3)) ->
@@ -683,8 +707,6 @@ and v_fieldkindbis x =
       and v2 = v_fullType v2
       and v3 = v_constExpression v3
       in ()
-  in
-  vin.kfieldkindbis (k, all_functions) x
 
 and v_class_member_sequencable =
   function

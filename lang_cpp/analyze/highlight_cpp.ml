@@ -60,20 +60,32 @@ let visit_toplevel
     match xs with
     | [] -> ()
 
-    (* don't want class decl to generate noise *)
-    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum(ii))
-      ::T.TCommentSpace ii2::T.TIdent(s, ii3)::T.TPtVirg _::xs ->
+    (* a little bit pad specific *)
+    |   T.TComment(ii)
+      ::T.TCommentNewline (ii2)
+      ::T.TComment(ii3)
+      ::T.TCommentNewline (ii4)
+      ::T.TComment(ii5)
+      ::xs ->
+        let s = Ast.str_of_info ii in
+        let s5 =  Ast.str_of_info ii5 in
+        (match () with
+        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection1
+        | _ when s =~ ".*------" && s5 =~ ".*------" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection2
+        | _ when s =~ ".*####" && s5 =~ ".*####" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection0
+        | _ ->
+            ()
+        );
         aux_toks xs
-
-    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii) 
-        (* thrift stuff *)
-        | T.TIdent ("service", ii)
-      )
-       ::T.TCommentSpace ii2::T.TIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
-
-        tag ii3 (Class (Def2 fake_no_def2));
-        aux_toks xs;
 
     (* a little bit hphp specific *)
     | T.TComment ii::T.TCommentSpace ii2::T.TComment ii3::xs 
@@ -90,7 +102,45 @@ let visit_toplevel
         );
         aux_toks xs
 
+    (* heuristic for class/struct definitions. 
+     * 
+     * Must be before the heuristic for function definitions
+     * otherwise this pattern will never be exercised
+     * 
+     * the code below has been commented because it generates
+     * too much false positives. For instance in 'struct foo * bar(...) '
+     * foo would be classified as the start of a struct definition
+     *
+     * don't want forward class declarations to generate noise
+     * | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum(ii))
+     * ::T.TCommentSpace ii2::T.TIdent(s, ii3)::T.TPtVirg _::xs ->
+     * aux_toks xs
+     * | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii) 
+     * | T.TIdent ("service", ii)
+     * )
+     * ::T.TCommentSpace ii2::T.TIdent(s, ii3)::xs
+     * when Ast.col_of_info ii = 0 ->
+     * 
+     * tag ii3 (Class (Def2 fake_no_def2));
+     * aux_toks xs;
+     *)
 
+    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii)
+        (* thrift stuff *)
+        | T.TIdent ("service", ii)
+      )
+      ::T.TCommentSpace ii2
+      ::T.TIdent(s, ii3)
+      ::T.TCommentSpace ii4
+      ::T.TOBrace ii5
+      ::xs
+        when Ast.col_of_info ii = 0 ->
+
+        tag ii3 (Class (Def2 fake_no_def2));
+        aux_toks xs;
+
+
+    (* heuristic for function definitions *)
     | t1::xs when TH.col_of_tok t1 = 0 && TH.is_not_comment t1 ->
         let line_t1 = TH.line_of_tok t1 in
         let rec find_ident_paren xs =
@@ -110,6 +160,7 @@ let visit_toplevel
         aux_toks xs
 
 
+
     | x::xs ->
         aux_toks xs
   in
@@ -119,16 +170,84 @@ let visit_toplevel
   (* ast phase 1 *) 
 
   let hooks = { V.default_visitor with
+    (* -------------------------------------------------------------------- *)
+    V.kvar_declaration = (fun (k, _) x ->
+      match x with
+      | DeclList (xs_comma, ii) ->
+          let xs = Ast.uncomma xs_comma in
+          xs +> List.iter (fun onedecl ->
+
+            let (nameopt, ft, sto) = onedecl in
+            nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
+              (* todo, call for annotater *)
+              let scope = (Local Use) in
+              ii +> List.iter (fun ii -> tag ii scope)
+            );
+          );
+           k x
+      | MacroDecl _ ->
+           k x
+    );
 
     (* -------------------------------------------------------------------- *)
-    V.kfieldkindbis = (fun (k, vx) x -> 
-      match x with
+    V.kexpr = (fun (k, _) x ->
+      let (ebis, aref), ii = x in
+      match ebis with
+
+      | FunCall (e, args) ->
+          (match Ast.untype (Ast.unwrap e) with
+          | Ident name ->
+              let ii = Ast.info_of_name_tmp name in
+              tag ii (Function (Use2 fake_no_use2));
+          | _ ->
+              ()
+          );
+          k x
+
+      | RecordAccess (e, name)
+      | RecordPtAccess (e, name) 
+          ->
+          let ii = Ast.info_of_name_tmp name in
+          tag ii (Field (Use));
+          k x
+      | _ -> k x
+    );
+
+    (* -------------------------------------------------------------------- *)
+    V.kparameterType = (fun (k, vx) x ->
+      let (_, ii) = x in
+      ii +> List.iter (fun ii -> tag ii (Parameter Def));
+      k x
+    );
+
+    (* -------------------------------------------------------------------- *)
+    V.ktypeC = (fun (k, vx) x ->
+      let (typeCbis, ii)  = x in
+      match typeCbis with
+      | TypeName (s, opt) ->
+          ii +> List.iter (fun ii -> tag ii (TypeDef Use));
+          k x
+
+      | StructUnionName (su, s) ->
+          ii +> List.iter (fun ii -> tag ii (StructName Use));
+          k x
+
+      | _ -> k x
+    );
+    (* -------------------------------------------------------------------- *)
+    V.kfieldkind = (fun (k, vx) x -> 
+      match Ast.unwrap x with
       | FieldDecl onedecl ->
           let (nameopt, ft, sto) = onedecl in
           nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
             ii +> List.iter (fun ii -> tag ii (Field (Def)))
           );
           k x
+
+      | BitField (sopt, ft, e) ->
+          let (_, ii) = x in
+          ii +> List.iter (fun ii -> tag ii (Field (Def)))
+
       | _ -> k x
     );
   }
@@ -192,6 +311,7 @@ let visit_toplevel
     | T.Twchar_t ii
       -> tag ii TypeInt
     (* thrift stuff *)
+
     | T.TIdent (
         ("string" | "i32" | "i64" | "i8" | "i16" | "byte"
           | "list" | "map" | "set" 
@@ -223,7 +343,7 @@ let visit_toplevel
     | T.TIdentDefine (_, ii) ->
         tag ii (MacroVar (Def2 NoUse))
 
-
+    (* never executed ? only the TIncludeStart token is in the token list ? *)
     | T.TInclude (_, _, _, ii) -> 
         tag ii Include
 
@@ -282,8 +402,71 @@ let visit_toplevel
     | T.TIdent (("service" | "include" | "extends"), ii) ->
         tag ii Keyword
 
+    | T.TIdent (_, ii) ->
+        ()
 
-    | _ -> ()
+    | T.Tbool2 ii
+    | T.Tlong2 ii
+    | T.Tshort2 ii
+    | T.Twchar_t2 ii
+    | T.Tdouble2 ii
+    | T.Tfloat2 ii
+    | T.Tint2 ii
+    | T.Tchar2 ii
+        -> tag ii TypeInt
+
+
+    | T.TtemplatenameQ2 _
+    | T.TtemplatenameQ _
+    | T.TypedefIdent2 _
+    | T.Tconstructorname _
+    | T.Ttemplatename _
+    | T.Tclassname2 _
+    | T.Tclassname _
+    | T.TIntZeroVirtual _
+
+    | T.TCCro2 _
+    | T.TOCro2 _
+    | T.TSup2 _
+    | T.TInf2 _
+    | T.TOParCplusplusInit _
+
+    | T.TAction _
+    | T.TCParEOL _
+
+    | T.TMacroIterator _
+    | T.TMacroDeclConst _
+    | T.TMacroDecl _
+    | T.TMacroString _
+    | T.TMacroStmt _
+
+    | T.TCommentCpp _
+    | T.TCommentMisc _
+      -> ()
+
+    | T.TIncludeFilename (_, ii) ->
+        tag ii String
+    | T.TIncludeStart (ii, _aref) ->
+        tag ii Include
+
+
+    | T.TDefEOL _
+
+    | T.TOBraceDefineInit _
+    | T.TOParDefine _
+    | T.TCppEscapedNewline _
+    | T.TDefParamVariadic _
+
+    | T.TypedefIdent _
+
+    | T.TCommentNewline _
+    | T.TCommentSpace _
+
+    | T.EOF _
+    | T.TUnknown _
+        -> ()
+
+
   );
 
   ()

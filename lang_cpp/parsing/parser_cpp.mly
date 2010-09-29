@@ -309,7 +309,7 @@ let mk_e e ii = ((e, Ast.noType()), ii)
 %token <Ast_cpp.info> TUnknown
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_cpp.info> TComment TCommentSpace 
+%token <Ast_cpp.info> TComment TCommentSpace TCommentNewline
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/

@@ -11,11 +11,13 @@ module Ast = Ast_cpp
 
 let is_space = function
   | TCommentSpace _ -> true
+  | TCommentNewline _ -> true
   | _ -> false
 
 let is_comment_or_space = function
   | TComment _ -> true
   | TCommentSpace _ -> true
+  | TCommentNewline _ -> true
 
   | _ -> false
 
@@ -31,12 +33,14 @@ let is_comment = function
   | TComment _    | TCommentSpace _ 
   | TCommentCpp _ 
   | TCommentMisc _ -> true
+  | TCommentNewline _ -> true
   | _ -> false
 
 
 let is_real_comment = function
   | TComment _    | TCommentSpace _ 
       -> true
+  | TCommentNewline _ -> true
   | _ -> false
 
 let is_fake_comment = function
@@ -297,6 +301,7 @@ let info_of_tok = function
   | TCommentSpace        (i) -> i
   | TCommentCpp          (cppkind, i) -> i
   | TCommentMisc         (i) -> i
+  | TCommentNewline        (i) -> i
 
   | TIfdef               (i) -> i
   | TIfdefelse           (i) -> i
@@ -512,6 +517,8 @@ let visitor_info_of_tok f = function
   | TCommentSpace        (i) -> TCommentSpace        (f i) 
   | TCommentCpp          (cppkind, i) -> TCommentCpp          (cppkind, f i) 
   | TCommentMisc         (i) -> TCommentMisc         (f i) 
+  | TCommentNewline         (i) -> TCommentNewline         (f i) 
+
   | TIfdef               (i) -> TIfdef               (f i) 
   | TIfdefelse           (i) -> TIfdefelse           (f i) 
   | TIfdefelif           (i) -> TIfdefelif           (f i) 
