@@ -33,6 +33,10 @@ module TH = Token_helpers_cpp
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
 
+let h_debug_functions = Common.hashset_of_list [
+  "DEBUG"
+]
+
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -194,11 +198,29 @@ let visit_toplevel
       let (ebis, aref), ii = x in
       match ebis with
 
+      | Ident name ->
+          let ii = Ast.info_of_name_tmp name in
+          let s = Ast.str_of_info ii in
+          if s =~ "[A-Z][A-Z_]*" &&
+            (* the FunCall case might have already tagged it with something *)
+            not (Hashtbl.mem already_tagged ii)
+          then 
+            tag ii (Macro (Use2 fake_no_use2))
+          else 
+            ()
+          
+
       | FunCall (e, args) ->
           (match Ast.untype (Ast.unwrap e) with
           | Ident name ->
               let ii = Ast.info_of_name_tmp name in
-              tag ii (Function (Use2 fake_no_use2));
+              let s = Ast.str_of_info ii in
+              if Hashtbl.mem h_debug_functions s
+              then
+                tag ii BuiltinCommentColor
+              else
+                tag ii (Function (Use2 fake_no_use2))
+
           | _ ->
               ()
           );
@@ -208,7 +230,7 @@ let visit_toplevel
       | RecordPtAccess (e, name) 
           ->
           let ii = Ast.info_of_name_tmp name in
-          tag ii (Field (Use));
+          tag ii (Field (Use2 fake_no_use2));
           k x
       | _ -> k x
     );
@@ -240,14 +262,18 @@ let visit_toplevel
       | FieldDecl onedecl ->
           let (nameopt, ft, sto) = onedecl in
           nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
-            ii +> List.iter (fun ii -> tag ii (Field (Def)))
+            ii +> List.iter (fun ii -> tag ii (Field (Def2 NoUse)))
           );
           k x
 
       | BitField (sopt, ft, e) ->
           let (_, ii) = x in
-          ii +> List.iter (fun ii -> tag ii (Field (Def)))
-
+          (match ii with
+          | [iiname;iicolon] ->
+              tag iiname (Field (Def2 NoUse))
+          | [iicolon] -> ()
+          | _ -> failwith "wrong bitfield"
+          )
       | _ -> k x
     );
   }

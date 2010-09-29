@@ -111,11 +111,14 @@ let main_action xs =
   let db = light_db_of_files_or_dirs !lang xs in
   
   let file = Common.relative_to_absolute !db_file in
+  let file = if !readable_db then file ^ ".json" else file in
+
   let res = Common.y_or_no (spf "writing data in %s" file) in
   if not res 
   then failwith "ok I stop";
 
-  if !marshall_db
+
+  if !marshall_db && not !readable_db
   then Common.write_value db file
   else Database_code.save_database ~readable_db:!readable_db db file
   ;
