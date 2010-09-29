@@ -305,7 +305,7 @@ let visit_toplevel
       | Ast.ClassVariables (modifiers, vars, tok) ->
           vars +> Ast.uncomma +> List.iter (fun (dname, _opt) ->
             let info = Ast.info_of_dname dname in
-            tag info (Field Def);
+            tag info (Field (Def2 fake_no_def2));
           );
           k x
     );
@@ -538,7 +538,7 @@ let visit_toplevel
           | XhpAttrEnum (tok_enum, xs) ->
               ()
           );
-          tag iiname (Field (Use));
+          tag iiname (Field (Use2 fake_no_use2));
           k x
               
 
@@ -558,7 +558,7 @@ let visit_toplevel
               tag info (Parameter Use)
 
           | S.Class -> 
-              tag info (Field Use)
+              tag info (Field (Use2 fake_no_use2))
 
           | S.Global ->
               (* TODO, need global_used table *)
@@ -585,7 +585,7 @@ let visit_toplevel
           | Some (exprbis, tbis) ->
               (match exprbis with
               | Sc (C (Ast.String (s, info))) ->
-                  tag info (Field Use);
+                  tag info (Field (Use2 fake_no_use2));
                   vx.V.vlvalue var;
 
               | Sc (C (Int (s, info))) ->
@@ -651,7 +651,7 @@ let visit_toplevel
 
       | ObjAccessSimple (lval, tok, name) ->
           let info = Ast.info_of_name name in
-          tag info (Field Use);
+          tag info (Field (Use2 fake_no_use2));
           k x
 
       | StaticMethodCallSimple (qualif, name, args) -> 
@@ -676,7 +676,7 @@ let visit_toplevel
       match x with
       | OName name ->
           let info = Ast.info_of_name name in
-          tag info (Field (Use))
+          tag info (Field (Use2 fake_no_use2))
       | _ -> k x
 
 
@@ -869,7 +869,7 @@ let visit_toplevel
       | T.T_XHP_ATTRIBUTE ii -> tag ii KeywordObject
 
       | T.T_XHP_TEXT (_, ii) -> tag ii String
-      | T.T_XHP_ATTR (_, ii) -> tag ii (Field Use)
+      | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
 
       | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
       | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml

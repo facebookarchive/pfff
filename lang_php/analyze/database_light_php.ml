@@ -262,7 +262,7 @@ let database_code_from_php_database ?(verbose=false) db =
       e
     )
   in
-  Db.adjust_method_external_users entities_arr;
+  Db.adjust_method_or_field_external_users entities_arr;
 
   let dirs = dirs +> List.map (fun s -> 
     Common.filename_without_leading_path root s) in

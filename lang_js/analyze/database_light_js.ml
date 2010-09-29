@@ -110,6 +110,9 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* step1: collecting definitions *)
   let (hdefs: (string, Db.entity) Hashtbl.t) = Hashtbl.create 1001 in
 
+  (* remember the position of the def so avoid some false positives
+   * when looking for uses.
+   *)
   let (hdefs_pos: (Ast.info, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
   files +> List.iter (fun file ->
@@ -247,7 +250,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let entities_arr = 
     Common.hash_to_list hdefs +> List.map snd +> Array.of_list
   in
-  Db.adjust_method_external_users entities_arr;
+  Db.adjust_method_or_field_external_users entities_arr;
 
   let dirs = dirs +> List.map (fun s -> 
     Common.filename_without_leading_path root s) in
