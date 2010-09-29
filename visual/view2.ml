@@ -83,6 +83,10 @@ let _refresh_da = ref (fun () ->
 
 let dw_stack = ref []
 
+(* ugly *)
+let root_orig () = 
+  (Common.last !dw_stack).M.root
+
 let paint_content_maybe_refresher = ref None
 let current_rects_to_draw = ref []
 
@@ -1380,7 +1384,10 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
 
           let res = dialog_search_def !dw.model in
           res +> Common.do_option (fun s ->
-            let root = !dw.root in
+            let root = 
+              (* could also support local grep? and use !dw.root instead ?  *)
+              root_orig ()
+            in
             let matching_files = run_grep_query ~root s in
             let files = matching_files +> List.map fst +> Common.uniq in
             let current_grep_query = 
