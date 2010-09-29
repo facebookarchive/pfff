@@ -799,6 +799,10 @@ let is_origintok =  PI.is_origintok
 let rewrap_pinfo pi ii =  
   {ii with PI.token = pi}
 
+(* for error reporting *) 
+let string_of_info ii = 
+  Parse_info.string_of_parse_info (parse_info_of_info ii)
+
 (*****************************************************************************)
 (* Converters *)
 (*****************************************************************************)

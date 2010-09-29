@@ -4,8 +4,9 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= \
+SRC= flag_analyze_cpp.ml \
      highlight_cpp.ml \
+     check_variables_cpp.ml \
      database_light_cpp.ml \
      test_analyze_cpp.ml
 
