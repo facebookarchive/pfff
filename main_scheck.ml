@@ -15,6 +15,8 @@ open Ast_php
 module Ast = Ast_php
 module V = Visitor_php
 
+module S = Scope_code
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -44,7 +46,7 @@ let rank_errors errs =
   errs |> List.map (fun x ->
     x,
     match x with
-    | Error_php.UnusedVariable (_, Scope_php.Local) -> 10
+    | Error_php.UnusedVariable (_, S.Local) -> 10
     | _ -> 0
   ) |> Common.sort_by_val_highfirst |> Common.map fst
 

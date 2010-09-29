@@ -936,6 +936,11 @@ let map_of_list of_a xs =
 let map_of_int x = x
 let map_of_int64 x = x
 
+let map_of_either _of_a _of_b =
+  function
+  | Left v1 -> let v1 = _of_a v1 in Left ((v1))
+  | Right v1 -> let v1 = _of_b v1 in Right ((v1))
+
 
 (* this is subtle ... *)
 let rec (map_v: f:( k:(v -> v) -> v -> v) -> v -> v) =

@@ -6,7 +6,7 @@ open Ast_php
 
 (* pad: few tweaks because of module limitations in ocamltarzan.
  *  
- * I inlined the vof_of_phptype here and vof_of_phpscope
+ * I inlined the vof_of_phptype here
  * (to avoid having multiple meta_of_xxx.ml files)
  *)
 
@@ -16,20 +16,6 @@ module Type_php = struct
     let vof_phpfunction_type x = 
       Ocaml.VTODO ""
 end
-module Scope_php = struct
-    let vof_phpscope x = 
-      match x with
-  | Scope_php.Global -> Ocaml.VSum (("Global", []))
-  | Scope_php.Local -> Ocaml.VSum (("Local", []))
-  | Scope_php.Param -> Ocaml.VSum (("Param", []))
-  | Scope_php.Class -> Ocaml.VSum (("Class", []))
-  | Scope_php.LocalExn -> Ocaml.VSum (("LocalExn", []))
-  | Scope_php.LocalIterator -> Ocaml.VSum (("LocalIterator", []))
-  | Scope_php.ListBinded -> Ocaml.VSum (("ListBinded", []))
-  | Scope_php.NoScope -> Ocaml.VSum (("NoScope", []))
-
-end
-
  
 let vof_int = Ocaml.vof_int
 let vof_unit = Ocaml.vof_unit
@@ -473,7 +459,7 @@ and vof_variablebis =
   function
   | Var ((v1, v2)) ->
       let v1 = vof_dname v1
-      and v2 = vof_ref Scope_php.vof_phpscope v2
+      and v2 = vof_ref Scope_code.vof_scope v2
       in Ocaml.VSum (("Var", [ v1; v2 ]))
   | This v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
   | VArrayAccess ((v1, v2)) ->

@@ -116,7 +116,8 @@ val map_of_string: string -> string
 val map_of_ref: 'a -> 'b -> 'b
 val map_of_option: ('a -> 'b) -> 'a option -> 'b option
 val map_of_list: ('a -> 'a) -> 'a list -> 'a list
-
+val map_of_either: 
+  ('a -> 'b) -> ('c -> 'd) -> ('a, 'c) Common.either -> ('b, 'd) Common.either
 
 val v_unit: unit -> unit
 val v_bool: bool -> unit

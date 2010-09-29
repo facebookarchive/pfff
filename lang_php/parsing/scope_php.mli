@@ -1,18 +1,7 @@
 (*s: scope_php.mli *)
 (*s: type phpscope *)
-type phpscope = 
-  | Global
-  | Local 
-  | Param
+type phpscope = Scope_code.scope
 
-  | Class
-
-  | LocalExn
-  | LocalIterator
-  | ListBinded
-  (* | Class ? *)
-
-  | NoScope
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)

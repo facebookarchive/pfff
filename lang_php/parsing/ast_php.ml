@@ -768,7 +768,7 @@ and toplevel =
 (*****************************************************************************)
 let noType () = ({ t = [Type_php.Unknown]})
 let noTypeVar () = ({ tlval = [Type_php.Unknown]})
-let noScope () = ref (Scope_php.NoScope)
+let noScope () = ref (Scope_code.NoScope)
 let noFtype () = ([Type_php.Unknown])
 
 let fakeInfo ?(next_to=None) str = 

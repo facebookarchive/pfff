@@ -31,32 +31,12 @@ open Common
 (* Types *)
 (*****************************************************************************)
 (*s: type phpscope *)
-type phpscope = 
-  | Global
-  | Local 
-  | Param
-
-  | Class
-
-  | LocalExn
-  | LocalIterator
-  | ListBinded
-  (* | Class ? *)
-
-  | NoScope
+type phpscope = Scope_code.scope
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
 (*e: type phpscope *)
 
-let s_of_phpscope = function
-  | Global ->  "Global"
-  | Local ->  "Local"
-  | Param ->  "Param"
-  | Class ->  "Class"
-  | LocalExn ->  "LocalExn"
-  | LocalIterator ->  "LocalIterator"
-  | ListBinded ->  "ListBinded"
-  | NoScope ->  "NoScope"
+let s_of_phpscope = Scope_code.string_of_scope
 
 (*e: scope_php.ml *)

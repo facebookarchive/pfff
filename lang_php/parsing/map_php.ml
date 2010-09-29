@@ -23,33 +23,6 @@ open Ast_php
 (* Prelude *)
 (*****************************************************************************)
 
-
-module Common = struct
-let map_filename v = map_of_string v
-
-let map_either _of_a _of_b =
-  function
-  | Left v1 -> let v1 = _of_a v1 in Left ((v1))
-  | Right v1 -> let v1 = _of_b v1 in Right ((v1))
-
-end 
-
-module Scope_php = struct
-open Scope_php
-let map_phpscope =
-  function
-  | Global -> Global
-  | Local -> Local
-  | Param -> Param
-  | NoScope -> NoScope
-  | ListBinded -> ListBinded
-  | LocalIterator -> LocalIterator
-  | LocalExn -> LocalExn
-  | Class -> Class
-end
-
-
-
 module Type_php = struct
 open Type_php
 let rec map_phptype v = map_of_list map_phptypebis v
@@ -207,35 +180,35 @@ and map_bracket _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 
 and map_comma_list_arg _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list_var _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list_expr _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list_param _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list2 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list3 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list4 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list6 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list7 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list8 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list10 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list12 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list13 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list14 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list15 _of_a xs = 
-  map_of_list (fun x -> Common.map_either _of_a map_info x) xs
+  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
   
 and map_name =
   function
@@ -549,7 +522,7 @@ and map_variablebis =
   function
   | Var ((v1, v2)) ->
       let v1 = map_dname v1
-      and v2 = map_of_ref Scope_php.map_phpscope v2
+      and v2 = map_of_ref Scope_code.map_scope v2
       in Var ((v1, v2))
   | This v1 -> let v1 = map_tok v1 in This ((v1))
   | VArrayAccess ((v1, v2)) ->
@@ -704,7 +677,7 @@ and map_stmt x =
       and v2 = map_tok v2
       and v3 = map_expr v3
       and v4 = map_tok v4
-      and v5 = Common.map_either map_foreach_variable map_variable v5
+      and v5 = Ocaml.map_of_either map_foreach_variable map_variable v5
       and v6 = map_of_option map_foreach_arrow v6
       and v7 = map_tok v7
       and v8 = map_colon_stmt v8
