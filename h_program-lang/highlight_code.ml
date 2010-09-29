@@ -772,9 +772,10 @@ let info_of_category = function
   | Operator ->
       [`FOREGROUND "cyan";] (* could do better ? *)
 
-  | (Label _|EnumName _)
-      -> 
-      [`FOREGROUND "wheat";]
+  | (Label _) ->
+      [`FOREGROUND "cyan";]
+  | EnumName usedef
+      -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
 
   | EmbededHtml ->
       (* to be consistent with Archi_code.Ui color *)
