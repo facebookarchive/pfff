@@ -422,9 +422,10 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 2
        (0 "/home/pad/www/html/ajax/groups/mall/ufi.php")
        (1 "-test_functions_json")
+       (2 "/home/pad/pfff/demos/foo.php")
        )
      ))
    )

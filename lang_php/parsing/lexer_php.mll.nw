@@ -333,7 +333,7 @@ let rec current_mode () =
 
 <<function tokens>>=
 let tokens2 file = 
-  let table     = Common.full_charpos_to_pos_large file in
+  let table     = Parse_info.full_charpos_to_pos_large file in
 
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
@@ -359,7 +359,7 @@ let tokens2 file =
   with
   | Lexer_php.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                   (Common.error_message file (lexbuf_to_strpos lexbuf)))
+                   (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
 @
@@ -454,7 +454,7 @@ let tok = tok +> TH.visitor_info_of_tok (fun ii ->
        match Ast.pinfo_of_info ii with
        | Parse_info.OriginTok pi ->
                   Parse_info.OriginTok 
-                    (Common.complete_parse_info_large file table pi)
+                    (Parse_info.complete_parse_info_large file table pi)
        | Parse_info.FakeTokStr _
        | Parse_info.Ab  
        | Parse_info.ExpandedTok _
@@ -637,7 +637,7 @@ let comment_pp_ize toks =
   )
 
 let mark_as_expanded last_orig_parse_info toks =
-  let cnt = ref (String.length (last_orig_parse_info.Common.str)) in
+  let cnt = ref (String.length (last_orig_parse_info.Parse_info.str)) in
   toks |> List.map (fun tok -> 
     let len = String.length (TH.str_of_tok tok) in
     cnt := !cnt + len;
@@ -790,7 +790,7 @@ let adapt_tokens_pp2 ~orig_filename toks_pp =
           match pinfo with
           | Parse_info.OriginTok pi ->
               Parse_info.OriginTok { pi with
-                Common.file = orig_filename;
+                Parse_info.file = orig_filename;
               }
           | Parse_info.FakeTokStr _
           | Parse_info.Ab  
@@ -1203,7 +1203,8 @@ and st_one_line_comment = parse
       let syminfo = rewrap_str sym info in
 
       let parse_info = Ast.parse_info_of_info info in
-      let pos_after_sym   = parse_info.charpos + String.length sym in
+      let pos_after_sym   = 
+        parse_info.Parse_info.charpos + String.length sym in
       let pos_after_white = pos_after_sym + String.length white in
 
       let whiteinfo = tokinfo_str_pos white pos_after_sym in
@@ -2195,14 +2196,14 @@ let tok     lexbuf  = Lexing.lexeme lexbuf
 
 let tokinfo_str_pos str pos = 
   { 
-    Ast.pinfo = Parse_info.OriginTok {
-      Common.charpos = pos; 
-      Common.str     = str;
+    Ast.pinfo = Parse_info.OriginTok { Parse_info.
+      charpos = pos; 
+      str     = str;
 
       (* info filled in a post-lexing phase, cf Parse_php.tokens *)
-      Common.line = -1; 
-      Common.column = -1; 
-      Common.file = "";
+      line = -1; 
+      column = -1; 
+      file = "";
     };
     comments = ();
     transfo = Ast.NoTransfo;
