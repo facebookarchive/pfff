@@ -331,7 +331,7 @@ let info_to_fixpos ii =
   match Ast_php.pinfo_of_info ii with
   | Parse_info.OriginTok pi -> 
       (* Ast_cocci.Real *)
-      pi.Common.charpos
+      pi.Parse_info.charpos
   | Parse_info.FakeTokStr _
   | Parse_info.Ab 
   | Parse_info.ExpandedTok _

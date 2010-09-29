@@ -57,7 +57,6 @@ type info = {
    * the Common.parse_info embedded inside the pinfo type.
    *)
   mutable pinfo : pinfo; 
-
   (*s: type info hook *)
   (*TODO*)
   comments: unit;
