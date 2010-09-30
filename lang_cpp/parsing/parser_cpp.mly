@@ -289,6 +289,12 @@ let fix_add_params_ident = function
 (*-------------------------------------------------------------------------- *)
 
 let mk_e e ii = ((e, Ast.noType()), ii)
+let mk_funcall e1 args = 
+  match e1 with
+  | (Ident (name, _idinfo), _t), ii_empty ->
+      FunCallSimple (name, args)
+  | _ -> 
+      FunCallExpr (e1, args)
     
 %}
 
@@ -836,7 +842,7 @@ postfix_expr:
  | postfix_expr TOCro expr TCCro                
      { mk_e(ArrayAccess ($1, $3)) [$2;$4] }
  | postfix_expr TOPar argument_list_opt TCPar  
-     { mk_e(FunCall ($1, $3)) [$2;$4] }
+     { mk_e(mk_funcall $1 $3) [$2;$4] }
 
 
  /*(*c++ext: ident is now a id_expression *)*/

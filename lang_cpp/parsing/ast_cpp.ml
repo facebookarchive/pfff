@@ -209,7 +209,13 @@ and expressionbis =
   (* c++ext: *)
   | This 
 
-  | FunCall        of expression * argument comma_list
+  (* specialized version of FunCallExpr that makes it easier to write
+   * certain analysis. Note that because 'name' can be qualified,
+   * FunCallSimple is also a StaticMethodCallSimple
+   *)
+  | FunCallSimple  of name  * argument comma_list
+  (* todo: MethodCallSimple, MethodCallExpr *)
+  | FunCallExpr    of expression * argument comma_list
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
   | CondExpr       of expression * expression option * expression
@@ -772,6 +778,9 @@ let noInIfdef () =
 let unwrap = fst
 let uncomma xs = List.map fst xs
 let untype = fst
+
+let unwrap_typeC (qu, (typeC, ii)) = typeC
+
 
 let rewrap_str = PI.rewrap_str
 let str_of_info = PI.str_of_info

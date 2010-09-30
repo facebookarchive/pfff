@@ -35,6 +35,7 @@ type visitor_in = {
   kparameterType: parameterType vin;
   ktypeC: typeC vin;
   kvar_declaration: var_declaration vin;
+  kcompound: compound vin;
 }
 and visitor_out = {
   vexpr: expression vout;
@@ -50,6 +51,7 @@ let default_visitor =
     kparameterType = (fun (k,_) x -> k x);
     ktypeC = (fun (k,_) x -> k x);
     kvar_declaration  = (fun (k,_) x -> k x);
+    kcompound = (fun (k,_) x -> k x);
   }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -365,7 +367,9 @@ and v_expressionbis =
 
   | Constant v1 -> let v1 = v_constant v1 in ()
   | This -> ()
-  | FunCall ((v1, v2)) ->
+  | FunCallSimple ((v1, v2)) ->
+      let v1 = v_name v1 and v2 = v_comma_list14 v_argument v2 in ()
+  | FunCallExpr ((v1, v2)) ->
       let v1 = v_expression v1 and v2 = v_comma_list14 v_argument v2 in ()
   | CondExpr ((v1, v2, v3)) ->
       let v1 = v_expression v1
@@ -524,7 +528,12 @@ and v_statementbis =
   | MacroStmt -> ()
   | Try ((v1, v2)) ->
       let v1 = v_wrap27 v_compound v1 and v2 = v_list v_handler v2 in ()
-and v_compound v = v_list v_statement_sequencable v
+and v_compound v = 
+ let k v =
+   v_list v_statement_sequencable v
+ in
+ vin.kcompound (k, all_functions) v
+
 and v_statement_sequencable =
   function
   | StmtElem v1 -> let v1 = v_statement v1 in ()

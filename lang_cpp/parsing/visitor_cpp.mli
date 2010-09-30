@@ -8,6 +8,7 @@ type visitor_in = {
   kparameterType: parameterType vin;
   ktypeC: typeC vin;
   kvar_declaration: var_declaration vin;
+  kcompound: compound vin;
 }
 and visitor_out = {
   vexpr: expression vout;
