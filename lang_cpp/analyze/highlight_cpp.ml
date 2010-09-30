@@ -203,7 +203,7 @@ let visit_toplevel
                 then FunctionDecl NoUse
                 else
                  (* could be a global too when the decl is at the top *)
-                  if !is_at_toplevel
+                  if !is_at_toplevel  || fst sto = (Sto Extern)
                   then (Global (Def2 fake_no_def2))
                   else (Local Def)
               in

@@ -181,7 +181,7 @@ let visit_prog prog =
             nameopt +> Common.do_option (fun ((name, ini_opt), ii) ->
 
               let scope = 
-                if is_top_env !_scoped_env
+                if is_top_env !_scoped_env || fst sto = (Sto Extern)
                 then S.Global
                 else S.Local
               in
