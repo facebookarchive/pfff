@@ -9,6 +9,7 @@ type call_trace = {
 
   (* f_type: *)
 }
+val string_of_call_trace: call_trace -> string
 
 type config = {
   auto_trace: int;
