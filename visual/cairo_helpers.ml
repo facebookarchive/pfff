@@ -31,7 +31,11 @@ let prepare_string s =
   for i = 0 to String.length s - 1 do
     let c = String.get s i in
     if int_of_char c >= 128
-    then String.set s i 'Z';
+    then String.set s i 'Z'
+    else 
+      if c = '\t'
+      then String.set s i ' '
+      else ()
   done;
   ()
 
