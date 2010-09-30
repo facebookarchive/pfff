@@ -771,11 +771,12 @@ let create_menu m label =
 (* Interactivity *)
 (*****************************************************************************)
 
-(* This is useful to debug. lablgtk does not give complete report
+(* This is useful to debug. Lablgtk does not give a complete report
  * when an exception is thrown from a idle or timeout handler.
  * By setting this global you make those handles synchronous
  * in which case you will have proper diagnostic information
- * in case of failure.
+ * in case of failure. If you don't set it you will also
+ * get a backtrace on stderr.
  *)
 let synchronous_actions = ref false
 
@@ -783,8 +784,15 @@ let synchronous_actions = ref false
 let gmain_idle_add ~prio callback =
   if not !synchronous_actions
   then
-    GMain.Idle.add ~prio callback
+    GMain.Idle.add ~prio (fun () -> 
+      try 
+        callback ()
+      with exn ->
+        pr2 (Common.exn_to_s_with_backtrace exn);
+        raise exn
+    )
   else begin
+    (* does not work for now *)
     while callback () do
       ()
     done;
