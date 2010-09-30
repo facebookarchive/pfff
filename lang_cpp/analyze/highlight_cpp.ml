@@ -167,8 +167,6 @@ let visit_toplevel
         find_ident_paren same_line;
         aux_toks xs
 
-
-
     | x::xs ->
         aux_toks xs
   in
@@ -214,6 +212,19 @@ let visit_toplevel
           k x
       | MacroDecl _ ->
            k x
+    );
+    (* -------------------------------------------------------------------- *)
+    V.kstmt = (fun (k, _) x ->
+      match x with
+      | Labeled (Ast.Label (_s, st)), ii ->
+          ii +> List.iter (fun ii -> tag ii KeywordExn);
+          k x
+
+      | Jump (Goto s), ii ->
+          let (iigoto, lblii, iiptvirg) = Common.tuple_of_list3 ii in
+          tag lblii KeywordExn;
+          k x
+      | _ -> k x
     );
 
     (* -------------------------------------------------------------------- *)
@@ -380,10 +391,16 @@ let visit_toplevel
     | T.Tconst ii | T.Tvolatile ii 
     | T.Tbreak ii | T.Tcontinue ii
     | T.Treturn ii
-    | T.Tgoto ii | T.Tdefault ii 
+    | T.Tdefault ii 
     | T.Tsizeof ii 
     | T.Trestrict ii 
       -> 
+        tag ii Keyword
+
+    | T.Tgoto ii ->
+        (* people often use goto as an try/throw exception mechanism
+         * so let's use the same color
+         *)
         tag ii Keyword
 
     | T.Tasm ii 

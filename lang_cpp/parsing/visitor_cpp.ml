@@ -31,6 +31,7 @@ open Ast_cpp
 (* hooks *)
 type visitor_in = {
   kexpr: expression vin;
+  kstmt: statement vin;
   kfieldkind: fieldkind vin;
   kparameterType: parameterType vin;
   ktypeC: typeC vin;
@@ -52,6 +53,7 @@ let default_visitor =
     ktypeC = (fun (k,_) x -> k x);
     kvar_declaration  = (fun (k,_) x -> k x);
     kcompound = (fun (k,_) x -> k x);
+    kstmt = (fun (k,_) x -> k x);
   }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -514,7 +516,12 @@ and v_cast_operator =
   | Const_cast -> ()
   | Reinterpret_cast -> ()
 and v_constExpression v = v_expression v
-and v_statement v = v_wrap28 v_statementbis v
+and v_statement v = 
+  let rec k v = 
+    v_wrap28 v_statementbis v
+  in
+  vin.kstmt (k, all_functions) v
+
 and v_statementbis =
   function
   | Compound v1 -> let v1 = v_compound v1 in ()
