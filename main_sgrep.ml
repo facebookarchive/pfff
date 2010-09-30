@@ -437,7 +437,140 @@ let find_bad_jsprintf xs =
     in
     (V.mk_visitor hook).V.vprogram ast;
   )
-  
+
+(*---------------------------------------------------------------------------*)
+(* Finding run_once patterns *)
+(*---------------------------------------------------------------------------*)
+
+(* pre: requires to have run the Check_variables.check_and_annotate_program
+ * which "tags" variables with the appropriate scope information.
+ *)
+let globals_or_statics_lvalues_in = 
+ V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.klvalue = (fun (k, _) lvalue ->
+      match lvalue with
+      | Var (varname, { contents = (S.Global | S.Static)}), _t ->
+          Common.push2 lvalue aref
+      | VArrayAccess (
+          (Var (varname, { contents = (S.Global | S.Static)}), _t2),
+          _expr
+        ), _t ->
+          Common.push2 lvalue aref
+
+      (* todo? all qualified variables are static variables ?
+       * maybe should let Check_variables.check_and_annotate_program also
+       * annotates those vars with a GlobalClass tag.
+       *)
+      | VQualifier (qu_, var), _ ->
+          Common.push2 lvalue aref
+
+      | _ -> k lvalue
+    );
+  }
+  )
+let globals_or_statics_lvalues_in_expr e = 
+  globals_or_statics_lvalues_in (fun v -> v.V.vexpr e)
+
+let vars_assigned_in =
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.kexpr = (fun (k, _) expr ->
+      match Ast.untype expr with
+      | Assign (lval, _, expr2) 
+      | AssignOp (lval, _, expr2) 
+          ->
+          Common.push2 (lval, expr2) aref
+      | _ -> k expr
+    )
+  })
+let vars_assigned_in_stmt x = 
+  vars_assigned_in (fun v -> v.V.vstmt x)
+
+
+let find_run_once_pattern files_or_dirs =  
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs in
+
+  files +> List.iter (fun file ->
+    if !verbose then pr2 (spf "processing: %s" file);
+
+    let (ast2, _stat) = Parse_php.parse file in
+    let ast = Parse_php.program_of_program2 ast2 in
+    Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
+
+    (* here we just want to annotate the AST with the Local/Global/Static
+     * scope tag; we don't want to check if all the variables
+     * are correctly used (e.g. wether a $this->field is valid
+     * by looking at the definition of the class of $this) hence
+     * the None argument.
+     *)
+    Check_variables_php.check_and_annotate_program
+      ~find_entity:None
+      ast;
+
+    (* Step1: find a if.
+     * todo? restrict to toplevel ifs in a function/method? 
+     *)
+    let v = V.mk_visitor { V.default_visitor with
+      V.kstmt = (fun (k, _) stmt ->
+        match stmt with
+        | If (tok_if, (_lp, expr, _rp), then_branch, elseif_list, else_opt) ->
+
+            (* Step2: extract globals or statics lvalues in the
+             * condition of the if. Can be a simple global $foo, a
+             * specialglobal like $GLOBALS['index'], or a static class
+             * variable like self::$foo, or a static variable.
+             * 
+             * todo? should perhaps restrict to certain patterns like
+             * if($foo), if(!$foo), if(isset($foo)), if(!isset($foo)). 
+             *)
+            let lvalues = globals_or_statics_lvalues_in_expr expr in
+            
+            lvalues +> List.iter (fun lval ->
+              let s = Unparse_php.string_of_lvalue lval in
+              if !verbose then pr2 (spf "\tGLOBAL in if: %s" s);
+            );
+
+            (* Step3: extract assignements in the body of the if 
+             * todo? restrict to simple ifs without a else branch ? *)
+            let assigns_lval_expr = 
+              vars_assigned_in_stmt then_branch in
+            
+            (* Step4: check if the global in the if condition matches
+             * one of the assignement in the body.
+             * 
+             * todo? could enforce that there is only one such
+             * assignement and that it has a specific form (e.g. '=
+             * true' when the condition was on the global being
+             * false). *)
+            lvalues +> List.iter (fun lval ->
+              let lval1 = 
+                Lib_parsing_php.abstract_position_info_lvalue lval in
+              assigns_lval_expr +> List.iter (fun (lval_assign, expr_assign) ->
+                let lval2 =
+                  Lib_parsing_php.abstract_position_info_lvalue lval_assign in
+                
+                if lval1 = lval2
+                then begin
+                  (* Step5: report the match showing both the condition and
+                   * associated assignement.
+                   * 
+                   * todo: see if the previous naive algorithm reports too
+                   * many false positives. *)
+                  pr2 ("FOUND a run_once pattern.");
+                  pr2 ("IF = ");
+                  print_simple_match [tok_if];
+                  pr2 ("ASSIGN = ");
+                  print_simple_match (Lib_parsing_php.ii_of_expr expr_assign);
+                end
+              );
+            )
+
+        | _ -> k stmt
+      );
+    }
+    in
+    v.V.vprogram ast; 
+  )
+
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
@@ -452,6 +585,8 @@ let sgrep_extra_actions () = [
 
   "-find_bad_jsprintf", " <files_or_dirs>",
   Common.mk_action_n_arg (find_bad_jsprintf);
+  "-find_run_once_pattern", " <files_or_dirs>",
+  Common.mk_action_n_arg (find_run_once_pattern);
   
 ]
 
