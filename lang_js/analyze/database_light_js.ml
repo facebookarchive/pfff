@@ -80,7 +80,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
       Ast.file_of_info info +> 
         Common.filename_without_leading_path root;
     e_pos = { Common.l = l; Common.c = c };
-    e_kind = Database_code.entity_kind_of_highlight_category categ;
+    e_kind = Database_code.entity_kind_of_highlight_category_def categ;
 
     (* filled in step 2 *)
     e_number_external_users = 0;
@@ -130,6 +130,8 @@ let compute_database ?(verbose=false) files_or_dirs =
 
       Highlight_js.visit_toplevel 
         ~tag_hook:(fun info categ -> 
+
+          (* todo: use is_entity_def_category ? *)
           match categ with
           | HC.Function (HC.Def2 _) 
           | HC.Global (HC.Def2 _)

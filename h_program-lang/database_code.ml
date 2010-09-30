@@ -479,6 +479,62 @@ let save_database ?(readable_db=false) database file =
 
 
 (*****************************************************************************)
+(* Entities categories *)
+(*****************************************************************************)
+
+
+let entity_kind_of_highlight_category_def categ = 
+  (* TODO: constant *)
+  match categ with
+  | HC.Function (HC.Def2 _) -> Function
+  | HC.FunctionDecl _ -> Function
+  | HC.Global (HC.Def2 _) -> Global
+  | HC.Class (HC.Def2 _) -> Class
+  | HC.Method (HC.Def2 _) -> Method
+  | HC.Field (HC.Def2 _) -> Field
+  | HC.StaticMethod (HC.Def2 _) -> StaticMethod
+  | HC.Macro (HC.Def2 _) -> Macro (* todo? want agglomerate ? *)
+  | HC.MacroVar (HC.Def2 _) -> Macro
+
+  | HC.Module HC.Def -> Module
+  | HC.TypeDef HC.Def -> Type
+  | _ -> 
+      failwith "this category has no Database_code counterpart"
+
+let entity_kind_of_highlight_category_use categ = 
+  (* TODO: constant *)
+  match categ with
+  | HC.Function (HC.Use2 _) -> Function
+  | HC.FunctionDecl _ -> Function
+  | HC.Global (HC.Use2 _) -> Global
+  | HC.Class (HC.Use2 _) -> Class
+  | HC.Method (HC.Use2 _) -> Method
+  | HC.Field (HC.Use2 _) -> Field
+  | HC.StaticMethod (HC.Use2 _) -> StaticMethod
+  | HC.Macro (HC.Use2 _) -> Macro (* todo? want agglomerate ? *)
+  | HC.MacroVar (HC.Use2 _) -> Macro
+
+  | HC.Module HC.Use -> Module
+  | HC.TypeDef HC.Use -> Type
+
+  | HC.StructName HC.Use -> Class
+  | _ -> 
+      failwith "this category has no Database_code counterpart"
+
+
+(* In database_light_xxx we sometimes need given a use to increment
+ * the e_number_external_users counter of an entity. Nevertheless
+ * multiple entities may have the same name in which case looking
+ * for an entity in the environment will return multiple
+ * entities of different kinds. Here we filter back the
+ * non valid entities.
+ *)
+let entity_and_highlight_category_correpondance entity categ =
+  let entity_kind_use = entity_kind_of_highlight_category_use categ in
+  entity.e_kind = entity_kind_use
+
+
+(*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
 
@@ -502,23 +558,6 @@ let alldirs_and_parent_dirs_of_relative_dirs dirs =
   +> List.map Common.inits_of_relative_dir 
   +> List.flatten +> Common.uniq_eff
 
-let entity_kind_of_highlight_category categ = 
-  (* TODO: constant *)
-  match categ with
-  | HC.Function (HC.Def2 _) -> Function
-  | HC.Class (HC.Def2 _) -> Class
-  | HC.Module HC.Def -> Module
-  | HC.TypeDef HC.Def -> Type
-  | HC.Global (HC.Def2 _) -> Global
-  | HC.MacroVar (HC.Def2 _) -> Macro
-  | HC.Macro (HC.Def2 _) -> Macro (* todo? want agglomerate ? *)
-  | HC.Method (HC.Def2 _) -> Method
-  | HC.Field (HC.Def2 _) -> Field
-  | HC.StaticMethod (HC.Def2 _) -> StaticMethod
-  | HC.FunctionDecl _ -> Function
-
-  | _ -> 
-      failwith "this category has no Database_code counterpart"
 
 
 let merge_databases db1 db2 =

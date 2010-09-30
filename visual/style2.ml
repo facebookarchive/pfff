@@ -49,7 +49,6 @@ let multiplier_use x =
   | SH.UniqueUse -> 1.3
   | SH.NoUse -> 0.9
 
-(* coupling: rewrite_categ_using_entities in parsing2.ml *)
 let size_font_multiplier_of_categ ~font_size_real categ =
     match categ with
     | Some (SH.Class SH.Def2 use) -> 5. *. multiplier_use use
@@ -64,6 +63,8 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
         
+    | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
+          -> 1.5
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
         
@@ -84,7 +85,15 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.BadSmell) -> 2.5
     | Some (SH.UseOfRef) -> 2.
         
-    | _ -> 1. 
+    | _ -> 
+        (* the cases above should have covered all the cases *)
+        categ +> Common.do_option (fun categ ->
+          if Highlight_code.is_entity_def_category categ
+          then failwith "You should update size_font_multiplier_of_categ";
+        );
+
+
+        1. 
 (*e: size_font_multiplier_of_categ() *)
 
 (*s: windows_params() *)

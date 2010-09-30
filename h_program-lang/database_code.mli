@@ -56,8 +56,14 @@ val files_and_dirs_and_sorted_entities_for_completion:
 val adjust_method_or_field_external_users: 
   entity array -> unit
 
-val entity_kind_of_highlight_category: 
+val entity_kind_of_highlight_category_def: 
   Highlight_code.category -> entity_kind
+val entity_kind_of_highlight_category_use: 
+  Highlight_code.category -> entity_kind
+
+(* use vs def *)
+val entity_and_highlight_category_correpondance:
+  entity -> Highlight_code.category -> bool
 
 val string_of_entity_kind: entity_kind -> string
 

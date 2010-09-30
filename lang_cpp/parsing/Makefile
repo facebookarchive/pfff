@@ -11,6 +11,7 @@ SRC= flag_parsing_cpp.ml \
      meta_ast_cpp.ml \
      export_ast_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
+     type_cpp.ml \
      semantic_cpp.ml \
      lexer_parser_cpp.ml \
      parser_cpp.ml lexer_cpp.ml \
@@ -21,9 +22,6 @@ SRC= flag_parsing_cpp.ml \
      test_parsing_cpp.ml \
 
 # parser_php_mly_helper.ml \
-# scope_php.ml \
-# type_php.ml \
-
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \

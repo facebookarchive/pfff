@@ -132,6 +132,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
       Highlight_ml.visit_toplevel 
         ~tag_hook:(fun info categ -> 
+          (* todo: use is_entity_def_category ? *)
           match categ with
           | HC.Function (HC.Def2 _) 
           | HC.Global (HC.Def2 _)
@@ -170,7 +171,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                   spf "%s.%s" module_name s;
                 e_file = file;
                 e_pos = { Common.l = l; Common.c = c };
-                e_kind = Database_code.entity_kind_of_highlight_category categ;
+                e_kind = Db.entity_kind_of_highlight_category_def categ;
                 (* filled in step 2 *)
                 e_number_external_users = 0;
                 e_good_examples_of_use = [];

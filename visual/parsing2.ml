@@ -126,7 +126,7 @@ let use_arity_of_use_count n =
 let rewrite_categ_using_entities s categ file entities =
 
   let e_kind_opt = 
-    try Some (Db.entity_kind_of_highlight_category categ)
+    try Some (Db.entity_kind_of_highlight_category_def categ)
     with _ -> None
   in
   match e_kind_opt with
@@ -155,28 +155,9 @@ let rewrite_categ_using_entities s categ file entities =
   | [e] ->
       let use_cnt = e.Db.e_number_external_users in
       let arity = use_arity_of_use_count use_cnt in
-      (* coupling: you must also say in style2 to take into account
-       * the arity for the category
-       *)
-      (match categ with
-      | Function (Def2 _) ->
-          Function (Def2 arity)
-      | FunctionDecl _ ->
-          FunctionDecl (arity)
-      | Class (Def2 _) ->
-          Class (Def2 arity)
-      | Method (Def2 _) ->
-          Method (Def2 arity)
-      | StaticMethod (Def2 _) ->
-          StaticMethod (Def2 arity)
-      | Field (Def2 _) ->
-          Field (Def2 arity)
-      | MacroVar (Def2 _) ->
-          MacroVar (Def2 arity)
-      | Macro (Def2 _) ->
-          Macro (Def2 arity)
-      | _ -> categ
-      )
+      if HC.is_entity_def_category categ
+      then HC.rewrap_arity_def2_category arity categ 
+      else categ
   | x::y::xs ->
       (* TODO: handle __construct directly *)
       if not (List.mem s ["__construct"])

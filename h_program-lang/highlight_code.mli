@@ -91,7 +91,8 @@ val info_of_category :
    | `WEIGHT of [> `BOLD ] ]
   list
 
-
+val is_entity_def_category: category -> bool
+val rewrap_arity_def2_category: def_info -> category -> category
 
 (* use the same polymorphic variants than in ocamlgtk *)
 val info_of_usedef : 

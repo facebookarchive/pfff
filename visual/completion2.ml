@@ -99,6 +99,11 @@ let icon_of_kind kind has_test =
   | Db.Dir -> `DIRECTORY
   | Db.MultiDirs -> `QUIT
 
+  (* todo *)
+  | Db.Field -> `CONNECT
+  | Db.Macro -> `CONNECT
+
+
 
 module L=struct
   type t = { 

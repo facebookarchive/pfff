@@ -133,6 +133,11 @@ type usedef2 =
 (* coupling: if add constructor, don't forget to add its handling in 2 places
  * below, for its color and associated string representation.
  * 
+ * Also if it's a new kind of entity, you'll probably have to
+ * extend is_entity_def_category below (which in turn is
+ * used for instance in visual/parsing.ml and its
+ * rewrite_categ_using_entities function.
+ * 
  * If you look at usedef below, you should get all the way C programmer
  * can name things: 
  *   - macro, macrovar
@@ -607,7 +612,7 @@ let info_of_category = function
           | UniqueUse -> [`FOREGROUND "yellow"]
           | NoUse -> [`FOREGROUND "IndianRed";]
           )
-      | NoInfoPlace -> [`FOREGROUND "red";]
+      | NoInfoPlace -> [`FOREGROUND "LightCyan";]
 
       ) ++ info_of_def_arity def_arity
 
@@ -814,3 +819,61 @@ let arity_ids ids  =
   | [x] -> UniqueDef
   | [x;y] -> DoubleDef
   | x::y::z::xs -> MultiDef
+
+
+
+(* coupling: if you add a new kind of entity, then 
+ * don't forget to modify size_font_multiplier_of_categ in pfff_visual
+ * code
+ * 
+ * How sure this list is exhaustive ? C-c for usedef2
+ *)
+let is_entity_def_category categ = 
+  match categ with
+  | Function (Def2 _) 
+  (* also ? *)
+  | FunctionDecl _ 
+
+  | Global (Def2 _) 
+
+  | Class (Def2 _) 
+  | Method (Def2 _) 
+  | Field (Def2 _) 
+  | StaticMethod (Def2 _) 
+
+  | Macro (Def2 _) 
+  | MacroVar (Def2 _) 
+
+  (* Def *)
+  | Module (Def)
+  | TypeDef Def 
+
+  (* todo: what about other Def ? like Label, Parameter, etc ? *)
+    -> true
+  | _ -> false
+
+
+let rewrap_arity_def2_category arity categ = 
+
+  match categ with
+  | Function (Def2 _) -> Function (Def2 arity)
+  | FunctionDecl _ ->  FunctionDecl (arity)
+  | Global (Def2 _) ->  Global (Def2 arity)
+
+  | Class (Def2 _) ->  Class (Def2 arity)
+  | Method (Def2 _) ->  Method (Def2 arity)
+  | Field (Def2 _) -> Field (Def2 arity)
+  | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
+        
+  | Macro (Def2 _) -> Macro (Def2 arity)
+  | MacroVar (Def2 _) -> MacroVar (Def2 arity)
+
+  (* todo? *)
+  | Module Def ->
+      pr2_once "No arity for Module Def yet";
+      Module Def
+  | TypeDef Def  ->  
+      pr2_once "No arity for Typedef Def yet";
+      TypeDef Def
+
+  | _ -> failwith "not a Def2-kind categoriy"
