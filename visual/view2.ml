@@ -1133,7 +1133,7 @@ let motion_notify (da, da2) dw ev =
     true
   end else begin
     current_motion_refresher := 
-      Some (GMain.Idle.add ~prio:100 (motion_refresher ev dw));
+      Some (Gui.gmain_idle_add ~prio:100 (motion_refresher ev dw));
     true
   end
 (*e: motion_refresher *)
@@ -1710,7 +1710,7 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
     ()
   );
 
-  (* GMain.Idle.add ~prio: 1000 (idle dw) +> ignore; *)
+  (* Gui.gmain_idle_add ~prio: 1000 (idle dw) +> ignore; *)
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
