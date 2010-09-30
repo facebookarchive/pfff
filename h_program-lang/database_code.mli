@@ -32,6 +32,7 @@ type database = {
 }
 
 val empty_database: unit -> database
+val default_db_name: string
 
 (* classic load/save *)
 val load_database: 

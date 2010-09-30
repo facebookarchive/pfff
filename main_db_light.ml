@@ -110,7 +110,13 @@ let main_action xs =
   let xs = xs +> List.map Common.relative_to_absolute in
   let db = light_db_of_files_or_dirs !lang xs in
   
-  let file = Common.relative_to_absolute !db_file in
+  let file = 
+    match xs with
+    | [dir] -> 
+        Filename.concat dir Database_code.default_db_name
+    | _ ->
+        Common.relative_to_absolute !db_file 
+  in
   let file = if !readable_db then file ^ ".json" else file in
 
   let res = Common.y_or_no (spf "writing data in %s" file) in
@@ -226,7 +232,7 @@ let options () =
     (spf " <str> choose language (default = %s)" !lang);
 
     "-o", Arg.Set_string db_file, 
-    (spf " <file> output file (default = %s)" !db_file);
+    (spf " <file> output file (default = %s)" Database_code.default_db_name);
 
     "-with_php_db", Arg.Set_string with_php_db, 
     (" <metapath>");

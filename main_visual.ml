@@ -57,11 +57,23 @@ let main_action xs =
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
+  let db_file = 
+    match !db_file, xs with
+    | None, [dir] ->
+        let db = Filename.concat dir Database_code.default_db_name in
+        if Sys.file_exists db 
+        then begin 
+          pr2 (spf "Using pfff light db: %s" db);
+          Some db
+        end
+        else !db_file
+    | _ -> !db_file
+  in
 
   Common.finalize (fun () -> 
     View2.mk_gui 
       model 
-      !db_file
+      db_file
       ~screen_size:!screen_size 
       !test_mode
       xs
