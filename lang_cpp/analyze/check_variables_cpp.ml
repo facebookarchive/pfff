@@ -44,6 +44,9 @@ module S = Scope_code
 type environment = 
   (Ast.name * (Scope_code.scope * int ref)) list list 
 
+let is_top_env env =
+  List.length env = 1
+
 (*****************************************************************************)
 (* Environment *)
 (*****************************************************************************)
@@ -79,7 +82,7 @@ let (initial_env: environment ref) = ref [
     fake_dname s, (S.Global, ref 1)
   )
 *)
-
+  []
 ]
 
 (* opti: cache ? use hash ? *)
@@ -121,6 +124,22 @@ let add_binding k v =
 (* checks *)
 (*****************************************************************************)
 
+let do_in_new_scope_and_check f = 
+  new_scope();
+  let res = f() in
+
+  let top = top_scope () in
+  del_scope();
+
+  top |> List.rev |> List.iter (fun (name, (scope, aref)) ->
+    if !aref = 0 
+    then 
+      let s = Ast.string_of_name_tmp name in
+      pr ("Unused variable: " ^ s);
+      (*(E.UnusedVariable (name, scope)) *)
+  );
+  res
+
 (*****************************************************************************)
 (* Scoped visitor *)
 (*****************************************************************************)
@@ -134,15 +153,46 @@ let visit_prog prog =
   let hooks = { V.default_visitor with
 
     (* 1: scoping management *)
+    V.kcompound =  (fun (k, vx) x ->
+      do_in_new_scope_and_check (fun () -> k x)
+    );
 
     (* 2: adding defs of name in environment *)
     V.kparameterType = (fun (k, vx) x ->
-      let name = 
-        raise Todo 
-      in
-      add_binding name (S.Param, ref 0);
+
+      let (pbis, ii) = x in
+      let (_, sopt, ft) = pbis in
+      sopt +> Common.do_option (fun s ->
+        let name = 
+          Ast.semi_fake_name (s, List.hd ii)
+        in
+        add_binding name (S.Param, ref 0);
+      );
       k x
     );
+    (* -------------------------------------------------------------------- *)
+    V.kvar_declaration = (fun (k, _) x ->
+      match x with
+      | DeclList (xs_comma, ii) ->
+          let xs = Ast.uncomma xs_comma in
+          xs +> List.iter (fun onedecl ->
+
+            let (nameopt, ft, sto) = onedecl in
+            nameopt +> Common.do_option (fun ((name, ini_opt), ii) ->
+
+              let scope = 
+                if is_top_env !_scoped_env
+                then S.Global
+                else S.Local
+              in
+              add_binding name (scope, ref 0);
+            );
+          );
+          k x
+      | MacroDecl _ ->
+          k x
+    );
+
 
     (* 3: checking uses *)
 

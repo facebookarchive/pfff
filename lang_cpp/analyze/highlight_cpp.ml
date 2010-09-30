@@ -27,6 +27,8 @@ module TH = Token_helpers_cpp
 
 module S = Scope_code
 
+module Type = Type_cpp
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -172,10 +174,20 @@ let visit_toplevel
   in
   aux_toks toks;
 
+  let is_at_toplevel = ref true in
+
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
 
   let hooks = { V.default_visitor with
+
+    (* -------------------------------------------------------------------- *)
+    V.kcompound =  (fun (k, vx) x ->
+      Common.save_excursion is_at_toplevel false (fun () ->
+        k x
+      )
+    );
+
     (* -------------------------------------------------------------------- *)
     V.kvar_declaration = (fun (k, _) x ->
       match x with
@@ -185,12 +197,21 @@ let visit_toplevel
 
             let (nameopt, ft, sto) = onedecl in
             nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
-              (* todo, call for annotater *)
-              let scope = (Local Use) in
-              ii +> List.iter (fun ii -> tag ii scope)
+
+              let categ = 
+                if Type.is_function_type ft
+                then FunctionDecl NoUse
+                else
+                 (* could be a global too when the decl is at the top *)
+                  if !is_at_toplevel
+                  then (Global (Def2 fake_no_def2))
+                  else (Local Def)
+              in
+                
+              ii +> List.iter (fun ii -> tag ii categ)
             );
           );
-           k x
+          k x
       | MacroDecl _ ->
            k x
     );
@@ -224,19 +245,14 @@ let visit_toplevel
             )
           
 
-      | FunCall (e, args) ->
-          (match Ast.untype (Ast.unwrap e) with
-          | Ident (name, _) ->
-              let ii = Ast.info_of_name_tmp name in
-              let s = Ast.str_of_info ii in
-              if Hashtbl.mem h_debug_functions s
-              then
-                tag ii BuiltinCommentColor
-              else
-                tag ii (Function (Use2 fake_no_use2))
-
-          | _ ->
-              ()
+      | FunCallSimple (name, args) ->
+          let ii = Ast.info_of_name_tmp name in
+          let s = Ast.str_of_info ii in
+          (if Hashtbl.mem h_debug_functions s
+          then
+            tag ii BuiltinCommentColor
+          else
+            tag ii (Function (Use2 fake_no_use2))
           );
           k x
 

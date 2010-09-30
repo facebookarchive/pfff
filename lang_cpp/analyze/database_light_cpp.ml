@@ -131,6 +131,11 @@ let compute_database ?(verbose=false) files_or_dirs =
 
     let (ast2, _stat) = Parse_cpp.parse file in
 
+    let ast = Parse_cpp.program_of_program2 ast2 in
+    (* work by side effect on ast2 too *)
+    Check_variables_cpp.check_and_annotate_program
+      ast;
+
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
@@ -143,12 +148,15 @@ let compute_database ?(verbose=false) files_or_dirs =
           | HC.Field (HC.Use2 _)
           | HC.Macro (HC.Use2 _)
           | HC.MacroVar (HC.Use2 _)
+          | HC.Global (HC.Use2 _)
             ->
               let s = Ast.str_of_info info in
               Hashtbl.find_all hdefs s +> List.iter (fun entity ->
                 let file_entity = entity.Db.e_file in
+
                 (* todo: check corresponding entity_kind ? *)
-                if file_entity <> file
+                if file_entity <> file && 
+                   Db.entity_and_highlight_category_correpondance entity categ
                 then begin
                   entity.Db.e_number_external_users <-
                     entity.Db.e_number_external_users + 1;
