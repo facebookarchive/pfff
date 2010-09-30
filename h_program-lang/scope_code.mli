@@ -1,6 +1,6 @@
 
 type scope = 
-  | Global | Local  | Param 
+  | Global | Local  | Param | Static
   | Class
   | LocalExn | LocalIterator
   | ListBinded

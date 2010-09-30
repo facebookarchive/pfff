@@ -539,9 +539,8 @@ let visit_prog
           )
 
       | StaticVars (_, vars_list, _) ->
-          vars_list |> Ast.uncomma |> List.iter (fun (dname, affect_opt) ->
-            (* less: have a S.Static special scope ? *)
-            add_binding dname (S.Local, ref 0);
+          vars_list |> Ast.uncomma |> List.iter (fun (varname, affect_opt) ->
+            add_binding varname (S.Static, ref 0);
             (* TODO recurse on the affect *)
           )
 

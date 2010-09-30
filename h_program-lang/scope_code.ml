@@ -36,6 +36,7 @@ type scope =
   | Global
   | Local 
   | Param
+  | Static
 
   | Class
 
@@ -56,6 +57,7 @@ let string_of_scope = function
   | Global ->  "Global"
   | Local ->  "Local"
   | Param ->  "Param"
+  | Static ->  "Static"
   | Class ->  "Class"
   | LocalExn ->  "LocalExn"
   | LocalIterator ->  "LocalIterator"
@@ -71,6 +73,7 @@ let vof_scope x =
   | Global -> Ocaml.VSum (("Global", []))
   | Local -> Ocaml.VSum (("Local", []))
   | Param -> Ocaml.VSum (("Param", []))
+  | Static -> Ocaml.VSum (("Static", []))
   | Class -> Ocaml.VSum (("Class", []))
   | LocalExn -> Ocaml.VSum (("LocalExn", []))
   | LocalIterator -> Ocaml.VSum (("LocalIterator", []))
@@ -82,6 +85,7 @@ let sexp_of_scope x =
   | Global -> Sexp.Atom "Global"
   | Local -> Sexp.Atom "Local"
   | Param -> Sexp.Atom "Param"
+  | Static -> Sexp.Atom "Static"
   | NoScope -> Sexp.Atom "NoScope"
   | ListBinded -> Sexp.Atom "ListBinded"
   | LocalIterator -> Sexp.Atom "LocalIterator"
@@ -93,6 +97,7 @@ let map_scope =
   | Global -> Global
   | Local -> Local
   | Param -> Param
+  | Static -> Static
   | NoScope -> NoScope
   | ListBinded -> ListBinded
   | LocalIterator -> LocalIterator
