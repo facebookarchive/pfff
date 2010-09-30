@@ -36,7 +36,7 @@ open Common
 
 let verbose = ref false
 
-let db_file = ref "/tmp/light_db.db"
+let db_file = ref (None: string option)
 let pleac_dir = ref "/tmp/pleac"
 
 (* action mode *)
@@ -111,12 +111,15 @@ let main_action xs =
   let db = light_db_of_files_or_dirs !lang xs in
   
   let file = 
-    match xs with
-    | [dir] -> 
+    match !db_file, xs with
+    | None, [dir] -> 
         Filename.concat dir Database_code.default_db_name
+    | Some s, _ ->
+        s
     | _ ->
-        Common.relative_to_absolute !db_file 
+        failwith "please use -o"
   in
+  let file = Common.relative_to_absolute file in
   let file = if !readable_db then file ^ ".json" else file in
 
   let res = Common.y_or_no (spf "writing data in %s" file) in
@@ -231,7 +234,7 @@ let options () =
     "-lang", Arg.Set_string lang, 
     (spf " <str> choose language (default = %s)" !lang);
 
-    "-o", Arg.Set_string db_file, 
+    "-o", Arg.String (fun s -> db_file := Some s),
     (spf " <file> output file (default = %s)" Database_code.default_db_name);
 
     "-with_php_db", Arg.Set_string with_php_db, 
