@@ -4,8 +4,11 @@
 type tests_coverage = (Common.filename (* source *), tests_score) Common.assoc
  and tests_score = (Common.filename (* a test *) * float) list
 
-type files_coverage = (Common.filename, line_coverage) Common.assoc
- and line_coverage = int list
+type files_coverage = (Common.filename, file_coverage) Common.assoc
+ and file_coverage = {
+   covered_call_sites: int list;
+   call_sites: int list;
+ }
 
 val threshold_working_tests_percentage : float ref
 
@@ -37,8 +40,10 @@ val coverage_tests :
 
 val files_coverage_from_tests:  
   ?skip_call:(Xdebug.call_trace -> bool) ->
+  ?is_directive_to_filter:(string -> bool) ->
   php_cmd_run_test:(php_interpreter:string -> Common.filename -> string) ->
-  all_test_files:(unit -> Common.filename list) ->
+  all_test_files:Common.filename list ->
+  all_files:Common.filename list ->
   unit ->
   files_coverage
 
