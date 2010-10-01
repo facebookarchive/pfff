@@ -18,16 +18,16 @@
      h_version-control
      h_visualization
      h_program-lang
-     parsing_php
-     parsing_js
-     parsing_sql
-     analyze_php
-     analyze_php/basic
-     analyze_php/foundation
-     analyze_php/database
-     analyze_php/qa_test
-     analyze_php/qa_code
-     analyze_php/static_analysis
+     lang_php/parsing
+     lang_js/parsing
+     lang_sql/parsing
+     lang_php/analyze
+     lang_php/analyze/basic
+     lang_php/analyze/foundation
+     lang_php/analyze/database
+     lang_php/analyze/qa_test
+     lang_php/analyze/qa_code
+     lang_php/analyze/static_analysis
      gui
      facebook
      mini_php
@@ -46,7 +46,7 @@
      facebook/qa_code
      facebook
      lang_php/matcher
-     compile_php
+     lang_php/compile
      facebook/thrift
      facebook/thrift/gen-ocaml
     ")
@@ -446,6 +446,7 @@
      ))
    )
 
+
   ; --------------------------------------------------------------------------
   ; facebook/fb_phpunit
   ; --------------------------------------------------------------------------
@@ -493,6 +494,22 @@
      (case 1
        (0 "")
        (1 "-test_thrift")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
+  ; facebook/check_module
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "facebook/check_module/checkModule"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-test")
        )
      ))
    )
