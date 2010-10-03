@@ -60,7 +60,6 @@ rule category = parse
   | ".mli/"
   | ".h/"
       { Interface }
-  
 
   (* ml specific ? *)
   | ".depend" { Building }
