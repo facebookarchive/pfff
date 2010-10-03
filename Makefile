@@ -109,6 +109,9 @@ GRAPHDIR=external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 
+# for the moment it's used only by facebook/ code so could move in
+# facebook/external/
+THRIFTDIR=external/ocamlthrift
 
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
@@ -183,6 +186,7 @@ LIBS= commons/commons.cma \
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
   $(GRAPHDIR) \
+  $(THRIFTDIR) \
   $(GUIDIR) $(CAIRODIR) \
   h_version-control \
   h_visualization \
