@@ -3,7 +3,6 @@
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
  *)
-
 open Common
 
 module Flag = Flag_visual
@@ -11,22 +10,15 @@ module Flag = Flag_visual
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * ./configure -visual
- * 
- * port install gtk2
- * port install cairo
- * port install freetype
- * port install mysql5-devel
- * 
- *)
+
+(* *)
 
 (*****************************************************************************)
 (* Flags *)
 (*****************************************************************************)
 
+(*s: main flags *)
 (* See also Gui.synchronous_actions *)
-
 let test_mode = ref (None: string option)
 let proto = ref false
 let screen_size = ref 2
@@ -34,14 +26,72 @@ let screen_size = ref 2
 let db_path = ref (Database.database_dir "/home/pad/www")
 *)
 let db_file = ref (None: Common.filename option)
+(*e: main flags *)
 
 (* action mode *)
 let action = ref ""
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+(*s: treemap_generator *)
+let treemap_generator paths = 
+  let treemap = Treemap_pl.code_treemap paths in
+  let algo = Treemap.Ordered Treemap.PivotByMiddle in
+  let rects = Treemap.render_treemap_algo ~algo treemap in
+  Common.pr2 (spf "%d rectangles to draw" (List.length rects));
+  rects
+(*e: treemap_generator *)
+
+(*s: build_model *)
+let build_model2 root dbfile_opt =   
+  let db_opt = dbfile_opt +> Common.fmap (fun file ->
+    if file =~ ".*.json"
+    then Database_code.load_database file
+    else Common.get_value file
+  )
+  in
+  let hentities = Model2.hentities root db_opt in
+  let hfiles_entities = Model2.hfiles_and_top_entities root db_opt in
+  let all_entities = Model2.all_entities db_opt in
+  let idx = Completion2.build_completion_defs_index all_entities in
+  
+  let model = { Model2.
+           db = db_opt;
+           hentities = hentities;
+           hfiles_entities = hfiles_entities;
+           big_grep_idx = idx;
+  }
+  in
+  (*
+    let model = Ancient2.mark model in
+    Gc.compact ();
+  *)
+(*
+  (* sanity check *)
+  let hentities = (Ancient2.follow model).Model2.hentities in
+  let n = Hashtbl.length hentities in
+  pr2 (spf "before = %d" n);
+  let cnt = ref 0 in
+  Hashtbl.iter (fun k v -> pr2 k; incr cnt) hentities;
+  pr2 (spf "after = %d" !cnt);
+  (* let _x = Hashtbl.find hentities "kill" in *)
+*)
+
+
+  model
+
+let build_model a b = 
+  Common.profile_code2 "View.build_model" (fun () ->
+    build_model2 a b)
+(*e: build_model *)
+
+(*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
 
+(*s: main_action() *)
 let main_action xs = 
   (*
     GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc";
@@ -53,7 +103,10 @@ let main_action xs =
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   
-  let model = () in
+  let model = Model2.async_make () in
+
+  let dw = Model2.init_drawing treemap_generator model xs in
+
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -70,21 +123,45 @@ let main_action xs =
     | _ -> !db_file
   in
 
+  let root = Common.common_prefix_of_files_or_dirs xs in
+
+  (* This can require lots of stack. Make sure to have ulimit -s 40000.
+   * This thread also cause some Bus error on MacOS :(
+   * so have to use Timeout instead when on the Mac
+   *)
+  (if Cairo_helpers.is_old_cairo() 
+  then
+    Thread.create (fun () ->
+      Model2.async_set (build_model root db_file) model;
+    ) ()
+    +> ignore
+   else 
+    Model2.async_set (build_model root db_file) model;
+   (*
+    GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
+      Model2.async_set (build_model root dbfile_opt) model;
+      false
+    ) +> ignore
+   *)
+  );
+
+
   Common.finalize (fun () -> 
     View2.mk_gui 
-      model 
-      db_file
+      (model, dw, db_file)
       ~screen_size:!screen_size 
       !test_mode
       xs
   ) (fun() -> 
     ()
   )
+(*e: main_action() *)
   
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
 
+(*s: visual_commitid() action *)
 let visual_commitid id = 
   let files = Common.cmd_to_list
     (spf "git show --pretty=\"format:\" --name-only %s"
@@ -96,15 +173,17 @@ let visual_commitid id =
   in
   pr2_gen files;
   main_action files
+(*e: visual_commitid() action *)
   
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
-  "-commitid", " <id>",
-  Common.mk_action_1_arg (visual_commitid);
+ (*s: actions *)
+   "-commitid", " <id>",
+   Common.mk_action_1_arg (visual_commitid);
+ (*e: actions *)
 ]
-
  
 (*****************************************************************************)
 (* The options *)
@@ -119,36 +198,37 @@ let all_actions () =
  []
 
 let options () = [ 
-  "-screen_size" , Arg.Set_int screen_size,
-  " <int> 1 = small, 2 = big";
-  "-ss" , Arg.Set_int screen_size,
-  " alias for -screen_size";
-  "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
-  " ";
+  (*s: options *)
+    "-screen_size" , Arg.Set_int screen_size,
+    " <int> 1 = small, 2 = big";
+    "-ss" , Arg.Set_int screen_size,
+    " alias for -screen_size";
+    "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
+    " ";
 
-  "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
-  " ";
-  "-with_info", Arg.String (fun s -> db_file := Some s),
-  " ";
+    "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
+    " ";
+    "-with_info", Arg.String (fun s -> db_file := Some s),
+    " ";
 
-  "-test" , Arg.String (fun s -> test_mode := Some s),
-  " <str> execute an internal script";
-  "-proto" , Arg.Set proto,
-  " ";
+    "-test" , Arg.String (fun s -> test_mode := Some s),
+    " <str> execute an internal script";
+    "-proto" , Arg.Set proto,
+    " ";
 
-  "-verbose" , Arg.Set Flag.verbose_visual,
-  " ";
-  "-debug_gc", Arg.Set Flag.debug_gc,
-  " ";
-  "-debug_handlers", Arg.Set Gui.synchronous_actions,
-  " ";
- "-disable_ancient", Arg.Clear Flag.use_ancient,
-  " ";
- "-enable_ancient", Arg.Set Flag.use_ancient,
-  " ";
- "-disable_fonts", Arg.Set Flag.disable_fonts,
-  " ";
-
+    "-verbose" , Arg.Set Flag.verbose_visual,
+    " ";
+    "-debug_gc", Arg.Set Flag.debug_gc,
+    " ";
+    "-debug_handlers", Arg.Set Gui.synchronous_actions,
+    " ";
+   "-disable_ancient", Arg.Clear Flag.use_ancient,
+    " ";
+   "-enable_ancient", Arg.Set Flag.use_ancient,
+    " ";
+   "-disable_fonts", Arg.Set Flag.disable_fonts,
+    " ";
+  (*e: options *)
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Flag_analyze_php.cmdline_flags_verbose () ++

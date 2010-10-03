@@ -271,244 +271,10 @@ all." - frish
 % say that model/view/controller
 
 
-
-\section{Gtk/Cairo}
-
-\subsection{Gtk}
-
-\subsection{Cairo}
-
-<<new_pixmap sig>>=
-val new_pixmap : 
-  width:int -> height:int -> GDraw.pixmap
-@
-
-<<new_pixmap()>>=
-let new_pixmap ~width ~height =
-  let drawable = GDraw.pixmap ~width ~height () in
-  drawable#set_foreground `WHITE ;
-  drawable#rectangle
-    ~x:0 ~y:0 ~width ~height ~filled:true () ;
-  drawable
-@
-
-<<cairo helpers functions sig>>=
-val fill_rectangle:
-  ?alpha:float ->
-  cr:Cairo.t -> 
-  x:float -> y:float -> w:float -> h:float ->
-  color:Simple_color.emacs_color -> 
-  unit ->
-  unit
-
-val draw_rectangle_figure:
-  cr:Cairo.t -> 
-  color:Simple_color.emacs_color -> 
-  Figures.rectangle -> unit
-
-val draw_rectangle_bis:
-  cr:Cairo.t -> 
-  color:Simple_color.color -> 
-  line_width:float ->
-  Figures.rectangle -> unit
-
-
-val prepare_string : string -> unit
-val origin : Cairo.point
-
-val device_to_user_distance_x : Cairo.t -> float -> float
-val device_to_user_distance_y : Cairo.t -> float -> float
-val user_to_device_distance_x : Cairo.t -> float -> float
-val user_to_device_distance_y : Cairo.t -> float -> float
-
-val device_to_user_size : Cairo.t -> float -> float
-val user_to_device_font_size : Cairo.t -> float -> float
-val cairo_point_to_point : Cairo.point -> Figures.point
-
-val show_text : Cairo.t -> string -> unit
-val text_extents : Cairo.t -> string -> Cairo.text_extents
-val set_font_size: Cairo.t -> float -> unit
-
-val clear : Cairo.t -> unit
-
-val surface_of_pixmap :
-  < pixmap : [> `drawable ] Gobject.obj; .. > -> [ `Any ] Cairo.surface
-
-val distance_points : Cairo.point -> Cairo.point -> float
-
-val is_old_cairo : unit -> bool
-@
-
-<<cairo helpers functions>>=
-(* work by side effect on the (mutable) string *)
-let prepare_string s = 
-  for i = 0 to String.length s - 1 do
-    let c = String.get s i in
-    if int_of_char c >= 128
-    then String.set s i 'Z';
-  done;
-  ()
-
-let origin = { Cairo. x = 0.; y = 0. }
-
-let device_to_user_distance_x cr deltax = 
-  let pt = Cairo.device_to_user_distance cr { origin with Cairo.x = deltax } in
-  pt.Cairo.x
-let device_to_user_distance_y cr deltay = 
-  let pt = Cairo.device_to_user_distance cr { origin with Cairo.y = deltay } in
-  pt.Cairo.y
-
-let user_to_device_distance_x cr deltax = 
-  let pt = Cairo.user_to_device_distance cr { origin with Cairo.x = deltax } in
-  pt.Cairo.x
-let user_to_device_distance_y cr deltay = 
-  let pt = Cairo.user_to_device_distance cr { origin with Cairo.y = deltay } in
-  pt.Cairo.y
-
-(* TODO: this is buggy, as we can move the map which can led to
- * some device_to_user to translate to x = 0
- *)
-let device_to_user_size cr size = 
-  let device = { Cairo.x = size; Cairo.y = 0.; } in
-  let user = Cairo.device_to_user cr device in
-  user.Cairo.x
-
-(* still needed ? can just call device_to_user_size ? *)
-let user_to_device_font_size cr font_size = 
-  let user_dist = { Cairo.x = font_size; Cairo.y = font_size } in
-  let device_dist = Cairo.user_to_device_distance cr user_dist in
-  device_dist.Cairo.x
-
-
-(* floats are the norm in graphics *)
-open Common.ArithFloatInfix
-
-let cairo_point_to_point p = 
-  { F.x = p.Cairo.x;
-    F.y = p.Cairo.y;
-  }
-
-
-let show_text2 cr s =
-  (* this 'if' is only for compatibility with old versions of cairo
-   * that returns some out_of_memory error when applied to empty strings
-   *)
-  if s = "" then () else 
-  try 
-    prepare_string s;
-    Cairo.show_text cr s
-  with exn ->
-    let status = Cairo.status cr in
-    let s2 = Cairo.string_of_status status in
-    failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
-
-let show_text a b = 
-  Common.profile_code "View.cairo_show_text" (fun () -> show_text2 a b)
-
-let fake_text_extents = 
-  { Cairo.
-    x_bearing   = 0.1; y_bearing   = 0.1;
-    text_width  = 0.1; text_height = 0.1;
-    x_advance   = 0.1; y_advance   = 0.1 ;
-  }
-
-let text_extents2 cr s = 
-  (*if s = ""
-  then fake_text_extents
-  else 
-  *)
-  Cairo.text_extents cr s
-
-let text_extents a b = 
-  Common.profile_code "CairoH.cairo_text_extent" (fun () -> text_extents2 a b)
-
-
-let set_font_size2 cr font_size =
-  Cairo.set_font_size cr font_size
-
-let set_font_size cr font_size =
-  Common.profile_code "CairoH.set_font_size" (fun () ->
-    set_font_size2 cr font_size
-  )
-
-
-
-(* see http://cairographics.org/FAQ/#clear_a_surface *)
-let clear cr =
-  Cairo.set_source_rgba cr 0. 0. 0.   0.;
-  Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
-  Cairo.paint cr;
-  Cairo.set_operator cr Cairo.OPERATOR_OVER;
-  ()
-
-let surface_of_pixmap pm =
-  let cr = Cairo_lablgtk.create pm#pixmap in
-  Cairo.get_target cr
-
-
-let distance_points p1 p2 =
-  abs_float (p2.Cairo.x - p1.Cairo.x) +
-  abs_float (p2.Cairo.y - p1.Cairo.y) +
-    0.
-
-let is_old_cairo () = 
-  let s = Cairo.compile_time_version_string in
-  match () with
-  | _ when s =~ "1\\.[89]\\.*" -> false
-  | _ -> true
-
-let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
-  (let (r,g,b) = color +> Color.rgbf_of_string in
-  Cairo.set_source_rgba cr r g b alpha;
-  );
-  
-  Cairo.move_to cr x y;
-  Cairo.line_to cr (x+w) y;
-  Cairo.line_to cr (x+w) (y+h);
-  Cairo.line_to cr x (y+h);
-  Cairo.fill cr;
-  ()
-
-let draw_rectangle_figure ~cr ~color r =
-  (let (r,g,b) = color +> Color.rgbf_of_string in
-  Cairo.set_source_rgb cr r g b;
-  );
- let line_width = device_to_user_size cr 3. in
-
-  Cairo.set_line_width cr line_width; (* ((r.q.y - r.p.y) / 30.); *)
-
-  Cairo.move_to cr r.p.x r.p.y;
-  Cairo.line_to cr r.q.x r.p.y;
-  Cairo.line_to cr r.q.x r.q.y;
-  Cairo.line_to cr r.p.x r.q.y;
-  Cairo.line_to cr r.p.x r.p.y;
-  Cairo.stroke cr;
-  ()
-
-(* factorize with draw_rectangle. don't use buggy device_to_user_size !!!
-*)
-let draw_rectangle_bis ~cr ~color ~line_width r =
-  (let (r,g,b) = 
-    color +> Color.rgb_of_color +> Color.rgbf_of_rgb
-    in
-   Cairo.set_source_rgb cr r g b;
-  );
-  Cairo.set_line_width cr line_width;
-
-  Cairo.move_to cr r.p.x r.p.y;
-  Cairo.line_to cr r.q.x r.p.y;
-  Cairo.line_to cr r.q.x r.q.y;
-  Cairo.line_to cr r.p.x r.q.y;
-  Cairo.line_to cr r.p.x r.p.y;
-  Cairo.stroke cr;
-  ()
-@
-
-\paragraph{User vs device coordinates}
-
 \section{Main}
 
 <<main flags>>=
+(* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
 let proto = ref false
 let screen_size = ref 2
@@ -530,15 +296,52 @@ let main_action xs =
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   
-  let model = () in
+  let model = Model2.async_make () in
+
+  let dw = Model2.init_drawing treemap_generator model xs in
+
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
+  let db_file = 
+    match !db_file, xs with
+    | None, [dir] ->
+        let db = Filename.concat dir Database_code.default_db_name in
+        if Sys.file_exists db 
+        then begin 
+          pr2 (spf "Using pfff light db: %s" db);
+          Some db
+        end
+        else !db_file
+    | _ -> !db_file
+  in
+
+  let root = Common.common_prefix_of_files_or_dirs xs in
+
+  (* This can require lots of stack. Make sure to have ulimit -s 40000.
+   * This thread also cause some Bus error on MacOS :(
+   * so have to use Timeout instead when on the Mac
+   *)
+  (if Cairo_helpers.is_old_cairo() 
+  then
+    Thread.create (fun () ->
+      Model2.async_set (build_model root db_file) model;
+    ) ()
+    +> ignore
+   else 
+    Model2.async_set (build_model root db_file) model;
+   (*
+    GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
+      Model2.async_set (build_model root dbfile_opt) model;
+      false
+    ) +> ignore
+   *)
+  );
+
 
   Common.finalize (fun () -> 
     View2.mk_gui 
-      model 
-      !db_file
+      (model, dw, db_file)
       ~screen_size:!screen_size 
       !test_mode
       xs
@@ -853,7 +656,8 @@ let actual_root_of_db ~root db =
 <<mk_gui sig>>=
 val mk_gui :
   screen_size:int ->
-  'a -> Common.filename option -> 'b option -> 
+  (Model2.model Model2.async * Model2.drawing * Common.filename option) -> 
+  'b option -> 
   Common.filename list -> 
   unit
 @ 
@@ -886,6 +690,10 @@ let _refresh_da = ref (fun () ->
 )
 
 let dw_stack = ref []
+
+(* ugly *)
+let root_orig () = 
+  (Common.last !dw_stack).M.root
 
 let paint_content_maybe_refresher = ref None
 let current_rects_to_draw = ref []
@@ -937,13 +745,11 @@ and have emacsclient in your path).
 
 
 <<mk_gui()>>=
-let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
+let mk_gui ~screen_size (model, dw, dbfile_opt) test_mode dirs_or_files =
 
   let root = Common.common_prefix_of_files_or_dirs dirs_or_files in
 
-  let model = Model2.async_make () in
-
-  let dw = ref (Model2.init_drawing treemap_generator model dirs_or_files) in
+  let dw = ref dw in
   Common.push2 !dw dw_stack;
 
   let width, height, minimap_hpos, minimap_vpos = 
@@ -1041,7 +847,10 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
 
           let res = dialog_search_def !dw.model in
           res +> Common.do_option (fun s ->
-            let root = !dw.root in
+            let root = 
+              (* could also support local grep? and use !dw.root instead ?  *)
+              root_orig ()
+            in
             let matching_files = run_grep_query ~root s in
             let files = matching_files +> List.map fst +> Common.uniq in
             let current_grep_query = 
@@ -1364,27 +1173,8 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
     ()
   );
 
-  (* GMain.Idle.add ~prio: 1000 (idle dw) +> ignore; *)
+  (* Gui.gmain_idle_add ~prio: 1000 (idle dw) +> ignore; *)
 
-  (* This can require lots of stack. Make sure to have ulimit -s 40000.
-   * This thread also cause some Bus error on MacOS :(
-   * so have to use Timeout instead when on the Mac
-   *)
-  (if CairoH.is_old_cairo() 
-  then
-    Thread.create (fun () ->
-      Model2.async_set (build_model root dbfile_opt) model;
-    ) ()
-    +> ignore
-   else 
-    Model2.async_set (build_model root dbfile_opt) model;
-   (*
-    GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
-      Model2.async_set (build_model root dbfile_opt) model;
-      false
-    ) +> ignore
-   *)
-  );
   GtkThread.main ();
   ()
 @
@@ -1470,7 +1260,7 @@ let paint2 dw =
   then begin
     current_rects_to_draw := rects;
     paint_content_maybe_refresher := 
-      Some (GMain.Idle.add ~prio:3000 (lazy_paint ~user_rect dw));
+      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
   end;
 
   (* also clear the overlay *)
@@ -1643,10 +1433,10 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
     | 1 -> 0.1, 0.8
     | 2 -> 0.05, 0.2
     | 3 -> 0.03, 0.4
-    | 4 -> 0.02, 0.6
-    | 5 -> 0.01, 0.7
-    | 6 -> 0.005, 0.8
-    | _ -> 0.003, 0.9
+    | 4 -> 0.02, 0.5
+    | 5 -> 0.02, 0.65
+    | 6 -> 0.02, 0.7
+    | _ -> 0.02, 0.8
     )
   in
   let font_size = font_size / (zoom) (* use zoom factor inversely *) in
@@ -1968,6 +1758,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
     | FT.PL (FT.ML _)
     | FT.PL (FT.Cplusplus | FT.C)
     | FT.PL (FT.Thrift)
+    | FT.Text ("nw" | "tex"  | "texi" | "web")
     ) ->
 
     let column = ref 0 in
@@ -3208,6 +2999,11 @@ let icon_of_kind kind has_test =
   | Db.Dir -> `DIRECTORY
   | Db.MultiDirs -> `QUIT
 
+  (* todo *)
+  | Db.Field -> `CONNECT
+  | Db.Macro -> `CONNECT
+
+
 
 module L=struct
   type t = { 
@@ -3523,7 +3319,7 @@ let motion_notify (da, da2) dw ev =
     true
   end else begin
     current_motion_refresher := 
-      Some (GMain.Idle.add ~prio:100 (motion_refresher ev dw));
+      Some (Gui.gmain_idle_add ~prio:100 (motion_refresher ev dw));
     true
   end
 @ 
@@ -3843,10 +3639,13 @@ val tokens_with_categ_of_file :
 val use_arity_of_use_count : int -> Highlight_code.use_arity
 
 type ast =
-    Php of Parse_php.program2
   | ML of Parse_ml.program2
+  | Php of Parse_php.program2
   | Cpp of Parse_cpp.program2
   | Js of Parse_js.program2
+
+  | Noweb of Parse_nw.program2
+
 val _hmemo_file : (Common.filename, ast) Hashtbl.t
 val disable_file_in_cache : 
   Common.filename -> unit
@@ -3873,12 +3672,32 @@ open Highlight_code
  * disable_file_in_cache below.
  *)
 type ast = 
-  | Php of Parse_php.program2
   | ML  of Parse_ml.program2
+  | Php of Parse_php.program2
   | Cpp of Parse_cpp.program2
   | Js  of Parse_js.program2
 
+  | Noweb of Parse_nw.program2
+
+
 let _hmemo_file = Hashtbl.create 101
+
+let parse_ml2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    ML (Parse_ml.parse file +> fst))
+let parse_ml_cache a = 
+  Common.profile_code "View.parse_ml_cache" (fun () -> 
+    match parse_ml2 a with | ML a -> a | _ -> raise Impossible
+  )
+
+let parse_nw2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Noweb (Parse_nw.parse file +> fst))
+let parse_nw_cache a = 
+  Common.profile_code "View.parse_nw_cache" (fun () -> 
+    match parse_nw2 a with | Noweb a -> a | _ -> raise Impossible
+  )
+
 
 let parse_php2 file = 
   Common.memoized _hmemo_file file (fun () -> 
@@ -3894,30 +3713,28 @@ let parse_php_cache a =
     match parse_php2 a with | Php a -> a | _ -> raise Impossible
   )
 
-let parse_ml2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    ML (Parse_ml.parse file +> fst))
-let parse_ml_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
-    match parse_ml2 a with | ML a -> a | _ -> raise Impossible
-  )
-
-
-let parse_cpp2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Cpp (Parse_cpp.parse_tokens file +> fst))
-let parse_cpp_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
-    match parse_cpp2 a with | Cpp a -> a | _ -> raise Impossible
-  )
-
 let parse_js2 file = 
   Common.memoized _hmemo_file file (fun () -> 
     Js (Parse_js.parse file +> fst))
 let parse_js_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
+  Common.profile_code "View.parse_js_cache" (fun () -> 
     match parse_js2 a with | Js a -> a | _ -> raise Impossible
   )
+
+let parse_cpp2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    let (ast2, stat) = Parse_cpp.parse file in
+    let ast = Parse_cpp.program_of_program2 ast2 in
+    (* work by side effect on ast2 too *)
+    Check_variables_cpp.check_and_annotate_program
+      ast;
+    Cpp ast2
+  )
+let parse_cpp_cache a = 
+  Common.profile_code "View.parse_cpp_cache" (fun () -> 
+    match parse_cpp2 a with | Cpp a -> a | _ -> raise Impossible
+  )
+
 
 
 
@@ -3947,7 +3764,7 @@ let use_arity_of_use_count n =
 let rewrite_categ_using_entities s categ file entities =
 
   let e_kind_opt = 
-    try Some (Db.entity_kind_of_highlight_category categ)
+    try Some (Db.entity_kind_of_highlight_category_def categ)
     with _ -> None
   in
   match e_kind_opt with
@@ -3976,22 +3793,9 @@ let rewrite_categ_using_entities s categ file entities =
   | [e] ->
       let use_cnt = e.Db.e_number_external_users in
       let arity = use_arity_of_use_count use_cnt in
-      (* coupling: you must also say in style2 to take into account
-       * the arity for the category
-       *)
-      (match categ with
-      | Function (Def2 _) ->
-          Function (Def2 arity)
-      | FunctionDecl _ ->
-          FunctionDecl (arity)
-      | Class (Def2 _) ->
-          Class (Def2 arity)
-      | Method (Def2 _) ->
-          Method (Def2 arity)
-      | StaticMethod (Def2 _) ->
-          StaticMethod (Def2 arity)
-      | _ -> categ
-      )
+      if HC.is_entity_def_category categ
+      then HC.rewrap_arity_def2_category arity categ 
+      else categ
   | x::y::xs ->
       (* TODO: handle __construct directly *)
       if not (List.mem s ["__construct"])
@@ -4066,7 +3870,7 @@ let tokens_with_categ_of_file file hentities =
           let info = Token_helpers_ml.info_of_tok tok in
           let s = Token_helpers_ml.str_of_tok tok in
 
-          if not (Ast_ml.is_origintok info)
+          if not (Parse_info.is_origintok info)
           then None
           else 
             let categ = Common.hfind_option info h in
@@ -4081,6 +3885,41 @@ let tokens_with_categ_of_file file hentities =
 
         )
       ) +> List.flatten
+
+  | FT.Text ("nw" | "tex" | "texi" | "web") ->
+
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_nw_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_nw.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_nw.info_of_tok tok in
+          let s = Token_helpers_nw.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
 
   | FT.PL (FT.Cplusplus _ | FT.C | FT.Thrift) ->
       let h = Hashtbl.create 101 in
@@ -4246,6 +4085,8 @@ let async_set v a =
   " ";
   "-debug_gc", Arg.Set Flag.debug_gc,
   " ";
+  "-debug_handlers", Arg.Set Gui.synchronous_actions,
+  " ";
  "-disable_ancient", Arg.Clear Flag.use_ancient,
   " ";
  "-enable_ancient", Arg.Set Flag.use_ancient,
@@ -4308,18 +4149,20 @@ let multiplier_use x =
 
 let size_font_multiplier_of_categ ~font_size_real categ =
     match categ with
-    | Some (SH.Class SH.Def2 use) -> 6. *. multiplier_use use
-    | Some (SH.Module SH.Def) -> 6.
+    | Some (SH.Class SH.Def2 use) -> 5. *. multiplier_use use
+    | Some (SH.Module SH.Def) -> 5.
     | Some (SH.Function (SH.Def2 use)) -> 3.5 *. multiplier_use use
-    | Some (SH.TypeDef SH.Def) -> 6.
-    | Some (SH.Global (SH.Def2 _)) -> 3.
+    | Some (SH.TypeDef SH.Def) -> 5.
+    | Some (SH.Global (SH.Def2 use)) -> 3. *. multiplier_use use
     | Some (SH.FunctionDecl use) -> 2.5 *. multiplier_use use
-    | Some (SH.Macro (SH.Def2 _)) -> 2.
-    | Some (SH.MacroVar (SH.Def2 _)) -> 2.
+    | Some (SH.Macro (SH.Def2 use)) -> 2. *. multiplier_use use
+    | Some (SH.MacroVar (SH.Def2 use)) -> 2. *. multiplier_use use
     | Some (SH.Method (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
+    | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
         
-
+    | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
+          -> 1.5
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
         
@@ -4330,6 +4173,8 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.CommentEstet) -> 1.0
     | Some (SH.CommentCopyright) -> 0.5
 
+    | Some (SH.CommentSyncweb) -> 1.
+
 (*
     | Some (SH.Comment) when font_size_real > 7.
           -> 1.5
@@ -4338,7 +4183,15 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.BadSmell) -> 2.5
     | Some (SH.UseOfRef) -> 2.
         
-    | _ -> 1. 
+    | _ -> 
+        (* the cases above should have covered all the cases *)
+        categ +> Common.do_option (fun categ ->
+          if Highlight_code.is_entity_def_category categ
+          then failwith "You should update size_font_multiplier_of_categ";
+        );
+
+
+        1. 
 @
 
 
@@ -4369,7 +4222,7 @@ let threshold_draw_content_font_size_real = ref
 
 (* big and auto-generated files can take too much time to render *)
 let threshold_draw_content_nblines = 
-  ref 10000.
+  ref 25000.
 
 let threshold_draw_label_font_size_real = ref 
   10.
@@ -4422,6 +4275,244 @@ Hope you like it.
 
 
 \appendix
+
+\section{Gtk/Cairo}
+
+\subsection{Gtk}
+
+\subsection{Cairo}
+
+<<new_pixmap sig>>=
+val new_pixmap : 
+  width:int -> height:int -> GDraw.pixmap
+@
+
+<<new_pixmap()>>=
+let new_pixmap ~width ~height =
+  let drawable = GDraw.pixmap ~width ~height () in
+  drawable#set_foreground `WHITE ;
+  drawable#rectangle
+    ~x:0 ~y:0 ~width ~height ~filled:true () ;
+  drawable
+@
+
+<<cairo helpers functions sig>>=
+val fill_rectangle:
+  ?alpha:float ->
+  cr:Cairo.t -> 
+  x:float -> y:float -> w:float -> h:float ->
+  color:Simple_color.emacs_color -> 
+  unit ->
+  unit
+
+val draw_rectangle_figure:
+  cr:Cairo.t -> 
+  color:Simple_color.emacs_color -> 
+  Figures.rectangle -> unit
+
+val draw_rectangle_bis:
+  cr:Cairo.t -> 
+  color:Simple_color.color -> 
+  line_width:float ->
+  Figures.rectangle -> unit
+
+
+val prepare_string : string -> unit
+val origin : Cairo.point
+
+val device_to_user_distance_x : Cairo.t -> float -> float
+val device_to_user_distance_y : Cairo.t -> float -> float
+val user_to_device_distance_x : Cairo.t -> float -> float
+val user_to_device_distance_y : Cairo.t -> float -> float
+
+val device_to_user_size : Cairo.t -> float -> float
+val user_to_device_font_size : Cairo.t -> float -> float
+val cairo_point_to_point : Cairo.point -> Figures.point
+
+val show_text : Cairo.t -> string -> unit
+val text_extents : Cairo.t -> string -> Cairo.text_extents
+val set_font_size: Cairo.t -> float -> unit
+
+val clear : Cairo.t -> unit
+
+val surface_of_pixmap :
+  < pixmap : [> `drawable ] Gobject.obj; .. > -> [ `Any ] Cairo.surface
+
+val distance_points : Cairo.point -> Cairo.point -> float
+
+val is_old_cairo : unit -> bool
+@
+
+<<cairo helpers functions>>=
+(* work by side effect on the (mutable) string *)
+let prepare_string s = 
+  for i = 0 to String.length s - 1 do
+    let c = String.get s i in
+    if int_of_char c >= 128
+    then String.set s i 'Z'
+    else 
+      if c = '\t'
+      then String.set s i ' '
+      else ()
+  done;
+  ()
+
+let origin = { Cairo. x = 0.; y = 0. }
+
+let device_to_user_distance_x cr deltax = 
+  let pt = Cairo.device_to_user_distance cr { origin with Cairo.x = deltax } in
+  pt.Cairo.x
+let device_to_user_distance_y cr deltay = 
+  let pt = Cairo.device_to_user_distance cr { origin with Cairo.y = deltay } in
+  pt.Cairo.y
+
+let user_to_device_distance_x cr deltax = 
+  let pt = Cairo.user_to_device_distance cr { origin with Cairo.x = deltax } in
+  pt.Cairo.x
+let user_to_device_distance_y cr deltay = 
+  let pt = Cairo.user_to_device_distance cr { origin with Cairo.y = deltay } in
+  pt.Cairo.y
+
+(* TODO: this is buggy, as we can move the map which can led to
+ * some device_to_user to translate to x = 0
+ *)
+let device_to_user_size cr size = 
+  let device = { Cairo.x = size; Cairo.y = 0.; } in
+  let user = Cairo.device_to_user cr device in
+  user.Cairo.x
+
+(* still needed ? can just call device_to_user_size ? *)
+let user_to_device_font_size cr font_size = 
+  let user_dist = { Cairo.x = font_size; Cairo.y = font_size } in
+  let device_dist = Cairo.user_to_device_distance cr user_dist in
+  device_dist.Cairo.x
+
+
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+let cairo_point_to_point p = 
+  { F.x = p.Cairo.x;
+    F.y = p.Cairo.y;
+  }
+
+
+let show_text2 cr s =
+  (* this 'if' is only for compatibility with old versions of cairo
+   * that returns some out_of_memory error when applied to empty strings
+   *)
+  if s = "" then () else 
+  try 
+    prepare_string s;
+    Cairo.show_text cr s
+  with exn ->
+    let status = Cairo.status cr in
+    let s2 = Cairo.string_of_status status in
+    failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
+
+let show_text a b = 
+  Common.profile_code "View.cairo_show_text" (fun () -> show_text2 a b)
+
+let fake_text_extents = 
+  { Cairo.
+    x_bearing   = 0.1; y_bearing   = 0.1;
+    text_width  = 0.1; text_height = 0.1;
+    x_advance   = 0.1; y_advance   = 0.1 ;
+  }
+
+let text_extents2 cr s = 
+  (*if s = ""
+  then fake_text_extents
+  else 
+  *)
+  Cairo.text_extents cr s
+
+let text_extents a b = 
+  Common.profile_code "CairoH.cairo_text_extent" (fun () -> text_extents2 a b)
+
+
+let set_font_size2 cr font_size =
+  Cairo.set_font_size cr font_size
+
+let set_font_size cr font_size =
+  Common.profile_code "CairoH.set_font_size" (fun () ->
+    set_font_size2 cr font_size
+  )
+
+
+
+(* see http://cairographics.org/FAQ/#clear_a_surface *)
+let clear cr =
+  Cairo.set_source_rgba cr 0. 0. 0.   0.;
+  Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
+  Cairo.paint cr;
+  Cairo.set_operator cr Cairo.OPERATOR_OVER;
+  ()
+
+let surface_of_pixmap pm =
+  let cr = Cairo_lablgtk.create pm#pixmap in
+  Cairo.get_target cr
+
+
+let distance_points p1 p2 =
+  abs_float (p2.Cairo.x - p1.Cairo.x) +
+  abs_float (p2.Cairo.y - p1.Cairo.y) +
+    0.
+
+let is_old_cairo () = 
+  let s = Cairo.compile_time_version_string in
+  match () with
+  | _ when s =~ "1\\.[89]\\.*" -> false
+  | _ -> true
+
+let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
+  (let (r,g,b) = color +> Color.rgbf_of_string in
+  Cairo.set_source_rgba cr r g b alpha;
+  );
+  
+  Cairo.move_to cr x y;
+  Cairo.line_to cr (x+w) y;
+  Cairo.line_to cr (x+w) (y+h);
+  Cairo.line_to cr x (y+h);
+  Cairo.fill cr;
+  ()
+
+let draw_rectangle_figure ~cr ~color r =
+  (let (r,g,b) = color +> Color.rgbf_of_string in
+  Cairo.set_source_rgb cr r g b;
+  );
+ let line_width = device_to_user_size cr 3. in
+
+  Cairo.set_line_width cr line_width; (* ((r.q.y - r.p.y) / 30.); *)
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.line_to cr r.p.x r.p.y;
+  Cairo.stroke cr;
+  ()
+
+(* factorize with draw_rectangle. don't use buggy device_to_user_size !!!
+*)
+let draw_rectangle_bis ~cr ~color ~line_width r =
+  (let (r,g,b) = 
+    color +> Color.rgb_of_color +> Color.rgbf_of_rgb
+    in
+   Cairo.set_source_rgb cr r g b;
+  );
+  Cairo.set_line_width cr line_width;
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.line_to cr r.p.x r.p.y;
+  Cairo.stroke cr;
+  ()
+@
+
+\paragraph{User vs device coordinates}
 
 \section{Extra Code}
 
@@ -4704,12 +4795,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 <<button_action_minimap>>
 
 (*****************************************************************************)
-(* Heavy Computation *)
-(*****************************************************************************)
-<<treemap_generator>>
-
-<<build_model>>
-(*****************************************************************************)
 (* The main UI *)
 (*****************************************************************************)
 
@@ -4965,6 +5050,14 @@ module Flag = Flag_visual
 
 (* action mode *)
 let action = ref ""
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+<<treemap_generator>>
+
+<<build_model>>
 
 (*****************************************************************************)
 (* Main action *)

@@ -1222,71 +1222,15 @@ let button_action_minimap (da,da2) dw ev =
 (*e: button_action_minimap *)
 
 (*****************************************************************************)
-(* Heavy Computation *)
-(*****************************************************************************)
-(*s: treemap_generator *)
-let treemap_generator paths = 
-  let treemap = Treemap_pl.code_treemap paths in
-  let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap_algo ~algo treemap in
-  Common.pr2 (spf "%d rectangles to draw" (List.length rects));
-  rects
-(*e: treemap_generator *)
-
-(*s: build_model *)
-let build_model2 root dbfile_opt =   
-  let db_opt = dbfile_opt +> Common.fmap (fun file ->
-    if file =~ ".*.json"
-    then Database_code.load_database file
-    else Common.get_value file
-  )
-  in
-  let hentities = Model2.hentities root db_opt in
-  let hfiles_entities = Model2.hfiles_and_top_entities root db_opt in
-  let all_entities = Model2.all_entities db_opt in
-  let idx = Completion2.build_completion_defs_index all_entities in
-  
-  let model = { Model2.
-           db = db_opt;
-           hentities = hentities;
-           hfiles_entities = hfiles_entities;
-           big_grep_idx = idx;
-  }
-  in
-  (*
-    let model = Ancient2.mark model in
-    Gc.compact ();
-  *)
-(*
-  (* sanity check *)
-  let hentities = (Ancient2.follow model).Model2.hentities in
-  let n = Hashtbl.length hentities in
-  pr2 (spf "before = %d" n);
-  let cnt = ref 0 in
-  Hashtbl.iter (fun k v -> pr2 k; incr cnt) hentities;
-  pr2 (spf "after = %d" !cnt);
-  (* let _x = Hashtbl.find hentities "kill" in *)
-*)
-
-
-  model
-
-let build_model a b = 
-  Common.profile_code2 "View.build_model" (fun () ->
-    build_model2 a b)
-(*e: build_model *)
-(*****************************************************************************)
 (* The main UI *)
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
+let mk_gui ~screen_size (model, dw, dbfile_opt) test_mode dirs_or_files =
 
   let root = Common.common_prefix_of_files_or_dirs dirs_or_files in
 
-  let model = Model2.async_make () in
-
-  let dw = ref (Model2.init_drawing treemap_generator model dirs_or_files) in
+  let dw = ref dw in
   Common.push2 !dw dw_stack;
 
   let width, height, minimap_hpos, minimap_vpos = 
@@ -1712,25 +1656,6 @@ let mk_gui ~screen_size model dbfile_opt test_mode dirs_or_files =
 
   (* Gui.gmain_idle_add ~prio: 1000 (idle dw) +> ignore; *)
 
-  (* This can require lots of stack. Make sure to have ulimit -s 40000.
-   * This thread also cause some Bus error on MacOS :(
-   * so have to use Timeout instead when on the Mac
-   *)
-  (if CairoH.is_old_cairo() 
-  then
-    Thread.create (fun () ->
-      Model2.async_set (build_model root dbfile_opt) model;
-    ) ()
-    +> ignore
-   else 
-    Model2.async_set (build_model root dbfile_opt) model;
-   (*
-    GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
-      Model2.async_set (build_model root dbfile_opt) model;
-      false
-    ) +> ignore
-   *)
-  );
   GtkThread.main ();
   ()
 (*e: mk_gui() *)

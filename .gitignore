@@ -231,3 +231,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_java/parsing/parser_java.ml
 /lang_java/parsing/parser_java.mli
 /lang_java/parsing/parser_java.output
+/visual/Visual.out
