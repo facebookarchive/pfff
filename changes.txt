@@ -2,6 +2,11 @@
 
 * 0.14
 
+** pfff_visual
+
+*** visual grep
+can now visualize the result of a git grep on a project.
+
 ** introducing parsing_java/
 
 ** introducing parsing_nw/
@@ -11,7 +16,7 @@ the documentation of pfff!)
 
 * 0.13
 
-public release
+public release!
 
 * 0.12
 
