@@ -1,5 +1,4 @@
 (*s: view2.ml *)
-
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
@@ -1226,9 +1225,7 @@ let button_action_minimap (da,da2) dw ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size (model, dw, dbfile_opt) test_mode dirs_or_files =
-
-  let root = Common.common_prefix_of_files_or_dirs dirs_or_files in
+let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
   let dw = ref dw in
   Common.push2 !dw dw_stack;

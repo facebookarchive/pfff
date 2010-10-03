@@ -148,10 +148,9 @@ let main_action xs =
 
   Common.finalize (fun () -> 
     View2.mk_gui 
-      (model, dw, db_file)
       ~screen_size:!screen_size 
       !test_mode
-      xs
+      (root, model, dw, db_file)
   ) (fun() -> 
     ()
   )

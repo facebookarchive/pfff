@@ -341,10 +341,9 @@ let main_action xs =
 
   Common.finalize (fun () -> 
     View2.mk_gui 
-      (model, dw, db_file)
       ~screen_size:!screen_size 
       !test_mode
-      xs
+      (root, model, dw, db_file)
   ) (fun() -> 
     ()
   )
@@ -656,9 +655,11 @@ let actual_root_of_db ~root db =
 <<mk_gui sig>>=
 val mk_gui :
   screen_size:int ->
-  (Model2.model Model2.async * Model2.drawing * Common.filename option) -> 
   'b option -> 
-  Common.filename list -> 
+  (string (* root *) * 
+   Model2.model Model2.async * 
+   Model2.drawing * 
+   Common.filename option) -> 
   unit
 @ 
 
@@ -745,9 +746,7 @@ and have emacsclient in your path).
 
 
 <<mk_gui()>>=
-let mk_gui ~screen_size (model, dw, dbfile_opt) test_mode dirs_or_files =
-
-  let root = Common.common_prefix_of_files_or_dirs dirs_or_files in
+let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
   let dw = ref dw in
   Common.push2 !dw dw_stack;
@@ -4629,7 +4628,6 @@ module Flag = Flag_visual
 
 
 <<view2.ml>>=
-
 <<Facebook copyright>>
 
 open Common
