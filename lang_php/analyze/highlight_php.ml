@@ -573,6 +573,10 @@ let visit_toplevel
 
           | S.NoScope ->
               tag info (NoType)
+
+          | S.Static ->
+              (* todo? could invent a Static in highlight_code ? *)
+              tag info (Global (Use2 fake_no_use2))
           )
 
       | This (tok) ->
