@@ -26,8 +26,11 @@ PROGS+=ppp
 
 # without bdb pfff_db_light will be incomplete regarding PHP
 PROGS+=pfff_db_light
-PROGS+=pfff_db
 PROGS+=scheck
+
+ifeq ($(FEATURE_BDB), 1)
+PROGS+=pfff_db
+endif
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=pfff_visual
@@ -174,7 +177,7 @@ LIBS= commons/commons.cma \
      lang_php/analyze/finder/lib.cma \
      lang_php/analyze/static_analysis/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
-     lang_php/analyze/analyze_php.cma \
+     lang_php/analyze/lib.cma \
     lang_sql/parsing/lib.cma \
     lang_js/parsing/lib.cma \
      lang_js/analyze/lib.cma \

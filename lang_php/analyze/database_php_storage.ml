@@ -1,3 +1,35 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2010 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
+open Common
+
+open Database_php
+
+module Flag = Flag_analyze_php
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Globals/constants *)
+(*****************************************************************************)
+
+(* note: this is not the oassoc_buffer size_buffer *)
+let bdb_size_tables = 50000 
+
 
 (*****************************************************************************)
 (* Helpers persistency *)
@@ -18,13 +50,19 @@ let create_bdb_string metapath dbname env =
   Oassocbdb_string.create_bdb metapath dbname env transact
     flag_size_buffer_oassoc_buffer
 
+
+
 (* if use GDBM, but buggy: 
  *   let create_dbm metapath dbname = 
  *   Oassocdbm.create_dbm metapath dbname 
  *)
 
 
-let open_db ~metapath = 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let open_db metapath = 
   let metapath = Common.chop_dirsymbol metapath in
   check_is_database_dir metapath;
 
@@ -320,3 +358,9 @@ let open_db ~metapath =
 
       );
     }
+
+
+
+
+let set_link () = 
+  Database_php._current_open_db_backend := open_db

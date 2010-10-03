@@ -2,7 +2,15 @@ TOP=../..
 ##############################################################################
 # Variables
 ##############################################################################
-TARGET=analyze_php
+TARGET=lib
+
+include $(TOP)/Makefile.config
+
+ifeq ($(FEATURE_BDB), 1)
+DATABASE_PHP_STORAGE=database_php_storage.ml
+BDBINCLUDE=$(TOP)/external/ocamlbdb
+endif
+
 
 SRC= \
      normalize_php.ml \
@@ -14,6 +22,7 @@ SRC= \
      database_php_build2.ml \
      database_light_php.ml \
      dependencies_php.ml \
+     $(DATABASE_PHP_STORAGE) \
      test_analyze_php.ml
 
 -include $(TOP)/Makefile.config
@@ -22,7 +31,7 @@ SRC= \
 # emacs_mode.ml 
 # relation.ml
 
-#ifeq ($(FEATURES_PCRE), 1)
+#ifeq ($(FEATURE_PCRE), 1)
 #PCRECMA=pcre.cma
 #PCREINCLUDE= +pcre
 #PCREINCLUDE=$(TOP)/ocamlpcre/lib
@@ -45,6 +54,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
+   $(BDBINCLUDE) \
    ../parsing \
    basic \
    foundation \

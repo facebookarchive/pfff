@@ -169,12 +169,16 @@ exception Error of error
  * note: create_db is in database_php_build.mli 
  *)
 exception DatabaseAlreadyLocked
+val acquire_lock: Common.dirname -> unit
+val release_lock: Common.dirname -> unit
 
 val check_db: database -> unit
 val open_db_mem: project -> database
 val close_db: database -> unit
 
+(* usually a berkeleyDb backend defined in database_php_storage.ml *)
 val _current_open_db_backend: (Common.dirname -> database) ref
+
 val with_db:  metapath:Common.dirname -> (database -> 'a) -> 'a
 
 (* ---------------------------------------------------------------------- *)

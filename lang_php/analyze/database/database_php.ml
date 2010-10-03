@@ -372,8 +372,6 @@ let glimpse_special_dirname = "GLIMPSEDB"
  * if you want the different behavior
  *)
 
-(* note: this is not the oassoc_buffer size_buffer *)
-let bdb_size_tables = 50000 
 
 let is_database_dir ~metapath = 
   Sys.file_exists (metapath ^ "/prj.raw")
