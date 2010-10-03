@@ -26,6 +26,8 @@ let screen_size = ref 2
 let db_path = ref (Database.database_dir "/home/pad/www")
 *)
 let db_file = ref (None: Common.filename option)
+
+let filter = ref Treemap_pl.ex_filter_file
 (*e: main flags *)
 
 (* action mode *)
@@ -37,7 +39,7 @@ let action = ref ""
 
 (*s: treemap_generator *)
 let treemap_generator paths = 
-  let treemap = Treemap_pl.code_treemap paths in
+  let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
   let rects = Treemap.render_treemap_algo ~algo treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
@@ -213,6 +215,10 @@ let options () = [
     "-test" , Arg.String (fun s -> test_mode := Some s),
     " <str> execute an internal script";
     "-proto" , Arg.Set proto,
+    " ";
+
+    "-ocaml_filter", Arg.Unit (fun () -> 
+      filter := Treemap_pl.ocaml_filter_file),
     " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,

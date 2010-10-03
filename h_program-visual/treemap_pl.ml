@@ -245,16 +245,28 @@ let treemap_file_size_hook ~root file =
   ))
 
 
+let no_filter_file file = true
 
-let filter_file file = 
+let ex_filter_file file = 
   (* simple example of filtering *)
   let (d,b,e) = Common.dbe_of_filename_noext_ok file in
   match e with
   | "output" -> false
   | _ -> true
+
+let ocaml_filter_file file = 
+  match File_type.file_type_of_file file with
+  | PL (ML _)
+  | PL (Makefile) 
+      -> true
+  | _ -> false
+
+
+let pad_filter_file file = 
+  raise Todo
       
 
-let code_treemap2 paths =
+let code_treemap2 ~filter_file paths =
   let root = Common.common_prefix_of_files_or_dirs paths in
   let tree = 
     paths +> Treemap.tree_of_dirs_or_files
@@ -282,6 +294,6 @@ let code_treemap2 paths =
     ~label_of_dir:(fun d -> d)
     ~label_of_file:(fun (f, intleaf (*, aref *)) -> f)
 
-let code_treemap a = 
+let code_treemap ~filter_file a = 
   Common.profile_code "Treemap_pl.code_treemap" (fun () ->
-    code_treemap2 a)
+    code_treemap2 ~filter_file a)

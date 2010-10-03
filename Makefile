@@ -539,7 +539,7 @@ db:
 
 visual:
 	./pfff_visual -profile -ss 2 \
-	   -with_info DB_LIGHT  .
+	   -with_info DB_LIGHT -ocaml_filter  .
 visualopt:
 	./pfff_visual.opt -profile -ss 2 \
 	   -with_info DB_LIGHT .
