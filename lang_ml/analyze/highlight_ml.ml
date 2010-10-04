@@ -119,7 +119,7 @@ let visit_toplevel
         | _ ->
             ()
         );
-        aux_toks xs
+        aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::T.TEq ii5::xs
         when Ast.col_of_info ii = 0 ->
