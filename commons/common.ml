@@ -1957,6 +1957,12 @@ let rec (while_some: gen:(unit-> 'a option) -> f:('a -> 'b) -> unit -> 'b list)
       let rest = while_some gen f () in
       e::rest
 
+(* perl idiom *)
+let (||=) aref vf = 
+  match !aref with
+  | None -> aref := Some (vf ())
+  | Some _ -> ()
+
 (*****************************************************************************)
 (* TriBool *)
 (*****************************************************************************)

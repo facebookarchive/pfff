@@ -824,6 +824,8 @@ val list_to_single_or_exn: 'a list -> 'a
 
 val while_some: gen:(unit-> 'a option) -> f:('a -> 'b) -> unit -> 'b list
 
+val (||=): 'a option ref -> (unit -> 'a) -> unit
+
 (*x: common.mli for basic types *)
 (*****************************************************************************)
 (* TriBool *)
