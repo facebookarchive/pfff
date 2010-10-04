@@ -605,6 +605,8 @@ let visit_toplevel
           (* security: *)
           if Hashtbl.mem hbad_functions f 
           then tag info BadSmell;
+          
+
 
           db_opt +> Common.do_option (fun (id, current_file, db) ->
           
@@ -665,7 +667,9 @@ let visit_toplevel
 
       | FunCallVar (qu_opt, var, args) ->
           (* function pointer call !!! put in big font *)
-          k x
+          let ii = Lib_parsing_php.ii_of_lvalue var in
+          ii +> List.iter (fun info -> tag info PointerCall);
+          
 
       | ObjAccess (_, _) 
       | VQualifier (_, _)

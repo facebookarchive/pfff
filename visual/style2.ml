@@ -67,6 +67,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
           -> 1.5
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
+
         
 
     | Some (SH.CommentSection0) -> 5.
@@ -83,7 +84,11 @@ let size_font_multiplier_of_categ ~font_size_real categ =
 *)
 
     | Some (SH.BadSmell) -> 2.5
+
+    (* ocaml *)
     | Some (SH.UseOfRef) -> 2.
+    (* php, C, etc *)
+    | Some (SH.PointerCall) -> 3.
         
     | _ -> 
         (* the cases above should have covered all the cases *)

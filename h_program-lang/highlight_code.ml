@@ -686,7 +686,7 @@ let info_of_category = function
 
 
   | PointerCall -> 
-      [`FOREGROUND "gold3";
+      [`FOREGROUND "firebrick";
        `WEIGHT `BOLD; 
        `SCALE `XX_LARGE;
       ]
