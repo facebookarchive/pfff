@@ -774,7 +774,7 @@ let deadcode_unittest =
        * small php files whose name, e.g. all_dead.php explains what
        * kind of function they contain. 
        *)
-      let deadcode_data_dir = Config.path ^ "/tests/deadcode/" in
+      let deadcode_data_dir = Config.path ^ "/tests/php/deadcode/" in
 
       (* The deadcode analysis can be customized via "hooks".
        * This default hook is good enough for our unit tests.
