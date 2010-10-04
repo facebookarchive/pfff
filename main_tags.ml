@@ -45,6 +45,8 @@ let heavy_tagging = ref false
 
 let lang = ref "php"
 
+let output_file = ref "TAGS"
+
 (*****************************************************************************)
 (* Some  debugging functions *)
 (*****************************************************************************)
@@ -89,8 +91,18 @@ let main_action xs =
   (* This can augment the size of the tags file
      let xs = List.map relative_to_absolute xs in 
   *)
+  let tags_file = 
+    (*
+     * Common.relative_to_absolute "TAGS" in
+     * let res = Common.y_or_no (spf "writing data in %s" tag_file) in
+     * if not res 
+     * then failwith "ok I stop";
+     *)
+    !output_file
+  in
   let files_and_defs = defs_of_files_or_dirs !lang xs in
-  Tags.generate_TAGS_file files_and_defs;
+  pr2 (spf "Writing data in %s" tags_file);
+  Tags.generate_TAGS_file ~tags_file files_and_defs;
   ()
 
 (*****************************************************************************)
@@ -106,8 +118,13 @@ let options () =
     " ";
     "-heavy_tagging", Arg.Set heavy_tagging, 
     " generates some extra tags with semantic prefix: F_, C_, M_";
+
     "-lang", Arg.Set_string lang, 
     (spf " <str> choose language (default = %s)" !lang);
+
+    "-o", Arg.Set_string output_file, 
+    " <file> default = TAGS";
+
   ] ++
 
   Common.options_of_actions action (all_actions()) ++

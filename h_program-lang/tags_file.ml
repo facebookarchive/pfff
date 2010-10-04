@@ -93,14 +93,9 @@ let fake_defs = [
 (* Main entry point *)
 (*****************************************************************************)
 
-let generate_TAGS_file files_and_defs =
+let generate_TAGS_file ~tags_file files_and_defs =
 
-  let tag_file = Common.relative_to_absolute "TAGS" in
-  let res = Common.y_or_no (spf "writing data in %s" tag_file) in
-  if not res 
-  then failwith "ok I stop";
-  
-  Common.with_open_outfile tag_file (fun (pr_no_nl, _chan) ->
+  Common.with_open_outfile tags_file (fun (pr_no_nl, _chan) ->
 
     pr_no_nl header;
 
