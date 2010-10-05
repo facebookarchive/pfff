@@ -236,6 +236,7 @@ let fake_entity = {Database_code.
      e_pos = { Common.l = -1; Common.c = -1 };
      e_number_external_users = 0;
      e_good_examples_of_use = [];
+     e_properties = [];
 }
 
 let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx = 

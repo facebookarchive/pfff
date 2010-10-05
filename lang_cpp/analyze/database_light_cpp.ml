@@ -59,6 +59,8 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
     e_number_external_users = 0;
     (* TODO *)
     e_good_examples_of_use = [];
+    (* TODO *)
+    e_properties = [];
   }
 
 

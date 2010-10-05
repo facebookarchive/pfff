@@ -175,6 +175,11 @@ let compute_database ?(verbose=false) files_or_dirs =
                 (* filled in step 2 *)
                 e_number_external_users = 0;
                 e_good_examples_of_use = [];
+
+                (* TODO once we have a real parser, can at least
+                 * set the UseGlobal
+                 *)
+                e_properties = [];
               }
               in
               (* todo? could be more precise and add the Modulename.s

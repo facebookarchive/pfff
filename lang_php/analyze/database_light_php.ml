@@ -42,6 +42,14 @@ let mk_entity ~root id nb_users good_example_ids db =
    * for a class when start typing the class
    *)
   let fullname = DbPHP.complete_name_of_id id db in
+
+  let properties = 
+    (* TODO for function can look in AST if contains dynamic calls
+     * at least. Could also use for global vars by calling
+     * the annotater (or normally ast already annotated ?
+     *)
+    []
+  in
     
   { Database_code.
     e_name = name;
@@ -62,6 +70,8 @@ let mk_entity ~root id nb_users good_example_ids db =
       );
     e_number_external_users = nb_users;
     e_good_examples_of_use = good_example_ids; 
+
+    e_properties = properties;
   }      
 
 let exclude_ids_same_file ids idfile db =

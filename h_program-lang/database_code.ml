@@ -169,7 +169,21 @@ type entity = {
   * even when it's called only once, but by a small wrapper that is
   * itself very often called.
   *)
+
+  e_properties: property list;
  }
+ and property = 
+   (* mostly function properties *)
+
+   (* todo: could also say which argument is dataflow involved in the
+    * dynamic call if any 
+    *)
+   | ContainDynamicCall
+
+    (* the argument position taken by ref *)
+   | TakeArgNByRef of int
+
+   | UseGlobal of string
 
 
 (* Note that because we now use indexed entities, you can not
@@ -261,69 +275,11 @@ let entity_kind_of_string s =
 (* json -> X *)
 (*---------------------------------------------------------------------------*)
 
-let ids_of_json json = 
-  match json with
-  | J.Array xs ->
-      xs +> List.map (function
-      | J.Int id -> id
-      | _ -> failwith "bad json"
-      )
-  | _ -> failwith "bad json"
-
-
-let int_of_entity_kind e = 
-  match e with
-  | Function -> 1
-  | Class -> 2
-  | Module -> 3
-  | Type -> 4
-  | Constant -> 5
-  | Global -> 6
-  | Method -> 7
-  | StaticMethod -> 8
-  | Field -> 9
-  | File -> 10
-  | Dir -> 11
-  | MultiDirs -> 12
-  | Macro -> 13
-
-let entity_kind_of_int i = 
-  match i with
-  | 1 -> Function
-  | 2 -> Class
-  | 3 -> Module
-  | 4 -> Type
-  | 5 -> Constant
-  | 6 -> Global
-  | 7 -> Method
-  | 8 -> StaticMethod
-  | 9 -> Field
-  | 10 -> File
-  | 11 -> Dir
-  | 12 -> MultiDirs
-  | 13 -> Macro
-  | _ -> failwith "wrong entity number"
-
-
-let string_short_of_entity_kind e = 
-  match e with
-  | Function -> "F"
-  | Class -> "Cl"
-  | Module -> "Mo"
-  | Type -> "T"
-  | Constant -> "Co"
-  | Global -> "G"
-  | Macro -> "Mc"
-  | Method -> "Me"
-  | StaticMethod -> "SM"
-  | Field -> "Fld"
-  | File -> "Fi"
-  | Dir -> "Di"
-  | MultiDirs -> "Md"
-
-
 let json_of_filepos x = 
   J.Array [J.Int x.Common.l; J.Int x.Common.c]
+
+let json_of_property x =
+  raise Todo
 
 let json_of_entity e = 
   J.Object [
@@ -335,18 +291,7 @@ let json_of_entity e =
     (* different from type *)
     "cnt", J.Int e.e_number_external_users;
     "u", J.Array (e.e_good_examples_of_use +> List.map (fun id -> J.Int id));
-  ]
-
-let json_compact_of_entity e =
-  J.Array [
-    J.Int (int_of_entity_kind e.e_kind);
-    J.String e.e_name;
-    J.String e.e_fullname;
-    J.String e.e_file;
-    J.Int e.e_pos.Common.l;
-    J.Int e.e_pos.Common.c;
-    J.Int e.e_number_external_users;
-    J.Array (e.e_good_examples_of_use +> List.map (fun id -> J.Int id));
+    "ps", J.Array (e.e_properties +> List.map json_of_property);
   ]
 
 let json_of_database db = 
@@ -357,17 +302,34 @@ let json_of_database db =
     "files", J.Array (db.files +> List.map (fun (x, i) ->
       J.Array([J.String x; J.Int i])));
     "entities", J.Array (db.entities +> 
-                         Array.to_list +> List.map json_compact_of_entity);
+                         Array.to_list +> List.map json_of_entity);
   ]
 
 (*---------------------------------------------------------------------------*)
 (* X -> json *)
 (*---------------------------------------------------------------------------*)
+let ids_of_json json = 
+  match json with
+  | J.Array xs ->
+      xs +> List.map (function
+      | J.Int id -> id
+      | _ -> failwith "bad json"
+      )
+  | _ -> failwith "bad json"
 
 let filepos_of_json json = 
   match json with
   | J.Array [J.Int l; J.Int c] ->
       { Common.l = l; Common.c = c }
+  | _ -> failwith "Bad json"
+
+let property_of_json json =
+  raise Todo
+
+let properties_of_json json =
+  match json with
+  | J.Array xs ->
+      xs +> List.map property_of_json
   | _ -> failwith "Bad json"
 
 (* Reverse of json_of_entity_info; must follow same convention for the order
@@ -384,6 +346,7 @@ let entity_of_json2 json =
     (* different from type *)
     "cnt", J.Int e_number_external_users;
     "u", ids;
+    "ps", properties;
     ] -> {
       e_kind = entity_kind_of_string e_kind;
       e_name = e_name;
@@ -392,35 +355,13 @@ let entity_of_json2 json =
       e_pos = filepos_of_json e_pos;
       e_number_external_users = e_number_external_users;
       e_good_examples_of_use = ids_of_json ids;
-      
+      e_properties = properties_of_json properties;
     }
   | _ -> failwith "Bad json"
 
 let entity_of_json a = 
   Common.profile_code "Db.entity_of_json" (fun () ->
     entity_of_json2 a)
-
-let entity_of_json_compact json =
-  match json with
-  | J.Array [
-      J.Int e_kind;
-      J.String e_name;
-      J.String e_fullname;
-      J.String e_file;
-      J.Int e_pos_l; 
-      J.Int e_pos_c;
-      J.Int e_number_external_users;
-      ids;
-    ] -> {
-      e_kind = entity_kind_of_int e_kind;
-      e_name = e_name;
-      e_file = e_file;
-      e_fullname = e_fullname;
-      e_pos = { Common.l = e_pos_l; Common.c = e_pos_c };
-      e_number_external_users = e_number_external_users;
-      e_good_examples_of_use = ids_of_json ids
-  }
-  | _ -> failwith "Bad json"
 
 
 let database_of_json2 json =
@@ -447,7 +388,7 @@ let database_of_json2 json =
         | _ -> failwith "Bad json"
       );
       entities = 
-        db_entities +> List.map entity_of_json_compact +> Array.of_list
+        db_entities +> List.map entity_of_json +> Array.of_list
     }
       
   | _ -> failwith "Bad json"
@@ -461,7 +402,10 @@ let database_of_json json =
 (* Load/Save *)
 (*****************************************************************************)
 
-(* could use JSON or Marshall *)
+(* Those functions are mostly obsolete. It's more efficient to use Marshall
+ * to store big database. This function is used only when
+ * one wants to have a readable database.
+ *)
 let load_database2 file =
   let json = 
     Common.profile_code2 "Json_in.load_json" (fun () ->
@@ -472,8 +416,9 @@ let load_database2 file =
 let load_database file =
   Common.profile_code2 "Db.load_db" (fun () -> load_database2 file)
 
-
-(* todo? use the more efficient json pretty printer ? *)
+(* less: could use the more efficient json pretty printer, but really
+ * marshall is probably better. Only biniou could be a valid alternative.
+ *)
 let save_database ?(readable_db=false) database file =
    database |> json_of_database |> 
        Json_io.string_of_json ~compact:(not readable_db) ~recursive:false
@@ -483,7 +428,6 @@ let save_database ?(readable_db=false) database file =
 (*****************************************************************************)
 (* Entities categories *)
 (*****************************************************************************)
-
 
 let entity_kind_of_highlight_category_def categ = 
   (* TODO: constant *)
@@ -630,6 +574,7 @@ let mk_dir_entity dir n = {
   e_kind = Dir;
   e_number_external_users = n;
   e_good_examples_of_use = [];
+  e_properties = [];
 }
 let mk_file_entity file n = { 
   e_name = Common.basename file;
@@ -639,6 +584,7 @@ let mk_file_entity file n = {
   e_kind = File;
   e_number_external_users = n;
   e_good_examples_of_use = [];
+  e_properties = [];
 }
 
 let mk_multi_dirs_entity name dirs_entities =
@@ -658,6 +604,7 @@ let mk_multi_dirs_entity name dirs_entities =
     (* todo? *)
     (List.length dirs_fullnames);
   e_good_examples_of_use = [];
+  e_properties = [];
   }
 
 let multi_dirs_entities_of_dirs es =
