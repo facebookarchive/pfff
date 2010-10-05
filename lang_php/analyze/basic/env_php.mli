@@ -16,3 +16,6 @@ type env = {
 }
 
 val mk_env: php_root:Common.dirname -> env
+
+val hbad_functions: string Common.hashset
+val hdynamic_call_wrappers: string Common.hashset

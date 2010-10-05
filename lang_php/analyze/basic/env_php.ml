@@ -78,8 +78,6 @@ let mk_env ~php_root = {
   );
 }
     
-
-
 let globals_builtins = [
   "GLOBALS";
 
@@ -91,4 +89,19 @@ let globals_builtins = [
   "_REQUEST";
   "_ENV";
   "_SESSION";
+]
+
+(* todo: facebook specific. Also would be good to associate a message with *)
+let hbad_functions = Common.hashset_of_list [
+  "HTML";
+  "curl_exec";
+  "debug_rlog";
+]
+
+let hdynamic_call_wrappers = Common.hashset_of_list [
+  "call_user_func";
+  "call_user_func_array";
+  (* facebook specific *)
+  "fb_call_user_func_safe";
+  "fb_call_user_func_safe_return";
 ]

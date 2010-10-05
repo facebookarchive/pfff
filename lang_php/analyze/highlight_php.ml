@@ -36,12 +36,6 @@ module T = Parser_php
 (* Globals *)
 (*****************************************************************************)
 
-(* todo: facebook specific. Also would be good to associate a message with *)
-let hbad_functions = Common.hashset_of_list [
-  "HTML";
-  "curl_exec";
-  "debug_rlog";
-]
 
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
@@ -602,11 +596,11 @@ let visit_toplevel
           let info = Ast.info_of_name callname in
           let f = Ast.name callname in
 
+
           (* security: *)
-          if Hashtbl.mem hbad_functions f 
+          if Hashtbl.mem Env_php.hbad_functions f 
           then tag info BadSmell;
           
-
 
           db_opt +> Common.do_option (fun (id, current_file, db) ->
           
