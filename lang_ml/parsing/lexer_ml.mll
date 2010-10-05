@@ -116,33 +116,25 @@ let keyword_table = Common.hash_of_list [
 (*****************************************************************************)
 let letter = ['A'-'Z' 'a'-'z']
 let digit  = ['0'-'9']
-
+let hexa = digit | ['A' 'F' 'a' 'f']
 let newline = '\n'
 let space = [' ' '\t']
-
 
 let lowerletter = ['a'-'z']
 let upperletter = ['A'-'Z']
 
-let ident = (lowerletter | '_') (letter | digit | '_' | "'")*
+let ident      = (lowerletter | '_') (letter | digit | '_' | "'")*
 let upperident = upperletter (letter | digit | '_')*
-
 let label_name = (lowerletter | '_') (letter | digit | '_' | "'")*
-let label = '~' label_name ':'
-let optlabel = '?' label_name ':'
 
 let operator_char = 
  '!'| '$' | '%' | '&' | '*' | '+' | '-' | '.' | '/' 
   | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~' 
-
 let prefix_symbol = 
   ('!' | '?' | '~') operator_char*
-
 let infix_symbol = 
   ('=' | '<' | '>' | '@' | '^' | '|'| '&' | '+' | '-' | '*'| '/' | '$'|'%' )
    operator_char*
-
-let hexa = digit | ['A' 'F' 'a' 'f']
 
 (*****************************************************************************)
 rule token = parse
@@ -247,11 +239,11 @@ rule token = parse
       TUpperIdent (s, tokinfo lexbuf)
     }
 
-  | label {
+  | '~' label_name ':' {
       let s = tok lexbuf in
       TLabelDecl (s, tokinfo lexbuf)
     }
-  | optlabel {
+  | '?' label_name ':' {
       let s = tok lexbuf in
       TOptLabelDecl (s, tokinfo lexbuf)
     }
