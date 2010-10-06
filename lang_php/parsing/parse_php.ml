@@ -25,6 +25,8 @@ module TH   = Token_helpers_php
 
 (*e: parse_php module aliases *)
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -140,50 +142,10 @@ let print_bad line_error (start_line, end_line) filelines  =
 (* Stat *)
 (*****************************************************************************)
 (*s: type parsing_stat *)
-type parsing_stat = {
-  filename: Common.filename;
-  mutable correct: int;
-  mutable bad: int;
-}
 (*e: type parsing_stat *)
 
 (*s: parse_php stat function *)
-let default_stat file =  { 
-    filename = file;
-    correct = 0; bad = 0;
-(*
-    have_timeout = false;
-    commentized = 0;
-    problematic_lines = [];
-*)
-  }
 (*x: parse_php stat function *)
-let print_parsing_stat_list statxs =
-  let total = List.length statxs in
-  let perfect = 
-    statxs 
-      +> List.filter (function 
-      | {bad = n} when n = 0 -> true 
-      | _ -> false)
-      +> List.length 
-  in
-
-  pr2 "\n\n\n---------------------------------------------------------------";
-  pr2 (
-  (spf "NB total files = %d; " total) ^
-  (spf "perfect = %d; " perfect) ^
-  (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
-  );
-
-  let good = statxs +> List.fold_left (fun acc {correct = x} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x} -> acc+x) 0  in
-
-  let gf, badf = float_of_int good, float_of_int bad in
-  pr2 (
-  (spf "nb good = %d,  nb bad = %d " good bad) ^
-  (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
-   )
-  )
 (*e: parse_php stat function *)
 
 (*****************************************************************************)
@@ -286,37 +248,18 @@ let tokens a =
 (* Helper for main entry point *)
 (*****************************************************************************)
 (*s: parse tokens_state helper *)
-type tokens_state = {
-  mutable rest :         Parser_php.token list;
-  mutable current :      Parser_php.token;
-  (* it's passed since last "checkpoint", not passed from the beginning *)
-  mutable passed :       Parser_php.token list;
-  (* if want to do some lalr(k) hacking ... cf yacfe.
-   * mutable passed_clean : Parser_php_c.token list;
-   * mutable rest_clean :   Parser_php_c.token list;
-   *)
-}
 (*x: parse tokens_state helper *)
-let mk_tokens_state toks = 
-  { 
-    rest       = toks;
-    current    = (List.hd toks);
-    passed = []; 
-    (* passed_clean = [];
-     * rest_clean = (toks +> List.filter TH.is_not_comment);
-     *)
-  }
 (*x: parse tokens_state helper *)
 (* Hacked lex. This function use refs passed by parse.
  * 'tr' means 'token refs'.
  *)
 let rec lexer_function tr = fun lexbuf ->
-  match tr.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.current)
+  match tr.PI.rest with
+  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
   | v::xs -> 
-      tr.rest <- xs;
-      tr.current <- v;
-      tr.passed <- v::tr.passed;
+      tr.PI.rest <- xs;
+      tr.PI.current <- v;
+      tr.PI.passed <- v::tr.PI.passed;
 
       if TH.is_comment v ||
         (* TODO a little bit specific to FB ? *)
@@ -633,7 +576,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
         )
   in
 
-  let stat = default_stat filename in
+  let stat = Parse_info.default_stat filename in
   let filelines = Common.cat_array filename in
 
   let toks = tokens filename in
@@ -643,9 +586,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
     else adapt_tokens_pp ~orig_filename toks
   in
 
-  let tr = mk_tokens_state toks in
+  let tr = Parse_info.mk_tokens_state toks in
 
-  let checkpoint = TH.line_of_tok tr.current in
+  let checkpoint = TH.line_of_tok tr.PI.current in
 
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
   let elems = 
@@ -659,22 +602,22 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
         ))
     ) with e ->
 
-      let line_error = TH.line_of_tok tr.current in
+      let line_error = TH.line_of_tok tr.PI.current in
 
-      let _passed_before_error = tr.passed in
-      let current = tr.current in
+      let _passed_before_error = tr.PI.passed in
+      let current = tr.PI.current in
 
       (* no error recovery, the whole file is discarded *)
-      tr.passed <- List.rev toks;
+      tr.PI.passed <- List.rev toks;
 
-      let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.passed in 
+      let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
       Right (info_of_bads, line_error, current, e)
   in
 
   match elems with
   | Left xs ->
-      stat.correct <- (Common.cat filename +> List.length);
+      stat.PI.correct <- (Common.cat filename +> List.length);
 
       distribute_info_items_toplevel xs toks filename, 
       stat
@@ -706,9 +649,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       if !Flag.show_parsing_error
       then print_bad line_error (checkpoint, checkpoint2) filelines;
 
-      stat.bad     <- Common.cat filename +> List.length;
+      stat.PI.bad     <- Common.cat filename +> List.length;
 
-      let info_item = mk_info_item filename (List.rev tr.passed) in 
+      let info_item = mk_info_item filename (List.rev tr.PI.passed) in 
       [Ast.NotParsedCorrectly info_of_bads, info_item], 
       stat
 (*x: Parse_php.parse *)

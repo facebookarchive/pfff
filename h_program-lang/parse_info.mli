@@ -8,6 +8,9 @@ type parse_info = {
     file: Common.filename;
   } 
 (* see also type filepos = { l: int; c: int; } in common.mli *)
+val fake_parse_info : parse_info
+val string_of_parse_info : parse_info -> string
+val string_of_parse_info_bis : parse_info -> string
 
 type token =
   | OriginTok  of parse_info
@@ -47,11 +50,18 @@ type parsing_stat = {
   mutable bad: int;
 }
 val default_stat: Common.filename -> parsing_stat
+val print_parsing_stat_list: parsing_stat list -> unit
+
+type 'tok tokens_state = {
+  mutable rest:         'tok list;
+  mutable current:      'tok;
+  (* it's passed since last "checkpoint", not passed from the beginning *)
+  mutable passed:       'tok list;
+}
+
+val mk_tokens_state: 'tok list -> 'tok tokens_state
 
 
-val fake_parse_info : parse_info
-val string_of_parse_info : parse_info -> string
-val string_of_parse_info_bis : parse_info -> string
 
 (* array[i] will contain the (line x col) of the i char position *)
 val full_charpos_to_pos : Common.filename -> (int * int) array

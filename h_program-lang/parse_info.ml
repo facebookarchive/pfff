@@ -143,7 +143,38 @@ type parsing_stat = {
 let default_stat file =  { 
     filename = file;
     correct = 0; bad = 0;
+(*
+    have_timeout = false;
+    commentized = 0;
+    problematic_lines = [];
+*)
 }
+
+
+(* Many parsers need to interact with the lexer, or use tricks around
+ * the stream of tokens, or do some error recovery, or just need to
+ * pass certain tokens (like the comments token) which requires
+ * to have access to this stream of remaining tokens.
+ * The token_state type helps.
+ *)
+type 'tok tokens_state = {
+  mutable rest:         'tok list;
+  mutable current:      'tok;
+  (* it's passed since last "checkpoint", not passed from the beginning *)
+  mutable passed:       'tok list;
+  (* if want to do some lalr(k) hacking ... cf yacfe.
+   * mutable passed_clean : 'tok list;
+   * mutable rest_clean :   'tok list;
+   *)
+}
+let mk_tokens_state toks = { 
+    rest       = toks;
+    current    = (List.hd toks);
+    passed = []; 
+    (* passed_clean = [];
+     * rest_clean = (toks +> List.filter TH.is_not_comment);
+     *)
+  }
 
 (*****************************************************************************)
 (* string_of *)
@@ -793,3 +824,33 @@ let error_message_short = fun filename (lexeme, lexstart) ->
     end
 
 
+(*****************************************************************************)
+(* Parsing statistics *)
+(*****************************************************************************)
+
+let print_parsing_stat_list statxs =
+  let total = List.length statxs in
+  let perfect = 
+    statxs 
+      +> List.filter (function 
+      | {bad = n} when n = 0 -> true 
+      | _ -> false)
+      +> List.length 
+  in
+
+  pr2 "\n\n\n---------------------------------------------------------------";
+  pr2 (
+  (spf "NB total files = %d; " total) ^
+  (spf "perfect = %d; " perfect) ^
+  (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
+  );
+
+  let good = statxs +> List.fold_left (fun acc {correct = x} -> acc+x) 0 in
+  let bad  = statxs +> List.fold_left (fun acc {bad = x} -> acc+x) 0  in
+
+  let gf, badf = float_of_int good, float_of_int bad in
+  pr2 (
+  (spf "nb good = %d,  nb bad = %d " good bad) ^
+  (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
+   )
+  )

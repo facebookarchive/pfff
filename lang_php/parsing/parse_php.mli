@@ -1,11 +1,6 @@
 (*s: parse_php.mli *)
 
 (*s: type parsing_stat *)
-type parsing_stat = {
-  filename: Common.filename;
-  mutable correct: int;
-  mutable bad: int;
-}
 (*e: type parsing_stat *)
 (*s: type program2 *)
 type program2 = toplevel2 list
@@ -18,7 +13,7 @@ type program2 = toplevel2 list
 (* This is the main function *)
 val parse : 
   ?pp:string option -> 
-  Common.filename -> (program2 * parsing_stat)
+  Common.filename -> (program2 * Parse_info.parsing_stat)
 
 val parse_program:
   ?pp:string option ->
@@ -36,5 +31,4 @@ val program_of_program2 : program2 -> Ast_php.program
 (*x: parse_php.mli *)
 val tokens: Common.filename -> Parser_php.token list
 (*x: parse_php.mli *)
-val print_parsing_stat_list: parsing_stat list -> unit
 (*e: parse_php.mli *)

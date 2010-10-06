@@ -43,15 +43,15 @@ let test_parse_php xs  =
 
     Common.push2 stat stat_list;
     (*s: add stat for regression testing in hash *)
-        let s = sprintf "bad = %d" stat.Parse_php.bad in
-        if stat.Parse_php.bad = 0
+        let s = sprintf "bad = %d" stat.Parse_info.bad in
+        if stat.Parse_info.bad = 0
         then Hashtbl.add newscore file (Common.Ok)
         else Hashtbl.add newscore file (Common.Pb s)
         ;
     (*e: add stat for regression testing in hash *)
   );
 
-  Parse_php.print_parsing_stat_list !stat_list;
+  Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
     let dirname_opt = 
       match xs with

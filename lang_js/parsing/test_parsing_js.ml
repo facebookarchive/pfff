@@ -42,7 +42,7 @@ let test_parse_js xs  =
       Common.push2 stat stat_list;
     end
   );
-  Parse_js.print_parsing_stat_list !stat_list;
+  Parse_info.print_parsing_stat_list !stat_list;
   ()
 
 
