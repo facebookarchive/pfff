@@ -123,29 +123,92 @@
 /*(* Rules type declaration *)*/
 /*(*************************************************************************)*/
 
-%start foo
-%type <unit> foo
+%start unit_interface  unit_implementation
+%type <Ast_ml.toplevel list> unit_interface
+%type <Ast_ml.toplevel list> unit_implementation
 
 %%
-
-/*(*************************************************************************)*/
-/*(* Entry points *)*/
-/*(*************************************************************************)*/
-
-foo: EOF { () }
-
 
 /*(*************************************************************************)*/
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
+unit_interface: specification_list_opt { [] }
+
+unit_implementation: definition_list_opt { [] }
+
+specification: 
+ | Tval value_name TColon typexpr { }
+ | Texternal value_name TColon typexpr TEq external_declaration { }
+
+definition: 
+ | Tlet rec_opt let_binding /*TODOand_let_binding_list_opt*/ { }
+
+
+let_binding:
+ | TEq  { }
+/*
+ | pattern TEq expr { }
+ | value_name parameter_list_opt type_annot_opt TEq expr { }
+*/
+
+/* TODO: optional ;; */
+specification_list_opt:
+ | /* empty */ { }
+ | specification_list { }
+specification_list:
+ | specification { }
+ | specification_list specification { }
+
+definition_list_opt:
+ | /* empty */ { }
+ | definition_list { }
+definition_list:
+ | definition { }
+ | definition_list definition { }
+
 /*(*************************************************************************)*/
 /*(* Names *)*/
 /*(*************************************************************************)*/
 
+value_name:
+ | TLowerIdent { }
+ | TOParen operator_name TCParen { }
+
+operator_name:
+ | TPrefixOperator { }
+ | infix_op { }
+
+infix_op:
+ | TInfixOperator { }
+ | TStar { }
+ | TEq { }
+ | Tor { }
+ /*(* but not Tand, because of conflict ? *)*/
+ | TAnd { } 
+ | TAssign { }
+
+ | Tmod { }
+ | Tland { }
+ | Tlor { }
+ | Tlxor { }
+ | Tlsl { } 
+ | Tlsr { }
+ | Tasr { }
+
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
 /*(*----------------------------*)*/
+
+/*(*----------------------------*)*/
+/*(* Misc names *)*/
+/*(*----------------------------*)*/
+
+/*(* used in typexpr as both 'a and 'A are valid polymorphic names *)*/
+ident: 
+ | TLowerIdent { }
+ | TUpperIdent { }
+
 
 /*(*************************************************************************)*/
 /*(* Expressions *)*/
@@ -175,6 +238,9 @@ foo: EOF { () }
 /*(* Types expressions *)*/
 /*(*----------------------------*)*/
 
+typexpr:
+ | TQuote ident { }
+
 /*(*************************************************************************)*/
 /*(* Classes *)*/
 /*(*************************************************************************)*/
@@ -203,7 +269,16 @@ foo: EOF { () }
 /*(* Module expressions *)*/
 /*(*----------------------------*)*/
 
+/*(*************************************************************************)*/
+/*(* Misc *)*/
+/*(*************************************************************************)*/
+
+external_declaration: TString { }
 
 /*(*************************************************************************)*/
 /*(* xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
+
+rec_opt:
+ | Trec { }
+ | /*(*empty*)*/ { }

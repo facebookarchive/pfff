@@ -20,6 +20,8 @@ open Ast_ml
 module Ast = Ast_ml
 module Flag = Flag_parsing_ml
 
+module V = Visitor_ml
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -36,3 +38,26 @@ let find_ml_files_of_dir_or_files xs =
     | File_type.PL (File_type.ML ("ml" | "mli")) -> true
     | _ -> false
   ) |> Common.sort
+
+(*****************************************************************************)
+(* Extract infos *)
+(*****************************************************************************)
+
+let extract_info_visitor recursor = 
+  let globals = ref [] in
+  let hooks = { V.default_visitor with
+    V.kinfo = (fun (k, _) i -> Common.push2 i globals)
+  } in
+  begin
+    let vout = V.mk_visitor hooks in
+    recursor vout;
+    List.rev !globals
+  end
+
+let ii_of_toplevel top = 
+  extract_info_visitor (fun visitor -> visitor.V.vtoplevel top)
+
+(*****************************************************************************)
+(* Max min, range *)
+(*****************************************************************************)
+let min_max_ii_by_pos xs = Parse_info.min_max_ii_by_pos xs

@@ -12,3 +12,77 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+
+open Common
+
+open Ocaml
+
+open Ast_ml
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* hooks *)
+type visitor_in = {
+(*
+  kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
+  kstmt: (st  -> unit) * visitor_out -> st  -> unit;
+  kfield: (field -> unit) * visitor_out -> field -> unit;
+*)
+  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+}
+and visitor_out = {
+(*
+  vexpr: expr  -> unit;
+  vst: st -> unit;
+  vtop: toplevel -> unit;
+  vinfo: info -> unit;
+  vprogram: program -> unit;
+*)
+  vtoplevel: toplevel -> unit;
+  vprogram: program -> unit;
+}
+
+let default_visitor = { 
+  kinfo   = (fun (k,_) x -> k x);
+(*  
+  kexpr   = (fun (k,_) x -> k x);
+  kstmt   = (fun (k,_) x -> k x);
+  kfield = (fun (k,_) x -> k x);
+*)
+}
+
+
+let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
+
+(* start of auto generation *)
+
+let rec v_info x =
+  let k x = match x with { Parse_info.
+     token = v_pinfox; comments = v_comments; transfo = v_transfo 
+    } ->
+    let _arg = Parse_info.v_pinfo v_pinfox in
+    let _arg = v_unit v_comments in 
+    let _arg = Parse_info.v_transformation v_transfo in 
+    ()
+  in
+  vin.kinfo (k, all_functions) x
+
+and v_tok v = v_info v
+
+
+and v_toplevel =
+  function
+  | Ok v1 -> let v1 = v_info v1 in ()
+  | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
+  | FinalDef v1 -> let v1 = v_info v1 in ()
+and v_program v = v_list v_toplevel v
+
+ and all_functions =   
+    {
+      vprogram = v_program;
+      vtoplevel = v_toplevel;
+    }
+  in
+  all_functions

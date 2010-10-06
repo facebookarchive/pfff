@@ -47,7 +47,15 @@ and tok = info
 (* Toplevel phrases *)
 (* ------------------------------------------------------------------------- *)
 
-and toplevel = unit
+and toplevel =
+  | Ok of info
+
+  | NotParsedCorrectly of info list
+  | FinalDef of info (* EOF *)
+
+ and program = toplevel list
+ (* with tarzan *)
+
 
 (*****************************************************************************)
 (* Wrappers *)

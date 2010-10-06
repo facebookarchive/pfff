@@ -185,6 +185,8 @@ rule token = parse
   | "#" { TSharp(tokinfo lexbuf) }
   | "&" { TAnd(tokinfo lexbuf) }
   | "&&" { TAndAnd(tokinfo lexbuf) }
+
+  (* also used as beginning of a char *)
   | "'" { TQuote(tokinfo lexbuf) }
 
   | "`" { TBackQuote(tokinfo lexbuf) }
