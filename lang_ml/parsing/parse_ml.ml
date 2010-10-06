@@ -59,31 +59,6 @@ let lexbuf_to_strpos lexbuf     =
 (* Tokens/Ast association  *)
 (*****************************************************************************)
 
-let mk_info_item2 filename toks = 
-  let buf = Buffer.create 100 in
-  let s = 
-    (* old: get_slice_file filename (line1, line2) *)
-    begin
-      toks +> List.iter (fun tok -> 
-        match TH.pinfo_of_tok tok with
-        | Parse_info.OriginTok _ 
-        | Parse_info.ExpandedTok _ ->
-            Buffer.add_string buf (TH.str_of_tok tok)
-
-        (* the virtual semicolon *)
-        | Parse_info.FakeTokStr _ -> 
-            ()
-        | Parse_info.Ab _  -> raise Impossible
-      );
-      Buffer.contents buf
-    end
-  in
-  (s, toks) 
-
-let mk_info_item a b = 
-  Common.profile_code "Parsing.mk_info_item" 
-    (fun () -> mk_info_item2 a b)
-
 (* on very huge file, this function was previously segmentation fault
  * in native mode because span was not tail call
  *)
@@ -92,7 +67,9 @@ let rec distribute_info_items_toplevel2 xs toks filename =
   | [] -> raise Impossible
   | [Ast_ml.FinalDef e] -> 
       (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = mk_info_item filename toks in
+      let info_item = Parse_info.mk_info_item 
+        ~info_of_tok:TH.info_of_tok toks 
+      in
       [Ast_ml.FinalDef e, info_item]
   | ast::xs ->
 
@@ -108,7 +85,10 @@ let rec distribute_info_items_toplevel2 xs toks filename =
             | _ -> raise Impossible
           ))
       in
-      let info_item = mk_info_item filename toks_before_max in
+      let info_item = Parse_info.mk_info_item 
+        ~info_of_tok:TH.info_of_tok
+        toks_before_max 
+      in
       (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
 
 
@@ -278,7 +258,10 @@ let parse2 filename =
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
-      let info_item = mk_info_item filename (List.rev tr.PI.passed) in 
+      let info_item = 
+        Parse_info.mk_info_item ~info_of_tok:TH.info_of_tok 
+          (List.rev tr.PI.passed) 
+      in 
       [Ast.NotParsedCorrectly info_of_bads, info_item], 
       stat
 

@@ -334,6 +334,32 @@ let min_max_ii_by_pos xs =
 
 
 
+let mk_info_item2 ~info_of_tok toks  = 
+  let buf = Buffer.create 100 in
+  let s = 
+    (* old: get_slice_file filename (line1, line2) *)
+    begin
+      toks +> List.iter (fun tok -> 
+        let info = info_of_tok tok in
+        match info.token with
+        | OriginTok _ 
+        | ExpandedTok _ ->
+            Buffer.add_string buf (str_of_info info)
+
+        (* the virtual semicolon *)
+        | FakeTokStr _ -> 
+            ()
+        | Ab _  -> raise Impossible
+      );
+      Buffer.contents buf
+    end
+  in
+  (s, toks) 
+
+let mk_info_item ~info_of_tok a = 
+  Common.profile_code "Parsing.mk_info_item" 
+    (fun () -> mk_info_item2 ~info_of_tok a)
+
 (*****************************************************************************)
 (* vtoken -> ocaml *)
 (*****************************************************************************)

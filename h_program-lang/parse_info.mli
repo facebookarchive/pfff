@@ -52,6 +52,7 @@ type parsing_stat = {
 val default_stat: Common.filename -> parsing_stat
 val print_parsing_stat_list: parsing_stat list -> unit
 
+
 type 'tok tokens_state = {
   mutable rest:         'tok list;
   mutable current:      'tok;
@@ -116,6 +117,9 @@ val get_orig_info: (parse_info -> 'a) -> info -> 'a
 
 val compare_pos: info -> info -> int
 val min_max_ii_by_pos: info list -> info * info
+
+val mk_info_item: 
+  info_of_tok:('tok -> info) -> 'tok list -> string * 'tok list
 
 (* meta *)
 val vof_token:
