@@ -334,13 +334,16 @@ let coverage_tests
     pr2 "computing set of test files";
     let xs = all_test_files () in
     pr2 (spf "%d test files found" (List.length xs));
-    xs
+    Common.index_list_and_total xs
   in
 
   (* using a map reduce model *)
-  let (mapper: filename -> test_cover_result) = fun test_file ->
+  let (mapper: (filename * int * int) -> test_cover_result) = 
+   fun (test_file, i, total) ->
+    let trace_file = Common.new_temp_file "xdebug" ".xt" in
+    Common.finalize (fun () ->
     try (
-    pr2 (spf "processing: %s" test_file);
+    pr2 (spf "processing: %s (%d/%d)" test_file i total);
 
     if not (Xdebug.php_has_xdebug_extension ())
     then failwith "xdebug is not properly installed";
@@ -354,7 +357,6 @@ let coverage_tests
     }
     in
 
-    let trace_file = Common.new_temp_file "xdebug" ".xt" in
     let php_interpreter = 
       Xdebug.php_cmd_with_xdebug_on ~trace_file ~config () in
     let cmd = php_cmd_run_test ~php_interpreter test_file in
@@ -374,7 +376,6 @@ let coverage_tests
 
         let h = Common.hash_with_default (fun () -> 0) in
 
-
         pr2 (spf " trace length = %d lines, xdebug trace = %d lines" 
                 (List.length output_cmd)
                 (Common.nblines_with_wc trace_file)
@@ -390,7 +391,6 @@ let coverage_tests
               let file_called = call.Xdebug.f_file in 
               h#update file_called (fun old -> old + 1)
           );
-        Common.erase_this_temp_file trace_file;
         Cover (test_file, h#to_list)
     | Phpunit.Fail _ | Phpunit.Fatal _ -> 
         (* I should normally print the failing test output, 
@@ -402,8 +402,13 @@ let coverage_tests
         Problem (test_file, "failing or fataling test")
     )
    with Timeout ->
+     (* those files can get huge *)
      pr2 (spf "PB with %s" test_file);
      Problem (test_file, "timeout when running test and computing coverage")
+    ) (fun () ->
+      Common.erase_this_temp_file trace_file;
+    )
+
   in
 
   (* regular_php_file -> hash_of_relevant_test_files_with_score *)
@@ -491,10 +496,12 @@ let files_coverage_from_tests
     Hashtbl.create 101
   ) in
 
-  all_test_files |> List.iter (fun test_file ->
-
+  all_test_files +> Common.index_list_and_total +> List.iter 
+  (fun (test_file, i, total) ->
+    let trace_file = Common.new_temp_file "xdebug" ".xt" in
+    Common.finalize (fun () ->
    try (
-    pr2 (spf "processing test: %s" test_file);
+    pr2 (spf "processing test: %s (%d/%d)" test_file i total);
 
     if not (Xdebug.php_has_xdebug_extension ())
     then failwith "xdebug is not properly installed";
@@ -508,7 +515,6 @@ let files_coverage_from_tests
     }
     in
 
-    let trace_file = Common.new_temp_file "xdebug" ".xt" in
     let php_interpreter = 
       Xdebug.php_cmd_with_xdebug_on ~trace_file ~config () in
     let cmd = php_cmd_run_test ~php_interpreter test_file in
@@ -552,11 +558,14 @@ let files_coverage_from_tests
           )
         end
       );
-    Common.erase_this_temp_file trace_file;
     )
    with Timeout ->
      pr2 (spf "PB with %s, timeout" test_file);
+  ) (fun () ->
+    Common.erase_this_temp_file trace_file;
+    )
   );
+    
   (* some sanity checks *)
   let h_all_files = Common.hashset_of_list all_files in
   h#to_list +> List.iter (fun (file, hset) ->
