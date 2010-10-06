@@ -86,6 +86,8 @@ type files_coverage = (Common.filename, file_coverage) Common.assoc
  *)
 let threshold_working_tests_percentage = ref 80.0 
 
+let threshold_nblines_trace_too_big = ref 1_000_000
+
 exception NotEnoughWorkingTests
 
 (*****************************************************************************)
@@ -363,7 +365,7 @@ let coverage_tests
     pr2 (spf "executing: %s" cmd);
     let output_cmd = 
       Common.profile_code "Run PHP tests" (fun () ->
-        Common.timeout_function 50 (fun () ->
+        Common.timeout_function 10 (fun () ->
           Common.cmd_to_list cmd 
         )
       )
@@ -376,22 +378,27 @@ let coverage_tests
 
         let h = Common.hash_with_default (fun () -> 0) in
 
-        pr2 (spf " trace length = %d lines, xdebug trace = %d lines" 
-                (List.length output_cmd)
-                (Common.nblines_with_wc trace_file)
-        );
+        let nblines = Common.nblines_with_wc trace_file in
 
-        trace_file +> Xdebug.iter_dumpfile 
-          ~config 
-          ~show_progress:false
-          ~fatal_when_exn:true
-          (fun call ->
-            if skip_call call then ()
-            else
-              let file_called = call.Xdebug.f_file in 
-              h#update file_called (fun old -> old + 1)
-          );
-        Cover (test_file, h#to_list)
+        pr2 (spf " trace length = %d lines, xdebug trace = %d lines" 
+                (List.length output_cmd) nblines);
+
+        if nblines > !threshold_nblines_trace_too_big
+        then 
+          Problem (test_file, "trace file too big")
+        else begin
+          trace_file +> Xdebug.iter_dumpfile 
+            ~config 
+            ~show_progress:false
+            ~fatal_when_exn:true
+            (fun call ->
+              if skip_call call then ()
+              else
+                let file_called = call.Xdebug.f_file in 
+                h#update file_called (fun old -> old + 1)
+            );
+          Cover (test_file, h#to_list)
+        end
     | Phpunit.Fail _ | Phpunit.Fatal _ -> 
         (* I should normally print the failing test output, 
          * but some tests generates really weird binary output
