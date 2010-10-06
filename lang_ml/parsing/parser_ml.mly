@@ -21,6 +21,7 @@
  *  (note that it also contains conflict when translated into yacc).
  * src: http://www.mpi-sws.org/~rossberg/hamlet/
  *  solves ambiguities
+ * src: linear ML parser
  * 
  * alternatives: use menhir ? use dypgen ?
  *)
@@ -146,9 +147,6 @@ unit_interface: specification_list_opt EOF { $1 ++ [FinalDef $2] }
 
 unit_implementation: definition_list_opt EOF { $1 ++ [FinalDef $2] }
 
-
-
-
 specification: 
  | Tval      value_name TColon typexpr { TODO $1 }
  | Texternal value_name TColon typexpr TEq external_declaration { TODO $1 }
@@ -165,6 +163,7 @@ let_binding:
  | pattern TEq expr { }
  | value_name parameter_list_opt type_annot_opt TEq expr { }
 */
+
 
 /* TODO: optional ;; */
 specification_list_opt:
@@ -264,6 +263,42 @@ ident:
 /*(*----------------------------*)*/
 /*(* Types definitions *)*/
 /*(*----------------------------*)*/
+type_definition: Ttype typedef { TODO $1 (*TODO: and typedef *) } 
+
+typedef: tyvar_seq typeconstr_name type_information 
+   { (*TODO: type_info opt*) }
+
+tyvar_seq: 
+ | tyvar_seq1 { }
+ | /*(*empty*)*/ { }
+
+tyvar_seq1:
+ | ty_var { }
+ | TOParen tyvar_comma_list TCParen { }
+
+tyvar_comma_list:
+ | ty_var { }
+ | ty_var TComma tyvar_comma_list { }
+
+
+
+type_information:
+ | type_equation       { }
+ | type_representation { }
+
+type_equation:
+ | TEq typexpr { }
+
+/*(* conflict if remove the Pipe *)*/
+type_representation:
+ | TEq TPipe constr_decl_pipe_list { }
+
+constr_decl_pipe_list:
+ | constr_decl { }
+ | constr_decl_pipe_list TPipe constr_decl { }
+
+constr_decl:
+ | TUpperIdent Tof { }
 
 /*(*----------------------------*)*/
 /*(* Exceptions *)*/
@@ -286,21 +321,30 @@ ty_star_list:
  | ty_cons TStar ty_star_list { }
 
 ty_cons:
- | ty_simple { }
+ | ty_at { }
  | ty_seq typeconstr_path { }
 
-ty_simple:
- | typeconstr_path { }
- | TQuote ident { }
+ty_at:
+ | ty_var { }
  | TOParen typexpr TCParen { }
 
 ty_seq:
  | ty_cons { }
+ | /*(*empty*)*/ { }
  | TOParen ty_comma_list TCParen { }
 
 ty_comma_list:
  | typexpr TComma ty_comma_list { }
  | typexpr TComma typexpr { }
+
+ty_var:
+ | TQuote ident { }
+
+/*(*----------------------------*)*/
+/*(* Misc *)*/
+/*(*----------------------------*)*/
+
+constr_decl: Texception { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
