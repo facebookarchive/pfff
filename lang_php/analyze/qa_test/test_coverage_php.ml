@@ -361,7 +361,7 @@ let coverage_tests
     pr2 (spf "executing: %s" cmd);
     let output_cmd = 
       Common.profile_code "Run PHP tests" (fun () ->
-        Common.timeout_function 100 (fun () ->
+        Common.timeout_function 50 (fun () ->
           Common.cmd_to_list cmd 
         )
       )
@@ -390,6 +390,7 @@ let coverage_tests
               let file_called = call.Xdebug.f_file in 
               h#update file_called (fun old -> old + 1)
           );
+        Common.erase_this_temp_file trace_file;
         Cover (test_file, h#to_list)
     | Phpunit.Fail _ | Phpunit.Fatal _ -> 
         (* I should normally print the failing test output, 
@@ -515,7 +516,7 @@ let files_coverage_from_tests
 
     let output_cmd = 
       Common.profile_code "Run PHP tests" (fun () ->
-        Common.timeout_function 100 (fun () ->
+        Common.timeout_function 50 (fun () ->
           Common.cmd_to_list cmd 
         )
       )
@@ -551,6 +552,7 @@ let files_coverage_from_tests
           )
         end
       );
+    Common.erase_this_temp_file trace_file;
     )
    with Timeout ->
      pr2 (spf "PB with %s, timeout" test_file);
