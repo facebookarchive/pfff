@@ -15,8 +15,19 @@
 %{
 (*
  * src: http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
- * itself derived from the official ocaml reference manual.
+ *  itself probably derived from the official ocaml reference manual
+ *  (note that it unfortunately contains conflict when translated into yacc).
+ * src: http://www.mpi-sws.org/~rossberg/sml.html
+ *  (note that it also contains conflict when translated into yacc).
+ * src: http://www.mpi-sws.org/~rossberg/hamlet/
+ *  solves ambiguities
+ * 
+ * alternatives: use menhir ? use dypgen ?
  *)
+open Common
+
+open Ast_ml
+
 %}
 
 /*(*************************************************************************)*/
@@ -73,8 +84,6 @@
 
 %token <Ast_ml.info> TOBracketGreater
 %token <Ast_ml.info> TColonGreater
-
-%token <Ast_ml.info> TLess TGreater
 
 %token <Ast_ml.info> TDot TDotDot 
 %token <Ast_ml.info> TComma
@@ -133,16 +142,21 @@
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-unit_interface: specification_list_opt { [] }
+unit_interface: specification_list_opt EOF { $1 ++ [FinalDef $2] }
 
-unit_implementation: definition_list_opt { [] }
+unit_implementation: definition_list_opt EOF { $1 ++ [FinalDef $2] }
+
+
+
 
 specification: 
- | Tval value_name TColon typexpr { }
- | Texternal value_name TColon typexpr TEq external_declaration { }
+ | Tval      value_name TColon typexpr { TODO $1 }
+ | Texternal value_name TColon typexpr TEq external_declaration { TODO $1 }
+ | type_definition { $1 }
+ | Texception constr_decl { TODO $1 }
 
 definition: 
- | Tlet rec_opt let_binding /*TODOand_let_binding_list_opt*/ { }
+ | Tlet rec_opt let_binding /*TODOand_let_binding_list_opt*/ { TODO $1 }
 
 
 let_binding:
@@ -154,18 +168,18 @@ let_binding:
 
 /* TODO: optional ;; */
 specification_list_opt:
- | /* empty */ { }
- | specification_list { }
+ | /* empty */ { [] }
+ | specification_list { $1 }
 specification_list:
- | specification { }
- | specification_list specification { }
+ | specification { [$1] }
+ | specification_list specification { $1 ++ [$2] }
 
 definition_list_opt:
- | /* empty */ { }
- | definition_list { }
+ | /* empty */     { [] }
+ | definition_list { $1 }
 definition_list:
- | definition { }
- | definition_list definition { }
+ | definition { [$1] }
+ | definition_list definition { $1 ++ [$2] }
 
 /*(*************************************************************************)*/
 /*(* Names *)*/
@@ -196,9 +210,30 @@ infix_op:
  | Tlsr { }
  | Tasr { }
 
+
+typeconstr_name: TLowerIdent { }
+
+module_name: TUpperIdent { }
+ 
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
 /*(*----------------------------*)*/
+
+module_path:
+ | module_name { }
+ | module_path TDot module_name { }
+
+extended_module_path:
+ | module_name { }
+ | extended_module_path TDot module_name { }
+ | extended_module_path TOParen extended_module_path TCParen { }
+
+
+
+
+typeconstr_path:
+ | typeconstr_name { }
+ | extended_module_path typeconstr_name { }
 
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
@@ -238,8 +273,34 @@ ident:
 /*(* Types expressions *)*/
 /*(*----------------------------*)*/
 
+/*(* src: http://www.mpi-sws.org/~rossberg/hamlet/ disambiguation tricks *)*/
 typexpr:
+ | ty_tuple TArrow typexpr { }
+ | ty_tuple { }
+
+ty_tuple:
+ | ty_star_list { }
+
+ty_star_list:
+ | ty_cons { }
+ | ty_cons TStar ty_star_list { }
+
+ty_cons:
+ | ty_simple { }
+ | ty_seq typeconstr_path { }
+
+ty_simple:
+ | typeconstr_path { }
  | TQuote ident { }
+ | TOParen typexpr TCParen { }
+
+ty_seq:
+ | ty_cons { }
+ | TOParen ty_comma_list TCParen { }
+
+ty_comma_list:
+ | typexpr TComma ty_comma_list { }
+ | typexpr TComma typexpr { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
@@ -282,3 +343,5 @@ external_declaration: TString { }
 rec_opt:
  | Trec { }
  | /*(*empty*)*/ { }
+
+
