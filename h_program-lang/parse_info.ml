@@ -320,6 +320,19 @@ let compare_pos ii1 ii2 =
       | _ -> raise Impossible
 
 
+let min_max_ii_by_pos xs =
+  match xs with
+  | [] -> failwith "empty list, max_min_ii_by_pos"
+  | [x] -> (x, x)
+  | x::xs -> 
+      let pos_leq p1 p2 = (compare_pos p1 p2) =|= (-1) in
+      xs +> List.fold_left (fun (minii,maxii) e -> 
+        let maxii' = if pos_leq maxii e then e else maxii in
+        let minii' = if pos_leq e minii then e else minii in
+        minii', maxii'
+      ) (x,x)
+
+
 
 (*****************************************************************************)
 (* vtoken -> ocaml *)
@@ -824,6 +837,20 @@ let error_message_short = fun filename (lexeme, lexstart) ->
     end
 
 
+let print_bad line_error (start_line, end_line) filelines  = 
+  begin
+    pr2 ("badcount: " ^ i_to_s (end_line - start_line));
+
+    for i = start_line to end_line do 
+      let line = filelines.(i) in 
+
+      if i =|= line_error 
+      then  pr2 ("BAD:!!!!!" ^ " " ^ line) 
+      else  pr2 ("bad:" ^ " " ^      line) 
+    done
+  end
+
+
 (*****************************************************************************)
 (* Parsing statistics *)
 (*****************************************************************************)
@@ -854,3 +881,4 @@ let print_parsing_stat_list statxs =
   (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
    )
   )
+

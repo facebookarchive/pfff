@@ -56,9 +56,6 @@ let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 let lexbuf_to_strpos lexbuf     = 
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
-let token_to_strpos tok = 
-  (TH.str_of_tok tok, TH.pos_of_tok tok)
-
 let mk_info_item2 filename toks = 
   let buf = Buffer.create 100 in
   let s = 
@@ -126,24 +123,14 @@ let distribute_info_items_toplevel a b c =
 (* Error diagnostic  *)
 (*****************************************************************************)
 
+let token_to_strpos tok = 
+  (TH.str_of_tok tok, TH.pos_of_tok tok)
+
 let error_msg_tok tok = 
   let file = TH.file_of_tok tok in
   if !Flag.verbose_parsing
   then Parse_info.error_message file (token_to_strpos tok) 
   else ("error in " ^ file  ^ "set verbose_parsing for more info")
-
-let print_bad line_error (start_line, end_line) filelines  = 
-  begin
-    pr2 ("badcount: " ^ i_to_s (end_line - start_line));
-
-    for i = start_line to end_line do 
-      let line = filelines.(i) in 
-
-      if i =|= line_error 
-      then  pr2 ("BAD:!!!!!" ^ " " ^ line) 
-      else  pr2 ("bad:" ^ " " ^      line) 
-    done
-  end
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -443,7 +430,7 @@ let parse2 filename =
       let checkpoint2 = Common.cat filename +> List.length in
 
       if !Flag.show_parsing_error
-      then print_bad line_error (checkpoint, checkpoint2) filelines;
+      then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 

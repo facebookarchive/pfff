@@ -88,6 +88,8 @@ val error_message_info :  parse_info -> string
  *)
 val error_messagebis : Common.filename -> (string * int) -> int -> string
 
+val print_bad: int -> int * int -> string array -> unit
+
 (* lexer helpers *)
 val tokinfo_str_pos: string -> int -> info
 val rewrap_str: string -> info -> info
@@ -113,6 +115,7 @@ val get_info: (parse_info -> 'a) -> info -> 'a
 val get_orig_info: (parse_info -> 'a) -> info -> 'a
 
 val compare_pos: info -> info -> int
+val min_max_ii_by_pos: info list -> info * info
 
 (* meta *)
 val vof_token:

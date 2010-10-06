@@ -605,7 +605,7 @@ let index_db1_2 db files =
       (* parsing, the important call *)
       let (ast2, stat) = Parse_php.parse file in
       let file_info = {
-        parsing_status = if stat.Parse_php.bad = 0 then `OK else `BAD;
+        parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD;
       }
       in
       db.file_info#add2 (file, file_info);
@@ -1382,7 +1382,7 @@ let create_db
     (*
     *)
     if verbose_stats then begin
-      Parse_php.print_parsing_stat_list   parsing_stats;
+      Parse_info.print_parsing_stat_list   parsing_stats;
       !_errors +> List.iter pr2;
     end;
     db

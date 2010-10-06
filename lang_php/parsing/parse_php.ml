@@ -124,18 +124,6 @@ let error_msg_tok tok =
   then Parse_info.error_message file (token_to_strpos tok) 
   else ("error in " ^ file  ^ "set verbose_parsing for more info")
 
-let print_bad line_error (start_line, end_line) filelines  = 
-  begin
-    pr2 ("badcount: " ^ i_to_s (end_line - start_line));
-
-    for i = start_line to end_line do 
-      let line = filelines.(i) in 
-
-      if i =|= line_error 
-      then  pr2 ("BAD:!!!!!" ^ " " ^ line) 
-      else  pr2 ("bad:" ^ " " ^      line) 
-    done
-  end
 (*e: parse_php error diagnostic *)
 
 (*****************************************************************************)
@@ -647,7 +635,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       let checkpoint2 = Common.cat filename +> List.length in
 
       if !Flag.show_parsing_error
-      then print_bad line_error (checkpoint, checkpoint2) filelines;
+      then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
