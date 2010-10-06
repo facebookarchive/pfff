@@ -48,7 +48,7 @@ and tok = info
 (* ------------------------------------------------------------------------- *)
 
 and toplevel =
-  | Ok of info
+  | TODO of info
 
   | NotParsedCorrectly of info list
   | FinalDef of info (* EOF *)

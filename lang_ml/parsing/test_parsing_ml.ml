@@ -24,12 +24,15 @@ let test_tokens_ml file =
 let test_parse_ml_or_mli xs =
 
   let fullxs = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
+  let stat_list = ref [] in
+
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
     let (xs, stat) = Parse_ml.parse file in
-    ()
+    Common.push2 stat stat_list;
   );
+  Parse_info.print_parsing_stat_list !stat_list;
   ()
 
 (*****************************************************************************)
