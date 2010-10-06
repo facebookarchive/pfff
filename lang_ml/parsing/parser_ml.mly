@@ -14,9 +14,11 @@
  */
 %{
 (*
- * src: http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
- *  itself probably derived from the official ocaml reference manual
+ * src: http://caml.inria.fr/pub/docs/manual-ocaml/language.html
  *  (note that it unfortunately contains conflict when translated into yacc).
+ * src: http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
+ *  itself derived from the official ocaml reference manual
+ *  (note that it also contains conflict when translated into yacc).
  * src: http://www.mpi-sws.org/~rossberg/sml.html
  *  (note that it also contains conflict when translated into yacc).
  * src: http://www.mpi-sws.org/~rossberg/hamlet/
@@ -298,7 +300,8 @@ constr_decl_pipe_list:
  | constr_decl_pipe_list TPipe constr_decl { }
 
 constr_decl:
- | TUpperIdent Tof { }
+ | constr_name
+ | constr_name Tof typexpr { }
 
 /*(*----------------------------*)*/
 /*(* Exceptions *)*/
