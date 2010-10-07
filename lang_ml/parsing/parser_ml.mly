@@ -1,31 +1,36 @@
-/* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- */
+/***********************************************************************/
+/*                                                                     */
+/*                           Objective Caml                            */
+/*                                                                     */
+/*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         */
+/*                                                                     */
+/*  Copyright 1996 Institut National de Recherche en Informatique et   */
+/*  en Automatique.  All rights reserved.  This file is distributed    */
+/*  under the terms of the Q Public License version 1.0.               */
+/*                                                                     */
+/***********************************************************************/
+/* Yoann Padioleau */
 %{
-(*
- * src: http://caml.inria.fr/pub/docs/manual-ocaml/language.html
+(* 
+ * src: slightly adapted from the official source of OCaml in its
+ * parsing/ subdirectory.
+ * Was: $Id: parser.mly 10536 2010-06-07 15:32:32Z doligez $
+ *
+ * other sources:
+ * - http://caml.inria.fr/pub/docs/manual-ocaml/language.html
  *  (note that it unfortunately contains conflict when translated into yacc).
- * src: http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
+ * - http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
  *  itself derived from the official ocaml reference manual
  *  (note that it also contains conflict when translated into yacc).
- * src: http://www.mpi-sws.org/~rossberg/sml.html
+ * - http://www.mpi-sws.org/~rossberg/sml.html
  *  (note that it also contains conflict when translated into yacc).
- * src: http://www.mpi-sws.org/~rossberg/hamlet/
+ * - http://www.mpi-sws.org/~rossberg/hamlet/
  *  solves ambiguities
- * src: linear ML parser
+ * - linear ML parser
  * 
- * alternatives: use menhir ? use dypgen ?
+ * alternatives: 
+ *   - use menhir ? 
+ *   - use dypgen ?
  *)
 open Common
 
@@ -114,7 +119,6 @@ open Ast_ml
 %token <string * Ast_ml.info> TPrefixOperator
 %token <string * Ast_ml.info> TInfixOperator
 
-
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
@@ -127,17 +131,74 @@ open Ast_ml
 /*(* priorities *)*/
 /*(*-----------------------------------------*)*/
 
-/*(*-----------------------------------------*)*/
-/*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc SHIFTHERE
+/*
+(* Precedences and associativities.
+ *
+ * Tokens and rules have precedences.  A reduce/reduce conflict is resolved
+ * in favor of the first rule (in source file order).  A shift/reduce conflict
+ * is resolved by comparing the precedence and associativity of the token to
+ * be shifted with those of the rule to be reduced.
+ * 
+ * By default, a rule has the precedence of its rightmost terminal (if any).
+ * 
+ * When there is a shift/reduce conflict between a rule and a token that
+ * have the same precedence, it is resolved using the associativity:
+ * if the token is left-associative, the parser will reduce; if
+ * right-associative, the parser will shift; if non-associative,
+ * the parser will declare a syntax error.
+ * 
+ * We will only use associativities with operators of the kind  x * x -> x
+ * for example, in the rules of the form    expr: expr BINOP expr
+ * in all other cases, we define two precedences if needed to resolve
+ * conflicts.
+ * 
+ * The precedences must be listed from low to high.
+ *)*/
+
+%nonassoc Tin
+%nonassoc below_SEMI
+%nonassoc TSemiColon                          /* below TEq ({lbl=...; lbl=...}) */
+%nonassoc Tlet                           /* above TSemiColon ( ...; let ... in ...) */
+%nonassoc below_WITH
+%nonassoc Tfunction Twith                 /* below TPipe  (match ... with ...) */
+%nonassoc TAnd             /* above Twith (module rec A: Tsig with ... and ...) */
+%nonassoc Tthen                          /* below Telse (if ... then ...) */
+%nonassoc Telse                          /* (if ... then ... else ...) */
+%nonassoc TAssignMutable                     /* below TAssign (lbl <- x := e) */
+%right    TAssign                    /* expr (e := e := e) */
+%nonassoc Tas
+%left     TPipe                           /* pattern (p|p|p) */
+%nonassoc below_COMMA
+%left     TComma                         /* expr/expr_comma_list (e,e,e) */
+%right    TArrow                  /* core_type2 (t -> t -> t) */
+%right    Tor BARBAR                     /* expr (e || e || e) */
+%right    Tand TAndAnd          /* expr (e && e && e) */
+%nonassoc below_EQUAL
+%left     INFIXOP0 TEq TLess TGreater   /* expr (e OP e OP e) */
+%right    INFIXOP1                      /* expr (e OP e OP e) */
+%right    TColonColon                    /* expr (e :: e :: e) */
+%left     INFIXOP2 TPlus PLUSDOT TMinus TMinusDot  /* expr (e OP e OP e) */
+%left     INFIXOP3 TStar                 /* expr (e OP e OP e) */
+%right    INFIXOP4                      /* expr (e OP e OP e) */
+%nonassoc prec_unary_minus prec_unary_plus /* unary - */
+%nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
+%nonassoc prec_constr_appl              /* above Tas TPipe TColonColon TComma */
+%nonassoc below_SHARP
+%nonassoc TSharp                         /* simple_expr/toplevel_directive */
+%nonassoc below_DOT
+%nonassoc TDot
+/* Finally, the first tokens of simple_expr are above everything else. */
+%nonassoc TBackQuote TBang Tbegin TChar Tfalse TFloat TInt INT32 INT64
+          TOBrace TOBraceLess TOBracket TOBracketPipe TLowerIdent TOParen
+          Tnew NATIVEINT PREFIXOP TString Ttrue TUpperIdent
 
 /*(*************************************************************************)*/
 /*(* Rules type declaration *)*/
 /*(*************************************************************************)*/
 
-%start unit_interface  unit_implementation
-%type <Ast_ml.toplevel list> unit_interface
-%type <Ast_ml.toplevel list> unit_implementation
+%start interface  implementation
+%type <Ast_ml.toplevel list> interface
+%type <Ast_ml.toplevel list> implementation
 
 %%
 
@@ -145,105 +206,89 @@ open Ast_ml
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-unit_interface: specification_list_opt EOF { $1 ++ [FinalDef $2] }
+implementation:
+    structure EOF                        { [FinalDef $2] }
 
-unit_implementation: definition_list_opt EOF { $1 ++ [FinalDef $2] }
-
-specification: 
- | Tval      value_name TColon typexpr { TODO $1 }
- | Texternal value_name TColon typexpr TEq external_declaration { TODO $1 }
- | type_definition { $1 }
- | Texception constr_decl { TODO $1 }
-
-definition: 
- | Tlet rec_opt let_binding /*TODOand_let_binding_list_opt*/ { TODO $1 }
+interface:
+    signature EOF                        { [FinalDef $2] }
 
 
-let_binding:
- | TEq  { }
-/*
- | pattern TEq expr { }
- | value_name parameter_list_opt type_annot_opt TEq expr { }
-*/
+/*(*************************************************************************)*/
+/*(* Structure *)*/
+/*(*************************************************************************)*/
+
+structure: Texception { }
+
+/*(*************************************************************************)*/
+/*(* Signature *)*/
+/*(*************************************************************************)*/
+
+signature:
+    /* empty */                                 { }
+  | signature signature_item                    { }
+  | signature signature_item TSemiColonSemiColon           { }
+
+signature_item:
+  | Tval val_ident TColon core_type
+      { }
+  | Texternal val_ident TColon core_type TEq primitive_declaration
+      { }
 
 
-/* TODO: optional ;; */
-specification_list_opt:
- | /* empty */ { [] }
- | specification_list { $1 }
-specification_list:
- | specification { [$1] }
- | specification_list specification { $1 ++ [$2] }
-
-definition_list_opt:
- | /* empty */     { [] }
- | definition_list { $1 }
-definition_list:
- | definition { [$1] }
- | definition_list definition { $1 ++ [$2] }
+primitive_declaration:
+  | TString                                      { }
+  | TString primitive_declaration                { }
 
 /*(*************************************************************************)*/
 /*(* Names *)*/
 /*(*************************************************************************)*/
 
-value_name:
- | TLowerIdent { }
- | TOParen operator_name TCParen { }
+val_ident:
+  | TLowerIdent                                      { }
+  | TOParen operator TCParen                      { }
 
-operator_name:
- | TPrefixOperator { }
- | infix_op { }
+operator:
+  | TPrefixOperator                                    { }
+  | TInfixOperator { }
+  | TStar                                        { }
+  | TEq                                       { }
+  | Tor                                          { }
+  /*(* but not Tand, because of conflict ? *)*/
+  | Tand                                   { }
+  | TAssign                                  { }
 
-infix_op:
- | TInfixOperator { }
- | TStar { }
- | TEq { }
- | Tor { }
- /*(* but not Tand, because of conflict ? *)*/
- | TAnd { } 
- | TAssign { }
+  | Tmod { }
+  | Tland { }
+  | Tlor { }
+  | Tlxor { }
+  | Tlsl { } 
+  | Tlsr { }
+  | Tasr { }
 
- | Tmod { }
- | Tland { }
- | Tlor { }
- | Tlxor { }
- | Tlsl { } 
- | Tlsr { }
- | Tasr { }
-
-
-typeconstr_name: TLowerIdent { }
-
-module_name: TUpperIdent { }
+ident:
+  | TUpperIdent                                      { }
+  | TLowerIdent                                      { }
  
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
 /*(*----------------------------*)*/
 
-module_path:
- | module_name { }
- | module_path TDot module_name { }
+mod_longident:
+  | TUpperIdent                                      { }
+  | mod_longident TDot TUpperIdent                    { }
 
-extended_module_path:
- | module_name { }
- | extended_module_path TDot module_name { }
- | extended_module_path TOParen extended_module_path TCParen { }
+mod_ext_longident:
+  | TUpperIdent                                      { }
+  | mod_ext_longident TDot TUpperIdent                { }
+  | mod_ext_longident TOParen mod_ext_longident TCParen { }
 
-
-
-
-typeconstr_path:
- | typeconstr_name { }
- | extended_module_path typeconstr_name { }
+type_longident:
+  | TLowerIdent                                      { }
+  | mod_ext_longident TDot TLowerIdent                { }
 
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
 /*(*----------------------------*)*/
-
-/*(* used in typexpr as both 'a and 'A are valid polymorphic names *)*/
-ident: 
- | TLowerIdent { }
- | TUpperIdent { }
 
 
 /*(*************************************************************************)*/
@@ -265,43 +310,6 @@ ident:
 /*(*----------------------------*)*/
 /*(* Types definitions *)*/
 /*(*----------------------------*)*/
-type_definition: Ttype typedef { TODO $1 (*TODO: and typedef *) } 
-
-typedef: tyvar_seq typeconstr_name type_information 
-   { (*TODO: type_info opt*) }
-
-tyvar_seq: 
- | tyvar_seq1 { }
- | /*(*empty*)*/ { }
-
-tyvar_seq1:
- | ty_var { }
- | TOParen tyvar_comma_list TCParen { }
-
-tyvar_comma_list:
- | ty_var { }
- | ty_var TComma tyvar_comma_list { }
-
-
-
-type_information:
- | type_equation       { }
- | type_representation { }
-
-type_equation:
- | TEq typexpr { }
-
-/*(* conflict if remove the Pipe *)*/
-type_representation:
- | TEq TPipe constr_decl_pipe_list { }
-
-constr_decl_pipe_list:
- | constr_decl { }
- | constr_decl_pipe_list TPipe constr_decl { }
-
-constr_decl:
- | constr_name
- | constr_name Tof typexpr { }
 
 /*(*----------------------------*)*/
 /*(* Exceptions *)*/
@@ -311,43 +319,49 @@ constr_decl:
 /*(* Types expressions *)*/
 /*(*----------------------------*)*/
 
-/*(* src: http://www.mpi-sws.org/~rossberg/hamlet/ disambiguation tricks *)*/
-typexpr:
- | ty_tuple TArrow typexpr { }
- | ty_tuple { }
+core_type:
+    core_type2
+      { }
 
-ty_tuple:
- | ty_star_list { }
+core_type2:
+  | simple_core_type_or_tuple
+      { }
+  | core_type2 TArrow core_type2
+      {  }
 
-ty_star_list:
- | ty_cons { }
- | ty_cons TStar ty_star_list { }
+simple_core_type_or_tuple:
+  | simple_core_type                            { }
+  | simple_core_type TStar core_type_list
+      { }
 
-ty_cons:
- | ty_at { }
- | ty_seq typeconstr_path { }
+simple_core_type:
+    simple_core_type2  %prec below_SHARP
+      { }
+  | TOParen core_type_comma_list TCParen %prec below_SHARP
+      { }
 
-ty_at:
- | ty_var { }
- | TOParen typexpr TCParen { }
+simple_core_type2:
+  | TQuote ident
+      { }
+  | type_longident
+      { }
+  | simple_core_type2 type_longident
+      { }
+  | TOParen core_type_comma_list TCParen type_longident
+      { }
 
-ty_seq:
- | ty_cons { }
- | /*(*empty*)*/ { }
- | TOParen ty_comma_list TCParen { }
 
-ty_comma_list:
- | typexpr TComma ty_comma_list { }
- | typexpr TComma typexpr { }
+core_type_comma_list:
+  | core_type                                   { }
+  | core_type_comma_list TComma core_type        { }
 
-ty_var:
- | TQuote ident { }
+core_type_list:
+  | simple_core_type                            { }
+  | core_type_list TStar simple_core_type        { }
 
 /*(*----------------------------*)*/
 /*(* Misc *)*/
 /*(*----------------------------*)*/
-
-constr_decl: Texception { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
@@ -381,14 +395,8 @@ constr_decl: Texception { }
 /*(* Misc *)*/
 /*(*************************************************************************)*/
 
-external_declaration: TString { }
-
 /*(*************************************************************************)*/
 /*(* xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
-
-rec_opt:
- | Trec { }
- | /*(*empty*)*/ { }
 
 
