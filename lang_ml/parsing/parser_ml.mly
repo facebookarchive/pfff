@@ -424,6 +424,9 @@ expr:
  | Tmatch seq_expr Twith opt_bar match_cases
       { }
 
+ | Ttry seq_expr Twith opt_bar match_cases
+      { }
+
  | expr TEq expr
       { }
 
@@ -486,6 +489,9 @@ simple_expr:
 
  /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen
+      { }
+
+ | TOParen seq_expr type_constraint TCParen
       { }
 
 
@@ -614,6 +620,9 @@ simple_pattern:
  | signed_constant
       { }
 
+ | TOBracket pattern_semi_list opt_semi TCBracket
+      { }
+
  /*(* note that let (x:...) a =  will trigger this rule *)*/
  | TOParen pattern TColon core_type TCParen
       { }
@@ -622,6 +631,10 @@ simple_pattern:
       { }
 
 
+pattern_semi_list:
+ | pattern                                     { }
+ | pattern_semi_list TSemiColon pattern              { }
+
 pattern_comma_list:
  | pattern_comma_list TComma pattern            { }
  | pattern TComma pattern                       { }
@@ -629,6 +642,9 @@ pattern_comma_list:
 /*(*************************************************************************)*/
 /*(* Types *)*/
 /*(*************************************************************************)*/
+
+type_constraint:
+ | TColon core_type                             { }
 
 /*(*----------------------------*)*/
 /*(* Types definitions *)*/
