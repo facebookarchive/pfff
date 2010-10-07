@@ -232,6 +232,8 @@ signature_item:
      { }
  | Texternal val_ident TColon core_type TEq primitive_declaration
      { }
+ | Ttype type_declarations
+      { }
 
 
 primitive_declaration:
@@ -268,6 +270,16 @@ operator:
 ident:
  | TUpperIdent                                      { }
  | TLowerIdent                                      { }
+
+
+constr_ident:
+ | TUpperIdent                                      { }
+/*  | TOBracket TCBracket                           { } */
+ | TOParen TCParen                               { }
+ | TColonColon                                  { }
+/*  | TOParen TColonColon TCParen                    { "::" } */
+ | Tfalse                                       { }
+ | Ttrue                                        { }
  
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
@@ -310,6 +322,50 @@ type_longident:
 /*(*----------------------------*)*/
 /*(* Types definitions *)*/
 /*(*----------------------------*)*/
+
+type_declarations:
+ | type_declaration                            { }
+ | type_declarations TAnd type_declaration      { }
+
+type_declaration:
+  type_parameters TLowerIdent type_kind /*TODO constraints*/
+      { }
+
+type_kind:
+ | /*empty*/
+      { }
+ | TEq core_type
+      { }
+ | TEq constructor_declarations
+      { }
+ | TEq /*TODO private_flag*/ TPipe constructor_declarations
+      { }
+
+
+constructor_declarations:
+ | constructor_declaration                     { }
+ | constructor_declarations TPipe constructor_declaration { }
+
+constructor_declaration:
+    constr_ident constructor_arguments          { }
+
+constructor_arguments:
+ | /*empty*/                                   { }
+ | Tof core_type_list                           { }
+
+
+type_parameters:
+ |  /*empty*/                                   { }
+ | type_parameter                              { }
+ | TOParen type_parameter_list TCParen           { }
+
+type_parameter_list:
+ | type_parameter                              { }
+ | type_parameter_list TComma type_parameter    { }
+
+type_parameter:
+    /*TODO type_variance*/ TQuote ident                   { }
+
 
 /*(*----------------------------*)*/
 /*(* Exceptions *)*/
