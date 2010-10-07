@@ -525,8 +525,8 @@ let debug f = if !_debug then f () else ()
 (* Profiling *)
 (*****************************************************************************)
 
-let get_mem() =
-  command2("grep VmData /proc/" ^ string_of_int (Unix.getpid()) ^ "/status")
+(* now near cmd_to_list: let get_mem() = *)
+
 
 let memory_stat () =
   let stat = Gc.stat() in
@@ -3146,6 +3146,10 @@ let nblines_with_wc2 file =
   | _ -> failwith "pb in output of wc"
 let nblines_with_wc a = 
   profile_code "Common.nblines_with_wc" (fun () -> nblines_eff2 a)
+
+let get_mem() =
+  cmd_to_list("grep VmData /proc/" ^ string_of_int (Unix.getpid()) ^ "/status")
+  +> join ""
 
 (* now in prelude:
  * let command2 s = ignore(Sys.command s)

@@ -214,7 +214,7 @@ val debug : (unit -> unit) -> unit
 (* Profiling (cpu/mem) *)
 (*****************************************************************************)
 
-val get_mem : unit -> unit
+val get_mem : unit -> string
 val memory_stat : unit -> string
 
 val timenow : unit -> string

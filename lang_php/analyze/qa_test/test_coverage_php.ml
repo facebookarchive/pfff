@@ -346,6 +346,9 @@ let coverage_tests
     Common.finalize (fun () ->
     try (
     pr2 (spf "processing: %s (%d/%d)" test_file i total);
+    pr2 (Common.get_mem());
+    pr2 (Common.memory_stat());
+
 
     if not (Xdebug.php_has_xdebug_extension ())
     then failwith "xdebug is not properly installed";
