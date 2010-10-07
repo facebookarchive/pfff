@@ -254,6 +254,12 @@ signature_item:
 
  | Topen mod_longident
       { }
+ | Tmodule Ttype ident TEq module_type
+      { }
+ | Tmodule TUpperIdent module_declaration
+      { }
+
+
 
 /*(*----------------------------*)*/
 /*(* Misc *)*/
@@ -299,6 +305,8 @@ structure_item:
 
  | Tmodule TUpperIdent module_binding
       { }
+ | Tmodule Ttype ident TEq module_type
+      { }
  | Tinclude module_expr
       { }
 
@@ -338,7 +346,7 @@ operator:
  | TGreater                                     { }
 
 
-/*(* for polymorphic types both 'a and 'A is valid *)*/
+/*(* for polymorphic types both 'a and 'A is valid. Same for module types. *)*/
 ident:
  | TUpperIdent                                      { }
  | TLowerIdent                                      { }
@@ -411,6 +419,10 @@ label_longident:
 class_longident:
  | TLowerIdent                                      { }
  | mod_longident TDot TLowerIdent                    { }
+
+mty_longident:
+ | ident                                       { }
+ | mod_ext_longident TDot ident                 { }
 
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
@@ -763,6 +775,9 @@ pattern_comma_list:
 
 type_constraint:
  | TColon core_type                             { }
+ 
+ /*(* object cast extension *)*/
+ | TColonGreater core_type                      { }
 
 /*(*----------------------------*)*/
 /*(* Types definitions *)*/
@@ -1023,9 +1038,22 @@ module_binding:
  | TEq module_expr
       { }
 
+module_declaration:
+ | TColon module_type
+      { }
+
 /*(*----------------------------*)*/
 /*(* Module types *)*/
 /*(*----------------------------*)*/
+
+module_type:
+ | mty_longident
+      { }
+ | Tsig signature Tend
+      { }
+ | Tfunctor TOParen TUpperIdent TColon module_type TCParen TArrow module_type
+      %prec below_WITH
+      { }
 
 /*(*----------------------------*)*/
 /*(* Module expressions *)*/
@@ -1035,7 +1063,14 @@ module_expr:
   /*(* when just do a module aliasing *)*/
   | mod_longident
       { }
+  /*(* nested modules *)*/
   | Tstruct structure Tend
+      { }
+  /*(* functor definition *)*/
+  | Tfunctor TOParen TUpperIdent TColon module_type TCParen TArrow module_expr
+      { }
+  /*(* module/functor application *)*/
+  | module_expr TOParen module_expr TCParen
       { }
 
 /*(*************************************************************************)*/
