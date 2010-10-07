@@ -180,7 +180,7 @@ rule token = parse
   | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
   | "<" { TLess(tokinfo lexbuf) }  | ">" { TGreater(tokinfo lexbuf) }
 
-  | "!=" { TBangEq(tokinfo lexbuf) }
+  | "!=" { TBangEq(tokinfo lexbuf) (* INFIXOP0 *) }
 
   | "#" { TSharp(tokinfo lexbuf) }
   | "&" { TAnd(tokinfo lexbuf) }

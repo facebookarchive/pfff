@@ -180,6 +180,7 @@ open Ast_ml
 %right    TColonColon                    /* expr (e :: e :: e) */
 %left     INFIXOP2 TPlus PLUSDOT TMinus TMinusDot  /* expr (e OP e OP e) */
 %left     INFIXOP3 TStar                 /* expr (e OP e OP e) */
+%left     TInfixOperator /* pad: */
 %right    INFIXOP4                       /* expr (e OP e OP e) */
 %nonassoc prec_unary_minus prec_unary_plus /* unary - */
 %nonassoc prec_constant_constructor      /* cf. simple_expr (C versus C x) */
@@ -189,9 +190,9 @@ open Ast_ml
 %nonassoc below_DOT
 %nonassoc TDot
 /* Finally, the first tokens of simple_expr are above everything else. */
-%nonassoc TBackQuote TBang Tbegin TChar Tfalse TFloat TInt INT32 INT64
+%nonassoc TBackQuote TBang Tbegin TChar Tfalse TFloat TInt
           TOBrace TOBraceLess TOBracket TOBracketPipe TLowerIdent TOParen
-          Tnew NATIVEINT PREFIXOP TString Ttrue TUpperIdent
+          Tnew TPrefixOperator TString Ttrue TUpperIdent
 
 /*(*************************************************************************)*/
 /*(* Rules type declaration *)*/
@@ -325,6 +326,16 @@ constr_ident:
 label:
     TLowerIdent                                      { }
 
+/*(*----------------------------*)*/
+/*(* Labels *)*/
+/*(*----------------------------*)*/
+
+label_var:
+    TLowerIdent    { }
+
+label_ident:
+    TLowerIdent   { }
+
  
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
@@ -356,6 +367,11 @@ constr_longident:
  | Tfalse                                       { }
  | Ttrue                                        { }
 
+/*(* record field name *)*/
+label_longident:
+ | TLowerIdent                                      { }
+ | mod_longident TDot TLowerIdent                    { }
+
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
 /*(*----------------------------*)*/
@@ -370,14 +386,82 @@ seq_expr:
  | expr TSemiColon                     { }
  | expr TSemiColon seq_expr            { }
 
+
 expr:
  | simple_expr %prec below_SHARP
       { }
+ /*(* function application *)*/
+ | simple_expr simple_labeled_expr_list
+      { }
+
+ | Tlet rec_flag let_bindings Tin seq_expr
+      { }
+ | Tfun labeled_simple_pattern fun_def
+      { }
+
+ | expr_comma_list %prec below_COMMA
+      { }
+ | constr_longident simple_expr %prec below_SHARP
+      { }
+
+ | expr TInfixOperator expr
+      { }
+
+ | Tif seq_expr Tthen expr Telse expr
+     { }
+ | Tif seq_expr Tthen expr
+      { }
+
+
+
 
 simple_expr:
+ | constant
+      { }
  | val_longident
       { }
- | constant
+ /*(* this includes 'false' *)*/
+ | constr_longident %prec prec_constant_constructor
+      { }
+ | TOParen seq_expr TCParen
+      { }
+ | simple_expr TDot label_longident
+      { }
+
+ /*(* array extension *)*/
+ | simple_expr TDot TOParen seq_expr TCParen
+      { }
+
+
+simple_labeled_expr_list:
+ | labeled_simple_expr
+      { }
+ | simple_labeled_expr_list labeled_simple_expr
+      { }
+
+labeled_simple_expr:
+ | simple_expr %prec below_SHARP
+      { }
+ | label_expr
+      { }
+
+
+expr_comma_list:
+ | expr_comma_list TComma expr                  { }
+ | expr TComma expr                             { }
+
+/*(*----------------------------*)*/
+/*(* Labels *)*/
+/*(*----------------------------*)*/
+
+label_expr:
+ | TLabelDecl simple_expr %prec below_SHARP
+      { }
+ | TTilde label_ident
+      { }
+ | TQuestion label_ident
+      { }
+ | TOptLabelDecl simple_expr %prec below_SHARP
       { }
 
 /*(*----------------------------*)*/
@@ -419,6 +503,7 @@ pattern:
  | pattern TPipe pattern
       { }
 
+
 simple_pattern:
  | val_ident %prec below_EQUAL
       { }
@@ -429,6 +514,9 @@ simple_pattern:
  | signed_constant
       { }
 
+ /*(* note that let (x:...) a =  will trigger this rule *)*/
+ | TOParen pattern TColon core_type TCParen
+      { }
 
  | TOParen pattern TCParen
       { }
@@ -596,15 +684,58 @@ strict_binding:
  | labeled_simple_pattern fun_binding
       { }
 
+
 labeled_simple_pattern:
   | simple_pattern
       { }
-
+  | label_pattern
+      { }
 
 
 rec_flag:
  | /* empty */                                 { }
  | Trec                                         { }
+
+
+label_let_pattern:
+ | label_var
+      { }
+ | label_var TColon core_type
+      { }
+
+opt_default:
+ | /* empty */                         { }
+ | TEq seq_expr                      { }
+
+/*(*----------------------------*)*/
+/*(* Labels *)*/
+/*(*----------------------------*)*/
+
+label_pattern:
+  | TTilde label_var
+      { }
+  /*(* ex: let x ~foo:a *)*/
+  | TLabelDecl simple_pattern
+      { }
+  | TTilde TOParen label_let_pattern TCParen
+      { }
+  | TQuestion TOParen label_let_pattern opt_default TCParen
+      { }
+  | TQuestion label_var
+      { }
+
+/*(*************************************************************************)*/
+/*(* Fun, definitions *)*/
+/*(*************************************************************************)*/
+
+fun_def:
+ | match_action                                { }
+ | labeled_simple_pattern fun_def
+      { }
+
+match_action:
+ | TArrow seq_expr                       { }
+ | Twhen seq_expr TArrow seq_expr         { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
