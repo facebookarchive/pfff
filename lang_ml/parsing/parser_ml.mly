@@ -408,6 +408,11 @@ expr:
  | expr TColonColon expr
      { }
 
+ | TPrefixOperator simple_expr
+      { }
+ | TBang simple_expr
+      { }
+
  | expr TInfixOperator expr
       { }
 
@@ -476,6 +481,9 @@ simple_expr:
  | TOBrace record_expr TCBrace
       { }
 
+ | TOBracket expr_semi_list opt_semi TCBracket
+      { }
+
  /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen
       { }
@@ -500,6 +508,9 @@ expr_comma_list:
  | expr_comma_list TComma expr                  { }
  | expr TComma expr                             { }
 
+expr_semi_list:
+ | expr                                        { }
+ | expr_semi_list TSemiColon expr                    { }
 
 
 
