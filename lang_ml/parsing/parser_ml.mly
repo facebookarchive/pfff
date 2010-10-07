@@ -557,6 +557,8 @@ simple_expr:
  /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen
       { }
+ | simple_expr TDot TOBracket seq_expr TCBracket
+      { }
 
  /*(* object extension *)*/
  | simple_expr TSharp label
@@ -873,6 +875,9 @@ simple_core_type2:
  /*(* name tag extension *)*/
  | TOBracket row_field TPipe row_field_list TCBracket
       { }
+ | TOBracket tag_field TCBracket
+      { }
+
 
 core_type_comma_list:
  | core_type                                   { }
@@ -1030,7 +1035,6 @@ module_expr:
   /*(* when just do a module aliasing *)*/
   | mod_longident
       { }
-
   | Tstruct structure Tend
       { }
 
