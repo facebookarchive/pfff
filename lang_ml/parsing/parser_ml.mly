@@ -230,6 +230,9 @@ signature_item:
  | Texception TUpperIdent constructor_arguments
       { }
 
+ | Topen mod_longident
+      { }
+
 /*(*----------------------------*)*/
 /*(* Misc *)*/
 /*(*----------------------------*)*/
@@ -262,12 +265,17 @@ structure_item:
      { }
  | Texception TUpperIdent constructor_arguments
      { }
+
+ | Topen mod_longident
+      { }
+
  /*(* start of deviation *)*/
 
  | Tlet rec_flag let_bindings
       {  }
 
- | Topen mod_longident
+
+ | Tmodule TUpperIdent module_binding
       { }
 
 
@@ -341,6 +349,13 @@ val_longident:
  | val_ident                                   { }
  | mod_longident TDot val_ident                 { }
 
+constr_longident:
+ | mod_longident       %prec below_DOT         { }
+ | TOBracket TCBracket                           { }
+ | TOParen TCParen                               { }
+ | Tfalse                                       { }
+ | Ttrue                                        { }
+
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
 /*(*----------------------------*)*/
@@ -389,16 +404,39 @@ signed_constant:
 pattern:
  | simple_pattern
       { }
+ | constr_longident pattern %prec prec_constr_appl
+      { }
+
+ | pattern_comma_list  %prec below_COMMA
+      { }
  | pattern TColonColon pattern
+      { }
+
+ | pattern Tas val_ident
+      { }
+
+ /*(* nested patterns *)*/
+ | pattern TPipe pattern
       { }
 
 simple_pattern:
  | val_ident %prec below_EQUAL
       { }
+ | constr_longident
+      { }
  | TUnderscore
       { }
  | signed_constant
       { }
+
+
+ | TOParen pattern TCParen
+      { }
+
+
+pattern_comma_list:
+ | pattern_comma_list TComma pattern            { }
+ | pattern TComma pattern                       { }
 
 /*(*************************************************************************)*/
 /*(* Types *)*/
@@ -588,6 +626,10 @@ rec_flag:
 /*(* Modules *)*/
 /*(*************************************************************************)*/
 
+module_binding:
+ | TEq module_expr
+      { }
+
 /*(*----------------------------*)*/
 /*(* Module types *)*/
 /*(*----------------------------*)*/
@@ -595,6 +637,10 @@ rec_flag:
 /*(*----------------------------*)*/
 /*(* Module expressions *)*/
 /*(*----------------------------*)*/
+
+module_expr:
+  | mod_longident
+      { }
 
 /*(*************************************************************************)*/
 /*(* Misc *)*/
