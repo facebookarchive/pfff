@@ -35,7 +35,8 @@ let find_ml_files_of_dir_or_files xs =
   +> List.filter (fun filename ->
     let ftype = File_type.file_type_of_file filename in
     match ftype with
-    | File_type.PL (File_type.ML ("ml" | "mli")) -> true
+    | File_type.PL (File_type.ML ("ml" | "mli")) -> 
+        not (filename =~ ".*\\.md5sum")
     | _ -> false
   ) |> Common.sort
 

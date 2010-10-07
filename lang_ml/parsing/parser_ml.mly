@@ -83,7 +83,8 @@ open Ast_ml
  Tclass Tnew Tinherit Tconstraint Tinitializer Tmethod Tobject Tprivate
  Tvirtual
  Tlazy Tmutable Tassert
- Tand Tor Tmod Tlor Tlsl Tlsr Tlxor Tasr Tland
+ Tand 
+ Tor Tmod Tlor Tlsl Tlsr Tlxor Tasr Tland
 
 /*(* syntax *)*/
 %token <Ast_ml.info> TOParen TCParen TOBrace TCBrace TOBracket TCBracket
@@ -162,7 +163,7 @@ open Ast_ml
 %nonassoc Tlet                           /* above TSemiColon ( ...; let ... in ...) */
 %nonassoc below_WITH
 %nonassoc Tfunction Twith                 /* below TPipe  (match ... with ...) */
-%nonassoc TAnd             /* above Twith (module rec A: Tsig with ... and ...) */
+%nonassoc Tand             /* above Twith (module rec A: Tsig with ... and ...) */
 %nonassoc Tthen                          /* below Telse (if ... then ...) */
 %nonassoc Telse                          /* (if ... then ... else ...) */
 %nonassoc TAssignMutable                 /* below TAssign (lbl <- x := e) */
@@ -173,7 +174,7 @@ open Ast_ml
 %left     TComma                         /* expr/expr_comma_list (e,e,e) */
 %right    TArrow                         /* core_type2 (t -> t -> t) */
 %right    Tor BARBAR                     /* expr (e || e || e) */
-%right    Tand TAndAnd                   /* expr (e && e && e) */
+%right    TAnd TAndAnd                   /* expr (e && e && e) */
 %nonassoc below_EQUAL
 %left     INFIXOP0 TEq TLess TGreater    /* expr (e OP e OP e) */
 %right    INFIXOP1                       /* expr (e OP e OP e) */
@@ -203,6 +204,26 @@ open Ast_ml
 %type <Ast_ml.toplevel list> implementation
 
 %%
+
+/*(*************************************************************************)*/
+/*(* TOC *)*/
+/*(*************************************************************************)*/
+/*
+(*
+ * the value constructions:
+ *  - constants
+ *  - constructors
+ *  - lists
+ *  - records
+ *  - tuples 
+ *  - arrays
+ *  - symbols (`Foo)
+ * have at the same time some rules to express:
+ *  - the type
+ *  - the expression
+ *  - the pattern
+ *)
+ */
 
 /*(*************************************************************************)*/
 /*(* Toplevel, compilation units *)*/
@@ -278,6 +299,8 @@ structure_item:
 
  | Tmodule TUpperIdent module_binding
       { }
+ | Tinclude module_expr
+      { }
 
 
 
@@ -296,7 +319,7 @@ operator:
  | TEq                                       { }
  | Tor                                          { }
   /*(* but not Tand, because of conflict ? *)*/
- | Tand                                   { }
+ | TAnd                                   { }
  | TAssign                                  { }
  | Tmod { }
  | Tland { }
@@ -305,6 +328,14 @@ operator:
  | Tlsl { } 
  | Tlsr { }
  | Tasr { }
+
+ | TBang                                        { }
+ | TPlus                                        { }
+ | TPlusDot                                     { }
+ | TMinus                                       { }
+ | TMinusDot                                    { }
+ | TLess                                        { }
+ | TGreater                                     { }
 
 
 /*(* for polymorphic types both 'a and 'A is valid *)*/
@@ -408,11 +439,6 @@ expr:
  | expr TColonColon expr
      { }
 
- | TPrefixOperator simple_expr
-      { }
- | TBang simple_expr
-      { }
-
  | expr TInfixOperator expr
       { }
 
@@ -427,6 +453,14 @@ expr:
  | Ttry seq_expr Twith opt_bar match_cases
       { }
 
+ | Twhile seq_expr Tdo seq_expr Tdone
+     { }
+ | Tfor val_ident TEq seq_expr direction_flag seq_expr Tdo seq_expr Tdone
+     { }
+
+ | expr TAssign expr
+      { }
+
  | expr TEq expr
       { }
 
@@ -434,6 +468,8 @@ expr:
  | expr TPlus expr
       { }
  | expr TMinus expr
+     { }
+ | expr TPlusDot expr
      { }
  | expr TMinusDot expr
      { }
@@ -445,7 +481,7 @@ expr:
      { }
  | expr Tor expr
      { }
- | expr Tand expr
+ | expr TAnd expr
      { }
  | expr TAndAnd expr
      { }
@@ -481,14 +517,31 @@ simple_expr:
  | Tbegin Tend
      { }
 
+ /*(* bugfix: must be in simple_expr. Originally made the mistake to put it
+    * in expr: and the parser would then not recognize things like 'foo !x'
+    *)*/
+ | TPrefixOperator simple_expr
+      { }
+ | TBang simple_expr
+     { }
+
+
  | TOBrace record_expr TCBrace
       { }
 
  | TOBracket expr_semi_list opt_semi TCBracket
       { }
+ | TOBracketPipe expr_semi_list opt_semi TPipeCBracket
+      { }
+ | TOBracketPipe TPipeCBracket
+      { }
 
  /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen
+      { }
+
+ /*(* object extension *)*/
+ | simple_expr TSharp label
       { }
 
  | TOParen seq_expr type_constraint TCParen
@@ -544,6 +597,11 @@ subtractive:
 additive:
   | TPlus                                        { }
   | TPlusDot                                     { }
+
+
+direction_flag:
+ | Tto                                          { }
+ | Tdownto                                      { }
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -620,7 +678,14 @@ simple_pattern:
  | signed_constant
       { }
 
+ | TOBrace lbl_pattern_list record_pattern_end TCBrace
+      { }
+
  | TOBracket pattern_semi_list opt_semi TCBracket
+      { }
+ | TOBracketPipe pattern_semi_list opt_semi TPipeCBracket
+      { }
+ | TOBracketPipe TPipeCBracket
       { }
 
  /*(* note that let (x:...) a =  will trigger this rule *)*/
@@ -629,6 +694,18 @@ simple_pattern:
 
  | TOParen pattern TCParen
       { }
+
+
+lbl_pattern_list:
+ | label_longident TEq pattern               { }
+ | label_longident                             { }
+ | lbl_pattern_list TSemiColon label_longident TEq pattern { }
+ | lbl_pattern_list TSemiColon label_longident       { }
+
+record_pattern_end:
+ |  opt_semi                                    { }
+ /*(* new 3.12 feature! *)*/
+ | TSemiColon TUnderscore opt_semi                    { }
 
 
 pattern_semi_list:
@@ -652,7 +729,7 @@ type_constraint:
 
 type_declarations:
  | type_declaration                            { }
- | type_declarations TAnd type_declaration     { }
+ | type_declarations Tand type_declaration     { }
 
 type_declaration:
   type_parameters TLowerIdent type_kind /*TODO constraints*/
@@ -777,7 +854,7 @@ poly_type:
 
 let_bindings:
  | let_binding                                 { }
- | let_bindings TAnd let_binding                { }
+ | let_bindings Tand let_binding                { }
 
 
 let_binding:
@@ -883,7 +960,11 @@ module_binding:
 /*(*----------------------------*)*/
 
 module_expr:
+  /*(* when just do a module aliasing *)*/
   | mod_longident
+      { }
+
+  | Tstruct structure Tend
       { }
 
 /*(*************************************************************************)*/

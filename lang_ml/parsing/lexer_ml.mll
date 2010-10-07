@@ -101,7 +101,10 @@ let keyword_table = Common.hash_of_list [
   "mutable", (fun ii -> Tmutable ii);
   "assert", (fun ii -> Tassert ii);
 
+   (* used when doing mutually recursive definitions *)
   "and", (fun ii -> Tand ii);
+
+
   "or", (fun ii -> Tor ii);
   "mod", (fun ii -> Tmod ii);
   "lor", (fun ii -> Tlor ii);
@@ -155,6 +158,12 @@ rule token = parse
       let com = comment lexbuf in
       TComment(info +> Parse_info.tok_add_s com)
     }
+
+  | "#" space* digit+ space* ("\"" [^ '"']* "\"")? 
+      {
+        TCommentMisc (tokinfo lexbuf)
+      }
+        
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -269,7 +278,7 @@ rule token = parse
      TInt (s, tokinfo lexbuf)
    }
 
-  | '-' 
+  | '-'?
     digit (digit | '_')*
     ('.' (digit | '_')*)?
     ( ('e' |'E') ['+' '-']? digit (digit | '_')* )? 
