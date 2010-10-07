@@ -13,8 +13,9 @@
 %{
 (* 
  * src: slightly adapted from the official source of OCaml in its
- * parsing/ subdirectory.
- * Was: $Id: parser.mly 10536 2010-06-07 15:32:32Z doligez $
+ *  parsing/ subdirectory.
+ * 
+ * was: $Id: parser.mly 10536 2010-06-07 15:32:32Z doligez $
  *
  * other sources:
  * - http://caml.inria.fr/pub/docs/manual-ocaml/language.html
@@ -157,32 +158,32 @@ open Ast_ml
 
 %nonassoc Tin
 %nonassoc below_SEMI
-%nonassoc TSemiColon                          /* below TEq ({lbl=...; lbl=...}) */
+%nonassoc TSemiColon                     /* below TEq ({lbl=...; lbl=...}) */
 %nonassoc Tlet                           /* above TSemiColon ( ...; let ... in ...) */
 %nonassoc below_WITH
 %nonassoc Tfunction Twith                 /* below TPipe  (match ... with ...) */
 %nonassoc TAnd             /* above Twith (module rec A: Tsig with ... and ...) */
 %nonassoc Tthen                          /* below Telse (if ... then ...) */
 %nonassoc Telse                          /* (if ... then ... else ...) */
-%nonassoc TAssignMutable                     /* below TAssign (lbl <- x := e) */
-%right    TAssign                    /* expr (e := e := e) */
+%nonassoc TAssignMutable                 /* below TAssign (lbl <- x := e) */
+%right    TAssign                        /* expr (e := e := e) */
 %nonassoc Tas
-%left     TPipe                           /* pattern (p|p|p) */
+%left     TPipe                          /* pattern (p|p|p) */
 %nonassoc below_COMMA
 %left     TComma                         /* expr/expr_comma_list (e,e,e) */
-%right    TArrow                  /* core_type2 (t -> t -> t) */
+%right    TArrow                         /* core_type2 (t -> t -> t) */
 %right    Tor BARBAR                     /* expr (e || e || e) */
-%right    Tand TAndAnd          /* expr (e && e && e) */
+%right    Tand TAndAnd                   /* expr (e && e && e) */
 %nonassoc below_EQUAL
-%left     INFIXOP0 TEq TLess TGreater   /* expr (e OP e OP e) */
-%right    INFIXOP1                      /* expr (e OP e OP e) */
+%left     INFIXOP0 TEq TLess TGreater    /* expr (e OP e OP e) */
+%right    INFIXOP1                       /* expr (e OP e OP e) */
 %right    TColonColon                    /* expr (e :: e :: e) */
 %left     INFIXOP2 TPlus PLUSDOT TMinus TMinusDot  /* expr (e OP e OP e) */
 %left     INFIXOP3 TStar                 /* expr (e OP e OP e) */
-%right    INFIXOP4                      /* expr (e OP e OP e) */
+%right    INFIXOP4                       /* expr (e OP e OP e) */
 %nonassoc prec_unary_minus prec_unary_plus /* unary - */
-%nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
-%nonassoc prec_constr_appl              /* above Tas TPipe TColonColon TComma */
+%nonassoc prec_constant_constructor      /* cf. simple_expr (C versus C x) */
+%nonassoc prec_constr_appl               /* above Tas TPipe TColonColon TComma */
 %nonassoc below_SHARP
 %nonassoc TSharp                         /* simple_expr/toplevel_directive */
 %nonassoc below_DOT
@@ -206,11 +207,9 @@ open Ast_ml
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-implementation:
-    structure EOF                        { [FinalDef $2] }
+implementation: structure EOF                        { [FinalDef $2] }
 
-interface:
-    signature EOF                        { [FinalDef $2] }
+interface:      signature EOF                        { [FinalDef $2] }
 
 
 /*(*************************************************************************)*/
@@ -224,67 +223,68 @@ structure: Texception { }
 /*(*************************************************************************)*/
 
 signature:
-    /* empty */                                 { }
-  | signature signature_item                    { }
-  | signature signature_item TSemiColonSemiColon           { }
+ | /* empty */                                 { }
+ | signature signature_item                    { }
+ | signature signature_item TSemiColonSemiColon           { }
 
 signature_item:
-  | Tval val_ident TColon core_type
-      { }
-  | Texternal val_ident TColon core_type TEq primitive_declaration
-      { }
+ | Tval val_ident TColon core_type
+     { }
+ | Texternal val_ident TColon core_type TEq primitive_declaration
+     { }
 
 
 primitive_declaration:
-  | TString                                      { }
-  | TString primitive_declaration                { }
+ | TString                                      { }
+ | TString primitive_declaration                { }
 
 /*(*************************************************************************)*/
 /*(* Names *)*/
 /*(*************************************************************************)*/
 
 val_ident:
-  | TLowerIdent                                      { }
-  | TOParen operator TCParen                      { }
+ | TLowerIdent                                      { }
+ | TOParen operator TCParen                      { }
 
 operator:
-  | TPrefixOperator                                    { }
-  | TInfixOperator { }
-  | TStar                                        { }
-  | TEq                                       { }
-  | Tor                                          { }
+ | TPrefixOperator                                    { }
+ | TInfixOperator { }
+ | TStar                                        { }
+ | TEq                                       { }
+ | Tor                                          { }
   /*(* but not Tand, because of conflict ? *)*/
-  | Tand                                   { }
-  | TAssign                                  { }
+ | Tand                                   { }
+ | TAssign                                  { }
+ | Tmod { }
+ | Tland { }
+ | Tlor { }
+ | Tlxor { }
+ | Tlsl { } 
+ | Tlsr { }
+ | Tasr { }
 
-  | Tmod { }
-  | Tland { }
-  | Tlor { }
-  | Tlxor { }
-  | Tlsl { } 
-  | Tlsr { }
-  | Tasr { }
 
+/*(* for polymorphic types both 'a and 'A is valid *)*/
 ident:
-  | TUpperIdent                                      { }
-  | TLowerIdent                                      { }
+ | TUpperIdent                                      { }
+ | TLowerIdent                                      { }
  
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
 /*(*----------------------------*)*/
 
 mod_longident:
-  | TUpperIdent                                      { }
-  | mod_longident TDot TUpperIdent                    { }
+ | TUpperIdent                                      { }
+ | mod_longident TDot TUpperIdent                    { }
 
 mod_ext_longident:
-  | TUpperIdent                                      { }
-  | mod_ext_longident TDot TUpperIdent                { }
-  | mod_ext_longident TOParen mod_ext_longident TCParen { }
+ | TUpperIdent                                      { }
+ | mod_ext_longident TDot TUpperIdent                { }
+ | mod_ext_longident TOParen mod_ext_longident TCParen { }
 
 type_longident:
-  | TLowerIdent                                      { }
-  | mod_ext_longident TDot TLowerIdent                { }
+ | TLowerIdent                                      { }
+ | mod_ext_longident TDot TLowerIdent                { }
 
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
@@ -320,40 +320,39 @@ type_longident:
 /*(*----------------------------*)*/
 
 core_type:
-    core_type2
-      { }
+ | core_type2
+    { }
 
 core_type2:
-  | simple_core_type_or_tuple
+ | simple_core_type_or_tuple
       { }
-  | core_type2 TArrow core_type2
+ | core_type2 TArrow core_type2
       {  }
 
 simple_core_type_or_tuple:
-  | simple_core_type                            { }
-  | simple_core_type TStar core_type_list
-      { }
+ | simple_core_type                            { }
+ | simple_core_type TStar core_type_list     { }
 
 simple_core_type:
-    simple_core_type2  %prec below_SHARP
+ | simple_core_type2  %prec below_SHARP
       { }
-  | TOParen core_type_comma_list TCParen %prec below_SHARP
+ | TOParen core_type_comma_list TCParen %prec below_SHARP
       { }
 
 simple_core_type2:
-  | TQuote ident
+ | TQuote ident
       { }
-  | type_longident
+ | type_longident
       { }
-  | simple_core_type2 type_longident
+ | simple_core_type2 type_longident
       { }
-  | TOParen core_type_comma_list TCParen type_longident
+ | TOParen core_type_comma_list TCParen type_longident
       { }
 
 
 core_type_comma_list:
-  | core_type                                   { }
-  | core_type_comma_list TComma core_type        { }
+ | core_type                                   { }
+ | core_type_comma_list TComma core_type        { }
 
 core_type_list:
   | simple_core_type                            { }
