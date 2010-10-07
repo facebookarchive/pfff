@@ -25,12 +25,8 @@ open Ast_ml
 
 (* hooks *)
 type visitor_in = {
-(*
-  kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
-  kstmt: (st  -> unit) * visitor_out -> st  -> unit;
-  kfield: (field -> unit) * visitor_out -> field -> unit;
-*)
-  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+  kinfo: info vin;
+  kexpr: expr vin;
 }
 and visitor_out = {
 (*
@@ -40,17 +36,15 @@ and visitor_out = {
   vinfo: info -> unit;
   vprogram: program -> unit;
 *)
-  vtoplevel: toplevel -> unit;
-  vprogram: program -> unit;
+  vtoplevel: toplevel vout;
+  vprogram: program vout;
 }
+and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
+and 'a vout = 'a -> unit
 
 let default_visitor = { 
   kinfo   = (fun (k,_) x -> k x);
-(*  
   kexpr   = (fun (k,_) x -> k x);
-  kstmt   = (fun (k,_) x -> k x);
-  kfield = (fun (k,_) x -> k x);
-*)
 }
 
 

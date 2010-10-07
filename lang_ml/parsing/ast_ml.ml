@@ -29,29 +29,140 @@ open Common
 type info = Parse_info.info
 and tok = info
 
+(* a shortcut to annotate some information with token/position information *)
+and 'a wrap = 'a * info
+
+and 'a paren   = tok * 'a * tok
+and 'a brace   = tok * 'a * tok
+and 'a bracket = tok * 'a * tok 
+
+and 'a comma_list = ('a, tok (* the comma *)) Common.either list
+and 'a and_list = ('a, tok (* the 'and' *)) Common.either list
+
+and 'a star_list = ('a, tok (* the '*' *)) Common.either list
+
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
+type name = Name of string wrap
+(* lower and uppernames aliases, just for clarity *)
+and lname = name
+and uname = name
+
+type long_name = qualifier * name
+ and qualifier = (name * tok (*'.'*)) list
 
 (* ------------------------------------------------------------------------- *)
-(* Type expressions *)
+(* Types *)
 (* ------------------------------------------------------------------------- *)
 (* core language, module language, class language *)
 
+type ty = unit
 
 (* ------------------------------------------------------------------------- *)
-(* Value expressions *)
+(* Expressions *)
 (* ------------------------------------------------------------------------- *)
+and expr = unit
+
+and seq_expr = unit
+
+(* ------------------------------------------------------------------------- *)
+(* Patterns *)
+(* ------------------------------------------------------------------------- *)
+and pattern = unit
+
+and simple_pattern = unit
+
+and labeled_simple_pattern = unit
+
+(* ------------------------------------------------------------------------- *)
+(* Type declarations *)
+(* ------------------------------------------------------------------------- *)
+and type_declaration = unit
+
+and constructor_arguments =
+  | NoConstrArg
+  | Of of tok * ty star_list
+
+(* ------------------------------------------------------------------------- *)
+(* Let binding *)
+(* ------------------------------------------------------------------------- *)
+
+and let_binding =
+  | LetClassic of let_def
+  | LetPattern of pattern * tok (* = *) * seq_expr
+
+(* was called fun_binding in the grammar *)
+and let_def = {
+  l_name: name; (* val_ident *)
+  l_args: labeled_simple_pattern list; (* can be empty *)
+  l_tok: tok; (* = *)
+  l_body: seq_expr;
+ }
+
+(* ------------------------------------------------------------------------- *)
+(* Function binding *)
+(* ------------------------------------------------------------------------- *)
+ 
+
+and function_def = unit
+
+(* ------------------------------------------------------------------------- *)
+(* Module *)
+(* ------------------------------------------------------------------------- *)
+and module_type = unit
+
+
+and module_expr = unit
+(* ------------------------------------------------------------------------- *)
+(* Class *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Signature/Structure items *)
+(* ------------------------------------------------------------------------- *)
+
+(* could split in sig_item and struct_item but many constructions are
+ * valid in both contexts
+ *)
+and item = 
+ | TypeDecl of tok * type_declaration and_list
+ | ExceptionDecl of tok * name * constructor_arguments
+ | ExternalDecl of tok * name (* val_ident *) * tok (*:*) * ty * tok (* = *) *
+     string wrap list (* primitive declarations *)
+
+ | Open of tok * long_name
+
+ (* only in sig_item *)
+ | ValDecl of tok * name (* val_ident *) * tok (*:*) * ty
+
+ (* only in struct_item *)
+ | Let of tok * rec_opt * let_binding and_list
+     
+ | ItemTodo
+
+and sig_item = item
+and struct_item = item
+
+  and rec_opt = tok option
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel phrases *)
 (* ------------------------------------------------------------------------- *)
 
 and toplevel =
-  | TODO of info
+  | Item of item
+
+  (* should both be removed *)
+  | ScSc of info (* ;; *)
+  | TopSeqExpr of seq_expr
 
   | NotParsedCorrectly of info list
   | FinalDef of info (* EOF *)
+
+  | TODO of info
 
  and program = toplevel list
  (* with tarzan *)

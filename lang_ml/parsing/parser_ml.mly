@@ -37,6 +37,11 @@ open Common
 
 open Ast_ml
 
+let (qufix: long_name -> tok -> (string wrap) -> long_name) = 
+ fun longname dottok ident ->
+  match longname with
+  | xs, Name ident2 ->
+      xs ++ [Name ident2, dottok], Name ident
 %}
 
 /*(*************************************************************************)*/
@@ -231,33 +236,34 @@ open Ast_ml
 
 interface:      signature EOF                        { [FinalDef $2] }
 
-implementation: structure EOF                        { [FinalDef $2] }
+implementation: structure EOF                        { $1 ++ [FinalDef $2] }
 
 /*(*************************************************************************)*/
 /*(* Signature *)*/
 /*(*************************************************************************)*/
 
 signature:
- | /* empty */                                 { }
- | signature signature_item                    { }
- | signature signature_item TSemiColonSemiColon           { }
+ | /* empty */                                  { [] }
+ | signature signature_item                     { $1 ++ [Item $2] }
+ | signature signature_item TSemiColonSemiColon { $1 ++ [Item $2; ScSc $3] }
 
 signature_item:
- | Tval val_ident TColon core_type
-     { }
- | Texternal val_ident TColon core_type TEq primitive_declaration
-     { }
  | Ttype type_declarations
-      { }
+     { ItemTodo }
+ | Tval val_ident TColon core_type
+     { ItemTodo }
+ | Texternal val_ident TColon core_type TEq primitive_declaration
+     { ItemTodo }
  | Texception TUpperIdent constructor_arguments
-      { }
+     { ItemTodo }
 
  | Topen mod_longident
-      { }
+     { ItemTodo }
+
  | Tmodule Ttype ident TEq module_type
-      { }
+     { ItemTodo }
  | Tmodule TUpperIdent module_declaration
-      { }
+     { ItemTodo }
 
 
 
@@ -266,8 +272,8 @@ signature_item:
 /*(*----------------------------*)*/
 
 primitive_declaration:
- | TString                                      { }
- | TString primitive_declaration                { }
+ | TString                                      { [$1] }
+ | TString primitive_declaration                { $1::$2 }
 
 /*(*************************************************************************)*/
 /*(* Structure *)*/
@@ -275,40 +281,39 @@ primitive_declaration:
 
 /*(* pad: should not allow those toplevel seq_expr *)*/
 structure:
- | structure_tail                              { }
- | seq_expr structure_tail                     { }
+ | structure_tail                              { $1 }
+ | seq_expr structure_tail                     { TopSeqExpr $1::$2 }
 
 structure_tail:
- |  /* empty */                                 { }
- | TSemiColonSemiColon                                    { }
- | TSemiColonSemiColon seq_expr structure_tail            { }
- | TSemiColonSemiColon structure_item structure_tail      { }
- | structure_item structure_tail               { }
+ |  /* empty */                                 { [] }
+ | TSemiColonSemiColon                          { [ScSc $1] }
+ | TSemiColonSemiColon seq_expr structure_tail  { ScSc $1::TopSeqExpr $2::$3 }
+ | TSemiColonSemiColon structure_item structure_tail  { ScSc $1::Item $2::$3 }
+ | structure_item structure_tail                      { Item $1::$2 }
 
 structure_item:
  /*(* as in signature_item *)*/
- | Texternal val_ident TColon core_type TEq primitive_declaration
-     { }
  | Ttype type_declarations
-     { }
+     { TypeDecl ($1, $2) }
  | Texception TUpperIdent constructor_arguments
-     { }
+     { ExceptionDecl ($1, Name $2, $3) }
+ | Texternal val_ident TColon core_type TEq primitive_declaration
+     { ExternalDecl ($1, $2, $3, $4, $5, $6)  }
 
  | Topen mod_longident
-      { }
+      { Open ($1, $2) }
 
  /*(* start of deviation *)*/
-
  | Tlet rec_flag let_bindings
-      {  }
+      { ItemTodo }
 
 
  | Tmodule TUpperIdent module_binding
-      { }
+      { ItemTodo }
  | Tmodule Ttype ident TEq module_type
-      { }
+      { ItemTodo }
  | Tinclude module_expr
-      { }
+      { ItemTodo }
 
 
 
@@ -317,8 +322,8 @@ structure_item:
 /*(*************************************************************************)*/
 
 val_ident:
- | TLowerIdent                                      { }
- | TOParen operator TCParen                      { }
+ | TLowerIdent                                { Name $1 }
+ | TOParen operator TCParen                   { Name ("TODOOPERATOR", $1) }
 
 operator:
  | TPrefixOperator                                    { }
@@ -385,8 +390,8 @@ label_ident:
 /*(*----------------------------*)*/
 
 mod_longident:
- | TUpperIdent                                      { }
- | mod_longident TDot TUpperIdent                    { }
+ | TUpperIdent                       { [], Name $1 }
+ | mod_longident TDot TUpperIdent    { qufix $1 $2 $3 }
 
 mod_ext_longident:
  | TUpperIdent                                      { }
@@ -435,8 +440,8 @@ mty_longident:
 
 seq_expr:
  | expr        %prec below_SEMI  { }
- | expr TSemiColon                     { }
  | expr TSemiColon seq_expr            { }
+ | expr TSemiColon                     { }
 
 
 expr:
@@ -602,8 +607,8 @@ labeled_simple_expr:
 
 
 expr_comma_list:
- | expr_comma_list TComma expr                  { }
- | expr TComma expr                             { }
+ | expr_comma_list TComma expr                  { $1 ++ [Right $2; Left $3] }
+ | expr TComma expr                             { [Left $1; Right $2; Left $3] }
 
 expr_semi_list:
  | expr                                        { }
@@ -766,8 +771,8 @@ pattern_semi_list:
  | pattern_semi_list TSemiColon pattern              { }
 
 pattern_comma_list:
- | pattern_comma_list TComma pattern            { }
- | pattern TComma pattern                       { }
+ | pattern_comma_list TComma pattern            { $1 ++ [Right $2; Left $3] }
+ | pattern TComma pattern                       { [Left $1; Right $2; Left $3] }
 
 /*(*************************************************************************)*/
 /*(* Types *)*/
@@ -784,8 +789,8 @@ type_constraint:
 /*(*----------------------------*)*/
 
 type_declarations:
- | type_declaration                            { }
- | type_declarations Tand type_declaration     { }
+ | type_declaration                            { [Left $1] }
+ | type_declarations Tand type_declaration     { $1 ++ [Right $2; Left $3] }
 
 type_declaration:
   type_parameters TLowerIdent type_kind /*TODO constraints*/
@@ -814,8 +819,8 @@ constructor_declaration:
     constr_ident constructor_arguments          { }
 
 constructor_arguments:
- | /*empty*/                                   { }
- | Tof core_type_list                           { }
+ | /*(*empty*)*/                            { NoConstrArg }
+ | Tof core_type_list                       { Of ($1, $2) }
 
 
 type_parameters:
@@ -824,8 +829,8 @@ type_parameters:
  | TOParen type_parameter_list TCParen           { }
 
 type_parameter_list:
- | type_parameter                              { }
- | type_parameter_list TComma type_parameter    { }
+ | type_parameter                               { [Left $1] }
+ | type_parameter_list TComma type_parameter    { $1 ++ [Right $2; Left $3] }
 
 type_parameter:
     /*TODO type_variance*/ TQuote ident                   { }
@@ -868,8 +873,9 @@ core_type2:
 
 
 simple_core_type_or_tuple:
- | simple_core_type                            { }
- | simple_core_type TStar core_type_list     { }
+ | simple_core_type                          { [Left $1] }
+ | simple_core_type TStar core_type_list     { Left $1::Right $2::$3 }
+
 
 simple_core_type:
  | simple_core_type2  %prec below_SHARP
@@ -895,12 +901,12 @@ simple_core_type2:
 
 
 core_type_comma_list:
- | core_type                                   { }
- | core_type_comma_list TComma core_type        { }
+ | core_type                                  { [Left $1] }
+ | core_type_comma_list TComma core_type      { $1 ++ [Right $2; Left $3] }
 
 core_type_list:
-  | simple_core_type                            { }
-  | core_type_list TStar simple_core_type        { }
+  | simple_core_type                         { [Left $1] }
+  | core_type_list TStar simple_core_type    { $1 ++ [Right $2; Left $3] }
 
 /*(*----------------------------*)*/
 /*(* Misc *)*/
