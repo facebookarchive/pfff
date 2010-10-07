@@ -204,8 +204,8 @@ let parse2 filename =
       Left 
         (Common.profile_code "Parser_ml.main" (fun () ->
           if filename =~ ".*\\.mli"
-          then Parser_ml.unit_interface (lexer_function tr) lexbuf_fake
-          else Parser_ml.unit_implementation (lexer_function tr) lexbuf_fake
+          then Parser_ml.interface (lexer_function tr) lexbuf_fake
+          else Parser_ml.implementation (lexer_function tr) lexbuf_fake
         ))
     ) with e ->
 
