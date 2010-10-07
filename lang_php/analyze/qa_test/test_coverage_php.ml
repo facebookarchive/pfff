@@ -65,6 +65,7 @@ type test_cover_result =
       list
   | Problem of Common.filename * string (* error message *)
 
+
 (* Note that xdebug by default does not trace assignements but only 
  * function and method calls, which mean the list of lines returned
  * is an under-approximation. We compensate such an approximation by
@@ -78,6 +79,8 @@ type files_coverage = (Common.filename, file_coverage) Common.assoc
  }
  (* with tarzan *)
 
+
+
 (* In the past lots of tests were failing but we still wanted
  * to generate coverage data. Now, sometimes the codebase is broken which
  * makes all the tests failing but we were still generate an empty coverage
@@ -87,6 +90,8 @@ type files_coverage = (Common.filename, file_coverage) Common.assoc
 let threshold_working_tests_percentage = ref 80.0 
 
 let threshold_nblines_trace_too_big = ref 1_000_000
+
+let timeout_run_test = 50
 
 exception NotEnoughWorkingTests
 
@@ -287,7 +292,16 @@ let get_all_call_lines_with_sanity_check
   end;
   (* TODO: second sanity check, check that talk about same lines ? *)
   lines_calls
- 
+
+
+let killall_php_process () = 
+  pr2 "Remaining php process";
+  Sys.command ("ps aux |grep php") +> ignore;
+  pr2 "killing";
+  Sys.command ("killall php") +> ignore;
+  pr2 "Still remaining php process ?";
+  Sys.command ("ps aux |grep php") +> ignore;
+  ()
 
 (*****************************************************************************)
 (* Main entry points *)
@@ -344,11 +358,8 @@ let coverage_tests
    fun (test_file, i, total) ->
     let trace_file = Common.new_temp_file "xdebug" ".xt" in
     Common.finalize (fun () ->
-    try (
     pr2 (spf "processing: %s (%d/%d)" test_file i total);
     pr2 (Common.get_mem());
-    pr2 (Common.memory_stat());
-
 
     if not (Xdebug.php_has_xdebug_extension ())
     then failwith "xdebug is not properly installed";
@@ -366,9 +377,11 @@ let coverage_tests
       Xdebug.php_cmd_with_xdebug_on ~trace_file ~config () in
     let cmd = php_cmd_run_test ~php_interpreter test_file in
     pr2 (spf "executing: %s" cmd);
+
+    try (
     let output_cmd = 
       Common.profile_code "Run PHP tests" (fun () ->
-        Common.timeout_function 10 (fun () ->
+        Common.timeout_function timeout_run_test (fun () ->
           Common.cmd_to_list cmd 
         )
       )
@@ -414,10 +427,13 @@ let coverage_tests
    with Timeout ->
      (* those files can get huge *)
      pr2 (spf "PB with %s" test_file);
+     (* TODO: would not work when use MPI *)
+     killall_php_process ();
      Problem (test_file, "timeout when running test and computing coverage")
-    ) (fun () ->
-      Common.erase_this_temp_file trace_file;
-    )
+    ) 
+      (fun () ->
+        Common.erase_this_temp_file trace_file;
+      )
 
   in
 
@@ -510,7 +526,6 @@ let files_coverage_from_tests
   (fun (test_file, i, total) ->
     let trace_file = Common.new_temp_file "xdebug" ".xt" in
     Common.finalize (fun () ->
-   try (
     pr2 (spf "processing test: %s (%d/%d)" test_file i total);
 
     if not (Xdebug.php_has_xdebug_extension ())
@@ -530,9 +545,10 @@ let files_coverage_from_tests
     let cmd = php_cmd_run_test ~php_interpreter test_file in
     pr2 (spf "executing: %s" cmd);
 
+    try (
     let output_cmd = 
       Common.profile_code "Run PHP tests" (fun () ->
-        Common.timeout_function 50 (fun () ->
+        Common.timeout_function timeout_run_test (fun () ->
           Common.cmd_to_list cmd 
         )
       )
@@ -599,9 +615,6 @@ let files_coverage_from_tests
           file covered;
     }
   )
-
-
-
 
 
 (*****************************************************************************)
