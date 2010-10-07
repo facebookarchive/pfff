@@ -280,6 +280,10 @@ constr_ident:
 /*  | TOParen TColonColon TCParen                    { "::" } */
  | Tfalse                                       { }
  | Ttrue                                        { }
+
+/*(* record field name *)*/
+label:
+    TLowerIdent                                      { }
  
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
@@ -340,6 +344,8 @@ type_kind:
       { }
  | TEq /*TODO private_flag*/ TPipe constructor_declarations
       { }
+ | TEq /*TODO private_flag*/ TOBrace label_declarations opt_semi TCBrace
+      { }
 
 
 constructor_declarations:
@@ -367,6 +373,18 @@ type_parameter:
     /*TODO type_variance*/ TQuote ident                   { }
 
 
+label_declarations:
+ | label_declaration                           { }
+ | label_declarations TSemiColon label_declaration   { }
+
+label_declaration:
+    mutable_flag label TColon poly_type          { }
+
+mutable_flag:
+ | /* empty */                                 { }
+ | Tmutable                                     { }
+
+
 /*(*----------------------------*)*/
 /*(* Exceptions *)*/
 /*(*----------------------------*)*/
@@ -384,6 +402,15 @@ core_type2:
       { }
  | core_type2 TArrow core_type2
       {  }
+ /*(* ext: olabl *)*/
+ | TLowerIdent           TColon core_type2 TArrow core_type2
+      {  }
+ | TQuestion TLowerIdent TColon core_type2 TArrow core_type2
+      { }
+ /*(* pad: only because of my lexer *)*/
+ | TOptLabelDecl                core_type2 TArrow core_type2
+     { }
+
 
 simple_core_type_or_tuple:
  | simple_core_type                            { }
@@ -417,6 +444,10 @@ core_type_list:
 /*(*----------------------------*)*/
 /*(* Misc *)*/
 /*(*----------------------------*)*/
+
+poly_type:
+  core_type
+          { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
@@ -454,4 +485,6 @@ core_type_list:
 /*(* xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
-
+opt_semi:
+ | /* empty */                                 { }
+ | TSemiColon                                        { }
