@@ -249,13 +249,13 @@ signature:
 
 signature_item:
  | Ttype type_declarations
-     { TypeDecl ($1, $2) }
+     { Type ($1, $2) }
  | Tval val_ident TColon core_type
-     { ValDecl ($1, Name $2, $3, $4) }
+     { Val ($1, Name $2, $3, $4) }
  | Texternal val_ident TColon core_type TEq primitive_declaration
-     { ExternalDecl ($1, Name $2, $3, $4, $5, $6) }
+     { External ($1, Name $2, $3, $4, $5, $6) }
  | Texception TUpperIdent constructor_arguments
-     { ExceptionDecl ($1, Name $2, $3) }
+     { Exception ($1, Name $2, $3) }
 
  | Topen mod_longident
      { Open ($1, $2) }
@@ -294,11 +294,11 @@ structure_tail:
 structure_item:
  /*(* as in signature_item *)*/
  | Ttype type_declarations
-     { TypeDecl ($1, $2) }
+     { Type ($1, $2) }
  | Texception TUpperIdent constructor_arguments
-     { ExceptionDecl ($1, Name $2, $3) }
+     { Exception ($1, Name $2, $3) }
  | Texternal val_ident TColon core_type TEq primitive_declaration
-     { ExternalDecl ($1, Name $2, $3, $4, $5, $6)  }
+     { External ($1, Name $2, $3, $4, $5, $6)  }
 
  | Topen mod_longident
       { Open ($1, $2) }
@@ -358,21 +358,18 @@ ident:
 
 
 constr_ident:
- | TUpperIdent     { }
- | TOParen TCParen { }
- | TColonColon     { }
- | Tfalse          { }
- | Ttrue           { }
+ | TUpperIdent     { $1 }
+ | TOParen TCParen { "()TODO", $1 }
+ | TColonColon     { "::", $1 }
+ | Tfalse          { "false", $1 }
+ | Ttrue           { "true", $1 }
 /*  | TOBracket TCBracket                           { } */
 /*  | TOParen TColonColon TCParen                    { "::" } */
 
 /*(* record field name *)*/
-label:
-    TLowerIdent                                      { }
+label: TLowerIdent  { $1 }
 
-
-name_tag:
-    TBackQuote ident                             { }
+name_tag: TBackQuote ident   { }
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -797,30 +794,37 @@ type_declarations:
  | type_declarations Tand type_declaration     { $1 ++ [Right $2; Left $3] }
 
 type_declaration:
-  type_parameters TLowerIdent type_kind /*TODO constraints*/
-      { }
+  type_parameters TLowerIdent type_kind /*(*TODO constraints*)*/
+   { 
+     match $3 with
+     | None -> 
+         TyAbstract ($1, Name $2)
+     | Some (tok_eq, type_kind) ->
+         TyDef ($1, Name $2, tok_eq, type_kind)
+   }
+
 
 type_kind:
  | /*(*empty*)*/
-      { }
+      { None }
  | TEq core_type
-      { }
+      { Some ($1, TyCore $2) }
  | TEq constructor_declarations
-      { }
- | TEq /*TODO private_flag*/ TPipe constructor_declarations
-      { }
- | TEq /*TODO private_flag*/ TOBrace label_declarations opt_semi TCBrace
-      { }
-
+      { Some ($1, TyAlgebric $2) }
+ | TEq /*(*TODO private_flag*)*/ TPipe constructor_declarations
+      { Some ($1, TyAlgebric (Right $2::$3)) }
+ | TEq /*(*TODO private_flag*)*/ TOBrace label_declarations opt_semi TCBrace
+      { Some ($1, TyRecord ($2, ($3 ++ $4), $5)) }
 
 
 
 constructor_declarations:
- | constructor_declaration                     { }
- | constructor_declarations TPipe constructor_declaration { }
+ | constructor_declaration                     { [Left $1] }
+ | constructor_declarations TPipe constructor_declaration 
+     { $1 ++ [Right $2; Left $3] }
 
 constructor_declaration:
-    constr_ident constructor_arguments          { }
+    constr_ident constructor_arguments          { Name $1, $2 }
 
 constructor_arguments:
  | /*(*empty*)*/                            { NoConstrArg }
@@ -828,29 +832,37 @@ constructor_arguments:
 
 
 type_parameters:
- |  /*(*empty*)*/                              { }
- | type_parameter                              { }
- | TOParen type_parameter_list TCParen         { }
+ |  /*(*empty*)*/                              { TyNoParam  }
+ | type_parameter                              { TyParam1 $1 }
+ | TOParen type_parameter_list TCParen         { TyParamMulti (($1, $2, $3)) }
 
 type_parameter_list:
  | type_parameter                               { [Left $1] }
  | type_parameter_list TComma type_parameter    { $1 ++ [Right $2; Left $3] }
 
 type_parameter:
-    /*TODO type_variance*/ TQuote ident   { }
+  /*(*TODO type_variance*)*/ TQuote ident   { ($1, Name $2) }
 
 
 
 label_declarations:
- | label_declaration                           { }
- | label_declarations TSemiColon label_declaration   { }
+ | label_declaration                           { [Left $1] }
+ | label_declarations TSemiColon label_declaration   { $1 ++[Right $2; Left $3]}
 
 label_declaration:
-    mutable_flag label TColon poly_type          { }
+  mutable_flag label TColon poly_type          
+   { 
+     {
+       fld_mutable = $1;
+       fld_name = Name $2;
+       fld_tok = $3;
+       fld_type = $4;
+     }
+   }
 
 mutable_flag:
- | /* empty */                                 { }
- | Tmutable                                     { }
+ | /*(*empty*)*/       { None }
+ | Tmutable            { Some $1 }
 
 
 /*(*----------------------------*)*/
@@ -918,7 +930,7 @@ core_type_list:
 
 poly_type:
  | core_type
-     { }
+     { $1 }
 
 
 row_field_list:
@@ -1099,8 +1111,8 @@ module_expr:
 /*(*************************************************************************)*/
 
 opt_semi:
- | /*(*empty*)*/    { }
- | TSemiColon       { }
+ | /*(*empty*)*/    { [] }
+ | TSemiColon       { [Right $1] }
 
 opt_bar:
  | /*(*empty*)*/    { }

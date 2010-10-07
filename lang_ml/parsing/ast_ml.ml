@@ -38,6 +38,7 @@ and 'a bracket = tok * 'a * tok
 
 and 'a comma_list = ('a, tok (* ',' *)) Common.either list
 and 'a and_list = ('a, tok (* 'and' *)) Common.either list
+and 'a pipe_list = ('a, tok (* '*' *)) Common.either list
 
 and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
 and 'a star_list = ('a, tok (* '*' *)) Common.either list
@@ -49,9 +50,9 @@ and 'a star_list = ('a, tok (* '*' *)) Common.either list
 (* ------------------------------------------------------------------------- *)
 type name = Name of string wrap
 
-(* lower and uppernames aliases, just for clarity *)
-and lname = name
-and uname = name
+  (* lower and uppernames aliases, just for clarity *)
+  and lname = name
+  and uname = name
 
  (* with tarzan *)
 
@@ -63,28 +64,60 @@ type long_name = qualifier * name
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
-(* core language, module language, class language *)
 
 type ty = 
   | TyName of long_name
-  | TyVar of tok * name
+  | TyVar of tok (* ' *) * name
   | TyTuple of ty star_list (* at least 2 *)
   | TyFunction of ty * tok (* -> *) * ty
-  | TyApp of ty_args * long_name (* could be merged wit TyName *)
+  | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
   | TyTodo
 
-and ty_args = 
-  | TyArg1 of ty
-  | TyArgMulti of ty comma_list paren
-  (* TyNoArg and merge TyName and TyApp ? *)
+
+and type_declaration =
+  | TyAbstract of ty_params * name
+  | TyDef of ty_params * name * tok (* = *) * type_def_kind
+
+ and type_def_kind =
+   | TyCore of ty
+   | TyAlgebric of constructor_declaration pipe_list (* optional first | *)
+   | TyRecord   of label_declaration semicolon_list (* optional final ; *) brace
+
+ (* OR type: algebric data type *)
+ and constructor_declaration = name (* constr_ident *) * constructor_arguments
+  and constructor_arguments =
+    | NoConstrArg
+    | Of of tok * ty star_list
+
+ (* AND type: record *)
+ and label_declaration = {
+   fld_mutable: tok option;
+   fld_name: name;
+   fld_tok: tok; (* : *)
+   fld_type: ty; (* poly_type ?? *)
+ }
+
+
+
+ and ty_args = 
+    | TyArg1 of ty
+    | TyArgMulti of ty comma_list paren
+    (* todo? | TyNoArg and merge TyName and TyApp ? *)
+
+ and ty_params =
+   | TyNoParam
+   | TyParam1 of ty_parameter
+   | TyParamMulti of ty_parameter comma_list paren
+ and ty_parameter = tok (* ' *) * name (* a TyVar *)
+
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 and expr = unit
 
-(* can have an optional ';' as terminator too, not only separator *)
+(* optional final ';' as terminator *)
 and seq_expr = expr semicolon_list
 
 (* ------------------------------------------------------------------------- *)
@@ -97,14 +130,6 @@ and simple_pattern = unit
 (* rename in parameter ? *)
 and labeled_simple_pattern = unit
 
-(* ------------------------------------------------------------------------- *)
-(* Type declarations *)
-(* ------------------------------------------------------------------------- *)
-and type_declaration = unit
-
-and constructor_arguments =
-  | NoConstrArg
-  | Of of tok * ty star_list
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding *)
@@ -114,12 +139,12 @@ and let_binding =
   | LetClassic of let_def
   | LetPattern of pattern * tok (* = *) * seq_expr
 
-(* was called fun_binding in the grammar *)
-and let_def = {
-  l_name: name; (* val_ident *)
-  l_args: labeled_simple_pattern list; (* can be empty *)
-  l_tok: tok; (* = *)
-  l_body: seq_expr;
+ (* was called fun_binding in the grammar *)
+ and let_def = {
+   l_name: name; (* val_ident *)
+   l_args: labeled_simple_pattern list; (* can be empty *)
+   l_tok: tok; (* = *)
+   l_body: seq_expr;
  }
 
 (* ------------------------------------------------------------------------- *)
@@ -146,20 +171,20 @@ and module_expr = unit
  * valid in both contexts.
  *)
 and item = 
- | TypeDecl of tok * type_declaration and_list
- | ExceptionDecl of tok * name * constructor_arguments
- | ExternalDecl of tok * name (* val_ident *) * tok (*:*) * ty * tok (* = *) *
-     string wrap list (* primitive declarations *)
-
- | Open of tok * long_name
-
- (* only in sig_item *)
- | ValDecl of tok * name (* val_ident *) * tok (*:*) * ty
-
- (* only in struct_item *)
- | Let of tok * rec_opt * let_binding and_list
-     
- | ItemTodo
+  | Type      of tok * type_declaration and_list
+  | Exception of tok * name * constructor_arguments
+  | External  of tok * name (* val_ident *) * tok (*:*) * ty * tok (* = *) *
+      string wrap list (* primitive declarations *)
+      
+  | Open of tok * long_name
+      
+  (* only in sig_item *)
+  | Val of tok * name (* val_ident *) * tok (*:*) * ty
+      
+  (* only in struct_item *)
+  | Let of tok * rec_opt * let_binding and_list
+      
+  | ItemTodo
 
 and sig_item = item
 and struct_item = item
@@ -179,8 +204,6 @@ and toplevel =
 
   | NotParsedCorrectly of info list
   | FinalDef of info (* EOF *)
-
-  | TODO of info
 
  and program = toplevel list
 

@@ -68,7 +68,6 @@ and v_tok v = v_info v
 
 and v_toplevel =
   function
-  | TODO v1 -> let v1 = v_info v1 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
