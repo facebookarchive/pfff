@@ -159,6 +159,7 @@ let info_of_tok = function
   | TAndAnd ii -> ii
   | TSharp ii -> ii
   | TMinusDot ii -> ii
+  | TPlusDot ii -> ii
   | TPlus ii -> ii
   | TMinus ii -> ii
 
@@ -282,6 +283,7 @@ let visitor_info_of_tok f = function
   | TAndAnd (ii) -> TAndAnd (f ii)
   | TSharp (ii) -> TSharp (f ii)
   | TMinusDot (ii) -> TMinusDot (f ii)
+  | TPlusDot (ii) -> TPlusDot (f ii)
   | TPlus (ii) -> TPlus (f ii)
   | TMinus (ii) -> TMinus (f ii)
 

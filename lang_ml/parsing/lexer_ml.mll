@@ -211,8 +211,10 @@ rule token = parse
 
   | ":>" { TColonGreater(tokinfo lexbuf) }
 
-  (* why -. is mentionned as a keyword and not +. ? *)
+  (* why -. is mentionned in grammar as a keyword and not +. ? *)
   | "-." { TMinusDot(tokinfo lexbuf) }
+
+  | "+." { TPlusDot(tokinfo lexbuf) }
 
   (* why ! is not mentionned as a keyword ? *)
   | "!" { TBang(tokinfo lexbuf) }

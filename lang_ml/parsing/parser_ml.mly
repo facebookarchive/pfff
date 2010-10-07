@@ -112,7 +112,7 @@ open Ast_ml
 %token <Ast_ml.info> TAnd TAndAnd
 %token <Ast_ml.info> TSharp
 
-%token <Ast_ml.info> TMinusDot
+%token <Ast_ml.info> TMinusDot TPlusDot
 
 /*(* operators *)*/
 %token <Ast_ml.info> TPlus TMinus
@@ -178,7 +178,7 @@ open Ast_ml
 %left     INFIXOP0 TEq TLess TGreater    /* expr (e OP e OP e) */
 %right    INFIXOP1                       /* expr (e OP e OP e) */
 %right    TColonColon                    /* expr (e :: e :: e) */
-%left     INFIXOP2 TPlus PLUSDOT TMinus TMinusDot  /* expr (e OP e OP e) */
+%left     INFIXOP2 TPlus TPlusDot TMinus TMinusDot  /* expr (e OP e OP e) */
 %left     INFIXOP3 TStar                 /* expr (e OP e OP e) */
 %left     TInfixOperator /* pad: */
 %right    INFIXOP4                       /* expr (e OP e OP e) */
@@ -398,11 +398,15 @@ expr:
       { }
  | Tfun labeled_simple_pattern fun_def
       { }
+ | Tfunction opt_bar match_cases
+     { }
 
  | expr_comma_list %prec below_COMMA
-      { }
+     { }
  | constr_longident simple_expr %prec below_SHARP
-      { }
+     { }
+ | expr TColonColon expr
+     { }
 
  | expr TInfixOperator expr
       { }
@@ -412,6 +416,42 @@ expr:
  | Tif seq_expr Tthen expr
       { }
 
+ | Tmatch seq_expr Twith opt_bar match_cases
+      { }
+
+ | expr TEq expr
+      { }
+
+
+ | expr TPlus expr
+      { }
+ | expr TMinus expr
+     { }
+ | expr TMinusDot expr
+     { }
+ | expr TStar expr
+     { }
+ | expr TLess expr
+     { }
+ | expr TGreater expr
+     { }
+ | expr Tor expr
+     { }
+ | expr Tand expr
+     { }
+ | expr TAndAnd expr
+     { }
+ | subtractive expr %prec prec_unary_minus
+     { }
+ | additive expr %prec prec_unary_plus
+     { }
+
+ | simple_expr TDot label_longident TAssignMutable expr
+      { }
+     
+
+ | Tassert simple_expr %prec below_SHARP
+     { }
 
 
 
@@ -423,14 +463,24 @@ simple_expr:
  /*(* this includes 'false' *)*/
  | constr_longident %prec prec_constant_constructor
       { }
+ | simple_expr TDot label_longident
+      { }
+
  | TOParen seq_expr TCParen
       { }
- | simple_expr TDot label_longident
+ | Tbegin seq_expr Tend
+     { }
+ | Tbegin Tend
+     { }
+
+ | TOBrace record_expr TCBrace
       { }
 
  /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen
       { }
+
+
 
 
 simple_labeled_expr_list:
@@ -449,6 +499,34 @@ labeled_simple_expr:
 expr_comma_list:
  | expr_comma_list TComma expr                  { }
  | expr TComma expr                             { }
+
+
+
+
+
+
+record_expr:
+ | simple_expr Twith lbl_expr_list opt_semi     { }
+ | lbl_expr_list opt_semi                      { }
+
+lbl_expr_list:
+ | label_longident TEq expr
+      { }
+ | label_longident
+      { }
+ | lbl_expr_list TSemiColon label_longident TEq expr
+     { }
+ | lbl_expr_list TSemiColon label_longident
+     { }
+
+
+subtractive:
+  | TMinus                                       { }
+  | TMinusDot                                    { }
+
+additive:
+  | TPlus                                        { }
+  | TPlusDot                                     { }
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -484,6 +562,17 @@ signed_constant:
 /*(*************************************************************************)*/
 /*(* Patterns *)*/
 /*(*************************************************************************)*/
+
+match_cases:
+ | pattern match_action                        { }
+ | match_cases TPipe pattern match_action        { }
+
+match_action:
+ | TArrow seq_expr                       { }
+ | Twhen seq_expr TArrow seq_expr         { }
+
+
+
 
 pattern:
  | simple_pattern
@@ -733,9 +822,6 @@ fun_def:
  | labeled_simple_pattern fun_def
       { }
 
-match_action:
- | TArrow seq_expr                       { }
- | Twhen seq_expr TArrow seq_expr         { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
@@ -784,3 +870,7 @@ module_expr:
 opt_semi:
  | /* empty */                                 { }
  | TSemiColon                                        { }
+
+opt_bar:
+ | /* empty */                                 { }
+ | TPipe                                         { }
