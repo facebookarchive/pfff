@@ -249,16 +249,16 @@ signature:
 
 signature_item:
  | Ttype type_declarations
-     { ItemTodo }
+     { TypeDecl ($1, $2) }
  | Tval val_ident TColon core_type
-     { ItemTodo }
+     { ValDecl ($1, Name $2, $3, $4) }
  | Texternal val_ident TColon core_type TEq primitive_declaration
-     { ItemTodo }
+     { ExternalDecl ($1, Name $2, $3, $4, $5, $6) }
  | Texception TUpperIdent constructor_arguments
-     { ItemTodo }
+     { ExceptionDecl ($1, Name $2, $3) }
 
  | Topen mod_longident
-     { ItemTodo }
+     { Open ($1, $2) }
 
  | Tmodule Ttype ident TEq module_type
      { ItemTodo }
@@ -298,14 +298,14 @@ structure_item:
  | Texception TUpperIdent constructor_arguments
      { ExceptionDecl ($1, Name $2, $3) }
  | Texternal val_ident TColon core_type TEq primitive_declaration
-     { ExternalDecl ($1, $2, $3, $4, $5, $6)  }
+     { ExternalDecl ($1, Name $2, $3, $4, $5, $6)  }
 
  | Topen mod_longident
       { Open ($1, $2) }
 
  /*(* start of deviation *)*/
  | Tlet rec_flag let_bindings
-      { ItemTodo }
+      { Let ($1, $2, $3) }
 
 
  | Tmodule TUpperIdent module_binding
@@ -322,49 +322,49 @@ structure_item:
 /*(*************************************************************************)*/
 
 val_ident:
- | TLowerIdent                                { Name $1 }
- | TOParen operator TCParen                   { Name ("TODOOPERATOR", $1) }
+ | TLowerIdent                                { $1 }
+ | TOParen operator TCParen                   { ("TODOOPERATOR", $1) }
 
 operator:
- | TPrefixOperator                                    { }
- | TInfixOperator { }
- | TStar                                        { }
- | TEq                                       { }
- | Tor                                          { }
+ | TPrefixOperator      { }
+ | TInfixOperator       { }
+ | TStar     { }
+ | TEq       { }
+ | Tor       { }
   /*(* but not Tand, because of conflict ? *)*/
- | TAnd                                   { }
- | TAssign                                  { }
- | Tmod { }
- | Tland { }
- | Tlor { }
- | Tlxor { }
- | Tlsl { } 
- | Tlsr { }
- | Tasr { }
+ | TAnd      { }
+ | TAssign   { }
+ | Tmod      { }
+ | Tland     { }
+ | Tlor      { }
+ | Tlxor     { }
+ | Tlsl      { } 
+ | Tlsr      { }
+ | Tasr      { }
 
- | TBang                                        { }
- | TPlus                                        { }
- | TPlusDot                                     { }
- | TMinus                                       { }
- | TMinusDot                                    { }
- | TLess                                        { }
- | TGreater                                     { }
+ | TBang     { }
+ | TPlus     { }
+ | TPlusDot  { }
+ | TMinus    { }
+ | TMinusDot { }
+ | TLess     { }
+ | TGreater  { }
 
 
 /*(* for polymorphic types both 'a and 'A is valid. Same for module types. *)*/
 ident:
- | TUpperIdent                                      { }
- | TLowerIdent                                      { }
+ | TUpperIdent                                      { $1 }
+ | TLowerIdent                                      { $1 }
 
 
 constr_ident:
- | TUpperIdent                                      { }
+ | TUpperIdent     { }
+ | TOParen TCParen { }
+ | TColonColon     { }
+ | Tfalse          { }
+ | Ttrue           { }
 /*  | TOBracket TCBracket                           { } */
- | TOParen TCParen                               { }
- | TColonColon                                  { }
 /*  | TOParen TColonColon TCParen                    { "::" } */
- | Tfalse                                       { }
- | Ttrue                                        { }
 
 /*(* record field name *)*/
 label:
@@ -394,40 +394,41 @@ mod_longident:
  | mod_longident TDot TUpperIdent    { qufix $1 $2 $3 }
 
 mod_ext_longident:
- | TUpperIdent                                      { }
- | mod_ext_longident TDot TUpperIdent                { }
- | mod_ext_longident TOParen mod_ext_longident TCParen { }
+ | TUpperIdent                                  { [], Name $1 }
+ | mod_ext_longident TDot TUpperIdent           { qufix $1 $2 $3 }
+ | mod_ext_longident TOParen mod_ext_longident TCParen 
+     { [], Name ("TODOEXTMODULE", $2) }
 
 
 
 type_longident:
- | TLowerIdent                                      { }
- | mod_ext_longident TDot TLowerIdent                { }
+ | TLowerIdent                               { [], Name $1 }
+ | mod_ext_longident TDot TLowerIdent        { qufix $1 $2 $3 }
 
 val_longident:
- | val_ident                                   { }
- | mod_longident TDot val_ident                 { }
+ | val_ident                                   { [], Name $1 }
+ | mod_longident TDot val_ident                { qufix $1 $2 $3 }
 
 constr_longident:
- | mod_longident       %prec below_DOT         { }
- | TOBracket TCBracket                           { }
- | TOParen TCParen                               { }
- | Tfalse                                       { }
- | Ttrue                                        { }
+ | mod_longident       %prec below_DOT     { }
+ | TOBracket TCBracket                     { }
+ | TOParen TCParen                         { }
+ | Tfalse                                  { }
+ | Ttrue                                   { }
 
 /*(* record field name *)*/
 label_longident:
- | TLowerIdent                                      { }
- | mod_longident TDot TLowerIdent                    { }
+ | TLowerIdent                              { [], Name $1 }
+ | mod_longident TDot TLowerIdent           { qufix $1 $2 $3 }
 
 
 class_longident:
- | TLowerIdent                                      { }
- | mod_longident TDot TLowerIdent                    { }
+ | TLowerIdent                               { [], Name $1 }
+ | mod_longident TDot TLowerIdent            { qufix $1 $2 $3 }
 
 mty_longident:
- | ident                                       { }
- | mod_ext_longident TDot ident                 { }
+ | ident                                      { [], Name $1 }
+ | mod_ext_longident TDot ident               { qufix $1 $2 $3 }
 
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
@@ -439,9 +440,12 @@ mty_longident:
 /*(*************************************************************************)*/
 
 seq_expr:
- | expr        %prec below_SEMI  { }
- | expr TSemiColon seq_expr            { }
- | expr TSemiColon                     { }
+ | expr        %prec below_SEMI        { [Left $1] }
+ | expr TSemiColon seq_expr            { Left $1::Right $2::$3 }
+ /*(* bad ? should be removed ? but it's convenient in certain contexts like
+    * begin end to allow ; as a terminator
+    *)*/
+ | expr TSemiColon                     { [Left $1; Right $2] }
 
 
 expr:
@@ -779,10 +783,10 @@ pattern_comma_list:
 /*(*************************************************************************)*/
 
 type_constraint:
- | TColon core_type                             { }
+ | TColon core_type           { }
  
  /*(* object cast extension *)*/
- | TColonGreater core_type                      { }
+ | TColonGreater core_type    { }
 
 /*(*----------------------------*)*/
 /*(* Types definitions *)*/
@@ -797,7 +801,7 @@ type_declaration:
       { }
 
 type_kind:
- | /*empty*/
+ | /*(*empty*)*/
       { }
  | TEq core_type
       { }
@@ -824,16 +828,16 @@ constructor_arguments:
 
 
 type_parameters:
- |  /*empty*/                                   { }
+ |  /*(*empty*)*/                              { }
  | type_parameter                              { }
- | TOParen type_parameter_list TCParen           { }
+ | TOParen type_parameter_list TCParen         { }
 
 type_parameter_list:
  | type_parameter                               { [Left $1] }
  | type_parameter_list TComma type_parameter    { $1 ++ [Right $2; Left $3] }
 
 type_parameter:
-    /*TODO type_variance*/ TQuote ident                   { }
+    /*TODO type_variance*/ TQuote ident   { }
 
 
 
@@ -855,49 +859,49 @@ mutable_flag:
 
 core_type:
  | core_type2
-    { }
+    { $1 }
 
 core_type2:
  | simple_core_type_or_tuple
-      { }
+     { $1 }
  | core_type2 TArrow core_type2
-      {  }
+     { TyFunction ($1, $2, $3) }
  /*(* ext: olabl *)*/
  | TLowerIdent           TColon core_type2 TArrow core_type2
-      {  }
+     { TyTodo  }
  | TQuestion TLowerIdent TColon core_type2 TArrow core_type2
-      { }
+     { TyTodo }
  /*(* pad: only because of lexer hack around labels *)*/
  | TOptLabelDecl                core_type2 TArrow core_type2
-     { }
+     { TyTodo }
 
 
 simple_core_type_or_tuple:
- | simple_core_type                          { [Left $1] }
- | simple_core_type TStar core_type_list     { Left $1::Right $2::$3 }
+ | simple_core_type                          { $1 }
+ | simple_core_type TStar core_type_list     { TyTuple (Left $1::Right $2::$3) }
 
 
 simple_core_type:
  | simple_core_type2  %prec below_SHARP
-      { }
+      { $1 }
  | TOParen core_type_comma_list TCParen %prec below_SHARP
-      { }
+      { TyTodo }
 
 simple_core_type2:
  | TQuote ident
-      { }
+      { TyVar ($1, Name $2) }
  | type_longident
-      { }
+      { TyName ($1) }
  | simple_core_type2 type_longident
-      { }
+      { TyApp (TyArg1 $1, $2) }
  | TOParen core_type_comma_list TCParen type_longident
-      { }
+      { TyApp (TyArgMulti (($1, $2, $3)), $4) }
 
  /*(* name tag extension *)*/
  | TOBracket row_field TPipe row_field_list TCBracket
-      { }
+      { TyTodo }
  | TOBracket tag_field TCBracket
-      { }
+      { TyTodo }
 
 
 core_type_comma_list:
@@ -946,29 +950,36 @@ amper_type_list:
 /*(*************************************************************************)*/
 
 let_bindings:
- | let_binding                                 { }
- | let_bindings Tand let_binding                { }
+ | let_binding                           { [Left $1] }
+ | let_bindings Tand let_binding         { $1 ++ [Right $2; Left $3] }
 
 
 let_binding:
  | val_ident fun_binding
-      { }
+      { 
+        let (args, (teq, body)) = $2 in
+        LetClassic {
+          l_name = Name $1;
+          l_args = args;
+          l_tok = teq;
+          l_body = body;
+        }
+      }
  | pattern TEq seq_expr
-      { }
+      { LetPattern ($1, $2, $3) }
 
 
 
 fun_binding:
- | strict_binding
-      { }
+ | strict_binding { $1 }
 
 strict_binding:
  /*(* simple values, e.g. 'let x = 1' *)*/
  | TEq seq_expr
-      { }
+      { [], ($1, $2) }
  /*(* function values, e.g. 'let x a b c = 1' *)*/
  | labeled_simple_pattern fun_binding
-      { }
+      { let (args, body) = $2 in $1::args, body }
 
 
 labeled_simple_pattern:
@@ -979,8 +990,8 @@ labeled_simple_pattern:
 
 
 rec_flag:
- | /* empty */                                 { }
- | Trec                                         { }
+ | /*(*empty*)*/   { None }
+ | Trec            { Some $1 }
 
 
 label_let_pattern:
@@ -990,8 +1001,8 @@ label_let_pattern:
       { }
 
 opt_default:
- | /* empty */                         { }
- | TEq seq_expr                      { }
+ | /*(*empty*)*/           { None  }
+ | TEq seq_expr            { Some ($1, $2) }
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -1088,9 +1099,9 @@ module_expr:
 /*(*************************************************************************)*/
 
 opt_semi:
- | /* empty */                                 { }
- | TSemiColon                                        { }
+ | /*(*empty*)*/    { }
+ | TSemiColon       { }
 
 opt_bar:
- | /* empty */                                 { }
- | TPipe                                         { }
+ | /*(*empty*)*/    { }
+ | TPipe            { }

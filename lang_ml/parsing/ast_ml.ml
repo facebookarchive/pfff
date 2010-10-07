@@ -36,10 +36,11 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 
-and 'a comma_list = ('a, tok (* the comma *)) Common.either list
-and 'a and_list = ('a, tok (* the 'and' *)) Common.either list
+and 'a comma_list = ('a, tok (* ',' *)) Common.either list
+and 'a and_list = ('a, tok (* 'and' *)) Common.either list
 
-and 'a star_list = ('a, tok (* the '*' *)) Common.either list
+and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
+and 'a star_list = ('a, tok (* '*' *)) Common.either list
 
  (* with tarzan *)
 
@@ -47,26 +48,44 @@ and 'a star_list = ('a, tok (* the '*' *)) Common.either list
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
 type name = Name of string wrap
+
 (* lower and uppernames aliases, just for clarity *)
 and lname = name
 and uname = name
 
+ (* with tarzan *)
+
 type long_name = qualifier * name
  and qualifier = (name * tok (*'.'*)) list
+
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 (* core language, module language, class language *)
 
-type ty = unit
+type ty = 
+  | TyName of long_name
+  | TyVar of tok * name
+  | TyTuple of ty star_list (* at least 2 *)
+  | TyFunction of ty * tok (* -> *) * ty
+  | TyApp of ty_args * long_name (* could be merged wit TyName *)
+
+  | TyTodo
+
+and ty_args = 
+  | TyArg1 of ty
+  | TyArgMulti of ty comma_list paren
+  (* TyNoArg and merge TyName and TyApp ? *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 and expr = unit
 
-and seq_expr = unit
+(* can have an optional ';' as terminator too, not only separator *)
+and seq_expr = expr semicolon_list
 
 (* ------------------------------------------------------------------------- *)
 (* Patterns *)
@@ -75,6 +94,7 @@ and pattern = unit
 
 and simple_pattern = unit
 
+(* rename in parameter ? *)
 and labeled_simple_pattern = unit
 
 (* ------------------------------------------------------------------------- *)
@@ -106,14 +126,12 @@ and let_def = {
 (* Function binding *)
 (* ------------------------------------------------------------------------- *)
  
-
 and function_def = unit
 
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
 and module_type = unit
-
 
 and module_expr = unit
 (* ------------------------------------------------------------------------- *)
@@ -125,7 +143,7 @@ and module_expr = unit
 (* ------------------------------------------------------------------------- *)
 
 (* could split in sig_item and struct_item but many constructions are
- * valid in both contexts
+ * valid in both contexts.
  *)
 and item = 
  | TypeDecl of tok * type_declaration and_list
@@ -165,6 +183,7 @@ and toplevel =
   | TODO of info
 
  and program = toplevel list
+
  (* with tarzan *)
 
 
