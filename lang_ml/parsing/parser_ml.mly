@@ -217,7 +217,7 @@ open Ast_ml
  *  - records
  *  - tuples 
  *  - arrays
- *  - symbols (`Foo)
+ *  - name tags (`Foo)
  * have at the same time some rules to express:
  *  - the type
  *  - the expression
@@ -357,6 +357,10 @@ constr_ident:
 label:
     TLowerIdent                                      { }
 
+
+name_tag:
+    TBackQuote ident                             { }
+
 /*(*----------------------------*)*/
 /*(* Labels *)*/
 /*(*----------------------------*)*/
@@ -400,6 +404,11 @@ constr_longident:
 
 /*(* record field name *)*/
 label_longident:
+ | TLowerIdent                                      { }
+ | mod_longident TDot TLowerIdent                    { }
+
+
+class_longident:
  | TLowerIdent                                      { }
  | mod_longident TDot TLowerIdent                    { }
 
@@ -492,10 +501,19 @@ expr:
 
  | simple_expr TDot label_longident TAssignMutable expr
       { }
+
+
+ | simple_expr TDot TOParen seq_expr TCParen TAssignMutable expr
+      { }
+ | simple_expr TDot TOBracket seq_expr TCBracket TAssignMutable expr
+      { }
      
 
  | Tassert simple_expr %prec below_SHARP
      { }
+
+ | name_tag simple_expr %prec below_SHARP
+      { }
 
 
 
@@ -543,6 +561,12 @@ simple_expr:
  /*(* object extension *)*/
  | simple_expr TSharp label
       { }
+ | Tnew class_longident
+      { }
+
+ /*(* name tag extension *)*/
+ | name_tag %prec prec_constant_constructor
+     { }
 
  | TOParen seq_expr type_constraint TCParen
       { }
@@ -602,6 +626,8 @@ additive:
 direction_flag:
  | Tto                                          { }
  | Tdownto                                      { }
+
+
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -667,6 +693,13 @@ pattern:
  | pattern TPipe pattern
       { }
 
+ /*(* name tag extension *)*/
+ | name_tag pattern %prec prec_constr_appl
+      { }
+
+
+
+
 
 simple_pattern:
  | val_ident %prec below_EQUAL
@@ -692,8 +725,14 @@ simple_pattern:
  | TOParen pattern TColon core_type TCParen
       { }
 
+ /*(* name tag extension *)*/
+ | name_tag
+      { }
+
  | TOParen pattern TCParen
       { }
+
+
 
 
 lbl_pattern_list:
@@ -831,6 +870,9 @@ simple_core_type2:
  | TOParen core_type_comma_list TCParen type_longident
       { }
 
+ /*(* name tag extension *)*/
+ | TOBracket row_field TPipe row_field_list TCBracket
+      { }
 
 core_type_comma_list:
  | core_type                                   { }
@@ -847,6 +889,31 @@ core_type_list:
 poly_type:
  | core_type
      { }
+
+
+row_field_list:
+ | row_field                                   { }
+ | row_field_list TPipe row_field                { }
+
+row_field:
+ | tag_field                                   { }
+ | simple_core_type2                           { }
+
+tag_field:
+ | name_tag Tof opt_ampersand amper_type_list
+      { }
+ | name_tag
+      { }
+
+opt_ampersand:
+ | TAnd                                   { }
+ | /* empty */                                 { }
+
+amper_type_list:
+ | core_type                                   { }
+ | amper_type_list TAnd core_type         { }
+
+
 
 /*(*************************************************************************)*/
 /*(* Let, definitions *)*/
