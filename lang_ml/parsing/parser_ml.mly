@@ -207,16 +207,9 @@ open Ast_ml
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-implementation: structure EOF                        { [FinalDef $2] }
-
 interface:      signature EOF                        { [FinalDef $2] }
 
-
-/*(*************************************************************************)*/
-/*(* Structure *)*/
-/*(*************************************************************************)*/
-
-structure: Texception { }
+implementation: structure EOF                        { [FinalDef $2] }
 
 /*(*************************************************************************)*/
 /*(* Signature *)*/
@@ -234,11 +227,50 @@ signature_item:
      { }
  | Ttype type_declarations
       { }
+ | Texception TUpperIdent constructor_arguments
+      { }
 
+/*(*----------------------------*)*/
+/*(* Misc *)*/
+/*(*----------------------------*)*/
 
 primitive_declaration:
  | TString                                      { }
  | TString primitive_declaration                { }
+
+/*(*************************************************************************)*/
+/*(* Structure *)*/
+/*(*************************************************************************)*/
+
+/*(* pad: should not allow those toplevel seq_expr *)*/
+structure:
+ | structure_tail                              { }
+ | seq_expr structure_tail                     { }
+
+structure_tail:
+ |  /* empty */                                 { }
+ | TSemiColonSemiColon                                    { }
+ | TSemiColonSemiColon seq_expr structure_tail            { }
+ | TSemiColonSemiColon structure_item structure_tail      { }
+ | structure_item structure_tail               { }
+
+structure_item:
+ /*(* as in signature_item *)*/
+ | Texternal val_ident TColon core_type TEq primitive_declaration
+     { }
+ | Ttype type_declarations
+     { }
+ | Texception TUpperIdent constructor_arguments
+     { }
+ /*(* start of deviation *)*/
+
+ | Tlet rec_flag let_bindings
+      {  }
+
+ | Topen mod_longident
+      { }
+
+
 
 /*(*************************************************************************)*/
 /*(* Names *)*/
@@ -284,6 +316,7 @@ constr_ident:
 /*(* record field name *)*/
 label:
     TLowerIdent                                      { }
+
  
 /*(*----------------------------*)*/
 /*(* Qualified names *)*/
@@ -298,9 +331,15 @@ mod_ext_longident:
  | mod_ext_longident TDot TUpperIdent                { }
  | mod_ext_longident TOParen mod_ext_longident TCParen { }
 
+
+
 type_longident:
  | TLowerIdent                                      { }
  | mod_ext_longident TDot TLowerIdent                { }
+
+val_longident:
+ | val_ident                                   { }
+ | mod_longident TDot val_ident                 { }
 
 /*(*----------------------------*)*/
 /*(* Misc names *)*/
@@ -311,13 +350,55 @@ type_longident:
 /*(* Expressions *)*/
 /*(*************************************************************************)*/
 
+seq_expr:
+ | expr        %prec below_SEMI  { }
+ | expr TSemiColon                     { }
+ | expr TSemiColon seq_expr            { }
+
+expr:
+ | simple_expr %prec below_SHARP
+      { }
+
+simple_expr:
+ | val_longident
+      { }
+ | constant
+      { }
+
 /*(*----------------------------*)*/
 /*(* Constants *)*/
 /*(*----------------------------*)*/
 
+constant:
+ | TInt                                         { }
+ | TChar                                        { }
+ | TString                                      { }
+ | TFloat                                       { }
+
+signed_constant:
+ | constant                                    { }
+ | TMinus TInt                                   { }
+ | TMinus TFloat                                 { }
+ | TPlus TInt                                    { }
+ | TPlus TFloat                                  { }
+
 /*(*************************************************************************)*/
 /*(* Patterns *)*/
 /*(*************************************************************************)*/
+
+pattern:
+ | simple_pattern
+      { }
+ | pattern TColonColon pattern
+      { }
+
+simple_pattern:
+ | val_ident %prec below_EQUAL
+      { }
+ | TUnderscore
+      { }
+ | signed_constant
+      { }
 
 /*(*************************************************************************)*/
 /*(* Types *)*/
@@ -329,7 +410,7 @@ type_longident:
 
 type_declarations:
  | type_declaration                            { }
- | type_declarations TAnd type_declaration      { }
+ | type_declarations TAnd type_declaration     { }
 
 type_declaration:
   type_parameters TLowerIdent type_kind /*TODO constraints*/
@@ -346,6 +427,8 @@ type_kind:
       { }
  | TEq /*TODO private_flag*/ TOBrace label_declarations opt_semi TCBrace
       { }
+
+
 
 
 constructor_declarations:
@@ -373,6 +456,7 @@ type_parameter:
     /*TODO type_variance*/ TQuote ident                   { }
 
 
+
 label_declarations:
  | label_declaration                           { }
  | label_declarations TSemiColon label_declaration   { }
@@ -384,10 +468,6 @@ mutable_flag:
  | /* empty */                                 { }
  | Tmutable                                     { }
 
-
-/*(*----------------------------*)*/
-/*(* Exceptions *)*/
-/*(*----------------------------*)*/
 
 /*(*----------------------------*)*/
 /*(* Types expressions *)*/
@@ -407,7 +487,7 @@ core_type2:
       {  }
  | TQuestion TLowerIdent TColon core_type2 TArrow core_type2
       { }
- /*(* pad: only because of my lexer *)*/
+ /*(* pad: only because of lexer hack around labels *)*/
  | TOptLabelDecl                core_type2 TArrow core_type2
      { }
 
@@ -446,8 +526,47 @@ core_type_list:
 /*(*----------------------------*)*/
 
 poly_type:
-  core_type
-          { }
+ | core_type
+     { }
+
+/*(*************************************************************************)*/
+/*(* Let, definitions *)*/
+/*(*************************************************************************)*/
+
+let_bindings:
+ | let_binding                                 { }
+ | let_bindings TAnd let_binding                { }
+
+
+let_binding:
+ | val_ident fun_binding
+      { }
+ | pattern TEq seq_expr
+      { }
+
+
+
+fun_binding:
+ | strict_binding
+      { }
+
+strict_binding:
+ /*(* simple values, e.g. 'let x = 1' *)*/
+ | TEq seq_expr
+      { }
+ /*(* function values, e.g. 'let x a b c = 1' *)*/
+ | labeled_simple_pattern fun_binding
+      { }
+
+labeled_simple_pattern:
+  | simple_pattern
+      { }
+
+
+
+rec_flag:
+ | /* empty */                                 { }
+ | Trec                                         { }
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
