@@ -113,11 +113,15 @@ let visit_toplevel
 
     V.kty = (fun (k, _) t ->
       match t with
-      | TyName long_name
-      | TyApp (_, long_name) ->
+      | TyName long_name ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
           tag info TypeMisc;
+          k t
+      | TyApp (_, long_name) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info TypeVoid;
           k t
 
       | TyVar (_tok, name) ->
@@ -396,7 +400,11 @@ let visit_toplevel
       ->
         tag ii KeywordLoop; (* TODO better categ ? *)
 
-    | T.TEq ii
+    | T.TEq ii ->
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          tag ii Punctuation
+        
 
     | T.TSemiColon ii | T.TPipe ii | T.TComma ii
 
