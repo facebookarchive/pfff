@@ -56,6 +56,8 @@ let h_builtin_bool = Common.hashset_of_list [
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
+let lexer_based_tagger = false
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -87,6 +89,8 @@ let visit_toplevel
   (* try better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
+  let in_let = ref false in
+
   let v = V.mk_visitor { V.default_visitor with
 
     V.kexpr = (fun (k, _) x ->
@@ -94,8 +98,6 @@ let visit_toplevel
       | FunCallSimple (long_name, args) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
-
-          let s = Ast.str_of_name name in
 
           tag info (Function (Use2 fake_no_use2));
           k x
@@ -106,6 +108,24 @@ let visit_toplevel
 
       | Try (_try, _e1, tok_with, _match_cases) ->
           tag tok_with (KeywordExn);
+          k x
+
+      | L long_name ->
+
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+
+          if not (Hashtbl.mem already_tagged info)
+          then begin 
+            (* TODO could be a param, could be a local. Need scope analysis *)
+            tag info (Local Use) 
+          end;
+          k x
+
+      | FieldAccess (e, _tok, long_name) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info (Field (Use2 fake_no_use2));
           k x
 
       | _ -> k x
@@ -199,9 +219,10 @@ let visit_toplevel
         );
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
-    (* if had parse error, then the AST will not contain the definitions, but
-     * we can still try to tag certain things.
-     * Poor's man semantic tagger. Infer if ident is a func, or class,
+
+    (* If had a parse error, then the AST will not contain the definitions, but
+     * we can still try to tag certain things. Here is a
+     * poor's man semantic tagger. Infer if ident is a func, or class,
      * or module based on the few tokens around. 
      * 
      * This may look ridiculous to do such semantic tagging using tokens 
@@ -212,16 +233,15 @@ let visit_toplevel
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::T.TEq ii5::xs
         when Ast.col_of_info ii = 0 ->
 
-        if not (Hashtbl.mem already_tagged ii3)
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Global (Def2 NoUse));
-
 
         aux_toks xs;
 
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        if not (Hashtbl.mem already_tagged ii3)
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
 
         aux_toks xs;
@@ -229,7 +249,7 @@ let visit_toplevel
     | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        if not (Hashtbl.mem already_tagged ii3)
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (FunctionDecl NoUse);
         aux_toks xs;
 
@@ -238,14 +258,31 @@ let visit_toplevel
       T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        if not (Hashtbl.mem already_tagged ii3)
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
+
+    | T.Tand(ii)::T.TLowerIdent(s, ii3)::xs
+        when Ast.col_of_info ii = 0 ->
+
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then tag ii3 (Function (Def2 NoUse));
+        aux_toks xs;
+
+    | T.Ttype(ii)::T.TLowerIdent(s, ii3)::xs
+        when Ast.col_of_info ii = 0 ->
+
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then tag ii3 (TypeDef Def);
+        aux_toks xs;
+
+    (* module defs *)
 
     | T.Tmodule(_)
       ::T.TUpperIdent(_,ii_mod)
       ::T.TEq (_)
       ::T.Tstruct (_)::xs ->
+
         tag ii_mod (Module Def);
         aux_toks xs
 
@@ -253,33 +290,24 @@ let visit_toplevel
       ::T.TUpperIdent(_,ii_mod)
       ::T.TColon (_)
       ::T.Tsig (_)::xs ->
+
         tag ii_mod (Module Def);
         aux_toks xs
 
 
-    | T.Tand(ii)::T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
 
-        if not (Hashtbl.mem already_tagged ii3)
-        then tag ii3 (Function (Def2 NoUse));
-        aux_toks xs;
-
-    | T.Ttype(ii)::T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
-
-        if not (Hashtbl.mem already_tagged ii3)
-        then tag ii3 (TypeDef Def);
-        aux_toks xs;
+    (* bad smell, use of ref *)
 
     | T.TBang ii1::T.TLowerIdent(s2, ii2)::xs ->
         tag ii2 (UseOfRef);
-
         aux_toks xs
 
     | T.TBang ii1::T.TUpperIdent(s, ii)::T.TDot _::T.TLowerIdent(s2, ii2)::xs ->
         tag ii (Module Use);
         tag ii2 (UseOfRef);
         aux_toks xs
+
+    (* module use, and function call! *)
 
     | T.TUpperIdent(s, ii)::T.TDot ii2::T.TUpperIdent(s2, ii3)::xs ->
         tag ii (Module Use);
@@ -290,6 +318,7 @@ let visit_toplevel
         (* see my .emacs *)
         if Hashtbl.mem h_builtin_modules s then begin
           tag ii BuiltinCommentColor;
+          (* don't look if aready tagged *)
           tag ii3 Builtin;
         end else begin
           tag ii (Module Use);
@@ -297,6 +326,7 @@ let visit_toplevel
         end;
         aux_toks xs;
 
+    (* labels *)
     | T.TTilde ii1::T.TLowerIdent (s, ii2)::xs ->
         (* TODO when parser, can also have Use *)
         tag ii1 (Parameter Def);
@@ -534,7 +564,6 @@ let visit_toplevel
             tag ii KeywordExn
         | _ ->
             ()
-
 
   );
 
