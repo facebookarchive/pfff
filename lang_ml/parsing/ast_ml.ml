@@ -38,9 +38,12 @@ and 'a bracket = tok * 'a * tok
 
 and 'a comma_list = ('a, tok (* ',' *)) Common.either list
 and 'a and_list = ('a, tok (* 'and' *)) Common.either list
-and 'a pipe_list = ('a, tok (* '*' *)) Common.either list
 
+(* optional first | *)
+and 'a pipe_list = ('a, tok (* '*' *)) Common.either list
+(* optional final ; *)
 and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
+
 and 'a star_list = ('a, tok (* '*' *)) Common.either list
 
  (* with tarzan *)
@@ -68,6 +71,7 @@ type long_name = qualifier * name
 type ty = 
   | TyName of long_name
   | TyVar of tok (* ' *) * name
+
   | TyTuple of ty star_list (* at least 2 *)
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
@@ -81,8 +85,8 @@ and type_declaration =
 
  and type_def_kind =
    | TyCore of ty
-   | TyAlgebric of constructor_declaration pipe_list (* optional first | *)
-   | TyRecord   of label_declaration semicolon_list (* optional final ; *) brace
+   | TyAlgebric of constructor_declaration pipe_list
+   | TyRecord   of field_declaration semicolon_list brace
 
  (* OR type: algebric data type *)
  and constructor_declaration = name (* constr_ident *) * constructor_arguments
@@ -91,7 +95,7 @@ and type_declaration =
     | Of of tok * ty star_list
 
  (* AND type: record *)
- and label_declaration = {
+ and field_declaration = {
    fld_mutable: tok option;
    fld_name: name;
    fld_tok: tok; (* : *)
@@ -115,10 +119,81 @@ and type_declaration =
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
-and expr = unit
+and expr =
+  | C of constant
+  | L of long_name (* val_longident *)
 
-(* optional final ';' as terminator *)
+  | Cons of long_name (* constr_longident *) * expr option
+  | Tuple of expr comma_list
+
+  | ParenExpr of expr paren
+
+  (* can be empty; can not be singular as we use instead ParenExpr *) 
+  | Sequence of seq_expr paren (* can also be 'begin'/'end' *)
+
+  | Prefix of string wrap * expr
+  | Infix of expr * string wrap * expr
+
+  | FunCallSimple of long_name * argument list
+  | FunCall of expr * argument list
+
+  (* could be factorized with Prefix but it's not a usual prefix operator! *)
+  | RefAccess of tok (* ! *) * expr
+  | RefAssign of expr * tok (* := *) * expr
+
+  | FieldAccess of expr * tok (* . *) * long_name
+  | FieldAssign of expr * tok (* . *) * long_name * tok (* <- *) * expr
+  | Record of record_expr brace
+
+  | ObjAccess of expr * tok (* # *) * name
+  | New of tok * long_name (* class_longident *)
+  
+
+  | LetIn of tok * rec_opt * let_binding and_list * tok (* in *) * seq_expr
+  | Fun of tok * parameter list (* at least one *) * match_action
+  | Function of tok * match_case pipe_list
+
+  (* why they allow seq_expr ?? *)
+  | If of tok * seq_expr * tok * expr * (tok * expr) option
+  | Match of tok * seq_expr * tok * match_case pipe_list
+
+  | Try of tok * seq_expr * tok * match_case pipe_list 
+
+  | While of tok * seq_expr * tok * seq_expr * tok
+  | For of tok * name * tok * seq_expr * for_direction * seq_expr * 
+           tok * seq_expr * tok
+
+
+  | ExprTodo
+
 and seq_expr = expr semicolon_list
+
+ and constant =
+   | Int of string wrap
+   | Float of string wrap
+   | Char of string wrap
+   | String of string wrap
+
+ and record_expr =
+   | RecordNormal of            field_and_expr semicolon_list
+   | RecordWith of expr * tok * field_and_expr semicolon_list
+   and field_and_expr = 
+     | FieldExpr of long_name * tok * expr
+     (* new 3.12 feature *)
+     | FieldImplicitExpr of long_name
+
+ and argument = unit
+
+ and match_action =
+   | Action of tok (* -> *) * seq_expr
+   | WhenAction of tok (* when *) * seq_expr * tok (* -> *) * seq_expr
+
+ and match_case =
+  pattern * match_action
+
+ and for_direction =
+  | To of tok
+  | Downto of tok
 
 (* ------------------------------------------------------------------------- *)
 (* Patterns *)
@@ -130,6 +205,7 @@ and simple_pattern = unit
 (* rename in parameter ? *)
 and labeled_simple_pattern = unit
 
+and parameter = labeled_simple_pattern
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding *)
@@ -142,7 +218,7 @@ and let_binding =
  (* was called fun_binding in the grammar *)
  and let_def = {
    l_name: name; (* val_ident *)
-   l_args: labeled_simple_pattern list; (* can be empty *)
+   l_args: parameter list; (* can be empty *)
    l_tok: tok; (* = *)
    l_body: seq_expr;
  }
@@ -184,7 +260,7 @@ and item =
   (* only in struct_item *)
   | Let of tok * rec_opt * let_binding and_list
       
-  | ItemTodo
+  | ItemTodo of info
 
 and sig_item = item
 and struct_item = item
@@ -218,3 +294,8 @@ let str_of_info x = Parse_info.str_of_info x
 let col_of_info x = Parse_info.col_of_info x
 let line_of_info x = Parse_info.line_of_info x
 let pos_of_info x = Parse_info.pos_of_info x
+
+let str_of_name (Name (s,_)) = s
+let info_of_name (Name (_,info)) = info
+
+let name_of_long_name (_, name) = name

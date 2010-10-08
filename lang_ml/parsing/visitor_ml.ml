@@ -27,15 +27,10 @@ open Ast_ml
 type visitor_in = {
   kinfo: info vin;
   kexpr: expr vin;
+  kfield_decl: field_declaration vin;
+  kty: ty vin;
 }
 and visitor_out = {
-(*
-  vexpr: expr  -> unit;
-  vst: st -> unit;
-  vtop: toplevel -> unit;
-  vinfo: info -> unit;
-  vprogram: program -> unit;
-*)
   vtoplevel: toplevel vout;
   vprogram: program vout;
 }
@@ -45,6 +40,8 @@ and 'a vout = 'a -> unit
 let default_visitor = { 
   kinfo   = (fun (k,_) x -> k x);
   kexpr   = (fun (k,_) x -> k x);
+  kfield_decl = (fun (k,_) x -> k x);
+  kty = (fun (k,_) x -> k x);
 }
 
 
@@ -113,8 +110,9 @@ and v_long_name (v1, v2) =
 and v_qualifier v =
   v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
   
-and v_ty =
-  function
+and v_ty x =
+  let rec k x = 
+    match x with
   | TyName v1 -> let v1 = v_long_name v1 in ()
   | TyVar ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
   | TyTuple v1 -> let v1 = v_star_list2 v_ty v1 in ()
@@ -122,6 +120,8 @@ and v_ty =
       let v1 = v_ty v1 and v2 = v_tok v2 and v3 = v_ty v3 in ()
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in ()
   | TyTodo -> ()
+  in
+  vin.kty (k, all_functions) x
 
 and v_type_declaration =
   function
@@ -145,15 +145,20 @@ and v_constructor_arguments =
   | NoConstrArg -> ()
   | Of ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_star_list1 v_ty v2 in ()
 and
-  v_label_declaration {
-                        fld_mutable = v_fld_mutable;
-                        fld_name = v_fld_name;
-                        fld_tok = v_fld_tok;
-                        fld_type = v_fld_type
-                      } =
-  let arg = v_option v_tok v_fld_mutable in
-  let arg = v_name v_fld_name in
-  let arg = v_tok v_fld_tok in let arg = v_ty v_fld_type in ()
+  v_label_declaration x = 
+   let rec k x = 
+     match x with {
+       fld_mutable = v_fld_mutable;
+       fld_name = v_fld_name;
+       fld_tok = v_fld_tok;
+       fld_type = v_fld_type
+     } ->
+     let arg = v_option v_tok v_fld_mutable in
+     let arg = v_name v_fld_name in
+     let arg = v_tok v_fld_tok in let arg = v_ty v_fld_type in ()
+   in
+   vin.kfield_decl (k, all_functions) x
+
 and v_ty_args =
   function
   | TyArg1 v1 -> let v1 = v_ty v1 in ()
@@ -165,7 +170,11 @@ and v_ty_params =
   | TyParamMulti v1 ->
       let v1 = v_paren1 (v_comma_list1 v_ty_parameter) v1 in ()
 and v_ty_parameter (v1, v2) = let v1 = v_tok v1 and v2 = v_name v2 in ()
-and v_expr v = v_unit v
+and v_expr v = 
+ 
+ match v with
+  | ExprTodo -> ()
+
 and v_seq_expr v = v_semicolon_list1 v_expr v
 and v_pattern v = v_unit v
 and v_simple_pattern v = v_unit v
@@ -217,7 +226,8 @@ and v_item =
       and v2 = v_rec_opt v2
       and v3 = v_and_list1 v_let_binding v3
       in ()
-  | ItemTodo -> ()
+  | ItemTodo v -> v_info v
+
 and v_sig_item v = v_item v
 and v_struct_item v = v_item v
 and v_rec_opt v = v_option v_tok v

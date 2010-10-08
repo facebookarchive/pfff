@@ -261,9 +261,9 @@ signature_item:
      { Open ($1, $2) }
 
  | Tmodule Ttype ident TEq module_type
-     { ItemTodo }
+     { ItemTodo $1 }
  | Tmodule TUpperIdent module_declaration
-     { ItemTodo }
+     { ItemTodo $1 }
 
 
 
@@ -309,11 +309,11 @@ structure_item:
 
 
  | Tmodule TUpperIdent module_binding
-      { ItemTodo }
+      { ItemTodo $1 }
  | Tmodule Ttype ident TEq module_type
-      { ItemTodo }
+      { ItemTodo $1 }
  | Tinclude module_expr
-      { ItemTodo }
+      { ItemTodo $1 }
 
 
 
@@ -407,11 +407,11 @@ val_longident:
  | mod_longident TDot val_ident                { qufix $1 $2 $3 }
 
 constr_longident:
- | mod_longident       %prec below_DOT     { }
- | TOBracket TCBracket                     { }
- | TOParen TCParen                         { }
- | Tfalse                                  { }
- | Ttrue                                   { }
+ | mod_longident       %prec below_DOT     { $1 }
+ | TOBracket TCBracket                     { [], Name ("[]TODO", $1) }
+ | TOParen TCParen                         { [], Name ("()TODO", $1) }
+ | Tfalse                                  { [], Name ("false", $1) }
+ | Ttrue                                   { [], Name ("true", $1) }
 
 /*(* record field name *)*/
 label_longident:
@@ -437,8 +437,9 @@ mty_longident:
 /*(*************************************************************************)*/
 
 seq_expr:
- | expr        %prec below_SEMI        { [Left $1] }
+ | expr             %prec below_SEMI   { [Left $1] }
  | expr TSemiColon seq_expr            { Left $1::Right $2::$3 }
+
  /*(* bad ? should be removed ? but it's convenient in certain contexts like
     * begin end to allow ; as a terminator
     *)*/
@@ -447,158 +448,169 @@ seq_expr:
 
 expr:
  | simple_expr %prec below_SHARP
-      { }
+     { $1 }
  /*(* function application *)*/
  | simple_expr simple_labeled_expr_list
-      { }
+     { 
+       match $1 with
+       | L name -> FunCallSimple (name, $2)
+       | _      -> FunCall ($1, $2)
+     }
 
  | Tlet rec_flag let_bindings Tin seq_expr
-      { }
+     { LetIn ($1, $2, $3, $4, $5) }
  | Tfun labeled_simple_pattern fun_def
-      { }
+     { let (params, action) = $3 in
+       Fun ($1, $2::params, action)
+     }
+
  | Tfunction opt_bar match_cases
-     { }
+     { Function ($1, $2 ++ $3) }
 
  | expr_comma_list %prec below_COMMA
-     { }
+     { Tuple $1 }
  | constr_longident simple_expr %prec below_SHARP
-     { }
+     { Cons ($1, Some $2) }
+
  | expr TColonColon expr
-     { }
+     { Infix ($1, ("::", $2), $3) }
 
  | expr TInfixOperator expr
-      { }
+     { Infix ($1, $2, $3) }
 
  | Tif seq_expr Tthen expr Telse expr
-     { }
+     { If ($1, $2, $3, $4, Some ($5, $6)) }
  | Tif seq_expr Tthen expr
-      { }
+     { If ($1, $2, $3, $4, None) }
 
  | Tmatch seq_expr Twith opt_bar match_cases
-      { }
+     { Match ($1, $2, $3, $4 ++ $5) }
 
  | Ttry seq_expr Twith opt_bar match_cases
-      { }
+     { Try ($1, $2, $3, $4 ++ $5) }
 
  | Twhile seq_expr Tdo seq_expr Tdone
-     { }
+     { While ($1, $2, $3, $4, $5) }
  | Tfor val_ident TEq seq_expr direction_flag seq_expr Tdo seq_expr Tdone
-     { }
+     { For ($1, Name $2, $3, $4, $5, $6, $7, $8, $9)  }
 
- | expr TAssign expr
-      { }
+ | expr TAssign expr { RefAssign ($1, $2, $3) }
 
- | expr TEq expr
-      { }
+ | expr TEq expr   { Infix ($1, ("=", $2), $3) }
 
+ | expr TPlus expr     { Infix ($1, ("+", $2), $3)  }
+ | expr TMinus expr    { Infix ($1, ("-", $2), $3) }
+ | expr TPlusDot expr  { Infix ($1, ("+.", $2), $3) }
+ | expr TMinusDot expr { Infix ($1, ("-.", $2), $3) }
+ | expr TStar expr     { Infix ($1, ("*", $2), $3) }
+ | expr TLess expr     { Infix ($1, ("<", $2), $3) }
+ | expr TGreater expr  { Infix ($1, (">", $2), $3) }
+ | expr Tor expr       { Infix ($1, ("or", $2), $3) }
+ | expr TAnd expr      { Infix ($1, ("&", $2), $3) }
+ | expr TAndAnd expr   { Infix ($1, ("&&", $2), $3) }
 
- | expr TPlus expr
-      { }
- | expr TMinus expr
-     { }
- | expr TPlusDot expr
-     { }
- | expr TMinusDot expr
-     { }
- | expr TStar expr
-     { }
- | expr TLess expr
-     { }
- | expr TGreater expr
-     { }
- | expr Tor expr
-     { }
- | expr TAnd expr
-     { }
- | expr TAndAnd expr
-     { }
  | subtractive expr %prec prec_unary_minus
-     { }
+     { Prefix ($1, $2) }
  | additive expr %prec prec_unary_plus
-     { }
+     { Prefix ($1, $2) }
 
  | simple_expr TDot label_longident TAssignMutable expr
-      { }
+      { FieldAssign ($1, $2, $3, $4, $5) }
 
 
+ /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen TAssignMutable expr
-      { }
+     { ExprTodo }
  | simple_expr TDot TOBracket seq_expr TCBracket TAssignMutable expr
-      { }
-     
+     { ExprTodo }
 
+ /*(* bigarray extension, a.{i} <- v *)*/
+ | simple_expr TDot TOBrace expr TCBrace TAssignMutable expr
+     { ExprTodo }
+     
  | Tassert simple_expr %prec below_SHARP
-     { }
+     { ExprTodo }
 
  | name_tag simple_expr %prec below_SHARP
-      { }
+     { ExprTodo }
 
 
 
 simple_expr:
  | constant
-      { }
+     { C $1 }
  | val_longident
-      { }
+     { L $1 }
  /*(* this includes 'false' *)*/
  | constr_longident %prec prec_constant_constructor
-      { }
- | simple_expr TDot label_longident
-      { }
+     { Cons ($1, None) }
 
+ | simple_expr TDot label_longident
+     { FieldAccess ($1, $2, $3) }
+
+ /*(* if only one expr then prefer to generate a ParenExpr *)*/
  | TOParen seq_expr TCParen
-      { }
+     { match $2 with
+     | [] -> Sequence ($1, $2, $3) 
+     | [Left x] -> ParenExpr ($1, x, $3)
+     | [Right x] -> raise Impossible
+     | _ -> Sequence ($1, $2, $3) 
+     }
+
  | Tbegin seq_expr Tend
-     { }
+     { Sequence ($1, $2, $3)  }
  | Tbegin Tend
-     { }
+     { Sequence ($1, [], $2) }
 
  /*(* bugfix: must be in simple_expr. Originally made the mistake to put it
     * in expr: and the parser would then not recognize things like 'foo !x'
     *)*/
  | TPrefixOperator simple_expr
-      { }
+     { Prefix ($1, $2) }
  | TBang simple_expr
-     { }
+     { RefAccess ($1, $2) }
 
 
  | TOBrace record_expr TCBrace
-      { }
+     { Record ($1, $2, $3) }
 
  | TOBracket expr_semi_list opt_semi TCBracket
-      { }
+     { ExprTodo }
  | TOBracketPipe expr_semi_list opt_semi TPipeCBracket
-      { }
+     { ExprTodo }
  | TOBracketPipe TPipeCBracket
-      { }
+     { ExprTodo }
 
  /*(* array extension *)*/
  | simple_expr TDot TOParen seq_expr TCParen
-      { }
+     { ExprTodo }
  | simple_expr TDot TOBracket seq_expr TCBracket
-      { }
+     { ExprTodo }
+ /*(* bigarray extension *)*/
+ | simple_expr TDot TOBrace expr TCBrace
+     { ExprTodo }
 
  /*(* object extension *)*/
  | simple_expr TSharp label
-      { }
+     { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident
-      { }
+     { New ($1, $2) }
+
 
  /*(* name tag extension *)*/
  | name_tag %prec prec_constant_constructor
-     { }
+     { ExprTodo }
 
  | TOParen seq_expr type_constraint TCParen
-      { }
-
+     { ExprTodo }
 
 
 
 simple_labeled_expr_list:
  | labeled_simple_expr
-      { }
+      { [$1] }
  | simple_labeled_expr_list labeled_simple_expr
-      { }
+      { $1 ++ [$2] }
 
 labeled_simple_expr:
  | simple_expr %prec below_SHARP
@@ -612,42 +624,52 @@ expr_comma_list:
  | expr TComma expr                             { [Left $1; Right $2; Left $3] }
 
 expr_semi_list:
- | expr                                        { }
- | expr_semi_list TSemiColon expr                    { }
+ | expr                                  { }
+ | expr_semi_list TSemiColon expr        { }
 
 
 
 
 
 record_expr:
- | simple_expr Twith lbl_expr_list opt_semi     { }
- | lbl_expr_list opt_semi                      { }
+ | lbl_expr_list opt_semi                    { RecordNormal ($1 ++ $2) }
+ | simple_expr Twith lbl_expr_list opt_semi  { RecordWith ($1, $2, $3 ++ $4) }
 
 lbl_expr_list:
  | label_longident TEq expr
-      { }
+     { [Left (FieldExpr ($1, $2, $3))] }
+ | lbl_expr_list TSemiColon     label_longident TEq expr
+     { $1 ++ [Right $2; Left (FieldExpr ($3, $4, $5))] }
+ /*(* new 3.12 feature! *)*/
  | label_longident
-      { }
- | lbl_expr_list TSemiColon label_longident TEq expr
-     { }
- | lbl_expr_list TSemiColon label_longident
-     { }
+      { [Left (FieldImplicitExpr ($1))] }
+ | lbl_expr_list TSemiColon     label_longident
+     { $1 ++ [Right $2; Left (FieldImplicitExpr $3)] }
 
 
 subtractive:
-  | TMinus                                       { }
-  | TMinusDot                                    { }
+  | TMinus                                       { "-", $1 }
+  | TMinusDot                                    { "-.", $1 }
 
 additive:
-  | TPlus                                        { }
-  | TPlusDot                                     { }
+  | TPlus                                        { "+", $1 }
+  | TPlusDot                                     { "+.", $1 }
 
 
 direction_flag:
- | Tto                                          { }
- | Tdownto                                      { }
+ | Tto                                          { To $1 }
+ | Tdownto                                      { Downto $1 }
 
 
+/*(*----------------------------*)*/
+/*(* Constants *)*/
+/*(*----------------------------*)*/
+
+constant:
+ | TInt     { Int $1 }
+ | TChar    { Char $1 }
+ | TString  { String $1 }
+ | TFloat   { Float $1 }
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -663,35 +685,17 @@ label_expr:
  | TOptLabelDecl simple_expr %prec below_SHARP
       { }
 
-/*(*----------------------------*)*/
-/*(* Constants *)*/
-/*(*----------------------------*)*/
-
-constant:
- | TInt                                         { }
- | TChar                                        { }
- | TString                                      { }
- | TFloat                                       { }
-
-signed_constant:
- | constant                                    { }
- | TMinus TInt                                   { }
- | TMinus TFloat                                 { }
- | TPlus TInt                                    { }
- | TPlus TFloat                                  { }
-
 /*(*************************************************************************)*/
 /*(* Patterns *)*/
 /*(*************************************************************************)*/
 
 match_cases:
- | pattern match_action                        { }
- | match_cases TPipe pattern match_action        { }
+ | pattern  match_action                     { [Left ($1, $2)] }
+ | match_cases TPipe    pattern match_action { $1 ++ [Right $2; Left ($3, $4)] }
 
 match_action:
- | TArrow seq_expr                       { }
- | Twhen seq_expr TArrow seq_expr         { }
-
+ | TArrow seq_expr                  { Action ($1, $2) }
+ | Twhen seq_expr TArrow seq_expr   { WhenAction ($1, $2, $3, $4) }
 
 
 
@@ -775,6 +779,14 @@ pattern_comma_list:
  | pattern_comma_list TComma pattern            { $1 ++ [Right $2; Left $3] }
  | pattern TComma pattern                       { [Left $1; Right $2; Left $3] }
 
+
+signed_constant:
+ | constant       { }
+ | TMinus TInt    { }
+ | TMinus TFloat  { }
+ | TPlus TInt     { }
+ | TPlus TFloat   { }
+
 /*(*************************************************************************)*/
 /*(* Types *)*/
 /*(*************************************************************************)*/
@@ -813,7 +825,7 @@ type_kind:
       { Some ($1, TyAlgebric $2) }
  | TEq /*(*TODO private_flag*)*/ TPipe constructor_declarations
       { Some ($1, TyAlgebric (Right $2::$3)) }
- | TEq /*(*TODO private_flag*)*/ TOBrace label_declarations opt_semi TCBrace
+ | TEq /*(*TODO private_flag*)*/ TOBrace label_declarations opt_semi2 TCBrace
       { Some ($1, TyRecord ($2, ($3 ++ $4), $5)) }
 
 
@@ -958,7 +970,7 @@ amper_type_list:
 
 
 /*(*************************************************************************)*/
-/*(* Let, definitions *)*/
+/*(* Let/Fun definitions *)*/
 /*(*************************************************************************)*/
 
 let_bindings:
@@ -981,17 +993,19 @@ let_binding:
       { LetPattern ($1, $2, $3) }
 
 
-
 fun_binding:
  | strict_binding { $1 }
 
 strict_binding:
  /*(* simple values, e.g. 'let x = 1' *)*/
- | TEq seq_expr
-      { [], ($1, $2) }
+ | TEq seq_expr  { [], ($1, $2) }
  /*(* function values, e.g. 'let x a b c = 1' *)*/
- | labeled_simple_pattern fun_binding
-      { let (args, body) = $2 in $1::args, body }
+ | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args, body }
+
+fun_def:
+ | match_action                    { [], $1 }
+ | labeled_simple_pattern fun_def  { let (args, body) = $2 in $1::args, body }
+
 
 
 labeled_simple_pattern:
@@ -999,12 +1013,6 @@ labeled_simple_pattern:
       { }
   | label_pattern
       { }
-
-
-rec_flag:
- | /*(*empty*)*/   { None }
- | Trec            { Some $1 }
-
 
 label_let_pattern:
  | label_var
@@ -1015,6 +1023,10 @@ label_let_pattern:
 opt_default:
  | /*(*empty*)*/           { None  }
  | TEq seq_expr            { Some ($1, $2) }
+
+rec_flag:
+ | /*(*empty*)*/   { None }
+ | Trec            { Some $1 }
 
 /*(*----------------------------*)*/
 /*(* Labels *)*/
@@ -1032,16 +1044,6 @@ label_pattern:
       { }
   | TQuestion label_var
       { }
-
-/*(*************************************************************************)*/
-/*(* Fun, definitions *)*/
-/*(*************************************************************************)*/
-
-fun_def:
- | match_action                                { }
- | labeled_simple_pattern fun_def
-      { }
-
 
 /*(*************************************************************************)*/
 /*(* Classes *)*/
@@ -1114,6 +1116,10 @@ opt_semi:
  | /*(*empty*)*/    { [] }
  | TSemiColon       { [Right $1] }
 
+opt_semi2:
+ | /*(*empty*)*/    { [] }
+ | TSemiColon       { [Right $1] }
+
 opt_bar:
- | /*(*empty*)*/    { }
- | TPipe            { }
+ | /*(*empty*)*/    { [] }
+ | TPipe            { [Right $1] }

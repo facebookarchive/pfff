@@ -3,6 +3,8 @@ open Ast_ml
 type visitor_in = {
   kinfo: info vin;
   kexpr: expr vin;
+  kfield_decl: field_declaration vin;
+  kty: ty vin;
 }
 and visitor_out = {
   vtoplevel: toplevel vout;
