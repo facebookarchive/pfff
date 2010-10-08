@@ -26,11 +26,11 @@ BINDIR	=$(DESTDIR)${exec_prefix}/bin
 MANDIR=${datarootdir}/man
 
 # Other variables set by ./configure
-OCAMLC   = ocamlc.opt
-OCAMLOPT = ocamlopt.opt
+OCAMLC   = ocamlc
+OCAMLOPT = ocamlopt
 OCAMLDEP = ocamldep -slash
-OCAMLDOC = ocamldoc.opt
-OCAMLLEX = ocamllex.opt
+OCAMLDOC = ocamldoc
+OCAMLLEX = ocamllex
 OCAMLYACC= ocamlyacc
 OCAMLLIB = /home/pad/packages/stow/godi-3.11/lib/ocaml/std-lib
 OCAMLBEST= opt
