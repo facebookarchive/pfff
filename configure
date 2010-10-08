@@ -237,6 +237,15 @@ if($pcre) {
 		      );
 }
 
+# The default ocamlgraph configure generate Makefiles that uses some -pack
+# and certain module names like Graph that conflicts with other pfff modules
+# so right now the Makefile is hand-crafted.
+#{
+#    pr2 "";
+#    pr2 "Configuring ocamlgraph";
+#    system("cd external/ocamlgraph; ./configure");
+#}
+
 if($gui) {
     pr2 "";
     pr2 "Configuring ocamlgtk";
