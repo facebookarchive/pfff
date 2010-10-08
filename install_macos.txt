@@ -5,11 +5,8 @@ Then
  => can ./configure -bdb
 
  $ sudo port install cairo
- $ sudo port install gtk
+ $ sudo port install gtk2
  => can configure -visual
-
- $ sudo port install mysql
- => can ./configure -facebook
 
 For cairo and gtk don't use the quartz setting as it is currently
 buggy under macports.
