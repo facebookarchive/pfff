@@ -52,6 +52,10 @@ let h_builtin_bool = Common.hashset_of_list [
   "exists"; "forall";
 ]
 
+
+let fake_no_def2 = NoUse
+let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -219,6 +223,43 @@ let visit_toplevel
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
 
+  (* try better colorize identifiers which can be many different things
+   * e.g. a field, a type, a function, a parameter, etc
+   *)
+  let v = V.mk_visitor { V.default_visitor with
+    V.kfield_decl = (fun (k, _) fld ->
+      let name = fld.fld_name in
+      let info = Ast.info_of_name name in
+      tag info (Field (Def2 fake_no_def2));
+      
+      k fld
+    );
+
+    V.kty = (fun (k, _) t ->
+      match t with
+      | TyName long_name
+      | TyApp (_, long_name) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info TypeMisc;
+          k t
+
+      | TyVar (_tok, name) ->
+          let info = Ast.info_of_name name in
+
+          tag info TypeVoid;
+          k t
+
+          
+      | TyTuple _
+      | TyFunction _
+      | TyTodo _
+          -> k t
+    );
+  }
+  in
+  v.V.vtoplevel  toplevel;
+
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
@@ -256,18 +297,23 @@ let visit_toplevel
     | T.Tfalse ii | T.Ttrue ii -> 
         tag ii Boolean
 
+
+
     | T.Tlet ii | T.Tin ii | T.Tand ii | T.Trec ii 
     | T.Tval ii
     | T.Texternal ii
-        -> tag ii TypeVoid (* TODO *)
+        -> tag ii Keyword
 
     | T.Tfun ii | T.Tfunction ii ->
-        tag ii TypeVoid (* TODO *)
-
+        tag ii Keyword
 
     | T.Ttype ii
     | T.Tof ii
-      -> tag ii TypeMisc (* TODO *)
+      -> tag ii Keyword
+
+
+
+
 
     | T.Tif ii | T.Tthen ii | T.Telse ii ->
         tag ii KeywordConditional
@@ -396,6 +442,8 @@ let visit_toplevel
         tag ii Operator
 
     | T.TMinusDot ii
+    | T.TPlusDot ii
+
     | T.TArrow ii
     | T.TBangEq ii
     | T.TOBracketGreater ii
