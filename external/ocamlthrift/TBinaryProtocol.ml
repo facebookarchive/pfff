@@ -44,8 +44,12 @@ let comp_int64 b n =
     done;
     !s
 
-let version_mask = 0xffff0000
-let version_1 = 0x80010000
+(* pad: was a 0xffff0000 literal but it does generate a compilation error
+ * on 32 bits machine. It will now generate a runtime error.
+ *)
+let version_mask = int_of_string "0xffff0000"
+
+let version_1 = int_of_string "0x80010000"
 
 class t trans =
 object (self)
