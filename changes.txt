@@ -13,6 +13,19 @@ can now visualize the result of a git grep on a project.
 so can visualize also Tex/Latex/Noweb source (which includes
 the documentation of pfff!)
 
+** global analysis
+
+*** store additional attributes/properties per entities in the light code db
+
+e.g. is the function dead, does it use a global, does it take
+argument by refs. This can help the visualizer to give more semantic
+visual feedback.
+
+** pfff:ml
+more highlight
+
+** wrote a few wiki pages
+Also applied pfff_visual on many open source project and generated screenshots.
 
 * 0.13
 

@@ -185,6 +185,12 @@ type entity = {
 
    | UseGlobal of string
 
+   | DeadCode (* the function itself is dead, e.g. never called *)
+   | ContainDeadStatements
+
+   | CodeCoverage of int list (* e.g. covered lines by unit tests *)
+
+   (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
 
 (* Note that because we now use indexed entities, you can not
  * play with.entities as before. For instance merging databases
