@@ -81,16 +81,85 @@ let visit_toplevel
 
 
   (* -------------------------------------------------------------------- *)
+  (* ast phase 1 *) 
+  (* -------------------------------------------------------------------- *)
+
+  (* try better colorize identifiers which can be many different things
+   * e.g. a field, a type, a function, a parameter, etc
+   *)
+  let v = V.mk_visitor { V.default_visitor with
+
+    V.kexpr = (fun (k, _) x ->
+      match x with
+      | FunCallSimple (long_name, args) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+
+          let s = Ast.str_of_name name in
+
+          tag info (Function (Use2 fake_no_use2));
+          k x
+
+      | Match (_match, _e1, tok_with, _match_cases) ->
+          tag tok_with (KeywordConditional);
+          k x
+
+      | Try (_try, _e1, tok_with, _match_cases) ->
+          tag tok_with (KeywordExn);
+          k x
+
+      | _ -> k x
+    );
+
+    V.kty = (fun (k, _) t ->
+      match t with
+      | TyName long_name
+      | TyApp (_, long_name) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info TypeMisc;
+          k t
+
+      | TyVar (_tok, name) ->
+          let info = Ast.info_of_name name in
+
+          tag info TypeVoid;
+          k t
+
+          
+      | TyTuple _
+      | TyFunction _
+      | TyTodo _
+          -> k t
+    );
+
+    V.kfield_decl = (fun (k, _) fld ->
+      let name = fld.fld_name in
+      let info = Ast.info_of_name name in
+      tag info (Field (Def2 fake_no_def2));
+      
+      k fld
+    );
+
+    V.kfield_expr = (fun (k, _) x ->
+      match x with
+      | FieldExpr (long_name, _, _)
+      | FieldImplicitExpr long_name
+          ->
+
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info (Field (Use2 fake_no_use2));
+          k x
+    );
+  }
+  in
+  v.V.vtoplevel  toplevel;
+
+  (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
   (* -------------------------------------------------------------------- *)
-  (* poor's man semantic tagger. Infer if ident is a func, or class,
-   * or module based on the few tokens around. 
-   * 
-   * This may look ridiculous to do such semantic tagging using tokens 
-   * instead of the full ast but many ocaml files could not parse with
-   * the default parser because of camlp4 extensions so having
-   * a solid token-base tagger is still useful as a last resort.
-   * 
+  (* 
    * note: all TCommentSpace are filtered in xs so easier to write
    * rules (but regular comments are kept as well as newlines).
    *)
@@ -105,6 +174,7 @@ let visit_toplevel
       ::T.TCommentNewline (ii4)
       ::T.TComment(ii5)
       ::xs ->
+
         let s = Ast.str_of_info ii in
         let s5 =  Ast.str_of_info ii5 in
         (match () with
@@ -125,22 +195,38 @@ let visit_toplevel
         );
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
+    (* if had parse error, then the AST will not contain the definitions, but
+     * we can still try to tag certain things.
+     * Poor's man semantic tagger. Infer if ident is a func, or class,
+     * or module based on the few tokens around. 
+     * 
+     * This may look ridiculous to do such semantic tagging using tokens 
+     * instead of the full ast but many ocaml files could not parse with
+     * the default parser because of camlp4 extensions so having
+     * a solid token-based tagger is still useful as a last resort.
+     *)
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::T.TEq ii5::xs
         when Ast.col_of_info ii = 0 ->
 
-        tag ii3 (Global (Def2 NoUse));
+        if not (Hashtbl.mem already_tagged ii3)
+        then tag ii3 (Global (Def2 NoUse));
+
+
         aux_toks xs;
 
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        tag ii3 (Function (Def2 NoUse));
+        if not (Hashtbl.mem already_tagged ii3)
+        then tag ii3 (Function (Def2 NoUse));
+
         aux_toks xs;
 
     | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        tag ii3 (FunctionDecl NoUse);
+        if not (Hashtbl.mem already_tagged ii3)
+        then tag ii3 (FunctionDecl NoUse);
         aux_toks xs;
 
     | T.Tlet(ii)::
@@ -148,7 +234,8 @@ let visit_toplevel
       T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        tag ii3 (Function (Def2 NoUse));
+        if not (Hashtbl.mem already_tagged ii3)
+        then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
     | T.Tmodule(_)
@@ -169,13 +256,15 @@ let visit_toplevel
     | T.Tand(ii)::T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        tag ii3 (Function (Def2 NoUse));
+        if not (Hashtbl.mem already_tagged ii3)
+        then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
     | T.Ttype(ii)::T.TLowerIdent(s, ii3)::xs
         when Ast.col_of_info ii = 0 ->
 
-        tag ii3 (TypeDef Def);
+        if not (Hashtbl.mem already_tagged ii3)
+        then tag ii3 (TypeDef Def);
         aux_toks xs;
 
     | T.TBang ii1::T.TLowerIdent(s2, ii2)::xs ->
@@ -219,46 +308,6 @@ let visit_toplevel
   )
   in
   aux_toks toks';
-
-  (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
-
-  (* try better colorize identifiers which can be many different things
-   * e.g. a field, a type, a function, a parameter, etc
-   *)
-  let v = V.mk_visitor { V.default_visitor with
-    V.kfield_decl = (fun (k, _) fld ->
-      let name = fld.fld_name in
-      let info = Ast.info_of_name name in
-      tag info (Field (Def2 fake_no_def2));
-      
-      k fld
-    );
-
-    V.kty = (fun (k, _) t ->
-      match t with
-      | TyName long_name
-      | TyApp (_, long_name) ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-          tag info TypeMisc;
-          k t
-
-      | TyVar (_tok, name) ->
-          let info = Ast.info_of_name name in
-
-          tag info TypeVoid;
-          k t
-
-          
-      | TyTuple _
-      | TyFunction _
-      | TyTodo _
-          -> k t
-    );
-  }
-  in
-  v.V.vtoplevel  toplevel;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -323,8 +372,14 @@ let visit_toplevel
     | T.Twhen ii -> (* TODO: should also colorize it's with, when parser *)
         tag ii KeywordConditional
 
-    | T.Ttry ii | T.Twith ii ->
+    | T.Ttry ii  ->
         tag ii KeywordExn
+
+
+    | T.Twith ii ->
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          tag ii Keyword
 
     | T.Tfor ii | T.Tdo ii | T.Tdone ii | T.Twhile ii
     | T.Tto ii

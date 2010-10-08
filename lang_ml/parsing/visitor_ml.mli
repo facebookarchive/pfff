@@ -4,6 +4,7 @@ type visitor_in = {
   kinfo: info vin;
   kexpr: expr vin;
   kfield_decl: field_declaration vin;
+  kfield_expr: field_and_expr vin;
   kty: ty vin;
 }
 and visitor_out = {

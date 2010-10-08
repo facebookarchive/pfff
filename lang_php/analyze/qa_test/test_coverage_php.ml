@@ -91,7 +91,7 @@ let threshold_working_tests_percentage = ref 80.0
 
 let threshold_nblines_trace_too_big = ref 1_000_000
 
-let timeout_run_test = 50
+let timeout_run_test = 100
 
 exception NotEnoughWorkingTests
 

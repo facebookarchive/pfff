@@ -28,6 +28,7 @@ type visitor_in = {
   kinfo: info vin;
   kexpr: expr vin;
   kfield_decl: field_declaration vin;
+  kfield_expr: field_and_expr vin;
   kty: ty vin;
 }
 and visitor_out = {
@@ -41,6 +42,7 @@ let default_visitor = {
   kinfo   = (fun (k,_) x -> k x);
   kexpr   = (fun (k,_) x -> k x);
   kfield_decl = (fun (k,_) x -> k x);
+  kfield_expr = (fun (k,_) x -> k x);
   kty = (fun (k,_) x -> k x);
 }
 
@@ -201,8 +203,10 @@ and v_ty_params =
 and v_ty_parameter (v1, v2) = let v1 = v_tok v1 and v2 = v_name v2 in ()
 
 
-and v_expr =
-  function
+and v_expr v =
+  let rec k x = 
+    match x with
+
   | C v1 -> let v1 = v_constant v1 in ()
   | L v1 -> let v1 = v_long_name v1 in ()
   | Cons ((v1, v2)) ->
@@ -291,6 +295,8 @@ and v_expr =
       and v9 = v_tok v9
       in ()
   | ExprTodo -> ()
+  in
+  vin.kexpr (k, all_functions) v
 
 and v_constant =
   function
@@ -307,11 +313,14 @@ and v_record_expr =
       and v2 = v_tok v2
       and v3 = v_semicolon_list11 v_field_and_expr v3
       in ()
-and v_field_and_expr =
-  function
+and v_field_and_expr v =
+  let rec k x = 
+    match x with
   | FieldExpr ((v1, v2, v3)) ->
       let v1 = v_long_name v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | FieldImplicitExpr v1 -> let v1 = v_long_name v1 in ()
+  in
+  vin.kfield_expr (k, all_functions) v
 
 and v_argument v = v_unit v
 
