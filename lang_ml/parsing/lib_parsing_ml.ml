@@ -62,3 +62,14 @@ let ii_of_toplevel top =
 (* Max min, range *)
 (*****************************************************************************)
 let min_max_ii_by_pos xs = Parse_info.min_max_ii_by_pos xs
+
+(*****************************************************************************)
+(* AST helpers *)
+(*****************************************************************************)
+
+let is_function_body x = 
+  match Ast.uncomma x with
+  | (Fun _ | Function _)::xs ->
+      true
+  | _ -> false
+

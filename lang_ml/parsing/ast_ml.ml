@@ -247,6 +247,7 @@ and module_expr = unit
  *)
 and item = 
   | Type      of tok * type_declaration and_list
+
   | Exception of tok * name * constructor_arguments
   | External  of tok * name (* val_ident *) * tok (*:*) * ty * tok (* = *) *
       string wrap list (* primitive declarations *)
@@ -298,3 +299,8 @@ let str_of_name (Name (s,_)) = s
 let info_of_name (Name (_,info)) = info
 
 let name_of_long_name (_, name) = name
+
+let uncomma xs = Common.map_filter (function
+  | Left e -> Some e
+  | Right info -> None
+  ) xs

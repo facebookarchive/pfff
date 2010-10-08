@@ -58,6 +58,9 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = false
 
+(* set to true when want to debug the ast based tagger *)
+let disable_token_phase2 = true
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -93,8 +96,70 @@ let visit_toplevel
 
   let v = V.mk_visitor { V.default_visitor with
 
+    V.kitem = (fun (k, _) x ->
+
+      match x with
+      | Val (tok, name, tok2, ty) 
+      | External (tok, name, tok2, ty, _, _) 
+         ->
+          let info = Ast.info_of_name name in
+          (match ty with
+          (* todo: actually it can be a typedef alias to a function too
+           * but this would require some analysis
+           *)
+          | TyFunction _ ->
+              tag info (FunctionDecl NoUse)
+          | _ ->
+              tag info (Global (Def2 NoUse))
+          );
+          k x
+
+      | Exception (tok, name, args) ->
+          let info = Ast.info_of_name name in
+          tag info (TypeDef Def);
+          k x
+
+      | Type _ 
+      | Let _
+      | Open _
+      | ItemTodo _
+         ->
+          k x
+    );
+
+    V.klet_def = (fun (k, _) x ->
+      let name = x.l_name in
+      let info = Ast.info_of_name name in
+
+      if not !in_let then begin
+        if List.length x.l_args > 0 || 
+           Lib_parsing_ml.is_function_body x.l_body
+        then tag info (Function (Def2 NoUse))
+        else tag info (Global (Def2 NoUse))
+      end else begin
+        tag info (Local (Def))
+      end;
+      Common.save_excursion in_let true (fun () ->
+        k x
+      )
+      
+    );
+
     V.kexpr = (fun (k, _) x ->
       match x with
+      | L long_name ->
+
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+
+          (* could have been tagged as a function name in the rule below *)
+          if not (Hashtbl.mem already_tagged info)
+          then begin 
+            (* TODO could be a param, could be a local. Need scope analysis *)
+            tag info (Local Use) 
+          end;
+          k x
+
       | FunCallSimple (long_name, args) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
@@ -102,6 +167,7 @@ let visit_toplevel
           tag info (Function (Use2 fake_no_use2));
           k x
 
+      (* disambiguate "with" which can be used for match, try, or record *)
       | Match (_match, _e1, tok_with, _match_cases) ->
           tag tok_with (KeywordConditional);
           k x
@@ -110,23 +176,20 @@ let visit_toplevel
           tag tok_with (KeywordExn);
           k x
 
-      | L long_name ->
 
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-
-          if not (Hashtbl.mem already_tagged info)
-          then begin 
-            (* TODO could be a param, could be a local. Need scope analysis *)
-            tag info (Local Use) 
-          end;
-          k x
-
-      | FieldAccess (e, _tok, long_name) ->
+      | FieldAccess (e, _tok, long_name) 
+      | FieldAssign (e, _tok, long_name, _, _) 
+        ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
           tag info (Field (Use2 fake_no_use2));
           k x
+
+      | ObjAccess (e, tok, name) ->
+          let info = Ast.info_of_name name in
+          tag info (Method (Use2 fake_no_use2));
+          k x
+
 
       | _ -> k x
     );
@@ -138,10 +201,15 @@ let visit_toplevel
           let info = Ast.info_of_name name in
           tag info TypeMisc;
           k t
-      | TyApp (_, long_name) ->
+
+      | TyApp (ty_args, long_name) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
+          (* different color for higher-order types *)
           tag info TypeVoid;
+
+          (* todo: ty_args *)
+
           k t
 
       | TyVar (_tok, name) ->
@@ -155,6 +223,19 @@ let visit_toplevel
       | TyFunction _
       | TyTodo _
           -> k t
+    );
+
+    V.ktype_declaration = (fun (k, _) x ->
+      match x with
+      | TyDef (ty_params, name, tok, type_kind) ->
+
+          let info = Ast.info_of_name name in
+          tag info (TypeDef Def);
+          (* todo: ty_params *)
+          k x
+          
+      | TyAbstract _ ->
+          k x
     );
 
     V.kfield_decl = (fun (k, _) fld ->
@@ -346,7 +427,7 @@ let visit_toplevel
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-
+  if not disable_token_phase2 then
   toks +> List.iter (fun tok -> 
     match tok with
     | T.TComment ii ->

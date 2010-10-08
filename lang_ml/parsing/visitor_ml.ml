@@ -30,6 +30,9 @@ type visitor_in = {
   kfield_decl: field_declaration vin;
   kfield_expr: field_and_expr vin;
   kty: ty vin;
+  ktype_declaration: type_declaration vin;
+  kitem: item vin;
+  klet_def: let_def vin;
 }
 and visitor_out = {
   vtoplevel: toplevel vout;
@@ -44,6 +47,9 @@ let default_visitor = {
   kfield_decl = (fun (k,_) x -> k x);
   kfield_expr = (fun (k,_) x -> k x);
   kty = (fun (k,_) x -> k x);
+  ktype_declaration  = (fun (k,_) x -> k x);
+  kitem  = (fun (k,_) x -> k x);
+  klet_def  = (fun (k,_) x -> k x);
 }
 
 
@@ -154,8 +160,9 @@ and v_ty x =
   in
   vin.kty (k, all_functions) x
 
-and v_type_declaration =
-  function
+and v_type_declaration x =
+  let rec k x =
+    match x with
   | TyAbstract ((v1, v2)) -> let v1 = v_ty_params v1 and v2 = v_name v2 in ()
   | TyDef ((v1, v2, v3, v4)) ->
       let v1 = v_ty_params v1
@@ -163,6 +170,9 @@ and v_type_declaration =
       and v3 = v_tok v3
       and v4 = v_type_def_kind v4
       in ()
+  in
+  vin.ktype_declaration (k, all_functions) x
+
 and v_type_def_kind =
   function
   | TyCore v1 -> let v1 = v_ty v1 in ()
@@ -352,20 +362,27 @@ and v_let_binding =
   | LetPattern ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_seq_expr v3 in ()
 and
-  v_let_def {
+  v_let_def x =
+  let rec k x =
+    match x with
+ {
               l_name = v_l_name;
               l_args = v_l_args;
               l_tok = v_l_tok;
               l_body = v_l_body
-            } =
+            } ->
   let arg = v_name v_l_name in
   let arg = v_list v_labeled_simple_pattern v_l_args in
   let arg = v_tok v_l_tok in let arg = v_seq_expr v_l_body in ()
+  in
+  vin.klet_def (k, all_functions) x
+
 and v_function_def v = v_unit v
 and v_module_type v = v_unit v
 and v_module_expr v = v_unit v
-and v_item =
-  function
+and v_item x =
+  let rec k x =
+    match x with
   | Type ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_and_list2 v_type_declaration v2 in ()
   | Exception ((v1, v2, v3)) ->
@@ -394,6 +411,8 @@ and v_item =
       and v3 = v_and_list1 v_let_binding v3
       in ()
   | ItemTodo v -> v_info v
+  in
+  vin.kitem (k, all_functions) x
 
 and v_sig_item v = v_item v
 and v_struct_item v = v_item v

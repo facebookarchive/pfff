@@ -6,6 +6,9 @@ type visitor_in = {
   kfield_decl: field_declaration vin;
   kfield_expr: field_and_expr vin;
   kty: ty vin;
+  ktype_declaration: type_declaration vin;
+  kitem: item vin;
+  klet_def: let_def vin;
 }
 and visitor_out = {
   vtoplevel: toplevel vout;
