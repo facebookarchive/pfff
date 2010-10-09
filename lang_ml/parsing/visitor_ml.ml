@@ -332,7 +332,14 @@ and v_field_and_expr v =
   in
   vin.kfield_expr (k, all_functions) v
 
-and v_argument v = v_unit v
+and v_argument =
+  function
+  | ArgExpr v1 -> let v1 = v_expr v1 in ()
+  | ArgLabelTilde ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
+  | ArgImplicitTildeExpr ((v1, v2)) ->
+      let v1 = v_tok v1 and v2 = v_name v2 in ()
+  | ArgImplicitQuestionExpr ((v1, v2)) ->
+      let v1 = v_tok v1 and v2 = v_name v2 in ()
 
 and v_match_action =
   function

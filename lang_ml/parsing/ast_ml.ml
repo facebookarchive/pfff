@@ -181,7 +181,12 @@ and seq_expr = expr semicolon_list
      (* new 3.12 feature *)
      | FieldImplicitExpr of long_name
 
- and argument = unit
+ and argument = 
+   | ArgExpr of expr
+   | ArgLabelTilde of name (* todo: without the tilde and : ? *) * expr
+   (* ArgLabelQuestion ?? *)
+   | ArgImplicitTildeExpr of tok * name
+   | ArgImplicitQuestionExpr of tok * name
 
  and match_action =
    | Action of tok (* -> *) * seq_expr

@@ -59,7 +59,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 let lexer_based_tagger = false
 
 (* set to true when want to debug the ast based tagger *)
-let disable_token_phase2 = true
+let disable_token_phase2 = false
 
 (*****************************************************************************)
 (* Code highlighter *)

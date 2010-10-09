@@ -378,8 +378,9 @@ name_tag: TBackQuote ident   { }
 label_var:
     TLowerIdent    { }
 
+/*(* for label arguments like ~x or ?x *)*/
 label_ident:
-    TLowerIdent   { }
+    TLowerIdent   { $1 }
 
  
 /*(*----------------------------*)*/
@@ -614,9 +615,9 @@ simple_labeled_expr_list:
 
 labeled_simple_expr:
  | simple_expr %prec below_SHARP
-      { }
+      { ArgExpr $1 }
  | label_expr
-      { }
+      { $1 }
 
 
 expr_comma_list:
@@ -676,14 +677,14 @@ constant:
 /*(*----------------------------*)*/
 
 label_expr:
- | TLabelDecl simple_expr %prec below_SHARP
-      { }
  | TTilde label_ident
-      { }
+      { ArgImplicitTildeExpr ($1, Name $2) }
  | TQuestion label_ident
-      { }
+      { ArgImplicitQuestionExpr ($1, Name $2) }
+ | TLabelDecl simple_expr %prec below_SHARP
+      { ArgLabelTilde (Name $1 (* TODO remove the ~ and : *), $2) }
  | TOptLabelDecl simple_expr %prec below_SHARP
-      { }
+      { raise Todo }
 
 /*(*************************************************************************)*/
 /*(* Patterns *)*/
