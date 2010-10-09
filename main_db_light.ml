@@ -277,6 +277,8 @@ let main () =
   (* Common_extra.set_link(); 
      let argv = Features.Distribution.mpi_adjust_argv Sys.argv in
   *)
+  (* ugly *)
+  Database_php_storage.set_link ();
 
   let usage_msg = 
     "Usage: " ^ basename Sys.argv.(0) ^ 

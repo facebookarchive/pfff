@@ -234,7 +234,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-interface:      signature EOF                        { [FinalDef $2] }
+interface:      signature EOF                        { $1 ++ [FinalDef $2] }
 
 implementation: structure EOF                        { $1 ++ [FinalDef $2] }
 
@@ -524,11 +524,11 @@ expr:
      { ExprTodo }
  | simple_expr TDot TOBracket seq_expr TCBracket TAssignMutable expr
      { ExprTodo }
-
  /*(* bigarray extension, a.{i} <- v *)*/
  | simple_expr TDot TOBrace expr TCBrace TAssignMutable expr
      { ExprTodo }
      
+
  | Tassert simple_expr %prec below_SHARP
      { ExprTodo }
 
@@ -891,6 +891,7 @@ core_type2:
      { $1 }
  | core_type2 TArrow core_type2
      { TyFunction ($1, $2, $3) }
+
  /*(* ext: olabl *)*/
  | TLowerIdent           TColon core_type2 TArrow core_type2
      { TyTodo  }

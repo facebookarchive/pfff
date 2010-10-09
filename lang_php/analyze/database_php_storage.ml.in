@@ -31,6 +31,8 @@ module Flag = Flag_analyze_php
 let bdb_size_tables = 50000 
 
 
+#if FEATURE_BDB==1
+
 (*****************************************************************************)
 (* Helpers persistency *)
 (*****************************************************************************)
@@ -364,3 +366,14 @@ let open_db metapath =
 
 let set_link () = 
   Database_php._current_open_db_backend := open_db
+
+#else 
+
+let open_db dir =
+  failwith "use configure -bdb"
+
+let set_link () = 
+  ()
+
+#endif
+

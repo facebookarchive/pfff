@@ -399,8 +399,8 @@ let visit_toplevel
         (* see my .emacs *)
         if Hashtbl.mem h_builtin_modules s then begin
           tag ii BuiltinCommentColor;
-          (* don't look if aready tagged *)
-          tag ii3 Builtin;
+          if not (Hashtbl.mem already_tagged ii3)
+          then tag ii3 Builtin;
         end else begin
           tag ii (Module Use);
           (* tag ii3 (Function Use); *)

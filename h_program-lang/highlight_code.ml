@@ -440,13 +440,11 @@ The big principles for the colors, fonts, and strikes are:
   - red background:  expanded code
   - other special backgrounds: search results
 
-  - blue:   variables
-  - yellow: functions (and macros)
-  - pink:   macros
-  - purple: fields
   - green:  types
-  - orange: keywords
-
+  - purple: fields
+  - yellow: functions (and macros)
+  - blue:   globals, variables
+  - pink:   macros
 
   - cyan and big:      global, 
     turquoise and big: remote global,
@@ -458,7 +456,6 @@ The big principles for the colors, fonts, and strikes are:
   - salmon: many uses, probably a utility function (e.g. printf)
 
   - red: problem, no definitions
-
 "
 
 
