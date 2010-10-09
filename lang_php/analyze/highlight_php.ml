@@ -36,7 +36,6 @@ module T = Parser_php
 (* Globals *)
 (*****************************************************************************)
 
-
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
@@ -212,7 +211,6 @@ let visit_toplevel
           k x
       | Halt (_, _, _) ->
           k x
-
       | NotParsedCorrectly _ -> 
           (* handled later *)
           ()
@@ -308,46 +306,7 @@ let visit_toplevel
     V.kstmt = (fun (k,bigf) stmt -> 
       k stmt;
       match stmt with
-
-      | ExprStmt ((e, tok)) -> 
-          ()
-      | EmptyStmt tok -> 
-          ()
-      | Block xs_brace -> 
-          ()
-      | If ((tok, eparen, stmt, elseif, elseopt)) ->
-          ()
-      | IfColon ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
-          ()
-      | While ((v1, v2, v3)) ->
-          ()
-      | Do ((v1, v2, v3, v4, v5)) ->
-          ()
-      | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
-          ()
-      | Switch ((v1, v2, v3)) ->
-          ()
-      | Foreach ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
-          ()
-      | Break ((v1, v2, v3)) ->
-          ()
-      | Continue ((v1, v2, v3)) ->
-          ()
-      | Return ((v1, v2, v3)) ->
-          ()
-
-      | Throw ((v1, v2, v3)) ->
-          ()
-      | Try ((v1, v2, v3, v4)) ->
-          ()
-
-      | Echo ((v1, v2, v3)) ->
-          ()
-
-      | InlineHtml v1 -> 
-          ()
       | Globals ((v1, v2, v3)) ->
-
           (* see scoping_php.ml *)
           v2 +> Ast.uncomma +> List.iter (fun x ->
             match x  with
@@ -367,12 +326,7 @@ let visit_toplevel
             tag info (Local Def);
           );
           ()
-      | Ast.Use ((v1, v2, v3)) ->
-          ()
-      | Unset ((v1, v2, v3)) ->
-          ()
-      | Declare ((v1, v2, v3)) -> 
-          ()
+      | _ -> ()
 
     );
     (* -------------------------------------------------------------------- *)
@@ -402,87 +356,13 @@ let visit_toplevel
       | Some _ -> ()
         );
       *)
-
-
-
       let (exprbis, tinfo) = expr in
       match exprbis with
 
-      | Lv v1 ->
-          ()
-      | Sc v1 ->
-          ()
-      | Assign ((v1, v2, v3)) ->
-          ()
-      | AssignRef ((v1, v2, v3, v4)) ->
-          ()
-      | AssignNew ((v1, v2, v3, v4, v5, v6)) ->
-          ()
-      | AssignOp ((v1, v2, v3)) ->
-          ()
-      | Postfix ((v1, v2)) ->
-          ()
-      | Infix ((v1, v2)) ->
-          ()
-      | Binary ((v1, v2, v3)) ->
-          ()
-      | Unary ((v1, v2)) ->
-          ()
-      | CondExpr ((v1, v2, v3, v4, v5)) ->
-          ()
-
-      | AssignList ((v1, v2, v3, v4)) ->
-          ()
-      | ConsArray ((v1, v2)) ->
-          ()
-
-
-      | New ((v1, v2, v3)) ->
-          ()
-      | Clone ((v1, v2)) ->
-          ()
-      | InstanceOf ((v1, v2, v3)) ->
-          ()
-
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc
-      | CastUnset ((v1, v2)) ->
+      | _ ->
           ()
-      | Exit ((v1, v2)) ->
-          ()
-      | At ((v1, v2)) ->
-          ()
-      | Print ((v1, v2)) ->
-          ()
-
-      | BackQuote ((v1, v2, v3)) ->
-          ()
-      | Ast.Include ((v1, v2)) ->
-          ()
-      | IncludeOnce ((v1, v2)) ->
-          ()
-      | Require ((v1, v2)) ->
-          ()
-      | RequireOnce ((v1, v2)) ->
-          ()
-
-      | Empty ((v1, v2)) ->
-          ()
-      | Isset ((v1, v2)) ->
-          ()
-
-      | Eval ((v1, v2)) ->
-          ()
-      | ParenExpr (v1, e, v2) -> 
-          (* this is handled in a generic way in the token annotater below *)
-          ()
-
-      | XhpHtml _ ->
-          ()
-      | EDots _ -> ()
-      | Lambda _ -> 
-          ()
-
     );
     (* -------------------------------------------------------------------- *)
     V.kxhp_html = (fun (k, _) x ->
@@ -862,13 +742,11 @@ let visit_toplevel
         ()
 
 
-      | T.T_XHP_PCDATA ii -> tag ii KeywordObject
-      | T.T_XHP_ANY ii -> tag ii KeywordObject
-      | T.T_XHP_REQUIRED ii -> tag ii KeywordObject
-      | T.T_XHP_ENUM ii -> tag ii KeywordObject
-      | T.T_XHP_CATEGORY ii -> tag ii KeywordObject
-      | T.T_XHP_CHILDREN ii -> tag ii KeywordObject
-      | T.T_XHP_ATTRIBUTE ii -> tag ii KeywordObject
+      | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
+      | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
+      | T.T_XHP_CATEGORY ii | T.T_XHP_CHILDREN ii
+      | T.T_XHP_ATTRIBUTE ii 
+        -> tag ii KeywordObject
 
       | T.T_XHP_TEXT (_, ii) -> tag ii String
       | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
@@ -902,10 +780,9 @@ let visit_toplevel
       (* we want to highlight code using eval! *)
       | T.T_EVAL ii -> tag ii BadSmell
 
-      | T.T_REQUIRE_ONCE ii -> tag ii Include
-      | T.T_REQUIRE ii -> tag ii Include
-      | T.T_INCLUDE_ONCE ii -> tag ii Include
-      | T.T_INCLUDE ii -> tag ii Include
+      | T.T_REQUIRE_ONCE ii | T.T_REQUIRE ii
+      | T.T_INCLUDE_ONCE ii | T.T_INCLUDE ii 
+          -> tag ii Include
 
       | T.T_INSTANCEOF ii -> tag ii KeywordObject
       | T.T_CLONE ii -> tag ii KeywordObject
@@ -913,63 +790,36 @@ let visit_toplevel
 
       | T.T__AT ii -> tag ii Builtin
 
-      | T.T_IS_NOT_EQUAL ii
-      | T.T_IS_EQUAL ii
-      | T.T_IS_NOT_IDENTICAL ii
-      | T.T_IS_IDENTICAL ii
+      | T.T_IS_NOT_EQUAL ii   | T.T_IS_EQUAL ii
+      | T.T_IS_NOT_IDENTICAL ii  | T.T_IS_IDENTICAL ii
           -> tag ii Operator
 
       (* done in Cast *)
-      | T.T_UNSET_CAST ii
-      | T.T_OBJECT_CAST ii
-      | T.T_ARRAY_CAST ii
-      | T.T_STRING_CAST ii
-      | T.T_DOUBLE_CAST ii
-      | T.T_INT_CAST ii
+      | T.T_UNSET_CAST ii   | T.T_OBJECT_CAST ii
+      | T.T_ARRAY_CAST ii   | T.T_STRING_CAST ii
+      | T.T_DOUBLE_CAST ii   | T.T_INT_CAST ii
       | T.T_BOOL_CAST ii
           -> ()
 
-      | T.T_IS_GREATER_OR_EQUAL ii
-      | T.T_IS_SMALLER_OR_EQUAL ii
-      | T.T_SR ii
-      | T.T_SL ii
-      | T.T_LOGICAL_XOR ii
-      | T.T_LOGICAL_AND ii
-      | T.T_LOGICAL_OR ii
-      | T.T_BOOLEAN_AND ii
+      | T.T_IS_GREATER_OR_EQUAL ii  | T.T_IS_SMALLER_OR_EQUAL ii
+      | T.T_SR ii   | T.T_SL ii
+      | T.T_LOGICAL_XOR ii  | T.T_LOGICAL_AND ii
+      | T.T_LOGICAL_OR ii   | T.T_BOOLEAN_AND ii
       | T.T_BOOLEAN_OR ii
-      | T.T_DEC ii
-      | T.T_INC ii
-      | T.T_SR_EQUAL ii
-      | T.T_SL_EQUAL ii
-      | T.T_XOR_EQUAL ii
-      | T.T_OR_EQUAL ii
-      | T.T_AND_EQUAL ii
+      | T.T_DEC ii  | T.T_INC ii
+      | T.T_SR_EQUAL ii   | T.T_SL_EQUAL ii
+      | T.T_XOR_EQUAL ii  | T.T_OR_EQUAL ii  | T.T_AND_EQUAL ii
       | T.T_MOD_EQUAL ii
       | T.T_CONCAT_EQUAL ii
-      | T.T_DIV_EQUAL ii
-      | T.T_MUL_EQUAL ii
-      | T.T_MINUS_EQUAL ii
-      | T.T_PLUS_EQUAL ii
-      | T.TGREATER ii
-      | T.TSMALLER ii
-      | T.TEQ ii
-      | T.TXOR ii
-      | T.TOR ii
-      | T.TAND ii
-      | T.TMOD ii
-      | T.TDIV ii
-      | T.TMUL ii
-      | T.TMINUS ii
-      | T.TPLUS ii
+      | T.T_DIV_EQUAL ii  | T.T_MUL_EQUAL ii
+      | T.T_MINUS_EQUAL ii  | T.T_PLUS_EQUAL ii
+      | T.TGREATER ii   | T.TSMALLER ii
+      | T.TEQ ii | T.TXOR ii | T.TOR ii | T.TAND ii
+      | T.TMOD ii | T.TDIV ii | T.TMUL ii | T.TMINUS ii | T.TPLUS ii
           -> tag ii Operator
 
-      | T.TQUESTION ii
-      | T.TTILDE ii
-      | T.TBANG ii
-      | T.TDOT ii
-      | T.TCOMMA ii
-      | T.TCOLON ii
+      | T.TQUESTION ii  | T.TTILDE ii  | T.TBANG ii  | T.TDOT ii
+      | T.TCOMMA ii  | T.TCOLON ii
       | T.TCOLCOL ii
           -> tag ii Punctuation
 
@@ -985,11 +835,8 @@ let visit_toplevel
       | T.T_CLOSE_TAG ii -> tag ii Punctuation
 
       (* done in PreProcess *)
-      | T.T_FILE ii
-      | T.T_LINE ii
-      | T.T_FUNC_C ii
-      | T.T_METHOD_C ii
-      | T.T_CLASS_C ii
+      | T.T_FILE ii  | T.T_LINE ii 
+      | T.T_FUNC_C ii | T.T_METHOD_C ii | T.T_CLASS_C ii
           -> ()
 
       (* can be a type hint *)
@@ -1018,15 +865,12 @@ let visit_toplevel
       | T.T_UNSET ii -> tag ii Builtin
 
       | T.T_VAR ii -> tag ii Keyword
-      | T.T_PUBLIC ii -> tag ii Keyword
-      | T.T_PROTECTED ii -> tag ii Keyword
-      | T.T_PRIVATE ii -> tag ii Keyword
+      | T.T_PUBLIC ii | T.T_PROTECTED ii | T.T_PRIVATE ii 
+          -> tag ii Keyword
 
-      | T.T_FINAL ii -> tag ii KeywordObject
-      | T.T_ABSTRACT ii -> tag ii KeywordObject
+      | T.T_FINAL ii | T.T_ABSTRACT ii -> tag ii KeywordObject
 
       | T.T_STATIC ii -> tag ii Keyword
-
       | T.T_CONST ii -> tag ii Keyword
 
       (* could be for func or method so tagged via ast *)
@@ -1039,32 +883,22 @@ let visit_toplevel
       | T.T_DECLARE ii -> tag ii Keyword
       | T.T_EXIT ii -> tag ii Keyword
 
-      | T.T_THROW ii -> tag ii KeywordExn
-      | T.T_CATCH ii -> tag ii KeywordExn
-      | T.T_TRY ii -> tag ii KeywordExn
+      | T.T_THROW ii | T.T_CATCH ii | T.T_TRY ii -> tag ii KeywordExn
 
-      | T.T_RETURN ii -> tag ii Keyword
-      | T.T_CONTINUE ii -> tag ii Keyword
-      | T.T_BREAK ii -> tag ii Keyword
+      | T.T_RETURN ii | T.T_CONTINUE ii | T.T_BREAK ii -> tag ii Keyword
 
-      | T.T_DEFAULT ii -> tag ii Keyword
-      | T.T_CASE ii -> tag ii Keyword
+      | T.T_DEFAULT ii | T.T_CASE ii -> tag ii Keyword
 
-      | T.T_ENDSWITCH ii -> tag ii KeywordConditional
-      | T.T_SWITCH ii -> tag ii KeywordConditional
+      | T.T_ENDSWITCH ii | T.T_SWITCH ii -> tag ii KeywordConditional
 
-      | T.T_ENDFOREACH ii -> tag ii KeywordLoop
-      | T.T_FOREACH ii -> tag ii KeywordLoop
-      | T.T_ENDFOR ii -> tag ii KeywordLoop
-      | T.T_FOR ii -> tag ii KeywordLoop
-      | T.T_ENDWHILE ii -> tag ii KeywordLoop
-      | T.T_WHILE ii -> tag ii KeywordLoop
-      | T.T_DO ii -> tag ii KeywordLoop
+      | T.T_ENDFOREACH ii | T.T_FOREACH ii
+      | T.T_ENDFOR ii | T.T_FOR ii
+      | T.T_ENDWHILE ii | T.T_WHILE ii
+      | T.T_DO ii 
+        -> tag ii KeywordLoop
 
-      | T.T_IF ii -> tag ii KeywordConditional
-      | T.T_ELSEIF ii -> tag ii KeywordConditional
-      | T.T_ELSE ii -> tag ii KeywordConditional
-      | T.T_ENDIF ii -> tag ii KeywordConditional
+      | T.T_IF ii | T.T_ELSEIF ii  | T.T_ELSE ii | T.T_ENDIF ii 
+          -> tag ii KeywordConditional
 
       | T.T_PRINT ii -> tag ii Builtin
       | T.T_ECHO ii -> tag ii Builtin
