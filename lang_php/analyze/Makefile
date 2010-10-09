@@ -7,7 +7,6 @@ TARGET=lib
 include $(TOP)/Makefile.config
 
 ifeq ($(FEATURE_BDB), 1)
-DATABASE_PHP_STORAGE=database_php_storage.ml
 BDBINCLUDE=$(TOP)/external/ocamlbdb
 endif
 
@@ -22,7 +21,7 @@ SRC= \
      database_php_build2.ml \
      database_light_php.ml \
      dependencies_php.ml \
-     $(DATABASE_PHP_STORAGE) \
+     database_php_storage.ml \
      test_analyze_php.ml
 
 -include $(TOP)/Makefile.config
