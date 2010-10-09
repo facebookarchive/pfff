@@ -508,7 +508,6 @@ let visit_toplevel
                 ii +> List.iter (fun info -> tag info PointerCall);
                 
           end;
-          
 
           db_opt +> Common.do_option (fun (id, current_file, db) ->
           
