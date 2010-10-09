@@ -232,3 +232,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_java/parsing/parser_java.mli
 /lang_java/parsing/parser_java.output
 /visual/Visual.out
+/lang_php/analyze/database_php_storage.ml

@@ -395,6 +395,9 @@ PCRE_LIBS=$PCRE_LIBS
 # or setenv it to \".opt\" in your startup script.
 #OPTBIN=$opt
 
+pr2 "Generating lang_php/analyze/database_php_storage.ml";
+`cpp -DFEATURE_BDB=$bdb lang_php/analyze/database_php_storage.ml.in > lang_php/analyze/database_php_storage.ml`;
+
 pr2 "Generating commons/features.ml";
 `cpp -DFEATURE_GUI=$gui -DFEATURE_MPI=$mpi -DFEATURE_PCRE=$pcre -DFEATURE_BACKTRACE=$bt commons/features.ml.in > commons/features.ml`;
 
