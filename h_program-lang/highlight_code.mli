@@ -20,19 +20,16 @@ type category =
   | KeywordConditional | KeywordLoop 
   | KeywordExn | KeywordObject | KeywordModule
 
-  | BadSmell
-
   | Function of usedef2
   | FunctionDecl of def_info
   | Global of usedef2
   | Class of usedef2
-  | Method of usedef2
   | Field of usedef2
+  | Method of usedef2
   | StaticMethod of usedef2
   | Macro of usedef2
   | MacroVar of usedef2
 
-  | Struct
   | StructName of usedef
   | EnumName of usedef
   | EnumValue of usedef
@@ -41,13 +38,20 @@ type category =
   | Constructor
   | Module of usedef
   | Label of usedef
+
+  | BadSmell
+
   | UseOfRef
 
   | PointerCall
   | CallByRef
+  | ParameterRef
+
+  | IdentUnknown
+
+
   | Local of usedef
   | Parameter of usedef
-  | IdentUnknown
 
   | TypeVoid | TypeInt | TypeMisc
 

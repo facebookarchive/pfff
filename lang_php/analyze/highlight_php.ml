@@ -40,7 +40,9 @@ module T = Parser_php
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
 
-(* look if def in same file of current file *)
+(* todo: should do that generically via the light db.
+ * look if def in same file of current file 
+ *)
 let place_ids current_file ids db = 
   match ids with
   | [] -> NoInfoPlace 
@@ -69,14 +71,16 @@ let place_ids current_file ids db =
         else PlaceExternal
 
 
+
+(* obsolete: this is now computed generically in pfff_visual via the light_db
+ * in rewrite_categ_using_entities using x.e_number_external_users.
+ *)
 let arity_of_number nbuses =
   match nbuses with
   | 0 -> NoUse
   | 1 -> UniqueUse
   | n when n < 50 -> MultiUse
   | _ -> LotsOfUse
-
-
 let use_arity_ident_function_or_macro s db =
   let ids = Db.function_ids__of_string s db in
   let nbuses = 
@@ -91,8 +95,20 @@ let use_arity_ident_function_or_macro s db =
   arity_of_number nbuses
 
 
+(* we generate fake value here because the real one are computed in a
+ * later phase in rewrite_categ_using_entities in pfff_visual.
+ *)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
+(* strings are more than just strings in PHP and webapps in general *)
+let tag_string ~tag s ii =
+  match s with
+  | s when s =~ "/.*" -> tag ii EmbededUrl
+  | s when s =~ "[a-z]+://" -> tag ii EmbededUrl
+      (* security: html in strings is BAD ! *)
+  | s when s =~ "<" -> tag ii BadSmell
+  | _ -> tag ii String
 
 
 (*****************************************************************************)
@@ -119,7 +135,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
- * to figure out what kind of ident it is.
+ * to figure out what kind of ident it is (a function, a class, a constant)
  *)
 let visit_toplevel 
     ~tag
@@ -145,15 +161,6 @@ let visit_toplevel
       Hashtbl.add already_tagged ii true
     end
   )
-  in
-  (* Strings are more than just strings in PHP and webapps in general *)
-  let tag_string s ii =
-    match s with
-    | s when s =~ "/.*" -> tag ii EmbededUrl
-    | s when s =~ "[a-z]+://" -> tag ii EmbededUrl
-    (* security: html in strings is BAD ! *)
-    | s when s =~ "<" -> tag ii BadSmell
-    | _ -> tag ii String
   in
 
   (* toks phase 1 *)
@@ -221,7 +228,12 @@ let visit_toplevel
     V.kparameter = (fun (k, _) param ->
 
       let info = Ast.info_of_dname param.p_name in
-      tag info (Parameter Def);
+      (if param.p_ref = None
+      then
+        tag info (Parameter Def)
+       else
+         tag info ParameterRef
+      );
 
       param.p_type +> Common.do_option (function
       | Hint name -> 
@@ -229,7 +241,8 @@ let visit_toplevel
           tag info (TypeMisc);
       | HintArray tok ->
           tag tok (TypeMisc);
-      )
+      );
+
     );
 
     (* -------------------------------------------------------------------- *)
@@ -480,6 +493,21 @@ let visit_toplevel
           (* security: *)
           if Hashtbl.mem Env_php.hbad_functions f 
           then tag info BadSmell;
+
+          if Hashtbl.mem Env_php.hdynamic_call_wrappers f 
+          then begin
+            match args +> Ast.unparen +> Ast.uncomma with
+            | [] -> failwith "dynamic call wrappers should have arguments"
+            | x::xs ->
+                (* alternative: could also have a FunCallVarBuiltins
+                 * but any wrappers around call_user_func should also
+                 * be considered as dangerous. Better to use
+                 * the ContainDynamicCall of database_code then.
+                 *)
+                let ii = Lib_parsing_php.ii_of_argument x in
+                ii +> List.iter (fun info -> tag info PointerCall);
+                
+          end;
           
 
           db_opt +> Common.do_option (fun (id, current_file, db) ->
@@ -489,7 +517,10 @@ let visit_toplevel
             (* todo? look if macro ? *)
           
             let nbdefs = Highlight_code.arity_ids ids in
+
+            (* obsolete *)
             let nbuses = use_arity_ident_function_or_macro f db in
+
             let place = place_ids current_file ids db in
             tag info (Function (Use2 (place, nbdefs, nbuses)));
           
@@ -575,7 +606,7 @@ let visit_toplevel
           (* this can be sometimes tagged as url, or field access in array *)
           if not (Hashtbl.mem already_tagged ii)
           then 
-            tag_string s ii
+            tag_string ~tag s ii
 
       | CName name -> 
           (* cf also typing_php.ml *)
@@ -620,7 +651,7 @@ let visit_toplevel
       match e with
       | EncapsString (s, ii) ->
           if not (Hashtbl.mem already_tagged ii)
-          then tag_string s ii
+          then tag_string ~tag s ii
       | _ -> k e
     );
     (* -------------------------------------------------------------------- *)
@@ -915,11 +946,11 @@ let visit_toplevel
 
       | T.T_ENCAPSED_AND_WHITESPACE (s, ii) -> 
           if not (Hashtbl.mem already_tagged ii)
-          then tag_string s ii
+          then tag_string ~tag s ii
 
       | T.T_CONSTANT_ENCAPSED_STRING (s, ii) -> 
           if not (Hashtbl.mem already_tagged ii)
-          then tag_string s ii
+          then tag_string ~tag s ii
 
       (* should been handled in Constant *)
       | T.T_DNUMBER ii -> ()

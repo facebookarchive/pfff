@@ -179,10 +179,6 @@ type category =
   | KeywordObject
   | KeywordModule
 
-
-  (* semantic information *)
-  | BadSmell
-
   (* functions, macros. By default global scope (macro can have local
    * but not that used), so no need to like for variables and have a
    * global/local dichotomy of scope. (But even if functions are globals,
@@ -194,18 +190,15 @@ type category =
   (* variables *)
   | Global of usedef2
 
-  | Class of usedef2
-  | Method of usedef2
+  | Class of usedef2 (* also valid for struct ? *)
   | Field of usedef2
+  | Method of usedef2
   | StaticMethod of usedef2
 
   | Macro of usedef2
   | MacroVar of usedef2
 
-  (* fields, have a place too? *)
-  | Struct
-  | StructName of usedef (* place def_arity * use_arity *)
-
+  | StructName of usedef
   (* ClassName of place ... *)
 
   | EnumName of usedef
@@ -220,22 +213,27 @@ type category =
   | Module of usedef
   (* misc *)
   | Label of usedef
-   (* could reuse Global (Use2 ...) but the use of refs is not always
-    * the use of a global. Moreover using a ref in OCaml is really bad
-    * which is why I want to highlight it specially.
-    *)
+
+
+  (* semantic information *)
+  | BadSmell
+
+  (* could reuse Global (Use2 ...) but the use of refs is not always
+   * the use of a global. Moreover using a ref in OCaml is really bad
+   * which is why I want to highlight it specially.
+   *)
   | UseOfRef 
 
-  | PointerCall
+  | PointerCall (* a.k.a dynamic call *)
   | CallByRef 
+  | ParameterRef
+
+  | IdentUnknown
 
   (* kind of specific case of Global of Local which we know are really 
    * really local. Don't really need a def_arity and place here. *)
   | Local     of usedef
   | Parameter of usedef
-
-  | IdentUnknown
-
 
 
   | TypeVoid
@@ -282,7 +280,7 @@ type category =
   | NotParsed | Passed | Expanded | Error
   | NoType
 
-
+  (* well, normal code *)
   | Normal
 
 
@@ -506,6 +504,22 @@ let info_of_category = function
   | BadSmell -> [`FOREGROUND "magenta"] 
 
   | UseOfRef -> [`FOREGROUND "magenta"]
+  | ParameterRef -> [`FOREGROUND "magenta"]
+
+  | PointerCall -> 
+      [`FOREGROUND "firebrick";
+       `WEIGHT `BOLD; 
+       `SCALE `XX_LARGE;
+      ]
+
+  | CallByRef ->   
+      [`FOREGROUND "orange"; 
+       `WEIGHT `BOLD; 
+       `SCALE `XX_LARGE;
+      ]
+  | IdentUnknown ->   [`FOREGROUND "red";]
+
+
 
   (* searches, background *)
   | MatchGlimpse -> [`BACKGROUND "grey46"]
@@ -577,7 +591,6 @@ let info_of_category = function
 
 
   (* use *)
-
 
   | Function (Use2 (defplace,def_arity,use_arity)) -> 
       (match defplace with
@@ -682,23 +695,6 @@ let info_of_category = function
       ]
 
 
-  | PointerCall -> 
-      [`FOREGROUND "firebrick";
-       `WEIGHT `BOLD; 
-       `SCALE `XX_LARGE;
-      ]
-
-  | CallByRef ->   
-      [`FOREGROUND "orange"; 
-       `WEIGHT `BOLD; 
-       `SCALE `XX_LARGE;
-      ]
-
-
-
-
-  | IdentUnknown ->   [`FOREGROUND "red";]
-
 
 
   | TypeVoid -> [`FOREGROUND "LimeGreen";]
@@ -711,7 +707,6 @@ let info_of_category = function
 
   | Module (Def) -> [`FOREGROUND "chocolate";]
 
-  | Struct -> [`FOREGROUND "OliveDrab";]
   | StructName usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
 
   | Field (Def2 _) -> 

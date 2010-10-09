@@ -51,6 +51,9 @@ let multiplier_use x =
 
 let size_font_multiplier_of_categ ~font_size_real categ =
     match categ with
+
+    (* entities defs *)
+
     | Some (SH.Class SH.Def2 use) -> 5. *. multiplier_use use
     | Some (SH.Module SH.Def) -> 5.
     | Some (SH.Function (SH.Def2 use)) -> 3.5 *. multiplier_use use
@@ -63,13 +66,13 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
         
+    (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
-
         
-
+    (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.
     | Some (SH.CommentSection1) -> 4.
     | Some (SH.CommentSection2) -> 3.5
@@ -83,13 +86,18 @@ let size_font_multiplier_of_categ ~font_size_real categ =
           -> 1.5
 *)
 
+    (* semantic visual feedback *)
+
     | Some (SH.BadSmell) -> 2.5
 
     (* ocaml *)
     | Some (SH.UseOfRef) -> 2.
+
     (* php, C, etc *)
     | Some (SH.PointerCall) -> 3.
+    | Some (SH.ParameterRef) -> 2.
 
+    (* misc *)
     | Some (SH.Local (SH.Def)) -> 1.2
         
     | _ -> 

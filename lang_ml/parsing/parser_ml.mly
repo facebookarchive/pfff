@@ -684,7 +684,7 @@ label_expr:
  | TLabelDecl simple_expr %prec below_SHARP
       { ArgLabelTilde (Name $1 (* TODO remove the ~ and : *), $2) }
  | TOptLabelDecl simple_expr %prec below_SHARP
-      { raise Todo }
+      { ArgLabelQuestion (Name $1 (* TODO remove the ~ and : *), $2) }
 
 /*(*************************************************************************)*/
 /*(* Patterns *)*/

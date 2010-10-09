@@ -183,10 +183,14 @@ and seq_expr = expr semicolon_list
 
  and argument = 
    | ArgExpr of expr
+
    | ArgLabelTilde of name (* todo: without the tilde and : ? *) * expr
-   (* ArgLabelQuestion ?? *)
    | ArgImplicitTildeExpr of tok * name
+
+   (* apparently can do 'foo ?attr:1' *)
+   | ArgLabelQuestion of name (* todo: without the tilde and : ? *) * expr
    | ArgImplicitQuestionExpr of tok * name
+
 
  and match_action =
    | Action of tok (* -> *) * seq_expr

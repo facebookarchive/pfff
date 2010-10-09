@@ -340,6 +340,7 @@ and v_argument =
       let v1 = v_tok v1 and v2 = v_name v2 in ()
   | ArgImplicitQuestionExpr ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_name v2 in ()
+  | ArgLabelQuestion ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
 
 and v_match_action =
   function
