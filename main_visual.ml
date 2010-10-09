@@ -121,7 +121,15 @@ let main_action xs =
           pr2 (spf "Using pfff light db: %s" db);
           Some db
         end
-        else !db_file
+        else
+         let db = Filename.concat dir Database_code.default_db_name ^ ".json" in
+         if Sys.file_exists db 
+         then begin 
+           pr2 (spf "Using pfff light db: %s" db);
+           Some db
+         end
+         else
+           !db_file
     | _ -> !db_file
   in
 
