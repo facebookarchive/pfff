@@ -19,6 +19,8 @@ type entity = {
  and property = 
    (* mostly for Function kind *)
    | ContainDynamicCall
+   | ContainReflectionCall
+
    | TakeArgNByRef of int (* the argument position taken by ref *)
 
    | UseGlobal of string

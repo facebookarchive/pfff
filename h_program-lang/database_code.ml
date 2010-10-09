@@ -179,6 +179,7 @@ type entity = {
     * dynamic call if any 
     *)
    | ContainDynamicCall
+   | ContainReflectionCall
 
     (* the argument position taken by ref *)
    | TakeArgNByRef of int
@@ -314,7 +315,7 @@ let json_of_database db =
 (*---------------------------------------------------------------------------*)
 (* X -> json *)
 (*---------------------------------------------------------------------------*)
-let ids_of_json json = 
+let ids_of_json json =
   match json with
   | J.Array xs ->
       xs +> List.map (function
