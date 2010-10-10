@@ -72,16 +72,31 @@ let rec light_db_of_files_or_dirs lang xs =
     | "php" ->
         (match xs with
         | [_x] ->
-            
-            (try 
-              Database_php.check_is_database_dir !with_php_db
-            with _ ->
-              failwith "for PHP we expect a database; use -with_php_db"
-            );
-            Database_php.with_db ~metapath:!with_php_db (fun db ->
+
+            let db = 
+              (try 
+                  Database_php.check_is_database_dir !with_php_db;
+                  Database_php_storage.open_db !with_php_db
+                with _ ->
+                  let root = Common.common_prefix_of_files_or_dirs xs in
+
+                  let prj = Database_php.Project (root, None) in
+
+                  let php_files = 
+                    Lib_parsing_php.find_php_files_of_dir_or_files xs 
+                    +> List.map Common.relative_to_absolute 
+                  in
+                  Database_php_build.create_db
+                    ~db_support:Database_php.Mem
+                    ~files:(Some php_files)
+                    prj 
+              );
+            in
+            Common.finalize (fun () ->
               Database_light_php.database_code_from_php_database 
                 ~verbose db
-            )
+            ) (fun () -> Database_php.close_db db)
+            
         | _ -> 
             failwith "for PHP we expect one dir"
         )
