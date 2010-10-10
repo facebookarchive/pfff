@@ -409,16 +409,21 @@ let hfiles_and_top_entities
 (* We want to provide completion not only for functions/class/methods
  * but also for files and directory themselves.
  * 
- * We should maybe pass files_and_dirs in addition to the db_opt
+ * We pass the rootin addition to the db_opt
  * because sometimes we don't have a db but we could still provide
  * completion for the dirs and files.
  * 
  * todo: what do do when the root of the db is not the root
  * of the treemap ?
  *)
-let all_entities db_opt =
+let all_entities db_opt root =
   match db_opt with
-  | None -> []
+  | None -> 
+      let db = Database_code.files_and_dirs_database_from_root root in
+      Database_code.files_and_dirs_and_sorted_entities_for_completion
+        ~threshold_too_many_entities:!Flag.threshold_too_many_entities
+        db
+
   | Some db ->
       let nb_entities = Array.length db.Db.entities in
       let nb_files = List.length db.Db.files in

@@ -282,6 +282,8 @@ let screen_size = ref 2
 let db_path = ref (Database.database_dir "/home/pad/www")
 *)
 let db_file = ref (None: Common.filename option)
+
+let filter = ref Treemap_pl.ex_filter_file
 @
 
 <<main_action()>>=
@@ -312,7 +314,15 @@ let main_action xs =
           pr2 (spf "Using pfff light db: %s" db);
           Some db
         end
-        else !db_file
+        else
+         let db = Filename.concat dir Database_code.default_db_name ^ ".json" in
+         if Sys.file_exists db 
+         then begin 
+           pr2 (spf "Using pfff light db: %s" db);
+           Some db
+         end
+         else
+           !db_file
     | _ -> !db_file
   in
 
@@ -363,7 +373,7 @@ type model = {
 
 <<treemap_generator>>=
 let treemap_generator paths = 
-  let treemap = Treemap_pl.code_treemap paths in
+  let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
   let rects = Treemap.render_treemap_algo ~algo treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
@@ -3135,6 +3145,7 @@ let fake_entity = {Database_code.
      e_pos = { Common.l = -1; Common.c = -1 };
      e_number_external_users = 0;
      e_good_examples_of_use = [];
+     e_properties = [];
 }
 
 let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx = 
@@ -4080,6 +4091,10 @@ let async_set v a =
   "-proto" , Arg.Set proto,
   " ";
 
+  "-ocaml_filter", Arg.Unit (fun () -> 
+    filter := Treemap_pl.ocaml_filter_file),
+  " ";
+
   "-verbose" , Arg.Set Flag.verbose_visual,
   " ";
   "-debug_gc", Arg.Set Flag.debug_gc,
@@ -4148,6 +4163,9 @@ let multiplier_use x =
 
 let size_font_multiplier_of_categ ~font_size_real categ =
     match categ with
+
+    (* entities defs *)
+
     | Some (SH.Class SH.Def2 use) -> 5. *. multiplier_use use
     | Some (SH.Module SH.Def) -> 5.
     | Some (SH.Function (SH.Def2 use)) -> 3.5 *. multiplier_use use
@@ -4160,12 +4178,13 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
         
+    (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
         
-
+    (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.
     | Some (SH.CommentSection1) -> 4.
     | Some (SH.CommentSection2) -> 3.5
@@ -4179,8 +4198,19 @@ let size_font_multiplier_of_categ ~font_size_real categ =
           -> 1.5
 *)
 
+    (* semantic visual feedback *)
+
     | Some (SH.BadSmell) -> 2.5
+
+    (* ocaml *)
     | Some (SH.UseOfRef) -> 2.
+
+    (* php, C, etc *)
+    | Some (SH.PointerCall) -> 3.
+    | Some (SH.ParameterRef) -> 2.
+
+    (* misc *)
+    | Some (SH.Local (SH.Def)) -> 1.2
         
     | _ -> 
         (* the cases above should have covered all the cases *)

@@ -56,7 +56,7 @@ let build_model2 root dbfile_opt =
   in
   let hentities = Model2.hentities root db_opt in
   let hfiles_entities = Model2.hfiles_and_top_entities root db_opt in
-  let all_entities = Model2.all_entities db_opt in
+  let all_entities = Model2.all_entities db_opt root in
   let idx = Completion2.build_completion_defs_index all_entities in
   
   let model = { Model2.

@@ -65,8 +65,12 @@ val alldirs_and_parent_dirs_of_relative_dirs:
 val build_top_k_sorted_entities_per_file:
   k:int -> entity array -> (Common.filename, entity list) Hashtbl.t
 
+val files_and_dirs_database_from_root:
+  Common.dirname -> database
+
 val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
+
 
 val adjust_method_or_field_external_users: 
   entity array -> unit
