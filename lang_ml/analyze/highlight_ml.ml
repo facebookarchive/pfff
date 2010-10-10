@@ -45,6 +45,7 @@ let h_builtin_modules = Common.hashset_of_list [
   "List"; "Hashtbl"; "Array";
   "String"; "Str";
   "Sys"; "Unix"; "Gc";
+  "Filename";
 ]
 
 let h_builtin_bool = Common.hashset_of_list [
@@ -155,7 +156,10 @@ let visit_toplevel
           (* could have been tagged as a function name in the rule below *)
           if not (Hashtbl.mem already_tagged info)
           then begin 
-            (* TODO could be a param, could be a local. Need scope analysis *)
+            (* TODO could be a param, could be a local. Need scope analysis 
+             * TODO could also be actually a func passed to a higher
+             *  order function, as in List.map snd, or even x +> Common.sort
+             *)
             tag info (Local Use) 
           end;
           k x

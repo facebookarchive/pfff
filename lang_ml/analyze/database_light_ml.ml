@@ -36,7 +36,7 @@ module T = Parser_ml
  *   corresponding entity (if it's used in a different file)
  *   as well as the entity->test_files_using_it hash.
  * 
- * Currently the analysis is just lexical-based (yes I know, I am
+ * Currently many analysis are just lexical-based (yes I know, I am
  * ridiculous) so there is some ambiguity when we find a use such
  * as a function call. 
  * We don't always know to which precise entity it corresponds to.
@@ -73,6 +73,8 @@ let is_test_file file =
 *)
 let is_test_or_pleac_file file = 
   is_test_file file || is_pleac_file file
+
+
 
 let entity_poor_id_of_entity e = 
   Id (e.Db.e_file, e.Db.e_pos)
