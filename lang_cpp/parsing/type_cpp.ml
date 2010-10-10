@@ -31,3 +31,14 @@ let rec is_function_type x =
   match Ast.unwrap_typeC x with
   | FunctionType _ -> true
   | _ -> false
+
+let rec is_method_type x = 
+  match Ast.unwrap_typeC x with
+  | Pointer y -> 
+      is_method_type y
+  | ParenType ft -> 
+      is_method_type ft
+  | FunctionType _ -> 
+      true
+  | _ -> false
+

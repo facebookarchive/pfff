@@ -250,6 +250,10 @@ let visit_toplevel
                 tag ii (Global (Use2 fake_no_use2));
             | S.NoScope ->
                 ()
+            | S.Static ->
+                (* todo? could invent a Static in highlight_code ? *)
+                tag ii (Global (Use2 fake_no_use2));
+                
             | 
               (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class)
                 -> failwith "scope not handled"
@@ -303,7 +307,14 @@ let visit_toplevel
       | FieldDecl onedecl ->
           let (nameopt, ft, sto) = onedecl in
           nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
-            ii +> List.iter (fun ii -> tag ii (Field (Def2 NoUse)))
+
+            let kind = 
+              (* poor's man object using function pointer; classic C idiom *)
+              if Type.is_method_type ft
+              then Method (Def2 fake_no_def2)
+              else Field (Def2 NoUse)
+            in
+            ii +> List.iter (fun ii -> tag ii kind)
           );
           k x
 
