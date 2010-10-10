@@ -40,8 +40,13 @@ val print_warning_if_not_correctly_parsed:
 (*x: lib_parsing_php.mli *)
 val get_all_funcalls_in_body: Ast_php.stmt_and_def list -> string list
 val get_all_funcalls_ast: Ast_php.toplevel -> string list
+
 val get_all_constant_strings_ast: Ast_php.toplevel -> string list
-val get_all_funcvars_ast: Ast_php.toplevel -> string (* dname *) list
+
+val get_all_funcvars_in_body: 
+  Ast_php.stmt_and_def list -> string (* dname *) list
+val get_all_funcvars_ast: 
+  Ast_php.toplevel -> string (* dname *) list
 
 val get_vars: 
   (Visitor_php.visitor_out -> unit) -> Ast_php.dname list
@@ -54,6 +59,5 @@ val get_vars_assignements:
 
 val top_statements_of_program: 
     Ast_php.program -> Ast_php.stmt list
-
 
 (*e: lib_parsing_php.mli *)

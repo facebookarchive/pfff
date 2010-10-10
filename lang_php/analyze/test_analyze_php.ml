@@ -345,10 +345,10 @@ let test_cfg_pil file =
 let test_phpdoc dir =
   let files = Phpmanual_xml.find_functions_reference_of_dir dir in
   files +> List.iter (fun file ->
-    let func = Phpmanual_xml.function_name_of_xml_filename file in
+    let _func = Phpmanual_xml.function_name_of_xml_filename file in
     (* pr2 (spf "%s\n %s" func file); *)
     try 
-      let xml = Phpmanual_xml.parse_xml file in
+      let _xml = Phpmanual_xml.parse_xml file in
       ()
     with exn ->
       pr2 (spf "PB in %s" file);

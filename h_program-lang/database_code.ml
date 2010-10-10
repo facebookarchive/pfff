@@ -181,7 +181,7 @@ type entity = {
    | ContainDynamicCall
    | ContainReflectionCall
 
-    (* the argument position taken by ref *)
+    (* the argument position taken by ref; 0-index based *)
    | TakeArgNByRef of int
 
    | UseGlobal of string
@@ -286,7 +286,11 @@ let json_of_filepos x =
   J.Array [J.Int x.Common.l; J.Int x.Common.c]
 
 let json_of_property x =
-  raise Todo
+  match x with
+  | ContainDynamicCall ->    J.Array [J.String "ContainDynamicCall"]
+  | ContainReflectionCall -> J.Array [J.String "ContainReflectionCall"]
+  | TakeArgNByRef i -> J.Array [J.String "TakeArgNByRef"; J.Int i]
+  | _ -> raise Todo
 
 let json_of_entity e = 
   J.Object [

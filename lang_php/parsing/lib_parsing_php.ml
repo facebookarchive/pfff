@@ -283,7 +283,9 @@ let get_all_constant_strings_ast ast =
   (V.mk_visitor hooks).V.vtop ast;  
   Common.hashset_to_list h
 (*x: ast getters *)
-let get_all_funcvars_ast ast =
+
+
+let get_all_funcvars f =
   let h = Hashtbl.create 101 in
   
   let hooks = { V.default_visitor with
@@ -294,6 +296,9 @@ let get_all_funcvars_ast ast =
 
           (* TODO enough ? what about qopt ? 
            * and what if not directly a Var ?
+           * 
+           * and what about call_user_func ? should be
+           * transformed at parsing time into a FunCallVar ?
            *)
           (match untype var with
           | Var (dname, _scope) ->
@@ -308,11 +313,14 @@ let get_all_funcvars_ast ast =
   } 
   in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtop ast;
+  f visitor;
   Common.hashset_to_list h
+
+let get_all_funcvars_in_body body =
+  get_all_funcvars (fun visitor -> body +> List.iter visitor.V.vstmt_and_def)
+let get_all_funcvars_ast x =
+  get_all_funcvars (fun visitor ->  visitor.V.vtop x)
 (*e: ast getters *)
-
-
 
 let get_static_vars =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with

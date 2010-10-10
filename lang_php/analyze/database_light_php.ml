@@ -31,7 +31,7 @@ module HC = Highlight_code
 (* Helpers *)
 (*****************************************************************************)
 
-let mk_entity ~root id nb_users good_example_ids db =
+let mk_entity ~root id nb_users good_example_ids properties db =
   let l = DbPHP.line_of_id id db in
   let c = DbPHP.col_of_id id db in
   let name = DbPHP.name_of_id id db in
@@ -43,14 +43,6 @@ let mk_entity ~root id nb_users good_example_ids db =
    *)
   let fullname = DbPHP.complete_name_of_id id db in
 
-  let properties = 
-    (* TODO for function can look in AST if contains dynamic calls
-     * at least. Could also use for global vars by calling
-     * the annotater (or normally ast already annotated ?
-     *)
-    []
-  in
-    
   { Database_code.
     e_name = name;
     e_fullname = 
@@ -70,7 +62,6 @@ let mk_entity ~root id nb_users good_example_ids db =
       );
     e_number_external_users = nb_users;
     e_good_examples_of_use = good_example_ids; 
-
     e_properties = properties;
   }      
 
@@ -159,7 +150,64 @@ let good_examples_of_use external_callers db =
   (* don't want to increase the size of the db so just take a few one *)
   Common.take_safe 3 candidates +> List.map (fun (Entity_php.Id i) -> i)
   
-  
+(*****************************************************************************)
+(* Properties *)
+(*****************************************************************************)
+
+(* For function can look in AST if contains dynamic calls.
+ * Also look for parameters passed by ref.
+ *)
+
+
+
+let properties_of_function_or_method id db =
+  let id_ast = DbPHP.ast_of_id id db in
+
+  let ps = ref [] in
+
+  let params, body = 
+    match id_ast with
+    | Ast_entity_php.Function def ->
+        (* TODO *)
+        def.Ast.f_params +> Ast.unparen +> Ast.uncomma, 
+        def.Ast.f_body +> Ast.unbrace
+    | Ast_entity_php.Method def ->
+        def.Ast.m_params +> Ast.unparen +> Ast.uncomma, 
+        (match def.Ast.m_body with
+        | Ast.AbstractMethod _ -> []
+        | Ast.MethodBody body -> body +> Ast.unbrace
+        )
+    | _ -> 
+        failwith "was expecting a Function or Method entity"
+  in
+  (* passed by ref *)
+  params +> Common.index_list_0 +> List.iter (fun (p, i) ->
+    if p.Ast.p_ref <> None
+    then Common.push2 (Db.TakeArgNByRef i) ps;
+  );
+
+  (* call dynamic stuff 
+   * todo: should be done via bottomup analysis and using dataflow information
+   *  so even if people define lots of wrappers around the builtin
+   *  dynamic function, then it does not matter.
+   *)
+  let calls = Lib_parsing_php.get_all_funcalls_in_body body in
+  let dyncalls = Lib_parsing_php.get_all_funcvars_in_body body in
+
+  if not (null dyncalls) ||
+     calls +> List.exists (fun s -> 
+       Hashtbl.mem Env_php.hdynamic_call_wrappers s)
+  then Common.push2 (Db.ContainDynamicCall) ps;
+
+  (* dead function *)
+
+  (* todo: reflection (also recursive), use global (also recursive),
+   *  dead statements (may need to know exit-like functions),
+   *  code coverage.
+   *)
+     
+
+  !ps
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -200,11 +248,13 @@ let database_code_from_php_database ?(verbose=false) db =
            * in our class/method analysis. That's why we have another
            * phase later to adjust the method callers count.
            *)
-          let good_ex_ids = 
-            good_examples_of_use external_callers db
-          in
+          let good_ex_ids = good_examples_of_use external_callers db in
+          let properties = properties_of_function_or_method id db in
+
           Some (id, mk_entity 
-                   ~root id (List.length external_callers) good_ex_ids db)
+                   ~root id 
+                   (List.length external_callers) good_ex_ids properties
+                   db)
 
       | Entity_php.Class -> 
           let users = DbPHP.class_users_of_id id db in
@@ -214,12 +264,13 @@ let database_code_from_php_database ?(verbose=false) db =
           let external_users = 
             exclude_ids_same_file (users ++ extenders) idfile db in
 
-          let good_ex_ids = 
-            good_examples_of_use external_users db
-          in
+          let good_ex_ids = good_examples_of_use external_users db in
+          let properties = [] in (* TODO *)
 
           Some (id, mk_entity 
-                   ~root id (List.length external_users) good_ex_ids db)
+                   ~root id 
+                   (List.length external_users) good_ex_ids properties
+                   db)
 
 
 
@@ -230,14 +281,13 @@ let database_code_from_php_database ?(verbose=false) db =
           let external_users = 
             exclude_ids_same_file (users) idfile db in
 
-          let good_ex_ids = 
-            good_examples_of_use external_users db
-          in
+          let good_ex_ids = good_examples_of_use external_users db in
+          let properties = [] in (* TODO *)
 
           Some (id, mk_entity 
-                   ~root id (List.length external_users) good_ex_ids db)
-
-
+                   ~root id 
+                   (List.length external_users) good_ex_ids properties
+                   db)
 
       (* TODO *)
       | Entity_php.ClassConstant
@@ -272,6 +322,7 @@ let database_code_from_php_database ?(verbose=false) db =
       e
     )
   in
+  (* our current method/field analysis is imprecise; need to compensate back *)
   Db.adjust_method_or_field_external_users entities_arr;
 
   let dirs = dirs +> List.map (fun s -> 
