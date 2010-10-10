@@ -910,8 +910,9 @@ simple_core_type_or_tuple:
 simple_core_type:
  | simple_core_type2  %prec below_SHARP
       { $1 }
+ /*(* weird diff between 'Foo of a * b' and 'Foo of (a * b)' *)*/
  | TOParen core_type_comma_list TCParen %prec below_SHARP
-      { TyTodo }
+      { TyTuple2 (($1, $2, $3)) }
 
 simple_core_type2:
  | TQuote ident

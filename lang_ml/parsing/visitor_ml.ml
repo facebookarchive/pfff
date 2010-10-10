@@ -153,6 +153,7 @@ and v_ty x =
   | TyName v1 -> let v1 = v_long_name v1 in ()
   | TyVar ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
   | TyTuple v1 -> let v1 = v_star_list2 v_ty v1 in ()
+  | TyTuple2 v1 -> let v1 = v_paren (v_star_list2 v_ty) v1 in ()
   | TyFunction ((v1, v2, v3)) ->
       let v1 = v_ty v1 and v2 = v_tok v2 and v3 = v_ty v3 in ()
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in ()

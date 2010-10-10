@@ -56,7 +56,7 @@ let h_builtin_bool = Common.hashset_of_list [
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-let lexer_based_tagger = true
+let lexer_based_tagger = false
 
 (* set to true when want to debug the ast based tagger *)
 let disable_token_phase2 = false
@@ -164,7 +164,17 @@ let visit_toplevel
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
 
-          tag info (Function (Use2 fake_no_use2));
+          let module_name = Ast.module_of_long_name long_name in
+          let module_infos = Ast.module_infos_of_long_name long_name in
+
+          if Hashtbl.mem h_builtin_modules module_name then begin
+            module_infos +> List.iter (fun ii -> tag ii BuiltinCommentColor);
+            tag info Builtin;
+          end
+          else begin
+            tag info (Function (Use2 fake_no_use2));
+          end;
+
           k x
 
       (* disambiguate "with" which can be used for match, try, or record *)
@@ -220,6 +230,7 @@ let visit_toplevel
 
           
       | TyTuple _
+      | TyTuple2 _
       | TyFunction _
       | TyTodo _
           -> k t
@@ -399,7 +410,7 @@ let visit_toplevel
         (* see my .emacs *)
         if Hashtbl.mem h_builtin_modules s then begin
           tag ii BuiltinCommentColor;
-          if not (Hashtbl.mem already_tagged ii3)
+          if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
           then tag ii3 Builtin;
         end else begin
           tag ii (Module Use);

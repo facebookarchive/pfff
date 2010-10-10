@@ -73,6 +73,7 @@ type ty =
   | TyVar of tok (* ' *) * name
 
   | TyTuple of ty star_list (* at least 2 *)
+  | TyTuple2 of ty star_list paren (* at least 1 *)
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
@@ -308,6 +309,11 @@ let str_of_name (Name (s,_)) = s
 let info_of_name (Name (_,info)) = info
 
 let name_of_long_name (_, name) = name
+let module_of_long_name (qu, _) = 
+  qu +> List.map fst +> List.map str_of_name +> Common.join "."
+
+let module_infos_of_long_name (qu, _) = 
+  qu +> List.map fst +> List.map info_of_name
 
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
