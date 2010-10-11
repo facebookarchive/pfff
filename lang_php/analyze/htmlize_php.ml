@@ -111,13 +111,12 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) filename db =
     asts_and_toks |> List.map (fun (id, ast, toks) ->
 
       let h = Hashtbl.create 101 in
+
+      let empty_hentities = Hashtbl.create 0 in
+
       Highlight_php.visit_toplevel 
         ~tag:(fun info categ -> Hashtbl.add h info categ)
-        ~maybe_add_has_type_icon:(fun a b c -> ())
-        prefs
-        (Some (id, filename, db))
-        (ast, toks)
-        ;
+        prefs  empty_hentities  (ast, toks);
       
       toks |> Common.map_filter (fun tok -> 
         let info = Token_helpers_php.info_of_tok tok in

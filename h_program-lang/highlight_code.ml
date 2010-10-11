@@ -504,7 +504,6 @@ let info_of_category = function
   | BadSmell -> [`FOREGROUND "magenta"] 
 
   | UseOfRef -> [`FOREGROUND "magenta"]
-  | ParameterRef -> [`FOREGROUND "magenta"]
 
   | PointerCall -> 
       [`FOREGROUND "firebrick";
@@ -512,6 +511,7 @@ let info_of_category = function
        `SCALE `XX_LARGE;
       ]
 
+  | ParameterRef -> [`FOREGROUND "magenta"]
   | CallByRef ->   
       [`FOREGROUND "orange"; 
        `WEIGHT `BOLD; 

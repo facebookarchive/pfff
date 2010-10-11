@@ -96,6 +96,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     (* php, C, etc *)
     | Some (SH.PointerCall) -> 3.
     | Some (SH.ParameterRef) -> 2.
+    | Some (SH.CallByRef) -> 3.
 
     (* misc *)
     | Some (SH.Local (SH.Def)) -> 1.2

@@ -24,7 +24,8 @@ open Highlight_code
 
 module S = Scope_code
 
-module Db = Database_php
+module Db = Database_code
+module DbPHP = Database_php
 
 module T = Parser_php
 
@@ -47,7 +48,7 @@ let place_ids current_file ids db =
   match ids with
   | [] -> NoInfoPlace 
   | [x] ->
-      let other_file = Db.filename_of_id x db in
+      let other_file = DbPHP.filename_of_id x db in
       if other_file = current_file
       then PlaceLocal
       else 
@@ -58,7 +59,7 @@ let place_ids current_file ids db =
 
   | x::y::xs -> 
       let other_files = 
-        Common.map (fun id -> Db.filename_of_id id db) ids +> Common.uniq 
+        Common.map (fun id -> DbPHP.filename_of_id id db) ids +> Common.uniq 
       in
       if List.mem current_file other_files
       then PlaceLocal
@@ -82,11 +83,11 @@ let arity_of_number nbuses =
   | n when n < 50 -> MultiUse
   | _ -> LotsOfUse
 let use_arity_ident_function_or_macro s db =
-  let ids = Db.function_ids__of_string s db in
+  let ids = DbPHP.function_ids__of_string s db in
   let nbuses = 
     ids +> List.map (fun id -> 
       try 
-        let callers = db.Db.uses.Db.callers_of_f#assoc id in
+        let callers = db.DbPHP.uses.DbPHP.callers_of_f#assoc id in
         List.length callers
       with Not_found -> 0
     )
@@ -110,6 +111,70 @@ let tag_string ~tag s ii =
   | s when s =~ "<" -> tag ii BadSmell
   | _ -> tag ii String
 
+
+(*****************************************************************************)
+(* Properties highlighter *)
+(*****************************************************************************)
+
+let highlight_funcall_simple ~tag ~hentities f args info =
+
+  if Hashtbl.mem Env_php.hdynamic_call_wrappers f 
+  then begin
+    match args with
+    | [] -> failwith "dynamic call wrappers should have arguments"
+    | x::xs ->
+        (* alternative: could also have a FunCallVarBuiltins
+         * but any wrappers around call_user_func should also
+         * be considered as dangerous. Better to use
+         * the ContainDynamicCall of database_code then.
+         *)
+        let ii = Lib_parsing_php.ii_of_argument x in
+        ii +> List.iter (fun info -> tag info PointerCall);
+        
+  end;
+  (match () with
+  (* security: *)
+  | _ when Hashtbl.mem Env_php.hbad_functions f ->
+      tag info BadSmell
+        
+  | _ ->
+      (match Hashtbl.find_all hentities f with
+      | [e] ->
+          let ps = e.Db.e_properties in
+          
+          (* dynamic call *)
+          (if List.mem Db.ContainDynamicCall ps
+          then
+            (* todo: should try to find instead which arguments 
+             * is called dynamically using dataflow analysis
+             *)
+            tag info PointerCall
+            else
+              tag info (Function (Use2 fake_no_use2))
+          );
+
+          (* args by ref *)
+          ps +> List.iter (function
+          | Db.TakeArgNByRef i ->
+              let a = List.nth args i in
+              let ii = Lib_parsing_php.ii_of_argument a in
+              ii +> List.iter (fun info -> tag info CallByRef);
+          | Db.ContainDynamicCall _ -> ()
+          | _ -> raise Todo
+          );
+          ()
+            
+      | x::y::xs -> 
+          pr2_once ("highlight_php: multiple entities for: " ^ f);
+
+          (* todo: place of id *)
+          tag info (Function (Use2 fake_no_use2));
+      | [] -> 
+          (* todo: place of id *)
+          tag info (Function (Use2 fake_no_use2));
+      );
+  );
+  ()
 
 (*****************************************************************************)
 (* PHP Code highlighter *)
@@ -137,13 +202,8 @@ let tag_string ~tag s ii =
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is (a function, a class, a constant)
  *)
-let visit_toplevel 
-    ~tag
-    ~maybe_add_has_type_icon
-    prefs 
-    db_opt
-    (toplevel, toks)
-  =
+let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
+
   let already_tagged = Hashtbl.create 101 in
 
   let tag = (fun ii categ ->
@@ -181,10 +241,6 @@ let visit_toplevel
           let name = def.f_name in
           let info = Ast.info_of_name name in
           tag info (Function (Def2 NoUse));
-
-          db_opt +> Common.do_option (fun (id, current_file, db) ->
-            maybe_add_has_type_icon id info db;
-          );
 
           k x
       (* todo more ? *)
@@ -228,12 +284,17 @@ let visit_toplevel
     V.kparameter = (fun (k, _) param ->
 
       let info = Ast.info_of_dname param.p_name in
-      (if param.p_ref = None
-      then
-        tag info (Parameter Def)
-       else
-         tag info ParameterRef
-      );
+
+      (* we highlight parameters passed by ref elsewhere *)
+      if not (Hashtbl.mem already_tagged info)
+      then begin
+        (if param.p_ref = None
+        then
+          tag info (Parameter Def)
+          else
+            tag info ParameterRef
+        );
+      end;
 
       param.p_type +> Common.do_option (function
       | Hint name -> 
@@ -282,11 +343,6 @@ let visit_toplevel
             let info = Ast.info_of_dname param.p_name in
             tag info (Parameter Def);
 
-          );
-
-          db_opt +> Common.do_option (fun (id, current_file, db) ->
-            let idmethod = Db.id_of_phpname name db in
-            maybe_add_has_type_icon idmethod info db;
           );
 
           k x
@@ -489,68 +545,9 @@ let visit_toplevel
           let info = Ast.info_of_name callname in
           let f = Ast.name callname in
 
+          let args = args +> Ast.unparen +> Ast.uncomma in
 
-          (* security: *)
-          if Hashtbl.mem Env_php.hbad_functions f 
-          then tag info BadSmell;
-
-          if Hashtbl.mem Env_php.hdynamic_call_wrappers f 
-          then begin
-            match args +> Ast.unparen +> Ast.uncomma with
-            | [] -> failwith "dynamic call wrappers should have arguments"
-            | x::xs ->
-                (* alternative: could also have a FunCallVarBuiltins
-                 * but any wrappers around call_user_func should also
-                 * be considered as dangerous. Better to use
-                 * the ContainDynamicCall of database_code then.
-                 *)
-                let ii = Lib_parsing_php.ii_of_argument x in
-                ii +> List.iter (fun info -> tag info PointerCall);
-                
-          end;
-
-          db_opt +> Common.do_option (fun (id, current_file, db) ->
-          
-            let ids = Db.function_ids__of_string f db in
-
-            (* todo? look if macro ? *)
-          
-            let nbdefs = Highlight_code.arity_ids ids in
-
-            (* obsolete *)
-            let nbuses = use_arity_ident_function_or_macro f db in
-
-            let place = place_ids current_file ids db in
-            tag info (Function (Use2 (place, nbdefs, nbuses)));
-          
-            (* the args *)
-            (match ids with
-            | [id] -> 
-                let ast = Db.ast_of_id id db in
-                (match ast with
-                | Ast_entity_php.Function def ->
-                    let params = Ast.unparen def.f_params +> Ast.uncomma in
-                    let args = Ast.unparen args +> Ast.uncomma in
-                    let zipped = Common.zip_safe params args in
-                    zipped +> List.iter (fun (param, arg) ->
-                      if param.Ast.p_ref = None
-                      then vx.V.vargument arg
-                      else begin
-                        let iis = Lib_parsing_php.ii_of_argument arg in
-                        iis +> List.iter (fun ii ->
-                          tag ii (CallByRef)
-                        )
-                      end
-                    );
-                | _ ->
-                    tag info Error;
-                )
-            | _ -> ()
-            )
-          );
-          if db_opt = None then 
-            tag info (Function (Use2 fake_no_use2));
-
+          highlight_funcall_simple ~tag ~hentities f args info;
           k x
           
 

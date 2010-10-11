@@ -189,11 +189,7 @@ let tokens_with_categ_of_file file hentities =
         (* computing the token attributes *)
         Highlight_php.visit_toplevel 
           ~tag:(fun info categ -> Hashtbl.add h info categ)
-          ~maybe_add_has_type_icon:(fun a b c -> ())
-          prefs
-          None
-          (ast, toks)
-        ;
+          prefs hentities (ast, toks);
       
         (* getting the text *)
         toks |> Common.map_filter (fun tok -> 
