@@ -427,10 +427,8 @@ let coverage_tests
    with Timeout ->
      (* those files can get huge *)
      pr2 (spf "PB with %s" test_file);
-     (* old:  killall_php_process (); 
-      * but would not work when use MPI and can output stuff on
-      * stdout which mess things up
-      *)
+     (* todo: does not work when use MPI *)
+     killall_php_process (); 
      Problem (test_file, "timeout when running test and computing coverage")
     ) 
       (fun () ->
@@ -589,6 +587,7 @@ let lines_coverage_from_tests
     )
    with Timeout ->
      pr2 (spf "PB with %s, timeout" test_file);
+     killall_php_process (); 
   ) (fun () ->
     Common.erase_this_temp_file trace_file;
     )
