@@ -75,7 +75,7 @@ let enum_safe x n =
 let rec take n xs = 
   match (n,xs) with
   | (0,_) -> []
-  | (_,[]) -> failwith "take: not enough"
+  | (_,[]) -> failwith "Common.take: not enough"
   | (n,x::xs) -> x::take (n-1) xs
 
 
