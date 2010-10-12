@@ -834,7 +834,6 @@ let index_db2_2 db =
 
         | ClassVariables (class_var_modifier, _opt_ty, 
                           class_variable_list, tok) ->
-
             class_variable_list +> Ast.uncomma +> List.iter (fun class_var ->
               let (dname, _affect) = class_var in
 

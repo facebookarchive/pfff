@@ -684,6 +684,20 @@ and vof_stmt =
       and v2 = vof_paren (vof_comma_list vof_declare) v2
       and v3 = vof_colon_stmt v3
       in Ocaml.VSum (("Declare", [ v1; v2; v3 ]))
+
+  | TypedDeclaration ((v1, v2, v3, v4)) ->
+      let v1 = vof_hint_type v1
+      and v2 = vof_lvalue v2
+      and v3 =
+        Ocaml.vof_option
+          (fun (v1, v2) ->
+             let v1 = vof_tok v1
+             and v2 = vof_expr v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v3
+      and v4 = vof_tok v4
+      in Ocaml.VSum (("TypedDeclaration", [ v1; v2; v3; v4 ]))
+      
 and vof_switch_case_list =
   function
   | CaseList ((v1, v2, v3, v4)) ->
@@ -768,6 +782,7 @@ and
                  f_ref = v_f_ref;
                  f_name = v_f_name;
                  f_params = v_f_params;
+                 f_return_type = v_f_return_type;
                  f_body = v_f_body;
                  f_type = v_f_type
                } =
@@ -777,6 +792,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_brace (vof_list vof_stmt_and_def) v_f_body in
   let bnd = ("f_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_f_return_type in
+  let bnd = ("f_return_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_paren (vof_comma_list vof_parameter) v_f_params in
   let bnd = ("f_params", arg) in
@@ -950,11 +968,15 @@ and
                    m_ref = v_m_ref;
                    m_name = v_m_name;
                    m_params = v_m_params;
+                   m_return_type = v_m_return_type;
                    m_body = v_m_body
                  } =
   let bnds = [] in
   let arg = vof_method_body v_m_body in
   let bnd = ("m_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_m_return_type in
+  let bnd = ("m_return_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_paren (vof_comma_list vof_parameter) v_m_params in
   let bnd = ("m_params", arg) in
