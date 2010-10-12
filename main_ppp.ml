@@ -120,6 +120,7 @@ let mk_method s params body =
     m_name = Name (s, fkt s);
     m_params = (fkt "(", params, fkt ")");
     m_body = MethodBody (fkt "{", body, fkt "}");
+    m_return_type = None;
   }
 
 let mk_param s = { 
@@ -393,6 +394,7 @@ let (mk_anon_class:
     closed_vars +> List.map (fun s ->
       ClassVariables (
         VModifiers [Private, fkt "private"],
+        None,
         [Left (fkdname s, None)],
         fkt ";"
       )
@@ -546,13 +548,57 @@ let main_action file =
 (* Extra actions *)
 (*****************************************************************************)
 
+let unparse_without_type_hints file =
 
+  (* steps:
+   *  - parse with enabling the type hints grammar extension
+   *  - visit ast and annotate type hints tokens with Remove
+   *  - unparse ast using the tokens annotations
+   *)
+
+  Flag_parsing_php.type_hints_extension := true;
+
+  let (ast2, _stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+
+  (* visit ast and annotate type hints *)
+  let annotate_type_hint_tokens_as_remove type_hint =
+    let token = 
+      match type_hint with
+      | Hint name -> Ast.info_of_name name
+      | HintArray tok -> tok
+    in
+    token.Ast.transfo <- Ast.Remove;
+  in
+  let v = V.mk_visitor { V.default_visitor with
+    (* todo? we could keep some typehint such as Object or Array,
+     * at certain places like in function parameters as they are already
+     * accepted by vanilla PHP *)
+    V.khint_type = (fun (k, _) ty ->
+      annotate_type_hint_tokens_as_remove ty
+    );
+  }
+  in
+  (* modifying ast will also modify ast2 by side effect *)
+  v.V.vprogram ast;
+
+  (* the default unparser knows about the Remove token annotation *)
+  let s = Unparse_php.string_of_program2_using_tokens ast2 in
+  pr s
+
+
+let extra_actions () = [
+  "-unparse_without_type_hints", " <file>",
+  Common.mk_action_1_arg (unparse_without_type_hints);
+
+]
 
 (*****************************************************************************)
 (* The options *)
 (*****************************************************************************)
 
 let all_actions () = 
+ extra_actions () ++
  Test_parsing_php.actions()++
  []
 

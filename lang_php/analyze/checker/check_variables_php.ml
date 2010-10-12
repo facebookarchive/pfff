@@ -544,6 +544,9 @@ let visit_prog
             (* TODO recurse on the affect *)
           )
 
+      | TypedDeclaration (_, _, _, _) ->
+          pr2_once "TODO: TypedDeclaration"
+
       | Foreach (_, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
           vx.V.vexpr e;
 
@@ -609,7 +612,9 @@ let visit_prog
 
     V.kclass_stmt = (fun (k, _) x ->
       match x with
-      | ClassVariables (_modifier, class_vars, _tok) ->
+      | ClassVariables (_modifier, _opt_ty, class_vars, _tok) ->
+          (* could use opt_ty to do type checking but this is better done
+           * in typing_php.ml *)
 
           (* todo: add the modifier in the scope ? *)
           class_vars |> Ast.uncomma |> List.iter (fun (dname, affect_opt) ->

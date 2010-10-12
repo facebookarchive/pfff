@@ -351,6 +351,19 @@ statement: unticked_statement { $1 }
 unticked_statement:
  | expr           TSEMICOLON		  { ExprStmt($1,$2) }
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
+
+  /*(* static-php-ext: *)*/
+ | type_hint variable TSEMICOLON          { 
+     if not !Flag_parsing_php.type_hints_extension
+     then raise Parsing.Parse_error;
+     TypedDeclaration ($1, $2, None, $3)
+   }
+ | type_hint variable TEQ expr TSEMICOLON { 
+     if not !Flag_parsing_php.type_hints_extension
+     then raise Parsing.Parse_error;
+     TypedDeclaration ($1, $2, Some ($3, $4), $5)
+   }
+
  | TOBRACE inner_statement_list TCBRACE   { Block($1,$2,$3) }
 
  | T_IF TOPAR expr TCPAR statement elseif_list else_single 
@@ -548,15 +561,22 @@ function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
 unticked_function_declaration_statement:
   T_FUNCTION is_reference ident
   TOPAR parameter_list TCPAR 
+  /*(* static-php-ext: *)*/
+  optional_class_type
   TOBRACE inner_statement_list TCBRACE
   { 
     let params = ($4, $5, $6) in
-    let body = ($7, $8, $9) in
+    let body = ($8, $9, $10) in
+
+    if not !Flag_parsing_php.type_hints_extension && $7 <> None
+    then raise Parsing.Parse_error;
+
     ({
       f_tok = $1;
       f_ref = $2;
       f_name = Name $3;
       f_params = params;
+      f_return_type = $7;
       f_body = body;
       f_type = Ast_php.noFtype();
     })
@@ -590,11 +610,12 @@ non_empty_parameter_list:
 /*(*x: GRAMMAR function declaration *)*/
 optional_class_type:
  | /*(*empty*)*/	{ None }
- | ident		{ Some (Hint (Name $1)) }
- | T_ARRAY		{ Some (HintArray $1) }
+ | type_hint            { Some $1 }
 
- | T_XHP_COLONID_DEF    { Some (Hint (XhpName $1)) }
-
+type_hint:
+ | ident		{ (Hint (Name $1)) }
+ | T_ARRAY		{ (HintArray $1) }
+ | T_XHP_COLONID_DEF    { (Hint (XhpName $1)) }
 
 is_reference:
  | /*(*empty*)*/  { None }
@@ -681,17 +702,33 @@ class_statement:
  | T_CONST class_constant_declaration            TSEMICOLON 
      { ClassConstants($1, $2, $3) }
  | variable_modifiers class_variable_declaration TSEMICOLON 
-     { ClassVariables($1, $2, $3) }
+     { ClassVariables($1, None, $2, $3) }
+
+  /*(* static-php-ext: *)*/
+ | variable_modifiers type_hint class_variable_declaration TSEMICOLON 
+     { 
+       if not !Flag_parsing_php.type_hints_extension
+       then raise Parsing.Parse_error;
+
+       ClassVariables($1, Some $2, $3, $4) 
+     }
+
  | method_modifiers T_FUNCTION is_reference ident  
-     TOPAR parameter_list TCPAR 
+     TOPAR parameter_list TCPAR
+     optional_class_type
      method_body 
-     { Method {
+     { 
+       if not !Flag_parsing_php.type_hints_extension && $8 <> None
+       then raise Parsing.Parse_error;
+
+       Method {
          m_modifiers = $1;
          m_tok = $2;
          m_ref = $3;
          m_name = Name $4;
          m_params = ($5, $6, $7);
-         m_body = $8;
+         m_return_type = $8;
+         m_body = $9;
        }
      }
 

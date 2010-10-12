@@ -820,7 +820,8 @@ and
                  f_name = v_f_name;
                  f_params = v_f_params;
                  f_body = v_f_body;
-                 f_type = v_f_type
+                 f_type = v_f_type;
+                 f_return_type = v_f_return_type;
                } =
   let v_f_type = Type_php.map_phptype v_f_type in
   let v_f_body = map_brace_body (map_of_list map_stmt_and_def) v_f_body in
@@ -828,13 +829,15 @@ and
   let v_f_name = map_name v_f_name in
   let v_f_ref = map_is_ref v_f_ref in
   let v_f_tok = map_tok v_f_tok in
+  let v_f_return_type = map_of_option map_hint_type v_f_return_type in
   {
     f_tok = v_f_tok;
     f_ref = v_f_ref;
     f_name = v_f_name;
     f_params = v_f_params;
+    f_return_type = v_f_return_type;
     f_body = v_f_body;
-    f_type = v_f_type
+    f_type = v_f_type;
   }
 and
   map_parameter {
@@ -947,11 +950,12 @@ and map_class_stmt =
       and v2 = map_comma_list13 map_class_constant v2
       and v3 = map_tok v3
       in ClassConstants ((v1, v2, v3))
-  | ClassVariables ((v1, v2, v3)) ->
+  | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = map_class_var_modifier v1
+      and opt_ty = map_option map_hint_type opt_ty
       and v2 = map_comma_list14 map_class_variable v2
       and v3 = map_tok v3
-      in ClassVariables ((v1, v2, v3))
+      in ClassVariables ((v1, opt_ty, v2, v3))
   | Method v1 -> let v1 = map_method_def v1 in Method ((v1))
   | XhpDecl _ -> raise Todo
 and map_class_constant (v1, v2) =
@@ -972,6 +976,7 @@ and
                    m_ref = v_m_ref;
                    m_name = v_m_name;
                    m_params = v_m_params;
+                   m_return_type = v_m_return_type;
                    m_body = v_m_body
                  } =
   let v_m_body = map_method_body v_m_body in
@@ -979,15 +984,17 @@ and
   let v_m_name = map_name v_m_name in
   let v_m_ref = map_is_ref v_m_ref in
   let v_m_tok = map_tok v_m_tok in
-  let v_m_modifiers = map_of_list (map_wrap_modif map_modifier) v_m_modifiers
-  in 
+  let v_m_modifiers = map_of_list (map_wrap_modif map_modifier) v_m_modifiers in
+  let v_m_return_type = map_of_option map_hint_type v_m_return_type in
+
   {
     m_modifiers = v_m_modifiers;
     m_tok = v_m_tok;
     m_ref = v_m_ref;
     m_name = v_m_name;
     m_params = v_m_params;
-    m_body = v_m_body
+    m_body = v_m_body;
+    m_return_type = v_m_return_type;
   }
 
 and map_modifier =

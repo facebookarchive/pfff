@@ -88,7 +88,7 @@ let static_new_or_extends_of_ast idast =
 let get_public_or_protected_vars_of_class def =
 
   def.c_body +> Ast.unbrace +> Common.map_filter (function
-  |  ClassVariables (modifiers, class_vars, _tok) ->
+  |  ClassVariables (modifiers, _opt_ty, class_vars, _tok) ->
        
        let modifiers = Ast.unmodifiers modifiers in
        

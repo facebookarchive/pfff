@@ -870,6 +870,15 @@ and v_stmt xxx =
       and v3 = v_colon_stmt v3
       in 
       ()
+  | TypedDeclaration ((v1, v2, v3, v4)) ->
+      let v1 = v_hint_type v1
+      and v2 = v_variable v2
+      and v3 =
+        v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ())
+          v3
+      and v4 = v_tok v4
+      in ()
+
   in
   vin.kstmt (k,all_functions) xxx
 
@@ -955,13 +964,15 @@ and
                f_ref = v_f_ref;
                f_name = v_f_name;
                f_params = v_f_params;
-               f_body = v_f_body
+               f_body = v_f_body;
+               f_return_type = v_f_return_type;
              } ->
   let arg = v_tok v_f_tok in 
   let arg = v_is_ref v_f_ref in 
   let arg = v_name v_f_name in
   let arg = v_parameters v_f_params in
   let arg = v_body v_f_body in
+  let arg = v_option v_hint_type v_f_return_type in
   ()
   in
   vin.kfunc_def (k, all_functions) x
@@ -1035,8 +1046,9 @@ and v_class_stmt x =
       and v2 = v_comma_list20 v_class_constant v2
       and v3 = v_tok v3
       in ()
-  | ClassVariables ((v1, v2, v3)) ->
+  | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = v_class_var_modifier v1
+      and opt_ty = v_option v_hint_type opt_ty
       and v2 = v_comma_list21 v_class_variable v2
       and v3 = v_tok v3
       in ()
@@ -1080,7 +1092,8 @@ and
                  m_ref = v_m_ref;
                  m_name = v_m_name;
                  m_params = v_m_params;
-                 m_body = v_m_body
+                 m_body = v_m_body;
+                 m_return_type = v_m_return_type;
                } ->
   let arg = v_list (v_wrap8 v_modifier) v_m_modifiers in 
   let arg = v_tok v_m_tok in
@@ -1088,6 +1101,7 @@ and
   let arg = v_name v_m_name in
   let arg = v_parameters v_m_params in
   let arg = v_method_body v_m_body in
+  let arg = v_option v_hint_type v_m_return_type in
   ()
   in
   vin.kmethod_def (k, all_functions) x

@@ -363,7 +363,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           );
           k x;
 
-      | Ast.ClassVariables (modifiers, vars, tok) ->
+      | Ast.ClassVariables (modifiers, _opt_ty, vars, tok) ->
           vars +> Ast.uncomma +> List.iter (fun (dname, _opt) ->
             let info = Ast.info_of_dname dname in
             tag info (Field (Def2 fake_no_def2));

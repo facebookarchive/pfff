@@ -24,6 +24,8 @@ let verbose_pp = ref false
 
 let caching_parsing = ref false
 
+let type_hints_extension = ref false
+
 (* in facebook context, we want xhp support by default *)
 let xhp_builtin = ref true
 

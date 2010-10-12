@@ -467,6 +467,9 @@ and stmt =
     | Unset of tok * lvalue comma_list paren * tok
     | Declare of tok * declare comma_list paren * colon_stmt
   (*e: stmt constructors *)
+    (* static-php-ext: *)
+    | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
+
 
   (*s: AST statement rest *)
     and switch_case_list = 
@@ -509,6 +512,7 @@ and func_def = {
   f_ref: is_ref;
   f_name: name;
   f_params: parameter comma_list paren;
+  f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
   (*s: f_type mutable field *)
   (* semantic: *)
@@ -577,7 +581,9 @@ and interface_def = {
 (*x: AST class definition *)
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
-    | ClassVariables of class_var_modifier * class_variable comma_list * tok (* ; *)
+    | ClassVariables of 
+        class_var_modifier * hint_type option *
+        class_variable comma_list * tok (* ; *)
     | Method of method_def
 
     | XhpDecl of xhp_decl
@@ -597,6 +603,7 @@ and interface_def = {
           m_ref: is_ref;
           m_name: name;
           m_params: parameter comma_list paren;
+          m_return_type: hint_type option;
           m_body: method_body;
         }
     (*x: class_stmt types *)
