@@ -218,7 +218,7 @@ let options () = [
     "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
     "-with_info", Arg.String (fun s -> db_file := Some s),
-    " ";
+    " <db light file>";
 
     "-test" , Arg.String (fun s -> test_mode := Some s),
     " <str> execute an internal script";

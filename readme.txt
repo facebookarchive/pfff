@@ -48,7 +48,7 @@ You can also look at ./pfff --help
 Usage for pfff_db_light:
 -------------------
 
-   $ ./pfff_db_light -lang ml ~/pfff
+   $ ./pfff_db_light -lang ml -o /tmp/light_db.db ~/pfff
 
 to analyze all the .ml and .mli files under ~/pfff and store metadata
 information (the database) in /tmp/light_db.db
