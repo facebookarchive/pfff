@@ -25,6 +25,8 @@ let metapath = ref "/tmp/pfff_db"
 (* for build_db *)
 let phase = ref Database_php_build.max_phase
 
+let index_method = ref false
+
 (* action mode *)
 let action = ref ""
 
@@ -54,7 +56,7 @@ let main_action xs =
           ~phase:!phase
           prj 
       in
-      Database_php_build.index_db_method db;
+      if !index_method then Database_php_build.index_db_method db;
 
       Database_php.close_db db;
       ()
@@ -89,6 +91,8 @@ let options () =
     "<dir> (default=" ^ !metapath ^ ")";
     "-phase", Arg.Set_int phase,
     " <phase number>";
+    "-index_method", Arg.Set index_method,
+    " ";
   ] ++
   Flag_parsing_php.cmdline_flags_pp () ++
   Common.options_of_actions action (all_actions()) ++
