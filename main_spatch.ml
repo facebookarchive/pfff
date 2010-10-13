@@ -34,7 +34,7 @@ module PI = Parse_info
 (* Flags *)
 (*****************************************************************************)
 
-let verbose = ref false
+let verbose = ref true
 
 let apply_patch = ref false
 
@@ -775,6 +775,8 @@ let type_hints_removal = type_hints_removal_transformation, None
 (* -------------------------------------------------------------------------*)
 (* to test *)
 (* -------------------------------------------------------------------------*)
+
+(* see also demos/simple_refactoring.ml *)
 let simple_transfo xs = 
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
@@ -812,17 +814,191 @@ let simple_transfo xs =
     
     let diff = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
     diff |> List.iter pr;
-
-
   );
-
   ()
 
+(*---------------------------------------------------------------------------*)
+(* fbt-xph-izer for erling *)
+(*---------------------------------------------------------------------------*)
+
+(*
+ * - fbt("A{X}B", Y)
+ * + <fbt>
+ * +   A
+ * +   <fbt:param name="X">Y</fbt:param>
+ * +   B
+ * + </fbt>
+ * 
+ * 
+ * There's an optional last argument after the arguments:
+ * 
+ * - fbt('string with {two} {args}', arg1, arg2, 'blork')
+ * + <fbt desc="blork" ... (the rest as before)
+ * 
+ * There's additional functions which add arguments to the beginning :-(
+ * 
+ * - fbts('project-name', ...args...)
+ * + <fbt secret="project-name" ....
+ * 
+ * - fbt_locale($locale, ... args...)
+ * + <fbt locale={$locale} ...
+ * 
+ * - fbts_locale('project', $locale
+ * + <fbt secret="project" locale={$locale}
+ *)
+    
+let read_all_input () = 
+  let rec aux () =
+    try 
+      let s = read_line () in
+      s ^ "\n" ^ aux ()
+    with End_of_file -> ""
+  in
+  aux ()
+
+(* todo? do we allow to escape the { ? *)
+let rec parse_fbt_static_string s = 
+  if s =~ "\\([^{]*\\){\\([^}]+\\)}\\(.*\\)"
+  then
+    let (before, var, after) = Common.matched3 s in
+    Left before::Right var::parse_fbt_static_string after
+  else 
+    if s = "" then [] else [Left s]
+
+let _ = example 
+  (parse_fbt_static_string "I love {puppies} with {butter}" =
+   [Left "I love "; Right "puppies"; Left " with "; Right "butter"]
+  )
+
+
+let fbt_xhp ~attributes parsed_fbt_string args =
+  Common.with_open_stringbuf (fun (pr, _buf) ->
+  pr (spf "<fbt%s>" attributes);
+
+  let rec aux xs args = 
+    match xs, args with
+    | [], [] -> ()
+    | (Left s)::xs, args ->
+        pr s;
+        aux xs args
+    | (Right name)::xs, e::args ->
+        (* todo: use a pretty printer so if the concatenated string
+         * below turned out to be more than 80 columns then it
+         * be automatically splitted and intented correctly
+         *)
+        let s = Unparse_php.string_of_expr e in
+        pr (spf "<fbt:param name=\"%s\">{%s}</fbt:param>" name s);
+        
+        aux xs args
+    | _ -> failwith "wrong number of arguments in fbt"
+  in
+  aux parsed_fbt_string args;
+  pr "</fbt>";
+  )
+
+
+(* There's an optional last argument after the arguments:
+ * 
+ * - fbt('string with {two} {args}', arg1, arg2, 'blork')
+ * + <fbt desc="blork" ... (the rest as before)
+ *)
+let adjust_when_optional_last_fbt_arg parsed_fbt_string args =
+  let nb_metavars = 
+    parsed_fbt_string 
+     +> List.filter (function Right _ -> true | Left _ -> false) 
+     +> List.length
+  in
+  if nb_metavars = List.length args
+  then "", parsed_fbt_string, args
+  else
+    (match Common.last args with
+    | (Sc(C(String((static_string, i_3)))), t_4) ->
+        spf " desc=\"%s\"" static_string, parsed_fbt_string, 
+        Common.list_init args
+    | _ -> failwith "expecting a constant string as last arg of fbt()"
+    )
+ 
+
+let fbt_xhp_izer_string s =
+  let e = Parse_php.expr_of_string s in
+
+  (* src:  pr (Export_ast_php.ml_pattern_string_of_expr e) *)
+  match e with
+  | (Lv((FunCallSimple(Name((fbt_func, i_1)), args), tlval_14)), t_15) 
+      when fbt_func =~ "fbt.*" ->
+      
+      let args = args +> Ast.unparen +> Ast.uncomma +> List.map Ast.unarg in
+      (match fbt_func, args with
+      | "fbt", (Sc(C(String((static_string, i_str)))), _t)::args ->
+         
+          let xs = parse_fbt_static_string static_string in 
+          let (desc_opt, xs, args) = 
+            adjust_when_optional_last_fbt_arg xs args 
+          in
+          fbt_xhp ~attributes:desc_opt xs args
+
+      | "fbts", 
+           (Sc(C(String((desc_string, _)))), t_1)
+         ::(Sc(C(String((static_string, _)))), t_2)
+         ::args -> 
+
+          let xs = parse_fbt_static_string static_string in 
+          let desc = spf " desc=\"%s\"" desc_string in
+          fbt_xhp ~attributes:desc xs args
+
+      | "fbt_locale",
+            expr
+          ::(Sc(C(String((static_string, i_3)))), t_4)
+          ::args ->
+
+          let xs = parse_fbt_static_string static_string in 
+          let (desc_opt, xs, args) = 
+            adjust_when_optional_last_fbt_arg xs args in
+          let desc_locale = 
+            spf " locale={%s}" (Unparse_php.string_of_expr expr) in
+          
+          fbt_xhp ~attributes:(desc_locale ^ desc_opt) xs args
+
+      | "fbts_locale", 
+             (Sc(C(String((desc_string, i_desct)))), t_1)
+           ::expr
+           ::(Sc(C(String((static_string, i_3)))), t_4)
+           ::args ->
+
+          let xs = parse_fbt_static_string static_string in 
+          let desc = 
+            spf " locale={%s} desc=\"%s\"" 
+                (Unparse_php.string_of_expr expr) 
+                desc_string
+          in
+          fbt_xhp ~attributes:desc xs args;
+
+      | _ ->
+          let str = Export_ast_php.ml_pattern_string_of_expr e in
+          failwith ("was expecting a funcall to fbt, not : " ^ str)
+      )
+  | _ -> 
+      let str = Export_ast_php.ml_pattern_string_of_expr e in
+      failwith ("was expecting a funcall to fbt, not : " ^ str)
+
+(* no diamond perl operator in ocaml ... *)
+let fbt_xhp_izer file =
+  let s = Common.read_file file in
+  pr (fbt_xhp_izer_string s)
+let fbt_xhp_izer_stdin () =
+  let s = read_all_input () in
+  pr (fbt_xhp_izer_string s)
+       
 
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let spatch_extra_actions () = [
+  "-fbt_xhp_izer", " <file>",
+  Common.mk_action_1_arg fbt_xhp_izer;
+  "-fbt_xhp_izer_stdin", " no argument, works on STDIN",
+  Common.mk_action_0_arg fbt_xhp_izer_stdin;
+
   "-send_mail_transfo", "<files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo send_mail_transfo);
   "-send_mail_def_transfo", "<file>",

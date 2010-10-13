@@ -217,14 +217,15 @@
   ; spatch
   ; --------------------------------------------------------------------------
   (setq
-   pad-ocaml-project-prog     "spatch_php"
+   pad-ocaml-project-prog     "spatch"
    pad-ocaml-project-args 
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 1
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
+       (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
 
        )
      )
