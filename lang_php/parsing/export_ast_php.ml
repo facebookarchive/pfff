@@ -18,8 +18,6 @@
 
 open Common
 
-let ml_pattern_string_of_program ast = 
-
 (*
   let v = Ocaml.VList [
     Ocaml.VInt 10000; Ocaml.VInt 10000; Ocaml.VInt 10000; Ocaml.VInt 10000;
@@ -34,8 +32,8 @@ let ml_pattern_string_of_program ast =
   pr2 s;
 *)
 
-  let v = Meta_ast_php.vof_program ast in
 
+let string_of_v v =
   let cnt = ref 0 in
 
   (* transformation to not have the parse info or type info in the output *)
@@ -57,8 +55,14 @@ let ml_pattern_string_of_program ast =
     | _ -> k x
   ) v
   in
-
   let s = Ocaml.string_of_v v' in
   s
+
+let ml_pattern_string_of_program ast = 
+  Meta_ast_php.vof_program ast +> string_of_v
+
+let ml_pattern_string_of_expr e = 
+  Meta_ast_php.vof_expr e +> string_of_v
+
 
 (*e: export_ast_php.ml *)
