@@ -19,12 +19,12 @@ pfff is also made of few tools:
  - pfff, which allows to test the different parsers on a single file
  - pfff_db_light, which does some global analysis on a set of source files and
    store the data in a marshalled form in a file somewhere (e.g. /tmp/light_db)
- - pfff_db, which does language specific global analysis on a set
+ - pfff_db, which does some heavy language specific global analysis on a set
    of source files and store the data in a database somewhere 
    (e.g. /tmp/pfff_db)
  - pfff_visual, which is a gtk and cairo based source code 
    visualizer/navigator/searcher leveraging
-   the information computed previously by pfff_db_light and pfff_db
+   the information computed previously by pfff_db_light
  - sgrep, a syntactical grep
  - spatch, a syntacitcal patch
  - scheck, a bug finder
@@ -53,6 +53,16 @@ Usage for pfff_db_light:
 to analyze all the .ml and .mli files under ~/pfff and store metadata
 information (the database) in /tmp/light_db.db
 
+Usage for pfff_visual:
+------------------------
+
+  $ ./pfff_visual -with_info /tmp/light_db.db ~/pfff
+
+This should launch a gtk-based GUI that allows you to visualize
+source code and perform some code search.
+
+
+
 Usage for pfff_db:
 -------------------
 
@@ -66,11 +76,3 @@ Once this is done you can use some of the flags of pfff_db to
 do some analysis as in:
 
   $ ./pfff_db -deadcode_analysis /tmp/pfff_db
-
-Usage for pfff_visual:
-------------------------
-
-  $ ./pfff_visual -with_info /tmp/light_db.db ~/pfff
-
-This should launch a gtk-based GUI that allows you to visualize
-source code and perform some code search.

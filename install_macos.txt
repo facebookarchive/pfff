@@ -2,8 +2,6 @@ Install macports http://www.macports.org/
 
 Then
  $ sudo port install pcre
- => can ./configure -bdb
-
  $ sudo port install cairo
  $ sudo port install gtk2
  => can configure -visual

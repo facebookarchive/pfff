@@ -2,19 +2,20 @@
 You must first install a recent version of 
  - OCaml (at least 3.11), 
    see http://caml.inria.fr/download.en.html
- - Berkeley DB (at least 4.3)
-   if you want the analysis capability
  - GTK (at least gtk 2.10)
    if you want the GUI capabilities.
  - Cairo
    if you want the fancy graphics capabilities.
+ - Berkeley DB (at least 4.3)
+   if you need to process huge codebase
  - Pcre
    if you want stuff I don't remember.
+
 You will need both the runtime and the development library for
 those packages (e.g. pcre and pcre-devel packages under most Linux
 distributions).
 
-Then if you want everything then just type
+If you want most of the good things just type:
 
   $ ./configure
   $ make depend
@@ -29,7 +30,7 @@ as pfff or pfff_visual.
 
 If you just want to compile the parsing frontend, then type 
 
-   $ ./configure -nobdb -nogui -novisual
+   $ ./configure -nogui -novisual -nobdb
 
 If you want the parsing frontend and the analysis framework then type
 
