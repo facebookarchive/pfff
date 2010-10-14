@@ -17,7 +17,7 @@ let show_function_calls file =
        V.klvalue = (fun (k, _) var ->
 
         match Ast_php.untype var with
-        | FunCallSimple (qu_opt, funcname, args) ->
+        | FunCallSimple (funcname, args) ->
             (*s: print funcname *)
             let s = Ast_php.name funcname in
             let info = Ast_php.info_of_name funcname in

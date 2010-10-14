@@ -22,7 +22,7 @@ let show_function_calls file =
      { V.default_visitor with
        V.klvalue = (fun (k, _) var ->
         match Ast_php.untype var with
-        | FunCallSimple (qu_opt, funcname, args) ->
+        | FunCallSimple (funcname, args) ->
 
             (*s: print funcname and nbargs *)
             let f = Ast_php.name funcname in

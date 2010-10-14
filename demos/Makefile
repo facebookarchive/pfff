@@ -11,19 +11,22 @@ include ../Makefile.config
 ifeq ($(FEATURE_BDB),1)
 ANALYZECMA=../external/ocamlpcre/lib/pcre.cma \
 	   ../external/ocamlbdb/bdb.cma ../commons/commons_bdb.cma \
-           ../h_version-control/lib.cma \
-           ../analyze_php/analyze_php.cma 
+           ../lang_php/analyze/lib.cma \
+
 ANALUZEINCLUDES= \
       ../external/ocamlbdb/ \
       ../external/ocamlpcre/lib \
-      ../analyze_php
+      ../h_program-lang \
+      ../lang_php/analyze
 endif
 
 LIBS= ../commons/commons.cma \
-      ../parsing_php/parsing_php.cma \
+      ../h_version-control/lib.cma \
+      ../h_program-lang/lib.cma \
+      ../lang_php/parsing/lib.cma \
       $(ANALYZECMA)
 INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
-            ../parsing_php $(ANALUZEINCLUDES)
+            ../lang_php/parsing $(ANALUZEINCLUDES)
 
 SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 
@@ -72,9 +75,9 @@ PROGS=php_transducer.byte \
  justin.byte bjacobs.byte
 # simple_zero_to_null.byte count_elseifs.byte
 
-ifeq ($(FEATURE_BDB),1)
-PROGS+=kaplan.byte
-endif
+#ifeq ($(FEATURE_BDB),1)
+#PROGS+=kaplan.byte
+#endif
 
 all: rec  $(PROGS)
 opt: $(PROGS:.byte=.opt)

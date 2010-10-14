@@ -166,12 +166,12 @@ let (path_analysis: Ast_php.expr -> Ast_php.info -> Common.filename) =
 
       let base = 
         match Ast.untype e1 with
-        | Lvalue
+        | Lv
             (VArrayAccess
                 ((Var (DName (varname, _), _scope), _t),
                 (_tok,
                 Some
-                  (Scalar (Ast.Constant (String (fieldname, _info))), _t2),
+                  (Sc (Ast.C (String (fieldname, _info))), _t2),
                 _info2)),
             _t3)
           ->
@@ -194,7 +194,7 @@ let (path_analysis: Ast_php.expr -> Ast_php.info -> Common.filename) =
       in
       let rest = 
         match Ast.untype e2 with
-        | Scalar (Ast.Constant (String (str, _info))) ->
+        | Sc (Ast.C (String (str, _info))) ->
             str
         | _ ->  not_handled_include_format ()
       in
@@ -302,12 +302,12 @@ let dependencies_file file =
          (VArrayAccess(
             (VArrayAccess((Var(DName(("GLOBALS", i_1)), t), tlval_2),
                (i_3,
-                Some((Scalar(Ast.Constant(String(("THRIFT_AUTOLOAD", i_4)))), t_5)),
+                Some((Sc(Ast.C(String(("THRIFT_AUTOLOAD", i_4)))), t_5)),
                 i_6)),
              tlval_7),
-            (i_8, Some((Scalar(Ast.Constant(String((sclass, i_9)))), t_10)), i_11)),
+            (i_8, Some((Sc(Ast.C(String((sclass, i_9)))), t_10)), i_11)),
           tlval_12), i_13,
-         (Scalar(Ast.Constant(String((sfile, info_file)))), t_15))
+         (Sc(Ast.C(String((sfile, info_file)))), t_15))
 
         -> 
           Common.push2 ({
@@ -324,7 +324,7 @@ let dependencies_file file =
 
     V.klvalue = (fun (k, _) v ->
       match Ast.untype v with
-      | FunCallSimple (_qu, name, args) ->
+      | FunCallSimple (name, args) ->
           (* recurse *)
           k v;
 
@@ -335,10 +335,10 @@ let dependencies_file file =
           (* could be a regular function call, or a require_module special
            * call *)
           
-          (match sfunc, Ast.unparen args with
+          (match sfunc, args +> Ast.unparen +> Ast.uncomma  with
 
           | "define",
-              (Arg ((Scalar (Ast.Constant (String (s,info)))), _t))::xs ->
+              (Arg ((Sc (Ast.C (String (s,info)))), _t))::xs ->
 
               Common.push2 {
                 e_kind = Constant s;
@@ -350,13 +350,13 @@ let dependencies_file file =
            * and to which include directive they expand to.
            *)
           | ("require_module" | "require_module_lazy") ,
-            [(Arg ((Scalar (Ast.Constant (String (str,_))), _t1)))] ->
+            [(Arg ((Sc (Ast.C (String (str,_))), _t1)))] ->
               Common.push2 (
                 "/flib/" ^ str ^ "/__init__.php", pos_of_info info
               ) includes;
 
           | "require_source",
-            [(Arg ((Scalar (Ast.Constant (String (str,_))), _t1)))] ->
+            [(Arg ((Sc (Ast.C (String (str,_))), _t1)))] ->
 
               (* dir, base, extension *)
               let (d,b,e) = 
@@ -370,14 +370,14 @@ let dependencies_file file =
 
 
           | "require_conf",
-            [(Arg ((Scalar (Ast.Constant (String (str,_))), _t1)))] ->
+            [(Arg ((Sc (Ast.C (String (str,_))), _t1)))] ->
               Common.push2 (
                 "/conf/" ^ str, pos_of_info info
               ) includes;
 
           | "require_thrift_package",
-            [(Arg ((Scalar (Ast.Constant (String (str,_))), _)));
-             (Arg ((Scalar (Ast.Constant (String (str2,_))), _)))
+            [(Arg ((Sc (Ast.C (String (str,_))), _)));
+             (Arg ((Sc (Ast.C (String (str2,_))), _)))
             ] ->
               Common.push2 (
                 spf "/lib/thrift/packages/%s/%s.php" str str2, 
