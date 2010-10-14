@@ -10,6 +10,8 @@ let verbose_checking = ref true
 let debug_bdb = ref false
 let debug_checker = ref false
 
+let show_analyze_error = ref true
+
 
 let cmdline_flags_verbose () = [
   "-verbose_database", Arg.Set verbose_database , "  ";

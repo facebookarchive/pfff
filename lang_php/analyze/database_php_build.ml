@@ -92,7 +92,7 @@ let _errors = ref []
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
 
 let pr2_err s = 
-  pr2 s;
+  Common.pr2 s;
   Common.push2 s _errors;
   ()
 
@@ -456,7 +456,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
                Db.static_function_ids_of_strings ~theclass:sclass smethod db
          in
          let s = N.nameS name in
-         if null candidates
+         if null candidates && !Flag.show_analyze_error
          then pr2 (spf "PB: no candidate for function call: %s" s);
 
          name, name_ii_list |> List.map snd, candidates
@@ -572,8 +572,11 @@ let build_entity_finder db =
         raise Todo
     )
     with exn ->
-      pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
+      if !Flag.show_analyze_error
+      then 
+        pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
               s (Common.exn_to_s exn));
+
       raise exn
   )
 
@@ -1381,7 +1384,7 @@ let create_db
     (* Parsing_stat.print_stat_numbers (); *)
     (*
     *)
-    if verbose_stats then begin
+    if verbose_stats && !Flag.show_analyze_error then begin
       Parse_info.print_parsing_stat_list   parsing_stats;
       !_errors +> List.iter pr2;
     end;

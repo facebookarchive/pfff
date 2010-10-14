@@ -116,6 +116,10 @@ let fake_dname s =
   DName (s, Ast.fakeInfo s)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Environment *)
 (*****************************************************************************)
 
@@ -303,7 +307,8 @@ let vars_passed_by_ref_in ~find_entity =
             | _ -> raise Impossible
             )
             with Not_found ->
-              pr2_once (spf "Could not find def for: %s" s);
+              if !Flag.show_analyze_error
+              then pr2_once (spf "Could not find def for: %s" s);
            )
           );
           k x
@@ -334,13 +339,16 @@ let vars_passed_by_ref_in ~find_entity =
                             Class_php.get_constructor def in
                           params_vs_args constructor_def.m_params args
                         with Not_found ->
+                          if !Flag.show_analyze_error
+                          then  
                           pr2_once (spf "Could not find constructor for: %s" s);
                       );
 
                   | _ -> raise Impossible
                   )
                 with Not_found ->
-                    pr2_once (spf "Could not find class def for: %s" s);
+                  if !Flag.show_analyze_error
+                  then pr2_once (spf "Could not find class def for: %s" s);
                 ));
               k x
 
@@ -504,7 +512,8 @@ let visit_prog
           | _ -> raise Impossible
           )
         with Not_found -> 
-          pr2_once (spf "Could not find class def for: %s" parent);
+          if !Flag.show_analyze_error
+          then pr2_once (spf "Could not find class def for: %s" parent);
       ));
 
       (* must reorder the class_stmts as we want class variables defined
