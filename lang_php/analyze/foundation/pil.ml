@@ -73,6 +73,7 @@ module Ast = Ast_php
  * References:
  *  [1] CIL, C Intermediate Language, Necula et al, CC'00
  *  [2] The Ruby Intermediate Language, Furr et al, DSL'09
+ * 
  *)
 (*****************************************************************************)
 (* Types *)
@@ -103,7 +104,7 @@ type type_info = {
 }
  (* with tarzan *)
 
-(* 'var' can be an existing variable (e.g. $xxx) of a fake and fresh
+(* 'var' can be an existing variable (e.g. $xxx) or a fake and fresh
  * generated variable resulting from the linearization of an expression.
  *)
 type var = 
@@ -151,10 +152,16 @@ and expr = exprbis * type_info
    *)
   | Binary  of expr * binaryOp * expr
   | Unary   of unaryOp * expr
+
+  (* We could transform into a If but this would require to
+   * change the return types of linearize_expr; this is because we would
+   * need to push a stmt rather than just an instr *)
   | CondExpr of expr * expr * expr
 
   (* todo: apparently can put some refs & inside array() expressions *)
+  (* array(expr1,..., exprn) *)
   | ConsArray of expr list
+  (* array(key1 => expr1,...) also defined as an array in AST *)
   | ConsHash  of (expr * expr) list
 
   | Cast of castOp * expr
@@ -249,6 +256,21 @@ type stmt =
   *)
 
  and catch = unit (* TODO *)
+  (* with tarzan *)
+
+type program = 
+  | Require of require
+  | TopStmt of stmt
+
+  | FunctionDef of function_def
+  | ClassDef of class_def
+  | InterfaceDef of interface_def
+
+ and function_def = unit (* TODO *)
+ and class_def = unit (* TODO *)
+ and interface_def = unit (* TODO *)
+ and require = unit (* TODO *)
+
   (* with tarzan *)
 
 (*****************************************************************************)
@@ -470,5 +492,8 @@ let string_of_stmt ?show_all x =
 let string_of_expr ?show_all x = 
   x +> vof_expr +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
 
+
+let string_of_program ?show_all x =
+  raise Todo
 
 (*e: pil.ml *)

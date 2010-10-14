@@ -36,6 +36,7 @@ module B = Pil
  * - sugar removing for increments
  * - removing tokens from the AST, to have really an AST, not a CST
  * - TODO many other stuff
+ * 
  *)
 (*****************************************************************************)
 (* Types *)
@@ -80,11 +81,6 @@ let stmt_of_stmts_list = function
 (*****************************************************************************)
 (* Algorithm *)
 (*****************************************************************************)
-
-(*****************************************************************************)
-(* Main entry point *)
-(*****************************************************************************)
-
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
@@ -837,10 +833,10 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
     | A.Use _ ->
          failwith "This Use should be lifted by another simplification phase"
 
-      |
-(Declare (_, _, _)|Unset (_, _, _)|InlineHtml _|
-StaticVars (_, _, _)|Globals (_, _, _)|Try (_, _, _, _))
-        -> raise Todo
+    |
+        (Declare (_, _, _)|Unset (_, _, _)|InlineHtml _|
+            StaticVars (_, _, _)|Globals (_, _, _)|Try (_, _, _, _))
+      -> raise Todo
 
   and aux_colon_stmt colon = 
     match colon with
@@ -866,5 +862,12 @@ let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
     | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
         raise Todo
   ) +> List.flatten
+
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+let pil_of_program ast = 
+  raise Todo
 
 (*e: pil_build.ml *)

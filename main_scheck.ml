@@ -239,11 +239,42 @@ let test_jeannin file =
   )
 
 (*---------------------------------------------------------------------------*)
+(* type inference playground *)
+(*---------------------------------------------------------------------------*)
+
+let type_inference file =
+  let ast = Parse_php.parse_program file in
+
+  (* Php Intermediate Language *)
+  try 
+    let pil = Pil_build.pil_of_program ast in
+
+    (* todo: how bootstrap this ? need a bottom-up analysis but
+     * we could first start with the types of the PHP builtins that
+     * we already have (see builtins_php.mli in lang_php/analyze/).
+     *)
+    let env = () in
+
+    (* works by side effect on the pil *)
+    Type_inference_pil.infer_types env pil;
+
+    let s = Pil.string_of_program 
+      ~show_all:true (* wanna see the types *) pil
+    in
+    pr s
+  with exn ->
+    pr2 "File contain constructions not supported by the PIL; bailing out";
+    raise exn
+
+
+(*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let scheck_extra_actions () = [
   "-jeannin", " <file>",
   Common.mk_action_1_arg test_jeannin;
+  "-type_inference", " <file>",
+  Common.mk_action_1_arg type_inference;
 ]
 
 (*****************************************************************************)

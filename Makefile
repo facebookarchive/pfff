@@ -213,6 +213,7 @@ MAKESUBDIRS=commons \
   lang_php/analyze \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \
+   lang_php/analyze/typing \
    lang_php/analyze/checker \
    lang_php/analyze/database \
    lang_php/analyze/static_analysis \

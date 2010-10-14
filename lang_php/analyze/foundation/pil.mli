@@ -15,6 +15,10 @@ type assignOp = Ast_php.assignOp
 type castOp = Ast_php.castOp
 
 type type_info = {
+  (* phptype is currently a list of types, to represent a union of types.
+   * By default it is thus set to the empty list when we don't have
+   * any type information.
+   *)
   mutable t: Type_php.phptype;
 }
 
@@ -23,6 +27,7 @@ type var =
   | This of Ast_php.tok
 
 
+(* Note the lack of a function calls case in lvalue. This is intented *)
 type lvalue = lvaluebis * type_info
  and lvaluebis = 
    | VVar of var
@@ -33,6 +38,9 @@ type lvalue = lvaluebis * type_info
    | DynamicObjAccess of var * var
    | IndirectAccess of var * indirect
 
+(* Enforce only very basic expressions. Assign and function calls are in
+ * the 'instruction' type below.
+ *)
 and expr = exprbis * type_info
  and exprbis =
   | Lv of lvalue
@@ -41,14 +49,10 @@ and expr = exprbis * type_info
 
   | Binary  of expr * binaryOp * expr
   | Unary   of unaryOp * expr
-  (* We could transform into a If but this would require to
-   * change the return types of linearize_expr; this is because we would
-   * need to push a stmt rather than just an instr *)
   | CondExpr of expr * expr * expr
 
-  | ConsArray of expr list (* array(expr1,..., exprn)*)
-  | ConsHash  of (expr * expr) list (* array(key1 => expr1,...)
-                                     also defined as an array in AST *)
+  | ConsArray of expr list 
+  | ConsHash  of (expr * expr) list 
 
   | Cast of castOp * expr
   | InstanceOf of expr * class_name_reference
@@ -93,10 +97,25 @@ type stmt =
 
  and catch = unit (* TODO *)
 
+type program = 
+  | Require of require
+  | TopStmt of stmt
+
+  | FunctionDef of function_def
+  | ClassDef of class_def
+  | InterfaceDef of interface_def
+
+ and function_def = unit (* TODO *)
+ and class_def = unit (* TODO *)
+ and interface_def = unit (* TODO *)
+ and require = unit (* TODO *)
+
 (* for debugging *)
 val string_of_instr: ?show_all:bool -> instr -> string
 val string_of_stmt: ?show_all:bool -> stmt -> string
 val string_of_expr: ?show_all:bool -> expr -> string
+
+val string_of_program: ?show_all:bool -> program -> string
 
 (* meta *)
 val vof_expr: expr -> Ocaml.v

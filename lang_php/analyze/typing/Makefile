@@ -9,6 +9,7 @@ SRC= \
      type_annotater_php.ml \
      typing_weak_php.ml \
      typing_trivial_php.ml \
+     type_inference_pil.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
@@ -21,6 +22,7 @@ INCLUDEDIRS= $(TOP)/commons \
    ../../parsing \
    .. \
    ../basic \
+   ../foundation \
 
 ##############################################################################
 # Generic variables
