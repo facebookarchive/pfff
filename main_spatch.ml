@@ -713,6 +713,66 @@ let event_transfo_func ast =
 let event_transfo = event_transfo_func, Some ["listen"]
 
 (* -------------------------------------------------------------------------*)
+(* type hint removal refactoring *)
+(* -------------------------------------------------------------------------*)
+
+let is_backward_compatible hint = 
+  not (List.mem hint ["int"; "bool"; "float"; "string"; 
+                           "void"; "mixed";
+                           "scalar"; "number";])
+
+let type_hints_removal_transformation ast =
+
+  let was_modified = ref false in
+
+  let remove_type_hint_tokens type_hint =
+    let info =
+      match type_hint with
+      | HintArray info -> info
+      | Hint name -> Ast.info_of_name name
+    in
+    let s = Ast.str_of_info info in
+    if not (is_backward_compatible s) then begin
+      was_modified := true;
+      info.transfo <- Ast.Remove;
+    end
+  in
+
+  let hook = { V.default_visitor with
+    V.kfunc_def = (fun (k, _) def ->
+      def.f_return_type +> Common.do_option remove_type_hint_tokens;
+      k def;
+    );
+    V.kmethod_def = (fun (k, _) def ->
+      def.m_return_type +> Common.do_option remove_type_hint_tokens;
+      k def;
+    );
+    V.kparameter = (fun (k, _) p ->
+      p.p_type +> Common.do_option remove_type_hint_tokens;
+      k p;
+    );
+    V.kstmt = (fun (k, _) stmt ->
+      match stmt with
+      | TypedDeclaration (hint_type, lval, expr_opt, semicolon) ->
+          remove_type_hint_tokens hint_type;
+          k stmt
+      | _ -> k stmt
+    );
+    V.kclass_stmt = (fun (k, _) class_stmt ->
+      match class_stmt with
+      | ClassVariables (modifiers, hint_type_opt, class_vars, tok) ->
+          hint_type_opt +> Common.do_option remove_type_hint_tokens;
+      | ClassConstants _ | Method _ | XhpDecl _ -> 
+          k class_stmt
+    );
+  }
+  in
+  (V.mk_visitor hook).V.vprogram ast;
+  !was_modified
+
+let type_hints_removal = type_hints_removal_transformation, None
+
+(* -------------------------------------------------------------------------*)
 (* to test *)
 (* -------------------------------------------------------------------------*)
 let simple_transfo xs = 
@@ -767,17 +827,18 @@ let spatch_extra_actions () = [
   Common.mk_action_n_arg (apply_transfo send_mail_transfo);
   "-send_mail_def_transfo", "<file>",
   Common.mk_action_n_arg (apply_transfo send_mail_def_transfo);
-
   "-fn_idx_transfo", "<files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo fn_idx_transfo);
-
   "-preparer_transfo", "<files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo preparer_transfo);
   "-preparer_transfo_bis", "<files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo preparer_transfo_bis);
-
   "-event_transfo", "<files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo_js event_transfo);
+  "-type_hints_removal", "<files_or_dirs>",
+  Common.mk_action_n_arg (fun file_or_dirs -> 
+    Flag_parsing_php.type_hints_extension := true;
+    apply_transfo type_hints_removal file_or_dirs);
 
   "-simple_transfo", "<files_or_dirs>",
   Common.mk_action_n_arg (simple_transfo);

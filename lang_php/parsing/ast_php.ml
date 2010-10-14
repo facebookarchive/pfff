@@ -615,7 +615,9 @@ and interface_def = {
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
     | ClassVariables of 
-        class_var_modifier * hint_type option *
+        class_var_modifier * 
+         (* static-php-ext: *)
+          hint_type option *
         class_variable comma_list * tok (* ; *)
     | Method of method_def
 
