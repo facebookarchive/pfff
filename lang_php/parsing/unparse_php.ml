@@ -179,8 +179,9 @@ let is_behind_a_remove_or_replace prev_tok cur_tok =
   | (Remove _ | Replace _), _ -> true
   | _ -> false
 
-let (string_of_program2_using_tokens: Parse_php.program2 -> string) = 
- fun ast2 ->
+let string_of_program2_using_tokens 
+ ?(remove_space_after_removed = true)
+  ast2 =
 
    (* for some of the processing below, it is convenient to enclose
     * the list of tokens with some fake tokens so that the special
@@ -232,8 +233,10 @@ let (string_of_program2_using_tokens: Parse_php.program2 -> string) =
             if is_in_between_some_remove tok_prev tok 
              (* TODO: this is ok only for certain tokens, such
               * as comma
-              *  || is_behind_a_remove_or_replace tok_prev tok
+              *  
               *)
+              || (is_behind_a_remove_or_replace tok_prev tok &&
+                  remove_space_after_removed)
             then () 
             else comments |> List.iter pp_tok;
 
