@@ -587,6 +587,46 @@ let unparse_without_type_hints file =
   pr s
 
 
+(*---------------------------------------------------------------------------*)
+(* XHP preprocessor and static optimizer *)
+(*---------------------------------------------------------------------------*)
+
+let xhp_preprocesor file =
+  let ast = Parse_php.parse_program file in
+  raise Todo
+
+(* I have some ideas on how we can make XHP faster via static analysis
+ * in the rewriter, but I don't have time to work on it. It would probably
+ * take a while to build since I think you would need to rewrite much
+ * of the parser.
+ * 
+ * The idea is that given code like:
+ * 
+ * $foo = <div><span><a href={$href}>hello</a></span></div>;
+ * ...
+ * Currently we rewrite it to:
+ * 
+ * $foo=new xhp_div(array(), array(new xhp_span(array(), array(new xhp_a(array('href' => $this,), array('hello'))))));
+ * 
+ * But we could rewrite it to this instead:
+ * 
+ * $foo=new xhp_div(array(), array(HTML('<span><a href='.txt2html($href).'>hello</a></span>')));
+ * 
+ * You can't convert the outside div to a string, but you can convert 
+ * the inside nodes. Since we mostly enforce that you can only append 
+ * to XHP nodes this would be safe. If we have an intern or noob or 
+ * someone who's interested in parsers and wants to work on XHP this 
+ * might be a good project.
+ *)
+
+let xhp_optimizer file =
+  let ast = Parse_php.parse_program file in
+  raise Todo
+
+(*---------------------------------------------------------------------------*)
+(* Extra actions *)
+(*---------------------------------------------------------------------------*)
+
 let extra_actions () = [
   "-unparse_without_type_hints", " <file>",
   Common.mk_action_1_arg (unparse_without_type_hints);
