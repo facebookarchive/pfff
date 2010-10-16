@@ -97,7 +97,7 @@ type stmt =
 
  and catch = unit (* TODO *)
 
-type program = 
+type toplevel = 
   | Require of require
   | TopStmt of stmt
 
@@ -109,6 +109,9 @@ type program =
  and class_def = unit (* TODO *)
  and interface_def = unit (* TODO *)
  and require = unit (* TODO *)
+
+type program = toplevel list
+
 
 (* for debugging *)
 val string_of_instr: ?show_all:bool -> instr -> string

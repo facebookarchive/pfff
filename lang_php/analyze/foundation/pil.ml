@@ -20,7 +20,6 @@ open Common
 
 module Ast = Ast_php
 
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -75,6 +74,7 @@ module Ast = Ast_php
  *  [2] The Ruby Intermediate Language, Furr et al, DSL'09
  * 
  *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -96,9 +96,7 @@ type dname = Ast_php.dname
 
 
 
-(* We may want to use Pil instead of Ast_php for the type inference
- * analysis at some point.
- *)
+(* set by the type inference analysis *)
 type type_info = {
   mutable t: Type_php.phptype;
 }
@@ -120,17 +118,23 @@ type var =
  * So lvalue is not a a recursive type (there is no lvalue inside
  * a lvalue). 
  * Also note that function or method calls are not there (but in 'instr').
+ * 
+ * TODO: BAD have expr inside ArrayAccess. Should be '(constant, var) either'
  *)
 type lvalue = lvaluebis * type_info
  and lvaluebis = 
    | VVar of var
+   (* A::$x *)
    | VQualifier of qualifier * var
 
-   | ArrayAccess of var * expr option
+   | ArrayAccess of var * expr option 
+   (* $o->property. Method calls are in the 'instr' type  *)
    | ObjAccess of var * name
+   (* $o->$fld *)
    | DynamicObjAccess of var * var
+   (* $$x *)
    | IndirectAccess of var * indirect
-   (* todo: VBraceXxx ?? ObjAccess ? *)
+   (* todo: VBraceXxx ?? *)
 
 (* 'expr' is side effect free (as opposed to Ast_php.expr) ! 
  *  
@@ -144,6 +148,7 @@ type lvalue = lvaluebis * type_info
 and expr = exprbis * type_info
  and exprbis =
   | Lv of lvalue
+
   | C of constant
   | ClassConstant of (qualifier * name)
 
@@ -170,12 +175,12 @@ and expr = exprbis * type_info
 
  (* with tarzan *)
 
-(* an instruction is a statement that has no local (intraprocedural) 
+(* 'instr' is a statement that has no local (intraprocedural) 
  * control flow. It will be thus represented as a singled node in 
  * the CFG.
  * 
- * Why not 'Assign of var * expr' to simplify even more ? Because
- * an expression like $a[2] = 3; would be forced to be linearized into
+ * Why not 'Assign of var * expr' below to simplify even more ? 
+ * Because an expr like $a[2] = 3; would be forced to be linearized into
  * $xxx_1 = $a[2]; $xxx_1 = 3; which depending on the semantic of
  * assignement could be wrong (for instance with copy-on-write semantic).
  * 
@@ -187,13 +192,17 @@ and expr = exprbis * type_info
  * they will be tagged as fake variables anyway.
  *)
 type instr = 
+  (* $a = expr *)
   | Assign of lvalue * assign_kind * expr
+  (* $a = &$b *)
   | AssignRef of lvalue * lvalue
-  | Call   of lvalue * call_kind * argument list
+  (* $a = foo(args) *)
+  | Call   of lvalue  * call_kind * argument list
+  (* eval ... bad *)
   | Eval of expr
   (* todo: Lambda *)
 
-  (* Infix and Posfix exprs are desugared into regular assigns *)
+  (* note: Infix and Posfix exprs were desugared into regular assigns *)
   and assign_kind = 
     | AssignEq
     | AssignOp of assignOp
@@ -215,19 +224,19 @@ type instr =
 
  (* with tarzan *)
 
-(* Quite similar to Ast_php.stmt, except if/while/... contain the new
- * 'expr' type which are side-effect free. Also removed
+(* 'stmt' is very similar to Ast_php.stmt, except if/while/... contain the 
+ * new 'expr' type which is side-effect free. Also removed
  * some sugar and some deprecated forms like the ColonXxx.
  * Note that the include/require, which were removed from the 'expr'
- * are also not represented in 'stmt'. It's just bad coding. They should
- * be only at the toplevel.
+ * are also not represented in 'stmt'. It's just bad coding. We lift them
+ * up (again) to the toplevel.
  * 
  *)
 type stmt = 
   | Instr of instr
 
   (* Could make If takes a stmt list instead of a stmt, which would remove
-   * the need for Block. Not sure what is best. *)
+   * the need for Block and maybe even EmptyStmt. Not sure what is best. *)
   | Block of stmt list
 
   (* useful to avoid having some 'stmt option' for instance in If *)
@@ -236,7 +245,7 @@ type stmt =
   (* elseifs are desugared; Switch are transformed in ifs *)
   | If of expr * stmt * stmt
   
-  (* Do, For, Foreach are desugared  *)
+  (* Do, For, Foreach are desugared into a While  *)
   | While of expr * stmt
 
   (* todo: could transform that into gotos ? *)
@@ -248,7 +257,7 @@ type stmt =
   | Throw of expr
   | Try of stmt * catch
 
-  (* InlineHtml is desugared *)
+  (* InlineHtml is desugared into a regular echo *)
   | Echo of expr list
 
   (* todo? put expr stuff here (Print, Exit, Backquote, etc) 
@@ -258,7 +267,7 @@ type stmt =
  and catch = unit (* TODO *)
   (* with tarzan *)
 
-type program = 
+type toplevel = 
   | Require of require
   | TopStmt of stmt
 
@@ -270,7 +279,9 @@ type program =
  and class_def = unit (* TODO *)
  and interface_def = unit (* TODO *)
  and require = unit (* TODO *)
+  (* with tarzan *)
 
+type program = toplevel list
   (* with tarzan *)
 
 (*****************************************************************************)

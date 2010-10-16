@@ -33,8 +33,10 @@ module B = Pil
  * the simpler constructs of Pil. Here are the simplifications done:
  * 
  * - linearization of expression
- * - sugar removing for increments
- * - removing tokens from the AST, to have really an AST, not a CST
+ * - sugar removal for postfix/infix increments
+ * - removing most tokens from the AST, to have really an AST, not a CST
+ *   (keep the one associated with names as error reporting may need
+ *    this information)
  * - TODO many other stuff
  * 
  *)
@@ -47,9 +49,6 @@ module B = Pil
 (*****************************************************************************)
 let noType () = ({ B.t = [Type_php.Unknown] })
 
-(* We don't propagate the tainting as the typing inference will
- * be done on the simplified AST (PIL) rather than on the original
- * AST *)
 let mkt x = x, noType ()
 
 let counter = ref 0
@@ -64,9 +63,15 @@ let vv_of_v v=
 let fresh_vvar () = 
   vv_of_v (fresh_var ())
 
+(* there are a few cases as when we transform expressions where we need
+ * to build constant integers, for instance when $i++ -> $i = $i + !
+ *)
 let expr_of_int i =
   mkt(B.C(A.Int(string_of_int i, A.fakeInfo (string_of_int i))))
 
+(* when transforming certain loops we need to generate fresh variables
+ * initialized to a certain boolean value (like $done = false; while (!$done)
+ *)
 let expr_true () =
   mkt(B.C(A.CName(A.Name("true", A.fakeInfo "true"))))
 let expr_false () =
@@ -75,16 +80,24 @@ let expr_false () =
 
 let stmt_of_stmts_list = function
 | [] -> B.EmptyStmt
-| [ stmt ] -> stmt
+| [stmt] -> stmt
 | l -> B.Block l
+
+let instrs_to_stmts xs = 
+  xs +> List.map (fun x -> B.Instr x)
 
 (*****************************************************************************)
 (* Algorithm *)
 (*****************************************************************************)
+
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
+(* given some expressions like 'foo() + bar()' we will return 
+ * a set of instructions, here $tmp1 = foo(); $tmp2 = bar(); $tmp3=$tmp1+$tmp2;
+ * as well as the resultant expressions, here the simple lvalue $tmp3
+ *)
 let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 
   let instrs = ref [] in
@@ -94,6 +107,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.Var (dname, _scoperef) -> mkt (B.VVar (B.Var dname))
 
     | A.FunCallSimple (name, argsA) ->
+        (* note that both aux_args and make_var_from_call also modify
+         * by side effect 'instrs'
+         *)
         let argsB = argsA |> Ast.unparen |> Ast.uncomma |> aux_args in
         let v = make_var_from_call (B.SimpleCall name) argsB in
         vv_of_v v
@@ -159,6 +175,11 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
          * $b[2]=0;
          * var_dump($b); // 0
          * var_dump($a); // still 3!! Because of copy on write
+         * 
+         * todo? or we could not care about the copy-on-write thing
+         * and simplify even more the PIL. Maybe most of the static
+         * analysis we need are not dependent on the copy-on-write
+         * semantic.
          *)
         let lvB = aux_lvalue lvA in
         let v = fresh_var() in
@@ -224,22 +245,23 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
       | A.ConsArray (_tok, array_pairs) ->
           (* TODOjjeannin: for the cases ArrayRef and ArrayArrowRef
            * the translation is semantically wrong, but it's good enough
-           * for type inference and control flow analysis *)
-          (* For mixed arrows/not arrows arrays, the following example 
+           * for type inference and control flow analysis 
+           * 
+           * For mixed arrows/not arrows arrays, the following example 
            * gives a good idea of the semantics:
-           php> var_dump(array(1,"car"=>2,3,"bus"=>4,5));
-           array(5) {
-             [0]=>
-             int(1)
-             ["car"]=>
-             int(2)
-             [1]=>
-             int(3)
-             ["bus"]=>
-             int(4)
-             [2]=>
-             int(5)
-           }
+           * php> var_dump(array(1,"car"=>2,3,"bus"=>4,5));
+           * array(5) {
+           *   [0]=>
+           *   int(1)
+           *   ["car"]=>
+           *   int(2)
+           *   [1]=>
+           *   int(3)
+           *   ["bus"]=>
+           *   int(4)
+           *   [2]=>
+           *   int(5)
+           * }
            *)
           let array_pairs = array_pairs +> Ast.unparen +> Ast.uncomma in
 
@@ -256,7 +278,7 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
                     i:= !i+1; res
               | A.ArrayArrowExpr (e1, _, e2) ->
                   aux_expr e1, aux_expr e2
-         (* the last two cases are semantically wrong (I'm suppressing &) *)
+             (* the last two cases are semantically wrong (I'm suppressing &)*)
               | A.ArrayRef (_, lv) ->
                   let res = expr_of_int !i, mkt(B.Lv(aux_lvalue lv)) in
                     i:= !i+1; res
@@ -275,12 +297,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
               )
             in mkt (B.ConsArray exprs)
 
+      (* no need to care about extra tokens *)
       | A.ParenExpr e_paren ->
           e_paren |> A.unparen |> aux_expr
-
-      | A.Eval(_, e_paren) -> (* TODOjjeannin *)
-          (*let v = e_paren |> A.unparen |> make_var_from_Aexpr in
-          mkt (B.Lv( vv_of_v v))*) raise Todo
 
       | A.AssignOp(lvA, op_w, eA) ->
           let lvB = aux_lvalue lvA in
@@ -294,9 +313,6 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 
       | A.CondExpr(cond, _, if_t, _, if_f) ->
           mkt (B.CondExpr(aux_expr cond, aux_expr if_t, aux_expr if_f))
-
-      | A.EDots _ -> raise Impossible
-      | A.Lambda _ -> raise Todo
 
       | A.Isset (t, argsA) ->
           (* for now we transform it into a normal function call ; TODO *)
@@ -343,13 +359,11 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           mkt (B.Lv lvB)
 
       | A.At(_, expr) ->
-          (* TODO: for now we just suppress the @ signs *)
+          (* for now we just suppress the @ signs *)
           aux_expr expr
 
       | A.InstanceOf(expr, _, cnr) ->
           mkt(B.InstanceOf(aux_expr expr, cnr))
-
-      | A.XhpHtml _ -> raise Todo
 
       | A.Infix(op_w, lvA) | A.Postfix(lvA, op_w) ->
           (* ++lv returns the final value of lv
@@ -390,9 +404,6 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           Common.push2 instr instrs;
           mkt (B.Lv lv1B)
 
-      | (RequireOnce (_, _)|Require (_, _)|IncludeOnce (_, _)|Include (_, _))
-        -> failwith "Those should be lifted by another simplification phase"
-
       | A.AssignList(_, la, _, expr) ->
           (* list($la1, $la2, ..., $lan) = expr has to be translated as 
            * $fresh = expr; $la1 = fresh[1]; 
@@ -406,12 +417,29 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           push_list_assign la fresh;
           mkt(B.Lv(vv_of_v fresh))
 
+
+      | (RequireOnce (_, _)|Require (_, _)|IncludeOnce (_, _)|Include (_, _))
+        -> failwith "Those should be lifted by another simplification phase"
+
+      | A.XhpHtml _ -> raise Todo
+
+      | A.Eval(_, e_paren) ->
+          (*let v = e_paren |> A.unparen |> make_var_from_Aexpr in
+          mkt (B.Lv( vv_of_v v))*) 
+          raise Todo
+
+      | A.EDots _ -> 
+          raise Impossible
+      | A.Lambda _ -> 
+          raise Todo
+
       | A.Exit (_, args) -> raise Todo
       |A.BackQuote (_, _, _)|A.CastUnset (_, _)|A.Clone (_, _)
         -> raise Todo
     
   (* Helper functions for converting lvalues, expressions and calls into
-   * variables; their use ensures that we never forget the Common.push2 *)
+   * variables; their use ensures that we never forget the Common.push2 
+   *)
   and (make_var_from_Blvalue: B.lvalue -> B.var) = fun lvB ->
     let v = fresh_var() in
     let vv = mkt (B.VVar v) in
@@ -536,9 +564,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
 
-let instrs_to_stmts xs = 
-  xs +> List.map (fun x -> B.Instr x)
-
+(* a single statement like while(foo()) { } will now generate multiple
+ * PIL statements, here  $tmp = foo(); while($tmp) {  $tmp = foo(); }
+ *)
 let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
 
   let rec (aux_stmt : A.stmt -> B.stmt list) = fun st ->
@@ -583,10 +611,10 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
         setup_expr_stmts ++ [B.While (last_expr, 
                                      B.Block (stmts ++ setup_expr_stmts))]
 
+    (* do{ A } while (b) is translated as
+     * $fresh = true; while($fresh) do { A; $fresh = b }
+     *)
     | A.Do(_, stmt, _, expr, _) ->
-        (* do{ A } while (b) is translated as
-         * $fresh = true; while($fresh) do { A; $fresh = b }
-         *)
         let expr = Ast.unparen expr in
         let stmts = aux_stmt stmt in
 
@@ -601,13 +629,14 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
         [ fresh_true ] ++ [ B.While (mkt(B.Lv(fresh)),
           B.Block(stmts ++ setup_expr_stmts ++ [fresh_b])) ]
 
+    (* for(init1, ..., initk; cond1, ..., condm; incr1, ..., incrn)
+     * { stmt } is translated as
+     * init1; ...; initk; cond1; ...; cond<m-1>; while(condm) 
+     * { stmt; incr1; ...; incrn ; cond1; ...; cond<m-1> }
+     * see http://php.net/manual/en/control-structures.for.php
+     *)
     | A.For(_, _, initA, _, condA, _, incrA, _, stmtA) -> 
-        (* for(init1, ..., initk; cond1, ..., condm; incr1, ..., incrn)
-         * { stmt } is translated as
-         * init1; ...; initk; cond1; ...; cond<m-1>; while(condm) 
-         * { stmt; incr1; ...; incrn ; cond1; ...; cond<m-1> }
-         * see http://php.net/manual/en/control-structures.for.php
-         *)        let rec (list_to_expr_cond : 
+        let rec (list_to_expr_cond : 
            (B.instr list * B.expr) list -> B.instr list * B.expr) = function
         (* from a list [instrs1,expr1;...;instrsn,exprn]
          * builds the pair
@@ -640,24 +669,26 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
           init_stmts ++ cond_stmts ++ 
           [ B.While(cond, B.Block( stmtB ++ incr_stmts ++ cond_stmts )) ]
 
-    | A.Foreach(_, _, expr, _, lv, arr, _, stmt) -> raise Todo
-        (* foreach($arr as $value){stmt} is translated as
-         * while(list(, $value) = each($arr)){stmt}, i.e.
-         *
-         *
-         * foreach($arr as $key => $value){stmt} is translated as
-         * while(list($key, $value) = each($arr)){stmt}, i.e.
-         *)
-        (* According to Drew from HPHP, this will not work
+    (* foreach($arr as $value){stmt} is translated as
+     * while(list(, $value) = each($arr)){stmt}, i.e.
+     *
+     *
+     * foreach($arr as $key => $value){stmt} is translated as
+     * while(list($key, $value) = each($arr)){stmt}, i.e.
+     *)
+    | A.Foreach(_, _, expr, _, lv, arr, _, stmt) -> 
+        (* According to Drew Parovski, this will not work
          * as the each construct uses an internal temp variable
          * so if we translate like this any nested foreach loop
          * will have the wrong semantics; still according to him
-         * foreach cannot be translated only using the construcs of PIL *)
-
-    | A.If (tok, cond1, stmt1, elseifs, elseopt) ->
-        (* if(a){b}elseif(c){d}elseif(e){f}else{g} is translated in
-         * if(a){b}else{if(c){d}else{if(e){f}{g}}} etc.
+         * foreach cannot be translated only using the construcs of PIL 
          *)
+        raise Todo
+
+    (* if(a){b}elseif(c){d}elseif(e){f}else{g} is translated in
+     * if(a){b}else{if(c){d}else{if(e){f}{g}}} etc.
+     *)
+    | A.If (tok, cond1, stmt1, elseifs, elseopt) ->
         (* there cannot be any break statements inside an if so 
          * that should not cause a problem *)
         let rec (aux : (tok * A.expr paren * A.stmt) list ->
@@ -681,9 +712,12 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
          * elseif cases; it just appears first *)
         aux ((tok, cond1, stmt1)::elseifs) elseopt
 
+    (* this is very similar to the A.If case;
+     * it seems too complicated to do just one case for both though 
+     * less: IfColon is an old PHP feature we don't have to support.
+     *  could remove this whole case.
+     *)
     | A.IfColon (tok1, cond1, tok2, stmt1, elseifs, elseopt, _, _) ->
-        (* this is very similar to the A.If case;
-         * it seems too complicated to do just one case for both though *)
         let rec (aux : A.new_elseif list ->
                    A.new_else option -> B.stmt list)
                    = fun elseifs elseopt ->
@@ -707,52 +741,52 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
          * elseif cases; it just appears first *)
         aux ((tok1, cond1, tok2, stmt1)::elseifs) elseopt
 
+    (* This is a hard one, even if it does not look like it;
+     * here is a way to translate it that should work:
+     * switch(expr){
+     *   case expr_a :
+     *     do_a;
+     *   case expr_b :
+     *     do_b;
+     *   ...
+     *   default :
+     *     do_default
+     *   ...
+     * }  
+     *     is translated as:
+     * $expr = expr;
+     * $cond_while = true;
+     * while($cond_while){
+     *   $cond_while = false; // only goes through once
+     *   $case = 0;
+     *   if($expr == expr_a){ $case=1; }
+     *   else if($expr == expr_b){ $case=2; }
+     *   // b should not be evaluated if we are in the case a
+     *   // (only relevant if b has side effects)
+     *   ...
+     *   // nothing here for default
+     *   ...
+     *   $cond = ($case == 1) || $cond;
+     *   if($cond){ do_a; }
+     *   $cond = ($case == 2) || $cond;
+     *   if($cond){ do_b; }
+     *   ...
+     *   $cond = ($case == 0) || $cond; // 0 is for default
+     *   if($cond){ do_d; }
+     *   ...
+     * }
+     * The enclosing while($cond) is to make sure everything
+     * works fine if there is a break instruction in the middle; we
+     * could have done it with while(true){... ; break;} but our way
+     * ensures it also works with continue instructions.
+     * The two passes are necessary to ensure default behaves correctly:
+     * expr_a, expr_b, are evaluated in order until one applies; if none
+     * applies, default applies; if default applies all the expr_a,
+     * expr_b, etc. have to be evaluated, even
+     * if they are after the default. default only applies if no other
+     * case applies, even if default is not at the end.
+     *)  
     | A.Switch(_, exprA, switch_cases) ->
-        (* This is a hard one, even if it does not look like it;
-         * here is a way to translate it that should work:
-         * switch(expr){
-         *   case expr_a :
-         *     do_a;
-         *   case expr_b :
-         *     do_b;
-         *   ...
-         *   default :
-         *     do_default
-         *   ...
-         * }  
-         *     is translated as:
-         * $expr = expr;
-         * $cond_while = true;
-         * while($cond_while){
-         *   $cond_while = false; // only goes through once
-         *   $case = 0;
-         *   if($expr == expr_a){ $case=1; }
-         *   else if($expr == expr_b){ $case=2; }
-         *   // b should not be evaluated if we are in the case a
-         *   // (only relevant if b has side effects)
-         *   ...
-         *   // nothing here for default
-         *   ...
-         *   $cond = ($case == 1) || $cond;
-         *   if($cond){ do_a; }
-         *   $cond = ($case == 2) || $cond;
-         *   if($cond){ do_b; }
-         *   ...
-         *   $cond = ($case == 0) || $cond; // 0 is for default
-         *   if($cond){ do_d; }
-         *   ...
-         * }
-         * The enclosing while($cond) is to make sure everything
-         * works fine if there is a break instruction in the middle; we
-         * could have done it with while(true){... ; break;} but our way
-         * ensures it also works with continue instructions.
-         * The two passes are necessary to ensure default behaves correctly:
-         * expr_a, expr_b, are evaluated in order until one applies; if none
-         * applies, default applies; if default applies all the expr_a,
-         * expr_b, etc. have to be evaluated, even
-         * if they are after the default. default only applies if no other
-         * case applies, even if default is not at the end.
-         *)  
         let instrs_expr, exprB = exprA |> Ast.unparen
           |> linearize_expr in
         let stmts_expr = instrs_to_stmts instrs_expr in
@@ -801,7 +835,8 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
                                             mkt(B.Lv cond_vv))))) ::
               B.If(mkt(B.Lv cond_vv), stmtB, B.EmptyStmt) ::
               l2
-            ) in
+            ) 
+        in
         let cases = match switch_cases with
           | CaseList(_, _, c, _) | CaseColonList( _, _, c, _, _) -> c in
         let l1, l2 = aux cases in
@@ -849,8 +884,6 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
     | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
         raise Todo
   in
-  
-
   let stmts = aux_stmt st in
   stmts
 
@@ -867,6 +900,8 @@ let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
+
+
 let pil_of_program ast = 
   raise Todo
 
