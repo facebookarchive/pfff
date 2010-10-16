@@ -535,6 +535,8 @@ expr:
  | name_tag simple_expr %prec below_SHARP
      { ExprTodo }
 
+ | Tlazy simple_expr %prec below_SHARP
+     { ExprTodo }
 
 
 simple_expr:

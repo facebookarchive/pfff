@@ -203,7 +203,7 @@ let anamorphic_diviser_of_file ~root file =
       | Archi_code.Data -> 15.
 
       (* augment size of main *)
-      | Archi_code.Main | Archi_code.Init -> 0.5
+      | Archi_code.Main | Archi_code.Init -> 0.33
 
       | _ -> 1.
       )
