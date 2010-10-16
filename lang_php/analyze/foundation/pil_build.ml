@@ -901,8 +901,27 @@ let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
 (* Main entry point *)
 (*****************************************************************************)
 
+let rec pil_of_program ast = 
+  
+  ast +> List.map (function
+  | A.StmtList xs ->
+      xs +> List.map linearize_stmt +> List.flatten +> List.map (fun st ->
+        B.TopStmt st)
 
-let pil_of_program ast = 
-  raise Todo
+  | FuncDef def ->
+      raise Todo
+  | ClassDef def ->
+      raise Todo
+  | InterfaceDef def ->
+      raise Todo
+
+  | Halt _ ->
+      raise Todo
+  | NotParsedCorrectly _ ->
+      failwith "Parse error in the file"
+  | FinalDef _ -> []
+
+  ) +> List.flatten
+
 
 (*e: pil_build.ml *)

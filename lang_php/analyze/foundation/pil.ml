@@ -469,42 +469,71 @@ let rec vof_stmt =
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
 and vof_catch v = Ocaml.vof_unit v
 
+let rec vof_toplevel =
+  function
+  | Require v1 -> let v1 = vof_require v1 in Ocaml.VSum (("Require", [ v1 ]))
+  | TopStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("TopStmt", [ v1 ]))
+  | FunctionDef v1 ->
+      let v1 = vof_function_def v1 in Ocaml.VSum (("FunctionDef", [ v1 ]))
+  | ClassDef v1 ->
+      let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
+  | InterfaceDef v1 ->
+      let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceDef", [ v1 ]))
+and vof_function_def v = Ocaml.vof_unit v
+and vof_class_def v = Ocaml.vof_unit v
+and vof_interface_def v = Ocaml.vof_unit v
+and vof_require v = Ocaml.vof_unit v
+  
+let vof_program v = Ocaml.vof_list vof_toplevel v
+
+
 (*****************************************************************************)
 (* String of *)
 (*****************************************************************************)
+type debug_config = {
+  show_types: bool;
+  show_tokens: bool;
+}
 
-let (adjust_ocaml_v: ?show_all:bool -> Ocaml.v -> Ocaml.v) =
- fun ?(show_all=false) v ->
+let default_debug_config = {
+  show_types = false;
+  show_tokens = false;
+}
+
+let (adjust_ocaml_v: ?config:debug_config -> Ocaml.v -> Ocaml.v) =
+ fun ?(config=default_debug_config) v ->
 
   let v = 
-    if show_all
-    then v
-    else 
-      (* let's hide all those {pinfo = ... } and types annotations *)
-      Ocaml.map_v ~f:(fun ~k v ->
-        match v with
-        | Ocaml.VDict xs ->
-            if xs +> List.exists (fun (s, _) -> List.mem s ["pinfo"; "t"])
-            then
-              Ocaml.VDict []
-            else k v
-        | _ -> k v
-      ) v
+    Ocaml.map_v ~f:(fun ~k v ->
+      match v with
+      | Ocaml.VDict xs ->
+         (* let's hide all those {pinfo = ... } and type annotations *)
+          if 
+            (xs +> List.exists (fun (s, _) -> s = "pinfo") &&
+             not config.show_tokens
+             ) ||
+            (xs +> List.exists (fun (s, _) -> s = "t") &&
+             not (config.show_types
+             ))
+          then Ocaml.VDict []
+          else k v
+      | _ -> k v
+    ) v
   in
   v
 
-let (string_of_instr: ?show_all:bool -> instr -> string) = 
- fun ?show_all x ->
-  x +> vof_instr +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
+let string_of_instr ?config x =
+  x +> vof_instr +> adjust_ocaml_v ?config +> Ocaml.string_of_v
 
-let string_of_stmt ?show_all x = 
-  x +> vof_stmt +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
+let string_of_stmt ?config x = 
+  x +> vof_stmt +> adjust_ocaml_v ?config +> Ocaml.string_of_v
 
-let string_of_expr ?show_all x = 
-  x +> vof_expr +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
+let string_of_expr ?config x = 
+  x +> vof_expr +> adjust_ocaml_v ?config +> Ocaml.string_of_v
 
 
-let string_of_program ?show_all x =
-  raise Todo
+let string_of_program ?config x =
+  x +> vof_program +> adjust_ocaml_v ?config +> Ocaml.string_of_v
+  
 
 (*e: pil.ml *)

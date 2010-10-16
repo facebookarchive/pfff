@@ -21,6 +21,8 @@ open Common
 module A = Ast_php
 module P = Pil
 
+let _show_types = ref false
+
 (* This module is a pretty printer for Pil
  * The output code is correct PHP code that can be parsed and executed
  *)
@@ -96,7 +98,10 @@ let string_of_castOp (c:A.castOp) = match c with
 |A.ArrayTy  -> "array"
 |A.ObjectTy -> "object"
 
-let string_of_type_info (t:P.type_info) = "/* TYPE */" (* TODOjjeannin *)
+let string_of_type_info (t:P.type_info) = 
+  if !_show_types
+  then "/* TYPE */" (* TODOjjeannin *)
+  else ""
 
 let string_of_var (v:P.var) = match v with
 |P.Var d -> string_of_dname d
@@ -196,4 +201,13 @@ let rec string_of_stmt (s:P.stmt) = match s with
 |P.Echo(el) ->"echo "^(String.concat ", " (List.map string_of_expr el))^
                ";\n"
 
+
+let string_of_program ?(show_types=false) xs = 
+  Common.save_excursion _show_types show_types (fun () ->
+    xs +> List.map (fun top ->
+      match top with
+      | P.TopStmt st -> string_of_stmt st
+      | _ -> raise Todo
+    ) +> Common.join ""
+  )
 (*e: pretty_print_pil.ml *)

@@ -114,11 +114,17 @@ type program = toplevel list
 
 
 (* for debugging *)
-val string_of_instr: ?show_all:bool -> instr -> string
-val string_of_stmt: ?show_all:bool -> stmt -> string
-val string_of_expr: ?show_all:bool -> expr -> string
+type debug_config = {
+  show_types: bool;
+  show_tokens: bool;
+}
+val default_debug_config: debug_config
 
-val string_of_program: ?show_all:bool -> program -> string
+val string_of_instr: ?config:debug_config -> instr -> string
+val string_of_stmt: ?config:debug_config -> stmt -> string
+val string_of_expr: ?config:debug_config -> expr -> string
+
+val string_of_program: ?config:debug_config -> program -> string
 
 (* meta *)
 val vof_expr: expr -> Ocaml.v

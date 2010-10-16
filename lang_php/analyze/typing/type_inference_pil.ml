@@ -40,4 +40,5 @@ type env = unit
 (*****************************************************************************)
 
 let infer_types env pil = 
-  raise Todo
+  pr2 "infer_types:Todo"
+

@@ -1,5 +1,7 @@
 (*s: pretty_print_pil.mli *)
 
+val string_of_program: ?show_types:bool -> Pil.program -> string
+
 val string_of_lvalue: Pil.lvalue -> string
 val string_of_expr:   Pil.expr   -> string
 val string_of_stmt:   Pil.stmt   -> string

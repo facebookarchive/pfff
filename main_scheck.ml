@@ -245,7 +245,7 @@ let test_jeannin file =
 let type_inference file =
   let ast = Parse_php.parse_program file in
 
-  (* Php Intermediate Language *)
+  (* PHP Intermediate Language *)
   try 
     let pil = Pil_build.pil_of_program ast in
 
@@ -258,10 +258,18 @@ let type_inference file =
     (* works by side effect on the pil *)
     Type_inference_pil.infer_types env pil;
 
+    (* simple pretty printer *)
+    let s = Pretty_print_pil.string_of_program pil in
+    pr s;
+
+    (* internal representation pretty printer *)
     let s = Pil.string_of_program 
-      ~show_all:true (* wanna see the types *) pil
+      ~config:{Pil.show_types = true; Pil.show_tokens = false} 
+      pil
     in
-    pr s
+    pr s;
+
+
   with exn ->
     pr2 "File contain constructions not supported by the PIL; bailing out";
     raise exn
