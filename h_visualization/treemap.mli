@@ -67,7 +67,9 @@ val layoutf_of_algo: algorithm -> ('a, 'b) layout_func
 (*e: signature algos *)
 
 val render_treemap_algo: 
-  ?algo:algorithm -> ('dir, 'file) treemap -> treemap_rendering
+  ?algo:algorithm -> 
+  ?big_borders:bool ->
+  ('dir, 'file) treemap -> treemap_rendering
 
 
 

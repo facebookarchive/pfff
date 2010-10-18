@@ -778,9 +778,7 @@ let layoutf_of_algo algo =
   | Ordered pivotf -> ordered_layout ~pivotf
 
 
-let (render_treemap_algo2: 
-      ?algo:algorithm -> ('dir, 'file) treemap -> treemap_rendering) = 
- fun ?(algo=Classic) treemap ->
+let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
   let flayout = layoutf_of_algo algo in
 
   let treemap_rects = ref [] in
@@ -818,6 +816,7 @@ let (render_treemap_algo2:
 
         (* does not work, weird *)
         let border = 
+          if not big_borders then
           match depth with
           | 1 -> 0.0
           | 2 -> 0.002
@@ -825,6 +824,15 @@ let (render_treemap_algo2:
           | 4 -> 0.0005
           | 5 -> 0.0002
           | _ -> 0.0
+          else 
+          match depth with
+          | 1 -> 0.0
+          | 2 -> 0.002
+          | 3 -> 0.0015
+          | 4 -> 0.0010
+          | 5 -> 0.0008
+          | 6 -> 0.0005
+          | _ -> 0.0002
         in
         let p = { 
           x = p.x +. border;
@@ -863,9 +871,9 @@ let (render_treemap_algo2:
   
   List.rev !treemap_rects
 
-let render_treemap_algo ?algo x = 
+let render_treemap_algo ?algo ?big_borders x = 
   Common.profile_code "Treemap.render_treemap" (fun () -> 
-    render_treemap_algo2 ?algo x)
+    render_treemap_algo2 ?algo ?big_borders x)
 
 (*****************************************************************************)
 (* Main display function  *)
