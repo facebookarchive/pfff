@@ -56,10 +56,17 @@ let is_auto_generated file =
   | "in" ->
       Sys.file_exists (Common.filename_of_dbe (d,b, "am"))
 
+  | "c" ->
+      Sys.file_exists (Common.filename_of_dbe (d,b, "y")) ||
+      Sys.file_exists (Common.filename_of_dbe (d,b, "l")) ||
+      (* bigloo *)
+      Sys.file_exists (Common.filename_of_dbe (d,b, "scm"))
+ 
+
   | _ -> false
 
 let re_auto_generated = Str.regexp
-  ".*\\.\\(ml\\|mli\\|tex\\|info\\|in\\)"
+  ".*\\.\\(ml\\|mli\\|tex\\|info\\|in\\|c\\)"
 
 (*****************************************************************************)
 (* Filename->archi *)

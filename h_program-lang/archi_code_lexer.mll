@@ -104,9 +104,12 @@ rule category = parse
 
 
   | "core" { Core }
-  | "/base" { Core }
+(*  | "/base" { Core } *)
 
-  | "mysql" { Storage }
+  | "mysql" 
+  | "sqlite" 
+      { Storage }
+
   | "database" { Storage }
 
   | "security" { Security }
@@ -138,7 +141,7 @@ rule category = parse
 
   | "stdlib" { Core }
   | "util" { Utils }
-  | "/base" { Utils }
+(*  | "/base" { Utils } *)
   | "common" { Utils }
   (* Exact "lib", Utils; *)
 
@@ -189,7 +192,10 @@ rule category = parse
   | "/score_parsing" { Data }
   | "/score_tests" { Data }
 
-  | "/data/" { Data }
+
+(* in haskell this is a valid dir
+   | "/data/" { Data } 
+*)
 
   (* facebook specific ? *)
   | "/si/"
@@ -199,6 +205,7 @@ rule category = parse
   (* as in OCaml asmcomp/ directory *)
   | "x86"
   | "i386"
+  | "i686"
   | "/386/"
   | "ia64"
   | "mips"
@@ -212,7 +219,9 @@ rule category = parse
   | "s390"
   | "blackfin"
   | "/ppc/"
-  | "power"
+  | "ppc64"
+  | "/power/"
+  | "/powerpc/"
   | "/alpha/" 
       { Architecture }
 
@@ -224,6 +233,49 @@ rule category = parse
   | "/arch/" 
       { Architecture }
 
+  | "win32"
+  | "macos"
+  | "unix"
+  | "linux"
+
+  | "msdos"
+  | "/vms"
+  | "minix"
+  | "/dos/"
+      { OS }
+
+  | "dns" 
+  | "ftp" 
+  | "ssh" 
+  | "http" 
+  | "smtp" 
+  | "ldap" 
+  | "/imap"  (* / because can have files like guimap *)
+  | "krb4" 
+  | "pop3" 
+  | "socks" 
+  | "ssl" 
+  | "socket" 
+  | "mime" 
+  | "url." 
+  | "uri." 
+  | "ipv4"
+  | "ipv6"
+  | "icmp."
+  | "tcp."
+      { Network }
+
+  (* scan and gram ? too short ? *)
+  | "scanne"
+  | "parse"
+  | "lexer"
+  | "token."
+  | "tokeniz"
+  | "/gram."
+  | "/scan."
+  | "grammar"
+      { Parsing }
+
   | "/ui/"
   | "/gui/" 
   | "visual"
@@ -232,13 +284,21 @@ rule category = parse
   | "render"
   | "/video/"
   | "/media/"
+  | "screen"
+      { Ui }
+
+  | "/gtk/"
+  | "/qt/"
+  | "/tcltk/"
+  | "x11"
+  | "/wx"
       { Ui }
 
   | "/intern/" { Intern }
   (* as in Linux *)
   | "documentation" { Doc }
-  (* tofix ? network ? memory ?  so mm/ and net/ are colored *)
-  | "/net/" { Intern }
+  (* todo also  memory ?  so mm/ is colored too  *)
+  | "/net/" { Network }
 
   | "/old/"
   | "/backup/"
@@ -308,7 +368,14 @@ rule category = parse
   | "/vi/"
   | "/zh/"
   | "/zh-tw/"
-      { Data }
+      { I18n }
+
+  | "i18n" 
+  | "unicode"
+  | "gettext"
+  | "/intl/"
+      { I18n }
+      
 
   | _ { 
       category lexbuf
