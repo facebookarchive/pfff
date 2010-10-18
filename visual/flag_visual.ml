@@ -22,6 +22,8 @@ let threshold_too_many_entities = ref 300000
 
 let top_n = ref 100
 
+let boost_label_size = ref false
+
 let debug_gc = ref false
 
 (* Ancient does not interact well with hashtbl and ocaml polymorphic

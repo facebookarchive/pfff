@@ -41,7 +41,9 @@ let action = ref ""
 let treemap_generator paths = 
   let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap_algo ~algo treemap in
+  let rects = Treemap.render_treemap_algo 
+    ~algo ~big_borders:!Flag.boost_label_size
+    treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
 (*e: treemap_generator *)
@@ -213,6 +215,12 @@ let options () = [
     "-ss" , Arg.Set_int screen_size,
     " alias for -screen_size";
     "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
+    " ";
+    "-boost_lbl" , Arg.Set Flag.boost_label_size,
+    " ";
+    "-bl" , Arg.Set Flag.boost_label_size,
+    " ";
+    "-no_bl" , Arg.Clear Flag.boost_label_size,
     " ";
 
     "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
