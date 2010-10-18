@@ -10,17 +10,20 @@ type file_type =
   | Other of string
 
  and pl_type = 
-  | ML of string
-  | Haskell of string
+  | ML of string | Haskell of string
   | Makefile
   | Script of string
   | C | Cplusplus | Java | Csharp
+  | Scheme | Lisp 
   | Elisp
   | Perl | Python | Ruby
   | Erlang
+  | Beta
   | Web of webpl_type
+  | R of string
   | Asm
   | Thrift
+  | MiscPL of string
 
    and webpl_type = 
      | Php of string

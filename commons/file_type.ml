@@ -40,12 +40,16 @@ type file_type =
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
   | C | Cplusplus | Java | Csharp
+  | Scheme | Lisp 
   | Elisp
   | Perl | Python | Ruby
   | Erlang
+  | Beta
   | Web of webpl_type
+  | R of string
   | Asm
   | Thrift
+  | MiscPL of string
 
     and webpl_type = 
       | Php of string (* php or phpt or script *)
@@ -81,9 +85,13 @@ let file_type_of_file2 file =
 
   | "lml" (* linear ML *)
       -> PL (ML e)
+  | "sml" 
+      -> PL (ML e)
 
   | "hs" | "lhs" -> PL (Haskell e)
   | "erl" -> PL Erlang
+
+  | "bet" -> PL Beta
 
   (* todo detect false C file, look for "Mode: Objective-C++" string in file ?
    * can also be a c++, use Parser_cplusplus.is_problably_cplusplus_file 
@@ -102,6 +110,9 @@ let file_type_of_file2 file =
 
   | "thrift" -> PL Thrift
 
+  | "scm" | "rkt" -> PL Scheme
+  | "lisp" -> PL Lisp
+
   | "el" -> PL Elisp
   | "pl" | "perl" -> PL Perl (* could be prolog too *)
   | "py" -> PL Python
@@ -110,7 +121,14 @@ let file_type_of_file2 file =
 
   | "s" | "S" | "asm" -> PL Asm
 
+  | "R" | "Rd" -> PL (R e)
+
   | "sh" -> PL (Script e)
+
+  | "m4" -> PL (MiscPL e)
+
+  (* merd *)
+  | "me" -> PL (MiscPL "me")
 
   | "php" | "phpt" -> PL (Web (Php e))
   | "css" -> PL (Web Css)
@@ -120,6 +138,9 @@ let file_type_of_file2 file =
   | "json" -> PL (Web Json)
   | "sql" -> PL (Web Sql)
   | "sqlite" -> PL (Web Sql)
+
+  (* apple stuff ? *)
+  | "xib" -> PL (Web Xml)
 
   (* facebook: sqlshim files *)
   | "sql3" -> PL (Web Sql)
@@ -140,7 +161,7 @@ let file_type_of_file2 file =
   | "nw" | "web" -> Text e
 
   | "org" 
-  | "md" 
+  | "md" | "rest"
     -> Text e
 
   | "rtf" -> Text e
