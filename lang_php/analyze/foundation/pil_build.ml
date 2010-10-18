@@ -64,7 +64,7 @@ let fresh_vvar () =
   vv_of_v (fresh_var ())
 
 (* there are a few cases as when we transform expressions where we need
- * to build constant integers, for instance when $i++ -> $i = $i + !
+ * to build constant integers, for instance when $i++ -> $i = $i + 1
  *)
 let expr_of_int i =
   mkt(B.C(A.Int(string_of_int i, A.fakeInfo (string_of_int i))))
