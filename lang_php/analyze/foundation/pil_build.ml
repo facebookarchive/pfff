@@ -923,7 +923,56 @@ let pil_of_param p = {
   B.p_default = p.p_default +> Common.fmap (fun (_tok, static_scalar) ->
     pil_of_static_scalar static_scalar);
 }
-  
+
+let pil_of_class_stmt x =
+  match x with
+  | A.ClassConstants (_tok, xs, _tok2) -> 
+      xs +> Ast.uncomma +> List.map (fun (name, (tok, static_scalar)) ->
+        B.ClassConstantDef (name, pil_of_static_scalar static_scalar)
+      )
+  | A.ClassVariables (modifiers, hint_type_opt, class_vars, _tok) ->
+      class_vars +> Ast.uncomma +> List.map (fun (dname, static_opt) ->
+        B.ClassVariable (
+          (match modifiers with
+          | NoModifiers _ -> []
+          | VModifiers xs -> xs +> List.map unwrap
+          ),
+          hint_type_opt +> Common.fmap pil_of_type_hint ,
+          dname, 
+          static_opt +> Common.fmap (fun (_tok, sc) -> pil_of_static_scalar sc)
+      ))
+
+  | A.Method def ->
+      let modifiers = def.m_modifiers +> List.map unwrap in
+
+      let func_def = {
+        B.f_name = def.m_name;
+        B.f_ref = (match def.m_ref with None -> false | Some _ -> true);
+        B.f_params = def.m_params +> Ast.unparen +> Ast.uncomma +> 
+          List.map pil_of_param;
+        B.f_return_type = def.m_return_type +> Common.fmap pil_of_type_hint;
+        B.f_body = 
+          (match def.m_body with
+          | A.AbstractMethod _ -> []
+          | A.MethodBody body ->
+              body +> Ast.unbrace +> List.map 
+                linearize_stmt_and_def +> List.flatten
+          );
+      }
+      in
+      (match def.m_body with
+      | A.AbstractMethod _ ->
+          [B.AbstractMethod (modifiers, func_def)]
+      | A.MethodBody _ ->
+          [B.Method (modifiers, func_def)]
+      )
+  (* todo: should implement the xhp desugaring ? or represent xhp
+   * in the pil ?
+   *)
+  | A.XhpDecl decl ->
+      raise Todo
+
+
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -950,7 +999,23 @@ let rec pil_of_program ast =
 
 
   | A.ClassDef def ->
-      raise Todo
+      [B.ClassDef {
+        B.c_name = def.c_name;
+        B.c_type = (match def.c_type with
+        | A.ClassRegular _ -> B.ClassRegular
+        | A.ClassFinal _ -> B.ClassFinal
+        | A.ClassAbstract _ -> B.ClassAbstract
+        );
+        B.c_extends = def.c_extends +> Common.fmap (fun (_t, name) -> name);
+        B.c_implements = (match def.c_implements with
+        | None -> []
+        | Some (_tok, xs) -> xs +> Ast.uncomma;
+        );
+        B.c_body = 
+          def.c_body +> Ast.unbrace +> List.map pil_of_class_stmt +> 
+            List.flatten;
+      }]
+
   | A.InterfaceDef def ->
       raise Todo
 

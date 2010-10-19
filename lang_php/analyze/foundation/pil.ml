@@ -61,7 +61,7 @@ module Ast = Ast_php
  * elements in PIL, but I do it less. For instance comma_list or paren
  * stuff are removed here.
  * 
- * TODO: does the linearization respect the semantic of PHP ? Is there
+ * todo: does the linearization respect the semantic of PHP ? Is there
  * cases where spliting a complex expression into multiple parts
  * with intermediate variables leads to a different semantic ?
  * For instance apparently $i++ is not equivalent to $i = $i + 1 when
@@ -91,6 +91,8 @@ type castOp = Ast_php.castOp
 type constant = Ast_php.constant
 type class_name_reference = Ast_php.class_name_reference
 
+type modifier = Ast_php.modifier
+
 type name = Ast_php.name
 type dname = Ast_php.dname
 
@@ -119,7 +121,7 @@ type var =
  * a lvalue). 
  * Also note that function or method calls are not there (but in 'instr').
  * 
- * TODO: BAD have expr inside ArrayAccess. Should be '(constant, var) either'
+ * todo: BAD have expr inside ArrayAccess. Should be '(constant, var) either'
  *)
 type lvalue = lvaluebis * type_info
  and lvaluebis = 
@@ -293,18 +295,38 @@ type function_def = {
 
   (* with tarzan *)
 
-type class_def = unit (* TODO *)
-type interface_def = unit (* TODO *)
+type class_def = {
+  c_name: name;
+  c_type: class_type;
+  c_extends: name option;
+  c_implements: name list;
+  c_body: class_stmt list;
+ }
+ and class_type = 
+   | ClassRegular | ClassFinal | ClassAbstract 
+   (* interface have only the c_extends set. c_implements is always empty.
+    * there was previously a 'interface_def' type but simpler to merge
+    * it with class_def
+    *)
+   | Interface 
+ and class_stmt =
+   | ClassConstantDef of name * static_scalar
+   | ClassVariable of 
+       modifier list * (* static-php-ext: *) hint_type option *
+       dname * static_scalar option
+   | Method of (modifier list * function_def)
+   (* the f_body will always be empty *) 
+   | AbstractMethod of (modifier list * function_def)
+  (* with tarzan *)
 
 type require = unit (* TODO *)
 
 type toplevel = 
   | Require of require
   | TopStmt of stmt
-
   | FunctionDef of function_def
+  (* actually also used also for interface *)
   | ClassDef of class_def
-  | InterfaceDef of interface_def
 
   (* with tarzan *)
 
@@ -333,6 +355,7 @@ let vof_castOp = Meta_ast_php.vof_castOp
 
 let vof_constant = Meta_ast_php.vof_constant
 let vof_class_name_reference = Meta_ast_php.vof_class_name_reference
+let vof_modifier = Meta_ast_php.vof_modifier
 
 let vof_phptype x = Ocaml.VTODO "type"
 
@@ -550,6 +573,68 @@ and
 and vof_static_scalar v = vof_expr v
 and vof_hint_type v = vof_name v
 
+
+let rec
+  vof_class_def {
+                  c_name = v_c_name;
+                  c_type = v_c_type;
+                  c_extends = v_c_extends;
+                  c_implements = v_c_implements;
+                  c_body = v_c_body
+                } =
+  let bnds = [] in
+  let arg = Ocaml.vof_list vof_class_stmt v_c_body in
+  let bnd = ("c_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_name v_c_implements in
+  let bnd = ("c_implements", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_name v_c_extends in
+  let bnd = ("c_extends", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_class_type v_c_type in
+  let bnd = ("c_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_c_name in
+  let bnd = ("c_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_class_type =
+  function
+  | ClassRegular -> Ocaml.VSum (("ClassRegular", []))
+  | ClassFinal -> Ocaml.VSum (("ClassFinal", []))
+  | ClassAbstract -> Ocaml.VSum (("ClassAbstract", []))
+  | Interface -> Ocaml.VSum (("Interface", []))
+and vof_class_stmt =
+  function
+  | ClassConstantDef ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = vof_static_scalar v2
+      in Ocaml.VSum (("ClassConstantDef", [ v1; v2 ]))
+  | ClassVariable ((v1, v2, v3, v4)) ->
+      let v1 = Ocaml.vof_list vof_modifier v1
+      and v2 = Ocaml.vof_option vof_hint_type v2
+      and v3 = vof_dname v3
+      and v4 = Ocaml.vof_option vof_static_scalar v4
+      in Ocaml.VSum (("ClassVariable", [ v1; v2; v3; v4 ]))
+  | Method v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = Ocaml.vof_list vof_modifier v1
+             and v2 = vof_function_def v2
+             in Ocaml.VTuple [ v1; v2 ])
+      in Ocaml.VSum (("Method", [ v1 ]))
+  | AbstractMethod v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = Ocaml.vof_list vof_modifier v1
+             and v2 = vof_function_def v2
+             in Ocaml.VTuple [ v1; v2 ])
+      in Ocaml.VSum (("AbstractMethod", [ v1 ]))
+
+
+let rec vof_require v = Ocaml.vof_unit v
+
 let rec vof_toplevel =
   function
   | Require v1 -> let v1 = vof_require v1 in Ocaml.VSum (("Require", [ v1 ]))
@@ -558,13 +643,8 @@ let rec vof_toplevel =
       let v1 = vof_function_def v1 in Ocaml.VSum (("FunctionDef", [ v1 ]))
   | ClassDef v1 ->
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
-  | InterfaceDef v1 ->
-      let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceDef", [ v1 ]))
 
-and vof_class_def v = Ocaml.vof_unit v
-and vof_interface_def v = Ocaml.vof_unit v
-and vof_require v = Ocaml.vof_unit v
-  
+ 
 let vof_program v = Ocaml.vof_list vof_toplevel v
 
 
