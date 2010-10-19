@@ -265,7 +265,38 @@ type stmt =
   *)
 
  and catch = unit (* TODO *)
+
   (* with tarzan *)
+
+type function_def = {
+   f_name: name;
+   f_params: parameter list;
+   f_ref: bool;
+   f_return_type: hint_type option;
+   f_body: stmt list;
+ }
+  and parameter = {
+    p_name: dname;
+    p_type: hint_type option;
+    p_ref: bool;
+    p_default: static_scalar option;
+  }
+ (* note: 'static_scalar' used to be a separate type than 'expr' in Ast_php,
+  * which by construction enforced static values. Many 'expr' constructors were
+  * unfortunately duplicated in this type. So simpler to just use 'expr'.
+  *)
+ and static_scalar = expr
+ (* we allow more places to contain a type hint when the user use the 
+  * require_strict(); annotation in his code.
+  *)
+ and hint_type = name
+
+  (* with tarzan *)
+
+type class_def = unit (* TODO *)
+type interface_def = unit (* TODO *)
+
+type require = unit (* TODO *)
 
 type toplevel = 
   | Require of require
@@ -275,13 +306,10 @@ type toplevel =
   | ClassDef of class_def
   | InterfaceDef of interface_def
 
- and function_def = unit (* TODO *)
- and class_def = unit (* TODO *)
- and interface_def = unit (* TODO *)
- and require = unit (* TODO *)
   (* with tarzan *)
 
 type program = toplevel list
+
   (* with tarzan *)
 
 (*****************************************************************************)
@@ -355,7 +383,15 @@ and vof_exprbis =
   | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | C v1 ->
       let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
-  | Binary ((v1, v2, v3)) ->
+  | ClassConstant v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = vof_qualifier v1
+             and v2 = vof_name v2
+             in Ocaml.VTuple [ v1; v2 ])
+      in Ocaml.VSum (("ClassConstant", [ v1 ]))
+ | Binary ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_binaryOp v2
       and v3 = vof_expr v3
@@ -469,6 +505,51 @@ let rec vof_stmt =
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
 and vof_catch v = Ocaml.vof_unit v
 
+let rec
+  vof_function_def {
+                     f_name = v_f_name;
+                     f_params = v_f_params;
+                     f_ref = v_f_ref;
+                     f_return_type = v_f_return_type;
+                     f_body = v_f_body
+                   } =
+  let bnds = [] in
+  let arg = Ocaml.vof_list vof_stmt v_f_body in
+  let bnd = ("f_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_f_return_type in
+  let bnd = ("f_return_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_bool v_f_ref in
+  let bnd = ("f_ref", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_parameter v_f_params in
+  let bnd = ("f_params", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_f_name in
+  let bnd = ("f_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and
+  vof_parameter {
+                  p_name = v_p_name;
+                  p_type = v_p_type;
+                  p_ref = v_p_ref;
+                  p_default = v_p_default
+                } =
+  let bnds = [] in
+  let arg = Ocaml.vof_option vof_static_scalar v_p_default in
+  let bnd = ("p_default", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_bool v_p_ref in
+  let bnd = ("p_ref", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_p_type in
+  let bnd = ("p_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_dname v_p_name in
+  let bnd = ("p_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_static_scalar v = vof_expr v
+and vof_hint_type v = vof_name v
+
 let rec vof_toplevel =
   function
   | Require v1 -> let v1 = vof_require v1 in Ocaml.VSum (("Require", [ v1 ]))
@@ -479,7 +560,7 @@ let rec vof_toplevel =
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
   | InterfaceDef v1 ->
       let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceDef", [ v1 ]))
-and vof_function_def v = Ocaml.vof_unit v
+
 and vof_class_def v = Ocaml.vof_unit v
 and vof_interface_def v = Ocaml.vof_unit v
 and vof_require v = Ocaml.vof_unit v

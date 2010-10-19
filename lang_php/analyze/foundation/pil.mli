@@ -97,6 +97,26 @@ type stmt =
 
  and catch = unit (* TODO *)
 
+type function_def = {
+   f_name: name;
+   f_params: parameter list;
+   f_ref: bool;
+   f_return_type: hint_type option;
+   f_body: stmt list;
+ }
+  and parameter = {
+    p_name: dname;
+    p_type: hint_type option;
+    p_ref: bool;
+    p_default: static_scalar option;
+  }
+ and static_scalar = expr
+ and hint_type = name
+
+type class_def = unit (* TODO *)
+type interface_def = unit (* TODO *)
+type require = unit (* TODO *)
+
 type toplevel = 
   | Require of require
   | TopStmt of stmt
@@ -105,10 +125,6 @@ type toplevel =
   | ClassDef of class_def
   | InterfaceDef of interface_def
 
- and function_def = unit (* TODO *)
- and class_def = unit (* TODO *)
- and interface_def = unit (* TODO *)
- and require = unit (* TODO *)
 
 type program = toplevel list
 

@@ -202,6 +202,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
         let e = A.unbrace e_brace in
         make_var_from_Aexpr e |> vv_of_v
 
+    | A.VArrayAccessXhp _ ->
+        raise Todo
+
   and aux_args args = 
     args +> List.map (function
     | A.Arg e -> 
@@ -567,7 +570,7 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 (* a single statement like while(foo()) { } will now generate multiple
  * PIL statements, here  $tmp = foo(); while($tmp) {  $tmp = foo(); }
  *)
-let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
+let rec (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
 
   let rec (aux_stmt : A.stmt -> B.stmt list) = fun st ->
     match st with
@@ -580,7 +583,7 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
 
     | A.Block stmt_and_defs ->
         let xs = Ast.unbrace stmt_and_defs in
-        xs +> List.map aux_stmt_and_def +> List.flatten
+        xs +> List.map linearize_stmt_and_def +> List.flatten
 
     | A.Echo (_, exprs, _) ->
         let exprs = Ast.uncomma exprs in
@@ -728,13 +731,13 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
             let instrs_cond, expr_cond = condA |> Ast.unparen 
               |> linearize_expr in
             let stmts_cond = instrs_to_stmts instrs_cond in
-            let stmtsB = stmtsA |>  List.map aux_stmt_and_def 
+            let stmtsB = stmtsA |>  List.map linearize_stmt_and_def 
               |> List.flatten in
             stmts_cond ++ [ B.If(expr_cond, B.Block stmtsB, 
                                  stmt_of_stmts_list (aux tl elseopt)) ]
 
         | [], Some (_, _, stmtsA) -> 
-            stmtsA |> List.map aux_stmt_and_def |> List.flatten
+            stmtsA |> List.map linearize_stmt_and_def |> List.flatten
 
         ) in
         (* the if case is not any different than all the other
@@ -803,7 +806,7 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
         | Case(_, eA, _, stmtA)::tl ->
             let instrs_eB, eB = linearize_expr eA in
             let stmts_eB = instrs_to_stmts instrs_eB
-            and stmtB = stmtA |> (List.map aux_stmt_and_def)
+            and stmtB = stmtA |> (List.map linearize_stmt_and_def)
                 |> List.flatten |> stmt_of_stmts_list in
             let index = !i in i := !i+1;
             let l1, l2 = aux tl in
@@ -823,7 +826,7 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
               l2
             )
         | Default(_, _, stmtA)::tl ->            
-            let stmtB = stmtA |> (List.map aux_stmt_and_def)
+            let stmtB = stmtA |> (List.map linearize_stmt_and_def)
                 |> List.flatten |> stmt_of_stmts_list in
             let l1, l2 = aux tl in
             l1, (
@@ -871,21 +874,25 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
     |
         (Declare (_, _, _)|Unset (_, _, _)|InlineHtml _|
             StaticVars (_, _, _)|Globals (_, _, _)|Try (_, _, _, _))
+
       -> raise Todo
+    | TypedDeclaration _ ->
+        raise Todo
 
   and aux_colon_stmt colon = 
     match colon with
     | A.SingleStmt st -> aux_stmt st
-    | A.ColonStmt(_, stl, _, _) -> stl |> List.map aux_stmt_and_def
+    | A.ColonStmt(_, stl, _, _) -> stl |> List.map linearize_stmt_and_def
       |> List.flatten
-  and aux_stmt_and_def x = 
-    match x with
-    | A.Stmt st -> aux_stmt st
-    | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
-        raise Todo
   in
-  let stmts = aux_stmt st in
-  stmts
+  aux_stmt st
+
+and linearize_stmt_and_def x = 
+  match x with
+  | A.Stmt st -> linearize_stmt st
+  | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
+      raise Todo
+
 
 
 let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
@@ -896,6 +903,27 @@ let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
         raise Todo
   ) +> List.flatten
 
+(* ------------------------------------------------------------------------- *)
+(* Misc *)
+(* ------------------------------------------------------------------------- *)
+
+
+let pil_of_type_hint t = 
+  match t with
+  | Hint name -> name
+  | HintArray tok -> Name ("Array", tok)
+
+let pil_of_static_scalar sc = 
+  raise Todo
+
+let pil_of_param p = {
+  B.p_name = p.p_name;
+  B.p_ref = (match p.p_ref with None -> false | Some _ -> true);
+  B.p_type = p.p_type +> Common.fmap pil_of_type_hint;
+  B.p_default = p.p_default +> Common.fmap (fun (_tok, static_scalar) ->
+    pil_of_static_scalar static_scalar);
+}
+  
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -908,18 +936,29 @@ let rec pil_of_program ast =
       xs +> List.map linearize_stmt +> List.flatten +> List.map (fun st ->
         B.TopStmt st)
 
-  | FuncDef def ->
+  | A.FuncDef def ->
+      [B.FunctionDef {
+        B.f_name = def.f_name;
+        B.f_ref = (match def.f_ref with None -> false | Some _ -> true);
+        B.f_params = def.f_params +> Ast.unparen +> Ast.uncomma +> 
+          List.map pil_of_param;
+        B.f_return_type = def.f_return_type +> Common.fmap pil_of_type_hint;
+        B.f_body = def.f_body +> Ast.unbrace +> List.map 
+          linearize_stmt_and_def +> List.flatten;
+        
+      }]
+
+
+  | A.ClassDef def ->
       raise Todo
-  | ClassDef def ->
-      raise Todo
-  | InterfaceDef def ->
+  | A.InterfaceDef def ->
       raise Todo
 
-  | Halt _ ->
+  | A.Halt _ ->
       raise Todo
-  | NotParsedCorrectly _ ->
+  | A.NotParsedCorrectly _ ->
       failwith "Parse error in the file"
-  | FinalDef _ -> []
+  | A.FinalDef _ -> []
 
   ) +> List.flatten
 

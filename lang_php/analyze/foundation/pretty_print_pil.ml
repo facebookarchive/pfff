@@ -202,11 +202,40 @@ let rec string_of_stmt (s:P.stmt) = match s with
                ";\n"
 
 
+let string_of_hint_type hint = 
+  string_of_name hint
+let string_of_option_type_hint x = 
+  match x with 
+  | None -> ""
+  | Some hint -> string_of_hint_type hint ^ " "
+
+let string_of_param p =
+  (string_of_option_type_hint p.P.p_type) ^
+  (* p_ref ? *)
+  (string_of_dname p.P.p_name) ^
+  (match p.P.p_default with
+  | None -> ""
+  | Some e -> " = " ^ string_of_expr e
+  )
+
 let string_of_program ?(show_types=false) xs = 
   Common.save_excursion _show_types show_types (fun () ->
     xs +> List.map (fun top ->
       match top with
       | P.TopStmt st -> string_of_stmt st
+
+      | P.FunctionDef def ->
+          let header = spf "function %s(%s) %s {\n"
+            (string_of_name def.P.f_name)
+            (def.P.f_params +> List.map string_of_param +> Common.join ", ")
+            (string_of_option_type_hint def.P.f_return_type)
+          in
+          (* todo? f_ref ? *)
+          let body = 
+            def.P.f_body +> List.map string_of_stmt +> Common.join ""
+          in
+          header ^ body ^ "}\n"
+
       | _ -> raise Todo
     ) +> Common.join ""
   )
