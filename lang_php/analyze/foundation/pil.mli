@@ -13,6 +13,7 @@ type constant = Ast_php.constant
 type class_name_reference = Ast_php.class_name_reference
 type assignOp = Ast_php.assignOp
 type castOp = Ast_php.castOp
+type modifier = Ast_php.modifier
 
 type type_info = {
   (* phptype is currently a list of types, to represent a union of types.
@@ -32,14 +33,13 @@ type lvalue = lvaluebis * type_info
  and lvaluebis = 
    | VVar of var
    | VQualifier of qualifier * var
-
    | ArrayAccess of var * expr option
    | ObjAccess of var * name
    | DynamicObjAccess of var * var
    | IndirectAccess of var * indirect
 
 (* Enforce only very basic expressions. Assign and function calls are in
- * the 'instruction' type below.
+ * the 'instr' type below.
  *)
 and expr = exprbis * type_info
  and exprbis =
@@ -97,18 +97,49 @@ type stmt =
 
  and catch = unit (* TODO *)
 
+type function_def = {
+   f_name: name;
+   f_params: parameter list;
+   f_ref: bool;
+   f_return_type: hint_type option;
+   f_body: stmt list;
+ }
+  and parameter = {
+    p_name: dname;
+    p_type: hint_type option;
+    p_ref: bool;
+    p_default: static_scalar option;
+  }
+ and static_scalar = expr
+ and hint_type = name
+
+
+type class_def = {
+  c_name: name;
+  c_type: class_type;
+  c_extends: name option;
+  c_implements: name list;
+  c_body: class_stmt list;
+ }
+ and class_type = 
+   | ClassRegular | ClassFinal | ClassAbstract 
+   | Interface 
+ and class_stmt =
+   | ClassConstantDef of name * static_scalar
+   | ClassVariable of 
+       modifier list * (* static-php-ext: *) hint_type option *
+       dname * static_scalar option
+   | Method of (modifier list * function_def)
+   | AbstractMethod of (modifier list * function_def)
+
+type require = unit (* TODO *)
+
 type toplevel = 
   | Require of require
   | TopStmt of stmt
-
   | FunctionDef of function_def
   | ClassDef of class_def
-  | InterfaceDef of interface_def
 
- and function_def = unit (* TODO *)
- and class_def = unit (* TODO *)
- and interface_def = unit (* TODO *)
- and require = unit (* TODO *)
 
 type program = toplevel list
 
