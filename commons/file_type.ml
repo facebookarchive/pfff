@@ -130,6 +130,8 @@ let file_type_of_file2 file =
   (* merd *)
   | "me" -> PL (MiscPL "me")
 
+  | "vim" -> PL (MiscPL "vim")
+
   | "php" | "phpt" -> PL (Web (Php e))
   | "css" -> PL (Web Css)
   | "js" -> PL (Web Js)
@@ -173,6 +175,9 @@ let file_type_of_file2 file =
   | "log"
   | "toc" | "brf"  
   | "out" | "output"
+      -> Obj e
+  (* pad: I use it to store marshalled data *)
+  | "db"
       -> Obj e
 
   | "msi" 
