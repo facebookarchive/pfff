@@ -216,8 +216,10 @@ let anamorphic_diviser_of_file ~root file =
       | Archi_code.I18n -> 8.
       | Archi_code.Data -> 15.
 
-      (* augment size of main *)
-      | Archi_code.Main | Archi_code.Init -> 0.33
+      (* augment size of main 
+       * TODO: should be adaptative
+       *)
+      | Archi_code.Main | Archi_code.Init -> 0.5
 
       | _ -> 1.
       )
