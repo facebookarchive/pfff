@@ -369,10 +369,16 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
     else 
       Common.filename_without_leading_path dw.root txt in
 
+  let readable_txt =
+    if String.length readable_txt > 15
+    then Filename.basename readable_txt
+    else readable_txt
+  in
+
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  Cairo.set_font_size cr_overlay 40.;
+  Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
   let extent = CairoH.text_extents cr_overlay readable_txt in
   let tw = extent.Cairo.text_width in

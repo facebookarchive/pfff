@@ -39,6 +39,8 @@ let zoom_factor_incruste_mode = 10. (* was 18 *)
 let threshold_draw_dark_background_font_size_real = 1.
 (*e: threshold_draw_dark_background_font_size_real *)
 
+let font_size_filename_cursor = 20.
+
 (*s: size_font_multiplier_of_categ() *)
 let multiplier_use x = 
   match x with

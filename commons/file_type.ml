@@ -150,7 +150,10 @@ let file_type_of_file2 file =
   | "png" | "jpg" | "JPG" | "gif" | "tiff" -> Media (Picture e)
   | "xcf" | "xpm" -> Media (Picture e)
   | "icns" | "icon" | "ico" -> Media (Picture e)
+  | "ppm" -> Media (Picture e)
   | "ttf" | "font"  -> Media (Picture e)
+
+  | "wav"  -> Media (Sound e)
 
   | "swf" -> Media (Picture e)
 

@@ -8,4 +8,7 @@ val size_font_multiplier_of_categ :
 val threshold_draw_dark_background_font_size_real : float
 
 val zoom_factor_incruste_mode : float
+
+val font_size_filename_cursor: float
+
 (*e: style2.mli *)

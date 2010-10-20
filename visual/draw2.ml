@@ -713,7 +713,13 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
  * else txt
  * in
  *)
-
+(*
+  let txt = 
+  if true
+  then if txt =~ "[^-]*-\\(.*\\)" then Common.matched1 txt else txt
+  else txt
+  in
+*)
   let r = rect.T.tr_rect in
   
   let w = F.rect_width r in

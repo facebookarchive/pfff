@@ -215,6 +215,7 @@ rule category = parse
   | "sparc"
   | "amd64"
   | "/arm/"
+  | "/arm."
   | "hppa"
   (* linux source *)
   | "parisc"
@@ -229,9 +230,17 @@ rule category = parse
   | "rs6000"
   | "h8300"
   | "/vax/"
+  | "/vax."
   | "sh64"
   | "/cris/"
   | "/frv/"
+  (* emacs source *)
+  | "386"
+  | "hp800"
+  | "iris4d"
+  | "macppc"
+  | "xtensa"
+
       { Architecture }
 
   (* plan9 source *)
@@ -242,16 +251,28 @@ rule category = parse
   | "/arch/" 
       { Architecture }
 
-  | "win32"
-  | "macos"
   | "unix"
   | "linux"
+  | "macos"
+  | "win32"
 
+  | "cygwin"
   | "msdos"
   | "/vms"
-  | "minix"
   | "/dos/"
   | "mswin"
+  | "ms-w32"
+  (* emacs source *)
+  | "/aix"
+  | "/hpux"
+  | "/irix"
+  | "/darwin"
+  | "freebsd"
+  | "netbsd"
+  | "openbsd"
+
+  | "/w32"
+
       { OS }
 
   | "dns" 

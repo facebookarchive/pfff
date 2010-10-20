@@ -181,7 +181,7 @@ let anamorphic_diviser_of_file ~root file =
   | Doc _ -> 100.
   | Obj _ -> 500.
 
-  | PL (Web Html) -> 25.
+  | PL (Web Html) -> 85.
 
   | PL (Web Json) -> 40.
 
@@ -202,6 +202,7 @@ let anamorphic_diviser_of_file ~root file =
   *)
 
   | Media (Picture _) -> 200.
+  | Media (Sound _) -> 100.
 
   | Other _ -> 10.
 

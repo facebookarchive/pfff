@@ -67,6 +67,11 @@ type source_archi =
   | Parsing (* scanner, parser *)
   | Security 
   | I18n
+  (* todo? 
+   * Memory (e.g. malloc, buffer), Fonts (font, charset)
+   * IO (e.g. keyboard, mouse)
+   * Strings (e.g. regex
+   *)
 
   | Architecture (* e.g. x86 *)
   | OS (* e.g. win32, macos, unix *)
