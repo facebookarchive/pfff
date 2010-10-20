@@ -115,7 +115,9 @@ rule category = parse
   | "security" { Security }
 
   | "lite" { MiniLite }
-  | "mini" { MiniLite }
+(* too many false positives, like mini in mono
+   | "mini" { MiniLite } 
+*)
 
   | "/tests/" 
   | "/test/" 
@@ -223,6 +225,13 @@ rule category = parse
   | "/power/"
   | "/powerpc/"
   | "/alpha/" 
+  (* gcc source *)
+  | "rs6000"
+  | "h8300"
+  | "/vax/"
+  | "sh64"
+  | "/cris/"
+  | "/frv/"
       { Architecture }
 
   (* plan9 source *)
@@ -242,10 +251,11 @@ rule category = parse
   | "/vms"
   | "minix"
   | "/dos/"
+  | "mswin"
       { OS }
 
   | "dns" 
-  | "ftp" 
+  | "ftp"
   | "ssh" 
   | "http" 
   | "smtp" 
@@ -269,22 +279,27 @@ rule category = parse
   | "scanne"
   | "parse"
   | "lexer"
-  | "token."
-  | "tokeniz"
+  | "token" (* false positive with security stuff ? *)
   | "/gram."
   | "/scan."
   | "grammar"
+
+  (* invent UnParsing category ? do also print ? *)
+  | "pretty_print"
       { Parsing }
 
   | "/ui/"
   | "/gui/" 
-  | "visual"
-  | "image"
   | "display"
   | "render"
   | "/video/"
   | "/media/"
   | "screen"
+  | "visual"
+  | "image"
+  | "jpeg"
+  | "/ui."
+  | "window"
       { Ui }
 
   | "/gtk/"
