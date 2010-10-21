@@ -57,8 +57,9 @@ let all_actions () =
   Test_parsing_ml.actions()++
   Test_parsing_php.actions()++
   Test_parsing_js.actions()++
-  Test_parsing_nw.actions()++
   Test_parsing_cpp.actions()++
+  Test_parsing_nw.actions()++
+  Test_parsing_lisp.actions()++
   Test_mini_php.actions()++
 
   Test_analyze_cpp.actions () ++
