@@ -370,8 +370,11 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
       Common.filename_without_leading_path dw.root txt in
 
   let readable_txt =
-    if String.length readable_txt > 15
-    then Filename.basename readable_txt
+    if String.length readable_txt > 25
+    then 
+      let dirs = Filename.dirname readable_txt +> Common.split "/" in
+      let file = Filename.basename readable_txt in
+      spf "%s/.../%s" (List.hd dirs) file
     else readable_txt
   in
 
