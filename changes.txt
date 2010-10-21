@@ -13,6 +13,11 @@ can now visualize the result of a git grep on a project.
 so can visualize also Tex/Latex/Noweb source (which includes
 the documentation of pfff!)
 
+** introducing parsing_lisp/
+
+** php analysis
+finalized the PIL
+
 ** global analysis
 
 *** store additional attributes/properties per entities in the light code db
@@ -24,12 +29,15 @@ visual feedback.
 ** pfff:ml
 more highlight
 
-** wrote a few wiki pages
-Also applied pfff_visual on many open source project and generated screenshots.
+** documentation
+
+wrote a few wiki pages (intro, sgrep, features, etc)
+
+applied pfff_visual on many open source project and generated screenshots.
 
 * 0.13
 
-public release!
+first public release!
 
 * 0.12
 
