@@ -106,6 +106,17 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         | _ -> ()
         );
         aux_toks xs
+
+    (* scheme/racket *)
+    | T.TOParen ii1::T.TIdent (s2, ii2)
+      ::T.TOParen iibis::T.TIdent (s3, ii3)::xs 
+        when PI.col_of_info ii1 = 0 ->
+        (match s2 with
+        | "define" -> 
+            tag ii3 (Function (Def2 NoUse))
+        | _ -> ()
+        );
+        aux_toks xs
         
 
     | x::xs ->
@@ -148,16 +159,25 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     | T.TIdent (s, ii) ->
         (match s with
+        (* lisp *)
         | "defun"  
             -> tag ii Keyword
-
-        | "setq"  | "defvar" | "let"
+        | "setq"  | "defvar" 
             -> tag ii KeywordObject (* hmm not really *)
+
+        (* scheme *)
+        | "define"  
+            -> tag ii Keyword
+
+
+        | "let"  | "let*" 
+            -> tag ii KeywordObject
 
         | "defconst"
             -> tag ii KeywordObject
 
-        | "require" | "provide"
+        | "require" | "provide" 
+        | "module" (* racket *)
             -> tag ii KeywordModule
 
         | "t"  ->
