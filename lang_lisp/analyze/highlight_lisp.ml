@@ -47,7 +47,6 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     Hashtbl.add already_tagged ii true
   )
   in
-
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
   (* -------------------------------------------------------------------- *)
@@ -55,7 +54,6 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
   (* -------------------------------------------------------------------- *)
-
   (* 
    * note: all TCommentSpace are filtered in xs so easier to write
    * rules (but regular comments are kept as well as newlines).
@@ -93,6 +91,22 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         );
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
+    (* Poor's man semantic tagger. Infer if ident is a func, or variable,
+     * based on the few tokens around and the column information.
+     *)
+    | T.TOParen ii1::T.TIdent (s2, ii2)::T.TIdent (s3, ii3)::xs 
+        when PI.col_of_info ii1 = 0 ->
+        (match s2 with
+        | "setq" | "defvar" ->
+            tag ii3 (Global (Def2 NoUse))
+        | "defun" -> 
+            tag ii3 (Function (Def2 NoUse))
+        | "defconst" ->
+            tag ii3 (MacroVar (Def2 NoUse))
+        | _ -> ()
+        );
+        aux_toks xs
+        
 
     | x::xs ->
         aux_toks xs
@@ -136,8 +150,15 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         (match s with
         | "defun"  
             -> tag ii Keyword
-        | "setq" 
+
+        | "setq"  | "defvar" | "let"
             -> tag ii KeywordObject (* hmm not really *)
+
+        | "defconst"
+            -> tag ii KeywordObject
+
+        | "require" | "provide"
+            -> tag ii KeywordModule
 
         | "t"  ->
             tag ii Boolean
@@ -146,6 +167,8 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
         | "cond" | "if" ->
             tag ii KeywordConditional
+        | "while" | "do" ->
+            tag ii KeywordLoop
 
         | "concat"
         | "getenv"
