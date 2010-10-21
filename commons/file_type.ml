@@ -78,7 +78,7 @@ let file_type_of_file2 file =
 *)
 
   | "ml" | "mli" 
-  | "mly" | "mll" 
+  | "mly" | "mll"
       -> PL (ML e)
   | "mlp" (* used in emacs source *)
       -> PL (ML e)
@@ -86,6 +86,9 @@ let file_type_of_file2 file =
   | "lml" (* linear ML *)
       -> PL (ML e)
   | "sml" 
+      -> PL (ML e)
+  (* fsharp *)
+  | "fsi" 
       -> PL (ML e)
 
   | "hs" | "lhs" -> PL (Haskell e)
