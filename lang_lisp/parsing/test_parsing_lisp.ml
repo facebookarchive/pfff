@@ -23,6 +23,20 @@ let test_tokens_lisp file =
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
+let test_parse_lisp xs =
+
+  let fullxs = Lib_parsing_lisp.find_lisp_files_of_dir_or_files xs in
+  let stat_list = ref [] in
+
+  fullxs +> List.iter (fun file -> 
+    pr2 ("PARSING: " ^ file);
+
+    let (xs, stat) = Parse_lisp.parse file in
+    Common.push2 stat stat_list;
+  );
+  Parse_info.print_parsing_stat_list !stat_list;
+  ()
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -34,4 +48,6 @@ let test_tokens_lisp file =
 let actions () = [
   "-tokens_lisp", "   <file>", 
   Common.mk_action_1_arg test_tokens_lisp;
+  "-parse_lisp", "   <files or dirs>", 
+  Common.mk_action_n_arg test_parse_lisp;
 ]

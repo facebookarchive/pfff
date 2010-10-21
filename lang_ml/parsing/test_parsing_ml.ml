@@ -91,6 +91,7 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_ml;
   "-parse_ml", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_ml_or_mli;
+
   "-refactor_grammar", "   <subst_file> <file>", 
   Common.mk_action_2_arg refactor_grammar;
 ]

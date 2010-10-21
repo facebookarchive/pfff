@@ -11,6 +11,7 @@ SRC= flag_parsing_lisp.ml \
      ast_scheme.ml \
      parser_lisp.ml lexer_lisp.ml \
      parse_lisp.ml \
+     lib_parsing_lisp.ml \
      test_parsing_lisp.ml
 
 #     unparse_js.ml \
