@@ -97,6 +97,11 @@ rule token = parse
       TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
     }
 
+   (* maybe elisp specific *)
+  | "?\\" _ {
+      TString (tok lexbuf, tokinfo lexbuf)
+    }
+
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
