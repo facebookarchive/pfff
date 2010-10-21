@@ -135,6 +135,10 @@ let file_type_of_file2 file =
 
   | "vim" -> PL (MiscPL "vim")
 
+  (* from hex to bcc *)
+  | "he" -> PL (MiscPL "he")
+  | "bc" -> PL (MiscPL "bc")
+
   | "php" | "phpt" -> PL (Web (Php e))
   | "css" -> PL (Web Css)
   | "js" -> PL (Web Js)
