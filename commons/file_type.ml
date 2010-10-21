@@ -227,12 +227,12 @@ let file_type_of_file2 file =
   | _ when Common.is_executable file -> Binary e
 
   | _ when b = "Makefile" -> PL Makefile
+  | _ when b = "README" -> Text "txt"
 
-  (* facebook *)
   | _ when b = "TAGS" -> Binary e
-
   | _ when b = "TARGETS" -> PL Makefile
   | _ when b = ".depend" -> Obj "depend"
+  | _ when b = ".emacs" -> PL (Lisp (Elisp))
 
   | _ when Common.filesize file > 300_000 ->
       Obj e
