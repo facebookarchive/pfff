@@ -49,7 +49,6 @@ let symbol =
   ['-' '+' '=' '~'  '.'  ',' '/' ':' '<' '>' '*' ';' '#' 
      '_'  '?' '^' '|' '!' '&' ] 
 (*
-'\''
 '\\'
 '@'
 '"'
@@ -74,6 +73,15 @@ rule token = parse
 
   | '(' { TOParen (tokinfo lexbuf) } | ')' { TCParen (tokinfo lexbuf) }
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
+
+  | '\'' { TQuote (tokinfo lexbuf) }
+  (* special rule for symbols e.g. 'foo ? or because '(foo) is also
+   * valid just let the parser differentiate those different quoted
+   * things ?
+   *)
+  | '`'  { TBackQuote (tokinfo lexbuf) }
+  | ','  { TComma (tokinfo lexbuf) }
+  | '@'  { TAt (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)

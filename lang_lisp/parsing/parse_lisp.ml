@@ -28,6 +28,13 @@ module TH = Parser_lisp
 (* Prelude *)
 (*****************************************************************************)
 
+(* 
+ * alt: 
+ *  - Could reuse the parser in ocamlsexp ? but they just have Atom | Sexp
+ *    and I need to differentiate numbers in the highlighter, and
+ *    also handling quoted, anti-quoted and other lisp special things.
+ *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)

@@ -37,11 +37,10 @@ type file_type =
  and pl_type = 
   | ML of string  (* mli, ml, mly, mll *)
   | Haskell of string
+  | Lisp of lisp_type
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
   | C | Cplusplus | Java | Csharp
-  | Scheme | Lisp 
-  | Elisp
   | Perl | Python | Ruby
   | Erlang
   | Beta
@@ -50,6 +49,8 @@ type file_type =
   | Asm
   | Thrift
   | MiscPL of string
+
+   and lisp_type = CommonLisp | Elisp | Scheme
 
     and webpl_type = 
       | Php of string (* php or phpt or script *)
@@ -113,10 +114,10 @@ let file_type_of_file2 file =
 
   | "thrift" -> PL Thrift
 
-  | "scm" | "rkt" -> PL Scheme
-  | "lisp" -> PL Lisp
+  | "scm" | "rkt" -> PL (Lisp Scheme)
+  | "lisp" -> PL (Lisp CommonLisp)
+  | "el" -> PL (Lisp Elisp)
 
-  | "el" -> PL Elisp
   | "pl" | "perl" -> PL Perl (* could be prolog too *)
   | "py" -> PL Python
   | "rb" -> PL Ruby

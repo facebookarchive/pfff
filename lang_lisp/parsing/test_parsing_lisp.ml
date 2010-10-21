@@ -11,8 +11,10 @@ open OUnit
 (*****************************************************************************)
 
 let test_tokens_lisp file = 
-  if not (file =~ ".*\\.nw") 
-  then pr2 "warning: seems not a noweb file";
+  (match File_type.file_type_of_file file with
+  | File_type.PL (File_type.Lisp _) -> ()
+  | _ -> pr2 "warning: seems not a lisp file";
+  );
 
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;

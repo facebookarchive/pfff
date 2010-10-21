@@ -33,6 +33,12 @@ type token =
   | TOBracket of (Ast_lisp.info)
   | TCBracket of (Ast_lisp.info)
 
+  | TQuote of (Ast_lisp.info)
+  (* anti-quote expressions tokens, as in `(foo ,v ,@xs) *)
+  | TBackQuote of (Ast_lisp.info)
+  | TComma  of (Ast_lisp.info)
+  | TAt  of (Ast_lisp.info)
+
   | TUnknown of (Ast_lisp.info)
   | EOF of (Ast_lisp.info)
 
@@ -68,6 +74,11 @@ let visitor_info_of_tok f = function
   | TCParen ii -> TCParen (f ii)
   | TOBracket ii -> TOBracket (f ii)
   | TCBracket ii -> TCBracket (f ii)
+
+  | TQuote ii -> TQuote (f ii)
+  | TBackQuote ii -> TBackQuote (f ii)
+  | TComma ii -> TComma (f ii)
+  | TAt ii -> TAt (f ii)
 
   | TUnknown ii -> TUnknown (f ii)
   | EOF ii -> EOF (f ii)
