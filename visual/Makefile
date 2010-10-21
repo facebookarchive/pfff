@@ -38,6 +38,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
          $(TOP)/lang_ml/analyze \
         $(TOP)/lang_nw/parsing \
          $(TOP)/lang_nw/analyze \
+        $(TOP)/lang_lisp/parsing \
+         $(TOP)/lang_lisp/analyze \
         $(TOP)/lang_cpp/parsing \
          $(TOP)/lang_cpp/analyze \
         $(TOP)/lang_js/parsing \

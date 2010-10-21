@@ -35,10 +35,13 @@ open Highlight_code
  *)
 type ast = 
   | ML  of Parse_ml.program2
+
   | Php of Parse_php.program2
-  | Cpp of Parse_cpp.program2
   | Js  of Parse_js.program2
 
+  | Cpp of Parse_cpp.program2
+
+  | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
 
 
@@ -58,6 +61,14 @@ let parse_nw2 file =
 let parse_nw_cache a = 
   Common.profile_code "View.parse_nw_cache" (fun () -> 
     match parse_nw2 a with | Noweb a -> a | _ -> raise Impossible
+  )
+
+let parse_lisp2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Lisp (Parse_lisp.parse file +> fst))
+let parse_lisp_cache a = 
+  Common.profile_code "View.parse_lisp_cache" (fun () -> 
+    match parse_lisp2 a with | Lisp a -> a | _ -> raise Impossible
   )
 
 
@@ -243,6 +254,40 @@ let tokens_with_categ_of_file file hentities =
 
         )
       ) +> List.flatten
+
+  | FT.PL (FT.Lisp _) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_lisp_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_lisp.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Parser_lisp.info_of_tok tok in
+          let s = Parser_lisp.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
 
   | FT.Text ("nw" | "tex" | "texi" | "web") ->
 

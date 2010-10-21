@@ -5,3 +5,5 @@
 (setq debug-on-error       t) ;or   --debug-init
 
 (defun h(s) (concat (getenv "HOME") "/" s))
+
+(setq bar 1001)

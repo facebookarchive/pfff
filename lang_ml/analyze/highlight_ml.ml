@@ -71,13 +71,8 @@ let disable_token_phase2 = false
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
  *)
+let visit_toplevel ~tag_hook prefs  (*db_opt *) (toplevel, toks) =
 
-let visit_toplevel 
-    ~tag_hook
-    prefs 
-    (*db_opt *)
-    (toplevel, toks)
-  =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;

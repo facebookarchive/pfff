@@ -9,10 +9,13 @@ val use_arity_of_use_count : int -> Highlight_code.use_arity
 
 type ast =
   | ML of Parse_ml.program2
+
   | Php of Parse_php.program2
-  | Cpp of Parse_cpp.program2
   | Js of Parse_js.program2
 
+  | Cpp of Parse_cpp.program2
+
+  | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
 
 val _hmemo_file : (Common.filename, ast) Hashtbl.t

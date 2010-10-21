@@ -1,0 +1,186 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2010 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
+open Common
+
+open Ast_lisp
+
+module Ast = Ast_lisp
+module PI = Parse_info
+
+open Highlight_code
+
+module T = Parser_lisp
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Helpers when have global analysis information *)
+(*****************************************************************************)
+
+let fake_no_def2 = NoUse
+let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
+(*****************************************************************************)
+(* Code highlighter *)
+(*****************************************************************************)
+
+let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
+
+  let already_tagged = Hashtbl.create 101 in
+  let tag = (fun ii categ ->
+    tag_hook ii categ;
+    Hashtbl.add already_tagged ii true
+  )
+  in
+
+  (* -------------------------------------------------------------------- *)
+  (* ast phase 1 *) 
+  (* -------------------------------------------------------------------- *)
+
+  (* -------------------------------------------------------------------- *)
+  (* toks phase 1 *)
+  (* -------------------------------------------------------------------- *)
+
+  (* 
+   * note: all TCommentSpace are filtered in xs so easier to write
+   * rules (but regular comments are kept as well as newlines).
+   *)
+
+  let rec aux_toks xs = 
+    match xs with
+    | [] -> ()
+
+    (* a little bit pad specific *)
+    |   T.TComment(ii)
+      ::T.TCommentNewline (ii2)
+      ::T.TComment(ii3)
+      ::T.TCommentNewline (ii4)
+      ::T.TComment(ii5)
+      ::xs ->
+
+        let s = PI.str_of_info ii in
+        let s5 =  PI.str_of_info ii5 in
+        (match () with
+        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection1
+        | _ when s =~ ".*------" && s5 =~ ".*------" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection2
+        | _ when s =~ ".*####" && s5 =~ ".*####" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection0
+        | _ ->
+            ()
+        );
+        aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
+
+
+    | x::xs ->
+        aux_toks xs
+  in
+  let toks' = toks +> Common.exclude (function
+    | T.TCommentSpace _ -> true
+    | _ -> false
+  )
+  in
+  aux_toks toks';
+
+  (* -------------------------------------------------------------------- *)
+  (* toks phase 2 *)
+
+  toks +> List.iter (fun tok -> 
+    match tok with
+    | T.TComment ii ->
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          (* a little bit syncweb specific *)
+          let s = PI.str_of_info ii in
+          if s =~ "(\\*[sex]:" (* yep, s e x are the syncweb markers *)
+          then tag ii CommentSyncweb
+          else tag ii Comment
+
+    | T.TCommentNewline ii | T.TCommentSpace ii 
+      -> ()
+
+    | T.TUnknown ii 
+      -> tag ii Error
+    | T.EOF ii
+      -> ()
+
+    | T.TString (s,ii) ->
+        tag ii String
+
+    | T.TNumber (s,ii) ->
+        tag ii Number
+
+    | T.TIdent (s, ii) ->
+        (match s with
+        | "defun"  
+            -> tag ii Keyword
+        | "setq" 
+            -> tag ii KeywordObject (* hmm not really *)
+
+        | "t"  ->
+            tag ii Boolean
+        | "nil"  ->
+            tag ii Boolean (* or Null ? *)
+
+        | "cond" | "if" ->
+            tag ii KeywordConditional
+
+        | "concat"
+        | "getenv"
+            ->  tag ii Builtin
+
+        | _ -> ()
+        )
+
+
+    | T.TCBracket ii
+    | T.TOBracket ii
+        -> tag ii TypeVoid (* TODO *)
+
+    | T.TCParen ii
+    | T.TOParen ii
+      -> tag ii Punctuation
+
+    | T.TQuote ii ->
+        tag ii EmbededHtml (* quote stuff is kind of like XHP after all *)
+
+    | T.TAt ii
+    | T.TComma ii
+    | T.TBackQuote ii
+      ->
+        tag ii EmbededHtml (* quote stuff is kind of like XHP after all *)
+
+
+
+  );
+
+  (* -------------------------------------------------------------------- *)
+  (* ast phase 2 *)  
+
+  ()
+
+
+
+

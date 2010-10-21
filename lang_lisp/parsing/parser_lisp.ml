@@ -15,6 +15,8 @@
 
 open Common
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -88,3 +90,5 @@ let info_of_tok tok =
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok +> ignore;
   Common.some !res
 
+
+let str_of_tok  x = PI.str_of_info  (info_of_tok x)
