@@ -136,6 +136,29 @@ let visit_toplevel
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
+    (* specific to texinfo *)
+    |    T.TSymbol("@", _)
+      :: T.TWord(s, ii)::xs ->
+           let categ_opt = 
+             (match s with
+             | "title" -> Some CommentSection0
+             | "chapter" -> Some CommentSection0
+             | "section" -> Some CommentSection1
+             | "subsection" -> Some CommentSection2
+             | "c" -> Some Comment
+             | _ -> None
+             )
+           in
+           (match categ_opt with
+           | None -> 
+               tag ii Keyword;
+               aux_toks xs
+           | Some categ ->
+               let (before, _, _) = span_newline xs in
+               tag_all_tok_with ~tag categ before;
+               (* repass on tokens, in case there are nested tex commands *)
+               aux_toks xs
+           )
 
     (* specific to web TeX source: ex: @* \[24] Getting the next token. *)
     |    T.TSymbol("@*", _)
