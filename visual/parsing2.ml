@@ -35,6 +35,7 @@ open Highlight_code
  *)
 type ast = 
   | ML  of Parse_ml.program2
+  | Hs  of Parse_hs.program2
 
   | Php of Parse_php.program2
   | Js  of Parse_js.program2
@@ -53,6 +54,14 @@ let parse_ml2 file =
 let parse_ml_cache a = 
   Common.profile_code "View.parse_ml_cache" (fun () -> 
     match parse_ml2 a with | ML a -> a | _ -> raise Impossible
+  )
+
+let parse_hs2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Hs (Parse_hs.parse file +> fst))
+let parse_hs_cache a = 
+  Common.profile_code "View.parse_hs_cache" (fun () -> 
+    match parse_hs2 a with | Hs a -> a | _ -> raise Impossible
   )
 
 let parse_nw2 file = 
@@ -254,6 +263,40 @@ let tokens_with_categ_of_file file hentities =
 
         )
       ) +> List.flatten
+
+  | FT.PL (FT.Haskell _) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_hs_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_hs.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Parser_hs.info_of_tok tok in
+          let s = Parser_hs.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
 
   | FT.PL (FT.Lisp _) ->
       let h = Hashtbl.create 101 in

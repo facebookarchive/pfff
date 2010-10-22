@@ -9,6 +9,7 @@ val use_arity_of_use_count : int -> Highlight_code.use_arity
 
 type ast =
   | ML of Parse_ml.program2
+  | Hs  of Parse_hs.program2
 
   | Php of Parse_php.program2
   | Js of Parse_js.program2
