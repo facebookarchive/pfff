@@ -237,3 +237,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_lisp/parsing/lexer_lisp.ml
 /lang_haskell/parsing/lexer_hs.ml
 /pfff.top
+/demos/simple_refactoring

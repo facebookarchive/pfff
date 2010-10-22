@@ -4,8 +4,27 @@
 # to people who wants to use pfff in their own application.
 
 ##############################################################################
+# Simple compilation
+##############################################################################
+
+# This is intentionnaly not using OCAMLC, SYSLIBS and so on to show a simple 
+# way to compile a pfff "script"
+simple_refactoring: simple_refactoring.ml
+	ocamlc -g -o simple_refactoring \
+         -I ../commons -I ../lang_php/parsing \
+          str.cma unix.cma nums.cma bigarray.cma \
+	  ../commons/commons.cma ../h_program-lang/lib.cma \
+          ../lang_php/parsing/lib.cma \
+          simple_refactoring.ml
+
+clean::
+	rm simple_refactoring
+
+##############################################################################
 # Variables
 ##############################################################################
+
+# Now we switch to a more traditional Makefile
 
 include ../Makefile.config
 ifeq ($(FEATURE_BDB),1)
@@ -96,6 +115,8 @@ rec::
 
 clean::
 	rm -f *.opt *.byte
+
+
 
 ##############################################################################
 # Developer rules
