@@ -160,6 +160,7 @@ let file_type_of_file2 file =
   | "xcf" | "xpm" -> Media (Picture e)
   | "icns" | "icon" | "ico" -> Media (Picture e)
   | "ppm" -> Media (Picture e)
+  | "tga" -> Media (Picture e)
   | "ttf" | "font"  -> Media (Picture e)
 
   | "wav"  -> Media (Sound e)
