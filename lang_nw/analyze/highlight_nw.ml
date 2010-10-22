@@ -146,6 +146,10 @@ let visit_toplevel
              | "section" -> Some CommentSection1
              | "subsection" -> Some CommentSection2
              | "c" -> Some Comment
+             (* don't want to polluate my view with indexing "aspect" *)
+             | "cindex" -> 
+                 tag ii Comment;
+                 Some Comment
              | _ -> None
              )
            in

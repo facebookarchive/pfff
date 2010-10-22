@@ -135,6 +135,7 @@ let file_type_of_file2 file =
   | "me" -> PL (MiscPL "me")
 
   | "vim" -> PL (MiscPL "vim")
+  | "nanorc" -> PL (MiscPL "nanorc")
 
   (* from hex to bcc *)
   | "he" -> PL (MiscPL "he")

@@ -37,6 +37,8 @@ open Archi_code
 
 }
 
+let b = ['/' '_' '-' '.']
+
 (*****************************************************************************)
 
 rule category = parse
@@ -74,9 +76,12 @@ rule category = parse
 
   | "/changes" 
       { Doc }
+  | "readme"
+      { Doc }
 
   | "/license" 
   | "/copyright" 
+  | b "copying" 
       { BoilerPlate }
 
   (* gnu software boilerplate *)
@@ -208,31 +213,28 @@ rule category = parse
   | "x86"
   | "i386"
   | "i686"
-  | "/386/"
   | "ia64"
   | "mips"
   | "m68k"
   | "sparc"
   | "amd64"
-  | "/arm/"
-  | "/arm."
+  | b "arm" b
   | "hppa"
   (* linux source *)
   | "parisc"
   | "s390"
   | "blackfin"
-  | "/ppc/"
+  | b "ppc" b
   | "ppc64"
   | "/power/"
-  | "/powerpc/"
-  | "/alpha/" 
+  | b "powerpc" b
+  | b "alpha" b
   (* gcc source *)
   | "rs6000"
   | "h8300"
-  | "/vax/"
-  | "/vax."
+  | b "vax" b
   | "sh64"
-  | "/cris/"
+  | b "cris" b
   | "/frv/"
   (* emacs source *)
   | "386"
@@ -241,6 +243,9 @@ rule category = parse
   | "macppc"
   | "xtensa"
 
+  (* qemu source *)
+  | b "sh4" b
+  | "microblaze"
       { Architecture }
 
   (* plan9 source *)
@@ -258,20 +263,21 @@ rule category = parse
 
   | "cygwin"
   | "msdos"
-  | "/vms"
-  | "/dos/"
+  | b "vms" b
+  | b "dos/" b
   | "mswin"
   | "ms-w32"
   (* emacs source *)
-  | "/aix"
-  | "/hpux"
-  | "/irix"
-  | "/darwin"
+  | b "aix" b
+  | b "hpux" b
+  | b "irix" b
+  | "darwin"
   | "freebsd"
   | "netbsd"
   | "openbsd"
+  | b "bsd" b
 
-  | "/w32"
+  | b "w32" b
 
       { OS }
 
@@ -281,7 +287,7 @@ rule category = parse
   | "http" 
   | "smtp" 
   | "ldap" 
-  | "/imap"  (* / because can have files like guimap *)
+  | b "imap" b  (* because can have files like guimap *)
   | "krb4" 
   | "pop3" 
   | "socks" 

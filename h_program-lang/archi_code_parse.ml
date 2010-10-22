@@ -36,6 +36,7 @@ open Archi_code
 (* Helpers *)
 (*****************************************************************************)
 
+(* coupling: don't forget to extend re_auto_generated below too *)
 let is_auto_generated file =
   let (d,b,e) = Common.dbe_of_filename_noext_ok file in
   match e with
@@ -62,11 +63,15 @@ let is_auto_generated file =
       (* bigloo *)
       Sys.file_exists (Common.filename_of_dbe (d,b, "scm"))
  
+  | _ when b = "Makefile" && e = "NOEXT" ->
+      Sys.file_exists (Common.filename_of_dbe (d,b, "am")) ||
+      Sys.file_exists (Common.filename_of_dbe (d,b, "in"))
 
   | _ -> false
 
+(* opti: for some fastpath *)
 let re_auto_generated = Str.regexp
-  ".*\\.\\(ml\\|mli\\|tex\\|info\\|in\\|c\\)"
+  "\\(.*\\.\\(ml\\|mli\\|tex\\|info\\|in\\|c\\)\\)\\|.*Makefile"
 
 (*****************************************************************************)
 (* Filename->archi *)
