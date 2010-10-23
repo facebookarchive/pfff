@@ -28,8 +28,10 @@ type token =
 
   | TNumber of (string * Ast_hs.info)
   | TString of (string * Ast_hs.info)
+  | TChar of (string * Ast_hs.info)
 
   | TIdent of (string * Ast_hs.info)
+  | TUpperIdent of (string * Ast_hs.info)
   | TSymbol of (string * Ast_hs.info)
 
   | TOParen of (Ast_hs.info)
@@ -66,6 +68,10 @@ type token =
   | Tinfixl of (Ast_hs.info)
   | Tinfixr of (Ast_hs.info)
 
+  | Tqualified of (Ast_hs.info)
+  | Tas of (Ast_hs.info)
+  | Thiding of (Ast_hs.info)
+
   | TUnknown of (Ast_hs.info)
   | EOF of (Ast_hs.info)
 
@@ -95,8 +101,10 @@ let visitor_info_of_tok f = function
 
   | TNumber (s, ii) -> TNumber (s, f ii)
   | TString (s, ii) -> TString (s, f ii)
+  | TChar (s, ii) -> TChar (s, f ii)
 
   | TIdent (s, ii) -> TIdent (s, f ii)
+  | TUpperIdent (s, ii) -> TUpperIdent (s, f ii)
   | TSymbol (s, ii) -> TSymbol (s, f ii)
 
   | TOParen ii -> TOParen (f ii)
@@ -132,6 +140,10 @@ let visitor_info_of_tok f = function
   | Tinfix ii -> Tinfix (f ii)
   | Tinfixl ii -> Tinfixl (f ii)
   | Tinfixr ii -> Tinfixr (f ii)
+
+  | Tqualified ii -> Tqualified (f ii)
+  | Tas ii -> Tas (f ii)
+  | Thiding ii -> Thiding (f ii)
 
 
   | TUnknown ii -> TUnknown (f ii)

@@ -38,6 +38,7 @@ type category =
   | Constructor
   | Module of usedef
   | Label of usedef
+  | FunctionEquation
 
   | BadSmell
 

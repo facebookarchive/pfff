@@ -100,11 +100,44 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii1 (Function (Def2 NoUse));
         aux_toks xs
 
-
     | (T.Ttype _ | T.Tdata _ | T.Tnewtype _)::T.TIdent (s, ii1)::xs ->
         tag ii1 (TypeDef Def);
         aux_toks xs
         
+
+
+    (* a few false positives, for instance local typed variable
+     * and method definitions in type class
+     *)
+    | T.TIdent (s, ii1)::T.TSymbol ("::", ii3)::xs 
+        when PI.col_of_info ii1 > 0 ->
+
+        tag ii1 (Field (Def2 NoUse));
+        aux_toks xs
+
+    | T.TIdent (s, ii1)::xs 
+        when PI.col_of_info ii1 = 0 ->
+
+        tag ii1 FunctionEquation;
+        aux_toks xs
+
+    | T.TIdent (s, ii1)::T.TSymbol ("<-", ii3)::xs  ->
+        tag ii1 UseOfRef;
+        aux_toks xs
+
+(* too many false positives, for instance records building 
+    | T.TIdent (s, ii1)::T.TSymbol ("=", ii3)::xs  ->
+        tag ii1 (Local Def);
+        aux_toks xs
+*)
+
+    | T.TIdent (s, ii1)::T.TSymbol ("@", ii2)::xs  ->
+        tag ii1 (Local Def);
+        aux_toks xs
+
+    | T.TSymbol ("\\", ii1)::T.TIdent (s, ii2)::xs  ->
+        tag ii2 (Parameter Def);
+        aux_toks xs
 
     | x::xs ->
         aux_toks xs
@@ -141,6 +174,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TString (s,ii) ->
         tag ii String
 
+    | T.TChar (s,ii) ->
+        tag ii String
+
     | T.TNumber (s,ii) ->
         tag ii Number
 
@@ -161,8 +197,15 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TPipe ii 
         -> tag ii Punctuation
 
-    | T.TSymbol (_, ii)
-        -> tag ii Operator
+    | T.TSymbol (s, ii)
+        -> 
+        let kind = 
+          match s with
+          | "::" | "->" | "<-" | "=" ->
+              Punctuation
+          | _ -> Operator
+        in
+        tag ii kind
 
     | T.Tdata  ii -> tag ii Keyword
     | T.Tnewtype  ii -> tag ii Keyword
@@ -189,8 +232,23 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.Tinfixl  ii -> tag ii Keyword
     | T.Tinfixr  ii -> tag ii Keyword
 
-    | T.TIdent ii
-        -> ()
+    | T.Tqualified  ii 
+    | T.Tas  ii 
+    | T.Thiding  ii 
+      -> tag ii KeywordModule
+
+
+    | T.TIdent (s, ii)
+        -> 
+        (match s with
+        | "unsafePerformIO" -> tag ii BadSmell
+        | _ -> ()
+        )
+
+    | T.TUpperIdent (s, ii)
+        -> 
+        (* could be a type or a constructor *)
+        tag ii TypeMisc
 
 
   );

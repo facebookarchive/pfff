@@ -214,6 +214,9 @@ type category =
   (* misc *)
   | Label of usedef
 
+  (* haskell *)
+  | FunctionEquation
+
 
   (* semantic information *)
   | BadSmell
@@ -702,6 +705,7 @@ let info_of_category = function
   | TypeMisc -> [`FOREGROUND "chartreuse";]
 
   | Constructor -> [`FOREGROUND "LightBlue2";]
+  | FunctionEquation -> [`FOREGROUND "LightSkyBlue";]
 
   | Module (Use) -> [`FOREGROUND "DarkSlateGray4";]
 
@@ -773,7 +777,7 @@ let info_of_category = function
       [`FOREGROUND "cyan";]
 
   | Operator ->
-      [`FOREGROUND "cyan";] (* could do better ? *)
+      [`FOREGROUND "DeepSkyBlue3";] (* could do better ? *)
 
   | (Label _) ->
       [`FOREGROUND "cyan";]
@@ -789,6 +793,8 @@ let info_of_category = function
        * used as a method call in method programming
        *)
       [`FOREGROUND "DarkGoldenrod2"] 
+
+
 
   | Normal -> [`FOREGROUND "wheat";]
 

@@ -74,6 +74,12 @@ let keyword_table = Common.hash_of_list [
   "infix", (fun ii -> Tinfix ii); 
   "infixl", (fun ii -> Tinfixl ii); 
   "infixr", (fun ii -> Tinfixr ii);
+
+
+  (* additional keywords not in spec *)
+  "qualified", (fun ii -> Tqualified ii);
+  "hiding", (fun ii -> Thiding ii);
+  "as", (fun ii -> Tas ii);
 ]
 
 }
@@ -85,16 +91,18 @@ let digit = ['0'-'9']
 let lowerletter = ['a'-'z']
 let upperletter = ['A'-'Z']
 
+let ident      = (lowerletter | '_') (letter | digit | '_' | "'")*
+let upperident = upperletter (letter | digit | '_')*
+
 let symbol =
   ['-' '+' '=' '~'  '.'  '/' ':' '<' '>' '*' '#' '_'  '?' '^' '!' '&'
     '|'
+    '$'
+   (* todo: should be its own token probably *)
+   '\\' (* for lambdas *)
+   '@'  (* as pattern *)
+   (* '"' '`' *)
   ]
-(*
-'\\'
-'@'
-'"'
-'`'
-*)
 
 (*****************************************************************************)
 rule token = parse
@@ -141,9 +149,17 @@ rule token = parse
     }
 
   (* ----------------------------------------------------------------------- *)
+  (* Chars *)
+  (* ----------------------------------------------------------------------- *)
+
+  | "'" (_ as c) "'" {
+      TChar (String.make 1 c, tokinfo lexbuf)
+    }
+
+  (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  | (letter | '_') (letter | '_' | digit )* {
+  | ident {
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
       match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
@@ -151,6 +167,15 @@ rule token = parse
       | None -> TIdent (s, info)
     }
 
+  | upperident {
+      let s = tok lexbuf in
+      TUpperIdent (s, tokinfo lexbuf)
+    }
+
+  | '`' ident '`' {
+      (* todo: make it a TIdentInfix ? *)
+      TSymbol (tok lexbuf, tokinfo lexbuf)
+    }
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
