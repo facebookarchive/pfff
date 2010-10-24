@@ -147,6 +147,9 @@ rule category = parse
    *)
   | "profiling" { Profiler }
 
+  (* False positif for util below *)
+  | "binutils" { Regular }
+
   | "stdlib" { Core }
   | "util" { Utils }
 (*  | "/base" { Utils } *)
