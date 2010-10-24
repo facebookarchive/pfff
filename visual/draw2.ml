@@ -658,6 +658,17 @@ let _hmemo_text_extent = Hashtbl.create 101
  * 
  * note that this function is also called when we mouse over a rectangle
  * in which case we redraw the label in a different color
+ * 
+ * design: good to have a color different for dir and files.
+ * 
+ * design: could decide to give different colors to dirs depending on its
+ * depth, like red for toplevel dir, green, and so on, like I do for 
+ * my code sections, but feel simpler to just have one.
+ * The rectangles will already have different colors and in the end
+ * the depth does not have that much meaning in projects. For instance
+ * in java code there are lots of nested directories (org/apache/...),
+ * in some projects there is always an intermediate src/ directory;
+ * each software have different conventions.
  *)
 let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
   if !Flag.disable_fonts then ()
