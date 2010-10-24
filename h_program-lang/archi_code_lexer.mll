@@ -126,6 +126,7 @@ rule category = parse
 
   | "/tests/" 
   | "/test/" 
+  | "/test2/" 
   | "/t/" 
   | "/testsuite/" 
       { Test }
@@ -389,7 +390,7 @@ rule category = parse
   | "/lt/"
   | "/lv/"
   | "/mg/"
-  | "/mk/"
+(*  | "/mk/" can be source of mk *)
   | "/mr/"
   | "/ne/"
   | "/nl/"

@@ -228,7 +228,7 @@ let file_type_of_file2 file =
 
   | _ when Common.is_executable file -> Binary e
 
-  | _ when b = "Makefile" -> PL Makefile
+  | _ when b = "Makefile" || b = "mkfile" -> PL Makefile
   | _ when b = "README" -> Text "txt"
 
   | _ when b = "TAGS" -> Binary e

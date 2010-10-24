@@ -33,17 +33,15 @@ module TH = Token_helpers_nw
 (* Helpers *)
 (*****************************************************************************)
 
-let span_close_brace xs = 
-  Common.split_when (function 
-  | T.TCBrace _ -> true
-  | _ -> false
-  ) xs
+let span_close_brace xs = xs +> Common.split_when (function 
+  | T.TCBrace _ -> true | _ -> false)
 
-let span_newline xs = 
-  Common.split_when (function 
-  | T.TCommentNewline _ -> true
-  | _ -> false
-  ) xs
+let span_newline xs = xs +> Common.split_when (function 
+  | T.TCommentNewline _ -> true | _ -> false)
+
+let span_end_bracket xs = xs +> Common.split_when (function 
+  | T.TSymbol("]", _) -> true | _ -> false)
+
 
 let tag_all_tok_with ~tag categ xs = 
   xs +> List.iter (fun tok ->
@@ -136,6 +134,12 @@ let visit_toplevel
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
+    (* noweb specific *)
+    |  T.TSymbol("[", _)::T.TSymbol("[", _)::xs ->
+         let (before, middle, after) = span_end_bracket xs in
+         tag_all_tok_with ~tag TypeMisc (* TODO *) before;
+         aux_toks (middle::after);
+
     (* specific to texinfo *)
     |    T.TSymbol("@", _)
       :: T.TWord(s, ii)::xs ->
@@ -209,19 +213,16 @@ let visit_toplevel
         then ()
         else ()
 
-    | T.TCommentNewline ii 
-      -> ()
-
-    | T.TCommand (s, ii) ->
-        tag ii Keyword
-        
+    | T.TCommentNewline ii -> ()
+    | T.TCommand (s, ii) ->    tag ii Keyword
+      
     | T.TWord (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then
           ()
 
 
-
+    (* noweb specific obviously *)
     | T.TBeginNowebChunk ii
     | T.TEndNowebChunk ii
       ->
@@ -239,21 +240,17 @@ let visit_toplevel
     | T.TVerbatimLine (_, ii) ->
         tag ii KeywordModule (* TODO *)
 
+
     | T.TNumber (_, ii) -> 
         if not (Hashtbl.mem already_tagged ii)
         then
           tag ii Number
     | T.TSymbol (_, ii) -> tag ii Punctuation
 
+    | T.TOBrace ii | T.TCBrace ii ->  tag ii Punctuation
 
-    | T.TOBrace ii | T.TCBrace ii
-      ->
-        tag ii Punctuation
-
-    | T.TUnknown ii 
-      -> tag ii Error
-    | T.EOF ii
-      -> ()
+    | T.TUnknown ii -> tag ii Error
+    | T.EOF ii-> ()
 
   );
 
