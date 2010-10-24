@@ -63,19 +63,8 @@ val int_ofv:    v -> int
 val float_ofv:  v -> float
 val unit_ofv: v -> unit
 val string_ofv: v -> string
-
 val list_ofv: (v -> 'a) -> v -> 'a list
 val option_ofv: (v -> 'a) -> v -> 'a option
-
-type loc = string
-val stag_incorrect_n_args: loc -> string -> v -> 'a
-val unexpected_stag: loc -> v -> 'a
-val record_only_pairs_expected: loc -> (string * v) -> 'a
-val record_duplicate_fields: loc -> string list -> v -> 'a
-val record_extra_fields: loc -> string list -> v -> 'a
-val record_undefined_elements: loc -> v -> 'b -> 'a
-val record_list_instead_atom: loc -> v -> 'a
-val tuple_of_size_n_expected: loc -> int -> v -> 'a
 
 (* regular pretty printer (not via sexp, but using Format) *)
 val string_of_v: v -> string
@@ -129,3 +118,15 @@ val v_ref: ('a -> unit) -> 'a ref -> unit
 val v_either: 
   ('a -> unit) -> ('b -> unit) -> 
   ('a, 'b) Common.either -> unit
+
+(* sexp related stuff *)
+
+type loc = string
+val stag_incorrect_n_args: loc -> string -> v -> 'a
+val unexpected_stag: loc -> v -> 'a
+val record_only_pairs_expected: loc -> (string * v) -> 'a
+val record_duplicate_fields: loc -> string list -> v -> 'a
+val record_extra_fields: loc -> string list -> v -> 'a
+val record_undefined_elements: loc -> v -> 'b -> 'a
+val record_list_instead_atom: loc -> v -> 'a
+val tuple_of_size_n_expected: loc -> int -> v -> 'a
