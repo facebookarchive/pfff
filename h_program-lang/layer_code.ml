@@ -22,13 +22,13 @@ open Common
  * The goal of this module is to provide a data-structure to represent
  * code "layers" (a.k.a. code "aspects"). The idea is to imitate google
  * earth layers (e.g. the wikipedia layer, panoramio layer, etc), but
- * for code. One could have a deadcode layer, a coverage layer,
+ * for code. One could have a deadcode layer, a test coverage layer,
  * and then display those layers or not on an existing codebase in 
  * pfff_visual. sgrep can also be extended to transform a query result
  * into a layer.
  * 
  * The layer is basically some mapping from files to a set of lines with
- * a specific color code. A few questions and answers:
+ * a specific color code. A few design choices:
  * 
  *  - How to represent a layer at the macro and micro level in pfff_visual ?
  * 
@@ -45,28 +45,34 @@ open Common
  *    needs ? 
  * 
  *   Here are some examples of layers and how they are "encoded" by the
- *   'layer type below:
+ *   'layer' type below:
  * 
- *    * deadcode (dead function, class, statement)
- *      how? dead lines in red color. At the macro_level one can give
+ *    * deadcode (dead function, dead class, dead statement, dead assignnements)
+ * 
+ *      How? dead lines in red color. At the macro_level one can give
  *      a grey_xxx color  with a percentage (e.g. grey53).
  * 
  *    * test coverage (static or dynamic)
- *      how? covered lines in green, not covered in red ? Also
+ * 
+ *      How? covered lines in green, not covered in red ? Also
  *      convey a GreyLevel visualization by setting the 'macro_level' field.
  * 
  *    * age of file
- *      how? 2010 in green, 2009 in yelow, 2008 in red and so on.
+ * 
+ *      How? 2010 in green, 2009 in yelow, 2008 in red and so on.
  *      At the macro_level can do a mix of colors.
  * 
  *    * bad smells
- *      how? each bad smell could have a different color and macro_level
+ * 
+ *      How? each bad smell could have a different color and macro_level
  *      showing a percentage of the rectangle with the right color
  *      for each smells in the file.
  * 
  *    * security patterns (bad smells)
  * 
- *    * activity ? How whow add and delete information ?
+ *    * activity ? 
+ * 
+ *      How whow add and delete information ?
  *      At the micro_level can't show the delete, but at macro_level
  *      could divide the treemap_rectangle in 2 where percentage of
  *      add and delete, and also maybe white to show the amount of add
