@@ -205,8 +205,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
     rect;
 
   (* have to redraw the label *)
-  Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:"black" 
-    rect;
+  Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:None rect;
   ()
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
@@ -255,7 +254,7 @@ let paint2 dw =
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter 
-    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:"black");
+    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
@@ -293,7 +292,7 @@ let paint_minimap2 dw =
 
   (* draw the labels, if have enough space *)
   rects +> List.iter 
-    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:"black");
+    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None);
 
   (* draw the zoom rectangle *)
   let user_rect = device_to_user_area dw in
@@ -412,7 +411,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   CairoH.draw_rectangle_figure
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
   Draw.draw_treemap_rectangle_label_maybe 
-    ~cr:cr_overlay ~color:"blue" ~zoom:dw.zoom r_englobing;
+    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
 
   middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
     let color = 
@@ -424,7 +423,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     CairoH.draw_rectangle_figure
       ~cr:cr_overlay ~color r.T.tr_rect;
     Draw.draw_treemap_rectangle_label_maybe 
-      ~cr:cr_overlay ~color ~zoom:dw.zoom r;
+      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
     
   Cairo.restore cr_overlay;

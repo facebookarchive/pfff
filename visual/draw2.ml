@@ -655,8 +655,11 @@ let _hmemo_text_extent = Hashtbl.create 101
  * so you must avoid calling it too much. A simple optimisation
  * when the treemap is big is to avoid trying to draw labels
  * that are too tiny already.
+ * 
+ * note that this function is also called when we mouse over a rectangle
+ * in which case we redraw the label in a different color
  *)
-let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
+let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
   if !Flag.disable_fonts then ()
   else begin
 
@@ -664,10 +667,19 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
   let base = Filename.basename lbl in
   (* old: Common.is_directory_eff lbl *)
   let is_directory = rect.T.tr_is_node in
+
   let txt = 
     if is_directory
     then base ^ "/"
     else base
+  in
+  let color = 
+    match color with
+    | None -> 
+        if is_directory 
+        then "NavyBlue"
+        else "black"
+    | Some c -> c
   in
 
   Cairo.select_font_face cr "serif" 
