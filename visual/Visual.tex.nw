@@ -1191,6 +1191,8 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
 \section{Treemap View}
 
+% macro-level visualization. See also archi_code.ml.
+
 <<paint>>=
 let context_of_drawing dw = 
   { Draw.
@@ -1585,6 +1587,8 @@ let draw_treemap_rectangle_label_maybe ~cr ~zoom ~color rect =
 
 
 \section{Source View}
+
+% micro-level visualization. See also highlight_code.ml
 
 \subsection{Principles}
 
@@ -2168,6 +2172,13 @@ let hfiles_and_top_entities
   hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
 @ 
 
+\section{Layers}
+
+\subsection{Macro-level}
+
+% need majority when multiple match same file ?
+
+\subsection{Micro-level}
 
 \section{Navigation}
 

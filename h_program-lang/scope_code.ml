@@ -80,18 +80,6 @@ let vof_scope x =
   | ListBinded -> Ocaml.VSum (("ListBinded", []))
   | NoScope -> Ocaml.VSum (("NoScope", []))
 
-let sexp_of_scope x =
-  match x with
-  | Global -> Sexp.Atom "Global"
-  | Local -> Sexp.Atom "Local"
-  | Param -> Sexp.Atom "Param"
-  | Static -> Sexp.Atom "Static"
-  | NoScope -> Sexp.Atom "NoScope"
-  | ListBinded -> Sexp.Atom "ListBinded"
-  | LocalIterator -> Sexp.Atom "LocalIterator"
-  | LocalExn -> Sexp.Atom "LocalExn"
-  | Class -> Sexp.Atom "Class"
-
 let map_scope =
   function
   | Global -> Global
@@ -103,3 +91,16 @@ let map_scope =
   | LocalIterator -> LocalIterator
   | LocalExn -> LocalExn
   | Class -> Class
+
+(* still needed ? *)
+let sexp_of_scope x =
+  match x with
+  | Global -> Sexp.Atom "Global"
+  | Local -> Sexp.Atom "Local"
+  | Param -> Sexp.Atom "Param"
+  | Static -> Sexp.Atom "Static"
+  | NoScope -> Sexp.Atom "NoScope"
+  | ListBinded -> Sexp.Atom "ListBinded"
+  | LocalIterator -> Sexp.Atom "LocalIterator"
+  | LocalExn -> Sexp.Atom "LocalExn"
+  | Class -> Sexp.Atom "Class"
