@@ -6255,7 +6255,7 @@ let (tree_of_files: filename list -> (string, (string * filename)) tree) =
         aux files)
 
 
-
+(* finding the common root *)
 let common_prefix_of_files_or_dirs2 xs =
   let xs = xs +> List.map relative_to_absolute in
   match xs with

@@ -42,16 +42,25 @@ let test_big_grep file =
   ()
 
 
+let test_layer file =
+  let layer = Layer_code.load_layer file in
+  let json = Layer_code.json_of_layer layer in
+  let s = Json_out.string_of_json json in
+  pr2 s
+
 
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
-    "-test_load_db",  " <file>",
-    Common.mk_action_1_arg test_load_light_db;
-
+  "-test_load_db",  " <file>",
+  Common.mk_action_1_arg test_load_light_db;
+  
   "-test_big_grep", " <file>",
-    Common.mk_action_1_arg test_big_grep;
+  Common.mk_action_1_arg test_big_grep;
+
+  "-test_layer", " <file>",
+  Common.mk_action_1_arg test_layer;
 
 ]

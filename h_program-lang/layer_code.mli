@@ -21,3 +21,7 @@ type layer = {
  *)
 val load_layer: Common.filename -> layer
 val save_layer: layer -> Common.filename -> unit
+
+(* helpers *)
+val json_of_layer: layer -> Json_type.t
+val layer_of_json: Json_type.t -> layer

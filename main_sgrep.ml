@@ -40,6 +40,8 @@ let match_format = ref Lib_parsing_php.Normal
 
 let mvars = ref ([]: Metavars_php.mvar list)
 
+let layer_file = ref (None: filename option)
+
 (* action mode *)
 let action = ref ""
 
@@ -47,12 +49,15 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
+(* for -gen_layer *)
+let _matching_tokens = ref []
+
 (* TODO? could do slicing of function relative to the pattern, so 
  * would see where the parameters come from :)
  *)
 
 let print_match mvars mvar_binding tokens_matched_code = 
-  match mvars with
+  (match mvars with
   | [] ->
       Lib_parsing_php.print_match ~format:!match_format tokens_matched_code
 
@@ -70,9 +75,45 @@ let print_match mvars mvar_binding tokens_matched_code =
       )
   | x::y::xs ->
       failwith "multiple metavariables not yet handled. mailto:pad@facebook.com"
+  );
+  tokens_matched_code +> List.iter (fun x -> Common.push2 x _matching_tokens)
 
 let print_simple_match tokens_matched_code =
   print_match [] [] tokens_matched_code
+
+
+(* a layer need readable path, hence the ~root argument *)
+let gen_layer ~root file =
+  pr2 ("generating layer in " ^ file);
+
+  let root = Common.relative_to_absolute root in
+
+  let toks = !_matching_tokens in
+  let kinds = ["m" (* match *), "red"] in
+  
+  let files_and_lines = toks +> List.map (fun tok ->
+    let file = Ast.file_of_info tok in
+    let line = Ast.line_of_info tok in
+    let file' = Common.relative_to_absolute file in 
+    Common.filename_without_leading_path root file', line
+  )
+  in
+  let group = Common.group_assoc_bykey_eff files_and_lines in
+  let layer = { Layer_code.
+    kinds = kinds;
+    files = group +> List.map (fun (file, lines) ->
+      let lines = Common.uniq lines in
+      (file, { Layer_code.
+               micro_level = (lines +> List.map (fun l -> l, "m"));
+               macro_level = [];
+      })
+    );
+  }
+  in
+  Layer_code.save_layer layer file;
+  ()
+  
+
   
 (*****************************************************************************)
 (* Main action *)
@@ -159,6 +200,11 @@ let main_action xs =
       (V.mk_visitor hook).V.vtop top
     );
    
+  );
+  !layer_file +> Common.do_option (fun file ->
+
+    let root = Common.common_prefix_of_files_or_dirs xs in
+    gen_layer ~root file
   );
   ()
 
@@ -464,6 +510,7 @@ let sgrep_extra_actions () = [
 let all_actions () = 
  sgrep_extra_actions()++
  Test_parsing_php.actions()++
+ Test_program_lang.actions()++
  []
 
 let options () = 
@@ -472,6 +519,7 @@ let options () =
     " <pattern> expression pattern";
     "-f", Arg.Set_string pattern_file, 
     " <file> obtain pattern from file";
+
     "-emacs", Arg.Unit (fun () -> match_format := Lib_parsing_php.Emacs ),
     " print matches on the same line than the match position";
     "-oneline", Arg.Unit (fun () -> match_format := Lib_parsing_php.OneLine),
@@ -479,6 +527,9 @@ let options () =
 
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
     " <metavar> print the metavariable, not the matched code";
+
+    "-gen_layer", Arg.String (fun s -> layer_file := Some s),
+    " <file> save result in pfff layer file";
 
     "-verbose", Arg.Set verbose, 
     " ";
