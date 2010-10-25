@@ -24,11 +24,23 @@ open Common
  * earth layers (e.g. the wikipedia layer, panoramio layer, etc), but
  * for code. One could have a deadcode layer, a test coverage layer,
  * and then display those layers or not on an existing codebase in 
- * pfff_visual. sgrep can also be extended to transform a query result
- * into a layer.
+ * pfff_visual. The layer is basically some mapping from files to a 
+ * set of lines with a specific color code. 
  * 
- * The layer is basically some mapping from files to a set of lines with
- * a specific color code. A few design choices:
+ * 
+ * A few design choices:
+ * 
+ *  - one could store such information directly into database_xxx.ml 
+ *    and have pfff_db compute such information (for instance each function
+ *    could have a set of properties like unit_test, or dead) but this 
+ *    would force people to build their own db to visualize the results. 
+ *    One could compute this information in database_light_xxx.ml, but this 
+ *    will augment the size of the light db slowing down the pfff_visual launch
+ *    even when the people don't use the layers. So it's more flexible to just
+ *    separate layer_code.ml from database_code.ml and have multiple persistent
+ *    files for each information. Also it's quite convenient to have
+ *    utilities like sgrep to be easily extendable to transform a query result
+ *    into a layer.
  * 
  *  - How to represent a layer at the macro and micro level in pfff_visual ?
  * 

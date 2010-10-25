@@ -33,7 +33,7 @@ module HC = Highlight_code
  * Each programming language analysis library usually provide
  * a more powerful database (e.g. analyze_php/database/database_php.mli)
  * with more information. Such a database is usually also efficiently stored
- * on disk via BerkeleyDb. Nevertheless generic tools like the
+ * on disk via BerkeleyDB. Nevertheless generic tools like the
  * code visualizer can benefit from a shorter and generic version of this
  * database. Moreover when we have codebase with multiple langages
  * (e.g. PHP and javascript), having a common type can help for some
