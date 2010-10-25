@@ -44,8 +44,17 @@ let main_action xs =
 let action1 () = 
   raise Todo
 
+
+let test_json_pretty_printer file =
+  let json = Json_in.load_json file in
+  let s = Json_io.string_of_json json in
+  pr s
+
+
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
+  "-json_pp", " <file>",
+  Common.mk_action_1_arg test_json_pretty_printer;
 ]
 
 (*****************************************************************************)
