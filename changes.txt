@@ -4,8 +4,15 @@
 
 ** pfff_visual
 
+*** more semantic visual feedback
+can see arguments passed by refs visually (TakeArgNByRef)
+as well as functions containing dynamic calls (ContainDynamicCall)
+
+*** TODO layers
+
 *** visual grep
 can now visualize the result of a git grep on a project.
+
 
 ** introducing parsing_nw/
 so can visualize also Tex/Latex/Noweb source (which includes
@@ -19,6 +26,7 @@ the documentation of pfff!)
 
 
 ** php analysis
+
 finalized the PIL
 
 ** global analysis
