@@ -14,3 +14,10 @@ type layer = {
    macro_level: (kind * float (* percentage of rectangle *)) list;
  }
  and kind = string
+
+
+(* save either in a (readable) json format or (fast) marshalled form 
+ * depending on the extension of the filename
+ *)
+val load_layer: Common.filename -> layer
+val save_layer: layer -> Common.filename -> unit

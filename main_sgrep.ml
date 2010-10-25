@@ -55,6 +55,7 @@ let print_match mvars mvar_binding tokens_matched_code =
   match mvars with
   | [] ->
       Lib_parsing_php.print_match ~format:!match_format tokens_matched_code
+
   | [x] ->
       (match Common.assoc_option x mvar_binding with
       | Some binded_code ->
@@ -158,7 +159,8 @@ let main_action xs =
       (V.mk_visitor hook).V.vtop top
     );
    
-  )
+  );
+  ()
 
 (*****************************************************************************)
 (* Extra actions *)
