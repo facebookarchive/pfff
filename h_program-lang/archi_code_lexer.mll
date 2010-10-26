@@ -314,6 +314,7 @@ rule category = parse
   | "/gram."
   | "/scan."
   | "grammar"
+  | "/lex"
 
   (* invent UnParsing category ? do also print ? *)
   | "pretty_print"
