@@ -49,6 +49,8 @@ let info_of_tok = function
   | TUnknown ii -> ii
   | EOF ii -> ii
 
+  | TSharpDirective ii -> ii
+
   | TInt  (s, ii) -> ii
   | TFloat  (s, ii) -> ii
   | TChar  (s, ii) -> ii
@@ -173,6 +175,8 @@ let visitor_info_of_tok f = function
   | TCommentMisc ii -> TCommentMisc (f ii)
   | TUnknown ii -> TUnknown (f ii)
   | EOF (ii) -> EOF (f ii)
+
+  | TSharpDirective ii -> TSharpDirective (f ii)
 
   | TInt (s, ii) -> TInt (s, f ii)
   | TFloat (s, ii) -> TFloat (s, f ii)

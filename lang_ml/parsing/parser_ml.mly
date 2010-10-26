@@ -130,6 +130,8 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
+%token <Ast_ml.info> TSharpDirective
+
 /*(* classic *)*/
 %token <Ast_ml.info> TUnknown
 %token <Ast_ml.info> EOF
@@ -188,6 +190,9 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 %left     INFIXOP3 TStar                 /* expr (e OP e OP e) */
 %left     TInfixOperator /* pad: */
 %right    INFIXOP4                       /* expr (e OP e OP e) */
+%left     Tmod Tlor Tlxor Tland
+%right    Tlsr Tasr Tlsl
+
 %nonassoc prec_unary_minus prec_unary_plus /* unary - */
 %nonassoc prec_constant_constructor      /* cf. simple_expr (C versus C x) */
 %nonassoc prec_constr_appl               /* above Tas TPipe TColonColon TComma */
@@ -285,11 +290,21 @@ structure:
  | seq_expr structure_tail                     { TopSeqExpr $1::$2 }
 
 structure_tail:
- |  /* empty */                                 { [] }
- | TSemiColonSemiColon                          { [ScSc $1] }
- | TSemiColonSemiColon seq_expr structure_tail  { ScSc $1::TopSeqExpr $2::$3 }
- | TSemiColonSemiColon structure_item structure_tail  { ScSc $1::Item $2::$3 }
- | structure_item structure_tail                      { Item $1::$2 }
+ |  /* empty */                                 
+     { [] }
+ | TSemiColonSemiColon                          
+     { [ScSc $1] }
+ | TSemiColonSemiColon seq_expr structure_tail  
+     { ScSc $1::TopSeqExpr $2::$3 }
+ | TSemiColonSemiColon structure_item structure_tail  
+     { ScSc $1::Item $2::$3 }
+ | TSemiColonSemiColon TSharpDirective  structure_tail  
+     { ScSc $1::TopDirective $2::$3 }
+
+ | structure_item structure_tail                      
+     { Item $1::$2 }
+ | TSharpDirective structure_tail 
+     { TopDirective $1::$2 }
 
 structure_item:
  /*(* as in signature_item *)*/
@@ -349,7 +364,6 @@ operator:
  | TMinusDot { }
  | TLess     { }
  | TGreater  { }
-
 
 /*(* for polymorphic types both 'a and 'A is valid. Same for module types. *)*/
 ident:
@@ -478,6 +492,33 @@ expr:
 
  | expr TInfixOperator expr
      { Infix ($1, $2, $3) }
+
+ | expr Tmod expr 
+     { Infix ($1, ("mod", $2), $3) }
+ | expr Tland expr 
+     { Infix ($1, ("land", $2), $3) }
+ | expr Tlor expr 
+     { Infix ($1, ("lor", $2), $3) }
+ | expr Tlxor expr 
+     { Infix ($1, ("lxor", $2), $3) }
+
+ | expr Tlsl expr 
+     { Infix ($1, ("lsl", $2), $3) }
+ | expr Tlsr expr 
+     { Infix ($1, ("lsr", $2), $3) }
+ | expr Tasr expr 
+     { Infix ($1, ("asr", $2), $3) }
+
+/*
+  | expr INFIXOP1 expr
+      { mkinfix $1 $2 $3 }
+  | expr INFIXOP2 expr
+      { mkinfix $1 $2 $3 }
+  | expr INFIXOP3 expr
+      { mkinfix $1 $2 $3 }
+  | expr INFIXOP4 expr
+      { mkinfix $1 $2 $3 }
+*/
 
  | Tif seq_expr Tthen expr Telse expr
      { If ($1, $2, $3, $4, Some ($5, $6)) }

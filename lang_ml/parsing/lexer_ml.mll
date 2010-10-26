@@ -104,7 +104,7 @@ let keyword_table = Common.hash_of_list [
    (* used when doing mutually recursive definitions *)
   "and", (fun ii -> Tand ii);
 
-
+  (* was INFIXOP3 and INFIXOP4 in original grammar apparently *)
   "or", (fun ii -> Tor ii);
   "mod", (fun ii -> Tmod ii);
   "lor", (fun ii -> Tlor ii);
@@ -160,10 +160,19 @@ rule token = parse
     }
 
   | "#" space* digit+ space* ("\"" [^ '"']* "\"")? 
-      {
-        TCommentMisc (tokinfo lexbuf)
-      }
-        
+      { TCommentMisc (tokinfo lexbuf) }
+
+  (* just doing "#"[^'\n']+  can also match method calls. Would be good
+   * to enforce in first column but ocamllex can't do that natively
+   *)
+  | "#!"[^'\n']+ 
+      { TSharpDirective (tokinfo lexbuf) }
+
+  (* todo: hmmm but could be ambiguous with method call too ? *)
+  | "#load" space+ [^'\n']+ 
+      { TSharpDirective (tokinfo lexbuf) }
+  | "#directory" space+ [^'\n']+ 
+      { TSharpDirective (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)

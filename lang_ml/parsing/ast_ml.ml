@@ -288,6 +288,9 @@ and toplevel =
   | ScSc of info (* ;; *)
   | TopSeqExpr of seq_expr
 
+  (* some ml files contain some #! or even #load directives *)
+  | TopDirective of info
+
   | NotParsedCorrectly of info list
   | FinalDef of info (* EOF *)
 
