@@ -246,26 +246,6 @@ in your path.
 %sgrep connection ?
 \end{verbatim}
 
-\section{Related Work}
-
-\begin{verbatim}
-
-http://www.haskell.org/haskellwiki/Yi
-
-http://www.cse.chalmers.se/~bernardy/FunctionalIncrementalParsing.pdf
-"Thanks for the links. The paper is a very interesting reading indeed.
-Its main focus is on incrementality (not reparsing the whole buffer at
-every keystroke). I'm not so sure how important it is in the context
-of the current discussion though: I guess that with an efficient
-parsing technology and modern computers, parsing even a big buffer at
-every keystroke should be fast enough. Trivial optimizations like
-storing the internal state of the parser at some point could also be
-used if needed. I'm more concerned about the error recovery aspect;
-the paper suggests the use of annotated error recovery rules, but
-writing them for a grammar like OCaml's does not seem an easy task at
-all." - frish
-
-\end{verbatim}
 
 %chapter{Implem} ?
 % say that model/view/controller
@@ -2539,7 +2519,7 @@ let go_back dw_ref =
   ()
 @ 
 
-\subsection{Incruste}
+\subsection{Incruste Mode}
 
 <<idle>>=
 let idle dw () = 
@@ -3246,6 +3226,8 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
 
 \subsection{Use Search, aka Visual [[grep]]}
 
+% see also layers
+
 \begin{verbatim}
 %cscope-like
 \end{verbatim}
@@ -3602,7 +3584,7 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
 
 
-\subsection{Layering}
+\subsection{Cairo Layers}
 
 <<draw_rectangle_overlay>>=
 let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
@@ -4309,6 +4291,26 @@ let visual_commitid id =
 
 
 
+\section{Related Work}
+
+\begin{verbatim}
+
+http://www.haskell.org/haskellwiki/Yi
+
+http://www.cse.chalmers.se/~bernardy/FunctionalIncrementalParsing.pdf
+"Thanks for the links. The paper is a very interesting reading indeed.
+Its main focus is on incrementality (not reparsing the whole buffer at
+every keystroke). I'm not so sure how important it is in the context
+of the current discussion though: I guess that with an efficient
+parsing technology and modern computers, parsing even a big buffer at
+every keystroke should be fast enough. Trivial optimizations like
+storing the internal state of the parser at some point could also be
+used if needed. I'm more concerned about the error recovery aspect;
+the paper suggests the use of annotated error recovery rules, but
+writing them for a grammar like OCaml's does not seem an easy task at
+all." - frish
+
+\end{verbatim}
 \section{Conclusion}
 
 Hope you like it.
