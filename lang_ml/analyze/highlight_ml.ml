@@ -185,7 +185,6 @@ let visit_toplevel ~tag_hook prefs  (*db_opt *) (toplevel, toks) =
           tag tok_with (KeywordExn);
           k x
 
-
       | FieldAccess (e, _tok, long_name) 
       | FieldAssign (e, _tok, long_name, _, _) 
         ->
@@ -460,6 +459,7 @@ let visit_toplevel ~tag_hook prefs  (*db_opt *) (toplevel, toks) =
     | T.EOF ii
       -> ()
 
+    | T.TSharpDirective ii -> tag ii Ifdef
 
     | T.TString (s,ii) ->
         tag ii String
