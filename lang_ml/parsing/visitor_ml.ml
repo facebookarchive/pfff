@@ -435,6 +435,7 @@ and v_toplevel =
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
+  | TopDirective v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
   
  and all_functions =   
