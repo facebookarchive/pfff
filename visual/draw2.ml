@@ -695,6 +695,7 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
 
   Cairo.select_font_face cr "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+
   let font_size, minus_alpha = 
     if not !Flag.boost_label_size
     then 
@@ -721,10 +722,10 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
   let font_size = font_size / (zoom) (* use zoom factor inversely *) in
   let alpha = 1. - (minus_alpha / zoom) in
 
-    try_draw_label 
-      ~font_size_orig:font_size
-      ~color ~alpha 
-      ~cr ~rect txt
+  try_draw_label 
+    ~font_size_orig:font_size
+    ~color ~alpha 
+    ~cr ~rect txt
   end
 
 
@@ -801,6 +802,15 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
        
            Cairo.move_to cr x y;
            CairoH.show_text cr txt;
+
+           if rect.T.tr_depth <= 2 then begin
+             (let (r,g,b) = Color.rgbf_of_string "red" in
+              Cairo.set_source_rgba cr r g b alpha;
+             );
+             Cairo.move_to cr x y;
+             CairoH.show_text cr (String.sub txt 0 1);
+           end
+           
    
      | 2 | 5 | 8 | 11 when 
            tw < sqrt (w * w + h * h) && 
@@ -834,6 +844,19 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
          Cairo.rotate cr ~angle:angle;
          CairoH.show_text cr txt;
          Cairo.rotate cr ~angle:(-. angle);
+         
+         if rect.T.tr_depth <= 2 then begin
+           (let (r,g,b) = Color.rgbf_of_string "red" in
+            Cairo.set_source_rgba cr r g b alpha;
+           );
+           Cairo.move_to cr x y;
+           Cairo.rotate cr ~angle:angle;
+           CairoH.show_text cr (String.sub txt 0 1);
+           Cairo.rotate cr ~angle:(-. angle);
+         end;
+
+
+
    
      | 3 ->
          (* I am ok to go down to 70% *)
