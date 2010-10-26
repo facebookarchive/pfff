@@ -184,6 +184,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 %right    TAnd TAndAnd                   /* expr (e && e && e) */
 %nonassoc below_EQUAL
 %left     INFIXOP0 TEq TLess TGreater    /* expr (e OP e OP e) */
+%left     TBangEq
 %right    INFIXOP1                       /* expr (e OP e OP e) */
 %right    TColonColon                    /* expr (e :: e :: e) */
 %left     INFIXOP2 TPlus TPlusDot TMinus TMinusDot  /* expr (e OP e OP e) */
@@ -508,6 +509,9 @@ expr:
      { Infix ($1, ("lsr", $2), $3) }
  | expr Tasr expr 
      { Infix ($1, ("asr", $2), $3) }
+
+ | expr TBangEq expr
+     { Infix ($1, ("!=", $2), $3) }
 
 /*
   | expr INFIXOP1 expr

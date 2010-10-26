@@ -188,6 +188,7 @@ let file_type_of_file2 file =
   | "log"
   | "toc" | "brf"  
   | "out" | "output"
+  | "hi"
       -> Obj e
   (* pad: I use it to store marshalled data *)
   | "db"
