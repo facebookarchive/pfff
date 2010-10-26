@@ -346,13 +346,9 @@ let draw_summary_content
 let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
 
   let font_size = layout.font_size in
-  let split_nb_columns = layout.split_nb_columns in
-  let w_per_column  = layout.w_per_column in
-  let space_per_line = layout.space_per_line in
 
   let r = rect.T.tr_rect in
   let font_size_real = CairoH.user_to_device_font_size cr font_size in
-
 
   (* highlighting grep-like queries *)
   let matching_lines = 
@@ -368,7 +364,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
   let line = ref 1 in
 
   let nblines_per_column = 
-    (nblines / split_nb_columns) +> ceil +> int_of_float in
+    (nblines / layout.split_nb_columns) +> ceil +> int_of_float in
 
   (* ugly *)
   text_with_user_pos := [];
@@ -388,8 +384,8 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
     let column = ref 0 in
     let line_in_column = ref 1 in
 
-    let x = r.p.x + (float_of_int !column) * w_per_column in
-    let y = r.p.y + (space_per_line * (float_of_int !line_in_column)) in
+    let x = r.p.x + (float_of_int !column) * layout.w_per_column in
+    let y = r.p.y + (layout.space_per_line * (float_of_int !line_in_column)) in
         
     Cairo.move_to cr x y;
 
@@ -487,8 +483,10 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
             line_in_column := 1;
           end;
 
-          let x = r.p.x + (float_of_int !column) * w_per_column in
-          let y = r.p.y + (space_per_line * (float_of_int !line_in_column)) in
+          let x = r.p.x + 
+            (float_of_int !column) * layout.w_per_column in
+          let y = r.p.y + 
+            (layout.space_per_line * (float_of_int !line_in_column)) in
 
           (* must be done before the move_to below ! *)
           if is_matching_line !line
@@ -497,9 +495,9 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
               ~alpha:0.5
               ~color:"magenta"
               ~x 
-              ~y:(y - space_per_line) 
-              ~w:w_per_column 
-              ~h:(space_per_line * 3.)
+              ~y:(y - layout.space_per_line) 
+              ~w:layout.w_per_column 
+              ~h:(layout.space_per_line * 3.)
               ()
           end;
           
@@ -527,8 +525,10 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
     Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
       Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
       
-        let x = r.p.x + (float_of_int column) * w_per_column in
-        let y = r.p.y + (space_per_line * (float_of_int line_in_column)) in
+        let x = r.p.x + 
+          (float_of_int column) * layout.w_per_column in
+        let y = r.p.y + 
+          (layout.space_per_line * (float_of_int line_in_column)) in
         
         Cairo.move_to cr x y;
         CairoH.show_text cr s;
