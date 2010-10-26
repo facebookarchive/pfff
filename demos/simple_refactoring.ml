@@ -49,9 +49,9 @@ module V = Visitor_php
  * default for ease of prototyping.
  * 
  * 
- * Futur work:
+ * Future work:
  * At some point we want to have a DSL for expressing "semantic patches" 
- * like coccinelle and express it simply with:
+ * like coccinelle (http://coccinelle.lip6.fr) and express it simply with:
  * 
  *  @@ @@
  * - ArgAssert::isString(X, Y)
@@ -68,7 +68,7 @@ module V = Visitor_php
  * "manually" those refactoring using the OCaml internal API 
  * to manipulate the AST.
  * 
- * Timing: 1 pomodoro
+ * Timing: 25 minutes
  * 
  * Alternatives:
  *  - lex-pass I believe has a special command just for that.
