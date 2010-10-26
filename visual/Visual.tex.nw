@@ -355,7 +355,9 @@ type model = {
 let treemap_generator paths = 
   let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap_algo ~algo treemap in
+  let rects = Treemap.render_treemap_algo 
+    ~algo ~big_borders:!Flag.boost_label_size
+    treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
 @ 
@@ -371,7 +373,7 @@ let build_model2 root dbfile_opt =
   in
   let hentities = Model2.hentities root db_opt in
   let hfiles_entities = Model2.hfiles_and_top_entities root db_opt in
-  let all_entities = Model2.all_entities db_opt in
+  let all_entities = Model2.all_entities db_opt root in
   let idx = Completion2.build_completion_defs_index all_entities in
   
   let model = { Model2.
@@ -1192,8 +1194,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
     rect;
 
   (* have to redraw the label *)
-  Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:"black" 
-    rect;
+  Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:None rect;
   ()
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
@@ -1242,7 +1243,7 @@ let paint2 dw =
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter 
-    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:"black");
+    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
@@ -1389,7 +1390,7 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
 val draw_treemap_rectangle_label_maybe :
   cr:Cairo.t -> 
   zoom:float -> 
-  color:Simple_color.emacs_color -> 
+  color:Simple_color.emacs_color option -> 
   Treemap.treemap_rectangle -> 
   unit
 @ 
@@ -1402,8 +1403,22 @@ let _hmemo_text_extent = Hashtbl.create 101
  * so you must avoid calling it too much. A simple optimisation
  * when the treemap is big is to avoid trying to draw labels
  * that are too tiny already.
+ * 
+ * note that this function is also called when we mouse over a rectangle
+ * in which case we redraw the label in a different color
+ * 
+ * design: good to have a color different for dir and files.
+ * 
+ * design: could decide to give different colors to dirs depending on its
+ * depth, like red for toplevel dir, green, and so on, like I do for 
+ * my code sections, but feel simpler to just have one.
+ * The rectangles will already have different colors and in the end
+ * the depth does not have that much meaning in projects. For instance
+ * in java code there are lots of nested directories (org/apache/...),
+ * in some projects there is always an intermediate src/ directory;
+ * each software have different conventions.
  *)
-let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
+let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
   if !Flag.disable_fonts then ()
   else begin
 
@@ -1411,16 +1426,28 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
   let base = Filename.basename lbl in
   (* old: Common.is_directory_eff lbl *)
   let is_directory = rect.T.tr_is_node in
+
   let txt = 
     if is_directory
     then base ^ "/"
     else base
   in
+  let color = 
+    match color with
+    | None -> 
+        if is_directory 
+        then "NavyBlue"
+        else "black"
+    | Some c -> c
+  in
 
-  Cairo.select_font_face cr "serif" 
+  Cairo.select_font_face cr "serif"
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+
   let font_size, minus_alpha = 
-    (match rect.T.tr_depth with
+    if not !Flag.boost_label_size
+    then 
+     (match rect.T.tr_depth with
     | 1 -> 0.1, 0.8
     | 2 -> 0.05, 0.2
     | 3 -> 0.03, 0.4
@@ -1428,20 +1455,45 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect =
     | 5 -> 0.02, 0.65
     | 6 -> 0.02, 0.7
     | _ -> 0.02, 0.8
+     )
+    else
+    (match rect.T.tr_depth with
+    | 1 -> 0.1, 0.8
+    | 2 -> 0.06, 0.2
+    | 3 -> 0.045, 0.3
+    | 4 -> 0.041, 0.35
+    | 5 -> 0.04, 0.4
+    | 6 -> 0.03, 0.45
+    | _ -> 0.02, 0.5
     )
   in
   let font_size = font_size / (zoom) (* use zoom factor inversely *) in
   let alpha = 1. - (minus_alpha / zoom) in
 
-    try_draw_label 
-      ~font_size_orig:font_size
-      ~color ~alpha 
-      ~cr ~rect txt
+  try_draw_label 
+    ~font_size_orig:font_size
+    ~color ~alpha 
+    ~cr ~rect txt
   end
 
 
 and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
 
+(* ugly: sometimes labels are too big. Should provide a way to
+ * shorten them.
+ * let txt = 
+ * if true
+ * then if txt =~ "org.eclipse.\\(.*\\)" then Common.matched1 txt else txt
+ * else txt
+ * in
+ *)
+(*
+  let txt = 
+  if true
+  then if txt =~ "[^-]*-\\(.*\\)" then Common.matched1 txt else txt
+  else txt
+  in
+*)
   let r = rect.T.tr_rect in
   
   let w = F.rect_width r in
@@ -1498,6 +1550,18 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
        
            Cairo.move_to cr x y;
            CairoH.show_text cr txt;
+
+           (* '<= 2' actually means "the toplevel entries" as 
+            * the root is at depth=1
+            *)
+           if rect.T.tr_depth <= 2 then begin
+             (let (r,g,b) = Color.rgbf_of_string "red" in
+              Cairo.set_source_rgba cr r g b alpha;
+             );
+             Cairo.move_to cr x y;
+             CairoH.show_text cr (String.sub txt 0 1);
+           end
+           
    
      | 2 | 5 | 8 | 11 when 
            tw < sqrt (w * w + h * h) && 
@@ -1531,6 +1595,19 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
          Cairo.rotate cr ~angle:angle;
          CairoH.show_text cr txt;
          Cairo.rotate cr ~angle:(-. angle);
+         
+         if rect.T.tr_depth <= 2 then begin
+           (let (r,g,b) = Color.rgbf_of_string "red" in
+            Cairo.set_source_rgba cr r g b alpha;
+           );
+           Cairo.move_to cr x y;
+           Cairo.rotate cr ~angle:angle;
+           CairoH.show_text cr (String.sub txt 0 1);
+           Cairo.rotate cr ~angle:(-. angle);
+         end;
+
+
+
    
      | 3 ->
          (* I am ok to go down to 70% *)
@@ -1752,6 +1829,8 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
     | FT.PL (FT.Cplusplus | FT.C)
     | FT.PL (FT.Thrift)
     | FT.Text ("nw" | "tex"  | "texi" | "web")
+    | FT.PL (FT.Lisp _)
+    | FT.PL (FT.Haskell _)
     ) ->
 
     let column = ref 0 in
@@ -1982,7 +2061,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
       failwith s2;
     );
     *)
-    Cairo.select_font_face cr "serif" 
+    Cairo.select_font_face cr Style.font_text
       Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
     
     let font_size_real = CairoH.user_to_device_font_size cr font_size in
@@ -2622,7 +2701,7 @@ let paint_minimap2 dw =
 
   (* draw the labels, if have enough space *)
   rects +> List.iter 
-    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:"black");
+    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None);
 
   (* draw the zoom rectangle *)
   let user_rect = device_to_user_area dw in
@@ -2847,7 +2926,7 @@ let run_tbgs_query ~root s =
  * an extra entity when have a fullname that is not empty
  *)
 val all_entities :
-  Database_code.database option ->
+  Database_code.database option -> Common.dirname ->
   Database_code.entity list
 @
 
@@ -2906,16 +2985,21 @@ val my_entry_completion_eff :
 (* We want to provide completion not only for functions/class/methods
  * but also for files and directory themselves.
  * 
- * We should maybe pass files_and_dirs in addition to the db_opt
+ * We pass the rootin addition to the db_opt
  * because sometimes we don't have a db but we could still provide
  * completion for the dirs and files.
  * 
  * todo: what do do when the root of the db is not the root
  * of the treemap ?
  *)
-let all_entities db_opt =
+let all_entities db_opt root =
   match db_opt with
-  | None -> []
+  | None -> 
+      let db = Database_code.files_and_dirs_database_from_root root in
+      Database_code.files_and_dirs_and_sorted_entities_for_completion
+        ~threshold_too_many_entities:!Flag.threshold_too_many_entities
+        db
+
   | Some db ->
       let nb_entities = Array.length db.Db.entities in
       let nb_files = List.length db.Db.files in
@@ -3559,10 +3643,19 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
     else 
       Common.filename_without_leading_path dw.root txt in
 
+  let readable_txt =
+    if String.length readable_txt > 25
+    then 
+      let dirs = Filename.dirname readable_txt +> Common.split "/" in
+      let file = Filename.basename readable_txt in
+      spf "%s/.../%s" (List.hd dirs) file
+    else readable_txt
+  in
+
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  Cairo.set_font_size cr_overlay 40.;
+  Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
   let extent = CairoH.text_extents cr_overlay readable_txt in
   let tw = extent.Cairo.text_width in
@@ -3595,7 +3688,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   CairoH.draw_rectangle_figure
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
   Draw.draw_treemap_rectangle_label_maybe 
-    ~cr:cr_overlay ~color:"blue" ~zoom:dw.zoom r_englobing;
+    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
 
   middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
     let color = 
@@ -3607,7 +3700,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     CairoH.draw_rectangle_figure
       ~cr:cr_overlay ~color r.T.tr_rect;
     Draw.draw_treemap_rectangle_label_maybe 
-      ~cr:cr_overlay ~color ~zoom:dw.zoom r;
+      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
     
   Cairo.restore cr_overlay;
@@ -3620,12 +3713,12 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   (* device coordinates *)
   mutable pm: GDraw.pixmap;
   (* todo: going from a point to the enclosing rectangle via pixel color
-     trick. Kind of ugly.
-     mutable pm_color_trick: GDraw.pixmap;
-     mutable pm_color_trick_info: (string) array.
-     alternative: just find pixel by iterating over all the rectangles
-      and check if he's inside
-  *)
+   *  trick. Kind of ugly.
+   * mutable pm_color_trick: GDraw.pixmap;
+   * mutable pm_color_trick_info: (string) array.
+   * alternative: just find pixel by iterating over all the rectangles
+   * and check if he's inside
+   *)
   mutable overlay: [ `Any ] Cairo.surface;
 @
 
@@ -3643,10 +3736,14 @@ val use_arity_of_use_count : int -> Highlight_code.use_arity
 
 type ast =
   | ML of Parse_ml.program2
+  | Hs  of Parse_hs.program2
+
   | Php of Parse_php.program2
-  | Cpp of Parse_cpp.program2
   | Js of Parse_js.program2
 
+  | Cpp of Parse_cpp.program2
+
+  | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
 
 val _hmemo_file : (Common.filename, ast) Hashtbl.t
@@ -3676,10 +3773,14 @@ open Highlight_code
  *)
 type ast = 
   | ML  of Parse_ml.program2
+  | Hs  of Parse_hs.program2
+
   | Php of Parse_php.program2
-  | Cpp of Parse_cpp.program2
   | Js  of Parse_js.program2
 
+  | Cpp of Parse_cpp.program2
+
+  | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
 
 
@@ -3693,12 +3794,28 @@ let parse_ml_cache a =
     match parse_ml2 a with | ML a -> a | _ -> raise Impossible
   )
 
+let parse_hs2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Hs (Parse_hs.parse file +> fst))
+let parse_hs_cache a = 
+  Common.profile_code "View.parse_hs_cache" (fun () -> 
+    match parse_hs2 a with | Hs a -> a | _ -> raise Impossible
+  )
+
 let parse_nw2 file = 
   Common.memoized _hmemo_file file (fun () -> 
     Noweb (Parse_nw.parse file +> fst))
 let parse_nw_cache a = 
   Common.profile_code "View.parse_nw_cache" (fun () -> 
     match parse_nw2 a with | Noweb a -> a | _ -> raise Impossible
+  )
+
+let parse_lisp2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Lisp (Parse_lisp.parse file +> fst))
+let parse_lisp_cache a = 
+  Common.profile_code "View.parse_lisp_cache" (fun () -> 
+    match parse_lisp2 a with | Lisp a -> a | _ -> raise Impossible
   )
 
 
@@ -3830,11 +3947,7 @@ let tokens_with_categ_of_file file hentities =
         (* computing the token attributes *)
         Highlight_php.visit_toplevel 
           ~tag:(fun info categ -> Hashtbl.add h info categ)
-          ~maybe_add_has_type_icon:(fun a b c -> ())
-          prefs
-          None
-          (ast, toks)
-        ;
+          prefs hentities (ast, toks);
       
         (* getting the text *)
         toks |> Common.map_filter (fun tok -> 
@@ -3888,6 +4001,74 @@ let tokens_with_categ_of_file file hentities =
 
         )
       ) +> List.flatten
+
+  | FT.PL (FT.Haskell _) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_hs_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_hs.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Parser_hs.info_of_tok tok in
+          let s = Parser_hs.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
+
+  | FT.PL (FT.Lisp _) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_lisp_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_lisp.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Parser_lisp.info_of_tok tok in
+          let s = Parser_lisp.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
 
   | FT.Text ("nw" | "tex" | "texi" | "web") ->
 
@@ -4073,11 +4254,17 @@ let async_set v a =
   " alias for -screen_size";
   "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
   " ";
+  "-boost_lbl" , Arg.Set Flag.boost_label_size,
+  " ";
+  "-bl" , Arg.Set Flag.boost_label_size,
+  " ";
+  "-no_bl" , Arg.Clear Flag.boost_label_size,
+  " ";
 
   "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
   " ";
   "-with_info", Arg.String (fun s -> db_file := Some s),
-  " ";
+  " <db light file>";
 
   "-test" , Arg.String (fun s -> test_mode := Some s),
   " <str> execute an internal script";
@@ -4119,6 +4306,11 @@ val size_font_multiplier_of_categ :
 val threshold_draw_dark_background_font_size_real : float
 
 val zoom_factor_incruste_mode : float
+
+val font_size_filename_cursor: float
+
+val font_text: string
+
 @ 
 
 <<windows_params()>>=
@@ -4201,6 +4393,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     (* php, C, etc *)
     | Some (SH.PointerCall) -> 3.
     | Some (SH.ParameterRef) -> 2.
+    | Some (SH.CallByRef) -> 3.
 
     (* misc *)
     | Some (SH.Local (SH.Def)) -> 1.2
@@ -4254,6 +4447,8 @@ let threshold_nb_rects_draw_content = ref 2500
 let threshold_too_many_entities = ref 300000
 
 let top_n = ref 100
+
+let boost_label_size = ref false
 
 let debug_gc = ref false
 
@@ -4359,7 +4554,7 @@ val draw_rectangle_bis:
   Figures.rectangle -> unit
 
 
-val prepare_string : string -> unit
+val prepare_string : string -> string
 val origin : Cairo.point
 
 val device_to_user_distance_x : Cairo.t -> float -> float
@@ -4388,16 +4583,21 @@ val is_old_cairo : unit -> bool
 <<cairo helpers functions>>=
 (* work by side effect on the (mutable) string *)
 let prepare_string s = 
-  for i = 0 to String.length s - 1 do
-    let c = String.get s i in
-    if int_of_char c >= 128
-    then String.set s i 'Z'
-    else 
-      if c = '\t'
-      then String.set s i ' '
+  if s ==~ re_space
+  then 
+    s ^ s (* double it *)
+  else begin
+    for i = 0 to String.length s - 1 do
+      let c = String.get s i in
+      if int_of_char c >= 128
+      then String.set s i 'Z'
+      else 
+        if c = '\t'
+        then String.set s i ' '
       else ()
-  done;
-  ()
+    done;
+    s
+  end
 
 let origin = { Cairo. x = 0.; y = 0. }
 
@@ -4445,8 +4645,8 @@ let show_text2 cr s =
    *)
   if s = "" then () else 
   try 
-    prepare_string s;
-    Cairo.show_text cr s
+    let s' = prepare_string s in
+    Cairo.show_text cr s'
   with exn ->
     let status = Cairo.status cr in
     let s2 = Cairo.string_of_status status in
@@ -5003,6 +5203,21 @@ module Flag = Flag_visual
 
 <<threshold_draw_dark_background_font_size_real>>
 
+let font_size_filename_cursor = 30.
+
+(* see also Cairo_helpers.prepare_string which may double the spaces *)
+let font_text = 
+  match 0 with
+  | 0 -> "serif"
+
+  | 1 -> "helvetica"
+  | 2 -> "courier"
+  | 3 -> "arial"
+  | 4 -> "consolas"
+  | 5 -> "dejavu"
+  | 6 -> "terminal"
+  | _ -> raise Impossible
+
 <<size_font_multiplier_of_categ()>>
 
 <<windows_params()>>
@@ -5030,6 +5245,8 @@ module Color = Simple_color
 open Figures
 
 (* May have to move this in commons/ at some point *)
+
+let re_space = Str.regexp "^[ ]+$"
 
 <<cairo helpers functions>>
 @ 
