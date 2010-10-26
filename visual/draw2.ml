@@ -613,7 +613,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
       failwith s2;
     );
     *)
-    Cairo.select_font_face cr "serif" 
+    Cairo.select_font_face cr Style.font_text
       Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
     
     let font_size_real = CairoH.user_to_device_font_size cr font_size in
@@ -693,7 +693,7 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
     | Some c -> c
   in
 
-  Cairo.select_font_face cr "serif" 
+  Cairo.select_font_face cr "serif"
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
 
   let font_size, minus_alpha = 
@@ -803,6 +803,9 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
            Cairo.move_to cr x y;
            CairoH.show_text cr txt;
 
+           (* '<= 2' actually means "the toplevel entries" as 
+            * the root is at depth=1
+            *)
            if rect.T.tr_depth <= 2 then begin
              (let (r,g,b) = Color.rgbf_of_string "red" in
               Cairo.set_source_rgba cr r g b alpha;

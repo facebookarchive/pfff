@@ -21,7 +21,7 @@ val draw_rectangle_bis:
   Figures.rectangle -> unit
 
 
-val prepare_string : string -> unit
+val prepare_string : string -> string
 val origin : Cairo.point
 
 val device_to_user_distance_x : Cairo.t -> float -> float

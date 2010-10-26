@@ -11,4 +11,6 @@ val zoom_factor_incruste_mode : float
 
 val font_size_filename_cursor: float
 
+val font_text: string
+
 (*e: style2.mli *)

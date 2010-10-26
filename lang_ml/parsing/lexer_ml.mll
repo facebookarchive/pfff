@@ -127,7 +127,7 @@ let lowerletter = ['a'-'z']
 let upperletter = ['A'-'Z']
 
 let ident      = (lowerletter | '_') (letter | digit | '_' | "'")*
-let upperident = upperletter (letter | digit | '_')*
+let upperident = upperletter (letter | digit | '_' | "'")*
 let label_name = (lowerletter | '_') (letter | digit | '_' | "'")*
 
 let operator_char = 

@@ -41,6 +41,19 @@ let threshold_draw_dark_background_font_size_real = 1.
 
 let font_size_filename_cursor = 30.
 
+(* see also Cairo_helpers.prepare_string which may double the spaces *)
+let font_text = 
+  match 0 with
+  | 0 -> "serif"
+
+  | 1 -> "helvetica"
+  | 2 -> "courier"
+  | 3 -> "arial"
+  | 4 -> "consolas"
+  | 5 -> "dejavu"
+  | 6 -> "terminal"
+  | _ -> raise Impossible
+
 (*s: size_font_multiplier_of_categ() *)
 let multiplier_use x = 
   match x with

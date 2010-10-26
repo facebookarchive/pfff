@@ -25,19 +25,26 @@ open Figures
 
 (* May have to move this in commons/ at some point *)
 
+let re_space = Str.regexp "^[ ]+$"
+
 (*s: cairo helpers functions *)
 (* work by side effect on the (mutable) string *)
 let prepare_string s = 
-  for i = 0 to String.length s - 1 do
-    let c = String.get s i in
-    if int_of_char c >= 128
-    then String.set s i 'Z'
-    else 
-      if c = '\t'
-      then String.set s i ' '
+  if s ==~ re_space
+  then 
+    s ^ s (* double it *)
+  else begin
+    for i = 0 to String.length s - 1 do
+      let c = String.get s i in
+      if int_of_char c >= 128
+      then String.set s i 'Z'
+      else 
+        if c = '\t'
+        then String.set s i ' '
       else ()
-  done;
-  ()
+    done;
+    s
+  end
 
 let origin = { Cairo. x = 0.; y = 0. }
 
@@ -85,8 +92,8 @@ let show_text2 cr s =
    *)
   if s = "" then () else 
   try 
-    prepare_string s;
-    Cairo.show_text cr s
+    let s' = prepare_string s in
+    Cairo.show_text cr s'
   with exn ->
     let status = Cairo.status cr in
     let s2 = Cairo.string_of_status status in

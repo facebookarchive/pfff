@@ -13,6 +13,9 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 *** visual grep
 can now visualize the result of a git grep on a project.
 
+*** better visualization of directories
+use different color for dirs and files, and highlight first
+letter of label at depth = 1
 
 ** introducing parsing_nw/
 so can visualize also Tex/Latex/Noweb source (which includes
