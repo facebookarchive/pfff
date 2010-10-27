@@ -46,53 +46,6 @@ type model = {
  }
 (*e: type model *)
 
-(* ---------------------------------------------------------------------- *)
-(* opti *)
-(* ---------------------------------------------------------------------- *)
-
-(*s: type async *)
-type 'a async = {
-  m: Mutex.t; 
-  c: Condition.t;
-  v: 'a option ref;
-  }
-(*e: type async *)
-
-(*s: async functions *)
-let async_make () = {
-  m = Mutex.create (); 
-  c = Condition.create ();
-  v = ref None;
-}
-
-let locked f l =
-  Mutex.lock l;
-  try 
-    let x = f () in 
-    Mutex.unlock l; 
-    x
-  with e -> 
-    Mutex.unlock l; 
-    raise e
-
-let async_get a = 
-  let rec go a =
-    match !(a.v) with
-    | None -> 
-        pr2 "not yet computed";
-        Condition.wait a.c a.m; 
-        go a
-    | Some v -> v
-  in
-  locked (fun () -> go a) a.m
-
-let async_set v a = 
-  locked (fun () ->
-    a.v := Some v;
-    Condition.signal a.c;
-  ) a.m
-(*e: async functions *)
-
 
 (*****************************************************************************)
 (* The drawing area *)
@@ -118,7 +71,7 @@ type drawing = {
   root: Common.path;
 
   (* computed lazily *)
-  model: model async;
+  dw_model: model Async.t;
 
   (*s: fields drawing query stuff *)
     (* queries *)
@@ -129,7 +82,7 @@ type drawing = {
       (Common.filename, int) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
-  settings: settings;
+  dw_settings: settings;
 
   (*s: fields drawing main view *)
     (* device coordinates *)
@@ -216,7 +169,7 @@ let init_drawing
     root = root;
     treemap_func = func;
 
-    model = model;
+    dw_model = model;
 
     current_query = "";
     current_searched_rectangles = [];
@@ -243,7 +196,7 @@ let init_drawing
     pm_minimap = new_pixmap ~width:width_minimap ~height:width_minimap;
     drag_pt_minimap = { Cairo.x = 0.0; Cairo.y = 0.0 };
 
-    settings = {
+    dw_settings = {
       (* todo: too fuzzy for now *)
       draw_summary = false;
 
@@ -252,6 +205,26 @@ let init_drawing
   }
 (*e: init_drawing() *)
 
+(*****************************************************************************)
+(* The drawing context *)
+(*****************************************************************************)
+
+(*s: type context *)
+(* a slice of drawing used in the drawing functions *)
+type context = {
+  model: model Async.t;
+  settings:settings;
+  nb_rects_on_screen: int;
+  grep_query: (Common.filename, int) Hashtbl.t;
+}
+(*e: type context *)
+
+let context_of_drawing dw = { 
+  nb_rects_on_screen = dw.nb_rects;
+  model = dw.dw_model;
+  settings = dw.dw_settings;
+  grep_query = dw.current_grep_query;
+} 
 
 (*****************************************************************************)
 (* POINT -> treemap info *)

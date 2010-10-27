@@ -4,7 +4,7 @@ val mk_gui :
   screen_size:int ->
   'b option -> 
   (string (* root *) * 
-   Model2.model Model2.async * 
+   Model2.model Async.t * 
    Model2.drawing * 
    Common.filename option) -> 
   unit

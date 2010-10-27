@@ -23,18 +23,29 @@ module Color = Simple_color
 
 open Figures
 
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Text related *)
+(*****************************************************************************)
+
 (* May have to move this in commons/ at some point *)
 
 let re_space = Str.regexp "^[ ]+$"
 
 (*s: cairo helpers functions *)
-(* work by side effect on the (mutable) string *)
+(* !does side effect on the (mutable) string! *)
 let prepare_string s = 
   if s ==~ re_space
   then 
     s ^ s (* double it *)
   else begin
-    for i = 0 to String.length s - 1 do
+    for i = 0 to String.length s -.. 1 do
       let c = String.get s i in
       if int_of_char c >= 128
       then String.set s i 'Z'
@@ -45,6 +56,45 @@ let prepare_string s =
     done;
     s
   end
+
+
+let show_text2 cr s =
+  (* this 'if' is only for compatibility with old versions of cairo
+   * that returns some out_of_memory error when applied to empty strings
+   *)
+  if s = "" then () else 
+  try 
+    let s' = prepare_string s in
+    Cairo.show_text cr s'
+  with exn ->
+    let status = Cairo.status cr in
+    let s2 = Cairo.string_of_status status in
+    failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
+
+let show_text a b = 
+  Common.profile_code "View.cairo_show_text" (fun () -> show_text2 a b)
+
+let fake_text_extents = 
+  { Cairo.
+    x_bearing   = 0.1; y_bearing   = 0.1;
+    text_width  = 0.1; text_height = 0.1;
+    x_advance   = 0.1; y_advance   = 0.1 ;
+  }
+
+let text_extents cr s = 
+  Common.profile_code "CairoH.cairo_text_extent" (fun () -> 
+    (*if s = ""  then fake_text_extents else *)
+    Cairo.text_extents cr s
+  )
+
+let set_font_size cr font_size =
+  Common.profile_code "CairoH.set_font_size" (fun () ->
+    Cairo.set_font_size cr font_size
+  )
+
+(*****************************************************************************)
+(* Distance conversion *)
+(*****************************************************************************)
 
 let origin = { Cairo. x = 0.; y = 0. }
 
@@ -76,59 +126,19 @@ let user_to_device_font_size cr font_size =
   let device_dist = Cairo.user_to_device_distance cr user_dist in
   device_dist.Cairo.x
 
-
-(* floats are the norm in graphics *)
-open Common.ArithFloatInfix
-
 let cairo_point_to_point p = 
   { F.x = p.Cairo.x;
     F.y = p.Cairo.y;
   }
 
+let distance_points p1 p2 =
+  abs_float (p2.Cairo.x - p1.Cairo.x) +
+  abs_float (p2.Cairo.y - p1.Cairo.y) +
+    0.
 
-let show_text2 cr s =
-  (* this 'if' is only for compatibility with old versions of cairo
-   * that returns some out_of_memory error when applied to empty strings
-   *)
-  if s = "" then () else 
-  try 
-    let s' = prepare_string s in
-    Cairo.show_text cr s'
-  with exn ->
-    let status = Cairo.status cr in
-    let s2 = Cairo.string_of_status status in
-    failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
-
-let show_text a b = 
-  Common.profile_code "View.cairo_show_text" (fun () -> show_text2 a b)
-
-let fake_text_extents = 
-  { Cairo.
-    x_bearing   = 0.1; y_bearing   = 0.1;
-    text_width  = 0.1; text_height = 0.1;
-    x_advance   = 0.1; y_advance   = 0.1 ;
-  }
-
-let text_extents2 cr s = 
-  (*if s = ""
-  then fake_text_extents
-  else 
-  *)
-  Cairo.text_extents cr s
-
-let text_extents a b = 
-  Common.profile_code "CairoH.cairo_text_extent" (fun () -> text_extents2 a b)
-
-
-let set_font_size2 cr font_size =
-  Cairo.set_font_size cr font_size
-
-let set_font_size cr font_size =
-  Common.profile_code "CairoH.set_font_size" (fun () ->
-    set_font_size2 cr font_size
-  )
-
-
+(*****************************************************************************)
+(* Surface *)
+(*****************************************************************************)
 
 (* see http://cairographics.org/FAQ/#clear_a_surface *)
 let clear cr =
@@ -142,17 +152,9 @@ let surface_of_pixmap pm =
   let cr = Cairo_lablgtk.create pm#pixmap in
   Cairo.get_target cr
 
-
-let distance_points p1 p2 =
-  abs_float (p2.Cairo.x - p1.Cairo.x) +
-  abs_float (p2.Cairo.y - p1.Cairo.y) +
-    0.
-
-let is_old_cairo () = 
-  let s = Cairo.compile_time_version_string in
-  match () with
-  | _ when s =~ "1\\.[89]\\.*" -> false
-  | _ -> true
+(*****************************************************************************)
+(* Drawing *)
+(*****************************************************************************)
 
 let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
   (let (r,g,b) = color +> Color.rgbf_of_string in
@@ -200,4 +202,16 @@ let draw_rectangle_bis ~cr ~color ~line_width r =
   Cairo.stroke cr;
   ()
 (*e: cairo helpers functions *)
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
+let is_old_cairo () = 
+  let s = Cairo.compile_time_version_string in
+  match () with
+  | _ when s =~ "1\\.[89]\\.*" -> false
+  | _ -> true
+
+
 (*e: cairo_helpers.ml *)

@@ -1,4 +1,4 @@
-(*s: draw2.ml *)
+(*s: draw_microlevel.ml *)
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
@@ -16,41 +16,24 @@
  *)
 (*e: Facebook copyright *)
 
+
 open Common
 
-(* 
- * Floats are the norm in graphics. 
- * note: with ocaml 3.12 could also use the Float.(...) local open extension
- *)
 open Common.ArithFloatInfix
-
-module Color = Simple_color
 
 open Figures (* for the fields *)
 open Model2 (* for the fields *)
 
+module Flag = Flag_visual
 module Style = Style2
+
+module Color = Simple_color
+module F = Figures
+module T = Treemap
+module CairoH = Cairo_helpers
+
 module FT = File_type
 module Parsing = Parsing2
-
-module Flag = Flag_visual
-
-module HC = Highlight_code
-
-module Db = Database_code
-
-module CairoH = Cairo_helpers
-module T = Treemap
-
-module F = Figures
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(* ugly *)
-
-let text_with_user_pos = ref []
 
 (*****************************************************************************)
 (* Types *)
@@ -65,15 +48,12 @@ type draw_content_layout = {
 }
 (*e: type draw_content_layout *)
 
-(*s: type context *)
-(* a slice of Model2.drawing *)
-type context = {
-  model: Model2.model Model2.async;
-  settings:Model2.settings;
-  nb_rects_on_screen: int;
-  current_grep_query: (Common.filename, int) Hashtbl.t;
-}
-(*e: type context *)
+(*****************************************************************************)
+(* globals *)
+(*****************************************************************************)
+
+(* ugly *)
+let text_with_user_pos = ref []
 
 (*****************************************************************************)
 (* Helpers *)
@@ -82,41 +62,6 @@ type context = {
 let is_big_file_with_few_lines ~nblines fullpath = 
   nblines < 20. && 
   Common.filesize_eff fullpath > 4000
-
-(*****************************************************************************)
-(* Basics *)
-(*****************************************************************************)
-
-(*s: draw_treemap_rectangle() *)
-let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
-  let r = rect.T.tr_rect in
-
-  (let (r,g,b) = 
-    let (r,g,b) = rect.T.tr_color +> Color.rgb_of_color +> Color.rgbf_of_rgb in
-    match color with
-    | None -> (r,g,b)
-    | Some c -> 
-        let (r2,g2,b2) = c +> Color.rgbf_of_string in
-        (r2 + r / 20., g2 + g / 20., b2 + b / 20.)
-  in
-  Cairo.set_source_rgba cr r g b (alpha);
-  );
-
-  Cairo.move_to cr r.p.x r.p.y;
-  Cairo.line_to cr r.q.x r.p.y;
-  Cairo.line_to cr r.q.x r.q.y;
-  Cairo.line_to cr r.p.x r.q.y;
-  Cairo.fill cr;
-  ()
-
-let draw_treemap_rectangle ~cr ?color ?alpha a =
-  Common.profile_code "View.draw_treemap_rectangle" (fun () -> 
-    draw_treemap_rectangle2 ~cr ?color ?alpha a)
-(*e: draw_treemap_rectangle() *)
-
-(*****************************************************************************)
-(* Color of entity *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Anamorphic entities *)
@@ -202,7 +147,6 @@ let optimal_nb_columns ~nblines ~nbcolumns ~w ~h =
   aux 0.0   1.
 (*e: optimal_nb_columns *)
 
-
 (*s: draw_column_bars *)
 let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect = 
   let r = rect.T.tr_rect in
@@ -228,116 +172,6 @@ let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
     draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect)
 (*e: draw_column_bars *)
 
-
-(*****************************************************************************)
-(* File Summary *)
-(*****************************************************************************)
-
-(*s: draw_summary_content *)
-(* todo: should base this on the current max in the current view.
- * Also bad that can not compare function use by just looking
- * at their size :(
-*)
-let threshold_print_summary_entity_users = 10
-
-let draw_summary_content2 ~cr ~layout ~context ~nblines ~file rect =
-
-  let w_per_column  = layout.w_per_column in
-
-  let r = rect.T.tr_rect in
-  let file = rect.T.tr_label in
-
-  let model = Model2.async_get context.model in
-
-  let files_entities = model.Model2.hfiles_entities in
-  let entities = 
-    try Hashtbl.find files_entities file
-    with Not_found -> []
-  in
-  let entities = 
-    entities 
-    +> Common.take_safe 5
-    +> Common.filter (fun e ->
-      e.Db.e_number_external_users > threshold_print_summary_entity_users
-    )
-  in
-
-  let _w = F.rect_width r in
-  let h = F.rect_height r in
-
-  (* todo: bad to use w cos its give advantage to huge file.
-   * w_per_column on the opposite is rougly the same on a screen.
-   *)
-  let font_size = w_per_column / 2. in
-
-  let font_size_real = CairoH.user_to_device_font_size cr font_size in
-  
-  let space_per_line_summary = 
-    h / 6.
-  in
-  entities +> Common.index_list_1 +> List.iter (fun (e, i) ->
-
-    let nb_use = e.Db.e_number_external_users in
-    (* todo: move this func elsewhere, in database_code ?  *)
-    let use_arity = Parsing.use_arity_of_use_count nb_use in
-    
-    (* would like to reuse code used when drawing content but
-     * I've copy paste to allow specifics anamorphic config
-     *)
-    let font_size_multiplier = 
-      (* should reuse Style2.mulitplier_use ? *)
-      match use_arity with
-      | HC.HugeUse when nb_use > 1000 -> 4.
-      | HC.HugeUse -> 3.
-      | HC.LotsOfUse -> 2.
-      | HC.MultiUse -> 1.1
-      | HC.SomeUse | HC.UniqueUse -> 0.7
-      | HC.NoUse -> 0.5
-    in
-    let size_font_multiplier_multiplier = 
-      (*- 0.2 * font_size_real + 2. *)
-      match font_size_real with
-      | n when n < 3. -> 2.
-      | n when n < 8. -> 1.5
-      | n when n < 10. -> 1.
-      | _ -> 0.5
-    in
-
-    let final_font_size = 
-      final_font_size_when_multiplier 
-        ~multiplier:font_size_multiplier
-        ~size_font_multiplier_multiplier
-        ~font_size
-        ~font_size_real
-    in
-
-  (* TODO use the appropriate color for entity *)
-    (let (r,g,b) = 
-      0.2, 0.0, 0.0
-    in
-    let alpha = 0.5 in
-    Cairo.set_source_rgba cr r g b alpha;
-    );
-    Cairo.set_font_size cr final_font_size;
-    
-    let x = r.p.x in
-    let y = r.p.y + (space_per_line_summary * (float_of_int i)) in
-
-    let str = e.Db.e_name in
-    Cairo.move_to cr x y;
-    CairoH.show_text cr str;
-    let str = spf "(%d)" e.Db.e_number_external_users in
-    CairoH.show_text cr str;
-  );
-  ()
-
-
-let draw_summary_content 
- ~cr ~layout ~context ~nblines ~file rect =
-  Common.profile_code "View.draw_summary_content" (fun () ->
-    draw_summary_content2 ~cr ~layout ~context ~nblines ~file rect)
-(*e: draw_summary_content *)
-
 (*****************************************************************************)
 (* File Content *)
 (*****************************************************************************)
@@ -352,7 +186,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
 
   (* highlighting grep-like queries *)
   let matching_lines = 
-    try Hashtbl.find_all context.current_grep_query file
+    try Hashtbl.find_all context.grep_query file
     with Not_found -> []
   in
   let hmatching_lines = Common.hashset_of_list matching_lines in
@@ -389,7 +223,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
         
     Cairo.move_to cr x y;
 
-    let model = Model2.async_get context.model in
+    let model = Async.async_get context.model in
     let entities = model.Model2.hentities in
 
     let tokens_with_categ = 
@@ -403,7 +237,8 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
         | n when n <= 10 -> 0.6
         | _ -> 0.3
       in
-      draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") ~alpha rect;
+      Draw_basics.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+        ~alpha rect;
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
         ~line_width:font_size rect.T.tr_rect;
     end;
@@ -634,7 +469,9 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
     else 
      if context.settings.draw_summary 
      then 
-       draw_summary_content ~cr ~layout ~context ~nblines ~file:fullpath  rect
+       raise Todo
+(*       draw_summary_content ~cr ~layout ~context ~nblines ~file:fullpath  rect
+*)
     end
   end
   end
@@ -644,254 +481,4 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
 (*e: draw_treemap_rectangle_content_maybe *)
     
 
-(*****************************************************************************)
-(* Label *)
-(*****************************************************************************)
-
-(*s: draw_treemap_rectangle_label_maybe *)
-let _hmemo_text_extent = Hashtbl.create 101
-
-(* This can be quite cpu intensive. CairoH.text_extents is quite slow
- * so you must avoid calling it too much. A simple optimisation
- * when the treemap is big is to avoid trying to draw labels
- * that are too tiny already.
- * 
- * note that this function is also called when we mouse over a rectangle
- * in which case we redraw the label in a different color
- * 
- * design: good to have a color different for dir and files.
- * 
- * design: could decide to give different colors to dirs depending on its
- * depth, like red for toplevel dir, green, and so on, like I do for 
- * my code sections, but feel simpler to just have one.
- * The rectangles will already have different colors and in the end
- * the depth does not have that much meaning in projects. For instance
- * in java code there are lots of nested directories (org/apache/...),
- * in some projects there is always an intermediate src/ directory;
- * each software have different conventions.
- *)
-let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
-  if !Flag.disable_fonts then ()
-  else begin
-
-  let lbl = rect.T.tr_label in
-  let base = Filename.basename lbl in
-  (* old: Common.is_directory_eff lbl *)
-  let is_directory = rect.T.tr_is_node in
-
-  let txt = 
-    if is_directory
-    then base ^ "/"
-    else base
-  in
-  let color = 
-    match color with
-    | None -> 
-        if is_directory 
-        then "NavyBlue"
-        else "black"
-    | Some c -> c
-  in
-
-  Cairo.select_font_face cr "serif"
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
-
-  let font_size, minus_alpha = 
-    if not !Flag.boost_label_size
-    then 
-     (match rect.T.tr_depth with
-    | 1 -> 0.1, 0.8
-    | 2 -> 0.05, 0.2
-    | 3 -> 0.03, 0.4
-    | 4 -> 0.02, 0.5
-    | 5 -> 0.02, 0.65
-    | 6 -> 0.02, 0.7
-    | _ -> 0.02, 0.8
-     )
-    else
-    (match rect.T.tr_depth with
-    | 1 -> 0.1, 0.8
-    | 2 -> 0.06, 0.2
-    | 3 -> 0.045, 0.3
-    | 4 -> 0.041, 0.35
-    | 5 -> 0.04, 0.4
-    | 6 -> 0.03, 0.45
-    | _ -> 0.02, 0.5
-    )
-  in
-  let font_size = font_size / (zoom) (* use zoom factor inversely *) in
-  let alpha = 1. - (minus_alpha / zoom) in
-
-  try_draw_label 
-    ~font_size_orig:font_size
-    ~color ~alpha 
-    ~cr ~rect txt
-  end
-
-
-and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
-
-(* ugly: sometimes labels are too big. Should provide a way to
- * shorten them.
- * let txt = 
- * if true
- * then if txt =~ "org.eclipse.\\(.*\\)" then Common.matched1 txt else txt
- * else txt
- * in
- *)
-(*
-  let txt = 
-  if true
-  then if txt =~ "[^-]*-\\(.*\\)" then Common.matched1 txt else txt
-  else txt
-  in
-*)
-  let r = rect.T.tr_rect in
-  
-  let w = F.rect_width r in
-  let h = F.rect_height r in
-
-  let is_file = 
-    (* old: try Common.is_file_eff rect.T.tr_label with _ -> false *)
-    not rect.T.tr_is_node
-  in
-
-  (let (r,g,b) = color +> Color.rgbf_of_string in
-   Cairo.set_source_rgba cr r g b alpha;
-  );
-
-  let rec aux ~font_size ~step =
-
-    (* opti: this avoid lots of computation *)
-    let font_size_real = CairoH.user_to_device_font_size cr font_size in
-
-    if font_size_real < !Flag.threshold_draw_label_font_size_real
-    then ()
-    else begin
-
-     CairoH.set_font_size cr font_size;
-
-     (* opti:
-      *  was let extent = CairoH.text_extents cr txt
-      *)
-     let th, base_tw = 
-       Common.memoized _hmemo_text_extent (font_size, font_size_real) (fun ()->
-         (* peh because it exercises the spectrum of high letters *)
-         let extent = CairoH.text_extents cr "peh" in
-         let tw = extent.Cairo.text_width in
-         let th = extent.Cairo.text_height in
-         th, tw
-       )
-     in
-     let tw = float_of_int (String.length txt) * base_tw / 3. in
-           
-     
-     (* will try first horizontally at a certain size, then
-      * diagonally at a certain size, and if can't then reduce
-      * the font_size (up to a certain limit) and try again
-      * (first horizontally, then diagonally).
-      *)
-     match step with
-     | 1 | 4 | 7 | 10 when tw < w && th < h && rect.T.tr_depth > 1 ->
-           (* see http://cairographics.org/tutorial/#L3showtext 
-            * for the logic behind the placement of the text
-            *)
-     
-           let x = r.p.x + w / 2.0 - (tw / 2.0) in
-           let y = r.p.y + h / 2.0 + (th / 2.0) in
-       
-           Cairo.move_to cr x y;
-           CairoH.show_text cr txt;
-
-           (* '<= 2' actually means "the toplevel entries" as 
-            * the root is at depth=1
-            *)
-           if rect.T.tr_depth <= 2 then begin
-             (let (r,g,b) = Color.rgbf_of_string "red" in
-              Cairo.set_source_rgba cr r g b alpha;
-             );
-             Cairo.move_to cr x y;
-             CairoH.show_text cr (String.sub txt 0 1);
-           end
-           
-   
-     | 2 | 5 | 8 | 11 when 
-           tw < sqrt (w * w + h * h) && 
-           th < min w h &&
-             rect.T.tr_depth > 1 ->
-           (* todo: try vertically ... *)
-   
-         (* you have to draw on a paper to understand this code below ... *)
-   
-         let tangent = h / w in
-         let angle = atan tangent in
-   
-         (* right now we don't handle the fact that the text itself has
-          * a height but below the x and y positions are just the
-          * place of the very bottom of the first letter. In some way we trace a
-          * line below the text in the diagonal of the rectangle. This means all
-          * the text is on the top of the diagonal. It should be in the middle
-          * of the diagonal. 
-          * As a first fix we can artificially augment the angle ... ugly
-          *)
-         let angle = 
-           min (angle + angle / 10.) (Math.pi / 2.) 
-         in
-   
-         (* I love basic math *)
-         let x = r.p.x + w / 2.0 - (cos angle * (tw / 2.0)) in
-         let y = r.p.y + h / 2.0 - (sin angle * (tw / 2.0)) in
-         Cairo.move_to cr x y;
-   
-           
-         Cairo.rotate cr ~angle:angle;
-         CairoH.show_text cr txt;
-         Cairo.rotate cr ~angle:(-. angle);
-         
-         if rect.T.tr_depth <= 2 then begin
-           (let (r,g,b) = Color.rgbf_of_string "red" in
-            Cairo.set_source_rgba cr r g b alpha;
-           );
-           Cairo.move_to cr x y;
-           Cairo.rotate cr ~angle:angle;
-           CairoH.show_text cr (String.sub txt 0 1);
-           Cairo.rotate cr ~angle:(-. angle);
-         end;
-
-
-
-   
-     | 3 ->
-         (* I am ok to go down to 70% *)
-         let font_size = font_size_orig * 0.7 in
-         aux ~step:4 ~font_size
-     | 6 ->
-         (* I am ok to go down to 50% of original *)
-         let font_size = font_size_orig * 0.5 in
-         aux ~step:7 ~font_size
-   
-     | 9 ->
-         (* I am ok to go down to 30% of original for file only  *)
-         if is_file
-         then 
-           let font_size = font_size_orig * 0.25 in
-           aux ~step:10 ~font_size
-         else ()
-   
-     (* this case is taken only for the first cases (1, 2, ..) when the
-      * associated 'when' expression is false
-      *)
-     | n -> 
-         if n >= 12
-         then ()
-         else aux ~step:(Pervasives.(+) n 1) ~font_size
-    end
-  in
-  aux ~font_size:font_size_orig ~step:1 
-
-let draw_treemap_rectangle_label_maybe ~cr ~zoom ~color rect =
-  Common.profile_code "View.draw_label_maybe" (fun () ->
-    draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect)
-(*e: draw_treemap_rectangle_label_maybe *)
-
-(*e: draw2.ml *)
+(*e: draw_microlevel.ml *)
