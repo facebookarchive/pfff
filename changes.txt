@@ -30,17 +30,23 @@ the documentation of pfff!)
 
 ** php analysis
 
-finalized the PIL
+*** finalized the PIL
+
+*** dataflow analysis using PIL (thanks to iproctor)
 
 ** global analysis
 
 *** store additional attributes/properties per entities in the light code db
 
-e.g. is the function dead, does it use a global, does it take
-argument by refs. This can help the visualizer to give more semantic
-visual feedback.
+- does it take argument by refs. 
+- does it contain dynamic calls ($fn(...))
+- TODO does it use a global, 
+- TODO is the function dead, 
+
+This can help the visualizer to give more semantic visual feedback.
 
 ** pfff:ml
+
 more highlight
 
 ** documentation
@@ -48,6 +54,10 @@ more highlight
 wrote a few wiki pages (intro, sgrep, features, etc)
 
 applied pfff_visual on many open source project and generated screenshots.
+
+** internals
+
+refactor the code in visual/ to have smaller and cleaner files.
 
 * 0.13
 
