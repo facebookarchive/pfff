@@ -8,8 +8,6 @@ module Cg = Callgraph_php
 
 module V = Visitor_php
 
-module Dp = Dataflow_pil
-
 open OUnit
 
 (*****************************************************************************)
@@ -363,8 +361,10 @@ let test_dataflow_pil file =
       (try
          let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
          let flow = Controlflow_build_pil.cfg_of_stmts pil in
-         let mp = Dp.reaching_fixpoint flow in
-         Dp.display_reaching_dflow flow mp
+         let mp = Dataflow_pil.reaching_fixpoint flow in
+
+         Dataflow_pil.display_reaching_dflow flow mp
+
       with Controlflow_build_pil.Error err ->
         Controlflow_build_pil.report_error err
       )

@@ -17,6 +17,8 @@ open Common
 
 open Pil
 
+module PP = Pretty_print_pil
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -89,21 +91,21 @@ let short_string_of_node node =
   | TrueNode -> "<true>"
 
   | Echo xs ->
-      "echo:" ^ (xs +> List.map Pil.string_of_expr +> Common.join ", ")
+      "echo " ^ (xs +> List.map PP.string_of_expr +> Common.join ", ")
   | Instr i ->
-      "instr: " ^ Pil.string_of_instr i
+      PP.string_of_instr i
 
   | WhileHeader e ->
-      "while: " ^ Pil.string_of_expr e
+      "while " ^ PP.string_of_expr e
 
   | Return e ->
-      "return:" ^
+      "return " ^
       (match e with
       | None -> ""
-      | Some e -> Pil.string_of_expr e
+      | Some e -> PP.string_of_expr e
       )
   | IfHeader e ->
-      "if: " ^ Pil.string_of_expr e
+      "if " ^ PP.string_of_expr e
 
   | Join -> "<join>"
 

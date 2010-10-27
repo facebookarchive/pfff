@@ -6,6 +6,7 @@ TARGET=lib
 
 SRC= \
      pil.ml pil_build.ml \
+     pretty_print_pil.ml \
      phpmanual_xml.ml builtins_php.ml \
      graph_php.ml \
      controlflow_pil.ml  controlflow_build_pil.ml \
@@ -14,7 +15,6 @@ SRC= \
      dataflow_php.ml \
      dataflow_pil.ml \
      bottomup_analysis_php.ml \
-     pretty_print_pil.ml \
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \

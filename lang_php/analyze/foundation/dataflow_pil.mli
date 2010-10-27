@@ -1,30 +1,56 @@
 (*s: dataflow_pil.mli *)
 
-module DM : Map.S with type key = Pil.dname
-module DS : Set.S with type elt = Pil.dname
-type ni = Controlflow_pil.nodei
+(* the goal of a dataflow analysis is to store information about each
+ * variable (VarMap) at each program point (NodeiMap).
+ *)
+module VarMap : Map.S with type key = Pil.dname
+module NodeiMap : Map.S with type key = Controlflow_pil.nodei
 
-module NS : Set.S with type elt = ni
-module NM : Map.S with type key = ni
+(* the final dataflow result; a map from each program point to a map containing
+ * information from each variables
+ *)
+type 'a mapping = ('a inout) NodeiMap.t
 
-type 'a env = 'a DM.t
+ (* each node in the CFG will have a inbound environment and an outbout one *)
+ and 'a inout = {
+   in_env: 'a env;
+   out_env: 'a env;
+ }
+  (* the env type below is polymorphic so one can map different things, 
+   * for instance a bool for a liveness analysis.
+  *)
+ and 'a env = 'a VarMap.t
 
-type 'a inout = {
-  in_env: 'a env;
-  out_env: 'a env;
-}
+type 'a transfn = 'a mapping -> Controlflow_pil.nodei -> 'a mapping
 
-type 'a mapping = ('a inout) NM.t
+(* generic entry point *)
+val fixpoint: 
+  eq:('a -> 'a -> bool) -> 
+  init:'a mapping ->
+  trans:'a transfn -> 
+  flow:Controlflow_pil.flow -> 
+  'a mapping
 
-val fixpoint: Controlflow_pil.flow -> ('a -> 'a -> bool) -> 'a mapping ->
-  ('a mapping -> Ograph_extended.nodei -> 'a mapping) -> 'a mapping
+module VarSet : Set.S with type elt = Pil.dname
+module NodeiSet : Set.S with type elt = Controlflow_pil.nodei
 
-val reaching_transfer: Controlflow_pil.flow -> DS.t NM.t -> (NS.t DM.t) NM.t ->
-    NS.t mapping -> ni -> NS.t mapping
-val reaching_fixpoint: Controlflow_pil.flow -> NS.t mapping
+(* specific dataflow analysis: reaching analysis *)
 
-val display_dflow: Controlflow_pil.flow -> 'a mapping -> ('a -> string) -> unit
-val display_reaching_dflow: Controlflow_pil.flow -> NS.t mapping -> unit
+val reaching_transfer: 
+  gen:VarSet.t NodeiMap.t -> 
+  kill:(NodeiSet.t VarMap.t) NodeiMap.t ->
+  flow:Controlflow_pil.flow -> 
+  NodeiSet.t transfn
+
+val reaching_fixpoint: 
+  Controlflow_pil.flow -> NodeiSet.t mapping
+
+(* debugging *)
+val display_dflow: 
+  Controlflow_pil.flow -> 'a mapping -> ('a -> string) -> unit
+
+val display_reaching_dflow: 
+ Controlflow_pil.flow -> NodeiSet.t mapping -> unit
 
 (*x: dataflow_pil.mli *)
 (*e: dataflow_pil.mli *)
