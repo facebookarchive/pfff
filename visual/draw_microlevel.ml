@@ -67,28 +67,6 @@ let is_big_file_with_few_lines ~nblines fullpath =
 (* Anamorphic entities *)
 (*****************************************************************************)
 
-(*s: final_font_size_when_multiplier *)
-let final_font_size_when_multiplier 
-    ~multiplier ~size_font_multiplier_multiplier 
-    ~font_size ~font_size_real 
-   = 
-  let size_font_multiplier = multiplier in
-  
-  let font_size_adjusted = 
-    if size_font_multiplier = 1.
-    then font_size
-    else 
-      max 
-       (font_size * size_font_multiplier * size_font_multiplier_multiplier)
-       (font_size * 1.5)
-  in
-  
-  let final_font_size = 
-    Common.borne ~min:font_size ~max:(font_size * 30.) font_size_adjusted
-  in
-  final_font_size
-(*e: final_font_size_when_multiplier *)
-
 (*s: final_font_size_of_categ *)
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
@@ -105,7 +83,7 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     | _ -> 0.5
   in
 
-  final_font_size_when_multiplier 
+  Draw_common.final_font_size_when_multiplier 
     ~multiplier
     ~size_font_multiplier_multiplier
     ~font_size
@@ -237,7 +215,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
         | n when n <= 10 -> 0.6
         | _ -> 0.3
       in
-      Draw_basics.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
         ~alpha rect;
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
         ~line_width:font_size rect.T.tr_rect;

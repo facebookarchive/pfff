@@ -11,8 +11,8 @@ SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
     editor_connection.ml \
     model2.ml \
     completion2.ml \
-    draw_basics.ml draw_labels.ml draw_legend.ml \
-    draw_microlevel.ml draw_macrolevel.ml \
+    draw_common.ml draw_labels.ml draw_legend.ml \
+    draw_macrolevel.ml draw_microlevel.ml  \
     view2.ml
 
 #experimental:  future.ml \    ancient2.ml \      completion.ml \

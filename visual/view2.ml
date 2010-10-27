@@ -88,11 +88,9 @@ let root_orig () =
 let paint_content_maybe_refresher = ref None
 let current_rects_to_draw = ref []
 
-
 let current_r = ref None
 
 let current_motion_refresher = ref None
-
 (*e: view globals *)
 
 (*****************************************************************************)
@@ -214,7 +212,7 @@ let paint2 dw =
   let nb_rects = dw.nb_rects in
 
   (* phase 1, draw the rectangles *)
-  rects +> List.iter (Draw_basics.draw_treemap_rectangle ~cr);
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter 
@@ -253,7 +251,7 @@ let paint_minimap2 dw =
 
   let rects = dw.treemap in
   (* draw the rectangles *)
-  rects +> List.iter (Draw_basics.draw_treemap_rectangle ~cr);
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
 
   (* draw the labels, if have enough space *)
   rects +> List.iter 
@@ -431,9 +429,11 @@ let zoomed_surface_of_rectangle dw r =
   let context = context_of_drawing dw in
   let context = { context with Model2.nb_rects_on_screen = 1 } in
 
-  Draw_basics.draw_treemap_rectangle ~cr ~alpha:0.9 r';
+  Draw_macrolevel.draw_treemap_rectangle 
+    ~cr ~alpha:0.9 r';
   Draw_microlevel.draw_treemap_rectangle_content_maybe 
     ~cr ~context ~clipping:user_rect r';
+
   sur, device_width, device_height
   )
 

@@ -17,9 +17,10 @@
 %------------------------------------------------------------------------------
 %thx to LP, changed for the better a few things :)
 % - factorized types
-% - help identify features
-% - help put together related stuff, for instance htop_entities
+% - helped identify features
+% - helped put together related stuff, for instance htop_entities
 %   and the mixed/summary view
+% - helped split in macrolevel and microlevel code
 
 %thx to pfff_visual:
 % - splitted big files like draw.ml and view.ml
@@ -134,13 +135,6 @@ Yoann Padioleau\\
 % can copy what is inside Treemap.tex.nw
 
 \begin{verbatim}
-%integrate visualizer and source code ! separate skill for now
-%later: integrate more artifacts. See vision.txt
-
-whole program visualization. To actually see the architecture.
-\end{verbatim}
-
-\begin{verbatim}
 (*
  * This file is the basis for a new kind of code visualizer, 
  * with real time zoom on a treemap and partial thumbnails with anamorphic
@@ -172,6 +166,15 @@ whole program visualization. To actually see the architecture.
  *)
 
 \end{verbatim}
+
+\begin{verbatim}
+%integrate visualizer and source code ! separate skill for now
+%later: integrate more artifacts. See vision.txt
+
+whole program visualization. To actually see the architecture.
+\end{verbatim}
+
+
 
 Note that this is not a replacement for Emacs or Vi, but more a
 companion that works with Emacs or Vi, a little bit
@@ -298,6 +301,8 @@ and have emacsclient in your path).
  * There are also 'draw' which is called by the 'paint'. 'Paint' creates
  * the cairo context and adjust the scaling if needed and then call
  * 'draw'
+ 
+ * then there are cairo layers
 \end{verbatim}
 
 \begin{verbatim}
@@ -341,7 +346,6 @@ let main_action xs =
   let model = Async.async_make () in
 
   let dw = Model2.init_drawing treemap_generator model xs in
-
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -499,6 +503,17 @@ type drawing = {
 }
   <<type settings>>
 @
+
+<<type context>>=
+(* a slice of drawing used in the drawing functions *)
+type context = {
+  model: model Async.t;
+  settings:settings;
+  nb_rects_on_screen: int;
+  grep_query: (Common.filename, int) Hashtbl.t;
+}
+@ 
+
 
 <<hentities sig>>=
 val hentities :
@@ -748,13 +763,10 @@ let root_orig () =
 let paint_content_maybe_refresher = ref None
 let current_rects_to_draw = ref []
 
-
 let current_r = ref None
 
 let current_motion_refresher = ref None
-
 @ 
-
 
 
 <<mk_gui()>>=
@@ -1193,7 +1205,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
 \section{Macrolevel View: the Treemap}
 
-% macro-level visualization. See also archi_code.ml.
+%macro-level visualization. See also archi_code.ml.
 
 \subsection{Treemap Principles}
 
@@ -1257,6 +1269,8 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
     draw_treemap_rectangle2 ~cr ?color ?alpha a)
 @ 
 
+
+\subsection{Labels}
 
 <<draw_treemap_rectangle_label_maybe sig>>=
 val draw_treemap_rectangle_label_maybe :
@@ -1514,104 +1528,8 @@ let draw_treemap_rectangle_label_maybe ~cr ~zoom ~color rect =
     draw_treemap_rectangle_label_maybe2 ~cr ~zoom ~color rect)
 @ 
 
-\subsection{Painting}
-
-<<paint>>=
-
-let paint_content_maybe_rect ~user_rect dw rect =
-  let cr = Cairo_lablgtk.create dw.pm#pixmap in
-  zoom_pan_scale_map cr dw;
-
-  let context = Model2.context_of_drawing dw in
-
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr  ~clipping:user_rect  ~context rect;
-
-  (* have to redraw the label *)
-  Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr ~zoom:dw.zoom ~color:None rect;
-
-  ()
-
-(* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
-let lazy_paint ~user_rect dw () =
-  pr2 "Lazy Paint";
-  let start = Unix.gettimeofday () in
-  while Unix.gettimeofday () - start < 0.3 do
-    match !current_rects_to_draw with
-    | [] -> ()
-    | x::xs ->
-        current_rects_to_draw := xs;
-        pr2 (spf "Drawing: %s" (x.T.tr_label));
-        paint_content_maybe_rect ~user_rect dw x;
-  done;
-  !_refresh_da ();
-  if !current_rects_to_draw = []
-  then false
-  else true
-
-
-let paint2 dw = 
-
-  !paint_content_maybe_refresher +> Common.do_option (fun x ->
-    GMain.Idle.remove x;
-  );
-  current_rects_to_draw := [];
-
-  let cr = Cairo_lablgtk.create dw.pm#pixmap in
-  dw.pm#rectangle 
-    ~x:0 ~y:0 
-    ~width:dw.width ~height:dw.height 
-    ~filled:true () ;
-
-  pr2 (spf "paint, with zoom = %f, xtrans = %f, ytrans = %f" 
-          dw.zoom dw.xtrans dw.ytrans);
-  let user_rect = device_to_user_area dw in
-  pr2 (F.s_of_rectangle user_rect);
-
-  zoom_pan_scale_map cr dw;
-
-  let rects = dw.treemap in
-  let nb_rects = dw.nb_rects in
-
-  (* phase 1, draw the rectangles *)
-  rects +> List.iter (Draw_basics.draw_treemap_rectangle ~cr);
-
-  (* phase 2, draw the labels, if have enough space *)
-  rects +> List.iter 
-    (Draw_labels.draw_treemap_rectangle_label_maybe 
-        ~cr ~zoom:dw.zoom  ~color:None);
-
-  (* phase 3, draw the content, if have enough space *)
-  if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
-    (* draw_content_maybe calls nblines which is quite expensive so
-     * want to limit it *)
-  then begin
-    current_rects_to_draw := rects;
-    paint_content_maybe_refresher := 
-      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
-  end;
-
-  (* also clear the overlay *)
-  let cr_overlay = Cairo.create dw.overlay in
-  CairoH.clear cr_overlay;
-
-  ()
-
-let paint dw = 
-  Common.profile_code2 "View.paint" (fun () -> paint2 dw)
-@ 
-
 
 \subsection{Color code}
-
-<<expose_legend>>=
-let expose_legend da dw_ref ev = 
-  let cr = Cairo_lablgtk.create da#misc#window in
-  Draw_legend.draw_legend ~cr;
-  true
-@ 
-
 
 <<paint_legend>>=
 let draw_legend ~cr =
@@ -1656,14 +1574,20 @@ let draw_legend ~cr =
   ()
 @ 
 
+<<expose_legend>>=
+let expose_legend da dw_ref ev = 
+  let cr = Cairo_lablgtk.create da#misc#window in
+  Draw_legend.draw_legend ~cr;
+  true
+@ 
 
-\section{Source View}
+
+
+\section{Microlevel View: Source Thumbnails}
 
 % micro-level visualization. See also highlight_code.ml
 
 \subsection{Principles}
-
-\subsection{Color code}
 
 \subsection{Drawing}
 
@@ -1677,17 +1601,6 @@ type draw_content_layout = {
 @ 
 
 
-
-<<type context>>=
-(* a slice of drawing used in the drawing functions *)
-type context = {
-  model: model Async.t;
-  settings:settings;
-  nb_rects_on_screen: int;
-  grep_query: (Common.filename, int) Hashtbl.t;
-}
-@ 
-
 <<draw_treemap_rectangle_content_maybe sig>>=
 val draw_treemap_rectangle_content_maybe :
   cr:Cairo.t ->
@@ -1696,6 +1609,8 @@ val draw_treemap_rectangle_content_maybe :
   Treemap.treemap_rectangle -> 
   unit
 @ 
+
+\subsection{Entities size}
 
 <<final_font_size_when_multiplier>>=
 let final_font_size_when_multiplier 
@@ -1736,13 +1651,15 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     | _ -> 0.5
   in
 
-  final_font_size_when_multiplier 
+  Draw_common.final_font_size_when_multiplier 
     ~multiplier
     ~size_font_multiplier_multiplier
     ~font_size
     ~font_size_real
 @ 
 
+
+\subsection{Column layout}
 
 <<font_size_when_have_x_columns>>=
 let font_size_when_have_x_columns ~nblines ~nbcolumns ~w ~h ~with_n_columns = 
@@ -1803,6 +1720,9 @@ let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
 @ 
 
 
+\subsection{Content rendering}
+
+% thumbnails and actual source is same code! not like in visual studio
 
 <<draw_content>>=
 let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
@@ -1865,7 +1785,7 @@ let draw_content2 ~cr ~layout ~context ~nblines ~file rect =
         | n when n <= 10 -> 0.6
         | _ -> 0.3
       in
-      Draw_basics.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
         ~alpha rect;
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
         ~line_width:font_size rect.T.tr_rect;
@@ -2108,10 +2028,105 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
     draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
 @ 
 
+\subsection{Color code}
 
 
-\section{Mixed View}
 
+\section{Macro+Micro View}
+
+\subsection{Painting}
+
+% also contain the code for calling the micro-level
+
+<<paint>>=
+
+let paint_content_maybe_rect ~user_rect dw rect =
+  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  zoom_pan_scale_map cr dw;
+
+  let context = Model2.context_of_drawing dw in
+
+  Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr  ~clipping:user_rect  ~context rect;
+
+  (* have to redraw the label *)
+  Draw_labels.draw_treemap_rectangle_label_maybe 
+    ~cr ~zoom:dw.zoom ~color:None rect;
+
+  ()
+
+(* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
+let lazy_paint ~user_rect dw () =
+  pr2 "Lazy Paint";
+  let start = Unix.gettimeofday () in
+  while Unix.gettimeofday () - start < 0.3 do
+    match !current_rects_to_draw with
+    | [] -> ()
+    | x::xs ->
+        current_rects_to_draw := xs;
+        pr2 (spf "Drawing: %s" (x.T.tr_label));
+        paint_content_maybe_rect ~user_rect dw x;
+  done;
+  !_refresh_da ();
+  if !current_rects_to_draw = []
+  then false
+  else true
+
+
+let paint2 dw = 
+
+  !paint_content_maybe_refresher +> Common.do_option (fun x ->
+    GMain.Idle.remove x;
+  );
+  current_rects_to_draw := [];
+
+  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  dw.pm#rectangle 
+    ~x:0 ~y:0 
+    ~width:dw.width ~height:dw.height 
+    ~filled:true () ;
+
+  pr2 (spf "paint, with zoom = %f, xtrans = %f, ytrans = %f" 
+          dw.zoom dw.xtrans dw.ytrans);
+  let user_rect = device_to_user_area dw in
+  pr2 (F.s_of_rectangle user_rect);
+
+  zoom_pan_scale_map cr dw;
+
+  let rects = dw.treemap in
+  let nb_rects = dw.nb_rects in
+
+  (* phase 1, draw the rectangles *)
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
+
+  (* phase 2, draw the labels, if have enough space *)
+  rects +> List.iter 
+    (Draw_labels.draw_treemap_rectangle_label_maybe 
+        ~cr ~zoom:dw.zoom  ~color:None);
+
+  (* phase 3, draw the content, if have enough space *)
+  if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
+    (* draw_content_maybe calls nblines which is quite expensive so
+     * want to limit it *)
+  then begin
+    current_rects_to_draw := rects;
+    paint_content_maybe_refresher := 
+      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
+  end;
+
+  (* also clear the overlay *)
+  let cr_overlay = Cairo.create dw.overlay in
+  CairoH.clear cr_overlay;
+
+  ()
+
+let paint dw = 
+  Common.profile_code2 "View.paint" (fun () -> paint2 dw)
+@ 
+
+
+
+\subsection{Mixed view}
 
 <<draw_summary_content>>=
 (* todo: should base this on the current max in the current view.
@@ -2182,7 +2197,7 @@ let draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect =
     in
 
     let final_font_size = 
-      Draw_microlevel.final_font_size_when_multiplier 
+      Draw_common.final_font_size_when_multiplier 
         ~multiplier:font_size_multiplier
         ~size_font_multiplier_multiplier
         ~font_size
@@ -2371,6 +2386,15 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
               s filepos.Common.l filepos.Common.c);
       Some filepos
   )
+@ 
+
+<<text_with_user_pos sig>>=
+(* ugly: used when middle-clicking on the drawing area to know 
+ * how to translate a point into a filepos so that we can open
+ * the file at the right position.
+ *)
+val text_with_user_pos :
+  (string * Common.filepos * Cairo.point) Common.stack ref
 @ 
 
 
@@ -2582,14 +2606,6 @@ let open_file_in_current_editor ~file ~line =
   run_emacsclient ~file ~line
 @
 
-<<text_with_user_pos sig>>=
-(* ugly: used when middle-clicking on the drawing area to know 
- * how to translate a point into a filepos so that we can open
- * the file at the right position.
- *)
-val text_with_user_pos :
-  (string * Common.filepos * Cairo.point) Common.stack ref
-@ 
 
 \subsection{Going Back}
 
@@ -2712,7 +2728,7 @@ let paint_minimap2 dw =
 
   let rects = dw.treemap in
   (* draw the rectangles *)
-  rects +> List.iter (Draw_basics.draw_treemap_rectangle ~cr);
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
 
   (* draw the labels, if have enough space *)
   rects +> List.iter 
@@ -3503,9 +3519,11 @@ let zoomed_surface_of_rectangle dw r =
   let context = context_of_drawing dw in
   let context = { context with Model2.nb_rects_on_screen = 1 } in
 
-  Draw_basics.draw_treemap_rectangle ~cr ~alpha:0.9 r';
+  Draw_macrolevel.draw_treemap_rectangle 
+    ~cr ~alpha:0.9 r';
   Draw_microlevel.draw_treemap_rectangle_content_maybe 
     ~cr ~context ~clipping:user_rect r';
+
   sur, device_width, device_height
   )
 
@@ -5075,52 +5093,13 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
   
 @ 
 
-\subsection{[[draw_basics.mli]]}
-
-<<draw_basics.mli>>=
-
-<<draw_treemap_rectangle sig>>
-
-@ 
-
-\subsection{[[draw_basics.ml]]}
-
-<<draw_basics.ml>>=
-<<Facebook copyright>>
-open Common
-
-(* 
- * Floats are the norm in graphics. 
- * note: with ocaml 3.12 could also use the Float.(...) local open extension
- *)
-open Common.ArithFloatInfix
-
-open Figures (* for the fields *)
-open Model2 (* for the fields *)
-
-module T = Treemap
-
-module Color = Simple_color
-
-(*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Basics *)
-(*****************************************************************************)
-
-<<draw_treemap_rectangle()>>
-
-(*****************************************************************************)
-(* Color of entity *)
-(*****************************************************************************)
-@ 
-
 
 \subsection{[[draw_macrolevel.mli]]}
 
 <<draw_macrolevel.mli>>=
+
+<<draw_treemap_rectangle sig>>
+
 @ 
 
 \subsection{[[draw_macrolevel.ml]]}
@@ -5145,6 +5124,13 @@ module CairoH = Cairo_helpers
 module  Parsing = Parsing2
 
 (*****************************************************************************)
+(* Drawing rectangles *)
+(*****************************************************************************)
+
+<<draw_treemap_rectangle()>>
+
+
+(*****************************************************************************)
 (* File Summary *)
 (*****************************************************************************)
 
@@ -5158,12 +5144,6 @@ module  Parsing = Parsing2
 <<draw_treemap_rectangle_content_maybe sig>>
 
 <<text_with_user_pos sig>>
-
-(* current used also by draw_macrolevel *)
-val final_font_size_when_multiplier:
-  multiplier:float ->
-  size_font_multiplier_multiplier:float ->
-  font_size:float -> font_size_real:'a -> float
 
 @ 
 
@@ -5216,8 +5196,6 @@ let is_big_file_with_few_lines ~nblines fullpath =
 (* Anamorphic entities *)
 (*****************************************************************************)
 
-<<final_font_size_when_multiplier>>
-
 <<final_font_size_of_categ>>
 
 (*****************************************************************************)
@@ -5241,35 +5219,6 @@ let is_big_file_with_few_lines ~nblines fullpath =
     
 
 @ 
-
-\subsection{[[draw_legend.mli]]}
-
-<<draw_legend.mli>>=
-val draw_legend: cr:Cairo.t -> unit
-@
-
-\subsection{[[draw_legend.ml]]}
-
-<<draw_legend.ml>>=
-<<Facebook copyright>>
-
-open Common
-
-open Common.ArithFloatInfix
-
-module CairoH = Cairo_helpers
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Drawing *)
-(*****************************************************************************)
-
-<<paint_legend>>
-
-@
 
 \subsection{[[draw_labels.mli]]}
 
@@ -5307,6 +5256,74 @@ module CairoH = Cairo_helpers
 <<draw_treemap_rectangle_label_maybe>>
 
 @ 
+
+\subsection{[[draw_common.mli]]}
+
+<<draw_common.mli>>=
+
+(* current used also by draw_macrolevel *)
+val final_font_size_when_multiplier:
+  multiplier:float ->
+  size_font_multiplier_multiplier:float ->
+  font_size:float -> font_size_real:'a -> float
+
+@ 
+
+\subsection{[[draw_common.ml]]}
+
+<<draw_common.ml>>=
+<<Facebook copyright>>
+
+open Common
+
+open Common.ArithFloatInfix
+
+module CairoH = Cairo_helpers
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Anamorphic entities *)
+(*****************************************************************************)
+
+<<final_font_size_when_multiplier>>
+
+
+@ 
+
+ 
+
+
+\subsection{[[draw_legend.mli]]}
+
+<<draw_legend.mli>>=
+val draw_legend: cr:Cairo.t -> unit
+@
+
+\subsection{[[draw_legend.ml]]}
+
+<<draw_legend.ml>>=
+<<Facebook copyright>>
+
+open Common
+
+open Common.ArithFloatInfix
+
+module CairoH = Cairo_helpers
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Drawing *)
+(*****************************************************************************)
+
+<<paint_legend>>
+
+@
 
 \subsection{[[parsing2.mli]]}
 

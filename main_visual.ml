@@ -110,7 +110,6 @@ let main_action xs =
 
   let dw = Model2.init_drawing treemap_generator model xs in
 
-
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
   let db_file = 

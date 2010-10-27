@@ -33,6 +33,38 @@ module CairoH = Cairo_helpers
 module  Parsing = Parsing2
 
 (*****************************************************************************)
+(* Drawing rectangles *)
+(*****************************************************************************)
+
+(*s: draw_treemap_rectangle() *)
+let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
+  let r = rect.T.tr_rect in
+
+  (let (r,g,b) = 
+    let (r,g,b) = rect.T.tr_color +> Color.rgb_of_color +> Color.rgbf_of_rgb in
+    match color with
+    | None -> (r,g,b)
+    | Some c -> 
+        let (r2,g2,b2) = c +> Color.rgbf_of_string in
+        (r2 + r / 20., g2 + g / 20., b2 + b / 20.)
+  in
+  Cairo.set_source_rgba cr r g b (alpha);
+  );
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.fill cr;
+  ()
+
+let draw_treemap_rectangle ~cr ?color ?alpha a =
+  Common.profile_code "View.draw_treemap_rectangle" (fun () -> 
+    draw_treemap_rectangle2 ~cr ?color ?alpha a)
+(*e: draw_treemap_rectangle() *)
+
+
+(*****************************************************************************)
 (* File Summary *)
 (*****************************************************************************)
 
@@ -105,7 +137,7 @@ let draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect =
     in
 
     let final_font_size = 
-      Draw_microlevel.final_font_size_when_multiplier 
+      Draw_common.final_font_size_when_multiplier 
         ~multiplier:font_size_multiplier
         ~size_font_multiplier_multiplier
         ~font_size
