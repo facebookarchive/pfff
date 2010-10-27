@@ -21,9 +21,9 @@ module S = Scope_code
 (* Purpose *)
 (*****************************************************************************)
 
-(* 
+(*
  * A syntactical checker for PHP.
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -42,7 +42,7 @@ let rank = ref true
 (*****************************************************************************)
 
 (* ranking errors, inspired by Engler slides *)
-let rank_errors errs = 
+let rank_errors errs =
   errs |> List.map (fun x ->
     x,
     match x with
@@ -53,9 +53,9 @@ let rank_errors errs =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_dbg s = 
+let pr2_dbg s =
   if !verbose then Common.pr2 s
- 
+
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
@@ -64,7 +64,7 @@ let main_action xs =
   (* todo: build info about builtins, so when call to preg_match,
    * know that this function takes things via reference.
    *
-   * also make it possible to take a db in parameter so 
+   * also make it possible to take a db in parameter so
    * for other functions, we can also get their prototype.
    *)
 
@@ -90,9 +90,9 @@ let main_action xs =
   );
 
   let errs = !Error_php._errors |> List.rev in
-  let errs = 
+  let errs =
     if !rank
-    then rank_errors errs |> Common.take_safe 20 
+    then rank_errors errs |> Common.take_safe 20
     else errs
   in
 
@@ -112,8 +112,8 @@ let main_action xs =
     | _ -> ()
   );
   pr2 "top 10 most recurring unused variable name";
-  hcount_str#to_list |> Common.sort_by_val_highfirst |> Common.take_safe 10 
-   |> List.iter (fun (s, cnt) -> 
+  hcount_str#to_list |> Common.sort_by_val_highfirst |> Common.take_safe 10
+   |> List.iter (fun (s, cnt) ->
         pr2 (spf " %s -> %d" s cnt)
       );
   ()
@@ -127,7 +127,7 @@ type warning =
   | UndefinedFunction of Ast_php.name
   | UnableToDetermineDef of Ast_php.name
   | WrongKeywordArgument of Ast_php.dname * Ast_php.expr * Ast_php.name *
-                     Ast_php.parameter * Ast_php.func_def 
+                     Ast_php.parameter * Ast_php.func_def
   | TooManyArguments of Ast_php.name * Ast_php.func_def
   | TooFewArguments  of Ast_php.name * Ast_php.func_def
 
@@ -148,10 +148,10 @@ let report_warning = function
       pr2 (spf "Warning: at %s
   the assignment '$%s=%s' in the argument list of this call to '%s()' looks like a keyword argument, but the corresponding parameter in the definition of '%s' is called '$%s'
   function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_dname dn)) 
+          (Ast.string_of_info (Ast.info_of_dname dn))
           (Ast.dname dn) (Unparse_php.string_of_expr expr)
           (Ast.name funcname) (Ast.name funcname)
-          (Ast.dname param.p_name) 
+          (Ast.dname param.p_name)
           (Ast.string_of_info (Ast.info_of_name def.f_name))
       )
   | TooManyArguments(funcname, def) ->
@@ -181,21 +181,21 @@ let test_jeannin file =
   let ast = Parse_php.parse_program file in
   Database_php.with_db ~metapath:dir (fun db ->
 
-    let visitor = 
+    let visitor =
       V.mk_visitor { V.default_visitor with
         V.klvalue = (fun (k, _) x ->
           match Ast.untype x with
           | FunCallSimple (funcname, args) ->
-              (let ids = Database_php.function_ids__of_string 
+              (let ids = Database_php.function_ids__of_string
                        (Ast.name funcname) db in
                match ids with
-              | [] -> 
+              | [] ->
                   report_warning (UndefinedFunction funcname)
               | _ :: _ :: _ ->
                   (* a function with the same name is defined at different places *)
                   (* TODO: deal with functions defined several times *)
                   report_warning (UnableToDetermineDef funcname)
-              | [id] -> 
+              | [id] ->
                   let def = match Database_php.ast_of_id id db with
                     | Ast_entity_php.Function(def) -> def
                     | _ -> raise Impossible
@@ -203,12 +203,12 @@ let test_jeannin file =
                   let rec aux params args =
                     match (params, args) with
                     | [], [] -> ()
-                    | [], y::ys -> 
+                    | [], y::ys ->
                         report_warning (TooManyArguments(funcname, def));
                         aux [] ys
                     | x::xs, [] ->
                         (match x.p_default with
-                        | None -> 
+                        | None ->
                             report_warning (TooFewArguments(funcname, def));
                         | Some _ -> ()
                         );
@@ -217,9 +217,9 @@ let test_jeannin file =
                         (match y with
                         | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
                             if not (Ast.dname dn =$= Ast.dname x.p_name)
-                            then 
-                              report_warning 
-                                (WrongKeywordArgument(dn, expr, funcname, 
+                            then
+                              report_warning
+                                (WrongKeywordArgument(dn, expr, funcname,
                                                       x, def))
                         | _ -> ()
                         );
@@ -246,7 +246,7 @@ let type_inference file =
   let ast = Parse_php.parse_program file in
 
   (* PHP Intermediate Language *)
-  try 
+  try
     let pil = Pil_build.pil_of_program ast in
 
     (* todo: how bootstrap this ? need a bottom-up analysis but
@@ -263,8 +263,8 @@ let type_inference file =
     pr s;
 
     (* internal representation pretty printer *)
-    let s = Pil.string_of_program 
-      ~config:{Pil.show_types = true; Pil.show_tokens = false} 
+    let s = Pil.string_of_program
+      ~config:{Pil.show_types = true; Pil.show_tokens = false}
       pil
     in
     pr s;
@@ -289,18 +289,19 @@ let scheck_extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
  scheck_extra_actions()++
  Test_parsing_php.actions()++
+ Test_analyze_php.actions()++
  []
 
-let options () = 
+let options () =
   [
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Set verbose,
     " ";
-    "-strict", Arg.Set Error_php.strict, 
+    "-strict", Arg.Set Error_php.strict,
     " ";
-    "-no_rank", Arg.Clear rank, 
+    "-no_rank", Arg.Clear rank,
     " ";
   ] ++
   Flag_parsing_php.cmdline_flags_pp () ++
@@ -310,17 +311,17 @@ let options () =
   Common.cmdline_flags_verbose () ++
   Common.cmdline_flags_other () ++
   [
-  "-version",   Arg.Unit (fun () -> 
+  "-version",   Arg.Unit (fun () ->
     pr2 (spf "sgrep_php version: %s" Config.version);
     exit 0;
-  ), 
+  ),
     "  guess what";
 
   (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
+  "-date",   Arg.Unit (fun () ->
     pr2 "version: $Date: 2010/04/25 00:44:57 $";
     raise (Common.UnixExit 0)
-    ), 
+    ),
   "   guess what";
   ] ++
   []
@@ -329,45 +330,45 @@ let options () =
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
-  let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
+let main () =
+  let usage_msg =
+    "Usage: " ^ Common.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
 
     (match args with
-   
+
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | x::xs -> 
+    | x::xs ->
         main_action (x::xs)
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
     )
   )
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
       main ();
   )

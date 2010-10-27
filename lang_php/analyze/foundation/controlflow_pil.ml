@@ -6,14 +6,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 
-open Common 
+open Common
 
 open Pil
 
@@ -35,29 +35,29 @@ type node = {
   (* For now we just have node_kind, but later if we want to do some data-flow
    * analysis or use temporal logic, we may want to add extra information
    * in each CFG nodes. We could also record such extra
-   * information in an external table that maps Ograph_extended.nodei, 
+   * information in an external table that maps Ograph_extended.nodei,
    * that is nodeid, to some information.
    *)
   n: node_kind;
-} 
- and node_kind = 
+}
+ and node_kind =
 
   (* special fake cfg nodes *)
   | Enter
-  | Exit 
+  | Exit
   (* An alternative is to store such information in the edges, but
    * experience shows it's easier to encode it via regular nodes
    *)
   | TrueNode
   | FalseNode
-      
+
   | IfHeader of expr
   | WhileHeader of expr
-        
+
   | Return of expr option
-      
+
   | Jump
-        
+
   | TryHeader
   | Throw
 
@@ -67,10 +67,10 @@ type node = {
   | Join
  (* with tarzan *)
 
-(* For now there is just one kind of edge. Later we may have more, 
+(* For now there is just one kind of edge. Later we may have more,
  * see the ShadowNode idea of Julia Lawall.
  *)
-type edge = Direct 
+type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable
 
@@ -80,7 +80,7 @@ type nodei = Ograph_extended.nodei
 (* String of *)
 (*****************************************************************************)
 
-let short_string_of_node node = 
+let short_string_of_node node =
   match node.n with
   | Enter -> "<enter>"
   | Exit -> "<exit>"
@@ -88,16 +88,16 @@ let short_string_of_node node =
   | FalseNode -> "<false>"
   | TrueNode -> "<true>"
 
-  | Echo xs -> 
+  | Echo xs ->
       "echo:" ^ (xs +> List.map Pil.string_of_expr +> Common.join ", ")
-  | Instr i -> 
+  | Instr i ->
       "instr: " ^ Pil.string_of_instr i
 
-  | WhileHeader e -> 
+  | WhileHeader e ->
       "while: " ^ Pil.string_of_expr e
 
-  | Return e -> 
-      "return:" ^ 
+  | Return e ->
+      "return:" ^
       (match e with
       | None -> ""
       | Some e -> Pil.string_of_expr e
@@ -140,24 +140,24 @@ and vof_node_kind =
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
   | Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
   | Join -> Ocaml.VSum (("Join", []))
-  
+
 
 
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
-      
+
 
 let (first_node : flow -> Ograph_extended.nodei) = fun flow ->
-  raise Todo
+  fst (List.find (fun (_, nk) -> nk.n == Enter) flow#nodes#tolist)
 
 let (mk_node: node_kind -> node) = fun nk ->
   raise Todo
 
 (* using internally graphviz dot and ghostview on X11 *)
 let (display_flow: flow -> unit) = fun flow ->
-  flow +> Ograph_extended.print_ograph_mutable_generic  
-    ~s_of_node:(fun (nodei, node) -> 
+  flow +> Ograph_extended.print_ograph_mutable_generic
+    ~s_of_node:(fun (nodei, node) ->
       let s = short_string_of_node node in
       (* 'dot' does not like quote *)
       String.escaped s, None, None

@@ -12,10 +12,11 @@ SRC= \
      controlflow_php.ml  controlflow_build_php.ml \
      callgraph_php.ml aliasing_function_php.ml  \
      dataflow_php.ml \
+     dataflow_pil.ml \
      bottomup_analysis_php.ml \
      pretty_print_pil.ml \
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
