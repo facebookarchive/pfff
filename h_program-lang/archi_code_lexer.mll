@@ -128,7 +128,11 @@ rule category = parse
   | "/test/" 
   | "/test2/" 
   | "/t/" 
+  | "/_test"
   | "/testsuite/" 
+      { Test }
+
+  | "/example"
       { Test }
 
   (* facebook specific a little *)
@@ -197,6 +201,7 @@ rule category = parse
   | "external" { ThirdParty }
   | "legacy" { ThirdParty }
   | "deprecated" { Legacy }
+  | "/attic/" { Legacy }
 
   (* pad specfic *)
   | "ocamlextra" { ThirdParty }
@@ -211,6 +216,9 @@ rule category = parse
   (* facebook specific ? *)
   | "/si/"
   | "site_integrity" 
+      { Security }
+
+  | "/auth" b 
       { Security }
 
   (* as in OCaml asmcomp/ directory *)
@@ -283,6 +291,9 @@ rule category = parse
 
   | b "w32" b
 
+  (* tinyGL *)
+  | "/beos"
+
       { OS }
 
   | "dns" 
@@ -339,7 +350,8 @@ rule category = parse
   | "/qt/"
   | "/tcltk/"
   | "x11"
-  | "/wx"
+  (* wxwindows. it's also used in efuns, e.g. toolkit/wX_edit.ml *)
+  | "/wx" 
       { Ui }
 
   | "/intern/" { Intern }
@@ -416,6 +428,7 @@ rule category = parse
   | "/vi/"
   | "/zh/"
   | "/zh-tw/"
+  | "/la/"
       { I18n }
 
   | "i18n" 

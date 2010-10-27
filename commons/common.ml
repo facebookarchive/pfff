@@ -2373,7 +2373,9 @@ let dbe_of_filename file =
   Filename.basename file +> filesuffix
 
 let filename_of_dbe (dir, base, ext) =
-  Filename.concat dir (base ^ "." ^ ext)
+  if ext =$= ""
+  then Filename.concat dir base
+  else Filename.concat dir (base ^ "." ^ ext)
 
 
 let dbe_of_filename_noext_ok file = 

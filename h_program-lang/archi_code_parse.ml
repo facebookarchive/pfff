@@ -36,6 +36,8 @@ open Archi_code
 (* Helpers *)
 (*****************************************************************************)
 
+let re_c_yaccfile = Str.regexp "\\(.*\\).tab"
+
 (* coupling: don't forget to extend re_auto_generated below too *)
 let is_auto_generated file =
   let (d,b,e) = Common.dbe_of_filename_noext_ok file in
@@ -61,11 +63,18 @@ let is_auto_generated file =
       Sys.file_exists (Common.filename_of_dbe (d,b, "y")) ||
       Sys.file_exists (Common.filename_of_dbe (d,b, "l")) ||
       (* bigloo *)
-      Sys.file_exists (Common.filename_of_dbe (d,b, "scm"))
+      Sys.file_exists (Common.filename_of_dbe (d,b, "scm")) ||
+      (if b ==~ re_c_yaccfile
+      then 
+        let b' = Common.matched1 b in
+        Sys.file_exists (Common.filename_of_dbe (d,b', "y"))
+      else false
+      )
  
   | _ when b = "Makefile" && e = "NOEXT" ->
       Sys.file_exists (Common.filename_of_dbe (d,b, "am")) ||
-      Sys.file_exists (Common.filename_of_dbe (d,b, "in"))
+      Sys.file_exists (Common.filename_of_dbe (d,b, "in")) ||
+      Sys.file_exists (Common.filename_of_dbe (d,"Imakefile", ""))
 
   | _ -> false
 
