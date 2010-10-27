@@ -332,6 +332,7 @@ rule category = parse
   | "jpeg"
   | "/ui."
   | "window"
+  | "/draw_"
       { Ui }
 
   | "/gtk/"

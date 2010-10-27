@@ -1,20 +1,5 @@
 (*s: model2.mli *)
 
-(*s: type async *)
-type 'a async = {
-  m: Mutex.t; 
-  c: Condition.t;
-  v: 'a option ref;
-  }
-(*e: type async *)
-(*s: async functions sig *)
-val async_get: 'a async -> 'a
-val async_make: unit -> 'a async
-val async_set: 'a -> 'a async -> unit
-
-val locked: (unit -> 'a) -> Mutex.t -> 'a
-(*e: async functions sig *)
-
 (*s: type model *)
 type model = {
   db: Database_code.database option;
@@ -50,7 +35,7 @@ type drawing = {
   root: Common.path;
 
   (* computed lazily *)
-  model: model async;
+  dw_model: model Async.t;
 
   (*s: fields drawing query stuff *)
     (* queries *)
@@ -61,7 +46,7 @@ type drawing = {
       (Common.filename, int) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
-  settings: settings;
+  dw_settings: settings;
 
   (*s: fields drawing main view *)
     (* device coordinates *)
@@ -110,6 +95,16 @@ type drawing = {
   (*e: type settings *)
 (*e: type drawing *)
 
+(*s: type context *)
+(* a slice of drawing used in the drawing functions *)
+type context = {
+  model: model Async.t;
+  settings:settings;
+  nb_rects_on_screen: int;
+  grep_query: (Common.filename, int) Hashtbl.t;
+}
+(*e: type context *)
+val context_of_drawing: drawing -> context
 
 (*s: init_drawing sig *)
 val init_drawing :
@@ -118,7 +113,7 @@ val init_drawing :
   ?width_minimap:int ->
   ?height_minimap:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
-  model async ->
+  model Async.t ->
   Common.filename list -> 
   drawing
 (*e: init_drawing sig *)

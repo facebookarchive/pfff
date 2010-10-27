@@ -35,7 +35,6 @@ module M = Model2
 open Common.ArithFloatInfix
 
 module Style = Style2
-module Draw = Draw2
 
 module Flag = Flag_visual
 
@@ -89,41 +88,9 @@ let root_orig () =
 let paint_content_maybe_refresher = ref None
 let current_rects_to_draw = ref []
 
-
 let current_r = ref None
 
 let current_motion_refresher = ref None
-
-let interface_doc = "
-This tool displays a \"code map\" of a software project using
-Treemaps. \"Treemaps display hierarchical (tree-structured) data as a
-set of nested rectangles. Each branch of the tree is given a 
-rectangle, which is then tiled with smaller rectangles representing
-sub-branches. A leaf node's rectangle has an area proportional 
-to a specified dimension on the data.
-\" - http://en.wikipedia.org/wiki/Treemapping:
-
-In our case the dimension is the size of the file.
-Moreover each file is colored according to its
-\"category\": display code, third party code, etc.
-See the legend. We use basic heuristcs based on the
-name of the files and directory.
-
-Files and directories are also sorted alphabetically
-and partially ordered from top to bottom and left to right. 
-So a toplevel 'zzz' subdirectory should be located at the bottom 
-right of the screen.
-
-As you move the mouse, the blue highlighted areas are the next
-level of directories.
-
-Double-clicking zooms in on the blue-highlighted area.
-Right-clicking zoom directly to the file under the cursor.
-Middle-clicking open the file under the cursor in your
-favourite editor (provided you have M-x server-start
-and have emacsclient in your path).
-
-"
 (*e: view globals *)
 
 (*****************************************************************************)
@@ -187,25 +154,20 @@ let device_to_user_area dw =
 (*****************************************************************************)
 
 (*s: paint *)
-let context_of_drawing dw = 
-  { Draw.
-    nb_rects_on_screen = dw.nb_rects;
-    model = dw.model;
-    settings = dw.settings;
-    current_grep_query = dw.current_grep_query;
-  } 
 
 let paint_content_maybe_rect ~user_rect dw rect =
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   zoom_pan_scale_map cr dw;
 
-  let context = context_of_drawing dw in
+  let context = Model2.context_of_drawing dw in
 
-  Draw.draw_treemap_rectangle_content_maybe ~cr  ~clipping:user_rect  ~context
-    rect;
+  Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr  ~clipping:user_rect  ~context rect;
 
   (* have to redraw the label *)
-  Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom ~color:None rect;
+  Draw_labels.draw_treemap_rectangle_label_maybe 
+    ~cr ~zoom:dw.zoom ~color:None rect;
+
   ()
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
@@ -250,11 +212,12 @@ let paint2 dw =
   let nb_rects = dw.nb_rects in
 
   (* phase 1, draw the rectangles *)
-  rects +> List.iter (Draw.draw_treemap_rectangle ~cr);
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter 
-    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:dw.zoom  ~color:None);
+    (Draw_labels.draw_treemap_rectangle_label_maybe 
+        ~cr ~zoom:dw.zoom  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
@@ -288,11 +251,11 @@ let paint_minimap2 dw =
 
   let rects = dw.treemap in
   (* draw the rectangles *)
-  rects +> List.iter (Draw.draw_treemap_rectangle ~cr);
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
 
   (* draw the labels, if have enough space *)
   rects +> List.iter 
-    (Draw.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None);
+    (Draw_labels.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None);
 
   (* draw the zoom rectangle *)
   let user_rect = device_to_user_area dw in
@@ -303,51 +266,6 @@ let paint_minimap2 dw =
 let paint_minimap dw = 
   Common.profile_code2 "View.paint minimap" (fun () -> paint_minimap2 dw)
 (*e: paint_minimap *)
-
-(*s: paint_legend *)
-let paint_legend ~cr =
-
-  Cairo.select_font_face cr "serif" 
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  let size = 25.  in
-
-  Cairo.set_font_size cr (size * 0.6);
-
-  Cairo.set_source_rgba cr 0. 0. 0.    1.0;
-  
-  let archis = Archi_code.source_archi_list in
-
-  let grouped_archis = archis +> Common.group_by_mapped_key (fun archi ->
-    let color = Treemap_pl.color_of_source_archi archi in
-    (* I tend to favor the darker variant of the color in treemap_pl.ml hence
-     * the 3 below
-     *)
-    let color = color ^ "3" in
-    color
-  )
-  in
-
-  
-  grouped_archis +> Common.index_list_1 +> List.iter (fun ((color,kinds), i) ->
-    
-    let x = 10. in
-    
-    let y = float_of_int i * size in
-
-    let w = size in
-    let h = size in
-
-    CairoH.fill_rectangle ~cr ~color ~x ~y ~w ~h ();
-
-    let s = 
-      kinds +> List.map Archi_code.s_of_source_archi +> Common.join ", " in
-
-    Cairo.set_source_rgba cr 0. 0. 0.    1.0;
-    Cairo.move_to cr (x + size * 2.) (y + size * 0.8);
-    Cairo.show_text cr s;
-  );
-  ()
-(*e: paint_legend *)
 
 (*****************************************************************************)
 (* Overlays *)
@@ -410,7 +328,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
 
   CairoH.draw_rectangle_figure
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
-  Draw.draw_treemap_rectangle_label_maybe 
+  Draw_labels.draw_treemap_rectangle_label_maybe 
     ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
 
   middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
@@ -422,7 +340,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     in
     CairoH.draw_rectangle_figure
       ~cr:cr_overlay ~color r.T.tr_rect;
-    Draw.draw_treemap_rectangle_label_maybe 
+    Draw_labels.draw_treemap_rectangle_label_maybe 
       ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
     
@@ -509,10 +427,13 @@ let zoomed_surface_of_rectangle dw r =
    *)
 
   let context = context_of_drawing dw in
-  let context = { context with Draw.nb_rects_on_screen = 1 } in
+  let context = { context with Model2.nb_rects_on_screen = 1 } in
 
-  Draw.draw_treemap_rectangle ~cr ~alpha:0.9 r';
-  Draw.draw_treemap_rectangle_content_maybe ~cr ~context ~clipping:user_rect r';
+  Draw_macrolevel.draw_treemap_rectangle 
+    ~cr ~alpha:0.9 r';
+  Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr ~context ~clipping:user_rect r';
+
   sur, device_width, device_height
   )
 
@@ -702,10 +623,8 @@ let configure_minimap da2 dw_ref ev =
 (* ---------------------------------------------------------------------- *)
 (*s: expose_legend *)
 let expose_legend da dw_ref ev = 
-
-  let gwin = da#misc#window in
-  let cr = Cairo_lablgtk.create gwin in
-  paint_legend ~cr;
+  let cr = Cairo_lablgtk.create da#misc#window in
+  Draw_legend.draw_legend ~cr;
   true
 (*e: expose_legend *)
 
@@ -765,7 +684,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
       ~width_minimap:dw.width_minimap
       ~height_minimap:dw.height_minimap
       dw.treemap_func 
-      dw.model 
+      dw.dw_model 
       paths;
   !dw_ref.current_entity <- current_entity;
   (match current_grep_query with
@@ -789,7 +708,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
 (*s: dialog_search_def *)
 let dialog_search_def model = 
   let idx = (fun () -> 
-    let model = Model2.async_get model in
+    let model = Async.async_get model in
     model.Model2.big_grep_idx 
   )
   in
@@ -962,11 +881,12 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
   let user_rect = device_to_user_area dw in
 
   let context = context_of_drawing dw in
-  let context = { context with Draw.nb_rects_on_screen = 1 } in
+  let context = { context with Model2.nb_rects_on_screen = 1 } in
   
   (* does side effect on Draw.text_with_user_pos *)
-  Draw.draw_treemap_rectangle_content_maybe ~cr ~clipping:user_rect ~context r;
-  let xs = !Draw.text_with_user_pos in
+  Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr ~clipping:user_rect ~context r;
+  let xs = !Draw_microlevel.text_with_user_pos in
 
   let scores = xs
     +> List.map (fun (s, filepos, pt) ->
@@ -1088,7 +1008,7 @@ let motion_refresher ev dw () =
     draw_label_overlay ~cr_overlay ~dw ~x ~y r;
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
     
-    if dw.settings.draw_searched_rectangles;
+    if dw.dw_settings.draw_searched_rectangles;
     then
         draw_searched_rectangles ~cr_overlay ~dw;
     
@@ -1305,8 +1225,8 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
         ) +> ignore;
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
-          let model = !dw.model in
-          let model = Model2.async_get model in
+          let model = !dw.dw_model in
+          let model = Async.async_get model in
           match !dw.current_entity, model.db with
           | Some e, Some db ->
               (match e.Db.e_good_examples_of_use with
@@ -1331,7 +1251,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
         (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
-          let res = dialog_search_def !dw.model in
+          let res = dialog_search_def !dw.dw_model in
           res +> Common.do_option (fun s ->
             let root = 
               (* could also support local grep? and use !dw.root instead ?  *)
@@ -1348,7 +1268,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
         fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
 
-          let res = dialog_search_def !dw.model in
+          let res = dialog_search_def !dw.dw_model in
           res +> Common.do_option (fun s ->
             let root = !dw.root in
             let matching_files = run_tbgs_query ~root s in
@@ -1391,7 +1311,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
         let fc = new GMenu.factory menu ~accel_group in
 
         fc#add_item "_Interface" ~key:K._H ~callback:(fun () -> 
-            G.dialog_text interface_doc "Help"
+            G.dialog_text Help.interface_doc "Help"
         ) +> ignore;
 
         fc#add_item "_Legend" ~key:K._L ~callback:(fun () -> 
@@ -1435,7 +1355,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
 *)
       let idx = (fun () -> 
-        let model = Model2.async_get model in
+        let model = Async.async_get model in
         model.Model2.big_grep_idx 
       )
       in
@@ -1472,7 +1392,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
           !dw.current_query <- str;
           !dw.current_searched_rectangles <- [];
 
-          if !dw.settings.draw_searched_rectangles
+          if !dw.dw_settings.draw_searched_rectangles
           then begin
             (* better to compute once the set of matching rectangles
              * cos doing it each time in motify would incur too much

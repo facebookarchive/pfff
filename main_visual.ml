@@ -83,7 +83,6 @@ let build_model2 root dbfile_opt =
   (* let _x = Hashtbl.find hentities "kill" in *)
 *)
 
-
   model
 
 let build_model a b = 
@@ -107,10 +106,9 @@ let main_action xs =
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   
-  let model = Model2.async_make () in
+  let model = Async.async_make () in
 
   let dw = Model2.init_drawing treemap_generator model xs in
-
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -144,11 +142,11 @@ let main_action xs =
   (if Cairo_helpers.is_old_cairo() 
   then
     Thread.create (fun () ->
-      Model2.async_set (build_model root db_file) model;
+      Async.async_set (build_model root db_file) model;
     ) ()
     +> ignore
    else 
-    Model2.async_set (build_model root db_file) model;
+    Async.async_set (build_model root db_file) model;
    (*
     GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
       Model2.async_set (build_model root dbfile_opt) model;
@@ -156,7 +154,6 @@ let main_action xs =
     ) +> ignore
    *)
   );
-
 
   Common.finalize (fun () -> 
     View2.mk_gui 

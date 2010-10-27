@@ -4,15 +4,15 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC=cairo_helpers.ml \
-    flag_visual.ml \
+SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
+    flag_visual.ml help.ml \
     style2.ml \
     parsing2.ml \
     editor_connection.ml \
     model2.ml \
-    custom_list_generic.ml \
     completion2.ml \
-    draw2.ml \
+    draw_common.ml draw_labels.ml draw_legend.ml \
+    draw_macrolevel.ml draw_microlevel.ml  \
     view2.ml
 
 #experimental:  future.ml \    ancient2.ml \      completion.ml \
