@@ -1,5 +1,6 @@
 
 val visit_toplevel :
+  ?lexer_based_tagger:bool ->
   tag_hook:
     (Ast_ml.info -> Highlight_code.category -> unit) ->
   Highlight_code.highlighter_preferences ->

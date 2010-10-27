@@ -75,6 +75,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_ml.visit_toplevel 
+        ~lexer_based_tagger:true (* !! *)
         ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
         prefs
         (ast, toks)

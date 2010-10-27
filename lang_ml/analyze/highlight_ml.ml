@@ -57,8 +57,6 @@ let h_builtin_bool = Common.hashset_of_list [
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-let lexer_based_tagger = false
-
 (* set to true when want to debug the ast based tagger *)
 let disable_token_phase2 = false
 
@@ -71,7 +69,9 @@ let disable_token_phase2 = false
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
  *)
-let visit_toplevel ~tag_hook prefs  (*db_opt *) (toplevel, toks) =
+let visit_toplevel 
+ ?(lexer_based_tagger=false)
+ ~tag_hook prefs  (*db_opt *) (toplevel, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
