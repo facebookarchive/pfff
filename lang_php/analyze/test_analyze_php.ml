@@ -361,9 +361,12 @@ let test_dataflow_pil file =
       (try
          let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
          let flow = Controlflow_build_pil.cfg_of_stmts pil in
-         let mp = Dataflow_pil.reaching_fixpoint flow in
-
-         Dataflow_pil.display_reaching_dflow flow mp
+         let reach = Dataflow_pil.reaching_fixpoint flow in
+         let liveness = Dataflow_pil.liveness_fixpoint flow in
+         pr "Reaching:";
+         Dataflow_pil.display_reaching_dflow flow reach;
+         pr "Liveness:";
+         Dataflow_pil.display_liveness_dflow flow liveness
 
       with Controlflow_build_pil.Error err ->
         Controlflow_build_pil.report_error err
