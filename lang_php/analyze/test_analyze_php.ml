@@ -276,6 +276,7 @@ let test_cyclomatic_php file =
   )
 (*e: test_cyclomatic_php *)
 
+(* todo: adapt to PIL *)
 let test_dfg_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
@@ -462,6 +463,18 @@ let test_callgraph_php files_or_dirs =
     "/tmp/test_callgraph.dot"
     g;
   ()
+
+
+(* topological sort of strongly connected components *)
+let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
+
+  let db = db_of_files_or_dirs files_or_dirs in
+
+  (* converting the callgraph stored as two assocs in the db
+   * into something algorithms in ocamlgraph/ can work on
+   *)
+  raise Todo
+
 
 let test_track_function_result function_name file =
   let db = db_of_files_or_dirs [file] in
@@ -1115,6 +1128,7 @@ let actions () = [
   "-type_xdebug_php", " <file>",
   Common.mk_action_1_arg test_type_xdebug_php;
 
+  (* todo: adapt to PIL *)
   "-dfg_php",  " <file>",
     Common.mk_action_1_arg test_dfg_php;
 
@@ -1123,8 +1137,12 @@ let actions () = [
 
   "-deadcode_php", " <files_or_dirs>",
   Common.mk_action_n_arg test_deadcode_php;
+
   "-callgraph_php", " <files_or_dirs>",
   Common.mk_action_n_arg test_callgraph_php;
+
+  "-callgraph_topo_scc_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_topo_sorted_strongly_connected_callgraph_php;
 
 
   "-test_track_function_result", " <function> <db>",
