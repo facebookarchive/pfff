@@ -8,12 +8,12 @@ SRC= \
      pil.ml pil_build.ml \
      pretty_print_pil.ml \
      phpmanual_xml.ml builtins_php.ml \
-     graph_php.ml \
      controlflow_pil.ml  controlflow_build_pil.ml \
      controlflow_php.ml  controlflow_build_php.ml \
      callgraph_php.ml aliasing_function_php.ml  \
      dataflow_php.ml \
      dataflow_pil.ml \
+     graph_php.ml \
      bottomup_analysis_php.ml \
 
 SYSLIBS= str.cma unix.cma

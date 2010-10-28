@@ -19,15 +19,30 @@ module Ast = Ast_php
 
 open Ast_php
 
+module G = Graph
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
 (* 
- * An adapter over ocamlgraph 
+ * An adapter over Database_php.database caller/callees assoc tables
+ * using Common.graph (itself an adapter over ocamlgraph/) to have
+ * access to complex graph algorithms (e.g. strongly-connected-components).
  * 
- * Alternatives:
- *  - camllib by bjeannet
- *  - reimplement myself the graph basic algorithms using ograph_simple
- *    as underling data
+ * See also callgraph_php.ml and callees_of_id() in database_php.ml.
  *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+type id_graph = Entity_php.id G.graph
+
+(*****************************************************************************)
+(* Graph building *)
+(*****************************************************************************)
+
+let build_callgraph = 
+  raise Todo
 
