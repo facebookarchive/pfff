@@ -75,8 +75,8 @@ open Common
  * other libraries by making some small converters from one representation
  * to the other (e.g. from my ograph_simple to ocamlgraph, and vice versa).
  * 
- * Note, ocamlgraph is really good and this file is useful
- * but for quick and dirty simple graph stuff, 
+ * Note, ocamlgraph is really good and this file is useful,
+ * but for quick and dirty simple graph stuff
  * ograph_simple should be simpler (less dependencies). You can 
  * use it directly from common.cma. Then with the converter to ocamlgraph,
  * you can start with ograph_simple, and if in a few places you need
@@ -104,35 +104,182 @@ open Common
 (* OG for ocamlgraph *)
 module OG = Ocamlgraph.Pack.Digraph
 
-(* TODO:
- *  sucks to have this intermediate module. Should copy paste
- *  pack.ml of ocamlgraph, make the code polymorphic, and incorporate
- *  the node info to int vertices. And also make a 'dot' that 
- *  can be parametrized by a str_of_node function, like in
- *  ograph_extended.
- * 
- *)
-
 type 'key graph = {
   og: OG.t;
+
+  (* Note that OG.V.t is not even an integer. It's an abstract data type
+   * from which one can get its 'label' which is an int. It's a little
+   * bit tedious because to create such a 't' you also have to use
+   * yet another function: OG.V.create that takes an int ...
+   *)
 
   key_of_vertex: (OG.V.t, 'key) Hashtbl.t;
   vertex_of_key: ('key, OG.V.t) Hashtbl.t;
 
-  (* add node info also ? *)
+  (* used to create vertexes (OG.V.create n) *)
   cnt: int ref;
 }
 
+(*
+module OG :
+  sig
+    type t = Ocamlgraph.Pack.Digraph.t
+    module V :
+      sig
+        type t = Ocamlgraph.Pack.Digraph.V.t
+        val compare : t -> t -> int
+        val hash : t -> int
+        val equal : t -> t -> bool
+        type label = int
+        val create : label -> t
+        val label : t -> label
+      end
+    type vertex = V.t
+    module E :
+      sig
+        type t = Ocamlgraph.Pack.Digraph.E.t
+        val compare : t -> t -> int
+        val src : t -> V.t
+        val dst : t -> V.t
+        type label = int
+        val create : V.t -> label -> V.t -> t
+        val label : t -> label
+        type vertex = V.t
+      end
+
+    type edge = E.t
+    val is_directed : bool
+    val create : ?size:int -> unit -> t
+    val copy : t -> t
+    val add_vertex : t -> V.t -> unit
+    val remove_vertex : t -> V.t -> unit
+    val add_edge : t -> V.t -> V.t -> unit
+    val add_edge_e : t -> E.t -> unit
+    val remove_edge : t -> V.t -> V.t -> unit
+    val remove_edge_e : t -> E.t -> unit
+    module Mark :
+      sig
+        type graph = t
+        type vertex = V.t
+        val clear : t -> unit
+        val get : V.t -> int
+        val set : V.t -> int -> unit
+      end
+
+    val is_empty : t -> bool
+    val nb_vertex : t -> int
+    val nb_edges : t -> int
+    val out_degree : t -> V.t -> int
+    val in_degree : t -> V.t -> int
+    val mem_vertex : t -> V.t -> bool
+    val mem_edge : t -> V.t -> V.t -> bool
+    val mem_edge_e : t -> E.t -> bool
+    val find_edge : t -> V.t -> V.t -> E.t
+    val succ : t -> V.t -> V.t list
+    val pred : t -> V.t -> V.t list
+    val succ_e : t -> V.t -> E.t list
+    val pred_e : t -> V.t -> E.t list
+    val iter_vertex : (V.t -> unit) -> t -> unit
+    val iter_edges : (V.t -> V.t -> unit) -> t -> unit
+    val fold_vertex : (V.t -> 'a -> 'a) -> t -> 'a -> 'a
+    val fold_edges : (V.t -> V.t -> 'a -> 'a) -> t -> 'a -> 'a
+    val map_vertex : (V.t -> V.t) -> t -> t
+    val iter_edges_e : (E.t -> unit) -> t -> unit
+    val fold_edges_e : (E.t -> 'a -> 'a) -> t -> 'a -> 'a
+    val iter_succ : (V.t -> unit) -> t -> V.t -> unit
+    val iter_pred : (V.t -> unit) -> t -> V.t -> unit
+    val fold_succ : (V.t -> 'a -> 'a) -> t -> V.t -> 'a -> 'a
+    val fold_pred : (V.t -> 'a -> 'a) -> t -> V.t -> 'a -> 'a
+    val iter_succ_e : (E.t -> unit) -> t -> V.t -> unit
+    val fold_succ_e : (E.t -> 'a -> 'a) -> t -> V.t -> 'a -> 'a
+    val iter_pred_e : (E.t -> unit) -> t -> V.t -> unit
+    val fold_pred_e : (E.t -> 'a -> 'a) -> t -> V.t -> 'a -> 'a
+    val find_vertex : t -> int -> V.t
+    val transitive_closure : ?reflexive:bool -> t -> t
+    val add_transitive_closure : ?reflexive:bool -> t -> t
+    val mirror : t -> t
+    val complement : t -> t
+    val intersect : t -> t -> t
+    val union : t -> t -> t
+
+    module Dfs :
+      sig
+        val iter : ?pre:(V.t -> unit) -> ?post:(V.t -> unit) -> t -> unit
+        val prefix : (V.t -> unit) -> t -> unit
+        val postfix : (V.t -> unit) -> t -> unit
+        val iter_component :
+          ?pre:(V.t -> unit) -> ?post:(V.t -> unit) -> t -> V.t -> unit
+        val prefix_component : (V.t -> unit) -> t -> V.t -> unit
+        val postfix_component : (V.t -> unit) -> t -> V.t -> unit
+        val has_cycle : t -> bool
+      end
+
+    module Bfs :
+      sig
+        val iter : (V.t -> unit) -> t -> unit
+        val iter_component : (V.t -> unit) -> t -> V.t -> unit
+      end
+    module Marking : sig val dfs : t -> unit val has_cycle : t -> bool end
+    module Classic :
+      sig
+        val divisors : int -> t
+        val de_bruijn : int -> t
+        val vertex_only : int -> t
+        val full : ?self:bool -> int -> t
+      end
+    module Rand :
+      sig
+        val graph : ?loops:bool -> v:int -> e:int -> unit -> t
+        val labeled :
+          (V.t -> V.t -> E.label) ->
+          ?loops:bool -> v:int -> e:int -> unit -> t
+      end
+    module Components :
+      sig
+        val scc : t -> int * (V.t -> int)
+        val scc_array : t -> V.t list array
+        val scc_list : t -> V.t list list
+      end
+
+DONE    val shortest_path : t -> V.t -> V.t -> E.t list * int
+
+    val ford_fulkerson : t -> V.t -> V.t -> (E.t -> int) * int
+
+    val goldberg : t -> V.t -> V.t -> (E.t -> int) * int
+
+    module PathCheck :
+      sig
+        type path_checker = Ocamlgraph.Pack.Digraph.PathCheck.path_checker
+        val create : t -> path_checker
+        val check_path : path_checker -> V.t -> V.t -> bool
+      end
+    module Topological :
+      sig
+        val fold : (V.t -> 'a -> 'a) -> t -> 'a -> 'a
+        val iter : (V.t -> unit) -> t -> unit
+      end
+    val spanningtree : t -> E.t list
+
+    val dot_output : t -> string -> unit
+DONE    val display_with_gv : t -> unit
+    val parse_gml_file : string -> t
+    val parse_dot_file : string -> t
+    val print_gml_file : t -> string -> unit
+  end
+*)
+
+
 (*****************************************************************************)
-(* Entry points *)
+(* Graph construction *)
 (*****************************************************************************)
 
-let create () = 
-  { og = OG.create ();
-    key_of_vertex = Hashtbl.create 101;
-    vertex_of_key = Hashtbl.create 101;
-    cnt = ref 0;
-  }
+let create () = { 
+  og = OG.create ();
+  key_of_vertex = Hashtbl.create 101;
+  vertex_of_key = Hashtbl.create 101;
+  cnt = ref 0;
+}
+
 let add_vertex_if_not_present key g = 
   if Hashtbl.mem g.vertex_of_key key
   then ()
@@ -150,12 +297,19 @@ let key_of_vertex v g =
   Hashtbl.find g.key_of_vertex v
 
 let add_edge k1 k2 g = 
-  add_vertex_if_not_present k1 g;
-  add_vertex_if_not_present k2 g;
   let vx = g +> vertex_of_key k1 in
   let vy = g +> vertex_of_key k2 in
   OG.add_edge g.og vx vy;
   ()
+
+let add_edge_and_nodes_if_not_present k1 k2 g = 
+  add_vertex_if_not_present k1 g;
+  add_vertex_if_not_present k2 g;
+  add_edge k1 k2 g
+
+(*****************************************************************************)
+(* The graph algorithms *)
+(*****************************************************************************)
 
 let shortest_path k1 k2 g = 
   let vx = g +> vertex_of_key k1 in
@@ -167,6 +321,16 @@ let shortest_path k1 k2 g =
   in
   vertexes |> List.map (fun v -> key_of_vertex v g)
 
+let transitive_closure g = 
+  let og' = OG.transitive_closure ~reflexive:false g.og in
+  { g with og = og' }
+
+(*****************************************************************************)
+(* Graph visualization and debugging *)
+(*****************************************************************************)
+
+let display_with_gv g =
+  OG.display_with_gv g.og
 
 let print_graph_generic ~str_of_key filename g = 
   Common.with_open_outfile filename (fun (pr,_) ->

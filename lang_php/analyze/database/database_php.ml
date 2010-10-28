@@ -906,9 +906,7 @@ let mk_graph_of_file ?(depth_limit=None) succ file db =
       direct |> List.iter (fun file2 ->
         
         g +> G.add_vertex_if_not_present file2;
-        let vx = g +> G.vertex_of_key file in
-        let vy = g +> G.vertex_of_key file2 in
-        G.OG.add_edge g.G.og vx vy;
+        g +> G.add_edge file file2;
         
         aux file2 (depth + 1);
       );
