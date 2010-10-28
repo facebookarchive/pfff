@@ -427,6 +427,25 @@ let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
   (* converting the callgraph stored as two assocs in the db
    * into something algorithms in ocamlgraph/ can work on
    *)
+
+  let all_ids = db.Db.fullid_of_id#tolist in
+  let successors id =
+    try
+      let callsites = Db.callees_of_id id db in
+      callsites |> Common.map_filter (fun (Cg.CallSite (id2, kind_call)) ->
+        (* for now consider only regular function call *)
+        match kind_call with
+        | Cg.Direct _ -> Some id2
+        | _ -> None
+      )
+    with
+     (* class id have no callees *)
+     _ -> []
+  in
+  let g = Graph_php.build_entities_graph ~all_ids ~successors in
+  
+    
+  
   raise Todo
 
 

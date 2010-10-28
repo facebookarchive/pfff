@@ -43,6 +43,26 @@ type id_graph = Entity_php.id G.graph
 (* Graph building *)
 (*****************************************************************************)
 
-let build_callgraph = 
-  raise Todo
+let build_entities_graph ~all_ids ~successors = 
+  let g = G.create () in
+
+  all_ids +> List.iter (fun id -> g +> G.add_vertex_if_not_present id);
+  all_ids +> List.iter (fun id ->
+    let succ = successors id in
+    succ +> List.iter (fun id2 ->
+      g +> G.add_edge id id2
+    )
+  );
+  g
+
+(*****************************************************************************)
+(* Debugging *)
+(*****************************************************************************)
+
+let display_with_gv g db =
+  let tmpfile = Common.new_temp_file "graph_php" "dot" in
+  G.print_graph_generic ~str_of_key:(fun id ->
+    (* Db.complete_name_of_id id db *)
+    raise Todo
+  )
 
