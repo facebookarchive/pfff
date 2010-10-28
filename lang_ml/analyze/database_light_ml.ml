@@ -133,6 +133,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_ml.visit_toplevel 
+        ~lexer_based_tagger:true (* !! *)
         ~tag_hook:(fun info categ -> 
           (* todo: use is_entity_def_category ? *)
           match categ with
