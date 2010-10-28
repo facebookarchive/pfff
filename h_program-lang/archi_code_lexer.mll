@@ -96,8 +96,9 @@ rule category = parse
 
   (* pad specific ? *)
   | "/main_" { Main }
-  | "flag_" { Configuration }
-  | "test_" { Test }
+  | "/flag_" { Configuration }
+  | "/test_" { Test }
+  | "/unit_" { Test }
 
 
   | "/main." { Main }

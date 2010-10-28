@@ -22,7 +22,9 @@ SRC= \
      database_light_php.ml \
      dependencies_php.ml \
      database_php_storage.ml \
-     test_analyze_php.ml
+     test_analyze_php.ml \
+     unit_analyze_php.ml \
+
 
 -include $(TOP)/Makefile.config
 
