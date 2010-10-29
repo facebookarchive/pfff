@@ -4,8 +4,10 @@ TOP=../../..
 ##############################################################################
 TARGET=lib
 
+#note: database_php.ml is now in foundation/
+
+
 SRC= \
-     database_php.ml \
      database_php_query.ml \
      database_php_statistics.ml \
 

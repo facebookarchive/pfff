@@ -13,6 +13,7 @@ SRC= \
      callgraph_php.ml aliasing_function_php.ml  \
      dataflow_php.ml \
      dataflow_pil.ml \
+     database_php.ml \
      graph_php.ml \
      bottomup_analysis_php.ml \
 

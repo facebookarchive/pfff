@@ -18,7 +18,7 @@ INCLUDEDIRS= $(TOP)/commons \
    ../../parsing \
    .. \
    ../basic \
-   ../database \
+   ../foundation \
 
 ##############################################################################
 # Generic variables
