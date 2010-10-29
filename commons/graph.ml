@@ -325,6 +325,7 @@ let transitive_closure g =
   let og' = OG.transitive_closure ~reflexive:false g.og in
   { g with og = og' }
 
+(* http://en.wikipedia.org/wiki/Strongly_connected_component *)
 let strongly_connected_components g =
   let scc_array_vt = OG.Components.scc_array g.og in
   let scc_array = 
@@ -341,6 +342,9 @@ let strongly_connected_components g =
     ));
   scc_array, h
 
+(* http://en.wikipedia.org/wiki/Strongly_connected_component *)
+let strongly_connected_components_condensation g =
+  raise Todo
 
 (*****************************************************************************)
 (* Graph visualization and debugging *)

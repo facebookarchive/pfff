@@ -18,6 +18,8 @@ val transitive_closure:
   'a graph -> 'a graph
 val strongly_connected_components:
   'a graph -> ('a list array * ('a, int) Hashtbl.t)
+val strongly_connected_components_condensation:
+  'a graph -> ('a list) graph
 
 (* debugging support *)
 val display_with_gv:
