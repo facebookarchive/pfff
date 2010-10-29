@@ -114,7 +114,7 @@ let file_type_of_file2 file =
 
   | "thrift" -> PL Thrift
 
-  | "scm" | "rkt" -> PL (Lisp Scheme)
+  | "scm" | "rkt" | "ss" -> PL (Lisp Scheme)
   | "lisp" -> PL (Lisp CommonLisp)
   | "el" -> PL (Lisp Elisp)
 
