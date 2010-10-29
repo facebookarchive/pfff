@@ -7,11 +7,11 @@ module VarMap : Map.S with type key = string
 
 (* The final dataflow result; a map from each program point to a map
  * containing information from each variables.
- * 
+ *
  * The array is really a Map with nodei as a key. This means the flow
  * must have nodei that starts at 0 and are not too spreaded. This is
  * currently the case when the graph comes from
- * Controlflow_build_pil.ml (itself using Ograph_extended.ml). 
+ * Controlflow_build_pil.ml (itself using Ograph_extended.ml).
  *)
 type 'a mapping = ('a inout) array
 
@@ -44,7 +44,7 @@ module NodeiSet : Set.S with type elt = Controlflow_pil.nodei
 val reaching_fixpoint:
   Controlflow_pil.flow -> NodeiSet.t mapping
 
-val liveness_fixpoint: 
+val liveness_fixpoint:
   Controlflow_pil.flow -> unit mapping
 
 (* debugging *)

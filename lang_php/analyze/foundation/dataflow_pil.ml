@@ -69,7 +69,7 @@ module NodeiMap = Map.Make(NiOrd)
 
 (* The final dataflow result; a map from each program point to a map containing
  * information from each variables.
- * 
+ *
  * opti: this used to be a 'NodeiMap.t' instead of an 'array' but 'nodei'
  * are always int and array gives a 6x speedup according to iain
  * so let's use array.
@@ -205,7 +205,7 @@ let (fixpoint:
     flow:F.flow ->
     forward: bool ->
    'a mapping) =
- fun ~eq ~init ~trans ~flow ~forward -> 
+ fun ~eq ~init ~trans ~flow ~forward ->
   fixpoint_worker eq init trans flow
    (if forward then forward_succs else backward_succs)
    (flow#nodes#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty)
@@ -216,74 +216,87 @@ let (fixpoint:
 
 (* todo: should move this code in visitor_pil.ml *)
 
+(* Node id -> var name -> is on the lhs? -> acc -> acc' *)
 type 'a fold_fn = nodei -> string -> bool -> 'a -> 'a
 
-let (lv_fold : 'a fold_fn -> nodei -> bool -> Pil.lvaluebis -> 'a -> 'a) =
-fun lf ni islv lv v -> match lv with
+type 'a fold_env = {fold_fn: string -> bool -> 'a -> 'a; fold_vars: VarSet.t}
+
+let (lv_fold : 'a fold_env -> bool -> Pil.lvaluebis -> 'a
+    -> 'a) =
+fun fold_env lhs lvl acc -> match lvl with
   | Pil.VVar (Pil.Var va)
   | Pil.ArrayAccess (Pil.Var va, _)
   | Pil.ObjAccess (Pil.Var va, _)
-  | Pil.DynamicObjAccess (Pil.Var va, _) -> lf ni (Ast_php.dname va) islv v
-  | Pil.IndirectAccess _ -> raise Todo
+  | Pil.DynamicObjAccess (Pil.Var va, _) ->
+    fold_env.fold_fn (Ast_php.dname va) lhs acc
+  | Pil.IndirectAccess (Var va, _) ->
+    VarSet.fold (fun var acc' -> fold_env.fold_fn var lhs acc')
+      fold_env.fold_vars (fold_env.fold_fn (Ast_php.dname va) false acc)
 
   | VVar (This _)
   | ArrayAccess (This _, _)
   | ObjAccess (This _, _)
   | DynamicObjAccess (This _, _)
-  | VQualifier (_, _) -> v (* TODO ? *)
+  | IndirectAccess (This _, _)
+  | VQualifier (_, _) -> acc (* TODO ? *)
 
-let rec (expr_fold: 'a fold_fn -> nodei -> Pil.exprbis -> 'a -> 'a) =
-fun lf ni ex v -> let r = expr_fold lf ni in
-  match ex with
-  | Pil.Lv (lv, _) -> lv_fold lf ni false lv v
-  | Pil.Binary ((e1,_), _, (e2,_)) -> r e2 (r e1 v)
+let rec (expr_fold: 'a fold_env -> Pil.exprbis -> 'a -> 'a) =
+fun fold_env exp acc -> let rcr = expr_fold fold_env in
+  match exp with
+  | Pil.Lv (lvl, _) -> lv_fold fold_env false lvl acc
+  | Pil.Binary ((e1,_), _, (e2,_)) -> rcr e2 (rcr e1 acc)
   | Pil.Cast (_, (e,_))
   | Pil.InstanceOf ((e,_), _)
-  | Pil.Unary (_, (e,_)) -> r e v
-  | Pil.CondExpr ((e1,_), (e2,_), (e3,_)) -> expr_fold lf ni e3 (r e1 (r e2 v))
-  | Pil.ConsArray es -> List.fold_left (fun v' (e,_) -> r e v') v es
-  | Pil.ConsHash eps -> List.fold_left (fun v' ((e1,_), (e2,_)) ->
-       r e2 (r e1 v')) v eps
+  | Pil.Unary (_, (e,_)) -> rcr e acc
+  | Pil.CondExpr ((e1,_), (e2,_), (e3,_)) -> rcr e3 (rcr e1 (rcr e2 acc))
+  | Pil.ConsArray es -> List.fold_left (fun acc' (e,_) -> rcr e acc') acc es
+  | Pil.ConsHash eps -> List.fold_left (fun acc' ((e1,_), (e2,_)) ->
+       rcr e2 (rcr e1 acc')) acc eps
 
-  | (ClassConstant _|C _) ->  v (* TODO ? *)
+  | (ClassConstant _|C _) -> acc (* TODO ? *)
 
 
-let (instr_fold: 'a fold_fn -> nodei -> Pil.instr -> 'a -> 'a) =
-fun lf ni i v ->
-  let lvf = lv_fold lf ni true in
-  let ef = expr_fold lf ni in
-  match i with
-  | Pil.Assign ((lv, _), _, (e,_)) -> lvf lv (ef e v)
-  | Pil.AssignRef ((lv1, _), (lv2, _)) -> lvf lv1 (lvf lv2 v)
+let (instr_fold: 'a fold_env -> Pil.instr -> 'a -> 'a) =
+fun fold_env inst acc ->
+  let lvf = lv_fold fold_env true in
+  let exf = expr_fold fold_env in
+  match inst with
+  | Pil.Assign ((lv, _), _, (e,_)) -> lvf lv (exf e acc)
+  | Pil.AssignRef ((lv1, _), (lv2, _)) -> lvf lv1 (lvf lv2 acc)
   | Pil.Call ((lv, _), _, args) -> lvf lv
-    (List.fold_left (fun v -> function Pil.Arg (e, _) -> ef e v
-                                     | Pil.ArgRef (lv, _) -> lvf lv v) v args)
-  | Pil.Eval (e, _) -> ef e v
+    (List.fold_left (fun acc' -> function
+                     | Pil.Arg (e, _) -> exf e acc'
+                     | Pil.ArgRef (lv, _) -> lvf lv acc')
+      acc args)
+  | Pil.Eval (e, _) -> exf e acc
 
-let (node_fold: 'a fold_fn -> nodei -> F.node_kind -> 'a -> 'a) =
-fun lf ni n v -> match n with
-  | F.Instr i -> instr_fold lf ni i v
+let (node_fold: 'a fold_env -> F.node_kind -> 'a -> 'a) =
+fun fold_env node acc -> match node with
+  | F.Instr i -> instr_fold fold_env i acc
   | F.WhileHeader (e,_)
   | F.Return (Some (e, _))
-  | F.IfHeader (e, _) -> expr_fold lf ni e v
-  | F.Echo es -> List.fold_left (fun v' (e, _) -> expr_fold lf ni e v') v es
+  | F.IfHeader (e, _) -> expr_fold fold_env e acc
+  | F.Echo es -> List.fold_left (fun acc' (e, _) -> expr_fold fold_env e acc')
+    acc es
 
-  | (F.Join|F.Throw|F.TryHeader|F.Jump|F.FalseNode|F.TrueNode|F.Exit|F.Enter) 
+  | (F.Join|F.Throw|F.TryHeader|F.Jump|F.FalseNode|F.TrueNode|F.Exit|F.Enter)
   | F.Return (None)
     ->
-      v (* TODO *)
+      acc (* TODO *)
 
-let (flow_fold: 'a fold_fn -> 'a -> F.flow -> 'a) =
-fun lf v flow -> flow#nodes#fold
-  (fun v' (ni, nd) -> node_fold lf ni nd.F.n v') v
+let (flow_fold: 'a fold_fn -> VarSet.t -> 'a -> F.flow -> 'a) =
+fun fold_fn vars acc flow -> flow#nodes#fold
+  (fun acc' (ni, nd) -> node_fold {fold_fn = fold_fn ni; fold_vars = vars}
+   nd.F.n acc') acc
 
-let flow_fold_lv lf v fl = flow_fold
-  (fun ni dn lv v -> if lv then lf ni dn v else v) v fl
-let flow_fold_rv lf v fl = flow_fold
-  (fun ni dn lv v -> if not lv then lf ni dn v else v) v fl
+let flow_fold_lv fold_fn vars acc flow = flow_fold
+  (fun ndi dnm lhs acc' -> if lhs then fold_fn ndi dnm acc' else acc') vars acc
+    flow
+let flow_fold_rv fold_fn vars acc flow = flow_fold
+  (fun ndi dnm lhs acc' -> if not lhs then fold_fn ndi dnm acc' else acc')
+    vars acc flow
 
-
-let new_node_array (f: F.flow) v = 
+let new_node_array (f: F.flow) v =
   let arr = Array.make f#nb_nodes v in
   (* sanity checking *)
   let len = Array.length arr in
@@ -291,7 +304,7 @@ let new_node_array (f: F.flow) v =
     if ni >= len
     then failwith "the CFG nodei is bigger than the number of nodes"
   );
-  
+
   arr
 
 
@@ -327,25 +340,25 @@ let add_def d nm ni =
   VarMap.add nm v d
 
 let (vars: F.flow -> VarSet.t) =
-  flow_fold (fun _ va _ vs -> VarSet.add va vs) VarSet.empty
+  flow_fold (fun _ va _ vs -> VarSet.add va vs) VarSet.empty VarSet.empty
 
-let (reaching_defs: F.flow -> NodeiSet.t env) =
-  flow_fold (fun ni va _ ds -> add_def ds va ni) VarMap.empty
+let (reaching_defs: VarSet.t -> F.flow -> NodeiSet.t env) = fun vars ->
+  flow_fold_lv (fun ni va acc -> add_def acc va ni) vars VarMap.empty
 
 let up_map k f mp = mp.(k) <- f mp.(k); mp
 
 let up_set_map k v mp = up_map k (VarSet.add v) mp
 
 (* gen/kill *)
-let (reaching_gens: F.flow -> VarSet.t array) = fun fl ->
-  flow_fold_lv (fun ni v gs -> up_set_map ni v gs)
+let (reaching_gens: VarSet.t -> F.flow -> VarSet.t array) = fun vars fl ->
+  flow_fold_lv (fun ni v gs -> up_set_map ni v gs) vars
     (new_node_array fl VarSet.empty) fl
 
 let (reaching_kills:
-   NodeiSet.t env -> F.flow -> (NodeiSet.t env) array) =
- fun ds fl -> flow_fold_lv (fun ni va ks ->
+   NodeiSet.t env -> VarSet.t -> F.flow -> (NodeiSet.t env) array) =
+ fun ds vars fl -> flow_fold_lv (fun ni va ks ->
     let d = NodeiSet.remove ni (VarMap.find va ds) in
-    up_map ni (fun v -> VarMap.add va d v) ks)
+    up_map ni (fun v -> VarMap.add va d v) ks) vars
       (new_node_array fl (empty_env())) fl
 
 (*
@@ -375,10 +388,10 @@ let (reaching_transfer:
   {in_env = new_in; out_env = new_out}
 
 let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
-  let ds = reaching_defs flow in
-
-  let gen = reaching_gens flow in
-  let kill = reaching_kills ds flow in
+  let vars = vars flow in
+  let defs = reaching_defs vars flow in
+  let gen = reaching_gens vars flow in
+  let kill = reaching_kills defs vars flow in
 
   fixpoint
     ~eq:NodeiSet.equal
@@ -393,13 +406,13 @@ let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
 
 type liveness_mapping = unit mapping
 
-let (liveness_gens: F.flow -> VarSet.t array) = fun fl ->
-  flow_fold_rv (fun ni va gs -> up_set_map ni va gs)
+let (liveness_gens: VarSet.t -> F.flow -> VarSet.t array) = fun vars fl ->
+  flow_fold_rv (fun ni va gs -> up_set_map ni va gs) vars
     (new_node_array fl VarSet.empty) fl
 
-let (liveness_kills: F.flow -> (unit env) array) = fun fl ->
+let (liveness_kills: VarSet.t -> F.flow -> (unit env) array) = fun vars fl ->
   flow_fold_lv (fun ni va ks ->
-      up_map ni (fun v -> VarMap.add va () v) ks)
+      up_map ni (fun v -> VarMap.add va () v) ks) vars
     (new_node_array fl (empty_env ())) fl
 
 let (liveness_transfer:
@@ -418,8 +431,9 @@ let (liveness_transfer:
   {in_env = new_in; out_env = new_out}
 
 let (liveness_fixpoint: F.flow -> liveness_mapping) = fun flow ->
-  let gen = liveness_gens flow in
-  let kill = liveness_kills flow in
+  let vars = vars flow in
+  let gen = liveness_gens vars flow in
+  let kill = liveness_kills vars flow in
   fixpoint
     ~eq:(fun _ _ -> true)
     ~init:(new_node_array flow (empty_inout ()))
