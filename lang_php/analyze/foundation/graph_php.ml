@@ -21,6 +21,9 @@ open Ast_php
 
 module G = Graph
 
+module Db = Database_php
+module Cg = Callgraph_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -55,14 +58,35 @@ let build_entities_graph ~all_ids ~successors =
   );
   g
 
+let build_simple_callgraph db =
+
+  let all_ids = db.Db.fullid_of_id#keys in
+  let successors id =
+    try
+      let callsites = Db.callees_of_id id db in
+      callsites |> Common.map_filter (fun (Cg.CallSite (id2, kind_call)) ->
+        (* for now consider only regular function call *)
+        match kind_call with
+        | Cg.Direct _ -> Some id2
+        | _ -> None
+      )
+    with
+     (* class id have no callees *)
+     _ -> []
+  in
+  build_entities_graph ~all_ids ~successors
+
+(*****************************************************************************)
+(* Graph algorithms *)
+(*****************************************************************************)
+
+
 (*****************************************************************************)
 (* Debugging *)
 (*****************************************************************************)
-
 let display_with_gv g db =
   let tmpfile = Common.new_temp_file "graph_php" "dot" in
-  G.print_graph_generic ~str_of_key:(fun id ->
-    (* Db.complete_name_of_id id db *)
-    raise Todo
-  )
+  g +> G.print_graph_generic  ~str_of_key:(fun id ->
+    Db.complete_name_of_id id db
+  ) tmpfile
 

@@ -325,6 +325,23 @@ let transitive_closure g =
   let og' = OG.transitive_closure ~reflexive:false g.og in
   { g with og = og' }
 
+let strongly_connected_components g =
+  let scc_array_vt = OG.Components.scc_array g.og in
+  let scc_array = 
+    scc_array_vt +> Array.map (fun xs -> xs +> List.map (fun vt -> 
+      key_of_vertex vt g
+    ))
+  in
+  let h = Hashtbl.create 101 in
+  scc_array +> Array.iteri (fun i xs -> 
+    xs +> List.iter (fun k -> 
+      if Hashtbl.mem h k
+      then failwith "the strongly connected components should be disjoint";
+      Hashtbl.add h k i
+    ));
+  scc_array, h
+
+
 (*****************************************************************************)
 (* Graph visualization and debugging *)
 (*****************************************************************************)
@@ -354,4 +371,12 @@ let print_graph_generic ~str_of_key filename g =
     );
   Ograph_extended.launch_gv_cmd filename;
   ()
+
+let tmpfile = "/tmp/graph_ml.dot"
+
+let display_strongly_connected_components ~str_of_key hscc g =
+  print_graph_generic ~str_of_key:(fun k ->
+    let s = str_of_key k in
+    spf "%s (scc=%d)" s (Hashtbl.find hscc k)
+  ) tmpfile g
 
