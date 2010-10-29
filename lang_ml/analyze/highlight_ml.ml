@@ -397,6 +397,14 @@ let visit_toplevel
         tag ii2 (UseOfRef);
         aux_toks xs
 
+    |    T.TLowerIdent(_, ii1)
+      ::(T.TAssign ii2 | T.TAssignMutable ii2)
+      ::xs ->
+        tag ii1 (UseOfRef);
+        tag ii2 (UseOfRef);
+        aux_toks xs
+
+
     (* module use, and function call! *)
 
     | T.TUpperIdent(s, ii)::T.TDot ii2::T.TUpperIdent(s2, ii3)::xs ->
@@ -519,7 +527,9 @@ let visit_toplevel
     | T.TAssign ii 
     | T.TAssignMutable ii 
       ->
-        tag ii KeywordLoop; (* TODO better categ ? *)
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          tag ii UseOfRef;
 
     | T.TEq ii ->
         if not (Hashtbl.mem already_tagged ii)
