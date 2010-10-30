@@ -3361,86 +3361,99 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
 
 \section{Assembling Views}
 
-<<motion_refresher>>=
-(* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
-let motion_refresher ev dw () =
-  let cr_overlay = Cairo.create dw.overlay in
-  CairoH.clear cr_overlay;
+% draw vs paint vs xxx
 
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
+\subsection{Cairo layers}
 
-  let pt = { Cairo. x = GdkEvent.Motion.x ev; y = GdkEvent.Motion.y ev;} in
-  let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
+<<fields drawing main view>>=
+  (* device coordinates *)
+  mutable pm: GDraw.pixmap;
+  (* todo: going from a point to the enclosing rectangle via pixel color
+   *  trick. Kind of ugly.
+   * mutable pm_color_trick: GDraw.pixmap;
+   * mutable pm_color_trick_info: (string) array.
+   * alternative: just find pixel by iterating over all the rectangles
+   * and check if he's inside
+   *)
+  mutable overlay: [ `Any ] Cairo.surface;
+@
 
-  let r_opt = find_rectangle_at_user_point dw user in
-  r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
-    let txt = r.T.tr_label in
-    !Controller._statusbar_addtext txt;
-    
-    draw_label_overlay ~cr_overlay ~dw ~x ~y r;
-    draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
-    
-    if dw.dw_settings.draw_searched_rectangles;
-    then
-        draw_searched_rectangles ~cr_overlay ~dw;
-    
-    Controller.current_r := Some r;
-    
-    (* it has been computed, use it then *)
-    if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
-      dw.in_zoom_incruste
-    then
-      draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
-      
-  );
-  !Controller._refresh_da ();
-  false
+\subsection{Rectangle overlay}
 
+<<draw_rectangle_overlay>>=
+let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
+  Cairo.save cr_overlay;
+  View_mainmap.zoom_pan_scale_map cr_overlay dw;
+  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
 
-let motion_notify (da, da2) dw ev =
+  CairoH.draw_rectangle_figure
+    ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
+  Draw_labels.draw_treemap_rectangle_label_maybe 
+    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
 
-  !Controller.current_motion_refresher +> Common.do_option (fun x ->
-    GMain.Idle.remove x;
-  );
-
-  let dw = !dw in
-
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
-  pr2 (spf "motion: %f, %f" x y);
-
-  if dw.in_dragging then begin
-
-    let deltax = x -. dw.drag_pt.Cairo.x in
-    let deltay = y -. dw.drag_pt.Cairo.y in
-    
-    let deltax_user = 
-      View_mainmap.with_map dw 
-        (fun cr -> CairoH.device_to_user_distance_x cr deltax)
+  middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
+    let color = 
+      match i with
+      | 1 -> "grey70"
+      | 2 -> "grey40"
+      | _ -> spf "grey%d" (max 1 (50 -.. (i *.. 10)))
     in
-    let deltay_user = 
-      View_mainmap.with_map dw 
-        (fun cr -> CairoH.device_to_user_distance_y cr deltay)
-    in
+    CairoH.draw_rectangle_figure
+      ~cr:cr_overlay ~color r.T.tr_rect;
+    Draw_labels.draw_treemap_rectangle_label_maybe 
+      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
+  );
     
-    dw.xtrans <- dw.xtrans +. deltax_user;
-    dw.ytrans <- dw.ytrans +. deltay_user;
-    
-    dw.drag_pt <- { Cairo.x = x ; Cairo.y = y } ;
-    
-    GtkBase.Widget.queue_draw da#as_widget;
-    GtkBase.Widget.queue_draw da2#as_widget;
-  
-    true
-  end else begin
-    Controller.current_motion_refresher := 
-      Some (Gui.gmain_idle_add ~prio:100 (motion_refresher ev dw));
-    true
-  end
+  Cairo.restore cr_overlay;
+  ()
 @ 
 
 
+\subsection{Label overlay}
+
+<<draw_label_overlay>>=
+let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
+
+  let txt = r.T.tr_label in
+
+  let readable_txt = 
+    if dw.root = txt (* when we are fully zoomed on one file *)
+    then "root"
+    else 
+      Common.filename_without_leading_path dw.root txt in
+
+  let readable_txt =
+    if String.length readable_txt > 25
+    then 
+      let dirs = Filename.dirname readable_txt +> Common.split "/" in
+      let file = Filename.basename readable_txt in
+      spf "%s/.../%s" (List.hd dirs) file
+    else readable_txt
+  in
+
+  Cairo.select_font_face cr_overlay "serif" 
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
+  Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
+      
+  let extent = CairoH.text_extents cr_overlay readable_txt in
+  let tw = extent.Cairo.text_width in
+  let _th = extent.Cairo.text_height in
+
+
+  Cairo.move_to cr_overlay (x - tw / 2.) (y);
+  CairoH.show_text cr_overlay readable_txt;
+  
+  (*
+  Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
+  Cairo.move_to cr_overlay x y;
+  Cairo.line_to cr_overlay (x + 10.) (y + 10.);
+  Cairo.stroke cr_overlay;
+  *)
+  ()
+@ 
+
+\subsection{Searched files overlay}
 
 <<draw_searched_rectangles>>=
 let draw_searched_rectangles ~cr_overlay ~dw =
@@ -3467,6 +3480,7 @@ let draw_searched_rectangles ~cr_overlay ~dw =
   ()
 @ 
 
+\subsection{Zoom overlay}
 
 <<zoomed_surface_of_rectangle>>=
 let _hmemo_surface = Hashtbl.create 101
@@ -3571,6 +3585,88 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
   ()
 @ 
 
+\subsection{Assembling}
+
+<<motion_refresher>>=
+(* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
+let motion_refresher ev dw () =
+  let cr_overlay = Cairo.create dw.overlay in
+  CairoH.clear cr_overlay;
+
+  let x = GdkEvent.Motion.x ev in
+  let y = GdkEvent.Motion.y ev in
+
+  let pt = { Cairo. x = GdkEvent.Motion.x ev; y = GdkEvent.Motion.y ev;} in
+  let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
+
+  let r_opt = find_rectangle_at_user_point dw user in
+  r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
+    let txt = r.T.tr_label in
+    !Controller._statusbar_addtext txt;
+    
+    draw_label_overlay ~cr_overlay ~dw ~x ~y r;
+    draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
+    
+    if dw.dw_settings.draw_searched_rectangles;
+    then
+        draw_searched_rectangles ~cr_overlay ~dw;
+    
+    Controller.current_r := Some r;
+    
+    (* it has been computed, use it then *)
+    if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
+      dw.in_zoom_incruste
+    then
+      draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
+      
+  );
+  !Controller._refresh_da ();
+  false
+
+
+let motion_notify (da, da2) dw ev =
+
+  !Controller.current_motion_refresher +> Common.do_option (fun x ->
+    GMain.Idle.remove x;
+  );
+
+  let dw = !dw in
+
+  let x = GdkEvent.Motion.x ev in
+  let y = GdkEvent.Motion.y ev in
+  pr2 (spf "motion: %f, %f" x y);
+
+  if dw.in_dragging then begin
+
+    let deltax = x -. dw.drag_pt.Cairo.x in
+    let deltay = y -. dw.drag_pt.Cairo.y in
+    
+    let deltax_user = 
+      View_mainmap.with_map dw 
+        (fun cr -> CairoH.device_to_user_distance_x cr deltax)
+    in
+    let deltay_user = 
+      View_mainmap.with_map dw 
+        (fun cr -> CairoH.device_to_user_distance_y cr deltay)
+    in
+    
+    dw.xtrans <- dw.xtrans +. deltax_user;
+    dw.ytrans <- dw.ytrans +. deltay_user;
+    
+    dw.drag_pt <- { Cairo.x = x ; Cairo.y = y } ;
+    
+    GtkBase.Widget.queue_draw da#as_widget;
+    GtkBase.Widget.queue_draw da2#as_widget;
+  
+    true
+  end else begin
+    Controller.current_motion_refresher := 
+      Some (Gui.gmain_idle_add ~prio:100 (motion_refresher ev dw));
+    true
+  end
+@ 
+
+
 
 <<assemble_layers>>=
 (* Composing the "layers". See cairo/tests/knockout.ml example.
@@ -3662,100 +3758,13 @@ let configure a b c =
   Common.profile_code2 "View.configure" (fun () -> configure2 a b c)
 @ 
 
-% draw vs paint vs xxx
-
-<<draw_label_overlay>>=
-let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
-
-  let txt = r.T.tr_label in
-
-  let readable_txt = 
-    if dw.root = txt (* when we are fully zoomed on one file *)
-    then "root"
-    else 
-      Common.filename_without_leading_path dw.root txt in
-
-  let readable_txt =
-    if String.length readable_txt > 25
-    then 
-      let dirs = Filename.dirname readable_txt +> Common.split "/" in
-      let file = Filename.basename readable_txt in
-      spf "%s/.../%s" (List.hd dirs) file
-    else readable_txt
-  in
-
-  Cairo.select_font_face cr_overlay "serif" 
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
-      
-  let extent = CairoH.text_extents cr_overlay readable_txt in
-  let tw = extent.Cairo.text_width in
-  let _th = extent.Cairo.text_height in
 
 
-  Cairo.move_to cr_overlay (x - tw / 2.) (y);
-  CairoH.show_text cr_overlay readable_txt;
-  
-  (*
-  Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
-  Cairo.move_to cr_overlay x y;
-  Cairo.line_to cr_overlay (x + 10.) (y + 10.);
-  Cairo.stroke cr_overlay;
-  *)
-  ()
-@ 
-
-
-
-
-\subsection{Cairo Layers}
-
-<<draw_rectangle_overlay>>=
-let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
-
-  CairoH.draw_rectangle_figure
-    ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
-  Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
-
-  middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
-    let color = 
-      match i with
-      | 1 -> "grey70"
-      | 2 -> "grey40"
-      | _ -> spf "grey%d" (max 1 (50 -.. (i *.. 10)))
-    in
-    CairoH.draw_rectangle_figure
-      ~cr:cr_overlay ~color r.T.tr_rect;
-    Draw_labels.draw_treemap_rectangle_label_maybe 
-      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
-  );
-    
-  Cairo.restore cr_overlay;
-  ()
-@ 
-
-\subsection{Assembling}
-
-<<fields drawing main view>>=
-  (* device coordinates *)
-  mutable pm: GDraw.pixmap;
-  (* todo: going from a point to the enclosing rectangle via pixel color
-   *  trick. Kind of ugly.
-   * mutable pm_color_trick: GDraw.pixmap;
-   * mutable pm_color_trick_info: (string) array.
-   * alternative: just find pixel by iterating over all the rectangles
-   * and check if he's inside
-   *)
-  mutable overlay: [ `Any ] Cairo.surface;
-@
 
 
 \section{Language Modes}
+
+\subsection{Parsing}
 
 <<parsing2.mli>>=
 
@@ -4210,6 +4219,8 @@ let tokens_with_categ_of_file file hentities =
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"
 @ 
+
+
 
 \subsection{OCaml}
 
