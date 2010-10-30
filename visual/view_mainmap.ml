@@ -1,0 +1,379 @@
+(*s: view_mainmap.ml *)
+(*s: Facebook copyright *)
+(* Yoann Padioleau
+ * 
+ * Copyright (C) 2010 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+(*e: Facebook copyright *)
+
+open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+module K = GdkKeysyms
+
+
+module F = Figures
+module T = Treemap
+module CairoH = Cairo_helpers
+
+
+module Flag = Flag_visual
+open Model2
+module Controller = Controller2
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Types, globals *)
+(*****************************************************************************)
+
+
+(*****************************************************************************)
+(* Scaling *)
+(*****************************************************************************)
+
+(*s: zoom_pan_scale_map *)
+let zoom_pan_scale_map cr dw =
+  Cairo.scale cr 
+    (dw.zoom * (float_of_int dw.width / T.xy_ratio))
+    (dw.zoom * (float_of_int dw.height))
+  ;
+  (* I first scale and then translate as the xtrans are in user coordinates *)
+  Cairo.translate cr dw.xtrans dw.ytrans;
+  (* TODO clipping  Cairo.rectangle cr ~x:dw.xtrans ~y: *)
+  ()
+(*e: zoom_pan_scale_map *)
+
+(*s: with_map *)
+let with_map dw f = 
+  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  zoom_pan_scale_map cr dw;
+  f cr
+(*e: with_map *)
+
+(*s: device_to_user_area *)
+(* still needed ? reuse helper functions above ? *)
+let device_to_user_area dw = 
+  with_map dw (fun cr ->
+
+    let device_point = { Cairo. x = 0.0; y = 0.0 } in
+    let user_point1 = Cairo.device_to_user cr device_point in
+    let device_point = { Cairo.x = float_of_int dw.width; 
+                         Cairo.y = float_of_int dw.height; } in
+    let user_point2 = Cairo.device_to_user cr device_point in
+    
+    { F.p = CairoH.cairo_point_to_point user_point1;
+      F.q = CairoH.cairo_point_to_point user_point2;
+    }
+  )
+(*e: device_to_user_area *)
+
+
+(*****************************************************************************)
+(* Painting *)
+(*****************************************************************************)
+
+(*s: paint *)
+
+let paint_content_maybe_rect ~user_rect dw rect =
+  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  zoom_pan_scale_map cr dw;
+
+  let context = Model2.context_of_drawing dw in
+
+  Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr  ~clipping:user_rect  ~context rect;
+
+  (* have to redraw the label *)
+  Draw_labels.draw_treemap_rectangle_label_maybe 
+    ~cr ~zoom:dw.zoom ~color:None rect;
+
+  ()
+
+(* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
+let lazy_paint ~user_rect dw () =
+  pr2 "Lazy Paint";
+  let start = Unix.gettimeofday () in
+  while Unix.gettimeofday () - start < 0.3 do
+    match !Controller.current_rects_to_draw with
+    | [] -> ()
+    | x::xs ->
+        Controller.current_rects_to_draw := xs;
+        pr2 (spf "Drawing: %s" (x.T.tr_label));
+        paint_content_maybe_rect ~user_rect dw x;
+  done;
+  !Controller._refresh_da ();
+  if !Controller.current_rects_to_draw = []
+  then false
+  else true
+
+
+let paint2 dw = 
+
+  !Controller.paint_content_maybe_refresher +> Common.do_option (fun x ->
+    GMain.Idle.remove x;
+  );
+  Controller.current_rects_to_draw := [];
+
+  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  dw.pm#rectangle 
+    ~x:0 ~y:0 
+    ~width:dw.width ~height:dw.height 
+    ~filled:true () ;
+
+  pr2 (spf "paint, with zoom = %f, xtrans = %f, ytrans = %f" 
+          dw.zoom dw.xtrans dw.ytrans);
+  let user_rect = device_to_user_area dw in
+  pr2 (F.s_of_rectangle user_rect);
+
+  zoom_pan_scale_map cr dw;
+
+  let rects = dw.treemap in
+  let nb_rects = dw.nb_rects in
+
+  (* phase 1, draw the rectangles *)
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
+
+  (* phase 2, draw the labels, if have enough space *)
+  rects +> List.iter 
+    (Draw_labels.draw_treemap_rectangle_label_maybe 
+        ~cr ~zoom:dw.zoom  ~color:None);
+
+  (* phase 3, draw the content, if have enough space *)
+  if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
+    (* draw_content_maybe calls nblines which is quite expensive so
+     * want to limit it *)
+  then begin
+    Controller.current_rects_to_draw := rects;
+    Controller.paint_content_maybe_refresher := 
+      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
+  end;
+
+  (* also clear the overlay *)
+  let cr_overlay = Cairo.create dw.overlay in
+  CairoH.clear cr_overlay;
+
+  ()
+
+let paint dw = 
+  Common.profile_code2 "View.paint" (fun () -> paint2 dw)
+(*e: paint *)
+
+(*****************************************************************************)
+(* Events *)
+(*****************************************************************************)
+
+(*s: key_pressed *)
+let key_pressed (da, da2) dw_ref ev = 
+  let dw = !dw_ref in
+
+  pr2 ("key pressed");
+
+  (* this is in device coordinate, so no need to take into account the zoom *)
+  let _delta_move = float dw.width /. 16. in
+  let delta_move_user = 0.1 in (* TODO *)
+
+  let delta_zoom = 1.3 in
+
+  let b = 
+    (match GdkEvent.Key.keyval ev with
+    | k when k = K._Left ->
+        dw.xtrans <- dw.xtrans +. delta_move_user;
+        (* todo opti: *)
+        paint dw;
+        true
+    | k when k = K._Right ->
+        dw.xtrans <- dw.xtrans -. delta_move_user;
+        (* todo opti: *)
+        paint dw;
+        true
+
+    | k when k = K._Up ->
+        dw.ytrans <- dw.ytrans +. delta_move_user;
+        (* todo opti: *)
+        paint dw;
+        true
+    | k when k = K._Down ->
+        dw.ytrans <- dw.ytrans -. delta_move_user;
+        (* todo opti: *)
+        paint dw;
+        true
+
+    | k when k = K._plus ->
+        dw.zoom <- dw.zoom /. delta_zoom;
+        (* can't optimize here, have to paint *)
+        paint dw;
+        true
+    | k when k = K._minus ->
+        dw.zoom <- dw.zoom *. delta_zoom;
+        (* can't optimize here, have to paint *)
+        paint dw;
+        true
+
+
+
+
+    | k when k = K._z ->
+        dw.in_zoom_incruste <- not (dw.in_zoom_incruste);
+        true
+
+    | k when k = K._b ->
+        !Controller._go_back dw_ref;
+        true
+
+    | k when k = K._e ->
+        raise Todo
+
+    | k when k = K._q ->
+        GMain.quit () ; false
+
+    | _ -> false
+    )
+  in
+  if b then begin
+    GtkBase.Widget.queue_draw da#as_widget;
+    GtkBase.Widget.queue_draw da2#as_widget;
+  end;
+  b
+(*e: key_pressed *)
+
+(*s: find_filepos_in_rectangle_at_user_point *)
+(* Cannot move this to model.ml because we abuse the drawing function
+ * and the Draw.text_with_user_pos 100.
+ *)
+let find_filepos_in_rectangle_at_user_point user_pt dw r = 
+  (* ugly, but if use dw.pm#pixmap directly then it has
+   * weird side effects like darking the label
+   *)
+  let sur =
+    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
+      Cairo.CONTENT_COLOR_ALPHA dw.width dw.height
+  in
+  let cr = Cairo.create sur in
+           
+  zoom_pan_scale_map cr dw;
+  let user_rect = device_to_user_area dw in
+
+  let context = context_of_drawing dw in
+  let context = { context with Model2.nb_rects_on_screen = 1 } in
+  
+  (* does side effect on Draw.text_with_user_pos *)
+  Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr ~clipping:user_rect ~context r;
+  let xs = !Draw_microlevel.text_with_user_pos in
+
+  let scores = xs
+    +> List.map (fun (s, filepos, pt) ->
+      (s, filepos), CairoH.distance_points user_pt pt
+    )
+    +> Common.sort_by_val_lowfirst 
+    +> List.map fst
+  in
+  (match scores with
+  | [] -> 
+      pr2 ("no filepos found");
+      None
+  | (s, filepos)::xs ->
+      pr2 (spf "closest point is: %s at %d:%d"
+              s filepos.Common.l filepos.Common.c);
+      Some filepos
+  )
+(*e: find_filepos_in_rectangle_at_user_point *)
+            
+
+(*s: button_action *)
+let button_action da dw_ref ev =
+  let dw = !dw_ref in
+
+  let pt = { Cairo. x = GdkEvent.Button.x ev; y = GdkEvent.Button.y ev;} in
+  let user = with_map dw (fun cr -> Cairo.device_to_user cr pt) in
+
+  let r_opt = Model2.find_rectangle_at_user_point dw user in
+
+  match GdkEvent.get_type ev with
+  | `BUTTON_PRESS ->
+
+      let button = GdkEvent.Button.button ev in
+      pr2 (spf "button %d pressed" button);
+
+      (match button with
+      | 1 -> 
+
+(* DISABLED FOR NOW
+          dw.drag_pt <- { 
+            Cairo.x = GdkEvent.Button.x ev; 
+            Cairo.y = GdkEvent.Button.y ev; 
+          };
+          dw.in_dragging <- true;
+*)
+
+          r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+            let file = r.T.tr_label in
+            pr2 (spf "clicking on %s" file);
+          );
+          true
+      | 2 ->
+          r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+            let file = r.T.tr_label in
+            pr2 (spf "opening %s" file);
+
+            match find_filepos_in_rectangle_at_user_point user dw r with
+            | None ->
+                Editor_connection.open_file_in_current_editor ~file ~line:0;
+            | Some (fpos) ->
+                Editor_connection.open_file_in_current_editor ~file 
+                  ~line:fpos.Common.l;
+          );
+          true
+
+      | 3 ->
+          
+      r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+        let path = r.T.tr_label in
+
+        !Controller._go_dirs_or_file dw_ref [path];
+      );
+      true
+      | _ -> false
+      )
+  | `BUTTON_RELEASE ->
+
+      let button = GdkEvent.Button.button ev in
+      pr2 (spf "button %d released" button);
+
+      (match button with
+      | 1 ->
+          dw.in_dragging <- false;
+
+          GtkBase.Widget.queue_draw da#as_widget;
+          true
+      | _ -> false
+      )
+
+  | `TWO_BUTTON_PRESS ->
+      pr2 ("double click");
+
+      r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
+        let path = r_englobing.T.tr_label in
+        !Controller._go_dirs_or_file dw_ref [path];
+      );
+
+      true
+  | _ -> false
+(*e: button_action *)
+
+
+(*e: view_mainmap.ml *)

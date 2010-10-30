@@ -21,9 +21,11 @@
 % - helped put together related stuff, for instance htop_entities
 %   and the mixed/summary view
 % - helped split in macrolevel and microlevel code
+% - helped the split of view2.ml in view_mainmap, minimap, ui_search, etc.
 
 %thx to pfff_visual:
-% - splitted big files like draw.ml and view.ml
+% - splitted big files like draw.ml and view.ml because saw they were too
+%   big
 
 %history LP-ization:
 % - skeleton; a not too bad TOC
@@ -736,36 +738,10 @@ val mk_gui :
  * initialized by including gtkInit.cmo earlier in the linking command.
  *)
 
-let statusbar = 
-  GMisc.statusbar () 
-
-let ctx = 
-  statusbar#new_context "main" 
-
-let statusbar_addtext s = 
-  ctx#push s +> ignore
-
-let title_of_path s = "Pfff_visual: " ^ s
-
-let _set_title = ref (fun s ->
-  failwith "_set_title not defined"
-)
-let _refresh_da = ref (fun () ->
-  failwith "_refresh_da not defined"
-)
-
-let dw_stack = ref []
-
 (* ugly *)
 let root_orig () = 
-  (Common.last !dw_stack).M.root
+  (Common.last !Controller.dw_stack).M.root
 
-let paint_content_maybe_refresher = ref None
-let current_rects_to_draw = ref []
-
-let current_r = ref None
-
-let current_motion_refresher = ref None
 @ 
 
 
@@ -773,20 +749,25 @@ let current_motion_refresher = ref None
 let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
   let dw = ref dw in
-  Common.push2 !dw dw_stack;
+  Common.push2 !dw Controller.dw_stack;
 
   let width, height, minimap_hpos, minimap_vpos = 
     Style.windows_params screen_size in
 
   let w = GWindow.window 
-    ~title:(title_of_path root)
+    ~title:(Controller.title_of_path root)
     ~width
     ~height
     ~allow_shrink: true
     ~allow_grow:true
     () 
   in
-  _set_title := (fun s -> w#set_title s);
+  let statusbar = GMisc.statusbar () in
+  let ctx = statusbar#new_context "main" in
+
+  Controller._set_title := (fun s -> w#set_title s);
+  Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
+    
 
   let accel_group = GtkData.AccelGroup.create () in
   w#misc#set_name "main window";
@@ -838,7 +819,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
         (* todo? open Db ? *)
         fc#add_item "_Go back" ~key:K._B ~callback:(fun () -> 
-          go_back dw;
+          !Controller._go_back dw;
         ) +> ignore;
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
@@ -856,7 +837,8 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
                     Model2.readable_to_absolute_filename_under_root file 
                       ~root:!dw.root in
 
-                  go_dirs_or_file ~current_entity:(Some e) dw [final_file];
+                  !Controller._go_dirs_or_file 
+                    ~current_entity:(Some e) dw [final_file];
               )
           | _ -> failwith "no entity currently selected or no db"
         ) +> ignore ;
@@ -868,32 +850,32 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
         (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
-          let res = dialog_search_def !dw.dw_model in
+          let res = Ui_search.dialog_search_def !dw.dw_model in
           res +> Common.do_option (fun s ->
             let root = 
               (* could also support local grep? and use !dw.root instead ?  *)
               root_orig ()
             in
-            let matching_files = run_grep_query ~root s in
+            let matching_files = Ui_search.run_grep_query ~root s in
             let files = matching_files +> List.map fst +> Common.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
-            go_dirs_or_file ~current_grep_query dw files
+            !Controller._go_dirs_or_file ~current_grep_query dw files
           );
         ) +> ignore;
 
         fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
 
-          let res = dialog_search_def !dw.dw_model in
+          let res = Ui_search.dialog_search_def !dw.dw_model in
           res +> Common.do_option (fun s ->
             let root = !dw.root in
-            let matching_files = run_tbgs_query ~root s in
+            let matching_files = Ui_search.run_tbgs_query ~root s in
             let files = matching_files +> List.map fst +> Common.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
-            go_dirs_or_file ~current_grep_query dw files
+            !Controller._go_dirs_or_file ~current_grep_query dw files
           );
         ) +> ignore;
 
@@ -906,20 +888,20 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
           let current_root = !dw.root in
-          let _old_dw = Common.pop2 dw_stack in
+          let _old_dw = Common.pop2 Controller.dw_stack in
           (* have to disable the AST caching.
            * todo? disable all entries in the cache ?
            *)
           if Common.is_file current_root
           then Parsing2.disable_file_in_cache current_root;
 
-          go_dirs_or_file dw [current_root];
+          !Controller._go_dirs_or_file dw [current_root];
 
         ) +> ignore;
 
         fc#add_item "_Zoom" ~key:K._Z ~callback:(fun () -> 
           !dw.in_zoom_incruste <- not (!dw.in_zoom_incruste);
-          !_refresh_da();
+          !Controller._refresh_da();
         ) +> ignore;
 
       );
@@ -1002,7 +984,7 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
           in
 
           pr2 (spf "e= %s, final_paths= %s" str(Common.join "|" final_paths));
-          go_dirs_or_file ~current_entity:(Some e) dw final_paths;
+          !Controller._go_dirs_or_file ~current_entity:(Some e) dw final_paths;
           true
         )
         ~callback_changed:(fun str ->
@@ -1039,8 +1021,8 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
             end;
             let cr_overlay = Cairo.create !dw.overlay in
             CairoH.clear cr_overlay;
-            draw_searched_rectangles ~cr_overlay ~dw:!dw;
-            !_refresh_da();
+            View_overlays.draw_searched_rectangles ~cr_overlay ~dw:!dw;
+            !Controller._refresh_da();
           end
         )
         idx
@@ -1053,21 +1035,21 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_BACK) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          go_back dw;
+          !Controller._go_back dw;
         )
       ));
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_UP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
           let current_root = !dw.root in
-          go_dirs_or_file dw [Common.dirname current_root];
+          !Controller._go_dirs_or_file dw [Common.dirname current_root];
         )
       ));
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GOTO_TOP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          dw_stack := [Common.last !dw_stack];
-          go_back dw;
+          Controller.dw_stack := [Common.last !Controller.dw_stack];
+          !Controller._go_back dw;
 
         )
       ));
@@ -1124,9 +1106,13 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
     da2#event#connect#configure ~callback:(configure_minimap da2 dw) +> ignore;
 *)
 
-    da#event#connect#button_press   (button_action da dw) +> ignore;
-    da#event#connect#button_release (button_action da dw) +> ignore;
-    da#event#connect#motion_notify  (motion_notify (da,da2) dw) +> ignore; 
+    da#event#connect#button_press   
+      (View_mainmap.button_action da dw) +> ignore;
+    da#event#connect#button_release 
+      (View_mainmap.button_action da dw) +> ignore;
+
+    da#event#connect#motion_notify  
+      (View_overlays.motion_notify (da,da2) dw) +> ignore; 
 
 (*
     da2#event#connect#button_press  
@@ -1137,9 +1123,11 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
       (motion_notify_minimap (da,da2) dw) +> ignore; 
 *)
 
-    _refresh_da := (fun () ->
+    Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
     );
+    Controller._go_back := Ui_navigation.go_back;
+    Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
 
 (*
@@ -2060,25 +2048,25 @@ let lazy_paint ~user_rect dw () =
   pr2 "Lazy Paint";
   let start = Unix.gettimeofday () in
   while Unix.gettimeofday () - start < 0.3 do
-    match !current_rects_to_draw with
+    match !Controller.current_rects_to_draw with
     | [] -> ()
     | x::xs ->
-        current_rects_to_draw := xs;
+        Controller.current_rects_to_draw := xs;
         pr2 (spf "Drawing: %s" (x.T.tr_label));
         paint_content_maybe_rect ~user_rect dw x;
   done;
-  !_refresh_da ();
-  if !current_rects_to_draw = []
+  !Controller._refresh_da ();
+  if !Controller.current_rects_to_draw = []
   then false
   else true
 
 
 let paint2 dw = 
 
-  !paint_content_maybe_refresher +> Common.do_option (fun x ->
+  !Controller.paint_content_maybe_refresher +> Common.do_option (fun x ->
     GMain.Idle.remove x;
   );
-  current_rects_to_draw := [];
+  Controller.current_rects_to_draw := [];
 
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   dw.pm#rectangle 
@@ -2109,8 +2097,8 @@ let paint2 dw =
     (* draw_content_maybe calls nblines which is quite expensive so
      * want to limit it *)
   then begin
-    current_rects_to_draw := rects;
-    paint_content_maybe_refresher := 
+    Controller.current_rects_to_draw := rects;
+    Controller.paint_content_maybe_refresher := 
       Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
   end;
 
@@ -2325,7 +2313,7 @@ let key_pressed (da, da2) dw_ref ev =
         true
 
     | k when k = K._b ->
-        go_back dw_ref;
+        !Controller._go_back dw_ref;
         true
 
     | k when k = K._e ->
@@ -2448,7 +2436,7 @@ let button_action da dw_ref ev =
       r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
         let path = r.T.tr_label in
 
-        go_dirs_or_file dw_ref [path];
+        !Controller._go_dirs_or_file dw_ref [path];
       );
       true
       | _ -> false
@@ -2472,7 +2460,7 @@ let button_action da dw_ref ev =
 
       r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
         let path = r_englobing.T.tr_label in
-        go_dirs_or_file dw_ref [path];
+        !Controller._go_dirs_or_file dw_ref [path];
       );
 
       true
@@ -2496,14 +2484,14 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
    *)
 
   let dw = !dw_ref in
-  !_set_title (title_of_path root);
+  !Controller._set_title (Controller.title_of_path root);
 
   (* the release event will arrive later on the new dw so
    * has to first set the context good for the old dw
    *)
   !dw_ref.in_dragging <- false;
   
-  Common.push2 !dw_ref dw_stack;
+  Common.push2 !dw_ref Controller.dw_stack;
 
   dw_ref := 
     Model2.init_drawing 
@@ -2524,8 +2512,8 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
        *)
       !dw_ref.current_grep_query <- dw.current_grep_query;
   );
-  paint !dw_ref;
-  !_refresh_da ();
+  View_mainmap.paint !dw_ref;
+  !Controller._refresh_da ();
   ()
 @ 
 
@@ -2615,17 +2603,17 @@ let go_back dw_ref =
   (* reset also the motion notifier ? less needed because
    * the next motion will reset it
    *)
-  !paint_content_maybe_refresher +> Common.do_option (fun x ->
+  !Controller.paint_content_maybe_refresher +> Common.do_option (fun x ->
     GMain.Idle.remove x;
   );
 
-  let old_dw = Common.pop2 dw_stack in
+  let old_dw = Common.pop2 Controller.dw_stack in
   dw_ref := old_dw;
   
   let path = !dw_ref.root in
-  !_set_title (title_of_path path);
+  !Controller._set_title (Controller.title_of_path path);
 
-  !_refresh_da();
+  !Controller._refresh_da();
   ()
 @ 
 
@@ -2636,7 +2624,7 @@ let idle dw () =
   let dw = !dw in
 
   (*pr2 "idle";*)
-  !current_r +> Common.do_option (fun r ->
+  !Controller.current_r +> Common.do_option (fun r ->
     (* will compute and cache *)
     if dw.in_zoom_incruste 
     then zoomed_surface_of_rectangle dw r +> ignore;
@@ -2675,7 +2663,10 @@ let motion_notify_minimap (da, da2) dw ev =
     dw.drag_pt_minimap <- { Cairo.x = x ; Cairo.y = y } ;
     
     (* TODO: opti, should not recompute when just move! *)
+(* TOREPUT
     paint dw;
+*)
+
     GtkBase.Widget.queue_draw da#as_widget;
     GtkBase.Widget.queue_draw da2#as_widget;
     
@@ -2707,7 +2698,9 @@ let button_action_minimap (da,da2) dw ev =
       dw.in_dragging <- false;
 
       (* TODO: opti *)
+(* TOREPUT
       paint dw;
+*)
 
       GtkBase.Widget.queue_draw da#as_widget;
       GtkBase.Widget.queue_draw da2#as_widget;
@@ -2735,7 +2728,10 @@ let paint_minimap2 dw =
     (Draw_labels.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None);
 
   (* draw the zoom rectangle *)
-  let user_rect = device_to_user_area dw in
+  let user_rect = 
+    (* device_to_user_area dw  *)
+     raise Todo
+  in
   CairoH.draw_rectangle_figure ~cr ~color:"white" user_rect;
   ()
 
@@ -3375,12 +3371,12 @@ let motion_refresher ev dw () =
   let y = GdkEvent.Motion.y ev in
 
   let pt = { Cairo. x = GdkEvent.Motion.x ev; y = GdkEvent.Motion.y ev;} in
-  let user = with_map dw (fun cr -> Cairo.device_to_user cr pt) in
+  let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
 
   let r_opt = find_rectangle_at_user_point dw user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let txt = r.T.tr_label in
-    statusbar_addtext txt;
+    !Controller._statusbar_addtext txt;
     
     draw_label_overlay ~cr_overlay ~dw ~x ~y r;
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
@@ -3389,7 +3385,7 @@ let motion_refresher ev dw () =
     then
         draw_searched_rectangles ~cr_overlay ~dw;
     
-    current_r := Some r;
+    Controller.current_r := Some r;
     
     (* it has been computed, use it then *)
     if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
@@ -3398,13 +3394,13 @@ let motion_refresher ev dw () =
       draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
       
   );
-  !_refresh_da ();
+  !Controller._refresh_da ();
   false
 
 
 let motion_notify (da, da2) dw ev =
 
-  !current_motion_refresher +> Common.do_option (fun x ->
+  !Controller.current_motion_refresher +> Common.do_option (fun x ->
     GMain.Idle.remove x;
   );
 
@@ -3420,10 +3416,12 @@ let motion_notify (da, da2) dw ev =
     let deltay = y -. dw.drag_pt.Cairo.y in
     
     let deltax_user = 
-      with_map dw (fun cr -> CairoH.device_to_user_distance_x cr deltax)
+      View_mainmap.with_map dw 
+        (fun cr -> CairoH.device_to_user_distance_x cr deltax)
     in
     let deltay_user = 
-      with_map dw (fun cr -> CairoH.device_to_user_distance_y cr deltay)
+      View_mainmap.with_map dw 
+        (fun cr -> CairoH.device_to_user_distance_y cr deltay)
     in
     
     dw.xtrans <- dw.xtrans +. deltax_user;
@@ -3436,7 +3434,7 @@ let motion_notify (da, da2) dw ev =
   
     true
   end else begin
-    current_motion_refresher := 
+    Controller.current_motion_refresher := 
       Some (Gui.gmain_idle_add ~prio:100 (motion_refresher ev dw));
     true
   end
@@ -3447,7 +3445,7 @@ let motion_notify (da, da2) dw ev =
 <<draw_searched_rectangles>>=
 let draw_searched_rectangles ~cr_overlay ~dw =
   Cairo.save cr_overlay;
-  zoom_pan_scale_map cr_overlay dw;
+  View_mainmap.zoom_pan_scale_map cr_overlay dw;
 
   dw.current_searched_rectangles +> List.iter (fun r ->
     CairoH.draw_rectangle_figure ~cr:cr_overlay 
@@ -3475,7 +3473,7 @@ let _hmemo_surface = Hashtbl.create 101
 let zoomed_surface_of_rectangle dw r =
   Common.memoized _hmemo_surface (r.T.tr_label, dw.zoom) (fun () ->
 
-  let user_rect = device_to_user_area dw in
+  let user_rect = View_mainmap.device_to_user_area dw in
   
   let sur =
     Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
@@ -3497,7 +3495,7 @@ let zoomed_surface_of_rectangle dw r =
     xtrans = 0.; ytrans = 0.;
   } 
   in
-  zoom_pan_scale_map cr dw';
+  View_mainmap.zoom_pan_scale_map cr dw';
   (* a normalized rectangle that starts at 0 x 0 *)
   let rect = r.T.tr_rect in
   let rect' = { 
@@ -3646,7 +3644,7 @@ let configure2_bis da dw_ref ev =
     Cairo.surface_create_similar sur_src 
     Cairo.CONTENT_COLOR_ALPHA w h;
     
-  paint dw;
+  View_mainmap.paint dw;
   true
 
 (* ugly: for some unknown reason configure get called twice at
@@ -3716,7 +3714,7 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 <<draw_rectangle_overlay>>=
 let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   Cairo.save cr_overlay;
-  zoom_pan_scale_map cr_overlay dw;
+  View_mainmap.zoom_pan_scale_map cr_overlay dw;
   CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
 
   CairoH.draw_rectangle_figure
@@ -4894,6 +4892,81 @@ let context_of_drawing dw = {
 <<all_entities>>
 @ 
 
+\subsection{[[controller2.mli]]}
+
+<<controller2.mli>>=
+
+val _refresh_da: (unit -> unit) ref
+
+val _go_back: 
+  (Model2.drawing ref -> unit) ref
+val _go_dirs_or_file: 
+  (?current_entity: Database_code.entity option ->
+   ?current_grep_query: (string, int) Hashtbl.t option ->
+    Model2.drawing ref -> Common.path list -> unit
+  ) ref
+
+val _statusbar_addtext: (string -> unit) ref
+val _set_title: (string -> unit) ref
+
+val current_rects_to_draw:
+  (Treemap.treemap_rectangle list) ref
+val current_r:
+  Treemap.treemap_rectangle option ref
+
+val paint_content_maybe_refresher:
+  GMain.Idle.id option ref
+val current_motion_refresher:
+  GMain.Idle.id option ref
+
+val dw_stack:
+  Model2.drawing list ref
+
+val title_of_path: string -> string
+
+@ 
+
+
+\subsection{[[controller2.ml]]}
+
+<<controller2.ml>>=
+<<Facebook copyright>>
+
+let _refresh_da = ref (fun () ->
+  failwith "_refresh_da not defined"
+)
+
+let current_rects_to_draw = ref []
+
+let current_r = ref None
+
+let paint_content_maybe_refresher = ref None
+
+let current_motion_refresher = ref None
+
+let dw_stack = ref []
+
+
+
+let _go_back = ref (fun dw_ref ->
+  failwith "_go_back not defined"
+)
+
+let _go_dirs_or_file = ref 
+ (fun ?(current_entity=None) ?(current_grep_query=None)  dw_ref paths ->
+  failwith "_go_dirs_or_file not defined"
+)
+
+let _statusbar_addtext = ref (fun s ->
+  failwith "_statusbar_addtext not defined"
+)
+let _set_title = ref (fun s ->
+  failwith "_set_title not defined"
+)
+
+let title_of_path s = "Pfff_visual: " ^ s
+
+@ 
 
 \subsection{[[help.mli]]}
 
@@ -4927,6 +5000,9 @@ val interface_doc: string
 <<Facebook copyright>>
 
 open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
 
 module G = Gui
 module K = GdkKeysyms
@@ -4934,19 +5010,17 @@ module GR = Gdk.Rectangle
 
 module F = Figures
 module T = Treemap
-
 module CairoH = Cairo_helpers
 
 open Figures (* for the fields *)
 open Model2 (* for the fields *)
 module M = Model2
 
-(* floats are the norm in graphics *)
-open Common.ArithFloatInfix
-
-module Style = Style2
 
 module Flag = Flag_visual
+module Style = Style2
+
+module Controller = Controller2
 
 module Db = Database_code
 
@@ -4969,49 +5043,9 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 (* Scaling *)
 (*****************************************************************************)
 
-<<zoom_pan_scale_map>>
-
-<<scale_minimap>>
-
-<<with_map>>
-
-<<with_minimap>>
-
-<<device_to_user_area>>
-
-(*****************************************************************************)
-(* Painting *)
-(*****************************************************************************)
-
-<<paint>>
-
-<<paint_minimap>>
-
 (*****************************************************************************)
 (* Overlays *)
 (*****************************************************************************)
-
-(* ---------------------------------------------------------------------- *)
-(* The current filename *)
-(* ---------------------------------------------------------------------- *)
-
-<<draw_label_overlay>>
-(* ---------------------------------------------------------------------- *)
-(* The current rectangles *)
-(* ---------------------------------------------------------------------- *)
-
-<<draw_rectangle_overlay>>
-(* ---------------------------------------------------------------------- *)
-(* The selected rectangles *)
-(* ---------------------------------------------------------------------- *)
-
-<<draw_searched_rectangles>>
-
-(* ---------------------------------------------------------------------- *)
-(* The magnifying glass *)
-(* ---------------------------------------------------------------------- *)
-
-<<zoomed_surface_of_rectangle>>
 
 (*****************************************************************************)
 (* Layering *)
@@ -5028,14 +5062,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 <<configure>>
 
 (* ---------------------------------------------------------------------- *)
-(* The mini-map *)
-(* ---------------------------------------------------------------------- *)
-
-<<expose_minimap>>
-
-<<configure_minimap>>
-
-(* ---------------------------------------------------------------------- *)
 (* The legend *)
 (* ---------------------------------------------------------------------- *)
 <<expose_legend>>
@@ -5043,47 +5069,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 (*****************************************************************************)
 (* Events *)
 (*****************************************************************************)
-
-(* ---------------------------------------------------------------------- *)
-(* Navigation *)
-(* ---------------------------------------------------------------------- *)
-
-<<go_back>>
-
-<<go_dirs_or_file>>
-
-(* ---------------------------------------------------------------------- *)
-(* Search *)
-(* ---------------------------------------------------------------------- *)
-
-<<dialog_search_def>>
-
-<<run_grep_query>>
-
-<<run_tbgs_query>>
-
-(* ---------------------------------------------------------------------- *)
-(* The main map *)
-(* ---------------------------------------------------------------------- *)
-
-<<key_pressed>>
-
-<<find_filepos_in_rectangle_at_user_point>>
-            
-
-<<button_action>>
-
-<<motion_refresher>>
-
-<<idle>>
-
-(* ---------------------------------------------------------------------- *)
-(* The mini-map *)
-(* ---------------------------------------------------------------------- *)
-
-<<motion_notify_minimap>>
-
-<<button_action_minimap>>
 
 (*****************************************************************************)
 (* The main UI *)
@@ -5324,6 +5309,309 @@ module CairoH = Cairo_helpers
 <<paint_legend>>
 
 @
+
+
+\subsection{[[view_mainmap.mli]]}
+
+<<view_mainmap.mli>>=
+
+val paint: Model2.drawing -> unit
+
+val zoom_pan_scale_map: Cairo.t -> Model2.drawing -> unit
+
+val device_to_user_area: Model2.drawing -> Figures.rectangle
+
+val with_map: Model2.drawing -> (Cairo.t -> 'a) -> 'a
+
+val button_action:
+ < as_widget : [> `widget ] Gtk.obj; .. > ->
+   Model2.drawing ref -> GdkEvent.Button.t -> bool
+
+@ 
+
+\subsection{[[view_mainmap.ml]]}
+
+<<view_mainmap.ml>>=
+<<Facebook copyright>>
+
+open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+module K = GdkKeysyms
+
+
+module F = Figures
+module T = Treemap
+module CairoH = Cairo_helpers
+
+
+module Flag = Flag_visual
+open Model2
+module Controller = Controller2
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Types, globals *)
+(*****************************************************************************)
+
+
+(*****************************************************************************)
+(* Scaling *)
+(*****************************************************************************)
+
+<<zoom_pan_scale_map>>
+
+<<with_map>>
+
+<<device_to_user_area>>
+
+
+(*****************************************************************************)
+(* Painting *)
+(*****************************************************************************)
+
+<<paint>>
+
+(*****************************************************************************)
+(* Events *)
+(*****************************************************************************)
+
+<<key_pressed>>
+
+<<find_filepos_in_rectangle_at_user_point>>
+            
+
+<<button_action>>
+
+
+@ 
+
+\subsection{[[view_minimap.mli]]}
+
+<<view_minimap.mli>>=
+@ 
+
+\subsection{[[view_minimap.ml]]}
+
+<<view_minimap.ml>>=
+<<Facebook copyright>>
+
+open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+module GR = Gdk.Rectangle
+
+module F = Figures
+module T = Treemap
+module CairoH = Cairo_helpers
+
+module Flag = Flag_visual
+open Model2
+module Controller = Controller2
+
+(*****************************************************************************)
+(* Scaling *)
+(*****************************************************************************)
+
+<<scale_minimap>>
+
+<<with_minimap>>
+
+(*****************************************************************************)
+(* Painting *)
+(*****************************************************************************)
+
+<<paint_minimap>>
+
+(* ---------------------------------------------------------------------- *)
+(* The mini-map *)
+(* ---------------------------------------------------------------------- *)
+
+<<expose_minimap>>
+
+<<configure_minimap>>
+
+(* ---------------------------------------------------------------------- *)
+(* The mini-map *)
+(* ---------------------------------------------------------------------- *)
+
+<<motion_notify_minimap>>
+
+<<button_action_minimap>>
+
+
+
+@ 
+
+
+\subsection{[[view_overlays.mli]]}
+
+<<view_overlays.mli>>=
+
+val draw_searched_rectangles:
+  cr_overlay:Cairo.t -> dw:Model2.drawing -> unit
+
+val motion_notify:
+  < as_widget : [> `widget ] Gtk.obj; .. > *
+  < as_widget : [> `widget ] Gtk.obj; .. > ->
+  Model2.drawing ref -> GdkEvent.Motion.t -> bool
+
+@ 
+
+
+\subsection{[[view_overlays.ml]]}
+
+<<view_overlays.ml>>=
+<<Facebook copyright>>
+
+open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+
+module F = Figures
+module T = Treemap
+module CairoH = Cairo_helpers
+
+module Flag = Flag_visual
+open Model2
+module Controller = Controller2
+module Style = Style2
+
+open Figures (* for the fields *)
+module M = Model2
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* ---------------------------------------------------------------------- *)
+(* The current filename *)
+(* ---------------------------------------------------------------------- *)
+
+<<draw_label_overlay>>
+(* ---------------------------------------------------------------------- *)
+(* The current rectangles *)
+(* ---------------------------------------------------------------------- *)
+
+<<draw_rectangle_overlay>>
+(* ---------------------------------------------------------------------- *)
+(* The selected rectangles *)
+(* ---------------------------------------------------------------------- *)
+
+<<draw_searched_rectangles>>
+
+(* ---------------------------------------------------------------------- *)
+(* The magnifying glass *)
+(* ---------------------------------------------------------------------- *)
+
+<<zoomed_surface_of_rectangle>>
+
+(* ---------------------------------------------------------------------- *)
+(* Motion refresher *)
+(* ---------------------------------------------------------------------- *)
+
+<<motion_refresher>>
+
+<<idle>>
+
+
+@ 
+
+\subsection{[[ui_search.mli]]}
+
+<<ui_search.mli>>=
+
+val dialog_search_def: 
+  Model2.model Async.t -> string option
+
+val run_grep_query:
+  root:string -> string -> (string * int) list
+
+val run_tbgs_query:
+  root:string -> string -> (string * int) list
+
+@ 
+
+
+\subsection{[[ui_search.ml]]}
+
+<<ui_search.ml>>=
+<<Facebook copyright>>
+open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+module G = Gui
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* ---------------------------------------------------------------------- *)
+(* Search *)
+(* ---------------------------------------------------------------------- *)
+
+<<dialog_search_def>>
+
+<<run_grep_query>>
+
+<<run_tbgs_query>>
+
+
+@ 
+
+\subsection{[[ui_navigation.mli]]}
+
+<<ui_navigation.mli>>=
+
+val go_back: 
+  Model2.drawing ref -> unit
+
+val go_dirs_or_file:
+  ?current_entity:Database_code.entity option ->
+  ?current_grep_query:(Common.filename, int) Hashtbl.t option ->
+  Model2.drawing ref -> Common.filename list -> unit
+
+@ 
+
+
+\subsection{[[ui_navigation.ml]]}
+
+<<ui_navigation.ml>>=
+<<Facebook copyright>>
+open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+module G = Gui
+
+module Controller = Controller2
+
+open Model2
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* ---------------------------------------------------------------------- *)
+(* Navigation *)
+(* ---------------------------------------------------------------------- *)
+
+<<go_back>>
+
+<<go_dirs_or_file>>
+
+
+@ 
+
+
+
 
 \subsection{[[parsing2.mli]]}
 
