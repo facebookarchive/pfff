@@ -128,10 +128,10 @@ let file_type_of_file2 file =
   | "R" | "Rd" -> PL (R e)
 
   | "sh" -> PL (Script e)
-
   | "m4" -> PL (MiscPL e)
-
   | "conf" -> PL (MiscPL e)
+
+  | "scala" -> PL (MiscPL e)
 
   (* merd *)
   | "me" -> PL (MiscPL "me")

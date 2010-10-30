@@ -70,6 +70,8 @@
 
 \usepackage{graphicx}
 
+\usepackage{fullpage}
+
 %------------------------------------------------------------------------------
 % Macros
 %------------------------------------------------------------------------------
@@ -270,7 +272,7 @@ and have emacsclient in your path).
 @ 
 
 
-\subsection{Viewing Pfff Itself}
+\subsection{Viewing Pfff itself}
 
 \subsection{Semantic Visual Feedback}
 
@@ -315,7 +317,12 @@ see Cairo/Gtk appendix
 
 \begin{verbatim}
 Plan for following sections.
-Dependencies diagram. Tabular.
+Dependencies diagram and Tabular.
+ - main
+ - treemap
+ - semantic info and parser
+ - assembling layers
+ - gtk/cairo
 \end{verbatim}
 
 \section{Main}
@@ -1191,11 +1198,11 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 @
 
 
-\section{Macrolevel View: the Treemap}
+\section{Macrolevel View: The Treemap}
 
 %macro-level visualization. See also archi_code.ml.
 
-\subsection{Treemap Principles}
+\subsection{Treemap principles}
 
 % xyratio
 
@@ -2469,7 +2476,7 @@ let button_action da dw_ref ev =
 
 
 
-\subsection{Zooming In}
+\subsection{Zooming in a directory}
 
 
 <<go_dirs_or_file>>=
@@ -2565,9 +2572,9 @@ let find_rectangle_at_user_point a b =
     find_rectangle_at_user_point2 a b)
 @
 
-\subsection{Zooming Fully}
+\subsection{Zooming in a file}
 
-\subsection{Editor Connection}
+\subsection{Editor connection}
 
 <<editor_connection.mli>>=
 val open_file_in_current_editor : file:string -> line:int -> unit
@@ -2595,7 +2602,7 @@ let open_file_in_current_editor ~file ~line =
 @
 
 
-\subsection{Going Back}
+\subsection{Going back}
 
 <<go_back>>=
 let go_back dw_ref = 
@@ -2617,7 +2624,9 @@ let go_back dw_ref =
   ()
 @ 
 
-\subsection{Incruste Mode}
+\subsection{Magnifying glass}
+
+%Incruste Mode
 
 <<idle>>=
 let idle dw () = 
@@ -2804,7 +2813,7 @@ let scale_minimap cr dw =
 @ 
 
 
-\subsection{Fine Grained Pan and Zoom}
+\subsection{Fine-grained pan and zoom}
 
 
 <<with_map>>=
@@ -2938,7 +2947,7 @@ let run_tbgs_query ~root s =
     (Common.filename, int) Hashtbl.t;
 @
 
-\subsection{Definition Search}
+\subsection{Definition search}
 
 \begin{verbatim}
 %tags-like
@@ -2959,7 +2968,7 @@ val all_entities :
 
 
 
-\subsection{Completion Building}
+\subsection{Completion building}
 
 <<completion2.mli>>=
 
@@ -2985,7 +2994,7 @@ let build_completion_defs_index all_entities =
   BG.build_index all_entities
 @ 
 
-\subsection{Completion Window}
+\subsection{Completion window}
 
 <<completion2.mli>>=
 
@@ -3359,7 +3368,7 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
 \end{verbatim}
 
 
-\section{Assembling Views}
+\section{Overlays}
 
 % draw vs paint vs xxx
 
@@ -4561,6 +4570,8 @@ Hope you like it.
 \subsection{Gtk}
 
 \subsection{Cairo}
+
+% ref to good tutorial
 
 <<new_pixmap sig>>=
 val new_pixmap : 
