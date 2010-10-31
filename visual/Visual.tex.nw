@@ -70,7 +70,7 @@
 
 \usepackage{graphicx}
 
-\usepackage{fullpage}
+%\usepackage{fullpage}
 
 %------------------------------------------------------------------------------
 % Macros
@@ -136,8 +136,6 @@ Yoann Padioleau\\
 \section{Introduction}
 
 \subsection{Motivations}
-% can copy what is inside Treemap.tex.nw
-
 \begin{verbatim}
 (*
  * This file is the basis for a new kind of code visualizer, 
@@ -147,8 +145,6 @@ Yoann Padioleau\\
  * 
  * By playing with colors, size, fonts, and transparency, can show lots
  * of stuff.
- * 
- * Assumes the treemap contains the absolute paths to existing files/dirs.
  * 
  * There is not a single view that can accomodate all 
  * navigation/code-understanding programmer needs. So we provide multiple
@@ -172,13 +168,15 @@ Yoann Padioleau\\
 \end{verbatim}
 
 \begin{verbatim}
+can copy also what is inside Treemap.tex.nw
+\end{verbatim}
+
+\begin{verbatim}
 %integrate visualizer and source code ! separate skill for now
 %later: integrate more artifacts. See vision.txt
 
 whole program visualization. To actually see the architecture.
 \end{verbatim}
-
-
 
 Note that this is not a replacement for Emacs or Vi, but more a
 companion that works with Emacs or Vi, a little bit
@@ -225,6 +223,11 @@ The source code of \pfff is governed by the following copyright:
 #include "About.tex.nw"
 
 \section{Examples of Use}
+
+\begin{verbatim}
+put cool scenario of use. cool question and how can get visual answer to
+those questions!
+\end{verbatim}
 
 \subsection{Viewing the Linux Kernel}
 
@@ -306,7 +309,11 @@ and have emacsclient in your path).
  * the cairo context and adjust the scaling if needed and then call
  * 'draw'
  
- * then there are cairo layers
+ * then there are cairo layers.
+
+ * 
+ * Assumes the treemap contains the absolute paths to existing files/dirs.
+
 \end{verbatim}
 
 \begin{verbatim}
@@ -328,33 +335,39 @@ Dependencies diagram and Tabular.
 \section{Main}
 
 <<main flags>>=
+let screen_size = ref 2
+let filter = ref Treemap_pl.ex_filter_file
+
+let db_file = ref (None: Common.filename option)
+(* let db_path = ref (Database.database_dir "/home/pad/www") *)
+let layer_file = ref (None: Common.filename option)
+
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
 let proto = ref false
-let screen_size = ref 2
-(*
-let db_path = ref (Database.database_dir "/home/pad/www")
-*)
-let db_file = ref (None: Common.filename option)
-
-let filter = ref Treemap_pl.ex_filter_file
 @
 
 <<main_action()>>=
 let main_action xs = 
-  (*
-    GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc";
-  *)
-  if !Flag.debug_gc
-  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+  set_gc ();
 
-  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
-  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
-  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
-  
+  let root = Common.common_prefix_of_files_or_dirs xs in
+  pr2 (spf "Using root = %s" root);
+
   let model = Async.async_make () in
 
-  let dw = Model2.init_drawing treemap_generator model xs in
+  let layers = 
+    match !layer_file with
+    | None -> []
+    | Some file -> [Layer_code.load_layer file]
+  in
+  let layers = 
+    Layer_code.build_index_of_layers 
+      ~root 
+      (layers +> List.map (fun x -> x, true)) 
+  in
+
+  let dw = Model2.init_drawing treemap_generator model layers xs in
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -379,7 +392,6 @@ let main_action xs =
     | _ -> !db_file
   in
 
-  let root = Common.common_prefix_of_files_or_dirs xs in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
@@ -413,6 +425,8 @@ let main_action xs =
 
 \section{The Model}
 
+\subsection{The code database}
+
 <<type model>>=
 type model = {
   db: Database_code.database option;
@@ -420,20 +434,6 @@ type model = {
   <<model fields hook>>
  }
 @
-
-
-
-<<treemap_generator>>=
-let treemap_generator paths = 
-  let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
-  let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap_algo 
-    ~algo ~big_borders:!Flag.boost_label_size
-    treemap in
-  Common.pr2 (spf "%d rectangles to draw" (List.length rects));
-  rects
-@ 
-
 
 <<build_model>>=
 let build_model2 root dbfile_opt =   
@@ -469,7 +469,6 @@ let build_model2 root dbfile_opt =
   pr2 (spf "after = %d" !cnt);
   (* let _x = Hashtbl.find hentities "kill" in *)
 *)
-
   model
 
 let build_model a b = 
@@ -477,6 +476,21 @@ let build_model a b =
     build_model2 a b)
 @ 
 
+
+\subsection{The treemap generator}
+
+<<treemap_generator>>=
+let treemap_generator paths = 
+  let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
+  let algo = Treemap.Ordered Treemap.PivotByMiddle in
+  let rects = Treemap.render_treemap_algo 
+    ~algo ~big_borders:!Flag.boost_label_size
+    treemap in
+  Common.pr2 (spf "%d rectangles to draw" (List.length rects));
+  rects
+@ 
+
+\subsection{The final model}
 
 <<type drawing>>=
 (* All the 'float' below are to be intepreted as user coordinates except when
@@ -500,6 +514,8 @@ type drawing = {
   (* computed lazily *)
   dw_model: model Async.t;
 
+  mutable layers: Layer_code.layers_with_index;
+
   <<fields drawing query stuff>>
 
   dw_settings: settings;
@@ -513,6 +529,8 @@ type drawing = {
   <<type settings>>
 @
 
+\subsection{The microlevel specific model}
+
 <<type context>>=
 (* a slice of drawing used in the drawing functions *)
 type context = {
@@ -520,9 +538,12 @@ type context = {
   settings:settings;
   nb_rects_on_screen: int;
   grep_query: (Common.filename, int) Hashtbl.t;
+  layers_microlevel: 
+   (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
 }
 @ 
 
+\subsection{Misc}
 
 <<hentities sig>>=
 val hentities :
@@ -577,6 +598,7 @@ val init_drawing :
   ?height_minimap:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
   model Async.t ->
+  Layer_code.layers_with_index ->
   Common.filename list -> 
   drawing
 @
@@ -590,6 +612,7 @@ let init_drawing
   ?(height_minimap = 60)
   func 
   model
+  layers
   paths
  =
 
@@ -608,6 +631,7 @@ let init_drawing
     treemap_func = func;
 
     dw_model = model;
+    layers = layers;
 
     current_query = "";
     current_searched_rectangles = [];
@@ -643,6 +667,20 @@ let init_drawing
 
   }
 @
+
+\subsection{On filenames}
+
+\begin{verbatim}
+quite tricky. Also had pbs with our testing code. Relative path
+are convenient but bad in code. 
+
+- relative
+- absolute
+- readable
+
+need readable in files so can reuse (for code light database and layers,
+see section X and Y later)
+\end{verbatim}
 
 <<readable_to_absolute_filename_under_root sig>>=
 val readable_to_absolute_filename_under_root :
@@ -713,6 +751,8 @@ let actual_root_of_db ~root db =
 
 \section{The UI}
 
+\subsection{Overall organisation}
+
 \begin{verbatim}
  * Overall UI organisation:
  *  - menu
@@ -749,6 +789,15 @@ let root_orig () =
 
 @ 
 
+\subsection{Menu}
+
+\subsection{Toolbar}
+
+\subsection{Main view}
+
+\subsection{Status bar}
+
+\subsection{Misc}
 
 <<mk_gui()>>=
 let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
@@ -1195,12 +1244,13 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
   ()
 @
 
+\section{The Controller}
 
 \section{Macrolevel View: The Treemap}
 
 %macro-level visualization. See also archi_code.ml.
 
-\subsection{Treemap principles}
+\subsection{Principles}
 
 % xyratio
 
@@ -1748,16 +1798,11 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       ~line_width:font_size rect.T.tr_rect;
   end;
 
-  (* highlighting grep-like queries *)
-  let matching_lines = 
-    try Hashtbl.find_all context.grep_query file
-    with Not_found -> []
+  (* highlighting layers (and grep-like queries) *)
+  let hmatching_lines = 
+    try Hashtbl.find context.layers_microlevel file
+    with Not_found -> Hashtbl.create 0
   in
-  let hmatching_lines = Common.hashset_of_list matching_lines in
-  let is_matching_line i = 
-    Hashtbl.mem hmatching_lines i
-  in
-  pr2_gen matching_lines;
 
   let nblines_per_column = 
     (layout.nblines / layout.split_nb_columns) +> ceil +> int_of_float in
@@ -1796,7 +1841,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
       set_source_rgba_and_font_size_of_categ 
         ~cr ~font_size ~font_size_real
-        ~is_matching_line:(is_matching_line !line)
+        ~is_matching_line:(Hashtbl.mem hmatching_lines !line)
         categ;
       
       let xs = Common.lines_with_nl_either s in
@@ -1824,18 +1869,18 @@ let draw_content2 ~cr ~layout ~context ~file rect =
             (layout.space_per_line * (float_of_int !line_in_column)) in
 
           (* must be done before the move_to below ! *)
-          if is_matching_line !line
-          then begin
-            CairoH.fill_rectangle ~cr 
-              ~alpha:0.5
-              ~color:"magenta"
-              ~x 
-              ~y:(y - layout.space_per_line) 
-              ~w:layout.w_per_column 
-              ~h:(layout.space_per_line * 3.)
-              ()
-          end;
-          
+          (match Common.hfind_option !line hmatching_lines with
+          | None -> ()
+          | Some color ->
+              CairoH.fill_rectangle ~cr 
+                ~alpha:0.5
+                ~color
+                ~x 
+                ~y:(y - layout.space_per_line) 
+                ~w:layout.w_per_column 
+                ~h:(layout.space_per_line * 3.)
+                ()
+          );
           Cairo.move_to cr x y;
           
           
@@ -2207,6 +2252,12 @@ let hfiles_and_top_entities root db_opt =
 
 \section{Layers}
 
+\subsection{Micro-level}
+
+\begin{verbatim}
+This is kind of intra-file "aspect"
+\end{verbatim}
+
 \subsection{Macro-level}
 
 % need majority when multiple match same file ?
@@ -2215,12 +2266,6 @@ let hfiles_and_top_entities root db_opt =
 This is kind of inter-file "aspect". See also
 the regular archi_code treemap which is also
 about aspects.
-\end{verbatim}
-
-\subsection{Micro-level}
-
-\begin{verbatim}
-This is kind of intra-file "aspect"
 \end{verbatim}
 
 \section{Navigation}
@@ -2468,6 +2513,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
       ~height_minimap:dw.height_minimap
       dw.treemap_func 
       dw.dw_model 
+      dw.layers
       paths;
   !dw_ref.current_entity <- current_entity;
   (match current_grep_query with
@@ -3555,7 +3601,7 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
   ()
 @ 
 
-\subsection{Assembling}
+\subsection{Assembling overlays}
 
 <<motion_refresher>>=
 (* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
@@ -3637,6 +3683,53 @@ let motion_notify (da, da2) dw ev =
 @ 
 
 
+\section{Final Rendering}
+
+\subsection{The big picture}
+
+\begin{verbatim}
+
+\end{verbatim}
+
+
+\subsection{Configure Event}
+
+<<configure>>=
+let configure2_bis da dw_ref ev = 
+  let dw = !dw_ref in
+
+  let w = GdkEvent.Configure.width ev in
+  let h = GdkEvent.Configure.height ev in
+
+  dw.width <- w;
+  dw.height <- h;
+  dw.pm <- Model2.new_pixmap dw.width dw.height;
+  let cr_src = Cairo_lablgtk.create dw.pm#pixmap in
+  let sur_src = Cairo.get_target cr_src in
+  dw.overlay <- 
+    Cairo.surface_create_similar sur_src 
+    Cairo.CONTENT_COLOR_ALPHA w h;
+    
+  View_mainmap.paint dw;
+  true
+
+(* ugly: for some unknown reason configure get called twice at
+ * the beginning of the program
+ *)
+let first_call = ref true
+let configure2 a b c =
+  (* should probably do is_old_gtk() *)
+  if !first_call && CairoH.is_old_cairo () 
+  then begin first_call := false; true end
+  else 
+    configure2_bis a b c
+
+let configure a b c =
+  Common.profile_code2 "View.configure" (fun () -> configure2 a b c)
+@ 
+
+
+\subsection{Expose Event}
 
 <<assemble_layers>>=
 (* Composing the "layers". See cairo/tests/knockout.ml example.
@@ -3694,42 +3787,17 @@ let expose a b c =
 @ 
 
 
-<<configure>>=
-let configure2_bis da dw_ref ev = 
-  let dw = !dw_ref in
+\subsection{Trace: clicking a directory}
 
-  let w = GdkEvent.Configure.width ev in
-  let h = GdkEvent.Configure.height ev in
+\begin{verbatim}
+diagram where see events, functions,  draw vs paint vs overlays.
+\end{verbatim}
 
-  dw.width <- w;
-  dw.height <- h;
-  dw.pm <- Model2.new_pixmap dw.width dw.height;
-  let cr_src = Cairo_lablgtk.create dw.pm#pixmap in
-  let sur_src = Cairo.get_target cr_src in
-  dw.overlay <- 
-    Cairo.surface_create_similar sur_src 
-    Cairo.CONTENT_COLOR_ALPHA w h;
-    
-  View_mainmap.paint dw;
-  true
+\subsection{Trace: moving the mouse}
 
-(* ugly: for some unknown reason configure get called twice at
- * the beginning of the program
- *)
-let first_call = ref true
-let configure2 a b c =
-  (* should probably do is_old_gtk() *)
-  if !first_call && CairoH.is_old_cairo () 
-  then begin first_call := false; true end
-  else 
-    configure2_bis a b c
-
-let configure a b c =
-  Common.profile_code2 "View.configure" (fun () -> configure2 a b c)
-@ 
-
-
-
+\begin{verbatim}
+diagram where see events, functions,  draw vs paint vs overlays.
+\end{verbatim}
 
 
 \section{Language Modes}
@@ -3761,6 +3829,9 @@ val _hmemo_file : (Common.filename, ast) Hashtbl.t
 val disable_file_in_cache : 
   Common.filename -> unit
 @ 
+
+
+\subsection{Semantic visual feedback}
 
 <<parsing2.ml>>=
 <<Facebook copyright>>
@@ -4194,14 +4265,20 @@ let tokens_with_categ_of_file file hentities =
 
 \subsection{OCaml}
 
+\subsection{Tex/Latex/NoWeb}
+
+
+
 \subsection{PHP}
+
+\subsection{Javascript}
 
 \subsection{[[C/C++]] and variants}
 %variants: thrift
 
-\subsection{Javascript}
+\subsection{Haskell}
 
-\subsection{Tex/Latex/NoWeb}
+\subsection{Lisp/Scheme}
 
 \section{Optimisations}
 
@@ -4276,8 +4353,11 @@ let async_set v a =
 
   "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
   " ";
+
   "-with_info", Arg.String (fun s -> db_file := Some s),
-  " <db light file>";
+  " <db_light_file>";
+  "-with_layer", Arg.String (fun s -> layer_file := Some s),
+  " <layer_file>";
 
   "-test" , Arg.String (fun s -> test_mode := Some s),
   " <str> execute an internal script";
@@ -4526,11 +4606,9 @@ Hope you like it.
 
 \appendix
 
-\section{Gtk/Cairo}
+\section{Gtk}
 
-\subsection{Gtk}
-
-\subsection{Cairo}
+\section{Cairo}
 
 % ref to good tutorial
 
@@ -4844,7 +4922,8 @@ let context_of_drawing dw = {
   model = dw.dw_model;
   settings = dw.dw_settings;
   grep_query = dw.current_grep_query;
-} 
+  layers_microlevel = dw.layers.Layer_code.micro_index;
+}
 
 (*****************************************************************************)
 (* Point -> treemap info *)
@@ -5023,15 +5102,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 <<view globals>>
 
 (*****************************************************************************)
-(* Scaling *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Overlays *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Layering *)
+(* Final view rendering *)
 (*****************************************************************************)
 
 (* ---------------------------------------------------------------------- *)
@@ -5092,7 +5163,7 @@ module CairoH = Cairo_helpers
 module  Parsing = Parsing2
 
 (*****************************************************************************)
-(* Drawing rectangles *)
+(* Drawing a treemap rectangle *)
 (*****************************************************************************)
 
 <<draw_treemap_rectangle()>>
@@ -5400,6 +5471,17 @@ module Controller = Controller2
 (* Prelude *)
 (*****************************************************************************)
 
+(* This module calls Draw_macrolevel and Draw_microlevel and assembles
+ * the final "painting" of the code "main map". It is called mainly by
+ * View2.configure and Ui_navigation.go_dirs_and_file.
+ * 
+ * Painting is not the last element in the "main map" rendering pipeline.
+ * There is also View_overlay which is called mainly when the user
+ * moves the mouse which triggers the View_overlay.motion_refresher
+ * callback which just add overlays on top of the already drawn (and
+ * computationaly expensive) painting done here. 
+ *)
+
 (*****************************************************************************)
 (* Types, globals *)
 (*****************************************************************************)
@@ -5536,6 +5618,16 @@ module M = Model2
 (* Prelude *)
 (*****************************************************************************)
 
+(* This module mainly modifies the dw.overlay cairo surface. It also
+ * triggers the refresh_da which triggers itself the expose event
+ * which triggers the View2.assemble_layers composition of dw.pm with
+ * dw.overlay
+ *)
+
+(*****************************************************************************)
+(* The overlays *)
+(*****************************************************************************)
+
 (* ---------------------------------------------------------------------- *)
 (* The current filename *)
 (* ---------------------------------------------------------------------- *)
@@ -5558,9 +5650,9 @@ module M = Model2
 
 <<zoomed_surface_of_rectangle>>
 
-(* ---------------------------------------------------------------------- *)
-(* Motion refresher *)
-(* ---------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Assembling overlays *)
+(*****************************************************************************)
 
 <<motion_refresher>>
 
@@ -5833,7 +5925,9 @@ module Flag = Flag_visual
 (* Prelude *)
 (*****************************************************************************)
 
-(* *)
+(* 
+ * Main entry point of pfff_visual.
+ *)
 
 (*****************************************************************************)
 (* Flags *)
@@ -5841,11 +5935,28 @@ module Flag = Flag_visual
 
 <<main flags>>
 
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
+
 (* action mode *)
 let action = ref ""
 
 (*****************************************************************************)
 (* Helpers *)
+(*****************************************************************************)
+
+let set_gc () =
+  if !Flag.debug_gc
+  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+
+  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
+  ()
+
+(*****************************************************************************)
+(* Model helpers *)
 (*****************************************************************************)
 
 <<treemap_generator>>
@@ -5875,9 +5986,9 @@ let extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-(* update: try put ocamlgtk related test in widgets/test_widgets.ml, not
- * here. Here it's for ... well it's for nothing I think as it's not really
- * easy to test gui.
+(* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
+ * here. Here it's for ... well it's for nothing I think because it's not 
+ * really easy to test a gui.
  *)
 let all_actions () = 
  extra_actions()++
