@@ -489,7 +489,7 @@ expr:
      { Cons ($1, Some $2) }
 
  | expr TColonColon expr
-     { Infix ($1, ("::", $2), $3) }
+     { Infix ($1, ("::", $2), $3) (* TODO ? ConsList ? *) }
 
  | expr TInfixOperator expr
      { Infix ($1, $2, $3) }
@@ -746,28 +746,27 @@ match_action:
  | Twhen seq_expr TArrow seq_expr   { WhenAction ($1, $2, $3, $4) }
 
 
-
 pattern:
  | simple_pattern
-      { }
- | constr_longident pattern %prec prec_constr_appl
-      { }
+      { $1 }
 
+ | constr_longident pattern %prec prec_constr_appl
+      { PatCons ($1, Some $2) }
  | pattern_comma_list  %prec below_COMMA
-      { }
+      { PatTuple ($1) }
  | pattern TColonColon pattern
-      { }
+      { PatConsInfix ($1, $2, $3) }
 
  | pattern Tas val_ident
-      { }
+      { PatAs ($1, $2, Name $3) }
 
  /*(* nested patterns *)*/
  | pattern TPipe pattern
-      { }
+      { PatDisj ($1, $2, $3) }
 
  /*(* name tag extension *)*/
  | name_tag pattern %prec prec_constr_appl
-      { }
+      { PatTodo }
 
 
 
@@ -775,34 +774,34 @@ pattern:
 
 simple_pattern:
  | val_ident %prec below_EQUAL
-      { }
+      { PatVar (Name $1) }
  | constr_longident
-      { }
+      { PatCons ($1, None) }
  | TUnderscore
-      { }
+      { PatUnderscore $1 }
  | signed_constant
-      { }
+      { PatConstant $1 }
 
  | TOBrace lbl_pattern_list record_pattern_end TCBrace
-      { }
+      { PatTodo }
 
  | TOBracket pattern_semi_list opt_semi TCBracket
-      { }
+      { PatTodo }
  | TOBracketPipe pattern_semi_list opt_semi TPipeCBracket
-      { }
+      { PatTodo }
  | TOBracketPipe TPipeCBracket
-      { }
+      { PatTodo }
 
  /*(* note that let (x:...) a =  will trigger this rule *)*/
  | TOParen pattern TColon core_type TCParen
-      { }
+      { PatTodo }
 
  /*(* name tag extension *)*/
  | name_tag
-      { }
+      { PatTodo }
 
  | TOParen pattern TCParen
-      { }
+      { ParenPat ($1, $2, $3) }
 
 
 
@@ -829,11 +828,11 @@ pattern_comma_list:
 
 
 signed_constant:
- | constant       { }
- | TMinus TInt    { }
- | TMinus TFloat  { }
- | TPlus TInt     { }
- | TPlus TFloat   { }
+ | constant       { C2 $1 }
+ | TMinus TInt    { CMinus ($1, Int $2) }
+ | TMinus TFloat  { CMinus ($1, Float $2) }
+ | TPlus TInt     { CPlus ($1, Int $2) }
+ | TPlus TFloat   { CPlus ($1, Float $2) }
 
 /*(*************************************************************************)*/
 /*(* Types *)*/

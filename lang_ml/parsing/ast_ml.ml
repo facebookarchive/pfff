@@ -124,7 +124,7 @@ and expr =
   | C of constant
   | L of long_name (* val_longident *)
 
-  | Cons of long_name (* constr_longident *) * expr option
+  | Cons(*Algebric*) of long_name (* constr_longident *) * expr option
   | Tuple of expr comma_list
 
   | ParenExpr of expr paren
@@ -207,14 +207,34 @@ and seq_expr = expr semicolon_list
 (* ------------------------------------------------------------------------- *)
 (* Patterns *)
 (* ------------------------------------------------------------------------- *)
-and pattern = unit
+and pattern = 
+  | PatVar of name
+  | PatConstant of signed_constant
+  | PatCons(*Algebric*) of long_name (* constr_longident *) * pattern option
+  | PatConsInfix of pattern * tok (* :: *) * pattern
+  | PatTuple of pattern comma_list
+  | PatUnderscore of tok
+
+  | PatAs of pattern * tok (* as *) * name
+  (* ocaml disjunction patterns extension *)
+  | PatDisj of pattern * tok (* | *) * pattern
+
+  | ParenPat of pattern paren
+  | PatTodo
     
-and simple_pattern = unit
+ (* rename in parameter ? *)
+ and labeled_simple_pattern = unit
 
-(* rename in parameter ? *)
-and labeled_simple_pattern = unit
+ and parameter = labeled_simple_pattern
 
-and parameter = labeled_simple_pattern
+ and signed_constant = 
+    | C2 of constant
+    (* actually only valid for the Int and Float case, not Char and String
+     * but don't want to introduce yet another intermediate type just for
+     * the Int and Float
+     *)
+    | CMinus of tok * constant
+    | CPlus of tok * constant
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding *)

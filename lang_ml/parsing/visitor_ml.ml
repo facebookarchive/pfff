@@ -31,12 +31,14 @@ type visitor_in = {
   kfield_expr: field_and_expr vin;
   kty: ty vin;
   ktype_declaration: type_declaration vin;
+  kpattern: pattern vin;
   kitem: item vin;
   klet_def: let_def vin;
 }
 and visitor_out = {
   vtoplevel: toplevel vout;
   vprogram: program vout;
+  vmatch_case: match_case vout;
 }
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 and 'a vout = 'a -> unit
@@ -50,6 +52,7 @@ let default_visitor = {
   ktype_declaration  = (fun (k,_) x -> k x);
   kitem  = (fun (k,_) x -> k x);
   klet_def  = (fun (k,_) x -> k x);
+  kpattern = (fun (k,_) x -> k x);
 }
 
 
@@ -97,6 +100,9 @@ and v_paren11 _of_a (v1, v2, v3) =
 and v_paren12 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
+and v_paren13 _of_a (v1, v2, v3) =
+  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+
 and v_brace _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_brace1 _of_a (v1, v2, v3) =
@@ -113,6 +119,7 @@ and v_comma_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 and v_comma_list2 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 
 and v_comma_list11 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_comma_list12 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 
 and v_and_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
 and v_and_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
@@ -222,7 +229,7 @@ and v_expr v =
   | L v1 -> let v1 = v_long_name v1 in ()
   | Cons ((v1, v2)) ->
       let v1 = v_long_name v1 and v2 = v_option v_expr v2 in ()
-  | Tuple v1 -> let v1 = v_comma_list11 v_expr v1 in ()
+  | Tuple v1 -> let v1 = v_comma_list12 v_expr v1 in ()
   | ParenExpr v1 -> let v1 = v_paren12 v_expr v1 in ()
   | Sequence v1 -> let v1 = v_paren11 v_seq_expr v1 in ()
   | Prefix ((v1, v2)) ->
@@ -360,10 +367,35 @@ and v_for_direction =
   | Downto v1 -> let v1 = v_tok v1 in ()
 
 and v_seq_expr v = v_semicolon_list1 v_expr v
-and v_pattern v = v_unit v
+
+and v_pattern x =
+   let k x = match x with
+  | PatVar v1 -> let v1 = v_name v1 in ()
+  | PatConstant v1 -> let v1 = v_signed_constant v1 in ()
+  | PatCons ((v1, v2)) ->
+      let v1 = v_long_name v1 and v2 = v_option v_pattern v2 in ()
+  | PatConsInfix ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()
+  | PatTuple v1 -> let v1 = v_comma_list11 v_pattern v1 in ()
+  | PatUnderscore v1 -> let v1 = v_tok v1 in ()
+  | PatAs ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
+  | PatDisj ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()
+  | ParenPat v1 -> let v1 = v_paren13 v_pattern v1 in ()
+  | PatTodo -> ()
+   in
+   vin.kpattern (k, all_functions) x
+
 and v_simple_pattern v = v_unit v
 and v_labeled_simple_pattern v = v_unit v
 and v_parameter v = v_labeled_simple_pattern v
+
+and v_signed_constant =
+  function
+  | C2 v1 -> let v1 = v_constant v1 in ()
+  | CMinus ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_constant v2 in ()
+  | CPlus ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_constant v2 in ()
 
 and v_let_binding =
   function
@@ -442,6 +474,7 @@ and v_program v = v_list v_toplevel v
     {
       vprogram = v_program;
       vtoplevel = v_toplevel;
+      vmatch_case = v_match_case;
     }
   in
   all_functions
