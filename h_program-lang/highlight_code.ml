@@ -159,8 +159,8 @@ type category =
 
   (* generic emacs mode  *)
   | Comment 
+
   | String
-  | Punctuation
   (* pad addons *)
   | Number | Boolean | Null
 
@@ -168,6 +168,8 @@ type category =
   | Keyword  (* SEMI multi *)
   | Operator (* TODO multi *)
   | Builtin
+
+  | Punctuation
 
   | BuiltinCommentColor (* e.g. for "pr", "pr2", "spf". etc *)
   | BuiltinBoolean (* e.g. "not" *)
@@ -209,7 +211,10 @@ type category =
   | TypeDef of usedef
 
   (* ocaml *)
-  | Constructor
+  | ConstructorDef of def_info
+  | ConstructorUse of use_info
+  | ConstructorMatch of use_info
+
   | Module of usedef
   (* misc *)
   | Label of usedef
@@ -704,7 +709,10 @@ let info_of_category = function
   | TypeInt ->  [`FOREGROUND "chartreuse";]
   | TypeMisc -> [`FOREGROUND "chartreuse";]
 
-  | Constructor -> [`FOREGROUND "LightBlue2";]
+  | ConstructorDef _ -> [`FOREGROUND "HotPink";]
+  | ConstructorMatch _ -> [`FOREGROUND "PaleVioletRed";]
+  | ConstructorUse _ -> [`FOREGROUND "pink3";]
+
   | FunctionEquation -> [`FOREGROUND "LightSkyBlue";]
 
   | Module (Use) -> [`FOREGROUND "DarkSlateGray4";]

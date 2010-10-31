@@ -198,6 +198,12 @@ let visit_toplevel
           tag info (Method (Use2 fake_no_use2));
           k x
 
+      | Cons (long_name, eopt) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info (ConstructorUse fake_no_use2);
+          k x
+
 
       | _ -> k x
     );
@@ -241,6 +247,17 @@ let visit_toplevel
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
           (* todo: ty_params *)
+
+          (match type_kind with
+          | TyAlgebric xs ->
+              xs +> Ast.unpipe +> List.iter (fun (name, args) ->
+                let info = Ast.info_of_name name in
+                tag info (ConstructorDef fake_no_def2)
+              );
+
+          | TyCore _ | TyRecord _ -> ()
+          );
+
           k x
           
       | TyAbstract _ ->
@@ -556,7 +573,8 @@ let visit_toplevel
     | T.TUpperIdent (s, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then
-          tag ii Constructor
+          ()
+          (* tag ii Constructor *)
 
     | T.TLabelDecl (s, ii) ->
         tag ii (Parameter Def)

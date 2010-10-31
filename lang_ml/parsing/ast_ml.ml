@@ -208,7 +208,7 @@ and seq_expr = expr semicolon_list
 (* Patterns *)
 (* ------------------------------------------------------------------------- *)
 and pattern = unit
-
+    
 and simple_pattern = unit
 
 (* rename in parameter ? *)
@@ -322,3 +322,5 @@ let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right info -> None
   ) xs
+
+let unpipe xs = uncomma xs
