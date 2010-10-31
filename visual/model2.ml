@@ -219,6 +219,8 @@ type context = {
   settings:settings;
   nb_rects_on_screen: int;
   grep_query: (Common.filename, int) Hashtbl.t;
+  layers_microlevel: 
+   (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
 }
 (*e: type context *)
 
@@ -227,7 +229,8 @@ let context_of_drawing dw = {
   model = dw.dw_model;
   settings = dw.dw_settings;
   grep_query = dw.current_grep_query;
-} 
+  layers_microlevel = dw.layers.Layer_code.micro_index;
+}
 
 (*****************************************************************************)
 (* Point -> treemap info *)

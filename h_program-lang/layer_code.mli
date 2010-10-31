@@ -15,7 +15,9 @@ type layer = {
  }
  and kind = string
 
+(* The filenames are in absolute path format in the index. *)
 type layers_with_index = {
+  root: Common.dirname;
   layers: (layer * bool (* is active *)) list;
 
   micro_index:
@@ -24,7 +26,9 @@ type layers_with_index = {
     (Common.filename, (float * Simple_color.emacs_color) list) Hashtbl.t;
 }
 
-val build_index_of_layers: (layer * bool) list -> layers_with_index
+val build_index_of_layers: 
+  root:Common.dirname -> (layer * bool) list -> 
+  layers_with_index
 
 (* save either in a (readable) json format or (fast) marshalled form 
  * depending on the extension of the filename

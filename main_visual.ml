@@ -116,14 +116,21 @@ let build_model a b =
 let main_action xs = 
   set_gc ();
 
+  let root = Common.common_prefix_of_files_or_dirs xs in
+  pr2 (spf "Using root = %s" root);
+
   let model = Async.async_make () in
+
   let layers = 
     match !layer_file with
     | None -> []
     | Some file -> [Layer_code.load_layer file]
   in
   let layers = 
-    Layer_code.build_index_of_layers (layers +> List.map (fun x -> x, true)) in
+    Layer_code.build_index_of_layers 
+      ~root 
+      (layers +> List.map (fun x -> x, true)) 
+  in
 
   let dw = Model2.init_drawing treemap_generator model layers xs in
 
@@ -150,7 +157,6 @@ let main_action xs =
     | _ -> !db_file
   in
 
-  let root = Common.common_prefix_of_files_or_dirs xs in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(

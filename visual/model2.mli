@@ -104,7 +104,11 @@ type context = {
   model: model Async.t;
   settings:settings;
   nb_rects_on_screen: int;
-  grep_query: (Common.filename, int) Hashtbl.t;
+
+  grep_query: 
+    (Common.filename, int) Hashtbl.t;
+  layers_microlevel: 
+   (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
 }
 (*e: type context *)
 val context_of_drawing: drawing -> context

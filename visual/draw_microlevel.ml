@@ -244,16 +244,11 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       ~line_width:font_size rect.T.tr_rect;
   end;
 
-  (* highlighting grep-like queries *)
-  let matching_lines = 
-    try Hashtbl.find_all context.grep_query file
-    with Not_found -> []
+  (* highlighting layers (and grep-like queries) *)
+  let hmatching_lines = 
+    try Hashtbl.find context.layers_microlevel file
+    with Not_found -> Hashtbl.create 0
   in
-  let hmatching_lines = Common.hashset_of_list matching_lines in
-  let is_matching_line i = 
-    Hashtbl.mem hmatching_lines i
-  in
-  pr2_gen matching_lines;
 
   let nblines_per_column = 
     (layout.nblines / layout.split_nb_columns) +> ceil +> int_of_float in
@@ -292,7 +287,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
       set_source_rgba_and_font_size_of_categ 
         ~cr ~font_size ~font_size_real
-        ~is_matching_line:(is_matching_line !line)
+        ~is_matching_line:(Hashtbl.mem hmatching_lines !line)
         categ;
       
       let xs = Common.lines_with_nl_either s in
@@ -320,18 +315,18 @@ let draw_content2 ~cr ~layout ~context ~file rect =
             (layout.space_per_line * (float_of_int !line_in_column)) in
 
           (* must be done before the move_to below ! *)
-          if is_matching_line !line
-          then begin
-            CairoH.fill_rectangle ~cr 
-              ~alpha:0.5
-              ~color:"magenta"
-              ~x 
-              ~y:(y - layout.space_per_line) 
-              ~w:layout.w_per_column 
-              ~h:(layout.space_per_line * 3.)
-              ()
-          end;
-          
+          (match Common.hfind_option !line hmatching_lines with
+          | None -> ()
+          | Some color ->
+              CairoH.fill_rectangle ~cr 
+                ~alpha:0.5
+                ~color
+                ~x 
+                ~y:(y - layout.space_per_line) 
+                ~w:layout.w_per_column 
+                ~h:(layout.space_per_line * 3.)
+                ()
+          );
           Cairo.move_to cr x y;
           
           

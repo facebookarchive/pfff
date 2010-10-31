@@ -115,7 +115,8 @@ open Common
 (* Type *)
 (*****************************************************************************)
 
-(* note: the filenames must be in readable format 
+(* note: the filenames must be in readable format so layer files can be reused
+ * by multiple users.
  * 
  * alternatives:
  *  - could have line range ? useful for layer matching lots of
@@ -157,7 +158,13 @@ type layer = {
 
  (* with tarzan *)
 
+
+(* The filenames in the index are in absolute path format. That way they
+ * can be used from pfff_visual in hashtbl and compared to the
+ * current file.
+ *)
 type layers_with_index = {
+  root: Common.dirname;
   layers: (layer * bool (* is active *)) list;
 
   micro_index:
@@ -175,7 +182,7 @@ type layers_with_index = {
  * fastly get all the information relevant to a file and a line ?
  * I doubt MySQL can be as fast and light as my JSON + hashtbl indexing.
  *)
-let build_index_of_layers layers = 
+let build_index_of_layers ~root layers = 
   let hmicro = Common.hash_with_default (fun () -> Hashtbl.create 101) in
   let hmacro = Common.hash_with_default (fun () -> []) in
   
@@ -183,6 +190,8 @@ let build_index_of_layers layers =
     let hkind = Common.hash_of_list layer.kinds in
 
     layer.files +> List.iter (fun (file, finfo) ->
+
+      let file = Filename.concat root file in
 
       (* todo? v is supposed to be a float representing a percentage of 
        * the rectangle but below we will add the macro info of multiple
@@ -213,6 +222,7 @@ let build_index_of_layers layers =
   );
   {
     layers = layers;
+    root = root;
     macro_index = hmacro#to_h;
     micro_index = hmicro#to_h;
   }
