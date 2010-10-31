@@ -4976,6 +4976,7 @@ object
   val h = Hashtbl.create 101 
   method to_list = hash_to_list h
   method to_h = h
+
   method add k v = 
     Hashtbl.replace h k v
   method assoc k = 

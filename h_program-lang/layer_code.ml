@@ -163,15 +163,59 @@ type layers_with_index = {
   micro_index:
     (filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
   macro_index:
-    (filename, (float * Simple_color.emacs_color)) Hashtbl.t;
+    (filename, (float * Simple_color.emacs_color) list) Hashtbl.t;
 }
 
 (*****************************************************************************)
 (* Multi layers indexing *)
 (*****************************************************************************)
 
+(* Am I reinventing database indexing ? Should use a real database
+ * to store layer information so one can then just use SQL to 
+ * fastly get all the information relevant to a file and a line ?
+ * I doubt MySQL can be as fast and light as my JSON + hashtbl indexing.
+ *)
 let build_index_of_layers layers = 
-  raise Todo
+  let hmicro = Common.hash_with_default (fun () -> Hashtbl.create 101) in
+  let hmacro = Common.hash_with_default (fun () -> []) in
+  
+  layers +> List.iter (fun (layer, b) ->
+    let hkind = Common.hash_of_list layer.kinds in
+
+    layer.files +> List.iter (fun (file, finfo) ->
+
+      (* todo? v is supposed to be a float representing a percentage of 
+       * the rectangle but below we will add the macro info of multiple
+       * layers together which mean the float may not represent percentage
+       * anynore. They still represent a part of the file though.
+       * The caller would have to first recompute the sum of all those
+       * floats to recompute the actual multi-layer percentage.
+       *)
+      let color_macro_level = finfo.macro_level +> List.map (fun (kind, v) ->
+        v, Hashtbl.find hkind kind
+      ) 
+      in
+      hmacro#update file (fun old -> color_macro_level ++ old);
+
+      finfo.micro_level +> List.iter (fun (line, kind) ->
+        let color = Hashtbl.find hkind kind in
+
+        hmicro#update file (fun oldh -> 
+          (* We add so the same line could be assigned multiple colors.
+           * The order of the layer could determine which color should
+           * have priority.
+           *)
+          Hashtbl.add oldh line color;
+          oldh
+      )
+      )
+    );
+  );
+  {
+    layers = layers;
+    macro_index = hmacro#to_h;
+    micro_index = hmicro#to_h;
+  }
 
 (*****************************************************************************)
 (* Meta *)

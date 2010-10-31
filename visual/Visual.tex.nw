@@ -1524,6 +1524,10 @@ let draw_treemap_rectangle_label_maybe ~cr ~zoom ~color rect =
 
 \subsection{Color code}
 
+\begin{verbatim}
+This is kind of interfile "aspect"
+\end{verbatim}
+
 <<paint_legend>>=
 let draw_legend ~cr =
 
@@ -2207,7 +2211,17 @@ let hfiles_and_top_entities root db_opt =
 
 % need majority when multiple match same file ?
 
+\begin{verbatim}
+This is kind of inter-file "aspect". See also
+the regular archi_code treemap which is also
+about aspects.
+\end{verbatim}
+
 \subsection{Micro-level}
+
+\begin{verbatim}
+This is kind of intra-file "aspect"
+\end{verbatim}
 
 \section{Navigation}
 
