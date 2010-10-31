@@ -37,6 +37,16 @@ module M = Model2
 (* Prelude *)
 (*****************************************************************************)
 
+(* This module mainly modifies the dw.overlay cairo surface. It also
+ * triggers the refresh_da which triggers itself the expose event
+ * which triggers the View2.assemble_layers composition of dw.pm with
+ * dw.overlay
+ *)
+
+(*****************************************************************************)
+(* The overlays *)
+(*****************************************************************************)
+
 (* ---------------------------------------------------------------------- *)
 (* The current filename *)
 (* ---------------------------------------------------------------------- *)
@@ -249,9 +259,9 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
   ()
 (*e: zoomed_surface_of_rectangle *)
 
-(* ---------------------------------------------------------------------- *)
-(* Motion refresher *)
-(* ---------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Assembling overlays *)
+(*****************************************************************************)
 
 (*s: motion_refresher *)
 (* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)

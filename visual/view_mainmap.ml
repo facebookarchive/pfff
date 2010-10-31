@@ -36,6 +36,17 @@ module Controller = Controller2
 (* Prelude *)
 (*****************************************************************************)
 
+(* This module calls Draw_macrolevel and Draw_microlevel and assembles
+ * the final "painting" of the code "main map". It is called mainly by
+ * View2.configure and Ui_navigation.go_dirs_and_file.
+ * 
+ * Painting is not the last element in the "main map" rendering pipeline.
+ * There is also View_overlay which is called mainly when the user
+ * moves the mouse which triggers the View_overlay.motion_refresher
+ * callback which just add overlays on top of the already drawn (and
+ * computationaly expensive) painting done here. 
+ *)
+
 (*****************************************************************************)
 (* Types, globals *)
 (*****************************************************************************)

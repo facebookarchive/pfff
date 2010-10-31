@@ -33,7 +33,7 @@ module CairoH = Cairo_helpers
 module  Parsing = Parsing2
 
 (*****************************************************************************)
-(* Drawing rectangles *)
+(* Drawing a treemap rectangle *)
 (*****************************************************************************)
 
 (*s: draw_treemap_rectangle() *)
