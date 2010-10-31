@@ -5950,18 +5950,18 @@ let random_subset_of_list num xs =
 let cmdline_flags_devel () = 
   [
     "-debugger",         Arg.Set debugger , 
-    "   option to set if launched inside ocamldebug";
+    " option to set if launched inside ocamldebug";
     "-profile",          Arg.Unit (fun () -> profile := PALL), 
-    "   gather timing information about important functions";
+    " gather timing information about important functions";
   ]
 let cmdline_flags_verbose () =
   [
     "-verbose_level",  Arg.Set_int verbose_level, 
     " <int> guess what";
     "-disable_pr2_once",     Arg.Set disable_pr2_once, 
-    "   to print more messages";
+    " to print more messages";
     "-show_trace_profile",          Arg.Set show_trace_profile, 
-    "   show trace";
+    " show trace";
   ]
 
 let cmdline_flags_other () = 

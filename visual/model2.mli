@@ -144,7 +144,7 @@ val hentities :
 (*s: hfiles_and_top_entities sig *)
 val hfiles_and_top_entities :
   Common.path -> Database_code.database option -> 
-  (string, Database_code.entity list) Hashtbl.t
+  (Common.filename, Database_code.entity list) Hashtbl.t
 (*e: hfiles_and_top_entities sig *)
 
 (*s: all_entities sig *)

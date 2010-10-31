@@ -28,7 +28,7 @@ module Db = Database_code
 module Flag = Flag_visual
 
 (*****************************************************************************)
-(* Types *)
+(* The code model *)
 (*****************************************************************************)
 
 (*s: type model *)
@@ -48,7 +48,7 @@ type model = {
 
 
 (*****************************************************************************)
-(* The drawing area *)
+(* The drawing model *)
 (*****************************************************************************)
 
 (*s: type drawing *)
@@ -87,6 +87,8 @@ type drawing = {
   (*s: fields drawing main view *)
     (* device coordinates *)
     mutable pm: GDraw.pixmap;
+    mutable overlay: [ `Any ] Cairo.surface;
+
     (* todo: going from a point to the enclosing rectangle via pixel color
      *  trick. Kind of ugly.
      * mutable pm_color_trick: GDraw.pixmap;
@@ -94,7 +96,6 @@ type drawing = {
      * alternative: just find pixel by iterating over all the rectangles
      * and check if he's inside
      *)
-    mutable overlay: [ `Any ] Cairo.surface;
   (*e: fields drawing main view *)
 
   (*s: fields drawing viewport *)
@@ -152,17 +153,14 @@ let init_drawing
   paths
  =
 
-  let pm = new_pixmap ~width ~height in
   let paths = paths +> Common.map Common.relative_to_absolute in
-
   let root = Common.common_prefix_of_files_or_dirs paths in
   pr2_gen root;
 
   let treemap = 
-    Common.profile_code2 "Visual.building the treemap" (fun () ->
-      func paths 
-    )
-  in
+   Common.profile_code2 "Visual.building the treemap" (fun () -> func paths) in
+  let pm = new_pixmap ~width ~height in
+
   {
     treemap = treemap;
     nb_rects = List.length treemap;
@@ -179,13 +177,20 @@ let init_drawing
     pm = pm;
     overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm) 
       Cairo.CONTENT_COLOR_ALPHA width height;
+    width = width;
+    height = height;
 
-    width = width ;
-    height = height ;
+    dw_settings = {
+      (* todo: too fuzzy for now *)
+      draw_summary = false;
 
-    zoom = 1. ;
-    xtrans = 0. ;
-    ytrans = 0. ;
+      draw_searched_rectangles = true;
+    };
+
+
+    zoom = 1.;
+    xtrans = 0.;
+    ytrans = 0.;
 
     drag_pt = { Cairo.x = 0.0; Cairo.y = 0.0 };
     in_dragging = false;
@@ -196,12 +201,6 @@ let init_drawing
     pm_minimap = new_pixmap ~width:width_minimap ~height:width_minimap;
     drag_pt_minimap = { Cairo.x = 0.0; Cairo.y = 0.0 };
 
-    dw_settings = {
-      (* todo: too fuzzy for now *)
-      draw_summary = false;
-
-      draw_searched_rectangles = true;
-    };
   }
 (*e: init_drawing() *)
 
@@ -227,7 +226,7 @@ let context_of_drawing dw = {
 } 
 
 (*****************************************************************************)
-(* POINT -> treemap info *)
+(* Point -> treemap info *)
 (*****************************************************************************)
 
 (*s: find_rectangle_at_user_point() *)
@@ -360,9 +359,8 @@ let hentities root db_opt =
 (*e: hentities() *)
 
 (*s: hfiles_and_top_entities() *)
-let hfiles_and_top_entities    
- root db_opt =
-
+(* used in the summary mixed mode *)
+let hfiles_and_top_entities root db_opt =
   let hfiles = Hashtbl.create 1001 in
 
   db_opt +> Common.do_option (fun db ->
@@ -386,9 +384,9 @@ let hfiles_and_top_entities
 (* We want to provide completion not only for functions/class/methods
  * but also for files and directory themselves.
  * 
- * We pass the rootin addition to the db_opt
- * because sometimes we don't have a db but we could still provide
- * completion for the dirs and files.
+ * We pass the root in addition to the db_opt because sometimes we 
+ * don't have a db but we still want to provide completion for the 
+ * dirs and files.
  * 
  * todo: what do do when the root of the db is not the root
  * of the treemap ?
