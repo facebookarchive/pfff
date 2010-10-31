@@ -15,6 +15,16 @@ type layer = {
  }
  and kind = string
 
+type layers_with_index = {
+  layers: (layer * bool (* is active *)) list;
+
+  micro_index:
+    (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
+  macro_index:
+    (Common.filename, (float * Simple_color.emacs_color)) Hashtbl.t;
+}
+
+val build_index_of_layers: (layer * bool) list -> layers_with_index
 
 (* save either in a (readable) json format or (fast) marshalled form 
  * depending on the extension of the filename

@@ -11,30 +11,49 @@ module Flag = Flag_visual
 (* Prelude *)
 (*****************************************************************************)
 
-(* *)
+(* 
+ * Main entry point of pfff_visual.
+ *)
 
 (*****************************************************************************)
 (* Flags *)
 (*****************************************************************************)
 
 (*s: main flags *)
+let screen_size = ref 2
+let filter = ref Treemap_pl.ex_filter_file
+
+let db_file = ref (None: Common.filename option)
+(* let db_path = ref (Database.database_dir "/home/pad/www") *)
+let layer_file = ref (None: Common.filename option)
+
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
 let proto = ref false
-let screen_size = ref 2
-(*
-let db_path = ref (Database.database_dir "/home/pad/www")
-*)
-let db_file = ref (None: Common.filename option)
-
-let filter = ref Treemap_pl.ex_filter_file
 (*e: main flags *)
+
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
 
 (* action mode *)
 let action = ref ""
 
 (*****************************************************************************)
 (* Helpers *)
+(*****************************************************************************)
+
+let set_gc () =
+  if !Flag.debug_gc
+  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+
+  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
+  ()
+
+(*****************************************************************************)
+(* Model helpers *)
 (*****************************************************************************)
 
 (*s: treemap_generator *)
@@ -82,7 +101,6 @@ let build_model2 root dbfile_opt =
   pr2 (spf "after = %d" !cnt);
   (* let _x = Hashtbl.find hentities "kill" in *)
 *)
-
   model
 
 let build_model a b = 
@@ -96,19 +114,18 @@ let build_model a b =
 
 (*s: main_action() *)
 let main_action xs = 
-  (*
-    GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc";
-  *)
-  if !Flag.debug_gc
-  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+  set_gc ();
 
-  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
-  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
-  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
-  
   let model = Async.async_make () in
+  let layers = 
+    match !layer_file with
+    | None -> []
+    | Some file -> [Layer_code.load_layer file]
+  in
+  let layers = 
+    Layer_code.build_index_of_layers (layers +> List.map (fun x -> x, true)) in
 
-  let dw = Model2.init_drawing treemap_generator model xs in
+  let dw = Model2.init_drawing treemap_generator model layers xs in
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -197,9 +214,9 @@ let extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-(* update: try put ocamlgtk related test in widgets/test_widgets.ml, not
- * here. Here it's for ... well it's for nothing I think as it's not really
- * easy to test gui.
+(* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
+ * here. Here it's for ... well it's for nothing I think because it's not 
+ * really easy to test a gui.
  *)
 let all_actions () = 
  extra_actions()++
@@ -222,8 +239,11 @@ let options () = [
 
     "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
+
     "-with_info", Arg.String (fun s -> db_file := Some s),
-    " <db light file>";
+    " <db_light_file>";
+    "-with_layer", Arg.String (fun s -> layer_file := Some s),
+    " <layer_file>";
 
     "-test" , Arg.String (fun s -> test_mode := Some s),
     " <str> execute an internal script";

@@ -37,6 +37,8 @@ type drawing = {
   (* computed lazily *)
   dw_model: model Async.t;
 
+  mutable layers: Layer_code.layers_with_index;
+
   (*s: fields drawing query stuff *)
     (* queries *)
     mutable current_query: string;
@@ -115,6 +117,7 @@ val init_drawing :
   ?height_minimap:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
   model Async.t ->
+  Layer_code.layers_with_index ->
   Common.filename list -> 
   drawing
 (*e: init_drawing sig *)

@@ -73,6 +73,8 @@ type drawing = {
   (* computed lazily *)
   dw_model: model Async.t;
 
+  mutable layers: Layer_code.layers_with_index;
+
   (*s: fields drawing query stuff *)
     (* queries *)
     mutable current_query: string;
@@ -150,6 +152,7 @@ let init_drawing
   ?(height_minimap = 60)
   func 
   model
+  layers
   paths
  =
 
@@ -168,6 +171,7 @@ let init_drawing
     treemap_func = func;
 
     dw_model = model;
+    layers = layers;
 
     current_query = "";
     current_searched_rectangles = [];

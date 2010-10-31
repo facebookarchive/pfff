@@ -82,6 +82,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
       ~height_minimap:dw.height_minimap
       dw.treemap_func 
       dw.dw_model 
+      dw.layers
       paths;
   !dw_ref.current_entity <- current_entity;
   (match current_grep_query with

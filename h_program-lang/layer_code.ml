@@ -157,6 +157,22 @@ type layer = {
 
  (* with tarzan *)
 
+type layers_with_index = {
+  layers: (layer * bool (* is active *)) list;
+
+  micro_index:
+    (filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
+  macro_index:
+    (filename, (float * Simple_color.emacs_color)) Hashtbl.t;
+}
+
+(*****************************************************************************)
+(* Multi layers indexing *)
+(*****************************************************************************)
+
+let build_index_of_layers layers = 
+  raise Todo
+
 (*****************************************************************************)
 (* Meta *)
 (*****************************************************************************)
@@ -365,8 +381,8 @@ let layer_of_json json =
 (* Load/Save *)
 (*****************************************************************************)
 
-let is_json_file file = 
-  match File_type.file_type_of_file file with
+let is_json_filename filename = 
+  match File_type.file_type_of_file filename with
   | File_type.PL (File_type.Web (File_type.Json)) -> true
   | _ -> false
 
@@ -374,12 +390,12 @@ let is_json_file file =
  * the user edit the layer file, for instance to adjust the colors.
  *)
 let load_layer file =
-  if is_json_file file
+  if is_json_filename file
   then Ocaml.load_json file +> layer_of_json
   else Common.get_value file
 
 let save_layer layer file =
-  if is_json_file file
+  if is_json_filename file
   (* layer +> vof_layer +> Ocaml.string_of_v +> Common.write_file ~file *)
   then layer +> json_of_layer +> Ocaml.save_json file
   else  Common.write_value layer file
