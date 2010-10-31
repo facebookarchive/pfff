@@ -709,8 +709,8 @@ let info_of_category = function
   | TypeInt ->  [`FOREGROUND "chartreuse";]
   | TypeMisc -> [`FOREGROUND "chartreuse";]
 
-  | ConstructorDef _ -> [`FOREGROUND "HotPink";]
-  | ConstructorMatch _ -> [`FOREGROUND "PaleVioletRed";]
+  | ConstructorDef _ -> [`FOREGROUND "tomato1";]
+  | ConstructorMatch _ -> [`FOREGROUND "pink1";]
   | ConstructorUse _ -> [`FOREGROUND "pink3";]
 
   | FunctionEquation -> [`FOREGROUND "LightSkyBlue";]
@@ -728,7 +728,7 @@ let info_of_category = function
       [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Use)
 
 
-  | TypeDef usedef -> [`FOREGROUND "ForestGreen"] ++ info_of_usedef usedef 
+  | TypeDef usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
 
 
 

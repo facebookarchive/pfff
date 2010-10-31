@@ -89,6 +89,7 @@ let visit_toplevel
    * e.g. a field, a type, a function, a parameter, etc
    *)
   let in_let = ref false in
+  let in_try_with = ref false in
 
   let v = V.mk_visitor { V.default_visitor with
 
@@ -141,7 +142,7 @@ let visit_toplevel
       
     );
 
-    V.kexpr = (fun (k, _) x ->
+    V.kexpr = (fun (k, bigf) x ->
       match x with
       | L long_name ->
 
@@ -181,9 +182,16 @@ let visit_toplevel
           tag tok_with (KeywordConditional);
           k x
 
-      | Try (_try, _e1, tok_with, _match_cases) ->
+      | Try (try_tok, e, tok_with, match_cases) ->
           tag tok_with (KeywordExn);
-          k x
+
+          k (Try (try_tok, e, tok_with, []));
+
+          Common.save_excursion in_try_with true (fun () ->
+            match_cases +> Ast.unpipe +> List.iter (fun match_case ->
+              bigf.V.vmatch_case match_case
+            )
+          )
 
       | FieldAccess (e, _tok, long_name) 
       | FieldAssign (e, _tok, long_name, _, _) 
@@ -205,6 +213,20 @@ let visit_toplevel
           k x
 
 
+      | _ -> k x
+    );
+
+    V.kpattern = (fun (k, _) x ->
+      match x with
+      | PatCons (long_name, popt) ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+
+          (if !in_try_with 
+          then tag info (KeywordExn)
+          else tag info (ConstructorMatch fake_no_use2);
+          );
+          k x
       | _ -> k x
     );
 
