@@ -105,7 +105,7 @@ let gen_layer ~root file =
       let lines = Common.uniq lines in
       (file, { Layer_code.
                micro_level = (lines +> List.map (fun l -> l, "m"));
-               macro_level = [];
+               macro_level =  if null lines then [] else ["m", 1.];
       })
     );
   }

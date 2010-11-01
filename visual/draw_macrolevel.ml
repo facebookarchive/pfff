@@ -55,6 +55,7 @@ let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
   Cairo.line_to cr r.q.x r.p.y;
   Cairo.line_to cr r.q.x r.q.y;
   Cairo.line_to cr r.p.x r.q.y;
+
   Cairo.fill cr;
   ()
 
@@ -62,6 +63,34 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
   Common.profile_code "View.draw_treemap_rectangle" (fun () -> 
     draw_treemap_rectangle2 ~cr ?color ?alpha a)
 (*e: draw_treemap_rectangle() *)
+
+
+(*****************************************************************************)
+(* Layers macrolevel *)
+(*****************************************************************************)
+
+let draw_trect_using_layers ~cr layers_with_index rect =
+  let _r = rect.T.tr_rect in
+
+  let is_file = not rect.T.tr_is_node in
+  let color = if is_file then "white" else "black" in
+
+  draw_treemap_rectangle ~cr ~color:(Some color) rect;
+
+  if is_file then begin
+    let file = rect.T.tr_label in
+    
+    let color_info = 
+      try Hashtbl.find layers_with_index.Layer_code.macro_index file
+      with Not_found -> []
+    in
+    (* TODO what to draw ? a splitted rectangle ? 
+     * For now the last win ...
+     *)
+    color_info +> List.iter (fun (float, color) -> 
+      draw_treemap_rectangle ~cr ~color:(Some color) rect;
+    );
+  end
 
 
 (*****************************************************************************)

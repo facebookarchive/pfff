@@ -30,7 +30,7 @@ module CairoH = Cairo_helpers
 
 module Flag = Flag_visual
 open Model2
-module Controller = Controller2
+module Ctl = Controller2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -119,25 +119,23 @@ let lazy_paint ~user_rect dw () =
   pr2 "Lazy Paint";
   let start = Unix.gettimeofday () in
   while Unix.gettimeofday () - start < 0.3 do
-    match !Controller.current_rects_to_draw with
+    match !Ctl.current_rects_to_draw with
     | [] -> ()
     | x::xs ->
-        Controller.current_rects_to_draw := xs;
+        Ctl.current_rects_to_draw := xs;
         pr2 (spf "Drawing: %s" (x.T.tr_label));
         paint_content_maybe_rect ~user_rect dw x;
   done;
-  !Controller._refresh_da ();
-  if !Controller.current_rects_to_draw = []
+  !Ctl._refresh_da ();
+  if !Ctl.current_rects_to_draw = []
   then false
   else true
 
 
 let paint2 dw = 
 
-  !Controller.paint_content_maybe_refresher +> Common.do_option (fun x ->
-    GMain.Idle.remove x;
-  );
-  Controller.current_rects_to_draw := [];
+  !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
+  Ctl.current_rects_to_draw := [];
 
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   dw.pm#rectangle 
@@ -155,21 +153,25 @@ let paint2 dw =
   let rects = dw.treemap in
   let nb_rects = dw.nb_rects in
 
-  (* phase 1, draw the rectangles *)
-  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
+  (if null dw.layers.Layer_code.layers
+  then
+    (* phase 1, draw the rectangles *)
+    rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
+  else 
+    rects +> List.iter (Draw_macrolevel.draw_trect_using_layers ~cr dw.layers)
+  );
 
   (* phase 2, draw the labels, if have enough space *)
-  rects +> List.iter 
-    (Draw_labels.draw_treemap_rectangle_label_maybe 
-        ~cr ~zoom:dw.zoom  ~color:None);
+  rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
+                         ~cr ~zoom:dw.zoom  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
     (* draw_content_maybe calls nblines which is quite expensive so
      * want to limit it *)
   then begin
-    Controller.current_rects_to_draw := rects;
-    Controller.paint_content_maybe_refresher := 
+    Ctl.current_rects_to_draw := rects;
+    Ctl.paint_content_maybe_refresher := 
       Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
   end;
 
@@ -242,7 +244,7 @@ let key_pressed (da, da2) dw_ref ev =
         true
 
     | k when k = K._b ->
-        !Controller._go_back dw_ref;
+        !Ctl._go_back dw_ref;
         true
 
     | k when k = K._e ->
@@ -355,7 +357,7 @@ let button_action da dw_ref ev =
       r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
         let path = r.T.tr_label in
 
-        !Controller._go_dirs_or_file dw_ref [path];
+        !Ctl._go_dirs_or_file dw_ref [path];
       );
       true
       | _ -> false
@@ -379,7 +381,7 @@ let button_action da dw_ref ev =
 
       r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
         let path = r_englobing.T.tr_label in
-        !Controller._go_dirs_or_file dw_ref [path];
+        !Ctl._go_dirs_or_file dw_ref [path];
       );
 
       true

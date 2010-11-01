@@ -9,4 +9,10 @@ val draw_treemap_rectangle :
   unit
 (*e: draw_treemap_rectangle sig *)
 
+val draw_trect_using_layers:
+  cr:Cairo.t ->
+  Layer_code.layers_with_index ->
+  Treemap.treemap_rectangle -> 
+  unit
+
 (*e: draw_macrolevel.mli *)

@@ -238,11 +238,15 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       | n when n <= 10 -> 0.6
       | _ -> 0.3
     in
-    Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
-      ~alpha rect;
-    (* draw a thin rectangle with aspect color *)
-    CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
-      ~line_width:(font_size / 2.) rect.T.tr_rect;
+    (* unset when used when debugging the layering display *)
+    if Hashtbl.length context.layers_microlevel = 0 || true
+    then begin
+      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+        ~alpha rect;
+      (* draw a thin rectangle with aspect color *)
+      CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
+        ~line_width:(font_size / 2.) rect.T.tr_rect;
+    end;
   end;
 
   (* highlighting layers (and grep-like queries) *)
