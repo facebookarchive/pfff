@@ -2329,8 +2329,9 @@ module BasicType = struct
 end
 
 
+(* updated: added '-' in filesuffix because of file like foo.c-- *)
 let (filesuffix: filename -> string) = fun s -> 
-  (try regexp_match s ".+\\.\\([a-zA-Z0-9_]+\\)$" with _ ->  "NOEXT")
+  (try regexp_match s ".+\\.\\([a-zA-Z0-9_-]+\\)$" with _ ->  "NOEXT")
 let (fileprefix: filename -> string) = fun s -> 
   (try regexp_match s "\\(.+\\)\\.\\([a-zA-Z0-9_]+\\)?$" with _ ->  s)
 
