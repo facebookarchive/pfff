@@ -69,12 +69,32 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
 (* Layers macrolevel *)
 (*****************************************************************************)
 
+(* How should we draw layer information at the macro level ?
+ *   
+ *  - fill the rectangle with the color of one layer ? 
+ *  - separate equally among layers ? 
+ *  - draw on top of the existing archi color ?
+ *  - draw circles instead of rectangle so have quantitative information too 
+ *    (like I was doing when display git related commit information).
+ * 
+ * It is maybe good to not draw on top of the existing archi_code color. 
+ * Too many colors kill colors. Also we can not convey quantitative 
+ * information by coloring with full rectangles (instead of the random
+ * circles trick) but for some layers like security it is probably better.
+ * Don't care so much about how many bad calls; care really about
+ * number of files with bad calls in them.
+ * 
+ * So for now we just fill rectangles with colors from the layer and
+ * when a file matches multiple layers we split the rectangle in equal
+ * parts.
+ *)
+
 let draw_trect_using_layers ~cr layers_with_index rect =
   let _r = rect.T.tr_rect in
 
+  (* don't use archi_code color. Just black and white *)
   let is_file = not rect.T.tr_is_node in
   let color = if is_file then "white" else "black" in
-
   draw_treemap_rectangle ~cr ~color:(Some color) rect;
 
   if is_file then begin
@@ -84,14 +104,15 @@ let draw_trect_using_layers ~cr layers_with_index rect =
       try Hashtbl.find layers_with_index.Layer_code.macro_index file
       with Not_found -> []
     in
-    (* TODO what to draw ? a splitted rectangle ? 
+    (* What to draw ? 
+     * TODO a splitted rectangle ? 
      * For now the last win ...
+     * todo? could use the quantitative information in the float ?
      *)
     color_info +> List.iter (fun (float, color) -> 
       draw_treemap_rectangle ~cr ~color:(Some color) rect;
     );
   end
-
 
 (*****************************************************************************)
 (* File Summary *)
