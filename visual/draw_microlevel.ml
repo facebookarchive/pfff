@@ -240,8 +240,9 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     in
     Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
       ~alpha rect;
+    (* draw a thin rectangle with aspect color *)
     CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
-      ~line_width:font_size rect.T.tr_rect;
+      ~line_width:(font_size / 2.) rect.T.tr_rect;
   end;
 
   (* highlighting layers (and grep-like queries) *)

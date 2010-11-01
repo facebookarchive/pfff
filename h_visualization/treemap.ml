@@ -819,7 +819,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
           if not big_borders then
           match depth with
           | 1 -> 0.0
-          | 2 -> 0.002
+          | 2 -> 0.003
           | 3 -> 0.001
           | 4 -> 0.0005
           | 5 -> 0.0002
@@ -827,7 +827,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
           else 
           match depth with
           | 1 -> 0.0
-          | 2 -> 0.002
+          | 2 -> 0.003
           | 3 -> 0.0015
           | 4 -> 0.0010
           | 5 -> 0.0008

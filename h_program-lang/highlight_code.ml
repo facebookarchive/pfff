@@ -450,7 +450,7 @@ The big principles for the colors, fonts, and strikes are:
   - purple: fields
   - yellow: functions (and macros)
   - blue:   globals, variables
-  - pink:   macros
+  - pink:   constants, macros
 
   - cyan and big:      global, 
     turquoise and big: remote global,
@@ -725,7 +725,7 @@ let info_of_category = function
       [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Def)
 
   | Field (Use2 _) -> 
-      [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Use)
+      [`FOREGROUND "MediumPurple3"] ++ info_of_usedef (Use)
 
 
   | TypeDef usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 

@@ -84,15 +84,14 @@ let file_type_of_file2 file =
   | "mlp" (* used in emacs source *)
       -> PL (ML e)
 
-  | "lml" (* linear ML *)
-      -> PL (ML e)
-  | "sml" 
-      -> PL (ML e)
+  | "sml" -> PL (ML e)
   (* fsharp *)
-  | "fsi" 
-      -> PL (ML e)
+  | "fsi"  -> PL (ML e)
+  (* linear ML *)
+  | "lml"  -> PL (ML e)
 
   | "hs" | "lhs" -> PL (Haskell e)
+
   | "erl" -> PL Erlang
 
   | "bet" -> PL Beta
@@ -125,13 +124,18 @@ let file_type_of_file2 file =
 
   | "s" | "S" | "asm" -> PL Asm
 
+  | "c--" -> PL (MiscPL e)
+
   | "R" | "Rd" -> PL (R e)
+
+  | "scala" -> PL (MiscPL e)
 
   | "sh" -> PL (Script e)
   | "m4" -> PL (MiscPL e)
   | "conf" -> PL (MiscPL e)
 
-  | "scala" -> PL (MiscPL e)
+  (* Andrew Appel's Tiger toy language *)
+  | "tig" -> PL (MiscPL e)
 
   (* merd *)
   | "me" -> PL (MiscPL "me")
