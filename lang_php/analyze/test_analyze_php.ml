@@ -329,6 +329,32 @@ let test_dataflow_pil file =
   | _ -> ()
   )
 
+(* collect all variables in a function using the PIL visitor *)
+let test_visitor_pil file =
+
+  let ast = Parse_php.parse_program file in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
+      let funcname = Ast_php.name def.Ast_php.f_name in
+
+      let h = Hashtbl.create 101 in
+      let visitor = Visitor_pil.mk_visitor { Visitor_pil.default_visitor with
+        Visitor_pil.kvar = (fun (k, _) var ->
+          match var with
+          | Pil.Var dname ->
+              let s = Ast_php.dname dname in
+              Hashtbl.replace h s true
+          | _ -> k var
+        );
+      }
+      in
+      visitor.Visitor_pil.vstmt_list pil;
+      let vars = Common.hashset_to_list h in
+      pr2 (spf "vars in function %s = %s" funcname (Common.join ", " vars));
+  | _ -> ()
+  )
+
 (*****************************************************************************)
 (* Subsystem testing that requires a db *)
 (*****************************************************************************)
@@ -553,6 +579,8 @@ let actions () = [
     Common.mk_action_1_arg test_cfg_pil;
     "-dataflow_pil", " <file",
     Common.mk_action_1_arg test_dataflow_pil;
+    "-visitor_pil", " <file",
+    Common.mk_action_1_arg test_visitor_pil;
 
   (*s: test_analyze_php actions *)
     "-cfg_php",  " <file>",
@@ -632,8 +660,6 @@ let actions () = [
 
   "-include_require_static", " <file>",
   Common.mk_action_1_arg test_include_require;
-
-
 ]
 
 (*e: test_analyze_php.ml *)

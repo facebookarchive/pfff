@@ -4,7 +4,7 @@
 # Prelude 
 ##############################################################################
 
-# This file assumes the caller will have set a few variables and then do a
+# This file assumes the "includer" will have set a few variables and then do a
 # include Makefile.common. Here are those variables:
 #  - SRC
 #  - INCLUDEDIRS
@@ -13,6 +13,7 @@
 #  - SRCNW
 #  - TEXMAIN
 #  - TEX
+
 ##############################################################################
 # Generic variables
 ##############################################################################
