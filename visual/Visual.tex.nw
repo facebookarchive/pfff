@@ -1304,6 +1304,7 @@ let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
   Cairo.line_to cr r.q.x r.p.y;
   Cairo.line_to cr r.q.x r.q.y;
   Cairo.line_to cr r.p.x r.q.y;
+
   Cairo.fill cr;
   ()
 
@@ -1792,10 +1793,15 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       | n when n <= 10 -> 0.6
       | _ -> 0.3
     in
-    Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
-      ~alpha rect;
-    CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
-      ~line_width:font_size rect.T.tr_rect;
+    (* unset when used when debugging the layering display *)
+    if Hashtbl.length context.layers_microlevel = 0 || true
+    then begin
+      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+        ~alpha rect;
+      (* draw a thin rectangle with aspect color *)
+      CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
+        ~line_width:(font_size / 2.) rect.T.tr_rect;
+    end;
   end;
 
   (* highlighting layers (and grep-like queries) *)
@@ -2051,25 +2057,23 @@ let lazy_paint ~user_rect dw () =
   pr2 "Lazy Paint";
   let start = Unix.gettimeofday () in
   while Unix.gettimeofday () - start < 0.3 do
-    match !Controller.current_rects_to_draw with
+    match !Ctl.current_rects_to_draw with
     | [] -> ()
     | x::xs ->
-        Controller.current_rects_to_draw := xs;
+        Ctl.current_rects_to_draw := xs;
         pr2 (spf "Drawing: %s" (x.T.tr_label));
         paint_content_maybe_rect ~user_rect dw x;
   done;
-  !Controller._refresh_da ();
-  if !Controller.current_rects_to_draw = []
+  !Ctl._refresh_da ();
+  if !Ctl.current_rects_to_draw = []
   then false
   else true
 
 
 let paint2 dw = 
 
-  !Controller.paint_content_maybe_refresher +> Common.do_option (fun x ->
-    GMain.Idle.remove x;
-  );
-  Controller.current_rects_to_draw := [];
+  !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
+  Ctl.current_rects_to_draw := [];
 
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   dw.pm#rectangle 
@@ -2087,21 +2091,25 @@ let paint2 dw =
   let rects = dw.treemap in
   let nb_rects = dw.nb_rects in
 
-  (* phase 1, draw the rectangles *)
-  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
+  (if null dw.layers.Layer_code.layers
+  then
+    (* phase 1, draw the rectangles *)
+    rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
+  else 
+    rects +> List.iter (Draw_macrolevel.draw_trect_using_layers ~cr dw.layers)
+  );
 
   (* phase 2, draw the labels, if have enough space *)
-  rects +> List.iter 
-    (Draw_labels.draw_treemap_rectangle_label_maybe 
-        ~cr ~zoom:dw.zoom  ~color:None);
+  rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
+                         ~cr ~zoom:dw.zoom  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
     (* draw_content_maybe calls nblines which is quite expensive so
      * want to limit it *)
   then begin
-    Controller.current_rects_to_draw := rects;
-    Controller.paint_content_maybe_refresher := 
+    Ctl.current_rects_to_draw := rects;
+    Ctl.paint_content_maybe_refresher := 
       Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
   end;
 
@@ -2325,7 +2333,7 @@ let key_pressed (da, da2) dw_ref ev =
         true
 
     | k when k = K._b ->
-        !Controller._go_back dw_ref;
+        !Ctl._go_back dw_ref;
         true
 
     | k when k = K._e ->
@@ -2448,7 +2456,7 @@ let button_action da dw_ref ev =
       r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
         let path = r.T.tr_label in
 
-        !Controller._go_dirs_or_file dw_ref [path];
+        !Ctl._go_dirs_or_file dw_ref [path];
       );
       true
       | _ -> false
@@ -2472,7 +2480,7 @@ let button_action da dw_ref ev =
 
       r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
         let path = r_englobing.T.tr_label in
-        !Controller._go_dirs_or_file dw_ref [path];
+        !Ctl._go_dirs_or_file dw_ref [path];
       );
 
       true
@@ -4455,6 +4463,8 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.Method (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
+
+    | Some (SH.ConstructorDef (use)) -> 1.2 *. multiplier_use use
         
     (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
@@ -5139,6 +5149,12 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 
 <<draw_treemap_rectangle sig>>
 
+val draw_trect_using_layers:
+  cr:Cairo.t ->
+  Layer_code.layers_with_index ->
+  Treemap.treemap_rectangle -> 
+  unit
+
 @ 
 
 \subsection{[[draw_macrolevel.ml]]}
@@ -5168,6 +5184,55 @@ module  Parsing = Parsing2
 
 <<draw_treemap_rectangle()>>
 
+
+(*****************************************************************************)
+(* Layers macrolevel *)
+(*****************************************************************************)
+
+(* How should we draw layer information at the macro level ?
+ *   
+ *  - fill the rectangle with the color of one layer ? 
+ *  - separate equally among layers ? 
+ *  - draw on top of the existing archi color ?
+ *  - draw circles instead of rectangle so have quantitative information too 
+ *    (like I was doing when display git related commit information).
+ * 
+ * It is maybe good to not draw on top of the existing archi_code color. 
+ * Too many colors kill colors. Also we can not convey quantitative 
+ * information by coloring with full rectangles (instead of the random
+ * circles trick) but for some layers like security it is probably better.
+ * Don't care so much about how many bad calls; care really about
+ * number of files with bad calls in them.
+ * 
+ * So for now we just fill rectangles with colors from the layer and
+ * when a file matches multiple layers we split the rectangle in equal
+ * parts.
+ *)
+
+let draw_trect_using_layers ~cr layers_with_index rect =
+  let _r = rect.T.tr_rect in
+
+  (* don't use archi_code color. Just black and white *)
+  let is_file = not rect.T.tr_is_node in
+  let color = if is_file then "white" else "black" in
+  draw_treemap_rectangle ~cr ~color:(Some color) rect;
+
+  if is_file then begin
+    let file = rect.T.tr_label in
+    
+    let color_info = 
+      try Hashtbl.find layers_with_index.Layer_code.macro_index file
+      with Not_found -> []
+    in
+    (* What to draw ? 
+     * TODO a splitted rectangle ? 
+     * For now the last win ...
+     * todo? could use the quantitative information in the float ?
+     *)
+    color_info +> List.iter (fun (float, color) -> 
+      draw_treemap_rectangle ~cr ~color:(Some color) rect;
+    );
+  end
 
 (*****************************************************************************)
 (* File Summary *)
@@ -5465,7 +5530,7 @@ module CairoH = Cairo_helpers
 
 module Flag = Flag_visual
 open Model2
-module Controller = Controller2
+module Ctl = Controller2
 
 (*****************************************************************************)
 (* Prelude *)
