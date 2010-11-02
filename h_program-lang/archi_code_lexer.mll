@@ -137,6 +137,8 @@ rule category = parse
 
   | "/example"
       { Test }
+  | "dummy"
+      { Test }
 
   (* facebook specific a little *)
   | "/__tests__/" { Test }
