@@ -201,7 +201,7 @@ let tokens2 file =
         then Lexer_php._last_non_whitespace_like_token := Some tok;
 
         (*s: fill in the line and col information for tok *)
-        let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
+        let tok = tok +> TH.visitor_info_of_tok (fun ii ->
         { ii with Ast.pinfo=
           (* could assert pinfo.filename = file ? *)
                match Ast.pinfo_of_info ii with
