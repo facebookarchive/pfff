@@ -222,10 +222,12 @@ rule category = parse
   | "/score_parsing" { Data }
   | "/score_tests" { Data }
 
+  | "/big/" { Data }
 
 (* in haskell this is a valid dir
    | "/data/" { Data } 
 *)
+
 
   (* facebook specific ? *)
   | "/si/"
