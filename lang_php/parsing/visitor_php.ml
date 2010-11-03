@@ -128,6 +128,7 @@ and visitor_out = {
   vlist_assign: list_assign -> unit;
   vclass_constant: class_constant -> unit;
   vclass_variable: class_variable -> unit;
+  vxhp_attr_value: xhp_attr_value -> unit;
   vinfo: info -> unit;
   vprogram: program -> unit;
 }
@@ -1230,6 +1231,7 @@ and v_program v = v_list v_toplevel v
       vlist_assign = v_list_assign;
       vclass_constant = v_class_constant;
       vclass_variable = v_class_variable;
+      vxhp_attr_value = v_xhp_attr_value;
     }
   in
   all_functions

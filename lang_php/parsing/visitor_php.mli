@@ -73,6 +73,7 @@ and visitor_out = {
   vlist_assign: list_assign -> unit;
   vclass_constant: class_constant -> unit;
   vclass_variable: class_variable -> unit;
+  vxhp_attr_value: xhp_attr_value -> unit;
   vinfo: info -> unit;
   vprogram: program -> unit;
 }
