@@ -204,7 +204,10 @@ let build_index_of_layers ~root layers =
        * floats to recompute the actual multi-layer percentage.
        *)
       let color_macro_level = finfo.macro_level +> List.map (fun (kind, v) ->
-        v, Hashtbl.find hkind kind
+        try 
+          v, Hashtbl.find hkind kind
+        with
+        Not_found -> failwith (spf "kind %s was not defined" kind)
       ) 
       in
       hmacro#update file (fun old -> color_macro_level ++ old);
