@@ -339,7 +339,7 @@ let record_list_instead_atom loc v =
   failwith ("record_list_instead_atom:")
 
 let tuple_of_size_n_expected  loc n v = 
-  failwith ("tuple_of_size_n_expected:")
+  failwith (spf "tuple_of_size_n_expected: %d, got %s" n (Common.dump v))
 
 
 
@@ -781,7 +781,12 @@ let rec (v_of_json: Json_type.json_type -> v) = fun j ->
    *)
   | J.Array xs ->
       (match xs with
-      | (J.String s)::xs when s =~ "^[A-Z][A-Za-z_]*" ->
+      (* VERY VERY UGLY. It is legitimate to have for instance tuples
+       * of strings where the first element is a string that happen to
+       * look like a constructor. With this ugly code we currently
+       * not handle that :(
+       *)
+      | (J.String s)::xs when s =~ "^[A-Z][A-Za-z_]*$" ->
           VSum (s, List.map v_of_json  xs)
       | ys ->
           VList (xs +> List.map v_of_json)

@@ -516,6 +516,22 @@
    )
 
   ; --------------------------------------------------------------------------
+  ; pfff_visual
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "pfff_visual"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-ss 1 -with_layer /tmp/layer_security.json  /home/pad/pfff/facebook/tests/mini_www/")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
   ; for the help system, for C-c C-h to find where to look for
   (mapcar (lambda (p) 
             (ocaml-add-path (concat pad-ocaml-project-path "/" p))

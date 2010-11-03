@@ -154,6 +154,9 @@ type layer = {
     *)
    macro_level: (kind * float (* percentage of rectangle *)) list;
  }
+ (* ugly: because of the ugly way Ocaml.json_of_v currently works
+  * the kind can not start with a uppercase
+  *)
  and kind = string
 
  (* with tarzan *)
@@ -285,7 +288,6 @@ and vof_kind v = Ocaml.vof_string v
 
 let emacs_color_ofv v = Ocaml.string_ofv v
 let filename_ofv v = Ocaml.string_ofv v
-
 
 let rec layer_ofv__ =
   let _loc = "Xxx.layer"
@@ -421,6 +423,7 @@ and file_info_ofv sexp = file_info_ofv__ sexp
 and kind_ofv__ = let _loc = "Xxx.kind" in fun sexp -> Ocaml.string_ofv sexp
 and kind_ofv sexp = kind_ofv__ sexp
 
+
 (*****************************************************************************)
 (* Json *)
 (*****************************************************************************)
@@ -436,9 +439,12 @@ let layer_of_json json =
 (*****************************************************************************)
 
 let is_json_filename filename = 
+  filename =~ ".*\\.json$"
+  (*
   match File_type.file_type_of_file filename with
   | File_type.PL (File_type.Web (File_type.Json)) -> true
   | _ -> false
+  *)
 
 (* we allow to save in JSON format because it may be useful to let
  * the user edit the layer file, for instance to adjust the colors.
