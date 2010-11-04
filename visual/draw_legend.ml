@@ -22,16 +22,17 @@ open Common.ArithFloatInfix
 
 module CairoH = Cairo_helpers
 
+module L = Layer_code
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Drawing *)
+(* Helpers *)
 (*****************************************************************************)
 
-(*s: paint_legend *)
-let draw_legend ~cr =
+let draw_legend_of_color_string_pairs ~cr xs = 
 
   Cairo.select_font_face cr "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
@@ -41,8 +42,29 @@ let draw_legend ~cr =
 
   Cairo.set_source_rgba cr 0. 0. 0.    1.0;
   
-  let archis = Archi_code.source_archi_list in
+  xs +> Common.index_list_1 +> List.iter (fun ((color,s), i) ->
+    
+    let x = 10. in
+    let y = float_of_int i * size in
 
+    let w = size in
+    let h = size in
+
+    CairoH.fill_rectangle ~cr ~color ~x ~y ~w ~h ();
+    Cairo.set_source_rgba cr 0. 0. 0.    1.0;
+    Cairo.move_to cr (x + size * 2.) (y + size * 0.8);
+    Cairo.show_text cr s;
+  );
+  ()
+  
+(*****************************************************************************)
+(* Drawing *)
+(*****************************************************************************)
+
+(*s: paint_legend *)
+let draw_legend ~cr =
+
+  let archis = Archi_code.source_archi_list in
   let grouped_archis = archis +> Common.group_by_mapped_key (fun archi ->
     let color = Treemap_pl.color_of_source_archi archi in
     (* I tend to favor the darker variant of the color in treemap_pl.ml hence
@@ -52,25 +74,22 @@ let draw_legend ~cr =
     color
   )
   in
-  
-  grouped_archis +> Common.index_list_1 +> List.iter (fun ((color,kinds), i) ->
-    
-    let x = 10. in
-    let y = float_of_int i * size in
+  let grouped_archis = grouped_archis +> List.map (fun (color, kinds) ->
+    color, kinds +> List.map Archi_code.s_of_source_archi +> Common.join ", "
+  ) in
+  draw_legend_of_color_string_pairs ~cr grouped_archis
 
-    let w = size in
-    let h = size in
-
-    CairoH.fill_rectangle ~cr ~color ~x ~y ~w ~h ();
-
-    let s = 
-      kinds +> List.map Archi_code.s_of_source_archi +> Common.join ", " in
-
-    Cairo.set_source_rgba cr 0. 0. 0.    1.0;
-    Cairo.move_to cr (x + size * 2.) (y + size * 0.8);
-    Cairo.show_text cr s;
-  );
-  ()
 (*e: paint_legend *)
+
+let draw_legend_layer ~cr layers_idx = 
+  let pairs = 
+    layers_idx.L.layers +> Common.map_filter (fun (layer, is_active) ->
+      if is_active
+      then Some layer.L.kinds
+      else None
+    ) +> List.flatten +> List.map (fun (a, b) -> (b, a))
+  in
+  draw_legend_of_color_string_pairs ~cr pairs
+
 
 (*e: draw_legend.ml *)

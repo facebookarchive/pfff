@@ -170,7 +170,12 @@ let configure a b c =
 (*s: expose_legend *)
 let expose_legend da dw_ref ev = 
   let cr = Cairo_lablgtk.create da#misc#window in
-  Draw_legend.draw_legend ~cr;
+
+  let dw = !dw_ref in
+  (if null dw.layers.Layer_code.layers
+  then Draw_legend.draw_legend ~cr
+  else Draw_legend.draw_legend_layer ~cr dw.layers
+  );
   true
 (*e: expose_legend *)
 
