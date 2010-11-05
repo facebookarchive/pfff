@@ -19,9 +19,9 @@ TARGET=pfff
 
 PROGS=pfff
 
-PROGS+=pfff_tags
 PROGS+=sgrep
 PROGS+=spatch
+PROGS+=stags
 PROGS+=ppp
 
 # without bdb pfff_db_light will be incomplete regarding PHP
@@ -332,17 +332,17 @@ purebytecode:
 
 
 #------------------------------------------------------------------------------
-# pfff_tags targets
+# stags targets
 #------------------------------------------------------------------------------
 
-pfff_tags: $(LIBS) main_tags.cmo 
+stags: $(LIBS) main_stags.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 
-pfff_tags.opt: $(LIBS:.cma=.cmxa) main_tags.cmx
+stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 
 clean::
-	rm -f pfff_tags
+	rm -f stags
 
 #------------------------------------------------------------------------------
 # sgrep targets
