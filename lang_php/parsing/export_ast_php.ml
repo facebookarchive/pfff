@@ -48,6 +48,7 @@ let string_of_v v =
             Ocaml.VVar ("t", Int64.of_int !cnt)
         | _ when xs +> List.exists (function ("tvar", _) -> true | _ -> false)->
             Ocaml.VVar ("tlval", Int64.of_int !cnt)
+
         | _ -> 
             (* recurse, x can be a record containing itself some records *)
             k x
