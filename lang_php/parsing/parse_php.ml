@@ -683,6 +683,31 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
   Common.erase_this_temp_file tmpfile;
   res
 
+let (xhp_expr_of_string: string -> Ast_php.expr) = fun s ->
+  let tmpfile = Common.new_temp_file "xhp_expr_of_s" "php" in
+
+  (* the parser/lexer needs to recognize certain tokens to switch
+   * in a XHP_MODE. We do that by inserting this fake $a = 
+   * before the xhp expression.
+   *)
+  Common.write_file tmpfile ("<?php $a=\n" ^ s ^ ";\n");
+
+  let (ast2, _stat) = parse tmpfile in
+  let ast = program_of_program2 ast2 in
+
+  let res = 
+    (match ast with
+    | [Ast.StmtList 
+          [Ast.ExprStmt 
+              ((Ast.Assign(_, i_3, e), t_9),_)];Ast.FinalDef _] -> 
+        e
+  | _ -> failwith "only expr pattern are supported for now"
+  )
+  in
+  Common.erase_this_temp_file tmpfile;
+  res
+
+
 
 (* this function is useful mostly for our unit tests *)
 let (program_of_string: string -> Ast_php.program) = fun s -> 
