@@ -79,6 +79,21 @@ ovisual:
 clean::
 	rm -f TAGS
 
+dot:
+	$(OCAMLDOC) -I +threads $(SRC) -dot -dot-reduce
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_ml.ps
+	ps2pdf Fig_graph_ml.ps
+	rm -f Fig_graph_ml.ps
+
+doti:
+	$(OCAMLDOC) -I +threads $(SRC:.ml=.mli) -dot
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_mli.ps
+	ps2pdf Fig_graph_mli.ps
+	rm -f Fig_graph_mli.ps
+
+
 ##############################################################################
 # literate rules
 ##############################################################################

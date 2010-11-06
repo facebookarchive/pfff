@@ -19,9 +19,9 @@ TARGET=pfff
 
 PROGS=pfff
 
-PROGS+=pfff_tags
 PROGS+=sgrep
 PROGS+=spatch
+PROGS+=stags
 PROGS+=ppp
 
 # without bdb pfff_db_light will be incomplete regarding PHP
@@ -225,12 +225,16 @@ MAKESUBDIRS=commons \
    lang_php/analyze/typing \
    lang_php/analyze/checker \
    lang_php/analyze/database \
+   lang_php/analyze/tools \
+   lang_php/analyze/qa_test \
+   lang_php/analyze/dynamic_analysis \
    lang_php/analyze/static_analysis \
   $(VISUALDIR) \
   $(FACEBOOKDIR)
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
- commons/ocamlextra commons/lib-json commons/lib-xml \
+ commons/ocamlextra commons/ocollection \
+ commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE)
 
 ##############################################################################
@@ -332,17 +336,17 @@ purebytecode:
 
 
 #------------------------------------------------------------------------------
-# pfff_tags targets
+# stags targets
 #------------------------------------------------------------------------------
 
-pfff_tags: $(LIBS) main_tags.cmo 
+stags: $(LIBS) main_stags.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 
-pfff_tags.opt: $(LIBS:.cma=.cmxa) main_tags.cmx
+stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 
 clean::
-	rm -f pfff_tags
+	rm -f stags
 
 #------------------------------------------------------------------------------
 # sgrep targets
@@ -423,7 +427,7 @@ clean::
 	rm -f pfff_db_light
 
 #------------------------------------------------------------------------------
-# pfff_browser target
+# OBSOLETE: pfff_browser target
 #------------------------------------------------------------------------------
 SYSLIBS2=external/ocamlgtk/src/lablgtk.cma 
 LIBS2=commons/commons_gui.cma gui/gui.cma
@@ -573,6 +577,21 @@ push:
 pull:
 	git pull
 	cd facebook; git pull
+
+DSRC=$(SRC)
+
+DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
+#DIRS=lang_php/parsing
+DSRC+=$(DIRS:=/*.ml)
+DSRC+=$(wildcard main_*.ml)
+
+dotall:
+	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce 
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_ml.ps
+	ps2pdf Fig_graph_ml.ps
+	rm -f Fig_graph_ml.ps
+
 
 ##############################################################################
 # Pad specific rules

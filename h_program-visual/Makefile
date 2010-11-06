@@ -28,7 +28,7 @@ SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 
 ifeq ($(FEATURE_GRAPHICS),1)
-SRC2+=treemap_pl_graphics.ml
+SRC2+=graphics/treemap_pl_graphics.ml
 PROGS=visual_pl
 endif
 
@@ -50,10 +50,10 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
 
 
-$(TARGET1): $(LIBS) $(EXTRALIBS) $(OBJS) main_program_visual.cmo 
+visual: $(LIBS) $(EXTRALIBS) $(OBJS) main_program_visual.cmo 
 	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 
 
-$(TARGET1).opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) main_program_visual.cmx
+visual.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) main_program_visual.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBSOPT) $(SYSLIBS:.cma=.cmxa) $^ 
 
 clean::

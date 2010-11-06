@@ -238,3 +238,5 @@ external/ocamlbdb/libcamlbdb.a
 /lang_haskell/parsing/lexer_hs.ml
 /pfff.top
 /demos/simple_refactoring
+/stags
+/h_program-visual/visual
