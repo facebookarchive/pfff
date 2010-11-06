@@ -458,10 +458,10 @@ OBJS3=visual/lib.cma
 
 GTKLOOP=gtkThread.cmo gtkInit.cmo
 
-codemap: $(LIBS) commons/commons_gui.cma $(OBJS3) main_visual.cmo
+codemap: $(LIBS) commons/commons_gui.cma $(OBJS3) main_codemap.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma  $(SYSLIBS3) $(GTKLOOP) $^
 
-codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) main_visual.cmx
+codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) main_codemap.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa  $(SYSLIBS3:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
 clean::
