@@ -1,0 +1,3 @@
+
+have C-c C-t working to get type information under cursor
+
