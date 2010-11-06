@@ -38,7 +38,7 @@ open Common
  * for instance constants starting with a big X are considered metavars
  * for expression.
  *
- * C-s pad or any comment
+ * C-s "pad" or "iso" or any comment
  *)
 
 (* A is the pattern, and B the concrete source code. For now
@@ -111,9 +111,19 @@ module type PARAM =
       ('a * 'b -> (tin -> ('c * 'd) tout)) -> 
       (tin -> ('c * 'd) tout)
 
+
+    (* the disjunctive combinator *)
+    val (>||>) : 
+      (tin -> 'x tout) ->
+      (tin -> 'x tout) -> 
+      (tin -> 'x tout)
+
+
     (* The classical monad combinators *)
     val return : ('a * 'b) -> tin -> ('a *'b) tout
     val fail : tin -> ('a * 'b) tout
+
+    val tokenf : (A.info, B.info) matcher
 
     val envf : (Metavars_php.mvar * Metavars_php.binded_code) ->
       (unit -> tin -> 'x tout) -> (tin -> 'x tout)
@@ -130,6 +140,8 @@ struct
 type ('a, 'b) matcher = 'a -> 'b  -> X.tin -> ('a * 'b) X.tout
 
 let (>>=) = X.(>>=)
+let (>||>) = X.(>||>)
+
 let return = X.return
 let fail = X.fail
 
@@ -208,9 +220,10 @@ let m_exp_info a b =
 
 
 (*****************************************************************************)
-let m_info a b = 
-  (* dont care about position, space/indent/comment isomorphism *)
-  return (a, b)
+let m_info a b = X.tokenf a b
+  (* old: dont care about position, space/indent/comment isomorphism 
+   * return (a, b)
+   *)
 
 let m_comma_list f a b = 
   m_list (m_either f m_info) a b
@@ -1258,19 +1271,88 @@ and m_xhp_tag a b =
   match a, b with
   (a, b) -> (m_list m_string) a b
 
+and iso_m_list_m_xhp_body a b =
+  match a with
+  (* iso-by-absence: it's ok to have an empty body in the pattern *)
+  | [] -> 
+      return (a, b)
+  | _ -> 
+      (m_list m_xhp_body) a b
+
+and sort_xhp_attributes xs = 
+  xs +> List.map (fun attr -> 
+    let ((attr_name, ii), tok, value) = attr in 
+    attr_name, attr
+  ) +> Common.sort_by_key_highfirst +> List.map snd
+    
+and iso_m_list_m_xhp_attribute a b =
+  (* let's sort so don't care about order.
+   * todo: if add metavar for attribut names then this will not work
+   * anymore
+   *)
+  let a = sort_xhp_attributes a in
+  let b = sort_xhp_attributes b in
+  
+  let rec aux a b = 
+    match a, b with
+    (* iso-by-absence: it's ok to have less attr in the pattern *)
+    | [], b -> return ([], b)
+    | _, [] -> fail
+    | x::xs, y::ys ->
+
+        (
+          m_xhp_attribute x y >>= (fun (x, y) ->
+            aux xs ys >>= (fun (xs, ys) ->
+              return (x::xs, y::ys)
+            ))
+        ) >||> (
+          (* iso: allow to skip one attribute *)
+          aux (x::xs) (ys) >>= (fun (xs, ys) ->
+              return (xs, y::ys)
+            )
+        )
+        
+  in
+  aux a b
+
+
+(* We want to allow multiple isomorphisms here.
+ *  
+ * For instance it's ok to have attributes in different
+ * order in the pattern or even missing attributes
+ * (for people who wants to have a strict match for the attributes
+ *  we could add a -strict_xhp to sgrep/spatch or have a 
+ *  special attribute like  NOATTR=true in the xhp expression itself).
+ * 
+ * It's also ok to have a Xhp pattern matching
+ * a XhpSingleton or Xhp (hmmm but this may cause pb to
+ * spatch). 
+ * 
+ * Finally it's ok to have an empty xhp body. We may want 
+ * to add a "..." syntax for that instead of doing it by default.
+ *)
 and m_xhp_html a b = 
   match a, b with
   | A.Xhp(a1, a2, a3, a4, a5), B.Xhp(b1, b2, b3, b4, b5) ->
+
     (m_wrap m_xhp_tag) a1 b1 >>= (fun (a1, b1) -> 
-    (m_list m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 
+
+    (iso_m_list_m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 
+
     m_tok a3 b3 >>= (fun (a3, b3) -> 
-    (m_list m_xhp_body) a4 b4 >>= (fun (a4, b4) -> 
+
+    (iso_m_list_m_xhp_body) a4 b4 >>= (fun (a4, b4) -> 
+
     (m_wrap (m_option m_xhp_tag)) a5 b5 >>= (fun (a5, b5) -> 
+
+
     return (
        A.Xhp(a1, a2, a3, a4, a5),
        B.Xhp(b1, b2, b3, b4, b5)
     )
     )))))
+
+
   | A.XhpSingleton(a1, a2, a3), B.XhpSingleton(b1, b2, b3) ->
     (m_wrap m_xhp_tag) a1 b1 >>= (fun (a1, b1) -> 
     (m_list m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 

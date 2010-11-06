@@ -222,15 +222,17 @@
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 3
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
-
+       (2 "-c /home/pad/pfff/tests/php/spatch/foo.spatch /home/pad/pfff/tests/php/spatch/foo.php")
+       (3 "-c /home/pad/pfff/tests/php/spatch/border.spatch /home/pad/pfff/tests/php/spatch/border.php")
        )
      )
     )
    )
+
 
   ; --------------------------------------------------------------------------
   ; db_light

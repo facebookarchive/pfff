@@ -82,6 +82,17 @@ module XMATCH = struct
         ) in
         List.flatten xxs
 
+
+  let (>||>) m1 m2 = fun tin ->
+(* CHOICE
+      let xs = m1 tin in
+      if null xs
+      then m2 tin
+      else xs
+*)
+    (* opti? use set instead of list *)
+    m1 tin ++ m2 tin
+
            
   let return (a,b) = fun tin ->
     (* old: Some (a,b) *)
@@ -138,6 +149,10 @@ module XMATCH = struct
         fail tin
     | Some new_binding ->
         f () new_binding
+
+  let tokenf a b = 
+    (* dont care about position, space/indent/comment isomorphism *)
+    return (a, b)
     
 end
 

@@ -1389,16 +1389,15 @@ and st_comment = parse
 (*s: rule st_one_line_comment *)
 and st_one_line_comment = parse
   | "?"|"%"|">" { let s = tok lexbuf in s ^ st_one_line_comment lexbuf }
-  | [^'\n' '\r' '?''%''>']* (ANY_CHAR as x)
+  | ([^'\n' '\r' '?''%''>']* as start) (ANY_CHAR as x)
       { 
-        let s = tok lexbuf in
         (match x with
         | '?' | '%' | '>' -> 
             yyless 1 lexbuf;
-            s ^ st_one_line_comment lexbuf
+            start ^ st_one_line_comment lexbuf
         (* end of recursion when new line or other character  *)
-        | '\n' -> s
-        | _ -> s
+        | '\n' -> start ^ "\n"
+        | c -> start ^ String.make 1 c
         )
       }
   | NEWLINE { tok lexbuf }
