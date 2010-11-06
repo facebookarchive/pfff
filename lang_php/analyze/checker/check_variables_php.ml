@@ -192,10 +192,8 @@ let vars_used_in =
             k x
       );
     })
-let vars_used_in_expr e = 
-  vars_used_in (fun v -> v.V.vexpr e)
-let vars_used_in_lvalue e = 
-  vars_used_in (fun v -> v.V.vlvalue e)
+let vars_used_in_any any = 
+  vars_used_in (fun v -> v any)
 
 (* TODO: qualified_vars_in !!! *)
 
@@ -242,8 +240,8 @@ let vars_assigned_in =
     }
   )
 
-let vars_assigned_in_expr e = 
-  vars_assigned_in (fun v -> v.V.vexpr e)
+let vars_assigned_in_any any = 
+  vars_assigned_in (fun v -> v any)
 
 
 let keyword_arguments_vars_in = 
@@ -261,8 +259,8 @@ let keyword_arguments_vars_in =
       | ArgRef _ -> ()
     );
   })
-let keyword_arguments_vars_in_expr e = 
-  keyword_arguments_vars_in (fun v -> v.V.vexpr e)
+let keyword_arguments_vars_in_any any = 
+  keyword_arguments_vars_in (fun v -> v any)
 
 (* maybe could be merged with vars_assigned_in but maybe we want
  * the caller to differentiate between regular assignements
@@ -361,8 +359,8 @@ let vars_passed_by_ref_in ~find_entity =
     }
   )
 
-let vars_passed_by_ref_in_expr ~find_entity e = 
-  vars_passed_by_ref_in ~find_entity (fun v -> v.V.vexpr e)
+let vars_passed_by_ref_in_any ~find_entity e = 
+  vars_passed_by_ref_in ~find_entity (fun v -> v e)
 
 
 (*****************************************************************************)
@@ -557,7 +555,7 @@ let visit_prog
           pr2_once "TODO: TypedDeclaration"
 
       | Foreach (_, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
-          vx.V.vexpr e;
+          vx (Expr e);
 
           let lval = 
             match var_either with
@@ -594,7 +592,7 @@ let visit_prog
                     );
                 );
                 
-                vx.V.vcolon_stmt colon_stmt;
+                vx (ColonStmt2 colon_stmt);
               );
 
           | _ -> failwith "weird, foreach with not a var as iterator"
@@ -700,7 +698,7 @@ let visit_prog
           let shared_ref = ref 0 in
 
           assigned |> List.iter (fun list_assign ->
-            let vars = vars_used_in (fun v -> v.V.vlist_assign list_assign) in
+            let vars = vars_used_in_any (ListAssign list_assign) in
             vars |> List.iter (fun v ->
               (* if the variable was already existing, then 
                * better not to add a new binding cos this will mask
@@ -715,7 +713,7 @@ let visit_prog
                   ()
             );
           );
-          vx.V.vexpr e
+          vx (Expr e)
 
       | Eval _ -> pr2_once "Eval: TODO";
           k x
@@ -731,12 +729,12 @@ let visit_prog
        then begin
         is_top_expr := false;
       
-        let used = vars_used_in_expr x in
-        let assigned = vars_assigned_in_expr x in
-        let passed_by_refs = vars_passed_by_ref_in_expr ~find_entity x in
+        let used = vars_used_in_any (Expr x) in
+        let assigned = vars_assigned_in_any (Expr x) in
+        let passed_by_refs = vars_passed_by_ref_in_any ~find_entity (Expr x) in
 
         (* keyword arguments should be ignored and treated as comment *)
-        let keyword_args = keyword_arguments_vars_in_expr x in
+        let keyword_args = keyword_arguments_vars_in_any (Expr x) in
 
         (* todo: enough ? if do $x = $x + 1 then got problems ? *)
         let used' = 
@@ -801,7 +799,7 @@ let visit_prog
   in
 
   let visitor = Visitor_php.mk_visitor hooks in
-  visitor.Visitor_php.vprogram prog
+  visitor (Program prog)
 
 (*****************************************************************************)
 (* Main entry point *)

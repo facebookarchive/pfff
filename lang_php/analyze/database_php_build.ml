@@ -157,7 +157,7 @@ let rec first_filepos_origin ii =
       else first_filepos_origin xs
 
 let (fpos_of_toplevel: Ast.toplevel -> Entity.filepos) = fun top -> 
-  let allii = Lib_parsing.ii_of_toplevel top in
+  let allii = Lib_parsing.ii_of_any (Toplevel top) in
   first_filepos_origin allii 
 
 let (fpos_of_idast: Ast_entity_php.id_ast -> Entity.filepos) = fun ast ->
@@ -178,7 +178,7 @@ let prange_of_origin_tokens toks =
 
 
 let first_comment ast toks =
-  let ii = Lib_parsing_php.ii_of_toplevel ast in
+  let ii = Lib_parsing_php.ii_of_any (Toplevel ast) in
   let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
   let min = Ast_php.parse_info_of_info min in
@@ -676,7 +676,7 @@ let index_db2_2 db =
      * deadcode analyzer to remove some false positives if a function
      * is mentionned in a string
      *)
-    let strings = Lib_parsing.get_all_constant_strings_ast ast in
+    let strings = Lib_parsing.get_all_constant_strings_any (Toplevel ast) in
     strings +> List.iter (fun s ->
       db.strings#add2 (s, ());
     );
@@ -866,7 +866,7 @@ let index_db2_2 db =
       );
     }
     in
-    (V.mk_visitor hooks).V.vtop ast
+    (V.mk_visitor hooks) (Toplevel ast)
 
   )
 
@@ -1082,7 +1082,7 @@ let index_db4_2 db =
       tags := comment_tags;
     );
 
-    let callees = Lib_parsing_php.get_all_funcalls_ast ast in
+    let callees = Lib_parsing_php.get_all_funcalls_any (Toplevel ast) in
     (* facebook specific ... *)
     
     if List.mem "THIS_FUNCTION_EXPIRES_ON" callees

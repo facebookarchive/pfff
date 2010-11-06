@@ -128,7 +128,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
          * be considered as dangerous. Better to use
          * the ContainDynamicCall of database_code then.
          *)
-        let ii = Lib_parsing_php.ii_of_argument x in
+        let ii = Lib_parsing_php.ii_of_any (Argument x) in
         ii +> List.iter (fun info -> tag info PointerCall);
         
   end;
@@ -157,7 +157,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
           ps +> List.iter (function
           | Db.TakeArgNByRef i ->
               let a = List.nth args i in
-              let ii = Lib_parsing_php.ii_of_argument a in
+              let ii = Lib_parsing_php.ii_of_any (Argument a) in
               ii +> List.iter (fun info -> tag info CallByRef);
           | Db.ContainDynamicCall _ -> ()
           | _ -> raise Todo
@@ -310,11 +310,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     V.kstmt_and_def = (fun (k, bigf) x ->
       match x with
       | FuncDefNested def ->
-          bigf.V.vtop (FuncDef def)
+          bigf (Toplevel (FuncDef def))
       | ClassDefNested def ->
-          bigf.V.vtop (Ast.ClassDef def)
+          bigf (Toplevel (Ast.ClassDef def))
       | InterfaceDefNested def ->
-          bigf.V.vtop (Ast.InterfaceDef def)
+          bigf (Toplevel (Ast.InterfaceDef def))
       | Stmt _ -> k x
     );
 
@@ -533,7 +533,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               (match exprbis with
               | Sc (C (Ast.String (s, info))) ->
                   tag info (Field (Use2 fake_no_use2));
-                  vx.V.vlvalue var;
+                  vx (Lvalue var);
 
               | Sc (C (Int (s, info))) ->
                   k x
@@ -568,7 +568,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | FunCallVar (qu_opt, var, args) ->
           (* function pointer call !!! put in big font *)
-          let ii = Lib_parsing_php.ii_of_lvalue var in
+          let ii = Lib_parsing_php.ii_of_any (Lvalue var) in
           ii +> List.iter (fun info -> tag info PointerCall);
           
 
@@ -678,7 +678,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   } 
   in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtop toplevel;
+  visitor (Toplevel toplevel);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)

@@ -135,6 +135,9 @@ let string_of_any any =
     (mk_unparser_visitor pp) any
   )
 
+(* convenient shortcut *)
+let string_of_expr x = string_of_any (Expr x)
+
 (*****************************************************************************)
 (* unparsing by using the tokens *)
 (*****************************************************************************)

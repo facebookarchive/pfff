@@ -178,7 +178,7 @@ let visit_toplevel elem =
       match x with
       | FuncDef def ->
           let funcalls = 
-            Lib_parsing_php.get_all_funcalls_in_body (unbrace def.f_body) 
+            Lib_parsing_php.get_all_funcalls_any (Body def.f_body)
           in
           let contain_func_name_args_like = 
             no_check_when_contain +> List.exists (fun danger_func -> 
@@ -221,7 +221,7 @@ let visit_toplevel elem =
     );
   } in
   let visitor = Visitor_php.mk_visitor hooks in
-  visitor.Visitor_php.vtop elem
+  visitor (Toplevel elem)
 
 (*****************************************************************************)
 (* Entry point *)

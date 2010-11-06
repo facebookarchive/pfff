@@ -346,7 +346,7 @@ let ast_php_to_idl toplevels =
           | _ -> raise NotValidIdlPhpEntry
         )
         with NotValidIdlPhpEntry ->
-          let ii = Lib_parsing_php.ii_of_stmt stmt in
+          let ii = Lib_parsing_php.ii_of_any (Stmt2 stmt) in
           let info, _max = Lib_parsing_php.min_max_ii_by_pos ii in
           let pinfo = Ast.parse_info_of_info info in
           pr2 ("PB:" ^ (Parse_info.error_message_info pinfo));

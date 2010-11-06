@@ -64,7 +64,7 @@ let (info_at_pos: int -> Ast.toplevel -> Ast.info) = fun pos top ->
     );
   } in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtop top;
+  visitor (Toplevel top);
   Common.list_to_single_or_exn !res
 
 
@@ -102,7 +102,7 @@ let (expr_at_pos: int -> Ast.toplevel -> Ast.expr) = fun pos top ->
       k e;
       if not !found_in_nested then begin
 
-        let ii = Lib_parsing_php.ii_of_expr e in
+        let ii = Lib_parsing_php.ii_of_any (Expr e) in
         let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
         
         let startoffset = Ast_php.pos_of_info min in
@@ -120,7 +120,7 @@ let (expr_at_pos: int -> Ast.toplevel -> Ast.expr) = fun pos top ->
   }
   in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtop top;
+  visitor (Toplevel top);
   Common.list_to_single_or_exn !res
 
 

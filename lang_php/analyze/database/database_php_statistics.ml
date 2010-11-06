@@ -232,7 +232,7 @@ let typing_stat_ast ast db h_notfound_type_ident h_notfound_type_field =
     );
   }
   in 
-  (V.mk_visitor hooks).V.vtop ast;
+  (V.mk_visitor hooks)  (Toplevel ast);
 
   (!good, !bad), 
   (!good_id, !bad_id), (!good_fld, !bad_fld),
@@ -532,7 +532,7 @@ let fields_stat_db db =
         );
       }
       in
-      (V.mk_visitor hooks).V.vtop ast;
+      (V.mk_visitor hooks) (Toplevel ast);
      )
     )));
   let xs = hcount +> Common.hash_to_list +> Common.sort_by_val_highfirst in

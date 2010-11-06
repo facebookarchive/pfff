@@ -5,6 +5,8 @@ val string_of_program2: Parse_php.program2 -> string
 (* for now it does not maintain comments or space *)
 val string_of_any: Ast_php.any -> string
 
+val string_of_expr: Ast_php.expr -> string
+
 val string_of_infos: Ast_php.info list -> string
 
 val string_of_program2_using_tokens: 

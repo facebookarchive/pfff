@@ -191,8 +191,8 @@ let properties_of_function_or_method id db =
    *  so even if people define lots of wrappers around the builtin
    *  dynamic function, then it does not matter.
    *)
-  let calls = Lib_parsing_php.get_all_funcalls_in_body body in
-  let dyncalls = Lib_parsing_php.get_all_funcvars_in_body body in
+  let calls = Lib_parsing_php.get_all_funcalls_any (Ast.StmtAndDefs body) in
+  let dyncalls = Lib_parsing_php.get_all_funcvars_any (Ast.StmtAndDefs body) in
 
   if not (null dyncalls) ||
      calls +> List.exists (fun s -> 

@@ -91,7 +91,7 @@ let extract_fields_per_var top =
     );
   }
   in
-  (V.mk_visitor hooks).V.vtop top;
+  (V.mk_visitor hooks) (Toplevel top);
   hvars +> Common.hash_to_list +> List.map (fun (s,h) -> 
     s, Common.hashset_to_list h
   )

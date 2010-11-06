@@ -539,7 +539,7 @@ let main_action file =
 
   !all_classes +> List.rev +> List.iter (fun (classdef) ->
     let top = ClassDef classdef in
-    let s = Unparse_php.string_of_toplevel top in
+    let s = Unparse_php.string_of_any (Toplevel top) in
     pr s;
   );
   ()
@@ -580,7 +580,7 @@ let unparse_without_type_hints file =
   }
   in
   (* modifying ast will also modify ast2 by side effect *)
-  v.V.vprogram ast;
+  v (Program ast);
 
   (* the default unparser knows about the Remove token annotation *)
   let s = Unparse_php.string_of_program2_using_tokens ast2 in

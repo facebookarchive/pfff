@@ -235,7 +235,7 @@ let test_jeannin file =
         );
       }
     in
-    ast |> visitor.V.vprogram
+    visitor (Program ast)
   )
 
 (*---------------------------------------------------------------------------*)

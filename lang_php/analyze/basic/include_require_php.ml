@@ -274,7 +274,7 @@ let filename_concat dir file =
 (* Main entry points *)
 (*****************************************************************************)
 
-let all_increq_of_program asts = 
+let all_increq_of_any any = 
   let xs = 
     V.do_visit_with_ref (fun aref ->
       { V.default_visitor with
@@ -287,7 +287,7 @@ let all_increq_of_program asts =
         );
       }
     )
-    (fun vout -> vout.V.vprogram asts)
+    (fun vout -> vout any)
   in
   xs
 
@@ -365,7 +365,7 @@ let includes_of_file env file =
   let ast = Parse_php.parse_program file in
   let dir = dirname file in
   
-  let incs = all_increq_of_program ast in
+  let incs = all_increq_of_any (Program ast) in
   incs +> Common.map_filter (fun (_kind, tok, incexpr) ->
     
     let fopt = resolve_path (env, dir) incexpr in

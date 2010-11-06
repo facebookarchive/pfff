@@ -81,7 +81,7 @@ let cyclomatic_complexity_file file =
      }
   in
   (try 
-      (V.mk_visitor hooks).V.vprogram ast;
+      (V.mk_visitor hooks) (Program ast);
     with
     Controlflow_build_php.Error err ->
       Controlflow_build_php.report_error err

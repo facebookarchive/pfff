@@ -263,7 +263,7 @@ let parse_spatch file =
   in
 
   (* need adjust the tokens in it now *)
-  let toks = Lib_parsing_php.ii_of_expr pattern in
+  let toks = Lib_parsing_php.ii_of_any (Expr pattern) in
 
   (* adjust with Minus info *)  
   toks +> List.iter (fun tok ->
@@ -379,7 +379,7 @@ let main_action xs =
       );
     }
     in
-    visitor.V.vprogram ast;
+    visitor (Program ast);
     
     if !was_modifed then begin
       let s = Unparse_php.string_of_program2_using_tokens ast2 in
@@ -459,7 +459,7 @@ let send_mail_transfo_func ast =
       V.kfunc_def = (fun (k, _) def ->
         let body = def.f_body in
         current_vars_and_assignements := Lib_parsing_php.get_vars_assignements 
-          (fun vout -> vout.V.vbody body);
+          (fun vout -> vout (Body body));
         k def;
       );
       V.kclass_stmt = (fun (k, _) x ->
@@ -470,7 +470,7 @@ let send_mail_transfo_func ast =
             | MethodBody body -> 
                 
                 current_vars_and_assignements := Lib_parsing_php.get_vars_assignements 
-                  (fun vout -> vout.V.vbody body);
+                  (fun vout -> vout (Body body));
                 k x;
             )
         | XhpDecl _ -> k x
@@ -486,13 +486,13 @@ let send_mail_transfo_func ast =
           was_modified := true;
           if !verbose then 
             Lib_parsing_php.print_match ~format:Lib_parsing_php.Emacs
-              (Lib_parsing_php.ii_of_lvalue x);
+              (Lib_parsing_php.ii_of_any (Lvalue x));
 
           (match Ast.uncomma args with
           | (Arg to_expr)::(Arg subj_expr)::(Arg body_expr)::default_args ->
 
               (* 1: remove the lines *)
-              let toks = Lib_parsing_php.ii_of_lvalue x in
+              let toks = Lib_parsing_php.ii_of_any (Lvalue x) in
               toks |> List.iter (fun info -> info.transfo <- Ast.Remove);
 
               (* 2: add lines for first 3 arguments *)
@@ -583,7 +583,7 @@ let send_mail_transfo_func ast =
     }
     in
     (* opti ? dont analyze func if no constant in it ?*)
-    (V.mk_visitor hook).V.vprogram ast;
+    (V.mk_visitor hook) (Program ast);
 
     !was_modified
 
@@ -602,7 +602,7 @@ let send_mail_def_transfo_func ast =
         let ii =
           [def.f_tok] ++
           [Ast.info_of_name def.f_name] ++
-          Lib_parsing_php.ii_of_parameters def.f_params
+          Lib_parsing_php.ii_of_any (Parameters def.f_params)
         in
         ii |> List.iter (fun info ->
           info.transfo <- Ast.Remove
@@ -663,7 +663,7 @@ let send_mail_def_transfo_func ast =
       );
   }
   in
-  (V.mk_visitor hook).V.vprogram ast;
+  (V.mk_visitor hook) (Program ast);
   true (* was modified *)
 
 let send_mail_def_transfo = send_mail_def_transfo_func, Some ["send_mail"]
@@ -685,7 +685,7 @@ let fn_idx_transfo_func ast =
           was_modified := true;
           if !verbose then 
             Lib_parsing_php.print_match ~format:Lib_parsing_php.Emacs
-              (Lib_parsing_php.ii_of_lvalue x);
+              (Lib_parsing_php.ii_of_any (Lvalue x));
 
 
           (match args with
@@ -725,7 +725,7 @@ let fn_idx_transfo_func ast =
       );
     }
     in
-    (V.mk_visitor hook).V.vprogram ast;
+    (V.mk_visitor hook) (Program ast);
 
     !was_modified
 
@@ -809,8 +809,7 @@ let preparer_transfo_func ast =
                       pr2 (spf "Name of parameter: %s" name_second_param);
                        
                       (replace_dname_waitFor_or_runSiblings
-                          name_second_param).V.vclass_stmt
-                        class_stmt;
+                          name_second_param) (ClassStmt class_stmt);
                   | _ -> 
                       pr2 "wrong number of argument to prepare method"
                   )
@@ -849,12 +848,12 @@ let preparer_transfo_bis_func ast =
                       in
                       pr2 (spf "Name of parameter: %s" name_second_param);
 
-                      let ii = Lib_parsing_php.ii_of_parameter b in
+                      let ii = Lib_parsing_php.ii_of_any (Parameter b) in
                       let ii = comma::ii in
 
                       let all_vars_used = 
                         Lib_parsing_php.get_vars (fun vout -> 
-                          vout.V.vclass_stmt class_stmt)
+                          vout (ClassStmt class_stmt))
                       in
                       let all_vars = all_vars_used |> List.map Ast.dname in
                       if List.mem name_second_param all_vars
@@ -990,7 +989,7 @@ let type_hints_removal_transformation ast =
     );
   }
   in
-  (V.mk_visitor hook).V.vprogram ast;
+  (V.mk_visitor hook) (Program ast);
   !was_modified
 
 let type_hints_removal = type_hints_removal_transformation, None
@@ -1018,7 +1017,7 @@ let simple_transfo xs =
         | FunCallSimple((Name ("foo", info_foo)), (lp, args, rp)) ->
             pr2 "found match";
             
-            let ii = Lib_parsing_php.ii_of_lvalue x in
+            let ii = Lib_parsing_php.ii_of_any (Lvalue x) in
             ii |> List.iter (fun info ->
               info.transfo <- Ast.Remove
             );
@@ -1028,7 +1027,7 @@ let simple_transfo xs =
       );
     }
     in
-    (V.mk_visitor hook).V.vprogram ast;
+    (V.mk_visitor hook) (Program ast);
 
     let s = Unparse_php.string_of_program2_using_tokens ast2 in
     

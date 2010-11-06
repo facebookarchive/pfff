@@ -21,7 +21,7 @@ type increq =
    | RequireOnce
 
 val top_increq_of_program: Ast_php.program -> increq list
-val all_increq_of_program: Ast_php.program -> increq list
+val all_increq_of_any: Ast_php.any -> increq list
 
 val increq_expr_of_expr: Ast_php.expr -> increq_expr
 

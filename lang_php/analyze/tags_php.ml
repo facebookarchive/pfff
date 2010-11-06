@@ -116,7 +116,7 @@ let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
       );
     }
     in
-    visitor.V.vprogram ast;
+    visitor (Program ast);
       
     let defs = List.rev (!defs) in
     (file, defs)

@@ -103,8 +103,7 @@ let test_visit2_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  let hooks = { Visitor2_php.default_visitor with
-
+  let v = Visitor2_php.mk_visitor { Visitor2_php.default_visitor with
     Visitor_php.klvalue = (fun (k, vx) e ->
       match fst e with
       | Ast_php.FunCallSimple (callname, args) ->
@@ -113,9 +112,9 @@ let test_visit2_php file =
 
       | _ -> k e
     );
-  } in
-  let visitor = Visitor2_php.mk_visitor hooks in
-  ast +> List.iter visitor.Visitor2_php.vorigin.Visitor_php.vtop
+  } 
+  in
+  v.Visitor2_php.vorigin (Ast.Program ast)
 
 
 let test_xdebug_dumpfile file =
@@ -268,11 +267,11 @@ let test_pil file =
     );
   } in
   let v = V.mk_visitor hooks in
-  v.V.vprogram ast
+  v (Ast.Program ast)
 
 let test_pretty_print_pil file =
   let ast = Parse_php.parse_program file in
-  let hooks = { V.default_visitor with
+  let v = V.mk_visitor { V.default_visitor with
     V.kstmt = (fun (k, vx) st ->
       let stmts = Pil_build.linearize_stmt st in
       stmts +> List.iter (fun st ->
@@ -280,8 +279,7 @@ let test_pretty_print_pil file =
       )
     );
   } in
-  let v = V.mk_visitor hooks in
-  v.V.vprogram ast
+  v (Ast.Program ast)
 
 let test_cfg_pil file =
   let ast = Parse_php.parse_program file in
@@ -372,7 +370,7 @@ let test_function_pointer_analysis metapath =
 
     Database_php_build.iter_files_and_topids db "FPOINTER" (fun id file ->
       let ast = db.Db.defs.Db.toplevels#assoc id in
-      let funcvars = Lib_parsing_php.get_all_funcvars_ast ast in
+      let funcvars = Lib_parsing_php.get_all_funcvars_any (Ast.Toplevel ast) in
       funcvars +> List.iter (fun dvar ->
         pr2 dvar;
         let prefixes =

@@ -93,6 +93,6 @@ let finding_function_pointer_prefix dvar ast =
     );
   } in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtop ast;
+  visitor (Toplevel ast);
   Common.hashset_to_list h
 

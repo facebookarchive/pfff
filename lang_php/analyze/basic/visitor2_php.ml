@@ -91,18 +91,18 @@ let (mk_visitor: V.visitor_in -> visitor_out) = fun vin ->
   let v_id_ast x = 
     match x with
     | Ast2.Function v1 -> 
-        vout_origin_patched.V.vtop (FuncDef v1)
+        vout_origin_patched (Toplevel (FuncDef v1))
     | Ast2.Class v1 -> 
-        vout_origin_patched.V.vtop (ClassDef v1)
+        vout_origin_patched (Toplevel (ClassDef v1))
     | Ast2.Interface v1 -> 
-        vout_origin_patched.V.vtop (InterfaceDef v1)
+        vout_origin_patched (Toplevel (InterfaceDef v1))
     | Ast2.StmtList v1 -> 
-        vout_origin_patched.V.vtop (StmtList v1)
+        vout_origin_patched (Toplevel (StmtList v1))
 
 
     | Ast2.Method v1 -> 
         is_toplevel_class_member := true;
-        vout_origin_patched.V.vclass_stmt (Method v1)
+        vout_origin_patched (ClassStmt (Method v1))
 
     (* TODO the previous patch hook will forbid any processing 
      * of class members, which we dont want for actual id_ast class 
@@ -110,19 +110,19 @@ let (mk_visitor: V.visitor_in -> visitor_out) = fun vin ->
      *)
     | Ast2.ClassConstant class_cst ->
         is_toplevel_class_member := true;
-        vout_origin_patched.V.vclass_constant class_cst
+        vout_origin_patched (ClassConstant2 class_cst)
 
     | Ast2.ClassVariable (class_var, _modifier) ->
         is_toplevel_class_member := true;
-        vout_origin_patched.V.vclass_variable class_var
+        vout_origin_patched (ClassVariable class_var)
 
     | Ast2.XhpDecl xhp ->
         is_toplevel_class_member := true;
-        vout_origin_patched.V.vclass_stmt (XhpDecl xhp)
+        vout_origin_patched (ClassStmt (XhpDecl xhp))
 
 
     | Ast2.Misc xs -> 
-        xs +> List.iter vout_origin_patched.V.vinfo
+        vout_origin_patched (InfoList xs)
 
   in
   { 

@@ -66,7 +66,7 @@ let print_match mvars mvar_binding tokens_matched_code =
       | Some binded_code ->
           (match binded_code with
           | Metavars_php.Expr e ->
-            let ii = Lib_parsing_php.ii_of_expr e in
+            let ii = Lib_parsing_php.ii_of_any (Expr e) in
             Lib_parsing_php.print_match 
               ~format:Lib_parsing_php.OneLine ii
           )
@@ -167,7 +167,7 @@ let main_action xs =
               (* could also recurse to find nested matching inside
                * the matched code itself.
                *)
-                let matched_tokens = Lib_parsing_php.ii_of_lvalue x in
+                let matched_tokens = Lib_parsing_php.ii_of_any (Lvalue x) in
                 matches_with_env +> List.iter (fun env ->
                   print_match !mvars env matched_tokens
                 )
@@ -187,7 +187,7 @@ let main_action xs =
               (* could also recurse to find nested matching inside
                * the matched code itself.
                *)
-                let matched_tokens = Lib_parsing_php.ii_of_expr x in
+                let matched_tokens = Lib_parsing_php.ii_of_any (Expr x) in
                 matches_with_env +> List.iter (fun env ->
                   print_match !mvars env matched_tokens
                 )
@@ -197,7 +197,7 @@ let main_action xs =
     in
     ast +> List.iter (fun top ->
       (* opti ? dont analyze func if no constant in it ?*)
-      (V.mk_visitor hook).V.vtop top
+      (V.mk_visitor hook) (Toplevel top)
     );
    
   );
@@ -250,7 +250,7 @@ let test_find_object_ref_parameter xs =
       );
     }
     in
-    (V.mk_visitor hook).V.vprogram ast;
+    (V.mk_visitor hook) (Program ast);
     
     ()
   )
@@ -277,12 +277,12 @@ let test_find_bad_static_arrays xs =
 
     let process_body body =
       let static_vars = Lib_parsing_php.get_static_vars 
-        (fun vout -> vout.V.vbody body) in
+        (fun vout -> vout (Body body)) in
       let vars_and_assigns = Lib_parsing_php.get_vars_assignements 
-        (fun vout -> vout.V.vbody body) in
+        (fun vout -> vout (Body body)) in
 
       let returns = Lib_parsing_php.get_returns 
-        (fun vout -> vout.V.vbody body) in
+        (fun vout -> vout (Body body)) in
       let vars_in_return = returns |> Common.map_filter (fun e -> 
         match Ast.untype e with
         | Lv v ->
@@ -339,7 +339,7 @@ let test_find_bad_static_arrays xs =
       );
     }
     in
-    (V.mk_visitor hook).V.vprogram ast;
+    (V.mk_visitor hook) (Program ast);
     
 
   )

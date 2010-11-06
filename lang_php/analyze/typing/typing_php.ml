@@ -566,9 +566,7 @@ let annotate_with_fresh_typevars_every_expr envref def =
     );
   }
   in
-  (Ast.unbrace def.f_body) +> List.iter (V.mk_visitor hooks).V.vstmt_and_def;
-  ()
-
+  (V.mk_visitor hooks) (Body def.f_body)
 
 
 (* envref will contain the binding for globals *)

@@ -45,6 +45,11 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_php.verbose_visit
  * restriction" of ocaml :(
  * 
  * update: reordered a few things to help unparse_php.ml
+ * 
+ * update: instead of generating a set of vxxx I now just generate
+ * a vout = vany. This helps avoid the proliferation of functions
+ * like ii_of_expr, ii_of_stmt, etc. You just need a ii_of_any now.
+ * Is is the final design ? Could we factorize vin ? 
  *)
 
 module Scope_php = struct
@@ -1214,10 +1219,14 @@ and v_any = function
   | ClassConstant2 v1 -> let v1 = v_class_constant v1 in ()
   | ClassVariable v1 -> let v1 = v_class_variable v1 in ()
   | Body v1 -> let v1 = v_brace30 (v_list v_topstatement) v1 in ()
+  | StmtAndDefs v1 -> let v1 = v_list v_topstatement v1 in ()
   | ListAssign v1 -> let v1 = v_list_assign v1 in ()
   | XhpAttribute v1 -> let v1 = v_xhp_attribute v1 in ()
   | XhpAttrValue v1 -> let v1 = v_xhp_attr_value v1 in ()
   | XhpHtml2 v1 -> let v1 = v_xhp_html v1 in ()
+  | Info v1 -> let v1 = v_info v1 in ()
+  | InfoList v1 -> let v1 = v_list v_info v1 in ()
+  | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()
 
 (* end of auto generation *)
  

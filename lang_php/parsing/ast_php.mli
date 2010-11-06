@@ -744,15 +744,21 @@ type any =
   | Argument of argument
   | Parameter of parameter
   | Parameters of parameter comma_list paren
+  | Body of stmt_and_def list brace
+  | StmtAndDefs of stmt_and_def list
+
   | ClassStmt of class_stmt
   | ClassConstant2 of class_constant
   | ClassVariable of class_variable
-  | Body of stmt_and_def list brace
   | ListAssign of list_assign
+  | ColonStmt2 of colon_stmt
  
   | XhpAttribute of xhp_attribute
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
+
+  | Info of info
+  | InfoList of info list
   (* with tarzan *)
 
 (*****************************************************************************)
