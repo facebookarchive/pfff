@@ -22,6 +22,7 @@
 %   and the mixed/summary view
 % - helped split in macrolevel and microlevel code
 % - helped the split of view2.ml in view_mainmap, minimap, ui_search, etc.
+% - easier to do search and replace on all files, just do it here :)
 
 %thx to pfff_visual:
 % - splitted big files like draw.ml and view.ml because saw they were too
@@ -93,10 +94,10 @@
 
 \title{
 {\Huge 
-Pfff visual
+CodeMap
 }\\
 Google Maps for Source Code\\
-{version 0.2}
+{version 0.3}
 }
 
 \author{
@@ -229,7 +230,7 @@ put cool scenario of use. cool question and how can get visual answer to
 those questions!
 \end{verbatim}
 
-\subsection{Viewing the Linux Kernel}
+\subsection{Viewing the Linux kernel}
 
 Here are the basics:
 As you move the mouse, the blue highlighted areas are the next
@@ -277,14 +278,14 @@ and have emacsclient in your path).
 
 \subsection{Viewing Pfff itself}
 
-\subsection{Semantic Visual Feedback}
+\subsection{Generic semantic visual feedback}
 
 \begin{verbatim}
 % big = use
 % green = tested
 % purple = bad code
 
-%todo: more scenario/workflow showing cool use of pfff_visual
+%todo: more scenario/workflow showing cool use of codemaps
 
 %sgrep connection ?
 
@@ -320,6 +321,8 @@ and have emacsclient in your path).
 concepts: 
 user vs device
 see Cairo/Gtk appendix
+
+macro vs micro level
 \end{verbatim}
 
 \begin{verbatim}
@@ -543,6 +546,87 @@ type context = {
 }
 @ 
 
+\subsection{On filenames}
+
+\begin{verbatim}
+quite tricky. Also had pbs with our testing code. Relative path
+are convenient but bad in code. 
+
+- relative
+- absolute
+- readable
+
+need readable in files so can reuse (for code light database and layers,
+see section X and Y later)
+\end{verbatim}
+
+<<readable_to_absolute_filename_under_root sig>>=
+val readable_to_absolute_filename_under_root :
+  root:Common.path -> string -> string
+@
+
+<<actual_root_of_db sig>>=
+val actual_root_of_db : 
+  root:Common.path -> Database_code.database -> string
+@
+
+
+<<readable_to_absolute_filename_under_root>>=
+(* People may run the visualizer on a subdir of what is mentionned in the
+ * database code (e.g. subdir ~/www/flib of ~/www). The light_db
+ * contains only readable paths (e.g. flib/foo.php); the reason for
+ * those readable paths is that we want to reuse the light_db
+ * and share it among multiple users which may have
+ * different paths for their own software repo (e.g. ~/www4/).
+ * 
+ * When the user select an entity through the search box,
+ * we will know the readable paths of the entity he is looking for
+ * but we need a full path for refreshing the treemap.
+ * We can not just concatenate the root with the readable paths which
+ * in the example would lead to the path  ~/www/flib/flib/foo.php.
+ * 
+ * The goal of the function below is given a readable path like
+ * flib/foo.php and a root like ~/www/flib  to recognize the common part
+ * and return a valid fullpath like ~/www/flib/foo.php
+ * 
+ *)
+let rec readable_to_absolute_filename_under_root ~root filename =
+
+  (* the root may be a filename *)
+  let root_dir = 
+    if is_directory root then root
+    else Filename.dirname root
+  in
+
+  let root_and_parents =
+    Common.inits_of_absolute_dir root_dir +> List.rev
+  in
+  try 
+    root_and_parents +> Common.return_when (fun dir ->
+      let path = Filename.concat dir filename in
+      if Sys.file_exists path
+      then Some path
+      else None
+    )
+  with Not_found ->
+    failwith 
+      (spf "can't find file %s with root = %s" filename root)
+@
+
+
+<<actual_root_of_db>>=
+let actual_root_of_db ~root db =
+  let a_file = (db.Db.entities.(0)).Db.e_file in
+  let absolute_file = 
+    readable_to_absolute_filename_under_root root a_file in
+  
+  if absolute_file =~ ("\\(.*\\)/" ^ a_file)
+  then Common.matched1 absolute_file
+  else failwith (spf "Could not find actual_root of %s under %s: "
+                    absolute_file root)
+@
+
+
 \subsection{Misc}
 
 <<hentities sig>>=
@@ -667,87 +751,6 @@ let init_drawing
 
   }
 @
-
-\subsection{On filenames}
-
-\begin{verbatim}
-quite tricky. Also had pbs with our testing code. Relative path
-are convenient but bad in code. 
-
-- relative
-- absolute
-- readable
-
-need readable in files so can reuse (for code light database and layers,
-see section X and Y later)
-\end{verbatim}
-
-<<readable_to_absolute_filename_under_root sig>>=
-val readable_to_absolute_filename_under_root :
-  root:Common.path -> string -> string
-@
-
-<<actual_root_of_db sig>>=
-val actual_root_of_db : 
-  root:Common.path -> Database_code.database -> string
-@
-
-
-<<readable_to_absolute_filename_under_root>>=
-(* People may run the visualizer on a subdir of what is mentionned in the
- * database code (e.g. subdir ~/www/flib of ~/www). The light_db
- * contains only readable paths (e.g. flib/foo.php); the reason for
- * those readable paths is that we want to reuse the light_db
- * and share it among multiple users which may have
- * different paths for their own software repo (e.g. ~/www4/).
- * 
- * When the user select an entity through the search box,
- * we will know the readable paths of the entity he is looking for
- * but we need a full path for refreshing the treemap.
- * We can not just concatenate the root with the readable paths which
- * in the example would lead to the path  ~/www/flib/flib/foo.php.
- * 
- * The goal of the function below is given a readable path like
- * flib/foo.php and a root like ~/www/flib  to recognize the common part
- * and return a valid fullpath like ~/www/flib/foo.php
- * 
- *)
-let rec readable_to_absolute_filename_under_root ~root filename =
-
-  (* the root may be a filename *)
-  let root_dir = 
-    if is_directory root then root
-    else Filename.dirname root
-  in
-
-  let root_and_parents =
-    Common.inits_of_absolute_dir root_dir +> List.rev
-  in
-  try 
-    root_and_parents +> Common.return_when (fun dir ->
-      let path = Filename.concat dir filename in
-      if Sys.file_exists path
-      then Some path
-      else None
-    )
-  with Not_found ->
-    failwith 
-      (spf "can't find file %s with root = %s" filename root)
-@
-
-
-<<actual_root_of_db>>=
-let actual_root_of_db ~root db =
-  let a_file = (db.Db.entities.(0)).Db.e_file in
-  let absolute_file = 
-    readable_to_absolute_filename_under_root root a_file in
-  
-  if absolute_file =~ ("\\(.*\\)/" ^ a_file)
-  then Common.matched1 absolute_file
-  else failwith (spf "Could not find actual_root of %s under %s: "
-                    absolute_file root)
-@
-
 
 \section{The UI}
 
@@ -2568,9 +2571,15 @@ let find_rectangle_at_user_point a b =
     find_rectangle_at_user_point2 a b)
 @
 
+\subsection{Zooming in multiple directories}
+
+\begin{verbatim}
+see multi dir search
+\end{verbatim}
+
 \subsection{Zooming in a file}
 
-\subsection{Editor connection}
+\subsection{Opening a file in an external editor}
 
 <<editor_connection.mli>>=
 val open_file_in_current_editor : file:string -> line:int -> unit
@@ -2964,7 +2973,7 @@ val all_entities :
 
 
 
-\subsection{Completion building}
+\subsubsection{Completion building}
 
 <<completion2.mli>>=
 
@@ -2990,7 +2999,7 @@ let build_completion_defs_index all_entities =
   BG.build_index all_entities
 @ 
 
-\subsection{Completion window}
+\subsubsection{Completion window}
 
 <<completion2.mli>>=
 
@@ -3342,10 +3351,10 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
 
 \subsection{Use Search, aka Visual [[grep]]}
 
-% see also layers
 
 \begin{verbatim}
 %cscope-like
+% see also layers
 \end{verbatim}
 
 
@@ -3354,6 +3363,8 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
 \begin{verbatim}
 %multi dirs
 \end{verbatim}
+
+\subsection{Multi-directories}
 
 \subsection{Example search}
 
@@ -3368,7 +3379,13 @@ let my_entry_completion_eff ~callback_selected ~callback_changed x =
 
 % draw vs paint vs xxx
 
-\subsection{Cairo layers}
+\subsection{Cairo overlays}
+
+\begin{verbatim}
+aka layers
+similar but different from the  layers in prevision section.
+Here low level graphics layers.
+\end{verbatim}
 
 <<fields drawing main view>>=
   (* device coordinates *)
@@ -3682,7 +3699,7 @@ let motion_notify (da, da2) dw ev =
 \end{verbatim}
 
 
-\subsection{Configure Event}
+\subsection{The [[configure]] event}
 
 <<configure>>=
 let configure2_bis da dw_ref ev = 
@@ -3719,7 +3736,7 @@ let configure a b c =
 @ 
 
 
-\subsection{Expose Event}
+\subsection{The [[expose]] event}
 
 <<assemble_layers>>=
 (* Composing the "layers". See cairo/tests/knockout.ml example.
@@ -3821,7 +3838,7 @@ val disable_file_in_cache :
 @ 
 
 
-\subsection{Semantic visual feedback}
+\subsection{Generic semantic visual feedback}
 
 <<parsing2.ml>>=
 <<Facebook copyright>>
@@ -4838,6 +4855,162 @@ let draw_rectangle_bis ~cr ~color ~line_width r =
 
 \section{Extra Code}
 
+\subsection{[[main_visual.ml]]}
+
+<<main_visual.ml>>=
+(*
+ * Please imagine a long and boring gnu-style copyright notice 
+ * appearing just here.
+ *)
+open Common
+
+module Flag = Flag_visual
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* 
+ * Main entry point of codemap.
+ *)
+
+(*****************************************************************************)
+(* Flags *)
+(*****************************************************************************)
+
+<<main flags>>
+
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
+
+(* action mode *)
+let action = ref ""
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let set_gc () =
+  if !Flag.debug_gc
+  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+
+  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
+  ()
+
+(*****************************************************************************)
+(* Model helpers *)
+(*****************************************************************************)
+
+<<treemap_generator>>
+
+<<build_model>>
+
+(*****************************************************************************)
+(* Main action *)
+(*****************************************************************************)
+
+<<main_action()>>
+  
+(*****************************************************************************)
+(* Extra actions *)
+(*****************************************************************************)
+
+<<visual_commitid() action>>
+  
+(*---------------------------------------------------------------------------*)
+(* the command line flags *)
+(*---------------------------------------------------------------------------*)
+let extra_actions () = [
+ <<actions>>
+]
+ 
+(*****************************************************************************)
+(* The options *)
+(*****************************************************************************)
+
+(* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
+ * here. Here it's for ... well it's for nothing I think because it's not 
+ * really easy to test a gui.
+ *)
+let all_actions () = 
+ extra_actions()++
+ []
+
+let options () = [ 
+  <<options>>
+  ] ++
+  Common.options_of_actions action (all_actions()) ++
+  Flag_analyze_php.cmdline_flags_verbose () ++
+  Common.cmdline_flags_devel () ++
+  Common.cmdline_flags_verbose () ++
+  [
+  "-version",   Arg.Unit (fun () -> 
+    pr2 (spf "CodeMap version: %s" Config.version);
+    exit 0;
+  ), 
+    "  guess what";
+  ]
+
+(*****************************************************************************)
+(* The main entry point *)
+(*****************************************************************************)
+let main () = 
+  Common_extra.set_link ();
+
+  let usage_msg = 
+    ("Usage: " ^ basename Sys.argv.(0) ^ " [options] <path> \nOptions are:") 
+  in
+  let args = Common.parse_options (options()) usage_msg Sys.argv in
+
+  (* must be done after Arg.parse, because Common.profile is set by it *)
+  Common.profile_code "Main total" (fun () -> 
+
+    (match args with
+    (* --------------------------------------------------------- *)
+    (* actions, useful to debug subpart *)
+    (* --------------------------------------------------------- *)
+    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+        Common.do_action !action xs (all_actions())
+
+    | _ when not (Common.null_string !action) -> 
+        failwith ("unrecognized action or wrong params: " ^ !action)
+
+    (* --------------------------------------------------------- *)
+    (* main entry *)
+    (* --------------------------------------------------------- *)
+
+    | (x::xs) -> 
+        main_action (x::xs)
+
+    (* --------------------------------------------------------- *)
+    (* empty entry *)
+    (* --------------------------------------------------------- *)
+    | _ -> Arg.usage (Arg.align (options())) usage_msg; 
+    );
+  )
+
+(*****************************************************************************)
+let _ = 
+  if Sys.argv +> Array.to_list +> List.exists (fun x -> x ="-debugger")
+  then Common.debugger := true;
+
+  Common.finalize
+    (fun ()-> 
+      main ()
+    )
+    (fun()-> 
+      pr2 (Common.profile_diagnostic ());
+      Common.erase_temp_files ();
+    )
+
+@ 
+
+\subsection{[[flag_visual.ml]]}
+
+
 \subsection{[[model2.mli]]}
 
 <<model2.mli>>=
@@ -4946,97 +5119,6 @@ let context_of_drawing dw = {
 <<all_entities>>
 @ 
 
-\subsection{[[controller2.mli]]}
-
-<<controller2.mli>>=
-
-val _refresh_da: (unit -> unit) ref
-
-val _go_back: 
-  (Model2.drawing ref -> unit) ref
-val _go_dirs_or_file: 
-  (?current_entity: Database_code.entity option ->
-   ?current_grep_query: (string, int) Hashtbl.t option ->
-    Model2.drawing ref -> Common.path list -> unit
-  ) ref
-
-val _statusbar_addtext: (string -> unit) ref
-val _set_title: (string -> unit) ref
-
-val current_rects_to_draw:
-  (Treemap.treemap_rectangle list) ref
-val current_r:
-  Treemap.treemap_rectangle option ref
-
-val paint_content_maybe_refresher:
-  GMain.Idle.id option ref
-val current_motion_refresher:
-  GMain.Idle.id option ref
-
-val dw_stack:
-  Model2.drawing list ref
-
-val title_of_path: string -> string
-
-@ 
-
-
-\subsection{[[controller2.ml]]}
-
-<<controller2.ml>>=
-<<Facebook copyright>>
-
-let _refresh_da = ref (fun () ->
-  failwith "_refresh_da not defined"
-)
-
-let current_rects_to_draw = ref []
-
-let current_r = ref None
-
-let paint_content_maybe_refresher = ref None
-
-let current_motion_refresher = ref None
-
-let dw_stack = ref []
-
-
-
-let _go_back = ref (fun dw_ref ->
-  failwith "_go_back not defined"
-)
-
-let _go_dirs_or_file = ref 
- (fun ?(current_entity=None) ?(current_grep_query=None)  dw_ref paths ->
-  failwith "_go_dirs_or_file not defined"
-)
-
-let _statusbar_addtext = ref (fun s ->
-  failwith "_statusbar_addtext not defined"
-)
-let _set_title = ref (fun s ->
-  failwith "_set_title not defined"
-)
-
-let title_of_path s = "Pfff_visual: " ^ s
-
-@ 
-
-\subsection{[[help.mli]]}
-
-<<help.mli>>=
-val interface_doc: string
-
-@ 
-
-\subsection{[[help.ml]]}
-
-<<help.ml>>=
-<<interface_doc>>
-@ 
- 
-
-
 \subsection{[[view2.mli]]}
 
 
@@ -5123,6 +5205,136 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 <<mk_gui()>>
   
 @ 
+
+
+\subsection{[[controller2.mli]]}
+
+<<controller2.mli>>=
+
+val _refresh_da: (unit -> unit) ref
+
+val _go_back: 
+  (Model2.drawing ref -> unit) ref
+val _go_dirs_or_file: 
+  (?current_entity: Database_code.entity option ->
+   ?current_grep_query: (string, int) Hashtbl.t option ->
+    Model2.drawing ref -> Common.path list -> unit
+  ) ref
+
+val _statusbar_addtext: (string -> unit) ref
+val _set_title: (string -> unit) ref
+
+val current_rects_to_draw:
+  (Treemap.treemap_rectangle list) ref
+val current_r:
+  Treemap.treemap_rectangle option ref
+
+val paint_content_maybe_refresher:
+  GMain.Idle.id option ref
+val current_motion_refresher:
+  GMain.Idle.id option ref
+
+val dw_stack:
+  Model2.drawing list ref
+
+val title_of_path: string -> string
+
+@ 
+
+
+\subsection{[[controller2.ml]]}
+
+<<controller2.ml>>=
+<<Facebook copyright>>
+
+let _refresh_da = ref (fun () ->
+  failwith "_refresh_da not defined"
+)
+
+let current_rects_to_draw = ref []
+
+let current_r = ref None
+
+let paint_content_maybe_refresher = ref None
+
+let current_motion_refresher = ref None
+
+let dw_stack = ref []
+
+
+
+let _go_back = ref (fun dw_ref ->
+  failwith "_go_back not defined"
+)
+
+let _go_dirs_or_file = ref 
+ (fun ?(current_entity=None) ?(current_grep_query=None)  dw_ref paths ->
+  failwith "_go_dirs_or_file not defined"
+)
+
+let _statusbar_addtext = ref (fun s ->
+  failwith "_statusbar_addtext not defined"
+)
+let _set_title = ref (fun s ->
+  failwith "_set_title not defined"
+)
+
+let title_of_path s = "CodeMap: " ^ s
+
+@ 
+
+\subsection{[[help.mli]]}
+
+<<help.mli>>=
+val interface_doc: string
+
+@ 
+
+\subsection{[[help.ml]]}
+
+<<help.ml>>=
+<<interface_doc>>
+@ 
+ 
+
+
+\subsection{[[draw_common.mli]]}
+
+<<draw_common.mli>>=
+
+(* current used also by draw_macrolevel *)
+val final_font_size_when_multiplier:
+  multiplier:float ->
+  size_font_multiplier_multiplier:float ->
+  font_size:float -> font_size_real:'a -> float
+
+@ 
+
+\subsection{[[draw_common.ml]]}
+
+<<draw_common.ml>>=
+<<Facebook copyright>>
+
+open Common
+
+open Common.ArithFloatInfix
+
+module CairoH = Cairo_helpers
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Anamorphic entities *)
+(*****************************************************************************)
+
+<<final_font_size_when_multiplier>>
+
+
+@ 
+
+ 
 
 
 \subsection{[[draw_macrolevel.mli]]}
@@ -5405,45 +5617,6 @@ module CairoH = Cairo_helpers
 <<draw_treemap_rectangle_label_maybe>>
 
 @ 
-
-\subsection{[[draw_common.mli]]}
-
-<<draw_common.mli>>=
-
-(* current used also by draw_macrolevel *)
-val final_font_size_when_multiplier:
-  multiplier:float ->
-  size_font_multiplier_multiplier:float ->
-  font_size:float -> font_size_real:'a -> float
-
-@ 
-
-\subsection{[[draw_common.ml]]}
-
-<<draw_common.ml>>=
-<<Facebook copyright>>
-
-open Common
-
-open Common.ArithFloatInfix
-
-module CairoH = Cairo_helpers
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Anamorphic entities *)
-(*****************************************************************************)
-
-<<final_font_size_when_multiplier>>
-
-
-@ 
-
- 
-
 
 \subsection{[[draw_legend.mli]]}
 
@@ -5894,6 +6067,38 @@ let font_text =
 
 @ 
 
+\subsection{[[editor_connection.mli]]}
+
+
+\subsection{[[editor_connection.ml]]}
+
+<<editor_connection.ml>>=
+<<Facebook copyright>>
+
+open Common
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Emacs *)
+(*****************************************************************************)
+
+<<emacs configuration>>
+
+(*****************************************************************************)
+(* Vi *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+
+<<open_file_in_current_editor()>>
+@ 
+
+
 \subsection{[[async.mli]]}
 
 <<async.mli>>=
@@ -5969,194 +6174,6 @@ let is_old_cairo () =
 
 
 @ 
-
-\subsection{[[editor_connection.mli]]}
-
-
-\subsection{[[editor_connection.ml]]}
-
-<<editor_connection.ml>>=
-<<Facebook copyright>>
-
-open Common
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Emacs *)
-(*****************************************************************************)
-
-<<emacs configuration>>
-
-(*****************************************************************************)
-(* Vi *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-
-<<open_file_in_current_editor()>>
-@ 
-
-
-\subsection{[[main_visual.ml]]}
-
-<<main_visual.ml>>=
-(*
- * Please imagine a long and boring gnu-style copyright notice 
- * appearing just here.
- *)
-open Common
-
-module Flag = Flag_visual
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(* 
- * Main entry point of pfff_visual.
- *)
-
-(*****************************************************************************)
-(* Flags *)
-(*****************************************************************************)
-
-<<main flags>>
-
-(* todo? config file ? 
- * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
- *)
-
-(* action mode *)
-let action = ref ""
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-let set_gc () =
-  if !Flag.debug_gc
-  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
-
-  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
-  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
-  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
-  ()
-
-(*****************************************************************************)
-(* Model helpers *)
-(*****************************************************************************)
-
-<<treemap_generator>>
-
-<<build_model>>
-
-(*****************************************************************************)
-(* Main action *)
-(*****************************************************************************)
-
-<<main_action()>>
-  
-(*****************************************************************************)
-(* Extra actions *)
-(*****************************************************************************)
-
-<<visual_commitid() action>>
-  
-(*---------------------------------------------------------------------------*)
-(* the command line flags *)
-(*---------------------------------------------------------------------------*)
-let extra_actions () = [
- <<actions>>
-]
- 
-(*****************************************************************************)
-(* The options *)
-(*****************************************************************************)
-
-(* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
- * here. Here it's for ... well it's for nothing I think because it's not 
- * really easy to test a gui.
- *)
-let all_actions () = 
- extra_actions()++
- []
-
-let options () = [ 
-  <<options>>
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Flag_analyze_php.cmdline_flags_verbose () ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  [
-  "-version",   Arg.Unit (fun () -> 
-    pr2 (spf "pfff_visual version: %s" Config.version);
-    exit 0;
-  ), 
-    "  guess what";
-  ]
-
-(*****************************************************************************)
-(* The main entry point *)
-(*****************************************************************************)
-let main () = 
-  Common_extra.set_link ();
-
-  let usage_msg = 
-    ("Usage: " ^ basename Sys.argv.(0) ^ " [options] <path> \nOptions are:") 
-  in
-  let args = Common.parse_options (options()) usage_msg Sys.argv in
-
-  (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
-
-    (match args with
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
-        Common.do_action !action xs (all_actions())
-
-    | _ when not (Common.null_string !action) -> 
-        failwith ("unrecognized action or wrong params: " ^ !action)
-
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-
-    | (x::xs) -> 
-        main_action (x::xs)
-
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | _ -> Arg.usage (Arg.align (options())) usage_msg; 
-    );
-  )
-
-(*****************************************************************************)
-let _ = 
-  if Sys.argv +> Array.to_list +> List.exists (fun x -> x ="-debugger")
-  then Common.debugger := true;
-
-  Common.finalize
-    (fun ()-> 
-      main ()
-    )
-    (fun()-> 
-      pr2 (Common.profile_diagnostic ());
-      Common.erase_temp_files ();
-    )
-
-@ 
-
-\subsection{[[flag_visual.ml]]}
-
 
 \section{Changelog}
 \label{sec:changelog}

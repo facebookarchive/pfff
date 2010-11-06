@@ -48,6 +48,6 @@ let _set_title = ref (fun s ->
   failwith "_set_title not defined"
 )
 
-let title_of_path s = "Pfff_visual: " ^ s
+let title_of_path s = "CodeMap: " ^ s
 
 (*e: controller2.ml *)

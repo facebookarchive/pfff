@@ -33,7 +33,7 @@ PROGS+=pfff_db
 endif
 
 ifeq ($(FEATURE_VISUAL), 1)
-PROGS+=pfff_visual
+PROGS+=codemap
 endif
 
 OPTPROGS= $(PROGS:=.opt)
@@ -336,7 +336,7 @@ purebytecode:
 
 
 #------------------------------------------------------------------------------
-# stags targets
+# stags targets (was pfff_tags)
 #------------------------------------------------------------------------------
 
 stags: $(LIBS) main_stags.cmo 
@@ -447,7 +447,7 @@ clean::
 	rm -f pfff_browser
 
 #------------------------------------------------------------------------------
-# pfff_visual target
+# codemap target (was pfff_visual)
 #------------------------------------------------------------------------------
 SYSLIBS3= \
  external/ocamlgtk/src/lablgtk.cma \
@@ -458,14 +458,14 @@ OBJS3=visual/lib.cma
 
 GTKLOOP=gtkThread.cmo gtkInit.cmo
 
-pfff_visual: $(LIBS) commons/commons_gui.cma $(OBJS3) main_visual.cmo
+codemap: $(LIBS) commons/commons_gui.cma $(OBJS3) main_visual.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma  $(SYSLIBS3) $(GTKLOOP) $^
 
-pfff_visual.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) main_visual.cmx
+codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) main_visual.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa  $(SYSLIBS3:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
 clean::
-	rm -f pfff_visual
+	rm -f codemap
 
 
 #------------------------------------------------------------------------------

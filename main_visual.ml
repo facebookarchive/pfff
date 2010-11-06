@@ -12,7 +12,7 @@ module Flag = Flag_visual
 (*****************************************************************************)
 
 (* 
- * Main entry point of pfff_visual.
+ * Main entry point of codemap.
  *)
 
 (*****************************************************************************)
@@ -280,7 +280,7 @@ let options () = [
   Common.cmdline_flags_verbose () ++
   [
   "-version",   Arg.Unit (fun () -> 
-    pr2 (spf "pfff_visual version: %s" Config.version);
+    pr2 (spf "CodeMap version: %s" Config.version);
     exit 0;
   ), 
     "  guess what";
