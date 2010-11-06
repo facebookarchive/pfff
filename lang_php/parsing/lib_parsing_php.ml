@@ -71,26 +71,8 @@ let extract_info_visitor recursor =
     List.rev !globals
   end
 (*x: extract infos *)
-let ii_of_toplevel top = 
-  extract_info_visitor (fun visitor -> visitor.V.vtop top)
-
-let ii_of_expr e = 
-  extract_info_visitor (fun visitor -> visitor.V.vexpr e)
-
-let ii_of_stmt e = 
-  extract_info_visitor (fun visitor -> visitor.V.vstmt e)
-
-let ii_of_argument e = 
-  extract_info_visitor (fun visitor -> visitor.V.vargument e)
-
-let ii_of_lvalue e = 
-  extract_info_visitor (fun visitor -> visitor.V.vlvalue e)
-
-let ii_of_parameters e = 
-  extract_info_visitor (fun visitor -> visitor.V.vparameters e)
-
-let ii_of_parameter e = 
-  extract_info_visitor (fun visitor -> visitor.V.vparameter e)
+let ii_of_any any = 
+  extract_info_visitor (fun visitor -> visitor any)
 (*e: extract infos *)
 
 (*****************************************************************************)
@@ -255,13 +237,10 @@ let get_all_funcalls f =
   f visitor;
   Common.hashset_to_list h
 (*x: ast getters *)
-let get_all_funcalls_ast ast =
-  get_all_funcalls (fun visitor ->  visitor.V.vtop ast)
-
-let get_all_funcalls_in_body body =
-  get_all_funcalls (fun visitor ->  body +> List.iter visitor.V.vstmt_and_def)
+let get_all_funcalls_any any =
+  get_all_funcalls (fun visitor ->  visitor any)
 (*x: ast getters *)
-let get_all_constant_strings_ast ast = 
+let get_all_constant_strings_any any = 
   let h = Hashtbl.create 101 in
 
   let hooks = { V.default_visitor with
@@ -277,11 +256,11 @@ let get_all_constant_strings_ast ast =
           Hashtbl.replace h str true;
       | _ -> k x
     );
-  } 
-    
+  }
   in
-  (V.mk_visitor hooks).V.vtop ast;  
+  (V.mk_visitor hooks) any;
   Common.hashset_to_list h
+
 (*x: ast getters *)
 
 
@@ -316,10 +295,8 @@ let get_all_funcvars f =
   f visitor;
   Common.hashset_to_list h
 
-let get_all_funcvars_in_body body =
-  get_all_funcvars (fun visitor -> body +> List.iter visitor.V.vstmt_and_def)
-let get_all_funcvars_ast x =
-  get_all_funcvars (fun visitor ->  visitor.V.vtop x)
+let get_all_funcvars_any any = 
+  get_all_funcvars (fun visitor -> visitor any)
 (*e: ast getters *)
 
 let get_static_vars =

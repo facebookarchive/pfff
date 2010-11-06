@@ -58,25 +58,7 @@ type visitor_in = {
 }
 (*e: type visitor_in *)
 (*s: type visitor_out *)
-and visitor_out = {
-  vexpr: expr  -> unit;
-  vstmt: stmt -> unit;
-  vtop: toplevel -> unit;
-  vstmt_and_def: stmt_and_def -> unit;
-  vlvalue: lvalue -> unit;
-  vargument: argument -> unit;
-  vparameter: parameter -> unit;
-  vparameters: parameter comma_list paren -> unit;
-  vclass_stmt: class_stmt -> unit;
-  vbody: stmt_and_def list brace -> unit;
-  vcolon_stmt: colon_stmt -> unit;
-  vlist_assign: list_assign -> unit;
-  vclass_constant: class_constant -> unit;
-  vclass_variable: class_variable -> unit;
-  vxhp_attr_value: xhp_attr_value -> unit;
-  vinfo: info -> unit;
-  vprogram: program -> unit;
-}
+and visitor_out = any -> unit
 (*e: type visitor_out *)
 
 (*s: visitor functions *)

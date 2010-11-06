@@ -134,7 +134,7 @@ let test_visit_php file =
     );
   } in
   let visitor = Visitor_php.mk_visitor hooks in
-  ast +> List.iter visitor.Visitor_php.vtop 
+  visitor (Ast.Program ast)
 (*e: test_visit_php *)
 
 let test_unparse_php file = 
@@ -253,7 +253,7 @@ let unittest =
       }
       in
       let visitor = Visitor_php.mk_visitor hooks in
-      visitor.Visitor_php.vprogram ast;
+      visitor (Program ast);
       assert_equal 4 !cnt ;
     );
 

@@ -92,10 +92,8 @@ let string_of_program2 ast2 =
     in
     
     ast2 +> List.iter (fun (top, infos) ->
-      (V.mk_visitor hooks).V.vtop top
+      (V.mk_visitor hooks) (Toplevel top)
     )
-
-
   )
 
 let mk_unparser_visitor pp = 
@@ -122,37 +120,19 @@ let mk_unparser_visitor pp =
   (V.mk_visitor hooks)
     
 
-let string_of_toplevel top = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vtop top
-  )
-
 let string_of_infos ii = 
   (* todo: keep space, keep comments *)
   ii |> List.map (fun info -> Ast.str_of_info info) |> Common.join ""
 
 
 let string_of_expr_old e = 
-  let ii = Lib_parsing_php.ii_of_expr e in
+  let ii = Lib_parsing_php.ii_of_any (Expr e) in
   string_of_infos ii
 
-let string_of_expr e = 
+let string_of_any any = 
   Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vexpr e
-  )
-
-let string_of_lvalue x = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vlvalue x
-  )
-
-let string_of_param e = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vparameter e
+    (mk_unparser_visitor pp) any
   )
 
 (*****************************************************************************)
@@ -189,7 +169,7 @@ let string_of_program2_using_tokens
     *)
    let fake_tok = 
      let e = Parse_php.expr_of_string "1" in
-     let ii = Lib_parsing_php.ii_of_expr e in
+     let ii = Lib_parsing_php.ii_of_any (Expr e) in
      match ii with
      | [info] -> Parser_php.T_ECHO (Ast.rewrap_str "" info)
      | _ -> raise Impossible

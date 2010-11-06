@@ -93,7 +93,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       [Ast_php.FinalDef e, info_item]
   | ast::xs ->
       
-      let ii = Lib_parsing_php.ii_of_toplevel ast in
+      let ii = Lib_parsing_php.ii_of_any (Ast.Toplevel ast) in
       let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
       let toks_before_max, toks_after = 

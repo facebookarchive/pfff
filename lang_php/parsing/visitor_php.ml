@@ -113,25 +113,7 @@ type visitor_in = {
 
   kinfo: (info -> unit)  * visitor_out -> info  -> unit;
 }
-and visitor_out = {
-  vexpr: expr  -> unit;
-  vstmt: stmt -> unit;
-  vtop: toplevel -> unit;
-  vstmt_and_def: stmt_and_def -> unit;
-  vlvalue: lvalue -> unit;
-  vargument: argument -> unit;
-  vparameter: parameter -> unit;
-  vparameters: parameter comma_list paren -> unit;
-  vclass_stmt: class_stmt -> unit;
-  vbody: stmt_and_def list brace -> unit;
-  vcolon_stmt: colon_stmt -> unit;
-  vlist_assign: list_assign -> unit;
-  vclass_constant: class_constant -> unit;
-  vclass_variable: class_variable -> unit;
-  vxhp_attr_value: xhp_attr_value -> unit;
-  vinfo: info -> unit;
-  vprogram: program -> unit;
-}
+and visitor_out = any -> unit
 
 let default_visitor = 
   { kexpr   = (fun (k,_) x -> k x);
@@ -242,6 +224,9 @@ and v_paren18 _of_a (v1, v2, v3) =
 and v_paren19 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
+and v_paren20 _of_a (v1, v2, v3) =
+  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+
 and v_brace _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_brace2 _of_a (v1, v2, v3) =
@@ -253,6 +238,8 @@ and v_brace4 _of_a (v1, v2, v3) =
 and v_brace5 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_brace6 _of_a (v1, v2, v3) =
+  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+and v_brace30 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
 and v_bracket _of_a (v1, v2, v3) =
@@ -330,6 +317,8 @@ and v_comma_list25 _of_a xs =
 and v_comma_list26 _of_a xs = 
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 and v_comma_list27 _of_a xs = 
+  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
+and v_comma_list30 _of_a xs = 
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
 
@@ -1211,32 +1200,30 @@ and v_toplevel x =
 
 and v_program v = v_list v_toplevel v
 
+and v_any = function
+  | Lvalue v1 -> let v1 = v_variable v1 in ()
+  | Expr v1 -> let v1 = v_expr v1 in ()
+  | Stmt2 v1 -> let v1 = v_stmt v1 in ()
+  | StmtAndDef v1 -> let v1 = v_topstatement v1 in ()
+  | Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | Program v1 -> let v1 = v_program v1 in ()
+  | Argument v1 -> let v1 = v_argument v1 in ()
+  | Parameter v1 -> let v1 = v_parameter v1 in ()
+  | Parameters v1 -> let v1 = v_paren20 (v_comma_list30 v_parameter) v1 in ()
+  | ClassStmt v1 -> let v1 = v_class_stmt v1 in ()
+  | ClassConstant2 v1 -> let v1 = v_class_constant v1 in ()
+  | ClassVariable v1 -> let v1 = v_class_variable v1 in ()
+  | Body v1 -> let v1 = v_brace30 (v_list v_topstatement) v1 in ()
+  | ListAssign v1 -> let v1 = v_list_assign v1 in ()
+  | XhpAttribute v1 -> let v1 = v_xhp_attribute v1 in ()
+  | XhpAttrValue v1 -> let v1 = v_xhp_attr_value v1 in ()
+  | XhpHtml2 v1 -> let v1 = v_xhp_html v1 in ()
 
 (* end of auto generation *)
-
-
- and all_functions =   
-    {
-      vexpr = v_expr;
-      vstmt = v_stmt;
-      vtop = v_toplevel;
-      vstmt_and_def = v_topstatement;
-      vlvalue = v_variable;
-      vargument = v_argument;
-      vclass_stmt = v_class_stmt;
-      vinfo = v_info;
-      vprogram = v_program;
-      vparameters = v_parameters;
-      vparameter = v_parameter;
-      vbody = v_body;
-      vcolon_stmt = v_colon_stmt;
-      vlist_assign = v_list_assign;
-      vclass_constant = v_class_constant;
-      vclass_variable = v_class_variable;
-      vxhp_attr_value = v_xhp_attr_value;
-    }
-  in
-  all_functions
+ 
+and all_functions x = v_any x
+in
+  v_any
 
 
 
