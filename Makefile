@@ -230,7 +230,7 @@ MAKESUBDIRS=commons \
   $(FACEBOOKDIR)
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
- commons/ocamlextra commons/lib-json commons/lib-xml \
+ commons/ocamlextra commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE)
 
 ##############################################################################
@@ -423,7 +423,7 @@ clean::
 	rm -f pfff_db_light
 
 #------------------------------------------------------------------------------
-# pfff_browser target
+# OBSOLETE: pfff_browser target
 #------------------------------------------------------------------------------
 SYSLIBS2=external/ocamlgtk/src/lablgtk.cma 
 LIBS2=commons/commons_gui.cma gui/gui.cma
@@ -573,6 +573,17 @@ push:
 pull:
 	git pull
 	cd facebook; git pull
+
+#DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo, $(MAKESUBDIRS))
+DIRS=lang_php/parsing
+SRC2=$(SRC) $(wildcard main_*.ml)
+dotall:
+	ocamldoc -I +threads $(INCLUDES) $(DIRS:=/*.ml) $(SRC2)  -dot -dot-reduce 
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_ml.ps
+	ps2pdf Fig_graph_ml.ps
+	rm -f Fig_graph_ml.ps
+
 
 ##############################################################################
 # Pad specific rules
