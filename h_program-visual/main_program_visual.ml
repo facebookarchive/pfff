@@ -43,8 +43,10 @@ let misc_extra_actions () = [
 
 let all_actions () = 
   misc_extra_actions () ++
+  (* 
   Treemap_pl.actions () ++
   Treemap_ex_pfff.actions () ++
+  *)
  []
 
 let options () = 

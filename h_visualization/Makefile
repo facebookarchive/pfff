@@ -13,10 +13,11 @@ TARGET=lib
 SRC= figures.ml \
      jgraph.ml \
      treemap.ml treemap_json.ml
-
-# dot.ml gnuplot.ml 
-# html.ml latex.ml 
 #now in commons/ simple_color.ml 
+
+#todo: empty for now
+SRC+=gnuplot.ml html.ml latex.ml 
+#dot.ml
 
 LIBS=$(TOP)/commons/commons.cma
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-json
@@ -27,7 +28,7 @@ SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
 # graphics is not included by default because it can conflict with
 # applications using lablgtk instead
 ifeq ($(FEATURE_GRAPHICS),1)
-SRC2+=treemap_graphics.ml
+SRC2+=graphics/treemap_graphics.ml
 SYSLIBS+=graphics.cma
 PROGS+=treemap_viewer
 endif
@@ -52,10 +53,10 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
 
 
-treemap_viewer: $(LIBS) $(EXTRALIBS) $(OBJS) $(SRC2:.ml=.cmo) main_treemap.cmo 
+treemap_viewer: $(LIBS) $(EXTRALIBS) $(OBJS) $(SRC2:.ml=.cmo) graphics/main_treemap.cmo 
 	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 
 
-treemap_viewer.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) main_treemap.cmx
+treemap_viewer.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) graphics/main_treemap.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBSOPT) $(SYSLIBS:.cma=.cmxa) $^ 
 
 clean::

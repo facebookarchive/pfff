@@ -225,12 +225,16 @@ MAKESUBDIRS=commons \
    lang_php/analyze/typing \
    lang_php/analyze/checker \
    lang_php/analyze/database \
+   lang_php/analyze/tools \
+   lang_php/analyze/qa_test \
+   lang_php/analyze/dynamic_analysis \
    lang_php/analyze/static_analysis \
   $(VISUALDIR) \
   $(FACEBOOKDIR)
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
- commons/ocamlextra commons/lib-json commons/lib-xml commons/lib-sexp \
+ commons/ocamlextra commons/ocollection \
+ commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE)
 
 ##############################################################################
@@ -574,11 +578,15 @@ pull:
 	git pull
 	cd facebook; git pull
 
-#DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo, $(MAKESUBDIRS))
-DIRS=lang_php/parsing
-SRC2=$(SRC) $(wildcard main_*.ml)
+DSRC=$(SRC)
+
+DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
+#DIRS=lang_php/parsing
+DSRC+=$(DIRS:=/*.ml)
+DSRC+=$(wildcard main_*.ml)
+
 dotall:
-	ocamldoc -I +threads $(INCLUDES) $(DIRS:=/*.ml) $(SRC2)  -dot -dot-reduce 
+	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce 
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps
 	ps2pdf Fig_graph_ml.ps

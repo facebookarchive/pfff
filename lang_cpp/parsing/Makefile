@@ -23,6 +23,10 @@ SRC= flag_parsing_cpp.ml \
 
 # parser_php_mly_helper.ml \
 
+#todo:  empty for now
+SRC+=parsing_consistency.ml parsing_recovery.ml pp_analysis.ml \
+  pp_ast.ml pp_token.ml token_cpp.ml token_views_cpp.ml
+
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
    $(TOP)/h_program-lang/lib.cma
@@ -170,21 +174,5 @@ NOSRCI=flag_parsing_php.mli lexer_php.mli parser_php.mli
 NOSRCI+=test_parsing_php.mli token_helpers_php.mli
 SRCILP=$(filter-out $(NOSRCI),$(SRCI))
 
-dot:
-	$(OCAMLDOC) $(SRC) -dot -dot-reduce -dot-colors white
-	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
-	dot -Tps ocamldoc.out > dot.ps
-	mv dot.ps Fig_graph_ml.ps
-	ps2pdf Fig_graph_ml.ps
-#	dot2tex ocamldoc.out --figonly -o Fig_depend.tex
-
-doti:
-	$(OCAMLDOC) $(SRCILP) -dot -dot-colors white
-	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
-	dot -Tps ocamldoc.out > dot.ps
-	gv dot.ps
-	mv dot.ps Fig_graph_mli.ps
-	ps2pdf Fig_graph_mli.ps
-#	dot2tex ocamldoc.out --figonly -o Fig_depend.tex
 
 

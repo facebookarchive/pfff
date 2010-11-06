@@ -17,6 +17,9 @@ SRC= \
      graph_php.ml \
      bottomup_analysis_php.ml \
 
+#todo: empty for now
+SRC+=cfa_pil.ml
+
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \
 

@@ -9,6 +9,9 @@ SRC= patch.ml lib_vcs.ml  \
      version_control.ml \
      test_version_control.ml
 
+#todo: empty for now
+SRC+=subversion.ml
+
 
 LIBS=../commons/commons.cma
 INCLUDEDIRS= ../commons ../commons/lib-sexp
