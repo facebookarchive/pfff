@@ -38,6 +38,8 @@ config.status
 _darcs
 .svn
 
+Fig_graph_ml.pdf
+
 # data
 /TAGS
 /DB_LIGHT

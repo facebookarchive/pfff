@@ -51,7 +51,7 @@ MAKESUBDIRS=basic foundation tools typing finder checker annotaters \
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
+   $(TOP)/commons/lib-json $(TOP)/commons/lib-xml \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
@@ -67,6 +67,7 @@ INCLUDEDIRS= $(TOP)/commons \
    static_analysis \
    dynamic_analysis \
    qa_test \
+   finder \
 
 #   $(PCREINCLUDE) $(JANEINCLUDE)
 #$(TOP)/matcher_php
@@ -218,16 +219,9 @@ clean::
 	rm -f *.aux *.toc *.log *.brf *.out
 
 
-# need to have .cmi first, so need make all from TOP
-dot:
-#	$(OCAMLDOC) $(SRC) -dot -dot-reduce -dot-colors white
-#	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
-	dot -Tps ocamldoc.out > dot.ps
-	mv dot.ps Fig_graph_ml.ps
-#	ps2pdf Fig_graph_ml.ps
 
 # edit the resulting dot file and remove the _php in the names of the modules
-doti:
+doti2:
 #	$(OCAMLDOC) $(SRC_MLI) -dot -dot-colors white
 #	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
 	dot -Tps ocamldoc.out > dot.ps
@@ -235,3 +229,14 @@ doti:
 	mv dot.ps Fig_graph_mli.ps
 #	ps2pdf Fig_graph_mli.ps
 
+
+DIRS= $(filter-out foo, $(MAKESUBDIRS))
+DSRC+=$(DIRS:=/*.ml)
+DSRC+=$(wildcard *.ml)
+
+dotall:
+	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce 
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_ml.ps
+	ps2pdf Fig_graph_ml.ps
+	rm -f Fig_graph_ml.ps

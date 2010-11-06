@@ -174,7 +174,6 @@ lpdistclean::
 
 
 
-
 OCAMLDOC=ocamldoc $(INCLUDES)
 
 SRCI=$(SRC:ml=mli)
@@ -182,21 +181,14 @@ NOSRCI=flag_parsing_php.mli lexer_php.mli parser_php.mli
 NOSRCI+=test_parsing_php.mli token_helpers_php.mli
 SRCILP=$(filter-out $(NOSRCI),$(SRCI))
 
-dot:
-	$(OCAMLDOC) $(SRC) -dot -dot-reduce -dot-colors white
-	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
-	dot -Tps ocamldoc.out > dot.ps
-	mv dot.ps Fig_graph_ml.ps
-	ps2pdf Fig_graph_ml.ps
-#	dot2tex ocamldoc.out --figonly -o Fig_depend.tex
-
-doti:
-	$(OCAMLDOC) $(SRCILP) -dot -dot-colors white
-	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
+doti2:
+	$(OCAMLDOC) $(SRCILP) -dot
 	dot -Tps ocamldoc.out > dot.ps
 	gv dot.ps
 	mv dot.ps Fig_graph_mli.ps
 	ps2pdf Fig_graph_mli.ps
+
 #	dot2tex ocamldoc.out --figonly -o Fig_depend.tex
+#	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
 
 
