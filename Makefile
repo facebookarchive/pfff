@@ -552,19 +552,19 @@ db:
 	./pfff_db_light -verbose  -lang ml -o DB_LIGHT .
 
 visual:
-	./pfff_visual -profile -ss 2 \
+	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT -ocaml_filter  .
 visualopt:
-	./pfff_visual.opt -profile -ss 2 \
+	./codemap.opt -profile -ss 2 \
 	   -with_info DB_LIGHT .
 
 
-visual_test: pfff_visual
-	./pfff_visual -verbose -profile -ss 1 -ft 1. \
+visual_test: codemap
+	./codemap -verbose -profile -ss 1 -ft 1. \
           -with_info DB_LIGHT -filter 'pad:ml' commons/
 
 visualhead:
-	./pfff_visual -ss 1 -ft 0.5 -commitid HEAD
+	./codemap -ss 1 -ft 0.5 -commitid HEAD
 
 #VCS related
 #test related
