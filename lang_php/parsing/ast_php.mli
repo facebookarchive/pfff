@@ -732,6 +732,29 @@ and toplevel =
  (*e: tarzan annotation *)
 
 (*e: AST toplevel *)
+
+type any = 
+  | Lvalue of lvalue
+  | Expr of expr
+  | Stmt2 of stmt
+  | StmtAndDef of stmt_and_def
+  | Toplevel of toplevel
+  | Program of program
+
+  | Argument of argument
+  | Parameter of parameter
+  | Parameters of parameter comma_list paren
+  | ClassStmt of class_stmt
+  | ClassConstant2 of class_constant
+  | ClassVariable of class_variable
+  | Body of stmt_and_def list brace
+  | ListAssign of list_assign
+ 
+  | XhpAttribute of xhp_attribute
+  | XhpAttrValue of xhp_attr_value
+  | XhpHtml2 of xhp_html
+  (* with tarzan *)
+
 (*****************************************************************************)
 (* AST helpers *)
 (*****************************************************************************)

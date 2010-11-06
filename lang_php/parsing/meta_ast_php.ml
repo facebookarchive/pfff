@@ -466,6 +466,10 @@ and vof_variablebis =
       let v1 = vof_variable v1
       and v2 = vof_bracket (vof_option vof_expr) v2
       in Ocaml.VSum (("VArrayAccess", [ v1; v2 ]))
+  | VArrayAccessXhp ((v1, v2)) ->
+      let v1 = vof_expr v1
+      and v2 = vof_bracket (Ocaml.vof_option vof_expr) v2
+      in Ocaml.VSum (("VArrayAccessXhp", [ v1; v2 ]))
   | VBrace ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_brace vof_expr v2
@@ -1173,6 +1177,43 @@ and vof_program v =
   profile_code "vof_program" (fun () ->
     vof_list vof_toplevel v
   )
+
+and vof_any =
+  function
+  | Lvalue v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
+  | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
+  | Stmt2 v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt2", [ v1 ]))
+  | StmtAndDef v1 ->
+      let v1 = vof_stmt_and_def v1 in Ocaml.VSum (("StmtAndDef", [ v1 ]))
+  | Toplevel v1 ->
+      let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
+  | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
+  | Argument v1 ->
+      let v1 = vof_argument v1 in Ocaml.VSum (("Argument", [ v1 ]))
+  | Parameter v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("Parameter", [ v1 ]))
+  | Parameters v1 ->
+      let v1 = vof_paren (vof_comma_list vof_parameter) v1
+      in Ocaml.VSum (("Parameters", [ v1 ]))
+  | ClassStmt v1 ->
+      let v1 = vof_class_stmt v1 in Ocaml.VSum (("ClassStmt", [ v1 ]))
+  | ClassConstant2 v1 ->
+      let v1 = vof_class_constant v1
+      in Ocaml.VSum (("ClassConstant2", [ v1 ]))
+  | ClassVariable v1 ->
+      let v1 = vof_class_variable v1
+      in Ocaml.VSum (("ClassVariable", [ v1 ]))
+  | Body v1 ->
+      let v1 = vof_brace (Ocaml.vof_list vof_stmt_and_def) v1
+      in Ocaml.VSum (("Body", [ v1 ]))
+  | ListAssign v1 ->
+      let v1 = vof_list_assign v1 in Ocaml.VSum (("ListAssign", [ v1 ]))
+  | XhpAttribute v1 ->
+      let v1 = vof_xhp_attribute v1 in Ocaml.VSum (("XhpAttribute", [ v1 ]))
+  | XhpAttrValue v1 ->
+      let v1 = vof_xhp_attr_value v1 in Ocaml.VSum (("XhpAttrValue", [ v1 ]))
+  | XhpHtml2 v1 ->
+      let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml2", [ v1 ]))
   
 (*****************************************************************************)
 (* Ocaml.v -> type *)
