@@ -258,9 +258,8 @@ let get_all_call_lines_with_sanity_check
       []
   in
       
-  let calls = get_all_calls ?is_directive_to_filter
-    (fun v ->  v (Program ast)) in
-      
+  let calls = get_all_calls ?is_directive_to_filter (Program ast) in
+     
   let lines_calls = 
     calls 
     +> List.map (fun (sopt, rp) -> Ast.line_of_info rp)

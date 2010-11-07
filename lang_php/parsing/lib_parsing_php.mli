@@ -31,21 +31,13 @@ val print_warning_if_not_correctly_parsed:
   Ast_php.program -> Common.filename -> unit
 
 (*x: lib_parsing_php.mli *)
-val get_all_funcalls_any: Ast_php.any -> string list
-
-val get_all_constant_strings_any: 
-  Ast_php.any -> string list
-val get_all_funcvars_any: 
-  Ast_php.any -> string (* dname *) list
-
-val get_vars: 
-  (Visitor_php.visitor_out -> unit) -> Ast_php.dname list
-val get_static_vars: 
-  (Visitor_php.visitor_out -> unit) -> Ast_php.dname list
-val get_returns: 
-  (Visitor_php.visitor_out -> unit) -> Ast_php.expr list
-val get_vars_assignements: 
-  (Visitor_php.visitor_out -> unit) -> (string * Ast_php.expr list) list
+val get_all_funcalls_any         : Ast_php.any -> string list
+val get_all_constant_strings_any : Ast_php.any -> string list
+val get_all_funcvars_any         : Ast_php.any -> string (* dname *) list
+val get_vars                     : Ast_php.any -> Ast_php.dname list
+val get_static_vars              : Ast_php.any -> Ast_php.dname list
+val get_returns                  : Ast_php.any -> Ast_php.expr list
+val get_vars_assignements        : Ast_php.any -> (string * Ast_php.expr list) list
 
 val top_statements_of_program: 
     Ast_php.program -> Ast_php.stmt list

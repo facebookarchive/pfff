@@ -175,7 +175,7 @@ let lookup_env_opt_for_class a b =
 (*****************************************************************************)
 
 (* for now return only local vars, not class var like self::$x *)
-let vars_used_in =
+let vars_used_in_any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
       V.klvalue = (fun (k,vx) x ->
         match Ast.untype x with
@@ -192,8 +192,6 @@ let vars_used_in =
             k x
       );
     })
-let vars_used_in_any any = 
-  vars_used_in (fun v -> v any)
 
 (* TODO: qualified_vars_in !!! *)
 
@@ -219,7 +217,7 @@ let rec get_assigned_var_lval_opt lval =
 (* update: does consider also function calls to function taking parameters via
  * reference. Use global info.
  *)
-let vars_assigned_in =
+let vars_assigned_in_any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k,vx) x ->
       match Ast.untype x with
@@ -240,11 +238,7 @@ let vars_assigned_in =
     }
   )
 
-let vars_assigned_in_any any = 
-  vars_assigned_in (fun v -> v any)
-
-
-let keyword_arguments_vars_in = 
+let keyword_arguments_vars_in_any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kargument = (fun (k, vx) x ->
       match x with
@@ -259,14 +253,12 @@ let keyword_arguments_vars_in =
       | ArgRef _ -> ()
     );
   })
-let keyword_arguments_vars_in_any any = 
-  keyword_arguments_vars_in (fun v -> v any)
 
 (* maybe could be merged with vars_assigned_in but maybe we want
  * the caller to differentiate between regular assignements
  * and possibly assigned by being passed by ref
  *)
-let vars_passed_by_ref_in ~find_entity = 
+let vars_passed_by_ref_in_any ~find_entity = 
   V.do_visit_with_ref (fun aref -> 
     let params_vs_args params args = 
 
@@ -358,10 +350,6 @@ let vars_passed_by_ref_in ~find_entity =
     );
     }
   )
-
-let vars_passed_by_ref_in_any ~find_entity e = 
-  vars_passed_by_ref_in ~find_entity (fun v -> v e)
-
 
 (*****************************************************************************)
 (* (Semi) Globals, Julia's style *)

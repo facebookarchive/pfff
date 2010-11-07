@@ -67,7 +67,6 @@ val default_visitor : visitor_in
 val mk_visitor: visitor_in -> visitor_out
 (*x: visitor functions *)
 val do_visit_with_ref:
-  ('a list ref -> visitor_in) -> 
-  (visitor_out -> unit) -> 'a list
+  ('a list ref -> visitor_in) -> any -> 'a list
 (*e: visitor functions *)
 (*e: visitor_php.mli *)

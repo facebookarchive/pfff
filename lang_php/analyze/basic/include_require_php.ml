@@ -274,22 +274,17 @@ let filename_concat dir file =
 (* Main entry points *)
 (*****************************************************************************)
 
-let all_increq_of_any any = 
-  let xs = 
-    V.do_visit_with_ref (fun aref ->
-      { V.default_visitor with
-        V.kexpr = (fun (k, bigf) x ->
-          match increq_of_include_stmt x with
-          | Some require -> Common.push2 require aref;
-          | None -> 
-              (* do we need to recurse ? *)
-              k x
-        );
-      }
-    )
-    (fun vout -> vout any)
-  in
-  xs
+let all_increq_of_any = 
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.kexpr = (fun (k, bigf) x ->
+      match increq_of_include_stmt x with
+      | Some require -> Common.push2 require aref;
+      | None -> 
+          (* do we need to recurse ? *)
+          k x
+    );
+  }
+  )
 
 let top_increq_of_program asts = 
   let stmts = Lib_parsing_php.top_statements_of_program asts in

@@ -1236,20 +1236,20 @@ in
 
 
 
-let do_visit_with_ref mk_hooks recursor = 
+let do_visit_with_ref mk_hooks = fun any ->
   let res = ref [] in
   let hooks = mk_hooks res in
   begin
     let vout = mk_visitor hooks in
-    recursor vout;
+    vout any;
     !res
   end
 
-let do_visit_with_h mk_hooks recursor = 
+let do_visit_with_h mk_hooks = fun any ->
   let h = Hashtbl.create 101 in
   let hooks = mk_hooks h in
   begin 
     let vout = mk_visitor hooks in
-    recursor vout;
+    vout any;
     h
   end
