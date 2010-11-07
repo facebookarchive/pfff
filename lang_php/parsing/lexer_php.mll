@@ -63,7 +63,6 @@ let tokinfo_str_pos str pos =
       column = -1; 
       file = "";
     };
-    comments = ();
     transfo = Ast.NoTransfo;
   }
 let tokinfo lexbuf  = 

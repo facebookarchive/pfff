@@ -99,16 +99,13 @@ let rec map_info x =
   let rec k x = 
     match x with
     { pinfo = v_pinfo; 
-      comments = v_comments; 
       transfo = v_transfo } ->
-    let v_comments = map_of_unit v_comments in
     let v_pinfo = 
       (* todo? map_pinfo v_pinfo *)
     v_pinfo
     in
     (* not recurse in transfo ? *)
     { pinfo = v_pinfo;   (* generete a fresh field *)
-      comments = v_comments; 
       transfo = v_transfo }
   in
   vin.kinfo (k, all_functions) x

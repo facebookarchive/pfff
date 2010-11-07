@@ -134,7 +134,6 @@ let (dumb_spatch_pattern: Ast_php.expr) =
         { PI.str = "1"; charpos = 6; line = 2; column = 0; 
           file = "tests/php/spatch/1.php"; 
         });
-     comments = (); 
      (* the spatch is to replace every 1 by 42 *)
      transfo = Replace (AddStr "42");
     }

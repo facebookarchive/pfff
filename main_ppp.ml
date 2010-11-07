@@ -84,11 +84,10 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
-let fkt str = 
-  { pinfo = Parse_info.FakeTokStr (str, None);
-    comments = ();
-    transfo = Ast.NoTransfo;
-  }
+let fkt str = { 
+  pinfo = Parse_info.FakeTokStr (str, None);
+  transfo = Ast.NoTransfo;
+}
 let fkdname s = 
   DName (s, fkt ("$" ^ s))
 

@@ -25,8 +25,7 @@ type info = {
    *)
   mutable pinfo : pinfo; 
   (*s: type info hook *)
-  (*TODO*)
-  comments: unit;
+  (* todo? comments: .... *)
   (*x: type info hook *)
   mutable transfo: transformation;
   (*e: type info hook *)

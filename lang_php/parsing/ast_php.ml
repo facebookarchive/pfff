@@ -58,8 +58,7 @@ type info = {
    *)
   mutable pinfo : pinfo; 
   (*s: type info hook *)
-  (*TODO*)
-  comments: unit;
+  (* todo? comments: .... *)
   (*x: type info hook *)
   mutable transfo: transformation;
   (*e: type info hook *)
@@ -811,11 +810,9 @@ let noTypeVar () = ({ tlval = [Type_php.Unknown]})
 let noScope () = ref (Scope_code.NoScope)
 let noFtype () = ([Type_php.Unknown])
 
-let fakeInfo ?(next_to=None) str = 
-  { 
+let fakeInfo ?(next_to=None) str = { 
     pinfo = FakeTokStr (str, next_to);
     transfo = NoTransfo;
-    comments = ();
   }
 (*x: ast_php.ml *)
 (*****************************************************************************)

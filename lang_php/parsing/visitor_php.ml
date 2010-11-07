@@ -164,8 +164,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 (* start of auto generation *)
 
 let rec v_info x  =
-  let k x = match x with { pinfo = v_pinfo; comments = v_comments } ->
-    let arg = v_unit v_comments in 
+  let k x = match x with { pinfo = v_pinfo; } ->
   (* TODO ? not sure what behavior we want with tokens and fake tokens.
   *)
     (*let arg = v_parse_info v_pinfo in *)

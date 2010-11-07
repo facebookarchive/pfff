@@ -27,13 +27,10 @@ let vof_ref = Ocaml.vof_ref
 (* pad: generated code starts here *)
 
   
-let rec vof_info { pinfo = v_pinfo; comments = v_comments; transfo = v_transfo } =
+let rec vof_info { pinfo = v_pinfo; transfo = v_transfo } =
   let bnds = [] in
   let arg = vof_transformation v_transfo in
   let bnd = ("transfo", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_unit v_comments in
-  let bnd = ("comments", arg) in
   let bnds = bnd :: bnds in
   let arg = Parse_info.vof_token v_pinfo in
   let bnd = ("pinfo", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
@@ -1282,13 +1279,11 @@ let rec info_ofv__ =
                     ->
                     {
                       pinfo = pinfo_value;
-                      comments = comments_value;
                       transfo = transfo_value;
                     }
                 | _ ->
                     Ocaml.record_undefined_elements _loc sexp
                       [ ((!pinfo_field = None), "pinfo");
-                        ((!comments_field = None), "comments");
                         ((!transfo_field = None), "transfo") ]))
     | sexp -> Ocaml.record_list_instead_atom _loc sexp
 and info_ofv sexp = info_ofv__ sexp

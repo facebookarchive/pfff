@@ -100,7 +100,7 @@ let main files_or_dirs =
     let ast = Parse_php.program_of_program2 ast_and_tokens_list in
 
     (* step2: visit the AST and annotate the relevant tokens in AST leaves *)
-    let hook = { V.default_visitor with
+    let visitor = V.mk_visitor { V.default_visitor with
 
       V.kexpr = (fun (k, _) expr ->
         match expr with
@@ -184,7 +184,8 @@ let main files_or_dirs =
           t_21) ->
 
             (* let's get all the tokens composing the expression *)
-            let tokens_in_expression = Lib_parsing_php.ii_of_expr an_expr in
+            let tokens_in_expression = 
+              Lib_parsing_php.ii_of_any (Expr an_expr) in
 
             tokens_in_expression +> List.iter (fun tok ->
               tok.Ast.transfo <- Ast.Remove;
@@ -194,7 +195,7 @@ let main files_or_dirs =
       );
     }
     in
-    (V.mk_visitor hook).V.vprogram ast;
+    visitor (Program ast);
 
     (* step3: unparse the annotated AST and show the diff *)
     let s = Unparse_php.string_of_program2_using_tokens ast_and_tokens_list in
