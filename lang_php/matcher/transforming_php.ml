@@ -128,6 +128,13 @@ module XMATCH = struct
         let a = Lib_parsing_php.abstract_position_info_expr a in
         let b = Lib_parsing_php.abstract_position_info_expr b in
         a = b
+
+    | A.XhpAttrValue _, A.XhpAttrValue _ ->
+        
+        let a = Lib_parsing_php.abstract_position_info_any a in
+        let b = Lib_parsing_php.abstract_position_info_any b in
+        a =*= b
+
     | _, _ -> false
 
   let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
@@ -147,12 +154,23 @@ module XMATCH = struct
         (* first time the metavar is binded. Just add it to the environment *)
         Some (Common.insert_assoc (mvar, valu) tin)
 
-  let envf (mvar, valu) f = fun tin ->
-    match check_and_add_metavar_binding (mvar, valu) tin with
+  let distribute_transfo transfo any = 
+    let ii = Lib_parsing_php.ii_of_any any in
+    (* TODO, adjust the + to the right place *)
+    ii +> List.iter (fun tok -> 
+      tok.B.transfo <- transfo
+    )
+
+  let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
+   fun (mvar, imvar) any  -> fun tin ->
+    match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
         fail tin
     | Some new_binding ->
-        f () new_binding
+        (* TODO: distribute transfo mark *)
+        distribute_transfo imvar.A.transfo any;
+
+        return ((mvar, imvar), any) new_binding
 
   (* propagate the transformation info *)
   let tokenf a b = 

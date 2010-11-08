@@ -149,12 +149,13 @@ module XMATCH = struct
         (* first time the metavar is binded. Just add it to the environment *)
         Some (Common.insert_assoc (mvar, valu) tin)
 
-  let envf (mvar, valu) f = fun tin ->
-    match check_and_add_metavar_binding (mvar, valu) tin with
+  let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
+   fun (mvar, imvar) any  -> fun tin ->
+    match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
         fail tin
     | Some new_binding ->
-        f () new_binding
+        return ((mvar, imvar), any) new_binding
 
   let tokenf a b = 
     (* dont care about position, space/indent/comment isomorphism *)

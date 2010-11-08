@@ -125,8 +125,7 @@ module type PARAM =
 
     val tokenf : (A.info, B.info) matcher
 
-    val envf : (Metavars_php.mvar * Ast_php.any) ->
-      (unit -> tin -> 'x tout) -> (tin -> 'x tout)
+    val envf : (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher
   end
 
 (*****************************************************************************)
@@ -951,13 +950,15 @@ and m_expr a b =
 and m_exprbis a b = 
   match a, b with
   (* special case, metavars !! *)
-  | ((A.Sc (A.C (A.CName (A.Name (name,_))))), 
+  | ((A.Sc (A.C (A.CName (A.Name (name,info_name))))), 
     e2) when is_metavar_name name ->
-      X.envf (name, B.Expr (e2, Ast_php.noType())) (fun () ->
+      X.envf (name, info_name) (B.Expr (e2, Ast_php.noType())) >>= (function
+      | ((name, info_name), B.Expr (e2, _))  ->
         return (
-          a,
-          b
-      )
+          (A.Sc (A.C (A.CName (A.Name (name,info_name))))),
+          e2
+        )
+      | _ -> raise Impossible
       )
 
   (* pad *)
@@ -1384,12 +1385,14 @@ and m_xhp_attr_name a b =
 
 and m_xhp_attr_value a b = 
   match a, b with
-  | A.SgrepXhpAttrValueMvar (name, _), b when is_metavar_name name ->
-      X.envf (name, B.XhpAttrValue b) (fun () ->
-        return (
-          a,
-          b
-      )
+  | A.SgrepXhpAttrValueMvar (name, i_name), b when is_metavar_name name ->
+      X.envf (name, i_name) (B.XhpAttrValue b) >>= (function
+      | ((name, i_name), B.XhpAttrValue b) ->
+          return (
+            A.SgrepXhpAttrValueMvar (name, i_name),
+            b
+          )
+      | _ -> raise Impossible
       )      
 
   | A.XhpAttrString(a1, a2, a3), B.XhpAttrString(b1, b2, b3) ->
