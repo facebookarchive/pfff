@@ -280,8 +280,42 @@ let parse_spatch file =
    * the AST.
    *)
   pattern
-   
 
+let spatch pattern file =
+  let was_modifed = ref false in
+    
+  (* quite similar to what we do in main_sgrep.ml *)
+  let (ast2, _stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+  Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
+
+  let visitor = V.mk_visitor { V.default_visitor with
+    (* for now handle only expression patching *)
+    V.kexpr = (fun (k, _) x ->
+      let matches_with_env =  
+        Matching_php.match_e_e pattern  x
+      in
+      if matches_with_env = []
+      then k x
+      else begin
+        was_modifed := true;
+        Transforming_php.transform_e_e pattern x
+          (* TODO, maybe could get multiple matching env *)
+          (List.hd matches_with_env) 
+      end
+    );
+  }
+  in
+  visitor (Program ast);
+
+  if !was_modifed 
+  then Some (Unparse_php.string_of_program2_using_tokens ast2)
+  else None
+
+      
+
+
+    
 
 
 let main_action xs =
@@ -297,45 +331,17 @@ let main_action xs =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
     pr2 (spf "processing: %s (%d/%d)" file i total);
+    let resopt = spatch pattern file in
+    resopt +> Common.do_option (fun (s) ->
 
-    let was_modifed = ref false in
-    
-    (* quite similar to what we do in main_sgrep.ml *)
-    let (ast2, _stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast2 in
-    Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
-
-    let visitor = V.mk_visitor { V.default_visitor with
-      (* for now handle only expression patching *)
-      V.kexpr = (fun (k, _) x ->
-        let matches_with_env =  
-          Matching_php.match_e_e pattern  x
-        in
-        if matches_with_env = []
-        then k x
-        else begin
-          was_modifed := true;
-          Transforming_php.transform_e_e pattern x
-            (* TODO, maybe could get multiple matching env *)
-            (List.hd matches_with_env) 
-        end
-      );
-    }
-    in
-    visitor (Program ast);
-    
-    if !was_modifed then begin
-      let s = Unparse_php.string_of_program2_using_tokens ast2 in
-      
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
       
       let diff = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
       diff |> List.iter pr;
-
       if !apply_patch 
       then Common.write_file ~file:file s;
-    end
+    )
   )
 
 
@@ -388,6 +394,43 @@ let simple_transfo xs =
   );
   ()
 
+(*---------------------------------------------------------------------------*)
+(* regression testing *)
+(*---------------------------------------------------------------------------*)
+
+let unittest_spatch () =
+  let testdir = Filename.concat Config.path "tests/php/spatch/" in
+  let expfiles = Common.glob (testdir ^ "*.exp") in
+  
+  expfiles +> List.iter (fun expfile ->
+    if expfile =~ "\\(.*\\)\\([0-9]*\\)\\.exp$" then begin
+      let (prefix, variant) = Common.matched2 expfile in
+      let spatchfile = prefix ^ ".spatch" in
+      let phpfile = prefix ^ variant ^ ".php" in
+      pr2 (spf "Testing %s on %s expecting %s" 
+              (Filename.basename spatchfile)
+              (Filename.basename phpfile)
+              (Filename.basename expfile));
+
+      let pattern = parse_spatch spatchfile in
+      let resopt = spatch pattern phpfile in
+
+      let file_res = 
+        match resopt with
+        | None -> phpfile
+        | Some s ->
+            let tmpfile = Common.new_temp_file "spatch_test" ".php" in
+            Common.write_file ~file:tmpfile s;
+            tmpfile
+      in
+      let diff = Common.cmd_to_list (spf "diff -u %s %s" file_res expfile) in
+      diff |> List.iter pr;
+      if List.length diff > 1
+      then failwith (spf "PB with %s" expfile);
+    end 
+    else failwith ("wrong format for expfile: " ^ expfile)
+  )
+
 
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
@@ -396,6 +439,10 @@ let spatch_extra_actions () = [
   (* see also demos/simple_refactoring.ml *)
   "-simple_transfo", "<files_or_dirs>",
   Common.mk_action_n_arg (simple_transfo);
+
+  "-test", "",
+  Common.mk_action_0_arg unittest_spatch;
+
 ]
 
 (*****************************************************************************)
