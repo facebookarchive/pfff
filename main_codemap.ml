@@ -1,4 +1,4 @@
-(*s: main_visual.ml *)
+(*s: main_codemap.ml *)
 (*
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
@@ -338,4 +338,4 @@ let _ =
       Common.erase_temp_files ();
     )
 
-(*e: main_visual.ml *)
+(*e: main_codemap.ml *)

@@ -101,7 +101,7 @@ SRC_ML= $(filter-out $(SRC_NOT_SYNCED), $(SRC))
 SRC_NO_MLI=flag_visual.mli
 SRC_MLI=$(filter-out $(SRC_NO_MLI), $(SRC_ML:ml=mli))
 
-SRC_VIEWS=$(SRC_MLI) $(SRC_ML) ../main_visual.ml
+SRC_VIEWS=$(SRC_MLI) $(SRC_ML) ../main_codemap.ml
 
 #------------------------------------------------------------------------------
 sync:

@@ -4855,9 +4855,9 @@ let draw_rectangle_bis ~cr ~color ~line_width r =
 
 \section{Extra Code}
 
-\subsection{[[main_visual.ml]]}
+\subsection{[[main_codemap.ml]]}
 
-<<main_visual.ml>>=
+<<main_codemap.ml>>=
 (*
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
