@@ -77,18 +77,20 @@ let mk_env ~php_root = {
     None
   );
 }
-    
+
+(* src: http://php.net/manual/en/language.variables.superglobals.php *)
 let globals_builtins = [
   "GLOBALS";
 
   "_SERVER";
   "_GET";
   "_POST";
+  "_FILES";
   "_SESSION";
   "_COOKIE";
+  "_SESSION";
   "_REQUEST";
   "_ENV";
-  "_SESSION";
 ]
 
 (* todo: facebook specific. Also would be good to associate a message with *)
