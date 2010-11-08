@@ -125,7 +125,7 @@ module type PARAM =
 
     val tokenf : (A.info, B.info) matcher
 
-    val envf : (Metavars_php.mvar * Metavars_php.binded_code) ->
+    val envf : (Metavars_php.mvar * Ast_php.any) ->
       (unit -> tin -> 'x tout) -> (tin -> 'x tout)
   end
 
@@ -953,7 +953,7 @@ and m_exprbis a b =
   (* special case, metavars !! *)
   | ((A.Sc (A.C (A.CName (A.Name (name,_))))), 
     e2) when is_metavar_name name ->
-      X.envf (name, MV.Expr (e2, Ast_php.noType())) (fun () ->
+      X.envf (name, B.Expr (e2, Ast_php.noType())) (fun () ->
         return (
           a,
           b
@@ -1384,6 +1384,14 @@ and m_xhp_attr_name a b =
 
 and m_xhp_attr_value a b = 
   match a, b with
+  | A.SgrepXhpAttrValueMvar (name, _), b when is_metavar_name name ->
+      X.envf (name, B.XhpAttrValue b) (fun () ->
+        return (
+          a,
+          b
+      )
+      )      
+
   | A.XhpAttrString(a1, a2, a3), B.XhpAttrString(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     (m_list m_encaps) a2 b2 >>= (fun (a2, b2) -> 
@@ -1402,6 +1410,7 @@ and m_xhp_attr_value a b =
     )
   | A.XhpAttrString _, _
   | A.XhpAttrExpr _, _
+  | A.SgrepXhpAttrValueMvar _, _
    -> fail
 
 

@@ -15,6 +15,8 @@
 
 open Common
 
+module Ast = Ast_php
+
 module MV = Metavars_php
 
 (*****************************************************************************)
@@ -111,7 +113,7 @@ module XMATCH = struct
    *)
   let equal_ast_binded_code a b =
     match a, b with
-    | MV.Expr a, MV.Expr b ->
+    | Ast.Expr a, Ast.Expr b ->
 
         (* Note that because we want to retain the position information
          * of the matched code in the environment (e.g. for the -pvar
@@ -121,10 +123,14 @@ module XMATCH = struct
          * with different position information. So before doing
          * the comparison we just need to remove/abstract-away 
          * the line number information in each ASTs.
+         * 
+         * todo: optimize by caching the abstract_lined ?
          *)
         let a = Lib_parsing_php.abstract_position_info_expr a in
         let b = Lib_parsing_php.abstract_position_info_expr b in
         a = b
+    | _, _ -> 
+        false
 
   let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
     match Common.assoc_option mvar tin with

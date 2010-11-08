@@ -30,14 +30,6 @@ open Ast_php
  *)
 type mvar = string 
 
-type metavars_binding = (mvar, binded_code) Common.assoc
- and binded_code =
-   (* at some point we could bind class names, method names, or other
-    * kinds of PHP entities.
-    * 
-    * todo? could just reuse any ?
-    *)
-   | Expr of expr
-
+type metavars_binding = (mvar, Ast_php.any) Common.assoc
 
 let empty_environment = []

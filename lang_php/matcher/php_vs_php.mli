@@ -33,7 +33,7 @@ module type PARAM =
     (* -------------------------------------------------------------------- *)
     (* Environment manipulation. Extract info from tin, the "something" *)
     (* -------------------------------------------------------------------- *)
-    val envf : (Metavars_php.mvar * Metavars_php.binded_code) ->
+    val envf : (Metavars_php.mvar * Ast_php.any) ->
       (unit -> tin -> 'x tout) -> (tin -> 'x tout)
 
 

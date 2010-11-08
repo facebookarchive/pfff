@@ -63,13 +63,9 @@ let print_match mvars mvar_binding tokens_matched_code =
 
   | [x] ->
       (match Common.assoc_option x mvar_binding with
-      | Some binded_code ->
-          (match binded_code with
-          | Metavars_php.Expr e ->
-            let ii = Lib_parsing_php.ii_of_any (Expr e) in
-            Lib_parsing_php.print_match 
-              ~format:Lib_parsing_php.OneLine ii
-          )
+      | Some any ->
+          let ii = Lib_parsing_php.ii_of_any any in
+          Lib_parsing_php.print_match  ~format:Lib_parsing_php.OneLine ii
       | None ->
           failwith (spf "the metavariable '%s' was not binded" x)
       )
@@ -122,6 +118,7 @@ let main_action xs =
 
   (* for now handle only expression *)
   let pattern_expr = 
+    Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     match !pattern_file, !pattern_string with
     | "", "" -> failwith "I need a pattern; use -f or -e";
     | file, _ when file <> "" ->
@@ -133,8 +130,12 @@ let main_action xs =
         | _ -> failwith "only expr pattern are supported for now"
         )
     | _, s when s <> ""->
-        Parse_php.expr_of_string s
+        (* ugly *)
+        if s =~ "^[ \t]*<"
+        then Parse_php.xhp_expr_of_string s
+        else Parse_php.expr_of_string s
     | _ -> raise Impossible
+    )
   in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in

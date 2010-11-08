@@ -1408,7 +1408,7 @@ xhp_attribute_value:
     * XHP mode which means every ident is transformed in a xhp attribute
     *)*/
  /*(* sgrep_ext: *)*/
- | T_XHP_ATTR { sgrep_guard (raise Todo) }
+ | T_XHP_ATTR { sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 /*(*----------------------------*)*/
 /*(* auxillary bis *)*/

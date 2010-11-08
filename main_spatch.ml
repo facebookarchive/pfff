@@ -199,10 +199,12 @@ let parse_spatch file =
   (* pr2 spatch_without_patch_annot; *)
 
   let pattern = 
+    Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     (* ugly *)
     if spatch_without_patch_annot =~ "^[ \t]*<"
     then Parse_php.xhp_expr_of_string spatch_without_patch_annot 
     else Parse_php.expr_of_string spatch_without_patch_annot 
+    )
   in
 
   (* need adjust the tokens in it now *)

@@ -317,6 +317,8 @@ type expr = exprbis * exp_info
     and xhp_attr_value = 
       | XhpAttrString of tok (* '"' *) * encaps list * tok (* '"' *)
       | XhpAttrExpr of expr brace
+      (* sgrep: *)
+      | SgrepXhpAttrValueMvar of string wrap
    and xhp_body = 
      | XhpText of string wrap
      | XhpExpr of expr brace
