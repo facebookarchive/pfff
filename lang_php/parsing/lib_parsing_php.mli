@@ -10,6 +10,8 @@ val abstract_position_info_toplevel: Ast_php.toplevel -> Ast_php.toplevel
 val abstract_position_info_expr: Ast_php.expr -> Ast_php.expr
 val abstract_position_info_lvalue: Ast_php.lvalue -> Ast_php.lvalue
 val abstract_position_info_program: Ast_php.program -> Ast_php.program
+
+val abstract_position_info_any: Ast_php.any -> Ast_php.any
 (*x: lib_parsing_php.mli *)
 val range_of_origin_ii: Ast_php.info list -> (int * int) option
 val min_max_ii_by_pos: Ast_php.info list -> Ast_php.info * Ast_php.info

@@ -90,6 +90,7 @@ let abstract_position_visitor recursor =
     recursor vout;
   end
 (*x: abstract infos *)
+(* todo: remove ? *)
 let abstract_position_info_program x = 
   abstract_position_visitor (fun visitor -> visitor.V2.vprogram x)
 let abstract_position_info_expr x = 
@@ -98,6 +99,10 @@ let abstract_position_info_lvalue x =
   abstract_position_visitor (fun visitor -> visitor.V2.vlvalue x)
 let abstract_position_info_toplevel x = 
   abstract_position_visitor (fun visitor -> visitor.V2.vtop x)
+
+
+let abstract_position_info_any x = 
+  abstract_position_visitor (fun visitor -> visitor.V2.vany x)
 (*e: abstract infos *)
 
 (*****************************************************************************)
