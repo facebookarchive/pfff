@@ -694,6 +694,7 @@ let (xhp_expr_of_string: string -> Ast_php.expr) = fun s ->
 
   let (ast2, _stat) = parse tmpfile in
   let ast = program_of_program2 ast2 in
+  Lib_parsing_php.print_warning_if_not_correctly_parsed ast tmpfile;
 
   let res = 
     (match ast with
@@ -701,7 +702,7 @@ let (xhp_expr_of_string: string -> Ast_php.expr) = fun s ->
           [Ast.ExprStmt 
               ((Ast.Assign(_, i_3, e), t_9),_)];Ast.FinalDef _] -> 
         e
-  | _ -> failwith "only expr pattern are supported for now"
+    | _ -> failwith "only expr pattern are supported for now"
   )
   in
   Common.erase_this_temp_file tmpfile;

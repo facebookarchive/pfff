@@ -163,7 +163,7 @@ let failwith_xhp_ambiguity_colon info =
   in
   (*failwith err*)
   pr2 err;
-  raise (Parsing.Parse_error )
+  raise Parsing.Parse_error
 
 let failwith_xhp_ambiguity_percent info =
   let err = 
@@ -172,7 +172,21 @@ let failwith_xhp_ambiguity_percent info =
   in
   (*failwith err*)
   pr2 err;
-  raise (Parsing.Parse_error )
+  raise Parsing.Parse_error
+
+(*****************************************************************************)
+(* Sgrep *)
+(*****************************************************************************)
+let sgrep_guard v = 
+  if !Flag_parsing_php.sgrep_mode
+  then v
+  else raise Parsing.Parse_error
+
+(*****************************************************************************)
+(* Xdebug *)
+(*****************************************************************************)
+
+(* todo: xdebug_guard *)
 
 (*****************************************************************************)
 (* shortcuts *)

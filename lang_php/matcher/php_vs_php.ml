@@ -60,7 +60,7 @@ module MV = Metavars_php
  * ast_php.ml and extend it.
  *)
 let is_metavar_name s = 
-  s =~ "[A-Z]\\(_[A-Z]*\\)?"
+  s =~ "[A-Z]\\([0-9]?_[A-Z]*\\)?"
 
 let is_metavar_variable_name s = 
   s =~ "V\\(_[A-Z]*\\)?"
@@ -961,9 +961,9 @@ and m_exprbis a b =
       )
 
   (* pad *)
-  | A.EDots _, _ -> 
+  | A.SgrepExprDots _, _ -> 
       fail
-  | _, B.EDots _ -> 
+  | _, B.SgrepExprDots _ -> 
       pr2 "weird, have a ... in source; they are allowed only in patterns";
       fail
 
@@ -1681,21 +1681,21 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       return ([], [])
 
   (* iso on ... *)
-  | [Left (A.Arg (A.EDots i, _))], bbs ->
+  | [Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
       (* TODO do different combinaisons *)
       return (
         xsa,
         xsb
       )
 
-  | [Right _; Left (A.Arg (A.EDots i, _))], bbs ->
+  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
       (* TODO do different combinaisons *)
       return (
         xsa,
         xsb
       )
 
-  | Left (A.Arg (A.EDots i, _))::xs, bbs ->
+  | Left (A.Arg (A.SgrepExprDots i, _))::xs, bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->

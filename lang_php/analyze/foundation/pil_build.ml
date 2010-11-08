@@ -431,7 +431,7 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           mkt (B.Lv( vv_of_v v))*) 
           raise Todo
 
-      | A.EDots _ -> 
+      | A.SgrepExprDots _ -> 
           raise Impossible
       | A.Lambda _ -> 
           raise Todo

@@ -1156,7 +1156,8 @@ expr_without_variable_bis:
 
 
  /*(*s: exprbis grammar rule hook *)*/
- | TDOTS { EDots $1 }
+ /*(* sgrep_ext: *)*/
+ | TDOTS { sgrep_guard (SgrepExprDots $1) }
 
  /*(* xhp: do not put in 'expr', otherwise can't have xhp 
     * in function arguments
@@ -1280,6 +1281,10 @@ variable2:
      T_OBJECT_OPERATOR object_property method_or_not 
      variable_properties
      { Variable ($1, ($2, $3, $4)::$5) }
+ /*(* sgrep_ext: *)*/
+ | T_IDENT T_OBJECT_OPERATOR object_property method_or_not 
+     variable_properties /*(* contains more T_OBJECT_OPERATOR *)*/
+     { sgrep_guard (raise Todo) }
 
 base_variable_with_function_calls:
  | base_variable {  BaseVar $1 }
@@ -1302,7 +1307,6 @@ reference_variable:
 compound_variable:
  | T_VARIABLE			{ Var2 (DName $1, Ast_php.noScope()) }
  | TDOLLAR TOBRACE expr TCBRACE	{ VDollar2 ($1, ($2, $3, $4)) }
-
 
 /*(*x: GRAMMAR variable *)*/
 simple_indirect_reference:
@@ -1400,6 +1404,11 @@ xhp_attribute_value:
  | TGUIL encaps_list TGUIL { XhpAttrString ($1, $2, $3) }
  | TOBRACE expr TCBRACE    { XhpAttrExpr ($1, $2, $3) }
 
+ /*(* ugly: one cannot use T_IDENT here, because the lexer is still in
+    * XHP mode which means every ident is transformed in a xhp attribute
+    *)*/
+ /*(* sgrep_ext: *)*/
+ | T_XHP_ATTR { sgrep_guard (raise Todo) }
 
 /*(*----------------------------*)*/
 /*(* auxillary bis *)*/

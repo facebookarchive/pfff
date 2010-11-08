@@ -352,7 +352,7 @@ and map_expr (x) =
       let v1 = map_tok v1
       and v2 = map_paren6 (map_comma_list_var map_variable) v2
       in Isset ((v1, v2))
-  | EDots v1 -> let v1 = map_info v1 in EDots ((v1))
+  | SgrepExprDots v1 -> let v1 = map_info v1 in SgrepExprDots ((v1))
   | ParenExpr v1 -> let v1 = map_paren_expr map_expr v1 in ParenExpr ((v1))
   | XhpHtml _ ->
       raise Todo

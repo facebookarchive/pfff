@@ -210,7 +210,9 @@ let print_warning_if_not_correctly_parsed ast file =
   then begin
     Common.pr2 (spf "warning: parsing problem in %s" file);
     Common.pr2_once ("Use -parse_php to diagnose");
-    Common.pr2_once ("Probably because of XHP; -xhp may be helpful");
+    (* old: 
+     * Common.pr2_once ("Probably because of XHP; -xhp may be helpful"); 
+     *)
   end
 
 (*****************************************************************************)

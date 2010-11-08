@@ -193,7 +193,7 @@ type expr = exprbis * exp_info
   | XhpHtml of xhp_html
 
   (*s: type exprbis hook *)
-  | EDots of info
+  | SgrepExprDots of info
   (*x: type exprbis hook *)
   (* unparser: *)
   | ParenExpr of expr paren

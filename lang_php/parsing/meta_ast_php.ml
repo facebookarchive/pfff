@@ -244,7 +244,8 @@ and vof_exprbis =
       in Ocaml.VSum (("Isset", [ v1; v2 ]))
   | XhpHtml v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml", [ v1 ]))
-  | EDots v1 -> let v1 = vof_info v1 in Ocaml.VSum (("EDots", [ v1 ]))
+  | SgrepExprDots v1 -> 
+      let v1 = vof_info v1 in Ocaml.VSum (("SgrepExprDots", [ v1 ]))
   | ParenExpr v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("ParenExpr", [ v1 ]))
 and vof_scalar =

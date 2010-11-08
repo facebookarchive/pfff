@@ -546,7 +546,7 @@ let rec type_of_expr env e =
   | ParenExpr v1 -> 
       [T.Unknown]
 
-  | (EDots _|XhpHtml _|Lambda _) -> 
+  | (SgrepExprDots _|XhpHtml _|Lambda _) -> 
       raise Todo
 
 
