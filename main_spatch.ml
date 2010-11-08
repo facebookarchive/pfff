@@ -405,7 +405,11 @@ let unittest_spatch () =
   let expfiles = Common.glob (testdir ^ "*.exp") in
   
   expfiles +> List.iter (fun expfile ->
-    if expfile =~ "\\(.*\\)\\([0-9]*\\)\\.exp$" then begin
+    (* todo: this regexp should just be .*? but ocaml regexp do not
+     * have the greedy feature :( Also note that expfile is a fullpath
+     * so it can contains /, hence this ugly regexp
+     *)
+    if expfile =~ "\\([a-zA-Z_/]+\\)\\([0-9]*\\)\\.exp$" then begin
       let (prefix, variant) = Common.matched2 expfile in
       let spatchfile = prefix ^ ".spatch" in
       let phpfile = prefix ^ variant ^ ".php" in
