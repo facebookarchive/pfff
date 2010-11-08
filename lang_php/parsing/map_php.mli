@@ -16,6 +16,8 @@ and visitor_out = {
   vprogram: program -> program;
   vexpr: expr -> expr;
   vlvalue: lvalue -> lvalue;
+  vxhpattrvalue: xhp_attr_value -> xhp_attr_value;
+  vany: any -> any;
 }
 
 val default_visitor: visitor_in

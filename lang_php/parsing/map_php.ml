@@ -79,6 +79,8 @@ and visitor_out = {
   vprogram: program -> program;
   vexpr: expr -> expr;
   vlvalue: lvalue -> lvalue;
+  vxhpattrvalue: xhp_attr_value -> xhp_attr_value;
+  vany: any -> any;
 }
 
 let default_visitor = 
@@ -130,6 +132,11 @@ and map_wrap5 _of_a (v1, v2) =
 and map_wrap6 _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 and map_wrap7 _of_a (v1, v2) =
+  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
+
+and map_wrap10 _of_a (v1, v2) =
+  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
+and map_wrap11 _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 
 and map_paren_args _of_a (v1, v2, v3) =
@@ -212,6 +219,7 @@ and map_name =
   | Name v1 -> let v1 = map_wrap_string map_of_string v1 in Name ((v1))
   | XhpName v1 -> let v1 = map_wrap_tag (map_of_list map_of_string) v1 in 
                   XhpName ((v1))
+and map_xhp_tag v = map_of_list map_of_string v
 and map_dname =
   function | DName v1 -> let v1 = map_wrap_string map_of_string v1 in DName ((v1))
 and map_qualifier =
@@ -354,8 +362,7 @@ and map_expr (x) =
       in Isset ((v1, v2))
   | SgrepExprDots v1 -> let v1 = map_info v1 in SgrepExprDots ((v1))
   | ParenExpr v1 -> let v1 = map_paren_expr map_expr v1 in ParenExpr ((v1))
-  | XhpHtml _ ->
-      raise Todo
+  | XhpHtml v1 -> let v1 = map_xhp_html v1 in XhpHtml ((v1))
  in
  let v1 = map_exprbis v1 and v2 = map_exp_info v2  in
  (v1, v2)
@@ -504,6 +511,44 @@ and map_class_name_reference =
       in ClassNameRefDynamic ((v1))
 and map_obj_prop_access (v1, v2) =
   let v1 = map_tok v1 and v2 = map_obj_property v2 in (v1, v2)
+
+and map_xhp_html =
+  function
+  | Xhp ((v1, v2, v3, v4, v5)) ->
+      let v1 = map_wrap10 map_xhp_tag v1
+      and v2 = map_of_list map_xhp_attribute v2
+      and v3 = map_tok v3
+      and v4 = map_of_list map_xhp_body v4
+      and v5 = map_wrap11 (map_of_option map_xhp_tag) v5
+      in Xhp ((v1, v2, v3, v4, v5))
+  | XhpSingleton ((v1, v2, v3)) ->
+      let v1 = map_wrap10 map_xhp_tag v1
+      and v2 = map_of_list map_xhp_attribute v2
+      and v3 = map_tok v3
+      in XhpSingleton ((v1, v2, v3))
+and map_xhp_attribute (v1, v2, v3) =
+  let v1 = map_xhp_attr_name v1
+  and v2 = map_tok v2
+  and v3 = map_xhp_attr_value v3
+  in (v1, v2, v3)
+and map_xhp_attr_name v = map_wrap_string map_of_string v
+and map_xhp_attr_value =
+  function
+  | XhpAttrString ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_of_list map_encaps v2
+      and v3 = map_tok v3
+      in XhpAttrString ((v1, v2, v3))
+  | XhpAttrExpr v1 -> let v1 = map_brace_expr map_expr v1 in XhpAttrExpr ((v1))
+  | SgrepXhpAttrValueMvar v1 ->
+      let v1 = map_wrap_string map_of_string v1 in SgrepXhpAttrValueMvar ((v1))
+and map_xhp_body =
+  function
+  | XhpText v1 -> let v1 = map_wrap_string map_of_string v1 in XhpText ((v1))
+  | XhpExpr v1 -> let v1 = map_brace_expr map_expr v1 in XhpExpr ((v1))
+  | XhpNested v1 -> let v1 = map_xhp_html v1 in XhpNested ((v1))
+
+
 and map_variable (v1, v2) =
   let k x = match v1, v2 with
     | ((v1, v2)) ->
@@ -1081,6 +1126,38 @@ and map_toplevel =
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
 and map_program v = map_of_list map_toplevel v
 
+
+and map_any =
+  function
+  | Lvalue v1 -> let v1 = map_variable v1 in Lvalue ((v1))
+  | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
+  | Stmt2 v1 -> let v1 = map_stmt v1 in Stmt2 ((v1))
+  | StmtAndDef v1 -> let v1 = map_stmt_and_def v1 in StmtAndDef ((v1))
+  | Toplevel v1 -> let v1 = map_toplevel v1 in Toplevel ((v1))
+  | Program v1 -> let v1 = map_program v1 in Program ((v1))
+  | Argument v1 -> let v1 = map_argument v1 in Argument ((v1))
+  | Parameter v1 -> let v1 = map_parameter v1 in Parameter ((v1))
+  | Parameters v1 ->
+      let v1 = map_paren (map_comma_list map_parameter) v1
+      in Parameters ((v1))
+  | Body v1 ->
+      let v1 = map_brace_body (map_of_list map_stmt_and_def) v1 in Body ((v1))
+  | StmtAndDefs v1 ->
+      let v1 = map_of_list map_stmt_and_def v1 in StmtAndDefs ((v1))
+  | ClassStmt v1 -> let v1 = map_class_stmt v1 in ClassStmt ((v1))
+  | ClassConstant2 v1 ->
+      let v1 = map_class_constant v1 in ClassConstant2 ((v1))
+  | ClassVariable v1 ->
+      let v1 = map_class_variable v1 in ClassVariable ((v1))
+  | ListAssign v1 -> let v1 = map_list_assign v1 in ListAssign ((v1))
+  | ColonStmt2 v1 -> let v1 = map_colon_stmt v1 in ColonStmt2 ((v1))
+  | XhpAttribute v1 -> let v1 = map_xhp_attribute v1 in XhpAttribute ((v1))
+  | XhpAttrValue v1 -> let v1 = map_xhp_attr_value v1 in XhpAttrValue ((v1))
+  | XhpHtml2 v1 -> let v1 = map_xhp_html v1 in XhpHtml2 ((v1))
+  | Info v1 -> let v1 = map_info v1 in Info ((v1))
+  | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
+
+
  and all_functions =   
     {
       vtop = map_toplevel;
@@ -1088,6 +1165,8 @@ and map_program v = map_of_list map_toplevel v
       vprogram = map_program;
       vexpr = map_expr;
       vlvalue = map_variable;
+      vxhpattrvalue = map_xhp_attr_value;
+      vany = map_any;
     }
   in
   all_functions
