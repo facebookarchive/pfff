@@ -7,6 +7,7 @@ TARGET=lib
 SRC= \
      xdebug.ml \
      phpunit.ml \
+     php_serialize.ml \
 
 
 
@@ -54,4 +55,12 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+
+PP=-pp camlp4o
+
+php_serialize.cmo: php_serialize.ml
+	$(OCAMLC) $(PP) -c $<
+
+php_serialize.cmx: php_serialize.ml
+	$(OCAMLOPT) $(PP) -c $<
 

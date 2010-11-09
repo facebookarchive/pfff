@@ -185,6 +185,26 @@ let test_type_xdebug_php file =
   );
   ()
 
+let test_phpdoc dir =
+  let files = Phpmanual_xml.find_functions_reference_of_dir dir in
+  files +> List.iter (fun file ->
+    let _func = Phpmanual_xml.function_name_of_xml_filename file in
+    (* pr2 (spf "%s\n %s" func file); *)
+    try
+      let _xml = Phpmanual_xml.parse_xml file in
+      ()
+    with exn ->
+      pr2 (spf "PB in %s" file);
+  )
+
+let test_php_serialize file =
+  let s = Common.read_file file in
+  let php = Php_serialize.parse_string s in
+  let v = Php_serialize.vof_php php in
+  let s = Ocaml.string_of_v v in
+  pr2 s
+
+
 (*s: test_cfg_php *)
 let test_cfg_php file =
   let (ast2,_stat) = Parse_php.parse file in
@@ -293,18 +313,6 @@ let test_cfg_pil file =
         Controlflow_build_pil.report_error err
       )
   | _ -> ()
-  )
-
-let test_phpdoc dir =
-  let files = Phpmanual_xml.find_functions_reference_of_dir dir in
-  files +> List.iter (fun file ->
-    let _func = Phpmanual_xml.function_name_of_xml_filename file in
-    (* pr2 (spf "%s\n %s" func file); *)
-    try
-      let _xml = Phpmanual_xml.parse_xml file in
-      ()
-    with exn ->
-      pr2 (spf "PB in %s" file);
   )
 
 let test_dataflow_pil file =
@@ -634,6 +642,8 @@ let actions () = [
 
   "-test_phpdoc", " <dir>",
   Common.mk_action_1_arg test_phpdoc;
+  "-test_php_serialize", " <file>",
+  Common.mk_action_1_arg test_php_serialize;
 
   "-dependencies_php", " <metapath>",
   Common.mk_action_1_arg test_dependencies_php;
