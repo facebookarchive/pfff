@@ -42,8 +42,78 @@ module S = Scope_code
  * see if all uses of it are covered. Other files are more concerned
  * about checks related to entities, that is Ast_php.name.
  * 
+ * The errors detected here are mostly:
+ *  - UseOfUndefinedVariable
+ *  - UnusedVariable
+ * 
  * See tests/bugs/unused_var.php for corner cases to handle.
  * 
+ * One issue is the handling of variables passed by reference
+ * which can look like use_of_undeclared_variable bugs but which
+ * are not. One way to fix it is to do a global analysis that
+ * remembers what are all the functions taking arguments by reference
+ * and whitelist them here. But this is tedious. 
+ * Another simpler way is to force programmers
+ * to actually declare such variables before those kinds of
+ * function calls.
+ * 
+ * Another issue is functions like extract(), param_get(), param_post()
+ * or variable variables like $$x. Regarding the param_get/param_post()
+ * one way to fix it is to just to not analyse toplevel code.
+ * Another solution is to hardcode a few analysis that recognize
+ * the arguments of those functions.
+ * For the extract() and $$x one can just bailout of such code or
+ * as evan did remember the first line where such code happen and
+ * don't do any analysis pass this point.
+ * 
+ * Another issue is that the analysis below will probably flag lots of 
+ * warning on an existing PHP codebase. Some programmers may find
+ * legitimate certain things, for instance having variables declared in
+ * in a foreach to escape its foreach scope. This would then hinder
+ * the whole analysis because people would just not run the analysis.
+ * You need the approval of the PHP developers on such analysis first
+ * and get them ok to change their coding styles rules.
+ * 
+ * Another issue is the implicitly-declared-when-used-the-first-time
+ * ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
+ * 
+ * 
+ * Here are some notes by evan in his own variable linter:
+ * 
+ * "These things declare variables in a function":
+ * - DONE Explicit parameters
+ * - DONE Assignment via list()
+ * - DONE Static
+ * - DONE Global
+ * - DONE foreach()
+ * - DONE catch
+ * - DONE Builtins ($this)
+ * - TODO Lexical vars, in php 5.3 lambda expressions
+ * - SEMI Assignment
+ *   (pad: variable mentionned for the first time)
+ * 
+ * "These things make lexical scope unknowable":
+ * - TODO Use of extract()
+ * - SEMI Assignment to variable variables ($$x)
+ * - DONE Global with variable variables
+ *   (pad: I actually bail out on such code)
+ * 
+ * These things don't count as "using" a variable:
+ * - TODO isset()
+ * - TODO empty()
+ * - SEMI Static class variables
+ * 
+ * 
+ * Here are a few additional checks and features of this checker:
+ *  - when the strict_scope flag is set, check_variables will
+ *    emulate a block-scoped language as in JSLint and flags
+ *    variables used outside their "block".
+ *  - when passed the find_entity hook, check_variables will:
+ *     * know  about functions taking parameters by reference which removes
+ *       some false positives.
+ *     * flag use of class without a constructor or use of undefined class
+ *     * use of undefined member
+ *     
  * 
  * todo?: cfg analysis
  * 
@@ -69,8 +139,8 @@ module S = Scope_code
  *    probably a typo. But sometimes variable names are mentionned in
  *    interface signature in which case they occur only once. So you need
  *    some basic analysis, the token level is not enough. You may not
- *    need the CFG but at least you need the AST to differentiate the different
- *    kinds of unused variables. 
+ *    need the CFG but at least you need the AST to differentiate the 
+ *    different kinds of unused variables. 
  * 
  *  - Some of the scoping logic was previously in another file, scoping_php.ml
  *    But we were kind of duplicating the logic that is in scoping_php.ml 
