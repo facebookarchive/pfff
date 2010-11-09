@@ -278,7 +278,19 @@ let ocaml_filter_file file =
   match File_type.file_type_of_file file with
   | PL (ML _)
   | PL (Makefile) 
-      -> true
+      -> 
+      (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file)
+  | _ -> false
+
+let ocaml_mli_filter_file file = 
+  match File_type.file_type_of_file file with
+  | PL (ML "mli")
+  | PL (Makefile) 
+      -> 
+      (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file) &&
+      not (file =~ ".*/commons/")
   | _ -> false
 
 

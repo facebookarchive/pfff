@@ -259,6 +259,9 @@ let options () = [
     "-ocaml_filter", Arg.Unit (fun () -> 
       filter := Treemap_pl.ocaml_filter_file),
     " ";
+    "-ocaml_mli_filter", Arg.Unit (fun () -> 
+      filter := Treemap_pl.ocaml_mli_filter_file),
+    " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";

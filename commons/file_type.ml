@@ -286,3 +286,6 @@ let string_of_pl x =
   | Web _ -> raise Todo
 *)
 
+
+let is_syncweb_obj_file file = 
+  file =~ ".*md5sum_"

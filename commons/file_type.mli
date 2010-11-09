@@ -43,6 +43,8 @@ val file_type_of_file:
 
 val is_textual_file: 
   Common.filename -> bool
+val is_syncweb_obj_file:
+  Common.filename -> bool
 
 (* specialisations *)
 val webpl_type_of_file: 

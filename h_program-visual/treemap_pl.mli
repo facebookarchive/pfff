@@ -12,6 +12,7 @@ val anamorphic_diviser_of_file:
 val no_filter_file: Common.filename -> bool
 val ex_filter_file: Common.filename -> bool
 val ocaml_filter_file: Common.filename -> bool
+val ocaml_mli_filter_file: Common.filename -> bool
 val pad_filter_file: Common.filename -> bool
 
 (* default treemap *)
