@@ -54,17 +54,6 @@ module MV = Metavars_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* 
- * Hacks abusing existing PHP constructs to encode extra constructions.
- * One day we will have a pattern_php_ast.ml that mimic mostly
- * ast_php.ml and extend it.
- *)
-let is_metavar_name s = 
-  s =~ "[A-Z]\\([0-9]?_[A-Z]*\\)?"
-
-let is_metavar_variable_name s = 
-  s =~ "V\\(_[A-Z]*\\)?"
-
 (*****************************************************************************)
 (* Functor parameter combinators *)
 (*****************************************************************************)
@@ -624,20 +613,33 @@ and m_variablebis a b =
   (* pad: iso on $V metavar. Match any kind of PHP 'variable'.
    * Note that this includes function call. It's 'variable' in
    * the PHP original grammar sense, as usual.
-  *)
-  | A.Var(a1, a2),  b when is_metavar_variable_name (A.dname a1) ->
-      (* TODO add in environment ? *)
-      return (
-        a, b
+   *)
+  | A.Var((A.DName (dname, info_dname)), a2),
+    b when MV.is_metavar_variable_name dname ->
+
+      X.envf (dname, info_dname) (B.Lvalue (b, Ast_php.noTypeVar())) >>= 
+      (function
+      | ((dname, info_dname), B.Lvalue (b, _))  ->
+        return (
+          A.Var((A.DName (dname, info_dname)), a2), 
+          b
+        )
+      | _ -> raise Impossible
       )
 
   (* pad, iso on variable name *)
-  | A.Var(a1, a2), B.Var(b1, b2) when is_metavar_name (A.dname a1) ->
-      (* TODO add in environment ? *)
-      return (
-        a, b
-      )
+  | A.Var((A.DName (dname, info_dname)), a2), 
+    B.Var(b1, b2) when MV.is_metavar_name dname ->
 
+      X.envf (dname, info_dname) (B.Lvalue (b, Ast_php.noTypeVar())) >>= 
+      (function
+      | ((dname, info_dname), B.Lvalue (b, _))  ->
+        return (
+          A.Var((A.DName (dname, info_dname)), a2), 
+          b
+        )
+      | _ -> raise Impossible
+      )
 
   | A.Var(a1, a2), B.Var(b1, b2) ->
     m_dname a1 b1 >>= (fun (a1, b1) -> 
@@ -951,7 +953,7 @@ and m_exprbis a b =
   match a, b with
   (* special case, metavars !! *)
   | ((A.Sc (A.C (A.CName (A.Name (name,info_name))))), 
-    e2) when is_metavar_name name ->
+    e2) when MV.is_metavar_name name ->
       X.envf (name, info_name) (B.Expr (e2, Ast_php.noType())) >>= (function
       | ((name, info_name), B.Expr (e2, _))  ->
         return (
@@ -1385,7 +1387,7 @@ and m_xhp_attr_name a b =
 
 and m_xhp_attr_value a b = 
   match a, b with
-  | A.SgrepXhpAttrValueMvar (name, i_name), b when is_metavar_name name ->
+  | A.SgrepXhpAttrValueMvar (name, i_name), b when MV.is_metavar_name name ->
       X.envf (name, i_name) (B.XhpAttrValue b) >>= (function
       | ((name, i_name), B.XhpAttrValue b) ->
           return (

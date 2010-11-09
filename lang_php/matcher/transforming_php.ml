@@ -28,6 +28,10 @@ module B = Ast_php
  * against another PHP AST providing a kind of patch but at a 
  * syntactical level.
  * 
+ * See https://github.com/facebook/pfff/wiki/Spatch
+ * 
+ * To understand the logic behind this code it may help to first read
+ * this: http://coccinelle.lip6.fr/papers/eurosys08.pdf
  *)
 
 (*****************************************************************************)
@@ -127,7 +131,7 @@ module XMATCH = struct
          *)
         let a = Lib_parsing_php.abstract_position_info_expr a in
         let b = Lib_parsing_php.abstract_position_info_expr b in
-        a = b
+        a =*= b
 
     | A.XhpAttrValue _, A.XhpAttrValue _ ->
         
@@ -137,6 +141,7 @@ module XMATCH = struct
 
     | _, _ -> false
 
+  (* this is quite similar to the code in matching_php.ml *)
   let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
     match Common.assoc_option mvar tin with
     | Some valu' ->
@@ -154,11 +159,76 @@ module XMATCH = struct
         (* first time the metavar is binded. Just add it to the environment *)
         Some (Common.insert_assoc (mvar, valu) tin)
 
-  let distribute_transfo transfo any = 
+
+
+  let subst_metavars env add =
+    let env = 
+      env +> List.map (fun (mvar, any) -> mvar, Unparse_php.string_of_any any)
+    in
+    match add with
+    | B.AddNewlineAndIdent -> 
+        B.AddNewlineAndIdent
+    | B.AddStr s ->
+        let s' = Common.global_replace_regexp MV.metavar_regexp_string
+         (fun matched ->
+          try List.assoc matched env
+          with Not_found -> 
+            failwith (spf "metavariable %s was not found in environment" 
+                         matched)
+         ) s
+        in
+        B.AddStr s'
+
+  (* when a transformation contains a '+' part, as in 
+   * - 2
+   * + bar(X)
+   * 
+   * then before applying the transformation we need first to
+   * substitute all metavariables by their actual binded value
+   * in the environment.
+   *)
+  let adjust_transfo_with_env env transfo = 
+     match transfo with
+     | B.NoTransfo 
+     | B.Remove -> transfo
+
+     | B.AddBefore add ->
+         B.AddBefore (subst_metavars env add)
+     | B.AddAfter add ->
+         B.AddAfter (subst_metavars env add)
+     | B.Replace add ->
+         B.Replace (subst_metavars env add)
+
+
+  (* 
+   * Sometimes a metavariable like X will match an expression made of
+   * multiple tokens  like  '1*2'. 
+   * This metavariable may have a transformation associated with it,
+   * like  '- X',  in which case we want to propagate the removal
+   * transformation to all the tokens in the matched expression.
+   * 
+   * In some cases the transformation may also contains a +, as in
+   *   - X
+   *   + 3
+   * in which case we can not just propagate the transformation
+   * to all the tokens. Indeed doing so would duplicate the '+ 3'
+   * on all the matched tokens. We need instead to distribute
+   * the removal transformation and associate the '+' transformation
+   * part only to the very last matched token by X (here '2').
+   *)
+
+  let distribute_transfo transfo any env = 
     let ii = Lib_parsing_php.ii_of_any any in
-    (* TODO, adjust the + to the right place *)
-    ii +> List.iter (fun tok -> 
-      tok.B.transfo <- transfo
+
+    (match transfo with
+    | B.NoTransfo -> ()
+    | B.Remove -> ii +> List.iter (fun tok -> tok.B.transfo <- B.Remove)
+    | B.Replace add ->
+        ii +> List.iter (fun tok -> tok.B.transfo <- B.Remove);
+        let any_ii = List.hd ii in
+        any_ii.B.transfo <- adjust_transfo_with_env env transfo;
+    | B.AddBefore add -> raise Todo
+    | B.AddAfter add -> raise Todo
     )
 
   let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
@@ -168,14 +238,16 @@ module XMATCH = struct
         fail tin
     | Some new_binding ->
         (* TODO: distribute transfo mark *)
-        distribute_transfo imvar.A.transfo any;
-
+        distribute_transfo imvar.A.transfo any tin;
         return ((mvar, imvar), any) new_binding
 
+
+
   (* propagate the transformation info *)
-  let tokenf a b = 
-    b.B.transfo <- a.A.transfo;
-    return (a, b)
+  let tokenf a b = fun tin ->
+    let transfo = a.A.transfo in
+    b.B.transfo <- adjust_transfo_with_env tin transfo;   
+    return (a, b) tin
     
 end
 
@@ -191,9 +263,3 @@ type ('a, 'b) transformer = 'a -> 'b ->
 let transform_e_e pattern e   env = 
   ignore (MATCH.m_expr pattern e   env);
   ()
-
-(*
-let match_v_v pattern e = 
-  let env = MV.empty_environment in
-  MATCH.m_variable pattern e env +> extract_bindings
-*)
