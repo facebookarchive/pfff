@@ -745,10 +745,12 @@ let rec static_function_ids_of_strings ~theclass smethod db =
       let theclass_parent_opt = parent_name_of_id idclass db in
       match theclass_parent_opt with
       | None -> 
-          pr2 (spf "could not find parent for class %s" 
-                  (name_of_id idclass db));
-          pr2 (spf "could not determine static method for %s::%s" 
-                  theclass smethod);
+          if !Flag.show_analyze_error then begin
+            pr2 (spf "could not find parent for class %s" 
+                    (name_of_id idclass db));
+            pr2 (spf "could not determine static method for %s::%s" 
+                    theclass smethod);
+          end;
           []
       | Some theclass_parent ->
           static_function_ids_of_strings ~theclass:theclass_parent smethod db
