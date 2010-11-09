@@ -33,3 +33,20 @@ type mvar = string
 type metavars_binding = (mvar, Ast_php.any) Common.assoc
 
 let empty_environment = []
+
+let metavar_regexp_string = 
+  "\\([A-Z]\\([0-9]?_[A-Z]*\\)?\\)"
+
+let metavar_regexp  = Str.regexp metavar_regexp_string
+
+(* 
+ * Hacks abusing existing PHP constructs to encode extra constructions.
+ * One day we will have a pattern_php_ast.ml that mimic mostly
+ * ast_php.ml and extend it.
+ *)
+let is_metavar_name s = 
+  s ==~ metavar_regexp
+
+(* todo: replace this hack by allowing X->method(...) in php grammar *)
+let is_metavar_variable_name s = 
+  s =~ "V\\(_[A-Z]*\\)?"

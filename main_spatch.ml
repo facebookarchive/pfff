@@ -443,7 +443,7 @@ let unittest_spatch () =
 (*---------------------------------------------------------------------------*)
 let spatch_extra_actions () = [
   (* see also demos/simple_refactoring.ml *)
-  "-simple_transfo", "<files_or_dirs>",
+  "-simple_transfo", " <files_or_dirs>",
   Common.mk_action_n_arg (simple_transfo);
 
   "-test", "",
@@ -469,7 +469,7 @@ let options () =
     "-verbose", Arg.Set verbose, 
     " ";
   ] ++
-  Flag_parsing_php.cmdline_flags_pp () ++
+  (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++
