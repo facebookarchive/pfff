@@ -1377,9 +1377,9 @@ let evoval = ()
 (* Environment *)
 (*****************************************************************************)
 
-let check_stack = ref true
+let _check_stack = ref true
 let check_stack_size limit = 
-  if !check_stack then begin
+  if !_check_stack then begin
     pr2 "checking stack size (do ulimit -s 40000 if problem)";
     let rec aux i = 
       if i = limit
@@ -5968,7 +5968,7 @@ let cmdline_flags_verbose () =
 
 let cmdline_flags_other () = 
   [
-    "-nocheck_stack",      Arg.Clear check_stack, 
+    "-nocheck_stack",      Arg.Clear _check_stack, 
     " ";
     "-batch_mode", Arg.Set _batch_mode,
     " no interactivity";

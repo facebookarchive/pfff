@@ -509,6 +509,8 @@ val evoval : evotype
 (* Environment *)
 (*****************************************************************************)
 
+val _check_stack: bool ref
+
 val check_stack_size: int -> unit
 val check_stack_nbfiles: int -> unit
  
