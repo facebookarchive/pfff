@@ -232,6 +232,13 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
   if font_size_real > Style.threshold_draw_dark_background_font_size_real
   then begin
+
+    (* erase what was done at the macrolevel *)
+    if Hashtbl.length context.layers_microlevel > 0 then begin
+      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "white") 
+        ~alpha:1.0 rect;
+    end;
+
     let alpha = 
       match context.nb_rects_on_screen with
       | n when n <= 2 -> 0.8
@@ -246,7 +253,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       (* draw a thin rectangle with aspect color *)
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
         ~line_width:(font_size / 2.) rect.T.tr_rect;
-    end;
+    end
   end;
 
   (* highlighting layers (and grep-like queries) *)
