@@ -256,11 +256,20 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     end
   end;
 
-  (* highlighting layers (and grep-like queries) *)
+  (* highlighting layers (and grep-like queries at one point) *)
   let hmatching_lines = 
     try Hashtbl.find context.layers_microlevel file
     with Not_found -> Hashtbl.create 0
   in
+
+  (* todo: make sgrep_query a form of layer *)
+  let matching_grep_lines = 
+    try Hashtbl.find_all context.grep_query file
+    with Not_found -> []
+  in
+  matching_grep_lines +> List.iter (fun line ->
+    Hashtbl.add hmatching_lines line "purple"
+  );
 
   let nblines_per_column = 
     (layout.nblines / layout.split_nb_columns) +> ceil +> int_of_float in
