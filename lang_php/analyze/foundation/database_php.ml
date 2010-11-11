@@ -1016,7 +1016,11 @@ let col_of_id id db =
   fullid.EC.column
 
 let kind_of_id id db =
-  db.defs.id_kind#assoc id
+  try 
+    db.defs.id_kind#assoc id
+  (* probably because of NotParsedCorrectly entities *)
+  with Not_found -> 
+    EC.IdMisc
 
 let readable_filename_of_id id db =
   let file = filename_of_id id db in

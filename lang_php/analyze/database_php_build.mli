@@ -12,6 +12,12 @@ val create_db :
   Database_php.project -> 
   Database_php.database
 
+(* use Include_require_php.recursive_included_files_of_file *)
+val fast_create_db_mem:
+  ?phase:int ->
+  Common.path list -> 
+  Database_php.database
+
 (* wrapper that makes it easier for some code to not depend on database_php *)
 val build_entity_finder: 
   Database_php.database -> Ast_entity_php.entity_finder

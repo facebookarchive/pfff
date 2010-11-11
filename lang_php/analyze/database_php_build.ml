@@ -623,6 +623,12 @@ let index_db1_2 db files =
            * do not add it otherwise id will not be a primary key.
            *)
           | Ast.FinalDef _ -> ()
+          (* do we want to add the NotParsedCorrectly in the db ? It
+           * can be useful in the code visualizer to have all
+           * the elements in a file, including the one that do not
+           * parse.
+           * Note that this id does not have a id_kind for now.
+           *)
           | _ ->
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
@@ -1393,8 +1399,15 @@ let create_db
 
 
 (*****************************************************************************)
-(* Misc operations *)
+(* Fast db construction *)
 (*****************************************************************************)
+
+(* The goal here is to build a database containing enough context, enough
+ * relevant files, to be able to do interesting global analysis on a file
+ * passed as a parameter to one of our command line program.
+ *)
+let fast_create_db_mem ?phase files_or_dirs =
+  raise Todo
 
 (*****************************************************************************)
 (* Main entry for Arg *)

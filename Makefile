@@ -547,7 +547,7 @@ website:
 .PHONY:: tags visual db
 
 tags:
-	./pfff_tags -verbose -lang ml .
+	./stags -verbose -lang ml .
 db:
 	./pfff_db_light -verbose  -lang ml -o DB_LIGHT .
 
