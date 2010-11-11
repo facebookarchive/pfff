@@ -79,7 +79,7 @@ let file_type_of_file2 file =
 *)
 
   | "ml" | "mli" 
-  | "mly" | "mll"
+  | "mly" | "mll"    | "mlb" (* mlburg *)
       -> PL (ML e)
   | "mlp" (* used in emacs source *)
       -> PL (ML e)

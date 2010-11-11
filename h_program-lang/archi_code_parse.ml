@@ -46,6 +46,9 @@ let is_auto_generated file =
       Sys.file_exists (Common.filename_of_dbe (d,b, "mll"))
       || 
       Sys.file_exists (Common.filename_of_dbe (d,b, "mly"))
+      ||
+      Sys.file_exists (Common.filename_of_dbe (d,b, "mlb"))
+
   | "mli" ->
       Sys.file_exists (Common.filename_of_dbe (d,b, "mly"))
 
