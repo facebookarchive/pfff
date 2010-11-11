@@ -23,7 +23,7 @@ pfff is also made of few tools:
  - pfff_db, which does some heavy language specific global analysis on a set
    of source files and store the data in a database somewhere 
    (e.g. /tmp/pfff_db)
- - pfff_visual, which is a gtk and cairo based source code 
+ - codemap, which is a gtk and cairo based source code 
    visualizer/navigator/searcher leveraging
    the information computed previously by pfff_db_light
  - sgrep, a syntactical grep
@@ -54,10 +54,10 @@ Usage for pfff_db_light:
 to analyze all the .ml and .mli files under ~/pfff and store metadata
 information (the database) in /tmp/light_db.db
 
-Usage for pfff_visual:
+Usage for codemap:
 ------------------------
 
-  $ ./pfff_visual -with_info /tmp/light_db.db ~/pfff
+  $ ./codemap -with_info /tmp/light_db.db ~/pfff
 
 This should launch a gtk-based GUI that allows you to visualize
 source code and perform some code search.
