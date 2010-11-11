@@ -3743,6 +3743,7 @@ let rec groupBy eq l =
       let (xs1,xs2) = List.partition (fun x' -> eq x x') xs in
       (x::xs1)::(groupBy eq xs2)
 
+(* you should really use group_assoc_bykey_eff *)
 let rec group_by_mapped_key fkey l =
   match l with
   | [] -> []
