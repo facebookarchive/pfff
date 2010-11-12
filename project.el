@@ -39,6 +39,7 @@
      meta
      facebook/fb_common
      facebook/fb_org
+     facebook/fb_db
      facebook/check_module
      facebook/flib_navigator
      facebook/visual
@@ -150,12 +151,12 @@
   ; pfff_misc
   ; --------------------------------------------------------------------------
   (setq
-   pad-ocaml-project-prog     "pfff_misc"
+   pad-ocaml-project-prog     "facebook/pfff_misc"
    pad-ocaml-project-args 
    (join-string 
     (list 
      "-debugger"
-     (case 50
+     (case 100
 
        (0 "-test")
 
@@ -183,6 +184,7 @@
 
        (50 "-parse_js /home/pad/pfff/tests/js/foo.js")
 
+       (100 "-foo")
        )
      )
     )
