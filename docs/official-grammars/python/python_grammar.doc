@@ -1,7 +1,4 @@
-
-name ::= lc_letter (lc_letter | "_")*
-  
-lc_letter ::= "a"..."z"
+src: http://docs.python.org/release/2.5.2/ref/grammar.txt
 
 identifier ::= 
              (letter|"_") (letter | digit | "_")*
@@ -98,7 +95,7 @@ atom ::=
 enclosure ::= 
              parenth_form | list_display
                 | generator_expression | dict_display
-                | string_conversion
+                | string_conversion | yield_atom
 
 literal ::= 
              stringliteral | integer | longinteger
@@ -107,41 +104,38 @@ literal ::=
 parenth_form ::= 
              "(" [expression_list] ")"
 
-test ::= 
-             or_test | lambda_form
-  
-testlist ::= 
-             test ( "," test )* [ "," ]
-  
 list_display ::= 
-             "[" [listmaker] "]"
+             "[" [expression_list | list_comprehension] "]"
   
-listmaker ::= 
-             expression ( list_for
-              | ( "," expression )* [","] )
+list_comprehension ::= 
+             expression list_for
+  
+list_for ::= 
+             "for" target_list "in" old_expression_list
+              [list_iter]
+  
+old_expression_list ::= 
+             old_expression
+              [("," old_expression)+ [","]]
   
 list_iter ::= 
              list_for | list_if
   
-list_for ::= 
-             "for" expression_list "in" testlist
-              [list_iter]
-  
 list_if ::= 
-             "if" test [list_iter]
+             "if" old_expression [list_iter]
 
 generator_expression ::= 
-             "(" test genexpr_for ")"
+             "(" expression genexpr_for ")"
   
 genexpr_for ::= 
-             "for" expression_list "in" test
+             "for" target_list "in" or_test
               [genexpr_iter]
   
 genexpr_iter ::= 
              genexpr_for | genexpr_if
   
 genexpr_if ::= 
-             "if" test [genexpr_iter]
+             "if" old_expression [genexpr_iter]
 
 dict_display ::= 
              "\{" [key_datum_list] "\}"
@@ -154,6 +148,12 @@ key_datum ::=
 
 string_conversion ::= 
              "`" expression_list "`"
+
+yield_atom ::= 
+             "(" yield_expression ")"
+  
+yield_expression ::= 
+             "yield" [expression_list]
 
 primary ::= 
              atom | attributeref
@@ -202,9 +202,8 @@ ellipsis ::=
              "..."
 
 call ::= 
-             primary "(" [argument_list [","]] ")"
-             primary "(" [argument_list [","] |
-	      test genexpr_for ] ")"                                                   
+             primary "(" [argument_list [","]
+                            | expression genexpr_for] ")"
   
 argument_list ::= 
              positional_arguments ["," keyword_arguments]
@@ -240,7 +239,6 @@ m_expr ::=
 a_expr ::= 
              m_expr | a_expr "+" m_expr
               | a_expr "-" m_expr
-<tex2html_comment_mark>41
 
 shift_expr ::= 
              a_expr
@@ -263,8 +261,13 @@ comp_operator ::=
                 | "is" ["not"] | ["not"] "in"
 
 expression ::= 
-             or_test [if or_test else
-              test] | lambda_form
+             conditional_expression | lambda_form
+  
+old_expression ::= 
+             or_test | old_lambda_form
+  
+conditional_expression ::= 
+             or_test ["if" or_test "else" expression]
   
 or_test ::= 
              and_test | or_test "or" and_test
@@ -277,6 +280,9 @@ not_test ::=
 
 lambda_form ::= 
              "lambda" [parameter_list]: expression
+  
+old_lambda_form ::= 
+             "lambda" [parameter_list]: old_expression
 
 expression_list ::= 
              expression ( "," expression )* [","]
@@ -304,7 +310,8 @@ assert_stmt ::=
              "assert" expression ["," expression]
 
 assignment_stmt ::= 
-             (target_list "=")+ expression_list
+             (target_list "=")+
+              (expression_list | yield_expression)
   
 target_list ::= 
              target ("," target)* [","]
@@ -318,12 +325,12 @@ target ::=
                 | slicing
 
 augmented_assignment_stmt ::= 
-             target augop expression_list
+             target augop
+              (expression_list | yield_expression)
   
 augop ::= 
              "+=" | "-=" | "*=" | "/=" | "\%=" | "**="
-  <tex2html_comment_mark>47
-              | ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="
+                | ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="
 
 pass_stmt ::= 
              "pass"
@@ -332,15 +339,15 @@ del_stmt ::=
              "del" target_list
 
 print_stmt ::= 
-             "print" ( \optionalexpression ("," expression)* \optional","
+             "print" ([expression ("," expression)* [","]
                 | ">>" expression
-                  \optional("," expression)+ \optional"," )
+                  [("," expression)+ [","])
 
 return_stmt ::= 
              "return" [expression_list]
 
 yield_stmt ::= 
-             "yield" expression_list
+             yield_expression
 
 raise_stmt ::= 
              "raise" [expression ["," expression
@@ -355,22 +362,28 @@ continue_stmt ::=
 import_stmt ::= 
              "import" module ["as" name]
                 ( "," module ["as" name] )*
-                | "from" module "import" identifier
+                | "from" relative_module "import" identifier
                     ["as" name]
                   ( "," identifier ["as" name] )*
-                | "from" module "import" "(" identifier
-                    ["as" name]
+                | "from" relative_module "import" "("
+                    identifier ["as" name]
                   ( "," identifier ["as" name] )* [","] ")"
                 | "from" module "import" "*"
   
 module ::= 
              (identifier ".")* identifier
+  
+relative_module ::= 
+             "."* module | "."+
+  
+name ::= 
+             identifier
 
 global_stmt ::= 
              "global" identifier ("," identifier)*
 
 exec_stmt ::= 
-             "exec" expression
+             "exec" or_expr
               ["in" expression ["," expression]]
 
 compound_stmt ::= 
