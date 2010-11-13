@@ -521,8 +521,7 @@ let visit_toplevel
 
 
     | T.Tlet ii | T.Tin ii | T.Tand ii | T.Trec ii 
-    | T.Tval ii
-    | T.Texternal ii
+    | T.Tval ii | T.Texternal ii
         -> tag ii Keyword
 
     | T.Tfun ii | T.Tfunction ii ->
@@ -605,21 +604,11 @@ let visit_toplevel
     | T.Topen ii  ->
         tag ii BadSmell
 
-    | T.Tmodule ii 
-    | T.Tstruct ii
-    | T.Tsig ii
-    | T.Tinclude ii
-    | T.Tfunctor ii
+    | T.Tmodule ii | T.Tstruct ii | T.Tsig ii | T.Tinclude ii | T.Tfunctor ii
         -> tag ii KeywordModule
 
-    | T.Tclass ii
-    | T.Tvirtual ii
-    | T.Tprivate ii
-    | T.Tobject ii
-    | T.Tnew ii
-    | T.Tmethod ii
-    | T.Tinitializer ii
-    | T.Tinherit ii
+    | T.Tclass ii  | T.Tvirtual ii | T.Tprivate ii | T.Tobject ii
+    | T.Tnew ii | T.Tmethod ii | T.Tinitializer ii | T.Tinherit ii
     | T.Tconstraint ii
         -> tag ii KeywordObject
 
@@ -646,28 +635,16 @@ let visit_toplevel
       -> tag ii Punctuation
 
 
-    | T.Tland ii 
-    | T.Tasr ii
-    | T.Tlxor ii
-    | T.Tlsr ii
-    | T.Tlsl ii
-    | T.Tlor ii
-    | T.Tmod ii
-    | T.Tor ii ->
+    | T.Tland ii  | T.Tasr ii | T.Tlxor ii | T.Tlsr ii | T.Tlsl ii
+    | T.Tlor ii | T.Tmod ii | T.Tor ii ->
         tag ii Punctuation
 
-    | T.TSharp ii
-    | T.TQuote ii
-    | T.TBackQuote ii
-    | T.TQuestion ii
-    | T.TQuestionQuestion ii
+    | T.TSharp ii  | T.TQuote ii  | T.TBackQuote ii
+    | T.TQuestion ii | T.TQuestionQuestion ii
 
-    | T.TDotDot ii
-    | T.TColonGreater ii
-    | T.TColonColon ii
+    | T.TDotDot ii  | T.TColonGreater ii | T.TColonColon ii
 
-    | T.TAnd ii
-    | T.TAndAnd ii
+    | T.TAnd ii | T.TAndAnd ii
       -> tag ii Punctuation
 
     | T.TPrefixOperator (_, ii) ->
@@ -678,14 +655,9 @@ let visit_toplevel
     | T.TMinusDot ii
     | T.TPlusDot ii
 
-    | T.TArrow ii
-    | T.TBangEq ii
-    | T.TOBracketGreater ii
-    | T.TGreaterCBrace ii
-    | T.TOBraceLess ii
-    | T.TGreaterCBracket ii
-    | T.TOBracketLess ii
-
+    | T.TArrow ii | T.TBangEq ii
+    | T.TOBracketGreater ii | T.TGreaterCBrace ii
+    | T.TOBraceLess ii    | T.TGreaterCBracket ii | T.TOBracketLess ii
 
     | T.TOptLabelUse (_, ii)
     | T.TLabelUse (_, ii)
