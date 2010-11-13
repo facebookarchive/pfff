@@ -113,7 +113,13 @@ let tokens a =
 (*****************************************************************************)
 
 let parse2 filename = 
-  raise Todo
+
+  let stat = Parse_info.default_stat filename in
+  let toks_orig = tokens filename in
+
+  (* TODO *)
+  [(), ("", toks_orig)], stat
+
 
 let parse a = 
   Common.profile_code "Parse_python.parse" (fun () -> parse2 a)

@@ -11,8 +11,8 @@ open OUnit
 (*****************************************************************************)
 
 let test_tokens_python file = 
-  if not (file =~ ".*\\.ml[iyl]?") 
-  then pr2 "warning: seems not a ocaml file";
+  if not (file =~ ".*\\.py") 
+  then pr2 "warning: seems not a python file";
 
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;

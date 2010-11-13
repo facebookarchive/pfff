@@ -2,7 +2,7 @@
 
 * 0.14
 
-** pfff_visual
+** codemap
 
 *** more semantic visual feedback
 can see arguments passed by refs visually (TakeArgNByRef)
@@ -16,7 +16,7 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 can now visualize the result of a git grep on a project.
 
 *** better visualization of directories
-use different color for dirs and files, and highlight first
+use different color for dirs and files labels, and highlight first
 letter of label at depth = 1
 
 ** introduce spatch, a syntactical patch
@@ -26,15 +26,17 @@ a DSL to express easily refactoring on PHP.
 better support for XHP patterns with flexible matching
 on attributes
 
-** introducing parsing_nw/
+** introducing lang_nw/
 so can visualize also Tex/Latex/Noweb source (which includes
 the documentation of pfff!)
 
-** introducing parsing_lisp/
+** introducing lang_lisp/
 
-** introducing parsing_haskell/
+** introducing lang_haskell/
 
-** introducing parsing_java/
+** introducing lang_java/
+
+** introducing lang_python/
 
 ** php analysis
 
@@ -54,7 +56,7 @@ the documentation of pfff!)
 This can help the visualizer to give more semantic visual feedback.
 
 *** layer type so can save results of global analysis and process them
-later in pfff_visual or pfff_statistics
+later in codemap or pfff_statistics
 
 ** pfff:ml
 
@@ -62,15 +64,17 @@ more highlight
 
 ** documentation
 
-wrote a wiki pages (intro, sgrep, spatch, features, vision, etc)
+wrote wiki pages (intro, sgrep, spatch, features, vision, roadmap, etc)
 
-applied pfff_visual on many open source project and generated screenshots.
+applied codemap on many open source project and generated screenshots.
 
 ** internals
 
 refactor the code in visual/ to have smaller and cleaner files (thanks
-to literate programming and pfff_visual itself to show the problem
+to literate programming and codemap itself to show the problem
 and assist in the refactoring)
+
+** renamed pfff_visual in codemap
 
 * 0.13
 

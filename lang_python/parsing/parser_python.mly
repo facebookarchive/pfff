@@ -42,6 +42,13 @@ open Ast_python
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
+%token <string * Ast_python.info> TInt
+%token <string * Ast_python.info> TFloat
+%token <string * Ast_python.info> TComplex
+%token <string * Ast_python.info> TChar
+%token <string * Ast_python.info> TString
+
+%token <string * Ast_python.info> TIdent
 
 /*(* keywords tokens *)*/
 %token <Ast_python.info>
@@ -56,6 +63,30 @@ open Ast_python
   Tdel Tfrom Tas Twith Tassert Tpass Texcept Timport Tprint Texec Tin Tis
 
 /*(* syntax *)*/
+%token <Ast_python.info> TOParen TCParen 
+%token <Ast_python.info> TOBracket TCBracket
+%token <Ast_python.info> TOBrace TCBrace
+%token <Ast_python.info> TOAngle TCAngle
+
+%token <Ast_python.info>
+ TComma
+ TColon
+ TBackQuote
+ TDot
+ TEllipsis
+ TStar TStarStar
+ TEq
+ TPlus TMinus 
+ TTilde
+ TSlash  TSlashSlash
+ TPercent
+ TAnd TOr TXor
+ TLess TMore TEqEq TMoreEq TLessEq TDiff TNotEq
+ TAt
+
+%token <string * Ast_python.info>
+ TAugOp
+ 
 
 /*(* operators *)*/
 

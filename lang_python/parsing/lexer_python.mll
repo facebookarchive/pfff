@@ -86,6 +86,40 @@ let keyword_table = Common.hash_of_list [
 let letter = ['A'-'Z' 'a'-'z']
 let digit  = ['0'-'9']
 
+let ident = (letter | '_') (letter | digit | '_')*
+
+let newline = '\n'
+let space = [' ' '\t']
+
+let nonzerodigit = ['1'-'9']
+let octdigit = ['0'-'7']
+let hexdigit = digit | ['a'-'f'] | ['A'-'F']
+
+let octal = ['0'-'7']
+
+(* in long string we can have any kind of \, like \[, so '\\' ['a'-'z'] is
+ * not enough
+ *)
+let escapeseq = 
+   ( '\\' octal octal octal | '\\' _)
+
+let decimalinteger = nonzerodigit digit* | '0'
+let octinteger = '0' octdigit+
+let hexinteger = '0' ('x' | 'X') hexdigit+
+
+let integer = (decimalinteger | octinteger | hexinteger)
+
+let intpart = digit+
+let fraction = '.' digit+
+let exponent = ('e' | 'E') ('+' | '-')? digit+
+
+let pointfloat = intpart? fraction | intpart '.'
+let exponentfloat = (intpart | pointfloat) exponent
+
+let floatnumber = (pointfloat | exponentfloat)
+
+let imagnumber = (floatnumber | intpart) ('j' | 'J')
+
 (*****************************************************************************)
 
 rule token = parse
@@ -93,22 +127,129 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
+  | "#" [^ '\n']* { TComment (tokinfo lexbuf) }
+
+  (* python use haskell layout so newline and indentation has to be handled
+   * in a special way by the caller of the lexer
+   *)
+  | newline { TCommentNewline (tokinfo lexbuf) }
+  | space+ { TCommentSpace (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
+  | "="  { TEq (tokinfo lexbuf) }
+
+  | "(" { TOParen(tokinfo lexbuf) }  | ")" { TCParen(tokinfo lexbuf) }
+  | "{" { TOBrace(tokinfo lexbuf) }  | "}" { TCBrace(tokinfo lexbuf) }
+  | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
+  | "<<" { TOAngle(tokinfo lexbuf) }  | ">>" { TCAngle(tokinfo lexbuf) }
+
+  | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
+  | "<" { TLess(tokinfo lexbuf) }  | ">" { TMore(tokinfo lexbuf) }
+  | "<=" { TLessEq(tokinfo lexbuf) }  | ">=" { TMoreEq(tokinfo lexbuf) }
+
+
+  | "==" { TEqEq(tokinfo lexbuf) }
+  | "<>" { TDiff(tokinfo lexbuf) }
+  | "!=" { TNotEq(tokinfo lexbuf) }
+
+  | "&" { TAnd(tokinfo lexbuf) }
+  | "|" { TOr(tokinfo lexbuf) }
+  | "^" { TXor(tokinfo lexbuf) }
+
+  | "`" { TBackQuote(tokinfo lexbuf) }
+  | "@" { TAt(tokinfo lexbuf) }
+
+  | "*" { TStar(tokinfo lexbuf) }
+  | "**" { TStarStar(tokinfo lexbuf) }
+  | "," { TComma(tokinfo lexbuf) }
+
+  | "." { TDot(tokinfo lexbuf) }
+  | "..." { TEllipsis(tokinfo lexbuf) }
+  | ":" { TColon(tokinfo lexbuf) }
+  | "~" { TTilde(tokinfo lexbuf) }
+
+  | "/" { TSlash(tokinfo lexbuf) }
+  | "//" { TSlashSlash(tokinfo lexbuf) }
+  | "%" { TPercent(tokinfo lexbuf) }
+
+
+  | "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**="
+  | ">>=" | "<<=" | "&=" | "^=" | "|=" { 
+      let s = tok lexbuf in
+      TAugOp (s, tokinfo lexbuf)
+    }
+          
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
+  | ident {
+      let info = tokinfo lexbuf in
+      let s = tok lexbuf in
+      match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
+      | Some f -> f info
+      | None -> TIdent (s, info)
+    }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
+  | integer             { TInt (tok lexbuf, tokinfo lexbuf) }
+  | integer ('l' | 'L') { TInt (tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
+
+  | ['u''U']? "'" { 
+      let info = tokinfo lexbuf in
+      let s = string_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+    }
+  | ['u''U']? '"' { 
+      let info = tokinfo lexbuf in
+      let s = string_double_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
+    }
+
+  | ['u''U']? "'''" { 
+      let info = tokinfo lexbuf in
+      let s = string_triple_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "'''"))
+    }
+  | ['u''U']? '"' '"' '"' { 
+      let info = tokinfo lexbuf in
+      let s = string_triple_double_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "\"\"\""))
+    }
+
+  (* TODO: the rules for the raw string are not exactly the same;
+   * should not call the same string_xxx
+   *)
+  | ("r" | "ur" | "R" | "UR" | "Ur" | "uR") "'" {
+      let info = tokinfo lexbuf in
+      let s = string_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+    }
+  | ("r" | "ur" | "R" | "UR" | "Ur" | "uR") '"' {
+      let info = tokinfo lexbuf in
+      let s = string_double_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+    }
+
+  | ("r" | "ur" | "R" | "UR" | "Ur" | "uR") "'''" {
+      let info = tokinfo lexbuf in
+      let s = string_triple_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+    }
+  | ("r" | "ur" | "R" | "UR" | "Ur" | "uR") '"' '"' '"' {
+      let info = tokinfo lexbuf in
+      let s = string_triple_double_quote lexbuf in
+      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+    }
+    
 
   (* ----------------------------------------------------------------------- *)
   (* Misc *)
@@ -127,3 +268,54 @@ rule token = parse
     }
 
 (*****************************************************************************)
+
+and string_quote = parse
+  | "'" { "" }
+
+  | [^ '\'' '\n']* { let s = tok lexbuf in s ^ string_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in string_quote lexbuf }
+
+  | eof { pr2 "LEXER: end of file in string_quote"; "'"}
+  | _  { let s = tok lexbuf in
+         pr2 ("LEXER: unrecognised symbol in string_quote:"^s);
+         s ^ string_quote lexbuf
+    }
+
+and string_double_quote = parse
+  | '"' { "" }
+
+  | [^ '\"' '\n']* { let s = tok lexbuf in s ^ string_double_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in string_double_quote lexbuf }
+
+
+  | eof { pr2 "LEXER: end of file in string_double_quote"; "'"}
+  | _  { let s = tok lexbuf in
+         pr2 ("LEXER: unrecognised symbol in string_double_quote:"^s);
+         s ^ string_double_quote lexbuf
+    }
+
+and string_triple_quote = parse
+  | "'''" { "" }
+
+  | [^ '\\' '\'' ]* { let s = tok lexbuf in s ^ string_triple_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in string_triple_quote lexbuf }
+  | "'" { let s = tok lexbuf in string_triple_quote lexbuf }
+
+  | eof { pr2 "LEXER: end of file in string_triple_quote"; "'"}
+  | _  { let s = tok lexbuf in
+         pr2 ("LEXER: unrecognised symbol in string_triple_quote:"^s);
+         s ^ string_triple_quote lexbuf
+    }
+
+and string_triple_double_quote = parse
+  | '"' '"' '"' { "" }
+
+  | [^ '\\' '"' ]* { let s = tok lexbuf in s ^ string_triple_double_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in string_triple_double_quote lexbuf }
+  | '"' { let s = tok lexbuf in string_triple_double_quote lexbuf }
+
+  | eof { pr2 "LEXER: end of file in string_triple_double_quote"; "'"}
+  | _  { let s = tok lexbuf in
+         pr2 ("LEXER: unrecognised symbol in string_triple_double_quote:"^s);
+         s ^ string_triple_double_quote lexbuf
+    }
