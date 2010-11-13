@@ -45,6 +45,8 @@ type ast =
   | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
 
+  | Python of Parse_python.program2
+
 
 let _hmemo_file = Hashtbl.create 101
 
@@ -101,6 +103,14 @@ let parse_js2 file =
 let parse_js_cache a = 
   Common.profile_code "View.parse_js_cache" (fun () -> 
     match parse_js2 a with | Js a -> a | _ -> raise Impossible
+  )
+
+let parse_python2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Python (Parse_python.parse file +> fst))
+let parse_python_cache a = 
+  Common.profile_code "View.parse_python_cache" (fun () -> 
+    match parse_python2 a with | Python a -> a | _ -> raise Impossible
   )
 
 let parse_cpp2 file = 
@@ -280,6 +290,39 @@ let tokens_with_categ_of_file file hentities =
         toks |> Common.map_filter (fun tok -> 
           let info = Parser_hs.info_of_tok tok in
           let s = Parser_hs.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
+  | FT.PL (FT.Python) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_python_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_python.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_python.info_of_tok tok in
+          let s = Token_helpers_python.str_of_tok tok in
 
           if not (Parse_info.is_origintok info)
           then None

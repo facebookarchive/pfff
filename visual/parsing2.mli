@@ -19,6 +19,8 @@ type ast =
   | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
 
+  | Python of Parse_python.program2
+
 val _hmemo_file : (Common.filename, ast) Hashtbl.t
 val disable_file_in_cache : 
   Common.filename -> unit

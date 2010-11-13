@@ -39,6 +39,14 @@ let tag_all_tok_with ~tag categ xs =
     tag info categ
   )
 
+(* we generate fake value here because the real one are computed in a
+ * later phase in rewrite_categ_using_entities in pfff_visual.
+ *)
+let fake_no_def2 = NoUse
+let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
+let lexer_based_tagger = true
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -62,10 +70,12 @@ let visit_toplevel
   )
   in
 
+  (* -------------------------------------------------------------------- *)
+  (* ast phase 1 *) 
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
-  (* -------------------------------------------------------------------- *)
+
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
@@ -97,6 +107,16 @@ let visit_toplevel
         aux_toks xs
 
     (* poor's man identifier tagger *)
+    | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Class (Def2 fake_no_def2));
+        aux_toks xs
+
+    | T.Tdef ii1::T.TIdent (s, ii2)::xs ->
+        (* todo: actually could be a method if in class scope *)
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Function (Def2 fake_no_def2));
+        aux_toks xs
 
     | x::xs ->
         aux_toks xs
@@ -108,14 +128,15 @@ let visit_toplevel
   in
   aux_toks toks';
 
-  (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
   toks +> List.iter (fun tok -> 
     match tok with
+
+    (* comments *)
+
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
         then
@@ -131,6 +152,8 @@ let visit_toplevel
     | T.TUnknown ii -> tag ii Error
     | T.EOF ii-> ()
 
+    (* values  *)
+
     | T.TString (s,ii) ->
         tag ii String
     | T.TChar (s, ii) ->
@@ -141,18 +164,45 @@ let visit_toplevel
     | T.TComplex (_, ii) ->
         tag ii Number
 
+    (* keywords  *)
     | T.Tdef ii | T.Tlambda ii ->
         tag ii Keyword
 
     | T.Tif ii | T.Telif ii | T.Telse ii ->
         tag ii KeywordConditional
 
-    | T.Ttry ii  ->
-        tag ii KeywordExn
-
     | T.Tfor ii | T.Twhile ii
       -> tag ii KeywordLoop
 
+    | T.Ttry ii  | T.Tfinally ii | T.Traise ii| T.Texcept ii
+      -> tag ii KeywordExn
+
+    | T.Tclass ii
+        -> tag ii KeywordObject
+
+    | T.Timport ii  | T.Tas ii | T.Tfrom ii
+        -> tag ii KeywordModule
+
+    | T.Tcontinue ii
+    | T.Tbreak ii
+    | T.Tyield ii
+    | T.Treturn ii
+        -> tag ii Keyword
+
+    | T.Tis ii | T.Tin ii  | T.Texec ii
+    | T.Tprint ii 
+    | T.Tpass ii
+    | T.Tassert ii
+    | T.Twith ii
+    | T.Tdel ii
+    | T.Tglobal ii
+    | T.Tnot ii
+    | T.Tand ii
+    | T.Tor ii
+        -> tag ii Keyword
+
+
+    (* symbols *)
     | T.TEq ii ->
         if not (Hashtbl.mem already_tagged ii)
         then
@@ -173,12 +223,8 @@ let visit_toplevel
         ->
         tag ii Punctuation
 
-    | T.Timport ii 
-        -> tag ii KeywordModule
 
 
-    | T.Tclass ii
-        -> tag ii KeywordObject
 
     | T.TTilde ii
     | T.TStar ii
@@ -206,28 +252,8 @@ let visit_toplevel
     | T.TComma ii
     | T.TCAngle ii
     | T.TOAngle ii
-    | T.Tis ii
-    | T.Tin ii
-    | T.Texec ii
-    | T.Tprint ii
-    | T.Texcept ii
-    | T.Tpass ii
-    | T.Tassert ii
-    | T.Twith ii
-    | T.Tas ii
-    | T.Tfrom ii
-    | T.Tdel ii
-    | T.Tglobal ii
-    | T.Tnot ii
-    | T.Tand ii
-    | T.Tor ii
-    | T.Tfinally ii
-    | T.Traise ii
-    | T.Tcontinue ii
-    | T.Tbreak ii
-    | T.Tyield ii
-    | T.Treturn ii
         -> tag ii Punctuation
+
 
     | T.TIdent (s, ii)
         -> ()

@@ -289,6 +289,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.Text ("nw" | "tex"  | "texi" | "web")
     | FT.PL (FT.Lisp _)
     | FT.PL (FT.Haskell _)
+    | FT.PL (FT.Python)
     ) ->
 
     let column = ref 0 in

@@ -47,6 +47,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
          $(TOP)/lang_cpp/analyze \
         $(TOP)/lang_js/parsing \
          $(TOP)/lang_js/analyze \
+        $(TOP)/lang_python/parsing \
+         $(TOP)/lang_python/analyze \
 
 
 SYSINCLUDES=\
