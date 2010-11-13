@@ -145,6 +145,7 @@ BASICLIBS=commons/commons.cma \
  lang_cpp/parsing/lib.cma \
  lang_php/matcher/lib.cma \
  lang_java/parsing/lib.cma \
+ lang_python/parsing/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
@@ -190,6 +191,8 @@ LIBS= commons/commons.cma \
      lang_cpp/analyze/lib.cma \
     lang_java/parsing/lib.cma \
      lang_java/analyze/lib.cma \
+    lang_python/parsing/lib.cma \
+     lang_python/analyze/lib.cma \
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
@@ -219,6 +222,8 @@ MAKESUBDIRS=commons \
    lang_cpp/analyze \
   lang_java/parsing \
    lang_java/analyze \
+  lang_python/parsing \
+   lang_python/analyze \
   lang_php/analyze \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \

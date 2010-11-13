@@ -243,3 +243,7 @@ external/ocamlbdb/libcamlbdb.a
 /stags
 /h_program-visual/visual
 /codemap
+/lang_python/parsing/lexer_python.ml
+/lang_python/parsing/parser_python.ml
+/lang_python/parsing/parser_python.mli
+/lang_python/parsing/parser_python.output
