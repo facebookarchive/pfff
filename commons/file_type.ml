@@ -86,7 +86,7 @@ let file_type_of_file2 file =
 
   | "sml" -> PL (ML e)
   (* fsharp *)
-  | "fsi"  -> PL (ML e)
+  | "fsi" | "fsx" | "fs"  -> PL (ML e)
   (* linear ML *)
   | "lml"  -> PL (ML e)
 
