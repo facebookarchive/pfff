@@ -159,6 +159,9 @@ rule token = parse
       TComment(info +> Parse_info.tok_add_s com)
     }
 
+  (* ext: fsharp *)
+  | "///" [^ '\n']* { TComment (tokinfo lexbuf) }
+
   | "#" space* digit+ space* ("\"" [^ '"']* "\"")? 
       { TCommentMisc (tokinfo lexbuf) }
 
