@@ -217,12 +217,12 @@ rule token = parse
   | ['u''U']? "'''" { 
       let info = tokinfo lexbuf in
       let s = string_triple_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "'''"))
+      TLongString (s, info +> Parse_info.tok_add_s (s ^ "'''"))
     }
   | ['u''U']? '"' '"' '"' { 
       let info = tokinfo lexbuf in
       let s = string_triple_double_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\"\"\""))
+      TLongString (s, info +> Parse_info.tok_add_s (s ^ "\"\"\""))
     }
 
   (* TODO: the rules for the raw string are not exactly the same;
@@ -242,12 +242,12 @@ rule token = parse
   | ("r" | "ur" | "R" | "UR" | "Ur" | "uR") "'''" {
       let info = tokinfo lexbuf in
       let s = string_triple_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+      TLongString (s, info +> Parse_info.tok_add_s (s ^ "'"))
     }
   | ("r" | "ur" | "R" | "UR" | "Ur" | "uR") '"' '"' '"' {
       let info = tokinfo lexbuf in
       let s = string_triple_double_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "'"))
+      TLongString (s, info +> Parse_info.tok_add_s (s ^ "'"))
     }
     
 
@@ -273,7 +273,7 @@ and string_quote = parse
   | "'" { "" }
 
   | [^ '\'' '\n']* { let s = tok lexbuf in s ^ string_quote lexbuf }
-  | escapeseq { let s = tok lexbuf in string_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in s ^ string_quote lexbuf }
 
   | eof { pr2 "LEXER: end of file in string_quote"; "'"}
   | _  { let s = tok lexbuf in
@@ -285,7 +285,7 @@ and string_double_quote = parse
   | '"' { "" }
 
   | [^ '\"' '\n']* { let s = tok lexbuf in s ^ string_double_quote lexbuf }
-  | escapeseq { let s = tok lexbuf in string_double_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in s ^ string_double_quote lexbuf }
 
 
   | eof { pr2 "LEXER: end of file in string_double_quote"; "'"}
@@ -298,8 +298,8 @@ and string_triple_quote = parse
   | "'''" { "" }
 
   | [^ '\\' '\'' ]* { let s = tok lexbuf in s ^ string_triple_quote lexbuf }
-  | escapeseq { let s = tok lexbuf in string_triple_quote lexbuf }
-  | "'" { let s = tok lexbuf in string_triple_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in s ^ string_triple_quote lexbuf }
+  | "'" { let s = tok lexbuf in s ^ string_triple_quote lexbuf }
 
   | eof { pr2 "LEXER: end of file in string_triple_quote"; "'"}
   | _  { let s = tok lexbuf in
@@ -311,8 +311,8 @@ and string_triple_double_quote = parse
   | '"' '"' '"' { "" }
 
   | [^ '\\' '"' ]* { let s = tok lexbuf in s ^ string_triple_double_quote lexbuf }
-  | escapeseq { let s = tok lexbuf in string_triple_double_quote lexbuf }
-  | '"' { let s = tok lexbuf in string_triple_double_quote lexbuf }
+  | escapeseq { let s = tok lexbuf in s ^ string_triple_double_quote lexbuf }
+  | '"' { let s = tok lexbuf in s ^ string_triple_double_quote lexbuf }
 
   | eof { pr2 "LEXER: end of file in string_triple_double_quote"; "'"}
   | _  { let s = tok lexbuf in

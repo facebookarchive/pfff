@@ -47,6 +47,7 @@ open Ast_python
 %token <string * Ast_python.info> TComplex
 %token <string * Ast_python.info> TChar
 %token <string * Ast_python.info> TString
+%token <string * Ast_python.info> TLongString
 
 %token <string * Ast_python.info> TIdent
 

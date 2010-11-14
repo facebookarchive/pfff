@@ -725,7 +725,7 @@ let info_of_category = function
       [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Def)
 
   | Field (Use2 _) -> 
-      [`FOREGROUND "MediumPurple3"] ++ info_of_usedef (Use)
+      [`FOREGROUND "MediumPurple2"] ++ info_of_usedef (Use)
 
 
   | TypeDef usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
@@ -759,9 +759,9 @@ let info_of_category = function
 
 
   | Number -> [`FOREGROUND "yellow3";]
-  | Boolean -> [`FOREGROUND "cyan";]
+  | Boolean -> [`FOREGROUND "pink3";]
   | String -> [`FOREGROUND "green3";]
-  | Null -> [`FOREGROUND "cyan";]
+  | Null -> [`FOREGROUND "cyan3";]
 
 
 

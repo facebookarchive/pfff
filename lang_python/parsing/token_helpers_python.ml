@@ -87,6 +87,7 @@ let visitor_info_of_tok f = function
   | TComplex (s, ii) -> TComplex (s, f ii)
   | TChar (s, ii) -> TChar (s, f ii)
   | TString (s, ii) -> TString (s, f ii)
+  | TLongString (s, ii) -> TLongString (s, f ii)
 
   | TIdent (s, ii) -> TIdent (s, f ii)
 

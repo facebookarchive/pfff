@@ -107,6 +107,8 @@ let visit_toplevel
         aux_toks xs
 
     (* poor's man identifier tagger *)
+
+    (* defs *)
     | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
@@ -117,6 +119,55 @@ let visit_toplevel
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Function (Def2 fake_no_def2));
         aux_toks xs
+
+
+    (* uses *)
+
+    | T.TIdent (s, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then begin 
+          tag ii3 (Method (Use2 fake_no_use2));
+          if not (Hashtbl.mem already_tagged ii1)
+          then tag ii1 (Local Use);
+        end;
+        aux_toks xs
+
+    | T.TIdent (s, ii1)::T.TOParen(ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
+        then tag ii1 (Function (Use2 fake_no_use2));
+        aux_toks xs
+
+    | T.TIdent (s, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::xs ->
+        (match xs with
+        | (T.TDot _)::_ ->
+
+            if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+            then tag ii3 (Field (Use2 fake_no_use2));
+
+            if not (Hashtbl.mem already_tagged ii1)
+            then tag ii1 (Local Use);
+
+            aux_toks (T.TIdent (s3, ii3)::xs)
+
+        | _ ->
+          if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+          then begin 
+            tag ii3 (Field (Use2 fake_no_use2));
+            (* TODO *)
+            if not (Hashtbl.mem already_tagged ii1)
+            then tag ii1 (Local Use);
+          end;
+            aux_toks xs
+        )
+
+    | T.TIdent (s, ii1)::xs ->
+        if s =~ "[a-z]" then begin
+          if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
+          then tag ii1 (Local (Use));
+        end;
+        aux_toks xs
+        
+        
 
     | x::xs ->
         aux_toks xs
@@ -164,6 +215,11 @@ let visit_toplevel
     | T.TComplex (_, ii) ->
         tag ii Number
 
+
+    | T.TLongString (s,ii) ->
+        (* most of the time they are used as documentation strings *)
+        tag ii Comment
+
     (* keywords  *)
     | T.Tdef ii | T.Tlambda ii ->
         tag ii Keyword
@@ -196,10 +252,12 @@ let visit_toplevel
     | T.Twith ii
     | T.Tdel ii
     | T.Tglobal ii
+        -> tag ii Keyword
+
     | T.Tnot ii
     | T.Tand ii
     | T.Tor ii
-        -> tag ii Keyword
+        -> tag ii BuiltinBoolean
 
 
     (* symbols *)
@@ -255,8 +313,12 @@ let visit_toplevel
         -> tag ii Punctuation
 
 
-    | T.TIdent (s, ii)
-        -> ()
+    | T.TIdent (s, ii) -> 
+        match s with
+        | "None" -> tag ii Null
+        | "True" | "False" -> tag ii Boolean
+        | "self" -> tag ii KeywordObject
+        | _ -> ()
 
   );
 
