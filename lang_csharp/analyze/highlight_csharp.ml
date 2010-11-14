@@ -41,6 +41,10 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = true
 
+
+let is_module_name s = 
+  s =~ "[A-Z].*"
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -103,8 +107,65 @@ let visit_toplevel
     (* poor's man identifier tagger *)
 
     (* defs *)
+    | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Class (Def2 fake_no_def2));
+        aux_toks xs
+
+    | (T.Tvoid ii | T.Tint ii)
+      ::T.TIdent (s, ii2)
+      ::T.TOParen (ii3)
+      ::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Method (Def2 fake_no_def2));
+        aux_toks xs
+
+    |   T.TIdent (s1, ii1)::T.TDot ii2
+      ::T.TIdent (s3, ii3)::T.TIdent (s4,ii4)::xs 
+       ->
+        if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
+        then begin 
+          tag ii4 (Field (Def2 fake_no_def2));
+
+          tag ii3 (TypeMisc);
+          if is_module_name s1 then tag ii1 (Module (Use));
+        end;
+        aux_toks xs
+
 
     (* uses *)
+
+    |   T.TIdent (s1, ii1)::T.TDot ii2
+      ::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then begin 
+          tag ii3 (Method (Use2 fake_no_use2));
+          (*
+          if not (Hashtbl.mem already_tagged ii1)
+          then tag ii1 (Local Use);
+          *)
+          if is_module_name s1 then tag ii1 (Module (Use))
+        end;
+        aux_toks xs
+
+    |   T.TIdent (s1, ii1)::T.TDot ii2
+      ::T.TIdent (s3, ii3)::T.TEq ii4::xs ->
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then begin 
+          tag ii3 (Field (Use2 fake_no_use2));
+          if is_module_name s1 then tag ii1 (Module (Use))
+        end;
+        aux_toks xs
+
+
+    |  T.TIdent (s1, ii1)::T.TDot ii2
+     ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
+        if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
+        then begin 
+          if is_module_name s1 then tag ii1 (Module Use)
+        end;
+        aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
+        
 
     | x::xs ->
         aux_toks xs
