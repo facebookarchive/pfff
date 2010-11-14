@@ -71,6 +71,7 @@ let all_actions () =
   Test_parsing_lisp.actions()++
   Test_parsing_hs.actions()++
   Test_parsing_python.actions()++
+  Test_parsing_csharp.actions()++
   Test_mini_php.actions()++
 
   Test_analyze_cpp.actions () ++

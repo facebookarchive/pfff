@@ -247,3 +247,7 @@ external/ocamlbdb/libcamlbdb.a
 /lang_python/parsing/parser_python.ml
 /lang_python/parsing/parser_python.mli
 /lang_python/parsing/parser_python.output
+/lang_csharp/parsing/lexer_csharp.ml
+/lang_csharp/parsing/parser_csharp.ml
+/lang_csharp/parsing/parser_csharp.mli
+/lang_csharp/parsing/parser_csharp.output
