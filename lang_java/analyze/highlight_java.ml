@@ -115,11 +115,13 @@ let visit_toplevel
 
     V.kexpr_s = (fun (k, _) e ->
       (match Ast.unwrap e with
+      (* todo: could be also a MethodCall !! need access parent *)
       | Dot (e, ident) ->
           tag_ident ident (Field (Use2 fake_no_use2));
-      | _ -> ()
+          k e
+      | _ -> k e
       );
-      k e
+
     );
     V.ktype_s = (fun (k, _) e ->
       (match Ast.unwrap e with

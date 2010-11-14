@@ -357,6 +357,10 @@ rule category = parse
 
   | "/ui/"
   | "/gui/" 
+
+  (* too many false positives ? *)
+  | "gui"
+
   | "display"
   | "render"
   | "/video/"
