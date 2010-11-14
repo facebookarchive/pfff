@@ -47,6 +47,7 @@ and expr = exprbis wrap
   and exprbis = 
   | Name of name (* include 'this' and 'super' special names *)
 
+  (* todo: split in constant type with Int | Float | String | Char | Bool *)
   | Literal of string
 
   | ClassLiteral of typ
@@ -56,6 +57,7 @@ and expr = exprbis wrap
   | NewArray of typ * exprs * int * init option
 
   | Dot of expr * ident
+  (* todo: split in MethodCallSimple and so on *)
   | Call of expr * exprs
   | ArrayAccess of expr * expr
 

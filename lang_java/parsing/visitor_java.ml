@@ -461,6 +461,15 @@ and class_body = fun bigf cb ->
 and modifiers = fun bigf xs -> 
   List.map (modifier bigf) xs
 
+and toplevel = fun bigf top ->
+  match top with
+  | Unit  x -> 
+      Unit (compilation_unit bigf x)
+  | NotParsedCorrectly xs -> 
+      NotParsedCorrectly (infoii bigf xs)
+  | FinalDef inf -> 
+      FinalDef (info bigf inf)
+      
 
 (*****************************************************************************)
 (* Visitor, iter-like *)

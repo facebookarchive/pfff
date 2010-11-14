@@ -37,6 +37,7 @@ val infoii           : visitor_s -> info list -> info list
 val decls             : visitor_s -> decls             -> decls            
 val modifiers         : visitor_s -> modifiers -> modifiers 
 
+val toplevel: visitor_s -> toplevel -> toplevel
 
 type 'a effect = 'a -> unit
 

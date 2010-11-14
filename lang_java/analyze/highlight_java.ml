@@ -18,7 +18,7 @@ open Common
 open Ast_java
 
 module Ast = Ast_java
-(*module V = Visitor_java *)
+module V = Visitor_java
 
 open Highlight_code
 
@@ -63,9 +63,76 @@ let visit_toplevel
     Hashtbl.replace already_tagged ii true
   )
   in
+  let tag_ident id categ = 
+    let (_s, ii) = id in
+    (* should have only one normally *)
+    ii +> List.iter (fun ii -> tag ii categ);
+  in
+  let tag_name name categ = 
+    match name with
+    | [] -> pr2 "tag_name: noii"
+    | _ -> 
+        let before, final = Common.list_init name, Common.last name
+        in
+        tag_ident final categ
+  in
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
+
+  (* tagging the idents of the AST *)
+  let hook = { V.default_visitor_s with
+
+    V.kdecl_s = (fun (k, _) d ->
+      (match d with
+      | Ast.Class x ->
+          let ident = x.cl_name in
+          tag_ident ident (Class (Def2 fake_no_def2));
+      | Ast.Interface x ->
+          ()
+      | Ast.Field x ->
+          let var = x.f_var in
+          let ident = var.v_name in
+          tag_ident ident (Field (Def2 fake_no_def2));
+
+      | Ast.Method x ->
+          let var = x.m_var in
+          let ident = var.v_name in
+          tag_ident ident (Method (Def2 fake_no_def2));
+
+      | Ast.Constructor x ->
+          let var = x.m_var in
+          let ident = var.v_name in
+          tag_ident ident (Method (Def2 fake_no_def2));
+
+      | Ast.InstanceInit x ->
+          ()
+      | Ast.StaticInit x ->
+          ()
+      );
+      k d
+    );
+
+    V.kexpr_s = (fun (k, _) e ->
+      (match Ast.unwrap e with
+      | Dot (e, ident) ->
+          tag_ident ident (Field (Use2 fake_no_use2));
+      | _ -> ()
+      );
+      k e
+    );
+    V.ktype_s = (fun (k, _) e ->
+      (match Ast.unwrap e with
+      | TypeName name ->
+          tag_name name TypeMisc
+      | ArrayType _ ->
+          ()
+      );
+      k e
+    );
+  }
+  in
+  V.toplevel hook toplevel +> ignore;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
