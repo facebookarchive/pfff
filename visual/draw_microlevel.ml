@@ -290,6 +290,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.Lisp _)
     | FT.PL (FT.Haskell _)
     | FT.PL (FT.Python)
+    | FT.PL (FT.Csharp)
     ) ->
 
     let column = ref 0 in

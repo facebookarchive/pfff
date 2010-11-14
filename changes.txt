@@ -38,6 +38,8 @@ the documentation of pfff!)
 
 ** introducing lang_python/
 
+** introducing lang_csharp/
+
 ** php analysis
 
 *** finalized the PIL

@@ -151,19 +151,30 @@ let visit_toplevel
 
     (* keywords  *)
     | T.Tbool ii
+        -> tag ii TypeMisc
+
     | T.Tbyte ii
     | T.Tchar ii
+        -> tag ii TypeInt (* TODO *)
+
     | T.Tvoid ii
+        -> tag ii TypeVoid
+
     | T.Tdouble ii
     | T.Tfloat ii
+
     | T.Tshort ii
     | T.Tint ii
     | T.Tlong ii
-    | T.Tstring ii
-    | T.Tsbyte ii
     | T.Tushort ii
     | T.Tuint ii
     | T.Tulong ii
+       -> tag ii TypeInt
+
+    | T.Tstring ii
+    | T.Tsbyte ii
+        -> tag ii TypeMisc
+
     | T.Tclass ii
     | T.Tabstract ii
     | T.Tvirtual ii
@@ -172,40 +183,56 @@ let visit_toplevel
     | T.Tinterface ii
     | T.Tnew ii
     | T.Tobject ii
+        -> tag ii KeywordObject
+
     | T.Tprivate ii
     | T.Tprotected ii
     | T.Tpublic ii
+        -> tag ii Keyword
+
     | T.Treturn ii
     | T.Tbreak ii
     | T.Tcontinue ii
+        -> tag ii Keyword
+
     | T.Tswitch ii
     | T.Tcase ii
+        -> tag ii KeywordConditional
+
+    | T.Tstruct ii
+
     | T.Tdefault ii
     | T.Tenum ii
-    | T.Tstruct ii
     | T.Tconst ii
     | T.Tunsafe ii
+        -> tag ii Keyword
+
     | T.Tnamespace ii
     | T.Tusing ii
+        -> tag ii KeywordModule
+
     | T.Tstatic ii
     | T.Tvolatile ii
     | T.Textern ii
-    | T.Tif ii
-    | T.Telse ii
-    | T.Tdo ii
-    | T.Twhile ii
-    | T.Tfor ii
-    | T.Tforeach ii
+
+    | T.Tif ii  | T.Telse ii -> tag ii KeywordConditional
+    | T.Tdo ii  | T.Twhile ii | T.Tfor ii | T.Tforeach ii
+          -> tag ii KeywordLoop
+
     | T.Tgoto ii
-    | T.Tthrow ii
-    | T.Ttry ii
-    | T.Tcatch ii
+        -> tag ii Keyword
+
+    | T.Tthrow ii | T.Ttry ii | T.Tcatch ii
     | T.Tfinally ii
-    | T.Tchecked ii
-    | T.Tunchecked ii
+    | T.Tchecked ii | T.Tunchecked ii
+        -> tag ii KeywordExn
+
     | T.Tnull ii
-    | T.Ttrue ii
-    | T.Tfalse ii
+        -> tag ii Null
+
+    | T.Ttrue ii | T.Tfalse ii
+      ->  tag ii Boolean
+
     | T.Tref ii
     | T.Tout ii
     | T.Tas ii
@@ -227,18 +254,23 @@ let visit_toplevel
     | T.Tsizeof ii
     | T.Tstackalloc ii
     | T.Ttypeof ii
+        -> tag ii Keyword
+
     | T.TCppLine ii
     | T.TCppError ii
     | T.TCppWarning ii
     | T.TCppRegion ii
     | T.TCppEndRegion ii
-    | T.TDefine ii
-    | T.TUndef ii
+        -> tag ii CppOther
+
+    | T.TDefine ii -> tag ii Define
+    | T.TUndef ii -> tag ii Define
+
     | T.TIfdefIf ii
     | T.TIfdefElif ii
     | T.TIfdefElse ii
     | T.TIfdefEndif ii
-        -> ()
+        -> tag ii Ifdef
 
     (* symbols *)
     | T.TEq ii ->
@@ -253,6 +285,7 @@ let visit_toplevel
 
     | T.TPlus ii | T.TMinus ii
     | T.TLess ii | T.TMore ii
+        -> tag ii Operator
 
     | T.TDot (ii)
     | T.TColon (ii)
@@ -261,10 +294,10 @@ let visit_toplevel
 
     | T.TTilde ii
     | T.TStar ii
-      -> tag ii Punctuation
+      -> tag ii Operator
 
     | T.TAnd ii
-        -> tag ii Punctuation
+        -> tag ii Operator
 
     | T.TAssignOp (_, ii) -> tag ii Punctuation
 
@@ -272,23 +305,27 @@ let visit_toplevel
     | T.TLessEq ii
     | T.TMoreEq ii
     | T.TEqEq ii
+
     | T.TXor ii
     | T.TOr ii
     | T.TPercent ii
+        -> tag ii Operator
 
     | T.TComma ii
     | T.TCAngle ii
     | T.TOAngle ii
         -> tag ii Punctuation
 
-    | T.TArrow ii
+    | T.TDiv ii
+    | T.TDec ii
+    | T.TInc ii
     | T.TOrOr ii 
     | T.TAndAnd ii 
     | T.TBang ii 
-    | T.TDec ii
-    | T.TInc ii
+        -> tag ii Operator
+
+    | T.TArrow ii
     | T.TQuestion ii
-    | T.TDiv ii
     | T.TSemiColon ii
         -> tag ii Punctuation
 

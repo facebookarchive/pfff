@@ -132,15 +132,26 @@ let digit  = ['0'-'9']
 let newline = '\n'
 let space = [' ' '\t']
 
+let nonzerodigit = ['1'-'9']
+let octdigit = ['0'-'7']
+let hexdigit = digit | ['a'-'f'] | ['A'-'F']
+
+
 let ident = (letter | '_') (letter | digit)*
 (* TODO connect-char combine-char formating-char *)
 
-let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
 
 let escapeseq = 
    ( '\\' 'x' hexdigit hexdigit? hexdigit? hexdigit?
     '\\' ['\'' '"' '\\' '0' 'a' 'b' 'f' 'n' 'r' 't' 'v']
    )
+
+(* TODO, was copied from python *)
+let decimalinteger = nonzerodigit digit* | '0'
+let octinteger = '0' octdigit+
+let hexinteger = '0' ('x' | 'X') hexdigit+
+
+let integer = (decimalinteger | octinteger | hexinteger)
 
 (*****************************************************************************)
 
@@ -250,6 +261,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
+  | integer { TInt (tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
