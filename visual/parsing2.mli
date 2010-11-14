@@ -15,7 +15,9 @@ type ast =
   | Js of Parse_js.program2
 
   | Cpp of Parse_cpp.program2
+
   | Csharp of Parse_csharp.program2
+  | Java of Parse_java.program2
 
   | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2

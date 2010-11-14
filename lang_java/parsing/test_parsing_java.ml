@@ -37,7 +37,7 @@ let test_parse xs  =
     pr2 "";
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_java.parse_java file in
+    let (xs, stat) = Parse_java.parse file in
 
     Common.push2 stat stat_list;
     let s = sprintf "bad = %d" stat.PI.bad in
@@ -186,7 +186,7 @@ let test_lexer file =
 (* ---------------------------------------------------------------------- *)
 
 let test_visitor file = 
-  let bigf = { Visitor_java.default_visitor_s with
+  let _bigf = { Visitor_java.default_visitor_s with
     Visitor_java.kexpr_s = (fun (k, bigf) e -> 
       match Ast_java.unwrap e with
       | Ast_java.Literal s -> 
@@ -198,11 +198,13 @@ let test_visitor file =
       | _ -> k e
     );
   } in
-
-  let ((xs,info_item), stat) = Parse_java.parse_java file in
+  (*
+  let ((xs,info_item), stat) = Parse_java.parse file in
   match xs with
   | Left cu -> Visitor_java.compilation_unit bigf cu +> ignore
   | Right _ -> pr2 "error parsing"
+  *)
+  raise Todo
 
   
 

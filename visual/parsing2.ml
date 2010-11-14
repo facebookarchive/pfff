@@ -43,6 +43,7 @@ type ast =
   | Cpp of Parse_cpp.program2
 
   | Csharp of Parse_csharp.program2
+  | Java of Parse_java.program2
 
   | Lisp of Parse_lisp.program2
   | Noweb of Parse_nw.program2
@@ -121,6 +122,14 @@ let parse_csharp2 file =
 let parse_csharp_cache a = 
   Common.profile_code "View.parse_csharp_cache" (fun () -> 
     match parse_csharp2 a with | Csharp a -> a | _ -> raise Impossible
+  )
+
+let parse_java2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Java (Parse_java.parse file +> fst))
+let parse_java_cache a = 
+  Common.profile_code "View.parse_java_cache" (fun () -> 
+    match parse_java2 a with | Java a -> a | _ -> raise Impossible
   )
 
 let parse_cpp2 file = 
@@ -367,6 +376,39 @@ let tokens_with_categ_of_file file hentities =
         toks |> Common.map_filter (fun tok -> 
           let info = Token_helpers_csharp.info_of_tok tok in
           let s = Token_helpers_csharp.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
+  | FT.PL (FT.Java) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_java_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_java.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_java.info_of_tok tok in
+          let s = Token_helpers_java.str_of_tok tok in
 
           if not (Parse_info.is_origintok info)
           then None

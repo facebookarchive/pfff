@@ -167,7 +167,7 @@ let constructor_invocation name args =
  *)
 */
 %start goal
-%type <Ast_java.compilation_unit> goal
+%type <Ast_java.program> goal
 
 %type <Ast_java.typ> type_java
 %type <Ast_java.stmt> statement
@@ -190,7 +190,7 @@ let constructor_invocation name args =
 */
 /*(*************************************************************************)*/
 
-goal: compilation_unit EOF  { $1 }
+goal: compilation_unit EOF  { [Unit $1; FinalDef $2] }
 
 
 /* 7.3 */

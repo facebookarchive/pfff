@@ -11,18 +11,15 @@ module PI = Parse_info
 (* The AST java related types *)
 (*****************************************************************************)
 
-(* forunparser: *)
+(* ------------------------------------------------------------------------- *)
+(* Token/info *)
+(* ------------------------------------------------------------------------- *)
 
+(* forunparser: *)
 type info = Parse_info.info
 
-and il = info list
-
-(* wrap2 is like wrap, except that I use it often for separator such
- * as ','. In that case the info is associated to the argument that
- * follows, so in 'a,b' I will have in the list [(a,[]); (b,[','])]. *)
-and 'a wrap  = 'a * il
-and 'a wrap2 = 'a * il
-
+(* todo:  = 'a * info *)
+and 'a wrap  = 'a * info list
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, namespace *)
@@ -34,7 +31,7 @@ and name = ident (*wrap2 '.' *) list
 and names = name list
 
 (* ------------------------------------------------------------------------- *)
-(* Type *)
+(* Types *)
 (* ------------------------------------------------------------------------- *)
 
 and typ = typbis wrap
@@ -42,9 +39,8 @@ and typ = typbis wrap
   | TypeName of name (* include the 'void', 'int', and other primitive type *)
   | ArrayType of typ
 
-
 (* ------------------------------------------------------------------------- *)
-(* Expression *)
+(* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
 and expr = exprbis wrap
@@ -76,9 +72,8 @@ and exprs = expr list
 
 and op = string
 
-
 (* ------------------------------------------------------------------------- *)
-(* Statement *)
+(* Statements *)
 (* ------------------------------------------------------------------------- *)
 
 and stmt = stmtbis wrap
@@ -128,7 +123,6 @@ and catch = var * stmt
 and cases = case list
 and catches = catch list
 
-
 (* ------------------------------------------------------------------------- *)
 (* Variable declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -148,54 +142,54 @@ and modifiers = modifier list
 
 and vars = var list
 
-and var =
-  { v_mods : modifiers;
-    v_type : typ;
-    v_name : ident }
-
+and var = { 
+  v_mods: modifiers;
+  v_type: typ;
+  v_name: ident 
+}
 
 and init = initbis wrap
   and initbis =
   | ExprInit of expr
   | ArrayInit of init list
 
-
 (* ------------------------------------------------------------------------- *)
 (* Method, field *)
 (* ------------------------------------------------------------------------- *)
 
-and method_decl =
-  { m_var : var;
-    m_formals : vars;
-    m_throws : names;
-    m_body : stmt }
+and method_decl = { 
+  m_var: var;
+  m_formals: vars;
+  m_throws: names;
+  m_body: stmt 
+}
 
-and field =
-  { f_var : var;
-    f_init : init option }
-
+and field = { 
+  f_var: var;
+  f_init: init option 
+}
 
 (* ------------------------------------------------------------------------- *)
 (* Class *)
 (* ------------------------------------------------------------------------- *)
 
-and class_decl =
-  { cl_mods : modifiers;
-    cl_name : ident;
-    cl_super : name option;
-    cl_impls : names;
-    cl_body : decls }
+and class_decl = { 
+  cl_mods: modifiers;
+  cl_name: ident;
+  cl_super: name option;
+  cl_impls: names;
+  cl_body: decls 
+}
 
-and interface =
-  { if_mods : modifiers;
-    if_name : ident;
-    if_exts : names;
-    if_body : decls }
-
-
+and interface = { 
+  if_mods: modifiers;
+  if_name: ident;
+  if_exts: names;
+  if_body: decls 
+}
 
 (* ------------------------------------------------------------------------- *)
-(* The toplevels elements *)
+(* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
 
 and decl =
@@ -212,28 +206,32 @@ and decl =
 
 and decls = decl list
 
+and compilation_unit = { 
+  package: name wrap option;
+  imports: names;
+  decls: decls;
+}
 
-and compilation_unit =
-  { package : name wrap option;
-    imports : names;
-    decls : decls;
-    (* pad: comments : Source.comments *)
-  }
+and toplevel =
+  | Unit of compilation_unit
+  | NotParsedCorrectly of info list
+  | FinalDef of info
 
-and program = (compilation_unit, info list) Common.either
+and program = toplevel list
 
-and toplevel = compilation_unit
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let unwrap = fst
 
-let pos_of_info  = PI.pos_of_info
 let str_of_info  = PI.str_of_info
-let file_of_info = PI.file_of_info
 let line_of_info = PI.line_of_info
 let col_of_info  = PI.col_of_info
+let pos_of_info  = PI.pos_of_info
+
+let file_of_info = PI.file_of_info
 
 let rewrap_str =  PI.rewrap_str
 
