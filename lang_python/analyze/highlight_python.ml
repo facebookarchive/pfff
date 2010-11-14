@@ -47,6 +47,12 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = true
 
+
+let builtin_functions = Common.hashset_of_list [
+  "isinstance";
+  "set";
+  "dict";
+]
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -134,7 +140,11 @@ let visit_toplevel
 
     | T.TIdent (s, ii1)::T.TOParen(ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
-        then tag ii1 (Function (Use2 fake_no_use2));
+        then 
+          (if Hashtbl.mem builtin_functions s
+          then tag ii1 Builtin
+          else tag ii1 (Function (Use2 fake_no_use2))
+          );
         aux_toks xs
 
     | T.TIdent (s, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::xs ->
@@ -161,10 +171,12 @@ let visit_toplevel
         )
 
     | T.TIdent (s, ii1)::xs ->
+        (*
         if s =~ "[a-z]" then begin
           if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
           then tag ii1 (Local (Use));
         end;
+        *)
         aux_toks xs
         
         

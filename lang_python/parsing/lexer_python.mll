@@ -272,7 +272,7 @@ rule token = parse
 and string_quote = parse
   | "'" { "" }
 
-  | [^ '\'' '\n']* { let s = tok lexbuf in s ^ string_quote lexbuf }
+  | [^ '\'' '\\' '\n']* { let s = tok lexbuf in s ^ string_quote lexbuf }
   | escapeseq { let s = tok lexbuf in s ^ string_quote lexbuf }
 
   | eof { pr2 "LEXER: end of file in string_quote"; "'"}

@@ -182,7 +182,7 @@ let file_type_of_file2 file =
   | "nw" | "web" -> Text e
 
   | "org" 
-  | "md" | "rest"
+  | "md" | "rest" | "textile"
     -> Text e
 
   | "rtf" -> Text e
