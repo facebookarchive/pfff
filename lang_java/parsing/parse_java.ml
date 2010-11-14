@@ -24,45 +24,8 @@ let error_msg_tok tok =
 
 
 (*****************************************************************************)
-(* Stat *)
-(*****************************************************************************)
-type parsing_stat = {
-  mutable correct: int;
-  mutable bad: int;
-}
-
-let print_parsing_stat_list statxs =
-  let total = List.length statxs in
-  let perfect = 
-    statxs 
-      +> List.filter (function 
-      | {bad = n} when n = 0 -> true 
-      | _ -> false)
-      +> List.length 
-  in
-
-  pr "\n\n\n---------------------------------------------------------------";
-  pr (
-  (sprintf "NB total files = %d; " total) ^
-  (sprintf "perfect = %d; " perfect) ^
-  (sprintf "=========> %d" ((100 * perfect) / total)) ^ "%"
-  );
-
-  let good = statxs +> List.fold_left (fun acc {correct = x} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x} -> acc+x) 0  in
-
-  let gf, badf = float_of_int good, float_of_int bad in
-  pr (
-  (sprintf "nb good = %d,  nb bad = %d " good bad) ^
-  (sprintf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
-   )
-  )
-
-
-(*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-
 
 let tokens2 file = 
  let table     = Parse_info.full_charpos_to_pos_large file in
@@ -95,7 +58,7 @@ let tokens2 file =
   with
     | Lexer_java.Lexical s -> 
         failwith ("lexical error " ^ s ^ "\n =" ^ 
-                  (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
+                  (PI.error_message file (lexbuf_to_strpos lexbuf)))
     | e -> raise e
  )
 
@@ -125,7 +88,10 @@ let parse_java_old filename =
         let toks = [] in (* TODO *)
 
         let stat = 
-          { correct = (Common.cat filename +> List.length); bad = 0 }
+          { PI.correct = (Common.cat filename +> List.length); 
+            PI.bad = 0;
+            PI.filename = filename;
+          }
         in
 	Printf.eprintf "%s: OK\n" (Lexer_helper.location ());
         (Left ast, toks), stat
@@ -133,13 +99,19 @@ let parse_java_old filename =
   with e -> 
     error (Printexc.to_string e);
     let toks = [] in (* TODO *)
-    let stat = { correct = 0; bad = (Common.cat filename +> List.length); } in
+    let stat = { PI.correct = 0; 
+                 bad = (Common.cat filename +> List.length); 
+                 PI.filename = filename;
+    } 
+    in
     (Right (), toks), stat
 
 
 
 
 let parse_java filename =
+  let stat = Parse_info.default_stat filename in
+
   let toks_orig = tokens filename in
 
   let toks = toks_orig +> Common.exclude TH.is_comment in
@@ -169,11 +141,8 @@ let parse_java filename =
 
   try (
     let ast = Parser_java.goal lexer_function lexbuf_fake in
-
-    let stat = 
-      { correct = (Common.cat filename +> List.length); bad = 0 }
-    in
-    Printf.eprintf "%s: OK\n" (Lexer_helper.location ());
+    stat.PI.correct <- Common.cat filename +> List.length;
+    (* Printf.eprintf "%s: OK\n" (Lexer_helper.location ()); *)
     (Left ast, toks_orig), stat
   )
   with e -> begin
@@ -190,8 +159,7 @@ let parse_java filename =
     | e -> raise e
     );
     error (Printexc.to_string e);
-    let stat = { correct = 0; bad = (Common.cat filename +> List.length); } in
-
+    stat.PI.bad <- Common.cat filename +> List.length;
     let info_of_bads = Common.map_eff_rev TH.info_of_tok toks_orig in 
 
     (Right info_of_bads, toks_orig), stat

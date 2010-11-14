@@ -13,6 +13,8 @@ open Common
 
 open Parser_java
 
+module PI = Parse_info
+
 let score_path = "/home/pad/c-yacfe/tmp"
 let tmpfile = "/tmp/output.java" 
 
@@ -38,15 +40,15 @@ let test_parse xs  =
     let (xs, stat) = Parse_java.parse_java file in
 
     Common.push2 stat stat_list;
-    let s = sprintf "bad = %d" stat.Parse_java.bad in
-    if stat.Parse_java.bad = 0
+    let s = sprintf "bad = %d" stat.PI.bad in
+    if stat.PI.bad = 0
     then Hashtbl.add newscore file (Common.Ok)
     else Hashtbl.add newscore file (Common.Pb s)
     ;
   );
   flush stdout; flush stderr;
 
-  Parse_java.print_parsing_stat_list !stat_list;
+  PI.print_parsing_stat_list !stat_list;
 
   let dirname_opt = 
     match xs with

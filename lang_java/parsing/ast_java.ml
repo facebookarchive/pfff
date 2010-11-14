@@ -1,6 +1,8 @@
 (* Joust: a Java lexer, parser, and pretty-printer written in OCaml
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
  * Released under the GNU General Public License 
+ * 
+ * Yoann Padioleau: 2010, port to pfff infrastructure 
  *)
 
 module PI = Parse_info
@@ -12,10 +14,6 @@ module PI = Parse_info
 (* forunparser: *)
 
 type info = Parse_info.info
-(* todo:
-  comments_tag: comments_around ref; (* set in comment_annotater.ml *)
-*)
-  (* todo? token_info : sometimes useful to know what token it was *)
 
 and il = info list
 
@@ -24,10 +22,6 @@ and il = info list
  * follows, so in 'a,b' I will have in the list [(a,[]); (b,[','])]. *)
 and 'a wrap  = 'a * il
 and 'a wrap2 = 'a * il
-
-
-
-
 
 
 (* ------------------------------------------------------------------------- *)
@@ -229,48 +223,6 @@ and compilation_unit =
 and program = (compilation_unit, info list) Common.either
 
 and toplevel = compilation_unit
-
-(* ------------------------------------------------------------------------- *)
-
-
-
-(*****************************************************************************)
-(* C comments *)
-(*****************************************************************************)
-
-(* I often use m for comments as I can not use c (already use for c stuff) 
- * and com is too long.
- *)
-
-(* this type will be associated to each token *)
-and comments_around = {
-  mbefore: comment_and_relative_pos list;
-  mafter:  comment_and_relative_pos list;
-}
-  and comment_and_relative_pos = {
-
-   minfo: Parse_info.parse_info;
-   (* the int represent the number of lines of difference between the
-    * current token and the comment. When on same line, this number is 0.
-    * When previous line, -1. In some way the after/before in previous
-    * record is useless because the sign of the integer can helps
-    * do the difference too, but I keep it that way.
-    *)
-   mpos: int;
-   (* todo?
-    *  is_alone_in_line: bool; (*for labels, to avoid false positive*)
-    *)
- }
-
-and comment = Parse_info.parse_info
-and com = comment list ref
-
-
-
-let emptyComments= {
-  mbefore = [];
-  mafter = [];
-}
 
 (*****************************************************************************)
 (* Wrappers *)
