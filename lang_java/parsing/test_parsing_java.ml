@@ -74,11 +74,18 @@ let to_string = function
   | TUnknown i -> "UNKNOWN"
   | TComment i -> "COMMENT"
   | TCommentSpace i -> "SPACE"
+  | TCommentNewline i -> "NEWLINE"
 
 
   | IDENTIFIER (id,ii) -> "Identifier " ^ id
   | PRIMITIVE_TYPE (s, ii) -> "PrimitiveType " ^ s
+
   | LITERAL (s, ii) -> "Literal " ^ s
+  | TString (s, ii)
+  | TChar (s, ii)
+  | TFloat (s, ii)
+  | TInt (s, ii)
+      -> "Literal " ^ s
 
   (* 3.11 Separators *)
   | LP ii -> "("

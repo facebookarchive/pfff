@@ -220,8 +220,23 @@ and toplevel =
   | FinalDef of info
 
 and program = toplevel list
-
  (* with tarzan *)
+
+type any =
+  | Expr2 of expr
+  | Stmt of stmt
+  | Typ of typ
+  | Var of var
+  | Init of init
+  | Method2 of method_decl
+  | Field2 of field
+  | Class2 of class_decl
+  | Interface2 of interface
+  | Decl of decl
+  | CompUnit of compilation_unit
+  | Toplevel of toplevel
+  | Program of program
+
 
 (*****************************************************************************)
 (* Wrappers *)
