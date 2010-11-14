@@ -46,7 +46,9 @@ and typ = typbis wrap
 and expr = exprbis wrap
   and exprbis = 
   | Name of name (* include 'this' and 'super' special names *)
+
   | Literal of string
+
   | ClassLiteral of typ
 
   | NewClass of typ * exprs * decls wrap (* { } *) option

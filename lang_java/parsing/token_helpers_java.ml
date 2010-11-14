@@ -13,7 +13,7 @@ let is_eof = function
   | _ -> false
 
 let is_comment = function
-  | TComment _ | TCommentSpace _ -> true
+  | TComment _ | TCommentSpace _  | TCommentNewline _ -> true
   | _ -> false 
 
 let is_just_comment = function
@@ -33,6 +33,12 @@ let info_of_tok = function
   | TUnknown ii -> ii
   | TComment ii -> ii
   | TCommentSpace ii -> ii
+  | TCommentNewline ii -> ii
+
+  | TInt (s, ii) -> ii
+  | TFloat (s, ii) -> ii
+  | TChar (s, ii) -> ii
+  | TString (s, ii) -> ii
 
   | IDENTIFIER (id,ii) -> ii
   | PRIMITIVE_TYPE (s, ii) -> ii
@@ -141,6 +147,12 @@ let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown (f ii)
   | TComment ii -> TComment (f ii)
   | TCommentSpace ii -> TCommentSpace (f ii)
+  | TCommentNewline ii -> TCommentNewline (f ii)
+
+  | TInt (s, ii) -> TInt (s, f ii)
+  | TFloat (s, ii) -> TFloat (s, f ii)
+  | TChar (s, ii) -> TChar (s, f ii)
+  | TString (s, ii) -> TString (s, f ii)
 
   | IDENTIFIER (id,ii) -> IDENTIFIER (id, f ii)
   | PRIMITIVE_TYPE (s, ii) -> PRIMITIVE_TYPE (s, f ii)

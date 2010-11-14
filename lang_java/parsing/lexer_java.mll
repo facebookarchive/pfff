@@ -1,23 +1,33 @@
-(* Joust: a Java lexer, parser, and pretty-printer written in OCaml
-   Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
-   Released under the GNU General Public License *)
-
-(* ocamllex lexer for Java
-
-   Attempts to conform to:
-
-   The Java Language Specification
-   Second Edition
-
-   James Gosling, Bill Joy, Guy Steele, Gilad Bracha *)
-
 {
+(* Joust: a Java lexer, parser, and pretty-printer written in OCaml
+ *  Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
+ *  Released under the GNU General Public License 
+ * 
+ * ocamllex lexer for Java
+ * 
+ * Attempts to conform to:
+ * 
+ * The Java Language Specification
+ * Second Edition
+ * 
+ * James Gosling, Bill Joy, Guy Steele, Gilad Bracha 
+ *)
+
 open Common 
 
 open Lexer_helper
+
 open Parser_java
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 exception Lexical of string
 (*exception Unterminated_comment*)
 
@@ -26,10 +36,7 @@ let tok     lexbuf  =
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-(*todo:    comments_tag = ref Ast_java.emptyComments; *)
-
-let tok_add_s = Parse_info.tok_add_s
-
+(* ---------------------------------------------------------------------- *)
 (* Java reserved words. *)
 
 let literal v = (v, (fun ii -> LITERAL (v,ii)))
@@ -100,13 +107,8 @@ let keyword_table = Common.hash_of_list [
 
   (* javaext: 1.4 *)
   "assert", (fun ii -> ASSERT ii);
-
 ]
-
-
-
 }
-
 (*****************************************************************************)
 
 (* CHAPTER 3: Lexical Structure *)
@@ -216,6 +218,9 @@ let Literal =
 let AssignmentOperator =
   ('+' | '-' | '*' | '/' | '&' | '|' | '^' | '%' | "<<" | ">>" | ">>>") '='
 
+
+let newline = '\n'
+
 (*****************************************************************************)
 rule token = parse
 (* old:
@@ -228,13 +233,15 @@ rule token = parse
 | "//" InputCharacter* LineTerminator (* inline of EndOfLineComment*)
     { eol_comment lexbuf; next_line lexbuf; token lexbuf }
 *)
-| [' ' '\t' '\n' '\r' '\011' '\012' ]+  
-    { TCommentSpace (tokinfo lexbuf) }
+ | [' ' '\t' '\r' '\011' '\012' ]+  { TCommentSpace (tokinfo lexbuf) }
+
+ | newline { TCommentNewline (tokinfo lexbuf) }
+
 | "/*"
     { 
       let info = tokinfo lexbuf in 
       let com = comment lexbuf in
-      TComment(info +> tok_add_s com) 
+      TComment(info +> Parse_info.tok_add_s com) 
     }
 (* don't keep the trailing \n; it will be in another token *)
 | "//" InputCharacter* 
@@ -252,11 +259,14 @@ rule token = parse
       | None -> IDENTIFIER (s, info)
           
     }
-| Literal { 
-    let info = tokinfo lexbuf in
-    let s = tok lexbuf in
-    LITERAL (s, info) 
-  }
+
+| IntegerLiteral  { TInt (tok lexbuf, tokinfo lexbuf) }
+| FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
+| CharacterLiteral { TChar (tok lexbuf, tokinfo lexbuf) }
+| StringLiteral { TString (tok lexbuf, tokinfo lexbuf) }
+| BooleanLiteral { LITERAL (tok lexbuf, tokinfo lexbuf) }
+| NullLiteral { LITERAL (tok lexbuf, tokinfo lexbuf) }
+
 
 (* 3.11 Separators *)
 | '('  { LP(tokinfo lexbuf) } | ')'  { RP(tokinfo lexbuf) }

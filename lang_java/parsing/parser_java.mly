@@ -79,7 +79,8 @@ let constructor_invocation name args =
 %}
 
 /*(*************************************************************************)*/
-
+/*(* tokens *)*/
+/*(*************************************************************************)*/
 /*
 (* 
  * pad: some tokens are not even used in this file because they are filtered
@@ -89,14 +90,24 @@ let constructor_invocation name args =
  *)
 */
 
-/*(* unrecognized token *)*/
-%token <Ast_java.info> TUnknown
+/*(*-----------------------------------------*)*/
+/*(* the comment tokens *)*/
+/*(*-----------------------------------------*)*/
+%token <Ast_java.info> TComment TCommentNewline TCommentSpace 
 
-%token <Ast_java.info> TComment TCommentSpace 
+/*(*-----------------------------------------*)*/
+/*(* the normal tokens *)*/
+/*(*-----------------------------------------*)*/
 
+/*(* tokens with "values" *)*/
+%token <string * Ast_java.info> TInt
+%token <string * Ast_java.info> TFloat
+%token <string * Ast_java.info> TChar
+%token <string * Ast_java.info> TString
+
+%token <(string * Ast_java.info)> LITERAL
 
 %token <(string * Ast_java.info)> IDENTIFIER
-%token <(string * Ast_java.info)> LITERAL
 %token <(string * Ast_java.info)> PRIMITIVE_TYPE
 
 /*
@@ -144,6 +155,7 @@ let constructor_invocation name args =
 
 %token <(string * Ast_java.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
+/*(* keywords tokens *)*/
 /*
  * 3.9 Keywords
  */
@@ -157,7 +169,21 @@ let constructor_invocation name args =
  /*(* javaext: *)*/
  ASSERT
 
+/*(*-----------------------------------------*)*/
+/*(* extra tokens: *)*/
+/*(*-----------------------------------------*)*/
+
+/*(* classic *)*/
+%token <Ast_java.info> TUnknown
 %token <Ast_java.info> EOF
+
+/*(*-----------------------------------------*)*/
+/*(* priorities *)*/
+/*(*-----------------------------------------*)*/
+
+/*(*************************************************************************)*/
+/*(* Rules type declaration *)*/
+/*(*************************************************************************)*/
 
 /*(*-----------------------------------------*)*/
 /*
@@ -174,6 +200,10 @@ let constructor_invocation name args =
 %type <Ast_java.expr> expression
 
 %%
+
+/*(*************************************************************************)*/
+/*(* TOC *)*/
+/*(*************************************************************************)*/
 
 /*(*************************************************************************)*/
 /*
@@ -260,7 +290,7 @@ primary:
 
 
 primary_no_new_array:
- | literal             { Literal (fst $1), [snd $1] }
+ | literal             { $1 }
  | class_literal       { $1 }
  | THIS                { Name [this_ident $1], todoii }
  | name DOT THIS       { Name (List.rev (this_ident $3 :: $1)), todoii }
@@ -272,7 +302,13 @@ primary_no_new_array:
 
 
 /* 3.10 */
-literal: LITERAL { $1 }
+literal: 
+ | LITERAL { Literal (fst $1), [snd $1] }
+
+ | TInt { Literal (fst $1), [snd $1] }
+ | TFloat { Literal (fst $1), [snd $1] }
+ | TChar { Literal (fst $1), [snd $1] }
+ | TString { Literal (fst $1), [snd $1] }
 
 /* 15.8.2 */
 class_literal:

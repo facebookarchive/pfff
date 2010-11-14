@@ -33,6 +33,14 @@ module TH = Token_helpers_java
 (* Helpers *)
 (*****************************************************************************)
 
+(* we generate fake value here because the real one are computed in a
+ * later phase in rewrite_categ_using_entities in pfff_visual.
+ *)
+let fake_no_def2 = NoUse
+let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
+let lexer_based_tagger = true
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -56,27 +64,58 @@ let visit_toplevel
   )
   in
 
+  (* -------------------------------------------------------------------- *)
+  (* ast phase 1 *) 
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
-  (* -------------------------------------------------------------------- *)
 
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
+    (* a little bit pad specific *)
+    |   T.TComment(ii)
+      ::T.TCommentNewline (ii2)
+      ::T.TComment(ii3)
+      ::T.TCommentNewline (ii4)
+      ::T.TComment(ii5)
+      ::xs ->
+        let s = Parse_info.str_of_info ii in
+        let s5 =  Parse_info.str_of_info ii5 in
+        (match () with
+        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection0
+        | _ when s =~ ".*------" && s5 =~ ".*------" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection1
+        | _ when s =~ ".*####" && s5 =~ ".*####" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection2
+        | _ ->
+            ()
+        );
+        aux_toks xs
+
+    (* poor's man identifier tagger *)
+
+    (* defs *)
+
+    (* uses *)
+
+
     | x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
-    (* needed ? *)
-    (* | T.TCommentSpace _ -> true *)
+    | T.TCommentSpace _ -> true
     | _ -> false
   )
   in
   aux_toks toks';
-
-  (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -84,8 +123,141 @@ let visit_toplevel
   toks +> List.iter (fun tok -> 
     match tok with
 
-    | T.EOF ii
-      -> ()
+    (* comments *)
+
+    | T.TComment ii ->
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          tag ii Comment
+
+    | T.TCommentSpace ii ->
+        if not (Hashtbl.mem already_tagged ii)
+        then ()
+        else ()
+
+    | T.TCommentNewline ii -> ()
+
+    | T.TUnknown ii -> tag ii Error
+    | T.EOF ii-> ()
+
+    (* values  *)
+
+    | T.TString (s,ii) ->
+        tag ii String
+    | T.TChar (s, ii) ->
+        tag ii String
+    | T.TFloat (s,ii) | T.TInt (s,ii) ->
+        tag ii Number
+
+
+    | T.LITERAL (s, ii) ->
+        (match s with
+        | "true" | "false" -> tag ii Boolean
+        | "null" -> tag ii Null
+
+        | _ -> ()
+        )
+
+    | T.PRIMITIVE_TYPE (s, ii) ->
+        (match s with
+        | "void" -> tag ii TypeVoid
+        | "boolean" -> tag ii TypeMisc
+        | _ -> tag ii TypeMisc
+        )
+
+    | T.OPERATOR_EQ (s, ii) ->
+        tag ii Operator
+
+    | T.IDENTIFIER (s, ii) ->
+        ()
+
+
+    (* keywords  *)
+    | T.BOOLEAN ii -> tag ii TypeMisc
+
+    | T.BYTE ii | T.CHAR ii | T.INT ii | T.SHORT ii | T.LONG ii
+          -> tag ii TypeInt
+
+    | T.DOUBLE ii | T.FLOAT ii
+          -> tag ii TypeMisc
+
+    | T.VOID ii -> tag ii TypeVoid
+       
+    | T.CLASS ii  | T.ABSTRACT ii | T.INTERFACE ii
+    | T.PRIVATE ii | T.PROTECTED ii | T.PUBLIC ii
+    | T.THIS ii | T.SUPER ii | T.NEW ii 
+    | T.INSTANCEOF ii
+    | T.EXTENDS ii  | T.FINAL ii | T.IMPLEMENTS ii
+          -> tag ii KeywordObject
+
+    | T.BREAK ii | T.CONTINUE ii
+    | T.RETURN ii | T.GOTO ii
+          -> tag ii Keyword
+
+    | T.TRY ii  | T.THROW ii | T.THROWS ii
+    | T.CATCH ii  | T.FINALLY ii
+          -> tag ii KeywordExn
+
+    | T.IF ii | T.ELSE ii 
+          -> tag ii KeywordConditional
+
+    | T.FOR ii | T.DO ii | T.WHILE ii
+          -> tag ii KeywordLoop
+
+    | T.SWITCH ii
+    | T.CASE ii
+    | T.DEFAULT ii
+        -> tag ii KeywordConditional
+
+    | T.PACKAGE ii
+    | T.IMPORT ii
+        -> tag ii KeywordModule
+
+    | T.NATIVE ii
+        -> tag ii Keyword
+
+    | T.VOLATILE ii | T.STATIC ii
+    | T.CONST ii
+        -> tag ii Keyword
+
+    | T.SYNCHRONIZED ii
+        -> tag ii Keyword
+
+    | T.STRICTFP ii
+    | T.TRANSIENT ii
+    | T.ASSERT ii
+        -> tag ii Keyword
+
+    (* symbols *)
+
+    | T.LP ii | T.RP ii
+    | T.LC ii | T.RC ii
+    | T.LB ii  | T.RB ii
+
+    | T.SM ii
+    | T.CM ii
+    | T.DOT ii
+
+    | T.EQ ii  | T.GT ii | T.LT ii
+    | T.NOT ii  | T.COMPL ii
+
+    | T.COND ii
+    | T.COLON ii
+    | T.EQ_EQ ii
+
+    | T.LE ii  | T.GE ii
+    | T.NOT_EQ ii
+    | T.AND ii  | T.OR ii
+    | T.INCR ii | T.DECR ii
+    | T.PLUS ii  | T.MINUS ii  | T.TIMES ii  | T.DIV ii
+    | T.AND_AND ii | T.OR_OR ii | T.XOR ii
+
+    | T.MOD ii
+    | T.LS ii
+    | T.SRS ii
+    | T.URS ii
+        -> tag ii Punctuation
+
   );
 
   (* -------------------------------------------------------------------- *)
