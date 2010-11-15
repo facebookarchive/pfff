@@ -22,8 +22,7 @@ module S = Scope_code
 (*****************************************************************************)
 
 (*
- * A syntactical checker for PHP.
- *
+ * A lint-like checker for PHP.
  *)
 
 (*****************************************************************************)
@@ -43,12 +42,12 @@ let rank = ref true
 
 (* ranking errors, inspired by Engler slides *)
 let rank_errors errs =
-  errs |> List.map (fun x ->
+  errs +> List.map (fun x ->
     x,
     match x with
     | Error_php.UnusedVariable (_, S.Local) -> 10
     | _ -> 0
-  ) |> Common.sort_by_val_highfirst |> Common.map fst
+  ) +> Common.sort_by_val_highfirst +> Common.map fst
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -89,14 +88,14 @@ let main_action xs =
     *)
   );
 
-  let errs = !Error_php._errors |> List.rev in
+  let errs = !Error_php._errors +> List.rev in
   let errs =
     if !rank
-    then rank_errors errs |> Common.take_safe 20
+    then rank_errors errs +> Common.take_safe 20
     else errs
   in
 
-  errs |> List.iter (fun err ->
+  errs +> List.iter (fun err ->
     pr (Error_php.string_of_error err);
   );
   pr2 (spf "total errors = %d" (List.length !Error_php._errors));
@@ -104,7 +103,7 @@ let main_action xs =
   (* most recurring probably false positif *)
   let hcount_str = Common.hash_with_default (fun() -> 0) in
 
-  !Error_php._errors |> List.iter (fun err ->
+  !Error_php._errors +> List.iter (fun err ->
     match err with
     | Error_php.UnusedVariable (dname, scope) ->
         let s = Ast.dname dname in
@@ -112,8 +111,8 @@ let main_action xs =
     | _ -> ()
   );
   pr2 "top 10 most recurring unused variable name";
-  hcount_str#to_list |> Common.sort_by_val_highfirst |> Common.take_safe 10
-   |> List.iter (fun (s, cnt) ->
+  hcount_str#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10
+   +> List.iter (fun (s, cnt) ->
         pr2 (spf " %s -> %d" s cnt)
       );
   ()
@@ -304,7 +303,6 @@ let options () =
     "-no_rank", Arg.Clear rank,
     " ";
   ] ++
-  Flag_parsing_php.cmdline_flags_pp () ++
   Flag_analyze_php.cmdline_flags_verbose () ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
