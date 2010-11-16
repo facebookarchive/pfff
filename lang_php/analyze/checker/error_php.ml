@@ -125,6 +125,30 @@ let string_of_error error =
           (Ast.string_of_info (Ast.info_of_name def.f_name))
       )
 
+let info_of_error err =
+  match err with
+  | UndefinedFunction name 
+  | UnableToDetermineDef name
+
+  | TooManyArguments2 (name, _)
+  | TooFewArguments2  (name, _)
+      -> Some (Ast.info_of_name name)
+
+  (* call sites *)
+  | TooManyArguments  (parse_info, name (* def *)) ->
+      raise Todo
+  | NotEnoughArguments (parse_info, name (* def *)) ->
+      raise Todo
+  | WrongKeywordArgument (dname,  expr, name, param, fdef) ->
+      raise Todo
+
+  | UseOfUndefinedVariable dname
+  | UnusedVariable (dname, _)
+      -> Some (Ast.info_of_dname dname)
+
+  (* classes *)
+  | UseOfUndefinedMember name 
+      -> raise Todo
 
 let report_error err = 
   pr2 (string_of_error err)

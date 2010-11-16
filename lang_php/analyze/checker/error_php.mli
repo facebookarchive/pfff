@@ -19,15 +19,14 @@ type error =
   | UseOfUndefinedMember of Ast_php.name
 
 val string_of_error: error -> string
+val info_of_error: error -> Ast_php.info option
 
 exception Error of error
-
-val report_error : error -> unit
-
 val _errors: error list ref
 
 val fatal: error -> unit
 val warning: error -> unit
 
+val report_error : error -> unit
 val report_all_errors: unit -> unit
 
