@@ -48,6 +48,14 @@ module S = Scope_code
  * 
  * See tests/bugs/unused_var.php for corner cases to handle.
  * 
+ * Detecting such mistakes is made slightly more complicated on one
+ * side by PHP because of the lack of declaration in the language;
+ * the first assgignement "declares" the variable. On the other side
+ * the PHP language forces people to explicitly declared
+ * the use of global variables (via the 'global' statement) which
+ * helps.
+ * 
+ * 
  * One issue is the handling of variables passed by reference
  * which can look like use_of_undeclared_variable bugs but which
  * are not. One way to fix it is to do a global analysis that

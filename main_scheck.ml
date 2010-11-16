@@ -21,8 +21,69 @@ module S = Scope_code
 (* Purpose *)
 (*****************************************************************************)
 
-(*
- * A lint-like checker for PHP.
+(* A lint-like checker for PHP.
+ * 
+ * By default 'scheck' performs only a local analysis of the files passed
+ * on the command line. It is thus quite fast while still detecting a few
+ * important bugs like the use of undefined variables. 
+ * 
+ * 'scheck' can also leverage more expensive global analysis to find more bugs.
+ * Doing so requires a PHP code database which is usually very expensive 
+ * to build (see pfff_db) and very large disk-wise. Fortunately one can 
+ * now build a light database (see pfff_db_light) and use this as a cache.
+ * 
+ * One could also use the heavy database but this requires to have
+ * the program linked with Berkeley DB, adding some dependencies to 
+ * the user of the program (and is not very multi-user friendly for now).
+ * Fortunately this db can now be built in memory, on the fly.
+ * Thanks to the include_require_php.ml analysis, we can
+ * build only the db for the files that matters, cutting significantly
+ * the time to build the db (going down from 40 000 files to about 1000
+ * files on average on facebook code). In a way it is similar
+ * to what gcc does when it calls 'cpp' to get the full information for
+ * a file. 
+ * 
+ * Note that scheck is mostly for generic bugs (that sometimes
+ * requires global analysis). For API-specific bugs, you can use 'sgrep'.
+ * 
+ * modes:
+ *  - local analysis
+ *  - TODO leverage global analysis computed previously by pfff_db_light
+ *  - TODO perform global analysis "lazily" by building db on-the-fly
+ *    of the relevant included files (configurable via a -depth_limit flag)
+ *  - still? leverage global analysis computed by pfff_db
+ * 
+ * current checks:
+ *   - TODO use/def of entities (e.g. use of undefined class/function/constant
+ *     a la checkModule)
+ *   - TODO variable related (use of undeclared variable, unused variable, etc)
+ *   - TODO function call related (wrong number of arguments, bad keyword
+ *     arguments, etc)
+ *   - TODO class related (use of undefined member)
+ *   - TODO dead code (dead function in callgraph, dead block in CFG, 
+ *     dead assignement in dataflow)
+ *   - TODO include/require and file related (including file that do not
+ *     exist anymore)
+ *   - TODO type related
+ *   - TODO resource related (open/close match)
+ *   - TODO security related ??
+ *   - TODO require_strict() related (see facebook/.../main_linter.ml)
+ * 
+ * related: 
+ *   - TODO lint_php.ml (small syntactic conventions, e.g. bad defines)
+ *   - TODO check_code_php.ml (include/require stuff)
+ *   - TODO check_module.ml (require_module() stuff), 
+ *   - TODO main_linter.ml (require_strict() stuff), 
+ *   - TODO main_checker.ml (flib-aware  checker),
+ * 
+ * todo: make it possible to take a db in parameter so
+ * for other functions, we can also get their prototype.
+ * 
+ * todo: build info about builtins, so when call to preg_match,
+ * know that this function takes things via reference.
+ * 
+ * later: it could later also check javascript, CSS, sql, etc
+ * 
  *)
 
 (*****************************************************************************)
@@ -35,6 +96,23 @@ let verbose = ref false
 let action = ref ""
 
 let rank = ref true
+
+(* todo: depth_limit is used to stop the expensive recursive includes process.
+ *
+ * todo: one issue is that some code like facebook uses special 
+ * require/include directives that include_require_php.ml is not aware of.
+ * Maybe we should have a unfacebookizer preprocessor that removes
+ * this sugar. The alternative right now is to copy most of the code
+ * in this file in facebook/qa_code/checker.ml :( and plug in the
+ * special include_require_php.ml hooks.
+ *)
+
+(* In strict mode, we are more aggressive regarding scope like in
+ * JsLint.
+ *
+ * is also in Error_php.ml
+ *)
+let strict_scope = ref false 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -60,13 +138,6 @@ let pr2_dbg s =
 (*****************************************************************************)
 let main_action xs =
 
-  (* todo: build info about builtins, so when call to preg_match,
-   * know that this function takes things via reference.
-   *
-   * also make it possible to take a db in parameter so
-   * for other functions, we can also get their prototype.
-   *)
-
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
   Flag_parsing_php.show_parsing_error := false;
@@ -74,13 +145,18 @@ let main_action xs =
   files +> List.iter (fun file ->
     pr2_dbg (spf "processing: %s" file);
 
-    let (ast2, _stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast2 in
+    let ast = Parse_php.parse_program file in
     Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
-    Check_variables_php.check_and_annotate_program ast;
+    (* TODO *)
+    let find_entity = None in
+    
+    Check_variables_php.check_and_annotate_program 
+      ~strict_scope:!strict_scope
+      ~find_entity
+      ast;
 
-    (*
+    (* TODO:
       Check_unused_var_php.check_program ast;
       Checking_php.check_program ast;
       Check_scope_use_php.check_program ast;
@@ -120,122 +196,6 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
-
-(* the position in the name below correspond to the function at the call site *)
-type warning =
-  | UndefinedFunction of Ast_php.name
-  | UnableToDetermineDef of Ast_php.name
-  | WrongKeywordArgument of Ast_php.dname * Ast_php.expr * Ast_php.name *
-                     Ast_php.parameter * Ast_php.func_def
-  | TooManyArguments of Ast_php.name * Ast_php.func_def
-  | TooFewArguments  of Ast_php.name * Ast_php.func_def
-
-let report_warning = function
-  | UndefinedFunction(funcname) ->
-      pr2 (spf "Warning: at %s
-  function %s is undefined"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-      )
-  | UnableToDetermineDef(funcname) ->
-      pr2 (spf "Warning: at %s
-  function %s is defined several times; unable to find which one applies"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-      )
-  | WrongKeywordArgument(dn, expr, funcname, param, def) ->
-      pr2 (spf "Warning: at %s
-  the assignment '$%s=%s' in the argument list of this call to '%s()' looks like a keyword argument, but the corresponding parameter in the definition of '%s' is called '$%s'
-  function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_dname dn))
-          (Ast.dname dn) (Unparse_php.string_of_expr expr)
-          (Ast.name funcname) (Ast.name funcname)
-          (Ast.dname param.p_name)
-          (Ast.string_of_info (Ast.info_of_name def.f_name))
-      )
-  | TooManyArguments(funcname, def) ->
-      pr2 (spf "Warning: at %s
-  function call %s has too many arguments
-  function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-          (Ast.string_of_info (Ast.info_of_name def.f_name))
-      )
-  | TooFewArguments(funcname, def) ->
-      pr2 (spf "Warning: at %s
-  function call %s has too few arguments
-  function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-          (Ast.string_of_info (Ast.info_of_name def.f_name))
-      )
-
-let test_jeannin file =
-  (* usage for tests/bugs/wrong_keyword_args.php:
-   *   ./pfff_db tests/bugs/  # building the database
-   *   ./scheck_php -jeannin tests/bugs/wrong_keyword_args.php
-   *)
-  let dir = "/tmp/pfff_db/" in
-    (* TODO: we should probably put the db in a better place *)
-  let ast = Parse_php.parse_program file in
-  Database_php.with_db ~metapath:dir (fun db ->
-
-    let visitor =
-      V.mk_visitor { V.default_visitor with
-        V.klvalue = (fun (k, _) x ->
-          match Ast.untype x with
-          | FunCallSimple (funcname, args) ->
-              (let ids = Database_php.function_ids__of_string
-                       (Ast.name funcname) db in
-               match ids with
-              | [] ->
-                  report_warning (UndefinedFunction funcname)
-              | _ :: _ :: _ ->
-                  (* a function with the same name is defined at different places *)
-                  (* TODO: deal with functions defined several times *)
-                  report_warning (UnableToDetermineDef funcname)
-              | [id] ->
-                  let def = match Database_php.ast_of_id id db with
-                    | Ast_entity_php.Function(def) -> def
-                    | _ -> raise Impossible
-                  in
-                  let rec aux params args =
-                    match (params, args) with
-                    | [], [] -> ()
-                    | [], y::ys ->
-                        report_warning (TooManyArguments(funcname, def));
-                        aux [] ys
-                    | x::xs, [] ->
-                        (match x.p_default with
-                        | None ->
-                            report_warning (TooFewArguments(funcname, def));
-                        | Some _ -> ()
-                        );
-                        aux xs []
-                    | x::xs, y::ys ->
-                        (match y with
-                        | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
-                            if not (Ast.dname dn =$= Ast.dname x.p_name)
-                            then
-                              report_warning
-                                (WrongKeywordArgument(dn, expr, funcname,
-                                                      x, def))
-                        | _ -> ()
-                        );
-                        aux xs ys
-                  in
-
-                  let params = def.f_params in
-                  aux (Ast.uncomma (Ast.unparen params))
-                      (Ast.uncomma (Ast.unparen args))
-              );
-              k x
-          | _ -> k x
-        );
-      }
-    in
-    visitor (Program ast)
-  )
 
 (*---------------------------------------------------------------------------*)
 (* type inference playground *)
@@ -278,8 +238,6 @@ let type_inference file =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let scheck_extra_actions () = [
-  "-jeannin", " <file>",
-  Common.mk_action_1_arg test_jeannin;
   "-type_inference", " <file>",
   Common.mk_action_1_arg type_inference;
 ]
@@ -298,8 +256,11 @@ let options () =
   [
     "-verbose", Arg.Set verbose,
     " ";
-    "-strict", Arg.Set Error_php.strict,
-    " ";
+    "-strict", Arg.Set strict_scope,
+    " emulate block scope instead of function scope";
+     "-no_scrict_scope", Arg.Clear strict_scope, 
+     " use function scope (default)";
+
     "-no_rank", Arg.Clear rank,
     " ";
   ] ++
@@ -310,7 +271,7 @@ let options () =
   Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () ->
-    pr2 (spf "sgrep_php version: %s" Config.version);
+    pr2 (spf "scheck version: %s" Config.version);
     exit 0;
   ),
     "  guess what";
@@ -329,6 +290,7 @@ let options () =
 (*****************************************************************************)
 
 let main () =
+
   let usage_msg =
     "Usage: " ^ Common.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
