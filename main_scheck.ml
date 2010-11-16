@@ -100,11 +100,12 @@ let rank = ref true
 (* todo: depth_limit is used to stop the expensive recursive includes process.
  *
  * todo: one issue is that some code like facebook uses special 
- * require/include directives that include_require_php.ml is not aware of.
- * Maybe we should have a unfacebookizer preprocessor that removes
- * this sugar. The alternative right now is to copy most of the code
- * in this file in facebook/qa_code/checker.ml :( and plug in the
- * special include_require_php.ml hooks.
+ *  require/include directives that include_require_php.ml is not aware of.
+ *  Maybe we should have a unfacebookizer preprocessor that removes
+ *  this sugar. The alternative right now is to copy most of the code
+ *  in this file in facebook/qa_code/checker.ml :( and plug in the
+ *  special include_require_php.ml hooks. Another alternative is to use
+ *  the light_db.json cache.
  *)
 
 (* In strict mode, we are more aggressive regarding scope like in
