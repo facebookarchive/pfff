@@ -4,10 +4,17 @@ TOP=../../..
 ##############################################################################
 TARGET=lib
 
+# mostly local analysis
 SRC= \
   error_php.ml \
-  check_functions_php.ml \
   check_variables_php.ml \
+  check_includes_php.ml \
+  check_cfg_php.ml \
+  check_dfg_php.ml \
+
+# mostly global analysis
+SRC+= \
+  check_functions_php.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
