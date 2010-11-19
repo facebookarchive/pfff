@@ -161,11 +161,17 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           (B.DynamicCall(qualif_opt, v_func)) argsB in
         vv_of_v v_res
 
+    (* TODO this is buggy, it does not make sense to transform
+     *  A::$var[...] into  $tmp = $var[...]; A::$tmp !
+     *  The problem is actually in ast_php.ml where VQualifier
+     *  should not take some ArrayAccess in parameter.x
+     *)
     | A.VQualifier(qualif, lv) ->
         let v = make_var_from_Alvalue lv in
         mkt (B.VQualifier(qualif, v))
 
-    | A.This t -> mkt (B.VVar (B.This t))
+    | A.This t -> 
+        mkt (B.VVar (B.This t))
 
     | A.VArrayAccess(lvA, e) ->
         (* we need to pass by reference because of the case:
@@ -577,8 +583,9 @@ let rec (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
     | A.ExprStmt (e, _tok) ->
         (* todo? print warning of _last_expr is not
          * a simple Lv ? 
+         * TODO: should use last_expr !!
          *)
-        let instrs, _last_expr = linearize_expr e in
+        let (instrs, last_expr) = linearize_expr e in
         instrs_to_stmts instrs
 
     | A.Block stmt_and_defs ->

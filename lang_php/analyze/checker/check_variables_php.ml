@@ -253,7 +253,7 @@ let lookup_env_opt_for_class a b =
 (*****************************************************************************)
 
 (* for now return only local vars, not class var like self::$x *)
-let vars_used_in_any =
+let vars_used_in_any x =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
       V.klvalue = (fun (k,vx) x ->
         match Ast.untype x with
@@ -264,12 +264,19 @@ let vars_used_in_any =
          * what I do for name
          *)
         | VQualifier (qu, lval) ->
+            (* TODO: bug!!! right now A::$a[e] is parsed as
+             * a VQualifier(VArrayAccesS($a, e))
+             * but e could contains variable too !! so should actually
+             * visit the lval. But we also don't want to visit certain
+             * parts of lval.
+             *)
+
             ()
 
         | _ -> 
             k x
       );
-    })
+    }) x
 
 (* TODO: qualified_vars_in !!! *)
 

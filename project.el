@@ -28,6 +28,7 @@
      lang_php/analyze/qa_test
      lang_php/analyze/qa_code
      lang_php/analyze/static_analysis
+     lang_php/analyze/checker
      gui
      facebook
      mini_php
@@ -231,6 +232,24 @@
        (2 "-c /home/pad/pfff/tests/php/spatch/foo.spatch /home/pad/pfff/tests/php/spatch/foo.php")
        (3 "-c /home/pad/pfff/tests/php/spatch/border.spatch /home/pad/pfff/tests/php/spatch/border.php")
        (4 "-test")
+       )
+     )
+    )
+   )
+
+  ; --------------------------------------------------------------------------
+  ; scheck
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "scheck"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 1
+
+       (0 "-test")
+       (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
        )
      )
     )

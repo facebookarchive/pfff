@@ -120,7 +120,8 @@ and basevar_to_variable basevar =
   let v = vwithoutobj_to_variable vwithoutobj in
   (match qu_opt with
   | None -> v
-  | Some qu -> mkvar (VQualifier (qu, v))
+  | Some qu -> 
+      lift_qualifier_closer_to_var qu v
   )
 
 and vwithoutobj_to_variable vwithoutobj = 
@@ -150,6 +151,18 @@ and refvar_to_variable refvar =
         VBraceAccess(v, exprb)
   in
   mkvar v
+
+(* even if A::$v['fld'] is parsed in the grammar
+ * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
+ * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+ * 
+ * So this function try to put the qualifier closer to the variable
+ * it is attached to. We must recurse when we have ArrayAccess to
+ * access the deaper variable. We must stop when there is an indirect
+ * because A::$$v should not be parsed as $(A::$v).
+ *)
+and lift_qualifier_closer_to_var qu v =
+  mkvar (VQualifier (qu, v))
 
 (*e: variable2 to variable functions *)
 
