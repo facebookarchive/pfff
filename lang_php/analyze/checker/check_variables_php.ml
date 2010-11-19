@@ -330,8 +330,10 @@ let keyword_arguments_vars_in_any =
           | (Assign((Var(dname, _scope), tlval_4), i_5,
                      _e),
                    t_8) ->
-              Common.push2 dname aref
-          | _ -> ()
+              Common.push2 dname aref;
+              k x
+          | _ ->
+              k x
           )
       | ArgRef _ -> ()
     );
@@ -668,7 +670,22 @@ let visit_prog
 
           | _ -> failwith "weird, foreach with not a var as iterator"
           )
-
+      (* note: I was not handling Unset which takes a lvalue (not
+       * an expression) as an argument. Because of that the kexpr
+       * hook below that compute the set of vars_used_in_expr
+       * was never triggered and every call to unset($avar) was not
+       * considered as a use of $avar.
+       * 
+       * C-s "lvalue" in Ast_php to be sure all Ast elements
+       * containing lvalue are appropriatly considered.
+       * 
+       * In the send I still decided to not consider it because
+       * a mention of a variable in a $unset should not be really
+       * considered as a use of variable. There should be another
+       * statement in the function that actually use the variable.
+       *)
+      | Unset (t1, lvals_list, t2) ->
+          k x
 
       | _ -> k x
     );
