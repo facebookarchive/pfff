@@ -519,7 +519,6 @@ let do_in_new_scope_and_check f =
  * we add the binding in the environment with a counter, a la checkModule.
  *)
 let visit_prog 
- ?(strict_scope = true)
  ?(find_entity = None) 
  prog = 
 
@@ -542,7 +541,7 @@ let visit_prog
      * want to check.
      *)
     V.kstmt_and_def_list_scope = (fun (k, _) x ->
-      if strict_scope 
+      if !E.strict 
       then do_in_new_scope_and_check (fun () -> k x)
       else k x
     );
@@ -894,7 +893,6 @@ let visit_prog
 (*****************************************************************************)
 
 let check_and_annotate_program2
-  ?strict_scope
   ?find_entity
   prog 
   =
@@ -902,9 +900,9 @@ let check_and_annotate_program2
   (* globals (re)initialialisation *) 
   _scoped_env := !initial_env;
 
-  visit_prog ?strict_scope ?find_entity prog;
+  visit_prog ?find_entity prog;
   ()
 
-let check_and_annotate_program ?strict_scope ?find_entity a = 
+let check_and_annotate_program ?find_entity a = 
   Common.profile_code "Checker.variables" (fun () -> 
-    check_and_annotate_program2 ?strict_scope ?find_entity a)
+    check_and_annotate_program2 ?find_entity a)

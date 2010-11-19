@@ -13,6 +13,9 @@ type layer = {
    micro_level: (int (* line *) * kind) list;
    macro_level: (kind * float (* percentage of rectangle *)) list;
  }
+ (* ugly: the first letter of the propery cannot be in uppercase because
+  * of the ugly way Ocaml.json_of_v currently works.
+  *)
  and kind = string
 
 (* The filenames are in absolute path format in the index. *)
@@ -39,3 +42,9 @@ val save_layer: layer -> Common.filename -> unit
 (* helpers *)
 val json_of_layer: layer -> Json_type.t
 val layer_of_json: Json_type.t -> layer
+
+val simple_layer_of_parse_infos: 
+  root:Common.dirname ->
+  (Parse_info.info * kind) list ->
+  (kind * Simple_color.emacs_color) list ->
+  layer

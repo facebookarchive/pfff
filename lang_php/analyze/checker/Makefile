@@ -16,6 +16,8 @@ SRC= \
 SRC+= \
   check_functions_php.ml \
 
+SRC+= check_all_php.ml layer_checker_php.ml
+
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
 

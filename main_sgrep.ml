@@ -87,6 +87,7 @@ let gen_layer ~root file =
   let toks = !_matching_tokens in
   let kinds = ["m" (* match *), "red"] in
   
+  (* todo: could now use Layer_code.simple_layer_of_parse_infos *)
   let files_and_lines = toks +> List.map (fun tok ->
     let file = Ast.file_of_info tok in
     let line = Ast.line_of_info tok in

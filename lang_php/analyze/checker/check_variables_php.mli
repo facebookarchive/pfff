@@ -5,12 +5,12 @@
  *  - ...
  * Does some side effect on program to set the scope ref of variables.
  * Also does side effects on Error_php._errors
+ * Also dependent on Error_php.strict
  * 
  * update: can now pass a hook to find class definitions as 
  * some access to variables can be legit if the superclass (defined
  * in another file) has defined those protected variables.
  *)
 val check_and_annotate_program: 
-  ?strict_scope: bool ->
   ?find_entity: Ast_entity_php.entity_finder option ->
   Ast_php.program -> unit

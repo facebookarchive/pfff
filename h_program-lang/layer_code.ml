@@ -462,3 +462,83 @@ let save_layer layer file =
   (* layer +> vof_layer +> Ocaml.string_of_v +> Common.write_file ~file *)
   then layer +> json_of_layer +> Ocaml.save_json file
   else  Common.write_value layer file
+
+(*****************************************************************************)
+(* Layer builder helper *)
+(*****************************************************************************)
+
+(* Simple layer builder - group by file, by line, by property.
+ * The layer can also be used to summarize statistics per dirs and
+ * subdirs and so on.
+ *)
+let simple_layer_of_parse_infos ~root xs kinds =
+
+  (* group by file, group by line, uniq categ *)
+  let files_and_lines = xs +> List.map (fun (tok, kind) ->
+    let file = Parse_info.file_of_info tok in
+    let line = Parse_info.line_of_info tok in
+    let file' = Common.relative_to_absolute file in 
+    Common.filename_without_leading_path root file', (line, kind)
+  )
+  in
+
+  let (group: (Common.filename * (int * kind) list) list) = 
+    Common.group_assoc_bykey_eff files_and_lines 
+  in
+
+  { 
+    kinds = kinds;
+    files = group +> List.map (fun (file, lines_and_kinds) ->
+
+      let (group: (int * kind list) list) = 
+        Common.group_assoc_bykey_eff lines_and_kinds 
+      in
+      let all_kinds_in_file = 
+        group +> List.map snd +> List.flatten +> Common.uniq in
+
+      (file, { 
+       micro_level = 
+          group +> List.map (fun (line, kinds) -> 
+            let kinds = Common.uniq kinds in
+            kinds +> List.map (fun kind -> line, kind)
+          ) +> List.flatten;
+
+       macro_level =  
+          (* todo: we are supposed to give a percentage per kind but
+           * for now we give the same number to every kinds
+           *)
+          all_kinds_in_file +> List.map (fun kind -> (kind, 1.));
+      })
+    );
+  }
+
+
+(* old: superseded by Layer_code.layer.files and file_info 
+ * type stat_per_file = 
+ *  (string (* a property *), int list (* lines *)) Common.assoc
+ * 
+ * type stats = 
+ *  (Common.filename, stat_per_file) Hashtbl.t
+ *
+ * 
+ * old:
+ * let (print_statistics: stats -> unit) = fun h ->
+ * let xxs = Common.hash_to_list h in
+ * pr2_gen (xxs);
+ * ()
+ *
+ * let gen_security_layer xs = 
+ * let _root = Common.common_prefix_of_files_or_dirs xs in
+ * let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+ * 
+ * let h = Hashtbl.create 101 in
+ * 
+ * files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
+ * pr2 (spf "processing: %s (%d/%d)" file i total);
+ * let ast = Parse_php.parse_program file in
+ * let stat_file = stat_of_program ast in
+ * Hashtbl.add h file stat_file
+ * );
+ * Common.write_value h "/tmp/bigh";
+ * print_statistics h
+ *)

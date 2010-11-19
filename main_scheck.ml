@@ -115,6 +115,8 @@ let rank = ref true
  *)
 let strict_scope = ref false 
 
+let layer_file = ref (None: filename option)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -158,24 +160,6 @@ let pr2_dbg s =
 (* Main action *)
 (*****************************************************************************)
 
-let check_file ~find_entity file =
-
-  let ast = Parse_php.parse_program file in
-  Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
-
-  Check_variables_php.check_and_annotate_program 
-    ~strict_scope:!strict_scope
-    ~find_entity
-    ast;
-
-  (* TODO:
-     Check_unused_var_php.check_program ast;
-     Checking_php.check_program ast;
-     Check_scope_use_php.check_program ast;
-     Check_unused_var_php.check_program ast;
-  *)
-  ()
-
 let main_action xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
@@ -187,7 +171,7 @@ let main_action xs =
     (* TODO *)
     let find_entity = None in
 
-    check_file ~find_entity file;
+    Check_all_php.check_file ~find_entity file;
   );
 
   let errs = !Error_php._errors +> List.rev in
@@ -196,18 +180,19 @@ let main_action xs =
   errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
   show_10_most_recurssing_unused_variable_names ();
   pr2 (spf "total errors = %d" (List.length !Error_php._errors));
+
+  !layer_file +> Common.do_option (fun file ->
+    (*  a layer needs readable paths, hence the root *)
+    let root = Common.common_prefix_of_files_or_dirs xs in
+
+    Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
+
+  );
   ()
 
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
-
-(*---------------------------------------------------------------------------*)
-(* Layer *)
-(*---------------------------------------------------------------------------*)
-
-let gen_layer dir =
-  raise Todo
 
 (*---------------------------------------------------------------------------*)
 (* type inference playground *)
@@ -277,7 +262,7 @@ let test () =
   (* todo *)
   let find_entity = None in
 
-  test_files +> List.iter (check_file ~find_entity);
+  test_files +> List.iter (Check_all_php.check_file ~find_entity);
   !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e));
   
   let (actual_errors: (Common.filename * int (* line *)) list) = 
@@ -309,8 +294,6 @@ let test () =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let scheck_extra_actions () = [
-  "-gen_layer", " <dir>",
-  Common.mk_action_1_arg gen_layer;
 
   "-type_inference", " <file>",
   Common.mk_action_1_arg type_inference;
@@ -340,6 +323,10 @@ let options () =
 
     "-no_rank", Arg.Clear rank,
     " ";
+
+    "-gen_layer", Arg.String (fun s -> layer_file := Some s),
+    " <file> save result in pfff layer file";
+
   ] ++
   Flag_analyze_php.cmdline_flags_verbose () ++
   Common.options_of_actions action (all_actions()) ++
