@@ -260,18 +260,16 @@ let vars_used_in_any x =
         | Var (dname, _scope) ->
             Common.push2 dname aref
 
-        (* todo: maybe the qualifier should be with Var, just like
-         * what I do for name
+        (* Used to have a bad representation for A::$a[e]
+         * It was parsed asa VQualifier(VArrayAccesS($a, e))
+         * but e could contains variable too !! so should actually
+         * visit the lval. But we also don't want to visit certain
+         * parts of lval.
+         * Introducing ClassVar fixed the problem.
+         * The qualifier should be with Var, just like what I do for name.
+         * 
+         * old: | VQualifier (qu, lval) -> ()
          *)
-        | VQualifier (qu, lval) ->
-            (* TODO: bug!!! right now A::$a[e] is parsed as
-             * a VQualifier(VArrayAccesS($a, e))
-             * but e could contains variable too !! so should actually
-             * visit the lval. But we also don't want to visit certain
-             * parts of lval.
-             *)
-
-            ()
 
         | _ -> 
             k x

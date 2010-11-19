@@ -708,6 +708,15 @@ and m_variablebis a b =
        B.VQualifier(b1, b2)
     )
     ))
+
+  | A.ClassVar(a1, a2), B.ClassVar(b1, b2) ->
+    m_qualifier a1 b1 >>= (fun (a1, b1) -> 
+    m_dname a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.ClassVar(a1, a2),
+       B.ClassVar(b1, b2)
+    )
+    ))
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     m_name a2 b2 >>= (fun (a2, b2) -> 
     m_paren (m_list__m_argument) a3 b3 >>= (fun (a3, b3) -> 
@@ -772,6 +781,7 @@ and m_variablebis a b =
   | A.VBraceAccess _, _
   | A.Indirect _, _
   | A.VQualifier _, _
+  | A.ClassVar _, _
   | A.FunCallSimple _, _
   | A.FunCallVar _, _
   | A.MethodCallSimple _, _

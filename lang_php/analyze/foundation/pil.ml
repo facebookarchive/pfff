@@ -126,7 +126,10 @@ type var =
 type lvalue = lvaluebis * type_info
  and lvaluebis = 
    | VVar of var
-   (* A::$x *)
+   (* A::$x. 
+    * TODO change in ClassVar of qualifier * dname 
+    * and introduce a DynamicClassVar of qualifier * var
+    *)
    | VQualifier of qualifier * var
 
    | ArrayAccess of var * expr option 
