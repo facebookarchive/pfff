@@ -1,12 +1,5 @@
 <?php
 
-function ok2() {
-  $db_scb_key = 1;
-  if (!isset(A::$dbGetters[$db_scb_key])) {
-    return 2;
-  }
-}
-
 //ERROR: unused param
 function foo($a) {
 
@@ -18,15 +11,25 @@ function foo($a) {
 }
 
 
+
+
+
+
 // My analysis used to have a few false positives because my code
 // was buggy.
-
 function ok1() {
   $a = 1;
   if (isset($a)) {
     return $a;
   }
   return 2;
+}
+
+function ok2() {
+  $db_scb_key = 1;
+  if (!isset(A::$dbGetters[$db_scb_key])) {
+    return 2;
+  }
 }
 
 
