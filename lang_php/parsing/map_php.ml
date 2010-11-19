@@ -100,15 +100,19 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 let rec map_info x = 
   let rec k x = 
     match x with
-    { pinfo = v_pinfo; 
-      transfo = v_transfo } ->
+    { Parse_info.token = v_pinfo; 
+      transfo = v_transfo;
+      comments = v_comments;
+    } ->
     let v_pinfo = 
       (* todo? map_pinfo v_pinfo *)
     v_pinfo
     in
     (* not recurse in transfo ? *)
-    { pinfo = v_pinfo;   (* generete a fresh field *)
-      transfo = v_transfo }
+    { Parse_info.token = v_pinfo;   (* generete a fresh field *)
+      transfo = v_transfo;
+      comments = v_comments;
+    }
   in
   vin.kinfo (k, all_functions) x
 

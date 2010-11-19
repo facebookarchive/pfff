@@ -20,6 +20,7 @@ open Common
 
 open Ast_php 
 open Parser_php (* the tokens *)
+open Parse_info
 
 module V = Visitor_php
 module Ast = Ast_php
@@ -63,7 +64,7 @@ let string_of_program2 ast2 =
 
     let hooks = { V.default_visitor with
       V.kinfo = (fun (k, _) info ->
-        match info.pinfo with
+        match info.Parse_info.token with
         | Parse_info.OriginTok p ->
             let line = p.Parse_info.line in 
             if line > !cur_line
@@ -99,7 +100,7 @@ let string_of_program2 ast2 =
 let mk_unparser_visitor pp = 
   let hooks = { V.default_visitor with
     V.kinfo = (fun (k, _) info ->
-      match info.pinfo with
+      match info.Parse_info.token with
       | Parse_info.OriginTok p ->
           let s =  p.Parse_info.str in
           pp s; (* pp " "; *)

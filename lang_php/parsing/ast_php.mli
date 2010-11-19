@@ -19,17 +19,16 @@ type pinfo = Parse_info.token
   (*e: tarzan annotation *)
 (*e: type pinfo *)
 
-type info = { 
-  (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
-   *)
-  mutable pinfo : pinfo; 
+(* contains among other things the position of the token through
+ * the Common.parse_info embedded inside it.
+ *)
+type info = Parse_info.info
   (*s: type info hook *)
   (* todo? comments: .... *)
   (*x: type info hook *)
-  mutable transfo: transformation;
+  (* old: mutable transfo: transformation; *)
   (*e: type info hook *)
-  }
+
 and tok = info
 (*x: AST info *)
 (* a shortcut to annotate some information with token/position information *)
@@ -40,15 +39,7 @@ and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 (*x: AST info *)
-and transformation = 
-  | NoTransfo
-  | Remove 
-  | AddBefore of add
-  | AddAfter of add
-  | Replace of add
-  and add = 
-    | AddStr of string
-    | AddNewlineAndIdent
+(* old: transformation = ... now in parse_info.ml *)
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -809,7 +800,6 @@ val get_type : expr -> Type_php.phptype
 val set_type : expr -> Type_php.phptype -> unit
 (*x: AST helpers interface *)
 val rewrap_str : string -> info -> info
-val rewrap_parse_info : Parse_info.parse_info -> info -> info
 val is_origintok : info -> bool
 val al_info : info -> info
 val compare_pos : info -> info -> int

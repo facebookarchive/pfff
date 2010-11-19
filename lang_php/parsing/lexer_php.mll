@@ -54,7 +54,7 @@ let tok     lexbuf  = Lexing.lexeme lexbuf
 
 let tokinfo_str_pos str pos = 
   { 
-    Ast.pinfo = Parse_info.OriginTok { Parse_info.
+    Parse_info.token = Parse_info.OriginTok { Parse_info.
       charpos = pos; 
       str     = str;
 
@@ -63,7 +63,8 @@ let tokinfo_str_pos str pos =
       column = -1; 
       file = "";
     };
-    transfo = Ast.NoTransfo;
+    transfo = Parse_info.NoTransfo;
+    comments = ();
   }
 let tokinfo lexbuf  = 
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)

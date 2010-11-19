@@ -1,11 +1,13 @@
 open Common
 
 open Ast_php
+open Parse_info
 
 module Ast = Ast_php
 module V = Visitor_php
 
 module S = Scope_code
+
 
 (*****************************************************************************)
 (* Purpose *)
@@ -84,9 +86,10 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
-let fkt str = { 
-  pinfo = Parse_info.FakeTokStr (str, None);
-  transfo = Ast.NoTransfo;
+let fkt str = { Parse_info.
+  token = Parse_info.FakeTokStr (str, None);
+  transfo = Parse_info.NoTransfo;
+  comments = ();
 }
 let fkdname s = 
   DName (s, fkt ("$" ^ s))
@@ -567,7 +570,7 @@ let unparse_without_type_hints file =
       | Hint name -> Ast.info_of_name name
       | HintArray tok -> tok
     in
-    token.Ast.transfo <- Ast.Remove;
+    token.Parse_info.transfo <- Remove;
   in
   let v = V.mk_visitor { V.default_visitor with
     (* todo? we could keep some typehint such as Object or Array,
@@ -591,7 +594,7 @@ let unparse_without_type_hints file =
 (*---------------------------------------------------------------------------*)
 
 let xhp_preprocesor file =
-  let ast = Parse_php.parse_program file in
+  let _ast = Parse_php.parse_program file in
   raise Todo
 
 (* I have some ideas on how we can make XHP faster via static analysis
@@ -619,7 +622,7 @@ let xhp_preprocesor file =
  *)
 
 let xhp_optimizer file =
-  let ast = Parse_php.parse_program file in
+  let _ast = Parse_php.parse_program file in
   raise Todo
 
 (*---------------------------------------------------------------------------*)

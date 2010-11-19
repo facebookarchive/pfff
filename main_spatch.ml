@@ -20,6 +20,8 @@ module V2 = Visitor_js
 
 module PI = Parse_info
 
+open Parse_info
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -129,13 +131,14 @@ let apply_transfo (f, keywords_grep_opt) xs =
 let (dumb_spatch_pattern: Ast_php.expr) = 
   (* ./pfff -dump_php_ml tests/php/spatch/1.php *)
   let i_1 = {
-    pinfo =
+    PI.token =
       PI.OriginTok(
         { PI.str = "1"; charpos = 6; line = 2; column = 0; 
           file = "tests/php/spatch/1.php"; 
         });
      (* the spatch is to replace every 1 by 42 *)
-     transfo = Replace (AddStr "42");
+     PI.transfo = PI.Replace (PI.AddStr "42");
+     PI.comments = ();
     }
   in
   let t_1 = Ast.noType () in
@@ -223,7 +226,7 @@ let parse_spatch file =
     let annot = Hashtbl.find hline_env line in
     (match annot with
     | Context -> ()
-    | Minus -> tok.transfo <- Remove;
+    | Minus -> tok.PI.transfo <- PI.Remove;
     | Plus _ -> 
         (* normally impossible since we removed the elements in the
          * plus line, except the newline. should assert it's only newline
@@ -376,9 +379,9 @@ let simple_transfo xs =
             
             let ii = Lib_parsing_php.ii_of_any (Lvalue x) in
             ii |> List.iter (fun info ->
-              info.transfo <- Ast.Remove
+              info.transfo <- Remove
             );
-            info_foo.transfo <- Ast.Replace (Ast.AddStr "1");
+            info_foo.transfo <- Replace (AddStr "1");
             ()
         | _ -> k x
       );

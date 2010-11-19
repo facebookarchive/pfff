@@ -202,7 +202,7 @@ let tokens2 file =
 
         (*s: fill in the line and col information for tok *)
         let tok = tok +> TH.visitor_info_of_tok (fun ii ->
-        { ii with Ast.pinfo=
+        { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
                match Ast.pinfo_of_info ii with
                | Parse_info.OriginTok pi ->
@@ -341,7 +341,7 @@ let mark_as_expanded last_orig_parse_info toks =
     tok |> TH.visitor_info_of_tok (fun info -> 
       let parse_info_in_pp = Ast.parse_info_of_info info in
       { info with 
-        Ast.pinfo = Parse_info.ExpandedTok (
+        Parse_info.token = Parse_info.ExpandedTok (
           parse_info_in_pp, 
           last_orig_parse_info, 
           !cnt)
@@ -483,7 +483,7 @@ let adapt_tokens_pp2 ~orig_filename toks_pp =
    toks_pp +> List.rev_map (fun tok ->
     tok +> TH.visitor_info_of_tok (fun ii ->
       let pinfo = Ast.pinfo_of_info ii in
-      { ii with Ast.pinfo =
+      { ii with Parse_info.token =
           match pinfo with
           | Parse_info.OriginTok pi ->
               Parse_info.OriginTok { pi with

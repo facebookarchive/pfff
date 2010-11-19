@@ -52,17 +52,16 @@ type pinfo = Parse_info.token
   (*e: tarzan annotation *)
 (*e: type pinfo *)
 
-type info = { 
-  (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
-   *)
-  mutable pinfo : pinfo; 
+(* contains among other things the position of the token through
+ * the Common.parse_info embedded inside it.
+ *)
+type info = Parse_info.info
   (*s: type info hook *)
   (* todo? comments: .... *)
   (*x: type info hook *)
-  mutable transfo: transformation;
+  (* old: mutable transfo: transformation; *)
   (*e: type info hook *)
-  }
+
 and tok = info
 (*x: AST info *)
 (* a shortcut to annotate some information with token/position information *)
@@ -73,15 +72,7 @@ and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 (*x: AST info *)
-and transformation = 
-  | NoTransfo
-  | Remove 
-  | AddBefore of add
-  | AddAfter of add
-  | Replace of add
-  and add = 
-    | AddStr of string
-    | AddNewlineAndIdent
+(* old: transformation = ... now in parse_info.ml *)
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -819,8 +810,9 @@ let noScope () = ref (Scope_code.NoScope)
 let noFtype () = ([Type_php.Unknown])
 
 let fakeInfo ?(next_to=None) str = { 
-    pinfo = FakeTokStr (str, next_to);
-    transfo = NoTransfo;
+  token = FakeTokStr (str, next_to);
+  comments = ();
+  transfo = NoTransfo;
   }
 (*x: ast_php.ml *)
 (*****************************************************************************)
@@ -859,14 +851,7 @@ let unmodifiers class_vars =
 (*x: ast_php.ml *)
 let untype (e, xinfo) = e
 (*x: ast_php.ml *)
-let parse_info_of_info ii = 
-  match ii.pinfo with
-  | OriginTok pinfo -> pinfo
-  (* TODO ? dangerous ? *)
-  | ExpandedTok (pinfo_pp, pinfo_orig, offset) -> pinfo_pp
-  | FakeTokStr _
-  | Ab 
-    -> failwith "parse_info_of_info: no OriginTok"
+let parse_info_of_info = Parse_info.parse_info_of_info
 (*x: ast_php.ml *)
 (* todo: return a Real | Virt position ? *)
 let pos_of_info  ii = (parse_info_of_info ii).Parse_info.charpos
@@ -876,37 +861,15 @@ let file_of_info ii = (parse_info_of_info ii).Parse_info.file
 let line_of_info ii = (parse_info_of_info ii).Parse_info.line
 let col_of_info  ii = (parse_info_of_info ii).Parse_info.column
 (*x: ast_php.ml *)
-let pinfo_of_info ii = ii.pinfo
+let pinfo_of_info = Parse_info.pinfo_of_info
 (*x: ast_php.ml *)
-let rewrap_str s ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok pi -> 
-        OriginTok { pi with Parse_info.str = s;}
-    | FakeTokStr (s, next_to) -> 
-        FakeTokStr (s, next_to)
-    | Ab -> Ab
-    | ExpandedTok _ -> 
-        failwith "rewrap_str: ExpandedTok not allowed here"
-    )
-  }
-let rewrap_parse_info pi ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok _oldpi -> OriginTok pi
-    | FakeTokStr _  | Ab | ExpandedTok _ -> 
-        failwith "rewrap_parseinfo: no OriginTok"
-    )
-  }
+let rewrap_str = Parse_info.rewrap_str
 (*x: ast_php.ml *)
 (* for error reporting *) 
 let string_of_info ii = 
   Parse_info.string_of_parse_info (parse_info_of_info ii)
 
-let is_origintok ii = 
-  match ii.pinfo with
-  | OriginTok pi -> true
-  | FakeTokStr _ | Ab | ExpandedTok _ -> false
+let is_origintok = Parse_info.is_origintok
 
 
 type posrv = 
@@ -965,7 +928,7 @@ let set_type (e: expr) (ty: Type_php.phptype) =
  *)
 
 let al_info x = 
-  { x with pinfo = Ab }
+  { x with token = Ab }
 (*x: ast_php.ml *)
 (*****************************************************************************)
 (* Views *)

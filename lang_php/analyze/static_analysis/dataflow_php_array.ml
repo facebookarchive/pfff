@@ -86,8 +86,11 @@ let vars_in_v v =
     | _ -> k v
   )
   in
+  failwith "TODO: dname_ofv,"
+(*
   let all_dnames = !all_v_dnames +> List.map Meta_ast_php.dname_ofv in
   all_dnames +> List.map Ast.dname
+*)
   
 let vars_in_arguments args = 
   let v = Ocaml.vof_list Pil.vof_argument args in
@@ -141,11 +144,14 @@ let info_of_node n =
     | _ -> k v
   )
   in
+  failwith "TODO:info_ofv"
+(*
   let all_infos = !all_infos +> List.map Meta_ast_php.info_ofv in
   let origins = all_infos +> List.filter Ast_php.is_origintok in
   match origins with
   | x::xs -> filepos_of_info x
   | [] -> Entity_php.filepos_of_parse_info (Parse_info.fake_parse_info)
+*)
 
 (*****************************************************************************)
 (* Helpers *)

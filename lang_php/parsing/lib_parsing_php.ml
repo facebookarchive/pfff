@@ -82,7 +82,7 @@ let ii_of_any any =
 let abstract_position_visitor recursor = 
   let hooks = { V2.default_visitor with
     V2.kinfo = (fun (k, _) i -> 
-      { i with pinfo = Parse_info.Ab }
+      { i with Parse_info.token = Parse_info.Ab }
     )
   } in
   begin

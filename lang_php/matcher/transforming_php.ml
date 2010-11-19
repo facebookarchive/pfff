@@ -20,6 +20,8 @@ module MV = Metavars_php
 module A = Ast_php
 module B = Ast_php
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -166,9 +168,9 @@ module XMATCH = struct
       env +> List.map (fun (mvar, any) -> mvar, Unparse_php.string_of_any any)
     in
     match add with
-    | B.AddNewlineAndIdent -> 
-        B.AddNewlineAndIdent
-    | B.AddStr s ->
+    | PI.AddNewlineAndIdent -> 
+        PI.AddNewlineAndIdent
+    | PI.AddStr s ->
         let s' = Common.global_replace_regexp MV.metavar_regexp_string
          (fun matched ->
           try List.assoc matched env
@@ -177,7 +179,7 @@ module XMATCH = struct
                          matched)
          ) s
         in
-        B.AddStr s'
+        PI.AddStr s'
 
   (* when a transformation contains a '+' part, as in 
    * - 2
@@ -189,15 +191,15 @@ module XMATCH = struct
    *)
   let adjust_transfo_with_env env transfo = 
      match transfo with
-     | B.NoTransfo 
-     | B.Remove -> transfo
+     | PI.NoTransfo 
+     | PI.Remove -> transfo
 
-     | B.AddBefore add ->
-         B.AddBefore (subst_metavars env add)
-     | B.AddAfter add ->
-         B.AddAfter (subst_metavars env add)
-     | B.Replace add ->
-         B.Replace (subst_metavars env add)
+     | PI.AddBefore add ->
+         PI.AddBefore (subst_metavars env add)
+     | PI.AddAfter add ->
+         PI.AddAfter (subst_metavars env add)
+     | PI.Replace add ->
+         PI.Replace (subst_metavars env add)
 
 
   (* 
@@ -221,14 +223,14 @@ module XMATCH = struct
     let ii = Lib_parsing_php.ii_of_any any in
 
     (match transfo with
-    | B.NoTransfo -> ()
-    | B.Remove -> ii +> List.iter (fun tok -> tok.B.transfo <- B.Remove)
-    | B.Replace add ->
-        ii +> List.iter (fun tok -> tok.B.transfo <- B.Remove);
+    | PI.NoTransfo -> ()
+    | PI.Remove -> ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
+    | PI.Replace add ->
+        ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
         let any_ii = List.hd ii in
-        any_ii.B.transfo <- adjust_transfo_with_env env transfo;
-    | B.AddBefore add -> raise Todo
-    | B.AddAfter add -> raise Todo
+        any_ii.PI.transfo <- adjust_transfo_with_env env transfo;
+    | PI.AddBefore add -> raise Todo
+    | PI.AddAfter add -> raise Todo
     )
 
   let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
@@ -238,15 +240,15 @@ module XMATCH = struct
         fail tin
     | Some new_binding ->
         (* TODO: distribute transfo mark *)
-        distribute_transfo imvar.A.transfo any tin;
+        distribute_transfo imvar.PI.transfo any tin;
         return ((mvar, imvar), any) new_binding
 
 
 
   (* propagate the transformation info *)
   let tokenf a b = fun tin ->
-    let transfo = a.A.transfo in
-    b.B.transfo <- adjust_transfo_with_env tin transfo;   
+    let transfo = a.PI.transfo in
+    b.PI.transfo <- adjust_transfo_with_env tin transfo;   
     return (a, b) tin
     
 end

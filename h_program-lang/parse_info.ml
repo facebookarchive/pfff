@@ -216,7 +216,18 @@ let rewrap_str s ii =
         failwith "rewrap_str: ExpandedTok not allowed here"
     )
   }
+(*
+val rewrap_parse_info : Parse_info.parse_info -> info -> info
 
+let rewrap_parse_info pi ii = 
+  {ii with pinfo =
+    (match ii.pinfo with
+    | OriginTok _oldpi -> OriginTok pi
+    | FakeTokStr _  | Ab | ExpandedTok _ -> 
+        failwith "rewrap_parseinfo: no OriginTok"
+    )
+  }
+*)
 let parse_info_of_info ii = 
   match ii.token with
   | OriginTok pinfo -> pinfo
