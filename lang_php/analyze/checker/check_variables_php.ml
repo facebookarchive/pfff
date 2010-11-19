@@ -32,6 +32,9 @@ module S = Scope_code
 
 (* 
  * Finding stupid PHP mistakes related to variables.
+ * See tests/php/scheck/variables.php for example of bugs currently
+ * detected by this checker.
+ * See also tests/bugs/unused_var.php for corner cases to handle.
  * 
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are 2 orthogonal programming language notions.
@@ -46,7 +49,6 @@ module S = Scope_code
  *  - UseOfUndefinedVariable
  *  - UnusedVariable
  * 
- * See tests/bugs/unused_var.php for corner cases to handle.
  * 
  * Detecting such mistakes is made slightly more complicated on one
  * side by PHP because of the lack of declaration in the language;
