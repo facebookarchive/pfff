@@ -397,6 +397,7 @@ and lvalue = lvaluebis * lvalue_info
      * generate a ArrayAccess(Qualifier(A, $v), 'fld').
      *)
     | VQualifier of qualifier * lvalue
+    | ClassVar of qualifier * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren

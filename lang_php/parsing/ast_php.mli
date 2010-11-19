@@ -358,7 +358,13 @@ and lvalue = lvaluebis * lvalue_info
     (* on the left of var *)
     | Indirect  of lvalue * indirect 
   (*x: lvaluebis constructors *)
+    (* This used to be VQualifier of qualifier * lvalue but it was wrong.
+     * Even if A::$v['fld'] was parsed in the grammar
+     * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
+     * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+     *)
     | VQualifier of qualifier * lvalue
+    | ClassVar of qualifier * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren

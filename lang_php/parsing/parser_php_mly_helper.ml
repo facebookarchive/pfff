@@ -162,7 +162,28 @@ and refvar_to_variable refvar =
  * because A::$$v should not be parsed as $(A::$v).
  *)
 and lift_qualifier_closer_to_var qu v =
-  mkvar (VQualifier (qu, v))
+
+  let rec aux v =
+    match fst v with
+    | Indirect _ | VBrace _ | VBraceAccess _ -> 
+        raise Not_found
+    | VArrayAccess (lval, e) ->
+        let lval' = aux lval in
+        VArrayAccess (lval', e), snd v
+    | Var (name, _scope) -> 
+        mkvar (ClassVar (qu, name))
+    | This _ ->
+        failwith "todo: what mean A::this ?"
+
+    (* v should have been build via vwithoutobj_to_variable so
+     * we should see only a restrict set of lvalue constructor here
+     *)
+    | _ -> raise Impossible
+  in
+  try 
+    aux v
+  with Not_found -> mkvar (VQualifier (qu, v))
+    
 
 (*e: variable2 to variable functions *)
 

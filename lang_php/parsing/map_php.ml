@@ -590,6 +590,10 @@ and map_variablebis =
       let v1 = map_qualifier v1
       and v2 = map_variable v2
       in VQualifier ((v1, v2))
+  | ClassVar ((v1, v2)) ->
+      let v1 = map_qualifier v1
+      and v2 = map_dname v2
+      in ClassVar ((v1, v2))
   | FunCallSimple ((v2, v3)) ->
       let v2 = map_name v2
       and v3 = map_paren_args (map_comma_list_arg map_argument) v3
