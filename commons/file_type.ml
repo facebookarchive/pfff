@@ -125,6 +125,7 @@ let file_type_of_file2 file =
   | "s" | "S" | "asm" -> PL Asm
 
   | "c--" -> PL (MiscPL e)
+  | "oz" -> PL (MiscPL e)
 
   | "R" | "Rd" -> PL (R e)
 
