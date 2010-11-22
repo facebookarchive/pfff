@@ -542,3 +542,23 @@ let simple_layer_of_parse_infos ~root xs kinds =
  * Common.write_value h "/tmp/bigh";
  * print_statistics h
  *)
+
+(*****************************************************************************)
+(* Layer stat *)
+(*****************************************************************************)
+
+(* todo? could be useful also to show # of files involved instead of
+ * just the line count.
+ *)
+let stat_of_layer layer =
+  let h = Common.hash_with_default (fun () -> 0) in
+  
+  layer.kinds +> List.iter (fun (kind, _color) -> 
+    h#add kind 0
+  );
+  layer.files +> List.iter (fun (file, finfo) ->
+    finfo.micro_level +> List.iter (fun (_line, kind) ->
+      h#update kind (fun old -> old + 1)
+    )
+  );
+  h#to_list

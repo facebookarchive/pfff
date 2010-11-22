@@ -48,3 +48,5 @@ val simple_layer_of_parse_infos:
   (Parse_info.info * kind) list ->
   (kind * Simple_color.emacs_color) list ->
   layer
+
+val stat_of_layer: layer -> (kind * int) list

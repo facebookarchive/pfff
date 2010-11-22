@@ -55,6 +55,9 @@ let test_json_pretty_printer file =
 let pfff_extra_actions () = [
   "-json_pp", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
+  
+  "-layer_stat", " <file>",
+  Common.mk_action_1_arg Test_program_lang.layer_stat;
 ]
 
 (*****************************************************************************)

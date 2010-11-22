@@ -48,6 +48,13 @@ let test_layer file =
   let s = Json_out.string_of_json json in
   pr2 s
 
+let layer_stat file =
+  let layer = Layer_code.load_layer file in
+  let stats = Layer_code.stat_of_layer layer in
+  stats +> List.iter (fun (k, v) ->
+    pr (spf " %s = %d" k v)
+  )
+  
 
 (*****************************************************************************)
 (* Main entry for Arg *)
