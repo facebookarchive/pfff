@@ -9,6 +9,8 @@ type program2 = toplevel2 list
 val parse:
   Common.filename -> (program2 * Parse_info.parsing_stat)
 
+val parse_program:
+  Common.filename -> Ast_ml.program
 
 (* internal *)
 val tokens: Common.filename -> Parser_ml.token list

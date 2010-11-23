@@ -75,6 +75,12 @@ let refactor_grammar subst_file file =
     pr s
   );
   ()
+
+
+let test_dump_ml file =
+  let ast = Parse_ml.parse_program file in
+  let s = Export_ast_ml.ml_pattern_string_of_program ast in
+  pr s
           
 
 
@@ -91,6 +97,9 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_ml;
   "-parse_ml", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_ml_or_mli;
+
+  "-dump_ml", "   <file>", 
+  Common.mk_action_1_arg test_dump_ml;
 
   "-refactor_grammar", "   <subst_file> <file>", 
   Common.mk_action_2_arg refactor_grammar;
