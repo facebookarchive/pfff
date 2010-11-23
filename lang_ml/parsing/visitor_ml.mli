@@ -10,14 +10,10 @@ type visitor_in = {
   kpattern: pattern vin;
   kitem: item vin;
   klet_def: let_def vin;
-}
-and visitor_out = {
-  vtoplevel: toplevel vout;
-  vprogram: program vout;
-  vmatch_case: match_case vout;
+  klet_binding: let_binding vin;
 }
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
-and 'a vout = 'a -> unit
+and visitor_out = any -> unit
 
 val default_visitor: visitor_in
 

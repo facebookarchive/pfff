@@ -189,7 +189,7 @@ let visit_toplevel
 
           Common.save_excursion in_try_with true (fun () ->
             match_cases +> Ast.unpipe +> List.iter (fun match_case ->
-              bigf.V.vmatch_case match_case
+              bigf (MatchCase match_case)
             )
           )
 
@@ -307,7 +307,7 @@ let visit_toplevel
     );
   }
   in
-  v.V.vtoplevel  toplevel;
+  v (Toplevel toplevel);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)

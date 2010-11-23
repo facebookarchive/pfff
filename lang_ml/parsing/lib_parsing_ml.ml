@@ -55,8 +55,8 @@ let extract_info_visitor recursor =
     List.rev !globals
   end
 
-let ii_of_toplevel top = 
-  extract_info_visitor (fun visitor -> visitor.V.vtoplevel top)
+let ii_of_any any = 
+  extract_info_visitor (fun visitor -> visitor any)
 
 (*****************************************************************************)
 (* Max min, range *)

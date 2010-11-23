@@ -320,10 +320,10 @@ and toplevel =
  (* with tarzan *)
 
 type any =
-  | Constant of constant
   | Ty of ty
   | Expr of expr
   | Pattern of pattern
+
   | Item2 of item
   | Toplevel of toplevel
   | Program of program
@@ -331,6 +331,11 @@ type any =
   | TypeDeclaration of type_declaration
   | TypeDefKind of type_def_kind
   | FieldDeclaration of field_declaration
+
+  | MatchCase of match_case
+  | LetBinding of let_binding
+
+  | Constant of constant
 
   | Argument of argument
   | Body of seq_expr

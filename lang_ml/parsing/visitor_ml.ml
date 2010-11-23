@@ -34,14 +34,12 @@ type visitor_in = {
   kpattern: pattern vin;
   kitem: item vin;
   klet_def: let_def vin;
+  klet_binding: let_binding vin;
 }
-and visitor_out = {
-  vtoplevel: toplevel vout;
-  vprogram: program vout;
-  vmatch_case: match_case vout;
-}
-and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
-and 'a vout = 'a -> unit
+  and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
+
+and visitor_out = any -> unit
+
 
 let default_visitor = { 
   kinfo   = (fun (k,_) x -> k x);
@@ -53,6 +51,7 @@ let default_visitor = {
   kitem  = (fun (k,_) x -> k x);
   klet_def  = (fun (k,_) x -> k x);
   kpattern = (fun (k,_) x -> k x);
+  klet_binding = (fun (k,_) x -> k x);
 }
 
 
@@ -476,12 +475,24 @@ and v_toplevel =
   | FinalDef v1 -> let v1 = v_info v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
-  
- and all_functions =   
-    {
-      vprogram = v_program;
-      vtoplevel = v_toplevel;
-      vmatch_case = v_match_case;
-    }
-  in
-  all_functions
+
+and v_any = function
+  | Ty v1 -> let v1 = v_ty v1 in ()
+  | Expr v1 -> let v1 = v_expr v1 in ()
+  | Pattern v1 -> let v1 = v_pattern v1 in ()
+  | Item2 v1 -> let v1 = v_item v1 in ()
+  | Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | Program v1 -> let v1 = v_program v1 in ()
+  | TypeDeclaration v1 -> let v1 = v_type_declaration v1 in ()
+  | TypeDefKind v1 -> let v1 = v_type_def_kind v1 in ()
+  | MatchCase v1 -> let v1 = v_match_case v1 in ()
+  | FieldDeclaration v1 -> let v1 = v_label_declaration v1 in ()
+  | LetBinding v1 -> let v1 = v_let_binding v1 in ()
+  | Constant v1 -> let v1 = v_constant v1 in ()
+  | Argument v1 -> let v1 = v_argument v1 in ()
+  | Body v1 -> let v1 = v_seq_expr v1 in ()
+  | Info v1 -> let v1 = v_info v1 in ()
+  | InfoList v1 -> let v1 = v_list v_info v1 in ()
+and all_functions x = v_any x
+in
+v_any

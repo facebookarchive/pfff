@@ -462,3 +462,34 @@ and vof_toplevel =
   | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
 and vof_program v = Ocaml.vof_list vof_toplevel v
   
+let vof_any =
+  function
+  | Ty v1 -> let v1 = vof_ty v1 in Ocaml.VSum (("Ty", [ v1 ]))
+  | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
+  | Pattern v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Pattern", [ v1 ]))
+  | Item2 v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item2", [ v1 ]))
+  | Toplevel v1 ->
+      let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
+  | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
+  | TypeDeclaration v1 ->
+      let v1 = vof_type_declaration v1
+      in Ocaml.VSum (("TypeDeclaration", [ v1 ]))
+  | TypeDefKind v1 ->
+      let v1 = vof_type_def_kind v1 in Ocaml.VSum (("TypeDefKind", [ v1 ]))
+  | FieldDeclaration v1 ->
+      let v1 = vof_field_declaration v1
+      in Ocaml.VSum (("FieldDeclaration", [ v1 ]))
+  | MatchCase v1 ->
+      let v1 = vof_match_case v1 in Ocaml.VSum (("MatchCase", [ v1 ]))
+  | LetBinding v1 ->
+      let v1 = vof_let_binding v1 in Ocaml.VSum (("LetBinding", [ v1 ]))
+  | Constant v1 ->
+      let v1 = vof_constant v1 in Ocaml.VSum (("Constant", [ v1 ]))
+  | Argument v1 ->
+      let v1 = vof_argument v1 in Ocaml.VSum (("Argument", [ v1 ]))
+  | Body v1 -> let v1 = vof_seq_expr v1 in Ocaml.VSum (("Body", [ v1 ]))
+  | Info v1 -> let v1 = vof_info v1 in Ocaml.VSum (("Info", [ v1 ]))
+  | InfoList v1 ->
+      let v1 = Ocaml.vof_list vof_info v1
+      in Ocaml.VSum (("InfoList", [ v1 ]))
+  
