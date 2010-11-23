@@ -219,10 +219,11 @@ and pattern =
   (* ocaml disjunction patterns extension *)
   | PatDisj of pattern * tok (* | *) * pattern
 
+  | PatTyped of tok (*'('*) * pattern * tok (*':'*) * ty * tok (*')'*)
+
   | ParenPat of pattern paren
   | PatTodo
     
- (* rename in parameter ? *)
  and labeled_simple_pattern = unit
 
  and parameter = labeled_simple_pattern

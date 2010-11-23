@@ -116,8 +116,8 @@ let visit_toplevel
           tag info (TypeDef Def);
           k x
 
-      | Type _ 
       | Let _
+      | Type _ 
       | Open _
       | ItemTodo _
          ->

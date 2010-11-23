@@ -356,6 +356,13 @@ and vof_pattern =
       and v2 = vof_tok v2
       and v3 = vof_pattern v3
       in Ocaml.VSum (("PatDisj", [ v1; v2; v3 ]))
+  | PatTyped ((v1, v2, v3, v4, v5)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_pattern v2
+      and v3 = vof_tok v3
+      and v4 = vof_ty v4
+      and v5 = vof_tok v5
+      in Ocaml.VSum (("PatTyped", [ v1; v2; v3; v4; v5 ]))
   | ParenPat v1 ->
       let v1 = vof_paren vof_pattern v1 in Ocaml.VSum (("ParenPat", [ v1 ]))
   | PatTodo -> Ocaml.VSum (("PatTodo", []))

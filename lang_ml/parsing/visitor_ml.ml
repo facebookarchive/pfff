@@ -382,6 +382,13 @@ and v_pattern x =
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
   | PatDisj ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()
+  | PatTyped ((v1, v2, v3, v4, v5)) ->
+      let v1 = v_tok v1
+      and v2 = v_pattern v2
+      and v3 = v_tok v3
+      and v4 = v_ty v4
+      and v5 = v_tok v5
+      in ()
   | ParenPat v1 -> let v1 = v_paren13 v_pattern v1 in ()
   | PatTodo -> ()
    in

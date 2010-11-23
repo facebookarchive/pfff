@@ -794,7 +794,7 @@ simple_pattern:
 
  /*(* note that let (x:...) a =  will trigger this rule *)*/
  | TOParen pattern TColon core_type TCParen
-      { PatTodo }
+      { PatTyped ($1, $2, $3, $4, $5) }
 
  /*(* name tag extension *)*/
  | name_tag
