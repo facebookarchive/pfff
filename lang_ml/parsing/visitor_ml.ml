@@ -403,11 +403,14 @@ and v_signed_constant =
   | CMinus ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_constant v2 in ()
   | CPlus ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_constant v2 in ()
 
-and v_let_binding =
-  function
+and v_let_binding x =
+  let k x = match x with
   | LetClassic v1 -> let v1 = v_let_def v1 in ()
   | LetPattern ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_seq_expr v3 in ()
+  in
+  vin.klet_binding (k, all_functions) x
+
 and
   v_let_def x =
   let rec k x =

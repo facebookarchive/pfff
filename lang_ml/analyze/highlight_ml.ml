@@ -124,22 +124,44 @@ let visit_toplevel
           k x
     );
 
-    V.klet_def = (fun (k, _) x ->
-      let name = x.l_name in
-      let info = Ast.info_of_name name in
+    V.klet_binding = (fun (k, bigf) x ->
+      match x with
+      | LetClassic let_def -> 
+          let name = let_def.l_name in
+          let info = Ast.info_of_name name in
 
-      if not !in_let then begin
-        if List.length x.l_args > 0 || 
-           Lib_parsing_ml.is_function_body x.l_body
-        then tag info (Function (Def2 NoUse))
-        else tag info (Global (Def2 NoUse))
-      end else begin
-        tag info (Local (Def))
-      end;
-      Common.save_excursion in_let true (fun () ->
-        k x
-      )
-      
+          if not !in_let then begin
+            if List.length let_def.l_args > 0 || 
+              Lib_parsing_ml.is_function_body let_def.l_body
+            then tag info (Function (Def2 NoUse))
+            else tag info (Global (Def2 NoUse))
+          end else begin
+            tag info (Local (Def))
+          end;
+
+          Common.save_excursion in_let true (fun () ->
+            k x
+          )
+      | LetPattern (pat, _tok, body) ->
+          (match pat with
+          | PatTyped (_, PatVar name, _, _ty, _) ->
+              let info = Ast.info_of_name name in
+
+              if not !in_let then begin
+                if Lib_parsing_ml.is_function_body body
+                then tag info (Function (Def2 NoUse))
+                else tag info (Global (Def2 NoUse))
+              end else begin
+                tag info (Local (Def))
+          end;
+
+          | _ -> 
+              ()
+          );
+          Common.save_excursion in_let true (fun () ->
+            k x
+          )
+
     );
 
     V.kexpr = (fun (k, bigf) x ->
