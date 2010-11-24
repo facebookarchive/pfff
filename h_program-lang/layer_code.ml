@@ -203,26 +203,36 @@ let build_index_of_layers ~root layers =
        * The caller would have to first recompute the sum of all those
        * floats to recompute the actual multi-layer percentage.
        *)
-      let color_macro_level = finfo.macro_level +> List.map (fun (kind, v) ->
+      let color_macro_level = finfo.macro_level +> 
+        Common.map_filter (fun (kind, v) ->
         try 
-          v, Hashtbl.find hkind kind
+          Some (v, Hashtbl.find hkind kind)
         with
-        Not_found -> failwith (spf "kind %s was not defined" kind)
+        Not_found -> 
+          (* I was originally doing a failwith, but it can be convenient
+           * to be able to filter kinds in codemap by just editing the
+           * JSON file and removing certain kind definitions
+           *)
+          pr2_once (spf "PB: kind %s was not defined" kind);
+          None
       ) 
       in
       hmacro#update file (fun old -> color_macro_level ++ old);
 
       finfo.micro_level +> List.iter (fun (line, kind) ->
-        let color = Hashtbl.find hkind kind in
+        try 
+          let color = Hashtbl.find hkind kind in
 
-        hmicro#update file (fun oldh -> 
-          (* We add so the same line could be assigned multiple colors.
-           * The order of the layer could determine which color should
-           * have priority.
-           *)
-          Hashtbl.add oldh line color;
-          oldh
-      )
+          hmicro#update file (fun oldh -> 
+            (* We add so the same line could be assigned multiple colors.
+             * The order of the layer could determine which color should
+             * have priority.
+             *)
+            Hashtbl.add oldh line color;
+            oldh
+          )
+        with Not_found ->
+          pr2_once (spf "PB: kind %s was not defined" kind);
       )
     );
   );
