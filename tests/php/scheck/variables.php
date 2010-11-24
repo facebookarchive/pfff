@@ -42,7 +42,14 @@ function bad_foo($a) {
 }
 
 class A {
-  public function foo() {
+  public function foo($a) {
+    //ERROR: unused variable, because of the typo below
+    $im_service = foo($a);
+    //ERROR: typo
+    if ($im_servce === false) {
+      return 1;
+    }
+    return 2;
   }
 }
 
