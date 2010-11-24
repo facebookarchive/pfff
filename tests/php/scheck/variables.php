@@ -34,7 +34,7 @@ function bad_foo($a) {
 
   //ERROR: unused variable
   $match = array();
-  // this one error shows the need for more than just counting token
+  // note that this error shows the need for more than just counting token
   $matches = array();
   foreach($matches as $match) {
     echo $match;
@@ -63,15 +63,44 @@ function analysis1() {
 // Moreover it's also ok sometimes to have one variable mentioned
 // only once in a file, if it's a parameter of a method in an interface
 // definition for instance.
-function analysis2() {
 
+function analysis2() {
   //ERROR: even if $ok was mentionned before, it's no ok anymore
   $ok = 1;
 }
 
-// TODO cfg-based algorithm
+interface X {
+  // this is ok, $p is not a unused parameter
+  function analysis2bis($p);
+}
+
+// TODO cfg-based algorithm ??
 
 // TODO liveness-based algorithm
+function analysis4() {
+  //TODO should be error. useless assignement
+  $a = 1;
+  $a = 2;
+
+  echo $a;
+}
+
+function analysis4bis() {
+  $a = 1;
+  if (true) { $a = 2; }
+  echo $a;
+}
+
+function analysis4bis2() {
+  //TODO should be error. there is no path where this assignement is useful
+  $a = 1;
+  if (true) { 
+    $a = 2; 
+  } else {
+    $a = 3;
+  }
+  echo $a;
+}
 
 // -------------------------------------------------------------------------
 // False positives fix

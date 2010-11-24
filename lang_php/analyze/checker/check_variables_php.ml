@@ -552,7 +552,14 @@ let visit_prog
       do_in_new_scope_and_check (fun () -> k x);
     );
     V.kmethod_def = (fun (k, _) x ->
-      do_in_new_scope_and_check (fun () -> k x);
+      match x.m_body with
+      | AbstractMethod _ -> 
+          (* we don't want to parameters in method interface to be counted
+           * as unused Parameter
+           *)
+          ()
+      | MethodBody _ ->
+          do_in_new_scope_and_check (fun () -> k x);
     );
     V.kclass_def = (fun (k, _) x ->
 
