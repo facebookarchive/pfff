@@ -298,7 +298,9 @@ let actions () = [
       Common.mk_action_1_arg test_visit_php;
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
-    "-dump_ast", "   <file>", 
+    "-dump_php", "   <file>", 
+    Common.mk_action_1_arg test_dump_php;
+    "-dump_php_sexp", "   <file>", 
       Common.mk_action_1_arg test_sexp_php;
     "-dump_php_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_php;

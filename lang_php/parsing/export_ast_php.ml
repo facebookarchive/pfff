@@ -42,7 +42,7 @@ let string_of_v v =
     | Ocaml.VDict (xs) ->
         incr cnt;
         (match () with
-        | _ when xs +> List.exists (function ("pinfo", _) -> true | _ -> false)->
+        | _ when xs +> List.exists (function ("token", _) ->true | _ -> false)->
             Ocaml.VVar ("i", Int64.of_int !cnt)
         | _ when xs +> List.exists (function ("t", _) -> true | _ -> false)->
             Ocaml.VVar ("t", Int64.of_int !cnt)
