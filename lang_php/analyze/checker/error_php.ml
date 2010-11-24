@@ -29,11 +29,19 @@ module Ast = Ast_php
  *)
 
 (*****************************************************************************)
-(* Helpers *)
+(* Globals *)
 (*****************************************************************************)
+
 let strict = ref false
 
-(* the position in the name below correspond to the function at the call site *)
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+
+(* the position in the name below correspond to the function at the call site 
+ * coupling: if you add a constructor here, don't forget to extend
+ * layer_checker_php.ml too
+ *)
 type error = 
   (* functions *)
   | UndefinedFunction of Ast_php.name
@@ -54,8 +62,11 @@ type error =
   (* classes *)
   | UseOfUndefinedMember of Ast_php.name
 
-
 exception Error of error
+
+(*****************************************************************************)
+(* Pretty printers *)
+(*****************************************************************************)
 
 let string_of_error error = 
   let spos info = 
@@ -151,9 +162,13 @@ let info_of_error err =
   | UseOfUndefinedMember name 
       -> Some (Ast.info_of_name name)
 
-
 let report_error err = 
   pr2 (string_of_error err)
+
+
+(*****************************************************************************)
+(* Global bis *)
+(*****************************************************************************)
 
 let _errors = ref []
 
@@ -161,7 +176,6 @@ let _errors = ref []
 
 let fatal err =
   Common.push2 err _errors
-
 let warning err = 
   Common.push2 err _errors
 
