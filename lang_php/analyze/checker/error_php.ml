@@ -142,13 +142,15 @@ let info_of_error err =
   | WrongKeywordArgument (dname,  expr, name, param, fdef) ->
       raise Todo
 
+  (* variables *)
   | UseOfUndefinedVariable dname
   | UnusedVariable (dname, _)
       -> Some (Ast.info_of_dname dname)
 
   (* classes *)
   | UseOfUndefinedMember name 
-      -> raise Todo
+      -> Some (Ast.info_of_name name)
+
 
 let report_error err = 
   pr2 (string_of_error err)

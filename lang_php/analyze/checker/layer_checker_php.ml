@@ -17,6 +17,8 @@ open Common
 
 open Ast_php
 
+module E = Error_php
+open Error_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -30,8 +32,24 @@ open Ast_php
 (* Types *)
 (*****************************************************************************)
 
-(* could generate constructor for each *)
+(* ugly: there is some duplication and coupling with the Error_php.error
+ * type.
+ *)
 let properties = [
+  "eUndefinedFunction",    "blue";
+  "eUnableToDetermineDef", "blue2";
+
+  "eTooManyArguments", "blue3";
+  "eNotEnoughArguments", "blue4";
+
+  "eTooManyArguments2", "blue3" ;
+  "eTooFewArguments2",  "blue4" ;
+  "eWrongKeywordArgument", "yellow";
+
+  "eUseOfUndefinedVariable", "red" ;
+  "eUnusedVariable", "purple";
+
+  "eUseOfUndefinedMember", "cyan";
 ]
 
 (*****************************************************************************)
@@ -39,7 +57,27 @@ let properties = [
 (*****************************************************************************)
 
 let info_of_error_and_kind err =
-  raise Todo
+
+  let kind = 
+    match err with
+  | UndefinedFunction _ -> "eUndefinedFunction"
+  | UnableToDetermineDef _ ->"eUnableToDetermineDef"
+
+  | TooManyArguments _ ->"eTooManyArguments"
+  | NotEnoughArguments _ ->"eNotEnoughArguments"
+
+  | TooManyArguments2 _ ->"eTooManyArguments2"
+  | TooFewArguments2  _ ->"eTooFewArguments2"
+  | WrongKeywordArgument _ ->"eWrongKeywordArgument"
+
+  | UseOfUndefinedVariable _ ->"eUseOfUndefinedVariable"
+  | UnusedVariable _ ->"eUnusedVariable"
+
+  | UseOfUndefinedMember _ ->"eUseOfUndefinedMember"
+  in
+  E.info_of_error err +> Common.fmap (fun info ->
+    info, kind
+  )
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -47,23 +85,9 @@ let info_of_error_and_kind err =
 
 let gen_layer ~root ~output errors = 
 
-(*
-  (*  a layer needs readable paths, hence the root *)
-  let root = Common.realpath dir in
+  let infos = errors +> Common.map_filter info_of_error_and_kind in
 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
-
-  files +> List.iter (fun file ->
-    let find_entity = None in
-    Check_all_php.check_file ~find_entity file
-  );
-
-  let errors = !Error_php._errors in
-*)
-
-  let infos = errors +> List.map info_of_error_and_kind in
-
-  let layer = Layer_code.simple_layer_of_parse_infos ~root properties infos in
+  let layer = Layer_code.simple_layer_of_parse_infos ~root infos properties in
   pr2 ("generating layer in " ^ output);
   Layer_code.save_layer layer output;
   ()

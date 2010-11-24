@@ -755,6 +755,9 @@ let visit_prog
                *
                * This is mostly a copy-paste of check_use_against_env
                * but we additionnally check the scope.
+               * 
+               * TODO: but to be correct it requires entity_finder
+               * because the field may have been defined in the parent.
                *)
               let s = Ast.name name in
               (match lookup_env_opt_for_class s !_scoped_env with
