@@ -32,8 +32,8 @@ open Error_php
 (* Types *)
 (*****************************************************************************)
 
-(* ugly: there is some duplication and coupling with the Error_php.error
- * type.
+(* ugly: there is some duplication with Error_php.error
+ * coupling: with the Error_php.error type 
  *)
 let properties = [
   "eUndefinedFunction",    "blue";
@@ -47,10 +47,25 @@ let properties = [
   "eWrongKeywordArgument", "yellow";
 
   "eUseOfUndefinedVariable", "red" ;
-  "eUnusedVariable", "purple";
 
   "eUseOfUndefinedMember", "cyan";
   "eUglyGlobalDynamic", "cyan";
+  "eWeirdForeachNoIteratorVar", "cyan";
+
+  (* ugly: coupling with scope_code.ml *)
+  "eUnusedVariable-Local", "purple";
+
+  "eUnusedVariable-Global", "green";
+  "eUnusedVariable-Local", "green";
+  "eUnusedVariable-Param", "green";
+  "eUnusedVariable-Static", "green";
+  "eUnusedVariable-Class", "green";
+  "eUnusedVariable-LocalExn", "green";
+  "eUnusedVariable-LocalIterator", "green";
+  "eUnusedVariable-ListBinded", "green";
+  "eUnusedVariable-NoScope", "green";
+
+
 ]
 
 (*****************************************************************************)
@@ -71,11 +86,15 @@ let info_of_error_and_kind err =
   | TooFewArguments2  _ ->"eTooFewArguments2"
   | WrongKeywordArgument _ ->"eWrongKeywordArgument"
 
-  | UseOfUndefinedVariable _ ->"eUseOfUndefinedVariable"
-  | UnusedVariable _ ->"eUnusedVariable"
+  | UseOfUndefinedVariable _ -> 
+      "eUseOfUndefinedVariable"
+  | UnusedVariable (_, scope) ->
+      "eUnusedVariable-" ^ Scope_code.string_of_scope scope
 
   | UseOfUndefinedMember _ ->"eUseOfUndefinedMember"
   | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
+  | WeirdForeachNoIteratorVar _ -> "eWeirdForeachNoIteratorVar"
+
   in
   E.info_of_error err +> Common.fmap (fun info ->
     info, kind
