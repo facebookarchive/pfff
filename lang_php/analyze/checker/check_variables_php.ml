@@ -635,7 +635,7 @@ let visit_prog
       | TypedDeclaration (_, _, _, _) ->
           pr2_once "TODO: TypedDeclaration"
 
-      | Foreach (_, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
+      | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
           vx (Expr e);
 
           let lval = 
@@ -668,15 +668,16 @@ let visit_prog
 
                         scope_ref := S.LocalIterator;
 
-                    | _ -> 
-                        failwith "weird, foreach with not a var as iterator"
+                    | _ ->
+                        E.warning (E.WeirdForeachNoIteratorVar tok)
                     );
                 );
                 
                 vx (ColonStmt2 colon_stmt);
               );
 
-          | _ -> failwith "weird, foreach with not a var as iterator"
+          | _ -> 
+              E.warning (E.WeirdForeachNoIteratorVar tok)
           )
       (* note: I was not handling Unset which takes a lvalue (not
        * an expression) as an argument. Because of that the kexpr
@@ -816,7 +817,7 @@ let visit_prog
 
       | Eval _ -> pr2_once "Eval: TODO";
           k x
-      | Lambda _ -> failwith "Lambda: TODO"
+      | Lambda _ -> pr2_once "Lambda: TODO"
           
       (* Include | ... ? *)
 

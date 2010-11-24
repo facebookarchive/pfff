@@ -64,6 +64,7 @@ type error =
 
   (* bail-out constructs *)
   | UglyGlobalDynamic of Ast_php.info
+  | WeirdForeachNoIteratorVar of Ast_php.info
 
 exception Error of error
 
@@ -142,6 +143,9 @@ let string_of_error error =
   | UglyGlobalDynamic info ->
       let pinfo = Ast.parse_info_of_info info in
       spos pinfo ^ "CHECK: ugly dynamic global declaration"
+  | WeirdForeachNoIteratorVar info ->
+      let pinfo = Ast.parse_info_of_info info in
+      spos pinfo ^ "CHECK: weird, foreach with not a var as iterator"
         
 let info_of_error err =
   match err with
@@ -167,7 +171,9 @@ let info_of_error err =
       -> Some (Ast.info_of_name name)
 
   | UglyGlobalDynamic info
+  | WeirdForeachNoIteratorVar info
       -> Some info
+
 
 
 let report_error err = 
