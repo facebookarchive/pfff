@@ -8,9 +8,13 @@
 can see arguments passed by refs visually (TakeArgNByRef)
 as well as functions containing dynamic calls (ContainDynamicCall)
 
-*** google-earth like layers
+*** google-earth like layers!
 
 - security layer
+- TODO bugs layer
+- TODO test coverage layer
+- TODO deadcode layer
+- TODO distance_to_bottom layer
 
 *** visual grep
 can now visualize the result of a git grep on a project.
