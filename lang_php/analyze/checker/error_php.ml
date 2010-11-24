@@ -62,6 +62,9 @@ type error =
   (* classes *)
   | UseOfUndefinedMember of Ast_php.name
 
+  (* bail-out constructs *)
+  | UglyGlobalDynamic of Ast_php.info
+
 exception Error of error
 
 (*****************************************************************************)
@@ -136,6 +139,10 @@ let string_of_error error =
           (Ast.string_of_info (Ast.info_of_name def.f_name))
       )
 
+  | UglyGlobalDynamic info ->
+      let pinfo = Ast.parse_info_of_info info in
+      spos pinfo ^ "CHECK: ugly dynamic global declaration"
+        
 let info_of_error err =
   match err with
   | UndefinedFunction name 
@@ -145,7 +152,6 @@ let info_of_error err =
   | TooFewArguments2  (name, _)
       -> Some (Ast.info_of_name name)
 
-  (* call sites *)
   | TooManyArguments  (parse_info, name (* def *)) ->
       raise Todo
   | NotEnoughArguments (parse_info, name (* def *)) ->
@@ -153,14 +159,16 @@ let info_of_error err =
   | WrongKeywordArgument (dname,  expr, name, param, fdef) ->
       raise Todo
 
-  (* variables *)
   | UseOfUndefinedVariable dname
   | UnusedVariable (dname, _)
       -> Some (Ast.info_of_dname dname)
 
-  (* classes *)
   | UseOfUndefinedMember name 
       -> Some (Ast.info_of_name name)
+
+  | UglyGlobalDynamic info
+      -> Some info
+
 
 let report_error err = 
   pr2 (string_of_error err)

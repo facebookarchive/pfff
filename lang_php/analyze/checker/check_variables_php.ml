@@ -622,8 +622,8 @@ let visit_prog
             match var with
             | GlobalVar dname -> 
                 add_binding dname (S.Global, ref 0)
-            | GlobalDollar _  | GlobalDollarExpr _ ->
-                failwith "Todo: dynamic global declaration, this code is ugly"
+            | GlobalDollar (tok, _)  | GlobalDollarExpr (tok, _) ->
+                E.warning (E.UglyGlobalDynamic tok)
           )
 
       | StaticVars (_, vars_list, _) ->

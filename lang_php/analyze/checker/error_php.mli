@@ -17,6 +17,7 @@ type error =
   | UnusedVariable of Ast_php.dname  * Scope_php.phpscope
 
   | UseOfUndefinedMember of Ast_php.name
+  | UglyGlobalDynamic of Ast_php.info
 
 val string_of_error: error -> string
 val info_of_error: error -> Ast_php.info option

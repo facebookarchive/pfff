@@ -50,6 +50,7 @@ let properties = [
   "eUnusedVariable", "purple";
 
   "eUseOfUndefinedMember", "cyan";
+  "eUglyGlobalDynamic", "cyan";
 ]
 
 (*****************************************************************************)
@@ -74,6 +75,7 @@ let info_of_error_and_kind err =
   | UnusedVariable _ ->"eUnusedVariable"
 
   | UseOfUndefinedMember _ ->"eUseOfUndefinedMember"
+  | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
   in
   E.info_of_error err +> Common.fmap (fun info ->
     info, kind
