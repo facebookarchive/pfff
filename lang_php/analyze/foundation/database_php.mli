@@ -32,10 +32,11 @@ type id     = Entity_php.id
  *)
 type fullid = Entity_php.fullid 
 
+
 type id_kind   = Entity_php.id_kind
 type id_string = string
 
-(* aliases *)
+(* aliases; could be good have stronge types here at some point *)
 type id_function = id
 type id_class = id
 type id_interface = id
@@ -192,6 +193,8 @@ val complete_name_of_id: id -> database -> string
 val filename_of_id:          id -> database -> Common.filename
 val readable_filename_of_id: id -> database -> Common.filename
 
+val parse_info_of_id: id -> database -> Parse_info.info
+
 val line_of_id: id -> database -> int
 val col_of_id: id -> database -> int
 (* for debugging *) 
@@ -325,19 +328,22 @@ val has_parsing_problem:
 (* ---------------------------------------------------------------------- *)
 val path_of_project_in_database: database -> Common.dirname
 
-val path_of_project:             project -> Common.dirname
-val glimpse_metapath_of_database: database -> Common.dirname
-val default_metapath_of_project:  project -> Common.dirname
-val normalize_project: project -> project
-val database_tag_filename: string
-val check_is_database_dir: Common.dirname -> unit
-
-val default_extra_id_info : extra_id_info
-
 val absolute_to_readable_filename: 
   Common.filename -> database -> Common.filename
 val readable_to_absolute_filename: 
   Common.filename -> database -> Common.filename
+
+val path_of_project:             project -> Common.dirname
+val default_metapath_of_project:  project -> Common.dirname
+val normalize_project: project -> project
+
+val database_tag_filename: string
+val check_is_database_dir: Common.dirname -> unit
+
+val glimpse_metapath_of_database: database -> Common.dirname
+
+val default_extra_id_info : extra_id_info
+
 
 (* ---------------------------------------------------------------------- *)
 val actions: unit -> Common.cmdline_actions

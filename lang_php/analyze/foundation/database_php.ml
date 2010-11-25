@@ -1027,7 +1027,28 @@ let readable_filename_of_id id db =
   let prj_path = path_of_project db.project in
   Common.filename_without_leading_path prj_path file
 
+let parse_info_of_fullid str fullid =
+  { Parse_info.token =
+      Parse_info.OriginTok ( {
+        Parse_info.str = str;
+        (* todo? I don't think I use this field fortunately.
+         * I could recompute it from line and column but it would
+         * force me to reanalyze the file
+         *)
+        Parse_info.charpos = -1; 
 
+        Parse_info.line = fullid.EC.line;
+        Parse_info.column = fullid.EC.column;
+        Parse_info.file = fullid.EC.file;
+      }
+      );
+    Parse_info.comments = ();
+    Parse_info.transfo = Parse_info.NoTransfo;
+  }
+
+let parse_info_of_id id db =
+  let fullid = (db.fullid_of_id#assoc id) in
+  parse_info_of_fullid (name_of_id id db) fullid
 
 
 (*****************************************************************************)

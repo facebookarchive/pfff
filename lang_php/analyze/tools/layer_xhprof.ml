@@ -17,6 +17,10 @@ open Common
 
 open Ast_php
 
+module Db = Database_php
+
+module X = Xhprof
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -40,14 +44,42 @@ let properties = [
 (* Code *)
 (*****************************************************************************)
 
+let infos_and_kinds_of_xhprof_entities xhprof_entities db =
+  xhprof_entities +> Common.map (fun e ->
+    match e with
+    | X.Function funcname ->
+        let ids = Db.function_ids__of_string funcname db in
+        ids +> List.map (fun id ->
+          Db.parse_info_of_id id db, "live"
+        )
+    | X.Method (classname, methodname) ->
+        pr2_gen e;
+        raise Todo
+    | X.RunInit file -> 
+        (* todo? *)
+        []
+    | X.Main | X.PruneChild ->  
+        []
+    | X.Misc s -> 
+        pr2 ("not handled: " ^ s);
+        []
+  ) +> List.flatten
+
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let gen_layer ~xhprof_file ~db ~output = 
 
-  let root = raise Todo in
-  let infos = raise Todo in
+  let root = Db.path_of_project_in_database db in
+
+  let xhprof_entities =
+    Common.cat xhprof_file +> List.map (Xhprof.parse_xhprof_entity_string)
+  in
+  let infos =
+    infos_and_kinds_of_xhprof_entities xhprof_entities db
+  in
 
   let layer = Layer_code.simple_layer_of_parse_infos ~root infos properties in
   pr2 ("generating layer in " ^ output);
