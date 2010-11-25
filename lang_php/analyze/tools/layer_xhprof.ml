@@ -46,15 +46,26 @@ let properties = [
 
 let infos_and_kinds_of_xhprof_entities xhprof_entities db =
   xhprof_entities +> Common.map (fun e ->
+    try (
     match e with
     | X.Function funcname ->
+        (* ugly: should perhaps do that in the parse function *)
+        let funcname = X.remove_at_suffix funcname in
+
         let ids = Db.function_ids__of_string funcname db in
         ids +> List.map (fun id ->
           Db.parse_info_of_id id db, "live"
         )
     | X.Method (classname, methodname) ->
-        pr2_gen e;
-        raise Todo
+        let methodname = X.remove_at_suffix methodname in
+
+        let ids =
+          [Db.id_of_method ~theclass:classname methodname db]
+        in
+        ids +> List.map (fun id ->
+          Db.parse_info_of_id id db, "live"
+        )
+
     | X.RunInit file -> 
         (* todo? *)
         []
@@ -63,6 +74,16 @@ let infos_and_kinds_of_xhprof_entities xhprof_entities db =
     | X.Misc s -> 
         pr2 ("not handled: " ^ s);
         []
+    )
+    with exn ->
+      (match exn with
+      | Not_found | Multi_found ->
+          pr2 (spf "PB with %s, exn = %s"
+                (X.string_of_xhprof_entity e)
+                (Common.string_of_exn exn));
+          []
+      | _ -> raise exn
+      )
   ) +> List.flatten
 
 

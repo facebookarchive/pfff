@@ -150,3 +150,9 @@ let parse_caller_callee_string s =
 let _ = Common.example 
   (parse_caller_callee_string "foo::bar==>foobar" =*=
    { src = Method ("foo", "bar"); dest = Function "foobar"; })
+
+
+let remove_at_suffix s =
+  if s =~ "\\(.*\\)@[0-9]+$"
+  then Common.matched1 s
+  else s
