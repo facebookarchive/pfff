@@ -30,6 +30,7 @@ INCLUDEDIRS= $(TOP)/commons \
    .. \
    ../basic \
    ../annotaters \
+   ../foundation \
 
 ##############################################################################
 # Generic variables
