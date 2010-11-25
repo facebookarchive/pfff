@@ -36,21 +36,8 @@ open Error_php
  * coupling: with the Error_php.error type 
  *)
 let properties = [
-  "eUndefinedFunction",    "blue";
-  "eUnableToDetermineDef", "blue2";
-
-  "eTooManyArguments", "blue3";
-  "eNotEnoughArguments", "blue4";
-
-  "eTooManyArguments2", "blue3" ;
-  "eTooFewArguments2",  "blue4" ;
-  "eWrongKeywordArgument", "yellow";
 
   "eUseOfUndefinedVariable", "red" ;
-
-  "eUseOfUndefinedMember", "cyan";
-  "eUglyGlobalDynamic", "cyan";
-  "eWeirdForeachNoIteratorVar", "cyan";
 
   (* ugly: coupling with scope_code.ml *)
   "eUnusedVariable-Local", "purple";
@@ -64,6 +51,24 @@ let properties = [
   "eUnusedVariable-LocalIterator", "green";
   "eUnusedVariable-ListBinded", "green";
   "eUnusedVariable-NoScope", "green";
+
+
+
+  "eUndefinedFunction",    "blue";
+  "eUnableToDetermineDef", "blue2";
+
+  "eTooManyArguments", "blue3";
+  "eNotEnoughArguments", "blue4";
+
+  "eTooManyArguments2", "blue3" ;
+  "eTooFewArguments2",  "blue4" ;
+  "eWrongKeywordArgument", "yellow";
+
+
+  "eUseOfUndefinedMember", "cyan";
+  "eUglyGlobalDynamic", "cyan";
+  "eWeirdForeachNoIteratorVar", "cyan";
+
 
 
 ]
