@@ -10,9 +10,10 @@ SRC= \
   coverage_static_php.ml \
   dataflow_php_liveness.ml \
   dataflow_php_array.ml \
-  deadcode_php.ml \
+  deadcode_php.ml   layer_deadcode_php.ml \
   statistics_php.ml \
   tainted_php.ml \
+
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
