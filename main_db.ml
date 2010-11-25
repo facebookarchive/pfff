@@ -83,6 +83,8 @@ let pfff_extra_actions () = [
 let all_actions () = 
   pfff_extra_actions() ++
   Database_php_build.actions() ++
+  (* Layer_checker is in main_scheck.ml *)
+  Layer_deadcode_php.actions () ++
   Layer_xhprof.actions () ++
   []
 

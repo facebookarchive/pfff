@@ -16,6 +16,7 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 - TODO production coverage layer (using xhprof data)
 - TODO deadcode layer
 - TODO distance_to_bottom layer
+- TODO age, activity, #authors layers
 
 *** visual grep
 can now visualize the result of a git grep on a project.
