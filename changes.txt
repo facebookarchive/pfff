@@ -12,7 +12,8 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 
 - security layer
 - TODO bugs layer
-- TODO test coverage layer
+- TODO test coverage layer (using phpunit and xdebug data)
+- TODO production coverage layer (using xhprof data)
 - TODO deadcode layer
 - TODO distance_to_bottom layer
 
@@ -57,11 +58,12 @@ the documentation of pfff!)
 - does it take argument by refs. 
 - does it contain dynamic calls ($fn(...))
 - TODO does it use a global, 
-- TODO is the function dead, 
+- TODO is the function dead,
+- TODO is the function live in certain context
 
 This can help the visualizer to give more semantic visual feedback.
 
-*** layer type so can save results of global analysis and process them
+*** layer type, so can save results of global analysis and process them
 later in codemap or pfff_statistics
 
 ** pfff:ml

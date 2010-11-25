@@ -83,6 +83,7 @@ let pfff_extra_actions () = [
 let all_actions () = 
   pfff_extra_actions() ++
   Database_php_build.actions() ++
+  Layer_xhprof.actions () ++
   []
 
 let options () = 
