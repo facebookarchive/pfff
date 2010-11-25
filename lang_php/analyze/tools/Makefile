@@ -8,6 +8,7 @@ SRC= \
      xdebug.ml \
      phpunit.ml \
      php_serialize.ml \
+     xhprof.ml \
 
 
 
