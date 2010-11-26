@@ -689,7 +689,21 @@ let cfg_of_stmts = control_flow_graph_of_stmts
 
 (*s: function deadcode_detection *)
 let (deadcode_detection : F.flow -> unit) = fun flow ->
-  raise Todo
+  flow#nodes#iter (fun (k, node) -> 
+    let pred = flow#predecessors k in
+    if pred#null then 
+      (match node.F.n with
+      | F.Enter -> ()
+      | _ ->
+          let info = node.F.i in
+          (match info with
+          | None ->
+              pr2 "CFG: PB, found dead node but cant trace to location";
+          | Some info ->
+              raise (Error (DeadCode info))
+          )
+      )
+  )
 (*e: function deadcode_detection *)
 
 

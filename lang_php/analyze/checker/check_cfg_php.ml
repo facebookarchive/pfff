@@ -43,19 +43,22 @@ let check_program2
           Controlflow_build_php.deadcode_detection flow;
           ()
        with Controlflow_build_php.Error err ->
-         (* E.fatal CfgError of ... *)
-         Controlflow_build_php.report_error err
+         E.fatal (E.CfgError err);
       )
     );
     V.kmethod_def = (fun (k, _) def ->
-      (* todo: do not go in abstrac method ? *)
-      (try
-          let flow = Controlflow_build_php.cfg_of_method def in
-          Controlflow_build_php.deadcode_detection flow;
-       with Controlflow_build_php.Error err ->
-         (* E.fatal CfgError of ... *)
-         Controlflow_build_php.report_error err
-      )
+      match def.m_body with
+      (* do not go in abstract method, because cfg_of_method generate an
+       * exn in such case
+       *)
+      | AbstractMethod _ -> ()
+      | MethodBody _ ->
+          (try
+              let flow = Controlflow_build_php.cfg_of_method def in
+              Controlflow_build_php.deadcode_detection flow;
+            with Controlflow_build_php.Error err ->
+              E.fatal (E.CfgError err);
+          )
     );
   }
   in
