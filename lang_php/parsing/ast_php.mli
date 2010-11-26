@@ -794,6 +794,7 @@ val map_comma_list: ('a -> 'b) -> 'a comma_list -> 'b comma_list
 
 val unarg: argument -> expr
 val unmodifiers: class_var_modifier -> modifier list
+val unargs: argument comma_list -> expr list * w_variable list 
 (*x: AST helpers interface *)
 val untype : 'a * 'b -> 'a
 (*x: AST helpers interface *)

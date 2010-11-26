@@ -789,6 +789,16 @@ and map_stmt x =
       and v2 = map_paren9 (map_comma_list8 map_declare) v2
       and v3 = map_colon_stmt v3
       in Declare ((v1, v2, v3))
+  | TypedDeclaration ((v1, v2, v3, v4)) ->
+      let v1 = map_hint_type v1
+      and v2 = map_variable v2
+      and v3 =
+        map_of_option
+          (fun (v1, v2) ->
+             let v1 = map_tok v1 and v2 = map_expr v2 in (v1, v2))
+          v3
+      and v4 = map_tok v4
+      in TypedDeclaration ((v1, v2, v3, v4))
   in
   vin.kstmt (k, all_functions) x
 
@@ -1164,6 +1174,7 @@ and map_any =
   | XhpHtml2 v1 -> let v1 = map_xhp_html v1 in XhpHtml2 ((v1))
   | Info v1 -> let v1 = map_info v1 in Info ((v1))
   | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
+  | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
 
 
  and all_functions =   

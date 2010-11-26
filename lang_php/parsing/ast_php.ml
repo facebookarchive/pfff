@@ -844,6 +844,12 @@ let unarg arg =
   | Arg e -> e
   | ArgRef _ -> failwith "Found a ArgRef"
 
+let unargs xs = 
+  uncomma xs +> Common.partition_either (function
+  | Arg e -> Left e
+  | ArgRef (t, e) -> Right (e)
+  )
+
 let unmodifiers class_vars = 
   match class_vars with
   | NoModifiers _ -> []
