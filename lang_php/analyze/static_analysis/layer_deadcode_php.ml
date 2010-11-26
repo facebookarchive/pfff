@@ -32,7 +32,7 @@ module Db = Database_php
 (*****************************************************************************)
 
 let properties = [
-  "dead", "red";
+  "dead function", "red";
   "unknown", "white";
 ]
 
@@ -43,7 +43,7 @@ let properties = [
 
 let infos_and_kinds_of_dead_ids dead_ids db =
   dead_ids +> List.map (fun (_s, id) ->
-    Db.parse_info_of_id id db, "dead"
+    Db.parse_info_of_id id db, "dead function"
   )
 
 
