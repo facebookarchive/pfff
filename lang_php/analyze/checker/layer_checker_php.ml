@@ -67,6 +67,8 @@ let properties = [
   "eUglyGlobalDynamic", "cyan";
   "eWeirdForeachNoIteratorVar", "cyan";
 
+  "eDeadBreak", "tan1";
+  "eDeadReturn", "tan2";
   "eCfgError", "tan";
 
 ]
@@ -98,8 +100,12 @@ let info_of_error_and_kind err =
   | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
   | WeirdForeachNoIteratorVar _ -> "eWeirdForeachNoIteratorVar"
 
-  | CfgError (Controlflow_build_php.DeadCode _) ->
-      "eDeadStatement"
+  | CfgError (Controlflow_build_php.DeadCode (info, node_kind)) ->
+      (match node_kind with
+      | Controlflow_php.Break -> "eDeadBreak"
+      | Controlflow_php.Return -> "eDeadReturn"
+      | _ -> "eDeadStatement"
+      )
   | CfgError ( _) ->
       "eCfgError"
 

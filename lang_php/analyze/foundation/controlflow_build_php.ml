@@ -65,7 +65,7 @@ type state = {
 
 (*s: type Controlflow_build_php.error *)
 type error = 
-  | DeadCode        of Ast_php.info
+  | DeadCode        of Ast_php.info * Controlflow_php.node_kind
   | NoEnclosingLoop of Ast_php.info
   | ColonSyntax     of Ast_php.info
   | NoMethodBody    of Ast_php.info
@@ -700,7 +700,7 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
           | None ->
               pr2 "CFG: PB, found dead node but cant trace to location";
           | Some info ->
-              raise (Error (DeadCode info))
+              raise (Error (DeadCode (info, node.F.n)))
           )
       )
   )
@@ -728,8 +728,9 @@ let string_of_error error =
   match error with
   | ColonSyntax info ->
       spos info ^ "FLOW: dude, don't use the old PHP colon syntax: "
-  | DeadCode info ->
-      spos info ^ "FLOW: deadcode path detected"
+  | DeadCode (info, node_kind) ->
+      spos info ^ "FLOW: deadcode path detected " ^
+        (F.short_string_of_node_kind node_kind)
   | NoEnclosingLoop info ->
       spos info ^ "FLOW: no enclosing loop found for break or continue"
   | NoMethodBody info ->
@@ -740,7 +741,7 @@ let string_of_error error =
 let info_of_error error =
   match error with
   | ColonSyntax info
-  | DeadCode info
+  | DeadCode (info, _)
   | NoEnclosingLoop info
   | NoMethodBody info
   | DynamicBreak info

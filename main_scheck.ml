@@ -127,6 +127,12 @@ let rank_errors errs =
     x,
     match x with
     | Error_php.UnusedVariable (_, S.Local) -> 10
+    | Error_php.CfgError (Controlflow_build_php.DeadCode (_, node_kind)) ->
+        (match node_kind with
+        | Controlflow_php.Break -> 3
+        | Controlflow_php.Return -> 3
+        | _ -> 15
+        )
     | Error_php.CfgError _ -> 11
     | _ -> 0
   ) +> Common.sort_by_val_highfirst +> Common.map fst

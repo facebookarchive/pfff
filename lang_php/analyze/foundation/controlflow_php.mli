@@ -117,5 +117,7 @@ val mk_node: node_kind -> node
 val display_flow: flow -> unit
 (*e: function display_flow signature *)
 
+val short_string_of_node_kind: node_kind -> string
+
 (*x: controlflow_php.mli *)
 (*e: controlflow_php.mli *)

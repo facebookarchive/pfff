@@ -16,7 +16,7 @@ val deadcode_detection : Controlflow_php.flow -> unit
 
 (*s: type Controlflow_build_php.error *)
 type error = 
-  | DeadCode        of Ast_php.info
+  | DeadCode        of Ast_php.info * Controlflow_php.node_kind
   | NoEnclosingLoop of Ast_php.info
   | ColonSyntax     of Ast_php.info
   | NoMethodBody    of Ast_php.info

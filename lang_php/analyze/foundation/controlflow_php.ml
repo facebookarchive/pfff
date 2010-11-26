@@ -140,8 +140,8 @@ type flow = (node, edge) Ograph_extended.ograph_mutable
 (*****************************************************************************)
 
 (*s: function short_string_of_node *)
-let short_string_of_node node = 
-  match node.n with
+let short_string_of_node_kind nkind = 
+  match nkind with
   | Enter -> "<enter>"
   | Exit -> "<exit>"
 
@@ -197,7 +197,7 @@ let (mk_node: node_kind -> node) = fun nk ->
 let (display_flow: flow -> unit) = fun flow ->
   flow +> Ograph_extended.print_ograph_mutable_generic  
     ~s_of_node:(fun (nodei, node) -> 
-      short_string_of_node node, None, None
+      short_string_of_node_kind node.n, None, None
     )
 (*e: function display_flow *)
 (*e: controlflow_php.ml *)
