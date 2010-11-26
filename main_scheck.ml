@@ -236,6 +236,7 @@ let type_inference file =
 let test () =
   let test_files = [
     "tests/php/scheck/variables.php";
+    "tests/php/scheck/cfg.php";
   ] 
   in
   let test_files = test_files +> List.map (fun s -> 

@@ -20,6 +20,8 @@ type error =
   | UglyGlobalDynamic of Ast_php.info
   | WeirdForeachNoIteratorVar of Ast_php.info
 
+  | CfgError of Controlflow_build_php.error
+
 val string_of_error: error -> string
 val info_of_error: error -> Ast_php.info option
 

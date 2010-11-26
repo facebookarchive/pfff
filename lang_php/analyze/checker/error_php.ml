@@ -66,6 +66,9 @@ type error =
   | UglyGlobalDynamic of Ast_php.info
   | WeirdForeachNoIteratorVar of Ast_php.info
 
+  (* cfg, mostly DeadCode statements *)
+  | CfgError of Controlflow_build_php.error
+
 exception Error of error
 
 (*****************************************************************************)
@@ -146,6 +149,10 @@ let string_of_error error =
   | WeirdForeachNoIteratorVar info ->
       let pinfo = Ast.parse_info_of_info info in
       spos pinfo ^ "CHECK: weird, foreach with not a var as iterator"
+
+  | CfgError err ->
+      raise Todo
+  
         
 let info_of_error err =
   match err with
@@ -174,11 +181,12 @@ let info_of_error err =
   | WeirdForeachNoIteratorVar info
       -> Some info
 
+  | CfgError err ->
+      raise Todo
 
 
 let report_error err = 
   pr2 (string_of_error err)
-
 
 (*****************************************************************************)
 (* Global bis *)
@@ -190,6 +198,7 @@ let _errors = ref []
 
 let fatal err =
   Common.push2 err _errors
+(* no difference for now ... *)
 let warning err = 
   Common.push2 err _errors
 

@@ -33,11 +33,10 @@ let check_file ?find_entity file =
   Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
   Check_variables_php.check_and_annotate_program ?find_entity ast;
+  Check_cfg_php.check_program ?find_entity ast;
 
   (* TODO:
-     Check_unused_var_php.check_program ast;
      Checking_php.check_program ast;
      Check_scope_use_php.check_program ast;
-     Check_unused_var_php.check_program ast;
   *)
   ()

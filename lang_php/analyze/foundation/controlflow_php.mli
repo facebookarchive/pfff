@@ -41,13 +41,13 @@ type node = {
       | WhileHeader
       | DoHeader
       | DoWhileTail
-      | ForHeader 
-      | ForeachHeader 
+      | ForHeader
+      | ForeachHeader
 
   (*x: node_kind constructors *)
       | SwitchHeader
       | SwitchEnd
-      | Case 
+      | Case
       | Default
   (*x: node_kind constructors *)
       | Return
