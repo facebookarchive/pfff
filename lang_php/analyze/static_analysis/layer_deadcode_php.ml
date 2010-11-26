@@ -42,7 +42,10 @@ let properties = [
 (*****************************************************************************)
 
 let infos_and_kinds_of_dead_ids dead_ids db =
-  raise Todo
+  dead_ids +> List.map (fun (_s, id) ->
+    Db.parse_info_of_id id db, "dead"
+  )
+
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -52,7 +55,21 @@ let gen_layer ~db ~output =
 
   let root = Db.path_of_project_in_database db in
 
-  let dead_ids = raise Todo in
+  let hooks = { Deadcode_php.default_hooks with
+    (* Deadcode_php.is_probable_dynamic_funcname = 
+      False_positives_deadcode.is_probable_dynamic_funcname;
+    is_valid_author = Fb_employees.is_still_fb_employee;
+    is_valid_file = (fun file -> 
+      not (False_positives_deadcode.exclude_from_deadcode_patch_generation file)
+    );
+    *)
+    Deadcode_php.print_diff = false;
+    Deadcode_php.with_blame = false;
+  }
+  in
+  let dead_ids = 
+    Deadcode_php.finding_dead_functions hooks db
+  in
   let infos =
     infos_and_kinds_of_dead_ids dead_ids db
   in
