@@ -460,7 +460,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
                   ()
               );
           | XhpAttrExpr e -> ()
+          | SgrepXhpAttrValueMvar _ -> ()
           )
+     
       | _ -> ()
       );
       
@@ -521,6 +523,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               (* todo? could invent a Static in highlight_code ? *)
               tag info (Global (Use2 fake_no_use2))
           )
+      | ClassVar (qu, dname) ->
+          let info = Ast.info_of_dname dname in
+          (* todo? special category for class variables ? *)
+          tag info (Global (Use2 fake_no_use2))
 
       | This (tok) ->
           tag tok (Class (Use2 fake_no_use2))

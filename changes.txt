@@ -10,11 +10,11 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 
 *** google-earth like layers!
 
-- security layer
-- TODO bugs layer
+- static deadcode layer
+- dynamic coverage layer (using xhprof data)
 - TODO test coverage layer (using phpunit and xdebug data)
-- TODO production coverage layer (using xhprof data)
-- TODO deadcode layer
+- TODO bugs layer
+- security layer
 - TODO distance_to_bottom layer
 - TODO age, activity, #authors layers
 
