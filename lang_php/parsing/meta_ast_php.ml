@@ -417,6 +417,7 @@ and vof_xhp_attr_value =
       in Ocaml.VSum (("XhpAttrString", [ v1; v2; v3 ]))
   | XhpAttrExpr v1 ->
       let v1 = vof_brace vof_expr v1 in Ocaml.VSum (("XhpAttrExpr", [ v1 ]))
+  | SgrepXhpAttrValueMvar _ -> failwith "TODO: SgrepXhpAttrValueMvar"
 and vof_xhp_body =
   function
   | XhpText v1 ->
@@ -1204,4 +1205,8 @@ and vof_any =
       in Ocaml.VSum (("InfoList", [ v1 ]))
   | ColonStmt2 v1 ->
       let v1 = vof_colon_stmt v1 in Ocaml.VSum (("ColonStmt2", [ v1 ]))
+  | Case2 v1 -> let v1 = vof_case v1 in Ocaml.VSum (("Case2", [ v1 ]))
+  | StmtAndDefs v1 ->
+      let v1 = Ocaml.vof_list vof_stmt_and_def v1
+      in Ocaml.VSum (("StmtAndDefs", [ v1 ]))
   

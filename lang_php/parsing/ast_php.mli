@@ -750,6 +750,7 @@ type any =
   | ClassVariable of class_variable
   | ListAssign of list_assign
   | ColonStmt2 of colon_stmt
+  | Case2 of case
  
   | XhpAttribute of xhp_attribute
   | XhpAttrValue of xhp_attr_value

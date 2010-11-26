@@ -162,6 +162,8 @@ let intvalue_of_expr e =
 let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) = 
  fun state previ stmt ->
 
+   let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Stmt2 stmt))) in
+
    match stmt with
    | ExprStmt _ 
    | EmptyStmt _
@@ -169,7 +171,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | InlineHtml _
       ->
        let simple_stmt = F.TodoSimpleStmt in
-       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; } in
+       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
        state.g |> add_arc_opt (previ, newi);
        Some newi
 
@@ -194,11 +196,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          )
        in
 
-       let newi = state.g#add_node { F.n = node } in
+       let newi = state.g#add_node { F.n = node; i=i() } in
        state.g |> add_arc_opt (previ, newi);
 
-       let newfakethen = state.g#add_node { F.n = F.TrueNode; } in
-       let newfakeelse = state.g#add_node { F.n = F.FalseNode; } in
+       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
        state.g |> add_arc (newi, newfakethen);
        state.g |> add_arc (newi, newfakeelse);
 
@@ -220,12 +222,12 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
      (* previ -> doi ---> ... ---> finalthen (opt) ---> taili
       *             |--------- newfakethen ---------------|  |---> newfakelse
       *)
-       let doi = state.g#add_node { F.n = F.DoHeader; } in
+       let doi = state.g#add_node { F.n = F.DoHeader;i=i() } in
        state.g |> add_arc_opt (previ, doi);
-       let taili = state.g#add_node { F.n = F.DoWhileTail; } in
+       let taili = state.g#add_node { F.n = F.DoWhileTail;i=None } in
 
-       let newfakethen = state.g#add_node { F.n = F.TrueNode; } in
-       let newfakeelse = state.g#add_node { F.n = F.FalseNode; } in
+       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
        state.g |> add_arc (taili, newfakethen);
        state.g |> add_arc (taili, newfakeelse);
        state.g |> add_arc (newfakethen, doi);
@@ -259,11 +261,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       * elseif as syntactic sugar that translates into regular ifs, which
       * is what I do for now.
       *)
-       let newi = state.g#add_node { F.n = F.IfHeader; } in
+       let newi = state.g#add_node { F.n = F.IfHeader;i=i() } in
        state.g |> add_arc_opt (previ, newi);
        
-       let newfakethen = state.g#add_node { F.n = F.TrueNode; } in
-       let newfakeelse = state.g#add_node { F.n = F.FalseNode; } in
+       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
        state.g |> add_arc (newi, newfakethen);
        state.g |> add_arc (newi, newfakeelse);
 
@@ -289,14 +291,14 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        | None, Some nodei ->
            Some nodei
        | Some n1, Some n2 ->
-           let lasti = state.g#add_node { F.n = F.Join } in
+           let lasti = state.g#add_node { F.n = F.Join;i=None } in
            state.g |> add_arc (n1, lasti);
            state.g |> add_arc (n2, lasti);
            Some lasti
        )
         
    | Return (t1, eopt, t2) ->
-       let newi = state.g#add_node { F.n = F.Return } in
+       let newi = state.g#add_node { F.n = F.Return;i=i() } in
        state.g |> add_arc_opt (previ, newi);
        state.g |> add_arc (newi, state.exiti);
 
@@ -324,7 +326,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
              )
        in
 
-       let newi = state.g#add_node { F.n = node } in
+       let newi = state.g#add_node { F.n = node;i=i() } in
        state.g |> add_arc_opt (previ, newi);
 
        let nodei_to_jump_to = 
@@ -356,13 +358,13 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | Switch (t1, e, cases) ->
        (match cases with
        | CaseList (_obrace, _colon_opt, cases, _cbrace) ->
-           let newi = state.g#add_node { F.n = F.SwitchHeader } in
+           let newi = state.g#add_node { F.n = F.SwitchHeader;i=i() } in
            state.g |> add_arc_opt (previ, newi);
 
            (* note that if all cases have return, then we will remove
             * this endswitch node later.
             *)
-           let endi = state.g#add_node { F.n = F.SwitchEnd } in
+           let endi = state.g#add_node { F.n = F.SwitchEnd;i=None } in
 
            (* if no default: then must add path from start to end directly
             * todo? except if the cases cover the full spectrum ?
@@ -441,12 +443,12 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     *)
 
    | Try(t1, body, catch, other_catches) ->
-       let newi = state.g#add_node { F.n = F.TryHeader } in
-       let catchi = state.g#add_node { F.n = F.CatchStart } in
+       let newi = state.g#add_node { F.n = F.TryHeader;i=i() } in
+       let catchi = state.g#add_node { F.n = F.CatchStart;i=None } in
        state.g |> add_arc_opt (previ, newi);
 
        (* may have to delete it later if nobody connected to it *)
-       let endi = state.g#add_node { F.n = F.TryEnd } in
+       let endi = state.g#add_node { F.n = F.TryEnd;i=None } in
 
        (* for now we add a direct edge between the try and catch, 
         * as even the first statement in the body of the try could
@@ -510,7 +512,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     * certain edges)
     *)
    | Throw (t1, e, t2) ->
-       let newi = state.g#add_node { F.n = F.Throw } in
+       let newi = state.g#add_node { F.n = F.Throw; i=i() } in
        state.g |> add_arc_opt (previ, newi);
 
        let nodei_to_jump_to = 
@@ -539,7 +541,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | TypedDeclaration _
        ->
        let simple_stmt = F.TodoSimpleStmt in
-       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; } in
+       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt;i=i() } in
        state.g |> add_arc_opt (previ, newi);
        Some newi
      
@@ -585,7 +587,10 @@ and (cfg_cases:
        | Default (t1, t2, stmt_or_defs) ->
            F.Default, stmt_or_defs
      in
-     let newi = state.g#add_node { F.n = node } in
+
+     let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Case2 case))) in
+     
+     let newi = state.g#add_node { F.n = node; i=i() } in
      state.g |> add_arc_opt (previ, newi);
      (* connect SwitchHeader to Case node *)
      state.g |> add_arc (switchi, newi);
@@ -611,9 +616,10 @@ and (cfg_catches: state -> nodei -> nodei -> Ast_php.catch list -> nodei) =
  fun state previ tryendi catches ->
    catches +> List.fold_left (fun previ catch ->
      let (t, e_paren, stmt_or_defs) = catch in
-     let newi = state.g#add_node { F.n = F.Catch } in
-     let truei = state.g#add_node { F.n = F.TrueNode } in
-     let falsei = state.g#add_node { F.n = F.FalseNode } in
+
+     let newi = state.g#add_node { F.n = F.Catch; i=Some t } in
+     let truei = state.g#add_node { F.n = F.TrueNode;i=None } in
+     let falsei = state.g#add_node { F.n = F.FalseNode;i=None } in
      state.g |> add_arc (previ, newi);
      state.g |> add_arc (newi, truei);
      state.g |> add_arc (newi, falsei);
@@ -640,8 +646,8 @@ let (control_flow_graph_of_stmts: stmt list -> F.flow) = fun xs ->
   (* yes, I sometimes use objects, and even mutable objects in OCaml ... *)
   let g = new Ograph_extended.ograph_mutable in
 
-  let enteri = g#add_node { F.n = F.Enter; } in
-  let exiti = g#add_node { F.n = F.Exit; } in
+  let enteri = g#add_node { F.n = F.Enter;i=None } in
+  let exiti = g#add_node { F.n = F.Exit;i=None } in
 
   let state = {
     g = g;
@@ -686,33 +692,49 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
   raise Todo
 (*e: function deadcode_detection *)
 
+
 (*****************************************************************************)
 (* Error management *)
 (*****************************************************************************)
 
-(*s: function Controlflow_build_php.report_error *)
-let (report_error : error -> unit) = fun err ->
+let string_of_error error =
+  let spos info = 
+    let info = Ast.parse_info_of_info info in
+    (* emacs compile-mode compatible output *)
+    spf "%s:%d:%d: " 
+      info.Parse_info.file info.Parse_info.line info.Parse_info.column
+  in
+ (* old:
   let error_from_info info = 
     let pinfo = Ast.parse_info_of_info info in
     Parse_info.error_message_short 
       pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
   in
-
-  match err with
+ *)
+  match error with
   | ColonSyntax info ->
-      pr2 ("FLOW: dude, don't use the old PHP colon syntax: " ^ 
-        error_from_info info)
+      spos info ^ "FLOW: dude, don't use the old PHP colon syntax: "
   | DeadCode info ->
-      pr2 ("FLOW: deadcode path detected at: " ^ error_from_info info)
+      spos info ^ "FLOW: deadcode path detected"
   | NoEnclosingLoop info ->
-      pr2 ("FLOW: no enclosing loop found for break or continue at: " 
-            ^ error_from_info info)
+      spos info ^ "FLOW: no enclosing loop found for break or continue"
   | NoMethodBody info ->
-      pr2 ("FLOW: can't compute CFG of an abstract method at: " 
-            ^ error_from_info info)
+      spos info ^ "FLOW: can't compute CFG of an abstract method"
   | DynamicBreak info ->
-      pr2 ("FLOW: dynamic break/continue are not supported at: " 
-            ^ error_from_info info)
+      spos info ^ "FLOW: dynamic break/continue are not supported"
+
+let info_of_error error =
+  match error with
+  | ColonSyntax info
+  | DeadCode info
+  | NoEnclosingLoop info
+  | NoMethodBody info
+  | DynamicBreak info
+      -> Some info
+
+(*s: function Controlflow_build_php.report_error *)
+let (report_error : error -> unit) = fun err ->
+  pr2 (string_of_error err)
 (*e: function Controlflow_build_php.report_error *)
 
 (*e: controlflow_build_php.ml *)

@@ -1230,6 +1230,7 @@ and v_any = function
   | Info v1 -> let v1 = v_info v1 in ()
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()
+  | Case2 v1 -> let v1 = v_case v1 in ()
 
 (* end of auto generation *)
  

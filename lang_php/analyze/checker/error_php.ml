@@ -151,7 +151,7 @@ let string_of_error error =
       spos pinfo ^ "CHECK: weird, foreach with not a var as iterator"
 
   | CfgError err ->
-      raise Todo
+      Controlflow_build_php.string_of_error err
   
         
 let info_of_error err =
@@ -182,8 +182,7 @@ let info_of_error err =
       -> Some info
 
   | CfgError err ->
-      raise Todo
-
+      Controlflow_build_php.info_of_error err
 
 let report_error err = 
   pr2 (string_of_error err)

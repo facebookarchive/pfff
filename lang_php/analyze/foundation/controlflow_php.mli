@@ -11,6 +11,8 @@ type node = {
    * that is nodeid, to some information.
    *)
   n: node_kind;
+  (* for error report *)
+  i: Ast_php.info option;
 } 
 (*e: type node *)
 (*s: type node_kind *)
