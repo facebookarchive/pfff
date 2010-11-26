@@ -49,15 +49,15 @@ module DbQ = Database_php_query
  * 
  * 
  * history:
- * - deadcode_patches.tgz:
- * - deadcode_patches-v2.tgz: better heuristic for funcvar
- * - deadcode_patches-v3.tgz: better blame -C, and filter third-party stuff
- * - deadcode_patches-v4.tgz: do not generate patch for files where 
- *   tbgs/glimpse would return multiple match on certain deadcode functions
- * - deadcode_patches-v5.tgz: add date information to the patch filename
+ * - simple reaper
+ * - better heuristic for funcvar
+ * - better blame -C, and filter third-party stuff
+ * - do not generate patch for files where 
+ *   would return multiple match on certain deadcode functions
+ * - add date information to the patch filename
  *   so can later decide to apply first old dead code patches
- * - deadcode_patches-v6.tgz: do fixpoint. Also do CEs when using
- *   nested ast_ids
+ * - do fixpoint. Also do CEs when using nested ast_ids
+ * - can now use a whitelist generated from phproflive
  * 
  * Some of the code specific to facebook is in facebook/ and in main_db.ml
  * 
