@@ -38,9 +38,9 @@ open Error_php
 let properties = [
 
   "eUseOfUndefinedVariable", "red" ;
-
   (* ugly: coupling with scope_code.ml *)
   "eUnusedVariable-Local", "purple";
+  "eDeadStatement", "salmon";
 
   "eUnusedVariable-Global", "green";
   "eUnusedVariable-Local", "green";
@@ -51,8 +51,6 @@ let properties = [
   "eUnusedVariable-LocalIterator", "green";
   "eUnusedVariable-ListBinded", "green";
   "eUnusedVariable-NoScope", "green";
-
-
 
   "eUndefinedFunction",    "blue";
   "eUnableToDetermineDef", "blue2";
@@ -69,7 +67,7 @@ let properties = [
   "eUglyGlobalDynamic", "cyan";
   "eWeirdForeachNoIteratorVar", "cyan";
 
-
+  "eCfgError", "tan";
 
 ]
 
@@ -99,6 +97,11 @@ let info_of_error_and_kind err =
   | UseOfUndefinedMember _ ->"eUseOfUndefinedMember"
   | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
   | WeirdForeachNoIteratorVar _ -> "eWeirdForeachNoIteratorVar"
+
+  | CfgError (Controlflow_build_php.DeadCode _) ->
+      "eDeadStatement"
+  | CfgError ( _) ->
+      "eCfgError"
 
   in
   E.info_of_error err +> Common.fmap (fun info ->

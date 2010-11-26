@@ -127,6 +127,7 @@ let rank_errors errs =
     x,
     match x with
     | Error_php.UnusedVariable (_, S.Local) -> 10
+    | Error_php.CfgError _ -> 11
     | _ -> 0
   ) +> Common.sort_by_val_highfirst +> Common.map fst
 
@@ -163,15 +164,20 @@ let pr2_dbg s =
 let main_action xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let errors = ref [] in
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
   files +> List.iter (fun file ->
-    pr2_dbg (spf "processing: %s" file);
-    (* TODO *)
-    let find_entity = None in
-
-    Check_all_php.check_file ~find_entity file;
+    try 
+      pr2_dbg (spf "processing: %s" file);
+      (* TODO *)
+      let find_entity = None in
+      
+      Check_all_php.check_file ~find_entity file;
+    with exn ->
+      Common.push2 (spf "PB with %s, exn = %s" file 
+                              (Common.string_of_exn exn)) errors;
   );
 
   let errs = !Error_php._errors +> List.rev in
@@ -180,6 +186,10 @@ let main_action xs =
   errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
   show_10_most_recurssing_unused_variable_names ();
   pr2 (spf "total errors = %d" (List.length !Error_php._errors));
+
+  pr2 "";
+  !errors +> List.iter pr2;
+  pr2 "";
 
   !layer_file +> Common.do_option (fun file ->
     (*  a layer needs readable paths, hence the root *)
