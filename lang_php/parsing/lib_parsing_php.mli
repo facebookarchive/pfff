@@ -44,4 +44,8 @@ val get_vars_assignements        : Ast_php.any -> (string * Ast_php.expr list) l
 val top_statements_of_program: 
     Ast_php.program -> Ast_php.stmt list
 
+val functions_methods_or_topstms_of_program:
+  Ast_php.program -> 
+  (Ast_php.func_def list * Ast_php.method_def list * Ast_php.stmt list list) 
+
 (*e: lib_parsing_php.mli *)

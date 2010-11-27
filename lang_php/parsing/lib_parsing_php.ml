@@ -427,4 +427,36 @@ let top_statements_of_program ast =
       -> []
   ) |> List.flatten  
 
+(* We often do some analysis on "unit" of code like a function,
+ * a method, or toplevel statements. One can not use the
+ * 'toplevel' type for that because it contains Class and Interface which
+ * are too coarse grained; the method granularity is better.
+ * 
+ * For instance it makes sense to have a CFG for a function, a method,
+ * or toplevel statements but a CFG for a class does not make sense.
+ *)
+let functions_methods_or_topstms_of_program prog =
+  let funcs = ref [] in
+  let methods = ref [] in
+  let toplevels = ref [] in
+
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kfunc_def = (fun (k, _) def -> 
+      Common.push2 def funcs
+    );
+    V.kmethod_def = (fun (k, _) def -> 
+      Common.push2 def methods
+    );
+    V.ktop = (fun (k, _) top ->
+      match top with
+      | StmtList xs -> 
+          Common.push2 xs toplevels
+      | _ ->
+          k top
+    );
+  }
+  in
+  visitor (Program prog);
+  !funcs, !methods, !toplevels
+
 (*e: lib_parsing_php.ml *)
