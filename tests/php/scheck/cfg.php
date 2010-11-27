@@ -38,3 +38,16 @@ function foo3() {
   //ERROR: dead statement, requires a not-so-easy CFG to detect that
   echo 1;
 }
+
+function foo4() {
+  //ERROR: less important too
+  return 1;;
+}
+
+function foo5() {
+  return null;
+  
+  //ERROR: less important; people abuse return as some kind of #if 0
+  $a = 1;
+  return $a;
+}
