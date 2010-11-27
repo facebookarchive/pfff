@@ -68,6 +68,7 @@ type error =
 
   (* cfg, mostly DeadCode statements *)
   | CfgError of Controlflow_build_php.error
+  | CfgPilError of Controlflow_build_pil.error
 
 exception Error of error
 
@@ -152,7 +153,10 @@ let string_of_error error =
 
   | CfgError err ->
       Controlflow_build_php.string_of_error err
-  
+  | CfgPilError err ->
+      Controlflow_build_pil.string_of_error err
+
+ 
         
 let info_of_error err =
   match err with
@@ -183,6 +187,8 @@ let info_of_error err =
 
   | CfgError err ->
       Controlflow_build_php.info_of_error err
+  | CfgPilError err ->
+      Controlflow_build_pil.info_of_error err
 
 let report_error err = 
   pr2 (string_of_error err)

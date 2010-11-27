@@ -235,17 +235,26 @@ let cfg_of_stmts = control_flow_graph_of_stmts
 (* Error management *)
 (*****************************************************************************)
 
-let (report_error : error -> unit) = fun err ->
-  let error_from_info info = 
-    let pinfo = Ast_php.parse_info_of_info info in
-    Parse_info.error_message_short 
-      pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
+let string_of_error err =
+  let spos info = 
+    let info = Ast_php.parse_info_of_info info in
+    (* emacs compile-mode compatible output *)
+    spf "%s:%d:%d: " 
+      info.Parse_info.file info.Parse_info.line info.Parse_info.column
   in
 
   match err with
   | NoEnclosingLoop info ->
-      pr2 ("FLOW: no enclosing loop found for break or continue at: " 
-            ^ error_from_info info)
+      spos info ^ "FLOW: no enclosing loop found for break or continue"
   | DynamicBreak info ->
-      pr2 ("FLOW: dynamic break/continue are not supported at: " 
-            ^ error_from_info info)
+      spos info ^ "FLOW: dynamic break/continue are not supported"
+
+
+let info_of_error error =
+  match error with
+  | NoEnclosingLoop info
+  | DynamicBreak info
+      -> Some info
+
+let (report_error : error -> unit) = fun err ->
+  pr2 (string_of_error err)

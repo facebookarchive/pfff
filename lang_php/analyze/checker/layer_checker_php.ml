@@ -108,6 +108,8 @@ let info_of_error_and_kind err =
       )
   | CfgError ( _) ->
       "eCfgError"
+  | CfgPilError ( _) ->
+      "eCfgError"
 
   in
   E.info_of_error err +> Common.fmap (fun info ->

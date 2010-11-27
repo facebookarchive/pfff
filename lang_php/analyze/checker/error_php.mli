@@ -21,6 +21,7 @@ type error =
   | WeirdForeachNoIteratorVar of Ast_php.info
 
   | CfgError of Controlflow_build_php.error
+  | CfgPilError of Controlflow_build_pil.error
 
 val string_of_error: error -> string
 val info_of_error: error -> Ast_php.info option
