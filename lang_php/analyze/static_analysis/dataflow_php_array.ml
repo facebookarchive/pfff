@@ -93,11 +93,11 @@ let vars_in_v v =
 *)
   
 let vars_in_arguments args = 
-  let v = Ocaml.vof_list Pil.vof_argument args in
+  let v = Ocaml.vof_list Meta_pil.vof_argument args in
   vars_in_v v
 
 let vars_in_expr e = 
-  let v = Pil.vof_expr e in
+  let v = Meta_pil.vof_expr e in
   vars_in_v v
 
 

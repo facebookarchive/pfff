@@ -282,7 +282,7 @@ let test_pil file =
     V.kstmt = (fun (k, vx) st ->
       let stmts = Pil_build.linearize_stmt st in
       stmts +> List.iter (fun st ->
-        pr2 (Pil.string_of_stmt st)
+        pr2 (Meta_pil.string_of_stmt st)
       )
     );
   } in

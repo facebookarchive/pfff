@@ -116,7 +116,8 @@ let short_string_of_node node =
 (* Meta *)
 (*****************************************************************************)
 
-let vof_expr = Pil.vof_expr
+let vof_expr = Meta_pil.vof_expr
+let vof_instr = Meta_pil.vof_instr
 
 let rec vof_node { n = v_n } =
   let bnds = [] in

@@ -57,6 +57,8 @@ and expr = exprbis * type_info
   | Cast of castOp * expr
   | InstanceOf of expr * class_name_reference
 
+  | TodoExpr of Parse_info.info
+
 
 type instr =
   | Assign of lvalue * assign_kind * expr
@@ -64,6 +66,8 @@ type instr =
   (* Call(a,f,args) intuitively is an instruction a=f(args) *)
   | Call of lvalue * call_kind * argument list
   | Eval of expr
+
+  | TodoInstr of Parse_info.info
 
   and assign_kind = 
     | AssignEq
@@ -94,6 +98,8 @@ type stmt =
   | Throw of expr
   | Try of stmt * catch
   | Echo of expr list
+
+  | TodoStmt of Parse_info.info
 
  and catch = unit (* TODO *)
 
@@ -142,24 +148,5 @@ type toplevel =
 
 
 type program = toplevel list
-
-
-(* for debugging *)
-type debug_config = {
-  show_types: bool;
-  show_tokens: bool;
-}
-val default_debug_config: debug_config
-
-val string_of_instr: ?config:debug_config -> instr -> string
-val string_of_stmt: ?config:debug_config -> stmt -> string
-val string_of_expr: ?config:debug_config -> expr -> string
-
-val string_of_program: ?config:debug_config -> program -> string
-
-(* meta *)
-val vof_expr: expr -> Ocaml.v
-val vof_instr: instr -> Ocaml.v
-val vof_argument: argument -> Ocaml.v
 
 (*e: pil.mli *)

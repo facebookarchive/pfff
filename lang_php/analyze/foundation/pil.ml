@@ -48,26 +48,26 @@ module Ast = Ast_php
  * 
  * Enter PIL for PHP Intermediate Language, a better representation
  * for a PHP program. We just follow the tradition started by
- * CIL[1] and RIL[2] and propose here an AST bis which makes it
+ * CIL[1] and RIL[2] and propose here an AST which makes it
  * easier to write some static analysis.
  * 
- * Maybe I should focus on Ast_php because if we want to transform code
+ * Maybe we should focus on Ast_php because if we want to transform code
  * we have to work on that. But working on Pil can also help
- * clarify my comprehension of PHP :) It could also maybe make it
+ * clarify the semantic of PHP :) It could also maybe make it
  * easier to write the type inferer later.
  * 
  * 
- * I try, just like in Ast_php, to keep position information for the
- * elements in PIL, but I do it less. For instance comma_list or paren
+ * We try, just like in Ast_php, to keep position information for the
+ * elements in PIL, but we do it less. For instance comma_list or paren
  * stuff are removed here.
  * 
- * todo: does the linearization respect the semantic of PHP ? Is there
+ * TODO: does the linearization respect the semantic of PHP ? Is there
  * cases where spliting a complex expression into multiple parts
  * with intermediate variables leads to a different semantic ?
  * For instance apparently $i++ is not equivalent to $i = $i + 1 when
- * $i is a string. Wonderful PHP. But at the same time our goal here is
- * not to write a compiler. Our goal is to find bugs so we may relax some
- * requirements.
+ * $i is a string. Wonderful PHP. 
+ * But at the same time our goal here is not to write a compiler. Our goal
+ * is to find bugs so we maybe it's ok to relax some of the requirements.
  * 
  * References:
  *  [1] CIL, C Intermediate Language, Necula et al, CC'00
@@ -98,7 +98,7 @@ type dname = Ast_php.dname
 
 
 
-(* set by the type inference analysis *)
+(* set by the type inference analysis one day *)
 type type_info = {
   mutable t: Type_php.phptype;
 }
@@ -109,19 +109,19 @@ type type_info = {
  *)
 type var = 
   | Var of dname
-  (* todo? move in lvalue ? after all $this[2] is not possible *)
+  (* todo? move This in lvalue ? after all $this[2] is not possible *)
   | This of Ast_php.tok
  (* with tarzan *)
 
-(* 'lvalue', what can appear at the left side of an assignement. 
+(* An 'lvalue' is what can appear at the left side of an assignement.
  *
- * Note that as opposed to Ast_php.lvalue a linearization has been done so
- * $o->fld1->fld2 will be transformed in $obis = $o->fld1; $obis->fld2;
- * So lvalue is not a a recursive type (there is no lvalue inside
- * a lvalue). 
- * Also note that function or method calls are not there (but in 'instr').
+ * Note that as opposed to Ast_php.lvalue a linearization has been done here 
+ * so $o->fld1->fld2 will be transformed in $obis = $o->fld1; $obis->fld2;
+ * So lvalue is not a recursive type (there is no lvalue inside
+ * a lvalue).
+ * Also note that functions or method calls are not there (but in 'instr').
  * 
- * todo: BAD have expr inside ArrayAccess. Should be '(constant, var) either'
+ * TODO: have 'expr' inside ArrayAccess. Should be '(constant, var) either'
  *)
 type lvalue = lvaluebis * type_info
  and lvaluebis = 
@@ -141,7 +141,7 @@ type lvalue = lvaluebis * type_info
    | IndirectAccess of var * indirect
    (* todo: VBraceXxx ?? *)
 
-(* 'expr' is side effect free (as opposed to Ast_php.expr) ! 
+(* Note that the 'expr' type is side-effect free (as opposed to Ast_php.expr).
  *  
  * Moreover this type does not contain:
  * - assignements
@@ -177,10 +177,11 @@ and expr = exprbis * type_info
   | Cast of castOp * expr
   | InstanceOf of expr * class_name_reference
   (* todo: remaining Sc (Guil, etc), CastUnset, *)
+  | TodoExpr of Parse_info.info
 
  (* with tarzan *)
 
-(* 'instr' is a statement that has no local (intraprocedural) 
+(* 'instr' is a kind of statement that has no local (intraprocedural)
  * control flow. It will be thus represented as a singled node in 
  * the CFG.
  * 
@@ -195,6 +196,9 @@ and expr = exprbis * type_info
  * and and 'PureExpr of expr', but it complicates things. The current scheme
  * may lead to many dead variables, but all those variables can be detected as
  * they will be tagged as fake variables anyway.
+ * 
+ * TODO: not sure this is good to introduce such dead variables; it may
+ * make the unused_variable checker introduce some false positives.
  *)
 type instr = 
   (* $a = expr *)
@@ -206,6 +210,7 @@ type instr =
   (* eval ... bad *)
   | Eval of expr
   (* todo: Lambda *)
+  | TodoInstr of Parse_info.info
 
   (* note: Infix and Posfix exprs were desugared into regular assigns *)
   and assign_kind = 
@@ -230,8 +235,9 @@ type instr =
  (* with tarzan *)
 
 (* 'stmt' is very similar to Ast_php.stmt, except if/while/... contain the 
- * new 'expr' type which is side-effect free. Also removed
+ * new 'expr' type which is side-effect free. Also we removed
  * some sugar and some deprecated forms like the ColonXxx.
+ * 
  * Note that the include/require, which were removed from the 'expr'
  * are also not represented in 'stmt'. It's just bad coding. We lift them
  * up (again) to the toplevel.
@@ -243,17 +249,16 @@ type stmt =
   (* Could make If takes a stmt list instead of a stmt, which would remove
    * the need for Block and maybe even EmptyStmt. Not sure what is best. *)
   | Block of stmt list
-
   (* useful to avoid having some 'stmt option' for instance in If *)
   | EmptyStmt 
 
-  (* elseifs are desugared; Switch are transformed in ifs *)
+  (* elseifs are desugared; switches are transformed in ifs *)
   | If of expr * stmt * stmt
   
   (* Do, For, Foreach are desugared into a While  *)
   | While of expr * stmt
 
-  (* todo: could transform that into gotos ? *)
+  (* todo? could transform that into gotos ? *)
   | Break of expr option
   | Continue of expr option
 
@@ -267,7 +272,8 @@ type stmt =
 
   (* todo? put expr stuff here (Print, Exit, Backquote, etc) 
    * todo? Globals, StaticVars,  Use, Unset, Declare ?
-  *)
+   *)
+  | TodoStmt of Parse_info.info
 
  and catch = unit (* TODO *)
 
@@ -337,367 +343,5 @@ type program = toplevel list
 
   (* with tarzan *)
 
-(*****************************************************************************)
-(* Meta *)
-(*****************************************************************************)
-
-(* I wish I had deriving Show in OCaml ... in the mean time I have
- * to use my ocamltarzan tool to do compile-time reflection.
- *)
-
-(* generated by ocamltarzan: ocamltarzan -vof pil.ml *)
-let vof_dname = Meta_ast_php.vof_dname
-let vof_name = Meta_ast_php.vof_name
-let vof_qualifier = Meta_ast_php.vof_qualifier
-
-let vof_indirect = Meta_ast_php.vof_indirect
-let vof_binaryOp = Meta_ast_php.vof_binaryOp
-let vof_unaryOp = Meta_ast_php.vof_unaryOp
-let vof_assignOp = Meta_ast_php.vof_assignOp
-let vof_castOp = Meta_ast_php.vof_castOp
-
-let vof_constant = Meta_ast_php.vof_constant
-let vof_class_name_reference = Meta_ast_php.vof_class_name_reference
-let vof_modifier = Meta_ast_php.vof_modifier
-
-let vof_phptype x = Ocaml.VTODO "type"
-
-let vof_type_info { t = v_t } =
-  let bnds = [] in
-  let arg = vof_phptype v_t in
-  let bnd = ("t", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-
-
-let vof_var =
-  function
-  | Var v1 -> let v1 = vof_dname v1 in Ocaml.VSum (("Var", [ v1 ]))
-  | This v1 -> let v1 = Meta_ast_php.vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
-  
-let rec vof_lvalue (v1, v2) =
-  let v1 = vof_lvaluebis v1
-  and v2 = vof_type_info v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_lvaluebis =
-  function
-  | VVar v1 -> let v1 = vof_var v1 in Ocaml.VSum (("VVar", [ v1 ]))
-  | VQualifier ((v1, v2)) ->
-      let v1 = vof_qualifier v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("VQualifier", [ v1; v2 ]))
-  | ArrayAccess ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = Ocaml.vof_option vof_expr v2
-      in Ocaml.VSum (("ArrayAccess", [ v1; v2 ]))
-  | ObjAccess ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("ObjAccess", [ v1; v2 ]))
-  | DynamicObjAccess ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("DynamicObjAccess", [ v1; v2 ]))
-  | IndirectAccess ((v2, v1)) ->
-      let v1 = vof_indirect v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("IndirectAccess", [ v2; v1 ]))
-and vof_expr (v1, v2) =
-  let v1 = vof_exprbis v1
-  and v2 = vof_type_info v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_exprbis =
-  function
-  | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
-  | C v1 ->
-      let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
-  | ClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = vof_qualifier v1
-             and v2 = vof_name v2
-             in Ocaml.VTuple [ v1; v2 ])
-      in Ocaml.VSum (("ClassConstant", [ v1 ]))
- | Binary ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_binaryOp v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("Binary", [ v1; v2; v3 ]))
-  | Unary ((v1, v2)) ->
-      let v1 = vof_unaryOp v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Unary", [ v1; v2 ]))
-  | CondExpr ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("CondExpr", [ v1; v2; v3 ]))
-  | ConsArray v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1
-      in Ocaml.VSum (("ConsArray", [ v1 ]))
-  | ConsHash v1 -> 
-      let v1 = Ocaml.vof_list 
-               (fun (e2, e3) ->
-                  let v2 = vof_expr e2
-                  and v3 = vof_expr e3 in
-                Ocaml.VTuple [ v2; v3 ]) v1
-      in Ocaml.VSum (("ConsHash", [ v1 ]))
-  | Cast ((v1, v2)) ->
-      let v1 = vof_castOp v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Cast", [ v1; v2 ]))
-  | InstanceOf ((v1, v2)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_class_name_reference v2
-      in Ocaml.VSum (("InstanceOf", [ v1; v2 ]))
-  
-let rec vof_instr =
-  function
-  | Assign ((v1, v2, v3)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_assign_kind v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
-  | AssignRef ((v1, v2)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_lvalue v2
-      in Ocaml.VSum (("AssignRef", [ v1; v2 ]))
-  | Call ((v1, v2, v3)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_call_kind v2
-      and v3 = Ocaml.vof_list vof_argument v3
-      in Ocaml.VSum (("Call", [ v1; v2; v3 ]))
-  | Eval v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Eval", [ v1 ]))
-and vof_assign_kind =
-  function
-  | AssignEq -> Ocaml.VSum (("AssignEq", []))
-  | AssignOp v1 ->
-      let v1 = vof_assignOp v1 in Ocaml.VSum (("AssignOp", [ v1 ]))
-and vof_call_kind =
-  function
-  | SimpleCall v1 ->
-      let v1 = vof_name v1 in Ocaml.VSum (("SimpleCall", [ v1 ]))
-  | StaticMethodCall ((v1, v2)) ->
-      let v1 = vof_qualifier v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("StaticMethodCall", [ v1; v2 ]))
-  | MethodCall ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("MethodCall", [ v1; v2 ]))
-  | DynamicCall ((v1, v2)) ->
-      let v1 = Ocaml.vof_option vof_qualifier v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("DynamicCall", [ v1; v2 ]))
-  | DynamicMethodCall ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("DynamicMethodCall", [ v1; v2 ]))
-  | New v1 ->
-      let v1 = vof_class_name_reference v1 in Ocaml.VSum (("New", [ v1 ]))
-and vof_argument =
-  function
-  | Arg v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Arg", [ v1 ]))
-  | ArgRef v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("ArgRef", [ v1 ]))
-  
-let rec vof_stmt =
-  function
-  | Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
-  | Block v1 ->
-      let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))
-  | EmptyStmt -> Ocaml.VSum (("EmptyStmt", []))
-  | If ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_stmt v2
-      and v3 = vof_stmt v3
-      in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | While ((v1, v2)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_stmt v2
-      in Ocaml.VSum (("While", [ v1; v2 ]))
-  | Break v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1 in Ocaml.VSum (("Break", [ v1 ]))
-  | Continue v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Continue", [ v1 ]))
-  | Return v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Return", [ v1 ]))
-  | Throw v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Throw", [ v1 ]))
-  | Try ((v1, v2)) ->
-      let v1 = vof_stmt v1
-      and v2 = vof_catch v2
-      in Ocaml.VSum (("Try", [ v1; v2 ]))
-  | Echo v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
-and vof_catch v = Ocaml.vof_unit v
-
-let rec
-  vof_function_def {
-                     f_name = v_f_name;
-                     f_params = v_f_params;
-                     f_ref = v_f_ref;
-                     f_return_type = v_f_return_type;
-                     f_body = v_f_body
-                   } =
-  let bnds = [] in
-  let arg = Ocaml.vof_list vof_stmt v_f_body in
-  let bnd = ("f_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_hint_type v_f_return_type in
-  let bnd = ("f_return_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_f_ref in
-  let bnd = ("f_ref", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_parameter v_f_params in
-  let bnd = ("f_params", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_name v_f_name in
-  let bnd = ("f_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and
-  vof_parameter {
-                  p_name = v_p_name;
-                  p_type = v_p_type;
-                  p_ref = v_p_ref;
-                  p_default = v_p_default
-                } =
-  let bnds = [] in
-  let arg = Ocaml.vof_option vof_static_scalar v_p_default in
-  let bnd = ("p_default", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_p_ref in
-  let bnd = ("p_ref", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_hint_type v_p_type in
-  let bnd = ("p_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_dname v_p_name in
-  let bnd = ("p_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_static_scalar v = vof_expr v
-and vof_hint_type v = vof_name v
-
-
-let rec
-  vof_class_def {
-                  c_name = v_c_name;
-                  c_type = v_c_type;
-                  c_extends = v_c_extends;
-                  c_implements = v_c_implements;
-                  c_body = v_c_body
-                } =
-  let bnds = [] in
-  let arg = Ocaml.vof_list vof_class_stmt v_c_body in
-  let bnd = ("c_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_name v_c_implements in
-  let bnd = ("c_implements", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_name v_c_extends in
-  let bnd = ("c_extends", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_class_type v_c_type in
-  let bnd = ("c_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_name v_c_name in
-  let bnd = ("c_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_class_type =
-  function
-  | ClassRegular -> Ocaml.VSum (("ClassRegular", []))
-  | ClassFinal -> Ocaml.VSum (("ClassFinal", []))
-  | ClassAbstract -> Ocaml.VSum (("ClassAbstract", []))
-  | Interface -> Ocaml.VSum (("Interface", []))
-and vof_class_stmt =
-  function
-  | ClassConstantDef ((v1, v2)) ->
-      let v1 = vof_name v1
-      and v2 = vof_static_scalar v2
-      in Ocaml.VSum (("ClassConstantDef", [ v1; v2 ]))
-  | ClassVariable ((v1, v2, v3, v4)) ->
-      let v1 = Ocaml.vof_list vof_modifier v1
-      and v2 = Ocaml.vof_option vof_hint_type v2
-      and v3 = vof_dname v3
-      and v4 = Ocaml.vof_option vof_static_scalar v4
-      in Ocaml.VSum (("ClassVariable", [ v1; v2; v3; v4 ]))
-  | Method v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = Ocaml.vof_list vof_modifier v1
-             and v2 = vof_function_def v2
-             in Ocaml.VTuple [ v1; v2 ])
-      in Ocaml.VSum (("Method", [ v1 ]))
-  | AbstractMethod v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = Ocaml.vof_list vof_modifier v1
-             and v2 = vof_function_def v2
-             in Ocaml.VTuple [ v1; v2 ])
-      in Ocaml.VSum (("AbstractMethod", [ v1 ]))
-
-
-let rec vof_require v = Ocaml.vof_unit v
-
-let rec vof_toplevel =
-  function
-  | Require v1 -> let v1 = vof_require v1 in Ocaml.VSum (("Require", [ v1 ]))
-  | TopStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("TopStmt", [ v1 ]))
-  | FunctionDef v1 ->
-      let v1 = vof_function_def v1 in Ocaml.VSum (("FunctionDef", [ v1 ]))
-  | ClassDef v1 ->
-      let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
-
- 
-let vof_program v = Ocaml.vof_list vof_toplevel v
-
-
-(*****************************************************************************)
-(* String of *)
-(*****************************************************************************)
-type debug_config = {
-  show_types: bool;
-  show_tokens: bool;
-}
-
-let default_debug_config = {
-  show_types = false;
-  show_tokens = false;
-}
-
-let (adjust_ocaml_v: ?config:debug_config -> Ocaml.v -> Ocaml.v) =
- fun ?(config=default_debug_config) v ->
-
-  let v = 
-    Ocaml.map_v ~f:(fun ~k v ->
-      match v with
-      | Ocaml.VDict xs ->
-         (* let's hide all those {pinfo = ... } and type annotations *)
-          if 
-            (xs +> List.exists (fun (s, _) -> s = "pinfo") &&
-             not config.show_tokens
-             ) ||
-            (xs +> List.exists (fun (s, _) -> s = "t") &&
-             not (config.show_types
-             ))
-          then Ocaml.VDict []
-          else k v
-      | _ -> k v
-    ) v
-  in
-  v
-
-let string_of_instr ?config x =
-  x +> vof_instr +> adjust_ocaml_v ?config +> Ocaml.string_of_v
-
-let string_of_stmt ?config x = 
-  x +> vof_stmt +> adjust_ocaml_v ?config +> Ocaml.string_of_v
-
-let string_of_expr ?config x = 
-  x +> vof_expr +> adjust_ocaml_v ?config +> Ocaml.string_of_v
-
-
-let string_of_program ?config x =
-  x +> vof_program +> adjust_ocaml_v ?config +> Ocaml.string_of_v
-  
 
 (*e: pil.ml *)
