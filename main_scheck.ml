@@ -235,8 +235,8 @@ let type_inference file =
     pr s;
 
     (* internal representation pretty printer *)
-    let s = Pil.string_of_program
-      ~config:{Pil.show_types = true; Pil.show_tokens = false}
+    let s = Meta_pil.string_of_program
+      ~config:{Meta_pil.show_types = true; show_tokens = false}
       pil
     in
     pr s;
