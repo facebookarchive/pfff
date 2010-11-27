@@ -119,6 +119,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        state.g |> add_arc_opt (previ, newi);
        Some newi
 
+   | TodoStmt info ->
+       let newi = state.g#add_node { F.n = F.TodoNode (Some info); } in
+       state.g |> add_arc_opt (previ, newi);
+       Some newi
+
    | EmptyStmt ->
        previ
 
@@ -190,9 +195,13 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            state.g |> add_arc (n2, lasti);
            Some lasti
        )
+       
         
    | (Try (_, _)|Throw _|Continue _|Break _)
-       -> raise Todo
+       ->
+       let newi = state.g#add_node { F.n = F.TodoNode None; } in
+       state.g |> add_arc_opt (previ, newi);
+       Some newi
 
 and cfg_stmt_list state previ xs =
   xs +> List.fold_left (fun previ stmt -> 

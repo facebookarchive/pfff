@@ -169,7 +169,10 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.VQualifier(qualif, lv) ->
         let v = make_var_from_Alvalue lv in
         mkt (B.VQualifier(qualif, v))
-
+    | A.ClassVar (qu, var) ->
+        let info = Ast_php.info_of_dname var in
+        mkt (B.TodoLvalue info)
+        
     | A.This t -> 
         mkt (B.VVar (B.This t))
 
@@ -207,6 +210,7 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.VBrace(_, e_brace) ->
         let e = A.unbrace e_brace in
         make_var_from_Aexpr e |> vv_of_v
+
 
     | A.VArrayAccessXhp _ ->
         raise Todo
@@ -686,14 +690,14 @@ let rec (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
      * foreach($arr as $key => $value){stmt} is translated as
      * while(list($key, $value) = each($arr)){stmt}, i.e.
      *)
-    | A.Foreach(_, _, expr, _, lv, arr, _, stmt) -> 
+    | A.Foreach(tok, _, expr, _, lv, arr, _, stmt) -> 
         (* According to Drew Parovski, this will not work
          * as the each construct uses an internal temp variable
          * so if we translate like this any nested foreach loop
          * will have the wrong semantics; still according to him
          * foreach cannot be translated only using the construcs of PIL 
          *)
-        raise Todo
+        [B.TodoStmt tok]
 
     (* if(a){b}elseif(c){d}elseif(e){f}else{g} is translated in
      * if(a){b}else{if(c){d}else{if(e){f}{g}}} etc.
@@ -878,11 +882,14 @@ let rec (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
     | A.Use _ ->
          failwith "This Use should be lifted by another simplification phase"
 
-    |
-        (Declare (_, _, _)|Unset (_, _, _)|InlineHtml _|
-            StaticVars (_, _, _)|Globals (_, _, _)|Try (_, _, _, _))
+    | Declare (tok, _, _)
+    | Unset (tok, _, _)
+    | StaticVars (tok, _, _)
+    | Globals (tok, _, _)
+      -> [B.TodoStmt tok]
 
-      -> raise Todo
+    | Try (_, _, _, _)
+    | InlineHtml _
     | TypedDeclaration _ ->
         raise Todo
 

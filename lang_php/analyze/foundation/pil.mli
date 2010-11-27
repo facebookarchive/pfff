@@ -37,6 +37,7 @@ type lvalue = lvaluebis * type_info
    | ObjAccess of var * name
    | DynamicObjAccess of var * var
    | IndirectAccess of var * indirect
+   | TodoLvalue of Parse_info.info
 
 (* Enforce only very basic expressions. Assign and function calls are in
  * the 'instr' type below.

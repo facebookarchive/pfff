@@ -214,7 +214,9 @@ let (fixpoint:
 (* Node Visitors *)
 (*****************************************************************************)
 
-(* todo: should move this code in visitor_pil.ml *)
+(* TODO: should move this code in visitor_pil.ml and should use
+ * ocamltarzan and an iterative visitor instead.
+ *)
 
 (* Node id -> var name -> is on the lhs? -> acc -> acc' *)
 type 'a fold_fn = nodei -> string -> bool -> 'a -> 'a
@@ -238,7 +240,9 @@ fun fold_env lhs lvl acc -> match lvl with
   | ObjAccess (This _, _)
   | DynamicObjAccess (This _, _)
   | IndirectAccess (This _, _)
-  | VQualifier (_, _) -> acc (* TODO ? *)
+  | VQualifier (_, _) 
+  | TodoLvalue _
+    -> acc (* TODO ? *)
 
 let rec (expr_fold: 'a fold_env -> Pil.exprbis -> 'a -> 'a) =
 fun fold_env exp acc -> let rcr = expr_fold fold_env in
@@ -254,6 +258,7 @@ fun fold_env exp acc -> let rcr = expr_fold fold_env in
        rcr e2 (rcr e1 acc')) acc eps
 
   | (ClassConstant _|C _) -> acc (* TODO ? *)
+  | Pil.TodoExpr _ -> acc
 
 
 let (instr_fold: 'a fold_env -> Pil.instr -> 'a -> 'a) =
@@ -269,6 +274,7 @@ fun fold_env inst acc ->
                      | Pil.ArgRef (lv, _) -> lvf lv acc')
       acc args)
   | Pil.Eval (e, _) -> exf e acc
+  | TodoInstr _ -> acc
 
 let (node_fold: 'a fold_env -> F.node_kind -> 'a -> 'a) =
 fun fold_env node acc -> match node with
@@ -281,6 +287,7 @@ fun fold_env node acc -> match node with
 
   | (F.Join|F.Throw|F.TryHeader|F.Jump|F.FalseNode|F.TrueNode|F.Exit|F.Enter)
   | F.Return (None)
+  | F.TodoNode _
     ->
       acc (* TODO *)
 
@@ -295,6 +302,8 @@ let flow_fold_lv fold_fn vars acc flow = flow_fold
 let flow_fold_rv fold_fn vars acc flow = flow_fold
   (fun ndi dnm lhs acc' -> if not lhs then fold_fn ndi dnm acc' else acc')
     vars acc flow
+
+
 
 let new_node_array (f: F.flow) v =
   let arr = Array.make f#nb_nodes v in

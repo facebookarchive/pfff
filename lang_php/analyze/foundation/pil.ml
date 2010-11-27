@@ -140,6 +140,7 @@ type lvalue = lvaluebis * type_info
    (* $$x *)
    | IndirectAccess of var * indirect
    (* todo: VBraceXxx ?? *)
+   | TodoLvalue of Parse_info.info
 
 (* Note that the 'expr' type is side-effect free (as opposed to Ast_php.expr).
  *  

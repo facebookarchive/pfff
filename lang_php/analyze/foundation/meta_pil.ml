@@ -79,6 +79,8 @@ and vof_lvaluebis =
       let v1 = vof_indirect v1
       and v2 = vof_var v2
       in Ocaml.VSum (("IndirectAccess", [ v2; v1 ]))
+  | TodoLvalue v1 ->
+      let v1 = Parse_info.vof_info v1 in Ocaml.VSum (("TodoLvalue", [ v1 ]))
 and vof_expr (v1, v2) =
   let v1 = vof_exprbis v1
   and v2 = vof_type_info v2
@@ -128,6 +130,8 @@ and vof_exprbis =
       let v1 = vof_expr v1
       and v2 = vof_class_name_reference v2
       in Ocaml.VSum (("InstanceOf", [ v1; v2 ]))
+  | TodoExpr v1 ->
+      let v1 = Parse_info.vof_info v1 in Ocaml.VSum (("TodoExpr", [ v1 ]))
   
 let rec vof_instr =
   function
@@ -146,6 +150,8 @@ let rec vof_instr =
       and v3 = Ocaml.vof_list vof_argument v3
       in Ocaml.VSum (("Call", [ v1; v2; v3 ]))
   | Eval v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Eval", [ v1 ]))
+  | TodoInstr v1 ->
+      let v1 = Parse_info.vof_info v1 in Ocaml.VSum (("TodoInstr", [ v1 ]))
 and vof_assign_kind =
   function
   | AssignEq -> Ocaml.VSum (("AssignEq", []))
@@ -208,6 +214,8 @@ let rec vof_stmt =
       in Ocaml.VSum (("Try", [ v1; v2 ]))
   | Echo v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
+  | TodoStmt v1 ->
+      let v1 = Parse_info.vof_info v1 in Ocaml.VSum (("TodoStmt", [ v1 ]))
 and vof_catch v = Ocaml.vof_unit v
 
 let rec

@@ -66,6 +66,8 @@ type node = {
   | Echo of expr list
   | Instr of instr
 
+  | TodoNode of Parse_info.info option
+
   | Join
  (* with tarzan *)
 
@@ -108,6 +110,8 @@ let short_string_of_node node =
       "if " ^ PP.string_of_expr e
 
   | Join -> "<join>"
+
+  | TodoNode _ -> "<TodoStmt>"
 
   | (Throw|TryHeader|Jump)
     -> raise Todo

@@ -34,6 +34,8 @@ type node = {
   | Echo of expr list
   | Instr of instr
 
+  | TodoNode of Parse_info.info option
+
   | Join
 
 (* For now there is just one kind of edge. Later we may have more,
