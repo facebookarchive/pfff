@@ -5,6 +5,8 @@ module Ast = Ast_php
 
 open OUnit
 
+module Flag = Flag_parsing_php
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -114,6 +116,30 @@ let unittest =
       | _ ->
           assert_failure "not good AST"
     );
+
+    "parsing sgrep expressions" >:: (fun () ->
+      
+      let e = Parse_php.expr_of_string "debug_rlog(1)" in
+      assert_bool "should not generate an error" true;
+      let e = Parse_php.expr_of_string "debug_rlog(X)" in
+      assert_bool "should not generate an error" true;
+      let e = Parse_php.expr_of_string "debug_rlog(X, 0)" in
+      assert_bool "should not generate an error" true;
+
+      (try 
+        let e = 
+          Common.save_excursion Flag.show_parsing_error false (fun () ->
+            Parse_php.expr_of_string "debug_rlog(X, 0" 
+          ) 
+        in
+        assert_failure "should generate an error"
+      with exn ->
+        ()
+      );
+        
+
+    );
+
 
   (* todo: 
    *  - unparser is identity when do no modif
