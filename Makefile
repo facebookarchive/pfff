@@ -24,9 +24,11 @@ PROGS+=spatch
 PROGS+=stags
 PROGS+=ppp
 
-# without bdb pfff_db_light will be incomplete regarding PHP
+# note that without bdb, pfff_db_light will be incomplete regarding PHP
 PROGS+=pfff_db_light
 PROGS+=scheck
+
+PROGS+=pfff_test
 
 ifeq ($(FEATURE_BDB), 1)
 PROGS+=pfff_db
@@ -491,6 +493,20 @@ clean::
 	rm -f pfff_misc
 
 
+#------------------------------------------------------------------------------
+# pfff_test targets
+#------------------------------------------------------------------------------
+
+pfff_test: $(LIBS) main_test.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+
+pfff_test.opt: $(LIBS:.cma=.cmxa) main_test.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
+
+clean::
+	rm -f pfff_test
+
+
 ##############################################################################
 # Build documentation
 ##############################################################################
@@ -561,51 +577,47 @@ website:
 
 .PHONY:: tags visual db
 
+
 tags:
 	./stags -verbose -lang ml .
 db:
 	./pfff_db_light -verbose  -lang ml -o DB_LIGHT .
-
 visual:
 	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT -ocaml_filter  .
-visualopt:
-	./codemap.opt -profile -ss 2 \
-	   -with_info DB_LIGHT .
-
-
-visual_test: codemap
-	./codemap -verbose -profile -ss 1 -ft 1. \
-          -with_info DB_LIGHT -filter 'pad:ml' commons/
-
-visualhead:
-	./codemap -ss 1 -ft 0.5 -commitid HEAD
-
-#VCS related
-#test related
-#refactoring:
-# git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
-
+test:
+	./pfff_test all
 push:
 	git push origin master
-
 pull:
 	git pull
 	cd facebook; git pull
 
-DSRC=$(SRC)
+#refactoring:
+# git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
 
+DSRC=$(SRC)
 DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
 #DIRS=lang_php/parsing
 DSRC+=$(DIRS:=/*.ml)
 DSRC+=$(wildcard main_*.ml)
 
-dotall:
+archi:
 	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce 
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps
 	ps2pdf Fig_graph_ml.ps
 	rm -f Fig_graph_ml.ps
+
+
+visualopt:
+	./codemap.opt -profile -ss 2 \
+	   -with_info DB_LIGHT .
+visual_test: codemap
+	./codemap -verbose -profile -ss 1 -ft 1. \
+          -with_info DB_LIGHT -filter 'pad:ml' commons/
+visualhead:
+	./codemap -ss 1 -ft 0.5 -commitid HEAD
 
 
 ##############################################################################

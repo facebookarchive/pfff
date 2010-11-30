@@ -251,3 +251,5 @@ external/ocamlbdb/libcamlbdb.a
 /lang_csharp/parsing/parser_csharp.ml
 /lang_csharp/parsing/parser_csharp.mli
 /lang_csharp/parsing/parser_csharp.output
+/pfff_test
+/ocamldoc.out
