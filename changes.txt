@@ -12,10 +12,10 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 
 - static dead code layer
 - dynamic live code layer (using xhprof data)
-- TODO test coverage layer (using phpunit and xdebug data)
+- test coverage layer (using phpunit and xdebug data)
 - bugs layer
 - security layer
-- TODO distance_to_bottom layer
+- TODO cyclomatic, code_rank, distance_to_bottom layer
 - TODO age, activity, #authors layers
 
 *** visual grep

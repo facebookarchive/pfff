@@ -30,7 +30,8 @@ type layers_with_index = {
 }
 
 val build_index_of_layers: 
-  root:Common.dirname -> (layer * bool) list -> 
+  root:Common.dirname -> 
+  (layer * bool) list -> 
   layers_with_index
 
 (* save either in a (readable) json format or (fast) marshalled form 

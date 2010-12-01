@@ -85,6 +85,7 @@ let all_actions () =
   Database_php_build.actions() ++
   (* Layer_checker is in main_scheck.ml *)
   Layer_deadcode_php.actions () ++
+  Layer_coverage_php.actions () ++
   Layer_xhprof.actions () ++
   []
 

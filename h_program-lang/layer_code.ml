@@ -24,7 +24,7 @@ open Common
  * earth layers (e.g. the wikipedia layer, panoramio layer, etc), but
  * for code. One could have a deadcode layer, a test coverage layer,
  * and then display those layers or not on an existing codebase in 
- * pfff_visual. The layer is basically some mapping from files to a 
+ * codemap. The layer is basically some mapping from files to a 
  * set of lines with a specific color code. 
  * 
  * 
@@ -35,14 +35,14 @@ open Common
  *    could have a set of properties like unit_test, or dead) but this 
  *    would force people to build their own db to visualize the results. 
  *    One could compute this information in database_light_xxx.ml, but this 
- *    will augment the size of the light db slowing down the pfff_visual launch
+ *    will augment the size of the light db slowing down the codemap launch
  *    even when the people don't use the layers. So it's more flexible to just
  *    separate layer_code.ml from database_code.ml and have multiple persistent
  *    files for each information. Also it's quite convenient to have
  *    utilities like sgrep to be easily extendable to transform a query result
  *    into a layer.
  * 
- *  - How to represent a layer at the macro and micro level in pfff_visual ?
+ *  - How to represent a layer at the macro and micro level in codemap ?
  * 
  *    At the micro-level one has just to display the line with the
  *    requested color. At the macro-level have to either do a majority
@@ -131,7 +131,7 @@ open Common
  *    kind with the current scheme.
  * 
  *  - have a macro_level_composing_scheme: Majority | Mixed
- *    that is then interpreted in pfff_visual instead of forcing
+ *    that is then interpreted in codemap instead of forcing
  *    the layer creator to specific how to show the micro_level
  *    data at the macro_level.
  *)
@@ -144,7 +144,7 @@ type layer = {
 
    micro_level: (int (* line *) * kind) list;
 
-   (* The list can be empty in which case pfff_visual can use
+   (* The list can be empty in which case codemap can use
     * the micro_level information and show a mix of colors.
     * 
     * The list can have just one element too and have a kind
@@ -163,7 +163,7 @@ type layer = {
 
 
 (* The filenames in the index are in absolute path format. That way they
- * can be used from pfff_visual in hashtbl and compared to the
+ * can be used from codemap in hashtbl and compared to the
  * current file.
  *)
 type layers_with_index = {
