@@ -226,8 +226,6 @@ let sgrep_extra_actions () = [
 
 let all_actions () = 
  sgrep_extra_actions()++
- Test_parsing_php.actions()++
- Test_program_lang.actions()++
  []
 
 let options () = 
@@ -251,7 +249,7 @@ let options () =
     "-verbose", Arg.Set verbose, 
     " ";
   ] ++
-  Flag_parsing_php.cmdline_flags_pp () ++
+  (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++

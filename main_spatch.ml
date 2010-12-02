@@ -460,7 +460,6 @@ let spatch_extra_actions () = [
 
 let all_actions () = 
  spatch_extra_actions()++
- Test_parsing_php.actions()++
  []
 
 let options () = 

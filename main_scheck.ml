@@ -364,8 +364,6 @@ let scheck_extra_actions () = [
 
 let all_actions () =
  scheck_extra_actions()++
- Test_parsing_php.actions()++
- Test_analyze_php.actions()++
  []
 
 let options () =

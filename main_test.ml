@@ -98,6 +98,8 @@ let pfff_extra_actions () = [
 
 let all_actions () = 
   pfff_extra_actions() ++
+ Test_parsing_php.actions()++
+ Test_analyze_php.actions()++
   []
 
 let options () = 
