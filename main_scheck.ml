@@ -292,10 +292,11 @@ let test () =
   let test_files = [
     "tests/php/scheck/variables.php";
     "tests/php/scheck/cfg.php";
+    "tests/php/scheck/functions.php";
   ] 
   in
-  let test_files = test_files +> List.map (fun s -> 
-    Filename.concat Config.path s) in
+  let test_files = 
+    test_files +> List.map (fun s -> Filename.concat Config.path s) in
   
   let (expected_errors :(Common.filename * int (* line *)) list) =
     test_files +> List.map (fun file ->
@@ -315,10 +316,24 @@ let test () =
 
   Error_php._errors := [];
 
-  (* todo *)
-  let find_entity = None in
+  let prj = Database_php.Project ("/", None) in
+  let prj = Database_php.normalize_project prj in 
+  let db = 
+    Common.save_excursion Flag_analyze_php.verbose_database !verbose 
+      (fun()->
+        Database_php_build.create_db
+          ~db_support:(Database_php.Mem)
+          ~phase:2 (* TODO ? *)
+          ~files:(Some test_files )
+          ~verbose_stats:false
+          prj 
+      )
+  in
+  let find_entity = Some (Database_php_build.build_entity_finder db) in
 
+  (* run the bugs finders *)
   test_files +> List.iter (Check_all_php.check_file ~find_entity);
+
   !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e));
   
   let (actual_errors: (Common.filename * int (* line *)) list) = 

@@ -48,8 +48,8 @@ type error =
   | UnableToDetermineDef of Ast_php.name
 
   (* call sites *)
-  | TooManyArguments   of (Parse_info.parse_info * name (* def *))
-  | NotEnoughArguments of (Parse_info.parse_info * name (* def *))
+  | TooManyArguments   of (Ast_php.info * name (* def *))
+  | NotEnoughArguments of (Ast_php.info * name (* def *))
   | TooManyArguments2 of Ast_php.name * Ast_php.func_def
   | TooFewArguments2  of Ast_php.name * Ast_php.func_def
   | WrongKeywordArgument of Ast_php.dname * Ast_php.expr * Ast_php.name *
@@ -83,12 +83,13 @@ let string_of_error error =
       info.Parse_info.file info.Parse_info.line info.Parse_info.column
   in
   match error with
-  | TooManyArguments (info, name) ->
-      (* TODO use name  ? *)
+  | TooManyArguments (info, defname) ->
+      let info = Ast.parse_info_of_info info in
       (spos info ^ "CHECK: too many arguments");
-  | NotEnoughArguments (info, name) ->
-      (* TODO use name  ? *)
+  | NotEnoughArguments (info, defname) ->
+      let info = Ast.parse_info_of_info info in
       (spos info ^ "CHECK: not enough arguments");
+
   | UseOfUndefinedVariable (dname) ->
       let s = Ast.dname dname in
       let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
@@ -167,10 +168,10 @@ let info_of_error err =
   | TooFewArguments2  (name, _)
       -> Some (Ast.info_of_name name)
 
-  | TooManyArguments  (parse_info, name (* def *)) ->
-      raise Todo
-  | NotEnoughArguments (parse_info, name (* def *)) ->
-      raise Todo
+  | TooManyArguments  (call_info, defname) ->
+      Some call_info
+  | NotEnoughArguments (call_info, defname) ->
+      Some call_info
   | WrongKeywordArgument (dname,  expr, name, param, fdef) ->
       raise Todo
 

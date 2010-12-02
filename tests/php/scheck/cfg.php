@@ -1,6 +1,6 @@
 <?php
 
-function foo() {
+function cfg_foo() {
   
   $a = 1;
   echo $a;
@@ -9,14 +9,14 @@ function foo() {
   echo $a;
 }
 
-function foo2() {
+function cfg_foo2() {
   // we have a few code like this. It's an error but a less important one
   throw new Exception();
   //ERROR: dead statement
   return false;
 }
 
-function foo2() {
+function cfg_foo3() {
   // we have a few code like this. It's an error but a less important one
   switch(1) {
     case 1:
@@ -28,7 +28,7 @@ function foo2() {
   }
 }
 
-function foo3() {
+function cfg_foo4() {
   switch(1) {
     case 1:
       return 2;
@@ -39,12 +39,12 @@ function foo3() {
   echo 1;
 }
 
-function foo4() {
+function cfg_foo5() {
   //ERROR: less important too
   return 1;;
 }
 
-function foo5() {
+function cfg_foo6() {
   return null;
   
   //ERROR: less important; people abuse return as some kind of #if 0

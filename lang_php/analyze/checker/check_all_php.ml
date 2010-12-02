@@ -38,6 +38,11 @@ let check_file ?find_entity file =
   Check_dfg_php.check_program ?find_entity ast;
   *)
 
+  (* work only when find_entity is not None; requires global analysis *)
+  if find_entity <> None then begin
+    Check_functions_php.check_program ?find_entity ast;
+  end;
+
   (* TODO:
      Checking_php.check_program ast;
      Check_scope_use_php.check_program ast;

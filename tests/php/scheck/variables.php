@@ -5,10 +5,10 @@
 // -------------------------------------------------------------------------
 
 //ERROR: unused param
-function bad_foo($a) {
+function vars_bad_foo($a) {
 
   $ok = 1;
-  bar($ok);
+  vars_bar($ok);
 
   //ERROR: unused variable
   $c = 1;
@@ -17,7 +17,7 @@ function bad_foo($a) {
   echo $b;
 
   //ERROR: use of undefined variable
-  bar($d);
+  vars_bar($d);
 
   //ERROR: unused variable. Yes it's used by unset but this should not count
   $memory = 1;
@@ -25,12 +25,12 @@ function bad_foo($a) {
 
   $vars = array();
   foreach($vars as $var) {
-    bar($var);
+    vars_bar($var);
     //ERROR: unused variable, should be declared outide because it's used later
     $nested_var = 1;
   }
   //ERROR: use of undefined variable
-  bar($nested_var);
+  vars_bar($nested_var);
 
   //ERROR: unused variable
   $match = array();
@@ -41,10 +41,10 @@ function bad_foo($a) {
   }
 }
 
-class A {
+class vars_A {
   public function foo($a) {
     //ERROR: unused variable, because of the typo below
-    $im_service = foo($a);
+    $im_service = vars_foo($a);
     //ERROR: typo
     if ($im_servce === false) {
       return 1;
@@ -118,14 +118,14 @@ function analysis4bis2() {
 // -------------------------------------------------------------------------
 // My analysis used to have a few false positives because my code was buggy.
 
-function ok_keyword_arguments() {
+function vars_ok_keyword_arguments() {
   // no error for now even if $key appeared as unused. PHP has no
   // keyword arguments so people use such assignation as a kind of
   // comment
-  foo($key = 1);
+  vars_foo($key = 1);
 }
 
-function ok1() {
+function vars_ok1() {
   $a = 1;
   if (isset($a)) {
     return $a;
@@ -133,7 +133,7 @@ function ok1() {
   return 2;
 }
 
-function ok2() {
+function vars_ok2() {
   $db_scb_key = 1;
   if (!isset(A::$dbGetters[$db_scb_key])) {
     return 2;
@@ -142,15 +142,15 @@ function ok2() {
 
 
 // keyword arguments should be considered even when deeply nested ... hmmm
-function ok3() {
-  foo(foo($key = 1));
+function vars_ok3() {
+  vars_foo(vars_foo($key = 1));
 }
 
 // -------------------------------------------------------------------------
 // TODO
 // -------------------------------------------------------------------------
 
-function bad_compact() {
+function vars_bad_compact() {
 
   // this should not generate a warning for now. At some point
   // we want to remove all those ugly compact() but before that, no error.

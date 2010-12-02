@@ -1,6 +1,6 @@
 <?php
 
-function foo() {
+function foo_bailout() {
   $a = "foo";
   $foo = 2;
 
@@ -9,7 +9,7 @@ function foo() {
 
 $glob = 1;
 
-function foo2() {
+function foo2_bailout() {
   $s = "glob";
   global $$s;
 
