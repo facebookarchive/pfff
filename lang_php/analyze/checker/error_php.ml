@@ -228,6 +228,7 @@ let rank_errors errs =
         | _ -> 15
         )
     | CfgError _ -> 11
+    | UseOfUndefinedMember _ -> 5
     | _ -> 0
   ) +> Common.sort_by_val_highfirst +> Common.map fst
 
