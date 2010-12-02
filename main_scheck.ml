@@ -1,4 +1,3 @@
-
 (*
  * The author disclaims copyright to this source code.  In place of
  * a legal notice, here is a blessing:
@@ -30,29 +29,32 @@ module S = Scope_code
  * 'scheck' can also leverage more expensive global analysis to find more bugs.
  * Doing so requires a PHP code database which is usually very expensive 
  * to build (see pfff_db_heavy) and very large disk-wise. Fortunately one can 
- * now build a light database (see pfff_db) and use this as a cache.
- * 
- * One could also use the heavy database but this requires to have
- * the program linked with Berkeley DB, adding some dependencies to 
- * the user of the program (and is not very multi-user friendly for now).
- * Fortunately this db can now be built in memory, on the fly.
- * Thanks to the include_require_php.ml analysis, we can
+ * now build this database in memory, on the fly. Indeed, thanks
+ * to the include_require_php.ml analysis, we can now
  * build only the db for the files that matters, cutting significantly
  * the time to build the db (going down from 40 000 files to about 1000
  * files on average on facebook code). In a way it is similar
  * to what gcc does when it calls 'cpp' to get the full information for
  * a file. 
  * 
+ * 'scheck' can also leverage a light database (see pfff_db) and 
+ * use this as a cache.
+ * 
+ * 'scheck' could also use the heavy database but this requires to have
+ * the program linked with Berkeley DB, adding some dependencies to 
+ * the user of the program (and is not very multi-user friendly for now).
+ * See main_scheck_heavy.ml for such a program.
+ * 
  * Note that scheck is mostly for generic bugs (that sometimes
  * requires global analysis). For API-specific bugs, you can use 'sgrep'.
  * 
  * modes:
  *  - local analysis
- *  - TODO leverage global analysis computed previously by pfff_db_light
- *  - TODO perform global analysis "lazily" by building db on-the-fly
+ *  - perform global analysis "lazily" by building db on-the-fly
  *    of the relevant included files (configurable via a -depth_limit flag)
- *  - leverage global analysis computed by pfff_db_heavy, see 
- *    main_scheck_heavy.ml
+ *  - TODO leverage global analysis computed previously by pfff_db_light
+ *  - leverage global analysis computed by pfff_db_heavy, 
+ *    see main_scheck_heavy.ml
  * 
  * current checks:
  *   - variable related (use of undeclared variable, unused variable, etc)
@@ -96,10 +98,20 @@ let verbose = ref false
 (* action mode *)
 let action = ref ""
 
-let rank = ref true
+(* In strict mode, we are more aggressive regarding scope like in
+ * JsLint. This is a copy of the same variable in Error_php.ml
+ *)
+let strict_scope = ref false 
 
-(* todo: depth_limit is used to stop the expensive recursive includes process.
+(* running the heavy analysis processing for instance the included files *)
+let heavy = ref false
+
+(* depth_limit is used to stop the expensive recursive includes process.
  *
+ * I put 5 because it's fast enough at depth 5, and 
+ * I think it's good enough as it is probably bad for a file to use
+ * something that is distant by more than 5 includes. 
+ * 
  * todo: one issue is that some code like facebook uses special 
  *  require/include directives that include_require_php.ml is not aware of.
  *  Maybe we should have a unfacebookizer preprocessor that removes
@@ -108,14 +120,18 @@ let rank = ref true
  *  special include_require_php.ml hooks. Another alternative is to use
  *  the light_db.json cache.
  *)
+let depth_limit = ref (Some 5: int option)
 
-(* In strict mode, we are more aggressive regarding scope like in
- * JsLint.
- *
- * is also in Error_php.ml
- *)
-let strict_scope = ref false 
+(* let php_stdlib = 
+    ref (Filename.concat Config.path "/facebook/data/php_stdlib")
+*)
+let cache_parse = ref true
 
+
+(* for ranking errors *)
+let rank = ref true
+
+(* for codemap or layer_stat *)
 let layer_file = ref (None: filename option)
 
 (*****************************************************************************)
@@ -139,16 +155,70 @@ let main_action xs =
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
+  Error_php.strict := !strict_scope;
+
+  Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
   files +> List.iter (fun file ->
     try 
       pr2_dbg (spf "processing: %s" file);
-      (* TODO *)
-      let find_entity = None in
-      
-      Check_all_php.check_file ~find_entity file;
+
+      if not !heavy then begin
+        let find_entity = None in
+        Check_all_php.check_file ~find_entity file
+      end else begin
+
+        (* Build the database of information. Some checks needs to have
+         * a global view of the code, for instance to know what
+         * are the sets of valid protected variable that can be used
+         * in a child class.
+         * 
+         * todo: can probably optimize this later. For instance lazy
+         * loading of files, stop when are in flib as modules are
+         * not transitive.
+         *)
+
+        (* todo: could infer PHPROOT at least ? just look at
+         * the include in the file and see where the files are.
+         *)
+        let env = 
+          Env_php.mk_env (Common.dirname file)
+        in
+        let root = "/" in (* todo ? *)
+
+        let all_files = 
+          Include_require_php.recursive_included_files_of_file 
+            ~verbose:!verbose 
+            ~depth_limit:!depth_limit
+            env file
+        in
+        (* adding builtins *)
+        let builtin_files =
+          []
+          (*TODO Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib] *)
+        in
+        
+        let all_files = builtin_files ++ all_files in
+        let prj = Database_php.Project (root, None) in
+        let prj = Database_php.normalize_project prj in 
+    
+        let db = 
+          Common.save_excursion Flag_analyze_php.verbose_database !verbose 
+           (fun()->
+            Database_php_build.create_db
+              ~db_support:(Database_php.Mem)
+              ~phase:2 (* TODO ? *)
+              ~files:(Some all_files)
+              ~verbose_stats:false
+              prj 
+          )
+        in
+        let find_entity = Some (Database_php_build.build_entity_finder db) in
+        Check_all_php.check_file ~find_entity file
+      end
     with exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
-                              (Common.string_of_exn exn)) errors;
+                       (Common.string_of_exn exn)) errors;
+  );
   );
 
   let errs = !Error_php._errors +> List.rev in
@@ -302,10 +372,18 @@ let options () =
   [
     "-verbose", Arg.Set verbose,
     " ";
+
+    "-heavy", Arg.Set heavy,
+    " process included files";
+    "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
+    " limit the number of processed includes";
+    "-no_caching", Arg.Clear cache_parse, 
+    " don't cache parsed ASTs";
+
     "-strict", Arg.Set strict_scope,
     " emulate block scope instead of function scope";
-     "-no_scrict_scope", Arg.Clear strict_scope, 
-     " use function scope (default)";
+    "-no_scrict_scope", Arg.Clear strict_scope, 
+    " use function scope (default)";
 
     "-no_rank", Arg.Clear rank,
     " ";
