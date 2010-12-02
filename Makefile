@@ -24,14 +24,14 @@ PROGS+=spatch
 PROGS+=stags
 PROGS+=ppp
 
-# note that without bdb, pfff_db_light will be incomplete regarding PHP
-PROGS+=pfff_db_light
+# note that without bdb, pfff_db will be incomplete regarding PHP
+PROGS+=pfff_db
 PROGS+=scheck
 
 PROGS+=pfff_test
 
 ifeq ($(FEATURE_BDB), 1)
-PROGS+=pfff_db
+PROGS+=pfff_db_heavy
 endif
 
 ifeq ($(FEATURE_VISUAL), 1)
@@ -59,7 +59,7 @@ OPTPROGS= $(PROGS:=.opt)
 #  endif
 
 
-# cf also below for target pfff_db
+# cf also below for target pfff_db_heavy
 ifeq ($(FEATURE_BDB), 1)
 BDBDIR=external/ocamlbdb
 BDBCMD= $(MAKE) all -C $(BDBDIR) && $(MAKE) bdb -C commons
@@ -426,17 +426,17 @@ clean::
 	rm -f pfff_db
 
 #------------------------------------------------------------------------------
-# pfff_db_light targets
+# pfff_db_heavy targets
 #------------------------------------------------------------------------------
 
-pfff_db_light: $(LIBS) main_db_light.cmo 
+pfff_db_heavy: $(LIBS) main_db_heavy.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 
-pfff_db_light.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db_light.cmx
+pfff_db_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db_heavy.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
 
 clean:: 
-	rm -f pfff_db_light
+	rm -f pfff_db_heavy
 
 #------------------------------------------------------------------------------
 # OBSOLETE: pfff_browser target
@@ -581,7 +581,7 @@ website:
 tags:
 	./stags -verbose -lang ml .
 db:
-	./pfff_db_light -verbose  -lang ml -o DB_LIGHT .
+	./pfff_db -verbose  -lang ml -o DB_LIGHT .
 visual:
 	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT -ocaml_filter  .

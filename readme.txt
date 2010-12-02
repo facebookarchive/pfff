@@ -18,17 +18,19 @@ more documentation on how to use or extend pfff.
 
 pfff is also made of few tools:
  - pfff, which allows to test the different parsers on a single file
- - pfff_db_light, which does some global analysis on a set of source files and
-   store the data in a marshalled form in a file somewhere (e.g. /tmp/light_db)
- - pfff_db, which does some heavy language specific global analysis on a set
-   of source files and store the data in a database somewhere 
-   (e.g. /tmp/pfff_db)
+ - pfff_db, which does some global analysis on a set of source files and
+   store the data in a marshalled form in a file somewhere (e.g. /tmp/db.json)
+ - pfff_db_heavy, which does some heavy language specific global analysis 
+   on a set of source files and store the data in a database somewhere
+   (e.g. /tmp/pfff_db/)
  - codemap, which is a gtk and cairo based source code 
    visualizer/navigator/searcher leveraging
-   the information computed previously by pfff_db_light
+   the information computed previously by pfff_db
  - sgrep, a syntactical grep
  - spatch, a syntacitcal patch
  - scheck, a bug finder
+ - scheck_heavy, a bug finder leveraging the information computed previously
+   by pfff_db_heavy
  - pfff_tags, an Emacs tag generator
 
 For more information, look at the pfff wiki here:
@@ -46,34 +48,34 @@ or
 
 You can also look at ./pfff --help
 
-Usage for pfff_db_light:
+Usage for pfff_db:
 -------------------
 
-   $ ./pfff_db_light -lang ml -o /tmp/light_db.db ~/pfff
+   $ ./pfff_db -lang ml -o /tmp/pfff.db ~/pfff
 
 to analyze all the .ml and .mli files under ~/pfff and store metadata
-information (the database) in /tmp/light_db.db
+information (the database) in /tmp/pfff.db
 
 Usage for codemap:
 ------------------------
 
-  $ ./codemap -with_info /tmp/light_db.db ~/pfff
+  $ ./codemap -with_info /tmp/pfff.db ~/pfff
 
 This should launch a gtk-based GUI that allows you to visualize
 source code and perform some code search.
 
 
 
-Usage for pfff_db:
+Usage for pfff_db_heavy:
 -------------------
 
-   $ ./pfff_db -lang php -metapath /tmp/pfff_db ~/www/
+   $ ./pfff_db_heavy -lang php -metapath /tmp/pfff_db/ ~/www/
 
 to analyze all the .php and .phpt files under ~/www and store metadata
-information (the database) in /tmp/pfff_db. It may takes some time,
+information (the database) in /tmp/pfff_db/. It may takes some time,
 for instance 20 minutes for a really big PHP codebase.
 
-Once this is done you can use some of the flags of pfff_db to
+Once this is done you can use some of the flags of pfff_db_heavy to
 do some analysis as in:
 
-  $ ./pfff_db -deadcode_analysis /tmp/pfff_db
+  $ ./pfff_db_heavy -deadcode_analysis /tmp/pfff_db/
