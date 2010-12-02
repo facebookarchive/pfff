@@ -156,9 +156,14 @@ let highlight_funcall_simple ~tag ~hentities f args info =
           (* args by ref *)
           ps +> List.iter (function
           | Db.TakeArgNByRef i ->
-              let a = List.nth args i in
-              let ii = Lib_parsing_php.ii_of_any (Argument a) in
-              ii +> List.iter (fun info -> tag info CallByRef);
+              (try 
+                let a = List.nth args i in
+                let ii = Lib_parsing_php.ii_of_any (Argument a) in
+                ii +> List.iter (fun info -> tag info CallByRef)
+              with exn ->
+                pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
+              )
+                
           | Db.ContainDynamicCall _ -> ()
           | _ -> raise Todo
           );
