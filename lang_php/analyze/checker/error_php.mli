@@ -35,3 +35,6 @@ val warning: error -> unit
 val report_error : error -> unit
 val report_all_errors: unit -> unit
 
+val rank_errors: error list -> error list
+
+val show_10_most_recurring_unused_variable_names: unit -> unit

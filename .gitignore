@@ -253,3 +253,5 @@ external/ocamlbdb/libcamlbdb.a
 /lang_csharp/parsing/parser_csharp.output
 /pfff_test
 /ocamldoc.out
+/pfff_db_heavy
+/scheck_heavy

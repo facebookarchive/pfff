@@ -32,6 +32,7 @@ PROGS+=pfff_test
 
 ifeq ($(FEATURE_BDB), 1)
 PROGS+=pfff_db_heavy
+PROGS+=scheck_heavy
 endif
 
 ifeq ($(FEATURE_VISUAL), 1)
@@ -398,6 +399,19 @@ scheck.opt: $(LIBS:.cma=.cmxa) main_scheck.cmx
 
 clean::
 	rm -f scheck
+
+#------------------------------------------------------------------------------
+# scheck_heavy targets
+#------------------------------------------------------------------------------
+
+scheck_heavy: $(LIBS) main_scheck_heavy.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+
+scheck_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_scheck_heavy.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
+
+clean:: 
+	rm -f scheck_heavy
 
 #------------------------------------------------------------------------------
 # ppp targets

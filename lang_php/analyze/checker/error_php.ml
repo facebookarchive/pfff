@@ -209,3 +209,44 @@ let warning err =
 
 let report_all_errors () = 
   !_errors |> List.rev |> List.iter report_error
+
+
+(*****************************************************************************)
+(* Ranking bis *)
+(*****************************************************************************)
+
+(* ranking errors, inspired by Engler slides *)
+let rank_errors errs =
+  errs +> List.map (fun x ->
+    x,
+    match x with
+    | UnusedVariable (_, Scope_code.Local) -> 10
+    | CfgError (Controlflow_build_php.DeadCode (_, node_kind)) ->
+        (match node_kind with
+        | Controlflow_php.Break -> 3
+        | Controlflow_php.Return -> 3
+        | _ -> 15
+        )
+    | CfgError _ -> 11
+    | _ -> 0
+  ) +> Common.sort_by_val_highfirst +> Common.map fst
+
+
+let show_10_most_recurring_unused_variable_names () =
+
+  (* most recurring probably false positif *)
+  let hcount_str = Common.hash_with_default (fun() -> 0) in
+
+  !_errors +> List.iter (fun err ->
+    match err with
+    | UnusedVariable (dname, scope) ->
+        let s = Ast.dname dname in
+        hcount_str#update s (fun old -> old+1);
+    | _ -> ()
+  );
+  pr2 "top 10 most recurring unused variable names";
+  hcount_str#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10
+   +> List.iter (fun (s, cnt) ->
+        pr2 (spf " %s -> %d" s cnt)
+      );
+  ()

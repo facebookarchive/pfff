@@ -29,8 +29,8 @@ module S = Scope_code
  * 
  * 'scheck' can also leverage more expensive global analysis to find more bugs.
  * Doing so requires a PHP code database which is usually very expensive 
- * to build (see pfff_db) and very large disk-wise. Fortunately one can 
- * now build a light database (see pfff_db_light) and use this as a cache.
+ * to build (see pfff_db_heavy) and very large disk-wise. Fortunately one can 
+ * now build a light database (see pfff_db) and use this as a cache.
  * 
  * One could also use the heavy database but this requires to have
  * the program linked with Berkeley DB, adding some dependencies to 
@@ -51,12 +51,13 @@ module S = Scope_code
  *  - TODO leverage global analysis computed previously by pfff_db_light
  *  - TODO perform global analysis "lazily" by building db on-the-fly
  *    of the relevant included files (configurable via a -depth_limit flag)
- *  - still? leverage global analysis computed by pfff_db
+ *  - leverage global analysis computed by pfff_db_heavy, see 
+ *    main_scheck_heavy.ml
  * 
  * current checks:
+ *   - variable related (use of undeclared variable, unused variable, etc)
  *   - TODO use/def of entities (e.g. use of undefined class/function/constant
  *     a la checkModule)
- *   - TODO variable related (use of undeclared variable, unused variable, etc)
  *   - TODO function call related (wrong number of arguments, bad keyword
  *     arguments, etc)
  *   - TODO class related (use of undefined member)
@@ -121,42 +122,6 @@ let layer_file = ref (None: filename option)
 (* Helpers *)
 (*****************************************************************************)
 
-(* ranking errors, inspired by Engler slides *)
-let rank_errors errs =
-  errs +> List.map (fun x ->
-    x,
-    match x with
-    | Error_php.UnusedVariable (_, S.Local) -> 10
-    | Error_php.CfgError (Controlflow_build_php.DeadCode (_, node_kind)) ->
-        (match node_kind with
-        | Controlflow_php.Break -> 3
-        | Controlflow_php.Return -> 3
-        | _ -> 15
-        )
-    | Error_php.CfgError _ -> 11
-    | _ -> 0
-  ) +> Common.sort_by_val_highfirst +> Common.map fst
-
-
-let show_10_most_recurssing_unused_variable_names () =
-
-  (* most recurring probably false positif *)
-  let hcount_str = Common.hash_with_default (fun() -> 0) in
-
-  !Error_php._errors +> List.iter (fun err ->
-    match err with
-    | Error_php.UnusedVariable (dname, scope) ->
-        let s = Ast.dname dname in
-        hcount_str#update s (fun old -> old+1);
-    | _ -> ()
-  );
-  pr2 "top 10 most recurring unused variable names";
-  hcount_str#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10
-   +> List.iter (fun (s, cnt) ->
-        pr2 (spf " %s -> %d" s cnt)
-      );
-  ()
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -187,10 +152,14 @@ let main_action xs =
   );
 
   let errs = !Error_php._errors +> List.rev in
-  let errs = if !rank then rank_errors errs +> Common.take_safe 20 else errs in
+  let errs = 
+    if !rank 
+    then Error_php.rank_errors errs +> Common.take_safe 20 
+    else errs 
+  in
 
   errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
-  show_10_most_recurssing_unused_variable_names ();
+  Error_php.show_10_most_recurring_unused_variable_names ();
   pr2 (spf "total errors = %d" (List.length !Error_php._errors));
 
   pr2 "";
