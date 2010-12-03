@@ -374,19 +374,12 @@ let vars_passed_by_ref_in_any ~find_entity =
     V.klvalue = (fun (k, vx) x ->
       match Ast.untype x with
       | FunCallSimple (name, args) ->
-          let s = Ast.name name in
-          find_entity +> Common.do_option (fun find_entity ->
-           (try 
-             let id_ast = find_entity (Entity_php.Function, s) in
-            (match id_ast with
+          E.find_entity ~find_entity (Entity_php.Function, name)
+          +> Common.do_option (fun id_ast ->
+            match id_ast with
             | Ast_entity_php.Function def ->
                 params_vs_args def.f_params (Some args)
             | _ -> raise Impossible
-            )
-            with Not_found ->
-              if !Flag.show_analyze_error
-              then pr2_once (spf "Could not find def for: %s" s);
-           )
           );
           k x
       | FunCallVar _ 
@@ -403,30 +396,24 @@ let vars_passed_by_ref_in_any ~find_entity =
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic name ->
-              let s = Ast.name name in
+              
+              E.find_entity ~find_entity (Entity_php.Class, name)
+              +> Common.do_option (fun id_ast ->
+                match id_ast with
+                | Ast_entity_php.Class def ->
+                    (try 
+                        let constructor_def = 
+                          Class_php.get_constructor def in
+                        params_vs_args constructor_def.m_params args
 
-              find_entity +> Common.do_option (fun find_entity ->
-                (try 
-                  let id_ast = find_entity (Entity_php.Class, s) in
-                  (match id_ast with
-                  | Ast_entity_php.Class def ->
-                      
-                      (try 
-                          let constructor_def = 
-                            Class_php.get_constructor def in
-                          params_vs_args constructor_def.m_params args
-                        with Not_found ->
-                          if !Flag.show_analyze_error
-                          then  
-                          pr2_once (spf "Could not find constructor for: %s" s);
-                      );
+                     with Not_found ->
+                       if !Flag.show_analyze_error
+                       then pr2_once (spf "Could not find constructor for: %s" 
+                                         (Ast.name name));
+                    );
 
-                  | _ -> raise Impossible
-                  )
-                with Not_found ->
-                  if !Flag.show_analyze_error
-                  then pr2_once (spf "Could not find class def for: %s" s);
-                ));
+                | _ -> raise Impossible
+              );
               k x
 
           | ClassNameRefDynamic _ ->

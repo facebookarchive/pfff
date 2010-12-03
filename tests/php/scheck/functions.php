@@ -40,15 +40,24 @@ function func_foo3() {
   unknown_foo3();
 }
 
-function func_dup() {
+function func_dup($a) {
+  echo $a;
 }
 
-//function func_dup() {
-//}
+function func_dup($a) {
+  echo $a;
+}
 
 
 function func_foo4() {
-  func_dup();
+  //ERROR: multiply defined entity
+  func_dup(1);
+
+  func_dup(1);
+
+  func_dup(1,2);
+  func_dup(1,2);
+
 }
 
 

@@ -478,7 +478,7 @@ let options () =
   Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
-    Common.pr2 (spf "sgrep_php version: %s" Config.version);
+    Common.pr2 (spf "spatch_php version: %s" Config.version);
     exit 0;
   ), 
     "  guess what";
