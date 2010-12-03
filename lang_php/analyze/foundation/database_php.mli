@@ -169,9 +169,6 @@ exception Error of error
  * 
  * note: create_db is in database_php_build.mli 
  *)
-exception DatabaseAlreadyLocked
-val acquire_lock: Common.dirname -> unit
-val release_lock: Common.dirname -> unit
 
 val check_db: database -> unit
 val open_db_mem: project -> database

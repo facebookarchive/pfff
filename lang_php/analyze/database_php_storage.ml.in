@@ -61,6 +61,26 @@ let create_bdb_string metapath dbname env =
 
 
 (*****************************************************************************)
+(* Locking wrappers *)
+(*****************************************************************************)
+
+(* Berkeley DB and especially GDBM don't like when there is a concurrent
+ * access to the same database. 
+ * todo: could move in h_program-lang/ ?
+ *)
+
+exception DatabaseAlreadyLocked
+
+let lockfile metapath = Filename.concat metapath "lockfile.lock" 
+
+let acquire_lock metapath = 
+  try Common.acquire_file_lock (lockfile metapath)
+  with Common.FileAlreadyLocked -> raise DatabaseAlreadyLocked
+
+let release_lock metapath = 
+  Common.release_file_lock (lockfile metapath)
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -357,6 +377,8 @@ let open_db metapath =
         *)
 
         Bdb.Env.close env [];
+
+        release_lock metapath;
 
       );
     }

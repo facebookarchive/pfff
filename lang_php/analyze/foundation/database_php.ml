@@ -335,26 +335,6 @@ let string_of_extra_id_info x =
 
 
 (*****************************************************************************)
-(* Locking wrappers *)
-(*****************************************************************************)
-
-(* Berkeley DB and especially GDBM don't like when there is a concurrent
- * access to the same database. 
- * todo: could move in h_program-lang/ ?
- *)
-
-exception DatabaseAlreadyLocked
-
-let lockfile metapath = Filename.concat metapath "lockfile.lock" 
-
-let acquire_lock metapath = 
-  try Common.acquire_file_lock (lockfile metapath)
-  with Common.FileAlreadyLocked -> raise DatabaseAlreadyLocked
-
-let release_lock metapath = 
-  Common.release_file_lock (lockfile metapath)
-
-(*****************************************************************************)
 (* Extra *)
 (*****************************************************************************)
 
@@ -1116,12 +1096,8 @@ let open_db_mem prj =
 
 
 (*---------------------------------------------------------------------------*)
-let close_db db = 
-  db.close_hook ();
-  match db.db_support with
-  | Disk metapath ->
-      release_lock metapath;
-  | Mem -> ()
+let close_db db =
+  db.close_hook ()
 
 
 (*---------------------------------------------------------------------------*)

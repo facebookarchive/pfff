@@ -87,6 +87,7 @@ let resolve_class_name qu in_class =
 
 let no_check_when_contain = [
   "func_num_args";
+  "func_get_args";
 ]
 
 let contain_func_name_args_like any =
@@ -178,6 +179,15 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           +> Common.do_option (fun id_ast ->
             match id_ast with
             | Ast_entity_php.Method def ->
+
+               let contain_func_num_args = 
+                 contain_func_name_args_like (ClassStmt (Method def)) in
+
+               if contain_func_num_args
+               then pr2_once ("not checking functions containing calls to " ^
+                                 "func_num_args() or alike")
+               else 
+
                 check_args_vs_params 
                   (callname,   args +> Ast.unparen +> Ast.uncomma)
                   (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma)

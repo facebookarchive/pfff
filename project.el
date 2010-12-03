@@ -5,7 +5,7 @@
    [?\C-s ?\" left right ?\C-  ?\C-s ?\" left ?\M-w ?\C-x ?\C-f ?\C-x ?\C-f ?\C-y return ?\C-\M-l ?\C-s ?l ?i ?n ?e ?  left right ?\C-  ?\C-e ?\M-w ?\C-\M-l ?\M-g ?\C-y return])
 
 ; when have file:line format
-(fset 'pad-got-error
+(fset 'pad-goto-error
    [?\C-a ?\C-  ?\C-s ?: left ?\M-w ?\C-x ?\C-f ?\C-x ?\C-f ?\C-y return ?\C-\M-l right ?\C-  C-right ?\M-w ?\C-\M-l ?\M-g ?\C-y return])
 
 (fset 'pad-goto-backtrace

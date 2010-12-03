@@ -69,12 +69,13 @@ let main_action xs =
   Database_php.with_db ~metapath:!metapath (fun db ->
 
   let find_entity = Some (Database_php_build.build_entity_finder db) in
-
-  files +> List.iter (fun file ->
+  files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
     try 
-      pr2_dbg (spf "processing: %s" file);
+      pr2_dbg (spf "processing: %s (%d/%d)" file i total);
       Check_all_php.check_file ~find_entity file;
-    with exn ->
+    with 
+    | (Timeout | UnixExit _) as exn -> raise exn
+    | exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
                               (Common.string_of_exn exn)) errors;
   );

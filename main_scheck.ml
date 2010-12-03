@@ -220,7 +220,9 @@ let main_action xs =
         let find_entity = Some (Database_php_build.build_entity_finder db) in
         Check_all_php.check_file ~find_entity file
       end
-    with exn ->
+    with 
+    | (Timeout | UnixExit _) as exn -> raise exn
+    | exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
                        (Common.string_of_exn exn)) errors;
   );
