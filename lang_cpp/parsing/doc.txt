@@ -1,3 +1,13 @@
+from "yacc is dead" on ltu at http://lambda-the-ultimate.org/node/4148#comment
+
+"
+x*y;
+
+In C++ this could be a multiplication, pointer declaration, or
+arbitrary overloaded meaning of "*". You have to hit name and type
+resolution before you can distinguish them.
+"
+
 (* Cocci: Each token will be decorated in the future by the mcodekind
  * of cocci. It is the job of the pretty printer to look at this
  * information and decide to print or not the token (and also the

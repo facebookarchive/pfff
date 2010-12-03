@@ -38,6 +38,7 @@ type file_type =
   | ML of string  (* mli, ml, mly, mll *)
   | Haskell of string
   | Lisp of lisp_type
+  | Prolog of string
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
   | C | Cplusplus | Java | Csharp
@@ -120,7 +121,8 @@ let file_type_of_file2 file =
   | "pl" | "perl" -> PL Perl (* could be prolog too *)
   | "py" -> PL Python
   | "rb" -> PL Ruby
- 
+
+  | "clp" -> PL (Prolog e)
 
   | "s" | "S" | "asm" -> PL Asm
 
