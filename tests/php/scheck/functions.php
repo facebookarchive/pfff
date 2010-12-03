@@ -55,9 +55,8 @@ function func_foo4() {
 
   func_dup(1);
 
+  //ERROR: too many args
   func_dup(1,2);
-  func_dup(1,2);
-
 }
 
 

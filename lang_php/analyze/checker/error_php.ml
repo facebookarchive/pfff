@@ -237,6 +237,8 @@ let show_10_most_recurring_unused_variable_names () =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
+let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) = 
+  Hashtbl.create 101 
 
 let (find_entity:
   find_entity: Ast_entity_php.entity_finder option ->
@@ -248,17 +250,22 @@ let (find_entity:
   | None -> None
   | Some find_entity ->
       let str = Ast.name name in
-      (try 
-          let id_ast = find_entity (kind, str) in
-          Some id_ast
-        with
-        | Not_found ->
-            fatal (UndefinedEntity (kind, name));
-            None
-        | Multi_found ->
-            (* todo: to give 2 ex of defs would require a db *)
+      let ids_ast = find_entity (kind, str) in
+      (match ids_ast with
+      | [x] -> Some x
+      | [] ->
+          fatal (UndefinedEntity (kind, name));
+          None
+      | x::y::xs ->
+          if Hashtbl.mem h_already_error (kind, str) 
+          then ()
+          else begin
+            Hashtbl.replace h_already_error (kind, str) true;
+            (* todo: to give 2 ex of defs *)
             let ex1 = name (* TODO *) in
             let ex2 = name (* TODO *) in
             fatal (MultiDefinedEntity (kind, name, (ex1, ex2)));
-            None
+          end;
+          (* can give the first one ... *)
+          Some x
       )

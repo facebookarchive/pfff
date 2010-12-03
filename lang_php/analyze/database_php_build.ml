@@ -558,16 +558,17 @@ let add_methodcallees_of_id (idcaller, methods) db =
 (* See Ast_entity_php.mli for the rational behing having both a database
  * type and an entity_finder type.
  *)
-let build_entity_finder db = 
+let (build_entity_finder: database -> Ast_entity_php.entity_finder) =
+ fun db ->
   (fun (id_kind, s) ->
     try (
     match id_kind with
     | Entity_php.Class ->
-        let id = Db.id_of_class s db in
-        Db.ast_of_id id db
+        Db.class_ids_of_string s db 
+        +> List.map (fun id -> Db.ast_of_id id db)
     | Entity_php.Function ->
-        let id = Db.id_of_function s db in
-        Db.ast_of_id id db
+        Db.function_ids__of_string s db 
+        +> List.map (fun id -> Db.ast_of_id id db)
     | _ ->
         raise Todo
     )

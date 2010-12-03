@@ -557,10 +557,9 @@ let visit_prog
        *)
       x.c_extends +> Common.do_option (fun (tok, name_class_parent) ->
         (* todo: ugly to have to "cast" *)
-        let parent = Ast.name name_class_parent in
-        find_entity +> Common.do_option (fun find_entity ->
-         try 
-          let id_ast = find_entity (Entity_php.Class, parent) in
+
+        E.find_entity ~find_entity (Entity_php.Class, name_class_parent)
+        +> Common.do_option (fun id_ast ->
           (match id_ast with
           | Ast_entity_php.Class def2 ->
               
@@ -577,9 +576,6 @@ let visit_prog
 
           | _ -> raise Impossible
           )
-        with Not_found -> 
-          if !Flag.show_analyze_error
-          then pr2_once (spf "Could not find class def for: %s" parent);
       ));
 
       (* must reorder the class_stmts as we want class variables defined

@@ -65,4 +65,4 @@ let toplevel_to_idast x =
       Misc [v1]
 
 
-type entity_finder = (Entity_php.id_kind * string) -> id_ast
+type entity_finder = (Entity_php.id_kind * string) -> id_ast list

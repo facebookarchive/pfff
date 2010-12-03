@@ -37,7 +37,10 @@ val rank_errors: error list -> error list
 val show_10_most_recurring_unused_variable_names: unit -> unit
 
 (* small helper function generating Undefined (or MultiDefined) error 
- * if the entity was not found (or multiply defined)
+ * if the entity was not found (or multiply defined). 
+ * !! note that it memeoizes the MultiDefined error and the second time
+ *    actually returns on the definition
+ * !!
  *)
 val find_entity: 
   find_entity: Ast_entity_php.entity_finder option ->
