@@ -71,8 +71,14 @@ let check_args_vs_params ((callname:name), args) ((defname:name), params) =
     | x::xs, [] ->
         E.fatal (E.TooManyArguments (info, defname))
     | x::xs, y::ys ->
+        (match x with
+        | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
+            if not (Ast.dname dn =$= Ast.dname y.p_name)
+            then
+              E.fatal (E.WrongKeywordArgument(dn, y))
+        | _ -> ()
+        );
         aux xs ys
-        
   in
   aux args params
 
@@ -87,12 +93,9 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
     Visitor_php.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
-
-          let str_name = Ast_php.name callname in
-          find_entity +> Common.do_option (fun find_entity ->
-           try 
-           let id_ast = find_entity (Entity_php.Function, str_name) in
-           (match id_ast with
+          E.find_entity ~find_entity (Entity_php.Function, callname)
+          +> Common.do_option (fun id_ast ->
+           match id_ast with
            | Ast_entity_php.Function def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
@@ -103,14 +106,10 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
                                  "func_num_args() or alike")
                else 
                  check_args_vs_params 
-                   (callname, unparen args) 
+                   (callname,   args +> Ast.unparen +> Ast.uncomma)
                    (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
            | _ -> raise Impossible
            )
-           with Not_found -> 
-             if !Flag.show_analyze_error
-             then pr2_once (spf "Could not find def for: %s" str_name);
-          )
 
       | FunCallVar _ -> 
           pr2 "TODO: handling FuncVar";
@@ -119,63 +118,6 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
   } in
   let visitor = Visitor_php.mk_visitor hooks in
   visitor (Program prog)
-
-
-
-let visitor_check_funcalls db =
-  V.mk_visitor { V.default_visitor with
-    V.klvalue = (fun (k, _) x ->
-      match Ast.untype x with
-      | FunCallSimple (funcname, args) ->
-          (let ids = Database_php.function_ids__of_string
-            (Ast.name funcname) db in
-           match ids with
-           | [] ->
-               E.fatal (E.UndefinedFunction funcname)
-           | _ :: _ :: _ ->
-               (* a function with the same name is defined at different places *)
-               (* TODO: deal with functions defined several times *)
-               E.fatal (E.UnableToDetermineDef funcname)
-           | [id] ->
-               let def = match Database_php.ast_of_id id db with
-                 | Ast_entity_php.Function(def) -> def
-                 | _ -> raise Impossible
-               in
-               let rec aux params args =
-                 match (params, args) with
-                 | [], [] -> ()
-                 | [], y::ys ->
-                     E.fatal (E.TooManyArguments2(funcname, def));
-                     aux [] ys
-                 | x::xs, [] ->
-                     (match x.p_default with
-                     | None ->
-                         E.fatal (E.TooFewArguments2(funcname, def));
-                     | Some _ -> ()
-                     );
-                     aux xs []
-                 | x::xs, y::ys ->
-                     (match y with
-                     | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
-                         if not (Ast.dname dn =$= Ast.dname x.p_name)
-                         then
-                           E.fatal
-                             (E.WrongKeywordArgument(dn, expr, funcname,
-                                                  x, def))
-                     | _ -> ()
-                     );
-                     aux xs ys
-               in
-               
-               let params = def.f_params in
-               aux (Ast.uncomma (Ast.unparen params))
-                 (Ast.uncomma (Ast.unparen args))
-          );
-          k x
-      | _ -> k x
-    );
-  }
-
 
 (*****************************************************************************)
 (* Entry point *)

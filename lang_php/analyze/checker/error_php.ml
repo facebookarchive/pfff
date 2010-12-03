@@ -43,17 +43,15 @@ let strict = ref false
  * layer_checker_php.ml too
  *)
 type error = 
-  (* functions *)
-  | UndefinedFunction of Ast_php.name
-  | UnableToDetermineDef of Ast_php.name
+  (* entities *)
+  | UndefinedEntity of Entity_php.id_kind * Ast_php.name
+  | MultiDefinedEntity of Entity_php.id_kind * Ast_php.name *
+      (Ast_php.name * Ast_php.name)
 
   (* call sites *)
   | TooManyArguments   of (Ast_php.info * name (* def *))
   | NotEnoughArguments of (Ast_php.info * name (* def *))
-  | TooManyArguments2 of Ast_php.name * Ast_php.func_def
-  | TooFewArguments2  of Ast_php.name * Ast_php.func_def
-  | WrongKeywordArgument of Ast_php.dname * Ast_php.expr * Ast_php.name *
-                     Ast_php.parameter * Ast_php.func_def
+  | WrongKeywordArgument of Ast_php.dname * Ast_php.parameter
 
   (* variables *)
   | UseOfUndefinedVariable of Ast_php.dname
@@ -83,22 +81,40 @@ let string_of_error error =
       info.Parse_info.file info.Parse_info.line info.Parse_info.column
   in
   match error with
+
+  | UndefinedEntity(kind, name) ->
+      let info = Ast.parse_info_of_info (Ast.info_of_name name) in
+      (spos info ^ (spf "CHECK: undefined entity %s %s"
+                  (Entity_php.string_of_id_kind kind)
+                  (Ast.name name)))
+
+  | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
+      let info = Ast.parse_info_of_info (Ast.info_of_name name) in
+      (spos info ^ (spf "CHECK: multiply defined entity %s %s"
+                  (Entity_php.string_of_id_kind kind)
+                  (Ast.name name)))
+     (* todo? one was declared: %s and the other %s    or use tbgs ... *)
+
   | TooManyArguments (info, defname) ->
       let info = Ast.parse_info_of_info info in
       (spos info ^ "CHECK: too many arguments");
+     (* todo? function was declared: %s     or use tbgs ... *)
   | NotEnoughArguments (info, defname) ->
       let info = Ast.parse_info_of_info info in
       (spos info ^ "CHECK: not enough arguments");
+     (* todo? function was declared: %s    or use tbgs *)
+  | WrongKeywordArgument(dn, param) ->
+      let info = Ast.info_of_dname dn +> Ast.parse_info_of_info in
+      spos info ^ spf "CHECK: wrong keyword argument, %s <> %s"
+        (Ast.dname dn) (Ast.dname param.p_name)
+
+
 
   | UseOfUndefinedVariable (dname) ->
       let s = Ast.dname dname in
       let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
       spos info ^ spf "CHECK: use of undefined variable $%s" s
 
-  | UseOfUndefinedMember (name) ->
-      let s = Ast.name name in
-      let info = Ast.info_of_name name |> Ast.parse_info_of_info in
-      spos info ^ spf "CHECK: use of undefined member $%s" s
   | UnusedVariable (dname, scope) ->
       let s = Ast.dname dname in
       let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
@@ -106,44 +122,12 @@ let string_of_error error =
               (Scope_php.s_of_phpscope scope)
               s 
 
-  | UndefinedFunction(funcname) ->
-      (spf "Warning: at %s
-  function %s is undefined"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-      )
-  | UnableToDetermineDef(funcname) ->
-      (spf "Warning: at %s
-  function %s is defined several times; unable to find which one applies"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-      )
-  | WrongKeywordArgument(dn, expr, funcname, param, def) ->
-      (spf "Warning: at %s
-  the assignment '$%s=%s' in the argument list of this call to '%s()' looks like a keyword argument, but the corresponding parameter in the definition of '%s' is called '$%s'
-  function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_dname dn))
-          (Ast.dname dn) (Unparse_php.string_of_expr expr)
-          (Ast.name funcname) (Ast.name funcname)
-          (Ast.dname param.p_name)
-          (Ast.string_of_info (Ast.info_of_name def.f_name))
-      )
-  | TooManyArguments2(funcname, def) ->
-      (spf "Warning: at %s
-  function call %s has too many arguments
-  function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-          (Ast.string_of_info (Ast.info_of_name def.f_name))
-      )
-  | TooFewArguments2(funcname, def) ->
-      (spf "Warning: at %s
-  function call %s has too few arguments
-  function was declared: %s"
-          (Ast.string_of_info (Ast.info_of_name funcname))
-          (Ast.name funcname)
-          (Ast.string_of_info (Ast.info_of_name def.f_name))
-      )
+  | UseOfUndefinedMember (name) ->
+      let s = Ast.name name in
+      let info = Ast.info_of_name name |> Ast.parse_info_of_info in
+      spos info ^ spf "CHECK: use of undefined member $%s" s
+
+
 
   | UglyGlobalDynamic info ->
       let pinfo = Ast.parse_info_of_info info in
@@ -161,19 +145,16 @@ let string_of_error error =
         
 let info_of_error err =
   match err with
-  | UndefinedFunction name 
-  | UnableToDetermineDef name
-
-  | TooManyArguments2 (name, _)
-  | TooFewArguments2  (name, _)
+  | UndefinedEntity (_, name)
+  | MultiDefinedEntity (_, name, (_, _))
       -> Some (Ast.info_of_name name)
 
   | TooManyArguments  (call_info, defname) ->
       Some call_info
   | NotEnoughArguments (call_info, defname) ->
       Some call_info
-  | WrongKeywordArgument (dname,  expr, name, param, fdef) ->
-      raise Todo
+  | WrongKeywordArgument (dname,  param) ->
+      Some (Ast.info_of_dname dname)
 
   | UseOfUndefinedVariable dname
   | UnusedVariable (dname, _)
@@ -252,3 +233,32 @@ let show_10_most_recurring_unused_variable_names () =
         pr2 (spf " %s -> %d" s cnt)
       );
   ()
+
+(*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+
+let (find_entity:
+  find_entity: Ast_entity_php.entity_finder option ->
+  (Entity_php.id_kind * Ast_php.name) ->
+  Ast_entity_php.id_ast option) = 
+ fun ~find_entity (kind, name) ->
+
+  match find_entity with
+  | None -> None
+  | Some find_entity ->
+      let str = Ast.name name in
+      (try 
+          let id_ast = find_entity (kind, str) in
+          Some id_ast
+        with
+        | Not_found ->
+            fatal (UndefinedEntity (kind, name));
+            None
+        | Multi_found ->
+            (* todo: to give 2 ex of defs would require a db *)
+            let ex1 = name (* TODO *) in
+            let ex2 = name (* TODO *) in
+            fatal (MultiDefinedEntity (kind, name, (ex1, ex2)));
+            None
+      )

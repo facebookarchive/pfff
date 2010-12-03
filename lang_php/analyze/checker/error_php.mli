@@ -2,18 +2,13 @@
 val strict: bool ref
 
 type error = 
-  | UndefinedFunction of Ast_php.name
-  | UnableToDetermineDef of Ast_php.name
+  | UndefinedEntity of Entity_php.id_kind * Ast_php.name
+  | MultiDefinedEntity of Entity_php.id_kind * Ast_php.name *
+      (Ast_php.name * Ast_php.name)
 
   | TooManyArguments of (Parse_info.info (* call *) * Ast_php.name (* def *))
   | NotEnoughArguments of (Parse_info.info (* call *) * Ast_php.name (* def *))
-
-  | TooManyArguments2 of Ast_php.name * Ast_php.func_def
-  | TooFewArguments2  of Ast_php.name * Ast_php.func_def
-  | WrongKeywordArgument of 
-      Ast_php.dname * Ast_php.expr * 
-      Ast_php.name * Ast_php.parameter * 
-      Ast_php.func_def
+  | WrongKeywordArgument of  Ast_php.dname * Ast_php.parameter
 
   | UseOfUndefinedVariable of Ast_php.dname
   | UnusedVariable of Ast_php.dname  * Scope_php.phpscope
@@ -40,3 +35,11 @@ val report_all_errors: unit -> unit
 val rank_errors: error list -> error list
 
 val show_10_most_recurring_unused_variable_names: unit -> unit
+
+(* small helper function generating Undefined (or MultiDefined) error 
+ * if the entity was not found (or multiply defined)
+ *)
+val find_entity: 
+  find_entity: Ast_entity_php.entity_finder option ->
+  (Entity_php.id_kind * Ast_php.name) ->
+  Ast_entity_php.id_ast option

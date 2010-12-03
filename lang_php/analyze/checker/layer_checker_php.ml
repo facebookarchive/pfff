@@ -38,10 +38,10 @@ open Error_php
 let properties = [
 
   "eUseOfUndefinedVariable", "red" ;
-  (* ugly: coupling with scope_code.ml *)
   "eUnusedVariable-Local", "purple";
   "eDeadStatement", "salmon";
 
+  (* ugly: coupling with scope_code.ml *)
   "eUnusedVariable-Global", "green";
   "eUnusedVariable-Local", "green";
   "eUnusedVariable-Param", "green";
@@ -52,14 +52,17 @@ let properties = [
   "eUnusedVariable-ListBinded", "green";
   "eUnusedVariable-NoScope", "green";
 
-  "eUndefinedFunction",    "blue";
-  "eUnableToDetermineDef", "blue2";
+  (* ugly: coupling with entity_php.ml *)
+  "eUndefinedEntity-function",    "blue";
+  "eUndefinedEntity-class",    "blue";
+  "eUndefinedEntity-method",    "blue";
+
+  "eMultiDefinedEntity-function", "blue2";
+  "eMultiDefinedEntity-class", "blue2";
+  "eMultiDefinedEntity-method", "blue2";
 
   "eTooManyArguments", "blue3";
   "eNotEnoughArguments", "blue4";
-
-  "eTooManyArguments2", "blue3" ;
-  "eTooFewArguments2",  "blue4" ;
   "eWrongKeywordArgument", "yellow";
 
 
@@ -81,14 +84,14 @@ let info_of_error_and_kind err =
 
   let kind = 
     match err with
-  | UndefinedFunction _ -> "eUndefinedFunction"
-  | UnableToDetermineDef _ ->"eUnableToDetermineDef"
+  | UndefinedEntity (kind, _) -> 
+      "eUndefinedEntity-" ^ Entity_php.string_of_id_kind kind
+  | MultiDefinedEntity (kind, _, _) ->
+      "eMultiDefinedEntity-" ^ Entity_php.string_of_id_kind kind
 
   | TooManyArguments _ ->"eTooManyArguments"
   | NotEnoughArguments _ ->"eNotEnoughArguments"
 
-  | TooManyArguments2 _ ->"eTooManyArguments2"
-  | TooFewArguments2  _ ->"eTooFewArguments2"
   | WrongKeywordArgument _ ->"eWrongKeywordArgument"
 
   | UseOfUndefinedVariable _ -> 

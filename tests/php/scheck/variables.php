@@ -167,6 +167,9 @@ function vars_bad_compact() {
 // auxillary functions
 // -------------------------------------------------------------------------
 
-function vars_bar($x) {
-  echo $x;
+function vars_bar($key) {
+  echo $key;
 }
+
+//builtin
+function compact($_x) {}

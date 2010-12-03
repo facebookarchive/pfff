@@ -36,6 +36,7 @@ function func_foo_call_var_args() {
 }
 
 function func_foo3() {
+  //ERROR: undefined entity
   unknown_foo3();
 }
 
@@ -48,4 +49,27 @@ function func_dup() {
 
 function func_foo4() {
   func_dup();
+}
+
+
+function func_keywords($x, $a = 1, $b = 2) {
+  echo $x; echo $a; echo $b;
+}
+
+function func_call_keywords() {
+
+  //ERROR: not enough arguments
+  func_keywords();
+
+  func_keywords(1);
+  func_keywords(1,2);
+  func_keywords(1,2,3);
+  func_keywords(1, $a = 2, $b = 3);
+  func_keywords(1, $a = 2);
+
+  //ERROR: wrong keyword argument
+  func_keywords(1, $z = 2);
+
+  //ERROR: really wrong keyword argument
+  func_keywords(1, $b = 2);
 }
