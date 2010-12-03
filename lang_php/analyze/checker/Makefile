@@ -15,6 +15,7 @@ SRC= \
 # mostly global analysis
 SRC+= \
   check_functions_php.ml \
+  check_classes_php.ml \
 
 SRC+= check_all_php.ml layer_checker_php.ml
 

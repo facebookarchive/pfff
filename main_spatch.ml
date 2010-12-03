@@ -286,6 +286,7 @@ let parse_spatch file =
    *)
   pattern
 
+
 let spatch pattern file =
   let was_modifed = ref false in
     
@@ -316,9 +317,6 @@ let spatch pattern file =
   if !was_modifed 
   then Some (Unparse_php.string_of_program2_using_tokens ast2)
   else None
-
-      
-
 
     
 

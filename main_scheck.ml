@@ -298,6 +298,7 @@ let test () =
     "tests/php/scheck/variables.php";
     "tests/php/scheck/cfg.php";
     "tests/php/scheck/functions.php";
+    "tests/php/scheck/classes.php";
   ] 
   in
   let test_files = 

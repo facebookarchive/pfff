@@ -41,6 +41,7 @@ let check_file ?find_entity file =
   (* work only when find_entity is not None; requires global analysis *)
   if find_entity <> None then begin
     Check_functions_php.check_program ?find_entity ast;
+    Check_classes_php.check_program ?find_entity ast;
   end;
 
   (* TODO:
