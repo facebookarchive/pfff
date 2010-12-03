@@ -171,5 +171,5 @@ function vars_bar($key) {
   echo $key;
 }
 
-//builtin
-function compact($_x) {}
+//builtin, now in data/php_stdlib/
+//function compact($_x) {}

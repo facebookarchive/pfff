@@ -18,8 +18,8 @@ function func_foo2($i) {
   echo $i;
 }
 
-//builtin
-function func_num_args() {}
+//builtin, now in data/php_stdlib
+//function func_num_args() {}
 
 function func_var_args() {
   $args_count = func_num_args();

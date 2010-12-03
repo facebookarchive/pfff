@@ -122,9 +122,9 @@ let heavy = ref false
  *)
 let depth_limit = ref (Some 5: int option)
 
-(* let php_stdlib = 
-    ref (Filename.concat Config.path "/facebook/data/php_stdlib")
-*)
+let php_stdlib = 
+  ref (Filename.concat Config.path "/data/php_stdlib")
+
 let cache_parse = ref true
 
 
@@ -193,8 +193,7 @@ let main_action xs =
         in
         (* adding builtins *)
         let builtin_files =
-          []
-          (*TODO Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib] *)
+          Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib]
         in
         
         let all_files = builtin_files ++ all_files in
@@ -313,6 +312,10 @@ let test () =
         )
     ) +> List.flatten
   in
+  let builtin_files =
+    Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib]
+  in
+  let all_files = builtin_files ++ test_files in
 
   Error_php._errors := [];
 
@@ -324,7 +327,7 @@ let test () =
         Database_php_build.create_db
           ~db_support:(Database_php.Mem)
           ~phase:2 (* TODO ? *)
-          ~files:(Some test_files )
+          ~files:(Some all_files)
           ~verbose_stats:false
           prj 
       )
@@ -392,6 +395,8 @@ let options () =
     " limit the number of processed includes";
     "-no_caching", Arg.Clear cache_parse, 
     " don't cache parsed ASTs";
+     "-php_stdlib", Arg.Set_string php_stdlib, 
+     (spf " path to builtins (default = %s)" !php_stdlib);
 
     "-strict", Arg.Set strict_scope,
     " emulate block scope instead of function scope";
