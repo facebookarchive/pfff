@@ -41,6 +41,45 @@ module Flag = Flag_analyze_php
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+(* This is ugly. Some of the code requires to have a 'name' type
+ * for every "entities" we are defining and checking. For a class 
+ * constant we should really have a pair of name, one for the class
+ * and one for the constant itself. Instead we abuse 'name' and
+ * pack into it also the classname.
+ *)
+let rewrap_name_with_class_name classname name =
+  match name with 
+  | Name (s, info) ->
+      let new_str = spf "%s::%s" classname s in
+      Name (new_str, Ast.rewrap_str new_str info)
+  (* only classnames can be a XhpName. Constants (or functions)
+   * are always simple names
+   *)
+  | XhpName _ ->
+      failwith "Impossible: only classes can be XhpName"
+
+let mk_class_name s info = 
+  Name (s, info)
+
+(* todo? move in class_php.ml ? *)
+let resolve_class_name qu in_class =
+  match qu, in_class with
+  | Qualifier (name, _tok), _ ->
+      name
+  | Self _, Some (name, _parent) ->
+      name
+  | Self _, None ->
+      failwith ("Use of self:: outside of a class")
+  | Parent _, (Some (_, Some parent)) -> 
+      parent
+  | Parent _, _ ->
+      failwith "Use of parent:: in a class without a parent"
+
 (*****************************************************************************)
 (* Typing rules *)
 (*****************************************************************************)
@@ -88,7 +127,26 @@ let check_args_vs_params ((callname:name), args) ((defname:name), params) =
 
 let visit_and_check_funcalls  ?(find_entity = None) prog =
 
+  let in_class = ref (None: (Ast.name * Ast.name option) option) in
+
   let hooks = { Visitor_php.default_visitor with
+
+    V.kclass_def = (fun (k, _) def ->
+      let classname = def.c_name in
+      let parent_opt = 
+        match def.c_extends with
+        | None -> None
+        | Some (tok, classname) -> Some classname
+      in
+      Common.save_excursion in_class (Some (classname, parent_opt)) (fun () ->
+        def.c_extends +> Common.do_option (fun (tok, classname) ->
+          (* todo? E.find_entity ~find_entity (Entity_php.Class classname) *)
+          ()
+        );
+        k def;
+      );
+    );
+
 
     Visitor_php.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
@@ -111,6 +169,21 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
            | _ -> raise Impossible
            );
           k x
+
+      | StaticMethodCallSimple (qu, callname, args) ->
+          let classname = resolve_class_name qu !in_class in
+          let sclassname = Ast.name classname in
+          let name' = rewrap_name_with_class_name sclassname callname in
+          E.find_entity ~find_entity (Entity_php.StaticMethod, name')
+          +> Common.do_option (fun id_ast ->
+            match id_ast with
+            | Ast_entity_php.Method def ->
+                check_args_vs_params 
+                  (callname,   args +> Ast.unparen +> Ast.uncomma)
+                  (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma)
+                
+            | _ -> raise Impossible
+          )
 
       | FunCallVar _ -> 
           pr2 "TODO: handling FuncVar";

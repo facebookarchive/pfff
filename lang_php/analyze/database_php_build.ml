@@ -569,6 +569,14 @@ let (build_entity_finder: database -> Ast_entity_php.entity_finder) =
     | Entity_php.Function ->
         Db.function_ids__of_string s db 
         +> List.map (fun id -> Db.ast_of_id id db)
+    | Entity_php.StaticMethod ->
+        if s =~ "\\(.*\\)::\\(.*\\)"
+        then
+          let (sclass, smethod) = Common.matched2 s in
+          Db.static_function_ids_of_strings ~theclass:sclass smethod db
+          +> List.map (fun id -> Db.ast_of_id id db)
+        else
+          failwith ("wong static method format: " ^ s)
     | _ ->
         raise Todo
     )

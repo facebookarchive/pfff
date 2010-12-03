@@ -299,6 +299,7 @@ let test () =
     "tests/php/scheck/cfg.php";
     "tests/php/scheck/functions.php";
     "tests/php/scheck/classes.php";
+    "tests/php/scheck/static_methods.php";
   ] 
   in
   let test_files = 

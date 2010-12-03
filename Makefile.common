@@ -76,7 +76,7 @@ otags:
 ovisual:
 	echo "you should use pfff_visual"
 
-clean::
+distclean::
 	rm -f TAGS
 
 dot:
