@@ -34,18 +34,14 @@ let verbose = ref false
 (* action mode *)
 let action = ref ""
 
-(* In strict mode, we are more aggressive regarding scope like in
- * JsLint.
- *
- * is also in Error_php.ml
- *)
-let strict_scope = ref false 
+(* no -heavy or -depth_limit or -php_stdlib or -cache_parse here *)
+let metapath = ref "/tmp/pfff_db"
 
+let strict_scope = ref false 
 let rank = ref true
 
 let layer_file = ref (None: filename option)
 
-let metapath = ref "/tmp/pfff_db"
 
 (*****************************************************************************)
 (* Helpers *)
@@ -61,9 +57,7 @@ let pr2_dbg s =
 (* Main action *)
 (*****************************************************************************)
 
-(* mostly a copy paste of main_scheck.ml but now use metapath 
- * and calls more check_xxx functions.
- *)
+(* mostly a copy paste of main_scheck.ml but now use metapath *)
 let main_action xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
@@ -71,12 +65,14 @@ let main_action xs =
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
+
+  Database_php.with_db ~metapath:!metapath (fun db ->
+
+  let find_entity = Some (Database_php_build.build_entity_finder db) in
+
   files +> List.iter (fun file ->
     try 
       pr2_dbg (spf "processing: %s" file);
-      raise Todo;
-      let find_entity = None in
-      
       Check_all_php.check_file ~find_entity file;
     with exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
@@ -105,7 +101,7 @@ let main_action xs =
     Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
 
   );
-  ()
+  )
 
 (*****************************************************************************)
 (* Extra actions *)
@@ -167,6 +163,9 @@ let options () =
 (*****************************************************************************)
 
 let main () =
+
+  Common_extra.set_link();
+  Database_php_storage.set_link();
 
   let usage_msg =
     "Usage: " ^ Common.basename Sys.argv.(0) ^

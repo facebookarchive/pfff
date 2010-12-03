@@ -138,6 +138,56 @@ let layer_file = ref (None: filename option)
 (* Helpers *)
 (*****************************************************************************)
 
+let build_mem_db file =
+
+  (* Build the database of information. Some checks needs to have
+   * a global view of the code, for instance to know what
+   * are the sets of valid protected variable that can be used
+   * in a child class.
+   * 
+   * todo: can probably optimize this later. For instance lazy
+   * loading of files, stop when are in flib as modules are
+   * not transitive.
+   * 
+   * see also facebook/.../dependencies.ml
+   *)
+
+  (* todo: could infer PHPROOT at least ? just look at
+   * the include in the file and see where the files are.
+   *)
+  let env = 
+    Env_php.mk_env (Common.dirname file)
+  in
+  let root = "/" in (* todo ? *)
+
+  let all_files = 
+    Include_require_php.recursive_included_files_of_file 
+      ~verbose:!verbose 
+      ~depth_limit:!depth_limit
+      env file
+  in
+  (* adding builtins *)
+  let builtin_files =
+    Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib]
+  in
+        
+  let all_files = builtin_files ++ all_files in
+  let prj = Database_php.Project (root, None) in
+  let prj = Database_php.normalize_project prj in 
+  
+  let db = 
+          Common.save_excursion Flag_analyze_php.verbose_database !verbose 
+            (fun()->
+              Database_php_build.create_db
+                ~db_support:(Database_php.Mem)
+                ~phase:2 (* TODO ? *)
+                ~files:(Some all_files)
+                ~verbose_stats:false
+                prj 
+            )
+  in
+  db
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -166,51 +216,7 @@ let main_action xs =
         let find_entity = None in
         Check_all_php.check_file ~find_entity file
       end else begin
-
-        (* Build the database of information. Some checks needs to have
-         * a global view of the code, for instance to know what
-         * are the sets of valid protected variable that can be used
-         * in a child class.
-         * 
-         * todo: can probably optimize this later. For instance lazy
-         * loading of files, stop when are in flib as modules are
-         * not transitive.
-         *)
-
-        (* todo: could infer PHPROOT at least ? just look at
-         * the include in the file and see where the files are.
-         *)
-        let env = 
-          Env_php.mk_env (Common.dirname file)
-        in
-        let root = "/" in (* todo ? *)
-
-        let all_files = 
-          Include_require_php.recursive_included_files_of_file 
-            ~verbose:!verbose 
-            ~depth_limit:!depth_limit
-            env file
-        in
-        (* adding builtins *)
-        let builtin_files =
-          Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib]
-        in
-        
-        let all_files = builtin_files ++ all_files in
-        let prj = Database_php.Project (root, None) in
-        let prj = Database_php.normalize_project prj in 
-    
-        let db = 
-          Common.save_excursion Flag_analyze_php.verbose_database !verbose 
-           (fun()->
-            Database_php_build.create_db
-              ~db_support:(Database_php.Mem)
-              ~phase:2 (* TODO ? *)
-              ~files:(Some all_files)
-              ~verbose_stats:false
-              prj 
-          )
-        in
+        let db = build_mem_db file in
         let find_entity = Some (Database_php_build.build_entity_finder db) in
         Check_all_php.check_file ~find_entity file
       end

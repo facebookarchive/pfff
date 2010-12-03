@@ -1405,6 +1405,8 @@ let create_db
 (* The goal here is to build a database containing enough context, enough
  * relevant files, to be able to do interesting global analysis on a file
  * passed as a parameter to one of our command line program.
+ * 
+ * todo: see facebook/dependencies.ml for now
  *)
 let fast_create_db_mem ?phase files_or_dirs =
   raise Todo
