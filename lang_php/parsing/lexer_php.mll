@@ -1335,9 +1335,9 @@ and st_in_xhp_text current_tag = parse
       let xs = Common.split ":" tag in
       if (xs <> current_tag)
       then begin
-        failwith (spf "XHP: wrong closing tag for, %s != %s"
+        pr2 (spf "XHP: wrong closing tag for, %s != %s"
                      (Common.join ":" xs)
-                     (Common.join ":" current_tag))
+                     (Common.join ":" current_tag));
       end;
       pop_mode ();
       T_XHP_CLOSE_TAG(Some xs, tokinfo lexbuf)
