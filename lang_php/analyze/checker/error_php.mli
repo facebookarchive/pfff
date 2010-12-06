@@ -8,7 +8,7 @@ type error =
 
   | TooManyArguments of (Parse_info.info (* call *) * Ast_php.name (* def *))
   | NotEnoughArguments of (Parse_info.info (* call *) * Ast_php.name (* def *))
-  | WrongKeywordArgument of  Ast_php.dname * Ast_php.parameter
+  | WrongKeywordArgument of  Ast_php.dname * Ast_php.parameter * severity
 
   | UseOfUndefinedVariable of Ast_php.dname
   | UnusedVariable of Ast_php.dname  * Scope_php.phpscope
@@ -19,9 +19,14 @@ type error =
 
   | CfgError of Controlflow_build_php.error
   | CfgPilError of Controlflow_build_pil.error
+ and severity =
+   | Bad
+   | ReallyBad
+   | ReallyReallyBad
 
 val string_of_error: error -> string
 val info_of_error: error -> Ast_php.info option
+val string_of_severity: severity -> string
 
 exception Error of error
 val _errors: error list ref

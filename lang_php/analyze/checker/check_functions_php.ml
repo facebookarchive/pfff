@@ -97,7 +97,7 @@ let contain_func_name_args_like any =
   )
 
 
-let check_args_vs_params ((callname:name), args) ((defname:name), params) =
+let check_args_vs_params (callname, all_args) (defname, all_params) =
 
   let info = Ast_php.info_of_name callname in
 
@@ -115,12 +115,22 @@ let check_args_vs_params ((callname:name), args) ((defname:name), params) =
         | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
             if not (Ast.dname dn =$= Ast.dname y.p_name)
             then
-              E.fatal (E.WrongKeywordArgument(dn, y))
+              
+              let all_params_str = 
+                all_params +> List.map (fun p -> Ast.dname p.p_name) in
+              let severity =
+                if List.mem (Ast.dname dn) all_params_str
+                then E.ReallyReallyBad
+                else 
+                  (* todo: edit_distance *)
+                  E.Bad
+              in
+              E.fatal (E.WrongKeywordArgument(dn, y, severity))
         | _ -> ()
         );
         aux xs ys
   in
-  aux args params
+  aux all_args all_params
 
 (*****************************************************************************)
 (* Visitor *)

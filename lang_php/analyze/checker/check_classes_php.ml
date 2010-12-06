@@ -37,32 +37,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 (* Typing rules *)
 (*****************************************************************************)
 
-(* TODO? use that for constructor check *)
-let check_args_vs_params ((callname:name), args) ((defname:name), params) =
-
-  let info = Ast_php.info_of_name callname in
-
-  let rec aux args params = 
-    match args, params with
-    | [], [] -> ()
-    | [], y::ys ->
-        if y.p_default = None 
-        then E.fatal (E.NotEnoughArguments (info, defname))
-        else aux [] ys
-    | x::xs, [] ->
-        E.fatal (E.TooManyArguments (info, defname))
-    | x::xs, y::ys ->
-        (match x with
-        | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
-            if not (Ast.dname dn =$= Ast.dname y.p_name)
-            then
-              E.fatal (E.WrongKeywordArgument(dn, y))
-        | _ -> ()
-        );
-        aux xs ys
-  in
-  aux args params
-
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
@@ -82,7 +56,7 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
             match id_ast with
             | Ast_entity_php.Class def ->
                 (*
-                  check_args_vs_params 
+                  Check_functions_php.check_args_vs_params 
                   (callname,   args +> Ast.unparen +> Ast.uncomma)
                   (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
                 *)

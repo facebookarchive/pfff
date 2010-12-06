@@ -63,7 +63,11 @@ let properties = [
 
   "eTooManyArguments", "blue3";
   "eNotEnoughArguments", "blue4";
-  "eWrongKeywordArgument", "yellow";
+
+  (* ugly: coupling with error_code.ml *)
+  "eWrongKeywordArgument-Bad", "yellow";
+  "eWrongKeywordArgument-ReallyBad", "yellow";
+  "eWrongKeywordArgument-ReallyReallyBad", "yellow";
 
 
   "eUseOfUndefinedMember", "cyan";
@@ -92,7 +96,8 @@ let info_of_error_and_kind err =
   | TooManyArguments _ ->"eTooManyArguments"
   | NotEnoughArguments _ ->"eNotEnoughArguments"
 
-  | WrongKeywordArgument _ ->"eWrongKeywordArgument"
+  | WrongKeywordArgument (_, _, severity) ->
+      "eWrongKeywordArgument-" ^ (Error_php.string_of_severity severity)
 
   | UseOfUndefinedVariable _ -> 
       "eUseOfUndefinedVariable"

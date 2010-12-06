@@ -51,7 +51,7 @@ type error =
   (* call sites *)
   | TooManyArguments   of (Ast_php.info * name (* def *))
   | NotEnoughArguments of (Ast_php.info * name (* def *))
-  | WrongKeywordArgument of Ast_php.dname * Ast_php.parameter
+  | WrongKeywordArgument of Ast_php.dname * Ast_php.parameter * severity
 
   (* variables *)
   | UseOfUndefinedVariable of Ast_php.dname
@@ -67,6 +67,10 @@ type error =
   (* cfg, mostly DeadCode statements *)
   | CfgError of Controlflow_build_php.error
   | CfgPilError of Controlflow_build_pil.error
+ and severity =
+   | Bad
+   | ReallyBad
+   | ReallyReallyBad
 
 exception Error of error
 
@@ -74,7 +78,12 @@ exception Error of error
 (* Pretty printers *)
 (*****************************************************************************)
 
-let string_of_error error = 
+let string_of_severity = function
+  | Bad -> "Bad" 
+  | ReallyBad -> "ReallyBad"
+  | ReallyReallyBad -> "ReallyReallyBad"
+
+let string_of_error error =
   let spos info = 
     (* emacs compile-mode compatible output *)
     spf "%s:%d:%d: " 
@@ -103,10 +112,10 @@ let string_of_error error =
       let info = Ast.parse_info_of_info info in
       (spos info ^ "CHECK: not enough arguments");
      (* todo? function was declared: %s    or use tbgs *)
-  | WrongKeywordArgument(dn, param) ->
+  | WrongKeywordArgument(dn, param, severity) ->
       let info = Ast.info_of_dname dn +> Ast.parse_info_of_info in
-      spos info ^ spf "CHECK: wrong keyword argument, %s <> %s"
-        (Ast.dname dn) (Ast.dname param.p_name)
+      spos info ^ spf "CHECK: wrong keyword argument, %s <> %s (%s)"
+        (Ast.dname dn) (Ast.dname param.p_name) (string_of_severity severity)
 
 
 
@@ -153,7 +162,7 @@ let info_of_error err =
       Some call_info
   | NotEnoughArguments (call_info, defname) ->
       Some call_info
-  | WrongKeywordArgument (dname,  param) ->
+  | WrongKeywordArgument (dname,  param, _) ->
       Some (Ast.info_of_dname dname)
 
   | UseOfUndefinedVariable dname

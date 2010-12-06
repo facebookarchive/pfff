@@ -75,9 +75,9 @@ function func_call_keywords() {
   func_keywords(1, $a = 2, $b = 3);
   func_keywords(1, $a = 2);
 
-  //ERROR: wrong keyword argument
+  //ERROR: bad keyword argument
   func_keywords(1, $z = 2);
 
-  //ERROR: really wrong keyword argument
+  //ERROR: really really bad keyword argument
   func_keywords(1, $b = 2);
 }
