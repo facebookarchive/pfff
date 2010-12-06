@@ -572,3 +572,9 @@ let stat_of_layer layer =
     )
   );
   h#to_list
+
+
+let filter_layer f layer =
+  { layer with 
+    files = layer.files +> Common.filter (fun (file, _) -> f file);
+  }

@@ -51,3 +51,5 @@ val simple_layer_of_parse_infos:
   layer
 
 val stat_of_layer: layer -> (kind * int) list
+
+val filter_layer: (Common.filename -> bool) -> layer -> layer
