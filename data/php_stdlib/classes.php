@@ -82,5 +82,5 @@ class Collator { }
 //http://us.php.net/ArrayIterator
 class ArrayIterator { }
 
-http://php.net/manual/en/reserved.classes.php
+//http://php.net/manual/en/reserved.classes.php
 class stdClass { }
