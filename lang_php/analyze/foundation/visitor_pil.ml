@@ -18,6 +18,7 @@ open Common
 open Ocaml
 
 open Pil
+module F = Controlflow_pil
 
 (*****************************************************************************)
 (* Prelude *)
@@ -34,12 +35,8 @@ type visitor_in = {
   kinstr: instr vin;
   kstmt: stmt vin;
 }
-and visitor_out = {
-  vstmt: stmt vout;
-  vstmt_list: (stmt list) vout;
-}
-and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
-and 'a vout = 'a -> unit
+  and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
+and visitor_out = Controlflow_pil.any -> unit
 
 
 let default_visitor = { 
@@ -173,29 +170,147 @@ and v_stmt x =
 
  and v_stmt_list xs = List.iter v_stmt xs
 
- and all_functions =   
-    {
-      vstmt = v_stmt;
-      vstmt_list = v_stmt_list;
-    }
-  in
-  all_functions
+ and v_function_def {
+                   f_name = v_f_name;
+                   f_params = v_f_params;
+                   f_ref = v_f_ref;
+                   f_return_type = v_f_return_type;
+                   f_body = v_f_body
+                 } =
+  let arg = v_name v_f_name in
+  let arg = v_list v_parameter v_f_params in
+  let arg = v_bool v_f_ref in
+  let arg = v_option v_hint_type v_f_return_type in
+  let arg = v_list v_stmt v_f_body in ()
+ and
+  v_parameter {
+                p_name = v_p_name;
+                p_type = v_p_type;
+                p_ref = v_p_ref;
+                p_default = v_p_default
+              } =
+  let arg = v_dname v_p_name in
+  let arg = v_option v_hint_type v_p_type in
+  let arg = v_bool v_p_ref in
+  let arg = v_option v_static_scalar v_p_default in ()
+
+ and v_class_def {
+                c_name = v_c_name;
+                c_type = v_c_type;
+                c_extends = v_c_extends;
+                c_implements = v_c_implements;
+                c_body = v_c_body
+              } =
+  let arg = v_name v_c_name in
+  let arg = v_class_type v_c_type in
+  let arg = v_option v_name v_c_extends in
+  let arg = v_list v_name v_c_implements in
+  let arg = v_list v_class_stmt v_c_body in ()
+
+and v_class_type =
+  function
+  | ClassRegular -> ()
+  | ClassFinal -> ()
+  | ClassAbstract -> ()
+  | Interface -> ()
+and v_class_stmt =
+  function
+  | ClassConstantDef ((v1, v2)) ->
+      let v1 = v_name v1 and v2 = v_static_scalar v2 in ()
+  | ClassVariable ((v1, v2, v3, v4)) ->
+      let v1 = v_list v_modifier v1
+      and v2 = v_option v_hint_type v2
+      and v3 = v_dname v3
+      and v4 = v_option v_static_scalar v4
+      in ()
+  | Method v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = v_list v_modifier v1 and v2 = v_function_def v2 in ())
+      in ()
+  | AbstractMethod v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = v_list v_modifier v1 and v2 = v_function_def v2 in ())
+      in 
+      ()
+
+and v_modifier =
+  function
+  | Ast_php.Public -> ()
+  | Ast_php.Private -> ()
+  | Ast_php.Protected -> ()
+  | Ast_php.Static -> ()
+  | Ast_php.Abstract -> ()
+  | Ast_php.Final -> ()
+
+and v_static_scalar v = v_expr v
+and v_hint_type v = v_name v
+
+ and v_require () = ()
+ and v_toplevel =
+  function
+  | Require v1 -> let v1 = v_require v1 in ()
+  | TopStmt v1 -> let v1 = v_stmt v1 in ()
+  | FunctionDef v1 -> let v1 = v_function_def v1 in ()
+  | ClassDef v1 -> let v1 = v_class_def v1 in ()
+
+ and v_program v = v_list v_toplevel v
+
+and v_node { F.n = v_n } = let arg = v_node_kind v_n in ()
+
+and v_node_kind =
+  function
+  | F.Enter -> ()
+  | F.Exit -> ()
+  | F.TrueNode -> ()
+  | F.FalseNode -> ()
+  | F.IfHeader v1 -> let v1 = v_expr v1 in ()
+  | F.WhileHeader v1 -> let v1 = v_expr v1 in ()
+  | F.Return v1 -> let v1 = v_option v_expr v1 in ()
+  | F.Jump -> ()
+  | F.TryHeader -> ()
+  | F.Throw -> ()
+  | F.Echo v1 -> let v1 = v_list v_expr v1 in ()
+  | F.Instr v1 -> let v1 = v_instr v1 in ()
+  | F.TodoNode v1 -> 
+      (*let v1 = v_option Parse_info.v_info v1 in *)
+      ()
+  | F.Join -> ()
+
+ and v_any =
+  function
+  | F.Lvalue v1 -> let v1 = v_lvalue v1 in ()
+  | F.Expr v1 -> let v1 = v_expr v1 in ()
+  | F.Instr2 v1 -> let v1 = v_instr v1 in ()
+  | F.Stmt v1 -> let v1 = v_stmt v1 in ()
+  | F.Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | F.Program v1 -> let v1 = v_program v1 in ()
+  | F.Node v1 -> let v1 = v_node v1 in ()
 
 
-let do_visit_with_ref mk_hooks recursor = 
+ and all_functions x = v_any x
+ in
+  v_any
+
+
+
+let do_visit_with_ref mk_hooks = fun any -> 
   let res = ref [] in
   let hooks = mk_hooks res in
   begin
     let vout = mk_visitor hooks in
-    recursor vout;
+    vout any;
     !res
   end
 
-let do_visit_with_h mk_hooks recursor = 
+let do_visit_with_h mk_hooks = fun any -> 
   let h = Hashtbl.create 101 in
   let hooks = mk_hooks h in
   begin 
     let vout = mk_visitor hooks in
-    recursor vout;
+    vout any;
     h
   end

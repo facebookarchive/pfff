@@ -16,3 +16,6 @@ val string_of_program: ?config:debug_config -> Pil.program -> string
 val vof_expr: Pil.expr -> Ocaml.v
 val vof_instr: Pil.instr -> Ocaml.v
 val vof_argument: Pil.argument -> Ocaml.v
+
+(* meta *)
+val vof_node: Controlflow_pil.node -> Ocaml.v

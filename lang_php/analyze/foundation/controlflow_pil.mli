@@ -13,16 +13,14 @@ type node = {
  and node_kind =
 
   (* special fake cfg nodes *)
-  | Enter
-  | Exit
+  | Enter | Exit
+
   (* An alternative is to store such information in the edges, but
    * experience shows it's easier to encode it via regular nodes
    *)
-  | TrueNode
-  | FalseNode
+  | TrueNode | FalseNode
 
-  | IfHeader of expr
-  | WhileHeader of expr
+  | IfHeader of expr | WhileHeader of expr
 
   | Return of expr option
 
@@ -46,12 +44,23 @@ type edge = Direct
 type flow = (node, edge) Ograph_extended.ograph_mutable
 type nodei = Ograph_extended.nodei
 
+(* for the visitor *)
+type any =
+  | Lvalue of Pil.lvalue
+  | Expr of Pil.expr
+  | Instr2 of Pil.instr
+  | Stmt of Pil.stmt
+  | Node of node
+
+  | StmtList of stmt list
+
+  | Toplevel of Pil.toplevel
+  | Program of Pil.program
+
+
 val first_node : flow -> Ograph_extended.nodei
 val mk_node: node_kind -> node
 
 val short_string_of_node : node -> string
 (* using internally graphviz dot and ghostview on X11 *)
 val display_flow: flow -> unit
-
-(* meta *)
-val vof_node: node -> Ocaml.v

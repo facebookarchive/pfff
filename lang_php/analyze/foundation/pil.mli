@@ -1,6 +1,8 @@
 (*s: pil.mli *)
 
-(* The goal is to be significantly smaller than ast_php.mli *)
+(* The goal is to be significantly smaller than ast_php.mli.
+ * See also controlflow_pil.mli
+*)
 
 type name = Ast_php.name
 type dname = Ast_php.dname
@@ -147,7 +149,8 @@ type toplevel =
   | FunctionDef of function_def
   | ClassDef of class_def
 
-
 type program = toplevel list
+
+(* type any is in controlflow_pil.ml now *)
 
 (*e: pil.mli *)

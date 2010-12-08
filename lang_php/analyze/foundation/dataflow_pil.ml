@@ -226,12 +226,12 @@ type 'a fold_env = {fold_fn: string -> bool -> 'a -> 'a; fold_vars: VarSet.t}
 let (lv_fold : 'a fold_env -> bool -> Pil.lvaluebis -> 'a
     -> 'a) =
 fun fold_env lhs lvl acc -> match lvl with
-  | Pil.VVar (Pil.Var va)
-  | Pil.ArrayAccess (Pil.Var va, _)
-  | Pil.ObjAccess (Pil.Var va, _)
-  | Pil.DynamicObjAccess (Pil.Var va, _) ->
+  | VVar (Var va)
+  | ArrayAccess (Var va, _)
+  | ObjAccess (Var va, _)
+  | DynamicObjAccess (Var va, _) ->
     fold_env.fold_fn (Ast_php.dname va) lhs acc
-  | Pil.IndirectAccess (Var va, _) ->
+  | IndirectAccess (Var va, _) ->
     VarSet.fold (fun var acc' -> fold_env.fold_fn var lhs acc')
       fold_env.fold_vars (fold_env.fold_fn (Ast_php.dname va) false acc)
 
@@ -247,18 +247,18 @@ fun fold_env lhs lvl acc -> match lvl with
 let rec (expr_fold: 'a fold_env -> Pil.exprbis -> 'a -> 'a) =
 fun fold_env exp acc -> let rcr = expr_fold fold_env in
   match exp with
-  | Pil.Lv (lvl, _) -> lv_fold fold_env false lvl acc
-  | Pil.Binary ((e1,_), _, (e2,_)) -> rcr e2 (rcr e1 acc)
-  | Pil.Cast (_, (e,_))
-  | Pil.InstanceOf ((e,_), _)
-  | Pil.Unary (_, (e,_)) -> rcr e acc
-  | Pil.CondExpr ((e1,_), (e2,_), (e3,_)) -> rcr e3 (rcr e1 (rcr e2 acc))
-  | Pil.ConsArray es -> List.fold_left (fun acc' (e,_) -> rcr e acc') acc es
-  | Pil.ConsHash eps -> List.fold_left (fun acc' ((e1,_), (e2,_)) ->
+  | Lv (lvl, _) -> lv_fold fold_env false lvl acc
+  | Binary ((e1,_), _, (e2,_)) -> rcr e2 (rcr e1 acc)
+  | Cast (_, (e,_))
+  | InstanceOf ((e,_), _)
+  | Unary (_, (e,_)) -> rcr e acc
+  | CondExpr ((e1,_), (e2,_), (e3,_)) -> rcr e3 (rcr e1 (rcr e2 acc))
+  | ConsArray es -> List.fold_left (fun acc' (e,_) -> rcr e acc') acc es
+  | ConsHash eps -> List.fold_left (fun acc' ((e1,_), (e2,_)) ->
        rcr e2 (rcr e1 acc')) acc eps
 
   | (ClassConstant _|C _) -> acc (* TODO ? *)
-  | Pil.TodoExpr _ -> acc
+  | TodoExpr _ -> acc
 
 
 let (instr_fold: 'a fold_env -> Pil.instr -> 'a -> 'a) =
@@ -266,14 +266,14 @@ fun fold_env inst acc ->
   let lvf = lv_fold fold_env true in
   let exf = expr_fold fold_env in
   match inst with
-  | Pil.Assign ((lv, _), _, (e,_)) -> lvf lv (exf e acc)
-  | Pil.AssignRef ((lv1, _), (lv2, _)) -> lvf lv1 (lvf lv2 acc)
-  | Pil.Call ((lv, _), _, args) -> lvf lv
+  | Assign ((lv, _), _, (e,_)) -> lvf lv (exf e acc)
+  | AssignRef ((lv1, _), (lv2, _)) -> lvf lv1 (lvf lv2 acc)
+  | Call ((lv, _), _, args) -> lvf lv
     (List.fold_left (fun acc' -> function
-                     | Pil.Arg (e, _) -> exf e acc'
-                     | Pil.ArgRef (lv, _) -> lvf lv acc')
+                     | Arg (e, _) -> exf e acc'
+                     | ArgRef (lv, _) -> lvf lv acc')
       acc args)
-  | Pil.Eval (e, _) -> exf e acc
+  | Eval (e, _) -> exf e acc
   | TodoInstr _ -> acc
 
 let (node_fold: 'a fold_env -> F.node_kind -> 'a -> 'a) =
