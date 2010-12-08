@@ -1,6 +1,6 @@
 (*s: dataflow_pil.ml *)
 (*s: Facebook copyright *)
-(* Iain Proctor
+(* Iain Proctor, Yoann Padioleau
  *
  * Copyright (C) 2009-2010 Facebook
  *
@@ -28,8 +28,8 @@ open Pil
 
 (*
  * The goal of a dataflow analysis is to store information about each
- * variable at each program point, that is each node in a CFG
- * (e.g. whether a variable is "live" at a program point).
+ * variable at each program point that is each node in a CFG,
+ * e.g. whether a variable is "live" at a program point.
  * As you may want different kind of information, the types below
  * are polymorphic. But each take as a key a variable name (dname, for
  * dollar name, the type of variables in Ast_php).
@@ -63,8 +63,9 @@ module NiOrd = struct
 end
 
 module NodeiSet = Set.Make(NiOrd)
-(* not used anymore *)
-module NodeiMap = Map.Make(NiOrd)
+(* not used anymore
+ * module NodeiMap = Map.Make(NiOrd)
+ *)
 
 
 (* The final dataflow result; a map from each program point to a map containing
@@ -77,8 +78,8 @@ module NodeiMap = Map.Make(NiOrd)
 type 'a mapping = ('a inout) array
 
   and 'a inout = {
-    in_env: 'a env;
-    out_env: 'a env;
+    in_env: 'a VarMap.t;
+    out_env: 'a VarMap.t;
   }
    and 'a env = 'a VarMap.t
 
@@ -88,7 +89,6 @@ let empty_inout () = {in_env = empty_env (); out_env = empty_env ()}
 (*****************************************************************************)
 (* Equality *)
 (*****************************************************************************)
-
 
 let eq_env eq e1 e2 =
   VarMap.equal eq e1 e2
@@ -206,6 +206,7 @@ let (fixpoint:
     forward: bool ->
    'a mapping) =
  fun ~eq ~init ~trans ~flow ~forward ->
+
   fixpoint_worker eq init trans flow
    (if forward then forward_succs else backward_succs)
    (flow#nodes#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty)
@@ -232,8 +233,8 @@ fun fold_env lhs lvl acc -> match lvl with
   | DynamicObjAccess (Var va, _) ->
     fold_env.fold_fn (Ast_php.dname va) lhs acc
   | IndirectAccess (Var va, _) ->
-    VarSet.fold (fun var acc' -> fold_env.fold_fn var lhs acc')
-      fold_env.fold_vars (fold_env.fold_fn (Ast_php.dname va) false acc)
+      VarSet.fold (fun var acc' -> fold_env.fold_fn var lhs acc')
+        fold_env.fold_vars (fold_env.fold_fn (Ast_php.dname va) false acc)
 
   | VVar (This _)
   | ArrayAccess (This _, _)
@@ -290,6 +291,9 @@ fun fold_env node acc -> match node with
   | F.TodoNode _
     ->
       acc (* TODO *)
+
+
+
 
 let (flow_fold: 'a fold_fn -> VarSet.t -> 'a -> F.flow -> 'a) =
 fun fold_fn vars acc flow -> flow#nodes#fold

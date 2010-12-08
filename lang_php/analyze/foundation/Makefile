@@ -5,8 +5,8 @@ TOP=../../..
 TARGET=lib
 
 SRC= \
-     pil.ml controlflow_pil.ml \
-     meta_pil.ml pretty_print_pil.ml visitor_pil.ml \
+     pil.ml pretty_print_pil.ml controlflow_pil.ml \
+     meta_pil.ml visitor_pil.ml \
      phpmanual_xml.ml builtins_php.ml \
      pil_build.ml controlflow_build_pil.ml \
      controlflow_php.ml  controlflow_build_php.ml \
