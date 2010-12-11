@@ -134,7 +134,6 @@ let short_string_of_node node =
 (* Accessors *)
 (*****************************************************************************)
 
-
 let (first_node : flow -> Ograph_extended.nodei) = fun flow ->
   fst (List.find (fun (_, nk) -> nk.n == Enter) flow#nodes#tolist)
 
