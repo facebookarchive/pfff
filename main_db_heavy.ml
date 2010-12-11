@@ -21,7 +21,6 @@ module V = Visitor_php
 
 let metapath = ref "/tmp/pfff_db"
 
-
 (* for build_db *)
 let phase = ref Database_php_build.max_phase
 
@@ -65,15 +64,49 @@ let main_action xs =
 
   | [] -> raise Impossible
 
+let layers = [
+  "layer_deadcode.json", (fun dir db layerfile ->
+    Layer_deadcode_php.gen_layer ~db ~output:layerfile;
+  );
+  "layer_bugs.json", (fun dir db layerfile ->
+    
+    (* mostly copy paste of main_scheck_heavy.ml *)
+    let files = Lib_parsing_php.find_php_files_of_dir_or_files [dir] in
+    let errors = ref [] in
+    let find_entity = Some (Database_php_build.build_entity_finder db) in
 
+    files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
+      try 
+        pr2 (spf "processing: %s (%d/%d)" file i total);
+        Check_all_php.check_file ~find_entity file;
+      with 
+      | (Timeout | UnixExit _) as exn -> raise exn
+      | exn ->
+          Common.push2 (spf "PB with %s, exn = %s" file 
+                           (Common.string_of_exn exn)) errors;
+    );
+    !errors +> List.iter pr2;
+    Layer_checker_php.gen_layer ~root:dir ~output:layerfile !Error_php._errors
+  );
+]
 
+let gen_layers metapath =
+  Db.with_db ~metapath (fun db ->
+    let dir = Db.path_of_project_in_database db in
+    pr2 (spf "generating layers for %s in %s" dir metapath);
+
+    layers +> List.iter (fun (layerfile, f) ->
+      f dir db (Filename.concat metapath layerfile);
+    );
+  )
 
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
 
 let pfff_extra_actions () = [
-
+  "-gen_layers", " <metapath>",
+  Common.mk_action_1_arg gen_layers;
 ]
 
 (*****************************************************************************)
@@ -98,7 +131,6 @@ let options () =
     "-index_method", Arg.Set index_method,
     " ";
   ] ++
-  Flag_parsing_php.cmdline_flags_pp () ++
   Common.options_of_actions action (all_actions()) ++
   Flag_parsing_php.cmdline_flags_verbose () ++
   Flag_parsing_php.cmdline_flags_debugging () ++
