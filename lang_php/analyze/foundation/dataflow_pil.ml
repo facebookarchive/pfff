@@ -1,6 +1,6 @@
 (*s: dataflow_pil.ml *)
 (*s: Facebook copyright *)
-(* Iain Proctor
+(* Iain Proctor, Yoann Padioleau
  *
  * Copyright (C) 2009-2010 Facebook
  *
@@ -28,8 +28,8 @@ open Pil
 
 (*
  * The goal of a dataflow analysis is to store information about each
- * variable at each program point, that is each node in a CFG
- * (e.g. whether a variable is "live" at a program point).
+ * variable at each program point that is each node in a CFG,
+ * e.g. whether a variable is "live" at a program point.
  * As you may want different kind of information, the types below
  * are polymorphic. But each take as a key a variable name (dname, for
  * dollar name, the type of variables in Ast_php).
@@ -63,8 +63,9 @@ module NiOrd = struct
 end
 
 module NodeiSet = Set.Make(NiOrd)
-(* not used anymore *)
-module NodeiMap = Map.Make(NiOrd)
+(* not used anymore
+ * module NodeiMap = Map.Make(NiOrd)
+ *)
 
 
 (* The final dataflow result; a map from each program point to a map containing
@@ -77,8 +78,8 @@ module NodeiMap = Map.Make(NiOrd)
 type 'a mapping = ('a inout) array
 
   and 'a inout = {
-    in_env: 'a env;
-    out_env: 'a env;
+    in_env: 'a VarMap.t;
+    out_env: 'a VarMap.t;
   }
    and 'a env = 'a VarMap.t
 
@@ -88,7 +89,6 @@ let empty_inout () = {in_env = empty_env (); out_env = empty_env ()}
 (*****************************************************************************)
 (* Equality *)
 (*****************************************************************************)
-
 
 let eq_env eq e1 e2 =
   VarMap.equal eq e1 e2
@@ -206,6 +206,7 @@ let (fixpoint:
     forward: bool ->
    'a mapping) =
  fun ~eq ~init ~trans ~flow ~forward ->
+
   fixpoint_worker eq init trans flow
    (if forward then forward_succs else backward_succs)
    (flow#nodes#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty)
@@ -226,14 +227,14 @@ type 'a fold_env = {fold_fn: string -> bool -> 'a -> 'a; fold_vars: VarSet.t}
 let (lv_fold : 'a fold_env -> bool -> Pil.lvaluebis -> 'a
     -> 'a) =
 fun fold_env lhs lvl acc -> match lvl with
-  | Pil.VVar (Pil.Var va)
-  | Pil.ArrayAccess (Pil.Var va, _)
-  | Pil.ObjAccess (Pil.Var va, _)
-  | Pil.DynamicObjAccess (Pil.Var va, _) ->
+  | VVar (Var va)
+  | ArrayAccess (Var va, _)
+  | ObjAccess (Var va, _)
+  | DynamicObjAccess (Var va, _) ->
     fold_env.fold_fn (Ast_php.dname va) lhs acc
-  | Pil.IndirectAccess (Var va, _) ->
-    VarSet.fold (fun var acc' -> fold_env.fold_fn var lhs acc')
-      fold_env.fold_vars (fold_env.fold_fn (Ast_php.dname va) false acc)
+  | IndirectAccess (Var va, _) ->
+      VarSet.fold (fun var acc' -> fold_env.fold_fn var lhs acc')
+        fold_env.fold_vars (fold_env.fold_fn (Ast_php.dname va) false acc)
 
   | VVar (This _)
   | ArrayAccess (This _, _)
@@ -247,18 +248,18 @@ fun fold_env lhs lvl acc -> match lvl with
 let rec (expr_fold: 'a fold_env -> Pil.exprbis -> 'a -> 'a) =
 fun fold_env exp acc -> let rcr = expr_fold fold_env in
   match exp with
-  | Pil.Lv (lvl, _) -> lv_fold fold_env false lvl acc
-  | Pil.Binary ((e1,_), _, (e2,_)) -> rcr e2 (rcr e1 acc)
-  | Pil.Cast (_, (e,_))
-  | Pil.InstanceOf ((e,_), _)
-  | Pil.Unary (_, (e,_)) -> rcr e acc
-  | Pil.CondExpr ((e1,_), (e2,_), (e3,_)) -> rcr e3 (rcr e1 (rcr e2 acc))
-  | Pil.ConsArray es -> List.fold_left (fun acc' (e,_) -> rcr e acc') acc es
-  | Pil.ConsHash eps -> List.fold_left (fun acc' ((e1,_), (e2,_)) ->
+  | Lv (lvl, _) -> lv_fold fold_env false lvl acc
+  | Binary ((e1,_), _, (e2,_)) -> rcr e2 (rcr e1 acc)
+  | Cast (_, (e,_))
+  | InstanceOf ((e,_), _)
+  | Unary (_, (e,_)) -> rcr e acc
+  | CondExpr ((e1,_), (e2,_), (e3,_)) -> rcr e3 (rcr e1 (rcr e2 acc))
+  | ConsArray es -> List.fold_left (fun acc' (e,_) -> rcr e acc') acc es
+  | ConsHash eps -> List.fold_left (fun acc' ((e1,_), (e2,_)) ->
        rcr e2 (rcr e1 acc')) acc eps
 
   | (ClassConstant _|C _) -> acc (* TODO ? *)
-  | Pil.TodoExpr _ -> acc
+  | TodoExpr _ -> acc
 
 
 let (instr_fold: 'a fold_env -> Pil.instr -> 'a -> 'a) =
@@ -266,14 +267,14 @@ fun fold_env inst acc ->
   let lvf = lv_fold fold_env true in
   let exf = expr_fold fold_env in
   match inst with
-  | Pil.Assign ((lv, _), _, (e,_)) -> lvf lv (exf e acc)
-  | Pil.AssignRef ((lv1, _), (lv2, _)) -> lvf lv1 (lvf lv2 acc)
-  | Pil.Call ((lv, _), _, args) -> lvf lv
+  | Assign ((lv, _), _, (e,_)) -> lvf lv (exf e acc)
+  | AssignRef ((lv1, _), (lv2, _)) -> lvf lv1 (lvf lv2 acc)
+  | Call ((lv, _), _, args) -> lvf lv
     (List.fold_left (fun acc' -> function
-                     | Pil.Arg (e, _) -> exf e acc'
-                     | Pil.ArgRef (lv, _) -> lvf lv acc')
+                     | Arg (e, _) -> exf e acc'
+                     | ArgRef (lv, _) -> lvf lv acc')
       acc args)
-  | Pil.Eval (e, _) -> exf e acc
+  | Eval (e, _) -> exf e acc
   | TodoInstr _ -> acc
 
 let (node_fold: 'a fold_env -> F.node_kind -> 'a -> 'a) =
@@ -290,6 +291,9 @@ fun fold_env node acc -> match node with
   | F.TodoNode _
     ->
       acc (* TODO *)
+
+
+
 
 let (flow_fold: 'a fold_fn -> VarSet.t -> 'a -> F.flow -> 'a) =
 fun fold_fn vars acc flow -> flow#nodes#fold

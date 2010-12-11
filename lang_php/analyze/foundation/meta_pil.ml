@@ -16,6 +16,8 @@ open Common
 
 open Pil
 
+module F = Controlflow_pil
+
 (*****************************************************************************)
 (* Meta *)
 (*****************************************************************************)
@@ -336,6 +338,36 @@ let rec vof_toplevel =
 
  
 let vof_program v = Ocaml.vof_list vof_toplevel v
+
+
+(*****************************************************************************)
+(* nodes *)
+(*****************************************************************************)
+
+let rec vof_node { F.n = v_n } =
+  let bnds = [] in
+  let arg = vof_node_kind v_n in
+  let bnd = ("n", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_node_kind =
+  function
+  | F.Enter -> Ocaml.VSum (("Enter", []))
+  | F.Exit -> Ocaml.VSum (("Exit", []))
+  | F.TrueNode -> Ocaml.VSum (("TrueNode", []))
+  | F.FalseNode -> Ocaml.VSum (("FalseNode", []))
+  | F.IfHeader v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("IfHeader", [ v1 ]))
+  | F.WhileHeader v1 ->
+      let v1 = vof_expr v1 in Ocaml.VSum (("WhileHeader", [ v1 ]))
+  | F.Return v1 ->
+      let v1 = Ocaml.vof_option vof_expr v1
+      in Ocaml.VSum (("Return", [ v1 ]))
+  | F.Jump -> Ocaml.VSum (("Jump", []))
+  | F.TryHeader -> Ocaml.VSum (("TryHeader", []))
+  | F.Throw -> Ocaml.VSum (("Throw", []))
+  | F.Echo v1 ->
+      let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
+  | F.Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
+  | F.Join -> Ocaml.VSum (("Join", []))
 
 
 (*****************************************************************************)

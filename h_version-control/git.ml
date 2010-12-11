@@ -410,3 +410,22 @@ let max_date_of_lines ~basedir ?use_cache filename lines_to_remove =
   Common.maximum_dmy toblame
 
 
+
+(*****************************************************************************)
+(* Archeology *)
+(*****************************************************************************)
+
+(* src:
+ * http://www.bramschoenmakers.nl/en/node/645
+ * 
+ * Sometimes it's handy to checkout a branch based on a point in time but:
+ * 
+ *   $ git checkout master@{2009-07-27 13:37}
+ * 
+ * will not work, because it uses the reflog (which expires after some time).
+ * 
+ * The trick (as found on Nabble) is to lookup the revision on a certain
+ * date and check out that revision. This can be done in a single command:
+ * 
+ *   $ git checkout `git rev-list -n 1 --before="2009-07-27 13:37" master`
+ *)

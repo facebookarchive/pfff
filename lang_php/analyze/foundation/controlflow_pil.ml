@@ -47,6 +47,7 @@ type node = {
   (* special fake cfg nodes *)
   | Enter
   | Exit
+
   (* An alternative is to store such information in the edges, but
    * experience shows it's easier to encode it via regular nodes
    *)
@@ -79,6 +80,19 @@ type edge = Direct
 type flow = (node, edge) Ograph_extended.ograph_mutable
 
 type nodei = Ograph_extended.nodei
+
+(* for the visitor *)
+type any =
+  | Lvalue of lvalue
+  | Expr of expr
+  | Instr2 of instr
+  | Stmt of stmt
+  | Node of node
+
+  | StmtList of stmt list
+
+  | Toplevel of toplevel
+  | Program of program
 
 (*****************************************************************************)
 (* String of *)
@@ -117,43 +131,8 @@ let short_string_of_node node =
     -> raise Todo
 
 (*****************************************************************************)
-(* Meta *)
-(*****************************************************************************)
-
-let vof_expr = Meta_pil.vof_expr
-let vof_instr = Meta_pil.vof_instr
-
-let rec vof_node { n = v_n } =
-  let bnds = [] in
-  let arg = vof_node_kind v_n in
-  let bnd = ("n", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-
-and vof_node_kind =
-  function
-  | Enter -> Ocaml.VSum (("Enter", []))
-  | Exit -> Ocaml.VSum (("Exit", []))
-  | TrueNode -> Ocaml.VSum (("TrueNode", []))
-  | FalseNode -> Ocaml.VSum (("FalseNode", []))
-  | IfHeader v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("IfHeader", [ v1 ]))
-  | WhileHeader v1 ->
-      let v1 = vof_expr v1 in Ocaml.VSum (("WhileHeader", [ v1 ]))
-  | Return v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Return", [ v1 ]))
-  | Jump -> Ocaml.VSum (("Jump", []))
-  | TryHeader -> Ocaml.VSum (("TryHeader", []))
-  | Throw -> Ocaml.VSum (("Throw", []))
-  | Echo v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
-  | Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
-  | Join -> Ocaml.VSum (("Join", []))
-
-
-
-(*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
-
 
 let (first_node : flow -> Ograph_extended.nodei) = fun flow ->
   fst (List.find (fun (_, nk) -> nk.n == Enter) flow#nodes#tolist)

@@ -131,7 +131,7 @@ let var_name_of_lval lval =
  * to visit the node.
  *)
 let info_of_node n = 
-  let v = CFG.vof_node n in
+  let v = Meta_pil.vof_node n in
   let all_infos = ref [] in
   (* ugly hack using reflection
    * todo: generate visitors for Pil and Controlflow_pil

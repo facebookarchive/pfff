@@ -356,7 +356,7 @@ let test_visitor_pil file =
         );
       }
       in
-      visitor.Visitor_pil.vstmt_list pil;
+      visitor (Controlflow_pil.StmtList pil);
       let vars = Common.hashset_to_list h in
       pr2 (spf "vars in function %s = %s" funcname (Common.join ", " vars));
   | _ -> ()

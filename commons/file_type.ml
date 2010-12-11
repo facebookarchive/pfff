@@ -164,6 +164,7 @@ let file_type_of_file2 file =
 
   (* facebook: sqlshim files *)
   | "sql3" -> PL (Web Sql)
+  | "fbobj" -> PL (MiscPL "fbobj")
 
   | "png" | "jpg" | "JPG" | "gif" | "tiff" -> Media (Picture e)
   | "xcf" | "xpm" -> Media (Picture e)
