@@ -62,7 +62,21 @@ let pr2 s =
 (* Helpers *)
 (*****************************************************************************)
 
-let apply_transfo (f, keywords_grep_opt) xs =
+(* Some helper functions when using the low-level transformation API of pfff.
+ * You should use the spatch DSL if you can.
+ *)
+type transformation = {
+  (* Works by side effect on the tokens in the AST, see the transfo field.
+   * It returns a boolean indicating whether any transformation was done.
+   *)
+  trans_func: Ast_php.program -> bool;
+  (* optimisation; if a file does not contain certain keywords we don't
+   * even have to parse it
+   *)
+  grep_keywords: string list option;
+}
+
+let apply_transfo transfo xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
@@ -84,7 +98,7 @@ let apply_transfo (f, keywords_grep_opt) xs =
     k();
 
     let worth_trying = 
-      match keywords_grep_opt with
+      match transfo.grep_keywords with
       | None -> true
       | Some xs -> Common.contain_any_token_with_egrep xs file
     in
@@ -95,7 +109,7 @@ let apply_transfo (f, keywords_grep_opt) xs =
     let ast = Parse_php.program_of_program2 ast2 in
     Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
-    let was_modified = f ast in
+    let was_modified = transfo.trans_func ast in
 
     (* old: 
      * let patch = Patch.generate_patch !edition_cmds 
@@ -397,6 +411,78 @@ let simple_transfo xs =
   );
   ()
 
+(* -------------------------------------------------------------------------*)
+(* An example of an XHP transformation *)
+(* -------------------------------------------------------------------------*)
+
+(*
+ * The transformation below can be encoded via this syntactical patch:
+ * 
+ * <ui:section-header
+ * -   border=X
+ * ></ui:section-header>
+ * 
+ * There are nevertheless currenty a few limitations in spatch which
+ * will cause this syntactical patch to fail to transform all the
+ * relevant code (e.g. because of some XHP isomorphisms not yet
+ * handled by spatch). In the mean time the code below uses the low-level
+ * transformation API of pfff to express the same transformation;
+ * it can be used as a reference for spatch to compare with.
+ *)
+
+let remove_border_attribute ast =
+  let was_modified = ref false in
+
+  (* $ ./pfff -dump_php_ml tests/php/spatch/border_var.php 
+   *
+   * [StmtList(
+   *  [ExprStmt(
+   *    (Assign((Var(DName(("a", i_1)), Ref(NoScope)), tlval_2), i_3,
+   *       (XhpHtml(
+   *          Xhp((["ui"; "section-header"], i_4),
+   *            [(("href", i_5), i_6,
+   *              XhpAttrString(i_7, [EncapsString(("foo", i_8))], i_9));
+   *             (("border", i_10), i_11,
+   *              XhpAttrString(i_12, [EncapsString(("1", i_13))], i_14))],
+   *            i_15, [XhpText(("
+   *   This is nuts
+   *   ", i_16))],
+   *            (Some(["ui"; "section-header"]), i_17))),
+   *        t_18)),
+   *     t_19), i_20)]); FinalDef(i_21)]
+   *)
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kxhp_html = (fun (k, _) x ->
+      match x with
+      | Xhp ( (["ui"; "section-header"], _), attributes, _, _, _)
+      | XhpSingleton ( (["ui"; "section-header"], _), attributes, _) ->
+
+          attributes +> List.iter (fun attr ->
+            match attr with
+            | (("border", _tok_border), _tok_equal, _xhp_attr_value) ->
+                was_modified := true;
+                let tokens = Lib_parsing_php.ii_of_any (XhpAttribute attr) in
+                tokens +> List.iter (fun tok ->
+                  tok.transfo <- Remove;
+                );
+            | _ -> ()
+          );
+          (* recurse *)
+          k x
+      (* recurse *)
+      | _ -> k x
+    );
+  }
+  in
+  visitor (Program ast);
+  !was_modified
+
+let remove_border_attribute_transfo = {
+  trans_func = remove_border_attribute;
+  grep_keywords = Some ["border"];
+}
+
+
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
@@ -446,6 +532,9 @@ let spatch_extra_actions () = [
   (* see also demos/simple_refactoring.ml *)
   "-simple_transfo", " <files_or_dirs>",
   Common.mk_action_n_arg (simple_transfo);
+
+  "-remove_border_attribute", " <files_or_dirs>",
+  Common.mk_action_n_arg (apply_transfo remove_border_attribute_transfo);
 
   "-test", "",
   Common.mk_action_0_arg unittest_spatch;
