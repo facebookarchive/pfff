@@ -120,6 +120,7 @@ let all_actions () =
   Layer_deadcode_php.actions () ++
   Layer_coverage_php.actions () ++
   Layer_xhprof.actions () ++
+  Layer_cyclomatic_php.actions () ++
   []
 
 let options () = 

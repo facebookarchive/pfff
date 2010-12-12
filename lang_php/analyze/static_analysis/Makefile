@@ -5,7 +5,7 @@ TOP=../../..
 TARGET=lib
 
 SRC= \
-  cyclomatic_php.ml \
+  cyclomatic_php.ml layer_cyclomatic_php.ml \
   code_rank_php.ml \
   coverage_static_php.ml \
   dataflow_php_liveness.ml \

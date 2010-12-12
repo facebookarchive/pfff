@@ -15,7 +15,8 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 - test coverage layer (using phpunit and xdebug data)
 - bugs layer
 - security layer
-- TODO cyclomatic, code_rank, distance_to_bottom layer
+- cyclomatic complexity, 
+- TODO code_rank, distance_to_bottom layer
 - TODO age, activity, #authors layers
 
 *** visual grep
