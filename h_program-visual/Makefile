@@ -8,6 +8,7 @@ TARGET=lib
 
 SRC= flag_program_visual.ml \
      treemap_pl.ml \
+     layer_archi.ml \
      test_program_visual.ml
 
 
