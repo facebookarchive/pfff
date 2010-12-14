@@ -552,6 +552,7 @@ version:
 update:
 	make opt
 	cp codemap.opt ~/bin
+	cp scheck.opt ~/bin
 
 ##############################################################################
 # Package rules
