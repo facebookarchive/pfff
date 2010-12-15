@@ -1085,6 +1085,9 @@ val last_day_in_week_of_day : float_time -> float_time
 val day_secs: float_time
 
 val rough_days_since_jesus : date_dmy -> days
+(* to get a positive numbers the second date must be more recent than
+ * the first.
+ *)
 val rough_days_between_dates : date_dmy -> date_dmy -> days
 
 val string_of_unix_time_lfs : Unix.tm -> string

@@ -4,8 +4,11 @@ open Common
 
 (* operations on a singular file *)
 
+(* note that returned array is 0-indexed but the first entry is
+ * a dummy value.
+ *)
 val annotate : 
-  ?basedir:string -> ?use_cache:bool ->
+  ?basedir:string -> ?use_cache:bool -> ?use_dash_C:bool ->
   Common.filename -> Lib_vcs.line_annotation array
 val date_file_creation: 
   ?basedir:string -> Common.filename -> Common.date_dmy
