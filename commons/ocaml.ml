@@ -785,9 +785,15 @@ let rec (v_of_json: Json_type.json_type -> v) = fun j ->
        * of strings where the first element is a string that happen to
        * look like a constructor. With this ugly code we currently
        * not handle that :(
+       * 
+       * update: in the layer json file, one can have a filename
+       * like Makefile and we don't want it to be a constructor ...
+       * so for now I just generate constructors strings like
+       * __Pass so we know it comes from an ocaml constructor.
        *)
-      | (J.String s)::xs when s =~ "^[A-Z][A-Za-z_]*$" ->
-          VSum (s, List.map v_of_json  xs)
+       | (J.String s)::xs when s =~ "^__\\([A-Z][A-Za-z_]*\\)$" ->
+           let constructor = Common.matched1 s in
+           VSum (constructor, List.map v_of_json  xs)
       | ys ->
           VList (xs +> List.map v_of_json)
       )
