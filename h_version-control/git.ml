@@ -86,7 +86,7 @@ let annotate_regexp =
 
 
 (* related?  git blame and git pickaxe ? *)
-let annotate2 ?(basedir="") ?(use_cache=false) filename = 
+let annotate2 ?(basedir="") ?(use_cache=false) ?(use_dash_C=true) filename = 
 
   let full_filename = Filename.concat basedir filename in
 
@@ -97,7 +97,10 @@ let annotate2 ?(basedir="") ?(use_cache=false) filename =
      * adding HEAD so that can get the full information of a file that
      * has been modified in the working tree.
      *)
-    let cmd = (goto_dir basedir ^ "git annotate -C HEAD -- "^filename^" 2>&1")
+    let cmd = (goto_dir basedir ^ 
+                  spf "git annotate %s HEAD -- %s 2>&1"
+                  (if use_dash_C then "-C" else "")
+                  filename)
     in
     (* pr2 cmd; *)
     let xs = Common.cmd_to_list cmd in
@@ -121,8 +124,9 @@ let annotate2 ?(basedir="") ?(use_cache=false) filename =
     Array.of_list (dummy_annotation::annots)
   )
   
-let annotate ?basedir ?use_cache a = 
-  Common.profile_code "Git.annotate" (fun () -> annotate2 ?basedir ?use_cache a)
+let annotate ?basedir ?use_cache ?use_dash_C a = 
+  Common.profile_code "Git.annotate" (fun () -> 
+    annotate2 ?basedir ?use_cache ?use_dash_C a)
 
 (* ------------------------------------------------------------------------ *)
 let annotate_raw ?(basedir="") filename = 

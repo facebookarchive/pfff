@@ -121,6 +121,7 @@ let all_actions () =
   Layer_coverage_php.actions () ++
   Layer_xhprof.actions () ++
   Layer_cyclomatic_php.actions () ++
+  Layer_vcs.actions () ++
   []
 
 let options () = 
