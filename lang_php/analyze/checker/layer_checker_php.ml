@@ -42,6 +42,7 @@ let properties = [
   "eDeadStatement", "salmon";
 
   (* ugly: coupling with scope_code.ml *)
+(* commented for now, less important
   "eUnusedVariable-Global", "green";
   "eUnusedVariable-Local", "green";
   "eUnusedVariable-Param", "green";
@@ -51,26 +52,36 @@ let properties = [
   "eUnusedVariable-LocalIterator", "green";
   "eUnusedVariable-ListBinded", "green";
   "eUnusedVariable-NoScope", "green";
+*)
 
-  (* ugly: coupling with entity_php.ml *)
+  (* ugly: coupling with entity_php.ml
+   * don't forget to copy php_stdlib/ to the directory
+   * you want to analyze, otherwise you will get lots
+   * of such undefined-Xxx errors
+   *)
   "eUndefinedEntity-function",    "blue";
   "eUndefinedEntity-class",    "blue";
+(*
   "eUndefinedEntity-method",    "blue";
+*)
 
+(*
   "eMultiDefinedEntity-function", "blue2";
   "eMultiDefinedEntity-class", "blue2";
   "eMultiDefinedEntity-method", "blue2";
+*)
 
   "eTooManyArguments", "blue3";
   "eNotEnoughArguments", "blue4";
 
   (* ugly: coupling with error_code.ml *)
   "eWrongKeywordArgument-Bad", "yellow";
-  "eWrongKeywordArgument-ReallyBad", "yellow";
-  "eWrongKeywordArgument-ReallyReallyBad", "yellow";
+  "eWrongKeywordArgument-ReallyBad", "yellow3";
+  "eWrongKeywordArgument-ReallyReallyBad", "yellow4";
 
-
+(* commented for now
   "eUseOfUndefinedMember", "cyan";
+*)
   "eUglyGlobalDynamic", "cyan";
   "eWeirdForeachNoIteratorVar", "cyan";
 
