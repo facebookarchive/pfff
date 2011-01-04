@@ -82,7 +82,8 @@ let string_of_unaryOp (u:A.unaryOp) = match u with
 |A.UnTilde -> "~"
 
 let string_of_constant (c:A.constant) = match c with
-|A.Int sw | A.Double sw | A.String sw -> A.unwrap sw
+|A.Int sw | A.Double sw -> A.unwrap sw
+|A.String sw -> "\""^(A.unwrap sw)^"\""
 |A.CName n -> string_of_name n
 |A.PreProcess _ -> raise Todo
 |A.XdebugClass _ -> raise Todo
