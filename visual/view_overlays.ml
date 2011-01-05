@@ -73,15 +73,24 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
   Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
   let extent = CairoH.text_extents cr_overlay readable_txt in
   let tw = extent.Cairo.text_width in
-  let _th = extent.Cairo.text_height in
+  let th = extent.Cairo.text_height in
 
+  let refx = x - tw / 2. in
+  let refy = y in
 
-  Cairo.move_to cr_overlay (x - tw / 2.) (y);
+  CairoH.fill_rectangle ~cr:cr_overlay 
+    ~x:(refx + extent.Cairo.x_bearing) ~y:(refy + extent.Cairo.y_bearing)
+    ~w:tw ~h:(th * 1.2)
+    ~color:"black"
+    ~alpha:0.5
+    ();
+
+  Cairo.move_to cr_overlay refx refy;
+  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
   CairoH.show_text cr_overlay readable_txt;
   
   (*
