@@ -1,6 +1,6 @@
 -*- org -*-
 
-* 0.14
+* 0.14 (Q4 2010)
 
 ** codemap
 
@@ -10,14 +10,15 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 
 *** google-earth like layers!
 
+- architecture/aspect layer (default one)
 - static dead code layer
 - dynamic live code layer (using xhprof data)
 - test coverage layer (using phpunit and xdebug data)
 - bugs layer
 - security layer
 - cyclomatic complexity, 
-- TODO code_rank, distance_to_bottom layer
-- TODO age, activity, #authors layers
+- age (and activity) layer
+- number of authors layer
 
 *** visual grep
 can now visualize the result of a git grep on a project.
@@ -59,9 +60,6 @@ the documentation of pfff!)
 
 - does it take argument by refs. 
 - does it contain dynamic calls ($fn(...))
-- TODO does it use a global, 
-- TODO is the function dead,
-- TODO is the function live in certain context
 
 This can help the visualizer to give more semantic visual feedback.
 
@@ -90,7 +88,7 @@ and assist in the refactoring)
 
 first public release!
 
-* 0.12
+* 0.12 (Q3 2010)
 
 Real start of multi-language support.
 
@@ -179,7 +177,7 @@ include/require analysis as well as flib-unsugaring. Make it possible
 to grab all the files needed to check one file, in a way similar
 to what gcc does with cpp. Provide a DFS and BFS algo.
 
-* 0.10
+* 0.10 (Q2 2010)
 
 ** introduce test coverage analysis using xdebug.ml and phpunit.ml
 
@@ -294,7 +292,7 @@ and fb_org/fb_employee.ml, etc
 
 reorganized json/sexp output, factorize code and use more ocaml.ml
 
-* 0.8 
+* 0.8 (Q1 2010)
 
 ** xdebug trace parsing
 
@@ -372,7 +370,7 @@ internals manual for parsing_php/
 callgraph for methods (using weak heuristic), with optimisations
 to scale (partially because use weak heuristic)
 
-* 0.3 
+* 0.3 (Q4 2009)
 
 ** analysis
 
@@ -403,7 +401,7 @@ update: superseded by web gui
 
 ** global analysis first draft, PHP database (with ocamlbdb/)
 
-* alpha
+* alpha (Nov 2009)
 
 ** PHP parser first draft !
 reused Zend flex/bison code.
