@@ -27,7 +27,7 @@ pfff is also made of few tools:
    visualizer/navigator/searcher leveraging
    the information computed previously by pfff_db
  - sgrep, a syntactical grep
- - spatch, a syntacitcal patch
+ - spatch, a syntactical patch
  - scheck, a bug finder
  - scheck_heavy, a bug finder leveraging the information computed previously
    by pfff_db_heavy
