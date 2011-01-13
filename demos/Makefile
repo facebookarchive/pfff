@@ -11,7 +11,7 @@
 # way to compile a pfff "script"
 simple_refactoring: simple_refactoring.ml
 	ocamlc -g -o simple_refactoring \
-         -I ../commons -I ../lang_php/parsing \
+         -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
 	  ../commons/commons.cma ../h_program-lang/lib.cma \
           ../lang_php/parsing/lib.cma \
@@ -92,6 +92,7 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 PROGS=php_transducer.byte \
  show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte \
  justin.byte bjacobs.byte
+
 # simple_zero_to_null.byte count_elseifs.byte
 
 #ifeq ($(FEATURE_BDB),1)
