@@ -38,7 +38,7 @@ let empty_environment = []
  * such regexp (the starting F) even if it's not a metavar at all
  *)
 let metavar_regexp_string = 
-  "\\([A-Z]\\([0-9]?_[A-Z]*\\)?\\)$"
+  "\\b\\([A-Z]\\([0-9]?_[A-Z]*\\)?\\)\\b"
 
 let metavar_regexp  = Str.regexp metavar_regexp_string
 
