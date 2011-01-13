@@ -756,6 +756,8 @@ type any =
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
 
+  | StaticScalar of static_scalar
+
   | Info of info
   | InfoList of info list
   (* with tarzan *)

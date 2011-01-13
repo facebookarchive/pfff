@@ -1231,6 +1231,7 @@ and v_any = function
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()
   | Case2 v1 -> let v1 = v_case v1 in ()
+  | StaticScalar v1 -> let v1 = v_static_scalar v1 in ()
 
 (* end of auto generation *)
  

@@ -1199,6 +1199,9 @@ and vof_any =
       let v1 = vof_xhp_attr_value v1 in Ocaml.VSum (("XhpAttrValue", [ v1 ]))
   | XhpHtml2 v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml2", [ v1 ]))
+
+  | StaticScalar v1 ->
+      let v1 = vof_static_scalar v1 in Ocaml.VSum (("StaticScalar", [ v1 ]))
   | Info v1 -> let v1 = vof_info v1 in Ocaml.VSum (("Info", [ v1 ]))
   | InfoList v1 ->
       let v1 = Ocaml.vof_list vof_info v1

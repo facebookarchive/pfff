@@ -1175,7 +1175,7 @@ and map_any =
   | Info v1 -> let v1 = map_info v1 in Info ((v1))
   | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
-
+  | StaticScalar v1 -> let v1 = map_static_scalar v1 in StaticScalar v1
 
  and all_functions =   
     {
