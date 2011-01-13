@@ -5,6 +5,8 @@ open Ast_php
 module Ast = Ast_php
 module V = Visitor_php
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -161,8 +163,8 @@ let main files_or_dirs =
                i_right_paren)),
              tlval_20)),
           t_21) ->
-            i_token_comma.Ast.transfo <- Ast.Remove;
-            i_token_string.Ast.transfo <- Ast.Remove;
+            i_token_comma.PI.transfo <- PI.Remove;
+            i_token_string.PI.transfo <- PI.Remove;
 
         (* similar pattern except we accept any kind of expression as
          * the second argument, not just constant strings.
@@ -188,9 +190,9 @@ let main files_or_dirs =
               Lib_parsing_php.ii_of_any (Expr an_expr) in
 
             tokens_in_expression +> List.iter (fun tok ->
-              tok.Ast.transfo <- Ast.Remove;
+              tok.PI.transfo <- PI.Remove;
             );
-            token_comma.Ast.transfo <- Ast.Remove;
+            token_comma.PI.transfo <- PI.Remove;
         | _ -> k expr
       );
     }

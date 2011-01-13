@@ -40,8 +40,7 @@ open Common
  * 
  *  - Camllib by jeannet ?
  * 
- * There are probably more, see the caml hump.
- *    
+ *  - probably more on the caml hump.
  * 
  * I have also developed a few graph libraries, but really just
  * to have a data type with successors/predecessors accessors:
@@ -53,7 +52,7 @@ open Common
  *  - ograph_simple.ml, key can be specified, for instance can be a string,
  *    so dont have to pass through the intermediate nodei for everything.
  * 
- * ograph_simple and ograph_extended and ograph2way shows that there is not
+ * ograph_simple and ograph_extended and ograph2way show that there is not
  * a single graph that can accomodate all needs while still being convenient.
  * ograph_extended is more generic, but you pay a little for that by
  * forcing the user to have this intermediate 'nodei'. The people 
@@ -67,6 +66,7 @@ open Common
  * polymorphic nodes, which I think is quite useful (especially when
  * you want to display your graph with dot, you want to see the label
  * of the nodes, and not just integers. 
+ * 
  * 
  * So This module is a small modification of ocamlgraph, to have 
  * more polymorphic graph with some defaults that makes sense most
