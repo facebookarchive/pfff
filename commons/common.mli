@@ -1154,6 +1154,8 @@ val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.proce
 
 val command2 : string -> unit
 val _batch_mode: bool ref
+val command_safe: ?verbose:bool -> 
+  filename (* executable *) -> string list (* args *) -> int
 
 val y_or_no: string -> bool
 

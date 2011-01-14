@@ -3187,6 +3187,19 @@ let command2_y_or_no_exit_if_no cmd =
   then ()
   else raise (UnixExit (1))
 
+let command_safe ?(verbose=false) program args =
+  let pid = Unix.fork () in
+  let cmd_str = (program::args) +> join " " in
+  if pid =|= 0 then begin
+    pr2 ("running: " ^ cmd_str);
+    Unix.execv program (Array.of_list (program::args))
+  end
+  else
+    let (pid2, status) = Unix.waitpid [] pid in
+    match status with
+    | Unix.WEXITED retcode -> retcode
+    | Unix.WSIGNALED _ | Unix.WSTOPPED _ ->
+        failwith ("problem running: " ^ cmd_str)
   
 
 
