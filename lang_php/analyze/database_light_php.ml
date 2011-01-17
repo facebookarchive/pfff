@@ -83,8 +83,8 @@ let is_pleac_file file =
 let is_test_file file =
   let file = Common.lowercase file in
   (file =~ ".*__tests__.*") ||
-  (file =~ ".*tests/push-blocking") ||
-  (file =~ ".*tests/push-monitoring") ||
+  (file =~ ".*tests/push-blocking/") ||
+  (file =~ ".*tests/monitoring/") ||
   (file =~ ".*scripts/unittest/tests") ||
   false
 
@@ -222,8 +222,16 @@ let database_code_from_php_database ?(verbose=false) db =
   let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
 
   (* phase 1: collecting entities and basic information *)
+  if verbose then pr2 "phase 1: collecting entities";
+
   let entities = 
-    db.DbPHP.defs.DbPHP.id_kind#tolist +> Common.map_filter (fun (id, id_kind)->
+    db.DbPHP.defs.DbPHP.id_kind#tolist +>
+   (fun xs -> Common_extra.execute_and_show_progress2 
+     ~show_progress:verbose (List.length xs) 
+    (fun k -> 
+     xs +> Common.map_filter (fun (id, id_kind)->
+      k();
+
       match id_kind with
       | Entity_php.Function
       | Entity_php.Method
@@ -302,9 +310,11 @@ let database_code_from_php_database ?(verbose=false) db =
       | Entity_php.StmtList -> 
           None
 
-    )
+    )))
   in
   (* phase 2: adding the correct cross reference information *)
+  if verbose then pr2 "phase 2: adding crossref information";
+
   let entities_arr = Array.of_list entities in
 
   let h_id_phpdb_to_id_db = Hashtbl.create 101 in
@@ -322,6 +332,8 @@ let database_code_from_php_database ?(verbose=false) db =
       e
     )
   in
+  if verbose then pr2 "phase 3: last fixes";
+
   (* our current method/field analysis is imprecise; need to compensate back *)
   Db.adjust_method_or_field_external_users entities_arr;
 
