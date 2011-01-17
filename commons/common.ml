@@ -5873,7 +5873,7 @@ let add_in_scope_h x (k,v) =
 
 let (_execute_and_show_progress_func: 
    (show_progress:bool ->
-    int (* length *) -> ((unit -> unit) -> unit) -> unit) ref) 
+    int (* length *) -> ((unit -> unit) -> 'a) -> 'a) ref) 
  = ref 
   (fun ~show_progress a b -> 
     failwith "no execute  yet, have you included common_extra.cmo?"
