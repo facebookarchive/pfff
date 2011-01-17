@@ -498,6 +498,7 @@ let (class_def_of_string: string -> Ast_php.class_def) = fun s ->
 
 let parse_any filename =
   let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING filename in
+
   let tr = PI.mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
   

@@ -720,7 +720,9 @@ rule st_in_scripting = parse
               | TEQ _
               | T_DOUBLE_ARROW _
               | TCOLON _
-            ) when !Flag.xhp_builtin ->
+            )
+          | None (* when in sgrep/spatch mode, < is the first token *)
+            when !Flag.xhp_builtin ->
               push_mode (ST_IN_XHP_TAG xs);
               T_XHP_OPEN_TAG(xs, tokinfo lexbuf)
           | _ -> 

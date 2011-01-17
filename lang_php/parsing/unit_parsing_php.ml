@@ -147,6 +147,10 @@ let unittest =
       let any = Parse_php.any_of_string "foo()" in
       let ok = match any with Expr(_) -> true | _ -> false in
       assert_bool "should be the AST of an expression" ok;
+      let any = Parse_php.any_of_string "<x:frag>x</x:frag>" in
+      let ok = match any with Expr(_) -> true | _ -> false in
+      assert_bool "should be the AST of an expression" ok;
+
     );
 
 
