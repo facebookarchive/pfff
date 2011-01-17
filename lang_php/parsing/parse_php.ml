@@ -415,7 +415,42 @@ let parse_program ?pp file =
 (* Sub parsers *)
 (*****************************************************************************)
 
-(* This function is useful not only to test but also in our own code
+let parse_any filename =
+  let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING filename in
+
+  let tr = PI.mk_tokens_state toks in
+  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  
+  try 
+    Parser_php.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+  with exn ->
+    let cur = tr.PI.current in
+    if !Flag.show_parsing_error
+    then 
+    (match exn with
+     (* Lexical is not anymore launched I think *)
+     | Lexer_php.Lexical s -> 
+         pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
+     | Parsing.Parse_error -> 
+         pr2 ("parse error \n = " ^ error_msg_tok cur)
+    (* | Semantic_java.Semantic (s, i) -> 
+         pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
+    *)
+     | _ -> raise exn
+    );
+    raise exn
+    
+let any_of_string s =
+  let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
+  Common.write_file tmpfile s;
+  let res = parse_any tmpfile in
+  Common.erase_this_temp_file tmpfile;
+  res
+
+(* 
+ * todo: obsolete now with parse_any ? just redirect to parse_any ?
+ * 
+ * This function is useful not only to test but also in our own code
  * as a shortcut to build complex expressions
  *)
 let (expr_of_string: string -> Ast_php.expr) = fun s ->
@@ -430,27 +465,6 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
     | [Ast.StmtList [Ast.ExprStmt (e, _tok)];Ast.FinalDef _] -> e
   | _ -> failwith "only expr pattern are supported for now"
   )
-  in
-  Common.erase_this_temp_file tmpfile;
-  res
-
-let (xhp_expr_of_string: string -> Ast_php.expr) = fun s ->
-  let tmpfile = Common.new_temp_file "xhp_expr_of_s" "php" in
-
-  (* the parser/lexer needs to recognize certain tokens to switch
-   * in a XHP_MODE. We do that by inserting this fake $a = 
-   * before the xhp expression.
-   *)
-  Common.write_file tmpfile ("<?php $a=\n" ^ s ^ ";\n");
-
-  let (ast2, _stat) = parse tmpfile in
-  let ast = program_of_program2 ast2 in
-  Lib_parsing_php.print_warning_if_not_correctly_parsed ast tmpfile;
-
-  let res = 
-    match ast with
-    | [StmtList [ExprStmt  ((Assign(_, i_3, e), t_9),_)];FinalDef _] -> e
-    | _ -> failwith "only expr pattern are supported for now"
   in
   Common.erase_this_temp_file tmpfile;
   res
@@ -495,35 +509,5 @@ let (class_def_of_string: string -> Ast_php.class_def) = fun s ->
   | Left class_def -> class_def
   | Right interface_def -> 
       failwith "was expecting a class def, not an interface"
-
-let parse_any filename =
-  let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING filename in
-
-  let tr = PI.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
-  
-  try 
-    Parser_php.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
-  with exn ->
-    let cur = tr.PI.current in
-    (match exn with
-     (* Lexical is not anymore launched I think *)
-     | Lexer_php.Lexical s -> 
-         pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
-     | Parsing.Parse_error -> 
-         pr2 ("parse error \n = " ^ error_msg_tok cur)
-    (* | Semantic_java.Semantic (s, i) -> 
-         pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
-    *)
-     | _ -> raise exn
-    );
-    raise exn
-    
-let any_of_string s =
-  let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
-  Common.write_file tmpfile s;
-  let res = parse_any tmpfile in
-  Common.erase_this_temp_file tmpfile;
-  res
 
 (*e: parse_php.ml *)

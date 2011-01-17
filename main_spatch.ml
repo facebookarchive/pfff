@@ -217,11 +217,13 @@ let parse_spatch file =
 
   let pattern = 
     Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
-    (* ugly *)
-    if spatch_without_patch_annot =~ "^[ \t]*<"
-    then Parse_php.xhp_expr_of_string spatch_without_patch_annot 
-    else Parse_php.expr_of_string spatch_without_patch_annot 
+      Parse_php.any_of_string spatch_without_patch_annot
     )
+  in
+  let pattern =
+    match pattern with
+    | Expr e -> e
+    | _ ->failwith "only expr pattern are supported for now"
   in
 
   (* need adjust the tokens in it now *)

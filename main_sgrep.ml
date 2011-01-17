@@ -117,26 +117,22 @@ let gen_layer ~root file =
 (*****************************************************************************)
 let main_action xs =
 
-  (* for now handle only expression *)
-  let pattern_expr = 
+  let pattern = 
     Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     match !pattern_file, !pattern_string with
-    | "", "" -> failwith "I need a pattern; use -f or -e";
+    | "", "" -> 
+        failwith "I need a pattern; use -f or -e";
     | file, _ when file <> "" ->
-        let (ast2, _stat) = Parse_php.parse file in
-        let ast = Parse_php.program_of_program2 ast2 in
-
-        (match ast with
-        | [Ast.StmtList [Ast.ExprStmt (e, _tok)];Ast.FinalDef _] -> e
-        | _ -> failwith "only expr pattern are supported for now"
-        )
+        Parse_php.parse_any file
     | _, s when s <> ""->
-        (* ugly *)
-        if s =~ "^[ \t]*<"
-        then Parse_php.xhp_expr_of_string s
-        else Parse_php.expr_of_string s
+        Parse_php.any_of_string s
     | _ -> raise Impossible
     )
+  in
+  let pattern_expr =
+    match pattern with
+    | Expr e -> e
+    | _ ->failwith "only expr pattern are supported for now"
   in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in

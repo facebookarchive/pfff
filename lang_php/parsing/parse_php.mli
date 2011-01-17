@@ -29,7 +29,6 @@ val xdebug_expr_of_string: string -> Ast_php.expr
 val class_def_of_string: string -> Ast_php.class_def
 (*x: extra parse function signature *)
 val expr_of_string: string -> Ast_php.expr
-val xhp_expr_of_string: string -> Ast_php.expr
 val program_of_string: string -> Ast_php.program
 val any_of_string:  string -> Ast_php.any
 (*e: extra parse function signature *)
