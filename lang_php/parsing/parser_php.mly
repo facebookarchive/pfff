@@ -318,12 +318,13 @@ open Parser_php_mly_helper
 /*(*************************************************************************)*/
 /*(* Rules type declaration *)*/
 /*(*************************************************************************)*/
-%start main expr class_declaration_statement
+%start main expr class_declaration_statement sgrep_spatch_pattern
 /*(*s: GRAMMAR type of main rule *)*/
 %type <Ast_php.toplevel list> main
 %type <Ast_php.expr> expr
 %type <(Ast_php.class_def, Ast_php.interface_def) Common.either> 
   class_declaration_statement
+%type <Ast_php.any> sgrep_spatch_pattern
 /*(*e: GRAMMAR type of main rule *)*/
 
 %%
@@ -348,6 +349,9 @@ top_statement:
    }
 /*(*e: GRAMMAR toplevel *)*/
 
+sgrep_spatch_pattern:
+ | expr EOF { Expr $1 }
+ | statement EOF { Stmt2 $1 } 
 
 /*(*************************************************************************)*/
 /*(* statement *)*/

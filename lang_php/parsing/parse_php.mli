@@ -19,6 +19,11 @@ val parse_program:
   ?pp:string option ->
   Common.filename -> Ast_php.program
 
+(* for sgrep/spatch patterns *)
+val parse_any:
+  ?pp:string option ->
+  Common.filename -> Ast_php.any
+
 (*s: extra parse function signature *)
 val xdebug_expr_of_string: string -> Ast_php.expr 
 val class_def_of_string: string -> Ast_php.class_def
