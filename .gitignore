@@ -255,3 +255,4 @@ external/ocamlbdb/libcamlbdb.a
 /ocamldoc.out
 /pfff_db_heavy
 /scheck_heavy
+/demos/check_is_static_literal
