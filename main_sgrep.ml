@@ -213,11 +213,18 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
+let dump_sgrep_pattern file =
+  let any = Parse_php.parse_any file in
+  let s = Export_ast_php.ml_pattern_string_of_any any in
+  pr s
+
 
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let sgrep_extra_actions () = [
+  "-dump_pattern", " <file>",
+  Common.mk_action_1_arg dump_sgrep_pattern;
 ]
 
 (*****************************************************************************)

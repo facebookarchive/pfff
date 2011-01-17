@@ -4,6 +4,7 @@ val vof_program: Ast_php.program -> Ocaml.v
 val vof_toplevel: Ast_php.toplevel -> Ocaml.v
 val vof_expr: Ast_php.expr -> Ocaml.v
 
+val vof_any: Ast_php.any -> Ocaml.v
 
 (* used by pil.ml *)
 

@@ -65,5 +65,7 @@ let ml_pattern_string_of_program ast =
 let ml_pattern_string_of_expr e = 
   Meta_ast_php.vof_expr e +> string_of_v
 
+let ml_pattern_string_of_any any =
+  Meta_ast_php.vof_any any +> string_of_v
 
 (*e: export_ast_php.ml *)

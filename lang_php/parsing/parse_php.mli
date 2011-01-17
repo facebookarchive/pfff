@@ -21,8 +21,8 @@ val parse_program:
 
 (* for sgrep/spatch patterns *)
 val parse_any:
-  ?pp:string option ->
   Common.filename -> Ast_php.any
+
 
 (*s: extra parse function signature *)
 val xdebug_expr_of_string: string -> Ast_php.expr 
@@ -31,10 +31,13 @@ val class_def_of_string: string -> Ast_php.class_def
 val expr_of_string: string -> Ast_php.expr
 val xhp_expr_of_string: string -> Ast_php.expr
 val program_of_string: string -> Ast_php.program
+val any_of_string:  string -> Ast_php.any
 (*e: extra parse function signature *)
 (*x: parse_php.mli *)
 val program_of_program2 : program2 -> Ast_php.program
 (*x: parse_php.mli *)
-val tokens: Common.filename -> Parser_php.token list
+val tokens: 
+  ?init_state:Lexer_php.state_mode ->
+  Common.filename -> Parser_php.token list
 (*x: parse_php.mli *)
 (*e: parse_php.mli *)

@@ -561,6 +561,23 @@
    )
 
   ; --------------------------------------------------------------------------
+  ; pfff_test
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "pfff_test"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 1
+       (0 "all")
+       (1 "sgrep")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
   ; for the help system, for C-c C-h to find where to look for
   (mapcar (lambda (p) 
             (ocaml-add-path (concat pad-ocaml-project-path "/" p))
