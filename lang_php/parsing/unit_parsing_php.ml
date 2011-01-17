@@ -119,15 +119,15 @@ let unittest =
 
     "parsing sgrep expressions" >:: (fun () ->
       
-      let e = Parse_php.expr_of_string "debug_rlog(1)" in
+      let _e = Parse_php.expr_of_string "debug_rlog(1)" in
       assert_bool "should not generate an error" true;
-      let e = Parse_php.expr_of_string "debug_rlog(X)" in
+      let _e = Parse_php.expr_of_string "debug_rlog(X)" in
       assert_bool "should not generate an error" true;
-      let e = Parse_php.expr_of_string "debug_rlog(X, 0)" in
+      let _e = Parse_php.expr_of_string "debug_rlog(X, 0)" in
       assert_bool "should not generate an error" true;
 
       (try 
-        let e = 
+        let _e = 
           Common.save_excursion Flag.show_parsing_error false (fun () ->
             Parse_php.expr_of_string "debug_rlog(X, 0" 
           ) 
