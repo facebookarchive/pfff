@@ -184,4 +184,8 @@ let match_e_e pattern e =
 let match_v_v pattern e = 
   let env = MV.empty_environment in
   MATCH.m_variable pattern e env +> extract_bindings
+
+let match_st_st pattern e = 
+  let env = MV.empty_environment in
+  MATCH.m_stmt pattern e env +> extract_bindings
   

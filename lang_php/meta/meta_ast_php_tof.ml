@@ -614,13 +614,8 @@ and tof_stmt =
           [ Ocaml.Apply (("brace", (Ocaml.List (Ocaml.Var "stmt_and_def")))) ]);
          ("If",
           [ Ocaml.Var "tok"; Ocaml.Apply (("paren", (Ocaml.Var "expr")));
-            Ocaml.Var "stmt";
-            Ocaml.List
-              (Ocaml.Tuple
-                 [ Ocaml.Var "tok";
-                   Ocaml.Apply (("paren", (Ocaml.Var "expr")));
-                   Ocaml.Var "stmt" ]);
-            Ocaml.Option (Ocaml.Tuple [ Ocaml.Var "tok"; Ocaml.Var "stmt" ]) ]);
+            Ocaml.Var "stmt"; Ocaml.List (Ocaml.Var "if_elseif");
+            Ocaml.Option (Ocaml.Var "if_else") ]);
          ("IfColon",
           [ Ocaml.Var "tok"; Ocaml.Apply (("paren", (Ocaml.Var "expr")));
             Ocaml.Var "tok"; Ocaml.List (Ocaml.Var "stmt_and_def");
@@ -642,7 +637,7 @@ and tof_stmt =
             Ocaml.Var "switch_case_list" ]);
          ("Foreach",
           [ Ocaml.Var "tok"; Ocaml.Var "tok"; Ocaml.Var "expr";
-            Ocaml.Var "tok"; Ocaml.TTODO "";
+            Ocaml.Var "tok"; Ocaml.Var "foreach_var_either";
             Ocaml.Option (Ocaml.Var "foreach_arrow"); Ocaml.Var "tok";
             Ocaml.Var "colon_stmt" ]);
          ("Break",
@@ -657,22 +652,32 @@ and tof_stmt =
             Ocaml.Apply (("brace", (Ocaml.List (Ocaml.Var "stmt_and_def"))));
             Ocaml.Var "catch"; Ocaml.List (Ocaml.Var "catch") ]);
          ("Echo",
-          [ Ocaml.Var "tok"; Ocaml.List (Ocaml.Var "expr"); Ocaml.Var "tok" ]);
+          [ Ocaml.Var "tok";
+            Ocaml.Apply (("comma_list", (Ocaml.Var "expr"))); Ocaml.Var "tok" ]);
          ("Globals",
-          [ Ocaml.Var "tok"; Ocaml.List (Ocaml.Var "global_var");
+          [ Ocaml.Var "tok";
+            Ocaml.Apply (("comma_list", (Ocaml.Var "global_var")));
             Ocaml.Var "tok" ]);
          ("StaticVars",
-          [ Ocaml.Var "tok"; Ocaml.List (Ocaml.Var "static_var");
+          [ Ocaml.Var "tok";
+            Ocaml.Apply (("comma_list", (Ocaml.Var "static_var")));
             Ocaml.Var "tok" ]);
          ("InlineHtml", [ Ocaml.Apply (("wrap", Ocaml.String)) ]);
          ("Use",
           [ Ocaml.Var "tok"; Ocaml.Var "use_filename"; Ocaml.Var "tok" ]);
          ("Unset",
           [ Ocaml.Var "tok";
-            Ocaml.Apply (("paren", (Ocaml.List (Ocaml.Var "variable"))));
+            Ocaml.Apply
+              (("paren",
+                (Ocaml.Apply (("comma_list", (Ocaml.Var "lvalue"))))));
             Ocaml.Var "tok" ]);
          ("Declare",
           [ Ocaml.Var "tok";
-            Ocaml.Apply (("paren", (Ocaml.List (Ocaml.Var "declare"))));
-            Ocaml.Var "colon_stmt" ]) ])
+            Ocaml.Apply
+              (("paren",
+                (Ocaml.Apply (("comma_list", (Ocaml.Var "declare"))))));
+            Ocaml.Var "colon_stmt" ]);
+       ]
+    )
+
   

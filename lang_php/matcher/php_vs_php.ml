@@ -133,6 +133,8 @@ let (>||>) = X.(>||>)
 let return = X.return
 let fail = X.fail
 
+let fail2 s = pr2 (spf "PHP_VS_PHP: TODO for %s" s); X.fail
+
 (*****************************************************************************)
 let (m_option: ('a,'b) matcher -> ('a option,'b option) matcher) = fun f a b ->
   match a, b with
@@ -594,9 +596,9 @@ let m_cpp_directive a b =
   | A.FunctionC, _
    -> fail
 
-
-(*****************************************************************************)
-
+(* ---------------------------------------------------------------------- *)
+(* lvalue *)
+(* ---------------------------------------------------------------------- *)
 let rec m_variable a b = 
   match a, b with
   | (a1, a2), (b1, b2) ->
@@ -607,6 +609,7 @@ let rec m_variable a b =
        (b1, b2)
     )
     ))
+and m_lvalue a b = m_variable a b
 
 and m_variablebis a b = 
   match a, b with
@@ -947,6 +950,10 @@ and m_obj_prop_access a b =
     ))
 
 
+(* ---------------------------------------------------------------------- *)
+(* expr *)
+(* ---------------------------------------------------------------------- *)
+
 and m_expr a b = 
   match a, b with
   | (a1, a2), (b1, b2) ->
@@ -1280,6 +1287,10 @@ and m_exprbis a b =
   | A.ParenExpr _, _
    -> fail
 
+(* ---------------------------------------------------------------------- *)
+(* xhp *)
+(* ---------------------------------------------------------------------- *)
+
 and m_xhp_tag a b = 
   match a, b with
   (a, b) -> (m_list m_string) a b
@@ -1457,6 +1468,9 @@ and m_xhp_body a b =
   | A.XhpNested _, _
    -> fail
 
+(* ---------------------------------------------------------------------- *)
+(* expr 2 *)
+(* ---------------------------------------------------------------------- *)
 
 and m_scalar a b = 
   match a, b with
@@ -1735,4 +1749,285 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
   | _::_, _ ->
       fail
   
+
+(* ---------------------------------------------------------------------- *)
+(* stmt *)
+(* ---------------------------------------------------------------------- *)
+
+let rec m_stmt a b = 
+  match a, b with
+  | A.ExprStmt(a1, a2), B.ExprStmt(b1, b2) ->
+    m_expr a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.ExprStmt(a1, a2),
+       B.ExprStmt(b1, b2)
+    )
+    ))
+  | A.EmptyStmt(a1), B.EmptyStmt(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.EmptyStmt(a1),
+       B.EmptyStmt(b1)
+    )
+    )
+  | A.Block(a1), B.Block(b1) ->
+    (m_brace (m_list m_stmt_and_def)) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Block(a1),
+       B.Block(b1)
+    )
+    )
+  | A.If(a1, a2, a3, a4, a5), B.If(b1, b2, b3, b4, b5) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_stmt a3 b3 >>= (fun (a3, b3) -> 
+    (m_list m_if_elseif) a4 b4 >>= (fun (a4, b4) -> 
+    (m_option m_if_else) a5 b5 >>= (fun (a5, b5) -> 
+    return (
+       A.If(a1, a2, a3, a4, a5),
+       B.If(b1, b2, b3, b4, b5)
+    )
+    )))))
+  | A.IfColon(a1, a2, a3, a4, a5, a6, a7, a8), B.IfColon(b1, b2, b3, b4, b5, b6, b7, b8) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    (m_list m_stmt_and_def) a4 b4 >>= (fun (a4, b4) -> 
+    (m_list m_new_elseif) a5 b5 >>= (fun (a5, b5) -> 
+    (m_option m_new_else) a6 b6 >>= (fun (a6, b6) -> 
+    m_tok a7 b7 >>= (fun (a7, b7) -> 
+    m_tok a8 b8 >>= (fun (a8, b8) -> 
+    return (
+       A.IfColon(a1, a2, a3, a4, a5, a6, a7, a8),
+       B.IfColon(b1, b2, b3, b4, b5, b6, b7, b8)
+    )
+    ))))))))
+  | A.While(a1, a2, a3), B.While(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_colon_stmt a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.While(a1, a2, a3),
+       B.While(b1, b2, b3)
+    )
+    )))
+  | A.Do(a1, a2, a3, a4, a5), B.Do(b1, b2, b3, b4, b5) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_stmt a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    (m_paren m_expr) a4 b4 >>= (fun (a4, b4) -> 
+    m_tok a5 b5 >>= (fun (a5, b5) -> 
+    return (
+       A.Do(a1, a2, a3, a4, a5),
+       B.Do(b1, b2, b3, b4, b5)
+    )
+    )))))
+  | A.For(a1, a2, a3, a4, a5, a6, a7, a8, a9), B.For(b1, b2, b3, b4, b5, b6, b7, b8, b9) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_for_expr a3 b3 >>= (fun (a3, b3) -> 
+    m_tok a4 b4 >>= (fun (a4, b4) -> 
+    m_for_expr a5 b5 >>= (fun (a5, b5) -> 
+    m_tok a6 b6 >>= (fun (a6, b6) -> 
+    m_for_expr a7 b7 >>= (fun (a7, b7) -> 
+    m_tok a8 b8 >>= (fun (a8, b8) -> 
+    m_colon_stmt a9 b9 >>= (fun (a9, b9) -> 
+    return (
+       A.For(a1, a2, a3, a4, a5, a6, a7, a8, a9),
+       B.For(b1, b2, b3, b4, b5, b6, b7, b8, b9)
+    )
+    )))))))))
+  | A.Switch(a1, a2, a3), B.Switch(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_switch_case_list a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Switch(a1, a2, a3),
+       B.Switch(b1, b2, b3)
+    )
+    )))
+  | A.Foreach(a1, a2, a3, a4, a5, a6, a7, a8), B.Foreach(b1, b2, b3, b4, b5, b6, b7, b8) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_expr a3 b3 >>= (fun (a3, b3) -> 
+    m_tok a4 b4 >>= (fun (a4, b4) -> 
+    m_foreach_var_either a5 b5 >>= (fun (a5, b5) -> 
+    (m_option m_foreach_arrow) a6 b6 >>= (fun (a6, b6) -> 
+    m_tok a7 b7 >>= (fun (a7, b7) -> 
+    m_colon_stmt a8 b8 >>= (fun (a8, b8) -> 
+    return (
+       A.Foreach(a1, a2, a3, a4, a5, a6, a7, a8),
+       B.Foreach(b1, b2, b3, b4, b5, b6, b7, b8)
+    )
+    ))))))))
+  | A.Break(a1, a2, a3), B.Break(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_option m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Break(a1, a2, a3),
+       B.Break(b1, b2, b3)
+    )
+    )))
+  | A.Continue(a1, a2, a3), B.Continue(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_option m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Continue(a1, a2, a3),
+       B.Continue(b1, b2, b3)
+    )
+    )))
+  | A.Return(a1, a2, a3), B.Return(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_option m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Return(a1, a2, a3),
+       B.Return(b1, b2, b3)
+    )
+    )))
+  | A.Throw(a1, a2, a3), B.Throw(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_expr a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Throw(a1, a2, a3),
+       B.Throw(b1, b2, b3)
+    )
+    )))
+  | A.Try(a1, a2, a3, a4), B.Try(b1, b2, b3, b4) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_brace (m_list m_stmt_and_def)) a2 b2 >>= (fun (a2, b2) -> 
+    m_catch a3 b3 >>= (fun (a3, b3) -> 
+    (m_list m_catch) a4 b4 >>= (fun (a4, b4) -> 
+    return (
+       A.Try(a1, a2, a3, a4),
+       B.Try(b1, b2, b3, b4)
+    )
+    ))))
+  | A.Echo(a1, a2, a3), B.Echo(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_comma_list m_expr) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Echo(a1, a2, a3),
+       B.Echo(b1, b2, b3)
+    )
+    )))
+  | A.Globals(a1, a2, a3), B.Globals(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_comma_list m_global_var) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Globals(a1, a2, a3),
+       B.Globals(b1, b2, b3)
+    )
+    )))
+  | A.StaticVars(a1, a2, a3), B.StaticVars(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_comma_list m_static_var) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.StaticVars(a1, a2, a3),
+       B.StaticVars(b1, b2, b3)
+    )
+    )))
+  | A.InlineHtml(a1), B.InlineHtml(b1) ->
+    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.InlineHtml(a1),
+       B.InlineHtml(b1)
+    )
+    )
+  | A.Use(a1, a2, a3), B.Use(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_use_filename a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Use(a1, a2, a3),
+       B.Use(b1, b2, b3)
+    )
+    )))
+  | A.Unset(a1, a2, a3), B.Unset(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren (m_comma_list m_lvalue)) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Unset(a1, a2, a3),
+       B.Unset(b1, b2, b3)
+    )
+    )))
+  | A.Declare(a1, a2, a3), B.Declare(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren (m_comma_list m_declare)) a2 b2 >>= (fun (a2, b2) -> 
+    m_colon_stmt a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Declare(a1, a2, a3),
+       B.Declare(b1, b2, b3)
+    )
+    )))
+  | A.TypedDeclaration(a1, a2, a3, a4), B.TypedDeclaration(b1, b2, b3, b4) ->
+      fail2 "TypedDeclaration"
+
+  | A.ExprStmt _, _
+  | A.EmptyStmt _, _
+  | A.Block _, _
+  | A.If _, _
+  | A.IfColon _, _
+  | A.While _, _
+  | A.Do _, _
+  | A.For _, _
+  | A.Switch _, _
+  | A.Foreach _, _
+  | A.Break _, _
+  | A.Continue _, _
+  | A.Return _, _
+  | A.Throw _, _
+  | A.Try _, _
+  | A.Echo _, _
+  | A.Globals _, _
+  | A.StaticVars _, _
+  | A.InlineHtml _, _
+  | A.Use _, _
+  | A.Unset _, _
+  | A.Declare _, _
+  | A.TypedDeclaration _, _
+   -> fail
+
+
+and m_stmt_and_def a b =
+  fail2 "m_stmt_xxx"
+and m_if_elseif a b =
+  fail2 "m_stmt_xxx"
+and m_if_else a b =
+  fail2 "m_stmt_xxx"
+and m_new_elseif a b =
+  fail2 "m_stmt_xxx"
+and m_new_else a b =
+  fail2 "m_stmt_xxx"
+and m_colon_stmt a b =
+  fail2 "m_stmt_xxx"
+and m_for_expr a b =
+  fail2 "m_stmt_xxx"
+and m_switch_case_list a b =
+  fail2 "m_stmt_xxx"
+and m_foreach_var_either a b =
+  fail2 "m_stmt_xxx"
+and m_foreach_arrow a b =
+  fail2 "m_stmt_xxx"
+and m_catch a b =
+  fail2 "m_stmt_xxx"
+and m_global_var a b =
+  fail2 "m_stmt_xxx"
+and m_static_var a b =
+  fail2 "m_stmt_xxx"
+and m_use_filename a b =
+  fail2 "m_stmt_xxx"
+and m_declare a b =
+  fail2 "m_stmt_xxx"
+
+
 end
+

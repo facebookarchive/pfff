@@ -445,9 +445,8 @@ and stmt =
     | Block of stmt_and_def list brace
   (*x: stmt constructors *)
     | If      of tok * expr paren * stmt * 
-        (* elseif *) (tok * expr paren * stmt) list *
-        (* else *) (tok * stmt) option
-          (* if(){}{} *)
+        (* elseif *) if_elseif list *
+        (* else *)   if_else option
     (*s: ifcolon *)
     | IfColon of tok * expr paren * 
           tok * stmt_and_def list * new_elseif list * new_else option * 
@@ -473,8 +472,8 @@ and stmt =
     (* if it's a expr_without_variable, the second arg must be a Right variable,
      * otherwise if it's a variable then it must be a foreach_variable
      *)
-    | Foreach of tok * tok * expr * tok * 
-        (foreach_variable, lvalue) Common.either * foreach_arrow option * tok * 
+    | Foreach of tok * tok * expr * tok * foreach_var_either *
+        foreach_arrow option * tok * 
         colon_stmt
       (* example: foreach(expr as $lvalue) { colon_stmt }
        *          foreach(expr as $foreach_varialbe => $lvalue) { colon_stmt}
@@ -511,10 +510,14 @@ and stmt =
       and case = 
         | Case    of tok * expr * tok * stmt_and_def list
         | Default of tok * tok * stmt_and_def list
+
+   and if_elseif = tok * expr paren * stmt
+   and if_else = (tok * stmt)
   (*x: AST statement rest *)
     and for_expr = expr comma_list (* can be empty *)
     and foreach_arrow = tok * foreach_variable
     and foreach_variable = is_ref * lvalue
+    and foreach_var_either = (foreach_variable, lvalue) Common.either
   (*x: AST statement rest *)
     and catch = 
       tok * (fully_qualified_class_name * dname) paren * stmt_and_def list brace
