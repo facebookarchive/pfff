@@ -16,6 +16,8 @@ module V = Visitor_php
 
 module S = Scope_code
 
+open Ast_php
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -129,11 +131,6 @@ let main_action xs =
     | _ -> raise Impossible
     )
   in
-  let pattern_expr =
-    match pattern with
-    | Expr e -> e
-    | _ ->failwith "only expr pattern are supported for now"
-  in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
@@ -152,8 +149,8 @@ let main_action xs =
      *)
     let hook = 
 
-      match Ast.untype pattern_expr with
-      | Ast.Lv pattern_var ->
+      match pattern with
+      | Expr (Lv pattern_var, _t) ->
           { V.default_visitor with
             V.klvalue = (fun (k, _) x ->
               let matches_with_env =  
@@ -172,8 +169,7 @@ let main_action xs =
               end
             );
           }
-
-      | _ ->
+      | Expr pattern_expr ->
           { V.default_visitor with
             V.kexpr = (fun (k, _) x ->
               let matches_with_env =  
@@ -192,12 +188,31 @@ let main_action xs =
               end
             );
           }
+      | Stmt2 pattern ->
+          { V.default_visitor with
+            V.kstmt = (fun (k, _) x ->
+              let matches_with_env =  
+                Matching_php.match_st_st pattern x
+              in
+              if matches_with_env = []
+              then k x
+              else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+                let matched_tokens = Lib_parsing_php.ii_of_any (Stmt2 x) in
+                matches_with_env +> List.iter (fun env ->
+                  print_match !mvars env matched_tokens
+                )
+              end
+            );
+          }
+
+      | _ -> failwith (spf "pattern not yet supported:" ^ 
+                       Export_ast_php.ml_pattern_string_of_any pattern)
     in
-    ast +> List.iter (fun top ->
       (* opti ? dont analyze func if no constant in it ?*)
-      (V.mk_visitor hook) (Toplevel top)
-    );
-   
+    (V.mk_visitor hook) (Program ast)
   );
   !layer_file +> Common.do_option (fun file ->
 

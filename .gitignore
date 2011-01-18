@@ -256,3 +256,5 @@ external/ocamlbdb/libcamlbdb.a
 /pfff_db_heavy
 /scheck_heavy
 /demos/check_is_static_literal
+/lang_php/meta/ffi
+/lang_php/meta/gen_code
