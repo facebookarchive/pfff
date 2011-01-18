@@ -106,7 +106,7 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
             xs +> List.iter (fun (s, args) ->
               e+= "| A.%s%s, _" $ s $ (if null args then "" else " _");
             );
-            e+= " -> fail";
+            e+= " -> fail ()";
           end
 
 

@@ -677,7 +677,11 @@ and tof_stmt =
               (("paren",
                 (Ocaml.Apply (("comma_list", (Ocaml.Var "declare"))))));
             Ocaml.Var "colon_stmt" ]);
+
        ]
     )
+
+and tof_foreach_var_either =
+  Ocaml.add_new_type "foreach_var_either" (Ocaml.TTODO "")
 
   

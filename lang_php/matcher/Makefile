@@ -9,6 +9,7 @@ SRC= flag_matcher_php.ml   \
      php_vs_php.ml \
      matching_php.ml \
      transforming_php.ml \
+     unit_matcher_php.ml \
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \
@@ -16,6 +17,7 @@ LIBS=$(TOP)/commons/commons.cma \
      ../parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocollection \
+   $(TOP)/commons/ocamlextra \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    ../parsing
 

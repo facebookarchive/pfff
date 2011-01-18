@@ -110,6 +110,8 @@ module XMATCH = struct
 
   (* pre: both 'a' and 'b' contains only regular PHP code. There is no
    * metavariables in them.
+   * coupling: don't forget to also modify the one in transforming_php.ml
+   * todo: factorize code
    *)
   let equal_ast_binded_code a b =
     match a, b with
@@ -128,11 +130,19 @@ module XMATCH = struct
          *)
         let a = Lib_parsing_php.abstract_position_info_expr a in
         let b = Lib_parsing_php.abstract_position_info_expr b in
-        a = b
+        a =*= b
+
+    | Ast.Lvalue _, Ast.Lvalue _ 
+      ->
+        let a = Lib_parsing_php.abstract_position_info_any a in
+        let b = Lib_parsing_php.abstract_position_info_any b in
+        a =*= b
+
+        
     | _, _ -> 
         false
 
-  let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
+  let check_and_add_metavar_binding((mvar:Metavars_php.mvar), valu) = fun tin ->
     match Common.assoc_option mvar tin with
     | Some valu' ->
         (* TODO: have to ensure both matched ASTs are equal, valu =? valu'.

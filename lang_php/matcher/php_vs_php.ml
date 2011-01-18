@@ -31,8 +31,9 @@ open Common
  * parsing_php/ast_php.ml. An alternative could have been to transform
  * ast_php.ml in a very simple term language and do the 1-vs-1 match
  * on this term language, but depending on the construct (a PHP variable,
- * a string) we may want to do special things so it's easier to work
- * on the full AST.
+ * a string) we may want to do special things so it's better to work
+ * on the full AST. Working on a term language would be like working
+ * in an untyped language.
  * 
  * I then hardcoded a few isomorphisms by abusing some existing constructs,
  * for instance constants starting with a big X are considered metavars
@@ -130,12 +131,17 @@ type ('a, 'b) matcher = 'a -> 'b  -> X.tin -> ('a * 'b) X.tout
 let (>>=) = X.(>>=)
 let (>||>) = X.(>||>)
 
-let return = X.return
-let fail = X.fail
+let return = 
+  X.return
+let fail () = 
+  X.fail
 
-let fail2 s = pr2 (spf "PHP_VS_PHP: TODO for %s" s); X.fail
+let fail2 s = 
+  pr2 (spf "PHP_VS_PHP: TODO for %s" s); X.fail
 
-(*****************************************************************************)
+(* ---------------------------------------------------------------------- *)
+(* option, list, ref, either *)
+(* ---------------------------------------------------------------------- *)
 let (m_option: ('a,'b) matcher -> ('a option,'b option) matcher) = fun f a b ->
   match a, b with
   | None, None -> return (None, None)
@@ -148,7 +154,7 @@ let (m_option: ('a,'b) matcher -> ('a option,'b option) matcher) = fun f a b ->
       )
   | None, _
   | Some _, _
-      -> fail
+      -> fail ()
 
 let (m_ref: ('a,'b) matcher -> ('a ref,'b ref) matcher) = fun f a b ->
   match a, b with
@@ -175,7 +181,7 @@ let rec m_list f a b =
       )
   | [], _
   | _::_, _ ->
-      fail
+      fail ()
 
 let m_either f g a b = 
   match a, b with
@@ -191,12 +197,18 @@ let m_either f g a b =
         ))
   | Left _, Right _ 
   | Right _, Left _ -> 
-      fail
+      fail ()
+
+(* ---------------------------------------------------------------------- *)
+(* m_string *)
+(* ---------------------------------------------------------------------- *)
 
 let m_string a b = 
-  if a = b then return (a, b) else fail
+  if a = b then return (a, b) else fail ()
 
-(*****************************************************************************)
+(* ---------------------------------------------------------------------- *)
+(* scope, type (don't care for now) *)
+(* ---------------------------------------------------------------------- *)
 let m_xxx_scope a b = 
   (* dont care about scope for now *)
   return (a, b)
@@ -208,8 +220,9 @@ let m_var_info a b =
 let m_exp_info a b =
   return (a, b)
 
-
-(*****************************************************************************)
+(* ---------------------------------------------------------------------- *)
+(* tokens *)
+(* ---------------------------------------------------------------------- *)
 let m_info a b = X.tokenf a b
   (* old: dont care about position, space/indent/comment isomorphism 
    * return (a, b)
@@ -247,7 +260,9 @@ let m_bracket f a b =
 let m_brace f a b = m_bracket f a b
 let m_paren f a b = m_bracket f a b
 
-(*****************************************************************************)
+(* ---------------------------------------------------------------------- *)
+(* names *)
+(* ---------------------------------------------------------------------- *)
 let m_dname a b = 
   match a, b with
   | A.DName(a1), B.DName(b1) ->
@@ -276,10 +291,11 @@ let m_name a b =
     )
   | A.Name _, _
   | A.XhpName _, _
-   -> fail
+   -> fail ()
 
-
-(*****************************************************************************)
+(* ---------------------------------------------------------------------- *)
+(* operators *)
+(* ---------------------------------------------------------------------- *)
 let m_arithOp a b = 
   match a, b with
   | A.Plus, B.Plus ->
@@ -342,7 +358,7 @@ let m_arithOp a b =
   | A.And, _
   | A.Or, _
   | A.Xor, _
-   -> fail
+   -> fail ()
 
 let m_logicalOp a b = 
   match a, b with
@@ -425,7 +441,7 @@ let m_logicalOp a b =
   | A.XorLog, _
   | A.AndBool, _
   | A.OrBool, _
-   -> fail
+   -> fail ()
 
 
 let m_unaryOp a b = 
@@ -454,7 +470,7 @@ let m_unaryOp a b =
   | A.UnMinus, _
   | A.UnBang, _
   | A.UnTilde, _
-   -> fail
+   -> fail ()
 
 
 let m_binaryOp a b = 
@@ -482,7 +498,7 @@ let m_binaryOp a b =
   | A.Arith _, _
   | A.Logical _, _
   | A.BinaryConcat, _
-   -> fail
+   -> fail ()
 
 let m_assignOp a b = 
   match a, b with
@@ -500,7 +516,7 @@ let m_assignOp a b =
     )
   | A.AssignOpArith _, _
   | A.AssignConcat, _
-   -> fail
+   -> fail ()
 
 
 let m_fixOp a b = 
@@ -517,7 +533,11 @@ let m_fixOp a b =
     )
   | A.Dec, _
   | A.Inc, _
-   -> fail
+   -> fail ()
+
+(* ---------------------------------------------------------------------- *)
+(* cast, cpp directives  *)
+(* ---------------------------------------------------------------------- *)
 
 let m_ptype a b = 
   match a, b with
@@ -557,7 +577,7 @@ let m_ptype a b =
   | A.StringTy, _
   | A.ArrayTy, _
   | A.ObjectTy, _
-   -> fail
+   -> fail ()
 
 
 let m_castOp a b = m_ptype a b
@@ -594,7 +614,7 @@ let m_cpp_directive a b =
   | A.ClassC, _
   | A.MethodC, _
   | A.FunctionC, _
-   -> fail
+   -> fail ()
 
 (* ---------------------------------------------------------------------- *)
 (* lvalue *)
@@ -791,7 +811,7 @@ and m_variablebis a b =
   | A.StaticMethodCallSimple _, _
   | A.ObjAccessSimple _, _
   | A.ObjAccess _, _
-   -> fail
+   -> fail ()
 
 and m_rw_variable a b = m_variable a b
 and m_w_variable a b = m_variable a b
@@ -836,13 +856,15 @@ and m_qualifier a b =
   | A.Qualifier _, _
   | A.Self _, _
   | A.Parent _, _
-   -> fail
+   -> fail ()
 
 and m_fully_qualified_class_name a b = 
   match a, b with
   (a, b) -> m_name a b
 
 
+(*---------------------------------------------------------------------------*)
+(* argument *)
 (*---------------------------------------------------------------------------*)
 
 
@@ -865,7 +887,11 @@ and m_argument a b =
     ))
   | A.Arg _, _
   | A.ArgRef _, _
-   -> fail
+   -> fail ()
+
+(*---------------------------------------------------------------------------*)
+(* obj access *)
+(*---------------------------------------------------------------------------*)
 
 and m_obj_access a b = 
   match a, b with
@@ -897,7 +923,7 @@ and m_obj_property a b =
     )
   | A.ObjProp _, _
   | A.ObjPropVar _, _
-   -> fail
+   -> fail ()
 
 and m_obj_dim a b = 
   match a, b with
@@ -935,7 +961,7 @@ and m_obj_dim a b =
   | A.OBrace _, _
   | A.OArrayAccess _, _
   | A.OBraceAccess _, _
-   -> fail
+   -> fail ()
 
 
 and m_obj_prop_access a b = 
@@ -982,10 +1008,10 @@ and m_exprbis a b =
 
   (* pad *)
   | A.SgrepExprDots _, _ -> 
-      fail
+      fail ()
   | _, B.SgrepExprDots _ -> 
       pr2 "weird, have a ... in source; they are allowed only in patterns";
-      fail
+      fail ()
 
 
   | A.Lv(a1), B.Lv(b1) ->
@@ -1285,10 +1311,10 @@ and m_exprbis a b =
   | A.XhpHtml _, _
   | A.Lambda _, _
   | A.ParenExpr _, _
-   -> fail
+   -> fail ()
 
 (* ---------------------------------------------------------------------- *)
-(* xhp *)
+(* xhp (and a few xhp isos) *)
 (* ---------------------------------------------------------------------- *)
 
 and m_xhp_tag a b = 
@@ -1321,7 +1347,7 @@ and iso_m_list_m_xhp_attribute a b =
     match a, b with
     (* iso-by-absence: it's ok to have less attr in the pattern *)
     | [], b -> return ([], b)
-    | _, [] -> fail
+    | _, [] -> fail ()
     | x::xs, y::ys ->
 
         (
@@ -1388,7 +1414,7 @@ and m_xhp_html a b =
     )))
   | A.Xhp _, _
   | A.XhpSingleton _, _
-   -> fail
+   -> fail ()
 
 and m_xhp_attribute a b = 
   match a, b with
@@ -1437,7 +1463,7 @@ and m_xhp_attr_value a b =
   | A.XhpAttrString _, _
   | A.XhpAttrExpr _, _
   | A.SgrepXhpAttrValueMvar _, _
-   -> fail
+   -> fail ()
 
 
 and m_xhp_body a b = 
@@ -1466,10 +1492,10 @@ and m_xhp_body a b =
   | A.XhpText _, _
   | A.XhpExpr _, _
   | A.XhpNested _, _
-   -> fail
+   -> fail ()
 
 (* ---------------------------------------------------------------------- *)
-(* expr 2 *)
+(* scalar and other expr *)
 (* ---------------------------------------------------------------------- *)
 
 and m_scalar a b = 
@@ -1511,7 +1537,7 @@ and m_scalar a b =
   | A.ClassConstant _, _
   | A.Guil _, _
   | A.HereDoc _, _
-   -> fail
+   -> fail ()
 
 
 and m_list_assign a b = 
@@ -1539,7 +1565,7 @@ and m_list_assign a b =
   | A.ListVar _, _
   | A.ListList _, _
   | A.ListEmpty, _
-   -> fail
+   -> fail ()
 
 and m_array_pair a b = 
   match a, b with
@@ -1581,7 +1607,7 @@ and m_array_pair a b =
   | A.ArrayRef _, _
   | A.ArrayArrowExpr _, _
   | A.ArrayArrowRef _, _
-   -> fail
+   -> fail ()
 
 and m_class_name_reference a b = 
   match a, b with
@@ -1602,7 +1628,7 @@ and m_class_name_reference a b =
     ))
   | A.ClassNameRefStatic _, _
   | A.ClassNameRefDynamic _, _
-   -> fail
+   -> fail ()
 
 and m_encaps a b = 
   match a, b with
@@ -1652,7 +1678,7 @@ and m_encaps a b =
   | A.EncapsCurly _, _
   | A.EncapsDollarCurly _, _
   | A.EncapsExpr _, _
-   -> fail
+   -> fail ()
 
 and m_constant a b = 
   match a, b with
@@ -1708,8 +1734,10 @@ and m_constant a b =
   | A.PreProcess _, _
   | A.XdebugClass _, _
   | A.XdebugResource, _
-   -> fail
+   -> fail ()
 
+(*---------------------------------------------------------------------------*)
+(* arguments list iso *)
 (*---------------------------------------------------------------------------*)
 (* todo: comma handling is probably not good enough *)
 and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_list) = 
@@ -1747,7 +1775,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       )
   | [], _
   | _::_, _ ->
-      fail
+      fail ()
   
 
 (* ---------------------------------------------------------------------- *)
@@ -1994,40 +2022,130 @@ let rec m_stmt a b =
   | A.Unset _, _
   | A.Declare _, _
   | A.TypedDeclaration _, _
-   -> fail
+   -> fail ()
 
 
-and m_stmt_and_def a b =
-  fail2 "m_stmt_xxx"
-and m_if_elseif a b =
-  fail2 "m_stmt_xxx"
-and m_if_else a b =
-  fail2 "m_stmt_xxx"
-and m_new_elseif a b =
-  fail2 "m_stmt_xxx"
-and m_new_else a b =
-  fail2 "m_stmt_xxx"
-and m_colon_stmt a b =
-  fail2 "m_stmt_xxx"
-and m_for_expr a b =
-  fail2 "m_stmt_xxx"
-and m_switch_case_list a b =
-  fail2 "m_stmt_xxx"
+and m_stmt_and_def a b = 
+  match a, b with
+  | A.Stmt(a1), B.Stmt(b1) ->
+    m_stmt a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Stmt(a1),
+       B.Stmt(b1)
+    )
+    )
+  | A.FuncDefNested(a1), B.FuncDefNested(b1) ->
+    m_func_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.FuncDefNested(a1),
+       B.FuncDefNested(b1)
+    )
+    )
+  | A.ClassDefNested(a1), B.ClassDefNested(b1) ->
+    m_class_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassDefNested(a1),
+       B.ClassDefNested(b1)
+    )
+    )
+  | A.InterfaceDefNested(a1), B.InterfaceDefNested(b1) ->
+    m_interface_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.InterfaceDefNested(a1),
+       B.InterfaceDefNested(b1)
+    )
+    )
+  | A.Stmt _, _
+  | A.FuncDefNested _, _
+  | A.ClassDefNested _, _
+  | A.InterfaceDefNested _, _
+   -> fail ()
+
+and m_colon_stmt a b = 
+  match a, b with
+  | A.SingleStmt(a1), B.SingleStmt(b1) ->
+    m_stmt a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.SingleStmt(a1),
+       B.SingleStmt(b1)
+    )
+    )
+  | A.ColonStmt(a1, a2, a3, a4), B.ColonStmt(b1, b2, b3, b4) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_stmt_and_def) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    m_tok a4 b4 >>= (fun (a4, b4) -> 
+    return (
+       A.ColonStmt(a1, a2, a3, a4),
+       B.ColonStmt(b1, b2, b3, b4)
+    )
+    ))))
+  | A.SingleStmt _, _
+  | A.ColonStmt _, _
+   -> fail ()
+
+
+
+(* ---------------------------------------------------------------------- *)
+(* stmt auxilaries *)
+(* ---------------------------------------------------------------------- *)
+
 and m_foreach_var_either a b =
-  fail2 "m_stmt_xxx"
-and m_foreach_arrow a b =
-  fail2 "m_stmt_xxx"
-and m_catch a b =
-  fail2 "m_stmt_xxx"
-and m_global_var a b =
-  fail2 "m_stmt_xxx"
-and m_static_var a b =
-  fail2 "m_stmt_xxx"
-and m_use_filename a b =
-  fail2 "m_stmt_xxx"
-and m_declare a b =
-  fail2 "m_stmt_xxx"
+  m_either m_foreach_variable m_lvalue a b
 
+and m_foreach_variable a b = 
+  match a, b with
+  | (a1, a2), (b1, b2) ->
+    m_is_ref a1 b1 >>= (fun (a1, b1) -> 
+    m_variable a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       (a1, a2),
+       (b1, b2)
+    )
+    ))
+
+and m_is_ref a b =
+  m_option m_tok a b
+
+
+and m_foreach_arrow a b =
+  fail2 "m_foreach_arrow"
+
+
+
+and m_if_elseif a b =
+  fail2 "m_if_elseif"
+and m_if_else a b =
+  fail2 "m_if_else"
+
+and m_new_elseif a b =
+  fail2 "m_new_elseif"
+and m_new_else a b =
+  fail2 "m_new_else"
+
+and m_for_expr a b =
+  fail2 "m_for_expr"
+and m_switch_case_list a b =
+  fail2 "m_switch_case_list"
+and m_catch a b =
+  fail2 "m_catch"
+and m_global_var a b =
+  fail2 "m_global_var"
+and m_static_var a b =
+  fail2 "m_static_var"
+and m_use_filename a b =
+  fail2 "m_use_filename"
+and m_declare a b =
+  fail2 "m_declare"
+
+
+
+and m_func_def a b =
+  fail2 "m_func_def"
+and m_class_def a b =
+  fail2 "m_class_def"
+and m_interface_def a b =
+  fail2 "m_interface_def"
 
 end
 
