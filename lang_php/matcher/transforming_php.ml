@@ -267,3 +267,7 @@ type ('a, 'b) transformer = 'a -> 'b ->
 let transform_e_e pattern e   env = 
   ignore (MATCH.m_expr pattern e   env);
   ()
+
+let transform_st_st pattern e   env = 
+  ignore (MATCH.m_stmt pattern e   env);
+  ()

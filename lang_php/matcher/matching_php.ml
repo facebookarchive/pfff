@@ -133,11 +133,11 @@ module XMATCH = struct
         a =*= b
 
     | Ast.Lvalue _, Ast.Lvalue _ 
+    | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
       ->
         let a = Lib_parsing_php.abstract_position_info_any a in
         let b = Lib_parsing_php.abstract_position_info_any b in
         a =*= b
-
         
     | _, _ -> 
         false

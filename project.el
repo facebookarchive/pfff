@@ -230,7 +230,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 5
+     (case 6
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
@@ -238,6 +238,9 @@
        (3 "-c /home/pad/pfff/tests/php/spatch/border.spatch /home/pad/pfff/tests/php/spatch/border.php")
        (4 "-test")
        (5 "-c /home/pad/redirect.spatch /home/pad/redirect.php")
+
+       (6 " -f /home/pad/pfff/tests/php/sgrep/foreach.spatch /home/pad/pfff/tests/php/sgrep/foreach.php")
+
        )
      )
     )

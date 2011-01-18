@@ -220,24 +220,13 @@ let parse_spatch file =
       Parse_php.any_of_string spatch_without_patch_annot
     )
   in
-  let pattern =
-    match pattern with
-    | Expr e -> e
-    | _ ->failwith "only expr pattern are supported for now"
-  in
 
   (* need adjust the tokens in it now *)
-  let toks = Lib_parsing_php.ii_of_any (Expr pattern) in
+  let toks = Lib_parsing_php.ii_of_any pattern in
 
   (* adjust with Minus info *)  
   toks +> List.iter (fun tok ->
     let line = Ast.line_of_info tok in
-
-    (* ugly: right now expr_of_string introduce an extra <?php at
-     * the beginning which shifts line number by 1 so have
-     * to compensate back here.
-     *)
-    let line = line - 1 in
 
     let annot = Hashtbl.find hline_env line in
     (match annot with
@@ -270,8 +259,6 @@ let parse_spatch file =
   let rec aux xs = 
     match xs with
     | (line, toks_at_line)::rest ->
-        (* ugly *)
-        let line = line - 1 in
 
         (* if the next line was a +, then associate with the last token
          * on this line
@@ -311,24 +298,46 @@ let spatch pattern file =
   let ast = Parse_php.program_of_program2 ast2 in
   Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
-  let visitor = V.mk_visitor { V.default_visitor with
-    (* for now handle only expression patching *)
-    V.kexpr = (fun (k, _) x ->
-      let matches_with_env =  
-        Matching_php.match_e_e pattern  x
-      in
-      if matches_with_env = []
-      then k x
-      else begin
-        was_modifed := true;
-        Transforming_php.transform_e_e pattern x
-          (* TODO, maybe could get multiple matching env *)
-          (List.hd matches_with_env) 
-      end
-    );
-  }
+  let hook = 
+    match pattern with
+    | Expr pattern_expr ->
+      { V.default_visitor with
+        V.kexpr = (fun (k, _) x ->
+          let matches_with_env =  
+            Matching_php.match_e_e pattern_expr  x
+          in
+          if matches_with_env = []
+          then k x
+          else begin
+            was_modifed := true;
+            Transforming_php.transform_e_e pattern_expr x
+              (* TODO, maybe could get multiple matching env *)
+              (List.hd matches_with_env) 
+          end
+        );
+      }
+
+    | Stmt2 pattern ->
+      { V.default_visitor with
+        V.kstmt = (fun (k, _) x ->
+          let matches_with_env =  
+            Matching_php.match_st_st pattern x
+          in
+          if matches_with_env = []
+          then k x
+          else begin
+            was_modifed := true;
+            Transforming_php.transform_st_st pattern x
+              (* TODO, maybe could get multiple matching env *)
+              (List.hd matches_with_env) 
+          end
+        );
+      }
+
+    | _ -> failwith (spf "pattern not yet supported:" ^ 
+                       Export_ast_php.ml_pattern_string_of_any pattern)
   in
-  visitor (Program ast);
+  (V.mk_visitor hook) (Program ast);
 
   if !was_modifed 
   then Some (Unparse_php.string_of_program2_using_tokens ast2)
@@ -553,6 +562,8 @@ let all_actions () =
 
 let options () = 
   [
+    "-f", Arg.Set_string spatch_file, 
+    " <spatch_file>";
     "-c", Arg.Set_string spatch_file, 
     " <spatch_file>";
     "-apply_patch", Arg.Set apply_patch, 

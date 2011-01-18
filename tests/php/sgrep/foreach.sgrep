@@ -1,6 +1,5 @@
 foreach($A as $V) {
-     if(foo($V)) { return; }
-//   if (strpos($T, $V) !== false) {
-//     return;
-//   }
+   if (strpos($T, $V) !== false) {
+     return;
+   }
 }
