@@ -30,6 +30,10 @@ let unittest =
       let ast = Parse_php.program_of_string "echo 1+2;" in
       assert_no_parser_error ast;
     );
+    "parsing empty comments" >:: (fun () ->
+      let ast = Parse_php.program_of_string "$a/**/ =1;" in
+      assert_no_parser_error ast;
+    );
 
     (* Check that bad code contain a NotParsedCorrectly element. *)
     "rejecting bad code" >:: (fun () ->

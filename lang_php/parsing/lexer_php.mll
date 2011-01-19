@@ -496,6 +496,7 @@ rule st_in_scripting = parse
         let com = st_comment lexbuf in
         T_COMMENT(info +> tok_add_s com)
       }
+    | "/**/" { T_COMMENT(tokinfo lexbuf) }
 
     | "/**" { (* RESET_DOC_COMMENT(); *)
         let info = tokinfo lexbuf in 
