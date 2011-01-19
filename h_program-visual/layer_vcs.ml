@@ -103,6 +103,8 @@ let gen_nbauthors_layer dir ~output =
   ) in
 
   let layer = { Layer_code.
+     title = "Number of authors";
+     description = "Use information from git blame";           
      files = files +> Common.index_list_and_total +> 
       List.map (fun (file, i, total) ->
         pr2 (spf "processing: %s (%d/%d)" file i total);
@@ -151,6 +153,8 @@ let gen_age_layer dir ~output =
   ) in
 
   let layer = { Layer_code.
+     title = "Age of code";
+     description = "Use information from git blame";
      files = files +> Common.index_list_and_total +> 
       List.map (fun (file, i, total) ->
         pr2 (spf "processing: %s (%d/%d)" file i total);

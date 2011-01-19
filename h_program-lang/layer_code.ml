@@ -137,6 +137,8 @@ open Common
  *)
 
 type layer = {
+  title: string;
+  description: string;
   files: (filename * file_info) list;
   kinds: (kind * Simple_color.emacs_color) list;
  }
@@ -252,7 +254,14 @@ let build_index_of_layers ~root layers =
 let vof_emacs_color s = Ocaml.vof_string s
 let vof_filename s = Ocaml.vof_string s
 
-let rec vof_layer { files = v_files; kinds = v_kinds } =
+
+let rec
+  vof_layer {
+              title = v_title;
+              description = v_description;
+              files = v_files;
+              kinds = v_kinds
+            } =
   let bnds = [] in
   let arg =
     Ocaml.vof_list
@@ -270,7 +279,13 @@ let rec vof_layer { files = v_files; kinds = v_kinds } =
          and v2 = vof_file_info v2
          in Ocaml.VTuple [ v1; v2 ])
       v_files in
-  let bnd = ("files", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("files", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_string v_description in
+  let bnd = ("description", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_string v_title in
+  let bnd = ("title", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and
   vof_file_info { micro_level = v_micro_level; macro_level = v_macro_level }
                 =
@@ -307,12 +322,25 @@ let rec layer_ofv__ =
   in
     function
     | (Ocaml.VDict field_sexps as sexp) ->
-        let files_field = ref None and kinds_field = ref None
+        let title_field = ref None and description_field = ref None
+        and files_field = ref None and kinds_field = ref None
         and duplicates = ref [] and extra = ref [] in
         let rec iter =
           (function
            | (field_name, field_sexp) :: tail ->
                ((match field_name with
+                 | "title" ->
+                     (match !title_field with
+                      | None ->
+                          let fvalue = Ocaml.string_ofv field_sexp
+                          in title_field := Some fvalue
+                      | Some _ -> duplicates := field_name :: !duplicates)
+                 | "description" ->
+                     (match !description_field with
+                      | None ->
+                          let fvalue = Ocaml.string_ofv field_sexp
+                          in description_field := Some fvalue
+                      | Some _ -> duplicates := field_name :: !duplicates)
                  | "files" ->
                      (match !files_field with
                       | None ->
@@ -357,14 +385,25 @@ let rec layer_ofv__ =
              if !extra <> []
              then Ocaml.record_extra_fields _loc !extra sexp
              else
-               (match ((!files_field), (!kinds_field)) with
-                | (Some files_value, Some kinds_value) ->
-                    { files = files_value; kinds = kinds_value; }
+               (match ((!title_field), (!description_field), (!files_field),
+                       (!kinds_field))
+                with
+                | (Some title_value, Some description_value,
+                   Some files_value, Some kinds_value) ->
+                    {
+                      title = title_value;
+                      description = description_value;
+                      files = files_value;
+                      kinds = kinds_value;
+                    }
                 | _ ->
                     Ocaml.record_undefined_elements _loc sexp
-                      [ ((!files_field = None), "files");
+                      [ ((!title_field = None), "title");
+                        ((!description_field = None), "description");
+                        ((!files_field = None), "files");
                         ((!kinds_field = None), "kinds") ]))
     | sexp -> Ocaml.record_list_instead_atom _loc sexp
+
 and layer_ofv sexp = layer_ofv__ sexp
 and file_info_ofv__ =
   let _loc = "Xxx.file_info"
@@ -482,7 +521,7 @@ let save_layer layer file =
  * The layer can also be used to summarize statistics per dirs and
  * subdirs and so on.
  *)
-let simple_layer_of_parse_infos ~root xs kinds =
+let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
 
   (* group by file, group by line, uniq categ *)
   let files_and_lines = xs +> List.map (fun (tok, kind) ->
@@ -498,6 +537,8 @@ let simple_layer_of_parse_infos ~root xs kinds =
   in
 
   { 
+    title = title;
+    description = description;
     kinds = kinds;
     files = group +> List.map (fun (file, lines_and_kinds) ->
 

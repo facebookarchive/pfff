@@ -70,6 +70,8 @@ let heat_map_properties = [
 
 let gen_red_green_layer lines_coverage ~output =
   let layer = { Layer_code.
+    title = "Test coverage (red/green)";
+    description = "Use information from xdebug";
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
       let covered = lines_cover.Test_coverage_php.covered_call_sites in
       let all = lines_cover.Test_coverage_php.call_sites in
@@ -106,6 +108,8 @@ let gen_red_green_layer lines_coverage ~output =
 let gen_heatmap_layer lines_coverage ~output =
 
   let layer = { Layer_code.
+    title = "Test coverage (heatmap)";
+    description = "Use information from xdebug";
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
       let covered = lines_cover.Test_coverage_php.covered_call_sites in
       let all = lines_cover.Test_coverage_php.call_sites in

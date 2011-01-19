@@ -143,7 +143,10 @@ let gen_layer ~root ~output errors =
 
   let infos = errors +> Common.map_filter info_of_error_and_kind in
 
-  let layer = Layer_code.simple_layer_of_parse_infos ~root infos properties in
+  let layer = Layer_code.simple_layer_of_parse_infos 
+    ~title:"PHP Bugs"
+    ~description:"Use scheck_php; many false positives though"
+    ~root infos properties in
   pr2 ("generating layer in " ^ output);
   Layer_code.save_layer layer output;
   ()

@@ -81,7 +81,7 @@ let print_simple_match tokens_matched_code =
 
 
 (* a layer need readable path, hence the ~root argument *)
-let gen_layer ~root file =
+let gen_layer ~root ~query file =
   pr2 ("generating layer in " ^ file);
 
   let root = Common.relative_to_absolute root in
@@ -99,6 +99,8 @@ let gen_layer ~root file =
   in
   let group = Common.group_assoc_bykey_eff files_and_lines in
   let layer = { Layer_code.
+    title = "Sgrep";
+    description = "output of sgrep";
     kinds = kinds;
     files = group +> List.map (fun (file, lines) ->
       let lines = Common.uniq lines in
@@ -119,15 +121,15 @@ let gen_layer ~root file =
 (*****************************************************************************)
 let main_action xs =
 
-  let pattern = 
+  let pattern, query_string = 
     Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     match !pattern_file, !pattern_string with
     | "", "" -> 
         failwith "I need a pattern; use -f or -e";
     | file, _ when file <> "" ->
-        Parse_php.parse_any file
+        Parse_php.parse_any file, Common.read_file file
     | _, s when s <> ""->
-        Parse_php.any_of_string s
+        Parse_php.any_of_string s, s
     | _ -> raise Impossible
     )
   in
@@ -217,7 +219,7 @@ let main_action xs =
   !layer_file +> Common.do_option (fun file ->
 
     let root = Common.common_prefix_of_files_or_dirs xs in
-    gen_layer ~root file
+    gen_layer ~root ~query:query_string  file
   );
   ()
 

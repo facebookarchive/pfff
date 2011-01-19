@@ -4,8 +4,9 @@
  * his own repository (this also saves some space in the generated
  * JSON file). 
  *)
-
 type layer = {
+  title: string;
+  description: string;
   files: (Common.filename * file_info) list;
   kinds: (kind * Simple_color.emacs_color) list;
  }
@@ -46,6 +47,8 @@ val layer_of_json: Json_type.t -> layer
 
 val simple_layer_of_parse_infos: 
   root:Common.dirname ->
+  title:string ->
+  ?description:string ->
   (Parse_info.info * kind) list ->
   (kind * Simple_color.emacs_color) list ->
   layer

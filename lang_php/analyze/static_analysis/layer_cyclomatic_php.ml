@@ -68,6 +68,8 @@ let gen_layer dir ~output =
   let errors = ref [] in
 
   let layer = { Layer_code.
+   title = "Cyclomatic complexity";
+   description = "See http://en.wikipedia.org/wiki/Cyclomatic_complexity";
    files = files +> Common.index_list_and_total +> 
     List.map (fun (file, i, total) ->
       let ii_with_cyclo =
