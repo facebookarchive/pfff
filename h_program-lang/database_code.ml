@@ -290,7 +290,8 @@ let json_of_property x =
   | ContainDynamicCall ->    J.Array [J.String "ContainDynamicCall"]
   | ContainReflectionCall -> J.Array [J.String "ContainReflectionCall"]
   | TakeArgNByRef i -> J.Array [J.String "TakeArgNByRef"; J.Int i]
-  | _ -> raise Todo
+  | (CodeCoverage _|UseGlobal _|ContainDeadStatements|DeadCode) ->
+      raise Todo
 
 let json_of_entity e = 
   J.Object [
@@ -335,7 +336,12 @@ let filepos_of_json json =
   | _ -> failwith "Bad json"
 
 let property_of_json json =
-  raise Todo
+  match json with
+  | J.Array [J.String "ContainDynamicCall"] -> ContainDynamicCall
+  | J.Array [J.String "ContainReflectionCall"] -> ContainReflectionCall
+  | J.Array [J.String "TakeArgNByRef"; J.Int i] -> TakeArgNByRef i
+  | _ -> failwith "property_of_json: bad json"
+
 
 let properties_of_json json =
   match json with
