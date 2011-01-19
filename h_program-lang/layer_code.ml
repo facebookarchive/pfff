@@ -463,6 +463,7 @@ let is_json_filename filename =
  * the user edit the layer file, for instance to adjust the colors.
  *)
 let load_layer file =
+  pr2 (spf "loading layer: %s" file);
   if is_json_filename file
   then Ocaml.load_json file +> layer_of_json
   else Common.get_value file

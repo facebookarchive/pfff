@@ -26,6 +26,7 @@ let filter = ref Treemap_pl.ex_filter_file
 let db_file = ref (None: Common.filename option)
 (* let db_path = ref (Database.database_dir "/home/pad/www") *)
 let layer_file = ref (None: Common.filename option)
+let layer_dir = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -108,6 +109,15 @@ let build_model a b =
     build_model2 a b)
 (*e: build_model *)
 
+(* could also try to parse all json files and filter the one which do
+ * not parse *)
+let layers_in_dir dir =
+  Common.readdir_to_file_list dir +> Common.map_filter (fun file ->
+    if file =~ "layer.*json"
+    then Some (Filename.concat dir file)
+    else None
+  )
+
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
@@ -122,14 +132,21 @@ let main_action xs =
   let model = Async.async_make () in
 
   let layers = 
-    match !layer_file with
-    | None -> []
-    | Some file -> [Layer_code.load_layer file]
+    match !layer_file, !layer_dir, xs with
+    | Some file, _, _ -> 
+        [Layer_code.load_layer file]
+    | None, Some dir, _ 
+    | None, None, [dir] -> 
+        layers_in_dir dir +> List.map Layer_code.load_layer
+    | _ -> []
   in
   let layers = 
     Layer_code.build_index_of_layers 
       ~root 
-      (layers +> List.map (fun x -> x, true)) 
+      (match layers with 
+      | [layer] -> [layer, true]
+      | _ -> layers +> List.map (fun x -> x, false)
+      )
   in
 
   let dw = Model2.init_drawing treemap_generator model layers xs in
@@ -250,6 +267,8 @@ let options () = [
     " <db_light_file>";
     "-with_layer", Arg.String (fun s -> layer_file := Some s),
     " <layer_file>";
+    "-with_layers", Arg.String (fun s -> layer_dir := Some s),
+    " <layer_dir>";
 
     "-test" , Arg.String (fun s -> test_mode := Some s),
     " <str> execute an internal script";
