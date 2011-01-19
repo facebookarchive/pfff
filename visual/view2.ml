@@ -325,7 +325,9 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
       factory#add_submenu "_Layers" +> (fun menu -> 
         let entries = 
           !dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
-            `C ("Layer", active, (fun b -> pr2 "TODO"))
+            `C (layer.Layer_code.title, active, (fun b -> 
+              pr2 "TODO"
+            ))
           )
         in
         GToolbox.build_menu menu ~entries

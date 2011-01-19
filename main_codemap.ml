@@ -113,7 +113,7 @@ let build_model a b =
  * not parse *)
 let layers_in_dir dir =
   Common.readdir_to_file_list dir +> Common.map_filter (fun file ->
-    if file =~ "layer.*json"
+    if file =~ "layer.*marshall"
     then Some (Filename.concat dir file)
     else None
   )
@@ -154,6 +154,7 @@ let main_action xs =
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
   let db_file = 
+    (* todo: do as for layers, put this logic of marshall vs json elsewhere *)
     match !db_file, xs with
     | None, [dir] ->
         let db = Filename.concat dir Database_code.default_db_name in
