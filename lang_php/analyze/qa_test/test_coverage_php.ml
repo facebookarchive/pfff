@@ -711,6 +711,8 @@ let unittest = "coverage_php" >::: [
    *)
   "simple coverage" >:: (fun () ->
 
+    OUnit.skip_if true "xdebug obsolete";
+
     let all_test_files () = 
       [ p "t1_a.php";
         p "t2_b.php";
@@ -761,6 +763,7 @@ let unittest = "coverage_php" >::: [
    * require_module()
    *)
   "coverage skipping calls" >:: (fun () ->
+    OUnit.skip_if true "xdebug obsolete";
 
     let all_test_files () = [ 
       p "t4_only_require.php";
