@@ -171,8 +171,9 @@ let configure a b c =
 let expose_legend da dw_ref ev = 
   let cr = Cairo_lablgtk.create da#misc#window in
 
+  (* todo: make the architecture a layer so no need for special case *)
   let dw = !dw_ref in
-  (if null dw.layers.Layer_code.layers
+  (if not (Layer_code.has_active_layers dw.layers)
   then Draw_legend.draw_legend ~cr
   else Draw_legend.draw_legend_layer ~cr dw.layers
   );

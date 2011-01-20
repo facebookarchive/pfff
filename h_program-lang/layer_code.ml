@@ -191,7 +191,9 @@ let build_index_of_layers ~root layers =
   let hmicro = Common.hash_with_default (fun () -> Hashtbl.create 101) in
   let hmacro = Common.hash_with_default (fun () -> []) in
   
-  layers +> List.iter (fun (layer, b) ->
+  layers 
+   +> List.filter (fun (layer, active) -> active) 
+   +> List.iter (fun (layer, active) ->
     let hkind = Common.hash_of_list layer.kinds in
 
     layer.files +> List.iter (fun (file, finfo) ->
@@ -244,6 +246,13 @@ let build_index_of_layers ~root layers =
     macro_index = hmacro#to_h;
     micro_index = hmicro#to_h;
   }
+
+
+(*****************************************************************************)
+(* Layers helpers *)
+(*****************************************************************************)
+let has_active_layers layers =
+  layers.layers +> List.map snd +> Common.or_list
 
 (*****************************************************************************)
 (* Meta *)

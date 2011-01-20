@@ -34,6 +34,7 @@ val build_index_of_layers:
   root:Common.dirname -> 
   (layer * bool) list -> 
   layers_with_index
+val has_active_layers: layers_with_index -> bool
 
 (* save either in a (readable) json format or (fast) marshalled form 
  * depending on the extension of the filename
