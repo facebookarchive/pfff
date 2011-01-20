@@ -258,3 +258,4 @@ external/ocamlbdb/libcamlbdb.a
 /demos/check_is_static_literal
 /lang_php/meta/ffi
 /lang_php/meta/gen_code
+/DB_LIGHT.marshall
