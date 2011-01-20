@@ -45,6 +45,7 @@ Fig_graph_ml.pdf
 /DB_LIGHT
 /nohup.out
 /data/php_stdlib.defs_marshalled
+*.marshall
 
 # specific binaries
 /pfff
