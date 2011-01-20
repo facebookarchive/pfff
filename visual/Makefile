@@ -13,7 +13,7 @@ SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
     draw_common.ml draw_labels.ml draw_legend.ml \
     draw_macrolevel.ml draw_microlevel.ml  \
     view_mainmap.ml view_minimap.ml view_overlays.ml \
-    ui_search.ml ui_navigation.ml \
+    ui_search.ml ui_navigation.ml ui_layers.ml \
     view2.ml
 
 #experimental:  future.ml \    ancient2.ml \      completion.ml \

@@ -324,12 +324,21 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
       );
       factory#add_submenu "_Layers" +> (fun menu -> 
-        let entries = 
+        let layers = 
           !dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
-            `C (layer.Layer_code.title, active, (fun b -> 
-              pr2 "TODO"
+            (layer.Layer_code.title, active, (fun b -> 
+              Ui_layers.choose_layer ~root:(root_orig())
+                (Some layer.Layer_code.title) dw;
             ))
           )
+        in
+        (* todo: again, make the architecture a layer so less special cases *)
+        let entries = [`R (
+             ("Architecture", true, (fun b ->
+               Ui_layers.choose_layer ~root:(root_orig()) None dw;
+             ))::
+             layers)
+        ]
         in
         GToolbox.build_menu menu ~entries
       );
@@ -581,6 +590,10 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
     );
+    Controller._refresh_legend := (fun () ->
+      GtkBase.Widget.queue_draw da3#as_widget;
+    );
+
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
