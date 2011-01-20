@@ -255,7 +255,7 @@ let commit_of_relative_time ~basedir relative_data_string =
                  relative_data_string
              )) in
   let xs = Common.cmd_to_list cmd in
-  let last = Common.last xs in
+  let last = Common.list_last xs in
   id_and_summary_oneline last +> fst
 
 let commit_info ~basedir vid = 

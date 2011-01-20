@@ -596,10 +596,10 @@ website:
 tags:
 	./stags -verbose -lang ml .
 db:
-	./pfff_db -verbose  -lang ml -o DB_LIGHT .
+	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 visual:
 	./codemap -profile -ss 2 \
-	   -with_info DB_LIGHT -ocaml_filter  .
+	   -with_info DB_LIGHT.marshall -ocaml_filter  .
 test:
 	./pfff_test all
 push:

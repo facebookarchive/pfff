@@ -83,7 +83,11 @@ let exclude p xs =
   List.filter (fun x -> not (p x)) xs
 
 let last_n n l = List.rev (take n (List.rev l))
-let last l = List.hd (last_n 1 l)
+(*let last l = List.hd (last_n 1 l) *)
+let rec list_last = function
+ | [] -> raise Not_found
+  | [x] -> x
+  | x::y::xs -> list_last (y::xs)
 
 
 let (list_of_string: string -> char list) = function
@@ -2745,7 +2749,7 @@ let first_day_in_week_of_day day =
   List.hd (days_in_week_of_day day)
 
 let last_day_in_week_of_day day = 
-  last (days_in_week_of_day day)
+  list_last (days_in_week_of_day day)
 
 
 (* ---------------------------------------------------------------------- *)
@@ -3952,10 +3956,12 @@ let rec list_init = function
   | [x]      -> []
   | x::y::xs -> x::(list_init (y::xs))
 
-let rec list_last = function
-  | [] -> raise Not_found
-  | [x] -> x
-  | x::y::xs -> list_last (y::xs)
+(* now in prelude: 
+ * let rec list_last = function
+ * | [] -> raise Not_found
+ * | [x] -> x
+ * | x::y::xs -> list_last (y::xs)
+ *)
 
 (* pixel *)
 (* now in prelude

@@ -269,7 +269,7 @@ let parse_spatch file =
             ()
         | Some (Plus toadd) ->
             (* todo? what if there is no token on this line ? *)
-            let last_tok = Common.last toks_at_line in
+            let last_tok = Common.list_last toks_at_line in
             (match last_tok.transfo with
             | Remove -> last_tok.transfo <- Replace (AddStr toadd)
             | NoTransfo -> last_tok.transfo <- AddAfter (AddStr toadd)

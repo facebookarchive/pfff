@@ -64,7 +64,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 
 (* ugly *)
 let root_orig () = 
-  (Common.last !Controller.dw_stack).M.root
+  (Common.list_last !Controller.dw_stack).M.root
 
 (*e: view globals *)
 
@@ -501,7 +501,9 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GOTO_TOP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          Controller.dw_stack := [Common.last !Controller.dw_stack];
+          let top = Common.list_last !Controller.dw_stack in
+          (* put 2 in the stack because _go_back will popup one *)
+          Controller.dw_stack := [top; top];
           !Controller._go_back dw;
 
         )

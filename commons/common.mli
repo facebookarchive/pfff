@@ -1355,9 +1355,8 @@ val cons : 'a -> 'a list -> 'a list
 val uncons : 'a list -> 'a * 'a list
 val safe_tl : 'a list -> 'a list
 val head_middle_tail : 'a list -> 'a * 'a list * 'a
-val last : 'a list -> 'a
-val list_init : 'a list -> 'a list
 val list_last : 'a list -> 'a
+val list_init : 'a list -> 'a list
 val removelast : 'a list -> 'a list
 
 val inits : 'a list -> 'a list list

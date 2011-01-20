@@ -1533,7 +1533,7 @@ let rec find_macro_lineparen xs =
       then begin
           msg_macro_toplevel_noptvirg s;
           (* just to avoid the end-of-stream pb of ocamlyacc  *)
-          let tcpar = Common.last info_parens in
+          let tcpar = Common.list_last info_parens in
           tcpar.tok <- TCParEOL (TH.info_of_tok tcpar.tok);
           
           (*macro.tok <- TMacroTop (s, TH.info_of_tok macro.tok);*)
