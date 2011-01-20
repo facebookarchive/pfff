@@ -597,9 +597,13 @@ tags:
 	./stags -verbose -lang ml .
 db:
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
+layers:
+	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
+          layer_age.marshall
+
 visual:
 	./codemap -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -ocaml_filter  .
+	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
 test:
 	./pfff_test all
 push:
