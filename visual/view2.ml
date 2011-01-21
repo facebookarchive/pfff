@@ -327,8 +327,9 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
         let layers = 
           !dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
             (layer.Layer_code.title, active, (fun b -> 
-              Ui_layers.choose_layer ~root:(root_orig())
-                (Some layer.Layer_code.title) dw;
+              if b then
+                Ui_layers.choose_layer ~root:(root_orig())
+                  (Some layer.Layer_code.title) dw;
             ))
           )
         in

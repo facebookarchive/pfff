@@ -27,6 +27,7 @@ open Model2
 (*****************************************************************************)
 
 let choose_layer ~root layer_title_opt dw_ref =
+  pr2 "choose_layer()";
   let dw = !dw_ref in
 
   let original_layers = dw.M.layers.L.layers +> List.map fst in

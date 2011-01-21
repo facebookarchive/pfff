@@ -174,8 +174,12 @@ let gen_age_layer dir ~output =
             *)
            +> List.tl 
         in
+        let now_dmy = 
+          Common.today () 
+          +> Common.floattime_to_unixtime +> Common.unixtime_to_dmy 
+        in
 
-        let property = 
+        let max_age = 
           match annots with
           | [] -> "no info"
           | xs ->
@@ -185,15 +189,10 @@ let gen_age_layer dir ~output =
             +> List.map (fun (_version, Lib_vcs.Author _, date_dmy) -> date_dmy)
             +> Common.maximum_dmy
            in
-           pr2_gen max_date_dmy;
-           let now_dmy = 
-             Common.today () 
-             +> Common.floattime_to_unixtime +> Common.unixtime_to_dmy 
-           in
-           
            let age_in_days = 
              Common.rough_days_between_dates max_date_dmy now_dmy
            in
+           pr2_gen max_date_dmy;
            pr2_gen age_in_days;
 
            property_of_age age_in_days
@@ -201,12 +200,16 @@ let gen_age_layer dir ~output =
 
         readable_file,
         { Layer_code.
-          (* don't display anything at the line microlevel for now.
-           * could display the age of each line.
-           *)
-          micro_level = [];
+          micro_level = 
+            annots +> Common.index_list_1 +> List.map
+              (fun ((_version, Lib_vcs.Author _, date_dmy), i) -> 
+                let age_in_days = 
+                  Common.rough_days_between_dates date_dmy now_dmy
+                in
+                i, property_of_age age_in_days
+              );
 
-          macro_level = [property, 1.];
+          macro_level = [max_age, 1.];
         }
       );
       kinds = properties_age;

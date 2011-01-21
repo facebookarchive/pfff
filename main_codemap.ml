@@ -144,8 +144,11 @@ let main_action xs =
     Layer_code.build_index_of_layers 
       ~root 
       (match layers with 
-      | [layer] -> [layer, true]
-      | _ -> layers +> List.map (fun x -> x, false)
+      | [layer] -> 
+          (* not active by default. it causes some problems *)
+          [layer, false]
+      | _ -> 
+          layers +> List.map (fun x -> x, false)
       )
   in
 

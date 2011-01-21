@@ -590,7 +590,7 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags visual db
+.PHONY:: tags db layers   visual
 
 
 tags:
@@ -600,6 +600,8 @@ db:
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall
+	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
+          layer_age.json
 
 visual:
 	./codemap -profile -ss 2 \
