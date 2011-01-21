@@ -344,7 +344,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
           | None -> ()
           | Some color ->
               CairoH.fill_rectangle ~cr 
-                ~alpha:0.5
+                ~alpha:0.25
                 ~color
                 ~x 
                 ~y:(y - layout.space_per_line) 
