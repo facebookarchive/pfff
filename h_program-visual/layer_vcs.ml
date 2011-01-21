@@ -143,7 +143,7 @@ let gen_nbauthors_layer dir ~output =
   Layer_code.save_layer layer output
 
 
-let gen_age_layer dir ~output =
+let gen_age_layer ~line_granularity dir ~output =
   let dir = Common.realpath dir in
 
   let files = Common.files_of_dir_or_files_no_vcs_nofilter [dir] in
@@ -201,13 +201,15 @@ let gen_age_layer dir ~output =
         readable_file,
         { Layer_code.
           micro_level = 
+            if line_granularity then
             annots +> Common.index_list_1 +> List.map
               (fun ((_version, Lib_vcs.Author _, date_dmy), i) -> 
                 let age_in_days = 
                   Common.rough_days_between_dates date_dmy now_dmy
                 in
                 i, property_of_age age_in_days
-              );
+              )
+            else [];
 
           macro_level = [max_age, 1.];
         }
@@ -227,5 +229,9 @@ let actions () = [
   "-gen_nbauthors_layer", " <git dir> <layerfile>",
   Common.mk_action_2_arg (fun dir output -> gen_nbauthors_layer dir ~output);
   "-gen_age_layer", " <git dir> <layerfile>",
-  Common.mk_action_2_arg (fun dir output -> gen_age_layer dir ~output);
+  Common.mk_action_2_arg (fun dir output -> 
+    gen_age_layer ~line_granularity:false dir ~output);
+  "-gen_age_lines_layer", " <git dir> <layerfile>",
+  Common.mk_action_2_arg (fun dir output -> 
+    gen_age_layer ~line_granularity:true dir ~output);
 ]
