@@ -22,6 +22,7 @@ val rgbf_of_color: color -> rgbf
 val rainbow_array: rgbf array
 val rainbow_color: int -> rgbf
 
+val emacs_colors: (emacs_color * rgbf) list
 
 (* extra converters *)
 val rgb_of_string: string -> rgb
