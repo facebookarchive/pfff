@@ -3441,7 +3441,7 @@ let files_of_dir_or_files ext xs =
 
 let grep_dash_v_str = 
  "| grep -v /.hg/ |grep -v /CVS/ | grep -v /.git/ |grep -v /_darcs/" ^
- "| grep -v /.svn/"
+ "| grep -v /.svn/ | grep -v .git_annot"
 
 
 let files_of_dir_or_files_no_vcs ext xs = 
