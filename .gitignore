@@ -260,3 +260,5 @@ external/ocamlbdb/libcamlbdb.a
 /lang_php/meta/ffi
 /lang_php/meta/gen_code
 /DB_LIGHT.marshall
+/lang_erlang/parsing/parse_erlang.ml
+/lang_erlang/parsing/parse_erlang.mli

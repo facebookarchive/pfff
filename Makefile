@@ -150,6 +150,7 @@ BASICLIBS=commons/commons.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
+ lang_erlang/parsing/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
@@ -199,6 +200,7 @@ LIBS= commons/commons.cma \
      lang_python/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
      lang_csharp/analyze/lib.cma \
+    lang_erlang/parsing/lib.cma \
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
@@ -232,6 +234,7 @@ MAKESUBDIRS=commons \
    lang_python/analyze \
   lang_csharp/parsing \
    lang_csharp/analyze \
+  lang_erlang/parsing \
   lang_php/analyze \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \
