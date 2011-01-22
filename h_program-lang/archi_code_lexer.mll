@@ -61,6 +61,8 @@ rule category = parse
 
   | ".mli/"
   | ".h/"
+  | ".hpp/"
+  | ".hrl/"
       { Interface }
 
   (* ml specific ? *)

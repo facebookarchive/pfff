@@ -93,7 +93,7 @@ let file_type_of_file2 file =
 
   | "hs" | "lhs" -> PL (Haskell e)
 
-  | "erl" -> PL Erlang
+  | "erl" | "hrl" -> PL Erlang
 
   | "bet" -> PL Beta
 
