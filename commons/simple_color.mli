@@ -24,6 +24,10 @@ val rainbow_color: int -> rgbf
 
 val emacs_colors: (emacs_color * rgbf) list
 
+val emacs_basic_colors: (emacs_color * rgbf) list
+val emacs_degrade_colors: (emacs_color * rgbf) list
+val emacs_gray_colors: (emacs_color * rgbf) list
+
 (* extra converters *)
 val rgb_of_string: string -> rgb
 val color_of_string: string -> color
