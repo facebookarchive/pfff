@@ -28,6 +28,9 @@ val emacs_basic_colors: (emacs_color * rgbf) list
 val emacs_degrade_colors: (emacs_color * rgbf) list
 val emacs_gray_colors: (emacs_color * rgbf) list
 
+(* choose one of the pool of colors *)
+val random_emacs_color: (emacs_color * rgbf) list -> emacs_color
+
 (* extra converters *)
 val rgb_of_string: string -> rgb
 val color_of_string: string -> color

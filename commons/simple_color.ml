@@ -912,6 +912,11 @@ let emacs_gray_colors = [
 let emacs_colors = 
   emacs_basic_colors @ emacs_degrade_colors @ emacs_gray_colors
 
+let random_emacs_color xs =
+  let len = List.length xs in
+  let n = Random.int len in
+  List.nth xs n +> fst
+
 let rgbf_of_string s = 
   try
     List.assoc s emacs_colors
