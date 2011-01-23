@@ -33,6 +33,7 @@ module Db = Database_php
 
 let properties = [
   "dead function", "red";
+  "dead class", "purple";
   "unknown", "white";
 ]
 
@@ -41,9 +42,9 @@ let properties = [
 (* Code *)
 (*****************************************************************************)
 
-let infos_and_kinds_of_dead_ids dead_ids db =
+let infos_and_kinds_of_dead_ids dead_ids ~kind db =
   dead_ids +> List.map (fun (_s, id) ->
-    Db.parse_info_of_id id db, "dead function"
+    Db.parse_info_of_id id db, kind
   )
 
 
@@ -67,16 +68,21 @@ let gen_layer ~db ~output =
     Deadcode_php.with_blame = false;
   }
   in
-  let dead_ids = 
+  let dead_ids_func = 
     Deadcode_php.finding_dead_functions hooks db
   in
+  let dead_ids_class = 
+    Deadcode_php.finding_dead_classes hooks db
+  in
   let infos =
-    infos_and_kinds_of_dead_ids dead_ids db
+    infos_and_kinds_of_dead_ids dead_ids_func ~kind:"dead function" db ++
+    infos_and_kinds_of_dead_ids dead_ids_class ~kind:"dead class" db ++
+    []
   in
 
   let layer = Layer_code.simple_layer_of_parse_infos 
     ~title:"Dead code"
-    ~description:"Mostly functions without any callers (static analysis)"
+    ~description:"Mostly functions/classes without any users (static analysis)"
     ~root infos properties in
   pr2 ("generating layer in " ^ output);
   Layer_code.save_layer layer output;

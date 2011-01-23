@@ -49,6 +49,9 @@ val deadcode_analysis: hooks -> Database_php.database -> unit
 (* internal analysis functions *)
 val finding_dead_functions:
   hooks -> Database_php.database -> (string * Database_php.id) list
+val finding_dead_classes:
+  hooks -> Database_php.database -> (string * Database_php.id) list
+
 val deadcode_fixpoint_per_file:
   Database_php.id list (* original set of dead ids *) -> 
   hooks -> Database_php.database ->

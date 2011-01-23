@@ -240,6 +240,40 @@ let finding_dead_functions hooks db =
   pr2 (spf "number of dead functions: %d" (List.length !dead_ids));
   !dead_ids
 
+(* todo: factorize code with finding_dead_functions ? have notion
+ * of entity and user of entities
+ * 
+ * todo: finding_dead_ constants/interface/globals/variables ?
+ *)
+let finding_dead_classes hooks db = 
+  let dead_ids = ref [] in
+
+  (* todo: Db.functions_or_static_methods_in_db *)
+  Db.classes_in_db db +> List.iter (fun (idstr, ids) ->
+    let s = idstr in
+
+    if List.length ids > 1 
+    then pr2 ("Ambiguous name: " ^ s);
+
+    ids +> List.iter (fun id ->
+      let file_project = Db.readable_filename_of_id id db in
+      if hooks.is_valid_file file_project then begin
+        let is_dead = 
+          let users = Db.class_users_of_id id db in
+          let extenders = Db.class_extenders_of_id id db in
+          null (users ++ extenders) && not (false_positive id hooks db)
+        in
+        if is_dead
+        then begin
+          pr ("DEAD CLASS: no user/extender for " ^ s);
+          Common.push2 (s, id) dead_ids;
+        end
+      end
+    );
+  );
+  pr2 (spf "number of dead classes: %d" (List.length !dead_ids));
+  !dead_ids
+
 
 
 (* 
