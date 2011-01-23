@@ -53,6 +53,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
          $(TOP)/lang_csharp/analyze \
         $(TOP)/lang_java/parsing \
          $(TOP)/lang_java/analyze \
+        $(TOP)/lang_erlang/parsing \
+         $(TOP)/lang_erlang/analyze \
 
 
 SYSINCLUDES=\

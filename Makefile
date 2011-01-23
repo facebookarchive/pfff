@@ -201,6 +201,7 @@ LIBS= commons/commons.cma \
     lang_csharp/parsing/lib.cma \
      lang_csharp/analyze/lib.cma \
     lang_erlang/parsing/lib.cma \
+     lang_erlang/analyze/lib.cma \
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
@@ -235,6 +236,7 @@ MAKESUBDIRS=commons \
   lang_csharp/parsing \
    lang_csharp/analyze \
   lang_erlang/parsing \
+   lang_erlang/analyze \
   lang_php/analyze \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \

@@ -262,3 +262,7 @@ external/ocamlbdb/libcamlbdb.a
 /DB_LIGHT.marshall
 /lang_erlang/parsing/parse_erlang.ml
 /lang_erlang/parsing/parse_erlang.mli
+/lang_erlang/parsing/lexer_erlang.ml
+/lang_erlang/parsing/parser_erlang.ml
+/lang_erlang/parsing/parser_erlang.mli
+/lang_erlang/parsing/parser_erlang.output
