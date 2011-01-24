@@ -235,7 +235,7 @@ let empty_database () = {
 }
 
 let default_db_name = 
-  "PFFF_DB.db"
+  "PFFF_DB.marshall"
 (*****************************************************************************)
 (* String of *)
 (*****************************************************************************)
@@ -424,22 +424,33 @@ let database_of_json json =
  * one wants to have a readable database.
  *)
 let load_database2 file =
-  let json = 
-    Common.profile_code2 "Json_in.load_json" (fun () ->
-      Json_in.load_json file
-    ) in
-  let db = database_of_json json in
-  db
+  pr2 (spf "loading database: %s" file);
+  if File_type.is_json_filename file
+  then
+    let json = 
+      Common.profile_code2 "Json_in.load_json" (fun () ->
+        Json_in.load_json file
+      ) in
+    database_of_json json
+  else Common.get_value file
+
 let load_database file =
   Common.profile_code2 "Db.load_db" (fun () -> load_database2 file)
 
-(* less: could use the more efficient json pretty printer, but really
+(* 
+ * We allow to save in JSON format because it may be useful to let
+ * the user edit read the generated data.
+ * 
+ * less: could use the more efficient json pretty printer, but really
  * marshall is probably better. Only biniou could be a valid alternative.
  *)
-let save_database ?(readable_db=false) database file =
-   database |> json_of_database |> 
-       Json_io.string_of_json ~compact:(not readable_db) ~recursive:false
-   |> Common.write_file ~file
+let save_database database file =
+  if File_type.is_json_filename file
+  then
+    database +> json_of_database 
+    +> Json_io.string_of_json ~compact:false ~recursive:false
+    +> Common.write_file ~file
+  else Common.write_value database file
 
 
 (*****************************************************************************)

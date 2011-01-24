@@ -48,11 +48,12 @@ type database = {
 val empty_database: unit -> database
 val default_db_name: string
 
-(* obsolete: load/save with JSON. Better to use Marshall. *)
+(* save either in a (readable) json format or (fast) marshalled form 
+ * depending on the extension of the filename
+ *)
 val load_database: 
   Common.filename -> database
 val save_database: 
-  ?readable_db:bool ->
   database -> Common.filename -> unit
 
 (* when we want to analyze multi-languages projets *)
