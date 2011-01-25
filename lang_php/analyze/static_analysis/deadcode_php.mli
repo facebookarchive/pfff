@@ -3,6 +3,7 @@
 type hooks = {
   (* to remove certain false positives *)
   is_probable_dynamic_funcname: string -> bool;
+  is_probable_dynamic_classname: string -> bool;
 
   (* to avoid generating patches for code which does not have a valid 
    * git owner anymore
