@@ -432,7 +432,34 @@ let deadcode_unittest =
 
       );
 
-      (* TODO: dead classes, dead defines *)
+      "dead classes" >:: (fun () ->
+        let file = "class DeadA { } class NotDeadA { } $o = new NotDeadA();" in
+        let db = db_from_string file in
+
+        let dead_ids =
+          Deadcode_php.finding_dead_classes hooks db |> List.map snd in
+        assert_bool
+          "DeadA should be dead"
+          (List.mem (id "DeadA::" db) dead_ids);
+        assert_bool
+          "NotDeadA should not be dead"
+          (not (List.mem (id "NotDeadA::" db) dead_ids));
+      );
+
+      "dead classes corner cases" >:: (fun () ->
+        let file = 
+          "class NotDeadA { static function foo() {} } NotDeadA::foo();" in
+        let db = db_from_string file in
+
+        let dead_ids =
+          Deadcode_php.finding_dead_classes hooks db |> List.map snd in
+        assert_bool
+          "NotDeadA should not be dead"
+          (not (List.mem (id "NotDeadA::" db) dead_ids));
+      );
+
+      (* todo: dead methods (quite hard) *)
+      (* less: dead defines *)
 
     ])
 
