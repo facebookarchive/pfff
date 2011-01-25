@@ -55,8 +55,8 @@ let tag_of_name filelines name =
 let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
-  files +> List.map (fun file ->
-    if verbose then pr2 (spf "processing: %s" file);
+  files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
+    if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
 
     let (ast2, _stat) = Parse_php.parse file in
     let ast = Parse_php.program_of_program2 ast2 in

@@ -64,21 +64,16 @@ let rec defs_of_files_or_dirs lang xs =
   let heavy_tagging = !heavy_tagging in
   match lang with
   | "php" ->
-      Tags_php.php_defs_of_files_or_dirs 
-      ~verbose
-      ~heavy_tagging
-      xs 
-
+      Tags_php.php_defs_of_files_or_dirs ~verbose ~heavy_tagging xs 
   | "js" ->
-      raise Todo
-
+      Tags_js.tags_of_files_or_dirs ~verbose xs
   | "ml" ->
       Tags_ml.defs_of_files_or_dirs ~verbose xs
 
   | "web" ->
       let tag1 = defs_of_files_or_dirs "php" xs in
       let tag2 = defs_of_files_or_dirs "js" xs in
-      raise Todo
+      tag1 ++ tag2
 
   | _ -> failwith ("language not supported: " ^ lang)
       
