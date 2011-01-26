@@ -113,6 +113,10 @@ let keyword_table = Common.hash_of_list [
   "lxor", (fun ii -> Tlxor ii);
   "asr", (fun ii -> Tasr ii);
   "land", (fun ii -> Tland ii);
+
+  (* "ref" is not a keyword ? it's actually a function returning
+   * a {mutable contents = ...}
+   *)
 ]
 
 }

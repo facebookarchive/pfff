@@ -229,6 +229,7 @@ and v_expr v =
   | Cons ((v1, v2)) ->
       let v1 = v_long_name v1 and v2 = v_option v_expr v2 in ()
   | Tuple v1 -> let v1 = v_comma_list12 v_expr v1 in ()
+  | List v1 -> let v1 = v_bracket (v_semicolon_list v_expr) v1 in ()
   | ParenExpr v1 -> let v1 = v_paren12 v_expr v1 in ()
   | Sequence v1 -> let v1 = v_paren11 v_seq_expr v1 in ()
   | Prefix ((v1, v2)) ->

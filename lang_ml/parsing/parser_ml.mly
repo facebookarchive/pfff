@@ -628,8 +628,9 @@ simple_expr:
  | TOBrace record_expr TCBrace
      { Record ($1, $2, $3) }
 
- | TOBracket expr_semi_list opt_semi TCBracket
-     { ExprTodo }
+ | TOBracket expr_semi_list opt_semi3 TCBracket
+     { List ($1, $2 ++ $3, $4) }
+
  | TOBracketPipe expr_semi_list opt_semi TPipeCBracket
      { ExprTodo }
  | TOBracketPipe TPipeCBracket
@@ -678,8 +679,8 @@ expr_comma_list:
  | expr TComma expr                             { [Left $1; Right $2; Left $3] }
 
 expr_semi_list:
- | expr                                  { }
- | expr_semi_list TSemiColon expr        { }
+ | expr                                  { [Left $1] }
+ | expr_semi_list TSemiColon expr        { $1 ++ [Right $2; Left $3] }
 
 
 
@@ -1298,6 +1299,10 @@ opt_semi:
  | TSemiColon       { [Right $1] }
 
 opt_semi2:
+ | /*(*empty*)*/    { [] }
+ | TSemiColon       { [Right $1] }
+
+opt_semi3:
  | /*(*empty*)*/    { [] }
  | TSemiColon       { [Right $1] }
 
