@@ -293,6 +293,11 @@ let ocaml_mli_filter_file file =
       not (file =~ ".*/commons/")
   | _ -> false
 
+let php_filter_file file = 
+  match File_type.file_type_of_file file with
+  | PL (Web (Php _)) -> true
+  | _ -> false
+
 
 let pad_filter_file file = 
   raise Todo

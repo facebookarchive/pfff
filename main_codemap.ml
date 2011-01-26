@@ -285,6 +285,9 @@ let options () = [
     "-ocaml_mli_filter", Arg.Unit (fun () -> 
       filter := Treemap_pl.ocaml_mli_filter_file),
     " ";
+    "-php_filter", Arg.Unit (fun () -> 
+      filter := Treemap_pl.php_filter_file),
+    " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";
