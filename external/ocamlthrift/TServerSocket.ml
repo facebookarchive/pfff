@@ -19,15 +19,16 @@
 
 open Thrift
 
-class t port =
+class t port socket_options =
 object
   inherit Transport.server_t
   val mutable sock = None
   method listen =
     let s = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-      sock <- Some s;
-      Unix.bind s (Unix.ADDR_INET (Unix.inet_addr_any, port));
-      Unix.listen s 256
+    List.iter (fun (opt, b) -> Unix.setsockopt s opt b) socket_options;
+    sock <- Some s;
+    Unix.bind s (Unix.ADDR_INET (Unix.inet_addr_any, port));
+    Unix.listen s 256
   method close =
     match sock with
         Some s -> Unix.shutdown s Unix.SHUTDOWN_ALL; Unix.close s;
