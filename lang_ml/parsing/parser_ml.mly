@@ -263,6 +263,7 @@ signature_item:
  | Texception TUpperIdent constructor_arguments
      { Exception ($1, Name $2, $3) }
 
+ /*(* modules *)*/
  | Topen mod_longident
      { Open ($1, $2) }
 
@@ -324,6 +325,7 @@ structure_item:
       { Let ($1, $2, $3) }
 
 
+ /*(* modules *)*/
  | Tmodule TUpperIdent module_binding
       { ItemTodo $1 }
  | Tmodule Ttype ident TEq module_type
