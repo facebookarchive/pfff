@@ -52,18 +52,11 @@ let infos_and_kinds_of_dead_ids dead_ids ~kind db =
 (* Main entry point *)
 (*****************************************************************************)
 
-let gen_layer ~db ~output = 
+let gen_layer ~hooks ~db ~output = 
 
   let root = Db.path_of_project_in_database db in
 
-  let hooks = { Deadcode_php.default_hooks with
-    (* Deadcode_php.is_probable_dynamic_funcname = 
-      False_positives_deadcode.is_probable_dynamic_funcname;
-    is_valid_author = Fb_employees.is_still_fb_employee;
-    is_valid_file = (fun file -> 
-      not (False_positives_deadcode.exclude_from_deadcode_patch_generation file)
-    );
-    *)
+  let hooks = { hooks with
     Deadcode_php.print_diff = false;
     Deadcode_php.with_blame = false;
   }
@@ -97,7 +90,8 @@ let actions () = [
   "-gen_deadcode_layer", " <db> <output>",
   Common.mk_action_2_arg (fun dbpath output ->
     Database_php.with_db ~metapath:dbpath (fun db ->
-      gen_layer ~db ~output
+      let hooks = Deadcode_php.default_hooks in
+      gen_layer ~hooks ~db ~output
     )
   )
 ]
