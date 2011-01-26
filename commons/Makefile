@@ -20,7 +20,8 @@ MYSRC=common.ml common_extra.ml \
       ocollection/ograph2way.ml ograph_extended.ml ograph_simple.ml  \
       ofullcommon.ml \
       math.ml \
-      simple_color.ml file_type.ml glimpse.ml parser_combinators.ml
+      simple_color.ml file_type.ml file_format.ml \
+      glimpse.ml parser_combinators.ml
 
 # src from other authors, got from the web or caml hump, too small to be 
 # in their own external/ocamlxxx/
