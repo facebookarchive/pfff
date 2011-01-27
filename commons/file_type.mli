@@ -16,6 +16,7 @@ type file_type =
   | C | Cplusplus | Java | Csharp
   | Perl | Python | Ruby
   | Erlang
+  | Haxe
   | Beta
   | Web of webpl_type
   | R of string
