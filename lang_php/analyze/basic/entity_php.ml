@@ -60,8 +60,8 @@ type fullid = filepos
 }
  (* with tarzan *)
 
-(* todo? copy paste/redundant with 
- *  - place_code.ml
+(* todo? copy-paste/redundant with 
+ *  - database_code.ml, highlight_code.ml
  *  - view_widgets_source.ml
  *  - typing_c environment type 
  *  - type_annotater_c.ml namedef type
