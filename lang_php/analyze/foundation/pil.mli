@@ -7,7 +7,9 @@
 type name = Ast_php.name
 type dname = Ast_php.dname
 
+(* todo: remove the self/parent sugar here *)
 type qualifier = Ast_php.qualifier
+
 type indirect = Ast_php.indirect
 type binaryOp = Ast_php.binaryOp
 type unaryOp = Ast_php.unaryOp
