@@ -145,7 +145,7 @@ let main_action xs =
       ~root 
       (match layers with 
       | [layer] -> 
-          (* not active by default. it causes some problems *)
+          (* not active by default ? it causes some problems  *)
           [layer, false]
       | _ -> 
           layers +> List.map (fun x -> x, false)
