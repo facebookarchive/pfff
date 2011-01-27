@@ -56,7 +56,7 @@ let mk_entity ~root id nb_users good_example_ids properties db =
       | Entity_php.Class -> Db.Class
       | Entity_php.Method -> Db.Method
       | Entity_php.StaticMethod -> Db.StaticMethod
-      | Entity_php.Interface -> Db.Class (* todo ? interface ? *)
+      | Entity_php.Interface -> Db.Interface
 
       | _ -> raise Impossible
       );
