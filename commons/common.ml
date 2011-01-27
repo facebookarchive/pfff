@@ -2879,6 +2879,9 @@ let unixtime_to_floattime tm =
 let floattime_to_unixtime sec = 
   Unix.localtime sec
 
+let floattime_to_dmy sec =
+  sec +> floattime_to_unixtime +> unixtime_to_dmy
+
 
 let sec_to_days sec = 
   let minfactor = 60 in
@@ -4713,7 +4716,17 @@ let rec intersect x y =
 (*****************************************************************************)
 
 (* people often do that *)
-module StringSet = Set.Make(struct type t = string let compare = compare end)
+module StringSetOrig = Set.Make(struct type t = string let compare = compare end)
+
+module StringSet = struct
+  include StringSetOrig
+  let of_list xs = 
+    xs +> List.fold_left (fun acc e -> 
+      StringSetOrig.add e acc
+    ) StringSetOrig.empty
+  let to_list t = 
+    StringSetOrig.elements t
+end
 
 
 (*****************************************************************************)
