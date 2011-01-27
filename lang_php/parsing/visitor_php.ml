@@ -99,6 +99,8 @@ type visitor_in = {
 
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;
+  kinterface_def: 
+    (interface_def -> unit) * visitor_out -> interface_def -> unit;
 
   kmethod_def: (method_def -> unit) * visitor_out -> method_def -> unit;
 
@@ -142,6 +144,7 @@ let default_visitor =
     kfunc_def = (fun (k,_) x -> k x);
     kmethod_def = (fun (k,_) x -> k x);
     kclass_def = (fun (k,_) x -> k x);
+    kinterface_def = (fun (k,_) x -> k x);
 
     kcomma   = (fun (k,_) x -> k x);
 
@@ -1026,7 +1029,8 @@ and v_extend (v1, v2) =
 and v_interface (v1, v2) =
   let v1 = v_tok v1 and v2 = v_comma_list19 v_fully_qualified_class_name v2 in ()
 and
-  v_interface_def {
+  v_interface_def x =
+  let rec k {
                     i_tok = v_i_tok;
                     i_name = v_i_name;
                     i_extends = v_i_extends;
@@ -1037,6 +1041,9 @@ and
   let arg = v_option v_interface v_i_extends in
   let arg = v_brace4 (v_list v_class_stmt) v_i_body in
   ()
+  in
+  vin.kinterface_def (k, all_functions) x
+
 and v_class_stmt x =
   let k x = match x with
   | ClassConstants ((v1, v2, v3)) ->
