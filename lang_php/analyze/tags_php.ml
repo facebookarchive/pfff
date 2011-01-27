@@ -29,7 +29,10 @@ module Tags = Tags_file
  * It does not go to $idx in a file. Work for XHP. Work with
  * completion.
  * 
- * Bench: time to process ~/www ? 7min the first time.
+ * Bench: time to process ~/www ? 7min the first time, which
+ * is quite longer than ctags. But what is the price of correctness ?
+ * Moreover one can easily put this into a cron and even shares
+ * the results of such a cron to multiple developers via NFS.
  * 
  *)
 
@@ -49,33 +52,23 @@ let tag_of_name filelines name =
   tag_of_info filelines info
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Main function *)
 (*****************************************************************************)
 
-let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-
-  files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
-    if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
-
-    let (ast2, _stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast2 in
-    Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
-
-    let filelines = Common.cat_array file in
+(* todo: use defs_php.ml instead *)
+let tags_of_ast ~heavy_tagging ast filelines = 
 
     let defs = ref [] in
     let current_class = ref "" in
 
-
     let visitor = V.mk_visitor { V.default_visitor with
       V.kfunc_def = (fun (k, _) def ->
         let name = def.f_name in
-        let info = Ast.info_of_name name in
         Common.push2 (tag_of_name filelines name) defs;
-        let s = Ast.name name in
 
         if heavy_tagging then begin
+          let info = Ast.info_of_name name in
+          let s = Ast.name name in
           let info' = Ast.rewrap_str ("F_" ^ s) info in
           Common.push2 (tag_of_info filelines info') defs;
         end;
@@ -85,11 +78,11 @@ let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
 
       V.kclass_def = (fun (k, _) def ->
         let name = def.c_name in
-        let info = Ast.info_of_name name in
-        let s = Ast.name name in
         Common.push2 (tag_of_name filelines name) defs;
         
+        let s = Ast.name name in
         if heavy_tagging then begin
+          let info = Ast.info_of_name name in
           let info' = Ast.rewrap_str ("C_" ^ s) info in
           Common.push2 (tag_of_info filelines info') defs;
         end;
@@ -137,8 +130,27 @@ let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
     }
     in
     visitor (Program ast);
-      
     let defs = List.rev (!defs) in
+    defs
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+
+  files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
+    if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
+
+    let (ast2, _stat) = Parse_php.parse file in
+    let ast = Parse_php.program_of_program2 ast2 in
+    Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
+
+    let filelines = Common.cat_array file in
+
+    let defs = tags_of_ast ~heavy_tagging ast filelines in
+      
     (file, defs)
   )
   

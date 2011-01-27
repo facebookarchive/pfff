@@ -597,6 +597,12 @@ let unittest =
           (sort includees_z);
       );
     ]);
+
+    "tags_php" >::: [
+      "basic tags" >:: (fun () ->
+        ()
+      );
+    ];
   ]
 
 
