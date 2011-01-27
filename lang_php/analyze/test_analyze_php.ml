@@ -47,9 +47,6 @@ let db_of_files_or_dirs files_or_dirs =
   in
   db
 
-
-
-
 (*****************************************************************************)
 (* Subsystem testing, no db *)
 (*****************************************************************************)
@@ -88,17 +85,6 @@ let test_scope_php file =
   pr (Sexp_ast_php.string_of_program asts);
   ()
 
-
-let test_idl_to_php file =
-  let asts = ast_of_file file in
-  let idl_entries =
-    Builtins_php.ast_php_to_idl asts
-  in
-  idl_entries +> List.iter (fun idl ->
-    let s = Builtins_php.idl_entry_to_php_fake_code idl in
-    pr s
-  )
-
 let test_visit2_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
@@ -116,6 +102,19 @@ let test_visit2_php file =
   in
   v.Visitor2_php.vorigin (Ast.Program ast)
 
+(*****************************************************************************)
+(* Subsystem tools, no db *)
+(*****************************************************************************)
+
+let test_idl_to_php file =
+  let asts = ast_of_file file in
+  let idl_entries =
+    Builtins_php.ast_php_to_idl asts
+  in
+  idl_entries +> List.iter (fun idl ->
+    let s = Builtins_php.idl_entry_to_php_fake_code idl in
+    pr s
+  )
 
 let test_xdebug_dumpfile file =
   file +> Xdebug.iter_dumpfile (fun acall ->
@@ -204,6 +203,10 @@ let test_php_serialize file =
   let s = Ocaml.string_of_v v in
   pr2 s
 
+(*****************************************************************************)
+(* Subsystem, no db *)
+(*****************************************************************************)
+
 
 (*s: test_cfg_php *)
 let test_cfg_php file =
@@ -249,6 +252,13 @@ let test_cyclomatic_php file =
   )
 (*e: test_cyclomatic_php *)
 
+let test_stat_php file = 
+  let ast = Parse_php.parse_program file in
+  let stat = Statistics_php.stat_of_program ast in
+  let str = Statistics_php.string_of_stat stat in
+  pr2 str
+
+
 (* todo: adapt to PIL *)
 let test_dfg_php file =
   let (ast2,_stat) = Parse_php.parse file in
@@ -265,6 +275,10 @@ let test_dfg_php file =
       )
   | _ -> ()
   )
+
+(*****************************************************************************)
+(* Subsystem PIL testing, no db *)
+(*****************************************************************************)
 
 let test_pil file =
   let ast = Parse_php.parse_program file in
@@ -669,6 +683,8 @@ let actions () = [
 
   "-include_require_static", " <file>",
   Common.mk_action_1_arg test_include_require;
+  "-stat_php", " <file>",
+  Common.mk_action_1_arg test_stat_php;
 ]
 
 (*e: test_analyze_php.ml *)

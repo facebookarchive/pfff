@@ -1416,6 +1416,7 @@ let create_db
  * passed as a parameter to one of our command line program.
  * 
  * todo: see facebook/dependencies.ml for now
+ * todo: factorize all the db_of_files_or_dirs out there.
  *)
 let fast_create_db_mem ?phase files_or_dirs =
   raise Todo
