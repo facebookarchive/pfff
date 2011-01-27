@@ -44,6 +44,7 @@ type file_type =
   | C | Cplusplus | Java | Csharp
   | Perl | Python | Ruby
   | Erlang
+  | Haxe
   | Beta
   | Web of webpl_type
   | R of string
@@ -94,6 +95,8 @@ let file_type_of_file2 file =
   | "hs" | "lhs" -> PL (Haskell e)
 
   | "erl" | "hrl" -> PL Erlang
+
+  | "hx" | "hxp" | "hxml" -> PL Haxe
 
   | "bet" -> PL Beta
 
