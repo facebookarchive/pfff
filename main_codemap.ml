@@ -144,8 +144,11 @@ let main_action xs =
     Layer_code.build_index_of_layers 
       ~root 
       (match layers with 
-      | [layer] -> [layer, true]
-      | _ -> layers +> List.map (fun x -> x, false)
+      | [layer] -> 
+          (* not active by default ? it causes some problems  *)
+          [layer, false]
+      | _ -> 
+          layers +> List.map (fun x -> x, false)
       )
   in
 
@@ -282,6 +285,9 @@ let options () = [
     "-ocaml_mli_filter", Arg.Unit (fun () -> 
       filter := Treemap_pl.ocaml_mli_filter_file),
     " ";
+    "-php_filter", Arg.Unit (fun () -> 
+      filter := Treemap_pl.php_filter_file),
+    " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";
@@ -316,7 +322,9 @@ let main () =
   Common_extra.set_link ();
 
   let usage_msg = 
-    ("Usage: " ^ basename Sys.argv.(0) ^ " [options] <path> \nOptions are:") 
+    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+      (Common.basename Sys.argv.(0))
+      "https://github.com/facebook/pfff/wiki/Codemap"
   in
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 

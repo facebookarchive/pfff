@@ -146,7 +146,7 @@ let merge_tokens_line ~orig_toks ~pp_toks =
     if null commented_a
     then failwith "WEIRD: a XHP line has tokens but not the original one";
     
-    let last_orig_info = Common.last commented_a |> TH.info_of_tok in
+    let last_orig_info = Common.list_last commented_a |> TH.info_of_tok in
     let last_orig_parse_info = Ast.parse_info_of_info last_orig_info in
 
     let expanded_b = mark_as_expanded last_orig_parse_info b in
@@ -201,7 +201,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
         
         
     | (((xline, xtoks)::xs) as a), (((yline, ytoks)::ys) as b) -> 
-        last_orig_tok := Common.last xtoks;
+        last_orig_tok := Common.list_last xtoks;
         (match xline <=> yline with
         | Inf ->
             (* Sometimes XHP just remove certain tokens, like

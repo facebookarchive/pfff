@@ -294,6 +294,8 @@ let string_of_info ii =
 
 let is_origintok = Parse_info.is_origintok
 
+let info_of_name (s, info) = info
+
 
 
 let get_type (e: expr) = (snd e).t

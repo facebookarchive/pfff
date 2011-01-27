@@ -4,6 +4,8 @@ in directory lib/ocaml
 
 I have modified the Makefile, added some .mli, and some debugging
 information.
+I have also extended the server interface to accept socket options
+(such as SO_REUSEADDR).
 
 --------------
 archi:

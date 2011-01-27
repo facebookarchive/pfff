@@ -82,6 +82,8 @@ let extract_complete_name_of_info ast =
 
   let v = V.mk_visitor { V.default_visitor with
 
+    (* recognize the class *)
+
     V.kstmt = (fun (k, _) st ->
       match st with
       (* var Foo = { ... } *)
@@ -173,7 +175,11 @@ let extract_complete_name_of_info ast =
       ->
           Hashtbl.add h info_class (Db.Class, spf "JX.%s" class_name);
 
-          Common.save_excursion in_class (Some class_name) (fun () ->
+          (* was just %s before, but then get conflict between for instance
+           * DOM.setContent and JX.DOM.setContent
+           *)
+          Common.save_excursion in_class (Some (spf "JX.%s" class_name)) 
+          (fun () ->
             k e
           )
       (* JX.copy(Foo.prototype, { ... }) *)
@@ -294,6 +300,7 @@ let extract_complete_name_of_info ast =
     );
 
 
+    (* recognize the method *)
 
     V.kfield = (fun (k, _) e ->
       match e with

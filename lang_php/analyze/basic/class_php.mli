@@ -2,8 +2,10 @@
 (* __construct *)
 val constructor_name: string 
 
-val static_new_or_extends_of_ast: 
+(* new X(), X::, ... extends X, etc *)
+val users_of_class_in_ast: 
   Ast_entity_php.id_ast -> Ast_php.name list
+
 
 val get_public_or_protected_vars_of_class: 
   Ast_php.class_def -> Ast_php.dname list

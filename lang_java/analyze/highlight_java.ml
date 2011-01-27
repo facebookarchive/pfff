@@ -72,7 +72,7 @@ let visit_toplevel
     match name with
     | [] -> pr2 "tag_name: noii"
     | _ -> 
-        let before, final = Common.list_init name, Common.last name
+        let before, final = Common.list_init name, Common.list_last name
         in
         tag_ident final categ
   in

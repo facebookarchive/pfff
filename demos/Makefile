@@ -20,6 +20,17 @@ simple_refactoring: simple_refactoring.ml
 clean::
 	rm simple_refactoring
 
+check_is_static_literal: check_is_static_literal.cmo
+	ocamlc -g -o $@ \
+         -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
+          str.cma unix.cma nums.cma bigarray.cma \
+	  ../commons/commons.cma ../h_program-lang/lib.cma \
+          ../lang_php/parsing/lib.cma \
+          $^
+
+clean::
+	rm check_is_static_literal
+
 ##############################################################################
 # Variables
 ##############################################################################

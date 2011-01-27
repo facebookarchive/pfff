@@ -968,8 +968,8 @@ let index_db3_2 db =
 
     db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
 
-    (* the new *)
-    let classes_used = Class_php.static_new_or_extends_of_ast ast in
+    (* the new, X::, extends, etc *)
+    let classes_used = Class_php.users_of_class_in_ast ast in
     let candidates = 
       classes_used +> List.map Ast.name +> Common.set 
       +> Common.map_flatten (fun s -> class_ids_of_string s db)

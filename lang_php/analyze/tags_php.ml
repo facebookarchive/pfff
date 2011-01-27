@@ -55,8 +55,8 @@ let tag_of_name filelines name =
 let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
-  files +> List.map (fun file ->
-    if verbose then pr2 (spf "processing: %s" file);
+  files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
+    if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
 
     let (ast2, _stat) = Parse_php.parse file in
     let ast = Parse_php.program_of_program2 ast2 in
@@ -113,6 +113,26 @@ let php_defs_of_files_or_dirs ?(verbose=false) ~heavy_tagging xs =
           let info' = Ast.rewrap_str ("M_" ^ s) info in
           Common.push2 (tag_of_info filelines info') defs;
         end;
+      );
+
+      V.klvalue = (fun (k, bigf) x ->
+        match Ast.untype x with
+
+        | FunCallSimple((Name ("define", tok)), args) ->
+            let args = args |> Ast.unparen |> Ast.uncomma in
+            (match args with
+            (* TODO? maybe better to have a Define directly in the AST ? 
+             * is it specific to facebook ? 
+             *)
+            | (Arg ((Sc (C (String (s,info)))), _t))::xs -> 
+                (* by default the info contains the '' or "" around the string,
+                 * which is not the case for s. See ast_php.ml
+                 *)
+                let info' = Ast.rewrap_str (s) info in
+                Common.push2 (tag_of_info filelines info') defs;
+            | _ -> ()
+            )
+        | _ -> k x
       );
     }
     in

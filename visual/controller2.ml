@@ -19,6 +19,9 @@
 let _refresh_da = ref (fun () ->
   failwith "_refresh_da not defined"
 )
+let _refresh_legend = ref (fun () ->
+  failwith "_refresh_legend not defined"
+)
 
 let current_rects_to_draw = ref []
 

@@ -94,7 +94,7 @@ let file_type_of_file2 file =
 
   | "hs" | "lhs" -> PL (Haskell e)
 
-  | "erl" -> PL Erlang
+  | "erl" | "hrl" -> PL Erlang
 
   | "hx" | "hxp" | "hxml" -> PL Haxe
 
@@ -296,3 +296,11 @@ let string_of_pl x =
 
 let is_syncweb_obj_file file = 
   file =~ ".*md5sum_"
+
+let is_json_filename filename = 
+  filename =~ ".*\\.json$"
+  (*
+  match File_type.file_type_of_file filename with
+  | File_type.PL (File_type.Web (File_type.Json)) -> true
+  | _ -> false
+  *)

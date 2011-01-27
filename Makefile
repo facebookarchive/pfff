@@ -150,6 +150,7 @@ BASICLIBS=commons/commons.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
+ lang_erlang/parsing/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
@@ -199,6 +200,8 @@ LIBS= commons/commons.cma \
      lang_python/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
      lang_csharp/analyze/lib.cma \
+    lang_erlang/parsing/lib.cma \
+     lang_erlang/analyze/lib.cma \
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
@@ -232,6 +235,8 @@ MAKESUBDIRS=commons \
    lang_python/analyze \
   lang_csharp/parsing \
    lang_csharp/analyze \
+  lang_erlang/parsing \
+   lang_erlang/analyze \
   lang_php/analyze \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \
@@ -590,16 +595,22 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags visual db
+.PHONY:: tags db layers   visual
 
 
 tags:
 	./stags -verbose -lang ml .
 db:
-	./pfff_db -verbose  -lang ml -o DB_LIGHT .
+	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
+layers:
+	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
+          layer_age.marshall
+	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
+          layer_age.json
+
 visual:
 	./codemap -profile -ss 2 \
-	   -with_info DB_LIGHT -ocaml_filter  .
+	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
 test:
 	./pfff_test all
 push:

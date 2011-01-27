@@ -46,9 +46,6 @@ let lang = ref "web"
 
 let with_php_db = ref ""
 
-let readable_db = ref false
-let marshall_db = ref true
-
 (*****************************************************************************)
 (* Some  debugging functions *)
 (*****************************************************************************)
@@ -135,17 +132,11 @@ let main_action xs =
         failwith "please use -o"
   in
   let file = Common.relative_to_absolute file in
-  let file = if !readable_db then file ^ ".json" else file in
-
   let res = Common.y_or_no (spf "writing data in %s" file) in
   if not res 
   then failwith "ok I stop";
 
-
-  if !marshall_db && not !readable_db
-  then Common.write_value db file
-  else Database_code.save_database ~readable_db:!readable_db db file
-  ;
+  Database_code.save_database db file;
   ()
 
 (*****************************************************************************)
@@ -257,9 +248,6 @@ let options () =
 
     "-output_dir", Arg.Set_string pleac_dir, 
     (spf " <dir> output file (default = %s)" !pleac_dir);
-
-    "-readable_db", Arg.Set readable_db, 
-    (" ");
 
   ] ++
 

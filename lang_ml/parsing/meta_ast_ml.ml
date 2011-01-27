@@ -143,6 +143,9 @@ and vof_expr =
       in Ocaml.VSum (("Cons", [ v1; v2 ]))
   | Tuple v1 ->
       let v1 = vof_comma_list vof_expr v1 in Ocaml.VSum (("Tuple", [ v1 ]))
+  | List v1 ->
+      let v1 = vof_bracket (vof_semicolon_list vof_expr) v1
+      in Ocaml.VSum (("List", [ v1 ]))
   | ParenExpr v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("ParenExpr", [ v1 ]))
   | Sequence v1 ->

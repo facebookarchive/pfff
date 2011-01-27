@@ -191,7 +191,9 @@ let build_index_of_layers ~root layers =
   let hmicro = Common.hash_with_default (fun () -> Hashtbl.create 101) in
   let hmacro = Common.hash_with_default (fun () -> []) in
   
-  layers +> List.iter (fun (layer, b) ->
+  layers 
+   +> List.filter (fun (layer, active) -> active) 
+   +> List.iter (fun (layer, active) ->
     let hkind = Common.hash_of_list layer.kinds in
 
     layer.files +> List.iter (fun (file, finfo) ->
@@ -244,6 +246,13 @@ let build_index_of_layers ~root layers =
     macro_index = hmacro#to_h;
     micro_index = hmicro#to_h;
   }
+
+
+(*****************************************************************************)
+(* Layers helpers *)
+(*****************************************************************************)
+let has_active_layers layers =
+  layers.layers +> List.map snd +> Common.or_list
 
 (*****************************************************************************)
 (* Meta *)
@@ -490,25 +499,17 @@ let layer_of_json json =
 (* Load/Save *)
 (*****************************************************************************)
 
-let is_json_filename filename = 
-  filename =~ ".*\\.json$"
-  (*
-  match File_type.file_type_of_file filename with
-  | File_type.PL (File_type.Web (File_type.Json)) -> true
-  | _ -> false
-  *)
-
 (* we allow to save in JSON format because it may be useful to let
  * the user edit the layer file, for instance to adjust the colors.
  *)
 let load_layer file =
   pr2 (spf "loading layer: %s" file);
-  if is_json_filename file
+  if File_type.is_json_filename file
   then Ocaml.load_json file +> layer_of_json
   else Common.get_value file
 
 let save_layer layer file =
-  if is_json_filename file
+  if File_type.is_json_filename file
   (* layer +> vof_layer +> Ocaml.string_of_v +> Common.write_file ~file *)
   then layer +> json_of_layer +> Ocaml.save_json file
   else  Common.write_value layer file

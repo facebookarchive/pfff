@@ -2,9 +2,9 @@
 
 (* 
  * The goal of database_php.ml is to give access to information computed
- * by a set of global static or dynamic analysis such as what are the
- * set of callers to a certain function, what is the test coverage of
- * a file.
+ * by a set of global static and dynamic analysis such as what are the
+ * set of callers to a certain function (static) or what is the test 
+ * coverage of a file (dynamic).
  * 
  * The main type is 'database' defined below.
  *)
@@ -126,7 +126,9 @@ type database = {
     callees_of_f: (id, Callgraph_php.callsites_opt list) Oassoc.oassoc;
     callers_of_f: (id, Callgraph_php.callersinfo_opt list) Oassoc.oassoc; 
 
-    (* see also Class_php.static_new_of_ast for the opposite *)
+    (* See also Class_php.static_new_of_ast for the opposite.
+     * One use a class either with 'new X', 'X::', or 'extends X'.
+     *)
     users_of_class: (id_class, id list) Oassoc.oassoc;
     users_of_define: (id_define, id list) Oassoc.oassoc;
 

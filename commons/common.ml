@@ -83,7 +83,11 @@ let exclude p xs =
   List.filter (fun x -> not (p x)) xs
 
 let last_n n l = List.rev (take n (List.rev l))
-let last l = List.hd (last_n 1 l)
+(*let last l = List.hd (last_n 1 l) *)
+let rec list_last = function
+ | [] -> raise Not_found
+  | [x] -> x
+  | x::y::xs -> list_last (y::xs)
 
 
 let (list_of_string: string -> char list) = function
@@ -2745,7 +2749,7 @@ let first_day_in_week_of_day day =
   List.hd (days_in_week_of_day day)
 
 let last_day_in_week_of_day day = 
-  last (days_in_week_of_day day)
+  list_last (days_in_week_of_day day)
 
 
 (* ---------------------------------------------------------------------- *)
@@ -2874,6 +2878,9 @@ let unixtime_to_floattime tm =
 
 let floattime_to_unixtime sec = 
   Unix.localtime sec
+
+let floattime_to_dmy sec =
+  sec +> floattime_to_unixtime +> unixtime_to_dmy
 
 
 let sec_to_days sec = 
@@ -3437,7 +3444,7 @@ let files_of_dir_or_files ext xs =
 
 let grep_dash_v_str = 
  "| grep -v /.hg/ |grep -v /CVS/ | grep -v /.git/ |grep -v /_darcs/" ^
- "| grep -v /.svn/"
+ "| grep -v /.svn/ | grep -v .git_annot"
 
 
 let files_of_dir_or_files_no_vcs ext xs = 
@@ -3952,10 +3959,12 @@ let rec list_init = function
   | [x]      -> []
   | x::y::xs -> x::(list_init (y::xs))
 
-let rec list_last = function
-  | [] -> raise Not_found
-  | [x] -> x
-  | x::y::xs -> list_last (y::xs)
+(* now in prelude: 
+ * let rec list_last = function
+ * | [] -> raise Not_found
+ * | [x] -> x
+ * | x::y::xs -> list_last (y::xs)
+ *)
 
 (* pixel *)
 (* now in prelude
@@ -4707,7 +4716,17 @@ let rec intersect x y =
 (*****************************************************************************)
 
 (* people often do that *)
-module StringSet = Set.Make(struct type t = string let compare = compare end)
+module StringSetOrig = Set.Make(struct type t = string let compare = compare end)
+
+module StringSet = struct
+  include StringSetOrig
+  let of_list xs = 
+    xs +> List.fold_left (fun acc e -> 
+      StringSetOrig.add e acc
+    ) StringSetOrig.empty
+  let to_list t = 
+    StringSetOrig.elements t
+end
 
 
 (*****************************************************************************)

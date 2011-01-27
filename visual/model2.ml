@@ -415,4 +415,5 @@ let all_entities db_opt root =
         ~threshold_too_many_entities:!Flag.threshold_too_many_entities
         db
 (*e: all_entities *)
+
 (*e: model2.ml *)

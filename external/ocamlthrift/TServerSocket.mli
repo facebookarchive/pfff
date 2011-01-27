@@ -1,6 +1,6 @@
 
 class t :
-  int (* port *) ->
+  int (* port *) -> (Unix.socket_bool_option * bool) list ->
   object
     val mutable sock : Unix.file_descr option
 

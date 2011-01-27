@@ -62,6 +62,7 @@ let draw_legend_of_color_string_pairs ~cr xs =
 (*****************************************************************************)
 
 (*s: paint_legend *)
+(* todo: make the architecture a layer so no need for special case *)
 let draw_legend ~cr =
 
   let archis = Archi_code.source_archi_list in

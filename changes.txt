@@ -4,10 +4,6 @@
 
 ** codemap
 
-*** more semantic visual feedback
-can see arguments passed by refs visually (TakeArgNByRef)
-as well as functions containing dynamic calls (ContainDynamicCall)
-
 *** google-earth like layers!
 
 - architecture/aspect layer (default one)
@@ -20,8 +16,12 @@ as well as functions containing dynamic calls (ContainDynamicCall)
 - age (and activity) layer
 - number of authors layer
 
+*** more semantic visual feedback
+can see arguments passed by refs visually (TakeArgNByRef)
+as well as functions containing dynamic calls (ContainDynamicCall)
+
 *** visual grep
-can now visualize the result of a git grep on a project.
+can now visualize the result of a git grep on a project
 
 *** better visualization of directories
 use different color for dirs and files labels, and highlight first
@@ -31,8 +31,13 @@ letter of label at depth = 1
 a DSL to express easily refactoring on PHP.
 
 ** sgrep/spatch
-better support for XHP patterns with flexible matching
+
+*** better support for XHP patterns with flexible matching
 on attributes
+
+*** experimental support for statement patterns
+   can now express patterns like:
+    sgrep -e 'foreach($A as $V) { if (strpos($T, $V) !== false) { return Z; }}'
 
 ** introducing lang_nw/
 so can visualize also Tex/Latex/Noweb source (which includes
@@ -47,6 +52,8 @@ the documentation of pfff!)
 ** introducing lang_python/
 
 ** introducing lang_csharp/
+
+** introducing lang_erlang/
 
 ** php analysis
 
@@ -66,7 +73,7 @@ This can help the visualizer to give more semantic visual feedback.
 *** layer type, so can save results of global analysis and process them
 later in codemap or pfff_statistics
 
-** pfff:ml
+** lang_ml
 
 more highlight
 
@@ -78,11 +85,11 @@ applied codemap on many open source project and generated screenshots.
 
 ** internals
 
-refactor the code in visual/ to have smaller and cleaner files (thanks
-to literate programming and codemap itself to show the problem
-and assist in the refactoring)
+*** refactored the code in visual/ to have smaller and cleaner files 
+thanks to literate programming and codemap itself to show the problem
+and assist in the refactoring
 
-** renamed pfff_visual in codemap
+*** renamed pfff_visual in codemap
 
 * 0.13
 

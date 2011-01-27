@@ -64,7 +64,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 
 (* ugly *)
 let root_orig () = 
-  (Common.last !Controller.dw_stack).M.root
+  (Common.list_last !Controller.dw_stack).M.root
 
 (*e: view globals *)
 
@@ -171,8 +171,9 @@ let configure a b c =
 let expose_legend da dw_ref ev = 
   let cr = Cairo_lablgtk.create da#misc#window in
 
+  (* todo: make the architecture a layer so no need for special case *)
   let dw = !dw_ref in
-  (if null dw.layers.Layer_code.layers
+  (if not (Layer_code.has_active_layers dw.layers)
   then Draw_legend.draw_legend ~cr
   else Draw_legend.draw_legend_layer ~cr dw.layers
   );
@@ -323,12 +324,22 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
       );
       factory#add_submenu "_Layers" +> (fun menu -> 
-        let entries = 
+        let layers = 
           !dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
-            `C (layer.Layer_code.title, active, (fun b -> 
-              pr2 "TODO"
+            (layer.Layer_code.title, active, (fun b -> 
+              if b then
+                Ui_layers.choose_layer ~root:(root_orig())
+                  (Some layer.Layer_code.title) dw;
             ))
           )
+        in
+        (* todo: again, make the architecture a layer so less special cases *)
+        let entries = [`R (
+             ("Architecture", true, (fun b ->
+               Ui_layers.choose_layer ~root:(root_orig()) None dw;
+             ))::
+             layers)
+        ]
         in
         GToolbox.build_menu menu ~entries
       );
@@ -500,7 +511,9 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GOTO_TOP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          Controller.dw_stack := [Common.last !Controller.dw_stack];
+          let top = Common.list_last !Controller.dw_stack in
+          (* put 2 in the stack because _go_back will popup one *)
+          Controller.dw_stack := [top; top];
           !Controller._go_back dw;
 
         )
@@ -578,6 +591,10 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
     );
+    Controller._refresh_legend := (fun () ->
+      GtkBase.Widget.queue_draw da3#as_widget;
+    );
+
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       

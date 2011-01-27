@@ -153,7 +153,7 @@ let paint2 dw =
   let rects = dw.treemap in
   let nb_rects = dw.nb_rects in
 
-  (if null dw.layers.Layer_code.layers
+  (if not (Layer_code.has_active_layers dw.layers)
   then
     (* phase 1, draw the rectangles *)
     rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)

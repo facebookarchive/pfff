@@ -1062,6 +1062,7 @@ val dmy_to_unixtime: date_dmy -> float_time * Unix.tm
 val unixtime_to_dmy: Unix.tm -> date_dmy
 val unixtime_to_floattime: Unix.tm -> float_time
 val floattime_to_unixtime: float_time -> Unix.tm
+val floattime_to_dmy: float_time -> date_dmy
 
 val sec_to_days : int -> string
 val sec_to_hours : int -> string
@@ -1355,9 +1356,8 @@ val cons : 'a -> 'a list -> 'a list
 val uncons : 'a list -> 'a * 'a list
 val safe_tl : 'a list -> 'a list
 val head_middle_tail : 'a list -> 'a * 'a list * 'a
-val last : 'a list -> 'a
-val list_init : 'a list -> 'a list
 val list_last : 'a list -> 'a
+val list_init : 'a list -> 'a list
 val removelast : 'a list -> 'a list
 
 val inits : 'a list -> 'a list list
@@ -1594,17 +1594,24 @@ module StringSet :
     type elt = string
     type t
     val empty : t
+    val add : string -> t -> t
+    val remove : string -> t -> t
+    val singleton : string -> t
+
+    val of_list: string list -> t
+    val to_list: t -> string list
+
     val is_empty : t -> bool
     val mem : string -> t -> bool
-    val add : string -> t -> t
-    val singleton : string -> t
-    val remove : string -> t -> t
+
     val union : t -> t -> t
     val inter : t -> t -> t
     val diff : t -> t -> t
-    val compare : t -> t -> int
-    val equal : t -> t -> bool
+
     val subset : t -> t -> bool
+    val equal : t -> t -> bool
+
+    val compare : t -> t -> int
     val iter : (string -> unit) -> t -> unit
     val fold : (string -> 'a -> 'a) -> t -> 'a -> 'a
     val for_all : (string -> bool) -> t -> bool

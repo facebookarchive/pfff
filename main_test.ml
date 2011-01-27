@@ -86,11 +86,19 @@ let test_json_pretty_printer file =
   let s = Json_io.string_of_json json in
   pr s
 
+let test_json_bench file =
+  Common.profile_code2 "json_bench" (fun () ->
+    pr2 (Common.memory_stat ());
+    let _json = Json_in.load_json file in
+    pr2 (Common.memory_stat ());
+  )
 
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
   "-json_pp", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
+  "-json_bench", " <file>",
+  Common.mk_action_1_arg test_json_bench;
 ]
 
 (*****************************************************************************)

@@ -64,9 +64,11 @@ let main_action xs =
 
   | [] -> raise Impossible
 
+(* see also facebook/thrift/main_server.ml *)
 let layers = [
   "layer_deadcode.json", (fun dir db layerfile ->
-    Layer_deadcode_php.gen_layer ~db ~output:layerfile;
+    let hooks = Deadcode_php.default_hooks in
+    Layer_deadcode_php.gen_layer ~hooks ~db ~output:layerfile;
   );
   "layer_bugs.json", (fun dir db layerfile ->
     

@@ -61,6 +61,8 @@ rule category = parse
 
   | ".mli/"
   | ".h/"
+  | ".hpp/"
+  | ".hrl/"
       { Interface }
 
   (* ml specific ? *)
@@ -372,6 +374,10 @@ rule category = parse
   | "/ui."
   | "window"
   | "/draw_"
+      { Ui }
+
+  (* pad specfici ? *)
+  | "/layer_"
       { Ui }
 
   | "/gtk/"

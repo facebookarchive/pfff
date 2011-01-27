@@ -189,13 +189,15 @@ let visit_toplevel
           let module_name = Ast.module_of_long_name long_name in
           let module_infos = Ast.module_infos_of_long_name long_name in
 
-          if Hashtbl.mem h_builtin_modules module_name then begin
+          let s = Ast.str_of_name name in
+          (match () with
+          | _ when s = "ref" -> tag info UseOfRef
+          | _ when Hashtbl.mem h_builtin_modules module_name ->
             module_infos +> List.iter (fun ii -> tag ii BuiltinCommentColor);
             tag info Builtin;
-          end
-          else begin
+          | _ ->
             tag info (Function (Use2 fake_no_use2));
-          end;
+          );
 
           k x
 

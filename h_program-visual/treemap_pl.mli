@@ -14,6 +14,7 @@ val ex_filter_file: Common.filename -> bool
 val ocaml_filter_file: Common.filename -> bool
 val ocaml_mli_filter_file: Common.filename -> bool
 val pad_filter_file: Common.filename -> bool
+val php_filter_file: Common.filename -> bool
 
 (* default treemap *)
 val code_treemap: 

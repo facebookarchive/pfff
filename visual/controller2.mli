@@ -1,6 +1,7 @@
 (*s: controller2.mli *)
 
 val _refresh_da: (unit -> unit) ref
+val _refresh_legend: (unit -> unit) ref
 
 val _go_back: 
   (Model2.drawing ref -> unit) ref

@@ -296,8 +296,9 @@ let options () =
 
 let main () = 
   let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+      (Common.basename Sys.argv.(0))
+      "https://github.com/facebook/pfff/wiki/Sgrep"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in

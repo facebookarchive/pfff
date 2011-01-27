@@ -20,9 +20,11 @@ type ast =
   | Java of Parse_java.program2
 
   | Lisp of Parse_lisp.program2
-  | Noweb of Parse_nw.program2
+  | Erlang of Parse_erlang.program2
 
   | Python of Parse_python.program2
+
+  | Noweb of Parse_nw.program2
 
 val _hmemo_file : (Common.filename, ast) Hashtbl.t
 val disable_file_in_cache : 

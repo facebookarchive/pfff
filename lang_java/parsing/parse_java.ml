@@ -88,7 +88,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       in
       *)
       let toks_before_max = Common.list_init toks in
-      let toks_after = [Common.last toks] in
+      let toks_after = [Common.list_last toks] in
 
       let info_item = Parse_info.mk_info_item 
         ~info_of_tok:TH.info_of_tok

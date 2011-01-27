@@ -45,6 +45,7 @@ Fig_graph_ml.pdf
 /DB_LIGHT
 /nohup.out
 /data/php_stdlib.defs_marshalled
+*.marshall
 
 # specific binaries
 /pfff
@@ -258,3 +259,10 @@ external/ocamlbdb/libcamlbdb.a
 /demos/check_is_static_literal
 /lang_php/meta/ffi
 /lang_php/meta/gen_code
+/DB_LIGHT.marshall
+/lang_erlang/parsing/parse_erlang.ml
+/lang_erlang/parsing/parse_erlang.mli
+/lang_erlang/parsing/lexer_erlang.ml
+/lang_erlang/parsing/parser_erlang.ml
+/lang_erlang/parsing/parser_erlang.mli
+/lang_erlang/parsing/parser_erlang.output

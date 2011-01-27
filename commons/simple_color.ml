@@ -148,7 +148,7 @@ let color_of_rgbf rgbf =
  * 
  *)
 
-let emacs_colors = [
+let emacs_basic_colors = [
 "snow", (1.000000, 0.980392, 0.980392);
 "ghost white", (0.972549, 0.972549, 1.000000);
 "GhostWhite", (0.972549, 0.972549, 1.000000);
@@ -373,6 +373,9 @@ let emacs_colors = [
 "medium purple", (0.576471, 0.439216, 0.858824);
 "MediumPurple", (0.576471, 0.439216, 0.858824);
 "thistle", (0.847059, 0.749020, 0.847059);
+]
+
+let emacs_degrade_colors = [
 "snow1", (1.000000, 0.980392, 0.980392);
 "snow2", (0.933333, 0.913725, 0.913725);
 "snow3", (0.803922, 0.788235, 0.788235);
@@ -685,6 +688,9 @@ let emacs_colors = [
 "thistle2", (0.933333, 0.823529, 0.933333);
 "thistle3", (0.803922, 0.709804, 0.803922);
 "thistle4", (0.545098, 0.482353, 0.545098);
+]
+
+let emacs_gray_colors = [
 "gray0", (0.000000, 0.000000, 0.000000);
 "grey0", (0.000000, 0.000000, 0.000000);
 "gray1", (0.011765, 0.011765, 0.011765);
@@ -901,8 +907,15 @@ let emacs_colors = [
 "DarkRed", (0.545098, 0.000000, 0.000000);
 "light green", (0.564706, 0.933333, 0.564706);
 "LightGreen", (0.564706, 0.933333, 0.564706);
-
 ]
+
+let emacs_colors = 
+  emacs_basic_colors @ emacs_degrade_colors @ emacs_gray_colors
+
+let random_emacs_color xs =
+  let len = List.length xs in
+  let n = Random.int len in
+  List.nth xs n +> fst
 
 let rgbf_of_string s = 
   try

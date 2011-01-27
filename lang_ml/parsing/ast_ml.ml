@@ -126,6 +126,7 @@ and expr =
 
   | Cons(*Algebric*) of long_name (* constr_longident *) * expr option
   | Tuple of expr comma_list
+  | List of expr semicolon_list bracket
 
   | ParenExpr of expr paren
 

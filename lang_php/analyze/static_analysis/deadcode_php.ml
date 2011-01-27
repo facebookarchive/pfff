@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009, 2010, 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -58,6 +58,7 @@ module DbQ = Database_php_query
  *   so can later decide to apply first old dead code patches
  * - do fixpoint. Also do CEs when using nested ast_ids
  * - can now use a whitelist generated from phproflive
+ * - dead classes
  * 
  * Some of the code specific to facebook is in facebook/ and in main_db.ml
  * 
@@ -100,6 +101,7 @@ module DbQ = Database_php_query
 type hooks = {
   (* to remove certain false positives *)
   is_probable_dynamic_funcname: string -> bool;
+  is_probable_dynamic_classname: string -> bool;
 
   (* to avoid generating patches for code which does not have a valid 
    * git owner anymore (the guy left the company for instance ...)
@@ -127,6 +129,8 @@ type hooks = {
 
 let default_hooks = {
   is_probable_dynamic_funcname = (fun s -> false);
+  is_probable_dynamic_classname = (fun s -> false);
+
   is_valid_author  = (fun s -> true);
   is_valid_file = (fun filename -> true);
   false_positive_deadcode_annotations = [
@@ -193,6 +197,10 @@ let false_positive fid hooks db =
   | _ when hooks.is_probable_dynamic_funcname s ->
       pr ("Probable dynamic call: " ^ s);
       true
+  | _ when hooks.is_probable_dynamic_classname s ->
+      pr ("Probable dynamic class: " ^ s);
+      true
+
   | _ when hooks.false_positive_deadcode_annotations +> 
         List.exists (fun annot -> List.mem annot extra.Db.tags) ->
 
@@ -238,6 +246,39 @@ let finding_dead_functions hooks db =
     );
   );
   pr2 (spf "number of dead functions: %d" (List.length !dead_ids));
+  !dead_ids
+
+(* todo: factorize code with finding_dead_functions ? have notion
+ * of entity and user of entities
+ * 
+ * todo: finding_dead_ constants/interface/globals/variables ?
+ *)
+let finding_dead_classes hooks db = 
+  let dead_ids = ref [] in
+
+  (* todo: Db.functions_or_static_methods_in_db *)
+  Db.classes_in_db db +> List.iter (fun (idstr, ids) ->
+    let s = idstr in
+
+    if List.length ids > 1 
+    then pr2 ("Ambiguous name: " ^ s);
+
+    ids +> List.iter (fun id ->
+      let file_project = Db.readable_filename_of_id id db in
+      if hooks.is_valid_file file_project then begin
+        let is_dead = 
+          let users = Db.class_users_of_id id db in
+          null users && not (false_positive id hooks db)
+        in
+        if is_dead
+        then begin
+          pr ("DEAD CLASS: no user/extender for " ^ s);
+          Common.push2 (s, id) dead_ids;
+        end
+      end
+    );
+  );
+  pr2 (spf "number of dead classes: %d" (List.length !dead_ids));
   !dead_ids
 
 

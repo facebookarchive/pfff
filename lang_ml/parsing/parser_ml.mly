@@ -263,6 +263,7 @@ signature_item:
  | Texception TUpperIdent constructor_arguments
      { Exception ($1, Name $2, $3) }
 
+ /*(* modules *)*/
  | Topen mod_longident
      { Open ($1, $2) }
 
@@ -324,11 +325,16 @@ structure_item:
       { Let ($1, $2, $3) }
 
 
+ /*(* modules *)*/
  | Tmodule TUpperIdent module_binding
       { ItemTodo $1 }
  | Tmodule Ttype ident TEq module_type
       { ItemTodo $1 }
  | Tinclude module_expr
+      { ItemTodo $1 }
+
+ /*(* objects *)*/
+  | Tclass class_declarations
       { ItemTodo $1 }
 
 
@@ -622,8 +628,9 @@ simple_expr:
  | TOBrace record_expr TCBrace
      { Record ($1, $2, $3) }
 
- | TOBracket expr_semi_list opt_semi TCBracket
-     { ExprTodo }
+ | TOBracket expr_semi_list opt_semi3 TCBracket
+     { List ($1, $2 ++ $3, $4) }
+
  | TOBracketPipe expr_semi_list opt_semi TPipeCBracket
      { ExprTodo }
  | TOBracketPipe TPipeCBracket
@@ -672,8 +679,8 @@ expr_comma_list:
  | expr TComma expr                             { [Left $1; Right $2; Left $3] }
 
 expr_semi_list:
- | expr                                  { }
- | expr_semi_list TSemiColon expr        { }
+ | expr                                  { [Left $1] }
+ | expr_semi_list TSemiColon expr        { $1 ++ [Right $2; Left $3] }
 
 
 
@@ -1110,6 +1117,132 @@ label_pattern:
 /*(* Class definitions *)*/
 /*(*----------------------------*)*/
 
+class_declarations:
+  | class_declarations TAnd class_declaration   { }
+  | class_declaration                           { }
+
+class_declaration:
+    virtual_flag class_type_parameters TLowerIdent class_fun_binding
+      { }
+
+class_type_parameters:
+  | /*(*empty*)*/                                   { }
+  | TOBracket type_parameter_list TCBracket       { }
+
+class_fun_binding:
+  | TEq class_expr
+      { }
+  | labeled_simple_pattern class_fun_binding
+      { }
+
+class_expr:
+  | class_simple_expr
+      { }
+  | Tfun class_fun_def
+      { }
+  | class_simple_expr simple_labeled_expr_list
+      { }
+  | Tlet rec_flag let_bindings Tin class_expr
+      { }
+
+class_simple_expr:
+  | TOBracket core_type_comma_list TCBracket class_longident
+      { }
+  | class_longident
+      { }
+  | Tobject class_structure Tend
+      { }
+/* TODO
+  | TOParen class_expr TColon class_type TCParen
+      { }
+*/
+  | TOParen class_expr TCParen
+      { }
+
+class_fun_def:
+  | labeled_simple_pattern TArrow class_expr
+      { }
+  | labeled_simple_pattern class_fun_def
+      { }
+
+class_structure:
+    class_self_pattern class_fields
+      { }
+
+class_self_pattern:
+  | TOParen pattern TCParen
+      { }
+  | TOParen pattern TColon core_type TCParen
+      { }
+  | /*(*empty*)*/
+      { }
+
+
+
+class_fields:
+  | /*(*empty*)*/
+      { }
+  | class_fields Tinherit override_flag class_expr parent_binder
+      { }
+  | class_fields Tval virtual_value
+      { }
+  | class_fields Tval value
+      { }
+  | class_fields virtual_method
+      { }
+  | class_fields concrete_method
+      { }
+/* TODO
+  | class_fields Tconstraint constrain
+      { }
+*/
+  | class_fields Tinitializer seq_expr
+      { }
+
+
+parent_binder:
+  | Tas TLowerIdent
+          { }
+  | /* empty */
+          { }
+
+
+virtual_value:
+  | override_flag Tmutable Tvirtual label TColon core_type
+      { }
+  | Tvirtual mutable_flag label TColon core_type
+      { }
+
+value:
+  | override_flag mutable_flag label TEq seq_expr
+      { }
+  | override_flag mutable_flag label type_constraint TEq seq_expr
+      { }
+
+virtual_method:
+  | Tmethod override_flag Tprivate Tvirtual label TColon poly_type
+      { }
+  | Tmethod override_flag Tvirtual private_flag label TColon poly_type
+      { }
+
+concrete_method :
+  | Tmethod override_flag private_flag label strict_binding
+      { }
+  | Tmethod override_flag private_flag label TColon poly_type TEq seq_expr
+      { }
+
+virtual_flag:
+ | /*(* empty*)*/                               { }
+ | Tvirtual                                     { }
+
+override_flag:
+ | /*(*empty*)*/                                 { }
+ | TBang                                        { }
+
+private_flag:
+    /* empty */                                 { }
+  | Tprivate                                     { }
+
 /*(*************************************************************************)*/
 /*(* Modules *)*/
 /*(*************************************************************************)*/
@@ -1169,6 +1302,11 @@ opt_semi2:
  | /*(*empty*)*/    { [] }
  | TSemiColon       { [Right $1] }
 
+opt_semi3:
+ | /*(*empty*)*/    { [] }
+ | TSemiColon       { [Right $1] }
+
 opt_bar:
  | /*(*empty*)*/    { [] }
  | TPipe            { [Right $1] }
+
