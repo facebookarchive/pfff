@@ -42,7 +42,7 @@ open Common
  * 
  *  - probably more on the caml hump.
  * 
- * I have also developed a few graph libraries, but really just
+ * I have also developed a few graph libraries in commons/, but really just
  * to have a data type with successors/predecessors accessors:
  * 
  *  - common.ml type 'a graph. No algorithm, just builder/accessors.
@@ -51,6 +51,10 @@ open Common
  *  - ograph_extended.ml, implicit nodei = int for key.
  *  - ograph_simple.ml, key can be specified, for instance can be a string,
  *    so dont have to pass through the intermediate nodei for everything.
+ * 
+ * I have also included in commons/ the small code from ocamldot/ocamldoc in:
+ *  - ocamlextra/graph_ocamldot.ml 
+ *  - ocamlextra/graph_ocamldoc.ml
  * 
  * ograph_simple and ograph_extended and ograph2way show that there is not
  * a single graph that can accomodate all needs while still being convenient.
@@ -75,19 +79,15 @@ open Common
  * other libraries by making some small converters from one representation
  * to the other (e.g. from my ograph_simple to ocamlgraph, and vice versa).
  * 
- * Note, ocamlgraph is really good and this file is useful,
- * but for quick and dirty simple graph stuff
- * ograph_simple should be simpler (less dependencies). You can 
+ * Note that even if ocamlgraph is really good and even if this file is useful,
+ * for quick and dirty trival graph stuff then ograph_simple 
+ * should be simpler (less dependencies). You can 
  * use it directly from common.cma. Then with the converter to ocamlgraph,
  * you can start with ograph_simple, and if in a few places you need
  * to use the graph algorithm provided by ocamlgraph or ocamldot, then
  * use the adapters.
  * 
  * 
- * 
- * I have included also in commons/ the small code from ocamldot/ocamldoc in:
- *  - ocamlextra/graph_ocamldot.ml 
- *  - ocamlextra/graph_ocamldoc.ml
  * 
  * Alternatives in other languages:
  *  - c++ GTL, graph template library
@@ -104,6 +104,7 @@ open Common
 (* OG for ocamlgraph *)
 module OG = Ocamlgraph.Pack.Digraph
 
+(* Polymorphic graph *)
 type 'key graph = {
   og: OG.t;
 
