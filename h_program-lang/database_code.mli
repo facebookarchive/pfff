@@ -1,7 +1,14 @@
 
 type entity_kind = 
-  | Function | Class | Module | Type | Constant | Global | Macro
+  | Function 
+  | Class | Interface | Module 
+  | Type 
+  | Constant | Global 
+  | Macro
+  | TopStmt
+
   | Method | StaticMethod | Field
+
   | File | Dir | MultiDirs
 
 type entity_id = int

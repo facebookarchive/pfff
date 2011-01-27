@@ -94,16 +94,19 @@ module HC = Highlight_code
 type entity_kind = 
   | Function
   | Class
+  | Interface
   | Module
   | Type
   | Constant
   | Global
   | Macro
+  | TopStmt
 
   (* nested entities *)
   | Method
   | StaticMethod
   | Field
+  (* todo? ClassConstant *)
 
   (* when we use the database for completion purpose, then files/dirs
    * are also useful "entities" to get completion for.
@@ -245,11 +248,13 @@ let string_of_entity_kind e =
   match e with
   | Function -> "Function"
   | Class -> "Class"
+  | Interface -> "Interface"
   | Module -> "Module"
   | Type -> "Type"
   | Constant -> "Constant"
   | Global -> "Global"
   | Macro -> "Macro"
+  | TopStmt -> "TopStmt"
   | Method -> "Method"
   | StaticMethod -> "StaticMethod"
   | Field -> "Field"
@@ -261,11 +266,13 @@ let entity_kind_of_string s =
   match s with
   | "Function" -> Function
   | "Class" -> Class
+  | "Interface" -> Interface
   | "Module" -> Module
   | "Type" -> Type
   | "Constant" -> Constant
   | "Global" -> Global
   | "Macro" -> Macro
+  | "TopStmt" -> TopStmt
   | "Method" -> Method
   | "StaticMethod" -> StaticMethod
   | "Field" -> Field
@@ -492,6 +499,7 @@ let entity_kind_of_highlight_category_use categ =
   | HC.TypeDef HC.Use -> Type
 
   | HC.StructName HC.Use -> Class
+  (* TODO? Interface ? *)
   | _ -> 
       failwith "this category has no Database_code counterpart"
 
@@ -531,7 +539,6 @@ let alldirs_and_parent_dirs_of_relative_dirs dirs =
   dirs 
   +> List.map Common.inits_of_relative_dir 
   +> List.flatten +> Common.uniq_eff
-
 
 
 let merge_databases db1 db2 =
