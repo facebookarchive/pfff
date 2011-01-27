@@ -604,6 +604,7 @@ let unittest =
             function foo() { } 
             class A { }
             define('Cst',1);
+            interface B { }
         "
         in
         let tmpfile = tmp_php_file_from_string file_content in
@@ -615,8 +616,8 @@ let unittest =
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
             assert_equal 
-              ~msg:"The tags should contain only 3 entries"
-              (List.length tags_in_file) 3;
+              ~msg:"The tags should contain only 4 entries"
+              (List.length tags_in_file) 4;
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )

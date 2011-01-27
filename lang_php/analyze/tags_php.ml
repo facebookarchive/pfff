@@ -92,6 +92,22 @@ let tags_of_ast ~heavy_tagging ast filelines =
         );
       );
 
+      V.kinterface_def = (fun (k, _) def ->
+        let name = def.i_name in
+        Common.push2 (tag_of_name filelines name) defs;
+        
+        let s = Ast.name name in
+        if heavy_tagging then begin
+          let info = Ast.info_of_name name in
+          let info' = Ast.rewrap_str ("I_" ^ s) info in
+          Common.push2 (tag_of_info filelines info') defs;
+        end;
+        
+        Common.save_excursion current_class s (fun () ->
+          k def;
+        );
+      );
+
       V.kmethod_def = (fun (k, _) def ->
         let name = def.m_name in
         let info = Ast.info_of_name name in
