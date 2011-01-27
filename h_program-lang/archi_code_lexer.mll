@@ -376,6 +376,10 @@ rule category = parse
   | "/draw_"
       { Ui }
 
+  (* pad specfici ? *)
+  | "/layer_"
+      { Ui }
+
   | "/gtk/"
   | "/qt/"
   | "/tcltk/"
