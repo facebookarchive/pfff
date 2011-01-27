@@ -600,7 +600,26 @@ let unittest =
 
     "tags_php" >::: [
       "basic tags" >:: (fun () ->
-        ()
+        let file_content = "
+            function foo() { } 
+            class A { }
+            define('Cst',1);
+        "
+        in
+        let tmpfile = tmp_php_file_from_string file_content in
+        let tags = Tags_php.php_defs_of_files_or_dirs 
+          ~verbose:false
+          ~heavy_tagging:false
+          [tmpfile] in
+        (match tags with
+        | [file, tags_in_file] ->
+            assert_equal tmpfile file;
+            assert_equal 
+              ~msg:"The tags should contain only 3 entries"
+              (List.length tags_in_file) 3;
+        | _ ->
+            assert_failure "The tags should contain only one entry for one file"
+        )
       );
     ];
   ]
