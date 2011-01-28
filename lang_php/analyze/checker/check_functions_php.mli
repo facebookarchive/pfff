@@ -4,6 +4,8 @@
  * the function prototype signature. Handle also static method calls
  * as it is easy to determine statically to what they correspond. For
  * methods see check_methods_php.ml
+ * 
+ * pre: program without self/parent
  *)
 val check_program: 
   ?find_entity: Entity_php.entity_finder option ->

@@ -5,8 +5,10 @@ type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
   klvalue: (lvalue  -> lvalue) * visitor_out -> lvalue  -> lvalue;
   kstmt_and_def: 
-    (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def -> stmt_and_def;
+   (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
+  kqualifier: (qualifier -> qualifier) * visitor_out -> qualifier -> qualifier;
+  kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
   kinfo: (info -> info) * visitor_out -> info -> info;
                                                                             
 }

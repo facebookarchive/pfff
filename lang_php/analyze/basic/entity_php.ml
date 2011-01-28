@@ -61,9 +61,9 @@ type fullid = filepos
  (* with tarzan *)
 
 (* todo? copy-paste/redundant with 
- *  - Ast_php.entities
  *  - database_code.ml, highlight_code.ml
- *  - view_widgets_source.ml
+ *  - Ast_php.entity (but without the actual ast content)
+ *  - view_widgets_source.ml ?
  *  - typing_c environment type 
  *  - type_annotater_c.ml namedef type
  * 

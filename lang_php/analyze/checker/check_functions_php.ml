@@ -66,19 +66,11 @@ let rewrap_name_with_class_name classname name =
 let mk_class_name s info = 
   Name (s, info)
 
-(* todo? move in class_php.ml ? *)
-let resolve_class_name qu in_class =
-  match qu, in_class with
-  | Qualifier (name, _tok), _ ->
-      name
-  | Self _, Some (name, _parent) ->
-      name
-  | Self _, None ->
-      failwith ("Use of self:: outside of a class")
-  | Parent _, (Some (_, Some parent)) -> 
-      parent
-  | Parent _, _ ->
-      failwith "Use of parent:: in a class without a parent"
+let resolve_class_name qu =
+  match qu with
+  | Qualifier (name, _tok) -> name
+  | Self _ | Parent _ -> 
+      failwith "check_functions_php: call unsugar_self_parent"
 
 (*****************************************************************************)
 (* Typing rules *)
@@ -136,35 +128,16 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 (* Visitor *)
 (*****************************************************************************)
 
+(* pre: have a unsugar AST *)
 let visit_and_check_funcalls  ?(find_entity = None) prog =
 
-  let in_class = ref (None: (Ast.name * Ast.name option) option) in
-
   let hooks = { Visitor_php.default_visitor with
-
-    V.kclass_def = (fun (k, _) def ->
-      let classname = def.c_name in
-      let parent_opt = 
-        match def.c_extends with
-        | None -> None
-        | Some (tok, classname) -> Some classname
-      in
-      Common.save_excursion in_class (Some (classname, parent_opt)) (fun () ->
-        def.c_extends +> Common.do_option (fun (tok, classname) ->
-          (* todo? E.find_entity ~find_entity (Entity_php.Class classname) *)
-          ()
-        );
-        k def;
-      );
-    );
-
 
     Visitor_php.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
           E.find_entity ~find_entity (Entity_php.Function, callname)
-          +> Common.do_option (fun id_ast ->
-           match id_ast with
+          +> Common.do_option (fun id_ast -> match id_ast with
            | Ast_php.FunctionE def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
@@ -182,13 +155,12 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           k x
 
       | StaticMethodCallSimple (qu, callname, args) ->
-          let classname = resolve_class_name qu !in_class in
+          let classname = resolve_class_name qu in
           let sclassname = Ast.name classname in
           let name' = rewrap_name_with_class_name sclassname callname in
           E.find_entity ~find_entity (Entity_php.StaticMethod, name')
-          +> Common.do_option (fun id_ast ->
-            match id_ast with
-            | Ast_php.MethodE def ->
+          +> Common.do_option (fun id_ast -> match id_ast with
+           | Ast_php.MethodE def ->
 
                let contain_func_num_args = 
                  contain_func_name_args_like (ClassStmt (Method def)) in

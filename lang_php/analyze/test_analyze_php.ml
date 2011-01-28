@@ -85,6 +85,12 @@ let test_scope_php file =
   pr (Sexp_ast_php.string_of_program asts);
   ()
 
+let test_unsugar_php file = 
+  let ast = Parse_php.parse_program file in
+  let ast = Unsugar_php.unsugar_self_parent_program ast in
+  let s = Export_ast_php.ml_pattern_string_of_program ast in
+  pr2 s
+
 (*****************************************************************************)
 (* Subsystem tools, no db *)
 (*****************************************************************************)
@@ -665,6 +671,8 @@ let actions () = [
   Common.mk_action_1_arg test_include_require;
   "-stat_php", " <file>",
   Common.mk_action_1_arg test_stat_php;
+  "-test_unsugar_php", " <file>",
+  Common.mk_action_1_arg test_unsugar_php;
 ]
 
 (*e: test_analyze_php.ml *)

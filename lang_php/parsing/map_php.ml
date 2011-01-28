@@ -68,8 +68,11 @@ type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
   klvalue: (lvalue  -> lvalue) * visitor_out -> lvalue  -> lvalue;
   kstmt_and_def: 
-    (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def -> stmt_and_def;
+    (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
+  kqualifier: (qualifier -> qualifier) * visitor_out -> qualifier -> qualifier;
+  kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
+
   kinfo: (info -> info) * visitor_out -> info -> info;
                                                                             
 }
@@ -88,6 +91,8 @@ let default_visitor =
     klvalue   = (fun (k,_) x -> k x);
     kstmt_and_def = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
+    kqualifier = (fun (k,_) x -> k x);
+    kclass_def = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
   }
 
@@ -231,8 +236,9 @@ and map_name =
 and map_xhp_tag v = map_of_list map_of_string v
 and map_dname =
   function | DName v1 -> let v1 = map_wrap_string map_of_string v1 in DName ((v1))
-and map_qualifier =
-  function
+and map_qualifier x =
+  let rec k x =
+    match x with
   | Qualifier ((v1, v2)) ->
       let v1 = map_fully_qualified_class_name v1
       and v2 = map_tok v2
@@ -241,6 +247,9 @@ and map_qualifier =
       let v1 = map_tok v1 and v2 = map_tok v2 in Self ((v1, v2))
   | Parent ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_tok v2 in Parent ((v1, v2))
+  in
+  vin.kqualifier (k, all_functions) x
+
 and map_fully_qualified_class_name v = map_name v
 
   
@@ -957,7 +966,8 @@ and map_lexical_var =
   | LexicalVar ((v1, v2)) ->
       let v1 = map_is_ref v1 and v2 = map_dname v2 in LexicalVar ((v1, v2))
 and
-  map_class_def {
+  map_class_def x =
+  let rec k {
                   c_type = v_c_type;
                   c_name = v_c_name;
                   c_extends = v_c_extends;
@@ -976,6 +986,9 @@ and
     c_implements = v_c_implements;
     c_body = v_c_body
   }
+ in 
+  vin.kclass_def (k, all_functions) x
+
 
 and map_class_type =
   function

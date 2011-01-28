@@ -7,14 +7,11 @@ TARGET=lib
 SRC= flag_analyze_php.ml   \
      entity_php.ml \
      namespace_php.ml \
-     comment_php.ml \
-     annotation_php.ml \
+     unsugar_php.ml \
+     comment_php.ml annotation_php.ml \
      scoping_php.ml \
      env_php.ml \
-     define_php.ml \
-     func_php.ml \
-     include_require_php.ml \
-     class_php.ml \
+     define_php.ml func_php.ml include_require_php.ml class_php.ml \
      lib_analyze_php.ml \
 
 
