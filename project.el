@@ -574,9 +574,10 @@
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 2
        (0 "all")
        (1 "sgrep")
+       (2 "tags")
        )
      ))
    )

@@ -602,9 +602,7 @@ let unittest =
       "basic tags" >:: (fun () ->
         let file_content = "
             function foo() { } 
-            class A { 
-              function a_method() { } 
-            }
+            class A { }
             define('Cst',1);
             interface B { }
         "
@@ -616,8 +614,30 @@ let unittest =
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
             assert_equal 
-              ~msg:"The tags should contain only 5 entries"
-              (List.length tags_in_file) 5;
+              ~msg:"The tags should contain only 4 entries"
+              (List.length tags_in_file) 4;
+        | _ ->
+            assert_failure "The tags should contain only one entry for one file"
+        )
+      );
+      "method tags" >:: (fun () ->
+        let file_content = "
+           class A {
+              function a_method() { } 
+           }
+        " in
+        let tmpfile = tmp_php_file_from_string file_content in
+        let tags = 
+          Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
+        (match tags with
+        | [file, tags_in_file] ->
+            assert_equal tmpfile file;
+            (* we generate 2 tags per method, one for a_method, and one for
+             * A::a_method
+             *)
+            assert_equal 
+              ~msg:"The tags should contain only 3 entries"
+              (List.length tags_in_file) 3;
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
