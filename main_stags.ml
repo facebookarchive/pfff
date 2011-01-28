@@ -41,6 +41,7 @@ let verbose = ref false
 (* action mode *)
 let action = ref ""
 
+(* obsolete ? *)
 let heavy_tagging = ref false
 
 let lang = ref "php"
@@ -61,10 +62,10 @@ let output_file = ref "TAGS"
 
 let rec defs_of_files_or_dirs lang xs = 
   let verbose = !verbose in
-  let heavy_tagging = !heavy_tagging in
+  let _heavy_tagging = !heavy_tagging in
   match lang with
   | "php" ->
-      Tags_php.php_defs_of_files_or_dirs ~verbose ~heavy_tagging xs 
+      Tags_php.php_defs_of_files_or_dirs ~verbose (*~heavy_tagging*) xs 
   | "js" ->
       Tags_js.tags_of_files_or_dirs ~verbose xs
   | "ml" ->

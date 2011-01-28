@@ -1259,22 +1259,20 @@ and all_functions x = v_any x
 in
   v_any
 
-
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 let do_visit_with_ref mk_hooks = fun any ->
   let res = ref [] in
   let hooks = mk_hooks res in
-  begin
-    let vout = mk_visitor hooks in
-    vout any;
-    !res
-  end
+  let vout = mk_visitor hooks in
+  vout any;
+  List.rev !res
 
 let do_visit_with_h mk_hooks = fun any ->
   let h = Hashtbl.create 101 in
   let hooks = mk_hooks h in
-  begin 
-    let vout = mk_visitor hooks in
-    vout any;
-    h
-  end
+  let vout = mk_visitor hooks in
+  vout any;
+  h
