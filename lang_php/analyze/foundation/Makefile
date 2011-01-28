@@ -5,6 +5,7 @@ TOP=../../..
 TARGET=lib
 
 SRC= \
+     defs_uses_php.ml \
      pil.ml pretty_print_pil.ml controlflow_pil.ml \
      meta_pil.ml visitor_pil.ml \
      phpmanual_xml.ml builtins_php.ml \
