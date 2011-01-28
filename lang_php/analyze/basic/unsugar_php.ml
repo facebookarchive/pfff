@@ -36,15 +36,20 @@ module V = Map_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo? could be better to also return tok1 ? *)
+(* I also return the original token of self/parent so the caller can decide
+ * to do a rewrap on it. This is better than subsituting
+ * the name by the referenced class because ii_of_any and range_of_ii
+ * could get confused by having some Asts that contains ii
+ * outside.
+ *)
 let resolve_class_name qu in_class =
   match qu, in_class with
   | Qualifier (name, tok2), _ ->
-      name, tok2
-  | Self (_tok1, tok2), Some (name, _parent) ->
-      name, tok2
-  | Parent (_tok1, tok2), (Some (_, Some parent)) -> 
-      parent, tok2
+      name, Ast.info_of_name name, tok2
+  | Self (tok1, tok2), Some (name, _parent) ->
+      name, tok1, tok2
+  | Parent (tok1, tok2), (Some (_, Some parent)) -> 
+      parent, tok1, tok2
   | Self _, None ->
       failwith ("Use of self:: outside of a class")
   | Parent _, _ ->
@@ -72,8 +77,16 @@ let unsugar_self_parent_any2 any =
     );
 
     V.kqualifier = (fun (k, bigf) qu ->
-      let (name, tok_colon) = resolve_class_name qu !in_class in
-      Qualifier (name, tok_colon)
+      let (unsugar_name, tok_orig, tok_colon) = 
+        resolve_class_name qu !in_class in
+      let name' = 
+        match unsugar_name with
+        | Name (s, _info_of_referenced_class) -> 
+            Name (s, tok_orig)
+        | XhpName (xs, _info_of_referenced_class) ->
+            XhpName (xs, tok_orig)
+      in
+      Qualifier (name', tok_colon)
     );
   })
   in

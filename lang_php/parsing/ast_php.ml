@@ -326,7 +326,7 @@ type expr = exprbis * exp_info
      | ArrayArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
   (*x: AST expression rest *)
    and class_name_reference = 
-     | ClassNameRefStatic of name
+     | ClassNameRefStatic of fully_qualified_class_name
      | ClassNameRefDynamic of (lvalue * obj_prop_access list)
      and obj_prop_access = tok (* -> *) * obj_property
   (*e: AST expression rest *)
@@ -562,7 +562,7 @@ and func_def = {
     }
   (*x: AST function definition rest *)
       and hint_type = 
-        | Hint of name
+        | Hint of fully_qualified_class_name
         | HintArray  of tok
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option

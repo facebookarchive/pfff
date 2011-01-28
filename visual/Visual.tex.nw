@@ -3829,7 +3829,14 @@ type ast =
 
   | Cpp of Parse_cpp.program2
 
+  | Csharp of Parse_csharp.program2
+  | Java of Parse_java.program2
+
   | Lisp of Parse_lisp.program2
+  | Erlang of Parse_erlang.program2
+
+  | Python of Parse_python.program2
+
   | Noweb of Parse_nw.program2
 
 val _hmemo_file : (Common.filename, ast) Hashtbl.t
@@ -5212,6 +5219,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 <<controller2.mli>>=
 
 val _refresh_da: (unit -> unit) ref
+val _refresh_legend: (unit -> unit) ref
 
 val _go_back: 
   (Model2.drawing ref -> unit) ref

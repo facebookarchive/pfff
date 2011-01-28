@@ -518,7 +518,7 @@ and map_array_pair =
 and map_class_name_reference =
   function
   | ClassNameRefStatic v1 ->
-      let v1 = map_name v1 in ClassNameRefStatic ((v1))
+      let v1 = map_fully_qualified_class_name v1 in ClassNameRefStatic ((v1))
   | ClassNameRefDynamic v1 ->
       let v1 =
         (match v1 with
@@ -933,7 +933,7 @@ and
 
 and map_hint_type =
   function
-  | Hint v1 -> let v1 = map_name v1 in Hint ((v1))
+  | Hint v1 -> let v1 = map_fully_qualified_class_name v1 in Hint ((v1))
   | HintArray v1 -> let v1 = map_tok v1 in HintArray ((v1))
 and map_is_ref v = map_of_option map_tok v
 and

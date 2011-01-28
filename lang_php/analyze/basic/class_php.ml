@@ -39,49 +39,6 @@ let constructor_name = "__construct"
 (* Ast Helpers *)
 (*****************************************************************************)
 
-(* see also check_module.ml and the places where we call checkClassName 
- * todo: what with self:: and parent:: ? have to hook earlier than
- *  kfully_qualified_class_name, in kqualifier. Or just make a 
- *  pass that remove this sugar so then have a simpler AST and
- *  can raise Impossible for Parent and Self cases.
- *)
-let users_of_class_in_any x = 
-
-  V.do_visit_with_ref (fun aref ->
-    { V.default_visitor with
-
-      (* this covers the new X and instanceof X  *)
-      V.kclass_name_reference = (fun (k, bigf) classname_ref ->
-        (match classname_ref with
-        | ClassNameRefStatic name -> 
-            Common.push2 name aref
-        | ClassNameRefDynamic _ -> 
-            (* can't do much for now *)
-            ()
-        );
-        k classname_ref
-      );
-      (* this covers the X::, extends X, catch(X) *)
-      V.kfully_qualified_class_name = (fun (k, bigf) classname ->
-        Common.push2 classname aref;
-        k classname
-      );
-
-      (* xhp: there is also implicitely a new when we use a XHP tag *)
-      V.kxhp_html = (fun (k, _) x ->
-        match x with
-        | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-            Common.push2 (XhpName xhp_tag) aref;
-            k x
-        | XhpSingleton (xhp_tag, _attrs, _tok) ->
-            Common.push2 (XhpName xhp_tag) aref;
-            k x
-      );
-    }) x
-
-
-
-
 (* This is used in check_variables_php.ml to allow inherited
  * visible variables to be used in scope
  *)

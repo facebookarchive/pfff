@@ -134,6 +134,16 @@ let iter_files_and_ids db msg f =
     Db.recurse_children (fun id -> f id file) db id;
   )
 
+(* todo: refactor the code of database_php_build.ml so does need
+ * less this specific class case ?
+ *)
+let users_of_class_in_any any =
+  Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
+    match kind with
+    | Database_code.Class -> Some name
+    | _ -> None
+  )
+
 (*****************************************************************************)
 (* Helpers ast and tokens *)
 (*****************************************************************************)
@@ -949,7 +959,9 @@ let index_db3_2 db =
     let callees = 
       Callgraph_php.callees_of_any (Entity ast) in
 
-    (* the static method calls sites *)
+    (* todo: use unsugar_parent
+     * the static method calls sites 
+     *)
     let self, parent = 
       (* look if id belongs to a class *)
       match Db.classdef_of_nested_id_opt id db with
@@ -968,7 +980,7 @@ let index_db3_2 db =
     db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
 
     (* the new, X::, extends, etc *)
-    let classes_used = Class_php.users_of_class_in_any (Entity ast) in
+    let classes_used = users_of_class_in_any (Entity ast) in
     let candidates = 
       classes_used +> List.map Ast.name +> Common.set 
       +> Common.map_flatten (fun s -> class_ids_of_string s db)

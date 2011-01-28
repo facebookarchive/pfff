@@ -604,7 +604,7 @@ and v_unaryOp =
 and v_castOp v = v_ptype v
 and v_class_name_reference x =
   let rec k x = match x with
-  | ClassNameRefStatic v1 -> let v1 = v_name v1 in ()
+  | ClassNameRefStatic v1 -> let v1 = v_fully_qualified_class_name v1 in ()
   | ClassNameRefDynamic v1 ->
       let v1 =
         (match v1 with
@@ -996,7 +996,7 @@ and v_parameter x =
   vin.kparameter (k, all_functions) x
 and v_hint_type x = 
   let rec k x = match x with
-  | Hint v1 -> let v1 = v_name v1 in ()
+  | Hint v1 -> let v1 = v_fully_qualified_class_name v1 in ()
   | HintArray v1 -> let v1 = v_tok v1 in ()
   in
   vin.khint_type (k, all_functions) x
