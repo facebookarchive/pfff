@@ -68,7 +68,7 @@ type use =
  * todo: similar to what is in database_php_build.ml
  * 
  * history: was previously duplicated in 
- *  - tags_php.ml, 
+ *  - tags_php.ml
  *  - check_module.ml ?,
  *  - database_php_build.ml ?
  *)

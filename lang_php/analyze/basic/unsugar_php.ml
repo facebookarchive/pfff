@@ -25,11 +25,12 @@ module V = Map_php
 (* Prelude *)
 (*****************************************************************************)
 
-(* There are a few constructions in the PHP AST such as self:: and parent::
+(* 
+ * There are a few constructions in the PHP AST such as self:: and parent::
  * that makes certain analysis more tedious to write. The goal of this
  * module is just to unsugar those features.
  * 
- * For a real unsugar AST, see pil.ml
+ * If you want a really unsugared AST you should use pil.ml
  *)
 
 (*****************************************************************************)
@@ -39,8 +40,7 @@ module V = Map_php
 (* I also return the original token of self/parent so the caller can decide
  * to do a rewrap on it. This is better than subsituting
  * the name by the referenced class because ii_of_any and range_of_ii
- * could get confused by having some Asts that contains ii
- * outside.
+ * could get confused by having some Asts that contains outside ii.
  *)
 let resolve_class_name qu in_class =
   match qu, in_class with
@@ -96,7 +96,7 @@ let unsugar_self_parent_any a =
   Common.profile_code "Unsugar_php.self_parent" (fun () -> 
     unsugar_self_parent_any2 a)
 
-
+(* special case *)
 let unsugar_self_parent_program ast =
   unsugar_self_parent_any (Program ast) +> 
     (function Program x -> x | _ -> raise Impossible)
