@@ -107,7 +107,9 @@ let get_public_or_protected_vars_of_class def =
   ) +> List.flatten
 
 
-
+(* TODO: it could also be one which has the same name than the class.
+ *  print a warning to tell to use __construct instead ?
+ *)
 let get_constructor def =
   def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
     match class_stmt with
@@ -117,7 +119,11 @@ let get_constructor def =
     | _ -> None
   )
 
-
+(* This is useful when one needs to add class variables in scope.
+ * Because they may be at the end and that simple algorithm are just
+ * one pass on the ast, just simple to reorder the variables so that
+ * they are first. See Check_variables_php.
+ *)
 let class_variables_reorder_first def = 
   let (lb, body, rb) = def.c_body in
   let body' =
