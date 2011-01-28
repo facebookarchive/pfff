@@ -115,11 +115,8 @@ let callees id db =
 (* Unit tests *)
 (*****************************************************************************)
 
-
-
-
 (*---------------------------------------------------------------------------*)
-(* Callgraph *)
+(* Functions use/def, callgraph *)
 (*---------------------------------------------------------------------------*)
 
 (*
@@ -291,10 +288,147 @@ let callgraph_unittest =
     ]
 
 (*---------------------------------------------------------------------------*)
+(* Classes use/def *)
+(*---------------------------------------------------------------------------*)
+
+let class_unittest =
+    "class analysis" >::: [
+
+      "users of a class" >:: (fun () ->
+        let file = "
+          class A {
+           function foo() { }
+          }
+          class B {
+           function foo() { new A(); }
+          }
+          function c() { $a = new A(); $a->foo(); }
+        "
+        in
+        let db = db_from_string file in
+        (* shortcuts *)
+        let id s = id s db in
+        assert_equal
+          (sort [id "B::foo"; id "c"])
+          (sort (Db.class_users_of_id (id "A::") db));
+
+      );
+
+      "extenders of a class" >:: (fun () ->
+        let file = "
+          class A { }
+          class B extends A { }
+          class C { }
+        "
+        in
+        let db = db_from_string file in
+        (* shortcuts *)
+        let id s = id s db in
+        assert_equal
+          [id "B::"]
+          (Db.class_extenders_of_id (id "A::") db);
+
+        assert_equal
+          []
+          (Db.class_extenders_of_id (id "C::") db);
+      );
+
+      "implementers of interface" >:: (fun () ->
+        let file = "
+          interface A { }
+          interface A2 { }
+          class B implements A { }
+          class C implements A2, A { }
+        "
+        in
+        let db = db_from_string file in
+        (* shortcuts *)
+        let id s = id s db in
+        assert_equal
+          (sort [id "B::";id "C::"])
+          (sort (Db.class_implementers_of_id (id "A:::") db));
+      );
+    ]
+
+
+(*---------------------------------------------------------------------------*)
+(* Include use/def *)
+(*---------------------------------------------------------------------------*)
+
+let include_unittest =
+  "include_require" >::: (
+      let env = {
+        Env_php.global_arrays = Common.hash_of_list [
+          "_SERVER", Common.hash_of_list [
+            "PHP_ROOT", "/home/foo/www";
+          ];
+        ];
+        Env_php.constants = Common.hash_of_list [];
+        Env_php.globals = Common.hash_of_list [];
+        Env_php.globals_specials = (fun s dir -> None);
+      }
+      in [
+      (* I was previously using Filename.concat in include_require_php.ml
+       * which generate paths like a/b//c/foo.php which is annoying
+       * and can confuse some of our analysis. Check that no regression
+       * on this issue.
+       *)
+      "resolving path" >:: (fun () ->
+        let file = "
+        require_once $_SERVER['PHP_ROOT'].'/lib/alerts/alerts.php';
+        "
+        in
+        let tmpfile = tmp_php_file_from_string file in
+        let ast = ast_of_file_safe tmpfile in
+        let incs = Include_require_php.top_increq_of_program ast in
+        match incs with
+        | [(_inc_kind,_tok, incexpr)] ->
+            let path =
+              Include_require_php.resolve_path (env, "/") incexpr in
+            assert_equal
+              (Some "/home/foo/www/lib/alerts/alerts.php")
+              path;
+
+        | _ ->
+            assert_failure
+              "wrong number of elements returned by increq_of_program"
+      );
+
+      (* It is useful to know the set of files that directly or indirectly
+       * include a file.
+       *)
+      "includees includers" >:: (fun () ->
+        let data = [
+          "a.php", "";
+          "b.php", "include_once 'a.php';";
+          "c.php", "include_once 'b.php';";
+          "w.php", "";
+          "z.php", "include_once 'c.php'; include_once 'w.php'; ";
+        ]
+        in
+        let db = db_from_fake_files data in
+        Database_php_build2.index_db_includes_requires None db;
+
+        let p file = Db.readable_to_absolute_filename file db in
+
+        let includers_a = Db.includers_rec_of_file (p "a.php") db in
+        assert_equal
+          (sort [p "b.php"; p "c.php"; p "z.php"])
+          (sort includers_a);
+
+        let includees_z = Db.includees_rec_of_file (p "z.php") db in
+        assert_equal
+          (sort [p "c.php"; p "b.php"; p "a.php"; p "w.php"])
+          (sort includees_z);
+      );
+    ])
+
+(*---------------------------------------------------------------------------*)
 (* Deadcode *)
 (*---------------------------------------------------------------------------*)
 
-(* The deadcode analysis in pfff we do for facebook not only find
+(* 
+ * The deadcode analysis in pfff we do for facebook not only find
  * dead code. It also:
  *  - generate patches to remove this code,
  *  - use blame information to know who wrote the code,
@@ -305,7 +439,7 @@ let callgraph_unittest =
  * ids of the appropriate dead functions, or methods, or even classes.
  *)
 let deadcode_unittest =
-    "deadcode_php" >::: (
+  "deadcode_php" >::: (
 
       (* the tests data is in pfff/tests/deadcode/. It consists of a few
        * small php files whose name, e.g. all_dead.php explains what
@@ -464,140 +598,9 @@ let deadcode_unittest =
     ])
 
 (*---------------------------------------------------------------------------*)
-(* Final suite *)
+(* Tags *)
 (*---------------------------------------------------------------------------*)
-
-let unittest =
-  "analyze_php" >::: [
-    callgraph_unittest;
-    Test_coverage_php.unittest;
-    deadcode_unittest;
-
-    "class analysis" >::: [
-
-      "users of a class" >:: (fun () ->
-        let file = "
-          class A {
-           function foo() { }
-          }
-          class B {
-           function foo() { new A(); }
-          }
-          function c() { $a = new A(); $a->foo(); }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        assert_equal
-          (sort [id "B::foo"; id "c"])
-          (sort (Db.class_users_of_id (id "A::") db));
-
-      );
-
-      "extenders of a class" >:: (fun () ->
-        let file = "
-          class A { }
-          class B extends A { }
-          class C { }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        assert_equal
-          [id "B::"]
-          (Db.class_extenders_of_id (id "A::") db);
-
-        assert_equal
-          []
-          (Db.class_extenders_of_id (id "C::") db);
-      );
-
-      "implementers of interface" >:: (fun () ->
-        let file = "
-          interface A { }
-          interface A2 { }
-          class B implements A { }
-          class C implements A2, A { }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        assert_equal
-          (sort [id "B::";id "C::"])
-          (sort (Db.class_implementers_of_id (id "A:::") db));
-      );
-    ];
-
-    "include_require" >::: (
-      let env = {
-        Env_php.global_arrays = Common.hash_of_list [
-          "_SERVER", Common.hash_of_list [
-            "PHP_ROOT", "/home/foo/www";
-          ];
-        ];
-        Env_php.constants = Common.hash_of_list [];
-        Env_php.globals = Common.hash_of_list [];
-        Env_php.globals_specials = (fun s dir -> None);
-      }
-      in [
-      (* I was previously using Filename.concat in include_require_php.ml
-       * which generate paths like a/b//c/foo.php which is annoying
-       * and can confuse some of our analysis. Check that no regression
-       * on this issue.
-       *)
-      "resolving path" >:: (fun () ->
-        let file = "
-        require_once $_SERVER['PHP_ROOT'].'/lib/alerts/alerts.php';
-        "
-        in
-        let tmpfile = tmp_php_file_from_string file in
-        let ast = ast_of_file_safe tmpfile in
-        let incs = Include_require_php.top_increq_of_program ast in
-        match incs with
-        | [(_inc_kind,_tok, incexpr)] ->
-            let path =
-              Include_require_php.resolve_path (env, "/") incexpr in
-            assert_equal
-              (Some "/home/foo/www/lib/alerts/alerts.php")
-              path;
-
-        | _ ->
-            assert_failure
-              "wrong number of elements returned by increq_of_program"
-      );
-
-      (* It is useful to know the set of files that directly or indirectly
-       * include a file.
-       *)
-      "includees includers" >:: (fun () ->
-        let data = [
-          "a.php", "";
-          "b.php", "include_once 'a.php';";
-          "c.php", "include_once 'b.php';";
-          "w.php", "";
-          "z.php", "include_once 'c.php'; include_once 'w.php'; ";
-        ]
-        in
-        let db = db_from_fake_files data in
-        Database_php_build2.index_db_includes_requires None db;
-
-        let p file = Db.readable_to_absolute_filename file db in
-
-        let includers_a = Db.includers_rec_of_file (p "a.php") db in
-        assert_equal
-          (sort [p "b.php"; p "c.php"; p "z.php"])
-          (sort includers_a);
-
-        let includees_z = Db.includees_rec_of_file (p "z.php") db in
-        assert_equal
-          (sort [p "c.php"; p "b.php"; p "a.php"; p "w.php"])
-          (sort includees_z);
-      );
-    ]);
-
+let tags_unittest =
     "tags_php" >::: [
       "basic tags" >:: (fun () ->
         let file_content = "
@@ -642,8 +645,18 @@ let unittest =
             assert_failure "The tags should contain only one entry for one file"
         )
       );
-    ];
+    ]
+
+(*---------------------------------------------------------------------------*)
+(* Final suite *)
+(*---------------------------------------------------------------------------*)
+
+let unittest =
+  "analyze_php" >::: [
+    callgraph_unittest;
+    class_unittest;
+    include_unittest;
+    Test_coverage_php.unittest;
+    deadcode_unittest;
+    tags_unittest;
   ]
-
-
-

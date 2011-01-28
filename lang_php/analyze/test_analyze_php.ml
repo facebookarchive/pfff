@@ -48,7 +48,7 @@ let db_of_files_or_dirs files_or_dirs =
   db
 
 (*****************************************************************************)
-(* Subsystem testing, no db *)
+(* Type/scope annotations (no db) *)
 (*****************************************************************************)
 
 let test_type_php file =
@@ -85,14 +85,9 @@ let test_scope_php file =
   pr (Sexp_ast_php.string_of_program asts);
   ()
 
-let test_unsugar_php file = 
-  let ast = Parse_php.parse_program file in
-  let ast = Unsugar_php.unsugar_self_parent_program ast in
-  let s = Export_ast_php.ml_pattern_string_of_program ast in
-  pr2 s
 
 (*****************************************************************************)
-(* Subsystem tools, no db *)
+(* External tools cooperation (no db) *)
 (*****************************************************************************)
 
 let test_idl_to_php file =
@@ -193,7 +188,7 @@ let test_php_serialize file =
   pr2 s
 
 (*****************************************************************************)
-(* Subsystem, no db *)
+(* CFG/DFG (no db) *)
 (*****************************************************************************)
 
 
@@ -241,13 +236,6 @@ let test_cyclomatic_php file =
   )
 (*e: test_cyclomatic_php *)
 
-let test_stat_php file = 
-  let ast = Parse_php.parse_program file in
-  let stat = Statistics_php.stat_of_program ast in
-  let str = Statistics_php.string_of_stat stat in
-  pr2 str
-
-
 (* todo: adapt to PIL *)
 let test_dfg_php file =
   let (ast2,_stat) = Parse_php.parse file in
@@ -266,7 +254,23 @@ let test_dfg_php file =
   )
 
 (*****************************************************************************)
-(* Subsystem PIL testing, no db *)
+(* Misc (no db) *)
+(*****************************************************************************)
+
+let test_unsugar_php file = 
+  let ast = Parse_php.parse_program file in
+  let ast = Unsugar_php.unsugar_self_parent_program ast in
+  let s = Export_ast_php.ml_pattern_string_of_program ast in
+  pr2 s
+
+let test_stat_php file = 
+  let ast = Parse_php.parse_program file in
+  let stat = Statistics_php.stat_of_program ast in
+  let str = Statistics_php.string_of_stat stat in
+  pr2 str
+
+(*****************************************************************************)
+(* PIL (no db) *)
 (*****************************************************************************)
 
 let test_pil file =
