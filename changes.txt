@@ -89,6 +89,9 @@ applied codemap on many open source project and generated screenshots.
 thanks to literate programming and codemap itself to show the problem
 and assist in the refactoring
 
+*** refactored code about defs/uses in defs_uses_php.ml
+and put more generic stuff in h_program-lang/
+
 *** renamed pfff_visual in codemap
 
 * 0.13
