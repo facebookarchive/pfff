@@ -3,8 +3,8 @@
 val constructor_name: string 
 
 (* new X(), X::, ... extends X, etc *)
-val users_of_class_in_ast: 
-  Ast_entity_php.id_ast -> Ast_php.name list
+val users_of_class_in_any: 
+  Ast_php.any -> Ast_php.name list
 
 
 val get_public_or_protected_vars_of_class: 

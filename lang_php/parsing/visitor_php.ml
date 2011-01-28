@@ -1215,6 +1215,18 @@ and v_toplevel x =
 
 and v_program v = v_list v_toplevel v
 
+and v_entity = function
+  | FunctionE v1 -> let v1 = v_func_def v1 in ()
+  | ClassE v1 -> let v1 = v_class_def v1 in ()
+  | InterfaceE v1 -> let v1 = v_interface_def v1 in ()
+  | StmtListE v1 -> let v1 = v_list v_stmt v1 in ()
+  | MethodE v1 -> let v1 = v_method_def v1 in ()
+  | ClassConstantE v1 -> let v1 = v_class_constant v1 in ()
+  | ClassVariableE ((v1, v2)) ->
+      let v1 = v_class_variable v1 and v2 = v_list v_modifier v2 in ()
+  | XhpDeclE v1 -> let v1 = v_xhp_decl v1 in ()
+  | MiscE v1 -> let v1 = v_list v_info v1 in ()
+
 and v_any = function
   | Lvalue v1 -> let v1 = v_variable v1 in ()
   | Expr v1 -> let v1 = v_expr v1 in ()
@@ -1222,6 +1234,7 @@ and v_any = function
   | StmtAndDef v1 -> let v1 = v_topstatement v1 in ()
   | Toplevel v1 -> let v1 = v_toplevel v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
+  | Entity v1 -> let v1 = v_entity v1 in ()
   | Argument v1 -> let v1 = v_argument v1 in ()
   | Parameter v1 -> let v1 = v_parameter v1 in ()
   | Parameters v1 -> let v1 = v_paren20 (v_comma_list30 v_parameter) v1 in ()

@@ -20,7 +20,6 @@ open Ast_php
 open Database_php
 
 module Ast  = Ast_php
-module Ast2 = Ast_entity_php
 module Flag = Flag_analyze_php
 module V = Visitor_php
 module Lib_parsing = Lib_parsing_php
@@ -160,8 +159,8 @@ let (fpos_of_toplevel: Ast.toplevel -> Entity.filepos) = fun top ->
   let allii = Lib_parsing.ii_of_any (Toplevel top) in
   first_filepos_origin allii 
 
-let (fpos_of_idast: Ast_entity_php.id_ast -> Entity.filepos) = fun ast ->
-  let allii = Lib_analyze_php.ii_of_id_ast ast in
+let (fpos_of_idast: Ast_php.entity -> Entity.filepos) = fun ast ->
+  let allii = Lib_parsing_php.ii_of_any (Entity ast) in
   first_filepos_origin allii
   
 
@@ -292,7 +291,7 @@ let (add_filename_and_topids: (filename * id list) -> database -> unit) =
 
 (* have to update tables similar to add_toplevel *)
 let (add_nested_id_and_ast: 
-  enclosing_id:id -> Ast_entity_php.id_ast -> database -> id) = 
+  enclosing_id:id -> Ast_php.entity -> database -> id) = 
  fun ~enclosing_id ast db ->
 
   (* fullid_of_id, extra,   and the specific asts, enclosing and children *)
@@ -558,7 +557,7 @@ let add_methodcallees_of_id (idcaller, methods) db =
 (* See Ast_entity_php.mli for the rational behing having both a database
  * type and an entity_finder type.
  *)
-let (build_entity_finder: database -> Ast_entity_php.entity_finder) =
+let (build_entity_finder: database -> Entity_php.entity_finder) =
  fun db ->
   (fun (id_kind, s) ->
     try (
@@ -691,7 +690,7 @@ let index_db2_2 db =
      * deadcode analyzer to remove some false positives if a function
      * is mentionned in a string
      *)
-    let strings = Lib_parsing.get_all_constant_strings_any (Toplevel ast) in
+    let strings = Lib_parsing.get_constant_strings_any (Toplevel ast) in
     strings +> List.iter (fun s ->
       db.strings#add2 (s, ());
     );
@@ -778,7 +777,7 @@ let index_db2_2 db =
 
         | FuncDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-              (Ast_entity_php.Function def) db in
+              (Ast_php.FunctionE def) db in
             let s = Ast_php.name def.f_name in
             add_def (s, EC.Function, newid, Some def.f_name) db;
 
@@ -788,7 +787,7 @@ let index_db2_2 db =
             
         | ClassDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-              (Ast_entity_php.Class def) db in
+              (Ast_php.ClassE def) db in
             let s = Ast_php.name def.c_name in
             add_def (s, EC.Class, newid, Some def.c_name) db;
 
@@ -798,7 +797,7 @@ let index_db2_2 db =
 
         | InterfaceDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-              (Ast_entity_php.Interface def) db in
+              (Ast_php.InterfaceE def) db in
             let s = Ast_php.name def.i_name in
             add_def (s, EC.Interface, newid, Some def.i_name) db;
 
@@ -810,7 +809,7 @@ let index_db2_2 db =
         match x with
         | Method def ->
             let newid = add_nested_id_and_ast  ~enclosing_id:!enclosing_id
-              (Ast_entity_php.Method def) db in
+              (Ast_php.MethodE def) db in
             let s = Ast_php.name def.m_name in
             let id_kind = 
               if def.m_modifiers |> List.exists (fun (modifier, ii) -> 
@@ -838,7 +837,7 @@ let index_db2_2 db =
               let (name, _affect) = class_cst in
 
               let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-                (Ast_entity_php.ClassConstant(class_cst))
+                (Ast_php.ClassConstantE(class_cst))
                 db
               in
               let s = Ast.name name in
@@ -863,7 +862,7 @@ let index_db2_2 db =
               in
 
               let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-                (Ast_entity_php.ClassVariable(class_var, modifier)) db in
+                (Ast_php.ClassVariableE(class_var, modifier)) db in
 
               let s = "$" ^ Ast.dname dname in
               add_def (s, EC.ClassVariable, newid, None) db;
@@ -873,7 +872,7 @@ let index_db2_2 db =
 
         | XhpDecl decl ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-              (Ast_entity_php.XhpDecl decl) db in
+              (Ast_php.XhpDeclE decl) db in
             let s = "XHPDECLTODO" in
             add_def (s, EC.XhpDecl, newid, None) db;
 
@@ -948,7 +947,7 @@ let index_db3_2 db =
 
     (* the regular function calls sites *)
     let callees = 
-      Callgraph_php.callees_of_ast ast in
+      Callgraph_php.callees_of_any (Entity ast) in
 
     (* the static method calls sites *)
     let self, parent = 
@@ -964,12 +963,12 @@ let index_db3_2 db =
           self, parent
     in
     let static_method_callees = 
-      Callgraph_php.static_method_callees_of_ast ~self ~parent ast in
+      Callgraph_php.static_method_callees_of_any ~self ~parent (Entity ast) in
 
     db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
 
     (* the new, X::, extends, etc *)
-    let classes_used = Class_php.users_of_class_in_ast ast in
+    let classes_used = Class_php.users_of_class_in_any (Entity ast) in
     let candidates = 
       classes_used +> List.map Ast.name +> Common.set 
       +> Common.map_flatten (fun s -> class_ids_of_string s db)
@@ -981,7 +980,7 @@ let index_db3_2 db =
 
     (* the extends and implements *)
     (match ast with
-    | Ast2.Class def ->
+    | Ast.ClassE def ->
         let idB = id in
 
         def.c_extends |> Common.do_option (fun (tok, classnameA) ->
@@ -1017,16 +1016,16 @@ let index_db3_2 db =
     (* todo? interface can also be extended; maybe should add a 
      * extenders_of_interface at some point if it's useful
      *)
-    | Ast2.Interface _ ->
+    | Ast.InterfaceE _ ->
         ()
 
-    | Ast2.Misc _
-    | Ast2.ClassVariable _
-    | Ast2.ClassConstant _
-    | Ast2.XhpDecl _
-    | Ast2.Method _
-    | Ast2.StmtList _
-    | Ast2.Function _ 
+    | Ast.MiscE _
+    | Ast.ClassVariableE _
+    | Ast.ClassConstantE _
+    | Ast.XhpDeclE _
+    | Ast.MethodE _
+    | Ast.StmtListE _
+    | Ast.FunctionE _ 
       ->  ()
     );
 
@@ -1097,7 +1096,7 @@ let index_db4_2 db =
       tags := comment_tags;
     );
 
-    let callees = Lib_parsing_php.get_all_funcalls_any (Toplevel ast) in
+    let callees = Lib_parsing_php.get_funcalls_any (Toplevel ast) in
     (* facebook specific ... *)
     
     if List.mem "THIS_FUNCTION_EXPIRES_ON" callees
@@ -1155,10 +1154,14 @@ let index_db_method2 db =
 
   iter_files_and_ids db "ANALYZING_METHODS" (fun id file -> 
 
+    (* TODO!!!! do the same work twice when the entity is a class ?
+     * need to add in db a class without its children
+     *)
+
     let ast = Db.ast_of_id id db in
     let idcaller = id in
 
-    let methodcallees = Callgraph_php.method_callees_of_ast ast in
+    let methodcallees = Callgraph_php.method_callees_of_any (Entity ast) in
     (* old: db +> add_methodcallees_of_id(id, methodcallees); 
      * We now want to cut off certain information such as the set of callers
      * when the set is really too huge. We dont want a few outliers
@@ -1280,7 +1283,7 @@ let index_db_method a =
 
 let index_db_glimpse db = 
   let dir = path_of_project db.project in
-  let files = Lib_analyze_php.find_php_files [(dir ^ "/")] in
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files [(dir ^ "/")] in
 
   (* todo? glimpse sub parts ? marshall ast, pack ? *)
 
@@ -1358,7 +1361,7 @@ let create_db
            *      let ext = ".*\\.\\(php\\|phpt\\)$" in
            *)
           
-          Lib_analyze_php.find_php_files [(dir ^ "/")]
+          Lib_parsing_php.find_php_files_of_dir_or_files [(dir ^ "/")]
 
       | Some xs ->     xs
     in

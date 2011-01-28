@@ -409,7 +409,7 @@ let get_lines_to_remove db ids =
 
     let toks = Db.toks_of_topid_of_id id db in
 
-    let ii = Lib_analyze_php.ii_of_id_ast ast in
+    let ii = Lib_parsing_php.ii_of_any (Entity ast) in
     let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
     let min = Ast_php.parse_info_of_info min in

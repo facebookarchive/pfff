@@ -402,7 +402,7 @@ let idl_entry_to_php_fake_code entry =
 
 (* Generating stdlib from idl files *)
 let generate_php_stdlib src phpmanual_dir dest = 
-  let files = Lib_analyze_php.find_php_files [src] in
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files [src] in
 
   let phpdoc_finder = Phpmanual_xml.build_doc_function_finder phpmanual_dir in
 

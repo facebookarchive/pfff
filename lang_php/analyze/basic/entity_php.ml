@@ -61,6 +61,7 @@ type fullid = filepos
  (* with tarzan *)
 
 (* todo? copy-paste/redundant with 
+ *  - Ast_php.entities
  *  - database_code.ml, highlight_code.ml
  *  - view_widgets_source.ml
  *  - typing_c environment type 
@@ -86,6 +87,17 @@ type id_kind =
   | StaticMethod 
 
   | IdMisc
+
+(*
+ * update: I now return a list of entities instead of a single entity
+ * and raising a Not_found or Multi_found. The rational is that
+ * the caller knows better what to do when there are multiple
+ * matching definitions for an entity. For instance for 
+ * better error message having just Multi_found is not enough.
+ * The caller needs for instance to show two witnesses.
+ *)
+
+type entity_finder = (id_kind * string) -> Ast_php.entity list
 
 (*****************************************************************************)
 (* String_of *)

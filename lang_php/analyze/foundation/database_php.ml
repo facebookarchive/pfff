@@ -199,7 +199,7 @@ type database = {
      (* opti: contains only the nested asts. So NEVER USE THIS FIELD
       * directly. Use the ast_of_id helper function!
       *)
-     asts: (id, Ast_entity_php.id_ast) Oassoc.oassoc;
+     asts: (id, Ast_php.entity) Oassoc.oassoc;
 
      (* the remaining parsing information, the string and tokens *)
      str_of_topid:    (id, string)                Oassoc.oassoc;
@@ -456,7 +456,7 @@ let str_of_id id db =
 let ast_of_id id db = 
   try 
     let top = db.defs.toplevels#assoc id in
-    Ast_entity_php.toplevel_to_idast top
+    Lib_parsing_php.toplevel_to_entity top
   with Not_found ->
     db.defs.asts#assoc id
 
@@ -499,7 +499,7 @@ let callers_of_id id db =
 let parent_name_of_id2 id db = 
   let ast = ast_of_id id db in
   match ast with
-  | Ast_entity_php.Class def ->
+  | Ast_php.ClassE def ->
       def.c_extends |> Common.fmap (fun (tok, classname) -> 
         Ast.name classname
       )
@@ -544,7 +544,7 @@ let classdef_of_nested_id_opt id db =
       | EC.Class -> 
           let id_ast = ast_of_id id db in
           (match id_ast with
-          | Ast_entity_php.Class def -> Some def
+          | Ast_php.ClassE def -> Some def
           | _ -> 
               failwith "Impossible: must be a Class"
           )

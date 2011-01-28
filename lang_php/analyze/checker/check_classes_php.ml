@@ -54,7 +54,7 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
           E.find_entity ~find_entity (Entity_php.Class, class_name)
           +> Common.do_option (fun id_ast ->
             match id_ast with
-            | Ast_entity_php.Class def ->
+            | Ast_php.ClassE def ->
                 (*
                   Check_functions_php.check_args_vs_params 
                   (callname,   args +> Ast.unparen +> Ast.uncomma)

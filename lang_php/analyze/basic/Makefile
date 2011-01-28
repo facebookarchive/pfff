@@ -6,9 +6,7 @@ TARGET=lib
 
 SRC= flag_analyze_php.ml   \
      entity_php.ml \
-     ast_entity_php.ml \
      namespace_php.ml \
-     visitor2_php.ml \
      comment_php.ml \
      annotation_php.ml \
      scoping_php.ml \

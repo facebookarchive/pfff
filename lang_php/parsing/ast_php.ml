@@ -770,20 +770,43 @@ and toplevel =
 
 (*e: AST toplevel *)
 
+(* The goal of the entity type is to lift up important entities which
+ * are originally nested in the ast such as methods.
+ * 
+ * history: was in ast_entity_php.ml before but better to put everything
+ * in one file.
+ *)
+type entity = 
+  | FunctionE of func_def
+  | ClassE of class_def
+  | InterfaceE of interface_def
+  | StmtListE of stmt list
+
+  | MethodE of method_def
+
+  | ClassConstantE of class_constant
+  | ClassVariableE of class_variable * modifier list
+
+  | XhpDeclE of xhp_decl
+
+  | MiscE of info list
+ (* with tarzan *)
+
 type any = 
   | Lvalue of lvalue
   | Expr of expr
   | Stmt2 of stmt
   | StmtAndDef of stmt_and_def
+  | StmtAndDefs of stmt_and_def list
   | Toplevel of toplevel
   | Program of program
+  | Entity of entity
 
   | Argument of argument
   | Parameter of parameter
   | Parameters of parameter comma_list paren
 
   | Body of stmt_and_def list brace
-  | StmtAndDefs of stmt_and_def list
 
   | ClassStmt of class_stmt
   | ClassConstant2 of class_constant
@@ -801,6 +824,7 @@ type any =
 
   | Info of info
   | InfoList of info list
+
   (* with tarzan *)
 
 (*****************************************************************************)

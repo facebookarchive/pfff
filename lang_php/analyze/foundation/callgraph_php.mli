@@ -129,20 +129,20 @@ val calltree_callees_of_f:
  * caller/callee analysis then need to use this local information and
  * perform a global analysis. cf database.ml and functions below. 
  *)
-val callees_of_ast: 
-  Ast_entity_php.id_ast -> Namespace_php.nameS Ast_php.wrap list
+val callees_of_any: 
+  Ast_php.any -> Namespace_php.nameS Ast_php.wrap list
 
-val method_callees_of_ast: 
-  Ast_entity_php.id_ast -> Namespace_php.nameS Ast_php.wrap list
+val method_callees_of_any: 
+  Ast_php.any -> Namespace_php.nameS Ast_php.wrap list
 
 
 (* If we process the body of a method, this method can use PHP sugar with 
  * the self:: and parent:: syntax, hence the extra arguments.
  *)
-val static_method_callees_of_ast: 
+val static_method_callees_of_any: 
   self: string option ->
   parent: string option ->
-  Ast_entity_php.id_ast -> Namespace_php.nameS Ast_php.wrap list
+  Ast_php.any -> Namespace_php.nameS Ast_php.wrap list
 
 (*x: callgraph_php.mli *)
 (*e: callgraph_php.mli *)

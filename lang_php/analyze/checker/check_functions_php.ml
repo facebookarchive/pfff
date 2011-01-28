@@ -91,7 +91,7 @@ let no_check_when_contain = [
 ]
 
 let contain_func_name_args_like any =
-  let funcalls = Lib_parsing_php.get_all_funcalls_any any in
+  let funcalls = Lib_parsing_php.get_funcalls_any any in
   no_check_when_contain +> List.exists (fun danger_func -> 
     List.mem danger_func funcalls
   )
@@ -165,7 +165,7 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           E.find_entity ~find_entity (Entity_php.Function, callname)
           +> Common.do_option (fun id_ast ->
            match id_ast with
-           | Ast_entity_php.Function def ->
+           | Ast_php.FunctionE def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
                  contain_func_name_args_like (Body def.f_body) in
@@ -188,7 +188,7 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           E.find_entity ~find_entity (Entity_php.StaticMethod, name')
           +> Common.do_option (fun id_ast ->
             match id_ast with
-            | Ast_entity_php.Method def ->
+            | Ast_php.MethodE def ->
 
                let contain_func_num_args = 
                  contain_func_name_args_like (ClassStmt (Method def)) in

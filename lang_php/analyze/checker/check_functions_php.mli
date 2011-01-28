@@ -6,7 +6,7 @@
  * methods see check_methods_php.ml
  *)
 val check_program: 
-  ?find_entity: Ast_entity_php.entity_finder option ->
+  ?find_entity: Entity_php.entity_finder option ->
   Ast_php.program -> unit
 
 (* used also by check_classes_php.ml *)

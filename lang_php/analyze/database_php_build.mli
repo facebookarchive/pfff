@@ -20,7 +20,7 @@ val fast_create_db_mem:
 
 (* wrapper that makes it easier for some code to not depend on database_php *)
 val build_entity_finder: 
-  Database_php.database -> Ast_entity_php.entity_finder
+  Database_php.database -> Entity_php.entity_finder
 
 val actions: unit -> Common.cmdline_actions
 

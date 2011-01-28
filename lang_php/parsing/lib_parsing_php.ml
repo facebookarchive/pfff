@@ -48,12 +48,23 @@ let is_php_script file =
     with End_of_file -> false
   )
 
-let find_php_files_of_dir_or_files xs = 
+(* 
+ * In command line tools like git or mercurial, many operations works 
+ * when a file, a set of files, or even dirs are passed as parameters.
+ * We want the same with pfff, hence this small helper function that
+ * transform such files_or_dirs into a flag set of filenames.
+ *)
+let find_php_files_of_dir_or_files ?(verbose=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
-    (filename =~ ".*\\.php$") ||
+    let valid = 
+      (filename =~ ".*\\.php$") ||
       (filename =~ ".*\\.phpt$") ||
       is_php_script filename
+    in
+    if not valid && verbose
+    then pr2 ("not analyzing: " ^ filename);
+    valid
   ) |> Common.sort
 
 (*****************************************************************************)
@@ -90,17 +101,6 @@ let abstract_position_visitor recursor =
     recursor vout;
   end
 (*x: abstract infos *)
-(* todo: remove ? *)
-let abstract_position_info_program x = 
-  abstract_position_visitor (fun visitor -> visitor.V2.vprogram x)
-let abstract_position_info_expr x = 
-  abstract_position_visitor (fun visitor -> visitor.V2.vexpr x)
-let abstract_position_info_lvalue x = 
-  abstract_position_visitor (fun visitor -> visitor.V2.vlvalue x)
-let abstract_position_info_toplevel x = 
-  abstract_position_visitor (fun visitor -> visitor.V2.vtop x)
-
-
 let abstract_position_info_any x = 
   abstract_position_visitor (fun visitor -> visitor.V2.vany x)
 (*e: abstract infos *)
@@ -224,11 +224,10 @@ let print_warning_if_not_correctly_parsed ast file =
 (* Ast getters *)
 (*****************************************************************************)
 (*s: ast getters *)
-let get_all_funcalls f = 
+let get_funcalls_any any = 
   let h = Hashtbl.create 101 in
   
   let hooks = { V.default_visitor with
-
     (* TODO if nested function ??? still wants to report ? *)
     V.klvalue = (fun (k,vx) x ->
       match untype x with
@@ -241,13 +240,11 @@ let get_all_funcalls f =
   } 
   in
   let visitor = V.mk_visitor hooks in
-  f visitor;
+  visitor any;
   Common.hashset_to_list h
 (*x: ast getters *)
-let get_all_funcalls_any any =
-  get_all_funcalls (fun visitor ->  visitor any)
 (*x: ast getters *)
-let get_all_constant_strings_any any = 
+let get_constant_strings_any any = 
   let h = Hashtbl.create 101 in
 
   let hooks = { V.default_visitor with
@@ -270,8 +267,7 @@ let get_all_constant_strings_any any =
 
 (*x: ast getters *)
 
-
-let get_all_funcvars f =
+let get_funcvars_any any =
   let h = Hashtbl.create 101 in
   
   let hooks = { V.default_visitor with
@@ -279,7 +275,6 @@ let get_all_funcvars f =
     V.klvalue = (fun (k,vx) x ->
       match untype x with
       | FunCallVar (qu_opt, var, args) ->
-
           (* TODO enough ? what about qopt ? 
            * and what if not directly a Var ?
            * 
@@ -299,14 +294,12 @@ let get_all_funcvars f =
   } 
   in
   let visitor = V.mk_visitor hooks in
-  f visitor;
+  visitor any;
   Common.hashset_to_list h
 
-let get_all_funcvars_any any = 
-  get_all_funcvars (fun visitor -> visitor any)
 (*e: ast getters *)
 
-let get_static_vars =
+let get_static_vars_any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kstmt = (fun (k,vx) x ->
       match x with
@@ -355,7 +348,7 @@ and static_array_pair_to_array_pair x =
                      static_scalar_to_expr sc2)
 
 (* do some isomorphisms for declaration vs assignement *)
-let get_vars_assignements recursor = 
+let get_vars_assignements_any recursor = 
   (* We want to group later assignement by variables, and 
    * so we want to use function like Common.group_by_xxx 
    * which requires to have identical key. Each dname occurence 
@@ -401,23 +394,23 @@ let get_vars_assignements recursor =
   ) recursor |> Common.group_assoc_bykey_eff
   
 (* todo? do last_stmt_is_a_return isomorphism ? *)
-let get_returns = 
+let get_returns_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kstmt = (fun (k,vx) x ->
       match x with
       | Return (tok1, Some e, tok2) ->
           Common.push2 e aref
       | _ -> k x
-    )})
+    )}) any
 
-let get_vars = 
+let get_vars_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.klvalue = (fun (k,vx) x ->
       match Ast.untype x with
       | Var (dname, _scope) ->
           Common.push2 dname aref
       | _ -> k x
-    )})
+    )}) any
 
 let top_statements_of_program ast = 
   ast |> List.map (function
@@ -426,6 +419,26 @@ let top_statements_of_program ast =
   | InterfaceDef _|ClassDef _| FuncDef _
       -> []
   ) |> List.flatten  
+
+
+let toplevel_to_entity x = 
+  match x with
+  | StmtList v1 -> 
+      StmtListE v1
+  | FuncDef v1 ->
+      FunctionE v1
+  | ClassDef v1 -> 
+      ClassE v1
+  | InterfaceDef v1 -> 
+      InterfaceE v1
+
+  (* todo? *)
+  | Halt ((v1, v2, v3)) ->
+      MiscE []
+  | NotParsedCorrectly xs ->
+      MiscE xs
+  | FinalDef v1 ->
+      MiscE [v1]
 
 (* We often do some analysis on "unit" of code like a function,
  * a method, or toplevel statements. One can not use the

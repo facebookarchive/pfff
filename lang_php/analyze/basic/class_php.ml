@@ -20,7 +20,6 @@ open Ast_php
 module Ast = Ast_php
 
 module V = Visitor_php
-module V2 = Visitor2_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -46,9 +45,9 @@ let constructor_name = "__construct"
  *  pass that remove this sugar so then have a simpler AST and
  *  can raise Impossible for Parent and Self cases.
  *)
-let users_of_class_in_ast idast = 
+let users_of_class_in_any x = 
 
-  V2.do_visit_with_ref (fun aref ->
+  V.do_visit_with_ref (fun aref ->
     { V.default_visitor with
 
       (* this covers the new X and instanceof X  *)
@@ -78,8 +77,8 @@ let users_of_class_in_ast idast =
             Common.push2 (XhpName xhp_tag) aref;
             k x
       );
-    })
-    (fun visitor -> visitor.V2.vid_ast idast)
+    }) x
+
 
 
 

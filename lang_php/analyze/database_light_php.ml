@@ -167,11 +167,11 @@ let properties_of_function_or_method id db =
 
   let params, body = 
     match id_ast with
-    | Ast_entity_php.Function def ->
+    | Ast_php.FunctionE def ->
         (* TODO *)
         def.Ast.f_params +> Ast.unparen +> Ast.uncomma, 
         def.Ast.f_body +> Ast.unbrace
-    | Ast_entity_php.Method def ->
+    | Ast_php.MethodE def ->
         def.Ast.m_params +> Ast.unparen +> Ast.uncomma, 
         (match def.Ast.m_body with
         | Ast.AbstractMethod _ -> []
@@ -191,8 +191,8 @@ let properties_of_function_or_method id db =
    *  so even if people define lots of wrappers around the builtin
    *  dynamic function, then it does not matter.
    *)
-  let calls = Lib_parsing_php.get_all_funcalls_any (Ast.StmtAndDefs body) in
-  let dyncalls = Lib_parsing_php.get_all_funcvars_any (Ast.StmtAndDefs body) in
+  let calls = Lib_parsing_php.get_funcalls_any (Ast.StmtAndDefs body) in
+  let dyncalls = Lib_parsing_php.get_funcvars_any (Ast.StmtAndDefs body) in
 
   if not (null dyncalls) ||
      calls +> List.exists (fun s -> 

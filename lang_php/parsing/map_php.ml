@@ -125,6 +125,8 @@ and map_wrap_tag _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 and map_wrap_modif _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
+and map_wrap_xhp_tag _of_a (v1, v2) =
+  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 and map_wrap2 _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 and map_wrap3 _of_a (v1, v2) =
@@ -182,6 +184,9 @@ and map_brace_body _of_a (v1, v2, v3) =
 and map_brace_expr _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_brace_class_body _of_a (v1, v2, v3) =
+  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
+
+and map_brace_1 _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 
 and map_bracket _of_a (v1, v2, v3) =
@@ -1017,7 +1022,83 @@ and map_class_stmt =
       and v3 = map_tok v3
       in ClassVariables ((v1, opt_ty, v2, v3))
   | Method v1 -> let v1 = map_method_def v1 in Method ((v1))
-  | XhpDecl _ -> raise Todo
+  | XhpDecl v1 -> let v1 = map_xhp_decl v1 in XhpDecl ((v1))
+
+
+and map_xhp_decl =
+  function
+  | XhpAttributesDecl ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_comma_list map_xhp_attribute_decl v2
+      and v3 = map_tok v3
+      in XhpAttributesDecl ((v1, v2, v3))
+  | XhpChildrenDecl ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_xhp_children_decl v2
+      and v3 = map_tok v3
+      in XhpChildrenDecl ((v1, v2, v3))
+  | XhpCategoriesDecl ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_comma_list map_xhp_category_decl v2
+      and v3 = map_tok v3
+      in XhpCategoriesDecl ((v1, v2, v3))
+
+and map_xhp_attribute_decl =
+  function
+  | XhpAttrInherit v1 ->
+      let v1 = map_wrap_xhp_tag map_xhp_tag v1 in XhpAttrInherit ((v1))
+  | XhpAttrDecl ((v1, v2, v3, v4)) ->
+      let v1 = map_xhp_attribute_type v1
+      and v2 = map_xhp_attr_name v2
+      and v3 = map_of_option map_xhp_value_affect v3
+      and v4 = map_of_option map_tok v4
+      in XhpAttrDecl ((v1, v2, v3, v4))
+
+and map_xhp_attribute_type =
+  function
+  | XhpAttrType v1 -> let v1 = map_name v1 in XhpAttrType ((v1))
+  | XhpAttrEnum ((v1, v2)) ->
+      let v1 = map_tok v1
+      and v2 = map_brace_1 (map_comma_list map_constant) v2
+      in XhpAttrEnum ((v1, v2))
+and map_xhp_value_affect (v1, v2) =
+  let v1 = map_tok v1 and v2 = map_constant v2 in (v1, v2)
+
+and map_xhp_children_decl =
+  function
+  | XhpChild v1 -> let v1 = map_wrap_xhp_tag map_xhp_tag v1 in XhpChild ((v1))
+  | XhpChildCategory v1 ->
+      let v1 = map_wrap_xhp_tag map_xhp_tag v1 in XhpChildCategory ((v1))
+  | XhpChildAny v1 -> let v1 = map_tok v1 in XhpChildAny ((v1))
+  | XhpChildEmpty v1 -> let v1 = map_tok v1 in XhpChildEmpty ((v1))
+  | XhpChildPcdata v1 -> let v1 = map_tok v1 in XhpChildPcdata ((v1))
+  | XhpChildSequence ((v1, v2, v3)) ->
+      let v1 = map_xhp_children_decl v1
+      and v2 = map_tok v2
+      and v3 = map_xhp_children_decl v3
+      in XhpChildSequence ((v1, v2, v3))
+  | XhpChildAlternative ((v1, v2, v3)) ->
+      let v1 = map_xhp_children_decl v1
+      and v2 = map_tok v2
+      and v3 = map_xhp_children_decl v3
+      in XhpChildAlternative ((v1, v2, v3))
+  | XhpChildMul ((v1, v2)) ->
+      let v1 = map_xhp_children_decl v1
+      and v2 = map_tok v2
+      in XhpChildMul ((v1, v2))
+  | XhpChildOption ((v1, v2)) ->
+      let v1 = map_xhp_children_decl v1
+      and v2 = map_tok v2
+      in XhpChildOption ((v1, v2))
+  | XhpChildPlus ((v1, v2)) ->
+      let v1 = map_xhp_children_decl v1
+      and v2 = map_tok v2
+      in XhpChildPlus ((v1, v2))
+  | XhpChildParen v1 ->
+      let v1 = map_paren map_xhp_children_decl v1 in XhpChildParen ((v1))
+and map_xhp_category_decl v = map_wrap_xhp_tag map_xhp_tag v
+
+
 and map_class_constant (v1, v2) =
   let v1 = map_name v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
 and map_class_variable (v1, v2) =
@@ -1144,6 +1225,21 @@ and map_toplevel =
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
 and map_program v = map_of_list map_toplevel v
 
+and map_entity =
+  function
+  | FunctionE v1 -> let v1 = map_func_def v1 in FunctionE ((v1))
+  | ClassE v1 -> let v1 = map_class_def v1 in ClassE ((v1))
+  | InterfaceE v1 -> let v1 = map_interface_def v1 in InterfaceE ((v1))
+  | StmtListE v1 -> let v1 = map_of_list map_stmt v1 in StmtListE ((v1))
+  | MethodE v1 -> let v1 = map_method_def v1 in MethodE ((v1))
+  | ClassConstantE v1 ->
+      let v1 = map_class_constant v1 in ClassConstantE ((v1))
+  | ClassVariableE ((v1, v2)) ->
+      let v1 = map_class_variable v1
+      and v2 = map_of_list map_modifier v2
+      in ClassVariableE ((v1, v2))
+  | XhpDeclE v1 -> let v1 = map_xhp_decl v1 in XhpDeclE ((v1))
+  | MiscE v1 -> let v1 = map_of_list map_info v1 in MiscE ((v1))
 
 and map_any =
   function
@@ -1153,6 +1249,7 @@ and map_any =
   | StmtAndDef v1 -> let v1 = map_stmt_and_def v1 in StmtAndDef ((v1))
   | Toplevel v1 -> let v1 = map_toplevel v1 in Toplevel ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
+  | Entity v1 -> let v1 = map_entity v1 in Entity ((v1))
   | Argument v1 -> let v1 = map_argument v1 in Argument ((v1))
   | Parameter v1 -> let v1 = map_parameter v1 in Parameter ((v1))
   | Parameters v1 ->

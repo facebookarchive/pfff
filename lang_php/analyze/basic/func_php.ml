@@ -20,7 +20,6 @@ open Ast_php
 module Ast = Ast_php
 
 module V = Visitor_php
-module V2 = Visitor2_php
 
 (*****************************************************************************)
 (* Prelude *)

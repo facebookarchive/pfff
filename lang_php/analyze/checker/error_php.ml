@@ -250,9 +250,9 @@ let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) =
   Hashtbl.create 101 
 
 let (find_entity:
-  find_entity: Ast_entity_php.entity_finder option ->
+  find_entity: Entity_php.entity_finder option ->
   (Entity_php.id_kind * Ast_php.name) ->
-  Ast_entity_php.id_ast option) = 
+  Ast_php.entity option) = 
  fun ~find_entity (kind, name) ->
 
   match find_entity with

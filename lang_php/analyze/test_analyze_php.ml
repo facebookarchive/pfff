@@ -85,23 +85,6 @@ let test_scope_php file =
   pr (Sexp_ast_php.string_of_program asts);
   ()
 
-let test_visit2_php file =
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-
-  let v = Visitor2_php.mk_visitor { Visitor2_php.default_visitor with
-    Visitor_php.klvalue = (fun (k, vx) e ->
-      match fst e with
-      | Ast_php.FunCallSimple (callname, args) ->
-          let s = Ast_php.name callname in
-          pr2 ("calling: " ^ s);
-
-      | _ -> k e
-    );
-  } 
-  in
-  v.Visitor2_php.vorigin (Ast.Program ast)
-
 (*****************************************************************************)
 (* Subsystem tools, no db *)
 (*****************************************************************************)
@@ -393,7 +376,7 @@ let test_function_pointer_analysis metapath =
 
     Database_php_build.iter_files_and_topids db "FPOINTER" (fun id file ->
       let ast = db.Db.defs.Db.toplevels#assoc id in
-      let funcvars = Lib_parsing_php.get_all_funcvars_any (Ast.Toplevel ast) in
+      let funcvars = Lib_parsing_php.get_funcvars_any (Ast.Toplevel ast) in
       funcvars +> List.iter (fun dvar ->
         pr2 dvar;
         let prefixes =
@@ -619,9 +602,6 @@ let actions () = [
 
   "-scope_php", " <file>",
   Common.mk_action_1_arg test_scope_php;
-
-  "-visit2_php", "   <file>",
-    Common.mk_action_1_arg test_visit2_php;
 
   "-weak_php", " <file>",
   Common.mk_action_1_arg test_typing_weak_php;

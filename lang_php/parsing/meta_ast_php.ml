@@ -1163,6 +1163,30 @@ and vof_program v =
     vof_list vof_toplevel v
   )
 
+and vof_entity =
+  function
+  | FunctionE v1 ->
+      let v1 = vof_func_def v1 in Ocaml.VSum (("FunctionE", [ v1 ]))
+  | ClassE v1 -> let v1 = vof_class_def v1 in Ocaml.VSum (("ClassE", [ v1 ]))
+  | InterfaceE v1 ->
+      let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceE", [ v1 ]))
+  | StmtListE v1 ->
+      let v1 = Ocaml.vof_list vof_stmt v1
+      in Ocaml.VSum (("StmtListE", [ v1 ]))
+  | MethodE v1 ->
+      let v1 = vof_method_def v1 in Ocaml.VSum (("MethodE", [ v1 ]))
+  | ClassConstantE v1 ->
+      let v1 = vof_class_constant v1
+      in Ocaml.VSum (("ClassConstantE", [ v1 ]))
+  | ClassVariableE ((v1, v2)) ->
+      let v1 = vof_class_variable v1
+      and v2 = Ocaml.vof_list vof_modifier v2
+      in Ocaml.VSum (("ClassVariableE", [ v1; v2 ]))
+  | XhpDeclE v1 ->
+      let v1 = vof_xhp_decl v1 in Ocaml.VSum (("XhpDeclE", [ v1 ]))
+  | MiscE v1 ->
+      let v1 = Ocaml.vof_list vof_info v1 in Ocaml.VSum (("MiscE", [ v1 ]))
+
 and vof_any =
   function
   | Lvalue v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
@@ -1212,4 +1236,6 @@ and vof_any =
   | StmtAndDefs v1 ->
       let v1 = Ocaml.vof_list vof_stmt_and_def v1
       in Ocaml.VSum (("StmtAndDefs", [ v1 ]))
+
+  | Entity v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("Entity", [ v1 ]))
   

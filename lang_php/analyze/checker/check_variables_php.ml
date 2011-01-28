@@ -377,7 +377,7 @@ let vars_passed_by_ref_in_any ~find_entity =
           E.find_entity ~find_entity (Entity_php.Function, name)
           +> Common.do_option (fun id_ast ->
             match id_ast with
-            | Ast_entity_php.Function def ->
+            | Ast_php.FunctionE def ->
                 params_vs_args def.f_params (Some args)
             | _ -> raise Impossible
           );
@@ -400,7 +400,7 @@ let vars_passed_by_ref_in_any ~find_entity =
               E.find_entity ~find_entity (Entity_php.Class, name)
               +> Common.do_option (fun id_ast ->
                 match id_ast with
-                | Ast_entity_php.Class def ->
+                | Ast_php.ClassE def ->
                     (try 
                         let constructor_def = 
                           Class_php.get_constructor def in
@@ -561,7 +561,7 @@ let visit_prog
         E.find_entity ~find_entity (Entity_php.Class, name_class_parent)
         +> Common.do_option (fun id_ast ->
           (match id_ast with
-          | Ast_entity_php.Class def2 ->
+          | Ast_php.ClassE def2 ->
               
               let vars = Class_php.get_public_or_protected_vars_of_class def2
               in

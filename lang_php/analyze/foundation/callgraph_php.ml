@@ -23,7 +23,6 @@ module N = Namespace_php
 module E = Entity_php
 
 module V = Visitor_php
-module V2 = Visitor2_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -497,7 +496,7 @@ let callersinfo_opt_to_callersinfo ~callees_of_id idcallee x =
  * tagged as old: cos now we want to get all the instances
  * 
  *)
-let callees_of_ast id_ast =
+let callees_of_any any =
   let res = ref [] in
 
   let hooks = { Visitor_php.default_visitor with
@@ -519,33 +518,30 @@ let callees_of_ast id_ast =
     );
   } 
   in
-  let visitor = V2.mk_visitor hooks in
-  visitor.V2.vid_ast id_ast;
+  let visitor = V.mk_visitor hooks in
+  visitor any;
   !res
 
 
-let method_callees_of_ast idast = 
-  V2.do_visit_with_ref (fun aref ->
-    { V.default_visitor with
-      V.klvalue = (fun (k,vx) x ->
-        match Ast.untype  x with
-        | MethodCallSimple (var, t1, methname, args) ->
-            Common.push2 (N.name_to_nameS_wrap methname) aref;
-            k x
-        | _ -> 
-            k x
-      );
-    })
-    (fun visitor -> visitor.V2.vid_ast idast)
+let method_callees_of_any any = 
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.klvalue = (fun (k,vx) x ->
+      match Ast.untype  x with
+      | MethodCallSimple (var, t1, methname, args) ->
+          Common.push2 (N.name_to_nameS_wrap methname) aref;
+          k x
+      | _ -> 
+          k x
+    );
+  }) any
 
 (* We pass the information for self:: and parent:: as extra arguments. We
  * could also in the caller or at parsing time replace all occurences
  * of self:: and parent:: by their corresponding value. This information
  * is computable statically. This is what HPHP does.
  *)
-let static_method_callees_of_ast ~self ~parent idast = 
-  V2.do_visit_with_ref (fun aref ->
-    { V.default_visitor with
+let static_method_callees_of_any ~self ~parent any = 
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
       V.klvalue = (fun (k,vx) x ->
         match Ast.untype  x with
         | StaticMethodCallSimple (qu, methname, args) ->
@@ -587,7 +583,7 @@ let static_method_callees_of_ast ~self ~parent idast =
             k x
       );
     })
-    (fun visitor -> visitor.V2.vid_ast idast)
+    any
 
 
 (*****************************************************************************)

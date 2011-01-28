@@ -166,10 +166,8 @@ SRC_MLI=$(SRC_ML:ml=mli)
 SRC_NO_MLI=flag_analyze_php.ml 
 #TODO, mli files without their .ml counterpart included in the document
 SRC_MLI_NO_ML_NW= \
- basic/ast_entity_php.mli \
  basic/entity_php.mli \
  basic/lib_analyze_php.mli \
- basic/visitor2_php.mli \
  basic/namespace_php.mli \
  basic/comment_php.mli \
  basic/annotation_php.mli \

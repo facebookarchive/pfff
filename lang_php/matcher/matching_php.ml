@@ -115,8 +115,10 @@ module XMATCH = struct
    *)
   let equal_ast_binded_code a b =
     match a, b with
-    | Ast.Expr a, Ast.Expr b ->
-
+    | Ast.Expr _, Ast.Expr _ 
+    | Ast.Lvalue _, Ast.Lvalue _ 
+    | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
+      ->
         (* Note that because we want to retain the position information
          * of the matched code in the environment (e.g. for the -pvar
          * sgrep command line argument), we can not just use the
@@ -128,13 +130,6 @@ module XMATCH = struct
          * 
          * todo: optimize by caching the abstract_lined ?
          *)
-        let a = Lib_parsing_php.abstract_position_info_expr a in
-        let b = Lib_parsing_php.abstract_position_info_expr b in
-        a =*= b
-
-    | Ast.Lvalue _, Ast.Lvalue _ 
-    | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
-      ->
         let a = Lib_parsing_php.abstract_position_info_any a in
         let b = Lib_parsing_php.abstract_position_info_any b in
         a =*= b

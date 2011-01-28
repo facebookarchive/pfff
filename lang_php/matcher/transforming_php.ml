@@ -120,7 +120,10 @@ module XMATCH = struct
    *)
   let equal_ast_binded_code a b =
     match a, b with
-    | A.Expr a, A.Expr b ->
+    | A.Expr _, A.Expr _
+    | A.Lvalue _, A.Lvalue _ 
+    | A.XhpAttrValue _, A.XhpAttrValue _ 
+     ->
 
         (* Note that because we want to retain the position information
          * of the matched code in the environment (e.g. for the -pvar
@@ -131,14 +134,6 @@ module XMATCH = struct
          * the comparison we just need to remove/abstract-away 
          * the line number information in each ASTs.
          *)
-        let a = Lib_parsing_php.abstract_position_info_expr a in
-        let b = Lib_parsing_php.abstract_position_info_expr b in
-        a =*= b
-
-    | A.Lvalue _, A.Lvalue _ 
-    | A.XhpAttrValue _, A.XhpAttrValue _ 
-     ->
-        
         let a = Lib_parsing_php.abstract_position_info_any a in
         let b = Lib_parsing_php.abstract_position_info_any b in
         a =*= b

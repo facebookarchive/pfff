@@ -95,7 +95,7 @@ type database = {
      toplevels:   (id, Ast_php.toplevel) Oassoc.oassoc;
 
      (* NEVER USE THIS FIELD directly. Use the ast_of_id helper function! *)
-     asts: (id, Ast_entity_php.id_ast) Oassoc.oassoc;
+     asts: (id, Ast_php.entity) Oassoc.oassoc;
 
      (* consider also using toks_of_topid_of_id wrapper func *)
      str_of_topid:    (id, string)         Oassoc.oassoc;
@@ -201,7 +201,7 @@ val str_of_id:      id -> database -> string
 
 val kind_of_id: id -> database -> id_kind
 
-val ast_of_id:           id -> database -> Ast_entity_php.id_ast
+val ast_of_id:           id -> database -> Ast_php.entity
 val toks_of_topid_of_id: id -> database -> Parser_php.token list
 
 val is_top_id: id -> database -> bool

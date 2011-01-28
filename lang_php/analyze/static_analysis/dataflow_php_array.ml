@@ -288,7 +288,7 @@ let rec (track_function_call: string -> Database_php.database -> usage) =
      let id_ast = Db.ast_of_id id db in
 
      match id_ast with
-     | Ast_entity_php.Function def ->
+     | Ast_php.FunctionE def ->
 
          let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
          let flow = Controlflow_build_pil.cfg_of_stmts pil in
@@ -313,14 +313,14 @@ let rec (track_function_call: string -> Database_php.database -> usage) =
          )
 
 
-     | Ast_entity_php.Class _
-     | Ast_entity_php.Interface _
-     | Ast_entity_php.StmtList _
-     | Ast_entity_php.Method _
-     | Ast_entity_php.ClassConstant _
-     | Ast_entity_php.ClassVariable _
-     | Ast_entity_php.XhpDecl _
-     | Ast_entity_php.Misc _
+     | Ast_php.ClassE _
+     | Ast_php.InterfaceE _
+     | Ast_php.StmtListE _
+     | Ast_php.MethodE _
+     | Ast_php.ClassConstantE _
+     | Ast_php.ClassVariableE _
+     | Ast_php.XhpDeclE _
+     | Ast_php.MiscE _
          -> raise Todo
    ) +> List.flatten
    in

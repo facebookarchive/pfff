@@ -48,6 +48,6 @@ val show_10_most_recurring_unused_variable_names: unit -> unit
  * !!
  *)
 val find_entity: 
-  find_entity: Ast_entity_php.entity_finder option ->
+  find_entity: Entity_php.entity_finder option ->
   (Entity_php.id_kind * Ast_php.name) ->
-  Ast_entity_php.id_ast option
+  Ast_php.entity option
