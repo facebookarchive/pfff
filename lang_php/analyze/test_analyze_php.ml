@@ -90,16 +90,6 @@ let test_scope_php file =
 (* External tools cooperation (no db) *)
 (*****************************************************************************)
 
-let test_idl_to_php file =
-  let asts = ast_of_file file in
-  let idl_entries =
-    Builtins_php.ast_php_to_idl asts
-  in
-  idl_entries +> List.iter (fun idl ->
-    let s = Builtins_php.idl_entry_to_php_fake_code idl in
-    pr s
-  )
-
 let test_xdebug_dumpfile file =
   file +> Xdebug.iter_dumpfile (fun acall ->
     (* pr2 s *)
@@ -623,9 +613,6 @@ let actions () = [
   (* todo: adapt to PIL *)
   "-dfg_php",  " <file>",
     Common.mk_action_1_arg test_dfg_php;
-
-  "-idl_to_php", " <file>",
-  Common.mk_action_1_arg test_idl_to_php;
 
   "-deadcode_php", " <files_or_dirs>",
   Common.mk_action_n_arg test_deadcode_php;
