@@ -542,8 +542,9 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 1
        (0 "-test")
+       (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        )
      ))
    )
