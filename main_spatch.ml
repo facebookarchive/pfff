@@ -493,6 +493,60 @@ let remove_border_attribute_transfo = {
   grep_keywords = Some ["border"];
 }
 
+(* -------------------------------------------------------------------------*)
+(* Add action attribute to <ui:form> *)
+(* -------------------------------------------------------------------------*)
+
+(* 
+ * Here is the spatch (disjunction are currently not supported in spatch
+ * so have to do things manually):
+ * 
+ *   <ui:form
+ * (
+ *  action=...
+ * |
+ *  + action="#"
+ * )
+ *  >
+ * 
+ * todo: maybe we could generalize this transformation and add to
+ * spatch some command lines like: 
+ *  *  -add_xhp_attribute_if_not_there "ui:form" "action='#'"
+ *  *  -remove_xhp_attribute "ui:form" "border"
+ * a la lex-pass. Or maybe it's better to add support in the DSL directly
+ * so one can write the syntactical patch above.
+ *)
+let add_action_ui_form_transfo_func ast = 
+  let was_modified = ref false in
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kxhp_html = (fun (k, _) xhp ->
+      (* mostly copy paste of: pfff -dump_php tests/.../ui_form.php *)
+      match xhp with
+      | XhpSingleton((["ui"; "form"], info_tag), attributes, _)
+      | Xhp ((["ui"; "form"], info_tag), attributes, _, _, _) 
+        ->
+          if not (attributes +> 
+                  List.exists (fun ((attr_name,_), _tok, attr_val) ->
+                    attr_name = "action"
+          )) 
+          then begin
+            was_modified := true;
+            info_tag.PI.transfo <- PI.AddAfter (PI.AddStr " action=\"#\"");
+          end;
+          k xhp
+      | _ -> k xhp (* call the continuation *)
+    );
+  }
+  in
+  visitor (Program ast);
+  !was_modified
+
+let add_action_ui_form_transfo = {
+  trans_func = add_action_ui_form_transfo_func;
+  grep_keywords = Some ["ui:form"];
+}
+
+
 
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
@@ -546,6 +600,8 @@ let spatch_extra_actions () = [
 
   "-remove_border_attribute", " <files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo remove_border_attribute_transfo);
+  "-add_action_ui_form", " <files_or_dirs>",
+  Common.mk_action_n_arg (apply_transfo add_action_ui_form_transfo);
 
   "-test", "",
   Common.mk_action_0_arg unittest_spatch;
