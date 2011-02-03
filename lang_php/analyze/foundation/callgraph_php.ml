@@ -535,55 +535,42 @@ let method_callees_of_any any =
     );
   }) any
 
-(* We pass the information for self:: and parent:: as extra arguments. We
- * could also in the caller or at parsing time replace all occurences
- * of self:: and parent:: by their corresponding value. This information
- * is computable statically. This is what HPHP does.
+(* 
+ * history: we used to pass the information for self:: and parent:: as 
+ * extra arguments. We now instead in the caller (could do it at parsing time
+ * too) replace all occurences of self:: and parent:: by their corresponding 
+ * value. This information is computable statically. This is what HPHP does.
+ * 
+ * TODO: actually when have parent::foo it does not mean it's
+ * a static method. It could be a regular inherited public/protected 
+ * method
  *)
-let static_method_callees_of_any ~self ~parent any = 
+let static_method_callees_of_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-      V.klvalue = (fun (k,vx) x ->
-        match Ast.untype  x with
-        | StaticMethodCallSimple (qu, methname, args) ->
-            let sclass = 
-              match qu with
-              | Qualifier (classname, info1) ->
-                  Ast.name classname
+    V.klvalue = (fun (k,vx) x ->
+      match Ast.untype  x with
+      | StaticMethodCallSimple (qu, methname, args) ->
+          let sclass = 
+            match qu with
+            | Qualifier (classname, info1) ->
+                Ast.name classname
 
-              | Self (info_self, info1) ->
-                 (match self with
-                 | None ->
-                     pr2 (spf "PB: Use of self:: outside of a class def, %s"
-                                  (Ast.str_of_info info_self));
-                    "TODO"
-                 | Some sclass -> sclass
-                 )
-                      
-              | Parent (info_parent, info1) ->
-                 (match parent with
-                 | None ->
-                     pr2
-                       (spf "PB: Use of parent:: but could not find parent, %s"
-                                  (Ast.str_of_info info_parent));
-                     "TODO"
-                 | Some sclass -> sclass
-                 )
-            in
-            (match methname with
-            | Name (smeth, info2) ->
-                let e = N.NameQualifiedS (sclass, smeth), info2 in
-                Common.push2 e aref;
-                k x
-                
-                  
-            | XhpName _ -> 
-                failwith "TODO: XhpName"
-            )
-        | _ -> 
-            k x
-      );
-    })
-    any
+            | Self _ | Parent _ ->
+                failwith "use Unsugar_php.unsugar_self_parent"
+          in
+          (match methname with
+          | Name (smeth, info2) ->
+              let e = N.NameQualifiedS (sclass, smeth), info2 in
+              Common.push2 e aref;
+              k x
+          | XhpName _ -> 
+              failwith "TODO: XhpName"
+          )
+      | _ -> 
+          k x
+    );
+  })
+  any
 
 
 (*****************************************************************************)

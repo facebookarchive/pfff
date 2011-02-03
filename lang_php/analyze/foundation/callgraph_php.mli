@@ -136,12 +136,8 @@ val method_callees_of_any:
   Ast_php.any -> Namespace_php.nameS Ast_php.wrap list
 
 
-(* If we process the body of a method, this method can use PHP sugar with 
- * the self:: and parent:: syntax, hence the extra arguments.
- *)
+(* pre: unsugar_self_parent *)
 val static_method_callees_of_any: 
-  self: string option ->
-  parent: string option ->
   Ast_php.any -> Namespace_php.nameS Ast_php.wrap list
 
 (*x: callgraph_php.mli *)

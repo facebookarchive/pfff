@@ -100,3 +100,6 @@ let unsugar_self_parent_any a =
 let unsugar_self_parent_program ast =
   unsugar_self_parent_any (Program ast) +> 
     (function Program x -> x | _ -> raise Impossible)
+let unsugar_self_parent_toplevel x =
+  unsugar_self_parent_any (Toplevel x) +> 
+    (function Toplevel x -> x | _ -> raise Impossible)

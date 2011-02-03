@@ -14,6 +14,12 @@ val index_db_includes_requires:
   Database_php.database ->
   unit
 
+(* Method/class analysis. Not very precise for the moment, which is why
+ * it is not build by default by create_db
+ *)
+val index_db_method: 
+  Database_php.database -> unit
+
 val actions: unit -> Common.cmdline_actions
 
 (*e: database_php_build2.mli *)

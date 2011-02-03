@@ -225,6 +225,9 @@ val class_extenders_of_id: id_class -> database -> id_class list
 val class_implementers_of_id: id_interface -> database -> id_class list
 
 val classdef_of_nested_id_opt: id -> database -> Ast_php.class_def option
+val self_parent_of_nested_id: id -> database -> 
+  (string option * string option)
+  
 
 (* !!Use memoization so can be called many times for all the files
  * in a database without being too slow. But that means it does

@@ -7,7 +7,6 @@ val create_db :
   ?verbose_stats: bool ->
   ?db_support:Database_php.db_support ->
   ?phase:int -> 
-  ?use_glimpse:bool ->
   ?files:Common.filename list option ->
   Database_php.project -> 
   Database_php.database
@@ -26,12 +25,7 @@ val actions: unit -> Common.cmdline_actions
 
 val max_phase: int
 
-
-(* Method/class analysis. Not very precise for the moment, which is why
- * it is not build by default by create_db
- *)
-val index_db_method: 
-  Database_php.database -> unit
+(* see also database_php_build2.mli for other analysis (e.g. method analysis *)
 
 
 (* helpers used internally that can be useful to other *)

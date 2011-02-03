@@ -552,6 +552,19 @@ let classdef_of_nested_id_opt id db =
     )
   )
 
+let self_parent_of_nested_id id db =
+  (* look if id belongs to a class *)
+  match classdef_of_nested_id_opt id db with
+  | None -> None, None
+  | Some cdef ->
+      let self = Some (Ast.name cdef.c_name) in
+      let parent = cdef.c_extends |> Common.fmap (fun (tok, classname) ->
+        Ast.name classname
+      )
+      in
+      self, parent
+
+
 let complete_name_of_id id db = 
   try 
     let s = db.defs.id_name#assoc id in

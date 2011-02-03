@@ -15,15 +15,19 @@
 
 open Common
 
+open Ast_php
 open Database_php
 
+module Ast = Ast_php
 module Db = Database_php
+module N = Namespace_php
 
 module T = Type_php
 
 module Typing = Typing_php
 module TAC  = Type_annotater_php
 
+module CG = Callgraph_php
 
 
 (*****************************************************************************)
@@ -33,6 +37,178 @@ module TAC  = Type_annotater_php
 (*****************************************************************************)
 (* Build database intermediate steps *)
 (*****************************************************************************)
+
+
+(* Right now the method analysis is not very good, and so it's better
+ * to not include it by default
+ *)
+
+let hthrift_stuff = Common.hashset_of_list [
+  "skip";
+  "writeMessageBegin";
+  "writeMessageEnd";
+  "getTransport";
+  "flush";
+  "readMessageBegin";
+  "readMessageEnd";
+  "isStrictWrite";
+  "readI32";
+  "readString";
+  "read";
+  "write";
+  "flush";
+  "isStrictRead";
+  "writeFieldBegin"; "writeFieldEnd";
+  "writeStructBegin";   "writeStructEnd";
+  "readFieldBegin"; "readFieldEnd";
+  
+]
+
+let is_thrift_method_call s = 
+  Hashtbl.mem hthrift_stuff s
+
+let threshold_callee_candidates_db = 30 
+let threshold_callers_indirect_db = 100
+
+
+
+let index_db_method2 db = 
+
+
+  let partial_callers = Hashtbl.create 101 in
+  let partial_callees = Hashtbl.create 101 in
+
+  Database_php_build.iter_files_and_ids db "ANALYZING_METHODS" (fun id file -> 
+
+    (* TODO!!!! do the same work twice when the entity is a class ?
+     * need to add in db a class without its children
+     *)
+
+    let ast = Db.ast_of_id id db in
+    let idcaller = id in
+
+    let methodcallees = Callgraph_php.method_callees_of_any (Entity ast) in
+    (* old: db +> add_methodcallees_of_id(id, methodcallees); 
+     * We now want to cut off certain information such as the set of callers
+     * when the set is really too huge. We dont want a few outliers
+     * to penalize the whole analysis. As our analysis right now is quite
+     * simple, we got too many candidates for some method call sites, which
+     * in turns lead to the addition in the caller table of many
+     * ids to have a huge set, which can lead to this process to use more
+     * than 3Go of memory (this is because of the oassoc_cache in 
+     * database_php where we allow more then 5000 elements to always be
+     * in memory).
+     * So we now have this partial caller/callees table to solve partially
+     * the problem ...
+     * 
+     *)
+
+    methodcallees +> List.iter (fun (name, info) ->
+      let s = N.nameS name in
+      let candidates = 
+        (* can do a few IOs on bdb tables #defs and #kinds *)
+        Db.method_ids_of_string s db 
+      in
+
+      (* TODO let best_candidates, rest_callees_ommited_for_opti =
+      *)
+      let rest_callees_ommited_for_opti = candidates in
+
+      if List.length rest_callees_ommited_for_opti > 
+        threshold_callee_candidates_db 
+      then begin
+        pr2 (spf "too much callees: %s" s);
+
+        (* add info to have a partial_caller, partial_callee *)
+        Hashtbl.replace partial_callees idcaller true;
+        
+        rest_callees_ommited_for_opti +> List.iter (fun (id2) -> 
+          Hashtbl.replace partial_callers id2 true;
+
+        (*
+          if !Flag.verbose_database2 then 
+          let str_id2 = name_of_id id2 db in
+          pr2 (spf "not adding: %s --> .%s" str_id1 s);
+        *)
+        );
+      end (* TODO when we will have the split keep/rest_callees, then
+           * remove the else begin. Just do a sequence
+           *)
+      else begin
+        candidates +> List.iter (fun idcallee -> 
+          let extra = CG.default_call_extra_info in
+
+          let callopt = CG.MethodCallToOpt(idcallee, (name,info), extra) in
+          let calleropt = CG.MethodCallerIsOpt (idcaller, (name,info), extra) in
+
+          (* Unlike add_callees_of_id, we call this code
+           * multiple times for the same id. We must thus add directfuncs 
+           * to existing set of idfpos.
+           *)
+          db.uses.callees_of_f#apply_with_default idcaller
+            (fun old -> 
+              (* insert_set ? *)
+              Common.cons (callopt) old
+            ) (fun() -> []) +> ignore;
+
+          let nb_oldcallers = 
+            try List.length (db.uses.callers_of_f#assoc idcallee)
+            with Not_found -> 0
+          in
+
+          (* todo? count only the indirect in oldcallers ? *)
+          if nb_oldcallers > threshold_callers_indirect_db
+          then begin
+            if not (is_thrift_method_call s)
+            then pr2 (spf "too much callers already for: %s" s);
+
+            Hashtbl.replace partial_callers idcallee true;
+          end
+          else begin
+            db.uses.callers_of_f#apply_with_default idcallee
+              (fun old -> 
+                (* insert_set ? *)
+                Common.cons (calleropt) old
+              ) (fun() -> []) +> ignore;
+          end
+        )
+      end
+    )
+
+  );
+
+  (* update partial_caller/callee info in db *)
+  partial_callees +> Hashtbl.iter (fun id _v -> 
+    let old = 
+      try db.defs.extra#assoc id 
+      with Not_found -> 
+        pr2 "wierd: no extra_id_info";
+        Db.default_extra_id_info 
+    in
+    db.defs.extra#add2 (id, {old with partial_callees = true});
+  );
+  partial_callers +> Hashtbl.iter (fun id _v -> 
+    let old = 
+      try db.defs.extra#assoc id 
+      with Not_found -> 
+        pr2 "wierd: no extra_id_info";
+        Db.default_extra_id_info 
+    in
+    db.defs.extra#add2 (id, {old with partial_callers = true});
+  );
+  ()
+
+let index_db_method a = 
+  Common.profile_code "Db.index_db_method" (fun () -> index_db_method2 a)
+
+    (*
+    if phase >= 5 then index_db5 ?threshold_callee_db db;
+    db.flush_db();
+
+    if phase >= 6 then index_db6 db;
+    db.flush_db();
+    *)
+
 
 
 (* ---------------------------------------------------------------------- *)
@@ -236,6 +412,39 @@ let index_db_includes_requires ?hook_additional_includes a b =
  * ambiguities.
  *)
 
+
+(* ---------------------------------------------------------------------- *)
+(* step orthogonal:
+ *  - build glimpse index
+ *)
+
+let index_db_glimpse db = 
+  let dir = path_of_project db.project in
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files [(dir ^ "/")] in
+
+  (* todo? glimpse sub parts ? marshall ast, pack ? *)
+
+  Glimpse.glimpseindex_files files 
+    (glimpse_metapath_of_database db);
+  ()
+
+(*
+    ?(use_glimpse=false) 
+
+    if phase >= 2 && use_glimpse && db.db_support <> Db.Mem  
+    then index_db_glimpse db;
+...
+  "-index_db_glimpse", "   <db>", 
+    Common.mk_action_1_arg (fun dbname -> 
+      with_db ~metapath:dbname index_db_glimpse);
+
+...
+    (* perform some initialization on db ? populate with a few facts ? *)
+    if use_glimpse && db.db_support <> Db.Mem 
+    then Glimpse.check_have_glimpse ();
+
+
+*)
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)

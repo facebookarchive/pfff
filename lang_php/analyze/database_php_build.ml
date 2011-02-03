@@ -134,8 +134,8 @@ let iter_files_and_ids db msg f =
     Db.recurse_children (fun id -> f id file) db id;
   )
 
-(* todo: refactor the code of database_php_build.ml so does need
- * less this specific class case ?
+(* todo: refactor the code of database_php_build.ml so needs
+ * less this specific class case
  *)
 let users_of_class_in_any any =
   Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
@@ -648,6 +648,8 @@ let index_db1_2 db files =
            * Note that this id does not have a id_kind for now.
            *)
           | _ ->
+              let topelem = Unsugar_php.unsugar_self_parent_toplevel topelem in
+
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
         );
@@ -944,38 +946,35 @@ let index_db2 a =
  *
  *)
 
-let threshold_callee_candidates_db = 30 
-let threshold_callers_indirect_db = 100
-
 let index_db3_2 db = 
 
   (* how assert no modif on those important tables ? *)
 
   iter_files_and_ids db "ANALYZING3" (fun id file -> 
     let ast = Db.ast_of_id id db in
+    (* bugfix: was calling Unsugar_php.unsugar_self_parent_entity ast
+     * here but it's too later because an entity can be a nested id
+     * which does not have an enclosing class_def to set the classname.
+     * So the unsugaring must be done in phase 1
+     *)
+
     let idcaller = id in
 
-    (* the regular function calls sites *)
+    (* the regular function calls sites
+     * todo: if the entity is a class, then right now we will consider
+     * any calls inside its method. We used to use Visitor2 which was
+     * not visiting the class_statements of a class but now that we
+     * removed it, we visit everything. Not sure it's an issue.
+     *)
     let callees = 
       Callgraph_php.callees_of_any (Entity ast) in
 
-    (* todo: use unsugar_parent
-     * the static method calls sites 
+    (* TODO: actually when have parent::foo it does not mean it's
+     * a static method. It could be a regular inherited public/protected 
+     * method
      *)
-    let self, parent = 
-      (* look if id belongs to a class *)
-      match Db.classdef_of_nested_id_opt id db with
-      | None -> None, None
-      | Some cdef ->
-          let self = Some (Ast.name cdef.c_name) in
-          let parent = cdef.c_extends |> Common.fmap (fun (tok, classname) ->
-            Ast.name classname
-          )
-          in
-          self, parent
-    in
     let static_method_callees = 
-      Callgraph_php.static_method_callees_of_any ~self ~parent (Entity ast) in
+      Callgraph_php.static_method_callees_of_any (Entity ast) in
 
     db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
 
@@ -1124,184 +1123,8 @@ let index_db4_2 db =
   );
   ()
 
-
 let index_db4 a = 
   Common.profile_code "Db.index_db4" (fun () -> index_db4_2 a)
-
-(* ---------------------------------------------------------------------- *)
-
-(* Right now the method analysis is not very good, and so it's better
- * to not include it by default
- *)
-
-let hthrift_stuff = Common.hashset_of_list [
-  "skip";
-  "writeMessageBegin";
-  "writeMessageEnd";
-  "getTransport";
-  "flush";
-  "readMessageBegin";
-  "readMessageEnd";
-  "isStrictWrite";
-  "readI32";
-  "readString";
-  "read";
-  "write";
-  "flush";
-  "isStrictRead";
-  "writeFieldBegin"; "writeFieldEnd";
-  "writeStructBegin";   "writeStructEnd";
-  "readFieldBegin"; "readFieldEnd";
-  
-]
-
-let is_thrift_method_call s = 
-  Hashtbl.mem hthrift_stuff s
-
-let index_db_method2 db = 
-
-
-  let partial_callers = Hashtbl.create 101 in
-  let partial_callees = Hashtbl.create 101 in
-
-  iter_files_and_ids db "ANALYZING_METHODS" (fun id file -> 
-
-    (* TODO!!!! do the same work twice when the entity is a class ?
-     * need to add in db a class without its children
-     *)
-
-    let ast = Db.ast_of_id id db in
-    let idcaller = id in
-
-    let methodcallees = Callgraph_php.method_callees_of_any (Entity ast) in
-    (* old: db +> add_methodcallees_of_id(id, methodcallees); 
-     * We now want to cut off certain information such as the set of callers
-     * when the set is really too huge. We dont want a few outliers
-     * to penalize the whole analysis. As our analysis right now is quite
-     * simple, we got too many candidates for some method call sites, which
-     * in turns lead to the addition in the caller table of many
-     * ids to have a huge set, which can lead to this process to use more
-     * than 3Go of memory (this is because of the oassoc_cache in 
-     * database_php where we allow more then 5000 elements to always be
-     * in memory).
-     * So we now have this partial caller/callees table to solve partially
-     * the problem ...
-     * 
-     *)
-
-    methodcallees +> List.iter (fun (name, info) ->
-      let s = N.nameS name in
-      let candidates = 
-        (* can do a few IOs on bdb tables #defs and #kinds *)
-        Db.method_ids_of_string s db 
-      in
-
-      (* TODO let best_candidates, rest_callees_ommited_for_opti =
-      *)
-      let rest_callees_ommited_for_opti = candidates in
-
-      if List.length rest_callees_ommited_for_opti > 
-        threshold_callee_candidates_db 
-      then begin
-        pr2 (spf "too much callees: %s" s);
-
-        (* add info to have a partial_caller, partial_callee *)
-        Hashtbl.replace partial_callees idcaller true;
-        
-        rest_callees_ommited_for_opti +> List.iter (fun (id2) -> 
-          Hashtbl.replace partial_callers id2 true;
-
-        (*
-          if !Flag.verbose_database2 then 
-          let str_id2 = name_of_id id2 db in
-          pr2 (spf "not adding: %s --> .%s" str_id1 s);
-        *)
-        );
-      end (* TODO when we will have the split keep/rest_callees, then
-           * remove the else begin. Just do a sequence
-           *)
-      else begin
-        candidates +> List.iter (fun idcallee -> 
-          let extra = CG.default_call_extra_info in
-
-          let callopt = CG.MethodCallToOpt(idcallee, (name,info), extra) in
-          let calleropt = CG.MethodCallerIsOpt (idcaller, (name,info), extra) in
-
-          (* Unlike add_callees_of_id, we call this code
-           * multiple times for the same id. We must thus add directfuncs 
-           * to existing set of idfpos.
-           *)
-          db.uses.callees_of_f#apply_with_default idcaller
-            (fun old -> 
-              (* insert_set ? *)
-              Common.cons (callopt) old
-            ) (fun() -> []) +> ignore;
-
-          let nb_oldcallers = 
-            try List.length (db.uses.callers_of_f#assoc idcallee)
-            with Not_found -> 0
-          in
-
-          (* todo? count only the indirect in oldcallers ? *)
-          if nb_oldcallers > threshold_callers_indirect_db
-          then begin
-            if not (is_thrift_method_call s)
-            then pr2 (spf "too much callers already for: %s" s);
-
-            Hashtbl.replace partial_callers idcallee true;
-          end
-          else begin
-            db.uses.callers_of_f#apply_with_default idcallee
-              (fun old -> 
-                (* insert_set ? *)
-                Common.cons (calleropt) old
-              ) (fun() -> []) +> ignore;
-          end
-        )
-      end
-    )
-
-  );
-
-  (* update partial_caller/callee info in db *)
-  partial_callees +> Hashtbl.iter (fun id _v -> 
-    let old = 
-      try db.defs.extra#assoc id 
-      with Not_found -> 
-        pr2 "wierd: no extra_id_info";
-        Db.default_extra_id_info 
-    in
-    db.defs.extra#add2 (id, {old with partial_callees = true});
-  );
-  partial_callers +> Hashtbl.iter (fun id _v -> 
-    let old = 
-      try db.defs.extra#assoc id 
-      with Not_found -> 
-        pr2 "wierd: no extra_id_info";
-        Db.default_extra_id_info 
-    in
-    db.defs.extra#add2 (id, {old with partial_callers = true});
-  );
-  ()
-
-let index_db_method a = 
-  Common.profile_code "Db.index_db_method" (fun () -> index_db_method2 a)
-
-
-(* ---------------------------------------------------------------------- *)
-(* step orthogonal:
- *  - build glimpse index
- *)
-
-let index_db_glimpse db = 
-  let dir = path_of_project db.project in
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files [(dir ^ "/")] in
-
-  (* todo? glimpse sub parts ? marshall ast, pack ? *)
-
-  Glimpse.glimpseindex_files files 
-    (glimpse_metapath_of_database db);
-  ()
 
 (*****************************************************************************)
 (* create_db *)
@@ -1312,7 +1135,6 @@ let create_db
     ?(verbose_stats=true)
     ?(db_support=Db.Mem)
     ?(phase=max_phase) 
-    ?(use_glimpse=false) 
     ?(files=None) 
     prj  
  = 
@@ -1354,10 +1176,6 @@ let create_db
   in
   begin
 
-    (* perform some initialization on db ? populate with a few facts ? *)
-    if use_glimpse && db.db_support <> Db.Mem 
-    then Glimpse.check_have_glimpse ();
-
     let files = 
       match files with
       | None ->
@@ -1389,10 +1207,6 @@ let create_db
     let parsing_stats, bigpbs = 
       index_db1 db files
     in
-
-    if phase >= 2 && use_glimpse && db.db_support <> Db.Mem  
-    then index_db_glimpse db;
-
     db.flush_db();
 
     if phase >= 2 then index_db2 db;
@@ -1403,18 +1217,8 @@ let create_db
     if phase >= 4 then index_db4 db;
     db.flush_db();
 
-    (*
-    if phase >= 5 then index_db5 ?threshold_callee_db db;
-    db.flush_db();
-
-    if phase >= 6 then index_db6 db;
-    db.flush_db();
-    *)
-
-    (* Parsing_stat.print_stat_numbers (); *)
-    (*
-    *)
     if verbose_stats && !Flag.show_analyze_error then begin
+      (* Parsing_stat.print_stat_numbers (); *)
       Parse_info.print_parsing_stat_list   parsing_stats;
       !_errors +> List.iter pr2;
     end;
@@ -1444,11 +1248,6 @@ let actions () = [
   (* no -create_db as it is offered as the default action in 
    * main_db,ml
    *)
-
-  "-index_db_glimpse", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db_glimpse);
-
 (*
   "-index_db1", "   <db>", 
     Common.mk_action_1_arg (fun dbname -> 
@@ -1460,17 +1259,4 @@ let actions () = [
   "-index_db3", "   <db>", 
     Common.mk_action_1_arg (fun dbname -> 
       with_db ~metapath:dbname index_db3);
-(*
-  "-index_db4", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db4);
-  "-index_db5", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db5);
-  "-index_db6", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db6);
-
-*)
-
 ]

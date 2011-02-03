@@ -185,7 +185,9 @@ let callgraph_unittest =
         let id s = id s db in
         let callers id = callers id db in let _callees id = callees id db in
         assert_equal
-          (sort [id "A::a2"; id "B::b"])
+          (sort [id "A::a2"; id "B::b"; 
+                 (* todo? we now consider the class as callers too *)
+                 id "A::"; id "B::"])
           (sort (callers (id "A::a")));
       );
 
@@ -250,7 +252,7 @@ let callgraph_unittest =
         "
         in
         let db = db_from_string file in
-        Database_php_build.index_db_method db;
+        Database_php_build2.index_db_method db;
         (* shortcuts *)
         let id s = id s db in
         let _callers id = callers id db in let callees id = callees id db in
@@ -277,7 +279,7 @@ let callgraph_unittest =
         "
         in
         let db = db_from_string file in
-        Database_php_build.index_db_method db;
+        Database_php_build2.index_db_method db;
         (* shortcuts *)
         let id s = id s db in
         let _callers id = callers id db in let callees id = callees id db in
@@ -309,7 +311,7 @@ let class_unittest =
         (* shortcuts *)
         let id s = id s db in
         assert_equal
-          (sort [id "B::foo"; id "c"])
+          (sort [id "B::foo"; id "c"; id "B::"])
           (sort (Db.class_users_of_id (id "A::") db));
 
       );

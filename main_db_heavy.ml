@@ -55,7 +55,7 @@ let main_action xs =
           ~phase:!phase
           prj 
       in
-      if !index_method then Database_php_build.index_db_method db;
+      if !index_method then Database_php_build2.index_db_method db;
 
       Database_php.close_db db;
       ()
