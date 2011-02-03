@@ -648,7 +648,12 @@ let index_db1_2 db files =
            * Note that this id does not have a id_kind for now.
            *)
           | _ ->
-              let topelem = Unsugar_php.unsugar_self_parent_toplevel topelem in
+              let topelem = 
+                try Unsugar_php.unsugar_self_parent_toplevel topelem 
+                with Failure s ->
+                  pr2_err (spf "FAILURE in %s: %s" file s);
+                  topelem
+              in
 
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
