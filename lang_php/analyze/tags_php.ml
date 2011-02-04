@@ -23,7 +23,6 @@ module Tags = Tags_file
 
 module Db = Database_code
 
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -60,10 +59,10 @@ let tag_of_name filelines name =
 (* Main function *)
 (*****************************************************************************)
 
-(* todo: use defs_php.ml instead *)
 let tags_of_ast ast filelines = 
 
-    let defs = Defs_uses_php.defs_of_any (Program ast) in
+  let ast = Unsugar_php.unsugar_self_parent_program ast in
+  let defs = Defs_uses_php.defs_of_any (Program ast) in
     
     defs +> List.map (fun (kind, name, enclosing_name_opt) ->
       match kind with
@@ -126,7 +125,14 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
     Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
     let filelines = Common.cat_array file in
-    let defs = tags_of_ast ast filelines in
+    let defs = 
+      try tags_of_ast ast filelines 
+      with 
+      | Timeout -> raise Timeout
+      | exn -> 
+          pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+          []
+    in
       
     (file, defs)
   )
