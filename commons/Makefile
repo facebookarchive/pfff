@@ -94,7 +94,8 @@ endif
 
 
 ifeq ($(FEATURE_JSON_BUILTIN_COMMONS),1)
-SRC+=  json_common.ml
+SRC+=  
+#NOMORE: json_common.ml
 endif
 
 ifeq ($(FEATURE_SEXP_BUILTIN_COMMONS),1)
@@ -156,7 +157,8 @@ MYSEXPSRC=sexp_common.ml
 SEXPINCLUDES=-I ../ocamlsexp -I ../external/ocamltarzan/lib-sexp -I ../../ocamltarzan/lib-sexp
 
 #binprot
-MYBINSRC=bin_common.ml
+MYBINSRC=
+#NOMORE: bin_common.ml
 BININCLUDES=-I ../ocamltarzan/lib-binprot -I ../../ocamltarzan/lib-binprot
 
 #ocamlgraph
