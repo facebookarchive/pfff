@@ -649,10 +649,7 @@ let index_db1_2 db files =
            *)
           | _ ->
               let topelem = 
-                try Unsugar_php.unsugar_self_parent_toplevel topelem 
-                with Failure s ->
-                  pr2_err (spf "FAILURE in %s: %s" file s);
-                  topelem
+                Unsugar_php.unsugar_self_parent_toplevel topelem 
               in
 
               let id = db +> add_toplevel2 file (topelem, info_item) in

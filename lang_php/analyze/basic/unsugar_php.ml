@@ -50,10 +50,17 @@ let resolve_class_name qu in_class =
       name, tok1, tok2
   | Parent (tok1, tok2), (Some (_, Some parent)) -> 
       parent, tok1, tok2
-  | Self _, None ->
-      failwith ("Use of self:: outside of a class")
-  | Parent _, _ ->
-      failwith "Use of parent:: in a class without a parent"
+  | Self (tok1, tok2), None ->
+      (* I used to failwith, but our codebase contains such crap
+       * and we don't want all of our analysis to fail on one file
+       * just because of those wrong self/parent. Turns them
+       * into regular unknwon class so get the same benefits.
+       *)
+      pr2 ("PB: Use of self:: outside of a class");
+      Name ("UnkwnownUseOfSelf", tok1), tok1, tok2
+  | Parent (tok1, tok2), _ ->
+      pr2 "PB: Use of parent:: in a class without a parent";
+      Name ("UnkwnownUseOfParent", tok1), tok1, tok2
 
 (*****************************************************************************)
 (* Main entry point *)
