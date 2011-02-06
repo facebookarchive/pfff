@@ -306,7 +306,7 @@ The source code of \tm is governed by the following copyright:
 #include "About.tex.nw"
 
 
-\section{Examples of use}
+\section{Examples of Use}
 
 % manual
 % treedir 
@@ -1392,7 +1392,7 @@ let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) =
 \cite{treemap-cushion}
 
 
-\section{Extra features}
+\section{Extra Features}
 \label{sec:xxx}
 
 \subsection{Nesting}
@@ -1518,7 +1518,7 @@ let info_of_file_under_cursor_default = fun status (f, _) ->
 @ 
 
 
-\section{JSON reader}
+\section{JSON Reader}
 \label{sec:xxx}
 
 \begin{verbatim}
@@ -1928,7 +1928,9 @@ type treemap_rendering = treemap_rectangle list
 <<signature algos>>
 
 val render_treemap_algo: 
-  ?algo:algorithm -> ('dir, 'file) treemap -> treemap_rendering
+  ?algo:algorithm -> 
+  ?big_borders:bool ->
+  ('dir, 'file) treemap -> treemap_rendering
 
 
 
@@ -1953,6 +1955,10 @@ val tree_of_dirs_or_files:
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
   Common.path list -> 
+  (Common.dirname, Common.filename * 'a) Common.tree
+
+val remove_singleton_subdirs:
+  (Common.dirname, Common.filename * 'a) Common.tree ->
   (Common.dirname, Common.filename * 'a) Common.tree
 
 
@@ -2184,9 +2190,7 @@ let layoutf_of_algo algo =
   | Ordered pivotf -> ordered_layout ~pivotf
 
 
-let (render_treemap_algo2: 
-      ?algo:algorithm -> ('dir, 'file) treemap -> treemap_rendering) = 
- fun ?(algo=Classic) treemap ->
+let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
   let flayout = layoutf_of_algo algo in
 
   let treemap_rects = ref [] in
@@ -2224,13 +2228,23 @@ let (render_treemap_algo2:
 
         (* does not work, weird *)
         let border = 
+          if not big_borders then
           match depth with
           | 1 -> 0.0
-          | 2 -> 0.002
+          | 2 -> 0.003
           | 3 -> 0.001
           | 4 -> 0.0005
           | 5 -> 0.0002
           | _ -> 0.0
+          else 
+          match depth with
+          | 1 -> 0.0
+          | 2 -> 0.003
+          | 3 -> 0.0015
+          | 4 -> 0.0010
+          | 5 -> 0.0008
+          | 6 -> 0.0005
+          | _ -> 0.0002
         in
         let p = { 
           x = p.x +. border;
@@ -2269,9 +2283,9 @@ let (render_treemap_algo2:
   
   List.rev !treemap_rects
 
-let render_treemap_algo ?algo x = 
+let render_treemap_algo ?algo ?big_borders x = 
   Common.profile_code "Treemap.render_treemap" (fun () -> 
-    render_treemap_algo2 ?algo x)
+    render_treemap_algo2 ?algo ?big_borders x)
 
 (*****************************************************************************)
 (* Main display function  *)
@@ -2435,6 +2449,23 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
   Common.profile_code "Treemap.tree_of_dirs_or_files" (fun () ->
     tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook x
   )
+
+(* Some software, especially java have often a long chain
+ * of single directory, like org/eclipse/...
+ * which then introduce extra depth in the treemap which leads
+ * to overlapping labels and very small labels for the actual
+ * childrens. This function removes those intermediate singleton
+ * sub directories.
+ *)
+let rec remove_singleton_subdirs tree = 
+  match tree with
+  | Leaf x -> tree
+  | Node (x, [Node (y, ys)]) ->
+      (* todo? merge x and y ? *)
+      remove_singleton_subdirs (Node (x, ys))
+  | Node (x, ys) ->
+      Node (x, List.map remove_singleton_subdirs ys)
+
 (*****************************************************************************)
 (* Testing *)
 (*****************************************************************************)

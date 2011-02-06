@@ -113,7 +113,7 @@ SRC_VIEWS=$(SRC_MLI) $(SRC_ML) ../main_codemap.ml
 
 #------------------------------------------------------------------------------
 sync:
-	for i in $(SRC_VIEWS); do $(SYNCWEB) $(SRC_ORIG) $$i || exit 1; done 
+	for i in $(SRC_VIEWS); do echo $$i; $(SYNCWEB) $(SRC_ORIG) $$i || exit 1; done 
 
 
 pdf:
