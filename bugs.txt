@@ -1,2 +1,2 @@
-Send a mail to pad@facebook.com with [pfff] as a prefix in the 
+Send a mail to pad@fb.com with [pfff] as a prefix in the 
 subject of your mail.

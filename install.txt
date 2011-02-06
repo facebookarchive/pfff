@@ -23,7 +23,7 @@ If you want most of the good things just type:
   $ make opt
 
 This should generate a few binaries at the toplevel directory such
-as pfff or pfff_visual.
+as pfff or codemap.
 
 
 
