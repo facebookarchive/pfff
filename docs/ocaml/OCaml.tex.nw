@@ -6,6 +6,7 @@
 
 \newif\iffinal
 \newif\ifverbose
+\newif\iffacebook
 
 %\finaltrue\verbosefalse
 \finalfalse\verbosetrue
@@ -279,6 +280,43 @@ Yoann Padioleau\\
 
 \section{[[main.ml]] template}
 
+\chapter{Editing}
+
+\section{Emacs}
+
+\subsection{Tuareg mode}
+%good color
+%more colors
+
+\subsection{Tags}
+% use pfff/tags :)
+
+\subsection{Type Inference feedback}
+% .annot 
+
+% ocamlc -dtype
+% C-c C-t
+
+\subsection{Debugging}
+%ocamldebug !!!
+
+\subsection{[[project.el]] template}
+
+%c-c c-g
+%c-c c-l
+
+\subsection{Addons}
+
+\section{Vi}
+
+\section{Codemap}
+
+\chapter{Testing}
+
+% my example, quickcheck, my regression style
+
+% ounit?, 
+
 \chapter{Debugging}
 
 %ocamlc -g 
@@ -315,41 +353,6 @@ Amazing debugger. Can go back in time.
 
 %cool for exn
 %backtrace good, but cant see value of args (perl better for that)
-
-\chapter{Testing}
-
-% my example, quickcheck, my regression style
-
-% ounit?, 
-
-\chapter{Emacs}
-
-\section{Tuareg mode}
-%good color
-%more colors
-
-\section{Tags}
-% use pfff/tags :)
-
-\section{Type Inference feedback under Emacs}
-% .annot 
-
-% ocamlc -dtype
-% C-c C-t
-
-\section{Debugging under Emacs}
-%ocamldebug !!!
-
-\section{[[project.el]] template}
-
-%c-c c-g
-%c-c c-l
-
-\section{Addons}
-
-\chapter{Vi}
-
-\chapter{Codemap}
 
 \chapter{Libraries}
 
@@ -404,7 +407,7 @@ Amazing debugger. Can go back in time.
 %  - +>, better sense of reading 
 %  - visitor
 %  - hooks
-% ocamltarzan/camlmix 
+% ocamltarzan/camlmix, -dump_ast, ocaml.ml
 
 %hashbtl, setg mapg
 
