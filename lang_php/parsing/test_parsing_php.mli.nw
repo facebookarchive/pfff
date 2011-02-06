@@ -26,12 +26,6 @@ val test_visit_php  : Common.filename -> unit
 
 <<test_parsing_php.mli>>=
 
-(* Returns the testsuite for parsing_php/. To be concatenated by 
- * the caller (e.g. in pfff/main_misc.ml ) with other testsuites and 
- * run via OUnit.run_test_tt 
- *)
-val unittest: OUnit.test
-
 (* This makes accessible the different test_xxx functions above from 
  * the command line, e.g. '$ pfff -parse_php foo.php' will call the 
  * test_parse_php function.

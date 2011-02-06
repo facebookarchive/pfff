@@ -73,6 +73,63 @@ open Parse_info
 (* ------------------------------------------------------------------------- *)
 <<AST toplevel>>
 
+(* The goal of the entity type is to lift up important entities which
+ * are originally nested in the ast such as methods.
+ * 
+ * history: was in ast_entity_php.ml before but better to put everything
+ * in one file.
+ *)
+type entity = 
+  | FunctionE of func_def
+  | ClassE of class_def
+  | InterfaceE of interface_def
+  | StmtListE of stmt list
+
+  | MethodE of method_def
+
+  | ClassConstantE of class_constant
+  | ClassVariableE of class_variable * modifier list
+
+  | XhpDeclE of xhp_decl
+
+  | MiscE of info list
+ (* with tarzan *)
+
+type any = 
+  | Lvalue of lvalue
+  | Expr of expr
+  | Stmt2 of stmt
+  | StmtAndDef of stmt_and_def
+  | StmtAndDefs of stmt_and_def list
+  | Toplevel of toplevel
+  | Program of program
+  | Entity of entity
+
+  | Argument of argument
+  | Parameter of parameter
+  | Parameters of parameter comma_list paren
+
+  | Body of stmt_and_def list brace
+
+  | ClassStmt of class_stmt
+  | ClassConstant2 of class_constant
+  | ClassVariable of class_variable
+
+  | ListAssign of list_assign
+  | ColonStmt2 of colon_stmt
+  | Case2 of case
+ 
+  | XhpAttribute of xhp_attribute
+  | XhpAttrValue of xhp_attr_value
+  | XhpHtml2 of xhp_html
+
+  | StaticScalar of static_scalar
+
+  | Info of info
+  | InfoList of info list
+
+  (* with tarzan *)
+
 (*****************************************************************************)
 (* Comments *)
 (*****************************************************************************)
@@ -84,14 +141,13 @@ open Parse_info
 (*****************************************************************************)
 let noType () = ({ t = [Type_php.Unknown]})
 let noTypeVar () = ({ tlval = [Type_php.Unknown]})
-let noScope () = ref (Scope_php.NoScope)
+let noScope () = ref (Scope_code.NoScope)
 let noFtype () = ([Type_php.Unknown])
 
-let fakeInfo ?(next_to=None) str = 
-  { 
-    pinfo = FakeTokStr (str, next_to);
-    transfo = NoTransfo;
-    comments = ();
+let fakeInfo ?(next_to=None) str = { 
+  token = FakeTokStr (str, next_to);
+  comments = ();
+  transfo = NoTransfo;
   }
 @ 
 
@@ -124,6 +180,12 @@ let unarg arg =
   | Arg e -> e
   | ArgRef _ -> failwith "Found a ArgRef"
 
+let unargs xs = 
+  uncomma xs +> Common.partition_either (function
+  | Arg e -> Left e
+  | ArgRef (t, e) -> Right (e)
+  )
+
 let unmodifiers class_vars = 
   match class_vars with
   | NoModifiers _ -> []
@@ -137,14 +199,7 @@ let untype (e, xinfo) = e
 @ 
 
 <<ast_php.ml>>=
-let parse_info_of_info ii = 
-  match ii.pinfo with
-  | OriginTok pinfo -> pinfo
-  (* TODO ? dangerous ? *)
-  | ExpandedTok (pinfo_pp, pinfo_orig, offset) -> pinfo_pp
-  | FakeTokStr _
-  | Ab 
-    -> failwith "parse_info_of_info: no OriginTok"
+let parse_info_of_info = Parse_info.parse_info_of_info
 @ 
 
 <<ast_php.ml>>=
@@ -158,30 +213,11 @@ let col_of_info  ii = (parse_info_of_info ii).Parse_info.column
 @ 
 
 <<ast_php.ml>>=
-let pinfo_of_info ii = ii.pinfo
+let pinfo_of_info = Parse_info.pinfo_of_info
 @ 
 
 <<ast_php.ml>>=
-let rewrap_str s ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok pi -> 
-        OriginTok { pi with Parse_info.str = s;}
-    | FakeTokStr (s, next_to) -> 
-        FakeTokStr (s, next_to)
-    | Ab -> Ab
-    | ExpandedTok _ -> 
-        failwith "rewrap_str: ExpandedTok not allowed here"
-    )
-  }
-let rewrap_parse_info pi ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok _oldpi -> OriginTok pi
-    | FakeTokStr _  | Ab | ExpandedTok _ -> 
-        failwith "rewrap_parseinfo: no OriginTok"
-    )
-  }
+let rewrap_str = Parse_info.rewrap_str
 @ 
 
 <<ast_php.ml>>=
@@ -189,10 +225,7 @@ let rewrap_parse_info pi ii =
 let string_of_info ii = 
   Parse_info.string_of_parse_info (parse_info_of_info ii)
 
-let is_origintok ii = 
-  match ii.pinfo with
-  | OriginTok pi -> true
-  | FakeTokStr _ | Ab | ExpandedTok _ -> false
+let is_origintok = Parse_info.is_origintok
 
 
 type posrv = 
@@ -255,7 +288,7 @@ let set_type (e: expr) (ty: Type_php.phptype) =
  *)
 
 let al_info x = 
-  { x with pinfo = Ab }
+  { x with token = Ab }
 @ 
 
 <<ast_php.ml>>=

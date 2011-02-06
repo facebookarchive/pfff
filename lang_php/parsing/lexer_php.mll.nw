@@ -164,9 +164,9 @@ and st_in_xhp_text current_tag = parse
       let xs = Common.split ":" tag in
       if (xs <> current_tag)
       then begin
-        failwith (spf "XHP: wrong closing tag for, %s != %s"
+        pr2 (spf "XHP: wrong closing tag for, %s != %s"
                      (Common.join ":" xs)
-                     (Common.join ":" current_tag))
+                     (Common.join ":" current_tag));
       end;
       pop_mode ();
       T_XHP_CLOSE_TAG(Some xs, tokinfo lexbuf)
@@ -332,13 +332,15 @@ let rec current_mode () =
 @ 
 
 <<function tokens>>=
-let tokens2 file = 
+let tokens2 ?(init_state=Lexer_php.INITIAL) file = 
   let table     = Parse_info.full_charpos_to_pos_large file in
 
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
     Lexer_php.reset();
+    Lexer_php._mode_stack := [init_state];
+
     try 
       <<function phptoken>>
 
@@ -366,8 +368,8 @@ let tokens2 file =
 
 
 <<function tokens>>=
-let tokens a = 
-  Common.profile_code "Parse_php.tokens" (fun () -> tokens2 a)
+let tokens ?init_state a = 
+  Common.profile_code "Parse_php.tokens" (fun () -> tokens2 ?init_state a)
 @ 
 
 <<function phptoken>>=
@@ -448,8 +450,8 @@ let set_mode mode =
 \subsection{Position information}
 
 <<fill in the line and col information for tok>>=
-let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
-{ ii with Ast.pinfo=
+let tok = tok +> TH.visitor_info_of_tok (fun ii ->
+{ ii with Parse_info.token=
   (* could assert pinfo.filename = file ? *)
        match Ast.pinfo_of_info ii with
        | Parse_info.OriginTok pi ->
@@ -516,28 +518,9 @@ but probably simpler to use the [[cur_tok]] technique.
 
 
 <<parse tokens_state helper>>=
-type tokens_state = {
-  mutable rest :         Parser_php.token list;
-  mutable current :      Parser_php.token;
-  (* it's passed since last "checkpoint", not passed from the beginning *)
-  mutable passed :       Parser_php.token list;
-  (* if want to do some lalr(k) hacking ... cf yacfe.
-   * mutable passed_clean : Parser_php_c.token list;
-   * mutable rest_clean :   Parser_php_c.token list;
-   *)
-}
 @ 
 
 <<parse tokens_state helper>>=
-let mk_tokens_state toks = 
-  { 
-    rest       = toks;
-    current    = (List.hd toks);
-    passed = []; 
-    (* passed_clean = [];
-     * rest_clean = (toks +> List.filter TH.is_not_comment);
-     *)
-  }
 @ 
 
 <<parse tokens_state helper>>=
@@ -545,12 +528,12 @@ let mk_tokens_state toks =
  * 'tr' means 'token refs'.
  *)
 let rec lexer_function tr = fun lexbuf ->
-  match tr.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.current)
+  match tr.PI.rest with
+  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
   | v::xs -> 
-      tr.rest <- xs;
-      tr.current <- v;
-      tr.passed <- v::tr.passed;
+      tr.PI.rest <- xs;
+      tr.PI.current <- v;
+      tr.PI.passed <- v::tr.PI.passed;
 
       if TH.is_comment v ||
         (* TODO a little bit specific to FB ? *)
@@ -561,261 +544,6 @@ let rec lexer_function tr = fun lexbuf ->
         )
       then lexer_function (*~pass*) tr lexbuf
       else v
-
-
-
-(*****************************************************************************)
-(* Preprocessor (e.g. XHP) helper functions *)
-(*****************************************************************************)
-
-
-(* update: now that pfff supports XHP construts directly, there is far
- * less need for preprocessor support and merging tokens.
- * 
- * 
- * Pfff allows the user to pass a preprocessor command on the command line,
- * which makes it possible to parse for instance XHP code.
- * 
- * The preprocessor will generate a file in /tmp which means
- * errors or further analysis will report position information
- * on this tmp file. This can be inconvenient. If the
- * preprocessor maintain line positions (which is the mostly case for instance
- * with XHP), we can slightly improve the situation by
- * changing the .file field in parse_info.
- * 
- * Preprocessors such as XHP also remove comments, spaces, and indentations.
- * It can be useful to merge the original comments/spaces/indents in the 
- * original file with the tokens in the expanded file. This makes it easier
- * to support refactoring on XHP code for most of the tokens. Our solution
- * to merge is: 
- *  - transform certain tokens in the original file as 
- *    TCommentPP tokens when they were transformed or passed by
- *    the preprocessor,
- *  - mark the new tokens from the preprocessed code with a ExpandedTok
- *  - adjust the file and position information from similar tokens with
- *    the information from the original file.
- * 
- * Merging is not always possible if the preprocessor introduce really new
- * tokens than the original PHP parser does not understand. In the case
- * of XHP, which mainly use '<', ':'. '>' and strings, this is mostly ok.
- * Nevertheless the original code can also contain 
- * quotes inside HTML snippet which confuse completely the 
- * original lexer which then produce tokens that are too different
- * to the tokens after preprocessing (see tests/xhp/xhp_line_bug4.php). 
- * It is then too hard to synchronize them. What is important 
- * when we have problems synchronizing, is to fall back to a default mode
- * where everything is marked as ExpandedTok and TCommentPP.
- *)
-
-
-(* a few helpers *)
-
-let group_tokens_by_line toks = 
-
-  let rec aux current_line current_toks  xs =
-    match xs with
-    | [] -> 
-        [current_line,  List.rev current_toks]
-    | x::xs ->
-        let line = TH.line_of_tok x in
-        (match line <=> current_line with
-        | Common.Inf -> 
-            failwith ("Impossible: wrong order of tokens: " ^ TH.str_of_tok x)
-        | Common.Equal ->
-            aux current_line (x::current_toks) xs
-        | Common.Sup -> 
-            let hd = current_line, List.rev current_toks in
-            hd::aux line [x] xs
-        )
-  in
-  aux 1 [] toks
-
-let comment_pp_ize toks = 
-  toks |> List.map (fun tok -> 
-    let info = TH.info_of_tok tok in 
-    Parser_php.TCommentPP info
-  )
-
-let mark_as_expanded last_orig_parse_info toks =
-  let cnt = ref (String.length (last_orig_parse_info.Parse_info.str)) in
-  toks |> List.map (fun tok -> 
-    let len = String.length (TH.str_of_tok tok) in
-    cnt := !cnt + len;
-    tok |> TH.visitor_info_of_tok (fun info -> 
-      let parse_info_in_pp = Ast.parse_info_of_info info in
-      { info with 
-        Ast.pinfo = Parse_info.ExpandedTok (
-          parse_info_in_pp, 
-          last_orig_parse_info, 
-          !cnt)
-      }
-    )
-  )
-
-
-(* Merging tokens on a single line.
- *
- * As a first cut, we just want to know if this line has the same non-comment 
- * tokens in the original and preprocessed code. In that case the line 
- * didn't really needed XHP so we can return the original
- * set of tokens which will have better indentation, comments, etc.
- * Otherwise we return the tokens in the preprocessed code, but with
- * a special mark, ExpandedTok. We also add the original tokens 
- * as TCommentPP so that the unparser can still print back those
- * original tokens and pass the ExpandedTok one.
- * 
- * todo: could try to be more precise and merge more tokens inside
- * a line modified by XHP. Could do a diff at token level 
- * and adjust accordingly.
- * 
- *)
-let merge_tokens_line ~orig_toks ~pp_toks = 
-  let a = orig_toks in
-  let b = pp_toks in
-
-  let al_info_tok tok = 
-    TH.visitor_info_of_tok (fun info -> Ast.al_info info) tok
-  in
-  
-  let a' = Common.exclude TH.is_comment a |> List.map al_info_tok in
-  let b' = Common.exclude TH.is_comment b |> List.map al_info_tok in
-
-  if a' =*= b'
-  then a
-  else
-    (* todo: could do finer grained things here *)
-    let commented_a = comment_pp_ize a in
-    if null commented_a
-    then failwith "WEIRD: a XHP line has tokens but not the original one";
-    
-    let last_orig_info = Common.last commented_a |> TH.info_of_tok in
-    let last_orig_parse_info = Ast.parse_info_of_info last_orig_info in
-
-    let expanded_b = mark_as_expanded last_orig_parse_info b in
-
-    commented_a ++ expanded_b
-
-
-
-let  zip_and_sync ~toks_orig_lines ~toks_pp_lines = 
-  (* old: List.map snd toks_pp_lines +> List.flatten *)
-
-  (* This is used below just in one very ugly situation *)
-  let last_orig_tok = ref
-    (match toks_orig_lines with
-    | (xline, xtoks)::xs -> 
-        List.hd xtoks
-    | _ -> failwith  
-        "Impossible: if the file is empty then we should not be called at all"
-    )
-  in
-
-  let rec aux xs ys = 
-    match (xs, ys) with
-    | [], [] -> []
-
-    | ((xline, xtoks)::xs), [] -> 
-        (* The original can have some comments at the end of the file, which
-         * would be removed by XHP
-         *
-         * TODO: assert only space or eof 
-         *)
-        xtoks::aux xs []
-
-    | [], (yline, ytoks)::ys -> 
-        (* XHP usually cut the space and comments at the end of the file 
-         * so the original file should always be longer.
-         * 
-         * Nevertheless, in certain situations where the tokens 
-         * are very different with very different line positions, 
-         * sync can get confused. See xhp_line_bug4.php. So the best
-         * we can do here is to fall back to our invariant and 
-         * mark the tokens as ExpandedTok.
-         *)
-        let all_remaining_toks = 
-          (ytoks::List.map snd ys) |> List.flatten
-        in
-
-        let last_orig_parse_info = 
-          !last_orig_tok |> TH.info_of_tok |> Ast.parse_info_of_info in
-        let toks = mark_as_expanded last_orig_parse_info all_remaining_toks in
-        [toks]
-        
-        
-    | (((xline, xtoks)::xs) as a), (((yline, ytoks)::ys) as b) -> 
-        last_orig_tok := Common.last xtoks;
-        (match xline <=> yline with
-        | Inf ->
-            (* Sometimes XHP just remove certain tokens, like
-             * lines with   attribute x y; in which case we must
-             * remove them also from the original file. 
-             * 
-             * It's also usually because comments are passed by XHP.
-             * We could maybe assert to have only space  here or 
-             * tokens known to be passed by XHP like attribute
-             *)
-            let xtoks' = comment_pp_ize xtoks in
-            xtoks'::aux xs b
-        | Equal ->
-            let merged = merge_tokens_line ~orig_toks:xtoks ~pp_toks:ytoks in
-            merged::aux xs ys
-        | Sup ->
-            (* sometimes XHP remove some lines ... so have to adjust things 
-             *
-             *)
-            pr2 (spf "WEIRD, wrong line numbers in preprocessed file %d > %d"
-                     xline yline);
-                    
-            let b' = b |> List.map (fun (yline, ytoks) -> yline+1, ytoks) in
-            aux a b'
-        )
-  in
-  aux toks_orig_lines toks_pp_lines +> List.flatten
-
-
-(* Trying to merge tokens from the original file with the preprocessed file,
- * for instance to put back space, indentation and comments information
- * in the preprocessed file.
- *)
-let adapt_tokens_pp2 ~orig_filename toks_pp = 
-
-  (* The old algorithm was just to adjust the .file field so that error 
-   * reporting was slightly improved.
-   *)
-  if not !Flag.obsolete_merge_tokens_xhp then
-   toks_pp +> List.rev_map (fun tok ->
-    tok +> TH.visitor_info_of_tok (fun ii ->
-      let pinfo = Ast.pinfo_of_info ii in
-      { ii with Ast.pinfo =
-          match pinfo with
-          | Parse_info.OriginTok pi ->
-              Parse_info.OriginTok { pi with
-                Parse_info.file = orig_filename;
-              }
-          | Parse_info.FakeTokStr _
-          | Parse_info.Ab  
-            -> pinfo
-
-          | Parse_info.ExpandedTok _ -> 
-              raise Impossible
-      })
-  )  +> List.rev (* ugly, but need tail-call rev_map and so this rev *)
-  else 
-    (* algo: 
-     *  - split by line the tokens 
-     *  - for each line try to synchronize, 
-     *    by marking as TCommentPP the relevant tokens from toks_orig
-     *    and adding one from toks as ExpandedTok
-     *)
-    let toks_orig = tokens orig_filename in
-
-    let toks_pp_lines   = group_tokens_by_line toks_pp in
-    let toks_orig_lines = group_tokens_by_line toks_orig in
-    zip_and_sync ~toks_orig_lines ~toks_pp_lines
-
-let adapt_tokens_pp ~orig_filename toks_pp =
-  Common.profile_code "Parse_php.merge tokens" (fun () -> 
-    adapt_tokens_pp2 ~orig_filename toks_pp)
 
 @
 \l (*~pass*)
@@ -1016,6 +744,7 @@ as described in Section~\ref{sec:filter-comments-in-lexer}.
       let com = st_comment lexbuf in
       T_COMMENT(info +> tok_add_s com)
     }
+  | "/**/" { T_COMMENT(tokinfo lexbuf) }
 
   | "/**" { (* RESET_DOC_COMMENT(); *)
       let info = tokinfo lexbuf in 
@@ -1097,16 +826,15 @@ and st_comment = parse
 <<rule st_one_line_comment>>=
 and st_one_line_comment = parse
   | "?"|"%"|">" { let s = tok lexbuf in s ^ st_one_line_comment lexbuf }
-  | [^'\n' '\r' '?''%''>']* (ANY_CHAR as x)
+  | ([^'\n' '\r' '?''%''>']* as start) (ANY_CHAR as x)
       { 
-        let s = tok lexbuf in
         (match x with
         | '?' | '%' | '>' -> 
             yyless 1 lexbuf;
-            s ^ st_one_line_comment lexbuf
+            start ^ st_one_line_comment lexbuf
         (* end of recursion when new line or other character  *)
-        | '\n' -> s
-        | _ -> s
+        | '\n' -> start ^ "\n"
+        | c -> start ^ String.make 1 c
         )
       }
   | NEWLINE { tok lexbuf }
@@ -2159,7 +1887,9 @@ and st_var_offset = parse
             | TEQ _
             | T_DOUBLE_ARROW _
             | TCOLON _
-          ) when !Flag.xhp_builtin ->
+          )
+        | None (* when in sgrep/spatch mode, < is the first token *)
+          when !Flag.xhp_builtin ->
             push_mode (ST_IN_XHP_TAG xs);
             T_XHP_OPEN_TAG(xs, tokinfo lexbuf)
         | _ -> 
@@ -2196,7 +1926,7 @@ let tok     lexbuf  = Lexing.lexeme lexbuf
 
 let tokinfo_str_pos str pos = 
   { 
-    Ast.pinfo = Parse_info.OriginTok { Parse_info.
+    Parse_info.token = Parse_info.OriginTok { Parse_info.
       charpos = pos; 
       str     = str;
 
@@ -2205,8 +1935,8 @@ let tokinfo_str_pos str pos =
       column = -1; 
       file = "";
     };
+    transfo = Parse_info.NoTransfo;
     comments = ();
-    transfo = Ast.NoTransfo;
   }
 let tokinfo lexbuf  = 
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)

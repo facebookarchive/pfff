@@ -11,6 +11,8 @@ module Ast  = Ast_php
 module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
 
+open Ast_php
+
 @
 
 <<function program_of_program2>>=
@@ -63,7 +65,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       [Ast_php.FinalDef e, info_item]
   | ast::xs ->
       
-      let ii = Lib_parsing_php.ii_of_toplevel ast in
+      let ii = Lib_parsing_php.ii_of_any (Ast.Toplevel ast) in
       let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
       let toks_before_max, toks_after = 
@@ -91,57 +93,10 @@ let error_msg_tok tok =
   then Parse_info.error_message file (token_to_strpos tok) 
   else ("error in " ^ file  ^ "set verbose_parsing for more info")
 
-let print_bad line_error (start_line, end_line) filelines  = 
-  begin
-    pr2 ("badcount: " ^ i_to_s (end_line - start_line));
-
-    for i = start_line to end_line do 
-      let line = filelines.(i) in 
-
-      if i =|= line_error 
-      then  pr2 ("BAD:!!!!!" ^ " " ^ line) 
-      else  pr2 ("bad:" ^ " " ^      line) 
-    done
-  end
 @
 
 <<parse_php stat function>>=
-let default_stat file =  { 
-    filename = file;
-    correct = 0; bad = 0;
-(*
-    have_timeout = false;
-    commentized = 0;
-    problematic_lines = [];
-*)
-  }
 @ 
 
 <<parse_php stat function>>=
-let print_parsing_stat_list statxs =
-  let total = List.length statxs in
-  let perfect = 
-    statxs 
-      +> List.filter (function 
-      | {bad = n} when n = 0 -> true 
-      | _ -> false)
-      +> List.length 
-  in
-
-  pr2 "\n\n\n---------------------------------------------------------------";
-  pr2 (
-  (spf "NB total files = %d; " total) ^
-  (spf "perfect = %d; " perfect) ^
-  (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
-  );
-
-  let good = statxs +> List.fold_left (fun acc {correct = x} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x} -> acc+x) 0  in
-
-  let gf, badf = float_of_int good, float_of_int bad in
-  pr2 (
-  (spf "nb good = %d,  nb bad = %d " good bad) ^
-  (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
-   )
-  )
 @

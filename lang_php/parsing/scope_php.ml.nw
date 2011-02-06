@@ -17,15 +17,7 @@ open Common
 (*****************************************************************************)
 <<type phpscope>>
 
-let s_of_phpscope = function
-  | Global ->  "Global"
-  | Local ->  "Local"
-  | Param ->  "Param"
-  | Class ->  "Class"
-  | LocalExn ->  "LocalExn"
-  | LocalIterator ->  "LocalIterator"
-  | ListBinded ->  "ListBinded"
-  | NoScope ->  "NoScope"
+let s_of_phpscope = Scope_code.string_of_scope
 
 @ 
 
