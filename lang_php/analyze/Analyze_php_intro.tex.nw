@@ -331,7 +331,7 @@ Figure~\ref{fig:pfff-browser-screen} shows a screenshot of the
 [[pfff_browser]] tool in action.
 
 \begin{figure*}
-\resizebox{14cm}{20cm}{\rotatebox{90}{\includegraphics{../docs/manual/pfff_browser_screen}}}
+\resizebox{14cm}{20cm}{\rotatebox{90}{\includegraphics{../../docs/manual/pfff_browser_screen}}}
 %[angle=-90]
 \caption{GUI browser screenshot}
 %screenshit :)

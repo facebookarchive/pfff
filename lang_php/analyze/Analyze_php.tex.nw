@@ -2168,28 +2168,28 @@ val db_of_files_or_dirs: Common.path list -> Database_php.database
 
 \chapter{PHP Intermediate Language}
 
-#include "pil.ml.nw"
+#include "foundation/pil.ml.nw"
 
 \chapter{Control Flow Graph}
 
-#include "controlflow_php.ml.nw"
+#include "foundation/controlflow_php.ml.nw"
 
 
 \chapter{Data Flow Analysis}
 
-#include "dataflow_php.ml.nw"
+#include "foundation/dataflow_php.ml.nw"
 
 \chapter{Typing}
 
 \section{Trivial typing}
 
-#include "typing_trivial_php.ml.nw"
+#include "typing/typing_trivial_php.ml.nw"
 
 % and more 
 
 \chapter{Xdebug traces}
 
-#include "xdebug.ml.nw"
+#include "tools/xdebug.ml.nw"
 
 
 %\chapter{Database building}
@@ -2199,45 +2199,45 @@ val db_of_files_or_dirs: Common.path list -> Database_php.database
 
 \chapter{Code Rank}
 
-#include "code_rank_php.ml.nw"
+#include "static_analysis/code_rank_php.ml.nw"
 
 \chapter{Cyclomatic Complexity}
 
-#include "cyclomatic_php.ml.nw"
+#include "static_analysis/cyclomatic_php.ml.nw"
 
 \chapter{Dead code}
 
 
 % put also here dead statements ?
 
-#include "deadcode_php.ml.nw"
+#include "static_analysis/deadcode_php.ml.nw"
 
 
 \chapter{Tainted string analysis}
 
-#include "tainted_php.ml.nw"
+#include "static_analysis/tainted_php.ml.nw"
 
 \chapter{Data flow for arrays}
 
-#include "dataflow_php_array.ml.nw"
+#include "static_analysis/dataflow_php_array.ml.nw"
 
 \chapter{PHP Built-in Functions, Classes, and Globals}
 
-#include "builtins_php.ml.nw"
+#include "foundation/builtins_php.ml.nw"
 
 \chapter{PHPUnit}
 
-#include "phpunit.ml.nw"
+#include "tools/phpunit.ml.nw"
 
 \chapter{Code coverage}
 
 \section{Static coverage}
 
-#include "coverage_static_php.ml.nw"
+#include "static_analysis/coverage_static_php.ml.nw"
 
 \section{Dynamic coverage}
 
-#include "coverage_dynamic_php.ml.nw"
+#include "dynamic_analysis/coverage_dynamic_php.ml.nw"
 
 
 \chapter{Auxillary Code}

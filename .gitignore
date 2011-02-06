@@ -265,3 +265,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_erlang/parsing/parser_erlang.ml
 /lang_erlang/parsing/parser_erlang.mli
 /lang_erlang/parsing/parser_erlang.output
+/lang_php/analyze/Analyze_php.out
