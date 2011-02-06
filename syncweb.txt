@@ -4,7 +4,7 @@ the syncweb master is ~/pfff on macbook or linux dev machine
  - commons/ DEV
  - h_visualization/ MAC
  - lang_php/parsing/ DEV
- - lang_php/analyze/ ??
+ - lang_php/analyze/ DEV
  - lang_cpp/parsing/ ??
  - visual/ MAC
 
