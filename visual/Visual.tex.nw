@@ -344,6 +344,7 @@ let filter = ref Treemap_pl.ex_filter_file
 let db_file = ref (None: Common.filename option)
 (* let db_path = ref (Database.database_dir "/home/pad/www") *)
 let layer_file = ref (None: Common.filename option)
+let layer_dir = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -360,14 +361,24 @@ let main_action xs =
   let model = Async.async_make () in
 
   let layers = 
-    match !layer_file with
-    | None -> []
-    | Some file -> [Layer_code.load_layer file]
+    match !layer_file, !layer_dir, xs with
+    | Some file, _, _ -> 
+        [Layer_code.load_layer file]
+    | None, Some dir, _ 
+    | None, None, [dir] -> 
+        layers_in_dir dir +> List.map Layer_code.load_layer
+    | _ -> []
   in
   let layers = 
     Layer_code.build_index_of_layers 
       ~root 
-      (layers +> List.map (fun x -> x, true)) 
+      (match layers with 
+      | [layer] -> 
+          (* not active by default ? it causes some problems  *)
+          [layer, false]
+      | _ -> 
+          layers +> List.map (fun x -> x, false)
+      )
   in
 
   let dw = Model2.init_drawing treemap_generator model layers xs in
@@ -375,6 +386,7 @@ let main_action xs =
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
   let db_file = 
+    (* todo: do as for layers, put this logic of marshall vs json elsewhere *)
     match !db_file, xs with
     | None, [dir] ->
         let db = Filename.concat dir Database_code.default_db_name in
@@ -788,7 +800,7 @@ val mk_gui :
 
 (* ugly *)
 let root_orig () = 
-  (Common.last !Controller.dw_stack).M.root
+  (Common.list_last !Controller.dw_stack).M.root
 
 @ 
 
@@ -936,6 +948,26 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
           );
         ) +> ignore;
 
+      );
+      factory#add_submenu "_Layers" +> (fun menu -> 
+        let layers = 
+          !dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
+            (layer.Layer_code.title, active, (fun b -> 
+              if b then
+                Ui_layers.choose_layer ~root:(root_orig())
+                  (Some layer.Layer_code.title) dw;
+            ))
+          )
+        in
+        (* todo: again, make the architecture a layer so less special cases *)
+        let entries = [`R (
+             ("Architecture", true, (fun b ->
+               Ui_layers.choose_layer ~root:(root_orig()) None dw;
+             ))::
+             layers)
+        ]
+        in
+        GToolbox.build_menu menu ~entries
       );
 
       factory#add_submenu "_Misc" +> (fun menu -> 
@@ -1105,7 +1137,9 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GOTO_TOP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          Controller.dw_stack := [Common.last !Controller.dw_stack];
+          let top = Common.list_last !Controller.dw_stack in
+          (* put 2 in the stack because _go_back will popup one *)
+          Controller.dw_stack := [top; top];
           !Controller._go_back dw;
 
         )
@@ -1183,6 +1217,10 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
     );
+    Controller._refresh_legend := (fun () ->
+      GtkBase.Widget.queue_draw da3#as_widget;
+    );
+
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
@@ -1583,6 +1621,7 @@ This is kind of interfile "aspect"
 \end{verbatim}
 
 <<paint_legend>>=
+(* todo: make the architecture a layer so no need for special case *)
 let draw_legend ~cr =
 
   let archis = Archi_code.source_archi_list in
@@ -1606,8 +1645,9 @@ let draw_legend ~cr =
 let expose_legend da dw_ref ev = 
   let cr = Cairo_lablgtk.create da#misc#window in
 
+  (* todo: make the architecture a layer so no need for special case *)
   let dw = !dw_ref in
-  (if null dw.layers.Layer_code.layers
+  (if not (Layer_code.has_active_layers dw.layers)
   then Draw_legend.draw_legend ~cr
   else Draw_legend.draw_legend_layer ~cr dw.layers
   );
@@ -1772,6 +1812,13 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
   if font_size_real > Style.threshold_draw_dark_background_font_size_real
   then begin
+
+    (* erase what was done at the macrolevel *)
+    if Hashtbl.length context.layers_microlevel > 0 then begin
+      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "white") 
+        ~alpha:1.0 rect;
+    end;
+
     let alpha = 
       match context.nb_rects_on_screen with
       | n when n <= 2 -> 0.8
@@ -1786,14 +1833,23 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       (* draw a thin rectangle with aspect color *)
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
         ~line_width:(font_size / 2.) rect.T.tr_rect;
-    end;
+    end
   end;
 
-  (* highlighting layers (and grep-like queries) *)
+  (* highlighting layers (and grep-like queries at one point) *)
   let hmatching_lines = 
     try Hashtbl.find context.layers_microlevel file
     with Not_found -> Hashtbl.create 0
   in
+
+  (* todo: make sgrep_query a form of layer *)
+  let matching_grep_lines = 
+    try Hashtbl.find_all context.grep_query file
+    with Not_found -> []
+  in
+  matching_grep_lines +> List.iter (fun line ->
+    Hashtbl.add hmatching_lines line "purple"
+  );
 
   let nblines_per_column = 
     (layout.nblines / layout.split_nb_columns) +> ceil +> int_of_float in
@@ -1813,6 +1869,11 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.Text ("nw" | "tex"  | "texi" | "web")
     | FT.PL (FT.Lisp _)
     | FT.PL (FT.Haskell _)
+    | FT.PL (FT.Python)
+    | FT.PL (FT.Csharp)
+    | FT.PL (FT.Java)
+    | FT.PL (FT.Prolog _)
+    | FT.PL (FT.Erlang)
     ) ->
 
     let column = ref 0 in
@@ -1864,7 +1925,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
           | None -> ()
           | Some color ->
               CairoH.fill_rectangle ~cr 
-                ~alpha:0.5
+                ~alpha:0.25
                 ~color
                 ~x 
                 ~y:(y - layout.space_per_line) 
@@ -2076,7 +2137,7 @@ let paint2 dw =
   let rects = dw.treemap in
   let nb_rects = dw.nb_rects in
 
-  (if null dw.layers.Layer_code.layers
+  (if not (Layer_code.has_active_layers dw.layers)
   then
     (* phase 1, draw the rectangles *)
     rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
@@ -2260,6 +2321,65 @@ This is kind of inter-file "aspect". See also
 the regular archi_code treemap which is also
 about aspects.
 \end{verbatim}
+
+\subsection{UI}
+
+<<ui_layers.mli>>=
+val choose_layer: 
+  root:Common.dirname ->
+  string option (* layer title we want *) -> 
+  Model2.drawing ref -> 
+  unit
+@ 
+
+<<ui_layers.ml>>=
+<<Facebook copyright>>
+
+open Common
+
+module Controller = Controller2
+
+module L = Layer_code
+module M = Model2
+
+open Model2
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+let choose_layer ~root layer_title_opt dw_ref =
+  pr2 "choose_layer()";
+  let dw = !dw_ref in
+
+  let original_layers = dw.M.layers.L.layers +> List.map fst in
+  let layers_idx = 
+    Layer_code.build_index_of_layers 
+      ~root
+      (original_layers +> List.map (fun layer ->
+        layer, 
+        match layer_title_opt with
+        | None -> false
+        | Some title -> title =$= layer.L.title
+      ))
+  in
+  dw_ref := 
+    Model2.init_drawing 
+      ~width:dw.width
+      ~height:dw.height
+      ~width_minimap:dw.width_minimap
+      ~height_minimap:dw.height_minimap
+      dw.treemap_func 
+      dw.dw_model 
+      layers_idx
+      [root];
+  View_mainmap.paint !dw_ref;
+  !Controller._refresh_da ();
+  !Controller._refresh_legend ();
+  ()
+
+@ 
+
 
 \section{Navigation}
 
@@ -3456,15 +3576,24 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
   Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
   let extent = CairoH.text_extents cr_overlay readable_txt in
   let tw = extent.Cairo.text_width in
-  let _th = extent.Cairo.text_height in
+  let th = extent.Cairo.text_height in
 
+  let refx = x - tw / 2. in
+  let refy = y in
 
-  Cairo.move_to cr_overlay (x - tw / 2.) (y);
+  CairoH.fill_rectangle ~cr:cr_overlay 
+    ~x:(refx + extent.Cairo.x_bearing) ~y:(refy + extent.Cairo.y_bearing)
+    ~w:tw ~h:(th * 1.2)
+    ~color:"black"
+    ~alpha:0.5
+    ();
+
+  Cairo.move_to cr_overlay refx refy;
+  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
   CairoH.show_text cr_overlay readable_txt;
   
   (*
@@ -3876,9 +4005,15 @@ type ast =
 
   | Cpp of Parse_cpp.program2
 
-  | Lisp of Parse_lisp.program2
-  | Noweb of Parse_nw.program2
+  | Csharp of Parse_csharp.program2
+  | Java of Parse_java.program2
 
+  | Lisp of Parse_lisp.program2
+  | Erlang of Parse_erlang.program2
+
+  | Python of Parse_python.program2
+
+  | Noweb of Parse_nw.program2
 
 let _hmemo_file = Hashtbl.create 101
 
@@ -3935,6 +4070,38 @@ let parse_js2 file =
 let parse_js_cache a = 
   Common.profile_code "View.parse_js_cache" (fun () -> 
     match parse_js2 a with | Js a -> a | _ -> raise Impossible
+  )
+
+let parse_python2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Python (Parse_python.parse file +> fst))
+let parse_python_cache a = 
+  Common.profile_code "View.parse_python_cache" (fun () -> 
+    match parse_python2 a with | Python a -> a | _ -> raise Impossible
+  )
+
+let parse_csharp2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Csharp (Parse_csharp.parse file +> fst))
+let parse_csharp_cache a = 
+  Common.profile_code "View.parse_csharp_cache" (fun () -> 
+    match parse_csharp2 a with | Csharp a -> a | _ -> raise Impossible
+  )
+
+let parse_erlang2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Erlang (Parse_erlang.parse file +> fst))
+let parse_erlang_cache a = 
+  Common.profile_code "View.parse_erlang_cache" (fun () -> 
+    match parse_erlang2 a with | Erlang a -> a | _ -> raise Impossible
+  )
+
+let parse_java2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Java (Parse_java.parse file +> fst))
+let parse_java_cache a = 
+  Common.profile_code "View.parse_java_cache" (fun () -> 
+    match parse_java2 a with | Java a -> a | _ -> raise Impossible
   )
 
 let parse_cpp2 file = 
@@ -4131,6 +4298,138 @@ let tokens_with_categ_of_file file hentities =
         )
       ) +> List.flatten
 
+  | FT.PL (FT.Python) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_python_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_python.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_python.info_of_tok tok in
+          let s = Token_helpers_python.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
+
+  | FT.PL (FT.Csharp) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_csharp_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_csharp.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_csharp.info_of_tok tok in
+          let s = Token_helpers_csharp.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
+  | FT.PL (FT.Erlang) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_erlang_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_erlang.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_erlang.info_of_tok tok in
+          let s = Token_helpers_erlang.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
+
+  | FT.PL (FT.Java) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_java_cache file in
+      ast2 +> List.map (fun (ast, (_str, toks)) ->
+        (* computing the token attributes *)
+        Highlight_java.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_java.info_of_tok tok in
+          let s = Token_helpers_java.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = Parse_info.line_of_info info;
+                   c = Parse_info.col_of_info info;
+                 })
+
+        )
+      ) +> List.flatten
 
   | FT.PL (FT.Lisp _) ->
       let h = Hashtbl.create 101 in
@@ -4372,6 +4671,8 @@ let async_set v a =
   " <db_light_file>";
   "-with_layer", Arg.String (fun s -> layer_file := Some s),
   " <layer_file>";
+  "-with_layers", Arg.String (fun s -> layer_dir := Some s),
+  " <layer_dir>";
 
   "-test" , Arg.String (fun s -> test_mode := Some s),
   " <str> execute an internal script";
@@ -4380,6 +4681,12 @@ let async_set v a =
 
   "-ocaml_filter", Arg.Unit (fun () -> 
     filter := Treemap_pl.ocaml_filter_file),
+  " ";
+  "-ocaml_mli_filter", Arg.Unit (fun () -> 
+    filter := Treemap_pl.ocaml_mli_filter_file),
+  " ";
+  "-php_filter", Arg.Unit (fun () -> 
+    filter := Treemap_pl.php_filter_file),
   " ";
 
   "-verbose" , Arg.Set Flag.verbose_visual,
@@ -4915,6 +5222,15 @@ let set_gc () =
 
 <<build_model>>
 
+(* could also try to parse all json files and filter the one which do
+ * not parse *)
+let layers_in_dir dir =
+  Common.readdir_to_file_list dir +> Common.map_filter (fun file ->
+    if file =~ "layer.*marshall"
+    then Some (Filename.concat dir file)
+    else None
+  )
+
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
@@ -4968,7 +5284,9 @@ let main () =
   Common_extra.set_link ();
 
   let usage_msg = 
-    ("Usage: " ^ basename Sys.argv.(0) ^ " [options] <path> \nOptions are:") 
+    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+      (Common.basename Sys.argv.(0))
+      "https://github.com/facebook/pfff/wiki/Codemap"
   in
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
@@ -5124,6 +5442,7 @@ let context_of_drawing dw = {
 (*****************************************************************************)
 
 <<all_entities>>
+
 @ 
 
 \subsection{[[view2.mli]]}
@@ -5257,6 +5576,9 @@ val title_of_path: string -> string
 
 let _refresh_da = ref (fun () ->
   failwith "_refresh_da not defined"
+)
+let _refresh_legend = ref (fun () ->
+  failwith "_refresh_legend not defined"
 )
 
 let current_rects_to_draw = ref []

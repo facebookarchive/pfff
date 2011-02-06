@@ -1,3 +1,5 @@
+(*s: ui_layers.ml *)
+(*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
  * Copyright (C) 2010 Facebook
@@ -12,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: Facebook copyright *)
 
 open Common
 
@@ -55,3 +58,5 @@ let choose_layer ~root layer_title_opt dw_ref =
   !Controller._refresh_da ();
   !Controller._refresh_legend ();
   ()
+
+(*e: ui_layers.ml *)
