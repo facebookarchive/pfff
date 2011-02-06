@@ -1,4 +1,5 @@
 (*s: graph_php.mli *)
+(*x: graph_php.mli *)
 
 type id_graph = Entity_php.id Graph.graph
 
@@ -17,5 +18,4 @@ val build_entities_graph:
   successors: (Entity_php.id -> Entity_php.id list) ->
   id_graph
 
-(*x: graph_php.mli *)
 (*e: graph_php.mli *)

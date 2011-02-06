@@ -183,7 +183,7 @@ SRC_MLI_NO_ML_NW= \
  finder/smpl_php.mli \
  annotaters/comment_annotater_php.mli \
  annotaters/info_annotater_php.mli \
- database/database_php.mli \
+ foundation/database_php.mli \
  database_php_build.mli \
  database_php_build2.mli \
  database/database_php_query.mli \

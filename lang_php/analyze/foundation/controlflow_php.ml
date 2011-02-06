@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009, 2010, 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -71,13 +71,13 @@ type node = {
       | WhileHeader
       | DoHeader
       | DoWhileTail
-      | ForHeader 
-      | ForeachHeader 
+      | ForHeader
+      | ForeachHeader
 
   (*x: node_kind constructors *)
       | SwitchHeader
       | SwitchEnd
-      | Case 
+      | Case
       | Default
   (*x: node_kind constructors *)
       | Return

@@ -1,4 +1,5 @@
 (*s: statistics_php.mli *)
+(*x: statistics_php.mli *)
 type stat = {
   mutable functions: int;
   mutable classes: int;
@@ -24,5 +25,4 @@ val stat_of_program: Ast_php.program -> stat
 (* helpers *)
 val kind_of_file_using_stat: stat -> php_file_kind
 
-(*x: statistics_php.mli *)
 (*e: statistics_php.mli *)
