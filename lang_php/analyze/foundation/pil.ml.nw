@@ -8,7 +8,6 @@ open Common
 
 module Ast = Ast_php
 
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -37,31 +36,33 @@ module Ast = Ast_php
  * 
  * Enter PIL for PHP Intermediate Language, a better representation
  * for a PHP program. We just follow the tradition started by
- * CIL[1] and RIL[2] and propose here an AST bis which makes it
+ * CIL[1] and RIL[2] and propose here an AST which makes it
  * easier to write some static analysis.
  * 
- * Maybe I should focus on Ast_php because if we want to transform code
+ * Maybe we should focus on Ast_php because if we want to transform code
  * we have to work on that. But working on Pil can also help
- * clarify my comprehension of PHP :) It could also maybe make it
+ * clarify the semantic of PHP :) It could also maybe make it
  * easier to write the type inferer later.
  * 
  * 
- * I try, just like in Ast_php, to keep position information for the
- * elements in PIL, but I do it less. For instance comma_list or paren
+ * We try, just like in Ast_php, to keep position information for the
+ * elements in PIL, but we do it less. For instance comma_list or paren
  * stuff are removed here.
  * 
  * TODO: does the linearization respect the semantic of PHP ? Is there
  * cases where spliting a complex expression into multiple parts
  * with intermediate variables leads to a different semantic ?
  * For instance apparently $i++ is not equivalent to $i = $i + 1 when
- * $i is a string. Wonderful PHP. But at the same time our goal here is
- * not to write a compiler. Our goal is to find bugs so we may relax some
- * requirements.
+ * $i is a string. Wonderful PHP. 
+ * But at the same time our goal here is not to write a compiler. Our goal
+ * is to find bugs so we maybe it's ok to relax some of the requirements.
  * 
  * References:
  *  [1] CIL, C Intermediate Language, Necula et al, CC'00
  *  [2] The Ruby Intermediate Language, Furr et al, DSL'09
+ * 
  *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -78,48 +79,58 @@ type castOp = Ast_php.castOp
 type constant = Ast_php.constant
 type class_name_reference = Ast_php.class_name_reference
 
+type modifier = Ast_php.modifier
+
 type name = Ast_php.name
 type dname = Ast_php.dname
 
 
 
-(* We may want to use Pil instead of Ast_php for the type inference
- * analysis at some point.
- *)
+(* set by the type inference analysis one day *)
 type type_info = {
   mutable t: Type_php.phptype;
 }
  (* with tarzan *)
 
-(* 'var' can be an existing variable (e.g. $xxx) of a fake and fresh
+(* 'var' can be an existing variable (e.g. $xxx) or a fake and fresh
  * generated variable resulting from the linearization of an expression.
  *)
 type var = 
   | Var of dname
-  (* todo? move in lvalue ? after all $this[2] is not possible *)
+  (* todo? move This in lvalue ? after all $this[2] is not possible *)
   | This of Ast_php.tok
  (* with tarzan *)
 
-(* 'lvalue', what can appear at the left side of an assignement. 
+(* An 'lvalue' is what can appear at the left side of an assignement.
  *
- * Note that as opposed to Ast_php.lvalue a linearization has been done so
- * $o->fld1->fld2 will be transformed in $obis = $o->fld1; $obis->fld2;
- * So lvalue is not a a recursive type (there is no lvalue inside
- * a lvalue). 
- * Also note that function or method calls are not there (but in 'instr').
+ * Note that as opposed to Ast_php.lvalue a linearization has been done here 
+ * so $o->fld1->fld2 will be transformed in $obis = $o->fld1; $obis->fld2;
+ * So lvalue is not a recursive type (there is no lvalue inside
+ * a lvalue).
+ * Also note that functions or method calls are not there (but in 'instr').
+ * 
+ * TODO: have 'expr' inside ArrayAccess. Should be '(constant, var) either'
  *)
 type lvalue = lvaluebis * type_info
  and lvaluebis = 
    | VVar of var
+   (* A::$x. 
+    * TODO change in ClassVar of qualifier * dname 
+    * and introduce a DynamicClassVar of qualifier * var
+    *)
    | VQualifier of qualifier * var
 
-   | ArrayAccess of var * expr option
+   | ArrayAccess of var * expr option 
+   (* $o->property. Method calls are in the 'instr' type  *)
    | ObjAccess of var * name
+   (* $o->$fld *)
    | DynamicObjAccess of var * var
+   (* $$x *)
    | IndirectAccess of var * indirect
-   (* todo: VBraceXxx ?? ObjAccess ? *)
+   (* todo: VBraceXxx ?? *)
+   | TodoLvalue of Parse_info.info
 
-(* 'expr' is side effect free (as opposed to Ast_php.expr) ! 
+(* Note that the 'expr' type is side-effect free (as opposed to Ast_php.expr).
  *  
  * Moreover this type does not contain:
  * - assignements
@@ -131,6 +142,7 @@ type lvalue = lvaluebis * type_info
 and expr = exprbis * type_info
  and exprbis =
   | Lv of lvalue
+
   | C of constant
   | ClassConstant of (qualifier * name)
 
@@ -139,24 +151,31 @@ and expr = exprbis * type_info
    *)
   | Binary  of expr * binaryOp * expr
   | Unary   of unaryOp * expr
+
+  (* We could transform into a If but this would require to
+   * change the return types of linearize_expr; this is because we would
+   * need to push a stmt rather than just an instr *)
   | CondExpr of expr * expr * expr
 
   (* todo: apparently can put some refs & inside array() expressions *)
+  (* array(expr1,..., exprn) *)
   | ConsArray of expr list
+  (* array(key1 => expr1,...) also defined as an array in AST *)
   | ConsHash  of (expr * expr) list
 
   | Cast of castOp * expr
   | InstanceOf of expr * class_name_reference
   (* todo: remaining Sc (Guil, etc), CastUnset, *)
+  | TodoExpr of Parse_info.info
 
  (* with tarzan *)
 
-(* an instruction is a statement that has no local (intraprocedural) 
+(* 'instr' is a kind of statement that has no local (intraprocedural)
  * control flow. It will be thus represented as a singled node in 
  * the CFG.
  * 
- * Why not 'Assign of var * expr' to simplify even more ? Because
- * an expression like $a[2] = 3; would be forced to be linearized into
+ * Why not 'Assign of var * expr' below to simplify even more ? 
+ * Because an expr like $a[2] = 3; would be forced to be linearized into
  * $xxx_1 = $a[2]; $xxx_1 = 3; which depending on the semantic of
  * assignement could be wrong (for instance with copy-on-write semantic).
  * 
@@ -166,15 +185,23 @@ and expr = exprbis * type_info
  * and and 'PureExpr of expr', but it complicates things. The current scheme
  * may lead to many dead variables, but all those variables can be detected as
  * they will be tagged as fake variables anyway.
+ * 
+ * TODO: not sure this is good to introduce such dead variables; it may
+ * make the unused_variable checker introduce some false positives.
  *)
 type instr = 
+  (* $a = expr *)
   | Assign of lvalue * assign_kind * expr
+  (* $a = &$b *)
   | AssignRef of lvalue * lvalue
-  | Call   of lvalue * call_kind * argument list
+  (* $a = foo(args) *)
+  | Call   of lvalue  * call_kind * argument list
+  (* eval ... bad *)
   | Eval of expr
   (* todo: Lambda *)
+  | TodoInstr of Parse_info.info
 
-  (* Infix and Posfix exprs are desugared into regular assigns *)
+  (* note: Infix and Posfix exprs were desugared into regular assigns *)
   and assign_kind = 
     | AssignEq
     | AssignOp of assignOp
@@ -196,31 +223,31 @@ type instr =
 
  (* with tarzan *)
 
-(* Quite similar to Ast_php.stmt, except if/while/... contain the new
- * 'expr' type which are side-effect free. Also removed
+(* 'stmt' is very similar to Ast_php.stmt, except if/while/... contain the 
+ * new 'expr' type which is side-effect free. Also we removed
  * some sugar and some deprecated forms like the ColonXxx.
+ * 
  * Note that the include/require, which were removed from the 'expr'
- * are also not represented in 'stmt'. It's just bad coding. They should
- * be only at the toplevel.
+ * are also not represented in 'stmt'. It's just bad coding. We lift them
+ * up (again) to the toplevel.
  * 
  *)
 type stmt = 
   | Instr of instr
 
   (* Could make If takes a stmt list instead of a stmt, which would remove
-   * the need for Block. Not sure what is best. *)
+   * the need for Block and maybe even EmptyStmt. Not sure what is best. *)
   | Block of stmt list
-
   (* useful to avoid having some 'stmt option' for instance in If *)
   | EmptyStmt 
 
-  (* elseifs are desugared; Switch are transformed in ifs *)
+  (* elseifs are desugared; switches are transformed in ifs *)
   | If of expr * stmt * stmt
   
-  (* Do, For, Foreach are desugared  *)
+  (* Do, For, Foreach are desugared into a While  *)
   | While of expr * stmt
 
-  (* todo: could transform that into gotos ? *)
+  (* todo? could transform that into gotos ? *)
   | Break of expr option
   | Continue of expr option
 
@@ -229,235 +256,81 @@ type stmt =
   | Throw of expr
   | Try of stmt * catch
 
-  (* InlineHtml is desugared *)
+  (* InlineHtml is desugared into a regular echo *)
   | Echo of expr list
 
   (* todo? put expr stuff here (Print, Exit, Backquote, etc) 
    * todo? Globals, StaticVars,  Use, Unset, Declare ?
-  *)
+   *)
+  | TodoStmt of Parse_info.info
 
  and catch = unit (* TODO *)
+
   (* with tarzan *)
 
-(*****************************************************************************)
-(* Meta *)
-(*****************************************************************************)
+type function_def = {
+   f_name: name;
+   f_params: parameter list;
+   f_ref: bool;
+   f_return_type: hint_type option;
+   f_body: stmt list;
+ }
+  and parameter = {
+    p_name: dname;
+    p_type: hint_type option;
+    p_ref: bool;
+    p_default: static_scalar option;
+  }
+ (* note: 'static_scalar' used to be a separate type than 'expr' in Ast_php,
+  * which by construction enforced static values. Many 'expr' constructors were
+  * unfortunately duplicated in this type. So simpler to just use 'expr'.
+  *)
+ and static_scalar = expr
+ (* we allow more places to contain a type hint when the user use the 
+  * require_strict(); annotation in his code.
+  *)
+ and hint_type = name
 
-(* I wish I had deriving Show in OCaml ... in the mean time I have
- * to use my ocamltarzan tool to do compile-time reflection.
- *)
+  (* with tarzan *)
 
-(* generated by ocamltarzan: ocamltarzan -vof pil.ml *)
-let vof_dname = Meta_ast_php.vof_dname
-let vof_name = Meta_ast_php.vof_name
-let vof_qualifier = Meta_ast_php.vof_qualifier
+type class_def = {
+  c_name: name;
+  c_type: class_type;
+  c_extends: name option;
+  c_implements: name list;
+  c_body: class_stmt list;
+ }
+ and class_type = 
+   | ClassRegular | ClassFinal | ClassAbstract 
+   (* interface have only the c_extends set. c_implements is always empty.
+    * there was previously a 'interface_def' type but simpler to merge
+    * it with class_def
+    *)
+   | Interface 
+ and class_stmt =
+   | ClassConstantDef of name * static_scalar
+   | ClassVariable of 
+       modifier list * (* static-php-ext: *) hint_type option *
+       dname * static_scalar option
+   | Method of (modifier list * function_def)
+   (* the f_body will always be empty *) 
+   | AbstractMethod of (modifier list * function_def)
+  (* with tarzan *)
 
-let vof_indirect = Meta_ast_php.vof_indirect
-let vof_binaryOp = Meta_ast_php.vof_binaryOp
-let vof_unaryOp = Meta_ast_php.vof_unaryOp
-let vof_assignOp = Meta_ast_php.vof_assignOp
-let vof_castOp = Meta_ast_php.vof_castOp
+type require = unit (* TODO *)
 
-let vof_constant = Meta_ast_php.vof_constant
-let vof_class_name_reference = Meta_ast_php.vof_class_name_reference
+type toplevel = 
+  | Require of require
+  | TopStmt of stmt
+  | FunctionDef of function_def
+  (* actually also used also for interface *)
+  | ClassDef of class_def
 
-let vof_phptype x = Ocaml.VTODO "type"
+  (* with tarzan *)
 
-let vof_type_info { t = v_t } =
-  let bnds = [] in
-  let arg = vof_phptype v_t in
-  let bnd = ("t", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+type program = toplevel list
 
-
-let vof_var =
-  function
-  | Var v1 -> let v1 = vof_dname v1 in Ocaml.VSum (("Var", [ v1 ]))
-  | This v1 -> let v1 = Meta_ast_php.vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
-  
-let rec vof_lvalue (v1, v2) =
-  let v1 = vof_lvaluebis v1
-  and v2 = vof_type_info v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_lvaluebis =
-  function
-  | VVar v1 -> let v1 = vof_var v1 in Ocaml.VSum (("VVar", [ v1 ]))
-  | VQualifier ((v1, v2)) ->
-      let v1 = vof_qualifier v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("VQualifier", [ v1; v2 ]))
-  | ArrayAccess ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = Ocaml.vof_option vof_expr v2
-      in Ocaml.VSum (("ArrayAccess", [ v1; v2 ]))
-  | ObjAccess ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("ObjAccess", [ v1; v2 ]))
-  | DynamicObjAccess ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("DynamicObjAccess", [ v1; v2 ]))
-  | IndirectAccess ((v2, v1)) ->
-      let v1 = vof_indirect v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("IndirectAccess", [ v2; v1 ]))
-and vof_expr (v1, v2) =
-  let v1 = vof_exprbis v1
-  and v2 = vof_type_info v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_exprbis =
-  function
-  | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
-  | C v1 ->
-      let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
-  | Binary ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_binaryOp v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("Binary", [ v1; v2; v3 ]))
-  | Unary ((v1, v2)) ->
-      let v1 = vof_unaryOp v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Unary", [ v1; v2 ]))
-  | CondExpr ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("CondExpr", [ v1; v2; v3 ]))
-  | ConsArray v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1
-      in Ocaml.VSum (("ConsArray", [ v1 ]))
-  | ConsHash v1 -> 
-      let v1 = Ocaml.vof_list 
-               (fun (e2, e3) ->
-                  let v2 = vof_expr e2
-                  and v3 = vof_expr e3 in
-                Ocaml.VTuple [ v2; v3 ]) v1
-      in Ocaml.VSum (("ConsHash", [ v1 ]))
-  | Cast ((v1, v2)) ->
-      let v1 = vof_castOp v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Cast", [ v1; v2 ]))
-  | InstanceOf ((v1, v2)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_class_name_reference v2
-      in Ocaml.VSum (("InstanceOf", [ v1; v2 ]))
-  
-let rec vof_instr =
-  function
-  | Assign ((v1, v2, v3)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_assign_kind v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
-  | AssignRef ((v1, v2)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_lvalue v2
-      in Ocaml.VSum (("AssignRef", [ v1; v2 ]))
-  | Call ((v1, v2, v3)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_call_kind v2
-      and v3 = Ocaml.vof_list vof_argument v3
-      in Ocaml.VSum (("Call", [ v1; v2; v3 ]))
-  | Eval v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Eval", [ v1 ]))
-and vof_assign_kind =
-  function
-  | AssignEq -> Ocaml.VSum (("AssignEq", []))
-  | AssignOp v1 ->
-      let v1 = vof_assignOp v1 in Ocaml.VSum (("AssignOp", [ v1 ]))
-and vof_call_kind =
-  function
-  | SimpleCall v1 ->
-      let v1 = vof_name v1 in Ocaml.VSum (("SimpleCall", [ v1 ]))
-  | StaticMethodCall ((v1, v2)) ->
-      let v1 = vof_qualifier v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("StaticMethodCall", [ v1; v2 ]))
-  | MethodCall ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("MethodCall", [ v1; v2 ]))
-  | DynamicCall ((v1, v2)) ->
-      let v1 = Ocaml.vof_option vof_qualifier v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("DynamicCall", [ v1; v2 ]))
-  | DynamicMethodCall ((v1, v2)) ->
-      let v1 = vof_var v1
-      and v2 = vof_var v2
-      in Ocaml.VSum (("DynamicMethodCall", [ v1; v2 ]))
-  | New v1 ->
-      let v1 = vof_class_name_reference v1 in Ocaml.VSum (("New", [ v1 ]))
-and vof_argument =
-  function
-  | Arg v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Arg", [ v1 ]))
-  | ArgRef v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("ArgRef", [ v1 ]))
-  
-let rec vof_stmt =
-  function
-  | Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
-  | Block v1 ->
-      let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))
-  | EmptyStmt -> Ocaml.VSum (("EmptyStmt", []))
-  | If ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_stmt v2
-      and v3 = vof_stmt v3
-      in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | While ((v1, v2)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_stmt v2
-      in Ocaml.VSum (("While", [ v1; v2 ]))
-  | Break v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1 in Ocaml.VSum (("Break", [ v1 ]))
-  | Continue v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Continue", [ v1 ]))
-  | Return v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Return", [ v1 ]))
-  | Throw v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Throw", [ v1 ]))
-  | Try ((v1, v2)) ->
-      let v1 = vof_stmt v1
-      and v2 = vof_catch v2
-      in Ocaml.VSum (("Try", [ v1; v2 ]))
-  | Echo v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
-and vof_catch v = Ocaml.vof_unit v
-
-(*****************************************************************************)
-(* String of *)
-(*****************************************************************************)
-
-let (adjust_ocaml_v: ?show_all:bool -> Ocaml.v -> Ocaml.v) =
- fun ?(show_all=false) v ->
-
-  let v = 
-    if show_all
-    then v
-    else 
-      (* let's hide all those {pinfo = ... } and types annotations *)
-      Ocaml.map_v ~f:(fun ~k v ->
-        match v with
-        | Ocaml.VDict xs ->
-            if xs +> List.exists (fun (s, _) -> List.mem s ["pinfo"; "t"])
-            then
-              Ocaml.VDict []
-            else k v
-        | _ -> k v
-      ) v
-  in
-  v
-
-let (string_of_instr: ?show_all:bool -> instr -> string) = 
- fun ?show_all x ->
-  x +> vof_instr +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
-
-let string_of_stmt ?show_all x = 
-  x +> vof_stmt +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
-
-let string_of_expr ?show_all x = 
-  x +> vof_expr +> adjust_ocaml_v ?show_all +> Ocaml.string_of_v
-
+  (* with tarzan *)
 
 @
 
@@ -481,9 +354,12 @@ module B = Pil
  * the simpler constructs of Pil. Here are the simplifications done:
  * 
  * - linearization of expression
- * - sugar removing for increments
- * - removing tokens from the AST, to have really an AST, not a CST
+ * - sugar removal for postfix/infix increments
+ * - removing most tokens from the AST, to have really an AST, not a CST
+ *   (keep the one associated with names as error reporting may need
+ *    this information)
  * - TODO many other stuff
+ * 
  *)
 (*****************************************************************************)
 (* Types *)
@@ -494,9 +370,6 @@ module B = Pil
 (*****************************************************************************)
 let noType () = ({ B.t = [Type_php.Unknown] })
 
-(* We don't propagate the tainting as the typing inference will
- * be done on the simplified AST (PIL) rather than on the original
- * AST *)
 let mkt x = x, noType ()
 
 let counter = ref 0
@@ -511,9 +384,15 @@ let vv_of_v v=
 let fresh_vvar () = 
   vv_of_v (fresh_var ())
 
+(* there are a few cases as when we transform expressions where we need
+ * to build constant integers, for instance when $i++ -> $i = $i + 1
+ *)
 let expr_of_int i =
   mkt(B.C(A.Int(string_of_int i, A.fakeInfo (string_of_int i))))
 
+(* when transforming certain loops we need to generate fresh variables
+ * initialized to a certain boolean value (like $done = false; while (!$done)
+ *)
 let expr_true () =
   mkt(B.C(A.CName(A.Name("true", A.fakeInfo "true"))))
 let expr_false () =
@@ -522,21 +401,24 @@ let expr_false () =
 
 let stmt_of_stmts_list = function
 | [] -> B.EmptyStmt
-| [ stmt ] -> stmt
+| [stmt] -> stmt
 | l -> B.Block l
+
+let instrs_to_stmts xs = 
+  xs +> List.map (fun x -> B.Instr x)
 
 (*****************************************************************************)
 (* Algorithm *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Main entry point *)
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
+(* given some expressions like 'foo() + bar()' we will return 
+ * a set of instructions, here $tmp1 = foo(); $tmp2 = bar(); $tmp3=$tmp1+$tmp2;
+ * as well as the resultant expressions, here the simple lvalue $tmp3
+ *)
 let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 
   let instrs = ref [] in
@@ -546,6 +428,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.Var (dname, _scoperef) -> mkt (B.VVar (B.Var dname))
 
     | A.FunCallSimple (name, argsA) ->
+        (* note that both aux_args and make_var_from_call also modify
+         * by side effect 'instrs'
+         *)
         let argsB = argsA |> Ast.unparen |> Ast.uncomma |> aux_args in
         let v = make_var_from_call (B.SimpleCall name) argsB in
         vv_of_v v
@@ -597,11 +482,20 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           (B.DynamicCall(qualif_opt, v_func)) argsB in
         vv_of_v v_res
 
+    (* TODO this is buggy, it does not make sense to transform
+     *  A::$var[...] into  $tmp = $var[...]; A::$tmp !
+     *  The problem is actually in ast_php.ml where VQualifier
+     *  should not take some ArrayAccess in parameter.x
+     *)
     | A.VQualifier(qualif, lv) ->
         let v = make_var_from_Alvalue lv in
         mkt (B.VQualifier(qualif, v))
-
-    | A.This t -> mkt (B.VVar (B.This t))
+    | A.ClassVar (qu, var) ->
+        let info = Ast_php.info_of_dname var in
+        mkt (B.TodoLvalue info)
+        
+    | A.This t -> 
+        mkt (B.VVar (B.This t))
 
     | A.VArrayAccess(lvA, e) ->
         (* we need to pass by reference because of the case:
@@ -611,6 +505,11 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
          * $b[2]=0;
          * var_dump($b); // 0
          * var_dump($a); // still 3!! Because of copy on write
+         * 
+         * todo? or we could not care about the copy-on-write thing
+         * and simplify even more the PIL. Maybe most of the static
+         * analysis we need are not dependent on the copy-on-write
+         * semantic.
          *)
         let lvB = aux_lvalue lvA in
         let v = fresh_var() in
@@ -632,6 +531,10 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.VBrace(_, e_brace) ->
         let e = A.unbrace e_brace in
         make_var_from_Aexpr e |> vv_of_v
+
+
+    | A.VArrayAccessXhp _ ->
+        raise Todo
 
   and aux_args args = 
     args +> List.map (function
@@ -676,22 +579,23 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
       | A.ConsArray (_tok, array_pairs) ->
           (* TODOjjeannin: for the cases ArrayRef and ArrayArrowRef
            * the translation is semantically wrong, but it's good enough
-           * for type inference and control flow analysis *)
-          (* For mixed arrows/not arrows arrays, the following example 
+           * for type inference and control flow analysis 
+           * 
+           * For mixed arrows/not arrows arrays, the following example 
            * gives a good idea of the semantics:
-           php> var_dump(array(1,"car"=>2,3,"bus"=>4,5));
-           array(5) {
-             [0]=>
-             int(1)
-             ["car"]=>
-             int(2)
-             [1]=>
-             int(3)
-             ["bus"]=>
-             int(4)
-             [2]=>
-             int(5)
-           }
+           * php> var_dump(array(1,"car"=>2,3,"bus"=>4,5));
+           * array(5) {
+           *   [0]=>
+           *   int(1)
+           *   ["car"]=>
+           *   int(2)
+           *   [1]=>
+           *   int(3)
+           *   ["bus"]=>
+           *   int(4)
+           *   [2]=>
+           *   int(5)
+           * }
            *)
           let array_pairs = array_pairs +> Ast.unparen +> Ast.uncomma in
 
@@ -708,7 +612,7 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
                     i:= !i+1; res
               | A.ArrayArrowExpr (e1, _, e2) ->
                   aux_expr e1, aux_expr e2
-         (* the last two cases are semantically wrong (I'm suppressing &) *)
+             (* the last two cases are semantically wrong (I'm suppressing &)*)
               | A.ArrayRef (_, lv) ->
                   let res = expr_of_int !i, mkt(B.Lv(aux_lvalue lv)) in
                     i:= !i+1; res
@@ -727,12 +631,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
               )
             in mkt (B.ConsArray exprs)
 
+      (* no need to care about extra tokens *)
       | A.ParenExpr e_paren ->
           e_paren |> A.unparen |> aux_expr
-
-      | A.Eval(_, e_paren) -> (* TODOjjeannin *)
-          (*let v = e_paren |> A.unparen |> make_var_from_Aexpr in
-          mkt (B.Lv( vv_of_v v))*) raise Todo
 
       | A.AssignOp(lvA, op_w, eA) ->
           let lvB = aux_lvalue lvA in
@@ -746,9 +647,6 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 
       | A.CondExpr(cond, _, if_t, _, if_f) ->
           mkt (B.CondExpr(aux_expr cond, aux_expr if_t, aux_expr if_f))
-
-      | A.EDots _ -> raise Impossible
-      | A.Lambda _ -> raise Todo
 
       | A.Isset (t, argsA) ->
           (* for now we transform it into a normal function call ; TODO *)
@@ -795,13 +693,11 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           mkt (B.Lv lvB)
 
       | A.At(_, expr) ->
-          (* TODO: for now we just suppress the @ signs *)
+          (* for now we just suppress the @ signs *)
           aux_expr expr
 
       | A.InstanceOf(expr, _, cnr) ->
           mkt(B.InstanceOf(aux_expr expr, cnr))
-
-      | A.XhpHtml _ -> raise Todo
 
       | A.Infix(op_w, lvA) | A.Postfix(lvA, op_w) ->
           (* ++lv returns the final value of lv
@@ -842,9 +738,6 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           Common.push2 instr instrs;
           mkt (B.Lv lv1B)
 
-      | (RequireOnce (_, _)|Require (_, _)|IncludeOnce (_, _)|Include (_, _))
-        -> failwith "Those should be lifted by another simplification phase"
-
       | A.AssignList(_, la, _, expr) ->
           (* list($la1, $la2, ..., $lan) = expr has to be translated as 
            * $fresh = expr; $la1 = fresh[1]; 
@@ -858,12 +751,29 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           push_list_assign la fresh;
           mkt(B.Lv(vv_of_v fresh))
 
+
+      | (RequireOnce (_, _)|Require (_, _)|IncludeOnce (_, _)|Include (_, _))
+        -> failwith "Those should be lifted by another simplification phase"
+
+      | A.XhpHtml _ -> raise Todo
+
+      | A.Eval(_, e_paren) ->
+          (*let v = e_paren |> A.unparen |> make_var_from_Aexpr in
+          mkt (B.Lv( vv_of_v v))*) 
+          raise Todo
+
+      | A.SgrepExprDots _ -> 
+          raise Impossible
+      | A.Lambda _ -> 
+          raise Todo
+
       | A.Exit (_, args) -> raise Todo
       |A.BackQuote (_, _, _)|A.CastUnset (_, _)|A.Clone (_, _)
         -> raise Todo
     
   (* Helper functions for converting lvalues, expressions and calls into
-   * variables; their use ensures that we never forget the Common.push2 *)
+   * variables; their use ensures that we never forget the Common.push2 
+   *)
   and (make_var_from_Blvalue: B.lvalue -> B.var) = fun lvB ->
     let v = fresh_var() in
     let vv = mkt (B.VVar v) in
@@ -988,23 +898,24 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
 
-let instrs_to_stmts xs = 
-  xs +> List.map (fun x -> B.Instr x)
-
-let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
+(* a single statement like while(foo()) { } will now generate multiple
+ * PIL statements, here  $tmp = foo(); while($tmp) {  $tmp = foo(); }
+ *)
+let rec (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
 
   let rec (aux_stmt : A.stmt -> B.stmt list) = fun st ->
     match st with
     | A.ExprStmt (e, _tok) ->
         (* todo? print warning of _last_expr is not
          * a simple Lv ? 
+         * TODO: should use last_expr !!
          *)
-        let instrs, _last_expr = linearize_expr e in
+        let (instrs, last_expr) = linearize_expr e in
         instrs_to_stmts instrs
 
     | A.Block stmt_and_defs ->
         let xs = Ast.unbrace stmt_and_defs in
-        xs +> List.map aux_stmt_and_def +> List.flatten
+        xs +> List.map linearize_stmt_and_def +> List.flatten
 
     | A.Echo (_, exprs, _) ->
         let exprs = Ast.uncomma exprs in
@@ -1035,10 +946,10 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
         setup_expr_stmts ++ [B.While (last_expr, 
                                      B.Block (stmts ++ setup_expr_stmts))]
 
+    (* do{ A } while (b) is translated as
+     * $fresh = true; while($fresh) do { A; $fresh = b }
+     *)
     | A.Do(_, stmt, _, expr, _) ->
-        (* do{ A } while (b) is translated as
-         * $fresh = true; while($fresh) do { A; $fresh = b }
-         *)
         let expr = Ast.unparen expr in
         let stmts = aux_stmt stmt in
 
@@ -1053,13 +964,14 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
         [ fresh_true ] ++ [ B.While (mkt(B.Lv(fresh)),
           B.Block(stmts ++ setup_expr_stmts ++ [fresh_b])) ]
 
+    (* for(init1, ..., initk; cond1, ..., condm; incr1, ..., incrn)
+     * { stmt } is translated as
+     * init1; ...; initk; cond1; ...; cond<m-1>; while(condm) 
+     * { stmt; incr1; ...; incrn ; cond1; ...; cond<m-1> }
+     * see http://php.net/manual/en/control-structures.for.php
+     *)
     | A.For(_, _, initA, _, condA, _, incrA, _, stmtA) -> 
-        (* for(init1, ..., initk; cond1, ..., condm; incr1, ..., incrn)
-         * { stmt } is translated as
-         * init1; ...; initk; cond1; ...; cond<m-1>; while(condm) 
-         * { stmt; incr1; ...; incrn ; cond1; ...; cond<m-1> }
-         * see http://php.net/manual/en/control-structures.for.php
-         *)        let rec (list_to_expr_cond : 
+        let rec (list_to_expr_cond : 
            (B.instr list * B.expr) list -> B.instr list * B.expr) = function
         (* from a list [instrs1,expr1;...;instrsn,exprn]
          * builds the pair
@@ -1092,24 +1004,26 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
           init_stmts ++ cond_stmts ++ 
           [ B.While(cond, B.Block( stmtB ++ incr_stmts ++ cond_stmts )) ]
 
-    | A.Foreach(_, _, expr, _, lv, arr, _, stmt) -> raise Todo
-        (* foreach($arr as $value){stmt} is translated as
-         * while(list(, $value) = each($arr)){stmt}, i.e.
-         *
-         *
-         * foreach($arr as $key => $value){stmt} is translated as
-         * while(list($key, $value) = each($arr)){stmt}, i.e.
-         *)
-        (* According to Drew from HPHP, this will not work
+    (* foreach($arr as $value){stmt} is translated as
+     * while(list(, $value) = each($arr)){stmt}, i.e.
+     *
+     *
+     * foreach($arr as $key => $value){stmt} is translated as
+     * while(list($key, $value) = each($arr)){stmt}, i.e.
+     *)
+    | A.Foreach(tok, _, expr, _, lv, arr, _, stmt) -> 
+        (* According to Drew Parovski, this will not work
          * as the each construct uses an internal temp variable
          * so if we translate like this any nested foreach loop
          * will have the wrong semantics; still according to him
-         * foreach cannot be translated only using the construcs of PIL *)
-
-    | A.If (tok, cond1, stmt1, elseifs, elseopt) ->
-        (* if(a){b}elseif(c){d}elseif(e){f}else{g} is translated in
-         * if(a){b}else{if(c){d}else{if(e){f}{g}}} etc.
+         * foreach cannot be translated only using the construcs of PIL 
          *)
+        [B.TodoStmt tok]
+
+    (* if(a){b}elseif(c){d}elseif(e){f}else{g} is translated in
+     * if(a){b}else{if(c){d}else{if(e){f}{g}}} etc.
+     *)
+    | A.If (tok, cond1, stmt1, elseifs, elseopt) ->
         (* there cannot be any break statements inside an if so 
          * that should not cause a problem *)
         let rec (aux : (tok * A.expr paren * A.stmt) list ->
@@ -1133,9 +1047,12 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
          * elseif cases; it just appears first *)
         aux ((tok, cond1, stmt1)::elseifs) elseopt
 
+    (* this is very similar to the A.If case;
+     * it seems too complicated to do just one case for both though 
+     * less: IfColon is an old PHP feature we don't have to support.
+     *  could remove this whole case.
+     *)
     | A.IfColon (tok1, cond1, tok2, stmt1, elseifs, elseopt, _, _) ->
-        (* this is very similar to the A.If case;
-         * it seems too complicated to do just one case for both though *)
         let rec (aux : A.new_elseif list ->
                    A.new_else option -> B.stmt list)
                    = fun elseifs elseopt ->
@@ -1146,65 +1063,65 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
             let instrs_cond, expr_cond = condA |> Ast.unparen 
               |> linearize_expr in
             let stmts_cond = instrs_to_stmts instrs_cond in
-            let stmtsB = stmtsA |>  List.map aux_stmt_and_def 
+            let stmtsB = stmtsA |>  List.map linearize_stmt_and_def 
               |> List.flatten in
             stmts_cond ++ [ B.If(expr_cond, B.Block stmtsB, 
                                  stmt_of_stmts_list (aux tl elseopt)) ]
 
         | [], Some (_, _, stmtsA) -> 
-            stmtsA |> List.map aux_stmt_and_def |> List.flatten
+            stmtsA |> List.map linearize_stmt_and_def |> List.flatten
 
         ) in
         (* the if case is not any different than all the other
          * elseif cases; it just appears first *)
         aux ((tok1, cond1, tok2, stmt1)::elseifs) elseopt
 
+    (* This is a hard one, even if it does not look like it;
+     * here is a way to translate it that should work:
+     * switch(expr){
+     *   case expr_a :
+     *     do_a;
+     *   case expr_b :
+     *     do_b;
+     *   ...
+     *   default :
+     *     do_default
+     *   ...
+     * }  
+     *     is translated as:
+     * $expr = expr;
+     * $cond_while = true;
+     * while($cond_while){
+     *   $cond_while = false; // only goes through once
+     *   $case = 0;
+     *   if($expr == expr_a){ $case=1; }
+     *   else if($expr == expr_b){ $case=2; }
+     *   // b should not be evaluated if we are in the case a
+     *   // (only relevant if b has side effects)
+     *   ...
+     *   // nothing here for default
+     *   ...
+     *   $cond = ($case == 1) || $cond;
+     *   if($cond){ do_a; }
+     *   $cond = ($case == 2) || $cond;
+     *   if($cond){ do_b; }
+     *   ...
+     *   $cond = ($case == 0) || $cond; // 0 is for default
+     *   if($cond){ do_d; }
+     *   ...
+     * }
+     * The enclosing while($cond) is to make sure everything
+     * works fine if there is a break instruction in the middle; we
+     * could have done it with while(true){... ; break;} but our way
+     * ensures it also works with continue instructions.
+     * The two passes are necessary to ensure default behaves correctly:
+     * expr_a, expr_b, are evaluated in order until one applies; if none
+     * applies, default applies; if default applies all the expr_a,
+     * expr_b, etc. have to be evaluated, even
+     * if they are after the default. default only applies if no other
+     * case applies, even if default is not at the end.
+     *)  
     | A.Switch(_, exprA, switch_cases) ->
-        (* This is a hard one, even if it does not look like it;
-         * here is a way to translate it that should work:
-         * switch(expr){
-         *   case expr_a :
-         *     do_a;
-         *   case expr_b :
-         *     do_b;
-         *   ...
-         *   default :
-         *     do_default
-         *   ...
-         * }  
-         *     is translated as:
-         * $expr = expr;
-         * $cond_while = true;
-         * while($cond_while){
-         *   $cond_while = false; // only goes through once
-         *   $case = 0;
-         *   if($expr == expr_a){ $case=1; }
-         *   else if($expr == expr_b){ $case=2; }
-         *   // b should not be evaluated if we are in the case a
-         *   // (only relevant if b has side effects)
-         *   ...
-         *   // nothing here for default
-         *   ...
-         *   $cond = ($case == 1) || $cond;
-         *   if($cond){ do_a; }
-         *   $cond = ($case == 2) || $cond;
-         *   if($cond){ do_b; }
-         *   ...
-         *   $cond = ($case == 0) || $cond; // 0 is for default
-         *   if($cond){ do_d; }
-         *   ...
-         * }
-         * The enclosing while($cond) is to make sure everything
-         * works fine if there is a break instruction in the middle; we
-         * could have done it with while(true){... ; break;} but our way
-         * ensures it also works with continue instructions.
-         * The two passes are necessary to ensure default behaves correctly:
-         * expr_a, expr_b, are evaluated in order until one applies; if none
-         * applies, default applies; if default applies all the expr_a,
-         * expr_b, etc. have to be evaluated, even
-         * if they are after the default. default only applies if no other
-         * case applies, even if default is not at the end.
-         *)  
         let instrs_expr, exprB = exprA |> Ast.unparen
           |> linearize_expr in
         let stmts_expr = instrs_to_stmts instrs_expr in
@@ -1221,7 +1138,7 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
         | Case(_, eA, _, stmtA)::tl ->
             let instrs_eB, eB = linearize_expr eA in
             let stmts_eB = instrs_to_stmts instrs_eB
-            and stmtB = stmtA |> (List.map aux_stmt_and_def)
+            and stmtB = stmtA |> (List.map linearize_stmt_and_def)
                 |> List.flatten |> stmt_of_stmts_list in
             let index = !i in i := !i+1;
             let l1, l2 = aux tl in
@@ -1241,7 +1158,7 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
               l2
             )
         | Default(_, _, stmtA)::tl ->            
-            let stmtB = stmtA |> (List.map aux_stmt_and_def)
+            let stmtB = stmtA |> (List.map linearize_stmt_and_def)
                 |> List.flatten |> stmt_of_stmts_list in
             let l1, l2 = aux tl in
             l1, (
@@ -1253,7 +1170,8 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
                                             mkt(B.Lv cond_vv))))) ::
               B.If(mkt(B.Lv cond_vv), stmtB, B.EmptyStmt) ::
               l2
-            ) in
+            ) 
+        in
         let cases = match switch_cases with
           | CaseList(_, _, c, _) | CaseColonList( _, _, c, _, _) -> c in
         let l1, l2 = aux cases in
@@ -1285,26 +1203,31 @@ let (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
     | A.Use _ ->
          failwith "This Use should be lifted by another simplification phase"
 
-      |
-(Declare (_, _, _)|Unset (_, _, _)|InlineHtml _|
-StaticVars (_, _, _)|Globals (_, _, _)|Try (_, _, _, _))
-        -> raise Todo
+    | Declare (tok, _, _)
+    | Unset (tok, _, _)
+    | StaticVars (tok, _, _)
+    | Globals (tok, _, _)
+      -> [B.TodoStmt tok]
+
+    | Try (_, _, _, _)
+    | InlineHtml _
+    | TypedDeclaration _ ->
+        raise Todo
 
   and aux_colon_stmt colon = 
     match colon with
     | A.SingleStmt st -> aux_stmt st
-    | A.ColonStmt(_, stl, _, _) -> stl |> List.map aux_stmt_and_def
+    | A.ColonStmt(_, stl, _, _) -> stl |> List.map linearize_stmt_and_def
       |> List.flatten
-  and aux_stmt_and_def x = 
-    match x with
-    | A.Stmt st -> aux_stmt st
-    | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
-        raise Todo
   in
-  
+  aux_stmt st
 
-  let stmts = aux_stmt st in
-  stmts
+and linearize_stmt_and_def x = 
+  match x with
+  | A.Stmt st -> linearize_stmt st
+  | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
+      raise Todo
+
 
 
 let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
@@ -1314,6 +1237,131 @@ let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
     | (InterfaceDefNested _|ClassDefNested _|FuncDefNested _) ->
         raise Todo
   ) +> List.flatten
+
+(* ------------------------------------------------------------------------- *)
+(* Misc *)
+(* ------------------------------------------------------------------------- *)
+
+
+let pil_of_type_hint t = 
+  match t with
+  | Hint name -> name
+  | HintArray tok -> Name ("Array", tok)
+
+let pil_of_static_scalar sc = 
+  raise Todo
+
+let pil_of_param p = {
+  B.p_name = p.p_name;
+  B.p_ref = (match p.p_ref with None -> false | Some _ -> true);
+  B.p_type = p.p_type +> Common.fmap pil_of_type_hint;
+  B.p_default = p.p_default +> Common.fmap (fun (_tok, static_scalar) ->
+    pil_of_static_scalar static_scalar);
+}
+
+let pil_of_class_stmt x =
+  match x with
+  | A.ClassConstants (_tok, xs, _tok2) -> 
+      xs +> Ast.uncomma +> List.map (fun (name, (tok, static_scalar)) ->
+        B.ClassConstantDef (name, pil_of_static_scalar static_scalar)
+      )
+  | A.ClassVariables (modifiers, hint_type_opt, class_vars, _tok) ->
+      class_vars +> Ast.uncomma +> List.map (fun (dname, static_opt) ->
+        B.ClassVariable (
+          (match modifiers with
+          | NoModifiers _ -> []
+          | VModifiers xs -> xs +> List.map unwrap
+          ),
+          hint_type_opt +> Common.fmap pil_of_type_hint ,
+          dname, 
+          static_opt +> Common.fmap (fun (_tok, sc) -> pil_of_static_scalar sc)
+      ))
+
+  | A.Method def ->
+      let modifiers = def.m_modifiers +> List.map unwrap in
+
+      let func_def = {
+        B.f_name = def.m_name;
+        B.f_ref = (match def.m_ref with None -> false | Some _ -> true);
+        B.f_params = def.m_params +> Ast.unparen +> Ast.uncomma +> 
+          List.map pil_of_param;
+        B.f_return_type = def.m_return_type +> Common.fmap pil_of_type_hint;
+        B.f_body = 
+          (match def.m_body with
+          | A.AbstractMethod _ -> []
+          | A.MethodBody body ->
+              body +> Ast.unbrace +> List.map 
+                linearize_stmt_and_def +> List.flatten
+          );
+      }
+      in
+      (match def.m_body with
+      | A.AbstractMethod _ ->
+          [B.AbstractMethod (modifiers, func_def)]
+      | A.MethodBody _ ->
+          [B.Method (modifiers, func_def)]
+      )
+  (* todo: should implement the xhp desugaring ? or represent xhp
+   * in the pil ?
+   *)
+  | A.XhpDecl decl ->
+      raise Todo
+
+
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let rec pil_of_program ast = 
+  
+  ast +> List.map (function
+  | A.StmtList xs ->
+      xs +> List.map linearize_stmt +> List.flatten +> List.map (fun st ->
+        B.TopStmt st)
+
+  | A.FuncDef def ->
+      [B.FunctionDef {
+        B.f_name = def.f_name;
+        B.f_ref = (match def.f_ref with None -> false | Some _ -> true);
+        B.f_params = def.f_params +> Ast.unparen +> Ast.uncomma +> 
+          List.map pil_of_param;
+        B.f_return_type = def.f_return_type +> Common.fmap pil_of_type_hint;
+        B.f_body = def.f_body +> Ast.unbrace +> List.map 
+          linearize_stmt_and_def +> List.flatten;
+        
+      }]
+
+
+  | A.ClassDef def ->
+      [B.ClassDef {
+        B.c_name = def.c_name;
+        B.c_type = (match def.c_type with
+        | A.ClassRegular _ -> B.ClassRegular
+        | A.ClassFinal _ -> B.ClassFinal
+        | A.ClassAbstract _ -> B.ClassAbstract
+        );
+        B.c_extends = def.c_extends +> Common.fmap (fun (_t, name) -> name);
+        B.c_implements = (match def.c_implements with
+        | None -> []
+        | Some (_tok, xs) -> xs +> Ast.uncomma;
+        );
+        B.c_body = 
+          def.c_body +> Ast.unbrace +> List.map pil_of_class_stmt +> 
+            List.flatten;
+      }]
+
+  | A.InterfaceDef def ->
+      raise Todo
+
+  | A.Halt _ ->
+      raise Todo
+  | A.NotParsedCorrectly _ ->
+      failwith "Parse error in the file"
+  | A.FinalDef _ -> []
+
+  ) +> List.flatten
+
 
 @
 

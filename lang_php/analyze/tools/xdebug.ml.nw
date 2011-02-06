@@ -113,6 +113,10 @@ let default_config = {
 (* String of *)
 (*****************************************************************************)
 
+let string_of_call_trace x = 
+  spf "%s:%d: call = %s"
+    x.f_file x.f_line (Callgraph_php.s_of_kind_call x.f_call)
+
 let intval_of_params_mode = function
   | NoParam -> 0
   | TypeAndArity -> 1
@@ -412,7 +416,10 @@ let iter_dumpfile2
             trace_opt +> Common.do_option (fun trace -> 
               if not config.collect_return then
                 (try 
-                    callback trace
+                    if trace.f_call = CG.FunCall(xdebug_main_name) 
+                    then ()
+                    else 
+                      callback trace
 
                   with 
                   | Timeout -> raise Timeout

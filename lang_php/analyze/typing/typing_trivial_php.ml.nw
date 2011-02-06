@@ -322,7 +322,7 @@ let rec (type_of_expr: Ast_php.expr -> Type_php.phptype) = fun e ->
   | Unary ((UnMinus, _), e) -> type_of_expr e
 
   (* xdebug use sometimes ???, which in xdebug.ml is replaced by ... *)
-  | EDots _ -> 
+  | SgrepExprDots _ -> 
       [T.Unknown]
 
   | _ -> raise Todo

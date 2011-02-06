@@ -148,6 +148,7 @@ module J = Json_type
  *  this 3 ways ...
  *  
  *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -615,13 +616,13 @@ let json_of_test_status =
   function
   | Pass v1 ->
       let v1 = J.Int v1 in
-      let args = [ v1 ] in J.Array ((J.String "Pass")::args)
+      let args = [ v1 ] in J.Array ((J.String "__Pass")::args)
   | Fail ((v1, v2)) ->
       let v1 = J.Int v1 and v2 = J.Int v2 in
-      let args = [ v1; v2 ] in J.Array ((J.String "Fail")::args)
+      let args = [ v1; v2 ] in J.Array ((J.String "__Fail")::args)
   | Fatal v1 ->
       let v1 = J.String v1 in
-      let args = [ v1 ] in J.Array ((J.String "Fatal")::args)
+      let args = [ v1 ] in J.Array ((J.String "__Fatal")::args)
 
 let json_of_test_result {
                           t_file = v_t_file;
