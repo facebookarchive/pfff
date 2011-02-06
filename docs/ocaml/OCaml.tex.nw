@@ -21,6 +21,7 @@
 % - ocaml.org
 % - some of the .txt I put in shared project, like developer.txt
 %   extract stuff specific to ocaml
+% - 7 lang in 7 weeks   inspiration ?
 
 %------------------------------------------------------------------------------
 % Packages
@@ -246,14 +247,14 @@ Yoann Padioleau\\
 
 \section{Closures}
 
-\section{Howto do X ?}
+\section{How to do X ?}
 
 % option type (I want null or something)
 % ??
 
 \chapter{Your First Project}
 
-\section{Project Organization}
+\section{Project organization}
 
 % dir organization 
 
@@ -263,7 +264,7 @@ Yoann Padioleau\\
 
 % .mli !!!!!   also ocamlc -i,  but dont use it
 
-\section{[[Makefile]] Template}
+\section{[[Makefile]] template}
 
 % libraries .cma
 
@@ -291,8 +292,13 @@ Amazing debugger. Can go back in time.
 
 % cf later emacs section 
 
-\section{Displaying complex values}
+\section{Printf style debugging}
+
+%pr2_gen, a la Perl Dumper
+
 % cf also ocamltarzan 
+
+\section{Displaying complex values}
 
 % p
 
@@ -322,16 +328,19 @@ Amazing debugger. Can go back in time.
 %good color
 %more colors
 
-\section{Type Inference Feedback under Emacs}
+\section{Tags}
+% use pfff/tags :)
+
+\section{Type Inference feedback under Emacs}
 % .annot 
 
 % ocamlc -dtype
 % C-c C-t
 
-\section{Debugging Under Emacs}
+\section{Debugging under Emacs}
 %ocamldebug !!!
 
-\section{[[project.el]] Template}
+\section{[[project.el]] template}
 
 %c-c c-g
 %c-c c-l
@@ -354,15 +363,17 @@ Amazing debugger. Can go back in time.
 
 % caml hump, godi
 
+\chapter{The \ocaml PLEAC cookbook}
+
 \chapter{Pitfalls}
 
-\section{Ugly Stuff}
+\section{Ugly stuff}
 % a few ugly stuff 
 
 %no '-' in filename!!! otherwise can't open, or cant debug because tools
 %are not prepared to have _ in name, like ocamldebug ...
 
-\section{Syntax Memento}
+\section{Syntax memento}
 
 %\subsection{for C/Java/Php/... programmers}
 
@@ -402,15 +413,17 @@ Amazing debugger. Can go back in time.
 \url{http://en.wikipedia.org/wiki/Objective_Caml}
 
 
-\section{\ocaml Tutorial} 
+\section{\ocaml tutorials} 
 
 \url{http://www.ocaml-tutorial.org}
 
-\section{\ocaml Books} 
+\section{\ocaml books} 
 
 \section{Functional programming} 
+% wadler, htdp, sicp
+% seven languages in seven weeks ?
 
-\section{\ocaml Cookbook} 
+\section{\ocaml cookbook} 
 %PLEAC
 
 %excellent ressource 
@@ -419,7 +432,7 @@ Amazing debugger. Can go back in time.
 
 % http://wiki.xensource.com/xenwiki/OCaml_Best_Practices
 
-\section{Coding Conventions}
+\section{Coding conventions}
 % why ? make it easier for other people to read your code
 
 %NO OPEN, except for Ast
@@ -427,7 +440,7 @@ Amazing debugger. Can go back in time.
 % popular func, such as pr2, spf. otherwise qualify, as in
 % Common.map_filter 
 
-\section{Do's and Don't}
+\section{Do's and don't}
 
 % module sux
 

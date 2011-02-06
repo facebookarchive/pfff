@@ -1,1 +1,11 @@
-the syncweb master is ~/pfff on dev machine
+the syncweb master is ~/pfff on macbook or linux dev machine
+ - docs/manual/ ??
+ - docs/ocaml/ MAC
+ - commons/ ??
+ - h_visualization/ MAC
+ - lang_php/parsing/ ??
+ - lang_php/analyze/ ??
+ - lang_cpp/parsing/ ??
+ - visual/ MAC
+
+ - facebook/check_module/ DEV
