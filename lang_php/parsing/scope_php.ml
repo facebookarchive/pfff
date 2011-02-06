@@ -32,6 +32,7 @@ open Common
 (*****************************************************************************)
 (*s: type phpscope *)
 type phpscope = Scope_code.scope
+
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)

@@ -412,9 +412,8 @@ and stmt =
     | Block of stmt_and_def list brace
   (*x: stmt constructors *)
     | If      of tok * expr paren * stmt * 
-        (* elseif *) (tok * expr paren * stmt) list *
-        (* else *) (tok * stmt) option
-          (* if(){}{} *)
+        (* elseif *) if_elseif list *
+        (* else *)   if_else option
     (*s: ifcolon *)
     | IfColon of tok * expr paren * 
           tok * stmt_and_def list * new_elseif list * new_else option * 
@@ -440,8 +439,8 @@ and stmt =
     (* if it's a expr_without_variable, the second arg must be a Right variable,
      * otherwise if it's a variable then it must be a foreach_variable
      *)
-    | Foreach of tok * tok * expr * tok * 
-        (foreach_variable, lvalue) Common.either * foreach_arrow option * tok * 
+    | Foreach of tok * tok * expr * tok * foreach_var_either *
+        foreach_arrow option * tok * 
         colon_stmt
       (* example: foreach(expr as $lvalue) { colon_stmt }
        *          foreach(expr as $foreach_varialbe => $lvalue) { colon_stmt}
@@ -468,7 +467,6 @@ and stmt =
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
 
-
   (*s: AST statement rest *)
     and switch_case_list = 
       | CaseList      of 
@@ -479,10 +477,14 @@ and stmt =
       and case = 
         | Case    of tok * expr * tok * stmt_and_def list
         | Default of tok * tok * stmt_and_def list
+
+   and if_elseif = tok * expr paren * stmt
+   and if_else = (tok * stmt)
   (*x: AST statement rest *)
     and for_expr = expr comma_list (* can be empty *)
     and foreach_arrow = tok * foreach_variable
     and foreach_variable = is_ref * lvalue
+    and foreach_var_either = (foreach_variable, lvalue) Common.either
   (*x: AST statement rest *)
     and catch = 
       tok * (fully_qualified_class_name * dname) paren * stmt_and_def list brace
@@ -510,6 +512,7 @@ and func_def = {
   f_ref: is_ref;
   f_name: name;
   f_params: parameter comma_list paren;
+  (* static-php-ext: *)
   f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
   (*s: f_type mutable field *)
@@ -526,7 +529,7 @@ and func_def = {
     }
   (*x: AST function definition rest *)
       and hint_type = 
-        | Hint of name
+        | Hint of fully_qualified_class_name
         | HintArray  of tok
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option
@@ -580,7 +583,9 @@ and interface_def = {
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
     | ClassVariables of 
-        class_var_modifier * hint_type option *
+        class_var_modifier * 
+         (* static-php-ext: *)
+          hint_type option *
         class_variable comma_list * tok (* ; *)
     | Method of method_def
 
@@ -601,6 +606,7 @@ and interface_def = {
           m_ref: is_ref;
           m_name: name;
           m_params: parameter comma_list paren;
+         (* static-php-ext: *)
           m_return_type: hint_type option;
           m_body: method_body;
         }
