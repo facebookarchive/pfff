@@ -1,7 +1,5 @@
 \documentclass{report}
 
-% http://wiki.xensource.com/xenwiki/OCaml_Best_Practices
-
 %******************************************************************************
 % Prelude
 %******************************************************************************
@@ -17,7 +15,7 @@
 %------------------------------------------------------------------------------
 % History
 %------------------------------------------------------------------------------
-% was in ocaml.org before
+% some stuff was in ocaml.org before
 
 %TODO:
 % - ocaml.org
@@ -93,11 +91,9 @@
 \begin{document}
 
 \title{
-{\Huge OCaml Development}\\
+{\Huge OCaml for Smarties}\\
 %{Programmer's tricks}
 % ocaml tips of an old programmer
-% ocaml crash course
-% ocaml for smarties
 }
 \author{
 Yoann Padioleau\\
@@ -126,7 +122,6 @@ Yoann Padioleau\\
 \else
 \tableofcontents
 \fi
-
 
 %******************************************************************************
 % Body
@@ -164,17 +159,21 @@ Yoann Padioleau\\
 % - code factorization
 % - easy debugging, replay, display complex structure
 
-\section{\ocaml vs Other Programming Languages}
-%vs haskell
-%vs lisp
+\section{\ocaml vs X}
+
+%vs java
 %vs python/ruby
 %vs c/c++
-%vs java
+%vs PHP :)
+
 
 %less:
-% vs erlang
+%vs haskell
+%vs lisp
+%vs erlang
 
 \section{Toolset}
+%see emacs.org
 
 %ocamlc
 %ocamlopt
@@ -204,7 +203,7 @@ Yoann Padioleau\\
 \section{Godi}
 %why godi ?
 
-\section{Pad Installation}
+\section{Pad's installation}
 %also /home/pad/packages/bin 
 
 
@@ -218,13 +217,39 @@ Yoann Padioleau\\
 % link to syntax memento section for why that way
 
 % wierd, let main = ... 
+% like in PHP, toplevel statements
+% compiler generate code for functions and anonymous functions for toplevel 
+%  and when run it run all those fake functions (in the order of the
+% file and the modules given at link time). Usually only toplevel
+% is let main = 
+
+% (actually in C too, because can do
+% static int x = <expression>;
 
 % type inference
-% link to emacs C-c C-t
+% link to emacs C-c C-t, see more later
+
+<<foo.ml>>=
+@ 
 
 \section{Command line arguments}
 
 \section{A Simple Makefile}
+
+\chapter{\ocaml Crash Course}
+
+\section{Type inference}
+
+\section{Function call syntax}
+
+\section{Algebraic data types}
+
+\section{Closures}
+
+\section{Howto do X ?}
+
+% option type (I want null or something)
+% ??
 
 \chapter{Your First Project}
 
@@ -391,6 +416,8 @@ Amazing debugger. Can go back in time.
 %excellent ressource 
 
 \chapter{Coding style}
+
+% http://wiki.xensource.com/xenwiki/OCaml_Best_Practices
 
 \section{Coding Conventions}
 % why ? make it easier for other people to read your code

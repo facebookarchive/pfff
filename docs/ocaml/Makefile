@@ -7,7 +7,7 @@ SRCNW=OCaml.tex.nw
 TEXMAIN=OCaml.tex.nw
 TEX=OCaml.tex
 
-LPSRC=dotemacs-ocaml.el Makefile.template foo.ml
+LPSRC=foo.ml
 
 #------------------------------------------------------------------------------
 SYNCFLAGS=-md5sum_in_auxfile -less_marks
@@ -21,7 +21,8 @@ PDFLATEX=pdflatex --shell-escape
 #------------------------------------------------------------------------------
 sync:
 	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
-
+#sync -lang ?? dotemacs-ocaml.el 
+#sync -lang ?? Makefile.template 
 
 pdf:
 	$(NOWEB) $(TEXMAIN) > $(TEX)
