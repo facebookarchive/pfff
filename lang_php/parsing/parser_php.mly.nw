@@ -22,7 +22,7 @@ Here is the toplevel structure of [[parser_php.mly]]:
 /*(*************************************************************************)*/
 /*(* Rules type declaration *)*/
 /*(*************************************************************************)*/
-%start main expr class_declaration_statement
+%start main expr class_declaration_statement sgrep_spatch_pattern
 <<GRAMMAR type of main rule>>
 
 %%
@@ -39,6 +39,7 @@ Here is the toplevel structure of [[parser_php.mly]]:
 %type <Ast_php.expr> expr
 %type <(Ast_php.class_def, Ast_php.interface_def) Common.either> 
   class_declaration_statement
+%type <Ast_php.any> sgrep_spatch_pattern
 @
 
 
@@ -48,6 +49,9 @@ Here is the toplevel structure of [[parser_php.mly]]:
 /*(*************************************************************************)*/
 <<GRAMMAR toplevel>>
 
+sgrep_spatch_pattern:
+ | expr EOF { Expr $1 }
+ | statement EOF { Stmt2 $1 } 
 
 /*(*************************************************************************)*/
 /*(* statement *)*/
@@ -137,6 +141,19 @@ statement: unticked_statement { $1 }
 unticked_statement:
  | expr           TSEMICOLON		  { ExprStmt($1,$2) }
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
+
+  /*(* static-php-ext: *)*/
+ | type_hint variable TSEMICOLON          { 
+     if not !Flag_parsing_php.type_hints_extension
+     then raise Parsing.Parse_error;
+     TypedDeclaration ($1, $2, None, $3)
+   }
+ | type_hint variable TEQ expr TSEMICOLON { 
+     if not !Flag_parsing_php.type_hints_extension
+     then raise Parsing.Parse_error;
+     TypedDeclaration ($1, $2, Some ($3, $4), $5)
+   }
+
  | TOBRACE inner_statement_list TCBRACE   { Block($1,$2,$3) }
 
  | T_IF TOPAR expr TCPAR statement elseif_list else_single 
@@ -657,6 +674,10 @@ variable2:
      T_OBJECT_OPERATOR object_property method_or_not 
      variable_properties
      { Variable ($1, ($2, $3, $4)::$5) }
+ /*(* sgrep_ext: *)*/
+ | T_IDENT T_OBJECT_OPERATOR object_property method_or_not 
+     variable_properties /*(* contains more T_OBJECT_OPERATOR *)*/
+     { sgrep_guard (raise Todo) }
 
 base_variable_with_function_calls:
  | base_variable {  BaseVar $1 }
@@ -679,7 +700,6 @@ reference_variable:
 compound_variable:
  | T_VARIABLE			{ Var2 (DName $1, Ast_php.noScope()) }
  | TDOLLAR TOBRACE expr TCBRACE	{ VDollar2 ($1, ($2, $3, $4)) }
-
 
 @ 
 
@@ -802,6 +822,11 @@ xhp_attribute_value:
  | TGUIL encaps_list TGUIL { XhpAttrString ($1, $2, $3) }
  | TOBRACE expr TCBRACE    { XhpAttrExpr ($1, $2, $3) }
 
+ /*(* ugly: one cannot use T_IDENT here, because the lexer is still in
+    * XHP mode which means every ident is transformed in a xhp attribute
+    *)*/
+ /*(* sgrep_ext: *)*/
+ | T_XHP_ATTR { sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 /*(*----------------------------*)*/
 /*(* auxillary bis *)*/
@@ -822,15 +847,22 @@ function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
 unticked_function_declaration_statement:
   T_FUNCTION is_reference ident
   TOPAR parameter_list TCPAR 
+  /*(* static-php-ext: *)*/
+  optional_class_type
   TOBRACE inner_statement_list TCBRACE
   { 
     let params = ($4, $5, $6) in
-    let body = ($7, $8, $9) in
+    let body = ($8, $9, $10) in
+
+    if not !Flag_parsing_php.type_hints_extension && $7 <> None
+    then raise Parsing.Parse_error;
+
     ({
       f_tok = $1;
       f_ref = $2;
       f_name = Name $3;
       f_params = params;
+      f_return_type = $7;
       f_body = body;
       f_type = Ast_php.noFtype();
     })
@@ -872,11 +904,12 @@ non_empty_parameter_list:
 <<GRAMMAR function declaration>>=
 optional_class_type:
  | /*(*empty*)*/	{ None }
- | ident		{ Some (Hint (Name $1)) }
- | T_ARRAY		{ Some (HintArray $1) }
+ | type_hint            { Some $1 }
 
- | T_XHP_COLONID_DEF    { Some (Hint (XhpName $1)) }
-
+type_hint:
+ | ident		{ (Hint (Name $1)) }
+ | T_ARRAY		{ (HintArray $1) }
+ | T_XHP_COLONID_DEF    { (Hint (XhpName $1)) }
 
 is_reference:
  | /*(*empty*)*/  { None }
@@ -966,17 +999,33 @@ class_statement:
  | T_CONST class_constant_declaration            TSEMICOLON 
      { ClassConstants($1, $2, $3) }
  | variable_modifiers class_variable_declaration TSEMICOLON 
-     { ClassVariables($1, $2, $3) }
+     { ClassVariables($1, None, $2, $3) }
+
+  /*(* static-php-ext: *)*/
+ | variable_modifiers type_hint class_variable_declaration TSEMICOLON 
+     { 
+       if not !Flag_parsing_php.type_hints_extension
+       then raise Parsing.Parse_error;
+
+       ClassVariables($1, Some $2, $3, $4) 
+     }
+
  | method_modifiers T_FUNCTION is_reference ident  
-     TOPAR parameter_list TCPAR 
+     TOPAR parameter_list TCPAR
+     optional_class_type
      method_body 
-     { Method {
+     { 
+       if not !Flag_parsing_php.type_hints_extension && $8 <> None
+       then raise Parsing.Parse_error;
+
+       Method {
          m_modifiers = $1;
          m_tok = $2;
          m_ref = $3;
          m_name = Name $4;
          m_params = ($5, $6, $7);
-         m_body = $8;
+         m_return_type = $8;
+         m_body = $9;
        }
      }
 
@@ -1093,76 +1142,83 @@ xhp_attr_name:
 xhp_attr_name_atom:
  /*(* could put T_IDENT but even XHP keywords are accepted as XHP attributes*)*/
  | ident { snd $1 }
+
  /*(* Just like it's ok (but not good IMHO) to use XHP keywords in place
     * of regular PHP idents, it's ok to use PHP keywords in place
     * of XHP attribute names (but again not good IMHO).
     * 
-    * Right now I keep the list of tokens accepted limited to
-    * what I've found in our codebase. In theory I should put
-    * there all keywords mentionned in Lexer_php.keywords_table
-    * that do not introduce any conflict.
+    * The list of tokens below are all identifier-like keywords mentionned in
+    * the 'keyword tokens' section at the beginning of this file
+    * (which roughly correspond to the tokens in Lexer_php.keywords_table).
+    * There is no conflict introducing this big list of tokens.
     * 
     * todo? emit a warning when the user use PHP keywords for XHP attribute ?
     *)*/
- | T_LIST { $1 } 
- | T_ARRAY { $1 } 
-     
-  | T__AT { $1 } 
-  | T_NEW { $1 } 
-  | T_CLONE { $1 } 
-  | T_INSTANCEOF { $1 } 
-  | T_INCLUDE { $1 } 
-  | T_INCLUDE_ONCE { $1 } 
-  | T_REQUIRE { $1 } 
-  | T_REQUIRE_ONCE { $1 } 
-  | T_EVAL { $1 } 
-      
-  | T_ECHO { $1 } 
-  | T_PRINT { $1 } 
-  | T_IF { $1 } 
-  | T_ELSE { $1 } 
-  | T_ELSEIF { $1 } 
-  | T_ENDIF { $1 } 
-  | T_DO { $1 } 
-  | T_WHILE { $1 } 
-  | T_ENDWHILE { $1 } 
-  | T_FOR { $1 } 
-  | T_ENDFOR { $1 } 
-  | T_FOREACH { $1 } 
-  | T_ENDFOREACH { $1 } 
-  | T_SWITCH { $1 } 
-  | T_ENDSWITCH { $1 } 
-  | T_CASE { $1 } 
-  | T_DEFAULT { $1 } 
-  | T_BREAK { $1 } 
-  | T_CONTINUE { $1 } 
-  | T_RETURN { $1 } 
-  | T_TRY { $1 } 
-  | T_CATCH { $1 } 
-  | T_THROW { $1 } 
-  | T_EXIT { $1 } 
-  | T_DECLARE { $1 } 
-  | T_ENDDECLARE { $1 } 
-  | T_USE { $1 } 
-  | T_GLOBAL { $1 } 
-  | T_AS { $1 } 
-  | T_FUNCTION { $1 } 
-  | T_CONST { $1 } 
-  | T_STATIC { $1 } 
-  | T_ABSTRACT { $1 } 
-  | T_FINAL { $1 } 
-  | T_PRIVATE { $1 } 
-  | T_PROTECTED { $1 } 
-  | T_PUBLIC { $1 } 
-  | T_VAR { $1 } 
-  | T_UNSET { $1 } 
-  | T_ISSET { $1 } 
-  | T_EMPTY { $1 } 
-  | T_HALT_COMPILER { $1 } 
-  | T_CLASS { $1 } 
-  | T_INTERFACE { $1 } 
-  | T_EXTENDS { $1 } 
-  | T_IMPLEMENTS { $1 } 
+ | T_ECHO { $1 }
+ | T_PRINT { $1 }
+ | T_IF { $1 }
+ | T_ELSE { $1 }
+ | T_ELSEIF { $1 }
+ | T_ENDIF { $1 }
+ | T_DO { $1 }
+ | T_WHILE { $1 }
+ | T_ENDWHILE { $1 }
+ | T_FOR { $1 }
+ | T_ENDFOR { $1 }
+ | T_FOREACH { $1 }
+ | T_ENDFOREACH { $1 }
+ | T_SWITCH { $1 }
+ | T_ENDSWITCH { $1 }
+ | T_CASE { $1 }
+ | T_DEFAULT { $1 }
+ | T_BREAK { $1 }
+ | T_CONTINUE { $1 }
+ | T_RETURN { $1 }
+ | T_TRY { $1 }
+ | T_CATCH { $1 }
+ | T_THROW { $1 }
+ | T_EXIT { $1 }
+ | T_DECLARE { $1 }
+ | T_ENDDECLARE { $1 }
+ | T_USE { $1 }
+ | T_GLOBAL { $1 }
+ | T_AS { $1 }
+ | T_FUNCTION { $1 }
+ | T_CONST { $1 }
+ | T_STATIC { $1 }
+ | T_ABSTRACT { $1 }
+ | T_FINAL { $1 }
+ | T_PRIVATE { $1 }
+ | T_PROTECTED { $1 }
+ | T_PUBLIC { $1 }
+ | T_VAR { $1 }
+ | T_UNSET { $1 }
+ | T_ISSET { $1 }
+ | T_EMPTY { $1 }
+ | T_HALT_COMPILER { $1 }
+ | T_CLASS { $1 }
+ | T_INTERFACE { $1 }
+ | T_EXTENDS { $1 }
+ | T_IMPLEMENTS { $1 }
+ | T_LIST { $1 }
+ | T_ARRAY { $1 }
+ | T_CLASS_C { $1 }
+ | T_METHOD_C { $1 }
+ | T_FUNC_C { $1 }
+ | T_LINE { $1 }
+ | T_FILE { $1 }
+ | T_LOGICAL_OR { $1 }
+ | T_LOGICAL_AND { $1 }
+ | T_LOGICAL_XOR { $1 }
+ | T_NEW { $1 }
+ | T_CLONE { $1 }
+ | T_INSTANCEOF { $1 }
+ | T_INCLUDE { $1 }
+ | T_INCLUDE_ONCE { $1 }
+ | T_REQUIRE { $1 }
+ | T_REQUIRE_ONCE { $1 }
+ | T_EVAL { $1 }
+    
 
 
 
@@ -1434,7 +1490,8 @@ encaps_var_offset:
 @
 
 <<exprbis grammar rule hook>>=
-| TDOTS { EDots $1 }
+/*(* sgrep_ext: *)*/
+| TDOTS { sgrep_guard (SgrepExprDots $1) }
 
 /*(* xhp: do not put in 'expr', otherwise can't have xhp 
    * in function arguments
@@ -1580,7 +1637,7 @@ let failwith_xhp_ambiguity_colon info =
   in
   (*failwith err*)
   pr2 err;
-  raise (Parsing.Parse_error )
+  raise Parsing.Parse_error
 
 let failwith_xhp_ambiguity_percent info =
   let err = 
@@ -1589,7 +1646,21 @@ let failwith_xhp_ambiguity_percent info =
   in
   (*failwith err*)
   pr2 err;
-  raise (Parsing.Parse_error )
+  raise Parsing.Parse_error
+
+(*****************************************************************************)
+(* Sgrep *)
+(*****************************************************************************)
+let sgrep_guard v = 
+  if !Flag_parsing_php.sgrep_mode
+  then v
+  else raise Parsing.Parse_error
+
+(*****************************************************************************)
+(* Xdebug *)
+(*****************************************************************************)
+
+(* todo: xdebug_guard *)
 
 (*****************************************************************************)
 (* shortcuts *)
@@ -1683,7 +1754,8 @@ and basevar_to_variable basevar =
   let v = vwithoutobj_to_variable vwithoutobj in
   (match qu_opt with
   | None -> v
-  | Some qu -> mkvar (VQualifier (qu, v))
+  | Some qu -> 
+      lift_qualifier_closer_to_var qu v
   )
 
 and vwithoutobj_to_variable vwithoutobj = 
@@ -1713,6 +1785,39 @@ and refvar_to_variable refvar =
         VBraceAccess(v, exprb)
   in
   mkvar v
+
+(* even if A::$v['fld'] is parsed in the grammar
+ * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
+ * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+ * 
+ * So this function try to put the qualifier closer to the variable
+ * it is attached to. We must recurse when we have ArrayAccess to
+ * access the deaper variable. We must stop when there is an indirect
+ * because A::$$v should not be parsed as $(A::$v).
+ *)
+and lift_qualifier_closer_to_var qu v =
+
+  let rec aux v =
+    match fst v with
+    | Indirect _ | VBrace _ | VBraceAccess _ -> 
+        raise Not_found
+    | VArrayAccess (lval, e) ->
+        let lval' = aux lval in
+        VArrayAccess (lval', e), snd v
+    | Var (name, _scope) -> 
+        mkvar (ClassVar (qu, name))
+    | This _ ->
+        failwith "todo: what mean A::this ?"
+
+    (* v should have been build via vwithoutobj_to_variable so
+     * we should see only a restrict set of lvalue constructor here
+     *)
+    | _ -> raise Impossible
+  in
+  try 
+    aux v
+  with Not_found -> mkvar (VQualifier (qu, v))
+    
 
 @ 
 
@@ -1859,6 +1964,10 @@ generate them.
 %token <Ast_php.info> T_BAD_CHARACTER
 
 
+/*(*-----------------------------------------*)*/
+/*(* keyword tokens *)*/
+/*(*-----------------------------------------*)*/
+
 /*(* ugly: because of my hack around the implicit echo when use <?=, 
    * this T_ECHO might have a string different than "echo"
    *)*/
@@ -1900,15 +2009,25 @@ generate them.
 
 %token <Ast_php.info> T_CLASS   T_INTERFACE
 %token <Ast_php.info> T_EXTENDS T_IMPLEMENTS
-%token <Ast_php.info> T_OBJECT_OPERATOR
-
-%token <Ast_php.info> T_DOUBLE_ARROW
 
 %token <Ast_php.info> T_LIST T_ARRAY
 
 %token <Ast_php.info> T_CLASS_C T_METHOD_C T_FUNC_C
 %token <Ast_php.info> T_LINE   T_FILE
 
+%token <Ast_php.info> T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
+
+%token <Ast_php.info> T_NEW T_CLONE T_INSTANCEOF
+
+%token <Ast_php.info> T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
+%token <Ast_php.info> T_EVAL 
+
+/*(*-----------------------------------------*)*/
+/*(* symbol tokens *)*/
+/*(*-----------------------------------------*)*/
+
+%token <Ast_php.info> T_OBJECT_OPERATOR
+%token <Ast_php.info> T_DOUBLE_ARROW
 
 %token <Ast_php.info> T_OPEN_TAG  T_CLOSE_TAG
 %token <Ast_php.info> T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
@@ -1936,7 +2055,6 @@ generate them.
 %token <Ast_php.info> T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
 %token <Ast_php.info> T_INC    T_DEC
 %token <Ast_php.info> T_BOOLEAN_OR   T_BOOLEAN_AND 
-%token <Ast_php.info> T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
 %token <Ast_php.info> T_SL    T_SR
 %token <Ast_php.info> T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
 
@@ -1949,11 +2067,6 @@ generate them.
 
 
 %token <Ast_php.info> T__AT
-
-%token <Ast_php.info> T_NEW T_CLONE T_INSTANCEOF
-
-%token <Ast_php.info> T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
-%token <Ast_php.info> T_EVAL 
 
 /*(* was declared implicitely because was using directly the character *)*/
 %token <Ast_php.info> TOPAR TCPAR

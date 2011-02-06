@@ -289,6 +289,8 @@ type visitor_in = {
    *)
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;
+  kinterface_def: 
+    (interface_def -> unit) * visitor_out -> interface_def -> unit;
 
   kmethod_def: (method_def -> unit) * visitor_out -> method_def -> unit;
 
@@ -323,30 +325,12 @@ val mk_visitor: visitor_in -> visitor_out
 
 
 <<type visitor_out>>=
-and visitor_out = {
-  vexpr: expr  -> unit;
-  vstmt: stmt -> unit;
-  vtop: toplevel -> unit;
-  vstmt_and_def: stmt_and_def -> unit;
-  vlvalue: lvalue -> unit;
-  vargument: argument -> unit;
-  vparameter: parameter -> unit;
-  vparameters: parameter comma_list paren -> unit;
-  vclass_stmt: class_stmt -> unit;
-  vbody: stmt_and_def list brace -> unit;
-  vcolon_stmt: colon_stmt -> unit;
-  vlist_assign: list_assign -> unit;
-  vclass_constant: class_constant -> unit;
-  vclass_variable: class_variable -> unit;
-  vinfo: info -> unit;
-  vprogram: program -> unit;
-}
+and visitor_out = any -> unit
 @ 
 
 <<visitor functions>>=
 val do_visit_with_ref:
-  ('a list ref -> visitor_in) -> 
-  (visitor_out -> unit) -> 'a list
+  ('a list ref -> visitor_in) -> any -> 'a list
 @ 
 
 \section{[[pfff -visit_php]]}
@@ -376,7 +360,7 @@ let test_visit_php file =
     );
   } in
   let visitor = Visitor_php.mk_visitor hooks in
-  ast +> List.iter visitor.Visitor_php.vtop 
+  visitor (Ast.Program ast)
 @ 
 
 

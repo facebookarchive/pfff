@@ -67,6 +67,59 @@ open Common
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 <<AST toplevel>>
+
+(* ------------------------------------------------------------------------- *)
+(* Entity and any *)
+(* ------------------------------------------------------------------------- *)
+
+type entity = 
+  | FunctionE of func_def
+  | ClassE of class_def
+  | InterfaceE of interface_def
+  | StmtListE of stmt list
+
+  | MethodE of method_def
+
+  | ClassConstantE of class_constant
+  | ClassVariableE of class_variable * modifier list
+
+  | XhpDeclE of xhp_decl
+
+  | MiscE of info list
+
+type any = 
+  | Lvalue of lvalue
+  | Expr of expr
+  | Stmt2 of stmt
+  | StmtAndDef of stmt_and_def
+  | StmtAndDefs of stmt_and_def list
+  | Toplevel of toplevel
+  | Program of program
+  | Entity of entity
+
+  | Argument of argument
+  | Parameter of parameter
+  | Parameters of parameter comma_list paren
+  | Body of stmt_and_def list brace
+
+  | ClassStmt of class_stmt
+  | ClassConstant2 of class_constant
+  | ClassVariable of class_variable
+  | ListAssign of list_assign
+  | ColonStmt2 of colon_stmt
+  | Case2 of case
+ 
+  | XhpAttribute of xhp_attribute
+  | XhpAttrValue of xhp_attr_value
+  | XhpHtml2 of xhp_html
+
+  | StaticScalar of static_scalar
+
+  | Info of info
+  | InfoList of info list
+
+  (* with tarzan *)
+
 (*****************************************************************************)
 (* AST helpers *)
 (*****************************************************************************)
@@ -363,6 +416,8 @@ type expr = exprbis * exp_info
     and xhp_attr_value = 
       | XhpAttrString of tok (* '"' *) * encaps list * tok (* '"' *)
       | XhpAttrExpr of expr brace
+      (* sgrep: *)
+      | SgrepXhpAttrValueMvar of string wrap
    and xhp_body = 
      | XhpText of string wrap
      | XhpExpr of expr brace
@@ -630,7 +685,7 @@ The ugly conditional ternary operator:
 
 <<AST expression rest>>=
  and class_name_reference = 
-   | ClassNameRefStatic of name
+   | ClassNameRefStatic of fully_qualified_class_name
    | ClassNameRefDynamic of (lvalue * obj_prop_access list)
    and obj_prop_access = tok (* -> *) * obj_property
 @ 
@@ -777,7 +832,13 @@ The 'd' in [[dname]] stands for dollar (dollar name).
 @ 
 
 <<lvaluebis constructors>>=
+  (* This used to be VQualifier of qualifier * lvalue but it was wrong.
+   * Even if A::$v['fld'] was parsed in the grammar
+   * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
+   * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+   *)
   | VQualifier of qualifier * lvalue
+  | ClassVar of qualifier * dname
 @
 
 \subsection{Function calls}
@@ -859,6 +920,8 @@ and I end up not coding the complex one so ...
 (* by introducing Lambda, expr and stmt are now mutually recursive *)
 and stmt = 
   <<stmt constructors>>
+    (* static-php-ext: *)
+    | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
 
   <<AST statement rest>>
 @ 
@@ -877,9 +940,8 @@ and stmt =
 
 <<stmt constructors>>=
   | If      of tok * expr paren * stmt * 
-      (* elseif *) (tok * expr paren * stmt) list *
-      (* else *) (tok * stmt) option
-        (* if(){}{} *)
+      (* elseif *) if_elseif list *
+      (* else *)   if_else option
   <<ifcolon>>
   | While of tok * expr paren * colon_stmt
   | Do of tok * stmt * tok * expr paren * tok 
@@ -902,14 +964,17 @@ and stmt =
     and case = 
       | Case    of tok * expr * tok * stmt_and_def list
       | Default of tok * tok * stmt_and_def list
+
+ and if_elseif = tok * expr paren * stmt
+ and if_else = (tok * stmt)
 @ 
 
 <<stmt constructors>>=
   (* if it's a expr_without_variable, the second arg must be a Right variable,
    * otherwise if it's a variable then it must be a foreach_variable
    *)
-  | Foreach of tok * tok * expr * tok * 
-      (foreach_variable, lvalue) Common.either * foreach_arrow option * tok * 
+  | Foreach of tok * tok * expr * tok * foreach_var_either *
+      foreach_arrow option * tok * 
       colon_stmt
     (* example: foreach(expr as $lvalue) { colon_stmt }
      *          foreach(expr as $foreach_varialbe => $lvalue) { colon_stmt}
@@ -920,6 +985,7 @@ and stmt =
   and for_expr = expr comma_list (* can be empty *)
   and foreach_arrow = tok * foreach_variable
   and foreach_variable = is_ref * lvalue
+  and foreach_var_either = (foreach_variable, lvalue) Common.either
 @ 
 
 
@@ -1102,6 +1168,8 @@ and func_def = {
   f_ref: is_ref;
   f_name: name;
   f_params: parameter comma_list paren;
+  (* static-php-ext: *)
+  f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
   <<f_type mutable field>>
 }
@@ -1119,7 +1187,7 @@ and func_def = {
 
 <<AST function definition rest>>=
     and hint_type = 
-      | Hint of name
+      | Hint of fully_qualified_class_name
       | HintArray  of tok
 @
 \fbnote{plug here for a better type system for HPHP, with 
@@ -1184,7 +1252,11 @@ and interface_def = {
 <<AST class definition>>=
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
-    | ClassVariables of class_var_modifier * class_variable comma_list * tok (* ; *)
+    | ClassVariables of 
+        class_var_modifier * 
+         (* static-php-ext: *)
+          hint_type option *
+        class_variable comma_list * tok (* ; *)
     | Method of method_def
 
     | XhpDecl of xhp_decl
@@ -1257,6 +1329,8 @@ and interface_def = {
       m_ref: is_ref;
       m_name: name;
       m_params: parameter comma_list paren;
+     (* static-php-ext: *)
+      m_return_type: hint_type option;
       m_body: method_body;
     }
 @ 
@@ -1411,13 +1485,12 @@ and fully_qualified_class_name = name
 <<AST info>>=
 <<type pinfo>>
 
-type info = { 
-  (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
-   *)
-  mutable pinfo : pinfo; 
+(* contains among other things the position of the token through
+ * the Common.parse_info embedded inside it.
+ *)
+type info = Parse_info.info
   <<type info hook>>
-  }
+
 and tok = info
 @ 
 
@@ -1434,15 +1507,7 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 @ 
 
 <<AST info>>=
-and transformation = 
-  | NoTransfo
-  | Remove 
-  | AddBefore of add
-  | AddAfter of add
-  | Replace of add
-  and add = 
-    | AddStr of string
-    | AddNewlineAndIdent
+(* old: transformation = ... now in parse_info.ml *)
  <<tarzan annotation>>
 @ 
 
@@ -1479,8 +1544,7 @@ type parse_info = {
 \l see al_info function later 
 
 <<type info hook>>=
-(*TODO*)
-comments: unit;
+(* todo? comments: .... *)
 @ 
 
 \section{Semantic annotations}
@@ -1622,19 +1686,8 @@ val s_of_phpscope: phpscope -> string
 @ 
 
 <<type phpscope>>=
-type phpscope = 
-  | Global
-  | Local 
-  | Param
+type phpscope = Scope_code.scope
 
-  | Class
-
-  | LocalExn
-  | LocalIterator
-  | ListBinded
-  (* | Class ? *)
-
-  | NoScope
  <<tarzan annotation>>
 @ 
 
@@ -1644,7 +1697,7 @@ type phpscope =
 \section{Support for syntactical/semantic  [[grep]]}
 
 <<type exprbis hook>>=
-| EDots of info
+| SgrepExprDots of info
 @ 
 
 \section{Support for source-to-source transformations}
@@ -1691,7 +1744,7 @@ type:
 
 
 <<type info hook>>=
-mutable transfo: transformation;
+(* old: mutable transfo: transformation; *)
 @ 
 
 \section{Support for Xdebug}
@@ -1812,6 +1865,7 @@ val map_comma_list: ('a -> 'b) -> 'a comma_list -> 'b comma_list
 
 val unarg: argument -> expr
 val unmodifiers: class_var_modifier -> modifier list
+val unargs: argument comma_list -> expr list * w_variable list 
 @ 
 
 <<AST helpers interface>>=
@@ -1828,7 +1882,6 @@ val set_type : expr -> Type_php.phptype -> unit
 
 <<AST helpers interface>>=
 val rewrap_str : string -> info -> info
-val rewrap_parse_info : Parse_info.parse_info -> info -> info
 val is_origintok : info -> bool
 val al_info : info -> info
 val compare_pos : info -> info -> int

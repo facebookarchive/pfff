@@ -48,16 +48,7 @@ open Scope_php
 let sexp_of_phpscope x =
   if not !show_annot then Sexp.Atom ""
   else 
-  match x with
-  | Global -> Sexp.Atom "Global"
-  | Local -> Sexp.Atom "Local"
-  | Param -> Sexp.Atom "Param"
-  | NoScope -> Sexp.Atom "NoScope"
-  | ListBinded -> Sexp.Atom "ListBinded"
-  | LocalIterator -> Sexp.Atom "LocalIterator"
-  | LocalExn -> Sexp.Atom "LocalExn"
-  | Class -> Sexp.Atom "Class"
-
+    Scope_code.sexp_of_scope x
 end
 
 module Sexp_phptype = struct

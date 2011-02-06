@@ -6,6 +6,7 @@ open Common
 
 open Ast_php 
 open Parser_php (* the tokens *)
+open Parse_info
 
 module V = Visitor_php
 module Ast = Ast_php
@@ -49,7 +50,7 @@ let string_of_program2 ast2 =
 
     let hooks = { V.default_visitor with
       V.kinfo = (fun (k, _) info ->
-        match info.pinfo with
+        match info.Parse_info.token with
         | Parse_info.OriginTok p ->
             let line = p.Parse_info.line in 
             if line > !cur_line
@@ -78,16 +79,14 @@ let string_of_program2 ast2 =
     in
     
     ast2 +> List.iter (fun (top, infos) ->
-      (V.mk_visitor hooks).V.vtop top
+      (V.mk_visitor hooks) (Toplevel top)
     )
-
-
   )
 
 let mk_unparser_visitor pp = 
   let hooks = { V.default_visitor with
     V.kinfo = (fun (k, _) info ->
-      match info.pinfo with
+      match info.Parse_info.token with
       | Parse_info.OriginTok p ->
           let s =  p.Parse_info.str in
           pp s; (* pp " "; *)
@@ -108,38 +107,23 @@ let mk_unparser_visitor pp =
   (V.mk_visitor hooks)
     
 
-let string_of_toplevel top = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vtop top
-  )
-
 let string_of_infos ii = 
   (* todo: keep space, keep comments *)
   ii |> List.map (fun info -> Ast.str_of_info info) |> Common.join ""
 
 
 let string_of_expr_old e = 
-  let ii = Lib_parsing_php.ii_of_expr e in
+  let ii = Lib_parsing_php.ii_of_any (Expr e) in
   string_of_infos ii
 
-let string_of_expr e = 
+let string_of_any any = 
   Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vexpr e
+    (mk_unparser_visitor pp) any
   )
 
-let string_of_lvalue x = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vlvalue x
-  )
-
-let string_of_param e = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp).V.vparameter e
-  )
+(* convenient shortcut *)
+let string_of_expr x = string_of_any (Expr x)
 
 (*****************************************************************************)
 (* unparsing by using the tokens *)
@@ -165,8 +149,9 @@ let is_behind_a_remove_or_replace prev_tok cur_tok =
   | (Remove _ | Replace _), _ -> true
   | _ -> false
 
-let (string_of_program2_using_tokens: Parse_php.program2 -> string) = 
- fun ast2 ->
+let string_of_program2_using_tokens 
+ ?(remove_space_after_removed = true)
+  ast2 =
 
    (* for some of the processing below, it is convenient to enclose
     * the list of tokens with some fake tokens so that the special
@@ -174,7 +159,7 @@ let (string_of_program2_using_tokens: Parse_php.program2 -> string) =
     *)
    let fake_tok = 
      let e = Parse_php.expr_of_string "1" in
-     let ii = Lib_parsing_php.ii_of_expr e in
+     let ii = Lib_parsing_php.ii_of_any (Expr e) in
      match ii with
      | [info] -> Parser_php.T_ECHO (Ast.rewrap_str "" info)
      | _ -> raise Impossible
@@ -218,8 +203,10 @@ let (string_of_program2_using_tokens: Parse_php.program2 -> string) =
             if is_in_between_some_remove tok_prev tok 
              (* TODO: this is ok only for certain tokens, such
               * as comma
-              *  || is_behind_a_remove_or_replace tok_prev tok
+              *  
               *)
+              || (is_behind_a_remove_or_replace tok_prev tok &&
+                  remove_space_after_removed)
             then () 
             else comments |> List.iter pp_tok;
 
