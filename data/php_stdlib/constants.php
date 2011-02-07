@@ -638,3 +638,14 @@ define('LIBXML_ERR_NONE', 1);
 define('LIBXML_ERR_WARNING', 1);
 define('LIBXML_VERSION', 1);
 define('LIBXML_DOTTED_VERSION', 1);
+
+//http://www.php.net/manual/en/function.setlocale.php
+define('LC_ALL', 1);
+define('LC_COLLATE', 1);
+define('LC_CTYPE', 1);
+define('LC_MONETARY', 1);
+define('LC_NUMERIC', 1);
+define('LC_TIME', 1);
+define('LC_MESSAGES', 1);
+
+
