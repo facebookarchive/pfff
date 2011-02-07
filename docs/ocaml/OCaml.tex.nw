@@ -19,10 +19,10 @@
 % some stuff was in ocaml.org before
 
 %TODO:
+% - 7 lang in 7 weeks   inspiration ?
 % - ocaml.org
 % - some of the .txt I put in shared project, like developer.txt
 %   extract stuff specific to ocaml
-% - 7 lang in 7 weeks   inspiration ?
 
 %------------------------------------------------------------------------------
 % Packages
@@ -94,8 +94,7 @@
 
 \title{
 {\Huge OCaml for Smarties}\\
-%{Programmer's tricks}
-% ocaml tips of an old programmer
+% ocaml tips of an old OCaml programmer
 }
 \author{
 Yoann Padioleau\\
@@ -135,6 +134,10 @@ Yoann Padioleau\\
 
 \ocaml is a powerful language, trust me.
 
+\url{http://en.wikipedia.org/wiki/Objective_Caml}
+% ML tradition, type inference, functional, powerful type system,
+% impure so can have references/globals and exceptions, strict
+
 %goal of this document ?
 
 % wikipedia link ? and set of features
@@ -161,6 +164,12 @@ Yoann Padioleau\\
 % - code factorization
 % - easy debugging, replay, display complex structure
 
+% by static analysis world, by financial world (jane street), by system
+% world Xen, mldonkey, mylife backend, 
+% by F# is a copy of OCaml, and of course
+% origin in academics, especially program analysis, compilation, theorem 
+% proving, its original niche.
+
 \section{\ocaml vs X}
 
 %vs java
@@ -173,6 +182,8 @@ Yoann Padioleau\\
 %vs haskell
 %vs lisp
 %vs erlang
+
+% see section X for ocaml deficiencies against other languages too
 
 \section{Toolset}
 %see emacs.org
@@ -200,10 +211,14 @@ Yoann Padioleau\\
 
 %if with pad, then no need, see section X
 
+% unix packages (rpm, deb, macports, etc)
+
 \section{From source}
 
 \section{Godi}
 %why godi ?
+
+\section{Unix distributions}
 
 \section{Pad's installation}
 %also /home/pad/packages/bin 
@@ -261,7 +276,7 @@ Yoann Padioleau\\
 
 % flags 
 
-% libraries .cma
+% libraries .cma (even C people dunno that ...)
 
 % .mli !!!!!   also ocamlc -i,  but dont use it
 
@@ -313,9 +328,8 @@ Yoann Padioleau\\
 
 \chapter{Testing}
 
-% my example, quickcheck, my regression style
-
-% ounit?, 
+% my let _ = example ..., my cmdline_actions,
+% my regression style, ounit, quickcheck
 
 \chapter{Debugging}
 
@@ -376,16 +390,21 @@ Amazing debugger. Can go back in time.
 %no '-' in filename!!! otherwise can't open, or cant debug because tools
 %are not prepared to have _ in name, like ocamldebug ...
 
-\section{Syntax memento}
-
-%\subsection{for C/Java/Php/... programmers}
+\section{Confusing syntax for a C/Java/... programmer}
 
 % '*' are not pointers ... they mean tuples (pair, triples, ...)
 
 % !  is not negation !! it's pointer reference, so if see
 % if !flag then .... it does not mean negation
 
+\section{\ocaml deficiencies}
 
+% no typeclass :( have generic Eq (but sucks),
+% can emulate Show and deriving with camlp4 but not as good.
+
+% no multicore ...
+
+\section{Syntax memento}
 
 % let
 % ;;
@@ -394,7 +413,6 @@ Amazing debugger. Can go back in time.
 %  less chars when  foo 1 2 than foo(1, 2) 
 %  encourage make no diff between func and other values, a func
 %  can be passed as a param, partially applied, etc
-
 
 % comments are (* *) 
 
@@ -407,29 +425,9 @@ Amazing debugger. Can go back in time.
 %  - +>, better sense of reading 
 %  - visitor
 %  - hooks
-% ocamltarzan/camlmix, -dump_ast, ocaml.ml
+%  - ocamltarzan/camlmix, -dump_ast, ocaml.ml
 
 %hashbtl, setg mapg
-
-\chapter{Documentation}
-
-\url{http://en.wikipedia.org/wiki/Objective_Caml}
-
-
-\section{\ocaml tutorials} 
-
-\url{http://www.ocaml-tutorial.org}
-
-\section{\ocaml books} 
-
-\section{Functional programming} 
-% wadler, htdp, sicp
-% seven languages in seven weeks ?
-
-\section{\ocaml cookbook} 
-%PLEAC
-
-%excellent ressource 
 
 \chapter{Coding style}
 
@@ -445,8 +443,28 @@ Amazing debugger. Can go back in time.
 
 \section{Do's and don't}
 
-% module sux
+% module sux ?
 
+
+\chapter{More Documentation}
+
+\url{http://en.wikipedia.org/wiki/Objective_Caml}
+
+\section{\ocaml tutorials} 
+
+\url{http://www.ocaml-tutorial.org}
+
+\section{\ocaml books} 
+
+\section{Functional programming} 
+
+% wadler, htdp, sicp
+% seven languages in seven weeks ?
+
+\section{\ocaml cookbook} 
+%PLEAC
+
+%excellent ressource 
 
 \appendix
 
