@@ -87,6 +87,10 @@ let xhp_or_t_ident ii fii =
  * Note that PHP allow those keywords to be used in certain places,
  * for instance as object flds as in $o->while, so the transformation
  * from a LABEL to those keywords is done only in a few cases.
+ * 
+ * note: PHP is case insensitive so this hash table is used on
+ * a lowercased string so don't put strings in uppercase below because
+ * such key would never be reached!
  *)
 let keyword_table = Common.hash_of_list [
 
@@ -181,11 +185,11 @@ let keyword_table = Common.hash_of_list [
 
   "__halt_compiler", (fun ii -> T_HALT_COMPILER ii);
 
-  "__CLASS__",       (fun ii -> T_CLASS_C ii);
-  "__FUNCTION__",    (fun ii -> T_FUNC_C ii);
-  "__METHOD__",      (fun ii -> T_METHOD_C ii);
-  "__LINE__",        (fun ii -> T_LINE ii);
-  "__FILE__",        (fun ii -> T_FILE ii);
+  "__class__",       (fun ii -> T_CLASS_C ii);
+  "__function__",    (fun ii -> T_FUNC_C ii);
+  "__method__",      (fun ii -> T_METHOD_C ii);
+  "__line__",        (fun ii -> T_LINE ii);
+  "__file__",        (fun ii -> T_FILE ii);
 
   (* xhp: having those XHP keywords handled here could mean they can not
    * be used for entities like functions or class names. We could
@@ -209,6 +213,8 @@ let keyword_table = Common.hash_of_list [
   (* "empty" is already a PHP keyword, see T_EMPTY *)
   "pcdata", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_PCDATA x));
 ]
+let _ = assert ((Common.hkeys keyword_table) +> 
+                 List.for_all (fun s -> s = lowercase s))
 (*e: keywords_table hash *)
 
 (* ---------------------------------------------------------------------- *)

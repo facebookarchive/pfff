@@ -19,6 +19,20 @@ let assert_no_parser_error ast =
 let unittest =
   "parsing_php" >::: [
 
+    "lexing regular code" >:: (fun () ->
+      let toks = Parse_php.tokens_of_string "echo 1+2;" in
+      assert_bool "should have a Echo token" 
+        (toks +> List.exists (function 
+          Parser_php.T_ECHO _ -> true | _ -> false));
+    );
+
+    "lexing and case sensitivity" >:: (fun () ->
+      let toks = Parse_php.tokens_of_string 
+          "function foo() { echo __function__; }" in
+      assert_bool "should have a __FUNCTION__ token" 
+        (toks +> List.exists (function 
+          Parser_php.T_FUNC_C _ -> true | _ -> false));
+    );
     (* The PHP parser does not return an exception when a PHP file contains
      * an error, to allow some form of error recovery by not stopping 
      * at the first mistake. Instead it returns a NotParsedCorrectly 

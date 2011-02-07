@@ -477,6 +477,14 @@ let (program_of_string: string -> Ast_php.program) = fun s ->
   let ast = program_of_program2 ast2 in
   Common.erase_this_temp_file tmpfile;
   ast
+
+(* this function is useful mostly for our unit tests *)
+let (tokens_of_string: string -> Parser_php.token list) = fun s -> 
+  let tmpfile = Common.new_temp_file "pfff_tokens_of_s" "php" in
+  Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
+  let toks = tokens tmpfile in
+  Common.erase_this_temp_file tmpfile;
+  toks
   
 
 (* 
