@@ -129,7 +129,7 @@ define('LOG_DEBUG', 1);
 define('ICONV_IMPL', 1);
 define('ICONV_VERSION', 1);
 define('ICONV_MIME_DECODE_STRICT', 1);
-define('ICONV_MIME_DECODE_CONTINUE_ON_ERROR 	', 1);
+define('ICONV_MIME_DECODE_CONTINUE_ON_ERROR', 1);
 
 //http://php.net/manual/en/function.php-uname.php
 define('PHP_OS', 1);
@@ -616,3 +616,25 @@ define('CURLM_OUT_OF_MEMORY', 1);
 define('CURLM_INTERNAL_ERROR', 1);
 define('CURLMSG_DONE', 1);
 
+// http://php.net/manual/es/libxml.constants.php
+define('LIBXML_COMPACT', 1);
+define('LIBXML_DTDATTR', 1);
+define('LIBXML_DTDLOAD', 1);
+define('LIBXML_DTDVALID', 1);
+define('LIBXML_NOBLANKS', 1);
+define('LIBXML_NOCDATA', 1);
+define('LIBXML_NOEMPTYTAG', 1);
+define('LIBXML_NOENT', 1);
+define('LIBXML_NOERROR', 1);
+define('LIBXML_NONET', 1);
+define('LIBXML_NOWARNING', 1);
+define('LIBXML_NOXMLDECL', 1);
+define('LIBXML_NSCLEAN', 1);
+define('LIBXML_PARSEHUGE', 1);
+define('LIBXML_XINCLUDE', 1);
+define('LIBXML_ERR_ERROR', 1);
+define('LIBXML_ERR_FATAL', 1);
+define('LIBXML_ERR_NONE', 1);
+define('LIBXML_ERR_WARNING', 1);
+define('LIBXML_VERSION', 1);
+define('LIBXML_DOTTED_VERSION', 1);
