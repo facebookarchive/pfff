@@ -58,14 +58,17 @@ let assert_string str =
   if not (str = "") then assert_failure str
 
 let assert_equal ?(cmp = ( = )) ?printer ?msg expected actual  =
+  (* pad: better to use dump by default *)
+  let p = Dumper.dump in
+
   let get_error_string _ =
     match printer, msg with 
 	None, None -> 
-          (* pad: better to use dump by default *)
-          let p = Dumper.dump in
           (Format.sprintf "expected: %s but got: %s" 
               (p expected) (p actual)) 
-      | None, Some s -> (Format.sprintf "%s\nnot equal" s)
+      | None, Some s -> 
+          (Format.sprintf "%s\nnot equal, expected: %s but got: %s" s
+            (p expected) (p actual))
       | Some p, None -> (Format.sprintf "expected: %s but got: %s" 
 			   (p expected) (p actual))
       | Some p, Some s -> (Format.sprintf "%s\nexpected: %s but got: %s" 

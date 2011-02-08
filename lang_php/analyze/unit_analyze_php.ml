@@ -6,6 +6,7 @@ module Db = Database_php
 module Cg = Callgraph_php
 
 module V = Visitor_php
+module A = Annotation_php
 
 open OUnit
 
@@ -650,6 +651,47 @@ let tags_unittest =
     ]
 
 (*---------------------------------------------------------------------------*)
+(* Annotations *)
+(*---------------------------------------------------------------------------*)
+
+let annotation_unittest =
+  "annotation_php" >::: [
+    "data provider annotations" >:: (fun () ->
+      let file_content = "
+        class A {
+          // @dataProvider provider
+          public function foo() { }
+          public function provider() { }
+          // @dataProvider B::provider2
+          public function foo2() { }
+          /**
+           * @dataProvider provider3
+           */
+          public function foo3() { }
+          /*
+           * @dataProvider provider4
+           */
+          public function foo4() { }
+}
+"
+      in
+      let tmpfile = tmp_php_file_from_string file_content in
+      let (ast_with_comments, _stat) = Parse_php.parse tmpfile in
+      let annots = 
+        Annotation_php.annotations_of_program_with_comments ast_with_comments
+          +> List.map snd
+      in
+      assert_equal ~msg:"should have the DataProvider annotations"
+        (sort [A.DataProvider (A.Method "provider");
+               A.DataProvider (A.MethodExternal ("B", "provider2"));
+               A.DataProvider (A.Method "provider3");
+               A.DataProvider (A.Method "provider4");
+        ])
+        (sort annots);
+    );
+  ]
+
+(*---------------------------------------------------------------------------*)
 (* Final suite *)
 (*---------------------------------------------------------------------------*)
 
@@ -661,4 +703,5 @@ let unittest =
     Test_coverage_php.unittest;
     deadcode_unittest;
     tags_unittest;
+    annotation_unittest;
   ]

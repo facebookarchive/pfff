@@ -73,6 +73,9 @@ type annotation =
   | NotDeadCode
   | Have_THIS_FUNCTION_EXPIRES_ON
 
+  (* phpunit *)
+  | DataProvider of method_callback
+
   | Other of string
 
  (* see http://www.intern.facebook.com/intern/wiki/index.php/UnitTests/PHP#Controlling_Failure_Notification *)
@@ -80,6 +83,14 @@ type annotation =
    | Immediate
    | Consistent
    | Daily
+
+ (* see http://www.phpunit.de/manual/current/en/appendixes.annotations.html#appendixes.annotations.dataProvider although the documentation does not give
+  * any format, for instance the @dataProvider class::method is not
+  * mentioned
+  *)
+ and method_callback =
+   | Method of string
+   | MethodExternal of string (* class *) * string
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -155,6 +166,15 @@ let extract_annotations str =
     | _ when str =~ "@author[ ]+\\([^ ]+\\)" ->
         let name = Common.matched1 str in
         [Author name]
+
+    | _ when 
+          str =~ "@dataProvider[ ]+\\([a-zA-Z_0-9]+\\)::\\([a-zA-Z_0-9]+\\)" ->
+        let (aclass, amethod) = Common.matched2 str in
+        [DataProvider (MethodExternal (aclass, amethod))]
+
+    | _ when str =~ "@dataProvider[ ]+\\([a-zA-Z_0-9]+\\)" ->
+        let amethod = Common.matched1 str in
+        [DataProvider (Method amethod)]
        
     | _ -> 
         let xs = Common.all_match "\\(@[A-Za-z-]+\\)" str in
@@ -220,6 +240,9 @@ let rec vof_annotation =
   | NotDeadCode -> Ocaml.VSum (("NotDeadCode", []))
   | Have_THIS_FUNCTION_EXPIRES_ON ->
       Ocaml.VSum (("Have_THIS_FUNCTION_EXPIRES_ON", []))
+  | DataProvider v1 ->
+      let v1 = vof_method_callback v1
+      in Ocaml.VSum (("DataProvider", [ v1 ]))
   | Other v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Other", [ v1 ]))
 and vof_notification_kind =
@@ -227,6 +250,14 @@ and vof_notification_kind =
   | Immediate -> Ocaml.VSum (("Immediate", []))
   | Consistent -> Ocaml.VSum (("Consistent", []))
   | Daily -> Ocaml.VSum (("Daily", []))
+and vof_method_callback =
+  function
+  | Method v1 ->
+      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Method", [ v1 ]))
+  | MethodExternal ((v1, v2)) ->
+      let v1 = Ocaml.vof_string v1
+      and v2 = Ocaml.vof_string v2
+      in Ocaml.VSum (("MethodExternal", [ v1; v2 ]))
 
 
 (*****************************************************************************)
@@ -236,3 +267,31 @@ and vof_notification_kind =
 let str_debug_of_annotation a = 
   let v = vof_annotation a in
   Ocaml.string_of_v v
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let annotations_of_program_with_comments2 asts_and_tokens =
+ asts_and_tokens +> List.map (fun (ast, (_str, toks)) ->
+  toks +> List.map (function
+  | Parser_php.T_COMMENT info
+  | Parser_php.T_DOC_COMMENT info 
+    ->
+      let s = Ast_php.str_of_info info in
+      let annots = extract_annotations s in
+      (* add location information to the annotation by reusing the
+       * location information of the comment (that means
+       * that multiple annotations in one comment will share
+       * the same location, which is not very precise, but should
+       * be good enough to locate the annotation when we
+       * do checks related to annotations.
+       *)
+      annots +> List.map (fun annot -> info, annot)
+  | _ -> []
+  ) +> List.flatten
+ ) +> List.flatten
+ 
+let annotations_of_program_with_comments a = 
+  Common.profile_code "Annotation_php.annotations" (fun () ->
+    annotations_of_program_with_comments2 a)
