@@ -279,6 +279,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   (* ugly *)
   text_with_user_pos := [];
 
+  (* coupling: with parsing2.ml *)
   (match FT.file_type_of_file file with
   | (
       FT.PL (FT.Web (FT.Php _))
@@ -286,7 +287,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.ML _)
     | FT.PL (FT.Cplusplus | FT.C)
     | FT.PL (FT.Thrift)
-    | FT.Text ("nw" | "tex"  | "texi" | "web")
+    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
     | FT.PL (FT.Lisp _)
     | FT.PL (FT.Haskell _)
     | FT.PL (FT.Python)

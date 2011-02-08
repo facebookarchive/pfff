@@ -151,6 +151,7 @@ BASICLIBS=commons/commons.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
+ lang_text/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
@@ -202,6 +203,7 @@ LIBS= commons/commons.cma \
      lang_csharp/analyze/lib.cma \
     lang_erlang/parsing/lib.cma \
      lang_erlang/analyze/lib.cma \
+    lang_text/lib.cma
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
@@ -247,6 +249,7 @@ MAKESUBDIRS=commons \
    lang_php/analyze/qa_test \
    lang_php/analyze/dynamic_analysis \
    lang_php/analyze/static_analysis \
+  lang_text \
   $(VISUALDIR) \
   $(FACEBOOKDIR)
 
