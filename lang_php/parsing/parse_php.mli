@@ -36,6 +36,7 @@ val any_of_string:  string -> Ast_php.any
 (*e: extra parse function signature *)
 (*x: parse_php.mli *)
 val program_of_program2 : program2 -> Ast_php.program
+val program_of_program_with_comments : program_with_comments -> Ast_php.program
 (*x: parse_php.mli *)
 val tokens: 
   ?init_state:Lexer_php.state_mode ->

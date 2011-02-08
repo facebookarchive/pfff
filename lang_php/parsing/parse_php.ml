@@ -46,6 +46,7 @@ type program_with_comments = program2
 let program_of_program2 xs = 
   xs +> List.map fst
 (*e: function program_of_program2 *)
+let program_of_program_with_comments a = program_of_program2 a
 
 (*****************************************************************************)
 (* Wrappers *)
