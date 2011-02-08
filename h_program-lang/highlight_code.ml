@@ -268,6 +268,8 @@ type category =
   | CommentSection0
   | CommentSection1
   | CommentSection2
+  | CommentSection3 
+  | CommentSection4
   | CommentEstet
   | CommentCopyright
   | CommentSyncweb
@@ -547,6 +549,9 @@ let info_of_category = function
   | CommentSection0 -> [`FOREGROUND "coral";]
   | CommentSection1 -> [`FOREGROUND "orange";]
   | CommentSection2 -> [`FOREGROUND "LimeGreen";]
+  | CommentSection3 -> [`FOREGROUND "LightBlue3";]
+  | CommentSection4 -> [`FOREGROUND "gray";]
+
   | CommentEstet -> [`FOREGROUND "gray";]
   | CommentCopyright -> [`FOREGROUND "gray";]
   | CommentSyncweb -> [`FOREGROUND "DimGray";]

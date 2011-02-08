@@ -223,6 +223,7 @@ rule category = parse
   | "ocamlextra" { ThirdParty }
   | "/score_parsing" { Data }
   | "/score_tests" { Data }
+  | "/archive.org" { Data }
 
   | "/big/" { Data }
 

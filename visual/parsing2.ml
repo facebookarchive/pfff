@@ -52,6 +52,8 @@ type ast =
 
   | Noweb of Parse_nw.program2
 
+  (* less? | Org of Org_mode.org ? *)
+
 let _hmemo_file = Hashtbl.create 101
 
 let parse_ml2 file = 
@@ -228,7 +230,7 @@ let rewrite_categ_using_entities s categ file entities =
 (*****************************************************************************)
 
 (* coupling: right now if you add a language here, you need to whitelist it
- * also in draw2.draw_contents2.
+ * also in draw_microlevel.draw_contents2.
  * 
  * todo: ugly, lots of repetitive code. If factorize code in
  * parse_info.ml can at least factorize some of the Ast_xxx.str_of_xxx.
@@ -606,6 +608,9 @@ let tokens_with_categ_of_file file hentities =
       ) +> List.flatten
 
 
+  | FT.Text ("org") ->
+      let org = Org_mode.parse file in
+      Org_mode.highlight org
 
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"

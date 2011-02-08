@@ -91,8 +91,10 @@ let size_font_multiplier_of_categ ~font_size_real categ =
         
     (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.
-    | Some (SH.CommentSection1) -> 4.
-    | Some (SH.CommentSection2) -> 3.5
+    | Some (SH.CommentSection1) -> 3.
+    | Some (SH.CommentSection2) -> 2.0
+    | Some (SH.CommentSection3) -> 1.2
+    | Some (SH.CommentSection4) -> 1.1
     | Some (SH.CommentEstet) -> 1.0
     | Some (SH.CommentCopyright) -> 0.5
 
