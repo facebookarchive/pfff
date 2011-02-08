@@ -648,4 +648,5 @@ define('LC_NUMERIC', 1);
 define('LC_TIME', 1);
 define('LC_MESSAGES', 1);
 
-
+// http://php.net/manual/en/function.microtime.php
+define('CLOCK_MONOTONIC', 1);
