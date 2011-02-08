@@ -52,6 +52,8 @@ type ast =
 
   | Noweb of Parse_nw.program2
 
+  (* less? | Org of Org_mode.org ? *)
+
 let _hmemo_file = Hashtbl.create 101
 
 let parse_ml2 file = 
@@ -607,7 +609,8 @@ let tokens_with_categ_of_file file hentities =
 
 
   | FT.Text ("org") ->
-      raise Todo
+      let org = Org_mode.parse file in
+      Org_mode.highlight org
 
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"

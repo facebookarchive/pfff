@@ -14,6 +14,8 @@
 
 open Common 
 
+module HC = Highlight_code
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -37,6 +39,7 @@ type org = org_line list
 let parse file =
   let xs = Common.cat file in
   xs +> List.map (fun s ->
+    let s = s ^ "\n" in
     match () with
     | _ when s =~ "^\\([*]+\\)" ->
         let header = Common.matched1 s in
@@ -53,4 +56,24 @@ let parse file =
 (*****************************************************************************)
 
 let highlight org =
-  raise Todo
+  org +> Common.index_list_1 +> List.map (fun (org, line) ->
+    let filepos = { l = line; c = 0; } in
+    match org with
+    | Comment s -> 
+        s, Some (HC.Comment), filepos
+    | Other s ->
+        s, Some (HC.Normal), filepos
+    | Header (int, s) ->
+        let categ = 
+          (match int with
+          | 0 -> raise Impossible
+          | 1 -> Some HC.CommentSection0
+          | 2 -> Some HC.CommentSection1
+          | 3 -> Some HC.CommentSection2
+          | 4 -> Some HC.CommentSection3
+          | 5 -> Some HC.CommentSection4
+          | _ -> None
+          )
+        in
+        s, categ, filepos
+  )

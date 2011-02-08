@@ -70,7 +70,8 @@ type category =
 
   | CommentWordImportantNotion | CommentWordImportantModal
 
-  | CommentSection0 | CommentSection1 | CommentSection2
+  | CommentSection0 | CommentSection1 | CommentSection2 
+  | CommentSection3 | CommentSection4
   | CommentEstet | CommentCopyright | CommentSyncweb
 
   | MatchGlimpse | MatchSmPL
