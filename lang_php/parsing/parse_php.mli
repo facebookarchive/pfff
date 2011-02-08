@@ -8,6 +8,7 @@ type program2 = toplevel2 list
     Ast_php.toplevel (* NotParsedCorrectly if parse error *) * info_item
      (* the token list contains also the comment-tokens *)
      and info_item = (string * Parser_php.token list)
+type program_with_comments = program2
 (*e: type program2 *)
 
 (* This is the main function *)
