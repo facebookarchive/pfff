@@ -1,10 +1,14 @@
 <?php
 
-
 // see also static $builtin_defines =
 // in www/flib/_bin/_checkModuleLib.php
 define('CLOCK_THREAD_CPUTIME_ID', 1);
 
+// flib/ code is supposed to never use flib_init() so never use
+// any FLIB_CONTEXT_xxx constants, but some of our
+// code sometimes do:
+//   if (ModuleStack::getContext() === FLIB_CONTEXT_TEST) ...
+define('FLIB_CONTEXT_TEST', 1);
 
 define('T_XHP_TEXT', 1);
 
