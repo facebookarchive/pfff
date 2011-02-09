@@ -720,7 +720,7 @@ rule st_in_scripting = parse
            *)
           | Some (
                 TOPAR _ | TCPAR _
-              | T_ECHO _ | T_PRINT _
+              | T_ECHO _ | T_PRINT _ | T_CLONE _
               | TSEMICOLON _ | TCOMMA _
               | TOBRACE _ | TCBRACE _
               | T_RETURN _ 
