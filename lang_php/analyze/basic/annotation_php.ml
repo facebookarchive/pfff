@@ -51,6 +51,14 @@ type email = string
 let is_email s = 
   s =~ ".*@.*"
 
+(* todo? should make sure it's a valid unixname, but it requires access
+ * to the list of employees
+ *)
+let is_unixname s =
+  (* update, we now accept just usename as email *)
+  s =~ "[a-z][a-z0-9_]+"
+
+
 type unixname = string
  (* with tarzan *)
 
@@ -147,7 +155,7 @@ let extract_annotations str =
                   failwith ("wrong notification: " ^ s)
             in
 
-            if (not (is_email email)) 
+            if (not (is_email email || is_unixname email)) 
             then failwith ("not a valid email address: " ^ s);
             
             (email, notification)

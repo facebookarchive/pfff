@@ -154,6 +154,17 @@ define('SIGINT', 1);
 define('SIGTERM', 1);
 define('SIGUSR1', 1);
 
+//http://www.php.net/manual/en/class.datetime.php#datetime.constants.types
+define('DATE_ATOM', 1);
+define('DATE_COOKIE', 1); 
+define('DATE_ISO8601', 1); 
+define('DATE_RFC850', 1); 
+define('DATE_RFC1036', 1); 
+define('DATE_RFC1123', 1); 
+define('DATE_RFC2822', 1); 
+define('DATE_RFC3339', 1); 
+define('DATE_RSS', 1); 
+define('DATE_W3C', 1); 
 define('DATE_RFC822', 1);
 
 // http://php.net/manual/en/function.openssl-sign.php
