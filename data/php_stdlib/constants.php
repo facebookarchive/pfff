@@ -54,6 +54,9 @@ define('PREG_SPLIT_NO_EMPTY', 1);
 define('PREG_OFFSET_CAPTURE', 1);
 define('PREG_SPLIT_DELIM_CAPTURE', 1);
 
+//http://php.net/manual/en/function.preg-grep.php
+define('PREG_GREP_INVERT', 1);
+
 // http://php.net/manual/en/function.htmlspecialchars.php
 define('ENT_QUOTES', 1);
 
