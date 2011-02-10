@@ -542,15 +542,17 @@ VERSION=$(shell cat globals/config.ml.in |grep version |perl -p -e 's/.*"(.*)".*
 
 # note: don't remove DESTDIR, it can be set by package build system like ebuild
 install: all
+	mkdir -p $(DESTDIR)$(BINDIR)
 	mkdir -p $(DESTDIR)$(SHAREDIR)
-	cp -a config/ $(DESTDIR)$(SHAREDIR)
+	cp -a $(PROGS) $(BINDIR)
+	cp -a data $(DESTDIR)$(SHAREDIR)
 	@echo ""
-	@echo "You can also install XXX by copying the program XXX"
-	@echo "(available in this directory) anywhere you want and"
+	@echo "You can also install pfff by copying the programs"
+	@echo "available in this directory anywhere you want and"
 	@echo "give it the right options to find its configuration files."
 
 uninstall:
-	rm -rf $(DESTDIR)$(SHAREDIR)/config/
+	rm -rf $(DESTDIR)$(SHAREDIR)/data
 
 version:
 	@echo $(VERSION)

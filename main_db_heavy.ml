@@ -45,7 +45,14 @@ let main_action xs =
   match xs with
   | [dir] -> 
 
-      let dir = Common.realpath dir |> Common.chop_dirsymbol in
+      let dir = 
+        (try Common.realpath dir
+        with exn ->
+          pr2 "note: could not find realpath";
+          dir
+        )
+        +> Common.chop_dirsymbol 
+      in
       let prj = Database_php.Project (dir, None) in
       let prj = Database_php.normalize_project prj in 
 
@@ -106,9 +113,25 @@ let gen_layers metapath =
 (* Extra actions *)
 (*****************************************************************************)
 
+let deadcode_analysis db =
+
+  let hooks = { Deadcode_php.default_hooks with
+    Deadcode_php.print_diff = false;
+    Deadcode_php.with_blame = false;
+  }
+  in
+  let dead_ids_func = Deadcode_php.finding_dead_functions hooks db in
+  let dead_ids_class = Deadcode_php.finding_dead_classes hooks db in
+  pr2 (spf "total dead functions = %d, total dead classes = %d"
+          (List.length dead_ids_func) (List.length dead_ids_class));
+   ()
+
 let pfff_extra_actions () = [
   "-gen_layers", " <metapath>",
   Common.mk_action_1_arg gen_layers;
+  "-deadcode_analysis", " <metapath>",
+  Common.mk_action_1_arg (fun metapath ->
+    Database_php.with_db ~metapath (fun db -> deadcode_analysis db));
 ]
 
 (*****************************************************************************)
