@@ -51,15 +51,15 @@ You can also look at ./pfff --help
 Usage for pfff_db:
 -------------------
 
-   $ ./pfff_db -lang ml -o /tmp/pfff.db ~/pfff
+   $ ./pfff_db -lang ml -o /tmp/pfff.json ~/pfff
 
 to analyze all the .ml and .mli files under ~/pfff and store metadata
-information (the database) in /tmp/pfff.db
+information (the database) in /tmp/pfff.json
 
 Usage for codemap:
 ------------------------
 
-  $ ./codemap -with_info /tmp/pfff.db ~/pfff
+  $ ./codemap -with_info /tmp/pfff.json ~/pfff
 
 This should launch a gtk-based GUI that allows you to visualize
 source code and perform some code search.
@@ -82,3 +82,8 @@ Once this is done you can use some of the flags of pfff_db_heavy to
 do some analysis as in:
 
   $ ./pfff_db_heavy -deadcode_analysis /tmp/pfff_db/
+
+More information
+----------------------
+
+Look at the pfff wiki here: http://github.com/facebook/pfff/wiki/Main
