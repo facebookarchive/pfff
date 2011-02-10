@@ -239,7 +239,7 @@ let finding_dead_functions hooks db =
         in
         if is_dead_func
         then begin
-          pr ("DEAD FUNCTION: no caller for " ^ s);
+          pr (spf "DEAD FUNCTION: no caller for %s (in %s)" s file_project);
           Common.push2 (s, id) dead_ids;
         end
       end
@@ -272,7 +272,7 @@ let finding_dead_classes hooks db =
         in
         if is_dead
         then begin
-          pr ("DEAD CLASS: no user/extender for " ^ s);
+          pr (spf "DEAD CLASS: no user/extender for %s (in %s)" s file_project);
           Common.push2 (s, id) dead_ids;
         end
       end
