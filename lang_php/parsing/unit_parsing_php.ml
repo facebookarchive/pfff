@@ -11,10 +11,17 @@ module Flag = Flag_parsing_php
 (* Unit tests *)
 (*****************************************************************************)
 
-let assert_no_parser_error ast = 
-  assert_bool "bad: have a NotParsedCorrectly" 
-    (List.for_all (function NotParsedCorrectly _ -> false | _ -> true) ast);
-  ()
+(* Back when the PHP parser was quite fragile we used to do some error
+ * recovery in case of a parse error and instead of failing hard we
+ * were returning a NotParsedCorrectly toplevel element. Now
+ * we fail hard because the PHP parse is better. So this function
+ * is not useful anymore:
+ *
+ * let assert_no_parser_error ast = 
+ * assert_bool "bad: have a NotParsedCorrectly" 
+ * (List.for_all (function NotParsedCorrectly _ -> false | _ -> true) ast);
+ * ()
+ *)
 
 let unittest =
   "parsing_php" >::: [
@@ -41,20 +48,26 @@ let unittest =
      * NotParsedCorrectly element.
      *)
     "parsing regular code" >:: (fun () ->
-      let ast = Parse_php.program_of_string "echo 1+2;" in
-      assert_no_parser_error ast;
+      let _ast = Parse_php.program_of_string "echo 1+2;" in
+      ()
     );
     "parsing empty comments" >:: (fun () ->
-      let ast = Parse_php.program_of_string "$a/**/ =1;" in
-      assert_no_parser_error ast;
+      let _ast = Parse_php.program_of_string "$a/**/ =1;" in
+      ()
     );
 
-    (* Check that bad code contain a NotParsedCorrectly element. *)
     "rejecting bad code" >:: (fun () ->
       Flag_parsing_php.show_parsing_error := false;
-      let ast = Parse_php.program_of_string "echo 1+" in
-      assert_bool "bad: should have a NotParsedCorrectly" 
-        (List.exists (function NotParsedCorrectly _ -> true | _ -> false) ast)
+      try 
+        Parse_php.program_of_string "echo 1+";
+        assert_failure "should have generated a parse error exn"
+      with
+       Parse_php.Parse_error _ -> 
+         ()
+      (* old:
+       *  assert_bool "bad: should have a NotParsedCorrectly" 
+       * (List.exists (function NotParsedCorrectly _ -> true | _ -> false) ast)
+       *)
     );
 
     (* The PHP parser now understand PHP code containing XHP elements.
@@ -66,11 +79,9 @@ let unittest =
     "parsing xhp code" >:: (fun () ->
       (* old: Flag_parsing_php.pp_default := Some "xhpize"; *)
 
-      let ast = Parse_php.program_of_string "return <x:frag />;"  in
-      assert_no_parser_error ast;
-
-      let ast = Parse_php.program_of_string "return $this->foo()[2];"  in
-      assert_no_parser_error ast;
+      let _ast = Parse_php.program_of_string "return <x:frag />;"  in
+      let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
+      ()
     );
 
 
@@ -83,15 +94,12 @@ let unittest =
      *)
     "parsing xhp fn_idx sugar code" >:: (fun () ->
 
-      let ast = Parse_php.program_of_string "return foo()[2];"  in
-      assert_no_parser_error ast;
-
+      let _ast = Parse_php.program_of_string "return foo()[2];"  in
       (* If the rule is added in the wrong place in the grammar, then
        * the previous test will work but not this one.
        *)
       let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
       OUnit.skip_if true "grammar extension for XHP incomplete";
-      (*assert_no_parser_error ast;*)
     );
 
     (* Check that the visitor implementation correctly visit all AST 
