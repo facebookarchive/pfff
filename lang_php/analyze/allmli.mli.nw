@@ -334,6 +334,11 @@ val kind_of_file_using_stat: stat -> php_file_kind
 <<test_analyze_php.mli>>=
 @ 
 
+\section{[[test_analyze_db_php.mli]]}
+
+<<test_analyze_db_php.mli>>=
+@ 
+
 
 
 \section{[[type_annotater_php.mli]]}

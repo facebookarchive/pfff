@@ -23,6 +23,7 @@ SRC= \
      dependencies_php.ml \
      database_php_storage.ml \
      test_analyze_php.ml \
+     test_analyze_db_php.ml \
      unit_analyze_php.ml \
      unit_analyze_db_php.ml \
 
@@ -140,6 +141,7 @@ SRC_ORIG=Analyze_php.tex.nw Analyze_php_intro.tex.nw Analyze_php_use.tex.nw \
  dynamic_analysis/coverage_dynamic_php.ml.nw \
  allmli.mli.nw \
  test_analyze_php.ml.nw \
+ test_analyze_db_php.ml.nw \
 
 
 # set of ml files, the views. Also used by make lpclean.
@@ -161,6 +163,7 @@ SRC_ML= \
        static_analysis/dataflow_php_array.ml \
        dynamic_analysis/coverage_dynamic_php.ml \
        test_analyze_php.ml \
+       test_analyze_db_php.ml \
 
 SRC_MLI=$(SRC_ML:ml=mli)
 
