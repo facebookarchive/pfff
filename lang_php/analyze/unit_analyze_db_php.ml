@@ -42,11 +42,8 @@ let tmp_php_file_from_string s =
 
 let db_from_string s =
   let tmp_file = tmp_php_file_from_string s in
-  (* make sure it's a correct PHP file *)
-  let ast = Parse_php.parse_program tmp_file in
-  if not (List.for_all (function
-           Ast_php.NotParsedCorrectly _ -> false | _ -> true) ast)
-  then failwith ("Parsing problem for: " ^ s);
+  (* make sure it's a valid PHP file *)
+  let _ast = Parse_php.parse_program tmp_file in
   Test_analyze_db_php.db_of_files_or_dirs [tmp_file]
 
 
