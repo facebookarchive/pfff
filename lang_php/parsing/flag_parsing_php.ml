@@ -16,6 +16,8 @@ let cmdline_flags_debugging () = [
 ]
 (*x: flag_parsing_php.ml *)
 let show_parsing_error = ref true
+(* do not raise an exn when a parse error but use NotParsedCorrectly *)
+let error_recovery = ref true
 (*x: flag_parsing_php.ml *)
 let short_open_tag = ref true
 (*x: flag_parsing_php.ml *)

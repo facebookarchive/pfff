@@ -757,7 +757,7 @@ and toplevel =
   (*x: toplevel constructors *)
     | Halt of tok * unit paren * tok (* __halt__ ; *)
   (*x: toplevel constructors *)
-    | NotParsedCorrectly of info list
+    | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
   (*x: toplevel constructors *)
     | FinalDef of info (* EOF *)
   (*e: toplevel constructors *)

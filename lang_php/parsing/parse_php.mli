@@ -11,7 +11,9 @@ type program2 = toplevel2 list
 type program_with_comments = program2
 (*e: type program2 *)
 
-(* This is the main function *)
+exception Parse_error of Parse_info.info
+
+(* This is the main function. raise Parse_error when not Flag.error_recovery *)
 val parse : 
   ?pp:string option -> 
   Common.filename -> (program2 * Parse_info.parsing_stat)
