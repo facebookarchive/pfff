@@ -6,8 +6,5 @@
  *)
 val actions: unit -> Common.cmdline_actions
 
-(* helpers used also in unit_analyze_php.ml *)
-val db_of_files_or_dirs: Common.path list -> Database_php.database
-
 (*x: test_analyze_php.mli *)
 (*e: test_analyze_php.mli *)

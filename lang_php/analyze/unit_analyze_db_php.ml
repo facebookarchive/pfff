@@ -47,7 +47,7 @@ let db_from_string s =
   if not (List.for_all (function
            Ast_php.NotParsedCorrectly _ -> false | _ -> true) ast)
   then failwith ("Parsing problem for: " ^ s);
-  Test_analyze_php.db_of_files_or_dirs [tmp_file]
+  Test_analyze_db_php.db_of_files_or_dirs [tmp_file]
 
 
 let db_from_fake_files xs =
@@ -59,7 +59,7 @@ let db_from_fake_files xs =
     Common.command2 (spf "mkdir -p %s/%s" tmp_dir dir);
     Common.write_file ~file:(Filename.concat tmp_dir file) ("<?php\n" ^ s);
   );
-  let db = Test_analyze_php.db_of_files_or_dirs [tmp_dir] in
+  let db = Test_analyze_db_php.db_of_files_or_dirs [tmp_dir] in
   let db = { db with
     Database_php.project = Database_php.Project (tmp_dir, None);
   }
@@ -444,7 +444,7 @@ let deadcode_unittest =
       [
       "simple dead functionss" >:: (fun () ->
 
-        let db = Test_analyze_php.db_of_files_or_dirs [deadcode_data_dir] in
+        let db = Test_analyze_db_php.db_of_files_or_dirs [deadcode_data_dir] in
         (* shortcut *)
         let id s = id s db in
 
@@ -468,7 +468,7 @@ let deadcode_unittest =
       (* With a fixpoint, the deadcode reaper can find more dead functions. *)
       "transitive dead functions" >:: (fun () ->
 
-        let db = Test_analyze_php.db_of_files_or_dirs [deadcode_data_dir] in
+        let db = Test_analyze_db_php.db_of_files_or_dirs [deadcode_data_dir] in
         (* shortcut *)
         let id s = id s db in
 
@@ -495,7 +495,7 @@ let deadcode_unittest =
       "dead static methods" >:: (fun () ->
 
         OUnit.skip_if true "need have cleaner codebase so no false positif";
-        let db = Test_analyze_php.db_of_files_or_dirs [deadcode_data_dir] in
+        let db = Test_analyze_db_php.db_of_files_or_dirs [deadcode_data_dir] in
         (* shortcut *)
         let id s = id s db in
 
@@ -540,7 +540,7 @@ let deadcode_unittest =
        *)
 
       "dead static methods part2" >:: (fun () ->
-        let db = Test_analyze_php.db_of_files_or_dirs [deadcode_data_dir] in
+        let db = Test_analyze_db_php.db_of_files_or_dirs [deadcode_data_dir] in
         (* shortcut *)
         let id s = id s db in
 
