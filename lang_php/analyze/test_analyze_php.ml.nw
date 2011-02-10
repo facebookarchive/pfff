@@ -2,9 +2,6 @@
 open Common
 
 module Ast = Ast_php
-
-module Cg = Callgraph_php
-
 module V = Visitor_php
 
 (*****************************************************************************)
