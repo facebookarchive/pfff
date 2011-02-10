@@ -100,6 +100,26 @@ let callees id db =
 (*****************************************************************************)
 
 (*---------------------------------------------------------------------------*)
+(* Database building *)
+(*---------------------------------------------------------------------------*)
+
+let database_unittest =
+  "database_php" >::: [
+
+    "simple database" >:: (fun () ->
+      let data_dir = Config.path ^ "/tests/php/parsing/" in
+      let _db = Test_analyze_db_php.db_of_files_or_dirs [data_dir] in
+      ()
+    );
+    
+    "accept files with parse error" >:: (fun () ->
+      let data_dir = Config.path ^ "/tests/php/parsing_errors/" in
+      let _db = Test_analyze_db_php.db_of_files_or_dirs [data_dir] in
+      ()
+    );
+  ]
+
+(*---------------------------------------------------------------------------*)
 (* Functions use/def, callgraph *)
 (*---------------------------------------------------------------------------*)
 
@@ -590,6 +610,7 @@ let deadcode_unittest =
 
 let unittest =
   "analyze_db_php" >::: [
+    database_unittest;
     callgraph_unittest;
     class_unittest;
     include_unittest;
