@@ -4,3 +4,7 @@
  * run via OUnit.run_test_tt 
  *)
 val unittest: OUnit.test
+
+(* subsystems unittest *)
+val sgrep_unittest: OUnit.test
+val spatch_unittest: OUnit.test
