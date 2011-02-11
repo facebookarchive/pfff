@@ -59,7 +59,7 @@ let unittest =
     "rejecting bad code" >:: (fun () ->
       Flag_parsing_php.show_parsing_error := false;
       try 
-        Parse_php.program_of_string "echo 1+";
+        let _ = Parse_php.program_of_string "echo 1+" in
         assert_failure "should have generated a parse error exn"
       with
        Parse_php.Parse_error _ -> 

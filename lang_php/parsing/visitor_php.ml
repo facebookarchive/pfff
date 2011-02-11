@@ -115,6 +115,7 @@ type visitor_in = {
     class_name_reference -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
   kqualifier: (qualifier -> unit) * visitor_out -> qualifier -> unit;
+  karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
   
   kcomma: (info -> unit) * visitor_out -> info -> unit; 
 
@@ -158,6 +159,7 @@ let default_visitor =
 
     kxhp_attr_decl = (fun (k,_) x -> k x);
     kxhp_children_decl = (fun (k,_) x -> k x);
+    karray_pair =  (fun (k,_) x -> k x);
   }
 
 
@@ -624,8 +626,8 @@ and v_list_assign =
   | ListList ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren9 (v_comma_list9 v_list_assign) v2 in ()
   | ListEmpty -> ()
-and v_array_pair =
-  function
+and v_array_pair x =
+  let rec k x = match x with
   | ArrayExpr v1 -> let v1 = v_expr v1 in ()
   | ArrayRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_variable v2 in ()
   | ArrayArrowExpr ((v1, v2, v3)) ->
@@ -636,6 +638,8 @@ and v_array_pair =
       and v3 = v_tok v3
       and v4 = v_variable v4
       in ()
+  in
+  vin.karray_pair (k, all_functions) x
 and v_xhp_html x =
   let rec k x = 
     match x with
