@@ -58,12 +58,12 @@ module S = Scope_code
  * 
  * current checks:
  *   - variable related (use of undeclared variable, unused variable, etc)
- *   - TODO use/def of entities (e.g. use of undefined class/function/constant
+ *   - SEMI use/def of entities (e.g. use of undefined class/function/constant
  *     a la checkModule)
- *   - TODO function call related (wrong number of arguments, bad keyword
+ *   - function call related (wrong number of arguments, bad keyword
  *     arguments, etc)
  *   - TODO class related (use of undefined member)
- *   - TODO dead code (dead function in callgraph, dead block in CFG, 
+ *   - SEMI dead code (dead function in callgraph, dead block in CFG, 
  *     dead assignement in dataflow)
  *   - TODO include/require and file related (including file that do not
  *     exist anymore)
