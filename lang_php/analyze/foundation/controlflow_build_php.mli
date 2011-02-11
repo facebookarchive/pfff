@@ -23,7 +23,7 @@ type error =
   | DynamicBreak    of Ast_php.info
 (*e: type Controlflow_build_php.error *)
 
-val string_of_error: error -> string
+val string_of_error: ?show_position_info:bool -> error -> string
 val info_of_error: error -> Ast_php.info option
 
 (*s: error exception and report_error signature *)

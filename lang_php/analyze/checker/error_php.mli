@@ -24,7 +24,7 @@ type error =
    | ReallyBad
    | ReallyReallyBad
 
-val string_of_error: error -> string
+val string_of_error: ?show_position_info:bool -> error -> string
 val info_of_error: error -> Ast_php.info option
 val string_of_severity: severity -> string
 
