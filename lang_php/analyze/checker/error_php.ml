@@ -246,6 +246,16 @@ let show_10_most_recurring_unused_variable_names () =
       );
   ()
 
+
+let filter_false_positives err = 
+  err +> Common.exclude (function
+  (* this actually requires a global analysis to truly know if the class
+   * variable is unused
+   *)
+  | UnusedVariable (_, Scope_code.Class) -> true
+  | _ -> false
+  )
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)

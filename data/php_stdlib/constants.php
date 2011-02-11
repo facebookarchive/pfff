@@ -198,13 +198,14 @@ define('AF_INET', 1);
 define('AF_INET6', 1);
 define('AF_UNIX', 1);
 
-// ??
+//http://php.net/manual/en/function.socket-set-option.php
 define('SOCK_STREAM', 1);
 define('SOCK_DGRAM', 1);
 define('SOL_TCP', 1);
 define('SOL_SOCKET', 1);
 define('SOL_UDP', 1);
 define('SO_SNDTIMEO', 1);
+define('SO_RCVTIMEO', 1);
 
 // used by sqlshim
 //define('SQLITE3_INTEGER', 1);
@@ -664,3 +665,4 @@ define('LC_MESSAGES', 1);
 
 // http://php.net/manual/en/function.microtime.php
 define('CLOCK_MONOTONIC', 1);
+
