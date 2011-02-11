@@ -55,7 +55,7 @@ function array_unshift() { }
 function array_values() { }
 function array_walk_recursive() { }
 function array_walk() { }
-function compact() { }
+function compact($x) { }
 function shuffle() { }
 function count() { }
 function sizeof() { }

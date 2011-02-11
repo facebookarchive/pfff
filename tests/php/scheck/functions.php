@@ -14,6 +14,18 @@ function func_foo1() {
   func_foo2(1,2,3);
 }
 
+function test_nbargs_builtins() {
+  // this requires to have a good data/php_stdlib/
+
+  //ERROR: not enough arguments
+  $x = compact();
+
+  // ok
+  $x = compact("foo");
+
+  echo $x;
+}
+
 function func_foo2($i) {
   echo $i;
 }
