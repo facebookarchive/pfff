@@ -8,6 +8,9 @@ type ('a, 'b) matcher =
   'a -> 'b -> 
   Metavars_php.metavars_binding list
 
+(* right now it does not side effect on the first argument but it could
+ * at some point 
+ *)
 val match_e_e : (Ast_php.expr, Ast_php.expr) matcher
 val match_v_v : (Ast_php.lvalue, Ast_php.lvalue) matcher
 val match_st_st : (Ast_php.stmt, Ast_php.stmt) matcher

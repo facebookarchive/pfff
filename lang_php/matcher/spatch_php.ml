@@ -28,6 +28,8 @@ module PI = Parse_info
 (*****************************************************************************)
 
 (*
+ * See https://github.com/facebook/pfff/wiki/Spatch
+ * 
  * Here is an example of a spatch file:
  * 
  *    foo(2, 
@@ -39,21 +41,14 @@ module PI = Parse_info
  * the function call is the second argument of a call to
  * foo where its first argument is 2.
  * 
- * Algorithm to parse a spatch file:
- *  - take lines of the file, index the lines
- *  - replace the + lines by an empty line and remember in a line_env
- *    the line and its index
- *  - remove the - in the first column and remember in a line_env
- *    that is was a minus line
- *  - unlines the filtered lines into a new string 
- *  - call the PHP expr parser on this new string
- *  - go through all tokens and adjust its transfo field using the
- *    information in line_env
  *)
 
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
+
+(* but right now only Expr and Stmt are supported *)
+type pattern = Ast_php.any
 
 type line_kind = 
   | Context
@@ -89,6 +84,18 @@ let (dumb_spatch_pattern: Ast_php.expr) =
 (* Main entry points *)
 (*****************************************************************************)
 
+(* 
+ * Algorithm to parse a spatch file:
+ *  - take lines of the file, index the lines
+ *  - replace the + lines by an empty line and remember in a line_env
+ *    the line and its index
+ *  - remove the - in the first column and remember in a line_env
+ *    that is was a minus line
+ *  - unlines the filtered lines into a new string 
+ *  - call the PHP expr parser on this new string
+ *  - go through all tokens and adjust its transfo field using the
+ *    information in line_env
+ *)
 let parse_spatch file =
 
   let xs = Common.cat file +> Common.index_list_1 in

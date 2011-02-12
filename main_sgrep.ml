@@ -23,7 +23,7 @@ open Ast_php
 (*****************************************************************************)
 
 (* 
- * A syntactical grep for PHP.
+ * A syntactical grep for PHP. https://github.com/facebook/pfff/wiki/Sgrep
  * 
  * opti: git grep xxx | xargs sgrep_php
  *)

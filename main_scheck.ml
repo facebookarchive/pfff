@@ -370,7 +370,8 @@ let main () =
 
   let usage_msg =
     "Usage: " ^ Common.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+      " [options] <file or dir> " ^ "\n" ^ "Options are:" ^
+      "https://github.com/facebook/pfff/wiki/Scheck"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in

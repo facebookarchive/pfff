@@ -1,5 +1,8 @@
 
-val parse_spatch: Common.filename -> Ast_php.any
+(* but right now only Expr and Stmt are supported *)
+type pattern = Ast_php.any
 
-val spatch: Ast_php.any -> Common.filename -> string option
+val parse_spatch: Common.filename -> pattern
+
+val spatch: pattern -> Common.filename -> string option
 

@@ -27,7 +27,7 @@ open Parse_info
 (*****************************************************************************)
 
 (* 
- * A syntactical patch for PHP.
+ * A syntactical patch for PHP. https://github.com/facebook/pfff/wiki/Spatch
  * 
  * opti: git grep xxx | xargs spatch_php ...
  * 
