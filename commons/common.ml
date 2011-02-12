@@ -120,7 +120,16 @@ let unwind_protect f cleanup =
     with e -> begin cleanup e; raise e end
 
 let finalize f cleanup = 
-  if !debugger then f() else 
+  (* bug: we can not just call f in debugger mode because
+   * this change the semantic of the program. I originally
+   * put this code below:
+   *   if !debugger then f() else  
+   * because I wanted some errors to pop-out to the top so I can
+   * debug them but because now I use save_excursion and finalize
+   * quite a lot this changes too much the semantic.
+   * TODO: maybe I should not use save_excursion so much ? maybe
+   *  -debugger helps see code that I should refactor ?
+   *)
   try 
     let res = f () in
     cleanup ();
