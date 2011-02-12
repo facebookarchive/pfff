@@ -1696,6 +1696,11 @@ and m_constant a b =
        B.Double(b1)
     )
     )
+  
+  (* pad, iso on  name *)
+  | A.String("...", _), B.String(b1) ->
+      return (a, b)
+
   | A.String(a1), B.String(b1) ->
     m_wrap m_string a1 b1 >>= (fun (a1, b1) -> 
     return (
