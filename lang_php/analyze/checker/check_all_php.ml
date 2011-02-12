@@ -27,21 +27,21 @@ module E = Error_php
 (* Main entry points *)
 (*****************************************************************************)
 
-let check_file ?find_entity file =
+let check_file ?(find_entity=None) file =
 
   let ast = Parse_php.parse_program file in
   Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
-  Check_variables_php.check_and_annotate_program ?find_entity ast;
-  Check_cfg_php.check_program ?find_entity ast;
+  Check_variables_php.check_and_annotate_program ~find_entity ast;
+  Check_cfg_php.check_program ~find_entity ast;
   (* not ready yet
   Check_dfg_php.check_program ?find_entity ast;
   *)
 
   (* work only when find_entity is not None; requires global analysis *)
   if find_entity <> None then begin
-    Check_functions_php.check_program ?find_entity ast;
-    Check_classes_php.check_program ?find_entity ast;
+    Check_functions_php.check_program ~find_entity ast;
+    Check_classes_php.check_program ~find_entity ast;
   end;
 
   (* TODO:
