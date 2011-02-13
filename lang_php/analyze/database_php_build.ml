@@ -623,8 +623,10 @@ let index_db1_2 db files =
     try (
 
       Common.timeout_function 20 (fun () ->
-      (* parsing, the important call *)
-      let (ast2, stat) = Parse_php.parse file in
+      let (ast2, stat) = 
+          (* parsing, the important call *)
+          Parse_php.parse file 
+      in
       let file_info = {
         parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD;
       }
@@ -663,6 +665,7 @@ let index_db1_2 db files =
     with 
     | Out_of_memory  (*| Stack_overflow*) 
     | Timeout
+    | Parse_php.Parse_error _
     -> 
       (* Backtrace.print (); *)
       pr2_err ("PB: BIG PBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB: " ^ file);
@@ -711,6 +714,7 @@ let index_db2_2 db =
 
     (* add stuff not parsed correctly *)
     (match ast with
+    (* less: dead now that we don't do error_recovery *)
     | NotParsedCorrectly _infos -> 
         let toks = db.defs.tokens_of_topid#assoc id in
         toks +> List.iter (fun tok -> 

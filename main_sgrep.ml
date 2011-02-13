@@ -23,7 +23,7 @@ open Ast_php
 (*****************************************************************************)
 
 (* 
- * A syntactical grep for PHP.
+ * A syntactical grep for PHP. https://github.com/facebook/pfff/wiki/Sgrep
  * 
  * opti: git grep xxx | xargs sgrep_php
  *)
@@ -233,11 +233,21 @@ let dump_sgrep_pattern file =
 
 
 (*---------------------------------------------------------------------------*)
+(* Regression testing *)
+(*---------------------------------------------------------------------------*)
+let test () =
+  let suite = Unit_matcher_php.sgrep_unittest in
+  OUnit.run_test_tt suite |> ignore;
+  ()
+
+(*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let sgrep_extra_actions () = [
   "-dump_pattern", " <file>",
   Common.mk_action_1_arg dump_sgrep_pattern;
+  "-test", " ",
+  Common.mk_action_0_arg test;
 ]
 
 (*****************************************************************************)

@@ -16,36 +16,32 @@
 open Common
 
 open Ast_php
+open Parse_info
 
-module E = Error_php
+module Ast = Ast_php
+module V = Visitor_php
+
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
+(* See https://github.com/facebook/pfff/wiki/Sgrep
+*)
+
 (*****************************************************************************)
-(* Main entry points *)
+(* Type *)
 (*****************************************************************************)
 
-let check_file ?(find_entity=None) file =
+(* but right now only Expr and Stmt are supported *)
+type pattern = Ast_php.any
 
-  let ast = Parse_php.parse_program file in
-  Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
+(*****************************************************************************)
+(* Parsing *)
+(*****************************************************************************)
 
-  Check_variables_php.check_and_annotate_program ~find_entity ast;
-  Check_cfg_php.check_program ~find_entity ast;
-  (* not ready yet
-  Check_dfg_php.check_program ?find_entity ast;
-  *)
-
-  (* work only when find_entity is not None; requires global analysis *)
-  if find_entity <> None then begin
-    Check_functions_php.check_program ~find_entity ast;
-    Check_classes_php.check_program ~find_entity ast;
-  end;
-
-  (* TODO:
-     Checking_php.check_program ast;
-     Check_scope_use_php.check_program ast;
-  *)
-  ()
+let parse str =
+  Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
+    Parse_php.any_of_string str
+  )

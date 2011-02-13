@@ -83,38 +83,41 @@ let string_of_severity = function
   | ReallyBad -> "ReallyBad"
   | ReallyReallyBad -> "ReallyReallyBad"
 
-let string_of_error error =
+(* the show_position_info is used in facebook/check_module/ *)
+let string_of_error ?(show_position_info=true) error =
   let spos info = 
+    if show_position_info
     (* emacs compile-mode compatible output *)
-    spf "%s:%d:%d: " 
+    then spf "%s:%d:%d: CHECK:" 
       info.Parse_info.file info.Parse_info.line info.Parse_info.column
+    else ""
   in
   match error with
 
   | UndefinedEntity(kind, name) ->
       let info = Ast.parse_info_of_info (Ast.info_of_name name) in
-      (spos info ^ (spf "CHECK: undefined entity %s %s"
+      (spos info ^ (spf "Undefined entity %s %s"
                   (Entity_php.string_of_id_kind kind)
                   (Ast.name name)))
 
   | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
       let info = Ast.parse_info_of_info (Ast.info_of_name name) in
-      (spos info ^ (spf "CHECK: multiply defined entity %s %s"
+      (spos info ^ (spf "Multiply defined entity %s %s"
                   (Entity_php.string_of_id_kind kind)
                   (Ast.name name)))
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
 
   | TooManyArguments (info, defname) ->
       let info = Ast.parse_info_of_info info in
-      (spos info ^ "CHECK: too many arguments");
+      (spos info ^ "Too many arguments");
      (* todo? function was declared: %s     or use tbgs ... *)
   | NotEnoughArguments (info, defname) ->
       let info = Ast.parse_info_of_info info in
-      (spos info ^ "CHECK: not enough arguments");
+      (spos info ^ "Not enough arguments");
      (* todo? function was declared: %s    or use tbgs *)
   | WrongKeywordArgument(dn, param, severity) ->
       let info = Ast.info_of_dname dn +> Ast.parse_info_of_info in
-      spos info ^ spf "CHECK: wrong keyword argument, %s <> %s (%s)"
+      spos info ^ spf "Wrong keyword argument, %s <> %s (%s)"
         (Ast.dname dn) (Ast.dname param.p_name) (string_of_severity severity)
 
 
@@ -122,31 +125,31 @@ let string_of_error error =
   | UseOfUndefinedVariable (dname) ->
       let s = Ast.dname dname in
       let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
-      spos info ^ spf "CHECK: use of undefined variable $%s" s
+      spos info ^ spf "Use of undefined variable $%s" s
 
   | UnusedVariable (dname, scope) ->
       let s = Ast.dname dname in
       let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
-      spos info ^ spf "CHECK: unused %s variable $%s" 
+      spos info ^ spf "Unused %s variable $%s" 
               (Scope_php.s_of_phpscope scope)
               s 
 
   | UseOfUndefinedMember (name) ->
       let s = Ast.name name in
       let info = Ast.info_of_name name |> Ast.parse_info_of_info in
-      spos info ^ spf "CHECK: use of undefined member $%s" s
+      spos info ^ spf "Use of undefined member $%s" s
 
 
 
   | UglyGlobalDynamic info ->
       let pinfo = Ast.parse_info_of_info info in
-      spos pinfo ^ "CHECK: ugly dynamic global declaration"
+      spos pinfo ^ "Ugly dynamic global declaration"
   | WeirdForeachNoIteratorVar info ->
       let pinfo = Ast.parse_info_of_info info in
-      spos pinfo ^ "CHECK: weird, foreach with not a var as iterator"
+      spos pinfo ^ "Weird, foreach with not a var as iterator"
 
   | CfgError err ->
-      Controlflow_build_php.string_of_error err
+      Controlflow_build_php.string_of_error ~show_position_info err
   | CfgPilError err ->
       Controlflow_build_pil.string_of_error err
 
@@ -242,6 +245,16 @@ let show_10_most_recurring_unused_variable_names () =
         pr2 (spf " %s -> %d" s cnt)
       );
   ()
+
+
+let filter_false_positives err = 
+  err +> Common.exclude (function
+  (* this actually requires a global analysis to truly know if the class
+   * variable is unused
+   *)
+  | UnusedVariable (_, Scope_code.Class) -> true
+  | _ -> false
+  )
 
 (*****************************************************************************)
 (* Wrappers *)

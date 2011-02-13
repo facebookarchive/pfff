@@ -272,6 +272,11 @@ let rec lexer_function tr = fun lexbuf ->
 (*****************************************************************************)
 (*s: Parse_php.parse *)
 
+(* could move that in h_program-lang/, but maybe clearer to put it closer
+ * to the parsing function.
+ *)
+exception Parse_error of Parse_info.info
+
 let parse2 ?(pp=(!Flag.pp_default)) filename =
 
   let orig_filename = filename in
@@ -361,6 +366,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       distribute_info_items_toplevel xs toks filename, 
       stat
   | Right (info_of_bads, line_error, cur, exn) ->
+
+      if not !Flag.error_recovery 
+      then raise (Parse_error (TH.info_of_tok cur));
 
       (match exn with
       | Lexer_php.Lexical _ 

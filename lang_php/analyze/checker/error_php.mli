@@ -24,7 +24,7 @@ type error =
    | ReallyBad
    | ReallyReallyBad
 
-val string_of_error: error -> string
+val string_of_error: ?show_position_info:bool -> error -> string
 val info_of_error: error -> Ast_php.info option
 val string_of_severity: severity -> string
 
@@ -38,6 +38,7 @@ val report_error : error -> unit
 val report_all_errors: unit -> unit
 
 val rank_errors: error list -> error list
+val filter_false_positives: error list -> error list
 
 val show_10_most_recurring_unused_variable_names: unit -> unit
 

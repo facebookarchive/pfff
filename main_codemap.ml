@@ -288,6 +288,10 @@ let options () = [
     "-php_filter", Arg.Unit (fun () -> 
       filter := Treemap_pl.php_filter_file),
     " ";
+    "-nw_filter", Arg.Unit (fun () -> 
+      filter := (fun file -> match File_type.file_type_of_file file with
+      | File_type.Text "nw" -> true | _ -> false)),
+    " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";
