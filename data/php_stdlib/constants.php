@@ -220,13 +220,63 @@ define('MYSQL_ASSOC', 1);
 
 //http://us2.php.net/manual/en/function.mcrypt-encrypt.php
 define('MCRYPT_BLOWFISH', 1);
-define('MCRYPT_MODE_CFB', 1);
-define('MCRYPT_DEV_URANDOM', 1);
-define('MCRYPT_DECRYPT', 1);
-define('MCRYPT_ENCRYPT', 1);
-define('MCRYPT_RAND', 1);
 define('MCRYPT_DES', 1);
+
+//http://www.php.net/manual/en/mcrypt.constants.php
 define('MCRYPT_MODE_ECB', 1);
+define('MCRYPT_MODE_CBC', 1);
+define('MCRYPT_MODE_CFB', 1);
+define('MCRYPT_MODE_OFB', 1);
+define('MCRYPT_MODE_NOFB', 1);
+define('MCRYPT_MODE_STREAM', 1);
+define('MCRYPT_ENCRYPT', 1);
+define('MCRYPT_DECRYPT', 1);
+define('MCRYPT_DEV_RANDOM', 1);
+define('MCRYPT_DEV_URANDOM', 1);
+define('MCRYPT_RAND', 1);
+
+//http://www.php.net/manual/en/mcrypt.ciphers.php
+define('MCRYPT_3DES', 1);  
+define('MCRYPT_ARCFOUR_IV', 1);
+define('MCRYPT_ARCFOUR', 1);
+define('MCRYPT_BLOWFISH', 1);   
+define('MCRYPT_CAST_128', 1);
+define('MCRYPT_CAST_256', 1);   
+define('MCRYPT_CRYPT', 1);
+define('MCRYPT_DES', 1);
+define('MCRYPT_DES_COMPAT', 1);
+define('MCRYPT_ENIGMA', 1);
+define('MCRYPT_GOST', 1);
+define('MCRYPT_IDEA', 1);
+define('MCRYPT_LOKI97', 1);
+define('MCRYPT_MARS', 1);
+define('MCRYPT_PANAMA', 1);
+define('MCRYPT_RIJNDAEL_128', 1);
+define('MCRYPT_RIJNDAEL_192', 1);
+define('MCRYPT_RIJNDAEL_256', 1);
+define('MCRYPT_RC2', 1);
+define('MCRYPT_RC4', 1);
+define('MCRYPT_RC6', 1);
+define('MCRYPT_RC6_128', 1);
+define('MCRYPT_RC6_192', 1);
+define('MCRYPT_RC6_256', 1);
+define('MCRYPT_SAFER64', 1);
+define('MCRYPT_SAFER128', 1);
+define('MCRYPT_SAFERPLUS', 1);
+define('MCRYPT_SERPENT(libmcrypt', 1);
+define('MCRYPT_SERPENT_128', 1);
+define('MCRYPT_SERPENT_192', 1);
+define('MCRYPT_SERPENT_256', 1);
+define('MCRYPT_SKIPJACK', 1);
+define('MCRYPT_TEAN', 1);
+define('MCRYPT_THREEWAY', 1);
+define('MCRYPT_TRIPLEDES', 1);
+define('MCRYPT_TWOFISH', 1);
+define('MCRYPT_TWOFISH128', 1);
+define('MCRYPT_TWOFISH192', 1);
+define('MCRYPT_TWOFISH256', 1);
+define('MCRYPT_WAKE', 1);
+define('MCRYPT_XTEA', 1);
 
 // http://php.net/manual/en/function.str-pad.php
 define('STR_PAD_RIGHT', 1);
