@@ -1,3 +1,8 @@
-This is just for my treemap to see almost all the code involved in the program.
+This directory is a copy of the header files in the ocaml standard
+library. This is useful for me when using codemap so that I can see
+almost all the code involved in the program. This is also useful for
+the pfff emacs tag generator to find the builtins so one can jump easily
+to builtins too.
+
 I have removed outcometree.mli because it has a bad license.
 

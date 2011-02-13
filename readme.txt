@@ -1,7 +1,7 @@
 
                               pfff
 
-pfff is mainly an OCaml API to write static analysis, dynamic
+pfff is a set of tools and APIs to perform some static analysis, dynamic
 analysis, code visualizations, code navigations, or style-preserving
 source-to-source transformations such as refactorings on source code.
 For now the effort is focused on PHP but there is preliminary support
