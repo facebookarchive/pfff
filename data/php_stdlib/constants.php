@@ -716,3 +716,12 @@ define('LC_MESSAGES', 1);
 // http://php.net/manual/en/function.microtime.php
 define('CLOCK_MONOTONIC', 1);
 
+//http://php.net/manual/en/function.flock.php
+define('LOCK_SH', 1);
+define('LOCK_EX', 1);
+define('LOCK_UN', 1);
+
+// http://php.net/manual/en/function.mb-convert-case.php
+define('MB_CASE_UPPER', 1);
+define('MB_CASE_LOWER', 1);
+define('MB_CASE_TITLE', 1);
