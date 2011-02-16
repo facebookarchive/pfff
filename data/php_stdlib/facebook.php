@@ -37,6 +37,19 @@ define('FLIB_CONTEXT_CODESITE', 18);
 
 define('T_XHP_TEXT', 1);
 
+// see http://www.intern.facebook.com/intern/hphp/doc/index.php?file=threading
+define('GLOBAL_STATE_IGNORE', 1);
+define('GLOBAL_STATE_OVERWRITE', 1);
+define('GLOBAL_STATE_SKIP', 1);
+define('GLOBAL_SYMBOL_GLOBAL_VARIABLE', 1);
+define('GLOBAL_SYMBOL_STATIC_VARIABLE', 1);
+define('GLOBAL_SYMBOL_CLASS_STATIC', 1);
+define('GLOBAL_SYMBOL_DYNAMIC_CONSTANT', 1);
+define('GLOBAL_SYMBOL_FILE_INCLUDE', 1);
+define('GLOBAL_SYMBOL_REDECLARED_FUNCTION', 1);
+define('GLOBAL_SYMBOL_REDECLARED_CLASS', 1);
+
+
 // define('PHPMCC_USED_FAST_PATH', 1);
 
 // ??? defined where ?
