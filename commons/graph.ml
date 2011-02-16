@@ -90,7 +90,10 @@ open Common
  * 
  * 
  * Alternatives in other languages:
+ *  - boost C++ BGL, 
+ *    http://www.boost.org/doc/libs/1_45_0/libs/graph/doc/index.html
  *  - quickGraph for .NET, http://quickgraph.codeplex.com/
+ *    apparently inspired by the boost one
  *  - c++ GTL, graph template library
  *  - c++ ASTL, automata library
  *  
