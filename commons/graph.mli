@@ -9,6 +9,19 @@ val add_vertex_if_not_present :
   'a -> 'a graph -> unit
 val add_edge : 
   'a -> 'a -> 'a graph -> unit
+(* this will also remove its associated edges *)
+val remove_vertex:
+  'a -> 'a graph -> unit
+(* many algorithms works by side effect on the graph so need a copy function *)
+val copy: 
+  'a graph -> 'a graph
+
+
+(* graph access *)
+val nodes:
+  'a graph -> 'a list
+val out_degree: 'a -> 'a graph -> int
+val in_degree: 'a -> 'a graph -> int
 
 (* algorithms *)
 val shortest_path: 
@@ -22,6 +35,7 @@ val strongly_connected_components_condensation:
 
 (* debugging support *)
 val print_graph_generic :
+  ?launch_gv:bool ->
   str_of_key:('a -> string) -> Common.filename -> 'a graph -> unit
 
 val display_with_gv:

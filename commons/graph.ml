@@ -90,8 +90,10 @@ open Common
  * 
  * 
  * Alternatives in other languages:
+ *  - quickGraph for .NET, http://quickgraph.codeplex.com/
  *  - c++ GTL, graph template library
  *  - c++ ASTL, automata library
+ *  
  * 
  * 
  * 
@@ -196,6 +198,8 @@ module OG :
     val iter_pred_e : (E.t -> unit) -> t -> V.t -> unit
     val fold_pred_e : (E.t -> 'a -> 'a) -> t -> V.t -> 'a -> 'a
     val find_vertex : t -> int -> V.t
+
+
     val transitive_closure : ?reflexive:bool -> t -> t
     val add_transitive_closure : ?reflexive:bool -> t -> t
     val mirror : t -> t
@@ -280,6 +284,12 @@ let create () = {
   vertex_of_key = Hashtbl.create 101;
   cnt = ref 0;
 }
+let copy g = {
+  og = OG.copy g.og;
+  key_of_vertex = Hashtbl.copy g.key_of_vertex;
+  vertex_of_key = Hashtbl.copy g.vertex_of_key;
+  cnt = ref !(g.cnt);
+}
 
 let add_vertex_if_not_present key g = 
   if Hashtbl.mem g.vertex_of_key key
@@ -307,6 +317,27 @@ let add_edge_and_nodes_if_not_present k1 k2 g =
   add_vertex_if_not_present k1 g;
   add_vertex_if_not_present k2 g;
   add_edge k1 k2 g
+
+(*****************************************************************************)
+(* Graph visit *)
+(*****************************************************************************)
+
+let nodes g = 
+  Common.hkeys g.vertex_of_key
+
+let out_degree k g = OG.out_degree g.og (g +> vertex_of_key k)
+let in_degree k g  = OG.in_degree  g.og (g +> vertex_of_key k)
+
+(*****************************************************************************)
+(* Graph deconstruction *)
+(*****************************************************************************)
+
+let remove_vertex k g =
+  let vk = g +> vertex_of_key k in
+  OG.remove_vertex g.og vk;
+  Hashtbl.remove g.vertex_of_key k;
+  Hashtbl.remove g.key_of_vertex vk;
+  ()
 
 (*****************************************************************************)
 (* The graph algorithms *)
@@ -354,7 +385,7 @@ let strongly_connected_components_condensation g =
 let display_with_gv g =
   OG.display_with_gv g.og
 
-let print_graph_generic ~str_of_key filename g = 
+let print_graph_generic ?(launch_gv=true) ~str_of_key filename g = 
   Common.with_open_outfile filename (fun (pr,_) ->
     pr "digraph misc {\n" ;
     (* pr "size = \"10,10\";\n" ; *)
@@ -374,7 +405,7 @@ let print_graph_generic ~str_of_key filename g =
     );
     pr "}\n" ;
     );
-  Ograph_extended.launch_gv_cmd filename;
+  if launch_gv then Ograph_extended.launch_gv_cmd filename;
   ()
 
 let tmpfile = "/tmp/graph_ml.dot"
