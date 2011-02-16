@@ -5996,7 +5996,7 @@ let cmdline_flags_devel () =
     "-debugger",         Arg.Set debugger , 
     " option to set if launched inside ocamldebug";
     "-profile",          Arg.Unit (fun () -> profile := PALL), 
-    " gather timing information about important functions";
+    " output profiling information";
   ]
 let cmdline_flags_verbose () =
   [
