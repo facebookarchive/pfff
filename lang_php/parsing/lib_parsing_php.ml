@@ -221,6 +221,44 @@ let print_warning_if_not_correctly_parsed ast file =
   end
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+(* todo: move where ? 
+ * static_scalar does not have a direct mapping with scalar as some
+ * elements like StaticArray have mapping only in expr.
+*)
+let rec static_scalar_to_expr x = 
+  let exprbis = 
+    match x with
+    | StaticConstant cst -> 
+        Sc (C cst)
+    | StaticClassConstant (qu, name) -> 
+        Sc (ClassConstant (qu, name))
+    | StaticPlus (tok, sc) -> 
+        Unary ((UnPlus, tok), static_scalar_to_expr sc)
+    | StaticMinus (tok, sc) -> 
+        Unary ((UnMinus, tok), static_scalar_to_expr sc)
+    | StaticArray (tok, array_pairs_paren) ->
+        ConsArray (tok, 
+                  Ast.map_paren 
+                    (Ast.map_comma_list static_array_pair_to_array_pair) 
+                    array_pairs_paren)
+    | XdebugStaticDots ->
+        failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
+  in
+  exprbis, Ast.noType ()
+
+and static_array_pair_to_array_pair x = 
+  match x with
+  | StaticArraySingle (sc) -> 
+      ArrayExpr (static_scalar_to_expr sc)
+  | StaticArrayArrow (sc1, tok, sc2) ->
+      ArrayArrowExpr (static_scalar_to_expr sc1, 
+                     tok,
+                     static_scalar_to_expr sc2)
+
+(*****************************************************************************)
 (* Ast getters *)
 (*****************************************************************************)
 (*s: ast getters *)
@@ -313,39 +351,7 @@ let get_static_vars_any =
   })
 
 
-(* todo: move where ? 
- * static_scalar does not have a direct mapping with scalar as some
- * elements like StaticArray have mapping only in expr.
-*)
-let rec static_scalar_to_expr x = 
-  let exprbis = 
-    match x with
-    | StaticConstant cst -> 
-        Sc (C cst)
-    | StaticClassConstant (qu, name) -> 
-        Sc (ClassConstant (qu, name))
-    | StaticPlus (tok, sc) -> 
-        Unary ((UnPlus, tok), static_scalar_to_expr sc)
-    | StaticMinus (tok, sc) -> 
-        Unary ((UnMinus, tok), static_scalar_to_expr sc)
-    | StaticArray (tok, array_pairs_paren) ->
-        ConsArray (tok, 
-                  Ast.map_paren 
-                    (Ast.map_comma_list static_array_pair_to_array_pair) 
-                    array_pairs_paren)
-    | XdebugStaticDots ->
-        failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
-  in
-  exprbis, Ast.noType ()
 
-and static_array_pair_to_array_pair x = 
-  match x with
-  | StaticArraySingle (sc) -> 
-      ArrayExpr (static_scalar_to_expr sc)
-  | StaticArrayArrow (sc1, tok, sc2) ->
-      ArrayArrowExpr (static_scalar_to_expr sc1, 
-                     tok,
-                     static_scalar_to_expr sc2)
 
 (* do some isomorphisms for declaration vs assignement *)
 let get_vars_assignements_any recursor = 
@@ -412,6 +418,12 @@ let get_vars_any any =
       | _ -> k x
     )}) any
 
+(*****************************************************************************)
+(* Ast adapters *)
+(*****************************************************************************)
+
+(* todo? let lvalue_to_expr ?? *)
+
 let top_statements_of_program ast = 
   ast |> List.map (function
   | StmtList xs -> xs
@@ -419,7 +431,6 @@ let top_statements_of_program ast =
   | InterfaceDef _|ClassDef _| FuncDef _
       -> []
   ) |> List.flatten  
-
 
 let toplevel_to_entity x = 
   match x with
