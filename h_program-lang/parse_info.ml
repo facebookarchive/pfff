@@ -302,6 +302,10 @@ let get_orig_info f ii =
 let compare_pos ii1 ii2 =
   let get_pos = function
     | OriginTok pi -> Real pi
+(* todo? I have this for lang_php/
+    | FakeTokStr (s, Some (pi_orig, offset)) ->
+        Virt (pi_orig, offset)
+*)
     | FakeTokStr _
     | Ab  
       -> failwith "get_pos: Ab or FakeTok"

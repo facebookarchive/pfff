@@ -908,11 +908,7 @@ let string_of_info ii =
 let is_origintok = Parse_info.is_origintok
 
 
-type posrv = 
-  | Real of Parse_info.parse_info 
-  | Virt of 
-      Parse_info.parse_info (* last real info before expanded tok *) * 
-      int (* virtual offset *)
+type posrv = Parse_info.posrv
 
 let compare_pos ii1 ii2 =
   let get_pos = function

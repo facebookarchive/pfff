@@ -30,7 +30,11 @@ module V = Map_php
  * that makes certain analysis more tedious to write. The goal of this
  * module is just to unsugar those features.
  * 
- * If you want a really unsugared AST you should use pil.ml
+ * If you want a really unsugared AST you should use pil.ml.
+ * 
+ * todo? turns out people also use self:: or parent:: or static::
+ * in strings, to pass callbacks, so may have to unsugar the strings
+ * too ?
  *)
 
 (*****************************************************************************)

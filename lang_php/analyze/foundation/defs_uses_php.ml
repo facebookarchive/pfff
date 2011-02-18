@@ -36,9 +36,9 @@ module Db = Database_code
  * to variables, that is Ast_php.dname, as in check_variables_php.ml
  * 
  * todo: factorize code in
- *  - check_module.ml
  *  - database_php_build.ml
  *  - lib_parsing_php.ml many get_xxx_any ?
+ *  - check_module.ml
  *)
 
 (*****************************************************************************)
