@@ -27,7 +27,6 @@ as pfff or codemap.
 
 
 
-
 If you just want to compile the parsing frontend, then type 
 
    $ ./configure -nogui -novisual -nobdb
