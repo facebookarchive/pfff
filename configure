@@ -148,7 +148,7 @@ $error +=
     check_config("echo \"1;;\\n\" | ocaml |",
                  "Objective(.*) 3.*",
                  "OCaml (the wonderful language) is present.",
-                 "The program ocaml is missing or is not a good version. We need at least 3.09",
+                 "The program ocaml is missing or is not a good version. We need at least 3.11",
                  );
 
 # not really used for now
@@ -202,11 +202,13 @@ if($bdb) {
         $BDB_LIBS="/opt/local/lib/db46";
     }
     
-    $error2 += check_config("grep DB_VERSION_MAJOR  $BDB_INCLUDE/db.h |",
+    my $err += check_config("grep DB_VERSION_MAJOR  $BDB_INCLUDE/db.h |",
                             "#define	DB_VERSION_MAJOR	4",
                             "Berkeley DB is present.",
                             "The Berkeley DB library is missing.",
         );
+    if ($err) { $bdb = 0; }
+    $error2 += $err;
 }
 
 if($mysql) {
@@ -216,11 +218,13 @@ if($mysql) {
         $MYSQL_LIBS="/opt/local/lib/mysql5/mysql";
     }
 
-    $error2 += check_config("grep MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql/mysql_version.h |",
+    my $err += check_config("grep MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql/mysql_version.h |",
 		       "#define MYSQL_BASE_VERSION		\"mysqld-5.*\"",
 		       "MySQL is present.",
 		       "The MySQL library is missing.",
 		      );
+    if ($err) { $mysql = 0; }
+    $error2 += $err;
 }
 
 if($pcre) {
@@ -230,11 +234,13 @@ if($pcre) {
         $PCRE_LIBS="/opt/local/lib";
     }
 
-    $error2 += check_config("grep PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
+    my $err += check_config("grep PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
 		       "#define PCRE_MAJOR       ",
 		       "PCRE is present.",
 		       "The PCRE library is missing.",
 		      );
+    if ($err) { $mysql = 0; }
+    $error2 += $err;
 }
 
 # The default ocamlgraph configure generate Makefiles that uses some -pack
@@ -249,14 +255,16 @@ if($pcre) {
 if($gui) {
     pr2 "";
     pr2 "Configuring ocamlgtk";
-    system("cd external/ocamlgtk; ./configure");
+    my $err = system("cd external/ocamlgtk; ./configure");
+    if ($err) { $gui = 0; $error2++; }
 }
 
 if($visual) {
     pr2 "";
     pr2 "Configuring ocamlcairo";
-    system("cd external/ocamlcairo; 
+    my $err = system("cd external/ocamlcairo; 
             LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk");
+    if ($err) { $visual = 0; $error2++; }
 }
 
 ######################################################################
@@ -277,11 +285,15 @@ if($error2) {
 !!!! You can try to compile and test $project, 
 but some features or plugins may be missing. !!!!\n
 We have found $error2 missing package" . plural($error2) . ". " . 
-(($error2 > 1) ? "Some of those packages" : "This package") . 
-" may be installed 
-by picking " . ($error2 > 1 ? "them" : "it") . 
-" in $project-dependencies.tgz available on the $project website.
-"; 
+#(($error2 > 1) ? "Some of those packages" : "This package") . 
+#" may be installed 
+#by picking " . ($error2 > 1 ? "them" : "it") . 
+#" in $project-dependencies.tgz available on the $project website.
+#";
+"
+Have a look at the install_xxx.txt corresponding to your OS. 
+";
+
 } else {
     pr2 "
 All seems fine for $project.
@@ -295,10 +307,12 @@ if($error) {
 ----------------------------------------------------------------------
 !!!! There seems to have problem, we have found $error missing package" . 
 plural($error) . ".
-" . (($error > 1) ? "Some of those packages" : "This package") . 
-    " may be installed by picking " . ($error > 1 ? "them" : "it") . 
-    " in $project-dependencies.tgz available
-on the $project website. !!!!
+#" . (($error > 1) ? "Some of those packages" : "This package") . 
+#    " may be installed by picking " . ($error > 1 ? "them" : "it") . 
+#    " in $project-dependencies.tgz available
+#on the $project website. !!!!
+"Have a look at install.txt and the install_xxx.txt corresponding to your
+OS.
 ----------------------------------------------------------------------
 ";
 } else { 
