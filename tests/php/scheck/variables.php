@@ -23,15 +23,6 @@ function vars_bad_foo($a) {
   $memory = 1;
   unset($memory);
 
-  $vars = array();
-  foreach($vars as $var) {
-    vars_bar($var);
-    //ERROR: unused variable, should be declared outide because it's used later
-    $nested_var = 1;
-  }
-  //ERROR: use of undefined variable
-  vars_bar($nested_var);
-
   //ERROR: unused variable
   $match = array();
   // note that this error shows the need for more than just counting token

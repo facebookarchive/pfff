@@ -172,8 +172,6 @@ type environment =
   (dname * (Scope_code.scope * int ref)) list list 
 
 
-
-
 let unused_ok_when_no_strict s = 
   if !E.strict 
   then false
@@ -444,14 +442,6 @@ let new_scope() = _scoped_env := []::!_scoped_env
 let del_scope() = _scoped_env := List.tl !_scoped_env
 let top_scope() = List.hd !_scoped_env
 
-let do_in_new_scope f = 
-  begin
-    new_scope();
-    let res = f() in
-    del_scope();
-    res
-  end
-
 let add_in_scope namedef =
   let (current, older) = Common.uncons !_scoped_env in
   _scoped_env := (namedef::current)::older
@@ -496,8 +486,12 @@ let do_in_new_scope_and_check f =
       if unused_ok s then ()
       else E.fatal (E.UnusedVariable (dname, scope))
   );
-
   res
+
+let do_in_new_scope_and_check_if_strict f =
+  if !E.strict 
+  then do_in_new_scope_and_check f
+  else f ()
 
   
 (*****************************************************************************)
@@ -530,9 +524,7 @@ let visit_prog
      * want to check.
      *)
     V.kstmt_and_def_list_scope = (fun (k, _) x ->
-      if !E.strict 
-      then do_in_new_scope_and_check (fun () -> k x)
-      else k x
+      do_in_new_scope_and_check_if_strict (fun () -> k x)
     );
 
     V.kfunc_def = (fun (k, _) x ->
@@ -630,7 +622,7 @@ let visit_prog
           in
           (match Ast.untype lval with
           | Var (dname, scope_ref) ->
-              do_in_new_scope_and_check (fun () ->
+              do_in_new_scope_and_check_if_strict (fun () ->
                 (* People often use only one of the iterator when
                  * they do foreach like   foreach(... as $k => $v).
                  * We want to make sure that at least one of 
