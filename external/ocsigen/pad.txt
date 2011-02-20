@@ -1,0 +1,15 @@
+This directory is a copy of the header files and examples in the ocsigen 
+libraries. This is useful for me when using codemap so that I can see
+almost all the code involved in the program. This is also useful for
+the pfff emacs tag generator to find all the functions so one can jump easily
+to any function.
+
+
+for lwt:
+ cd .../site-lib/lwt/
+ cp *.ml* *.h ~/pfff/external/ocsigen/lwt/
+ cd lwt/
+ cp -a examples ~/pfff/external/ocsigen/lwt/
+
+for js_of_ocaml:
+
