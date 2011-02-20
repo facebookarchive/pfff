@@ -53,6 +53,17 @@ let set_gc () =
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
 
+let treemap_pfff_filter file =
+  match File_type.file_type_of_file file with
+  | File_type.PL (File_type.ML _)
+  | File_type.PL (File_type.Makefile) 
+      -> 
+      (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file)
+      && not (file =~ ".*commons/" || file =~ ".*external/")
+
+  | _ -> false
+
 (*****************************************************************************)
 (* Model helpers *)
 (*****************************************************************************)
@@ -291,6 +302,9 @@ let options () = [
     "-nw_filter", Arg.Unit (fun () -> 
       filter := (fun file -> match File_type.file_type_of_file file with
       | File_type.Text "nw" -> true | _ -> false)),
+    " ";
+    "-pfff_filter", Arg.Unit (fun () -> 
+      filter := treemap_pfff_filter),
     " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,

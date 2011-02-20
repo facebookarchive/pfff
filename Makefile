@@ -615,6 +615,9 @@ layers:
 
 visual:
 	./codemap -profile -ss 2 \
+	   -with_info DB_LIGHT.marshall -with_layers . -pfff_filter .
+visual_bis:
+	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
 test:
 	./pfff_test all
