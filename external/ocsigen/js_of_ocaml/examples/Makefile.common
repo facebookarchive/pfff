@@ -1,0 +1,22 @@
+
+include ../../Makefile.conf
+
+COMP=../../compiler/$(COMPILER)
+JSFILES=../../runtime/runtime.js
+OCAMLC=ocamlfind ocamlc -package lwt -pp "camlp4o ../../lib/syntax/pa_js.cmo" -I ../../lib
+STDLIB=$(LIBNAME).cma
+
+$(NAME).js: $(NAME).byte $(COMP) $(JSFILES)
+	$(COMP) -noruntime $(JSFILES) $(NAME).byte $(OPTIONS)
+
+$(NAME).byte: $(OBJS)
+	$(OCAMLC) -linkpkg -o $@ $(STDLIB) $^
+
+%.cmo: %.ml ../../lib/$(STDLIB)
+	$(OCAMLC) -c $<
+
+%.cmi: %.mli ../../lib/$(STDLIB)
+	$(OCAMLC) -c $<
+
+clean::
+	rm -f *.cm[io] $(NAME).byte $(NAME).js

@@ -6,10 +6,10 @@ to any function.
 
 
 for lwt:
- cd .../site-lib/lwt/
- cp *.ml* *.h ~/pfff/external/ocsigen/lwt/
  cd lwt/
  cp -a examples ~/pfff/external/ocsigen/lwt/
+ cd .../site-lib/lwt/
+ cp *.ml* *.h ~/pfff/external/ocsigen/lwt/
  cd lwt/
  *cp -f **/*.mli ~/pfff/external/ocsigen/lwt/
  => see optional .mli
@@ -23,7 +23,11 @@ for lwt:
 	external/ocsigen/lwt/lwt_text.mli
 	external/ocsigen/lwt/lwt_top.mli
 	external/ocsigen/lwt/test.mli
-
+ todo? cp -a tests/ too ?
 
 for js_of_ocaml:
+ cd js_of_ocaml/
+ cp -a examples ~/pfff/external/ocsigen/js_of_ocaml
+ cd .../site-lib/js_of_ocaml
+ cp *.ml* *.h ~/pfff/external/ocsigen/js_of_ocaml
 
