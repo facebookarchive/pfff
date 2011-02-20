@@ -245,6 +245,7 @@ started integrate treemap and web gui.
 
 ** misc
 dead sitevars analysis
+update: not used
 
 static arrays lint checks
 
@@ -266,9 +267,11 @@ with
 
 ** introduce facebook/fb_phpunit_wrap 
 and tools/phpunit.ml
+update: supersed by 't'
 
 ** introduce compile_php/
 but for now very rudimentary
+update: not used for now
 
 ** analysis
 
@@ -313,10 +316,11 @@ Can now do dynamic analysis! Done for type
 
 ** GUI 
 trivial type inference feedback based on xdebug info
+update: not really used for now
 
 ** introducing parsing_sql/
 could be useful at some point for better type checking or type inference
-
+update: not sure for now
 
 * 0.7
 
@@ -344,6 +348,7 @@ with map_php.ml. Used by ppp and closure implemetation.
 a code matcher working at the AST level
 
 ** introducing treemap viewer using Graphics.mli
+update: superseded by cairo-based viewer (but reused most of the algorithms)
 
 ** introducing code_rank
 
@@ -353,12 +358,14 @@ first part (with its literate programming manual)
 ** introducing flib_navigator
 update: superseded by web gui
 
+** treemap algorithms library and basic literate programming manual
+
 * 0.5
 
 ** parser 
 
-XHP experimental support. A new -pp option to give opportunity to call
-a preprocessor (eg XHP).
+XHP poor's man support. Just have A new -pp option to give opportunity to call
+a preprocessor (eg 'xhpize -d').
 
 ** ffi/meta
 a new -json option and json support
@@ -391,8 +398,10 @@ diffcamp/facebook integration (via mysql and git)
 
 ORM for mysql (using camlmix)
 Mysql support (with ocamlmysql/)
+note: for diffcamp/facebook integration
 
 IRC support (adapting ocamlirc/)
+update: not used anymore
 
 complement git.ml
 

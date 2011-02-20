@@ -15,7 +15,9 @@ use Pod::Usage;
 # assume standard: make, sh?, perl?
 # assume standard: diffutils, fileutils, findutils, grep, patchutils, sh-utils
 ## assume standard: diff, patch
-## realpath
+## realpath ?? 
+## findutils ?? need good gnu find, not macos find
+##  which adds some extra '//' in paths which bother pfff
 
 # sharutils, for obrowser/ocsigen  use of uuencode
 
