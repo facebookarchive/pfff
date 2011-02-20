@@ -10,6 +10,20 @@ for lwt:
  cp *.ml* *.h ~/pfff/external/ocsigen/lwt/
  cd lwt/
  cp -a examples ~/pfff/external/ocsigen/lwt/
+ cd lwt/
+ *cp -f **/*.mli ~/pfff/external/ocsigen/lwt/
+ => see optional .mli
+	external/ocsigen/lwt/lwt_event.mli
+	external/ocsigen/lwt/lwt_glib.mli
+	external/ocsigen/lwt/lwt_log_rules.mli
+	external/ocsigen/lwt/lwt_read_line.mli
+	external/ocsigen/lwt/lwt_signal.mli
+	external/ocsigen/lwt/lwt_ssl.mli
+	external/ocsigen/lwt/lwt_term.mli
+	external/ocsigen/lwt/lwt_text.mli
+	external/ocsigen/lwt/lwt_top.mli
+	external/ocsigen/lwt/test.mli
+
 
 for js_of_ocaml:
 
