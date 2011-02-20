@@ -68,6 +68,10 @@ rule category = parse
   (* ml specific ? *)
   | ".depend" { Building }
   | "ocamlmakefile" { BoilerPlate }
+  (* oasis boilerplate *)
+  | "setup.ml" { BoilerPlate }
+  (* ocamlbuild boilerplate *)
+  | "/_build" { BoilerPlate }
 
   | "makefile" 
   | "/configure" 
@@ -135,6 +139,9 @@ rule category = parse
   | "/testsuite/"
   (* gnugo *) 
   | "/regression"
+      { Test }
+
+  | "/benchmarks"
       { Test }
 
   | "/example"
