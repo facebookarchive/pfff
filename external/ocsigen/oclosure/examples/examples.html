@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+    <script src="test_roundedCorner_req.js"></script>
+    <script src="test_zippy_req.js"></script>
+    <script src="test_toolbar_req.js"></script>
+    <script src="test_dialog_req.js"></script>
+    <script src="test_prompt_req.js"></script>
+    <script src="test_tree_req.js"></script>
+    <link rel="stylesheet" href="../static/css/demo.css">
+    <link rel="stylesheet" href="../static/css/toolbar.css">
+    <link rel="stylesheet" href="../static/css/menuseparator.css">
+    <link rel="stylesheet" href="../static/css/dialog.css">
+    <link rel="stylesheet" href="../static/css/tree.css">
+    <style>
+      h2 {
+      background: #C0C0FF;
+      margin-top: 10px;
+      margin-bottom: 0px;
+      cursor: pointer;
+      padding: 1px 3px;
+      }
+      div {
+      margin: 0px;
+      padding: 0px;
+      }
+      p {
+      background: #DEDEFF;
+      border: solid #C0C0FF;
+      border-width: 0px 3px 3px 3px;
+      margin-top: 0px;
+      padding: 3px;
+      text-align: justify;
+      overflow: hidden;
+      }
+      img {
+      width: 19px;
+      height: 16px;
+      }
+      .goog-zippy-expanded img {
+      background-image: url('minus.png');
+      }
+      .goog-zippy-collapsed img {
+      background-image: url('plus.png');
+      }
+      hr{
+      margin-top: 20px;
+      margin-bottom: 20px
+      }
+      input {
+      width: 160px;
+      }
+      .rc {
+      margin: 0;
+      padding-bottom: 5px;
+      padding-right: 5px;
+      position: relative;
+      }
+      #roundedCornerRadiusSliderDiv {
+      height: 20px;
+      margin-top: 5px;
+      width: 160px;
+      }
+      .goog-slider-horizontal {
+      background-color: #cccccc;
+      overflow: hidden;
+      position: relative;
+      }
+      .goog-slider-thumb {
+      background-color: #666666;
+      height: 100%;
+      overflow: hidden;
+      position: absolute;
+      top: 0;
+      width: 20px;
+      }
+      .sliderLine {
+      border-top: 1px inset #ffffff;
+      height: 1px;
+      overflow: hidden;
+      position: absolute;
+      top: 9px;
+      width: 100%;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <h2 id="header">Titre</h2>
+    <p id="content">
+      Contenu du zippy, text ect
+      c<br />o<br />n<br />t<br />e<br />n<br />t<br /><br />h<br />
+      e<br />r<br />e
+    </p>
+    <h2 id="header2">Titre</h2>
+    <p id="content2">
+      Contenu du zippy, text ect
+      c<br />o<br />n<br />t<br />e<br />n<br />t<br /><br />h<br />
+      e<br />r<br />e
+    </p>
+    <hr />
+    <div id="toolbar"></div>
+    <hr />
+    <div id="treeContainer"></div>
+    <hr />
+    <div>Slide me to round the box!</div>
+    <div id="slider" style="height:20px; width:160px"></div>
+    <br />
+    <div id="rc0" style="float:left"></div>
+    <div id="rc1"></div>
+    <div id="rc2" style="float:left"></div>
+    <div id="rc3"></div>
+    <hr />
+
+    <script src="test_roundedCorner.js"></script>
+    <script src="test_zippy.js"></script>
+    <script src="test_toolbar.js"></script>
+    <script src="test_dialog.js"></script>
+    <script src="test_prompt.js"></script>
+    <script src="test_tree.js"></script>
+  </body>
+</html>

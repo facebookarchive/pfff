@@ -1,0 +1,52 @@
+<!DOCTYPE HTML> 
+<html> 
+<head> 
+  <title>goog.ui.Gauge</title> 
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+    <link rel="stylesheet" href="../static/css/demo.css">
+  <style> 
+    .type { font-size:14px; font-weight:bold; font-family:arial; background-color:#f7f7f7; text-align:center }
+  </style> 
+  <script src="test_gauge_req.js"></script>
+  
+</head> 
+ 
+<body> 
+  <h1>goog.ui.Gauge</h1> 
+  <h2>Note: This component requires vector graphics support</h2> 
+  <table border="1"> 
+    <tr valign="top"> 
+      <td class="type"> 
+        Basic
+      </td> 
+      <td class="type"> 
+        Background colors, title. custom ticks
+      </td> 
+      <td class="type"> 
+        Value change, formatted value, tick labels
+      </td> 
+      <td class="type"> 
+        Custom colors
+      </td> 
+    </tr> 
+    <tr> 
+      <td style="width: 120px"> 
+        <span id="basic"></span> 
+      </td> 
+      <td style="width: 200px"> 
+        <span id="colors"></span> 
+      </td> 
+      <td style="width: 300px"> 
+        <span id="interactive"></span> 
+        <center> 
+          <input type="text" size="3" value="22" id="v1" /> 
+        </center> 
+      </td> 
+      <td style="width: 200px"> 
+        <span id="customcolors"></span> 
+      </td> 
+    </tr> 
+  </table> 
+  <script  src="test_gauge.js"> </script> 
+</body> 
+</html> 

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<!--
+Copyright 2010 The Closure Library Authors. All Rights Reserved.
+
+Use of this source code is governed by an Apache 2.0 License.
+See the COPYING file for details.
+-->
+<head>
+  <title>goog.ui.DimensionPicker</title>
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/demos/../base.js"></script>
+  <script src="test_dimensionPicker_req.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css">
+  <link rel="stylesheet" href="../static/css/dimensionpicker.css">
+  <style>
+  .goog-dimension-picker div.goog-dimension-picker-highlighted {
+    background: url(../static/images/dimension-highlighted.png);
+  }
+  .goog-dimension-picker-unhighlighted {
+    background: url(../static/images/dimension-unhighlighted.png);
+  }
+  </style>
+</head>
+<body>
+  <h1>goog.ui.DimensionPicker</h1>
+  <table border="0" cellpadding="0" cellspacing="4" width="100%">
+    <tbody>
+      <tr valign="top">
+        <td width="67%">
+          <fieldset>
+
+            <legend>Demo of the <strong>goog.ui.DimensionPicker</strong>
+              component:
+            </legend>
+            <br/>
+            <label id="p1">This is a 10x8 picker:</label>
+            <label>You selected <span id="p1_value">nothing</span></label><br/>
+            <label>The below picker is a decorated DIV:</label>
+
+            <div id="decorateTarget" class="goog-dimension-picker"></div>
+          </fieldset>
+          <br/>
+          <br/>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <br/>
+  <div id="perf"></div>
+  <script src="test_dimensionPicker.js"></script>
+
+</body>
+</html>

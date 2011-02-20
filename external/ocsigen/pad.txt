@@ -35,3 +35,12 @@ for js_of_ocaml:
   (was .../site-lib/js_of_ocaml/runtime.js but deconcatenated)
  *cp -f **/*.mli ~/pfff/external/ocsigen/js_of_ocaml/
   (no diff)
+
+for oclosure:
+ cd oclosure/
+ cp -a examples ~/pfff/external/ocsigen/oclosure
+ cp -a * ~/pfff/external/ocsigen/oclosure/
+ cd ~/pfff/external/ocsigen/oclosure/
+ find -name "*.ml" | xargs rm -f
+
+ 

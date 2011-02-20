@@ -1,0 +1,55 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <title>goog.ui.AutoComplete</title> 
+   <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css"> 
+  <link rel="stylesheet" href="../static/css/autocomplete.css"> 
+<style type="text/css"> 
+    .apple {
+      background-color: #990033;
+      color: #FFFFFF;
+      margin: 3px;
+      font-style: italic;
+    }
+ 
+    .citrus {
+      background-color: #CCCC33;
+      color: #FFFFFF;
+      margin: 3px;
+      font-style: italic;
+    }
+ 
+    .berry {
+      background-color: #009933;
+      color: #FFFFFF;
+      margin: 3px;
+      font-style: italic;
+    }
+  </style> 
+</head> 
+<body> 
+    <h1>goog.ui.AutoComplete.RichRemote</h1> 
+  <p> 
+    Fruit Selector:<br> 
+    <input type="text" id="txtInput" style="width:500px"/> 
+    <input type="checkbox" id="berryAllergy" /> 
+    <label for="berryAllergy">berry allergy</label> 
+    <input type="checkbox" id="setHighlighting"/> 
+    <label for="setHighlighting">standard highlighting</label> 
+    <p> 
+      This data is being pulled from the server at
+      <a href="autocompleterichremotedata.js">autocompleterichremotedata.js</a>.
+    </p> 
+    <p> 
+      Ideally the server would perform a search on the query and would only
+      return relevant results; however, this response is static.
+    </p> 
+  </p> 
+ 
+  <iframe id="wikipedia" width="900" height="600"></iframe> 
+
+  <script src="test_autoCompleteRichRemote_req.js">  </script> 
+  <script src="test_autoCompleteRichRemote.js">  </script> 
+</body> 
+</html> 

@@ -1,0 +1,33 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title>goog.ui.FilteredMenu</title> 
+<script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css">
+<link rel="stylesheet" href="../static/css/menu.css">
+<link rel="stylesheet" href="../static/css/menuitem.css">
+<link rel="stylesheet" href="../static/css/tristatemenuitem.css">
+<link rel="stylesheet" href="../static/css/filteredmenu.css">
+<link rel="stylesheet" href="../static/css/filterobservingmenuitem.css"> 
+<script src="test_filteredMenu_req.js"></script> 
+<style>  
+.goog-menu {
+  width: 30ex;
+}
+ 
+.goog-menu-filter input {
+  width: 100%;
+ 
+  /* width: 100% interferes with the input event handler in IE6 */
+  width: expression('30ex');
+}
+</style> 
+</head> 
+<body> 
+ 
+<div id="menu1"></div> 
+ 
+<script type="text/javascript" src="test_filteredMenu.js"></script>
+
+</body>
+</html>

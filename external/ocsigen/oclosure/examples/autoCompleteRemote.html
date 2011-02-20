@@ -1,0 +1,26 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <title>goog.ui.AutoComplete.Remote</title> 
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css"> 
+  <link rel="stylesheet" href="../static/css/autocomplete.css">
+</head> 
+<body> 
+  <h1>goog.ui.AutoComplete.Remote</h1> 
+ 
+  Google Buzzwords:<br> 
+  <input type="text" id="txtInput" style="width:500px"><br> 
+  <p> 
+    This data is being pulled from the server at
+    <a href="data.js">data.js</a>.
+  </p> 
+  <p> 
+    Ideally the server would perform a search on the query and would only
+    return relevant results; however, this response is static.
+  </p> 
+ 
+  <script src="test_autoCompleteRemote_req.js">   </script> 
+  <script src="test_autoCompleteRemote.js">   </script> 
+</body> 
+</html> 

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>goog.ui.BidiInput</title>
+  <script type="text/javascript" src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css">
+</head>
+
+<body>
+  <h1>goog.ui.BidiInput</h1>
+
+  <p>
+  The direction of the input field changes automatically to RTL (right to left)
+    if the contents is in an RTL language (e.g. Hebrew or Arabic).
+  </p>
+
+  <fieldset>
+    <legend>A decorated input:&nbsp;</legend>
+    Text: <input type='text' id='c1' />
+
+  </fieldset>
+
+  <br />
+
+  <fieldset>
+    <legend>An input created programmatically:&nbsp;</legend>
+    Text: <span id='c2'></span> !
+
+
+  </fieldset>
+
+
+  <br />
+
+  <fieldset>
+    <legend>A decorated textarea:&nbsp;</legend>
+    <textarea id='c3'></textarea>
+  </fieldset>
+
+  <br />
+
+  <div dir='rtl'>
+  <fieldset>
+    <legend>Right to left div:&nbsp;</legend>
+    <textarea id='c4'></textarea>
+
+  </fieldset>
+  </div>
+<script src="test_bidiInput_req.js"></script>
+<script src="test_bidiInput.js"></script>
+</body>
+</html>

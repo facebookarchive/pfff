@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+  <title>Charcounter </title>
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css"> 
+  </head>
+
+  <body>
+    <h1>goog.ui.CharCounter</h1> 
+    
+    <p> 
+      <input type="text" id="input1"> 
+      <span id="counter1"></span> character(s) remaining
+    </p> 
+    <p> 
+      <input type="text" id="input2"> 
+      You have entered <span id="counter2"></span> character(s) of a maximum 160.
+    </p> 
+    <p> 
+      <input type="text" id="input3"> 
+      <span id="counter3"></span> character(s) remaining
+      <button id="set1">setMaxLength(10)</button> 
+      <button id="set2">setMaxLength(20)</button> 
+    </p> 
+    <p> 
+      <textarea id="input4"></textarea> 
+      <span id="counter4"></span> character(s) remaining
+    </p> 
+  <script src="test_charcounter_req.js"></script>
+  <script src="test_charcounter.js"></script>
+  </body>
+
+</html>

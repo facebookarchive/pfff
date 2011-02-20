@@ -1,0 +1,51 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <title>goog.ui.Select &amp; goog.ui.Option</title> 
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+<script src="test_select_req.js"></script> 
+<link rel="stylesheet" href="../static/css/demo.css">
+<link rel="stylesheet" href="../static/css/menubutton.css"> 
+<link rel="stylesheet" href="../static/css/menu.css"> 
+<link rel="stylesheet" href="../static/css/menuitem.css"> 
+<link rel="stylesheet" href="../static/css/flatmenubutton.css"> 
+<style> 
+    .good {
+      color: #080;
+      vertical-align: middle;
+    }
+ 
+    .bad {
+      color: #800;
+      vertical-align: middle;
+    }
+  </style> 
+</head> 
+<body> 
+  <h1>goog.ui.Select &amp; goog.ui.Option</h1> 
+  <fieldset> 
+    <legend>Demo of the <strong>goog.ui.Select</strong> component:</legend> 
+    <br> 
+    <label id="select1">The best movie of all time is </label>&nbsp;
+    <span class="good" id="value1"></span> 
+    <br> 
+    <br> 
+    <label id="select2">The worst movie of all time is </label>&nbsp;
+    <span class="bad" id="value2"></span> 
+    <br> 
+    <br> 
+    <label id="select3">The <strong>Select</strong> component for worst movie is
+    </label>&nbsp;<i>(This control doesn't auto-highlight; it only dispatches
+    ENTER and LEAVE events.)</i> 
+    <br> 
+    <br> 
+    <a id="add" href="#">Click here</a> to add a new option for the best movie,
+    <a id="hide" href="#">here</a> 
+    to hide/show the select component for the best movie, or
+    <a id="worst" href="#">here</a> 
+    to set the worst movie of all time to "Catwoman."
+    <br> 
+  </fieldset> 
+  <script src="test_select.js"> </script> 
+</body> 
+</html> 

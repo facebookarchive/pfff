@@ -1,0 +1,63 @@
+<html> 
+<!--
+Copyright 2009 The Closure Library Authors. All Rights Reserved.
+ 
+Use of this source code is governed by an Apache 2.0 License.
+See the COPYING file for details.
+--> 
+<!--
+Author: jparent@google.com (Julie Parent)
+--> 
+<head> 
+<meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+  <title>goog.editor Demo</title> 
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <script src="test_editor_req.js"></script> 
+  <link rel="stylesheet" href="../static/css/demo.css"> 
+ 
+  <link rel="stylesheet" href="../static/css/button.css" /> 
+  <link rel="stylesheet" href="../static/css/dialog.css" /> 
+  <link rel="stylesheet" href="../static/css/linkbutton.css" /> 
+  <link rel="stylesheet" href="../static/css/menu.css"> 
+  <link rel="stylesheet" href="../static/css/menuitem.css"> 
+  <link rel="stylesheet" href="../static/css/menuseparator.css"> 
+  <link rel="stylesheet" href="../static/css/tab.css" /> 
+  <link rel="stylesheet" href="../static/css/tabbar.css" /> 
+  <link rel="stylesheet" href="../static/css/toolbar.css" /> 
+  <link rel="stylesheet" href="../static/css/colormenubutton.css" /> 
+  <link rel="stylesheet" href="../static/css/palette.css" /> 
+  <link rel="stylesheet" href="../static/css/colorpalette.css" /> 
+ 
+  <link rel="stylesheet" href="../static/css/editor/bubble.css" /> 
+  <link rel="stylesheet" href="../static/css/editor/dialog.css" /> 
+  <link rel="stylesheet" href="../static/css/editor/linkdialog.css" /> 
+  <link rel="stylesheet" href="../static/css/editortoolbar.css" /> 
+ 
+  <style> 
+    #editMe {
+      width: 600px;
+      height: 300px;
+      background-color: white;
+      border: 1px solid grey;
+    }
+  </style> 
+</head> 
+ 
+<body> 
+  <h1>goog.editor Demo</h1> 
+  <p>This is a demonstration of a editable field, with installed plugins,
+hooked up to a toolbar.</p> 
+  <br> 
+  <div id='toolbar' style='width:602px'></div> 
+  <div id='editMe'></div> 
+  <hr> 
+  <p><b>Current field contents</b> 
+  (updates as contents of the editable field above change):<br> 
+  <textarea id="fieldContents" style="height:100px;width:400px;"></textarea><br> 
+  <input type="button" value="Set Field Contents" id="setFieldContent_b" /> 
+  (Use to set contents of the editable field to the contents of this textarea)
+  </p> 
+ 
+  <script src="test_editor.js"></script> 
+</body> 
+</html> 

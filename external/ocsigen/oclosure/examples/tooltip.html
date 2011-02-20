@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>goog.ui.Tooltip</title>
+  <meta charset="utf-8">
+  <script src="http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js"></script>
+  <link rel="stylesheet" href="../static/css/demo.css">
+  <script src="test_tooltip_req.js"></script> 
+  <style>
+    .goog-tooltip {
+      background: infobackground;
+      color: infotext;
+      border: 1px solid infotext;
+      padding: 1px;
+      font: menu;
+    }
+    .tooltip2 {
+      background: #C0C0FF;
+      color: infotext;
+      border: 1px solid infotext;
+      padding: 1px;
+      font: menu;
+      width: 120px;
+    }
+    span {
+      border-bottom: 1px dotted black;
+    }
+  </style>
+  </head>
+<body>
+  <h1>goog.ui.Tooltip</h1>
+  <p>
+    <button id="btn1">Hover me</button>
+    <button id="btn2">and me</button>
+
+    <button id="btn3">and me</button>
+    <button id="btnNoTooltip">but not me</button>
+  </p>
+
+  <p>
+    Demo <span id="txt1">tooltips</span> in text and and of <span id="txt2">nested
+    <span id="txt3">tooltips</span>, where an element triggers
+    one tooltip and an element inside the first element triggers another
+    one.</span>
+
+  </p>
+
+  <div style="overflow: auto; height: 100px; border: 1px solid black;">
+  <div style="margin: 5px; padding: 5px; height: 200px;">
+    <button id="btn4">and me too!</button>
+  </div>
+  </div>
+
+  <button id="btn5" style="position: absolute; bottom: 5px;">near bottom</button>
+
+  <script src="test_tooltip.js"></script>
+</body>
+</html>
