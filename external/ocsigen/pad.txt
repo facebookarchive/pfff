@@ -4,7 +4,6 @@ almost all the code involved in the program. This is also useful for
 the pfff emacs tag generator to find all the functions so one can jump easily
 to any function.
 
-
 for lwt:
  cd lwt/
  cp -a examples ~/pfff/external/ocsigen/lwt/
@@ -25,9 +24,14 @@ for lwt:
 	external/ocsigen/lwt/test.mli
  todo? cp -a tests/ too ?
 
+
 for js_of_ocaml:
  cd js_of_ocaml/
  cp -a examples ~/pfff/external/ocsigen/js_of_ocaml
  cd .../site-lib/js_of_ocaml
  cp *.ml* *.h ~/pfff/external/ocsigen/js_of_ocaml
-
+ cd js_of_ocaml/
+ cp -a runtime/ ~/pfff/external/ocsigen/js_of_ocaml/
+  (was .../site-lib/js_of_ocaml/runtime.js but deconcatenated)
+ *cp -f **/*.mli ~/pfff/external/ocsigen/js_of_ocaml/
+  (no diff)
