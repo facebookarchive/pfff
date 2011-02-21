@@ -37,11 +37,15 @@ my $bdb=0;
 my $mysql=0;
 
 my $graphics=0; # X11 graphics.cma
-my $gui=1; # gtk
-my $visual=1; # cairo
+my $visual=1; # cairo, codemap
+my $gui=1; # gtk, pfff_browser
 
-my $mpi=0;
 my $pcre=1;
+
+# not very stable
+my $mpi=0;
+
+# obsolete
 my $irc=0;
 
 
@@ -63,8 +67,8 @@ GetOptions (
     "bdb!" => \$bdb,
     "mysql!" => \$mysql,
     "pcre!" => \$pcre,
-    "irc!" => \$irc,
     "mpi!" => \$mpi,
+#    "irc!" => \$irc,
 #            "opt!" => ??? $opt=".opt"
 
     "gui!" => \$gui,
@@ -73,7 +77,7 @@ GetOptions (
 
     "with-all" => sub { 
         $bdb = 1; $mysql = 1; $irc = 1; $pcre = 1; 
-        $facebook = 1;
+        $facebook = 0;
         $gui = 1; $visual = 1; 
         #$graphics = 1; conflict when $visual
     },
