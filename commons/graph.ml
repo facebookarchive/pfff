@@ -372,7 +372,8 @@ let copy oldg =
   let nodes = nodes oldg in
   nodes +> List.iter (fun n -> add_vertex_if_not_present n g);
   nodes +> List.iter (fun n -> 
-    let succ = succ n g in
+    (* bugfix: it's oldg, not 'g', wow, copying stuff is error prone *)
+    let succ = succ n oldg in
     succ +> List.iter (fun n2 -> add_edge n n2 g)
   );
   g
