@@ -330,6 +330,10 @@ let succ k g = OG.succ g.og (g +> vertex_of_key k)
 let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
   +> List.map (fun k -> key_of_vertex k g)
 
+let ivertex k g = 
+  let v = vertex_of_key k g in
+  OG.V.label v
+
 (*****************************************************************************)
 (* Graph deconstruction *)
 (*****************************************************************************)
@@ -419,13 +423,17 @@ let strongly_connected_components_condensation g =
 let display_with_gv g =
   OG.display_with_gv g.og
 
-let print_graph_generic ?(launch_gv=true) ~str_of_key filename g = 
+let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
+ filename g = 
   Common.with_open_outfile filename (fun (pr,_) ->
     pr "digraph misc {\n" ;
     (* pr "size = \"10,10\";\n" ; *)
+    pr extra_string;
+    pr "\n";
 
     g.og |> OG.iter_vertex (fun v -> 
       let k = key_of_vertex v g in
+      (* todo? could also use the str_of_key to represent the node *)
       pr (spf "%d [label=\"%s\"];\n" 
              (OG.V.label v)
              (str_of_key k));

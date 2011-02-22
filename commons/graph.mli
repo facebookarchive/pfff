@@ -25,6 +25,9 @@ val pred: 'a -> 'a graph -> 'a list
 val out_degree: 'a -> 'a graph -> int
 val in_degree: 'a -> 'a graph -> int
 
+(* internal vertex number *)
+val ivertex: 'a -> 'a graph -> int
+
 (* algorithms *)
 val shortest_path: 
   'a -> 'a -> 'a graph -> 'a list
@@ -38,7 +41,10 @@ val strongly_connected_components_condensation:
 (* debugging support *)
 val print_graph_generic :
   ?launch_gv:bool ->
-  str_of_key:('a -> string) -> Common.filename -> 'a graph -> unit
+  ?extra_string:string ->
+  str_of_key:('a -> string) -> 
+  Common.filename -> 
+  'a graph -> unit
 
 val display_with_gv:
   'a graph -> unit
