@@ -287,12 +287,6 @@ let create () = {
   vertex_of_key = Hashtbl.create 101;
   cnt = ref 0;
 }
-let copy g = {
-  og = OG.copy g.og;
-  key_of_vertex = Hashtbl.copy g.key_of_vertex;
-  vertex_of_key = Hashtbl.copy g.vertex_of_key;
-  cnt = ref !(g.cnt);
-}
 
 let add_vertex_if_not_present key g = 
   if Hashtbl.mem g.vertex_of_key key
@@ -346,6 +340,38 @@ let remove_vertex k g =
   Hashtbl.remove g.vertex_of_key k;
   Hashtbl.remove g.key_of_vertex vk;
   ()
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
+(* todo? make the graph more functional ? it's very imperative right now
+ * which force the caller to write in an imperative way and use functions
+ * like this 'copy()'. Look at launchary haskell paper ?
+ *)
+let copy oldg = 
+(* 
+ * bugfix: we can't just OG.copy the graph and Hashtbl.copy the vertex because
+ * the vertex will actually be different in the copied graph, and so the
+ * vertex_of_key will return a vertex in the original graph, not in
+ * the new copied graph.
+ *)
+  (* {
+  og = OG.copy g.og;
+  key_of_vertex = Hashtbl.copy g.key_of_vertex;
+  vertex_of_key = Hashtbl.copy g.vertex_of_key;
+  cnt = ref !(g.cnt);
+     }
+  *)
+  (* naive way, enough ? optimize ? all those iter are ugly *)
+  let g = create () in
+  let nodes = nodes oldg in
+  nodes +> List.iter (fun n -> add_vertex_if_not_present n g);
+  nodes +> List.iter (fun n -> 
+    let succ = succ n g in
+    succ +> List.iter (fun n2 -> add_edge n n2 g)
+  );
+  g
 
 (*****************************************************************************)
 (* The graph algorithms *)
