@@ -38,7 +38,7 @@ exception Timeout
 exception UnixExit of int 
 
 let rec (do_n: int -> (unit -> unit) -> unit) = fun i f ->
-  if i = 0 then () else (f(); do_n (i-1) f)
+  if i = 0 then () else (f (); do_n (i-1) f)
 let rec (foldn: ('a -> int -> 'a) -> 'a -> int -> 'a) = fun f acc i ->
   if i = 0 then acc else foldn f (f acc i) (i-1)
 
@@ -115,7 +115,7 @@ let null xs = match xs with [] -> true | _ -> false
 let debugger = ref false  
 
 let unwind_protect f cleanup =
-  if !debugger then f() else 
+  if !debugger then f () else 
     try f ()
     with e -> begin cleanup e; raise e end
 
@@ -123,7 +123,7 @@ let finalize f cleanup =
   (* bug: we can not just call f in debugger mode because
    * this change the semantic of the program. I originally
    * put this code below:
-   *   if !debugger then f() else  
+   *   if !debugger then f () else  
    * because I wanted some errors to pop-out to the top so I can
    * debug them but because now I use save_excursion and finalize
    * quite a lot this changes too much the semantic.
@@ -412,7 +412,7 @@ let redirect_stdout file f =
     let saveout = Unix.dup Unix.stdout in
     Unix.dup2 descr Unix.stdout;
     flush stdout;
-    let res = f() in
+    let res = f () in
     flush stdout;
     Unix.dup2 saveout Unix.stdout;
     close_out chan;
@@ -421,7 +421,7 @@ let redirect_stdout file f =
 
 let redirect_stdout_opt optfile f =
   match optfile with
-    | None -> f()
+    | None -> f ()
     | Some outfile -> redirect_stdout outfile f
 
 let redirect_stdout_stderr file f =
@@ -434,7 +434,7 @@ let redirect_stdout_stderr file f =
     Unix.dup2 descr Unix.stdout;
     Unix.dup2 descr Unix.stderr;
     flush stdout; flush stderr;
-    f();
+    f ();
     flush stdout; flush stderr;
     Unix.dup2 saveout Unix.stdout;
     Unix.dup2 saveerr Unix.stderr;
@@ -448,14 +448,14 @@ let redirect_stdin file f =
 
     let savein = Unix.dup Unix.stdin in
     Unix.dup2 descr Unix.stdin;
-    f();
+    f ();
     Unix.dup2 savein Unix.stdin;
     close_in chan;
   end
 
 let redirect_stdin_opt optfile f =
   match optfile with
-  | None -> f()
+  | None -> f ()
   | Some infile -> redirect_stdin infile f
 
 
@@ -498,10 +498,10 @@ let log2 s = if !verbose_level >= 2 then dolog s
 let log3 s = if !verbose_level >= 3 then dolog s
 let log4 s = if !verbose_level >= 4 then dolog s
 
-let if_log f = if !verbose_level >= 1 then f()
-let if_log2 f = if !verbose_level >= 2 then f()
-let if_log3 f = if !verbose_level >= 3 then f()
-let if_log4 f = if !verbose_level >= 4 then f()
+let if_log f = if !verbose_level >= 1 then f ()
+let if_log2 f = if !verbose_level >= 2 then f ()
+let if_log3 f = if !verbose_level >= 3 then f ()
+let if_log4 f = if !verbose_level >= 4 then f ()
 
 (* ---------------------------------------------------------------------- *)
 
@@ -620,7 +620,7 @@ let profile_end category = failwith "todo"
  *)  
 let profile_code category f = 
   if not (check_profile category)
-  then f() 
+  then f () 
   else begin
   if !show_trace_profile then pr2 (spf "> %s" category);
   let t = Unix.gettimeofday () in
@@ -645,7 +645,7 @@ let _is_in_exclusif = ref (None: string option)
 
 let profile_code_exclusif category f = 
   if not (check_profile category)
-  then f() 
+  then f () 
   else begin
 
   match !_is_in_exclusif with
@@ -1030,7 +1030,7 @@ let rec print_between between fn = function
 let adjust_pp_with_indent f = 
   Format.open_box !_tab_level_print; 
   (*Format.force_newline();*)
-  f(); 
+  f (); 
   Format.close_box ();
   Format.print_newline()
 
@@ -1038,18 +1038,18 @@ let adjust_pp_with_indent_and_header s f =
   Format.open_box (!_tab_level_print + String.length s); 
   do_n !_tab_level_print (fun () -> Format.print_string " ");
   Format.print_string s;
-  f();
+  f ();
   Format.close_box ();
   Format.print_newline()
 
 
 
-let pp_do_in_box f      = Format.open_box 1; f(); Format.close_box ()
-let pp_do_in_zero_box f = Format.open_box 0; f(); Format.close_box ()
+let pp_do_in_box f      = Format.open_box 1; f (); Format.close_box ()
+let pp_do_in_zero_box f = Format.open_box 0; f (); Format.close_box ()
 
 let pp_f_in_box f      = 
   Format.open_box 1; 
-  let res = f() in 
+  let res = f () in 
   Format.close_box ();
   res
 
@@ -1159,7 +1159,7 @@ let rec applyn n f o = if n = 0 then o else applyn (n-1) f (f o)
 
 let forever f = 
   while true do
-    f();
+    f ();
   done
 
 
@@ -1171,7 +1171,7 @@ class ['a] shared_variable_hook (x:'a) =
       begin
         data <- x;
         pr "refresh registered";
-        registered +> List.iter (fun f -> f());
+        registered +> List.iter (fun f -> f ());
       end
     method get = data
     method modify f = self#set (f self#get)
@@ -1658,7 +1658,7 @@ let (/!) x y = if y =|= 0 then (log "common.ml: div by 0"; 0) else x / y
 
 (* now in prelude 
  * let rec (do_n: int -> (unit -> unit) -> unit) = fun i f ->
- * if i = 0 then () else (f(); do_n (i-1) f)
+ * if i = 0 then () else (f (); do_n (i-1) f)
  *)
 
 let times f n = do_n n f
@@ -3137,7 +3137,7 @@ let do_in_fork f =
         pr2 "being killed";
         Unix.kill 0 Sys.sigkill;
         ));
-      f(); 
+      f (); 
       exit 0;
     end
   else pid
@@ -3587,7 +3587,7 @@ let timeout_function timeoutval = fun f ->
     begin
       Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
       ignore(Unix.alarm timeoutval);
-      let x = f() in
+      let x = f () in
       ignore(Unix.alarm 0);
       x
     end
@@ -3614,7 +3614,7 @@ let timeout_function timeoutval = fun f ->
 
 let timeout_function_opt timeoutvalopt f =
   match timeoutvalopt with
-  | None -> f()
+  | None -> f ()
   | Some x -> timeout_function x f
   
 
@@ -3651,7 +3651,7 @@ let erase_this_temp_file f =
 
 (* now in prelude: exception UnixExit of int *)
 let exn_to_real_unixexit f = 
-  try f() 
+  try f () 
   with UnixExit x -> exit x
 
 
@@ -5819,7 +5819,7 @@ let del_scope scoped_env = scoped_env := List.tl !scoped_env
 let do_in_new_scope scoped_env f = 
   begin
     new_scope scoped_env;
-    let res = f() in
+    let res = f () in
     del_scope scoped_env;
     res
   end
@@ -5874,7 +5874,7 @@ let del_scope_h scoped_env =
 let do_in_new_scope_h scoped_env f = 
   begin
     new_scope_h scoped_env;
-    let res = f() in
+    let res = f () in
     del_scope_h scoped_env;
     res
   end
@@ -6107,7 +6107,7 @@ let main_boilerplate f =
       finalize          (fun ()-> 
         pp_do_in_zero_box (fun () -> 
           try 
-            f(); (* <---- here it is *)
+            f (); (* <---- here it is *)
           with Unix.Unix_error (e, fm, argm) -> 
             pr2 (spf "exn Unix_error: %s %s %s\n" 
                     (Unix.error_message e) fm argm);
@@ -6149,7 +6149,7 @@ let with_pr2_to_string f =
 let format_to_string f =
   let (nm,o) = Filename.open_temp_file "format_to_s" ".out" in
   Format.set_formatter_out_channel o;
-  let _ = f() in
+  let _ = f () in
   Format.print_newline();
   Format.print_flush();
   Format.set_formatter_out_channel stdout;
