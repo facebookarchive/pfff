@@ -331,6 +331,11 @@ let nodes g =
 let out_degree k g = OG.out_degree g.og (g +> vertex_of_key k)
 let in_degree k g  = OG.in_degree  g.og (g +> vertex_of_key k)
 
+let succ k g = OG.succ g.og (g +> vertex_of_key k) 
+  +> List.map (fun k -> key_of_vertex k g)
+let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
+  +> List.map (fun k -> key_of_vertex k g)
+
 (*****************************************************************************)
 (* Graph deconstruction *)
 (*****************************************************************************)

@@ -22,6 +22,8 @@ val copy:
 (* graph access *)
 val nodes:
   'a graph -> 'a list
+val succ: 'a -> 'a graph -> 'a list
+val pred: 'a -> 'a graph -> 'a list
 val out_degree: 'a -> 'a graph -> int
 val in_degree: 'a -> 'a graph -> int
 
