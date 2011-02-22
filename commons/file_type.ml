@@ -85,6 +85,8 @@ let file_type_of_file2 file =
       -> PL (ML e)
   | "mlp" (* used in emacs source *)
       -> PL (ML e)
+  | "eliom"
+      -> PL (ML e)
 
   | "sml" -> PL (ML e)
   (* fsharp *)
@@ -189,7 +191,7 @@ let file_type_of_file2 file =
   | "nw" | "web" -> Text e
 
   | "org" 
-  | "md" | "rest" | "textile"
+  | "md" | "rest" | "textile" | "wiki"
     -> Text e
 
   | "rtf" -> Text e
