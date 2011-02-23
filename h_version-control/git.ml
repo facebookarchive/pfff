@@ -28,13 +28,18 @@ let ext_git_annot_cache = ".git_annot"
 (* Helpers *)
 (*****************************************************************************)
 
-let rec parent_path_with_dotgit subdir = 
+let rec parent_path_with_dotgit_opt subdir = 
   let subdir = Common.relative_to_absolute subdir in
   if Sys.file_exists (Filename.concat subdir "/.git")
-  then subdir
+  then Some subdir
   else 
     let parent = Common.dirname subdir in
-    parent_path_with_dotgit parent
+    if parent = "."
+    then None
+    else parent_path_with_dotgit_opt parent
+
+let parent_path_with_dotgit a = 
+  Common.some (parent_path_with_dotgit_opt a)
 
 let cleanup_cache_files dir = 
   let cache_ext = [ext_git_annot_cache] in
