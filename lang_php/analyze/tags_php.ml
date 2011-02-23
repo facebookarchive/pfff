@@ -76,13 +76,24 @@ let tags_of_ast ast filelines =
           (match enclosing_name_opt with
           | None -> raise Impossible
           | Some class_name ->
-             (* also generate a A::xxx tag to help completion *)
+             (* Generate a 'class::method tag. Can then have
+              * a nice completion and know all the methods available
+              * in a class (the short Eiffel-like profile).
+              * 
+              * It used to also generate a 'method' tag with just
+              * the method name, but if there is also a function
+              * somewhere using the same name then this function
+              * could be hard to reach.
+              * 
+              * alternative: could do first global analysis pass
+              * to find all the functions and generate also the short
+              * 'method' tag name when we are sure it would not
+              * conflict with an existing function.
+              *)
               let info = Ast.info_of_name name in
               let info' = Ast.rewrap_str 
                 (Ast.name class_name  ^ "::" ^ Ast.name name) info in
-              [tag_of_name filelines name;
-               tag_of_info filelines info';
-              ]
+              [tag_of_info filelines info';]
           )
       | ( Db.MultiDirs| Db.Dir| Db.File
         | Db.Field | Db.StaticMethod | Db.TopStmt | Db.Macro | Db.Global

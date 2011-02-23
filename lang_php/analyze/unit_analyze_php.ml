@@ -71,20 +71,20 @@ let tags_unittest =
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
+            (* we used to generate 2 tags per method, one for 'a_method',
+             * and one for 'A::a_method', but if there is also somewhere
+             * a function called a_method() and that it's located in an
+             * alphabetically higher filenames, then M-. a_method
+             * will unfortunately go the method. So just simpler to not
+             * generate the a_method tag.
+             *)
             assert_equal 
-              ~msg:"The tags should contain only 3 entries"
-              (List.length tags_in_file) 3;
+              ~msg:"The tags should contain only 2 entries"
+              (List.length tags_in_file) 2;
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
       );
-
-    (* we used to generate 2 tags per method, one for 'a_method',
-     * and one for 'A::a_method', but if there is also somewhere
-     * a function called a_method() and that it's located in an
-     * alphabetically higher filenames, then M-. a_method
-     * will unfortunately go the the 
-     *)
 
     ]
 
