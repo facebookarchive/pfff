@@ -61,6 +61,7 @@ val max_date_of_lines:
   Common.date_dmy
 
 (* misc operations *)
+val parent_path_with_dotgit_opt: Common.dirname -> Common.dirname option
 val parent_path_with_dotgit: Common.dirname -> Common.dirname
 
 val clean_git_patch: Patch.patch_raw -> Patch.patch_raw

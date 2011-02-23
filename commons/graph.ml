@@ -287,12 +287,6 @@ let create () = {
   vertex_of_key = Hashtbl.create 101;
   cnt = ref 0;
 }
-let copy g = {
-  og = OG.copy g.og;
-  key_of_vertex = Hashtbl.copy g.key_of_vertex;
-  vertex_of_key = Hashtbl.copy g.vertex_of_key;
-  cnt = ref !(g.cnt);
-}
 
 let add_vertex_if_not_present key g = 
   if Hashtbl.mem g.vertex_of_key key
@@ -331,6 +325,15 @@ let nodes g =
 let out_degree k g = OG.out_degree g.og (g +> vertex_of_key k)
 let in_degree k g  = OG.in_degree  g.og (g +> vertex_of_key k)
 
+let succ k g = OG.succ g.og (g +> vertex_of_key k) 
+  +> List.map (fun k -> key_of_vertex k g)
+let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
+  +> List.map (fun k -> key_of_vertex k g)
+
+let ivertex k g = 
+  let v = vertex_of_key k g in
+  OG.V.label v
+
 (*****************************************************************************)
 (* Graph deconstruction *)
 (*****************************************************************************)
@@ -341,6 +344,39 @@ let remove_vertex k g =
   Hashtbl.remove g.vertex_of_key k;
   Hashtbl.remove g.key_of_vertex vk;
   ()
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
+(* todo? make the graph more functional ? it's very imperative right now
+ * which force the caller to write in an imperative way and use functions
+ * like this 'copy()'. Look at launchary haskell paper ?
+ *)
+let copy oldg = 
+(* 
+ * bugfix: we can't just OG.copy the graph and Hashtbl.copy the vertex because
+ * the vertex will actually be different in the copied graph, and so the
+ * vertex_of_key will return a vertex in the original graph, not in
+ * the new copied graph.
+ *)
+  (* {
+  og = OG.copy g.og;
+  key_of_vertex = Hashtbl.copy g.key_of_vertex;
+  vertex_of_key = Hashtbl.copy g.vertex_of_key;
+  cnt = ref !(g.cnt);
+     }
+  *)
+  (* naive way, enough ? optimize ? all those iter are ugly *)
+  let g = create () in
+  let nodes = nodes oldg in
+  nodes +> List.iter (fun n -> add_vertex_if_not_present n g);
+  nodes +> List.iter (fun n -> 
+    (* bugfix: it's oldg, not 'g', wow, copying stuff is error prone *)
+    let succ = succ n oldg in
+    succ +> List.iter (fun n2 -> add_edge n n2 g)
+  );
+  g
 
 (*****************************************************************************)
 (* The graph algorithms *)
@@ -388,13 +424,17 @@ let strongly_connected_components_condensation g =
 let display_with_gv g =
   OG.display_with_gv g.og
 
-let print_graph_generic ?(launch_gv=true) ~str_of_key filename g = 
+let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
+ filename g = 
   Common.with_open_outfile filename (fun (pr,_) ->
     pr "digraph misc {\n" ;
     (* pr "size = \"10,10\";\n" ; *)
+    pr extra_string;
+    pr "\n";
 
     g.og |> OG.iter_vertex (fun v -> 
       let k = key_of_vertex v g in
+      (* todo? could also use the str_of_key to represent the node *)
       pr (spf "%d [label=\"%s\"];\n" 
              (OG.V.label v)
              (str_of_key k));
