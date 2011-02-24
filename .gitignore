@@ -299,3 +299,9 @@ external/ocamlbdb/libcamlbdb.a
 /external/ocamlnet/netsys/netsys_types.ml
 /external/ocamlnet/netsys/Makefile.conf
 /external/ocamlnet/netsys/config.h
+/external/ocamlnet/netsys/configtests/atfunctions
+/external/ocamlnet/netsys/configtests/fdopendir
+/external/ocamlnet/netsys/configtests/posix_fadvise
+/external/ocamlnet/netsys/configtests/posix_fadvise.tmp
+/external/ocamlnet/netsys/configtests/posix_fallocate
+/external/ocamlnet/netsys/configtests/posix_fallocate.tmp

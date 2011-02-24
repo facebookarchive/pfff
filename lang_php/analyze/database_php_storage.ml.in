@@ -64,7 +64,7 @@ let create_bdb_string metapath dbname env =
 (* Locking wrappers *)
 (*****************************************************************************)
 
-(* Berkeley DB and especially GDBM don't like when there is a concurrent
+(* Berkeley DB and especially GDBM dont like when there is a concurrent
  * access to the same database. 
  * todo: could move in h_program-lang/ ?
  *)
@@ -113,7 +113,7 @@ let open_db metapath =
 
     if !Flag.debug_bdb then pr2 "env opened";
 
-    (* coupling: if add new table, don't forget to add the code that 
+    (* coupling: if add new table, dont forget to add the code that 
      * close the associated bdb table !!!! and code in flush_db() !!!!!
      *)
 
