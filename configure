@@ -258,6 +258,8 @@ if($pcre) {
 #    system("cd external/ocamlgraph; ./configure");
 #}
 
+#TODO: my $err = system("cd external/ocamlnet; ./configure");
+
 if($gui) {
     pr2 "";
     pr2 "Configuring ocamlgtk";

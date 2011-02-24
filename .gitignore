@@ -266,3 +266,14 @@ external/ocamlbdb/libcamlbdb.a
 /lang_erlang/parsing/parser_erlang.mli
 /lang_erlang/parsing/parser_erlang.output
 /lang_php/analyze/Analyze_php.out
+/external/ocamlnet/netstring/depend
+/external/ocamlnet/netsys/depend
+/external/ocamlnet/netstring/tools/unimap_to_ocaml/unimap_to_ocaml
+/external/ocamlnet/netstring/tools_done
+/external/ocamlnet/netstring/netconst.ml
+/external/ocamlnet/netstring/netdate.ml
+/external/ocamlnet/netstring/netdb.ml
+/external/ocamlnet/netstring/netmappings_iso.ml
+/external/ocamlnet/netstring/netmappings_jp.ml
+/external/ocamlnet/netstring/netmappings_kr.ml
+/external/ocamlnet/netstring/netmappings_other.ml

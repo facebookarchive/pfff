@@ -11,7 +11,10 @@ OBJECTS  = netconst.cmo netstring_pcre.cmo netstring_str.cmo netbuffer.cmo \
 
 PKGNAME  = netstring
 
-REQUIRES = pcre bigarray
+#pad: was when using ocamlfind
+#REQUIRES = pcre bigarray
+INCLUDES += -I ../../ocamlpcre/lib
+
 INCLUDES += $(INC_NETSYS)
 
 ISO_MAPPINGS   = mappings/iso*.unimap

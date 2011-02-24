@@ -1,4 +1,4 @@
-TOP_DIR=../..
+TOP_DIR=..
 
 include Makefile.def
 

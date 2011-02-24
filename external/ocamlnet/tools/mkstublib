@@ -1,0 +1,123 @@
+#! /bin/sh
+
+# usage: like ocamlmklib. This is only to be used until O'Caml 3.10.
+# O'Caml 3.11 supports ocamlmklib on mingw!
+
+mingw_mklib () {
+	libname=""
+	clibname=""
+	cmo=""
+	cmx=""
+	o=""
+	dyno=""
+	libopts=""
+	ldopts=""
+	ccopts=""
+
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			-o)
+				libname="$2"; shift 2 ;;
+			-oc)
+				clibname="$2"; shift 2 ;;
+			*.o)
+				file="$1"
+				o="$o $file"
+				if [ -f "${file%*.o}".d.o ]; then
+					dyno="$dyno ${file%*.o}.d.o"
+				fi
+				shift ;;
+			*.a)
+				echo "Archives not supported: $1" >&2
+				exit 1 ;;
+			*.cmo)
+				cmo="$cmo $1"; shift ;;
+			*.cmx)
+				cmx="$cmx $1"; shift ;;
+			-cclib)
+				libopts="$libopts $2"; shift 2 ;;
+			-ccopt)
+				ccopts="$ccopts $2"; shift 2 ;;
+			-ldopt)
+				ldopts="$ldopts $2"; shift 2 ;;
+			-L)
+				ccopts="$ccopts -L$2"; shift 2 ;;
+			-L*)
+				ccopts="$ccopts $1"; shift ;;
+			-l)
+				libopts="$libopts -l$2"; shift 2 ;;
+			-l*)
+				libopts="$libopts $1"; shift ;;
+			*)
+				: ;;
+		esac
+	done
+
+	if [ -z "$clibname" ]; then
+		clibname="$libname"
+	fi
+
+	if [ -z "$libname" ]; then
+		echo "Missing -o option!" >&2
+		exit 1
+	fi
+
+	# Create static archive:
+	if [ -n "$o" ]; then
+		set -x
+		rm -f "lib$clibname.a"
+		ar cr "lib$clibname.a" $o
+		ranlib "lib$clibname.a"	
+		set +x
+	fi
+
+	# Create DLL:
+	if [ -n "$dyno" -a -n "$cmo" ]; then
+		stdlib=`ocamlc -where | sed -e 's/\r//'`
+		set -x
+		gcc -mno-cygwin -shared -o "dll$clibname.dll" \
+			$dyno $ccopts $ldopts $libopts $stdlib/ocamlrun.a
+		set +x
+	fi
+
+	# Create ocaml archive(s):
+	if [ -n "$cmo" ]; then
+		set -x
+		ocamlc -a -o "$libname.cma" $cmo -dllib "-l$clibname" \
+			-cclib "-l$clibname" -ccopt "$ccopts" \
+			-cclib "$cclibs"
+		set +x
+	fi
+	if [ -n "$cmx" ]; then
+		set -x
+		ocamlopt -a -o "$libname.cmxa" $cmx \
+			-cclib "-l$clibname" -ccopt "$ccopts" \
+			-cclib "$cclibs"
+		set +x
+	fi
+}
+
+
+
+
+
+set -e
+system=`ocamlc -config | grep system | sed -e 's/system: //'`
+version=`ocamlc -version`
+
+case "$version" in
+	3.09|3.09.*|3.10|3.10.*|3.11.0*)
+		case "$system" in
+			mingw*)
+				mingw_mklib "$@" ;;
+			*)
+				set +x
+				ocamlmklib "$@" ;;
+		esac
+		;;
+	*)
+		set +x
+		ocamlmklib "$@"
+		;;
+esac
+

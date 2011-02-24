@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# usage:
+# stubcc [-I<dir> ...] file.c
+
+set -e
+
+# Look at the arguments:
+ccopt=""
+file=""
+ocamlc="ocamlc"
+while [ $# -gt 0 ]; do
+    case "$1" in
+	-ccopt)
+		ccopt="$ccopt $2"; shift 2 ;;
+	-ocamlc)
+	        ocamlc="$2"; shift 2 ;;
+	-*)
+		ccopt="$ccopt $1"; shift ;;
+	*.c)
+		file="$1"; shift ;;
+	*)
+		echo "Don't know what to do with: $1"; exit 1 ;;
+    esac
+done
+
+system=`$ocamlc -config | grep system | sed -e 's/system: //'`
+version=`$ocamlc -version`
+
+case "$version" in
+        3.09|3.09.*|3.10|3.10.*)
+		case "$system" in
+			mingw*)
+				bfile=`basename "$file" .c`
+				dfile=`dirname "$file"`
+				$ocamlc -verbose -c -ccopt "$ccopt" -ccopt -DCAML_DLL "$file"
+				mv "$dfile/$bfile.o" "$dfile/$bfile.d.o"
+				$ocamlc -verbose -c -ccopt "$ccopt" "$file"
+				;;
+			*)
+				$ocamlc -verbose -c -ccopt "$ccopt" "$file" 
+				;;
+		esac
+		;;
+	*)
+		$ocamlc -verbose -c -ccopt "$ccopt" "$file"
+		;;
+esac
+

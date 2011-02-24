@@ -1,4 +1,4 @@
-TOP_DIR=../..
+TOP_DIR=../
 
 include $(TOP_DIR)/Makefile.conf
 include Makefile.conf
@@ -80,5 +80,18 @@ netsys_oothr-posix: netsys_oothr_mt.cmx
 clean::
 	rm -f configtests/*.o configtests/*.err
 	rm -f configtests/posix_shm
+	rm -f configtests/atfunctions
+	rm -f configtests/fchdir
+	rm -f configtests/fdopendir
+	rm -f configtests/ocaml_fancy_page_tables
+	rm -f configtests/posix_fadvise
+	rm -f configtests/posix_fadvise.tmp
+	rm -f configtests/posix_fallocate
+	rm -f configtests/posix_fallocate.tmp
+	rm -f configtests/posix_memalign
+	rm -f configtests/posix_pthread
+	rm -f configtests/posix_sem
+	rm -f configtests/syslog
+
 
 include depend

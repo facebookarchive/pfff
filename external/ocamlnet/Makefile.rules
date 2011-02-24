@@ -1,0 +1,209 @@
+# -*- Makefile -*-
+# Inclusion of Makefile.conf may fail when cleaning up:
+
+-include $(TOP_DIR)/Makefile.conf
+
+# Makefile.conf: written by "configure".
+
+# How to invoke compilers and tools:
+# (May be moved to Makefile.conf if necessary)
+
+OCAMLC    = ocamlc -g $(OCAMLC_OPTIONS) $(INCLUDES) 
+OCAMLC_MLI= ocamlc -g $(OCAMLC_OPTIONS) $(INCLUDES)
+OCAMLOPT  = ocamlopt $(OCAMLOPT_OPTIONS) $(INCLUDES)
+OCAMLDEP  = ocamldep $(OCAMLDEP_OPTIONS) $(PP_OPTIONS)
+
+#pad: was originally:
+#OCAMLC    = $(OCAMLFIND) ocamlc -g $(OCAMLC_OPTIONS) $(INCLUDES) -package "$(REQUIRES)" $(PP_OPTIONS)
+#OCAMLC_MLI= $(OCAMLFIND) ocamlc -g $(OCAMLC_OPTIONS) $(INCLUDES) -package "$(REQUIRES)"
+## Note that PP_OPTIONS do not affect .mli! (usually breaks ocamldoc)
+#
+#OCAMLOPT  = $(OCAMLFIND) ocamlopt $(OCAMLOPT_OPTIONS) $(INCLUDES) -package "$(REQUIRES)" $(PP_OPTIONS)
+#OCAMLDEP  = $(OCAMLFIND) ocamldep $(OCAMLDEP_OPTIONS) $(PP_OPTIONS)
+#OCAMLFIND = ocamlfind
+OCAMLYACC = ocamlyacc
+OCAMLLEX  = ocamllex
+CAMLP4    = camlp4
+OCAMLMKLIB = $(TOP_DIR)/tools/mkstublib
+OCAMLDOC  = $(OCAMLFIND) ocamldoc
+STUBCC    = $(TOP_DIR)/tools/stubcc -ocamlc ocamlc
+
+TOOLS_DIR = $(TOP_DIR)/tools
+COLLECT_FILES = $(TOOLS_DIR)/collect_files
+
+#pad: removed the src/
+INC_NETSYS         = -I $(TOP_DIR)/netsys
+
+# To be overridden by the command line:
+INC_NETSTRING      = -I $(TOP_DIR)/src/netstring
+INC_EQUEUE         = -I $(TOP_DIR)/src/equeue
+INC_EQUEUE_SSL     = -I $(TOP_DIR)/src/equeue-ssl
+INC_NETCGI2        = -I $(TOP_DIR)/src/netcgi2
+INC_NETCGI2_APACHE = -I $(TOP_DIR)/src/netcgi2-apache
+INC_NETPLEX        = -I $(TOP_DIR)/src/netplex
+INC_NETCAMLBOX     = -I $(TOP_DIR)/src/netcamlbox
+INC_RPC            = -I $(TOP_DIR)/src/rpc
+INC_SHELL          = -I $(TOP_DIR)/src/shell
+
+# Standard definitions and rules
+
+XOBJECTS = $(OBJECTS:.cmo=.cmx)
+POBJECTS = $(OBJECTS:.cmo=.p.cmx)
+ARCHIVE  ?= $(PKGNAME)
+
+.PHONY: all opt all-mt-vm opt-mt-vm all-mt-posix opt-mt-posix
+
+ARCHIVE_CMA ?= $(ARCHIVE).cma 
+ARCHIVE_CMXA ?= $(ARCHIVE).cmxa 
+ARCHIVE_P ?= $(ARCHIVE).p
+ARCHIVE_P_CMXA ?= $(ARCHIVE_P).cmxa
+
+ALL ?= $(ARCHIVE_CMA) $(ALL_EXTRA) \
+       all-mt-$(MT_TYPE)
+OPT ?= $(ARCHIVE_CMXA) $(OPT_EXTRA) \
+       opt-mt-$(MT_TYPE) opt-p-$(HAVE_GPROF) opt-mt-$(MT_TYPE)-p-$(HAVE_GPROF)
+
+all: $(ALL)
+
+opt: $(OPT)
+
+all-mt-vm: $(ALLMT_EXTRA)
+all-mt-posix: $(ALLMT_EXTRA)
+opt-mt-vm:
+opt-mt-posix: $(OPTMT_EXTRA)
+opt-p-0:
+opt-p-1: $(ARCHIVE_P_CMXA) $(OPTP_EXTRA)
+opt-mt-vm-p-0:
+opt-mt-posix-p-0:
+opt-mt-vm-p-1:
+opt-mt-posix-p-1: $(OPTMTP_EXTRA)
+
+
+
+$(ARCHIVE_CMA): $(OBJECTS) $(COBJECTS)
+	if [ "X$(COBJECTS)" = "X" ]; then \
+		$(OCAMLC) -a -o $(ARCHIVE_CMA) $(OBJECTS); \
+	else \
+		$(OCAMLMKLIB) -o $(ARCHIVE) $(OBJECTS) $(COBJECTS) $(LINK_OPTIONS); \
+	fi
+
+$(ARCHIVE_CMXA): $(XOBJECTS) $(COBJECTS)
+	if [ "X$(COBJECTS)" = "X" ]; then \
+		$(OCAMLOPT) -a -o $(ARCHIVE_CMXA) $(XOBJECTS); \
+	else \
+		$(OCAMLMKLIB) -o $(ARCHIVE) $(XOBJECTS) $(COBJECTS) $(LINK_OPTIONS); \
+	fi
+
+$(ARCHIVE_P_CMXA): $(XOBJECTS) $(COBJECTS)
+	if [ "X$(COBJECTS)" = "X" ]; then \
+		$(OCAMLOPT) -a -o $(ARCHIVE_P_CMXA) $(POBJECTS); \
+	else \
+		$(OCAMLMKLIB) -o $(ARCHIVE_P) $(POBJECTS) $(COBJECTS) $(LINK_OPTIONS); \
+	fi
+
+# Files to remove everywhere by "make clean":
+
+CLEAN_LIST = *.cmi *.cmo *.cma *.cmx *.o *.a *.cmxa dll* packlist-* \
+	     ocamldoc.dump META depend $(PACKLIST) $(GENERATE)
+
+# Generic build rules:
+
+.SUFFIXES: .cmo .cmi .cmx .ml .mli .mll .mly .c .o
+
+.ml.cmx:
+	$(OCAMLOPT) -c $(OCAMLOPT_OPTIONS_FOR_$<) $<
+	[ $(HAVE_GPROF) -eq 0 ] || $(OCAMLOPT) -c -p -o `basename $@ .cmx`.p.cmx $(OCAMLOPT_OPTIONS_FOR_$<) $<
+
+.ml.cmo:
+	$(OCAMLC) -c $(OCAMLC_OPTIONS_FOR_$<) $<
+
+.mli.cmi:
+	$(OCAMLC_MLI) -c $(OCAMLC_OPTIONS_FOR_$<) $<
+
+.mll.ml:
+	$(OCAMLLEX) $<
+
+.mly.ml:
+	$(OCAMLYACC) $<
+
+.c.o:
+	$(STUBCC) -ccopt -O $(CC_OPTIONS) $(CC_OPTIONS_FOR_$<) $<
+
+# We add $(OBJECTS) to the antecedents of ocamldoc.dump to ensure that
+# the files are compiled. ocamldoc needs the .cmi files, and this is
+# the simplest way of ensuring that.
+
+ocamldoc.dump: $(DOBJECTS) $(OBJECTS)
+	$(OCAMLDOC) -dump ocamldoc.dump -stars $(INCLUDES) -package "$(REQUIRES)" $(OCAMLDOC_OPTIONS) $(DOBJECTS) || { rm -f ocamldoc.dump; exit 1; }
+
+# Install rules:
+
+.PHONY: install
+install:
+	@$(MAKE) -f Makefile.pre realinstall
+
+.PHONY: realinstall
+realinstall: install-$(INSTMETHOD) $(INSTOTHER) $(PACKLIST)
+
+
+.PHONY: uninstall
+uninstall: 
+	@$(MAKE) -f Makefile.pre realuninstall
+
+.PHONY: realuninstall
+realuninstall: $(UNINSTOTHER) uninstall-$(INSTMETHOD) 
+
+.PHONY: install-findlib
+install-findlib: META
+	files=`$(COLLECT_FILES) *.mli *.cmi *.cma *.cmxa *.a dll* META $(INSTALL_EXTRA)` && \
+	$(OCAMLFIND) install $(PKGNAME) $$files
+
+.PHONY: uninstall-findlib
+uninstall-findlib:
+	$(OCAMLFIND) remove $(PKGNAME)
+	if [ -n "$(PACKLIST)" ]; then                                         \
+	        if packlist=`ocamlfind query $(PKGNAME)`/$(PACKLIST); then    \
+	            if [ -f "$$packlist" ]; then                              \
+	                files=`cat $$packlist` &&                             \
+	                rm -f $$files;                                        \
+	                echo "$$files" | xargs echo "Removed ";               \
+	            fi;                                                       \
+	        fi;                                                           \
+	fi
+
+META: META.in
+	sed -e 's/@VERSION@/$(VERSION)/' \
+	    -e 's/@AUTHDHREQS@/$(AUTHDHREQS)/' \
+	    -e 's/@PREFERRED_CGI_PKG@/$(PREFERRED_CGI_PKG)/' \
+		META.in >META
+
+#----------------------------------------------------------------------
+# general rules:
+
+
+DEP_FILES ?= $(wildcard *.ml) $(wildcard *.mli)
+
+# Set NODEP to "@true" in order to disable "depend".
+
+depend: $(DEP_FILES)
+	$(NODEP) $(OCAMLDEP) *.ml *.mli >$@ || { rm -f $@; exit 1; }
+
+.PHONY: clean
+clean::
+	rm -f $(CLEAN_LIST)
+
+.PHONY: clean-doc
+clean-doc::
+	rm -f ocamldoc.dump
+
+.PHONY: distclean
+distclean::
+	rm -f $(CLEAN_LIST) META
+	rm -f *~ depend
+
+.PHONY: generate
+generate:
+	@$(MAKE) -f Makefile.pre realgenerate
+
+.PHONY: realgenerate
+realgenerate:: $(GENERATE)
