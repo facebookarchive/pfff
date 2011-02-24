@@ -20,6 +20,7 @@ MYSRC=common.ml common_extra.ml \
       ocollection/ograph2way.ml ograph_extended.ml ograph_simple.ml  \
       ofullcommon.ml \
       math.ml \
+      unicode.ml \
       simple_color.ml file_type.ml file_format.ml \
       glimpse.ml parser_combinators.ml
 
@@ -46,7 +47,7 @@ INCLUDEDIRS=ocamlextra ocollection
 SUBDIRS=ocamlextra ocollection
 
 # sexp/json/xml are so helpful to debug code that they are considered 
-# fundamental and so they are included/inlined directly in commons
+# fundamental and so they are part of commons.cma
 
 ifeq ($(FEATURE_SEXP_BUILTIN_COMMONS),1)
 SRC+= \
@@ -59,7 +60,9 @@ SRC+= \
   lib-sexp/path.ml \
   lib-sexp/conv.ml \
   lib-sexp/conv_error.ml
+#for make depend
 INCLUDEDIRS+=lib-sexp
+#for make clean
 SUBDIRS+=lib-sexp
 endif
 
