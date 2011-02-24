@@ -1,0 +1,652 @@
+{1:tutorial Netchannels Tutorial} 
+
+[Netchannels] is one of the basic modules of this library, because it
+provides some very basic abstractions needed for many other functions
+of the library. The key abstractions [Netchannels] defines are the types
+[in_obj_channel] and [out_obj_channel]. Both are class types providing
+sequential access to byte streams, one for input, one for output.
+They are comparable to the types [in_channel] and [out_channel] of the
+standard library that
+allow access to files. However, there is one fundamental difference:
+[in_channel] and [out_channel] are restricted to resources that are
+available through file descriptors, whereas [in_obj_channel] and
+[out_obj_channel] are just class types, and by providing implementations
+for them any kind of resources can be accessed.
+
+{2 Motivation}
+
+In some respect, [Netchannels] fixes a deficiency of the standard
+library. Look at the module [Printf] which defines six variants
+of the [printf] function:
+{[
+val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
+val printf : ('a, out_channel, unit) format -> 'a
+val eprintf : ('a, out_channel, unit) format -> 'a
+val sprintf : ('a, unit, string) format -> 'a
+val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
+val kprintf : (string -> string) -> ('a, unit, string) format -> 'a
+]}
+It is possible to write into six different kinds of print targets.
+The basic problem of this style is that the provider of a service 
+function like [printf] must define it for every commonly used
+print target. The other solution is that the provider defines only
+one version of the service function, but that the caller of the
+function arranges the polymorphism. A [Netchannels]-aware [Printf]
+would have only one variant of [printf]:
+{[
+val printf : out_obj_channel -> ('a, out_obj_channel, unit) format -> 'a
+]}
+The caller would create the right [out_obj_channel] object for the
+real print target:
+{[
+let file_ch = new output_file (file : out_channel) in
+printf file_ch ...
+]}
+(printing into files), or:
+{[
+let buffer_ch = new output_buffer (buf : Buffer.t) in
+printf buffer_ch ...
+]}
+(printing into buffers).
+Of course, this is only a hypothetical example. The point is that
+this library defines many parsers and printers, and that it is really
+a simplification for both the library and the user of the library
+to have this object encapsulation of I/O resources.
+
+{2 Programming with [in_obj_channel] }
+
+For example, let us program a function reading a data source
+line by line, and returning the sum of all lines which must be integer
+numbers. The argument [ch] is an open {!Netchannels.in_obj_channel},
+and the return value is the sum:
+{[
+let sum_up (ch : in_obj_channel) =
+  let sum = ref 0 in
+  try
+    while true do
+      let line = ch # input_line() in
+      sum := !sum + int_of_string line
+    done;
+    assert false
+  with
+    End_of_file ->
+      !sum
+]}
+The interesting point is that the data source can be anything: a channel,
+a string, or any other class that implements the class type
+[in_obj_channel]. 
+
+This expression opens the file ["data"] and returns the sum of this file:
+{[
+let ch = new input_channel (open_in "data") in
+sum_up ch
+]}
+The class {!Netchannels.input_channel} is an implementation of the type
+[in_obj_channel] where every method of the class simply calls the
+corresponding function of the module [Pervasives]. (By the way, it would
+be a good idea to close the channel afterwards: [ch#close_in()].
+We will discuss that below.)
+
+This expression sums up the contents of a constant string:
+{[
+let s = "1\n2\n3\n4" in
+let ch = new input_string s in
+sum_up ch
+]} 
+The class {!Netchannels.input_string} is an implementation of the type
+[in_obj_channel] that reads from a string that is treated
+like a channel.
+
+The effect of using the [Netchannels] module is that the same
+implementation [sum_up] can be used to read from multiple
+data sources, as it is sufficient to call the function with different
+implementations of [in_obj_channel].
+
+{2 The details of [in_obj_channel] }
+
+The properties of any class that implements [in_obj_channel]
+can be summarized as follows:
+
+- After the object has been created ([new]), the
+  netchannel is open. The netchannel remains open until it is
+  explicitly closed (method [close_in : unit -> unit]). When you call a
+  method of a closed netchannel, the exception
+  [Closed_channel] is raised (even if you try to close the channel again).
+- The methods
+  {[ 
+  really_input : string -> int -> int -> unit
+  input_char : unit -> char
+  input_byte : unit -> int
+  input_line : unit -> string
+  ]}
+   work like their counterparts of the standard library. In particular,
+   the end of file condition is signaled by rasising [End_of_file].
+- The method
+  {[
+  input : string -> int -> int -> int
+  ]}
+  works like its counterpart of the standard library, except that the
+  end of the file is also signaled by [End_of_file], and not by the
+  return value 0.
+- The method [pos_in : int] returns the current byte position of 
+  the channel in a way that is logically consistent with the 
+  input methods: After reading [n] bytes, the method
+  must return a position that is increased by [n]. Usually the
+  position is zero after the object has been created, but this
+  is not specified. Positions are available even for file
+  descriptors that are not seekable.
+- There is intentionally no [seek_in] method.  Seekable channels are
+  currently out of scope, as netstring focuses on non-seekable channels.
+
+{2 Programming with [out_obj_channel] }
+
+The following function outputs the numbers of an [int list]
+sequentially on the passed netchannel:
+{[ 
+let print_int_list (ch : out_obj_channel) l =
+  List.iter
+    (fun n ->
+       ch # output_string (string_of_int n);
+       ch # output_char '\n';
+    )
+    l;
+  ch # flush()
+]}
+The following statements write the output into a file:
+{[
+let ch = new output_channel (open_out "data") in
+print_int_list ch [1;2;3]
+]}
+And these statements write the output into a buffer:
+{[
+let b = Buffer.create 16 in
+let ch = new output_buffer b in
+print_int_list ch [1;2;3]
+]}
+
+Again, the caller of the function [print_int_list] determines the
+type of the output destination, and you do not need several functions
+for several types of destination.
+
+{2 The details of [out_obj_channel] }
+
+The properties of any class that implements [out_obj_channel]
+can be summarized as follows:
+
+- After the object has been created ([new]), the
+  netchannel is open. The netchannel remains open until it is
+  explicitly closed (method [close_out : unit -> unit]). When you call a
+  method of a closed netchannel, the exception
+  [Closed_channel] is raised (even if you try to close the channel again).
+- The methods
+  {[
+  output : string -> int -> int -> int
+  really_output : string -> int -> int -> unit
+  output_char : char -> unit
+  output_byte : int -> unit
+  output_string : string -> unit
+  ]}
+  work like their counterparts of the standard library. There is
+  usually an output buffer, but this is not specified. By calling
+  [flush : unit -> unit], the contents of the output buffer are
+  forced to be written to the destination.
+- The method
+  {[
+  output_buffer : Buffer.t -> unit
+  ]}
+  works like [Buffer.output_channel], i.e. the contents of the buffer
+  are printed to the channel.
+- The method
+  {[
+  output_channel : ?len:int -> in_obj_channel -> unit
+  ]}
+  reads data from the argument [in_obj_channel] and prints them to
+  the output channel. By default, the input channel is read until the
+  EOF position. If the [len] argument is passed, at
+  most this number of bytes are copied from the input
+  channel to the output channel. The input channel remains
+  open in all cases.
+- The method [pos_out : int] returns byte positions
+  that are logically consistent: After writing [n] bytes, the method
+  must return a position that is increased by [n]. Usually the
+  position is zero after the object has been created, but this
+  is not specified. Positions are available even for file
+  descriptors that are not seekable.
+- There is intentionally no [seek_out] method.
+  Seekable channels are currently out of scope, as netstring
+  focuses on non-seekable channels.
+
+{2 How to close channels}
+
+As channels may use file descriptors for their implementation,
+it is very important that all open channels are closed after they have
+been used; otherwise the operating system will certainly get out of
+file descriptors. The simple way,
+{[
+let ch = new <channel_class> args ... in
+... do something ...
+ch # close_in() or close_out()
+]}
+is dangerous because an exception may be raised between channel creation
+and the [close_*] invocation. An elegant solution is to use
+[with_in_obj_channel] and [with_out_obj_channel], as in:
+{[
+with_in_obj_channel             (* or with_out_obj_channel *)
+  (new <channel_class> ...)
+  (fun ch ->
+     ... do something ...
+  )
+]}
+This programming idiom ensures that the channel is always closed after
+usage, even in the case of exceptions.
+
+Complete examples:
+
+{[
+let sum = with_in_obj_channel
+            (new input_channel (open_in "data"))
+            sum_up ;;
+]}
+
+{[
+with_out_obj_channel
+  (new output_channel (open_out "data"))
+  (fun ch -> print_int_list ch ["1";"2";"3"]) ;;
+]}
+
+{2 Examples: HTML Parsing and Printing}
+
+In the Netstring library there are lots of parsers and printers
+that accept netchannels as data sources and destinations, respectively. One
+of them is the {!Nethtml} module providing an HTML parser and printer. A
+few code snippets how to call them, just to get used to netchannels:
+{[
+let html_document =
+  with_in_obj_channel
+    (new input_channel (open_in "myfile.html"))
+    Nethtml.parse ;;
+with_out_obj_channel
+  (new output_channel (open_out "otherfile.html"))
+  (fun ch -> Nethtml.write ch html_document) ;;
+]}
+
+{2 Transactional Output Channels}
+
+Sometimes you do not want that generated output is directly sent to the
+underlying file descriptor, but rather buffered until you know that
+everything worked fine. Imagine you program a network service, and
+you want to return the result only when the computations are successful,
+and an error message otherwise. One way to achieve this effect is
+to manually program a buffer:
+{[
+let network_service ch =
+  try
+    let b = Buffer.create 16 in
+    let ch' = new output_buffer b in
+    ... computations, write results into ch' ...
+    ch' # close_out;
+    ch # output_buffer b
+  with
+    error ->
+      ... write error message to ch ...
+]}
+There is a better way to do this, as there are transactional output
+channels. This type of netchannels provide a buffer for all written
+data like the above example, and only if data is explicitly committed
+it is copied to the real destination. Alternatively, you can also
+rollback the channel, i.e. delete the internal buffer. The signature
+of the type [trans_out_obj_channel] is:
+{[
+class type trans_out_obj_channel = object
+  inherit out_obj_channel
+  method commit_work : unit -> unit
+  method rollback_work : unit -> unit
+end
+]}
+They have the same methods as [out_obj_channel] plus
+[commit_work] and [rollback_work]. There are two
+implementations, one of them keeping the buffer in memory, and the
+other using a temporary file:
+{[
+let ch' = new buffered_trans_channel ch
+]}
+And:
+{[
+let ch' = new tempfile_trans_channel ch
+]}
+In the latter case, there are optional arguments specifiying where the
+temporary file is created.
+
+Now the network service would look like:
+{[
+let network_service transaction_provider ch =
+  try
+    let ch' = transaction_provider ch in
+    ... computations, write results into ch' ...
+    ch' # commit_work();
+    ch' # close_out()     (* implies ch # close_out() *)
+  with
+    error ->
+      ch' # rollback_work();
+      ... write error message to ch' ...
+      ch' # commit_work();
+      ch' # close_out()   (* implies ch # close_out() *)
+]}
+You can program this function without specifying which of the two
+implementations is used. Just call this function as
+{[
+network_service (new buffered_trans_channel) ch
+]}
+or
+{[
+network_service (new tempfile_trans_channel) ch
+]}
+to determine the type of transaction buffer.
+
+Some details:
+- The method [commit_work] copies all uncommitted data
+  to the underlying channel, and flushes all buffers.
+- When [rollback_work] is called the uncommitted data are deleted.
+- The method [flush] does not have any effect.
+- The reported position adds the committed and the uncommitted
+  amounts of data. This means that [rollback_work] resets the position
+  to the value of the last [commit_work] call.
+- When the transactional channel is closed, the underlying
+  channel is closed, too. By default, the uncommitted data is deleted, but
+  the current implementations can optionally commit data in this case.
+
+{2 Pipes and Filters}
+
+The class [pipe] is an [in_obj_channel] and an
+[out_obj_channel] at the same time (i.e. the class has
+the type [io_obj_channel]). A pipe has two endpoints, one
+for reading and one for writing (similar in concept to the pipes provided
+by the operating system, but note that our pipes have nothing to do
+with the OS pipes). Of course, you cannot read and write
+at the same time, so
+there must be an internal buffer storing the data that have
+been written but not yet read. How can such a construction be
+useful? Imagine you have two routines that run alternately,
+and one is capable of writing into netchannels, and the other
+can read from a netchannel. Pipes are the missing
+communication link in this situation, because the writer
+routine can output into the pipe, and the reader routine can
+read from the buffer of the pipe. In the following example,
+the writer outputs numbers from 1 to 100, and the reader sums
+them up:
+{[
+let pipe = new pipe() ;;
+let k = ref 1 ;;
+let writer() =
+  if !k <= 100 then (
+    pipe # output_string (string_of_int !k);
+    incr k;
+    if !k > 100 then pipe # close_out() else pipe # output_char '\n';
+  ) ;;
+let sum = ref 0 ;;
+let reader() =
+  let line = pipe # input_line() in
+  sum := !sum + int_of_string line ;;
+try
+  while true do
+    writer();
+    reader()
+  done
+with
+  End_of_file ->
+    () ;;
+]}
+The [writer] function prints the numbers into the pipe, and the
+[reader] function reads them in. By closing only the output end
+Of the pipe the [writer] signals the end of the stream, and the
+[input_line] method raises the exception [End_of_file].
+
+Of course, this example is very simple. What does happen
+when more is printed into the pipe than read? The internal
+buffer grows. What does happen when more is tried to read from
+the pipe than available? The input methods signal this by
+raising the special exception
+[Buffer_underrun]. Unfortunately, handling this exception
+can be very complicated, as the reader must be able to deal
+with partial reads.
+
+This could be solved by using the {!Netstream} module. A
+netstream is another extension of [in_obj_channel] that
+allows one to look ahead, i.e. you can look at the bytes that
+will be read next, and use this information to decide whether
+enough data are available or not. Netstreams are explained in
+another chapter of this manual.
+
+Pipes have another feature that makes them useful even for
+"normal" programming. You can specify a conversion function
+that is called when data is to be transferred from the writing
+end to the reading end of the pipe. The module
+{!Netencoding.Base64} defines such a pipe that converts data: The
+class [encoding_pipe] automatically encodes all bytes
+written into it by the Base64 scheme:
+{[
+let pipe = new Netencoding.Base64.encoding_pipe() ;;
+pipe # output_string "Hello World";
+pipe # close_out() ;;
+let s = pipe # input_line() ;;
+]}
+[s] has now the value ["SGVsbG8gV29ybGQ="], the encoded
+form of the input. This kind of pipe has the same interface
+as the basic pipe class, and the same problems to use it.
+Fortunately, the Netstring library has another facility
+simplifying the usage of pipes, namely {b filters}.
+
+There are two kinds of filters: The class
+{!Netchannels.output_filter} redirects data written to an
+[out_obj_channel] through a pipe, and the class
+{!Netchannels.input_filter} arranges that data read from an
+[in_obj_channel] flows through a pipe. An example makes
+that clearer. Imagine you have a function [write_results]
+that writes the results of a computation into an
+[out_obj_channel]. Normally, this channel is simply a
+file:
+{[
+with_out_obj_channel
+  (new output_channel (open_out "results"))
+  write_results
+]}
+Now you want that the file is Base64-encoded. This can be
+arranged by calling [write_results] differently:
+{[
+let pipe = new Netencoding.Base64.encoding_pipe() in
+with_out_obj_channel
+  (new output_channel (open_out "results"))
+  (fun ch ->
+    let ch' = new output_filter pipe ch in
+    write_results ch';
+    ch' # close_out()
+  )
+]}
+Now any invocation of an output method for [ch']
+actually prints into the filter, which redirects the data
+through the [pipe], thus encoding them, and finally
+passing the encoded data to the underlying channel
+[ch]. Note that you must close [ch'] to ensure
+that all data are filtered, it is not sufficient to flush
+output.
+
+It is important to understand why filters must be closed to
+work properly. The problem is that the Base64 encoding
+converts triples of three bytes into quadruples of four
+bytes.  Because not every string to convert is a multiple of
+three, there are special rules how to handle the exceeding
+one or two bytes at the end. The pipe must know the end of
+the input data in order to apply these rules correctly. If
+you only flush the filter, the exceeding bytes would simply
+remain in the internal buffer, because it is possible that
+more bytes follow. By closing the filter, you indicate that
+the definite end is reached, and the special rules for
+trailing data must be performed. \- Many conversions have
+similar problems, and because of this it is a good advice to
+always close output filters after usage.
+
+There is not only the class [output_filter] but also
+[input_filter]. This class can be used to perform
+conversions while reading from a file. Note that you often do
+not need to close input filters, because input channels can
+signal the end by raising [End_of_file], so the mentioned
+problems usually do not occur.
+
+There are a number of predefined conversion pipes:
+- {!Netencoding.Base64.encoding_pipe}: Performs Base64 encoding
+- {!Netencoding.Base64.decoding_pipe}: Performs Base64 decoding
+- {!Netencoding.QuotedPrintable.encoding_pipe}: Performs
+  QuotedPrintable encoding
+- {!Netencoding.QuotedPrintable.decoding_pipe}: Performs
+  QuotedPrintable decoding
+- {!Netconversion.conversion_pipe}: Converts the character encoding
+  form charset A to charset B
+
+{2 Defining Classes for Object Channels}
+
+As subtyping and inheritance are orthogonal in O'Caml, you can
+simply create your own netchannels by defining classes that match the
+[in_obj_channel] or [out_obj_channel] types. E.g.
+{[
+class my_in_channel : in_obj_channel =
+object (self)
+  method input s pos len = ...
+  method close_in() = ...
+  method pos_in = ...
+  method really_input s pos len = ...
+  method input_char() = ...
+  method input_line() = ...
+  method input_byte() = ...
+end
+]}
+
+Of course, this is non-trivial, especially for the [in_obj_channel]
+case. Fortunately, the Netchannels module includes a "construction kit"
+that allows one to define a channel class from only a few methods.
+A closer look at [in_obj_channel] and [out_obj_channel]
+shows that some methods can be derived from more fundamental methods.
+The following class types include only the fundamental methods:
+
+{[
+class type raw_in_channel = object
+  method input : string -> int -> int -> int
+  method close_in : unit -> unit
+  method pos_in : int
+end
+]}
+{[
+class type raw_out_channel = object
+  method output : string -> int -> int -> int
+  method close_out : unit -> unit
+  method pos_out : int
+  method flush : unit -> unit
+end
+]}
+
+In order to define a new class, it is sufficient to define this
+raw version of the class, and to lift it to the full functionality.
+For example, to define [my_in_channel]:
+{[
+class my_raw_in_channel : raw_in_channel =
+object (self)
+  method input s pos len = ...
+  method close_in() = ...
+  method pos_in = ...
+end
+class my_in_channel =
+  in_obj_channel_delegation (lift_in (`Raw(new my_raw_in_channel)))
+]}
+
+The function {!Netchannels.lift_in} can lift several forms of incomplete
+channel objects to the full class type [in_obj_channel]. There is also
+the corresponding function {!Netchannels.lift_out}. Note that lifting
+adds by default another internal buffer to the channel that must be
+explicitly turned off when it is not wanted. The rationale for this
+buffer is that it avoids some cases with extremely poor performance
+which might be surprising for many users.
+
+The class [in_obj_channel_delegation] is just an auxiliary construction
+to turn the [in_obj_channel] {i object} returned by [lift_in] again
+into a class.
+
+{2 Some FAQ}
+
+{ul
+{- {i Netchannels add further layers on top of the
+   built-in channels or file descriptors. Does this make them
+   slow?} 
+
+   Of course, Netchannels are slower than the underlying
+   built-in I/O facilities. There is at least one, but often
+   even more than one method call until the data is transferred
+   to or from the final I/O target. This costs time, and it is
+   a good idea to reduce the number of method calls for maximum
+   speed. Especially the character- or byte-based method calls
+   should be avoided, it is better to collect data and pass
+   them in larger chunks. This reduces the number
+   of method calls that are needed to transfer a block of
+   data.
+
+   However, some classes implement buffers themselves, and
+   data are only transferred when the buffers are full (or
+   empty). The overhead for the extra method calls is small
+   for these classes. The classes that implement their own
+   buffers are the transactional channels, the pipes, and
+   all the classes with "buffer" in their name.
+
+   Netchannels are often stacked, i.e. one netchannel object
+   transfers data to an underlying object, and this object
+   passes the data to further objects. Often buffers are
+   involved, and data are copied between buffers several
+   times. Of course, these copies can reduce the speed, too.}
+{- {i Why do Netchannels not support seeking?}
+
+   Netchannels were invented to support the implementation of
+   network protocols. Network endpoints are not seekable.}
+{- {i What about [printf] and [scanf]?}
+
+   In principle, methods for [printf] and [scanf] could be
+   added to [out_obj_channel] and [in_obj_channel], respectively,
+   as recent versions of O'Caml added the necessary language
+   means (polymorphic methods, [kprintf], [kscanf]). However,
+   polymorphic methods work only well when the type of the
+   channel object is always annotated (e.g. as 
+   [(ch : out_obj_channel) # printf ...]), so this is not
+   that much better than
+   [ch # output_string (sprintf ...)].}
+{- {i Can I pass an [in_obj_channel] to an ocamllex-generated
+   lexer?}
+
+   Yes, just call {!Netchannels.lexbuf_of_in_obj_channel} to turn the
+   [in_obj_channel] into a [lexbuf].}
+{- {i Do Netchannels support non-blocking I/O?}
+
+   Yes and no. Yes, because you can open a descriptor in
+   non-blocking mode, and create a netchannel from it. When
+   the program would block, the [input] and [output] methods return 0
+   to indicate this. However, the non-raw methods cannot cope
+   with these situations.}
+{- {i Do Netchannels support multiplexed I/O?}
+
+   No, there is no equivalent to [Unix.select] on the
+   level of netchannels.}
+{- {i Can I use Netchannels in multi-threaded programs?}
+
+   Yes. However, shared netchannels are not locked, and strange
+   things can happen when netchannels are used by several threads
+   at the same time.}
+{- {i Can I use pipes to communicate between threads?}
+
+   This could be made work, but it is currently not the case.
+   A multithreading-aware wrapper around pipes could do the job.}
+{- {i Pipes call external programs to do their job, don't they?}
+
+   No, they do not call external programs, nor do they need
+   any parallel execution threads. Pipes are just a tricky way
+   of organizing buffers.}
+{- {i How do I define my own conversion pipe?}
+
+   Look at the sources [netencoding.ml], it includes several
+   examples of conversion pipes.}
+}
+

@@ -1,0 +1,204 @@
+{1:tutorial Neturl Tutorial} 
+
+This module is a quite flexible parser for various kinds of URLs
+occuring in practice. The syntax is configurable such that one
+URL module can handle a lot of URL types in a generic way.
+
+{2 Generic Parsing}
+
+In order to parse an absolute URL (beginning with a scheme identifier 
+like "http:...") of unknown type just call
+{[ 
+let url = parse_url "http://me@server/directory"
+]}
+
+By default, this function can parse all URL types listed
+at {!Neturl.common_url_syntax}. However, the default configuration
+implies also that
+- relative URLs cannot be parsed
+- fragment identifiers are rejected (i.e. the part after the hash
+  mark like in "http://server/document#location")
+- characters are rejected when the most significant bit (MSB) is set
+
+The latter two features can be simply enabled by passing the
+arguments [~enable_fragment:true] and [~accept_8bits:true], 
+respectively.
+
+The restriction that relative URLs are rejected has to do with
+the problem that context information is missing. Because the scheme
+identifier (like "http") is not available, the function does not
+know which syntax the relative URL should have.  For example,
+the relative URL [dir/file?x=1] is differently parsed when
+it is taken relative to an [http] URL and when it is interpreted
+relative to an [ftp] URL. In the first case, the path component
+of the URL is ["dir/file"] and the query component is ["?x=1"],
+but in the latter case the path component is ["dir/file?x=1"],
+and a query component is not allowed.
+
+The solution is that the syntax of the base URL, relative to which
+the URL is seen, must be passed as additional argument. Under the
+assumption that [base_url] is the base URL, use
+{[
+let url = parse_url 
+            ~base_syntax:(url_syntax_of_url base_url) 
+            "/dir/file?x=1"
+]}
+Of course, this assumes that the base URL is known when the url
+is parsed.
+
+{2 Parsing For a Certain Syntax}
+
+The function [url_of_string] is also a parser, but you must pass
+the URL syntax as argument, e.g.
+{[
+let url = url_of_string syntax "ipp://server/printer"
+]}
+Pass as [syntax] one of the elements of {!Neturl.common_url_syntax},
+e.g.
+{[ let syntax = Hashtbl.find common_url_syntax "ipp" ]}
+or a self-defined syntax.
+
+{2 Printing URLs}
+
+This is much easier, just call [string_of_url] to convert an URL
+to a string. It is ensured that every URL always has an
+unambiguous representation as string.
+
+{2 URL Components}
+
+Internally, the parsed URL is decomposed into its components. This
+module supports two ways of decomposition:
++ [scheme://user;userparams:password@host:port/path;params?query#fragment]
++ [scheme:other;params?query#fragment]
+
+The first form is used for services that directly connect to a
+certain service running on a certain host. The second form can
+be used for everything else not falling under this category.
+
+Examples:
+{ul
+{- [http://me:abrakadabra@server/dir?x=5#section1]
+
+   scheme=["http"], user=["me"], password=["abrakadabra"], host=["server"],
+   path=["/dir"], query=["x=5"], fragment=["section1"] }
+{- [pop://you;auth=digest-md5@mail]
+
+   scheme=["pop"], user=["you"], user_params=[["auth=digest-md5"]], host=["mail"] }
+{- [mailto:gerd@gerd-stolpmann.de?cc=you@domain.com]
+
+   scheme=["mailto"], other=["gerd@gerd-stolpmann.de"],
+   query=["cc=you@domain.com"] }
+}
+
+It is important to mention that the decomposition is not fully
+performed, but only down to a certain level. For example, the
+query ["x=5"] could be further analysed and be split into
+the syntactic parts ["x"] and ["5"]. However, this is not done,
+just because the author seeked a compromise between the depth
+of analysis and the genericy of application.
+
+{2 URL Escaping}
+
+In order to represent the so-called unsafe characters, one can
+use [%]-escaping in URLs. For example, this URL contains a 
+password with [@], an unsafe character encoded as [%40]:
+{[ http://user:!$%40?@server ]}
+The question is how this module handles such escapings.
+
+It is surprising that the URL parser does not decode these
+escaped forms (it checks, however, whether they are syntactically
+correct). Internally, the components are stored as parsed,
+and one can even retrieve them in their original form.
+The function [url_password] returns the password component.
+Applied to the above URL, one can get the password in
+its original, "encoded" form, or as decoded string:
+- [url_password ~encoded:true url] returns ["!$%40?"]
+- [url_password url] returns ["!$@?"]
+
+{2 Representation of URL Components}
+
+The URL components can be retrieved with the functions
+- [url_scheme]
+- [url_user]
+- [url_user_param]
+- [url_password]
+- [url_host]
+- [url_port]
+- [url_path]
+- [url_param]
+- [url_query]
+- [url_fragment]
+- [url_other]
+
+Most components are just strings. Of course, the port number is an
+integer.
+
+The path component ([url_path]) has a non-obvious representation. The path
+is represented as string list, e.g. "a/b/c" is represented
+as [ ["a";"b";"c"] ]. Note, however, that absolute paths have
+an empty string at the beginning of the list, e.g.
+"/a/b/" is [ [""; "a"; "b"; "" ] ]. In most cases, the paths
+found in URLs are absolute, and because of this it is quite
+common to find this empty string at the beginning of the
+path list. The corner cases are:
+- [ [] ] is used when the path is missing in the URL
+- [ [ "" ] ] is "/"
+- [ [ ""; "" ] ] is considered as illegal
+
+The last two cases are somewhat arbitrary.
+
+There is the helper function [split_path] to convert the string
+representation of paths into the list representation.
+
+The parameters ([url_user_param] and [url_param]) are lists, too.
+A parameter starts with a semicolon as delimiter and runs until
+the next component, which can be another parameter. The contents,
+i.e. the values after the semicolons are put into the list. For example,
+the parameter ";auth=unix;type=i" is represented as
+[ ["auth=unix"; "type=i"] ].
+
+{2 Hint: Getting Query Arguments}
+
+The query component is represented as a single string. When queries
+use the standard syntax "name1=value1&name2=value2&...", one can
+parse this string using
+{[
+let args = Netencoding.Url.dest_url_encoded_parameters
+             (url_query ~encoded:true url)
+]}
+Note that [encoded:true] is needed.
+
+{2 Creating and Modifying URLs}
+
+In order to create a URL for a certain syntax, call [make_url]:
+{[
+let url = make_url 
+            ~scheme:"http"
+            ~user:"user"
+            ~password:"!$@?"
+            ~host:"server"
+            syntax
+]}
+It is checked whether the URL conforms to the passed syntax. By default,
+the components are passed in decoded form, and [make_url] automatically
+encodes them if necessary (here, for example, the at sign in the
+password). Alternatively, one can set [~encoded:true], and pass the
+already escaped components. In this case, [make_url] checks whether
+the encoding is sufficient to represent the URL as string.
+
+The functions [modify_url], [default_url], [undefault_url], and
+[remove_from_url] can be used to modify an existing URL.
+
+{2 Relative URLs}
+
+A URL is relative when the scheme identifier at the beginning is
+omitted. In this case, the URL can be transformed to an absolute
+URL when the base URL is known. The algorithm for this is defined
+in RFC 1808, and quite complicated. It is implemented in
+[apply_relative_url], but usually {!Neturl.ensure_absolute_url}
+is the more convenient function. Just call
+{[ let url' = ensure_absolute_url ~base url ]}
+to convert [url] to its absolute counterpart [url'] when it is
+relative, and to pass the URL unchanged when it is already
+absolute.
+

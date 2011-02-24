@@ -1,0 +1,7 @@
+I just wanted the netstring/ library of ocamlnet, which needs netsys/,
+so I just copied those 2 directories and modified the Makefile
+accordingly. I also un-findlibize it.
+
+I've also moved a few files around (e.g. the src/*/*.txt to docs/)
+
+

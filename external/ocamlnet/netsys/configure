@@ -1,0 +1,429 @@
+#! /bin/sh
+
+netsys_link_options=""
+have_posix_shm=0
+have_posix_sem=0
+have_posix_fadvise=0
+have_posix_fallocate=0
+have_posix_memalign=0
+have_posix_pthread=0
+have_printexc_register_printer=0
+have_printexc_register_printer_bool=false
+code_printexc_register_printer='()'
+have_ocaml_fancy_page_tables=0
+have_syslog=0
+have_at=0
+have_fchdir=0
+have_fdopendir=0
+
+win32=0
+
+stdlib=`ocamlc -where`
+
+######################################################################
+
+rm -f configtests/printexc_register_printer.err
+printf "Checking whether Ocaml has Printexc.register_printer... "
+if ( cd configtests; ocamlc -c printexc_register_printer.ml ) \
+     >>configtests/printexc_register_printer.err 2>&1
+then
+    have_printexc_register_printer=1
+    have_printexc_register_printer_bool=true
+    code_printexc_register_printer='Printexc.register_printer f'
+fi
+
+if [ $have_printexc_register_printer -gt 0 ]; then
+    echo "found"
+else
+    echo "not found"
+fi
+
+
+######################################################################
+
+rm -f configtests/ocaml_fancy_page_tables.err
+printf "Checking whether Ocaml has fancy page tables... "
+if ( cd configtests; ocamlc -o ocaml_fancy_page_tables ocaml_fancy_page_tables.c main.ml -custom ) \
+     >>configtests/ocaml_fancy_page_tables.err 2>&1
+then
+    if (cd configtests; ./ocaml_fancy_page_tables); then
+	have_ocaml_fancy_page_tables=1
+    fi
+fi
+
+if [ $have_ocaml_fancy_page_tables -gt 0 ]; then
+    def_have_ocaml_fancy_page_tables="#define FANCY_PAGE_TABLES"
+    echo "found"
+else
+    def_have_ocaml_fancy_page_tables="#undef FANCY_PAGE_TABLES"
+    echo "not found"
+fi
+
+
+######################################################################
+
+printf "Checking for POSIX shared memory... "
+
+posix_shm_compile=0
+posix_shm_link_options=""
+rm -f configtests/posix_shm.err
+if (cd configtests; ocamlc -o posix_shm posix_shm.c main.ml -custom ) \
+      >>configtests/posix_shm.err 2>&1
+then
+    posix_shm_compile=1
+else
+    if (cd configtests; ocamlc -o posix_shm posix_shm.c main.ml -cclib -lrt -custom ) \
+	>>configtests/posix_shm.err 2>&1
+    then
+	posix_shm_compile=1
+	posix_shm_link_options="-lrt"
+    fi
+fi
+
+if [ $posix_shm_compile -gt 0 ]; then
+    if configtests/posix_shm >>configtests/posix_shm.err 2>&1; then
+	have_posix_shm=1
+	netsys_link_options="$netsys_link_options $posix_shm_link_options"
+    fi
+fi
+
+if [ $have_posix_shm -gt 0 ]; then
+    echo "found"
+    def_have_posix_shm="#define HAVE_POSIX_SHM"
+else
+    echo "not found"
+    def_have_posix_shm="#undef HAVE_POSIX_SHM"
+fi
+
+######################################################################
+
+printf "Checking for POSIX semaphores... "
+
+posix_sem_compile=0
+posix_sem_link_options=""
+rm -f configtests/posix_sem.err
+if (cd configtests; ocamlc -o posix_sem posix_sem.c main.ml -custom ) \
+      >>configtests/posix_sem.err 2>&1
+then
+    posix_sem_compile=1
+else
+    if (cd configtests; ocamlc -o posix_sem posix_sem.c main.ml -cclib -lrt -custom ) \
+	>>configtests/posix_sem.err 2>&1
+    then
+	posix_sem_compile=1
+	posix_sem_link_options="-lrt"
+    fi
+fi
+
+if [ $posix_sem_compile -gt 0 ]; then
+    if configtests/posix_sem >>configtests/posix_sem.err 2>&1; then
+	have_posix_sem=1
+	netsys_link_options="$netsys_link_options $posix_sem_link_options"
+    fi
+fi
+
+if [ $have_posix_sem -gt 0 ]; then
+    echo "found"
+    def_have_posix_sem="#define HAVE_POSIX_SEM"
+else
+    echo "not found"
+    def_have_posix_sem="#undef HAVE_POSIX_SEM"
+fi
+######################################################################
+
+printf "Checking for POSIX fadvise... "
+
+posix_fadv_compile=0
+posix_fadv_link_options=""
+rm -f configtests/posix_fadvise.err
+if (cd configtests; ocamlc -o posix_fadvise posix_fadvise.c main.ml -custom ) \
+      >>configtests/posix_fadvise.err 2>&1
+then
+    posix_fadv_compile=1
+fi
+
+if [ $posix_fadv_compile -gt 0 ]; then
+    if ( cd configtests; ./posix_fadvise >>posix_fadvise.err 2>&1 ); then
+	have_posix_fadvise=1
+	netsys_link_options="$netsys_link_options $posix_fadv_link_options"
+    fi
+fi
+
+if [ $have_posix_fadvise -gt 0 ]; then
+    echo "found"
+    def_have_posix_fadvise="#define HAVE_POSIX_FADVISE"
+else
+    echo "not found"
+    def_have_posix_fadvise="#undef HAVE_POSIX_FADVISE"
+fi
+
+######################################################################
+
+printf "Checking for POSIX fallocate... "
+
+posix_fallo_compile=0
+posix_fallo_link_options=""
+rm -f configtests/posix_fallocate.err
+if (cd configtests; ocamlc -o posix_fallocate posix_fallocate.c main.ml -custom ) \
+      >>configtests/posix_fallocate.err 2>&1
+then
+    posix_fallo_compile=1
+fi
+
+if [ $posix_fallo_compile -gt 0 ]; then
+    if ( cd configtests && ./posix_fallocate >>posix_fallocate.err 2>&1) ; then
+	have_posix_fallocate=1
+	netsys_link_options="$netsys_link_options $posix_fallo_link_options"
+    fi
+fi
+
+if [ $have_posix_fallocate -gt 0 ]; then
+    echo "found"
+    def_have_posix_fallocate="#define HAVE_POSIX_FALLOCATE"
+else
+    echo "not found"
+    def_have_posix_fallocate="#undef HAVE_POSIX_FALLOCATE"
+fi
+######################################################################
+
+printf "Checking for POSIX memalign... "
+
+posix_malign_compile=0
+posix_malign_link_options=""
+rm -f configtests/posix_memalign.err
+if (cd configtests; ocamlc -o posix_memalign posix_memalign.c main.ml -custom ) \
+      >>configtests/posix_memalign.err 2>&1
+then
+    posix_malign_compile=1
+fi
+
+if [ $posix_malign_compile -gt 0 ]; then
+    if ( cd configtests && ./posix_memalign >>posix_memalign.err 2>&1) ; then
+	have_posix_memalign=1
+	netsys_link_options="$netsys_link_options $posix_malign_link_options"
+    fi
+fi
+
+if [ $have_posix_memalign -gt 0 ]; then
+    echo "found"
+    def_have_posix_memalign="#define HAVE_POSIX_MEMALIGN"
+else
+    echo "not found"
+    def_have_posix_memalign="#undef HAVE_POSIX_MEMALIGN"
+fi
+
+######################################################################
+
+printf "Checking for POSIX pthread... "
+
+# Following test is stolen from Ocaml's configure script:
+posix_pthr_link_options=""
+case `uname -s` in
+    SunOS)         posix_pthr_link_options="-lpthread -lposix4" ;;
+    FreeBSD)       posix_pthr_link_options="-pthread" ;;
+    OpenBSD)       posix_pthr_link_options="-pthread" ;;
+    *)             posix_pthr_link_options="-lpthread" ;;
+esac
+
+posix_pthr_compile=0
+rm -f configtests/posix_pthread.err
+if (cd configtests; ocamlc -o posix_pthread posix_pthread.c main.ml -custom -cclib "$posix_pthr_link_options" ) \
+      >>configtests/posix_pthread.err 2>&1
+then
+    posix_pthr_compile=1
+fi
+
+if [ $posix_pthr_compile -gt 0 ]; then
+    if configtests/posix_pthread >>configtests/posix_pthread.err 2>&1; then
+	have_posix_pthread=1
+	netsys_link_options="$netsys_link_options $posix_pthr_link_options"
+    fi
+fi
+
+if [ $have_posix_pthread -gt 0 ]; then
+    echo "found"
+    def_have_posix_pthread="#define HAVE_PTHREAD"
+else
+    echo "not found"
+    def_have_posix_pthread="#undef HAVE_PTHREAD"
+fi
+
+######################################################################
+
+printf "Checking for syslog... "
+
+posix_syslog_compile=0
+posix_syslog_link_options=""
+rm -f configtests/syslog.err
+if (cd configtests; ocamlc -o syslog syslog.c main.ml -custom ) \
+      >>configtests/syslog.err 2>&1
+then
+    posix_syslog_compile=1
+fi
+
+if [ $posix_syslog_compile -gt 0 ]; then
+    if ( cd configtests && ./syslog >>syslog.err 2>&1) ; then
+	have_syslog=1
+    fi
+fi
+
+if [ $have_syslog -gt 0 ]; then
+    echo "found"
+    def_have_syslog="#define HAVE_SYSLOG"
+else
+    echo "not found"
+    def_have_syslog="#undef HAVE_SYSLOG"
+fi
+
+######################################################################
+
+printf "Checking for POSIX functions like openat... "
+
+posix_at_compile=0
+posix_at_link_options=""
+rm -f configtests/atfunctions.err
+if (cd configtests; ocamlc -o atfunctions atfunctions.c main.ml -custom ) \
+      >>configtests/atfunctions.err 2>&1
+then
+    posix_at_compile=1
+fi
+
+if [ $posix_at_compile -gt 0 ]; then
+    if ( cd configtests && ./atfunctions >>atfunctions.err 2>&1) ; then
+	have_at=1
+    fi
+fi
+
+if [ $have_at -gt 0 ]; then
+    echo "found"
+    def_have_at="#define HAVE_AT"
+else
+    echo "not found (or incomplete)"
+    def_have_at="#undef HAVE_AT"
+fi
+
+######################################################################
+
+printf "Checking for fchdir... "
+
+posix_fchdir_compile=0
+posix_fchdir_link_options=""
+rm -f configtests/fchdir.err
+if (cd configtests; ocamlc -o fchdir fchdir.c main.ml -custom ) \
+      >>configtests/fchdir.err 2>&1
+then
+    posix_fchdir_compile=1
+fi
+
+if [ $posix_fchdir_compile -gt 0 ]; then
+    if ( cd configtests && ./fchdir >>fchdir.err 2>&1) ; then
+	have_fchdir=1
+    fi
+fi
+
+if [ $have_fchdir -gt 0 ]; then
+    echo "found"
+    def_have_fchdir="#define HAVE_FCHDIR"
+else
+    echo "not found"
+    def_have_fchdir="#undef HAVE_FCHDIR"
+fi
+
+######################################################################
+
+printf "Checking for fdopendir... "
+
+posix_fdopendir_compile=0
+posix_fdopendir_link_options=""
+rm -f configtests/fdopendir.err
+if (cd configtests; ocamlc -o fdopendir fdopendir.c main.ml -custom ) \
+      >>configtests/fdopendir.err 2>&1
+then
+    posix_fdopendir_compile=1
+fi
+
+if [ $posix_fdopendir_compile -gt 0 ]; then
+    if ( cd configtests && ./fdopendir >>fdopendir.err 2>&1) ; then
+	have_fdopendir=1
+    fi
+fi
+
+if [ $have_fdopendir -gt 0 ]; then
+    echo "found"
+    def_have_fdopendir="#define HAVE_FDOPENDIR"
+else
+    echo "not found"
+    def_have_fdopendir="#undef HAVE_FDOPENDIR"
+fi
+
+######################################################################
+
+printf "Checking for GPROF... "
+
+if [ -f $stdlib/std_exit.p.cmx ]; then
+    echo "found"
+    def_have_gprof="#define HAVE_GPROF"
+else
+    echo "not found"
+    def_have_gprof="#undef HAVE_GPROF"
+fi
+
+######################################################################
+
+printf "Checking for win32... "
+system=`ocamlc -config | grep system | sed -e 's/system: //'`
+case "$system" in
+    mingw|msvc)
+	  echo "yes"
+	  win32=1
+          netsys_link_options="$netsys_link_options -lws2_32" ;;
+	*)
+	  echo "no"  ;;
+esac
+
+
+######################################################################
+#
+# Locales: We use nl_langinfo which is not available on Win32.
+# So we just assume we have locales on all other platforms.
+
+if [ $win32 -gt 0 ]; then
+    def_have_locale="#undef HAVE_LOCALE"
+else
+    def_have_locale="#define HAVE_LOCALE"
+fi
+
+######################################################################
+
+
+cat <<EOF >Makefile.conf
+NETSYS_LINK_OPTIONS = $netsys_link_options
+EOF
+
+cat <<EOF >config.h
+$def_have_posix_shm
+$def_have_posix_sem
+$def_have_posix_fadvise
+$def_have_posix_fallocate
+$def_have_posix_memalign
+$def_have_posix_pthread
+$def_have_ocaml_fancy_page_tables
+$def_have_syslog
+$def_have_at
+$def_have_fchdir
+$def_have_fdopendir
+$def_have_gprof
+$def_have_locale
+EOF
+
+cat <<EOF >netsys_conf.ml
+(* This file is written by netsys/configure *)
+
+let have_printexc_register_printer = $have_printexc_register_printer_bool
+
+let printexc_register_printer f =
+  $code_printexc_register_printer
+
+EOF
+
+exit 0

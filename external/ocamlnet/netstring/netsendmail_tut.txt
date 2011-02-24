@@ -1,0 +1,207 @@
+{1:tutorial Netsendmail Tutorial}
+
+Generating mail messages is a very complicated procedure.
+[Netsendmail] provides a comparatively simple interface
+to accomplish this task without knowing too much about the details
+of the mail format. Here is a kind of cookbook:
+
+{2 Generate an ASCII Mail}
+
+In the simplest case, the mail is an ASCII text. Generate the mail
+with
+{[ 
+compose ~from_addr ~to_addrs ~subject main_text
+]}
+
+Here, [from_addr] is the sender's address as pair [(name,formal_address)],
+and [to_addrs] is the list of recipients in the same format. 
+The variable [subject] contains the subject of the message as string.
+Finally, [main_text] is the ASCII text.
+
+{2 Generate an Internationalised Mail}
+
+When addresses or the main text contain non-ASCII characters, you 
+should care about the [in_charset] and [out_charset] parameters.
+In general, the strings you pass to [compose] are encoded as 
+[in_charset], and the strings in the generated mail are encoded
+as [out_charset]. Usually, it is a good idea to have 
+[in_charset = out_charset], or [out_charset] as a superset of
+[in_charset] (otherwise you might get conversion errors).
+
+The default for both parameters is [`Enc_iso88591].
+
+Not everything can be internationalised. In particular, the [subject],
+the informal names of mail addresses, the [content_description], and
+the main text can be encoded in a non-ASCII character set. Especially,
+the formal mail addresses cannot be internationalised. Example:
+{[
+compose 
+  ~in_charset:`Enc_iso885915
+  ~out_charset:`Enc_iso885915
+  ~from_addr:("Heinz Dräger", "heinz\@draeger.de") 
+  ~to_addr:("Marion Schröder", "marion\@irgendwo.de")
+  ~subject:"Geschäftlich"
+  "Verkaufe Teddy-Bären für 100¤"
+]}
+
+Note that when you also pass [content_type], the main text is 
+no longer converted according to [in_charset] and [out_charset].
+It is expected that the main text has already the right encoding,
+and that the encoding is indicated by the [content_type]. Example:
+{[
+compose 
+  ~in_charset:`Enc_iso885915
+  ~out_charset:`Enc_iso885915
+  ~from_addr:("Heinz Dräger", "heinz\@draeger.de") 
+  ~to_addr:("Marion Schröder", "marion\@irgendwo.de")
+  ~content_type:("text/html", ["charset", Mimestring.mk_param "ISO-8859-1"])
+  ~subject:"Geschäftlich"
+  "<html><body>Verkaufe Teddy-Bären für 100&euro;</body></html>"
+]}
+Here, the header fields are encoded in ISO-8859-15, but the main
+text uses ISO-8859-1.
+
+The function {!Mimestring.mk_param} encapsulates parameter values for
+several kinds of structured values that may occur in mail headers,
+here for [Content-type]. This function takes care of the appropriate
+representation of the parameter value (e.g. for parameters like "title"
+that can be internationalised).
+
+{2 Generate a Mail with Attachments}
+
+An attachment can simply be passed to [compose]. For example, to
+add a file "foo.gif":
+{[
+compose
+  ...
+  attachments:[ wrap_attachment
+                  ~content_type:("image/gif", [])
+                  (new Netmime.file_mime_body "foo.gif") ]
+  ...
+]}
+
+This creates a [multipart/mixed] mail. The class
+{!Netmime.file_mime_body} encapsulates a file as a MIME body that
+can be attached to the mail (note: The file is not read as a whole
+into memory, but only chunk by chunk, so you can even attach large
+files without exhausting memory).
+
+The type [multipart/mixed] has the special feature that 
+the attached parts can
+either by displayed "inline" with the other contents, or suggested
+for saving in a file. This hint is indicated by the [Content-disposition]
+header. For example, to have the first attachment "inline", and the
+second as a file with name "foo.gif", use:
+{[
+compose
+  ...
+  attachments:[ wrap_attachment
+                  ~content_type:("image/gif", [])
+                  ~content_disposition:("inline", [])
+                  (new Netmime.file_mime_body "foo.gif");
+                wrap_attachment
+                  ~content_type:("image/gif", [])
+                  ~content_disposition:("attachment", ["filename",
+                                                       Mimestring.mk_param "foo.gif"])
+                  (new Netmime.file_mime_body "foo.gif") ]
+  ...
+]}
+
+{2 Generate a Multi-Format Mail}
+
+It is possible to generate messages where the main part is 
+available in several formats, e.g. in [text/plain] and
+[text/html]. The mail reader program can select which format
+can be presented best to the user.
+
+The [compose] function is not the right means to produce such
+a mail. It is better to use the more capable functions
+[wrap_parts] and [wrap_mail] for this purpose.
+
+For example, to get a message with the [text/plain] version
+[s_plain] and the [text/html] version [s_html], use:
+{[
+wrap_mail
+   ~from_addr ~to_addrs ~subject
+   (wrap_parts
+      ~content_type:("multipart/alternative", [])
+      [ wrap_attachment
+          ~content_type:("text/plain", [])
+          (new Netmime.memory_mime_body s_plain);
+        wrap_attachment
+          ~content_type:("text/html", [])
+          (new Netmime.memory_mime_body s_html)
+      ])
+]}
+
+Here, [wrap_attachment] is used to encapsulate the two versions of
+the main text. This works because there is no difference between the
+format of an attachment and the format of a text part. (Actually,
+[wrap_attachment] should be better called [wrap_body].) The class
+{!Netmime.memory_mime_body} encapsulates a string as MIME body.
+
+The function [wrap_parts] bundles the two versions to the main
+message, and [wrap_mail] adds the mail headers necessary to deliver
+the mail.
+
+Note that the simplest version of the message should be added
+first, and the fanciest version of the message should be added
+last.
+
+As a variant, one can also add file attachments. To do so, 
+insert a [multipart/mixed] container around the [multipart/alternative]
+message:
+
+{[
+wrap_mail
+   ~from_addr ~to_addrs ~subject
+   (wrap_parts
+      ~content_type:("multipart/mixed", [])
+      [ wrap_parts
+          ~content_type:("multipart/alternative", [])
+          [ wrap_attachment
+              ~content_type:("text/plain", [])
+              (new Netmime.memory_mime_body s_plain);
+            wrap_attachment
+              ~content_type:("text/html", [])
+              (new Netmime.memory_mime_body s_html)
+          ];
+        wrap_attachment
+          ~content_type:("audio/wav", [])
+          (new Netmime.file_mime_body "music.wav")
+      ])
+]}
+
+{2 Generate an MHTML Message}
+
+MHTML is an HTML document with attached resource files like images
+or style sheets. For example, to have the HTML text [s_html] bundled
+with an image and a style sheet, use:
+{[
+wrap_mail
+   ~from_addr ~to_addrs ~subject
+   (wrap_parts
+      ~content_type:("multipart/related",
+                     [ "type", Mimestring.mk_param "text/html" ])
+      [ wrap_attachment
+          ~content_type:("text/html", [])
+          (new Netmime.memory_mime_body s_html);
+        wrap_attachment
+          ~content_type:("image/gif", [])
+          ~content_id:"img1"
+          (new Netmime.file_mime_body "my.gif")
+        wrap_attachment
+          ~content_type:("text/css", [])
+          ~content_id:"style1"
+          (new Netmime.file_mime_body "style.css")
+      ])
+]}
+
+Note the [content_id] arguments that assign names to the individual
+parts. One can now refer to the parts from the HTML document by
+[cid] URLs, e.g. [cid:img1] points to the image in the second
+part.
+
+There is another mechanism using the [Content-Location] header to
+resolve hyperlinks to message parts. See RFC 2557 for details.
+

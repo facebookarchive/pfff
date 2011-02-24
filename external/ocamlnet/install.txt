@@ -1,0 +1,250 @@
+How to install ocamlnet
+
+ocamlnet is a quite large library, and is split up into several
+parts. Usually, it is not necessary to install all of ocamlnet,
+and there are configuration options allowing you to select what
+you want.
+
+The following table gives a rough overview. The libraries you
+must build at minimum are tagged as CORE. For the other libraries
+the configuration option is shown that will select them for build:
+
+Library 	Option		What it provides
+----------------------------------------------------------------------
+cgi		CORE		This is an alias for netcgi1
+equeue		CORE		Event queues
+equeue-gtk1	-enable-gtk	Event queues - integration into lablgtk
+equeue-gtk2	-enable-gtk2	Event queues - integration into lablgtk2
+equeue-ssl	-enable-ssl	Event queues - SSL support
+equeue-tcl	-enable-tcl	Event queues - integration into labltk
+netcgi1		CORE		Web applications
+netcgi2		CORE		Web applications (revised lib)
+netcgi2-plex	CORE		Web applications - support for netplex
+netclient	CORE		Clients for HTTP, FTP (exp), Telnet
+nethttpd	-with-nethttpd	Web server
+nethttpd-for-netcgi1 (same as nethttpd)
+nethttpd-for-netcgi2 (same as nethttpd)
+netplex		CORE		Generic server framework
+netshm		CORE		Shared memory for IPC
+netstring	CORE		String routines (e.g. URLs, HTML, Mail)
+netsys		CORE		System interfaces missing in Unix
+netzip	        -enable-zip     read/write gzip data using object channels
+pop		CORE		POP3 client
+rpc		CORE		Sophisticated SunRPC/ONCRPC implementation
+rpc-auth-dh	-with-rpc-auth-dh SunRPC/ONCRPC - Add-on for Diffie-Hellman auth
+rpc-auth-local	CORE (*)	SunRPC/ONCRPC - Add-on for local auth
+rpc-generator	CORE		SunRPC/ONCRPC - Stub generator
+rpc-ssl		-enable-ssl	SunRPC/ONCRPC - Add-on for SSL support
+rpc-xti		CORE (*)	SunRPC/ONCRPC - Add-on for XTI-only transports
+shell		CORE		Sophisticated version of Sys.command
+smtp		CORE		SMTP client
+----------------------------------------------------------------------
+(*) If the operation system supports it
+
+You should know that before ocamlnet-2.2 these libraries were distributed
+as several software packages (called ocamlnet, equeue, rpc, netclient).
+If you want to upgrade, you must upgrade all libraries at once and
+replace them with the versions coming with ocamlnet-2.2.
+
+For your convenience, the configuration options allow you to select
+libraries by prerequisites, e.g. -enable-ssl installs all libraries that
+need SSL. The following matrix shows which prerequisites are needed
+for which libraries:
+
+Option		Prerequisite	Version/Where to get/What it is
+----------------------------------------------------------------------
+CORE		findlib		>= 1.0
+				http://www.ocaml-programming.de/packages
+				Library manager
+
+CORE		pcre		>= 5
+		 (pcre-ocaml)	http://www.ocaml.info/ocaml_sources
+				Regular expressions library
+
+-enable-gtk	lablgtk		>= 1.2 (*)
+				http://wwwfun.kurims.kyoto-u.ac.jp/soft/
+				  olabl/lablgtk.html
+				Bindings for gtk GUIs
+
+-enable-gtk2	lablgtk2	probably any (*)
+				http://wwwfun.kurims.kyoto-u.ac.jp/soft/
+				  olabl/lablgtk.html
+				Bindings for gtk2 GUIs
+
+-enable-ssl	ssl		probably any
+		  (ocaml-ssl)	http://savonet.sourceforge.net/
+				Bindings for openssl
+
+-enable-tcl	labltk		probably any
+				part of the O'Caml distribution
+				Bindings for tcl/tk GUIs
+
+-enable-zip     camlzip         >= 1.01
+				http://pauillac.inria.fr/~xleroy/software.html
+	                        Bindings for zlib
+
+-with-nethttpd	none		none
+
+   Note: nethttpd must be explicitly selected because it is distributed
+   under different license conditions than the other libraries. See
+   the file LICENSE for more.
+
+-with-auth-dh	cryptgps	probably any
+				http://www.ocaml-programming.de/packages
+				Cryptographic library
+
+   Note: At runtime, -with-auth-dh needs further prerequisites,
+   namely the so-called keyserv daemon.
+----------------------------------------------------------------------
+(*) The distribution of this prerequite does not include findlib
+    support. It is, however, silently assumed the prerequisite
+    library is installed in the findlib way. Sorry if this is
+    inconvenient for you.
+
+
+
+In order to configure ocamlnet, just run the "configure" script with
+the mentioned options (-enable-X and -with-X). There are a few
+other options, as listed below. By default, the library archives
+are installed into the findlib default location. You can find out
+this location with the command
+
+    ocamlfind printconf destdir
+
+For every ocamlnet library, a subdirectory is created where the 
+files are installed. The few binary executables are installed into
+the directory where the ocaml compilers are installed. The data
+files are installed into the same directory as the netstring
+archives. The "configure" run shows all effective options.
+
+Option			What it changes
+----------------------------------------------------------------------
+-bindir <dir>		Binary executables are installed in <dir>
+
+-datadir <dir> 		Data files are installed in <dir>.
+
+			Note: This directory is compiled into the
+			netstring library, and cannot be changed
+			at runtime.
+
+-equeue-tcl-defs <str>	Only if you have -enable-tcl:
+ 			Sets options for the C compiler so the
+			include files for tcl are found. E.g.
+			-equeue-tcl-defs -I/usr/include/tcl8.4
+
+-equeue-tcl-libs <str>	Only if you have -enable-tcl:
+			Sets options for the linker so the 
+			tcl library is found. E.g.
+			-equeue-tcl-libs -ltcl8.4
+
+-auth-dh-style <style>	Only if you have -with-rpc-auth-dh:
+			Overrides the auto-selected style to
+			connect to the keyserv daemon.
+			Possible styles are:
+			- keyenvoy: run the keyenvoy program
+			- unixdomain: contact using Unix Domain socket
+			- tirpc: contact using XTI transport
+			  (this is also known as TI-RPC)
+
+-prefer-netcgi2		Only if you have -with-nethttpd:
+			Builds nethttpd against netcgi2 instead
+			of netcgi1
+----------------------------------------------------------------------
+
+The directory where the library archives are installed can be
+changed when you run "make install", see below.
+
+
+
+After having configured ocamlnet, you can build it:
+
+    make all
+
+builds the bytecode version, and
+
+    make opt
+
+builds the native version (if posssible on your platform).
+
+
+
+After the build you can install ocamlnet. It is not required to
+become root for this, as it is sufficient that you have write
+privileges in all directories where files are installed. Do
+this with:
+
+   make install
+
+At this time, you can change the location where the library archives
+are installed:
+
+   env OCAMLFIND_DESTDIR="<dir>" make install
+
+Here, <dir> is the replacement for what is output by
+"ocamlfind printconf destdir".
+
+
+
+In order to uninstall ocamlnet, run
+
+    make uninstall
+
+
+
+----------------------------------------------------------------------
+
+Special notes for distributors
+
+The build system includes a few mechanisms making life easier to
+build ocamlnet in package management environments.
+
+First, it is suggested to distribute ocamlnet as several packages
+in binary form:
+
+- ocamlnet		CORE only
+- ocamlnet-gtk		Add-on libraries needing gtk
+- ocamlnet-gtk2		Add-on libraries needing gtk2
+- ocamlnet-ssl		Add-on libraries needing ssl
+- ocamlnet-tcl		Add-on libraries needing tcl
+- ocamlnet-zip          Add-on libraries needing camlzip
+- ocamlnet-nethttpd	nethttpd (optional, if it makes the different
+			licensing conditions clearer)
+
+Second, you can completely separate the builds of the CORE and
+the add-on stuff:
+
+It is possible to build the add-on stuff later, i.e. after the
+ocamlnet CORE is already installed. To do so, use the special
+configuration option -disable-core, and run "make" with these
+extra variables:
+
+   INC_NETSYS="-package netsys"
+   INC_NETSTRING="-package netstring"
+   INC_EQUEUE="-package equeue"
+   INC_NETCGI1="-package netcgi1"
+   INC_NETCGI2="-package netcgi2"
+   INC_NETPLEX="-package netplex"
+   INC_RPC="-package rpc"
+   INC_SHELL="-package shell"
+
+i.e. "make all" becomes
+
+   make all INC_NETSYS="..." INC_NETSTRING="..." ...
+
+The effect is that the add-on libraries are built against the already
+installed core.
+
+Third, at installation time, it is possible to install into a
+local directory hierarchy. To do so, use
+
+   env DESTDIR="<root>" \
+       OCAMLFIND_DESTDIR="<root>/$(ocamlfind printconf destdir)" \
+       make install
+
+where <root> is the local directory. You should ensure that
+the direcories
+
+   "<root>/$(ocamlfind printconf destdir)", and optionally,
+   "<root>/$(ocamlfind printconf destdir)"/stublibs
+
+already exist.

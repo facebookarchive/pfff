@@ -1,0 +1,18 @@
+TOP_DIR=../..
+
+PRE = 1
+PKGNAME = netsys
+GENERATE = META
+INSTALL_EXTRA = netsys_oothr.cmo \
+		netsys_oothr_mt_init.cmo \
+                netsys_oothr_mt_init.cmx netsys_oothr_mt_init.o \
+                netsys_oothr_mt_init.p.cmx netsys_oothr_mt_init.p.o \
+                netsys_gprof_init.p.cmx netsys_gprof_init.p.o \
+                netsys_c_gprof.o
+
+include $(TOP_DIR)/Makefile.rules
+
+distclean::
+	rm -f Makefile.conf config.h
+	rm -f configtests/*.cmi configtests/*.cmo configtests/*.o
+	rm -f configtests/*.err configtests/posix_shm
