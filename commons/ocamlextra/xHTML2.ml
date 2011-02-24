@@ -28,6 +28,8 @@
 (** Typesafe constructors for XHTML 1.1 documents.
     @see <http://www.w3.org/TR/xhtml-modularization/abstract_modules.html> W3C Recommendation *)
 
+module XML = XML2
+
 module type T =
   sig
 
