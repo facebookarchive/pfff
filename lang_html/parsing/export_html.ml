@@ -16,9 +16,9 @@ let rec json_of_document doc =
       )
   | H.Data s -> J.Array [J.String "DATA"; J.String s]
 
-let rec json_of_html html = 
+let rec json_of_html_tree html = 
   J.Array (html +> List.map json_of_document)
 
 
-let json_string_of_html html = 
+let json_string_of_html_tree html = 
   raise Todo

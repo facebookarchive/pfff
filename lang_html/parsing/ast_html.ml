@@ -7,14 +7,13 @@
  * For the types of the full 'HTML + JS(script) + CSS(style)', 
  * see ast_web.ml.
  * 
- * alternatives: see http://caml.inria.fr/cgi-bin/hump.fr.cgi?sort=0&browse=49
+ * alternatives: 
  * - xHTML.ml: but poor AST, no parsing, and phantom types are tricky
  * - xml-light: just for strict XML and poor AST
  * - pxp: just for strict XML ?
  * - ocamlnet netstring: looks like a very simple html parser, very (too?)
  *    simple AST (checking is done via an external DTD), also support
- *    ascii only (or need to go through an ascii encoding of the input stream
- *    first)
+ *    ascii only (but can go through an ascii encoding of the input stream)
  * - ocigen: use xHTML.ml or ocamlduce to encode html elements, no parsing
  * - cduce/ocamlduce: they say they rely on pxp/expat/xml-light for input.
  *    They have potentially a better AST to work on, a well typed one.
@@ -29,6 +28,8 @@
  * - efuns has a html mode ? mldonkey ? cameleon ?
  * 
  * - ocamlgtk has a small xml lexer (src/xml_lexer.mll)
+ * 
+ * See also http://caml.inria.fr/cgi-bin/hump.fr.cgi?sort=0&browse=49
  *)
 
 (*
@@ -56,7 +57,7 @@
 
 (* a small wrapper over ocamlnet *)
 
-type html = Nethtml.document list
+type html_tree = Nethtml.document list
 
 type html_raw = string (* might want to use channel for efficiency *)
 

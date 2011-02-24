@@ -1,2 +1,2 @@
 
-val unparse: Ast_html.html -> Ast_html.html_raw
+val unparse_tree: Ast_html.html_tree -> Ast_html.html_raw

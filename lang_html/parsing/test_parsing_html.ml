@@ -33,7 +33,7 @@ let test_parse_html xs =
     pr2 ("PARSING: " ^ file);
 
     let s = Common.read_file file in 
-    let _ast = Parse_html.parse s in
+    let _ast = Parse_html.parse_simple_tree s in
     ()
     (*
     let (xs, stat) = Parse_erlang.parse file in
@@ -45,9 +45,9 @@ let test_parse_html xs =
 
 let test_dump_html file =
   let s = Common.read_file file in 
-  let ast = Parse_html.parse s in
+  let ast = Parse_html.parse_simple_tree s in
 (*  let s = Export_ast_ml.ml_pattern_string_of_program ast in *)
-  let json = Export_html.json_of_html ast in
+  let json = Export_html.json_of_html_tree ast in
   let s = Json_out.string_of_json json in
   pr2 s
 
