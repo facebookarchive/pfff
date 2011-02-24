@@ -47,6 +47,21 @@
  *     algorithms. Note that the majority of text processing falls into
  *     this class.
  * 
+ *  On ASCII compatible  (src ocamlnet/netstring/netconversion.mli):
+ * 
+ *    "ASCII compatible" means: The bytes 1 to 127 represent the ASCII
+ *    codes 1 to 127, and no other representation of a character contains
+ *    the bytes 1 to 127.
+ *    
+ *    For example, ISO-8859-1 is ASCII-compatible because the byte 1 to
+ *    127 mean the same as in ASCII, and all other characters use bytes
+ *    greater than 127. UTF-8 is ASCII-compatible for the same reasons,
+ *    *it does not matter that there are multi-byte characters*.
+ *    EBCDIC is not ASCII-compatible because the bytes 1 to 127 do not mean
+ *    the same as in ASCII. UTF-16 is not ASCII-compatible because the bytes
+ *    1 to 127 can occur in multi-byte representations of non-ASCII
+ *    characters.
+ * 
  * alternatives:
  *  - camomile, don't use "string", see above for pro/cons of camomile vs 
  *    netconversion.ml
