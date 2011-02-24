@@ -31,22 +31,32 @@
  * - ocamlgtk has a small xml lexer (src/xml_lexer.mll)
  *)
 
-type url = Url of string (* actually complicated sublanguage *)
+(*
+  type url = Url of string (* actually complicated sublanguage *)
+  
+  type tag = Tag of string
+  
+  type attribute = Attr of string (* * value ? *)
+  
+  type color = Color of string (* ?? *)
+  
+  
+  (* ??? tree ? how be precise ? 
+   * see xHtml.ml ? but too complicated to build ... shadow type sucks
+   *)
+  type html = unit 
+  
+  (* aka script *)
+  type javascript = unit
+  
+  (* aka style *)
+  type css = unit
 
-type tag = Tag of string
+*)
 
-type attribute = Attr of string (* * value ? *)
+(* a small wrapper over ocamlnet *)
 
-type color = Color of string (* ?? *)
+type html = Nethtml.document list
 
+type html_raw = string (* might want to use channel for efficiency *)
 
-(* ??? tree ? how be precise ? 
- * see xHtml.ml ? but too complicated to build ... shadow type sucks
- *)
-type html = unit 
-
-(* aka script *)
-type javascript = unit
-
-(* aka style *)
-type css = unit

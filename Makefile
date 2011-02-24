@@ -119,6 +119,12 @@ GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 # facebook/external/
 THRIFTDIR=external/ocamlthrift
 
+# could be under some ifeq($(FEATURE_WEB))
+OCAMLNETDIR=external/ocamlnet
+OCAMLNETINCLUDE=external/ocamlnet/netsys
+OCAMLNETCMA=external/ocamlnet/netsys/netsys.cma \
+  external/ocamlnet/netstring/netstring.cma
+
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
 endif
@@ -151,6 +157,7 @@ BASICLIBS=commons/commons.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
+ lang_html/parsing/lib.cma \
  lang_text/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
@@ -160,6 +167,7 @@ LIBS= commons/commons.cma \
        $(BDBCMA) \
        $(REGEXPCMA) \
        $(MPICMA) \
+       $(OCAMLNETCMA) \
        $(GRAPHCMA) \
        commons/commons_features.cma \
     h_version-control/lib.cma \
@@ -203,12 +211,15 @@ LIBS= commons/commons.cma \
      lang_csharp/analyze/lib.cma \
     lang_erlang/parsing/lib.cma \
      lang_erlang/analyze/lib.cma \
-    lang_text/lib.cma
+    lang_text/lib.cma \
+    lang_html/parsing/lib.cma \
+
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
   $(GRAPHDIR) \
   $(THRIFTDIR) \
+  $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
   h_version-control \
   h_visualization \
@@ -249,6 +260,7 @@ MAKESUBDIRS=commons \
    lang_php/analyze/qa_test \
    lang_php/analyze/dynamic_analysis \
    lang_php/analyze/static_analysis \
+  lang_html/parsing \
   lang_text \
   $(VISUALDIR) \
   $(FACEBOOKDIR)
@@ -256,7 +268,7 @@ MAKESUBDIRS=commons \
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
  commons/lib-json commons/lib-xml commons/lib-sexp \
- $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE)
+ $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE)
 
 ##############################################################################
 # Generic
