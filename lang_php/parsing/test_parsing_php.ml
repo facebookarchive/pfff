@@ -37,7 +37,11 @@ let test_parse_php xs  =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_php.parse file in
+    let (xs, stat) = 
+    Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+      Parse_php.parse file 
+    )
+    in
 
     Common.push2 stat stat_list;
     (*s: add stat for regression testing in hash *)

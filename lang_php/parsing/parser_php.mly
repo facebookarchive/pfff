@@ -815,6 +815,7 @@ xhp_attribute_decl_type:
  | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE 
      { XhpAttrEnum ($1, ($2, $3, $4)) }
 
+/*(*todo? why common_scalar below instead of static_scalar ? *)*/
 xhp_attribute_default:
  | /*(*empty*)*/     { None }
  | TEQ common_scalar { Some ($1, $2) }
