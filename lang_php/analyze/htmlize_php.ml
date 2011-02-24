@@ -20,7 +20,8 @@ module Ast = Ast_php
 
 module Db = Database_php
 
-module H = XHTML.M
+module H = XHTML2.M
+module XML = XML2
 
 (*****************************************************************************)
 (* Prelude *)
