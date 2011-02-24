@@ -259,13 +259,6 @@ if($pcre) {
 #    system("cd external/ocamlgraph; ./configure");
 #}
 
-if(1) {
-    pr2 "";
-    pr2 "Configuring ocamlnet";
-    my $err = system("cd external/ocamlnet/netsys; ./configure");
-    if ($err) { $ocamlnet = 0; $error2++; }
-}
-
 if($gui) {
     pr2 "";
     pr2 "Configuring ocamlgtk";
@@ -279,6 +272,15 @@ if($visual) {
     my $err = system("cd external/ocamlcairo; 
             LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk");
     if ($err) { $visual = 0; $error2++; }
+}
+
+# this is a smaller installation of ocamlnet. just call the 
+# netsys/configure
+if(1) {
+    pr2 "";
+    pr2 "Configuring ocamlnet";
+    my $err = system("cd external/ocamlnet/netsys; ./configure");
+    if ($err) { $ocamlnet = 0; $error2++; }
 }
 
 ######################################################################
