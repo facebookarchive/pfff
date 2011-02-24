@@ -63,9 +63,9 @@ ALL ?= $(ARCHIVE_CMA) $(ALL_EXTRA) \
 OPT ?= $(ARCHIVE_CMXA) $(OPT_EXTRA) \
        opt-mt-$(MT_TYPE) opt-p-$(HAVE_GPROF) opt-mt-$(MT_TYPE)-p-$(HAVE_GPROF)
 
-all: $(ALL)
+all:: $(ALL)
 
-opt: $(OPT)
+opt:: $(OPT)
 
 all-mt-vm: $(ALLMT_EXTRA)
 all-mt-posix: $(ALLMT_EXTRA)
