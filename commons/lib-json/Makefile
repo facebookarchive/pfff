@@ -64,18 +64,18 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+#pad: we include in the git repo already the generated file
+#json_lexer.ml: json_lexer.mll
+#	$(OCAMLLEX) $<
+#dist_clean::
+#	rm -f json_lexer.ml
+#beforedepend:: json_lexer.ml
 
-json_lexer.ml: json_lexer.mll
-	$(OCAMLLEX) $<
-clean::
-	rm -f json_lexer.ml
-beforedepend:: json_lexer.ml
-
-json_parser.ml json_parser.mli: json_parser.mly
-	$(OCAMLYACC) $<
-clean::
-	rm -f json_parser.ml json_parser.mli json_parser.output
-beforedepend:: json_parser.ml json_parser.mli
+#json_parser.ml json_parser.mli: json_parser.mly
+#	$(OCAMLYACC) $<
+#dist_clean::
+#	rm -f json_parser.ml json_parser.mli json_parser.output
+#beforedepend:: json_parser.ml json_parser.mli
 
 ##############################################################################
 # Generic rules
