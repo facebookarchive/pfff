@@ -32,7 +32,9 @@ let test_parse_html xs =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    raise Todo
+    let s = Common.read_file file in 
+    let _ast = Parse_html.parse s in
+    ()
     (*
     let (xs, stat) = Parse_erlang.parse file in
     Common.push2 stat stat_list;
@@ -42,12 +44,12 @@ let test_parse_html xs =
   ()
 
 let test_dump_html file =
-  raise Todo
-(*
-  let ast = Parse_html.parse_program file in
-  let s = Export_ast_ml.ml_pattern_string_of_program ast in
-  pr s
-*)
+  let s = Common.read_file file in 
+  let ast = Parse_html.parse s in
+(*  let s = Export_ast_ml.ml_pattern_string_of_program ast in *)
+  let json = Export_html.json_of_html ast in
+  let s = Json_out.string_of_json json in
+  pr2 s
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -63,5 +65,5 @@ let actions () = [
   "-parse_html", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_html;
   "-dump_html", "   <file>", 
-  Common.mk_action_n_arg test_dump_html;
+  Common.mk_action_1_arg test_dump_html;
 ]

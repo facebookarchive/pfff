@@ -125,8 +125,9 @@ OCAMLNETINCLUDE=external/ocamlnet/netsys external/ocamlnet/netstring
 OCAMLNETCMA= \
   external/ocamlnet/netsys/netsys_oothr.cma \
   external/ocamlnet/netsys/netsys.cma \
-  external/ocamlnet/netstring/netaccel.cma \
   external/ocamlnet/netstring/netstring.cma \
+
+#  external/ocamlnet/netstring/netaccel.cma \
 
 
 ifeq ($(FEATURE_GRAPHICS), 1)
