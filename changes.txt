@@ -1,5 +1,12 @@
 -*- org -*-
 
+* 0.15 beta (Q1 2011)
+
+** introduce web-based source code navigator a la lxr using ocsigen
+
+** introduce lang_html/
+(using code from a stripped down version of ocamlnet)
+
 * 0.14 (Q4 2010)
 
 ** codemap
@@ -414,7 +421,7 @@ deadcode analysis v1
 * 0.1
 
 ** introducing PHP gui (with ocamlgtk/)
-update: superseded by web gui
+update: superseded by codemap, a fancy gui using cairo and gtk
 
 * beta
 
