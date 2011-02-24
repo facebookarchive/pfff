@@ -40,6 +40,7 @@ my $graphics=0; # X11 graphics.cma
 my $visual=1; # cairo, codemap
 my $gui=1; # gtk, pfff_browser
 
+my $ocamlnet = 1;
 my $pcre=1;
 
 # not very stable
@@ -258,7 +259,12 @@ if($pcre) {
 #    system("cd external/ocamlgraph; ./configure");
 #}
 
-#TODO: my $err = system("cd external/ocamlnet; ./configure");
+if(1) {
+    pr2 "";
+    pr2 "Configuring ocamlnet";
+    my $err = system("cd external/ocamlnet/netsys; ./configure");
+    if ($err) { $ocamlnet = 0; $error2++; }
+}
 
 if($gui) {
     pr2 "";
