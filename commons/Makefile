@@ -67,7 +67,7 @@ ifeq ($(FEATURE_JSON_BUILTIN_COMMONS),1)
 SRC+= \
   lib-json/json_type.ml \
   lib-json/json_out.ml \
-  lib-json/netconversion.ml \
+  lib-json/netconversion2.ml \
   lib-json/json_parser.ml \
   lib-json/json_lexer.ml \
   lib-json/json_in.ml \

@@ -1,3 +1,5 @@
+# -*- Makefile -*-
+
 OBJECTS  = netconst.cmo netstring_pcre.cmo netstring_str.cmo netbuffer.cmo \
 	   netaux.cmo netchannels.cmo netdate.cmo \
 	   netdb.cmo netmappings.cmo netconversion.cmo netulex.cmo \

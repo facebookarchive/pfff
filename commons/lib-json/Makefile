@@ -7,7 +7,7 @@
 
 SRC= json_type.ml \
      json_out.ml \
-     netconversion.ml \
+     netconversion2.ml \
      json_parser.ml \
      json_lexer.ml \
      json_in.ml \

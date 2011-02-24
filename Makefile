@@ -121,9 +121,13 @@ THRIFTDIR=external/ocamlthrift
 
 # could be under some ifeq($(FEATURE_WEB))
 OCAMLNETDIR=external/ocamlnet
-OCAMLNETINCLUDE=external/ocamlnet/netsys
-OCAMLNETCMA=external/ocamlnet/netsys/netsys.cma \
-  external/ocamlnet/netstring/netstring.cma
+OCAMLNETINCLUDE=external/ocamlnet/netsys external/ocamlnet/netstring
+OCAMLNETCMA= \
+  external/ocamlnet/netsys/netsys_oothr.cma \
+  external/ocamlnet/netsys/netsys.cma \
+  external/ocamlnet/netstring/netaccel.cma \
+  external/ocamlnet/netstring/netstring.cma \
+
 
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
