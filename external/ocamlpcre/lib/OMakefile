@@ -6,38 +6,14 @@ OCAML_LIB_FLAGS += -cclib -lpcre
 LIB_CNAMES = pcre_stubs
 LIB_MLNAMES = pcre
 
-# Taken from OCamlMakeLibPackage (without packing!)
+OCamlMakeLib(pcre)
 
-name = pcre
 
-MY_LIBDIR = $(OCamlMainLib $(name))
-
-mkdir(-p $(MY_LIBDIR))
-
-$(MY_LIBDIR):
-  true
-
-OCAML_CLIBS = $(name)_stubs
-OCAML_COBJS = $(LIB_CNAMES)
-
-$(OCamlAddLibDir $(name), $(name).cmx): $(name).cmx
-  rm(-f $@)
-  symlink($<, $@)
-
-$(OCamlAddLibDir $(name), $(name).o): $(name).o
-  rm(-f $@)
-  symlink($<, $@)
-
-OCamlMakeLibCommon($(name))
-OCAML_LIB_FLAGS = -cclib -l$(OCAML_CLIBS) $(OCAML_LIB_FLAGS)
-OCamlStaticCLibraries($(OCAML_CLIBS), $(LIB_CNAMES))
-OCamlLibraryCbuild($(name), $(name))
-StaticCLibraryCopy($(name), $(MY_LIBDIR), lib$(OCAML_CLIBS))
-OCamlLibraryCopy($(name), $(MY_LIBDIR), $(name), $(name))
-
-libfile = lib$(OCAML_CLIBS)$(EXT_LIB)
-$(addsuffixes .cma .cmxa $(EXT_LIB), $(MY_LIBDIR)/$(name)): \
-  $(OCamlAddLibDir $(name), $(libfile))
-mycaml: $(libfile)
+doc: pcre $(OCAMLDOC_PP)
+  $(OCamlDocs Pcre, *.mli *.ml, \
+  "OCaml Pcre bindings.")
 
 InstantiateOCamlEnv()
+
+doc: pcre $(OCAMLDOC_PP)
+  $(OCamlDocs Pcre, *.mli *.ml, "Perl Compatible Regular Expressions.")

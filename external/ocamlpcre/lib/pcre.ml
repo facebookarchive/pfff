@@ -180,12 +180,12 @@ let version = pcre_version ()
 let config_utf8 = pcre_config_utf8 ()
 let config_newline = pcre_config_newline ()
 let config_link_size = pcre_config_link_size ()
-let config_match_limit = 
-  (* 
+(* 
      pad: BUGGGGG ??? it cause some segfault on my Mac ...
+-  10
   *)
-  (* pcre_config_match_limit ()  *)
-  10
+let config_match_limit = pcre_config_match_limit ()
+let config_match_limit_recursion = pcre_config_match_limit_recursion ()
 let config_stackrecurse = pcre_config_stackrecurse ()
 
 
