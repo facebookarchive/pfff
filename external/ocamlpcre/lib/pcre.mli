@@ -25,37 +25,35 @@
 
 (** {6 Exceptions} *)
 
-(** [Partial] gets raised when a string matched the pattern partially. *)
-exception Partial
+type error =
+  | Partial  (** String only matched the pattern partially *)
+  | BadPartial  (** Pattern contains items that cannot be used together
+                    with partial matching. *)
+  | BadPattern of string * int  (** [BadPattern (msg, pos)] regular
+                                    expression is malformed.  The reason
+                                    is in [msg], the position of the
+                                    error in the pattern in [pos]. *)
+  | BadUTF8  (** UTF8 string being matched is invalid *)
+  | BadUTF8Offset  (** Gets raised when a UTF8 string being matched with
+                       offset is invalid. *)
+  | MatchLimit  (** Maximum allowed number of match attempts with
+                    backtracking or recursion is reached during matching.
+                    ALL FUNCTIONS CALLING THE MATCHING ENGINE MAY RAISE
+                    IT!!! *)
+  | RecursionLimit
+  | InternalError of string
+      (** [InternalError msg] C-library exhibits unknown/undefined
+          behaviour.  The reason is in [msg]. *)
 
-(** [BadPartial] gets raised when a pattern contains items that cannot
-    be used together with partial matching. *)
-exception BadPartial
-
-(** [BadPattern (msg, pos)] gets raised when the regular expression is
-    malformed. The reason is in [msg], the position of the error in the
-    pattern in [pos]. *)
-exception BadPattern of string * int
-
-(** [BadUTF8] gets raised when a UTF8 string being matched is invalid. *)
-exception BadUTF8
-
-(** [BadUTF8Offset] gets raised when a UTF8 string being matched with offset
-    is invalid. *)
-exception BadUTF8Offset
-
-(** [MatchLimit] gets raised when the maximum allowed number of match
-    attempts with backtracking or recursion is reached during matching.
-    ALL FUNCTIONS CALLING THE MATCHING ENGINE MAY RAISE IT!!! *)
-exception MatchLimit
-
-(** [InternalError msg] gets raised when the C-library exhibits undefined
-    behaviour. The reason is in [msg]. *)
-exception InternalError of string
+(** Exception indicating PCRE errors. *)
+exception Error of error
 
 (** [Backtrack] used in callout functions to force backtracking. *)
 exception Backtrack
 
+(** [Regexp_or (pat, error)] gets raised for sub-pattern [pat] by [regexp_or]
+    if it failed to compile. *)
+exception Regexp_or of string * error
 
 (** {6 Compilation and runtime flags and their conversion functions} *)
 
@@ -127,6 +125,9 @@ val config_link_size : int
 
 (** Default limit for calls to internal matching function *)
 val config_match_limit : int
+
+(** Default limit recursion for calls to internal matching function *)
+val config_match_limit_recursion : int
 
 (** Indicates use of stack recursion in matching function *)
 val config_stackrecurse : bool
@@ -212,20 +213,22 @@ external maketables : unit -> chtables = "pcre_maketables_stub"
 val regexp :
   ?study : bool ->
   ?limit : int ->
+  ?limit_recursion : int ->
   ?iflags : icflag ->
   ?flags : cflag list ->
   ?chtables : chtables ->
   string -> regexp
-(** [regexp ?study ?limit ?iflags ?flags ?chtables pattern] compiles
-    [pattern] with [flags] when given, with [iflags] otherwise, and
-    with char tables [chtables]. If [study] is true, then the resulting
-    regular expression will be studied. If [limit] is specified, this
-    sets a limit to the amount of recursion and backtracking (only lower
-    than the builtin default!). If this limit is exceeded, [MatchLimit]
-    will be raised during matching.
+(** [regexp ?study ?limit ?limit_recursion ?iflags ?flags ?chtables pattern]
+    compiles [pattern] with [flags] when given, with [iflags] otherwise, and
+    with char tables [chtables]. If [study] is true, then the resulting regular
+    expression will be studied. If [limit] is specified, this sets a limit to
+    the amount of recursion and backtracking (only lower than the builtin
+    default!). If this limit is exceeded, [MatchLimit] will be raised during
+    matching.
 
     @param study default = true
     @param limit default = no extra limit other than default
+    @param limit_recursion default = no extra limit_recursion other than default
     @param iflags default = no extra flags
     @param flags default = ignored
     @param chtables default = builtin char tables
@@ -236,6 +239,18 @@ val regexp :
     expressions (= patterns), please consult the PCRE-documentation
     ("man pcrepattern") or PERL-manuals.
     @see <http://www.perl.com> www.perl.com *)
+
+val regexp_or :
+  ?study : bool ->
+  ?limit : int ->
+  ?limit_recursion : int ->
+  ?iflags : icflag ->
+  ?flags : cflag list ->
+  ?chtables : chtables ->
+  string list -> regexp
+(** [regexp_or ?study ?limit ?limit_recursion ?iflags ?flags ?chtables patterns]
+    like {!regexp}, but combines [patterns] as alternatives (or-patterns) into
+    one regular expression. *)
 
 val quote : string -> string
 (** [quote str] @return the quoted string of [str]. *)

@@ -22,28 +22,26 @@
 
 (* Public exceptions and their registration with the C runtime *)
 
-exception Partial
-exception BadPartial
-exception BadPattern of string * int
-exception BadUTF8
-exception BadUTF8Offset
-exception InternalError of string
-exception MatchLimit
+type error =
+  | Partial
+  | BadPartial
+  | BadPattern of string * int
+  | BadUTF8
+  | BadUTF8Offset
+  | MatchLimit
+  | RecursionLimit
+  | InternalError of string
+
+exception Error of error
 exception Backtrack
+exception Regexp_or of string * error
 
 (* Puts exceptions into global C-variables for fast retrieval *)
 external pcre_ocaml_init : unit -> unit = "pcre_ocaml_init"
 
 (* Registers exceptions with the C runtime and caches polymorphic variants *)
-let _ =
-  Callback.register_exception "Pcre.Not_found" Not_found;
-  Callback.register_exception "Pcre.Partial" Partial;
-  Callback.register_exception "Pcre.BadPartial" BadPartial;
-  Callback.register_exception "Pcre.BadPattern" (BadPattern ("", 0));
-  Callback.register_exception "Pcre.BadUTF8" BadUTF8;
-  Callback.register_exception "Pcre.BadUTF8Offset" BadUTF8Offset;
-  Callback.register_exception "Pcre.InternalError" (InternalError "");
-  Callback.register_exception "Pcre.MatchLimit" MatchLimit;
+let () =
+  Callback.register_exception "Pcre.Error" (Error (InternalError ""));
   Callback.register_exception "Pcre.Backtrack" Backtrack;
   pcre_ocaml_init ()
 
@@ -132,8 +130,8 @@ type rflag =
 
 let int_of_rflag = function
   | `ANCHORED -> 0x0010
-  | `NOTBOL   -> 0x0080
-  | `NOTEOL   -> 0x0100
+  | `NOTBOL -> 0x0080
+  | `NOTEOL -> 0x0100
   | `NOTEMPTY -> 0x0400
   | `PARTIAL -> 0x8000
 
@@ -171,6 +169,9 @@ external pcre_config_link_size :
 
 external pcre_config_match_limit :
   unit -> int = "pcre_config_match_limit_stub" "noalloc"
+
+external pcre_config_match_limit_recursion :
+  unit -> int = "pcre_config_match_limit_recursion_stub" "noalloc"
 
 external pcre_config_stackrecurse :
   unit -> bool = "pcre_config_stackrecurse_stub" "noalloc"
@@ -234,15 +235,43 @@ external get_match_limit : regexp -> int option = "pcre_get_match_limit_stub"
 external set_imp_match_limit :
   regexp -> int -> regexp = "pcre_set_imp_match_limit_stub" "noalloc"
 
-let regexp ?(study = true) ?limit ?(iflags = 0) ?flags ?chtables pat =
+external get_match_limit_recursion :
+  regexp -> int option = "pcre_get_match_limit_recursion_stub"
+
+(* Internal use only! *)
+external set_imp_match_limit_recursion :
+  regexp -> int -> regexp = "pcre_set_imp_match_limit_recursion_stub" "noalloc"
+
+let regexp
+      ?(study = true) ?limit ?limit_recursion
+      ?(iflags = 0) ?flags ?chtables pat =
   let rex =
     match flags with
     | Some flag_list -> compile (cflags flag_list) chtables pat
-    | _ -> compile iflags chtables pat in
+    | _ -> compile iflags chtables pat
+  in
   if study then pcre_study rex;
-  match limit with
+  let rex =
+    match limit with
+    | None -> rex
+    | Some lim -> set_imp_match_limit rex lim
+  in
+  match limit_recursion with
   | None -> rex
-  | Some lim -> set_imp_match_limit rex lim
+  | Some lim -> set_imp_match_limit_recursion rex lim
+
+let regexp_or
+      ?study ?limit ?limit_recursion ?(iflags = 0) ?flags ?chtables pats =
+  let check pat =
+    try ignore (regexp ~study:false ~iflags ?flags ?chtables pat)
+    with Error error -> raise (Regexp_or (pat, error))
+  in
+  List.iter check pats;
+  let big_pat =
+    let cnv pat = "(?:" ^ pat ^ ")" in
+    String.concat "|" (List.rev (List.rev_map cnv pats))
+  in
+  regexp ?study ?limit ?limit_recursion ~iflags ?flags ?chtables big_pat
 
 let string_unsafe_sub s ofs len =
   let r = String.create len in
@@ -546,8 +575,8 @@ let replace ?(iflags = 0) ?flags ?(rex = def_rex) ?pat
       let postfix_len = max (subj_len - cur_pos) 0 in
       let left = pos + full_len in
       let res = String.create (left + postfix_len) in
-      let _ = String.unsafe_blit subj 0 res 0 pos in
-      let _ = String.unsafe_blit subj cur_pos res left postfix_len in
+      String.unsafe_blit subj 0 res 0 pos;
+      String.unsafe_blit subj cur_pos res left postfix_len;
       let inner_coll ofs (templ, ix, len) =
         String.unsafe_blit templ ix res ofs len; ofs + len in
       let coll ofs (res_len, trans_lst) =
@@ -595,8 +624,8 @@ let qreplace ?(iflags = 0) ?flags ?(rex = def_rex) ?pat
       let postfix_len = max (subj_len - cur_pos) 0 in
       let left = pos + full_len in
       let res = String.create (left + postfix_len) in
-      let _ = String.unsafe_blit subj 0 res 0 pos in
-      let _ = String.unsafe_blit subj cur_pos res left postfix_len in
+      String.unsafe_blit subj 0 res 0 pos;
+      String.unsafe_blit subj cur_pos res left postfix_len;
       let coll ofs = function
         | Some (substr, ix, len) ->
             let new_ofs = ofs - len in
@@ -642,8 +671,8 @@ let substitute_substrings ?(iflags = 0) ?flags ?(rex = def_rex) ?pat
       let postfix_len = max (subj_len - cur_pos) 0 in
       let left = pos + full_len in
       let res = String.create (left + postfix_len) in
-      let _ = String.unsafe_blit subj 0 res 0 pos in
-      let _ = String.unsafe_blit subj cur_pos res left postfix_len in
+      String.unsafe_blit subj 0 res 0 pos;
+      String.unsafe_blit subj cur_pos res left postfix_len;
       let coll ofs (templ, ix, len) =
         let new_ofs = ofs - len in
         String.unsafe_blit templ ix res new_ofs len;

@@ -1,3 +1,37 @@
+2011-01-16:  Added support for limit recursion flag.
+
+             Thanks to Delphin Lecucq <Delphin.LECUCQ@3ds.com> for the patch!
+
+2010-10-31:  Improved Windows support with MSVC.
+
+             Thanks to Sylvain Le Gall <sylvain@le-gall.net> for the patch!
+
+2010-04-01:  Added new function:
+
+               * regexp_or
+
+2009-06-20:  Fixed bug in configuration functions that could lead to a segfault.
+
+             Thanks to Gerd Stolpmann <gerd@gerd-stolpmann.de> for the patch!
+
+2009-05-07:  Changed API wrt. error handling and thus made a major release.
+
+             Improved behavior in the presence of recursion limit errors.
+             Thanks to Martin Jambon <martinj@mylife.com> for this patch!
+
+2009-04-23:  Fixed build problem on MinGW.
+
+             Thanks to Gerd Stolpmann <gerd@gerd-stolpmann.de> for the patch!
+
+2009-03-08:  Fixed build problem on Mac OS X with macports.
+
+             Thanks to Ralph Douglass <ralph@grayskies.net> for the
+             initial patch.
+
+             Update OCamlMakefile.
+
+             Improved Godi-distribution.
+
 2008-05-06:  Fixed build problem with newer versions of PCRE.
 
 2008-03-14:  Synced with Jane Street tree.
@@ -9,7 +43,7 @@
              This function returns the names of all named substrings in a
              regular expression.
 
-             Thanks to Benedikt Grundmann <bgrundmann@janestcapital.com>
+             Thanks to Benedikt Grundmann <bgrundmann@janestreet.com>
              for the patch!
 
 2007-07-12:  Improved build scripts for Windows.
