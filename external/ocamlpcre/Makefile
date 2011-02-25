@@ -1,8 +1,6 @@
-TOP=../../
 -include Makefile.conf
--include $(TOP)/Makefile.config
 
-EXAMPLES = $(filter-out examples/CVS, $(wildcard examples/*))
+EXAMPLES = $(filter-out examples/OMakefile examples/CVS, $(wildcard examples/*))
 
 .PHONY: all
 all:
@@ -16,6 +14,10 @@ examples:
 doc:
 	@cd lib && $(MAKE) $@
 	ln -sf lib/doc
+
+.PHONY: htdoc
+htdoc:
+	@cd lib && $(MAKE) $@
 
 .PHONY:	install
 install:
@@ -31,6 +33,7 @@ clean:
 	@for dir in $(EXAMPLES); do (cd $$dir && $(MAKE) $@); done
 	@rm -f doc
 
+#pad:
 depend::
 
 all.opt:
