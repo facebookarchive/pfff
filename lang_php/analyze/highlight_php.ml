@@ -185,12 +185,17 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 (* PHP Code highlighter *)
 (*****************************************************************************)
 
-(* PHP mode and also expansion specificities coloring, and also now semantic
- * coloring and global-information-semantic feedback coloring!
- * Was using emacs_mode_xxx before but now have inlined the code and extended
- * it.
+(* 
+ * Visitor to help write an emacs-like php mode. Offer some 
+ * additional coloring and categories compared to font-lock-mode.
+ * Offer also now also some semantic coloring and global-information
+ * semantic feedback coloring!
+ * 
+ * history: 
+ *  - I was using emacs_mode_xxx before but now have inlined the code 
+ *    and extended it.
  *
- * note: Can do either a single function that do all, or multiple independent 
+ * design: Can do either a single function that do all, or multiple independent 
  * functions that repeatedly visit the same ast and tokens. The 
  * former is faster (no forest) but less flexible. If for instance want
  * to impose an order between the coloring, such as first keywords and 
@@ -199,10 +204,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
  * the caller can simply choose to call them in the order he wants so that
  * the last color win. Thus can easily separate concern.
  * 
- * 
- *)
-
-(* The idea of the code below is to visit the program either through its
+ * The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is (a function, a class, a constant)
