@@ -22,8 +22,18 @@ SRC= \
  views/product/product_show.ml \
  controllers/product_ctl.ml \
  \
- app.ml
+ htmlize_php2.ml \
+ app.ml \
 
+
+INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/h_program-lang/ \
+ $(TOP)/lang_php/parsing \
+ $(TOP)/lang_php/analyze/foundation \
+ $(TOP)/lang_php/analyze \
+
+
+INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
 
 # when ocsigen is installed, can use package name instead of those -I
 LIBSOCSIGEN=$(LIBDIRS2:../../%=$(OCSIGENDIR)/%)
@@ -33,7 +43,7 @@ LIBS = -package lwt.unix,pcre $(LIBSOCSIGEN)
 # Generic ocaml variables
 ##############################################################################
 
-OCAMLC= $(OCAMLFIND) $(CAMLCNAME) $(DBG) $(LIBS)
+OCAMLC= $(OCAMLFIND) $(CAMLCNAME) -dtypes $(DBG) $(LIBS) $(INCLUDES)
 OCAMLOPT= $(OCAMLFIND) $(CAMLOPTNAME) $(DBG) $(LIBS)
 OCAMLDEP= $(OCAMLFIND) ocamldep
 
@@ -67,7 +77,7 @@ opt: $(OBJSOPT)
 	$(CMXSCMD)
 
 run:
-	$(OCSIGENDIR)/server/ocsigen -c config/ocsigen.conf
+	LD_LIBRARY_PATH=../external/ocamlbdb $(OCSIGENDIR)/server/ocsigen -c config/ocsigen.conf
 
 clean_data::
 	-rm -f var/logs/*.log var/logs/ocsigen_command
