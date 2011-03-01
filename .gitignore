@@ -47,6 +47,8 @@ Fig_graph_ml.pdf
 /data/php_stdlib.defs_marshalled
 *.marshall
 
+web/var/dbs
+
 # specific binaries
 /pfff
 /pfff_db

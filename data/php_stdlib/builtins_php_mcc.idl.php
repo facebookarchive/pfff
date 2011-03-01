@@ -33,6 +33,8 @@ define('MCC_ARG_DEBUG', 0);
 define('MCC_ARG_DEBUG_LOGFILE', 0);
 define('MCC_HAVE_ZLIB_COMPRESSION', 0);
 define('MCC_COMPRESSION_THRESHOLD', 0);
+//pad: wtf ? see flib/core/cache/client/mcc.php, but the H and HH are used
+define('MCC_COMPRESSION_THRESHHOLD', 0);
 define('MCC_ARG_SERVERS', 0);
 define('MCC_ARG_MIRROR_CFG', 0);
 define('MCC_ARG_MIRROR_CFG_NAME', 0);
@@ -76,6 +78,11 @@ define('MCC_DELETE_ERROR_NOLOG', 0);
 //define('PHPMCC_USED_FAST_PATH', 0);
 //define('PHPMCC_USED_SLOW_PATH', 0);
 //define('PHPMCC_VERSION', 0);
+
+//from _checkModuleLib.php in $extension_defines
+define('MCC_NZLIB_COMPRESSION', 0);
+define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
+ 
 class phpmcc {
 const IPPROTO_TCP = 0;
 const IPPROTO_UDP = 0;

@@ -68,6 +68,7 @@ open Parse_info
  *  - a python and php one, http://code.google.com/p/html5lib
  *  - a javascript one, http://ejohn.org/blog/pure-javascript-html-parser/
  * 
+ * See also http://en.wikipedia.org/wiki/HTML5
  *)
 
 (*****************************************************************************)
