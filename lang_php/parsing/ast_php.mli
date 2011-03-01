@@ -362,6 +362,9 @@ and lvalue = lvaluebis * lvalue_info
   (*x: lvaluebis constructors *)
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren
     | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
+    (* PHP 5.3 *)
+    | StaticMethodCallVar of lvalue * tok (* :: *) * name * argument comma_list paren
+    | StaticObjCallVar of lvalue * tok (* :: *) * lvalue * argument comma_list paren
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name
     | ObjAccess of lvalue * obj_access

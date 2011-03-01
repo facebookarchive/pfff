@@ -1154,7 +1154,7 @@ expr_without_variable_bis:
  | T_PRINT expr  { Print($1,$2) }
 
  | TBACKQUOTE encaps_list TBACKQUOTE   { BackQuote($1,$2,$3) }
- /*(* php 5.3 only *)*/
+ /*(* PHP 5.3 *)*/
  | T_FUNCTION is_reference TOPAR parameter_list TCPAR lexical_vars 
    TOBRACE inner_statement_list TCBRACE 
      { 
@@ -1357,6 +1357,10 @@ function_head:
  | variable_without_objects      { FuncVar  (None, $1) }
  | qualifier    ident            { FuncName(Some $1, Name $2) }
  | qualifier    variable_without_objects  { FuncVar(Some $1, $2) }
+/*(* PHP 5.3 *)*/
+ | variable_class_name TCOLCOL ident { StaticMethodVar($1, $2, Name $3) }
+ | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
+
 /*(*x: GRAMMAR variable *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
 non_empty_function_call_parameter_list:
@@ -1486,6 +1490,7 @@ fully_qualified_class_name:
 
 /*(*e: GRAMMAR namespace *)*/
 
+variable_class_name: reference_variable { $1 }
 
 /*(*************************************************************************)*/
 /*(* class bis *)*/

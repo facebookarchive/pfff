@@ -39,7 +39,7 @@ let rec top_statements_to_toplevels topstatements eofinfo =
 (*s: type variable2 *)
 (* This type is only used for now during parsing time. It was originally
  * fully part of the PHP AST but it makes some processing like typing
- * harder with all the special cases. This type is more precise 
+ * harder with all the special cases. This type below is more precise 
  * than the one currently in the AST but it's not worthwhile the
  * extra complexity.
  *)
@@ -66,6 +66,10 @@ type variable2 =
       | FuncName of qualifier option * name
       (* dynamic function call *)
       | FuncVar  of qualifier option * var_without_obj
+      (* PHP 5.3 *)
+      | StaticMethodVar of ref_variable * tok * name
+      | StaticObjVar of ref_variable * tok * var_without_obj
+
 (*e: type variable2 *)
 
 (*s: variable2 to variable functions *)
@@ -110,6 +114,14 @@ and basevarfun_to_variable basevarfun =
           )
       | FuncVar (qopt, vwithoutobj) ->
           FunCallVar (qopt, vwithoutobj_to_variable vwithoutobj, args)
+      | StaticMethodVar (ref_var, tok, name) ->
+          let var = refvar_to_variable ref_var in
+          StaticMethodCallVar (var, tok, name, args)
+
+      | StaticObjVar (ref_var, tok, vwithoutobj) ->
+          let var = refvar_to_variable ref_var in
+          let var2 = vwithoutobj_to_variable vwithoutobj in
+          StaticObjCallVar (var, tok, var2, args)
       )
       in
       mkvar v
