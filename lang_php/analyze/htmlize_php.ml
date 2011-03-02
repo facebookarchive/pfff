@@ -97,7 +97,7 @@ let decorate_pcdata_with_attributes pcdata attrs =
 (* Returns a list of Html elt, almost one for each token. When a token
  * is a comment we even generate one element per line.
  *)
-let htmlize_pre_xhtml ?(use_magic_newline=false) filename db =
+let htmlize_pre_xhtml ?(use_magic_newline=false) ~hook_token filename db =
 
   let ids = db.Db.file_to_topids#assoc filename in
   let asts_and_toks = ids +> List.map (fun id -> 
@@ -140,7 +140,12 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) filename db =
         let res = 
           xs +> List.map (function
           | Left s -> 
-              decorate_pcdata_with_attributes (H.pcdata s) attrs
+              (* by default would return H.pcdata s, but
+               * could also be used to transform text into
+               * clickable elements, as in lxr
+               *)
+              let data = hook_token s tok categ in
+              decorate_pcdata_with_attributes data attrs
           | Right () ->
               (* no need for attributes for newlines *)
               H.pcdata 
@@ -154,8 +159,8 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) filename db =
   in
   inside_pre
 
-let htmlize filename db = 
-  let inside_pre = htmlize_pre_xhtml filename db in
+let htmlize ~hook_token filename db = 
+  let inside_pre = htmlize_pre_xhtml ~hook_token filename db in
 
   let html = 
     (H.html ~a:[H.a_xmlns `W3_org_1999_xhtml; H.a_xml_lang "en"]
@@ -174,9 +179,9 @@ let htmlize filename db =
   )
 
 (* very very ugly *)
-let htmlize_pre filename db = 
+let htmlize_pre ~hook_token filename db = 
 
-  let elt_list = htmlize_pre_xhtml filename db in
+  let elt_list = htmlize_pre_xhtml ~hook_token filename db in
 
   let html = H.magic_tag elt_list in
 
@@ -202,8 +207,9 @@ let htmlize_pre filename db =
 (* have lots of trouble calling a pretty printer on each element ...
  * For some reasons the indentation gets weird with this version
  *)
-let htmlize_pre_does_not_work filename db =
-  let elt_list = htmlize_pre_xhtml ~use_magic_newline:true filename db in
+let htmlize_pre_does_not_work ~hook_token filename db =
+  let elt_list = 
+    htmlize_pre_xhtml ~hook_token ~use_magic_newline:true filename db in
 
   let xs = 
     elt_list +> List.map (fun elt ->

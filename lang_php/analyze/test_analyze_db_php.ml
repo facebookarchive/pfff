@@ -221,7 +221,9 @@ let generate_html_php file =
   let nblines = Common.cat file |> List.length in
 
   let db = db_of_files_or_dirs [file] in
-  let xs = Htmlize_php.htmlize_pre file db in
+  let xs = Htmlize_php.htmlize_pre 
+    ~hook_token:(fun s tok categ -> XHTML2.M.pcdata s)
+    file db in
   let xs' = Common.index_list_1 xs in
   xs' +> List.iter (fun (s, i) ->
     pr2 (spf "%d: %s" i s);
