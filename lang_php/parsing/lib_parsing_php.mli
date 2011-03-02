@@ -26,8 +26,6 @@ type match_format =
   | OneLine
 
 val print_match: ?format:match_format -> Ast_php.info list -> unit
-val print_warning_if_not_correctly_parsed: 
-  Ast_php.program -> Common.filename -> unit
 
 (*x: lib_parsing_php.mli *)
 val get_funcalls_any         : Ast_php.any -> string list

@@ -208,6 +208,7 @@ let print_match ?(format = Normal) ii =
                             +> join_with_space_if_needed))
 
 
+(* obsolete: now catch Parse_php.Parse_error *)
 let print_warning_if_not_correctly_parsed ast file =
   if ast +> List.exists (function 
   | Ast_php.NotParsedCorrectly _ -> true

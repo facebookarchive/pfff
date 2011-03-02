@@ -131,9 +131,14 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
   files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
     if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
 
-    let (ast2, _stat) = Parse_php.parse_with_error_recovery file in
+    let (ast2) = 
+      try 
+        Parse_php.parse_with_error_recovery file +> fst
+      with Parse_php.Parse_error err ->
+        Common.pr2 (spf "warning: parsing problem in %s" file);
+        []
+    in
     let ast = Parse_php.program_of_program2 ast2 in
-    Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
     let filelines = Common.cat_array file in
     let defs = 
