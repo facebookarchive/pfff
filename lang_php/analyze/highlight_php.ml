@@ -583,7 +583,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           (* function pointer call !!! put in big font *)
           let ii = Lib_parsing_php.ii_of_any (Lvalue var) in
           ii +> List.iter (fun info -> tag info PointerCall);
-          
+
+      | StaticMethodCallVar (lval, _, _, _)
+      | StaticObjCallVar (lval, _, _, _)
+        ->
+          let ii = Lib_parsing_php.ii_of_any (Lvalue lval) in
+          ii +> List.iter (fun info -> tag info PointerCall);
+
 
       | ObjAccess (_, _) 
       | VQualifier (_, _)

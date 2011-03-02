@@ -689,6 +689,8 @@ and v_variable (v1, v2) =
  in
  vin.klvalue (k, all_functions) (v1,v2)
 
+and v_lvalue x = v_variable x
+
 and v_var_info { tlval = v_tvar } = let arg = Type_php.v_phptype v_tvar in ()
 and v_variablebis =
   function
@@ -729,6 +731,18 @@ and v_variablebis =
       and v2 = v_tok v2
       and v3 = v_name v3
       and v4 = v_paren (v_comma_list12 v_argument) v4
+      in ()
+  | StaticMethodCallVar ((v1, v2, v3, v4)) ->
+      let v1 = v_variable v1
+      and v2 = v_tok v2
+      and v3 = v_name v3
+      and v4 = v_paren (v_comma_list v_argument) v4
+      in ()
+  | StaticObjCallVar ((v1, v2, v3, v4)) ->
+      let v1 = v_variable v1
+      and v2 = v_tok v2
+      and v3 = v_lvalue v3
+      and v4 = v_paren (v_comma_list v_argument) v4
       in ()
   | ObjAccessSimple ((v1, v2, v3)) ->
       let v1 = v_variable v1 and v2 = v_tok v2 and v3 = v_name v3 in ()

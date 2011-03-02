@@ -576,6 +576,8 @@ and map_variable (v1, v2) =
   in
  vin.klvalue (k, all_functions) (v1,v2)
 
+and map_lvalue a = map_variable a
+
 and map_var_info { tlval = v_tvar } =
   let v_tvar = Type_php.map_phptype v_tvar in { tlval = v_tvar }
 and map_variablebis =
@@ -632,6 +634,18 @@ and map_variablebis =
       and v3 = map_name v3
       and v4 = map_paren_args (map_comma_list_arg map_argument) v4
       in MethodCallSimple ((v1, v2, v3, v4))
+  | StaticMethodCallVar ((v1, v2, v3, v4)) ->
+      let v1 = map_lvalue v1
+      and v2 = map_tok v2
+      and v3 = map_name v3
+      and v4 = map_paren (map_comma_list map_argument) v4
+      in StaticMethodCallVar ((v1, v2, v3, v4))
+  | StaticObjCallVar ((v1, v2, v3, v4)) ->
+      let v1 = map_lvalue v1
+      and v2 = map_tok v2
+      and v3 = map_lvalue v3
+      and v4 = map_paren (map_comma_list map_argument) v4
+      in StaticObjCallVar ((v1, v2, v3, v4))
   | ObjAccessSimple ((v1, v2, v3)) ->
       let v1 = map_variable v1
       and v2 = map_tok v2

@@ -491,6 +491,18 @@ and vof_variablebis =
       and v3 = vof_name v3
       and v4 = vof_paren (vof_comma_list vof_argument) v4
       in Ocaml.VSum (("MethodCallSimple", [ v1; v2; v3; v4 ]))
+  | StaticMethodCallVar ((v1, v2, v3, v4)) ->
+      let v1 = vof_lvalue v1
+      and v2 = vof_tok v2
+      and v3 = vof_name v3
+      and v4 = vof_paren (vof_comma_list vof_argument) v4
+      in Ocaml.VSum (("StaticMethodCallVar", [ v1; v2; v3; v4 ]))
+  | StaticObjCallVar ((v1, v2, v3, v4)) ->
+      let v1 = vof_lvalue v1
+      and v2 = vof_tok v2
+      and v3 = vof_lvalue v3
+      and v4 = vof_paren (vof_comma_list vof_argument) v4
+      in Ocaml.VSum (("StaticObjCallVar", [ v1; v2; v3; v4 ]))
   | ObjAccessSimple ((v1, v2, v3)) ->
       let v1 = vof_variable v1
       and v2 = vof_tok v2
