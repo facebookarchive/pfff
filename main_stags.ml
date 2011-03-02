@@ -25,6 +25,9 @@ module Tags = Tags_file
  * causing otags to fatal. One option is to help otags by passing it
  * the correct -pp flags. Another option is to at least default to
  * a lexical-level tag generator which is what I do here.
+ * 
+ * usage: 
+ *  $ stags -lang web -o TAGS *
  *)
 
 (*****************************************************************************)

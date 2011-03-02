@@ -30,7 +30,6 @@ module E = Error_php
 let check_file ?(find_entity=None) file =
 
   let ast = Parse_php.parse_program file in
-  Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 
   Check_variables_php.check_and_annotate_program ~find_entity ast;
   Check_cfg_php.check_program ~find_entity ast;

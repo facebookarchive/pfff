@@ -105,7 +105,9 @@ let apply_transfo transfo xs =
     if not worth_trying then ()
     else
     try (
-    let (ast2, _stat) = Parse_php.parse file in
+    let (ast2, _stat) = 
+      Parse_php.parse_with_error_recovery file 
+    in
     let ast = Parse_php.program_of_program2 ast2 in
     Lib_parsing_php.print_warning_if_not_correctly_parsed ast file;
 

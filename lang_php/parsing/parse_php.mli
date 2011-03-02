@@ -26,6 +26,12 @@ val parse_program:
 val parse_any:
   Common.filename -> Ast_php.any
 
+(* for sgrep/spatch where we don't want to spit out errors;
+ * usually used with Lib_parsing_php.print_warning_if_not_correctly_parsed
+ *)
+val parse_with_error_recovery : 
+  ?pp:string option -> 
+  Common.filename -> (program2 * Parse_info.parsing_stat)
 
 (*s: extra parse function signature *)
 val xdebug_expr_of_string: string -> Ast_php.expr 

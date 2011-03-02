@@ -421,6 +421,16 @@ let parse_program ?pp file =
   let (ast2, _stat) = parse ?pp file in
   program_of_program2 ast2
 
+(* todo? include the code of print_warning_if_not_correctly_parsed here too? 
+ * or remove this function and let the caller catch instead the
+ * exception and print
+ *)
+let parse_with_error_recovery ?pp file =
+  Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+  Common.save_excursion Flag_parsing_php.show_parsing_error false (fun () ->
+    parse ?pp file
+  ))
+
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)
