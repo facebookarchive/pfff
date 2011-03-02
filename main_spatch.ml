@@ -107,7 +107,7 @@ let apply_transfo transfo xs =
     try (
     let (ast2) = 
       try 
-        Parse_php.parse_with_error_recovery file +> fst
+        Parse_php.parse file +> fst
       with Parse_php.Parse_error err ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         []

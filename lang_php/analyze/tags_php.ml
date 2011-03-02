@@ -133,7 +133,7 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
 
     let (ast2) = 
       try 
-        Parse_php.parse_with_error_recovery file +> fst
+        Parse_php.parse file +> fst
       with Parse_php.Parse_error err ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         []

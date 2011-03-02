@@ -36,7 +36,7 @@ module PI = Parse_info
 (*s: type program2 *)
 type program2 = toplevel2 list
   and toplevel2 = 
-    Ast_php.toplevel (* NotParsedCorrectly if parse error *) * info_item
+    Ast_php.toplevel * info_item
      (* the token list contains also the comment-tokens *)
      and info_item = (string * Parser_php.token list)
 type program_with_comments = program2
@@ -420,16 +420,6 @@ let parse ?pp a =
 let parse_program ?pp file = 
   let (ast2, _stat) = parse ?pp file in
   program_of_program2 ast2
-
-(* todo? include the code of print_warning_if_not_correctly_parsed here too? 
- * or remove this function and let the caller catch instead the
- * exception and print
- *)
-let parse_with_error_recovery ?pp file =
-  Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
-  Common.save_excursion Flag_parsing_php.show_parsing_error false (fun () ->
-    parse ?pp file
-  ))
 
 (*****************************************************************************)
 (* Sub parsers *)

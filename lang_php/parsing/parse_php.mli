@@ -5,7 +5,7 @@
 (*s: type program2 *)
 type program2 = toplevel2 list
   and toplevel2 = 
-    Ast_php.toplevel (* NotParsedCorrectly if parse error *) * info_item
+    Ast_php.toplevel * info_item
      (* the token list contains also the comment-tokens *)
      and info_item = (string * Parser_php.token list)
 type program_with_comments = program2
@@ -25,13 +25,6 @@ val parse_program:
 (* for sgrep/spatch patterns *)
 val parse_any:
   Common.filename -> Ast_php.any
-
-(* for sgrep/spatch where we don't want to spit out errors;
- * usually used with Lib_parsing_php.print_warning_if_not_correctly_parsed
- *)
-val parse_with_error_recovery : 
-  ?pp:string option -> 
-  Common.filename -> (program2 * Parse_info.parsing_stat)
 
 (*s: extra parse function signature *)
 val xdebug_expr_of_string: string -> Ast_php.expr 
