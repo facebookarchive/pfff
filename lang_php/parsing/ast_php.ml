@@ -24,6 +24,12 @@ open Parse_info
 (*****************************************************************************)
 
 (* 
+ * NOTE: data from this type are often marshalled in berkeley DB tables
+ * which means that if you add new constructor or field in the types below, 
+ * you must erase the berkeley DB databases otherwise pfff
+ * will probably finish with a segfault (OCaml serialization is not
+ * type-safe).
+ * 
  * COUPLING: 
  * 
  * Note that some programs in other languages (e.g. Python) may
