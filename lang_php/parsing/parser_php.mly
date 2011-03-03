@@ -19,6 +19,7 @@
 /*(*s: GRAMMAR prelude *)*/
 %{
 (* src: ocamlyaccified from zend_language_parser.y in PHP source code.
+ * update: extended to deal with XHP based on XHP grammar.
  * 
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+

@@ -28,11 +28,10 @@ open Parse_info
  * which means that if you add new constructor or field in the types below, 
  * you must erase the berkeley DB databases otherwise pfff
  * will probably finish with a segfault (OCaml serialization is not
- * type-safe).
+ * type-safe). A hacky solution is to add new constructors only at the end
+ * of the type definition.
  * 
- * COUPLING: 
- * 
- * Note that some programs in other languages (e.g. Python) may
+ * COUPLING: some programs in other languages (e.g. Python) may
  * use some of the pfff binding, or JSON/sexp exporters, so if you
  * change the name of constructors in this file, don't forget
  * to regenerate the JSON/sexp exporters, but also to modify the
