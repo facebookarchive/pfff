@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009,2010,2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -32,8 +32,8 @@ open Parse_info
  * There are multiple ways to represent an HTML AST:
  *  - just as a tree of 'Element of ... | CdData of ...' (as done in ocamlnet).
  *    This is simple but lack type-checking. Some checking can be done though
- *    by using the spec of a DTD.
- *  - a tree with phantom types
+ *    by using the spec of a DTD and run a validator.
+ *  - a tree with phantom types (as done in xHTML)
  *  - a real AST, with one different constructor per html element, and
  *    precise types for the set of acceptable attributes. Because
  *    the DTD of HTML is complex, such an AST can be quite tedious to write.
@@ -148,7 +148,7 @@ open Parse_info
   type attribute = Attr of string (* * value ? *)
   
   type color = Color of string (* ?? *)
-  
+ 
   
   (* ??? tree ? how be precise ? 
    * see xHtml.ml ? but too complicated to build ... shadow type sucks
@@ -163,9 +163,17 @@ open Parse_info
 
 *)
 
+(* might want to use channel for efficiency *)
+type html_raw = HtmlRaw of string 
+
+type html_tree = 
+  | Element of tag * (attr_name * attr_value) list * html_tree list
+  | Data of string
+ and tag = string
+ and attr_name = string
+ and attr_value = string
+
 (* a small wrapper over ocamlnet *)
+type html_tree2 = Nethtml.document list
 
-type html_tree = Nethtml.document list
-
-type html_raw = string (* might want to use channel for efficiency *)
 
