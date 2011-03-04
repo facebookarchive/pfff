@@ -1,0 +1,40 @@
+./svg.cmo: 
+./svg.cmx: 
+./viewer_js.cmo: viewer_common.cmi 
+./viewer_js.cmx: viewer_common.cmx 
+./viewer_common.cmo: scene.cmi ./viewer_common.cmi 
+./viewer_common.cmx: scene.cmx ./viewer_common.cmi 
+./scene_extents.cmi: scene.cmi 
+./dot_lexer.cmi: dot_parser.cmi 
+./scene.cmo: ./scene.cmi 
+./scene.cmx: ./scene.cmi 
+./viewer.cmi: scene.cmi 
+./viewer.cmo: viewer_common.cmi scene_extents.cmi scene.cmi ./viewer.cmi 
+./viewer.cmx: viewer_common.cmx scene_extents.cmx scene.cmx ./viewer.cmi 
+./dot_render.cmo: scene.cmi dot_graph.cmi ./dot_render.cmi 
+./dot_render.cmx: scene.cmx dot_graph.cmx ./dot_render.cmi 
+./dot_graph.cmo: dot_parser.cmi dot_lexer.cmi dot_file.cmi ./dot_graph.cmi 
+./dot_graph.cmx: dot_parser.cmx dot_lexer.cmx dot_file.cmx ./dot_graph.cmi 
+./dot_parser.cmi: dot_file.cmi 
+./main.cmo: viewer.cmi dot_render.cmi dot_graph.cmi 
+./main.cmx: viewer.cmx dot_render.cmx dot_graph.cmx 
+./viewer_common.cmi: scene.cmi 
+./scene.cmi: 
+./scene_extents.cmo: scene.cmi ./scene_extents.cmi 
+./scene_extents.cmx: scene.cmx ./scene_extents.cmi 
+./dot_file.cmi: 
+./dot_graph.cmi: dot_file.cmi 
+./dot_lexer.cmo: dot_parser.cmi ./dot_lexer.cmi 
+./dot_lexer.cmx: dot_parser.cmx ./dot_lexer.cmi 
+./dot_parser.cmo: dot_file.cmi ./dot_parser.cmi 
+./dot_parser.cmx: dot_file.cmx ./dot_parser.cmi 
+./dot_file.cmo: ./dot_file.cmi 
+./dot_file.cmx: ./dot_file.cmi 
+./scene_json.cmi: scene.cmi 
+./scene_json.cmo: scene.cmi ./scene_json.cmi 
+./scene_json.cmx: scene.cmx ./scene_json.cmi 
+./dot_render.cmi: scene.cmi dot_graph.cmi 
+./converter.cmo: scene_json.cmi scene_extents.cmi scene.cmi dot_render.cmi \
+    dot_graph.cmi 
+./converter.cmx: scene_json.cmx scene_extents.cmx scene.cmx dot_render.cmx \
+    dot_graph.cmx 
