@@ -30,7 +30,6 @@ module T = Parser_html
 
 module PI = Parse_info
 
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -47,15 +46,14 @@ module PI = Parse_info
 (* Lexing only *)
 (*****************************************************************************)
 
-let tokens2 file = 
-  let _table     = Parse_info.full_charpos_to_pos_large file in
-  raise Todo
-
-let tokens a = 
-  Common.profile_code "Parse_html.tokens" (fun () -> tokens2 a)
+(* 
+ * For many languages I have tokens() and parse() functions, but for
+ * HTML because the lexical rules are so tied to the parsing rules,
+ * this modules does not provide a tokens() function, only a parse() one.
+ *)
 
 (*****************************************************************************)
-(* Alternate parsers *)
+(* Ocamlnet parser *)
 (*****************************************************************************)
 
 (* a small wrapper over ocamlnet *)
@@ -69,27 +67,15 @@ let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) =
     ch
 
 (*****************************************************************************)
-(* Parsing helpers *)
+(* Helpers *)
 (*****************************************************************************)
 
-(* todo: remove *)
-module S = struct
-  type t = string
-  let compare = (Pervasives.compare : string -> string -> int)
-end
-module Strset = Set.Make(S)
-
-(* todo: remove *)
-let hashtbl_from_alist l =
-  let ht = Hashtbl.create (List.length l) in
-  List.iter
-    (fun (k, v) ->
-       Hashtbl.add ht k v)
-    l;
-  ht
-
-exception End_of_scan
 exception Found
+
+(*****************************************************************************)
+(* Parsing helpers *)
+(*****************************************************************************)
+exception End_of_scan
 
 let rec parse_comment buf =
   let t = Lexer_html.scan_comment buf in
@@ -127,6 +113,48 @@ let rec parse_pi buf =
       (* must be Rpi *)
       ""
 
+let rec parse_special name buf =
+  (* Parse until </name> *)
+  match Lexer_html.scan_special buf with
+  | Lelementend (_tok, n) ->
+      if String.lowercase n = name then
+	""
+      else
+	"</" ^ n ^ parse_special name buf
+  | EOF _ ->
+      raise End_of_scan
+  | Cdata (_tok, s) ->
+      s ^ parse_special name buf
+  | _ ->
+      (* Illegal *)
+      parse_special name buf
+
+let rec skip_element buf =
+  (* Skip until ">" (or "/>") *)
+  match Lexer_html.scan_element buf with
+  | Relement _ | Relement_empty _ ->
+      ()
+  | EOF _ ->
+      raise End_of_scan
+  | _ ->
+      skip_element buf
+
+
+(*****************************************************************************)
+(* Misc helpers *)
+(*****************************************************************************)
+
+let model_of ~dtd_hash element_name =
+  if element_name = "" 
+  then (Everywhere, Any)
+  else
+    try 
+      (match Hashtbl.find dtd_hash element_name with 
+      | (eclass, Sub_exclusions(_,m)) -> eclass, m
+      | m -> m
+      )
+    with Not_found -> (Everywhere, Any)
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -151,24 +179,10 @@ let parse2 file =
   let current_name = ref "" in
   let current_atts = ref [] in
   let current_subs = ref [] in
-  let current_excl = ref Strset.empty in      (* current exclusions *)
+  let current_excl = ref StringSet.empty in      (* current exclusions *)
   let stack = Stack.create() in
-  let dtd_hash = hashtbl_from_alist dtd in
+  let dtd_hash = Common.hash_of_list dtd in
 
-  let model_of element_name =
-    if element_name = "" then
-      (Everywhere, Any)
-    else
-      let extract =
-	function
-	    (eclass, Sub_exclusions(_,m)) -> eclass, m
-	  | m -> m
-      in
-      try
-	extract(Hashtbl.find dtd_hash element_name)
-      with
-	  Not_found -> (Everywhere, Any)
-  in
 
   let exclusions_of element_name =
     if element_name = "" then
@@ -186,7 +200,7 @@ let parse2 file =
   in
 
   let is_possible_subelement parent_element parent_exclusions sub_element =
-    let (sub_class, _) = model_of sub_element in
+    let (sub_class, _) = model_of ~dtd_hash sub_element in
     let rec eval m =
       match m with
       | Inline2     -> sub_class = Inline
@@ -202,8 +216,8 @@ let parse2 file =
       | Sub_exclusions(_,_) -> assert false
     in
     (sub_class = Everywhere) || (
-	      (not (Strset.mem sub_element parent_exclusions)) &&
-	      let (_, parent_model) = model_of parent_element in
+	      (not (StringSet.mem sub_element parent_exclusions)) &&
+	      let (_, parent_model) = model_of ~dtd_hash parent_element in
 	      eval parent_model
 	    )
   in
@@ -223,7 +237,7 @@ let parse2 file =
     try
       while not (is_possible_subelement !current_name !current_excl sub_name) do
 	(* Maybe we are not allowed to end the current element: *)
-	let (current_class, _) = model_of !current_name in
+	let (current_class, _) = model_of ~dtd_hash !current_name in
 	if current_class = Essential_block then raise Stack.Empty;
 	(* End the current element and remove it from the stack: *)
 	let grant_parent = Stack.pop stack in
@@ -318,33 +332,7 @@ let parse2 file =
     parse_atts_lookahead (next_no_space false)
   in
 
-  let rec parse_special name =
-    (* Parse until </name> *)
-    match Lexer_html.scan_special buf with
-      | Lelementend (_tok, n) ->
-	  if String.lowercase n = name then
-	    ""
-	  else
-	    "</" ^ n ^ parse_special name
-      | EOF _ ->
-	  raise End_of_scan
-      | Cdata (_tok, s) ->
-	  s ^ parse_special name
-      | _ ->
-	  (* Illegal *)
-	  parse_special name
-  in
 
-  let rec skip_element() =
-    (* Skip until ">" (or "/>") *)
-    match Lexer_html.scan_element buf with
-      | Relement _ | Relement_empty _ ->
-	  ()
-      | EOF _ ->
-	  raise End_of_scan
-      | _ ->
-	  skip_element()
-  in
 
   let rec parse_next() =
     let t = Lexer_html.scan_document buf in
@@ -366,7 +354,7 @@ let parse2 file =
 	  parse_next()
       | Lelement (_tok, name) ->
 	  let name = String.lowercase name in
-	  let (_, model) = model_of name in
+	  let (_, model) = model_of ~dtd_hash name in
 	  ( match model with
 		Empty ->
 		  let atts, _ = parse_atts() in
@@ -380,9 +368,9 @@ let parse2 file =
 		    if is_empty then 
 		      ""
 		    else (
-		      let d = parse_special name in
+		      let d = parse_special name buf in
 		      (* Read until ">" *)
-		      skip_element();
+		      skip_element buf;
 		      d
 		    ) in
 		  current_subs := (Element(name, atts, [Data data])) :: !current_subs;
@@ -410,7 +398,8 @@ let parse2 file =
 		    current_atts := atts;
 		    current_subs := [];
 		    List.iter
-		      (fun xel -> current_excl := Strset.add xel !current_excl)
+		      (fun xel -> current_excl := 
+                        StringSet.add xel !current_excl)
 		      new_excl;
 		  );
 		  parse_next()
@@ -421,7 +410,7 @@ let parse2 file =
       | Lelementend (_tok, name) ->
 	  let name = String.lowercase name in
 	  (* Read until ">" *)
-	  skip_element();
+	  skip_element buf;
 	  (* Search the element to close on the stack: *)
 	  let found = 
 	    (name = !current_name) ||
@@ -429,7 +418,7 @@ let parse2 file =
 	      Stack.iter
 		(fun (old_name, _, _, _) ->
 		   if name = old_name then raise Found;
-		   match model_of old_name with
+		   match model_of ~dtd_hash old_name with
 		       Essential_block, _ -> raise Not_found;
 			 (* Don't close essential blocks implicitly *)
 		     | _ -> ())
