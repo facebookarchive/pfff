@@ -27,25 +27,31 @@ let test_tokens_html file =
 let test_parse_html xs =
 
   let fullxs = Lib_parsing_html.find_html_files_of_dir_or_files xs in
-  let stat_list = ref [] in
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let s = Common.read_file file in 
-    let _ast = Parse_html.parse_simple_tree (HtmlRaw s) in
+    (* old:
+     *  let s = Common.read_file file in 
+     * let _ast = Parse_html.parse_simple_tree (HtmlRaw s) in
+     * 
+     * let (xs, stat) = Parse_erlang.parse file in
+     * Common.push2 stat stat_list;
+     *)
+    let _tree = Parse_html.parse file in
     ()
-    (*
-    let (xs, stat) = Parse_erlang.parse file in
-    Common.push2 stat stat_list;
-    *)
   );
-  Parse_info.print_parsing_stat_list !stat_list;
   ()
 
-let test_dump_html file =
+let test_dump_html_old file =
   let s = Common.read_file file in 
   let ast = Parse_html.parse_simple_tree (HtmlRaw s) in
+  let json = Export_html.json_of_html_tree2 ast in
+  let s = Json_out.string_of_json json in
+  pr2 s
+
+let test_dump_html file =
+  let ast = Parse_html.parse file in
 (*  let s = Export_ast_ml.ml_pattern_string_of_program ast in *)
   let json = Export_html.json_of_html_tree ast in
   let s = Json_out.string_of_json json in
@@ -66,4 +72,6 @@ let actions () = [
   Common.mk_action_n_arg test_parse_html;
   "-dump_html", "   <file>", 
   Common.mk_action_1_arg test_dump_html;
+  "-dump_html_old", "   <file>", 
+  Common.mk_action_1_arg test_dump_html_old;
 ]

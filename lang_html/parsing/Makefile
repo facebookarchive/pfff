@@ -12,6 +12,7 @@ SRC= flag_parsing_html.ml \
      export_html.ml \
      parser_html.ml lexer_html.ml \
      token_helpers_html.ml \
+     dtd.ml \
      parse_html.ml \
      unparse_html.ml \
      test_parsing_html.ml
