@@ -1,3 +1,38 @@
 
 have C-c C-t working to get type information under cursor
 
+
+style:
+ bad example of style: ocamlnet/netstring/nethtml.ml.
+ bad nested functions,
+ bad indentation, too many newlines
+ bad use of open variants
+ overuse of intermediate functions like extract
+
+old: nested func
+  let model_of element_name =
+    if element_name = "" then
+      (`Everywhere, `Any)
+    else
+      let extract =
+	function
+	    (eclass, `Sub_exclusions(_,m)) -> eclass, m
+	  | m -> m
+      in
+      try
+	extract(Hashtbl.find dtd_hash element_name)
+      with
+	  Not_found -> (`Everywhere, `Any)
+  in
+
+better:
+let model_of ~dtd_hash element_name =
+  if element_name = "" 
+  then (Everywhere, Any)
+  else
+    try 
+      (match Hashtbl.find dtd_hash element_name with 
+      | (eclass, Sub_exclusions(_,m)) -> eclass, m
+      | m -> m
+      )
+    with Not_found -> (Everywhere, Any)

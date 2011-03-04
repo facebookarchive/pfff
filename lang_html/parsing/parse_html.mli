@@ -1,4 +1,6 @@
 
+exception Parse_error of Parse_info.info
+
 (* This is the main function *)
 val parse:
   Common.filename -> Ast_html.html_tree (* todo  * Parser_html.token list *)
