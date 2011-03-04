@@ -10,6 +10,8 @@ SRC= flag_parsing_html.ml \
      ast_html.ml \
      lib_parsing_html.ml \
      export_html.ml \
+     parser_html.ml lexer_html.ml \
+     token_helpers_html.ml \
      parse_html.ml \
      unparse_html.ml \
      test_parsing_html.ml
@@ -50,6 +52,24 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+
+lexer_html.ml: lexer_html.mll
+	$(OCAMLLEX) $<
+clean::
+	rm -f lexer_html.ml
+beforedepend:: lexer_html.ml
+
+
+parser_html.ml parser_html.mli: parser_html.mly
+	$(OCAMLYACC) $<
+clean::
+	rm -f parser_html.ml parser_html.mli parser_html.output
+beforedepend:: parser_html.ml parser_html.mli
+
+
+visitor_html.cmo: visitor_html.ml
+	$(OCAMLC) -w y -c $<
 
 
 ##############################################################################

@@ -1,4 +1,6 @@
 
+type info = Parse_info.info
+
 type html_raw = HtmlRaw of string
 
 type html_tree = 

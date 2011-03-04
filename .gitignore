@@ -309,3 +309,7 @@ external/ocamlbdb/libcamlbdb.a
 /external/ocamlnet/netsys/configtests/posix_fallocate.tmp
 /external/ocamlnet/netstring/nethtml_scanner.ml
 /external/ocamlnet/netsys/netsys_conf.ml
+/lang_html/parsing/lexer_html.ml
+/lang_html/parsing/parser_html.ml
+/lang_html/parsing/parser_html.mli
+/lang_html/parsing/parser_html.output
