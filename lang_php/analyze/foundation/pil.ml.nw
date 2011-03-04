@@ -536,6 +536,11 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.VArrayAccessXhp _ ->
         raise Todo
 
+    | A.StaticObjCallVar _ ->
+        raise Todo
+    | A.StaticMethodCallVar _ ->
+        raise Todo
+
   and aux_args args = 
     args +> List.map (function
     | A.Arg e -> 

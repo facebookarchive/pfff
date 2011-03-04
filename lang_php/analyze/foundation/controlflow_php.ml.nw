@@ -100,12 +100,14 @@ exception Error of error
 (* Error management *)
 (*****************************************************************************)
 
-let string_of_error error =
+let string_of_error ?(show_position_info=true) error =
   let spos info = 
     let info = Ast.parse_info_of_info info in
+    if show_position_info
     (* emacs compile-mode compatible output *)
-    spf "%s:%d:%d: " 
+    then spf "%s:%d:%d: FLOW " 
       info.Parse_info.file info.Parse_info.line info.Parse_info.column
+    else ""
   in
  (* old:
   let error_from_info info = 
@@ -116,16 +118,16 @@ let string_of_error error =
  *)
   match error with
   | ColonSyntax info ->
-      spos info ^ "FLOW: dude, don't use the old PHP colon syntax: "
+      spos info ^ "Dude, don't use the old PHP colon syntax: "
   | DeadCode (info, node_kind) ->
-      spos info ^ "FLOW: deadcode path detected " ^
+      spos info ^ "Deadcode path detected " ^
         (F.short_string_of_node_kind node_kind)
   | NoEnclosingLoop info ->
-      spos info ^ "FLOW: no enclosing loop found for break or continue"
+      spos info ^ "No enclosing loop found for break or continue"
   | NoMethodBody info ->
-      spos info ^ "FLOW: can't compute CFG of an abstract method"
+      spos info ^ "Can't compute CFG of an abstract method"
   | DynamicBreak info ->
-      spos info ^ "FLOW: dynamic break/continue are not supported"
+      spos info ^ "Dynamic break/continue are not supported"
 
 let info_of_error error =
   match error with
