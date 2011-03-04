@@ -1,7 +1,7 @@
 {
 (* Yoann Padioleau
  *
- * Copyright (c) 2001-2006 Patrick Doane and Gerd Stolpmann
+ * Copyright (C) 2001-2006 Patrick Doane and Gerd Stolpmann
  * Copyright (C) 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or

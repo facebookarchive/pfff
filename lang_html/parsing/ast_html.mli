@@ -10,4 +10,5 @@ type html_tree =
  and attr_name = string
  and attr_value = string
 
+(* html type in ocamlnet *)
 type html_tree2 = Nethtml.document list
