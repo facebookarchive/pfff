@@ -20,6 +20,8 @@ open Ast_html
 (* todo: remove *)
 open Parser_html
 
+open Dtd
+
 module Ast = Ast_html
 module Flag = Flag_parsing_html
 module TH   = Token_helpers_html
@@ -37,7 +39,8 @@ module PI = Parse_info
  * src: most of the code in this file comes from ocamlnet/netstring/.
  * The original CVS ID is:
  * $Id: nethtml.ml 1296 2009-11-18 13:27:41Z ChriS $
- * I've extended it mainly to add position information.
+ * I've extended it mainly to add position information. I've also
+ * moved stuff in dtd.ml and removed the encode/decode and xmap stuff.
  *)
 
 (*****************************************************************************)
@@ -124,7 +127,6 @@ let rec parse_pi buf =
       (* must be Rpi *)
       ""
 
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -155,17 +157,17 @@ let parse2 file =
 
   let model_of element_name =
     if element_name = "" then
-      (`Everywhere, `Any)
+      (Everywhere, Any)
     else
       let extract =
 	function
-	    (eclass, `Sub_exclusions(_,m)) -> eclass, m
+	    (eclass, Sub_exclusions(_,m)) -> eclass, m
 	  | m -> m
       in
       try
 	extract(Hashtbl.find dtd_hash element_name)
       with
-	  Not_found -> (`Everywhere, `Any)
+	  Not_found -> (Everywhere, Any)
   in
 
   let exclusions_of element_name =
@@ -174,7 +176,7 @@ let parse2 file =
     else
       let extract =
 	function
-	    (eclass, `Sub_exclusions(l,_)) -> l
+	    (eclass, Sub_exclusions(l,_)) -> l
 	  | _ -> []
       in
       try
@@ -187,19 +189,19 @@ let parse2 file =
     let (sub_class, _) = model_of sub_element in
     let rec eval m =
       match m with
-	  `Inline     -> sub_class = `Inline
-	| `Block      -> sub_class = `Block  || sub_class = `Essential_block
-	| `Flow       -> sub_class = `Inline || sub_class = `Block ||
-		         sub_class = `Essential_block
-	| `Elements l -> List.mem sub_element l
-	| `Any        -> true
-	| `Or(m1,m2)  -> eval m1 || eval m2
-	| `Except(m1,m2) -> eval m1 && not (eval m2)
-	| `Empty      -> false
-	| `Special    -> false
-	| `Sub_exclusions(_,_) -> assert false
+      | Inline2     -> sub_class = Inline
+      | Block2      -> sub_class = Block  || sub_class = Essential_block
+      | Flow       -> 
+          sub_class = Inline || sub_class = Block || sub_class = Essential_block
+      | Elements l -> List.mem sub_element l
+      | Any        -> true
+      | Or(m1,m2)  -> eval m1 || eval m2
+      | Except(m1,m2) -> eval m1 && not (eval m2)
+      | Empty      -> false
+      | Special    -> false
+      | Sub_exclusions(_,_) -> assert false
     in
-    (sub_class = `Everywhere) || (
+    (sub_class = Everywhere) || (
 	      (not (Strset.mem sub_element parent_exclusions)) &&
 	      let (_, parent_model) = model_of parent_element in
 	      eval parent_model
@@ -222,7 +224,7 @@ let parse2 file =
       while not (is_possible_subelement !current_name !current_excl sub_name) do
 	(* Maybe we are not allowed to end the current element: *)
 	let (current_class, _) = model_of !current_name in
-	if current_class = `Essential_block then raise Stack.Empty;
+	if current_class = Essential_block then raise Stack.Empty;
 	(* End the current element and remove it from the stack: *)
 	let grant_parent = Stack.pop stack in
 	Stack.push grant_parent backup;        (* Save it; may we need it *)
@@ -366,12 +368,12 @@ let parse2 file =
 	  let name = String.lowercase name in
 	  let (_, model) = model_of name in
 	  ( match model with
-		`Empty ->
+		Empty ->
 		  let atts, _ = parse_atts() in
 		  unwind_stack name;
 		  current_subs := (Element(name, atts, [])) :: !current_subs;
 		  parse_next()
-	      | `Special ->
+	      | Special ->
 		  let atts, is_empty = parse_atts() in
 		  unwind_stack name;
 		  let data = 
@@ -428,7 +430,7 @@ let parse2 file =
 		(fun (old_name, _, _, _) ->
 		   if name = old_name then raise Found;
 		   match model_of old_name with
-		       `Essential_block, _ -> raise Not_found;
+		       Essential_block, _ -> raise Not_found;
 			 (* Don't close essential blocks implicitly *)
 		     | _ -> ())
 		stack;
