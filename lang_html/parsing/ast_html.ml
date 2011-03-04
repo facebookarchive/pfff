@@ -96,7 +96,10 @@ type html_raw = HtmlRaw of string
 
 (* src: ocamlnet/netstring/nethtml.mli *)
 type html_tree = 
-  | Element of tag * (attr_name * attr_value) list * html_tree list
+  | Element of 
+      tag *
+      (attr_name * attr_value) list *
+      html_tree list
   | Data of string
 
  (* todo? some newtype ? *)
