@@ -18,13 +18,12 @@ use Pod::Usage;
 ## realpath ?? 
 ## findutils ?? need good gnu find, not macos find
 ##  which adds some extra '//' in paths which bother pfff
-
 # sharutils, for obrowser/ocsigen  use of uuencode
 
 my $project = 
     "pfff";
 my $projectcmdline = 
-    "./pfff -dump_ast demos/foo.php";
+    "./pfff -dump_php demos/foo.php";
 
 ######################################################################
 # Options
@@ -49,7 +48,6 @@ my $mpi=0;
 # obsolete
 my $irc=0;
 
-
 my $facebook=0; 
 
 #my $opt=".opt"; # also set in env.sh
@@ -59,8 +57,8 @@ my $help = 0;
 
 # see http://perldoc.perl.org/Getopt/Long.html
 # coupling: if add options here, add an explanation at the bottom of this file
-# too. Later may also add something in the documentation latex file (or use
-# LP)
+# too. Later may also add something in the documentation latex file 
+# (or use LP)
 GetOptions (
     "prefix=s" => \$prefix,
 
@@ -105,7 +103,6 @@ my $src="$prefix/share/$project";
 if ($visual) { $gui = 1; }
 #if ($bdb) { $pcre = 1; }
 if ($facebook) { $mysql = 1; }
-
 
 ######################################################################
 # Side effects
@@ -158,7 +155,7 @@ $error +=
                  "The program ocaml is missing or is not a good version. We need at least 3.11",
                  );
 
-# not really used for now
+#not really used for now:
 #$error2 += check_config("glimpse 2>&1 |",
 #		       "This is glimpse version",
 #		       "glimpse is present.",
@@ -348,7 +345,6 @@ see install.txt or type ./configure --help
 ";
 
 }
-
 
 ######################################################################
 # Generating the configuration
