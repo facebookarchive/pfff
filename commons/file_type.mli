@@ -10,7 +10,8 @@ type file_type =
   | Other of string
 
  and pl_type = 
-  | ML of string | Haskell of string | Lisp of lisp_type | Prolog of string
+  | ML of string | Haskell of string | Lisp of lisp_type 
+  | Prolog of string
   | Makefile
   | Script of string
   | C | Cplusplus | Java | Csharp
@@ -18,6 +19,7 @@ type file_type =
   | Erlang
   | Haxe
   | Beta
+  | Pascal
   | Web of webpl_type
   | R of string
   | Asm

@@ -46,6 +46,7 @@ type file_type =
   | Erlang
   | Haxe
   | Beta
+  | Pascal
   | Web of webpl_type
   | R of string
   | Asm
@@ -116,6 +117,8 @@ let file_type_of_file2 file =
 
   | "java" -> PL Java
   | "cs" -> PL Csharp
+
+  | "p" -> PL Pascal
 
   | "thrift" -> PL Thrift
 
