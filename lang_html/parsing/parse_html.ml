@@ -72,43 +72,44 @@ let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) =
 exception End_of_scan
 
 (* p_string: whether string literals in quotation marks are allowed *)
-let rec skip_space p_string buf =
+let rec skip_space p_string call_scan =
   let tok =
     if p_string 
-    then Lexer_html.scan_element_after_Eq buf
-    else Lexer_html.scan_element buf in
+    then call_scan Lexer_html.scan_element_after_Eq
+    else call_scan Lexer_html.scan_element 
+  in
   match tok with
-  | T.Space _ -> skip_space p_string buf
+  | T.Space _ -> skip_space p_string call_scan
   | t -> t
 
 (* skip until ">" (or "/>") *)
-let rec skip_element buf =
-  let tok = Lexer_html.scan_element buf in
+let rec skip_element call_scan =
+  let tok = call_scan Lexer_html.scan_element in
   match tok with
   | T.Relement _ 
   | T.Relement_empty _ 
     ->  ()
   | T.EOF _ -> raise End_of_scan
-  | _ -> skip_element buf
+  | _ -> skip_element call_scan
 
 
-let parse_atts buf =
+let parse_atts call_scan =
  
   let rec parse_atts_lookahead next =
     match next with
     | T.Relement _  -> ( [], false )
     | T.Relement_empty _  -> ( [], true )
     | T.Name (_tok, n) ->
-        (match skip_space false buf with
+        (match skip_space false call_scan with
         | T.Eq _ ->
-            (match skip_space true buf with
+            (match skip_space true call_scan with
             | T.Name (_tok, v) ->
                 let toks, is_empty =
-                  parse_atts_lookahead (skip_space false buf) in
+                  parse_atts_lookahead (skip_space false call_scan) in
                 ( (String.lowercase n, v) :: toks, is_empty )
             | T.Literal (_tok, v) ->
                 let toks, is_empty =
-                  parse_atts_lookahead (skip_space false buf) in
+                  parse_atts_lookahead (skip_space false call_scan) in
                 ( (String.lowercase n,v) :: toks, is_empty )
             | T.EOF _ ->
                 raise End_of_scan
@@ -120,7 +121,7 @@ let parse_atts buf =
                 ( [], true )
             | _ ->
                 (* Illegal *)
-                parse_atts_lookahead (skip_space false buf)
+                parse_atts_lookahead (skip_space false call_scan)
             )
         | T.EOF _ ->
             raise End_of_scan
@@ -141,52 +142,45 @@ let parse_atts buf =
         raise End_of_scan
     | _ ->
         (* Illegal *)
-        parse_atts_lookahead (skip_space false buf)
+        parse_atts_lookahead (skip_space false call_scan)
   in
-  parse_atts_lookahead (skip_space false buf)
+  parse_atts_lookahead (skip_space false call_scan)
 
 (* called for 'Special, not is_empty' tag categories *)
-let rec parse_special name buf =
+let rec parse_special name call_scan =
   (* Parse until </name> *)
-  match Lexer_html.scan_special buf with
+  match call_scan Lexer_html.scan_special with
   | T.Lelementend (_tok, n) ->
       if String.lowercase n = name 
       then ""
-      else "</" ^ n ^ parse_special name buf
+      else "</" ^ n ^ parse_special name call_scan
   | T.EOF _ -> raise End_of_scan
-  | T.Cdata (_tok, s) -> s ^ parse_special name buf
+  | T.Cdata (_tok, s) -> s ^ parse_special name call_scan
   | _ ->
       (* Illegal *)
-      parse_special name buf
+      parse_special name call_scan
 
 (*****************************************************************************)
 (* Misc helpers *)
 (*****************************************************************************)
 
 let model_of ~dtd_hash element_name =
-  if element_name = "" 
-  then (Dtd.Everywhere, Dtd.Any)
-  else
-    try 
-      (match Hashtbl.find dtd_hash element_name with 
-      | (eclass, Dtd.Sub_exclusions(_,m)) -> eclass, m
-      | m -> m
-      )
-    with Not_found -> (Dtd.Everywhere, Dtd.Any)
+  try 
+    (match Hashtbl.find dtd_hash element_name with 
+    | (eclass, Dtd.Sub_exclusions(_,m)) -> eclass, m
+    | m -> m
+    )
+  with Not_found -> (Dtd.Everywhere, Dtd.Any)
 
 let exclusions_of ~dtd_hash element_name =
-  if element_name = "" 
-  then []
-  else
-    try
-      (match Hashtbl.find dtd_hash element_name with
-      | (eclass, Dtd.Sub_exclusions(l,_)) -> l
-      | _ -> []
-      )
-    with Not_found -> []
+  try
+    (match Hashtbl.find dtd_hash element_name with
+    | (eclass, Dtd.Sub_exclusions(l,_)) -> l
+    | _ -> []
+    )
+  with Not_found -> []
 
-let is_possible_subelement 
- ~dtd_hash parent_element parent_exclusions sub_element =
+let is_possible_subelement ~dtd_hash parent_element parent_excl sub_element =
   let (sub_class, _) = model_of ~dtd_hash sub_element in
   let rec eval m =
     match m with
@@ -200,15 +194,15 @@ let is_possible_subelement
         sub_class = Dtd.Essential_block
     | Dtd.Elements l -> List.mem sub_element l
     | Dtd.Any        -> true
-    | Dtd.Or (m1,m2)  -> eval m1 || eval m2
+    | Dtd.Or     (m1,m2) -> eval m1 ||     eval m2
     | Dtd.Except (m1,m2) -> eval m1 && not (eval m2)
     | Dtd.Empty      -> false
     | Dtd.Special    -> false
     | Dtd.Sub_exclusions(_,_) -> assert false
   in
-  (sub_class = Dtd.Everywhere) || 
+  (sub_class = Dtd.Everywhere) ||
   (
-    (not (StringSet.mem sub_element parent_exclusions)) &&
+    (not (StringSet.mem sub_element parent_excl)) &&
       let (_, parent_model) = model_of ~dtd_hash parent_element in
       eval parent_model
   )
@@ -231,8 +225,16 @@ let parse2 file =
  Common.with_open_infile file (fun chan -> 
   let buf = Lexing.from_channel chan in
 
+  let toks = ref [] in
+  let call_scan scannerf = 
+    let t = scannerf buf in
+    Common.push2 t toks;
+    t
+  in
+
   let dtd = Dtd.html40_dtd in
   let dtd_hash = Common.hash_of_list dtd in
+
 
   let current = 
     ref { name = ""; atts = []; subs = []; excl = StringSet.empty} in
@@ -280,9 +282,8 @@ let parse2 file =
       current := backup_el;
   in
 
-
-  let rec parse_next() =
-    let t = Lexer_html.scan_document buf in
+  let rec parse_next () =
+    let t = call_scan Lexer_html.scan_document in
     match t with
     | T.TComment info ->
         current := { !current with subs = 
@@ -305,22 +306,22 @@ let parse2 file =
         let (_, model) = model_of ~dtd_hash name in
         (match model with
         | Dtd.Empty ->
-          let atts, _ = parse_atts buf in
+          let atts, _ = parse_atts call_scan in
           unwind_stack name;
           current := { !current with subs =
               (Ast.Element(name, atts, [])) :: !current.subs;
           };
           parse_next()
         | Dtd.Special ->
-            let atts, is_empty = parse_atts buf in
+            let atts, is_empty = parse_atts call_scan in
             unwind_stack name;
             let data = 
               if is_empty 
               then ""
               else begin
-                let d = parse_special name buf in
+                let d = parse_special name call_scan in
                 (* Read until ">" *)
-                skip_element buf;
+                skip_element call_scan;
                 d
               end
             in
@@ -329,7 +330,7 @@ let parse2 file =
             };
             parse_next()
         | _ ->
-            let atts, is_empty = parse_atts buf in
+            let atts, is_empty = parse_atts call_scan in
             (* Unwind the stack until we find an element which can be
              * the parent of the new element:
              *)
@@ -363,7 +364,7 @@ let parse2 file =
     | T.Lelementend (_tok, name) ->
         let name = String.lowercase name in
         (* Read until ">" *)
-        skip_element buf;
+        skip_element call_scan;
         (* Search the element to close on the stack: *)
         let found = 
           (name = !current.name) ||
@@ -432,9 +433,7 @@ let parse2 file =
       done;
       List.rev !current.subs
   in
-  (* TODO *)
-  let tokens = [] in
-  Ast.Element ("__root__", [], xs), tokens
+  Ast.Element ("__root__", [], xs), List.rev !toks
  )
 
 let parse a = 
