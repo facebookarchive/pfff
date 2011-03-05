@@ -34,6 +34,7 @@ module PI = Parse_info
  * $Id: nethtml.ml 1296 2009-11-18 13:27:41Z ChriS $
  * I've extended it mainly to add position information. I've also
  * moved stuff in dtd.ml and removed the encode/decode and xmap stuff.
+ * I've also simplified the code, factorized things.
  *)
 
 (*****************************************************************************)
