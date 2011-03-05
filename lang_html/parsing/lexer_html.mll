@@ -35,12 +35,13 @@ open Parser_html
  * I've extended it to add position information. I've also simplified the code
  * by leveraging the fact that we can call the lexing rule recursively
  * so one does not need the LeftComment, RightComment, MiddleComment 
- * extra tokens.
+ * and so on extra tokens.
  *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(* unused for now *)
 exception Lexical of string
 
 let tok     lexbuf  = 
@@ -126,27 +127,21 @@ and scan_pi = parse
   | eof   { pr2 "LEXER: end of file in comment"; ">" }
 
 (*****************************************************************************)
-and scan_special = parse
-  | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
-  | "<"              { Cdata (tokinfo lexbuf, "<") }
-  | [^ '<' ]+        { Cdata (tokinfo lexbuf, tok lexbuf) }
-
-  | eof { EOF (tokinfo lexbuf) }
-
 and scan_element = parse
   | ">"     { Relement (tokinfo lexbuf) }
   | "/>"    { Relement_empty (tokinfo lexbuf) }
   | ws+     { Space (tokinfo lexbuf, tok lexbuf) }
   | name    { Name (tokinfo lexbuf, tok lexbuf) }
-  | "="     { Is (tokinfo lexbuf) }
+  | "="     { Eq (tokinfo lexbuf) }
   | '"'     { Other (tokinfo lexbuf) }
   | "'"     { Other (tokinfo lexbuf) }
   | string_literal3 { Literal (tokinfo lexbuf, tok lexbuf) }
   | _       { Other (tokinfo lexbuf) }
   | eof     { EOF (tokinfo lexbuf) }
 
+(*****************************************************************************)
 (* ??? *)
-and scan_element_after_Is = parse
+and scan_element_after_Eq = parse
   | ">"     { Relement (tokinfo lexbuf) }
   | "/>"    { Relement_empty (tokinfo lexbuf) }
   | ws+     { Space (tokinfo lexbuf, tok lexbuf) }
@@ -160,3 +155,12 @@ and scan_element_after_Is = parse
   | string_literal4 { Literal ((tokinfo lexbuf), tok lexbuf) }
   | _               { Other (tokinfo lexbuf) }
   | eof             { EOF (tokinfo lexbuf) }
+
+(* ??? *)
+and scan_special = parse
+  | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
+  | "<"              { Cdata (tokinfo lexbuf, "<") }
+  | [^ '<' ]+        { Cdata (tokinfo lexbuf, tok lexbuf) }
+
+  | eof { EOF (tokinfo lexbuf) }
+

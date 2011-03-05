@@ -75,7 +75,7 @@ exception End_of_scan
 let rec skip_space p_string buf =
   let tok =
     if p_string 
-    then Lexer_html.scan_element_after_Is buf
+    then Lexer_html.scan_element_after_Eq buf
     else Lexer_html.scan_element buf in
   match tok with
   | T.Space _ -> skip_space p_string buf
@@ -100,7 +100,7 @@ let parse_atts buf =
     | T.Relement_empty _  -> ( [], true )
     | T.Name (_tok, n) ->
         (match skip_space false buf with
-        | T.Is _ ->
+        | T.Eq _ ->
             (match skip_space true buf with
             | T.Name (_tok, v) ->
                 let toks, is_empty =
@@ -410,7 +410,7 @@ let parse2 file =
         end
     | T.EOF _ ->
         raise End_of_scan
-    | (  T.Other _| T.Literal _| T.Is _
+    | (  T.Other _| T.Literal _| T.Eq _
        | T.Name _| T.Space _| T.Relement_empty _| T.Relement _)
         -> 
         (* pad: ???? *)

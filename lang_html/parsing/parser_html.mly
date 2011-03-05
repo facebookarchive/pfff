@@ -43,7 +43,7 @@ open Common
 %token <Ast_html.info * string> Cdata
 %token <Ast_html.info * string> Space
 %token <Ast_html.info * string> Name
-%token <Ast_html.info> Is
+%token <Ast_html.info> Eq
 %token <Ast_html.info * string> Literal
 %token <Ast_html.info> Other
 
