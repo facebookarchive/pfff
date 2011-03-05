@@ -32,15 +32,9 @@ open Common
 /*(* Tokens *)*/
 /*(*************************************************************************)*/
 
-%token <Ast_html.info> Lcomment  /*(* <!-- *)*/
-%token <Ast_html.info> Rcomment  /*(* --> *)*/
-%token <Ast_html.info> Mcomment  /*(* within comment *)*/
-%token <Ast_html.info> Ldoctype  /*(* <! *)*/
-%token <Ast_html.info> Rdoctype  /*(* > *)*/
-%token <Ast_html.info> Mdoctype  /*(* within declaration *)*/
-%token <Ast_html.info> Lpi       /*(* <? *)*/
-%token <Ast_html.info> Rpi       /*(* ?> or > *)*/
-%token <Ast_html.info> Mpi       /*(* within processing instruction *)*/
+%token <Ast_html.info> TComment  /*(* <!-- ... --> *)*/
+%token <Ast_html.info> TDoctype  /*(* <! ... > *)*/
+%token <Ast_html.info> TPi       /*(* <? ... ?> or >  *)*/
 
 %token <Ast_html.info * string>   Lelement
 %token <Ast_html.info * string>   Lelementend

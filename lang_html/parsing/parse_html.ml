@@ -76,38 +76,6 @@ let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) =
 (*****************************************************************************)
 exception End_of_scan
 
-let rec parse_comment buf =
-  let t = Lexer_html.scan_comment buf in
-  match t with
-  | Mcomment _ ->
-      let s = Lexing.lexeme buf in
-      s ^ parse_comment buf
-  | Rcomment _ -> ""
-  | EOF _ -> raise End_of_scan
-  | _ -> raise Impossible
-
-let rec parse_doctype buf =
-  let t = Lexer_html.scan_doctype buf in
-  match t with
-  | Mdoctype _ ->
-      let s = Lexing.lexeme buf in
-      s ^ parse_doctype buf
-  | Rdoctype _ -> ""
-  | EOF _ -> raise End_of_scan
-  | _ -> raise Impossible
-
-
-let rec parse_pi buf =
-  let t = Lexer_html.scan_pi buf in
-  match t with
-  | Mpi _ ->
-      let s = Lexing.lexeme buf in
-      s ^ parse_pi buf
-  | Rpi _ -> ""
-  | EOF _ -> raise End_of_scan
-  | _ -> raise Impossible
-
-
 let rec parse_special name buf =
   (* Parse until </name> *)
   match Lexer_html.scan_special buf with
@@ -201,20 +169,15 @@ let parse2 file =
  Common.with_open_infile file (fun chan -> 
   let buf = Lexing.from_channel chan in
 
-  (* was originally default parameters *)
-  let return_declarations = true in
-  let return_pis = true in
-  let return_comments = true in
-
   let dtd = Dtd.html40_dtd in
+  let dtd_hash = Common.hash_of_list dtd in
 
   let current_name = ref "" in
   let current_atts = ref [] in
   let current_subs = ref [] in
   let current_excl = ref StringSet.empty in      (* current exclusions *)
-  let stack = Stack.create() in
-  let dtd_hash = Common.hash_of_list dtd in
 
+  let stack = Stack.create() in
 
   let unwind_stack sub_name =
     (* If the current element is not a possible parent element for sub_name,
@@ -248,18 +211,17 @@ let parse2 file =
         current_excl := gp_excl;
         current_subs := current :: gp_subs
       done;
-    with
-        Stack.Empty ->
-          (* It did not work! Push everything back to the stack, and
-           * resume the old state.
-           *)
-          while Stack.length backup > 0 do
-            Stack.push (Stack.pop backup) stack
-          done;
-          current_name := backup_name;
-          current_atts := backup_atts;
-          current_subs := backup_subs;
-          current_excl := backup_excl
+    with Stack.Empty ->
+      (* It did not work! Push everything back to the stack, and
+       * resume the old state.
+       *)
+      while Stack.length backup > 0 do
+        Stack.push (Stack.pop backup) stack
+      done;
+      current_name := backup_name;
+      current_atts := backup_atts;
+      current_subs := backup_subs;
+      current_excl := backup_excl
   in
 
   let parse_atts() =
@@ -319,21 +281,19 @@ let parse2 file =
   let rec parse_next() =
     let t = Lexer_html.scan_document buf in
     match t with
-    | Lcomment _ ->
-        let comment = parse_comment buf in
-        if return_comments then
-          current_subs := (Element("--",["contents",comment],[])) :: !current_subs;
+    | TComment info ->
+        let comment = PI.str_of_info info in
+        Common.push2 (Element("--",["contents",comment],[])) current_subs;
         parse_next()
-    | Ldoctype _ ->
-        let decl = parse_doctype buf in
-        if return_declarations then
-          current_subs := (Element("!",["contents",decl],[])) :: !current_subs;
+    | TDoctype info ->
+        let decl = PI.str_of_info info in
+        Common.push2 (Element("!",["contents",decl],[])) current_subs;
         parse_next()
-    | Lpi _ ->
-        let pi = parse_pi buf in
-        if return_pis then
-          current_subs := (Element("?",["contents",pi],[])) :: !current_subs;
+    | TPi info ->
+        let pi = PI.str_of_info info in
+        Common.push2 (Element("?",["contents",pi],[])) current_subs;
         parse_next()
+
     | Lelement (_tok, name) ->
         let name = String.lowercase name in
         let (_, model) = model_of ~dtd_hash name in

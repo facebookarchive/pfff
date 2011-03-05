@@ -28,10 +28,14 @@ open Parser_html
 (*****************************************************************************)
 
 (* 
- * src: most of the code in this file comes from ocamlnet/netstring/.
+ * src: many of the code in this file comes from ocamlnet/netstring/.
  * The original CVS ID is:
  * $Id: nethtml_scanner.mll 1219 2009-04-14 13:28:56Z ChriS $
- * I've extended it mainly to add position information.
+ * 
+ * I've extended it to add position information. I've also simplified the code
+ * by leveraging the fact that we can call the lexing rule recursively
+ * so one does not need the LeftComment, RightComment, MiddleComment 
+ * extra tokens.
  *)
 
 (*****************************************************************************)
@@ -43,6 +47,9 @@ let tok     lexbuf  =
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+
+let tok_add_s s ii  =
+  Parse_info.rewrap_str ((Parse_info.str_of_info ii) ^ s) ii
 
 (* ---------------------------------------------------------------------- *)
 }
@@ -69,10 +76,21 @@ let string_literal4 = [^ '"' '\'' '>' ' ' '\t' '\n' '\r' ]+
 
 (* This following rules reflect HTML as it is used, not the SGML rules. *)
 rule scan_document = parse
-  | "<!--"      { Lcomment(tokinfo lexbuf) }
-
-  | "<!"        { Ldoctype(tokinfo lexbuf) }
-  | "<?"        { Lpi(tokinfo lexbuf) }
+  | "<!--" { 
+      let info = tokinfo lexbuf in
+      let com = scan_comment lexbuf in
+      TComment(info +> tok_add_s com) 
+    }
+  | "<!"  { 
+      let info = tokinfo lexbuf in
+      let com = scan_doctype lexbuf in
+      TDoctype(info +> tok_add_s com) 
+    }
+  | "<?" { 
+      let info = tokinfo lexbuf in
+      let com = scan_pi lexbuf in
+      TPi(info +> tok_add_s com) 
+    }
 
   | "<" (name as s)  { Lelement (tokinfo lexbuf, s) }
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
@@ -83,6 +101,29 @@ rule scan_document = parse
   | eof { EOF (tokinfo lexbuf) }
 
 (*****************************************************************************)
+and scan_comment = parse
+  (* FIXME: There may be any number of ws between -- and > *)
+  | "-->"  { tok lexbuf } 
+  | "-"       { let s = tok lexbuf in s ^ scan_comment lexbuf }
+  | [^ '-']+  { let s = tok lexbuf in s ^ scan_comment lexbuf }
+
+  | eof { pr2 "LEXER: end of file in comment"; "-->" }
+
+and scan_doctype = parse
+  (* Occurence in strings, and [ ] brackets ignored *)
+  | ">"         { tok lexbuf }
+  | [^ '>' ]+   { let s = tok lexbuf in scan_doctype lexbuf }
+
+  | eof { pr2 "LEXER: end of file in comment"; ">" }
+
+and scan_pi = parse
+  | "?>"   { tok lexbuf }
+  | ">"    { tok lexbuf }
+  | '?'           { let s = tok lexbuf in scan_pi lexbuf }
+  | [^ '>' '?' ]+ {  let s = tok lexbuf in scan_pi lexbuf }
+  | eof   { pr2 "LEXER: end of file in comment"; ">" }
+
+(*****************************************************************************)
 and scan_special = parse
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
   | "<"              { Cdata (tokinfo lexbuf, "<") }
@@ -90,31 +131,6 @@ and scan_special = parse
 
   | eof { EOF (tokinfo lexbuf) }
 
-(*****************************************************************************)
-and scan_comment = parse
-  (* FIXME: There may be any number of ws between -- and > *)
-  | "-->"  { Rcomment (tokinfo lexbuf) } 
-  | "-"    { Mcomment (tokinfo lexbuf) }
-  | [^ '-']+  { Mcomment (tokinfo lexbuf) }
-
-  | eof { EOF (tokinfo lexbuf) }
-
-(*****************************************************************************)
-and scan_doctype = parse
-  (* Occurence in strings, and [ ] brackets ignored *)
-  | ">"         { Rdoctype (tokinfo lexbuf) }
-  | [^ '>' ]+   { Mdoctype (tokinfo lexbuf) }
-
-  | eof { EOF (tokinfo lexbuf) }
-
-and scan_pi = parse
-  | "?>"   { Rpi (tokinfo lexbuf) }
-  | ">"    { Rpi (tokinfo lexbuf) }
-  | '?'    { Mpi (tokinfo lexbuf)  }
-  | [^ '>' '?' ]+ { Mpi (tokinfo lexbuf) }
-  | eof { EOF (tokinfo lexbuf) }
-
-(*****************************************************************************)
 and scan_element = parse
   | ">"     { Relement (tokinfo lexbuf) }
   | "/>"    { Relement_empty (tokinfo lexbuf) }
@@ -141,4 +157,3 @@ and scan_element_after_Is = parse
   | string_literal4 { Literal ((tokinfo lexbuf), tok lexbuf) }
   | _               { Other (tokinfo lexbuf) }
   | eof             { EOF (tokinfo lexbuf) }
-
