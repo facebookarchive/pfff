@@ -42,7 +42,7 @@ let h_pervasives_pad = Common.hashset_of_list [
 
 let h_builtin_modules = Common.hashset_of_list [
   "Pervasives"; "Common";
-  "List"; "Hashtbl"; "Array";
+  "List"; "Hashtbl"; "Array"; "Stack";
   "String"; "Str";
   "Sys"; "Unix"; "Gc";
   "Filename";

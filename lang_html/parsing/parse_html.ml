@@ -108,6 +108,59 @@ let rec next_no_space p_string buf =
   | t -> t
 
 
+let parse_atts buf =
+  
+  let rec parse_atts_lookahead next =
+    match next with
+    | Relement _  -> ( [], false )
+    | Relement_empty _  -> ( [], true )
+    | Name (_tok, n) ->
+        (match next_no_space false buf with
+        | Is _ ->
+            (match next_no_space true buf with
+            | Name (_tok, v) ->
+                let toks, is_empty =
+                  parse_atts_lookahead (next_no_space false buf) in
+                ( (String.lowercase n, v) :: toks, is_empty )
+            | Literal (_tok, v) ->
+                let toks, is_empty =
+                  parse_atts_lookahead (next_no_space false buf) in
+                ( (String.lowercase n,v) :: toks, is_empty )
+            | EOF _ ->
+                raise End_of_scan
+            | Relement _ ->
+                (* Illegal *)
+                ( [], false )
+            | Relement_empty _ ->
+                (* Illegal *)
+                ( [], true )
+            | _ ->
+                (* Illegal *)
+                parse_atts_lookahead (next_no_space false buf)
+            )
+        | EOF _ ->
+            raise End_of_scan
+        | Relement _ ->
+            (* <tag name> <==> <tag name="name"> *)
+            ( [ String.lowercase n, String.lowercase n ], false)
+        | Relement_empty _ ->
+            (* <tag name> <==> <tag name="name"> *)
+            ( [ String.lowercase n, String.lowercase n ], true)
+        | next' ->
+            (* assume <tag name ... > <==> <tag name="name" ...> *)
+            let toks, is_empty = 
+              parse_atts_lookahead next' in
+            ( ( String.lowercase n, String.lowercase n ) :: toks,
+            is_empty)
+        )
+    | EOF _ ->
+        raise End_of_scan
+    | _ ->
+        (* Illegal *)
+        parse_atts_lookahead (next_no_space false buf)
+  in
+  parse_atts_lookahead (next_no_space false buf)
+
 (*****************************************************************************)
 (* Misc helpers *)
 (*****************************************************************************)
@@ -224,59 +277,6 @@ let parse2 file =
       current_excl := backup_excl
   in
 
-  let parse_atts() =
-
-    let rec parse_atts_lookahead next =
-      match next with
-      | Relement _  -> ( [], false )
-      | Relement_empty _  -> ( [], true )
-      | Name (_tok, n) ->
-          (match next_no_space false buf with
-          | Is _ ->
-              (match next_no_space true buf with
-              | Name (_tok, v) ->
-                  let toks, is_empty =
-                    parse_atts_lookahead (next_no_space false buf) in
-                  ( (String.lowercase n, v) :: toks, is_empty )
-              | Literal (_tok, v) ->
-                  let toks, is_empty =
-                    parse_atts_lookahead (next_no_space false buf) in
-                  ( (String.lowercase n,v) :: toks, is_empty )
-              | EOF _ ->
-                  raise End_of_scan
-              | Relement _ ->
-                  (* Illegal *)
-                  ( [], false )
-              | Relement_empty _ ->
-                  (* Illegal *)
-                  ( [], true )
-              | _ ->
-                  (* Illegal *)
-                  parse_atts_lookahead (next_no_space false buf)
-              )
-          | EOF _ ->
-              raise End_of_scan
-          | Relement _ ->
-              (* <tag name> <==> <tag name="name"> *)
-              ( [ String.lowercase n, String.lowercase n ], false)
-          | Relement_empty _ ->
-              (* <tag name> <==> <tag name="name"> *)
-              ( [ String.lowercase n, String.lowercase n ], true)
-          | next' ->
-              (* assume <tag name ... > <==> <tag name="name" ...> *)
-              let toks, is_empty = 
-                parse_atts_lookahead next' in
-              ( ( String.lowercase n, String.lowercase n ) :: toks,
-              is_empty)
-          )
-      | EOF _ ->
-          raise End_of_scan
-      | _ ->
-          (* Illegal *)
-          parse_atts_lookahead (next_no_space false buf)
-    in
-    parse_atts_lookahead (next_no_space false buf)
-  in
 
   let rec parse_next() =
     let t = Lexer_html.scan_document buf in
@@ -299,12 +299,12 @@ let parse2 file =
         let (_, model) = model_of ~dtd_hash name in
         (match model with
         | Empty ->
-          let atts, _ = parse_atts() in
+          let atts, _ = parse_atts buf in
           unwind_stack name;
           current_subs := (Element(name, atts, [])) :: !current_subs;
           parse_next()
         | Special ->
-            let atts, is_empty = parse_atts() in
+            let atts, is_empty = parse_atts buf in
             unwind_stack name;
             let data = 
               if is_empty then 
@@ -318,7 +318,7 @@ let parse2 file =
             current_subs := (Element(name, atts, [Data data])) :: !current_subs;
             parse_next()
         | _ ->
-            let atts, is_empty = parse_atts() in
+            let atts, is_empty = parse_atts buf in
             (* Unwind the stack until we find an element which can be
              * the parent of the new element:
              *)
