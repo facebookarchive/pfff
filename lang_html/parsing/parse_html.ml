@@ -82,10 +82,9 @@ let rec parse_comment buf =
   | Mcomment _ ->
       let s = Lexing.lexeme buf in
       s ^ parse_comment buf
+  | Rcomment _ -> ""
   | EOF _ -> raise End_of_scan
-  | _ ->
-      (* must be Rcomment *)
-      ""
+  | _ -> raise Impossible
 
 let rec parse_doctype buf =
   let t = Lexer_html.scan_doctype buf in
@@ -93,10 +92,10 @@ let rec parse_doctype buf =
   | Mdoctype _ ->
       let s = Lexing.lexeme buf in
       s ^ parse_doctype buf
+  | Rdoctype _ -> ""
   | EOF _ -> raise End_of_scan
-  | _ ->
-      (* must be Rdoctype *)
-      ""
+  | _ -> raise Impossible
+
 
 let rec parse_pi buf =
   let t = Lexer_html.scan_pi buf in
@@ -104,10 +103,10 @@ let rec parse_pi buf =
   | Mpi _ ->
       let s = Lexing.lexeme buf in
       s ^ parse_pi buf
+  | Rpi _ -> ""
   | EOF _ -> raise End_of_scan
-  | _ ->
-      (* must be Rpi *)
-      ""
+  | _ -> raise Impossible
+
 
 let rec parse_special name buf =
   (* Parse until </name> *)

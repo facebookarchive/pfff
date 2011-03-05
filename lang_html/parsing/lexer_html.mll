@@ -50,13 +50,16 @@ let tokinfo lexbuf  =
 (*****************************************************************************)
 
 (* Simplified rules: Only ASCII is recognized as character set *)
+
 let letter = ['A'-'Z' 'a'-'z' ]
 let digit = ['0'-'9']
 let hexdigit = ['0'-'9' 'A'-'F' 'a'-'f']
+let ws = [ ' ' '\t' '\r' '\n' ]
+
 let namechar = letter | digit | '.' | ':' | '-' | '_'
 let name = ( letter | '_' | ':' ) namechar*
 let nmtoken = namechar+
-let ws = [ ' ' '\t' '\r' '\n' ]
+
 let string_literal1 = '"' [^ '"' ]* '"'
 let string_literal2 = "'" [^ '\'' ]* "'"
 let string_literal3 = [^ '"' '\'' '>' '=' ' ' '\t' '\n' '\r' ]+
@@ -73,9 +76,9 @@ rule scan_document = parse
 
   | "<" (name as s)  { Lelement (tokinfo lexbuf, s) }
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
-
+  (* todo? parse error ? *)
   | "<" (* misplaced "<" *) { Cdata (tokinfo lexbuf, "<") }
-  | [^ '<' ]+ { Cdata (tokinfo lexbuf, tok lexbuf) }
+  | [^ '<' ]+               { Cdata (tokinfo lexbuf, tok lexbuf) }
 
   | eof { EOF (tokinfo lexbuf) }
 
@@ -84,6 +87,7 @@ and scan_special = parse
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
   | "<"              { Cdata (tokinfo lexbuf, "<") }
   | [^ '<' ]+        { Cdata (tokinfo lexbuf, tok lexbuf) }
+
   | eof { EOF (tokinfo lexbuf) }
 
 (*****************************************************************************)
@@ -92,6 +96,7 @@ and scan_comment = parse
   | "-->"  { Rcomment (tokinfo lexbuf) } 
   | "-"    { Mcomment (tokinfo lexbuf) }
   | [^ '-']+  { Mcomment (tokinfo lexbuf) }
+
   | eof { EOF (tokinfo lexbuf) }
 
 (*****************************************************************************)
@@ -99,6 +104,7 @@ and scan_doctype = parse
   (* Occurence in strings, and [ ] brackets ignored *)
   | ">"         { Rdoctype (tokinfo lexbuf) }
   | [^ '>' ]+   { Mdoctype (tokinfo lexbuf) }
+
   | eof { EOF (tokinfo lexbuf) }
 
 and scan_pi = parse
