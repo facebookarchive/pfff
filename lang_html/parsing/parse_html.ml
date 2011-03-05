@@ -219,12 +219,11 @@ exception Found
 
 type element_state = {
   name: tag;
-  attrs: (attr_name * attr_value) list;
+  atts: (attr_name * attr_value) list;
   excl: StringSet.t;
   subs: html_tree list;
 }
 
-(* *)
 let parse2 file =
  Common.with_open_infile file (fun chan -> 
   let buf = Lexing.from_channel chan in
@@ -232,12 +231,10 @@ let parse2 file =
   let dtd = Dtd.html40_dtd in
   let dtd_hash = Common.hash_of_list dtd in
 
-  let current_name = ref "" in
-  let current_atts = ref [] in
-  let current_subs = ref [] in
-  let current_excl = ref StringSet.empty in      (* current exclusions *)
+  let current = 
+    ref { name = ""; atts = []; subs = []; excl = StringSet.empty} in
 
-  let stack = Stack.create() in
+  let (stack: element_state Stack.t) = Stack.create() in
 
   let unwind_stack sub_name =
     (* If the current element is not a possible parent element for sub_name,
@@ -247,29 +244,22 @@ let parse2 file =
      * same element as before.
      *)
     let backup = Stack.create() in
-    let backup_name = !current_name in
-    let backup_atts = !current_atts in
-    let backup_subs = !current_subs in
-    let backup_excl = !current_excl in
+    let backup_el = !current in
     try
       while not (is_possible_subelement 
-                    ~dtd_hash !current_name !current_excl sub_name) do
+                    ~dtd_hash !current.name !current.excl sub_name) do
         (* Maybe we are not allowed to end the current element: *)
-        let (current_class, _) = model_of ~dtd_hash !current_name in
+        let (current_class, _) = model_of ~dtd_hash !current.name in
         if current_class = Essential_block then raise Stack.Empty;
         (* End the current element and remove it from the stack: *)
         let grant_parent = Stack.pop stack in
         Stack.push grant_parent backup;        (* Save it; may we need it *)
-        let (gp_name, gp_atts, gp_subs, gp_excl) = grant_parent in
         (* If gp_name is an essential element, we are not allowed to close
          * it implicitly, even if that violates the DTD.
          *)
-        let current = Element (!current_name, !current_atts, 
-                               List.rev !current_subs) in
-        current_name := gp_name;
-        current_atts := gp_atts;
-        current_excl := gp_excl;
-        current_subs := current :: gp_subs
+        let current_el = 
+          Element (!current.name, !current.atts,  List.rev !current.subs) in
+        current := { grant_parent with subs = current_el :: grant_parent.subs;}
       done;
     with Stack.Empty ->
       (* It did not work! Push everything back to the stack, and
@@ -278,10 +268,7 @@ let parse2 file =
       while Stack.length backup > 0 do
         Stack.push (Stack.pop backup) stack
       done;
-      current_name := backup_name;
-      current_atts := backup_atts;
-      current_subs := backup_subs;
-      current_excl := backup_excl
+      current := backup_el;
   in
 
 
@@ -289,16 +276,19 @@ let parse2 file =
     let t = Lexer_html.scan_document buf in
     match t with
     | TComment info ->
-        let comment = PI.str_of_info info in
-        Common.push2 (Element("--",["contents",comment],[])) current_subs;
+        current := { !current with subs = 
+          (Element("--",["contents",PI.str_of_info info],[]))::!current.subs
+        };
         parse_next()
     | TDoctype info ->
-        let decl = PI.str_of_info info in
-        Common.push2 (Element("!",["contents",decl],[])) current_subs;
+        current := { !current with subs =
+          (Element("!",["contents",PI.str_of_info info],[]))::!current.subs;
+        };
         parse_next()
     | TPi info ->
-        let pi = PI.str_of_info info in
-        Common.push2 (Element("?",["contents",pi],[])) current_subs;
+        current := { !current with subs =
+            (Element("?",["contents",PI.str_of_info info],[]))::!current.subs;
+        };
         parse_next()
 
     | Lelement (_tok, name) ->
@@ -308,7 +298,9 @@ let parse2 file =
         | Empty ->
           let atts, _ = parse_atts buf in
           unwind_stack name;
-          current_subs := (Element(name, atts, [])) :: !current_subs;
+          current := { !current with subs =
+              (Element(name, atts, [])) :: !current.subs;
+          };
           parse_next()
         | Special ->
             let atts, is_empty = parse_atts buf in
@@ -322,7 +314,9 @@ let parse2 file =
                 skip_element buf;
                 d
               ) in
-            current_subs := (Element(name, atts, [Data data])) :: !current_subs;
+            current := { !current with subs = 
+                (Element(name, atts, [Data data])) :: !current.subs;
+            };
             parse_next()
         | _ ->
             let atts, is_empty = parse_atts buf in
@@ -332,29 +326,30 @@ let parse2 file =
             unwind_stack name;
             if is_empty then (
               (* Simple case *)
-              current_subs := (Element(name, atts, [])) :: !current_subs;
+              current := { !current with
+                subs = (Element(name, atts, [])) :: !current.subs;
+              }
             )
             else (
               (* Push the current element on the stack, and this element
                * becomes the new current element:
                *)
               let new_excl = exclusions_of ~dtd_hash name in
-              Stack.push 
-                (!current_name, 
-                !current_atts, !current_subs, !current_excl)
-                stack;
-              current_name := name;
-              current_atts := atts;
-              current_subs := [];
-              List.iter
-                (fun xel -> current_excl := 
-                  StringSet.add xel !current_excl)
-                new_excl;
+              Stack.push !current stack;
+              current := { 
+                name = name;
+                atts = atts;
+                subs = [];
+                excl = StringSet.union (StringSet.of_list new_excl) 
+                  !current.excl;
+              };
             );
             parse_next()
         )
     | Cdata (_tok, data) ->
-        current_subs := (Data data) :: !current_subs;
+        current := { !current with subs =
+            (Data data) :: !current.subs;
+        };
         parse_next()
     | Lelementend (_tok, name) ->
         let name = String.lowercase name in
@@ -362,15 +357,16 @@ let parse2 file =
         skip_element buf;
         (* Search the element to close on the stack: *)
         let found = 
-          (name = !current_name) ||
+          (name = !current.name) ||
             try
               Stack.iter
-                (fun (old_name, _, _, _) ->
+                (fun { name = old_name} ->
                   if name = old_name then raise Found;
                   match model_of ~dtd_hash old_name with
-                  Essential_block, _ -> raise Not_found;
+                  |  Essential_block, _ -> raise Not_found;
                     (* Don't close essential blocks implicitly *)
-                  | _ -> ())
+                  | _ -> ()
+                )
                 stack;
               false
             with
@@ -384,23 +380,22 @@ let parse2 file =
           (* If found: Remove the elements from the stack, and append
            * them to the previous element as sub elements
            *)
-          while !current_name <> name do
-            let old_name, old_atts, old_subs, old_excl = Stack.pop stack in
-            current_subs := (Element (!current_name, !current_atts,
-                                     List.rev !current_subs)) :: old_subs;
-            current_name := old_name;
-            current_atts := old_atts;
-            current_excl := old_excl
+          while !current.name <> name do
+            let old_el = Stack.pop stack in
+            current := { old_el with subs =
+                (Element (!current.name, !current.atts,
+                         List.rev !current.subs)) :: old_el.subs;
+            };
           done;
           (* Remove one more element: the element containing the element
            * currently being closed.
            *)
-          let old_name, old_atts, old_subs, old_excl = Stack.pop stack in
-          current_subs := (Element (!current_name, !current_atts,
-                                   List.rev !current_subs)) :: old_subs;
-          current_name := old_name;
-          current_atts := old_atts;
-          current_excl := old_excl;
+          let old_el = Stack.pop stack in
+          
+          current := { old_el with subs =
+              (Element (!current.name, !current.atts,
+                       List.rev !current.subs)) :: old_el.subs;
+          };
           (* Go on *)
           parse_next()
         end
@@ -417,15 +412,13 @@ let parse2 file =
     with End_of_scan ->
       (* Close all remaining elements: *)
       while Stack.length stack > 0 do
-        let old_name, old_atts, old_subs, old_excl = Stack.pop stack in
-        current_subs := Element (!current_name,
-                                !current_atts,
-                                List.rev !current_subs) :: old_subs;
-        current_name := old_name;
-        current_atts := old_atts;
-        current_excl := old_excl
+        let old_el = Stack.pop stack in
+        current := { old_el with subs =
+          Element (!current.name, !current.atts, 
+                  List.rev !current.subs) :: old_el.subs;
+        };
       done;
-      List.rev !current_subs
+      List.rev !current.subs
   in
   Element ("__root__", [], xs)
  )
