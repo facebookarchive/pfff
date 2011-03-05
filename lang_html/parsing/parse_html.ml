@@ -217,6 +217,13 @@ let is_possible_subelement
 
 exception Found
 
+type element_state = {
+  name: tag;
+  attrs: (attr_name * attr_value) list;
+  excl: StringSet.t;
+  subs: html_tree list;
+}
+
 (* *)
 let parse2 file =
  Common.with_open_infile file (fun chan -> 
