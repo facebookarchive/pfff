@@ -155,14 +155,15 @@ BASICLIBS=commons/commons.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
- lang_js/parsing/lib.cma \
- lang_cpp/parsing/lib.cma \
  lang_php/matcher/lib.cma \
+ lang_cpp/parsing/lib.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
  lang_html/parsing/lib.cma \
+ lang_js/parsing/lib.cma \
+ lang_css/parsing/lib.cma \
  lang_text/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
@@ -219,6 +220,7 @@ LIBS= commons/commons.cma \
     lang_text/lib.cma \
     lang_html/parsing/lib.cma \
      lang_html/analyze/lib.cma \
+    lang_css/parsing/lib.cma \
 
 
 MAKESUBDIRS=commons \
@@ -268,6 +270,7 @@ MAKESUBDIRS=commons \
    lang_php/analyze/static_analysis \
   lang_html/parsing \
    lang_html/analyze \
+  lang_css/parsing \
   lang_text \
   $(VISUALDIR) \
   $(FACEBOOKDIR)

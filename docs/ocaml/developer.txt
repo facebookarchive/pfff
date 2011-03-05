@@ -1,9 +1,12 @@
+-*- org -*-
+
 
 have C-c C-t working to get type information under cursor
 
+** style: 
 
-style:
- bad example of style: ocamlnet/netstring/nethtml.ml.
+*** bad example of style: ocamlnet/netstring/nethtml.ml.
+
  bad nested functions,
  bad indentation, too many newlines
  bad use of open variants
@@ -36,3 +39,8 @@ let model_of ~dtd_hash element_name =
       | m -> m
       )
     with Not_found -> (Everywhere, Any)
+
+*** bad example of style: ccss/
+bad use of open variants instead of plan variants
+use of _t to suffix type definition (no need, different namespace)
+

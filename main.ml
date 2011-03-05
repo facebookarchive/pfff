@@ -83,6 +83,7 @@ let all_actions () =
   Test_mini_php.actions()++
   Test_parsing_text.actions()++
   Test_parsing_html.actions()++
+  Test_parsing_css.actions()++
 
   Test_analyze_cpp.actions () ++
   []

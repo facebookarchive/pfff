@@ -313,3 +313,7 @@ external/ocamlbdb/libcamlbdb.a
 /lang_html/parsing/parser_html.ml
 /lang_html/parsing/parser_html.mli
 /lang_html/parsing/parser_html.output
+/lang_css/parsing/lexer_css.ml
+/lang_css/parsing/parser_css.ml
+/lang_css/parsing/parser_css.mli
+/lang_css/parsing/parser_css.output
