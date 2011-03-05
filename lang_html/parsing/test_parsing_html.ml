@@ -14,15 +14,14 @@ let test_tokens_html file =
   if not (file =~ ".*\\.html") 
   then pr2 "warning: seems not a html file";
 
-  raise Todo
 (*
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
-
-  let toks = Parse_erlang.tokens file in
+*)
+  let (_ast, toks) = Parse_html.parse file in
   toks +> List.iter (fun x -> pr2_gen x);
   ()
-*)
+
 
 let test_parse_html xs =
 
@@ -51,7 +50,7 @@ let test_dump_html_old file =
   pr2 s
 
 let test_dump_html file =
-  let ast = Parse_html.parse file in
+  let (ast, _toks) = Parse_html.parse file in
 (*  let s = Export_ast_ml.ml_pattern_string_of_program ast in *)
   let json = Export_html.json_of_html_tree ast in
   let s = Json_out.string_of_json json in

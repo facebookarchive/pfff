@@ -432,7 +432,9 @@ let parse2 file =
       done;
       List.rev !current.subs
   in
-  Ast.Element ("__root__", [], xs)
+  (* TODO *)
+  let tokens = [] in
+  Ast.Element ("__root__", [], xs), tokens
  )
 
 let parse a = 
