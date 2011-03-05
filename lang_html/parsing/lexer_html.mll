@@ -112,15 +112,15 @@ and scan_comment = parse
 and scan_doctype = parse
   (* Occurence in strings, and [ ] brackets ignored *)
   | ">"         { tok lexbuf }
-  | [^ '>' ]+   { let s = tok lexbuf in scan_doctype lexbuf }
+  | [^ '>' ]+   { let s = tok lexbuf in s ^ scan_doctype lexbuf }
 
   | eof { pr2 "LEXER: end of file in comment"; ">" }
 
 and scan_pi = parse
   | "?>"   { tok lexbuf }
   | ">"    { tok lexbuf }
-  | '?'           { let s = tok lexbuf in scan_pi lexbuf }
-  | [^ '>' '?' ]+ {  let s = tok lexbuf in scan_pi lexbuf }
+  | '?'           { let s = tok lexbuf in s ^ scan_pi lexbuf }
+  | [^ '>' '?' ]+ {  let s = tok lexbuf in s ^ scan_pi lexbuf }
   | eof   { pr2 "LEXER: end of file in comment"; ">" }
 
 (*****************************************************************************)
