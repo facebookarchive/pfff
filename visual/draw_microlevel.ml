@@ -284,6 +284,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   | (
       FT.PL (FT.Web (FT.Php _))
     | FT.PL (FT.Web (FT.Js _))
+    | FT.PL (FT.Web (FT.Html _))
     | FT.PL (FT.ML _)
     | FT.PL (FT.Cplusplus | FT.C)
     | FT.PL (FT.Thrift)

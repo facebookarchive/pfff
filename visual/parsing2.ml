@@ -25,6 +25,8 @@ module Db = Database_code
 
 open Highlight_code
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Parsing helpers *)
 (*****************************************************************************)
@@ -37,8 +39,9 @@ type ast =
   | ML  of Parse_ml.program2
   | Hs  of Parse_hs.program2
 
-  | Php of Parse_php.program2
+  | Html of Parse_html.program2
   | Js  of Parse_js.program2
+  | Php of Parse_php.program2
 
   | Cpp of Parse_cpp.program2
 
@@ -101,6 +104,14 @@ let parse_php2 file =
 let parse_php_cache a = 
   Common.profile_code "View.parse_php_cache" (fun () -> 
     match parse_php2 a with | Php a -> a | _ -> raise Impossible
+  )
+
+let parse_html2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Html (Parse_html.parse file))
+let parse_html_cache a = 
+  Common.profile_code "View.parse_html_cache" (fun () -> 
+    match parse_html2 a with | Html a -> a | _ -> raise Impossible
   )
 
 let parse_js2 file = 
@@ -238,7 +249,6 @@ let rewrite_categ_using_entities s categ file entities =
 let tokens_with_categ_of_file file hentities = 
   let ftype = FT.file_type_of_file file in
   let prefs = Highlight_code.default_highlighter_preferences in
-
 
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
@@ -607,6 +617,39 @@ let tokens_with_categ_of_file file hentities =
         )
       ) +> List.flatten
 
+
+  | FT.PL (FT.Web (FT.Html)) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_html_cache file in
+      ast2 +> (fun (ast, toks) ->
+        (* computing the token attributes *)
+        Highlight_html.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_html.info_of_tok tok in
+          let s = Token_helpers_html.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = PI.line_of_info info;
+                   c = PI.col_of_info info;
+                 })
+
+        )
+      )
 
   | FT.Text ("org") ->
       let org = Org_mode.parse file in

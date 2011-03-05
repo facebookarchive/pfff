@@ -8,6 +8,7 @@ TARGET=lib
 
 SRC= flag_parsing_html.ml \
      ast_html.ml \
+     visitor_html.ml \
      lib_parsing_html.ml \
      export_html.ml \
      parser_html.ml lexer_html.ml \

@@ -11,8 +11,9 @@ type ast =
   | ML of Parse_ml.program2
   | Hs  of Parse_hs.program2
 
-  | Php of Parse_php.program2
+  | Html of Parse_html.program2
   | Js of Parse_js.program2
+  | Php of Parse_php.program2
 
   | Cpp of Parse_cpp.program2
 
