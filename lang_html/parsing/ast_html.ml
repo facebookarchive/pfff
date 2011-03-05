@@ -56,6 +56,8 @@ module PI = Parse_info
  *    the well-typed construction of html, but does not help when
  *    we work on the AST, to do pattern matching on it, to have the
  *    exhaustive check of OCaml, etc.
+ *  - htcaml: camlp4 on top of xmlm, https://github.com/samoht/htcaml
+ *    simple AST
  * - mirage ?
  * - mmm ? 
  * - hevea ?
