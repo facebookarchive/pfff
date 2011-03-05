@@ -16,12 +16,6 @@
 
 open Common 
 
-open Ast_html
-(* todo: remove *)
-open Parser_html
-
-open Dtd
-
 module Ast = Ast_html
 module Flag = Flag_parsing_html
 module TH   = Token_helpers_html
@@ -79,12 +73,12 @@ exception End_of_scan
 let rec parse_special name buf =
   (* Parse until </name> *)
   match Lexer_html.scan_special buf with
-  | Lelementend (_tok, n) ->
+  | T.Lelementend (_tok, n) ->
       if String.lowercase n = name 
       then ""
       else "</" ^ n ^ parse_special name buf
-  | EOF _ -> raise End_of_scan
-  | Cdata (_tok, s) -> s ^ parse_special name buf
+  | T.EOF _ -> raise End_of_scan
+  | T.Cdata (_tok, s) -> s ^ parse_special name buf
   | _ ->
       (* Illegal *)
       parse_special name buf
@@ -92,8 +86,8 @@ let rec parse_special name buf =
 let rec skip_element buf =
   (* Skip until ">" (or "/>") *)
   match Lexer_html.scan_element buf with
-  | Relement _ | Relement_empty _ ->  ()
-  | EOF _ -> raise End_of_scan
+  | T.Relement _ | T.Relement_empty _ ->  ()
+  | T.EOF _ -> raise End_of_scan
   | _ -> skip_element buf
 
 
@@ -104,7 +98,7 @@ let rec next_no_space p_string buf =
     then Lexer_html.scan_element_after_Is buf
     else Lexer_html.scan_element buf in
   match tok with
-  | Space _ -> next_no_space p_string buf
+  | T.Space _ -> next_no_space p_string buf
   | t -> t
 
 
@@ -112,38 +106,38 @@ let parse_atts buf =
   
   let rec parse_atts_lookahead next =
     match next with
-    | Relement _  -> ( [], false )
-    | Relement_empty _  -> ( [], true )
-    | Name (_tok, n) ->
+    | T.Relement _  -> ( [], false )
+    | T.Relement_empty _  -> ( [], true )
+    | T.Name (_tok, n) ->
         (match next_no_space false buf with
-        | Is _ ->
+        | T.Is _ ->
             (match next_no_space true buf with
-            | Name (_tok, v) ->
+            | T.Name (_tok, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (next_no_space false buf) in
                 ( (String.lowercase n, v) :: toks, is_empty )
-            | Literal (_tok, v) ->
+            | T.Literal (_tok, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (next_no_space false buf) in
                 ( (String.lowercase n,v) :: toks, is_empty )
-            | EOF _ ->
+            | T.EOF _ ->
                 raise End_of_scan
-            | Relement _ ->
+            | T.Relement _ ->
                 (* Illegal *)
                 ( [], false )
-            | Relement_empty _ ->
+            | T.Relement_empty _ ->
                 (* Illegal *)
                 ( [], true )
             | _ ->
                 (* Illegal *)
                 parse_atts_lookahead (next_no_space false buf)
             )
-        | EOF _ ->
+        | T.EOF _ ->
             raise End_of_scan
-        | Relement _ ->
+        | T.Relement _ ->
             (* <tag name> <==> <tag name="name"> *)
             ( [ String.lowercase n, String.lowercase n ], false)
-        | Relement_empty _ ->
+        | T.Relement_empty _ ->
             (* <tag name> <==> <tag name="name"> *)
             ( [ String.lowercase n, String.lowercase n ], true)
         | next' ->
@@ -153,7 +147,7 @@ let parse_atts buf =
             ( ( String.lowercase n, String.lowercase n ) :: toks,
             is_empty)
         )
-    | EOF _ ->
+    | T.EOF _ ->
         raise End_of_scan
     | _ ->
         (* Illegal *)
@@ -167,14 +161,14 @@ let parse_atts buf =
 
 let model_of ~dtd_hash element_name =
   if element_name = "" 
-  then (Everywhere, Any)
+  then (Dtd.Everywhere, Dtd.Any)
   else
     try 
       (match Hashtbl.find dtd_hash element_name with 
-      | (eclass, Sub_exclusions(_,m)) -> eclass, m
+      | (eclass, Dtd.Sub_exclusions(_,m)) -> eclass, m
       | m -> m
       )
-    with Not_found -> (Everywhere, Any)
+    with Not_found -> (Dtd.Everywhere, Dtd.Any)
 
 let exclusions_of ~dtd_hash element_name =
   if element_name = "" 
@@ -182,7 +176,7 @@ let exclusions_of ~dtd_hash element_name =
   else
     try
       (match Hashtbl.find dtd_hash element_name with
-      | (eclass, Sub_exclusions(l,_)) -> l
+      | (eclass, Dtd.Sub_exclusions(l,_)) -> l
       | _ -> []
       )
     with Not_found -> []
@@ -192,19 +186,23 @@ let is_possible_subelement
   let (sub_class, _) = model_of ~dtd_hash sub_element in
   let rec eval m =
     match m with
-    | Inline2     -> sub_class = Inline
-    | Block2      -> sub_class = Block  || sub_class = Essential_block
-    | Flow       -> 
-        sub_class = Inline || sub_class = Block || sub_class = Essential_block
-    | Elements l -> List.mem sub_element l
-    | Any        -> true
-    | Or(m1,m2)  -> eval m1 || eval m2
-    | Except(m1,m2) -> eval m1 && not (eval m2)
-    | Empty      -> false
-    | Special    -> false
-    | Sub_exclusions(_,_) -> assert false
+    | Dtd.Inline2     -> sub_class = Dtd.Inline
+    | Dtd.Block2      -> 
+        sub_class = Dtd.Block  || 
+        sub_class = Dtd.Essential_block
+    | Dtd.Flow       -> 
+        sub_class = Dtd.Inline || 
+        sub_class = Dtd.Block  || 
+        sub_class = Dtd.Essential_block
+    | Dtd.Elements l -> List.mem sub_element l
+    | Dtd.Any        -> true
+    | Dtd.Or (m1,m2)  -> eval m1 || eval m2
+    | Dtd.Except (m1,m2) -> eval m1 && not (eval m2)
+    | Dtd.Empty      -> false
+    | Dtd.Special    -> false
+    | Dtd.Sub_exclusions(_,_) -> assert false
   in
-  (sub_class = Everywhere) || 
+  (sub_class = Dtd.Everywhere) || 
   (
     (not (StringSet.mem sub_element parent_exclusions)) &&
       let (_, parent_model) = model_of ~dtd_hash parent_element in
@@ -218,10 +216,11 @@ let is_possible_subelement
 exception Found
 
 type element_state = {
-  name: tag;
-  atts: (attr_name * attr_value) list;
+  name: Ast.tag;
+  atts: (Ast.attr_name * Ast.attr_value) list;
+  subs: Ast.html_tree list;
+
   excl: StringSet.t;
-  subs: html_tree list;
 }
 
 let parse2 file =
@@ -236,30 +235,36 @@ let parse2 file =
 
   let (stack: element_state Stack.t) = Stack.create() in
 
+  (* If the current element is not a possible parent element for sub_name,
+   * search the parent element in the stack.
+   * Either the new current element is the parent, or there was no
+   * possible parent. In the latter case, the current element is the
+   * same element as before.
+   *)
   let unwind_stack sub_name =
-    (* If the current element is not a possible parent element for sub_name,
-     * search the parent element in the stack.
-     * Either the new current element is the parent, or there was no
-     * possible parent. In the latter case, the current element is the
-     * same element as before.
-     *)
     let backup = Stack.create() in
     let backup_el = !current in
     try
       while not (is_possible_subelement 
                     ~dtd_hash !current.name !current.excl sub_name) do
+
         (* Maybe we are not allowed to end the current element: *)
         let (current_class, _) = model_of ~dtd_hash !current.name in
-        if current_class = Essential_block then raise Stack.Empty;
+        if current_class = Dtd.Essential_block 
+        then raise Stack.Empty;
+
         (* End the current element and remove it from the stack: *)
         let grant_parent = Stack.pop stack in
-        Stack.push grant_parent backup;        (* Save it; may we need it *)
+        (* Save it; may we need it *)
+        Stack.push grant_parent backup;  
+
         (* If gp_name is an essential element, we are not allowed to close
          * it implicitly, even if that violates the DTD.
          *)
-        let current_el = 
-          Element (!current.name, !current.atts,  List.rev !current.subs) in
-        current := { grant_parent with subs = current_el :: grant_parent.subs;}
+        current := { grant_parent with subs = 
+            Ast.Element (!current.name, !current.atts,  
+                        List.rev !current.subs) :: grant_parent.subs;
+        }
       done;
     with Stack.Empty ->
       (* It did not work! Push everything back to the stack, and
@@ -275,47 +280,48 @@ let parse2 file =
   let rec parse_next() =
     let t = Lexer_html.scan_document buf in
     match t with
-    | TComment info ->
+    | T.TComment info ->
         current := { !current with subs = 
-          (Element("--",["contents",PI.str_of_info info],[]))::!current.subs
+          (Ast.Element("--",["contents",PI.str_of_info info],[]))::!current.subs
         };
         parse_next()
-    | TDoctype info ->
+    | T.TDoctype info ->
         current := { !current with subs =
-          (Element("!",["contents",PI.str_of_info info],[]))::!current.subs;
+          (Ast.Element("!",["contents",PI.str_of_info info],[]))::!current.subs;
         };
         parse_next()
-    | TPi info ->
+    | T.TPi info ->
         current := { !current with subs =
-            (Element("?",["contents",PI.str_of_info info],[]))::!current.subs;
+          (Ast.Element("?",["contents",PI.str_of_info info],[]))::!current.subs;
         };
         parse_next()
 
-    | Lelement (_tok, name) ->
+    | T.Lelement (_tok, name) ->
         let name = String.lowercase name in
         let (_, model) = model_of ~dtd_hash name in
         (match model with
-        | Empty ->
+        | Dtd.Empty ->
           let atts, _ = parse_atts buf in
           unwind_stack name;
           current := { !current with subs =
-              (Element(name, atts, [])) :: !current.subs;
+              (Ast.Element(name, atts, [])) :: !current.subs;
           };
           parse_next()
-        | Special ->
+        | Dtd.Special ->
             let atts, is_empty = parse_atts buf in
             unwind_stack name;
             let data = 
-              if is_empty then 
-                ""
-              else (
+              if is_empty 
+              then ""
+              else begin
                 let d = parse_special name buf in
                 (* Read until ">" *)
                 skip_element buf;
                 d
-              ) in
+              end
+            in
             current := { !current with subs = 
-                (Element(name, atts, [Data data])) :: !current.subs;
+                (Ast.Element(name, atts, [Ast.Data data])) :: !current.subs;
             };
             parse_next()
         | _ ->
@@ -324,13 +330,12 @@ let parse2 file =
              * the parent of the new element:
              *)
             unwind_stack name;
-            if is_empty then (
+            if is_empty then 
               (* Simple case *)
               current := { !current with
-                subs = (Element(name, atts, [])) :: !current.subs;
+                subs = (Ast.Element(name, atts, [])) :: !current.subs;
               }
-            )
-            else (
+            else begin
               (* Push the current element on the stack, and this element
                * becomes the new current element:
                *)
@@ -343,15 +348,15 @@ let parse2 file =
                 excl = StringSet.union (StringSet.of_list new_excl) 
                   !current.excl;
               };
-            );
+            end;
             parse_next()
         )
-    | Cdata (_tok, data) ->
+    | T.Cdata (_tok, data) ->
         current := { !current with subs =
-            (Data data) :: !current.subs;
+            (Ast.Data data) :: !current.subs;
         };
         parse_next()
-    | Lelementend (_tok, name) ->
+    | T.Lelementend (_tok, name) ->
         let name = String.lowercase name in
         (* Read until ">" *)
         skip_element buf;
@@ -363,7 +368,7 @@ let parse2 file =
                 (fun { name = old_name} ->
                   if name = old_name then raise Found;
                   match model_of ~dtd_hash old_name with
-                  |  Essential_block, _ -> raise Not_found;
+                  |  Dtd.Essential_block, _ -> raise Not_found;
                     (* Don't close essential blocks implicitly *)
                   | _ -> ()
                 )
@@ -383,8 +388,8 @@ let parse2 file =
           while !current.name <> name do
             let old_el = Stack.pop stack in
             current := { old_el with subs =
-                (Element (!current.name, !current.atts,
-                         List.rev !current.subs)) :: old_el.subs;
+                (Ast.Element (!current.name, !current.atts,
+                             List.rev !current.subs)) :: old_el.subs;
             };
           done;
           (* Remove one more element: the element containing the element
@@ -393,16 +398,19 @@ let parse2 file =
           let old_el = Stack.pop stack in
           
           current := { old_el with subs =
-              (Element (!current.name, !current.atts,
-                       List.rev !current.subs)) :: old_el.subs;
+              (Ast.Element (!current.name, !current.atts,
+                           List.rev !current.subs)) :: old_el.subs;
           };
           (* Go on *)
           parse_next()
         end
-    | EOF _ ->
+    | T.EOF _ ->
         raise End_of_scan
-    | _ ->
-        parse_next()
+    | (  T.Other _| T.Literal _| T.Is _
+       | T.Name _| T.Space _| T.Relement_empty _| T.Relement _)
+        -> 
+        (* pad: ???? *)
+        parse_next ()
   in
 
   let xs = 
@@ -414,13 +422,13 @@ let parse2 file =
       while Stack.length stack > 0 do
         let old_el = Stack.pop stack in
         current := { old_el with subs =
-          Element (!current.name, !current.atts, 
-                  List.rev !current.subs) :: old_el.subs;
+          Ast.Element (!current.name, !current.atts, 
+                      List.rev !current.subs) :: old_el.subs;
         };
       done;
       List.rev !current.subs
   in
-  Element ("__root__", [], xs)
+  Ast.Element ("__root__", [], xs)
  )
 
 let parse a = 
