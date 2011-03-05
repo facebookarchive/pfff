@@ -28,16 +28,19 @@ OTHER_MAPPINGS = mappings/cp*.unimap \
                  mappings/mac*.unimap \
                  mappings/windows*.unimap
 
-PMAP = netmappings_iso.pmap netmappings_other.pmap netmappings_jp.pmap netmappings_kr.pmap
+PMAP = netmappings_iso.pmap netmappings_other.pmap 
+#pad: netmappings_jp.pmap netmappings_kr.pmap
 
 # netconversion.cmx, netbuffer.cmx: 
 # Allow cross-library inlining for these modules
 
-INSTALL_EXTRA_CMO = netmappings_iso netmappings_jp netmappings_kr \
+#pad: netmappings_jp netmappings_kr
+INSTALL_EXTRA_CMO = netmappings_iso  \
 		    netmappings_other netmappings_min \
 		    netstring_top \
 		    netaccel_link
-INSTALL_EXTRA_CMX = netmappings_iso netmappings_jp netmappings_kr \
+#pad: netmappings_jp netmappings_kr
+INSTALL_EXTRA_CMX = netmappings_iso \
                     netmappings_other netmappings_min \
 		    netconversion \
 		    netbuffer
@@ -91,26 +94,26 @@ netmappings_iso.ml: netmappings_iso.pmap netdb.cmi
 	tools/unimap_to_ocaml/unimap_to_ocaml \
 		-o netmappings_iso.ml netmappings_iso.pmap
 
-netmappings_jp.pmap: tools_done
-	test ! -d mappings || tools/unimap_to_ocaml/unimap_to_ocaml \
-		-o netmappings_jp.pmap -pmap $(JP_MAPPINGS)
-
-#	test ! -f mappings/Unihan.txt.bz2 || \
-#	   bzip2 -c -d mappings/Unihan.txt.bz2 | \
-# 	   tools/unimap_to_ocaml/unihan_extract \
-#	       -o netmappings_jp.pmap -jis0208 -jis0212
-
-netmappings_jp.ml: netmappings_jp.pmap netdb.cmi
-	tools/unimap_to_ocaml/unimap_to_ocaml \
-		-o netmappings_jp.ml netmappings_jp.pmap
-
-netmappings_kr.pmap: tools_done
-	test ! -d mappings || tools/unimap_to_ocaml/unimap_to_ocaml \
-		-o netmappings_kr.pmap -pmap $(KR_MAPPINGS)
-
-netmappings_kr.ml: netmappings_kr.pmap netdb.cmi
-	tools/unimap_to_ocaml/unimap_to_ocaml \
-		-o netmappings_kr.ml netmappings_kr.pmap
+#pad:netmappings_jp.pmap: tools_done
+#pad:	test ! -d mappings || tools/unimap_to_ocaml/unimap_to_ocaml \
+#pad:		-o netmappings_jp.pmap -pmap $(JP_MAPPINGS)
+#pad:
+#pad:#	test ! -f mappings/Unihan.txt.bz2 || \
+#pad:#	   bzip2 -c -d mappings/Unihan.txt.bz2 | \
+#pad:# 	   tools/unimap_to_ocaml/unihan_extract \
+#pad:#	       -o netmappings_jp.pmap -jis0208 -jis0212
+#pad:
+#pad:netmappings_jp.ml: netmappings_jp.pmap netdb.cmi
+#pad:	tools/unimap_to_ocaml/unimap_to_ocaml \
+#pad:		-o netmappings_jp.ml netmappings_jp.pmap
+#pad:
+#pad:netmappings_kr.pmap: tools_done
+#pad:	test ! -d mappings || tools/unimap_to_ocaml/unimap_to_ocaml \
+#pad:		-o netmappings_kr.pmap -pmap $(KR_MAPPINGS)
+#pad:
+#pad:netmappings_kr.ml: netmappings_kr.pmap netdb.cmi
+#pad:	tools/unimap_to_ocaml/unimap_to_ocaml \
+#pad:		-o netmappings_kr.ml netmappings_kr.pmap
 
 netmappings_other.pmap: tools_done
 	test ! -d mappings || tools/unimap_to_ocaml/unimap_to_ocaml \
