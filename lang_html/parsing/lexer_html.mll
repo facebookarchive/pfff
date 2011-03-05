@@ -75,6 +75,8 @@ let string_literal4 = [^ '"' '\'' '>' ' ' '\t' '\n' '\r' ]+
 (*****************************************************************************)
 
 (* This following rules reflect HTML as it is used, not the SGML rules. *)
+
+(* starting point *)
 rule scan_document = parse
   | "<!--" { 
       let info = tokinfo lexbuf in
@@ -143,6 +145,7 @@ and scan_element = parse
   | _       { Other (tokinfo lexbuf) }
   | eof     { EOF (tokinfo lexbuf) }
 
+(* ??? *)
 and scan_element_after_Is = parse
   | ">"     { Relement (tokinfo lexbuf) }
   | "/>"    { Relement_empty (tokinfo lexbuf) }

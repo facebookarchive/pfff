@@ -71,29 +71,8 @@ let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) =
 (*****************************************************************************)
 exception End_of_scan
 
-let rec parse_special name buf =
-  (* Parse until </name> *)
-  match Lexer_html.scan_special buf with
-  | T.Lelementend (_tok, n) ->
-      if String.lowercase n = name 
-      then ""
-      else "</" ^ n ^ parse_special name buf
-  | T.EOF _ -> raise End_of_scan
-  | T.Cdata (_tok, s) -> s ^ parse_special name buf
-  | _ ->
-      (* Illegal *)
-      parse_special name buf
-
-let rec skip_element buf =
-  (* Skip until ">" (or "/>") *)
-  match Lexer_html.scan_element buf with
-  | T.Relement _ | T.Relement_empty _ ->  ()
-  | T.EOF _ -> raise End_of_scan
-  | _ -> skip_element buf
-
-
+(* p_string: whether string literals in quotation marks are allowed *)
 let rec skip_space p_string buf =
-  (* p_string: whether string literals in quotation marks are allowed *)
   let tok =
     if p_string 
     then Lexer_html.scan_element_after_Is buf
@@ -102,9 +81,19 @@ let rec skip_space p_string buf =
   | T.Space _ -> skip_space p_string buf
   | t -> t
 
+(* skip until ">" (or "/>") *)
+let rec skip_element buf =
+  let tok = Lexer_html.scan_element buf in
+  match tok with
+  | T.Relement _ 
+  | T.Relement_empty _ 
+    ->  ()
+  | T.EOF _ -> raise End_of_scan
+  | _ -> skip_element buf
+
 
 let parse_atts buf =
-  
+ 
   let rec parse_atts_lookahead next =
     match next with
     | T.Relement _  -> ( [], false )
@@ -155,6 +144,20 @@ let parse_atts buf =
         parse_atts_lookahead (skip_space false buf)
   in
   parse_atts_lookahead (skip_space false buf)
+
+(* called for 'Special, not is_empty' tag categories *)
+let rec parse_special name buf =
+  (* Parse until </name> *)
+  match Lexer_html.scan_special buf with
+  | T.Lelementend (_tok, n) ->
+      if String.lowercase n = name 
+      then ""
+      else "</" ^ n ^ parse_special name buf
+  | T.EOF _ -> raise End_of_scan
+  | T.Cdata (_tok, s) -> s ^ parse_special name buf
+  | _ ->
+      (* Illegal *)
+      parse_special name buf
 
 (*****************************************************************************)
 (* Misc helpers *)
