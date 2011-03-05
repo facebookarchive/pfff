@@ -218,6 +218,7 @@ LIBS= commons/commons.cma \
      lang_erlang/analyze/lib.cma \
     lang_text/lib.cma \
     lang_html/parsing/lib.cma \
+     lang_html/analyze/lib.cma \
 
 
 MAKESUBDIRS=commons \
@@ -266,6 +267,7 @@ MAKESUBDIRS=commons \
    lang_php/analyze/dynamic_analysis \
    lang_php/analyze/static_analysis \
   lang_html/parsing \
+   lang_html/analyze \
   lang_text \
   $(VISUALDIR) \
   $(FACEBOOKDIR)
