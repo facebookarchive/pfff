@@ -92,14 +92,14 @@ let rec skip_element buf =
   | _ -> skip_element buf
 
 
-let rec next_no_space p_string buf =
+let rec skip_space p_string buf =
   (* p_string: whether string literals in quotation marks are allowed *)
   let tok =
     if p_string 
     then Lexer_html.scan_element_after_Is buf
     else Lexer_html.scan_element buf in
   match tok with
-  | T.Space _ -> next_no_space p_string buf
+  | T.Space _ -> skip_space p_string buf
   | t -> t
 
 
@@ -110,16 +110,16 @@ let parse_atts buf =
     | T.Relement _  -> ( [], false )
     | T.Relement_empty _  -> ( [], true )
     | T.Name (_tok, n) ->
-        (match next_no_space false buf with
+        (match skip_space false buf with
         | T.Is _ ->
-            (match next_no_space true buf with
+            (match skip_space true buf with
             | T.Name (_tok, v) ->
                 let toks, is_empty =
-                  parse_atts_lookahead (next_no_space false buf) in
+                  parse_atts_lookahead (skip_space false buf) in
                 ( (String.lowercase n, v) :: toks, is_empty )
             | T.Literal (_tok, v) ->
                 let toks, is_empty =
-                  parse_atts_lookahead (next_no_space false buf) in
+                  parse_atts_lookahead (skip_space false buf) in
                 ( (String.lowercase n,v) :: toks, is_empty )
             | T.EOF _ ->
                 raise End_of_scan
@@ -131,7 +131,7 @@ let parse_atts buf =
                 ( [], true )
             | _ ->
                 (* Illegal *)
-                parse_atts_lookahead (next_no_space false buf)
+                parse_atts_lookahead (skip_space false buf)
             )
         | T.EOF _ ->
             raise End_of_scan
@@ -152,9 +152,9 @@ let parse_atts buf =
         raise End_of_scan
     | _ ->
         (* Illegal *)
-        parse_atts_lookahead (next_no_space false buf)
+        parse_atts_lookahead (skip_space false buf)
   in
-  parse_atts_lookahead (next_no_space false buf)
+  parse_atts_lookahead (skip_space false buf)
 
 (*****************************************************************************)
 (* Misc helpers *)
@@ -234,7 +234,7 @@ let parse2 file =
   let current = 
     ref { name = ""; atts = []; subs = []; excl = StringSet.empty} in
 
-  let (stack: element_state Stack.t) = Stack.create() in
+  let stack = Stack.create() in
 
   (* If the current element is not a possible parent element for sub_name,
    * search the parent element in the stack.
@@ -367,7 +367,8 @@ let parse2 file =
             try
               Stack.iter
                 (fun { name = old_name} ->
-                  if name = old_name then raise Found;
+                  if name = old_name 
+                  then raise Found;
                   match model_of ~dtd_hash old_name with
                   |  Dtd.Essential_block, _ -> raise Not_found;
                     (* Don't close essential blocks implicitly *)
@@ -397,7 +398,6 @@ let parse2 file =
            * currently being closed.
            *)
           let old_el = Stack.pop stack in
-          
           current := { old_el with subs =
               (Ast.Element (!current.name, !current.atts,
                            List.rev !current.subs)) :: old_el.subs;
