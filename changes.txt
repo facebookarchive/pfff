@@ -7,6 +7,9 @@
 ** introduce lang_html/
 (using code from a stripped down version of ocamlnet)
 
+** introduce lang_css/
+(using code from ccss by dario teixeira)
+
 * 0.14 (Q4 2010)
 
 ** codemap
