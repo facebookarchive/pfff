@@ -14,6 +14,9 @@ open Common
 
 (*
  * spec: http://www.w3.org/TR/CSS2/grammar.html
+ * The official grammar contains a space token ...
+ * old spec: http://www.w3.org/TR/REC-CSS1/#appendix-b
+ * see also: http://www.w3.org/TR/CSS2/syndata.html
  * 
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
