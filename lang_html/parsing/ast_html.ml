@@ -40,7 +40,9 @@ module PI = Parse_info
  *  - an ocamlduce/cduce AST, which have a type system specially made to 
  *    express the kind of invariants of a DTD.
  * 
- * TODO The solution used in this module is to use a real AST ?
+ * TODO: add token/info in the html tree (so can have ast-based highlighting
+ *  which is needed for coloring urls as in href)
+ * TODO: The solution used in this module is to use a real AST ?
  * 
  * alternative implementations: 
  * - xHTML.ml: but poor AST, no parsing, and phantom types are tricky

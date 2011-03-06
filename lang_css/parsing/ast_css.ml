@@ -1,3 +1,11 @@
+(* Dario Teixeira
+ * 
+ * Copyright (c) 2010 Dario Teixeira (dario.teixeira@yahoo.com)
+ * Copyright (C) 2011 Facebook
+ * 
+ * This software is distributed under the terms of the GNU GPL version 2.
+ * See LICENSE file for full license text.
+ *)
 
 open Common
 
@@ -15,3 +23,102 @@ open Common
  * - css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
  * - camlp4 and css https://github.com/samoht/cass
  *)
+
+
+(*****************************************************************************)
+(* The AST related types *)
+(*****************************************************************************)
+
+(* 
+ * from http://en.wikipedia.org/wiki/Cascading_Style_Sheets#Syntax:
+ * "A style sheet consists of a list of rules. Each rule or rule-set consists
+ *  of one or more selectors and a declaration block. A declaration-block
+ *  consists of a list of declarations in braces. Each declaration itself
+ *  consists of a property, a colon (:), a value. If there are multiple
+ *  declarations in a block, a semi-colon (;) must be inserted to
+ *  separate each declaration"
+ *)
+
+(* ------------------------------------------------------------------------- *)
+(* Token/info *)
+(* ------------------------------------------------------------------------- *)
+
+type pinfo = Parse_info.token
+type info = Parse_info.info
+and tok = info
+
+(* ------------------------------------------------------------------------- *)
+(* Selector *)
+(* ------------------------------------------------------------------------- *)
+
+type selector = simplesel * (combinator * simplesel) list
+
+ and simplesel =
+   | Explicit of element * qualifier list
+   | Generic of qualifier * qualifier list
+
+ and combinator = Descendant | General_sibling | Adjacent_sibling | Child
+
+  and element =
+    | Tag of string
+    | Universal
+
+  and qualifier =
+    | Id of string
+    | Class of string
+    | Attr of string * attr
+    | PseudoClass of string
+    | PseudoElement of string
+    | SelFunc of string * functiont
+
+    and functiont =
+      | Qualified of qualifier list
+      | Nth of string
+
+    and attr =
+      | AttrExists
+      | AttrEquals of string
+      | AttrIncludes of string
+      | AttrDashmatch of string
+      | AttrPrefix of string
+      | AttrSuffix of string
+      | AttrSubstring of string
+
+(* ------------------------------------------------------------------------- *)
+(* Declaration *)
+(* ------------------------------------------------------------------------- *)
+
+type declaration = property * expression * important
+
+  and property = string
+  and important = bool
+
+  and expression = sentence list
+   and sentence = term list
+
+   and term =
+     | Calc of calc
+     | String of string
+     | Ident of string
+     | Uri of string
+     | Hash of string
+     | TermFunc of string * expression
+     | Slash
+
+     and calc =
+       | Varref of variable
+       | Quantity of quantity
+       (* ccss only *)
+       | Sum of calc * calc
+       | Sub of calc * calc
+       | Mul of calc * calc
+       | Div of calc * calc
+
+       and quantity = float * string option
+
+       and variable = string
+
+(* ------------------------------------------------------------------------- *)
+(* Rule *)
+(* ------------------------------------------------------------------------- *)
+type rule = selector list * declaration list

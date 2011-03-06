@@ -43,4 +43,6 @@ let model_of ~dtd_hash element_name =
 *** bad example of style: ccss/
 bad use of open variants instead of plan variants
 use of _t to suffix type definition (no need, different namespace)
-
+unindented mutually recursive types. When have lots of type definitions,
+ as it's the case usually with AST of languages, indent the types
+ to convey grouping information.
