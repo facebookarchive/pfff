@@ -1,5 +1,5 @@
 {
-(* Yoann Padioleau
+(* Patrick Doane and Gerd Stolpmann
  *
  * Copyright (C) 2001-2006 Patrick Doane and Gerd Stolpmann
  * Copyright (C) 2011 Facebook

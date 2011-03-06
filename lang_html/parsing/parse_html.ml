@@ -1,4 +1,4 @@
-(* Yoann Padioleau
+(*  Patrick Doane and Gerd Stolpmann
  *
  * Copyright (C) 2001-2006 Patrick Doane and Gerd Stolpmann
  * Copyright (C) 2011 Facebook
@@ -37,6 +37,9 @@ module Dtd = Dtd_simple
  * I've extended it mainly to add position information. I've also
  * moved stuff in dtd.ml and removed the encode/decode and xmap stuff.
  * I've also simplified the code, factorized things.
+ * 
+ * TODO: need complete_parse_info so have good position information
+ * in the tokens.
  *)
 
 (*****************************************************************************)
