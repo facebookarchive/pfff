@@ -15,6 +15,7 @@ open Common
 (*
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
+ * I've mostly convereted it from menhir to ocamlyacc.
  *)
 %}
 
