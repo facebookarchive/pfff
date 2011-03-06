@@ -20,8 +20,12 @@ open Parser_css
  * 
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/.
- * I've mostly converted it from ulex to ocamllex and removed the
- * space handling weirdness ...
+ * I've mostly converted it from ulex to ocamllex and removed the line
+ * number management which can be done in a better way outside
+ * (like in the other pfff parsers).
+ * 
+ * Note that this lexer handles spacing in an unusual way. This is
+ * because the CSS grammar is space sensitive ...
  *)
 
 (*****************************************************************************)
@@ -77,68 +81,69 @@ rule token = parse
    * give this lexer as-is to the parsing function. You must have an
    * intermediate layer that filter those tokens.
    *)
-  | "/*" { 
+  | space* "/*" { 
       let info = tokinfo lexbuf in
       let com = comment lexbuf in
       TComment(info +> Parse_info.tok_add_s com)
     }
-  | "//" [^ '\n']+ { TComment (tokinfo lexbuf) }
-  | space	   { TCommentSpace (tokinfo lexbuf) }
+  | space* "//" [^ '\n']+ space* { TComment (tokinfo lexbuf) }
+  | space          { S (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
 
   (* pad: ?? why not separate tokens ? and resolve in grammar ? *)
-  | "url("     { URI (tokinfo lexbuf) }
-  | (ident as s) '('  { TERM_FUNC (s, tokinfo lexbuf) }
-  | ':' (ident as s) '(' { SEL_FUNC (s, tokinfo lexbuf) }
+  | "url("               { URI (tokinfo lexbuf) }
+  | (ident as s) '('     { TERM_FUNC (s, tokinfo lexbuf) }
+  | ':' (ident as s) '(' { SEL_FUNC  (s, tokinfo lexbuf) }
 
-  | nth	          { NTH (tok lexbuf, tokinfo lexbuf) }
+  | nth           { NTH (tok lexbuf, tokinfo lexbuf) }
   | number units? { QUANTITY ((*parse_quantity*) tok lexbuf, tokinfo lexbuf) }
 
-  | ident	 { IDENT (tok lexbuf, tokinfo lexbuf) }
-  | variable	 { VAR (tok lexbuf, tokinfo lexbuf) }
-  | hashed	 { HASH (tok lexbuf, tokinfo lexbuf) }
+  | ident        { IDENT (tok lexbuf, tokinfo lexbuf) }
+  | variable     { VAR   (tok lexbuf, tokinfo lexbuf) }
+  | hashed       { HASH  (tok lexbuf, tokinfo lexbuf) }
 
-  | "@charset" 	 { CHARSET (tokinfo lexbuf) }
-  | "@import" 	 { IMPORT (tokinfo lexbuf) }
-  | "@media" 	 { MEDIA (tokinfo lexbuf) }
-  | "@page" 	 { PAGE (tokinfo lexbuf) }
-  | "@font-face" { FONTFACE (tokinfo lexbuf) }
-  | "!important" { IMPORTANT (tokinfo lexbuf) }
+  | "@charset" space+   { CHARSET  (tokinfo lexbuf) }
+  | "@import" space+    { IMPORT   (tokinfo lexbuf) }
+  | "@media" space+     { MEDIA    (tokinfo lexbuf) }
+  | "@page" space+      { PAGE     (tokinfo lexbuf) }
+  | "@font-face" space+ { FONTFACE (tokinfo lexbuf) }
+  | space* "!important" space* { IMPORTANT (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
 
-  | "="	 { ATTR_EQUALS (tokinfo lexbuf) }
-  | "~=" { ATTR_INCLUDES (tokinfo lexbuf) }
+  | "="  { ATTR_EQUALS    (tokinfo lexbuf) }
+  | "~=" { ATTR_INCLUDES  (tokinfo lexbuf) }
   | "|=" { ATTR_DASHMATCH (tokinfo lexbuf) }
-  | "^=" { ATTR_PREFIX (tokinfo lexbuf) }
-  | "$=" { ATTR_SUFFIX (tokinfo lexbuf) }
+  | "^=" { ATTR_PREFIX    (tokinfo lexbuf) }
+  | "$=" { ATTR_SUFFIX    (tokinfo lexbuf) }
   | "*=" { ATTR_SUBSTRING (tokinfo lexbuf) }
 
-  | "::" { DOUBLE_COLON (tokinfo lexbuf) }
-  | '*'  { ASTERISK (tokinfo lexbuf) }
   (* 247 is the decimal Unicode codepoint for the division sign 
-   * | 247 	{ QUOTIENT }	
+   * | 247      { QUOTIENT }    
    *)
-  | '/' { SLASH (tokinfo lexbuf) }
-  | '+' { PLUS (tokinfo lexbuf) }
-  | '-' { MINUS (tokinfo lexbuf) }
-  | '~' { TILDE (tokinfo lexbuf) }
-  | '>' { GT (tokinfo lexbuf) }
-  | '{' { OPEN_CURLY (tokinfo lexbuf) }
-  | '}' { CLOSE_CURLY (tokinfo lexbuf) }
-  | ';' { SEMICOLON (tokinfo lexbuf) }
-  | ':' { COLON (tokinfo lexbuf) }
-  | ',' { COMMA (tokinfo lexbuf) }
-  | '(' { OPEN_ROUND (tokinfo lexbuf) }
-  | ')' { CLOSE_ROUND (tokinfo lexbuf) }
-  | '.'	{ PERIOD (tokinfo lexbuf) }
-  | '['	{ OPEN_SQUARE (tokinfo lexbuf) }
-  | ']'	{ CLOSE_SQUARE (tokinfo lexbuf) }
+  | space* "::" space* { DOUBLE_COLON (tokinfo lexbuf) }
+  | space* '*' space* { ASTERISK      (tokinfo lexbuf) }
+  | space* '/' space* { SLASH         (tokinfo lexbuf) }
+  | space* '+' space* { PLUS          (tokinfo lexbuf) }
+  | space* '-' space* { MINUS         (tokinfo lexbuf) }
+  | space* '~' space* { TILDE         (tokinfo lexbuf) }
+  | space* '>' space* { GT            (tokinfo lexbuf) }
+  | space* '{' space* { OPEN_CURLY    (tokinfo lexbuf) }
+  | space* '}' space* { CLOSE_CURLY   (tokinfo lexbuf) }
+  | space* ';' space* { SEMICOLON     (tokinfo lexbuf) }
+  | space* ':' space* { COLON         (tokinfo lexbuf) }
+  | space* ',' space* { COMMA         (tokinfo lexbuf) }
+  | space* '(' space* { OPEN_ROUND    (tokinfo lexbuf) }
+  | space* ')' space* { CLOSE_ROUND   (tokinfo lexbuf) }
+
+  | '.' { PERIOD (tokinfo lexbuf) }
+  | '[' { OPEN_SQUARE (tokinfo lexbuf) }
+  | ']' { CLOSE_SQUARE (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -168,15 +173,15 @@ rule token = parse
   (* eof *)
   (* ----------------------------------------------------------------------- *)
 
-  | eof	{ EOF (tokinfo lexbuf) }
-  | _	{ TUnknown (tokinfo lexbuf) }
+  | eof { EOF (tokinfo lexbuf) }
+  | _   { TUnknown (tokinfo lexbuf) }
             
 (*****************************************************************************)
 and single_string = parse
   | '\''  { "" }
   (* escaping ?? was not in original ... *)
   (* opti ? *)
-  | _	{ let s = tok lexbuf in s ^ single_string lexbuf } 
+  | _   { let s = tok lexbuf in s ^ single_string lexbuf } 
   | eof { 
       pr2 "LEXER: WEIRD end of file in single quoted string";
       ""
@@ -184,10 +189,10 @@ and single_string = parse
 
 
 and double_string = parse
-  | '"'	 { "" }
+  | '"'  { "" }
   (* escaping ?? was not in original ... *)
   (* opti ? *)
-  | _	{ let s = tok lexbuf in s ^ double_string lexbuf } 
+  | _   { let s = tok lexbuf in s ^ double_string lexbuf } 
   | eof { 
       pr2 "LEXER: WEIRD end of file in double quoted string";
       ""
@@ -195,7 +200,7 @@ and double_string = parse
 
 (*****************************************************************************)
 and comment = parse
-  | "*/" { tok lexbuf }
+  | "*/" space* { tok lexbuf }
   (* was buggy in original I think *)
   | [^'*''/']+ { let s = tok lexbuf in s ^ comment lexbuf } 
   | "*"     { let s = tok lexbuf in s ^ comment lexbuf }

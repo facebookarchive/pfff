@@ -32,10 +32,10 @@ open Common
 /*(* the comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_css.info> TCommentSpace TComment
+%token <Ast_css.info> TComment
 
-/*(* pad: ??? *)*/
-%token S
+/*(* pad: space, the css grammar is space sensitive, hmmm *)*/
+%token <Ast_css.info> S
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
