@@ -36,9 +36,25 @@ module PI = Parse_info
 
 type program2 = Ast.stylesheet * T.token list
 
+exception Parse_error of Parse_info.info
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let lexbuf_to_strpos lexbuf     = 
+  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
+
+let token_to_strpos tok = 
+  (TH.str_of_tok tok, TH.pos_of_tok tok)
+
+(*****************************************************************************)
+(* Error diagnostic  *)
+(*****************************************************************************)
+let error_msg_tok tok = 
+  let file = TH.file_of_tok tok in
+  if !Flag.verbose_parsing
+  then Parse_info.error_message file (token_to_strpos tok) 
+  else ("error in " ^ file  ^ "set verbose_parsing for more info")
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -54,12 +70,10 @@ let tokens2 file =
       let mltoken lexbuf = 
         Lexer_css.token lexbuf
       in
-      
       let rec tokens_aux acc = 
         let tok = mltoken lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
-        (*
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
@@ -70,8 +84,6 @@ let tokens2 file =
            | _ -> raise Todo
         })
         in
-        *)
-        
         if (match tok with T.EOF _ -> true | _ -> false)
         then List.rev (tok::acc)
         else tokens_aux (tok::acc)
@@ -88,11 +100,62 @@ let tokens a =
   Common.profile_code "Parse_css.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
+(* Helper for main entry point *)
+(*****************************************************************************)
+
+(* Hacked lex. This function use refs passed by parse.
+ * 'tr' means 'token refs'.
+ *)
+let rec lexer_function tr = fun lexbuf ->
+  match tr.PI.rest with
+  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
+  | v::xs -> 
+      tr.PI.rest <- xs;
+      tr.PI.current <- v;
+      tr.PI.passed <- v::tr.PI.passed;
+      if (match v with T.TComment _ -> true | _ -> false)
+      then lexer_function (*~pass*) tr lexbuf
+      else v
+
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let parse2 filename = 
-  raise Todo
+
+  let toks = tokens filename in
+
+  let tr = Parse_info.mk_tokens_state toks in
+  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+
+  (* -------------------------------------------------- *)
+  (* Call parser *)
+  (* -------------------------------------------------- *)
+  try 
+    (Common.profile_code "Parser_css.main" (fun () ->
+      Parser_css.stylesheet (lexer_function tr) lexbuf_fake, toks
+    ))
+  with exn ->
+    let current = tr.PI.current in
+
+    if not !Flag.error_recovery 
+    then raise (Parse_error (TH.info_of_tok current));
+
+    if !Flag.show_parsing_error
+    then 
+      (match exn with
+      (* Lexical is not anymore launched I think *)
+      | Lexer_css.Lexical s -> 
+          pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok current)
+      | Parsing.Parse_error -> 
+          pr2 ("parse error \n = " ^ error_msg_tok current)
+            (* | Semantic_java.Semantic (s, i) -> 
+               pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
+            *)
+      | e -> raise Impossible
+      );
+    [], toks
 
 let parse a = 
   Common.profile_code "Parse_css.parse" (fun () -> parse2 a)
