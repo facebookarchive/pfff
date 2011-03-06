@@ -9,14 +9,13 @@ TARGET=lib
 SRC= flag_parsing_css.ml \
      ast_css.ml \
      lib_parsing_css.ml \
+     parser_css.ml lexer_css.ml \
+     parse_css.ml \
      test_parsing_css.ml
 
 #     visitor_html.ml \
 #     export_html.ml \
-#     parser_html.ml lexer_html.ml \
 #     token_helpers_html.ml \
-#     dtd_simple.ml \
-#     parse_html.ml \
 #     unparse_html.ml \
 #     
 

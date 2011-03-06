@@ -7,10 +7,13 @@ have C-c C-t working to get type information under cursor
 
 *** bad example of style: ocamlnet/netstring/nethtml.ml.
 
- bad nested functions,
- bad indentation, too many newlines
- bad use of open variants
- overuse of intermediate functions like extract
+bad nested functions,
+
+bad indentation, too many newlines
+
+bad use of open variants
+
+overuse of intermediate functions like extract
 
 old: nested func
   let model_of element_name =
@@ -41,8 +44,15 @@ let model_of ~dtd_hash element_name =
     with Not_found -> (Everywhere, Any)
 
 *** bad example of style: ccss/
+
 bad use of open variants instead of plan variants
+
 use of _t to suffix type definition (no need, different namespace)
+
 unindented mutually recursive types. When have lots of type definitions,
  as it's the case usually with AST of languages, indent the types
  to convey grouping information.
+
+use less than 80 columns!
+
+don't use TABS, use space, and indent 2 space, not 4 (and especially not 8!)

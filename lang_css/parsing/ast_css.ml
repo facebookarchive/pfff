@@ -19,6 +19,9 @@ open Common
  * 
  * See also http://en.wikipedia.org/wiki/Cascading_Style_Sheets
  * 
+ * Most of the code in this file is copy pasted from Dario Teixera
+ * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
+ * 
  * alternatives:
  * - css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
  * - camlp4 and css https://github.com/samoht/cass
@@ -122,3 +125,5 @@ type declaration = property * expression * important
 (* Rule *)
 (* ------------------------------------------------------------------------- *)
 type rule = selector list * declaration list
+
+type stylesheet = rule list
