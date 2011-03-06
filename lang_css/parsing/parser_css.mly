@@ -285,16 +285,47 @@ pseudo_page_opt: S { }
 /*(* xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
-statement_star: S { }
+selector_separated_nonempty_list_COMMA:
+ | selector { [] }
+ | selector_separated_nonempty_list_COMMA COMMA selector { [] }
 
-selector_separated_nonempty_list_COMMA: S { }
-combination_star: S { }
-qualifier_star: S { }
-qualifier_plus: S { }
-declaration_plus: S { }
-boption_IMPORTANT: S { }
-sentence_separated_nonempty_list_COMMA: S { }
-term_separated_nonempty_list_sopt: S { }
+sentence_separated_nonempty_list_COMMA:
+ | sentence { [] }
+ | sentence_separated_nonempty_list_COMMA COMMA sentence { [] }
+
+term_separated_nonempty_list_sopt: 
+ | term { [] }
+ | term_separated_nonempty_list_sopt S term { [] }
+
+
+statement_star:
+ | statement_star statement { [] }
+ | /*(*empty*)*/ { [] }
+
+combination_star:
+ | combination_star combination { [] }
+ | /*(*empty*)*/ { [] }
+ 
+qualifier_star: 
+ | qualifier_star qualifier { [] }
+ | /*(*empty*)*/ { [] }
+
+
+
+qualifier_plus: 
+ | qualifier { [] }
+ | qualifier_plus qualifier { [] }
+
+declaration_plus: 
+ | declaration { [] }
+ | declaration_plus declaration { [] }
+
+
+
+boption_IMPORTANT: 
+ | /*(*empty*)*/ { [] }
+ | IMPORTANT { [] }
+
 
 
 
