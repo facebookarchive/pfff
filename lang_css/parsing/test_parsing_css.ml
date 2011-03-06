@@ -34,7 +34,10 @@ let test_parse_css xs =
   ()
 
 let test_dump_css file =
-  raise Todo
+  let (ast, _toks) = Parse_css.parse file in
+  let s = Export_ast_css.ml_pattern_string_of_stylesheet ast in
+  pr s
+
 
 (*****************************************************************************)
 (* Unit tests *)
