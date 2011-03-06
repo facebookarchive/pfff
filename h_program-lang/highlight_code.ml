@@ -258,6 +258,9 @@ type category =
   (* web related *)
   | EmbededHtml (* e.g. xhp *)
   | EmbededUrl (* e.g. xhp *)
+  | EmbededCode (* e.g. javascript *)
+  | EmbededStyle (* e.g. css *)
+  | Verbatim (* for latex, noweb, html pre *)
 
 
   (* Ccomment *)
@@ -806,6 +809,13 @@ let info_of_category = function
        * used as a method call in method programming
        *)
       [`FOREGROUND "DarkGoldenrod2"] 
+
+  | EmbededCode ->
+      [`FOREGROUND "yellow3"] 
+  | EmbededStyle ->
+      [`FOREGROUND "peru"] 
+  | Verbatim ->
+      [`FOREGROUND "plum"] 
 
 
 

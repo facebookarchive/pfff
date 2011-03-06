@@ -45,12 +45,57 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
     Hashtbl.add already_tagged ii true
   )
   in
-
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
   (* -------------------------------------------------------------------- *)
 
-  (* if href, then EmbededUrl *)
+  let rec visit = function
+
+    | Element ((Tag (s_tag, tok_t)), attrs, xs) ->
+        attrs +> List.iter 
+          (fun (Attr (s_attr, tok_a), (Val (s_val, tok_v))) ->
+            match s_attr with
+            | "href" | "xmlns" -> tag tok_v EmbededUrl
+            | "id" -> tag tok_v (Local Def)
+            | _ -> ()
+          );
+        (match s_tag, xs with
+        | "script", _ ->
+            xs +> List.iter (function
+            | Element _ -> () | Data (s, tok) -> tag tok EmbededCode
+            )
+        | "style", _ ->
+            xs +> List.iter (function
+            | Element _ -> () | Data (s, tok) -> 
+                pr2 "style";
+                tag tok Verbatim
+            )
+
+        | "pre", _ ->
+            xs +> List.iter (function
+            | Element _ -> raise Impossible
+            | Data (s, tok) -> tag tok Verbatim
+            )
+
+        | "h1", _ ->
+            xs +> List.iter (function
+            | Element _ -> () | Data (s, tok) -> tag tok CommentSection1
+            )
+        | "h2", _ ->
+            xs +> List.iter (function
+            | Element _ -> () | Data (s, tok) -> tag tok CommentSection2
+            )
+        | "h3", _ ->
+            xs +> List.iter (function
+            | Element _ -> () | Data (s, tok) -> tag tok CommentSection3
+            )
+        | _ -> ()
+        );
+        xs +> List.iter visit
+    | Data _ -> ()
+  in
+  visit toplevel;
+
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
@@ -94,14 +139,17 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
         ()
 
     | T.Literal (ii, s) -> 
+        (* can be a href *)
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
 
     | T.Other (ii) -> tag ii NotParsed
 
     | T.Cdata (ii, s) ->
-        (* tag ii String ? *)
-        ()
+        (* can be js code, css code *)
+ 
+        if not (Hashtbl.mem already_tagged ii)
+        then () (* tag ii String ? *)
 
     | T.TPi (ii)
     | T.TDoctype (ii)

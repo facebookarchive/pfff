@@ -229,7 +229,7 @@ let visit_toplevel
         tag ii KeywordExn (* TODO *)
 
     | T.TNowebChunkLine (_, ii) ->
-        tag ii BuiltinBoolean (* TODO *)
+        tag ii EmbededCode
 
 
     | T.TBeginVerbatim ii
@@ -238,7 +238,7 @@ let visit_toplevel
         tag ii KeywordLoop
 
     | T.TVerbatimLine (_, ii) ->
-        tag ii KeywordModule (* TODO *)
+        tag ii Verbatim
 
 
     | T.TNumber (_, ii) -> 

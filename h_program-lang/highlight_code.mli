@@ -67,6 +67,9 @@ type category =
 
   | EmbededHtml (* e.g. xhp *)
   | EmbededUrl (* e.g. xhp *)
+  | EmbededCode (* e.g. javascript *)
+  | EmbededStyle (* e.g. css *)
+  | Verbatim (* for latex, noweb, html pre *)
 
   | CommentWordImportantNotion | CommentWordImportantModal
 
