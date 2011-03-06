@@ -14,7 +14,7 @@ open Common
 
 (*
  * spec: http://www.w3.org/TR/CSS2/grammar.html
- * The official grammar contains a space token ...
+ * The official grammar contains a space token ... hmmm
  * old spec: http://www.w3.org/TR/REC-CSS1/#appendix-b
  * see also: http://www.w3.org/TR/CSS2/syndata.html
  * 
@@ -94,39 +94,10 @@ open Common
 /*(*************************************************************************)*/
 
 stylesheet:
- | s_star charset_opt statement_star EOF { [] (* ($2, $3) *)}
-
-charset:
- | CHARSET TString SEMICOLON                                      {$2}
+  | statement_star EOF { [] (* TODO $1 *) }
 
 statement:
- | IMPORT source s_opt media_list_opt SEMICOLON
-     {`Import ($2, $4)}
- | MEDIA media_list OPEN_CURLY rule_plus CLOSE_CURLY
-     {`Media ($2, $4)}
- | PAGE pseudo_page_opt declaration_block
-     {`Page ($2, $3)}
- | FONTFACE declaration_block
-     {`Fontface $2}
- | VAR COLON expr SEMICOLON  
-     { raise Todo (* `Vardecl ($startpos($1), $1, $3) *)}
- | rule
-     {`Rule $1}
-
-source:
- | TString
-     {`String $1}
- | URI TString CLOSE_ROUND
-     {`Uri $2}
-
-media_list:
- | medium_separated_nonempty_list_COMMA                  {$1}
-
-medium:
- | IDENT                                                         {$1}
-
-pseudo_page:
- | COLON IDENT                                                   {$2}
+ | rule {`Rule $1}
 
 rule:
  | selector_list declaration_block                               {($1, $2)}
@@ -145,14 +116,10 @@ combination:
  | combinator simple_selector                                    {($1, $2)}
 
 combinator:
- | S
-     {`Descendant}
- | TILDE
-     {`General_sibling}
- | PLUS
-     {`Adjacent_sibling}
- | GT
-     {`Child}
+ | S       {`Descendant}
+ | TILDE   {`General_sibling}
+ | PLUS    {`Adjacent_sibling}
+ | GT      {`Child}
 
 simple_selector:
  | element qualifier_star
@@ -169,8 +136,8 @@ simple_selector:
    }
 
 element:
- | IDENT                                                     {`Tag $1}
- | ASTERISK                                                  {`Universal}
+ | IDENT    {`Tag $1}
+ | ASTERISK {`Universal}
 
 qualifier:
  | HASH
@@ -252,7 +219,47 @@ calc:
      {raise Todo (* `Varref ($startpos($1), $1) *)}
  | QUANTITY                                                      {`Quantity $1}
 
-/*
+/*(*************************************************************************)*/
+/*(* maybe one day, was in dario original grammar *)*/
+/*(*************************************************************************)*/
+
+/*(* 
+stylesheet: 
+| s_star charset_opt statement_star EOF { [] (* ($2, $3) *)} 
+
+charset:
+ | CHARSET TString SEMICOLON                                      {$2}
+
+statement:
+ | IMPORT source s_opt media_list_opt SEMICOLON
+     {`Import ($2, $4)}
+ | MEDIA media_list OPEN_CURLY rule_plus CLOSE_CURLY
+     {`Media ($2, $4)}
+ | PAGE pseudo_page_opt declaration_block
+     {`Page ($2, $3)}
+ | FONTFACE declaration_block
+     {`Fontface $2}
+ | VAR COLON expr SEMICOLON  
+     { raise Todo (* `Vardecl ($startpos($1), $1, $3) *)}
+
+source:
+ | TString
+     {`String $1}
+ | URI TString CLOSE_ROUND
+     {`Uri $2}
+
+media_list:
+ | medium_separated_nonempty_list_COMMA                  {$1}
+
+medium:
+ | IDENT                                                         {$1}
+
+pseudo_page:
+ | COLON IDENT                                                   {$2}
+
+
+
+calc:
  | calc ASTERISK calc
      {`Mul ($startpos($2), $1, $3)}
  | calc QUOTIENT calc
@@ -263,21 +270,23 @@ calc:
      {`Sub ($startpos($2), $1, $3)}
  | OPEN_ROUND calc CLOSE_ROUND
      {$2}
-*/
 
-/*(*************************************************************************)*/
-/*(* xxx_opt, xxx_list *)*/
-/*(*************************************************************************)*/
-
-s_star: S { }
+medium_separated_nonempty_list_COMMA: S { }
 charset_opt: S { }
-statement_star: S { }
+s_star: S { }
 s_opt: S { }
 media_list_opt: S { }
 rule_plus: S { }
 pseudo_page_opt: S { }
 
-medium_separated_nonempty_list_COMMA: S { }
+*)*/
+
+/*(*************************************************************************)*/
+/*(* xxx_opt, xxx_list *)*/
+/*(*************************************************************************)*/
+
+statement_star: S { }
+
 selector_separated_nonempty_list_COMMA: S { }
 combination_star: S { }
 qualifier_star: S { }
