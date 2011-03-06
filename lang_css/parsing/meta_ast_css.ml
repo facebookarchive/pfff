@@ -26,8 +26,8 @@ and vof_simplesel =
 and vof_combinator =
   function
   | Descendant -> Ocaml.VSum (("Descendant", []))
-  | General_sibling -> Ocaml.VSum (("General_sibling", []))
-  | Adjacent_sibling -> Ocaml.VSum (("Adjacent_sibling", []))
+  | GeneralSibling -> Ocaml.VSum (("GeneralSibling", []))
+  | AdjacentSibling -> Ocaml.VSum (("AdjacentSibling", []))
   | Child -> Ocaml.VSum (("Child", []))
 and vof_element =
   function

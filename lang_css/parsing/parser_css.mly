@@ -8,6 +8,8 @@
 %{
 open Common
 
+open Ast_css
+
 (*************************************************************************)
 (* Prelude *)
 (*************************************************************************)
@@ -94,10 +96,10 @@ open Common
 /*(*************************************************************************)*/
 
 stylesheet:
-  | statement_star EOF { [] (* TODO $1 *) }
+  | statement_star EOF { $1 }
 
 statement:
- | rule {`Rule $1}
+ | rule { $1 (* `Rule *) }
 
 rule:
  | selector_list declaration_block                               {($1, $2)}
@@ -116,70 +118,58 @@ combination:
  | combinator simple_selector                                    {($1, $2)}
 
 combinator:
- | S       {`Descendant}
- | TILDE   {`General_sibling}
- | PLUS    {`Adjacent_sibling}
- | GT      {`Child}
+ | S       { Descendant }
+ | TILDE   { GeneralSibling }
+ | PLUS    { AdjacentSibling }
+ | GT      { Child }
 
 simple_selector:
  | element qualifier_star
-     {`Explicit ($1, $2)}
- | qualifier_plus  {
-     let nelist = function
-       | hd :: tl -> (hd, tl)
-       | []       -> failwith "nelist"
-     in
-     raise Todo
-     (*
-     `Generic (nelist $1)
-     *)
+     { Explicit ($1, $2) }
+ | qualifier_plus  
+     { let hd, tl = 
+       match $1 with 
+       | hd::tl -> hd, tl 
+       | _ -> failwith "Generic"
+       in
+       Generic (hd, tl)
    }
 
 element:
- | IDENT    {`Tag $1}
- | ASTERISK {`Universal}
+ | IDENT    { Tag (fst $1) }
+ | ASTERISK { Universal }
 
 qualifier:
  | HASH
-     {`Id $1}
+     { Id (fst $1) }
  | PERIOD IDENT
-     {`Class $2}
+     { Class (fst $2) }
  | OPEN_SQUARE IDENT attr_operation CLOSE_SQUARE
-     {`Attr ($2, $3)}
+     { Attr (fst $2, $3) }
  | COLON IDENT
-     {`Pseudo_class $2}
+     { PseudoClass (fst $2) }
  | DOUBLE_COLON IDENT
-     {`Pseudo_element $2}
+     { PseudoElement (fst $2) }
  | SEL_FUNC function_args CLOSE_ROUND
-     {`Sel_func ($1, $2)}
+     { SelFunc (fst $1, $2) }
 
 function_args:
- | qualifier_plus
-     {`Qualified $1}
- | NTH
-     {`Nth $1}
- | IDENT
-     {`Nth $1}
+ | qualifier_plus { Qualified $1 }
+ | NTH            { Nth (fst $1) }
+ | IDENT          { Nth (fst $1) }
 
 attr_operation:
- | /* empty */
-     {`Attr_exists}
- | ATTR_EQUALS attr_operand
-     {`Attr_equals $2}
- | ATTR_INCLUDES attr_operand
-     {`Attr_includes $2}
- | ATTR_DASHMATCH attr_operand
-     {`Attr_dashmatch $2}
- | ATTR_PREFIX attr_operand
-     {`Attr_prefix $2}
- | ATTR_SUFFIX attr_operand
-     {`Attr_suffix $2}
- | ATTR_SUBSTRING attr_operand
-     {`Attr_substring $2}
+ | /* empty */                  { AttrExists }
+ | ATTR_EQUALS attr_operand     { AttrEquals $2 }
+ | ATTR_INCLUDES attr_operand   { AttrIncludes $2 }
+ | ATTR_DASHMATCH attr_operand  { AttrDashmatch $2 }
+ | ATTR_PREFIX attr_operand     { AttrPrefix $2 }
+ | ATTR_SUFFIX attr_operand     { AttrSuffix $2 }
+ | ATTR_SUBSTRING attr_operand  { AttrSubstring $2 }
 
 attr_operand:
- | IDENT                                                         {$1}
- | TString                                                        {$1}
+ | IDENT   { fst $1 }
+ | TString { fst $1 }
 
 
 /*(*************************************************************************)*/
@@ -187,37 +177,27 @@ attr_operand:
 /*(*************************************************************************)*/
 
 declaration_block:
- | OPEN_CURLY declaration_plus CLOSE_CURLY                               {$2}
+ | OPEN_CURLY declaration_plus CLOSE_CURLY       { $2 }
 
 declaration:
- | IDENT COLON expr boption_IMPORTANT SEMICOLON                  {($1, $3, $4)}
+ | IDENT COLON expr boption_IMPORTANT SEMICOLON  { (fst $1, $3, $4) }
 
-expr:
- | sentence_separated_nonempty_list_COMMA                        {$1}
+expr: sentence_separated_nonempty_list_COMMA  { $1 }
 
-sentence:
- | term_separated_nonempty_list_sopt                             {$1}
+sentence: term_separated_nonempty_list_sopt   { $1 }
 
 term:
- | calc
-     {`Calc $1}
- | TString
-     {`String $1}
- | IDENT
-     {`Ident $1}
- | URI TString CLOSE_ROUND
-     {`Uri $2}
- | HASH
-     {`Hash $1}
- | TERM_FUNC expr CLOSE_ROUND
-     {`Term_func ($1, $2)}
- | SLASH
-     {`Slash}
+ | calc    { Calc $1 }
+ | TString { String (fst $1) }
+ | IDENT   { Ident (fst $1) }
+ | URI TString CLOSE_ROUND { Uri (fst $2) }
+ | HASH    { Hash (fst $1) }
+ | TERM_FUNC expr CLOSE_ROUND { TermFunc (fst $1, $2) }
+ | SLASH   { Slash }
 
 calc:
- | VAR
-     {raise Todo (* `Varref ($startpos($1), $1) *)}
- | QUANTITY                                                      {`Quantity $1}
+ | VAR      { Varref (fst ($1)) }
+ | QUANTITY { Quantity (0., Some (fst $1)) (* TODO parse_quantity *) }
 
 /*(*************************************************************************)*/
 /*(* maybe one day, was in dario original grammar *)*/
@@ -286,46 +266,40 @@ pseudo_page_opt: S { }
 /*(*************************************************************************)*/
 
 selector_separated_nonempty_list_COMMA:
- | selector { [] }
- | selector_separated_nonempty_list_COMMA COMMA selector { [] }
+ | selector { [$1] }
+ | selector_separated_nonempty_list_COMMA COMMA selector { $1 ++ [$3] }
 
 sentence_separated_nonempty_list_COMMA:
- | sentence { [] }
- | sentence_separated_nonempty_list_COMMA COMMA sentence { [] }
+ | sentence { [$1] }
+ | sentence_separated_nonempty_list_COMMA COMMA sentence { $1 ++ [$3] }
 
 term_separated_nonempty_list_sopt: 
- | term { [] }
- | term_separated_nonempty_list_sopt S term { [] }
+ | term { [$1] }
+ | term_separated_nonempty_list_sopt S term { $1 ++ [$3] }
 
 
 statement_star:
- | statement_star statement { [] }
+ | statement_star statement { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
 
 combination_star:
- | combination_star combination { [] }
+ | combination_star combination { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
  
 qualifier_star: 
- | qualifier_star qualifier { [] }
+ | qualifier_star qualifier { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
-
 
 
 qualifier_plus: 
- | qualifier { [] }
- | qualifier_plus qualifier { [] }
+ | qualifier { [$1] }
+ | qualifier_plus qualifier { $1 ++ [$2] }
 
 declaration_plus: 
- | declaration { [] }
- | declaration_plus declaration { [] }
-
+ | declaration { [$1] }
+ | declaration_plus declaration { $1 ++ [$2] }
 
 
 boption_IMPORTANT: 
- | /*(*empty*)*/ { [] }
- | IMPORTANT { [] }
-
-
-
-
+ | /*(*empty*)*/ { false }
+ | IMPORTANT { true }

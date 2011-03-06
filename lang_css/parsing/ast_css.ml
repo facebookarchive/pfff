@@ -62,7 +62,7 @@ type selector = simplesel * (combinator * simplesel) list
    | Explicit of element * qualifier list
    | Generic of qualifier * qualifier list
 
- and combinator = Descendant | General_sibling | Adjacent_sibling | Child
+ and combinator = Descendant | GeneralSibling | AdjacentSibling | Child
 
   and element =
     | Tag of string
