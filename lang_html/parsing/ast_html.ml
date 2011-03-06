@@ -107,9 +107,9 @@ type html_tree =
   | Data of string
 
  (* todo? some newtype ? *)
- and tag = string
- and attr_name = string
- and attr_value = string
+ and tag = Tag of string
+ and attr_name = Attr of string
+ and attr_value = Val of string
 
 (* 
  * TODO

@@ -15,10 +15,12 @@
 
 open Common
 
-module J = Json_type
+open Ast_html
 module H = Ast_html
 
+module J = Json_type
 module H2 = Nethtml
+
 
 (* obsolete *)
 let rec json_of_document doc = 
@@ -39,11 +41,11 @@ let rec json_of_html_tree2 html =
 
 let rec json_of_html_tree doc = 
   match doc with
-  | H.Element (name, args, subnodes) ->
+  | H.Element (Tag name, args, subnodes) ->
       J.Array ([
         J.String "ELEMENT";
         J.String name; 
-        J.Object (args +> List.map (fun (fld, value) ->
+        J.Object (args +> List.map (fun (Attr fld, Val value) ->
           fld, J.String value
         ))] ++
         (subnodes +> List.map json_of_html_tree)
