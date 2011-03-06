@@ -17,9 +17,10 @@ let test_tokens_css file =
 (*
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
-  let (_ast, toks) = Parse_html.parse file in
-  toks +> List.iter (fun x -> pr2_gen x);
 *)
+  let toks = Parse_css.tokens file in
+  toks +> List.iter (fun x -> pr2_gen x);
+
   ()
 
 let test_parse_css xs =

@@ -52,8 +52,6 @@ let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
 (*****************************************************************************)
 (* Tokens/Ast association  *)
@@ -148,7 +146,7 @@ let tokens2 file =
   with
   | Lexer_ml.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (lexbuf_to_strpos lexbuf)))
+                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
           

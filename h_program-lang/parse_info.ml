@@ -375,6 +375,10 @@ let mk_info_item ~info_of_tok a =
   Common.profile_code "Parsing.mk_info_item" 
     (fun () -> mk_info_item2 ~info_of_tok a)
 
+
+let lexbuf_to_strpos lexbuf     = 
+  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
+
 (*****************************************************************************)
 (* vtoken -> ocaml *)
 (*****************************************************************************)

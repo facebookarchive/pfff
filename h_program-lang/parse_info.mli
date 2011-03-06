@@ -121,6 +121,9 @@ val min_max_ii_by_pos: info list -> info * info
 val mk_info_item: 
   info_of_tok:('tok -> info) -> 'tok list -> string * 'tok list
 
+val lexbuf_to_strpos:
+  Lexing.lexbuf -> string * int
+
 (* meta *)
 val vof_token:
   token -> Ocaml.v
