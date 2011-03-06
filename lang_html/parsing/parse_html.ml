@@ -108,18 +108,20 @@ let parse_atts call_scan =
     match next with
     | T.Relement _  -> ( [], false )
     | T.Relement_empty _  -> ( [], true )
-    | T.Name (_tok, n) ->
+    | T.Name (tok1, n) ->
         (match skip_space false call_scan with
         | T.Eq _ ->
             (match skip_space true call_scan with
-            | T.Name (_tok, v) ->
+            | T.Name (tok2, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (skip_space false call_scan) in
-                ( (Attr (String.lowercase n), Val v) :: toks, is_empty )
-            | T.Literal (_tok, v) ->
+                ((Attr (String.lowercase n, tok1), Val (v, tok2)) :: toks, 
+                is_empty)
+            | T.Literal (tok2, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (skip_space false call_scan) in
-                ( (Attr (String.lowercase n), Val v) :: toks, is_empty )
+                ((Attr (String.lowercase n, tok1), Val (v, tok2))::toks, 
+                is_empty)
             | T.EOF _ ->
                 raise End_of_scan
             | T.Relement _ ->
@@ -136,15 +138,18 @@ let parse_atts call_scan =
             raise End_of_scan
         | T.Relement _ ->
             (* <tag name> <==> <tag name="name"> *)
-            ( [ Attr (String.lowercase n), Val (String.lowercase n)], false)
+            ([Attr (String.lowercase n, tok1), 
+              Val (String.lowercase n, Ast.fakeInfo())], false)
         | T.Relement_empty _ ->
             (* <tag name> <==> <tag name="name"> *)
-            ( [ Attr (String.lowercase n), Val (String.lowercase n)], true)
+            ([Attr (String.lowercase n, tok1), 
+              Val (String.lowercase n, Ast.fakeInfo())], true)
         | next' ->
             (* assume <tag name ... > <==> <tag name="name" ...> *)
             let toks, is_empty = 
               parse_atts_lookahead next' in
-            ( (Attr (String.lowercase n), Val (String.lowercase n)) :: toks,
+            ((Attr (String.lowercase n, tok1), 
+              Val (String.lowercase n, Ast.fakeInfo())) :: toks,
             is_empty)
         )
     | T.EOF _ ->
@@ -156,24 +161,26 @@ let parse_atts call_scan =
   parse_atts_lookahead (skip_space false call_scan)
 
 (* called for 'Special, not is_empty' tag categories *)
-let rec parse_special (Tag name) call_scan =
+let rec parse_special tag call_scan =
+  let (Tag (name, tok1)) = tag in
+
   (* Parse until </name> *)
   match call_scan Lexer_html.scan_special with
   | T.Lelementend (_tok, n) ->
       if String.lowercase n = name 
       then ""
-      else "</" ^ n ^ parse_special (Tag name) call_scan
+      else "</" ^ n ^ parse_special tag call_scan
   | T.EOF _ -> raise End_of_scan
-  | T.Cdata (_tok, s) -> s ^ parse_special (Tag name) call_scan
+  | T.Cdata (_tok, s) -> s ^ parse_special tag call_scan
   | _ ->
       (* Illegal *)
-      parse_special (Tag name) call_scan
+      parse_special tag call_scan
 
 (*****************************************************************************)
 (* Misc helpers *)
 (*****************************************************************************)
 
-let model_of ~dtd_hash (Tag element_name) =
+let model_of ~dtd_hash (Tag (element_name, _tok)) =
   try 
     (match Hashtbl.find dtd_hash element_name with 
     | (eclass, Dtd.Sub_exclusions(_,m)) -> eclass, m
@@ -181,7 +188,7 @@ let model_of ~dtd_hash (Tag element_name) =
     )
   with Not_found -> (Dtd.Everywhere, Dtd.Any)
 
-let exclusions_of ~dtd_hash (Tag element_name) =
+let exclusions_of ~dtd_hash (Tag (element_name, _tok)) =
   try
     (match Hashtbl.find dtd_hash element_name with
     | (eclass, Dtd.Sub_exclusions(l,_)) -> l
@@ -203,7 +210,7 @@ let is_possible_subelement
         sub_class = Dtd.Block  || 
         sub_class = Dtd.Essential_block
     | Dtd.Elements l -> 
-        let (Tag s) = sub_element in
+        let (Tag (s, _tok)) = sub_element in
         List.mem s l
     | Dtd.Any        -> true
     | Dtd.Or     (m1,m2) -> eval m1 ||     eval m2
@@ -212,7 +219,7 @@ let is_possible_subelement
     | Dtd.Special    -> false
     | Dtd.Sub_exclusions(_,_) -> assert false
   in
-  let (Tag sub_element_str) = sub_element in
+  let (Tag (sub_element_str, _tok)) = sub_element in
   (sub_class = Dtd.Everywhere) ||
   (
     (not (StringSet.mem sub_element_str parent_excl)) &&
@@ -248,9 +255,11 @@ let parse2 file =
   let dtd = Dtd.html40_dtd in
   let dtd_hash = Common.hash_of_list dtd in
 
-
-  let current = 
-    ref { name = Tag ""; atts = []; subs = []; excl = StringSet.empty} in
+  let current = ref { 
+    name = Tag ("", Ast.fakeInfo()); atts = []; 
+    subs = []; excl = StringSet.empty
+  } 
+  in
 
   let stack = Stack.create() in
 
@@ -301,28 +310,31 @@ let parse2 file =
     match t with
     | T.TComment info ->
         current := { !current with subs = 
-          (Element(Tag "--",
-                    [Attr "contents", Val (PI.str_of_info info)],[]))
+          (Element(Tag ("--", info),
+                    [Attr ("contents", Ast.fakeInfo()), 
+                    Val (PI.str_of_info info, Ast.fakeInfo())],[]))
             ::!current.subs
         };
         parse_next()
     | T.TDoctype info ->
         current := { !current with subs =
-          (Element(Tag "!",
-                  [Attr "contents", Val (PI.str_of_info info)],[]))
+          (Element(Tag ("!", info),
+                  [Attr ("contents", Ast.fakeInfo()), 
+                   Val (PI.str_of_info info, Ast.fakeInfo())],[]))
            ::!current.subs;
         };
         parse_next()
     | T.TPi info ->
         current := { !current with subs =
-          (Element(Tag "?",
-                  [Attr "contents",Val (PI.str_of_info info)],[]))
+          (Element(Tag ("?", info),
+                  [Attr ("contents", Ast.fakeInfo()),
+                   Val (PI.str_of_info info, Ast.fakeInfo())],[]))
            ::!current.subs;
         };
         parse_next()
 
-    | T.Lelement (_tok, name) ->
-        let name = Tag (String.lowercase name) in
+    | T.Lelement (tok, name) ->
+        let name = Tag (String.lowercase name, tok) in
         let (_, model) = model_of ~dtd_hash name in
         (match model with
         | Dtd.Empty ->
@@ -346,7 +358,8 @@ let parse2 file =
               end
             in
             current := { !current with subs = 
-                (Ast.Element(name, atts, [Ast.Data data])) :: !current.subs;
+                (Ast.Element(name, atts, [Ast.Data (data,Ast.fakeInfo())]))
+                :: !current.subs;
             };
             parse_next()
         | _ ->
@@ -376,13 +389,13 @@ let parse2 file =
             end;
             parse_next()
         )
-    | T.Cdata (_tok, data) ->
+    | T.Cdata (tok, data) ->
         current := { !current with subs =
-            (Ast.Data data) :: !current.subs;
+            (Ast.Data (data, tok))::!current.subs;
         };
         parse_next()
-    | T.Lelementend (_tok, name) ->
-        let name = Tag (String.lowercase name) in
+    | T.Lelementend (tok, name) ->
+        let name = Tag (String.lowercase name, tok) in
         (* Read until ">" *)
         skip_element call_scan;
         (* Search the element to close on the stack: *)
@@ -453,7 +466,7 @@ let parse2 file =
       done;
       List.rev !current.subs
   in
-  Ast.Element (Tag "__root__", [], xs), List.rev !toks
+  Ast.Element (Tag ("__root__", Ast.fakeInfo()), [], xs), List.rev !toks
  )
 
 let parse a = 

@@ -86,7 +86,9 @@ module PI = Parse_info
 type pinfo = Parse_info.token
 type info = Parse_info.info
 and tok = info
-
+(* a shortcut to annotate some information with token/position information *)
+and 'a wrap = 'a * info
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* HTML raw version *)
@@ -104,12 +106,14 @@ type html_tree =
       tag *
       (attr_name * attr_value) list *
       html_tree list
-  | Data of string
+  | Data of string wrap
 
  (* todo? some newtype ? *)
- and tag = Tag of string
- and attr_name = Attr of string
- and attr_value = Val of string
+ and tag = Tag of string wrap
+ and attr_name  = Attr of string wrap
+ and attr_value = Val  of string wrap
+
+ (* with tarzan *)
 
 (* 
  * TODO
@@ -146,6 +150,12 @@ type html_tree2 = Nethtml.document list
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
+
+let fakeInfo ?(next_to=None) ?(str="") () = { 
+  PI.token = PI.FakeTokStr (str, next_to);
+  comments = ();
+  transfo = PI.NoTransfo;
+  }
 
 (*****************************************************************************)
 (* Wrappers *)

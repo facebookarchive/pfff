@@ -41,16 +41,16 @@ let rec json_of_html_tree2 html =
 
 let rec json_of_html_tree doc = 
   match doc with
-  | H.Element (Tag name, args, subnodes) ->
+  | H.Element (Tag (name, _tok), args, subnodes) ->
       J.Array ([
         J.String "ELEMENT";
         J.String name; 
-        J.Object (args +> List.map (fun (Attr fld, Val value) ->
+        J.Object (args +> List.map (fun (Attr (fld, _t1), Val (value, _t2)) ->
           fld, J.String value
         ))] ++
         (subnodes +> List.map json_of_html_tree)
       )
-  | H.Data s -> J.Array [J.String "DATA"; J.String s]
+  | H.Data (s, _tok) -> J.Array [J.String "DATA"; J.String s]
 
 let json_string_of_html_tree html = 
   raise Todo
