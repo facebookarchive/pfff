@@ -23,38 +23,46 @@ open Common
 /*(* Tokens *)*/
 /*(*************************************************************************)*/
 
+/*(*-----------------------------------------*)*/
+/*(* the comment tokens *)*/
+/*(*-----------------------------------------*)*/
+/*(* coupling: Token_helpers.is_real_comment *)*/
+%token <Ast_css.info> TCommentSpace TComment
+
+/*(* pad: ??? *)*/
 %token S
 
-%token CHARSET IMPORT MEDIA PAGE FONTFACE
+/*(*-----------------------------------------*)*/
+/*(* the normal tokens *)*/
+/*(*-----------------------------------------*)*/
 
-%token OPEN_CURLY CLOSE_CURLY
-%token OPEN_ROUND CLOSE_ROUND
-%token OPEN_SQUARE CLOSE_SQUARE
-%token SEMICOLON COLON DOUBLE_COLON COMMA PERIOD SLASH
-%token ASTERISK QUOTIENT PLUS MINUS
-%token TILDE GT IMPORTANT
+%token <Ast_css.info> CHARSET IMPORT MEDIA PAGE FONTFACE
 
-%token ATTR_EQUALS
-%token ATTR_INCLUDES
-%token ATTR_DASHMATCH
-%token ATTR_PREFIX
-%token ATTR_SUFFIX
-%token ATTR_SUBSTRING
+%token <Ast_css.info> OPEN_CURLY CLOSE_CURLY
+%token <Ast_css.info> OPEN_ROUND CLOSE_ROUND
+%token <Ast_css.info> OPEN_SQUARE CLOSE_SQUARE
+%token <Ast_css.info> SEMICOLON COLON DOUBLE_COLON COMMA PERIOD SLASH
+%token <Ast_css.info> ASTERISK QUOTIENT PLUS MINUS
+%token <Ast_css.info> TILDE GT IMPORTANT
 
-%token URI
-%token <string> STRING
-%token <string> IDENT
-%token <string> NTH
-%token <string> HASH
-%token <string> VAR
+%token <Ast_css.info> ATTR_EQUALS ATTR_INCLUDES ATTR_DASHMATCH
+%token <Ast_css.info> ATTR_PREFIX ATTR_SUFFIX ATTR_SUBSTRING
 
-%token <string> SEL_FUNC
-%token <string> TERM_FUNC
+%token <Ast_css.info> URI
+%token <string * Ast_css.info> TString
+%token <string * Ast_css.info> IDENT
+%token <string * Ast_css.info> NTH
+%token <string * Ast_css.info> HASH
+%token <string * Ast_css.info> VAR
 
-%token <string> QUANTITY
+%token <string * Ast_css.info> SEL_FUNC
+%token <string * Ast_css.info> TERM_FUNC
+
+%token <string * Ast_css.info> QUANTITY
 
 /*(*-----------------------------------------*)*/
-%token EOF
+%token <Ast_css.info> TUnknown
+%token <Ast_css.info> EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/
@@ -84,7 +92,7 @@ stylesheet:
  | s_star charset_opt statement_star EOF { [] (* ($2, $3) *)}
 
 charset:
- | CHARSET STRING SEMICOLON                                      {$2}
+ | CHARSET TString SEMICOLON                                      {$2}
 
 statement:
  | IMPORT source s_opt media_list_opt SEMICOLON
@@ -101,9 +109,9 @@ statement:
      {`Rule $1}
 
 source:
- | STRING
+ | TString
      {`String $1}
- | URI STRING CLOSE_ROUND
+ | URI TString CLOSE_ROUND
      {`Uri $2}
 
 media_list:
@@ -199,7 +207,7 @@ attr_operation:
 
 attr_operand:
  | IDENT                                                         {$1}
- | STRING                                                        {$1}
+ | TString                                                        {$1}
 
 
 /*(*************************************************************************)*/
@@ -221,11 +229,11 @@ sentence:
 term:
  | calc
      {`Calc $1}
- | STRING
+ | TString
      {`String $1}
  | IDENT
      {`Ident $1}
- | URI STRING CLOSE_ROUND
+ | URI TString CLOSE_ROUND
      {`Uri $2}
  | HASH
      {`Hash $1}
