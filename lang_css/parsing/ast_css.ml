@@ -89,6 +89,8 @@ type selector = simplesel * (combinator * simplesel) list
       | AttrSuffix of string
       | AttrSubstring of string
 
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -123,9 +125,13 @@ type declaration = property * expression * important
 
        and variable = string
 
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Rule *)
 (* ------------------------------------------------------------------------- *)
 type rule = selector list * declaration list
+ (* with tarzan *)
 
 type stylesheet = rule list
+ (* with tarzan *)

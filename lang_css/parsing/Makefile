@@ -8,16 +8,17 @@ TARGET=lib
 
 SRC= flag_parsing_css.ml \
      ast_css.ml \
+     meta_ast_css.ml \
      lib_parsing_css.ml \
+     export_ast_css.ml \
      parser_css.ml lexer_css.ml \
      token_helpers_css.ml \
      parse_css.ml \
      test_parsing_css.ml
 
 #     visitor_html.ml \
-#     export_html.ml \
 #     unparse_html.ml \
-#     
+     
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma
