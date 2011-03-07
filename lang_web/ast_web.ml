@@ -35,6 +35,7 @@ type web_document = {
   stuff_in_js: (Ast_js.info * web_document);
 }
 
+(* move in tokens_web.ml ? or fake parser_web.mly ? or token_helpers.ml ? *)
 type token = 
   | THtml of Parser_html.token
   | TJs of Parser_js.token
