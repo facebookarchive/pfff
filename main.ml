@@ -5,12 +5,11 @@
 
 open Common
 
-
-
-
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
+
+(* A "driver" of the different parsers in pfff *)
 
 (*****************************************************************************)
 (* Flags *)
@@ -47,12 +46,10 @@ let main_action xs =
 let action1 () = 
   raise Todo
 
-
 let test_json_pretty_printer file =
   let json = Json_in.load_json file in
   let s = Json_io.string_of_json json in
   pr s
-
 
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
@@ -84,6 +81,7 @@ let all_actions () =
   Test_parsing_text.actions()++
   Test_parsing_html.actions()++
   Test_parsing_css.actions()++
+  Test_parsing_web.actions()++
 
   Test_analyze_cpp.actions () ++
   []
@@ -103,14 +101,14 @@ let options () =
 
   [
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "pfff (console) version: %s" Config.version);
+      pr2 (spf "pfff version: %s" Config.version);
       exit 0;
     ), 
     "  guess what";
 
     (* this can not be factorized in Common *)
     "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2008/10/26 00:44:57 $";
+      pr2 "version: $Date: 2011/03/26 00:44:57 $";
       raise (Common.UnixExit 0)
     ), 
     "   guess what";
@@ -162,9 +160,6 @@ let main () =
         failwith "too few arguments"
     )
   )
-
-
-
 
 (*****************************************************************************)
 let _ =

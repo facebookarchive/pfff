@@ -164,6 +164,7 @@ BASICLIBS=commons/commons.cma \
  lang_html/parsing/lib.cma \
  lang_js/parsing/lib.cma \
  lang_css/parsing/lib.cma \
+ lang_web/parsing/lib.cma \
  lang_text/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
@@ -221,6 +222,7 @@ LIBS= commons/commons.cma \
     lang_html/parsing/lib.cma \
      lang_html/analyze/lib.cma \
     lang_css/parsing/lib.cma \
+    lang_web/parsing/lib.cma \
 
 
 MAKESUBDIRS=commons \
@@ -271,6 +273,7 @@ MAKESUBDIRS=commons \
   lang_html/parsing \
    lang_html/analyze \
   lang_css/parsing \
+  lang_web/parsing \
   lang_text \
   $(VISUALDIR) \
   $(FACEBOOKDIR)
