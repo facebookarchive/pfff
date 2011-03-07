@@ -100,6 +100,31 @@ type html_raw = HtmlRaw of string
 (* HTML tree version *)
 (* ------------------------------------------------------------------------- *)
 
+(** The type [document] represents parsed HTML documents:
+ *
+ * {ul
+ * {- [Element (name, args, subnodes)] is an element node for an element of
+ *   type [name] (i.e. written [<name ...>...</name>]) with arguments [args]
+ *   and subnodes [subnodes] (the material within the element). The arguments
+ *   are simply name/value pairs. Entity references (something like [&xy;])
+ *   occuring in the values are {b not} resolved.
+ *
+ *   Arguments without values (e.g. [<select name="x" multiple>]: here,
+ *   [multiple] is such an argument) are represented as [(name,name)], i.e. the
+ *   name is also returned as value.
+ *
+ *   As argument names are case-insensitive, the names are all lowercase.}
+ * {- [Data s] is a character data node. Again, entity references are contained
+ *   as such and not as what they mean.}
+ * }
+ *
+ * Character encodings: The parser is restricted to ASCII-compatible
+ * encodings (see the function {!Netconversion.is_ascii_compatible} for
+ * a definition). In order to read other encodings, the text must be
+ * first recoded to an ASCII-compatible encoding (example below).
+ * Names of elements and attributes must additionally be ASCII-only.
+ *)
+
 (* src: ocamlnet/netstring/nethtml.mli *)
 type html_tree = 
   | Element of 

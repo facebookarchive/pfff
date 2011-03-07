@@ -33,8 +33,7 @@ open Common
 
 (*
  * From Gerd in march on the caml mailing list: 
- * Maybe the HTML specification would be a good reference here:
- * http://www.w3.org/TR/1999/REC-html401-19991224. You will see there that
+ * "http://www.w3.org/TR/1999/REC-html401-19991224. You will see there that
  * most HTML elements are either an inline element, a block element, or
  * both ("flow" element). The grammar of HTML is described in terms of
  * these classes. For instance, a P tag (paragraph) is a block element and
@@ -48,10 +47,25 @@ open Common
  * (and the </B> in the input is ignored).
  * 
  * If all start and all end tags are written out, changing the
- * simplified_dtd does not make any difference.
+ * simplified_dtd does not make any difference."
  *)
 
-(* What is the class of an element? *)
+(** We need a type that declares how to handle the various tags.
+ * This is called a "simplified DTD", as it is derived from SGML DTDs,
+ * but simplified to the extent used in the HTML definition.
+ *)
+
+(** Element classes are a property used in the HTML DTD. For our purposes,
+ * we define element classes simply as an enumeration:
+ * - [`Inline] is the class of inline HTML elements
+ * - [`Block] is the class of block HTML elements
+ * - [`Essential_block] is a sub-class of [`Block] with the additional
+ *   property that every start tag must be explicitly ended
+ * - [`None] means that the members of the class are neither block nor
+ *   inline elements, but have to be handled specially
+ * - [`Everywhere] means that the members of the class can occur everywhere, 
+ *   regardless of whether a constraint allows it or not.
+ *)
 type element_class = 
   | Inline
   | Block
@@ -59,7 +73,39 @@ type element_class =
   | None
   | Everywhere
 
-(* The constraint the subelements must fulfill *)
+(** Model constraints define the possible sub elements of an element:
+ * - [`Inline]: The sub elements must belong to the class [`Inline]
+ * - [`Block]: The sub elements must be members of the classes [`Block] or 
+ *   [`Essential_block]
+ * - [`Flow]: The sub elements must belong to the classes [`Inline], [`Block],
+ *   or [`Essential_block]
+ * - [`Empty]: There are no sub elements
+ * - [`Any]: Any sub element is allowed
+ * - [`Special]: The element has special content (e.g. [<script>]).
+ *   Functionally equivalent to [`Empty]
+ * - [`Elements l]: Only these enumerated elements may occur as sub elements
+ * - [`Or(m1,m2)]: One of the constraints [m1] or [m2] must hold
+ * - [`Except(m1,m2)]: The constraint [m1] must hold, and [m2] must not hold
+ * - [`Sub_exclusions(l,m)]: The constraint [m] must hold; furthermore, 
+ *   the elements enumerated in list [l] are not allowed as direct or
+ *   indirect subelements, even if [m] or the model of a subelement would
+ *   allow them. The difference to [`Except(m, `Elements l)] is that the
+ *   exclusion is inherited to the subelements. The [`Sub_exclusions]
+ *   expression must be toplevel, i.e. it must not occur within an [`Or], 
+ *   [`Except], or another ['Sub_exclusions] expression.
+ *
+ * Note that the members of the class [`Everywhere] are allowed everywhere,
+ * regardless of whether the model constraint allows them or not.
+ *
+ * Note that certain aspects are not modeled:
+ * - [#PCDATA]: We do not specify where PCDATA is allowed and where not.
+ * - Order, Number: We do neither specify in which order the sub elements must
+ *   occur nor how often they can occur
+ * - Inclusions: DTDs may describe that an element extraordinarily
+ *   allows a list of elements in all sub elements. 
+ * - Optional tags: Whether start or end tags can be omitted (to some extent,
+ *   this can be expressed with [`Essential_block], however)
+ *)
 type model_constraint =
   | Inline2
   | Block2
