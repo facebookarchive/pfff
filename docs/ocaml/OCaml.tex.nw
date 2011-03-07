@@ -204,6 +204,7 @@ Yoann Padioleau\\
 %emacs mode, cf later 
 
 %package manager, cf later 
+% ocamlfind and findlib
 
 \chapter{Installing OCaml}
 
@@ -247,7 +248,8 @@ Yoann Padioleau\\
 % link to emacs C-c C-t, see more later
 
 <<foo.ml>>=
-@ 
+let x = 1
+@
 
 \section{Command line arguments}
 
@@ -449,6 +451,10 @@ Amazing debugger. Can go back in time.
 \chapter{More Documentation}
 
 \url{http://en.wikipedia.org/wiki/Objective_Caml}
+
+% chailloux chapter on internals !!! great way to understand
+% how things work, and you need that to be proficient, know what
+% cost things (not like lisp programmer ... cf quote)
 
 \section{\ocaml tutorials} 
 
