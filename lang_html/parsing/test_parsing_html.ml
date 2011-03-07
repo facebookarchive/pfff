@@ -76,10 +76,9 @@ let actions () = [
   Common.mk_action_n_arg test_parse_html;
   "-dump_html", "   <file>", 
   Common.mk_action_1_arg test_dump_html;
-  "-json_html", "   <file>", 
-  Common.mk_action_1_arg test_dump_html;
+
   "-json_html", "   <file>", 
   Common.mk_action_1_arg test_json_html;
-  "-dump_html_old", "   <file>", 
+  "-json_html_old", "   <file>", 
   Common.mk_action_1_arg test_dump_html_old;
 ]
