@@ -89,6 +89,9 @@ rule scan_document = parse
       let com = scan_doctype lexbuf in
       TDoctype(info +> tok_add_s com) 
     }
+  (* pi stands for processing elements, it is obsolete in HTML 5
+   * see http://www.w3.org/TR/2011/WD-html5-diff-20110113/#syntax
+   *)
   | "<?" { 
       let info = tokinfo lexbuf in
       let com = scan_pi lexbuf in

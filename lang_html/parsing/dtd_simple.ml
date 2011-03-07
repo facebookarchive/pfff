@@ -31,6 +31,26 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
+(*
+ * From Gerd in march on the caml mailing list: 
+ * Maybe the HTML specification would be a good reference here:
+ * http://www.w3.org/TR/1999/REC-html401-19991224. You will see there that
+ * most HTML elements are either an inline element, a block element, or
+ * both ("flow" element). The grammar of HTML is described in terms of
+ * these classes. For instance, a P tag (paragraph) is a block element and
+ * contains block elements whereas B (bold) is an inline element and
+ * contains inline elements. From this follows that you cannot put a P
+ * inside a B: <B><P>something</P></B> is illegal.
+ * 
+ * The parser needs this information to resolve such input, i.e. do
+ * something with bad HTML. As HTML allows tag minimization (many end tags
+ * can be omitted), the parser can read this as: <B></B><P>something</P>
+ * (and the </B> in the input is ignored).
+ * 
+ * If all start and all end tags are written out, changing the
+ * simplified_dtd does not make any difference.
+ *)
+
 (* What is the class of an element? *)
 type element_class = 
   | Inline
@@ -44,6 +64,7 @@ type model_constraint =
   | Inline2
   | Block2
   | Flow         (* = `Inline or `Block *)
+
   | Empty
   | Any
   | Special (* for style and script tags *)
