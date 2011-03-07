@@ -8,6 +8,8 @@ TARGET=lib
 
 SRC= flag_parsing_web.ml \
      ast_web.ml \
+     parse_web.ml \
+     test_parsing_web.ml \
 
 #     meta_ast_html.ml \
 #     visitor_html.ml \
@@ -15,11 +17,7 @@ SRC= flag_parsing_web.ml \
 #     export_html.ml \
 #     parser_html.ml lexer_html.ml \
 #     token_helpers_html.ml \
-#     dtd_simple.ml \
-#     parse_html.ml \
 #     unparse_html.ml \
-#     test_parsing_html.ml
-
 
 
 SYSLIBS= str.cma unix.cma 

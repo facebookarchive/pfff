@@ -34,3 +34,8 @@ type web_document = {
   css: (Ast_html.info * Ast_css.stylesheet) list;
   stuff_in_js: (Ast_js.info * web_document);
 }
+
+type token = 
+  | THtml of Parser_html.token
+  | TJs of Parser_js.token
+  | TCss of Parser_css.token
