@@ -273,3 +273,39 @@ let html40_dtd =
     "frameset",           (None, Elements ["frameset"; "frame"; "noframes"]);
     "frame",              (None, Empty);
   ]
+
+
+(** A relaxed version of the HTML 4.0 DTD that matches better common
+ * practice. In particular, this DTD additionally allows that inline
+ * elements may span blocks. For example, 
+ * {[ <B>text1 <P>text2 ]}
+ * is parsed as
+ * {[ <B>text1 <P>text2</P></B> ]}
+ * and not as
+ * {[ <B>text1 </B><P>text2</P> ]}
+ * \- the latter is more correct (and parsed by [html40_dtd]), but is not what
+ * users expect.
+ *
+ * Note that this is still not what many browsers implement. For example,
+ * Netscape treats most inline tags specially: [<B>] switches bold on,
+ * [</B>] switches bold off. For example,
+ * {[ <A href='a'>text1<B>text2<A href='b'>text3 ]}
+ * is parsed as
+ * {[ <A href='a'>text1<B>text2</B></A><B><A href='b'>text3</A></B> ]}
+ * \- there is an extra [B] element around the second anchor! (You can
+ * see what Netscape parses by loading a page into the "Composer".)
+ * IMHO it is questionable to consider inline tags as switches because
+ * this is totally outside of the HTML specification, and browsers may
+ * differ in that point.
+ *
+ * Furthermore, several elements are turned into essential blocks:
+ * [TABLE], [UL], [OL], and [DL]. David Fox reported a problem with structures
+ * like:
+ * {[ <TABLE><TR><TD><TABLE><TR><TD>x</TD></TD></TR></TABLE>y</TD></TR></TABLE> ]}
+ * i.e. the [TD] of the inner table has two end tags. Without additional
+ * help, the second [</TD>] would close the outer table cell. Because of
+ * this problem, tables are now essential meaning that it is not allowed
+ * to implicitly add a missing [</TABLE>]; every table element has to
+ * be explicitly ended. This rule seems to be what many browsers implement.
+ *)
+(* TODO? val relaxed_html40_dtd : simplified_dtd *)

@@ -40,8 +40,10 @@ module PI = Parse_info
  *  - an ocamlduce/cduce AST, which have a type system specially made to 
  *    express the kind of invariants of a DTD.
  * 
- * TODO: add token/info in the html tree (so can have ast-based highlighting
- *  which is needed for coloring urls as in href)
+ * update: I've added token/info in the html tree so we can at least have 
+ *  an AST-based highlighter which is needed for coloring urls as in href
+ *  for instance.
+ * 
  * TODO: The solution used in this module is to use a real AST ?
  * 
  * alternative implementations: 
@@ -93,6 +95,7 @@ and 'a wrap = 'a * info
 (* ------------------------------------------------------------------------- *)
 (* HTML raw version *)
 (* ------------------------------------------------------------------------- *)
+
 (* might want to use channel for efficiency *)
 type html_raw = HtmlRaw of string 
 
@@ -100,6 +103,7 @@ type html_raw = HtmlRaw of string
 (* HTML tree version *)
 (* ------------------------------------------------------------------------- *)
 
+(* src: ocamlnet/netstring/nethtml.mli *)
 (** The type [document] represents parsed HTML documents:
  *
  * {ul
@@ -133,7 +137,6 @@ type html_tree =
       html_tree list
   | Data of string wrap
 
- (* todo? some newtype ? *)
  and tag = Tag of string wrap
  and attr_name  = Attr of string wrap
  and attr_value = Val  of string wrap
@@ -143,25 +146,16 @@ type html_tree =
 (* 
  * TODO
  * type url = Url of string (* actually complicated sublanguage *)
- * 
- * type tag = Tag of string
- * 
- * type attribute = Attr of string (* * value ? *)
- * 
  * type color = Color of string (* ?? *)
- * 
  * 
  * ??? tree ? how be precise ? 
  * see xHtml.ml ? but too complicated to build ... shadow type sucks
  *
- * type html = unit 
- * 
  * (* aka script *)
  * type javascript = unit
  * 
  * (*aka style *)
  * type css = unit
- * 
  *)
 
 (* ------------------------------------------------------------------------- *)
