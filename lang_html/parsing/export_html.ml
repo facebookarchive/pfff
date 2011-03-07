@@ -22,8 +22,28 @@ module J = Json_type
 module H2 = Nethtml
 
 let string_of_v v =
-  (* todo? hide token info *)
-  Ocaml.string_of_v v
+  let cnt = ref 0 in
+
+  (* transformation to not have the parse info or type info in the output *)
+  let v' = Ocaml.map_v ~f:(fun ~k x ->
+    match x with
+    | Ocaml.VDict (xs) ->
+        incr cnt;
+        (match () with
+        | _ when xs +> List.exists (function ("token", _) -> true | _ -> false)->
+            Ocaml.VVar ("i", Int64.of_int !cnt)
+        | _ when xs +> List.exists (function ("t", _) -> true | _ -> false)->
+            Ocaml.VVar ("t", Int64.of_int !cnt)
+        | _ when xs +> List.exists (function ("tvar", _) -> true | _ -> false)->
+            Ocaml.VVar ("tlval", Int64.of_int !cnt)
+        | _ -> 
+            (* recurse, x can be a record containing itself some records *)
+            k x
+        )
+    | _ -> k x
+  ) v
+  in
+  Ocaml.string_of_v v'
 
 let ml_pattern_string_of_html_tree ast = 
   Meta_ast_html.vof_html_tree ast +> string_of_v
