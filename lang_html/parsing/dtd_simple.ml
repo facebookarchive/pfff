@@ -46,7 +46,7 @@ type model_constraint =
   | Flow         (* = `Inline or `Block *)
   | Empty
   | Any
-  | Special
+  | Special (* for style and script tags *)
   | Elements of string list  (* Enumeration of allowed elements *)
 
   | Or of (model_constraint * model_constraint)

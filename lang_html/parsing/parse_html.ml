@@ -160,21 +160,38 @@ let parse_atts call_scan =
   in
   parse_atts_lookahead (skip_space false call_scan)
 
-(* called for 'Special, not is_empty' tag categories *)
-let rec parse_special tag call_scan =
+(* called for 'Special, not is_empty' tag categories, like 
+ * <script> and <style>. Parse until </name>.
+ * todo: this function is ugly. Could perhaps make scan_special
+ *  take the name as a parameter and do this loop until find the name
+ *  itself.
+ *)
+let parse_special tag call_scan =
   let (Tag (name, tok1)) = tag in
 
-  (* Parse until </name> *)
-  match call_scan Lexer_html.scan_special with
-  | T.Lelementend (_tok, n) ->
-      if String.lowercase n = name 
-      then ""
-      else "</" ^ n ^ parse_special tag call_scan
-  | T.EOF _ -> raise End_of_scan
-  | T.Cdata (_tok, s) -> s ^ parse_special tag call_scan
-  | _ ->
-      (* Illegal *)
-      parse_special tag call_scan
+  let first_tok = ref None in
+
+  let rec aux () = 
+    match call_scan Lexer_html.scan_special with
+    | T.Lelementend (_tok, n) ->
+        if String.lowercase n = name 
+        then ""
+        else "</" ^ n ^ aux ()
+    | T.EOF _ -> raise End_of_scan
+    | T.Cdata (tok, s) -> 
+        (if !first_tok = None then first_tok := Some tok);
+        s ^ aux ()
+    | _ ->
+        (* Illegal *)
+        aux ()
+  in
+  let s = aux () in
+  let info =
+    match !first_tok with
+    | None -> Ast.fakeInfo()
+    | Some tok -> PI.rewrap_str s tok
+  in
+  s, info 
 
 (*****************************************************************************)
 (* Misc helpers *)
@@ -349,7 +366,7 @@ let parse2 file =
             unwind_stack name;
             let data = 
               if is_empty 
-              then ""
+              then "", Ast.fakeInfo()
               else begin
                 let d = parse_special name call_scan in
                 (* Read until ">" *)
@@ -358,7 +375,7 @@ let parse2 file =
               end
             in
             current := { !current with subs = 
-                (Ast.Element(name, atts, [Ast.Data (data,Ast.fakeInfo())]))
+                (Ast.Element(name, atts, [Ast.Data data]))
                 :: !current.subs;
             };
             parse_next()
