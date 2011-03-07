@@ -51,6 +51,11 @@ let test_dump_html_old file =
 
 let test_dump_html file =
   let (ast, _toks) = Parse_html.parse file in
+  let s = Export_html.ml_pattern_string_of_html_tree ast in
+  pr2 s
+
+let test_json_html file =
+  let (ast, _toks) = Parse_html.parse file in
 (*  let s = Export_ast_ml.ml_pattern_string_of_program ast in *)
   let json = Export_html.json_of_html_tree ast in
   let s = Json_out.string_of_json json in
@@ -71,6 +76,10 @@ let actions () = [
   Common.mk_action_n_arg test_parse_html;
   "-dump_html", "   <file>", 
   Common.mk_action_1_arg test_dump_html;
+  "-json_html", "   <file>", 
+  Common.mk_action_1_arg test_dump_html;
+  "-json_html", "   <file>", 
+  Common.mk_action_1_arg test_json_html;
   "-dump_html_old", "   <file>", 
   Common.mk_action_1_arg test_dump_html_old;
 ]

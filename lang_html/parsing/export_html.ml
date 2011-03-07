@@ -21,6 +21,13 @@ module H = Ast_html
 module J = Json_type
 module H2 = Nethtml
 
+let string_of_v v =
+  (* todo? hide token info *)
+  Ocaml.string_of_v v
+
+let ml_pattern_string_of_html_tree ast = 
+  Meta_ast_html.vof_html_tree ast +> string_of_v
+
 
 (* obsolete *)
 let rec json_of_document doc = 

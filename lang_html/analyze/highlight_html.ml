@@ -60,18 +60,12 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
             | _ -> ()
           );
         (match s_tag, xs with
-        | "script", _ ->
-            xs +> List.iter (function
-            | Element _ -> () | Data (s, tok) -> tag tok EmbededCode
-            )
-        | "style", _ ->
-            xs +> List.iter (function
-            | Element _ -> () | Data (s, tok) -> 
-                pr2 "style";
-                tag tok Verbatim
-            )
-
         | "pre", _ ->
+            xs +> List.iter (function
+            | Element _ -> raise Impossible
+            | Data (s, tok) -> tag tok Verbatim
+            )
+        | "script", _ ->
             xs +> List.iter (function
             | Element _ -> raise Impossible
             | Data (s, tok) -> tag tok Verbatim
