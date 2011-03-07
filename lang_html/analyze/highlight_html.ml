@@ -68,7 +68,12 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
         | "script", _ ->
             xs +> List.iter (function
             | Element _ -> raise Impossible
-            | Data (s, tok) -> tag tok Verbatim
+            | Data (s, tok) -> tag tok EmbededCode
+            )
+        | "style", _ ->
+            xs +> List.iter (function
+            | Element _ -> raise Impossible
+            | Data (s, tok) -> tag tok EmbededStyle
             )
 
         | "h1", _ ->
