@@ -96,7 +96,7 @@ open Ast_css
 /*(*************************************************************************)*/
 
 stylesheet:
-  | statement_star EOF { $1 }
+  | s_star statement_star EOF { $2 }
 
 statement:
  | rule { $1 (* `Rule *) }
@@ -253,7 +253,6 @@ calc:
 
 medium_separated_nonempty_list_COMMA: S { }
 charset_opt: S { }
-s_star: S { }
 s_opt: S { }
 media_list_opt: S { }
 rule_plus: S { }
@@ -288,6 +287,10 @@ combination_star:
  
 qualifier_star: 
  | qualifier_star qualifier { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+s_star: 
+ | s_star S { [] }
  | /*(*empty*)*/ { [] }
 
 

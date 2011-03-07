@@ -45,13 +45,13 @@ let parse2 filename =
     | Element ((Tag (s_tag, tok_t)), attrs, xs) ->
         (match s_tag, xs with
         | "script", [Data (s, tok)] ->
-            let tmpfile = Common.new_temp_file "web" "js" in
+            let tmpfile = Common.new_temp_file "web" ".js" in
             Common.write_file ~file:tmpfile s;
             let ast = Parse_js.parse_program tmpfile in
             Common.push2 (tok, ast) js;
 
         | "style", [Data (s, tok)] ->
-            let tmpfile = Common.new_temp_file "web" "css" in
+            let tmpfile = Common.new_temp_file "web" ".css" in
             Common.write_file ~file:tmpfile s;
             let (ast, _toks) = Parse_css.parse tmpfile in
             Common.push2 (tok, ast) css;
