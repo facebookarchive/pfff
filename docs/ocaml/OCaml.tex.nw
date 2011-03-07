@@ -20,7 +20,9 @@
 
 %TODO:
 % - 7 lang in 7 weeks   inspiration ?
-% - ocaml.org
+% - graydon hoare tutorial on DSL and ocaml http://www.venge.net/graydon/talks/
+% - ocaml-tutorial.org ?
+% - my ocaml.org file
 % - some of the .txt I put in shared project, like developer.txt
 %   extract stuff specific to ocaml
 
