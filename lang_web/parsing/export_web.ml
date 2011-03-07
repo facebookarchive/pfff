@@ -15,5 +15,9 @@
 
 open Common
 
-let ml_pattern_string_of_web_document ast = 
-  raise Todo
+open Ast_web
+
+let ml_pattern_string_of_web_document webdoc = 
+  let s_html = Export_html.ml_pattern_string_of_html_tree webdoc.html in
+  s_html
+
