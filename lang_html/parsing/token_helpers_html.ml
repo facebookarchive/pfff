@@ -40,6 +40,7 @@ let visitor_info_of_tok f = function
   | Lelement (ii, s) -> Lelement (f ii, s)
   | Lelementend (ii, s) -> Lelementend (f ii, s)
   | Cdata (ii, s) -> Cdata (f ii, s)
+  | CdataSpecial (ii, s) -> CdataSpecial (f ii, s)
   | Space (ii, s) -> Space (f ii, s)
   | Name (ii, s) -> Name (f ii, s)
   | Literal (ii, s) -> Literal (f ii, s)

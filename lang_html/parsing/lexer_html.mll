@@ -159,8 +159,8 @@ and scan_element_after_Eq = parse
 (* for <script> and <style> tags, see Parse_html.parse_special *)
 and scan_special = parse
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
-  | "<"              { Cdata (tokinfo lexbuf, "<") }
-  | [^ '<' ]+        { Cdata (tokinfo lexbuf, tok lexbuf) }
+  | "<"              { CdataSpecial (tokinfo lexbuf, "<") }
+  | [^ '<' ]+        { CdataSpecial (tokinfo lexbuf, tok lexbuf) }
 
   | eof { EOF (tokinfo lexbuf) }
 

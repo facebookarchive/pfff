@@ -41,6 +41,7 @@ open Common
 %token <Ast_html.info> Relement  /*(* > *)*/
 %token <Ast_html.info> Relement_empty   /*(* />, for XML compat *)*/
 %token <Ast_html.info * string> Cdata
+%token <Ast_html.info * string> CdataSpecial
 %token <Ast_html.info * string> Space
 %token <Ast_html.info * string> Name
 %token <Ast_html.info> Eq

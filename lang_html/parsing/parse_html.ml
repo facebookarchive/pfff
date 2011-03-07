@@ -162,7 +162,8 @@ let parse_atts call_scan =
 
 (* called for 'Special, not is_empty' tag categories, like 
  * <script> and <style>. Parse until </name>.
- * todo: this function is ugly. Could perhaps make scan_special
+ * 
+ * todo: this function is very ugly; could perhaps make scan_special
  *  take the name as a parameter and do this loop until find the name
  *  itself.
  *)
@@ -178,7 +179,7 @@ let parse_special tag call_scan =
         then ""
         else "</" ^ n ^ aux ()
     | T.EOF _ -> raise End_of_scan
-    | T.Cdata (tok, s) -> 
+    | T.CdataSpecial (tok, s) -> 
         (if !first_tok = None then first_tok := Some tok);
         s ^ aux ()
     | _ ->
@@ -192,6 +193,23 @@ let parse_special tag call_scan =
     | Some tok -> PI.rewrap_str s tok
   in
   s, info 
+
+(* 
+ * This is very ugly. The reason for this function and the first_tok
+ * hack above was that codemap was originally not displaying the color
+ * for text inside <script> or <style>. With this function
+ * ./pfff -tokens_html and -dump_html will display tokens agreeing
+ * with each other.
+ *)
+let rec merge_cdataspecial_tokens xs =
+  match xs with
+  | [] -> []
+  | T.CdataSpecial (tok, s1)::T.CdataSpecial (_tok, s2)::rest ->
+      let str = s1 ^ s2 in
+      let tok = PI.rewrap_str str tok in
+      merge_cdataspecial_tokens ((T.CdataSpecial (tok, str))::rest)
+  | x::xs ->
+      x::merge_cdataspecial_tokens xs
 
 (*****************************************************************************)
 (* Misc helpers *)
@@ -462,7 +480,9 @@ let parse2 file =
     | T.EOF _ ->
         raise End_of_scan
     | (  T.Other _| T.Literal _| T.Eq _
-       | T.Name _| T.Space _| T.Relement_empty _| T.Relement _)
+       | T.Name _| T.Space _| T.Relement_empty _| T.Relement _
+       | T.CdataSpecial _
+      )
         -> 
         (* pad: ???? *)
         parse_next ()
@@ -483,7 +503,8 @@ let parse2 file =
       done;
       List.rev !current.subs
   in
-  Ast.Element (Tag ("__root__", Ast.fakeInfo()), [], xs), List.rev !toks
+  Ast.Element (Tag ("__root__", Ast.fakeInfo()), [], xs), 
+   (!toks +> List.rev +> merge_cdataspecial_tokens)
  )
 
 let parse a = 
