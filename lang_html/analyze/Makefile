@@ -13,7 +13,6 @@ SRC= \
 SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 MAKESUBDIRS=
@@ -22,7 +21,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
    $(TOP)/external/ocamlpcre/lib \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
    $(TOP)/globals \
    ../parsing \
 
