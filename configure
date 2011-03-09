@@ -15,6 +15,7 @@ use Pod::Usage;
 # assume standard: make, sh?, perl?
 # assume standard: diffutils, fileutils, findutils, grep, patchutils, sh-utils
 ## assume standard: diff, patch
+
 ## realpath ?? 
 ## findutils ?? need good gnu find, not macos find
 ##  which adds some extra '//' in paths which bother pfff
@@ -243,18 +244,13 @@ if($pcre) {
 		       "PCRE is present.",
 		       "The PCRE library is missing.",
 		      );
-    if ($err) { $mysql = 0; }
+    if ($err) { $pcre = 0; }
     $error2 += $err;
 }
 
 # The default ocamlgraph configure generate Makefiles that uses some -pack
 # and certain module names like Graph that conflicts with other pfff modules
 # so right now the Makefile is hand-crafted.
-#{
-#    pr2 "";
-#    pr2 "Configuring ocamlgraph";
-#    system("cd external/ocamlgraph; ./configure");
-#}
 
 if($gui) {
     pr2 "";
@@ -368,7 +364,7 @@ LIBDIR=$prefix/lib
 # Where to install the configuration files
 SHAREDIR=$src
 
-# Common features, cf Commons/Makefile
+# Common features, cf commons/Makefile
 FEATURE_SEXP_BUILTIN_COMMONS=1
 FEATURE_JSON_BUILTIN_COMMONS=1
 FEATURE_XML_BUILTIN_COMMONS=1

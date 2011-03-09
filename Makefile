@@ -641,9 +641,6 @@ layers:
 visual:
 	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
-visual_bis:
-	./codemap -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . -pfff_filter .
 test:
 	./pfff_test all
 push:
@@ -669,6 +666,9 @@ archi:
 	rm -f Fig_graph_ml.ps
 
 
+visual_bis:
+	./codemap -profile -ss 2 \
+	   -with_info DB_LIGHT.marshall -with_layers . -pfff_filter .
 visualopt:
 	./codemap.opt -profile -ss 2 \
 	   -with_info DB_LIGHT .
