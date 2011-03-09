@@ -159,7 +159,10 @@ and scan_element_after_Eq = parse
   | _               { Other (tokinfo lexbuf) }
   | eof             { EOF (tokinfo lexbuf) }
 
-(* for <script> and <style> tags, see Parse_html.parse_special *)
+(* for <script> and <style> tags, see Parse_html.parse_special, 
+ * look for a </script> or </style>. 
+ * todo: what if the js code contains the string "</script>" ??
+ *)
 and scan_special = parse
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
   | "<"              { CdataSpecial (tokinfo lexbuf, "<") }
