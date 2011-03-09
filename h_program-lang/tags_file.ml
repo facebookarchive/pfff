@@ -113,7 +113,12 @@ let generate_TAGS_file ~tags_file files_and_defs =
     files_and_defs +> List.iter (fun (file, defs) ->
 
       let all_defs = defs +> Common.map_filter (fun tag ->
-        Some (string_of_tag tag)
+        if String.length tag.tag_definition_text > 300
+        then begin 
+          pr2 (spf "WEIRD long string in %s, passing the tag" file);
+          None
+        end 
+        else Some (string_of_tag tag)
       ) +> Common.join "" in
       let size_defs = String.length all_defs in
       pr_no_nl (spf "%s,%d\n" file size_defs);

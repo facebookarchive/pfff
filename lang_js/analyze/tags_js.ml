@@ -44,7 +44,11 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
   files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
     if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
 
-    let ast = Parse_js.parse_program file in
+    let ast = 
+      Common.save_excursion Flag_parsing_js.show_parsing_error false (fun ()->
+        Parse_js.parse_program file 
+      )
+    in
 
     let filelines = Common.cat_array file in
 
