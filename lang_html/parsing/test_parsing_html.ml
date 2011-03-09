@@ -13,7 +13,6 @@ open OUnit
 let test_tokens_html file = 
   if not (file =~ ".*\\.html") 
   then pr2 "warning: seems not a html file";
-
 (*
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
