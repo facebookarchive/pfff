@@ -30,17 +30,9 @@ module PI = Parse_info
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo? factorize code with the other taggers *)
-let tag_of_info filelines info =
-  let line = PI.line_of_info info in
-  let pos = PI.pos_of_info info in
-  let col = PI.col_of_info info in
-  let s = PI.str_of_info info in
-  Tags.mk_tag (filelines.(line)) s line (pos - col)
-
 let tag_of_name filelines name = 
   let info = Ast.info_of_name name in
-  tag_of_info filelines info
+  Tags.tag_of_info filelines info
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -82,7 +74,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
           | _ -> str
          in
          let info' = Parse_info.rewrap_str str' info in
-         tag_of_info filelines info'
+         Tags.tag_of_info filelines info'
        )
     in
     file, tags

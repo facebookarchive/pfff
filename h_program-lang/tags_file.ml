@@ -15,6 +15,8 @@
 
 open Common
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -89,6 +91,15 @@ let fake_defs = [
   mk_tag "function d() {" "d" 20 107;
 ]
 
+
+(* helpers used externally by language taggers *)
+let tag_of_info filelines info =
+  let line = PI.line_of_info info in
+  let pos = PI.pos_of_info info in
+  let col = PI.col_of_info info in
+  let s = PI.str_of_info info in
+  mk_tag (filelines.(line)) s line (pos - col)
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -101,7 +112,9 @@ let generate_TAGS_file ~tags_file files_and_defs =
 
     files_and_defs +> List.iter (fun (file, defs) ->
 
-      let all_defs = defs +> List.map string_of_tag +> Common.join "" in
+      let all_defs = defs +> Common.map_filter (fun tag ->
+        Some (string_of_tag tag)
+      ) +> Common.join "" in
       let size_defs = String.length all_defs in
       pr_no_nl (spf "%s,%d\n" file size_defs);
       pr_no_nl all_defs;

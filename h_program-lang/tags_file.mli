@@ -17,3 +17,6 @@ val mk_tag: string -> string -> int -> int -> tag
 val string_of_tag: tag -> string
 val header: string
 val footer: string
+
+(* helpers used by language taggers *)
+val tag_of_info: string array -> Parse_info.info -> tag
