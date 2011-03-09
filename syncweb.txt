@@ -1,11 +1,35 @@
-the syncweb master is ~/pfff on macbook or linux dev machine
+The syncweb masters are in ~/pfff on macbook (MAC) or linux dev machine (DEV):
+
+ - commons/ DEV
+
  - docs/manual/ ??
  - docs/ocaml/ MAC
- - commons/ DEV
+
  - h_visualization/ MAC
+
  - lang_php/parsing/ DEV
  - lang_php/analyze/ DEV
  - lang_cpp/parsing/ ??
+
  - visual/ MAC
 
  - facebook/check_module/ DEV
+
+
+The darcs masters are in ~/mobile/commons/ and here are clones:
+
+ - commons/ MAC
+ - commons/lib-json ? DEV
+ - commons/lib-sexp ? DEV
+
+ - h_program-lang/ DEV
+ - h_version-control/ DEV
+ - h_visualization/ DEV
+
+ - docs/ocaml/ ?? DEV
+ - gui/ ?? DEV
+
+ - lang_html/ DEV
+ - lang_css/ DEV
+ - lang_js/ DEV
+
