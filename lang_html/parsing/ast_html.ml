@@ -64,7 +64,7 @@ module PI = Parse_info
  *    simple AST
  * - mirage ?
  * - mmm ? 
- * - hevea ?
+ * - hevea has a htmllexer.mll, looks quite similar to the one in ocamlnet
  * - efuns has a html mode ? mldonkey ? cameleon ?
  * - ocamlgtk has a small xml lexer (src/xml_lexer.mll)
  * See also http://caml.inria.fr/cgi-bin/hump.fr.cgi?sort=0&browse=49
