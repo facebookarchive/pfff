@@ -24,6 +24,15 @@ open Parse_info
 (*****************************************************************************)
 
 (* 
+ * This module defines an Abstract Syntax Tree for PHP 5.2 with
+ * a few PHP 5.3 extensions (like closures) and support for XHP.
+ * 
+ * This is actually more a concrete syntax tree than an AST. This
+ * is convenient in a refactoring context or code visualization
+ * context, but if you need to do some heavy static analysis, consider
+ * instead lang_php/analyze/foundation/pil.ml, which defines a
+ * PHP Intermediate Language a la CIL.
+ * 
  * NOTE: data from this type are often marshalled in berkeley DB tables
  * which means that if you add new constructor or field in the types below, 
  * you must erase the berkeley DB databases otherwise pfff
