@@ -94,12 +94,15 @@ let parse_lisp_cache a =
 
 let parse_php2 file = 
   Common.memoized _hmemo_file file (fun () -> 
+    Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
     let (ast2, stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast2 in
+    let ast = 
+      Parse_php.program_of_program2 ast2 in
     (* work by side effect on ast2 too *)
     Check_variables_php.check_and_annotate_program
       ast;
     Php ast2
+    )
   )
 let parse_php_cache a = 
   Common.profile_code "View.parse_php_cache" (fun () -> 
