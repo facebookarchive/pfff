@@ -1227,14 +1227,17 @@ let save_excursion_and_enable reference f =
   )
 
 
-let memoized h k f = 
-  try Hashtbl.find h k 
-  with Not_found -> 
-    let v = f () in
-    begin
-      Hashtbl.add h k v;
-      v
-    end
+let memoized ?(use_cache=true) h k f = 
+  if not use_cache 
+  then f ()
+  else 
+    try Hashtbl.find h k 
+    with Not_found -> 
+      let v = f () in
+      begin
+        Hashtbl.add h k v;
+        v
+      end
 
 let cache_in_ref myref f = 
   match !myref with
@@ -4949,7 +4952,7 @@ let group_assoc_bykey_eff2 xs =
   keys +> List.map (fun k -> k, Hashtbl.find_all h k)
 
 let group_assoc_bykey_eff xs = 
-  profile_code2 "Common.group_assoc_bykey_eff" (fun () -> 
+  profile_code "Common.group_assoc_bykey_eff" (fun () -> 
     group_assoc_bykey_eff2 xs)
   
 

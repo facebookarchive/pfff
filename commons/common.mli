@@ -431,7 +431,8 @@ val unwind_protect : (unit -> 'a) -> (exn -> 'b) -> 'a
 (* java spirit *)
 val finalize :       (unit -> 'a) -> (unit -> 'b) -> 'a
 
-val memoized : ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
+val memoized : 
+  ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 
 val cache_in_ref : 'a option ref -> (unit -> 'a) -> 'a
 
