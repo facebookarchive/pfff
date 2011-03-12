@@ -658,8 +658,12 @@ DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/oca
 DSRC+=$(DIRS:=/*.ml)
 DSRC+=$(wildcard main_*.ml)
 
+#PP1=-pp camlp4o
+DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,black,slategray3
+
 archi:
-	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce 
+	ocamldoc $(PP1) -I +threads $(INCLUDES) $(DSRC)  \
+	  -dot -dot-reduce -dot-colors $(DOTCOLORS)
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps
 	ps2pdf Fig_graph_ml.ps
