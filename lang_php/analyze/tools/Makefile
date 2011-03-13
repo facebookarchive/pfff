@@ -10,7 +10,7 @@ SRC= \
      php_serialize.ml \
      xhprof.ml layer_xhprof.ml \
 
-
+#hphpi_trace.ml is in facebook/qa_test/ for now (more convenient)
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
