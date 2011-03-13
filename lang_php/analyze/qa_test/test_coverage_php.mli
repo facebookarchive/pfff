@@ -60,7 +60,6 @@ val get_all_call_lines_with_sanity_check:
 
 
 val actions: unit -> Common.cmdline_actions
-val unittest: OUnit.test
 
 (* input/output *)
 val json_of_tests_coverage: tests_coverage -> Json_type.json_type

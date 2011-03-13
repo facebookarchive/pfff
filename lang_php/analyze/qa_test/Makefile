@@ -9,6 +9,7 @@ SRC= \
   test_smells_php.ml \
   test_coverage_php.ml \
   layer_coverage_php.ml \
+  unit_coverage_php.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \

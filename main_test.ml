@@ -52,6 +52,8 @@ let test regexp =
       Unit_analyze_php.unittest;
       Unit_analyze_db_php.unittest;
       Unit_matcher_php.unittest;
+      (* this one needs xdebug to work *)
+      Unit_coverage_php.unittest; 
     ]
   in
   let suite = 

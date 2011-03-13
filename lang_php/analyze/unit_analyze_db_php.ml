@@ -703,7 +703,6 @@ let unittest =
     callgraph_unittest;
     class_unittest;
     include_unittest;
-    Test_coverage_php.unittest;
     deadcode_unittest;
     checkers_unittest;
   ]
