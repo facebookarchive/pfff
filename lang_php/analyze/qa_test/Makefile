@@ -5,9 +5,9 @@ TOP=../../..
 TARGET=lib
 
 SRC= \
-  test_rank_php.ml \
-  test_smells_php.ml \
-  test_coverage_php.ml \
+  rank_test_php.ml \
+  bad_smells_php.ml \
+  coverage_tests_php.ml \
   layer_coverage_php.ml \
   unit_coverage_php.ml \
 

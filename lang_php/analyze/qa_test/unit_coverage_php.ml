@@ -1,6 +1,6 @@
 open Common
 
-open Test_coverage_php
+open Coverage_tests_php
 
 (*****************************************************************************)
 (* Unit test *)
