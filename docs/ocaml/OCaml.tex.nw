@@ -20,11 +20,18 @@
 
 %TODO:
 % - 7 lang in 7 weeks   inspiration ?
+% - jon harrop ray tracer C++ vs ocaml (old version)
 % - graydon hoare tutorial on DSL and ocaml http://www.venge.net/graydon/talks/
 % - ocaml-tutorial.org ?
 % - my ocaml.org file
 % - some of the .txt I put in shared project, like developer.txt
 %   extract stuff specific to ocaml
+% - jane street experience report ?
+
+%SEMI:
+% - slides on haxe
+% - xen experience report
+% - elsa gunter slides
 
 %------------------------------------------------------------------------------
 % Packages
@@ -134,11 +141,27 @@ Yoann Padioleau\\
 \label{sec:introduction}
 \n convention: use we/you, but try to limit their use
 
-\ocaml is a powerful language, trust me.
-
 \url{http://en.wikipedia.org/wiki/Objective_Caml}
 % ML tradition, type inference, functional, powerful type system,
-% impure so can have references/globals and exceptions, strict
+% impure so can have references/globals and exceptions, strict, gc, ...
+% and fast! (rewrite from php to ocaml: 30x faster ... (algo different
+% but still)
+
+\ocaml is a powerful language, trust me.
+% xen tool stack on top of xen kernel, static driver verifier microsoft
+% jane street trading software (X% of ws transactions)
+% mylife full backend stack,   
+% unison file two-way synchronizer (rsync on steroids),  
+%  mldonkey (peer-to-peer),
+% fftw generator (MIT),
+% many top static analysis tools in the academic world at top 
+% universities like stanford, berkeley, caltech, and industry world
+% CEA (french nuclear plant, they don't like bugs in their code)
+% so used by static analysis world, by financial world (jane street), by system
+% world (Xen, mldonkey, mylife backend),
+% F# is a copy of OCaml, and of course
+% origin in academics, especially program analysis, compilation, theorem 
+% proving, its original niche.
 
 %goal of this document ?
 
@@ -155,22 +178,18 @@ Yoann Padioleau\\
 %   for now unfortunately). Same syntax so easy to port if one day F#
 %   really mainstream
 
-% why good, cf peyton jones coder at work:
+%why good according to me, cf also peyton jones in 'coder at work':
 % - for maintenance, when change something, compiler tells us all dependent
-%   places should be changed too. Confidence. No confident in PHP. 
+%   places should be changed too. Confidence!! No confident in PHP.
 %   if change data repr or number of args, you are on your own.
 %   I'll be anxious in PHP
 % - debugging, no side effect, so local, so when bug, local
 % - documentation, I can say something but not too much about what the program
 %   does.
-% - code factorization
-% - easy debugging, replay, display complex structure
-
-% by static analysis world, by financial world (jane street), by system
-% world Xen, mldonkey, mylife backend, 
-% by F# is a copy of OCaml, and of course
-% origin in academics, especially program analysis, compilation, theorem 
-% proving, its original niche.
+% - code factorization power, with HOF, ex with_open, finalize is not a 
+%   keyword, cache_computation, etc
+% - easy debugging, replay!!, and display complex structure in 
+%   debugger/interpreter (in contrast to C++ world ...), a la vardump
 
 \section{\ocaml vs X}
 
@@ -178,7 +197,6 @@ Yoann Padioleau\\
 %vs python/ruby
 %vs c/c++
 %vs PHP :)
-
 
 %less:
 %vs haskell
@@ -261,11 +279,37 @@ let x = 1
 
 \section{Type inference}
 
+% don't repeat yourself, cf haxe slides
+
+% type inference for polymorphic code too !! no ugly 
+% Map<...,<...,...>> x = new Map<....<....,...>>
+
+\section{Values}
+
+% many builtins, tuples, lists,  records
+
 \section{Function call syntax}
+
+% explain syntax, but don't explain too much about curry and so on
+% tell the reader to go to section X if want to know more
 
 \section{Algebraic data types}
 
+% enum on steroids. Show ex of enum, red, green, blue.
+% show ex of error type, enum and string_of_error function.
+% then show want to extend!, how to do it in X ?
+
+\section{Expression oriented}
+% nice if then else as expression. Like ternary. This has
+% implication. Instead of  $x = 0; if (...) then $x =1; else $x = 2;
+% (which is modifying memory cells), 
+% instead do  let x = if ... then ... else ...
+% can do that in C with ternary, but not that readable for big
+%  expression and can't nest them. Not unusual in OCaml to do:
+% let x = if ... then  (match ...) else ....
+
 \section{Closures}
+% and higher order
 
 \section{How to do X ?}
 
@@ -429,9 +473,20 @@ Amazing debugger. Can go back in time.
 %  - +>, better sense of reading 
 %  - visitor
 %  - hooks
-%  - ocamltarzan/camlmix, -dump_ast, ocaml.ml
+%  - ocamltarzan/camlmix, -dump_ast, ocaml.ml, see also camlp4, dyntype, ...
+
+% advanced stuff: functors, objects, labels, etc
 
 %hashbtl, setg mapg
+
+
+%\chapter{More stuff}
+
+% don't talk about curry, curry does not matter that much, but
+%  explain why this syntax. Because save space :) no (,,,). If
+% function and funcall matters more than if/do/while, then optimize
+% the syntax, and also allow for partial application ! and code like
+% List.map (fff "xxx") [...],  section, etc (pointwise programming a la FP)
 
 \chapter{Coding style}
 
@@ -485,6 +540,10 @@ CC.
 
 \end{thebibliography}
 
+% xen paper on ocaml experience
+% jane street paper on ocaml experience
+% haxe slides
+% graydon hoare from mozilla
 
 %******************************************************************************
 % Postlude
