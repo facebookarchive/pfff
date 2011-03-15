@@ -75,7 +75,7 @@ let unittest = "coverage_php" >::: [
         ~phpunit_parse_trace:fake_phpunit_parse_trace
         ()
     in
-    let json = json_of_tests_coverage cover in
+    let json = Coverage_code.json_of_tests_coverage cover in
     let s = Json_out.string_of_json json in
     pr s;
 
@@ -132,7 +132,7 @@ let unittest = "coverage_php" >::: [
         ~skip_call:skip_require_module_calls
         ()
     in
-    let json = json_of_tests_coverage cover in
+    let json = Coverage_code.json_of_tests_coverage cover in
     let s = Json_out.string_of_json json in
     pr s;
 
@@ -153,10 +153,11 @@ let unittest = "coverage_php" >::: [
   "coverage and json input output" >:: (fun () ->
     assert_bool
       "should parse good_trace.json"
-      (let _ = load_tests_coverage (p "good_trace.json") in true);
+      (let _ = Coverage_code.load_tests_coverage (p "good_trace.json") in true);
     assert_bool
       "should generate exn on bad_trace.json"
-      (try let _ = load_tests_coverage (p "bad_trace.json") in false
+      (try let _ = 
+        Coverage_code.load_tests_coverage (p "bad_trace.json") in false
        with exn -> true
       );
   );
