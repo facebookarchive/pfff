@@ -7,20 +7,23 @@ open Coverage_tests_php
 (*****************************************************************************)
 open OUnit
 
-(* The test coverage analysis of pfff we do for facebook depends on
+(* 
+ * The test coverage analysis of pfff we do for facebook depends on
  * multiple components:
- * - xdebug, and our ocaml binding to the runner and trace format
- * - phpunit, and our ocaml binding to the runner and result format
- * - some facebook extensions to phpunit and the way we run tests
- * - some facebook specificities because of flib
- * - the way we run php (zend or hphp)
- * - MPI
+ * 
+ *  - xdebug, and our ocaml binding to the runner and trace format
+ *  - phpunit, and our ocaml binding to the runner and result format
+ *  - some facebook extensions to phpunit and the way we run tests
+ *  - some facebook specificities because of flib
+ *  - the way we run php (zend or hphp)
+ *  - MPI
  * 
  * If we want to unit tests, we need to remove from the equations a few
  * things. For instance we can get a trace without having to conform to
  * phpunit or to the test runner scripts we use by having
  * the coverage analysis function taking the specifics as 
  * parameters. So here we go into different steps:
+ * 
  *  - first bypass almost everything (the conformance to phpunit, 
  *    to our test infrastructure), and instead just execute php code
  *    under xdebug with the basic php interpreter.
@@ -33,12 +36,12 @@ let p f = realpath (Config.path ^ "/tests/php/coverage/" ^ f)
 
 (* mocking *)
 let fake_phpunit_parse_trace file _output = {
-      Phpunit.t_file = file;
-      t_status = Phpunit.Pass 1;
-      t_time = 0;
-      t_memory = 0.0;
-      t_shimmed = 0;
-      t_trace_nb_lines = 0;
+  Phpunit.t_file = file;
+  t_status = Phpunit.Pass 1;
+  t_time = 0;
+  t_memory = 0.0;
+  t_shimmed = 0;
+  t_trace_nb_lines = 0;
 }
 
 (* normally we need to include the command of a test runner,
@@ -162,4 +165,3 @@ let unittest = "coverage_php" >::: [
       );
   );
 ]
-
