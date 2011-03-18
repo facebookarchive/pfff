@@ -4610,7 +4610,7 @@ let is_set xs =
 
 let (single_set: 'a -> 'a set) = fun x -> insert_set x empty_set
 let (set: 'a list -> 'a set) = fun xs -> 
-  xs +> List.fold_left (flip insert_set) empty_set 
+  xs +> List.fold_left (flip insert_set) empty_set +> List.sort compare
 
 let (exists_set: ('a -> bool) -> 'a set -> bool) = List.exists
 let (forall_set: ('a -> bool) -> 'a set -> bool) = List.for_all
@@ -6140,7 +6140,8 @@ let md5sum_of_string s =
 let realpath path = 
   match cmd_to_list (spf "realpath %s" path) with
   | [s] -> s
-  | _ -> failwith "problem with realpath"
+  | xs -> 
+      failwith (spf "problem with realpath on %s: %s " path (unlines xs))
 
 
 let with_pr2_to_string f = 
