@@ -15,7 +15,7 @@ val find_testcase_class_if_any:
 (* a poor's man test result database ... *)
 
 type test_status = 
-  | Pass of int (* nb tests *)
+  | Pass of int (* nb passing tests *) * int (* skipped *)
   | Fail of int (* fail *) * int (* pass *)
   | Fatal of string
 

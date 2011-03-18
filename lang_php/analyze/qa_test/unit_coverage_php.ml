@@ -37,7 +37,7 @@ let p f = realpath (Config.path ^ "/tests/php/coverage/" ^ f)
 (* mocking *)
 let fake_phpunit_parse_trace file _output = {
   Phpunit.t_file = file;
-  t_status = Phpunit.Pass 1;
+  t_status = Phpunit.Pass (1, 0);
   t_time = 0;
   t_memory = 0.0;
   t_shimmed = 0;
