@@ -15,6 +15,7 @@ SRC= programming_language.ml \
      database_code.ml \
      statistics_code.ml statistics_parsing.ml \
      big_grep.ml \
+     coverage_code.ml layer_coverage.ml \
      test_program_lang.ml
 
 SYSLIBS= str.cma unix.cma 

@@ -7,20 +7,23 @@ open Coverage_tests_php
 (*****************************************************************************)
 open OUnit
 
-(* The test coverage analysis of pfff we do for facebook depends on
+(* 
+ * The test coverage analysis of pfff we do for facebook depends on
  * multiple components:
- * - xdebug, and our ocaml binding to the runner and trace format
- * - phpunit, and our ocaml binding to the runner and result format
- * - some facebook extensions to phpunit and the way we run tests
- * - some facebook specificities because of flib
- * - the way we run php (zend or hphp)
- * - MPI
+ * 
+ *  - xdebug, and our ocaml binding to the runner and trace format
+ *  - phpunit, and our ocaml binding to the runner and result format
+ *  - some facebook extensions to phpunit and the way we run tests
+ *  - some facebook specificities because of flib
+ *  - the way we run php (zend or hphp)
+ *  - MPI
  * 
  * If we want to unit tests, we need to remove from the equations a few
  * things. For instance we can get a trace without having to conform to
  * phpunit or to the test runner scripts we use by having
  * the coverage analysis function taking the specifics as 
  * parameters. So here we go into different steps:
+ * 
  *  - first bypass almost everything (the conformance to phpunit, 
  *    to our test infrastructure), and instead just execute php code
  *    under xdebug with the basic php interpreter.
@@ -33,12 +36,12 @@ let p f = realpath (Config.path ^ "/tests/php/coverage/" ^ f)
 
 (* mocking *)
 let fake_phpunit_parse_trace file _output = {
-      Phpunit.t_file = file;
-      t_status = Phpunit.Pass 1;
-      t_time = 0;
-      t_memory = 0.0;
-      t_shimmed = 0;
-      t_trace_nb_lines = 0;
+  Phpunit.t_file = file;
+  t_status = Phpunit.Pass 1;
+  t_time = 0;
+  t_memory = 0.0;
+  t_shimmed = 0;
+  t_trace_nb_lines = 0;
 }
 
 (* normally we need to include the command of a test runner,
@@ -75,7 +78,7 @@ let unittest = "coverage_php" >::: [
         ~phpunit_parse_trace:fake_phpunit_parse_trace
         ()
     in
-    let json = json_of_tests_coverage cover in
+    let json = Coverage_code.json_of_tests_coverage cover in
     let s = Json_out.string_of_json json in
     pr s;
 
@@ -132,7 +135,7 @@ let unittest = "coverage_php" >::: [
         ~skip_call:skip_require_module_calls
         ()
     in
-    let json = json_of_tests_coverage cover in
+    let json = Coverage_code.json_of_tests_coverage cover in
     let s = Json_out.string_of_json json in
     pr s;
 
@@ -153,12 +156,12 @@ let unittest = "coverage_php" >::: [
   "coverage and json input output" >:: (fun () ->
     assert_bool
       "should parse good_trace.json"
-      (let _ = load_tests_coverage (p "good_trace.json") in true);
+      (let _ = Coverage_code.load_tests_coverage (p "good_trace.json") in true);
     assert_bool
       "should generate exn on bad_trace.json"
-      (try let _ = load_tests_coverage (p "bad_trace.json") in false
+      (try let _ = 
+        Coverage_code.load_tests_coverage (p "bad_trace.json") in false
        with exn -> true
       );
   );
 ]
-
