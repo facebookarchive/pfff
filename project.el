@@ -436,12 +436,14 @@
    (join-string 
     (list 
      "-debugger"
-     (case 4
+     (case 10
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
        (3 "-getMock_transfo /home/pad/www/flib/intern/load_balancer/syncer/__tests__/LoadBalancerConfigSnapshotTest.php")
        (4 "-getMock_transfo /home/pad/pfff/tests/ppp/getMock_ex2.php")
+
+       (10 "-test fb_coverage")
        )
      ))
    )
