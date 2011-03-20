@@ -22,7 +22,9 @@ MYSRC=common.ml common_extra.ml \
       math.ml \
       unicode.ml \
       simple_color.ml file_type.ml file_format.ml \
-      glimpse.ml parser_combinators.ml
+      glimpse.ml parser_combinators.ml \
+      concurrency.ml parallel.ml \
+
 
 # src from other authors, got from the web or caml hump, too small to be 
 # in their own external/ocamlxxx/

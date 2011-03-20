@@ -1757,6 +1757,9 @@ val hash_of_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
 
 
 val hkeys : ('a, 'b) Hashtbl.t -> 'a list 
+
+(* hunion h1 h2  adds all binding in h2 into h1 *)
+val hunion: ('a, 'b) Hashtbl.t -> ('a, 'b) Hashtbl.t -> unit
 (*x: common.mli for collection types *)
 (*****************************************************************************)
 (* Hash sets *)
@@ -1767,6 +1770,9 @@ type 'a hashset = ('a, bool) Hashtbl.t
 
 (* common use of hashset, in a hash of hash *)
 val hash_hashset_add : 'a -> 'b -> ('a, 'b hashset) Hashtbl.t -> unit
+
+(* hashset_union h1 h2  adds all elements in h2 into h1 *)
+val hashset_union: 'a hashset -> 'a hashset -> unit
 
 val hashset_to_set : 
  < fromlist : ('a ) list -> 'c; .. > -> ('a, 'b) Hashtbl.t -> 'c

@@ -4936,6 +4936,11 @@ let hashset_to_list h = hash_to_list h +> List.map fst
 let hashset_of_list xs = 
   xs +> List.map (fun x -> x, true) +> hash_of_list
 
+let hashset_union h1 h2 =
+  h2 +> Hashtbl.iter (fun k _bool -> 
+    Hashtbl.replace h1 k true
+  )
+
 
 
 let hkeys h = 
@@ -4943,6 +4948,10 @@ let hkeys h =
   h +> Hashtbl.iter (fun k v -> Hashtbl.replace hkey k true);
   hashset_to_list hkey
 
+let hunion h1 h2 =
+  h2 +> Hashtbl.iter (fun k v -> 
+    Hashtbl.add h1 k v
+  )
 
 
 let group_assoc_bykey_eff2 xs = 
