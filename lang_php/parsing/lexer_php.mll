@@ -726,7 +726,7 @@ rule st_in_scripting = parse
               | T_RETURN _ 
               | TEQ _
               | T_DOUBLE_ARROW _
-              | TCOLON _
+              | TQUESTION _ | TCOLON _
             )
           | None (* when in sgrep/spatch mode, < is the first token *)
             when !Flag.xhp_builtin ->
