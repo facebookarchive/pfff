@@ -96,7 +96,6 @@ and 'a wrap = 'a * info
 (* HTML raw version *)
 (* ------------------------------------------------------------------------- *)
 
-(* might want to use channel for efficiency *)
 type html_raw = HtmlRaw of string 
 
 (* ------------------------------------------------------------------------- *)
@@ -129,7 +128,7 @@ type html_raw = HtmlRaw of string
  * Names of elements and attributes must additionally be ASCII-only.
  *)
 
-(* src: ocamlnet/netstring/nethtml.mli *)
+(* src: ocamlnet/netstring/nethtml.mli, extended with pad's wrap and newtype *)
 type html_tree = 
   | Element of 
       tag *
