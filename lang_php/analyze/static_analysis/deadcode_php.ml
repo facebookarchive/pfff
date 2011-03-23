@@ -657,8 +657,10 @@ let deadcode_analysis hooks db =
       (dead_ids +> List.map snd) 
       hooks db
   in
+  let pbs = ref [] in
 
   grouped_by_file +> List.iter (fun (filename, ids) ->
+  try 
    if hooks.skip_patch_generation_for_file filename then ()
    else begin
     
@@ -682,6 +684,14 @@ let deadcode_analysis hooks db =
     else 
       if hooks.print_diff then xs' +> List.iter pr
    end
-  )
+   with 
+   | Timeout -> raise Timeout
+   | UnixExit n -> raise (UnixExit n)
+   | exn -> 
+       let err = spf "PB with %s, exn = %s" filename (Common.exn_to_s exn) in
+       pr2 err; Common.push2 err pbs;
+  );
+  !pbs +> List.iter pr2;
+  ()
 
 (*e: deadcode_php.ml *)
