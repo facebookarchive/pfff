@@ -152,7 +152,9 @@ type html_tree2 = Nethtml.document list
  * 
  * contentions: if the tag belongs to different types then I prefix it
  * with the current type. For instance 'text' belongs to many types hence
- * 'Address_Text', 'Body_Text', etc.
+ * 'Address_Text', 'Body_Text', etc (I did some exceptions for A, Br, Hr
+ * which were used only in one other place, in <pre> in which case I prefixed
+ * only in the pre type).
  * 
  * concepts: body, block, text, flow ?
  *)
@@ -187,7 +189,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
   (* diff between body_content and block_content ? *)
   and body_content =
     | Body_Heading of heading
-    | Hr of attrs
+    | Hr of attrs (* also in <pre> *)
     | Body_Flow of flow (* was Body_Block and Body_Text originally *)
     | Del of attrs * flow | Ins of attrs * flow
     | Address of attrs * address_content list
@@ -236,8 +238,8 @@ type html = Html of attrs * head * (body, frameset) Common.either
      | PlainText of plain_text
      | PhysicalStyle of physical_style
      | ContentStyle of content_style
-     | A of attrs * a_content list
-     | Br of attrs
+     | A of attrs * a_content list (* also in <pre> *)
+     | Br of attrs (* also in <pre> *)
      | Img of attrs
      | Iframe of attrs
      | Embed of attrs | NoEmbed of attrs * text
@@ -308,9 +310,21 @@ type html = Html of attrs * head * (body, frameset) Common.either
 (* ------------------------------------------------------------------------- *)
 (* Tables *)
 (* ------------------------------------------------------------------------- *)
-  and table_content = unit
   and caption = Caption of attrs * body_content
-  and colgroup = unit
+
+  and colgroup =
+    | Colgroup of attrs
+    | ColgroupContent of colgroup_content list
+   and colgroup_content = Col of attrs
+
+  and table_content =
+    | THead of attrs | TFoot of attrs | TBody of attrs
+    | Tr of attrs * table_cell list
+
+   and table_cell =
+     | Th of attrs * body_content
+     | Td of attrs * body_content
+
 
 (* ------------------------------------------------------------------------- *)
 (* Applets/Objects *)
@@ -328,13 +342,20 @@ type html = Html of attrs * head * (body, frameset) Common.either
 (* ------------------------------------------------------------------------- *)
 
   and li = Li of attrs * flow
-  and dl_content = unit
+
+  and dl_content = dt * dd
+   and dt = Dt of attrs * text
+   and dd = Dd of attrs * flow   
 
   and a_content =
     | A_Heading of heading
     | A_Text of text
   
-  and pre_content = unit
+  and pre_content =
+    | Pre_Br of attrs
+    | Pre_Hr of attrs
+    | Pre_A of attrs
+    | Pre_Text of style_text
 
   and address_content = 
     | Address_P of attrs * text
@@ -353,52 +374,9 @@ type html = Html of attrs * head * (body, frameset) Common.either
  and 'a list1 = 'a * 'a list
 
 (*
-
-colgroup_content 	::=	{<col>}0
-colgroup_tag 	::=	<colgroup>
- 	 	colgroup_content
-
-dd_tag 	::=	<dd> flow </dd>
-
-dl_content 	::=	dt_tag dd_tag
-
-dt_tag 	::=	<dt>
- 	 	text
- 	 	</dt>
-
-pre_content 	::=	<br>
- 	|	<hr>
- 	|	a_tag
- 	|	style_text
-
-
-samp_tag 	::=	<samp> text </samp>
-
+samp_tag 	::=	<samp> text </samp> ???
+server_tag [g] 	::=	<server> plain_text </server> ???
 script_tag [f] 	::=	<script> plain_text </script>
-
-
-server_tag [g] 	::=	<server> plain_text </server>
-
-table_cell 	::=	td_tag
- 	|	th_tag
-table_content 	::=	<tbody>
- 	|	<tfoot>
- 	|	<thead>
- 	|	tr_tag
-table_tag 	::=	<table>
- 	 	[caption_tag]
- 	 	{colgroup_tag}0
- 	 	{table_content}0
- 	 	</table>
-td_tag 	::=	<td> body_content </td>
-
-
-th_tag 	::=	<th> body_content </th>
-
-tr_tag 	::=	<tr>
- 	 	{table_cell}0
- 	 	</tr>
-
 *)
 
 (* 
