@@ -195,7 +195,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
     and block_content = 
       | Blockquote of attrs * body_content (* ? why not block_content ? *)
       | Center of attrs * body_content (* obsolete in html5 *)
-      | Div of attrs * body_content
+      | Div of attrs * body_content (* !! *)
       | Form of attrs * form_content list
       | Table of attrs * caption option * colgroup list * table_content list
       | Pre of attrs * pre_content list
@@ -236,8 +236,26 @@ type html = Html of attrs * head * (body, frameset) Common.either
      (* ?? *)
      | Spacer of attrs | Wbr of attrs | Ilayer of attrs * body_content
 
-   and physical_style = unit
-   and content_style = unit
+   and physical_style =
+    | B of attrs * text | I of attrs * text | Tt of attrs * text
+    | Big of attrs * text | Small of attrs * text 
+    | Blink of attrs * text | Strike of attrs * text | U of attrs * text
+    | Font of attrs * style_text
+    | Sub of attrs * text | Sup of attrs * text
+    | Span of attrs * text (* !! *)
+    (* ?? *)
+    | Bdo of attrs * text | S of attrs * text
+
+   and content_style =
+    (* why not in physical style ? *)
+    | Em of  attrs * text | Strong of attrs * text
+    | Abbr of attrs * text
+    | Acronym of attrs * text
+    | Cite of attrs * text
+    | Code of attrs * text
+    (* ?? *)
+    | Dfn of attrs * text | Kbd of attrs * text | Q of attrs * text
+    | Var of attrs * text
 
   and li = Li of attrs * flow
 
@@ -283,47 +301,23 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
 (*
 
-abbr_tag 	::=	<abbr> text </abbr>
-acronym_tag 	::=	<acronym> text </acronym>
-
-b_tag 	::=	<b> text </b>
-bdo_tag 	::=	<bdo> text </bdo>
-big_tag 	::=	<big> text </big>
-blink_tag 	::=	<blink> text </blink>
-
-cite_tag 	::=	<cite> text </cite>
-code_tag 	::=	<code> text </code>
-
 colgroup_content 	::=	{<col>}0
 colgroup_tag 	::=	<colgroup>
  	 	colgroup_content
 
-content_style 	::=	abbr_tag
- 	|	acronym_tag
- 	|	cite_tag
- 	|	code_tag
- 	|	dfn_tag
- 	|	em_tag
- 	|	kbd_tag
- 	|	q_tag
- 	|	strong_tag
- 	|	var_tag
-
 dd_tag 	::=	<dd> flow </dd>
-dfn_tag 	::=	<dfn> text </dfn>
 
 dl_content 	::=	dt_tag dd_tag
 
 dt_tag 	::=	<dt>
  	 	text
  	 	</dt>
-em_tag 	::=	<em> text </em>
+
 fieldset_tag 	::=	<fieldset>
  	 	[legend_tag]
  	 	{form_content}0
  	 	</fieldset>
 
-font_tag 	::=	<font> style_text </font>
 form_content [c] 	::=	<input>
  	|	<keygen>
  	|	body_content
@@ -333,9 +327,7 @@ form_content [c] 	::=	<input>
  	|	textarea_tag
 
 
-i_tag 	::=	<i> text </i>
 
-kbd_tag 	::=	<kbd> text </kbd>
 label_content [d] 	::=	<input>
  	|	body_content
  	|	select_tag
@@ -353,28 +345,12 @@ optgroup_tag 	::=	<optgroup>
 option_tag 	::=	<option> plain_text </option>
 p_tag 	::=	<p> text </p>
 
-physical_style 	::=	b_tag
- 	|	bdo_tag
- 	|	big_tag
- 	|	blink_tag
- 	|	font_tag
- 	|	i_tag
- 	|	s_tag
- 	|	small_tag
- 	|	span_tag
- 	|	strike_tag
- 	|	sub_tag
- 	|	sup_tag
- 	|	tt_tag
- 	|	u_tag
-
 pre_content 	::=	<br>
  	|	<hr>
  	|	a_tag
  	|	style_text
 
-q_tag 	::=	<q> text </q>
-s_tag 	::=	<s> text </s>
+
 samp_tag 	::=	<samp> text </samp>
 script_tag [f] 	::=	<script> plain_text </script>
 select_content 	::=	optgroup_tag
@@ -383,13 +359,7 @@ select_tag 	::=	<select>
  	 	{select_content}0
  	 	</select>
 server_tag [g] 	::=	<server> plain_text </server>
-small_tag 	::=	<small> text </small>
-span_tag 	::=	<span> text </span>
-strike_tag 	::=	<strike> text </strike>
-strong_tag 	::=	<strong> text </strong>
 
-sub_tag 	::=	<sub> text </sub>
-sup_tag 	::=	<sup> text </sup>
 table_cell 	::=	td_tag
  	|	th_tag
 table_content 	::=	<tbody>
@@ -410,10 +380,7 @@ th_tag 	::=	<th> body_content </th>
 tr_tag 	::=	<tr>
  	 	{table_cell}0
  	 	</tr>
-tt_tag 	::=	<tt> text </tt>
-u_tag 	::=	<u> text </u>
 
-var_tag 	::=	<var> text </var>
 *)
 
 (* 
