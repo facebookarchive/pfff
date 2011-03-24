@@ -35,18 +35,18 @@ module PI = Parse_info
  *    by using the spec of a DTD and run a validator.
  *  - a tree with phantom types (as done in xHTML)
  *  - a real AST, with one different constructor per html element, and
- *    precise types for the set of acceptable attributes. Because
+ *    possibly precise types for the set of acceptable attributes. Because
  *    the DTD of HTML is complex, such an AST can be quite tedious to write.
  *  - an ocamlduce/cduce AST, which have a type system specially made to 
  *    express the kind of invariants of a DTD.
  * 
+ * The solution used in this module is to define multiple html types
+ * because depending on the usage certain types are more convenient than
+ * other.
+ * 
  * update: I've added token/info in the html tree so we can at least have 
  *  an AST-based highlighter which is needed for coloring urls as in href
  *  for instance.
- * 
- * The solution used in this module is to define multiple html types 
- * because depending on the usage certain types are more convenient than
- * other.
  * 
  * alternative implementations: 
  * - xHTML.ml: but poor AST, no parsing, and phantom types are tricky
@@ -90,7 +90,6 @@ module PI = Parse_info
 type pinfo = Parse_info.token
 type info = Parse_info.info
 and tok = info
-(* a shortcut to annotate some information with token/position information *)
 and 'a wrap = 'a * info
  (* with tarzan *)
 
@@ -105,7 +104,7 @@ type html_raw = HtmlRaw of string
 (* ------------------------------------------------------------------------- *)
 
 (* src: ocamlnet/netstring/nethtml.mli *)
-(** The type [document] represents parsed HTML documents:
+(* The type [document] represents parsed HTML documents:
  *
  * {ul
  * {- [Element (name, args, subnodes)] is an element node for an element of
@@ -144,6 +143,7 @@ type html_tree =
 
  (* with tarzan *)
 
+
 (* a small wrapper over ocamlnet *)
 type html_tree2 = Nethtml.document list
 
@@ -152,36 +152,23 @@ type html_tree2 = Nethtml.document list
 (* ------------------------------------------------------------------------- *)
 
 (* 
- * TODO
- * type url = Url of string (* actually complicated sublanguage *)
- * type color = Color of string (* ?? *)
- * 
- * ??? tree ? how be precise ? 
- * see xHtml.ml ? but too complicated to build ... shadow type sucks
- *
- * (* aka script *)
- * type javascript = unit
- * 
- * (*aka style *)
- * type css = unit
- *)
-
-
-(* The following type is derived from the grammar in the following book:
+ * The following types are derived from the grammar in the following book:
  * src: HTML & XHTML definitive guide edition 6.
  * 
- * contentions: if tag belongs to different types then prefix it
- * with the current type, e.g. 'text' belons to many types hence
+ * contentions: if the tag belongs to different types then I prefix it
+ * with the current type. For instance 'text' belongs to many types hence
  * 'Address_Text', 'Body_Text', etc.
+ * 
+ * concepts: block, text, flow ?
  *)
 type html = Html of attrs * head * body (* | frameset? *)
+
  and head = Head of attrs * head_content list
 
   and head_content =
     | Title of attrs * plain_text
     | Style of attrs * plain_text (* CSS *)
-    | Meta of attrs
-    | Link of attrs
+    | Meta of attrs | Link of attrs
     (* ?? *)
     | Base of attrs | HeadContent_IsIndex of attrs | NextId of attrs
 
@@ -191,14 +178,13 @@ type html = Html of attrs * head * body (* | frameset? *)
     | Heading of heading
     | Hr of attrs
     | Body_Block of block
+    | Body_Text of text
     | Del of attrs * flow | Ins of attrs * flow
     | Address of attrs * address_content list
     | Marquee of attrs * style_text  (* erling :) *)
-    | Body_Text of text
     (* ?? *)
-    | Map of attrs * area list
-    | Layer of attrs * body_content
-    | Bgsound of attrs
+    | Map of attrs * area list 
+    | Layer of attrs * body_content | Bgsound of attrs
 
    and heading = 
      | H1 of attrs * text | H2 of attrs * text
@@ -207,17 +193,30 @@ type html = Html of attrs * head * body (* | frameset? *)
 
    and block = block_content list
     and block_content = 
-     | Block_IsIndex of attrs
+      | Blockquote of attrs * body_content (* ? why not block_content ? *)
+      | Center of attrs * body_content (* obsolete in html5 *)
+      | Div of attrs * body_content
+      | Form of attrs * form_content list
+      | Table of attrs * caption option * colgroup list * table_content list
+      | Pre of attrs * pre_content list
+      | Listing of attrs * literal_text
+      | Menu of attrs * li list
+      | Multicol of attrs * body_content
+      | Dl of attrs * dl_content list1
+      | Ul of attrs * li list1 | Ol of attrs * li list1
+      | Block_P of attrs * text
+
+      (* ?? *)
+      | Block_IsIndex of attrs
+      | Basefont of attrs * body_content (* ?? *)
+      | Dir of attrs * li list1
+      | Nobr of attrs * text
+      | Xmp of attrs * literal_text
 
    and flow = flow_content list
     and flow_content =
       | Flow_Block of block
       | Flow_Text of text
-
-   and address_content = 
-     | Address_P of attrs * text
-     | Address_Text of text
-
 
   and text = text_content list
    and text_content =
@@ -229,12 +228,29 @@ type html = Html of attrs * head * body (* | frameset? *)
      | Space of attrs | Wbr of attrs
      | Text of plain_text
 
+  and li = Li of attrs * flow
 
+  and form_content = unit
+  
+  and table_content = unit
+  and caption = unit
+  and colgroup = unit
+
+  and pre_content = unit
+
+  and dl_content = unit
+
+  and address_content = 
+    | Address_P of attrs * text
+    | Address_Text of text
   and area = unit
 
  and attrs = (attr_name * attr_value) list
  and plain_text = string wrap
  and style_text = string wrap
+ and literal_text = string wrap
+
+ and 'a list1 = 'a * 'a list
 
 (*
 a_content [a] 	::=	heading
@@ -249,34 +265,14 @@ applet_content 	::=	{<param>}0
  	 	body_content
 applet_tag 	::=	<applet> applet_content </applet>
 b_tag 	::=	<b> text </b>
-basefont_tag 	::=	<basefont> body_content </basefont>
+
 bdo_tag 	::=	<bdo> text </bdo>
 big_tag 	::=	<big> text </big>
 blink_tag 	::=	<blink> text </blink>
 
-block_content 	::=
- 	|	basefont_tag
- 	|	blockquote_tag
- 	|	center_tag
- 	|	dir_tag
- 	|	div_tag
- 	|	dl_tag
- 	|	form_tag
- 	|	listing_tag
- 	|	menu_tag
- 	|	multicol_tag
- 	 	 
- 	|	nobr_tag
- 	|	ol_tag
- 	|	p_tag
- 	|	pre_tag
- 	|	table_tag
- 	|	ul_tag
- 	|	xmp_tag
 
-blockquote_tag 	::=	<blockquote> body_content </blockquote>
 caption_tag 	::=	<caption> body_content </caption>
-center_tag 	::=	<center> body_content </center>
+
 
 cite_tag 	::=	<cite> text </cite>
 code_tag 	::=	<code> text </code>
@@ -297,14 +293,9 @@ content_style 	::=	abbr_tag
  	|	var_tag
 dd_tag 	::=	<dd> flow </dd>
 dfn_tag 	::=	<dfn> text </dfn>
-dir_tag [b] 	::=	<dir>
- 	 	{li_tag}
- 	 	</dir>
-div_tag 	::=	<div> body_content </div>
+
 dl_content 	::=	dt_tag dd_tag
-dl_tag 	::=	<dl>
- 	 	{dl_content}
- 	 	</dl>
+
 dt_tag 	::=	<dt>
  	 	text
  	 	</dt>
@@ -322,9 +313,7 @@ form_content [c] 	::=	<input>
  	|	label_tag
  	|	select_tag
  	|	textarea_tag
-form_tag 	::=	<form>
- 	 	{form_content}0
- 	 	</form>
+
 frameset_content 	::=	<frame>
  	|	noframes_tag
 frameset_tag 	::=	<frameset>
@@ -346,13 +335,7 @@ label_tag 	::=	<label>
 
 legend_tag 	::=	<legend> text </legend>
 li_tag 	::=	<li> flow </li>
-listing_tag 	::=	<listing> literal_text </listing>
 
-menu_tag [e] 	::=	<menu>
- 	 	{li_tag}0
- 	 	</menu>
-multicol_tag 	::=	<multicol> body_content </multicol>
-nobr_tag 	::=	<nobr> text </nobr>
 noembed_tag 	::=	<noembed> text </noembed>
 noframes_tag 	::=	<noframes>
  	 	{body_content}0
@@ -361,9 +344,7 @@ noscript_tag 	::=	<noscript> text </noscript>
 object_content 	::=	{<param>}0
  	 	body_content
 object_tag 	::=	<object> object_content </object>
-ol_tag 	::=	<ol>
- 	 	{li_tag}
- 	 	</ol>
+
 optgroup_tag 	::=	<optgroup>
  	 	{option_tag}0
  	 	</optgroup>
@@ -387,9 +368,7 @@ pre_content 	::=	<br>
  	|	<hr>
  	|	a_tag
  	|	style_text
-pre_tag 	::=	<pre>
- 	 	{pre_content}0
- 	 	</pre>
+
 q_tag 	::=	<q> text </q>
 s_tag 	::=	<s> text </s>
 samp_tag 	::=	<samp> text </samp>
@@ -439,12 +418,24 @@ tr_tag 	::=	<tr>
  	 	</tr>
 tt_tag 	::=	<tt> text </tt>
 u_tag 	::=	<u> text </u>
-ul_tag 	::=	<ul>
- 	 	{li_tag}
- 	 	</ul>
+
 var_tag 	::=	<var> text </var>
-xmp_tag 	::=	<xmp> literal_text </xmp>
 *)
+
+(* 
+ * TODO
+ * type url = Url of string (* actually complicated sublanguage *)
+ * type color = Color of string (* ?? *)
+ * 
+ * ??? tree ? how be precise ? 
+ * see xHtml.ml ? but too complicated to build ... shadow type sucks
+ *
+ * (* aka script *)
+ * type javascript = unit
+ * 
+ * (*aka style *)
+ * type css = unit
+ *)
 
 (*****************************************************************************)
 (* Some constructors *)
