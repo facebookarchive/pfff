@@ -161,7 +161,7 @@ type html_tree2 = Nethtml.document list
  * 
  * concepts: block, text, flow ?
  *)
-type html = Html of attrs * head * body (* | frameset? *)
+type html = Html of attrs * head * (body, frameset) Common.either
 
  and head = Head of attrs * head_content list
 
@@ -175,8 +175,8 @@ type html = Html of attrs * head * body (* | frameset? *)
  and body = Body of attrs * body_content list
 
   and body_content =
-    | Heading of heading
     | Hr of attrs
+    | Body_Heading of heading
     | Body_Block of block
     | Body_Text of text
     | Del of attrs * flow | Ins of attrs * flow
@@ -220,20 +220,35 @@ type html = Html of attrs * head * body (* | frameset? *)
 
   and text = text_content list
    and text_content =
+     | PlainText of plain_text
+     | PhysicalStyle of physical_style
+     | ContentStyle of content_style
+     | A of attrs * a_content list
      | Br of attrs
-     | Embed of attrs
      | Img of attrs
+
      | Iframe of attrs
+     | NoScript of attrs * text
+     | Embed of attrs 
+     | NoEmbed of attrs * text
+     | Applet of attrs * applet_content
+     | Object of attrs * object_content
      (* ?? *)
-     | Space of attrs | Wbr of attrs
-     | Text of plain_text
+     | Spacer of attrs | Wbr of attrs | Ilayer of attrs * body_content
+
+   and physical_style = unit
+   and content_style = unit
 
   and li = Li of attrs * flow
+
+  and a_content =
+    | A_Heading of heading
+    | A_Text of text
 
   and form_content = unit
   
   and table_content = unit
-  and caption = unit
+  and caption = Caption of attrs * body_content
   and colgroup = unit
 
   and pre_content = unit
@@ -245,6 +260,20 @@ type html = Html of attrs * head * body (* | frameset? *)
     | Address_Text of text
   and area = unit
 
+  and applet_content = 
+    | Applet_Body of body_content
+    | AppletParams of param list
+  and object_content = applet_content
+
+    and param = unit
+
+ (* obsolete with html5 *)
+ and frameset = Frameset of attrs * frameset_content list
+  and frameset_content =
+    | Frame of attrs
+    | NoFrame of attrs * body_content list
+
+
  and attrs = (attr_name * attr_value) list
  and plain_text = string wrap
  and style_text = string wrap
@@ -253,26 +282,14 @@ type html = Html of attrs * head * body (* | frameset? *)
  and 'a list1 = 'a * 'a list
 
 (*
-a_content [a] 	::=	heading
- 	|	text
-a_tag 	::=	<a>
- 	 	{a_content}0
- 	 	</a>
+
 abbr_tag 	::=	<abbr> text </abbr>
 acronym_tag 	::=	<acronym> text </acronym>
 
-applet_content 	::=	{<param>}0
- 	 	body_content
-applet_tag 	::=	<applet> applet_content </applet>
 b_tag 	::=	<b> text </b>
-
 bdo_tag 	::=	<bdo> text </bdo>
 big_tag 	::=	<big> text </big>
 blink_tag 	::=	<blink> text </blink>
-
-
-caption_tag 	::=	<caption> body_content </caption>
-
 
 cite_tag 	::=	<cite> text </cite>
 code_tag 	::=	<code> text </code>
@@ -291,6 +308,7 @@ content_style 	::=	abbr_tag
  	|	q_tag
  	|	strong_tag
  	|	var_tag
+
 dd_tag 	::=	<dd> flow </dd>
 dfn_tag 	::=	<dfn> text </dfn>
 
@@ -314,15 +332,8 @@ form_content [c] 	::=	<input>
  	|	select_tag
  	|	textarea_tag
 
-frameset_content 	::=	<frame>
- 	|	noframes_tag
-frameset_tag 	::=	<frameset>
- 	 	{frameset_content}0
- 	 	</frameset>
-
 
 i_tag 	::=	<i> text </i>
-ilayer_tag 	::=	<ilayer> body_content </ilayer>
 
 kbd_tag 	::=	<kbd> text </kbd>
 label_content [d] 	::=	<input>
@@ -334,22 +345,14 @@ label_tag 	::=	<label>
  	 	</label>
 
 legend_tag 	::=	<legend> text </legend>
-li_tag 	::=	<li> flow </li>
-
-noembed_tag 	::=	<noembed> text </noembed>
-noframes_tag 	::=	<noframes>
- 	 	{body_content}0
- 	 	</noframes>
-noscript_tag 	::=	<noscript> text </noscript>
-object_content 	::=	{<param>}0
- 	 	body_content
-object_tag 	::=	<object> object_content </object>
 
 optgroup_tag 	::=	<optgroup>
  	 	{option_tag}0
  	 	</optgroup>
+
 option_tag 	::=	<option> plain_text </option>
 p_tag 	::=	<p> text </p>
+
 physical_style 	::=	b_tag
  	|	bdo_tag
  	|	big_tag
@@ -364,6 +367,7 @@ physical_style 	::=	b_tag
  	|	sup_tag
  	|	tt_tag
  	|	u_tag
+
 pre_content 	::=	<br>
  	|	<hr>
  	|	a_tag
@@ -399,17 +403,7 @@ table_tag 	::=	<table>
  	 	</table>
 td_tag 	::=	<td> body_content </td>
 
-text_content 	::=
- 	|	a_tag
- 	|	applet_tag
- 	|	content_style
- 	|	ilayer_tag
- 	|	noembed_tag
- 	|	noscript_tag
- 	 	 
- 	|	object_tag
- 	|	physical_style
- 	|	plain_text
+
 textarea_tag 	::=	<textarea> plain_text </textarea>
 th_tag 	::=	<th> body_content </th>
 
