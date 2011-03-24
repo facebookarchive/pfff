@@ -396,6 +396,8 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
  and 'a list1 = 'a * 'a list
 
+  (* with tarzan *)
+
 (* 
  * TODO
  * type url = Url of string (* actually complicated sublanguage *)
