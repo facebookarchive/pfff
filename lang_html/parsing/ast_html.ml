@@ -170,7 +170,13 @@ type html = Html of attrs * head * (body, frameset) Common.either
   and head_content =
     | Title of attrs * plain_text
     | Style of attrs * plain_text (* CSS *)
-    | Meta of attrs | Link of attrs
+    | Meta of attrs 
+    | Link of attrs (* usually link to css file *)
+    (* note: a script tag may be placed anywhere within a HTML document *)
+    | Head_Script of attrs * plain_text  (* JS *)
+    (* note: a server tag may be placed anywhere within a HTML document *)
+    | Head_Server of attrs * plain_text
+
     (* ?? *)
     | Base of attrs | HeadContent_IsIndex of attrs | NextId of attrs
 
@@ -195,6 +201,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
     | Address of attrs * address_content list
     | Marquee of attrs * style_text  (* erling :) *)
     | Map of attrs * area list 
+
     (* ?? *)
     | Layer of attrs * body_content | Bgsound of attrs
 
@@ -218,15 +225,24 @@ type html = Html of attrs * head * (body, frameset) Common.either
       | Form of attrs * form_content list
       | Table of attrs * caption option * colgroup list * table_content list
       | Pre of attrs * pre_content list
+      | Samp of attrs * text (* todo? right place ? *)
       | Listing of attrs * literal_text
+      (* note: "the li_tag within the menu mayu not contain any element found
+       * in a block" *)
       | Menu of attrs * li list
       | Multicol of attrs * body_content
       | Dl of attrs * dl_content list1
       | Ul of attrs * li list1 | Ol of attrs * li list1
+
+      | Block_Script of attrs * plain_text
+
       (* ?? *)
       | Block_IsIndex of attrs
       | Basefont of attrs * body_content (* ?? *)
-      | Dir of attrs * li list1   | Nobr of attrs * text 
+      (* note: "the li_tag within the dir_tag may not contain any element
+       * found in a block" *)
+      | Dir of attrs * li list1   
+      | Nobr of attrs * text 
       | Xmp of attrs * literal_text
 
 (* ------------------------------------------------------------------------- *)
@@ -244,6 +260,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
      | Iframe of attrs
      | Embed of attrs | NoEmbed of attrs * text
      | Applet of attrs * applet_content | Object of attrs * object_content
+
      (* ?? *)
      | NoScript of attrs * text | Ilayer of attrs * body_content
      | Spacer of attrs | Wbr of attrs 
@@ -256,6 +273,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
     | Font of attrs * style_text
     | Sub of attrs * text | Sup of attrs * text
     | Span of attrs * text (* !! *)
+
     (* ?? *)
     | Bdo of attrs * text 
 
@@ -265,6 +283,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
     | Abbr of attrs * text | Acronym of attrs * text
     | Cite of attrs * text
     | Code of attrs * text
+
     (* ?? *)
     | Dfn of attrs * text | Kbd of attrs * text | Q of attrs * text
     | Var of attrs * text
@@ -281,6 +300,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
 (* ------------------------------------------------------------------------- *)
 (* Forms *)
 (* ------------------------------------------------------------------------- *)
+  (* note: "form_content nay not contain form_tags; you may not nest <form>" *)
   and form_content =
     | Form_Input of attrs (* lots of options here *)
     | Form_Body of body_content
@@ -289,9 +309,11 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
     | Fieldset of attrs * legend option * form_content list
     | Label of attrs * label_content list
+
     (* ?? *)
     | Keygen of attrs
 
+  (* note: "as with <form>, you cannot embed <form> or <label> in <label>" *)
   (* factorize with form_content ? *)
    and label_content =
      | Label_Input of attrs
@@ -347,6 +369,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
    and dt = Dt of attrs * text
    and dd = Dd of attrs * flow   
 
+  (* note: "a_content may not contain a_tags; you may not nest <a> tags" *)
   and a_content =
     | A_Heading of heading
     | A_Text of text
@@ -372,12 +395,6 @@ type html = Html of attrs * head * (body, frameset) Common.either
  and literal_text = string wrap
 
  and 'a list1 = 'a * 'a list
-
-(*
-samp_tag 	::=	<samp> text </samp> ???
-server_tag [g] 	::=	<server> plain_text </server> ???
-script_tag [f] 	::=	<script> plain_text </script>
-*)
 
 (* 
  * TODO
