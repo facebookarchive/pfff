@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009,2010,2011 Facebook
+ * Copyright (C) 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -144,6 +144,13 @@ type html_tree =
 
  (* with tarzan *)
 
+(* a small wrapper over ocamlnet *)
+type html_tree2 = Nethtml.document list
+
+(* ------------------------------------------------------------------------- *)
+(* HTML full AST version *)
+(* ------------------------------------------------------------------------- *)
+
 (* 
  * TODO
  * type url = Url of string (* actually complicated sublanguage *)
@@ -159,18 +166,75 @@ type html_tree =
  * type css = unit
  *)
 
-(* ------------------------------------------------------------------------- *)
-(* HTML full AST version *)
-(* ------------------------------------------------------------------------- *)
 
 (* The following type is derived from the grammar in the following book:
- * src: HTML & XHTML definitive guide edition 6 
+ * src: HTML & XHTML definitive guide edition 6.
+ * 
+ * contentions: if tag belongs to different types then prefix it
+ * with the current type, e.g. 'text' belons to many types hence
+ * 'Address_Text', 'Body_Text', etc.
  *)
 type html = Html of attrs * head * body (* | frameset? *)
- and head = Head of attrs
- and body = Body of attrs
+ and head = Head of attrs * head_content list
 
- and attrs = tok * (attr_name * attr_value) list
+  and head_content =
+    | Title of attrs * plain_text
+    | Style of attrs * plain_text (* CSS *)
+    | Meta of attrs
+    | Link of attrs
+    (* ?? *)
+    | Base of attrs | HeadContent_IsIndex of attrs | NextId of attrs
+
+ and body = Body of attrs * body_content list
+
+  and body_content =
+    | Heading of heading
+    | Hr of attrs
+    | Body_Block of block
+    | Del of attrs * flow | Ins of attrs * flow
+    | Address of attrs * address_content list
+    | Marquee of attrs * style_text  (* erling :) *)
+    | Body_Text of text
+    (* ?? *)
+    | Map of attrs * area list
+    | Layer of attrs * body_content
+    | Bgsound of attrs
+
+   and heading = 
+     | H1 of attrs * text | H2 of attrs * text
+     | H3 of attrs * text | H4 of attrs * text
+     | H5 of attrs * text | H6 of attrs * text
+
+   and block = block_content list
+    and block_content = 
+     | Block_IsIndex of attrs
+
+   and flow = flow_content list
+    and flow_content =
+      | Flow_Block of block
+      | Flow_Text of text
+
+   and address_content = 
+     | Address_P of attrs * text
+     | Address_Text of text
+
+
+  and text = text_content list
+   and text_content =
+     | Br of attrs
+     | Embed of attrs
+     | Img of attrs
+     | Iframe of attrs
+     (* ?? *)
+     | Space of attrs | Wbr of attrs
+     | Text of plain_text
+
+
+  and area = unit
+
+ and attrs = (attr_name * attr_value) list
+ and plain_text = string wrap
+ and style_text = string wrap
 
 (*
 a_content [a] 	::=	heading
@@ -180,11 +244,7 @@ a_tag 	::=	<a>
  	 	</a>
 abbr_tag 	::=	<abbr> text </abbr>
 acronym_tag 	::=	<acronym> text </acronym>
-address_content 	::=	p_tag
- 	|	text
-address_tag 	::=	<address>
- 	 	{address_content}0
- 	 	</address>
+
 applet_content 	::=	{<param>}0
  	 	body_content
 applet_tag 	::=	<applet> applet_content </applet>
@@ -193,8 +253,8 @@ basefont_tag 	::=	<basefont> body_content </basefont>
 bdo_tag 	::=	<bdo> text </bdo>
 big_tag 	::=	<big> text </big>
 blink_tag 	::=	<blink> text </blink>
-block 	::=	{block_content}0
-block_content 	::=	<isindex>
+
+block_content 	::=
  	|	basefont_tag
  	|	blockquote_tag
  	|	center_tag
@@ -213,28 +273,18 @@ block_content 	::=	<isindex>
  	|	table_tag
  	|	ul_tag
  	|	xmp_tag
+
 blockquote_tag 	::=	<blockquote> body_content </blockquote>
-body_content 	::=	<bgsound>
- 	|	<hr>
- 	|	address_tag
- 	|	block
- 	|	del_tag
- 	|	heading
- 	|	ins_tag
- 	|	layer_tag
- 	|	map_tag
- 	|	marquee_tag
- 	|	text
-body_tag 	::=	<body>
- 	 	{body_content}0
- 	 	</body>
 caption_tag 	::=	<caption> body_content </caption>
 center_tag 	::=	<center> body_content </center>
+
 cite_tag 	::=	<cite> text </cite>
 code_tag 	::=	<code> text </code>
+
 colgroup_content 	::=	{<col>}0
 colgroup_tag 	::=	<colgroup>
  	 	colgroup_content
+
 content_style 	::=	abbr_tag
  	|	acronym_tag
  	|	cite_tag
@@ -246,7 +296,6 @@ content_style 	::=	abbr_tag
  	|	strong_tag
  	|	var_tag
 dd_tag 	::=	<dd> flow </dd>
-del_tag 	::=	<del> flow </del>
 dfn_tag 	::=	<dfn> text </dfn>
 dir_tag [b] 	::=	<dir>
  	 	{li_tag}
@@ -264,9 +313,7 @@ fieldset_tag 	::=	<fieldset>
  	 	[legend_tag]
  	 	{form_content}0
  	 	</fieldset>
-flow 	::=	{flow_content}0
-flow_content 	::=	block
- 	|	text
+
 font_tag 	::=	<font> style_text </font>
 form_content [c] 	::=	<input>
  	|	<keygen>
@@ -283,36 +330,11 @@ frameset_content 	::=	<frame>
 frameset_tag 	::=	<frameset>
  	 	{frameset_content}0
  	 	</frameset>
-h1_tag 	::=	<h1> text </h1>
-h2_tag 	::=	<h2> text </h2>
-h3_tag 	::=	<h3> text </h3>
-h4_tag 	::=	<h4> text </h4>
-h5_tag 	::=	<h5> text </h5>
- 	 	 
-h6_tag 	::=	<h6> text </h6>
-head_content 	::=	<base>
- 	|	<isindex>
- 	|	<link>
- 	|	<meta>
- 	|	<nextid>
- 	|	style_tag
- 	|	title_tag
-head_tag 	::=	<head>
- 	 	{head_content}0
- 	 	</head>
-heading 	::=	h1_tag
- 	|	h2_tag
- 	|	h3_tag
- 	|	h4_tag
- 	|	h5_tag
- 	|	h6_tag
-html_content 	::=	head_tag body_tag
- 	|	head_tag frameset_tag
-html_document 	::=	html_tag
-html_tag 	::=	<html> html_content </html>
+
+
 i_tag 	::=	<i> text </i>
 ilayer_tag 	::=	<ilayer> body_content </ilayer>
-ins_tag 	::=	<ins> flow </ins>
+
 kbd_tag 	::=	<kbd> text </kbd>
 label_content [d] 	::=	<input>
  	|	body_content
@@ -321,13 +343,11 @@ label_content [d] 	::=	<input>
 label_tag 	::=	<label>
  	 	{label_content}0
  	 	</label>
-layer_tag 	::=	<layer> body_content </layer>
+
 legend_tag 	::=	<legend> text </legend>
 li_tag 	::=	<li> flow </li>
 listing_tag 	::=	<listing> literal_text </listing>
-map_content 	::=	{<area>}0
-map_tag 	::=	<map> map_content </map>
-marquee_tag 	::=	<marquee> style_text </marquee>
+
 menu_tag [e] 	::=	<menu>
  	 	{li_tag}0
  	 	</menu>
@@ -384,7 +404,7 @@ small_tag 	::=	<small> text </small>
 span_tag 	::=	<span> text </span>
 strike_tag 	::=	<strike> text </strike>
 strong_tag 	::=	<strong> text </strong>
-style_tag 	::=	<style> plain_text </style>
+
 sub_tag 	::=	<sub> text </sub>
 sup_tag 	::=	<sup> text </sup>
 table_cell 	::=	td_tag
@@ -399,13 +419,8 @@ table_tag 	::=	<table>
  	 	{table_content}0
  	 	</table>
 td_tag 	::=	<td> body_content </td>
-text 	::=	{text_content}0
-text_content 	::=	<br>
- 	|	<embed>
- 	|	<iframe>
- 	|	<img>
- 	|	<spacer>
- 	|	<wbr>
+
+text_content 	::=
  	|	a_tag
  	|	applet_tag
  	|	content_style
@@ -418,7 +433,7 @@ text_content 	::=	<br>
  	|	plain_text
 textarea_tag 	::=	<textarea> plain_text </textarea>
 th_tag 	::=	<th> body_content </th>
-title_tag 	::=	<title> plain_text </title>
+
 tr_tag 	::=	<tr>
  	 	{table_cell}0
  	 	</tr>
@@ -430,10 +445,6 @@ ul_tag 	::=	<ul>
 var_tag 	::=	<var> text </var>
 xmp_tag 	::=	<xmp> literal_text </xmp>
 *)
-
-(* ------------------------------------------------------------------------- *)
-(* a small wrapper over ocamlnet *)
-type html_tree2 = Nethtml.document list
 
 (*****************************************************************************)
 (* Some constructors *)
