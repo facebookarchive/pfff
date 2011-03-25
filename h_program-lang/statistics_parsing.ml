@@ -46,7 +46,7 @@ let print_parsing_stat_list ?(verbose=false) = fun statxs ->
   let perfect = 
     statxs 
       +> List.filter (function 
-          {have_timeout = false; bad = 0} -> true | _ -> false)
+          {have_timeout = false; bad = 0; _} -> true | _ -> false)
       +> List.length 
   in
 
@@ -55,11 +55,11 @@ let print_parsing_stat_list ?(verbose=false) = fun statxs ->
   pr "pbs with files:";
   statxs 
     +> List.filter (function 
-      | {have_timeout = true} -> true 
-      | {bad = n} when n > 0 -> true 
+      | {have_timeout = true; _} -> true 
+      | {bad = n; _} when n > 0 -> true 
       | _ -> false)
     +> List.iter (function 
-        {filename = file; have_timeout = timeout; bad = n} -> 
+        {filename = file; have_timeout = timeout; bad = n; _} -> 
           pr (file ^ "  " ^ (if timeout then "TIMEOUT" else i_to_s n));
         );
 
@@ -68,19 +68,19 @@ let print_parsing_stat_list ?(verbose=false) = fun statxs ->
   let threshold_passed = 100 in
   statxs 
     +> List.filter (function 
-      | {commentized = n} when n > threshold_passed -> true
+      | {commentized = n; _} when n > threshold_passed -> true
       | _ -> false)
     +> List.iter (function 
-        {filename = file; commentized = n} -> 
+        {filename = file; commentized = n; _} -> 
           pr (file ^ "  " ^ (i_to_s n));
         );
 
   pr "\n\n\n";
   end;
 
-  let good = statxs +> List.fold_left (fun acc {correct = x} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x} -> acc+x) 0  in
-  let passed = statxs +> List.fold_left (fun acc {commentized = x} -> acc+x) 0
+  let good = statxs +> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
+  let bad  = statxs +> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
+  let passed = statxs +> List.fold_left (fun acc {commentized = x; _} -> acc+x) 0
   in
   let total_lines = good + bad in
 
@@ -90,10 +90,10 @@ let print_parsing_stat_list ?(verbose=false) = fun statxs ->
   (sprintf "NB total lines = %d; " total_lines) ^
   (sprintf "perfect = %d; " perfect) ^
   (sprintf "pbs = %d; "     (statxs +> List.filter (function 
-      {have_timeout = b; bad = n} when n > 0 -> true | _ -> false) 
+      {have_timeout = b; bad = n; _} when n > 0 -> true | _ -> false) 
                                +> List.length)) ^
   (sprintf "timeout = %d; " (statxs +> List.filter (function 
-      {have_timeout = true; bad = n} -> true | _ -> false) 
+      {have_timeout = true; bad = n; _} -> true | _ -> false) 
                                +> List.length)) ^
   (sprintf "=========> %d" ((100 * perfect) / total)) ^ "%"
                                                           

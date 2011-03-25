@@ -68,56 +68,63 @@ let nullDecl = {
 let fake_pi = Parse_info.fake_parse_info
 
 let addStorageD  = function 
-  | ((x,ii), ({storageD = (NoSto,[])} as v)) -> { v with storageD = (x, [ii]) }
-  | ((x,ii), ({storageD = (y, ii2)} as v)) ->  
+  | ((x,ii), ({storageD = (NoSto,[]); _} as v)) -> 
+      { v with storageD = (x, [ii]) }
+  | ((x,ii), ({storageD = (y, ii2); _} as v)) ->  
       if x = y then warning "duplicate storage classes" v
       else raise (Semantic ("multiple storage classes", fake_pi))
 
 let addInlineD  = function 
-  | ((true,ii), ({inlineD = (false,[])} as v)) -> { v with inlineD=(true,[ii])}
-  | ((true,ii), ({inlineD = (true, ii2)} as v)) -> warning "duplicate inline" v
+  | ((true,ii), ({inlineD = (false,[]); _} as v)) -> 
+      { v with inlineD=(true,[ii])}
+  | ((true,ii), ({inlineD = (true, ii2); _} as v)) -> 
+      warning "duplicate inline" v
   | _ -> raise Impossible
 
 
 let addTypeD     = function 
-  | ((Left3 Signed,ii)   ,({typeD = ((Some Signed,  b,c),ii2)} as v)) -> 
+  | ((Left3 Signed,ii)   ,({typeD = ((Some Signed,  b,c),ii2); _} as v)) -> 
       warning "duplicate 'signed'"   v
-  | ((Left3 UnSigned,ii) ,({typeD = ((Some UnSigned,b,c),ii2)} as v)) -> 
+  | ((Left3 UnSigned,ii) ,({typeD = ((Some UnSigned,b,c),ii2); _} as v)) -> 
       warning "duplicate 'unsigned'" v
-  | ((Left3 _,ii),        ({typeD = ((Some _,b,c),ii2)} as _v)) -> 
+  | ((Left3 _,ii),        ({typeD = ((Some _,b,c),ii2); _} as _v)) -> 
       raise (Semantic ("both signed and unsigned specified", fake_pi))
-  | ((Left3 x,ii),        ({typeD = ((None,b,c),ii2)} as v))   -> 
+  | ((Left3 x,ii),        ({typeD = ((None,b,c),ii2); _} as v))   -> 
       {v with typeD = (Some x,b,c),ii ++ ii2}
 
-  | ((Middle3 Short,ii),  ({typeD = ((a,Some Short,c),ii2)} as v)) -> 
+  | ((Middle3 Short,ii),  ({typeD = ((a,Some Short,c),ii2); _} as v)) -> 
       warning "duplicate 'short'" v
 
       
   (* gccext: long long allowed *)
-  | ((Middle3 Long,ii),   ({typeD = ((a,Some Long ,c),ii2)} as v)) -> 
+  | ((Middle3 Long,ii),   ({typeD = ((a,Some Long ,c),ii2); _} as v)) -> 
       { v with typeD = (a, Some LongLong, c),ii++ii2 }
-  | ((Middle3 Long,ii),   ({typeD = ((a,Some LongLong ,c),ii2)} as v)) -> 
+  | ((Middle3 Long,ii),   ({typeD = ((a,Some LongLong ,c),ii2); _} as v)) -> 
       warning "triplicate 'long'" v
 
-  | ((Middle3 _,ii),      ({typeD = ((a,Some _,c),ii2)} as _v)) -> 
+  | ((Middle3 _,ii),      ({typeD = ((a,Some _,c),ii2); _} as _v)) -> 
       raise (Semantic ("both long and short specified", fake_pi))
-  | ((Middle3 x,ii),      ({typeD = ((a,None,c),ii2)} as v))  -> 
+  | ((Middle3 x,ii),      ({typeD = ((a,None,c),ii2); _} as v))  -> 
       {v with typeD = (a, Some x,c),ii++ii2}
 
-  | ((Right3 t,ii),       ({typeD = ((a,b,Some _),ii2)} as _v)) -> 
+  | ((Right3 t,ii),       ({typeD = ((a,b,Some _),ii2); _} as _v)) -> 
       raise (Semantic ("two or more data types", fake_pi))
-  | ((Right3 t,ii),       ({typeD = ((a,b,None),ii2)} as v))   -> 
+  | ((Right3 t,ii),       ({typeD = ((a,b,None),ii2); _} as v))   -> 
       {v with typeD = (a,b, Some t),ii++ii2}
 
 
 let addQualif = function
-  | ({const=true},   ({const=true} as x)) ->   warning "duplicate 'const'" x
-  | ({volatile=true},({volatile=true} as x))-> warning "duplicate 'volatile'" x
-  | ({const=true},    v) -> {v with const=true}
-  | ({volatile=true}, v) -> {v with volatile=true}
+  | ({const=true; _},   ({const=true; _} as x)) -> 
+      warning "duplicate 'const'" x
+  | ({volatile=true; _},({volatile=true; _} as x))-> 
+      warning "duplicate 'volatile'" x
+  | ({const=true; _},    v) -> 
+      {v with const=true}
+  | ({volatile=true; _}, v) -> 
+      {v with volatile=true}
   | _ -> internal_error "there is no noconst or novolatile keyword"
 
-let addQualifD ((qu,ii), ({qualifD = (v,ii2)} as x)) =
+let addQualifD ((qu,ii), ({qualifD = (v,ii2); _} as x)) =
   { x with qualifD = (addQualif (qu, v),ii::ii2) }
 
 
@@ -175,7 +182,7 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
      ,((st, inline),iist++iinl)
   )
 
-let fixDeclSpecForParam = function ({storageD = (st,iist)} as r) -> 
+let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) -> 
   let ((qu,ty) as v,_st) = fixDeclSpecForDecl r in
   match st with
   | (Sto Register) -> (v, true), iist

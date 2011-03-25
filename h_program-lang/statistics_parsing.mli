@@ -6,4 +6,6 @@ type parsing_stat = {
     mutable commentized: int;
   } 
 
+val default_stat: Common.filename -> parsing_stat
+
 val print_parsing_stat_list: ?verbose:bool -> parsing_stat list -> unit
