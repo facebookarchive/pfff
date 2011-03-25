@@ -88,6 +88,7 @@ and v_lvaluebis =
   | DynamicObjAccess ((v1, v2)) -> let v1 = v_var v1 and v2 = v_var v2 in ()
   | IndirectAccess ((v1, v2)) ->
       let v1 = v_var v1 and v2 = v_indirect v2 in ()
+  | TodoLvalue _ -> raise Todo
 
 and v_expr x =
   let k = fun (v1, v2) -> let v1 = v_exprbis v1 and v2 = v_type_info v2 
@@ -117,6 +118,7 @@ and v_exprbis =
   | Cast ((v1, v2)) -> let v1 = v_castOp v1 and v2 = v_expr v2 in ()
   | InstanceOf ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_class_name_reference v2 in ()
+  | TodoExpr _ -> raise Todo
 
 and v_instr x =
  let k = function
@@ -129,6 +131,7 @@ and v_instr x =
       and v3 = v_list v_argument v3
       in ()
   | Eval v1 -> let v1 = v_expr v1 in ()
+  | TodoInstr _ -> raise Todo
  in
  vin.kinstr (k, all_functions) x
 
@@ -163,6 +166,8 @@ and v_stmt x =
   | Throw v1 -> let v1 = v_expr v1 in ()
   | Try ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_catch v2 in ()
   | Echo v1 -> let v1 = v_list v_expr v1 in ()
+  | TodoStmt _ -> raise Todo
+
  in
  vin.kstmt (k, all_functions) x
 
@@ -289,6 +294,7 @@ and v_node_kind =
   | F.Toplevel v1 -> let v1 = v_toplevel v1 in ()
   | F.Program v1 -> let v1 = v_program v1 in ()
   | F.Node v1 -> let v1 = v_node v1 in ()
+  | F.StmtList _ -> raise Todo
 
 
  and all_functions x = v_any x

@@ -99,7 +99,7 @@ let stat_of_program ast =
   let (funcs, classes, topstmts) = 
     Lib_parsing_php.functions_methods_or_topstms_of_program ast in
 
-  let stat = { (default_stat ()) with
+  let _stat = { (default_stat ()) with
     functions = List.length funcs;
     classes = List.length classes;
   }

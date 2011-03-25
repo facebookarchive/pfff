@@ -127,6 +127,7 @@ let rec string_of_lvalue ((lv, ti):P.lvalue) =
                                 (string_of_var v2)
   |P.IndirectAccess(v,i) -> (string_of_var v)^"->"^
                             (string_of_indirect i)
+  | P.TodoLvalue _ -> raise Todo
   in
 (string_of_lvaluebis lv)^(string_of_type_info ti)
 
@@ -155,6 +156,9 @@ and string_of_expr ((e, ti):P.expr) =
   |P.Cast(c, e)->"("^(string_of_castOp c)^")"^(string_of_expr e)
   |P.InstanceOf(e, cnr) -> (string_of_expr e)^" instanceof "^
                            (string_of_class_name_reference cnr)
+
+  | P.TodoExpr _ -> raise Todo
+
   in
 (string_of_exprbis e)^(string_of_type_info ti)
 
@@ -176,38 +180,41 @@ let string_of_argument = function
 |P.ArgRef lv -> "&("^(string_of_lvalue lv)^")"
 
 let rec string_of_instr (i:P.instr) = match i with
-|P.Assign(lv, ak, e) -> (string_of_lvalue lv)^(string_of_assign_kind ak)^
+  |P.Assign(lv, ak, e) -> (string_of_lvalue lv)^(string_of_assign_kind ak)^
                          (string_of_expr e)^"; "
-|P.AssignRef(lv1, lv2) -> (string_of_lvalue lv1)^" =& "^
-                           (string_of_lvalue lv2)^"; "
-|P.Call(s,f,args) ->
-    (string_of_lvalue s)^" = "^(string_of_call_kind f)^"("^
-    (String.concat ", " (List.map string_of_argument args))^"); "
-|P.Eval(e) -> "eval("^(string_of_expr e)^"); "
+  |P.AssignRef(lv1, lv2) -> (string_of_lvalue lv1)^" =& "^
+     (string_of_lvalue lv2)^"; "
+  |P.Call(s,f,args) ->
+     (string_of_lvalue s)^" = "^(string_of_call_kind f)^"("^
+       (String.concat ", " (List.map string_of_argument args))^"); "
+  |P.Eval(e) -> "eval("^(string_of_expr e)^"); "
+  | P.TodoInstr _ -> raise Todo
 
 let string_of_catch x = 
   raise Todo
 
 let rec string_of_stmt (s:P.stmt) = match s with
-|P.Instr i -> (string_of_instr i)^"\n"
-|P.Block sl -> "{\n"^(String.concat "\n" (List.map string_of_stmt sl))^
+  |P.Instr i -> (string_of_instr i)^"\n"
+  |P.Block sl -> "{\n"^(String.concat "\n" (List.map string_of_stmt sl))^
                 "\n}\n"
-|P.EmptyStmt -> ";\n"
-|P.If(e, s1, s2) ->"if("^(string_of_expr e)^")"^
-                    (string_of_stmt s1)^"else "^
-                    (string_of_stmt s2)
-|P.While(e, s) -> "while("^(string_of_expr e)^")"^
-                   (string_of_stmt s)
-|P.Break(None) -> "break;\n"
-|P.Break(Some e) -> "break "^(string_of_expr e)^";\n"
-|P.Continue(None) -> "continue;\n"
-|P.Continue(Some e) -> "continue "^(string_of_expr e)^";\n"
-|P.Return(None) -> "return;\n"
-|P.Return(Some e) -> "return "^(string_of_expr e)^";\n"
-|P.Throw(e) -> "throw "^(string_of_expr e)^";\n"
-|P.Try(s, c) -> "try "^(string_of_stmt s)^"catch "^(string_of_catch c)^"\n"
-|P.Echo(el) ->"echo "^(String.concat ", " (List.map string_of_expr el))^
-               ";\n"
+  |P.EmptyStmt -> ";\n"
+  |P.If(e, s1, s2) ->"if("^(string_of_expr e)^")"^
+     (string_of_stmt s1)^"else "^
+      (string_of_stmt s2)
+  |P.While(e, s) -> "while("^(string_of_expr e)^")"^
+     (string_of_stmt s)
+  |P.Break(None) -> "break;\n"
+  |P.Break(Some e) -> "break "^(string_of_expr e)^";\n"
+  |P.Continue(None) -> "continue;\n"
+  |P.Continue(Some e) -> "continue "^(string_of_expr e)^";\n"
+  |P.Return(None) -> "return;\n"
+  |P.Return(Some e) -> "return "^(string_of_expr e)^";\n"
+  |P.Throw(e) -> "throw "^(string_of_expr e)^";\n"
+  |P.Try(s, c) -> "try "^(string_of_stmt s)^"catch "^(string_of_catch c)^"\n"
+  |P.Echo(el) ->"echo "^(String.concat ", " (List.map string_of_expr el))^
+     ";\n"
+  | P.TodoStmt _ -> raise Todo
+
 
 let fmap_str f opt =
   match opt with

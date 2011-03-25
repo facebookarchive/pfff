@@ -368,6 +368,7 @@ and vof_node_kind =
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Echo", [ v1 ]))
   | F.Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
   | F.Join -> Ocaml.VSum (("Join", []))
+  | F.TodoNode _ -> raise Todo
 
 
 (*****************************************************************************)
