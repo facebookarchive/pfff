@@ -130,13 +130,13 @@ type ('a, 'b) layout_func =
 (*s: function treemap accessors *)
 let color_of_treemap_node x = 
   match x with 
-  | Node (({color = c}, _), _) -> c
-  | Leaf (({color = c}, _)) -> c
+  | Node (({color = c; _}, _), _) -> c
+  | Leaf (({color = c; _}, _)) -> c
 
 let size_of_treemap_node x = 
   match x with 
-  | Node (({size = s}, _), _) -> s
-  | Leaf (({size = s}, _)) -> s
+  | Node (({size = s; _}, _), _) -> s
+  | Leaf (({size = s; _}, _)) -> s
 (*e: function treemap accessors *)
 
 (*s: function algorithm accessors *)
