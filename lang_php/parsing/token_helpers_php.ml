@@ -26,14 +26,13 @@ let is_eof = function
   | _ -> false
 
 let is_comment = function
-  | T_WHITESPACE _
   | T_COMMENT _ | T_DOC_COMMENT _ 
-  | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
+  | TSpaces _ | TNewline _ -> true
   | TCommentPP _ -> true
   | _ -> false 
 
 let is_just_comment = function
-  | TComment _ -> true
+  | T_COMMENT _ -> true
   | _ -> false 
 
 
@@ -49,9 +48,8 @@ let is_just_comment = function
 
 let info_of_tok = function
   | TUnknown ii -> ii
-  | TCommentSpace ii -> ii
-  | TCommentNewline ii -> ii
-  | TComment ii -> ii
+  | TSpaces ii -> ii
+  | TNewline ii -> ii
   | TCommentPP ii -> ii
   | T_LNUMBER (s, ii) -> ii
   | T_DNUMBER (s, ii) -> ii
@@ -120,7 +118,6 @@ let info_of_tok = function
   | T_OPEN_TAG_WITH_ECHO ii -> ii
   | T_CLOSE_TAG_OF_ECHO ii -> ii
   | T_CLOSE_TAG ii -> ii
-  | T_WHITESPACE ii -> ii
   | T_START_HEREDOC ii -> ii
   | T_END_HEREDOC ii -> ii
   | T_DOLLAR_OPEN_CURLY_BRACES ii -> ii
@@ -233,9 +230,8 @@ let info_of_tok = function
 
 let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown(f ii)
-  | TCommentSpace ii -> TCommentSpace(f ii)
-  | TCommentNewline ii -> TCommentNewline(f ii)
-  | TComment ii -> TComment(f ii)
+  | TSpaces ii -> TSpaces(f ii)
+  | TNewline ii -> TNewline(f ii)
   | TCommentPP ii -> TCommentPP(f ii)
   | T_LNUMBER (s,ii) -> T_LNUMBER(s, f ii)
   | T_DNUMBER (s,ii) -> T_DNUMBER(s, f ii)
@@ -304,7 +300,6 @@ let visitor_info_of_tok f = function
   | T_OPEN_TAG_WITH_ECHO ii -> T_OPEN_TAG_WITH_ECHO(f ii)
   | T_CLOSE_TAG_OF_ECHO ii -> T_CLOSE_TAG_OF_ECHO(f ii)
   | T_CLOSE_TAG ii -> T_CLOSE_TAG(f ii)
-  | T_WHITESPACE ii -> T_WHITESPACE(f ii)
   | T_START_HEREDOC ii -> T_START_HEREDOC(f ii)
   | T_END_HEREDOC ii -> T_END_HEREDOC(f ii)
   | T_DOLLAR_OPEN_CURLY_BRACES ii -> T_DOLLAR_OPEN_CURLY_BRACES(f ii)

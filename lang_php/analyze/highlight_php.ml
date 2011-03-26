@@ -709,13 +709,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     | T.EOF ii -> ()
     | T.TUnknown ii -> tag ii Error
 
-    | T.T_WHITESPACE ii -> ()
+    | T.TNewline ii -> ()
+    | T.TSpaces ii -> ()
 
-    (* used ? *)
     | T.TCommentPP ii -> ()
-    | T.TComment ii -> ()
-    | T.TCommentNewline ii -> ()
-    | T.TCommentSpace ii -> ()
    
     (* they should have been covered before *)
     | T.T_VARIABLE (_, ii) -> 

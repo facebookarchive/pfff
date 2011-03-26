@@ -70,7 +70,7 @@ open Parser_php_mly_helper
 /*(*-----------------------------------------*)*/
 /*(*s: GRAMMAR comment tokens *)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_php.info> TCommentSpace TCommentNewline   TComment
+%token <Ast_php.info> TSpaces TNewline
 
 /*(* when use preprocessor and want to mark removed tokens as commented *)*/
 %token <Ast_php.info> TCommentPP
@@ -78,7 +78,6 @@ open Parser_php_mly_helper
 /*(* not mentionned in this grammar. preprocessed *)*/
 %token <Ast_php.info> T_COMMENT
 %token <Ast_php.info> T_DOC_COMMENT
-%token <Ast_php.info> T_WHITESPACE
 /*(*e: GRAMMAR comment tokens *)*/
 
 /*(*-----------------------------------------*)*/

@@ -52,9 +52,8 @@ module TH = Token_helpers_php
 
 (* set of tokens that are not in the leaves of the AST *)
 let is_not_in_ast = function
-  | T_WHITESPACE _
   | T_COMMENT _ | T_DOC_COMMENT _ 
-  | TComment _ | TCommentSpace _ | TCommentNewline _ 
+  | TSpaces _ | TNewline _ 
       -> true
   | _ -> false
 let is_in_ast tok = not (is_not_in_ast tok)
@@ -63,7 +62,7 @@ let is_in_ast tok = not (is_not_in_ast tok)
  * but we usually want to keep the newlines and comments
  *)
 let is_newline_or_comment = function
-  | T_COMMENT _ | T_DOC_COMMENT _ | TCommentNewline _ -> true
+  | T_COMMENT _ | T_DOC_COMMENT _ | TNewline _ -> true
   | _ -> false
 
 
@@ -239,10 +238,10 @@ let string_of_program2_using_transfo ast2 =
              else 
               if is_a_remove_or_replace tok_prev
               then 
-                (* we don't want the space tokens but we want to keep
-                 * the original newlines and comments *)
-                comments +> List.filter is_newline_or_comment 
-                +> List.iter pp_tok
+                (match comments with
+                | TSpaces _::rest -> rest +> List.iter pp_tok
+                | _ -> comments +> List.iter pp_tok
+                )
               else
                 comments +> List.iter pp_tok
             );

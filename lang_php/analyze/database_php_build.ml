@@ -197,9 +197,15 @@ let first_comment ast toks =
       Token_helpers_php.pos_of_tok tok < min.Parse_info.charpos
     ) +> List.rev
   in
+
+  (* note that the tokens in toks_before_min are in reverse order.
+   * Note also that for one-liner comments the tokens contain
+   * a newline. so //comment\nfunctionfoo will return 2 tokens,
+   * [T_COMMENT("//comment\n"); T_FUNCTION(...)].
+   *)
   let comment_info = 
     match toks_before_min with
-    | Parser_php.T_WHITESPACE i1::
+    | Parser_php.TNewline i1::
         (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
         if Ast_php.col_of_info i2 = 0
         then Some (Ast_php.parse_info_of_info i2)

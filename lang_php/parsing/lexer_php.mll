@@ -515,7 +515,9 @@ rule st_in_scripting = parse
         T_COMMENT(info +> tok_add_s com)
       }
 
-    | WHITESPACE { T_WHITESPACE(tokinfo lexbuf) }
+    (* old: | WHITESPACE { T_WHITESPACE(tokinfo lexbuf) } *)
+    | [' '  '\t']+ { TSpaces(tokinfo lexbuf) }
+    | ['\n' '\r']  { TNewline(tokinfo lexbuf) }
 
   (*e: comments rules *)
 
@@ -635,7 +637,8 @@ rule st_in_scripting = parse
         let lblinfo = tokinfo_str_pos label pos_after_white in
         
         push_token (T_IDENT (label, lblinfo));
-        push_token (T_WHITESPACE (whiteinfo));
+       (* todo: could be newline ... *)
+        push_token (TSpaces (whiteinfo));
 
         T_OBJECT_OPERATOR(syminfo)
       }
@@ -1176,7 +1179,7 @@ and st_start_heredoc stopdoc = parse
       if s = stopdoc
       then begin
         set_mode ST_IN_SCRIPTING;
-        push_token (T_WHITESPACE (space_info));
+        push_token (TNewline (space_info));
         if semi = ";"
         then push_token (TSEMICOLON (colon_info));
           
@@ -1246,7 +1249,7 @@ and st_start_heredoc stopdoc = parse
       if s = stopdoc 
       then begin
         set_mode ST_IN_SCRIPTING;
-        push_token (T_WHITESPACE(space_info));
+        push_token (TNewline(space_info));
         if semi = ";"
         then push_token (TSEMICOLON (colon_info));
         push_token (T_END_HEREDOC(lbl_info));
@@ -1292,7 +1295,8 @@ and st_in_xhp_tag current_tag = parse
    * 
    * todo? allow comments too there ? 
    *)
-  | WHITESPACE { T_WHITESPACE(tokinfo lexbuf) }
+  | [' ' '\t']+ { TSpaces(tokinfo lexbuf) }
+  | ['\n' '\r'] { TNewline(tokinfo lexbuf) }
 
   (* attribute management *)
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }

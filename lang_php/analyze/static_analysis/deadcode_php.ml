@@ -420,9 +420,14 @@ let get_lines_to_remove db ids =
         Token_helpers_php.pos_of_tok tok < min.Parse_info.charpos
       ) +> List.rev
     in
+    (* note that the tokens in toks_before_min are in reverse order.
+     * note also that for one-liner comment the tokens contain
+     * the newline. so //comment\nfunctionfoo will return 2 tokens,
+     * [T_COMMENT("//comment\n"); T_FUNCTION(...)].
+     *)
     let min_comment = 
       match toks_before_min with
-      | Parser_php.T_WHITESPACE i1::
+      | Parser_php.TNewline i1::
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
           if Ast_php.col_of_info i2 = 0 &&
              (* bugfix: dont want comment far away *)
@@ -432,7 +437,7 @@ let get_lines_to_remove db ids =
 
       (* bugfix *)
       | Parser_php.T_COMMENT i1first::
-          Parser_php.T_WHITESPACE i1::
+          Parser_php.TNewline i1::
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs
         ->
           if Ast_php.col_of_info i1first = 0 &&
@@ -446,7 +451,7 @@ let get_lines_to_remove db ids =
           then Ast_php.parse_info_of_info i2
           else min
 
-      | Parser_php.T_WHITESPACE i1::tok2::xs ->
+      | Parser_php.TNewline i1::tok2::xs ->
           let _ltok2 = Token_helpers_php.line_of_tok tok2 in
           let _lwhite = Ast_php.line_of_info i1 in
           if Ast_php.col_of_info i1 = 0 (* buggy: lwhite <> ltok2 *)
