@@ -73,7 +73,7 @@ let is_in_between_some_remove prev_tok cur_tok =
   | Remove _, Remove _ -> true
   | _ -> false
 
-let is_behind_a_remove_or_replace tok = 
+let is_a_remove_or_replace tok = 
   match (TH.info_of_tok tok).transfo with
   | (Remove _ | Replace _) -> true
   | _ -> false
@@ -195,27 +195,19 @@ let string_of_program2_using_transfo ast2 =
    let fake_tok = Parser_php.T_ECHO (Ast.fakeInfo "fake_token") in
 
   Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = 
-      Buffer.add_string buf s 
-    in
-
+    let pp s = Buffer.add_string buf s in
     let pp_tok tok = 
       match TH.pinfo_of_tok tok with
       | Parse_info.OriginTok _ -> 
           pp (TH.str_of_tok tok);
-
-      | Parse_info.ExpandedTok _ -> 
-          ()
+      | Parse_info.ExpandedTok _ -> ()
       | Parse_info.FakeTokStr ("fake_token", _) -> ()
-
-      | Parse_info.Ab _ 
-      | Parse_info.FakeTokStr _ -> raise Impossible
+      | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
     in
     let pp_add toadd = 
       match toadd with
       | AddStr s -> pp s
-      | AddNewlineAndIdent -> 
-          raise Todo
+      | AddNewlineAndIdent -> raise Todo
     in
     
     ast2 |> List.iter (fun (ast, (s, toks)) ->
@@ -227,27 +219,31 @@ let string_of_program2_using_transfo ast2 =
       in
       assert(null trailing_comments); (* there is a a trailing fake tok *)
 
+      (* the goal here is to print tok and its preceding comments if
+       * the transfo fields of the previous and current token respect
+       * certain conditions
+       *)
       toks_ast_with_previous_comments_attached |> Common.iter_with_previous 
           (fun (comments_prev, tok_prev) (comments, tok)  ->
 
             (if is_in_between_some_remove tok_prev tok 
-             (* TODO: this is ok only for certain tokens, such
-              * as comma.
-              * This code is ugly. The proper way is to have a
+             (* TODO: this is ok only for certain tokens, such as comma.
+              * 
+              * todo: this code is ugly. The proper way is probably to have a
               * classic code pretty-printer/indenter that we
               * run after the transformation. Trying to transform
               * and reindent (or adjust space) at the same time
               * is too complicated I think.
               *)
-             then ()
+             then () (* don't print the comment *)
              else 
-              if is_behind_a_remove_or_replace tok_prev
+              if is_a_remove_or_replace tok_prev
               then 
                 (* we don't want the space tokens but we want to keep
                  * the original newlines and comments *)
                 comments +> List.filter is_newline_or_comment 
                 +> List.iter pp_tok
-              else 
+              else
                 comments +> List.iter pp_tok
             );
 
