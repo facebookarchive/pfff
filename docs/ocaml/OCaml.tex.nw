@@ -277,6 +277,11 @@ let x = 1
 
 \chapter{\ocaml Crash Course}
 
+% functional style vs imperative
+% total = 0;
+% for(i = 0; i < 10; i ++) { total += i; } return total;
+% fold (+) (enum 1 10),   composable!
+
 \section{Type inference}
 
 % don't repeat yourself, cf haxe slides

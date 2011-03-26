@@ -390,6 +390,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
 (* ------------------------------------------------------------------------- *)
 
  and attrs = (attr_name * attr_value) list
+
  and plain_text = string wrap
  and style_text = string wrap
  and literal_text = string wrap
