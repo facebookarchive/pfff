@@ -905,7 +905,7 @@ let print_parsing_stat_list statxs =
   let perfect = 
     statxs 
       +> List.filter (function 
-      | {bad = n} when n = 0 -> true 
+      | {bad = n; _} when n = 0 -> true 
       | _ -> false)
       +> List.length 
   in
@@ -917,8 +917,8 @@ let print_parsing_stat_list statxs =
   (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
   );
 
-  let good = statxs +> List.fold_left (fun acc {correct = x} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x} -> acc+x) 0  in
+  let good = statxs +> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
+  let bad  = statxs +> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
 
   let gf, badf = float_of_int good, float_of_int bad in
   pr2 (

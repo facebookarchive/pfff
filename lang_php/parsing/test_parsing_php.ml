@@ -142,7 +142,7 @@ let test_visit_php file =
 let test_unparse_php file = 
   let (ast2, stat) = Parse_php.parse file in
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
-  let s = Unparse_php.string_of_program2_using_tokens ast2 in
+  let s = Unparse_php.string_of_program2_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;
   let xs = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
   xs |> List.iter pr2;
@@ -156,7 +156,7 @@ let test_parse_xhp_with_xhpize file =
   Sexp_ast_php.show_info := false;
   let s = Sexp_ast_php.string_of_program ast in
   pr2 s;
-  let s = Unparse_php.string_of_program2_using_tokens ast2 in
+  let s = Unparse_php.string_of_program2_using_transfo ast2 in
   pr2 s;
   ()
 

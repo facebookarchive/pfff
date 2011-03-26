@@ -25,7 +25,7 @@ module Lexer = Lexer_cpp
 module Semantic = Semantic_cpp
 (* module Visitor_c = Visitor_cplusplus *)
 
-module Stat = Parsing_stat_cpp
+module Stat = Statistics_parsing
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -991,7 +991,7 @@ let parse_print_error_heuristic2 file =
   let toks = Parsing_hacks.fix_tokens_cpp toks in
 
   let filelines = (""::Common.cat file) +> Array.of_list in
-  let stat = Stat.default_stat file in
+  let stat = Statistics_parsing.default_stat file in
 
 
   let tr = { 

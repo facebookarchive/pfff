@@ -32,37 +32,71 @@ module TH = Token_helpers_php
 (*****************************************************************************)
 
 (* 
- * There are multiple ways to unparse PHP code. 
- * One can iterating over the AST, and print its leaves, but 
- * comments and spaces are not in the AST right now which require 
- * extra code. 
- * One can iterate over the tokens, where comments and spaces are normal
- * citizens, but this can be too low level.
+ * There are multiple ways to unparse PHP code:
+ *  - one can iterate over the AST, and print its leaves, but 
+ *    comments and spaces are not in the AST right now so you need
+ *    some extra code that also visit the tokens and try to "sync" the
+ *    visit of the AST with the tokens
+ *  - one can iterate over the tokens, where comments and spaces are normal
+ *    citizens, but this can be too low level.
  * 
  * related: the sexp/json "exporters".
  * 
- * todo? Want to put this module in parsing_php/ 
- * it does not have to be here, but maybe simpler
- * to put it here so have   basic parser/unparser
- * together.
+ * this module could be in analyze_php/ instead of parsing_php/, 
+ * but it's maybe good to have the basic parser/unparser together.
  *)
 
 (*****************************************************************************)
-(* unparsing by using AST visitor *)
+(* Helpers *)
 (*****************************************************************************)
 
+(* set of tokens that are not in the leaves of the AST *)
+let is_not_in_ast = function
+  | T_WHITESPACE _
+  | T_COMMENT _ | T_DOC_COMMENT _ 
+  | TComment _ | TCommentSpace _ | TCommentNewline _ 
+      -> true
+  | _ -> false
+let is_in_ast tok = not (is_not_in_ast tok)
+
+(* when transforming and unparsing we sometimes need to remove spaces,
+ * but we usually want to keep the newlines and comments
+ *)
+let is_newline_or_comment = function
+  | T_COMMENT _ | T_DOC_COMMENT _ | TCommentNewline _ -> true
+  | _ -> false
+
+
+let is_in_between_some_remove prev_tok cur_tok = 
+  match (TH.info_of_tok prev_tok).transfo, 
+        (TH.info_of_tok cur_tok).transfo with
+  | Remove _, Remove _ -> true
+  | _ -> false
+
+let is_a_remove_or_replace tok = 
+  match (TH.info_of_tok tok).transfo with
+  | (Remove _ | Replace _) -> true
+  | _ -> false
+
+(*****************************************************************************)
+(* Unparsing using AST visitor *)
+(*****************************************************************************)
+
+(* This will not preserve space and comments but it's useful
+ * and good enough for printing small chunk of PHP code for debugging purpose.
+ * We try to preserve the line number.
+ *)
 let string_of_program2 ast2 = 
+  let ast = Parse_php.program_of_program2 ast2 in
   Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = 
-      Buffer.add_string buf s
-    in
+    let pp s = Buffer.add_string buf s in
     let cur_line = ref 1 in
 
     pp "<?php";
     pp "\n"; 
     incr cur_line;
 
-    let hooks = { V.default_visitor with
+    let visitor = V.mk_visitor { V.default_visitor with
       V.kinfo = (fun (k, _) info ->
         match info.Parse_info.token with
         | Parse_info.OriginTok p ->
@@ -72,7 +106,6 @@ let string_of_program2 ast2 =
               (line - !cur_line) +> Common.times (fun () -> pp "\n"); 
               cur_line := line;
             end;
-
             let s =  p.Parse_info.str in
             pp s; pp " ";
         | Parse_info.FakeTokStr (s, _opt) ->
@@ -82,20 +115,19 @@ let string_of_program2 ast2 =
               pp "\n";
               incr cur_line;
             end
-
-        | Parse_info.Ab
-          ->
+        | Parse_info.Ab ->
             ()
         | Parse_info.ExpandedTok _ ->
             raise Todo
       );
     }
     in
-    
-    ast2 +> List.iter (fun (top, infos) ->
-      (V.mk_visitor hooks) (Toplevel top)
-    )
+    visitor (Program ast);
   )
+
+(*****************************************************************************)
+(* Even simpler unparser using AST visitor *)
+(*****************************************************************************)
 
 let mk_unparser_visitor pp = 
   let hooks = { V.default_visitor with
@@ -140,89 +172,80 @@ let string_of_any any =
 let string_of_expr x = string_of_any (Expr x)
 
 (*****************************************************************************)
-(* unparsing by using the tokens *)
+(* Transformation-aware unparser (using the tokens) *)
 (*****************************************************************************)
 
-let is_not_in_ast = function
-  | T_WHITESPACE _
-  | T_COMMENT _ | T_DOC_COMMENT _ 
-  | TComment _ | TCommentSpace _ | TCommentNewline _ 
-      -> true
-  | _ -> false
-let is_in_ast tok = not (is_not_in_ast tok)
-
-let is_in_between_some_remove prev_tok cur_tok = 
-  match (TH.info_of_tok prev_tok).transfo, 
-        (TH.info_of_tok cur_tok).transfo with
-  | Remove _, Remove _ -> true
-  | _ -> false
-
-let is_behind_a_remove_or_replace prev_tok cur_tok = 
-  match (TH.info_of_tok prev_tok).transfo, 
-        (TH.info_of_tok cur_tok).transfo with
-  | (Remove _ | Replace _), _ -> true
-  | _ -> false
-
-let string_of_program2_using_tokens 
- ?(remove_space_after_removed = true)
-  ast2 =
+(* 
+ * The idea of the algorithm here is to iterate over all the tokens
+ * and depending on the token transfo annotation to print or not
+ * the token as well as the comments/spaces associated with the token.
+ * The current token is not enough to take certain decisions so
+ * the algorithm actually itererates on all the tokens with
+ * the previous token as contextual information. For instance if
+ * the previous token was also annotated with a Remove, then 
+ * we want to also remove the spaces between the previous and current
+ * token.
+ *)
+let string_of_program2_using_transfo ast2 =
 
    (* for some of the processing below, it is convenient to enclose
     * the list of tokens with some fake tokens so that the special
-    * case on the edges does not have to be handled.
+    * case on the edges do not have to be handled.
     *)
-   let fake_tok = 
-     let e = Parse_php.expr_of_string "1" in
-     let ii = Lib_parsing_php.ii_of_any (Expr e) in
-     match ii with
-     | [info] -> Parser_php.T_ECHO (Ast.rewrap_str "" info)
-     | _ -> raise Impossible
-   in
+   let fake_tok = Parser_php.T_ECHO (Ast.fakeInfo "fake_token") in
 
   Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
-    let pp s = 
-      Buffer.add_string buf s 
-    in
-
+    let pp s = Buffer.add_string buf s in
     let pp_tok tok = 
       match TH.pinfo_of_tok tok with
       | Parse_info.OriginTok _ -> 
           pp (TH.str_of_tok tok);
-
-      | Parse_info.ExpandedTok _ -> 
-          ()
-
+      | Parse_info.ExpandedTok _ -> ()
+      | Parse_info.FakeTokStr ("fake_token", _) -> ()
       | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
     in
     let pp_add toadd = 
       match toadd with
       | AddStr s -> pp s
-      | AddNewlineAndIdent -> 
-          raise Todo
+      | AddNewlineAndIdent -> raise Todo
     in
     
     ast2 |> List.iter (fun (ast, (s, toks)) ->
 
       let toks = [fake_tok] ++ toks ++ [fake_tok] in
       
-      let (toks_ast_with_comment_attached, trailing_comments) = 
+      let (toks_ast_with_previous_comments_attached, trailing_comments) = 
         Common.group_by_post (fun tok -> is_in_ast tok) toks
       in
-      (* the last comments should be attached to the last fake_tok *)
-      assert(null trailing_comments);
+      assert(null trailing_comments); (* there is a a trailing fake tok *)
 
-      toks_ast_with_comment_attached |> Common.iter_with_previous 
+      (* the goal here is to print tok and its preceding comments if
+       * the transfo fields of the previous and current token respect
+       * certain conditions
+       *)
+      toks_ast_with_previous_comments_attached |> Common.iter_with_previous 
           (fun (comments_prev, tok_prev) (comments, tok)  ->
 
-            if is_in_between_some_remove tok_prev tok 
-             (* TODO: this is ok only for certain tokens, such
-              * as comma
-              *  
+            (if is_in_between_some_remove tok_prev tok 
+             (* TODO: this is ok only for certain tokens, such as comma.
+              * 
+              * todo: this code is ugly. The proper way is probably to have a
+              * classic code pretty-printer/indenter that we
+              * run after the transformation. Trying to transform
+              * and reindent (or adjust space) at the same time
+              * is too complicated I think.
               *)
-              || (is_behind_a_remove_or_replace tok_prev tok &&
-                  remove_space_after_removed)
-            then () 
-            else comments |> List.iter pp_tok;
+             then () (* don't print the comment *)
+             else 
+              if is_a_remove_or_replace tok_prev
+              then 
+                (* we don't want the space tokens but we want to keep
+                 * the original newlines and comments *)
+                comments +> List.filter is_newline_or_comment 
+                +> List.iter pp_tok
+              else
+                comments +> List.iter pp_tok
+            );
 
             let info = TH.info_of_tok tok in
 
@@ -231,6 +254,8 @@ let string_of_program2_using_tokens
             | Parse_info.ExpandedTok _, 
                 (Remove | Replace _ | AddAfter _ | AddBefore _) ->
                 failwith "Can't do transformation on expanded Tok"
+
+            | Parse_info.FakeTokStr ("fake_token", _), _ -> ()
 
             | Parse_info.Ab, _ -> raise Impossible
             | Parse_info.FakeTokStr _, _ -> raise Impossible

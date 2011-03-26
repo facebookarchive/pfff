@@ -836,6 +836,7 @@ let lift_in ?(eol = ["\n"]) ?(buffered=true) ?buffer_size (x : lift_in_arg) =
 	new lift_raw_in_channel r
     | `Raw r when buffered ->
 	new lift_raw_in_channel_buf ~eol ?buffer_size r
+    | _ -> failwith "Impossible"
 ;;
 
 
@@ -1310,6 +1311,7 @@ let lift_out ?(buffered=true) ?buffer_size (x : lift_out_arg) =
     | `Raw r when buffered ->
 	let r' = new buffered_raw_out_channel ?buffer_size r in
 	new lift_raw_out_channel r'
+    | _ -> failwith "Impossible"
 ;;
 
 

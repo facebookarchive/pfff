@@ -51,3 +51,6 @@ let find_html_files_of_dir_or_files xs =
 (* AST helpers *)
 (*****************************************************************************)
 
+let html_tree_to_html tree =
+  raise Todo
+

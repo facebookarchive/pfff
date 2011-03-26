@@ -12,7 +12,7 @@ type program2 = toplevel2 list
 
 (* This is the main function *)
 val parse:  
-  Common.filename -> (program2 * Parsing_stat_cpp.parsing_stat)
+  Common.filename -> (program2 * Statistics_parsing.parsing_stat)
 
 val parse_program:  
   Common.filename -> Ast_cpp.program
@@ -27,7 +27,7 @@ val init_defs : Common.filename -> unit
 
 (* return fake program but with good tokens. just use the lexer *)
 val parse_tokens:
-  Common.filename -> (program2 * Parsing_stat_cpp.parsing_stat)
+  Common.filename -> (program2 * Statistics_parsing.parsing_stat)
 
 
 val tokens:      Common.filename -> Parser_cpp.token list
@@ -40,9 +40,9 @@ val parse_gen:
     ((Lexing.lexbuf -> Parser_cpp.token) -> Lexing.lexbuf -> 'a) -> string -> 'a
 
 val parse_print_error_heuristic:  
-  Common.filename (*cfile*) -> (program2 * Parsing_stat_cpp.parsing_stat)
+  Common.filename (*cfile*) -> (program2 * Statistics_parsing.parsing_stat)
 val parse_c_and_cpp : (* alias of previous func *)
-  Common.filename (*cfile*) -> (program2 * Parsing_stat_cpp.parsing_stat)
+  Common.filename (*cfile*) -> (program2 * Statistics_parsing.parsing_stat)
 
 
 (* easy way to build complex Ast elements from simple strings *)

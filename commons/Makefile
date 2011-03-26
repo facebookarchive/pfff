@@ -200,7 +200,7 @@ OPTFLAGS=-thread
 # or setenv it to ".opt" in your startup script.
 OPTBIN ?= #.opt
 
-OCAMLCFLAGS ?= -g -dtypes -thread
+OCAMLCFLAGS ?= -g -dtypes -thread -w +9
 
 # The OCaml tools.
 OCAMLC =ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(INCLUDES)

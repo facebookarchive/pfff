@@ -76,6 +76,9 @@ beforedepend:: parser_cpp.ml parser_cpp.mli
 visitor_cpp.cmo: visitor_cpp.ml
 	$(OCAMLC) -w y -c $<
 
+parsing_hacks.cmo: parsing_hacks.ml
+	$(OCAMLC) -w -9 -c $<
+
 ##############################################################################
 # Generic rules
 ##############################################################################

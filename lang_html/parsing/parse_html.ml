@@ -438,7 +438,7 @@ let parse2 file =
           (name =*= !current.name) ||
             try
               Stack.iter
-                (fun { name = old_name} ->
+                (fun { name = old_name; _} ->
                   if name = old_name 
                   then raise Found;
                   match model_of ~dtd_hash old_name with
@@ -491,7 +491,7 @@ let parse2 file =
   let xs = 
     try
       parse_next();  (* never returns. Will get a warning X *)
-      assert false
+      (* assert false *)
     with End_of_scan ->
       (* Close all remaining elements: *)
       while Stack.length stack > 0 do

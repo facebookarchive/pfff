@@ -154,9 +154,13 @@ and
                           tr_rect = v_tr_rect;
                           tr_color = v_tr_color;
                           tr_label = v_tr_label;
-                          tr_depth = v_tr_depth
+                          tr_depth = v_tr_depth;
+                          tr_is_node = v_tr_is_node;
                         } =
   let bnds = [] in
+  let arg = Ocaml.vof_bool v_tr_is_node in
+  let bnd = ("tr_is_node", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_int v_tr_depth in
   let bnd = ("tr_depth", arg) in
   let bnds = bnd :: bnds in
@@ -167,7 +171,9 @@ and
   let bnd = ("tr_color", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_rectangle v_tr_rect in
-  let bnd = ("tr_rect", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("tr_rect", arg) in 
+  let bnds = bnd :: bnds in
+  Ocaml.VDict bnds
 
 
 let json_of_treemap_rendering rendering = 

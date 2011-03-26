@@ -618,7 +618,7 @@ let parse_document ?(dtd = html40_dtd)
   in
   try
     parse_next();  (* never returns. Will get a warning X *)
-    assert false
+   (* assert false *)
   with
       End_of_scan ->
 	(* Close all remaining elements: *)

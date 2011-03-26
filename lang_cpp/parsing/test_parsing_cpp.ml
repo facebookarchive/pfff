@@ -35,7 +35,7 @@ let test_parse_cpp xs  =
     let (xs, stat) = Parse_cpp.parse file in
     Common.push2 stat stat_list;
   );
-  Parsing_stat_cpp.print_parsing_stat_list !stat_list;
+  Statistics_parsing.print_parsing_stat_list !stat_list;
   ()
 
 

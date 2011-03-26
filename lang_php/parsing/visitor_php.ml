@@ -169,7 +169,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 (* start of auto generation *)
 
 let rec v_info x  =
-  let k x = match x with { Parse_info.token = v_pinfo; } ->
+  let k x = match x with { Parse_info.token = v_pinfo; _ } ->
   (* TODO ? not sure what behavior we want with tokens and fake tokens.
   *)
     (*let arg = v_parse_info v_pinfo in *)
@@ -985,6 +985,7 @@ and
                f_params = v_f_params;
                f_body = v_f_body;
                f_return_type = v_f_return_type;
+               f_type = v_f_type;
              } ->
   let arg = v_tok v_f_tok in 
   let arg = v_is_ref v_f_ref in 
@@ -992,6 +993,7 @@ and
   let arg = v_parameters v_f_params in
   let arg = v_body v_f_body in
   let arg = v_option v_hint_type v_f_return_type in
+  let arg = Type_php.v_phptype v_f_type in
   ()
   in
   vin.kfunc_def (k, all_functions) x

@@ -177,7 +177,7 @@ let visit_toplevel
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
 
-  let hooks = { V.default_visitor with
+  let hooks = { (*V.default_visitor with *)
 
     (* -------------------------------------------------------------------- *)
     V.kcompound =  (fun (k, vx) x ->

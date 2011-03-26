@@ -256,5 +256,5 @@ let spatch pattern file =
   (V.mk_visitor hook) (Program ast);
 
   if !was_modifed 
-  then Some (Unparse_php.string_of_program2_using_tokens ast2)
+  then Some (Unparse_php.string_of_program2_using_transfo ast2)
   else None

@@ -80,12 +80,8 @@ module PI = Parse_info
  *)
 
 (*****************************************************************************)
-(* The AST related types *)
+(* Tokens/info *)
 (*****************************************************************************)
-
-(* ------------------------------------------------------------------------- *)
-(* Token/info *)
-(* ------------------------------------------------------------------------- *)
 
 type pinfo = Parse_info.token
 type info = Parse_info.info
@@ -93,15 +89,15 @@ and tok = info
 and 'a wrap = 'a * info
  (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* HTML raw version *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 type html_raw = HtmlRaw of string 
 
-(* ------------------------------------------------------------------------- *)
-(* HTML tree version *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* HTML Tree version *)
+(*****************************************************************************)
 
 (* src: ocamlnet/netstring/nethtml.mli *)
 (* The type [document] represents parsed HTML documents:
@@ -143,13 +139,12 @@ type html_tree =
 
  (* with tarzan *)
 
-
 (* a small wrapper over ocamlnet *)
 type html_tree2 = Nethtml.document list
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* HTML full AST version *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 (* 
  * The following types are derived from the grammar in the following book:
@@ -157,93 +152,242 @@ type html_tree2 = Nethtml.document list
  * 
  * contentions: if the tag belongs to different types then I prefix it
  * with the current type. For instance 'text' belongs to many types hence
- * 'Address_Text', 'Body_Text', etc.
+ * 'Address_Text', 'Body_Text', etc (I did some exceptions for A, Br, Hr
+ * which were used only in one other place, in <pre> in which case I prefixed
+ * only in the pre type).
  * 
- * concepts: block, text, flow ?
+ * concepts: body, block, text, flow ?
  *)
-type html = Html of attrs * head * body (* | frameset? *)
+
+(* ------------------------------------------------------------------------- *)
+(* Top and Head *)
+(* ------------------------------------------------------------------------- *)
+
+type html = Html of attrs * head * (body, frameset) Common.either
 
  and head = Head of attrs * head_content list
 
   and head_content =
     | Title of attrs * plain_text
     | Style of attrs * plain_text (* CSS *)
-    | Meta of attrs | Link of attrs
+    | Meta of attrs 
+    | Link of attrs (* usually link to css file *)
+    (* note: a script tag may be placed anywhere within a HTML document *)
+    | Head_Script of attrs * plain_text  (* JS *)
+    (* note: a server tag may be placed anywhere within a HTML document *)
+    | Head_Server of attrs * plain_text
+
     (* ?? *)
     | Base of attrs | HeadContent_IsIndex of attrs | NextId of attrs
 
  and body = Body of attrs * body_content list
 
+ (* obsolete with html5 *)
+ and frameset = Frameset of attrs * frameset_content list
+  and frameset_content =
+    | Frame of attrs
+    | NoFrame of attrs * body_content list
+
+(* ------------------------------------------------------------------------- *)
+(* Body content *)
+(* ------------------------------------------------------------------------- *)
+
+  (* diff between body_content and block_content ? *)
   and body_content =
-    | Heading of heading
-    | Hr of attrs
-    | Body_Block of block
-    | Body_Text of text
+    | Body_Heading of heading
+    | Hr of attrs (* also in <pre> *)
+    | Body_Flow of flow (* was Body_Block and Body_Text originally *)
     | Del of attrs * flow | Ins of attrs * flow
     | Address of attrs * address_content list
     | Marquee of attrs * style_text  (* erling :) *)
-    (* ?? *)
     | Map of attrs * area list 
+
+    (* ?? *)
     | Layer of attrs * body_content | Bgsound of attrs
 
+   (* also in <a> content, not sure why *)
    and heading = 
      | H1 of attrs * text | H2 of attrs * text
      | H3 of attrs * text | H4 of attrs * text
      | H5 of attrs * text | H6 of attrs * text
 
+(* ------------------------------------------------------------------------- *)
+(* Block *)
+(* ------------------------------------------------------------------------- *)
+
+  (* diff between block and text ? *)
    and block = block_content list
     and block_content = 
+      | Block_P of attrs * text
+      | Div of attrs * body_content (* !! *)
       | Blockquote of attrs * body_content (* ? why not block_content ? *)
       | Center of attrs * body_content (* obsolete in html5 *)
-      | Div of attrs * body_content
       | Form of attrs * form_content list
       | Table of attrs * caption option * colgroup list * table_content list
       | Pre of attrs * pre_content list
+      | Samp of attrs * text (* todo? right place ? *)
       | Listing of attrs * literal_text
+      (* note: "the li_tag within the menu mayu not contain any element found
+       * in a block" *)
       | Menu of attrs * li list
       | Multicol of attrs * body_content
       | Dl of attrs * dl_content list1
       | Ul of attrs * li list1 | Ol of attrs * li list1
-      | Block_P of attrs * text
+
+      | Block_Script of attrs * plain_text
 
       (* ?? *)
       | Block_IsIndex of attrs
       | Basefont of attrs * body_content (* ?? *)
-      | Dir of attrs * li list1
-      | Nobr of attrs * text
+      (* note: "the li_tag within the dir_tag may not contain any element
+       * found in a block" *)
+      | Dir of attrs * li list1   
+      | Nobr of attrs * text 
       | Xmp of attrs * literal_text
+
+(* ------------------------------------------------------------------------- *)
+(* Text *)
+(* ------------------------------------------------------------------------- *)
+
+  and text = text_content list
+   and text_content =
+     | PlainText of plain_text
+     | PhysicalStyle of physical_style
+     | ContentStyle of content_style
+     | A of attrs * a_content list (* also in <pre> *)
+     | Br of attrs (* also in <pre> *)
+     | Img of attrs
+     | Iframe of attrs
+     | Embed of attrs | NoEmbed of attrs * text
+     | Applet of attrs * applet_content | Object of attrs * object_content
+
+     (* ?? *)
+     | NoScript of attrs * text | Ilayer of attrs * body_content
+     | Spacer of attrs | Wbr of attrs 
+
+   and physical_style =
+    | B of attrs * text | I of attrs * text | Tt of attrs * text
+    | Big of attrs * text | Small of attrs * text 
+    | Strike of attrs * text | S of attrs * text (* <=> strike, new browsers *)
+    | Blink of attrs * text | U of attrs * text
+    | Font of attrs * style_text
+    | Sub of attrs * text | Sup of attrs * text
+    | Span of attrs * text (* !! *)
+
+    (* ?? *)
+    | Bdo of attrs * text 
+
+   (* the difference with physical_style is subtle *)
+   and content_style =
+    | Em of  attrs * text | Strong of attrs * text
+    | Abbr of attrs * text | Acronym of attrs * text
+    | Cite of attrs * text
+    | Code of attrs * text
+
+    (* ?? *)
+    | Dfn of attrs * text | Kbd of attrs * text | Q of attrs * text
+    | Var of attrs * text
+
+(* ------------------------------------------------------------------------- *)
+(* Flow (Block or Text) *)
+(* ------------------------------------------------------------------------- *)
 
    and flow = flow_content list
     and flow_content =
       | Flow_Block of block
       | Flow_Text of text
 
-  and text = text_content list
-   and text_content =
-     | Br of attrs
-     | Embed of attrs
-     | Img of attrs
-     | Iframe of attrs
-     (* ?? *)
-     | Space of attrs | Wbr of attrs
-     | Text of plain_text
+(* ------------------------------------------------------------------------- *)
+(* Forms *)
+(* ------------------------------------------------------------------------- *)
+  (* note: "form_content nay not contain form_tags; you may not nest <form>" *)
+  and form_content =
+    | Form_Input of attrs (* lots of options here *)
+    | Form_Body of body_content
+    | Form_TextArea of attrs * plain_text
+    | Form_Select of attrs * select_content list
+
+    | Fieldset of attrs * legend option * form_content list
+    | Label of attrs * label_content list
+
+    (* ?? *)
+    | Keygen of attrs
+
+  (* note: "as with <form>, you cannot embed <form> or <label> in <label>" *)
+  (* factorize with form_content ? *)
+   and label_content =
+     | Label_Input of attrs
+     | Label_Body of body_content
+     | Label_TextArea of attrs * plain_text
+     | Label_Select of attrs * select_content list
+
+   and select_content =
+     | OptGroup of attrs * option_tag list
+     | SelectOption of option_tag
+  and legend = Legend of attrs * text
+
+  (* I call it option_tag and not option to not conflict with Common.option *)
+  and option_tag = Option of attrs * plain_text
+
+(* ------------------------------------------------------------------------- *)
+(* Tables *)
+(* ------------------------------------------------------------------------- *)
+  and caption = Caption of attrs * body_content
+
+  and colgroup =
+    | Colgroup of attrs
+    | ColgroupContent of colgroup_content list
+   and colgroup_content = Col of attrs
+
+  and table_content =
+    | THead of attrs | TFoot of attrs | TBody of attrs
+    | Tr of attrs * table_cell list
+
+   and table_cell =
+     | Th of attrs * body_content
+     | Td of attrs * body_content
+
+
+(* ------------------------------------------------------------------------- *)
+(* Applets/Objects *)
+(* ------------------------------------------------------------------------- *)
+
+  and applet_content = 
+    | Applet_Body of body_content
+    | AppletParams of param list
+  and object_content = applet_content
+
+    and param = unit
+
+(* ------------------------------------------------------------------------- *)
+(* Misc *)
+(* ------------------------------------------------------------------------- *)
 
   and li = Li of attrs * flow
 
-  and form_content = unit
+  and dl_content = dt * dd
+   and dt = Dt of attrs * text
+   and dd = Dd of attrs * flow   
+
+  (* note: "a_content may not contain a_tags; you may not nest <a> tags" *)
+  and a_content =
+    | A_Heading of heading
+    | A_Text of text
   
-  and table_content = unit
-  and caption = unit
-  and colgroup = unit
-
-  and pre_content = unit
-
-  and dl_content = unit
+  and pre_content =
+    | Pre_Br of attrs
+    | Pre_Hr of attrs
+    | Pre_A of attrs
+    | Pre_Text of style_text
 
   and address_content = 
     | Address_P of attrs * text
     | Address_Text of text
   and area = unit
+
+(* ------------------------------------------------------------------------- *)
+(* Helpers *)
+(* ------------------------------------------------------------------------- *)
 
  and attrs = (attr_name * attr_value) list
 
@@ -254,177 +398,6 @@ type html = Html of attrs * head * body (* | frameset? *)
  and 'a list1 = 'a * 'a list
 
   (* with tarzan *)
-
-
-(*
-a_content [a] 	::=	heading
- 	|	text
-a_tag 	::=	<a>
- 	 	{a_content}0
- 	 	</a>
-abbr_tag 	::=	<abbr> text </abbr>
-acronym_tag 	::=	<acronym> text </acronym>
-
-applet_content 	::=	{<param>}0
- 	 	body_content
-applet_tag 	::=	<applet> applet_content </applet>
-b_tag 	::=	<b> text </b>
-
-bdo_tag 	::=	<bdo> text </bdo>
-big_tag 	::=	<big> text </big>
-blink_tag 	::=	<blink> text </blink>
-
-
-caption_tag 	::=	<caption> body_content </caption>
-
-
-cite_tag 	::=	<cite> text </cite>
-code_tag 	::=	<code> text </code>
-
-colgroup_content 	::=	{<col>}0
-colgroup_tag 	::=	<colgroup>
- 	 	colgroup_content
-
-content_style 	::=	abbr_tag
- 	|	acronym_tag
- 	|	cite_tag
- 	|	code_tag
- 	|	dfn_tag
- 	|	em_tag
- 	|	kbd_tag
- 	|	q_tag
- 	|	strong_tag
- 	|	var_tag
-dd_tag 	::=	<dd> flow </dd>
-dfn_tag 	::=	<dfn> text </dfn>
-
-dl_content 	::=	dt_tag dd_tag
-
-dt_tag 	::=	<dt>
- 	 	text
- 	 	</dt>
-em_tag 	::=	<em> text </em>
-fieldset_tag 	::=	<fieldset>
- 	 	[legend_tag]
- 	 	{form_content}0
- 	 	</fieldset>
-
-font_tag 	::=	<font> style_text </font>
-form_content [c] 	::=	<input>
- 	|	<keygen>
- 	|	body_content
- 	|	fieldset_tag
- 	|	label_tag
- 	|	select_tag
- 	|	textarea_tag
-
-frameset_content 	::=	<frame>
- 	|	noframes_tag
-frameset_tag 	::=	<frameset>
- 	 	{frameset_content}0
- 	 	</frameset>
-
-
-i_tag 	::=	<i> text </i>
-ilayer_tag 	::=	<ilayer> body_content </ilayer>
-
-kbd_tag 	::=	<kbd> text </kbd>
-label_content [d] 	::=	<input>
- 	|	body_content
- 	|	select_tag
- 	|	textarea_tag
-label_tag 	::=	<label>
- 	 	{label_content}0
- 	 	</label>
-
-legend_tag 	::=	<legend> text </legend>
-li_tag 	::=	<li> flow </li>
-
-noembed_tag 	::=	<noembed> text </noembed>
-noframes_tag 	::=	<noframes>
- 	 	{body_content}0
- 	 	</noframes>
-noscript_tag 	::=	<noscript> text </noscript>
-object_content 	::=	{<param>}0
- 	 	body_content
-object_tag 	::=	<object> object_content </object>
-
-optgroup_tag 	::=	<optgroup>
- 	 	{option_tag}0
- 	 	</optgroup>
-option_tag 	::=	<option> plain_text </option>
-p_tag 	::=	<p> text </p>
-physical_style 	::=	b_tag
- 	|	bdo_tag
- 	|	big_tag
- 	|	blink_tag
- 	|	font_tag
- 	|	i_tag
- 	|	s_tag
- 	|	small_tag
- 	|	span_tag
- 	|	strike_tag
- 	|	sub_tag
- 	|	sup_tag
- 	|	tt_tag
- 	|	u_tag
-pre_content 	::=	<br>
- 	|	<hr>
- 	|	a_tag
- 	|	style_text
-
-q_tag 	::=	<q> text </q>
-s_tag 	::=	<s> text </s>
-samp_tag 	::=	<samp> text </samp>
-script_tag [f] 	::=	<script> plain_text </script>
-select_content 	::=	optgroup_tag
- 	|	option_tag
-select_tag 	::=	<select>
- 	 	{select_content}0
- 	 	</select>
-server_tag [g] 	::=	<server> plain_text </server>
-small_tag 	::=	<small> text </small>
-span_tag 	::=	<span> text </span>
-strike_tag 	::=	<strike> text </strike>
-strong_tag 	::=	<strong> text </strong>
-
-sub_tag 	::=	<sub> text </sub>
-sup_tag 	::=	<sup> text </sup>
-table_cell 	::=	td_tag
- 	|	th_tag
-table_content 	::=	<tbody>
- 	|	<tfoot>
- 	|	<thead>
- 	|	tr_tag
-table_tag 	::=	<table>
- 	 	[caption_tag]
- 	 	{colgroup_tag}0
- 	 	{table_content}0
- 	 	</table>
-td_tag 	::=	<td> body_content </td>
-
-text_content 	::=
- 	|	a_tag
- 	|	applet_tag
- 	|	content_style
- 	|	ilayer_tag
- 	|	noembed_tag
- 	|	noscript_tag
- 	 	 
- 	|	object_tag
- 	|	physical_style
- 	|	plain_text
-textarea_tag 	::=	<textarea> plain_text </textarea>
-th_tag 	::=	<th> body_content </th>
-
-tr_tag 	::=	<tr>
- 	 	{table_cell}0
- 	 	</tr>
-tt_tag 	::=	<tt> text </tt>
-u_tag 	::=	<u> text </u>
-
-var_tag 	::=	<var> text </var>
-*)
 
 (* 
  * TODO

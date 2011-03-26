@@ -303,7 +303,7 @@ let set_as_comment cppkind x =
 
 let set_as_opar_cplusplus xs = 
   match xs with
-  | ({tok = TOPar ii} as tok1)::xs -> 
+  | ({tok = TOPar ii;_} as tok1)::xs -> 
       pr2_cplusplus "TOParCplusplusInit";
       tok1.tok <- TOParCplusplusInit ii;
       
@@ -596,14 +596,14 @@ let rec mk_body_function_grouped xs =
   | [] -> []
   | x::xs -> 
       (match x with
-      | {tok = TOBrace _; col = 0} -> 
+      | {tok = TOBrace _; col = 0; _} -> 
           let is_closing_brace = function 
-            | {tok = TCBrace _; col = 0 } -> true 
+            | {tok = TCBrace _; col = 0; _ } -> true 
             | _ -> false 
           in
           let body, xs = Common.span (fun x -> not (is_closing_brace x)) xs in
           (match xs with
-          | ({tok = TCBrace _; col = 0 })::xs -> 
+          | ({tok = TCBrace _; col = 0; _ })::xs -> 
               BodyFunction body::mk_body_function_grouped xs
           | [] -> 
               pr2 "PB:not found closing brace in fuzzy parsing";
@@ -729,7 +729,7 @@ let rec set_in_function_tag xs =
 
   (* ) { and the closing } is in column zero, then certainly a function *)
 (*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({tok = TCPar _ })::(Braceised (body, tok1, Some tok2))::xs 
+  | BToken ({tok = TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
       when tok1.col <> 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
         tok.where <- InFunction
@@ -758,9 +758,9 @@ let rec set_in_other xs =
   match xs with 
   | [] -> ()
   (* enum x { } *)
-  | BToken ({tok = Tenum _})::BToken ({tok = TIdent _})
+  | BToken ({tok = Tenum _;_})::BToken ({tok = TIdent _;_})
     ::Braceised(body, tok1, tok2)::xs 
-  | BToken ({tok = Tenum _})
+  | BToken ({tok = Tenum _;_})
     ::Braceised(body, tok1, tok2)::xs 
     -> 
       body +> List.iter (iter_token_brace (fun tok -> 
@@ -768,7 +768,7 @@ let rec set_in_other xs =
       ));
       set_in_other xs
   (* struct/union/class x { } *)
-  | BToken ({tok = tokstruct})::BToken ({tok = TIdent _})
+  | BToken ({tok = tokstruct; _})::BToken ({tok = TIdent _; _})
     ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
       body +> List.iter (iter_token_brace (fun tok -> 
         tok.where <- InStruct;
@@ -776,7 +776,7 @@ let rec set_in_other xs =
       set_in_other xs
 
   (* struct/union/class x : ... { } *)
-  | BToken ({tok = tokstruct})::BToken ({tok = TIdent _})
+  | BToken ({tok = tokstruct; _})::BToken ({tok = TIdent _; _})
     ::BToken ({tok = TCol _})::xs when TH.is_classkey_keyword tokstruct -> 
       
       let (before, elem, after) = Common.split_when is_braceised xs in
