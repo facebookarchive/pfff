@@ -246,11 +246,15 @@ type html = Html of attrs * head * body (* | frameset? *)
   and area = unit
 
  and attrs = (attr_name * attr_value) list
+
  and plain_text = string wrap
  and style_text = string wrap
  and literal_text = string wrap
 
  and 'a list1 = 'a * 'a list
+
+  (* with tarzan *)
+
 
 (*
 a_content [a] 	::=	heading
