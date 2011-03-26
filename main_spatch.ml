@@ -122,7 +122,7 @@ let apply_transfo transfo xs =
      *)
 
     if was_modified then begin 
-      let s = Unparse_php.string_of_program2_using_tokens ast2 in
+      let s = Unparse_php.string_of_program2_using_transfo ast2 in
     
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
@@ -209,7 +209,7 @@ let simple_transfo xs =
     in
     (V.mk_visitor hook) (Program ast);
 
-    let s = Unparse_php.string_of_program2_using_tokens ast2 in
+    let s = Unparse_php.string_of_program2_using_transfo ast2 in
     
     let tmpfile = Common.new_temp_file "trans" ".php" in
     Common.write_file ~file:tmpfile s;

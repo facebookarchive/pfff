@@ -584,8 +584,8 @@ let unparse_without_type_hints file =
   (* modifying ast will also modify ast2 by side effect *)
   v (Program ast);
 
-  (* the default unparser knows about the Remove token annotation *)
-  let s = Unparse_php.string_of_program2_using_tokens ast2 in
+  (* this unparser knows about the Remove token annotation *)
+  let s = Unparse_php.string_of_program2_using_transfo ast2 in
   pr s
 
 
