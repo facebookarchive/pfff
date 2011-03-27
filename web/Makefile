@@ -84,6 +84,7 @@ clean_data::
 
 clean::
 	find -name "*.cm[ioxa]" | xargs rm -f
+	find -name "*.annot" | xargs rm -f
 
 ##############################################################################
 # Generic ocaml rules
