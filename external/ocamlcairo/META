@@ -1,0 +1,5 @@
+description = "cairo ocaml binding"
+requires = "str unix bigarray"
+version="1.0"
+archive(byte)="cairo.cma"
+archive(native)="cairo.cmxa"

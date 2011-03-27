@@ -21,6 +21,8 @@ config.make : config.make.in configure
 	$(error run ./configure)
 include config.make
 
+install_findlib:
+	ocamlfind install cairo META src/*.cm* src/*.so
 .PHONY : all opt doc install clean
 
 depend:
