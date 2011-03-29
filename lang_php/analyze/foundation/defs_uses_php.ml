@@ -178,7 +178,7 @@ let uses_of_any any =
      *   (via class_name_reference), 
      * - X::Cst, X::$var, X::method(), X::$f() 
      *   (via qualifier)
-     * - extends X, implements X, catch(X), functin foo(X $f)
+     * - extends X, implements X, catch(X), function foo(X $f)
      *   (via fully_qualified_class_name)
      *)
     V.kfully_qualified_class_name = (fun (k, bigf) classname ->
