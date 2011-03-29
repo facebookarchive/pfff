@@ -1257,6 +1257,8 @@ val new_temp_file : string (* prefix *) -> string (* suffix *) -> filename
 val erase_temp_files : unit -> unit
 val erase_this_temp_file : filename -> unit
 
+val with_tmp_file: str:string -> ext:string -> (filename -> 'a) -> 'a
+
 (* If the user use some exit 0 in his code, then no one can intercept this
  * exit and do something before exiting. There is exn handler for exit 0
  * so better never use exit 0 but instead use an exception and just at

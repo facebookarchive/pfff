@@ -3652,6 +3652,12 @@ let erase_this_temp_file f =
   end
 
 
+let with_tmp_file ~str ~ext f =
+  let tmpfile = new_temp_file "tmp" ext in
+  write_file ~file:tmpfile str;
+  f tmpfile
+
+
 (* now in prelude: exception UnixExit of int *)
 let exn_to_real_unixexit f = 
   try f () 
