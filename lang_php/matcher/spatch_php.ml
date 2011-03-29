@@ -199,7 +199,9 @@ let parse_spatch file =
    *)
   pattern
 
-
+let parse_spatch_string spatch_str =
+  Common.with_tmp_file ~str:spatch_str ~ext:".spatch" 
+    parse_spatch
 
 let spatch pattern file =
   let was_modifed = ref false in
