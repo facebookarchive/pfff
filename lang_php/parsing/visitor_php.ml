@@ -79,6 +79,7 @@ type visitor_in = {
   klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
+  kstatic_scalar: (static_scalar -> unit) * visitor_out ->static_scalar -> unit;
   kstmt_and_def: (stmt_and_def -> unit) * visitor_out -> stmt_and_def  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
   kclass_stmt: (class_stmt -> unit) * visitor_out -> class_stmt -> unit;
@@ -130,6 +131,7 @@ let default_visitor =
     klvalue    = (fun (k,_) x -> k x);
     kconstant    = (fun (k,_) x -> k x);
     kscalar    = (fun (k,_) x -> k x);
+    kstatic_scalar    = (fun (k,_) x -> k x);
     kstmt_and_def    = (fun (k,_) x -> k x);
     kencaps = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
@@ -501,8 +503,9 @@ and v_scalar v =
   in
   vin.kscalar (k, all_functions) v
 
-and v_static_scalar =
-  function
+and v_static_scalar v =
+  let k x =
+    match x with
   | StaticConstant v1 -> let v1 = v_constant v1 in ()
   | StaticClassConstant v1 ->
       let v1 =
@@ -518,6 +521,8 @@ and v_static_scalar =
       and v2 = v_paren8 (v_comma_list8 v_static_array_pair) v2
       in ()
   | XdebugStaticDots -> ()
+  in
+  vin.kstatic_scalar (k, all_functions) v
 
 and v_static_scalar_affect (v1, v2) =
   let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
