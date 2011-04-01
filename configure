@@ -151,9 +151,9 @@ my $error2 = 0;
 #---------------------------------------------------------------------
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
-                 "Objective(.*) 3.*",
+                 "Objective(.*) 3.12",
                  "OCaml (the wonderful language) is present.",
-                 "The program ocaml is missing or is not a good version. We need at least 3.11",
+                 "The program ocaml is missing or is not a good version. We need at least 3.12",
                  );
 
 #not really used for now:
