@@ -216,6 +216,10 @@ and vof_exprbis =
       let v1 = vof_tok v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("RequireOnce", [ v1; v2 ]))
+  | Yield ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("Yield", [ v1; v2 ]))
   | Empty ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_paren vof_variable v2

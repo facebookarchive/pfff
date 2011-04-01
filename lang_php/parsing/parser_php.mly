@@ -241,6 +241,11 @@ open Parser_php_mly_helper
 /*(*e: GRAMMAR tokens hook *)*/
 
 /*(*-----------------------------------------*)*/
+/*(* PHP language extensions: *)*/
+/*(*-----------------------------------------*)*/
+%token <Ast_php.info> T_YIELD;
+
+/*(*-----------------------------------------*)*/
 /*(* XHP tokens: *)*/
 /*(*-----------------------------------------*)*/
 
@@ -307,6 +312,7 @@ open Parser_php_mly_helper
 %left      T_ELSEIF
 %left      T_ELSE
 %left      T_ENDIF
+%nonassoc  T_YIELD
 
 /*(* xhp: this is used only to remove some shift/reduce ambiguities on the
    * error-rule trick.
@@ -1171,7 +1177,9 @@ expr_without_variable_bis:
        in
        Lambda ldef
      }
-         
+ /*(* php-facebook-ext: *)*/
+ | T_YIELD expr { Yield ($1, $2) }
+
  | internal_functions_in_yacc { $1 }
 
 

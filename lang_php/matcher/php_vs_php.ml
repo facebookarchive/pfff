@@ -1282,6 +1282,14 @@ and m_exprbis a b =
        B.RequireOnce(b1, b2)
     )
     ))
+  | A.Yield(a1, a2), B.Yield(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_expr a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.Yield(a1, a2),
+       B.Yield(b1, b2)
+    )
+    ))
   | A.Empty(a1, a2), B.Empty(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_paren m_variable a2 b2 >>= (fun (a2, b2) -> 
@@ -1337,6 +1345,7 @@ and m_exprbis a b =
   | A.XhpHtml _, _
   | A.Lambda _, _
   | A.ParenExpr _, _
+  | A.Yield _, _
    -> fail ()
 
 (* ---------------------------------------------------------------------- *)

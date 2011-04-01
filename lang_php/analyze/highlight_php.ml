@@ -946,6 +946,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_PRINT ii -> tag ii Builtin
       | T.T_ECHO ii -> tag ii Builtin
 
+      | T.T_YIELD ii -> tag ii Keyword
+
+
       | T.T_BAD_CHARACTER ii -> tag ii Error
       | T.T_CHARACTER ii -> tag ii String
 
