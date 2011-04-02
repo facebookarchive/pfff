@@ -1,0 +1,37 @@
+.goog-slider-vertical,
+.goog-slider-horizontal {
+background-color: ThreeDFace;
+position: relative;
+overflow: hidden;
+height: 20px;
+width: 400px;
+}
+
+.goog-slider-thumb {
+position: absolute;
+background-color: ThreeDShadow;
+overflow: hidden;
+}
+
+.goog-slider-vertical .goog-slider-thumb {
+left: 0;
+height: 20px;
+width: 100%;
+}
+
+.goog-slider-horizontal .goog-slider-thumb {
+top: 0;
+width: 20px;
+height: 100%;
+}
+#s-h {
+margin-bottom: 2em;
+}
+strong {
+display: block;
+margin-bottom: 3px;
+}
+#out1, #out2 {
+color: #999;
+margin-left: 1em;
+}
