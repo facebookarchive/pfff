@@ -3,9 +3,9 @@
   open Shared
 }}
 {client{
-  open Client
+  open Graffiti_client
 }}
-open Server
+open Graffiti_server
 
 let include_canvas (name:string) (canvas_box:[ Xhtml5types.div ] XHTML5.M.elt) =
 

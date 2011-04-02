@@ -1,28 +1,28 @@
 open Common
 
 module Db = Database_php
-module H = XHTML.M
-
 module HC = Highlight_code
 
-let init () = 
-  Common_extra.set_link();
-  Database_php_storage.set_link();
-  ()
+module H = XHTML.M
 
-let _ = init()
-(* todo: ugly, would be better to have access to this information from
- * the ocsigen command line.
- * Also ugly that have to put that globally so that the
- * endpoint can access it :(
+
+(* 
+ * The goal of this module is to provide a code browser a la LXR.
+ * See  http://lxr.linux.no/#linux+v2.6.37.1/mm/compaction.c as an
+ * example.
+ * 
+ * It's also an exercise in learning ocsigen. A code browser does
+ * not require anything fancy like Depot. No need for a ORM,
+ * or forms. Just need to htmlize a source file and add
+ * hrefs into it to make it hypertextable.
+ * 
+ * todo: add search, add nice html, add fast html
+ * 
+ * alternatives:
+ * - http://en.wikipedia.org/wiki/LXR_Cross_Referencer
+ * - http://en.wikipedia.org/wiki/OpenGrok
+ * 
  *)
-let db = !(Db._current_open_db_backend) "/tmp/pfff_db"
-
-let _ =
-  Sys.set_signal Sys.sigint (Sys.Signal_handle   (fun _ -> 
-    pr2 "C-c intercepted, will do some cleaning before exiting";
-    Db.close_db db
-  ))
 
 let htmlize_dir ~link dir db =
   let subdirs = Common.readdir_to_dir_list dir +> Common.sort in
@@ -63,14 +63,14 @@ let _ = Eliom_output.Xhtml.register lxr
     (fun readable_path () ->
       (* todo? sanitized path ? *)
 
-      let path = Db.readable_to_absolute_filename readable_path db in
+      let path = Db.readable_to_absolute_filename readable_path Global_db.db in
       let hook_token s tok categ =
         match categ with
         | Some (HC.Function (HC.Use2 _)) ->
 
             (try 
-              let id = Db.id_of_function s db in
-              let file = Db.readable_filename_of_id id db in
+              let id = Db.id_of_function s Global_db.db in
+              let file = Db.readable_filename_of_id id Global_db.db in
               Eliom_output.Xhtml.a lxr [H.pcdata s] file
             with (Not_found | Multi_found) as exn ->
               Eliom_output.Xhtml.a lxr [H.pcdata s] (Common.exn_to_s exn)
@@ -79,8 +79,8 @@ let _ = Eliom_output.Xhtml.register lxr
       in
       let html = 
         if Common.is_directory path
-        then htmlize_dir ~link:lxr path db
-        else Htmlize_php2.htmlize_with_headers ~hook_token path db 
+        then htmlize_dir ~link:lxr path Global_db.db
+        else Htmlize_php2.htmlize_with_headers ~hook_token path Global_db.db 
       in
       Lwt.return html
     )
