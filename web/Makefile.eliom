@@ -1,4 +1,4 @@
-## HERE IS THE SECTION CONCERNING .eliom SOURCE FILE COMPILATION
+# -*- Makefile -*-
 
 ## type inference #######
 

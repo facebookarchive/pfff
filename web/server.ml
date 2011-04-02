@@ -1,3 +1,5 @@
+open Common
+
 open XHTML5.M
 open Shared
 open Lwt
