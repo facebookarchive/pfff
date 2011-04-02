@@ -83,7 +83,7 @@ let get_bus_image (name:string) =
       Hashtbl.add graffiti_info name (bus,image_string);
       (bus,image_string)
 
-let main_service = Eliom_services.service ~path:[""]
+let main_service = Eliom_services.service ~path:["graffiti"]
   ~get_params:(Eliom_parameters.unit) ()
 let multigraffiti_service = Eliom_services.coservice ~fallback:main_service
   ~get_params:(Eliom_parameters.string "name") ()

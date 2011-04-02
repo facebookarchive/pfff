@@ -56,7 +56,7 @@ let htmlize_dir ~link dir db =
   )
 
 
-let lxr = Eliom_services.service [""] (Eliom_parameters.string "path") ()
+let lxr = Eliom_services.service ["lxr"] (Eliom_parameters.string "path") ()
 
 (* from the eliom tutorial *)
 let _ = Eliom_output.Xhtml.register lxr
