@@ -75,6 +75,7 @@ module PI = Parse_info
  *  - the one in firefox, webkit
  *  - a python and php one, http://code.google.com/p/html5lib
  *  - a javascript one, http://ejohn.org/blog/pure-javascript-html-parser/
+ *  - http://lambda.haskell.org/hp-tmp/docs/2011.2.0.0/packages/html-1.0.1.2/doc/html/Text-Html.html
  * 
  * See also http://en.wikipedia.org/wiki/HTML5
  *)
