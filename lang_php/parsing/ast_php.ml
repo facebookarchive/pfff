@@ -228,7 +228,18 @@ type expr = exprbis * exp_info
   | Isset of tok * lvalue comma_list paren
   (*e: exprbis other constructors *)
 
+  (* xhp: *)
   | XhpHtml of xhp_html
+  (* php-facebook-ext: 
+   *
+   * todo: this should be at the statement level as there are only a few
+   * forms of yield that hphp support (e.g. yield <expr>; and 
+   * <lval> = yield <expr>). One could then have a YieldReturn and YieldAssign
+   * but this may change and none of the analysis in pfff need to
+   * understand yield so for now just make it simple and add yield
+   * at the expression level.
+   *)
+  | Yield of tok * expr
 
   (*s: type exprbis hook *)
   | SgrepExprDots of info

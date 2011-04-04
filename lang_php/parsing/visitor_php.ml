@@ -447,6 +447,7 @@ and v_expr (x: expr) =
   | IncludeOnce ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Require ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | RequireOnce ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
+  | Yield ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Empty ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren5 v_variable v2 in ()
   | Isset ((v1, v2)) ->

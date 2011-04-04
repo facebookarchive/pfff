@@ -225,6 +225,8 @@ let info_of_tok = function
   | T_XHP_ANY (ii) -> ii
   | T_XHP_PCDATA (ii) -> ii
 
+  | T_YIELD (ii) -> ii
+
   | EOF ii -> ii
 
 
@@ -405,6 +407,8 @@ let visitor_info_of_tok f = function
 
   | T_XHP_ANY (ii) -> T_XHP_ANY (f ii)
   | T_XHP_PCDATA (ii) -> T_XHP_PCDATA (f ii)
+
+  | T_YIELD (ii) -> T_YIELD (f ii)
 
   | EOF ii -> EOF(f ii)
 

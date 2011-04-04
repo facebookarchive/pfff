@@ -40,6 +40,9 @@ let is_metavar_name s =
 (* in facebook context, we want xhp support by default *)
 let xhp_builtin = ref true
 
+(* e.g. yield *)
+let facebook_lang_extensions = ref true
+
 (* Alternative way to get xhp by calling xhpize as a preprocessor.
  * Slower than builtin_xhp and have some issues where the comments
  * are removed, unless you use the experimental_merge_tokens_xhp
@@ -63,6 +66,8 @@ let cmdline_flags_pp () = [
     pp_default := Some xhp_command),
   "  parsing XHP using xhpize as a preprocessor";
   "-no_xhp", Arg.Clear xhp_builtin,
+  " ";
+  "-no_fb_ext", Arg.Clear facebook_lang_extensions,
   " ";
   (*e: other cmdline_flags_pp *)
 ]

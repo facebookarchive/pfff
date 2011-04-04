@@ -81,6 +81,13 @@ let xhp_or_t_ident ii fii =
     let s = Ast.str_of_info ii in
     T_IDENT(s, ii)
 
+let lang_ext_or_t_ident ii fii =
+  if !Flag.facebook_lang_extensions
+  then fii ii
+  else 
+    let s = Ast.str_of_info ii in
+    T_IDENT(s, ii)
+
 (* ---------------------------------------------------------------------- *)
 (*s: keywords_table hash *)
 (* opti: less convenient, but using a hash is faster than using a match.
@@ -190,6 +197,10 @@ let keyword_table = Common.hash_of_list [
   "__method__",      (fun ii -> T_METHOD_C ii);
   "__line__",        (fun ii -> T_LINE ii);
   "__file__",        (fun ii -> T_FILE ii);
+
+  (* php-facebook-ext: should perhaps have a flag
+   *)
+  "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
 
   (* xhp: having those XHP keywords handled here could mean they can not
    * be used for entities like functions or class names. We could
