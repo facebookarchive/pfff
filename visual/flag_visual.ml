@@ -18,7 +18,7 @@ let threshold_draw_label_font_size_real = ref
 
 let threshold_nb_rects_draw_content = ref 2500
 
-let threshold_too_many_entities = ref 300000
+let threshold_too_many_entities = ref 600000
 
 let top_n = ref 100
 
