@@ -161,7 +161,7 @@ and st =
 
   | Block of toplevel list brace
   | Nop of sc
-  | Expr of expr * sc
+  | ExprStmt of expr * sc
 
   | If of tok * expr paren * st * (tok (* else *) * st) option
   | Do of tok * st * tok (* while *) * expr paren * sc
@@ -226,6 +226,13 @@ and toplevel =
 
  and program = toplevel list
  (* with tarzan *)
+
+type any =
+  | Expr of expr
+  | Stmt of st
+  | Func of func_decl
+  | Toplevel of toplevel
+  | Program of program
 
 (*****************************************************************************)
 (* Comments *)

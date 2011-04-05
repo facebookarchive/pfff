@@ -261,10 +261,10 @@ and vof_st =
       let v1 = vof_brace (Ocaml.vof_list vof_toplevel) v1
       in Ocaml.VSum (("Block", [ v1 ]))
   | Nop v1 -> let v1 = vof_sc v1 in Ocaml.VSum (("Nop", [ v1 ]))
-  | Expr ((v1, v2)) ->
+  | ExprStmt ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_sc v2
-      in Ocaml.VSum (("Expr", [ v1; v2 ]))
+      in Ocaml.VSum (("ExprStmt", [ v1; v2 ]))
   | If ((v1, v2, v3, v4)) ->
       let v1 = vof_tok v1
       and v2 = vof_paren vof_expr v2

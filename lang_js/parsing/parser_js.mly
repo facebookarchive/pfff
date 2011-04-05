@@ -196,7 +196,7 @@ empty_statement:
  | semicolon { Nop $1 }
 
 expression_statement:
- | expression_no_statement semicolon { Expr ($1, $2) }
+ | expression_no_statement semicolon { ExprStmt ($1, $2) }
 
 
 if_statement:

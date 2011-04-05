@@ -317,7 +317,7 @@ and v_st x =
       in ()
   | Block v1 -> let v1 = v_brace2 (v_list v_toplevel) v1 in ()
   | Nop v1 -> let v1 = v_sc v1 in ()
-  | Expr ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_sc v2 in ()
+  | ExprStmt ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_sc v2 in ()
   | If ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_paren2 v_expr v2
