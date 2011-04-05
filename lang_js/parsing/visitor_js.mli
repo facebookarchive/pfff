@@ -8,15 +8,12 @@ type visitor_in = {
   kfield: (field -> unit) * visitor_out -> field -> unit;
   kinfo: (info -> unit)  * visitor_out -> info  -> unit;
 }
-and visitor_out = {
-  vexpr: expr  -> unit;
-  vst: st -> unit;
-  vtop: toplevel -> unit;
-  vinfo: info -> unit;
-  vprogram: program -> unit;
-}
-
+and visitor_out = any -> unit
 
 val default_visitor : visitor_in
 
 val mk_visitor: visitor_in -> visitor_out
+
+(* poor's man fold *)
+val do_visit_with_ref:
+  ('a list ref -> visitor_in) -> any -> 'a list

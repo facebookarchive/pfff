@@ -70,7 +70,7 @@ let unittest =
        *)
     );
 
-    (* The PHP parser now understand PHP code containing XHP elements.
+    (* The PHP parser now understands PHP code containing XHP elements.
      * In the past pfff would call a preprocessor before parsing a file. By
      * setting this preprocessor to "xhpize", the XHP command line 
      * preprocessor, we could then parse the regular preprocessed code.

@@ -366,6 +366,6 @@ let extract_complete_name_of_info ast =
     );
   }
   in
-  v.V.vprogram ast;
+  v (Program ast);
   h
 

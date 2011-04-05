@@ -140,7 +140,7 @@ type expr = exprbis * exp_info
     | B_and  | B_or
 
   and property_name =
-    | PN_String of string wrap
+    | PN_String of name
     | PN_Num of string (* todo? PN_Float of float | PN_Int of int32 *) wrap
     | PN_Empty (* ?? *)
         
@@ -233,6 +233,7 @@ type any =
   | Func of func_decl
   | Toplevel of toplevel
   | Program of program
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Comments *)

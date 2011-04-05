@@ -49,13 +49,7 @@ type visitor_in = {
   kfield: (field -> unit) * visitor_out -> field -> unit;
   kinfo: (info -> unit)  * visitor_out -> info  -> unit;
 }
-and visitor_out = {
-  vexpr: expr  -> unit;
-  vst: st -> unit;
-  vtop: toplevel -> unit;
-  vinfo: info -> unit;
-  vprogram: program -> unit;
-}
+and visitor_out = any -> unit
 
 let default_visitor = 
   { kexpr   = (fun (k,_) x -> k x);
@@ -286,7 +280,7 @@ and v_binop =
   | B_or -> ()
 and v_property_name =
   function
-  | PN_String v1 -> let v1 = v_wrap v_string v1 in ()
+  | PN_String v1 -> let v1 = v_name v1 in ()
   | PN_Num v1 -> let v1 = v_wrap v_string v1 in ()
   | PN_Empty -> ()
 and v_assignment_operator =
@@ -425,16 +419,26 @@ and v_toplevel =
   | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
-  
 
- and all_functions =   
-    {
-      vexpr = v_expr;
-      vst = v_st;
-      vprogram = v_program;
-      vtop = v_toplevel;
-      vinfo = v_info;
-    }
-  in
-  all_functions
+and v_any =  function
+  | Expr v1 -> let v1 = v_expr v1 in ()
+  | Stmt v1 -> let v1 = v_st v1 in ()
+  | Func v1 -> let v1 = v_func_decl v1 in ()
+  | Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | Program v1 -> let v1 = v_program v1 in ()
 
+and all_functions x = v_any x
+in
+all_functions
+
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let do_visit_with_ref mk_hooks = fun any ->
+  let res = ref [] in
+  let hooks = mk_hooks res in
+  let vout = mk_visitor hooks in
+  vout any;
+  List.rev !res
