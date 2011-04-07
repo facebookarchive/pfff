@@ -223,7 +223,8 @@ let m_exp_info a b =
 (* ---------------------------------------------------------------------- *)
 (* tokens *)
 (* ---------------------------------------------------------------------- *)
-let m_info a b = X.tokenf a b
+let m_info a b = 
+  X.tokenf a b
   (* old: dont care about position, space/indent/comment isomorphism 
    * return (a, b)
    *)
@@ -1790,19 +1791,28 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       return ([], [])
 
   (* iso on ... *)
-  | [Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
-      (* TODO do different combinaisons *)
+  | [Left (A.Arg (A.SgrepExprDots i, tok))], bbs ->
+      (* TODO do the different combinaisons, and apply the possible
+       * transfo in tok.
+       *)
       return (
         xsa,
         xsb
       )
 
-  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
-      (* TODO do different combinaisons *)
-      return (
-        xsa,
-        xsb
+  (* bugfix: we can have some Replace or AddAfter in the token of
+   * the comma. We need to apply it to the code.
+   *)
+  | [Right a; Left (A.Arg (A.SgrepExprDots i, tok))], Right b::bbs ->
+      m_info a b >>= (fun (a, b) ->
+        return (
+          [Right a; Left (A.Arg (A.SgrepExprDots i, tok))],
+          Right b::bbs
+        )
       )
+
+  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
+      raise Impossible
 
   | Left (A.Arg (A.SgrepExprDots i, _))::xs, bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
