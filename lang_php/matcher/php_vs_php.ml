@@ -1128,7 +1128,7 @@ and m_exprbis a b =
     ))))
   | A.ConsArray(a1, a2), B.ConsArray(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_paren (m_comma_list m_array_pair) a2 b2 >>= (fun (a2, b2) -> 
+    m_paren (m_list__m_array_pair) a2 b2 >>= (fun (a2, b2) -> 
     return (
        A.ConsArray(a1, a2),
        B.ConsArray(b1, b2)
@@ -1779,7 +1779,10 @@ and m_constant a b =
 (*---------------------------------------------------------------------------*)
 (* arguments list iso *)
 (*---------------------------------------------------------------------------*)
-(* todo: comma handling is probably not good enough *)
+(* todo: comma handling is probably not good enough.
+ * todo: make this code generic ? but I need to dig into the element
+ *  to find the SgrepExprDots so it have not be that easy to factorize.
+ *)
 and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_list) = 
   (*old: m_list m_argument xsa xsb *)
   match xsa, xsb with
@@ -1813,6 +1816,47 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         )
       )
       )
+  | [], _
+  | _::_, _ ->
+      fail ()
+
+
+(*---------------------------------------------------------------------------*)
+(* array list iso *)
+(*---------------------------------------------------------------------------*)
+
+(* todo: would be good to factorize code with m_list__m_argument *)
+and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.comma_list) = 
+  match xsa, xsb with
+  | [], [] -> 
+      return ([], [])
+
+  (* iso on ... *)
+  | [Left (A.ArrayExpr (A.SgrepExprDots i, _))], bbs ->
+      (* TODO do different combinaisons *)
+      return (
+        xsa,
+        xsb
+      )
+
+  | [Right _; Left (A.ArrayExpr (A.SgrepExprDots i, _))], bbs ->
+      (* TODO do different combinaisons *)
+      return (
+        xsa,
+        xsb
+      )
+
+  | Left (A.ArrayExpr (A.SgrepExprDots i, _))::xs, bbs ->
+      failwith "... is allowed for now only at the end. Give money to pad to get this feature"
+
+  | xa::aas, xb::bbs ->
+      (m_either m_array_pair m_info) xa xb >>= (fun (xa, xb) ->
+      m_list__m_array_pair aas bbs >>= (fun (aas, bbs) ->
+        return (
+          xa::aas,
+          xb::bbs
+        )
+      ))
   | [], _
   | _::_, _ ->
       fail ()

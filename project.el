@@ -204,7 +204,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 4
+     (case 10
        
        (0 "-e 1 /home/pad/c-pfff/tests/")
        (1 "-f /home/pad/c-pfff/tests/semantic_grep/method_call.php  /home/pad/c-pfff/tests/method_call.php")
@@ -215,7 +215,10 @@
        (3 " -find_run_once_pattern tests/sgrep/run_once_pattern.php ")
 
        (4 " -f /home/pad/pfff/tests/php/sgrep/foreach.sgrep /home/pad/pfff/tests/php/sgrep/foreach.php")
+       (10 "-test")
        )
+
+     
      
      )
     )
