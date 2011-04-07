@@ -11,7 +11,8 @@ module Flag = Flag_parsing_php
 (* Unit tests *)
 (*****************************************************************************)
 
-let sgrep_unittest =
+(* run by sgrep -test *)
+let sgrep_unittest = [
   "sgrep variable metavars matching" >:: (fun () ->
 
     let pattern = Parse_php.any_of_string "foo($V, $V);" in
@@ -34,8 +35,10 @@ let sgrep_unittest =
         assert_failure "parsing problem in sgrep pattern parsing"
     );
   )
+]
 
-let spatch_unittest =
+(* run by spatch -test *)
+let spatch_unittest = [
   "spatch regressions" >:: (fun () ->
 
     let testdir = Filename.concat Config.path "tests/php/spatch/" in
@@ -74,16 +77,15 @@ let spatch_unittest =
       else failwith ("wrong format for expfile: " ^ expfile)
     )
   )
-
+]
 (*****************************************************************************)
 (* Final suite *)
 (*****************************************************************************)
 
 let unittest =
-  "matcher_php" >::: [
-    sgrep_unittest;
-    spatch_unittest;
-  ]
+  "matcher_php" >::: (
+    sgrep_unittest ++ spatch_unittest
+  )
 
 (*****************************************************************************)
 (* Main entry for Arg *)

@@ -348,8 +348,9 @@ let add_action_ui_form_transfo = {
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
+open OUnit
 let test () =
-  let suite = Unit_matcher_php.spatch_unittest in
+  let suite = "spatch" >::: Unit_matcher_php.spatch_unittest in
   OUnit.run_test_tt suite |> ignore;
   ()
 

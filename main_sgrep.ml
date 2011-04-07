@@ -240,8 +240,9 @@ let dump_sgrep_pattern file =
 (*---------------------------------------------------------------------------*)
 (* Regression testing *)
 (*---------------------------------------------------------------------------*)
+open OUnit
 let test () =
-  let suite = Unit_matcher_php.sgrep_unittest in
+  let suite = "sgrep" >::: Unit_matcher_php.sgrep_unittest in
   OUnit.run_test_tt suite |> ignore;
   ()
 
