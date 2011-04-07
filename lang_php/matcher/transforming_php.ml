@@ -122,7 +122,8 @@ module XMATCH = struct
     match a, b with
     | A.Expr _, A.Expr _
     | A.Lvalue _, A.Lvalue _ 
-    | A.XhpAttrValue _, A.XhpAttrValue _ 
+    | A.XhpAttrValue _, A.XhpAttrValue _
+    | A.Name2 _, B.Name2 _
      ->
 
         (* Note that because we want to retain the position information
@@ -236,9 +237,28 @@ module XMATCH = struct
     | None ->
         fail tin
     | Some new_binding ->
-        (* TODO: distribute transfo mark *)
         distribute_transfo imvar.PI.transfo any tin;
+
         return ((mvar, imvar), any) new_binding
+
+
+  (* ugly: in the case of string metavariables like "A", as in
+   *   foo("A")   vs  foo("Ent")
+   * we want A to bind to the unquoted string Ent (not "Ent"),
+   * but we still want it to apply the possible transfo on "Ent".
+   * So we really need to pass two different things, the any
+   * we want to add in the environment and the any we want
+   * to match against and transform.
+   *)
+  let (envf2: (Metavars_php.mvar Ast_php.wrap, (Ast_php.any * Ast_php.any)) matcher) =
+   fun (mvar, imvar) (any1, any2)  -> fun tin ->
+    match check_and_add_metavar_binding (mvar, any1) tin with
+    | None ->
+        fail tin
+    | Some new_binding ->
+        distribute_transfo imvar.PI.transfo any2 tin;
+
+        return ((mvar, imvar), (any1, any2)) new_binding
 
 
 

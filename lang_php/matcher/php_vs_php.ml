@@ -116,6 +116,8 @@ module type PARAM =
     val tokenf : (A.info, B.info) matcher
 
     val envf : (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher
+    (* ugly hack for the "A" string metavariables *)
+    val envf2 : (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher
   end
 
 (*****************************************************************************)
@@ -1732,10 +1734,39 @@ and m_constant a b =
        B.Double(b1)
     )
     )
-  
+  (* bind the content of a string to a metavariable.
+   * PHP has no first-class function or class so it's quite common
+   * to pass around function or class name via strings, so it's convenient
+   * to bind a metavariable to a string content and consider it
+   * as an entity (a Name).
+   *)
+  | A.String(name, info_name), B.String(sb, info_sb) 
+      when MV.is_metavar_name name ->
+
+      (* removing the surrounding quotes *)
+      let any1 = B.Name2 (B.Name (sb, Ast_php.rewrap_str sb info_sb)) in
+
+      let any2 = B.Expr (B.Sc (B.C (B.String(sb, info_sb))), A.noType()) in
+
+    X.envf2 (name, info_name) (any1, any2) >>= 
+      (function
+      | ((name, info_name), 
+          (_any1, B.Expr (B.Sc (B.C (B.String(sb, info_sb))), _))) ->
+        return (
+          A.String(name, info_name),
+          B.String(sb, info_sb)
+        )
+      | _ -> raise Impossible
+      )
+
+
   (* pad, iso on  name *)
-  | A.String("...", _), B.String(b1) ->
-      return (a, b)
+  | A.String("...", a), B.String(s, b) ->
+      m_info a b >>= (fun (a, b) ->
+        return (
+          A.String ("...", a), 
+          B.String (s, b)
+        ))
 
   | A.String(a1), B.String(b1) ->
     m_wrap m_string a1 b1 >>= (fun (a1, b1) -> 

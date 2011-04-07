@@ -794,6 +794,8 @@ type any =
   | Info of info
   | InfoList of info list
 
+  | Name2 of name
+
   (* with tarzan *)
 
 (*****************************************************************************)

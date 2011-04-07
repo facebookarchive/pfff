@@ -162,6 +162,16 @@ module XMATCH = struct
     | Some new_binding ->
         return ((mvar, imvar), any) new_binding
 
+  let (envf2: (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher) =
+   fun (mvar, imvar) (any1, any2)  -> fun tin ->
+    match check_and_add_metavar_binding (mvar, any1) tin with
+    | None ->
+        fail tin
+    | Some new_binding ->
+        return ((mvar, imvar), (any1, any2)) new_binding
+
+
+
   let tokenf a b = 
     (* dont care about position, space/indent/comment isomorphism *)
     return (a, b)
