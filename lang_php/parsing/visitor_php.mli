@@ -22,6 +22,7 @@ type visitor_in = {
 
   (* xhp: *)
   kxhp_html: (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
+  kxhp_tag: (xhp_tag wrap -> unit) * visitor_out -> xhp_tag wrap -> unit;
   kxhp_attribute: 
     (xhp_attribute -> unit) * visitor_out -> xhp_attribute -> unit;
 

@@ -89,21 +89,26 @@ type visitor_in = {
 
   kobj_dim: (obj_dim -> unit) * visitor_out -> obj_dim -> unit;
 
-  kxhp_html: (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
+  kxhp_html: 
+    (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
+  kxhp_tag: 
+    (xhp_tag wrap -> unit) * visitor_out -> xhp_tag wrap -> unit;
   kxhp_attribute: 
     (xhp_attribute -> unit) * visitor_out -> xhp_attribute -> unit;
-
   kxhp_attr_decl:
     (xhp_attribute_decl -> unit) * visitor_out -> xhp_attribute_decl -> unit;
   kxhp_children_decl:
     (xhp_children_decl -> unit) * visitor_out -> xhp_children_decl -> unit;
 
-  kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
-  kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;
+  kfunc_def:  
+    (func_def -> unit) * visitor_out -> func_def -> unit;
+  kclass_def:  
+    (class_def -> unit) * visitor_out -> class_def -> unit;
   kinterface_def: 
     (interface_def -> unit) * visitor_out -> interface_def -> unit;
 
-  kmethod_def: (method_def -> unit) * visitor_out -> method_def -> unit;
+  kmethod_def: 
+    (method_def -> unit) * visitor_out -> method_def -> unit;
 
   kstmt_and_def_list_scope: 
     (stmt_and_def list -> unit) * visitor_out -> stmt_and_def list  -> unit;
@@ -157,6 +162,7 @@ let default_visitor =
     kqualifier  = (fun (k,_) x -> k x);
 
     kxhp_html = (fun (k,_) x -> k x);
+    kxhp_tag = (fun (k,_) x -> k x);
     kxhp_attribute = (fun (k,_) x -> k x);
 
     kxhp_attr_decl = (fun (k,_) x -> k x);
@@ -347,9 +353,13 @@ and v_ptype =
   
 and v_name = function 
   | Name v1 -> let v1 = v_wrap v_string v1 in ()
-  | XhpName v1 -> let v1 = v_wrap9 v_xhp_tag v1 in ()
+  | XhpName v1 -> let v1 = v_xhp_tag_wrap v1 in ()
 and v_dname = function | DName v1 -> let v1 = v_wrap v_string v1 in ()
 and v_xhp_tag v = v_list v_string v
+and v_xhp_tag_wrap x =
+  let k v = v_wrap9 v_xhp_tag v in
+  vin.kxhp_tag (k, all_functions) x
+
 and v_qualifier v =
   let k x = 
     match x with
@@ -650,14 +660,14 @@ and v_xhp_html x =
   let rec k x = 
     match x with
     | Xhp ((v1, v2, v3, v4, v5)) ->
-      let v1 = v_wrap10 v_xhp_tag v1
+      let v1 = v_xhp_tag_wrap v1
       and v2 = v_list v_xhp_attribute v2
       and v3 = v_tok v3
       and v4 = v_list v_xhp_body v4
       and v5 = v_wrap11 (v_option v_xhp_tag) v5
       in ()
    | XhpSingleton ((v1, v2, v3)) ->
-      let v1 = v_wrap10 v_xhp_tag v1
+      let v1 = v_xhp_tag_wrap v1
       and v2 = v_list v_xhp_attribute v2
       and v3 = v_tok v3
       in ()
@@ -1150,7 +1160,7 @@ and v_method_body =
   | MethodBody v1 -> let v1 = v_body v1 in ()
 and v_xhp_attribute_decl x =
   let rec k x = match x with
-  | XhpAttrInherit v1 -> let v1 = v_wrap9 v_xhp_tag v1 in ()
+  | XhpAttrInherit v1 -> let v1 = v_xhp_tag_wrap v1 in ()
   | XhpAttrDecl ((v1, v2, v3, v4)) ->
       let v1 = v_xhp_attribute_type v1
       and v2 = v_xhp_attr_name v2
@@ -1171,8 +1181,8 @@ and v_xhp_value_affect (v1, v2) =
 
 and v_xhp_children_decl x = 
   let rec k x = match x with
-  | XhpChild v1 -> let v1 = v_wrap9 v_xhp_tag v1 in ()
-  | XhpChildCategory v1 -> let v1 = v_wrap9 v_xhp_tag v1 in ()
+  | XhpChild v1 -> let v1 = v_xhp_tag_wrap v1 in ()
+  | XhpChildCategory v1 -> let v1 = v_xhp_tag_wrap v1 in ()
   | XhpChildAny v1 -> let v1 = v_tok v1 in ()
   | XhpChildEmpty v1 -> let v1 = v_tok v1 in ()
   | XhpChildPcdata v1 -> let v1 = v_tok v1 in ()
@@ -1196,7 +1206,7 @@ and v_xhp_children_decl x =
   in
   vin.kxhp_children_decl (k, all_functions) x
 
-and v_xhp_category_decl v = v_wrap9 v_xhp_tag v
+and v_xhp_category_decl v = v_xhp_tag_wrap v
 
 and v_global_var =
   function
