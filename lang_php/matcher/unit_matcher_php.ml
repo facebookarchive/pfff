@@ -34,7 +34,23 @@ let sgrep_unittest = [
     | _ ->
         assert_failure "parsing problem in sgrep pattern parsing"
     );
-  )
+  );
+  "misc features" >:: (fun () ->
+    (* pattern, code *)
+    let pairs = [
+      "foo(X, array(...));",  "foo(1, array(2, 3));";
+    ] in
+    pairs +> List.iter (fun (spattern, scode) ->
+      match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
+      | Stmt2 pattern, Stmt2 code ->
+          let matches_with_env = Matching_php.match_st_st pattern code in
+          assert_bool (spf "pattern:|%s| should match |%s" spattern scode)
+            (matches_with_env <> []);
+    | _ ->
+        assert_failure "parsing problem in sgrep pattern parsing"
+    )
+  );
+
 ]
 
 (* run by spatch -test *)
