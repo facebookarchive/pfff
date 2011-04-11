@@ -56,31 +56,32 @@ let htmlize_dir ~link dir db =
   )
 
 
-let lxr = Eliom_services.service ["lxr"] (Eliom_parameters.string "path") ()
+let main_service = 
+  Eliom_services.service ["lxr"] (Eliom_parameters.string "path") ()
 
 (* from the eliom tutorial *)
-let _ = Eliom_output.Xhtml.register lxr
-    (fun readable_path () ->
-      (* todo? sanitized path ? *)
+let _ = Eliom_output.Xhtml.register main_service
+  (fun readable_path () ->
+    (* todo? sanitized path ? *)
 
-      let path = Db.readable_to_absolute_filename readable_path Global_db.db in
-      let hook_token s tok categ =
-        match categ with
-        | Some (HC.Function (HC.Use2 _)) ->
+    let path = Db.readable_to_absolute_filename readable_path Global_db.db in
+    let hook_token s tok categ =
+      match categ with
+      | Some (HC.Function (HC.Use2 _)) ->
 
-            (try 
+          (try 
               let id = Db.id_of_function s Global_db.db in
               let file = Db.readable_filename_of_id id Global_db.db in
-              Eliom_output.Xhtml.a lxr [H.pcdata s] file
+              Eliom_output.Xhtml.a main_service [H.pcdata s] file
             with (Not_found | Multi_found) as exn ->
-              Eliom_output.Xhtml.a lxr [H.pcdata s] (Common.exn_to_s exn)
+              Eliom_output.Xhtml.a main_service [H.pcdata s] (Common.exn_to_s exn)
             )
         | _ -> H.pcdata s
       in
       let html = 
         if Common.is_directory path
-        then htmlize_dir ~link:lxr path Global_db.db
+        then htmlize_dir ~link:main_service path Global_db.db
         else Htmlize_php2.htmlize_with_headers ~hook_token path Global_db.db 
       in
       Lwt.return html
-    )
+  )

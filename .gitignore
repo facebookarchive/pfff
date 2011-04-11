@@ -317,3 +317,7 @@ external/ocamlbdb/libcamlbdb.a
 /lang_css/parsing/parser_css.ml
 /lang_css/parsing/parser_css.mli
 /lang_css/parsing/parser_css.output
+/web/app_codemap.type.mli
+/web/app_codemap_client.ml
+/web/app_codemap_server.ml
+/web/app_lxr_server.ml

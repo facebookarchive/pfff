@@ -1,7 +1,9 @@
-open Shared
-open Event_arrows
+module Shared = Codemap_shared
 
-let draw ctx (color, size, (x1, y1), (x2, y2)) =
+module Ev = Event_arrows
+let (>>>) = Ev.(>>>)
+
+let draw_client ctx (color, size, (x1, y1), (x2, y2)) =
   ctx##strokeStyle <- (Js.string color);
   ctx##lineWidth <- float size;
   ctx##beginPath();
@@ -12,14 +14,19 @@ let draw ctx (color, size, (x1, y1), (x2, y2)) =
 let launch_client_canvas bus imageservice canvas_box =
   let canvas = Dom_html.createCanvas Dom_html.document in
   let ctx = canvas##getContext (Dom_html._2d_) in
-  canvas##width <- width; canvas##height <- height;
+  canvas##width <- Shared.width; 
+  canvas##height <- Shared.height;
+
   ctx##lineCap <- Js.string "round";
 
   (* The initial image: *)
   let img = Dom_html.createImg Dom_html.document in
-  img##alt <- Js.string "canvas";
-  img##src <- Js.string (Eliom_output.Xhtml5.make_string_uri ~service:imageservice ());
-  img##onload <- Dom_html.handler (fun ev -> ctx##drawImage(img, 0., 0.); Js._false);
+  img##alt <- 
+    Js.string "canvas";
+  img##src <- 
+    Js.string (Eliom_output.Xhtml5.make_string_uri ~service:imageservice ());
+  img##onload <- 
+    Dom_html.handler (fun ev -> ctx##drawImage(img, 0., 0.); Js._false);
 
   Dom.appendChild canvas_box canvas;
 
@@ -38,7 +45,8 @@ let launch_client_canvas bus imageservice canvas_box =
   in
   pSmall##render(Js.some canvas_box);
 
-  let x = ref 0 and y = ref 0 in
+  let x = ref 0 in
+  let y = ref 0 in
   let set_coord ev =
     let x0, y0 = Dom_html.elementClientPosition canvas in
     x := ev##clientX - x0; y := ev##clientY - y0 in
@@ -51,11 +59,18 @@ let launch_client_canvas bus imageservice canvas_box =
   in
   let line ev =
     let v = compute_line ev in
+    (* notify other clients of the new line *)
     let _ = Eliom_client_bus.write bus v in
-    draw ctx v
+    draw_client ctx v
   in
-  let _ = Lwt_stream.iter (draw ctx) (Eliom_client_bus.stream bus) in
-  ignore (run (mousedowns canvas
-		 (arr (fun ev -> set_coord ev; line ev)
-			      >>> first [mousemoves Dom_html.document (arr line);
-					 mouseup Dom_html.document >>> (arr line)])) ())
+  (* listen on new line events from other clients *)
+  let _ = Lwt_stream.iter (draw_client ctx) (Eliom_client_bus.stream bus) in
+
+  ignore (Ev.run (Ev.mousedowns canvas
+		  (Ev.arr (fun ev -> set_coord ev; line ev)
+		    >>> Ev.first [
+                      Ev.mousemoves Dom_html.document (Ev.arr line);
+		      Ev.mouseup Dom_html.document >>> (Ev.arr line)
+                    ]
+                  )) 
+             ())
