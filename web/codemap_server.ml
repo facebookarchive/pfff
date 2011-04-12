@@ -59,19 +59,10 @@ let bus_image (name:string) =
 
 let main_service = Eliom_services.service ~path:["codemap"]
   ~get_params:(Eliom_parameters.unit) ()
+
 (* this service is defined in app.eliom *)
 let service = Eliom_services.coservice ~fallback:main_service
   ~get_params:(Eliom_parameters.string "name") ()
-
-let choose_drawing_form () =
-  App.get_form ~service:service
-    (fun (name) ->
-      [H.p [
-        H.pcdata "drawing name: ";
-        App.string_input ~input_type:`Text ~name ();
-        H.br ();
-        App.string_input ~input_type:`Submit ~value:"Go" ()
-      ]])
 
 (*****************************************************************************)
 (* main entry point *)
@@ -80,5 +71,12 @@ let () = App.register ~service:main_service
   (fun () () ->
     Lwt.return [
       H.h1 [H.pcdata "Welcome to Multigraffiti"];
-      choose_drawing_form ();
+      App.get_form ~service:service
+        (fun (name) ->
+          [H.p [
+            H.pcdata "drawing name: ";
+            App.string_input ~input_type:`Text ~name ();
+            H.br ();
+            App.string_input ~input_type:`Submit ~value:"Go" ()
+          ]])
     ])
