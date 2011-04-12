@@ -321,3 +321,5 @@ external/ocamlbdb/libcamlbdb.a
 /web/app_codemap_client.ml
 /web/app_codemap_server.ml
 /web/app_lxr_server.ml
+/web/client
+/web/client.js

@@ -14,6 +14,7 @@ let _ = Eliom_output.Xhtml.register top
            [])
        (H.body [
          H.h1 [H.pcdata "coucou"];
+         H.h1 [Link.a Dump_server.main_service [H.pcdata "dumper"] ()];
          H.h1 [Link.a Lxr_server.main_service [H.pcdata "lxr"] ""];
          H.h1 [Link.a Codemap_server.main_service [H.pcdata "codemap"] ()];
        ]
