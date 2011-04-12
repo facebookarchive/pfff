@@ -1179,6 +1179,7 @@ expr_without_variable_bis:
      }
  /*(* php-facebook-ext: *)*/
  | T_YIELD expr { Yield ($1, $2) }
+ | T_YIELD T_BREAK { YieldBreak ($1, $2) }
 
  | internal_functions_in_yacc { $1 }
 

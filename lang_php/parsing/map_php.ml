@@ -372,6 +372,8 @@ and map_expr (x) =
       let v1 = map_tok v1 and v2 = map_expr v2 in RequireOnce ((v1, v2))
   | Yield ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_expr v2 in Yield ((v1, v2))
+  | YieldBreak ((v1, v2)) ->
+      let v1 = map_tok v1 and v2 = map_tok v2 in YieldBreak ((v1, v2))
   | Empty ((v1, v2)) ->
       let v1 = map_tok v1
       and v2 = map_paren5 map_variable v2

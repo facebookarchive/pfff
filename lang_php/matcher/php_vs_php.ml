@@ -1293,6 +1293,14 @@ and m_exprbis a b =
        B.Yield(b1, b2)
     )
     ))
+  | A.YieldBreak(a1, a2), B.YieldBreak(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.YieldBreak(a1, a2),
+       B.YieldBreak(b1, b2)
+    )
+    ))
   | A.Empty(a1, a2), B.Empty(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_paren m_variable a2 b2 >>= (fun (a2, b2) -> 
@@ -1349,6 +1357,7 @@ and m_exprbis a b =
   | A.Lambda _, _
   | A.ParenExpr _, _
   | A.Yield _, _
+  | A.YieldBreak _, _
    -> fail ()
 
 (* ---------------------------------------------------------------------- *)

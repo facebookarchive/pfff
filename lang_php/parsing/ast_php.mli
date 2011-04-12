@@ -184,6 +184,7 @@ type expr = exprbis * exp_info
   | XhpHtml of xhp_html
 
   | Yield of tok * expr
+  | YieldBreak of tok * tok
 
   (*s: type exprbis hook *)
   | SgrepExprDots of info

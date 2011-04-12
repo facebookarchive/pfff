@@ -450,7 +450,7 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
           raise Impossible
       | A.Lambda _ -> 
           raise Todo
-      | A.Yield _ ->
+      | A.Yield _ | A.YieldBreak _ ->
           raise Todo
 
       | A.Exit (_, args) -> raise Todo

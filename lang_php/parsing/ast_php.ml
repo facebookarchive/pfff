@@ -240,6 +240,7 @@ type expr = exprbis * exp_info
    * at the expression level.
    *)
   | Yield of tok * expr
+  | YieldBreak of tok * tok
 
   (*s: type exprbis hook *)
   | SgrepExprDots of info
