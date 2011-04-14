@@ -1,7 +1,5 @@
 
-type messages = 
-  (string * int * (int * int) * (int * int))
-  deriving (Json)
+type message = unit
 
-let width = 700
-let height = 400
+let width = 1000
+let height = 800

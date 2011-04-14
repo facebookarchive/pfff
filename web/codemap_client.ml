@@ -1,76 +1,79 @@
+
+module Html = Dom_html
+
 module Shared = Codemap_shared
 
-module Ev = Event_arrows
-let (>>>) = Ev.(>>>)
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
-let draw_client ctx (color, size, (x1, y1), (x2, y2)) =
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let ccs s = 
+  Goog.Ui.ControlContent.string (Js.string s)
+
+let get_element_by_id s = 
+  Js.Opt.get (Dom_html.document##getElementById(Js.string s))
+    (fun _ -> assert false)
+
+let js = 
+  Js.string
+
+let add_item s (m : Goog.Ui.menu Js.t) = 
+  m##addItem(Goog.Tools.Union.i1 jsnew 
+                Goog.Ui.menuItem(ccs s, Js.null, Js.null))
+
+
+let draw ctx (color, size, (x1, y1), (x2, y2)) =
   ctx##strokeStyle <- (Js.string color);
   ctx##lineWidth <- float size;
   ctx##beginPath();
   ctx##moveTo(float x1, float y1);
   ctx##lineTo(float x2, float y2);
-  ctx##stroke()
+  ctx##stroke();
+  ()
 
-let launch_client_canvas bus imageservice canvas_box =
+(*****************************************************************************)
+(* The main UI *)
+(*****************************************************************************)
+
+let mk_gui () =
+
+  (*-------------------------------------------------------------------*)
+  (* Menu *)
+  (*-------------------------------------------------------------------*)
+
+  let menu = jsnew Goog.Ui.menu(Js.null, Js.null) in
+  add_item "File" menu; 
+  add_item "Misc" menu; 
+  let div = Dom_html.createDiv Dom_html.document in
+  Dom.appendChild Dom_html.document##body div;
+  menu##render(Js.some div);
+
+  (*-------------------------------------------------------------------*)
+  (* toolbar *)
+  (*-------------------------------------------------------------------*)
+
+
+  (*-------------------------------------------------------------------*)
+  (* main view *)
+  (*-------------------------------------------------------------------*)
+
   let canvas = Dom_html.createCanvas Dom_html.document in
   let ctx = canvas##getContext (Dom_html._2d_) in
   canvas##width <- Shared.width; 
   canvas##height <- Shared.height;
+  Dom.appendChild Dom_html.document##body canvas;
+
+  (*-------------------------------------------------------------------*)
+  (* End *)
+  (*-------------------------------------------------------------------*)
 
   ctx##lineCap <- Js.string "round";
+  draw ctx ("#ffaa33", 12, (10, 10), (200, 100));
+  ()
 
-  (* The initial image: *)
-  let img = Dom_html.createImg Dom_html.document in
-  img##alt <- 
-    Js.string "canvas";
-  img##src <- 
-    Js.string (Eliom_output.Xhtml5.make_string_uri ~service:imageservice ());
-  img##onload <- 
-    Dom_html.handler (fun ev -> ctx##drawImage(img, 0., 0.); Js._false);
-
-  Dom.appendChild canvas_box canvas;
-
-  (* Size of the brush *)
-  let slider = jsnew Goog.Ui.slider(Js.null) in
-  slider##setMinimum(1.);
-  slider##setMaximum(80.);
-  slider##setValue(10.);
-  slider##setMoveToPointEnabled(Js._true);
-  slider##render(Js.some canvas_box);
-  
-  (* The color palette: *)
-  let pSmall = 
-    jsnew Goog.Ui.hsvPalette(Js.null, Js.null,
-                             Js.some (Js.string "goog-hsv-palette-sm"))
-  in
-  pSmall##render(Js.some canvas_box);
-
-  let x = ref 0 in
-  let y = ref 0 in
-  let set_coord ev =
-    let x0, y0 = Dom_html.elementClientPosition canvas in
-    x := ev##clientX - x0; y := ev##clientY - y0 in
-  let compute_line ev = 
-    let oldx = !x and oldy = !y in
-    set_coord ev;
-    let color = Js.to_string (pSmall##getColor()) in
-    let size = int_of_float (Js.to_float (slider##getValue())) in
-    (color, size, (oldx, oldy), (!x, !y))
-  in
-  let line ev =
-    let v = compute_line ev in
-    (* notify other clients of the new line *)
-    let _ = Eliom_client_bus.write bus v in
-    draw_client ctx v
-  in
-  (* listen on new line events from other clients *)
-  let _ = Lwt_stream.iter (draw_client ctx) (Eliom_client_bus.stream bus) in
-
-  ignore (Ev.run (Ev.mousedowns canvas
-		  (Ev.arr (fun ev -> set_coord ev; line ev)
-		    >>> Ev.first [
-                      Ev.mousemoves Dom_html.document (Ev.arr line);
-		      Ev.mouseup Dom_html.document >>> (Ev.arr line)
-                    ]
-                  )) 
-             ())
+let onload () = 
+  mk_gui ()

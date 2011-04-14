@@ -1,3 +1,16 @@
+(*
+ * Please imagine a long and boring gnu-style copyright notice 
+ * appearing just here.
+ *)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Default Page *)
+(*****************************************************************************)
+
 {shared{
 }}
 
@@ -6,44 +19,30 @@
 
 module H = XHTML5.M
 
-(* pad: could remove the need to pass the canvas_box and retrive it instead
- * via a getElementById in client.ml.
- *)
-let include_canvas (name:string) (canvas_box:[ Xhtml5types.div ] XHTML5.M.elt) =
+module App = Eliom_output.Eliom_appl (struct
+  let application_name = "client"
+  let params = { Eliom_output.default_appl_params with
+	  
+    Eliom_output.ap_headers_before = [
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/default.css")  ();
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/common.css")  ();
+      H.script ~a:[H.a_src (H.uri_of_string "js/goog/base.js")] (H.pcdata "");
+      H.script ~a:[H.a_src (H.uri_of_string "client_req.js")] (H.pcdata "");
+    ];
+  }
+end)
 
-  let bus, image_string = 
-    Codemap_server.bus_image name in
+let main_service = Eliom_services.service ~path:["codemap"]
+  ~get_params:(Eliom_parameters.unit) ()
 
-  let imageservice =
-    Eliom_output.Text.register_coservice'
-      ~timeout:10.
-      (* the service is available fo 10 seconds only, but it is long
-	 enouth for the browser to do its request. *)
-      ~get_params:Eliom_parameters.unit
-      (fun () () -> 
-        Lwt.return (image_string (), "image/png")
-      )
-  in
-
-  Eliom_services.onload {{
-    Codemap_client.launch_client_canvas %bus %imageservice %canvas_box
-  }}
-
-let () = Codemap_server.App.register ~service:Codemap_server.service
-  (fun name () ->
-    (* the page element in wich we will include the canvas *)
-
-    (* this div is qualified with original module name otherwise one get
-     * an error message when used above in the '%canvas_box'
-     *)
-    let canvas_box = XHTML5.M.div [] in
-
-    include_canvas name canvas_box;
+(*****************************************************************************)
+(* main entry point *)
+(*****************************************************************************)
+let () = App.register ~service:main_service
+  (fun () () ->
+    Eliom_services.onload {{
+      Codemap_client.onload ();
+    }};
     Lwt.return [
-      H.h1 [H.pcdata name];
-      (* if want switch to another drawing
-       *  Server.choose_drawing_form ();
-       *)
-      canvas_box;
-    ] 
-  )
+      H.h1 [H.pcdata "Welcome to CodemapWeb"];
+    ])
