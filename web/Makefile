@@ -94,8 +94,10 @@ beforedepend:: app_lxr_server.ml
 STATICDIR=/tmp/static
 OCSIGENDIR=ocsigen
 run: 
-	rm -f $(STATICDIR)/css/*
-	cp -a css/ $(STATICDIR)
+	rm -rf $(STATICDIR)/css/*
+	mkdir -p $(STATICDIR)/css/goog
+	cp -a css/*.* $(STATICDIR)
+	cp -a css/goog/*.* $(STATICDIR)/css/goog
 	cp -a images/ $(STATICDIR)
 	cp -a $(OCSIGENDIR)/files/mime.types $(STATICDIR)
 	LD_LIBRARY_PATH=../external/ocamlbdb ocsigen -c ocsigen.conf

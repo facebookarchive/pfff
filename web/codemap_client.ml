@@ -25,6 +25,10 @@ let add_item s (m : Goog.Ui.menu Js.t) =
   m##addItem(Goog.Tools.Union.i1 jsnew 
                 Goog.Ui.menuItem(ccs s, Js.null, Js.null))
 
+let add_separator (m : Goog.Ui.menu Js.t) = 
+  m##addItem(Goog.Tools.Union.i2 jsnew 
+                Goog.Ui.menuSeparator(Js.null))
+
 
 let draw ctx (color, size, (x1, y1), (x2, y2)) =
   ctx##strokeStyle <- (Js.string color);

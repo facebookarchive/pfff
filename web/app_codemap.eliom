@@ -25,8 +25,16 @@ module App = Eliom_output.Eliom_appl (struct
 	  
     Eliom_output.ap_headers_before = [
       H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/default.css")  ();
-      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/common.css")  ();
+
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/goog/common.css")();
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/goog/menu.css")();
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/goog/menuitem.css")();
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/goog/menuseparator.css")();
+
+      H.link ~rel:[`Stylesheet] ~href:(H.uri_of_string "css/codemap.css")  ();
+
       H.script ~a:[H.a_src (H.uri_of_string "js/goog/base.js")] (H.pcdata "");
+
       H.script ~a:[H.a_src (H.uri_of_string "client_req.js")] (H.pcdata "");
     ];
   }
