@@ -19,6 +19,7 @@
 % some stuff was in ocaml.org before
 
 %TODO:
+% - pgoctut.tex in reference/template/latex, good style, good look
 % - 7 lang in 7 weeks   inspiration ?
 % - jon harrop ray tracer C++ vs ocaml (old version)
 % - graydon hoare tutorial on DSL and ocaml http://www.venge.net/graydon/talks/
