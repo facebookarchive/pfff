@@ -198,8 +198,7 @@ let keyword_table = Common.hash_of_list [
   "__line__",        (fun ii -> T_LINE ii);
   "__file__",        (fun ii -> T_FILE ii);
 
-  (* php-facebook-ext: should perhaps have a flag
-   *)
+  (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
 
   (* xhp: having those XHP keywords handled here could mean they can not
