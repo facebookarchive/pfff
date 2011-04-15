@@ -127,7 +127,7 @@ and vof_exprbis =
   | CondExpr ((v1, v2, v3, v4, v5)) ->
       let v1 = vof_expr v1
       and v2 = vof_tok v2
-      and v3 = vof_expr v3
+      and v3 = vof_option vof_expr v3
       and v4 = vof_tok v4
       and v5 = vof_expr v5
       in Ocaml.VSum (("CondExpr", [ v1; v2; v3; v4; v5 ]))

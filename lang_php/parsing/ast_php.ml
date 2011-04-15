@@ -186,7 +186,14 @@ type expr = exprbis * exp_info
   | Postfix of rw_variable   * fixOp wrap
   | Infix   of fixOp wrap    * rw_variable
   (*x: exprbis other constructors *)
-  | CondExpr of expr * tok (* ? *) * expr * tok (* : *) * expr
+  (* PHP 5.3 allow 'expr ?: expr' hence the 'option' type below
+   * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
+   * "Since PHP 5.3, it is possible to leave out the middle part of the
+   * ternary operator. Expression 
+   * expr1 ?: expr3 returns expr1 if expr1 evaluates to TRUE, and expr3
+   * otherwise."
+   *)
+  | CondExpr of expr * tok (* ? *) * expr option * tok (* : *) * expr
   (*x: exprbis other constructors *)
   | AssignList  of tok (* list *)  * list_assign comma_list paren * 
         tok (* = *) * expr

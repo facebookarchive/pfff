@@ -329,8 +329,11 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
       | A.Cast (c, e) ->
           mkt (B.Cast (A.unwrap c, aux_expr e))
 
-      | A.CondExpr(cond, _, if_t, _, if_f) ->
+      | A.CondExpr(cond, _, Some if_t, _, if_f) ->
           mkt (B.CondExpr(aux_expr cond, aux_expr if_t, aux_expr if_f))
+
+      | A.CondExpr(cond, _, None, _, if_f) ->
+          raise Todo
 
       | A.Isset (t, argsA) ->
           (* for now we transform it into a normal function call ; TODO *)

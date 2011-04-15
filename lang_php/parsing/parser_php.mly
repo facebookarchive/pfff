@@ -1131,7 +1131,9 @@ expr_without_variable_bis:
  | expr T_INSTANCEOF class_name_reference 
      { InstanceOf($1,$2,$3) }
 
- | expr TQUESTION  expr TCOLON  expr	 { CondExpr($1,$2,$3,$4,$5) }
+ | expr TQUESTION  expr TCOLON  expr	 { CondExpr($1,$2,Some $3,$4,$5) }
+ /*(* PHP 5.3 *)*/
+ | expr TQUESTION  TCOLON  expr	 { CondExpr($1,$2,None,$3,$4) }
 
 /*(* I don't parse XHP elements defs in the same way than the original
    * XHP parser, which simplifies the grammar, but introduce possible

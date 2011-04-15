@@ -419,7 +419,7 @@ and v_expr (x: expr) =
   | CondExpr ((v1, v2, v3, v4, v5)) ->
       let v1 = v_expr v1
       and v2 = v_tok v2
-      and v3 = v_expr v3
+      and v3 = v_option v_expr v3
       and v4 = v_tok v4
       and v5 = v_expr v5
       in ()

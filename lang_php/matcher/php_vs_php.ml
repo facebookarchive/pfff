@@ -1111,7 +1111,7 @@ and m_exprbis a b =
   | A.CondExpr(a1, a2, a3, a4, a5), B.CondExpr(b1, b2, b3, b4, b5) ->
     m_expr a1 b1 >>= (fun (a1, b1) -> 
     m_tok a2 b2 >>= (fun (a2, b2) -> 
-    m_expr a3 b3 >>= (fun (a3, b3) -> 
+    m_option m_expr a3 b3 >>= (fun (a3, b3) -> 
     m_tok a4 b4 >>= (fun (a4, b4) -> 
     m_expr a5 b5 >>= (fun (a5, b5) -> 
     return (

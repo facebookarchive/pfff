@@ -139,7 +139,7 @@ type expr = exprbis * exp_info
   | Postfix of rw_variable   * fixOp wrap
   | Infix   of fixOp wrap    * rw_variable
   (*x: exprbis other constructors *)
-  | CondExpr of expr * tok (* ? *) * expr * tok (* : *) * expr
+  | CondExpr of expr * tok (* ? *) * expr option * tok (* : *) * expr
   (*x: exprbis other constructors *)
   | AssignList  of tok (* list *)  * list_assign comma_list paren * 
         tok (* = *) * expr

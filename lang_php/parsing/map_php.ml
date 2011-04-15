@@ -302,7 +302,7 @@ and map_expr (x) =
   | CondExpr ((v1, v2, v3, v4, v5)) ->
       let v1 = map_expr v1
       and v2 = map_tok v2
-      and v3 = map_expr v3
+      and v3 = map_option map_expr v3
       and v4 = map_tok v4
       and v5 = map_expr v5
       in CondExpr ((v1, v2, v3, v4, v5))
