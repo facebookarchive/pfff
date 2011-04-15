@@ -738,7 +738,7 @@ rule st_in_scripting = parse
               | TSEMICOLON _ | TCOMMA _
               | TOBRACE _ | TCBRACE _
               | T_RETURN _ 
-              | TEQ _
+              | TEQ _ | T_CONCAT_EQUAL _
               | T_DOUBLE_ARROW _
               | TQUESTION _ | TCOLON _
             )
