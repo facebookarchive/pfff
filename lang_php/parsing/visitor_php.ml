@@ -633,6 +633,7 @@ and v_class_name_reference x =
              and v2 = v_list v_obj_prop_access v2
              in ())
       in ()
+  | ClassNameRefLateStatic v1 -> let v1 = v_tok v1 in ()
   in
   vin.kclass_name_reference (k, all_functions) x
 
@@ -752,6 +753,12 @@ and v_variablebis =
       in ()
   | StaticMethodCallVar ((v1, v2, v3, v4)) ->
       let v1 = v_variable v1
+      and v2 = v_tok v2
+      and v3 = v_name v3
+      and v4 = v_paren (v_comma_list v_argument) v4
+      in ()
+  | LateStaticCall ((v1, v2, v3, v4)) ->
+      let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_name v3
       and v4 = v_paren (v_comma_list v_argument) v4

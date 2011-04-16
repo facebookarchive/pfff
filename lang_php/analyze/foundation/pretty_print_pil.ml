@@ -95,10 +95,11 @@ let string_of_constant (c:A.constant) = match c with
 |A.XdebugResource _ -> raise Todo
 
 let string_of_class_name_reference (cnr:A.class_name_reference) = 
-match cnr with
-|A.ClassNameRefStatic n -> string_of_class_name_or_selfparent  n
-|A.ClassNameRefDynamic _ -> raise Todo
-
+  match cnr with
+  | A.ClassNameRefStatic n -> string_of_class_name_or_selfparent  n
+  | A.ClassNameRefDynamic _ -> raise Todo
+  | A.ClassNameRefLateStatic _ -> raise Todo
+      
 let string_of_assignOp (a:A.assignOp) = match a with
 |A.AssignOpArith o -> (string_of_binaryOp (A.Arith o))^"="
 |A.AssignConcat    -> ".="

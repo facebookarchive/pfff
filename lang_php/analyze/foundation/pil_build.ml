@@ -219,6 +219,8 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
         raise Todo
     | A.StaticMethodCallVar _ ->
         raise Todo
+    | A.LateStaticCall _ ->
+        raise Todo
 
   and aux_args args = 
     args +> List.map (function

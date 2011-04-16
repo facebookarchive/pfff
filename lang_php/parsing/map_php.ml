@@ -531,6 +531,8 @@ and map_class_name_reference =
              and v2 = map_of_list map_obj_prop_access v2
              in (v1, v2))
       in ClassNameRefDynamic ((v1))
+  | ClassNameRefLateStatic v1 ->
+      let v1 = map_tok v1 in ClassNameRefLateStatic ((v1))
 and map_obj_prop_access (v1, v2) =
   let v1 = map_tok v1 and v2 = map_obj_property v2 in (v1, v2)
 
@@ -644,6 +646,12 @@ and map_variablebis =
       and v3 = map_name v3
       and v4 = map_paren (map_comma_list map_argument) v4
       in StaticMethodCallVar ((v1, v2, v3, v4))
+  | LateStaticCall ((v1, v2, v3, v4)) ->
+      let v1 = map_tok v1
+      and v2 = map_tok v2
+      and v3 = map_name v3
+      and v4 = map_paren (map_comma_list map_argument) v4
+      in LateStaticCall ((v1, v2, v3, v4))
   | StaticObjCallVar ((v1, v2, v3, v4)) ->
       let v1 = map_lvalue v1
       and v2 = map_tok v2

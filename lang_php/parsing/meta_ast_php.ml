@@ -392,6 +392,9 @@ and vof_class_name_reference =
              and v2 = vof_list vof_obj_prop_access v2
              in Ocaml.VTuple [ v1; v2 ])
       in Ocaml.VSum (("ClassNameRefDynamic", [ v1 ]))
+  | ClassNameRefLateStatic v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("ClassNameRefLateStatic", [ v1 ]))
+
 and vof_obj_prop_access (v1, v2) =
   let v1 = vof_tok v1 and v2 = vof_obj_property v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_xhp_html =
@@ -509,6 +512,12 @@ and vof_variablebis =
       and v3 = vof_lvalue v3
       and v4 = vof_paren (vof_comma_list vof_argument) v4
       in Ocaml.VSum (("StaticObjCallVar", [ v1; v2; v3; v4 ]))
+  | LateStaticCall ((v1, v2, v3, v4)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = vof_name v3
+      and v4 = vof_paren (vof_comma_list vof_argument) v4
+      in Ocaml.VSum (("LateStaticCall", [ v1; v2; v3; v4 ]))
   | ObjAccessSimple ((v1, v2, v3)) ->
       let v1 = vof_variable v1
       and v2 = vof_tok v2

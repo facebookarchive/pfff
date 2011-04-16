@@ -793,6 +793,18 @@ and m_variablebis a b =
     )
     ))))
 
+  | A.LateStaticCall(a1, a2, a3, a4), 
+    B.LateStaticCall(b1, b2, b3, b4) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_name a3 b3 >>= (fun (a3, b3) -> 
+    m_paren (m_list__m_argument) a4 b4 >>= (fun (a4, b4) -> 
+    return (
+       A.LateStaticCall(a1, a2, a3, a4),
+       B.LateStaticCall(b1, b2, b3, b4)
+    )
+    ))))
+
   | A.StaticObjCallVar(a1, a2, a3, a4), 
     B.StaticObjCallVar(b1, b2, b3, b4) ->
     m_lvalue a1 b1 >>= (fun (a1, b1) -> 
@@ -840,6 +852,7 @@ and m_variablebis a b =
   | A.StaticObjCallVar _, _
   | A.ObjAccessSimple _, _
   | A.ObjAccess _, _
+  | A.LateStaticCall _, _
    -> fail ()
 
 and m_rw_variable a b = m_variable a b
@@ -1672,6 +1685,13 @@ and m_class_name_reference a b =
        B.ClassNameRefStatic(b1)
     )
     )
+  | A.ClassNameRefLateStatic(a1), B.ClassNameRefLateStatic(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassNameRefLateStatic(a1),
+       B.ClassNameRefLateStatic(b1)
+    )
+    )
   | A.ClassNameRefDynamic(a1, a2), B.ClassNameRefDynamic(b1, b2) ->
     m_variable a1 b1 >>= (fun (a1, b1) -> 
     m_list m_obj_prop_access a2 b2 >>= (fun (a2, b2) -> 
@@ -1682,6 +1702,7 @@ and m_class_name_reference a b =
     ))
   | A.ClassNameRefStatic _, _
   | A.ClassNameRefDynamic _, _
+  | A.ClassNameRefLateStatic _, _
    -> fail ()
 
 and m_encaps a b = 
