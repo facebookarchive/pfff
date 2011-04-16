@@ -1382,6 +1382,10 @@ function_head:
 /*(* PHP 5.3 *)*/
  | variable_class_name TCOLCOL ident { StaticMethodVar($1, $2, Name $3) }
  | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
+/*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
+   * for such a feature; it's everything except a static call ...
+   *)*/
+ | T_STATIC TCOLCOL ident { LateStatic ($1, $2, Name $3) }
 
 /*(*x: GRAMMAR variable *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
@@ -1519,6 +1523,8 @@ variable_class_name: reference_variable { $1 }
 class_name_reference:
  | class_name_or_selfparent	{ ClassNameRefStatic $1 }
  | dynamic_class_name_reference	{ ClassNameRefDynamic $1 }
+ /*(* PHP 5.3, "late static binding" *)*/
+ | T_STATIC                     { ClassNameRefLateStatic $1 }
 
 dynamic_class_name_reference:
  | base_variable_bis { ($1, []) }

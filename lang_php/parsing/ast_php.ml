@@ -362,6 +362,9 @@ type expr = exprbis * exp_info
    and class_name_reference = 
      | ClassNameRefStatic of class_name_or_selfparent
      | ClassNameRefDynamic of (lvalue * obj_prop_access list)
+     (* PHP 5.3 "late static binding" *)
+     | ClassNameRefLateStatic of tok (* static *)
+
      and obj_prop_access = tok (* -> *) * obj_property
   (*e: AST expression rest *)
 
@@ -433,6 +436,9 @@ and lvalue = lvaluebis * lvalue_info
     | StaticMethodCallVar of lvalue * tok (* :: *) * name *
         argument comma_list paren
     | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
+        argument comma_list paren
+    (* PHP 5.3 "late static binding" *)
+    | LateStaticCall of tok (* static *) * tok (* ::: *) * name *
         argument comma_list paren
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name

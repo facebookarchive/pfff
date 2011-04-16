@@ -769,11 +769,21 @@ rule st_in_scripting = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
+    (* ugly: 'self' and 'parent' should be keywords forbidden to be used
+     * as regular identifiers. But PHP is case insensitive and does not
+     * consider self/parent or SELF/PARENT as keywords. I think it's
+     * bad so I now consider self/parent as keywords, but still allow
+     * at least the uppercase form to be used as identifier, hence those
+     * two rules below.
+     *)
+    | "SELF"   { T_IDENT (tok lexbuf, tokinfo lexbuf) }
+    | "PARENT" { T_IDENT (tok lexbuf, tokinfo lexbuf) }
   (*s: keyword and ident rules *)
     | LABEL
         { let info = tokinfo lexbuf in
           let s = tok lexbuf in
           match Common.optionise (fun () -> 
+            (* PHP is case insensitive ... it's ok to write IF(...) { ... } *)
             Hashtbl.find keyword_table (String.lowercase s))
           with
           | Some f -> f info
