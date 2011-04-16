@@ -78,14 +78,15 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
  (*e: type dname *)
 
  (*s: qualifiers *)
- and qualifier = 
-   | Qualifier of fully_qualified_class_name * tok (* :: *)
+ and qualifier = class_name_or_selfparent * tok (* :: *)
+  and class_name_or_selfparent =
+   | ClassName of fully_qualified_class_name
    (* Could also transform at parsing time all occurences of self:: and
     * parent:: by their respective names. But I prefer to have all the 
     * PHP features somehow explicitely represented in the AST.
     *)
-   | Self   of tok * tok (* :: *)
-   | Parent of tok * tok (* :: *)
+   | Self   of tok
+   | Parent of tok
 
  and fully_qualified_class_name = name
  (*e: qualifiers *)
@@ -296,7 +297,7 @@ type expr = exprbis * exp_info
      | ArrayArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
   (*x: AST expression rest *)
    and class_name_reference = 
-     | ClassNameRefStatic of fully_qualified_class_name
+     | ClassNameRefStatic of class_name_or_selfparent
      | ClassNameRefDynamic of (lvalue * obj_prop_access list)
      and obj_prop_access = tok (* -> *) * obj_property
   (*e: AST expression rest *)
@@ -537,7 +538,7 @@ and func_def = {
     }
   (*x: AST function definition rest *)
       and hint_type = 
-        | Hint of fully_qualified_class_name
+        | Hint of class_name_or_selfparent
         | HintArray  of tok
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option

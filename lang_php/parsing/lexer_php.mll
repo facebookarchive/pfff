@@ -112,14 +112,18 @@ let keyword_table = Common.hash_of_list [
   "class_xdebug",           (fun ii -> T_CLASS_XDEBUG ii);
   "resource_xdebug",           (fun ii -> T_RESOURCE_XDEBUG ii);
 
-  (* I removed those tokens and do the work in parser_php.mly.
-   * This allows to have self/parent to be used at more places, 
-   * which is tolerated by PHP (it should not but that's how it is).
-   * This is also similar to what I do for $this.
-   *
-   * "self",           (fun ii -> T_SELF ii);
-   * "parent",           (fun ii -> T_PARENT ii);
+  (* Those tokens were not in the original PHP lexer. This allowed to 
+   * have "self"/"parent" to be used at more places, e.g. as a function 
+   * name which is tolerated by PHP but should not IMHO. Those idents
+   * have a special meaning and this should be reflected in the lexer,
+   * especially since PHP 5.3 which allows static:: in addition to 
+   * self::, parent::. 'static' is a keyword so there is no reason 
+   * to not make self/parent keywords too.
+   * 
+   * todo: should do something similar for $this.
    *)
+  "self",             (fun ii -> T_SELF ii);
+  "parent",           (fun ii -> T_PARENT ii);
 
  (*s: repetitive keywords table *)
    "if",              (fun ii -> T_IF ii);
