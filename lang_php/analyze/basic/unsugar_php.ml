@@ -48,13 +48,13 @@ module V = Map_php
  *)
 let resolve_class_name qu in_class =
   match qu, in_class with
-  | Qualifier (name, tok2), _ ->
+  | (ClassName (name), tok2), _ ->
       name, Ast.info_of_name name, tok2
-  | Self (tok1, tok2), Some (name, _parent) ->
+  | (Self (tok1), tok2), Some (name, _parent) ->
       name, tok1, tok2
-  | Parent (tok1, tok2), (Some (_, Some parent)) -> 
+  | (Parent (tok1), tok2), (Some (_, Some parent)) -> 
       parent, tok1, tok2
-  | Self (tok1, tok2), None ->
+  | (Self (tok1), tok2), None ->
       (* I used to failwith, but our codebase contains such crap
        * and we don't want all of our analysis to fail on one file
        * just because of those wrong self/parent. Turns them
@@ -62,7 +62,7 @@ let resolve_class_name qu in_class =
        *)
       pr2 ("PB: Use of self:: outside of a class");
       Name ("UnkwnownUseOfSelf", tok1), tok1, tok2
-  | Parent (tok1, tok2), _ ->
+  | (Parent (tok1), tok2), _ ->
       pr2 "PB: Use of parent:: in a class without a parent";
       Name ("UnkwnownUseOfParent", tok1), tok1, tok2
 
@@ -97,7 +97,7 @@ let unsugar_self_parent_any2 any =
         | XhpName (xs, _info_of_referenced_class) ->
             XhpName (xs, tok_orig)
       in
-      Qualifier (name', tok_colon)
+      ClassName (name'), tok_colon
     );
   })
   in

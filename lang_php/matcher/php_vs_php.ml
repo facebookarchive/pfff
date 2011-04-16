@@ -855,34 +855,41 @@ and m_indirect a b =
     )
     )
 
-
 and m_qualifier a b = 
   match a, b with
-  | A.Qualifier(a1, a2), B.Qualifier(b1, b2) ->
+  | (a1, a2), (b1, b2) ->
+      m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) ->
+      m_tok a2 b2 >>= (fun (a2, b2) ->
+        return (
+          (a1, a2),
+          (b1, b2)
+        )
+      ))
+
+and m_class_name_or_selfparent a b = 
+  match a, b with
+  | A.ClassName(a1), B.ClassName(b1) ->
     m_fully_qualified_class_name a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Qualifier(a1, a2),
-       B.Qualifier(b1, b2)
+       A.ClassName(a1),
+       B.ClassName(b1)
     )
-    ))
-  | A.Self(a1, a2), B.Self(b1, b2) ->
+    )
+  | A.Self(a1), B.Self(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Self(a1, a2),
-       B.Self(b1, b2)
+       A.Self(a1),
+       B.Self(b1)
     )
-    ))
-  | A.Parent(a1, a2), B.Parent(b1, b2) ->
+    )
+  | A.Parent(a1), B.Parent(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Parent(a1, a2),
-       B.Parent(b1, b2)
+       A.Parent(a1),
+       B.Parent(b1)
     )
-    ))
-  | A.Qualifier _, _
+    )
+  | A.ClassName _, _
   | A.Self _, _
   | A.Parent _, _
    -> fail ()
@@ -1659,7 +1666,7 @@ and m_array_pair a b =
 and m_class_name_reference a b = 
   match a, b with
   | A.ClassNameRefStatic(a1), B.ClassNameRefStatic(b1) ->
-    m_name a1 b1 >>= (fun (a1, b1) -> 
+    m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.ClassNameRefStatic(a1),
        B.ClassNameRefStatic(b1)

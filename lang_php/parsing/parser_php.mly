@@ -374,16 +374,24 @@ unticked_statement:
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
 
   /*(* static-php-ext: *)*/
- | type_hint variable TSEMICOLON          { 
-     if not !Flag_parsing_php.type_hints_extension
-     then raise Parsing.Parse_error;
-     TypedDeclaration ($1, $2, None, $3)
-   }
- | type_hint variable TEQ expr TSEMICOLON { 
-     if not !Flag_parsing_php.type_hints_extension
-     then raise Parsing.Parse_error;
-     TypedDeclaration ($1, $2, Some ($3, $4), $5)
-   }
+/*
+(* todo: this is commented because it is not really used
+ * and it generates some conflicts now that type_hint
+ * is not anymore   type_hint: ident { ... } but 
+ * type_hint: class_name_or_selfparent { ... }
+ * 
+ * | type_hint variable TSEMICOLON          { 
+ * if not !Flag_parsing_php.type_hints_extension
+ * then raise Parsing.Parse_error;
+ * TypedDeclaration ($1, $2, None, $3)
+ * }
+ * | type_hint variable TEQ expr TSEMICOLON { 
+ * if not !Flag_parsing_php.type_hints_extension
+ * then raise Parsing.Parse_error;
+ * TypedDeclaration ($1, $2, Some ($3, $4), $5)
+ * }
+ *)
+*/
 
  | TOBRACE inner_statement_list TCBRACE   { Block($1,$2,$3) }
 

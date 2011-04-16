@@ -934,7 +934,8 @@ let (linearize_body: Ast_php.stmt_and_def list -> Pil.stmt list) = fun xs ->
 
 let pil_of_type_hint t = 
   match t with
-  | Hint name -> name
+  | Hint (ClassName name) -> name
+  | Hint (_) -> raise Todo
   | HintArray tok -> Name ("Array", tok)
 
 let pil_of_static_scalar sc = 

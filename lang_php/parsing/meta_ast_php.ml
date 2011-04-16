@@ -61,20 +61,17 @@ and vof_dname =
   function
   | DName v1 ->
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("DName", [ v1 ]))
-and vof_qualifier =
+and vof_qualifier (v1, v2) =
+  let v1 = vof_class_name_or_selfparent v1
+  and v2 = vof_tok v2
+  in Ocaml.VTuple [ v1; v2 ]
+and vof_class_name_or_selfparent =
   function
-  | Qualifier ((v1, v2)) ->
+  | ClassName v1 ->
       let v1 = vof_fully_qualified_class_name v1
-      and v2 = vof_tok v2
-      in Ocaml.VSum (("Qualifier", [ v1; v2 ]))
-  | Self ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_tok v2
-      in Ocaml.VSum (("Self", [ v1; v2 ]))
-  | Parent ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_tok v2
-      in Ocaml.VSum (("Parent", [ v1; v2 ]))
+      in Ocaml.VSum (("ClassName", [ v1 ]))
+  | Self v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Self", [ v1 ]))
+  | Parent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Parent", [ v1 ]))
 
 and vof_fully_qualified_class_name v = vof_name v
   
@@ -385,7 +382,8 @@ and vof_array_pair =
 and vof_class_name_reference =
   function
   | ClassNameRefStatic v1 ->
-      let v1 = vof_name v1 in Ocaml.VSum (("ClassNameRefStatic", [ v1 ]))
+      let v1 = vof_class_name_or_selfparent v1 in
+      Ocaml.VSum (("ClassNameRefStatic", [ v1 ]))
   | ClassNameRefDynamic v1 ->
       let v1 =
         (match v1 with
@@ -837,7 +835,8 @@ and
   let bnd = ("p_type", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_hint_type =
   function
-  | Hint v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Hint", [ v1 ]))
+  | Hint v1 -> let v1 = vof_class_name_or_selfparent v1 in 
+               Ocaml.VSum (("Hint", [ v1 ]))
   | HintArray v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("HintArray", [ v1 ]))
 and vof_is_ref v = vof_option vof_tok v
 
