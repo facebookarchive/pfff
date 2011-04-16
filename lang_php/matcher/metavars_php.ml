@@ -35,10 +35,12 @@ type metavars_binding = (mvar, Ast_php.any) Common.assoc
 let empty_environment = []
 
 (* bugfix: don't forget $, otherwise string like FBredirect would match
- * such regexp (the starting F) even if it's not a metavar at all
+ * such regexp (the starting F) even if it's not a metavar at all.
+ * 
+ * examples: X, X1, X1_ILOVEPUPPIES
  *)
 let metavar_regexp_string = 
-  "\\b\\([A-Z]\\([0-9]?_[A-Z]*\\)?\\)\\b"
+  "\\b\\([A-Z][0-9]?\\(_[A-Z0-9]*\\)?\\)\\b"
 
 let metavar_regexp  = Str.regexp metavar_regexp_string
 

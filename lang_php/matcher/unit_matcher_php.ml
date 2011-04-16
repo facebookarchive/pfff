@@ -35,10 +35,17 @@ let sgrep_unittest = [
         assert_failure "parsing problem in sgrep pattern parsing"
     );
   );
-  "misc features" >:: (fun () ->
+  "misc sgrep features" >:: (fun () ->
     (* pattern, code *)
     let pairs = [
+      (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));";
+
+      (* metavariables *)
+      "foo(X);"       ,  "foo(1);";
+      "foo(X1);"      ,  "foo(1);";
+      "foo(X1_MISC);" ,  "foo(1);";
+      "foo(X_MISC);"  ,  "foo(1);";
     ] in
     pairs +> List.iter (fun (spattern, scode) ->
       match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
