@@ -394,12 +394,9 @@ and map_expr (x) =
 and map_scalar =
   function
   | C v1 -> let v1 = map_constant v1 in C ((v1))
-  | ClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = map_qualifier v1 and v2 = map_name v2 in (v1, v2))
-      in ClassConstant ((v1))
+  | ClassConstant (v1, v2) ->
+      let v1 = map_qualifier v1 and v2 = map_name v2 in
+      ClassConstant (v1, v2)
   | Guil ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_of_list map_encaps v2
@@ -523,14 +520,10 @@ and map_class_name_reference =
   function
   | ClassNameRefStatic v1 ->
       let v1 = map_class_name_or_selfparent v1 in ClassNameRefStatic ((v1))
-  | ClassNameRefDynamic v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = map_variable v1
-             and v2 = map_of_list map_obj_prop_access v2
-             in (v1, v2))
-      in ClassNameRefDynamic ((v1))
+  | ClassNameRefDynamic (v1, v2) ->
+      let v1 = map_variable v1
+      and v2 = map_of_list map_obj_prop_access v2
+      in ClassNameRefDynamic (v1, v2)
   | ClassNameRefLateStatic v1 ->
       let v1 = map_tok v1 in ClassNameRefLateStatic ((v1))
 and map_obj_prop_access (v1, v2) =

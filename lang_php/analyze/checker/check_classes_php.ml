@@ -70,7 +70,7 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
       | New (tok, (ClassNameRefStatic (Self _ | Parent _)), args) ->
           pr2 "TODO: handling ClassNameRefStatic of self or parent";
           k x
-      | New (tok, (ClassNameRefDynamic class_name), args) ->
+      | New (tok, (ClassNameRefDynamic (class_name, _)), args) ->
           pr2 "TODO: handling ClassNameRefDynamic";
           k x
       | _ -> k x

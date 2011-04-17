@@ -504,10 +504,8 @@ and v_scalar v =
   let k x = 
     match x with
   | C v1 -> let v1 = v_constant v1 in ()
-  | ClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) -> let v1 = v_qualifier v1 and v2 = v_name v2 in ())
+  | ClassConstant (v1, v2) ->
+      let v1 = v_qualifier v1 and v2 = v_name v2 
       in ()
   | Guil ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_list v_encaps v2 and v3 = v_tok v3 in ()
@@ -625,13 +623,9 @@ and v_castOp v = v_ptype v
 and v_class_name_reference x =
   let rec k x = match x with
   | ClassNameRefStatic v1 -> let v1 = v_class_name_or_selfparent v1 in ()
-  | ClassNameRefDynamic v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = v_variable v1
-             and v2 = v_list v_obj_prop_access v2
-             in ())
+  | ClassNameRefDynamic (v1, v2) ->
+      let v1 = v_variable v1
+      and v2 = v_list v_obj_prop_access v2
       in ()
   | ClassNameRefLateStatic v1 -> let v1 = v_tok v1 in ()
   in

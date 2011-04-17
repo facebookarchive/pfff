@@ -1228,7 +1228,7 @@ internal_functions_in_yacc:
 scalar:
  | common_scalar		{ C $1 }
  | ident 			{ C (CName (Name $1)) }
- | class_constant	        { ClassConstant $1 }
+ | class_constant	        { ClassConstant (fst $1, snd $1) }
 
  | TGUIL encaps_list TGUIL 	
      { Guil ($1, $2, $3)}
@@ -1522,7 +1522,7 @@ variable_class_name: reference_variable { $1 }
 /*(*s: GRAMMAR class bis *)*/
 class_name_reference:
  | class_name_or_selfparent	{ ClassNameRefStatic $1 }
- | dynamic_class_name_reference	{ ClassNameRefDynamic $1 }
+ | dynamic_class_name_reference	{ ClassNameRefDynamic (fst $1, snd $1) }
  /*(* PHP 5.3, "late static binding" *)*/
  | T_STATIC                     { ClassNameRefLateStatic $1 }
 

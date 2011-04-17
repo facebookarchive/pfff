@@ -239,14 +239,10 @@ and vof_scalar =
   function
   | C v1 ->
       let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
-  | ClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = vof_qualifier v1
-             and v2 = vof_name v2
-             in Ocaml.VTuple [ v1; v2 ])
-      in Ocaml.VSum (("ClassConstant", [ v1 ]))
+  | ClassConstant (v1, v2) ->
+      let v1 = vof_qualifier v1
+      and v2 = vof_name v2
+      in Ocaml.VSum (("ClassConstant", [ v1; v2 ]))
   | Guil ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_list vof_encaps v2
@@ -384,14 +380,10 @@ and vof_class_name_reference =
   | ClassNameRefStatic v1 ->
       let v1 = vof_class_name_or_selfparent v1 in
       Ocaml.VSum (("ClassNameRefStatic", [ v1 ]))
-  | ClassNameRefDynamic v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = vof_variable v1
-             and v2 = vof_list vof_obj_prop_access v2
-             in Ocaml.VTuple [ v1; v2 ])
-      in Ocaml.VSum (("ClassNameRefDynamic", [ v1 ]))
+  | ClassNameRefDynamic (v1, v2) ->
+      let v1 = vof_variable v1
+      and v2 = vof_list vof_obj_prop_access v2
+      in Ocaml.VSum (("ClassNameRefDynamic", [ v1; v2 ]))
   | ClassNameRefLateStatic v1 ->
       let v1 = vof_tok v1 in Ocaml.VSum (("ClassNameRefLateStatic", [ v1 ]))
 

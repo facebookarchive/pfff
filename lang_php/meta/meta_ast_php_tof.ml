@@ -40,6 +40,9 @@ let tof_pinfo =
     (Ocaml.Sum
        [ ("OriginTok", [ Ocaml.Var "parse_info" ]); ("FakeTok", []); ("Ab", []) ])
   
+
+let tof_comma_list =
+  Ocaml.add_new_type "comma_list" (Ocaml.List (Ocaml.TTODO ""))
  
 let tof_bracket =
   Ocaml.add_new_type "bracket"

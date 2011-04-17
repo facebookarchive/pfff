@@ -120,7 +120,15 @@ let test_matcher_all () =
     "switch_case_list";
   ]
   in
-  all_types +> List.iter test_matcher_gen;
+  all_types +> List.iter (fun t -> 
+    try 
+      test_matcher_gen t
+    with 
+    | Todo ->
+        pr2 ("PB TODO with : " ^ t);
+    | Not_found ->
+        pr2 ("PB Not_found with : " ^ t);
+  );
   ()
 
 let ffi_extra_actions () = [

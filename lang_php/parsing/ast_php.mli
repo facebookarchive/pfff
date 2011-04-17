@@ -197,7 +197,7 @@ type expr = exprbis * exp_info
   (*s: type scalar and constant and encaps *)
     and scalar = 
       | C of constant
-      | ClassConstant of (qualifier * name)
+      | ClassConstant of qualifier * name
         
       | Guil    of tok (* '"' or b'"' *) * encaps list * tok (* '"' *)
       | HereDoc of 
@@ -298,7 +298,7 @@ type expr = exprbis * exp_info
   (*x: AST expression rest *)
    and class_name_reference = 
      | ClassNameRefStatic of class_name_or_selfparent
-     | ClassNameRefDynamic of (lvalue * obj_prop_access list)
+     | ClassNameRefDynamic of lvalue * obj_prop_access list
      (* PHP 5.3 "late static binding" *)
      | ClassNameRefLateStatic of tok (* static *)
      and obj_prop_access = tok (* -> *) * obj_property
