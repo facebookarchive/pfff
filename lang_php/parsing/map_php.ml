@@ -1202,12 +1202,9 @@ and map_static_var (v1, v2) =
 and map_static_scalar =
   function
   | StaticConstant v1 -> let v1 = map_constant v1 in StaticConstant ((v1))
-  | StaticClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = map_qualifier v1 and v2 = map_name v2 in (v1, v2))
-      in StaticClassConstant ((v1))
+  | StaticClassConstant (v1, v2) ->
+      let v1 = map_qualifier v1 and v2 = map_name v2
+      in StaticClassConstant (v1, v2)
   | StaticPlus ((v1, v2)) ->
       let v1 = map_tok v1
       and v2 = map_static_scalar v2

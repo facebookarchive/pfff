@@ -688,7 +688,7 @@ and static_var = dname * static_scalar_affect option
 (*x: AST other declaration *)
   and static_scalar = 
     | StaticConstant of constant
-    | StaticClassConstant of (qualifier * name) (* semantic ? *)
+    | StaticClassConstant of qualifier * name (* semantic ? *)
         
     | StaticPlus  of tok * static_scalar
     | StaticMinus of tok * static_scalar

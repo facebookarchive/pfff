@@ -1244,7 +1244,7 @@ scalar:
 static_scalar: /* compile-time evaluated scalars */
  | common_scalar	 { StaticConstant $1 }
  | ident 		 { StaticConstant (CName (Name $1)) }
- | static_class_constant { StaticClassConstant $1 }
+ | static_class_constant { StaticClassConstant (fst $1, snd $1) }
 
  | TPLUS static_scalar	 { StaticPlus($1,$2) }
  | TMINUS static_scalar	 { StaticMinus($1,$2) }

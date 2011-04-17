@@ -1114,14 +1114,10 @@ and vof_static_scalar =
   function
   | StaticConstant v1 ->
       let v1 = vof_constant v1 in Ocaml.VSum (("StaticConstant", [ v1 ]))
-  | StaticClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = vof_qualifier v1
-             and v2 = vof_name v2
-             in Ocaml.VTuple [ v1; v2 ])
-      in Ocaml.VSum (("StaticClassConstant", [ v1 ]))
+  | StaticClassConstant (v1, v2) ->
+      let v1 = vof_qualifier v1
+      and v2 = vof_name v2
+      in Ocaml.VSum (("StaticClassConstant", [ v1; v2 ]))
   | StaticPlus ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_static_scalar v2

@@ -518,11 +518,8 @@ and v_static_scalar v =
   let k x =
     match x with
   | StaticConstant v1 -> let v1 = v_constant v1 in ()
-  | StaticClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) -> let v1 = v_qualifier v1 and v2 = v_name v2 in ())
-      in ()
+  | StaticClassConstant (v1, v2) ->
+      let v1 = v_qualifier v1 and v2 = v_name v2 in ()
   | StaticPlus ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
   | StaticMinus ((v1, v2)) ->
