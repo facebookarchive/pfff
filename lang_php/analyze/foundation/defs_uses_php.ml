@@ -78,8 +78,8 @@ let defs_of_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
     V.kqualifier = (fun (k, bigf) x ->
-      (match x with
-      | Qualifier _ -> () 
+      (match fst x with
+      | ClassName _ -> () 
       | Self _ | Parent _ -> failwith "defs_uses_php: call unsugar_self_parent"
       );
       k x
@@ -166,8 +166,8 @@ let uses_of_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
     V.kqualifier = (fun (k, bigf) x ->
-      (match x with
-      | Qualifier _ -> ()
+      (match fst x with
+      | ClassName _ -> ()
       | Self _ | Parent _ -> failwith "defs_uses_php: call unsugar_self_parent"
       );
       k x

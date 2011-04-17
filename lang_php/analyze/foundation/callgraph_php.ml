@@ -551,8 +551,8 @@ let static_method_callees_of_any any =
       match Ast.untype  x with
       | StaticMethodCallSimple (qu, methname, args) ->
           let sclass = 
-            match qu with
-            | Qualifier (classname, info1) ->
+            match fst qu with
+            | ClassName (classname) ->
                 Ast.name classname
 
             | Self _ | Parent _ ->

@@ -112,14 +112,18 @@ let keyword_table = Common.hash_of_list [
   "class_xdebug",           (fun ii -> T_CLASS_XDEBUG ii);
   "resource_xdebug",           (fun ii -> T_RESOURCE_XDEBUG ii);
 
-  (* I removed those tokens and do the work in parser_php.mly.
-   * This allows to have self/parent to be used at more places, 
-   * which is tolerated by PHP (it should not but that's how it is).
-   * This is also similar to what I do for $this.
-   *
-   * "self",           (fun ii -> T_SELF ii);
-   * "parent",           (fun ii -> T_PARENT ii);
+  (* Those tokens were not in the original PHP lexer. This allowed to 
+   * have "self"/"parent" to be used at more places, e.g. as a function 
+   * name which is tolerated by PHP but should not IMHO. Those idents
+   * have a special meaning and this should be reflected in the lexer,
+   * especially since PHP 5.3 which allows static:: in addition to 
+   * self::, parent::. 'static' is a keyword so there is no reason 
+   * to not make self/parent keywords too.
+   * 
+   * todo: should do something similar for $this.
    *)
+  "self",             (fun ii -> T_SELF ii);
+  "parent",           (fun ii -> T_PARENT ii);
 
  (*s: repetitive keywords table *)
    "if",              (fun ii -> T_IF ii);
@@ -198,8 +202,7 @@ let keyword_table = Common.hash_of_list [
   "__line__",        (fun ii -> T_LINE ii);
   "__file__",        (fun ii -> T_FILE ii);
 
-  (* php-facebook-ext: should perhaps have a flag
-   *)
+  (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
 
   (* xhp: having those XHP keywords handled here could mean they can not
@@ -766,11 +769,21 @@ rule st_in_scripting = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
+    (* ugly: 'self' and 'parent' should be keywords forbidden to be used
+     * as regular identifiers. But PHP is case insensitive and does not
+     * consider self/parent or SELF/PARENT as keywords. I think it's
+     * bad so I now consider self/parent as keywords, but still allow
+     * at least the uppercase form to be used as identifier, hence those
+     * two rules below.
+     *)
+    | "SELF"   { T_IDENT (tok lexbuf, tokinfo lexbuf) }
+    | "PARENT" { T_IDENT (tok lexbuf, tokinfo lexbuf) }
   (*s: keyword and ident rules *)
     | LABEL
         { let info = tokinfo lexbuf in
           let s = tok lexbuf in
           match Common.optionise (fun () -> 
+            (* PHP is case insensitive ... it's ok to write IF(...) { ... } *)
             Hashtbl.find keyword_table (String.lowercase s))
           with
           | Some f -> f info

@@ -51,7 +51,7 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k,vx) x ->
       match Ast_php.untype  x with
-      | New (tok, (ClassNameRefStatic class_name), args) ->
+      | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
           E.find_entity ~find_entity (Entity_php.Class, class_name)
           +> Common.do_option (fun id_ast ->
@@ -67,6 +67,9 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
           );
           k x
 
+      | New (tok, (ClassNameRefStatic (Self _ | Parent _)), args) ->
+          pr2 "TODO: handling ClassNameRefStatic of self or parent";
+          k x
       | New (tok, (ClassNameRefDynamic class_name), args) ->
           pr2 "TODO: handling ClassNameRefDynamic";
           k x

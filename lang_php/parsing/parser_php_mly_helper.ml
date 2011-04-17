@@ -69,6 +69,7 @@ type variable2 =
       (* PHP 5.3 *)
       | StaticMethodVar of ref_variable * tok * name
       | StaticObjVar of ref_variable * tok * var_without_obj
+      | LateStatic of tok * tok * name
 
 (*e: type variable2 *)
 
@@ -122,6 +123,8 @@ and basevarfun_to_variable basevarfun =
           let var = refvar_to_variable ref_var in
           let var2 = vwithoutobj_to_variable vwithoutobj in
           StaticObjCallVar (var, tok, var2, args)
+      | LateStatic (tok_static, tok_colcol, name) ->
+          LateStaticCall(tok_static, tok_colcol, name, args)
       )
       in
       mkvar v

@@ -163,9 +163,9 @@ let mk_new_anon_class_call s
      (New
        (fkt "new",
        ClassNameRefStatic
-        (Name 
+        (ClassName(Name 
           (s,
-           fkt s)),
+           fkt s))),
        Some
         (fkt "(",
          closed_vars_of_this_closure +> List.map (fun closed_var ->
@@ -567,7 +567,8 @@ let unparse_without_type_hints file =
   let annotate_type_hint_tokens_as_remove type_hint =
     let token = 
       match type_hint with
-      | Hint name -> Ast.info_of_name name
+      | Hint (ClassName name) -> Ast.info_of_name name
+      | Hint (Self tok | Parent tok) -> tok
       | HintArray tok -> tok
     in
     token.Parse_info.transfo <- Remove;

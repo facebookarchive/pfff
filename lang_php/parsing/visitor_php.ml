@@ -360,15 +360,16 @@ and v_xhp_tag_wrap x =
   let k v = v_wrap9 v_xhp_tag v in
   vin.kxhp_tag (k, all_functions) x
 
-and v_qualifier v =
-  let k x = 
-    match x with
-  | Qualifier ((v1, v2)) ->
-      let v1 = v_fully_qualified_class_name v1 and v2 = v_tok v2 in ()
-  | Self ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
-  | Parent ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
+and v_qualifier v = 
+  let k (v1, v2) =
+    let v1 = v_class_name_or_selfparent v1 and v2 = v_tok v2 in ()
   in
   vin.kqualifier (k, all_functions) v
+and v_class_name_or_selfparent =
+  function
+  | ClassName v1 -> let v1 = v_fully_qualified_class_name v1 in ()
+  | Self v1 -> let v1 = v_tok v1 in ()
+  | Parent v1 -> let v1 = v_tok v1 in ()
 
 and v_fully_qualified_class_name v = 
   let k x = v_name x in
@@ -623,7 +624,7 @@ and v_unaryOp =
 and v_castOp v = v_ptype v
 and v_class_name_reference x =
   let rec k x = match x with
-  | ClassNameRefStatic v1 -> let v1 = v_fully_qualified_class_name v1 in ()
+  | ClassNameRefStatic v1 -> let v1 = v_class_name_or_selfparent v1 in ()
   | ClassNameRefDynamic v1 ->
       let v1 =
         (match v1 with
@@ -632,6 +633,7 @@ and v_class_name_reference x =
              and v2 = v_list v_obj_prop_access v2
              in ())
       in ()
+  | ClassNameRefLateStatic v1 -> let v1 = v_tok v1 in ()
   in
   vin.kclass_name_reference (k, all_functions) x
 
@@ -751,6 +753,12 @@ and v_variablebis =
       in ()
   | StaticMethodCallVar ((v1, v2, v3, v4)) ->
       let v1 = v_variable v1
+      and v2 = v_tok v2
+      and v3 = v_name v3
+      and v4 = v_paren (v_comma_list v_argument) v4
+      in ()
+  | LateStaticCall ((v1, v2, v3, v4)) ->
+      let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_name v3
       and v4 = v_paren (v_comma_list v_argument) v4
@@ -1033,7 +1041,7 @@ and v_parameter x =
   vin.kparameter (k, all_functions) x
 and v_hint_type x = 
   let rec k x = match x with
-  | Hint v1 -> let v1 = v_fully_qualified_class_name v1 in ()
+  | Hint v1 -> let v1 = v_class_name_or_selfparent v1 in ()
   | HintArray v1 -> let v1 = v_tok v1 in ()
   in
   vin.khint_type (k, all_functions) x

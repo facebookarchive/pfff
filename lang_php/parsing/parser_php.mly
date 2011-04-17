@@ -167,6 +167,9 @@ open Parser_php_mly_helper
 %token <Ast_php.info> T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
 %token <Ast_php.info> T_EVAL 
 
+/*(* not in original grammar *)*/
+%token <Ast_php.info> T_SELF T_PARENT
+
 /*(*-----------------------------------------*)*/
 /*(* symbol tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -371,16 +374,24 @@ unticked_statement:
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
 
   /*(* static-php-ext: *)*/
- | type_hint variable TSEMICOLON          { 
-     if not !Flag_parsing_php.type_hints_extension
-     then raise Parsing.Parse_error;
-     TypedDeclaration ($1, $2, None, $3)
-   }
- | type_hint variable TEQ expr TSEMICOLON { 
-     if not !Flag_parsing_php.type_hints_extension
-     then raise Parsing.Parse_error;
-     TypedDeclaration ($1, $2, Some ($3, $4), $5)
-   }
+/*
+(* todo: this is commented because it is not really used
+ * and it generates some conflicts now that type_hint
+ * is not anymore   type_hint: ident { ... } but 
+ * type_hint: class_name_or_selfparent { ... }
+ * 
+ * | type_hint variable TSEMICOLON          { 
+ * if not !Flag_parsing_php.type_hints_extension
+ * then raise Parsing.Parse_error;
+ * TypedDeclaration ($1, $2, None, $3)
+ * }
+ * | type_hint variable TEQ expr TSEMICOLON { 
+ * if not !Flag_parsing_php.type_hints_extension
+ * then raise Parsing.Parse_error;
+ * TypedDeclaration ($1, $2, Some ($3, $4), $5)
+ * }
+ *)
+*/
 
  | TOBRACE inner_statement_list TCBRACE   { Block($1,$2,$3) }
 
@@ -631,9 +642,8 @@ optional_class_type:
  | type_hint            { Some $1 }
 
 type_hint:
- | ident		{ (Hint (Name $1)) }
- | T_ARRAY		{ (HintArray $1) }
- | T_XHP_COLONID_DEF    { (Hint (XhpName $1)) }
+ | class_name_or_selfparent { Hint $1 }
+ | T_ARRAY		    { HintArray $1 }
 
 is_reference:
  | /*(*empty*)*/  { None }
@@ -932,7 +942,8 @@ xhp_attr_name_atom:
  | T_REQUIRE { $1 }
  | T_REQUIRE_ONCE { $1 }
  | T_EVAL { $1 }
-    
+ | T_SELF { $1 }
+ | T_PARENT { $1 }    
 
 
 
@@ -1371,6 +1382,10 @@ function_head:
 /*(* PHP 5.3 *)*/
  | variable_class_name TCOLCOL ident { StaticMethodVar($1, $2, Name $3) }
  | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
+/*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
+   * for such a feature; it's everything except a static call ...
+   *)*/
+ | T_STATIC TCOLCOL ident { LateStatic ($1, $2, Name $3) }
 
 /*(*x: GRAMMAR variable *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
@@ -1483,14 +1498,12 @@ ident:
  | T_XHP_ANY  { Ast_php.str_of_info $1, $1 }
  | T_XHP_PCDATA  { Ast_php.str_of_info $1, $1 }
 
-qualifier: 
- | fully_qualified_class_name TCOLCOL { 
-     match $1 with
-     | Name ("self", info) -> Self(info, $2)
-     | Name ("parent", info) -> Parent(info, $2)
-     | _ ->
-         Qualifier ($1, $2) 
-   }
+qualifier: class_name_or_selfparent TCOLCOL { $1, $2 }
+
+class_name_or_selfparent:
+ | fully_qualified_class_name { ClassName $1 }
+ | T_SELF   { Self($1) }
+ | T_PARENT { Parent($1) }
 
 fully_qualified_class_name: 
  | ident { Name $1 }
@@ -1508,12 +1521,10 @@ variable_class_name: reference_variable { $1 }
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR class bis *)*/
 class_name_reference:
- | ident			{ ClassNameRefStatic (Name $1) }
+ | class_name_or_selfparent	{ ClassNameRefStatic $1 }
  | dynamic_class_name_reference	{ ClassNameRefDynamic $1 }
-
- | T_XHP_COLONID_DEF { ClassNameRefStatic (XhpName $1) }
-
-
+ /*(* PHP 5.3, "late static binding" *)*/
+ | T_STATIC                     { ClassNameRefLateStatic $1 }
 
 dynamic_class_name_reference:
  | base_variable_bis { ($1, []) }

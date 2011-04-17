@@ -67,8 +67,8 @@ let mk_class_name s info =
   Name (s, info)
 
 let resolve_class_name qu =
-  match qu with
-  | Qualifier (name, _tok) -> name
+  match fst qu with
+  | ClassName (name) -> name
   | Self _ | Parent _ -> 
       failwith "check_functions_php: call unsugar_self_parent"
 

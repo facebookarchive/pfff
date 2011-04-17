@@ -304,9 +304,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       end;
 
       param.p_type +> Common.do_option (function
-      | Hint name -> 
+      | Hint (ClassName name) -> 
           let info = Ast.info_of_name name in
           tag info (TypeMisc);
+      | Hint (Self _ | Parent _) -> 
+          ()
       | HintArray tok ->
           tag tok (TypeMisc);
       );
@@ -590,6 +592,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let ii = Lib_parsing_php.ii_of_any (Lvalue lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
+      | LateStaticCall (tok1, tok2, name, args) ->
+          (* todo? *)
+          ()
 
       | ObjAccess (_, _) 
       | VQualifier (_, _)
@@ -672,9 +677,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kclass_name_reference = (fun (k, vx) x ->
       match x with 
-      | ClassNameRefStatic name ->
+      | ClassNameRefStatic (ClassName name) ->
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
+      | ClassNameRefStatic (Self _ | Parent _) ->
+          ()
+      | ClassNameRefLateStatic _ ->
+          ()
       | ClassNameRefDynamic _ ->
           ()
     );
@@ -685,11 +694,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     );
     (* -------------------------------------------------------------------- *)
     V.kqualifier = (fun (k, vx) x ->
-      match x with
-      | Self (tok, _)
-      | Parent (tok, _) ->
+      match fst x with
+      | Self (tok)
+      | Parent (tok) ->
           tag tok (Class (Use2 fake_no_use2));
-      | Qualifier _ ->
+      | ClassName _ ->
           k x
     );
     (* -------------------------------------------------------------------- *)
@@ -945,6 +954,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | T.T_PRINT ii -> tag ii Builtin
       | T.T_ECHO ii -> tag ii Builtin
+
+      | T.T_SELF ii | T.T_PARENT ii ->
+          tag ii (Class (Use2 fake_no_use2));
 
       | T.T_YIELD ii -> tag ii Keyword
 

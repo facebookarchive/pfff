@@ -393,7 +393,7 @@ let vars_passed_by_ref_in_any ~find_entity =
       match Ast.untype x with
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
-          | ClassNameRefStatic name ->
+          | ClassNameRefStatic (ClassName name) ->
               
               E.find_entity ~find_entity (Entity_php.Class, name)
               +> Common.do_option (fun id_ast ->
@@ -414,6 +414,13 @@ let vars_passed_by_ref_in_any ~find_entity =
               );
               k x
 
+          | ClassNameRefStatic (Self _ | Parent _) ->
+              (* TODO *)
+              k x
+
+          | ClassNameRefLateStatic _ ->
+              (* todo ? *)
+              k x
           | ClassNameRefDynamic _ ->
               (* todo ? *)
               k x

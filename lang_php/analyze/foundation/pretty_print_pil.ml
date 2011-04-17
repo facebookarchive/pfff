@@ -41,10 +41,15 @@ let string_of_name (n:A.name) = match n with
 let string_of_dname (d:A.dname) = match d with
 | A.DName sw -> "$"^(A.unwrap sw)
 
-let string_of_qualifier (q:A.qualifier) = match q with
-| A.Qualifier(f, _) -> (string_of_name f)^"::"
-| A.Self(_, _) -> "self::"
-| A.Parent(_, _) -> "parent::"
+let string_of_class_name_or_selfparent x = 
+  match x with
+  | A.ClassName(f) -> (string_of_name f)
+  | A.Self(_) -> "self"
+  | A.Parent(_) -> "parent"
+
+let string_of_qualifier (q:A.qualifier) = 
+  string_of_class_name_or_selfparent (fst q) ^ "::"
+
 
 let string_of_indirect (i:A.indirect) = match i with
 | A.Dollar _ -> "$(???Indirect)" (* TODOjjeannin *)
@@ -90,10 +95,11 @@ let string_of_constant (c:A.constant) = match c with
 |A.XdebugResource _ -> raise Todo
 
 let string_of_class_name_reference (cnr:A.class_name_reference) = 
-match cnr with
-|A.ClassNameRefStatic n -> string_of_name n
-|A.ClassNameRefDynamic _ -> raise Todo
-
+  match cnr with
+  | A.ClassNameRefStatic n -> string_of_class_name_or_selfparent  n
+  | A.ClassNameRefDynamic _ -> raise Todo
+  | A.ClassNameRefLateStatic _ -> raise Todo
+      
 let string_of_assignOp (a:A.assignOp) = match a with
 |A.AssignOpArith o -> (string_of_binaryOp (A.Arith o))^"="
 |A.AssignConcat    -> ".="

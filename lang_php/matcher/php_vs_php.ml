@@ -793,6 +793,18 @@ and m_variablebis a b =
     )
     ))))
 
+  | A.LateStaticCall(a1, a2, a3, a4), 
+    B.LateStaticCall(b1, b2, b3, b4) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_name a3 b3 >>= (fun (a3, b3) -> 
+    m_paren (m_list__m_argument) a4 b4 >>= (fun (a4, b4) -> 
+    return (
+       A.LateStaticCall(a1, a2, a3, a4),
+       B.LateStaticCall(b1, b2, b3, b4)
+    )
+    ))))
+
   | A.StaticObjCallVar(a1, a2, a3, a4), 
     B.StaticObjCallVar(b1, b2, b3, b4) ->
     m_lvalue a1 b1 >>= (fun (a1, b1) -> 
@@ -840,6 +852,7 @@ and m_variablebis a b =
   | A.StaticObjCallVar _, _
   | A.ObjAccessSimple _, _
   | A.ObjAccess _, _
+  | A.LateStaticCall _, _
    -> fail ()
 
 and m_rw_variable a b = m_variable a b
@@ -855,34 +868,41 @@ and m_indirect a b =
     )
     )
 
-
 and m_qualifier a b = 
   match a, b with
-  | A.Qualifier(a1, a2), B.Qualifier(b1, b2) ->
+  | (a1, a2), (b1, b2) ->
+      m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) ->
+      m_tok a2 b2 >>= (fun (a2, b2) ->
+        return (
+          (a1, a2),
+          (b1, b2)
+        )
+      ))
+
+and m_class_name_or_selfparent a b = 
+  match a, b with
+  | A.ClassName(a1), B.ClassName(b1) ->
     m_fully_qualified_class_name a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Qualifier(a1, a2),
-       B.Qualifier(b1, b2)
+       A.ClassName(a1),
+       B.ClassName(b1)
     )
-    ))
-  | A.Self(a1, a2), B.Self(b1, b2) ->
+    )
+  | A.Self(a1), B.Self(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Self(a1, a2),
-       B.Self(b1, b2)
+       A.Self(a1),
+       B.Self(b1)
     )
-    ))
-  | A.Parent(a1, a2), B.Parent(b1, b2) ->
+    )
+  | A.Parent(a1), B.Parent(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Parent(a1, a2),
-       B.Parent(b1, b2)
+       A.Parent(a1),
+       B.Parent(b1)
     )
-    ))
-  | A.Qualifier _, _
+    )
+  | A.ClassName _, _
   | A.Self _, _
   | A.Parent _, _
    -> fail ()
@@ -1659,10 +1679,17 @@ and m_array_pair a b =
 and m_class_name_reference a b = 
   match a, b with
   | A.ClassNameRefStatic(a1), B.ClassNameRefStatic(b1) ->
-    m_name a1 b1 >>= (fun (a1, b1) -> 
+    m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.ClassNameRefStatic(a1),
        B.ClassNameRefStatic(b1)
+    )
+    )
+  | A.ClassNameRefLateStatic(a1), B.ClassNameRefLateStatic(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassNameRefLateStatic(a1),
+       B.ClassNameRefLateStatic(b1)
     )
     )
   | A.ClassNameRefDynamic(a1, a2), B.ClassNameRefDynamic(b1, b2) ->
@@ -1675,6 +1702,7 @@ and m_class_name_reference a b =
     ))
   | A.ClassNameRefStatic _, _
   | A.ClassNameRefDynamic _, _
+  | A.ClassNameRefLateStatic _, _
    -> fail ()
 
 and m_encaps a b = 
