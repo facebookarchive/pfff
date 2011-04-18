@@ -19,7 +19,8 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 
-(* This module provides a big functor, PHP_VS_PHP, which can be used
+(* 
+ * This module provides a big functor, PHP_VS_PHP, which can be used
  * to match some PHP AST elements against other PHP AST elements in
  * a flexible way.
  * 
@@ -201,6 +202,8 @@ let m_either f g a b =
   | Right _, Left _ -> 
       fail ()
 
+let m_unit a b = return (a, b)
+
 (* ---------------------------------------------------------------------- *)
 (* m_string *)
 (* ---------------------------------------------------------------------- *)
@@ -235,7 +238,6 @@ let m_comma_list f a b =
   m_list (m_either f m_info) a b
 
 let m_tok a b = m_info a b
-
 
 let m_wrap f a b = 
   match a, b with
@@ -911,11 +913,9 @@ and m_fully_qualified_class_name a b =
   match a, b with
   (a, b) -> m_name a b
 
-
 (*---------------------------------------------------------------------------*)
 (* argument *)
 (*---------------------------------------------------------------------------*)
-
 
 and m_argument a b = 
   match a, b with
@@ -1023,7 +1023,6 @@ and m_obj_prop_access a b =
        (b1, b2)
     )
     ))
-
 
 (* ---------------------------------------------------------------------- *)
 (* expr *)
@@ -1900,7 +1899,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
 
 
 (*---------------------------------------------------------------------------*)
-(* array list iso *)
+(* array list *)
 (*---------------------------------------------------------------------------*)
 
 (* todo: would be good to factorize code with m_list__m_argument *)
@@ -1944,7 +1943,7 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
 (* stmt *)
 (* ---------------------------------------------------------------------- *)
 
-let rec m_stmt a b = 
+and m_stmt a b = 
   match a, b with
   | A.ExprStmt(a1, a2), B.ExprStmt(b1, b2) ->
     m_expr a1 b1 >>= (fun (a1, b1) -> 
@@ -2289,6 +2288,9 @@ and m_for_expr a b =
   fail2 "m_for_expr"
 and m_switch_case_list a b =
   fail2 "m_switch_case_list"
+and m_case a b =
+  fail2 "m_case"
+
 and m_catch a b =
   fail2 "m_catch"
 and m_global_var a b =
@@ -2301,13 +2303,704 @@ and m_declare a b =
   fail2 "m_declare"
 
 
+(* ------------------------------------------------------------------------- *)
+(* Function definition *)
+(* ------------------------------------------------------------------------- *)
 
-and m_func_def a b =
-  fail2 "m_func_def"
+and m_func_def a b = 
+  match a, b with
+  { A. 
+  f_tok = a1;
+  f_ref = a2;
+  f_name = a3;
+  f_params = a4;
+  f_return_type = a5;
+  f_body = a6;
+  f_type = a7;
+  },
+  { B. 
+  f_tok = b1;
+  f_ref = b2;
+  f_name = b3;
+  f_params = b4;
+  f_return_type = b5;
+  f_body = b6;
+  f_type = b7;
+  } -> 
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_is_ref a2 b2 >>= (fun (a2, b2) -> 
+    (* iso on function name *)
+    m_name_metavar_ok a3 b3 >>= (fun (a3, b3) -> 
+    (m_paren (m_comma_list m_parameter)) a4 b4 >>= (fun (a4, b4) -> 
+    (m_option m_hint_type) a5 b5 >>= (fun (a5, b5) -> 
+    (m_brace (m_list m_stmt_and_def)) a6 b6 >>= (fun (a6, b6) -> 
+    m_type a7 b7 >>= (fun (a7, b7) -> 
+    return (
+      { A. 
+      f_tok = a1;
+      f_ref = a2;
+      f_name = a3;
+      f_params = a4;
+      f_return_type = a5;
+      f_body = a6;
+      f_type = a7;
+      },
+      { B.
+      f_tok = b1;
+      f_ref = b2;
+      f_name = b3;
+      f_params = b4;
+      f_return_type = b5;
+      f_body = b6;
+      f_type = b7;
+      } 
+    )
+  )))))))
+
+and m_type a b = return (a, b)
+
+and m_parameter a b = 
+  match a, b with
+  { A.
+  p_type = a1;
+  p_ref = a2;
+  p_name = a3;
+  p_default = a4;
+  },
+  { B.
+  p_type = b1;
+  p_ref = b2;
+  p_name = b3;
+  p_default = b4;
+  } -> 
+    (m_option m_hint_type) a1 b1 >>= (fun (a1, b1) -> 
+    m_is_ref a2 b2 >>= (fun (a2, b2) -> 
+    m_dname a3 b3 >>= (fun (a3, b3) -> 
+    (m_option m_static_scalar_affect) a4 b4 >>= (fun (a4, b4) -> 
+    return (
+      { A.
+      p_type = a1;
+      p_ref = a2;
+      p_name = a3;
+      p_default = a4;
+      },
+      { B.
+      p_type = b1;
+      p_ref = b2;
+      p_name = b3;
+      p_default = b4;
+      } 
+    )
+  ))))
+
+
+and m_hint_type a b = 
+  match a, b with
+  | A.Hint(a1), B.Hint(b1) ->
+    m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Hint(a1),
+       B.Hint(b1)
+    )
+    )
+  | A.HintArray(a1), B.HintArray(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.HintArray(a1),
+       B.HintArray(b1)
+    )
+    )
+  | A.Hint _, _
+  | A.HintArray _, _
+   -> fail ()
+
+
+(* ------------------------------------------------------------------------- *)
+(* Class definition *)
+(* ------------------------------------------------------------------------- *)
 and m_class_def a b =
   fail2 "m_class_def"
+
 and m_interface_def a b =
   fail2 "m_interface_def"
+
+and m_method_def a b =
+  fail2 "m_method_def"
+
+and m_class_constant a b = 
+  match a, b with
+  | (a1, a2), (b1, b2) ->
+    m_name a1 b1 >>= (fun (a1, b1) -> 
+    m_static_scalar_affect a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       (a1, a2),
+       (b1, b2)
+    )
+    ))
+
+and m_class_stmt a b = 
+  match a, b with
+  | A.ClassConstants(a1, a2, a3), B.ClassConstants(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_comma_list m_class_constant) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.ClassConstants(a1, a2, a3),
+       B.ClassConstants(b1, b2, b3)
+    )
+    )))
+  | A.ClassVariables(a1, a2, a3, a4), B.ClassVariables(b1, b2, b3, b4) ->
+    m_class_var_modifier a1 b1 >>= (fun (a1, b1) -> 
+    (m_option m_hint_type) a2 b2 >>= (fun (a2, b2) -> 
+    (m_comma_list m_class_variable) a3 b3 >>= (fun (a3, b3) -> 
+    m_tok a4 b4 >>= (fun (a4, b4) -> 
+    return (
+       A.ClassVariables(a1, a2, a3, a4),
+       B.ClassVariables(b1, b2, b3, b4)
+    )
+    ))))
+  | A.Method(a1), B.Method(b1) ->
+    m_method_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Method(a1),
+       B.Method(b1)
+    )
+    )
+  | A.XhpDecl(a1), B.XhpDecl(b1) ->
+    m_xhp_decl a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpDecl(a1),
+       B.XhpDecl(b1)
+    )
+    )
+  | A.ClassConstants _, _
+  | A.ClassVariables _, _
+  | A.Method _, _
+  | A.XhpDecl _, _
+   -> fail ()
+
+
+and m_class_variable a b = 
+  match a, b with
+  | (a1, a2), (b1, b2) ->
+    m_dname a1 b1 >>= (fun (a1, b1) -> 
+    (m_option m_static_scalar_affect) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       (a1, a2),
+       (b1, b2)
+    )
+    ))
+
+and m_modifier a b = 
+  match a, b with
+  | A.Public, B.Public ->
+    return (
+       A.Public,
+       B.Public
+    )
+  | A.Private, B.Private ->
+    return (
+       A.Private,
+       B.Private
+    )
+  | A.Protected, B.Protected ->
+    return (
+       A.Protected,
+       B.Protected
+    )
+  | A.Static, B.Static ->
+    return (
+       A.Static,
+       B.Static
+    )
+  | A.Abstract, B.Abstract ->
+    return (
+       A.Abstract,
+       B.Abstract
+    )
+  | A.Final, B.Final ->
+    return (
+       A.Final,
+       B.Final
+    )
+  | A.Public, _
+  | A.Private, _
+  | A.Protected, _
+  | A.Static, _
+  | A.Abstract, _
+  | A.Final, _
+   -> fail ()
+
+and m_class_var_modifier a b = 
+  match a, b with
+  | A.NoModifiers(a1), B.NoModifiers(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.NoModifiers(a1),
+       B.NoModifiers(b1)
+    )
+    )
+  | A.VModifiers(a1), B.VModifiers(b1) ->
+    (m_list (m_wrap m_modifier)) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.VModifiers(a1),
+       B.VModifiers(b1)
+    )
+    )
+  | A.NoModifiers _, _
+  | A.VModifiers _, _
+   -> fail ()
+
+
+
+
+(* ------------------------------------------------------------------------- *)
+(* Other declarations *)
+(* ------------------------------------------------------------------------- *)
+
+and m_xhp_decl a b =
+  fail2 "m_xhp_decl"
+
+and m_static_scalar a b = 
+  match a, b with
+  | A.StaticConstant(a1), B.StaticConstant(b1) ->
+    m_constant a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StaticConstant(a1),
+       B.StaticConstant(b1)
+    )
+    )
+  | A.StaticClassConstant(a1, a2), B.StaticClassConstant(b1, b2) ->
+    m_qualifier a1 b1 >>= (fun (a1, b1) -> 
+    m_name a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.StaticClassConstant(a1, a2),
+       B.StaticClassConstant(b1, b2)
+    )
+    ))
+  | A.StaticPlus(a1, a2), B.StaticPlus(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_static_scalar a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.StaticPlus(a1, a2),
+       B.StaticPlus(b1, b2)
+    )
+    ))
+  | A.StaticMinus(a1, a2), B.StaticMinus(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_static_scalar a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.StaticMinus(a1, a2),
+       B.StaticMinus(b1, b2)
+    )
+    ))
+  | A.StaticArray(a1, a2), B.StaticArray(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren (m_comma_list m_static_array_pair)) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.StaticArray(a1, a2),
+       B.StaticArray(b1, b2)
+    )
+    ))
+  | A.XdebugStaticDots, B.XdebugStaticDots ->
+    return (
+       A.XdebugStaticDots,
+       B.XdebugStaticDots
+    )
+  | A.StaticConstant _, _
+  | A.StaticClassConstant _, _
+  | A.StaticPlus _, _
+  | A.StaticMinus _, _
+  | A.StaticArray _, _
+  | A.XdebugStaticDots, _
+   -> fail ()
+
+and m_static_scalar_affect a b = 
+  match a, b with
+  | (a1, a2), (b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_static_scalar a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       (a1, a2),
+       (b1, b2)
+    )
+    ))
+
+and m_static_array_pair a b = 
+  match a, b with
+  | A.StaticArraySingle(a1), B.StaticArraySingle(b1) ->
+    m_static_scalar a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StaticArraySingle(a1),
+       B.StaticArraySingle(b1)
+    )
+    )
+  | A.StaticArrayArrow(a1, a2, a3), B.StaticArrayArrow(b1, b2, b3) ->
+    m_static_scalar a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_static_scalar a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.StaticArrayArrow(a1, a2, a3),
+       B.StaticArrayArrow(b1, b2, b3)
+    )
+    )))
+  | A.StaticArraySingle _, _
+  | A.StaticArrayArrow _, _
+   -> fail ()
+  
+
+(* ------------------------------------------------------------------------- *)
+(* The toplevels elements *)
+(* ------------------------------------------------------------------------- *)
+
+and m_program a b = 
+  match a, b with
+  (a, b) -> (m_list m_toplevel) a b
+
+and m_toplevel a b = 
+  match a, b with
+  | A.StmtList(a1), B.StmtList(b1) ->
+    (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StmtList(a1),
+       B.StmtList(b1)
+    )
+    )
+  | A.FuncDef(a1), B.FuncDef(b1) ->
+    m_func_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.FuncDef(a1),
+       B.FuncDef(b1)
+    )
+    )
+  | A.ClassDef(a1), B.ClassDef(b1) ->
+    m_class_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassDef(a1),
+       B.ClassDef(b1)
+    )
+    )
+  | A.InterfaceDef(a1), B.InterfaceDef(b1) ->
+    m_interface_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.InterfaceDef(a1),
+       B.InterfaceDef(b1)
+    )
+    )
+  | A.Halt(a1, a2, a3), B.Halt(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren m_unit) a2 b2 >>= (fun (a2, b2) -> 
+    m_tok a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.Halt(a1, a2, a3),
+       B.Halt(b1, b2, b3)
+    )
+    )))
+  | A.NotParsedCorrectly(a1), B.NotParsedCorrectly(b1) ->
+    (m_list m_info) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.NotParsedCorrectly(a1),
+       B.NotParsedCorrectly(b1)
+    )
+    )
+  | A.FinalDef(a1), B.FinalDef(b1) ->
+    m_info a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.FinalDef(a1),
+       B.FinalDef(b1)
+    )
+    )
+  | A.StmtList _, _
+  | A.FuncDef _, _
+  | A.ClassDef _, _
+  | A.InterfaceDef _, _
+  | A.Halt _, _
+  | A.NotParsedCorrectly _, _
+  | A.FinalDef _, _
+   -> fail ()
+
+
+let m_entity a b = 
+  match a, b with
+  | A.FunctionE(a1), B.FunctionE(b1) ->
+    m_func_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.FunctionE(a1),
+       B.FunctionE(b1)
+    )
+    )
+  | A.ClassE(a1), B.ClassE(b1) ->
+    m_class_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassE(a1),
+       B.ClassE(b1)
+    )
+    )
+  | A.InterfaceE(a1), B.InterfaceE(b1) ->
+    m_interface_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.InterfaceE(a1),
+       B.InterfaceE(b1)
+    )
+    )
+  | A.StmtListE(a1), B.StmtListE(b1) ->
+    (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StmtListE(a1),
+       B.StmtListE(b1)
+    )
+    )
+  | A.MethodE(a1), B.MethodE(b1) ->
+    m_method_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.MethodE(a1),
+       B.MethodE(b1)
+    )
+    )
+  | A.ClassConstantE(a1), B.ClassConstantE(b1) ->
+    m_class_constant a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassConstantE(a1),
+       B.ClassConstantE(b1)
+    )
+    )
+  | A.ClassVariableE(a1, a2), B.ClassVariableE(b1, b2) ->
+    m_class_variable a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_modifier) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.ClassVariableE(a1, a2),
+       B.ClassVariableE(b1, b2)
+    )
+    ))
+  | A.XhpDeclE(a1), B.XhpDeclE(b1) ->
+    m_xhp_decl a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpDeclE(a1),
+       B.XhpDeclE(b1)
+    )
+    )
+  | A.MiscE(a1), B.MiscE(b1) ->
+    (m_list m_info) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.MiscE(a1),
+       B.MiscE(b1)
+    )
+    )
+  | A.FunctionE _, _
+  | A.ClassE _, _
+  | A.InterfaceE _, _
+  | A.StmtListE _, _
+  | A.MethodE _, _
+  | A.ClassConstantE _, _
+  | A.ClassVariableE _, _
+  | A.XhpDeclE _, _
+  | A.MiscE _, _
+   -> fail ()
+
+
+let m_any a b = 
+  match a, b with
+  | A.Lvalue(a1), B.Lvalue(b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Lvalue(a1),
+       B.Lvalue(b1)
+    )
+    )
+  | A.Expr(a1), B.Expr(b1) ->
+    m_expr a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Expr(a1),
+       B.Expr(b1)
+    )
+    )
+  | A.Stmt2(a1), B.Stmt2(b1) ->
+    m_stmt a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Stmt2(a1),
+       B.Stmt2(b1)
+    )
+    )
+  | A.StmtAndDef(a1), B.StmtAndDef(b1) ->
+    m_stmt_and_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StmtAndDef(a1),
+       B.StmtAndDef(b1)
+    )
+    )
+  | A.StmtAndDefs(a1), B.StmtAndDefs(b1) ->
+    (m_list m_stmt_and_def) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StmtAndDefs(a1),
+       B.StmtAndDefs(b1)
+    )
+    )
+  | A.Toplevel(a1), B.Toplevel(b1) ->
+    m_toplevel a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Toplevel(a1),
+       B.Toplevel(b1)
+    )
+    )
+  | A.Program(a1), B.Program(b1) ->
+    m_program a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Program(a1),
+       B.Program(b1)
+    )
+    )
+  | A.Entity(a1), B.Entity(b1) ->
+    m_entity a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Entity(a1),
+       B.Entity(b1)
+    )
+    )
+  | A.Argument(a1), B.Argument(b1) ->
+    m_argument a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Argument(a1),
+       B.Argument(b1)
+    )
+    )
+  | A.Parameter(a1), B.Parameter(b1) ->
+    m_parameter a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Parameter(a1),
+       B.Parameter(b1)
+    )
+    )
+  | A.Parameters(a1), B.Parameters(b1) ->
+    (m_paren (m_comma_list m_parameter)) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Parameters(a1),
+       B.Parameters(b1)
+    )
+    )
+  | A.Body(a1), B.Body(b1) ->
+    (m_brace (m_list m_stmt_and_def)) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Body(a1),
+       B.Body(b1)
+    )
+    )
+  | A.ClassStmt(a1), B.ClassStmt(b1) ->
+    m_class_stmt a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassStmt(a1),
+       B.ClassStmt(b1)
+    )
+    )
+  | A.ClassConstant2(a1), B.ClassConstant2(b1) ->
+    m_class_constant a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassConstant2(a1),
+       B.ClassConstant2(b1)
+    )
+    )
+  | A.ClassVariable(a1), B.ClassVariable(b1) ->
+    m_class_variable a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ClassVariable(a1),
+       B.ClassVariable(b1)
+    )
+    )
+  | A.ListAssign(a1), B.ListAssign(b1) ->
+    m_list_assign a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ListAssign(a1),
+       B.ListAssign(b1)
+    )
+    )
+  | A.ColonStmt2(a1), B.ColonStmt2(b1) ->
+    m_colon_stmt a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ColonStmt2(a1),
+       B.ColonStmt2(b1)
+    )
+    )
+  | A.Case2(a1), B.Case2(b1) ->
+    m_case a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Case2(a1),
+       B.Case2(b1)
+    )
+    )
+  | A.XhpAttribute(a1), B.XhpAttribute(b1) ->
+    m_xhp_attribute a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpAttribute(a1),
+       B.XhpAttribute(b1)
+    )
+    )
+  | A.XhpAttrValue(a1), B.XhpAttrValue(b1) ->
+    m_xhp_attr_value a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpAttrValue(a1),
+       B.XhpAttrValue(b1)
+    )
+    )
+  | A.XhpHtml2(a1), B.XhpHtml2(b1) ->
+    m_xhp_html a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpHtml2(a1),
+       B.XhpHtml2(b1)
+    )
+    )
+  | A.StaticScalar(a1), B.StaticScalar(b1) ->
+    m_static_scalar a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.StaticScalar(a1),
+       B.StaticScalar(b1)
+    )
+    )
+  | A.Info(a1), B.Info(b1) ->
+    m_info a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Info(a1),
+       B.Info(b1)
+    )
+    )
+  | A.InfoList(a1), B.InfoList(b1) ->
+    (m_list m_info) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.InfoList(a1),
+       B.InfoList(b1)
+    )
+    )
+  | A.Name2(a1), B.Name2(b1) ->
+    m_name a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Name2(a1),
+       B.Name2(b1)
+    )
+    )
+  | A.Lvalue _, _
+  | A.Expr _, _
+  | A.Stmt2 _, _
+  | A.StmtAndDef _, _
+  | A.StmtAndDefs _, _
+  | A.Toplevel _, _
+  | A.Program _, _
+  | A.Entity _, _
+  | A.Argument _, _
+  | A.Parameter _, _
+  | A.Parameters _, _
+  | A.Body _, _
+  | A.ClassStmt _, _
+  | A.ClassConstant2 _, _
+  | A.ClassVariable _, _
+  | A.ListAssign _, _
+  | A.ColonStmt2 _, _
+  | A.Case2 _, _
+  | A.XhpAttribute _, _
+  | A.XhpAttrValue _, _
+  | A.XhpHtml2 _, _
+  | A.StaticScalar _, _
+  | A.Info _, _
+  | A.InfoList _, _
+  | A.Name2 _, _
+   -> fail ()
 
 end
 

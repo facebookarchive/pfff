@@ -14,7 +14,6 @@ module Flag = Flag_parsing_php
 (* run by sgrep -test *)
 let sgrep_unittest = [
   "sgrep variable metavars matching" >:: (fun () ->
-
     let pattern = Parse_php.any_of_string "foo($V, $V);" in
     let code = Parse_php.any_of_string "foo($x, $y);" in
     (match pattern, code with
@@ -24,28 +23,33 @@ let sgrep_unittest = [
     | _ ->
         assert_failure "parsing problem in sgrep pattern parsing"
     );
-
-    let pattern = Parse_php.any_of_string "foo($V, $V);" in
-    let code = Parse_php.any_of_string "foo($x, $x);" in
-    (match pattern, code with
-    | Stmt2 pattern, Stmt2 code ->
-        let matches_with_env =  Matching_php.match_st_st pattern code in
-        assert_bool "should match" (matches_with_env <> []);
-    | _ ->
-        assert_failure "parsing problem in sgrep pattern parsing"
-    );
   );
+
   "misc sgrep features" >:: (fun () ->
     (* pattern, code *)
     let pairs = [
+      (* '...' in funcall *)
+      "foo(...);", "foo();";
+      "foo(...);", "foo(1);";
+      "foo(...);", "foo(1,2);";
+
+      (* linear patterns *)
+      "foo($V, $V);", "foo($x, $x);";
+
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));";
+
+      (* statements *)
+      "if(X) { foo(); }", "if(true) { foo(); }";
 
       (* metavariables *)
       "foo(X);"       ,  "foo(1);";
       "foo(X1);"      ,  "foo(1);";
       "foo(X1_MISC);" ,  "foo(1);";
       "foo(X_MISC);"  ,  "foo(1);";
+
+      (* metavariables on function calls *)
+      "X(1,2);", "foo(1,2);";
     ] in
     pairs +> List.iter (fun (spattern, scode) ->
       match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
@@ -58,6 +62,26 @@ let sgrep_unittest = [
     )
   );
 
+  "toplevel sgrep matching" >:: (fun () ->
+    (* pattern, code *)
+    let pairs = [
+      "function X(){ return Y(...); }","function foo(){ return bar(); }";
+
+(*
+      "function X(...){ return Y(...); }","function foo($x){ return bar(); }";
+*)
+
+    ] in
+    pairs +> List.iter (fun (spattern, scode) ->
+      match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
+      | Toplevel pattern, Toplevel code ->
+          let matches_with_env = Matching_php.match_top_top pattern code in
+          assert_bool (spf "pattern:|%s| should match |%s" spattern scode)
+            (matches_with_env <> []);
+    | _ ->
+        assert_failure "parsing problem in sgrep pattern parsing"
+    )
+  );
 ]
 
 (* run by spatch -test *)

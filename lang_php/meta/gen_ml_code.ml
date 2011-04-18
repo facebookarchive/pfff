@@ -146,7 +146,56 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
 
       | O.Apply (x,y) ->
           e += "(a, b) -> %s a b" $ (call_to_matcher (O.Apply (x,y)))
-      | _ -> raise Todo
+
+      | O.Dict xs ->
+          let aa = Common.index_list_1 xs +> List.map (fun (t, i) ->
+            spf "a%d" i, t
+          ) in
+          let bb = Common.index_list_1 xs +> List.map (fun (t, i) ->
+            spf "b%d" i, t
+          ) in
+
+          e+= "{ A. ";
+          aa +> List.iter (fun (aa1, (fld, _, t)) ->
+            e += "%s = %s;" $ fld $ aa1
+          );
+          e+= "},";
+          e+= "{ B. ";
+          bb +> List.iter (fun (bb1, (fld, _, t)) ->
+            e += "%s = %s;" $ fld $ bb1
+          );
+          e+= "} -> ";
+
+          e --> (fun e ->
+            (* ... *)
+            zip aa bb +> List.iter (fun ((aa1, (fld, _, t)), (aa2, _)) ->
+              e.p (spf "%s %s %s >>= (fun (%s, %s) -> " 
+                      (call_to_matcher t) aa1 aa2 aa1 aa2);
+              );
+              e+= "return (";
+              e --> (fun e ->
+
+                e+= "{ A. ";
+                aa +> List.iter (fun (aa1, (fld, _, t)) ->
+                  e += "%s = %s;" $ fld $ aa1
+                );
+                e+= "},";
+                e+= "{ B.";
+                bb +> List.iter (fun (bb1, (fld, _, t)) ->
+                  e += "%s = %s;" $ fld $ bb1
+                );
+                e+= "} ";
+              );
+              e+= (")");
+          );
+          e.p (Common.repeat ")" (List.length xs) +> Common.join "")
+          
+
+
+      | (O.TTODO _|O.Option _|O.Arrow (_, _)|O.Poly _
+         |O.Int|O.String|O.Char|O.Float|O.Bool|O.Unit) ->
+          raise Todo
+
     in
     aux t
   )

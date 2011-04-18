@@ -359,8 +359,10 @@ top_statement:
 /*(*e: GRAMMAR toplevel *)*/
 
 sgrep_spatch_pattern:
- | expr EOF { Expr $1 }
- | statement EOF { Stmt2 $1 } 
+ | expr EOF      { Expr $1 }
+ | statement EOF { Stmt2 $1 }
+ | function_declaration_statement { Toplevel (FuncDef $1) }
+
 
 /*(*************************************************************************)*/
 /*(* statement *)*/
