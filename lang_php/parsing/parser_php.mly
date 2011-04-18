@@ -616,26 +616,26 @@ unticked_function_declaration_statement:
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
 non_empty_parameter_list:
  | optional_class_type T_VARIABLE			
-     { let p = mk_param $1 $2 in [Left p] }
+     { let p = mk_param $1 $2 in [Left3 p] }
  | optional_class_type TAND T_VARIABLE			
-     { let p = mk_param $1 $3 in [Left {p with p_ref = Some $2}] }
+     { let p = mk_param $1 $3 in [Left3 {p with p_ref = Some $2}] }
  | optional_class_type T_VARIABLE         TEQ static_scalar
-     { let p = mk_param $1 $2 in [Left {p with p_default = Some ($3,$4)}] }
+     { let p = mk_param $1 $2 in [Left3 {p with p_default = Some ($3,$4)}] }
  | optional_class_type TAND T_VARIABLE    TEQ static_scalar
      { let p = mk_param $1 $3 in 
-       [Left {p with p_ref = Some $2; p_default = Some ($4, $5)}]
+       [Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}]
      }
 
  /*(*s: repetitive non_empty_parameter_list *)*/
   | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE 	
-      { let p = mk_param $3 $4 in $1 ++ [Right $2; Left p] }
+      { let p = mk_param $3 $4 in $1 ++ [Right3 $2; Left3 p] }
   | non_empty_parameter_list TCOMMA  optional_class_type TAND T_VARIABLE	
-      { let p = mk_param $3 $5 in $1 ++ [Right $2; Left {p with p_ref = Some $4}] }
+      { let p = mk_param $3 $5 in $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4}] }
   | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE TEQ static_scalar 	
-      { let p = mk_param $3 $4 in $1 ++ [Right $2; Left {p with p_default = Some ($5,$6)}] }
+      { let p = mk_param $3 $4 in $1 ++ [Right3 $2; Left3 {p with p_default = Some ($5,$6)}] }
   | non_empty_parameter_list TCOMMA  optional_class_type TAND T_VARIABLE	 TEQ static_scalar 
       { let p = mk_param $3 $5 in 
-        $1 ++ [Right $2; Left {p with p_ref = Some $4; p_default = Some ($6, $7)}]
+        $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4; p_default = Some ($6, $7)}]
       }
  /*(*e: repetitive non_empty_parameter_list *)*/
 /*(*x: GRAMMAR function declaration *)*/

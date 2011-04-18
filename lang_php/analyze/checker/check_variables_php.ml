@@ -347,7 +347,7 @@ let vars_passed_by_ref_in_any ~find_entity =
   V.do_visit_with_ref (fun aref -> 
     let params_vs_args params args = 
 
-      let params = params +> Ast.unparen +> Ast.uncomma in
+      let params = params +> Ast.unparen +> Ast.uncomma_dots in
       let args = 
         match args with
         | None -> []

@@ -149,7 +149,7 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
                else 
                  check_args_vs_params 
                    (callname,   args +> Ast.unparen +> Ast.uncomma)
-                   (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
+                   (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma_dots)
            | _ -> raise Impossible
            );
           k x
@@ -172,7 +172,7 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
 
                 check_args_vs_params 
                   (callname,   args +> Ast.unparen +> Ast.uncomma)
-                  (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma)
+                  (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma_dots)
                 
             | _ -> raise Impossible
           )

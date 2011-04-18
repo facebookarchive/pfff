@@ -975,7 +975,7 @@ let pil_of_class_stmt x =
       let func_def = {
         B.f_name = def.m_name;
         B.f_ref = (match def.m_ref with None -> false | Some _ -> true);
-        B.f_params = def.m_params +> Ast.unparen +> Ast.uncomma +> 
+        B.f_params = def.m_params +> Ast.unparen +> Ast.uncomma_dots +> 
           List.map pil_of_param;
         B.f_return_type = def.m_return_type +> Common.fmap pil_of_type_hint;
         B.f_body = 
@@ -1016,7 +1016,7 @@ let rec pil_of_program ast =
       [B.FunctionDef {
         B.f_name = def.f_name;
         B.f_ref = (match def.f_ref with None -> false | Some _ -> true);
-        B.f_params = def.f_params +> Ast.unparen +> Ast.uncomma +> 
+        B.f_params = def.f_params +> Ast.unparen +> Ast.uncomma_dots +> 
           List.map pil_of_param;
         B.f_return_type = def.f_return_type +> Common.fmap pil_of_type_hint;
         B.f_body = def.f_body +> Ast.unbrace +> List.map 

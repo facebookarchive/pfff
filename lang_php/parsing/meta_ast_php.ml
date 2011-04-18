@@ -49,6 +49,9 @@ and vof_bracket _of_a (v1, v2, v3) =
 
 and vof_comma_list _of_a xs = 
   Ocaml.vof_list (fun x -> Ocaml.vof_either _of_a vof_info x) xs
+
+and vof_comma_list_dots _of_a xs = 
+  Ocaml.vof_list (fun x -> Ocaml.vof_either3 _of_a vof_info vof_info x) xs
   
 let rec vof_name =
   function
@@ -804,7 +807,7 @@ and
   let arg = Ocaml.vof_option vof_hint_type v_f_return_type in
   let bnd = ("f_return_type", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_paren (vof_comma_list vof_parameter) v_f_params in
+  let arg = vof_paren (vof_comma_list_dots vof_parameter) v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_f_name in
@@ -866,7 +869,7 @@ and  vof_lambda_def {
   let arg = Ocaml.vof_option vof_lexical_vars v_l_use in
   let bnd = ("l_use", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_paren (vof_comma_list vof_parameter) v_l_params in
+  let arg = vof_paren (vof_comma_list_dots vof_parameter) v_l_params in
   let bnd = ("l_params", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_is_ref v_l_ref in
@@ -987,7 +990,7 @@ and
   let arg = Ocaml.vof_option vof_hint_type v_m_return_type in
   let bnd = ("m_return_type", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_paren (vof_comma_list vof_parameter) v_m_params in
+  let arg = vof_paren (vof_comma_list_dots vof_parameter) v_m_params in
   let bnd = ("m_params", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_m_name in
@@ -1218,7 +1221,7 @@ and vof_any =
   | Parameter v1 ->
       let v1 = vof_parameter v1 in Ocaml.VSum (("Parameter", [ v1 ]))
   | Parameters v1 ->
-      let v1 = vof_paren (vof_comma_list vof_parameter) v1
+      let v1 = vof_paren (vof_comma_list_dots vof_parameter) v1
       in Ocaml.VSum (("Parameters", [ v1 ]))
   | ClassStmt v1 ->
       let v1 = vof_class_stmt v1 in Ocaml.VSum (("ClassStmt", [ v1 ]))

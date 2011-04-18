@@ -265,7 +265,14 @@ and v_comma x =
   let k info = v_tok info
   in
   vin.kcomma (k, all_functions) x
-and v_comma_list _of_a xs = 
+and v_comma_list_dots _of_a xs = 
+  xs +> List.iter (function 
+  | Left3 x -> _of_a x 
+  | Middle3 info -> v_tok info
+  | Right3 info -> v_comma info
+  )
+
+and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun _of_a xs ->
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 and v_comma_list2 _of_a xs = 
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
@@ -490,7 +497,7 @@ and
   let arg = v_body v_l_body in
   ()
 and v_parameters x = 
-    v_paren17 (v_comma_list6 v_parameter) x
+    v_paren17 (v_comma_list_dots v_parameter) x
 
 and v_lexical_vars (v1, v2) =
   let v1 = v_tok v1 
@@ -1273,7 +1280,7 @@ and v_any = function
   | Entity v1 -> let v1 = v_entity v1 in ()
   | Argument v1 -> let v1 = v_argument v1 in ()
   | Parameter v1 -> let v1 = v_parameter v1 in ()
-  | Parameters v1 -> let v1 = v_paren20 (v_comma_list30 v_parameter) v1 in ()
+  | Parameters v1 -> let v1 = v_paren20 (v_comma_list_dots v_parameter) v1 in ()
   | ClassStmt v1 -> let v1 = v_class_stmt v1 in ()
   | ClassConstant2 v1 -> let v1 = v_class_constant v1 in ()
   | ClassVariable v1 -> let v1 = v_class_variable v1 in ()

@@ -202,6 +202,29 @@ let m_either f g a b =
   | Right _, Left _ -> 
       fail ()
 
+let m_either3 f g h   a b = 
+  match a, b with
+  | Left3 a, Left3 b ->
+      f a b >>= (fun (a, b) -> 
+        return (
+          Left3 a, Left3 b
+        ))
+  | Right3 a, Right3 b ->
+      h a b >>= (fun (a, b) -> 
+        return (
+          Right3 a, Right3 b
+        ))
+  | Middle3 a, Middle3 b ->
+      g a b >>= (fun (a, b) -> 
+        return (
+          Middle3 a, Middle3 b
+        ))
+  | Left3 _, _ 
+  | Right3 _, _ 
+  | Middle3 _, _ 
+      -> 
+      fail ()
+
 let m_unit a b = return (a, b)
 
 (* ---------------------------------------------------------------------- *)
@@ -236,6 +259,13 @@ let m_info a b =
 
 let m_comma_list f a b = 
   m_list (m_either f m_info) a b
+
+(* TODO iso on "..." *)
+let m_comma_list_dots f a b = 
+  m_list (m_either3 f m_info m_info) a b
+
+
+
 
 let m_tok a b = m_info a b
 
@@ -2367,7 +2397,7 @@ and m_func_def a b =
     m_is_ref a2 b2 >>= (fun (a2, b2) -> 
     (* iso on function name *)
     m_name_metavar_ok a3 b3 >>= (fun (a3, b3) -> 
-    (m_paren (m_comma_list m_parameter)) a4 b4 >>= (fun (a4, b4) -> 
+    (m_paren (m_comma_list_dots m_parameter)) a4 b4 >>= (fun (a4, b4) -> 
     (m_option m_hint_type) a5 b5 >>= (fun (a5, b5) -> 
     (m_brace (m_list m_stmt_and_def)) a6 b6 >>= (fun (a6, b6) -> 
     m_type a7 b7 >>= (fun (a7, b7) -> 
@@ -2907,7 +2937,7 @@ let m_any a b =
     )
     )
   | A.Parameters(a1), B.Parameters(b1) ->
-    (m_paren (m_comma_list m_parameter)) a1 b1 >>= (fun (a1, b1) -> 
+    (m_paren (m_comma_list_dots m_parameter)) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.Parameters(a1),
        B.Parameters(b1)

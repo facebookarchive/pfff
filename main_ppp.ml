@@ -406,7 +406,7 @@ let (mk_anon_class:
     let s = "__construct" in
     let params = closed_vars +> List.map mk_param 
       (* todo: introduce commas *)
-      +> List.map (fun p -> Left p)
+      +> List.map (fun p -> Left3 p)
     in
     let constr_body = closed_vars +> List.map (fun s ->
       (* via using expr_of_string "$this->x = $x" in toplevel *)

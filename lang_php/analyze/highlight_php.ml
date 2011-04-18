@@ -347,7 +347,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info kind;
 
           (* see scoping_php.ml *)
-          let params = Ast.uncomma (Ast.unparen def.m_params) in
+          let params = def.m_params +> Ast.unparen +> Ast.uncomma_dots in
           params +> List.iter (fun param ->
             let info = Ast.info_of_dname param.p_name in
             tag info (Parameter Def);

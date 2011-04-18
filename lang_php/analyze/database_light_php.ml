@@ -169,10 +169,10 @@ let properties_of_function_or_method id db =
     match id_ast with
     | Ast_php.FunctionE def ->
         (* TODO *)
-        def.Ast.f_params +> Ast.unparen +> Ast.uncomma, 
+        def.Ast.f_params +> Ast.unparen +> Ast.uncomma_dots, 
         def.Ast.f_body +> Ast.unbrace
     | Ast_php.MethodE def ->
-        def.Ast.m_params +> Ast.unparen +> Ast.uncomma, 
+        def.Ast.m_params +> Ast.unparen +> Ast.uncomma_dots, 
         (match def.Ast.m_body with
         | Ast.AbstractMethod _ -> []
         | Ast.MethodBody body -> body +> Ast.unbrace

@@ -197,13 +197,14 @@ and map_brace_1 _of_a (v1, v2, v3) =
 and map_bracket _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 
+and map_comma_list_dots _of_a xs = 
+  map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
+
 and map_comma_list_arg _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list_var _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list_expr _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list_param _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 and map_comma_list2 _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
@@ -918,7 +919,7 @@ and
                } =
   let v_f_type = Type_php.map_phptype v_f_type in
   let v_f_body = map_brace_body (map_of_list map_stmt_and_def) v_f_body in
-  let v_f_params = map_paren_params (map_comma_list_param map_parameter) v_f_params in
+  let v_f_params = map_paren_params (map_comma_list_dots map_parameter) v_f_params in
   let v_f_name = map_name v_f_name in
   let v_f_ref = map_is_ref v_f_ref in
   let v_f_tok = map_tok v_f_tok in
@@ -965,7 +966,7 @@ and
                  } =
   let v_l_body = map_brace_body (map_of_list map_stmt_and_def) v_l_body in
   let v_l_use = map_of_option map_lexical_vars v_l_use in
-  let v_l_params = map_paren_params (map_comma_list_param map_parameter) v_l_params in
+  let v_l_params = map_paren_params (map_comma_list_dots map_parameter) v_l_params in
   let v_l_ref = map_is_ref v_l_ref in
   let v_l_tok = map_tok v_l_tok in 
   {
@@ -1153,7 +1154,7 @@ and
                    m_body = v_m_body
                  } =
   let v_m_body = map_method_body v_m_body in
-  let v_m_params = map_paren_params (map_comma_list_param map_parameter) v_m_params in
+  let v_m_params = map_paren_params (map_comma_list_dots map_parameter) v_m_params in
   let v_m_name = map_name v_m_name in
   let v_m_ref = map_is_ref v_m_ref in
   let v_m_tok = map_tok v_m_tok in
@@ -1282,7 +1283,7 @@ and map_any =
   | Argument v1 -> let v1 = map_argument v1 in Argument ((v1))
   | Parameter v1 -> let v1 = map_parameter v1 in Parameter ((v1))
   | Parameters v1 ->
-      let v1 = map_paren (map_comma_list map_parameter) v1
+      let v1 = map_paren (map_comma_list_dots map_parameter) v1
       in Parameters ((v1))
   | Body v1 ->
       let v1 = map_brace_body (map_of_list map_stmt_and_def) v1 in Body ((v1))

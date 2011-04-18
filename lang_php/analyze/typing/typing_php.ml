@@ -577,7 +577,7 @@ let annotate_toplevel envref ast =
 
       (* compute environment *)
 
-      let params = Ast.uncomma (Ast.unparen def.f_params) in
+      let params = Ast.uncomma_dots (Ast.unparen def.f_params) in
       params +> List.iter (fun param ->
         let s = Ast.dname param.p_name in
         let name = N.dnameS_of_dname param.p_name in

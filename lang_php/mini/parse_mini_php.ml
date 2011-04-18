@@ -161,7 +161,7 @@ and ast_to_mini asts =
   | A.FuncDef def ->
       let s = A.name def.f_name in
       let params = 
-        def.f_params +> A.unparen +> A.uncomma +> List.map (fun param ->
+        def.f_params +> A.unparen +> A.uncomma_dots +> List.map (fun param ->
           let s = A.dname param.p_name in
           let eopt = 
             param.p_default +> Common.fmap (fun (tokeq, static_scalar) ->
