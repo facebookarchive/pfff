@@ -298,6 +298,40 @@ let m_name a b =
   | A.XhpName _, _
    -> fail ()
 
+let m_name_metavar_ok a b =
+  match a, b with
+
+  (* iso on name *)
+  | A.Name(name, info_name), B.Name(b1) 
+      when MV.is_metavar_name name ->
+
+      X.envf (name, info_name) (B.Name2 b) >>= (function
+      | ((name, info_name), B.Name2 (b))  ->
+        return (
+          A.Name(name, info_name),
+          b
+        )
+      | _ -> raise Impossible
+      )
+
+  | A.Name(a1), B.Name(b1) ->
+    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Name(a1),
+       B.Name(b1)
+    )
+    )
+  | A.XhpName(a1), B.XhpName(b1) ->
+    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpName(a1),
+       B.XhpName(b1)
+    )
+    )
+  | A.Name _, _
+  | A.XhpName _, _
+   -> fail ()
+
 (* ---------------------------------------------------------------------- *)
 (* operators *)
 (* ---------------------------------------------------------------------- *)
@@ -746,7 +780,9 @@ and m_variablebis a b =
     )
     ))
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
-    m_name a2 b2 >>= (fun (a2, b2) -> 
+    (* iso on function name *)
+    m_name_metavar_ok a2 b2 >>= (fun (a2, b2) -> 
+
     m_paren (m_list__m_argument) a3 b3 >>= (fun (a3, b3) -> 
     return (
        A.FunCallSimple(a2, a3),
