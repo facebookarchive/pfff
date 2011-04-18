@@ -284,6 +284,12 @@ let vof_either _of_a _of_b =
   | Left v1 -> let v1 = _of_a v1 in VSum (("Left", [ v1 ]))
   | Right v1 -> let v1 = _of_b v1 in VSum (("Right", [ v1 ]))
 
+let vof_either3 _of_a _of_b _of_c =
+  function
+  | Left3 v1 -> let v1 = _of_a v1 in VSum (("Left3", [ v1 ]))
+  | Middle3 v1 -> let v1 = _of_b v1 in VSum (("Middle3", [ v1 ]))
+  | Right3 v1 -> let v1 = _of_c v1 in VSum (("Right3", [ v1 ]))
+
 
 
 
@@ -952,6 +958,12 @@ let map_of_either _of_a _of_b =
   | Left v1 -> let v1 = _of_a v1 in Left ((v1))
   | Right v1 -> let v1 = _of_b v1 in Right ((v1))
 
+let map_of_either3 _of_a _of_b _of_c =
+  function
+  | Left3 v1 -> let v1 = _of_a v1 in Left3 ((v1))
+  | Middle3 v1 -> let v1 = _of_b v1 in Middle3 ((v1))
+  | Right3 v1 -> let v1 = _of_c v1 in Right3 ((v1))
+
 
 (* this is subtle ... *)
 let rec (map_v: f:( k:(v -> v) -> v -> v) -> v -> v) =
@@ -1019,6 +1031,12 @@ let v_either of_a of_b x =
   match x with
   | Left a -> of_a a
   | Right b -> of_b b
+
+let v_either3 of_a of_b of_c x = 
+  match x with
+  | Left3 a -> of_a a
+  | Middle3 b -> of_b b
+  | Right3 c -> of_c c
 
 (*****************************************************************************)
 (* Tests *)

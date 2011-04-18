@@ -58,6 +58,8 @@ val vof_list   : ('a -> v) -> 'a list -> v
 val vof_option : ('a -> v) -> 'a option -> v
 val vof_ref    : ('a -> v) -> 'a ref -> v
 val vof_either    : ('a -> v) -> ('b -> v) -> ('a, 'b) Common.either -> v
+val vof_either3    : ('a -> v) -> ('b -> v) -> ('c -> v) -> 
+  ('a, 'b, 'c) Common.either3 -> v
 
 val int_ofv:    v -> int
 val float_ofv:  v -> float
@@ -107,6 +109,9 @@ val map_of_option: ('a -> 'b) -> 'a option -> 'b option
 val map_of_list: ('a -> 'a) -> 'a list -> 'a list
 val map_of_either: 
   ('a -> 'b) -> ('c -> 'd) -> ('a, 'c) Common.either -> ('b, 'd) Common.either
+val map_of_either3: 
+  ('a -> 'b) -> ('c -> 'd) -> ('e -> 'f) -> 
+  ('a, 'c, 'e) Common.either3 -> ('b, 'd, 'f) Common.either3
 
 val v_unit: unit -> unit
 val v_bool: bool -> unit
@@ -118,6 +123,9 @@ val v_ref: ('a -> unit) -> 'a ref -> unit
 val v_either: 
   ('a -> unit) -> ('b -> unit) -> 
   ('a, 'b) Common.either -> unit
+val v_either3: 
+  ('a -> unit) -> ('b -> unit) -> ('c -> unit) ->
+  ('a, 'b, 'c) Common.either3 -> unit
 
 (* sexp related stuff *)
 

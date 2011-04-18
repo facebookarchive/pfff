@@ -85,6 +85,8 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
+and 'a comma_list_dots = 
+  ('a, tok (* ... for sgrep *), tok (* the comma *)) Common.either3 list
 (*x: AST info *)
 (* old: transformation = ... now in parse_info.ml *)
  (*s: tarzan annotation *)
@@ -589,7 +591,7 @@ and func_def = {
   f_tok: tok; (* function *)
   f_ref: is_ref;
   f_name: name;
-  f_params: parameter comma_list paren;
+  f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
@@ -618,7 +620,7 @@ and lambda_def = {
  l_tok: tok; (* function *)
  l_ref: is_ref;
  (* no l_name, anonymous *)
- l_params: parameter comma_list paren;
+ l_params: parameter comma_list_dots paren;
  l_use:  lexical_vars option;
  l_body: stmt_and_def list brace;
 }
@@ -683,7 +685,7 @@ and interface_def = {
           m_tok: tok; (* function *)
           m_ref: is_ref;
           m_name: name;
-          m_params: parameter comma_list paren;
+          m_params: parameter comma_list_dots paren;
          (* static-php-ext: *)
           m_return_type: hint_type option;
           m_body: method_body;
@@ -849,7 +851,7 @@ type any =
 
   | Argument of argument
   | Parameter of parameter
-  | Parameters of parameter comma_list paren
+  | Parameters of parameter comma_list_dots paren
 
   | Body of stmt_and_def list brace
 
@@ -905,6 +907,11 @@ let unbracket = unparen
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right info -> None
+  ) xs
+
+let uncomma_dots xs = Common.map_filter (function
+  | Left3 e -> Some e
+  | Right3 info | Middle3 info -> None
   ) xs
 
 let map_paren f (lp, x, rp) = (lp, f x, rp)
