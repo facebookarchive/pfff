@@ -80,6 +80,9 @@ beforedepend:: parser_php.ml parser_php.mli
 visitor_php.cmo: visitor_php.ml
 	$(OCAMLC) -w y -c $<
 
+pretty_print_php.cmo: pretty_print_php.ml
+	$(OCAMLC) -w y -c $<
+
 
 ##############################################################################
 # Generic rules

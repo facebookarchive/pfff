@@ -148,6 +148,11 @@ let test_unparse_php file =
   xs |> List.iter pr2;
   ()
 
+let test_pretty_print_php file = 
+  let (ast2, stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+  Pretty_print_php.pretty_print_program ast
+
 (* note that pfff can now parse XHP files without calling xhpize *)
 let test_parse_xhp_with_xhpize file = 
   let pp_cmd = "xhpize" in
@@ -205,6 +210,8 @@ let actions () = [
 
     "-unparse_php", "   <file>", 
     Common.mk_action_1_arg test_unparse_php;
+    "-pretty_print_php", "   <file>", 
+    Common.mk_action_1_arg test_pretty_print_php;
     "-parse_xdebug_expr", "   <string>", 
     Common.mk_action_1_arg test_parse_xdebug_expr;
     "-parse_xhp_with_xhpize", "   <file>", 
