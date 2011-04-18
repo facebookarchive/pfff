@@ -66,11 +66,7 @@ let sgrep_unittest = [
     (* pattern, code *)
     let pairs = [
       "function X(){ return Y(...); }","function foo(){ return bar(); }";
-
-(*
       "function X(...){ return Y(...); }","function foo($x){ return bar(); }";
-*)
-
     ] in
     pairs +> List.iter (fun (spattern, scode) ->
       match Sgrep_php.parse spattern, Parse_php.any_of_string scode with

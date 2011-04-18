@@ -260,13 +260,6 @@ let m_info a b =
 let m_comma_list f a b = 
   m_list (m_either f m_info) a b
 
-(* TODO iso on "..." *)
-let m_comma_list_dots f a b = 
-  m_list (m_either3 f m_info m_info) a b
-
-
-
-
 let m_tok a b = m_info a b
 
 let m_wrap f a b = 
@@ -1916,6 +1909,8 @@ and m_constant a b =
 (* todo: comma handling is probably not good enough.
  * todo: make this code generic ? but I need to dig into the element
  *  to find the SgrepExprDots so it have not be that easy to factorize.
+ * update: actually can use the comma_list_dots technique which avoid
+ *  digging and help factorize code!
  *)
 and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_list) = 
   (*old: m_list m_argument xsa xsb *)
@@ -2003,7 +1998,46 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
   | [], _
   | _::_, _ ->
       fail ()
+
+(*---------------------------------------------------------------------------*)
+(* comma list dots iso *)
+(*---------------------------------------------------------------------------*)
   
+and m_comma_list_dots f xsa xsb = 
+  match xsa, xsb with
+  | [], [] -> 
+      return ([], [])
+
+  (* iso on ... *)
+  | [Middle3 _infoTodo], bbs ->
+      (* TODO do different combinaisons, and apply token *)
+      return (
+        xsa,
+        xsb
+      )
+
+  | [Right3 _; Middle3 _], bbs ->
+      (* TODO do different combinaisons *)
+      return (
+        xsa,
+        xsb
+      )
+
+  | (Middle3 _)::xs, bbs ->
+      failwith "... is allowed for now only at the end. Give money to pad to get this feature"
+
+  | xa::aas, xb::bbs ->
+      (m_either3 f m_info m_info) xa xb >>= (fun (xa, xb) ->
+      m_comma_list_dots f aas bbs >>= (fun (aas, bbs) ->
+        return (
+          xa::aas,
+          xb::bbs
+        )
+      ))
+  | [], _
+  | _::_, _ ->
+      fail ()
+
 
 (* ---------------------------------------------------------------------- *)
 (* stmt *)

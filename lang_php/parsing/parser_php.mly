@@ -625,6 +625,11 @@ non_empty_parameter_list:
      { let p = mk_param $1 $3 in 
        [Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}]
      }
+ /*(* sgrep_ext: *)*/
+ | TDOTS                                 
+     { sgrep_guard ([Middle3 $1]) }
+ | non_empty_parameter_list TCOMMA TDOTS 
+     { sgrep_guard ($1 ++ [Right3 $2; Middle3 $3]) }
 
  /*(*s: repetitive non_empty_parameter_list *)*/
   | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE 	
@@ -637,6 +642,8 @@ non_empty_parameter_list:
       { let p = mk_param $3 $5 in 
         $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4; p_default = Some ($6, $7)}]
       }
+
+
  /*(*e: repetitive non_empty_parameter_list *)*/
 /*(*x: GRAMMAR function declaration *)*/
 optional_class_type:
