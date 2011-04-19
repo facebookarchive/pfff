@@ -91,6 +91,14 @@ and v_bracket _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
 
+and v_comma v1 = let v1 = v_tok v1 in ()
+and v_comma_list_dots _of_a xs = 
+  xs +> List.iter (function 
+  | Left3 x -> _of_a x 
+  | Middle3 info -> v_tok info
+  | Right3 info -> v_comma info
+  )
+
 let rec v_name =
   function
   | Name v1 -> let v1 = v_wrap v_string v1 in ()
@@ -98,12 +106,16 @@ let rec v_name =
   
 and v_xhp_tag v = v_list v_string v
 and v_dname = function | DName v1 -> let v1 = v_wrap v_string v1 in ()
-and v_qualifier =
+
+and v_qualifier (v1, v2) = 
+  let v1 = v_class_name_or_selfparent v1 and v2 = v_tok v2 in ()
+
+and v_class_name_or_selfparent =
   function
-  | Qualifier ((v1, v2)) ->
-      let v1 = v_fully_qualified_class_name v1 and v2 = v_tok v2 in ()
-  | Self ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
-  | Parent ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
+  | ClassName v1 -> let v1 = v_fully_qualified_class_name v1 in ()
+  | Self v1 -> let v1 = v_tok v1 in ()
+  | Parent v1 -> let v1 = v_tok v1 in ()
+
 and v_fully_qualified_class_name v = v_name v
   
 let rec v_expr (v1, v2) = let v1 = v_exprbis v1 and v2 = v_exp_info v2 in ()
@@ -198,11 +210,8 @@ and v_exprbis =
 and v_scalar =
   function
   | C v1 -> let v1 = v_constant v1 in ()
-  | ClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) -> let v1 = v_qualifier v1 and v2 = v_name v2 in ())
-      in ()
+  | ClassConstant (v1, v2) ->
+      let v1 = v_qualifier v1 and v2 = v_name v2 in ()
   | Guil ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_list v_encaps v2 and v3 = v_tok v3 in ()
   | HereDoc ((v1, v2, v3)) ->
@@ -297,13 +306,11 @@ and v_array_pair =
 and v_class_name_reference =
   function
   | ClassNameRefStatic v1 -> let v1 = v_class_name_or_selfparent v1 in ()
-  | ClassNameRefDynamic v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) ->
-             let v1 = v_lvalue v1 and v2 = v_list v_obj_prop_access v2 in ())
-      in ()
-and v_class_name_or_selfparent x = v_fully_qualified_class_name x
+  | ClassNameRefDynamic (v1, v2) ->
+      let v1 = v_lvalue v1 and v2 = v_list v_obj_prop_access v2 in ()
+  | ClassNameRefLateStatic v1 ->
+      let v1 = v_tok v1 in
+      ()
 
 and v_obj_prop_access (v1, v2) =
   let v1 = v_tok v1 and v2 = v_obj_property v2 in ()
@@ -384,6 +391,13 @@ and v_lvaluebis =
       and v3 = v_name v3
       and v4 = v_paren (v_comma_list v_argument) v4
       in ()
+  | LateStaticCall ((v1, v2, v3, v4)) ->
+      let v1 = v_tok v1
+      and v2 = v_tok v2
+      and v3 = v_name v3
+      and v4 = v_paren (v_comma_list v_argument) v4
+      in ()
+
   | StaticObjCallVar ((v1, v2, v3, v4)) ->
       let v1 = v_lvalue v1
       and v2 = v_tok v2
@@ -611,7 +625,7 @@ and
   let arg = v_tok v_f_tok in
   let arg = v_is_ref v_f_ref in
   let arg = v_name v_f_name in
-  let arg = v_paren (v_comma_list v_parameter) v_f_params in
+  let arg = v_paren (v_comma_list_dots v_parameter) v_f_params in
   let arg = v_option v_hint_type v_f_return_type in
   let arg = v_brace (v_list v_stmt_and_def) v_f_body in
   (* let arg = Type_php.v_phptype v_f_type in *)
@@ -642,7 +656,7 @@ and
                } =
   let arg = v_tok v_l_tok in
   let arg = v_is_ref v_l_ref in
-  let arg = v_paren (v_comma_list v_parameter) v_l_params in
+  let arg = v_paren (v_comma_list_dots v_parameter) v_l_params in
   let arg = v_option v_lexical_vars v_l_use in
   let arg = v_brace (v_list v_stmt_and_def) v_l_body in ()
 and v_lexical_vars (v1, v2) =
@@ -722,7 +736,7 @@ and
   let arg = v_tok v_m_tok in
   let arg = v_is_ref v_m_ref in
   let arg = v_name v_m_name in
-  let arg = v_paren (v_comma_list v_parameter) v_m_params in
+  let arg = v_paren (v_comma_list_dots v_parameter) v_m_params in
   let arg = v_option v_hint_type v_m_return_type in
   let arg = v_method_body v_m_body in ()
 and v_modifier =
@@ -807,11 +821,8 @@ and v_static_var (v1, v2) =
 and v_static_scalar =
   function
   | StaticConstant v1 -> let v1 = v_constant v1 in ()
-  | StaticClassConstant v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) -> let v1 = v_qualifier v1 and v2 = v_name v2 in ())
-      in ()
+  | StaticClassConstant (v1, v2) ->
+      let v1 = v_qualifier v1 and v2 = v_name v2 in ()
   | StaticPlus ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
   | StaticMinus ((v1, v2)) ->
