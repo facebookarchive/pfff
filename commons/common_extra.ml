@@ -33,7 +33,7 @@ let set_link () =
 let _init_execute = 
   set_link ()
 
-let execute_and_show_progress2 ~show_progress len f = 
+let execute_and_show_progress2 ?(show_progress=true) len f = 
   let _count = ref 0 in
   (* kind of continuation passed to f *)
   let continue_pourcentage () = 
@@ -47,3 +47,8 @@ let execute_and_show_progress2 ~show_progress len f =
   if !Common._batch_mode || not show_progress
   then f nothing
   else f continue_pourcentage
+
+let with_progress_list_metter ?show_progress fk xs =
+  let len = List.length xs in
+  execute_and_show_progress2 ?show_progress len 
+    (fun k -> fk k xs)
