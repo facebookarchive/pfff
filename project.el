@@ -233,7 +233,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 10
+     (case 11
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
@@ -246,6 +246,7 @@
        (7 "-c /home/pad/pfff/tests/php/spatch/space.spatch /home/pad/pfff/tests/php/spatch/space1.php")
 
        (10 "-c /home/pad/ex.spatch /home/pad/ex.php")
+       (11 "-c /home/pad/ex2.spatch /home/pad/ex2.php")
        )
      )
     )

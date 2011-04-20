@@ -218,6 +218,30 @@ let spatch pattern file =
 
   let hook = 
     match pattern with
+    (* bugfix: if we have an ExprVar, then a pattern such as 
+     * $foo->method() will not match expressions such as 
+     * $foo->method()->method because the full ExprVar will not
+     * match. The pb is that we need not only a match_e_e but also
+     * a match_v_v with the same visitor
+     *)
+
+    | Expr (Lv pattern_var, _t) ->
+      { V.default_visitor with
+        V.klvalue = (fun (k, _) x ->
+          let matches_with_env =  
+            Matching_php.match_v_v pattern_var  x
+          in
+          if matches_with_env = []
+          then k x
+          else begin
+            was_modifed := true;
+            Transforming_php.transform_v_v pattern_var x
+              (* TODO, maybe could get multiple matching env *)
+              (List.hd matches_with_env) 
+          end
+        );
+      }
+
     | Expr pattern_expr ->
       { V.default_visitor with
         V.kexpr = (fun (k, _) x ->

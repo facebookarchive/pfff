@@ -121,6 +121,7 @@ let gen_layer ~root ~query file =
 (*****************************************************************************)
 let main_action xs =
 
+  (* todo: move in lang_php/matcher/sgrep_php.ml *)
   let pattern, query_string = 
     Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     match !pattern_file, !pattern_string with
@@ -148,15 +149,15 @@ let main_action xs =
     in
     let ast = Parse_php.program_of_program2 ast2 in
 
-    (* bugfix: if we have an ExprVar, then a pattern such as 
-     * $foo->method() will not match expressions such as 
-     * $foo->method()->method because the full ExprVar will not
-     * match. The pb is that we need not only a match_e_e but also
-     * a match_v_v with the same visitor
-     *)
+    (* coupling: copy paste with lang_php/matcher/spatch_php.ml *)
     let hook = 
-
       match pattern with
+     (* bugfix: if we have an ExprVar, then a pattern such as 
+      * $foo->method() will not match expressions such as 
+      * $foo->method()->method because the full ExprVar will not
+      * match. The pb is that we need not only a match_e_e but also
+      * a match_v_v with the same visitor
+      *)
       | Expr (Lv pattern_var, _t) ->
           { V.default_visitor with
             V.klvalue = (fun (k, _) x ->

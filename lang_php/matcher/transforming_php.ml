@@ -286,3 +286,7 @@ let transform_e_e pattern e   env =
 let transform_st_st pattern e   env = 
   ignore (MATCH.m_stmt pattern e   env);
   ()
+
+let transform_v_v pattern e   env = 
+  ignore (MATCH.m_variable pattern e   env);
+  ()
