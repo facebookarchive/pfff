@@ -29,6 +29,9 @@ open OUnit
  *    under xdebug with the basic php interpreter.
  *  - TODO introduce phpunit, and the fact that we bypass failing tests
  *  - TODO introduce facebook specificities
+ * 
+ * UPDATE: this is now obsolete. See facebook/qa_test/unit_qa_test.ml
+ * which use HPHP instead of Xdebug.
  *)
 
 (* shortcut *)
