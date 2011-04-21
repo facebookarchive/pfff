@@ -58,6 +58,9 @@ class DirectoryIterator { }
 //http://us2.php.net/RecursiveIteratorIterator
 class RecursiveIteratorIterator { }
 
+//http://php.net/manual/en/class.recursivedirectoryiterator.php
+class RecursiveDirectoryIterator { }
+
 //http://php.net/manual/en/class.iterator.php
 class Iterator { }
 
