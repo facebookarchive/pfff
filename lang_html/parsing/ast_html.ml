@@ -400,6 +400,12 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
   (* with tarzan *)
 
+(* ------------------------------------------------------------------------- *)
+(* any *)
+(* ------------------------------------------------------------------------- *)
+type any =
+  | HtmlTree of html_tree
+
 (* 
  * TODO
  * type url = Url of string (* actually complicated sublanguage *)

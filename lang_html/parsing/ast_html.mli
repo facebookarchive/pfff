@@ -166,6 +166,8 @@ type html = Html of attrs * head * (body, frameset) Common.either
  and literal_text = string wrap
  and 'a list1 = 'a * 'a list
 
+type any =
+  | HtmlTree of html_tree
 
 val fakeInfo:
   ?next_to:(Parse_info.parse_info * int) option -> 

@@ -23,14 +23,27 @@ open Ast_html
 (* Prelude *)
 (*****************************************************************************)
 
+(* 
+ * A classic AST visitor, just like for the other PLs in pfff.
+ * todo? maybe could reuse some of the ideas in CSS to have more
+ * compact visitors?
+ *)
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
 type visitor_in = {
-  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+  khtml_tree: html_tree vin;
+  kinfo: info vin;
  }
-and visitor_out = html_tree -> unit
+  and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
+
+and visitor_out = any -> unit
+
+let default_visitor = { 
+  kinfo   = (fun (k,_) x -> k x);
+  khtml_tree   = (fun (k,_) x -> k x);
+}
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -53,8 +66,8 @@ let rec v_info x  =
  *)
 and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_html_tree =
-  function
+and v_html_tree x =
+  let rec k = function
   | Element ((v1, v2, v3)) ->
       let v1 = v_tag v1
       and v2 =
@@ -65,12 +78,26 @@ and v_html_tree =
       and v3 = v_list v_html_tree v3
       in ()
   | Data v1 -> let v1 = v_wrap v_string v1 in ()
+  in
+  vin.khtml_tree (k, all_functions) x
+
 and v_tag = function | Tag v1 -> let v1 = v_wrap v_string v1 in ()
 and v_attr_name = function | Attr v1 -> let v1 = v_wrap v_string v1 in ()
 and v_attr_value = function | Val v1 -> let v1 = v_wrap v_string v1 in ()
 
+and v_any = function
+  | HtmlTree v1 -> let v1 = v_html_tree v1 in ()
 and all_functions x = v_any x
-and v_any x = v_html_tree x
-
 in
- raise Todo
+v_any
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let do_visit_with_ref mk_hooks = fun any ->
+  let res = ref [] in
+  let hooks = mk_hooks res in
+  let vout = mk_visitor hooks in
+  vout any;
+  List.rev !res

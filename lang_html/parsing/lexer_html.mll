@@ -100,8 +100,12 @@ rule scan_document = parse
 
   | "<" (name as s)  { Lelement (tokinfo lexbuf, s) }
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
-  (* todo? parse error ? *)
-  | "<" (* misplaced "<" *) { Cdata (tokinfo lexbuf, "<") }
+  | "<" (* misplaced "<" *) { 
+      if !Flag.strict
+      then raise (Lexical ("wrong < token "))
+      else 
+        Cdata (tokinfo lexbuf, "<")
+    }
   | [^ '<' ]+               { Cdata (tokinfo lexbuf, tok lexbuf) }
 
   | eof { EOF (tokinfo lexbuf) }

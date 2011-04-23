@@ -20,7 +20,7 @@ open Ast_html
 module Ast = Ast_html
 module Flag = Flag_parsing_html
 
-(* module V = Visitor_erlang *)
+module V = Visitor_html
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -50,6 +50,15 @@ let find_html_files_of_dir_or_files xs =
 (*****************************************************************************)
 (* AST helpers *)
 (*****************************************************************************)
+
+let get_data_any any =
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.khtml_tree = (fun (k, _) x ->
+      match x with
+      | Data (s, _info) -> Common.push2 s aref
+      | _ -> k x
+    )
+  }) any
 
 let html_tree_to_html tree =
   raise Todo

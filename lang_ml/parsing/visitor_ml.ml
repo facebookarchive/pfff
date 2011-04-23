@@ -23,6 +23,10 @@ open Ast_ml
 (* Prelude *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 (* hooks *)
 type visitor_in = {
   kinfo: info vin;
@@ -73,6 +77,9 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
+(* todo: 3.12: could use polymorphic recursion instead of those ugly
+ * functions. Just write v_wrap: 'a. 'a wrap -> unit
+ *)
 and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap1 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
@@ -500,3 +507,14 @@ and v_any = function
 and all_functions x = v_any x
 in
 v_any
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let do_visit_with_ref mk_hooks = fun any ->
+  let res = ref [] in
+  let hooks = mk_hooks res in
+  let vout = mk_visitor hooks in
+  vout any;
+  List.rev !res

@@ -1,0 +1,2 @@
+
+let strict = ref true
