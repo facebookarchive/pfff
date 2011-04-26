@@ -7,22 +7,6 @@ type parse_info = {
     column: int;
     file: Common.filename;
   } 
-(* see also type filepos = { l: int; c: int; } in common.mli *)
-val fake_parse_info : parse_info
-val string_of_parse_info : parse_info -> string
-val string_of_parse_info_bis : parse_info -> string
-
-type token =
-  | OriginTok  of parse_info
-  | FakeTokStr of string  * (parse_info * int) option
-  | ExpandedTok of parse_info *  parse_info * int 
-  | Ab
-
-type posrv = 
-  | Real of parse_info 
-  | Virt of 
-      parse_info (* last real info before expanded tok *) * 
-      int (* virtual offset *)
 
 type info = {
   (* contains among other things the position of the token through
@@ -33,7 +17,13 @@ type info = {
   mutable transfo: transformation;
 }
 
-and transformation = 
+ and token =
+  | OriginTok  of parse_info
+  | FakeTokStr of string  * (parse_info * int) option
+  | ExpandedTok of parse_info *  parse_info * int 
+  | Ab
+
+ and transformation = 
   | NoTransfo
   | Remove 
   | AddBefore of add
@@ -43,6 +33,19 @@ and transformation =
   and add = 
     | AddStr of string
     | AddNewlineAndIdent
+
+type posrv = 
+  | Real of parse_info 
+  | Virt of 
+      parse_info (* last real info before expanded tok *) * 
+      int (* virtual offset *)
+
+
+
+(* see also type filepos = { l: int; c: int; } in common.mli *)
+val fake_parse_info : parse_info
+val string_of_parse_info : parse_info -> string
+val string_of_parse_info_bis : parse_info -> string
 
 type parsing_stat = {
   filename: Common.filename;
@@ -61,7 +64,6 @@ type 'tok tokens_state = {
 }
 
 val mk_tokens_state: 'tok list -> 'tok tokens_state
-
 
 
 (* array[i] will contain the (line x col) of the i char position *)
@@ -83,7 +85,8 @@ val info_from_charpos : int -> Common.filename -> (int * int * string)
 
 val error_message :       Common.filename -> (string * int) -> string
 val error_message_short : Common.filename -> (string * int) -> string
-val error_message_info :  parse_info -> string
+val error_message_parse_info :  parse_info -> string
+val error_message_info :  info -> string
 (* add a 'decalage/shift' argument to handle stuff such as cpp which includes 
  * files and who can make shift.
  *)

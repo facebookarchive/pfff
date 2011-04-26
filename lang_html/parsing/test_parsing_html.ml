@@ -36,8 +36,11 @@ let test_parse_html xs =
      * let (xs, stat) = Parse_erlang.parse file in
      * Common.push2 stat stat_list;
      *)
-    let _tree = Parse_html.parse file in
-    ()
+    try 
+      let _tree = Parse_html.parse file in
+      ()
+    with Parse_html.Parse_error info ->
+      pr2 (Parse_info.error_message_info info)
   );
   ()
 
@@ -50,6 +53,7 @@ let test_dump_html_old file =
 
 let test_dump_html file =
   let (ast, _toks) = Parse_html.parse file in
+  (* Format.set_margin 400; Format.set_max_indent 400; *)
   let s = Export_html.ml_pattern_string_of_html_tree ast in
   pr2 s
 

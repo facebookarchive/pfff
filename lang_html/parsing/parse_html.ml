@@ -294,12 +294,27 @@ type element_state = {
 let parse2 file =
  Common.with_open_infile file (fun chan -> 
   let buf = Lexing.from_channel chan in
+  let table     = Parse_info.full_charpos_to_pos_large file in
 
   let toks = ref [] in
   let call_scan scannerf = 
-    let t = scannerf buf in
-    Common.push2 t toks;
-    t
+    let tok = scannerf buf in
+
+    let tok = tok +> TH.visitor_info_of_tok (fun ii ->
+      { ii with Parse_info.token=
+          (* could assert pinfo.filename = file ? *)
+          match Parse_info.pinfo_of_info ii with
+          | Parse_info.OriginTok pi ->
+              Parse_info.OriginTok 
+                (Parse_info.complete_parse_info_large file table pi)
+          | Parse_info.FakeTokStr _
+          | Parse_info.Ab  
+          | Parse_info.ExpandedTok _
+            -> raise Impossible
+      })
+    in
+    Common.push2 tok toks;
+    tok
   in
 
   let dtd = Dtd.html40_dtd in

@@ -857,7 +857,7 @@ let error_message = fun filename (lexeme, lexstart) ->
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
        " given out of file:" ^ filename)
 
-let error_message_info = fun info -> 
+let error_message_parse_info = fun info -> 
   let filename = info.file in
   let lexeme = info.str in
   let lexstart = info.charpos in
@@ -867,6 +867,9 @@ let error_message_info = fun info ->
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
        " given out of file:" ^ filename)
 
+let error_message_info info =
+  let pinfo = parse_info_of_info info in
+  error_message_parse_info pinfo
 
 
 let error_message_short = fun filename (lexeme, lexstart) -> 
