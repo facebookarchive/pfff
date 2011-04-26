@@ -148,6 +148,8 @@ Yoann Padioleau\\
 % and fast! (rewrite from php to ocaml: 30x faster ... (algo different
 % but still)
 
+% type safety without burden of annotation! best of both worlds
+
 \ocaml is a powerful language, trust me.
 % xen tool stack on top of xen kernel, static driver verifier microsoft
 % jane street trading software (X% of ws transactions)
