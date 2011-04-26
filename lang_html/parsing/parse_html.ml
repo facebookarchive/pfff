@@ -124,15 +124,24 @@ let parse_atts call_scan =
                 is_empty)
             | T.EOF _ ->
                 raise End_of_scan
-            | T.Relement _ ->
-                (* Illegal *)
-                ( [], false )
-            | T.Relement_empty _ ->
-                (* Illegal *)
-                ( [], true )
-            | _ ->
-                (* Illegal *)
-                parse_atts_lookahead (skip_space false call_scan)
+            | T.Relement ii ->
+                if !Flag.strict
+                then raise (Parse_error (ii))
+                else 
+                 (* Illegal *)
+                 ( [], false )
+            | T.Relement_empty ii ->
+                if !Flag.strict
+                then raise (Parse_error (ii))
+                else 
+                  (* Illegal *)
+                  ( [], true )
+            | t ->
+                if !Flag.strict
+                then raise (Parse_error (TH.info_of_tok t))
+                else 
+                  (* Illegal *)
+                  parse_atts_lookahead (skip_space false call_scan)
             )
         | T.EOF _ ->
             raise End_of_scan
@@ -154,9 +163,12 @@ let parse_atts call_scan =
         )
     | T.EOF _ ->
         raise End_of_scan
-    | _ ->
-        (* Illegal *)
-        parse_atts_lookahead (skip_space false call_scan)
+    | t ->
+        if !Flag.strict
+        then raise (Parse_error (TH.info_of_tok t))
+        else 
+         (* Illegal *)
+         parse_atts_lookahead (skip_space false call_scan)
   in
   parse_atts_lookahead (skip_space false call_scan)
 
@@ -182,9 +194,12 @@ let parse_special tag call_scan =
     | T.CdataSpecial (tok, s) -> 
         (if !first_tok = None then first_tok := Some tok);
         s ^ aux ()
-    | _ ->
-        (* Illegal *)
-        aux ()
+    | t ->
+        if !Flag.strict
+        then raise (Parse_error (TH.info_of_tok t))
+        else 
+         (* Illegal *)
+         aux ()
   in
   let s = aux () in
   let info =
