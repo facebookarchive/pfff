@@ -28,6 +28,16 @@ module PI = Parse_info
 
 module Dtd = Dtd_simple
 
+(* While porting the original html parser to return an AST with line 
+ * information, the parser was getting buggy because some of the code
+ * was using = or <> which was not working property anymore (because
+ * the string of the tags were the same but their position was different)
+ * The 2 functions definition below make sure we never use those
+ * evil too-generic equality operators
+ *)
+let (=) () () = false
+let (<>) () () = false
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -187,12 +197,12 @@ let parse_special tag call_scan =
   let rec aux () = 
     match call_scan Lexer_html.scan_special with
     | T.Lelementend (_tok, n) ->
-        if String.lowercase n = name 
+        if String.lowercase n =$= name 
         then ""
         else "</" ^ n ^ aux ()
     | T.EOF _ -> raise End_of_scan
     | T.CdataSpecial (tok, s) -> 
-        (if !first_tok = None then first_tok := Some tok);
+        (if !first_tok =*= None then first_tok := Some tok);
         s ^ aux ()
     | t ->
         if !Flag.strict
@@ -251,14 +261,14 @@ let is_possible_subelement
   let (sub_class, _) = model_of ~dtd_hash sub_element in
   let rec eval m =
     match m with
-    | Dtd.Inline2     -> sub_class = Dtd.Inline
+    | Dtd.Inline2     -> sub_class =*= Dtd.Inline
     | Dtd.Block2      -> 
-        sub_class = Dtd.Block  || 
-        sub_class = Dtd.Essential_block
+        sub_class =*= Dtd.Block  || 
+        sub_class =*= Dtd.Essential_block
     | Dtd.Flow       -> 
-        sub_class = Dtd.Inline || 
-        sub_class = Dtd.Block  || 
-        sub_class = Dtd.Essential_block
+        sub_class =*= Dtd.Inline || 
+        sub_class =*= Dtd.Block  || 
+        sub_class =*= Dtd.Essential_block
     | Dtd.Elements l -> 
         let (Tag (s, _tok)) = sub_element in
         List.mem s l
@@ -270,7 +280,7 @@ let is_possible_subelement
     | Dtd.Sub_exclusions(_,_) -> assert false
   in
   let (Tag (sub_element_str, _tok)) = sub_element in
-  (sub_class = Dtd.Everywhere) ||
+  (sub_class =*= Dtd.Everywhere) ||
   (
     (not (StringSet.mem sub_element_str parent_excl)) &&
       let (_, parent_model) = model_of ~dtd_hash parent_element in
@@ -343,7 +353,7 @@ let parse2 file =
 
         (* Maybe we are not allowed to end the current element: *)
         let (current_class, _) = model_of ~dtd_hash !current.name in
-        if current_class = Dtd.Essential_block 
+        if current_class =*= Dtd.Essential_block 
         then raise Stack.Empty;
 
         (* End the current element and remove it from the stack: *)
@@ -465,11 +475,11 @@ let parse2 file =
         skip_element call_scan;
         (* Search the element to close on the stack: *)
         let found = 
-          (name =*= !current.name) ||
+          (Ast.str_of_tag name =$= Ast.str_of_tag !current.name) ||
             try
               Stack.iter
                 (fun { name = old_name; _} ->
-                  if name = old_name 
+                  if Ast.str_of_tag name =$= Ast.str_of_tag old_name
                   then raise Found;
                   match model_of ~dtd_hash old_name with
                   |  Dtd.Essential_block, _ -> raise Not_found;
@@ -489,7 +499,7 @@ let parse2 file =
           (* If found: Remove the elements from the stack, and append
            * them to the previous element as sub elements
            *)
-          while !current.name <> name do
+          while not (Ast.str_of_tag !current.name =$= Ast.str_of_tag name) do
             let old_el = Stack.pop stack in
             current := { old_el with subs =
                 (Ast.Element (!current.name, !current.atts,
@@ -540,3 +550,16 @@ let parse2 file =
 let parse a = 
   Common.profile_code "Parse_html.parse" (fun () -> parse2 a)
 
+
+
+(*****************************************************************************)
+(* Other entry points *)
+(*****************************************************************************)
+
+(* this function is useful mostly for our unit tests *)
+let (html_tree_of_string: string -> Ast_html.html_tree) = fun s -> 
+  let tmpfile = Common.new_temp_file "pfff_html_tree_of_s" "html" in
+  Common.write_file tmpfile s;
+  let (ast, _toks) = parse tmpfile in
+  Common.erase_this_temp_file tmpfile;
+  ast

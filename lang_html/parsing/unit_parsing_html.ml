@@ -1,0 +1,61 @@
+open Common
+
+open Ast_html
+module Ast = Ast_html
+
+open OUnit
+
+module Flag = Flag_parsing_html
+
+(*****************************************************************************)
+(* Unit tests *)
+(*****************************************************************************)
+
+let unittest =
+  "parsing_html" >::: [
+
+    "lexing regular code" >:: (fun () ->
+      ()
+    );
+
+    "parsing regular code" >:: (fun () ->
+      ()
+    );
+
+    "html tree correctness" >:: (fun () ->
+
+      let s = "<div>a</div><div>b</div>" in
+      let ast = Parse_html.html_tree_of_string s in
+      match ast with
+      | Element (
+          (Tag ("__root__", _)), [], 
+          [
+            Element (
+              (Tag ("div", _)), [],
+              _
+            );
+            Element (
+              (Tag ("div", _)), [],
+              _
+            );
+          ]
+        ) -> ()
+      | _ ->
+          assert_failure (spf "wrong ast for %s, got %s"
+                          s 
+                          (Export_html.ml_pattern_string_of_html_tree ast))
+
+    );
+
+  ]
+
+(*****************************************************************************)
+(* Main entry for Arg *)
+(*****************************************************************************)
+let actions () = [
+    "-unittest_parsing_html", "   ", 
+    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
+]
+
+    
+

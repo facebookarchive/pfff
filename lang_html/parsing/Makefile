@@ -17,6 +17,8 @@ SRC= flag_parsing_html.ml \
      dtd_simple.ml \
      parse_html.ml \
      unparse_html.ml \
+     pretty_print_html.ml \
+     unit_parsing_html.ml \
      test_parsing_html.ml
 
 

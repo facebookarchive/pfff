@@ -64,6 +64,11 @@ let test_json_html file =
   let s = Json_out.string_of_json json in
   pr2 s
 
+let test_pp_html file =
+  let (ast, _toks) = Parse_html.parse file in
+  let s = Pretty_print_html.string_of_html_tree ast in
+  pr2 s
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -79,6 +84,8 @@ let actions () = [
   Common.mk_action_n_arg test_parse_html;
   "-dump_html", "   <file>", 
   Common.mk_action_1_arg test_dump_html;
+  "-pp_html", "   <file>", 
+  Common.mk_action_1_arg test_pp_html;
 
   "-json_html", "   <file>", 
   Common.mk_action_1_arg test_json_html;

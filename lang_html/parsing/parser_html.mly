@@ -20,11 +20,14 @@ open Common
 (*************************************************************************)
 
 (* 
- * This file is used only to define the tokens. There is no actuall
- * grammar in this file. One could move the token definitions directly
- * in lexer_html.mll, as it was done originally in ocamlnet/netstring,
- * but we could at some point define a grammar. Moreover it is more
- * symetric with what we do in the other lang_xxx/ directories.
+ * This file is mainly used to define the tokens. We could have
+ * moved the token definitions directly in lexer_html.mll, as it was
+ * done originally in ocamlnet/netstring, but we now also use this
+ * file to defines a basic grammar to parse strict html.
+ * Moreover it is more symetric with what we do in the other 
+ * lang_xxx/ directories.
+ * Finally it's a good exercise to define a simple grammar using the
+ * tokens; it is as a side effect documenting some of those tokens.
  *)
 %}
 
@@ -51,7 +54,6 @@ open Common
 /*(*-----------------------------------------*)*/
 %token <Ast_html.info> EOF
 
-
 /*(*************************************************************************)*/
 /*(* Rules type declaration *)*/
 /*(*************************************************************************)*/
@@ -61,4 +63,30 @@ open Common
 
 %%
 
-main: EOF { }
+/*(* assume comments and doctype are filtered out and pi are forbidden *)*/
+main: 
+ | html_list EOF { }
+
+html: 
+ | Lelement attr_list Relement_empty { }
+ | Lelement attr_list Relement html_list Lelementend Relement { }
+ | Cdata { }
+
+attr:
+ | Name Eq value { }
+
+value:
+ | Literal { }
+
+/*(*************************************************************************)*/
+/*(* xxx_list, xxx_opt *)*/
+/*(*************************************************************************)*/
+
+html_list:
+ | html_list html { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+attr_list:
+ | attr_list attr { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+

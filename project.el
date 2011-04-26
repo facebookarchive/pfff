@@ -25,6 +25,7 @@
      lang_php/parsing
      lang_js/parsing
      lang_sql/parsing
+     lang_html/parsing
      lang_php/analyze
      lang_php/analyze/basic
      lang_php/analyze/foundation
@@ -88,7 +89,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 60
+     (case 100
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -117,6 +118,9 @@
        (55 "-parse_xhp /home/pad/pfff/tests/xhp/xhp_line_bug4.php")
 
        (60 "-parse_php /home/pad/pfff/tests/xhp_pb_but_ok/colon_ambiguity.php")
+
+
+       (100 "-parse_html /home/pad/pfff/tests/html/simple/div.html")
 
        )
      )

@@ -56,6 +56,7 @@ let test regexp =
       Unit_coverage_php.unittest; 
 
       Unit_parsing_js.unittest;
+      Unit_parsing_html.unittest;
     ]
   in
   let suite = 

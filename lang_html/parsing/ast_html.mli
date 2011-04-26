@@ -173,3 +173,5 @@ val fakeInfo:
   ?next_to:(Parse_info.parse_info * int) option -> 
   ?str:string -> unit -> 
   Parse_info.info
+
+val str_of_tag: tag -> string
