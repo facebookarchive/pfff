@@ -1,13 +1,15 @@
 all: unimap_to_ocaml
 
 unimap_to_ocaml: unimap_to_ocaml.ml
-	ocamlfind ocamlc -g -package str -linkpkg \
+	ocamlc \
 		-o unimap_to_ocaml \
+		str.cma \
 		unimap_to_ocaml.ml
 
 unihan_extract: unihan_extract.ml
-	ocamlfind ocamlc -g -package str -linkpkg \
+	ocamlc \
 		-o unihan_extract \
+		str.cma \
 		unihan_extract.ml
 
 clean:
