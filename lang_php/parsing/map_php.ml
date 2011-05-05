@@ -1095,7 +1095,7 @@ and map_xhp_attribute_type =
       and v2 = map_brace_1 (map_comma_list map_constant) v2
       in XhpAttrEnum ((v1, v2))
 and map_xhp_value_affect (v1, v2) =
-  let v1 = map_tok v1 and v2 = map_constant v2 in (v1, v2)
+  let v1 = map_tok v1 and v2 = map_static_scalar v2 in (v1, v2)
 
 and map_xhp_children_decl =
   function

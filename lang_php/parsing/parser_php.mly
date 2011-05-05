@@ -840,12 +840,9 @@ xhp_attribute_decl_type:
  | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE 
      { XhpAttrEnum ($1, ($2, $3, $4)) }
 
-/*(*todo? why common_scalar below instead of static_scalar ? *)*/
 xhp_attribute_default:
  | /*(*empty*)*/     { None }
- | TEQ common_scalar { Some ($1, $2) }
- /*(* for constants, e.g. foo = null *)*/
- | TEQ T_IDENT       { Some ($1, (CName (Name $2))) }
+ | TEQ static_scalar { Some ($1, $2) }
 
 xhp_attribute_is_required:
  | /*(*empty*)*/  { None }
@@ -1257,7 +1254,7 @@ static_scalar: /* compile-time evaluated scalars */
 
  | TPLUS static_scalar	 { StaticPlus($1,$2) }
  | TMINUS static_scalar	 { StaticMinus($1,$2) }
- | T_ARRAY TOPAR static_array_pair_list TCPAR 
+ | T_ARRAY TOPAR static_array_pair_list TCPAR
      { StaticArray($1, ($2, $3, $4)) }
 
  /*(*s: static_scalar grammar rule hook *)*/
