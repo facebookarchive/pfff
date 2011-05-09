@@ -64,6 +64,10 @@ class RecursiveDirectoryIterator { }
 //http://php.net/manual/en/class.iterator.php
 class Iterator { }
 
+
+//http://php.net/manual/en/class.serializable.php
+class Serializable { }
+
 // ------------------------------------------
 // Now in HPHP idl files
 // ------------------------------------------
