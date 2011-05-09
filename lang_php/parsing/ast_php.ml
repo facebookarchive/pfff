@@ -715,7 +715,7 @@ and interface_def = {
    and xhp_attribute_type = 
      | XhpAttrType of name (* e.g. float, bool, var, array, :foo *)
      | XhpAttrEnum of tok (* enum *) * constant comma_list brace
-  and xhp_value_affect = tok (* = *) * constant
+  and xhp_value_affect = tok (* = *) * static_scalar
 
  (* Regexp-like syntax. The grammar actually restricts what kinds of
   * regexps can be written. For instance pcdata must be nested. But

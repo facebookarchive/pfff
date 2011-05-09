@@ -1057,7 +1057,7 @@ and vof_xhp_attribute_type =
       and v2 = vof_brace (vof_comma_list vof_constant) v2
       in Ocaml.VSum (("XhpAttrEnum", [ v1; v2 ]))
 and vof_xhp_value_affect (v1, v2) =
-  let v1 = vof_tok v1 and v2 = vof_constant v2 in Ocaml.VTuple [ v1; v2 ]
+  let v1 = vof_tok v1 and v2 = vof_static_scalar v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_xhp_children_decl =
   function
   | XhpChild v1 ->

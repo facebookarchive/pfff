@@ -1183,7 +1183,7 @@ and v_xhp_attribute_type =
   | XhpAttrEnum ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_brace6 (v_comma_list27 v_constant) v2 in ()
 and v_xhp_value_affect (v1, v2) =
-  let v1 = v_tok v1 and v2 = v_constant v2 in ()
+  let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
 
 
 and v_xhp_children_decl x = 
