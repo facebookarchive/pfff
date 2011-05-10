@@ -87,3 +87,5 @@ define('T_XHP_TEXT', 1);
 // function xhp_preprocess_code() { }
 
 //class phpmcc {}
+
+function get_class_constants() { }
