@@ -1939,6 +1939,18 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         )
       )
 
+  (* '...' can also match no argument.
+   * TODO: this is ok in sgrep mode, but in spatch mode the comma
+   * or SgrepExprDots could carry some transfo. What should we do?
+   * Maybe just print warning.
+   *)
+  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], [] ->
+      return (
+        xsa,
+        xsb
+      )
+      
+
   | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
       raise Impossible
 

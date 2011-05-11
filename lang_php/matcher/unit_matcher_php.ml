@@ -11,6 +11,8 @@ module Flag = Flag_parsing_php
 (* Unit tests *)
 (*****************************************************************************)
 
+(* See https://github.com/facebook/pfff/wiki/Sgrep *)
+
 (* run by sgrep -test *)
 let sgrep_unittest = [
   "sgrep variable metavars matching" >:: (fun () ->
@@ -26,37 +28,65 @@ let sgrep_unittest = [
   );
 
   "misc sgrep features" >:: (fun () ->
-    (* pattern, code *)
-    let pairs = [
+    (* pattern, code (must be full statements) *)
+    let triples = [
+      (* concrete match *)
+      "foo(1,2);", "foo(1,2);", true;
+      "foo(1,3);", "foo(1,2);", false;
+
       (* '...' in funcall *)
-      "foo(...);", "foo();";
-      "foo(...);", "foo(1);";
-      "foo(...);", "foo(1,2);";
+      "foo(...);", "foo();", true;
+      "foo(...);", "foo(1);", true;
+      "foo(...);", "foo(1,2);", true;
+      "foo(X,...);", "foo(1,2);", true;
+      (* ... also match when there is no additional arguments *)
+      "foo(X,...);", "foo(1);", true;
 
       (* linear patterns *)
-      "foo($V, $V);", "foo($x, $x);";
+      "foo($V, $V);", "foo($x, $x);", true;
+      "X && X;", "($a||$b) && ($a|| $b);", true;
 
       (* '...' in arrays *)
-      "foo(X, array(...));",  "foo(1, array(2, 3));";
+      "foo(X, array(...));",  "foo(1, array(2, 3));", true;
 
       (* statements *)
-      "if(X) { foo(); }", "if(true) { foo(); }";
+      "if(X) { foo(); }", "if(true) { foo(); }", true;
 
       (* metavariables *)
-      "foo(X);"       ,  "foo(1);";
-      "foo(X1);"      ,  "foo(1);";
-      "foo(X1_MISC);" ,  "foo(1);";
-      "foo(X_MISC);"  ,  "foo(1);";
+      "foo(X);"       ,  "foo(1);", true;
+      "foo(X);"       ,  "foo(1+1);", true;
+      "foo(X1);"      ,  "foo(1);", true;
+      "foo(X1_MISC);" ,  "foo(1);", true;
+      "foo(X_MISC);"  ,  "foo(1);", true;
 
-      (* metavariables on function calls *)
-      "X(1,2);", "foo(1,2);";
+      (* metavariables on function name *)
+      "X(1,2);", "foo(1,2);", true;
+
+      (* more complex expressions *)
+      "strstr(...) == false;", "strstr($x)==false;", true;
+
+      (* xhp patterns *)
+      "return <x:frag border=\"1\" foo=\"2\" ></x:frag>;", 
+      "return <x:frag foo=\"2\" border=\"1\" ></x:frag>;", 
+      true;
+
+      "return <x:frag border=\"1\" foo=\"2\" ></x:frag>;", 
+      "return <x:frag foo=\"3\" border=\"1\" ></x:frag>;", 
+      false;
+
+
     ] in
-    pairs +> List.iter (fun (spattern, scode) ->
+    triples +> List.iter (fun (spattern, scode, should_match) ->
       match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
       | Stmt2 pattern, Stmt2 code ->
           let matches_with_env = Matching_php.match_st_st pattern code in
-          assert_bool (spf "pattern:|%s| should match |%s" spattern scode)
-            (matches_with_env <> []);
+          if should_match
+          then
+            assert_bool (spf "pattern:|%s| should match |%s" spattern scode)
+              (matches_with_env <> [])
+          else
+            assert_bool (spf "pattern:|%s| should not match |%s" spattern scode)
+              (matches_with_env = [])
     | _ ->
         assert_failure "parsing problem in sgrep pattern parsing"
     )
