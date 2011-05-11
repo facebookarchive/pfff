@@ -125,7 +125,10 @@ let string_of_error ?(show_position_info=true) error =
   | UseOfUndefinedVariable (dname) ->
       let s = Ast.dname dname in
       let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
-      spos info ^ spf "Use of undefined variable $%s" s
+      spos info ^ spf "Use of undeclared variable $%s. " s ^
+"Declare variables prior to use (even if you are passing them as reference
+    parameters). You may have misspelled this variable name.
+"
 
   | UnusedVariable (dname, scope) ->
       let s = Ast.dname dname in
