@@ -119,10 +119,10 @@ module S = Scope_code
  *    emulate a block-scoped language as in JSLint and flags
  *    variables used outside their "block".
  *  - when passed the find_entity hook, check_variables will:
- *     * know  about functions taking parameters by reference which removes
+ *     - know  about functions taking parameters by reference which removes
  *       some false positives.
- *     * flag use of class without a constructor or use of undefined class
- *     * use of undefined member
+ *     - flag use of class without a constructor or use of undefined class
+ *     - use of undefined member
  *     
  * 
  * todo?: cfg analysis
@@ -170,7 +170,6 @@ module S = Scope_code
 (* the ref is for the number of uses *)
 type environment = 
   (dname * (Scope_code.scope * int ref)) list list 
-
 
 let unused_ok_when_no_strict s = 
   if !E.strict 
@@ -243,7 +242,6 @@ let rec lookup_env2_for_class s env =
       then b 
       else lookup_env2_for_class s (xs::zs)
 
-
 let lookup_env_opt_for_class a b = 
   Common.optionise (fun () -> lookup_env2_for_class a b)
 
@@ -255,27 +253,27 @@ let lookup_env_opt_for_class a b =
 (* for now return only local vars, not class var like self::$x *)
 let vars_used_in_any x =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-      V.klvalue = (fun (k,vx) x ->
-        match Ast.untype x with
-        | Var (dname, _scope) ->
-            Common.push2 dname aref
+    V.klvalue = (fun (k,vx) x ->
+      match Ast.untype x with
+      | Var (dname, _scope) ->
+          Common.push2 dname aref
 
-        (* Used to have a bad representation for A::$a[e]
-         * It was parsed asa VQualifier(VArrayAccesS($a, e))
-         * but e could contains variable too !! so should actually
-         * visit the lval. But we also don't want to visit certain
-         * parts of lval.
+      (* Used to have a bad representation for A::$a[e]
+       * It was parsed asa VQualifier(VArrayAccesS($a, e))
+       * but e could contains variable too !! so should actually
+       * visit the lval. But we also don't want to visit certain
+       * parts of lval.
          * Introducing ClassVar fixed the problem.
-         * The qualifier should be with Var, just like what I do for name.
-         * 
-         * old: | VQualifier (qu, lval) -> ()
-         *)
-
-        | _ -> 
-            k x
-      );
-    }) x
-
+       * The qualifier should be with Var, just like what I do for name.
+       * 
+       * old: | VQualifier (qu, lval) -> ()
+       *)
+            
+      | _ -> 
+          k x
+    );
+  }) x
+    
 (* TODO: qualified_vars_in !!! *)
 
 (* the lval can be an array expression like 
@@ -295,7 +293,6 @@ let rec get_assigned_var_lval_opt lval =
   (* TODO *)
   | _ -> None
   )
-
 
 (* update: does consider also function calls to function taking parameters via
  * reference. Use global info.
@@ -471,13 +468,9 @@ let add_binding k v =
 
 let check_use_against_env var env = 
   let s = Ast.dname var in
-
   match lookup_env_opt s env with
-  | None -> 
-      E.fatal (E.UseOfUndefinedVariable var)
-
-  | Some (scope, aref) ->
-      incr aref
+  | None -> E.fatal (E.UseOfUndefinedVariable var)
+  | Some (scope, aref) -> incr aref
 
 let do_in_new_scope_and_check f = 
   new_scope();
@@ -499,7 +492,6 @@ let do_in_new_scope_and_check_if_strict f =
   if !E.strict 
   then do_in_new_scope_and_check f
   else f ()
-
   
 (*****************************************************************************)
 (* Scoped visitor *)
@@ -508,13 +500,11 @@ let do_in_new_scope_and_check_if_strict f =
 (* For each introduced binding (param, exception, foreach, etc), 
  * we add the binding in the environment with a counter, a la checkModule.
  *)
-let visit_prog 
- ?(find_entity = None) 
- prog = 
+let visit_prog ?(find_entity=None) prog = 
 
   let is_top_expr = ref true in 
 
-  let hooks = { Visitor_php.default_visitor with
+  let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
     (* scoping management.
      * 
@@ -681,7 +671,6 @@ let visit_prog
       | _ -> k x
     );
 
-
     V.kparameter = (fun (k,vx) x ->
       add_binding x.p_name (S.Param, ref 0);
       k x
@@ -728,8 +717,6 @@ let visit_prog
               scope_ref := scope;
           )
 
-
-
       | ObjAccessSimple (lval, tok, name) ->
           (match Ast.untype lval with
           | This _ ->
@@ -773,7 +760,6 @@ let visit_prog
       | AssignList (_, xs, _, e) ->
           let assigned = xs |> Ast.unparen |> Ast.uncomma in
 
-
           (* Use the same trick than for LocalIterator, make them 
            * share the same ref
            *)
@@ -799,7 +785,9 @@ let visit_prog
 
       | Eval _ -> pr2_once "Eval: TODO";
           k x
-      | Lambda _ -> pr2_once "Lambda: TODO"
+
+      | Lambda def -> 
+          raise Todo
           
       (* Include | ... ? *)
 
@@ -879,18 +867,13 @@ let visit_prog
     );
   }
   in
-
-  let visitor = Visitor_php.mk_visitor hooks in
   visitor (Program prog)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-let check_and_annotate_program2
-  ?find_entity
-  prog 
-  =
+let check_and_annotate_program2 ?find_entity prog =
 
   (* globals (re)initialialisation *) 
   _scoped_env := !initial_env;
