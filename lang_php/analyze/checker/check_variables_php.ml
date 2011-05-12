@@ -868,7 +868,6 @@ let visit_prog ?(find_entity=None) prog =
           )
         );
         passed_by_refs |> List.iter (fun v -> 
-
           (* Maybe a new local var *)
           let s = Ast.dname v in
           (match lookup_env_opt s !_scoped_env with

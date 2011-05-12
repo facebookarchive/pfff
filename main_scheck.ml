@@ -21,6 +21,7 @@ module S = Scope_code
 (*****************************************************************************)
 
 (* A lint-like checker for PHP.
+ * https://github.com/facebook/pfff/wiki/Scheck
  * 
  * By default 'scheck' performs only a local analysis of the files passed
  * on the command line. It is thus quite fast while still detecting a few
@@ -137,19 +138,21 @@ let layer_file = ref (None: filename option)
 (* Helpers *)
 (*****************************************************************************)
 
+(* Build the database of information. Take the name of the file
+ * we want to check and process all the files that are needed (included)
+ * to check it, a la cpp.
+ * 
+ * Some checks needs to have a global view of the code, for instance
+ * to know what are the sets of valid protected variable that can be used
+ * in a child class.
+ * 
+ * todo: can probably optimize this later. For instance lazy
+ * loading of files, stop when are in flib as modules are
+ * not transitive.
+ * 
+ * see also facebook/.../dependencies.ml
+ *)
 let build_mem_db file =
-
-  (* Build the database of information. Some checks needs to have
-   * a global view of the code, for instance to know what
-   * are the sets of valid protected variable that can be used
-   * in a child class.
-   * 
-   * todo: can probably optimize this later. For instance lazy
-   * loading of files, stop when are in flib as modules are
-   * not transitive.
-   * 
-   * see also facebook/.../dependencies.ml
-   *)
 
   (* todo: could infer PHPROOT at least ? just look at
    * the include in the file and see where the files are.
@@ -210,22 +213,20 @@ let main_action xs =
   files +> List.iter (fun file ->
     try 
       pr2_dbg (spf "processing: %s" file);
-
-      if not !heavy then begin
-        let find_entity = None in
-        Check_all_php.check_file ~find_entity file
-      end else begin
-        let db = build_mem_db file in
-        let find_entity = Some (Database_php_build.build_entity_finder db) in
-        Check_all_php.check_file ~find_entity file
-      end
+      let find_entity =
+        if not !heavy 
+        then None
+        else 
+          let db = build_mem_db file in
+          Some (Database_php_build.build_entity_finder db) 
+      in
+      Check_all_php.check_file ~find_entity file
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
     | exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
                        (Common.string_of_exn exn)) errors;
-  );
-  );
+  ));
 
   let errs = !Error_php._errors +> List.rev in
   let errs = 
@@ -300,7 +301,7 @@ let test () =
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
-let scheck_extra_actions () = [
+let extra_actions () = [
   "-type_inference", " <file>",
   Common.mk_action_1_arg type_inference;
   "-test", " ",
@@ -312,18 +313,18 @@ let scheck_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () =
- scheck_extra_actions()++
+ extra_actions()++
  []
 
 let options () =
   [
     "-verbose", Arg.Set verbose,
-    " ";
+    " guess what";
 
     "-heavy", Arg.Set heavy,
     " process included files";
     "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
-    " limit the number of processed includes";
+    " limit the number of includes to process";
     "-no_caching", Arg.Clear cache_parse, 
     " don't cache parsed ASTs";
      "-php_stdlib", Arg.Set_string php_stdlib, 
@@ -331,7 +332,7 @@ let options () =
 
     "-strict", Arg.Set strict_scope,
     " emulate block scope instead of function scope";
-    "-no_scrict_scope", Arg.Clear strict_scope, 
+    "-no_scrict", Arg.Clear strict_scope, 
     " use function scope (default)";
 
     "-no_rank", Arg.Clear rank,
@@ -355,7 +356,7 @@ let options () =
 
   (* this can not be factorized in Common *)
   "-date",   Arg.Unit (fun () ->
-    pr2 "version: $Date: 2010/04/25 00:44:57 $";
+    pr2 "version: $Date: 2011/05/12 00:44:57 $";
     raise (Common.UnixExit 0)
     ),
   "   guess what";
