@@ -75,6 +75,12 @@ define('T_XHP_TEXT', 1);
 
 //define('DEBUG_LOG_DEFAULT', 1);
 
+
+//from _checkModuleLib.php in $extension_defines
+define('MCC_NZLIB_COMPRESSION', 0);
+define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
+ 
+
 // ------------------------------------------
 // Now in HPHP idl files
 // ------------------------------------------
@@ -88,4 +94,3 @@ define('T_XHP_TEXT', 1);
 
 //class phpmcc {}
 
-function get_class_constants() { }

@@ -77,15 +77,11 @@ define('MCC_DELETE_DELETED', 0);
 define('MCC_DELETE_NOTFOUND', 0);
 define('MCC_DELETE_ERROR_LOG', 0);
 define('MCC_DELETE_ERROR_NOLOG', 0);
-//define('PHPMCC_NEW_HANDLE', 0);
-//define('PHPMCC_USED_FAST_PATH', 0);
-//define('PHPMCC_USED_SLOW_PATH', 0);
+define('PHPMCC_NEW_HANDLE', 0);
+define('PHPMCC_USED_FAST_PATH', 0);
+define('PHPMCC_USED_SLOW_PATH', 0);
 //define('PHPMCC_VERSION', 0);
 
-//from _checkModuleLib.php in $extension_defines
-define('MCC_NZLIB_COMPRESSION', 0);
-define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
- 
 class phpmcc {
 const IPPROTO_TCP = 0;
 const IPPROTO_UDP = 0;
