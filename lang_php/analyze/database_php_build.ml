@@ -1208,12 +1208,9 @@ let create_db
       | Some xs ->     xs
     in
 
-    let nbfiles = List.length files in
-    (* does not work well on Centos 5.2
-     *
-     * Common.check_stack_nbfiles nbfiles; 
-     *)
-    Common.check_stack_nbfiles nbfiles; 
+    let _nbfiles = List.length files in
+    (* does not work well on Centos 5.2 *)
+    (* Common.check_stack_nbfiles nbfiles;  *)
 
     (* ?default_depth_limit_cpp *)
     let parsing_stats, bigpbs = 

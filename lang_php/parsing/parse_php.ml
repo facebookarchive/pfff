@@ -410,7 +410,9 @@ let parse_memo ?pp file =
   then parse2 ?pp file
   else
     Common.memoized _hmemo_parse_php file (fun () -> 
-      parse2 ?pp file
+      Common.profile_code "Parse_php.parse_no_memo" (fun () ->
+        parse2 ?pp file
+      )
     )
 
 let parse ?pp a = 
