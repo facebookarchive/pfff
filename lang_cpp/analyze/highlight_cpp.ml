@@ -255,7 +255,7 @@ let visit_toplevel
                 tag ii (Global (Use2 fake_no_use2));
                 
             | 
-              (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class)
+              (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class|S.Closed)
                 -> failwith "scope not handled"
             )
           

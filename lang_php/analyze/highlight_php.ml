@@ -514,7 +514,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           | S.Class -> 
               tag info (Field (Use2 fake_no_use2))
 
-          | S.Global ->
+          | S.Global | S.Closed ->
               (* TODO, need global_used table *)
               tag info (Global (Use2 fake_no_use2));
 

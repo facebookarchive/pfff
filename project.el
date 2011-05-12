@@ -265,10 +265,11 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 2
 
        (0 "-test")
        (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
+       (2 "-debug_checker /home/pad/pfff/tests/php/scheck/closures.php")
        )
      )
     )

@@ -132,8 +132,8 @@ module S = Scope_code
  *  If connection empty => unused var
  *  If no binding => undefined variable
  * 
- * todo? maybe should define a PIL, PHP intermediate language that
- * makes it less tedious to write analysis of PHP code. There is too
+ * todo? maybe should use the PIL here; it would be 
+ * less tedious to write such analysis. There is too
  * many kinds of statements and expressions. Can probably factorize
  * more the code. For instance list($a, $b) = array is sugar 
  * for some assignations. But at the same time we may want to do special error 
@@ -188,7 +188,6 @@ let unused_ok s =
 
   || unused_ok_when_no_strict s
 
-
 let fake_dname s = 
   DName (s, Ast.fakeInfo s)
 
@@ -213,7 +212,6 @@ let fake_dname s =
  * dont define complex recursive class or dynamic hierarchies so
  * doing it statically in a naive way is good enough.
  *)
-
 let rec lookup_env2 s env = 
   match env with 
   | [] -> raise Not_found
@@ -253,6 +251,19 @@ let lookup_env_opt_for_class a b =
 (* for now return only local vars, not class var like self::$x *)
 let vars_used_in_any x =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.kexpr = (fun (k, vx) x ->
+      match Ast.untype x with
+      | Lambda def -> 
+          (* stop here, do not recurse in but count the use(...) as vars used *)
+          def.l_use +> Common.do_option (fun (_tok, vars) ->
+            vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
+            | LexicalVar (_is_ref, dname) ->
+                Common.push2 dname aref
+            );
+          )
+      | _ -> k x
+    );
+
     V.klvalue = (fun (k,vx) x ->
       match Ast.untype x with
       | Var (dname, _scope) ->
@@ -786,11 +797,24 @@ let visit_prog ?(find_entity=None) prog =
       | Eval _ -> pr2_once "Eval: TODO";
           k x
 
-      | Lambda def -> 
-          raise Todo
+      | Lambda def ->
+
+          (* reset completely the environment *)
+          Common.save_excursion _scoped_env !initial_env (fun () ->
+            Common.save_excursion is_top_expr true (fun () ->
+            do_in_new_scope_and_check (fun () ->
+
+              def.l_use +> Common.do_option (fun (_tok, vars) ->
+                vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
+                | LexicalVar (_is_ref, dname) ->
+                    add_binding dname (S.Closed, ref 0)
+                );
+              );
+              k x
+            ))
+          )
           
       (* Include | ... ? *)
-
           
       | _ ->
 
