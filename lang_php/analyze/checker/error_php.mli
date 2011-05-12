@@ -29,6 +29,8 @@ val info_of_error: error -> Ast_php.info option
 val string_of_severity: severity -> string
 
 exception Error of error
+
+(* ugly global, but sometimes they are practical *)
 val _errors: error list ref
 
 val fatal: error -> unit
@@ -42,11 +44,11 @@ val filter_false_positives: error list -> error list
 
 val show_10_most_recurring_unused_variable_names: unit -> unit
 
-(* small helper function generating Undefined (or MultiDefined) error 
+(* Small helper function generating Undefined (or MultiDefined) error 
  * if the entity was not found (or multiply defined). 
- * !! note that it memeoizes the MultiDefined error and the second time
- *    actually returns on the definition
- * !!
+ *
+ * Note that it memoizes the MultiDefined error so the second time
+ * it actually returns the right definition
  *)
 val find_entity: 
   find_entity: Entity_php.entity_finder option ->

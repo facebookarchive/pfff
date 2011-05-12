@@ -34,6 +34,8 @@ module Ast = Ast_php
 
 let strict = ref false
 
+(* see also _errors below *)
+
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
@@ -157,7 +159,9 @@ let string_of_error ?(show_position_info=true) error =
       Controlflow_build_pil.string_of_error err
 
  
-        
+(* todo? maybe could do as in errors_php.ml in facebook/ and have an error
+ * type being a record with the location of the error always available.
+ *)
 let info_of_error err =
   match err with
   | UndefinedEntity (_, name)
@@ -194,13 +198,18 @@ let report_error err =
 (* Global bis *)
 (*****************************************************************************)
 
+(* Ugly. Common.save_excursion can help reduce the problems that can
+ * come from using a global.
+ *)
 let _errors = ref []
 
 (* todo? let exn_when_error *)
 
 let fatal err =
   Common.push2 err _errors
-(* no difference for now ... *)
+(* no difference for now ..., maybe should have a record type for error like
+ * in check_module/ 
+ *)
 let warning err = 
   Common.push2 err _errors
 

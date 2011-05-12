@@ -128,12 +128,13 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 (* Visitor *)
 (*****************************************************************************)
 
-(* pre: have a unsugar AST *)
-let visit_and_check_funcalls  ?(find_entity = None) prog =
+(* pre: have a unsugar AST regarding self/parent
+ *)
+let visit_and_check_funcalls ?(find_entity=None) prog =
 
-  let hooks = { Visitor_php.default_visitor with
+  let visitor = V.mk_visitor { V.default_visitor with
 
-    Visitor_php.klvalue = (fun (k,vx) x ->
+    V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
           E.find_entity ~find_entity (Entity_php.Function, callname)
@@ -182,8 +183,8 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           k x
       | _ -> k x
     );
-  } in
-  let visitor = Visitor_php.mk_visitor hooks in
+  } 
+  in
   visitor (Program prog)
 
 (*****************************************************************************)
