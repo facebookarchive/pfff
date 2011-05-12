@@ -15,3 +15,4 @@ function property_exists() { }
 function get_object_vars() { }
 function call_user_method_array() { }
 function call_user_method() { }
+function get_class_constants() { }
