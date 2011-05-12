@@ -29,7 +29,7 @@ module S = Scope_code
  * 
  * 'scheck' can also leverage more expensive global analysis to find more bugs.
  * Doing so requires a PHP code database which is usually very expensive 
- * to build (see pfff_db_heavy) and very large disk-wise. Fortunately one can 
+ * to build (see pfff_db_heavy) and takes lots of space. Fortunately one can
  * now build this database in memory, on the fly. Indeed, thanks
  * to the include_require_php.ml analysis, we can now
  * build only the db for the files that matters, cutting significantly

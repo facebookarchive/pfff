@@ -22,7 +22,7 @@ module S = Scope_code
 (*****************************************************************************)
 
 (* A lint-like checker for PHP using (expensive) global analysis.
- * See also main_scheck.ml
+ * Mostly a copy paste of main_scheck.ml.
  *)
 
 (*****************************************************************************)
@@ -111,7 +111,7 @@ let main_action xs =
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
-let scheck_extra_actions () = [
+let extra_actions () = [
 ]
 
 (*****************************************************************************)
@@ -119,7 +119,7 @@ let scheck_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () =
- scheck_extra_actions()++
+ extra_actions()++
  []
 
 let options () =
@@ -128,8 +128,8 @@ let options () =
     "<dir> (default=" ^ !metapath ^ ")";
     "-strict", Arg.Set strict_scope,
     " emulate block scope instead of function scope";
-     "-no_scrict_scope", Arg.Clear strict_scope, 
-     " use function scope (default)";
+    "-no_scrict", Arg.Clear strict_scope, 
+    " use function scope (default)";
     "-no_rank", Arg.Clear rank,
     " ";
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),

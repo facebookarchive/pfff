@@ -13,7 +13,14 @@ type program_with_comments = program2
 
 exception Parse_error of Parse_info.info
 
-(* This is the main function. raise Parse_error when not Flag.error_recovery *)
+val _hmemo_parse_php: 
+  (Common.filename, program2 * Parse_info.parsing_stat) Hashtbl.t
+
+(* This is the main function. raise Parse_error when not Flag.error_recovery.
+ *
+ * !It can cache the parsing result in _hmemo_parse_php if Flag.caching_parsing
+ * is set.
+ *)
 val parse : 
   ?pp:string option -> 
   Common.filename -> (program2 * Parse_info.parsing_stat)
@@ -21,6 +28,7 @@ val parse :
 val parse_program:
   ?pp:string option ->
   Common.filename -> Ast_php.program
+
 
 (* for sgrep/spatch patterns *)
 val parse_any:
