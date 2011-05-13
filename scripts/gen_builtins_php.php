@@ -164,8 +164,15 @@ function DefineFunction($arr) {
           }
           $args_str=implode(", ", $args);
       }
+      $body_str = "";
+      if(isset($arr['flags']) && (
+         ($arr['flags'] & VariableArguments) ||
+         ($arr['flags'] & MixedVariableArguments)
+         )) {
+        $body_str = "func_get_args();";
+      }
       echo ($is_in_class ? " " : "") .
-           "function " . $arr['name'] . "($args_str) { }\n";
+           "function " . $arr['name'] . "($args_str) { $body_str }\n";
   }
 }
 
