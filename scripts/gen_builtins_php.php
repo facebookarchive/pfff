@@ -75,10 +75,10 @@ define('HasOptFunction',                 1 << 23);
 define('AllowIntercept',                 1 << 24);
 define('NoProfile',                      1 << 25);
 define('ContextSensitive',               1 << 26);
+define('NoDefaultSweep',                 1 << 27);
 
 define('VarArgsMask', (VariableArguments | RefVariableArguments |
                        MixedVariableArguments));
-
 
 $builtins_do_not_give_decl =
   array("die","eval","exit","__halt_compiler","echo", "print");
@@ -138,15 +138,37 @@ function DefineFunction($arr) {
 
   if (in_array($arr['name'], $builtins_do_not_give_decl)) {
   } else {
-    if ($is_in_class) {
-      // TODO get also the arguments, their types, and the return value
-      echo "function " . $arr['name'] . "() { }\n";
-    } else {
-      // TODO get also the arguments, their types, and the return value
-      echo "function " . $arr['name'] . "() { }\n";
-    }
+      // TODO the return type? does hphp allow type hint on return?
+      // TODO use flags?
+      $args = array();
+      $args_str = "";
+      if(isset($arr['args'])) {
+          foreach($arr['args'] as $arg) {
+            $ref_str = 
+              ($arg['type'] & Reference) ? "&" : "";
+
+            $val_str = "";
+            if (isset($arg['value'])) {
+              $v = $arg['value'];
+
+              // certain default values are not allowed in PHP land
+              if ($v === "TimeStamp::Current()" ||
+                  preg_match('/.*\|.*/', $v) ||
+                  false) { 
+                $val_str = " = null /* $v */";
+              } else {
+                $val_str = " = $v";
+              }
+            }
+            $args[] = $ref_str . '$' . $arg['name'] . $val_str;
+          }
+          $args_str=implode(", ", $args);
+      }
+      echo ($is_in_class ? " " : "") .
+           "function " . $arr['name'] . "($args_str) { }\n";
   }
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Classes
@@ -187,6 +209,7 @@ function BeginClass($arr) {
   $is_in_class = true;
   // TODO get the extends/implements too
   echo "class " . $arr['name'] . " {\n";
+  // the methods will be processed by DefineFunction() above
 
 }
 

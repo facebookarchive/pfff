@@ -271,10 +271,10 @@ let generate_php_stdlib ~src ~phpmanual_dir ~dest =
 let actions () = [
   (* e.g. 
    * ./pfff_misc -generate_php_stdlib tests/idl/ 
-   *    ~/software-src/phpdoc-svn/reference/   data/php_stdlib2
+   *    ~/local/software/phpdoc-svn/reference/   data/php_stdlib2
    * to test do:
    * ./pfff_misc -generate_php_stdlib tests/idl/array.idl.php
-   *   ~/software-src/phpdoc-svn/reference/array/   data/php_stdlib2
+   *   ~/local/software-src/phpdoc-svn/reference/array/   data/php_stdlib2
    *)
   "-generate_php_stdlib", " <src_idl> <src_phpmanual> <dest>",
   Common.mk_action_3_arg (fun src phpmanual_dir dest ->
