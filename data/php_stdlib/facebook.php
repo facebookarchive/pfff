@@ -80,6 +80,7 @@ define('T_XHP_TEXT', 1);
 define('MCC_NZLIB_COMPRESSION', 0);
 define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
  
+define('MCC_COMPRESSION_THRESHHOLD', 0);
 
 // ------------------------------------------
 // Now in HPHP idl files
