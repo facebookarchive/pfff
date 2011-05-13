@@ -20,7 +20,7 @@ function fql_parse_10($query) { }
 function fql_multiparse_10($query) { }
 function xhp_preprocess_code($code) { }
 function fb_call_user_func_array_async($function, $params) { }
-function fb_call_user_func_async($function) { }
+function fb_call_user_func_async($function) { func_get_args();}
 function fb_check_user_func_async($handle) { }
 function fb_end_user_func_async($handle) { }
 function fb_xbox_call_proxy($message) { }

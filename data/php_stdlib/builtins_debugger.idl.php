@@ -22,15 +22,15 @@ const AUTO_COMPLETE_KEYWORDS = 0;
 const AUTO_COMPLETE_CODE = 0;
  function __construct() { }
  function quit() { }
- function help($format) { }
- function info($format) { }
- function output($format) { }
- function error($format) { }
+ function help($format) { func_get_args();}
+ function info($format) { func_get_args();}
+ function output($format) { func_get_args();}
+ function error($format) { func_get_args();}
  function code($source, $highlight_line = 0, $start_line_no = 0, $end_line_no = 0) { }
- function ask($format) { }
+ function ask($format) { func_get_args();}
  function wrap($str) { }
  function helpTitle($str) { }
- function helpCmds($cmd, $desc) { }
+ function helpCmds($cmd, $desc) { func_get_args();}
  function helpBody($str) { }
  function helpSection($str) { }
  function tutorial($str) { }

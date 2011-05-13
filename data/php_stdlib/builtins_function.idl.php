@@ -4,23 +4,23 @@ function get_defined_functions() { }
 function function_exists($function_name) { }
 function is_callable($v, $syntax = false, &$name = null) { }
 function call_user_func_array($function, $params) { }
-function call_user_func($function) { }
+function call_user_func($function) { func_get_args();}
 function call_user_func_array_async($function, $params) { }
-function call_user_func_async($function) { }
+function call_user_func_async($function) { func_get_args();}
 function check_user_func_async($handles, $timeout = -1) { }
 function end_user_func_async($handle, $default_strategy = k_GLOBAL_STATE_IGNORE, $additional_strategies = null) { }
 function call_user_func_serialized($input) { }
 function call_user_func_array_rpc($host, $port, $auth, $timeout, $function, $params) { }
-function call_user_func_rpc($host, $port, $auth, $timeout, $function) { }
+function call_user_func_rpc($host, $port, $auth, $timeout, $function) { func_get_args();}
 function forward_static_call_array($function, $params) { }
-function forward_static_call($function) { }
+function forward_static_call($function) { func_get_args();}
 function get_called_class() { }
 function create_function($args, $code) { }
 function func_get_arg($arg_num) { }
 function func_get_args() { }
 function func_num_args() { }
-function register_postsend_function($function) { }
-function register_shutdown_function($function) { }
-function register_cleanup_function($function) { }
-function register_tick_function($function) { }
+function register_postsend_function($function) { func_get_args();}
+function register_shutdown_function($function) { func_get_args();}
+function register_cleanup_function($function) { func_get_args();}
+function register_tick_function($function) { func_get_args();}
 function unregister_tick_function($function_name) { }

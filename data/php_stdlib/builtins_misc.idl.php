@@ -13,7 +13,7 @@ function highlight_file($filename, $ret = false) { }
 function show_source($filename, $ret = false) { }
 function highlight_string($str, $ret = false) { }
 function ignore_user_abort($setting = false) { }
-function pack($format) { }
+function pack($format) { func_get_args();}
 function php_check_syntax($filename, &$error_message = null) { }
 function php_strip_whitespace($filename) { }
 function sleep($seconds) { }

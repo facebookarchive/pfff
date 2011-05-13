@@ -4,7 +4,7 @@ function use_soap_error_handler($handler = true) { }
 function is_soap_fault($fault) { }
 class SoapServer {
  function __construct($wsdl, $options = null_array) { }
- function setclass($name) { }
+ function setclass($name) { func_get_args();}
  function setobject($obj) { }
  function addfunction($func) { }
  function getfunctions() { }

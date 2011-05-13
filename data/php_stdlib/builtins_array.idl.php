@@ -32,16 +32,16 @@ function array_flip($trans) { }
 function array_key_exists($key, $search) { }
 function key_exists($key, $search) { }
 function array_keys($input, $search_value = null_variant, $strict = false) { }
-function array_map($callback, $arr1) { }
-function array_merge_recursive($array1) { }
-function array_merge($array1) { }
-function array_replace_recursive($array1) { }
-function array_replace($array1) { }
-function array_multisort(&$ar1) { }
+function array_map($callback, $arr1) { func_get_args();}
+function array_merge_recursive($array1) { func_get_args();}
+function array_merge($array1) { func_get_args();}
+function array_replace_recursive($array1) { func_get_args();}
+function array_replace($array1) { func_get_args();}
+function array_multisort(&$ar1) { func_get_args();}
 function array_pad($input, $pad_size, $pad_value) { }
 function array_pop(&$array) { }
 function array_product($array) { }
-function array_push(&$array, $var) { }
+function array_push(&$array, $var) { func_get_args();}
 function array_rand($input, $num_req = 1) { }
 function array_reduce($input, $callback, $initial = null_variant) { }
 function array_reverse($array, $preserve_keys = false) { }
@@ -51,11 +51,11 @@ function array_slice($array, $offset, $length = null_variant, $preserve_keys = f
 function array_splice(&$input, $offset, $length = null_variant, $replacement = null_variant) { }
 function array_sum($array) { }
 function array_unique($array, $sort_flags = 2) { }
-function array_unshift(&$array, $var) { }
+function array_unshift(&$array, $var) { func_get_args();}
 function array_values($input) { }
 function array_walk_recursive(&$input, $funcname, $userdata = null_variant) { }
 function array_walk(&$input, $funcname, $userdata = null_variant) { }
-function compact($varname) { }
+function compact($varname) { func_get_args();}
 function shuffle(&$array) { }
 function count($var, $recursive = false) { }
 function sizeof($var, $recursive = false) { }
@@ -71,22 +71,22 @@ function key(&$array) { }
 function hphp_get_iterator(&$iterable, $isMutable) { }
 function in_array($needle, $haystack, $strict = false) { }
 function range($low, $high, $step = 1) { }
-function array_diff($array1, $array2) { }
-function array_udiff($array1, $array2, $data_compare_func) { }
-function array_diff_assoc($array1, $array2) { }
-function array_diff_uassoc($array1, $array2, $key_compare_func) { }
-function array_udiff_assoc($array1, $array2, $data_compare_func) { }
-function array_udiff_uassoc($array1, $array2, $data_compare_func, $key_compare_func) { }
-function array_diff_key($array1, $array2) { }
-function array_diff_ukey($array1, $array2, $key_compare_func) { }
-function array_intersect($array1, $array2) { }
-function array_uintersect($array1, $array2, $data_compare_func) { }
-function array_intersect_assoc($array1, $array2) { }
-function array_intersect_uassoc($array1, $array2, $key_compare_func) { }
-function array_uintersect_assoc($array1, $array2, $data_compare_func) { }
-function array_uintersect_uassoc($array1, $array2, $data_compare_func, $key_compare_func) { }
-function array_intersect_key($array1, $array2) { }
-function array_intersect_ukey($array1, $array2, $key_compare_func) { }
+function array_diff($array1, $array2) { func_get_args();}
+function array_udiff($array1, $array2, $data_compare_func) { func_get_args();}
+function array_diff_assoc($array1, $array2) { func_get_args();}
+function array_diff_uassoc($array1, $array2, $key_compare_func) { func_get_args();}
+function array_udiff_assoc($array1, $array2, $data_compare_func) { func_get_args();}
+function array_udiff_uassoc($array1, $array2, $data_compare_func, $key_compare_func) { func_get_args();}
+function array_diff_key($array1, $array2) { func_get_args();}
+function array_diff_ukey($array1, $array2, $key_compare_func) { func_get_args();}
+function array_intersect($array1, $array2) { func_get_args();}
+function array_uintersect($array1, $array2, $data_compare_func) { func_get_args();}
+function array_intersect_assoc($array1, $array2) { func_get_args();}
+function array_intersect_uassoc($array1, $array2, $key_compare_func) { func_get_args();}
+function array_uintersect_assoc($array1, $array2, $data_compare_func) { func_get_args();}
+function array_uintersect_uassoc($array1, $array2, $data_compare_func, $key_compare_func) { func_get_args();}
+function array_intersect_key($array1, $array2) { func_get_args();}
+function array_intersect_ukey($array1, $array2, $key_compare_func) { func_get_args();}
 function sort(&$array, $sort_flags = 0, $use_collator = false) { }
 function rsort(&$array, $sort_flags = 0, $use_collator = false) { }
 function asort(&$array, $sort_flags = 0, $use_collator = false) { }

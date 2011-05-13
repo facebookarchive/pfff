@@ -21,8 +21,8 @@ function fb_rpc_intercept_handler($name, $obj, $params, $data, &$done) { }
 function fb_renamed_functions($names) { }
 function fb_rename_function($orig_func_name, $new_func_name) { }
 function fb_utf8ize(&$input) { }
-function fb_call_user_func_safe($function) { }
-function fb_call_user_func_safe_return($function, $def) { }
+function fb_call_user_func_safe($function) { func_get_args();}
+function fb_call_user_func_safe_return($function, $def) { func_get_args();}
 function fb_call_user_func_array_safe($function, $params) { }
 function fb_get_code_coverage($flush) { }
 function xhprof_enable($flags = 0, $args = null_array) { }

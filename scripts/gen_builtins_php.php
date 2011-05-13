@@ -172,7 +172,7 @@ function DefineFunction($arr) {
         $body_str = "func_get_args();";
       }
       echo ($is_in_class ? " " : "") .
-           "function " . $arr['name'] . "($args_str) { $body_str }\n";
+           "function " . $arr['name'] . "($args_str) { $body_str}\n";
   }
 }
 

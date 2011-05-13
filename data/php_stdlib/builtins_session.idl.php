@@ -17,6 +17,6 @@ function session_destroy() { }
 function session_unset() { }
 function session_commit() { }
 function session_write_close() { }
-function session_register($var_names) { }
+function session_register($var_names) { func_get_args();}
 function session_unregister($varname) { }
 function session_is_registered($varname) { }

@@ -20,7 +20,7 @@ function fscanf($handle, $format) { }
 function fpassthru($handle) { }
 function fwrite($handle, $data, $length = 0) { }
 function fputs($handle, $data, $length = 0) { }
-function fprintf($handle, $format) { }
+function fprintf($handle, $format) { func_get_args();}
 function vfprintf($handle, $format, $args) { }
 function fflush($handle) { }
 function ftruncate($handle, $size) { }

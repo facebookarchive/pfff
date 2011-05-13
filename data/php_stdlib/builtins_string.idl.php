@@ -49,12 +49,12 @@ function convert_cyr_string($str, $from, $to) { }
 function get_html_translation_table($table = 0, $quote_style = k_ENT_COMPAT) { }
 function hebrev($hebrew_text, $max_chars_per_line = 0) { }
 function hebrevc($hebrew_text, $max_chars_per_line = 0) { }
-function setlocale($category, $locale) { }
+function setlocale($category, $locale) { func_get_args();}
 function localeconv() { }
 function nl_langinfo($item) { }
-function printf($format) { }
+function printf($format) { func_get_args();}
 function vprintf($format, $args) { }
-function sprintf($format) { }
+function sprintf($format) { func_get_args();}
 function vsprintf($format, $args) { }
 function sscanf($str, $format) { }
 function chr($ascii) { }

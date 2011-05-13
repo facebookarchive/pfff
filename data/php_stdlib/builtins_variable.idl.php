@@ -23,7 +23,7 @@ function strval($v) { }
 function settype(&$var, $type) { }
 function print_r($expression, $ret = false) { }
 function var_export($expression, $ret = false) { }
-function var_dump($expression) { }
+function var_dump($expression) { func_get_args();}
 function debug_zval_dump($variable) { }
 function serialize($value) { }
 function unserialize($str) { }

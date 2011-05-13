@@ -7,7 +7,7 @@ function mb_check_encoding($var = null_string, $encoding = null_string) { }
 function mb_convert_case($str, $mode, $encoding = null_string) { }
 function mb_convert_encoding($str, $to_encoding, $from_encoding = null_variant) { }
 function mb_convert_kana($str, $option = null_string, $encoding = null_string) { }
-function mb_convert_variables($to_encoding, $from_encoding, &$vars) { }
+function mb_convert_variables($to_encoding, $from_encoding, &$vars) { func_get_args();}
 function mb_decode_mimeheader($str) { }
 function mb_decode_numericentity($str, $convmap, $encoding = null_string) { }
 function mb_detect_encoding($str, $encoding_list = null_variant, $strict = null_variant) { }

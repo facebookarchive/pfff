@@ -15,4 +15,4 @@ function method_exists($class_or_object, $method_name) { }
 function property_exists($class_or_object, $property) { }
 function get_object_vars($object) { }
 function call_user_method_array($method_name, &$obj, $paramarr) { }
-function call_user_method($method_name, &$obj) { }
+function call_user_method($method_name, &$obj) { func_get_args();}

@@ -118,7 +118,7 @@ class PDOStatement {
  function getattribute($attribute) { }
  function columncount() { }
  function getcolumnmeta($column) { }
- function setfetchmode($mode) { }
+ function setfetchmode($mode) { func_get_args();}
  function nextrowset() { }
  function closecursor() { }
  function debugdumpparams() { }
