@@ -58,43 +58,43 @@ const RES_TIMEOUT = 0;
 const RES_BAD_KEY_PROVIDED = 0;
 const RES_CONNECTION_SOCKET_CREATE_FAILURE = 0;
 const RES_PAYLOAD_FAILURE = 0;
-function __construct() { }
-function add() { }
-function addByKey() { }
-function addServer() { }
-function addServers() { }
-function append() { }
-function appendByKey() { }
-function cas() { }
-function casByKey() { }
-function decrement() { }
-function delete() { }
-function deleteByKey() { }
-function fetch() { }
-function fetchAll() { }
-function flush() { }
-function get() { }
-function getByKey() { }
-function getDelayed() { }
-function getDelayedByKey() { }
-function getMulti() { }
-function getMultiByKey() { }
-function getOption() { }
-function getResultCode() { }
-function getResultMessage() { }
-function getServerByKey() { }
-function getServerList() { }
-function getStats() { }
-function getVersion() { }
-function increment() { }
-function prepend() { }
-function prependByKey() { }
-function replace() { }
-function replaceByKey() { }
-function set() { }
-function setByKey() { }
-function setMulti() { }
-function setMultiByKey() { }
-function setOption() { }
-function __destruct() { }
+ function __construct($persistent_id = null_string) { }
+ function add($key, $value, $expiration = 0) { }
+ function addByKey($server_key, $key, $value, $expiration = 0) { }
+ function addServer($host, $port, $weight = 0) { }
+ function addServers($servers) { }
+ function append($key, $value) { }
+ function appendByKey($server_key, $key, $value) { }
+ function cas($cas_token, $key, $value, $expiration = 0) { }
+ function casByKey($cas_token, $server_key, $key, $value, $expiration = 0) { }
+ function decrement($key, $offset = 1) { }
+ function delete($key, $time = 0) { }
+ function deleteByKey($server_key, $key, $time = 0) { }
+ function fetch() { }
+ function fetchAll() { }
+ function flush($delay = 0) { }
+ function get($key, $cache_cb = null_variant, &$cas_token = null_variant) { }
+ function getByKey($server_key, $key, $cache_cb = null_variant, &$cas_token = null_variant) { }
+ function getDelayed($keys, $with_cas = false, $value_cb = null_variant) { }
+ function getDelayedByKey($server_key, $keys, $with_cas = false, $value_cb = null_variant) { }
+ function getMulti($keys, &$cas_tokens = null_variant, $flags = 0) { }
+ function getMultiByKey($server_key, $keys, &$cas_tokens = null_variant, $flags = 0) { }
+ function getOption($option) { }
+ function getResultCode() { }
+ function getResultMessage() { }
+ function getServerByKey($server_key) { }
+ function getServerList() { }
+ function getStats() { }
+ function getVersion() { }
+ function increment($key, $offset = 1) { }
+ function prepend($key, $value) { }
+ function prependByKey($server_key, $key, $value) { }
+ function replace($key, $value, $expiration = 0) { }
+ function replaceByKey($server_key, $key, $value, $expiration = 0) { }
+ function set($key, $value, $expiration = 0) { }
+ function setByKey($server_key, $key, $value, $expiration = 0) { }
+ function setMulti($items, $expiration = 0) { }
+ function setMultiByKey($server_key, $items, $expiration = 0) { }
+ function setOption($option, $value) { }
+ function __destruct() { }
 }

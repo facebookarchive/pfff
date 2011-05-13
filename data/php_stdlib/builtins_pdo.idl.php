@@ -83,55 +83,55 @@ const MYSQL_ATTR_COMPRESS = 0;
 const MYSQL_ATTR_DIRECT_QUERY = 0;
 const MYSQL_ATTR_FOUND_ROWS = 0;
 const MYSQL_ATTR_IGNORE_SPACE = 0;
-function __construct() { }
-function prepare() { }
-function begintransaction() { }
-function commit() { }
-function rollback() { }
-function setattribute() { }
-function getattribute() { }
-function exec() { }
-function lastinsertid() { }
-function errorcode() { }
-function errorinfo() { }
-function query() { }
-function quote() { }
-function __wakeup() { }
-function __sleep() { }
-function getavailabledrivers() { }
-function __destruct() { }
+ function __construct($dsn, $username = null_string, $password = null_string, $options = null_array) { }
+ function prepare($statement, $options = null_array) { }
+ function begintransaction() { }
+ function commit() { }
+ function rollback() { }
+ function setattribute($attribute, $value) { }
+ function getattribute($attribute) { }
+ function exec($query) { }
+ function lastinsertid($seqname = null_string) { }
+ function errorcode() { }
+ function errorinfo() { }
+ function query($sql) { }
+ function quote($str, $paramtype = q_PDO_PARAM_STR) { }
+ function __wakeup() { }
+ function __sleep() { }
+ function getavailabledrivers() { }
+ function __destruct() { }
 }
 class PDOStatement {
-function __construct() { }
-function execute() { }
-function fetch() { }
-function fetchobject() { }
-function fetchcolumn() { }
-function fetchall() { }
-function bindvalue() { }
-function bindparam() { }
-function bindcolumn() { }
-function rowcount() { }
-function errorcode() { }
-function errorinfo() { }
-function setattribute() { }
-function getattribute() { }
-function columncount() { }
-function getcolumnmeta() { }
-function setfetchmode() { }
-function nextrowset() { }
-function closecursor() { }
-function debugdumpparams() { }
-function current() { }
-function key() { }
-function next() { }
-function rewind() { }
-function valid() { }
-function __wakeup() { }
-function __sleep() { }
-function __destruct() { }
+ function __construct() { }
+ function execute($params = null_array) { }
+ function fetch($how = 0, $orientation = q_PDO_FETCH_ORI_NEXT, $offset = 0) { }
+ function fetchobject($class_name = null_string, $ctor_args = null) { }
+ function fetchcolumn($column_numner = 0) { }
+ function fetchall($how = 0, $class_name = null, $ctor_args = null) { }
+ function bindvalue($paramno, $param, $type = q_PDO_PARAM_STR) { }
+ function bindparam($paramno, &$param, $type = q_PDO_PARAM_STR, $max_value_len = 0, $driver_params = null) { }
+ function bindcolumn($paramno, &$param, $type = q_PDO_PARAM_STR, $max_value_len = 0, $driver_params = null) { }
+ function rowcount() { }
+ function errorcode() { }
+ function errorinfo() { }
+ function setattribute($attribute, $value) { }
+ function getattribute($attribute) { }
+ function columncount() { }
+ function getcolumnmeta($column) { }
+ function setfetchmode($mode) { }
+ function nextrowset() { }
+ function closecursor() { }
+ function debugdumpparams() { }
+ function current() { }
+ function key() { }
+ function next() { }
+ function rewind() { }
+ function valid() { }
+ function __wakeup() { }
+ function __sleep() { }
+ function __destruct() { }
 }
 class PDOException {
-function __construct() { }
-function __destruct() { }
+ function __construct() { }
+ function __destruct() { }
 }

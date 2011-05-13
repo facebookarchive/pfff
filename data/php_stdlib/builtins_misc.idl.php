@@ -5,23 +5,23 @@ define('NAN', 0);
 function connection_aborted() { }
 function connection_status() { }
 function connection_timeout() { }
-function constant() { }
-function define() { }
-function defined() { }
-function get_browser() { }
-function highlight_file() { }
-function show_source() { }
-function highlight_string() { }
-function ignore_user_abort() { }
-function pack() { }
-function php_check_syntax() { }
-function php_strip_whitespace() { }
-function sleep() { }
-function usleep() { }
-function time_nanosleep() { }
-function time_sleep_until() { }
-function uniqid() { }
-function unpack() { }
+function constant($name) { }
+function define($name, $value, $case_insensitive = false) { }
+function defined($name) { }
+function get_browser($user_agent = null_string, $return_array = false) { }
+function highlight_file($filename, $ret = false) { }
+function show_source($filename, $ret = false) { }
+function highlight_string($str, $ret = false) { }
+function ignore_user_abort($setting = false) { }
+function pack($format) { }
+function php_check_syntax($filename, &$error_message = null) { }
+function php_strip_whitespace($filename) { }
+function sleep($seconds) { }
+function usleep($micro_seconds) { }
+function time_nanosleep($seconds, $nanoseconds) { }
+function time_sleep_until($timestamp) { }
+function uniqid($prefix = null_string, $more_entropy = false) { }
+function unpack($format, $data) { }
 function sys_getloadavg() { }
-function token_get_all() { }
-function token_name() { }
+function token_get_all($source) { }
+function token_name($token) { }

@@ -11,36 +11,36 @@ define('XHPROF_FLAGS_VTSC', 0);
 define('XHPROF_FLAGS_TRACE', 0);
 define('XHPROF_FLAGS_MEASURE_XHPROF_DISABLE', 0);
 define('XHPROF_FLAGS_MALLOC', 0);
-function fb_thrift_serialize() { }
-function fb_thrift_unserialize() { }
-function fb_serialize() { }
-function fb_unserialize() { }
-function fb_intercept() { }
-function fb_stubout_intercept_handler() { }
-function fb_rpc_intercept_handler() { }
-function fb_renamed_functions() { }
-function fb_rename_function() { }
-function fb_utf8ize() { }
-function fb_call_user_func_safe() { }
-function fb_call_user_func_safe_return() { }
-function fb_call_user_func_array_safe() { }
-function fb_get_code_coverage() { }
-function xhprof_enable() { }
+function fb_thrift_serialize($thing) { }
+function fb_thrift_unserialize($thing, &$success, &$errcode = null_variant) { }
+function fb_serialize($thing) { }
+function fb_unserialize($thing, &$success, &$errcode = null_variant) { }
+function fb_intercept($name, $handler, $data = null_variant) { }
+function fb_stubout_intercept_handler($name, $obj, $params, $data, &$done) { }
+function fb_rpc_intercept_handler($name, $obj, $params, $data, &$done) { }
+function fb_renamed_functions($names) { }
+function fb_rename_function($orig_func_name, $new_func_name) { }
+function fb_utf8ize(&$input) { }
+function fb_call_user_func_safe($function) { }
+function fb_call_user_func_safe_return($function, $def) { }
+function fb_call_user_func_array_safe($function, $params) { }
+function fb_get_code_coverage($flush) { }
+function xhprof_enable($flags = 0, $args = null_array) { }
 function xhprof_disable() { }
 function xhprof_network_enable() { }
 function xhprof_network_disable() { }
-function xhprof_frame_begin() { }
+function xhprof_frame_begin($name) { }
 function xhprof_frame_end() { }
-function xhprof_run_trace() { }
+function xhprof_run_trace($packedTrace, $flags) { }
 function xhprof_sample_enable() { }
 function xhprof_sample_disable() { }
-function fb_load_local_databases() { }
-function fb_parallel_query() { }
-function fb_crossall_query() { }
-function fb_set_taint() { }
-function fb_unset_taint() { }
-function fb_get_taint() { }
-function fb_const_fetch() { }
-function fb_output_compression() { }
-function fb_set_exit_callback() { }
+function fb_load_local_databases($servers) { }
+function fb_parallel_query($sql_map, $max_thread = 50, $combine_result = true, $retry_query_on_fail = true, $connect_timeout = -1, $read_timeout = -1, $timeout_in_ms = false) { }
+function fb_crossall_query($sql, $max_thread = 50, $retry_query_on_fail = true, $connect_timeout = -1, $read_timeout = -1, $timeout_in_ms = false) { }
+function fb_set_taint(&$str, $taint) { }
+function fb_unset_taint(&$str, $taint) { }
+function fb_get_taint($str) { }
+function fb_const_fetch($key) { }
+function fb_output_compression($new_value) { }
+function fb_set_exit_callback($function) { }
 function fb_get_flush_stat() { }
