@@ -15,17 +15,17 @@ val deadcode_detection : Controlflow_php.flow -> unit
 (*e: controlflow checkers signatures *)
 
 (*s: type Controlflow_build_php.error *)
-type error = 
-  | DeadCode        of Ast_php.info * Controlflow_php.node_kind
-  | NoEnclosingLoop of Ast_php.info
-  | ColonSyntax     of Ast_php.info
-  | NoMethodBody    of Ast_php.info
-  | DynamicBreak    of Ast_php.info
+type error = error_kind * Ast_php.info
+ and error_kind = 
+  | DeadCode of Controlflow_php.node_kind
+  | NoEnclosingLoop
+  | ColonSyntax
+  | NoMethodBody
+  | DynamicBreak
 (*e: type Controlflow_build_php.error *)
 
-val string_of_error: ?show_position_info:bool -> error -> string
-val info_of_error: error -> Ast_php.info option
-
+val string_of_error: error -> string
+val string_of_error_kind: error_kind -> string
 (*s: error exception and report_error signature *)
 exception Error of error
 

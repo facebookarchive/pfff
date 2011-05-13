@@ -483,7 +483,7 @@ let add_binding k v =
 let check_use_against_env var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
-  | None -> E.fatal (E.UseOfUndefinedVariable var)
+  | None -> E.fatal (Ast.info_of_dname var) (E.UseOfUndefinedVariable var)
   | Some (scope, aref) -> incr aref
 
 let do_in_new_scope_and_check f = 
@@ -498,7 +498,7 @@ let do_in_new_scope_and_check f =
     then 
       let s = Ast.dname dname in
       if unused_ok s then ()
-      else E.fatal (E.UnusedVariable (dname, scope))
+      else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (dname, scope))
   );
   res
 
@@ -609,7 +609,7 @@ let visit_prog ?(find_entity=None) prog =
             | GlobalVar dname -> 
                 add_binding dname (S.Global, ref 0)
             | GlobalDollar (tok, _)  | GlobalDollarExpr (tok, _) ->
-                E.warning (E.UglyGlobalDynamic tok)
+                E.warning tok E.UglyGlobalDynamic
           )
 
       | StaticVars (_, vars_list, _) ->
@@ -655,7 +655,7 @@ let visit_prog ?(find_entity=None) prog =
                         scope_ref := S.LocalIterator;
 
                     | _ ->
-                        E.warning (E.WeirdForeachNoIteratorVar tok)
+                        E.warning tok E.WeirdForeachNoIteratorVar
                     );
                 );
                 
@@ -663,7 +663,7 @@ let visit_prog ?(find_entity=None) prog =
               );
 
           | _ -> 
-              E.warning (E.WeirdForeachNoIteratorVar tok)
+              E.warning tok E.WeirdForeachNoIteratorVar
           )
       (* note: I was not handling Unset which takes a lvalue (not
        * an expression) as an argument. Because of that the kexpr
@@ -746,7 +746,7 @@ let visit_prog ?(find_entity=None) prog =
               let s = Ast.name name in
               (match lookup_env_opt_for_class s !_scoped_env with
               | None -> 
-                  E.fatal (E.UseOfUndefinedMember name)
+                  E.fatal (Ast.info_of_name name) (E.UseOfUndefinedMember name)
 
               | Some (scope, aref) ->
                   if (scope <> S.Class)

@@ -98,7 +98,7 @@ let properties = [
 let info_of_error_and_kind err =
 
   let kind = 
-    match err with
+    match err.E.typ with
   | UndefinedEntity (kind, _) -> 
       "eUndefinedEntity-" ^ Entity_php.string_of_id_kind kind
   | MultiDefinedEntity (kind, _, _) ->
@@ -108,7 +108,7 @@ let info_of_error_and_kind err =
   | NotEnoughArguments _ ->"eNotEnoughArguments"
 
   | WrongKeywordArgument (_, _, severity) ->
-      "eWrongKeywordArgument-" ^ (Error_php.string_of_severity severity)
+      "eWrongKeywordArgument-" ^ (Error_php.string_of_severity2 severity)
 
   | UseOfUndefinedVariable _ -> 
       "eUseOfUndefinedVariable"
@@ -119,7 +119,7 @@ let info_of_error_and_kind err =
   | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
   | WeirdForeachNoIteratorVar _ -> "eWeirdForeachNoIteratorVar"
 
-  | CfgError (Controlflow_build_php.DeadCode (info, node_kind)) ->
+  | CfgError (Controlflow_build_php.DeadCode node_kind) ->
       (match node_kind with
       | Controlflow_php.Break -> "eDeadBreak"
       | Controlflow_php.Return -> "eDeadReturn"
@@ -131,9 +131,7 @@ let info_of_error_and_kind err =
       "eCfgError"
 
   in
-  E.info_of_error err +> Common.fmap (fun info ->
-    info, kind
-  )
+  err.loc, kind
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -141,7 +139,7 @@ let info_of_error_and_kind err =
 
 let gen_layer ~root ~output errors = 
 
-  let infos = errors +> Common.map_filter info_of_error_and_kind in
+  let infos = errors +> Common.map info_of_error_and_kind in
 
   let layer = Layer_code.simple_layer_of_parse_infos 
     ~title:"PHP Bugs"

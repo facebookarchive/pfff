@@ -1,12 +1,13 @@
 
 val cfg_of_stmts: Pil.stmt list -> Controlflow_pil.flow
 
-type error = 
-  | NoEnclosingLoop of Ast_php.info
-  | DynamicBreak    of Ast_php.info
+type error = error_kind * Ast_php.info
+ and error_kind = 
+  | NoEnclosingLoop
+  | DynamicBreak
 
 val string_of_error: error -> string
-val info_of_error: error -> Ast_php.info option
+val string_of_error_kind: error_kind -> string
 
 exception Error of error
 

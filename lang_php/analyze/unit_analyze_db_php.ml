@@ -668,12 +668,10 @@ let checkers_unittest =
   !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e));
   
   let (actual_errors: (Common.filename * int (* line *)) list) = 
-    !Error_php._errors +> Common.map_filter (fun err ->
-      let info_opt = Error_php.info_of_error err in
-      info_opt +> Common.fmap (fun info ->
-        (Ast.file_of_info info, Ast.line_of_info info)
+    !Error_php._errors +> Common.map (fun err ->
+      let info = err.Error_php.loc in
+      Ast.file_of_info info, Ast.line_of_info info
       )
-    )
   in
   
   (* diff report *)

@@ -43,8 +43,8 @@ let check_program2 ?find_entity prog =
           let flow = Controlflow_build_php.cfg_of_func def in
           Controlflow_build_php.deadcode_detection flow;
           ()
-       with Controlflow_build_php.Error err ->
-         E.fatal (E.CfgError err);
+       with Controlflow_build_php.Error (err, loc) ->
+         E.fatal loc (E.CfgError err);
     );
     V.kmethod_def = (fun (k, _) def ->
       match def.m_body with
@@ -56,8 +56,8 @@ let check_program2 ?find_entity prog =
           try
             let flow = Controlflow_build_php.cfg_of_method def in
             Controlflow_build_php.deadcode_detection flow;
-          with Controlflow_build_php.Error err ->
-            E.fatal (E.CfgError err);
+          with Controlflow_build_php.Error (err, loc) ->
+            E.fatal loc (E.CfgError err);
     );
   }
   in

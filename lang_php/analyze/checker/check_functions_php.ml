@@ -98,10 +98,10 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
     | [], [] -> ()
     | [], y::ys ->
         if y.p_default = None 
-        then E.fatal (E.NotEnoughArguments (info, defname))
+        then E.fatal info (E.NotEnoughArguments defname)
         else aux [] ys
     | x::xs, [] ->
-        E.fatal (E.TooManyArguments (info, defname))
+        E.fatal info (E.TooManyArguments defname)
     | x::xs, y::ys ->
         (match x with
         | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
@@ -117,7 +117,8 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
                   (* todo: edit_distance *)
                   E.Bad
               in
-              E.fatal (E.WrongKeywordArgument(dn, y, severity))
+              let loc = Ast.info_of_dname dn in
+              E.fatal loc(E.WrongKeywordArgument(dn, y, severity))
         | _ -> ()
         );
         aux xs ys

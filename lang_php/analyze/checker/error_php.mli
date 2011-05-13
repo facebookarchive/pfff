@@ -1,40 +1,48 @@
 
 val strict: bool ref
 
-type error = 
+type error = {
+  typ: error_kind;
+  loc: Ast_php.info;
+  sev: severity;
+}
+ and severity = Fatal | Warning
+
+ and error_kind = 
   | UndefinedEntity of Entity_php.id_kind * Ast_php.name
   | MultiDefinedEntity of Entity_php.id_kind * Ast_php.name *
       (Ast_php.name * Ast_php.name)
 
-  | TooManyArguments of (Parse_info.info (* call *) * Ast_php.name (* def *))
-  | NotEnoughArguments of (Parse_info.info (* call *) * Ast_php.name (* def *))
-  | WrongKeywordArgument of  Ast_php.dname * Ast_php.parameter * severity
+  | TooManyArguments of Ast_php.name (* def *)
+  | NotEnoughArguments of Ast_php.name (* def *)
+  | WrongKeywordArgument of  Ast_php.dname * Ast_php.parameter * severity2
 
   | UseOfUndefinedVariable of Ast_php.dname
   | UnusedVariable of Ast_php.dname  * Scope_php.phpscope
 
   | UseOfUndefinedMember of Ast_php.name
-  | UglyGlobalDynamic of Ast_php.info
-  | WeirdForeachNoIteratorVar of Ast_php.info
+  | UglyGlobalDynamic
+  | WeirdForeachNoIteratorVar
 
-  | CfgError of Controlflow_build_php.error
-  | CfgPilError of Controlflow_build_pil.error
- and severity =
-   | Bad
-   | ReallyBad
-   | ReallyReallyBad
+  | CfgError of Controlflow_build_php.error_kind
+  | CfgPilError of Controlflow_build_pil.error_kind
+  and severity2 =
+    | Bad
+    | ReallyBad
+    | ReallyReallyBad
 
-val string_of_error: ?show_position_info:bool -> error -> string
-val info_of_error: error -> Ast_php.info option
-val string_of_severity: severity -> string
+val string_of_error: error -> string
+val string_of_error_kind: error_kind -> string
+
+val string_of_severity2: severity2 -> string
 
 exception Error of error
 
 (* ugly global, but sometimes they are practical *)
 val _errors: error list ref
 
-val fatal: error -> unit
-val warning: error -> unit
+val fatal: Ast_php.info -> error_kind -> unit
+val warning: Ast_php.info -> error_kind -> unit
 
 val report_error : error -> unit
 val report_all_errors: unit -> unit
