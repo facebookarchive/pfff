@@ -9,18 +9,19 @@ type error = {
  and severity = Fatal | Warning
 
  and error_kind = 
-  | UndefinedEntity of Entity_php.id_kind * Ast_php.name
-  | MultiDefinedEntity of Entity_php.id_kind * Ast_php.name *
-      (Ast_php.name * Ast_php.name)
+  | UndefinedEntity    of Entity_php.id_kind * string (* name *)
+  | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
+      (string * string) (* name * name *)
 
-  | TooManyArguments of Ast_php.name (* def *)
-  | NotEnoughArguments of Ast_php.name (* def *)
-  | WrongKeywordArgument of  Ast_php.dname * Ast_php.parameter * severity2
+  | TooManyArguments   of string (* name *) (* def *)
+  | NotEnoughArguments of string (* name *) (* def *)
+  | WrongKeywordArgument of
+      string (* dname *) * string (* parameter *) * severity2
+        
+  | UseOfUndefinedVariable of string (* dname *)
+  | UnusedVariable of string (* dname *)  * Scope_php.phpscope
 
-  | UseOfUndefinedVariable of Ast_php.dname
-  | UnusedVariable of Ast_php.dname  * Scope_php.phpscope
-
-  | UseOfUndefinedMember of Ast_php.name
+  | UseOfUndefinedMember of string (* name *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
 

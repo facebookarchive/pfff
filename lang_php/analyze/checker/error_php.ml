@@ -57,24 +57,30 @@ type error = {
 
 (* coupling: if you add a constructor here, don't forget to extend
  * layer_checker_php.ml too.
+ * 
+ * note: try to not put structure that have position information in 
+ * the type below (so use string, not Ast_php.name), so that the
+ * error_kind is location independent and can be used portably as a key
+ * through different repository (cf cmf --only-new-errors).
  *)
  and error_kind = 
   (* entities *)
-  | UndefinedEntity of Entity_php.id_kind * Ast_php.name
-  | MultiDefinedEntity of Entity_php.id_kind * Ast_php.name *
-      (Ast_php.name * Ast_php.name)
+  | UndefinedEntity of Entity_php.id_kind * string (* name *)
+  | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
+      (string * string) (* name * name *)
 
   (* call sites *)
-  | TooManyArguments   of name (* def *)
-  | NotEnoughArguments of name (* def *)
-  | WrongKeywordArgument of Ast_php.dname * Ast_php.parameter * severity2
+  | TooManyArguments   of string (* name *) (* def *)
+  | NotEnoughArguments of string (* name *) (* def *)
+  | WrongKeywordArgument of 
+      string (* dname *) * string (* parameter *) * severity2
 
   (* variables *)
-  | UseOfUndefinedVariable of Ast_php.dname
-  | UnusedVariable of Ast_php.dname * Scope_php.phpscope
+  | UseOfUndefinedVariable of string (* dname *)
+  | UnusedVariable of string (* dname *) * Scope_php.phpscope
 
   (* classes *)
-  | UseOfUndefinedMember of Ast_php.name
+  | UseOfUndefinedMember of string (* name *)
 
   (* bail-out constructs *)
   | UglyGlobalDynamic
@@ -105,12 +111,12 @@ let string_of_error_kind error_kind =
   | UndefinedEntity(kind, name) ->
       spf "Undefined entity %s %s"
         (Entity_php.string_of_id_kind kind)
-        (Ast.name name)
+        (name)
 
   | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
       spf "Multiply defined entity %s %s"
         (Entity_php.string_of_id_kind kind)
-        (Ast.name name)
+        (name)
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
 
   | TooManyArguments defname ->
@@ -121,21 +127,18 @@ let string_of_error_kind error_kind =
      (* todo? function was declared: %s    or use tbgs *)
   | WrongKeywordArgument(dn, param, severity) ->
       spf "Wrong keyword argument, %s <> %s (%s)"
-        (Ast.dname dn) (Ast.dname param.p_name) (string_of_severity2 severity)
+        dn param (string_of_severity2 severity)
 
   | UseOfUndefinedVariable (dname) ->
-      let s = Ast.dname dname in
-      spf "Use of undeclared variable $%s. " s ^
+      spf "Use of undeclared variable $%s. " dname ^
 "Declare variables prior to use (even if you are passing them as reference
     parameters). You may have misspelled this variable name.
 "
   | UnusedVariable (dname, scope) ->
-      let s = Ast.dname dname in
-      spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) s 
+      spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) dname
 
   | UseOfUndefinedMember (name) ->
-      let s = Ast.name name in
-      spf "Use of undefined member $%s" s
+      spf "Use of undefined member $%s" name
 
   | UglyGlobalDynamic ->
       "Ugly dynamic global declaration"
@@ -207,8 +210,7 @@ let show_10_most_recurring_unused_variable_names () =
   !_errors +> List.iter (fun err ->
     match err.typ with
     | UnusedVariable (dname, scope) ->
-        let s = Ast.dname dname in
-        hcount_str#update s (fun old -> old+1);
+        hcount_str#update dname (fun old -> old+1);
     | _ -> ()
   );
   pr2 "top 10 most recurring unused variable names";
@@ -247,7 +249,7 @@ let (find_entity:
       (match ids_ast with
       | [x] -> Some x
       | [] ->
-          fatal (Ast.info_of_name name) (UndefinedEntity (kind, name));
+          fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
           None
       | x::y::xs ->
           if Hashtbl.mem h_already_error (kind, str) 
@@ -255,10 +257,10 @@ let (find_entity:
           else begin
             Hashtbl.replace h_already_error (kind, str) true;
             (* todo: to give 2 ex of defs *)
-            let ex1 = name (* TODO *) in
-            let ex2 = name (* TODO *) in
+            let ex1 = str (* TODO *) in
+            let ex2 = str (* TODO *) in
             fatal (Ast.info_of_name name) 
-              (MultiDefinedEntity (kind, name, (ex1, ex2)));
+              (MultiDefinedEntity (kind, str, (ex1, ex2)));
           end;
           (* can give the first one ... *)
           Some x

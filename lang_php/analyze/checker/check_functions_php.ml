@@ -92,16 +92,17 @@ let contain_func_name_args_like any =
 let check_args_vs_params (callname, all_args) (defname, all_params) =
 
   let info = Ast_php.info_of_name callname in
+  let str_def = Ast.name defname in
 
   let rec aux args params = 
     match args, params with
     | [], [] -> ()
     | [], y::ys ->
         if y.p_default = None 
-        then E.fatal info (E.NotEnoughArguments defname)
+        then E.fatal info (E.NotEnoughArguments str_def)
         else aux [] ys
     | x::xs, [] ->
-        E.fatal info (E.TooManyArguments defname)
+        E.fatal info (E.TooManyArguments str_def)
     | x::xs, y::ys ->
         (match x with
         | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
@@ -118,7 +119,9 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
                   E.Bad
               in
               let loc = Ast.info_of_dname dn in
-              E.fatal loc(E.WrongKeywordArgument(dn, y, severity))
+              let s = Ast.dname dn in
+              let param = Ast.dname y.p_name in
+              E.fatal loc (E.WrongKeywordArgument(s, param, severity))
         | _ -> ()
         );
         aux xs ys

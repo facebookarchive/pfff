@@ -483,7 +483,7 @@ let add_binding k v =
 let check_use_against_env var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
-  | None -> E.fatal (Ast.info_of_dname var) (E.UseOfUndefinedVariable var)
+  | None -> E.fatal (Ast.info_of_dname var) (E.UseOfUndefinedVariable s)
   | Some (scope, aref) -> incr aref
 
 let do_in_new_scope_and_check f = 
@@ -498,7 +498,7 @@ let do_in_new_scope_and_check f =
     then 
       let s = Ast.dname dname in
       if unused_ok s then ()
-      else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (dname, scope))
+      else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (s, scope))
   );
   res
 
@@ -746,7 +746,7 @@ let visit_prog ?(find_entity=None) prog =
               let s = Ast.name name in
               (match lookup_env_opt_for_class s !_scoped_env with
               | None -> 
-                  E.fatal (Ast.info_of_name name) (E.UseOfUndefinedMember name)
+                  E.fatal (Ast.info_of_name name) (E.UseOfUndefinedMember s)
 
               | Some (scope, aref) ->
                   if (scope <> S.Class)
