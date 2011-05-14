@@ -53,7 +53,7 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
       match Ast_php.untype  x with
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
-          E.find_entity ~find_entity (Entity_php.Class, class_name)
+          E.find_entity_and_warn ~find_entity (Entity_php.Class, class_name)
           +> Common.do_option (fun id_ast ->
             match id_ast with
             | Ast_php.ClassE def ->

@@ -49,7 +49,6 @@ val report_error : error -> unit
 val report_all_errors: unit -> unit
 
 val rank_errors: error list -> error list
-val filter_false_positives: error list -> error list
 
 val show_10_most_recurring_unused_variable_names: unit -> unit
 
@@ -59,7 +58,7 @@ val show_10_most_recurring_unused_variable_names: unit -> unit
  * Note that it memoizes the MultiDefined error so the second time
  * it actually returns the right definition
  *)
-val find_entity: 
+val find_entity_and_warn: 
   find_entity: Entity_php.entity_finder option ->
   (Entity_php.id_kind * Ast_php.name) ->
   Ast_php.entity option

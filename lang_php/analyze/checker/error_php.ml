@@ -235,7 +235,7 @@ let filter_false_positives err =
 let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) = 
   Hashtbl.create 101 
 
-let (find_entity:
+let (find_entity_and_warn:
   find_entity: Entity_php.entity_finder option ->
   (Entity_php.id_kind * Ast_php.name) ->
   Ast_php.entity option) = 

@@ -22,6 +22,8 @@ module V = Visitor_php
 
 module E = Error_php
 
+module Ent = Entity_php
+
 module Flag = Flag_analyze_php
 
 (*****************************************************************************)
@@ -141,7 +143,7 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
     V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
-          E.find_entity ~find_entity (Entity_php.Function, callname)
+          E.find_entity_and_warn ~find_entity (Ent.Function, callname)
           +> Common.do_option (fun id_ast -> match id_ast with
            | Ast_php.FunctionE def ->
                (* todo? memoize ? *)
@@ -163,7 +165,7 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
           let classname = resolve_class_name qu in
           let sclassname = Ast.name classname in
           let name' = rewrap_name_with_class_name sclassname callname in
-          E.find_entity ~find_entity (Entity_php.StaticMethod, name')
+          E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
           +> Common.do_option (fun id_ast -> match id_ast with
            | Ast_php.MethodE def ->
 

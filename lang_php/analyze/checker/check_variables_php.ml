@@ -25,6 +25,7 @@ module V = Visitor_php
 module E = Error_php
 
 module S = Scope_code
+module Ent = Entity_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -380,7 +381,7 @@ let vars_passed_by_ref_in_any ~find_entity =
     V.klvalue = (fun (k, vx) x ->
       match Ast.untype x with
       | FunCallSimple (name, args) ->
-          E.find_entity ~find_entity (Entity_php.Function, name)
+          E.find_entity_and_warn ~find_entity (Ent.Function, name)
           +> Common.do_option (fun id_ast ->
             match id_ast with
             | Ast_php.FunctionE def ->
@@ -403,7 +404,7 @@ let vars_passed_by_ref_in_any ~find_entity =
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->
               
-              E.find_entity ~find_entity (Entity_php.Class, name)
+              E.find_entity_and_warn ~find_entity (Ent.Class, name)
               +> Common.do_option (fun id_ast ->
                 match id_ast with
                 | Ast_php.ClassE def ->
@@ -561,7 +562,7 @@ let visit_prog ?(find_entity=None) prog =
       x.c_extends +> Common.do_option (fun (tok, name_class_parent) ->
         (* todo: ugly to have to "cast" *)
 
-        E.find_entity ~find_entity (Entity_php.Class, name_class_parent)
+        E.find_entity_and_warn ~find_entity (Ent.Class, name_class_parent)
         +> Common.do_option (fun id_ast ->
           (match id_ast with
           | Ast_php.ClassE def2 ->
