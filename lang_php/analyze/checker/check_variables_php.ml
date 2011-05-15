@@ -223,6 +223,7 @@ let do_in_new_scope_and_check_if_strict f =
 let visit_prog ?(find_entity=None) prog = 
 
   let is_top_expr = ref true in 
+  let scope = ref Ent.StmtList in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
@@ -245,7 +246,9 @@ let visit_prog ?(find_entity=None) prog =
     );
 
     V.kfunc_def = (fun (k, _) x ->
-      do_in_new_scope_and_check (fun () -> k x);
+      Common.save_excursion scope Ent.Function (fun () ->
+        do_in_new_scope_and_check (fun () -> k x);
+      )
     );
     V.kmethod_def = (fun (k, _) x ->
       match x.m_body with
@@ -255,7 +258,10 @@ let visit_prog ?(find_entity=None) prog =
            *)
           ()
       | MethodBody _ ->
+      (* todo: diff between Method and StaticMethod? *)
+      Common.save_excursion scope Ent.Method (fun () ->
           do_in_new_scope_and_check (fun () -> k x);
+      )
     );
     V.kclass_def = (fun (k, _) x ->
 
@@ -396,7 +402,17 @@ let visit_prog ?(find_entity=None) prog =
     );
 
     V.kparameter = (fun (k,vx) x ->
-      add_binding x.p_name (S.Param, ref 0);
+      let cnt = 
+        match !scope with
+        (* Don't report UnusedParameter for parameters of methods.
+         * people sometimes override a method and don't use all
+         * the parameters
+         *)
+        | Ent.Method -> 1
+        | Ent.Function -> 0
+        | _ -> 0
+      in
+      add_binding x.p_name (S.Param, ref cnt);
       k x
     );
 
