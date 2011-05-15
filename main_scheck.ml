@@ -294,7 +294,7 @@ let type_inference file =
 (* Regression testing *)
 (*---------------------------------------------------------------------------*)
 let test () =
-  let suite = Unit_analyze_db_php.checkers_unittest in
+  let suite = Unit_checker_php.unittest in
   OUnit.run_test_tt suite |> ignore;
   ()
 

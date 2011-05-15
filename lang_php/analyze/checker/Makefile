@@ -11,6 +11,7 @@ SRC= \
   check_includes_php.ml \
   check_cfg_php.ml \
   check_dfg_php.ml \
+#  unit_checker_php.ml \
 
 # mostly global analysis
 SRC+= \
@@ -27,6 +28,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/lib-json \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/globals \
    ../../parsing \
    .. \
    ../basic \
