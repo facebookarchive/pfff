@@ -55,8 +55,8 @@ open Check_variables_helpers_php
  *  - UnusedVariable
  * 
  * 
- * Detecting such mistakes is made slightly more complicated on one
- * side by PHP because of the lack of declaration in the language;
+ * Detecting such mistakes is made slightly more complicated
+ * by PHP because of the lack of declaration in the language;
  * the first assgignement "declares" the variable. On the other side
  * the PHP language forces people to explicitly declared
  * the use of global variables (via the 'global' statement) which
@@ -98,8 +98,7 @@ open Check_variables_helpers_php
  * "These things declare variables in a function":
  * - DONE Explicit parameters
  * - DONE Assignment via list()
- * - DONE Static
- * - DONE Global
+ * - DONE Static, Global
  * - DONE foreach()
  * - DONE catch
  * - DONE Builtins ($this)
@@ -209,6 +208,7 @@ let do_in_new_scope_and_check f =
 let do_in_new_scope_and_check_if_strict f =
   if !E.strict 
   then do_in_new_scope_and_check f
+  (* use same scope *)
   else f ()
   
 (*****************************************************************************)
@@ -217,6 +217,8 @@ let do_in_new_scope_and_check_if_strict f =
 
 (* For each introduced binding (param, exception, foreach, etc), 
  * we add the binding in the environment with a counter, a la checkModule.
+ * We then check at use time if something was declared before. We then
+ * finally check when we exit a scope that all variables were actually used.
  *)
 let visit_prog ?(find_entity=None) prog = 
 
@@ -261,6 +263,10 @@ let visit_prog ?(find_entity=None) prog =
        * from the parent. If find_entity raise Not_found
        * then it may be because of legitimate errors, but 
        * such error reporting will be done in check_class_php.ml
+       * 
+       * todo: actually need to get the protected/public of the full
+       * ancestors (but I think it's bad to access some variables
+       * from an inherited class far away ... I hate OO for that kind of stuff)
        *)
       x.c_extends +> Common.do_option (fun (tok, name_class_parent) ->
         (* todo: ugly to have to "cast" *)
@@ -459,6 +465,10 @@ let visit_prog ?(find_entity=None) prog =
                     
                   incr aref
               )
+          (* todo: the other cases would require a complex class analysis ...
+           * maybe some simple dataflow can do the trick for 90% of the code.
+           * Just look for a new Xxx above in the CFG.
+           *)
           | _ -> k x
           )
       | _ -> 
