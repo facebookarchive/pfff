@@ -92,7 +92,7 @@ function analysis2() {
 }
 
 interface X {
-  // this is ok, $p is not a unused parameter
+  // this is ok, $p is not an unused parameter
   function analysis2bis($p);
 }
 
