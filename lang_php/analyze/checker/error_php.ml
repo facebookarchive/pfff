@@ -90,6 +90,8 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
   | CfgPilError of Controlflow_build_pil.error_kind
 
+  (* todo: type errors *)
+
   and severity2 =
    | Bad
    | ReallyBad
@@ -109,22 +111,19 @@ let string_of_severity2 = function
 let string_of_error_kind error_kind =
   match error_kind with
   | UndefinedEntity(kind, name) ->
-      spf "Undefined entity %s %s"
-        (Entity_php.string_of_id_kind kind)
-        (name)
+      spf "Undefined entity %s %s" (Entity_php.string_of_id_kind kind) name
 
   | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
-      spf "Multiply defined entity %s %s"
-        (Entity_php.string_of_id_kind kind)
-        (name)
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
+      spf "Multiply defined entity %s %s"(Entity_php.string_of_id_kind kind)
+        name
 
   | TooManyArguments defname ->
-      "Too many arguments"
      (* todo? function was declared: %s     or use tbgs ... *)
+      "Too many arguments"
   | NotEnoughArguments defname ->
-      "Not enough arguments"
      (* todo? function was declared: %s    or use tbgs *)
+      "Not enough arguments"
   | WrongKeywordArgument(dn, param, severity) ->
       spf "Wrong keyword argument, %s <> %s (%s)"
         dn param (string_of_severity2 severity)
