@@ -78,7 +78,9 @@ let mk_env ~php_root = {
   );
 }
 
-(* src: http://php.net/manual/en/language.variables.superglobals.php *)
+(* src: http://www.php.net/manual/en/reserved.variables.php
+ *  and http://php.net/manual/en/language.variables.superglobals.php 
+ *)
 let globals_builtins = [
   "GLOBALS";
 
@@ -91,6 +93,12 @@ let globals_builtins = [
   "_SESSION";
   "_REQUEST";
   "_ENV";
+
+  "php_errormsg";
+  "HTTP_RAW_POST_DATA";
+  "http_response_header";
+  "argc";
+  "argv";
 ]
 
 (* todo: facebook specific. Also would be good to associate a message with *)
