@@ -29,11 +29,7 @@ type define_def = string * define_param * define_body
 
 (* extracting define_def, e.g. from a standard.h; assume have called 
  * fix_tokens_define before to have the TDefEol *)
-(* TODO
-val extract_macros : 
-  Parser_c.token list -> (string, define_def) Common.assoc
-*)
-val extract_cpp_define : 
+val extract_macros:
   Parser_cpp.token list -> (string, define_body) Common.assoc
 
 (* TODO

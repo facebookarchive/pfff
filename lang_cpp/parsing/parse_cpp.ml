@@ -383,12 +383,15 @@ let is_problably_cplusplus_file file =
 (* Parsing default define macros (in a standard.h file) *)
 (*****************************************************************************)
 
-(* TODO: extract macros *)
+let extract_macros2 file = 
+  Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () -> 
+    let toks = tokens (* todo: ~profile:false *) file in
+    let toks = Parsing_hacks.fix_tokens_define toks in
+    Pp_token.extract_macros toks
+  )
 
-let parse_cpp_define_file file = 
-  let toks = tokens file in
-  let toks = Parsing_hacks.fix_tokens_define toks in
-  Pp_token.extract_cpp_define toks
+let extract_macros a = 
+  Common.profile_code_exclusif "HACK" (fun () -> extract_macros2 a)
 
 (*****************************************************************************)
 (* Error recovery *)
@@ -648,6 +651,9 @@ let rec lexer_function tr = fun lexbuf ->
 (* Main entry point *)
 (*****************************************************************************)
 
+let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
+  ref (Hashtbl.create 101)
+
 (* can not be put in parsing_hack, cos then mutually recursive problem as
  * we also want to parse the standard.h file.
  *)
@@ -655,7 +661,7 @@ let init_defs std_h =
   if not (Common.lfile_exists std_h)
   then pr2 ("warning: Can't find default macro file: " ^ std_h)
   else 
-    Parsing_hacks._defs := Common.hash_of_list (parse_cpp_define_file std_h)
+    _defs := Common.hash_of_list (extract_macros std_h)
 
 
 (* note: as now we go in 2 passes, there is first all the error message of
@@ -675,7 +681,8 @@ let parse_print_error_heuristic2 file =
   let toks_orig = tokens file in
 
   let toks = Parsing_hacks.fix_tokens_define toks_orig in
-  let toks = Parsing_hacks.fix_tokens_cpp toks in
+  (* todo: _defs_builtins *)
+  let toks = Parsing_hacks.fix_tokens_cpp ~macro_defs:!_defs toks in
 
   let filelines = (""::Common.cat file) +> Array.of_list in
   let stat = Statistics_parsing.default_stat file in

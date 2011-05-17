@@ -212,7 +212,7 @@ let rec define_parse xs =
   | x::xs -> define_parse xs 
       
 
-let extract_cpp_define xs = 
+let extract_macros xs = 
   let cleaner = xs +> List.filter (fun x -> 
     not (TH.is_comment x)
   ) in

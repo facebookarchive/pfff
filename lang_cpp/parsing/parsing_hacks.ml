@@ -219,13 +219,6 @@ let not_annot s =
   not (s ==~ regexp_annot)
 
 (*****************************************************************************)
-(* Globals *)
-(*****************************************************************************)
-
-let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
-  ref (Hashtbl.create 101)
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -1711,7 +1704,7 @@ let insert_virtual_positions l =
 (* Fix tokens_cpp *)
 (*****************************************************************************)
 
-let fix_tokens_cpp2 (* ~macro_defs *) tokens = 
+let fix_tokens_cpp2 ~macro_defs tokens = 
   let tokens2 = ref (tokens +> acc_map mk_token_extended) in
   
   begin 
@@ -1745,7 +1738,7 @@ let fix_tokens_cpp2 (* ~macro_defs *) tokens =
 
     let paren_grouped = mk_parenthised  cleaner in
     Pp_token.apply_macro_defs 
-      !_defs
+      macro_defs
       paren_grouped;
     (* because the before field is used by apply_macro_defs *)
     tokens2 := rebuild_tokens_extented !tokens2; 
@@ -1788,8 +1781,9 @@ let fix_tokens_cpp2 (* ~macro_defs *) tokens =
     insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.tok))
   end
 
-let fix_tokens_cpp a = 
-  Common.profile_code "C parsing.fix_cpp" (fun () -> fix_tokens_cpp2 a)
+let fix_tokens_cpp ~macro_defs a = 
+  Common.profile_code "C parsing.fix_cpp" (fun () -> 
+    fix_tokens_cpp2 ~macro_defs a)
       
 (*****************************************************************************)
 (* Lexing with lookahead *)
