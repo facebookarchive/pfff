@@ -42,6 +42,13 @@ class vars_A {
     }
     return 2;
   }
+
+  public function test_this() {
+    return $this;
+  }
+  public function test_this2() {
+    return $this->foo(2);
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -61,6 +68,21 @@ function test_lambda($a) {
     ;
     });
   return $f;
+}
+
+class TestLambda {
+  public function test_lambda($a) {
+
+    $f = (function ($b) use($a, $this) {
+        echo $this;
+        return $a +
+               $b +
+               //ERROR: use of undeclared variable
+               $c;
+        ;
+      });
+    return $f;
+  }
 }
 
 // -------------------------------------------------------------------------

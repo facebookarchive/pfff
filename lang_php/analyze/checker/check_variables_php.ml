@@ -260,7 +260,19 @@ let visit_prog ?(find_entity=None) prog =
       | MethodBody _ ->
       (* todo: diff between Method and StaticMethod? *)
       Common.save_excursion scope Ent.Method (fun () ->
-          do_in_new_scope_and_check (fun () -> k x);
+        do_in_new_scope_and_check (fun () -> 
+          if not (Class_php.is_static_method x)
+          then begin
+            (* we put 1 as use_count because we are not interested
+             * in error message related to $this.
+             * it's legitimate to not use $this in a method
+             *)
+            let dname = Ast.DName ("this", Ast.fakeInfo "this") in
+            add_binding dname (S.Class, ref 1);
+          end;
+
+          k x
+        );
       )
     );
     V.kclass_def = (fun (k, _) x ->

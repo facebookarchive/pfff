@@ -58,6 +58,11 @@ let vars_used_in_any x =
        * 
        * old: | VQualifier (qu, lval) -> ()
        *)
+
+      (* transform This into a Var *)
+      | This (tok) ->
+          let dname = Ast.DName("this", tok) in
+          Common.push2 dname aref
             
       | _ -> 
           k x
