@@ -13,17 +13,16 @@ SRC= flag_parsing_cpp.ml \
      type_cpp.ml semantic_cpp.ml \
      lexer_parser_cpp.ml parser_cpp.ml lexer_cpp.ml \
      parsing_stat_cpp.ml \
-     token_helpers_cpp.ml \
+     token_helpers_cpp.ml token_views_cpp.ml \
+     pp_token.ml \
      parsing_hacks.ml \
      pp_analysis.ml \
      parsing_recovery_cpp.ml parsing_consistency_cpp.ml \
      parse_cpp.ml \
+     pp_ast.ml \
      test_parsing_cpp.ml \
 
 # parser_php_mly_helper.ml \
-
-#todo:  empty for now
-SRC+= pp_ast.ml pp_token.ml token_views_cpp.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
