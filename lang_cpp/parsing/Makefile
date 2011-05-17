@@ -15,6 +15,7 @@ SRC= flag_parsing_cpp.ml \
      parsing_stat_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml \
      pp_token.ml \
+     parsing_hacks_lib.ml parsing_hacks_pp.ml parsing_hacks_cpp.ml \
      parsing_hacks.ml \
      pp_analysis.ml \
      parsing_recovery_cpp.ml parsing_consistency_cpp.ml \
@@ -75,6 +76,11 @@ visitor_cpp.cmo: visitor_cpp.ml
 
 parsing_hacks.cmo: parsing_hacks.ml
 	$(OCAMLC) -w -9 -c $<
+parsing_hacks_cpp.cmo: parsing_hacks_cpp.ml
+	$(OCAMLC) -w -9 -c $<
+parsing_hacks_pp.cmo: parsing_hacks_pp.ml
+	$(OCAMLC) -w -9 -c $<
+
 
 ##############################################################################
 # Generic rules
