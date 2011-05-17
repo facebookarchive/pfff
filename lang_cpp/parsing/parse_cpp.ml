@@ -152,12 +152,12 @@ let count_lines_commentized xs =
       (function
       | Parse_info.OriginTok pinfo 
       | Parse_info.ExpandedTok (_,pinfo,_) -> 
-	  let newline = pinfo.Parse_info.line in
-	  if newline <> !line
-	  then begin
+          let newline = pinfo.Parse_info.line in
+          if newline <> !line
+          then begin
             line := newline;
             incr count
-	  end
+          end
       | _ -> ());
     !count
   end
@@ -173,22 +173,22 @@ let print_commentized xs =
       | Parse_info.OriginTok pinfo 
       | Parse_info.ExpandedTok (_,pinfo,_) -> 
 
-	  let newline = pinfo.Parse_info.line in
-	  let s = pinfo.Parse_info.str in
+          let newline = pinfo.Parse_info.line in
+          let s = pinfo.Parse_info.str in
 
-	  let s = Str.global_substitute 
-	    (Str.regexp "\n") (fun s -> "") s 
-	  in
-	    if newline = !line
-	    then prerr_string (s ^ " ")
-	    else begin
+          let s = Str.global_substitute 
+            (Str.regexp "\n") (fun s -> "") s 
+          in
+            if newline = !line
+            then prerr_string (s ^ " ")
+            else begin
               if !line = -1 
               then pr2_no_nl "passed:" 
               else pr2_no_nl "\npassed:";
               line := newline;
               pr2_no_nl (s ^ " ");
-	    end
-	| _ -> ());
+            end
+        | _ -> ());
     if not (null ys) then pr2 "";
   end
 
@@ -210,15 +210,15 @@ let tokens2 file =
       let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
         { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
-	  match Parse_info.pinfo_of_info ii with
-	    Parse_info.OriginTok pi ->
-              Parse_info.OriginTok (Parse_info.complete_parse_info file table pi)
-	  | Parse_info.ExpandedTok (pi,vpi, off) ->
+          match Parse_info.pinfo_of_info ii with
+          |  Parse_info.OriginTok pi ->
+             Parse_info.OriginTok (Parse_info.complete_parse_info file table pi)
+          | Parse_info.ExpandedTok (pi,vpi, off) ->
               Parse_info.ExpandedTok(
                 (Parse_info.complete_parse_info file table pi),vpi, off)
-	  | Parse_info.FakeTokStr (s,vpi_opt) -> 
+          | Parse_info.FakeTokStr (s,vpi_opt) -> 
               Parse_info.FakeTokStr (s,vpi_opt)
-	  | Parse_info.Ab -> failwith "should not occur"
+          | Parse_info.Ab -> failwith "should not occur"
       })
       in
 

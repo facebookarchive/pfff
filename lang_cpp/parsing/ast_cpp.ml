@@ -97,7 +97,7 @@ type name = qtop option * qualifier list * ident
  *)
 
 (* ------------------------------------------------------------------------- *)
-(* C Type *)
+(* Types *)
 (* ------------------------------------------------------------------------- *)
 (* Could have more precise type in fullType, in expression, etc, but
  * it requires to do too much things in parsing such as checking no
@@ -217,7 +217,7 @@ and typeQualifierbis = {const: bool; volatile: bool}
  *)
 
 (* ------------------------------------------------------------------------- *)
-(* C expression *)
+(* Expressions *)
 (* ------------------------------------------------------------------------- *)
 and expression = (expressionbis * fullType option ref (* semantic: *)) wrap
 and expressionbis = 
@@ -365,7 +365,7 @@ and expressionbis =
 
 
 (* ------------------------------------------------------------------------- *)
-(* C statement *)
+(* Statements *)
 (* ------------------------------------------------------------------------- *)
 (* note: that assignement is not a statement but an expression;
  * wonderful C langage.
@@ -729,7 +729,7 @@ and ifdef_directive =
  *)
 
 (* ------------------------------------------------------------------------- *)
-(* The toplevels elements *)
+(* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
 
 and toplevel =
@@ -754,7 +754,7 @@ and toplevel =
 and program = toplevel list
 
 (* ------------------------------------------------------------------------- *)
-(* The toplevels elements *)
+(* Any *)
 (* ------------------------------------------------------------------------- *)
 and any = 
   | Program of program

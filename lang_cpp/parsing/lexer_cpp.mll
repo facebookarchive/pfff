@@ -51,9 +51,7 @@ module Ast = Ast_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2 s = 
-  if !Flag.verbose_lexing 
-  then Common.pr2 s
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -201,7 +199,8 @@ let error_radix s =
   ("numeric " ^ s ^ " constant contains digits beyond the radix:")
 
 }
-
+(*****************************************************************************)
+(* Aliases *)
 (*****************************************************************************)
 let letter = ['A'-'Z' 'a'-'z' '_']
 let digit  = ['0'-'9']
@@ -237,6 +236,8 @@ let real = pent exp | ((pent? '.' pfract | pent '.' pfract? ) exp?)
 
 let id = letter (letter | digit) *
 
+(*****************************************************************************)
+(* Rule token *)
 (*****************************************************************************)
 rule token = parse
 
@@ -296,7 +297,7 @@ rule token = parse
 
 
   (* ---------------------- *)
-  (* misc *)
+  (* cpp pragmas *)
   (* ---------------------- *)
       
    (* bugfix: I want to keep comments so cant do a    sp [^'\n']+ '\n' 
@@ -655,6 +656,8 @@ rule token = parse
 
 
 (*****************************************************************************)
+(* Rule char *)
+(*****************************************************************************)
 and char = parse
 (* c++ext: or firefoxext: unicode char may take multiple char as in 'MOSS'
   | (_ as x)                                    "'"  { String.make 1 x }
@@ -707,11 +710,9 @@ and char = parse
 
   | eof { pr2 "LEXER: WIERD end of file in char"; ""}
 
-
-
-
 (*****************************************************************************)
-
+(* Rule string *)
+(*****************************************************************************)
 (* todo? factorise code with char ? but not same ending token so hard. *)
 and string  = parse
   | '"'                                       { "" }
@@ -748,8 +749,8 @@ and string  = parse
     }
   *)
 
-
-
+(*****************************************************************************)
+(* Rule comment *)
 (*****************************************************************************)
 
 (* less: allow only char-'*' ? *)
@@ -768,6 +769,8 @@ and comment = parse
 
 
 (*****************************************************************************)
+(* Rule cpp_eat_until_nl *)
+(*****************************************************************************)
 
 (* cpp recognize C comments, so when #define xx (yy) /* comment \n ... */
  * then he has already erased the /* comment. So:
@@ -780,9 +783,6 @@ and comment = parse
  * of other uninteresting directtives like #ifdef, #else where can have
  * stuff on the right on such directive.
  *)
-
-
-
 and cpp_eat_until_nl = parse
   (* bugfix: *)
   | "/*"          

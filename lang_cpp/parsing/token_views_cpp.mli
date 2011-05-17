@@ -14,23 +14,23 @@ val rebuild_tokens_extented : token_extended list -> token_extended list
 
 (* ---------------------------------------------------------------------- *)
 type paren_grouped =
-    Parenthised of paren_grouped list list * token_extended list
+  | Parenthised of paren_grouped list list * token_extended list
   | PToken of token_extended
 
 type brace_grouped =
-    Braceised of brace_grouped list list * token_extended *
+  | Braceised of brace_grouped list list * token_extended *
       token_extended option
   | BToken of token_extended
 
 type ifdef_grouped =
-    Ifdef of ifdef_grouped list list * token_extended list
+  | Ifdef of ifdef_grouped list list * token_extended list
   | Ifdefbool of bool * ifdef_grouped list list * token_extended list
   | NotIfdefLine of token_extended list
 
 type 'a line_grouped = Line of 'a list
 
 type body_function_grouped =
-    BodyFunction of token_extended list
+  | BodyFunction of token_extended list
   | NotBodyLine of token_extended list
 
 (* ---------------------------------------------------------------------- *)
@@ -57,8 +57,6 @@ val tokens_of_paren_ordered : paren_grouped list -> token_extended list
 (* ---------------------------------------------------------------------- *)
 val set_context_tag: brace_grouped list -> unit
 
-(* ---------------------------------------------------------------------- *)
 val set_as_comment : Token_cpp.cppcommentkind -> token_extended -> unit
 
-val set_as_opar_cplusplus: token_extended list -> unit
-
+(* val set_as_opar_cplusplus: token_extended list -> unit *)

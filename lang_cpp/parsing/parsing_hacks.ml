@@ -280,7 +280,16 @@ let (count_open_close_stuff_ifdef_clause: ifdef_grouped list -> (int * int)) =
 
 
 
+let set_as_opar_cplusplus xs = 
+  match xs with
+  | ({tok = TOPar ii;_} as tok1)::xs -> 
+      pr2_cplusplus "TOParCplusplusInit";
+      tok1.tok <- TOParCplusplusInit ii;
+      
+  | _ -> raise  Impossible
+
 (* ------------------------------------------------------------------------- *)
+
 
 (* c++ext: *)
 let templateLOOKAHEAD = 30

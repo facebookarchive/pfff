@@ -65,6 +65,8 @@ let rec v_info x =
   ()
 
 and v_tok v = v_info v
+
+(* todo: use ocaml 3.12 feature *)
 and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
 and v_wrap1 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_list v_info v2 in ()

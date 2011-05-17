@@ -28,18 +28,9 @@ module Flag = Flag_parsing_cpp
 
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
 
-
-let pr2_pp s = 
-  if !Flag.debug_pp
-  then Common.pr2_once ("PP-" ^ s)
-
-let pr2_cplusplus s = 
-  if !Flag.debug_cplusplus
-  then Common.pr2_once ("C++-" ^ s)
-
-(* ------------------------------------------------------------------------- *)
-(* fuzzy parsing, different "views" over the same program *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Fuzzy parsing, different "views" over the same program *)
+(*****************************************************************************)
 
 (* Normally I should not use ref/mutable in the token_extended type
  * and I should have a set of functions taking a list of tokens and
@@ -93,14 +84,6 @@ let set_as_comment cppkind x =
   else 
     x.tok <- TCommentCpp (cppkind, TH.info_of_tok x.tok)
 
-
-let set_as_opar_cplusplus xs = 
-  match xs with
-  | ({tok = TOPar ii;_} as tok1)::xs -> 
-      pr2_cplusplus "TOParCplusplusInit";
-      tok1.tok <- TOParCplusplusInit ii;
-      
-  | _ -> raise  Impossible
 
 let mk_token_extended x = 
   let (line, col) = TH.linecol_of_tok x in

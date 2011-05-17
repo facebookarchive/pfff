@@ -155,7 +155,7 @@ pad: -seq, -opt suffix
                   octal-escape-sequence
                   hexadecimal-escape-sequence
           simple-escape-sequence: one of
-                  \'  \"  \?  \\
+                  \'  \"  \?  \\                   "
                   \a  \b  \f  \n  \r  \t  \v
           octal-escape-sequence:
                   \ octal-digit
