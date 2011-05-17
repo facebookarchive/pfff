@@ -18,34 +18,53 @@
 open Common
 
 open Ast_cpp
-module M = Meta_ast_generic
+module Ast = Ast_cpp
 
+module M = Meta_ast_generic
 
 let _current_precision = ref M.default_precision
 
-let rec vof_info v = Parse_info.vof_info v
+let rec vof_info v = 
+  if not !_current_precision.M.full_info
+  then Ocaml.VUnit
+(*
+    Ocaml.VDict [
+      "line", Ocaml.VInt (Ast.line_of_info v);
+      "col", Ocaml.VInt (Ast.col_of_info v);
+    ]
+*)
+  else Parse_info.vof_info v
+
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1
   and v2 = Ocaml.vof_list vof_info v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_paren _of_a (v1, v2, v3) =
+  if !_current_precision.M.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
+  else _of_a v2
 and vof_brace _of_a (v1, v2, v3) =
+  if !_current_precision.M.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
+  else _of_a v2
 and vof_bracket _of_a (v1, v2, v3) =
+  if !_current_precision.M.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
-and vof_comma_list _of_a = Ocaml.vof_list (vof_wrap _of_a)
-
+  else _of_a v2
+and vof_comma_list _of_a  xs= 
+  if !_current_precision.M.token_info
+  then Ocaml.vof_list (vof_wrap _of_a) xs
+  else Ocaml.vof_list _of_a (Ast.uncomma xs)
 
 let rec vof_name (v1, v2, v3) =
   let v1 = Ocaml.vof_option vof_qtop v1
@@ -199,9 +218,13 @@ and vof_typeQualifierbis { const = v_const; volatile = v_volatile } =
 and vof_expression v =
   vof_wrap
     (fun (v1, v2) ->
+      if !_current_precision.M.type_info
+      then
        let v1 = vof_expressionbis v1
        and v2 = Ocaml.vof_ref (Ocaml.vof_option vof_fullType) v2
-       in Ocaml.VTuple [ v1; v2 ])
+       in Ocaml.VTuple [ v1; v2 ]
+      else vof_expressionbis v1
+    )
     v
 and vof_expressionbis =
   function

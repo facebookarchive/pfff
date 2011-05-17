@@ -19,6 +19,10 @@ open Common
 
 module Flag = Flag_parsing_cpp
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
 (* Tricks used to handle the ambiguity in the grammar with the typedef
  * which impose a cooperation between the lexer and the parser.
  * 

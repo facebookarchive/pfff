@@ -24,6 +24,9 @@ module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
 (*
  * subtil: ocamllex use side effect on lexbuf, so must take care. 
  * For instance must do   
@@ -53,6 +56,8 @@ let pr2 s =
   then Common.pr2 s
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 exception Lexical of string
 
@@ -63,7 +68,6 @@ let tokinfo lexbuf  =
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let tok_add_s  = Parse_info.tok_add_s
-    
 
 (* ---------------------------------------------------------------------- *)
 (* opti: less convenient, but using a hash is faster than using a match *)
@@ -379,46 +383,6 @@ rule token = parse
       { let info = tokinfo lexbuf in 
         TIfdefMisc (false, info) 
       }
-
-
-  (* linuxext: different possible variations (we not manage all of them):
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
-    #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,4,2)
-    #if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
-    #if LINUX_VERSION_CODE > KERNEL_VERSION(2,3,0)
-    #if LINUX_VERSION_CODE < 0x020600
-    #if LINUX_VERSION_CODE >= 0x2051c
-    #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0))
-    #if !(LINUX_VERSION_CODE > KERNEL_VERSION(2,5,73)) 
-    #if STREAMER_IOCTL && (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0))
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,20)  &&  LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,20) && \
-    # if defined(MODULE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,1,30)
-    #if LINUX_VERSION_CODE > LinuxVersionCode(2,3,12)
-    #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,1,93)
-    #ifndef LINUX_VERSION_CODE
-    #if LINUX_VERSION_CODE < ASC_LINUX_VERSION(2,2,0) || \
-    (LINUX_VERSION_CODE > ASC_LINUX_VERSION(2,3,0) && \
-    LINUX_VERSION_CODE < ASC_LINUX_VERSION(2,4,0))
-    #if (KERNEL_VERSION(2,4,0) > LINUX_VERSION_CODE)
-    #if LINUX_VERSION_CODE >= ASC_LINUX_VERSION(1,3,0)
-    # if defined(MODULE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,1,30)
-    
-  *)
-
-  (* linuxext: *)
-  | "#" spopt "if" sp "("?  "LINUX_VERSION_CODE" sp (">=" | ">") sp
-      { let info = tokinfo lexbuf in 
-        TIfdefVersion (true, info +> tok_add_s (cpp_eat_until_nl lexbuf)) 
-      } 
-  (* linuxext: *)
-  | "#" spopt "if" sp "!" "("?  "LINUX_VERSION_CODE" sp (">=" | ">") sp
-  | "#" spopt "if" sp ['(']?  "LINUX_VERSION_CODE" sp ("<=" | "<") sp
-      
-      { let info = tokinfo lexbuf in 
-        TIfdefVersion (false, info +> tok_add_s (cpp_eat_until_nl lexbuf)) 
-      } 
-
 
   (* can have some ifdef 0  hence the letter|digit even at beginning of word *)
   | "#" [' ''\t']* "ifdef"  [' ''\t']+ (letter|digit) ((letter|digit)*) [' ''\t']*  

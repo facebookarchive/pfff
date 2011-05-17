@@ -20,7 +20,7 @@ let test_tokens_cpp file =
   ()
 
 let test_parse_cpp xs  =
-  let ext = ".*\\.\\(c\\|cpp\\|h\\)$" in
+  let ext = ".*\\.\\([cC]\\|cpp\\|[cC][cC]\\|h\\)$" in
 
   (* could now use Lib_parsing_cpp.find_php_files_of_dir_or_files *)
   let fullxs = Common.files_of_dir_or_files_no_vcs_post_filter ext xs in
@@ -48,29 +48,26 @@ let test_dump_cpp file =
 (* Unit tests *)
 (*****************************************************************************)
 
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
-
     "-parse_cpp", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_cpp;
-
     "-tokens_cpp", "   <file>", 
     Common.mk_action_1_arg test_tokens_cpp;
+    "-dump_cpp", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp;
+    "-dump_cpp_ml", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp;
 
 (*
     "-unparse_js", "   <file>", 
     Common.mk_action_1_arg test_unparse_js;
-
     "-json", "   <file> export the AST of file into JSON", 
       Common.mk_action_1_arg test_json_js;
 *)
-
-    "-dump_cpp_ml", "   <file>", 
-    Common.mk_action_1_arg test_dump_cpp;
 
 ]
 

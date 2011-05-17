@@ -19,6 +19,10 @@ open Common
 module PI = Parse_info
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* The AST C++ related types *)
 (*****************************************************************************)
 
@@ -435,14 +439,11 @@ and block_declaration = block_declarationbis wrap
   (* gccext: *)
   | Asm of asmbody
 
-
   (* gccext: *)
   and asmbody = tok list (* string list *) * colon wrap (* : *) list
       and colon = Colon of colon_option comma_list
       and colon_option = colon_optionbis wrap
           and colon_optionbis = ColonMisc | ColonExpr of expression
-
-
 
 
 (* ------------------------------------------------------------------------- *)
@@ -463,7 +464,6 @@ and block_declaration = block_declarationbis wrap
  * 
  * note: var_declaration include prototype declaration.
  *)
-  
 and var_declaration = 
   | DeclList of onedecl comma_list wrap (* ; fakestart sto *)
   (* cppext: todo? now factorize with MacroTop ?  *)
@@ -483,7 +483,6 @@ and var_declaration =
      and func_specifier =
        | Inline
        | Virtual
-
 
 
      and initialiser = initialiserbis wrap
@@ -591,8 +590,6 @@ and class_definition =
   and base_clause = base_clausebis wrap (* virtual and access spec *)
     and base_clausebis = 
          class_name * bool (* virtual inheritance *) * access_spec option
-
-
 
   
 (* ------------------------------------------------------------------------- *)
