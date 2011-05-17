@@ -1,5 +1,8 @@
 (* Expanding or extracting macros, at the token level *)
 
+(* the either is to differentialte macro-variables from macro-functions *)
+type define_body = (unit,string list) Common.either * Parser_cpp.token list
+
 (*
 (* corresponds to what is in the yacfe configuration file (e.g. standard.h) *)
 type define_def = string * define_param * define_body 

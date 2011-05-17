@@ -20,7 +20,7 @@ val parse_program:
 val program_of_program2: program2 -> Ast_cpp.program
 
 val parse_cpp_define_file : 
-  Common.filename -> (string, Parsing_hacks.define_body) Common.assoc
+  Common.filename -> (string, Pp_token.define_body) Common.assoc
 
 val init_defs : Common.filename -> unit
 

@@ -32,14 +32,13 @@ open Common
  * end-of-line token.
  *)
 
-(* the either is to differentialte macro-variables from macro-functions *)
-type define_body = (unit,string list) either * Parser_cpp.token list
-
-val _defs : (string, define_body) Hashtbl.t ref
+val _defs : (string, Pp_token.define_body) Hashtbl.t ref
 
 
-val fix_tokens_define : Parser_cpp.token list -> Parser_cpp.token list
-val extract_cpp_define : Parser_cpp.token list -> (string, define_body) assoc
+val fix_tokens_define : 
+  Parser_cpp.token list -> Parser_cpp.token list
+val extract_cpp_define : 
+  Parser_cpp.token list -> (string, Pp_token.define_body) assoc
 
 
 val fix_tokens_cpp : 

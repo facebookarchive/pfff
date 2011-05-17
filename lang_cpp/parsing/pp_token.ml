@@ -57,3 +57,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
+type define_body = (unit,string list) either * Parser_cpp.token list
+

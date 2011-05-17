@@ -18,14 +18,13 @@ module TH = Token_helpers_cpp
 module TV = Token_views_cpp
 module LP = Lexer_parser_cpp
 
-open Parser_cpp
-
 module Flag = Flag_parsing_cpp
-module Parser = Parser_cpp
 module Ast = Ast_cpp
 
+module Parser = Parser_cpp
 module Stat = Parsing_stat_cpp
 
+open Parser_cpp
 open TV
 
 (*****************************************************************************)
@@ -60,6 +59,27 @@ let msg_gen cond is_known printer s =
  * there is no more (or not that much) hardcoded linux stuff.
  *)
 
+let is_known_typedef =
+  (fun s -> 
+    match s with
+    | "u_char"   | "u_short"  | "u_int"  | "u_long"
+    | "u8" | "u16" | "u32" | "u64" 
+    | "s8"  | "s16" | "s32" | "s64" 
+    | "__u8" | "__u16" | "__u32"  | "__u64"  
+        -> true
+        
+    | "acpi_handle" 
+    | "acpi_status" 
+      -> true
+        
+    | "FILE" 
+    | "DIR" 
+      -> true
+        
+    | s when s =~ ".*_t$" -> true
+    | _ -> false 
+  )
+  
 
 (* note: cant use partial application with let msg_typedef = 
  * because it would compute msg_typedef at compile time when 
@@ -67,26 +87,7 @@ let msg_gen cond is_known printer s =
  *)
 let msg_typedef (s,ii) = 
   msg_gen (!Flag.debug_typedef)
-    (fun s -> 
-      (match s with
-      | "u_char"   | "u_short"  | "u_int"  | "u_long"
-      | "u8" | "u16" | "u32" | "u64" 
-      | "s8"  | "s16" | "s32" | "s64" 
-      | "__u8" | "__u16" | "__u32"  | "__u64"  
-          -> true
-          
-      | "acpi_handle" 
-      | "acpi_status" 
-        -> true
-
-      | "FILE" 
-      | "DIR" 
-        -> true
-          
-      | s when s =~ ".*_t$" -> true
-      | _ -> false 
-      )
-    )
+    is_known_typedef
     (fun s -> 
       pr2_pp ("TYPEDEF: promoting: " ^ s);
       if !Flag.debug_typedef_location
@@ -95,8 +96,6 @@ let msg_typedef (s,ii) =
                  Parse_info.string_of_parse_info (Ast.parse_info_of_info ii))
     )
     s
-
-
 
 
 let msg_declare_macro s = 
@@ -131,21 +130,15 @@ let msg_declare_macro s =
 let msg_foreach s = 
   pr2_pp ("MACRO: found foreach: " ^ s)
 
-
 let msg_debug_macro s = 
   pr2_pp ("MACRO: found debug-macro: " ^ s)
 
-
 let msg_macro_noptvirg s = 
   pr2_pp ("MACRO: found macro with param noptvirg: " ^ s)
-
 let msg_macro_toplevel_noptvirg s = 
   pr2_pp ("MACRO: found toplevel macro noptvirg: " ^ s)
-
-
 let msg_macro_noptvirg_single s = 
   pr2_pp ("MACRO: found single-macro noptvirg: " ^ s)
-
 
 let msg_macro_higher_order s = 
   msg_gen (!Flag.debug_pp)
@@ -160,7 +153,6 @@ let msg_macro_higher_order s =
     )
     (fun s -> pr2_pp ("MACRO: found higher ordre macro : " ^ s))
     s
-
 
 let msg_stringification s = 
   msg_gen (!Flag.debug_pp)
@@ -220,10 +212,8 @@ let regexp_ns_decl_like = Str.regexp
    "\\).*")
 
 
-
 let regexp_typedef = Str.regexp
   ".*_t$"
-
 
 let false_typedef = [
   "printk";
@@ -234,9 +224,7 @@ let ok_typedef s = not (List.mem s false_typedef)
 let not_annot s = 
   not (s ==~ regexp_annot)
 
-type define_body = (unit,string list) either * Parser.token list
-
-let (_defs : (string, define_body) Hashtbl.t ref)  = 
+let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
   ref (Hashtbl.create 101)
 
 
