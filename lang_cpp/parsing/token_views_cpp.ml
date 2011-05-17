@@ -14,25 +14,20 @@
 
 open Common
 
+module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
 
 open Parser_cpp
 
-module Parser = Parser_cpp
-
-module Flag = Flag_parsing_cpp
-
 (*****************************************************************************)
-(* Some debugging functions  *)
+(* Prelude  *)
 (*****************************************************************************)
 
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
-
-(*****************************************************************************)
-(* Fuzzy parsing, different "views" over the same program *)
-(*****************************************************************************)
-
-(* Normally I should not use ref/mutable in the token_extended type
+(* 
+ * This module implements some Fuzzy parsing by offering different "views"
+ * over the same AST.
+ * 
+ * Normally I should not use ref/mutable in the token_extended type
  * and I should have a set of functions taking a list of tokens and
  * returning a list of tokens. The problem is that to make easier some
  * functions, it is better to work on better representation, on "views"
@@ -41,15 +36,26 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
  * tedious. One way is to maintain next to the view a list of "actions"
  * (I was using a hash storing the charpos of the token and associating
  * the action) but it is tedious too. Simpler to use mutable/ref. We
- * use the same idea that we use when working on the Ast_c. *)
-
-(* old: when I was using the list of "actions" next to the views, the hash
+ * use the same idea that we use when working on the Ast_c. 
+ *
+ * 
+ * old: when I was using the list of "actions" next to the views, the hash
  * indexed by the charpos, there could have been some problems:
  * how my fake_pos interact with the way I tag and adjust token ?
  * because I base my tagging on the position of the token ! so sometimes
  * could tag another fakeInfo that should not be tagged ? 
  * fortunately I don't use anymore this technique.
  *)
+
+(*****************************************************************************)
+(* Some debugging functions  *)
+(*****************************************************************************)
+
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 
 (* update: quite close to the Place_c.Inxxx.
  * update: now that can have complex nesting of class/func in c++,
@@ -62,46 +68,16 @@ type context =
   InFunction | InEnum | InStruct | InInitializer | NoContext
 
 type token_extended = { 
-  mutable tok: Parser.token;
+  mutable tok: Parser_cpp.token;
   mutable where: context;
 
   (* less: need also a after ? *)
-  mutable new_tokens_before : Parser.token list;
+  mutable new_tokens_before : Parser_cpp.token list;
 
   (* line x col  cache, more easily accessible, of the info in the token *)
   line: int; 
   col : int;
 }
-
-let set_as_comment cppkind x = 
-  (* normally the caller have first filtered the set of tokens to have
-   * a clearer "view" to work on
-   *)
-  assert(not (TH.is_real_comment x.tok));
-
-  if TH.is_eof x.tok 
-  then () (* otherwise parse_c will be lost if don't find a EOF token *)
-  else 
-    x.tok <- TCommentCpp (cppkind, TH.info_of_tok x.tok)
-
-
-let mk_token_extended x = 
-  let (line, col) = TH.linecol_of_tok x in
-  { tok = x; 
-    line = line; col = col; 
-    where = NoContext; 
-    new_tokens_before = [];
-  }
-
-let rebuild_tokens_extented toks_ext = 
-  let _tokens = ref [] in
-  toks_ext +> List.iter (fun tok -> 
-    tok.new_tokens_before +> List.iter (fun x -> push2 x _tokens);
-    push2 tok.tok _tokens 
-  );
-  let tokens = List.rev !_tokens in
-  (tokens +> acc_map mk_token_extended)
-
 
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 
@@ -134,6 +110,38 @@ type 'a line_grouped =
 type body_function_grouped = 
   | BodyFunction of token_extended list
   | NotBodyLine  of token_extended list
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let set_as_comment cppkind x = 
+  (* normally the caller have first filtered the set of tokens to have
+   * a clearer "view" to work on
+   *)
+  assert(not (TH.is_real_comment x.tok));
+
+  if TH.is_eof x.tok 
+  then () (* otherwise parse_c will be lost if don't find a EOF token *)
+  else 
+    x.tok <- TCommentCpp (cppkind, TH.info_of_tok x.tok)
+
+let mk_token_extended x = 
+  let (line, col) = TH.linecol_of_tok x in
+  { tok = x; 
+    line = line; col = col; 
+    where = NoContext; 
+    new_tokens_before = [];
+  }
+
+let rebuild_tokens_extented toks_ext = 
+  let _tokens = ref [] in
+  toks_ext +> List.iter (fun tok -> 
+    tok.new_tokens_before +> List.iter (fun x -> push2 x _tokens);
+    push2 tok.tok _tokens 
+  );
+  let tokens = List.rev !_tokens in
+  (tokens +> acc_map mk_token_extended)
 
 (* ------------------------------------------------------------------------- *)
 (* view builders  *)
@@ -531,10 +539,6 @@ let rec set_in_function_tag xs =
  in
  aux xs
 
-
-
-  
-
 let rec set_in_other xs = 
   match xs with 
   | [] -> ()
@@ -586,8 +590,6 @@ let rec set_in_other xs =
       body +> List.iter set_in_other;
       set_in_other xs
 
-      
-      
 
 let set_context_tag xs = 
   begin
