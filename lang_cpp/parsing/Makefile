@@ -8,16 +8,14 @@ TARGET=lib
 
 SRC= flag_parsing_cpp.ml \
      token_cpp.ml ast_cpp.ml \
-     meta_ast_cpp.ml \
-     export_ast_cpp.ml \
+     meta_ast_cpp.ml export_ast_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
-     type_cpp.ml \
-     semantic_cpp.ml \
-     lexer_parser_cpp.ml \
-     parser_cpp.ml lexer_cpp.ml \
+     type_cpp.ml semantic_cpp.ml \
+     lexer_parser_cpp.ml parser_cpp.ml lexer_cpp.ml \
      parsing_stat_cpp.ml \
      token_helpers_cpp.ml \
      parsing_hacks.ml \
+     pp_analysis.ml \
      parsing_recovery_cpp.ml parsing_consistency_cpp.ml \
      parse_cpp.ml \
      test_parsing_cpp.ml \
@@ -25,8 +23,7 @@ SRC= flag_parsing_cpp.ml \
 # parser_php_mly_helper.ml \
 
 #todo:  empty for now
-SRC+=pp_analysis.ml \
-  pp_ast.ml pp_token.ml token_cpp.ml token_views_cpp.ml
+SRC+= pp_ast.ml pp_token.ml token_views_cpp.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/commons.cma \
