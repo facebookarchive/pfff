@@ -253,6 +253,22 @@ let tokens_string string =
     | e -> raise e
 
 
+
+let parse_tokens2 filename =
+
+  let stat = Stat.default_stat filename in
+
+  let toks_orig = tokens filename in
+  let toks = Parsing_hacks.fix_tokens_define toks_orig in
+
+  (* TODO *)
+  [Ast.NotParsedCorrectly [], ("", toks)], stat
+
+let parse_tokens a = 
+  Common.profile_code "Parse_cpp.parse_tokens" (fun () -> parse_tokens2 a)
+
+
+
 (*****************************************************************************)
 (* Parsing, but very basic, no more used *)
 (*****************************************************************************)
@@ -470,6 +486,30 @@ type tokens_state = {
   mutable already_disambiguated : bool;
 }
 
+let useless_token x = 
+  match x with
+  | x when TH.is_comment x -> true
+      (* c++ext: *)
+  | Parser.TColCol _ -> true
+  | Parser.Tclassname _ -> true
+
+  | Parser.TColCol2 _ -> true
+  | Parser.Tclassname2 _ -> true
+
+  | _ -> false 
+
+let mk_tokens_state toks = { 
+    rest       = toks;
+    rest_clean = (toks +> Common.exclude useless_token);
+    current    = (List.hd toks);
+    passed = []; 
+    passed_clean = [];
+
+    (* c++ext: *)
+    pending_qualifier = [];
+    already_disambiguated = false;
+  }
+
 let retag_for_typedef xs = 
   xs +> List.map (function
   | Parser.TColCol ii -> Parser.TColCol2 ii
@@ -485,17 +525,6 @@ let retag_for_typedef xs =
   | _ -> raise Impossible
   )
 
-let useless_token x = 
-  match x with
-  | x when TH.is_comment x -> true
-      (* c++ext: *)
-  | Parser.TColCol _ -> true
-  | Parser.Tclassname _ -> true
-
-  | Parser.TColCol2 _ -> true
-  | Parser.Tclassname2 _ -> true
-
-  | _ -> false 
 
 (* Hacked lex. This function use refs passed by parse_print_error_heuristic 
  * tr means token refs.
@@ -674,6 +703,9 @@ let init_defs std_h =
  *)
 let parse_print_error_heuristic2 file = 
 
+  let filelines = Common.cat_array file in
+  let stat = Statistics_parsing.default_stat file in
+
   (* -------------------------------------------------- *)
   (* call lexer and get all the tokens *)
   (* -------------------------------------------------- *)
@@ -684,20 +716,8 @@ let parse_print_error_heuristic2 file =
   (* todo: _defs_builtins *)
   let toks = Parsing_hacks.fix_tokens_cpp ~macro_defs:!_defs toks in
 
-  let filelines = (""::Common.cat file) +> Array.of_list in
-  let stat = Statistics_parsing.default_stat file in
 
-  let tr = { 
-    rest       = toks;
-    rest_clean = (toks +> Common.exclude useless_token);
-    current    = (List.hd toks);
-    passed = []; 
-    passed_clean = [];
-
-    (* c++ext: *)
-    pending_qualifier = [];
-    already_disambiguated = false;
-  } in
+  let tr = mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
 
   let rec loop () =
@@ -842,21 +862,6 @@ let parse_print_error_heuristic a  =
 let parse_c_and_cpp a = parse_print_error_heuristic a
 
 let parse a = parse_print_error_heuristic a
-
-
-let parse_tokens2 filename =
-
-  let stat = Stat.default_stat filename in
-
-  let toks_orig = tokens filename in
-  let toks = Parsing_hacks.fix_tokens_define toks_orig in
-
-  (* TODO *)
-  [Ast.NotParsedCorrectly [], ("", toks)], stat
-
-let parse_tokens a = 
-  Common.profile_code "Parse_cpp.parse_tokens" (fun () -> parse_tokens2 a)
-
 
 let parse_program file = 
   let (ast2, _stat) = parse file in
