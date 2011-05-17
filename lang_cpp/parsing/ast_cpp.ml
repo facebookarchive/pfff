@@ -40,7 +40,6 @@ and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = 'a wrap list
 
-
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
 (* ------------------------------------------------------------------------- *)
@@ -83,6 +82,19 @@ type name = qtop option * qualifier list * ident
  and enum_name      = name (* only IdIdent *)
 
  and ident_name = name (* only IdIdent *)
+
+(* TODO: do like in parsing_c/
+ * and name = 
+ *  | RegularName of string wrap
+ *
+ *  (* cppext: *)
+ *  | CppConcatenatedName of (string wrap) wrap2 (* the ## separators *) list
+ *  (* normally only used inside list of things, as in parameters or arguments
+ *   * in which case, cf cpp-manual, it has a special meaning *)
+ *  | CppVariadicName of string wrap (* ## s *)
+ *  | CppIdentBuilder of string wrap (* s ( ) *) * 
+ *                      ((string wrap) wrap2 list) (* arguments *)
+ *)
 
 (* ------------------------------------------------------------------------- *)
 (* C Type *)
@@ -186,7 +198,9 @@ and typeCbis =
    (* -------------------------------------- *)    
    (* return * (params * has "...") 
     * c++ext: todo now const, throw spec, etc
-   *)
+    * 
+    * TODO: use record for parameterType, like in parsing_c/
+    *) 
    and functionType = fullType * (parameterType comma_list * bool wrap)
       and parameterType = (bool * string option * fullType) wrap (* reg s *)
               (* => (bool (register) * fullType) list * bool *)
@@ -195,6 +209,12 @@ and typeCbis =
 and typeQualifier = typeQualifierbis wrap 
 and typeQualifierbis = {const: bool; volatile: bool}
 
+(* TODO: like in parsing_c/
+ * (* gccext: cppext: *)
+ * and attribute = attributebis wrap
+ *  and attributebis =
+ *   | Attribute of string 
+ *)
 
 (* ------------------------------------------------------------------------- *)
 (* C expression *)
@@ -463,12 +483,14 @@ and block_declaration = block_declarationbis wrap
  * accepts it. 
  * 
  * note: var_declaration include prototype declaration.
+ * 
  *)
 and var_declaration = 
   | DeclList of onedecl comma_list wrap (* ; fakestart sto *)
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of (string * argument comma_list) wrap
 
+     (* TODO: use record as in parsing_c/ *)
      and onedecl = 
        ((name * initialiser option) wrap (* = *) option) * 
          fullType * 
@@ -510,16 +532,19 @@ and var_declaration =
  * parameter wheras a function definition can not. But, in some cases such
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declaration and function definition.
+ * 
+ * TODO: use record like in parsing_c/
  *)
 and definition = (string(*name*) * functionType * storage * compound) 
                  wrap (* s ( ) { } fakestart sto *)
-
 
 (* ------------------------------------------------------------------------- *)
 (* Struct/Class *)
 (* ------------------------------------------------------------------------- *)
 
-(* c++ext: the ident can be a template_id when do template specialization *)
+(* c++ext: the ident can be a template_id when do template specialization 
+ * TODO: use record
+ *)
 and class_definition = 
  (structUnion * ident_name(*class_name??*) option * base_clause comma_list option * 
  class_member_sequencable list (* new scope *))
@@ -632,19 +657,13 @@ and declaration = declarationbis wrap
 
 
 (* ------------------------------------------------------------------------- *)
-(* cpp, #define and #include body *)
+(* cppext: cpp directives, #ifdef, #define and #include body *)
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
-  | Include of includ 
   | Define of define 
+  | Include of includ 
   | Undef of string * tok list
   | PragmaAndCo of tok list
-
-(* to specialize if someone need more info *)
-and ifdef_directive = 
-  | IfdefDirective of tok list
-(* or and 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
-
 
 (* cppext *) 
 and define = string wrap * define_body   (* #define s *)
@@ -663,8 +682,6 @@ and define = string wrap * define_body   (* #define s *)
      | DefineEmpty
 
      | DefineTodo
-
-
 
 and includ = inc_file wrap (* #include s *) * 
   (unit (* old: include_rel_pos option ref *) * bool (* is in ifdef, cf -test incl *) )
@@ -686,6 +703,29 @@ and includ = inc_file wrap (* #include s *) *
  * first_of : string list list;
  * last_of :  string list list;
  * }
+ *)
+
+(* to specialize if someone need more info *)
+and ifdef_directive = 
+  | IfdefDirective of tok list
+(* or and 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
+
+(* TODO: like in parsing_c/
+ * (* todo? to specialize if someone need more info *)
+ * and ifdef_directive = (* or and 'a ifdefed = 'a list wrap *)
+ *   | IfdefDirective of (ifdefkind * matching_tag) wrap
+ *   and ifdefkind = 
+ *     | Ifdef (* todo? of string ? of formula_cpp ? *)
+ *     | IfdefElseif (* same *)
+ *     | IfdefElse (* same *)
+ *     | IfdefEndif 
+ *   (* set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
+ *    * a global so it means if you parse the same file twice you may get
+ *    * different id. I try now to avoid this pb by resetting it each 
+ *    * time I parse a file.
+ *    *)
+ *   and matching_tag = 
+ *     IfdefTag of (int (* tag *) * int (* total with this tag *))
  *)
 
 (* ------------------------------------------------------------------------- *)
@@ -713,21 +753,13 @@ and toplevel =
 (* ------------------------------------------------------------------------- *)
 and program = toplevel list
 
+(* ------------------------------------------------------------------------- *)
+(* The toplevels elements *)
+(* ------------------------------------------------------------------------- *)
+and any = 
+  | Program of program
  (* with tarzan *)
 
-(*****************************************************************************)
-(* Cpp constructs, put it comments in lexer *)
-(*****************************************************************************)
-
-(* This type is not in the Ast but is associated with the TCommentCpp token.
- * I put this enum here because parser_c.mly need it. I could have put
- * it also in lexer_parser.
- *)
-type cppcommentkind = 
-  | CppDirective | CppAttr | CppMacro 
-  | CppPassingNormal (* ifdef 0, cplusplus, etc *) 
-  | CppPassingCosWouldGetError (* expr passsing *)
-  | CppOther
 
 
 (*****************************************************************************)

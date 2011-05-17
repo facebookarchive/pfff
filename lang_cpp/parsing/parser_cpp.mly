@@ -35,9 +35,7 @@ let warning s v =
   else v
 
 
-let pr2 s = 
-  if !Flag.verbose_parsing 
-  then Common.pr2 s
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Parse helpers functions *)
@@ -296,12 +294,16 @@ let fix_add_params_ident = function
 (*-------------------------------------------------------------------------- *)
 
 let mk_e e ii = ((e, Ast.noType()), ii)
+(* todo: let mk_e e ii = Ast_c.mk_e e ii *)
+
 let mk_funcall e1 args = 
   match e1 with
   | (Ident (name, _idinfo), _t), ii_empty ->
       FunCallSimple (name, args)
   | _ -> 
       FunCallExpr (e1, args)
+
+(*let mk_string_wrap (s,info) = (s, [info])*)
     
 %}
 
@@ -322,7 +324,7 @@ let mk_funcall e1 args =
 %token <Ast_cpp.info> TUnknown
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_cpp.info> TComment TCommentSpace TCommentNewline
+%token <Ast_cpp.info> TCommentSpace TCommentNewline TComment
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
@@ -387,6 +389,10 @@ let mk_funcall e1 args =
 /*(* cppext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
 
+/*(*---------------*)*/
+/*(* define        *)*/
+/*(*---------------*)*/
+
 %token <Ast_cpp.info> TDefine
 %token <(string * Ast_cpp.info)> TDefParamVariadic
 
@@ -400,6 +406,9 @@ let mk_funcall e1 args =
 %token <(string * Ast_cpp.info)> TIdentDefine
 %token <Ast_cpp.info>            TDefEOL
 
+/*(*---------------*)*/
+/*(* include       *)*/
+/*(*---------------*)*/
 
 /*(* used only in lexer_c, then transformed in comment or splitted in tokens *)*/
 %token <(string * string * bool ref * Ast_cpp.info)> TInclude
@@ -409,19 +418,27 @@ let mk_funcall e1 args =
 %token <(string * Ast_cpp.info)> TIncludeFilename
 
 
-
-
+/*(*---------------*)*/
+/*(* ifdef         *)*/
+/*(*---------------*)*/
 
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
 %token <Ast_cpp.info>          TIfdef TIfdefelse TIfdefelif TEndif
 %token <(bool * Ast_cpp.info)> TIfdefBool TIfdefMisc TIfdefVersion
 
+/*(*---------------*)*/
+/*(* other         *)*/
+/*(*---------------*)*/
 
 
-%token <Ast_cpp.info> TCommentMisc
-%token <(Ast_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
+%token <string * Ast_cpp.info> TUndef
+
+%token <Ast_cpp.info> TCppDirectiveOther
 
 
+/*(*---------------*)*/
+/*(* macro use     *)*/
+/*(*---------------*)*/
 
 /*(* appear  after fix_tokens_cpp *)*/
 
@@ -432,12 +449,21 @@ let mk_funcall e1 args =
 %token <Ast_cpp.info>            TMacroDeclConst 
 %token <(string * Ast_cpp.info)> TMacroIterator
 
+/*(*---------------*)*/
+/*(* other         *)*/
+/*(*---------------*)*/
+
 /*(* %token <(string * Ast_cpp.info)> TMacroTop *)*/
 /*(* appear after parsing_hack *)*/
 %token <Ast_cpp.info> TCParEOL   
 
-
 %token <Ast_cpp.info> TAction
+
+
+/*(* TCommentMisc still useful ? obsolete ? *)*/
+%token <Ast_cpp.info> TCommentMisc
+%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
+
 
 
 /*(*-----------------------------------------*)*/

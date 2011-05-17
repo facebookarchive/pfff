@@ -425,6 +425,9 @@ let visit_toplevel
     | T.TDefine ii -> 
         tag ii Define
 
+    | T.TUndef (_, ii) ->
+        tag ii Define
+
     (* todo: could be also a MacroFunc *)
     | T.TIdentDefine (_, ii) ->
         tag ii (MacroVar (Def2 NoUse))
@@ -437,6 +440,9 @@ let visit_toplevel
         tag ii Ifdef
     | T.TIfdefBool (_, ii) | T.TIfdefMisc (_, ii) | T.TIfdefVersion (_, ii) ->
         tag ii Ifdef
+
+    | T.TCppDirectiveOther _ -> 
+        ()
 
     | T.Tthis ii  
     | T.Tnew ii | T.Tdelete ii  

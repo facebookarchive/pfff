@@ -51,12 +51,24 @@ let is_fake_comment = function
 let is_not_comment x = 
   not (is_comment x)
 
+(* ---------------------------------------------------------------------- *)
+
+let is_gcc_token = function
+  | Tasm _ 
+  | Tinline _ 
+  | Tattribute _ 
+  | Ttypeof _ 
+      -> true
+  | _ -> false
 
 let is_pp_instruction = function
-  | TInclude _ | TDefine _
+  | TInclude _ 
+  | TDefine _
   | TIfdef _   | TIfdefelse _ | TIfdefelif _
   | TEndif _ 
   | TIfdefBool _ | TIfdefMisc _ | TIfdefVersion _
+  | TUndef _ 
+  | TCppDirectiveOther _
       -> true
   | _ -> false
 
@@ -249,8 +261,6 @@ let is_maybenot_cpp_keyword = function
     -> true
   | _ -> false
 
-
-
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)
@@ -273,6 +283,9 @@ let info_of_tok = function
   (*cppext:*) 
   | TDefine (ii) -> ii 
   | TInclude (includes, filename, inifdef, i1) ->     i1
+
+  | TUndef (s, ii) -> ii
+  | TCppDirectiveOther (ii) -> ii
 
   | TIncludeStart (i1, inifdef) ->     i1
   | TIncludeFilename (s, i1) ->     i1
@@ -483,6 +496,9 @@ let visitor_info_of_tok f = function
 
   (* cppext: *)
   | TDefine (i1) -> TDefine(f i1) 
+
+  | TUndef (s,i1) -> TUndef(s, f i1) 
+  | TCppDirectiveOther (i1) -> TCppDirectiveOther(f i1) 
 
   | TInclude (includes, filename, inifdef, i1) -> 
       TInclude (includes, filename, inifdef, f i1)

@@ -121,7 +121,7 @@ let commentized xs = xs +> Common.map_filter (function
       if !Flag.filter_classic_passed
       then 
         (match cppkind with
-        | Ast.CppOther -> 
+        | Token_cpp.CppOther -> 
             let s = Ast.str_of_info ii in
             (match s with
             | s when s =~ "KERN_.*" -> None
@@ -129,7 +129,7 @@ let commentized xs = xs +> Common.map_filter (function
             | _ -> Some (ii.Parse_info.token)
             )
              
-        | Ast.CppDirective | Ast.CppAttr | Ast.CppMacro
+        | Token_cpp.CppDirective | Token_cpp.CppAttr | Token_cpp.CppMacro
             -> None
         | _ -> raise Todo
         )
@@ -444,14 +444,14 @@ let rec comment_until_defeol xs =
   | x::xs -> 
       (match x with
       | Parser.TDefEOL i -> 
-          Parser.TCommentCpp (Ast.CppDirective, TH.info_of_tok x)
+          Parser.TCommentCpp (Token_cpp.CppDirective, TH.info_of_tok x)
           ::xs
       | _ -> 
           let x' = 
             (* bugfix: otherwise may lose a TComment token *)
             if TH.is_real_comment x
             then x
-            else Parser.TCommentCpp (Ast.CppOther, TH.info_of_tok x)
+            else Parser.TCommentCpp (Token_cpp.CppOther, TH.info_of_tok x)
           in
           x'::comment_until_defeol xs
       )
@@ -613,7 +613,7 @@ let rec lexer_function tr = fun lexbuf ->
           if not (LP.current_context () = LP.InTopLevel) 
           then begin
             pr2_once ("CPP-DEFINE: inside function, I treat it as comment");
-            let v' = Parser.TCommentCpp (Ast.CppDirective,TH.info_of_tok v)
+            let v' = Parser.TCommentCpp (Token_cpp.CppDirective,TH.info_of_tok v)
             in
             tr.passed <- v'::tr.passed;
             tr.rest       <- comment_until_defeol tr.rest;
@@ -630,7 +630,7 @@ let rec lexer_function tr = fun lexbuf ->
           if not (LP.current_context () = LP.InTopLevel) 
           then begin
             pr2_once ("CPP-INCLUDE: inside function, I treat it as comment");
-            let v = Parser.TCommentCpp(Ast.CppDirective, info) in
+            let v = Parser.TCommentCpp(Token_cpp.CppDirective, info) in
             tr.passed <- v::tr.passed;
             lexer_function tr lexbuf
           end

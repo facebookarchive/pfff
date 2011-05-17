@@ -309,18 +309,18 @@ rule token = parse
   | "#" spopt "error"   sp  [^'\n']* '\n' 
   | "#" spopt "warning" sp  [^'\n']* '\n'                     
   | "#" spopt "abort"   sp  [^'\n']* '\n'
-      { TCommentCpp (CppDirective, tokinfo lexbuf) }
+      { TCppDirectiveOther (tokinfo lexbuf) }
 
   (* only after cpp, ex: # 1 "include/linux/module.h" 1 *)
   | "#" sp pent sp  '"' [^ '"']* '"' (spopt pent)*  spopt '\n'
-      { TCommentCpp (CppDirective, tokinfo lexbuf) }
+      { TCppDirectiveOther (tokinfo lexbuf) }
 
 
   (* in drivers/char/tpqic02.c, in old version of the kernel *)
-  | "#" [' ' '\t']* "error"     { TCommentCpp (CppDirective,tokinfo lexbuf) }
+  | "#" [' ' '\t']* "error"     { TCppDirectiveOther (tokinfo lexbuf) }
 
 
-  | "#" [' ' '\t']* '\n'        { TCommentCpp (CppDirective,tokinfo lexbuf) }
+  | "#" [' ' '\t']* '\n'        { TCppDirectiveOther (tokinfo lexbuf) }
 
 
   (* ---------------------- *)
@@ -332,11 +332,14 @@ rule token = parse
    *)
   | "#" [' ' '\t']* "define" { TDefine (tokinfo lexbuf) } 
 
-  | "#" [' ' '\t']* "undef" [' ' '\t']+ id
+  (* note: in some cases can have stuff after the ident as in #undef XXX 50, 
+   * but I currently don't handle it cos I think it's bad code.
+   *)
+  | (("#" [' ' '\t']* "undef" [' ' '\t']+) as _undef) (id as id)
       { let info = tokinfo lexbuf in 
-        TCommentCpp (CppDirective,info)(*+> tok_add_s (cpp_eat_until_nl lexbuf))*)
+        TUndef (id, info)
+        (*+> tok_add_s (cpp_eat_until_nl lexbuf))*)
       }
-
 
   (* ---------------------- *)
   (* #include *)

@@ -7,7 +7,7 @@ TARGET=lib
 -include $(TOP)/Makefile.config
 
 SRC= flag_parsing_cpp.ml \
-     ast_cpp.ml \
+     token_cpp.ml ast_cpp.ml \
      meta_ast_cpp.ml \
      export_ast_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
