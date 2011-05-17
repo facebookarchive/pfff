@@ -80,7 +80,6 @@ let is_known_typedef =
     | s when s =~ ".*_t$" -> true
     | _ -> false 
   )
-  
 
 (* note: cant use partial application with let msg_typedef = 
  * because it would compute msg_typedef at compile time when 
@@ -119,7 +118,6 @@ let msg_declare_macro s =
       | s when s =~ "^DEFINE_.*" -> true
       | s when s =~ "NS_DECL.*" -> true
  *)
-
       | _ -> false
       )
     )
@@ -236,7 +234,6 @@ let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  =
 (* Helpers *)
 (*****************************************************************************)
 
-(* ------------------------------------------------------------------------- *)
 (* the pair is the status of '()' and '{}', ex: (-1,0) 
  * if too much ')' and good '{}' 
  * could do for [] too ? 
@@ -266,7 +263,6 @@ let set_as_opar_cplusplus xs =
   | _ -> raise  Impossible
 
 (* ------------------------------------------------------------------------- *)
-
 (* c++ext: *)
 let templateLOOKAHEAD = 30
   
@@ -292,7 +288,6 @@ let rec have_a_tsup_quite_close xs =
       )
   | (Parenthised (xxs, info_parens))::xs -> 
       have_a_tsup_quite_close xs
-
 
 
 
@@ -358,6 +353,130 @@ let rec is_really_foreach xs =
 (*****************************************************************************)
 (* Parsing hacks for define  *)
 (*****************************************************************************)
+
+(*****************************************************************************)
+(* The #define tricks *)
+(*****************************************************************************)
+
+(* To parse macro definitions I need to do some tricks 
+ * as some information can be get only at the lexing level. For instance
+ * the space after the name of the macro in '#define foo (x)' is meaningful
+ * but the grammar can not get this information. So define_ident below
+ * look at such space and generate a special TOpardefine. In a similar
+ * way macro definitions can contain some antislash and newlines
+ * and the grammar need to know where the macro ends (which is 
+ * a line-level and so low token-level information). Hence the 
+ * function 'define_line' below and the TDefEol.
+ * 
+ * update: TDefEol is handled in a special way at different places, 
+ * a little bit like EOF, especially for error recovery, so this
+ * is an important token that should not be retagged!
+ * 
+ * 
+ * ugly hack, a better solution perhaps would be to erase TDefEOL 
+ * from the Ast and list of tokens in parse_c. 
+ * 
+ * note: I do a +1 somewhere, it's for the unparsing to correctly sync.
+ * 
+ * note: can't replace mark_end_define by simply a fakeInfo(). The reason
+ * is where is the \n TCommentSpace. Normally there is always a last token
+ * to synchronize on, either EOF or the token of the next toplevel.
+ * In the case of the #define we got in list of token 
+ * [TCommentSpace "\n"; TDefEOL] but if TDefEOL is a fakeinfo then we will
+ * not synchronize on it and so we will not print the "\n".
+ * A solution would be to put the TDefEOL before the "\n".
+ * 
+ * todo?: could put a ExpandedTok for that ? 
+ *)
+let mark_end_define ii = 
+  let ii' = 
+    { Parse_info.
+      token = Parse_info.OriginTok { 
+        (Ast.parse_info_of_info ii) with 
+          Parse_info.str = ""; 
+          Parse_info.charpos = Ast.pos_of_info ii + 1
+      };
+      transfo = Parse_info.NoTransfo;
+      comments = ();
+    } 
+  in
+  TDefEOL (ii')
+
+
+(* put the TDefEOL at the good place *)
+let rec define_line_1 xs = 
+  match xs with
+  | [] -> []
+  | TDefine ii::xs -> 
+      let line = Ast.line_of_info ii in
+      TDefine ii::define_line_2 line ii xs
+  | TCppEscapedNewline ii::xs -> 
+      pr2 "WIERD: a \\ outside a #define";
+      TCommentSpace ii::define_line_1 xs
+  | x::xs -> 
+      x::define_line_1 xs
+
+and define_line_2 line lastinfo xs = 
+  match xs with 
+  | [] -> 
+      (* should not happened, should meet EOF before *)
+      pr2 "PB: WIERD";   
+      mark_end_define lastinfo::[]
+  | x::xs -> 
+      let line' = TH.line_of_tok x in
+      let info = TH.info_of_tok x in
+
+      (match x with
+      | EOF ii -> 
+          mark_end_define lastinfo::EOF ii::define_line_1 xs
+      | TCppEscapedNewline ii -> 
+          if (line' <> line) then pr2 "PB: WIERD: not same line number";
+          TCommentSpace ii::define_line_2 (line+1) info xs
+      | x -> 
+          if line' = line
+          then x::define_line_2 line info xs 
+          else 
+            mark_end_define lastinfo::define_line_1 (x::xs)
+      )
+
+let rec define_ident xs = 
+  match xs with
+  | [] -> []
+  | TDefine ii::xs -> 
+      TDefine ii::
+      (match xs with
+      | TCommentSpace i1::TIdent (s,i2)::TOPar (i3)::xs -> 
+          (* Change also the kind of TIdent to avoid bad interaction
+           * with other parsing_hack tricks. For instant if keep TIdent then
+           * the stringication algo can believe the TIdent is a string-macro.
+           * So simpler to change the kind of the ident too.
+           *)
+          (* if TOParDefine sticked to the ident, then 
+           * it's a macro-function. Change token to avoid ambiguity
+           * between #define foo(x)  and   #define foo   (x)
+           *)
+          TCommentSpace i1::TIdentDefine (s,i2)::TOParDefine i3
+          ::define_ident xs
+      | TCommentSpace i1::TIdent (s,i2)::xs -> 
+          TCommentSpace i1::TIdentDefine (s,i2)::define_ident xs
+      | _ -> 
+          pr2 "wierd #define body"; 
+          define_ident xs
+      )
+  | x::xs -> 
+      x::define_ident xs
+
+let fix_tokens_define2 xs = 
+  define_ident (define_line_1 xs)
+
+let fix_tokens_define a = 
+  Common.profile_code "C parsing.fix_define" (fun () -> fix_tokens_define2 a)
+
+(* ------------------------------------------------------------------------- *)
+(* Other parsing hacks related to cpp, Include/Define hacks *)
+(* ------------------------------------------------------------------------- *)
+
+(* TODO: move stuff from parse_cpp.ml here *)
 
 (*****************************************************************************)
 (* CPP handling: macros, ifdefs, macros defs  *)
@@ -446,8 +565,6 @@ let rec find_ifdef_mid xs =
   (* no need complex analysis for ifdefbool *)
   | Ifdefbool (_, xxs, info_ifdef_stmt) -> 
       List.iter find_ifdef_mid xxs
-          
-        
   )
 
 
@@ -515,8 +632,6 @@ let rec find_ifdef_funheaders = function
   | Ifdefbool (_, xxs,info_ifdef_stmt)::xs -> 
       List.iter find_ifdef_funheaders xxs; 
       find_ifdef_funheaders xs
-        
-
 
 
 let rec adjust_inifdef_include xs = 
@@ -531,6 +646,11 @@ let rec adjust_inifdef_include xs =
       ));
   )
 
+(* ------------------------------------------------------------------------- *)
+(* cpp-builtin part2, macro, using standard.h or other defs *)
+(* ------------------------------------------------------------------------- *)
+
+(* now in cpp_token_c.ml *) 
 
 (* ------------------------------------------------------------------------- *)
 (* stringification *)
@@ -1024,8 +1144,6 @@ let rec find_define_init_brace_paren xs =
 
       aux xs
 
-    
-
   (* recurse *)
   | (PToken x)::xs -> aux xs 
   | (Parenthised (xxs, info_parens))::xs -> 
@@ -1035,8 +1153,6 @@ let rec find_define_init_brace_paren xs =
       aux xs
  in
  aux xs
-
-
 
 (* ------------------------------------------------------------------------- *)
 (* action *)
@@ -1092,10 +1208,7 @@ let find_cplusplus_view_all_tokens xs =
  in
  aux xs
 
-
-
 (* ------------------------------------------------------------------------- *)
-
 let find_cplusplus_view_filtered_tokens xs = 
  let rec aux xs =
 
@@ -1378,12 +1491,7 @@ let find_cplusplus_view_parenthized xs =
  in
  aux xs
 
-
-
-
-
 (* ------------------------------------------------------------------------- *)
-
 let find_cplusplus_view_parenthized2 xs = 
  let rec aux xs =
   match xs with
@@ -1430,8 +1538,6 @@ let rec find_cplusplus_view_line_paren xs =
       set_as_opar_cplusplus info_parens;
 
       aux xs
-
-
 
 
   (* xx<zz> yy(...); when in function *)
@@ -1495,7 +1601,6 @@ let rec find_cplusplus_view_line_paren xs =
 (* main fix cpp function *)
 (* ------------------------------------------------------------------------- *)
 
-
 let filter_cpp_stuff xs = 
   let rec aux xs = 
     match xs with
@@ -1548,13 +1653,10 @@ let insert_virtual_positions l =
   skip_fake l
 
 
+(*****************************************************************************)
+(* Fix tokens_cpp *)
+(*****************************************************************************)
 
-
-
-
-
-
-(* ------------------------------------------------------------------------- *)
 let fix_tokens_cpp2 (* ~macro_defs *) tokens = 
   let tokens2 = ref (tokens +> acc_map mk_token_extended) in
   
@@ -1634,114 +1736,6 @@ let fix_tokens_cpp2 (* ~macro_defs *) tokens =
 
 let fix_tokens_cpp a = 
   Common.profile_code "C parsing.fix_cpp" (fun () -> fix_tokens_cpp2 a)
-
-
-
-
-(*****************************************************************************)
-(* The #define tricks *)
-(*****************************************************************************)
-
-(* ugly hack, a better solution perhaps would be to erase TDefEOL 
- * from the Ast and list of tokens in parse_c. 
- * 
- * note: I do a +1 somewhere, it's for the unparsing to correctly sync.
- * 
- * note: can't replace mark_end_define by simply a fakeInfo(). The reason
- * is where is the \n TCommentSpace. Normally there is always a last token
- * to synchronize on, either EOF or the token of the next toplevel.
- * In the case of the #define we got in list of token 
- * [TCommentSpace "\n"; TDefEOL] but if TDefEOL is a fakeinfo then we will
- * not synchronize on it and so we will not print the "\n".
- * A solution would be to put the TDefEOL before the "\n".
- * 
- * todo?: could put a ExpandedTok for that ? 
- *)
-let mark_end_define ii = 
-  let ii' = 
-    { Parse_info.
-      token = Parse_info.OriginTok { 
-        (Ast.parse_info_of_info ii) with 
-          Parse_info.str = ""; 
-          Parse_info.charpos = Ast.pos_of_info ii + 1
-      };
-      transfo = Parse_info.NoTransfo;
-      comments = ();
-    } 
-  in
-  TDefEOL (ii')
-
-
-(* put the TDefEOL at the good place *)
-let rec define_line_1 xs = 
-  match xs with
-  | [] -> []
-  | TDefine ii::xs -> 
-      let line = Ast.line_of_info ii in
-      TDefine ii::define_line_2 line ii xs
-  | TCppEscapedNewline ii::xs -> 
-      pr2 "WIERD: a \\ outside a #define";
-      TCommentSpace ii::define_line_1 xs
-  | x::xs -> 
-      x::define_line_1 xs
-
-and define_line_2 line lastinfo xs = 
-  match xs with 
-  | [] -> 
-      (* should not happened, should meet EOF before *)
-      pr2 "PB: WIERD";   
-      mark_end_define lastinfo::[]
-  | x::xs -> 
-      let line' = TH.line_of_tok x in
-      let info = TH.info_of_tok x in
-
-      (match x with
-      | EOF ii -> 
-          mark_end_define lastinfo::EOF ii::define_line_1 xs
-      | TCppEscapedNewline ii -> 
-          if (line' <> line) then pr2 "PB: WIERD: not same line number";
-          TCommentSpace ii::define_line_2 (line+1) info xs
-      | x -> 
-          if line' = line
-          then x::define_line_2 line info xs 
-          else 
-            mark_end_define lastinfo::define_line_1 (x::xs)
-      )
-
-let rec define_ident xs = 
-  match xs with
-  | [] -> []
-  | TDefine ii::xs -> 
-      TDefine ii::
-      (match xs with
-      | TCommentSpace i1::TIdent (s,i2)::TOPar (i3)::xs -> 
-          (* Change also the kind of TIdent to avoid bad interaction
-           * with other parsing_hack tricks. For instant if keep TIdent then
-           * the stringication algo can believe the TIdent is a string-macro.
-           * So simpler to change the kind of the ident too.
-           *)
-          (* if TOParDefine sticked to the ident, then 
-           * it's a macro-function. Change token to avoid ambiguity
-           * between #define foo(x)  and   #define foo   (x)
-           *)
-          TCommentSpace i1::TIdentDefine (s,i2)::TOParDefine i3
-          ::define_ident xs
-      | TCommentSpace i1::TIdent (s,i2)::xs -> 
-          TCommentSpace i1::TIdentDefine (s,i2)::define_ident xs
-      | _ -> 
-          pr2 "wierd #define body"; 
-          define_ident xs
-      )
-  | x::xs -> 
-      x::define_ident xs
-  
-
-
-let fix_tokens_define2 xs = 
-  define_ident (define_line_1 xs)
-
-let fix_tokens_define a = 
-  Common.profile_code "C parsing.fix_define" (fun () -> fix_tokens_define2 a)
       
 
 (*****************************************************************************)
@@ -1785,9 +1779,6 @@ let extract_cpp_define xs =
     not (TH.is_comment x)
   ) in
   define_parse cleaner
-  
-
-      
 
 (*****************************************************************************)
 (* Lexing with lookahead *)
@@ -1833,7 +1824,6 @@ let not_struct_enum = function
 
 
 
-
 let lookahead2 next before = 
  (* TODO *)
  let pass = 2 in
@@ -1861,7 +1851,6 @@ let lookahead2 next before =
         pr2_cplusplus("constructed_object: "  ^s);
         TOParCplusplusInit i1    
         
-
 
 
   (* c++ext: for cast_function_expression and constructed expression.
