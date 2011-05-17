@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2002-2008 Yoann Padioleau
+ * Copyright (C) 2011 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -97,7 +98,6 @@ let msg_typedef (s,ii) =
     )
     s
 
-
 let msg_declare_macro s = 
   msg_gen (!Flag.debug_pp)
     (fun s -> 
@@ -178,7 +178,8 @@ let msg_templatename s =
 
 let msg_constructorname s = 
   pr2_cplusplus ("CONSTRUCTORNAME: found " ^ s)
-  
+
+(* todo: more msg_xxx from parsing_c/ *)  
 
 (*****************************************************************************)
 (* The regexp and basic view definitions *)
@@ -224,26 +225,16 @@ let ok_typedef s = not (List.mem s false_typedef)
 let not_annot s = 
   not (s ==~ regexp_annot)
 
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+
 let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
   ref (Hashtbl.create 101)
-
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(* Thanks to this function many stuff are not anymore hardcoded in ocaml code
- * (but they are now hardcoded in standard.h ...)
- *)
-let rec (cpp_engine: (string , Parser.token list) assoc -> 
-          Parser.token list -> Parser.token list) = fun env xs ->
-  xs +> List.map (fun tok -> 
-    match tok with
-    | TIdent (s,i1) when List.mem_assoc s env -> Common.assoc s env
-    | x -> [x]
-  )
-  +> List.flatten
-  
 
 (* ------------------------------------------------------------------------- *)
 (* the pair is the status of '()' and '{}', ex: (-1,0) 
@@ -266,8 +257,6 @@ let (count_open_close_stuff_ifdef_clause: ifdef_grouped list -> (int * int)) =
    );
    !cnt_paren, !cnt_brace
 
-
-
 let set_as_opar_cplusplus xs = 
   match xs with
   | ({tok = TOPar ii;_} as tok1)::xs -> 
@@ -277,7 +266,6 @@ let set_as_opar_cplusplus xs =
   | _ -> raise  Impossible
 
 (* ------------------------------------------------------------------------- *)
-
 
 (* c++ext: *)
 let templateLOOKAHEAD = 30
@@ -367,6 +355,9 @@ let rec is_really_foreach xs =
   in
   is_foreach_aux xs +> fst
 
+(*****************************************************************************)
+(* Parsing hacks for define  *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* CPP handling: macros, ifdefs, macros defs  *)
@@ -539,92 +530,6 @@ let rec adjust_inifdef_include xs =
         | _ -> ()
       ));
   )
-
-
-
-(* ------------------------------------------------------------------------- *)
-(* cpp-builtin part1, macro, using standard.h or other defs *)
-(* ------------------------------------------------------------------------- *)
-
-(* no need to take care to not substitute the macro name itself
- * that occurs in the macro definition because the macro name is
- * after fix_token_define a TDefineIdent, no more a TIdent.
- *)
-let rec apply_macro_defs xs = 
-  match xs with
-  | [] -> ()
-
-  (* recognized macro of standard.h (or other) *)
-  | PToken ({tok = TIdent (s,i1)} as id)::Parenthised (xxs,info_parens)::xs 
-      when Hashtbl.mem !_defs s -> 
-      pr2_pp ("MACRO: found known macro = " ^ s);
-      (match Hashtbl.find !_defs s with
-      | Left (), bodymacro -> 
-          pr2 ("macro without param used before parenthize, wierd: " ^ s);
-          (* ex: PRINTP("NCR53C400 card%s detected\n" ANDP(((struct ... *)
-          set_as_comment (Token_cpp.CppMacro) id;
-          id.new_tokens_before <- bodymacro;
-      | Right params, bodymacro -> 
-          if List.length params = List.length xxs
-          then
-            let xxs' = xxs +> List.map (fun x -> 
-              (tokens_of_paren_ordered x) +> List.map (fun x -> 
-                TH.visitor_info_of_tok Ast.make_expanded x.tok
-              )
-            ) in
-            id.new_tokens_before <-
-              cpp_engine (Common.zip params xxs') bodymacro
-
-          else begin
-            pr2 ("macro with wrong number of arguments, wierd: " ^ s);
-            id.new_tokens_before <- bodymacro;
-          end;
-          (* important to do that after have apply the macro, otherwise
-           * will pass as argument to the macro some tokens that
-           * are all TCommentCpp
-           *)
-          [Parenthised (xxs, info_parens)] +> 
-            iter_token_paren (set_as_comment Token_cpp.CppMacro);
-          set_as_comment Token_cpp.CppMacro id;
-
-           
-
-      );
-      apply_macro_defs xs
-
-  | PToken ({tok = TIdent (s,i1)} as id)::xs 
-      when Hashtbl.mem !_defs s -> 
-      pr2_pp ("MACRO: found known macro = " ^ s);
-      (match Hashtbl.find !_defs s with
-      | Right params, bodymacro -> 
-          pr2 ("macro with params but no parens found, wierd: " ^ s);
-          (* dont apply the macro, perhaps a redefinition *)
-          ()
-      | Left (), bodymacro -> 
-          (* special case when 1-1 substitution, we reuse the token *)
-          (match bodymacro with
-          | [newtok] -> 
-              id.tok <- (newtok +> TH.visitor_info_of_tok (fun _ -> 
-                TH.info_of_tok id.tok))
-
-          | _ -> 
-              set_as_comment Token_cpp.CppMacro id;
-              id.new_tokens_before <- bodymacro;
-          )
-      );
-      apply_macro_defs xs
-
-
-
-
-  (* recurse *)
-  | (PToken x)::xs -> apply_macro_defs xs 
-  | (Parenthised (xxs, info_parens))::xs -> 
-      xxs +> List.iter apply_macro_defs;
-      apply_macro_defs xs
-
-
-
 
 
 (* ------------------------------------------------------------------------- *)
@@ -1650,7 +1555,7 @@ let insert_virtual_positions l =
 
 
 (* ------------------------------------------------------------------------- *)
-let fix_tokens_cpp2 tokens = 
+let fix_tokens_cpp2 (* ~macro_defs *) tokens = 
   let tokens2 = ref (tokens +> acc_map mk_token_extended) in
   
   begin 
@@ -1683,7 +1588,9 @@ let fix_tokens_cpp2 tokens =
     let cleaner = !tokens2 +> filter_cpp_stuff in
 
     let paren_grouped = mk_parenthised  cleaner in
-    apply_macro_defs paren_grouped;
+    Pp_token.apply_macro_defs 
+      !_defs
+      paren_grouped;
     (* because the before field is used by apply_macro_defs *)
     tokens2 := rebuild_tokens_extented !tokens2; 
 
