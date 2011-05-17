@@ -388,7 +388,7 @@ let is_problably_cplusplus_file file =
 let parse_cpp_define_file file = 
   let toks = tokens file in
   let toks = Parsing_hacks.fix_tokens_define toks in
-  Parsing_hacks.extract_cpp_define toks
+  Pp_token.extract_cpp_define toks
 
 (*****************************************************************************)
 (* Error recovery *)
@@ -406,71 +406,7 @@ let parse_cpp_define_file file =
 (* Include/Define hacks *)
 (*****************************************************************************)
 
-(* Sometimes I prefer to generate a single token for a list of things in the
- * lexer so that if I have to passed them, liking passing TInclude then
- * it's easy. Also if I don't do a single token, then I need to 
- * parse the rest which may not need special stuff, like detecting 
- * end of line which the parser is not really ready for. So for instance
- * could I parse a #include <a/b/c/xxx.h> as 2 or more tokens ? just
- * lex #include ? so then need recognize <a/b/c/xxx.h> as one token ? 
- * but this kind of token is valid only after a #include and the
- * lexing and parsing rules are different for such tokens so not that
- * easy to parse such things in parser_c.mly. Hence the following hacks.
- * 
- * less?: maybe could get rid of this like I get rid of some of fix_define.
- *)
-
-(* ------------------------------------------------------------------------- *)
-(* helpers *)
-(* ------------------------------------------------------------------------- *)
-
-(* used to generate new token from existing one *)
-let new_info posadd str ii =
-  { Parse_info.token = 
-      Parse_info.OriginTok { (Parse_info.parse_info_of_info ii) with 
-        Parse_info.
-        charpos = Parse_info.pos_of_info ii + posadd;
-        str     = str;
-        column = Parse_info.col_of_info ii + posadd;
-      };
-    comments = ();
-    transfo = Parse_info.NoTransfo;
-   }
-
-
-let rec comment_until_defeol xs = 
-  match xs with
-  | [] -> failwith "cant find end of define token TDefEOL"
-  | x::xs -> 
-      (match x with
-      | Parser.TDefEOL i -> 
-          Parser.TCommentCpp (Token_cpp.CppDirective, TH.info_of_tok x)
-          ::xs
-      | _ -> 
-          let x' = 
-            (* bugfix: otherwise may lose a TComment token *)
-            if TH.is_real_comment x
-            then x
-            else Parser.TCommentCpp (Token_cpp.CppOther, TH.info_of_tok x)
-          in
-          x'::comment_until_defeol xs
-      )
-
-let drop_until_defeol xs = 
-  List.tl 
-    (Common.drop_until (function Parser.TDefEOL _ -> true | _ -> false) xs)
-
-
-
-(* ------------------------------------------------------------------------- *)
-(* returns a pair (replaced token, list of next tokens) *)
-(* ------------------------------------------------------------------------- *)
-
-let tokens_include (info, includes, filename, inifdef) = 
-  Parser.TIncludeStart (Parse_info.rewrap_str includes info, inifdef), 
-  [Parser.TIncludeFilename 
-      (filename, (new_info (String.length includes) filename info))
-  ]
+(* see parsing_hack.ml *)
 
 (*****************************************************************************)
 (* Helper for main entry point *)
@@ -616,8 +552,8 @@ let rec lexer_function tr = fun lexbuf ->
             let v' = Parser.TCommentCpp (Token_cpp.CppDirective,TH.info_of_tok v)
             in
             tr.passed <- v'::tr.passed;
-            tr.rest       <- comment_until_defeol tr.rest;
-            tr.rest_clean <- drop_until_defeol tr.rest_clean;
+            tr.rest       <- Parsing_hacks.comment_until_defeol tr.rest;
+            tr.rest_clean <- Parsing_hacks.drop_until_defeol tr.rest_clean;
             lexer_function tr lexbuf
           end
           else begin
@@ -636,7 +572,7 @@ let rec lexer_function tr = fun lexbuf ->
           end
           else begin
             let (v,new_tokens) = 
-              tokens_include (info, includes, filename, inifdef) in
+              Parsing_hacks.tokens_include (info, includes, filename, inifdef) in
             let new_tokens_clean = 
               new_tokens +> List.filter TH.is_not_comment  in
 

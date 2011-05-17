@@ -15,18 +15,15 @@
 
 open Common
 
-module TH = Token_helpers_cpp
-module TV = Token_views_cpp
-module LP = Lexer_parser_cpp
-
 module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
 
+module TH = Token_helpers_cpp
+module LP = Lexer_parser_cpp
 module Parser = Parser_cpp
-module Stat = Parsing_stat_cpp
 
 open Parser_cpp
-open TV
+open Token_views_cpp
 
 (*****************************************************************************)
 (* Some debugging functions  *)
@@ -59,27 +56,24 @@ let msg_gen cond is_known printer s =
  * functions "filter" some messages. So our heuristics are still good,
  * there is no more (or not that much) hardcoded linux stuff.
  *)
-
-let is_known_typedef =
-  (fun s -> 
-    match s with
-    | "u_char"   | "u_short"  | "u_int"  | "u_long"
-    | "u8" | "u16" | "u32" | "u64" 
-    | "s8"  | "s16" | "s32" | "s64" 
-    | "__u8" | "__u16" | "__u32"  | "__u64"  
-        -> true
-        
-    | "acpi_handle" 
-    | "acpi_status" 
+let is_known_typedef s =
+  match s with
+  | "u_char"   | "u_short"  | "u_int"  | "u_long"
+  | "u8" | "u16" | "u32" | "u64" 
+  | "s8"  | "s16" | "s32" | "s64" 
+  | "__u8" | "__u16" | "__u32"  | "__u64"  
       -> true
-        
-    | "FILE" 
-    | "DIR" 
-      -> true
-        
-    | s when s =~ ".*_t$" -> true
-    | _ -> false 
-  )
+      
+  | "acpi_handle" 
+  | "acpi_status" 
+    -> true
+      
+  | "FILE" 
+  | "DIR" 
+    -> true
+      
+  | s when s =~ ".*_t$" -> true
+  | _ -> false 
 
 (* note: cant use partial application with let msg_typedef = 
  * because it would compute msg_typedef at compile time when 
@@ -200,6 +194,13 @@ let regexp_declare =  Str.regexp
 let regexp_foreach = Str.regexp_case_fold 
   ".*\\(for_?each\\|for_?all\\|iterate\\|loop\\|walk\\|scan\\|each\\|for\\)"
 
+let regexp_typedef = Str.regexp
+  ".*_t$"
+
+let false_typedef = [
+  "printk";
+  ]
+
 (* firefoxext: *)
 let regexp_ns_decl_like = Str.regexp
   ("\\(" ^
@@ -211,14 +212,8 @@ let regexp_ns_decl_like = Str.regexp
    "\\).*")
 
 
-let regexp_typedef = Str.regexp
-  ".*_t$"
-
-let false_typedef = [
-  "printk";
-  ]
-
-let ok_typedef s = not (List.mem s false_typedef)
+let ok_typedef s = 
+  not (List.mem s false_typedef)
 
 let not_annot s = 
   not (s ==~ regexp_annot)
@@ -319,7 +314,6 @@ let rec find_tsup_quite_close xs =
   List.rev before, tsup, after
 
 (* ------------------------------------------------------------------------- *)
-
 (* cppext: *)
 
 let forLOOKAHEAD = 30
@@ -350,12 +344,11 @@ let rec is_really_foreach xs =
   in
   is_foreach_aux xs +> fst
 
-(*****************************************************************************)
-(* Parsing hacks for define  *)
-(*****************************************************************************)
+
+(* TODO: set_ifdef_parenthize_info ?? from parsing_c/ *)
 
 (*****************************************************************************)
-(* The #define tricks *)
+(* Parsing hacks for define  *)
 (*****************************************************************************)
 
 (* To parse macro definitions I need to do some tricks 
@@ -388,6 +381,7 @@ let rec is_really_foreach xs =
  * 
  * todo?: could put a ExpandedTok for that ? 
  *)
+
 let mark_end_define ii = 
   let ii' = 
     { Parse_info.
@@ -401,7 +395,6 @@ let mark_end_define ii =
     } 
   in
   TDefEOL (ii')
-
 
 (* put the TDefEOL at the good place *)
 let rec define_line_1 xs = 
@@ -476,7 +469,68 @@ let fix_tokens_define a =
 (* Other parsing hacks related to cpp, Include/Define hacks *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: move stuff from parse_cpp.ml here *)
+(* Sometimes I prefer to generate a single token for a list of things in the
+ * lexer so that if I have to passed them, liking passing TInclude then
+ * it's easy. Also if I don't do a single token, then I need to 
+ * parse the rest which may not need special stuff, like detecting 
+ * end of line which the parser is not really ready for. So for instance
+ * could I parse a #include <a/b/c/xxx.h> as 2 or more tokens ? just
+ * lex #include ? so then need recognize <a/b/c/xxx.h> as one token ? 
+ * but this kind of token is valid only after a #include and the
+ * lexing and parsing rules are different for such tokens so not that
+ * easy to parse such things in parser_c.mly. Hence the following hacks.
+ * 
+ * less?: maybe could get rid of this like I get rid of some of fix_define.
+ *)
+
+(* helpers *)
+(* used to generate new token from existing one *)
+let new_info posadd str ii =
+  { Parse_info.token = 
+      Parse_info.OriginTok { (Parse_info.parse_info_of_info ii) with 
+        Parse_info.
+        charpos = Parse_info.pos_of_info ii + posadd;
+        str     = str;
+        column = Parse_info.col_of_info ii + posadd;
+      };
+    comments = ();
+    transfo = Parse_info.NoTransfo;
+   }
+
+let rec comment_until_defeol xs = 
+  match xs with
+      
+  | [] -> 
+      (* job not done in Cpp_token_c.define_parse ? *)
+      failwith "cant find end of define token TDefEOL"
+  | x::xs -> 
+      (match x with
+      | Parser.TDefEOL i -> 
+          Parser.TCommentCpp (Token_cpp.CppDirective, TH.info_of_tok x)
+          ::xs
+      | _ -> 
+          let x' = 
+            (* bugfix: otherwise may lose a TComment token *)
+            if TH.is_real_comment x
+            then x
+            else Parser.TCommentCpp (Token_cpp.CppOther, TH.info_of_tok x)
+          in
+          x'::comment_until_defeol xs
+      )
+
+let drop_until_defeol xs = 
+  List.tl 
+    (Common.drop_until (function Parser.TDefEOL _ -> true | _ -> false) xs)
+
+(* ------------------------------------------------------------------------- *)
+(* returns a pair (replaced token, list of next tokens) *)
+(* ------------------------------------------------------------------------- *)
+
+let tokens_include (info, includes, filename, inifdef) = 
+  Parser.TIncludeStart (Parse_info.rewrap_str includes info, inifdef), 
+  [Parser.TIncludeFilename 
+      (filename, (new_info (String.length includes) filename info))
+  ]
 
 (*****************************************************************************)
 (* CPP handling: macros, ifdefs, macros defs  *)
@@ -1737,49 +1791,6 @@ let fix_tokens_cpp2 (* ~macro_defs *) tokens =
 let fix_tokens_cpp a = 
   Common.profile_code "C parsing.fix_cpp" (fun () -> fix_tokens_cpp2 a)
       
-
-(*****************************************************************************)
-(* for the cpp-builtin *)
-(*****************************************************************************)
-
-let rec define_parse xs = 
-  match xs with
-  | [] -> []
-  | TDefine i1::TIdentDefine (s,i2)::TOParDefine i3::xs -> 
-      let (tokparams, _, xs) = 
-        xs +> Common.split_when (function TCPar _ -> true | _ -> false) in
-      let (body, _, xs) = 
-        xs +> Common.split_when (function TDefEOL _ -> true | _ -> false) in
-      let params = 
-        tokparams +> Common.map_filter (function
-        | TComma _ -> None
-        | TIdent (s, _) -> Some s
-        | x -> error_cant_have x
-        ) in
-      let body = body +> List.map 
-        (TH.visitor_info_of_tok Ast.make_expanded) in
-      let def = (s, (Right params, body)) in
-      def::define_parse xs
-
-  | TDefine i1::TIdentDefine (s,i2)::xs -> 
-      let (body, _, xs) = 
-        xs +> Common.split_when (function TDefEOL _ -> true | _ -> false) in
-      let body = body +> List.map 
-        (TH.visitor_info_of_tok Ast.make_expanded) in
-      let def = (s, (Left (), body)) in
-      def::define_parse xs
-
-  | TDefine i1::_ -> 
-      raise Impossible
-  | x::xs -> define_parse xs 
-      
-
-let extract_cpp_define xs = 
-  let cleaner = xs +> List.filter (fun x -> 
-    not (TH.is_comment x)
-  ) in
-  define_parse cleaner
-
 (*****************************************************************************)
 (* Lexing with lookahead *)
 (*****************************************************************************)

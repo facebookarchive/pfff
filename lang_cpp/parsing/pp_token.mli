@@ -33,6 +33,8 @@ type define_def = string * define_param * define_body
 val extract_macros : 
   Parser_c.token list -> (string, define_def) Common.assoc
 *)
+val extract_cpp_define : 
+  Parser_cpp.token list -> (string, define_body) Common.assoc
 
 (* TODO
 val string_of_define_def: define_def -> string

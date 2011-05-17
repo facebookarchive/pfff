@@ -31,7 +31,7 @@ open Token_views_cpp
  * working at the AST level (which is very unusual but makes sense in 
  * the coccinelle context for instance).
  *  
- * Note that as I use a single lexer  to work both at the C and cpp level
+ * Note that because I use a single lexer to work both at the C and cpp level
  * there are some inconveniencies. 
  * For instance 'for' is a valid name for a macro parameter and macro 
  * body, but is interpreted in a special way by our single lexer, and 
@@ -50,7 +50,6 @@ open Token_views_cpp
  * as usual but use for instance in concatenation as in  a ## if
  * when expanded. In the case the grammar this time will not be happy
  * so this is also easy to fix in cpp_engine.
- * 
  *)
 
 (*****************************************************************************)
@@ -181,3 +180,40 @@ let rec apply_macro_defs defs xs =
 (* Extracting define_def from a standard.h  *)
 (*****************************************************************************)
 
+let rec define_parse xs = 
+  match xs with
+  | [] -> []
+  | TDefine i1::TIdentDefine (s,i2)::TOParDefine i3::xs -> 
+      let (tokparams, _, xs) = 
+        xs +> Common.split_when (function TCPar _ -> true | _ -> false) in
+      let (body, _, xs) = 
+        xs +> Common.split_when (function TDefEOL _ -> true | _ -> false) in
+      let params = 
+        tokparams +> Common.map_filter (function
+        | TComma _ -> None
+        | TIdent (s, _) -> Some s
+        | x -> error_cant_have x
+        ) in
+      let body = body +> List.map 
+        (TH.visitor_info_of_tok Ast.make_expanded) in
+      let def = (s, (Right params, body)) in
+      def::define_parse xs
+
+  | TDefine i1::TIdentDefine (s,i2)::xs -> 
+      let (body, _, xs) = 
+        xs +> Common.split_when (function TDefEOL _ -> true | _ -> false) in
+      let body = body +> List.map 
+        (TH.visitor_info_of_tok Ast.make_expanded) in
+      let def = (s, (Left (), body)) in
+      def::define_parse xs
+
+  | TDefine i1::_ -> 
+      raise Impossible
+  | x::xs -> define_parse xs 
+      
+
+let extract_cpp_define xs = 
+  let cleaner = xs +> List.filter (fun x -> 
+    not (TH.is_comment x)
+  ) in
+  define_parse cleaner
