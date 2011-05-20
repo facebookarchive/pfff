@@ -56,6 +56,7 @@
      lang_php/compile
      facebook/thrift
      facebook/thrift/gen-ocaml
+     lang_cpp/parsing
     ")
    pad-ocaml-project-toplevel "pfff.top"
    )
@@ -89,7 +90,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 100
+     (case 200
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -121,6 +122,8 @@
 
 
        (100 "-parse_html /home/pad/pfff/tests/html/simple/div.html")
+
+       (200 "-parse_cpp /home/pad/pfff/tests/cpp/foo.h")
 
        )
      )

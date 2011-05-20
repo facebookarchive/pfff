@@ -1432,7 +1432,8 @@ declarator_id:
        match snd $2 with
        | IdIdent s, iis ->
            s, List.hd iis
-       | _ -> raise Todo
+       | _ -> 
+           raise Todo
      }
 /*(* TODO ::opt nested-name-specifieropt type-name*) */
 
