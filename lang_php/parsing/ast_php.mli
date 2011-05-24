@@ -364,6 +364,11 @@ and lvalue = lvaluebis * lvalue_info
      *)
     | VQualifier of qualifier * lvalue
     | ClassVar of qualifier * dname
+    (* we could merge with ClassVar, but I prefer different constructs for 
+     * very different programming language concept.
+     * todo? have also a LateStaticVQualifier?
+     *)
+    | LateStaticClassVar of tok (* static *) * tok (* :: *) * dname 
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren
@@ -378,6 +383,7 @@ and lvalue = lvaluebis * lvalue_info
     (* PHP 5.3 "late static binding" *)
     | LateStaticCall of tok (* static *) * tok (* ::: *) * name *
         argument comma_list paren
+(*    | LateStaticVar of tok (* static *) * tok (* :: *) * dname *)
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name
     | ObjAccess of lvalue * obj_access

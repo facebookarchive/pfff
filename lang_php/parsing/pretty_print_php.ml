@@ -367,6 +367,7 @@ and v_lvaluebis =
   | VQualifier ((v1, v2)) ->
       let v1 = v_qualifier v1 and v2 = v_lvalue v2 in ()
   | ClassVar ((v1, v2)) -> let v1 = v_qualifier v1 and v2 = v_dname v2 in ()
+  | LateStaticClassVar _ -> raise Todo
   | FunCallSimple ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_paren (v_comma_list v_argument) v2 in ()
   | FunCallVar ((v1, v2, v3)) ->

@@ -136,6 +136,7 @@ and 'a comma_list_dots =
     *)
    | Self   of tok
    | Parent of tok
+   (* could add Static here? for late static binding? *)
 
  and fully_qualified_class_name = name
  (*e: qualifiers *)
@@ -428,6 +429,12 @@ and lvalue = lvaluebis * lvalue_info
      *)
     | VQualifier of qualifier * lvalue
     | ClassVar of qualifier * dname
+    (* we could merge with ClassVar, but I prefer different constructs for 
+     * very different programming language concept.
+     * todo? have also a LateStaticVQualifier?
+     * todo? should be lvalue not dname?
+     *)
+    | LateStaticClassVar of tok (* static *) * tok (* :: *) * dname 
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren
@@ -440,7 +447,7 @@ and lvalue = lvaluebis * lvalue_info
     | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
         argument comma_list paren
     (* PHP 5.3 "late static binding" *)
-    | LateStaticCall of tok (* static *) * tok (* ::: *) * name *
+    | LateStaticCall of tok (* static *) * tok (* :: *) * name *
         argument comma_list paren
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name

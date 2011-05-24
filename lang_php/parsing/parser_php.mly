@@ -1339,8 +1339,21 @@ base_variable_with_function_calls:
  | function_call {  $1 }
 
 base_variable:
- |            variable_without_objects                       { None,    $1 }
- | qualifier  variable_without_objects /*(*static_member*)*/ { Some $1, $2 }
+ |            variable_without_objects                       
+     { None,    $1 }
+ | qualifier  variable_without_objects /*(*static_member*)*/ 
+     { Some (Left $1), $2 }
+/*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
+   * for such a feature; it's everything except a static call ...
+   * 
+   * could be merged with the previous rule using qualifier if STATIC
+   * was made part of the qualifier type. Note that 5.3.0 refactored
+   * many parts of the grammar and I didn't really. Maybe I should
+   * more just copy what was done in Zend instead of adding my own
+   * new grammar rules because I think they are clearer.
+   *)*/
+ | T_STATIC TCOLCOL variable_without_objects
+     { Some (Right ($1, $2)), $3 }
 
 
 variable_without_objects:
@@ -1390,8 +1403,12 @@ function_head:
  | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
 /*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
    * for such a feature; it's everything except a static call ...
+   * 
+   * could be merged with the previous rule using qualifier if STATIC
+   * was made part of the qualifier type.
    *)*/
- | T_STATIC TCOLCOL ident { LateStatic ($1, $2, Name $3) }
+ | T_STATIC TCOLCOL ident 
+     { LateStatic ($1, $2, Name $3) }
 
 /*(*x: GRAMMAR variable *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/

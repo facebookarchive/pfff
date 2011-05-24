@@ -738,6 +738,9 @@ and v_variablebis =
       let v1 = v_qualifier v1 and v2 = v_variable v2 in ()
   | ClassVar ((v1, v2)) ->
       let v1 = v_qualifier v1 and v2 = v_dname v2 in ()
+  | LateStaticClassVar (v1, v2, v3) ->
+      let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_dname v3 in
+      ()
   | StaticMethodCallSimple ((v1, v2, v3)) ->
       let v1 = v_qualifier v1
       and v2 = v_name v2

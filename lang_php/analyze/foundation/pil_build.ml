@@ -172,6 +172,9 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.ClassVar (qu, var) ->
         let info = Ast_php.info_of_dname var in
         mkt (B.TodoLvalue info)
+
+    | A.LateStaticClassVar _ ->
+        raise Todo
         
     | A.This t -> 
         mkt (B.VVar (B.This t))
