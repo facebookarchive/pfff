@@ -34,7 +34,6 @@ let warning s v =
   then Common.warning ("PARSING: " ^ s) v
   else v
 
-
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
@@ -315,7 +314,7 @@ let mk_funcall e1 args =
 (* 
  * Some tokens are not even used in this file because they are filtered
  * in some intermediate phases. But they still must be declared because
- * ocamllex may generate them, or some intermediate phase may also
+ * ocamllex may generate them, or an intermediate phase may also
  * generate them (like some functions in parsing_hacks.ml)
  *)
 */
@@ -330,7 +329,7 @@ let mk_funcall e1 args =
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
-%token <string * Ast_cpp.info>                     TInt
+%token <string * Ast_cpp.info>                       TInt
 %token <(string * Ast_cpp.floatType) * Ast_cpp.info> TFloat
 %token <(string * Ast_cpp.isWchar) * Ast_cpp.info>   TChar
 %token <(string * Ast_cpp.isWchar) * Ast_cpp.info>   TString
@@ -384,7 +383,6 @@ let mk_funcall e1 args =
 %token <Ast_cpp.info> Tinline /*(* also c++ext: *)*/
 %token <Ast_cpp.info> Ttypeof
 
-
 /*(*-----------------------------------------*)*/
 /*(* cppext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -430,11 +428,9 @@ let mk_funcall e1 args =
 /*(* other         *)*/
 /*(*---------------*)*/
 
-
 %token <string * Ast_cpp.info> TUndef
 
 %token <Ast_cpp.info> TCppDirectiveOther
-
 
 /*(*---------------*)*/
 /*(* macro use     *)*/
@@ -459,11 +455,9 @@ let mk_funcall e1 args =
 
 %token <Ast_cpp.info> TAction
 
-
 /*(* TCommentMisc still useful ? obsolete ? *)*/
 %token <Ast_cpp.info> TCommentMisc
 %token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
-
 
 
 /*(*-----------------------------------------*)*/
@@ -504,7 +498,6 @@ let mk_funcall e1 args =
 
 /*(* TTilde2? *)*/
 
-
 %token <string * Ast_cpp.info> Tclassname 
 /*(* for typedef, appear after solved if next token is a typedef *)*/
 %token <string * Ast_cpp.info> Tclassname2
@@ -523,8 +516,6 @@ let mk_funcall e1 args =
 
 /*(*-----------------------------------------*)*/
 %token <Ast_cpp.info> EOF
-
-
 
 /*(*-----------------------------------------*)*/
 /*(* must be at the top so that it has the lowest priority *)*/
@@ -547,7 +538,6 @@ let mk_funcall e1 args =
 /*(*%left TColCol*)*/
 
 %nonassoc TOP
-
 
 /*(*************************************************************************)*/
 /*(* Rules type declaration *)*/
@@ -593,7 +583,6 @@ let mk_funcall e1 args =
 /*(*************************************************************************)*/
 
 
-
 /*(*************************************************************************)*/
 /*(* toplevel *)*/
 /*(*************************************************************************)*/
@@ -611,7 +600,6 @@ translation_unit:
 external_declaration: 
  | function_definition            { TopDecl (Definition $1, noii) }
  | block_declaration              { TopDecl (Declaration $1, noii) }
-
 
 
 /*(*************************************************************************)*/
@@ -732,22 +720,14 @@ operator_kind:
  | Tdelete TOCro2 TCCro2 { AllocOp DeleteArrayOp, [$1;$2;$3] }
 
 
-
-
-
 tcolcol_opt:
  | TColCol         { Some (QTop, [$1]) }
  | /*(* empty *)*/ { None }
 
 
-
-
-
 id_expression:
  | unqualified_id { noQscope, $1 }
  | qualified_id { $1 }
-
-
 
 
 
@@ -762,7 +742,6 @@ namespace_name:
 
 enum_name_or_typedef_name_or_simple_class_name:
  | TypedefIdent { $1 }
-
 
 
 
@@ -783,7 +762,6 @@ ident3:
 /*(*************************************************************************)*/
 /*(* expr *)*/
 /*(*************************************************************************)*/
-
 
 expr: 
  | assign_expr             { $1 }
@@ -897,8 +875,6 @@ postfix_expr:
  | cast_constructor_expr { $1 }
 
 
-
-
 primary_expr: 
  /*(*c++ext: cf below now. old: TIdent { mk_e(Ident  (fst $1)) [snd $1] }  *)*/
 
@@ -974,8 +950,6 @@ cpp_cast_operator:
  | Treinterpret_cast { Reinterpret_cast, $1 }
 
 
-
-
 /*
 (* c++ext: cast with function syntax, and also constructor, but conflict.
  * constructed object or cast. Have a few conflicts.
@@ -992,7 +966,6 @@ cast_constructor_expr:
        mk_e(ConstructedObject (ft, $3)) [$2;$4] 
      }
 
-
 basic_type_2: 
  | Tchar2                { (BaseType (IntType CChar)), [$1]}
  | Tint2                 { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
@@ -1004,9 +977,6 @@ basic_type_2:
  | Tshort2               { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
  | Tlong2                { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
  | Tbool2                { (BaseType (IntType CBool)),         [$1] }
-
-
-
 
 
 
@@ -1032,11 +1002,6 @@ new_initializer:
  | TOPar argument_list_opt TCPar { () }
 
 
-
-
-
-
-
 /*(*----------------------------*)*/
 /*(* gccext: *)*/
 /*(*----------------------------*)*/
@@ -1047,14 +1012,10 @@ compound_literal_expr:
  | topar2 type_id tcpar2 tobrace_ini initialize_list gcc_comma_opt tcbrace_ini
      { mk_e(GccConstructor ($2, List.rev $5)) ([$1;$3;$4;$7] ++ $6) }
 
-
- 
-
 string_elem:
  | TString { [snd $1] }
  /*(* cppext:  ex= printk (KERN_INFO "xxx" UTS_RELEASE)  *)*/
  | TMacroString { [$1] }
-
 
 /*(*----------------------------*)*/
 /*(* cppext: *)*/
@@ -1153,12 +1114,8 @@ statement_seq:
      { IfdefStmt $1 }
 
 
-
-
 expr_statement: 
  | expr_opt TPtVirg { $1, [$2] }
-
-
 
 
 /*(* note that case 1: case 2: i++;    would be correctly parsed, but with 
@@ -1172,9 +1129,6 @@ labeled:
  | Tdefault         TCol statement   { Default $3,             [$1; $2] } 
 
 
-
-
-
 /*(* classic else ambiguity resolved by a %prec *)*/
 selection: 
  | Tif TOPar expr TCPar statement              %prec SHIFTHERE
@@ -1183,8 +1137,6 @@ selection:
      { If ($3, $5, $7),  [$1;$2;$4;$6] }
  | Tswitch TOPar expr TCPar statement             
      { Switch ($3,$5),   [$1;$2;$4]  }
-
-
 
 iteration: 
  | Twhile TOPar expr TCPar statement                             
@@ -1204,7 +1156,6 @@ iteration:
      { MacroIteration (fst $1, $3, $5), [snd $1;$2;$4] }
 
 
-
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 
  | Tgoto ident  { Goto (fst $2),  [$1;snd $2] } 
@@ -1214,18 +1165,12 @@ jump:
  | Treturn expr { ReturnExpr $2,  [$1] }
  | Tgoto TMul expr { GotoComputed $3, [$1;$2] }
 
-
-
-
-
-       
 /*(*----------------------------*)*/
 /*(* c++ext: *)*/
 /*(*----------------------------*)*/
 
 declaration_statement:
  | block_declaration { DeclStmt $1, noii }
-
 
 
 try_block: 
@@ -1291,7 +1236,6 @@ simple_type_specifier:
 
 
 
-
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
 elaborated_type_specifier: 
  | Tenum ident 
@@ -1307,9 +1251,6 @@ elaborated_type_specifier:
      { let template = $2 in
        Right3 (TypenameKwd (Ast.nQ,template)), [$1]
      }
-
-
-
 
 /*(*----------------------------*)*/
 /*(* c++ext:  *)*/
@@ -1377,7 +1318,6 @@ cv_qualif:
 
 
 
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(* Declarator, right part of a type + second part of decl (the ident)  *)*/
 /*(*-----------------------------------------------------------------------*)*/
@@ -1420,7 +1360,6 @@ direct_d:
      }
  | direct_d topar parameter_type_list tcpar const_opt exception_specification_opt
      { (fst $1,fun x->(snd $1) (nQ,(FunctionType (x, $3),   [$2;$4]))) }
-
 
 
 /*(*----------------------------*)*/
@@ -1474,8 +1413,6 @@ direct_abstract_declarator:
      { fun x -> $1 (nQ, (FunctionType (x, $3), [$2;$4])) }
 
 
-
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(* Parameters (use decl_spec not type_spec just for 'register') *)*/
 /*(*-----------------------------------------------------------------------*)*/
@@ -1525,8 +1462,6 @@ const_opt:
  | /*(*empty*)*/ { None }
 
 
-
-
 /*(*----------------------------*)*/
 /*(* workarounds *)*/
 /*(*----------------------------*)*/
@@ -1534,9 +1469,6 @@ const_opt:
 parameter_decl: parameter_decl2 { et "param" ();  $1 }
 
 declaratorp: declarator      { LP.add_ident (fst (fst $1)); $1 }
-
-
-
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(* helper type rules *)*/
@@ -1558,8 +1490,6 @@ cv_qualif_list:
  | cv_qualif_list cv_qualif   { addQualifD ($2,$1) }
 
 
-
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(* xxx_type_id *)*/
 /*(*-----------------------------------------------------------------------*)*/
@@ -1570,7 +1500,6 @@ type_id:
      { let (returnType, _) = fixDeclSpecForDecl $1 in  returnType }
  | spec_qualif_list abstract_declarator
      { let (returnType, _) = fixDeclSpecForDecl $1 in $2 returnType }
-
 
 
 ptr_operator:
@@ -1598,13 +1527,9 @@ new_declarator:
  | direct_new_declarator 
      { () }
 
-
-
 direct_new_declarator:
  | TOCro expr TCCro { () }
  | direct_new_declarator TOCro expr TCCro { () }
-
-
 
 /*
 (* in c++ grammar they do 'type_spec_seq conversion_declaratoropt'. We
@@ -1632,10 +1557,6 @@ conversion_declarator:
      { () }
 
 
-
-
-
-
 /*(*************************************************************************)*/
 /*(* declaration, types, initializers *)*/
 /*(*************************************************************************)*/
@@ -1653,7 +1574,6 @@ block_declaration:
 /*(*----------------------------*)*/
 /*(* c++ext: *)*/
 /*(*----------------------------*)*/
-
 
 namespace_alias_definition:
  | Tnamespace TIdent TEq tcolcol_opt nested_name_specifier_opt namespace_name
@@ -1677,8 +1597,6 @@ using_declaration:
        name, [$1;$6]++$2
      }
 
-
-
 /*(*----------------------------*)*/
 /*(* gccext: c++ext: *)*/
 /*(*----------------------------*)*/
@@ -1687,8 +1605,6 @@ asm_definition:
  /*(* gccext: c++ext: also apparently *)*/
  | Tasm TOPar asmbody TCPar TPtVirg             { Asm $3, [$1;$2;$4;$5] }
  | Tasm Tvolatile TOPar asmbody TCPar TPtVirg   { Asm $4, [$1;$2;$3;$5;$6] }
-
-
 
 
 asmbody: 
@@ -1709,9 +1625,6 @@ colon_option:
  | /*(* empty *)*/                  { ColonMisc, [] }
 
 asm_expr: assign_expr { $1 }
-
-
-
 
 /*(*************************************************************************)*/
 /*(* simple declaration, initializers *)*/
@@ -1753,11 +1666,6 @@ simple_declaration2:
      { MacroDecl ((fst $3, $5), [snd $3;$4;$6;$7;fakeInfo();$1;$2])}
 
 
-
-
-
-
-
 /*(*-----------------------------------------------------------------------*)*/
 /*
 (* In c++ grammar they put 'explicit' in function_spec, 'typedef' and 'friend' 
@@ -1792,14 +1700,11 @@ decl_spec2:
  | Tfriend            decl_spec2 { addInlineD ((true, $1),$2) (*TODO*)}
 
 
-
-
 function_spec:
  /*(*gccext: and c++ext: *)*/
  | Tinline { Inline, $1 }
  /*(*c++ext: *)*/
  | Tvirtual { Virtual, $1 }
-
 
 storage_class_spec: 
  | Tstatic      { Sto Static,  $1 }
@@ -1809,16 +1714,12 @@ storage_class_spec:
  /*(* c++ext: *)*/
  | Tmutable     { Sto Register,$1 (*TODO*) }
 
-
 /*(*----------------------------*)*/
 /*(* workarounds *)*/
 /*(*----------------------------*)*/
 
 decl_spec: decl_spec2    { dt "declspec" (); $1  }
 simple_declaration: simple_declaration2 { et "simple_decl" (); $1 }
-
-
-
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(* declarators (right part of type and variable) *)*/
@@ -1842,8 +1743,6 @@ teq: TEq  { et "teq" (); $1 }
 
 init_declarator: init_declarator2  { dt "init" (); $1 }
 
-
-
 /*(*----------------------------*)*/
 /*(* gccext: *)*/
 /*(*----------------------------*)*/
@@ -1855,11 +1754,6 @@ declaratori:
 gcc_asm_decl: 
  | Tasm TOPar asmbody TCPar              {  }
  | Tasm Tvolatile TOPar asmbody TCPar   {  }
-
-
-
-
-
 
 			  
 /*(*-----------------------------------------------------------------------*)*/
@@ -1925,12 +1819,6 @@ designator:
 gcc_comma_opt_struct: 
  | TComma {  [$1] } 
  | /*(* empty *)*/  {  [Ast.fakeInfo() +> Ast.rewrap_str ","]  }
-
-
-
-
-
-
 
 /*(*************************************************************************)*/
 /*(* struct/class *)*/
@@ -2030,10 +1918,6 @@ member_declaration:
 
 
 
-
-
-
-
 field_declaration:
  | decl_spec member_declarator_list TPtVirg 
      {  
@@ -2054,9 +1938,6 @@ field_declaration:
          [(FieldDecl onedecl , noii),noii], 
          $2::(snd storage)) 
      }
-
-
-
 
 
 /*(* was called struct_declarator before *)*/
@@ -2103,9 +1984,6 @@ member_declarator:
        )
      }
 
-
-
-
 /*(* could also solve ambiguity without the special-token technique by
    * merging pure_specifier and constant_initializer and disambiguating
    * by looking at the form of the declaratorsd.
@@ -2116,8 +1994,6 @@ pure_specifier:
 
 constant_initializer:
  | TEq const_expr2 { $1, $2 }
-
-
 
 
 /*(* special case for ctor/dtor cos they don't have a return type *)*/
@@ -2184,15 +2060,10 @@ enumerator:
  | idente                 { (fst $1, None),      [snd $1]    }
  | idente  TEq const_expr { (fst $1, Some $3),   [snd $1; $2] }
 
-
-
 /*(*----------------------------*)*/
 /*(* workarounds *)*/
 /*(*----------------------------*)*/
 idente: ident { LP.add_ident (fst $1); $1 }
-
-
-
 
 /*(*************************************************************************)*/
 /*(* OO aux *)*/
@@ -2231,14 +2102,11 @@ base_specifier:
        (name, true, Some (fst $2)), [$1;snd $2]
      }
 
-
-
 /*(* todo? can be template_id  *)*/
 class_name:
 /* specialisation | ident3 { $1 } */
  | type_cplusplus_id { "todo", Ast.fakeInfo() (* TODOAST *) }
  | TIdent { $1 }
-
 
 /*(*----------------------------*)*/
 /*(* c++ext: ctor rules *)*/
@@ -2297,8 +2165,6 @@ declaration:
  | ctor_dtor { $1 }
 
 
-
-
 declaration_list: 
  | declaration_seq                  { [$1]   }
  | declaration_list declaration_seq { $1 ++ [$2] }
@@ -2314,9 +2180,6 @@ declaration_seq:
      { CppDirectiveDecl $1 }
  | cpp_ifdef_directive/*(* stat_or_decl_list ...*)*/  
      { IfdefDecl $1 }
-
-
-
 
 
 
@@ -2337,17 +2200,12 @@ template_parameter:
  | parameter_decl { $1 }
 
 
-
-
-
 /*(* c++ext: could also do a extern_string_opt to factorize stuff *)*/
 linkage_specification:
  | Textern TString declaration 
      { ExternC $3, [$1;snd $2] }
  | Textern TString TOBrace declaration_list_opt TCBrace 
      { ExternCList $4, [$1;snd $2;$3;$5] }
-
-
 
 
 namespace_definition:
@@ -2366,7 +2224,6 @@ named_namespace_definition:
 unnamed_namespace_definition:
  | Tnamespace TOBrace declaration_list_opt TCBrace 
      { NameSpaceAnon $3, [$1;$2;$4] }
-
 
 
 /*
@@ -2424,10 +2281,6 @@ cpp_directive:
          ((fst $2, [$1; snd $2;$7]), 
            (DefineFunc ($4, [$3;$5]), $6)) 
      }
-
-
-
-
 
 
 /*(* perhaps better to use assign_expr ? but in that case need 
@@ -2520,10 +2373,6 @@ celem:
  | EOF        { FinalDef $1 } 
 
 
-
-
-
-
 /*(*************************************************************************)*/
 /*(* some generic workarounds *)*/
 /*(*************************************************************************)*/
@@ -2560,11 +2409,6 @@ tcpar: TCPar
 /*(* xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
 
-
-
-
-
-
 string_list: 
  | string_elem { $1 }
  | string_list string_elem { $1 ++ $2 } 
@@ -2578,13 +2422,9 @@ colon_option_list:
  | colon_option_list TComma colon_option { $1 ++ [$3, [$2]] }
 
 
-
-
-
 argument_list: 
  | argument                           { [$1, []] }
  | argument_list TComma argument { $1 ++ [$3,    [$2]] }
-
 
 
 enumerator_list: 
@@ -2622,13 +2462,6 @@ designator_list:
  | designator_list designator { $1 ++ [$2] }
 
 
-
-
-
-
-
-
-
 handler_list:
  | handler { [$1] }
  | handler_list handler { $1 ++ [$2] }
@@ -2651,11 +2484,6 @@ base_specifier_list:
  | base_specifier                               { [$1,           []] }
  | base_specifier_list TComma base_specifier    { $1 ++ [$3,     [$2]] }
 
-
-
-
-
-
 /*(*-----------------------------------------------------------------------*)*/
 
 /*(* gccext:  which allow a trailing ',' in enum, as in perl *)*/
@@ -2666,8 +2494,6 @@ gcc_comma_opt:
 comma_opt:
  | TComma { [$1] }
  | { [] }
-
-
 
 
 gcc_opt_expr: 
@@ -2684,8 +2510,6 @@ expr_opt:
 
 
 
-
-
 argument_list_opt:
  | argument_list { $1 }
  | /*(*empty*)*/ { [] }
@@ -2695,14 +2519,9 @@ parameter_type_list_opt:
  | /*(*empty*)*/       { None }
 
 
-
-
 member_specification_opt:
  | member_specification { $1 }
  | /*(*empty*)*/        { [] }
-
-
-
 
 
 nested_name_specifier_opt:
@@ -2761,8 +2580,6 @@ ptvirg_opt:
  | { [] }
 */
 
-
 void_opt:
  | Tvoid         { Some $1 }
  | /*(*empty*)*/ { None }
-
