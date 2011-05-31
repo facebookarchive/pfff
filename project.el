@@ -240,7 +240,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 11
+     (case 20
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
@@ -254,6 +254,7 @@
 
        (10 "-c /home/pad/ex.spatch /home/pad/ex.php")
        (11 "-c /home/pad/ex2.spatch /home/pad/ex2.php")
+       (20 "-c /tmp/test.spatch /tmp/test.php")
        )
      )
     )
