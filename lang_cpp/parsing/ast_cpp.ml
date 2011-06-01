@@ -3,7 +3,7 @@
  * Copyright (C) 2002 Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2011 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -167,7 +167,6 @@ and typeCbis =
     | IntType   of intType 
     | FloatType of floatType
 
-
      (* stdC: type section 
       * add  a | SizeT ?
       * note: char and signed char are semantically different!! 
@@ -193,7 +192,6 @@ and typeCbis =
    and enumType = (string * constExpression option) wrap (* s = *) 
                   comma_list
                    (* => string * int list *)
-
 
    (* -------------------------------------- *)    
    (* return * (params * has "...") 
@@ -223,9 +221,9 @@ and expression = (expressionbis * fullType option ref (* semantic: *)) wrap
 and expressionbis = 
 
   (* Ident can be a enumeration constant, a simple variable, a name of a func.
-   * With cppext, Ident can also be the name of a macro. Sparse says
+   * cppext: Ident can also be the name of a macro. Sparse says
    * that "an identifier with a meaning is a symbol". 
-   * With c++ Ident is now a 'name' instead of a 'string' and can correspond 
+   * :c++ext: Ident is now a 'name' instead of a 'string' and can correspond 
    * to an operator name.
    *)
   | Ident          of name * (* semantic: *) ident_info
@@ -300,7 +298,6 @@ and expressionbis =
       and action_macro = 
          | ActMisc of tok list
 
-
   (* I put string for Int and Float because int would not be enough because
    * OCaml int are 31 bits. So simpler to do string. Same reason to have
    * string instead of int list for the String case.
@@ -353,7 +350,6 @@ and expressionbis =
     | UnaryNotOp
     | CommaOp
 
-
  (* c++ext: *)
   and cast_operator =
     | Static_cast
@@ -362,7 +358,6 @@ and expressionbis =
     | Reinterpret_cast
 
  and constExpression = expression (* => int *)
-
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
@@ -410,7 +405,6 @@ and statementbis =
   and exprStatement = expression option
 
 
-
   and labeled = Label   of string * statement
               | Case    of expression * statement 
               | CaseRange of expression * expression * statement (* gccext: *)
@@ -434,7 +428,6 @@ and statementbis =
             | Continue | Break 
             | Return   | ReturnExpr of expression
             | GotoComputed of expression (* gccext: goto *exp ';' *)
-
 
   (* c++ext: *)
   and handler = exception_declaration wrap (* catch () *) * compound wrap
@@ -542,7 +535,8 @@ and definition = (string(*name*) * functionType * storage * compound)
 (* Struct/Class *)
 (* ------------------------------------------------------------------------- *)
 
-(* c++ext: the ident can be a template_id when do template specialization 
+(* c++ext: the ident can be a template_id when do template specialization.
+ *
  * TODO: use record
  *)
 and class_definition = 
@@ -739,8 +733,6 @@ and toplevel =
   (* cppext: *)
   | CppTop of cpp_directive
   | IfdefTop of ifdef_directive (* * toplevel list *)
-
-  (* cppext: *)
   | MacroTop of string * argument comma_list * tok list
          
   (* gccext: allow redundant ';' *)
@@ -849,7 +841,9 @@ let (string_of_name_tmp: name -> string) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent s, _ -> s
-  | _ -> raise Todo
+  | _ ->
+      "TODO_string_of_name_tmp"
+      (* raise Todo *)
 
 let (info_of_name_tmp: name -> info) = fun name ->
   let (_opt, _qu, id) = name in

@@ -26,23 +26,10 @@ module Ast = Ast_cpp
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
- * subtil: ocamllex use side effect on lexbuf, so must take care. 
- * For instance must do   
- * 
- *  let info = tokinfo lexbuf in 
- *  TComment (info +> tok_add_s (comment lexbuf)) 
- * 
- * and not 
- * 
- *   TComment (tokinfo lexbuf +> tok_add_s (comment lexbuf)) 
- * 
- * because of the "wierd" order of evaluation of OCaml.
- *
- * note: can't use Lexer_parser._lexer_hint here to do different
- * things, because now we call the lexer to get all the tokens
- * (tokens_all), and then we parse. So we can't have the _lexer_hint
+ * note: we can't use Lexer_parser._lexer_hint here to do different
+ * things because we now call the lexer to get all the tokens
+ * (tokens_all), and then only we parse. So we can't have the _lexer_hint
  * info here. We can have it only in parse_c. For the same reason, the
  * typedef handling here is now useless. 
  *)
