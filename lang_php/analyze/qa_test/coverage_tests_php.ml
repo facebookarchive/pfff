@@ -499,8 +499,8 @@ let lines_coverage_from_tests
       with Not_found -> []
     in
     file, {
-      covered_call_sites = covered;
-      call_sites = 
+      covered_sites = covered;
+      all_sites = 
         get_all_call_lines_with_sanity_check ?is_directive_to_filter 
           file covered;
     }

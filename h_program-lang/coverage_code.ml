@@ -56,8 +56,8 @@ type tests_coverage = (Common.filename, tests_score) Common.assoc
  *)
 type lines_coverage = (Common.filename, file_lines_coverage) Common.assoc
  and file_lines_coverage = {
-   covered_call_sites: int list;
-   call_sites: int list;
+   covered_sites: int list;
+   all_sites: int list;
  }
  (* with tarzan *)
 
@@ -101,8 +101,8 @@ let (json_of_lines_coverage: lines_coverage -> J.json_type) = fun cov ->
     J.Object ([
       (* I use short fieldnames to avoid generating a huge JSON file.
       *)
-      "cov", J.Array (cover.covered_call_sites |> List.map (fun l -> J.Int l));
-      "all", J.Array (cover.call_sites |> List.map (fun l -> J.Int l));
+      "cov", J.Array (cover.covered_sites |> List.map (fun l -> J.Int l));
+      "all", J.Array (cover.all_sites |> List.map (fun l -> J.Int l));
     ])
   ))
 
@@ -117,12 +117,12 @@ let (lines_coverage_of_json: J.json_type -> lines_coverage) = fun j ->
             "all", J.Array call_sites;
           ]) ->
             {
-              covered_call_sites = 
+              covered_sites = 
                 covered_lines |> List.map (function
                 | J.Int l -> l
                 | _ -> failwith "Bad json, files_coverage_of_json"
                 );
-              call_sites = 
+              all_sites = 
                 call_sites |> List.map (function
                 | J.Int l -> l
                 | _ -> failwith "Bad json, files_coverage_of_json"

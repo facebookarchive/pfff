@@ -6,8 +6,8 @@ type tests_coverage = (Common.filename (* source *), tests_score) Common.assoc
 
 type lines_coverage = (Common.filename, file_lines_coverage) Common.assoc
  and file_lines_coverage = {
-   covered_call_sites: int list;
-   call_sites: int list;
+   covered_sites: int list;
+   all_sites: int list;
  }
 
 (* input/output *)

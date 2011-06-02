@@ -71,8 +71,8 @@ let gen_red_green_layer lines_coverage ~output =
     title = "Test coverage (red/green)";
     description = "Use information from xdebug";
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
-      let covered = lines_cover.Coverage_code.covered_call_sites in
-      let all = lines_cover.Coverage_code.call_sites in
+      let covered = lines_cover.Coverage_code.covered_sites in
+      let all = lines_cover.Coverage_code.all_sites in
       let not_covered = Common.minus_set all covered in
       let percent = 
         try 
@@ -109,8 +109,8 @@ let gen_heatmap_layer lines_coverage ~output =
     title = "Test coverage (heatmap)";
     description = "Use information from xdebug";
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
-      let covered = lines_cover.Coverage_code.covered_call_sites in
-      let all = lines_cover.Coverage_code.call_sites in
+      let covered = lines_cover.Coverage_code.covered_sites in
+      let all = lines_cover.Coverage_code.all_sites in
       let not_covered = Common.minus_set all covered in
       let percent = 
         try 
