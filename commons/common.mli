@@ -1776,6 +1776,9 @@ val hash_hashset_add : 'a -> 'b -> ('a, 'b hashset) Hashtbl.t -> unit
 (* hashset_union h1 h2  adds all elements in h2 into h1 *)
 val hashset_union: 'a hashset -> 'a hashset -> unit
 
+(* hashset_inter h1 h2  removes all elements in h1 not in h2 *)
+val hashset_inter: 'a hashset -> 'a hashset -> unit
+
 val hashset_to_set : 
  < fromlist : ('a ) list -> 'c; .. > -> ('a, 'b) Hashtbl.t -> 'c
 
