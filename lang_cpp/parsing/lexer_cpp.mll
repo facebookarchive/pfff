@@ -389,6 +389,8 @@ rule token = parse
    * for an ident does not work well with how we add info in
    * ast_c. So better to generate just one token, just one info,
    * even if have later to reanalyse those tokens and unsplit.
+   * 
+   * TODO: do as in yacfe, generate multiple tokens for those constructs?
    *)
 
   | ((id as s)  "...")

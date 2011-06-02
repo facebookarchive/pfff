@@ -3,7 +3,7 @@
 (* convenient globals *)
 (*****************************************************************************)
 
-let path = ref 
+let path = ref
   (try (Sys.getenv "PFFF_HOME")
     with Not_found-> "/home/pad/pfff"
   )
