@@ -4,7 +4,7 @@
  * Copyright (C) 2002 Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2011 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -26,14 +26,15 @@ module Ast = Ast_cpp
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
+
+(* The C/C++/CPP lexer.
+ * 
  * note: we can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
  * (tokens_all), and then only we parse. So we can't have the _lexer_hint
  * info here. We can have it only in parse_c. For the same reason, the
  * typedef handling here is now useless. 
  *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -61,78 +62,48 @@ let keyword_table = Common.hash_of_list [
   (* c: *)
   "void",   (fun ii -> Tvoid ii); 
   "char",   (fun ii -> Tchar ii);    
-  "short",  (fun ii -> Tshort ii); 
-  "int",    (fun ii -> Tint ii); 
+  "short",  (fun ii -> Tshort ii); "int",    (fun ii -> Tint ii); 
   "long",   (fun ii -> Tlong ii); 
-  "float",  (fun ii -> Tfloat ii); 
-  "double", (fun ii -> Tdouble ii);  
+  "float",  (fun ii -> Tfloat ii); "double", (fun ii -> Tdouble ii);  
 
-  "unsigned", (fun ii -> Tunsigned ii);  
-  "signed",   (fun ii -> Tsigned ii);
+  "unsigned", (fun ii -> Tunsigned ii); "signed",   (fun ii -> Tsigned ii);
   
   "auto",     (fun ii -> Tauto ii);    
   "register", (fun ii -> Tregister ii);  
   "extern",   (fun ii -> Textern ii); 
   "static",   (fun ii -> Tstatic ii);
 
-  "const",    (fun ii -> Tconst ii);
-  "volatile", (fun ii -> Tvolatile ii); 
+  "const",    (fun ii -> Tconst ii); "volatile", (fun ii -> Tvolatile ii); 
   
-  "struct",  (fun ii -> Tstruct ii); 
+  "struct",  (fun ii -> Tstruct ii);
   "union",   (fun ii -> Tunion ii); 
   "enum",    (fun ii -> Tenum ii);  
+
   "typedef", (fun ii -> Ttypedef ii);  
   
-  "if",      (fun ii -> Tif ii);      
-  "else",     (fun ii -> Telse ii); 
-  "break",   (fun ii -> Tbreak ii);   
-  "continue", (fun ii -> Tcontinue ii);
-  "switch",  (fun ii -> Tswitch ii);  
-  "case",     (fun ii -> Tcase ii);  
-  "default", (fun ii -> Tdefault ii); 
-  "for",     (fun ii -> Tfor ii);  
-  "do",      (fun ii -> Tdo ii);      
-  "while",   (fun ii -> Twhile ii);  
+  "if",      (fun ii -> Tif ii); "else",     (fun ii -> Telse ii); 
+  "break",   (fun ii -> Tbreak ii); "continue", (fun ii -> Tcontinue ii);
+  "switch",  (fun ii -> Tswitch ii); 
+  "case",     (fun ii -> Tcase ii); "default", (fun ii -> Tdefault ii); 
+  "for",     (fun ii -> Tfor ii);
+  "do",      (fun ii -> Tdo ii);
+  "while",   (fun ii -> Twhile ii);
   "return",  (fun ii -> Treturn ii);
-  "goto",    (fun ii -> Tgoto ii); 
+  "goto",    (fun ii -> Tgoto ii);
   
   "sizeof", (fun ii -> Tsizeof ii);   
 
 
-  (* gccext: cppext: linuxext: synonyms *)
-  "asm",     (fun ii -> Tasm ii);
-  "__asm__", (fun ii -> Tasm ii);
-  "__asm",   (fun ii -> Tasm ii);
-
-  "inline",     (fun ii -> Tinline ii); (* also a c++ext: *)
-  "__inline__", (fun ii -> Tinline ii);
-  "__inline",   (fun ii -> Tinline ii);
-  "INLINE",     (fun ii -> Tinline ii); 
-  "_INLINE_",   (fun ii -> Tinline ii); 
-  "__INLINE__",   (fun ii -> Tinline ii); 
-
+  (* gccext: cppext: linuxext: synonyms. more aliases are in macros.h *)
+  "asm",     (fun ii -> Tasm ii); 
   "__attribute__", (fun ii -> Tattribute ii);
-  "__attribute", (fun ii -> Tattribute ii);
-
   "typeof", (fun ii -> Ttypeof ii);
-  "__typeof__", (fun ii -> Ttypeof ii);
-  "__typeof", (fun ii -> Ttypeof ii);
 
-
-  (* gccext: alias *)
-  "__signed__",     (fun ii -> Tsigned ii);
-
-  "__const__",     (fun ii -> Tconst ii);
-  "__const",     (fun ii -> Tconst ii);
-
-  "__volatile__",  (fun ii -> Tvolatile ii); 
-  "__volatile",    (fun ii -> Tvolatile ii);  
-
+  (* also a c++ext: *)
+  "inline",     (fun ii -> Tinline ii); 
 
   (* c99:  *)
-  "__restrict",    (fun ii -> Trestrict ii);  
   "__restrict__",    (fun ii -> Trestrict ii);  
-
 
   (* c++ext: *)
   "class", (fun ii -> Tclass ii);
@@ -151,9 +122,10 @@ let keyword_table = Common.hash_of_list [
 
   "operator", (fun ii -> Toperator ii);
 
-  "public"    , (fun ii -> Tpublic ii);
+  "public"    , (fun ii -> Tpublic ii); 
   "private"   , (fun ii -> Tprivate ii);
   "protected" , (fun ii -> Tprotected ii);
+
   "friend"    , (fun ii -> Tfriend ii);
 
   "virtual", (fun ii -> Tvirtual ii);
@@ -163,8 +135,7 @@ let keyword_table = Common.hash_of_list [
 
   "bool", (fun ii -> Tbool ii);
 
-  "true", (fun ii -> Ttrue ii); 
-  "false", (fun ii -> Tfalse ii);
+  "true", (fun ii -> Ttrue ii); "false", (fun ii -> Tfalse ii);
 
   "wchar_t", (fun ii -> Twchar_t ii);
 
@@ -177,9 +148,6 @@ let keyword_table = Common.hash_of_list [
   "mutable", (fun ii -> Tmutable ii);
 
   "export", (fun ii -> Texport ii);
-
-
-  
  ]
 
 let error_radix s = 
@@ -358,8 +326,7 @@ rule token = parse
   (* #ifdef *)
   (* ---------------------- *)
 
-  (* '0'+ because sometimes it is a #if 000 *)
-  | "#" [' ' '\t']* "if" [' ' '\t']* '0'+           (* [^'\n']*  '\n' *)
+  | "#" [' ' '\t']* "if" [' ' '\t']* '0'           (* [^'\n']*  '\n' *)
       { let info = tokinfo lexbuf in 
         TIfdefBool (false, info(* +> tok_add_s (cpp_eat_until_nl lexbuf)*)) 
       }

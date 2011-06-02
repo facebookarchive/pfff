@@ -2,8 +2,22 @@
 (*****************************************************************************)
 (* convenient globals *)
 (*****************************************************************************)
-(* todo: let path = ref ... YACFE_HOME *)
 
+let path = ref 
+  (try (Sys.getenv "PFFF_HOME")
+    with Not_found-> "/home/pad/pfff"
+  )
+
+(*****************************************************************************)
+(* macros *)
+(*****************************************************************************)
+
+let macros_h = ref (Filename.concat !path "/data/cpp_stdlib/macros.h")
+
+let cmdline_flags_macrofile () = [
+  "-macros", Arg.Set_string macros_h,
+  " <file>";
+]
 
 (*****************************************************************************)
 (* show *)
@@ -38,17 +52,16 @@ let debug_lexer = ref false
 
 let debug_pp = ref false
 let debug_cplusplus = ref false
-
 let debug_cpp_ast  = ref false
 
 let cmdline_flags_debugging () = [
-  "-debug_lexer_cpp",        Arg.Set  debug_lexer , " ";
+  "-debug_lexer_cpp",   Arg.Set  debug_lexer , " ";
 
   "-debug_pp",          Arg.Set  debug_pp, " ";
-  "-debug_etdt",         Arg.Set  debug_etdt , "  ";
-  "-debug_typedef",      Arg.Set  debug_typedef, "  ";
+  "-debug_etdt",        Arg.Set  debug_etdt , "  ";
+  "-debug_typedef",     Arg.Set  debug_typedef, "  ";
 
-  "-debug_cplusplus",          Arg.Set  debug_cplusplus, " ";
+  "-debug_cplusplus",   Arg.Set  debug_cplusplus, " ";
 ]
 
 (*****************************************************************************)
@@ -60,5 +73,3 @@ let add_typedef_root = ref false
 let if0_passing = ref true
 
 let ifdef_to_if  = ref false
-
-
