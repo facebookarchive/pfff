@@ -216,7 +216,7 @@ let visit_prog prog =
   in
 
   let visitor = V.mk_visitor hooks in
-  visitor.V.vprogram prog
+  visitor (Program prog)
 
 (*****************************************************************************)
 (* Main entry point *)

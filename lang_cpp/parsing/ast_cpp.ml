@@ -752,6 +752,10 @@ and program = toplevel list
 (* ------------------------------------------------------------------------- *)
 and any = 
   | Program of program
+  | Toplevel of toplevel
+  | Expr of expression
+  | Stmt of statement
+
  (* with tarzan *)
 
 (*****************************************************************************)

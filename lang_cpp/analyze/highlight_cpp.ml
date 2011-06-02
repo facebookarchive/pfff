@@ -331,7 +331,7 @@ let visit_toplevel
   }
   in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtoplevel toplevel;
+  visitor (Toplevel toplevel);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)

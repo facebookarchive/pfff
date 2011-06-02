@@ -38,13 +38,9 @@ type visitor_in = {
   kvar_declaration: var_declaration vin;
   kcompound: compound vin;
 }
-and visitor_out = {
-  vexpr: expression vout;
-  vprogram: program vout;
-  vtoplevel: toplevel vout;
-}
+and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
-and 'a vout = 'a -> unit
+
 
 let default_visitor = 
   { kexpr    = (fun (k,_) x -> k x);
@@ -825,14 +821,16 @@ and v_toplevel =
   | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
 
- and all_functions =   
-    {      
-      vexpr = v_expression;
-      vprogram = v_program;
-      vtoplevel = v_toplevel;
-    }
-  in
-  all_functions
+and v_any = function
+  | Program x -> v_program x
+  | Expr x -> v_expression x
+  | Stmt x -> v_statement x
+  | Toplevel x -> v_toplevel x
 
+(* end of auto generation *)
+
+ and all_functions x = v_any x
+in
+ v_any
 
   
