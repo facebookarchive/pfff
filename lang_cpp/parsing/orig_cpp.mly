@@ -1,3 +1,5 @@
+src: http://www.csci.csusb.edu/dick/c++std/cd2/gram.html
+
 pad: -seq, -opt suffix
 
 1 This summary of C++ syntax is intended to be an aid to  comprehension.
