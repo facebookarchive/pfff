@@ -709,7 +709,7 @@ let parse_print_error_heuristic2 file =
   (* -------------------------------------------------- *)
   (* call lexer and get all the tokens *)
   (* -------------------------------------------------- *)
-  LP.lexer_reset_typedef(); 
+  LP.lexer_reset_state(); 
   let toks_orig = tokens file in
 
   let toks = Parsing_hacks.fix_tokens_define toks_orig in
@@ -773,7 +773,7 @@ let parse_print_error_heuristic2 file =
             tr.already_disambiguated <- false;
 
             (* choice: LP.restore_typedef_state(); *)
-            LP.lexer_reset_typedef(); 
+            LP.lexer_reset_state(); 
 
 
             let line_error = TH.line_of_tok tr.current in

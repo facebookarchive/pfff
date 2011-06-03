@@ -23,35 +23,32 @@ module Flag = Flag_parsing_cpp
 (* Prelude *)
 (*****************************************************************************)
 
-(* Tricks used to handle the ambiguity in the grammar with the typedef
- * which impose a cooperation between the lexer and the parser.
+(* This module is one of the many to provide hacks around the
+ * grammar. This module contains tricks to handle the ambiguity 
+ * in the grammar with the typedef which impose a cooperation 
+ * between the lexer and the parser. The C (and C++) grammar is
+ * not context free.
  * 
- * An example by hughes casse: "in the symbol table, local
- * definition must replace type definition in order to correctly parse
- * local variable in functions body. This is the only way to correctly
- * handle this kind of exception, that is,
+ * An example by Hughes Casse: 
  * 
- * typedef ... ID; int f(int *p) {int ID; return (ID) * *p;} If ID
- * isn't overload, last expression is parsed as a type cast, if it
- * isn't, this a multiplication."
+ *   "in the symbol table, local definitions must replace type 
+ *    definitions in order to correctly parse local variable in 
+ *    functions body. This is the only way to correctly
+ *    handle this kind of exception, that is,
  * 
- * Why parse_typedef_fix2 ? Cos when introduce new variable, for
- * instance when declare parameters for a function such as int var_t,
- * then the var_t must not be lexed as a typedef, so we must disable
- * temporaly the typedef mechanism to allow variable with same name as
- * a typedef. *)
+ *       typedef ... ID; 
+ *       int f(int *p) {
+ *          int ID; 
+ *          return (ID) * *p;
+ *       } 
+ *
+ *    If ID isn't overload, the last expression is parsed as a type cast. 
+ *    If it isn't, this a multiplication."
+ *)
 
-(* parse_typedef_fix *)
-let _handle_typedef = ref true
-
-(* parse_typedef_fix2 *)
-let enable_typedef ()  = _handle_typedef := true
-let disable_typedef () = _handle_typedef := false
-
-let is_enabled_typedef () = !_handle_typedef
-
-
-
+(*****************************************************************************)
+(* Typedef fix *)
+(*****************************************************************************)
 
 type identkind = TypeDefI | IdentI
 
@@ -63,7 +60,20 @@ type identkind = TypeDefI | IdentI
  *)
 let (_typedef : (string, identkind) Common.scoped_h_env ref) = 
   ref (Common.empty_scoped_h_env ())
-   
+
+
+(* Why those enable/disable ? When we introduce a new variable, for
+ * instance when we declare parameters for a function such as 'int var_t',
+ * then the 'var_t' must not be lexed as a typedef, so we must disable
+ * temporaly the typedef mechanism to allow variable with same name as
+ * a typedef. 
+ *)
+(* parse_typedef_fix2 *)
+let _handle_typedef = ref true
+let enable_typedef ()  = _handle_typedef := true
+let disable_typedef () = _handle_typedef := false
+let is_enabled_typedef () = !_handle_typedef
+
 let is_typedef s  = if !_handle_typedef then
   (match (Common.optionise (fun () -> Common.lookup_h_env s !_typedef)) with
   | Some TypeDefI -> true
@@ -85,7 +95,7 @@ let add_typedef_root s =
   else add_typedef s (* have far more .failed without this *)
 
 
-(* Used by parse_c when do some error recovery. The parse error may
+(* Used by parse_cpp when we do some error recovery. The parse error may
  * have some bad side effects on typedef hash, so recover this.
  *)
 let _old_state = ref (Common.clone_scoped_h_env !_typedef)
@@ -97,9 +107,20 @@ let restore_typedef_state () =
   _typedef := !_old_state
   
 
+(*****************************************************************************)
+(* Context help *)
+(*****************************************************************************)
 
-(* c++ext: must have a stack of Class/Struct or Func/Method 
- * as can nest them arbitrarily *)
+(* In addition to adjusting a symbol table for typedefs while parsing,
+ * we also adjust some contextual information that right now
+ * is used in parsing_hacks.ml.
+ * 
+ * todo? could this be a view or some info processed only by the lexer?
+ * do we really need the lexer/parser cooperation here?
+ *
+ * c++ext: must have a stack of Class/Struct or Func/Method 
+ * as can nest them arbitrarily 
+ *)
 type context = 
   | InTopLevel
   | InFunction
@@ -134,8 +155,11 @@ let pop_context () =
   !_lexer_hint.context_stack <- List.tl !_lexer_hint.context_stack
 
 
+(*****************************************************************************)
+(* Reset state *)
+(*****************************************************************************)
 
-let lexer_reset_typedef () = 
+let lexer_reset_state () = 
   begin
   _handle_typedef := true;
   _typedef := Common.empty_scoped_h_env ();

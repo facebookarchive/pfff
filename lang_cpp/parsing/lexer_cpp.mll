@@ -552,7 +552,6 @@ rule token = parse
         TString   ((s,   IsWchar),  (info +> tok_add_s (s ^ "\""))) 
       }
 
-
   (* Take care of the order ? No because lex try the longest match. The
    * strange diff between decimal and octal constant semantic is not
    * understood too by refman :) refman:11.1.4, and ritchie.
@@ -597,19 +596,14 @@ rule token = parse
  | ['0'-'1']+'b' { TInt (((tok lexbuf)<!!>(0,-2)) +> int_of_stringbits) } 
 *)
 
-
   (*------------------------------------------------------------------------ *)
   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
 
-  | _ 
-      { 
-        if !Flag.verbose_lexing 
-        then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
-        let info = tokinfo lexbuf in
-        TUnknown (info)
-      }
-
-
+  | _ { 
+      if !Flag.verbose_lexing 
+      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+      TUnknown (tokinfo lexbuf)
+    }
 
 (*****************************************************************************)
 (* Rule char *)
@@ -722,8 +716,6 @@ and comment = parse
       }
   | eof { pr2 "LEXER: WIERD end of file in comment"; ""}
 
-
-
 (*****************************************************************************)
 (* Rule cpp_eat_until_nl *)
 (*****************************************************************************)
@@ -755,5 +747,6 @@ and cpp_eat_until_nl = parse
    *)
   | [^ '\n' '\\'      '/' '*'  ]+ 
      { let s = tok lexbuf in s ^ cpp_eat_until_nl lexbuf } 
+
   | eof { pr2 "LEXER: end of file in cpp_eat_until_nl"; ""}
   | _   { let s = tok lexbuf in s ^ cpp_eat_until_nl lexbuf }  
