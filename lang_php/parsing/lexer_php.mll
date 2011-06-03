@@ -282,6 +282,8 @@ type state_mode =
   | ST_VAR_OFFSET
   (* started with <<<XXX, finished by XXX; *)
   | ST_START_HEREDOC of string
+  (* started with <<<'XXX', finished by XXX; *)
+  | ST_START_NOWDOC of string
 
   (* started with <xx when preceded by a certain token (e.g. 'return' '<xx'), 
    * finished by '>' by transiting to ST_IN_XHP_TEXT, or really finished
@@ -877,6 +879,12 @@ rule st_in_scripting = parse
         T_START_HEREDOC (tokinfo lexbuf)
       }
 
+    | 'b'? "<<<" TABS_AND_SPACES "'" (LABEL as s) "'" NEWLINE {
+        set_mode (ST_START_NOWDOC s);
+        (* could use another token, but simpler to reuse *)
+        T_START_HEREDOC (tokinfo lexbuf)
+      }
+
   (*e: strings rules *)
 
   (* ----------------------------------------------------------------------- *)
@@ -1304,6 +1312,53 @@ and st_start_heredoc stopdoc = parse
         TUnknown (tokinfo lexbuf)
       }
   (*e: repetitive st_start_heredoc rules for error handling *)
+
+(* ----------------------------------------------------------------------- *)
+(* todo? this is not what was in the original lexer, but the original lexer
+ * does complicated stuff ...
+ *)
+and st_start_nowdoc stopdoc = parse
+
+  | (LABEL as s) (";"? as semi) (['\n' '\r'] as space) {
+      let info = tokinfo lexbuf in 
+
+      let lbl_info = rewrap_str s info in
+
+      let pos = Ast.pos_of_info info in
+      let pos_after_label = pos + String.length s in
+      let pos_after_semi = pos_after_label + String.length semi in
+
+      let colon_info = 
+        tokinfo_str_pos semi pos_after_label in
+      let space_info = 
+        tokinfo_str_pos (string_of_char space) pos_after_semi in
+      
+      if s = stopdoc
+      then begin
+        set_mode ST_IN_SCRIPTING;
+        push_token (TNewline (space_info));
+        if semi = ";"
+        then push_token (TSEMICOLON (colon_info));
+        (* reuse same token than for heredocs *)
+        T_END_HEREDOC(lbl_info)
+      end else 
+        T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
+    }
+  | [^ '\n' '\r']+ {
+      T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
+    }
+
+  | ['\n' '\r'] {
+      TNewline (tokinfo lexbuf)
+    }
+
+  | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+  | _ { 
+      if !Flag.verbose_lexing 
+      then pr2_once ("LEXER:unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
+        TUnknown (tokinfo lexbuf)
+    }
+
       
 (*e: rule st_start_heredoc *)
 

@@ -183,6 +183,8 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
                 Lexer_php.st_var_offset lexbuf
             | Lexer_php.ST_START_HEREDOC s ->
                 Lexer_php.st_start_heredoc s lexbuf
+            | Lexer_php.ST_START_NOWDOC s ->
+                Lexer_php.st_start_nowdoc s lexbuf
 
             (* xhp: *)
             | Lexer_php.ST_IN_XHP_TAG current_tag ->
