@@ -31,7 +31,7 @@ module J = Json_type
  * We can even run the tests and says whether the new code has
  * been covered (like in MySql test infrastructure).
  * 
- * For now we just generate given a mapping from 
+ * For now we just provide types for a mapping from
  * a source code file to a list of relevant test files. 
  * 
  * References:
@@ -53,6 +53,11 @@ type tests_coverage = (Common.filename, tests_score) Common.assoc
  * is an under-approximation. We compensate such an approximation by
  * also computing the static set of function/method calls so that
  * a coverage percentage can be computed.
+ * 
+ * update: with hphpi tracer, we actually also cover assignement and
+ * this type is actually independent of such design decision.
+ * It's line-based though, so don't expect complex path coverage
+ * or MCDC stuff. Just simple line coverage ...
  *)
 type lines_coverage = (Common.filename, file_lines_coverage) Common.assoc
  and file_lines_coverage = {
