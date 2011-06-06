@@ -1104,6 +1104,9 @@ and st_double_quotes = parse
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(s, varinfo)
       }
+    (* bugfix: can have strings like "$$foo$" *)
+    | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
+
   (*x: encapsulated dollar stuff rules *)
     | "{$" { 
         yyless 1 lexbuf;
