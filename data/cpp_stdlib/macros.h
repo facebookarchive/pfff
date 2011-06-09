@@ -153,7 +153,7 @@
 
 #define FBUNIT_TEST(a) void a()
 
-#define FOR_EACH(a,b) for(;;;)
+#define FOR_EACH(a,b) for(;;)
 
 #define lexical_cast static_cast
 
