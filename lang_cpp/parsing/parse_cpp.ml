@@ -482,11 +482,8 @@ let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  =
   ref (Hashtbl.create 101)
 
 let init_defs file =     
-  if not (Common.lfile_exists file)
-  then pr2 ("warning: Can't find default macro file: " ^ file)
-  else 
-    _defs := Common.hash_of_list (extract_macros file)
-
+  pr2 (spf "using %s macro file" file);
+  _defs := Common.hash_of_list (extract_macros file)
 
 (* 
  * note: as now we go in 2 passes, there is first all the error message of

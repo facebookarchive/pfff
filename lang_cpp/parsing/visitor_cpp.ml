@@ -803,7 +803,7 @@ and v_includ (v1, v2) =
 and v_inc_file =
   function
   | Local v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | NonLocal v1 -> let v1 = v_list v_inc_elem v1 in ()
+  | Standard v1 -> let v1 = v_list v_inc_elem v1 in ()
   | Wierd v1 -> let v1 = v_string v1 in ()
 and v_inc_elem v = v_string v
 and v_toplevel =

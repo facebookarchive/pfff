@@ -540,7 +540,7 @@ and definition = (string(*name*) * functionType * storage * compound)
                  wrap (* s ( ) { } fakestart sto *)
 
 (* ------------------------------------------------------------------------- *)
-(* Struct/Class *)
+(* Class definition *)
 (* ------------------------------------------------------------------------- *)
 
 (* c++ext: the ident can be a template_id when do template specialization.
@@ -683,7 +683,7 @@ and includ = inc_file wrap (* #include s *) *
   (unit (* old: include_rel_pos option ref *) * bool (* is in ifdef, cf -test incl *) )
  and inc_file = 
   | Local    of inc_elem list
-  | NonLocal of inc_elem list
+  | Standard of inc_elem list
   | Wierd of string (* ex: #include SYSTEM_H *)
   and inc_elem = string
 
@@ -771,7 +771,7 @@ let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
  * old: or when don't want 'synchronize' on it in unparse_c.ml
  * (now have other mark for tha matter).
  *)
-let no_virt_pos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1)
+let noVirtPos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1)
 
 let fakeInfo pi  = 
   { PI.token = PI.FakeTokStr ("",None);
@@ -801,8 +801,8 @@ let noInIfdef () =
 (* Wrappers *)
 (*****************************************************************************)
 let unwrap = fst
-let uncomma xs = List.map fst xs
 let untype = fst
+let uncomma xs = List.map fst xs
 
 let unwrap_typeC (qu, (typeC, ii)) = typeC
 
@@ -811,20 +811,20 @@ let str_of_info = PI.str_of_info
 
 (* used by parsing hacks *)
 let make_expanded ii =
-  let (a, b) = no_virt_pos in
+  let (a, b) = noVirtPos in
   {ii with PI.token = 
       PI.ExpandedTok (PI.get_opi ii.PI.token, a, b)}
 
 (* used by token_helpers *)
 let get_info = PI.get_info
 
-let line_of_info = PI.line_of_info
-let col_of_info = PI.col_of_info
-let file_of_info = PI.file_of_info
-let pos_of_info  = PI.pos_of_info
-let pinfo_of_info = PI.pinfo_of_info
+let line_of_info       = PI.line_of_info
+let col_of_info        = PI.col_of_info
+let file_of_info       = PI.file_of_info
+let pos_of_info        = PI.pos_of_info
+let pinfo_of_info      = PI.pinfo_of_info
 let parse_info_of_info = PI.parse_info_of_info
-let is_origintok =  PI.is_origintok
+let is_origintok       = PI.is_origintok
 
 let opos_of_info ii = 
   PI.get_orig_info (function x -> x.PI.charpos) ii

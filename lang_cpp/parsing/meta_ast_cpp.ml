@@ -209,6 +209,9 @@ and vof_parameterType v =
     v
 and vof_typeQualifier v = vof_wrap vof_typeQualifierbis v
 and vof_typeQualifierbis { const = v_const; volatile = v_volatile } =
+ if not !_current_precision.M.type_info
+ then Ocaml.VUnit
+ else
   let bnds = [] in
   let arg = Ocaml.vof_bool v_volatile in
   let bnd = ("volatile", arg) in
@@ -890,9 +893,9 @@ and vof_inc_file =
   | Local v1 ->
       let v1 = Ocaml.vof_list vof_inc_elem v1
       in Ocaml.VSum (("Local", [ v1 ]))
-  | NonLocal v1 ->
+  | Standard v1 ->
       let v1 = Ocaml.vof_list vof_inc_elem v1
-      in Ocaml.VSum (("NonLocal", [ v1 ]))
+      in Ocaml.VSum (("Standard", [ v1 ]))
   | Wierd v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Wierd", [ v1 ]))
 and vof_inc_elem v = Ocaml.vof_string v

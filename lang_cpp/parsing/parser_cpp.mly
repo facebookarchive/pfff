@@ -2264,11 +2264,11 @@ cpp_directive:
        (* redo some lexing work :( *)
        let inc_file = 
          match () with
-         | _ when s =~ "^\"\\(.*\\)\"$" -> 
+         | _ when s =~ "^\"\\(.*\\)\"$" ->
              Local (Common.split "/" (matched1 s))
-         | _ when s =~ "^\\<\\(.*\\)\\>$" -> 
-             NonLocal (Common.split "/" (matched1 s))
-         | _ -> 
+         | _ when s =~ "^\\<\\(.*\\)\\>$" ->
+             Standard (Common.split "/" (matched1 s))
+         | _ ->
              Wierd s 
        in
        Include ((inc_file, [i1;i2]), (Ast.noRelPos(), !in_ifdef)) 
