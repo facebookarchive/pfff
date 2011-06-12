@@ -140,7 +140,14 @@
 // should be moved in a facebook.h at some point instead of abusing macros.h
 
 #define FBUNIT_TEST(a) void a()
+#define FBUNIT_FIXTURE_TEST(a, b) void a()
 
+// boost?
 #define FOR_EACH(a,b) for(;;)
 
+// boost too?
 #define lexical_cast static_cast
+
+// google gflags
+#define DEFINE_int32(a,b,c) int a = b
+#define DEFINE_string(a,b,c) int a = b

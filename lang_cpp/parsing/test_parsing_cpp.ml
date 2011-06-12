@@ -4,6 +4,8 @@ open Ast_cpp
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 
+module Stat = Statistics_parsing
+
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
@@ -21,18 +23,40 @@ let test_parse_cpp xs  =
   Parse_cpp.init_defs !Flag.macros_h;
 
   let stat_list = ref [] in
+  let newscore  = Common.empty_score () in
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     
     let (xs, stat) = Parse_cpp.parse file in
+
     Common.push2 stat stat_list;
+
+    let s = sprintf "bad = %d" stat.Stat.bad in
+    if stat.Stat.bad = 0
+    then Hashtbl.add newscore file (Common.Ok)
+    else Hashtbl.add newscore file (Common.Pb s)
   );
-  Statistics_parsing.print_parsing_stat_list !stat_list;
+
+  Stat.print_parsing_stat_list !stat_list;
+
+  (match xs with 
+  | [dirname] when is_directory dirname ->
+      pr2 "--------------------------------";
+      pr2 "regression testing  information";
+      pr2 "--------------------------------";
+      let score_path = Filename.concat !Flag.path "tmp" in
+      let str = Str.global_replace (Str.regexp "/") "__" dirname in
+      Common.regression_testing newscore 
+        (Filename.concat score_path
+            ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"))
+  | _ -> ()
+  );
   ()
 
-
 let test_dump_cpp file =
+  Parse_cpp.init_defs !Flag.macros_h;
+
   let ast = Parse_cpp.parse_program file in
   let s = Export_ast_cpp.ml_pattern_string_of_program ast in
   pr s

@@ -31,9 +31,9 @@ module Ast = Ast_cpp
  * 
  * note: we can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
- * (tokens_all), and then only we parse. So we can't have the _lexer_hint
- * info here. We can have it only in parse_c. For the same reason, the
- * typedef handling here is now useless. 
+ * (tokens_all), and then only we parse. So we can use the hint only 
+ * in parse_cpp.ml. For the same reason, the typedef handling here is 
+ * now useless.
  *)
 
 (*****************************************************************************)
@@ -55,6 +55,8 @@ let tokinfo lexbuf  =
 
 let tok_add_s  = Parse_info.tok_add_s
 
+(* ---------------------------------------------------------------------- *)
+(* Keywords *)
 (* ---------------------------------------------------------------------- *)
 (* opti: less convenient, but using a hash is faster than using a match *)
 let keyword_table = Common.hash_of_list [
@@ -155,7 +157,7 @@ let error_radix s =
 
 }
 (*****************************************************************************)
-(* Aliases *)
+(* Regexps aliases *)
 (*****************************************************************************)
 let letter = ['A'-'Z' 'a'-'z' '_']
 let digit  = ['0'-'9']
@@ -218,10 +220,9 @@ rule token = parse
         TComment(info +> tok_add_s com) 
       }
 
-
   (* C++ comment are allowed via gccext, but normally they are deleted by cpp.
-   * So need this here only when dont call cpp before.
-   * note that we don't keep the trailing \n; it will be in another token.
+   * So need this here only because we dont call cpp before.
+   * Note that we don't keep the trailing \n; it will be in another token.
    *)
   | "//" [^'\r' '\n' '\011']*    { TComment (tokinfo lexbuf) } 
 

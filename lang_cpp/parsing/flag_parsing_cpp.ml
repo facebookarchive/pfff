@@ -3,6 +3,7 @@
 (* convenient globals *)
 (*****************************************************************************)
 
+(* todo? use Config.path? but then need to link with globals ... *)
 let path = ref
   (try (Sys.getenv "PFFF_HOME")
     with Not_found-> "/home/pad/pfff"
