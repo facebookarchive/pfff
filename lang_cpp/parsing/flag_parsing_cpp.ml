@@ -30,7 +30,7 @@ let cmdline_flags_macrofile () = [
 let verbose_lexing = ref false
 let verbose_parsing = ref true
 
-let verbose_cpp_ast = ref false
+let verbose_pp_ast = ref false
 
 let filter_msg = ref false
 
@@ -51,8 +51,8 @@ let debug_typedef_location = ref false
 let debug_lexer = ref false
 
 let debug_pp = ref false
+let debug_pp_ast  = ref false
 let debug_cplusplus = ref false
-let debug_cpp_ast  = ref false
 
 let cmdline_flags_debugging () = [
   "-debug_lexer_cpp",   Arg.Set  debug_lexer , " ";

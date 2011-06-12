@@ -19,9 +19,9 @@ open Ast_cpp
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = 
-  Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_cpp_ast
+  Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_pp_ast
 let pr2_debug, pr2_debug_once = 
-  Common.mk_pr2_wrappers Flag_parsing_cpp.debug_cpp_ast
+  Common.mk_pr2_wrappers Flag_parsing_cpp.debug_pp_ast
 
 (*****************************************************************************)
 (* Cpp Ast Manipulations *)

@@ -33,6 +33,10 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 (*s: type program2 *)
 type program2 = toplevel2 list
   and toplevel2 = 
@@ -283,12 +287,12 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
 
   let orig_filename = filename in
   let filename =
+    (* note that now that pfff support XHP constructs directly, 
+     * this code is not that needed.
+     *)
     match pp with
     | None -> orig_filename
     | Some cmd ->
-        (* note that now that pfff support XHP constructs directly, 
-         * this code is not that needed.
-         *)
         Common.profile_code "Parse_php.pp_maybe" (fun () ->
 
           let pp_flag = if !Flag.verbose_pp then "-v" else "" in
@@ -326,6 +330,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
   let filelines = Common.cat_array filename in
 
   let toks = tokens filename in
+  (* note that now that pfff support XHP constructs directly, 
+   * this code is not that needed.
+   *)
   let toks = 
     if filename = orig_filename
     then toks

@@ -7,25 +7,14 @@
 // MacroString
 // ****************************************************************************
 
-/* String macros are normally handle quite well by my lalr(k) technique,
- * but sometimes it's not enough, for instance in the XX YY case, it could
+/* String macros are normally handle quite well by the lalr(k) technique,
+ * but sometimes it's not enough. For instance in the XX YY case, it could
  * be considered as a declaration with XX being a typedef, so we would
- * have an ambiguity. So at least by adding this special case, we can
- * catch more correct string-macro, no more a XX YY but now a good
- * "XX" YY 
- * 
- * cf include/linux/kernel.h
- *
- * For stringification I need to have at least a witness, a string, 
- * and sometimes have just printk(KERN_WARNING MYSTR) and it could
- * be transformed in a typedef later, so better to at least
- * transform in string already the string-macro we know.
- * 
- * Perhaps better to apply also as soon as possible the 
- * correct macro-annotation tagging (__init & co) to be able to
- * filter them as soon as possible so that they will not polluate
- * our pattern-matching that come later.
+ * have an ambiguity. So by adding a few special cases (e.g. KERN_WARNING
+ * for the linux kernel), we can catch more correct string-macros.
+ * For stringification I need to have at least a witness, a string.
  */
+//#define KERN_WARNING "WARNING"
 
 /* EX_TABLE & co. 
  *
@@ -61,6 +50,7 @@
 // ****************************************************************************
 // MacroStmt
 // ****************************************************************************
+
 // with or without parameters, but no ';'
 
 // ****************************************************************************
@@ -77,6 +67,9 @@
 // ****************************************************************************
 // MacroAttributes
 // ****************************************************************************
+
+//#define __init YACFE_ATTRIBUTE
+
 // TODO: could perhaps generalize via "__.*"
 
 // linkage
@@ -85,16 +78,12 @@
 
 // windows: WINAPI, STDCALL, ...
 
-//#define __init YACFE_ATTRIBUTE
-
 // ****************************************************************************
 // MacroKeywordAlias
 // ****************************************************************************
 
 // const, often defined via macro for backward compatibility with old compiler
 // I guess.
-
-// 
 
 // private/public
 
@@ -129,8 +118,6 @@
 // structure
 // MACHINE_START 
 
-// iterator defined two times
-
 // higher order, ASSERTCMP
 
 // parts of stuff, start of stuff
@@ -150,10 +137,10 @@
 // ****************************************************************************
 // Facebook stuff
 // ****************************************************************************
+// should be moved in a facebook.h at some point instead of abusing macros.h
 
 #define FBUNIT_TEST(a) void a()
 
 #define FOR_EACH(a,b) for(;;)
 
 #define lexical_cast static_cast
-

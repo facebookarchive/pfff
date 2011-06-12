@@ -534,7 +534,6 @@ let mk_funcall e1 args =
 %left TShl TShr
 %left TPlus TMinus
 %left TMul TDiv TMod 
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
 
 
 /*(*%left TColCol*)*/
@@ -563,7 +562,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 /*(*1 TOC *)*/
 /*(*************************************************************************)*/
 /*
-(*
+(* 
  * toplevel (obsolete)
  * 
  * ident
