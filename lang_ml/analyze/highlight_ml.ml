@@ -515,9 +515,19 @@ let visit_toplevel
         then
           (* a little bit syncweb specific *)
           let s = Ast.str_of_info ii in
-          if s =~ "(\\*[sex]:" (* yep, s e x are the syncweb markers *)
-          then tag ii CommentSyncweb
-          else tag ii Comment
+          (match s with
+          (* yep, s e x are the syncweb markers *)
+          | _ when s =~ "(\\*[sex]:"  -> tag ii CommentSyncweb
+          (* normally then use of *** or ### or --- should be enough,
+           * but in some files like ocamlyacc files the preceding
+           * heuristic fail in which case it's useful to have those
+           * rules. Moreover ocamldoc use something similar
+           *)
+          | _ when s =~ "(\\*1 "  -> tag ii CommentSection1
+          | _ when s =~ "(\\*2 "  -> tag ii CommentSection2
+          | _ when s =~ "(\\*3 "  -> tag ii CommentSection3
+          | _ -> tag ii Comment
+          )
 
     | T.TCommentMisc ii ->
         tag ii Comment
