@@ -29,15 +29,12 @@ module LP = Lexer_parser_cpp
 /*(*************************************************************************)*/
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
-
 /*
 (* 
- * Some tokens are not even used in this file because they are filtered
+ * Some tokens below are not even used in this file because they are filtered
  * in some intermediate phases. Some tokens also appear only here
- * and not in the lexer because they are created in some intermediate
- * phases (fresh tokens). All of those tokens have to be declared because
- * ocamllex may generate them, or an intermediate phase may also
- * generate them (like some functions in parsing_hacks.ml)
+ * and are not in the lexer because they are created in some intermediate
+ * phases (fresh tokens). Nevertheless all those tokens have to be declared.
  *)
 */
 
@@ -60,16 +57,17 @@ module LP = Lexer_parser_cpp
 %token <(string * Ast_cpp.isWchar) * Ast_cpp.info>   TString
 
 %token <string * Ast_cpp.info> TIdent 
-/*(* fresk_token: appears mostly after some fix_xxx in parsing_hack *)*/
+/*(* fresh_token: appears after some fix_tokens in parsing_hack *)*/
 %token <string * Ast_cpp.info> TypedefIdent 
 
 /*
-(* Some tokens like TOPar and TCPar are used as synchronisation stuff, 
- * in parsing_hack.ml. So if define special tokens like TOParDefine and
- * TCParEOL, then take care to also modify token_helpers.
+(* Some tokens like TOPar and TCPar are used as synchronisation point 
+ * in parsing_hack.ml. So if you define a special token like TOParDefine and
+ * TCParEOL, then you must take care to also modify token_helpers.ml
  *)
 */
 %token <Ast_cpp.info> TOPar TCPar TOBrace TCBrace TOCro TCCro 
+
 %token <Ast_cpp.info> TDot TComma TPtrOp 
 %token <Ast_cpp.info> TInc TDec
 %token <Ast_cpp.assignOp * Ast_cpp.info> TAssign 
@@ -80,9 +78,12 @@ module LP = Lexer_parser_cpp
 
 %token <Ast_cpp.info> TPtVirg
 %token <Ast_cpp.info> 
-       TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInf TSup TInfEq TSupEq
+       TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
        TShl TShr 
        TPlus TMinus TMul TDiv TMod 
+
+/*(*c++ext: see also TInf2 and TSup2 *)*/
+%token <Ast_cpp.info> TInf TSup 
 
 %token <Ast_cpp.info>
        Tchar Tshort Tint Tdouble Tfloat Tlong Tunsigned Tsigned Tvoid
@@ -93,25 +94,20 @@ module LP = Lexer_parser_cpp
        Tbreak Telse Tswitch Tcase Tcontinue Tfor Tdo Tif  Twhile Treturn
        Tgoto Tdefault
        Tsizeof  
+
 /*(* C99 *)*/
-%token <Ast_cpp.info>
-       Trestrict
+%token <Ast_cpp.info> Trestrict
 
 /*(*-----------------------------------------*)*/
 /*(*2 gccext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_cpp.info> Tasm
-%token <Ast_cpp.info> Tattribute
-%token <Ast_cpp.info> Tinline /*(* also c++ext: *)*/
-%token <Ast_cpp.info> Ttypeof
+%token <Ast_cpp.info> Tasm Tattribute Ttypeof
+/*(* also c++ext: *)*/
+%token <Ast_cpp.info> Tinline 
 
-/*(*-----------------------------------------*)*/
-/*(*2 cppext: extra tokens *)*/
-/*(*-----------------------------------------*)*/
-
-/*(*---------------*)*/
-/*(*2 define        *)*/
-/*(*---------------*)*/
+/*(*------------------*)*/
+/*(*2 cppext: define  *)*/
+/*(*------------------*)*/
 
 %token <Ast_cpp.info> TDefine
 %token <(string * Ast_cpp.info)> TDefParamVariadic
@@ -127,39 +123,36 @@ module LP = Lexer_parser_cpp
 %token <(string * Ast_cpp.info)> TIdentDefine
 %token <Ast_cpp.info>            TDefEOL
 
-/*(*---------------*)*/
-/*(*2 include       *)*/
-/*(*---------------*)*/
+/*(*------------------------*)*/
+/*(*2 cppext: include       *)*/
+/*(*------------------------*)*/
 
-/*(* used only in lexer_c, then transformed in comment or splitted in tokens *)*/
+/*(* used only in the lexer. It is then transformed in Comment or splitted *)*/
 %token <(string * string * bool ref * Ast_cpp.info)> TInclude
-
-/*(* tokens coming from above, generated in parse_c from TInclude, etc *)*/
+/*(* frest_token: tokens coming from TInclude generated in parsing_hack  *)*/
 %token <(Ast_cpp.info * bool ref)> TIncludeStart
-%token <(string * Ast_cpp.info)> TIncludeFilename
+%token <(string * Ast_cpp.info)>   TIncludeFilename
 
-
-/*(*---------------*)*/
-/*(*2 ifdef         *)*/
-/*(*---------------*)*/
+/*(*------------------------*)*/
+/*(*2 cppext: ifdef         *)*/
+/*(*------------------------*)*/
 
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
 %token <Ast_cpp.info>          TIfdef TIfdefelse TIfdefelif TEndif
 %token <(bool * Ast_cpp.info)> TIfdefBool TIfdefMisc TIfdefVersion
 
-/*(*---------------*)*/
-/*(*2 other         *)*/
-/*(*---------------*)*/
+/*(*----------------------*)*/
+/*(*2 cppext: other       *)*/
+/*(*----------------------*)*/
 
 %token <string * Ast_cpp.info> TUndef
-
 %token <Ast_cpp.info> TCppDirectiveOther
 
-/*(*---------------*)*/
-/*(*2 macro use     *)*/
-/*(*---------------*)*/
+/*(*-----------------------------*)*/
+/*(*2 cppext: special macros     *)*/
+/*(*-----------------------------*)*/
 
-/*(* appear  after fix_tokens_cpp *)*/
+/*(* fresh_token: appear after fix_tokens_cpp *)*/
 
 %token <Ast_cpp.info>            TMacroStmt
 /*(* no need for the value for the moment *)*/
@@ -173,13 +166,11 @@ module LP = Lexer_parser_cpp
 /*(*---------------*)*/
 
 /*(* %token <(string * Ast_cpp.info)> TMacroTop *)*/
-/*(* appear after parsing_hack *)*/
+/*(* fresh_token: appear after parsing_hack *)*/
 %token <Ast_cpp.info> TCParEOL   
 
 %token <Ast_cpp.info> TAction
 
-/*(* TCommentMisc still useful ? obsolete ? *)*/
-%token <Ast_cpp.info> TCommentMisc
 %token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
 
 
