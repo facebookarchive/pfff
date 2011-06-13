@@ -90,6 +90,7 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
   | CfgPilError of Controlflow_build_pil.error_kind
 
+  | UseOfUndefinedVariableInLambda of string (* dname *)
   (* todo: type errors *)
 
   and severity2 =
@@ -133,6 +134,11 @@ let string_of_error_kind error_kind =
 "Declare variables prior to use (even if you are passing them as reference
     parameters). You may have misspelled this variable name.
 "
+
+  | UseOfUndefinedVariableInLambda (dname) ->
+      spf "Use of undeclared variable $%s in lambda. " dname ^
+"See http://php.net/manual/en/functions.anonymous.php and the 'use' keyword."
+
   | UnusedVariable (dname, scope) ->
       spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) dname
 
