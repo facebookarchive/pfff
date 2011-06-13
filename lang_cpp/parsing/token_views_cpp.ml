@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  * 
  * Copyright (C) 2007, 2008 Ecole des Mines de Nantes
+ * Copyright (C) 2011, Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -24,11 +25,11 @@ open Parser_cpp
 (*****************************************************************************)
 
 (* 
- * This module implements some Fuzzy parsing by offering different "views"
- * over the same AST.
+ * This module makes it easier to write some fuzzy parsing heuristics
+ * by offering different "views" over the same set of tokens.
  * 
- * Normally I should not use ref/mutable in the token_extended type
- * and I should have a set of functions taking a list of tokens and
+ * Normally I should not use ref/mutable in the token_extended type below
+ * and instead have a set of functions taking a list of tokens and
  * returning a list of tokens. The problem is that to make easier some
  * functions, it is better to work on better representation, on "views"
  * over this list of tokens. But then modifying those views and get
@@ -38,7 +39,6 @@ open Parser_cpp
  * the action) but it is tedious too. Simpler to use mutable/ref. We
  * use the same idea that we use when working on the Ast_c. 
  *
- * 
  * old: when I was using the list of "actions" next to the views, the hash
  * indexed by the charpos, there could have been some problems:
  * how my fake_pos interact with the way I tag and adjust token ?
@@ -51,21 +51,11 @@ open Parser_cpp
 (* Some debugging functions  *)
 (*****************************************************************************)
 
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-
-(* update: quite close to the Place_c.Inxxx.
- * update: now that can have complex nesting of class/func in c++,
- *  this type is also present in duplicated form in lexer_parser2.ml
- * 
- * The strategy to set the tag is simply to look at the token 
- * before the '{'.
- *)
-type context = 
-  InFunction | InEnum | InStruct | InInitializer | NoContext
 
 type token_extended = { 
   mutable tok: Parser_cpp.token;
@@ -74,10 +64,21 @@ type token_extended = {
   (* less: need also a after ? *)
   mutable new_tokens_before : Parser_cpp.token list;
 
-  (* line x col  cache, more easily accessible, of the info in the token *)
+  (* line x col  cache (more easily accessible) of the info in the token *)
   line: int; 
   col : int;
 }
+ (* update: 
+  *  - quite similar to the Place_c.Inxxx.
+  *  - now that can have complex nesting of class/func in c++,
+  *    this type is also present in duplicated form in lexer_parser2.ml
+  * 
+  * The strategy to set the tag is simply to look at the token 
+  * before the '{'.
+  *)
+  and context = 
+  InFunction | InEnum | InStruct | InInitializer | NoContext
+
 
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 
@@ -143,8 +144,12 @@ let rebuild_tokens_extented toks_ext =
   let tokens = List.rev !_tokens in
   (tokens +> acc_map mk_token_extended)
 
+(*****************************************************************************)
+(* View builders  *)
+(*****************************************************************************)
+
 (* ------------------------------------------------------------------------- *)
-(* view builders  *)
+(* Parens *)
 (* ------------------------------------------------------------------------- *)
 
 (* todo: synchro ! use more indentation 
@@ -191,8 +196,9 @@ and mk_parameters extras acc_before_sep  xs =
           mk_parameters extras (PToken x::acc_before_sep) xs
       )
 
-
-
+(* ------------------------------------------------------------------------- *)
+(* Brace *)
+(* ------------------------------------------------------------------------- *)
 
 let rec mk_braceised xs = 
   match xs with
@@ -227,7 +233,9 @@ and mk_braceised_aux acc xs =
       )
 
           
-
+(* ------------------------------------------------------------------------- *)
+(* Ifdefs *)
+(* ------------------------------------------------------------------------- *)
 
 let rec mk_ifdef xs = 
   match xs with
@@ -301,7 +309,9 @@ and mk_ifdef_parameters extras acc_before_sep xs =
           mk_ifdef_parameters extras (NotIfdefLine line::acc_before_sep) xs
       )
 
-(* --------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
+(* Lines (of parens) *)
+(* ------------------------------------------------------------------------- *)
 
 let line_of_paren = function
   | PToken x -> x.line
@@ -334,12 +344,6 @@ let rec mk_line_parenthised xs =
       let line, xs = span_line_paren line_no xs in
       Line (x::line)::mk_line_parenthised xs
 *)
-
-
-
-
-
-(* --------------------------------------- *)
 
 let line_range_of_paren = function
   | PToken x -> x.line, x.line
@@ -376,11 +380,9 @@ let rec mk_line_parenthised xs =
       let line, xs = span_line_paren_range line_range xs in
       Line (x::line)::mk_line_parenthised xs
 
-
-
-
-
-(* --------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
+(* Function body *)
+(* ------------------------------------------------------------------------- *)
 let rec mk_body_function_grouped xs = 
   match xs with 
   | [] -> []
@@ -406,14 +408,14 @@ let rec mk_body_function_grouped xs =
           NotBodyLine line::mk_body_function_grouped xs 
       )
 
-(* --------------------------------------- *)
 let is_braceised = function
   | Braceised   _ -> true
   | BToken _ -> false
 
-(* ------------------------------------------------------------------------- *)
-(* view iterators  *)
-(* ------------------------------------------------------------------------- *)
+
+(*****************************************************************************)
+(* View iterators  *)
+(*****************************************************************************)
 
 let rec iter_token_paren f xs = 
   xs +> List.iter (function
@@ -439,8 +441,6 @@ let rec iter_token_ifdef f xs =
       info_ifdef +> List.iter f;
       xxs +> List.iter (iter_token_ifdef f)
   )
-
-
 
 
 let tokens_of_paren xs = 
@@ -486,10 +486,11 @@ let tokens_of_paren_ordered xs =
 
 
 
-(* ------------------------------------------------------------------------- *)
-(* set the context info in token *)
-(* ------------------------------------------------------------------------- *)
-(* All important context are introduced via some '{' '}'. To make the 
+(*****************************************************************************)
+(* Context *)
+(*****************************************************************************)
+(* 
+ * All important contexts are introduced via some '{' '}'. To make the 
  * difference is it often enough to just look at the few tokens before the
  * '{'.
  * 

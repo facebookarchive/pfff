@@ -1,6 +1,4 @@
 
-type context = InFunction | InEnum | InStruct | InInitializer | NoContext
-
 type token_extended = {
   mutable tok : Parser_cpp.token;
   mutable where : context;
@@ -8,11 +6,11 @@ type token_extended = {
   line : int;
   col : int;
 }
-val mk_token_extended : Parser_cpp.token -> token_extended
+ and context = InFunction | InEnum | InStruct | InInitializer | NoContext
 
+val mk_token_extended : Parser_cpp.token -> token_extended
 val rebuild_tokens_extented : token_extended list -> token_extended list
 
-(* ---------------------------------------------------------------------- *)
 type paren_grouped =
   | Parenthised of paren_grouped list list * token_extended list
   | PToken of token_extended
@@ -33,26 +31,20 @@ type body_function_grouped =
   | BodyFunction of token_extended list
   | NotBodyLine of token_extended list
 
-(* ---------------------------------------------------------------------- *)
-val mk_parenthised : token_extended list -> paren_grouped list
-val mk_braceised : token_extended list -> brace_grouped list
-val mk_ifdef : token_extended list -> ifdef_grouped list
-val mk_line_parenthised :
-  paren_grouped list -> paren_grouped line_grouped list
-val mk_body_function_grouped :
-  token_extended list -> body_function_grouped list
+val mk_parenthised: token_extended list -> paren_grouped list
+val mk_braceised:   token_extended list -> brace_grouped list
+val mk_ifdef:       token_extended list -> ifdef_grouped list
+val mk_body_function_grouped: token_extended list -> body_function_grouped list
 
-val line_of_paren : paren_grouped -> int
-val span_line_paren :
-  int -> paren_grouped list -> paren_grouped list * paren_grouped list
+val mk_line_parenthised: paren_grouped list -> paren_grouped line_grouped list
 
 (* ---------------------------------------------------------------------- *)
 val iter_token_paren : (token_extended -> unit) -> paren_grouped list -> unit
 val iter_token_brace : (token_extended -> unit) -> brace_grouped list -> unit
 val iter_token_ifdef : (token_extended -> unit) -> ifdef_grouped list -> unit
 
-val tokens_of_paren : paren_grouped list -> token_extended list
-val tokens_of_paren_ordered : paren_grouped list -> token_extended list
+val tokens_of_paren:         paren_grouped list -> token_extended list
+val tokens_of_paren_ordered: paren_grouped list -> token_extended list
 
 (* ---------------------------------------------------------------------- *)
 val set_context_tag: brace_grouped list -> unit

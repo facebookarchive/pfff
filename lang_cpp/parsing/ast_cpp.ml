@@ -22,7 +22,10 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
-(* This is a big file ... C++ is quite complicated ... *)
+(* This is a big file ... C++ is quite complicated ... 
+ *
+ * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
+ *)
 
 (*****************************************************************************)
 (* The AST C++ related types *)
@@ -175,7 +178,7 @@ and typeCbis =
       *)
       and intType   = 
         | CChar (* obsolete? | CWchar  *)
-	| Si of signed
+        | Si of signed
          (* c++ext: maybe could be put in baseType instead ? *)
         | CBool
         | WChar_t 
@@ -210,7 +213,10 @@ and typeCbis =
 
 
 and typeQualifier = typeQualifierbis wrap 
-and typeQualifierbis = {const: bool; volatile: bool}
+and typeQualifierbis = {
+  const: bool; 
+  volatile: bool
+}
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)

@@ -28,7 +28,7 @@ let cmdline_flags_macrofile () = [
 (* verbose *)
 (*****************************************************************************)
 
-let verbose_lexing = ref false
+let verbose_lexing = ref true
 let verbose_parsing = ref true
 
 let verbose_pp_ast = ref false
