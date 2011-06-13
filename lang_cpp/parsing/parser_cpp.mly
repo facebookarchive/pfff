@@ -32,14 +32,19 @@ module LP = Lexer_parser_cpp
 /*
 (* 
  * Some tokens below are not even used in this file because they are filtered
- * in some intermediate phases. Some tokens also appear only here
- * and are not in the lexer because they are created in some intermediate
- * phases (fresh tokens). Nevertheless all those tokens have to be declared.
+ * in some intermediate phases (e.g. the comment tokens). Some tokens
+ * also appear only here and are not in the lexer because they are
+ * created in some intermediate phases (aka "fresh" tokens). Nevertheless all
+ * those tokens have to be declared.
  *)
 */
 
 /*(* unrecognized token *)*/
 %token <Ast_cpp.info> TUnknown
+
+/*(*-----------------------------------------*)*/
+/*(*2 The space/comment tokens *)*/
+/*(*-----------------------------------------*)*/
 
 /*
 (* coupling: Token_helpers.is_real_comment. 
@@ -47,8 +52,11 @@ module LP = Lexer_parser_cpp
  *)*/
 %token <Ast_cpp.info> TCommentSpace TCommentNewline TComment
 
+/*(* fresh_token: cppext: appear after parsing_hack *)*/
+%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
+
 /*(*-----------------------------------------*)*/
-/*(*2 the normal tokens *)*/
+/*(*2 The C tokens *)*/
 /*(*-----------------------------------------*)*/
 
 %token <string * Ast_cpp.info>                       TInt
@@ -153,7 +161,6 @@ module LP = Lexer_parser_cpp
 /*(*-----------------------------*)*/
 
 /*(* fresh_token: appear after fix_tokens_cpp *)*/
-
 %token <Ast_cpp.info>            TMacroStmt
 /*(* no need for the value for the moment *)*/
 %token <Ast_cpp.info>            TMacroString 
@@ -169,10 +176,8 @@ module LP = Lexer_parser_cpp
 /*(* fresh_token: appear after parsing_hack *)*/
 %token <Ast_cpp.info> TCParEOL   
 
+/*(* fresh_token: appear after parsing_hack *)*/
 %token <Ast_cpp.info> TAction
-
-%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
-
 
 /*(*-----------------------------------------*)*/
 /*(*2 c++ext: extra tokens *)*/

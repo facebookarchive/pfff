@@ -9,54 +9,48 @@ module Ast = Ast_cpp
 (* Is_xxx, categories *)
 (*****************************************************************************)
 
+let is_eof = function
+  | EOF x -> true
+  | _ -> false
+
+(* ---------------------------------------------------------------------- *)
 let is_space = function
-  | TCommentSpace _ -> true
-  | TCommentNewline _ -> true
+  | TCommentSpace _  | TCommentNewline _ -> true
   | _ -> false
 
 let is_comment_or_space = function
-  | TComment _ -> true
-  | TCommentSpace _ -> true
-  | TCommentNewline _ -> true
-
+  | TCommentSpace _  | TCommentNewline _ 
+  | TComment _
+      -> true
   | _ -> false
 
 let is_just_comment = function
   | TComment _ -> true
   | _ -> false
 
-
-
-
-
 let is_comment = function
-  | TComment _    | TCommentSpace _ 
+  | TCommentSpace _ | TCommentNewline _
+  | TComment _    
   | TCommentCpp _ 
-  | TCommentNewline _ -> true
+      -> true
   | _ -> false
-
 
 let is_real_comment = function
   | TComment _    | TCommentSpace _ 
-      -> true
-  | TCommentNewline _ -> true
+  | TCommentNewline _ 
+    -> true
   | _ -> false
 
 let is_fake_comment = function
-  | TCommentCpp _
-      -> true
+  | TCommentCpp _ -> true
   | _ -> false
 
 let is_not_comment x = 
   not (is_comment x)
 
 (* ---------------------------------------------------------------------- *)
-
 let is_gcc_token = function
-  | Tasm _ 
-  | Tinline _ 
-  | Tattribute _ 
-  | Ttypeof _ 
+  | Tasm _ | Tinline _  | Tattribute _  | Ttypeof _ 
       -> true
   | _ -> false
 
@@ -70,8 +64,6 @@ let is_pp_instruction = function
   | TCppDirectiveOther _
       -> true
   | _ -> false
-
-
 
 
 let is_opar = function
@@ -90,11 +82,6 @@ let is_cbrace = function
   | TCBrace _ -> true
   | _ -> false 
 
-
-
-let is_eof = function
-  | EOF x -> true
-  | _ -> false
 
 let is_statement = function
   | Tfor _ | Tdo _ | Tif _ | Twhile _ | Treturn _ 
@@ -137,7 +124,6 @@ let is_start_of_something = function
   | _ -> false
 
 
-
 let is_binary_operator = function
   | TOrLog _ | TAndLog _ |  TOr _ |  TXor _ |  TAnd _ 
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _ 
@@ -176,7 +162,6 @@ let is_basic_type = function
   | _ -> false
 
 
-
 let is_struct_like_keyword = function
   | (Tstruct _ | Tunion _ | Tenum _) -> true
   (* c++ext: *)
@@ -187,43 +172,29 @@ let is_classkey_keyword = function
   | (Tstruct _ | Tunion _ | Tclass _) -> true
   | _ -> false
 
-
 let is_cpp_keyword = function
-  | Tclass _
-  | Tthis _
+  | Tclass _ | Tthis _
  
-  | Tnew _
-  | Tdelete _
+  | Tnew _ | Tdelete _
  
-  | Ttemplate _
-  | Ttypeid _
-  | Ttypename _
+  | Ttemplate _ | Ttypeid _ | Ttypename _
  
-  | Tcatch _
-  | Ttry _
-  | Tthrow _
+  | Tcatch _ | Ttry _ | Tthrow _
  
-  | Toperator _
-  | Tpublic _
-  | Tprivate _
-  | Tprotected _
+  | Toperator _ 
+  | Tpublic _ | Tprivate _ | Tprotected _
 
   | Tfriend _
  
   | Tvirtual _
  
-  | Tnamespace _
-  | Tusing _
+  | Tnamespace _ | Tusing _
  
   | Tbool _
-  | Tfalse _
-  | Ttrue _
+  | Tfalse _ | Ttrue _
  
-  | Twchar_t _
-  | Tconst_cast _
-  | Tdynamic_cast _
-  | Tstatic_cast _
-  | Treinterpret_cast  _
+  | Twchar_t _ 
+  | Tconst_cast _ | Tdynamic_cast _ | Tstatic_cast _ | Treinterpret_cast  _
   | Texplicit _
   | Tmutable _
  
@@ -234,28 +205,19 @@ let is_cpp_keyword = function
 
   | _ -> false
 
-
 let is_really_cpp_keyword = function
-  | Tconst_cast _
-  | Tdynamic_cast _
-  | Tstatic_cast _
-  | Treinterpret_cast  _
-
+  | Tconst_cast _ | Tdynamic_cast _ | Tstatic_cast _ | Treinterpret_cast  _
+        -> true
 (* when have some asm volatile, can have some ::
   | TColCol  _
       -> true
 *)
-
   | _ -> false
 
 (* some false positive on some C file like sqlite3.c *)
 let is_maybenot_cpp_keyword = function
-  | Tpublic _
-  | Tprivate _
-  | Tprotected _
-  | Ttemplate _
-  | Tnew _
-  | Ttypename _
+  | Tpublic _ | Tprivate _ | Tprotected _
+  | Ttemplate _ | Tnew _ | Ttypename _
   | Tnamespace _
     -> true
   | _ -> false
@@ -698,9 +660,7 @@ let visitor_info_of_tok f = function
   | Tlong2   (i) -> Tlong2 (f i)
   | Tbool2  (i) -> Tbool2 (f i)
 
-
   | EOF                  (i) -> EOF                  (f i) 
-  
 
 (*****************************************************************************)
 (* Accessors *)
