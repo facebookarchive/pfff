@@ -23,7 +23,6 @@ open Parser_cpp_mly_helper
 
 module Ast = Ast_cpp
 module LP = Lexer_parser_cpp
-   
 %}
 
 /*(*************************************************************************)*/
@@ -34,25 +33,26 @@ module LP = Lexer_parser_cpp
  * Some tokens below are not even used in this file because they are filtered
  * in some intermediate phases (e.g. the comment tokens). Some tokens
  * also appear only here and are not in the lexer because they are
- * created in some intermediate phases (aka "fresh" tokens). Nevertheless all
- * those tokens have to be declared.
+ * created in some intermediate phases (aka "fresh" tokens). Nevertheless
+ * all those tokens have to be declared.
  *)
 */
 
-/*(* unrecognized token *)*/
+/*(* unrecognized token, will generate parse error *)*/
 %token <Ast_cpp.info> TUnknown
+
+%token <Ast_cpp.info> EOF
 
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
-
 /*
-(* coupling: Token_helpers.is_real_comment. 
- * Those tokens are filtered in parse_cpp.ml.
+(* coupling: Token_helpers.is_real_comment and other related functions.
+ * disappear in parse_cpp.ml via TH.is_comment in lexer_function
  *)*/
 %token <Ast_cpp.info> TCommentSpace TCommentNewline TComment
 
-/*(* fresh_token: cppext: appear after parsing_hack *)*/
+/*(* fresh_token: cppext: appear after parsing_hack and disappear *)*/
 %token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
 
 /*(*-----------------------------------------*)*/
@@ -61,11 +61,10 @@ module LP = Lexer_parser_cpp
 
 %token <string * Ast_cpp.info>                       TInt
 %token <(string * Ast_cpp.floatType) * Ast_cpp.info> TFloat
-%token <(string * Ast_cpp.isWchar) * Ast_cpp.info>   TChar
-%token <(string * Ast_cpp.isWchar) * Ast_cpp.info>   TString
+%token <(string * Ast_cpp.isWchar) * Ast_cpp.info>   TChar TString
 
 %token <string * Ast_cpp.info> TIdent 
-/*(* fresh_token: appears after some fix_tokens in parsing_hack *)*/
+/*(* fresh_token: appear after some fix_tokens in parsing_hack.ml *)*/
 %token <string * Ast_cpp.info> TypedefIdent 
 
 /*
@@ -76,15 +75,9 @@ module LP = Lexer_parser_cpp
 */
 %token <Ast_cpp.info> TOPar TCPar TOBrace TCBrace TOCro TCCro 
 
-%token <Ast_cpp.info> TDot TComma TPtrOp 
-%token <Ast_cpp.info> TInc TDec
+%token <Ast_cpp.info> TDot TComma TPtrOp     TInc TDec
 %token <Ast_cpp.assignOp * Ast_cpp.info> TAssign 
-%token <Ast_cpp.info> TEq
-%token <Ast_cpp.info> TWhy  TTilde TBang
-%token <Ast_cpp.info> TEllipsis
-%token <Ast_cpp.info> TCol
-
-%token <Ast_cpp.info> TPtVirg
+%token <Ast_cpp.info> TEq  TWhy  TTilde TBang  TEllipsis  TCol  TPtVirg
 %token <Ast_cpp.info> 
        TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
        TShl TShr 
@@ -109,58 +102,46 @@ module LP = Lexer_parser_cpp
 /*(*-----------------------------------------*)*/
 /*(*2 gccext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_cpp.info> Tasm Tattribute Ttypeof
+%token <Ast_cpp.info> Tasm Ttypeof
+/*(* less: disappear in parsing_hacks_pp, not present in AST for now *)*/
+%token <Ast_cpp.info> Tattribute
 /*(* also c++ext: *)*/
 %token <Ast_cpp.info> Tinline 
 
-/*(*------------------*)*/
-/*(*2 cppext: define  *)*/
-/*(*------------------*)*/
+/*(*-----------------------------------------*)*/
+/*(*2 cppext: extra tokens *)*/
+/*(*-----------------------------------------*)*/
 
+/*(* cppext: define  *)*/
 %token <Ast_cpp.info> TDefine
 %token <(string * Ast_cpp.info)> TDefParamVariadic
-
-/*(* disappear after fix_tokens_define *)*/
+/*(* transformed in TCommentSpace and disappear in parsing_hack.ml *)*/
 %token <Ast_cpp.info> TCppEscapedNewline 
-
-/*(* fresh_token: appears after fix_tokens_define *)*/
+/*(* fresh_token: appear after fix_tokens_define in parsing_hack.ml *)*/
 %token <Ast_cpp.info> TOParDefine        
 %token <Ast_cpp.info> TOBraceDefineInit
-
-/*(* fresk_token: appears after fix_tokens_define *)*/
+/*(* fresk_token: appear after fix_tokens_define *)*/
 %token <(string * Ast_cpp.info)> TIdentDefine
 %token <Ast_cpp.info>            TDefEOL
 
-/*(*------------------------*)*/
-/*(*2 cppext: include       *)*/
-/*(*------------------------*)*/
-
+/*(* cppext: include  *)*/
 /*(* used only in the lexer. It is then transformed in Comment or splitted *)*/
 %token <(string * string * bool ref * Ast_cpp.info)> TInclude
-/*(* frest_token: tokens coming from TInclude generated in parsing_hack  *)*/
+/*(* fresh_token: tokens coming from TInclude generated in parsing_hack  *)*/
 %token <(Ast_cpp.info * bool ref)> TIncludeStart
 %token <(string * Ast_cpp.info)>   TIncludeFilename
 
-/*(*------------------------*)*/
-/*(*2 cppext: ifdef         *)*/
-/*(*------------------------*)*/
-
+/*(* cppext: ifdef         *)*/
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
 %token <Ast_cpp.info>          TIfdef TIfdefelse TIfdefelif TEndif
 %token <(bool * Ast_cpp.info)> TIfdefBool TIfdefMisc TIfdefVersion
 
-/*(*----------------------*)*/
-/*(*2 cppext: other       *)*/
-/*(*----------------------*)*/
-
+/*(* cppext: other       *)*/
 %token <string * Ast_cpp.info> TUndef
 %token <Ast_cpp.info> TCppDirectiveOther
 
-/*(*-----------------------------*)*/
-/*(*2 cppext: special macros     *)*/
-/*(*-----------------------------*)*/
-
-/*(* fresh_token: appear after fix_tokens_cpp *)*/
+/*(* cppext: special macros     *)*/
+/*(* fresh_token: appear after fix_tokens_cpp in parsing_hacks_pp.ml *)*/
 %token <Ast_cpp.info>            TMacroStmt
 /*(* no need for the value for the moment *)*/
 %token <Ast_cpp.info>            TMacroString 
@@ -168,15 +149,11 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info>            TMacroDeclConst 
 %token <(string * Ast_cpp.info)> TMacroIterator
 
-/*(*---------------*)*/
-/*(*2 other         *)*/
-/*(*---------------*)*/
-
+/*(* cppext: other        *)*/
 /*(* %token <(string * Ast_cpp.info)> TMacroTop *)*/
-/*(* fresh_token: appear after parsing_hack *)*/
+/*(* fresh_token: appear after parsing_hack ??? *)*/
 %token <Ast_cpp.info> TCParEOL   
-
-/*(* fresh_token: appear after parsing_hack *)*/
+/*(* fresh_token: appear after parsing_hack_pp.ml *)*/
 %token <Ast_cpp.info> TAction
 
 /*(*-----------------------------------------*)*/
@@ -199,46 +176,45 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TPtrOpStar TDotStar
 
 %token <Ast_cpp.info> TColCol 
-/*(* for typedef, appear after solved if next token is a typedef *)*/
-%token <Ast_cpp.info> TColCol2
 
-/*(* for constructed object *)*/
+/*(* fresh_token: for constructed object *)*/
 %token <Ast_cpp.info> TOParCplusplusInit
-
-/*(* for template *)*/
+/*(* fresh_token: for template *)*/
 %token <Ast_cpp.info> TInf2 TSup2
-
-/*(* for new[] delete[] *)*/
+/*(* fresh_token: for new[] delete[] *)*/
 %token <Ast_cpp.info> TOCro2 TCCro2
-
-/*(* for pure virtual method *)*/
+/*(* fresh_token: for pure virtual method *)*/
 %token <Ast_cpp.info> TIntZeroVirtual
-
 
 /*(* TTilde2? *)*/
 
-%token <string * Ast_cpp.info> Tclassname 
-/*(* for typedef, appear after solved if next token is a typedef *)*/
-%token <string * Ast_cpp.info> Tclassname2
+/*(* fresh_token: todo? merge with TypedefIdent? *)*/
+%token <string * Ast_cpp.info> Tclassname
 %token <string * Ast_cpp.info> Ttemplatename
+
+/*(* fresh_token: for methods with same name as classname *)*/
 %token <string * Ast_cpp.info> Tconstructorname
-/*(* for cast_constructor, before a '(' *)*/
-%token <string * Ast_cpp.info> TypedefIdent2
+
 /*(* for templatename as qualifier, before a '::' TODO write heuristic *)*/
 %token <string * Ast_cpp.info> TtemplatenameQ
+
+/*(* for cast_constructor, before a '(' *)*/
+%token <string * Ast_cpp.info> TypedefIdent2
+/*(* fresh_token: for constructed (basic) objects *)*/
+%token <Ast_cpp.info> 
+  Tchar2 Tint2 Tfloat2 Tdouble2 Twchar_t2 Tshort2 Tlong2 Tbool2
+
+/*(* fresh_token: appear after solved if next token is a typedef *)*/
+%token <Ast_cpp.info> TColCol2
+%token <string * Ast_cpp.info> Tclassname2
 %token <string * Ast_cpp.info> TtemplatenameQ2
 
-/*(* for constructed (basic) objects, cf heuristic in parsing_hack *)*/
-%token <Ast_cpp.info> Tchar2 Tint2 Tfloat2 Tdouble2 Twchar_t2 Tshort2 Tlong2 Tbool2
 /*(*  Tunsigned Tsigned Tvoid *)*/
 
-
-/*(*-----------------------------------------*)*/
-%token <Ast_cpp.info> EOF
-
-/*(*-----------------------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Priorities *)*/
+/*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc BOTTOM
 %nonassoc SHIFTHERE
 
 %nonassoc Telse
@@ -254,7 +230,6 @@ module LP = Lexer_parser_cpp
 %left TPlus TMinus
 %left TMul TDiv TMod 
 
-
 /*(*%left TColCol*)*/
 
 %nonassoc TOP
@@ -263,20 +238,19 @@ module LP = Lexer_parser_cpp
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 %start main celem statement expr type_id
+
 %type <Ast_cpp.program> main
-
 %type <Ast_cpp.toplevel> celem
-
 %type <Ast_cpp.statement> statement
 %type <Ast_cpp.expression> expr
 %type <Ast_cpp.fullType> type_id
-
 %type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
    declarator
 %type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
    declaratorsd
 
 %%
+
 /*(*************************************************************************)*/
 /*(*1 TOC *)*/
 /*(*************************************************************************)*/
@@ -302,13 +276,11 @@ module LP = Lexer_parser_cpp
  * xxx_list, xxx_opt
  *)
 */
-/*(*************************************************************************)*/
-
 
 /*(*************************************************************************)*/
 /*(*1 toplevel *)*/
 /*(*************************************************************************)*/
-/*(* no more used; now that use error recovery *)*/
+/*(* no more used now that use error recovery, but good to keep *)*/
 
 main:  
  | translation_unit EOF     { $1 }
@@ -323,11 +295,9 @@ external_declaration:
  | function_definition            { TopDecl (Definition $1, noii) }
  | block_declaration              { TopDecl (Declaration $1, noii) }
 
-
 /*(*************************************************************************)*/
-/*(*1 ident, scope *)*/
+/*(*1 Ident, scope *)*/
 /*(*************************************************************************)*/
-
 /*
 (* todo
  * ~id class_name,  conflict
@@ -339,46 +309,6 @@ unqualified_id:
  | operator_function_id { $1 }
  | conversion_function_id { $1 }
 
-
-qualified_id: 
- | nested_name_specifier /*(*templateopt*)*/ unqualified_id 
-   { $1, $2 }
-
-
-
-nested_name_specifier: 
- | class_or_namespace_name_for_qualifier TColCol nested_name_specifier_opt 
-   { (fst $1, snd $1++[$2])::$3 }
-
-class_or_namespace_name_for_qualifier:
- | Tclassname   { QClassname (fst $1), [snd $1] }
- | template_idq { $1 }
-
-template_idq:
- | TtemplatenameQ tinf_template template_argument_list tsup_template 
-  { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
-
-
-
-
-
-nested_name_specifier2: 
- | class_or_namespace_name_for_qualifier2 TColCol2 nested_name_specifier_opt2 
-  { (fst $1, snd $1++[$2])::$3 }
-
-class_or_namespace_name_for_qualifier2:
- | Tclassname2   { QClassname (fst $1), [snd $1]  }
- | template_idq2 { $1 }
-
-template_idq2:
- | TtemplatenameQ2 tinf_template template_argument_list tsup_template
-  { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
-
-
-
-
-
-
 operator_function_id: 
  | Toperator operator_kind
     { IdOperator (fst $2), $1::(snd $2) }
@@ -389,10 +319,29 @@ conversion_function_id:
 
 
 
+qualified_id: 
+ | nested_name_specifier /*(*templateopt*)*/ unqualified_id 
+   { $1, $2 }
+
+nested_name_specifier: 
+ | class_or_namespace_name_for_qualifier TColCol nested_name_specifier_opt 
+   { (fst $1, snd $1++[$2])::$3 }
+
+/*(* context dependent *)*/
+class_or_namespace_name_for_qualifier:
+ | Tclassname   { QClassname (fst $1), [snd $1] }
+ | template_idq { $1 }
+
+/*(* context dependent *)*/
+template_idq:
+ | TtemplatenameQ tinf_template template_argument_list tsup_template 
+  { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
 
 
-/*(* no deref getref operator (cos ambiguity with Mul and And), 
-   * no unaryplus/minus op either *)*/
+/*
+(* no deref getref operator (cos ambiguity with Mul and And), 
+ * no unaryplus/minus op either 
+ *)*/
 operator_kind:
  /*(* != == *)*/
  | TEqEq  { BinaryOp (Logical Eq),    [$1] }
@@ -446,49 +395,66 @@ tcolcol_opt:
  | TColCol         { Some (QTop, [$1]) }
  | /*(* empty *)*/ { None }
 
-
 id_expression:
  | unqualified_id { noQscope, $1 }
  | qualified_id { $1 }
 
 
-
+/*(* context dependent *)*/
 typedef_name: 
  | TypedefIdent { $1 }
 
+/*(* context dependent *)*/
 template_name:
  | Ttemplatename { $1 }
 
+/*(* used only with namespace/using rules. We use Tclassname for stuff
+   * like std::... *)*/
 namespace_name:
  | TIdent { $1 }
 
+/*(* context dependent *)*/
 enum_name_or_typedef_name_or_simple_class_name:
  | TypedefIdent { $1 }
 
 
+/*(*----------------------------*)*/
+/*(*2 workarounds *)*/
+/*(*----------------------------*)*/
+nested_name_specifier2: 
+ | class_or_namespace_name_for_qualifier2 TColCol2 nested_name_specifier_opt2 
+  { (fst $1, snd $1++[$2])::$3 }
 
-/*(* Why this ? Why not s/ident/TIdent ? cos there is multiple namespaces in C, 
-   * so a label can have the same name that a typedef, same for field and tags
-   * hence sometimes the use of ident  instead of TIdent.
-   *)*/
+class_or_namespace_name_for_qualifier2:
+ | Tclassname2   { QClassname (fst $1), [snd $1]  }
+ | template_idq2 { $1 }
+
+template_idq2:
+ | TtemplatenameQ2 tinf_template template_argument_list tsup_template
+  { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
+
+/*
+(* Why this ? Why not s/ident/TIdent ? cos there is multiple namespaces in C, 
+ * so a label can have the same name that a typedef, same for field and tags
+ * hence sometimes the use of ident  instead of TIdent.
+ *)*/
 ident: 
  | TIdent       { $1 }
  | typedef_name { $1 }
+
 
 /*(*c++ext:*)*/
 ident3:
  | ident { $1 }
  | TypedefIdent2 { $1 }
 
-
 /*(*************************************************************************)*/
-/*(*1 expr *)*/
+/*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
 expr: 
  | assign_expr             { $1 }
  | expr TComma assign_expr { mk_e (Sequence ($1,$3)) [$2] }
-
 
 /*(* bugfix: in C grammar they put 'unary_expr', but in fact it must be 
    * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed
@@ -568,15 +534,12 @@ unary_op:
  | TAndLog { GetRefLabel, $1 }
 
 
-
-
 postfix_expr: 
  | primary_expr               { $1 }
  | postfix_expr TOCro expr TCCro                
      { mk_e(ArrayAccess ($1, $3)) [$2;$4] }
  | postfix_expr TOPar argument_list_opt TCPar  
      { mk_e(mk_funcall $1 $3) [$2;$4] }
-
 
  /*(*c++ext: ident is now a id_expression *)*/
  | postfix_expr TDot   template_opt tcolcol_opt  id_expression
@@ -627,8 +590,16 @@ primary_expr:
 /*(*----------------------------*)*/
 
 /*(* can't factorize with following rule :(
-   * | tcolcol_opt nested_name_specifier_opt TIdent  *)*/
+   * | tcolcol_opt nested_name_specifier_opt TIdent
+   * TODO: move the code in parse_cpp_mly_helper or shorten in some way
+   *)*/
 primary_cplusplus_id:
+ | id_expression 
+     { let qtop = None in 
+       let name = (qtop, fst $1, snd $1) in 
+       let idinfo = Ast.noIdentInfo () in
+       mk_e(Ident (name, idinfo)) [] 
+     }
  | TColCol TIdent  
      { let qtop = Some (QTop, [$1]) in
        let qid = IdIdent (fst $2), [snd $2] in 
@@ -649,20 +620,11 @@ primary_cplusplus_id:
        let idinfo = Ast.noIdentInfo () in
        mk_e(Ident (name, idinfo)) [] 
      }
- | id_expression 
-     { let qtop = None in 
-       let name = (qtop, fst $1, snd $1) in 
-       let idinfo = Ast.noIdentInfo () in
-       mk_e(Ident (name, idinfo)) [] 
-     }
-
-
 
 /*(*could use TInf here *)*/
 cast_operator_expr: 
  | cpp_cast_operator tinf_template type_id  tsup_template TOPar expr TCPar 
      { mk_e (CplusplusCast (fst $1, $3, $6)) [snd $1;$2;$4;$5;$7] }
-
 
 /*(*c++ext:*)*/
 cpp_cast_operator:
@@ -670,7 +632,6 @@ cpp_cast_operator:
  | Tdynamic_cast     { Dynamic_cast, $1 }
  | Tconst_cast       { Const_cast, $1 }
  | Treinterpret_cast { Reinterpret_cast, $1 }
-
 
 /*
 (* c++ext: cast with function syntax, and also constructor, but conflict.
@@ -688,20 +649,6 @@ cast_constructor_expr:
        mk_e(ConstructedObject (ft, $3)) [$2;$4] 
      }
 
-basic_type_2: 
- | Tchar2                { (BaseType (IntType CChar)), [$1]}
- | Tint2                 { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
- | Tfloat2               { (BaseType (FloatType CFloat)),  [$1]}
- | Tdouble2              { (BaseType (FloatType CDouble)), [$1] }
-
- | Twchar_t2             { (BaseType (IntType WChar_t)),         [$1] }
-
- | Tshort2               { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
- | Tlong2                { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
- | Tbool2                { (BaseType (IntType CBool)),         [$1] }
-
-
-
 /*(* c++ext: * simple case: new A(x1, x2); *)*/
 new_expr:
  | tcolcol_opt Tnew new_placement_opt   new_type_id  new_initializer_opt
@@ -715,7 +662,6 @@ delete_expr:
      { mk_e (Delete ($3, $1)) [$2] }
  | tcolcol_opt Tdelete TOCro2 TCCro2 cast_expr 
      { mk_e (DeleteArray ($5, $1)) [$2;$3;$4] }
-
 
 new_placement: 
  | TOPar argument_list TCPar { () }
@@ -763,13 +709,24 @@ action_higherordermacro:
 /*(* would like evalInt $1 but require too much info *)*/
 const_expr: cond_expr { $1  }
 
-
+/*(* prepare for type context *)*/
 topar2: TOPar { et "topar2" (); $1  }
 tcpar2: TCPar { et "tcpar2" (); $1 (*TODO? et ? sure ? c pas dt plutot ? *) } 
 
+basic_type_2: 
+ | Tchar2                { (BaseType (IntType CChar)), [$1]}
+ | Tint2                 { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
+ | Tfloat2               { (BaseType (FloatType CFloat)),  [$1]}
+ | Tdouble2              { (BaseType (FloatType CDouble)), [$1] }
+
+ | Twchar_t2             { (BaseType (IntType WChar_t)),         [$1] }
+
+ | Tshort2               { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
+ | Tlong2                { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
+ | Tbool2                { (BaseType (IntType CBool)),         [$1] }
 
 /*(*************************************************************************)*/
-/*(*1 statement *)*/
+/*(*1 Statements *)*/
 /*(*************************************************************************)*/
 
 statement: 
@@ -806,12 +763,10 @@ statement:
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
      { (* TODO AST *) MacroStmt, [] }
 
- | Tif TOPar decl_spec init_declarator_list TCPar statement              %prec SHIFTHERE
+ | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec SHIFTHERE
      { MacroStmt, [] }
  | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
      { MacroStmt, [] }
-
-
 
 
 compound: 
@@ -905,11 +860,9 @@ exception_decl:
  | parameter_decl { ExnDecl $1 }
  | TEllipsis      { ExnDeclEllipsis $1 }
 
-
 /*(*************************************************************************)*/
-/*(*1 types *)*/
+/*(*1 Types *)*/
 /*(*************************************************************************)*/
-
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Type spec, left part of a type *)*/
@@ -939,12 +892,12 @@ simple_type_specifier:
 
  /*(* gccext: *)*/
  | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOfExpr ($3)), [$1;$2;$4] }
- | Ttypeof TOPar type_id   TCPar { Right3 (TypeOfType ($3)), [$1;$2;$4] }
+ | Ttypeof TOPar type_id   TCPar   { Right3 (TypeOfType ($3)), [$1;$2;$4] }
 
  /*
- (* parse_typedef_fix1: cant put: TIdent {} cos it make the grammar 
-  * ambiguous, generates lots of conflicts => we must 
-  * use some tricks: we make the lexer and parser cooperate, cf lexerParser.ml.
+ (* parse_typedef_fix1: cant put TIdent {} cos it makes the grammar 
+  * ambiguous and generates lots of conflicts => we must 
+  * use some tricks. We make the lexer and parser cooperate, cf lexerParser.ml.
   * 
   * parse_typedef_fix2: this is not enough, and you must use 
   * parse_typedef_fix2 to fully manage typedef problems in grammar.
@@ -955,7 +908,6 @@ simple_type_specifier:
   * Parse_c
   *)*/
  | type_cplusplus_id { Right3 (fst $1), snd $1 }
-
 
 
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
@@ -980,17 +932,17 @@ elaborated_type_specifier:
 
 /*(* cant factorize with a tcolcol_opt2 *)*/
 type_cplusplus_id:
- | type_name { $1 }
+ |          type_name { $1 }
  | TColCol2 type_name { $2 }
- | nested_name_specifier2 type_name { $2 }
+ |          nested_name_specifier2 type_name { $2 }
  | TColCol2 nested_name_specifier2 type_name { $3 }
-
 
 /*
 (* in c++ grammar they put 
  *  typename: enum-name | typedef-name | class-name 
  *   class-name:  identifier | template-id
- *    template-id: template-name < template-argument-list > 
+ *  template-id: template-name < template-argument-list > 
+ * 
  * But in my case I don't have the contextual info so when I see an ident
  * it can be a typedef-name, enum-name, class-name (not template-name
  * cos I detect them as they have a '<' just after),
@@ -1002,11 +954,8 @@ type_name:
      { (TypeName (fst $1,Ast.noTypedefDef())), [snd $1] }
  | template_id { $1 }
 
-
-
-
 template_id:
- | template_name tinf_template template_argument_list tsup_template 
+ | template_name tinf_template template_argument_list tsup_template
     { (TypeTemplate (fst $1,$3)), [snd $1;$2;$4] }
 
 /*
@@ -1019,14 +968,6 @@ template_argument:
  | type_id     { Left $1 }
  | assign_expr { Right $1 }
 
-
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-
-type_spec: type_spec2    { dt "type" (); $1   }
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Qualifiers *)*/
 /*(*-----------------------------------------------------------------------*)*/
@@ -1038,15 +979,13 @@ cv_qualif:
  /*(* C99 *)*/
  | Trestrict { (* TODO *) {const=false ; volatile=false},  $1 }
 
-
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Declarator, right part of a type + second part of decl (the ident)  *)*/
 /*(*-----------------------------------------------------------------------*)*/
 
 /*
 (* declarator return a couple: 
- *  (name, partial type (a function to be applied to return type)) 
+ *  (name, partial type (a function to be applied to return type))
  *
  * when int* f(int) we must return Func(Pointer int,int) and not
  * Pointer (Func(int,int) 
@@ -1100,15 +1039,8 @@ declarator_id:
      }
 /*(* TODO ::opt nested-name-specifieropt type-name*) */
 
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-
-tocro: TOCro { et "tocro" ();$1 }
-tccro: TCCro { dt "tccro" ();$1 }
-
-
+/*(*-----------------------------------------------------------------------*)*/
+/*(*2 Abstract Declarator (right part of a type, no ident) *)*/
 /*(*-----------------------------------------------------------------------*)*/
 abstract_declarator: 
  | pointer                            { $1 }
@@ -1185,15 +1117,6 @@ const_opt:
  | Tconst        { Some $1 }
  | /*(*empty*)*/ { None }
 
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-
-parameter_decl: parameter_decl2 { et "param" ();  $1 }
-
-declaratorp: declarator      { LP.add_ident (fst (fst $1)); $1 }
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 helper type rules *)*/
 /*(*-----------------------------------------------------------------------*)*/
@@ -1213,12 +1136,11 @@ cv_qualif_list:
  | cv_qualif                  { {nullDecl with qualifD = (fst $1,[snd $1])} }
  | cv_qualif_list cv_qualif   { addQualifD ($2,$1) }
 
-
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 xxx_type_id *)*/
 /*(*-----------------------------------------------------------------------*)*/
 
-/*(* for case and sizeof. was called type_name in old c grammar *)*/
+/*(* For cast and sizeof. Was called type_name in old C grammar. *)*/
 type_id: 
  | spec_qualif_list
      { let (returnType, _) = fixDeclSpecForDecl $1 in  returnType }
@@ -1236,7 +1158,7 @@ ptr_operator:
 /*(* ambiguity with '*' and '&' cos when have new int *2, it can
    * be parsed as (new int) * 2 or (new int * ) 2.
    * cf p62 of Ellis. So when see a TMul or TAnd don't reduce here,
-   * sift, hence the prec when are to decice wethere or not to enter
+   * shift, hence the prec when are to decide wether or not to enter
    * in new_declarator and its leading ptr_operator
    *)*/
 new_type_id: 
@@ -1280,9 +1202,21 @@ conversion_declarator:
  | ptr_operator %prec SHIFTHERE
      { () }
 
+/*(*----------------------------*)*/
+/*(*2 workarounds *)*/
+/*(*----------------------------*)*/
+
+type_spec: type_spec2    { dt "type" (); $1   }
+
+tocro: TOCro { et "tocro" ();$1 }
+tccro: TCCro { dt "tccro" ();$1 }
+
+parameter_decl: parameter_decl2 { et "param" ();  $1 }
+
+declaratorp: declarator      { LP.add_ident (fst (fst $1)); $1 }
 
 /*(*************************************************************************)*/
-/*(*1 declaration, types, initializers *)*/
+/*(*1 Block declaration (namespace and asm) *)*/
 /*(*************************************************************************)*/
 
 block_declaration:
@@ -1351,7 +1285,7 @@ colon_option:
 asm_expr: assign_expr { $1 }
 
 /*(*************************************************************************)*/
-/*(*1 simple declaration, initializers *)*/
+/*(*1 Simple declaration, initializers *)*/
 /*(*************************************************************************)*/
 
 simple_declaration2:
@@ -1423,7 +1357,6 @@ decl_spec2:
  | Ttypedef           decl_spec2 { addStorageD ((StoTypedef,$1),$2) }
  | Tfriend            decl_spec2 { addInlineD ((true, $1),$2) (*TODO*)}
 
-
 function_spec:
  /*(*gccext: and c++ext: *)*/
  | Tinline { Inline, $1 }
@@ -1437,13 +1370,6 @@ storage_class_spec:
  | Tregister    { Sto Register,$1 }
  /*(* c++ext: *)*/
  | Tmutable     { Sto Register,$1 (*TODO*) }
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-
-decl_spec: decl_spec2    { dt "declspec" (); $1  }
-simple_declaration: simple_declaration2 { et "simple_decl" (); $1 }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 declarators (right part of type and variable) *)*/
@@ -1461,13 +1387,6 @@ init_declarator2:
 
 
 /*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-teq: TEq  { et "teq" (); $1 }
-
-init_declarator: init_declarator2  { dt "init" (); $1 }
-
-/*(*----------------------------*)*/
 /*(*2 gccext: *)*/
 /*(*----------------------------*)*/
 declaratori: 
@@ -1480,6 +1399,8 @@ gcc_asm_decl:
  | Tasm Tvolatile TOPar asmbody TCPar   {  }
 
 			  
+/*(*-----------------------------------------------------------------------*)*/
+/*(*2 initializers *)*/
 /*(*-----------------------------------------------------------------------*)*/
 initialize: 
  | assign_expr                                    
@@ -1523,9 +1444,6 @@ initialize2:
      { InitIndexOld ($2, $4),    [$1;$3] }
   *)*/
 
-
-
-
 /*(* they can be nested, can have a .x.[3].y *)*/
 designator: 
  | TDot ident 
@@ -1535,17 +1453,23 @@ designator:
  | TOCro const_expr TEllipsis const_expr TCCro 
      { DesignatorRange ($2, $4),  [$1;$3;$5] }
 
-
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/
+
+decl_spec: decl_spec2    { dt "declspec" (); $1  }
+simple_declaration: simple_declaration2 { et "simple_decl" (); $1 }
+
+teq: TEq  { et "teq" (); $1 }
+
+init_declarator: init_declarator2  { dt "init" (); $1 }
 
 gcc_comma_opt_struct: 
  | TComma {  [$1] } 
  | /*(* empty *)*/  {  [Ast.fakeInfo() +> Ast.rewrap_str ","]  }
 
 /*(*************************************************************************)*/
-/*(*1 struct/class *)*/
+/*(*1 Class, struct *)*/
 /*(*************************************************************************)*/
 
 class_specifier: 
@@ -1558,8 +1482,6 @@ class_specifier:
        in
        (su, nameopt, baseopt, $3), [iisu;$2;$4]++iibopt
      }
-
-
 
 /*
 (* todo in grammar they allow anon class with base_clause, wierd. 
@@ -1589,8 +1511,6 @@ class_head:
        $1, Some name, $4
      }
 
-
-
 /*(* was called struct_union before *)*/
 class_key2: 
  | Tstruct   { Struct, $1 }
@@ -1612,7 +1532,6 @@ access_specifier:
  | Tpublic    { Public, $1 }
  | Tprivate   { Private, $1 }
  | Tprotected { Protected, $1 }
-
 
 
 /*(* in c++ grammar there is a ;opt after function_definition but 
@@ -1640,29 +1559,24 @@ member_declaration:
     *)*/
  | TPtVirg    { EmptyField, [$1] }
 
-
-
+/*(*-----------------------------------------------------------------------*)*/
+/*(*2 field declaration *)*/
+/*(*-----------------------------------------------------------------------*)*/
 field_declaration:
  | decl_spec member_declarator_list TPtVirg 
-     {  
-       let (returnType,storage) = fixDeclSpecForDecl $1 in
-
+     { let (returnType,storage) = fixDeclSpecForDecl $1 in
        FieldDeclList ($2 +> (List.map (fun (f, iivirg) ->     
          f returnType (unwrap storage), iivirg
-       )), $3::(snd storage)
-       )
+       )), $3::(snd storage))
      }
  | decl_spec TPtVirg 
-     { 
-       (* gccext: allow empty elements if it is a structdef or enumdef *)
+     { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (returnType,storage) = fixDeclSpecForDecl $1 in
        let onedecl = (None, returnType, unwrap storage) in
-       
        FieldDeclList (
          [(FieldDecl onedecl , noii),noii], 
          $2::(snd storage)) 
      }
-
 
 /*(* was called struct_declarator before *)*/
 member_declarator:
@@ -1719,6 +1633,9 @@ pure_specifier:
 constant_initializer:
  | TEq const_expr2 { $1, $2 }
 
+/*(*-----------------------------------------------------------------------*)*/
+/*(*2 constructor method *)*/
+/*(*-----------------------------------------------------------------------*)*/
 
 /*(* special case for ctor/dtor cos they don't have a return type *)*/
 ctor_dtor_member:
@@ -1769,7 +1686,6 @@ const_expr2: const_expr { dt "const_expr2" (); $1 }
 
 col: TCol  { et "dotdot" (); $1 }
 
-
 /*(*************************************************************************)*/
 /*(*1 enum *)*/
 /*(*************************************************************************)*/
@@ -1806,6 +1722,8 @@ base_clause:
    *  access-specifier virtualopt ::opt nested-name-specifieropt class-name
    * specialisation
    *)*/
+
+/*(* TODO: move the code in parse_cpp_mly_helper or shorten in some way *)*/
 base_specifier:
  | access_specifier class_name 
      { 
@@ -1828,7 +1746,7 @@ base_specifier:
 
 /*(* todo? can be template_id  *)*/
 class_name:
-/* specialisation | ident3 { $1 } */
+/*(* TODO? specialisation | ident3 { $1 } *)*/
  | type_cplusplus_id { "todo", Ast.fakeInfo() (* TODOAST *) }
  | TIdent { $1 }
 
@@ -1848,9 +1766,8 @@ mem_initializer_id:
 /* specialsiation | TIdent { () } */
  | primary_cplusplus_id { () }
 
-
 /*(*************************************************************************)*/
-/*(*1 function *)*/
+/*(*1 Function *)*/
 /*(*************************************************************************)*/
 
 function_definition: start_fun compound                { fixFunc ($1, $2) }
@@ -1870,7 +1787,7 @@ declaratorfd: declarator { et "declaratorfd" (); $1 }
 
 
 /*(*************************************************************************)*/
-/*(*1 declaration, in c++ sense *)*/
+/*(*1 Declaration, in c++ sense *)*/
 /*(*************************************************************************)*/
 
 /*
@@ -1967,10 +1884,8 @@ ctor_dtor:
      compound
      { NameSpaceAnon [],[] }
 
-
-
 /*(*************************************************************************)*/
-/*(*1 cpp directives *)*/
+/*(*1 Cpp directives *)*/
 /*(*************************************************************************)*/
 
 /*(* cppext: *)*/
@@ -2032,8 +1947,6 @@ define_val:
  | /*(* empty *)*/ { DefineEmpty }
 
 
-
-
 param_define:
  | TIdent               { fst $1, [snd $1] } 
  | TypedefIdent         { fst $1, [snd $1] } 
@@ -2054,8 +1967,6 @@ cpp_ifdef_directive:
  | TIfdefMisc  { IfdefDirective [snd $1] }
  | TIfdefVersion { IfdefDirective [snd $1] }
 
-
-
 cpp_other:
 /*(* cppext: *)*/
  | TIdent TOPar argument_list TCPar TPtVirg
@@ -2068,37 +1979,26 @@ cpp_other:
   /*(* ex: EXPORT_NO_SYMBOLS; *)*/
  | TIdent TPtVirg { EmptyDef [snd $1;$2] }
 
-
-
 /*(*************************************************************************)*/
-/*(*1 celem *)*/
+/*(*1 Celem *)*/
 /*(*************************************************************************)*/
 
 celem: 
  | declaration       { TopDecl $1 }
 
-
  | cpp_directive     { CppTop $1 }
-
- | cpp_ifdef_directive /* (*external_declaration_list ...*)*/
-     { IfdefTop $1 }
-
+ | cpp_ifdef_directive /* (*external_declaration_list ...*)*/ { IfdefTop $1 }
  | cpp_other     { $1 }
 
- /*
- (* in ~/kernels/src/linux-2.5.2/drivers/isdn/hisax/isdnl3.c sometimes
-  * the function ends with }; instead of just } 
-  * can also remove this rule and report "parse error" pb to morton
-  *)*/
+ /*(* sometimes the function ends with }; instead of just } *)*/
  | TPtVirg    { EmptyDef [$1] } 
 
- | TCBrace { EmptyDef [$1] (* TODO *) }
+ | TCBrace { EmptyDef [$1] (* TODO ??? *) }
 
  | EOF        { FinalDef $1 } 
 
-
 /*(*************************************************************************)*/
-/*(*1 some generic workarounds *)*/
+/*(*1 Some generic workarounds *)*/
 /*(*************************************************************************)*/
 
 tobrace: TOBrace  { LP.push_context LP.InFunction; LP.new_scope (); $1 }
@@ -2116,7 +2016,6 @@ tcbrace_struct: TCBrace { LP.pop_context (); $1 }
 /*(*todo? put some et() dt() ? *)*/
 tinf_template: TInf2 { LP.push_context LP.InTemplateParam; $1 }
 tsup_template: TSup2 { LP.pop_context(); $1 }
-
 
 topar: TOPar 
      { LP.new_scope ();et "topar" (); 

@@ -342,7 +342,7 @@ let rec lexer_function tr = fun lexbuf ->
 
     if !Flag.debug_lexer then Common.pr2_gen v;
 
-    if TH.is_comment v
+    if TH.is_comment v (* this will pass too the TCommentCpp *)
     then begin
       tr.passed <- v::tr.passed;
       lexer_function tr lexbuf
