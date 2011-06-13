@@ -183,10 +183,15 @@ open Check_variables_helpers_php
 (* checks *)
 (*****************************************************************************)
 
-let check_use_against_env var env = 
+let check_use_against_env ~in_lambda var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
-  | None -> E.fatal (Ast.info_of_dname var) (E.UseOfUndefinedVariable s)
+  | None -> 
+      E.fatal (Ast.info_of_dname var) 
+        (if in_lambda 
+        then (E.UseOfUndefinedVariableInLambda s)
+        else (E.UseOfUndefinedVariable s)
+        )
   | Some (scope, aref) -> incr aref
 
 let do_in_new_scope_and_check f = 
@@ -223,6 +228,7 @@ let do_in_new_scope_and_check_if_strict f =
 let visit_prog ?(find_entity=None) prog = 
 
   let is_top_expr = ref true in 
+  let in_lambda = ref false in
   let scope = ref Ent.StmtList in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
@@ -546,7 +552,8 @@ let visit_prog ?(find_entity=None) prog =
 
           (* reset completely the environment *)
           Common.save_excursion _scoped_env !initial_env (fun () ->
-            Common.save_excursion is_top_expr true (fun () ->
+          Common.save_excursion in_lambda true (fun () ->
+          Common.save_excursion is_top_expr true (fun () ->
             do_in_new_scope_and_check (fun () ->
 
               def.l_use +> Common.do_option (fun (_tok, vars) ->
@@ -556,7 +563,7 @@ let visit_prog ?(find_entity=None) prog =
                 );
               );
               k x
-            ))
+            )))
           )
           
       (* Include | ... ? *)
@@ -588,7 +595,8 @@ let visit_prog ?(find_entity=None) prog =
         let assigned' = 
           assigned |> Common.exclude (fun v -> List.mem v keyword_args) in
 
-        used' |> List.iter (fun v -> check_use_against_env v !_scoped_env);
+        used' |> List.iter (fun v -> 
+          check_use_against_env ~in_lambda:!in_lambda v !_scoped_env);
 
         assigned' |> List.iter (fun v -> 
 

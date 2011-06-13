@@ -110,7 +110,9 @@ let info_of_error_and_kind err =
   | WrongKeywordArgument (_, _, severity) ->
       "eWrongKeywordArgument-" ^ (Error_php.string_of_severity2 severity)
 
-  | UseOfUndefinedVariable _ -> 
+  | UseOfUndefinedVariable _ 
+  | UseOfUndefinedVariableInLambda _
+    -> 
       "eUseOfUndefinedVariable"
   | UnusedVariable (_, scope) ->
       "eUnusedVariable-" ^ Scope_code.string_of_scope scope
