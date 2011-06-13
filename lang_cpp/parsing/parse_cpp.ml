@@ -207,7 +207,7 @@ let tokens a =
 let extract_macros2 file = 
   Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () -> 
     let toks = tokens (* todo: ~profile:false *) file in
-    let toks = Parsing_hacks.fix_tokens_define toks in
+    let toks = Parsing_hacks_define.fix_tokens_define toks in
     Pp_token.extract_macros toks
   )
 let extract_macros a = 
@@ -380,8 +380,8 @@ let rec lexer_function tr = fun lexbuf ->
             let v' = Parser.TCommentCpp (Token_cpp.CppDirective,TH.info_of_tok v)
             in
             tr.passed <- v'::tr.passed;
-            tr.rest       <- Parsing_hacks.comment_until_defeol tr.rest;
-            tr.rest_clean <- Parsing_hacks.drop_until_defeol tr.rest_clean;
+            tr.rest       <- Parsing_hacks_define.comment_until_defeol tr.rest;
+            tr.rest_clean <- Parsing_hacks_define.drop_until_defeol tr.rest_clean;
             lexer_function tr lexbuf
           end
           else begin
@@ -400,7 +400,7 @@ let rec lexer_function tr = fun lexbuf ->
           end
           else begin
             let (v,new_tokens) = 
-              Parsing_hacks.tokens_include (info, includes, filename, inifdef) in
+              Parsing_hacks_define.tokens_include (info, includes, filename, inifdef) in
             let new_tokens_clean = 
               new_tokens +> List.filter TH.is_not_comment  in
 
@@ -504,7 +504,7 @@ let parse2 file =
   LP.lexer_reset_state(); 
   let toks_orig = tokens file in
 
-  let toks = Parsing_hacks.fix_tokens_define toks_orig in
+  let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
   (* todo: _defs_builtins *)
   let toks = Parsing_hacks.fix_tokens_cpp ~macro_defs:!_defs toks in
 

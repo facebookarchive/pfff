@@ -22,7 +22,7 @@ open Common
 let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
 
 (*****************************************************************************)
-(* Consistency checking *)
+(* Types *)
 (*****************************************************************************)
 
 type class_ident = 
@@ -60,6 +60,10 @@ type class_token =
   | CSymbol
   | CReservedKwd (type | decl | qualif | flow | misc | attr)
 *)
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 (* parse_typedef_fix4 *)
 let consistency_checking2 xs = 

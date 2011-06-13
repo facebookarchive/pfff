@@ -30,198 +30,49 @@ open Parsing_hacks_pp
 open Parsing_hacks_cpp
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* 
+ * This module tries to detect some cpp idioms so that we can parse as-is
+ * files by adjusting or commenting some tokens.
+ * Sometime we use some indentation information,  sometimes we
+ * do some kind of lalr(k) by finding patterns. We often try to
+ * work on a better token representation, like ifdef-paren-ized, brace-ized,
+ * paren-ized, so that we can pattern match more easily
+ * complex cpp idiom pattern (cf token_views_cpp.ml).
+ * We also try to get more contextual information such as whether the
+ * token is in an initializer because many patterns are different
+ * depending on context.
+ * 
+ * Example of cpp idioms:
+ *  - if 0 for commenting stuff (not always code, sometimes just real comments)
+ *  - ifdef old version
+ *  - ifdef funheader
+ *  - ifdef statements, ifdef expression, ifdef-mid
+ *  - macro toplevel (with or without a trailing ';')
+ *  - macro foreach
+ *  - macro higher order
+ *  - macro declare
+ *  - macro debug
+ *  - macro no ';'
+ *  - macro string, and macro function string taking param and ##
+ *  - macro attribute
+ * 
+ * Cf the TMacroXxx in parser_c.mly and MacroXxx in ast_c.ml
+ * 
+ * We also try to infer typedef.
+ * 
+ * c++ext: We also try to infer templates, constructors, etc.
+ * 
+ * We also do other stuff involving cpp like expanding macros,
+ * and we try parse define body by finding the end of define virtual 
+ * end-of-line token. But now most of the code is actually in pp_token.ml
+ * It is related to what is in the yacfe configuration file (e.g. standard.h)
+ *)
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(*****************************************************************************)
-(* Parsing hacks for define  *)
-(*****************************************************************************)
-
-(* To parse macro definitions I need to do some tricks 
- * as some information can be get only at the lexing level. For instance
- * the space after the name of the macro in '#define foo (x)' is meaningful
- * but the grammar can not get this information. So define_ident below
- * look at such space and generate a special TOpardefine. In a similar
- * way macro definitions can contain some antislash and newlines
- * and the grammar need to know where the macro ends (which is 
- * a line-level and so low token-level information). Hence the 
- * function 'define_line' below and the TDefEol.
- * 
- * update: TDefEol is handled in a special way at different places, 
- * a little bit like EOF, especially for error recovery, so this
- * is an important token that should not be retagged!
- * 
- * 
- * ugly hack, a better solution perhaps would be to erase TDefEOL 
- * from the Ast and list of tokens in parse_c. 
- * 
- * note: I do a +1 somewhere, it's for the unparsing to correctly sync.
- * 
- * note: can't replace mark_end_define by simply a fakeInfo(). The reason
- * is where is the \n TCommentSpace. Normally there is always a last token
- * to synchronize on, either EOF or the token of the next toplevel.
- * In the case of the #define we got in list of token 
- * [TCommentSpace "\n"; TDefEOL] but if TDefEOL is a fakeinfo then we will
- * not synchronize on it and so we will not print the "\n".
- * A solution would be to put the TDefEOL before the "\n".
- * 
- * todo?: could put a ExpandedTok for that ? 
- *)
-
-let mark_end_define ii = 
-  let ii' = 
-    { Parse_info.
-      token = Parse_info.OriginTok { 
-        (Ast.parse_info_of_info ii) with 
-          Parse_info.str = ""; 
-          Parse_info.charpos = Ast.pos_of_info ii + 1
-      };
-      transfo = Parse_info.NoTransfo;
-      comments = ();
-    } 
-  in
-  TDefEOL (ii')
-
-(* put the TDefEOL at the good place *)
-let rec define_line_1 xs = 
-  match xs with
-  | [] -> []
-  | TDefine ii::xs -> 
-      let line = Ast.line_of_info ii in
-      TDefine ii::define_line_2 line ii xs
-  | TCppEscapedNewline ii::xs -> 
-      pr2 "WIERD: a \\ outside a #define";
-      TCommentSpace ii::define_line_1 xs
-  | x::xs -> 
-      x::define_line_1 xs
-
-and define_line_2 line lastinfo xs = 
-  match xs with 
-  | [] -> 
-      (* should not happened, should meet EOF before *)
-      pr2 "PB: WIERD";   
-      mark_end_define lastinfo::[]
-  | x::xs -> 
-      let line' = TH.line_of_tok x in
-      let info = TH.info_of_tok x in
-
-      (match x with
-      | EOF ii -> 
-          mark_end_define lastinfo::EOF ii::define_line_1 xs
-      | TCppEscapedNewline ii -> 
-          if (line' <> line) then pr2 "PB: WIERD: not same line number";
-          TCommentSpace ii::define_line_2 (line+1) info xs
-      | x -> 
-          if line' = line
-          then x::define_line_2 line info xs 
-          else 
-            mark_end_define lastinfo::define_line_1 (x::xs)
-      )
-
-let rec define_ident xs = 
-  match xs with
-  | [] -> []
-  | TDefine ii::xs -> 
-      TDefine ii::
-      (match xs with
-      | TCommentSpace i1::TIdent (s,i2)::TOPar (i3)::xs -> 
-          (* Change also the kind of TIdent to avoid bad interaction
-           * with other parsing_hack tricks. For instant if keep TIdent then
-           * the stringication algo can believe the TIdent is a string-macro.
-           * So simpler to change the kind of the ident too.
-           *)
-          (* if TOParDefine sticked to the ident, then 
-           * it's a macro-function. Change token to avoid ambiguity
-           * between #define foo(x)  and   #define foo   (x)
-           *)
-          TCommentSpace i1::TIdentDefine (s,i2)::TOParDefine i3
-          ::define_ident xs
-      | TCommentSpace i1::TIdent (s,i2)::xs -> 
-          TCommentSpace i1::TIdentDefine (s,i2)::define_ident xs
-      | _ -> 
-          pr2 "wierd #define body"; 
-          define_ident xs
-      )
-  | x::xs -> 
-      x::define_ident xs
-
-let fix_tokens_define2 xs = 
-  define_ident (define_line_1 xs)
-
-let fix_tokens_define a = 
-  Common.profile_code "C parsing.fix_define" (fun () -> fix_tokens_define2 a)
-
-(* ------------------------------------------------------------------------- *)
-(* Other parsing hacks related to cpp, Include/Define hacks *)
-(* ------------------------------------------------------------------------- *)
-
-(* Sometimes I prefer to generate a single token for a list of things in the
- * lexer so that if I have to passed them, liking passing TInclude then
- * it's easy. Also if I don't do a single token, then I need to 
- * parse the rest which may not need special stuff, like detecting 
- * end of line which the parser is not really ready for. So for instance
- * could I parse a #include <a/b/c/xxx.h> as 2 or more tokens ? just
- * lex #include ? so then need recognize <a/b/c/xxx.h> as one token ? 
- * but this kind of token is valid only after a #include and the
- * lexing and parsing rules are different for such tokens so not that
- * easy to parse such things in parser_c.mly. Hence the following hacks.
- * 
- * less?: maybe could get rid of this like I get rid of some of fix_define.
- *)
-
-(* helpers *)
-(* used to generate new token from existing one *)
-let new_info posadd str ii =
-  { Parse_info.token = 
-      Parse_info.OriginTok { (Parse_info.parse_info_of_info ii) with 
-        Parse_info.
-        charpos = Parse_info.pos_of_info ii + posadd;
-        str     = str;
-        column = Parse_info.col_of_info ii + posadd;
-      };
-    comments = ();
-    transfo = Parse_info.NoTransfo;
-   }
-
-let rec comment_until_defeol xs = 
-  match xs with
-      
-  | [] -> 
-      (* job not done in Cpp_token_c.define_parse ? *)
-      failwith "cant find end of define token TDefEOL"
-  | x::xs -> 
-      (match x with
-      | Parser.TDefEOL i -> 
-          Parser.TCommentCpp (Token_cpp.CppDirective, TH.info_of_tok x)
-          ::xs
-      | _ -> 
-          let x' = 
-            (* bugfix: otherwise may lose a TComment token *)
-            if TH.is_real_comment x
-            then x
-            else Parser.TCommentCpp (Token_cpp.CppOther, TH.info_of_tok x)
-          in
-          x'::comment_until_defeol xs
-      )
-
-let drop_until_defeol xs = 
-  List.tl 
-    (Common.drop_until (function Parser.TDefEOL _ -> true | _ -> false) xs)
-
-(* ------------------------------------------------------------------------- *)
-(* returns a pair (replaced token, list of next tokens) *)
-(* ------------------------------------------------------------------------- *)
-
-let tokens_include (info, includes, filename, inifdef) = 
-  Parser.TIncludeStart (Parse_info.rewrap_str includes info, inifdef), 
-  [Parser.TIncludeFilename 
-      (filename, (new_info (String.length includes) filename info))
-  ]
-
-
-(* ------------------------------------------------------------------------- *)
-(* main fix cpp function *)
-(* ------------------------------------------------------------------------- *)
 
 let filter_cpp_stuff xs = 
   let rec aux xs = 
@@ -243,7 +94,6 @@ let filter_cpp_stuff xs =
   in
   aux xs
           
-
 let insert_virtual_positions l =
   let strlen x = String.length (Ast.str_of_info x) in
   let rec loop prev offset = function
