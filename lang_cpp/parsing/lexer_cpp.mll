@@ -523,17 +523,17 @@ rule token = parse
 
   | ['0'] ['0'-'9']+  
       { pr2 ("LEXER: " ^ error_radix "octal" ^ tok lexbuf); 
-        TCommentMisc (tokinfo lexbuf)
+        TUnknown (tokinfo lexbuf)
       }
   | ("0x" |"0X") ['0'-'9' 'a'-'z' 'A'-'Z']+ 
       { pr2 ("LEXER: " ^ error_radix "hexa" ^ tok lexbuf);
-        TCommentMisc (tokinfo lexbuf)
+        TUnknown (tokinfo lexbuf)
       }
 
  (* !put after other rules! otherwise 0xff will be parsed as an ident *)
   | ['0'-'9']+ letter (letter | digit) *  
       { pr2 ("LEXER: ZARB integer_string, certainly a macro:" ^ tok lexbuf);
-        TIdent (tok lexbuf, tokinfo lexbuf)
+        TUnknown (tokinfo lexbuf)
       } 
 
 (* gccext: http://gcc.gnu.org/onlinedocs/gcc/Binary-constants.html *)

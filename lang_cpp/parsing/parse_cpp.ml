@@ -128,7 +128,6 @@ let commentized xs = xs +> Common.map_filter (function
         )
       else Some (ii.PI.token)
       
-  | Parser.TCommentMisc ii
   | Parser.TAction ii 
     ->
       Some (ii.PI.token)
