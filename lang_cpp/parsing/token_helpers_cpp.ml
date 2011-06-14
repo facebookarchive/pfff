@@ -71,7 +71,7 @@ let is_opar = function
   | _ -> false
 
 let is_cpar = function
-  | TCPar _ | TCParEOL _ -> true
+  | TCPar _ | TCPar_EOL _ -> true
   | _ -> false
 
 let is_obrace = function
@@ -268,9 +268,9 @@ let info_of_tok = function
   | TIdent_MacroDecl             (s, i) -> i
   | Tconst_MacroDeclConst             (i) -> i
 (*  | TMacroTop             (s,i) -> i *)
-  | TCParEOL (i1) ->     i1
+  | TCPar_EOL (i1) ->     i1
 
-  | TAction             (i) -> i
+  | TAny_Action             (i) -> i
 
   | TComment             (i) -> i
   | TCommentSpace        (i) -> i
@@ -486,10 +486,10 @@ let visitor_info_of_tok f = function
   | TIdent_MacroDecl           (s,i) -> TIdent_MacroDecl            (s, f i)
   | Tconst_MacroDeclConst      (i)   -> Tconst_MacroDeclConst       (f i)
 (*  | TMacroTop          (s,i) -> TMacroTop             (s,f i) *)
-  | TCParEOL (i) ->     TCParEOL (f i)
+  | TCPar_EOL (i) ->     TCPar_EOL (f i)
 
 
-  | TAction               (i) -> TAction             (f i)
+  | TAny_Action               (i) -> TAny_Action             (f i)
 
   | TComment             (i) -> TComment             (f i) 
   | TCommentSpace        (i) -> TCommentSpace        (f i) 

@@ -560,13 +560,10 @@ let rec find_macro_lineparen xs =
       then begin
           (* just to avoid the end-of-stream pb of ocamlyacc  *)
           let tcpar = Common.list_last info_parens in
-          tcpar.tok <- TCParEOL (TH.info_of_tok tcpar.tok);
-          
+          change_tok tcpar (TCPar_EOL (TH.info_of_tok tcpar.tok));
           (*macro.tok <- TMacroTop (s, TH.info_of_tok macro.tok);*)
-          
-        end;
-
-       find_macro_lineparen (xs)
+      end;
+      find_macro_lineparen xs
 
 
 
@@ -752,19 +749,9 @@ and find_actions_params xxs =
     if toks +> List.exists (fun x -> TH.is_statement x.tok)
     then begin
       xs +> iter_token_paren (fun x -> 
-        if TH.is_eof x.tok
-        then 
-          (* certainly because paren detection had a pb because of
-           * some ifdef-exp
-           *)
-          pr2 "PB: wierd, I try to tag an EOF token as action"
-        else 
-          x.tok <- TAction (TH.info_of_tok x.tok);
+        change_tok x (TAny_Action (TH.info_of_tok x.tok));
       );
       true (* modified *)
     end
     else acc
   ) false
-
-
-

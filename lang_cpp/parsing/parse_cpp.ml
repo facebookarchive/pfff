@@ -130,8 +130,7 @@ let commentized xs = xs +> Common.map_filter (function
         )
       else Some (ii.PI.token)
       
-  | Parser.TAction ii 
-    ->
+  | Parser.TAny_Action ii ->
       Some (ii.PI.token)
   | _ -> 
       None

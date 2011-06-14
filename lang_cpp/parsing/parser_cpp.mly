@@ -146,10 +146,10 @@ module LP = Lexer_parser_cpp
 %token <(string * Ast_cpp.info)> TIdent_MacroDecl
 %token <Ast_cpp.info>            Tconst_MacroDeclConst 
 
-/*(* fresh_token: appear after parsing_hack ??? *)*/
-%token <Ast_cpp.info> TCParEOL
+/*(* fresh_token: appear after parsing_hack_pp.ml, alt to TIdent_MacroTop *)*/
+%token <Ast_cpp.info> TCPar_EOL
 /*(* fresh_token: appear after parsing_hack_pp.ml *)*/
-%token <Ast_cpp.info> TAction
+%token <Ast_cpp.info> TAny_Action
 
 /*(*-----------------------------------------*)*/
 /*(*2 c++ext: extra tokens *)*/
@@ -1966,8 +1966,8 @@ cpp_other:
  | TIdent TOPar argument_list TCPar TPtVirg
      { MacroTop (fst $1, $3,    [snd $1;$2;$4;$5]) } 
 
- /*(* TCParEOL to fix the end-of-stream bug of ocamlyacc *)*/
- | TIdent TOPar argument_list TCParEOL
+ /*(* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)*/
+ | TIdent TOPar argument_list TCPar_EOL
      { MacroTop (fst $1, $3,    [snd $1;$2;$4;fakeInfo()]) } 
 
   /*(* ex: EXPORT_NO_SYMBOLS; *)*/
@@ -2066,8 +2066,8 @@ taction_list:
 /*(* c++ext: to remove some conflicts (from 13 to 4)
    * | (* empty *) { [] } 
    *)*/
- | TAction { [$1] }
- | taction_list TAction { $1 ++ [$2] }
+ | TAny_Action { [$1] }
+ | taction_list TAny_Action { $1 ++ [$2] }
 
 param_define_list_opt: 
  | /*(* empty *)*/ { [] }

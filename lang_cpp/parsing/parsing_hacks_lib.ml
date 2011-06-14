@@ -157,6 +157,10 @@ let msg_change_tok tok =
   | Tconst_MacroDeclConst ii ->
       pr2_pp (spf "MACRO: retag const at %s" (pos ii))
 
+  | TCPar_EOL ii ->
+      pr2_pp (spf "MISC: retagging ) %s" (pos ii))
+
+
   | _ -> raise Todo
 
 
@@ -193,21 +197,25 @@ let msg_constructorname s =
 
 let change_tok extended_tok tok =
   msg_change_tok tok;
-  extended_tok.tok <- tok
+
+  (* otherwise parse_c will be lost if don't find a EOF token 
+   * why? because paren detection had a pb because of
+   * some ifdef-exp?
+   *)
+  if TH.is_eof extended_tok.tok
+  then pr2 "PB: wierd, I try to tag an EOF token as something else"
+  else extended_tok.tok <- tok
 
 let fresh_tok tok =
   msg_change_tok tok;
   tok
 
+(* normally the caller have first filtered the set of tokens to have
+ * a clearer "view" to work on
+ *)
 let set_as_comment cppkind x = 
-  (* normally the caller have first filtered the set of tokens to have
-   * a clearer "view" to work on
-   *)
   assert(not (TH.is_real_comment x.tok));
-
-  if TH.is_eof x.tok 
-  then () (* otherwise parse_c will be lost if don't find a EOF token *)
-  else change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.tok))
+  change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.tok))
 
 (*****************************************************************************)
 (* The regexp and basic view definitions *)
