@@ -58,8 +58,6 @@ let info_of_tok = function
   | T_VARIABLE (s, ii) -> ii
   | T_NUM_STRING (s, ii) -> ii
   | T_INLINE_HTML (s, ii) -> ii
-  | T_CHARACTER ii -> ii
-  | T_BAD_CHARACTER ii -> ii
   | T_ENCAPSED_AND_WHITESPACE (s, ii) -> ii
   | T_CONSTANT_ENCAPSED_STRING (s, ii) -> ii
   | T_ECHO ii -> ii
@@ -244,8 +242,6 @@ let visitor_info_of_tok f = function
   | T_VARIABLE (s, ii) -> T_VARIABLE(s, f ii)
   | T_NUM_STRING (s, ii) -> T_NUM_STRING(s, f ii)
   | T_INLINE_HTML (s, ii) -> T_INLINE_HTML(s, f ii)
-  | T_CHARACTER ii -> T_CHARACTER(f ii)
-  | T_BAD_CHARACTER ii -> T_BAD_CHARACTER(f ii)
   | T_ENCAPSED_AND_WHITESPACE (s, ii) -> T_ENCAPSED_AND_WHITESPACE(s, f ii)
   | T_CONSTANT_ENCAPSED_STRING (s,ii) -> T_CONSTANT_ENCAPSED_STRING(s, f ii)
   | T_ECHO ii -> T_ECHO(f ii)

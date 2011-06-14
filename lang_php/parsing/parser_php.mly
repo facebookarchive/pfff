@@ -19,7 +19,7 @@
 /*(*s: GRAMMAR prelude *)*/
 %{
 (* src: ocamlyaccified from zend_language_parser.y in PHP source code.
- * update: extended to deal with XHP based on XHP grammar.
+ * update: extended to deal with XHP based on XHP bison grammar.
  * 
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+
@@ -59,197 +59,133 @@ open Parser_php_mly_helper
 %}
 
 /*(*e: GRAMMAR prelude *)*/
-
 /*(*************************************************************************)*/
-/*(* Tokens *)*/
+/*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR tokens declaration *)*/
 
+%token <Ast_php.info> TUnknown /*(* unrecognized token *)*/
+%token <Ast_php.info> EOF
+
 /*(*-----------------------------------------*)*/
-/*(* the comment tokens *)*/
+/*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(*s: GRAMMAR comment tokens *)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Ast_php.info> TSpaces TNewline
 
+/*(* not mentionned in this grammar. filtered in parse_php.ml *)*/
+%token <Ast_php.info> T_COMMENT T_DOC_COMMENT
+
 /*(* when use preprocessor and want to mark removed tokens as commented *)*/
 %token <Ast_php.info> TCommentPP
-
-/*(* not mentionned in this grammar. preprocessed *)*/
-%token <Ast_php.info> T_COMMENT
-%token <Ast_php.info> T_DOC_COMMENT
 /*(*e: GRAMMAR comment tokens *)*/
 
 /*(*-----------------------------------------*)*/
-/*(* the normal tokens *)*/
+/*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(*s: GRAMMAR normal tokens *)*/
-%token <string * Ast_php.info> T_LNUMBER
-%token <string * Ast_php.info> T_DNUMBER
+%token <string * Ast_php.info> T_LNUMBER T_DNUMBER
 
 /*(* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
    * Note that with XHP if you want to add a rule using T_IDENT, you should
    * probably use 'ident' instead.
    *)*/
-%token <string * Ast_php.info> T_IDENT
-%token <string * Ast_php.info> T_VARIABLE
+%token <string * Ast_php.info> T_IDENT T_VARIABLE
 
-%token <string * Ast_php.info> T_CONSTANT_ENCAPSED_STRING
-%token <string * Ast_php.info> T_ENCAPSED_AND_WHITESPACE
+%token <string * Ast_php.info> 
+ T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML
 
 /*(* used only for offset of array access inside strings *)*/
 %token <string * Ast_php.info> T_NUM_STRING
 
-%token <string * Ast_php.info> T_INLINE_HTML
-
-
 %token <string * Ast_php.info> T_STRING_VARNAME
-
-%token <Ast_php.info> T_CHARACTER
-%token <Ast_php.info> T_BAD_CHARACTER
-
+/*(*in original: %token <Ast_php.info> T_CHARACTER T_BAD_CHARACTER *)*/
 
 /*(*-----------------------------------------*)*/
-/*(* keyword tokens *)*/
+/*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
 
+%token <Ast_php.info> 
+ T_IF T_ELSE T_ELSEIF T_ENDIF
+ T_DO  T_WHILE   T_ENDWHILE  T_FOR     T_ENDFOR T_FOREACH T_ENDFOREACH
+ T_SWITCH  T_ENDSWITCH T_CASE T_DEFAULT    T_BREAK T_CONTINUE
+ T_RETURN  T_TRY  T_CATCH T_THROW
+ T_EXIT T_DECLARE T_ENDDECLARE T_USE T_GLOBAL T_AS T_FUNCTION T_CONST T_VAR
 /*(* ugly: because of my hack around the implicit echo when use <?=, 
    * this T_ECHO might have a string different than "echo"
    *)*/
-%token <Ast_php.info> T_ECHO 
-%token <Ast_php.info> T_PRINT
-
-%token <Ast_php.info> T_IF
-%token <Ast_php.info> T_ELSE T_ELSEIF T_ENDIF
-%token <Ast_php.info> T_DO 
-%token <Ast_php.info> T_WHILE   T_ENDWHILE 
-%token <Ast_php.info> T_FOR     T_ENDFOR
-%token <Ast_php.info> T_FOREACH T_ENDFOREACH
-%token <Ast_php.info> T_SWITCH  T_ENDSWITCH
-%token <Ast_php.info> T_CASE T_DEFAULT    T_BREAK T_CONTINUE
-%token <Ast_php.info> T_RETURN
-%token <Ast_php.info> T_TRY  T_CATCH T_THROW
-%token <Ast_php.info> T_EXIT
-
-/*(* %token <Ast_php.info> T_SELF T_PARENT *)*/
-
-
-%token <Ast_php.info> T_DECLARE T_ENDDECLARE
-%token <Ast_php.info> T_USE
-%token <Ast_php.info> T_GLOBAL
-%token <Ast_php.info> T_AS
-%token <Ast_php.info> T_FUNCTION
-%token <Ast_php.info> T_CONST
-
-/*(* pad: was declared via right ... ??? mean token ? *)*/
-%token <Ast_php.info> T_STATIC  T_ABSTRACT  T_FINAL 
-%token <Ast_php.info> T_PRIVATE T_PROTECTED T_PUBLIC
-%token <Ast_php.info> T_VAR
-
-%token <Ast_php.info> T_UNSET
-%token <Ast_php.info> T_ISSET
-%token <Ast_php.info> T_EMPTY
-
-%token <Ast_php.info> T_HALT_COMPILER
-
-%token <Ast_php.info> T_CLASS   T_INTERFACE
-%token <Ast_php.info> T_EXTENDS T_IMPLEMENTS
-
-%token <Ast_php.info> T_LIST T_ARRAY
-
-%token <Ast_php.info> T_CLASS_C T_METHOD_C T_FUNC_C
-%token <Ast_php.info> T_LINE   T_FILE
-
-%token <Ast_php.info> T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
-
-%token <Ast_php.info> T_NEW T_CLONE T_INSTANCEOF
-
-%token <Ast_php.info> T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
-%token <Ast_php.info> T_EVAL 
-
-/*(* not in original grammar *)*/
-%token <Ast_php.info> T_SELF T_PARENT
+ T_ECHO  T_PRINT
+ /*(* pad: was declared via right ... ??? mean token ? *)*/
+ T_STATIC  T_ABSTRACT  T_FINAL  T_PRIVATE T_PROTECTED T_PUBLIC
+ T_UNSET T_ISSET T_EMPTY
+ T_HALT_COMPILER
+ T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
+ T_LIST T_ARRAY
+ T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE
+ T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
+ T_NEW T_CLONE T_INSTANCEOF
+ T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
+ T_EVAL 
+ /*(* not in original grammar *)*/
+ T_SELF T_PARENT
 
 /*(*-----------------------------------------*)*/
-/*(* symbol tokens *)*/
+/*(*2 Symbol tokens *)*/
 /*(*-----------------------------------------*)*/
 
-%token <Ast_php.info> T_OBJECT_OPERATOR
-%token <Ast_php.info> T_DOUBLE_ARROW
-
-%token <Ast_php.info> T_OPEN_TAG  T_CLOSE_TAG
-%token <Ast_php.info> T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
-
-
-%token <Ast_php.info> T_START_HEREDOC    T_END_HEREDOC
-%token <Ast_php.info> T_DOLLAR_OPEN_CURLY_BRACES
-%token <Ast_php.info> T_CURLY_OPEN
-
-%token <Ast_php.info> TCOLCOL
-
-/*(* pad: was declared as left/right, without a token decl in orig gram *)*/
-%token <Ast_php.info> TCOLON TCOMMA TDOT TBANG TTILDE TQUESTION
-
-%token <Ast_php.info> TOBRA 
-
-%token <Ast_php.info> TPLUS TMINUS TMUL TDIV TMOD
-
-%token <Ast_php.info> TAND TOR TXOR
-%token <Ast_php.info> TEQ
-%token <Ast_php.info> TSMALLER TGREATER
-
-%token <Ast_php.info> T_PLUS_EQUAL  T_MINUS_EQUAL  T_MUL_EQUAL  T_DIV_EQUAL
-%token <Ast_php.info> T_CONCAT_EQUAL  T_MOD_EQUAL 
-%token <Ast_php.info> T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
-%token <Ast_php.info> T_INC    T_DEC
-%token <Ast_php.info> T_BOOLEAN_OR   T_BOOLEAN_AND 
-%token <Ast_php.info> T_SL    T_SR
-%token <Ast_php.info> T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
-
-%token <Ast_php.info> T_BOOL_CAST  T_INT_CAST   T_DOUBLE_CAST  T_STRING_CAST
-%token <Ast_php.info> T_ARRAY_CAST T_OBJECT_CAST 
-%token <Ast_php.info> T_UNSET_CAST
-
-%token <Ast_php.info> T_IS_IDENTICAL T_IS_NOT_IDENTICAL
-%token <Ast_php.info> T_IS_EQUAL     T_IS_NOT_EQUAL
-
-
-%token <Ast_php.info> T__AT
-
-/*(* was declared implicitely because was using directly the character *)*/
-%token <Ast_php.info> TOPAR TCPAR
-%token <Ast_php.info> TOBRACE TCBRACE
-%token <Ast_php.info> TCBRA
-%token <Ast_php.info> TBACKQUOTE
+%token <Ast_php.info> 
+ T_OBJECT_OPERATOR T_DOUBLE_ARROW
+ T_OPEN_TAG  T_CLOSE_TAG T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
+ T_START_HEREDOC    T_END_HEREDOC
+ T_DOLLAR_OPEN_CURLY_BRACES T_CURLY_OPEN
+ TCOLCOL
+ /*(* pad: was declared as left/right, without a token decl in orig gram *)*/
+ TCOLON TCOMMA TDOT TBANG TTILDE TQUESTION
+ TOBRA 
+ TPLUS TMINUS TMUL TDIV TMOD
+ TAND TOR TXOR
+ TEQ TSMALLER TGREATER
+ T_PLUS_EQUAL  T_MINUS_EQUAL  T_MUL_EQUAL  T_DIV_EQUAL
+ T_CONCAT_EQUAL  T_MOD_EQUAL 
+ T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
+ T_INC    T_DEC
+ T_BOOLEAN_OR   T_BOOLEAN_AND 
+ T_SL    T_SR
+ T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
+ T_BOOL_CAST T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST 
+ T_UNSET_CAST
+ T_IS_IDENTICAL T_IS_NOT_IDENTICAL T_IS_EQUAL     T_IS_NOT_EQUAL
+ T__AT
+ /*(* was declared implicitely because was using directly the character *)*/
+ TOPAR TCPAR  TOBRACE TCBRACE
+ TCBRA TBACKQUOTE
 /*(* ugly: because of my hack around the implicit ';' when use ?>, 
    * this TSEMICOLON might have a string different than ';'
    *)*/
-%token <Ast_php.info> TSEMICOLON
-%token <Ast_php.info> TDOLLAR /*(* see also T_VARIABLE *)*/
-%token <Ast_php.info> TGUIL
-
-
+ TSEMICOLON
+ TDOLLAR /*(* see also T_VARIABLE *)*/
+ TGUIL
 /*(*e: GRAMMAR normal tokens *)*/
 
 /*(*-----------------------------------------*)*/
-/*(* extra tokens: *)*/
+/*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 /*(*s: GRAMMAR tokens hook *)*/
 %token <Ast_php.info> TDOTS
 /*(*x: GRAMMAR tokens hook *)*/
 
 /*(*x: GRAMMAR tokens hook *)*/
-%token <Ast_php.info> T_CLASS_XDEBUG
-%token <Ast_php.info> T_RESOURCE_XDEBUG
+%token <Ast_php.info> T_CLASS_XDEBUG T_RESOURCE_XDEBUG
 /*(*e: GRAMMAR tokens hook *)*/
 
 /*(*-----------------------------------------*)*/
-/*(* PHP language extensions: *)*/
+/*(*2 PHP language extensions: *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_php.info> T_YIELD;
+%token <Ast_php.info> T_YIELD
 
 /*(*-----------------------------------------*)*/
-/*(* XHP tokens: *)*/
+/*(*2 XHP tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* xhp: token for ':frag:foo' for instance; quite similiar to T_IDENT *)*/
@@ -263,28 +199,26 @@ open Parser_php_mly_helper
 %token <Ast_php.xhp_tag * Ast_php.info> T_XHP_OPEN_TAG
 
 /*(* ending part of the opening tag *)*/
-%token <Ast_php.info> T_XHP_GT
-%token <Ast_php.info> T_XHP_SLASH_GT
+%token <Ast_php.info> T_XHP_GT T_XHP_SLASH_GT
 
 /*(* xhp: e.g. for '</x:frag>'. The 'option' is for closing tags like </> *)*/
 %token <Ast_php.xhp_tag option * Ast_php.info> T_XHP_CLOSE_TAG
 
-%token <string * Ast_php.info> T_XHP_ATTR
-%token <string * Ast_php.info> T_XHP_TEXT
+%token <string * Ast_php.info> T_XHP_ATTR T_XHP_TEXT
 
 /*(* xhp keywords. If you add one don't forget to update the 'ident' rule. *)*/
-%token <Ast_php.info> T_XHP_ATTRIBUTE T_XHP_CHILDREN T_XHP_CATEGORY
-%token <Ast_php.info> T_XHP_ENUM T_XHP_REQUIRED
-%token <Ast_php.info> T_XHP_ANY /*(* T_XHP_EMPTY is T_EMPTY *)*/
-%token <Ast_php.info> T_XHP_PCDATA
+%token <Ast_php.info> 
+ T_XHP_ATTRIBUTE T_XHP_CHILDREN T_XHP_CATEGORY
+ T_XHP_ENUM T_XHP_REQUIRED
+ T_XHP_ANY /*(* T_XHP_EMPTY is T_EMPTY *)*/
+ T_XHP_PCDATA
 
-/*(*-----------------------------------------*)*/
-%token <Ast_php.info> TUnknown /*(* unrecognized token *)*/
-%token <Ast_php.info> EOF
 /*(*e: GRAMMAR tokens declaration *)*/
 
 /*(*s: GRAMMAR tokens priorities *)*/
-/*(*-----------------------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Priorities *)*/
+/*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
 %nonassoc SHIFTHERE
 
@@ -325,7 +259,7 @@ open Parser_php_mly_helper
 /*(*e: GRAMMAR tokens priorities *)*/
 
 /*(*************************************************************************)*/
-/*(* Rules type declaration *)*/
+/*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 %start main expr class_declaration_statement sgrep_spatch_pattern
 /*(*s: GRAMMAR type of main rule *)*/
@@ -340,7 +274,7 @@ open Parser_php_mly_helper
 
 /*(*s: GRAMMAR long set of rules *)*/
 /*(*************************************************************************)*/
-/*(* toplevel *)*/
+/*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR toplevel *)*/
 main: start EOF { top_statements_to_toplevels $1 $2 }
@@ -365,7 +299,7 @@ sgrep_spatch_pattern:
 
 
 /*(*************************************************************************)*/
-/*(* statement *)*/
+/*(*1 Statements *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR statement *)*/
 inner_statement: top_statement { $1 }
@@ -468,7 +402,7 @@ unticked_statement:
      { Declare($1,($2,$3,$4),$5) }
 /*(*x: GRAMMAR statement *)*/
 /*(*----------------------------*)*/
-/*(* auxillary statements *)*/
+/*(*2 auxillary statements *)*/
 /*(*----------------------------*)*/
 
 for_expr:
@@ -556,7 +490,7 @@ additional_catch:
      }
 /*(*x: GRAMMAR statement *)*/
 /*(*----------------------------*)*/
-/*(* auxillary bis *)*/
+/*(*2 auxillary bis *)*/
 /*(*----------------------------*)*/
 
 declare: ident   TEQ static_scalar { Name $1, ($2, $3) }
@@ -584,7 +518,7 @@ use_filename:
 /*(*e: GRAMMAR statement *)*/
 
 /*(*************************************************************************)*/
-/*(* function declaration *)*/
+/*(*1 Function declaration *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR function declaration *)*/
 function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
@@ -676,7 +610,7 @@ lexical_var_list:
 /*(*e: GRAMMAR function declaration *)*/
 
 /*(*************************************************************************)*/
-/*(* class declaration *)*/
+/*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR class declaration *)*/
 class_declaration_statement: unticked_class_declaration_statement { $1 }
@@ -732,7 +666,7 @@ implements_list:
  | T_IMPLEMENTS interface_list { Some($1, $2) }
 /*(*x: GRAMMAR class declaration *)*/
 /*(*----------------------------*)*/
-/*(* class statement *)*/
+/*(*2 class statement *)*/
 /*(*----------------------------*)*/
 
 class_statement:
@@ -818,7 +752,7 @@ method_body:
  | TOBRACE inner_statement_list TCBRACE	{ MethodBody ($1, $2, $3) }
 
 /*(*----------------------------*)*/
-/*(* XHP attributes *)*/
+/*(*2 XHP attributes *)*/
 /*(*----------------------------*)*/
 /*(* mostly a copy paste of the original XHP grammar *)*/
 
@@ -884,77 +818,26 @@ xhp_attr_name_atom:
     * 
     * todo? emit a warning when the user use PHP keywords for XHP attribute ?
     *)*/
- | T_ECHO { $1 }
- | T_PRINT { $1 }
- | T_IF { $1 }
- | T_ELSE { $1 }
- | T_ELSEIF { $1 }
- | T_ENDIF { $1 }
- | T_DO { $1 }
- | T_WHILE { $1 }
- | T_ENDWHILE { $1 }
- | T_FOR { $1 }
- | T_ENDFOR { $1 }
- | T_FOREACH { $1 }
- | T_ENDFOREACH { $1 }
- | T_SWITCH { $1 }
- | T_ENDSWITCH { $1 }
- | T_CASE { $1 }
- | T_DEFAULT { $1 }
- | T_BREAK { $1 }
- | T_CONTINUE { $1 }
- | T_RETURN { $1 }
- | T_TRY { $1 }
- | T_CATCH { $1 }
- | T_THROW { $1 }
- | T_EXIT { $1 }
- | T_DECLARE { $1 }
- | T_ENDDECLARE { $1 }
- | T_USE { $1 }
- | T_GLOBAL { $1 }
- | T_AS { $1 }
- | T_FUNCTION { $1 }
- | T_CONST { $1 }
- | T_STATIC { $1 }
- | T_ABSTRACT { $1 }
- | T_FINAL { $1 }
- | T_PRIVATE { $1 }
- | T_PROTECTED { $1 }
- | T_PUBLIC { $1 }
- | T_VAR { $1 }
- | T_UNSET { $1 }
- | T_ISSET { $1 }
- | T_EMPTY { $1 }
- | T_HALT_COMPILER { $1 }
- | T_CLASS { $1 }
- | T_INTERFACE { $1 }
- | T_EXTENDS { $1 }
- | T_IMPLEMENTS { $1 }
- | T_LIST { $1 }
- | T_ARRAY { $1 }
- | T_CLASS_C { $1 }
- | T_METHOD_C { $1 }
- | T_FUNC_C { $1 }
- | T_LINE { $1 }
- | T_FILE { $1 }
- | T_LOGICAL_OR { $1 }
- | T_LOGICAL_AND { $1 }
- | T_LOGICAL_XOR { $1 }
- | T_NEW { $1 }
- | T_CLONE { $1 }
- | T_INSTANCEOF { $1 }
- | T_INCLUDE { $1 }
- | T_INCLUDE_ONCE { $1 }
- | T_REQUIRE { $1 }
- | T_REQUIRE_ONCE { $1 }
- | T_EVAL { $1 }
- | T_SELF { $1 }
- | T_PARENT { $1 }    
-
-
+ | T_ECHO { $1 } | T_PRINT { $1 } | T_IF { $1 } | T_ELSE { $1 }
+ | T_ELSEIF { $1 } | T_ENDIF { $1 } | T_DO { $1 } | T_WHILE { $1 }
+ | T_ENDWHILE { $1 } | T_FOR { $1 } | T_ENDFOR { $1 } | T_FOREACH { $1 }
+ | T_ENDFOREACH { $1 } | T_SWITCH { $1 } | T_ENDSWITCH { $1 } | T_CASE { $1 }
+ | T_DEFAULT { $1 } | T_BREAK { $1 } | T_CONTINUE { $1 } | T_RETURN { $1 }
+ | T_TRY { $1 } | T_CATCH { $1 } | T_THROW { $1 } | T_EXIT { $1 }
+ | T_DECLARE { $1 } | T_ENDDECLARE { $1 } | T_USE { $1 } | T_GLOBAL { $1 }
+ | T_AS { $1 } | T_FUNCTION { $1 } | T_CONST { $1 } | T_STATIC { $1 }
+ | T_ABSTRACT { $1 } | T_FINAL { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 }
+ | T_PUBLIC { $1 } | T_VAR { $1 } | T_UNSET { $1 } | T_ISSET { $1 }
+ | T_EMPTY { $1 } | T_HALT_COMPILER { $1 } | T_CLASS { $1 }
+ | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_IMPLEMENTS { $1 } | T_LIST { $1 }
+ | T_ARRAY { $1 } | T_CLASS_C { $1 } | T_METHOD_C { $1 } | T_FUNC_C { $1 }
+ | T_LINE { $1 } | T_FILE { $1 } | T_LOGICAL_OR { $1 } | T_LOGICAL_AND { $1 }
+ | T_LOGICAL_XOR { $1 } | T_NEW { $1 } | T_CLONE { $1 } | T_INSTANCEOF { $1 }
+ | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
+ | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }    
 
 /*(*----------------------------*)*/
-/*(* XHP children *)*/
+/*(*2 XHP children *)*/
 /*(*----------------------------*)*/
 /*(* Mostly a copy paste of the original XHP grammar.
    * Not sure why it needs to be that complicated. We could factorize
@@ -994,7 +877,7 @@ xhp_children_decl_tag:
  | T_XHP_PERCENTID_DEF { XhpChildCategory $1 }
 
 /*(*----------------------------*)*/
-/*(* XHP category *)*/
+/*(*2 XHP category *)*/
 /*(*----------------------------*)*/
 
 xhp_category:
@@ -1005,7 +888,7 @@ xhp_category:
 /*(*e: GRAMMAR class declaration *)*/
 
 /*(*************************************************************************)*/
-/*(* expr and variable *)*/
+/*(*1 Expressions (and variables) *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR expression *)*/
 /*(* a little coupling with non_empty_function_call_parameter_list *)*/
@@ -1227,7 +1110,7 @@ internal_functions_in_yacc:
  | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
 /*(*x: GRAMMAR expression *)*/
 /*(*----------------------------*)*/
-/*(* scalar *)*/
+/*(*2 scalar *)*/
 /*(*----------------------------*)*/
 
 /*(*s: GRAMMAR scalar *)*/
@@ -1316,7 +1199,7 @@ non_empty_static_array_pair_list_rev:
 /*(*e: GRAMMAR scalar *)*/
 
 /*(*----------------------------*)*/
-/*(* variable *)*/
+/*(*2 variable *)*/
 /*(*----------------------------*)*/
 
 /*(*s: GRAMMAR variable *)*/
@@ -1383,7 +1266,7 @@ w_variable: variable { $1 }
 rw_variable: variable { $1 }
 /*(*x: GRAMMAR variable *)*/
 /*(*----------------------------*)*/
-/*(* function call *)*/
+/*(*2 function call *)*/
 /*(*----------------------------*)*/
 function_call: function_head TOPAR function_call_parameter_list TCPAR
   { FunCall ($1, ($2, $3, $4)) }
@@ -1428,7 +1311,7 @@ non_empty_function_call_parameter_list:
 
 /*(*x: GRAMMAR variable *)*/
 /*(*----------------------------*)*/
-/*(* list/array *)*/
+/*(*2 list/array *)*/
 /*(*----------------------------*)*/
 
 assignment_list_element:
@@ -1457,7 +1340,7 @@ non_empty_array_pair_list_rev:
 /*(*x: GRAMMAR variable *)*/
 
 /*(*----------------------------*)*/
-/*(* XHP embeded html *)*/
+/*(*2 XHP embeded html *)*/
 /*(*----------------------------*)*/
 xhp_html:
  | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG 
@@ -1484,7 +1367,7 @@ xhp_attribute_value:
  | T_XHP_ATTR { sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 /*(*----------------------------*)*/
-/*(* auxillary bis *)*/
+/*(*2 auxillary bis *)*/
 /*(*----------------------------*)*/
 
 exit_expr:
@@ -1496,7 +1379,7 @@ exit_expr:
 /*(*e: GRAMMAR expression *)*/
 
 /*(*************************************************************************)*/
-/*(* namespace *)*/
+/*(*1 Ident, namespace *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR namespace *)*/
 
@@ -1540,7 +1423,7 @@ fully_qualified_class_name:
 variable_class_name: reference_variable { $1 }
 
 /*(*************************************************************************)*/
-/*(* class bis *)*/
+/*(*1 Class bis *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR class bis *)*/
 class_name_reference:
@@ -1568,7 +1451,7 @@ ctor_arguments:
   | /*(*empty*)*/ { None }
 /*(*x: GRAMMAR class bis *)*/
 /*(*----------------------------*)*/
-/*(* object property, variable property *)*/
+/*(*2 object property, variable property *)*/
 /*(*----------------------------*)*/
 
 object_property:
@@ -1599,7 +1482,7 @@ dynamic_class_name_variable_property: T_OBJECT_OPERATOR object_property
 /*(*e: GRAMMAR class bis *)*/
 
 /*(*************************************************************************)*/
-/*(* Encaps *)*/
+/*(*1 Encaps *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR encaps *)*/
 encaps:
@@ -1706,7 +1589,7 @@ encaps_var_offset:
 /*(*e: GRAMMAR encaps *)*/
 
 /*(*************************************************************************)*/
-/*(* xxx_list, xxx_opt *)*/
+/*(*1 xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR xxxlist or xxxopt *)*/
 top_statement_list:
@@ -1824,7 +1707,6 @@ xhp_category_list:
 
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
-
 
 possible_comma:
  | /*(*empty*)*/ { [] }
