@@ -141,7 +141,7 @@ let drop_until_defeol xs =
 (* Parsing hacks for #define *)
 (*****************************************************************************)
 
-(* put the TDefEOL at the good place *)
+(* put the TCommentNewline_DefineEndOfMacro at the good place *)
 let rec define_line_1 xs = 
   match xs with
   | [] -> []
@@ -217,7 +217,8 @@ let fix_tokens_define a =
 (* returns a pair (replaced token, list of next tokens) *)
 
 let tokens_include (info, includes, filename, inifdef) = 
-  Parser.TIncludeStart (Parse_info.rewrap_str includes info, inifdef), 
-  [Parser.TIncludeFilename 
+  (* fresh_tok *) 
+   Parser.TInclude_Start (Parse_info.rewrap_str includes info, inifdef),
+  [ (* fresh_tok *) Parser.TInclude_Filename 
       (filename, (new_info (String.length includes) filename info))
   ]

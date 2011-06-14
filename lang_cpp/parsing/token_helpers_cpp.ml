@@ -248,8 +248,8 @@ let info_of_tok = function
   | TUndef (s, ii) -> ii
   | TCppDirectiveOther (ii) -> ii
 
-  | TIncludeStart (i1, inifdef) ->     i1
-  | TIncludeFilename (s, i1) ->     i1
+  | TInclude_Start (i1, inifdef) ->     i1
+  | TInclude_Filename (s, i1) ->     i1
 
   | TCommentNewline_DefineEndOfMacro (i1) ->     i1
   | TOPar_Define (i1) ->     i1
@@ -464,8 +464,8 @@ let visitor_info_of_tok f = function
   | TInclude (includes, filename, inifdef, i1) -> 
       TInclude (includes, filename, inifdef, f i1)
 
-  | TIncludeStart (i1, inifdef) -> TIncludeStart (f i1, inifdef)
-  | TIncludeFilename (s, i1) -> TIncludeFilename (s, f i1)
+  | TInclude_Start (i1, inifdef) -> TInclude_Start (f i1, inifdef)
+  | TInclude_Filename (s, i1) -> TInclude_Filename (s, f i1)
 
   | TCppEscapedNewline (i1) -> TCppEscapedNewline (f i1)
   | TCommentNewline_DefineEndOfMacro (i1) -> 

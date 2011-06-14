@@ -35,8 +35,7 @@ module LP = Lexer_parser_cpp
  * also appear only here and are not in the lexer because they are
  * created in some intermediate phases. They are called "fresh" tokens
  * and always contain a '_' in their name.
- *)
-*/
+ *)*/
 
 /*(* unrecognized token, will generate parse error *)*/
 %token <Ast_cpp.info> TUnknown
@@ -126,8 +125,8 @@ module LP = Lexer_parser_cpp
 /*(* used only in the lexer. It is then transformed in Comment or splitted *)*/
 %token <(string * string * bool ref * Ast_cpp.info)> TInclude
 /*(* fresh_token: tokens coming from TInclude generated in parsing_hack  *)*/
-%token <(Ast_cpp.info * bool ref)> TIncludeStart
-%token <(string * Ast_cpp.info)>   TIncludeFilename
+%token <(Ast_cpp.info * bool ref)> TInclude_Start
+%token <(string * Ast_cpp.info)>   TInclude_Filename
 
 /*(* cppext: ifdef         *)*/
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
@@ -1888,7 +1887,7 @@ ctor_dtor:
 
 /*(* cppext: *)*/
 cpp_directive: 
- | TIncludeStart TIncludeFilename 
+ | TInclude_Start TInclude_Filename 
      { 
        let (i1, in_ifdef) = $1 in
        let (s, i2) = $2 in

@@ -374,7 +374,9 @@ let rec lexer_function tr = fun lexbuf ->
       assert (x = v);
       
       (match v with
-      (* fix_define1 *)
+      (* fix_define1 
+       * TODO: move to fix_tokens_xxx style
+       *)
       | Parser.TDefine (tok) -> 
           if not (LP.current_context () = LP.InTopLevel) 
           then begin
