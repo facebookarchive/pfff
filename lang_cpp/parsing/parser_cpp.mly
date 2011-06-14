@@ -172,6 +172,9 @@ module LP = Lexer_parser_cpp
 
 %token <Ast_cpp.info> TColCol 
 
+/*(* TTilde2? *)*/
+/*(*  Tunsigned Tsigned Tvoid *)*/
+
 /*(* fresh_token: for constructed object *)*/
 %token <Ast_cpp.info> TOPar_CplusplusInit
 /*(* fresh_token: for template *)*/
@@ -180,31 +183,23 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TOCro_new TCCro_new
 /*(* fresh_token: for pure virtual method. TODO add stuff in parsing_hack *)*/
 %token <Ast_cpp.info> TInt_ZeroVirtual
-
-/*(* TTilde2? *)*/
-
 /*(* fresh_token: todo? merge with TypedefIdent? *)*/
 %token <string * Ast_cpp.info> Tclassname
+/*(* fresh_token: ???? *)*/
 %token <string * Ast_cpp.info> Ttemplatename
-
 /*(* fresh_token: for methods with same name as classname *)*/
 %token <string * Ast_cpp.info> Tconstructorname
-
 /*(* for templatename as qualifier, before a '::' TODO write heuristic *)*/
 %token <string * Ast_cpp.info> TtemplatenameQ
-
 /*(* for cast_constructor, before a '(' *)*/
 %token <string * Ast_cpp.info> TypedefIdent2
 /*(* fresh_token: for constructed (basic) objects *)*/
 %token <Ast_cpp.info> 
   Tchar2 Tint2 Tfloat2 Tdouble2 Twchar_t2 Tshort2 Tlong2 Tbool2
-
 /*(* fresh_token: appear after solved if next token is a typedef *)*/
 %token <Ast_cpp.info> TColCol2
 %token <string * Ast_cpp.info> Tclassname2
 %token <string * Ast_cpp.info> TtemplatenameQ2
-
-/*(*  Tunsigned Tsigned Tvoid *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
