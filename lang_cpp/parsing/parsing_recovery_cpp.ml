@@ -83,7 +83,7 @@ and find_next_synchro_define next already_passed =
   | [] ->  
       pr2 "ERROR-RECOV: end of file while in recovery mode"; 
       already_passed, []
-  | (Parser.TDefEOL i as v)::xs  -> 
+  | (Parser.TCommentNewline_DefineEndOfMacro i as v)::xs  -> 
       pr2 ("ERROR-RECOV: found sync end of #define "^i_to_s(TH.line_of_tok v));
       v::already_passed, xs
   | v::xs -> 

@@ -596,7 +596,8 @@ let parse2 file =
             if List.length xs >= 2 
             then 
               (match Common.head_middle_tail xs with
-              | Parser.TDefine _, _, Parser.TDefEOL _ -> 
+              | Parser.TDefine _, _, Parser.TCommentNewline_DefineEndOfMacro _ 
+                  -> 
                   was_define := true
               | _ -> ()
               )

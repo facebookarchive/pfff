@@ -67,7 +67,7 @@ let is_pp_instruction = function
 
 
 let is_opar = function
-  | TOPar _ | TOParDefine _ | TOParCplusplusInit _ -> true
+  | TOPar _ | TOPar_Define _ | TOParCplusplusInit _ -> true
   | _ -> false
 
 let is_cpar = function
@@ -75,7 +75,7 @@ let is_cpar = function
   | _ -> false
 
 let is_obrace = function
-  | TOBrace _ | TOBraceDefineInit _ -> true
+  | TOBrace _ | TOBrace_DefineInit _ -> true
   | _ -> false
 
 let is_cbrace = function
@@ -251,13 +251,14 @@ let info_of_tok = function
   | TIncludeStart (i1, inifdef) ->     i1
   | TIncludeFilename (s, i1) ->     i1
 
-  | TDefEOL (i1) ->     i1
-  | TOParDefine (i1) ->     i1
-  | TIdentDefine  (s, i) -> i
+  | TCommentNewline_DefineEndOfMacro (i1) ->     i1
+  | TOPar_Define (i1) ->     i1
+  | TIdent_Define  (s, i) -> i
+  | TOBrace_DefineInit (i1) ->     i1
+
   | TCppEscapedNewline (ii) -> ii
   | TDefParamVariadic (s, i1) ->     i1
 
-  | TOBraceDefineInit (i1) ->     i1
 
   | TUnknown             (i) -> i
 
@@ -467,13 +468,14 @@ let visitor_info_of_tok f = function
   | TIncludeFilename (s, i1) -> TIncludeFilename (s, f i1)
 
   | TCppEscapedNewline (i1) -> TCppEscapedNewline (f i1)
-  | TDefEOL (i1) -> TDefEOL (f i1)
-  | TOParDefine (i1) -> TOParDefine (f i1)
-  | TIdentDefine  (s, i) -> TIdentDefine (s, f i)
+  | TCommentNewline_DefineEndOfMacro (i1) -> 
+      TCommentNewline_DefineEndOfMacro (f i1)
+  | TOPar_Define (i1) -> TOPar_Define (f i1)
+  | TIdent_Define  (s, i) -> TIdent_Define (s, f i)
 
   | TDefParamVariadic (s, i1) -> TDefParamVariadic (s, f i1)
 
-  | TOBraceDefineInit (i1) -> TOBraceDefineInit (f i1)
+  | TOBrace_DefineInit (i1) -> TOBrace_DefineInit (f i1)
 
 
   | TUnknown             (i) -> TUnknown                (f i)

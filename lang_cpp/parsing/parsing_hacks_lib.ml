@@ -103,6 +103,17 @@ let msg_change_tok tok =
           (* todo? *)
           ()
       )
+
+  | TIdent_Define (s, ii) ->
+      ()
+  | TOPar_Define (ii) ->
+      ()
+  | TCommentNewline_DefineEndOfMacro _ ->
+      ()
+
+  | TOBrace_DefineInit ii ->
+      pr2_pp (spf "DEFINE: initializer at %s" (pos ii))
+
   | _ -> raise Todo
 
 let msg_declare_macro s =

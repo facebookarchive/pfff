@@ -429,7 +429,7 @@ let visit_toplevel
         tag ii Define
 
     (* todo: could be also a MacroFunc *)
-    | T.TIdentDefine (_, ii) ->
+    | T.TIdent_Define (_, ii) ->
         tag ii (MacroVar (Def2 NoUse))
 
     (* never executed ? only the TIncludeStart token is in the token list ? *)
@@ -541,10 +541,11 @@ let visit_toplevel
         tag ii Include
 
 
-    | T.TDefEOL _
+    | T.TCommentNewline_DefineEndOfMacro _
 
-    | T.TOBraceDefineInit _
-    | T.TOParDefine _
+    | T.TOBrace_DefineInit _
+    | T.TOPar_Define _
+
     | T.TCppEscapedNewline _
     | T.TDefParamVariadic _
 

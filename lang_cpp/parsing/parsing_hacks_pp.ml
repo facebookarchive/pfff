@@ -708,7 +708,7 @@ let rec find_define_init_brace_paren xs =
 
   (* mainly for firefox *)
   | (PToken {tok = TDefine _})
-    ::(PToken {tok = TIdentDefine (s,_)})
+    ::(PToken {tok = TIdent_Define (s,_)})
     ::(PToken ({tok = TOBrace i1} as tokbrace))
     ::(PToken tok2)
     ::(PToken tok3)
@@ -722,16 +722,12 @@ let rec find_define_init_brace_paren xs =
             
       in
       if is_init
-      then begin 
-        pr2_pp("found define initializer: " ^s);
-        tokbrace.tok <- TOBraceDefineInit i1;
-      end;
-
+      then change_tok tokbrace (TOBrace_DefineInit i1);
       aux xs
 
   (* mainly for linux, especially in sound/ *)
   | (PToken {tok = TDefine _})
-    ::(PToken {tok = TIdentDefine (s,_)})
+    ::(PToken {tok = TIdent_Define (s,_)})
     ::(Parenthised(xxx, info_parens))
     ::(PToken ({tok = TOBrace i1} as tokbrace))
     ::(PToken tok2)
@@ -746,10 +742,7 @@ let rec find_define_init_brace_paren xs =
             
       in
       if is_init
-      then begin 
-        pr2_pp("found define initializer with param: " ^ s);
-        tokbrace.tok <- TOBraceDefineInit i1;
-      end;
+      then tokbrace.tok <- TOBrace_DefineInit i1;
 
       aux xs
 

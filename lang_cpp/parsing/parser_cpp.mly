@@ -52,7 +52,7 @@ module LP = Lexer_parser_cpp
  *)*/
 %token <Ast_cpp.info> TCommentSpace TCommentNewline TComment
 
-/*(* fresh_token: cppext: appear after parsing_hack and disappear *)*/
+/*(* fresh_token: cppext: appears after parsing_hack_pp and disappear *)*/
 %token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TComment_Cpp
 
 /*(*-----------------------------------------*)*/
@@ -118,11 +118,9 @@ module LP = Lexer_parser_cpp
 /*(* transformed in TCommentSpace and disappear in parsing_hack.ml *)*/
 %token <Ast_cpp.info> TCppEscapedNewline 
 /*(* fresh_token: appear after fix_tokens_define in parsing_hack.ml *)*/
-%token <Ast_cpp.info> TOParDefine        
-%token <Ast_cpp.info> TOBraceDefineInit
-/*(* fresk_token: appear after fix_tokens_define *)*/
-%token <(string * Ast_cpp.info)> TIdentDefine
-%token <Ast_cpp.info>            TDefEOL
+%token <(string * Ast_cpp.info)> TIdent_Define
+%token <Ast_cpp.info> TOPar_Define TCommentNewline_DefineEndOfMacro
+%token <Ast_cpp.info> TOBrace_DefineInit
 
 /*(* cppext: include  *)*/
 /*(* used only in the lexer. It is then transformed in Comment or splitted *)*/
@@ -1908,14 +1906,16 @@ cpp_directive:
        Include ((inc_file, [i1;i2]), (Ast.noRelPos(), !in_ifdef)) 
      }
 
- | TDefine TIdentDefine define_val TDefEOL 
+ | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro
      { Define ((fst $2, [$1; snd $2;$4]), (DefineVar, $3)) }
 
  /*
  (* The TOParDefine is introduced to avoid ambiguity with previous rules.
   * A TOParDefine is a TOPar that was just next to the ident.
   *)*/
- | TDefine TIdentDefine TOParDefine param_define_list_opt TCPar define_val TDefEOL
+ | TDefine TIdent_Define 
+    TOPar_Define param_define_list_opt TCPar define_val 
+    TCommentNewline_DefineEndOfMacro
      { Define 
          ((fst $2, [$1; snd $2;$7]), 
            (DefineFunc ($4, [$3;$5]), $6)) 
@@ -1939,7 +1939,7 @@ define_val:
        DefineDoWhileZero ($2,  [$1;$3;$4;snd $5;$6])
      }
   *)*/
- | TOBraceDefineInit initialize_list TCBrace comma_opt 
+ | TOBrace_DefineInit initialize_list TCBrace comma_opt 
     { DefineInit (InitList (List.rev $2), [$1;$3]++$4)  }
  | /*(* empty *)*/ { DefineEmpty }
 

@@ -26,23 +26,24 @@ module Hack = Parsing_hacks_lib
 (* Prelude  *)
 (*****************************************************************************)
 
-(* To parse macro definitions I need to do some tricks 
- * as some information can be get only at the lexing level. For instance
+(* 
+ * To parse macro definitions I need to do some tricks 
+ * as some information can be computed only at the lexing level. For instance
  * the space after the name of the macro in '#define foo (x)' is meaningful
- * but the grammar can not get this information. So define_ident below
- * look at such space and generate a special TOpardefine. In a similar
- * way macro definitions can contain some antislash and newlines
- * and the grammar need to know where the macro ends (which is 
- * a line-level and so low token-level information). Hence the 
- * function 'define_line' below and the TDefEol.
+ * but the grammar does not have this information. So define_ident() below
+ * look at such space and generate a special TOpar_Define token. 
  * 
- * update: TDefEol is handled in a special way at different places, 
- * a little bit like EOF, especially for error recovery, so this
- * is an important token that should not be retagged!
+ * In a similar way macro definitions can contain some antislash and newlines
+ * and the grammar need to know where the macro ends which is
+ * a line-level and so low token-level information. Hence the 
+ * function define_line'()below and the TCommentNewline_DefineEndOfMacro.
  * 
+ * update: TCommentNewline_DefineEndOfMacro is handled in a special way
+ * at different places, a little bit like EOF, especially for error recovery,
+ * so this is an important token that should not be retagged!
  * 
- * ugly hack, a better solution perhaps would be to erase TDefEOL 
- * from the Ast and list of tokens in parse_c. 
+ * ugly hack, a better solution perhaps would be to erase
+ * TCommentNewline_DefineEndOfMacro from the Ast and list of tokens in parse_c.
  * 
  * note: I do a +1 somewhere, it's for the unparsing to correctly sync.
  * 
@@ -73,7 +74,7 @@ let mark_end_define ii =
       comments = ();
     } 
   in
-  TDefEOL (ii')
+  (* fresh_tok *) TCommentNewline_DefineEndOfMacro (ii')
 
 (* Sometimes I prefer to generate a single token for a list of things in the
  * lexer so that if I have to passed them, liking passing TInclude then
@@ -110,22 +111,26 @@ let rec comment_until_defeol xs =
       failwith "cant find end of define token TDefEOL"
   | x::xs -> 
       (match x with
-      | Parser.TDefEOL i -> 
-          Parser.TComment_Cpp (Token_cpp.CppDirective, TH.info_of_tok x)
+      | Parser.TCommentNewline_DefineEndOfMacro i -> 
+          (* fresh_tok *) 
+            Parser.TComment_Cpp (Token_cpp.CppDirective, TH.info_of_tok x)
           ::xs
       | _ -> 
           let x' = 
             (* bugfix: otherwise may lose a TComment token *)
             if TH.is_real_comment x
             then x
-            else Parser.TComment_Cpp (Token_cpp.CppOther, TH.info_of_tok x)
+            else
+            (* fresh_tok *) 
+              Parser.TComment_Cpp (Token_cpp.CppOther, TH.info_of_tok x)
           in
           x'::comment_until_defeol xs
       )
 
 let drop_until_defeol xs = 
-  List.tl 
-    (Common.drop_until (function Parser.TDefEOL _ -> true | _ -> false) xs)
+  xs +> Common.drop_until (function 
+    Parser.TCommentNewline_DefineEndOfMacro _ -> true | _ -> false)
+  +> List.tl
 
 (*****************************************************************************)
 (* Parsing hacks for #define *)
@@ -140,7 +145,7 @@ let rec define_line_1 xs =
       TDefine ii::define_line_2 line ii xs
   | TCppEscapedNewline ii::xs -> 
       pr2 "WIERD: a \\ outside a #define";
-      TCommentSpace ii::define_line_1 xs
+      (* fresh_tok*) TCommentSpace ii::define_line_1 xs
   | x::xs -> 
       x::define_line_1 xs
 
@@ -158,8 +163,9 @@ and define_line_2 line lastinfo xs =
       | EOF ii -> 
           mark_end_define lastinfo::EOF ii::define_line_1 xs
       | TCppEscapedNewline ii -> 
-          if (line' <> line) then pr2 "PB: WIERD: not same line number";
-          TCommentSpace ii::define_line_2 (line+1) info xs
+          if (line' <> line) 
+          then pr2 "PB: WIERD: not same line number";
+          (* fresh_tok*) TCommentSpace ii::define_line_2 (line+1) info xs
       | x -> 
           if line' = line
           then x::define_line_2 line info xs 
@@ -183,10 +189,14 @@ let rec define_ident xs =
            * it's a macro-function. Change token to avoid ambiguity
            * between #define foo(x)  and   #define foo   (x)
            *)
-          TCommentSpace i1::TIdentDefine (s,i2)::TOParDefine i3
+          TCommentSpace i1
+          ::Hack.fresh_tok (TIdent_Define (s,i2))
+          ::Hack.fresh_tok (TOPar_Define i3)
           ::define_ident xs
       | TCommentSpace i1::TIdent (s,i2)::xs -> 
-          TCommentSpace i1::TIdentDefine (s,i2)::define_ident xs
+          TCommentSpace i1
+          ::Hack.fresh_tok (TIdent_Define (s,i2))
+          ::define_ident xs
       | _ -> 
           pr2 "wierd #define body"; 
           define_ident xs

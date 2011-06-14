@@ -29,7 +29,7 @@ open Token_views_cpp
 (*****************************************************************************)
 
 (* 
- * CPP functions working at the token level. See cpp_ast_c for cpp functions
+ * CPP functions working at the token level. See pp_ast.ml for cpp functions
  * working at the AST level (which is very unusual but makes sense in 
  * the coccinelle context for instance).
  *  
@@ -42,14 +42,19 @@ open Token_views_cpp
  * 
  * There are multiple issues related to those keywords incorrect tokens.
  * Those keywords can be:
+ * 
  *   - (1) in the name of the macro as  in  #define inline
  *   - (2) in a parameter of the macro as in #define foo(char)   char x;
  *   - (3) in an argument to a macro call as in   IDENT(if);
- * Case 1 is easy to fix in define_ident.
- * Case 2 is easy to fix in define_parse where detect such toks in 
- * the parameter and then replace their occurence in the body in a Tident.
- * Case 3 is only an issue when the expanded token is not really use 
- * as usual but use for instance in concatenation as in  a ## if
+ * 
+ * Case 1 is easy to fix in define_ident in ???
+ * 
+ * Case 2 is easy to fix in define_parse below, where we detect such tokens
+ * in the parameters and then replace their occurence in the body with 
+ * a TIdent.
+ * 
+ * Case 3 is only an issue when the expanded token is not really used
+ * as usual but used for instance in concatenation as in  a ## if
  * when expanded. In the case the grammar this time will not be happy
  * so this is also easy to fix in cpp_engine.
  *)
@@ -59,33 +64,24 @@ open Token_views_cpp
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
 
-let pr2_pp s = 
-  if !Flag.debug_pp
-  then Common.pr2_once ("PP-" ^ s)
-
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
+(* the tokens in the body of the macro are all ExpandedTok *)
 type define_body = (unit,string list) either * Parser_cpp.token list
 
-(* ------------------------------------------------------------------------- *)
-(* mimic standard.h *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Apply macro (using standard.h or other defs) *)
+(*****************************************************************************)
+(* cpp-builtin part1, macro, using standard.h or other defs *)
 
-(*****************************************************************************)
-(* Parsing and helpers of hints  *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Expansion helpers *)
-(*****************************************************************************)
-
-(* Thanks to this function many stuff are not anymore hardcoded in ocaml code
- * (but they are now hardcoded in standard.h ...)
+(* Thanks to this function many stuff are not anymore hardcoded in 
+ * OCaml code (but are now hardcoded in standard.h ...)
  *)
-let rec (cpp_engine: (string , Parser.token list) assoc -> 
-          Parser.token list -> Parser.token list) = fun env xs ->
+let rec (cpp_engine: 
+  (string , Parser.token list) assoc -> Parser.token list -> Parser.token list)
+  = fun env xs ->
   xs +> List.map (fun tok -> 
     match tok with
     | TIdent (s,i1) when List.mem_assoc s env -> Common.assoc s env
@@ -93,13 +89,11 @@ let rec (cpp_engine: (string , Parser.token list) assoc ->
   )
   +> List.flatten
 
-(* ------------------------------------------------------------------------- *)
-(* apply macro, using standard.h or other defs *)
-(* ------------------------------------------------------------------------- *)
-
-(* cpp-builtin part1, macro, using standard.h or other defs *)
-
-(* no need to take care to not substitute the macro name itself
+(* 
+ * We apply a macro by generating new ExpandedToken and by
+ * commenting the old macro call.
+ * 
+ * no need to take care to substitute the macro name itself
  * that occurs in the macro definition because the macro name is
  * after fix_token_define a TDefineIdent, no more a TIdent.
  *)
@@ -112,7 +106,7 @@ let rec apply_macro_defs defs xs =
   (* recognized macro of standard.h (or other) *)
   | PToken ({tok = TIdent (s,i1);_} as id)::Parenthised (xxs,info_parens)::xs 
       when Hashtbl.mem defs s -> 
-      pr2_pp ("MACRO: found known macro = " ^ s);
+      Hack.pr2_pp ("MACRO: found known macro = " ^ s);
       (match Hashtbl.find defs s with
       | Left (), bodymacro -> 
           pr2 ("macro without param used before parenthize, wierd: " ^ s);
@@ -149,7 +143,7 @@ let rec apply_macro_defs defs xs =
 
   | PToken ({tok = TIdent (s,i1);_} as id)::xs 
       when Hashtbl.mem defs s -> 
-      pr2_pp ("MACRO: found known macro = " ^ s);
+      Hack.pr2_pp ("MACRO: found known macro = " ^ s);
       (match Hashtbl.find defs s with
       | Right params, bodymacro -> 
           pr2 ("macro with params but no parens found, wierd: " ^ s);
@@ -179,17 +173,19 @@ let rec apply_macro_defs defs xs =
  apply_macro_defs xs
 
 (*****************************************************************************)
-(* Extracting define_def from a standard.h  *)
+(* Extracting macros (from a standard.h) *)
 (*****************************************************************************)
 
+(* assumes have called fix_tokens_define before, so have TOPar_Define *)
 let rec define_parse xs = 
   match xs with
   | [] -> []
-  | TDefine i1::TIdentDefine (s,i2)::TOParDefine i3::xs -> 
+  | TDefine i1::TIdent_Define (s,i2)::TOPar_Define i3::xs -> 
       let (tokparams, _, xs) = 
         xs +> Common.split_when (function TCPar _ -> true | _ -> false) in
       let (body, _, xs) = 
-        xs +> Common.split_when (function TDefEOL _ -> true | _ -> false) in
+        xs +> Common.split_when 
+          (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let params = 
         tokparams +> Common.map_filter (function
         | TComma _ -> None
@@ -201,9 +197,10 @@ let rec define_parse xs =
       let def = (s, (Right params, body)) in
       def::define_parse xs
 
-  | TDefine i1::TIdentDefine (s,i2)::xs -> 
+  | TDefine i1::TIdent_Define (s,i2)::xs -> 
       let (body, _, xs) = 
-        xs +> Common.split_when (function TDefEOL _ -> true | _ -> false) in
+        xs +> Common.split_when 
+          (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let body = body +> List.map 
         (TH.visitor_info_of_tok Ast.make_expanded) in
       let def = (s, (Left (), body)) in
@@ -215,7 +212,5 @@ let rec define_parse xs =
       
 
 let extract_macros xs = 
-  let cleaner = xs +> List.filter (fun x -> 
-    not (TH.is_comment x)
-  ) in
+  let cleaner = xs +> List.filter (fun x -> not (TH.is_comment x)) in
   define_parse cleaner
