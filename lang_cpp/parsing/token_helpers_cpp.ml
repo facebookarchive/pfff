@@ -427,7 +427,7 @@ let info_of_tok = function
   | TOCro_new                 (i) -> i
   | TCCro_new                (i) -> i
 
-  | TIntZeroVirtual        (i) -> i
+  | TInt_ZeroVirtual        (i) -> i
 
   | Tchar2 (i) -> i
   | Tint2  (i) -> i
@@ -650,7 +650,7 @@ let visitor_info_of_tok f = function
   | TCCro_new                 (i) -> TCCro_new                 (f i) 
 
 
-  | TIntZeroVirtual (i) -> TIntZeroVirtual (f i)
+  | TInt_ZeroVirtual (i) -> TInt_ZeroVirtual (f i)
 
   | Tchar2                 (i) -> Tchar2                 (f i) 
   | Tint2                 (i) -> Tint2                 (f i) 

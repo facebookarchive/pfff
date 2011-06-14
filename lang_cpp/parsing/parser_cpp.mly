@@ -178,8 +178,8 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TInf_Template TSup_Template
 /*(* fresh_token: for new[] delete[] *)*/
 %token <Ast_cpp.info> TOCro_new TCCro_new
-/*(* fresh_token: for pure virtual method *)*/
-%token <Ast_cpp.info> TIntZeroVirtual
+/*(* fresh_token: for pure virtual method. TODO add stuff in parsing_hack *)*/
+%token <Ast_cpp.info> TInt_ZeroVirtual
 
 /*(* TTilde2? *)*/
 
@@ -1618,13 +1618,13 @@ member_declarator:
        )
      }
 
-/*(* could also solve ambiguity without the special-token technique by
-   * merging pure_specifier and constant_initializer and disambiguating
-   * by looking at the form of the declaratorsd.
-   * TODO do the heuristic in parsing_hack for TIntZeroVirtual
-   *)*/
+/*
+(* We could also solve the ambiguity without the special-token technique by
+ * merging pure_specifier and constant_initializer and disambiguating
+ * by looking at the form of the declaratorsd.
+ *)*/
 pure_specifier:
- | TEq TIntZeroVirtual { [$1;$2] }
+ | TEq TInt_ZeroVirtual { [$1;$2] }
 
 constant_initializer:
  | TEq const_expr2 { $1, $2 }
