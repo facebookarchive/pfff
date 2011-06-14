@@ -1908,10 +1908,10 @@ cpp_directive:
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro
      { Define ((fst $2, [$1; snd $2;$4]), (DefineVar, $3)) }
-
  /*
- (* The TOParDefine is introduced to avoid ambiguity with previous rules.
-  * A TOParDefine is a TOPar that was just next to the ident.
+ (* The TOPar_Define is introduced to avoid ambiguity with previous rules.
+  * A TOPar_Define is a TOPar that was just next to the ident (no space).
+  * See parsing_hacks_define.ml
   *)*/
  | TDefine TIdent_Define 
     TOPar_Define param_define_list_opt TCPar define_val 
@@ -1920,14 +1920,13 @@ cpp_directive:
          ((fst $2, [$1; snd $2;$7]), 
            (DefineFunc ($4, [$3;$5]), $6)) 
      }
-
-
-/*(* perhaps better to use assign_expr ? but in that case need 
-   * do a assign_expr_of_string in parse_c.
-   * c++ext: update, now statement include simple declarations
-   * todo? maybe can parse $1 and generate the previous DefineDecl
-   * and DefineFunction ? cos nested_func is also now inside statement.
-   *)*/
+/*
+(* perhaps better to use assign_expr ? but in that case need 
+ * do a assign_expr_of_string in parse_c.
+ * c++ext: update, now statement include simple declarations
+ * todo? maybe can parse $1 and generate the previous DefineDecl
+ * and DefineFunction ? cos nested_func is also now inside statement.
+ *)*/
 define_val: 
  | expr      { DefineExpr $1 }
  | statement { DefineStmt $1 }

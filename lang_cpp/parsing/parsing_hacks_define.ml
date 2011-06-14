@@ -42,6 +42,11 @@ module Hack = Parsing_hacks_lib
  * at different places, a little bit like EOF, especially for error recovery,
  * so this is an important token that should not be retagged!
  * 
+ * We also change the kind of TIdent to TIdent_Define to avoid bad interactions
+ * with other parsing_hack tricks. For instant if keep TIdent then
+ * the stringication heuristics can believe the TIdent is a string-macro.
+ * So simpler to change the kind of the TIdent in a macro too.
+ *
  * ugly hack, a better solution perhaps would be to erase
  * TCommentNewline_DefineEndOfMacro from the Ast and list of tokens in parse_c.
  * 
@@ -179,22 +184,18 @@ let rec define_ident xs =
   | TDefine ii::xs -> 
       TDefine ii::
       (match xs with
-      | TCommentSpace i1::TIdent (s,i2)::TOPar (i3)::xs -> 
-          (* Change also the kind of TIdent to avoid bad interaction
-           * with other parsing_hack tricks. For instant if keep TIdent then
-           * the stringication algo can believe the TIdent is a string-macro.
-           * So simpler to change the kind of the ident too.
+      | TCommentSpace i1::TIdent (s,i2)::(* no space *)TOPar (i3)::xs -> 
+          (* if TOPar_Define is just next to the ident (no space), then
+           * it's a macro-function. We change the token to avoid
+           * ambiguity between '#define foo(x)'  and   '#define foo   (x)'
            *)
-          (* if TOParDefine sticked to the ident, then 
-           * it's a macro-function. Change token to avoid ambiguity
-           * between #define foo(x)  and   #define foo   (x)
-           *)
-          TCommentSpace i1
+            TCommentSpace i1
           ::Hack.fresh_tok (TIdent_Define (s,i2))
           ::Hack.fresh_tok (TOPar_Define i3)
           ::define_ident xs
+
       | TCommentSpace i1::TIdent (s,i2)::xs -> 
-          TCommentSpace i1
+            TCommentSpace i1
           ::Hack.fresh_tok (TIdent_Define (s,i2))
           ::define_ident xs
       | _ -> 
@@ -208,7 +209,7 @@ let fix_tokens_define2 xs =
   define_ident (define_line_1 xs)
 
 let fix_tokens_define a = 
-  Common.profile_code "C parsing.fix_define" (fun () -> fix_tokens_define2 a)
+  Common.profile_code "Hack.fix_define" (fun () -> fix_tokens_define2 a)
 
 (*****************************************************************************)
 (* Parsing hacks for #include *)
