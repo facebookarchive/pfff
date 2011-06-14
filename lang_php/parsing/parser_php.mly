@@ -1157,7 +1157,7 @@ base_variable:
  |             variable_without_objects                       
      { None,    $1 }
  | qualifier  variable_without_objects /*(*static_member*)*/ 
-     { Some (Left $1), $2 }
+     { Some (Left3 $1), $2 }
 /*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
    * for such a feature; it's everything except a static call ...
    * 
@@ -1168,7 +1168,9 @@ base_variable:
    * new grammar rules because I think they are clearer.
    *)*/
  | T_STATIC TCOLCOL variable_without_objects
-     { Some (Right ($1, $2)), $3 }
+     { Some (Middle3 ($1, $2)), $3 }
+ | variable_class_name TCOLCOL variable_without_objects 
+     { Some (Right3 ($1, $2)), $3 }
 
 
 variable_without_objects:
@@ -1336,6 +1338,12 @@ ident:
  | T_XHP_ANY  { Ast.str_of_info $1, $1 }
  | T_XHP_PCDATA  { Ast.str_of_info $1, $1 }
 
+/*
+(* todo? Maybe we should allow 'static' here and also any kind of
+ * variable. Right now each time we use 'qualifier' in some
+ * rules we have to copy the rule to also allow static:: and
+ * even $foo::
+ *)*/
 qualifier: class_name_or_selfparent TCOLCOL { $1, $2 }
 
 class_name_or_selfparent:

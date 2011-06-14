@@ -540,7 +540,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | LateStaticClassVar (t1, t2, dname) ->
           (* todo? colorize t1? *)
           let info = Ast.info_of_dname dname in
-          tag info (Global (Use2 fake_no_use2))
+          tag info BadSmell
+
+      | DynamicClassVar (v1, t2, dname) ->
+          (* todo? colorize v1? bad to use dynamic variable ... *)
+          let info = Ast.info_of_dname dname in
+          tag info BadSmell
 
       | This (tok) ->
           tag tok (Class (Use2 fake_no_use2))

@@ -51,7 +51,11 @@ type variable2 =
     | FunCall of func_head * argument comma_list paren
 
     and base_variable = 
-      (qualifier, tok * tok (* static:: *)) either option * var_without_obj
+      (qualifier, 
+       tok * tok, (* static:: *)
+       ref_variable * tok (* $x:: *)
+       ) either3 option 
+      * var_without_obj
       and var_without_obj = indirect list * ref_variable
 
       and ref_variable = 
@@ -188,10 +192,13 @@ and lift_qualifier_closer_to_var qu v =
         VArrayAccess (lval', e), snd v
     | Var (name, _scope) ->
         (match qu with
-        | Left qu -> 
+        | Left3 qu -> 
             mkvar (ClassVar (qu, name))
-        | Right (tok1, tok2) ->
+        | Middle3 (tok1, tok2) ->
             mkvar (LateStaticClassVar (tok1, tok2, name))
+        | Right3 (refvar, tok) ->
+            let v = refvar_to_variable refvar in
+            mkvar (DynamicClassVar (v, tok, name))
         )
     | This _ ->
         failwith "todo: what mean A::this ?"
@@ -205,11 +212,13 @@ and lift_qualifier_closer_to_var qu v =
     aux v
   with Not_found -> 
     (match qu with
-    | Left qu ->
+    | Left3 qu ->
         mkvar (VQualifier (qu, v))
-    | Right _ ->
+    | Middle3 _ ->
         (* todo: static::$... ? *) 
         raise Parsing.Parse_error
+    | Right3 _ ->
+        raise Todo
     )
     
 

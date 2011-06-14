@@ -369,6 +369,7 @@ and lvalue = lvaluebis * lvalue_info
      * todo? have also a LateStaticVQualifier?
      *)
     | LateStaticClassVar of tok (* static *) * tok (* :: *) * dname 
+    | DynamicClassVar of lvalue * tok (* :: *) * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren

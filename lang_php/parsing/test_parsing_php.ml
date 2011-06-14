@@ -150,8 +150,9 @@ let test_unparse_php file =
 
 let test_pretty_print_php file = 
   let (ast2, stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  Pretty_print_php.pretty_print_program ast
+  let _ast = Parse_php.program_of_program2 ast2 in
+  raise Todo
+  (* Pretty_print_php.pretty_print_program ast *)
 
 (* note that pfff can now parse XHP files without calling xhpize *)
 let test_parse_xhp_with_xhpize file = 
