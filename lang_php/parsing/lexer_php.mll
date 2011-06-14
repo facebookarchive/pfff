@@ -3,7 +3,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -29,6 +29,17 @@ module Flag = Flag_parsing_php
 open Parser_php
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* The PHP lexer.
+ *
+ * There are a few tricks to go around ocamllex restrictions
+ * because PHP has different lexing rules depending on some "context"
+ * (similar to Perl, e.g. the <<<END context).
+ *)
+
+(*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing 
@@ -38,7 +49,6 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing
 (*****************************************************************************)
 exception Lexical of string
 
-(* ---------------------------------------------------------------------- *)
 (*s: lexer helpers *)
 (* pad: hack around ocamllex to emulate the yyless of flex. It seems
  * to work.
@@ -50,29 +60,17 @@ let yyless n lexbuf =
     Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
   }
 (*x: lexer helpers *)
-let tok     lexbuf  = Lexing.lexeme lexbuf
+let tok lexbuf = 
+  Lexing.lexeme lexbuf
 
-let tokinfo_str_pos str pos = 
-  { 
-    Parse_info.token = Parse_info.OriginTok { Parse_info.
-      charpos = pos; 
-      str     = str;
-
-      (* info filled in a post-lexing phase, cf Parse_php.tokens *)
-      line = -1; 
-      column = -1; 
-      file = "";
-    };
-    transfo = Parse_info.NoTransfo;
-    comments = ();
-  }
 let tokinfo lexbuf  = 
-  tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 (*x: lexer helpers *)
 let tok_add_s s ii  =
   Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
 (*e: lexer helpers *)
+
 
 let xhp_or_t_ident ii fii = 
   if !Flag.xhp_builtin 
@@ -89,6 +87,8 @@ let lang_ext_or_t_ident ii fii =
     T_IDENT(s, ii)
 
 (* ---------------------------------------------------------------------- *)
+(* Keywords *)
+(* ---------------------------------------------------------------------- *)
 (*s: keywords_table hash *)
 (* opti: less convenient, but using a hash is faster than using a match.
  * Note that PHP allow those keywords to be used in certain places,
@@ -101,16 +101,13 @@ let lang_ext_or_t_ident ii fii =
  *)
 let keyword_table = Common.hash_of_list [
 
-  "while",           (fun ii -> T_WHILE ii);
-  "endwhile",        (fun ii -> T_ENDWHILE ii);
-  "do",              (fun ii -> T_DO ii);
-  "for",             (fun ii -> T_FOR ii);
-  "endfor",          (fun ii -> T_ENDFOR ii);
-  "foreach",         (fun ii -> T_FOREACH ii);
-  "endforeach",      (fun ii -> T_ENDFOREACH ii);
+  "while",   (fun ii -> T_WHILE ii);   "endwhile", (fun ii -> T_ENDWHILE ii);
+  "do",      (fun ii -> T_DO ii);
+  "for",     (fun ii -> T_FOR ii);     "endfor", (fun ii -> T_ENDFOR ii);
+  "foreach", (fun ii -> T_FOREACH ii); "endforeach",(fun ii -> T_ENDFOREACH ii);
 
-  "class_xdebug",           (fun ii -> T_CLASS_XDEBUG ii);
-  "resource_xdebug",           (fun ii -> T_RESOURCE_XDEBUG ii);
+  "class_xdebug",    (fun ii -> T_CLASS_XDEBUG ii);
+  "resource_xdebug", (fun ii -> T_RESOURCE_XDEBUG ii);
 
   (* Those tokens were not in the original PHP lexer. This allowed to 
    * have "self"/"parent" to be used at more places, e.g. as a function 
@@ -122,85 +119,65 @@ let keyword_table = Common.hash_of_list [
    * 
    * todo: should do something similar for $this.
    *)
-  "self",             (fun ii -> T_SELF ii);
-  "parent",           (fun ii -> T_PARENT ii);
+  "self", (fun ii -> T_SELF ii); "parent", (fun ii -> T_PARENT ii);
 
  (*s: repetitive keywords table *)
-   "if",              (fun ii -> T_IF ii);
-   "else",            (fun ii -> T_ELSE ii);
-   "elseif",          (fun ii -> T_ELSEIF ii);
-   "endif",           (fun ii -> T_ENDIF ii);
-   "break",           (fun ii -> T_BREAK ii);
-   "continue",        (fun ii -> T_CONTINUE ii);
-   "switch",          (fun ii -> T_SWITCH ii);
-   "endswitch",       (fun ii -> T_ENDSWITCH ii);
-   "case",            (fun ii -> T_CASE ii);
-   "default",         (fun ii -> T_DEFAULT ii);
+  "if",       (fun ii -> T_IF ii);     "else", (fun ii -> T_ELSE ii);
+  "elseif",   (fun ii -> T_ELSEIF ii); "endif",      (fun ii -> T_ENDIF ii);
+  "break",    (fun ii -> T_BREAK ii);  "continue",   (fun ii -> T_CONTINUE ii);
+  "switch",   (fun ii -> T_SWITCH ii); "endswitch",(fun ii -> T_ENDSWITCH ii);
+  "case",       (fun ii -> T_CASE ii); "default",    (fun ii -> T_DEFAULT ii);
 
-   "return",          (fun ii -> T_RETURN ii);
-   "try",             (fun ii -> T_TRY ii);
-   "catch",           (fun ii -> T_CATCH ii);
-   "throw",           (fun ii -> T_THROW ii);
+  "return",     (fun ii -> T_RETURN ii);
 
-   "exit",            (fun ii -> T_EXIT ii);
-   "die",             (fun ii -> T_EXIT ii);
+  "try",        (fun ii -> T_TRY ii); "catch",      (fun ii -> T_CATCH ii);
+  "throw",      (fun ii -> T_THROW ii);
 
-   "array",           (fun ii -> T_ARRAY ii);
-   "list",            (fun ii -> T_LIST ii);
+  "exit",       (fun ii -> T_EXIT ii); "die",        (fun ii -> T_EXIT ii);
 
-   "as",              (fun ii -> T_AS ii);
+  "array",      (fun ii -> T_ARRAY ii); "list",       (fun ii -> T_LIST ii);
+  "as",         (fun ii -> T_AS ii);
 
-   "include",         (fun ii -> T_INCLUDE ii);
-   "include_once",    (fun ii -> T_INCLUDE_ONCE ii);
-   "require",         (fun ii -> T_REQUIRE ii);
-   "require_once",    (fun ii -> T_REQUIRE_ONCE ii);
+  "include",(fun ii ->T_INCLUDE ii);"include_once",(fun ii ->T_INCLUDE_ONCE ii);
+  "require",(fun ii ->T_REQUIRE ii);"require_once",(fun ii ->T_REQUIRE_ONCE ii);
 
-   "use",             (fun ii -> T_USE ii);
+  "use",             (fun ii -> T_USE ii);
 
-   "class",           (fun ii -> T_CLASS ii);
-   "new",             (fun ii -> T_NEW ii);
-   "clone",           (fun ii -> T_CLONE ii);
-   "interface",       (fun ii -> T_INTERFACE ii);
-   "extends",         (fun ii -> T_EXTENDS ii);
-   "implements",      (fun ii -> T_IMPLEMENTS ii);
-   "instanceof",      (fun ii -> T_INSTANCEOF ii);
+  "class",           (fun ii -> T_CLASS ii);
+  "new",             (fun ii -> T_NEW ii);
+  "clone",           (fun ii -> T_CLONE ii);
+  "interface",       (fun ii -> T_INTERFACE ii);
+  "extends",         (fun ii -> T_EXTENDS ii);
+  "implements",      (fun ii -> T_IMPLEMENTS ii);
+  "instanceof",      (fun ii -> T_INSTANCEOF ii);
 
-   "abstract",        (fun ii -> T_ABSTRACT ii);
-   "final",           (fun ii -> T_FINAL ii);
+  "abstract", (fun ii -> T_ABSTRACT ii); "final", (fun ii -> T_FINAL ii);
 
-   "private",         (fun ii -> T_PRIVATE ii);
-   "protected",       (fun ii -> T_PROTECTED ii);
-   "public",          (fun ii -> T_PUBLIC ii);
+  "private",         (fun ii -> T_PRIVATE ii);
+  "protected",       (fun ii -> T_PROTECTED ii);
+  "public",          (fun ii -> T_PUBLIC ii);
 
-   "echo",            (fun ii -> T_ECHO ii);
-   "print",           (fun ii -> T_PRINT ii);
+  "echo",            (fun ii -> T_ECHO ii);
+  "print",           (fun ii -> T_PRINT ii);
 
-   "eval",            (fun ii -> T_EVAL ii);
+  "eval",            (fun ii -> T_EVAL ii);
 
-   "global",          (fun ii -> T_GLOBAL ii);
-   "function",        (fun ii -> T_FUNCTION ii);
-
-   "empty",           (fun ii -> T_EMPTY ii);
-
-   "const",           (fun ii -> T_CONST ii);
-
-   "var",             (fun ii -> T_VAR ii); (* was VARTOKEN *)
-
-   "declare",         (fun ii -> T_DECLARE ii);
-   "enddeclare",      (fun ii -> T_ENDDECLARE ii);
-   "static",          (fun ii -> T_STATIC ii);
-
-   "unset",           (fun ii -> T_UNSET ii);
-   "isset",           (fun ii -> T_ISSET ii);
+  "global",          (fun ii -> T_GLOBAL ii);
+  "function",        (fun ii -> T_FUNCTION ii);
+  "empty",           (fun ii -> T_EMPTY ii);
+  "const",           (fun ii -> T_CONST ii);
+  "var",             (fun ii -> T_VAR ii); (* was VARTOKEN *)
+  "declare", (fun ii -> T_DECLARE ii); "enddeclare",(fun ii ->T_ENDDECLARE ii);
+  "static",          (fun ii -> T_STATIC ii);
+  "unset",           (fun ii -> T_UNSET ii);
+  "isset",           (fun ii -> T_ISSET ii);
  (*e: repetitive keywords table *)
 
   "__halt_compiler", (fun ii -> T_HALT_COMPILER ii);
 
   "__class__",       (fun ii -> T_CLASS_C ii);
-  "__function__",    (fun ii -> T_FUNC_C ii);
-  "__method__",      (fun ii -> T_METHOD_C ii);
-  "__line__",        (fun ii -> T_LINE ii);
-  "__file__",        (fun ii -> T_FILE ii);
+  "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
+  "__line__",  (fun ii -> T_LINE ii); "__file__", (fun ii -> T_FILE ii);
 
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
@@ -231,6 +208,8 @@ let _ = assert ((Common.hkeys keyword_table) +>
                  List.for_all (fun s -> s = lowercase s))
 (*e: keywords_table hash *)
 
+(* ---------------------------------------------------------------------- *)
+(* Lexer State *)
 (* ---------------------------------------------------------------------- *)
 (*s: type state_mode *)
 (* In most languages the lexer has no state and all strings are always
@@ -401,6 +380,8 @@ let is_in_binary_operator_position last_tok =
 }
 
 (*****************************************************************************)
+(* Regexps aliases *)
+(*****************************************************************************)
 (*s: regexp aliases *)
 let ANY_CHAR = (_ | ['\n'] )
 (*x: regexp aliases *)
@@ -505,6 +486,8 @@ let XHPATTR = XHPLABEL
 (*e: regexp aliases *)
 
 
+(*****************************************************************************)
+(* Rule in script *)
 (*****************************************************************************)
 (*s: rule st_in_scripting *)
 rule st_in_scripting = parse
@@ -649,8 +632,8 @@ rule st_in_scripting = parse
           parse_info.Parse_info.charpos + String.length sym in
         let pos_after_white = pos_after_sym + String.length white in
 
-        let whiteinfo = tokinfo_str_pos white pos_after_sym in
-        let lblinfo = tokinfo_str_pos label pos_after_white in
+        let whiteinfo = Parse_info.tokinfo_str_pos white pos_after_sym in
+        let lblinfo = Parse_info.tokinfo_str_pos label pos_after_white in
         
         push_token (T_IDENT (label, lblinfo));
        (* todo: could be newline ... *)
@@ -968,6 +951,8 @@ rule st_in_scripting = parse
 (*e: rule st_in_scripting *)
 
 (*****************************************************************************)
+(* Rule initial (html) *)
+(*****************************************************************************)
 (*s: rule initial *)
 and initial = parse
 
@@ -1019,6 +1004,8 @@ and initial = parse
 
 (*e: rule initial *)
 
+(*****************************************************************************)
+(* Rule looking_for_xxx *)
 (*****************************************************************************)
 (*s: rule st_looking_for_property *)
 
@@ -1078,6 +1065,8 @@ and st_var_offset = parse
 (*e: rule st_var_offset *)
 
 (*****************************************************************************)
+(* Rule strings *)
+(*****************************************************************************)
 (*s: rule st_double_quotes *)
 
 and st_double_quotes = parse
@@ -1099,7 +1088,7 @@ and st_double_quotes = parse
           let charpos_info = Ast.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
-          let bra_info = tokinfo_str_pos "[" pos_after_label in
+          let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(s, varinfo)
@@ -1157,7 +1146,7 @@ and st_backquote = parse
           let charpos_info = Ast.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
-          let bra_info = tokinfo_str_pos "[" pos_after_label in
+          let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(s, varinfo)
@@ -1207,9 +1196,9 @@ and st_start_heredoc stopdoc = parse
       let pos_after_semi = pos_after_label + String.length semi in
 
       let colon_info = 
-        tokinfo_str_pos semi pos_after_label in
+        Parse_info.tokinfo_str_pos semi pos_after_label in
       let space_info = 
-        tokinfo_str_pos (string_of_char space) pos_after_semi in
+        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
       
       if s = stopdoc
       then begin
@@ -1234,7 +1223,7 @@ and st_start_heredoc stopdoc = parse
           let charpos_info = Ast.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
-          let bra_info = tokinfo_str_pos "[" pos_after_label in
+          let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(s, varinfo)
@@ -1274,11 +1263,11 @@ and st_start_heredoc stopdoc = parse
       let pos_after_semi = pos_after_label + String.length semi in
 
       let lbl_info = 
-        tokinfo_str_pos s pos_after_here in
+        Parse_info.tokinfo_str_pos s pos_after_here in
       let colon_info = 
-        tokinfo_str_pos semi pos_after_label in
+        Parse_info.tokinfo_str_pos semi pos_after_label in
       let space_info = 
-        tokinfo_str_pos (string_of_char space) pos_after_semi in
+        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
       
 
       if s = stopdoc 
@@ -1332,9 +1321,9 @@ and st_start_nowdoc stopdoc = parse
       let pos_after_semi = pos_after_label + String.length semi in
 
       let colon_info = 
-        tokinfo_str_pos semi pos_after_label in
+        Parse_info.tokinfo_str_pos semi pos_after_label in
       let space_info = 
-        tokinfo_str_pos (string_of_char space) pos_after_semi in
+        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
       
       if s = stopdoc
       then begin
@@ -1365,6 +1354,8 @@ and st_start_nowdoc stopdoc = parse
       
 (*e: rule st_start_heredoc *)
 
+(*****************************************************************************)
+(* Rules for XHP *)
 (*****************************************************************************)
 (* XHP lexing states and rules *) 
 
@@ -1462,6 +1453,8 @@ and st_in_xhp_text current_tag = parse
       TUnknown (tokinfo lexbuf)
     }
 
+(*****************************************************************************)
+(* Rule comment *)
 (*****************************************************************************)
 (*s: rule st_comment *)
 and st_comment = parse 
