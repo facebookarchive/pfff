@@ -56,6 +56,7 @@ open Common
 open Ast_php
 open Parser_php_mly_helper
 
+module Ast = Ast_php
 %}
 
 /*(*e: GRAMMAR prelude *)*/
@@ -85,21 +86,17 @@ open Parser_php_mly_helper
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(*s: GRAMMAR normal tokens *)*/
-%token <string * Ast_php.info> T_LNUMBER T_DNUMBER
-
-/*(* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
+%token <string * Ast_php.info> 
+ T_LNUMBER T_DNUMBER
+ /*(* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
    * Note that with XHP if you want to add a rule using T_IDENT, you should
    * probably use 'ident' instead.
    *)*/
-%token <string * Ast_php.info> T_IDENT T_VARIABLE
-
-%token <string * Ast_php.info> 
+ T_IDENT T_VARIABLE
  T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML
-
-/*(* used only for offset of array access inside strings *)*/
-%token <string * Ast_php.info> T_NUM_STRING
-
-%token <string * Ast_php.info> T_STRING_VARNAME
+ /*(* used only for offset of array access inside strings *)*/
+ T_NUM_STRING
+ T_STRING_VARNAME
 /*(*in original: %token <Ast_php.info> T_CHARACTER T_BAD_CHARACTER *)*/
 
 /*(*-----------------------------------------*)*/
@@ -257,7 +254,6 @@ open Parser_php_mly_helper
 %left T_XHP_PERCENTID_DEF
 
 /*(*e: GRAMMAR tokens priorities *)*/
-
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
@@ -291,12 +287,10 @@ top_statement:
      | Right x -> InterfaceDefNested x
    }
 /*(*e: GRAMMAR toplevel *)*/
-
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
  | statement EOF { Stmt2 $1 }
  | function_declaration_statement { Toplevel (FuncDef $1) }
-
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
@@ -342,11 +336,7 @@ unticked_statement:
      { While($1,($2,$3,$4),$5) }
  | T_DO statement T_WHILE TOPAR expr TCPAR TSEMICOLON 
      { Do($1,$2,$3,($4,$5,$6),$7) }
- | T_FOR TOPAR
-     for_expr TSEMICOLON 
-     for_expr TSEMICOLON 
-     for_expr 
-     TCPAR 
+ | T_FOR TOPAR for_expr TSEMICOLON  for_expr TSEMICOLON for_expr TCPAR
      for_statement 
      { For($1,$2,$3,$4,$5,$6,$7,$8,$9) }
 
@@ -369,15 +359,13 @@ unticked_statement:
 
  | T_RETURN TSEMICOLON		              { Return ($1,None, $2) }
  | T_RETURN expr_without_variable TSEMICOLON  { Return ($1,Some ($2), $3)}
- | T_RETURN variable TSEMICOLON		      { Return ($1,Some (mk_e (Lv $2)), $3)}
+ | T_RETURN variable TSEMICOLON      { Return ($1,Some (mk_e (Lv $2)), $3)}
 
- | T_TRY  
-     TOBRACE inner_statement_list TCBRACE
+ | T_TRY   TOBRACE inner_statement_list TCBRACE
    T_CATCH TOPAR fully_qualified_class_name  T_VARIABLE TCPAR 
      TOBRACE inner_statement_list TCBRACE 
      additional_catches 
-     { 
-       let try_block = ($2,$3,$4) in
+     { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
        let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
        Try($1, try_block, catch, $13)
@@ -404,7 +392,6 @@ unticked_statement:
 /*(*----------------------------*)*/
 /*(*2 auxillary statements *)*/
 /*(*----------------------------*)*/
-
 for_expr:
  | /*(*empty*)*/    	{ [] }
  | non_empty_for_expr	{ $1 }
@@ -414,7 +401,6 @@ foreach_optional_arg:
   | T_DOUBLE_ARROW foreach_variable	{ Some($1,$2) }
 
 foreach_variable: is_reference variable { ($1, $2) }
-
 
 switch_case_list:
  | TOBRACE            case_list TCBRACE  { CaseList($1,None,$2,$3) }
@@ -441,7 +427,6 @@ case_separator:
  | T_XHP_COLONID_DEF { failwith_xhp_ambiguity_colon (snd $1) }
 
 
-
 while_statement:
  | statement                                         { SingleStmt $1 }
  | TCOLON inner_statement_list T_ENDWHILE TSEMICOLON { ColonStmt($1,$2,$3,$4) }
@@ -457,7 +442,6 @@ foreach_statement:
 declare_statement:
  | statement                                           { SingleStmt $1 }
  | TCOLON inner_statement_list T_ENDDECLARE TSEMICOLON { ColonStmt($1,$2,$3,$4)}
-
 
 
 elseif_list:
@@ -480,11 +464,9 @@ new_else_single:
 
 
 additional_catch:
- | T_CATCH 
-     TOPAR fully_qualified_class_name T_VARIABLE TCPAR 
-     TOBRACE inner_statement_list TCBRACE 
-     { 
-       let catch_block = ($6, $7, $8) in
+ | T_CATCH TOPAR fully_qualified_class_name T_VARIABLE TCPAR 
+           TOBRACE inner_statement_list TCBRACE 
+     { let catch_block = ($6, $7, $8) in
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
        catch
      }
@@ -535,15 +517,8 @@ unticked_function_declaration_statement:
 
     if not !Flag_parsing_php.type_hints_extension && $7 <> None
     then raise Parsing.Parse_error;
-
-    ({
-      f_tok = $1;
-      f_ref = $2;
-      f_name = Name $3;
-      f_params = params;
-      f_return_type = $7;
-      f_body = body;
-      f_type = Ast_php.noFtype();
+    ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
+       f_return_type = $7;f_body = body; f_type = Ast.noFtype();
     })
   }
 /*(*x: GRAMMAR function declaration *)*/
@@ -577,7 +552,6 @@ non_empty_parameter_list:
         $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4; p_default = Some ($6, $7)}]
       }
 
-
  /*(*e: repetitive non_empty_parameter_list *)*/
 /*(*x: GRAMMAR function declaration *)*/
 optional_class_type:
@@ -605,8 +579,6 @@ lexical_var_list:
  | TAND T_VARIABLE			{ [Left (Some $1, DName $2)] }
  | lexical_var_list TCOMMA T_VARIABLE       { $1 ++ [Right $2; Left (None, DName $3)]  }
  | lexical_var_list TCOMMA TAND T_VARIABLE  { $1 ++ [Right $2; Left (Some $3, DName $4)] }
-
-
 /*(*e: GRAMMAR function declaration *)*/
 
 /*(*************************************************************************)*/
@@ -620,23 +592,14 @@ unticked_class_declaration_statement:
      extends_from implements_list
      TOBRACE  class_statement_list TCBRACE 
      { Left { 
-         c_type = $1;
-         c_name = $2;
-         c_extends = $3;
-         c_implements = $4;
-         c_body = $5, $6, $7;
+       c_type = $1; c_name = $2;c_extends = $3; 
+       c_implements = $4; c_body = $5, $6, $7;
        }
      }
  | interface_entry class_name
      interface_extends_list
      TOBRACE class_statement_list TCBRACE 
-     { Right {
-         i_tok = $1;
-         i_name = $2;
-         i_extends = $3;
-         i_body = $4, $5, $6;
-       }
-     }
+     { Right { i_tok = $1; i_name = $2; i_extends = $3; i_body = $4, $5, $6; } }
 /*(*x: GRAMMAR class declaration *)*/
 class_name: 
  | ident { Name $1 }
@@ -691,15 +654,9 @@ class_statement:
      { 
        if not !Flag_parsing_php.type_hints_extension && $8 <> None
        then raise Parsing.Parse_error;
-
        Method {
-         m_modifiers = $1;
-         m_tok = $2;
-         m_ref = $3;
-         m_name = Name $4;
-         m_params = ($5, $6, $7);
-         m_return_type = $8;
-         m_body = $9;
+         m_modifiers = $1; m_tok = $2; m_ref = $3; m_name = Name $4;
+         m_params = ($5, $6, $7); m_return_type = $8; m_body = $9;
        }
      }
 
@@ -709,7 +666,6 @@ class_statement:
      { XhpDecl (XhpChildrenDecl ($1, $2, $3)) }
  | T_XHP_CATEGORY xhp_category_list TSEMICOLON 
      { XhpDecl (XhpCategoriesDecl ($1, $2, $3)) }
-
 
 /*(*x: GRAMMAR class declaration *)*/
 class_constant_declaration:
@@ -737,15 +693,10 @@ class_variable_declaration:
  /*(*e: repetitive class_variable_declaration with comma *)*/
 /*(*x: GRAMMAR class declaration *)*/
 member_modifier:
- | T_PUBLIC				{ Public,($1) }
- | T_PROTECTED				{ Protected,($1) }
- | T_PRIVATE				{ Private,($1) }
-
- | T_STATIC				{ Static,($1) }
-
- | T_ABSTRACT				{ Abstract,($1) }
- | T_FINAL				{ Final,($1) }
-
+ | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
+ | T_PRIVATE   { Private,($1) }
+ | T_STATIC    { Static,($1) }
+ | T_ABSTRACT { Abstract,($1) } | T_FINAL{ Final,($1) }
 
 method_body:
  | TSEMICOLON                   	{ AbstractMethod $1 }
@@ -761,7 +712,7 @@ xhp_attribute_decl:
      { XhpAttrInherit $1 }
  | xhp_attribute_decl_type xhp_attr_name xhp_attribute_default
      xhp_attribute_is_required 
-     { XhpAttrDecl ($1, ((Ast_php.str_of_info $2, $2)), $3, $4) }
+     { XhpAttrDecl ($1, ((Ast.str_of_info $2, $2)), $3, $4) }
 
 /*(* In the original grammar each types, e.g. float/string/bool/... 
    * had their special token. I abuse T_IDENT here, except for 
@@ -769,8 +720,8 @@ xhp_attribute_decl:
    *)*/
 xhp_attribute_decl_type:
  | class_name   { XhpAttrType $1 }
- | T_VAR        { XhpAttrType (Name (Ast_php.str_of_info $1, $1)) }
- | T_ARRAY      { XhpAttrType (Name (Ast_php.str_of_info $1, $1)) }
+ | T_VAR        { XhpAttrType (Name (Ast.str_of_info $1, $1)) }
+ | T_ARRAY      { XhpAttrType (Name (Ast.str_of_info $1, $1)) }
  | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE 
      { XhpAttrEnum ($1, ($2, $3, $4)) }
 
@@ -796,11 +747,8 @@ xhp_attr_name:
     * tokens.
     *)*/
  | xhp_attr_name TMINUS xhp_attr_name_atom 
-     { 
-       let s = Ast_php.str_of_info $1 ^ 
-         Ast_php.str_of_info $2 ^ Ast_php.str_of_info $3
-       in
-       Ast_php.rewrap_str s $1
+     { let s = Ast.str_of_info $1 ^  Ast.str_of_info $2 ^ Ast.str_of_info $3 in
+       Ast.rewrap_str s $1
      }
 
 xhp_attr_name_atom:
@@ -883,10 +831,7 @@ xhp_children_decl_tag:
 xhp_category:
  | T_XHP_PERCENTID_DEF { $1 }
 
-
-
 /*(*e: GRAMMAR class declaration *)*/
-
 /*(*************************************************************************)*/
 /*(*1 Expressions (and variables) *)*/
 /*(*************************************************************************)*/
@@ -920,7 +865,7 @@ expr_without_variable:
     *)*/
   | expr TOBRA dim_offset TCBRA
    { 
-     match Ast_php.untype $1 with
+     match Ast.untype $1 with
      (* Lv corresponds to Lvalue which includes function calls so 
       * foo()[1] will be translated into a 
       * VArrayAccess(FunCallSimple(...), 1).
@@ -1065,16 +1010,10 @@ expr_without_variable_bis:
  /*(* PHP 5.3 *)*/
  | T_FUNCTION is_reference TOPAR parameter_list TCPAR lexical_vars 
    TOBRACE inner_statement_list TCBRACE 
-     { 
-       let params = ($3, $4, $5) in
+     { let params = ($3, $4, $5) in
        let body = ($7, $8, $9) in
-
        let ldef = {
-         l_tok = $1;
-         l_ref = $2;
-         l_params = params;
-         l_use = $6;
-         l_body = body;
+         l_tok = $1; l_ref = $2; l_params = params; l_use = $6; l_body = body;
        }
        in
        Lambda ldef
@@ -1084,7 +1023,6 @@ expr_without_variable_bis:
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
 
  | internal_functions_in_yacc { $1 }
-
 
  /*(*s: exprbis grammar rule hook *)*/
  /*(* sgrep_ext: *)*/
@@ -1146,18 +1084,15 @@ static_scalar: /* compile-time evaluated scalars */
  /*(*e: static_scalar grammar rule hook *)*/
 
 
-
 common_scalar:
  | T_LNUMBER 			{ Int($1) }
  | T_DNUMBER 			{ Double($1) }
 
  | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
 
- | T_LINE 			{ PreProcess(Line, $1) }
- | T_FILE 			{ PreProcess(File, $1) }
- | T_CLASS_C			{ PreProcess(ClassC, $1) }
- | T_METHOD_C			{ PreProcess(MethodC, $1) }
- | T_FUNC_C			{ PreProcess(FunctionC, $1) }
+ | T_LINE    { PreProcess(Line, $1) }   | T_FILE { PreProcess(File, $1) }
+ | T_CLASS_C { PreProcess(ClassC, $1) } | T_METHOD_C { PreProcess(MethodC, $1) }
+ | T_FUNC_C  { PreProcess(FunctionC, $1) }
 
  /*(*s: common_scalar grammar rule hook *)*/
   | T_CLASS_XDEBUG class_name TOBRACE class_statement_list TCBRACE { 
@@ -1165,14 +1100,11 @@ common_scalar:
     }
   | T_CLASS_XDEBUG class_name TOBRACE TDOTS TCBRACE { 
       XdebugClass ($2, [])
-
     }
   | T_CLASS_XDEBUG class_name TOBRACE TDOTS TSEMICOLON TCBRACE { 
       XdebugClass ($2, [])
     }
-  | T_RESOURCE_XDEBUG  { 
-      XdebugResource
-    }
+  | T_RESOURCE_XDEBUG  { XdebugResource }
  /*(*e: common_scalar grammar rule hook *)*/
 
 class_constant: qualifier ident { $1, (Name $2) }
@@ -1222,7 +1154,7 @@ base_variable_with_function_calls:
  | function_call {  $1 }
 
 base_variable:
- |            variable_without_objects                       
+ |             variable_without_objects                       
      { None,    $1 }
  | qualifier  variable_without_objects /*(*static_member*)*/ 
      { Some (Left $1), $2 }
@@ -1249,7 +1181,7 @@ reference_variable:
  | reference_variable TOBRACE expr TCBRACE    { VBraceAccess2($1, ($2,$3,$4)) }
 
 compound_variable:
- | T_VARIABLE			{ Var2 (DName $1, Ast_php.noScope()) }
+ | T_VARIABLE			{ Var2 (DName $1, Ast.noScope()) }
  | TDOLLAR TOBRACE expr TCBRACE	{ VDollar2 ($1, ($2, $3, $4)) }
 
 /*(*x: GRAMMAR variable *)*/
@@ -1396,13 +1328,13 @@ ident:
    * 
    * todo? emit a warning when the user use XHP keywords for regular idents ?
    *)*/
- | T_XHP_ATTRIBUTE { Ast_php.str_of_info $1, $1 }
- | T_XHP_CATEGORY  { Ast_php.str_of_info $1, $1 }
- | T_XHP_CHILDREN  { Ast_php.str_of_info $1, $1 }
+ | T_XHP_ATTRIBUTE { Ast.str_of_info $1, $1 }
+ | T_XHP_CATEGORY  { Ast.str_of_info $1, $1 }
+ | T_XHP_CHILDREN  { Ast.str_of_info $1, $1 }
 
- | T_XHP_ENUM  { Ast_php.str_of_info $1, $1 }
- | T_XHP_ANY  { Ast_php.str_of_info $1, $1 }
- | T_XHP_PCDATA  { Ast_php.str_of_info $1, $1 }
+ | T_XHP_ENUM  { Ast.str_of_info $1, $1 }
+ | T_XHP_ANY  { Ast.str_of_info $1, $1 }
+ | T_XHP_PCDATA  { Ast.str_of_info $1, $1 }
 
 qualifier: class_name_or_selfparent TCOLCOL { $1, $2 }
 
@@ -1472,7 +1404,6 @@ variable_name:
  | TOBRACE expr TCBRACE	{ OBrace ($1,$2,$3) }
 
 
-
 variable_property: T_OBJECT_OPERATOR object_property method_or_not
   { $1, $2, $3 }
 
@@ -1480,39 +1411,32 @@ dynamic_class_name_variable_property: T_OBJECT_OPERATOR object_property
   { $1, $2 }
 
 /*(*e: GRAMMAR class bis *)*/
-
 /*(*************************************************************************)*/
 /*(*1 Encaps *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR encaps *)*/
 encaps:
  | T_ENCAPSED_AND_WHITESPACE { EncapsString $1 }
-
  | T_VARIABLE                                   
-     { 
-       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+     { let refvar = (Var2 (DName $1, Ast.noScope())) in
        let basevar = None, ([], refvar) in
        let basevarbis = BaseVar basevar in
        let var = Variable (basevarbis, []) in
        EncapsVar (variable2_to_lvalue var)
      }
  | T_VARIABLE TOBRA encaps_var_offset TCBRA	
-     { 
-       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+     { let refvar = (Var2 (DName $1, Ast.noScope())) in
        let dimoffset = Some (mk_e $3) in
        let refvar = VArrayAccess2(refvar, ($2, dimoffset, $4)) in
-       
        let basevar = None, ([], refvar) in
        let basevarbis = BaseVar basevar in
        let var = Variable (basevarbis, []) in
        EncapsVar (variable2_to_lvalue var)
      }
  | T_VARIABLE T_OBJECT_OPERATOR T_IDENT        
-     { 
-       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+     { let refvar = (Var2 (DName $1, Ast.noScope())) in
        let basevar = None, ([], refvar) in
        let basevarbis = BaseVar basevar in
-
        let prop_string = ObjProp (OName (Name $1)) in
        let obj_prop = ($2, prop_string, None) in
        let var = Variable (basevarbis, [obj_prop]) in
@@ -1531,7 +1455,7 @@ encaps:
        (* this is not really a T_VARIABLE, bit it's still conceptually
         * a variable so we build it almost like above
         *)
-       let refvar = (Var2 (DName $2, Ast_php.noScope())) in
+       let refvar = (Var2 (DName $2, Ast.noScope())) in
        let basevar = None, ([], refvar) in
        let basevarbis = BaseVar basevar in
        let var = Variable (basevarbis, []) in
@@ -1539,8 +1463,7 @@ encaps:
      }
 
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE 
-     {  
-       let refvar = (Var2 (DName $2, Ast_php.noScope())) in
+     { let refvar = (Var2 (DName $2, Ast.noScope())) in
        let dimoffset = Some ($4) in
        let refvar = VArrayAccess2(refvar, ($3, dimoffset, $5)) in
        
@@ -1551,12 +1474,9 @@ encaps:
      }
 
  /*(* for {$beer}s *)*/
- | T_CURLY_OPEN variable TCBRACE 
-     { EncapsCurly($1, $2, $3) }
-
+ | T_CURLY_OPEN variable TCBRACE           { EncapsCurly($1, $2, $3) }
  /*(* for ? *)*/
- | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE      
-     { EncapsExpr ($1, $2, $3) }
+ | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE { EncapsExpr ($1, $2, $3) }
 /*(*x: GRAMMAR encaps *)*/
 encaps_var_offset:
  | T_IDENT	{ 
@@ -1570,7 +1490,7 @@ encaps_var_offset:
      Sc (C cst)
    }
  | T_VARIABLE	{ 
-       let refvar = (Var2 (DName $1, Ast_php.noScope())) in
+       let refvar = (Var2 (DName $1, Ast.noScope())) in
        let basevar = None, ([], refvar) in
        let basevarbis = BaseVar basevar in
        let var = Variable (basevarbis, []) in
@@ -1584,10 +1504,7 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
-
-
 /*(*e: GRAMMAR encaps *)*/
-
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
@@ -1597,7 +1514,6 @@ top_statement_list:
  | /*(*empty*)*/ { [] }
 
 /*(*s: repetitive xxx_list *)*/
-
 inner_statement_list:
  | inner_statement_list  inner_statement { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
@@ -1627,9 +1543,7 @@ xhp_children:
  | xhp_children xhp_child { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
 
-
 /*(*e: repetitive xxx_list *)*/
-
 
 additional_catches:
  | non_empty_additional_catches { $1 }
@@ -1640,7 +1554,6 @@ non_empty_additional_catches:
  | non_empty_additional_catches additional_catch { $1 ++ [$2] }
 
 /*(*s: repetitive xxx and non_empty_xxx *)*/
-
 method_modifiers:
  | /*(*empty*)*/				{ [] }
  | non_empty_member_modifiers			{ $1 } 
@@ -1658,7 +1571,6 @@ function_call_parameter_list:
  | non_empty_function_call_parameter_list      { $1 }
  | /*(*empty*)*/			       { [] }
 /*(*e: repetitive xxx and non_empty_xxx *)*/
-
 
 unset_variables:
  | unset_variable { [Left $1] }
@@ -1705,9 +1617,7 @@ xhp_category_list:
  | xhp_category { [Left $1] }
  | xhp_category_list TCOMMA xhp_category { $1 ++ [Right $2; Left $3] }
 
-
 /*(*e: repetitive xxx_list with TCOMMA *)*/
-
 possible_comma:
  | /*(*empty*)*/ { [] }
  | TCOMMA        { [Right $1] }

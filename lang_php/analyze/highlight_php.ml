@@ -965,10 +965,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | T.T_YIELD ii -> tag ii Keyword
 
-
-      | T.T_BAD_CHARACTER ii -> tag ii Error
-      | T.T_CHARACTER ii -> tag ii String
-
       (* should have been handled in field *)
       | T.T_STRING_VARNAME ii -> ()
 
