@@ -173,11 +173,11 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TColCol 
 
 /*(* fresh_token: for constructed object *)*/
-%token <Ast_cpp.info> TOParCplusplusInit
+%token <Ast_cpp.info> TOPar_CplusplusInit
 /*(* fresh_token: for template *)*/
-%token <Ast_cpp.info> TInf2 TSup2
+%token <Ast_cpp.info> TInf_Template TSup_Template
 /*(* fresh_token: for new[] delete[] *)*/
-%token <Ast_cpp.info> TOCro2 TCCro2
+%token <Ast_cpp.info> TOCro_new TCCro_new
 /*(* fresh_token: for pure virtual method *)*/
 %token <Ast_cpp.info> TIntZeroVirtual
 
@@ -382,8 +382,8 @@ operator_kind:
  | Tnew    { AllocOp NewOp,    [$1] } 
  | Tdelete { AllocOp DeleteOp, [$1] }
  /*(*new[] delete[] (tripple tokens) *)*/
- | Tnew TOCro2 TCCro2    { AllocOp NewArrayOp,    [$1;$2;$3] }
- | Tdelete TOCro2 TCCro2 { AllocOp DeleteArrayOp, [$1;$2;$3] }
+ | Tnew TOCro_new TCCro_new    { AllocOp NewArrayOp,    [$1;$2;$3] }
+ | Tdelete TOCro_new TCCro_new { AllocOp DeleteArrayOp, [$1;$2;$3] }
 
 
 tcolcol_opt:
@@ -655,7 +655,7 @@ new_expr:
 delete_expr:
  | tcolcol_opt Tdelete cast_expr 
      { mk_e (Delete ($3, $1)) [$2] }
- | tcolcol_opt Tdelete TOCro2 TCCro2 cast_expr 
+ | tcolcol_opt Tdelete TOCro_new TCCro_new cast_expr 
      { mk_e (DeleteArray ($5, $1)) [$2;$3;$4] }
 
 new_placement: 
@@ -1374,12 +1374,12 @@ init_declarator2:
  | declaratori                  { ($1, None) }
  | declaratori teq initialize   { ($1, Some ($3, $2)) }
 
- /*(* c++ext: c++ initializer via call to constructor. note that this
+ /*(* c++ext: c++ initializer via call to constructor. Note that this
     * is different from TypedefIdent2, here the declaratori is an ident,
-    * not the constructorname hence the need for a TOParCplusplusInit
+    * not the constructorname hence the need for a TOPar_CplusplusInit
     * TODOAST
     *)*/
- | declaratori TOParCplusplusInit argument_list_opt TCPar { ($1, None) }
+ | declaratori TOPar_CplusplusInit argument_list_opt TCPar { ($1, None) }
 
 
 /*(*----------------------------*)*/
@@ -1826,7 +1826,7 @@ template_declaration:
    { ($3, $5), [$1;$2;$4] (* todo ++ some_to_list $1*) }
 
 explicit_specialization:
- | Ttemplate TInf2 TSup2 declaration 
+ | Ttemplate TInf_Template TSup_Template declaration 
      { TemplateSpecialization $4,[$1;$2;$3]}
 
 /*(*todo: '| type_paramter' 
@@ -2008,8 +2008,8 @@ tcbrace_ini: TCBrace { LP.pop_context (); $1 }
 tcbrace_struct: TCBrace { LP.pop_context (); $1 }
 
 /*(*todo? put some et() dt() ? *)*/
-tinf_template: TInf2 { LP.push_context LP.InTemplateParam; $1 }
-tsup_template: TSup2 { LP.pop_context(); $1 }
+tinf_template: TInf_Template { LP.push_context LP.InTemplateParam; $1 }
+tsup_template: TSup_Template { LP.pop_context(); $1 }
 
 topar: TOPar 
      { LP.new_scope ();et "topar" (); 

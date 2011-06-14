@@ -257,30 +257,24 @@ let lookahead2 next before =
   match (next, before) with
 
   (* c++ext: constructed objects part2 *)
+
   (* > xx(   and in function *)
-  | TOPar i1::_,           TIdent(s,i2)::TSup2 _::_ 
-      when (LP.current_context () = (LP.InFunction)) -> 
-        pr2_cplusplus("constructed_object: "  ^s);
-        TOParCplusplusInit i1    
+  | TOPar i1::_,           TIdent(s,i2)::TSup_Template _::_ 
+    when (LP.current_context () = (LP.InFunction)) -> 
+      fresh_tok (TOPar_CplusplusInit i1)
 
   (* yy xx(   and in function. The TIdent_Typedef here comes from
    * a rewriting done in parsing_hacks_cpp.ml.
    * todo? enough?
    *)
   | TOPar i1::_,              TIdent(s,i2)::TIdent_Typedef _::_ 
-      when (LP.current_context () = (LP.InFunction)) -> 
-        pr2_cplusplus("constructed_object: "  ^s);
-        TOParCplusplusInit i1    
+    when (LP.current_context () = (LP.InFunction)) -> 
+      fresh_tok (TOPar_CplusplusInit i1)
 
   (* int xx( and in function, problably not a internal declaration *)
   | TOPar i1::_,   TIdent(s,i2)::t1::_ 
-      when (LP.current_context () = (LP.InFunction)) &&
-        TH.is_basic_type t1
-        -> 
-        pr2_cplusplus("constructed_object: "  ^s);
-        TOParCplusplusInit i1    
-        
-
+    when (LP.current_context () = (LP.InFunction)) && TH.is_basic_type t1 -> 
+      fresh_tok (TOPar_CplusplusInit i1)
 
   (* c++ext: for cast_function_expression and constructed expression.
    * Can only match cast_function_expression ? can also match destructor ...
@@ -293,12 +287,11 @@ let lookahead2 next before =
    * new xxx(...)
    * new (placement_opt) xxx(...)
    *)
-  | (TIdent_Typedef(s,i1))::TOPar _::_ , ((Ttypedef _|Tnew _ |TCPar _)::_) 
-      ->
+  | (TIdent_Typedef(s,i1))::TOPar _::_ , ((Ttypedef _|Tnew _ |TCPar _)::_) ->
       TIdent_Typedef(s,i1)
 
   | tok::TOPar _::_ , ((Ttypedef _|Tnew _ |TCPar _)::_) 
-     when TH.is_basic_type tok  ->
+    when TH.is_basic_type tok ->
       tok
 
   (* addon: inline XXX() *)
@@ -320,8 +313,7 @@ let lookahead2 next before =
 
   (* basic type can now also be used as "cast_function/constructor" *)
   | (Tchar(i1))::TOPar _::_ , _  
-      when (LP.current_context() <> LP.InParameter)
-        ->
+    when (LP.current_context() <> LP.InParameter) ->
       pr2_cplusplus("cast_function_typedef: "  ^"char");
       Tchar2(i1)
   | (Tint(i1))::TOPar _::_ , _   
@@ -364,11 +356,11 @@ let lookahead2 next before =
       fresh_tok (TIdent_Typedef(s, i1))
 
   (* template<xxx  on xxx *)
-  | TIdent(s,i1)::_,      TInf2 _::_ ->
+  | TIdent(s,i1)::_,      TInf_Template _::_ ->
       fresh_tok (TIdent_Typedef(s, i1))
 
   (* template<xxx, yyy  on yyy *)
-  | TIdent(s,i1)::_,      TComma _::TIdent_Typedef(_)::TInf2 _::_ -> 
+  | TIdent(s,i1)::_,      TComma _::TIdent_Typedef(_)::TInf_Template _::_ -> 
       fresh_tok (TIdent_Typedef(s, i1))
 
   (*-------------------------------------------------------------*)

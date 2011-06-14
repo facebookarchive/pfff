@@ -67,7 +67,7 @@ let is_pp_instruction = function
 
 
 let is_opar = function
-  | TOPar _ | TOPar_Define _ | TOParCplusplusInit _ -> true
+  | TOPar _ | TOPar_Define _ | TOPar_CplusplusInit _ -> true
   | _ -> false
 
 let is_cpar = function
@@ -286,7 +286,7 @@ let info_of_tok = function
   | TIfdefVersion           (b, i) -> i
 
   | TOPar                (i) -> i
-  | TOParCplusplusInit                (i) -> i
+  | TOPar_CplusplusInit                (i) -> i
   | TCPar                (i) -> i
   | TOBrace              (i) -> i
   | TCBrace              (i) -> i
@@ -421,11 +421,11 @@ let info_of_tok = function
   | TtemplatenameQ  (s, i) -> i
   | TtemplatenameQ2  (s, i) -> i
 
-  | TInf2                 (i) -> i
-  | TSup2                 (i) -> i
+  | TInf_Template                 (i) -> i
+  | TSup_Template                 (i) -> i
 
-  | TOCro2                 (i) -> i
-  | TCCro2                 (i) -> i
+  | TOCro_new                 (i) -> i
+  | TCCro_new                (i) -> i
 
   | TIntZeroVirtual        (i) -> i
 
@@ -505,7 +505,7 @@ let visitor_info_of_tok f = function
   | TIfdefVersion        (b, i) -> TIfdefVersion     (b, f i) 
 
   | TOPar                (i) -> TOPar                (f i) 
-  | TOParCplusplusInit                (i) -> TOParCplusplusInit     (f i) 
+  | TOPar_CplusplusInit                (i) -> TOPar_CplusplusInit     (f i) 
   | TCPar                (i) -> TCPar                (f i) 
   | TOBrace              (i) -> TOBrace              (f i) 
   | TCBrace              (i) -> TCBrace              (f i) 
@@ -643,11 +643,11 @@ let visitor_info_of_tok f = function
   | TtemplatenameQ  (s, i) -> TtemplatenameQ  (s, f i) 
   | TtemplatenameQ2  (s, i) -> TtemplatenameQ2  (s, f i) 
 
-  | TInf2                 (i) -> TInf2                 (f i) 
-  | TSup2                 (i) -> TSup2                 (f i) 
+  | TInf_Template                 (i) -> TInf_Template                 (f i) 
+  | TSup_Template                 (i) -> TSup_Template                 (f i) 
 
-  | TOCro2                 (i) -> TOCro2                 (f i) 
-  | TCCro2                 (i) -> TCCro2                 (f i) 
+  | TOCro_new                 (i) -> TOCro_new                 (f i) 
+  | TCCro_new                 (i) -> TCCro_new                 (f i) 
 
 
   | TIntZeroVirtual (i) -> TIntZeroVirtual (f i)

@@ -517,14 +517,14 @@ let visit_toplevel
     | T.Tclassname _
     | T.TIntZeroVirtual _
 
-    | T.TCCro2 _
-    | T.TOCro2 _
-    | T.TSup2 _
-    | T.TInf2 _
-    | T.TOParCplusplusInit _
+    | T.TCCro_new _
+    | T.TOCro_new _
+    | T.TSup_Template _
+    | T.TInf_Template _
+    | T.TOPar_CplusplusInit _
 
-    | T.TAction _
-    | T.TCParEOL _
+    | T.TAny_Action _
+    | T.TCPar_EOL _
 
     | T.TIdent_MacroIterator _
     | T.Tconst_MacroDeclConst _

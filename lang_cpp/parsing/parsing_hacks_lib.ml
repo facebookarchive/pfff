@@ -70,6 +70,18 @@ let pr2_cplusplus s =
 let msg_change_tok tok =
   match tok with
 
+  | TIdent_Define (s, ii) ->
+      ()
+  | TOPar_Define (ii) ->
+      ()
+  | TCommentNewline_DefineEndOfMacro _ ->
+      ()
+
+  | TInclude_Start ii -> 
+      ()
+  | TInclude_Filename ii -> 
+      ()
+
   | TIdent_Typedef (s, ii) ->
       (* todo? also do LP.add_typedef_root s ??? *)
       s +> msg_gen (!Flag.debug_typedef) (fun s ->
@@ -85,6 +97,8 @@ let msg_change_tok tok =
         | _                             -> false 
       ) 
       (fun s -> pr2_pp (spf "TYPEDEF: promoting %s at %s " s (pos ii)))
+
+  (* cppext: *)
 
   | TComment_Cpp (directive, ii) ->
       let s = Ast.str_of_info ii in
@@ -106,13 +120,6 @@ let msg_change_tok tok =
           (* todo? *)
           ()
       )
-
-  | TIdent_Define (s, ii) ->
-      ()
-  | TOPar_Define (ii) ->
-      ()
-  | TCommentNewline_DefineEndOfMacro _ ->
-      ()
 
   | TOBrace_DefineInit ii ->
       pr2_pp (spf "DEFINE: initializer at %s" (pos ii))
@@ -160,6 +167,15 @@ let msg_change_tok tok =
   | TCPar_EOL ii ->
       pr2_pp (spf "MISC: retagging ) %s" (pos ii))
 
+  (* c++ext: *)
+  | TOPar_CplusplusInit ii ->
+      pr2_cplusplus (spf "constructor initializer at %s" (pos ii))
+
+  | TOCro_new ii | TCCro_new ii ->
+      pr2_cplusplus (spf "new [] at %s" (pos ii))
+
+  | TInf_Template ii | TSup_Template ii ->
+      pr2_cplusplus (spf "<> at %s" (pos ii))
 
   | _ -> raise Todo
 
