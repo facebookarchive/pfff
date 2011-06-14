@@ -497,14 +497,14 @@ let visit_toplevel
     | T.TIdent (_, ii) ->
         ()
 
-    | T.Tbool2 ii
-    | T.Tlong2 ii
-    | T.Tshort2 ii
-    | T.Twchar_t2 ii
-    | T.Tdouble2 ii
-    | T.Tfloat2 ii
-    | T.Tint2 ii
-    | T.Tchar2 ii
+    | T.Tbool_Constr ii
+    | T.Tlong_Constr ii
+    | T.Tshort_Constr ii
+    | T.Twchar_t_Constr ii
+    | T.Tdouble_Constr ii
+    | T.Tfloat_Constr ii
+    | T.Tint_Constr ii
+    | T.Tchar_Constr ii
         -> tag ii TypeInt
 
 
