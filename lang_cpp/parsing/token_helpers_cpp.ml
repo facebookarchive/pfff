@@ -31,7 +31,7 @@ let is_just_comment = function
 let is_comment = function
   | TCommentSpace _ | TCommentNewline _
   | TComment _    
-  | TCommentCpp _ 
+  | TComment_Cpp _ 
       -> true
   | _ -> false
 
@@ -42,7 +42,7 @@ let is_real_comment = function
   | _ -> false
 
 let is_fake_comment = function
-  | TCommentCpp _ -> true
+  | TComment_Cpp _ -> true
   | _ -> false
 
 let is_not_comment x = 
@@ -273,7 +273,7 @@ let info_of_tok = function
 
   | TComment             (i) -> i
   | TCommentSpace        (i) -> i
-  | TCommentCpp          (cppkind, i) -> i
+  | TComment_Cpp          (cppkind, i) -> i
   | TCommentNewline        (i) -> i
 
   | TIfdef               (i) -> i
@@ -491,7 +491,7 @@ let visitor_info_of_tok f = function
 
   | TComment             (i) -> TComment             (f i) 
   | TCommentSpace        (i) -> TCommentSpace        (f i) 
-  | TCommentCpp          (cppkind, i) -> TCommentCpp          (cppkind, f i) 
+  | TComment_Cpp          (cppkind, i) -> TComment_Cpp          (cppkind, f i) 
   | TCommentNewline         (i) -> TCommentNewline         (f i) 
 
   | TIfdef               (i) -> TIfdef               (f i) 

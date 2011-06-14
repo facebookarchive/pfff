@@ -116,17 +116,6 @@ type body_function_grouped =
 (* Helpers *)
 (*****************************************************************************)
 
-let set_as_comment cppkind x = 
-  (* normally the caller have first filtered the set of tokens to have
-   * a clearer "view" to work on
-   *)
-  assert(not (TH.is_real_comment x.tok));
-
-  if TH.is_eof x.tok 
-  then () (* otherwise parse_c will be lost if don't find a EOF token *)
-  else 
-    x.tok <- TCommentCpp (cppkind, TH.info_of_tok x.tok)
-
 let mk_token_extended x = 
   let (line, col) = TH.linecol_of_tok x in
   { tok = x; 

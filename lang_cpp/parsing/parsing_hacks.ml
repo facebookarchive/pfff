@@ -701,36 +701,23 @@ let lookahead2 next before =
   (*-------------------------------------------------------------*)
   | ((TIfdef ii |TIfdefelse ii |TIfdefelif ii |TEndif ii |
       TIfdefBool (_,ii)|TIfdefMisc(_,ii)|TIfdefVersion(_,ii))
-        as x)
-    ::_, _ 
-      -> 
+        as x) ::_, _  -> 
+
       if not !Flag.ifdef_to_if 
-      then TCommentCpp (Token_cpp.CppDirective, ii)
+      then fresh_tok (TComment_Cpp (Token_cpp.CppDirective, ii))
       else 
         if not (LP.current_context () = LP.InTopLevel)
         then x
-        else begin
-          pr2_pp("IFDEF: or related outside function. I treat it as comment");
-          TCommentCpp (Token_cpp.CppDirective, ii)
-        end
+        else fresh_tok (TComment_Cpp (Token_cpp.CppDirective, ii))
 
+  | (TUndef (id, ii) as x)::_, _ -> 
+      if (pass >= 2)
+      then fresh_tok (TComment_Cpp (Token_cpp.CppDirective, ii))
+      else x
 
-  | (TUndef (id, ii) as x)::_, _ 
-      -> 
+  | (TCppDirectiveOther (ii) as x)::_, _ -> 
         if (pass >= 2)
-        then begin
-          pr2_pp("UNDEF: I treat it as comment");
-          TCommentCpp (Token_cpp.CppDirective, ii)
-        end
-        else x
-
-  | (TCppDirectiveOther (ii) as x)::_, _ 
-      -> 
-        if (pass >= 2)
-        then begin
-          pr2_pp ("OTHER directive: I treat it as comment");
-          TCommentCpp (Token_cpp.CppDirective, ii)
-        end
+        then fresh_tok (TComment_Cpp (Token_cpp.CppDirective, ii))
         else x
 
    (* If ident contain a for_each, then certainly a macro. But to be

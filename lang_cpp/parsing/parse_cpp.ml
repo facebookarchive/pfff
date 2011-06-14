@@ -27,6 +27,8 @@ module Semantic = Semantic_cpp
 module PI = Parse_info
 module Stat = Statistics_parsing
 
+module Hack = Parsing_hacks_lib
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -110,7 +112,7 @@ let print_bad line_error (start_line, end_line) filelines  =
 (*****************************************************************************)
 
 let commentized xs = xs +> Common.map_filter (function
-  | Parser.TCommentCpp (cppkind, ii) -> 
+  | Parser.TComment_Cpp (cppkind, ii) -> 
       if !Flag.filter_classic_passed
       then 
         (match cppkind with
@@ -376,8 +378,9 @@ let rec lexer_function tr = fun lexbuf ->
       | Parser.TDefine (tok) -> 
           if not (LP.current_context () = LP.InTopLevel) 
           then begin
-            pr2 ("CPP-DEFINE: inside function, I treat it as comment");
-            let v' = Parser.TCommentCpp (Token_cpp.CppDirective,TH.info_of_tok v)
+            let v' = 
+              Hack.fresh_tok 
+                (Parser.TComment_Cpp (Token_cpp.CppDirective,TH.info_of_tok v))
             in
             tr.passed <- v'::tr.passed;
             tr.rest       <- Parsing_hacks_define.comment_until_defeol tr.rest;
@@ -393,8 +396,10 @@ let rec lexer_function tr = fun lexbuf ->
       | Parser.TInclude (includes, filename, inifdef, info) -> 
           if not (LP.current_context () = LP.InTopLevel) 
           then begin
-            pr2 ("CPP-INCLUDE: inside function, I treat it as comment");
-            let v = Parser.TCommentCpp(Token_cpp.CppDirective, info) in
+            let v = 
+              Hack.fresh_tok
+                (Parser.TComment_Cpp (Token_cpp.CppDirective, info))
+            in
             tr.passed <- v::tr.passed;
             lexer_function tr lexbuf
           end
@@ -430,7 +435,7 @@ let rec lexer_function tr = fun lexbuf ->
            * consider it as a comment, for instance some #include are
            * turned into comments, hence this code. *)
           match v with
-          | Parser.TCommentCpp _ -> lexer_function tr lexbuf
+          | Parser.TComment_Cpp _ -> lexer_function tr lexbuf
           | v -> 
               tr.passed_clean <- v::tr.passed_clean;
 

@@ -15,10 +15,11 @@
 
 open Common
 
+module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
 module Parser = Parser_cpp
-module Ast = Ast_cpp
+module Hack = Parsing_hacks_lib
 
 open Parser_cpp
 open Token_views_cpp
@@ -27,7 +28,8 @@ open Token_views_cpp
 (* Prelude *)
 (*****************************************************************************)
 
-(* cpp functions working at the token level. Cf cpp_ast_c for cpp functions
+(* 
+ * CPP functions working at the token level. See cpp_ast_c for cpp functions
  * working at the AST level (which is very unusual but makes sense in 
  * the coccinelle context for instance).
  *  
@@ -115,7 +117,7 @@ let rec apply_macro_defs defs xs =
       | Left (), bodymacro -> 
           pr2 ("macro without param used before parenthize, wierd: " ^ s);
           (* ex: PRINTP("NCR53C400 card%s detected\n" ANDP(((struct ... *)
-          set_as_comment (Token_cpp.CppMacro) id;
+          Hack.set_as_comment (Token_cpp.CppMacro) id;
           id.new_tokens_before <- bodymacro;
       | Right params, bodymacro -> 
           if List.length params = List.length xxs
@@ -137,8 +139,8 @@ let rec apply_macro_defs defs xs =
            * are all TCommentCpp
            *)
           [Parenthised (xxs, info_parens)] +> 
-            iter_token_paren (set_as_comment Token_cpp.CppMacro);
-          set_as_comment Token_cpp.CppMacro id;
+            iter_token_paren (Hack.set_as_comment Token_cpp.CppMacro);
+          Hack.set_as_comment Token_cpp.CppMacro id;
 
            
 
@@ -161,7 +163,7 @@ let rec apply_macro_defs defs xs =
                 TH.info_of_tok id.tok))
 
           | _ -> 
-              set_as_comment Token_cpp.CppMacro id;
+              Hack.set_as_comment Token_cpp.CppMacro id;
               id.new_tokens_before <- bodymacro;
           )
       );

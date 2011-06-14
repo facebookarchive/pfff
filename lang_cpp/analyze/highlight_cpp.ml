@@ -532,7 +532,7 @@ let visit_toplevel
     | T.TMacroString _
     | T.TMacroStmt _
 
-    | T.TCommentCpp _
+    | T.TComment_Cpp _
       -> ()
 
     | T.TIncludeFilename (_, ii) ->

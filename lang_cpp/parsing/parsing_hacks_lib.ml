@@ -52,6 +52,8 @@ let msg_gen cond is_known printer s =
       if not (is_known s)
       then printer s
 
+let pos ii = Ast.string_of_info ii
+
 (*****************************************************************************)
 (* Some debugging functions  *)
 (*****************************************************************************)
@@ -64,8 +66,10 @@ let pr2_cplusplus s =
   if !Flag.debug_cplusplus
   then Common.pr2_once ("C++-" ^ s)
 
+
 let msg_change_tok tok =
   match tok with
+
   | TIdent_Typedef (s, ii) ->
       (* todo? also do LP.add_typedef_root s ??? *)
       s +> msg_gen (!Flag.debug_typedef) (fun s ->
@@ -75,14 +79,29 @@ let msg_change_tok tok =
         | "s8"  | "s16" | "s32" | "s64" 
         | "__u8" | "__u16" | "__u32"  | "__u64"  
             -> true
-        | "acpi_handle" 
-        | "acpi_status" 
-          -> true
-        | "FILE" | "DIR" -> true
-        | s when s =~ ".*_t$" -> true
-        | _ -> false 
-      ) (fun s -> 
-        pr2_pp (spf "TYPEDEF: promoting: %s, at %s " s (Ast.string_of_info ii))
+        | "acpi_handle" | "acpi_status" -> true
+        | "FILE" | "DIR"                -> true
+        | s when s =~ ".*_t$"           -> true
+        | _                             -> false 
+      ) 
+      (fun s -> pr2_pp (spf "TYPEDEF: promoting %s at %s " s (pos ii)))
+
+  | TComment_Cpp (directive, ii) ->
+      let s = Ast.str_of_info ii in
+      (match directive, s with
+      | Token_cpp.CppDirective, _ when s =~ "#define.*" ->
+          pr2_pp (spf "DEFINE: commented at %s" (pos ii));
+      | Token_cpp.CppDirective, _ when s =~ "#include.*" ->
+          pr2_pp (spf "INCLUDE: commented at %s" (pos ii));
+      | Token_cpp.CppDirective, _ when s =~ "#if.*" ->
+          pr2_pp (spf "IFDEF: commented at %s" (pos ii));
+      | Token_cpp.CppDirective, _ when s =~ "#undef.*" -> 
+          pr2_pp (spf "UNDEF: commented at %s" (pos ii));
+      | Token_cpp.CppDirective, _ ->
+          pr2_pp (spf "OTHER: commented directive at %s" (pos ii));
+      | _ ->
+          (* todo? *)
+          ()
       )
   | _ -> raise Todo
 
@@ -172,6 +191,16 @@ let change_tok extended_tok tok =
 let fresh_tok tok =
   msg_change_tok tok;
   tok
+
+let set_as_comment cppkind x = 
+  (* normally the caller have first filtered the set of tokens to have
+   * a clearer "view" to work on
+   *)
+  assert(not (TH.is_real_comment x.tok));
+
+  if TH.is_eof x.tok 
+  then () (* otherwise parse_c will be lost if don't find a EOF token *)
+  else change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.tok))
 
 (*****************************************************************************)
 (* The regexp and basic view definitions *)

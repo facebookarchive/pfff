@@ -33,8 +33,8 @@ module LP = Lexer_parser_cpp
  * Some tokens below are not even used in this file because they are filtered
  * in some intermediate phases (e.g. the comment tokens). Some tokens
  * also appear only here and are not in the lexer because they are
- * created in some intermediate phases (the "fresh" tokens). Nevertheless
- * all those tokens have to be declared.
+ * created in some intermediate phases. They are called "fresh" tokens
+ * and always contain a '_' in their name.
  *)
 */
 
@@ -53,7 +53,7 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TCommentSpace TCommentNewline TComment
 
 /*(* fresh_token: cppext: appear after parsing_hack and disappear *)*/
-%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TCommentCpp
+%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TComment_Cpp
 
 /*(*-----------------------------------------*)*/
 /*(*2 The C tokens *)*/

@@ -48,7 +48,3 @@ val tokens_of_paren_ordered: paren_grouped list -> token_extended list
 
 (* ---------------------------------------------------------------------- *)
 val set_context_tag: brace_grouped list -> unit
-
-val set_as_comment : Token_cpp.cppcommentkind -> token_extended -> unit
-
-(* val set_as_opar_cplusplus: token_extended list -> unit *)

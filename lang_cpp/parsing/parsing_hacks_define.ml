@@ -15,12 +15,12 @@
 
 open Common
 
-module Ast = Ast_cpp
-
 open Parser_cpp
-module Parser = Parser_cpp
 
+module Ast = Ast_cpp
+module Parser = Parser_cpp
 module TH = Token_helpers_cpp
+module Hack = Parsing_hacks_lib
 
 (*****************************************************************************)
 (* Prelude  *)
@@ -111,14 +111,14 @@ let rec comment_until_defeol xs =
   | x::xs -> 
       (match x with
       | Parser.TDefEOL i -> 
-          Parser.TCommentCpp (Token_cpp.CppDirective, TH.info_of_tok x)
+          Parser.TComment_Cpp (Token_cpp.CppDirective, TH.info_of_tok x)
           ::xs
       | _ -> 
           let x' = 
             (* bugfix: otherwise may lose a TComment token *)
             if TH.is_real_comment x
             then x
-            else Parser.TCommentCpp (Token_cpp.CppOther, TH.info_of_tok x)
+            else Parser.TComment_Cpp (Token_cpp.CppOther, TH.info_of_tok x)
           in
           x'::comment_until_defeol xs
       )
