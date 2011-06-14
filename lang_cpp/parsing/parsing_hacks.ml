@@ -395,8 +395,8 @@ let lookahead2 next before =
 
       fresh_tok (TIdent_Typedef(s, i1))
 
-  (* xx yy *)
-  | (TIdent (s, i1)::TIdent (s2, i2)::_  , _) 
+  (* xx yy (c++ext: or operator) *)
+  | (TIdent (s, i1)::(TIdent (_, _) | Toperator _)::_  , _) 
     when not_struct_enum before  && ok_typedef s ->
          (* && not_annot s2 BUT lead to false positive*)
       fresh_tok (TIdent_Typedef (s, i1))
@@ -538,8 +538,7 @@ let lookahead2 next before =
   | (TIdent (s, i1)::(TMul _|TAnd _)::(Toperator (i2))::_ , _)
     when not_struct_enum before  
       && (LP.is_top_or_struct (LP.current_context ()))
-      && ok_typedef s 
-      ->
+      && ok_typedef s ->
       fresh_tok (TIdent_Typedef (s, i1))
 
   (*  xx *& yy (     AND in Toplevel *)
