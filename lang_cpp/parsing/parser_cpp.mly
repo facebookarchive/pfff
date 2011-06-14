@@ -137,19 +137,17 @@ module LP = Lexer_parser_cpp
 %token <string * Ast_cpp.info> TUndef
 %token <Ast_cpp.info> TCppDirectiveOther
 
-/*(* cppext: special macros     *)*/
-/*(* fresh_token: appear after fix_tokens_cpp in parsing_hacks_pp.ml *)*/
-%token <Ast_cpp.info>            TMacroStmt
+/*(* cppext: special macros *)*/
+/*(* fresh_token: appear after fix_tokens in parsing_hacks_pp.ml *)*/
 /*(* no need for the value for the moment *)*/
-%token <Ast_cpp.info>            TMacroString 
-%token <(string * Ast_cpp.info)> TMacroDecl
-%token <Ast_cpp.info>            TMacroDeclConst 
-%token <(string * Ast_cpp.info)> TMacroIterator
+%token <Ast_cpp.info>            TIdent_MacroStmt
+%token <Ast_cpp.info>            TIdent_MacroString 
+%token <(string * Ast_cpp.info)> TIdent_MacroIterator /*(*????*)*/
+%token <(string * Ast_cpp.info)> TIdent_MacroDecl
+%token <Ast_cpp.info>            Tconst_MacroDeclConst 
 
-/*(* cppext: other        *)*/
-/*(* %token <(string * Ast_cpp.info)> TMacroTop *)*/
 /*(* fresh_token: appear after parsing_hack ??? *)*/
-%token <Ast_cpp.info> TCParEOL   
+%token <Ast_cpp.info> TCParEOL
 /*(* fresh_token: appear after parsing_hack_pp.ml *)*/
 %token <Ast_cpp.info> TAction
 
@@ -680,7 +678,7 @@ compound_literal_expr:
 string_elem:
  | TString { [snd $1] }
  /*(* cppext:  ex= printk (KERN_INFO "xxx" UTS_RELEASE)  *)*/
- | TMacroString { [$1] }
+ | TIdent_MacroString { [$1] }
 
 /*(*----------------------------*)*/
 /*(*2 cppext: *)*/
@@ -735,7 +733,7 @@ statement:
  | jump TPtVirg    { Jump         (fst $1), snd $1 ++ [$2] }
 
  /*(* cppext: *)*/
- | TMacroStmt { MacroStmt, [$1] }
+ | TIdent_MacroStmt { MacroStmt, [$1] }
 
  /*
  (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
@@ -826,7 +824,7 @@ iteration:
        MacroIteration ("toto", [], $7),[] (* TODOfake ast, TODO need decl2 ? *)
      }
  /*(* cppext: *)*/
- | TMacroIterator TOPar argument_list_opt TCPar statement
+ | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration (fst $1, $3, $5), [snd $1;$2;$4] }
 
 
@@ -1313,11 +1311,12 @@ simple_declaration2:
          ),  ($3::iistart::snd storage))
      } 
  /*(* cppext: *)*/
- | TMacroDecl TOPar argument_list TCPar TPtVirg 
+ | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
      { MacroDecl ((fst $1, $3), [snd $1;$2;$4;$5;fakeInfo()]) }
- | Tstatic TMacroDecl TOPar argument_list TCPar TPtVirg 
+ | Tstatic TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
      { MacroDecl ((fst $2, $4), [snd $2;$3;$5;$6;fakeInfo();$1]) }
- | Tstatic TMacroDeclConst TMacroDecl TOPar argument_list TCPar TPtVirg 
+ | Tstatic Tconst_MacroDeclConst 
+    TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
      { MacroDecl ((fst $3, $5), [snd $3;$4;$6;$7;fakeInfo();$1;$2])}
 
 

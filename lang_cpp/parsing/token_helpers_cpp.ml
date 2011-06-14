@@ -88,7 +88,7 @@ let is_statement = function
   | Tbreak _ | Telse _ | Tswitch _ | Tcase _ | Tcontinue _
   | Tgoto _ 
   | TPtVirg _
-  | TMacroIterator _
+  | TIdent_MacroIterator _
       -> true
   | _ -> false
 
@@ -145,7 +145,7 @@ let is_stuff_taking_parenthized = function
   | Twhile _ 
   | Tswitch _
   | Ttypeof _
-  | TMacroIterator _
+  | TIdent_MacroIterator _
     -> true 
   | _ -> false
 
@@ -262,11 +262,11 @@ let info_of_tok = function
 
   | TUnknown             (i) -> i
 
-  | TMacroStmt             (i) -> i
-  | TMacroString             (i) -> i
-  | TMacroDecl             (s, i) -> i
-  | TMacroDeclConst             (i) -> i
-  | TMacroIterator             (s,i) -> i
+  | TIdent_MacroStmt             (i) -> i
+  | TIdent_MacroString             (i) -> i
+  | TIdent_MacroIterator             (s,i) -> i
+  | TIdent_MacroDecl             (s, i) -> i
+  | Tconst_MacroDeclConst             (i) -> i
 (*  | TMacroTop             (s,i) -> i *)
   | TCParEOL (i1) ->     i1
 
@@ -480,11 +480,11 @@ let visitor_info_of_tok f = function
 
   | TUnknown             (i) -> TUnknown                (f i)
 
-  | TMacroStmt           (i)   -> TMacroStmt            (f i)
-  | TMacroString         (i)   -> TMacroString          (f i)
-  | TMacroDecl           (s,i) -> TMacroDecl            (s, f i)
-  | TMacroDeclConst      (i)   -> TMacroDeclConst       (f i)
-  | TMacroIterator       (s,i) -> TMacroIterator        (s,f i)
+  | TIdent_MacroStmt           (i)   -> TIdent_MacroStmt            (f i)
+  | TIdent_MacroString         (i)   -> TIdent_MacroString          (f i)
+  | TIdent_MacroIterator       (s,i) -> TIdent_MacroIterator        (s,f i)
+  | TIdent_MacroDecl           (s,i) -> TIdent_MacroDecl            (s, f i)
+  | Tconst_MacroDeclConst      (i)   -> Tconst_MacroDeclConst       (f i)
 (*  | TMacroTop          (s,i) -> TMacroTop             (s,f i) *)
   | TCParEOL (i) ->     TCParEOL (f i)
 

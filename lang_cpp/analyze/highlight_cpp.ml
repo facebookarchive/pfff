@@ -526,18 +526,18 @@ let visit_toplevel
     | T.TAction _
     | T.TCParEOL _
 
-    | T.TMacroIterator _
-    | T.TMacroDeclConst _
-    | T.TMacroDecl _
-    | T.TMacroString _
-    | T.TMacroStmt _
+    | T.TIdent_MacroIterator _
+    | T.Tconst_MacroDeclConst _
+    | T.TIdent_MacroDecl _
+    | T.TIdent_MacroString _
+    | T.TIdent_MacroStmt _
 
     | T.TComment_Cpp _
       -> ()
 
-    | T.TIncludeFilename (_, ii) ->
+    | T.TInclude_Filename (_, ii) ->
         tag ii String
-    | T.TIncludeStart (ii, _aref) ->
+    | T.TInclude_Start (ii, _aref) ->
         tag ii Include
 
 

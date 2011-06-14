@@ -89,6 +89,9 @@ let msg_change_tok tok =
   | TComment_Cpp (directive, ii) ->
       let s = Ast.str_of_info ii in
       (match directive, s with
+      | Token_cpp.CppMacro, _ ->
+          pr2_pp (spf "MACRO: commented at %s" (pos ii))
+
       | Token_cpp.CppDirective, _ when s =~ "#define.*" ->
           pr2_pp (spf "DEFINE: commented at %s" (pos ii));
       | Token_cpp.CppDirective, _ when s =~ "#include.*" ->
@@ -114,45 +117,54 @@ let msg_change_tok tok =
   | TOBrace_DefineInit ii ->
       pr2_pp (spf "DEFINE: initializer at %s" (pos ii))
 
+  | TIdent_MacroString ii ->
+      let s = Ast.str_of_info ii in
+      s +> msg_gen (!Flag.debug_pp) (fun s -> 
+        match s with 
+        | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
+            -> true
+            (* s when s =~ ".*STR.*" -> true  *) 
+        | _ -> false
+      )
+      (fun s -> pr2_pp (spf "MACRO: string-macro %s at %s " s (pos ii)))
+
+  | TIdent_MacroStmt ii ->
+      pr2_pp (spf "MACRO: stmt-macro at %s" (pos ii));
+
+  | TIdent_MacroDecl (s, ii) ->
+      s +> msg_gen (!Flag.debug_pp) (fun s -> 
+        match s with 
+        | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
+        | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
+        | "DEFINE_SPINLOCK" | "DEFINE_TIMER"
+        | "DEVICE_ATTR" | "CLASS_DEVICE_ATTR" | "DRIVER_ATTR"
+        | "SENSOR_DEVICE_ATTR"
+        | "LIST_HEAD"
+        | "DECLARE_WORK"  | "DECLARE_TASKLET"
+        | "PORT_ATTR_RO" | "PORT_PMA_ATTR"
+        | "DECLARE_BITMAP"
+          -> true
+            (*
+              | s when s =~ "^DECLARE_.*" -> true
+              | s when s =~ ".*_ATTR$" -> true
+              | s when s =~ "^DEFINE_.*" -> true
+              | s when s =~ "NS_DECL.*" -> true
+            *)
+        | _ -> false
+      )
+      (fun s -> pr2_pp (spf "MACRO: macro-declare at %s" (pos ii)))
+
+  | Tconst_MacroDeclConst ii ->
+      pr2_pp (spf "MACRO: retag const at %s" (pos ii))
+
   | _ -> raise Todo
 
-let msg_declare_macro s =
-  s +> msg_gen (!Flag.debug_pp) (fun s -> 
-    match s with 
-    | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
-    | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
-    | "DEFINE_SPINLOCK" | "DEFINE_TIMER"
-    | "DEVICE_ATTR" | "CLASS_DEVICE_ATTR" | "DRIVER_ATTR"
-    | "SENSOR_DEVICE_ATTR"
-    | "LIST_HEAD"
-    | "DECLARE_WORK"  | "DECLARE_TASKLET"
-    | "PORT_ATTR_RO" | "PORT_PMA_ATTR"
-    | "DECLARE_BITMAP"
-        
-      -> true
-        (*
-          | s when s =~ "^DECLARE_.*" -> true
-          | s when s =~ ".*_ATTR$" -> true
-          | s when s =~ "^DEFINE_.*" -> true
-          | s when s =~ "NS_DECL.*" -> true
-        *)
-    | _ -> false
-  )
-  (fun s -> pr2_pp ("MACRO: found declare-macro: " ^ s))
-      
 
 let msg_foreach s = 
   pr2_pp ("MACRO: found foreach: " ^ s)
 
 let msg_debug_macro s = 
   pr2_pp ("MACRO: found debug-macro: " ^ s)
-
-let msg_macro_noptvirg s = 
-  pr2_pp ("MACRO: found macro with param noptvirg: " ^ s)
-let msg_macro_toplevel_noptvirg s = 
-  pr2_pp ("MACRO: found toplevel macro noptvirg: " ^ s)
-let msg_macro_noptvirg_single s = 
-  pr2_pp ("MACRO: found single-macro noptvirg: " ^ s)
 
 let msg_macro_higher_order s = 
   msg_gen (!Flag.debug_pp)
@@ -166,22 +178,6 @@ let msg_macro_higher_order s =
       )
     )
     (fun s -> pr2_pp ("MACRO: found higher ordre macro : " ^ s))
-    s
-
-let msg_stringification s = 
-  msg_gen (!Flag.debug_pp)
-    (fun s -> 
-      (match s with 
-      | "REVISION"
-      | "UTS_RELEASE"
-      | "SIZE_STR"
-      | "DMA_STR"
-          -> true
-      (* s when s =~ ".*STR.*" -> true  *) 
-      | _ -> false
-      )
-    )
-    (fun s -> pr2_pp ("MACRO: found string-macro " ^ s))
     s
 
 let msg_classname s = 

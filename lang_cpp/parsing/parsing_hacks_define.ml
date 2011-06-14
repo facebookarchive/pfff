@@ -216,6 +216,7 @@ let fix_tokens_define a =
 (*****************************************************************************)
 (* returns a pair (replaced token, list of next tokens) *)
 
+(* todo: move in a fix_tokens style *)
 let tokens_include (info, includes, filename, inifdef) = 
   (* fresh_tok *) 
    Parser.TInclude_Start (Parse_info.rewrap_str includes info, inifdef),
