@@ -429,15 +429,15 @@ let info_of_tok = function
 
   | TInt_ZeroVirtual        (i) -> i
 
-  | Tchar2 (i) -> i
-  | Tint2  (i) -> i
-  | Tfloat2 (i) -> i
-  | Tdouble2  (i) -> i
-  | Twchar_t2 (i) -> i
+  | Tchar_Constr (i) -> i
+  | Tint_Constr  (i) -> i
+  | Tfloat_Constr (i) -> i
+  | Tdouble_Constr  (i) -> i
+  | Twchar_t_Constr (i) -> i
 
-  | Tshort2  (i) -> i
-  | Tlong2   (i) -> i
-  | Tbool2  (i) -> i
+  | Tshort_Constr  (i) -> i
+  | Tlong_Constr   (i) -> i
+  | Tbool_Constr  (i) -> i
       
   | EOF                  (i) -> i
   
@@ -652,15 +652,15 @@ let visitor_info_of_tok f = function
 
   | TInt_ZeroVirtual (i) -> TInt_ZeroVirtual (f i)
 
-  | Tchar2                 (i) -> Tchar2                 (f i) 
-  | Tint2                 (i) -> Tint2                 (f i) 
-  | Tfloat2                 (i) -> Tfloat2                 (f i) 
-  | Tdouble2                 (i) -> Tdouble2                 (f i) 
-  | Twchar_t2                 (i) -> Twchar_t2                 (f i) 
+  | Tchar_Constr                 (i) -> Tchar_Constr                 (f i) 
+  | Tint_Constr                 (i) -> Tint_Constr                 (f i) 
+  | Tfloat_Constr                 (i) -> Tfloat_Constr                 (f i) 
+  | Tdouble_Constr                 (i) -> Tdouble_Constr                 (f i) 
+  | Twchar_t_Constr                 (i) -> Twchar_t_Constr                 (f i) 
 
-  | Tshort2  (i) -> Tshort2 (f i)
-  | Tlong2   (i) -> Tlong2 (f i)
-  | Tbool2  (i) -> Tbool2 (f i)
+  | Tshort_Constr  (i) -> Tshort_Constr (f i)
+  | Tlong_Constr   (i) -> Tlong_Constr (f i)
+  | Tbool_Constr  (i) -> Tbool_Constr (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 

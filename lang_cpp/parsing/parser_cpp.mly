@@ -118,7 +118,8 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TCppEscapedNewline 
 /*(* fresh_token: appear after fix_tokens_define in parsing_hack.ml *)*/
 %token <(string * Ast_cpp.info)> TIdent_Define
-%token <Ast_cpp.info> TOPar_Define TCommentNewline_DefineEndOfMacro
+%token <Ast_cpp.info> TOPar_Define
+%token <Ast_cpp.info> TCommentNewline_DefineEndOfMacro
 %token <Ast_cpp.info> TOBrace_DefineInit
 
 /*(* cppext: include  *)*/
@@ -195,8 +196,9 @@ module LP = Lexer_parser_cpp
 %token <string * Ast_cpp.info> TypedefIdent2
 /*(* fresh_token: for constructed (basic) objects *)*/
 %token <Ast_cpp.info> 
-  Tchar2 Tint2 Tfloat2 Tdouble2 Twchar_t2 Tshort2 Tlong2 Tbool2
-/*(* fresh_token: appear after solved if next token is a typedef *)*/
+  Tchar_Constr Tint_Constr Tfloat_Constr Tdouble_Constr Twchar_t_Constr
+  Tshort_Constr Tlong_Constr Tbool_Constr
+/*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Ast_cpp.info> TColCol2
 %token <string * Ast_cpp.info> Tclassname2
 %token <string * Ast_cpp.info> TtemplatenameQ2
@@ -704,16 +706,16 @@ topar2: TOPar { et "topar2" (); $1  }
 tcpar2: TCPar { et "tcpar2" (); $1 (*TODO? et ? sure ? c pas dt plutot ? *) } 
 
 basic_type_2: 
- | Tchar2                { (BaseType (IntType CChar)), [$1]}
- | Tint2                 { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
- | Tfloat2               { (BaseType (FloatType CFloat)),  [$1]}
- | Tdouble2              { (BaseType (FloatType CDouble)), [$1] }
+ | Tchar_Constr                { (BaseType (IntType CChar)), [$1]}
+ | Tint_Constr                { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
+ | Tfloat_Constr               { (BaseType (FloatType CFloat)),  [$1]}
+ | Tdouble_Constr              { (BaseType (FloatType CDouble)), [$1] }
 
- | Twchar_t2             { (BaseType (IntType WChar_t)),         [$1] }
+ | Twchar_t_Constr             { (BaseType (IntType WChar_t)),         [$1] }
 
- | Tshort2               { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
- | Tlong2                { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
- | Tbool2                { (BaseType (IntType CBool)),         [$1] }
+ | Tshort_Constr          { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
+ | Tlong_Constr           { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
+ | Tbool_Constr           { (BaseType (IntType CBool)),         [$1] }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/

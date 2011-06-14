@@ -314,39 +314,25 @@ let lookahead2 next before =
   (* basic type can now also be used as "cast_function/constructor" *)
   | (Tchar(i1))::TOPar _::_ , _  
     when (LP.current_context() <> LP.InParameter) ->
-      pr2_cplusplus("cast_function_typedef: "  ^"char");
-      Tchar2(i1)
+      fresh_tok (Tchar_Constr(i1))
   | (Tint(i1))::TOPar _::_ , _   
-      when (LP.current_context() <> LP.InParameter)
-        -> 
-      pr2_cplusplus("cast_function_typedef: "  ^"int");
-      Tint2(i1)
+    when (LP.current_context() <> LP.InParameter) -> 
+      fresh_tok (Tint_Constr(i1))
   | (Tfloat(i1))::TOPar _::_ , _   
-      when (LP.current_context() <> LP.InParameter)
-        -> 
-      pr2_cplusplus("cast_function_typedef: "  ^"float");
-      Tfloat2(i1)
+    when (LP.current_context() <> LP.InParameter) -> 
+      fresh_tok (Tfloat_Constr(i1))
   | (Tdouble(i1))::TOPar _::_ , _   
-      when (LP.current_context() <> LP.InParameter)
-        -> 
-      pr2_cplusplus("cast_function_typedef: "  ^"double");
-      Tdouble2(i1)
+    when (LP.current_context() <> LP.InParameter) -> 
+      fresh_tok (Tdouble_Constr(i1))
   | (Tshort(i1))::TOPar _::_ , _   
-      when (LP.current_context() <> LP.InParameter)
-        -> 
-      pr2_cplusplus("cast_function_typedef: "  ^"short");
-      Tshort2(i1)
+    when (LP.current_context() <> LP.InParameter) -> 
+      fresh_tok (Tshort_Constr(i1))
   | (Tlong(i1))::TOPar _::_ , _   
-      when (LP.current_context() <> LP.InParameter)
-        -> 
-      pr2_cplusplus("cast_function_typedef: "  ^"long");
-      Tlong2(i1)
-
+    when (LP.current_context() <> LP.InParameter) -> 
+      fresh_tok (Tlong_Constr(i1))
   | (Tbool(i1))::TOPar _::_ , _   
-      when (LP.current_context() <> LP.InParameter)
-        -> 
-      pr2_cplusplus("cast_function_typedef: "  ^"bool");
-      Tbool2(i1)
+    when (LP.current_context() <> LP.InParameter) -> 
+      fresh_tok (Tbool_Constr(i1))
 
 
 

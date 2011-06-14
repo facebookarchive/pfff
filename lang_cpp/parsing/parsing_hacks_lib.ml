@@ -175,7 +175,12 @@ let msg_change_tok tok =
       pr2_cplusplus (spf "new [] at %s" (pos ii))
 
   | TInf_Template ii | TSup_Template ii ->
-      pr2_cplusplus (spf "<> at %s" (pos ii))
+      pr2_cplusplus (spf "template <> at %s" (pos ii))
+
+  | Tchar_Constr ii | Tint_Constr ii | Tfloat_Constr ii | Tdouble_Constr ii
+  | Tshort_Constr ii | Tlong_Constr ii | Tbool_Constr ii
+     ->
+      pr2_cplusplus(spf "constructed object builtin at %s" (pos ii));
 
   | _ -> raise Todo
 
