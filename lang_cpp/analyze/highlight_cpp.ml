@@ -548,7 +548,7 @@ let visit_toplevel
     | T.TCppEscapedNewline _
     | T.TDefParamVariadic _
 
-    | T.TypedefIdent _
+    | T.TIdent_Typedef _
 
     | T.TCommentNewline _
     | T.TCommentSpace _

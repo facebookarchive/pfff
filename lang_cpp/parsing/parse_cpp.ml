@@ -417,7 +417,7 @@ let rec lexer_function tr = fun lexbuf ->
           let v = match v with
             | Parser.TIdent (s, ii) -> 
                 if LP.is_typedef s 
-                then Parser.TypedefIdent (s, ii)
+                then Parsing_hacks_lib.fresh_tok (Parser.TIdent_Typedef (s, ii))
                 else Parser.TIdent (s, ii)
             | x -> x
           in
@@ -436,7 +436,7 @@ let rec lexer_function tr = fun lexbuf ->
 
               (* ??? *)
               (match v with
-              | Parser.TypedefIdent _ -> 
+              | Parser.TIdent_Typedef _ -> 
                   tr.already_disambiguated <- true;
                   tr.pending_qualifier <- 
                     retag_for_typedef tr.pending_qualifier;

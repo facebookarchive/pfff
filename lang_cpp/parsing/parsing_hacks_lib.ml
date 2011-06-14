@@ -25,19 +25,36 @@ module Parser = Parser_cpp
 open Parser_cpp
 open Token_views_cpp
 
-(*
-val regexp_macro: Str.regexp
-val regexp_annot: Str.regexp
-val regexp_declare: Str.regexp
-val regexp_foreach: Str.regexp
-val regexp_typedef: Str.regexp
-*)
+(*****************************************************************************)
+(* Wrappers  *)
+(*****************************************************************************)
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+
+(*****************************************************************************)
+(* Helpers  *)
+(*****************************************************************************)
+
+(* 
+ * In the following, there are some harcoded names of types or macros
+ * but they are not used by our heuristics! They are just here to
+ * enable to detect false positive by printing only the typedef/macros
+ * that we don't know yet. If we print everything, then we can easily
+ * get lost with too much verbose tracing information. So those
+ * functions "filter" some messages. So our heuristics are still good,
+ * there is no more (or not that much) hardcoded linux stuff.
+ *)
+let msg_gen cond is_known printer s = 
+  if cond
+  then
+    if not (!Flag.filter_msg)
+    then printer s
+    else
+      if not (is_known s)
+      then printer s
 
 (*****************************************************************************)
 (* Some debugging functions  *)
 (*****************************************************************************)
-
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 
 let pr2_pp s = 
   if !Flag.debug_pp
@@ -47,84 +64,51 @@ let pr2_cplusplus s =
   if !Flag.debug_cplusplus
   then Common.pr2_once ("C++-" ^ s)
 
-let msg_gen cond is_known printer s = 
-  if cond
-  then
-    if not (!Flag.filter_msg)
-    then printer s
-    else
-      if not (is_known s)
-      then printer s
-        
-(* In the following, there are some harcoded names of types or macros
- * but they are not used by our heuristics! They are just here to
- * enable to detect false positive by printing only the typedef/macros
- * that we don't know yet. If we print everything, then we can easily
- * get lost with too much verbose tracing information. So those
- * functions "filter" some messages. So our heuristics are still good,
- * there is no more (or not that much) hardcoded linux stuff.
- *)
-let is_known_typedef s =
-  match s with
-  | "u_char"   | "u_short"  | "u_int"  | "u_long"
-  | "u8" | "u16" | "u32" | "u64" 
-  | "s8"  | "s16" | "s32" | "s64" 
-  | "__u8" | "__u16" | "__u32"  | "__u64"  
-      -> true
-      
-  | "acpi_handle" 
-  | "acpi_status" 
-    -> true
-      
-  | "FILE" 
-  | "DIR" 
-    -> true
-      
-  | s when s =~ ".*_t$" -> true
-  | _ -> false 
-
-(* note: cant use partial application with let msg_typedef = 
- * because it would compute msg_typedef at compile time when 
- * the flag debug_typedef is always false
- *)
-let msg_typedef (s,ii) = 
-  msg_gen (!Flag.debug_typedef)
-    is_known_typedef
-    (fun s -> 
-      pr2_pp ("TYPEDEF: promoting: " ^ s);
-      if !Flag.debug_typedef_location
-      then 
-        pr2_pp ("loc: " ^
-                 Parse_info.string_of_parse_info (Ast.parse_info_of_info ii))
-    )
-    s
-
-let msg_declare_macro s = 
-  msg_gen (!Flag.debug_pp)
-    (fun s -> 
-      (match s with 
-      | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
-      | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
-      | "DEFINE_SPINLOCK" | "DEFINE_TIMER"
-      | "DEVICE_ATTR" | "CLASS_DEVICE_ATTR" | "DRIVER_ATTR"
-      | "SENSOR_DEVICE_ATTR"
-      | "LIST_HEAD"
-      | "DECLARE_WORK"  | "DECLARE_TASKLET"
-      | "PORT_ATTR_RO" | "PORT_PMA_ATTR"
-      | "DECLARE_BITMAP"
-
+let msg_change_tok tok =
+  match tok with
+  | TIdent_Typedef (s, ii) ->
+      (* todo? also do LP.add_typedef_root s ??? *)
+      s +> msg_gen (!Flag.debug_typedef) (fun s ->
+        match s with
+        | "u_char"   | "u_short"  | "u_int"  | "u_long"
+        | "u8" | "u16" | "u32" | "u64" 
+        | "s8"  | "s16" | "s32" | "s64" 
+        | "__u8" | "__u16" | "__u32"  | "__u64"  
+            -> true
+        | "acpi_handle" 
+        | "acpi_status" 
           -> true
- (*
-      | s when s =~ "^DECLARE_.*" -> true
-      | s when s =~ ".*_ATTR$" -> true
-      | s when s =~ "^DEFINE_.*" -> true
-      | s when s =~ "NS_DECL.*" -> true
- *)
-      | _ -> false
+        | "FILE" | "DIR" -> true
+        | s when s =~ ".*_t$" -> true
+        | _ -> false 
+      ) (fun s -> 
+        pr2_pp (spf "TYPEDEF: promoting: %s, at %s " s (Ast.string_of_info ii))
       )
-    )
-    (fun s -> pr2_pp ("MACRO: found declare-macro: " ^ s))
-    s
+  | _ -> raise Todo
+
+let msg_declare_macro s =
+  s +> msg_gen (!Flag.debug_pp) (fun s -> 
+    match s with 
+    | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
+    | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
+    | "DEFINE_SPINLOCK" | "DEFINE_TIMER"
+    | "DEVICE_ATTR" | "CLASS_DEVICE_ATTR" | "DRIVER_ATTR"
+    | "SENSOR_DEVICE_ATTR"
+    | "LIST_HEAD"
+    | "DECLARE_WORK"  | "DECLARE_TASKLET"
+    | "PORT_ATTR_RO" | "PORT_PMA_ATTR"
+    | "DECLARE_BITMAP"
+        
+      -> true
+        (*
+          | s when s =~ "^DECLARE_.*" -> true
+          | s when s =~ ".*_ATTR$" -> true
+          | s when s =~ "^DEFINE_.*" -> true
+          | s when s =~ "NS_DECL.*" -> true
+        *)
+    | _ -> false
+  )
+  (fun s -> pr2_pp ("MACRO: found declare-macro: " ^ s))
       
 
 let msg_foreach s = 
@@ -181,9 +165,25 @@ let msg_constructorname s =
 
 (* todo: more msg_xxx from parsing_c/ *)  
 
+let change_tok extended_tok tok =
+  msg_change_tok tok;
+  extended_tok.tok <- tok
+
+let fresh_tok tok =
+  msg_change_tok tok;
+  tok
+
 (*****************************************************************************)
 (* The regexp and basic view definitions *)
 (*****************************************************************************)
+
+(*
+val regexp_macro: Str.regexp
+val regexp_annot: Str.regexp
+val regexp_declare: Str.regexp
+val regexp_foreach: Str.regexp
+val regexp_typedef: Str.regexp
+*)
 
 (* opti: better to built then once and for all, especially regexp_foreach *)
 

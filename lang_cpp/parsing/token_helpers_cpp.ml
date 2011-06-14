@@ -237,7 +237,7 @@ let info_of_tok = function
   | TAssign  (assignOp, i) -> i
 
   | TIdent  (s, i) -> i
-  | TypedefIdent  (s, i) -> i
+  | TIdent_Typedef  (s, i) -> i
 
   | TInt  (s, i) -> i
 
@@ -450,7 +450,7 @@ let visitor_info_of_tok f = function
   | TAssign  (assignOp, i)     -> TAssign  (assignOp, f i) 
 
   | TIdent  (s, i)       -> TIdent  (s, f i) 
-  | TypedefIdent  (s, i) -> TypedefIdent  (s, f i) 
+  | TIdent_Typedef  (s, i) -> TIdent_Typedef (s, f i) 
 
   | TInt  (s, i)         -> TInt  (s, f i) 
 

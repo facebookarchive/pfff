@@ -33,7 +33,7 @@ module LP = Lexer_parser_cpp
  * Some tokens below are not even used in this file because they are filtered
  * in some intermediate phases (e.g. the comment tokens). Some tokens
  * also appear only here and are not in the lexer because they are
- * created in some intermediate phases (aka "fresh" tokens). Nevertheless
+ * created in some intermediate phases (the "fresh" tokens). Nevertheless
  * all those tokens have to be declared.
  *)
 */
@@ -65,7 +65,7 @@ module LP = Lexer_parser_cpp
 
 %token <string * Ast_cpp.info> TIdent 
 /*(* fresh_token: appear after some fix_tokens in parsing_hack.ml *)*/
-%token <string * Ast_cpp.info> TypedefIdent 
+%token <string * Ast_cpp.info> TIdent_Typedef
 
 /*
 (* Some tokens like TOPar and TCPar are used as synchronisation point 
@@ -401,22 +401,22 @@ id_expression:
 
 
 /*(* context dependent *)*/
-typedef_name: 
- | TypedefIdent { $1 }
-
-/*(* context dependent *)*/
 template_name:
  | Ttemplatename { $1 }
 
 /*(* used only with namespace/using rules. We use Tclassname for stuff
-   * like std::... *)*/
+   * like std::... TODO: or just TIdent_Typedef *)*/
 namespace_name:
  | TIdent { $1 }
 
-/*(* context dependent *)*/
+/*
+(* context dependent: in the original grammar there was one rule
+ * for each names (e.g. typedef_name:, enum_name:, class_name:) but 
+ * we don't have such contextual information and we can merge 
+ * those rules anyway without introducing conflicts.
+ *)*/
 enum_name_or_typedef_name_or_simple_class_name:
- | TypedefIdent { $1 }
-
+ | TIdent_Typedef { $1 }
 
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
@@ -440,7 +440,7 @@ template_idq2:
  *)*/
 ident: 
  | TIdent       { $1 }
- | typedef_name { $1 }
+ | TIdent_Typedef { $1 }
 
 
 /*(*c++ext:*)*/
@@ -1941,15 +1941,12 @@ define_val:
   *)*/
  | TOBraceDefineInit initialize_list TCBrace comma_opt 
     { DefineInit (InitList (List.rev $2), [$1;$3]++$4)  }
- /*(* but quite stupid cos better to use typedef than define for that *)*/
- | TypedefIdent 
-    { DefineType (nQ,(TypeName(fst $1,noTypedefDef()),[snd $1]))}
  | /*(* empty *)*/ { DefineEmpty }
 
 
 param_define:
- | TIdent               { fst $1, [snd $1] } 
- | TypedefIdent         { fst $1, [snd $1] } 
+ | ident               { fst $1, [snd $1] }
+
  | TDefParamVariadic    { fst $1, [snd $1] } 
  | TEllipsis            { "...", [$1] }
  /*(* they reuse keywords :(  *)*/

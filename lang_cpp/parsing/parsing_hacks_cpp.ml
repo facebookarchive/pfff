@@ -40,8 +40,6 @@ let set_as_opar_cplusplus xs =
       
   | _ -> raise  Impossible
 
-(* ------------------------------------------------------------------------- *)
-(* c++ext: *)
 let templateLOOKAHEAD = 30
   
 (* note: no need to check for TCPar to stop for instance the search, 
@@ -94,10 +92,9 @@ let rec find_tsup_quite_close xs =
   let (before, tsup, after) = aux [] xs in
   List.rev before, tsup, after
 
-
-(* ------------------------------------------------------------------------- *)
-(* c++ext: *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Main heuristics *)
+(*****************************************************************************)
 
 let find_cplusplus_view_all_tokens xs = 
  let rec aux xs =
@@ -108,7 +105,6 @@ let find_cplusplus_view_all_tokens xs =
  in
  aux xs
 
-(* ------------------------------------------------------------------------- *)
 let find_cplusplus_view_filtered_tokens xs = 
  let rec aux xs =
 
@@ -377,9 +373,8 @@ let find_cplusplus_view_parenthized xs =
     ::PToken ({tok = TIdent(s,i2)} as tok1)
     ::Parenthised _
     ::xs 
-    -> 
-      pr2 "new placement and later typedef";
-      tok1.tok <- TypedefIdent(s,i2);
+    ->
+      change_tok tok1 (TIdent_Typedef(s,i2));
       aux xs
 
 
@@ -391,7 +386,6 @@ let find_cplusplus_view_parenthized xs =
  in
  aux xs
 
-(* ------------------------------------------------------------------------- *)
 let find_cplusplus_view_parenthized2 xs = 
  let rec aux xs =
   match xs with
@@ -406,7 +400,6 @@ let find_cplusplus_view_parenthized2 xs =
  aux xs
       
 
-(* ------------------------------------------------------------------------- *)
 (* pre: have done the templatenameize and TInf/TSup -> TInf2/TSup2 *)
 let rec find_cplusplus_view_line_paren xs = 
 
@@ -432,13 +425,10 @@ let rec find_cplusplus_view_line_paren xs =
       ignore(info_parens);
       (* todo? check that in info_parens have what looks like expressions *)
 
-      msg_typedef (s1,i1);
-      tok.tok <- TypedefIdent (s1,i1);
-
+      change_tok tok (TIdent_Typedef (s1,i1));
       set_as_opar_cplusplus info_parens;
 
       aux xs
-
 
   (* xx<zz> yy(...); when in function *)
   | (Line 
