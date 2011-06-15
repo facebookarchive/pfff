@@ -36,7 +36,6 @@ let set_as_opar_cplusplus xs =
   match xs with
   | ({tok = TOPar ii;_} as tok1)::xs -> 
       change_tok tok1 (TOPar_CplusplusInit ii);
-      
   | _ -> raise  Impossible
 
 let templateLOOKAHEAD = 30
@@ -97,7 +96,6 @@ let rec find_tsup_quite_close xs =
 
 let find_cplusplus_view_all_tokens xs = 
  let rec aux xs =
-
   match xs with
   | [] -> ()
   | x::xs -> aux xs
@@ -106,7 +104,6 @@ let find_cplusplus_view_all_tokens xs =
 
 let find_cplusplus_view_filtered_tokens xs = 
  let rec aux xs =
-
   match xs with
   | [] -> ()
 
@@ -115,8 +112,7 @@ let find_cplusplus_view_filtered_tokens xs =
     ::{tok = TColCol _}
     ::({tok = TIdent(s2,i2)} as tok2)
     ::xs -> 
-      msg_classname s;
-      tok1.tok <- Tclassname(s,i1);
+      change_tok tok1 (TIdent_ClassnameInQualifier (s,i1));
 
       if s = s2 
       then begin
@@ -130,9 +126,7 @@ let find_cplusplus_view_filtered_tokens xs =
     ::{tok = TColCol _}
     ::({tok = Toperator(i2)} as tok2)
     ::xs -> 
-      msg_classname s;
-      tok1.tok <- Tclassname(s,i1);
-
+      change_tok tok1 (TIdent_ClassnameInQualifier (s, i1));
       aux (tok2::xs)
 
    (* destructor special case *)
@@ -141,10 +135,7 @@ let find_cplusplus_view_filtered_tokens xs =
     ::{tok = TTilde _}
     ::({tok = TIdent(s2,i2)} as _tok2)
     ::xs -> 
-
-      msg_classname s;
-      tok1.tok <- Tclassname(s,i1);
-
+      change_tok tok1 (TIdent_ClassnameInQualifier (s, i1));
       aux xs
 
   (* operator special case to avoid ambiguity when have 
@@ -162,53 +153,54 @@ let find_cplusplus_view_filtered_tokens xs =
 
       aux xs
 
-
   (* recurse *)
   | x::xs -> aux xs
  in
  aux xs
 
+(* assume have done TInf -> TInf_Template, TIdent_ClassnameInQualifier, 
+ * and TIdent_Templatename.
+ * Pass 2!!
+ *)
 
-(* assume have done TInf -> TInf2, Tclassname, Ttemplatename *)
-(* pass 2 *)
 let find_cplusplus_view_filtered_tokens_bis xs = 
  let rec aux xs =
   match xs with
   | [] -> ()
 
   (* xx::yy<zz> ww *)
-  | ({tok = Tclassname (s1,i1)} as tok1)
+  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
     ::({tok = (*TypedefIdent*) _})
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = TSup_Template _})
-    ::(({tok = TIdent (s2,_)})| ({tok = Tclassname (s2,_)}))
+    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
 
   (* xx::yy<zz>& ww *)
-  | ({tok = Tclassname (s1,i1)} as tok1)
+  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
     ::({tok = (*TypedefIdent*) _})
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = TSup_Template _})
     ::({tok = TAnd _})
-    ::(({tok = TIdent (s2,_)})| ({tok = Tclassname (s2,_)}))
+    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
 
   (* xx::yy<zz*> ww *)
-  | ({tok = Tclassname (s1,i1)} as tok1)
+  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
     ::({tok = (*TypedefIdent*) _})
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = TMul _})
     ::({tok = TSup_Template _})
-    ::(({tok = TIdent (s2,_)})| ({tok = Tclassname (s2,_)}))
+    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
   (* xx::yy<zz*>& ww *)
-  | ({tok = Tclassname (s1,i1)} as tok1)
+  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
     ::({tok = (*TypedefIdent*) _})
     ::({tok = TInf_Template _})
@@ -216,7 +208,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::({tok = TMul _})
     ::({tok = TSup_Template _})
     ::({tok = TAnd _})
-    ::(({tok = TIdent (s2,_)})| ({tok = Tclassname (s2,_)}))
+    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
 
     -> 
@@ -266,7 +258,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
 
 
   (* aa::xx<zz>::yy ww *)
-  | ({tok = Tclassname (s1,i1)} as tok1)
+  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
     ::({tok = Ttemplatename (s3,i3)} as tok3)
     ::({tok = TInf_Template _})
@@ -275,7 +267,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::({tok = TColCol i4} as tok4)
     ::({tok = TIdent (s2,_)})
     ::xs 
-  | ({tok = Tclassname (s1,i1)} as tok1)
+  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
     ::({tok = Ttemplatename (s3,i3)} as tok3)
     ::({tok = TInf_Template _})
@@ -293,8 +285,6 @@ let find_cplusplus_view_filtered_tokens_bis xs =
       tok4.tok <- TColCol2 i4;
       
       aux xs
-
-
 
 
   (* recurse *)
@@ -469,11 +459,6 @@ let rec find_cplusplus_view_line_paren xs =
       set_as_opar_cplusplus info_parens;
 
       aux xs
-
-
-
-
-
 
   | x::xs -> 
       aux xs

@@ -292,7 +292,7 @@ let useless_token x =
   | x when TH.is_comment x -> true
   (* c++ext: *)
   | Parser.TColCol _ -> true
-  | Parser.Tclassname _ -> true
+  | Parser.TIdent_ClassnameInQualifier _ -> true
 
   | Parser.TColCol2 _ -> true
   | Parser.Tclassname2 _ -> true
@@ -315,7 +315,7 @@ let mk_tokens_state toks = {
 let retag_for_typedef xs = 
   xs +> List.map (function
   | Parser.TColCol ii -> Parser.TColCol2 ii
-  | Parser.Tclassname (s,ii) -> Parser.Tclassname2 (s,ii)
+  | Parser.TIdent_ClassnameInQualifier (s,ii) -> Parser.Tclassname2 (s,ii)
 
   | Parser.Tclassname2 (s,ii) -> Parser.Tclassname2 (s,ii)
   | Parser.TColCol2 ii -> Parser.TColCol2 ii

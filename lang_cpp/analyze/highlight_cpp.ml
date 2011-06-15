@@ -514,7 +514,7 @@ let visit_toplevel
     | T.Tconstructorname _
     | T.Ttemplatename _
     | T.Tclassname2 _
-    | T.Tclassname _
+    | T.TIdent_ClassnameInQualifier _
     | T.TInt_ZeroVirtual _
 
     | T.TCCro_new _

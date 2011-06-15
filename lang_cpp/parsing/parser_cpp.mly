@@ -116,7 +116,7 @@ module LP = Lexer_parser_cpp
 %token <(string * Ast_cpp.info)> TDefParamVariadic
 /*(* transformed in TCommentSpace and disappear in parsing_hack.ml *)*/
 %token <Ast_cpp.info> TCppEscapedNewline 
-/*(* fresh_token: appear after fix_tokens_define in parsing_hack.ml *)*/
+/*(* fresh_token: appear after fix_tokens_define in parsing_hack_define.ml *)*/
 %token <(string * Ast_cpp.info)> TIdent_Define
 %token <Ast_cpp.info> TOPar_Define
 %token <Ast_cpp.info> TCommentNewline_DefineEndOfMacro
@@ -125,7 +125,7 @@ module LP = Lexer_parser_cpp
 /*(* cppext: include  *)*/
 /*(* used only in the lexer. It is then transformed in Comment or splitted *)*/
 %token <(string * string * bool ref * Ast_cpp.info)> TInclude
-/*(* fresh_token: tokens coming from TInclude generated in parsing_hack  *)*/
+/*(* fresh_token: tokens from TInclude generated in parsing_hack_define  *)*/
 %token <(Ast_cpp.info * bool ref)> TInclude_Start
 %token <(string * Ast_cpp.info)>   TInclude_Filename
 
@@ -176,7 +176,7 @@ module LP = Lexer_parser_cpp
 /*(* TTilde2? *)*/
 /*(*  Tunsigned Tsigned Tvoid *)*/
 
-/*(* fresh_token: for constructed object *)*/
+/*(* fresh_token: for constructed object, in parsing_hacks_cpp.ml *)*/
 %token <Ast_cpp.info> TOPar_CplusplusInit
 /*(* fresh_token: for template *)*/
 %token <Ast_cpp.info> TInf_Template TSup_Template
@@ -184,8 +184,8 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TOCro_new TCCro_new
 /*(* fresh_token: for pure virtual method. TODO add stuff in parsing_hack *)*/
 %token <Ast_cpp.info> TInt_ZeroVirtual
-/*(* fresh_token: todo? merge with TypedefIdent? *)*/
-%token <string * Ast_cpp.info> Tclassname
+/*(* fresh_token: why can't use TypedefIdent? conflict? *)*/
+%token <string * Ast_cpp.info> TIdent_ClassnameInQualifier
 /*(* fresh_token: ???? *)*/
 %token <string * Ast_cpp.info> Ttemplatename
 /*(* fresh_token: for methods with same name as classname *)*/
@@ -321,7 +321,7 @@ nested_name_specifier:
 
 /*(* context dependent *)*/
 class_or_namespace_name_for_qualifier:
- | Tclassname   { QClassname (fst $1), [snd $1] }
+ | TIdent_ClassnameInQualifier { QClassname (fst $1), [snd $1] }
  | template_idq { $1 }
 
 /*(* context dependent *)*/

@@ -182,6 +182,10 @@ let msg_change_tok tok =
      ->
       pr2_cplusplus(spf "constructed object builtin at %s" (pos ii));
 
+  | TIdent_ClassnameInQualifier (s, ii) ->
+      pr2_cplusplus (spf "CLASSNAME: in qualifier context %s at %s " s (pos ii))
+
+
   | _ -> raise Todo
 
 
@@ -204,9 +208,6 @@ let msg_macro_higher_order s =
     )
     (fun s -> pr2_pp ("MACRO: found higher ordre macro : " ^ s))
     s
-
-let msg_classname s = 
-  pr2_cplusplus ("CLASSNAME: found " ^ s)
 
 let msg_templatename s = 
   pr2_cplusplus ("TEMPLATENAME: found " ^ s)

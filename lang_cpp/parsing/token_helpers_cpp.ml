@@ -413,7 +413,7 @@ let info_of_tok = function
   | TPtrOpStar (i) -> i
   | TDotStar(i) -> i
 
-  | Tclassname  (s, i) -> i
+  | TIdent_ClassnameInQualifier  (s, i) -> i
   | Tclassname2  (s, i) -> i
   | Ttemplatename  (s, i) -> i
   | Tconstructorname  (s, i) -> i
@@ -634,7 +634,7 @@ let visitor_info_of_tok f = function
   | TDotStar(i) -> TDotStar (f i)
 
 
-  | Tclassname  (s, i) -> Tclassname  (s, f i) 
+  | TIdent_ClassnameInQualifier  (s, i) -> TIdent_ClassnameInQualifier (s, f i) 
   | Tclassname2  (s, i) -> Tclassname2  (s, f i) 
   | Ttemplatename  (s, i) -> Ttemplatename  (s, f i) 
   | Tconstructorname  (s, i) -> Tconstructorname  (s, f i) 
