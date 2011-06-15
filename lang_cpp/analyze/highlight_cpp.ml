@@ -462,7 +462,7 @@ let visit_toplevel
         tag ii Punctuation
 
     | T.TColCol ii  
-    | T.TColCol2 ii ->
+    | T.TColCol_BeforeTypedef ii ->
         tag ii Punctuation
 
 

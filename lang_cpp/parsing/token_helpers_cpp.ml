@@ -408,7 +408,7 @@ let info_of_tok = function
   | Texport (i) -> i
 
   | TColCol (i) -> i
-  | TColCol2 (i) -> i
+  | TColCol_BeforeTypedef (i) -> i
 
   | TPtrOpStar (i) -> i
   | TDotStar(i) -> i
@@ -628,7 +628,7 @@ let visitor_info_of_tok f = function
 
 
   | TColCol (i) -> TColCol (f i)
-  | TColCol2 (i) -> TColCol2 (f i)
+  | TColCol_BeforeTypedef (i) -> TColCol_BeforeTypedef (f i)
 
   | TPtrOpStar (i) -> TPtrOpStar (f i)
   | TDotStar(i) -> TDotStar (f i)

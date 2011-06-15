@@ -200,6 +200,9 @@ let msg_change_tok tok =
   | TIdent_Templatename (s, ii) ->
       pr2_cplusplus (spf "TEMPLATENAME: found %s at %s" s (pos ii))
 
+  | TColCol_BeforeTypedef ii ->
+      pr2_cplusplus (spf "RECLASSIF colcol to colcol2 at %s" (pos ii))
+
 
   | _ -> raise Todo
 

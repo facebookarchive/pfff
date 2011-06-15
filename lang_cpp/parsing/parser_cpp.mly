@@ -199,7 +199,7 @@ module LP = Lexer_parser_cpp
   Tchar_Constr Tint_Constr Tfloat_Constr Tdouble_Constr Twchar_t_Constr
   Tshort_Constr Tlong_Constr Tbool_Constr
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
-%token <Ast_cpp.info> TColCol2
+%token <Ast_cpp.info> TColCol_BeforeTypedef
 %token <string * Ast_cpp.info> Tclassname2
 %token <string * Ast_cpp.info> TtemplatenameQ2
 
@@ -415,7 +415,8 @@ enum_name_or_typedef_name_or_simple_class_name:
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/
 nested_name_specifier2: 
- | class_or_namespace_name_for_qualifier2 TColCol2 nested_name_specifier_opt2 
+ | class_or_namespace_name_for_qualifier2 
+   TColCol_BeforeTypedef nested_name_specifier_opt2 
   { (fst $1, snd $1++[$2])::$3 }
 
 class_or_namespace_name_for_qualifier2:
@@ -926,9 +927,9 @@ elaborated_type_specifier:
 /*(* cant factorize with a tcolcol_opt2 *)*/
 type_cplusplus_id:
  |          type_name { $1 }
- | TColCol2 type_name { $2 }
+ | TColCol_BeforeTypedef type_name { $2 }
  |          nested_name_specifier2 type_name { $2 }
- | TColCol2 nested_name_specifier2 type_name { $3 }
+ | TColCol_BeforeTypedef nested_name_specifier2 type_name { $3 }
 
 /*
 (* in c++ grammar they put 

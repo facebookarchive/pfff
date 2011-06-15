@@ -213,14 +213,11 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::({tok = TAnd _})
     ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
-
     -> 
-      pr2 "RECLASSIF class and col to class2 col2";
       tok1.tok <- Tclassname2 (s1, i1);
-      tok2.tok <- TColCol2 i2;
+      change_tok tok2 (TColCol_BeforeTypedef i2);
       
       aux xs
-
 
   (* xx<zz>::yy ww *)
   | ({tok = TIdent_Templatename (s1,i1)} as tok1)
@@ -251,14 +248,11 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::({tok = TColCol i2} as tok2)
     ::({tok = TIdent (s2,_)})
     ::xs
-
     -> 
-      pr2 "RECLASSIF2 template and col to templateQ2 col2";
       tok1.tok <- TtemplatenameQ2 (s1, i1);
-      tok2.tok <- TColCol2 i2;
+      change_tok tok2 (TColCol_BeforeTypedef i2);
       
       aux xs
-
 
   (* aa::xx<zz>::yy ww *)
   | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
@@ -283,9 +277,9 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     -> 
       pr2 "RECLASSIF3 classname template and col to templateQ2 col2";
       tok1.tok <- Tclassname2 (s1, i1);
-      tok2.tok <- TColCol2 i2;
+      change_tok tok2 (TColCol_BeforeTypedef i2);
       tok3.tok <- TtemplatenameQ2 (s3, i3);
-      tok4.tok <- TColCol2 i4;
+      change_tok tok4 (TColCol_BeforeTypedef i4);
       
       aux xs
 

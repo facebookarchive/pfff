@@ -294,7 +294,7 @@ let useless_token x =
   | Parser.TColCol _ -> true
   | Parser.TIdent_ClassnameInQualifier _ -> true
 
-  | Parser.TColCol2 _ -> true
+  | Parser.TColCol_BeforeTypedef _ -> true
   | Parser.Tclassname2 _ -> true
 
   | _ -> false 
@@ -314,11 +314,11 @@ let mk_tokens_state toks = {
 (* ??? *)
 let retag_for_typedef xs = 
   xs +> List.map (function
-  | Parser.TColCol ii -> Parser.TColCol2 ii
+  | Parser.TColCol ii -> Parser.TColCol_BeforeTypedef ii
   | Parser.TIdent_ClassnameInQualifier (s,ii) -> Parser.Tclassname2 (s,ii)
 
   | Parser.Tclassname2 (s,ii) -> Parser.Tclassname2 (s,ii)
-  | Parser.TColCol2 ii -> Parser.TColCol2 ii
+  | Parser.TColCol_BeforeTypedef ii -> Parser.TColCol_BeforeTypedef ii
   | _ -> raise Impossible
   )
 
