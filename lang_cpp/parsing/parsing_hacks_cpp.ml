@@ -29,6 +29,13 @@ open Parsing_hacks_lib
 open Parsing_hacks_pp
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* TODO 
+ * TIdent_TemplatenameInQualifier 
+ *)
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -321,11 +328,8 @@ let find_cplusplus_view_parenthized xs =
     ::(PToken ({tok = TInf i2} as tok2))::xs 
     when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs)
     -> 
-      msg_templatename s;
-      tok1.tok <- TIdent_Templatename(s,i1);
-
+      change_tok tok1 (TIdent_Templatename(s,i1));
       change_tok tok2 (TInf_Template i2);
-      
       let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in
       change_tok toksup (TSup_Template toksupi);
       

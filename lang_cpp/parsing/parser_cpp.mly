@@ -186,14 +186,14 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TInt_ZeroVirtual
 /*(* fresh_token: why can't use TypedefIdent? conflict? *)*/
 %token <string * Ast_cpp.info> TIdent_ClassnameInQualifier
-/*(* fresh_token: ???? *)*/
+/*(* fresh_token: *)*/
 %token <string * Ast_cpp.info> TIdent_Templatename
+/*(* for templatename as qualifier, before a '::' TODO write heuristic! *)*/
+%token <string * Ast_cpp.info> TIdent_TemplatenameInQualifier
 /*(* fresh_token: for methods with same name as classname *)*/
 %token <string * Ast_cpp.info> TIdent_Constructor
-/*(* for templatename as qualifier, before a '::' TODO write heuristic *)*/
-%token <string * Ast_cpp.info> TtemplatenameQ
 /*(* for cast_constructor, before a '(' *)*/
-%token <string * Ast_cpp.info> TypedefIdent2
+%token <string * Ast_cpp.info> TIdent_TypedefConstr
 /*(* fresh_token: for constructed (basic) objects *)*/
 %token <Ast_cpp.info> 
   Tchar_Constr Tint_Constr Tfloat_Constr Tdouble_Constr Twchar_t_Constr
@@ -326,7 +326,8 @@ class_or_namespace_name_for_qualifier:
 
 /*(* context dependent *)*/
 template_idq:
- | TtemplatenameQ tinf_template template_argument_list tsup_template 
+ | TIdent_TemplatenameInQualifier 
+   tinf_template template_argument_list tsup_template
   { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
 
 
@@ -438,7 +439,7 @@ ident:
 /*(*c++ext:*)*/
 ident3:
  | ident { $1 }
- | TypedefIdent2 { $1 }
+ | TIdent_TypedefConstr { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -628,11 +629,11 @@ cpp_cast_operator:
 /*
 (* c++ext: cast with function syntax, and also constructor, but conflict.
  * constructed object or cast. Have a few conflicts.
- * todo can have nested specifier before the typedefident2 ... so 
+ * todo can have nested specifier before the typedefident ... so 
  * need a classname3 ?
 *)*/
 cast_constructor_expr:
- | TypedefIdent2 TOPar argument_list_opt TCPar 
+ | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
      { let ft = nQ, (TypeName (fst $1, Ast.noTypedefDef()), [snd $1]) in
        mk_e(ConstructedObject (ft, $3)) [$2;$4]  
      }

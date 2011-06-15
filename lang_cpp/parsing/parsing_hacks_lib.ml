@@ -70,6 +70,8 @@ let pr2_cplusplus s =
 let msg_change_tok tok =
   match tok with
 
+  (* mostly in parsing_hacks_define.ml *)
+
   | TIdent_Define (s, ii) ->
       ()
   | TOPar_Define (ii) ->
@@ -81,6 +83,8 @@ let msg_change_tok tok =
       ()
   | TInclude_Filename ii -> 
       ()
+
+  (* mostly in parsing_hacks.ml *)
 
   | TIdent_Typedef (s, ii) ->
       (* todo? also do LP.add_typedef_root s ??? *)
@@ -97,6 +101,8 @@ let msg_change_tok tok =
         | _                             -> false 
       ) 
       (fun s -> pr2_pp (spf "TYPEDEF: promoting %s at %s " s (pos ii)))
+
+  (* mostly in parsing_hacks_pp.ml *)
 
   (* cppext: *)
 
@@ -167,6 +173,8 @@ let msg_change_tok tok =
   | TCPar_EOL ii ->
       pr2_pp (spf "MISC: retagging ) %s" (pos ii))
 
+  (* mostly in parsing_hacks_cpp.ml *)
+
   (* c++ext: *)
   | TOPar_CplusplusInit ii ->
       pr2_cplusplus (spf "constructor initializer at %s" (pos ii))
@@ -181,12 +189,17 @@ let msg_change_tok tok =
   | Tshort_Constr ii | Tlong_Constr ii | Tbool_Constr ii
      ->
       pr2_cplusplus(spf "constructed object builtin at %s" (pos ii));
+  | TIdent_TypedefConstr (s, ii) ->
+      pr2_cplusplus (spf "constructed object %s at %s" s (pos ii))
 
   | TIdent_ClassnameInQualifier (s, ii) ->
       pr2_cplusplus (spf "CLASSNAME: in qualifier context %s at %s " s (pos ii))
   | TIdent_Constructor (s, ii) ->
       pr2_cplusplus (spf "CONSTRUCTOR: found %s at %s " s (pos ii))
       
+  | TIdent_Templatename (s, ii) ->
+      pr2_cplusplus (spf "TEMPLATENAME: found %s at %s" s (pos ii))
+
 
   | _ -> raise Todo
 
@@ -210,11 +223,8 @@ let msg_macro_higher_order s =
     )
     (fun s -> pr2_pp ("MACRO: found higher ordre macro : " ^ s))
     s
-
-let msg_templatename s = 
-  pr2_cplusplus ("TEMPLATENAME: found " ^ s)
-
 (* todo: more msg_xxx from parsing_c/ *)  
+
 
 let change_tok extended_tok tok =
   msg_change_tok tok;

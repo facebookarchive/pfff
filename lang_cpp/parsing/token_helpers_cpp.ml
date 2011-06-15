@@ -417,8 +417,8 @@ let info_of_tok = function
   | Tclassname2  (s, i) -> i
   | TIdent_Templatename  (s, i) -> i
   | TIdent_Constructor  (s, i) -> i
-  | TypedefIdent2  (s, i) -> i
-  | TtemplatenameQ  (s, i) -> i
+  | TIdent_TypedefConstr  (s, i) -> i
+  | TIdent_TemplatenameInQualifier  (s, i) -> i
   | TtemplatenameQ2  (s, i) -> i
 
   | TInf_Template                 (i) -> i
@@ -638,9 +638,10 @@ let visitor_info_of_tok f = function
   | Tclassname2  (s, i) -> Tclassname2  (s, f i) 
   | TIdent_Templatename  (s, i) -> TIdent_Templatename  (s, f i) 
   | TIdent_Constructor  (s, i) -> TIdent_Constructor  (s, f i) 
-  | TypedefIdent2  (s, i) -> TypedefIdent2  (s, f i) 
+  | TIdent_TypedefConstr  (s, i) -> TIdent_TypedefConstr  (s, f i) 
 
-  | TtemplatenameQ  (s, i) -> TtemplatenameQ  (s, f i) 
+  | TIdent_TemplatenameInQualifier  (s, i) -> 
+      TIdent_TemplatenameInQualifier  (s, f i) 
   | TtemplatenameQ2  (s, i) -> TtemplatenameQ2  (s, f i) 
 
   | TInf_Template                 (i) -> TInf_Template                 (f i) 

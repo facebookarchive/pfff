@@ -303,10 +303,8 @@ let lookahead2 next before =
     when (LP.current_context () = (LP.InClassStruct s)) -> 
       fresh_tok (TIdent_Constructor(s,i1))
 
-  | (TIdent_Typedef(s,i1))::TOPar _::_ , _ 
-    -> 
-      pr2_cplusplus("cast_function_typedef: "  ^s);
-      TypedefIdent2(s,i1)
+  | (TIdent_Typedef(s,i1))::TOPar _::_ , _ -> 
+      fresh_tok (TIdent_TypedefConstr(s,i1))
 
 
   (* basic type can now also be used as "cast_function/constructor" *)

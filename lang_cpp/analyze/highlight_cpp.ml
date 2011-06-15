@@ -509,8 +509,8 @@ let visit_toplevel
 
 
     | T.TtemplatenameQ2 _
-    | T.TtemplatenameQ _
-    | T.TypedefIdent2 _
+    | T.TIdent_TemplatenameInQualifier _
+    | T.TIdent_TypedefConstr _
     | T.TIdent_Constructor _
     | T.TIdent_Templatename _
     | T.Tclassname2 _
