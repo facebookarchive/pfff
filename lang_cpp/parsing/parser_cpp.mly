@@ -186,10 +186,14 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TInt_ZeroVirtual
 /*(* fresh_token: why can't use TypedefIdent? conflict? *)*/
 %token <string * Ast_cpp.info> TIdent_ClassnameInQualifier
-/*(* fresh_token: *)*/
+/*(* fresh_token: appears after solved if next token is a typedef *)*/
+%token <string * Ast_cpp.info> TIdent_ClassnameInQualifier_BeforeTypedef
+/*(* fresh_token: just before <> *)*/
 %token <string * Ast_cpp.info> TIdent_Templatename
 /*(* for templatename as qualifier, before a '::' TODO write heuristic! *)*/
 %token <string * Ast_cpp.info> TIdent_TemplatenameInQualifier
+/*(* fresh_token: appears after solved if next token is a typedef *)*/
+%token <string * Ast_cpp.info> TIdent_TemplatenameInQualifier_BeforeTypedef
 /*(* fresh_token: for methods with same name as classname *)*/
 %token <string * Ast_cpp.info> TIdent_Constructor
 /*(* for cast_constructor, before a '(' *)*/
@@ -200,8 +204,6 @@ module LP = Lexer_parser_cpp
   Tshort_Constr Tlong_Constr Tbool_Constr
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Ast_cpp.info> TColCol_BeforeTypedef
-%token <string * Ast_cpp.info> Tclassname2
-%token <string * Ast_cpp.info> TtemplatenameQ2
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -420,11 +422,12 @@ nested_name_specifier2:
   { (fst $1, snd $1++[$2])::$3 }
 
 class_or_namespace_name_for_qualifier2:
- | Tclassname2   { QClassname (fst $1), [snd $1]  }
+ | TIdent_ClassnameInQualifier_BeforeTypedef { QClassname (fst $1), [snd $1]  }
  | template_idq2 { $1 }
 
 template_idq2:
- | TtemplatenameQ2 tinf_template template_argument_list tsup_template
+ | TIdent_TemplatenameInQualifier_BeforeTypedef 
+   tinf_template template_argument_list tsup_template
   { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
 
 /*

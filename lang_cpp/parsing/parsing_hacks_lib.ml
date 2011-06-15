@@ -203,6 +203,10 @@ let msg_change_tok tok =
   | TColCol_BeforeTypedef ii ->
       pr2_cplusplus (spf "RECLASSIF colcol to colcol2 at %s" (pos ii))
 
+  | TIdent_ClassnameInQualifier_BeforeTypedef (s, ii) ->
+      pr2_cplusplus (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
+  | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
+      pr2_cplusplus (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
 
   | _ -> raise Todo
 

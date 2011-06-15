@@ -414,12 +414,12 @@ let info_of_tok = function
   | TDotStar(i) -> i
 
   | TIdent_ClassnameInQualifier  (s, i) -> i
-  | Tclassname2  (s, i) -> i
+  | TIdent_ClassnameInQualifier_BeforeTypedef  (s, i) -> i
   | TIdent_Templatename  (s, i) -> i
   | TIdent_Constructor  (s, i) -> i
   | TIdent_TypedefConstr  (s, i) -> i
   | TIdent_TemplatenameInQualifier  (s, i) -> i
-  | TtemplatenameQ2  (s, i) -> i
+  | TIdent_TemplatenameInQualifier_BeforeTypedef  (s, i) -> i
 
   | TInf_Template                 (i) -> i
   | TSup_Template                 (i) -> i
@@ -635,14 +635,16 @@ let visitor_info_of_tok f = function
 
 
   | TIdent_ClassnameInQualifier  (s, i) -> TIdent_ClassnameInQualifier (s, f i) 
-  | Tclassname2  (s, i) -> Tclassname2  (s, f i) 
+  | TIdent_ClassnameInQualifier_BeforeTypedef  (s, i) -> 
+      TIdent_ClassnameInQualifier_BeforeTypedef  (s, f i) 
   | TIdent_Templatename  (s, i) -> TIdent_Templatename  (s, f i) 
   | TIdent_Constructor  (s, i) -> TIdent_Constructor  (s, f i) 
   | TIdent_TypedefConstr  (s, i) -> TIdent_TypedefConstr  (s, f i) 
 
   | TIdent_TemplatenameInQualifier  (s, i) -> 
       TIdent_TemplatenameInQualifier  (s, f i) 
-  | TtemplatenameQ2  (s, i) -> TtemplatenameQ2  (s, f i) 
+  | TIdent_TemplatenameInQualifier_BeforeTypedef  (s, i) -> 
+      TIdent_TemplatenameInQualifier_BeforeTypedef  (s, f i) 
 
   | TInf_Template                 (i) -> TInf_Template                 (f i) 
   | TSup_Template                 (i) -> TSup_Template                 (f i) 

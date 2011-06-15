@@ -508,12 +508,12 @@ let visit_toplevel
         -> tag ii TypeInt
 
 
-    | T.TtemplatenameQ2 _
+    | T.TIdent_TemplatenameInQualifier_BeforeTypedef _
     | T.TIdent_TemplatenameInQualifier _
     | T.TIdent_TypedefConstr _
     | T.TIdent_Constructor _
     | T.TIdent_Templatename _
-    | T.Tclassname2 _
+    | T.TIdent_ClassnameInQualifier_BeforeTypedef _
     | T.TIdent_ClassnameInQualifier _
     | T.TInt_ZeroVirtual _
 
