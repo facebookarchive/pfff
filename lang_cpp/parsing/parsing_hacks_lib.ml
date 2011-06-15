@@ -170,6 +170,9 @@ let msg_change_tok tok =
   | Tconst_MacroDeclConst ii ->
       pr2_pp (spf "MACRO: retag const at %s" (pos ii))
 
+  | TAny_Action ii ->
+      pr2_pp (spf "ACTION: retag at %s" (pos ii))
+
   | TCPar_EOL ii ->
       pr2_pp (spf "MISC: retagging ) %s" (pos ii))
 
@@ -208,7 +211,8 @@ let msg_change_tok tok =
   | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
       pr2_cplusplus (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
 
-  | _ -> raise Todo
+  | _ -> 
+      raise Todo
 
 
 let msg_foreach s = 

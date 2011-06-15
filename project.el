@@ -26,6 +26,7 @@
      lang_js/parsing
      lang_sql/parsing
      lang_html/parsing
+     lang_cpp/parsing
      lang_php/analyze
      lang_php/analyze/basic
      lang_php/analyze/foundation
@@ -90,7 +91,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 200
+     (case 201
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -124,6 +125,7 @@
        (100 "-parse_html /home/pad/pfff/tests/html/simple/div.html")
 
        (200 "-parse_cpp /home/pad/pfff/tests/cpp/foo.h")
+       (201 "-parse_cpp /tmp/test.cpp")
 
        )
      )
