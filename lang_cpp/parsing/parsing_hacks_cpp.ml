@@ -220,7 +220,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
 
 
   (* xx<zz>::yy ww *)
-  | ({tok = Ttemplatename (s1,i1)} as tok1)
+  | ({tok = TIdent_Templatename (s1,i1)} as tok1)
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = TSup_Template _})
@@ -229,7 +229,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::xs
 
   (* xx<zz,zzz>::yy ww *)
-  | ({tok = Ttemplatename (s1,i1)} as tok1)
+  | ({tok = TIdent_Templatename (s1,i1)} as tok1)
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = (*TIdent (s,_)*) _})
@@ -240,7 +240,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::xs
 
   (* xx<zz*>::yy ww *)
-  | ({tok = Ttemplatename (s1,i1)} as tok1)
+  | ({tok = TIdent_Templatename (s1,i1)} as tok1)
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*)_})
     ::({tok = TMul _})
@@ -260,7 +260,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
   (* aa::xx<zz>::yy ww *)
   | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
-    ::({tok = Ttemplatename (s3,i3)} as tok3)
+    ::({tok = TIdent_Templatename (s3,i3)} as tok3)
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = TSup_Template _})
@@ -269,7 +269,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
     ::xs 
   | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
     ::({tok = TColCol i2} as tok2)
-    ::({tok = Ttemplatename (s3,i3)} as tok3)
+    ::({tok = TIdent_Templatename (s3,i3)} as tok3)
     ::({tok = TInf_Template _})
     ::({tok = (*TIdent (s,_)*) _})
     ::({tok = (*TIdent (s,_)*) _})
@@ -326,7 +326,7 @@ let find_cplusplus_view_parenthized xs =
     when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs)
     -> 
       msg_templatename s;
-      tok1.tok <- Ttemplatename(s,i1);
+      tok1.tok <- TIdent_Templatename(s,i1);
 
       change_tok tok2 (TInf_Template i2);
       
@@ -415,7 +415,7 @@ let rec find_cplusplus_view_line_paren xs =
 
   (* xx<zz> yy(...); when in function *)
   | (Line 
-        [PToken ({tok = Ttemplatename (s1,i1)} as _tok);
+        [PToken ({tok = TIdent_Templatename (s1,i1)} as _tok);
          PToken ({tok = TInf_Template _});
          PToken ({tok = (*TypedefIdent*) _ident});
          PToken ({tok = TSup_Template _});
@@ -437,7 +437,7 @@ let rec find_cplusplus_view_line_paren xs =
 
   (* xx<zz> yy \n(...); when in function *)
   | (Line 
-        [PToken ({tok = Ttemplatename (s1,i1)} as _tok);
+        [PToken ({tok = TIdent_Templatename (s1,i1)} as _tok);
          PToken ({tok = TInf_Template _});
          PToken ({tok = (*TypedefIdent*) _});
          PToken ({tok = TSup_Template _});

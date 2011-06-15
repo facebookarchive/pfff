@@ -187,7 +187,7 @@ module LP = Lexer_parser_cpp
 /*(* fresh_token: why can't use TypedefIdent? conflict? *)*/
 %token <string * Ast_cpp.info> TIdent_ClassnameInQualifier
 /*(* fresh_token: ???? *)*/
-%token <string * Ast_cpp.info> Ttemplatename
+%token <string * Ast_cpp.info> TIdent_Templatename
 /*(* fresh_token: for methods with same name as classname *)*/
 %token <string * Ast_cpp.info> Tconstructorname
 /*(* for templatename as qualifier, before a '::' TODO write heuristic *)*/
@@ -394,7 +394,7 @@ id_expression:
 
 /*(* context dependent *)*/
 template_name:
- | Ttemplatename { $1 }
+ | TIdent_Templatename { $1 }
 
 /*(* used only with namespace/using rules. We use Tclassname for stuff
    * like std::... TODO: or just TIdent_Typedef *)*/
