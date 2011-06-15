@@ -113,12 +113,8 @@ let find_cplusplus_view_filtered_tokens xs =
     ::({tok = TIdent(s2,i2)} as tok2)
     ::xs -> 
       change_tok tok1 (TIdent_ClassnameInQualifier (s,i1));
-
       if s = s2 
-      then begin
-        msg_constructorname s2;
-        tok2.tok <- Tconstructorname (s2, i2);
-      end;
+      then change_tok tok2 (TIdent_Constructor (s2, i2));
 
       aux (tok2::xs)
 

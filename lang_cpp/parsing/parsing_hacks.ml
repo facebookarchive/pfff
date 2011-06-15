@@ -299,11 +299,9 @@ let lookahead2 next before =
     (((TOBrace _| TCBrace _|TPtVirg _ | Texplicit _  |Tinline _)::_)
      (* for    public:   xx * y; *)
       | TCol _::(Tpublic _ |Tprotected _|Tprivate _)::_
-    )) when (LP.current_context () = (LP.InClassStruct s))
-        -> 
-      msg_constructorname s;
-      Tconstructorname(s,i1)
-
+    )) 
+    when (LP.current_context () = (LP.InClassStruct s)) -> 
+      fresh_tok (TIdent_Constructor(s,i1))
 
   | (TIdent_Typedef(s,i1))::TOPar _::_ , _ 
     -> 

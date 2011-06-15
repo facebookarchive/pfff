@@ -189,7 +189,7 @@ module LP = Lexer_parser_cpp
 /*(* fresh_token: ???? *)*/
 %token <string * Ast_cpp.info> TIdent_Templatename
 /*(* fresh_token: for methods with same name as classname *)*/
-%token <string * Ast_cpp.info> Tconstructorname
+%token <string * Ast_cpp.info> TIdent_Constructor
 /*(* for templatename as qualifier, before a '::' TODO write heuristic *)*/
 %token <string * Ast_cpp.info> TtemplatenameQ
 /*(* for cast_constructor, before a '(' *)*/
@@ -1632,22 +1632,22 @@ constant_initializer:
 
 /*(* special case for ctor/dtor cos they don't have a return type *)*/
 ctor_dtor_member:
- | explicit_opt Tconstructorname topar parameter_type_list_opt tcpar
+ | explicit_opt TIdent_Constructor topar parameter_type_list_opt tcpar
      ctor_mem_initializer_list_opt
      compound
      {  EmptyField, [](*TODO*) }
 
- | explicit_opt Tconstructorname topar parameter_type_list_opt tcpar
+ | explicit_opt TIdent_Constructor topar parameter_type_list_opt tcpar
      ctor_mem_initializer_list_opt
      TPtVirg 
      { EmptyField, [](*TODO*) }
 
- | Tinline Tconstructorname topar parameter_type_list_opt tcpar
+ | Tinline TIdent_Constructor topar parameter_type_list_opt tcpar
      ctor_mem_initializer_list_opt
      TPtVirg 
      { EmptyField, [](*TODO*) }
 
- | Tinline Tconstructorname topar parameter_type_list_opt tcpar
+ | Tinline TIdent_Constructor topar parameter_type_list_opt tcpar
      ctor_mem_initializer_list_opt
      compound
      {  EmptyField, [](*TODO*) }
@@ -1865,7 +1865,7 @@ unnamed_namespace_definition:
  * TODO scope ? do a start_constructor ? 
  *)*/
 ctor_dtor:
- | nested_name_specifier Tconstructorname topar parameter_type_list_opt tcpar
+ | nested_name_specifier TIdent_Constructor topar parameter_type_list_opt tcpar
      ctor_mem_initializer_list_opt
      compound
      { NameSpaceAnon [],[] }

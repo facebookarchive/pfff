@@ -184,7 +184,9 @@ let msg_change_tok tok =
 
   | TIdent_ClassnameInQualifier (s, ii) ->
       pr2_cplusplus (spf "CLASSNAME: in qualifier context %s at %s " s (pos ii))
-
+  | TIdent_Constructor (s, ii) ->
+      pr2_cplusplus (spf "CONSTRUCTOR: found %s at %s " s (pos ii))
+      
 
   | _ -> raise Todo
 
@@ -211,9 +213,6 @@ let msg_macro_higher_order s =
 
 let msg_templatename s = 
   pr2_cplusplus ("TEMPLATENAME: found " ^ s)
-
-let msg_constructorname s = 
-  pr2_cplusplus ("CONSTRUCTORNAME: found " ^ s)
 
 (* todo: more msg_xxx from parsing_c/ *)  
 
