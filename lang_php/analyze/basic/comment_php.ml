@@ -168,4 +168,11 @@ let _ = example(index_comment (SingleLineSlashSlash "foo") = [0, "foo"])
 let _ = example(index_comment (DocBlock (["foo"],true)) = [1, "foo"])
 
 
-
+let comments_of_file file =
+  let toks = Parse_php.tokens file in
+  toks +> Common.map_filter (function
+  | Parser_php.T_COMMENT info
+  | Parser_php.T_DOC_COMMENT info
+      -> Some info
+  | _ -> None
+  )
