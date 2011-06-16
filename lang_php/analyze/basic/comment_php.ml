@@ -23,6 +23,10 @@ open Common
  * A few types and helpers related to comment analysis. 
  * Should perhaps at one point parse even more comments and have 
  * tokens such as TWord, TAnnot, etc.
+ * 
+ * Note that the T_COMMENT and T_DOC_COMMENT tokens do not contain
+ * the final newline character. This will be tokenized as a separate
+ * TNewline.
  *)
 
 (*****************************************************************************)
