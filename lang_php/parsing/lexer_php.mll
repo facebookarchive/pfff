@@ -1484,11 +1484,18 @@ and st_one_line_comment = parse
             yyless 1 lexbuf;
             start ^ st_one_line_comment lexbuf
         (* end of recursion when new line or other character  *)
-        | '\n' -> start ^ "\n"
+        | '\n' -> 
+            (* don't want the newline to be part of the comment *)
+            yyless 1 lexbuf;
+            start
         | c -> start ^ String.make 1 c
         )
       }
-  | NEWLINE { tok lexbuf }
+  | NEWLINE { 
+      (* don't want the newline to be part of the comment *)
+      yyless 1 lexbuf;
+      ""
+    }
   | "?>" { 
       (* "%>" is only when use asp_tags *)
       yyless 2 lexbuf;
