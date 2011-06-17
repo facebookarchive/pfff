@@ -242,35 +242,6 @@ let fixFunc = function
             ("you are trying to do a function definition but you dont give " ^
              "any parameter", fake_pi))
 
-
-(*-------------------------------------------------------------------------- *)
-(* parse_typedef_fix2 *)
-(*-------------------------------------------------------------------------- *)
-
-let dt s () = 
-  if !Flag.debug_etdt then pr2 ("<" ^ s); 
-  LP.disable_typedef ()
-
-let et s () = 
-  if !Flag.debug_etdt then pr2 (">" ^ s);  
-  LP.enable_typedef ()
-
-
-let fix_add_params_ident = function
-  | ((s, (nQ, (FunctionType (fullt, (params, bool)),_)), st)) ->  
-
-      (match params with
-      | [((reg, None, ((_qua, (BaseType Void,_)))),_), _] ->  ()
-      | params -> 
-        params +> List.iter (function 
-         | (((bool, Some s, fullt), _), _) -> 
-            LP.add_ident s
-	 | _ -> 
-             ()
-             (* failwith "internal errror: fixOldCDecl not good" *)
-      )) 
-  | _ -> ()
-
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)

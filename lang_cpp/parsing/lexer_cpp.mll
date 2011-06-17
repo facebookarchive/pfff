@@ -31,7 +31,7 @@ module Ast = Ast_cpp
  *
  * This lexer generates tokens for C (int, while, ...), C++ (new, delete, ...),
  * and CPP (#define, #ifdef, ...). It also generate tokens for comments
- * and spaces. This means it can not be used as-is. Some post-filtering
+ * and spaces. This means that it can not be used as-is. Some post-filtering
  * has to be done to feed it to a parser. Note that C and C++ are not
  * context free languages and so some idents must be disambiguated
  * in some ways. TIdent below must thus be post-processed too (as well
@@ -452,14 +452,14 @@ rule token = parse
           match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
           | Some f -> f info
 
-           (* parse_typedef_fix. note: now this is no more useful, cos
-            * as we use tokens_all, it first parse all as an ident and
-            * later transform an indent in a typedef. so this job is
-            * now done in parse_c.ml.
+           (* typedef_hack. note: now this is no more useful, cos
+            * as we use tokens_all, we first parse all as an ident and
+            * later transform some idents into typedefs. So this job is
+            * now done in parse_cpp.ml.
             * 
             * old:
             *    if Lexer_parser.is_typedef s 
-            *    then TypedefIdent (s, info)
+            *    then Ident_Typedef (s, info)
             *    else TIdent (s, info)
             *)
           | None -> TIdent (s, info)

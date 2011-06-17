@@ -48,7 +48,6 @@ let cmdline_flags_verbose () = [
 let debug_lexer = ref false
 
 let debug_typedef = ref false
-let debug_etdt = ref false
 let debug_pp = ref false
 let debug_pp_ast  = ref false
 let debug_cplusplus = ref false
@@ -57,7 +56,6 @@ let cmdline_flags_debugging () = [
   "-debug_lexer_cpp",   Arg.Set  debug_lexer , " ";
 
   "-debug_pp",          Arg.Set  debug_pp, " ";
-  "-debug_etdt",        Arg.Set  debug_etdt , "  ";
   "-debug_typedef",     Arg.Set  debug_typedef, "  ";
   "-debug_cplusplus",   Arg.Set  debug_cplusplus, " ";
 
@@ -69,11 +67,8 @@ let cmdline_flags_debugging () = [
 ]
 
 (*****************************************************************************)
-(* Disapble parsing feature *)
+(* Disable parsing features *)
 (*****************************************************************************)
 
-let add_typedef_root = ref false
-
 let if0_passing = ref true
-
 let ifdef_to_if  = ref false

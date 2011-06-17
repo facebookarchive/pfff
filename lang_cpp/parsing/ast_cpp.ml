@@ -48,6 +48,7 @@ and 'a comma_list = 'a wrap list
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
 (* ------------------------------------------------------------------------- *)
+
 (* c++ext: in C 'name' and 'ident' are equivalent and equal to just string.
  * In C++ ident can have a complex form like A::B::list<int>::size.
  * I use Q for qualified. I also have a special type to make the difference

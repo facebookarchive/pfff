@@ -240,9 +240,6 @@ module LP = Lexer_parser_cpp
 %type <Ast_cpp.fullType> type_id
 %type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
    declarator
-%type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
-   declaratorsd
-
 %%
 
 /*(*************************************************************************)*/
@@ -281,9 +278,9 @@ main:
 
 translation_unit: 
  | external_declaration                  
-     { !LP._lexer_hint.context_stack <- [LP.InTopLevel];   [$1] }
+     { [$1] }
  | translation_unit external_declaration
-     { !LP._lexer_hint.context_stack <- [LP.InTopLevel]; $1 ++ [$2] }
+     { $1 ++ [$2] }
 
 external_declaration: 
  | function_definition            { TopDecl (Definition $1, noii) }
@@ -329,7 +326,7 @@ class_or_namespace_name_for_qualifier:
 /*(* context dependent *)*/
 template_idq:
  | TIdent_TemplatenameInQualifier 
-   tinf_template template_argument_list tsup_template
+   TInf_Template template_argument_list TSup_Template
   { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
 
 
@@ -427,7 +424,7 @@ class_or_namespace_name_for_qualifier2:
 
 template_idq2:
  | TIdent_TemplatenameInQualifier_BeforeTypedef 
-   tinf_template template_argument_list tsup_template
+   TInf_Template template_argument_list TSup_Template
   { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
 
 /*
@@ -505,7 +502,7 @@ pm_expr:
 
 cast_expr: 
  | unary_expr                        { $1 }
- | topar2 type_id tcpar2 cast_expr { mk_e(Cast ($2, $4)) [$1;$3] }
+ | TOPar type_id TCPar cast_expr { mk_e(Cast ($2, $4)) [$1;$3] }
 
 unary_expr: 
  | postfix_expr                    { $1 }
@@ -513,7 +510,7 @@ unary_expr:
  | TDec unary_expr                 { mk_e(Infix ($2, Dec))    [$1] }
  | unary_op cast_expr              { mk_e(Unary ($2, fst $1)) [snd $1] }
  | Tsizeof unary_expr              { mk_e(SizeOfExpr ($2))    [$1] }
- | Tsizeof topar2 type_id tcpar2 { mk_e(SizeOfType ($3))    [$1;$2;$4] }
+ | Tsizeof TOPar type_id TCPar { mk_e(SizeOfType ($3))    [$1;$2;$4] }
  /*(*c++ext: *)*/
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -552,8 +549,8 @@ postfix_expr:
 
  /*(* c++ext: *)*/
  | cast_operator_expr { $1 }
- | Ttypeid topar2 unary_expr tcpar2 { mk_e(TypeIdOfExpr ($3))    [$1;$2;$4] }
- | Ttypeid topar2 type_id    tcpar2 { mk_e(TypeIdOfType ($3))    [$1;$2;$4] }
+ | Ttypeid TOPar unary_expr TCPar { mk_e(TypeIdOfExpr ($3))    [$1;$2;$4] }
+ | Ttypeid TOPar type_id    TCPar { mk_e(TypeIdOfType ($3))    [$1;$2;$4] }
  | cast_constructor_expr { $1 }
 
 
@@ -620,7 +617,7 @@ primary_cplusplus_id:
 
 /*(*could use TInf here *)*/
 cast_operator_expr: 
- | cpp_cast_operator tinf_template type_id  tsup_template TOPar expr TCPar 
+ | cpp_cast_operator TInf_Template type_id  TSup_Template TOPar expr TCPar 
      { mk_e (CplusplusCast (fst $1, $3, $6)) [snd $1;$2;$4;$5;$7] }
 
 /*(*c++ext:*)*/
@@ -672,9 +669,9 @@ new_initializer:
 /*(*----------------------------*)*/
 
 compound_literal_expr:
- | topar2 type_id tcpar2 TOBrace TCBrace 
+ | TOPar type_id TCPar TOBrace TCBrace 
      { mk_e(GccConstructor ($2, [])) [$1;$3;$4;$5] }
- | topar2 type_id tcpar2 tobrace_ini initialize_list gcc_comma_opt tcbrace_ini
+ | TOPar type_id TCPar TOBrace initialize_list gcc_comma_opt TCBrace
      { mk_e(GccConstructor ($2, List.rev $5)) ([$1;$3;$4;$7] ++ $6) }
 
 string_elem:
@@ -705,10 +702,6 @@ action_higherordermacro:
 
 /*(* would like evalInt $1 but require too much info *)*/
 const_expr: cond_expr { $1  }
-
-/*(* prepare for type context *)*/
-topar2: TOPar { et "topar2" (); $1  }
-tcpar2: TCPar { et "tcpar2" (); $1 (*TODO? et ? sure ? c pas dt plutot ? *) } 
 
 basic_type_2: 
  | Tchar_Constr                { (BaseType (IntType CChar)), [$1]}
@@ -767,7 +760,7 @@ statement:
 
 
 compound: 
- | tobrace statement_list_opt tcbrace { $2, [$1; $3]  }
+ | TOBrace statement_list_opt TCBrace { $2, [$1; $3]  }
 
 
 statement_list:
@@ -851,7 +844,7 @@ try_block:
  | Ttry compound handler_list { Try ($2, $3), [$1] }
 
 handler: 
- | Tcatch topar exception_decl tcpar compound { ($3, [$1;$2;$4]), $5 }
+ | Tcatch TOPar exception_decl TCPar compound { ($3, [$1;$2;$4]), $5 }
 
 exception_decl:
  | parameter_decl { ExnDecl $1 }
@@ -866,7 +859,7 @@ exception_decl:
 /*(*-----------------------------------------------------------------------*)*/
 
 /*(* in c++ grammar they put 'cv_qualifier' here but I prefer keep as before *)*/
-type_spec2:
+type_spec:
  | simple_type_specifier { $1 }
  | elaborated_type_specifier { $1 }
  | enum_specifier  { Right3 (fst $1), snd $1 }
@@ -952,7 +945,7 @@ type_name:
  | template_id { $1 }
 
 template_id:
- | template_name tinf_template template_argument_list tsup_template
+ | template_name TInf_Template template_argument_list TSup_Template
     { (TypeTemplate (fst $1,$3)), [snd $1;$2;$4] }
 
 /*
@@ -1007,16 +1000,16 @@ direct_d:
      { ($1, fun x -> x) }
  | TOPar declarator TCPar      /*(* forunparser: old: $2 *)*/ 
      { (fst $2, fun x -> (nQ, (ParenType ((snd $2) x), [$1;$3]))) }
- | direct_d tocro            tccro         
+ | direct_d TOCro            TCCro         
      { (fst $1,fun x->(snd $1) (nQ,(Array (None,x),         [$2;$3]))) }
- | direct_d tocro const_expr tccro
+ | direct_d TOCro const_expr TCCro
      { (fst $1,fun x->(snd $1) (nQ,(Array (Some $3,x),      [$2;$4])))}
- | direct_d topar            tcpar const_opt exception_specification_opt
+ | direct_d TOPar            TCPar const_opt exception_specification_opt
      { (fst $1,
        fun x->(snd $1) 
          (nQ,(FunctionType (x,(([],(false, [])))),[$2;$3])))
      }
- | direct_d topar parameter_type_list tcpar const_opt exception_specification_opt
+ | direct_d TOPar parameter_type_list TCPar const_opt exception_specification_opt
      { (fst $1,fun x->(snd $1) (nQ,(FunctionType (x, $3),   [$2;$4]))) }
 
 
@@ -1074,8 +1067,8 @@ parameter_type_list:
  | parameter_list TComma TEllipsis { ($1, (true,  [$2;$3])) }
 
 
-parameter_decl2: 
- | decl_spec declaratorp
+parameter_decl: 
+ | decl_spec declarator
      { let ((returnType,hasreg),iihasreg) = fixDeclSpecForParam $1 in 
        (hasreg, Some (fst (fst $2)), ((snd $2) returnType)),    
         (iihasreg ++ [snd (fst $2)])      }
@@ -1087,7 +1080,7 @@ parameter_decl2:
        in (hasreg, None, returnType),           (iihasreg ++ []) }
 
 /*(*c++ext: default parameter value, copy paste, TODOAST *)*/
- | decl_spec declaratorp TEq assign_expr
+ | decl_spec declarator TEq assign_expr
      { let ((returnType,hasreg),iihasreg) = fixDeclSpecForParam $1 
        in 
        (hasreg, Some (fst (fst $2)), ((snd $2) returnType)),    
@@ -1120,14 +1113,13 @@ const_opt:
 
 /*(* For type_id. No storage here. Was used before for field but 
    * now structure fields can have storage so fields now use decl_spec. *)*/
-spec_qualif_list2: 
+spec_qualif_list: 
  | type_spec                    { addTypeD ($1, nullDecl) }
  | cv_qualif                    { {nullDecl with qualifD = (fst $1,[snd $1])}}
  | type_spec   spec_qualif_list { addTypeD ($1,$2)   }
  | cv_qualif   spec_qualif_list { addQualifD ($1,$2) }
 
-spec_qualif_list: spec_qualif_list2            {  dt "spec_qualif" (); $1 }
- 	     
+	     
 /*(* for pointers in direct_declarator and abstract_declarator *)*/
 cv_qualif_list: 
  | cv_qualif                  { {nullDecl with qualifD = (fst $1,[snd $1])} }
@@ -1198,19 +1190,6 @@ conversion_declarator:
      { () }
  | ptr_operator %prec SHIFTHERE
      { () }
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-
-type_spec: type_spec2    { dt "type" (); $1   }
-
-tocro: TOCro { et "tocro" ();$1 }
-tccro: TCCro { dt "tccro" ();$1 }
-
-parameter_decl: parameter_decl2 { et "param" ();  $1 }
-
-declaratorp: declarator      { LP.add_ident (fst (fst $1)); $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Block declaration (namespace and asm) *)*/
@@ -1285,7 +1264,7 @@ asm_expr: assign_expr { $1 }
 /*(*1 Simple declaration, initializers *)*/
 /*(*************************************************************************)*/
 
-simple_declaration2:
+simple_declaration:
  | decl_spec TPtVirg
      { let (returnType,storage) = fixDeclSpecForDecl $1 in 
        let iistart = Ast.fakeInfo () in
@@ -1303,7 +1282,7 @@ simple_declaration2:
              | Some (ini, iini) -> Some ini, [iini]
            in
 	   if fst (unwrap storage) = StoTypedef 
-	   then LP.add_typedef s;
+	   then (); (* LP.add_typedef s; *)
 
            (* TODO *)
            (Some ((semi_fake_name (s, iis), ini), iis ::iini), 
@@ -1340,7 +1319,7 @@ simple_declaration2:
  * decl_list is ambiguous ? (no cos have ';' between decl) 
  * 
  *)*/
-decl_spec2: 
+decl_spec: 
  | storage_class_spec      { {nullDecl with storageD = (fst $1, [snd $1]) } }
  | type_spec               { addTypeD ($1,nullDecl) }
  | cv_qualif               { {nullDecl with qualifD  = (fst $1, [snd $1]) } }
@@ -1348,12 +1327,12 @@ decl_spec2:
  | Ttypedef     { {nullDecl with storageD = (StoTypedef,  [$1]) } }
  | Tfriend      { {nullDecl with inlineD = (true, [$1]) } (*TODO*) }
 
- | storage_class_spec decl_spec2 { addStorageD ($1, $2) }
- | type_spec          decl_spec2 { addTypeD    ($1, $2) }
- | cv_qualif          decl_spec2 { addQualifD  ($1, $2) }
- | function_spec      decl_spec2 { addInlineD ((true, snd $1), $2) (*TODO*) }
- | Ttypedef           decl_spec2 { addStorageD ((StoTypedef,$1),$2) }
- | Tfriend            decl_spec2 { addInlineD ((true, $1),$2) (*TODO*)}
+ | storage_class_spec decl_spec { addStorageD ($1, $2) }
+ | type_spec          decl_spec { addTypeD    ($1, $2) }
+ | cv_qualif          decl_spec { addQualifD  ($1, $2) }
+ | function_spec      decl_spec { addInlineD ((true, snd $1), $2) (*TODO*) }
+ | Ttypedef           decl_spec { addStorageD ((StoTypedef,$1),$2) }
+ | Tfriend            decl_spec { addInlineD ((true, $1),$2) (*TODO*)}
 
 function_spec:
  /*(*gccext: and c++ext: *)*/
@@ -1372,9 +1351,9 @@ storage_class_spec:
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 declarators (right part of type and variable) *)*/
 /*(*-----------------------------------------------------------------------*)*/
-init_declarator2:  
+init_declarator:  
  | declaratori                  { ($1, None) }
- | declaratori teq initialize   { ($1, Some ($3, $2)) }
+ | declaratori TEq initialize   { ($1, Some ($3, $2)) }
 
  /*(* c++ext: c++ initializer via call to constructor. Note that this
     * is different from TypedefIdent2, here the declaratori is an ident,
@@ -1388,9 +1367,9 @@ init_declarator2:
 /*(*2 gccext: *)*/
 /*(*----------------------------*)*/
 declaratori: 
- | declarator                { LP.add_ident (fst (fst $1)); $1 }
+ | declarator                { $1 }
  /*(* gccext: *)*/ 
- | declarator gcc_asm_decl   { LP.add_ident (fst (fst $1)); $1 }
+ | declarator gcc_asm_decl   { $1 }
 
 gcc_asm_decl: 
  | Tasm TOPar asmbody TCPar              {  }
@@ -1403,9 +1382,9 @@ gcc_asm_decl:
 initialize: 
  | assign_expr                                    
      { InitExpr $1,                [] }
- | tobrace_ini initialize_list gcc_comma_opt_struct  tcbrace_ini
+ | TOBrace initialize_list gcc_comma_opt_struct  TCBrace
      { InitList (List.rev $2),     [$1;$4]++$3 }
- | tobrace_ini tcbrace_ini
+ | TOBrace TCBrace
      { InitList [],       [$1;$2] } /*(* gccext: *)*/
 
 
@@ -1425,9 +1404,9 @@ initialize_list:
 initialize2: 
  | cond_expr 
      { InitExpr $1,   [] } 
- | tobrace_ini initialize_list gcc_comma_opt_struct tcbrace_ini
+ | TOBrace initialize_list gcc_comma_opt_struct TCBrace
      { InitList (List.rev $2),   [$1;$4]++$3 }
- | tobrace_ini tcbrace_ini
+ | TOBrace TCBrace
      { InitList [],  [$1;$2]  }
 
  /*(* gccext: labeled elements, a.k.a designators *)*/
@@ -1455,13 +1434,6 @@ designator:
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/
 
-decl_spec: decl_spec2    { dt "declspec" (); $1  }
-simple_declaration: simple_declaration2 { et "simple_decl" (); $1 }
-
-teq: TEq  { et "teq" (); $1 }
-
-init_declarator: init_declarator2  { dt "init" (); $1 }
-
 gcc_comma_opt_struct: 
  | TComma {  [$1] } 
  | /*(* empty *)*/  {  [Ast.fakeInfo() +> Ast.rewrap_str ","]  }
@@ -1471,7 +1443,7 @@ gcc_comma_opt_struct:
 /*(*************************************************************************)*/
 
 class_specifier: 
- | class_head TOBrace member_specification_opt tcbrace_struct 
+ | class_head TOBrace member_specification_opt TCBrace 
      { let ((su, iisu), nameopt, baseopt) = $1 in
        let (baseopt, iibopt) = 
          match baseopt with 
@@ -1493,24 +1465,22 @@ class_specifier:
 *)*/
 class_head: 
  | class_key 
-     { LP.push_context LP.InStructAnon;
-       $1, None, None
-     }
+     { $1, None, None }
  | class_key ident base_clause_opt
-     { LP.push_context (LP.InClassStruct (fst $2)); 
+     { 
        let qid = IdIdent (fst $2), [snd $2] in
        let name = (None, noQscope, qid) in
        $1, Some name, $3
      }
  | class_key nested_name_specifier ident base_clause_opt
-     { LP.push_context (LP.InClassStruct (fst $3)); 
+     { 
        let qid = IdIdent (fst $3), [snd $3] in
        let name = (None, $2, qid) in
        $1, Some name, $4
      }
 
 /*(* was called struct_union before *)*/
-class_key2: 
+class_key: 
  | Tstruct   { Struct, $1 }
  | Tunion    { Union, $1 }
  /*(*c++ext: *)*/
@@ -1578,7 +1548,7 @@ field_declaration:
 
 /*(* was called struct_declarator before *)*/
 member_declarator:
- | declaratorsd                    
+ | declarator                    
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
          
@@ -1587,7 +1557,7 @@ member_declarator:
          (FieldDecl onedecl, noii)
        )
      }
- | declaratorsd pure_specifier
+ | declarator pure_specifier
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
          (*TODO detect methodDecl *)
@@ -1595,7 +1565,7 @@ member_declarator:
          (FieldDecl onedecl, $2)
        )
      }
- | declaratorsd constant_initializer
+ | declarator constant_initializer
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
          let ini = InitExpr (snd $2), noii in
@@ -1606,7 +1576,7 @@ member_declarator:
      }
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
- | declaratorsd col const_expr2 
+ | declarator TCol const_expr
      { let (name, partialt) = $1 in
        (fun returnType unwrap_storage -> 
          let s = (fst name) in
@@ -1614,7 +1584,7 @@ member_declarator:
          BitField (var, returnType, $3), [snd name; $2]
        )
      }
- | col const_expr2            
+ | TCol const_expr            
      { (fun returnType unwrap_storage -> 
          BitField (None, returnType, $2), [$1]
        )
@@ -1629,7 +1599,7 @@ pure_specifier:
  | TEq TInt_ZeroVirtual { [$1;$2] }
 
 constant_initializer:
- | TEq const_expr2 { $1, $2 }
+ | TEq const_expr { $1, $2 }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 constructor method *)*/
@@ -1637,22 +1607,22 @@ constant_initializer:
 
 /*(* special case for ctor/dtor cos they don't have a return type *)*/
 ctor_dtor_member:
- | explicit_opt TIdent_Constructor topar parameter_type_list_opt tcpar
+ | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
      {  EmptyField, [](*TODO*) }
 
- | explicit_opt TIdent_Constructor topar parameter_type_list_opt tcpar
+ | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      TPtVirg 
      { EmptyField, [](*TODO*) }
 
- | Tinline TIdent_Constructor topar parameter_type_list_opt tcpar
+ | Tinline TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      TPtVirg 
      { EmptyField, [](*TODO*) }
 
- | Tinline TIdent_Constructor topar parameter_type_list_opt tcpar
+ | Tinline TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
      {  EmptyField, [](*TODO*) }
@@ -1668,40 +1638,19 @@ ctor_dtor_member:
  | Tinline TTilde ident3 TOPar void_opt TCPar  TPtVirg
      { EmptyField, [](*TODO*) }
 
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-
-/*(*TODO? need more workaround ? cf old struct code *)*/
-
-declaratorsd: declarator 
-  { (*also ? LP.add_ident (fst (fst $1)); *) $1 }
-
-class_key: class_key2 { et "su" (); $1 }
-
-const_expr2: const_expr { dt "const_expr2" (); $1 }
-
-col: TCol  { et "dotdot" (); $1 }
-
 /*(*************************************************************************)*/
 /*(*1 enum *)*/
 /*(*************************************************************************)*/
 
 enum_specifier: 
- | Tenum        tobrace_enum enumerator_list gcc_comma_opt tcbrace_enum
+ | Tenum        TOBrace enumerator_list gcc_comma_opt TCBrace
      { Enum (None,    $3),           [$1;$2;$5] ++ $4 }
- | Tenum ident  tobrace_enum enumerator_list gcc_comma_opt tcbrace_enum
+ | Tenum ident  TOBrace enumerator_list gcc_comma_opt TCBrace
      { Enum (Some (fst $2), $4),     [$1; snd $2; $3;$6] ++ $5 }
 
 enumerator: 
- | idente                 { (fst $1, None),      [snd $1]    }
- | idente  TEq const_expr { (fst $1, Some $3),   [snd $1; $2] }
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-idente: ident { LP.add_ident (fst $1); $1 }
+ | ident                 { (fst $1, None),      [snd $1]    }
+ | ident  TEq const_expr { (fst $1, Some $3),   [snd $1; $2] }
 
 /*(*************************************************************************)*/
 /*(*1 OO aux *)*/
@@ -1770,19 +1719,11 @@ mem_initializer_id:
 
 function_definition: start_fun compound                { fixFunc ($1, $2) }
 
-start_fun: decl_spec declaratorfd  
+start_fun: decl_spec declarator
      { let (returnType,storage) = fixDeclSpecForFuncDef $1 in
-       let res = 
-        (fst $2, fixOldCDecl ((snd $2) returnType) , storage)  in
-       fix_add_params_ident res; 
+       let res = (fst $2, fixOldCDecl ((snd $2) returnType) , storage) in
        res
      }
-
-/*(*----------------------------*)*/
-/*(*2 workarounds *)*/
-/*(*----------------------------*)*/
-declaratorfd: declarator { et "declaratorfd" (); $1 }
-
 
 /*(*************************************************************************)*/
 /*(*1 Declaration, in c++ sense *)*/
@@ -1824,7 +1765,7 @@ declaration_seq:
 
 /*(*todo: export_opt, but generates lots of conflicts *)*/ 
 template_declaration:
- | Ttemplate tinf_template template_parameter_list tsup_template declaration
+ | Ttemplate TInf_Template template_parameter_list TSup_Template declaration
    { ($3, $5), [$1;$2;$4] (* todo ++ some_to_list $1*) }
 
 explicit_specialization:
@@ -1870,7 +1811,7 @@ unnamed_namespace_definition:
  * TODO scope ? do a start_constructor ? 
  *)*/
 ctor_dtor:
- | nested_name_specifier TIdent_Constructor topar parameter_type_list_opt tcpar
+ | nested_name_specifier TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
      { NameSpaceAnon [],[] }
@@ -1992,37 +1933,6 @@ celem:
  | TCBrace { EmptyDef [$1] (* TODO ??? *) }
 
  | EOF        { FinalDef $1 } 
-
-/*(*************************************************************************)*/
-/*(*1 Some generic workarounds *)*/
-/*(*************************************************************************)*/
-
-tobrace: TOBrace  { LP.push_context LP.InFunction; LP.new_scope (); $1 }
-tcbrace: TCBrace  { LP.pop_context();              LP.del_scope (); $1 }
-
-tobrace_enum: TOBrace { LP.push_context LP.InEnum; $1 }
-tcbrace_enum: TCBrace { LP.pop_context (); $1 }
-
-tobrace_ini: TOBrace { LP.push_context LP.InInitializer; $1 }
-tcbrace_ini: TCBrace { LP.pop_context (); $1 }
-
-/*(*tobrace_struct: TOBrace { LP.push_context LP.InStructAnon; $1 }*)*/
-tcbrace_struct: TCBrace { LP.pop_context (); $1 }
-
-/*(*todo? put some et() dt() ? *)*/
-tinf_template: TInf_Template { LP.push_context LP.InTemplateParam; $1 }
-tsup_template: TSup_Template { LP.pop_context(); $1 }
-
-topar: TOPar 
-     { LP.new_scope ();et "topar" (); 
-       LP.push_context LP.InParameter;
-       $1  
-     }
-tcpar: TCPar 
-     { LP.del_scope ();dt "tcpar" (); 
-       LP.pop_context (); 
-       $1  
-     }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
