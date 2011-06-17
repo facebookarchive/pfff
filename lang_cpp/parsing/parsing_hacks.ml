@@ -76,7 +76,7 @@ open Lexer_parser_cpp (* for the fields of lexer_hint type *)
 (* Helpers *)
 (*****************************************************************************)
 
-let filter_cpp_stuff xs = 
+let filter_pp_stuff xs = 
   let rec aux xs = 
     match xs with
     | [] -> []
@@ -135,24 +135,23 @@ let not_struct_enum = function
 (* Fix tokens_cpp *)
 (*****************************************************************************)
 
+(* 
+ * Main entry point for the token reclassifier (which generates "fresh" tokens).
+ * 
+ * The order of the rules is important, if you put the action heuristic first,
+ * then because of ifdef, can have not closed paren
+ * and so may believe that higher order macro 
+ * and it will eat too much tokens. So important to do 
+ * first the ifdef heuristic.
+ * 
+ * I recompute multiple times cleaner cos the mutable
+ * can have be changed and so may have more comments
+ * in the token original list.
+ *)
 let fix_tokens_cpp2 ~macro_defs tokens = 
   let tokens2 = ref (tokens +> acc_map mk_token_extended) in
   
   begin 
-    (* the order is important, if you put the action heuristic first,
-     * then because of ifdef, can have not closed paren
-     * and so may believe that higher order macro 
-     * and it will eat too much tokens. So important to do 
-     * first the ifdef.
-     * 
-     * I recompute multiple times cleaner cos the mutable
-     * can have be changed and so may have more comments
-     * in the token original list.
-     * 
-     *)
-
-    (* before filtering space and comments, want closed tokens *)
-    find_cplusplus_view_all_tokens !tokens2;
 
     (* ifdef *)
     let cleaner = !tokens2 +> List.filter (fun x -> 
@@ -165,7 +164,7 @@ let fix_tokens_cpp2 ~macro_defs tokens =
 
 
     (* macro 1 *)
-    let cleaner = !tokens2 +> filter_cpp_stuff in
+    let cleaner = !tokens2 +> filter_pp_stuff in
 
     let paren_grouped = mk_parenthised  cleaner in
     Pp_token.apply_macro_defs 
@@ -188,7 +187,7 @@ let fix_tokens_cpp2 ~macro_defs tokens =
 
 
     (* macro *)
-    let cleaner = !tokens2 +> filter_cpp_stuff in
+    let cleaner = !tokens2 +> filter_pp_stuff in
 
     let paren_grouped      = mk_parenthised  cleaner in
     let line_paren_grouped = mk_line_parenthised paren_grouped in
@@ -204,7 +203,7 @@ let fix_tokens_cpp2 ~macro_defs tokens =
     find_cplusplus_view_filtered_tokens_bis cleaner;
 
     (* actions *)
-    let cleaner = !tokens2 +> filter_cpp_stuff in
+    let cleaner = !tokens2 +> filter_pp_stuff in
     let paren_grouped = mk_parenthised  cleaner in
     find_actions  paren_grouped;
 

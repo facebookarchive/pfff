@@ -147,6 +147,7 @@
 
 // boost too?
 #define lexical_cast static_cast
+#define dynamic_pointer_cast static_cast
 
 // google gflags
 #define DEFINE_int32(a,b,c) int a = b

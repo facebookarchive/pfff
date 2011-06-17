@@ -60,11 +60,11 @@ let pos ii = Ast.string_of_info ii
 
 let pr2_pp s = 
   if !Flag.debug_pp
-  then Common.pr2_once ("PP-" ^ s)
+  then Common.pr2 ("PP-" ^ s)
 
 let pr2_cplusplus s = 
   if !Flag.debug_cplusplus
-  then Common.pr2_once ("C++-" ^ s)
+  then Common.pr2 ("C++-" ^ s)
 
 
 let msg_change_tok tok =
