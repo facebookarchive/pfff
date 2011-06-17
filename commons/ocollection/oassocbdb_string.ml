@@ -160,6 +160,8 @@ end
 
 
 let create_bdb metapath dbname env  transact size_buffer_oassoc_buffer =
+  (* bugfix: open_db expects an absolute path *)
+  let metapath = Common.relative_to_absolute metapath in
   let db = Bdb.Db.create env [] in 
   Bdb.Db.db_open db (transact()) 
     (spf "%s/%s.db4" metapath dbname) 
