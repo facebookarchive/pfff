@@ -299,8 +299,8 @@ external_declaration:
  *)
 */
 unqualified_id:
- | TIdent               { IdIdent (fst $1), [snd $1] }
- | operator_function_id { $1 }
+ | TIdent                 { IdIdent (fst $1), [snd $1] }
+ | operator_function_id   { $1 }
  | conversion_function_id { $1 }
 
 operator_function_id: 
@@ -929,9 +929,9 @@ elaborated_type_specifier:
 
 /*(* cant factorize with a tcolcol_opt2 *)*/
 type_cplusplus_id:
- |          type_name { $1 }
+ | type_name  { $1 }
+ | nested_name_specifier2 type_name { $2 }
  | TColCol_BeforeTypedef type_name { $2 }
- |          nested_name_specifier2 type_name { $2 }
  | TColCol_BeforeTypedef nested_name_specifier2 type_name { $3 }
 
 /*
