@@ -22,6 +22,8 @@ module Flag = Flag_parsing_cpp
 
 module V = Visitor_cpp
 
+module FT = File_type
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -29,8 +31,6 @@ module V = Visitor_cpp
 (*****************************************************************************)
 (* Filemames *)
 (*****************************************************************************)
-
-module FT = File_type
 
 let find_cpp_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
@@ -40,4 +40,4 @@ let find_cpp_files_of_dir_or_files xs =
         true
     | _ -> false
 
-  ) |> Common.sort
+  ) +> Common.sort

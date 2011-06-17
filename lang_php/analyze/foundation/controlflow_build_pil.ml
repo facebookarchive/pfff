@@ -64,9 +64,10 @@ type state = {
   | TryCtx    of nodei (* the first catch *)
 *)
 
-type error = 
-  | NoEnclosingLoop of Ast_php.info
-  | DynamicBreak    of Ast_php.info
+type error = error_kind * Ast_php.info
+ and error_kind = 
+  | NoEnclosingLoop
+  | DynamicBreak
 
 exception Error of error
 
@@ -244,26 +245,19 @@ let cfg_of_stmts = control_flow_graph_of_stmts
 (* Error management *)
 (*****************************************************************************)
 
-let string_of_error err =
-  let spos info = 
-    let info = Ast_php.parse_info_of_info info in
-    (* emacs compile-mode compatible output *)
-    spf "%s:%d:%d: " 
-      info.Parse_info.file info.Parse_info.line info.Parse_info.column
-  in
+let string_of_error_kind error_kind =
+  match error_kind with
+  | NoEnclosingLoop ->
+      "no enclosing loop found for break or continue"
+  | DynamicBreak ->
+      "dynamic break/continue are not supported"
 
-  match err with
-  | NoEnclosingLoop info ->
-      spos info ^ "FLOW: no enclosing loop found for break or continue"
-  | DynamicBreak info ->
-      spos info ^ "FLOW: dynamic break/continue are not supported"
-
-
-let info_of_error error =
-  match error with
-  | NoEnclosingLoop info
-  | DynamicBreak info
-      -> Some info
+(* note that the output is emacs compile-mode compliant *)
+let string_of_error (error_kind, info) =
+  let info = Ast_php.parse_info_of_info info in
+  spf "%s:%d:%d: FLOW %s " 
+    info.Parse_info.file info.Parse_info.line info.Parse_info.column
+    (string_of_error_kind error_kind)
 
 let (report_error : error -> unit) = fun err ->
   pr2 (string_of_error err)

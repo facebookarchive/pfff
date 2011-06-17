@@ -4,4 +4,6 @@ val gen_layer:
   Error_php.error list -> 
   unit
 
-(* internal *)
+(* internal, reused by layer_check_module.ml *)
+val properties: (string * string) list
+val info_of_error_and_kind: Error_php.error -> Ast_php.info * string

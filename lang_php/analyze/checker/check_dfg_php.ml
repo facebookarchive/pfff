@@ -50,8 +50,8 @@ let check_program2
          let _liveness = Dataflow_pil.liveness_fixpoint flow in
 
           ()
-       with Controlflow_build_pil.Error err ->
-         E.fatal (E.CfgPilError err);
+       with Controlflow_build_pil.Error (err, loc) ->
+         E.fatal loc (E.CfgPilError err)
       )
     );
     V.kmethod_def = (fun (k, _) def ->
@@ -69,9 +69,8 @@ let check_program2
               let _liveness = Dataflow_pil.liveness_fixpoint flow in
 
               ()
-            with Controlflow_build_pil.Error err ->
-              E.fatal (E.CfgPilError err);
-
+            with Controlflow_build_pil.Error (err, loc) ->
+              E.fatal loc (E.CfgPilError err)
           )
     );
   }

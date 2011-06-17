@@ -10,6 +10,9 @@ type tag = {
 (* will generate a TAGS file in the current directory *)
 val generate_TAGS_file: 
   tags_file: Common.filename -> (Common.filename * tag list) list -> unit
+(* will generate a tags file in the current directory *)
+val generate_vi_tags_file: 
+  tags_file: Common.filename -> (Common.filename * tag list) list -> unit
 
 (* internals *)
 val mk_tag: string -> string -> int -> int -> tag

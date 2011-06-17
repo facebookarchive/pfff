@@ -136,6 +136,7 @@ and 'a comma_list_dots =
     *)
    | Self   of tok
    | Parent of tok
+   (* could add Static here? for late static binding? *)
 
  and fully_qualified_class_name = name
  (*e: qualifiers *)
@@ -410,7 +411,7 @@ and lvalue = lvaluebis * lvalue_info
     (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
      * but with xhp we can.
      * 
-     * TODO? a VArrayAccessSimple with Constant string in expr ? 
+     * todo? a VArrayAccessSimple with Constant string in expr ? 
      *)
     | VArrayAccess of lvalue * expr option bracket
     | VArrayAccessXhp of expr * expr option bracket
@@ -425,11 +426,21 @@ and lvalue = lvaluebis * lvalue_info
      * Even if A::$v['fld'] was parsed in the grammar
      * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
      * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+     * 
+     * todo: merge those 4 cases in one. ClassVar of qualifier * lvalue
      *)
     | VQualifier of qualifier * lvalue
     | ClassVar of qualifier * dname
+    (* we could merge with ClassVar, but I prefer different constructs for 
+     * very different programming language concept.
+     * todo? have also a LateStaticVQualifier?
+     * todo? should be lvalue not dname?
+     *)
+    | LateStaticClassVar of tok (* static *) * tok (* :: *) * dname 
+    | DynamicClassVar of lvalue * tok (* :: *) * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
+    (* DynamicFunCall *)
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren
   (*x: lvaluebis constructors *)
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren
@@ -440,7 +451,7 @@ and lvalue = lvaluebis * lvalue_info
     | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
         argument comma_list paren
     (* PHP 5.3 "late static binding" *)
-    | LateStaticCall of tok (* static *) * tok (* ::: *) * name *
+    | LateStaticCall of tok (* static *) * tok (* :: *) * name *
         argument comma_list paren
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name

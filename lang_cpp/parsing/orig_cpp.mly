@@ -1,3 +1,5 @@
+src: http://www.csci.csusb.edu/dick/c++std/cd2/gram.html
+
 pad: -seq, -opt suffix
 
 1 This summary of C++ syntax is intended to be an aid to  comprehension.
@@ -155,7 +157,7 @@ pad: -seq, -opt suffix
                   octal-escape-sequence
                   hexadecimal-escape-sequence
           simple-escape-sequence: one of
-                  \'  \"  \?  \\
+                  \'  \"  \?  \\                   "
                   \a  \b  \f  \n  \r  \t  \v
           octal-escape-sequence:
                   \ octal-digit

@@ -18,10 +18,10 @@ function test_nbargs_builtins() {
   // this requires to have a good data/php_stdlib/
 
   //ERROR: not enough arguments
-  $x = compact();
+  $x = array_count_values();
 
   // ok
-  $x = compact("foo");
+  $x = array_count_values(array("foo"));
 
   echo $x;
 }
@@ -44,6 +44,11 @@ function func_foo_call_var_args() {
   func_var_args();
   func_var_args(1);
   func_var_args(1,2);
+
+  // same for builtins
+  compact();
+  compact(1);
+  compact(1,2);
 
 }
 

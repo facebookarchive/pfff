@@ -318,6 +318,3 @@ function_definition: decl_spec declarator decl_list compound {}
 		   | decl_spec declarator           compound {}
 		   | declarator decl_list compound {}
 		   | declarator compound {}
-
-
-

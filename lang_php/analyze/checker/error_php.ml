@@ -34,40 +34,66 @@ module Ast = Ast_php
 
 let strict = ref false
 
+(* see also _errors below *)
+
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
 
-(* the position in the name below correspond to the function at the call site 
- * coupling: if you add a constructor here, don't forget to extend
- * layer_checker_php.ml too
+(* I used to have just type error = error_kind, but then I would need a
+ * info_of_error() function to extract the position for each error. It 
+ * is simpler to put the error location in a field and have a simple
+ * error_kind (having a simple error_kind independent of location also
+ * makes it easy to have "stable" errors independent of repository
+ * which makes it easy to have cmf --only-new-errors working correctly).
  *)
-type error = 
+type error = {
+  typ: error_kind;
+  loc: Ast_php.info;
+  sev: severity;
+}
+ (* todo? Advise | Noisy | Meticulous ? *)
+ and severity = Fatal | Warning
+
+(* coupling: if you add a constructor here, don't forget to extend
+ * layer_checker_php.ml too.
+ * 
+ * note: try to not put structure that have position information in 
+ * the type below (so use string, not Ast_php.name), so that the
+ * error_kind is location independent and can be used portably as a key
+ * through different repository (cf cmf --only-new-errors).
+ *)
+ and error_kind = 
   (* entities *)
-  | UndefinedEntity of Entity_php.id_kind * Ast_php.name
-  | MultiDefinedEntity of Entity_php.id_kind * Ast_php.name *
-      (Ast_php.name * Ast_php.name)
+  | UndefinedEntity of Entity_php.id_kind * string (* name *)
+  | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
+      (string * string) (* name * name *)
 
   (* call sites *)
-  | TooManyArguments   of (Ast_php.info * name (* def *))
-  | NotEnoughArguments of (Ast_php.info * name (* def *))
-  | WrongKeywordArgument of Ast_php.dname * Ast_php.parameter * severity
+  | TooManyArguments   of string (* name *) (* def *)
+  | NotEnoughArguments of string (* name *) (* def *)
+  | WrongKeywordArgument of 
+      string (* dname *) * string (* parameter *) * severity2
 
   (* variables *)
-  | UseOfUndefinedVariable of Ast_php.dname
-  | UnusedVariable of Ast_php.dname * Scope_php.phpscope
+  | UseOfUndefinedVariable of string (* dname *)
+  | UnusedVariable of string (* dname *) * Scope_php.phpscope
 
   (* classes *)
-  | UseOfUndefinedMember of Ast_php.name
+  | UseOfUndefinedMember of string (* name *)
 
   (* bail-out constructs *)
-  | UglyGlobalDynamic of Ast_php.info
-  | WeirdForeachNoIteratorVar of Ast_php.info
+  | UglyGlobalDynamic
+  | WeirdForeachNoIteratorVar
 
   (* cfg, mostly DeadCode statements *)
-  | CfgError of Controlflow_build_php.error
-  | CfgPilError of Controlflow_build_pil.error
- and severity =
+  | CfgError of Controlflow_build_php.error_kind
+  | CfgPilError of Controlflow_build_pil.error_kind
+
+  | UseOfUndefinedVariableInLambda of string (* dname *)
+  (* todo: type errors *)
+
+  and severity2 =
    | Bad
    | ReallyBad
    | ReallyReallyBad
@@ -78,111 +104,64 @@ exception Error of error
 (* Pretty printers *)
 (*****************************************************************************)
 
-let string_of_severity = function
+let string_of_severity2 = function
   | Bad -> "Bad" 
   | ReallyBad -> "ReallyBad"
   | ReallyReallyBad -> "ReallyReallyBad"
 
-(* the show_position_info is used in facebook/check_module/ *)
-let string_of_error ?(show_position_info=true) error =
-  let spos info = 
-    if show_position_info
-    (* emacs compile-mode compatible output *)
-    then spf "%s:%d:%d: CHECK:" 
-      info.Parse_info.file info.Parse_info.line info.Parse_info.column
-    else ""
-  in
-  match error with
-
+let string_of_error_kind error_kind =
+  match error_kind with
   | UndefinedEntity(kind, name) ->
-      let info = Ast.parse_info_of_info (Ast.info_of_name name) in
-      (spos info ^ (spf "Undefined entity %s %s"
-                  (Entity_php.string_of_id_kind kind)
-                  (Ast.name name)))
+      spf "Undefined entity %s %s" (Entity_php.string_of_id_kind kind) name
 
   | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
-      let info = Ast.parse_info_of_info (Ast.info_of_name name) in
-      (spos info ^ (spf "Multiply defined entity %s %s"
-                  (Entity_php.string_of_id_kind kind)
-                  (Ast.name name)))
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
+      spf "Multiply defined entity %s %s"(Entity_php.string_of_id_kind kind)
+        name
 
-  | TooManyArguments (info, defname) ->
-      let info = Ast.parse_info_of_info info in
-      (spos info ^ "Too many arguments");
+  | TooManyArguments defname ->
      (* todo? function was declared: %s     or use tbgs ... *)
-  | NotEnoughArguments (info, defname) ->
-      let info = Ast.parse_info_of_info info in
-      (spos info ^ "Not enough arguments");
+      "Too many arguments"
+  | NotEnoughArguments defname ->
      (* todo? function was declared: %s    or use tbgs *)
+      "Not enough arguments"
   | WrongKeywordArgument(dn, param, severity) ->
-      let info = Ast.info_of_dname dn +> Ast.parse_info_of_info in
-      spos info ^ spf "Wrong keyword argument, %s <> %s (%s)"
-        (Ast.dname dn) (Ast.dname param.p_name) (string_of_severity severity)
-
-
+      spf "Wrong keyword argument, %s <> %s (%s)"
+        dn param (string_of_severity2 severity)
 
   | UseOfUndefinedVariable (dname) ->
-      let s = Ast.dname dname in
-      let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
-      spos info ^ spf "Use of undefined variable $%s" s
+      spf "Use of undeclared variable $%s. " dname ^
+"Declare variables prior to use (even if you are passing them as reference
+    parameters). You may have misspelled this variable name.
+"
+
+  | UseOfUndefinedVariableInLambda (dname) ->
+      spf "Use of undeclared variable $%s in lambda. " dname ^
+"See http://php.net/manual/en/functions.anonymous.php and the 'use' keyword."
 
   | UnusedVariable (dname, scope) ->
-      let s = Ast.dname dname in
-      let info = Ast.info_of_dname dname |> Ast.parse_info_of_info in
-      spos info ^ spf "Unused %s variable $%s" 
-              (Scope_php.s_of_phpscope scope)
-              s 
+      spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) dname
 
   | UseOfUndefinedMember (name) ->
-      let s = Ast.name name in
-      let info = Ast.info_of_name name |> Ast.parse_info_of_info in
-      spos info ^ spf "Use of undefined member $%s" s
+      spf "Use of undefined member $%s" name
 
-
-
-  | UglyGlobalDynamic info ->
-      let pinfo = Ast.parse_info_of_info info in
-      spos pinfo ^ "Ugly dynamic global declaration"
-  | WeirdForeachNoIteratorVar info ->
-      let pinfo = Ast.parse_info_of_info info in
-      spos pinfo ^ "Weird, foreach with not a var as iterator"
+  | UglyGlobalDynamic ->
+      "Ugly dynamic global declaration"
+  | WeirdForeachNoIteratorVar ->
+      "Weird, foreach with not a var as iterator"
 
   | CfgError err ->
-      Controlflow_build_php.string_of_error ~show_position_info err
+      Controlflow_build_php.string_of_error_kind err
   | CfgPilError err ->
-      Controlflow_build_pil.string_of_error err
+      Controlflow_build_pil.string_of_error_kind err
 
- 
-        
-let info_of_error err =
-  match err with
-  | UndefinedEntity (_, name)
-  | MultiDefinedEntity (_, name, (_, _))
-      -> Some (Ast.info_of_name name)
-
-  | TooManyArguments  (call_info, defname) ->
-      Some call_info
-  | NotEnoughArguments (call_info, defname) ->
-      Some call_info
-  | WrongKeywordArgument (dname,  param, _) ->
-      Some (Ast.info_of_dname dname)
-
-  | UseOfUndefinedVariable dname
-  | UnusedVariable (dname, _)
-      -> Some (Ast.info_of_dname dname)
-
-  | UseOfUndefinedMember name 
-      -> Some (Ast.info_of_name name)
-
-  | UglyGlobalDynamic info
-  | WeirdForeachNoIteratorVar info
-      -> Some info
-
-  | CfgError err ->
-      Controlflow_build_php.info_of_error err
-  | CfgPilError err ->
-      Controlflow_build_pil.info_of_error err
+(* note that the output is emacs compile-mode compliant *)
+let string_of_error error =
+  (* todo? use severity? *)
+  let info = Ast.parse_info_of_info error.loc in
+  spf "%s:%d:%d: CHECK: %s" 
+    info.Parse_info.file info.Parse_info.line info.Parse_info.column
+    (string_of_error_kind error.typ)
 
 let report_error err = 
   pr2 (string_of_error err)
@@ -191,19 +170,20 @@ let report_error err =
 (* Global bis *)
 (*****************************************************************************)
 
+(* Ugly. Common.save_excursion can help reduce the problems that can
+ * come from using a global.
+ *)
 let _errors = ref []
 
 (* todo? let exn_when_error *)
 
-let fatal err =
-  Common.push2 err _errors
-(* no difference for now ... *)
-let warning err = 
-  Common.push2 err _errors
+let fatal loc err =
+  Common.push2 { loc = loc; typ = err; sev = Fatal } _errors
+let warning loc err = 
+  Common.push2 { loc = loc; typ = err; sev = Warning } _errors
 
 let report_all_errors () = 
   !_errors |> List.rev |> List.iter report_error
-
 
 (*****************************************************************************)
 (* Ranking bis *)
@@ -213,9 +193,9 @@ let report_all_errors () =
 let rank_errors errs =
   errs +> List.map (fun x ->
     x,
-    match x with
+    match x.typ with
     | UnusedVariable (_, Scope_code.Local) -> 10
-    | CfgError (Controlflow_build_php.DeadCode (_, node_kind)) ->
+    | CfgError (Controlflow_build_php.DeadCode node_kind) ->
         (match node_kind with
         | Controlflow_php.Break -> 3
         | Controlflow_php.Return -> 3
@@ -233,10 +213,9 @@ let show_10_most_recurring_unused_variable_names () =
   let hcount_str = Common.hash_with_default (fun() -> 0) in
 
   !_errors +> List.iter (fun err ->
-    match err with
+    match err.typ with
     | UnusedVariable (dname, scope) ->
-        let s = Ast.dname dname in
-        hcount_str#update s (fun old -> old+1);
+        hcount_str#update dname (fun old -> old+1);
     | _ -> ()
   );
   pr2 "top 10 most recurring unused variable names";
@@ -246,14 +225,13 @@ let show_10_most_recurring_unused_variable_names () =
       );
   ()
 
-
 let filter_false_positives err = 
-  err +> Common.exclude (function
-  (* this actually requires a global analysis to truly know if the class
-   * variable is unused
-   *)
-  | UnusedVariable (_, Scope_code.Class) -> true
-  | _ -> false
+  err +> Common.exclude (fun x ->
+    match x.typ with
+    (* this actually requires a global analysis to truly know if the class
+     * variable is unused *)
+    | UnusedVariable (_, Scope_code.Class) -> true
+    | _ -> false
   )
 
 (*****************************************************************************)
@@ -262,7 +240,7 @@ let filter_false_positives err =
 let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) = 
   Hashtbl.create 101 
 
-let (find_entity:
+let (find_entity_and_warn:
   find_entity: Entity_php.entity_finder option ->
   (Entity_php.id_kind * Ast_php.name) ->
   Ast_php.entity option) = 
@@ -276,7 +254,7 @@ let (find_entity:
       (match ids_ast with
       | [x] -> Some x
       | [] ->
-          fatal (UndefinedEntity (kind, name));
+          fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
           None
       | x::y::xs ->
           if Hashtbl.mem h_already_error (kind, str) 
@@ -284,9 +262,10 @@ let (find_entity:
           else begin
             Hashtbl.replace h_already_error (kind, str) true;
             (* todo: to give 2 ex of defs *)
-            let ex1 = name (* TODO *) in
-            let ex2 = name (* TODO *) in
-            fatal (MultiDefinedEntity (kind, name, (ex1, ex2)));
+            let ex1 = str (* TODO *) in
+            let ex2 = str (* TODO *) in
+            fatal (Ast.info_of_name name) 
+              (MultiDefinedEntity (kind, str, (ex1, ex2)));
           end;
           (* can give the first one ... *)
           Some x

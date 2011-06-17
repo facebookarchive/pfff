@@ -23,6 +23,10 @@ open Common
  * A few types and helpers related to comment analysis. 
  * Should perhaps at one point parse even more comments and have 
  * tokens such as TWord, TAnnot, etc.
+ * 
+ * Note that the T_COMMENT and T_DOC_COMMENT tokens do not contain
+ * the final newline character. This will be tokenized as a separate
+ * TNewline.
  *)
 
 (*****************************************************************************)
@@ -168,4 +172,11 @@ let _ = example(index_comment (SingleLineSlashSlash "foo") = [0, "foo"])
 let _ = example(index_comment (DocBlock (["foo"],true)) = [1, "foo"])
 
 
-
+let comments_of_file file =
+  let toks = Parse_php.tokens file in
+  toks +> Common.map_filter (function
+  | Parser_php.T_COMMENT info
+  | Parser_php.T_DOC_COMMENT info
+      -> Some info
+  | _ -> None
+  )

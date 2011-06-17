@@ -32,7 +32,7 @@ module V = Visitor_php
 (* 
  * As opposed to OCaml or C++ or Java or most programming languages, 
  * there is no source code files where PHP builtin functions
- * and their types are declared. They are defined in the PHP manual 
+ * and their types are declared. They are only defined in the PHP manual 
  * and somewhere in the source code of Zend.
  * In OCaml most library functions are written in OCaml itself or are specified
  * via an 'external' declaration as in:
@@ -41,16 +41,16 @@ module V = Visitor_php
  * 
  * This is very convenient for certain tasks such as code browsing where
  * many functions would be seen as 'undefined' otherwise, or for 
- * the type inference  where we have info about the basic functions. 
+ * the type inference  because builtin functions are not special anymore. 
  * 
  * Unfortunately, this is not the case for PHP. Fortunately the
- * good guys from HPHP have spent some time to specify in a IDL form 
+ * good guys from HPHP have spent some time specifying in a IDL form 
  * the interface of many of those builtin PHP functions (including the 
- * one in some popular PHP extensions). They used it to 
- * generate C++ header files, but we can abuse it to instead generate
+ * one in some popular PHP extensions). They've used those interfaces to 
+ * generate C++ header files, but we can abuse them to instead generate
  * PHP "header" files that our tool can understand.
  * 
- * Moreover the PHP manual is stored in XML files and can also
+ * Note that the PHP manual is stored in XML files and so can also
  * be automatically processed to extract the names and types
  * of the builtin functions, classes, and constants.
  *)
@@ -113,11 +113,12 @@ module V = Visitor_php
  * 
  * history: 
  *  I was originally generating the files by analyzing the IDL
- *  files via pfff and pattern match the different cases.
+ *  files via pfff and by pattern matching the different cases.
  *  As the IDL got more complicated, it was far simpler
  *  to just define in PHP a DefineFunction() function that would
  *  do the appropriate things, just like what they do for generating
- *  C++ headers.
+ *  C++ headers. This is what is done by scripts/gen_builtins_php.php
+ *  below.
  * 
  * alternatives:
  *  - could analyze Zend source code ? Do they have something similar ?
@@ -127,8 +128,8 @@ module V = Visitor_php
 (* Types *)
 (*****************************************************************************)
 
-(* Not used anymore, but it can be useful to have some formal representations
- * of the HPHP idl files.
+(* Those types below are not used anymore, but it's good to have
+ * some formal representations of the HPHP idl files anyway.
  *)
 
 (* see hphp/src/idl/base.php. generated mostly via macro *)
@@ -236,7 +237,7 @@ let idl_type_of_string (s, info) =
 (* Main entry point *)
 (*****************************************************************************)
 
-(* Generating stdlib from idl files *)
+(* generating php_stdlib/ from idl files *)
 let generate_php_stdlib ~src ~phpmanual_dir ~dest = 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files [src] in
 
@@ -271,10 +272,10 @@ let generate_php_stdlib ~src ~phpmanual_dir ~dest =
 let actions () = [
   (* e.g. 
    * ./pfff_misc -generate_php_stdlib tests/idl/ 
-   *    ~/software-src/phpdoc-svn/reference/   data/php_stdlib2
+   *    ~/local/software/phpdoc-svn/reference/   data/php_stdlib2
    * to test do:
    * ./pfff_misc -generate_php_stdlib tests/idl/array.idl.php
-   *   ~/software-src/phpdoc-svn/reference/array/   data/php_stdlib2
+   *   ~/local/software-src/phpdoc-svn/reference/array/   data/php_stdlib2
    *)
   "-generate_php_stdlib", " <src_idl> <src_phpmanual> <dest>",
   Common.mk_action_3_arg (fun src phpmanual_dir dest ->

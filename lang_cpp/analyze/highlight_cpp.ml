@@ -255,7 +255,7 @@ let visit_toplevel
                 tag ii (Global (Use2 fake_no_use2));
                 
             | 
-              (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class)
+              (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class|S.Closed)
                 -> failwith "scope not handled"
             )
           
@@ -331,7 +331,7 @@ let visit_toplevel
   }
   in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vtoplevel toplevel;
+  visitor (Toplevel toplevel);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -425,8 +425,11 @@ let visit_toplevel
     | T.TDefine ii -> 
         tag ii Define
 
+    | T.TUndef (_, ii) ->
+        tag ii Define
+
     (* todo: could be also a MacroFunc *)
-    | T.TIdentDefine (_, ii) ->
+    | T.TIdent_Define (_, ii) ->
         tag ii (MacroVar (Def2 NoUse))
 
     (* never executed ? only the TIncludeStart token is in the token list ? *)
@@ -437,6 +440,9 @@ let visit_toplevel
         tag ii Ifdef
     | T.TIfdefBool (_, ii) | T.TIfdefMisc (_, ii) | T.TIfdefVersion (_, ii) ->
         tag ii Ifdef
+
+    | T.TCppDirectiveOther _ -> 
+        ()
 
     | T.Tthis ii  
     | T.Tnew ii | T.Tdelete ii  
@@ -456,7 +462,7 @@ let visit_toplevel
         tag ii Punctuation
 
     | T.TColCol ii  
-    | T.TColCol2 ii ->
+    | T.TColCol_BeforeTypedef ii ->
         tag ii Punctuation
 
 
@@ -491,59 +497,59 @@ let visit_toplevel
     | T.TIdent (_, ii) ->
         ()
 
-    | T.Tbool2 ii
-    | T.Tlong2 ii
-    | T.Tshort2 ii
-    | T.Twchar_t2 ii
-    | T.Tdouble2 ii
-    | T.Tfloat2 ii
-    | T.Tint2 ii
-    | T.Tchar2 ii
+    | T.Tbool_Constr ii
+    | T.Tlong_Constr ii
+    | T.Tshort_Constr ii
+    | T.Twchar_t_Constr ii
+    | T.Tdouble_Constr ii
+    | T.Tfloat_Constr ii
+    | T.Tint_Constr ii
+    | T.Tchar_Constr ii
         -> tag ii TypeInt
 
 
-    | T.TtemplatenameQ2 _
-    | T.TtemplatenameQ _
-    | T.TypedefIdent2 _
-    | T.Tconstructorname _
-    | T.Ttemplatename _
-    | T.Tclassname2 _
-    | T.Tclassname _
-    | T.TIntZeroVirtual _
+    | T.TIdent_TemplatenameInQualifier_BeforeTypedef _
+    | T.TIdent_TemplatenameInQualifier _
+    | T.TIdent_TypedefConstr _
+    | T.TIdent_Constructor _
+    | T.TIdent_Templatename _
+    | T.TIdent_ClassnameInQualifier_BeforeTypedef _
+    | T.TIdent_ClassnameInQualifier _
+    | T.TInt_ZeroVirtual _
 
-    | T.TCCro2 _
-    | T.TOCro2 _
-    | T.TSup2 _
-    | T.TInf2 _
-    | T.TOParCplusplusInit _
+    | T.TCCro_new _
+    | T.TOCro_new _
+    | T.TSup_Template _
+    | T.TInf_Template _
+    | T.TOPar_CplusplusInit _
 
-    | T.TAction _
-    | T.TCParEOL _
+    | T.TAny_Action _
+    | T.TCPar_EOL _
 
-    | T.TMacroIterator _
-    | T.TMacroDeclConst _
-    | T.TMacroDecl _
-    | T.TMacroString _
-    | T.TMacroStmt _
+    | T.TIdent_MacroIterator _
+    | T.Tconst_MacroDeclConst _
+    | T.TIdent_MacroDecl _
+    | T.TIdent_MacroString _
+    | T.TIdent_MacroStmt _
 
-    | T.TCommentCpp _
-    | T.TCommentMisc _
+    | T.TComment_Cpp _
       -> ()
 
-    | T.TIncludeFilename (_, ii) ->
+    | T.TInclude_Filename (_, ii) ->
         tag ii String
-    | T.TIncludeStart (ii, _aref) ->
+    | T.TInclude_Start (ii, _aref) ->
         tag ii Include
 
 
-    | T.TDefEOL _
+    | T.TCommentNewline_DefineEndOfMacro _
 
-    | T.TOBraceDefineInit _
-    | T.TOParDefine _
+    | T.TOBrace_DefineInit _
+    | T.TOPar_Define _
+
     | T.TCppEscapedNewline _
     | T.TDefParamVariadic _
 
-    | T.TypedefIdent _
+    | T.TIdent_Typedef _
 
     | T.TCommentNewline _
     | T.TCommentSpace _

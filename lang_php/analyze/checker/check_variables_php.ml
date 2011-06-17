@@ -25,6 +25,11 @@ module V = Visitor_php
 module E = Error_php
 
 module S = Scope_code
+module Ent = Entity_php
+
+
+open Env_check_php
+open Check_variables_helpers_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -50,8 +55,8 @@ module S = Scope_code
  *  - UnusedVariable
  * 
  * 
- * Detecting such mistakes is made slightly more complicated on one
- * side by PHP because of the lack of declaration in the language;
+ * Detecting such mistakes is made slightly more complicated
+ * by PHP because of the lack of declaration in the language;
  * the first assgignement "declares" the variable. On the other side
  * the PHP language forces people to explicitly declared
  * the use of global variables (via the 'global' statement) which
@@ -93,8 +98,7 @@ module S = Scope_code
  * "These things declare variables in a function":
  * - DONE Explicit parameters
  * - DONE Assignment via list()
- * - DONE Static
- * - DONE Global
+ * - DONE Static, Global
  * - DONE foreach()
  * - DONE catch
  * - DONE Builtins ($this)
@@ -119,10 +123,10 @@ module S = Scope_code
  *    emulate a block-scoped language as in JSLint and flags
  *    variables used outside their "block".
  *  - when passed the find_entity hook, check_variables will:
- *     * know  about functions taking parameters by reference which removes
+ *     - know  about functions taking parameters by reference which removes
  *       some false positives.
- *     * flag use of class without a constructor or use of undefined class
- *     * use of undefined member
+ *     - flag use of class without a constructor or use of undefined class
+ *     - use of undefined member
  *     
  * 
  * todo?: cfg analysis
@@ -132,8 +136,8 @@ module S = Scope_code
  *  If connection empty => unused var
  *  If no binding => undefined variable
  * 
- * todo? maybe should define a PIL, PHP intermediate language that
- * makes it less tedious to write analysis of PHP code. There is too
+ * todo? maybe should use the PIL here; it would be 
+ * less tedious to write such analysis. There is too
  * many kinds of statements and expressions. Can probably factorize
  * more the code. For instance list($a, $b) = array is sugar 
  * for some assignations. But at the same time we may want to do special error 
@@ -167,317 +171,28 @@ module S = Scope_code
 (* Types, constants *)
 (*****************************************************************************)
 
-(* the ref is for the number of uses *)
-type environment = 
-  (dname * (Scope_code.scope * int ref)) list list 
-
-
-let unused_ok_when_no_strict s = 
-  if !E.strict 
-  then false
-  else 
-    List.mem s 
-      ["res"; "retval"; "success"; "is_error"; "rs"; "ret";
-       "e"; "ex"; "exn"; (* exception *)
-      ]
-
-let unused_ok s =     
-   s =~ "_.*"
-  || s = "unused"
-  || s = "dummy"
-  || s =~ "ignored.*"
-
-  || unused_ok_when_no_strict s
-
-
-let fake_dname s = 
-  DName (s, Ast.fakeInfo s)
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Environment *)
-(*****************************************************************************)
-
-(* Looking up a variable in the environment. 
- *  
- * May need to also return the env at this place ??? xs::zs  below ?
- * For instance when look for a parent class in scope, and 
- * then search again the parent of this parent, should start
- * from the scope at the parent place ?
- * 
- * But in fact it is worse than that because php is dynamic so 
- * should look at parent chain of things at run-time!
- * But maybe in practice for most of the codebase, people
- * dont define complex recursive class or dynamic hierarchies so
- * doing it statically in a naive way is good enough.
- *)
-
-let rec lookup_env2 s env = 
-  match env with 
-  | [] -> raise Not_found
-  | []::zs -> lookup_env2 s zs
-  | ((a,b)::xs)::zs -> 
-      if Ast_php.dname a = s 
-      then b 
-      else lookup_env2 s (xs::zs)
-let lookup_env a b = 
-  Common.profile_code "CheckVar.lookup_env" (fun () -> lookup_env2  a b)
-
-
-let lookup_env_opt a b = 
-  Common.optionise (fun () -> lookup_env a b)
-
-(* This is ugly. Perhaps we should transform the environment to have
- * either a dname or a name so that those 2 types of entities
- * are clearly separated.
- *)
-let rec lookup_env2_for_class s env = 
-  match env with 
-  | [] -> raise Not_found
-  | []::zs -> lookup_env2_for_class s zs
-  | ((a,b)::xs)::zs -> 
-      if Ast_php.dname a = s && fst b = S.Class
-      then b 
-      else lookup_env2_for_class s (xs::zs)
-
-
-let lookup_env_opt_for_class a b = 
-  Common.optionise (fun () -> lookup_env2_for_class a b)
-
+(* see env_check_php.ml *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-(* for now return only local vars, not class var like self::$x *)
-let vars_used_in_any x =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-      V.klvalue = (fun (k,vx) x ->
-        match Ast.untype x with
-        | Var (dname, _scope) ->
-            Common.push2 dname aref
-
-        (* Used to have a bad representation for A::$a[e]
-         * It was parsed asa VQualifier(VArrayAccesS($a, e))
-         * but e could contains variable too !! so should actually
-         * visit the lval. But we also don't want to visit certain
-         * parts of lval.
-         * Introducing ClassVar fixed the problem.
-         * The qualifier should be with Var, just like what I do for name.
-         * 
-         * old: | VQualifier (qu, lval) -> ()
-         *)
-
-        | _ -> 
-            k x
-      );
-    }) x
-
-(* TODO: qualified_vars_in !!! *)
-
-(* the lval can be an array expression like 
- * $arr[$v] = 2;  in which case we must consider
- * only $arr in the list of assigned var, not $v.
- * 
- * old: let vars = vars_used_in_lvalue lval in
- * 
- *)
-let rec get_assigned_var_lval_opt lval = 
-
-  (match Ast.untype lval with
-  | Var (dname,  _) ->
-      Some dname
-  | VArrayAccess (lval, e) ->
-      get_assigned_var_lval_opt lval
-  (* TODO *)
-  | _ -> None
-  )
-
-
-(* update: does consider also function calls to function taking parameters via
- * reference. Use global info.
- *)
-let vars_assigned_in_any =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kexpr = (fun (k,vx) x ->
-      match Ast.untype x with
-      | Assign (lval, _, _) 
-      | AssignOp (lval, _, _) 
-          
-      | AssignRef (lval, _, _, _) 
-      | AssignNew (lval, _, _, _, _,  _) ->
-          
-          let vopt = get_assigned_var_lval_opt lval in
-          vopt |> Common.do_option (fun v -> Common.push2 v aref);
-          
-          (* recurse, can have $x = $y = 1 *)
-          k x
-      | _ -> 
-          k x
-    );
-    }
-  )
-
-let keyword_arguments_vars_in_any = 
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kargument = (fun (k, vx) x ->
-      match x with
-      | Arg e ->
-          (match e with
-          | (Assign((Var(dname, _scope), tlval_4), i_5,
-                     _e),
-                   t_8) ->
-              Common.push2 dname aref;
-              k x
-          | _ ->
-              k x
-          )
-      | ArgRef _ -> ()
-    );
-  })
-
-(* maybe could be merged with vars_assigned_in but maybe we want
- * the caller to differentiate between regular assignements
- * and possibly assigned by being passed by ref
- *)
-let vars_passed_by_ref_in_any ~find_entity = 
-  V.do_visit_with_ref (fun aref -> 
-    let params_vs_args params args = 
-
-      let params = params +> Ast.unparen +> Ast.uncomma_dots in
-      let args = 
-        match args with
-        | None -> []
-        | Some args -> args +> Ast.unparen +> Ast.uncomma 
-      in
-               
-      Common.zip_safe params args +> List.iter (fun (param, arg) ->
-                  
-        (match arg with
-        | Arg 
-            (Lv((Var(dname, _scope), tlval_49)), t_50) ->
-            if param.p_ref <> None
-            then
-              Common.push2 dname aref
-        | _ ->
-            ()
-        )
-      );
-    in
-
-  { V.default_visitor with
-    V.klvalue = (fun (k, vx) x ->
-      match Ast.untype x with
-      | FunCallSimple (name, args) ->
-          E.find_entity ~find_entity (Entity_php.Function, name)
-          +> Common.do_option (fun id_ast ->
-            match id_ast with
-            | Ast_php.FunctionE def ->
-                params_vs_args def.f_params (Some args)
-            | _ -> raise Impossible
-          );
-          k x
-      | FunCallVar _ 
-      | StaticMethodCallSimple _
-      | MethodCallSimple _
-          -> 
-          (* TODO !!! *)
-          k x
-      | _ -> 
-          k x
-    );
-    V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
-      | New (tok, class_name_ref, args) ->
-          (match class_name_ref with
-          | ClassNameRefStatic (ClassName name) ->
-              
-              E.find_entity ~find_entity (Entity_php.Class, name)
-              +> Common.do_option (fun id_ast ->
-                match id_ast with
-                | Ast_php.ClassE def ->
-                    (try 
-                        let constructor_def = 
-                          Class_php.get_constructor def in
-                        params_vs_args constructor_def.m_params args
-
-                     with Not_found ->
-                       if !Flag.show_analyze_error
-                       then pr2_once (spf "Could not find constructor for: %s" 
-                                         (Ast.name name));
-                    );
-
-                | _ -> raise Impossible
-              );
-              k x
-
-          | ClassNameRefStatic (Self _ | Parent _) ->
-              (* TODO *)
-              k x
-
-          | ClassNameRefLateStatic _ ->
-              (* todo ? *)
-              k x
-          | ClassNameRefDynamic _ ->
-              (* todo ? *)
-              k x
-          )
-      | _ -> k x
-    );
-    }
-  )
-
-(*****************************************************************************)
-(* (Semi) Globals, Julia's style *)
-(*****************************************************************************)
-
-(* use a ref because we may want to modify it *)
-let (initial_env: environment ref) = ref [
-  Env_php.globals_builtins |> List.map (fun s ->
-    fake_dname s, (S.Global, ref 1)
-  )
-]
-
-(* opti: cache ? use hash ? *)
-let _scoped_env = ref !initial_env
-
-(* TODO use generic implem of Common ? *)
-let new_scope() = _scoped_env := []::!_scoped_env 
-let del_scope() = _scoped_env := List.tl !_scoped_env
-let top_scope() = List.hd !_scoped_env
-
-let add_in_scope namedef =
-  let (current, older) = Common.uncons !_scoped_env in
-  _scoped_env := (namedef::current)::older
-
-
-(* ------------------------------------------------------------ *)
-let add_binding2 k v  = 
-
-  if !Flag.debug_checker 
-  then pr2 (spf "adding binding %s" (Ast.string_of_info (Ast.info_of_dname k)));
-
-  add_in_scope (k, v) 
-
-let add_binding k v = 
-  Common.profile_code "CV.add_binding" (fun () -> add_binding2 k v)
+(* see check_variables_helpers_php.ml *)
 
 (*****************************************************************************)
 (* checks *)
 (*****************************************************************************)
 
-let check_use_against_env var env = 
+let check_use_against_env ~in_lambda var env = 
   let s = Ast.dname var in
-
   match lookup_env_opt s env with
   | None -> 
-      E.fatal (E.UseOfUndefinedVariable var)
-
-  | Some (scope, aref) ->
-      incr aref
+      E.fatal (Ast.info_of_dname var) 
+        (if in_lambda 
+        then (E.UseOfUndefinedVariableInLambda s)
+        else (E.UseOfUndefinedVariable s)
+        )
+  | Some (scope, aref) -> incr aref
 
 let do_in_new_scope_and_check f = 
   new_scope();
@@ -491,15 +206,15 @@ let do_in_new_scope_and_check f =
     then 
       let s = Ast.dname dname in
       if unused_ok s then ()
-      else E.fatal (E.UnusedVariable (dname, scope))
+      else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (s, scope))
   );
   res
 
 let do_in_new_scope_and_check_if_strict f =
   if !E.strict 
   then do_in_new_scope_and_check f
+  (* use same scope *)
   else f ()
-
   
 (*****************************************************************************)
 (* Scoped visitor *)
@@ -507,14 +222,16 @@ let do_in_new_scope_and_check_if_strict f =
 
 (* For each introduced binding (param, exception, foreach, etc), 
  * we add the binding in the environment with a counter, a la checkModule.
+ * We then check at use time if something was declared before. We then
+ * finally check when we exit a scope that all variables were actually used.
  *)
-let visit_prog 
- ?(find_entity = None) 
- prog = 
+let visit_prog ?(find_entity=None) prog = 
 
   let is_top_expr = ref true in 
+  let in_lambda = ref false in
+  let scope = ref Ent.StmtList in
 
-  let hooks = { Visitor_php.default_visitor with
+  let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
     (* scoping management.
      * 
@@ -535,7 +252,9 @@ let visit_prog
     );
 
     V.kfunc_def = (fun (k, _) x ->
-      do_in_new_scope_and_check (fun () -> k x);
+      Common.save_excursion scope Ent.Function (fun () ->
+        do_in_new_scope_and_check (fun () -> k x);
+      )
     );
     V.kmethod_def = (fun (k, _) x ->
       match x.m_body with
@@ -545,7 +264,22 @@ let visit_prog
            *)
           ()
       | MethodBody _ ->
-          do_in_new_scope_and_check (fun () -> k x);
+      (* todo: diff between Method and StaticMethod? *)
+      Common.save_excursion scope Ent.Method (fun () ->
+        do_in_new_scope_and_check (fun () -> 
+          if not (Class_php.is_static_method x)
+          then begin
+            (* we put 1 as use_count because we are not interested
+             * in error message related to $this.
+             * it's legitimate to not use $this in a method
+             *)
+            let dname = Ast.DName ("this", Ast.fakeInfo "this") in
+            add_binding dname (S.Class, ref 1);
+          end;
+
+          k x
+        );
+      )
     );
     V.kclass_def = (fun (k, _) x ->
 
@@ -553,11 +287,15 @@ let visit_prog
        * from the parent. If find_entity raise Not_found
        * then it may be because of legitimate errors, but 
        * such error reporting will be done in check_class_php.ml
+       * 
+       * todo: actually need to get the protected/public of the full
+       * ancestors (but I think it's bad to access some variables
+       * from an inherited class far away ... I hate OO for that kind of stuff)
        *)
       x.c_extends +> Common.do_option (fun (tok, name_class_parent) ->
         (* todo: ugly to have to "cast" *)
 
-        E.find_entity ~find_entity (Entity_php.Class, name_class_parent)
+        E.find_entity_and_warn ~find_entity (Ent.Class, name_class_parent)
         +> Common.do_option (fun id_ast ->
           (match id_ast with
           | Ast_php.ClassE def2 ->
@@ -605,7 +343,7 @@ let visit_prog
             | GlobalVar dname -> 
                 add_binding dname (S.Global, ref 0)
             | GlobalDollar (tok, _)  | GlobalDollarExpr (tok, _) ->
-                E.warning (E.UglyGlobalDynamic tok)
+                E.warning tok E.UglyGlobalDynamic
           )
 
       | StaticVars (_, vars_list, _) ->
@@ -651,7 +389,7 @@ let visit_prog
                         scope_ref := S.LocalIterator;
 
                     | _ ->
-                        E.warning (E.WeirdForeachNoIteratorVar tok)
+                        E.warning tok E.WeirdForeachNoIteratorVar
                     );
                 );
                 
@@ -659,7 +397,7 @@ let visit_prog
               );
 
           | _ -> 
-              E.warning (E.WeirdForeachNoIteratorVar tok)
+              E.warning tok E.WeirdForeachNoIteratorVar
           )
       (* note: I was not handling Unset which takes a lvalue (not
        * an expression) as an argument. Because of that the kexpr
@@ -681,9 +419,18 @@ let visit_prog
       | _ -> k x
     );
 
-
     V.kparameter = (fun (k,vx) x ->
-      add_binding x.p_name (S.Param, ref 0);
+      let cnt = 
+        match !scope with
+        (* Don't report UnusedParameter for parameters of methods.
+         * people sometimes override a method and don't use all
+         * the parameters
+         *)
+        | Ent.Method -> 1
+        | Ent.Function -> 0
+        | _ -> 0
+      in
+      add_binding x.p_name (S.Param, ref cnt);
       k x
     );
 
@@ -728,8 +475,6 @@ let visit_prog
               scope_ref := scope;
           )
 
-
-
       | ObjAccessSimple (lval, tok, name) ->
           (match Ast.untype lval with
           | This _ ->
@@ -745,7 +490,7 @@ let visit_prog
               let s = Ast.name name in
               (match lookup_env_opt_for_class s !_scoped_env with
               | None -> 
-                  E.fatal (E.UseOfUndefinedMember name)
+                  E.fatal (Ast.info_of_name name) (E.UseOfUndefinedMember s)
 
               | Some (scope, aref) ->
                   if (scope <> S.Class)
@@ -754,6 +499,10 @@ let visit_prog
                     
                   incr aref
               )
+          (* todo: the other cases would require a complex class analysis ...
+           * maybe some simple dataflow can do the trick for 90% of the code.
+           * Just look for a new Xxx above in the CFG.
+           *)
           | _ -> k x
           )
       | _ -> 
@@ -772,7 +521,6 @@ let visit_prog
        *)
       | AssignList (_, xs, _, e) ->
           let assigned = xs |> Ast.unparen |> Ast.uncomma in
-
 
           (* Use the same trick than for LocalIterator, make them 
            * share the same ref
@@ -799,10 +547,26 @@ let visit_prog
 
       | Eval _ -> pr2_once "Eval: TODO";
           k x
-      | Lambda _ -> pr2_once "Lambda: TODO"
+
+      | Lambda def ->
+
+          (* reset completely the environment *)
+          Common.save_excursion _scoped_env !initial_env (fun () ->
+          Common.save_excursion in_lambda true (fun () ->
+          Common.save_excursion is_top_expr true (fun () ->
+            do_in_new_scope_and_check (fun () ->
+
+              def.l_use +> Common.do_option (fun (_tok, vars) ->
+                vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
+                | LexicalVar (_is_ref, dname) ->
+                    add_binding dname (S.Closed, ref 0)
+                );
+              );
+              k x
+            )))
+          )
           
       (* Include | ... ? *)
-
           
       | _ ->
 
@@ -831,7 +595,8 @@ let visit_prog
         let assigned' = 
           assigned |> Common.exclude (fun v -> List.mem v keyword_args) in
 
-        used' |> List.iter (fun v -> check_use_against_env v !_scoped_env);
+        used' |> List.iter (fun v -> 
+          check_use_against_env ~in_lambda:!in_lambda v !_scoped_env);
 
         assigned' |> List.iter (fun v -> 
 
@@ -856,7 +621,6 @@ let visit_prog
           )
         );
         passed_by_refs |> List.iter (fun v -> 
-
           (* Maybe a new local var *)
           let s = Ast.dname v in
           (match lookup_env_opt s !_scoped_env with
@@ -879,18 +643,13 @@ let visit_prog
     );
   }
   in
-
-  let visitor = Visitor_php.mk_visitor hooks in
   visitor (Program prog)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-let check_and_annotate_program2
-  ?find_entity
-  prog 
-  =
+let check_and_annotate_program2 ?find_entity prog =
 
   (* globals (re)initialialisation *) 
   _scoped_env := !initial_env;

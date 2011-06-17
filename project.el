@@ -26,6 +26,7 @@
      lang_js/parsing
      lang_sql/parsing
      lang_html/parsing
+     lang_cpp/parsing
      lang_php/analyze
      lang_php/analyze/basic
      lang_php/analyze/foundation
@@ -56,6 +57,7 @@
      lang_php/compile
      facebook/thrift
      facebook/thrift/gen-ocaml
+     lang_cpp/parsing
     ")
    pad-ocaml-project-toplevel "pfff.top"
    )
@@ -89,7 +91,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 100
+     (case 201
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -121,6 +123,9 @@
 
 
        (100 "-parse_html /home/pad/pfff/tests/html/simple/div.html")
+
+       (200 "-parse_cpp /home/pad/pfff/tests/cpp/foo.h")
+       (201 "-parse_cpp /tmp/test.cpp")
 
        )
      )
@@ -237,7 +242,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 11
+     (case 20
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
@@ -251,6 +256,7 @@
 
        (10 "-c /home/pad/ex.spatch /home/pad/ex.php")
        (11 "-c /home/pad/ex2.spatch /home/pad/ex2.php")
+       (20 "-c /tmp/test.spatch /tmp/test.php")
        )
      )
     )
@@ -265,10 +271,11 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 2
 
        (0 "-test")
        (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
+       (2 "-debug_checker /home/pad/pfff/tests/php/scheck/closures.php")
        )
      )
     )
@@ -554,11 +561,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 3
+     (case 10
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
        (3 "-test_visualize_dependencies 1 /home/pad/pfff/facebook/tests/mini_www/flib/")
+       (10 "-test")
        )
      ))
    )

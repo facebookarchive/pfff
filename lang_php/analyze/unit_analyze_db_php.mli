@@ -5,6 +5,3 @@
  *)
 val unittest: OUnit.test
 
-(* subsystems unittest *)
-val checkers_unittest: OUnit.test
-

@@ -46,8 +46,12 @@ class ReflectionClass { }
 class ReflectionFunction { }
 class ReflectionMethod { }
 
+//http://php.net/manual/en/class.reflectionobject.php
+class ReflectionObject  { }
+
 //http://php.net/manual/en/reserved.classes.php
 class stdClass { }
+//class Directory
 
 //http://us.php.net/ArrayIterator
 class ArrayIterator { }

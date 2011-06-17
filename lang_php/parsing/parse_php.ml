@@ -33,6 +33,10 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 (*s: type program2 *)
 type program2 = toplevel2 list
   and toplevel2 = 
@@ -183,6 +187,8 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
                 Lexer_php.st_var_offset lexbuf
             | Lexer_php.ST_START_HEREDOC s ->
                 Lexer_php.st_start_heredoc s lexbuf
+            | Lexer_php.ST_START_NOWDOC s ->
+                Lexer_php.st_start_nowdoc s lexbuf
 
             (* xhp: *)
             | Lexer_php.ST_IN_XHP_TAG current_tag ->
@@ -281,12 +287,12 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
 
   let orig_filename = filename in
   let filename =
+    (* note that now that pfff support XHP constructs directly, 
+     * this code is not that needed.
+     *)
     match pp with
     | None -> orig_filename
     | Some cmd ->
-        (* note that now that pfff support XHP constructs directly, 
-         * this code is not that needed.
-         *)
         Common.profile_code "Parse_php.pp_maybe" (fun () ->
 
           let pp_flag = if !Flag.verbose_pp then "-v" else "" in
@@ -324,6 +330,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
   let filelines = Common.cat_array filename in
 
   let toks = tokens filename in
+  (* note that now that pfff support XHP constructs directly, 
+   * this code is not that needed.
+   *)
   let toks = 
     if filename = orig_filename
     then toks
@@ -410,7 +419,9 @@ let parse_memo ?pp file =
   then parse2 ?pp file
   else
     Common.memoized _hmemo_parse_php file (fun () -> 
-      parse2 ?pp file
+      Common.profile_code "Parse_php.parse_no_memo" (fun () ->
+        parse2 ?pp file
+      )
     )
 
 let parse ?pp a = 

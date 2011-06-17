@@ -47,6 +47,8 @@ type scope =
   | ListBinded
   (* | Class ? *)
 
+  | Closed
+
   | NoScope
 
 (*****************************************************************************)
@@ -62,6 +64,7 @@ let string_of_scope = function
   | LocalExn ->  "LocalExn"
   | LocalIterator ->  "LocalIterator"
   | ListBinded ->  "ListBinded"
+  | Closed ->  "Closed"
   | NoScope ->  "NoScope"
 
 (*****************************************************************************)
@@ -78,6 +81,7 @@ let vof_scope x =
   | LocalExn -> Ocaml.VSum (("LocalExn", []))
   | LocalIterator -> Ocaml.VSum (("LocalIterator", []))
   | ListBinded -> Ocaml.VSum (("ListBinded", []))
+  | Closed -> Ocaml.VSum (("Closed", []))
   | NoScope -> Ocaml.VSum (("NoScope", []))
 
 let map_scope =
@@ -90,6 +94,7 @@ let map_scope =
   | ListBinded -> ListBinded
   | LocalIterator -> LocalIterator
   | LocalExn -> LocalExn
+  | Closed -> Closed
   | Class -> Class
 
 (* still needed ? *)
@@ -103,4 +108,5 @@ let sexp_of_scope x =
   | ListBinded -> Sexp.Atom "ListBinded"
   | LocalIterator -> Sexp.Atom "LocalIterator"
   | LocalExn -> Sexp.Atom "LocalExn"
+  | Closed -> Sexp.Atom "Closed"
   | Class -> Sexp.Atom "Class"

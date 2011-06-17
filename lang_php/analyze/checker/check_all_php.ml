@@ -39,6 +39,7 @@ let check_file ?(find_entity=None) file =
 
   (* work only when find_entity is not None; requires global analysis *)
   if find_entity <> None then begin
+    let ast = Unsugar_php.unsugar_self_parent_program ast in
     Check_functions_php.check_program ~find_entity ast;
     Check_classes_php.check_program ~find_entity ast;
   end;

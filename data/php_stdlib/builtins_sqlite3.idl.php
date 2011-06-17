@@ -12,43 +12,43 @@ define('SQLITE3_OPEN_READONLY', 0);
 define('SQLITE3_OPEN_READWRITE', 0);
 define('SQLITE3_OPEN_CREATE', 0);
 class SQLite3 {
-function __construct() { }
-function open() { }
-function close() { }
-function exec() { }
-function version() { }
-function lastinsertrowid() { }
-function lasterrorcode() { }
-function lasterrormsg() { }
-function loadextension() { }
-function changes() { }
-function escapestring() { }
-function prepare() { }
-function query() { }
-function querysingle() { }
-function createfunction() { }
-function createaggregate() { }
-function openblob() { }
-function __destruct() { }
+ function __construct() { }
+ function open($filename, $flags = null /* k_SQLITE3_OPEN_READWRITE|k_SQLITE3_OPEN_CREATE */, $encryption_key = null_string) { }
+ function close() { }
+ function exec($sql) { }
+ function version() { }
+ function lastinsertrowid() { }
+ function lasterrorcode() { }
+ function lasterrormsg() { }
+ function loadextension($extension) { }
+ function changes() { }
+ function escapestring($sql) { }
+ function prepare($sql) { }
+ function query($sql) { }
+ function querysingle($sql, $entire_row = false) { }
+ function createfunction($name, $callback, $argcount = -1) { }
+ function createaggregate($name, $step, $final, $argcount = -1) { }
+ function openblob($table, $column, $rowid, $dbname = null_string) { }
+ function __destruct() { }
 }
 class SQLite3Stmt {
-function __construct() { }
-function paramcount() { }
-function close() { }
-function reset() { }
-function clear() { }
-function bindparam() { }
-function bindvalue() { }
-function execute() { }
-function __destruct() { }
+ function __construct($dbobject, $statement) { }
+ function paramcount() { }
+ function close() { }
+ function reset() { }
+ function clear() { }
+ function bindparam($name, &$parameter, $type = k_SQLITE3_TEXT) { }
+ function bindvalue($name, $parameter, $type = k_SQLITE3_TEXT) { }
+ function execute() { }
+ function __destruct() { }
 }
 class SQLite3Result {
-function __construct() { }
-function numcolumns() { }
-function columnname() { }
-function columntype() { }
-function fetcharray() { }
-function reset() { }
-function finalize() { }
-function __destruct() { }
+ function __construct() { }
+ function numcolumns() { }
+ function columnname($column) { }
+ function columntype($column) { }
+ function fetcharray($mode = k_SQLITE3_BOTH) { }
+ function reset() { }
+ function finalize() { }
+ function __destruct() { }
 }

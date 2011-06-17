@@ -514,7 +514,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           | S.Class -> 
               tag info (Field (Use2 fake_no_use2))
 
-          | S.Global ->
+          | S.Global | S.Closed ->
               (* TODO, need global_used table *)
               tag info (Global (Use2 fake_no_use2));
 
@@ -536,6 +536,16 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
           tag info (Global (Use2 fake_no_use2))
+
+      | LateStaticClassVar (t1, t2, dname) ->
+          (* todo? colorize t1? *)
+          let info = Ast.info_of_dname dname in
+          tag info BadSmell
+
+      | DynamicClassVar (v1, t2, dname) ->
+          (* todo? colorize v1? bad to use dynamic variable ... *)
+          let info = Ast.info_of_dname dname in
+          tag info BadSmell
 
       | This (tok) ->
           tag tok (Class (Use2 fake_no_use2))
@@ -959,10 +969,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag ii (Class (Use2 fake_no_use2));
 
       | T.T_YIELD ii -> tag ii Keyword
-
-
-      | T.T_BAD_CHARACTER ii -> tag ii Error
-      | T.T_CHARACTER ii -> tag ii String
 
       (* should have been handled in field *)
       | T.T_STRING_VARNAME ii -> ()

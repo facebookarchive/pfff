@@ -36,19 +36,15 @@ module E = Error_php
 (* Main entry point *)
 (*****************************************************************************)
 
-let check_program2
-  ?find_entity
-  prog 
-  =
+let check_program2 ?find_entity prog =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kfunc_def = (fun (k, _) def ->
-      (try
+      try
           let flow = Controlflow_build_php.cfg_of_func def in
           Controlflow_build_php.deadcode_detection flow;
           ()
-       with Controlflow_build_php.Error err ->
-         E.fatal (E.CfgError err);
-      )
+       with Controlflow_build_php.Error (err, loc) ->
+         E.fatal loc (E.CfgError err);
     );
     V.kmethod_def = (fun (k, _) def ->
       match def.m_body with
@@ -57,18 +53,15 @@ let check_program2
        *)
       | AbstractMethod _ -> ()
       | MethodBody _ ->
-          (try
-              let flow = Controlflow_build_php.cfg_of_method def in
-              Controlflow_build_php.deadcode_detection flow;
-            with Controlflow_build_php.Error err ->
-              E.fatal (E.CfgError err);
-          )
+          try
+            let flow = Controlflow_build_php.cfg_of_method def in
+            Controlflow_build_php.deadcode_detection flow;
+          with Controlflow_build_php.Error (err, loc) ->
+            E.fatal loc (E.CfgError err);
     );
   }
   in
   visitor (Program prog)
 
-
 let check_program ?find_entity a = 
-  Common.profile_code "Checker.cfg" (fun () -> 
-    check_program2 ?find_entity a)
+  Common.profile_code "Checker.cfg" (fun () -> check_program2 ?find_entity a)

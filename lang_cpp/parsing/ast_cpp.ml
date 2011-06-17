@@ -3,7 +3,7 @@
  * Copyright (C) 2002 Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2011 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -19,6 +19,15 @@ open Common
 module PI = Parse_info
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* This is a big file ... C++ is quite complicated ... 
+ *
+ * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
+ *)
+
+(*****************************************************************************)
 (* The AST C++ related types *)
 (*****************************************************************************)
 
@@ -29,13 +38,12 @@ type info = Parse_info.info
 and tok = info
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap  = 'a * info list (* TODO CHANGE *)
+and 'a wrap  = 'a * info list (* TODO CHANGE to 'a * info *)
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = 'a wrap list
-
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
@@ -80,13 +88,26 @@ type name = qtop option * qualifier list * ident
 
  and ident_name = name (* only IdIdent *)
 
+(* TODO: do like in parsing_c/
+ * and ??? ident_string ??? = 
+ *  | RegularName of string wrap
+ *
+ *  (* cppext: *)
+ *  | CppConcatenatedName of (string wrap) wrap2 (* the ## separators *) list
+ *  (* normally only used inside list of things, as in parameters or arguments
+ *   * in which case, cf cpp-manual, it has a special meaning *)
+ *  | CppVariadicName of string wrap (* ## s *)
+ *  | CppIdentBuilder of string wrap (* s ( ) *) * 
+ *                      ((string wrap) wrap2 list) (* arguments *)
+ *)
+
 (* ------------------------------------------------------------------------- *)
-(* C Type *)
+(* Types *)
 (* ------------------------------------------------------------------------- *)
-(* Could have more precise type in fullType, in expression, etc, but
- * it requires to do too much things in parsing such as checking no
- * conflicting structname, computing value, etc. Better to separate
- * concern, so I put '=>' to mean what we would really like. In fact
+(* We could have a more precise type in fullType, in expression, etc, but
+ * it would require too much things at parsing time such as checking there
+ * is no conflicting structname, computing value, etc. It's better to separate
+ * concerns, so I put '=>' to mean what we would really like. In fact
  * what we really like is defining another fullType, expression, etc
  * from scratch, because many stuff are just sugar.
  * 
@@ -95,15 +116,14 @@ type name = qtop option * qualifier list * ident
  * grammar, you see that we can never specify const for the array
  * himself (but we can do it for pointer).
  * 
- * 
- * Because of ExprStatement, we can have more 'new scope' events, but
- * rare I think. For instance with 'array of constExpression' there can
+ * Because of ExprStatement, we can have more 'new scope', but it's
+ * rare I think. For instance with 'array of constExpression' we could
  * have an exprStatement and a new (local) struct defined. Same for
  * Constructor.
  * 
  * Some stuff are tagged semantic: which means that they are computed
- * after parsing. *)
-
+ * after parsing. 
+ *)
 
 and fullType = typeQualifier * typeC
 and  typeC = typeCbis wrap
@@ -123,8 +143,9 @@ and typeCbis =
   | EnumName        of string (*enum_name*)
   | StructUnionName of structUnion * string (*ident_name*)
 
-  (* c++note: TypeName can also correspond in fact to a classname or enumname *)
-  | TypeName   of string(*typedef_name*) * fullType option (* semantic: filled later *)
+  (* c++note: TypeName can now correspond also to a classname or enumname *)
+  | TypeName   of string(*typedef_name*) 
+      * fullType option (* semantic: filled later *)
   (* c++ext: *)
   | TypeTemplate of string(*ident_name*) * template_arguments
 
@@ -151,58 +172,70 @@ and typeCbis =
     | IntType   of intType 
     | FloatType of floatType
 
-
      (* stdC: type section 
       * add  a | SizeT ?
       * note: char and signed char are semantically different!! 
       *)
       and intType   = 
         | CChar (* obsolete? | CWchar  *)
-	| Si of signed
+        | Si of signed
          (* c++ext: maybe could be put in baseType instead ? *)
         | CBool
         | WChar_t 
 
         and signed = sign * base
-         and base = CChar2 | CShort | CInt | CLong | CLongLong (* gccext: *)
+         and base = 
+           | CChar2 | CShort | CInt | CLong 
+           (* gccext: *)
+           | CLongLong 
          and sign = Signed | UnSigned
 
          and floatType = CFloat | CDouble | CLongDouble
 
-
    (* -------------------------------------- *)    
    (* c++ext: and structType, cf now below *)
 
-   (* -------------------------------------- *)    
+   (* -------------------------------------- *)
+   (* TODO? use a record ? *)
    and enumType = (string * constExpression option) wrap (* s = *) 
                   comma_list
                    (* => string * int list *)
 
-
    (* -------------------------------------- *)    
    (* return * (params * has "...") 
-    * c++ext: todo now const, throw spec, etc
-   *)
+    * c++ext: TODO now const, throw spec, etc
+    * 
+    * TODO: use record for parameterType, like in parsing_c/
+    *) 
    and functionType = fullType * (parameterType comma_list * bool wrap)
       and parameterType = (bool * string option * fullType) wrap (* reg s *)
               (* => (bool (register) * fullType) list * bool *)
 
 
 and typeQualifier = typeQualifierbis wrap 
-and typeQualifierbis = {const: bool; volatile: bool}
+and typeQualifierbis = {
+  const: bool; 
+  volatile: bool
+}
 
+(* TODO: like in parsing_c/
+ * (* gccext: cppext: *)
+ * and attribute = attributebis wrap
+ *  and attributebis =
+ *   | Attribute of string 
+ *)
 
 (* ------------------------------------------------------------------------- *)
-(* C expression *)
+(* Expressions *)
 (* ------------------------------------------------------------------------- *)
 and expression = (expressionbis * fullType option ref (* semantic: *)) wrap
 and expressionbis = 
 
   (* Ident can be a enumeration constant, a simple variable, a name of a func.
-   * With cppext, Ident can also be the name of a macro. Sparse says
-   * that "an identifier with a meaning is a symbol". 
-   * With c++ Ident is now a 'name' instead of a 'string' and can correspond 
-   * to an operator name.
+   * cppext: Ident can also be the name of a macro. Sparse says
+   *  "an identifier with a meaning is a symbol". 
+   * c++ext: Ident is now a 'name' instead of a 'string' and can for 
+   *  instance correspond to an operator name.
    *)
   | Ident          of name * (* semantic: *) ident_info
   | Constant       of constant                                  
@@ -276,13 +309,12 @@ and expressionbis =
       and action_macro = 
          | ActMisc of tok list
 
-
   (* I put string for Int and Float because int would not be enough because
    * OCaml int are 31 bits. So simpler to do string. Same reason to have
    * string instead of int list for the String case.
    * 
    * note: that -2 is not a constant, it is the unary operator '-'
-   * applied to constant 2. So the string must represent a positive
+   * applied to the constant '2'. So the string must represent a positive
    * integer only. 
    *)
   and constant = 
@@ -297,8 +329,10 @@ and expressionbis =
 
     and isWchar = IsWchar | IsChar
 
-  (* gccext: GetRefLabel, via &&label notation *)
-  and unaryOp  = GetRef | DeRef | UnPlus |  UnMinus | Tilde | Not | GetRefLabel
+  and unaryOp  = 
+    | GetRef | DeRef | UnPlus |  UnMinus | Tilde | Not 
+    (* gccext: via &&label notation *)
+    | GetRefLabel
   and assignOp = SimpleAssign | OpAssign of arithOp
   and fixOp    = Dec | Inc
 
@@ -329,7 +363,6 @@ and expressionbis =
     | UnaryNotOp
     | CommaOp
 
-
  (* c++ext: *)
   and cast_operator =
     | Static_cast
@@ -339,15 +372,14 @@ and expressionbis =
 
  and constExpression = expression (* => int *)
 
-
 (* ------------------------------------------------------------------------- *)
-(* C statement *)
+(* Statements *)
 (* ------------------------------------------------------------------------- *)
 (* note: that assignement is not a statement but an expression;
- * wonderful C langage.
+ * wonderful C language.
  * 
- * note: I use 'and' for type definition cos gccext allow statement as
- * expression, so need mutual recursive type definition. 
+ * note: I use 'and' for type definition because gccext allows statements as
+ * expressions, so we need mutual recursive type definition now.
  *)
 
 and statement = statementbis wrap 
@@ -359,7 +391,11 @@ and statementbis =
   | Iteration     of iteration (* have fakeend *)
   | Jump          of jump
 
-  (* c++ext: old: simplify cocci: only at beginning of a compound normally *)
+  (* c++ext: 
+   * in C this constructor could be outside the statement type, in a
+   * decl type because declarations are only at the beginning of a compound
+   * normally. But in C++ we can freely mix declarations and statements 
+   *)
   | DeclStmt  of block_declaration 
   (* gccext: *)
   | NestedFunc of definition
@@ -368,11 +404,9 @@ and statementbis =
   (* c++ext: *)
   | Try of compound wrap * handler list
 
-
   (* cppext: c++ext:
-   * old: compound = (declaration list * statement list) 
+   * old: compound = (declaration list * statement list)
    * old: (declaration, statement) either list 
-   * Simplify cocci to just have statement list, by integrating Decl in stmt.
    *)
   and compound = statement_sequencable list 
 
@@ -385,18 +419,16 @@ and statementbis =
 
   and exprStatement = expression option
 
-
-
   and labeled = Label   of string * statement
               | Case    of expression * statement 
               | CaseRange of expression * expression * statement (* gccext: *)
 	      |	Default of statement
 
- (* for Switch, need check that all elements in the compound start 
-  * with a case:, otherwise unreachable code.
-  *)
   and selection     = 
    | If     of expression * statement * statement
+   (* for Switch, we need to check that all elements in the compound start 
+    * with a case:, otherwise it's unreachable code.
+    *)
    | Switch of expression * statement 
 
   and iteration     = 
@@ -404,13 +436,14 @@ and statementbis =
     | DoWhile of statement * expression
     | For     of exprStatement wrap * exprStatement wrap * exprStatement wrap *
                  statement
+    (* cppext: *)
     | MacroIteration of string * argument comma_list * statement
 
   and jump  = Goto of string
             | Continue | Break 
             | Return   | ReturnExpr of expression
-            | GotoComputed of expression (* gccext: goto *exp ';' *)
-
+            (* gccext: goto *exp ';' *)
+            | GotoComputed of expression
 
   (* c++ext: *)
   and handler = exception_declaration wrap (* catch () *) * compound wrap
@@ -435,14 +468,11 @@ and block_declaration = block_declarationbis wrap
   (* gccext: *)
   | Asm of asmbody
 
-
   (* gccext: *)
   and asmbody = tok list (* string list *) * colon wrap (* : *) list
       and colon = Colon of colon_option comma_list
       and colon_option = colon_optionbis wrap
           and colon_optionbis = ColonMisc | ColonExpr of expression
-
-
 
 
 (* ------------------------------------------------------------------------- *)
@@ -463,12 +493,12 @@ and block_declaration = block_declarationbis wrap
  * 
  * note: var_declaration include prototype declaration.
  *)
-  
 and var_declaration = 
   | DeclList of onedecl comma_list wrap (* ; fakestart sto *)
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of (string * argument comma_list) wrap
 
+     (* TODO: use record as in parsing_c/ *)
      and onedecl = 
        ((name * initialiser option) wrap (* = *) option) * 
          fullType * 
@@ -483,8 +513,6 @@ and var_declaration =
      and func_specifier =
        | Inline
        | Virtual
-
-
 
      and initialiser = initialiserbis wrap
        and initialiserbis = 
@@ -511,16 +539,20 @@ and var_declaration =
  * parameter wheras a function definition can not. But, in some cases such
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declaration and function definition.
+ * 
+ * TODO: use record like in parsing_c/
  *)
 and definition = (string(*name*) * functionType * storage * compound) 
                  wrap (* s ( ) { } fakestart sto *)
 
-
 (* ------------------------------------------------------------------------- *)
-(* Struct/Class *)
+(* Class definition *)
 (* ------------------------------------------------------------------------- *)
 
-(* c++ext: the ident can be a template_id when do template specialization *)
+(* c++ext: the ident can be a template_id when do template specialization.
+ *
+ * TODO: use record
+ *)
 and class_definition = 
  (structUnion * ident_name(*class_name??*) option * base_clause comma_list option * 
  class_member_sequencable list (* new scope *))
@@ -545,7 +577,6 @@ and class_definition =
 
      | DeclarationField of field_declaration
     
-         
      | Method of definition
      (* MethodDecl is inside field_declaration *)
 
@@ -560,8 +591,6 @@ and class_definition =
      | UsingDeclInClass of name
 
      | EmptyField  (* gccext: and maybe c++ext: ';' *)
-
-
 
       (* before unparser, I didn't have a FieldDeclList but just a Field. *)
       and field_declaration = 
@@ -587,14 +616,10 @@ and class_definition =
     | CppDirectiveStruct of cpp_directive
     | IfdefStruct of ifdef_directive (* * field list *)
 
-
   and base_clause = base_clausebis wrap (* virtual and access spec *)
     and base_clausebis = 
          class_name * bool (* virtual inheritance *) * access_spec option
 
-
-
-  
 (* ------------------------------------------------------------------------- *)
 (* Declaration, in c++ sense *)
 (* ------------------------------------------------------------------------- *)
@@ -621,7 +646,6 @@ and declaration = declarationbis wrap
   | NameSpaceAnon   of          declaration_sequencable list
 
 
-
  and template_parameters = template_parameter comma_list
   and template_parameter = parameterType (* todo more *)
 
@@ -635,19 +659,13 @@ and declaration = declarationbis wrap
 
 
 (* ------------------------------------------------------------------------- *)
-(* cpp, #define and #include body *)
+(* cppext: cpp directives, #ifdef, #define and #include body *)
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
-  | Include of includ 
   | Define of define 
+  | Include of includ 
   | Undef of string * tok list
   | PragmaAndCo of tok list
-
-(* to specialize if someone need more info *)
-and ifdef_directive = 
-  | IfdefDirective of tok list
-(* or and 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
-
 
 (* cppext *) 
 and define = string wrap * define_body   (* #define s *)
@@ -667,13 +685,11 @@ and define = string wrap * define_body   (* #define s *)
 
      | DefineTodo
 
-
-
 and includ = inc_file wrap (* #include s *) * 
   (unit (* old: include_rel_pos option ref *) * bool (* is in ifdef, cf -test incl *) )
  and inc_file = 
   | Local    of inc_elem list
-  | NonLocal of inc_elem list
+  | Standard of inc_elem list
   | Wierd of string (* ex: #include SYSTEM_H *)
   and inc_elem = string
 
@@ -691,8 +707,31 @@ and includ = inc_file wrap (* #include s *) *
  * }
  *)
 
+(* to specialize if someone need more info *)
+and ifdef_directive = 
+  | IfdefDirective of tok list
+(* or and 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
+
+(* TODO: like in parsing_c/
+ * (* todo? to specialize if someone need more info *)
+ * and ifdef_directive = (* or and 'a ifdefed = 'a list wrap *)
+ *   | IfdefDirective of (ifdefkind * matching_tag) wrap
+ *   and ifdefkind = 
+ *     | Ifdef (* todo? of string ? of formula_cpp ? *)
+ *     | IfdefElseif (* same *)
+ *     | IfdefElse (* same *)
+ *     | IfdefEndif 
+ *   (* set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
+ *    * a global so it means if you parse the same file twice you may get
+ *    * different id. I try now to avoid this pb by resetting it each 
+ *    * time I parse a file.
+ *    *)
+ *   and matching_tag = 
+ *     IfdefTag of (int (* tag *) * int (* total with this tag *))
+ *)
+
 (* ------------------------------------------------------------------------- *)
-(* The toplevels elements *)
+(* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
 
 and toplevel =
@@ -702,8 +741,6 @@ and toplevel =
   (* cppext: *)
   | CppTop of cpp_directive
   | IfdefTop of ifdef_directive (* * toplevel list *)
-
-  (* cppext: *)
   | MacroTop of string * argument comma_list * tok list
          
   (* gccext: allow redundant ';' *)
@@ -716,22 +753,16 @@ and toplevel =
 (* ------------------------------------------------------------------------- *)
 and program = toplevel list
 
+(* ------------------------------------------------------------------------- *)
+(* Any *)
+(* ------------------------------------------------------------------------- *)
+and any = 
+  | Program of program
+  | Toplevel of toplevel
+  | Expr of expression
+  | Stmt of statement
+
  (* with tarzan *)
-
-(*****************************************************************************)
-(* Cpp constructs, put it comments in lexer *)
-(*****************************************************************************)
-
-(* This type is not in the Ast but is associated with the TCommentCpp token.
- * I put this enum here because parser_c.mly need it. I could have put
- * it also in lexer_parser.
- *)
-type cppcommentkind = 
-  | CppDirective | CppAttr | CppMacro 
-  | CppPassingNormal (* ifdef 0, cplusplus, etc *) 
-  | CppPassingCosWouldGetError (* expr passsing *)
-  | CppOther
-
 
 (*****************************************************************************)
 (* Some constructors *)
@@ -746,7 +777,7 @@ let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
  * old: or when don't want 'synchronize' on it in unparse_c.ml
  * (now have other mark for tha matter).
  *)
-let no_virt_pos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1)
+let noVirtPos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1)
 
 let fakeInfo pi  = 
   { PI.token = PI.FakeTokStr ("",None);
@@ -776,31 +807,30 @@ let noInIfdef () =
 (* Wrappers *)
 (*****************************************************************************)
 let unwrap = fst
-let uncomma xs = List.map fst xs
 let untype = fst
+let uncomma xs = List.map fst xs
 
 let unwrap_typeC (qu, (typeC, ii)) = typeC
-
 
 let rewrap_str = PI.rewrap_str
 let str_of_info = PI.str_of_info
 
 (* used by parsing hacks *)
 let make_expanded ii =
-  let (a, b) = no_virt_pos in
+  let (a, b) = noVirtPos in
   {ii with PI.token = 
       PI.ExpandedTok (PI.get_opi ii.PI.token, a, b)}
 
 (* used by token_helpers *)
 let get_info = PI.get_info
 
-let line_of_info = PI.line_of_info
-let col_of_info = PI.col_of_info
-let file_of_info = PI.file_of_info
-let pos_of_info  = PI.pos_of_info
-let pinfo_of_info = PI.pinfo_of_info
+let line_of_info       = PI.line_of_info
+let col_of_info        = PI.col_of_info
+let file_of_info       = PI.file_of_info
+let pos_of_info        = PI.pos_of_info
+let pinfo_of_info      = PI.pinfo_of_info
 let parse_info_of_info = PI.parse_info_of_info
-let is_origintok =  PI.is_origintok
+let is_origintok       = PI.is_origintok
 
 let opos_of_info ii = 
   PI.get_orig_info (function x -> x.PI.charpos) ii
@@ -822,14 +852,15 @@ let (string_of_name_tmp: name -> string) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent s, _ -> s
-  | _ -> raise Todo
+  | _ ->
+      "TODO_string_of_name_tmp"
+      (* raise Todo *)
 
 let (info_of_name_tmp: name -> info) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent s, ii -> List.hd ii
   | _ -> raise Todo
-
 
 let (semi_fake_name: (string * info) -> name) = fun (s, iis) ->
   None, [], (IdIdent s, [iis])

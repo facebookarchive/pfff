@@ -26,6 +26,7 @@ SRC= \
      test_analyze_db_php.ml \
      unit_analyze_php.ml \
      unit_analyze_db_php.ml \
+     unit_checker_php.ml \
 
 
 -include $(TOP)/Makefile.config

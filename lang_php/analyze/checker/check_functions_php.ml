@@ -22,6 +22,8 @@ module V = Visitor_php
 
 module E = Error_php
 
+module Ent = Entity_php
+
 module Flag = Flag_analyze_php
 
 (*****************************************************************************)
@@ -92,16 +94,17 @@ let contain_func_name_args_like any =
 let check_args_vs_params (callname, all_args) (defname, all_params) =
 
   let info = Ast_php.info_of_name callname in
+  let str_def = Ast.name defname in
 
   let rec aux args params = 
     match args, params with
     | [], [] -> ()
     | [], y::ys ->
         if y.p_default = None 
-        then E.fatal (E.NotEnoughArguments (info, defname))
+        then E.fatal info (E.NotEnoughArguments str_def)
         else aux [] ys
     | x::xs, [] ->
-        E.fatal (E.TooManyArguments (info, defname))
+        E.fatal info (E.TooManyArguments str_def)
     | x::xs, y::ys ->
         (match x with
         | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
@@ -117,7 +120,10 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
                   (* todo: edit_distance *)
                   E.Bad
               in
-              E.fatal (E.WrongKeywordArgument(dn, y, severity))
+              let loc = Ast.info_of_dname dn in
+              let s = Ast.dname dn in
+              let param = Ast.dname y.p_name in
+              E.fatal loc (E.WrongKeywordArgument(s, param, severity))
         | _ -> ()
         );
         aux xs ys
@@ -128,15 +134,16 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 (* Visitor *)
 (*****************************************************************************)
 
-(* pre: have a unsugar AST *)
-let visit_and_check_funcalls  ?(find_entity = None) prog =
+(* pre: have a unsugar AST regarding self/parent
+ *)
+let visit_and_check_funcalls ?(find_entity=None) prog =
 
-  let hooks = { Visitor_php.default_visitor with
+  let visitor = V.mk_visitor { V.default_visitor with
 
-    Visitor_php.klvalue = (fun (k,vx) x ->
+    V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
-          E.find_entity ~find_entity (Entity_php.Function, callname)
+          E.find_entity_and_warn ~find_entity (Ent.Function, callname)
           +> Common.do_option (fun id_ast -> match id_ast with
            | Ast_php.FunctionE def ->
                (* todo? memoize ? *)
@@ -158,7 +165,7 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           let classname = resolve_class_name qu in
           let sclassname = Ast.name classname in
           let name' = rewrap_name_with_class_name sclassname callname in
-          E.find_entity ~find_entity (Entity_php.StaticMethod, name')
+          E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
           +> Common.do_option (fun id_ast -> match id_ast with
            | Ast_php.MethodE def ->
 
@@ -182,8 +189,8 @@ let visit_and_check_funcalls  ?(find_entity = None) prog =
           k x
       | _ -> k x
     );
-  } in
-  let visitor = Visitor_php.mk_visitor hooks in
+  } 
+  in
   visitor (Program prog)
 
 (*****************************************************************************)

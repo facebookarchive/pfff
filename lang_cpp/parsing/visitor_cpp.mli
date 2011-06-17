@@ -12,13 +12,8 @@ type visitor_in = {
   kvar_declaration: var_declaration vin;
   kcompound: compound vin;
 }
-and visitor_out = {
-  vexpr: expression vout;
-  vprogram: program vout;
-  vtoplevel: toplevel vout;
-}
+and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
-and 'a vout = 'a -> unit
 
 val default_visitor : visitor_in
 

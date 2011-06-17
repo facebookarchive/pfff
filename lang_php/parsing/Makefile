@@ -20,7 +20,6 @@ SRC= flag_parsing_php.ml \
      token_helpers_php.ml \
      pp_php.ml \
      parse_php.ml \
-     pretty_print_php.ml \
      unparse_php.ml \
      test_parsing_php.ml \
      unit_parsing_php.ml \

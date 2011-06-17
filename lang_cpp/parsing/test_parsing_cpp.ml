@@ -4,42 +4,59 @@ open Ast_cpp
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 
+module Stat = Statistics_parsing
+
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
 
 let test_tokens_cpp file = 
-  if not (file =~ ".*\\.cpp") 
-  then pr2 "warning: seems not a c++ file";
-
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
-
   let toks = Parse_cpp.tokens file in
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_cpp xs  =
-  let ext = ".*\\.\\(c\\|cpp\\|h\\)$" in
+  let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs in
 
-  (* could now use Lib_parsing_cpp.find_php_files_of_dir_or_files *)
-  let fullxs = Common.files_of_dir_or_files_no_vcs_post_filter ext xs in
+  Parse_cpp.init_defs !Flag.macros_h;
 
   let stat_list = ref [] in
-
-  Common.check_stack_nbfiles (List.length fullxs);
+  let newscore  = Common.empty_score () in
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
-
+    
     let (xs, stat) = Parse_cpp.parse file in
+
     Common.push2 stat stat_list;
+
+    let s = sprintf "bad = %d" stat.Stat.bad in
+    if stat.Stat.bad = 0
+    then Hashtbl.add newscore file (Common.Ok)
+    else Hashtbl.add newscore file (Common.Pb s)
   );
-  Statistics_parsing.print_parsing_stat_list !stat_list;
+
+  Stat.print_parsing_stat_list !stat_list;
+
+  (match xs with 
+  | [dirname] when is_directory dirname ->
+      pr2 "--------------------------------";
+      pr2 "regression testing  information";
+      pr2 "--------------------------------";
+      let score_path = Filename.concat !Flag.path "tmp" in
+      let str = Str.global_replace (Str.regexp "/") "__" dirname in
+      Common.regression_testing newscore 
+        (Filename.concat score_path
+            ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"))
+  | _ -> ()
+  );
   ()
 
-
 let test_dump_cpp file =
+  Parse_cpp.init_defs !Flag.macros_h;
+
   let ast = Parse_cpp.parse_program file in
   let s = Export_ast_cpp.ml_pattern_string_of_program ast in
   pr s
@@ -48,29 +65,18 @@ let test_dump_cpp file =
 (* Unit tests *)
 (*****************************************************************************)
 
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
-
     "-parse_cpp", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_cpp;
-
     "-tokens_cpp", "   <file>", 
     Common.mk_action_1_arg test_tokens_cpp;
-
-(*
-    "-unparse_js", "   <file>", 
-    Common.mk_action_1_arg test_unparse_js;
-
-    "-json", "   <file> export the AST of file into JSON", 
-      Common.mk_action_1_arg test_json_js;
-*)
-
+    "-dump_cpp", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp;
     "-dump_cpp_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
-
 ]
 

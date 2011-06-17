@@ -802,6 +802,25 @@ and m_variablebis a b =
        B.ClassVar(b1, b2)
     )
     ))
+  | A.LateStaticClassVar(a1, a2, a3), B.LateStaticClassVar(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_dname a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.LateStaticClassVar(a1, a2, a3),
+       B.LateStaticClassVar(b1, b2, b3)
+    )
+    )))
+  | A.DynamicClassVar(a1, a2, a3), B.DynamicClassVar(b1, b2, b3) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) -> 
+    m_tok a2 b2 >>= (fun (a2, b2) -> 
+    m_dname a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.DynamicClassVar(a1, a2, a3),
+       B.DynamicClassVar(b1, b2, b3)
+    )
+    )))
+
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     (* iso on function name *)
     m_name_metavar_ok a2 b2 >>= (fun (a2, b2) -> 
@@ -905,6 +924,7 @@ and m_variablebis a b =
   | A.Indirect _, _
   | A.VQualifier _, _
   | A.ClassVar _, _
+  | A.LateStaticClassVar _, _
   | A.FunCallSimple _, _
   | A.FunCallVar _, _
   | A.MethodCallSimple _, _
@@ -914,6 +934,7 @@ and m_variablebis a b =
   | A.ObjAccessSimple _, _
   | A.ObjAccess _, _
   | A.LateStaticCall _, _
+  | A.DynamicClassVar _, _
    -> fail ()
 
 and m_rw_variable a b = m_variable a b
@@ -1938,6 +1959,18 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
           Right b::bbs
         )
       )
+
+  (* '...' can also match no argument.
+   * TODO: this is ok in sgrep mode, but in spatch mode the comma
+   * or SgrepExprDots could carry some transfo. What should we do?
+   * Maybe just print warning.
+   *)
+  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], [] ->
+      return (
+        xsa,
+        xsb
+      )
+      
 
   | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
       raise Impossible

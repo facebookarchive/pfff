@@ -38,13 +38,9 @@ type visitor_in = {
   kvar_declaration: var_declaration vin;
   kcompound: compound vin;
 }
-and visitor_out = {
-  vexpr: expression vout;
-  vprogram: program vout;
-  vtoplevel: toplevel vout;
-}
+and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
-and 'a vout = 'a -> unit
+
 
 let default_visitor = 
   { kexpr    = (fun (k,_) x -> k x);
@@ -65,6 +61,8 @@ let rec v_info x =
   ()
 
 and v_tok v = v_info v
+
+(* todo: use ocaml 3.12 feature *)
 and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
 and v_wrap1 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
@@ -805,7 +803,7 @@ and v_includ (v1, v2) =
 and v_inc_file =
   function
   | Local v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | NonLocal v1 -> let v1 = v_list v_inc_elem v1 in ()
+  | Standard v1 -> let v1 = v_list v_inc_elem v1 in ()
   | Wierd v1 -> let v1 = v_string v1 in ()
 and v_inc_elem v = v_string v
 and v_toplevel =
@@ -823,14 +821,16 @@ and v_toplevel =
   | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
 
- and all_functions =   
-    {      
-      vexpr = v_expression;
-      vprogram = v_program;
-      vtoplevel = v_toplevel;
-    }
-  in
-  all_functions
+and v_any = function
+  | Program x -> v_program x
+  | Expr x -> v_expression x
+  | Stmt x -> v_statement x
+  | Toplevel x -> v_toplevel x
 
+(* end of auto generation *)
+
+ and all_functions x = v_any x
+in
+ v_any
 
   

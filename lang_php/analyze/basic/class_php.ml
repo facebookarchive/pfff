@@ -97,4 +97,5 @@ let class_variables_reorder_first def =
   }
 
 let is_static_method def =
-  raise Todo
+  let modifiers = def.m_modifiers +> List.map Ast.unwrap in
+  List.mem Ast.Static modifiers

@@ -92,7 +92,7 @@ optionval_to_dbtxn (v)
 	if (Is_block (v)) {
 		v = Field (v, 0);
 		if (Tag_val (v) != Abstract_tag) {
-			fprintf (stderr, "tag val of %d\n", Tag_val (v));
+			fprintf (stderr, "BDB: tag val of %d\n", Tag_val (v));
 			assert (0);
 		}
 		return (DB_TXN*) Field (v, 0);
@@ -129,7 +129,14 @@ static void raise_error (int err) {
 	if (err < 0) {
 		raise_with_arg (*caml_named_value("BDBError"), Val_int(err));
 	} else {
-		raise_constant (*caml_named_value("BDBSystemError"));
+          fprintf (stderr, "BDB: %s\n", db_strerror (err));
+          value* caml_exn;
+          caml_exn = caml_named_value("BDBSystemError");
+          if (caml_exn == NULL) {
+            caml_failwith("caml_named_value return NULL in bdb_stubs.c");
+          } else {
+            raise_constant (*caml_exn);
+          }
 	}
 }
 
@@ -174,7 +181,7 @@ value caml_env_create (value flags) {
 	if ((err = db_env_create (&dbenv, 
 			convert_flag_list(flags, env_create_flags))) != 0) {
 #ifdef DEBUG
-		fprintf (stderr, "env_create: %s\n", db_strerror (err));
+		fprintf (stderr, "BDB: env_create: %s\n", db_strerror (err));
 #endif
 		raise_error (err);
 	}
@@ -215,7 +222,7 @@ caml_env_open (val_dbenv, home, flags, mode)
 	if ((err = dbenv->open (dbenv, String_val (home), 
 		convert_flag_list (flags, env_open_flags), Int32_val (mode))) != 0) {
 #ifdef DEBUG
-		fprintf (stderr, "%s", db_strerror (err));
+		fprintf (stderr, "BDB: %s", db_strerror (err));
 #endif
 		raise_error (err);	
 	}
@@ -239,7 +246,7 @@ caml_env_close (value val_dbenv, value flags) {
 	if ((err = dbenv->close (dbenv, 
 		convert_flag_list (flags, env_close_flags))) != 0) {
 #ifdef DEBUG
-		fprintf (stderr, "env_close: %s", db_strerror (err));
+		fprintf (stderr, "BDB: env_close: %s", db_strerror (err));
 #endif
 		raise_error (err);
 	}

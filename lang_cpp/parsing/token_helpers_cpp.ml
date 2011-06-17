@@ -9,70 +9,73 @@ module Ast = Ast_cpp
 (* Is_xxx, categories *)
 (*****************************************************************************)
 
+let is_eof = function
+  | EOF x -> true
+  | _ -> false
+
+(* ---------------------------------------------------------------------- *)
 let is_space = function
-  | TCommentSpace _ -> true
-  | TCommentNewline _ -> true
+  | TCommentSpace _  | TCommentNewline _ -> true
   | _ -> false
 
 let is_comment_or_space = function
-  | TComment _ -> true
-  | TCommentSpace _ -> true
-  | TCommentNewline _ -> true
-
+  | TCommentSpace _  | TCommentNewline _ 
+  | TComment _
+      -> true
   | _ -> false
 
 let is_just_comment = function
   | TComment _ -> true
   | _ -> false
 
-
-
-
-
 let is_comment = function
-  | TComment _    | TCommentSpace _ 
-  | TCommentCpp _ 
-  | TCommentMisc _ -> true
-  | TCommentNewline _ -> true
+  | TCommentSpace _ | TCommentNewline _
+  | TComment _    
+  | TComment_Cpp _ 
+      -> true
   | _ -> false
-
 
 let is_real_comment = function
   | TComment _    | TCommentSpace _ 
-      -> true
-  | TCommentNewline _ -> true
+  | TCommentNewline _ 
+    -> true
   | _ -> false
 
 let is_fake_comment = function
-  | TCommentCpp _    | TCommentMisc _ 
-      -> true
+  | TComment_Cpp _ -> true
   | _ -> false
 
 let is_not_comment x = 
   not (is_comment x)
 
+(* ---------------------------------------------------------------------- *)
+let is_gcc_token = function
+  | Tasm _ | Tinline _  | Tattribute _  | Ttypeof _ 
+      -> true
+  | _ -> false
 
 let is_pp_instruction = function
-  | TInclude _ | TDefine _
+  | TInclude _ 
+  | TDefine _
   | TIfdef _   | TIfdefelse _ | TIfdefelif _
   | TEndif _ 
   | TIfdefBool _ | TIfdefMisc _ | TIfdefVersion _
+  | TUndef _ 
+  | TCppDirectiveOther _
       -> true
   | _ -> false
 
 
-
-
 let is_opar = function
-  | TOPar _ | TOParDefine _ | TOParCplusplusInit _ -> true
+  | TOPar _ | TOPar_Define _ | TOPar_CplusplusInit _ -> true
   | _ -> false
 
 let is_cpar = function
-  | TCPar _ | TCParEOL _ -> true
+  | TCPar _ | TCPar_EOL _ -> true
   | _ -> false
 
 let is_obrace = function
-  | TOBrace _ | TOBraceDefineInit _ -> true
+  | TOBrace _ | TOBrace_DefineInit _ -> true
   | _ -> false
 
 let is_cbrace = function
@@ -80,17 +83,12 @@ let is_cbrace = function
   | _ -> false 
 
 
-
-let is_eof = function
-  | EOF x -> true
-  | _ -> false
-
 let is_statement = function
   | Tfor _ | Tdo _ | Tif _ | Twhile _ | Treturn _ 
   | Tbreak _ | Telse _ | Tswitch _ | Tcase _ | Tcontinue _
   | Tgoto _ 
   | TPtVirg _
-  | TMacroIterator _
+  | TIdent_MacroIterator _
       -> true
   | _ -> false
 
@@ -126,7 +124,6 @@ let is_start_of_something = function
   | _ -> false
 
 
-
 let is_binary_operator = function
   | TOrLog _ | TAndLog _ |  TOr _ |  TXor _ |  TAnd _ 
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _ 
@@ -148,7 +145,7 @@ let is_stuff_taking_parenthized = function
   | Twhile _ 
   | Tswitch _
   | Ttypeof _
-  | TMacroIterator _
+  | TIdent_MacroIterator _
     -> true 
   | _ -> false
 
@@ -165,7 +162,6 @@ let is_basic_type = function
   | _ -> false
 
 
-
 let is_struct_like_keyword = function
   | (Tstruct _ | Tunion _ | Tenum _) -> true
   (* c++ext: *)
@@ -176,43 +172,29 @@ let is_classkey_keyword = function
   | (Tstruct _ | Tunion _ | Tclass _) -> true
   | _ -> false
 
-
 let is_cpp_keyword = function
-  | Tclass _
-  | Tthis _
+  | Tclass _ | Tthis _
  
-  | Tnew _
-  | Tdelete _
+  | Tnew _ | Tdelete _
  
-  | Ttemplate _
-  | Ttypeid _
-  | Ttypename _
+  | Ttemplate _ | Ttypeid _ | Ttypename _
  
-  | Tcatch _
-  | Ttry _
-  | Tthrow _
+  | Tcatch _ | Ttry _ | Tthrow _
  
-  | Toperator _
-  | Tpublic _
-  | Tprivate _
-  | Tprotected _
+  | Toperator _ 
+  | Tpublic _ | Tprivate _ | Tprotected _
 
   | Tfriend _
  
   | Tvirtual _
  
-  | Tnamespace _
-  | Tusing _
+  | Tnamespace _ | Tusing _
  
   | Tbool _
-  | Tfalse _
-  | Ttrue _
+  | Tfalse _ | Ttrue _
  
-  | Twchar_t _
-  | Tconst_cast _
-  | Tdynamic_cast _
-  | Tstatic_cast _
-  | Treinterpret_cast  _
+  | Twchar_t _ 
+  | Tconst_cast _ | Tdynamic_cast _ | Tstatic_cast _ | Treinterpret_cast  _
   | Texplicit _
   | Tmutable _
  
@@ -223,33 +205,22 @@ let is_cpp_keyword = function
 
   | _ -> false
 
-
 let is_really_cpp_keyword = function
-  | Tconst_cast _
-  | Tdynamic_cast _
-  | Tstatic_cast _
-  | Treinterpret_cast  _
-
+  | Tconst_cast _ | Tdynamic_cast _ | Tstatic_cast _ | Treinterpret_cast  _
+        -> true
 (* when have some asm volatile, can have some ::
   | TColCol  _
       -> true
 *)
-
   | _ -> false
 
 (* some false positive on some C file like sqlite3.c *)
 let is_maybenot_cpp_keyword = function
-  | Tpublic _
-  | Tprivate _
-  | Tprotected _
-  | Ttemplate _
-  | Tnew _
-  | Ttypename _
+  | Tpublic _ | Tprivate _ | Tprotected _
+  | Ttemplate _ | Tnew _ | Ttypename _
   | Tnamespace _
     -> true
   | _ -> false
-
-
 
 (*****************************************************************************)
 (* Visitors *)
@@ -266,7 +237,7 @@ let info_of_tok = function
   | TAssign  (assignOp, i) -> i
 
   | TIdent  (s, i) -> i
-  | TypedefIdent  (s, i) -> i
+  | TIdent_Typedef  (s, i) -> i
 
   | TInt  (s, i) -> i
 
@@ -274,33 +245,36 @@ let info_of_tok = function
   | TDefine (ii) -> ii 
   | TInclude (includes, filename, inifdef, i1) ->     i1
 
-  | TIncludeStart (i1, inifdef) ->     i1
-  | TIncludeFilename (s, i1) ->     i1
+  | TUndef (s, ii) -> ii
+  | TCppDirectiveOther (ii) -> ii
 
-  | TDefEOL (i1) ->     i1
-  | TOParDefine (i1) ->     i1
-  | TIdentDefine  (s, i) -> i
+  | TInclude_Start (i1, inifdef) ->     i1
+  | TInclude_Filename (s, i1) ->     i1
+
+  | TCommentNewline_DefineEndOfMacro (i1) ->     i1
+  | TOPar_Define (i1) ->     i1
+  | TIdent_Define  (s, i) -> i
+  | TOBrace_DefineInit (i1) ->     i1
+
   | TCppEscapedNewline (ii) -> ii
   | TDefParamVariadic (s, i1) ->     i1
 
-  | TOBraceDefineInit (i1) ->     i1
 
   | TUnknown             (i) -> i
 
-  | TMacroStmt             (i) -> i
-  | TMacroString             (i) -> i
-  | TMacroDecl             (s, i) -> i
-  | TMacroDeclConst             (i) -> i
-  | TMacroIterator             (s,i) -> i
+  | TIdent_MacroStmt             (i) -> i
+  | TIdent_MacroString             (i) -> i
+  | TIdent_MacroIterator             (s,i) -> i
+  | TIdent_MacroDecl             (s, i) -> i
+  | Tconst_MacroDeclConst             (i) -> i
 (*  | TMacroTop             (s,i) -> i *)
-  | TCParEOL (i1) ->     i1
+  | TCPar_EOL (i1) ->     i1
 
-  | TAction             (i) -> i
+  | TAny_Action             (i) -> i
 
   | TComment             (i) -> i
   | TCommentSpace        (i) -> i
-  | TCommentCpp          (cppkind, i) -> i
-  | TCommentMisc         (i) -> i
+  | TComment_Cpp          (cppkind, i) -> i
   | TCommentNewline        (i) -> i
 
   | TIfdef               (i) -> i
@@ -312,7 +286,7 @@ let info_of_tok = function
   | TIfdefVersion           (b, i) -> i
 
   | TOPar                (i) -> i
-  | TOParCplusplusInit                (i) -> i
+  | TOPar_CplusplusInit                (i) -> i
   | TCPar                (i) -> i
   | TOBrace              (i) -> i
   | TCBrace              (i) -> i
@@ -434,36 +408,36 @@ let info_of_tok = function
   | Texport (i) -> i
 
   | TColCol (i) -> i
-  | TColCol2 (i) -> i
+  | TColCol_BeforeTypedef (i) -> i
 
   | TPtrOpStar (i) -> i
   | TDotStar(i) -> i
 
-  | Tclassname  (s, i) -> i
-  | Tclassname2  (s, i) -> i
-  | Ttemplatename  (s, i) -> i
-  | Tconstructorname  (s, i) -> i
-  | TypedefIdent2  (s, i) -> i
-  | TtemplatenameQ  (s, i) -> i
-  | TtemplatenameQ2  (s, i) -> i
+  | TIdent_ClassnameInQualifier  (s, i) -> i
+  | TIdent_ClassnameInQualifier_BeforeTypedef  (s, i) -> i
+  | TIdent_Templatename  (s, i) -> i
+  | TIdent_Constructor  (s, i) -> i
+  | TIdent_TypedefConstr  (s, i) -> i
+  | TIdent_TemplatenameInQualifier  (s, i) -> i
+  | TIdent_TemplatenameInQualifier_BeforeTypedef  (s, i) -> i
 
-  | TInf2                 (i) -> i
-  | TSup2                 (i) -> i
+  | TInf_Template                 (i) -> i
+  | TSup_Template                 (i) -> i
 
-  | TOCro2                 (i) -> i
-  | TCCro2                 (i) -> i
+  | TOCro_new                 (i) -> i
+  | TCCro_new                (i) -> i
 
-  | TIntZeroVirtual        (i) -> i
+  | TInt_ZeroVirtual        (i) -> i
 
-  | Tchar2 (i) -> i
-  | Tint2  (i) -> i
-  | Tfloat2 (i) -> i
-  | Tdouble2  (i) -> i
-  | Twchar_t2 (i) -> i
+  | Tchar_Constr (i) -> i
+  | Tint_Constr  (i) -> i
+  | Tfloat_Constr (i) -> i
+  | Tdouble_Constr  (i) -> i
+  | Twchar_t_Constr (i) -> i
 
-  | Tshort2  (i) -> i
-  | Tlong2   (i) -> i
-  | Tbool2  (i) -> i
+  | Tshort_Constr  (i) -> i
+  | Tlong_Constr   (i) -> i
+  | Tbool_Constr  (i) -> i
       
   | EOF                  (i) -> i
   
@@ -477,46 +451,49 @@ let visitor_info_of_tok f = function
   | TAssign  (assignOp, i)     -> TAssign  (assignOp, f i) 
 
   | TIdent  (s, i)       -> TIdent  (s, f i) 
-  | TypedefIdent  (s, i) -> TypedefIdent  (s, f i) 
+  | TIdent_Typedef  (s, i) -> TIdent_Typedef (s, f i) 
 
   | TInt  (s, i)         -> TInt  (s, f i) 
 
   (* cppext: *)
   | TDefine (i1) -> TDefine(f i1) 
 
+  | TUndef (s,i1) -> TUndef(s, f i1) 
+  | TCppDirectiveOther (i1) -> TCppDirectiveOther(f i1) 
+
   | TInclude (includes, filename, inifdef, i1) -> 
       TInclude (includes, filename, inifdef, f i1)
 
-  | TIncludeStart (i1, inifdef) -> TIncludeStart (f i1, inifdef)
-  | TIncludeFilename (s, i1) -> TIncludeFilename (s, f i1)
+  | TInclude_Start (i1, inifdef) -> TInclude_Start (f i1, inifdef)
+  | TInclude_Filename (s, i1) -> TInclude_Filename (s, f i1)
 
   | TCppEscapedNewline (i1) -> TCppEscapedNewline (f i1)
-  | TDefEOL (i1) -> TDefEOL (f i1)
-  | TOParDefine (i1) -> TOParDefine (f i1)
-  | TIdentDefine  (s, i) -> TIdentDefine (s, f i)
+  | TCommentNewline_DefineEndOfMacro (i1) -> 
+      TCommentNewline_DefineEndOfMacro (f i1)
+  | TOPar_Define (i1) -> TOPar_Define (f i1)
+  | TIdent_Define  (s, i) -> TIdent_Define (s, f i)
 
   | TDefParamVariadic (s, i1) -> TDefParamVariadic (s, f i1)
 
-  | TOBraceDefineInit (i1) -> TOBraceDefineInit (f i1)
+  | TOBrace_DefineInit (i1) -> TOBrace_DefineInit (f i1)
 
 
   | TUnknown             (i) -> TUnknown                (f i)
 
-  | TMacroStmt           (i)   -> TMacroStmt            (f i)
-  | TMacroString         (i)   -> TMacroString          (f i)
-  | TMacroDecl           (s,i) -> TMacroDecl            (s, f i)
-  | TMacroDeclConst      (i)   -> TMacroDeclConst       (f i)
-  | TMacroIterator       (s,i) -> TMacroIterator        (s,f i)
+  | TIdent_MacroStmt           (i)   -> TIdent_MacroStmt            (f i)
+  | TIdent_MacroString         (i)   -> TIdent_MacroString          (f i)
+  | TIdent_MacroIterator       (s,i) -> TIdent_MacroIterator        (s,f i)
+  | TIdent_MacroDecl           (s,i) -> TIdent_MacroDecl            (s, f i)
+  | Tconst_MacroDeclConst      (i)   -> Tconst_MacroDeclConst       (f i)
 (*  | TMacroTop          (s,i) -> TMacroTop             (s,f i) *)
-  | TCParEOL (i) ->     TCParEOL (f i)
+  | TCPar_EOL (i) ->     TCPar_EOL (f i)
 
 
-  | TAction               (i) -> TAction             (f i)
+  | TAny_Action               (i) -> TAny_Action             (f i)
 
   | TComment             (i) -> TComment             (f i) 
   | TCommentSpace        (i) -> TCommentSpace        (f i) 
-  | TCommentCpp          (cppkind, i) -> TCommentCpp          (cppkind, f i) 
-  | TCommentMisc         (i) -> TCommentMisc         (f i) 
+  | TComment_Cpp          (cppkind, i) -> TComment_Cpp          (cppkind, f i) 
   | TCommentNewline         (i) -> TCommentNewline         (f i) 
 
   | TIfdef               (i) -> TIfdef               (f i) 
@@ -528,7 +505,7 @@ let visitor_info_of_tok f = function
   | TIfdefVersion        (b, i) -> TIfdefVersion     (b, f i) 
 
   | TOPar                (i) -> TOPar                (f i) 
-  | TOParCplusplusInit                (i) -> TOParCplusplusInit     (f i) 
+  | TOPar_CplusplusInit                (i) -> TOPar_CplusplusInit     (f i) 
   | TCPar                (i) -> TCPar                (f i) 
   | TOBrace              (i) -> TOBrace              (f i) 
   | TCBrace              (i) -> TCBrace              (f i) 
@@ -651,43 +628,44 @@ let visitor_info_of_tok f = function
 
 
   | TColCol (i) -> TColCol (f i)
-  | TColCol2 (i) -> TColCol2 (f i)
+  | TColCol_BeforeTypedef (i) -> TColCol_BeforeTypedef (f i)
 
   | TPtrOpStar (i) -> TPtrOpStar (f i)
   | TDotStar(i) -> TDotStar (f i)
 
 
-  | Tclassname  (s, i) -> Tclassname  (s, f i) 
-  | Tclassname2  (s, i) -> Tclassname2  (s, f i) 
-  | Ttemplatename  (s, i) -> Ttemplatename  (s, f i) 
-  | Tconstructorname  (s, i) -> Tconstructorname  (s, f i) 
-  | TypedefIdent2  (s, i) -> TypedefIdent2  (s, f i) 
+  | TIdent_ClassnameInQualifier  (s, i) -> TIdent_ClassnameInQualifier (s, f i) 
+  | TIdent_ClassnameInQualifier_BeforeTypedef  (s, i) -> 
+      TIdent_ClassnameInQualifier_BeforeTypedef  (s, f i) 
+  | TIdent_Templatename  (s, i) -> TIdent_Templatename  (s, f i) 
+  | TIdent_Constructor  (s, i) -> TIdent_Constructor  (s, f i) 
+  | TIdent_TypedefConstr  (s, i) -> TIdent_TypedefConstr  (s, f i) 
 
-  | TtemplatenameQ  (s, i) -> TtemplatenameQ  (s, f i) 
-  | TtemplatenameQ2  (s, i) -> TtemplatenameQ2  (s, f i) 
+  | TIdent_TemplatenameInQualifier  (s, i) -> 
+      TIdent_TemplatenameInQualifier  (s, f i) 
+  | TIdent_TemplatenameInQualifier_BeforeTypedef  (s, i) -> 
+      TIdent_TemplatenameInQualifier_BeforeTypedef  (s, f i) 
 
-  | TInf2                 (i) -> TInf2                 (f i) 
-  | TSup2                 (i) -> TSup2                 (f i) 
+  | TInf_Template                 (i) -> TInf_Template                 (f i) 
+  | TSup_Template                 (i) -> TSup_Template                 (f i) 
 
-  | TOCro2                 (i) -> TOCro2                 (f i) 
-  | TCCro2                 (i) -> TCCro2                 (f i) 
+  | TOCro_new                 (i) -> TOCro_new                 (f i) 
+  | TCCro_new                 (i) -> TCCro_new                 (f i) 
 
 
-  | TIntZeroVirtual (i) -> TIntZeroVirtual (f i)
+  | TInt_ZeroVirtual (i) -> TInt_ZeroVirtual (f i)
 
-  | Tchar2                 (i) -> Tchar2                 (f i) 
-  | Tint2                 (i) -> Tint2                 (f i) 
-  | Tfloat2                 (i) -> Tfloat2                 (f i) 
-  | Tdouble2                 (i) -> Tdouble2                 (f i) 
-  | Twchar_t2                 (i) -> Twchar_t2                 (f i) 
+  | Tchar_Constr                 (i) -> Tchar_Constr                 (f i) 
+  | Tint_Constr                 (i) -> Tint_Constr                 (f i) 
+  | Tfloat_Constr                 (i) -> Tfloat_Constr                 (f i) 
+  | Tdouble_Constr                 (i) -> Tdouble_Constr                 (f i) 
+  | Twchar_t_Constr                 (i) -> Twchar_t_Constr                 (f i) 
 
-  | Tshort2  (i) -> Tshort2 (f i)
-  | Tlong2   (i) -> Tlong2 (f i)
-  | Tbool2  (i) -> Tbool2 (f i)
-
+  | Tshort_Constr  (i) -> Tshort_Constr (f i)
+  | Tlong_Constr   (i) -> Tlong_Constr (f i)
+  | Tbool_Constr  (i) -> Tbool_Constr (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
-  
 
 (*****************************************************************************)
 (* Accessors *)

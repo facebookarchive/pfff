@@ -475,6 +475,16 @@ and vof_variablebis =
       let v1 = vof_qualifier v1
       and v2 = vof_dname v2
       in Ocaml.VSum (("ClassVar", [ v1; v2 ]))
+  | LateStaticClassVar ((v1, v2, v3)) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_tok v2 in
+      let v3 = vof_dname v3 in
+      Ocaml.VSum (("LateStaticClassVar", [ v1; v2; v3 ]))
+  | DynamicClassVar ((v1, v2, v3)) ->
+      let v1 = vof_lvalue v1 in
+      let v2 = vof_tok v2 in
+      let v3 = vof_dname v3 in
+      Ocaml.VSum (("DynamicClassVar", [ v1; v2; v3 ]))
   | FunCallSimple ((v2, v3)) ->
       let v2 = vof_name v2
       and v3 = vof_paren (vof_comma_list vof_argument) v3

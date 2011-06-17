@@ -21,4 +21,6 @@ val comment_style_new_line: comment -> string
 
 val index_comment: comment -> (int * string) list
 
+val comments_of_file: Common.filename -> Ast_php.info list
+
 (*e: comment_php.mli *)

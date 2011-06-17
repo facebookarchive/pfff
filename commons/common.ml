@@ -4947,6 +4947,11 @@ let hashset_union h1 h2 =
     Hashtbl.replace h1 k true
   )
 
+let hashset_inter h1 h2 =
+  h1 +> Hashtbl.iter (fun k _bool ->
+    if not (Hashtbl.mem h2 k)
+    then Hashtbl.remove h1 k
+  )
 
 
 let hkeys h = 

@@ -21,85 +21,85 @@ define('UCOL_NORMALIZATION_MODE', 0);
 define('UCOL_STRENGTH', 0);
 define('UCOL_HIRAGANA_QUATERNARY_MODE', 0);
 define('UCOL_NUMERIC_COLLATION', 0);
-function array_change_key_case() { }
-function array_chunk() { }
-function array_combine() { }
-function array_count_values() { }
-function array_fill_keys() { }
-function array_fill() { }
-function array_filter() { }
-function array_flip() { }
-function array_key_exists() { }
-function key_exists() { }
-function array_keys() { }
-function array_map() { }
-function array_merge_recursive() { }
-function array_merge() { }
-function array_replace_recursive() { }
-function array_replace() { }
-function array_multisort() { }
-function array_pad() { }
-function array_pop() { }
-function array_product() { }
-function array_push() { }
-function array_rand() { }
-function array_reduce() { }
-function array_reverse() { }
-function array_search() { }
-function array_shift() { }
-function array_slice() { }
-function array_splice() { }
-function array_sum() { }
-function array_unique() { }
-function array_unshift() { }
-function array_values() { }
-function array_walk_recursive() { }
-function array_walk() { }
-function compact($x) { }
-function shuffle() { }
-function count() { }
-function sizeof() { }
-function each() { }
-function current() { }
-function hphp_current_ref() { }
-function next() { }
-function pos() { }
-function prev() { }
-function reset() { }
-function end() { }
-function key() { }
-function hphp_get_iterator() { }
-function in_array() { }
-function range() { }
-function array_diff() { }
-function array_udiff() { }
-function array_diff_assoc() { }
-function array_diff_uassoc() { }
-function array_udiff_assoc() { }
-function array_udiff_uassoc() { }
-function array_diff_key() { }
-function array_diff_ukey() { }
-function array_intersect() { }
-function array_uintersect() { }
-function array_intersect_assoc() { }
-function array_intersect_uassoc() { }
-function array_uintersect_assoc() { }
-function array_uintersect_uassoc() { }
-function array_intersect_key() { }
-function array_intersect_ukey() { }
-function sort() { }
-function rsort() { }
-function asort() { }
-function arsort() { }
-function ksort() { }
-function krsort() { }
-function usort() { }
-function uasort() { }
-function uksort() { }
-function natsort() { }
-function natcasesort() { }
+function array_change_key_case($input, $upper = false) { }
+function array_chunk($input, $size, $preserve_keys = false) { }
+function array_combine($keys, $values) { }
+function array_count_values($input) { }
+function array_fill_keys($keys, $value) { }
+function array_fill($start_index, $num, $value) { }
+function array_filter($input, $callback = null_variant) { }
+function array_flip($trans) { }
+function array_key_exists($key, $search) { }
+function key_exists($key, $search) { }
+function array_keys($input, $search_value = null_variant, $strict = false) { }
+function array_map($callback, $arr1) { func_get_args();}
+function array_merge_recursive($array1) { func_get_args();}
+function array_merge($array1) { func_get_args();}
+function array_replace_recursive($array1) { func_get_args();}
+function array_replace($array1) { func_get_args();}
+function array_multisort(&$ar1) { func_get_args();}
+function array_pad($input, $pad_size, $pad_value) { }
+function array_pop(&$array) { }
+function array_product($array) { }
+function array_push(&$array, $var) { func_get_args();}
+function array_rand($input, $num_req = 1) { }
+function array_reduce($input, $callback, $initial = null_variant) { }
+function array_reverse($array, $preserve_keys = false) { }
+function array_search($needle, $haystack, $strict = false) { }
+function array_shift(&$array) { }
+function array_slice($array, $offset, $length = null_variant, $preserve_keys = false) { }
+function array_splice(&$input, $offset, $length = null_variant, $replacement = null_variant) { }
+function array_sum($array) { }
+function array_unique($array, $sort_flags = 2) { }
+function array_unshift(&$array, $var) { func_get_args();}
+function array_values($input) { }
+function array_walk_recursive(&$input, $funcname, $userdata = null_variant) { }
+function array_walk(&$input, $funcname, $userdata = null_variant) { }
+function compact($varname) { func_get_args();}
+function shuffle(&$array) { }
+function count($var, $recursive = false) { }
+function sizeof($var, $recursive = false) { }
+function each(&$array) { }
+function current($array) { }
+function hphp_current_ref(&$array) { }
+function next(&$array) { }
+function pos(&$array) { }
+function prev(&$array) { }
+function reset(&$array) { }
+function end(&$array) { }
+function key(&$array) { }
+function hphp_get_iterator(&$iterable, $isMutable) { }
+function in_array($needle, $haystack, $strict = false) { }
+function range($low, $high, $step = 1) { }
+function array_diff($array1, $array2) { func_get_args();}
+function array_udiff($array1, $array2, $data_compare_func) { func_get_args();}
+function array_diff_assoc($array1, $array2) { func_get_args();}
+function array_diff_uassoc($array1, $array2, $key_compare_func) { func_get_args();}
+function array_udiff_assoc($array1, $array2, $data_compare_func) { func_get_args();}
+function array_udiff_uassoc($array1, $array2, $data_compare_func, $key_compare_func) { func_get_args();}
+function array_diff_key($array1, $array2) { func_get_args();}
+function array_diff_ukey($array1, $array2, $key_compare_func) { func_get_args();}
+function array_intersect($array1, $array2) { func_get_args();}
+function array_uintersect($array1, $array2, $data_compare_func) { func_get_args();}
+function array_intersect_assoc($array1, $array2) { func_get_args();}
+function array_intersect_uassoc($array1, $array2, $key_compare_func) { func_get_args();}
+function array_uintersect_assoc($array1, $array2, $data_compare_func) { func_get_args();}
+function array_uintersect_uassoc($array1, $array2, $data_compare_func, $key_compare_func) { func_get_args();}
+function array_intersect_key($array1, $array2) { func_get_args();}
+function array_intersect_ukey($array1, $array2, $key_compare_func) { func_get_args();}
+function sort(&$array, $sort_flags = 0, $use_collator = false) { }
+function rsort(&$array, $sort_flags = 0, $use_collator = false) { }
+function asort(&$array, $sort_flags = 0, $use_collator = false) { }
+function arsort(&$array, $sort_flags = 0, $use_collator = false) { }
+function ksort(&$array, $sort_flags = 0) { }
+function krsort(&$array, $sort_flags = 0) { }
+function usort(&$array, $cmp_function) { }
+function uasort(&$array, $cmp_function) { }
+function uksort(&$array, $cmp_function) { }
+function natsort(&$array) { }
+function natcasesort(&$array) { }
 function i18n_loc_get_default() { }
-function i18n_loc_set_default() { }
-function i18n_loc_set_attribute() { }
-function i18n_loc_set_strength() { }
+function i18n_loc_set_default($locale) { }
+function i18n_loc_set_attribute($attr, $val) { }
+function i18n_loc_set_strength($strength) { }
 function i18n_loc_get_error_code() { }
