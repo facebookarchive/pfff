@@ -46,6 +46,8 @@ module PI = Parse_info
  * <SOH> ::= ascii SOH, (emacs ^A)
  * <CR> :: ascii CR
  * 
+ * 
+ * See also http://en.wikipedia.org/wiki/Ctags#Tags_file_formats
  *)
 
 (*****************************************************************************)
@@ -127,3 +129,28 @@ let generate_TAGS_file ~tags_file files_and_defs =
     );
   );
   ()
+
+let generate_vi_tags_file ~tags_file files_and_defs =
+  Common.with_open_outfile tags_file (fun (pr_no_nl, _chan) ->
+
+    let all_tags =
+      files_and_defs +> List.map (fun (file, defs) ->
+        defs +> Common.map_filter (fun tag ->
+          if String.length tag.tag_definition_text > 300
+          then begin 
+            pr2 (spf "WEIRD long string in %s, passing the tag" file);
+            None
+          end 
+          else Some (tag.tagname, (tag, file))
+        )) 
+      +> List.flatten
+      +> Common.sort_by_key_lowfirst
+    in
+    all_tags +> List.iter (fun (tagname, (tag, file)) ->
+      (* {tagname}<Tab>{tagfile}<Tab>{tagaddress} *)
+      pr_no_nl (spf "%s\t%s\t/%s/\n"
+                   tag.tagname
+                   file
+                   tag.tag_definition_text);
+    );
+  )
