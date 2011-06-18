@@ -1,11 +1,5 @@
-let not_struct_enum = function
-  | x::xs when TH.is_struct_like_keyword x -> false
-  | [] -> true
-  | x::xs -> true
-
 
 let forLOOKAHEAD = 30
-  
 
 (*****************************************************************************)
 (* Lexing with lookahead *)
@@ -139,9 +133,6 @@ let lookahead2 next before =
   (*-------------------------------------------------------------*)
   (* typedef inference, parse_typedef_fix3 *)
   (*-------------------------------------------------------------*)
-  (* TODO: use a fix_tokens_typedef instead of lookahead. Need 
-   * complex context? Need improve set_context then ...
-   *)
 
   (* xx xx *)
   | (TIdent(s,i1)::TIdent(s2,i2)::_ , _) 

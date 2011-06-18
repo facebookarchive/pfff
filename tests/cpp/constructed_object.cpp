@@ -1,5 +1,6 @@
 void main() {
 
-  vector<int> x = vector<int>();
+  vector<int> x = 
+    vector<int>();
 }
 

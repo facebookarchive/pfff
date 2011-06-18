@@ -24,14 +24,7 @@ val new_scope : unit -> unit
 val del_scope : unit -> unit
 
 type context = 
-  | InTopLevel
-  | InFunction
-  | InClassStruct of string
-  | InStructAnon
-  | InTemplateParam
-  | InParameter
-  | InInitializer
-  | InEnum
+ ...
 type lexer_hint = { 
   mutable context_stack: context Common.stack;
  }

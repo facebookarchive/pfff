@@ -64,7 +64,7 @@ open Parsing_hacks_lib
  *    template.
  * 
  * Cf the TMacroXxx in parser_c.mly and MacroXxx in ast_c.ml
-
+ * 
  * We also do other stuff involving cpp like expanding macros,
  * and we try parse define body by finding the end of define virtual 
  * end-of-line token. But now most of the code is actually in pp_token.ml
@@ -74,6 +74,9 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+let filter_comment_stuff xs =
+  xs +> List.filter (fun x -> not (TH.is_comment x.t))
 
 let filter_pp_stuff xs = 
   let rec aux xs = 
@@ -148,34 +151,29 @@ let fix_tokens2 ~macro_defs tokens =
   begin 
 
     (* ifdef *)
-    let cleaner = !tokens2 +> List.filter (fun x -> 
-      not (TH.is_comment x.t) (* could filter also #define/#include *)
-    ) in
+    let cleaner = !tokens2 +> filter_comment_stuff in
+
     let ifdef_grouped = mk_ifdef cleaner in
     Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
     Parsing_hacks_pp.find_ifdef_bool       ifdef_grouped;
     Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
 
-
     (* macro part 1 *)
     let cleaner = !tokens2 +> filter_pp_stuff in
 
     let paren_grouped = mk_parenthised  cleaner in
-    Pp_token.apply_macro_defs 
-      macro_defs
-      paren_grouped;
+    Pp_token.apply_macro_defs macro_defs paren_grouped;
+
     (* because the before field is used by apply_macro_defs *)
     tokens2 := rebuild_tokens_extented !tokens2; 
 
+    (* could filter also #define/#include *)
+    let cleaner = !tokens2 +> filter_comment_stuff in
+
+    let brace_grouped = mk_braceised cleaner in
     (* tagging contextual info (InFunc, InStruct, etc). Better to do
      * that after the "ifdef-simplification" phase.
      *)
-    let cleaner = !tokens2 +> List.filter (fun x -> 
-      not (TH.is_comment x.t) (* could filter also #define/#include *)
-    ) in
-
-    (* done on brace_grouped but actually modifies tokens2 *)
-    let brace_grouped = mk_braceised cleaner in
     Token_views_cpp.set_context_tag   brace_grouped;
 
     (* macro part2 *)
@@ -188,10 +186,14 @@ let fix_tokens2 ~macro_defs tokens =
     Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
     Parsing_hacks_pp.find_macro_paren        paren_grouped;
 
-    (* todo: find template <> symbols (need to be done before
-     * typedef heuristics *)
+    (* todo: find template <> symbols (need to be done before typedef heurist)*)
+
+    (* tokens2 := rebuild_tokens_extented !tokens2; ? *)
 
     (* todo: typedefs *)
+    Parsing_hacks_typedef.find_view_filtered_tokens cleaner;
+
+    (* tokens2 := rebuild_tokens_extented !tokens2; ? *)
 
     (* c++ stuff *)
     Parsing_hacks_cpp.find_view_filtered_tokens cleaner;

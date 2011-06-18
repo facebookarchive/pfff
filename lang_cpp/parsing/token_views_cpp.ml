@@ -85,8 +85,7 @@ type token_extended = {
     | InInitializer 
     | InTemplateParam (* TODO *)
     | InParameter (* TODO *)
-
-    | NoContext
+    (* | InArguments *)
 
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 
@@ -129,7 +128,7 @@ let mk_token_extended x =
   { t = x; 
     line = line; col = col; 
     (* we use List.hd at a few places, so convenient to have a sentinel *)
-    where = [NoContext]; 
+    where = [InTopLevel]; 
     new_tokens_before = [];
   }
 

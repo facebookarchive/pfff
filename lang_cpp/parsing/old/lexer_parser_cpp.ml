@@ -1,50 +1,4 @@
-(* Yoann Padioleau
- * 
- * Copyright (C) 2002 Yoann Padioleau
- * Copyright (C) 2006-2007 Ecole des Mines de Nantes
- * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2010 Facebook
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License (GPL)
- * version 2 as published by the Free Software Foundation.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * file license.txt for more details.
- *)
-
-open Common
-
 module Flag = Flag_parsing_cpp
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(* This module is one of the many to provide hacks around the
- * grammar. This module contains tricks to handle the ambiguity 
- * in the grammar with the typedef which impose a cooperation 
- * between the lexer and the parser. The C (and C++) grammar is
- * not context free.
- * 
- * An example by Hughes Casse: 
- * 
- *   "in the symbol table, local definitions must replace type 
- *    definitions in order to correctly parse local variable in 
- *    functions body. This is the only way to correctly
- *    handle this kind of exception, that is,
- * 
- *       typedef ... ID; 
- *       int f(int *p) {
- *          int ID; 
- *          return (ID) * *p;
- *       } 
- *
- *    If ID isn't overload, the last expression is parsed as a type cast. 
- *    If it isn't, this a multiplication."
- *)
 
 (*****************************************************************************)
 (* Typedef fix *)
@@ -60,7 +14,6 @@ type identkind = TypeDefI | IdentI
  *)
 let (_typedef : (string, identkind) Common.scoped_h_env ref) = 
   ref (Common.empty_scoped_h_env ())
-
 
 (* Why those enable/disable ? When we introduce a new variable, for
  * instance when we declare parameters for a function such as 'int var_t',
@@ -122,21 +75,7 @@ let restore_typedef_state () =
  * as can nest them arbitrarily 
  *)
 type context = 
-  | InTopLevel
-  | InFunction
-  | InClassStruct of string
-  | InStructAnon
-  | InTemplateParam
-  | InParameter
-  | InInitializer
-  | InEnum
-
-let is_top_or_struct = function
-  | InTopLevel
-  | InClassStruct _ 
-  | InStructAnon
-      -> true
-  | _ -> false
+ ...
 
 type lexer_hint = { 
   mutable context_stack: context Common.stack;
