@@ -150,6 +150,14 @@
 //#define typename typename_xxx
 
 // ****************************************************************************
+// sparse stuff
+// ****************************************************************************
+
+//YACFE_MACROITERATOR
+#define FOR_EACH_PTR(a,b) for(;;)
+#define FOR_EACH_PTR_NOTAG(a,b) for(;;)
+
+// ****************************************************************************
 // Facebook stuff
 // ****************************************************************************
 // should be moved in a facebook.h at some point instead of abusing macros.h
