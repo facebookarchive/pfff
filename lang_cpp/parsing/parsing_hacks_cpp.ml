@@ -41,7 +41,7 @@ open Parsing_hacks_pp
 
 let set_as_opar_cplusplus xs = 
   match xs with
-  | ({tok = TOPar ii;_} as tok1)::xs -> 
+  | ({t=TOPar ii;_} as tok1)::xs -> 
       change_tok tok1 (TOPar_CplusplusInit ii);
   | _ -> raise  Impossible
 
@@ -56,13 +56,13 @@ let rec have_a_tsup_quite_close xs =
   | [] -> false
   | (PToken x)::xs -> 
       (match x with
-      | {tok = TSup i} -> true
+      | {t=TSup i} -> true
 
       (* false positive *)
-      | {tok = tok} when TH.is_static_cast_like tok -> false
+      | {t=tok} when TH.is_static_cast_like tok -> false
 
       (* bugfix: but want allow some binary operator :) like '*' *)
-      | {tok = tok} when TH.is_binary_operator_except_star tok -> false
+      | {t=tok} when TH.is_binary_operator_except_star tok -> false
       
 
       | x -> have_a_tsup_quite_close xs
@@ -77,10 +77,10 @@ let rec find_tsup_quite_close xs =
     | [] -> failwith "find_tsup_quite_close, no tsup"
     | (PToken x)::xs -> 
         (match x with
-        | {tok = TSup ii} -> 
+        | {t=TSup ii} -> 
             acc, (x,ii), xs
               
-        | {tok = TInf ii} -> 
+        | {t=TInf ii} -> 
             (* recurse *)
             let (before, (tsuptok,_), after) = 
               find_tsup_quite_close xs in
@@ -115,9 +115,9 @@ let find_cplusplus_view_filtered_tokens xs =
   | [] -> ()
 
   (* classname *)
-  | ({tok = TIdent(s,i1)} as tok1)
-    ::{tok = TColCol _}
-    ::({tok = TIdent(s2,i2)} as tok2)
+  | ({t=TIdent(s,i1)} as tok1)
+    ::{t=TColCol _}
+    ::({t=TIdent(s2,i2)} as tok2)
     ::xs -> 
       change_tok tok1 (TIdent_ClassnameInQualifier (s,i1));
       if s = s2 
@@ -125,18 +125,18 @@ let find_cplusplus_view_filtered_tokens xs =
 
       aux (tok2::xs)
 
-  | ({tok = TIdent(s,i1)} as tok1)
-    ::{tok = TColCol _}
-    ::({tok = Toperator(i2)} as tok2)
+  | ({t=TIdent(s,i1)} as tok1)
+    ::{t=TColCol _}
+    ::({t=Toperator(i2)} as tok2)
     ::xs -> 
       change_tok tok1 (TIdent_ClassnameInQualifier (s, i1));
       aux (tok2::xs)
 
    (* destructor special case *)
-  | ({tok = TIdent(s,i1)} as tok1)
-    ::{tok = TColCol _}
-    ::{tok = TTilde _}
-    ::({tok = TIdent(s2,i2)} as _tok2)
+  | ({t=TIdent(s,i1)} as tok1)
+    ::{t=TColCol _}
+    ::{t=TTilde _}
+    ::({t=TIdent(s2,i2)} as _tok2)
     ::xs -> 
       change_tok tok1 (TIdent_ClassnameInQualifier (s, i1));
       aux xs
@@ -147,9 +147,9 @@ let find_cplusplus_view_filtered_tokens xs =
    * new [3] array access need see 2 tokens ahead, so again,
    * introduce an extra token to help.
    *)
-  | ({tok = Tnew i1} | {tok = Tdelete i1})
-      ::({tok = TOCro i2} as tok2)
-      ::({tok = TCCro i3} as tok3)
+  | ({t=Tnew i1} | {t=Tdelete i1})
+      ::({t=TOCro i2} as tok2)
+      ::({t=TCCro i3} as tok3)
       ::xs -> 
       change_tok tok2 (TOCro_new i2);
       change_tok tok3 (TCCro_new i3);
@@ -172,46 +172,46 @@ let find_cplusplus_view_filtered_tokens_bis xs =
   | [] -> ()
 
   (* xx::yy<zz> ww *)
-  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = (*TypedefIdent*) _})
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TSup_Template _})
-    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
+  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
+    ::({t=TColCol i2} as tok2)
+    ::({t=(*TypedefIdent*) _})
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TSup_Template _})
+    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
 
   (* xx::yy<zz>& ww *)
-  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = (*TypedefIdent*) _})
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TSup_Template _})
-    ::({tok = TAnd _})
-    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
+  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
+    ::({t=TColCol i2} as tok2)
+    ::({t=(*TypedefIdent*) _})
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TSup_Template _})
+    ::({t=TAnd _})
+    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
 
   (* xx::yy<zz*> ww *)
-  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = (*TypedefIdent*) _})
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TMul _})
-    ::({tok = TSup_Template _})
-    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
+  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
+    ::({t=TColCol i2} as tok2)
+    ::({t=(*TypedefIdent*) _})
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TMul _})
+    ::({t=TSup_Template _})
+    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
   (* xx::yy<zz*>& ww *)
-  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = (*TypedefIdent*) _})
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TMul _})
-    ::({tok = TSup_Template _})
-    ::({tok = TAnd _})
-    ::(({tok = TIdent (s2,_)})| ({tok = TIdent_ClassnameInQualifier (s2,_)}))
+  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
+    ::({t=TColCol i2} as tok2)
+    ::({t=(*TypedefIdent*) _})
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TMul _})
+    ::({t=TSup_Template _})
+    ::({t=TAnd _})
+    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
     ::xs
     -> 
       change_tok tok1 (TIdent_ClassnameInQualifier_BeforeTypedef (s1, i1));
@@ -220,33 +220,33 @@ let find_cplusplus_view_filtered_tokens_bis xs =
       aux xs
 
   (* xx<zz>::yy ww *)
-  | ({tok = TIdent_Templatename (s1,i1)} as tok1)
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TSup_Template _})
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = TIdent (s2,_)})
+  | ({t=TIdent_Templatename (s1,i1)} as tok1)
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TSup_Template _})
+    ::({t=TColCol i2} as tok2)
+    ::({t=TIdent (s2,_)})
     ::xs
 
   (* xx<zz,zzz>::yy ww *)
-  | ({tok = TIdent_Templatename (s1,i1)} as tok1)
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TSup_Template _})
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = TIdent (s2,_)})
+  | ({t=TIdent_Templatename (s1,i1)} as tok1)
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TSup_Template _})
+    ::({t=TColCol i2} as tok2)
+    ::({t=TIdent (s2,_)})
     ::xs
 
   (* xx<zz*>::yy ww *)
-  | ({tok = TIdent_Templatename (s1,i1)} as tok1)
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*)_})
-    ::({tok = TMul _})
-    ::({tok = TSup_Template _})
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = TIdent (s2,_)})
+  | ({t=TIdent_Templatename (s1,i1)} as tok1)
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*)_})
+    ::({t=TMul _})
+    ::({t=TSup_Template _})
+    ::({t=TColCol i2} as tok2)
+    ::({t=TIdent (s2,_)})
     ::xs
     -> 
       change_tok tok1 (TIdent_TemplatenameInQualifier_BeforeTypedef (s1, i1));
@@ -255,24 +255,24 @@ let find_cplusplus_view_filtered_tokens_bis xs =
       aux xs
 
   (* aa::xx<zz>::yy ww *)
-  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = TIdent_Templatename (s3,i3)} as tok3)
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TSup_Template _})
-    ::({tok = TColCol i4} as tok4)
-    ::({tok = TIdent (s2,_)})
+  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
+    ::({t=TColCol i2} as tok2)
+    ::({t=TIdent_Templatename (s3,i3)} as tok3)
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TSup_Template _})
+    ::({t=TColCol i4} as tok4)
+    ::({t=TIdent (s2,_)})
     ::xs 
-  | ({tok = TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({tok = TColCol i2} as tok2)
-    ::({tok = TIdent_Templatename (s3,i3)} as tok3)
-    ::({tok = TInf_Template _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = (*TIdent (s,_)*) _})
-    ::({tok = TSup_Template _})
-    ::({tok = TColCol i4} as tok4)
-    ::({tok = TIdent (s2,_)})
+  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
+    ::({t=TColCol i2} as tok2)
+    ::({t=TIdent_Templatename (s3,i3)} as tok3)
+    ::({t=TInf_Template _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=(*TIdent (s,_)*) _})
+    ::({t=TSup_Template _})
+    ::({t=TColCol i4} as tok4)
+    ::({t=TIdent (s2,_)})
     ::xs 
     -> 
       change_tok tok1 (TIdent_ClassnameInQualifier_BeforeTypedef (s1, i1));
@@ -295,7 +295,7 @@ let find_cplusplus_view_parenthized xs =
   | [] -> ()
       
   (* static_cast *)
-  | (PToken {tok = tok1})::(PToken ({tok = TInf i2} as tok2))::xs 
+  | (PToken {t=tok1})::(PToken ({t=TInf i2} as tok2))::xs 
     when TH.is_static_cast_like tok1 -> 
       change_tok tok2 (TInf_Template i2);
 
@@ -317,8 +317,8 @@ let find_cplusplus_view_parenthized xs =
    * can use this fact for our heuristic. Also people usually don't
    * nest < for expressions as in a < b < c.
    *)
-  | (PToken ({tok = TIdent(s,i1)} as tok1))
-    ::(PToken ({tok = TInf i2} as tok2))::xs 
+  | (PToken ({t=TIdent(s,i1)} as tok1))
+    ::(PToken ({t=TInf i2} as tok2))::xs 
     when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs)
     -> 
       change_tok tok1 (TIdent_Templatename(s,i1));
@@ -330,8 +330,8 @@ let find_cplusplus_view_parenthized xs =
       aux before_inf;
       aux rest
 
-  | (PToken ({tok = Ttemplate(i1)}))
-    ::(PToken ({tok = TInf i2} as tok2))::xs 
+  | (PToken ({t=Ttemplate(i1)}))
+    ::(PToken ({t=TInf i2} as tok2))::xs 
    when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) ->
       change_tok tok2 (TInf_Template i2);
       
@@ -344,9 +344,9 @@ let find_cplusplus_view_parenthized xs =
 
         
   (* new (...) type(arg) *)
-  | (PToken ({tok = Tnew(i1)}))
+  | (PToken ({t=Tnew(i1)}))
     ::Parenthised _
-    ::PToken ({tok = TIdent(s,i2)} as tok1)
+    ::PToken ({t=TIdent(s,i2)} as tok1)
     ::Parenthised _
     ::xs 
     ->
@@ -389,10 +389,10 @@ let rec find_cplusplus_view_line_paren xs =
    * perfectly be a declaration of a prototype or of a method.
    *)
   | (Line 
-        [PToken ({tok = TIdent (s1,i1)} as tok);
-         PToken ({tok = TIdent (s,_); where = ctx} as _constructor);
+        [PToken ({t=TIdent (s1,i1)} as tok);
+         PToken ({t=TIdent (s,_); where = ctx} as _constructor);
          Parenthised (xxs,info_parens);
-         PToken ({tok = TPtVirg _});
+         PToken ({t=TPtVirg _});
         ]
     )
     ::xs 
@@ -408,13 +408,13 @@ let rec find_cplusplus_view_line_paren xs =
 
   (* xx<zz> yy(...); when in function *)
   | (Line 
-        [PToken ({tok = TIdent_Templatename (s1,i1)} as _tok);
-         PToken ({tok = TInf_Template _});
-         PToken ({tok = (*TypedefIdent*) _ident});
-         PToken ({tok = TSup_Template _});
-         PToken ({tok = TIdent (s,_); where = ctx} as _constructor);
+        [PToken ({t=TIdent_Templatename (s1,i1)} as _tok);
+         PToken ({t=TInf_Template _});
+         PToken ({t=(*TypedefIdent*) _ident});
+         PToken ({t=TSup_Template _});
+         PToken ({t=TIdent (s,_); where = ctx} as _constructor);
          Parenthised (xxs,info_parens);
-         PToken ({tok = TPtVirg _});
+         PToken ({t=TPtVirg _});
         ]
     )
     ::xs 
@@ -430,17 +430,17 @@ let rec find_cplusplus_view_line_paren xs =
 
   (* xx<zz> yy \n(...); when in function *)
   | (Line 
-        [PToken ({tok = TIdent_Templatename (s1,i1)} as _tok);
-         PToken ({tok = TInf_Template _});
-         PToken ({tok = (*TypedefIdent*) _});
-         PToken ({tok = TSup_Template _});
-         PToken ({tok = TIdent (s,_); where = ctx} as _constructor);
+        [PToken ({t=TIdent_Templatename (s1,i1)} as _tok);
+         PToken ({t=TInf_Template _});
+         PToken ({t=(*TypedefIdent*) _});
+         PToken ({t=TSup_Template _});
+         PToken ({t=TIdent (s,_); where = ctx} as _constructor);
         ]
     )
     ::(Line 
          [
          Parenthised (xxs,info_parens);
-         PToken ({tok = TPtVirg _});
+         PToken ({t=TPtVirg _});
         ]
     )
     ::xs 

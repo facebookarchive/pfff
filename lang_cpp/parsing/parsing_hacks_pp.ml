@@ -41,7 +41,7 @@ let (count_open_close_stuff_ifdef_clause: ifdef_grouped list -> (int * int)) =
  fun xs -> 
    let cnt_paren, cnt_brace = ref 0, ref 0 in
    xs +> iter_token_ifdef (fun x -> 
-     (match x.tok with
+     (match x.t with
      | x when TH.is_opar x  -> incr cnt_paren
      | x when TH.is_obrace x -> incr cnt_brace
      | x when TH.is_cpar x  -> decr cnt_paren
@@ -189,7 +189,7 @@ let rec find_ifdef_funheaders = function
         (NotIfdefLine (({col = 0} as xline2)::line2))::ifdefblock2
       ], info_ifdef_stmt 
       )
-    ::NotIfdefLine (({tok = TOBrace i; col = 0})::line3)
+    ::NotIfdefLine (({t=TOBrace i; col = 0})::line3)
     ::xs  
    when List.length ifdefblock1 <= thresholdFunheaderLimit &&
         List.length ifdefblock2 <= thresholdFunheaderLimit
@@ -211,7 +211,7 @@ let rec find_ifdef_funheaders = function
         ]
       ], info_ifdef_stmt 
       )
-    ::NotIfdefLine (({tok = TOBrace i; col = 0})::line4)
+    ::NotIfdefLine (({t=TOBrace i; col = 0})::line4)
     ::xs  
     -> 
       find_ifdef_funheaders xs;
@@ -227,7 +227,7 @@ let rec find_ifdef_funheaders = function
         [NotIfdefLine (({col = 0} as xline3)::line3)];
       ], info_ifdef_stmt 
       )
-    ::NotIfdefLine (({tok = TOBrace i; col = 0})::line4)
+    ::NotIfdefLine (({t=TOBrace i; col = 0})::line4)
     ::xs 
     -> 
       find_ifdef_funheaders xs;
@@ -247,7 +247,7 @@ let rec adjust_inifdef_include xs =
   | NotIfdefLine _ -> ()
   | Ifdef (xxs, info_ifdef_stmt) | Ifdefbool (_, xxs, info_ifdef_stmt) -> 
       xxs +> List.iter (iter_token_ifdef (fun tokext -> 
-        match tokext.tok with
+        match tokext.t with
         | Parser.TInclude (s1, s2, inifdef_ref, ii) -> 
             inifdef_ref := true;
         | _ -> ()
@@ -271,15 +271,15 @@ let rec find_string_macro_paren xs =
   | Parenthised(xxs, info_parens)::xs -> 
       xxs +> List.iter (fun xs -> 
         if xs +> List.exists 
-          (function PToken({tok = TString _}) -> true | _ -> false) &&
+          (function PToken({t=TString _}) -> true | _ -> false) &&
           xs +> List.for_all 
-          (function PToken({tok = TString _}) | PToken({tok = TIdent _}) -> 
+          (function PToken({t=TString _}) | PToken({t=TIdent _}) -> 
             true | _ -> false)
         then
           xs +> List.iter (fun tok -> 
             match tok with
-            | PToken({tok = TIdent (s,_)} as id) -> 
-                change_tok id (TIdent_MacroString (TH.info_of_tok id.tok))
+            | PToken({t=TIdent (s,_)} as id) -> 
+                change_tok id (TIdent_MacroString (TH.info_of_tok id.t))
             | _ -> ()
           )
         else 
@@ -304,7 +304,7 @@ let rec find_macro_paren xs =
   | [] -> ()
       
   (* attribute *)
-  | PToken ({tok = Tattribute _} as id)
+  | PToken ({t=Tattribute _} as id)
     ::Parenthised (xxs,info_parens)
     ::xs
      -> 
@@ -321,20 +321,20 @@ let rec find_macro_paren xs =
    *)
 
   (* string macro with params, before case *)
-  | PToken ({tok = TString _})::PToken ({tok = TIdent (s,_)} as id)
+  | PToken ({t=TString _})::PToken ({t=TIdent (s,_)} as id)
     ::Parenthised (xxs, info_parens)
     ::xs -> 
-      change_tok id (TIdent_MacroString (TH.info_of_tok id.tok));
+      change_tok id (TIdent_MacroString (TH.info_of_tok id.t));
       [Parenthised (xxs, info_parens)] +> 
         iter_token_paren (set_as_comment Token_cpp.CppMacro);
       find_macro_paren xs
 
   (* after case *)
-  | PToken ({tok = TIdent (s,_)} as id)
+  | PToken ({t=TIdent (s,_)} as id)
     ::Parenthised (xxs, info_parens)
-    ::PToken ({tok = TString _})
+    ::PToken ({t=TString _})
     ::xs -> 
-      change_tok id (TIdent_MacroString (TH.info_of_tok id.tok));
+      change_tok id (TIdent_MacroString (TH.info_of_tok id.t));
       [Parenthised (xxs, info_parens)] +> 
         iter_token_paren (set_as_comment Token_cpp.CppMacro);
       find_macro_paren xs
@@ -345,12 +345,12 @@ let rec find_macro_paren xs =
    *)
         
   (* string macro variable, before case *)
-  | PToken ({tok = TString ((str,_),_)})::PToken ({tok = TIdent (s,_)} as id)
+  | PToken ({t=TString ((str,_),_)})::PToken ({t=TIdent (s,_)} as id)
       ::xs -> 
 
       (* c++ext: *)
       if str <> "C" then begin
-        change_tok id (TIdent_MacroString (TH.info_of_tok id.tok));
+        change_tok id (TIdent_MacroString (TH.info_of_tok id.t));
         find_macro_paren xs
       end
       (* bugfix, forgot to recurse in else case too ... *)
@@ -358,15 +358,15 @@ let rec find_macro_paren xs =
         find_macro_paren xs
 
   (* after case *)
-  | PToken ({tok = TIdent (s,_)} as id)::PToken ({tok = TString _})
+  | PToken ({t=TIdent (s,_)} as id)::PToken ({t=TString _})
       ::xs -> 
-      change_tok id (TIdent_MacroString (TH.info_of_tok id.tok));
+      change_tok id (TIdent_MacroString (TH.info_of_tok id.t));
       find_macro_paren xs
 
   (* TODO: cooperating with standard.h *)
-  | PToken ({tok = TIdent (s,i1)} as id)::xs 
+  | PToken ({t=TIdent (s,i1)} as id)::xs 
       when s = "MACROSTATEMENT" -> 
-      change_tok id (TIdent_MacroStmt(TH.info_of_tok id.tok));
+      change_tok id (TIdent_MacroStmt(TH.info_of_tok id.t));
       find_macro_paren xs
         
 
@@ -387,22 +387,22 @@ let rec find_macro_lineparen xs =
   | [] -> ()
 
   (* firefoxext: ex: NS_DECL_NSIDOMNODELIST *)
-  | (Line ([PToken ({tok = TIdent (s,_)} as macro);]))::xs 
+  | (Line ([PToken ({t=TIdent (s,_)} as macro);]))::xs 
     when s ==~ regexp_ns_decl_like -> 
       set_as_comment Token_cpp.CppMacro macro;
       
       find_macro_lineparen (xs)
 
   (* firefoxext: ex: NS_DECL_NSIDOMNODELIST; *)
-  | (Line ([PToken ({tok = TIdent (s,_)} as macro);
-            PToken ({tok = TPtVirg _})]))::xs 
+  | (Line ([PToken ({t=TIdent (s,_)} as macro);
+            PToken ({t=TPtVirg _})]))::xs 
     when s ==~ regexp_ns_decl_like -> 
       set_as_comment Token_cpp.CppMacro macro;
       
       find_macro_lineparen (xs)
 
   (* firefoxext: ex: NS_IMPL_XXX(a) *)
-  | (Line ([PToken ({tok = TIdent (s,_)} as macro);
+  | (Line ([PToken ({t=TIdent (s,_)} as macro);
            Parenthised (xxs,info_parens);
           ]))::xs 
     when s ==~ regexp_ns_decl_like -> 
@@ -417,14 +417,14 @@ let rec find_macro_lineparen xs =
   (* linuxext: ex: static [const] DEVICE_ATTR(); *)
   | (Line 
         (
-          [PToken ({tok = Tstatic _});
-           PToken ({tok = TIdent (s,_)} as macro);
+          [PToken ({t=Tstatic _});
+           PToken ({t=TIdent (s,_)} as macro);
            Parenthised (xxs,info_parens);
-           PToken ({tok = TPtVirg _});
+           PToken ({t=TPtVirg _});
           ] 
         ))::xs 
     when (s ==~ regexp_macro) -> 
-      let info = TH.info_of_tok macro.tok in
+      let info = TH.info_of_tok macro.t in
       change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
 
       find_macro_lineparen (xs)
@@ -432,18 +432,18 @@ let rec find_macro_lineparen xs =
   (* the static const case *)
   | (Line 
         (
-          [PToken ({tok = Tstatic _});
-           PToken ({tok = Tconst _} as const);
-           PToken ({tok = TIdent (s,_)} as macro);
+          [PToken ({t=Tstatic _});
+           PToken ({t=Tconst _} as const);
+           PToken ({t=TIdent (s,_)} as macro);
            Parenthised (xxs,info_parens);
-           PToken ({tok = TPtVirg _});
+           PToken ({t=TPtVirg _});
           ] 
             (*as line1*)
 
         ))
     ::xs 
     when (s ==~ regexp_macro) -> 
-      let info = TH.info_of_tok macro.tok in
+      let info = TH.info_of_tok macro.t in
       change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
       
       (* need retag this const, otherwise ambiguity in grammar 
@@ -452,7 +452,7 @@ let rec find_macro_lineparen xs =
 	 decl2 : Tstatic . Tconst TMacroDecl TOPar argument_list TCPar ...
 	 storage_class_spec : Tstatic .  (137)
       *)
-      change_tok const (Tconst_MacroDeclConst (TH.info_of_tok const.tok));
+      change_tok const (Tconst_MacroDeclConst (TH.info_of_tok const.t));
 
       find_macro_lineparen (xs)
 
@@ -463,14 +463,14 @@ let rec find_macro_lineparen xs =
    * because of the way mk_line is coded, we will not have access to
    * this ';' on the next line, even if next to the ')' *)
   | (Line 
-        ([PToken ({tok = Tstatic _});
-          PToken ({tok = TIdent (s,_)} as macro);
+        ([PToken ({t=Tstatic _});
+          PToken ({t=TIdent (s,_)} as macro);
           Parenthised (xxs,info_parens);
         ] 
         ))::xs 
     when s ==~ regexp_macro -> 
 
-      let info = TH.info_of_tok macro.tok in
+      let info = TH.info_of_tok macro.t in
       change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
 
       find_macro_lineparen (xs)
@@ -481,18 +481,18 @@ let rec find_macro_lineparen xs =
   (* on multiple lines *)
   | (Line 
         (
-          (PToken ({tok = Tstatic _})::[]
+          (PToken ({t=Tstatic _})::[]
           )))
     ::(Line 
           (
-            [PToken ({tok = TIdent (s,_)} as macro);
+            [PToken ({t=TIdent (s,_)} as macro);
              Parenthised (xxs,info_parens);
-             PToken ({tok = TPtVirg _});
+             PToken ({t=TPtVirg _});
             ]
           ) 
         )::xs 
     when (s ==~ regexp_macro) -> 
-      let info = TH.info_of_tok macro.tok in
+      let info = TH.info_of_tok macro.t in
       change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
 
       find_macro_lineparen xs
@@ -511,14 +511,14 @@ let rec find_macro_lineparen xs =
    *)
         
   | (Line 
-        ([PToken ({tok = TIdent (s,_)} as macro);
+        ([PToken ({t=TIdent (s,_)} as macro);
           Parenthised (xxs,info_parens);
-          PToken ({tok = TPtVirg _});
+          PToken ({t=TPtVirg _});
         ]
         ))::xs 
     when (s ==~ regexp_declare) -> 
 
-      let info = TH.info_of_tok macro.tok in
+      let info = TH.info_of_tok macro.t in
       change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
 
       find_macro_lineparen xs
@@ -531,7 +531,7 @@ let rec find_macro_lineparen xs =
    * the end-of-stream pb of ocamlyacc
    *)
   | (Line 
-        ([PToken ({tok = TIdent (s,ii); col = col1; where = ctx} as _macro);
+        ([PToken ({t=TIdent (s,ii); col = col1; where = ctx} as _macro);
           Parenthised (xxs,info_parens);
         ] as _line1
         ))
@@ -541,8 +541,8 @@ let rec find_macro_lineparen xs =
         (* to reduce number of false positive *)
         (match xs with
         | (Line (PToken ({col = col2 } as other)::restline2))::_ -> 
-            TH.is_eof other.tok || (col2 = 0 &&
-             (match other.tok with
+            TH.is_eof other.t || (col2 = 0 &&
+             (match other.t with
              | TOBrace _ -> false (* otherwise would match funcdecl *)
              | TCBrace _ when ctx <> InFunction -> false
              | TPtVirg _ 
@@ -560,8 +560,8 @@ let rec find_macro_lineparen xs =
       then begin
           (* just to avoid the end-of-stream pb of ocamlyacc  *)
           let tcpar = Common.list_last info_parens in
-          change_tok tcpar (TCPar_EOL (TH.info_of_tok tcpar.tok));
-          (*macro.tok <- TMacroTop (s, TH.info_of_tok macro.tok);*)
+          change_tok tcpar (TCPar_EOL (TH.info_of_tok tcpar.t));
+          (*macro.t <- TMacroTop (s, TH.info_of_tok macro.t);*)
       end;
       find_macro_lineparen xs
 
@@ -572,7 +572,7 @@ let rec find_macro_lineparen xs =
    *     return x;
    *)
   | (Line 
-        ([PToken ({tok = TIdent (s,ii); col = col1; where = ctx} as macro);
+        ([PToken ({t=TIdent (s,ii); col = col1; where = ctx} as macro);
           Parenthised (xxs,info_parens);
         ] as _line1
         ))
@@ -584,7 +584,7 @@ let rec find_macro_lineparen xs =
     -> 
       let condition = 
         (col1 = col2 && 
-            (match other.tok with
+            (match other.t with
             | TOBrace _ -> false (* otherwise would match funcdecl *)
             | TCBrace _ when ctx <> InFunction -> false
             | TPtVirg _ 
@@ -597,7 +597,7 @@ let rec find_macro_lineparen xs =
         ) 
         || 
         (col2 <= col1 &&
-              (match other.tok with
+              (match other.t with
               | TCBrace _ when ctx = InFunction -> true
               | Treturn _ -> true
               | Tif _ -> true
@@ -613,7 +613,7 @@ let rec find_macro_lineparen xs =
       then 
         if col1 = 0 then ()
         else begin
-          change_tok macro (TIdent_MacroStmt (TH.info_of_tok macro.tok));
+          change_tok macro (TIdent_MacroStmt (TH.info_of_tok macro.t));
           [Parenthised (xxs, info_parens)] +> 
             iter_token_paren (set_as_comment Token_cpp.CppMacro);
         end;
@@ -626,7 +626,7 @@ let rec find_macro_lineparen xs =
    *     UNLOCK
    *)
   | (Line 
-        ([PToken ({tok = TIdent (s,ii); col = col1; where = ctx} as macro);
+        ([PToken ({t=TIdent (s,ii); col = col1; where = ctx} as macro);
         ] as _line1
         ))
     ::(Line 
@@ -638,7 +638,7 @@ let rec find_macro_lineparen xs =
       let condition = 
         (col1 = col2 && 
             col1 <> 0 && (* otherwise can match typedef of fundecl*)
-            (match other.tok with
+            (match other.t with
             | TPtVirg _ -> false 
             | TOr _ -> false 
             | TCBrace _ when ctx <> InFunction -> false
@@ -647,7 +647,7 @@ let rec find_macro_lineparen xs =
             | _ -> true
             )) ||
           (col2 <= col1 &&
-              (match other.tok with
+              (match other.t with
               | TCBrace _ when ctx = InFunction -> true
               | Treturn _ -> true
               | Tif _ -> true
@@ -657,7 +657,7 @@ let rec find_macro_lineparen xs =
       in
       
       if condition
-      then change_tok macro (TIdent_MacroStmt (TH.info_of_tok macro.tok));
+      then change_tok macro (TIdent_MacroStmt (TH.info_of_tok macro.t));
 
       find_macro_lineparen (line2::xs)
         
@@ -675,14 +675,14 @@ let rec find_define_init_brace_paren xs =
   | [] -> ()
 
   (* mainly for firefox *)
-  | (PToken {tok = TDefine _})
-    ::(PToken {tok = TIdent_Define (s,_)})
-    ::(PToken ({tok = TOBrace i1} as tokbrace))
+  | (PToken {t=TDefine _})
+    ::(PToken {t=TIdent_Define (s,_)})
+    ::(PToken ({t=TOBrace i1} as tokbrace))
     ::(PToken tok2)
     ::(PToken tok3)
     ::xs -> 
       let is_init =
-        match tok2.tok, tok3.tok with
+        match tok2.t, tok3.t with
         | TInt _, TComma _ -> true
         | TString _, TComma _ -> true
         | TIdent _, TComma _ -> true
@@ -694,15 +694,15 @@ let rec find_define_init_brace_paren xs =
       aux xs
 
   (* mainly for linux, especially in sound/ *)
-  | (PToken {tok = TDefine _})
-    ::(PToken {tok = TIdent_Define (s,_)})
+  | (PToken {t=TDefine _})
+    ::(PToken {t=TIdent_Define (s,_)})
     ::(Parenthised(xxx, info_parens))
-    ::(PToken ({tok = TOBrace i1} as tokbrace))
+    ::(PToken ({t=TOBrace i1} as tokbrace))
     ::(PToken tok2)
     ::(PToken tok3)
     ::xs -> 
       let is_init =
-        match tok2.tok, tok3.tok with
+        match tok2.t, tok3.t with
         | TInt _, TComma _ -> true
         | TDot _, TIdent _ -> true
         | TIdent _, TComma _ -> true
@@ -710,7 +710,7 @@ let rec find_define_init_brace_paren xs =
             
       in
       if is_init
-      then tokbrace.tok <- TOBrace_DefineInit i1;
+      then tokbrace.t <- TOBrace_DefineInit i1;
 
       aux xs
 
@@ -731,7 +731,7 @@ let rec find_define_init_brace_paren xs =
 let rec find_actions = function
   | [] -> ()
 
-  | PToken ({tok = TIdent (s,ii)})
+  | PToken ({t=TIdent (s,ii)})
     ::Parenthised (xxs,info_parens)
     ::xs -> 
       find_actions xs;
@@ -746,10 +746,10 @@ let rec find_actions = function
 and find_actions_params xxs = 
   xxs +> List.fold_left (fun acc xs -> 
     let toks = tokens_of_paren xs in
-    if toks +> List.exists (fun x -> TH.is_statement x.tok)
+    if toks +> List.exists (fun x -> TH.is_statement x.t)
     then begin
       xs +> iter_token_paren (fun x -> 
-        change_tok x (TAny_Action (TH.info_of_tok x.tok));
+        change_tok x (TAny_Action (TH.info_of_tok x.t));
       );
       true (* modified *)
     end

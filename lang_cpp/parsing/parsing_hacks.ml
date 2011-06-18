@@ -82,7 +82,7 @@ let filter_pp_stuff xs =
     match xs with
     | [] -> []
     | x::xs -> 
-        (match x.tok with
+        (match x.t with
         | tok when TH.is_comment tok -> aux xs
         (* don't want drop the define, or if drop, have to drop
          * also its body otherwise the line heuristics may be lost
@@ -151,7 +151,7 @@ let fix_tokens2 ~macro_defs tokens =
 
     (* ifdef *)
     let cleaner = !tokens2 +> List.filter (fun x -> 
-      not (TH.is_comment x.tok) (* could filter also #define/#include *)
+      not (TH.is_comment x.t) (* could filter also #define/#include *)
     ) in
     let ifdef_grouped = mk_ifdef cleaner in
     find_ifdef_funheaders ifdef_grouped;
@@ -173,7 +173,7 @@ let fix_tokens2 ~macro_defs tokens =
      * that after the "ifdef-simplification" phase.
      *)
     let cleaner = !tokens2 +> List.filter (fun x -> 
-      not (TH.is_comment x.tok) (* could filter also #define/#include *)
+      not (TH.is_comment x.t) (* could filter also #define/#include *)
     ) in
 
     (* done on brace_grouped but actually modifies tokens2 *)
@@ -205,7 +205,7 @@ let fix_tokens2 ~macro_defs tokens =
     let paren_grouped = mk_parenthised  cleaner in
     find_actions  paren_grouped;
 
-    insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.tok))
+    insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.t))
   end
 
 let fix_tokens ~macro_defs a = 

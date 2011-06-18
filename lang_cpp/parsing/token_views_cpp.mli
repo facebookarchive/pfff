@@ -1,6 +1,6 @@
 
 type token_extended = {
-  mutable tok : Parser_cpp.token;
+  mutable t: Parser_cpp.token;
   mutable where : context;
   mutable new_tokens_before : Parser_cpp.token list;
   line : int;

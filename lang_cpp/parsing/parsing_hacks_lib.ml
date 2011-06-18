@@ -240,9 +240,9 @@ let change_tok extended_tok tok =
    * why? because paren detection had a pb because of
    * some ifdef-exp?
    *)
-  if TH.is_eof extended_tok.tok
+  if TH.is_eof extended_tok.t
   then pr2 "PB: wierd, I try to tag an EOF token as something else"
-  else extended_tok.tok <- tok
+  else extended_tok.t <- tok
 
 let fresh_tok tok =
   msg_change_tok tok;
@@ -252,8 +252,8 @@ let fresh_tok tok =
  * a clearer "view" to work on
  *)
 let set_as_comment cppkind x = 
-  assert(not (TH.is_real_comment x.tok));
-  change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.tok))
+  assert(not (TH.is_real_comment x.t));
+  change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.t))
 
 (*****************************************************************************)
 (* The regexp and basic view definitions *)

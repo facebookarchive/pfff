@@ -58,7 +58,10 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 (*****************************************************************************)
 
 type token_extended = { 
-  mutable tok: Parser_cpp.token;
+  (* chose 't' and not 'tok' to have a short name because we will write
+   * lots of ocaml patterns around this ... so better to be short
+   *)
+  mutable t: Parser_cpp.token;
   mutable where: context;
 
   (* less: need also a after ? *)
@@ -118,7 +121,7 @@ type body_function_grouped =
 
 let mk_token_extended x = 
   let (line, col) = TH.linecol_of_tok x in
-  { tok = x; 
+  { t = x; 
     line = line; col = col; 
     where = NoContext; 
     new_tokens_before = [];
@@ -128,7 +131,7 @@ let rebuild_tokens_extented toks_ext =
   let _tokens = ref [] in
   toks_ext +> List.iter (fun tok -> 
     tok.new_tokens_before +> List.iter (fun x -> push2 x _tokens);
-    push2 tok.tok _tokens 
+    push2 tok.t _tokens 
   );
   let tokens = List.rev !_tokens in
   (tokens +> acc_map mk_token_extended)
@@ -149,7 +152,7 @@ let rec mk_parenthised xs =
   match xs with
   | [] -> []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | xx when TH.is_opar xx -> 
           let body, extras, xs = mk_parameters [x] [] xs in
           Parenthised (body,extras)::mk_parenthised xs
@@ -165,7 +168,7 @@ and mk_parameters extras acc_before_sep  xs =
       pr2 "PB: not found closing paren in fuzzy parsing";
       [List.rev acc_before_sep], List.rev extras, []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       (* synchro *)
       | xx when TH.is_obrace xx && x.col = 0 -> 
           pr2 "PB: found synchro point } in paren";
@@ -193,7 +196,7 @@ let rec mk_braceised xs =
   match xs with
   | [] -> []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | xx when TH.is_obrace xx -> 
           let body, endbrace, xs = mk_braceised_aux [] xs in
           Braceised (body, x, endbrace)::mk_braceised xs
@@ -212,7 +215,7 @@ and mk_braceised_aux acc xs =
       pr2 "PB: not found closing brace in fuzzy parsing";
       [List.rev acc], None, []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | xx when TH.is_cbrace xx -> [List.rev acc], Some x, xs
       | xx when TH.is_obrace xx -> 
           let body, endbrace, xs = mk_braceised_aux [] xs in
@@ -230,7 +233,7 @@ let rec mk_ifdef xs =
   match xs with
   | [] -> []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | TIfdef _ -> 
           let body, extra, xs = mk_ifdef_parameters [x] [] xs in
           Ifdef (body, extra)::mk_ifdef xs
@@ -264,7 +267,7 @@ and mk_ifdef_parameters extras acc_before_sep xs =
       pr2 "PB: not found closing ifdef in fuzzy parsing";
       [List.rev acc_before_sep], List.rev extras, []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | TEndif _ -> 
           [List.rev acc_before_sep], List.rev (x::extras), xs
       | TIfdef _ -> 
@@ -314,7 +317,7 @@ let rec span_line_paren line = function
   | [] -> [],[]
   | x::xs -> 
       (match x with
-      | PToken tok when TH.is_eof tok.tok -> 
+      | PToken tok when TH.is_eof tok.t -> 
           [], x::xs
       | _ -> 
         if line_of_paren x = line 
@@ -348,7 +351,7 @@ let rec span_line_paren_range (imin, imax) = function
   | [] -> [],[]
   | x::xs -> 
       (match x with
-      | PToken tok when TH.is_eof tok.tok -> 
+      | PToken tok when TH.is_eof tok.t -> 
           [], x::xs
       | _ -> 
         if line_of_paren x >= imin && line_of_paren x <= imax
@@ -377,14 +380,14 @@ let rec mk_body_function_grouped xs =
   | [] -> []
   | x::xs -> 
       (match x with
-      | {tok = TOBrace _; col = 0; _} -> 
+      | {t=TOBrace _; col = 0; _} -> 
           let is_closing_brace = function 
-            | {tok = TCBrace _; col = 0; _ } -> true 
+            | {t = TCBrace _; col = 0; _ } -> true 
             | _ -> false 
           in
           let body, xs = Common.span (fun x -> not (is_closing_brace x)) xs in
           (match xs with
-          | ({tok = TCBrace _; col = 0; _ })::xs -> 
+          | ({t = TCBrace _; col = 0; _ })::xs -> 
               BodyFunction body::mk_body_function_grouped xs
           | [] -> 
               pr2 "PB:not found closing brace in fuzzy parsing";
@@ -508,7 +511,7 @@ let rec set_in_function_tag xs =
 
   (* ) { and the closing } is in column zero, then certainly a function *)
 (*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({tok = TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
+  | BToken ({t=TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
       when tok1.col <> 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
         tok.where <- InFunction
@@ -533,9 +536,9 @@ let rec set_in_other xs =
   match xs with 
   | [] -> ()
   (* enum x { } *)
-  | BToken ({tok = Tenum _;_})::BToken ({tok = TIdent _;_})
+  | BToken ({t=Tenum _;_})::BToken ({t=TIdent _;_})
     ::Braceised(body, tok1, tok2)::xs 
-  | BToken ({tok = Tenum _;_})
+  | BToken ({t=Tenum _;_})
     ::Braceised(body, tok1, tok2)::xs 
     -> 
       body +> List.iter (iter_token_brace (fun tok -> 
@@ -543,7 +546,7 @@ let rec set_in_other xs =
       ));
       set_in_other xs
   (* struct/union/class x { } *)
-  | BToken ({tok = tokstruct; _})::BToken ({tok = TIdent _; _})
+  | BToken ({t=tokstruct; _})::BToken ({t= TIdent _; _})
     ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
       body +> List.iter (iter_token_brace (fun tok -> 
         tok.where <- InStruct;
@@ -551,8 +554,8 @@ let rec set_in_other xs =
       set_in_other xs
 
   (* struct/union/class x : ... { } *)
-  | BToken ({tok = tokstruct; _})::BToken ({tok = TIdent _; _})
-    ::BToken ({tok = TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
+  | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
+    ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
       
       let (before, elem, after) = Common.split_when is_braceised xs in
       (match elem with 
@@ -566,7 +569,7 @@ let rec set_in_other xs =
           
 
   (* = { } *)
-  | BToken ({tok = TEq _; _})
+  | BToken ({t=TEq _; _})
     ::Braceised(body, tok1, tok2)::xs -> 
       body +> List.iter (iter_token_brace (fun tok -> 
         tok.where <- InInitializer;
