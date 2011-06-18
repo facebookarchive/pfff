@@ -1,10 +1,25 @@
 
 int x;
-foo y;
 
-bar x;
+foo1 x;
+
 // ugly, but allowed ...
-bar bar;
+foo2 foo2;
+
+foo3 *x;
+
+const foo4 *const x;
+
+foo5 **x;
+
+int x = (foo6) y;
+
+int x = (foo7 *) y;
+
+int x = (foo8) 1;
+
+int x = (foo9 **) y;
+
 
 //class Foo {
 //  Foo & operator=(const Foo &);

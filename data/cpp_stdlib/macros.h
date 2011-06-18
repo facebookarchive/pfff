@@ -133,6 +133,21 @@
 
 //#define G_BEGIN_DECLS
 
+// ****************************************************************************
+// git stuff
+// ****************************************************************************
+
+#define internal_function
+#define NOINLINE
+#define FORCEINLINE
+#define THROWSPEC
+#define NORETURN
+
+#define  __cdecl
+#define __MINGW_NOTHROW
+
+//#define new new_xxx
+//#define typename typename_xxx
 
 // ****************************************************************************
 // Facebook stuff

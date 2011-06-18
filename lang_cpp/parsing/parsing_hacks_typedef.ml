@@ -46,14 +46,36 @@ let is_top_or_struct = function
       -> true
   | _ -> false
 
+(* todo: transform into a map_and_filter_for_typedef
+ *)
+let filter_for_typedef xs = 
+  xs +> Common.exclude (fun tok_ext ->
+    match tok_ext.TV.t with
+   (* const is a strong signal for having a typedef, so why skip it?
+    * because it forces to duplicate rules. We need to infer
+    * the type anyway even when there is no const around.
+    * todo? maybe could do a special pass first that infer typedef
+    * using only const rules, and then remove those const so 
+    * have best of both worlds.
+    *)
+
+    | Tconst _ | Tvolatile _
+      -> true
+    | _ -> false
+  )
+  
+
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
 
 (* comments/cpp-directives removed
- * TODO assume have done TInf -> TInf_Template
+ * TODO assume have done TInf_Template and TIdent_ClassnameAsQualifier
+ * filtering so can focus on typedef identification.
  *)
 let find_view_filtered_tokens xs = 
+ let xs = filter_for_typedef xs in
+
  let rec aux xs =
   match xs with
   | [] -> ()
@@ -64,6 +86,46 @@ let find_view_filtered_tokens xs =
   (* xx yy *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
+  (* xx * yy
+   * TODO: could be a multiplication too 
+   * TODO: more confidence when xx terminates in _t ?
+   * TODO: could be xx & y in c++
+   *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
+  (* xx ** yy
+  *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
+
+
+
+  (* (xx) yy   and not a if/while before (, and yy can also be a constant *)
+  | {t=tok1}::{t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TCPar info2}
+    ::{t = TIdent (_,_) | TInt _ }::xs 
+    when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same ? *)
+    ->
+      change_tok tok3 (TIdent_Typedef (s, i1));
+      (* todo? recurse on bigger ? *)
+      aux xs
+
+   (* (xx * )
+    * TODO: does not really need the closing paren?
+    *)
+  | {t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TMul _}::{t=TCPar _}::xs ->
+      change_tok tok3 (TIdent_Typedef (s, i1));
+      aux xs
+
+   (* (xx ** ) *)
+  | {t=TOPar info1}::({t=TIdent(s, i1)} as tok3)
+    ::{t=TMul _}::{t=TMul _}::{t=TCPar _}::xs ->
+      change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
 
   (* recurse *)
