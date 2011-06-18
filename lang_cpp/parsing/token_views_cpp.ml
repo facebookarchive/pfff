@@ -37,7 +37,7 @@ open Parser_cpp
  * tedious. One way is to maintain next to the view a list of "actions"
  * (I was using a hash storing the charpos of the token and associating
  * the action) but it is tedious too. Simpler to use mutable/ref. We
- * use the same idea that we use when working on the Ast_c. 
+ * use the same idea that we use when working on the Ast. 
  *
  * old: when I was using the list of "actions" next to the views, the hash
  * indexed by the charpos, there could have been some problems:
@@ -50,7 +50,6 @@ open Parser_cpp
 (*****************************************************************************)
 (* Some debugging functions  *)
 (*****************************************************************************)
-
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
@@ -72,17 +71,22 @@ type token_extended = {
   line: int; 
   col : int;
 }
- (* update: 
-  *  - quite similar to the Place_c.Inxxx.
-  *  - now that can have complex nesting of class/func in c++,
-  *    this type is also present in duplicated form in lexer_parser2.ml
-  * 
-  * The strategy to set the tag is simply to look at the token 
+ (* 
+  * The strategy to set the tag is mostly to look at the token(s)
   * before the '{'.
   *)
   and context = 
-  InFunction | InEnum | InStruct | InInitializer | NoContext
+    | InTopLevel (* TODO *)
+    | InFunction 
+    (* knowing the name is useful to recognize constructors *)
+    | InClassStruct of string  (* TODO *)
+    | InStructAnon (* TODO *)
+    | InEnum 
+    | InInitializer 
+    | InTemplateParam (* TODO *)
+    | InParameter (* TODO *)
 
+    | NoContext
 
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 
@@ -124,6 +128,7 @@ let mk_token_extended x =
   let (line, col) = TH.linecol_of_tok x in
   { t = x; 
     line = line; col = col; 
+    (* we use List.hd at a few places, so convenient to have a sentinel *)
     where = [NoContext]; 
     new_tokens_before = [];
   }
@@ -225,11 +230,9 @@ and mk_braceised_aux acc xs =
           mk_braceised_aux (BToken x::acc) xs
       )
 
-          
 (* ------------------------------------------------------------------------- *)
 (* Ifdefs *)
 (* ------------------------------------------------------------------------- *)
-
 let rec mk_ifdef xs = 
   match xs with
   | [] -> []
@@ -405,7 +408,6 @@ let is_braceised = function
   | Braceised   _ -> true
   | BToken _ -> false
 
-
 (*****************************************************************************)
 (* View iterators  *)
 (*****************************************************************************)
@@ -477,14 +479,12 @@ let tokens_of_paren_ordered xs =
   xs +> List.iter aux_tokens_ordered;
   List.rev !g
 
-
-
 (*****************************************************************************)
 (* Context *)
 (*****************************************************************************)
 (* 
- * All important contexts are introduced via some '{' '}'. To make the 
- * difference is it often enough to just look at the few tokens before the
+ * Most of the important contexts are introduced via some '{' '}'. To
+ * disambiguate is it often enough to just look at a few tokens before the
  * '{'.
  * 
  * TODO harder now that have c++, can have function inside struct so need
@@ -536,6 +536,7 @@ let rec set_in_function_tag xs =
 let rec set_in_other xs = 
   match xs with 
   | [] -> ()
+
   (* enum x { } *)
   | BToken ({t=Tenum _;_})::BToken ({t=TIdent _;_})
     ::Braceised(body, tok1, tok2)::xs 
@@ -546,11 +547,12 @@ let rec set_in_other xs =
         tok.where <- InEnum::tok.where;
       ));
       set_in_other xs
+
   (* struct/union/class x { } *)
-  | BToken ({t=tokstruct; _})::BToken ({t= TIdent _; _})
+  | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
     ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InStruct::tok.where;
+        tok.where <- (InClassStruct s)::tok.where;
       ));
       set_in_other xs
 
@@ -584,7 +586,7 @@ let rec set_in_other xs =
       body +> List.iter set_in_other;
       set_in_other xs
 
-
+(* TODO: handle C++ context for real, and Parameter, and etc *)
 let set_context_tag xs = 
   begin
     (* order is important *)

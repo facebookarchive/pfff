@@ -6,7 +6,16 @@ type token_extended = {
   line : int;
   col : int;
 }
- and context = InFunction | InEnum | InStruct | InInitializer | NoContext
+ and context =
+    | InTopLevel
+    | InFunction 
+    | InClassStruct of string 
+    | InStructAnon
+    | InEnum 
+    | InInitializer 
+    | InTemplateParam
+    | InParameter
+    | NoContext
 
 val mk_token_extended : Parser_cpp.token -> token_extended
 val rebuild_tokens_extented : token_extended list -> token_extended list

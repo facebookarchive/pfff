@@ -176,7 +176,7 @@ let fix_tokens2 ~macro_defs tokens =
 
     (* done on brace_grouped but actually modifies tokens2 *)
     let brace_grouped = mk_braceised cleaner in
-    set_context_tag   brace_grouped;
+    Token_views_cpp.set_context_tag   brace_grouped;
 
     (* macro part2 *)
     let cleaner = !tokens2 +> filter_pp_stuff in
