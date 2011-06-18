@@ -34,8 +34,7 @@ module Hack = Parsing_hacks_lib
  * A heuristic based C/C++/CPP parser.
  * 
  * See "Parsing C/C++ Code without Pre-Preprocessing - Yoann Padioleau, CC'09"
- * avalaible at http://padator.org/papers/yacfe-cc09.pdf for more
- * information.
+ * avalaible at http://padator.org/papers/yacfe-cc09.pdf
  *)
 
 (*****************************************************************************)
@@ -153,6 +152,8 @@ let count_lines_commentized xs =
     !count
   end
 
+(* See also problematic_lines and parsing_stat.ml *)
+
 (* for most problematic tokens *)
 let is_same_line_or_close line tok =
   TH.line_of_tok tok =|= line ||
@@ -238,7 +239,7 @@ let extract_macros a =
 (* Hacked lex. This function use refs passed by parse. 
  * 'tr' means 'token refs'. This is used mostly to enable
  * error recovery (This used to do lots of stuff, such as
- * using calling some lookahead heuristics to reclassify
+ * calling some lookahead heuristics to reclassify
  * tokens such as TIdent into TIdent_Typeded but this is
  * now done in a fix_tokens style in parsing_hacks_typedef.ml.
  *)
