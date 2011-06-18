@@ -19,7 +19,6 @@ module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
 
 module TH = Token_helpers_cpp
-module LP = Lexer_parser_cpp
 module Parser = Parser_cpp
 
 open Parser_cpp
@@ -51,11 +50,6 @@ let (count_open_close_stuff_ifdef_clause: ifdef_grouped list -> (int * int)) =
    );
    !cnt_paren, !cnt_brace
 
-(* ------------------------------------------------------------------------- *)
-(* cppext: *)
-
-let forLOOKAHEAD = 30
-  
 (* look if there is a '{' just after the closing ')', and handling the
  * possibility to have nested expressions inside nested parenthesis 
  *)
@@ -82,17 +76,11 @@ let rec is_really_foreach xs =
   in
   is_foreach_aux xs +> fst
 
-
 (* TODO: set_ifdef_parenthize_info ?? from parsing_c/ *)
 
-
 (*****************************************************************************)
-(* CPP handling: macros, ifdefs, macros defs  *)
+(* Ifdef keeping/passing *)
 (*****************************************************************************)
-
-(* ------------------------------------------------------------------------- *)
-(* ifdef keeping/passing *)
-(* ------------------------------------------------------------------------- *)
 
 (* #if 0, #if 1,  #if LINUX_VERSION handling *)
 let rec find_ifdef_bool xs = 
@@ -255,15 +243,14 @@ let rec adjust_inifdef_include xs =
   )
 
 
-(* ------------------------------------------------------------------------- *)
-(* cpp-builtin part2, macro, using standard.h or other defs *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Builtin macros using standard.h or other defs *)
+(*****************************************************************************)
+(* now in pp_token.ml *) 
 
-(* now in cpp_token_c.ml *) 
-
-(* ------------------------------------------------------------------------- *)
-(* stringification *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Stringification *)
+(*****************************************************************************)
 
 let rec find_string_macro_paren xs = 
   match xs with
@@ -290,9 +277,9 @@ let rec find_string_macro_paren xs =
       find_string_macro_paren xs
       
 
-(* ------------------------------------------------------------------------- *)
-(* macro2 *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Macros *)
+(*****************************************************************************)
 
 (* don't forget to recurse in each case.
  * note that the code below is called after the ifdef phase simplification, 
@@ -665,9 +652,9 @@ let rec find_macro_lineparen xs =
       find_macro_lineparen xs
 
 
-(* ------------------------------------------------------------------------- *)
-(* define tobrace init *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* #Define tobrace init *)
+(*****************************************************************************)
 
 let rec find_define_init_brace_paren xs = 
  let rec aux xs = 
@@ -724,9 +711,9 @@ let rec find_define_init_brace_paren xs =
  in
  aux xs
 
-(* ------------------------------------------------------------------------- *)
-(* action *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Actions *)
+(*****************************************************************************)
 
 let rec find_actions = function
   | [] -> ()

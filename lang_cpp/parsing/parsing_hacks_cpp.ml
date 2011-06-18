@@ -101,7 +101,7 @@ let rec find_tsup_quite_close xs =
 (* Main heuristics *)
 (*****************************************************************************)
 
-let find_cplusplus_view_all_tokens xs = 
+let find_view_all_tokens xs = 
  let rec aux xs =
   match xs with
   | [] -> ()
@@ -109,7 +109,7 @@ let find_cplusplus_view_all_tokens xs =
  in
  aux xs
 
-let find_cplusplus_view_filtered_tokens xs = 
+let find_view_filtered_tokens xs = 
  let rec aux xs =
   match xs with
   | [] -> ()
@@ -166,7 +166,7 @@ let find_cplusplus_view_filtered_tokens xs =
  * Pass 2!!
  *)
 
-let find_cplusplus_view_filtered_tokens_bis xs = 
+let find_view_filtered_tokens_bis xs = 
  let rec aux xs =
   match xs with
   | [] -> ()
@@ -289,7 +289,7 @@ let find_cplusplus_view_filtered_tokens_bis xs =
  aux xs
 
 
-let find_cplusplus_view_parenthized xs = 
+let find_view_parenthized xs = 
  let rec aux xs =
   match xs with
   | [] -> ()
@@ -362,7 +362,7 @@ let find_cplusplus_view_parenthized xs =
  in
  aux xs
 
-let find_cplusplus_view_parenthized2 xs = 
+let find_view_parenthized2 xs = 
  let rec aux xs =
   match xs with
   | [] -> ()
@@ -377,7 +377,7 @@ let find_cplusplus_view_parenthized2 xs =
       
 
 (* pre: have done the templatenameize and TInf/TSup -> TInf2/TSup2 *)
-let rec find_cplusplus_view_line_paren xs = 
+let rec find_view_line_paren xs = 
 
  let rec aux xs =
   match xs with 

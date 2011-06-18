@@ -25,8 +25,6 @@ open Parser_cpp
 open Token_views_cpp
 
 open Parsing_hacks_lib
-open Parsing_hacks_pp
-open Parsing_hacks_cpp
 
 (*****************************************************************************)
 (* Prelude *)
@@ -154,9 +152,9 @@ let fix_tokens2 ~macro_defs tokens =
       not (TH.is_comment x.t) (* could filter also #define/#include *)
     ) in
     let ifdef_grouped = mk_ifdef cleaner in
-    find_ifdef_funheaders ifdef_grouped;
-    find_ifdef_bool       ifdef_grouped;
-    find_ifdef_mid        ifdef_grouped;
+    Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
+    Parsing_hacks_pp.find_ifdef_bool       ifdef_grouped;
+    Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
 
 
     (* macro part 1 *)
@@ -185,25 +183,27 @@ let fix_tokens2 ~macro_defs tokens =
 
     let paren_grouped      = mk_parenthised  cleaner in
     let line_paren_grouped = mk_line_parenthised paren_grouped in
-    find_define_init_brace_paren paren_grouped;
-    find_string_macro_paren paren_grouped;
-    find_macro_lineparen    line_paren_grouped;
-    find_macro_paren        paren_grouped;
+    Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
+    Parsing_hacks_pp.find_string_macro_paren paren_grouped;
+    Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
+    Parsing_hacks_pp.find_macro_paren        paren_grouped;
 
-    (* todo: typedefs! *)
+    (* todo: find template <> symbols (need to be done before
+     * typedef heuristics *)
 
-    (* C++ stuff *)
+    (* todo: typedefs *)
 
-    find_cplusplus_view_filtered_tokens cleaner;
-    find_cplusplus_view_parenthized paren_grouped;
-    find_cplusplus_view_parenthized2 paren_grouped;
-    find_cplusplus_view_line_paren line_paren_grouped;
-    find_cplusplus_view_filtered_tokens_bis cleaner;
+    (* c++ stuff *)
+    Parsing_hacks_cpp.find_view_filtered_tokens cleaner;
+    Parsing_hacks_cpp.find_view_parenthized paren_grouped;
+    Parsing_hacks_cpp.find_view_parenthized2 paren_grouped;
+    Parsing_hacks_cpp.find_view_line_paren line_paren_grouped;
+    Parsing_hacks_cpp.find_view_filtered_tokens_bis cleaner;
 
     (* actions *)
     let cleaner = !tokens2 +> filter_pp_stuff in
     let paren_grouped = mk_parenthised  cleaner in
-    find_actions  paren_grouped;
+    Parsing_hacks_pp.find_actions  paren_grouped;
 
     insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.t))
   end
