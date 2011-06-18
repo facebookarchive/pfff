@@ -14,11 +14,9 @@
 
 open Common
 
-module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
-
+module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
-module LP = Lexer_parser_cpp
 
 module Parser = Parser_cpp
 module Lexer = Lexer_cpp
@@ -231,72 +229,26 @@ let extract_macros a =
 (* Helper for main entry point *)
 (*****************************************************************************)
 
-(* 
- * The use of local refs (remaining_tokens, passed_tokens, ...) makes
- * possible error recovery. Indeed, they allow to skip some tokens and
- * still be able to call again the ocamlyacc parser. It is ugly code
- * because we cant modify ocamllex and ocamlyacc. As we want some
- * extended lexing tricks, we have to use such refs.
- * 
- * Those refs are now also used for my lalr(k) technique. Indeed They
- * store the futur and previous tokens that were parsed, and so
- * provide enough context information for powerful lex trick.
- * 
- * - passed_tokens_last_ckp stores the passed tokens since last
- *   checkpoint. Used for NotParsedCorrectly and also to build the
- *   info_item attached to each program_element.
- * - passed_tokens_clean is used for lookahead, in fact for lookback.
- * - remaining_tokens_clean is used for lookahead. Now remaining_tokens
- *   contain some comments and so would make pattern matching difficult
- *   in lookahead. Hence this variable. We would like also to get rid 
- *   of cpp instruction because sometimes a cpp instruction is between
- *   two tokens and makes a pattern matching fail. But lookahead also
- *   transform some cpp instruction (in comment) so can't remove them.
- *   c++ext: update, want also get rid of useless nested_qualifier which
- *   do not help to infer typedef (as they can be used to qualify a type
- *   or variable).
- * 
- * So remaining_tokens, passed_tokens_last_ckp contain comment-tokens,
- * whereas passed_tokens_clean and remaining_tokens_clean does not contain
- * comment-tokens.
- * 
- * Normally we have:
- * toks = (reverse passed_tok) ++ cur_tok ++ remaining_tokens   
- *    after the call to pop2.
- * toks = (reverse passed_tok) ++ remaining_tokens   
- *     at the and of the lexer_function call.
- * At the very beginning, cur_tok and remaining_tokens overlap, but not after.
- * At the end of lexer_function call,  cur_tok  overlap  with passed_tok.
- * 
- * convention: I use "tr"  for "tokens refs"
- * 
- * I now also need this lexing trick because the lexer return comment
- * tokens.
- *)
-
-type tokens_state = {
-  mutable rest :         Parser.token list;
-  mutable rest_clean :   Parser.token list;
-  mutable current :      Parser.token;
-  (* it's passed since last "checkpoint", not passed from the beginning *)
-  mutable passed :       Parser.token list;
-  mutable passed_clean : Parser.token list;
-}
-
-
-let mk_tokens_state toks = { 
-    rest       = toks;
-    rest_clean = (toks +> Common.exclude TH.is_comment);
-    current    = (List.hd toks);
-    passed = []; 
-    passed_clean = [];
-  }
-
-(* Hacked lex. This function use refs passed by parse_print_error_heuristic 
- * tr means token refs.
+(* Hacked lex. This function use refs passed by parse. 
+ * 'tr' means 'token refs'. This is used mostly to enable
+ * error recovery (This used to do lots of stuff, such as
+ * using calling some lookahead heuristics to reclassify
+ * tokens such as TIdent into TIdent_Typeded but this is
+ * now done in a fix_tokens style in parsing_hacks_typedef.ml.
  *)
 let rec lexer_function tr = fun lexbuf -> 
-  raise Todo
+  match tr.PI.rest with
+  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
+  | v::xs -> 
+      tr.PI.rest <- xs;
+      tr.PI.current <- v;
+      tr.PI.passed <- v::tr.PI.passed;
+
+      if !Flag.debug_lexer then pr2_gen v;
+
+      if TH.is_comment v
+      then lexer_function (*~pass*) tr lexbuf
+      else v
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -331,7 +283,8 @@ let parse2 file =
   (* todo: _defs_builtins *)
   let toks = Parsing_hacks.fix_tokens ~macro_defs:!_defs toks in
 
-  let tr = mk_tokens_state toks in
+  let tr = Parse_info.mk_tokens_state toks in
+
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
 
   let rec loop () =
@@ -342,15 +295,15 @@ let parse2 file =
      * It would be better to record when we have a } or ; in parser.mly,
      *  cos we know that they are the last symbols of external_declaration2.
      *)
-    let checkpoint = TH.line_of_tok tr.current in
+    let checkpoint = TH.line_of_tok tr.PI.current in
 
     (* bugfix: may not be equal to 'file' as after macro expansions we can
      * start to parse a new entity from the body of a macro, for instance
      * when parsing a define_machine() body, cf standard.h
      *)
-    let checkpoint_file = TH.file_of_tok tr.current in
+    let checkpoint_file = TH.file_of_tok tr.PI.current in
 
-    tr.passed <- [];
+    tr.PI.passed <- [];
     (* for some statistics *)
     let was_define = ref false in
 
@@ -365,32 +318,30 @@ let parse2 file =
             (match e with
             (* Lexical is not anymore launched I think *)
             | Lexer.Lexical s -> 
-                pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.current)
+                pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
             | Parsing.Parse_error -> 
-                pr2 ("parse error \n = " ^ error_msg_tok tr.current)
+                pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Semantic.Semantic (s, i) -> 
-                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
+                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
             | e -> raise e
             );
 
-            let line_error = TH.line_of_tok tr.current in
+            let line_error = TH.line_of_tok tr.PI.current in
 
             (*  error recovery, go to next synchro point *)
             let (passed', rest') = 
-              Parsing_recovery_cpp.find_next_synchro tr.rest tr.passed in
-            tr.rest <- rest';
-            tr.passed <- passed';
+              Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
+            tr.PI.rest <- rest';
+            tr.PI.passed <- passed';
 
-            tr.current <- List.hd passed';
-            tr.passed_clean <- [];           (* enough ? *)
-            (* with error recovery, rest and rest_clean may not be in sync *)
-            tr.rest_clean <- (tr.rest +> Common.exclude TH.is_comment);
+            tr.PI.current <- List.hd passed';
 
-            let checkpoint2 = TH.line_of_tok tr.current in (* <> line_error *)
-            let checkpoint2_file = TH.file_of_tok tr.current in
+            (* <> line_error *)
+            let checkpoint2 = TH.line_of_tok tr.PI.current in 
+            let checkpoint2_file = TH.file_of_tok tr.PI.current in
 
             (* was a define ? *)
-            let xs = tr.passed +> List.rev +> Common.exclude TH.is_comment in
+            let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
             if List.length xs >= 2 
             then 
               (match Common.head_middle_tail xs with
@@ -410,15 +361,16 @@ let parse2 file =
               else pr2 "PB: bad: but on tokens not from original file"
               ;
 
-            let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.passed in 
+            let info_of_bads = 
+              Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
             Ast.NotParsedCorrectly info_of_bads
           end
       )
     in
 
     (* again not sure if checkpoint2 corresponds to end of bad region *)
-    let checkpoint2 = TH.line_of_tok tr.current in
-    let checkpoint2_file = TH.file_of_tok tr.current in
+    let checkpoint2 = TH.line_of_tok tr.PI.current in
+    let checkpoint2_file = TH.file_of_tok tr.PI.current in
 
     let diffline = 
       if (checkpoint_file = checkpoint2_file) && (checkpoint_file = file)
@@ -431,7 +383,7 @@ let parse2 file =
          * the lines in the token from the correct file ?
          *)
     in
-    let info = mk_info_item file (List.rev tr.passed) in 
+    let info = mk_info_item file (List.rev tr.PI.passed) in 
 
     (* some stat updates *)
     stat.Stat.commentized <- 

@@ -244,6 +244,9 @@ rule token = parse
       ['A'-'Z''_']+ 
     ) as filename)
       { let info = tokinfo lexbuf in 
+        (* todo? generate 2 info so highlight_cpp.ml can colorize the
+         * directive and the filename differently
+         *)
         TInclude (includes, filename, Ast.noInIfdef(), info)
       }
 

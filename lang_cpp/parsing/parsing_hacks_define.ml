@@ -81,62 +81,6 @@ let mark_end_define ii =
   in
   (* fresh_tok *) TCommentNewline_DefineEndOfMacro (ii')
 
-(* Sometimes I prefer to generate a single token for a list of things in the
- * lexer so that if I have to passed them, liking passing TInclude then
- * it's easy. Also if I don't do a single token, then I need to 
- * parse the rest which may not need special stuff, like detecting 
- * end of line which the parser is not really ready for. So for instance
- * could I parse a #include <a/b/c/xxx.h> as 2 or more tokens ? just
- * lex #include ? so then need recognize <a/b/c/xxx.h> as one token ? 
- * but this kind of token is valid only after a #include and the
- * lexing and parsing rules are different for such tokens so not that
- * easy to parse such things in parser_c.mly. Hence the following hacks.
- * 
- * less?: maybe could get rid of this like I get rid of some of fix_define.
- *)
-(* used to generate new token from existing one *)
-let new_info posadd str ii =
-  { Parse_info.token = 
-      Parse_info.OriginTok { (Parse_info.parse_info_of_info ii) with 
-        Parse_info.
-        charpos = Parse_info.pos_of_info ii + posadd;
-        str     = str;
-        column = Parse_info.col_of_info ii + posadd;
-      };
-    comments = ();
-    transfo = Parse_info.NoTransfo;
-   }
-
-(* exported helpers *)
-let rec comment_until_defeol xs = 
-  match xs with
-      
-  | [] -> 
-      (* job not done in Cpp_token_c.define_parse ? *)
-      failwith "cant find end of define token TDefEOL"
-  | x::xs -> 
-      (match x with
-      | Parser.TCommentNewline_DefineEndOfMacro i -> 
-          (* fresh_tok *) 
-            Parser.TComment_Cpp (Token_cpp.CppDirective, TH.info_of_tok x)
-          ::xs
-      | _ -> 
-          let x' = 
-            (* bugfix: otherwise may lose a TComment token *)
-            if TH.is_real_comment x
-            then x
-            else
-            (* fresh_tok *) 
-              Parser.TComment_Cpp (Token_cpp.CppOther, TH.info_of_tok x)
-          in
-          x'::comment_until_defeol xs
-      )
-
-let drop_until_defeol xs = 
-  xs +> Common.drop_until (function 
-    Parser.TCommentNewline_DefineEndOfMacro _ -> true | _ -> false)
-  +> List.tl
-
 (*****************************************************************************)
 (* Parsing hacks for #define *)
 (*****************************************************************************)
@@ -211,15 +155,3 @@ let fix_tokens_define2 xs =
 let fix_tokens_define a = 
   Common.profile_code "Hack.fix_define" (fun () -> fix_tokens_define2 a)
 
-(*****************************************************************************)
-(* Parsing hacks for #include *)
-(*****************************************************************************)
-(* returns a pair (replaced token, list of next tokens) *)
-
-(* todo: move in a fix_tokens style *)
-let tokens_include (info, includes, filename, inifdef) = 
-  (* fresh_tok *) 
-   Parser.TInclude_Start (Parse_info.rewrap_str includes info, inifdef),
-  [ (* fresh_tok *) Parser.TInclude_Filename 
-      (filename, (new_info (String.length includes) filename info))
-  ]

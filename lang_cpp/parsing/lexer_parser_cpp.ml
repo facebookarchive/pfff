@@ -24,15 +24,26 @@ open Common
 (* 
  * This module used to contain some hacks to handle typedefs.
  * The parser while analyzing a file would recognize certain constructs
- * like typedefs and modify some globals in this file so that the lexer
- * would know that the next time a certain ident is lexed, it may
- * actually correspond to a typedef. Knowing that an ident
- * is a typedef is important because the C and C++ grammar
- * are not context-free grammars. They need to have this information
- * and so they need two different tokens (TIdent and TIdent_Typedef).
+ * like typedefs declarations and modify some globals in this file
+ * so that the lexer would know that the next time a certain ident
+ * is lexed, it may actually correspond to a typedef. 
+ * Knowing that an ident is a typedef is important because the
+ * C and C++ grammar are not context-free grammars. 
+ * They need to have this information and so they need two different
+ * tokens (TIdent and TIdent_Typedef).
  * 
  * This file is now empty because having yet another hack around
- * the tokens is too much. Now everything is handled in parsing_hack.ml
+ * the tokens was too much. First it was useful only for the
+ * typedefs that were declared in the file. Because we needed
+ * a general solution on this problem, having this special case
+ * was not helping. Moreover even handling this special case
+ * was tricky because one can write 'acpi acpi;' in which case
+ * the ident->typedef mechanism must be disabled just
+ * after having recognized a type. This was leading to many
+ * et/dt (for enable/disable typedef translation) in the
+ * grammar which was ugly.
+ * 
+ * Everything is now handled in parsing_hack.ml
  * by using the different views in token_views_cpp.ml and by
  * looking ahead as much as we want.
  * 

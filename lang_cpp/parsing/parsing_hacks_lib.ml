@@ -43,14 +43,12 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
  * functions "filter" some messages. So our heuristics are still good,
  * there is no more (or not that much) hardcoded linux stuff.
  *)
-let msg_gen cond is_known printer s = 
-  if cond
-  then
-    if not (!Flag.filter_msg)
+let msg_gen is_known printer s = 
+  if not (!Flag.filter_msg)
+  then printer s
+  else
+    if not (is_known s)
     then printer s
-    else
-      if not (is_known s)
-      then printer s
 
 let pos ii = Ast.string_of_info ii
 
@@ -66,6 +64,10 @@ let pr2_cplusplus s =
   if !Flag.debug_cplusplus
   then Common.pr2 ("C++-" ^ s)
 
+let pr2_typedef s = 
+  if !Flag.debug_typedef
+  then Common.pr2 ("TYPEDEF-" ^ s)
+
 
 let msg_change_tok tok =
   match tok with
@@ -79,16 +81,11 @@ let msg_change_tok tok =
   | TCommentNewline_DefineEndOfMacro _ ->
       ()
 
-  | TInclude_Start ii -> 
-      ()
-  | TInclude_Filename ii -> 
-      ()
-
   (* mostly in parsing_hacks.ml *)
 
   | TIdent_Typedef (s, ii) ->
       (* todo? also do LP.add_typedef_root s ??? *)
-      s +> msg_gen (!Flag.debug_typedef) (fun s ->
+      s +> msg_gen (fun s ->
         match s with
         | "u_char"   | "u_short"  | "u_int"  | "u_long"
         | "u8" | "u16" | "u32" | "u64" 
@@ -100,7 +97,7 @@ let msg_change_tok tok =
         | s when s =~ ".*_t$"           -> true
         | _                             -> false 
       ) 
-      (fun s -> pr2_pp (spf "TYPEDEF: promoting %s at %s " s (pos ii)))
+      (fun s -> pr2_typedef (spf "promoting %s at %s " s (pos ii)))
 
   (* mostly in parsing_hacks_pp.ml *)
 
@@ -132,7 +129,7 @@ let msg_change_tok tok =
 
   | TIdent_MacroString ii ->
       let s = Ast.str_of_info ii in
-      s +> msg_gen (!Flag.debug_pp) (fun s -> 
+      s +> msg_gen (fun s -> 
         match s with 
         | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
             -> true
@@ -145,7 +142,7 @@ let msg_change_tok tok =
       pr2_pp (spf "MACRO: stmt-macro at %s" (pos ii));
 
   | TIdent_MacroDecl (s, ii) ->
-      s +> msg_gen (!Flag.debug_pp) (fun s -> 
+      s +> msg_gen (fun s -> 
         match s with 
         | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
         | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
@@ -204,12 +201,12 @@ let msg_change_tok tok =
       pr2_cplusplus (spf "TEMPLATENAME: found %s at %s" s (pos ii))
 
   | TColCol_BeforeTypedef ii ->
-      pr2_cplusplus (spf "RECLASSIF colcol to colcol2 at %s" (pos ii))
+      pr2_typedef (spf "RECLASSIF colcol to colcol2 at %s" (pos ii))
 
   | TIdent_ClassnameInQualifier_BeforeTypedef (s, ii) ->
-      pr2_cplusplus (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
+      pr2_typedef (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
   | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
-      pr2_cplusplus (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
+      pr2_typedef (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
 
   | _ -> 
       raise Todo
@@ -222,8 +219,7 @@ let msg_debug_macro s =
   pr2_pp ("MACRO: found debug-macro: " ^ s)
 
 let msg_macro_higher_order s = 
-  msg_gen (!Flag.debug_pp)
-    (fun s -> 
+  msg_gen (fun s -> 
       (match s with 
       | "DBGINFO"
       | "DBGPX"

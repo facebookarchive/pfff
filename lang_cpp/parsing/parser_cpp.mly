@@ -123,11 +123,7 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TOBrace_DefineInit
 
 /*(* cppext: include  *)*/
-/*(* used only in the lexer. It is then transformed in Comment or splitted *)*/
 %token <(string * string * bool ref * Ast_cpp.info)> TInclude
-/*(* fresh_token: tokens from TInclude generated in parsing_hack_define  *)*/
-%token <(Ast_cpp.info * bool ref)> TInclude_Start
-%token <(string * Ast_cpp.info)>   TInclude_Filename
 
 /*(* cppext: ifdef         *)*/
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
@@ -1829,22 +1825,21 @@ ctor_dtor:
 
 /*(* cppext: *)*/
 cpp_directive: 
- | TInclude_Start TInclude_Filename 
+ | TInclude 
      { 
-       let (i1, in_ifdef) = $1 in
-       let (s, i2) = $2 in
+       let (include_str, filename, in_ifdef, tok) = $1 in
 
        (* redo some lexing work :( *)
        let inc_file = 
          match () with
-         | _ when s =~ "^\"\\(.*\\)\"$" ->
-             Local (Common.split "/" (matched1 s))
-         | _ when s =~ "^\\<\\(.*\\)\\>$" ->
-             Standard (Common.split "/" (matched1 s))
+         | _ when filename =~ "^\"\\(.*\\)\"$" ->
+             Local (Common.split "/" (matched1 filename))
+         | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
+             Standard (Common.split "/" (matched1 filename))
          | _ ->
-             Wierd s 
+             Wierd filename
        in
-       Include ((inc_file, [i1;i2]), (Ast.noRelPos(), !in_ifdef)) 
+       Include ((inc_file, [tok]), (Ast.noRelPos(), !in_ifdef))
      }
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro

@@ -432,7 +432,13 @@ let visit_toplevel
     | T.TIdent_Define (_, ii) ->
         tag ii (MacroVar (Def2 NoUse))
 
-    (* never executed ? only the TIncludeStart token is in the token list ? *)
+    (* TODO: have 2 tokens? 
+    | T.TInclude_Filename (_, ii) ->
+        tag ii String
+    | T.TInclude_Start (ii, _aref) ->
+        tag ii Include
+     *)
+
     | T.TInclude (_, _, _, ii) -> 
         tag ii Include
 
@@ -535,10 +541,6 @@ let visit_toplevel
     | T.TComment_Cpp _
       -> ()
 
-    | T.TInclude_Filename (_, ii) ->
-        tag ii String
-    | T.TInclude_Start (ii, _aref) ->
-        tag ii Include
 
 
     | T.TCommentNewline_DefineEndOfMacro _

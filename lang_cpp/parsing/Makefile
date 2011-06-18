@@ -15,7 +15,7 @@ SRC= flag_parsing_cpp.ml \
      parsing_stat_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml \
      parsing_hacks_lib.ml pp_token.ml \
-     parsing_hacks_pp.ml parsing_hacks_cpp.ml \
+     parsing_hacks_pp.ml parsing_hacks_cpp.ml parsing_hacks_typedef.ml \
      parsing_hacks_define.ml \
      parsing_hacks.ml \
      pp_analysis.ml \
