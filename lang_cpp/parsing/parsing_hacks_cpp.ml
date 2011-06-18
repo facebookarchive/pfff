@@ -396,8 +396,7 @@ let rec find_view_line_paren xs =
         ]
     )
     ::xs 
-    when ctx = InFunction
-      -> 
+    when List.hd ctx = InFunction -> 
       ignore(info_parens);
       (* todo? check that in info_parens have what looks like expressions *)
 
@@ -418,8 +417,7 @@ let rec find_view_line_paren xs =
         ]
     )
     ::xs 
-    when ctx = InFunction
-      -> 
+    when List.hd ctx = InFunction -> 
       ignore(info_parens);
       (* todo? check that in info_parens have what looks like expressions *)
 
@@ -444,8 +442,7 @@ let rec find_view_line_paren xs =
         ]
     )
     ::xs 
-    when ctx = InFunction
-      -> 
+    when List.hd ctx = InFunction -> 
       ignore(info_parens);
       (* todo? check that in info_parens have what looks like expressions *)
 

@@ -62,7 +62,8 @@ type token_extended = {
    * lots of ocaml patterns around this ... so better to be short
    *)
   mutable t: Parser_cpp.token;
-  mutable where: context;
+  (* In C++ we have functions inside classes, so need a stack of context *)
+  mutable where: context list; 
 
   (* less: need also a after ? *)
   mutable new_tokens_before : Parser_cpp.token list;
@@ -123,7 +124,7 @@ let mk_token_extended x =
   let (line, col) = TH.linecol_of_tok x in
   { t = x; 
     line = line; col = col; 
-    where = NoContext; 
+    where = [NoContext]; 
     new_tokens_before = [];
   }
 
@@ -514,7 +515,7 @@ let rec set_in_function_tag xs =
   | BToken ({t=TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
       when tok1.col <> 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction
+        tok.where <- InFunction::tok.where;
       ));
       aux xs
 
@@ -524,7 +525,7 @@ let rec set_in_function_tag xs =
   | (Braceised (body, tok1, Some tok2))::xs 
       when tok1.col = 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction
+        tok.where <- InFunction::tok.where;
       ));
       aux xs
   | Braceised (body, tok1, tok2)::xs -> 
@@ -542,14 +543,14 @@ let rec set_in_other xs =
     ::Braceised(body, tok1, tok2)::xs 
     -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InEnum;
+        tok.where <- InEnum::tok.where;
       ));
       set_in_other xs
   (* struct/union/class x { } *)
   | BToken ({t=tokstruct; _})::BToken ({t= TIdent _; _})
     ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InStruct;
+        tok.where <- InStruct::tok.where;
       ));
       set_in_other xs
 
@@ -561,7 +562,7 @@ let rec set_in_other xs =
       (match elem with 
       | Braceised(body, tok1, tok2) -> 
           body +> List.iter (iter_token_brace (fun tok -> 
-            tok.where <- InInitializer;
+            tok.where <- InInitializer::tok.where;
           ));
           set_in_other after
       | _ -> raise Impossible
@@ -572,7 +573,7 @@ let rec set_in_other xs =
   | BToken ({t=TEq _; _})
     ::Braceised(body, tok1, tok2)::xs -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InInitializer;
+        tok.where <- InInitializer::tok.where;
       ));
       set_in_other xs
 
