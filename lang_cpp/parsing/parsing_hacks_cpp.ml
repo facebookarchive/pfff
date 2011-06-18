@@ -74,8 +74,9 @@ let rec have_a_tsup_quite_close xs =
 let rec find_tsup_quite_close xs = 
   let rec aux acc xs =
     match xs with
-    | [] -> failwith "find_tsup_quite_close, no tsup"
+    | [] -> failwith "PB: find_tsup_quite_close, no tsup"
     | (PToken x)::xs -> 
+        pr2_gen x;
         (match x with
         | {t=TSup ii} -> 
             acc, (x,ii), xs

@@ -13,8 +13,8 @@ type token_extended = {
     | InStructAnon
     | InEnum 
     | InInitializer 
-    | InTemplateParam
     | InParameter
+    | InTemplateParam
 
 val mk_token_extended : Parser_cpp.token -> token_extended
 val rebuild_tokens_extented : token_extended list -> token_extended list

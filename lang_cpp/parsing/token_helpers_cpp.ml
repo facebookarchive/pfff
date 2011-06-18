@@ -222,6 +222,38 @@ let is_maybenot_cpp_keyword = function
     -> true
   | _ -> false
 
+(* used in the algorithm for "10 most problematic tokens". C-s for TIdent
+ * in parser_cpp.mly
+ *)
+let is_ident_like = function
+  | TIdent _
+  | TIdent_Typedef _
+  | TIdent_Define  _
+(*  | TDefParamVariadic _*)
+
+  | TUnknown _
+
+  | TIdent_MacroStmt _
+  | TIdent_MacroString _
+  | TIdent_MacroIterator _
+  | TIdent_MacroDecl _
+(*  | TIdent_MacroDeclConst _ *)
+(*
+  | TIdent_MacroAttr _
+  | TIdent_MacroAttrStorage _
+*)
+
+  | TIdent_ClassnameInQualifier _
+  | TIdent_ClassnameInQualifier_BeforeTypedef _
+  | TIdent_Templatename _
+  | TIdent_TemplatenameInQualifier _
+  | TIdent_TemplatenameInQualifier_BeforeTypedef _
+  | TIdent_Constructor _
+  | TIdent_TypedefConstr _
+      -> true
+
+  | _ -> false
+
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)

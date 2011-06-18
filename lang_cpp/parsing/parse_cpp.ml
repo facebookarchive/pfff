@@ -153,6 +153,12 @@ let count_lines_commentized xs =
     !count
   end
 
+(* for most problematic tokens *)
+let is_same_line_or_close line tok =
+  TH.line_of_tok tok =|= line ||
+  TH.line_of_tok tok =|= line - 1 ||
+  TH.line_of_tok tok =|= line - 2
+
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
@@ -254,6 +260,7 @@ let rec lexer_function tr = fun lexbuf ->
 (* Main entry point *)
 (*****************************************************************************)
 
+(* todo?: pass it as a parameter to parse_program instead ? *) 
 let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
   ref (Hashtbl.create 101)
 
@@ -328,6 +335,15 @@ let parse2 file =
 
             let line_error = TH.line_of_tok tr.PI.current in
 
+            let pbline =
+              tr.PI.passed
+              +> Common.filter (is_same_line_or_close line_error)
+              +> Common.filter TH.is_ident_like
+            in
+            let error_info =(pbline +> List.map TH.str_of_tok), line_error in
+            stat.Stat.problematic_lines <-
+              error_info::stat.Stat.problematic_lines;
+
             (*  error recovery, go to next synchro point *)
             let (passed', rest') = 
               Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
@@ -363,6 +379,7 @@ let parse2 file =
 
             let info_of_bads = 
               Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+
             Ast.NotParsedCorrectly info_of_bads
           end
       )

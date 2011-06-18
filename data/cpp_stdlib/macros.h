@@ -1,7 +1,7 @@
 // ****************************************************************************
 // Prelude
 // ****************************************************************************
-// this file is to be used with the -macros option of the C/C++ parsers in pfff
+// this file must be passed to the -macros option of the C/C++ parsers in pfff
 
 // ****************************************************************************
 // MacroString
@@ -12,7 +12,7 @@
  * be considered as a declaration with XX being a typedef, so we would
  * have an ambiguity. So by adding a few special cases (e.g. KERN_WARNING
  * for the linux kernel), we can catch more correct string-macros.
- * For stringification I need to have at least a witness, a string.
+ * I need to have at least one witness, a string.
  */
 //#define KERN_WARNING "WARNING"
 

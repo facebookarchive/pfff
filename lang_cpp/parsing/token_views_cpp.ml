@@ -71,20 +71,17 @@ type token_extended = {
   line: int; 
   col : int;
 }
- (* 
-  * The strategy to set the tag is mostly to look at the token(s)
-  * before the '{'.
-  *)
+ (* The strategy to tag is mostly to look at the token(s) before the '{' *)
   and context = 
-    | InTopLevel (* TODO *)
+    | InTopLevel
     | InFunction 
     (* knowing the name is useful to recognize constructors *)
     | InClassStruct of string  (* TODO *)
     | InStructAnon (* TODO *)
-    | InEnum 
-    | InInitializer 
-    | InTemplateParam (* TODO *)
+    | InEnum
+    | InInitializer
     | InParameter (* TODO *)
+    | InTemplateParam (* TODO *)
     (* | InArguments *)
 
 (* x list list, because x list separated by ',' *) 
@@ -152,7 +149,15 @@ let rebuild_tokens_extented toks_ext =
 (* todo: synchro ! use more indentation 
  * if paren not closed and same indentation level, certainly because
  * part of a mid-ifdef-expression.
-*)
+ * 
+ * c++ext: TODO: need to handle templates here. 
+ * The parenthized view must not consider the ',' in expressions
+ * like foo(lexical cast<string,int>, ...) as a separator for the arguments
+ * of foo(), otherwise we will get [lexical_cast<string;  ...] which
+ * could confuse some heuristics.
+ * 
+ * pre: have done the TInf->TInf_Template translation.
+ *)
 let rec mk_parenthised xs = 
   match xs with
   | [] -> []

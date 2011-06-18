@@ -39,6 +39,7 @@ let test_parse_cpp xs  =
   );
 
   Stat.print_parsing_stat_list !stat_list;
+  Stat.print_recurring_problematic_tokens !stat_list;
 
   (match xs with 
   | [dirname] when is_directory dirname ->
@@ -56,7 +57,6 @@ let test_parse_cpp xs  =
 
 let test_dump_cpp file =
   Parse_cpp.init_defs !Flag.macros_h;
-
   let ast = Parse_cpp.parse_program file in
   let s = Export_ast_cpp.ml_pattern_string_of_program ast in
   pr s
@@ -79,4 +79,3 @@ let actions () = [
     "-dump_cpp_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
 ]
-

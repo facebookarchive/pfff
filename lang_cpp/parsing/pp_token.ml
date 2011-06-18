@@ -71,6 +71,25 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 (* the tokens in the body of the macro are all ExpandedTok *)
 type define_body = (unit,string list) either * Parser_cpp.token list
 
+(* TODO:
+type define_def = string * define_param * define_body
+ and define_param =
+   | NoParam
+   | Params of string list
+ and define_body =
+   | DefineBody of Parser_c.token list
+   | DefineHint of parsinghack_hint
+
+   and parsinghack_hint =
+     | HintIterator
+     | HintDeclarator
+     | HintMacroString
+     | HintMacroStatement
+     | HintAttribute
+     | HintMacroIdentBuilder
+*)
+
+
 (*****************************************************************************)
 (* Apply macro (using standard.h or other defs) *)
 (*****************************************************************************)

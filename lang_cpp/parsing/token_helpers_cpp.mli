@@ -28,6 +28,8 @@ val is_cpar : Parser_cpp.token -> bool
 val is_obrace : Parser_cpp.token -> bool
 val is_cbrace : Parser_cpp.token -> bool
 
+val is_ident_like: Parser_cpp.token -> bool
+
 val info_of_tok : Parser_cpp.token -> Ast_cpp.info
 
 val visitor_info_of_tok : 
