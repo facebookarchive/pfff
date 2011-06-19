@@ -1856,6 +1856,8 @@ cpp_directive:
          ((fst $2, [$1; snd $2;$7]), 
            (DefineFunc ($4, [$3;$5]), $6)) 
      }
+
+ | TUndef { Undef (fst $1, [snd $1]) }
 /*
 (* perhaps better to use assign_expr ? but in that case need 
  * do a assign_expr_of_string in parse_c.
