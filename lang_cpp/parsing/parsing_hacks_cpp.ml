@@ -180,15 +180,34 @@ let reclassify_tokens_before_idents_or_typedefs xs =
   let rec aux xs =
     match xs with
     | [] -> ()
+
+    (* xx::yy     where yy is ident (funcall, variable, etc)  *)
     | Tok{t=TIdent _}::Tok{t=TColCol _}
       ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
         change_tok tok2 (TIdent_ClassnameInQualifier (s2, i2));
         aux xs
+
+    (* xx::t      wher et is a type *)
     | Tok{t=TIdent_Typedef _}::Tok({t=TColCol icolcol} as tcolcol)
       ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
         change_tok tok2 (TIdent_ClassnameInQualifier_BeforeTypedef (s2, i2));
         change_tok tcolcol (TColCol_BeforeTypedef icolcol);
         aux xs
+
+    (* xx::t<...> where t is a templatename *)
+    | Tok{t=TIdent_Templatename _}::Tok({t=TColCol icolcol} as tcolcol)
+      ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
+        change_tok tok2 (TIdent_ClassnameInQualifier_BeforeTypedef (s2, i2));
+        change_tok tcolcol (TColCol_BeforeTypedef icolcol);
+        aux xs
+
+    (* t<...>    where t is a typedef *)
+    | Angle (t1, xs_angle, t2)::Tok({t=TIdent_Typedef (s1, i1)} as tok1)::xs ->
+        aux xs_angle;
+        change_tok tok1 (TIdent_Templatename (s1, i1));
+        (* recurse with tok1 too! *)
+        aux (Tok tok1::xs)
+
     | x::xs -> 
         (match x with
         | Tok _ -> ()

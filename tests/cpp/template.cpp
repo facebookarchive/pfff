@@ -9,5 +9,9 @@ void main() {
 }
 
 void main() {
-  std::vector<std::string> x;
+//TODO:  std::vector<std::string> x;
+}
+
+void main() {
+  std::vector<StringPiece const*> buffers;
 }
