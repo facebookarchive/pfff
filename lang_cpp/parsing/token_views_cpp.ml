@@ -116,6 +116,14 @@ type body_function_grouped =
   | BodyFunction of token_extended list
   | NotBodyLine  of token_extended list
 
+type multi_grouped =
+  | Braces of token_extended * multi_grouped list * token_extended
+  | Parens of token_extended * multi_grouped list * token_extended
+  | Angle  of token_extended * multi_grouped list * token_extended
+  | Tok of token_extended
+
+ (* with tarzan *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -412,6 +420,65 @@ let is_braceised = function
   | Braceised   _ -> true
   | BToken _ -> false
 
+(* ------------------------------------------------------------------------- *)
+(* Multi ('{', '(', '<')  (could also do '[' ?) *)
+(* ------------------------------------------------------------------------- *)
+
+(* todo: check that it's consistent with the indentation? *)
+let mk_multi xs =
+
+  let rec consume x xs =
+    match x with
+    | {t=TOBrace ii;_} -> 
+        let body, closing, rest = look_close_brace [] xs in
+        Braces (x, body, closing), rest
+    | {t=TOPar ii;_} ->
+        let body, closing, rest = look_close_paren [] xs in
+        Parens (x, body, closing), rest
+    | {t=TInf_Template ii;_} ->
+        let body, closing, rest = look_close_template [] xs in
+        Angle (x, body, closing), rest
+    | x -> Tok x, xs
+  
+  and aux xs =
+  match xs with
+  | [] -> []
+  | x::xs ->
+      let x', xs' = consume x xs in
+      x'::aux xs'
+
+  and look_close_brace accbody xs =
+    match xs with
+    | [] -> failwith "PB look_close_brace"
+    | x::xs -> 
+        (match x with
+        | {t=TCBrace ii;_} -> List.rev accbody, x, xs
+        | _ -> let (x', xs') = consume x xs in
+               look_close_brace (x'::accbody) xs'
+        )
+
+  and look_close_paren accbody xs =
+    match xs with
+    | [] -> failwith "PB look_close_paren"
+    | x::xs -> 
+        (match x with
+        | {t=TCPar ii;_} -> List.rev accbody, x, xs
+        | _ -> let (x', xs') = consume x xs in
+               look_close_paren (x'::accbody) xs'
+        )
+
+  and look_close_template accbody xs =
+    match xs with
+    | [] -> failwith "PB look_close_template"
+    | x::xs -> 
+        (match x with
+        | {t=TSup_Template ii;_} -> List.rev accbody, x, xs
+        | _ -> let (x', xs') = consume x xs in
+               look_close_template (x'::accbody) xs'
+        )
+  in
+  aux xs
+
 (*****************************************************************************)
 (* View iterators  *)
 (*****************************************************************************)
@@ -482,6 +549,25 @@ let tokens_of_paren_ordered xs =
 
   xs +> List.iter aux_tokens_ordered;
   List.rev !g
+
+let tokens_of_multi_grouped xs =
+  let res = ref [] in
+
+  let add x = Common.push2 x res in
+
+  let rec aux xs =
+    xs +> List.iter (function
+    | Tok t1 -> add t1
+    | Braces (t1, xs, t2)
+    | Parens (t1, xs, t2)
+    | Angle (t1, xs, t2) ->
+        add t1;
+        aux xs;
+        add t2
+    )
+  in
+  aux xs;
+  List.rev !res
 
 (*****************************************************************************)
 (* Context *)
@@ -597,3 +683,33 @@ let set_context_tag xs =
     set_in_function_tag xs;
     set_in_other xs;
   end
+
+(*****************************************************************************)
+(* vof  *)
+(*****************************************************************************)
+
+let vof_token_extended t =
+  Ocaml.VString (TH.str_of_tok t.t)
+
+let rec vof_multi_grouped =
+  function
+  | Braces ((v1, v2, v3)) ->
+      let v1 = vof_token_extended v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = vof_token_extended v3
+      in Ocaml.VSum (("Braces", [ v1; v2; v3 ]))
+  | Parens ((v1, v2, v3)) ->
+      let v1 = vof_token_extended v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = vof_token_extended v3
+      in Ocaml.VSum (("Parens", [ v1; v2; v3 ]))
+  | Angle ((v1, v2, v3)) ->
+      let v1 = vof_token_extended v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = vof_token_extended v3
+      in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
+  | Tok v1 -> let v1 = vof_token_extended v1 in Ocaml.VSum (("Tok", [ v1 ]))
+
+let string_of_multi_grouped xs =
+  let v = Ocaml.VList (xs +> List.map vof_multi_grouped) in
+  Ocaml.string_of_v v

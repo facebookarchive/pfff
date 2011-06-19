@@ -63,7 +63,6 @@
 
 // no PTVirg or shortcut for array designator
 
-
 // ****************************************************************************
 // MacroAttributes
 // ****************************************************************************
@@ -77,6 +76,8 @@
 // params (IN, OUT)
 
 // windows: WINAPI, STDCALL, ...
+#define WINAPI
+#define  __cdecl
 
 // ****************************************************************************
 // MacroKeywordAlias
@@ -86,6 +87,11 @@
 // I guess.
 
 // private/public
+
+#define __asm__ asm
+#define __attribute __attribute__
+#define __volatile__ volatile
+#define __restrict __restrict__
 
 // ****************************************************************************
 // Prototype
@@ -142,12 +148,13 @@
 #define FORCEINLINE
 #define THROWSPEC
 #define NORETURN
+#define NORETURN_PTR
+#define MAYBE_UNUSED
 
-#define  __cdecl
 #define __MINGW_NOTHROW
+#define WSAAPI
 
-//#define new new_xxx
-//#define typename typename_xxx
+#define for_each_string_list_item(a,b) for(;;)
 
 // ****************************************************************************
 // sparse stuff
@@ -156,6 +163,19 @@
 //YACFE_MACROITERATOR
 #define FOR_EACH_PTR(a,b) for(;;)
 #define FOR_EACH_PTR_NOTAG(a,b) for(;;)
+#define FOR_EACH_PTR_REVERSE(a,b) for(;;)
+
+#define RECURSE_PTR_REVERSE(a,b) for(;;)
+
+//#define DO_END_FOR_EACH_REVERSE(a,b,c,d)
+
+#define __percpu
+#define SENTINEL_ATTR
+
+#define __user
+
+#define FORMAT_ATTR(a)
+#define NORETURN_ATTR
 
 // ****************************************************************************
 // Facebook stuff

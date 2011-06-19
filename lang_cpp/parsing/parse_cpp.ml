@@ -161,6 +161,17 @@ let is_same_line_or_close line tok =
   TH.line_of_tok tok =|= line - 2
 
 (*****************************************************************************)
+(* C vs C++ *)
+(*****************************************************************************)
+let fix_tokens_for_c xs =
+  xs +> List.map (function
+  | x when TH.is_cpp_keyword x ->
+      let ii = TH.info_of_tok x in
+      Parser.TIdent (Ast.str_of_info ii, ii)
+  | x -> x
+  )
+
+(*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
@@ -277,7 +288,7 @@ let init_defs file =
  * !!!This function use refs, and is not reentrant !!! so take care.
  * It uses the _defs global defined above!!!!
  *)
-let parse2 file = 
+let parse2 ?(c=false) file = 
 
   let stat = Statistics_parsing.default_stat file in
   let filelines = Common.cat_array file in
@@ -288,6 +299,7 @@ let parse2 file =
   let toks_orig = tokens file in
 
   let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
+  let toks = if c then fix_tokens_for_c toks else toks in
   (* todo: _defs_builtins *)
   let toks = Parsing_hacks.fix_tokens ~macro_defs:!_defs toks in
 
@@ -423,8 +435,8 @@ let parse2 file =
   let v = with_program2 Parsing_consistency_cpp.consistency_checking v in
   (v, stat)
 
-let parse a  = 
-  Common.profile_code "Parse_cpp.parse" (fun () -> parse2 a)
+let parse ?c a  = 
+  Common.profile_code "Parse_cpp.parse" (fun () -> parse2 ?c a)
 
 let parse_program file = 
   let (ast2, _stat) = parse file in

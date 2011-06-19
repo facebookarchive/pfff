@@ -7,7 +7,8 @@ type program2 = toplevel2 list
 (* This is the main function. It uses _defs below which often comes 
  * from a standard.h macro file 
  *)
-val parse:  
+val parse:
+  ?c:bool ->
   Common.filename -> (program2 * Statistics_parsing.parsing_stat)
 
 val parse_program:  

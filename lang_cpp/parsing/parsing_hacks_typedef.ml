@@ -26,15 +26,20 @@ open Parsing_hacks_lib
 (* Prelude *)
 (*****************************************************************************)
 
-(* TODO: use a view that is more convenient for typedefs detection.
- *  get rid of template arguments, get rid of qualifier, get
- *  rid of differences between & and *, differences between
- *  TIdent and TOperator, get rid of const, inline, merge multiple
- *  ** or *& or whatever
+(* 
+ * In this module we use a view that is more convenient for 
+ * typedefs detection. We get rid of:
+ *  - template arguments, 
+ *  - TODO qualifiers, 
+ *  - TODO differences between & and *, 
+ *  - TODO differences between TIdent and TOperator, 
+ *  - const, inline, 
+ *  - TODO merge multiple ** or *& or whatever
  * 
  * At the same time certain tokens like const/inline are stronger
  * signals towards a typedef ident.
  *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -46,35 +51,18 @@ let is_top_or_struct = function
       -> true
   | _ -> false
 
-(* todo: transform into a map_and_filter_for_typedef
- *)
-let filter_for_typedef xs = 
-  xs +> Common.exclude (fun tok_ext ->
-    match tok_ext.TV.t with
-   (* const is a strong signal for having a typedef, so why skip it?
-    * because it forces to duplicate rules. We need to infer
-    * the type anyway even when there is no const around.
-    * todo? maybe could do a special pass first that infer typedef
-    * using only const rules, and then remove those const so 
-    * have best of both worlds.
-    *)
-
-    | Tconst _ | Tvolatile _
-      -> true
-    | _ -> false
-  )
-  
-
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
 
 (* comments/cpp-directives removed
- * TODO assume have done TInf_Template and TIdent_ClassnameAsQualifier
- * filtering so can focus on typedef identification.
+ *
+ * assume have done TInf_Template (but not TIdent_ClassnameAsQualifier)
+ * filtering so we can focus on simple typedef patterns.
  *)
 let find_view_filtered_tokens xs = 
- let xs = filter_for_typedef xs in
+
+ let xxs = Parsing_hacks_cpp.filter_for_typedef xs in
 
  let rec aux xs =
   match xs with
@@ -108,7 +96,7 @@ let find_view_filtered_tokens xs =
 
   (* (xx) yy   and not a if/while before (, and yy can also be a constant *)
   | {t=tok1}::{t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TCPar info2}
-    ::{t = TIdent (_,_) | TInt _ }::xs 
+    ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ }::xs 
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same ? *)
     ->
       change_tok tok3 (TIdent_Typedef (s, i1));
@@ -131,4 +119,4 @@ let find_view_filtered_tokens xs =
   (* recurse *)
   | x::xs -> aux xs
  in
- aux xs
+ xxs +> List.iter aux

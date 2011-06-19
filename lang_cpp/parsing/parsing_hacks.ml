@@ -162,6 +162,14 @@ let fix_tokens2 ~macro_defs tokens =
     (* macro part 1 *)
     let cleaner = !tokens2 +> filter_pp_stuff in
 
+    (* find '<' '>' template symbols (need that before typedef heuristic) 
+     * need that even any paren view (which is wrong without it)
+     * 
+     * todo? expand macro first? some expand to lexical_cast ...
+     * but need correct parenthized view to expand macros => deadlock.
+     *)
+    Parsing_hacks_cpp.find_template_inf_sup cleaner;
+
     let paren_grouped = TV.mk_parenthised  cleaner in
     Pp_token.apply_macro_defs macro_defs paren_grouped;
 
@@ -187,21 +195,11 @@ let fix_tokens2 ~macro_defs tokens =
     Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
     Parsing_hacks_pp.find_macro_paren        paren_grouped;
 
-    (* todo: find template <> symbols (need to be done before typedef heurist)*)
-
-    (* tokens2 := rebuild_tokens_extented !tokens2; ? *)
-
     (* todo: typedefs *)
     Parsing_hacks_typedef.find_view_filtered_tokens cleaner;
 
-    (* tokens2 := rebuild_tokens_extented !tokens2; ? *)
-
     (* c++ stuff *)
-    Parsing_hacks_cpp.find_view_filtered_tokens cleaner;
-    Parsing_hacks_cpp.find_view_parenthized paren_grouped;
-    Parsing_hacks_cpp.find_view_parenthized2 paren_grouped;
-    Parsing_hacks_cpp.find_view_line_paren line_paren_grouped;
-    Parsing_hacks_cpp.find_view_filtered_tokens_bis cleaner;
+    Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs cleaner;
 
     (* actions *)
     let cleaner = !tokens2 +> filter_pp_stuff in

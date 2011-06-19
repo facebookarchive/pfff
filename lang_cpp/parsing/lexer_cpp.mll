@@ -113,7 +113,7 @@ let keyword_table = Common.hash_of_list [
   (* c99:  *)
   "__restrict__",    (fun ii -> Trestrict ii);  
 
-  (* c++ext: *)
+  (* c++ext: see also TH.is_cpp_keyword *)
   "class", (fun ii -> Tclass ii);
   "this", (fun ii -> Tthis ii);
 
@@ -419,6 +419,7 @@ rule token = parse
 
   | "==" { TEqEq(tokinfo lexbuf) }  | "!=" { TNotEq(tokinfo lexbuf) } 
   | ">=" { TSupEq(tokinfo lexbuf) } | "<=" { TInfEq(tokinfo lexbuf) } 
+  (* c++ext: transformed in TInf_Template in parsing_hacks_cpp.ml *)
   | "<"  { TInf(tokinfo lexbuf) }   | ">"  { TSup(tokinfo lexbuf) }
 
   | "&&" { TAndLog(tokinfo lexbuf) } | "||" { TOrLog(tokinfo lexbuf) }

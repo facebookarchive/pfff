@@ -19,18 +19,18 @@ module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
 
 module TH = Token_helpers_cpp
-module LP = Lexer_parser_cpp
+module TV = Token_views_cpp
 module Parser = Parser_cpp
 
 open Parser_cpp
 open Token_views_cpp
 
 open Parsing_hacks_lib
-open Parsing_hacks_pp
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
 (* TODO 
  * TIdent_TemplatenameInQualifier 
  *)
@@ -38,12 +38,6 @@ open Parsing_hacks_pp
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let set_as_opar_cplusplus xs = 
-  match xs with
-  | ({t=TOPar ii;_} as tok1)::xs -> 
-      change_tok tok1 (TOPar_CplusplusInit ii);
-  | _ -> raise  Impossible
 
 let templateLOOKAHEAD = 30
   
@@ -54,251 +48,103 @@ let templateLOOKAHEAD = 30
 let rec have_a_tsup_quite_close xs =
   match xs with
   | [] -> false
-  | (PToken x)::xs -> 
+  | x::xs -> 
       (match x with
       | {t=TSup i} -> true
 
-      (* false positive *)
+      (* false positive. pad:???? *)
       | {t=tok} when TH.is_static_cast_like tok -> false
 
       (* bugfix: but want allow some binary operator :) like '*' *)
       | {t=tok} when TH.is_binary_operator_except_star tok -> false
-      
 
       | x -> have_a_tsup_quite_close xs
       )
-  | (Parenthised (xxs, info_parens))::xs -> 
-      have_a_tsup_quite_close xs
+
 
 (* precondition: there is a tsup *)
 let rec find_tsup_quite_close xs = 
   let rec aux acc xs =
     match xs with
     | [] -> failwith "PB: find_tsup_quite_close, no tsup"
-    | (PToken x)::xs -> 
-        pr2_gen x;
+    | x::xs -> 
         (match x with
         | {t=TSup ii} -> 
             acc, (x,ii), xs
               
         | {t=TInf ii} -> 
             (* recurse *)
-            let (before, (tsuptok,_), after) = 
-              find_tsup_quite_close xs in
+            let (before, (tsuptok,_), after) = find_tsup_quite_close xs in
             (* we don't care about this one, it will be eventually be 
              * transformed by the caller *)
-            aux ((PToken x)::(before++[PToken tsuptok])) xs
+            aux (x::(before++[tsuptok])) xs
               
-              
-        | x -> aux ((PToken x)::acc) xs
+        | x -> aux (x::acc) xs
         )
-    | (Parenthised (xxs, info_parens))::xs -> 
-        aux ((Parenthised (xxs, info_parens))::acc) xs
   in
   let (before, tsup, after) = aux [] xs in
   List.rev before, tsup, after
+
+
+
+
+let rec filter_for_typedef xs = 
+  let xs =
+  xs +> Common.exclude (fun tok_ext ->
+    match tok_ext.TV.t with
+   (* const is a strong signal for having a typedef, so why skip it?
+    * because it forces to duplicate rules. We need to infer
+    * the type anyway even when there is no const around.
+    * todo? maybe could do a special pass first that infer typedef
+    * using only const rules, and then remove those const so 
+    * have best of both worlds.
+    *)
+    | Tconst _ | Tvolatile _
+    | Trestrict _
+      -> true
+    | _ -> false
+  )
+  in
+  let groups = TV.mk_multi xs in
+  filter_qualifier_and_template groups
+
+and filter_qualifier_and_template xs =
+  let _template_args = ref [] in
+
+  (* remove template *)
+  let rec aux xs =
+    xs +> Common.map_filter (function
+    | TV.Braces (t1, xs, t2) ->
+        Some (TV.Braces (t1, aux xs, t2))
+    | TV.Parens  (t1, xs, t2) ->
+        Some (TV.Parens (t1, aux xs, t2))
+    | TV.Angle (t1, xs, t2) ->
+        (* todo: analayze xs!! add in _template_args *)
+        None
+    | TV.Tok t1 -> Some (TV.Tok t1)
+    )
+  in
+  
+  let xs = aux xs in
+  (* todo: look also for _template_args *)
+  [TV.tokens_of_multi_grouped xs]
 
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
 
-let find_view_all_tokens xs = 
- let rec aux xs =
-  match xs with
-  | [] -> ()
-  | x::xs -> aux xs
- in
- aux xs
-
-let find_view_filtered_tokens xs = 
- let rec aux xs =
-  match xs with
-  | [] -> ()
-
-  (* classname *)
-  | ({t=TIdent(s,i1)} as tok1)
-    ::{t=TColCol _}
-    ::({t=TIdent(s2,i2)} as tok2)
-    ::xs -> 
-      change_tok tok1 (TIdent_ClassnameInQualifier (s,i1));
-      if s = s2 
-      then change_tok tok2 (TIdent_Constructor (s2, i2));
-
-      aux (tok2::xs)
-
-  | ({t=TIdent(s,i1)} as tok1)
-    ::{t=TColCol _}
-    ::({t=Toperator(i2)} as tok2)
-    ::xs -> 
-      change_tok tok1 (TIdent_ClassnameInQualifier (s, i1));
-      aux (tok2::xs)
-
-   (* destructor special case *)
-  | ({t=TIdent(s,i1)} as tok1)
-    ::{t=TColCol _}
-    ::{t=TTilde _}
-    ::({t=TIdent(s2,i2)} as _tok2)
-    ::xs -> 
-      change_tok tok1 (TIdent_ClassnameInQualifier (s, i1));
-      aux xs
-
-  (* operator special case to avoid ambiguity when have 
-   * x.operator new[3], which apparently is possible with 
-   * the grammar, so to know diff between new[] operator and 
-   * new [3] array access need see 2 tokens ahead, so again,
-   * introduce an extra token to help.
-   *)
-  | ({t=Tnew i1} | {t=Tdelete i1})
-      ::({t=TOCro i2} as tok2)
-      ::({t=TCCro i3} as tok3)
-      ::xs -> 
-      change_tok tok2 (TOCro_new i2);
-      change_tok tok3 (TCCro_new i3);
-
-      aux xs
-
-  (* recurse *)
-  | x::xs -> aux xs
- in
- aux xs
-
-(* assume have done TInf -> TInf_Template, TIdent_ClassnameInQualifier, 
- * and TIdent_Templatename.
- * Pass 2!!
+(* note: some macros in standard.h may expand to static_cast, so perhaps
+ * better to do template detection after macro expansion ?
  *)
-
-let find_view_filtered_tokens_bis xs = 
- let rec aux xs =
+let find_template_inf_sup xs =
+  let rec aux xs =
   match xs with
   | [] -> ()
 
-  (* xx::yy<zz> ww *)
-  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({t=TColCol i2} as tok2)
-    ::({t=(*TypedefIdent*) _})
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TSup_Template _})
-    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
-    ::xs
-
-  (* xx::yy<zz>& ww *)
-  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({t=TColCol i2} as tok2)
-    ::({t=(*TypedefIdent*) _})
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TSup_Template _})
-    ::({t=TAnd _})
-    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
-    ::xs
-
-  (* xx::yy<zz*> ww *)
-  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({t=TColCol i2} as tok2)
-    ::({t=(*TypedefIdent*) _})
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TMul _})
-    ::({t=TSup_Template _})
-    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
-    ::xs
-  (* xx::yy<zz*>& ww *)
-  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({t=TColCol i2} as tok2)
-    ::({t=(*TypedefIdent*) _})
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TMul _})
-    ::({t=TSup_Template _})
-    ::({t=TAnd _})
-    ::(({t=TIdent (s2,_)})| ({t=TIdent_ClassnameInQualifier (s2,_)}))
-    ::xs
-    -> 
-      change_tok tok1 (TIdent_ClassnameInQualifier_BeforeTypedef (s1, i1));
-      change_tok tok2 (TColCol_BeforeTypedef i2);
-      
-      aux xs
-
-  (* xx<zz>::yy ww *)
-  | ({t=TIdent_Templatename (s1,i1)} as tok1)
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TSup_Template _})
-    ::({t=TColCol i2} as tok2)
-    ::({t=TIdent (s2,_)})
-    ::xs
-
-  (* xx<zz,zzz>::yy ww *)
-  | ({t=TIdent_Templatename (s1,i1)} as tok1)
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TSup_Template _})
-    ::({t=TColCol i2} as tok2)
-    ::({t=TIdent (s2,_)})
-    ::xs
-
-  (* xx<zz*>::yy ww *)
-  | ({t=TIdent_Templatename (s1,i1)} as tok1)
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*)_})
-    ::({t=TMul _})
-    ::({t=TSup_Template _})
-    ::({t=TColCol i2} as tok2)
-    ::({t=TIdent (s2,_)})
-    ::xs
-    -> 
-      change_tok tok1 (TIdent_TemplatenameInQualifier_BeforeTypedef (s1, i1));
-      change_tok tok2 (TColCol_BeforeTypedef i2);
-      
-      aux xs
-
-  (* aa::xx<zz>::yy ww *)
-  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({t=TColCol i2} as tok2)
-    ::({t=TIdent_Templatename (s3,i3)} as tok3)
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TSup_Template _})
-    ::({t=TColCol i4} as tok4)
-    ::({t=TIdent (s2,_)})
-    ::xs 
-  | ({t=TIdent_ClassnameInQualifier (s1,i1)} as tok1)
-    ::({t=TColCol i2} as tok2)
-    ::({t=TIdent_Templatename (s3,i3)} as tok3)
-    ::({t=TInf_Template _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=(*TIdent (s,_)*) _})
-    ::({t=TSup_Template _})
-    ::({t=TColCol i4} as tok4)
-    ::({t=TIdent (s2,_)})
-    ::xs 
-    -> 
-      change_tok tok1 (TIdent_ClassnameInQualifier_BeforeTypedef (s1, i1));
-      change_tok tok2 (TColCol_BeforeTypedef i2);
-      change_tok tok3 (TIdent_TemplatenameInQualifier_BeforeTypedef (s3, i3));
-      change_tok tok4 (TColCol_BeforeTypedef i4);
-      
-      aux xs
-
-  (* recurse *)
-  | x::xs -> aux xs
- in
- aux xs
-
-
-let find_view_parenthized xs = 
- let rec aux xs =
-  match xs with
-  | [] -> ()
-      
   (* static_cast *)
-  | (PToken {t=tok1})::(PToken ({t=TInf i2} as tok2))::xs 
+  | {t=tok1}::({t=TInf i2} as tok2)::xs
     when TH.is_static_cast_like tok1 -> 
       change_tok tok2 (TInf_Template i2);
-
       let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in
       change_tok toksup (TSup_Template toksupi);
       
@@ -306,151 +152,53 @@ let find_view_parenthized xs =
       aux before_inf;
       aux rest
 
-  (* templatename *)
-
-  (* note: some macros in standard.h may expand to static_cast, so perhaps
-   * better to do template detection after macro expansion ?
-   *)
- 
-  (* Template, maybe. Rely on fact that even if C++ allow expression like
-   * a<b>c, parsed as (a < b) > c, most people don't use that, so we
-   * can use this fact for our heuristic. Also people usually don't
-   * nest < for expressions as in a < b < c.
-   *)
-  | (PToken ({t=TIdent(s,i1)} as tok1))
-    ::(PToken ({t=TInf i2} as tok2))::xs 
-    when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs)
-    -> 
-      change_tok tok1 (TIdent_Templatename(s,i1));
+  | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)::xs
+    when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) -> 
       change_tok tok2 (TInf_Template i2);
       let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in
       change_tok toksup (TSup_Template toksupi);
+
+      (* old: was chaning to TIdent_Templatename but now first need
+       * to do the typedef inference and then can transform the
+       * TIdent_Typedef into a TIdent_Templatename
+       *)
       
       (* recurse *)
       aux before_inf;
       aux rest
 
-  | (PToken ({t=Ttemplate(i1)}))
-    ::(PToken ({t=TInf i2} as tok2))::xs 
-   when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) ->
-      change_tok tok2 (TInf_Template i2);
-      
-      let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in
-      change_tok toksup (TSup_Template toksupi);
-      
-      (* recurse *)
-      aux before_inf;
-      aux rest
-
-        
-  (* new (...) type(arg) *)
-  | (PToken ({t=Tnew(i1)}))
-    ::Parenthised _
-    ::PToken ({t=TIdent(s,i2)} as tok1)
-    ::Parenthised _
-    ::xs 
-    ->
-      change_tok tok1 (TIdent_Typedef(s,i2));
-      aux xs
-
-
   (* recurse *)
-  | (PToken x)::xs -> aux xs 
-  | (Parenthised (xxs, info_parens))::xs -> 
-      xxs +> List.iter aux;
-      aux xs
- in
- aux xs
+  | x::xs -> aux xs
 
-let find_view_parenthized2 xs = 
- let rec aux xs =
-  match xs with
-  | [] -> ()
-
-  (* recurse *)
-  | (PToken x)::xs -> aux xs 
-  | (Parenthised (xxs, info_parens))::xs -> 
-      xxs +> List.iter aux;
-      aux xs
- in
- aux xs
-      
-
-(* pre: have done the templatenameize and TInf/TSup -> TInf2/TSup2 *)
-let rec find_view_line_paren xs = 
-
- let rec aux xs =
-  match xs with 
-  | [] -> ()
-
-  (* c++ext: constructed objects part1 *)
-
-  (* xx yy(...);    when in body of function/method, otherwise can
-   * perfectly be a declaration of a prototype or of a method.
-   *)
-  | (Line 
-        [PToken ({t=TIdent (s1,i1)} as tok);
-         PToken ({t=TIdent (s,_); where = ctx} as _constructor);
-         Parenthised (xxs,info_parens);
-         PToken ({t=TPtVirg _});
-        ]
-    )
-    ::xs 
-    when List.hd ctx = InFunction -> 
-      ignore(info_parens);
-      (* todo? check that in info_parens have what looks like expressions *)
-
-      change_tok tok (TIdent_Typedef (s1,i1));
-      set_as_opar_cplusplus info_parens;
-
-      aux xs
-
-  (* xx<zz> yy(...); when in function *)
-  | (Line 
-        [PToken ({t=TIdent_Templatename (s1,i1)} as _tok);
-         PToken ({t=TInf_Template _});
-         PToken ({t=(*TypedefIdent*) _ident});
-         PToken ({t=TSup_Template _});
-         PToken ({t=TIdent (s,_); where = ctx} as _constructor);
-         Parenthised (xxs,info_parens);
-         PToken ({t=TPtVirg _});
-        ]
-    )
-    ::xs 
-    when List.hd ctx = InFunction -> 
-      ignore(info_parens);
-      (* todo? check that in info_parens have what looks like expressions *)
-
-      set_as_opar_cplusplus info_parens;
-
-      aux xs
+  in
+  aux xs
 
 
-  (* xx<zz> yy \n(...); when in function *)
-  | (Line 
-        [PToken ({t=TIdent_Templatename (s1,i1)} as _tok);
-         PToken ({t=TInf_Template _});
-         PToken ({t=(*TypedefIdent*) _});
-         PToken ({t=TSup_Template _});
-         PToken ({t=TIdent (s,_); where = ctx} as _constructor);
-        ]
-    )
-    ::(Line 
-         [
-         Parenthised (xxs,info_parens);
-         PToken ({t=TPtVirg _});
-        ]
-    )
-    ::xs 
-    when List.hd ctx = InFunction -> 
-      ignore(info_parens);
-      (* todo? check that in info_parens have what looks like expressions *)
+let reclassify_tokens_before_idents_or_typedefs xs =
+  let groups = List.rev (TV.mk_multi xs) in
+  
+  let rec aux xs =
+    match xs with
+    | [] -> ()
+    | Tok{t=TIdent _}::Tok{t=TColCol _}
+      ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
+        change_tok tok2 (TIdent_ClassnameInQualifier (s2, i2));
+        aux xs
+    | Tok{t=TIdent_Typedef _}::Tok({t=TColCol icolcol} as tcolcol)
+      ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
+        change_tok tok2 (TIdent_ClassnameInQualifier_BeforeTypedef (s2, i2));
+        change_tok tcolcol (TColCol_BeforeTypedef icolcol);
+        aux xs
+    | x::xs -> 
+        (match x with
+        | Tok _ -> ()
+        | Braces (t1, xs, t2)
+        | Parens (t1, xs, t2)
+        | Angle (t1, xs, t2)
+          -> aux (List.rev xs)
+        );
+        aux xs
+  in
+  aux groups;
+  ()
 
-      set_as_opar_cplusplus info_parens;
-
-      aux xs
-
-  | x::xs -> 
-      aux xs
- in
- aux xs

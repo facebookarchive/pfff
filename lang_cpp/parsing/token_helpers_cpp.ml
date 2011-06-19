@@ -199,8 +199,6 @@ let is_cpp_keyword = function
   | Tmutable _
  
   | Texport _
-
-  | TColCol  _
       -> true
 
   | _ -> false
