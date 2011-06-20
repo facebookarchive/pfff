@@ -52,7 +52,7 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> TCommentSpace TCommentNewline TComment
 
 /*(* fresh_token: cppext: appears after parsing_hack_pp and disappear *)*/
-%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TComment_Cpp
+%token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TComment_Pp
 
 /*(*-----------------------------------------*)*/
 /*(*2 The C tokens *)*/

@@ -538,7 +538,7 @@ let visit_toplevel
     | T.TIdent_MacroString _
     | T.TIdent_MacroStmt _
 
-    | T.TComment_Cpp _
+    | T.TComment_Pp _
       -> ()
 
 

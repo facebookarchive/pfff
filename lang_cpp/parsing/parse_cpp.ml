@@ -109,7 +109,7 @@ let print_bad line_error (start_line, end_line) filelines  =
 (*****************************************************************************)
 
 let commentized xs = xs +> Common.map_filter (function
-  | Parser.TComment_Cpp (cppkind, ii) -> 
+  | Parser.TComment_Pp (cppkind, ii) -> 
       if !Flag.filter_classic_passed
       then 
         (match cppkind with

@@ -103,7 +103,7 @@ let msg_change_tok tok =
 
   (* cppext: *)
 
-  | TComment_Cpp (directive, ii) ->
+  | TComment_Pp (directive, ii) ->
       let s = Ast.str_of_info ii in
       (match directive, s with
       | Token_cpp.CppMacro, _ ->
@@ -253,7 +253,7 @@ let fresh_tok tok =
  *)
 let set_as_comment cppkind x = 
   assert(not (TH.is_real_comment x.t));
-  change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.t))
+  change_tok x (TComment_Pp (cppkind, TH.info_of_tok x.t))
 
 (*****************************************************************************)
 (* The regexp and basic view definitions *)
