@@ -44,25 +44,29 @@ open Parsing_hacks_lib
 (* Helpers *)
 (*****************************************************************************)
 
+(*
 let is_top_or_struct = function
   | TV.InTopLevel
   | TV.InClassStruct _ 
   | TV.InStructAnon
       -> true
   | _ -> false
+*)
 
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
 
-(* comments/cpp-directives removed
- *
- * assume have done TInf_Template (but not TIdent_ClassnameAsQualifier)
- * filtering so we can focus on simple typedef patterns.
+(* assumes comments/cpp-directives have been removed.
+ * TODO assumes template stuff and qualifiers have been removed
+ *  (but not TIdent_ClassnameAsQualifier)
+ *  so we can focus on simple typedef patterns.
+ * 
+ * Note that qualifiers are slightly less important to filter because
+ * most of the heuristics below look for tokens after the ident
+ * and qualifiers are usually before.
  *)
-let find_view_filtered_tokens xs = 
-
- let xxs = Parsing_hacks_cpp.filter_for_typedef xs in
+let find_view_filtered_tokens xxs = 
 
  let rec aux xs =
   match xs with
@@ -87,11 +91,11 @@ let find_view_filtered_tokens xs =
       aux xs
 
   (* xx ** yy
+   * TODO: could be a multiplication too, but with less probability
   *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
-
 
 
 

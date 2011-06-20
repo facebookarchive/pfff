@@ -25,7 +25,7 @@ module TV = Token_views_cpp
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This module tries to detect some cpp, c, or c++ idioms so that we can
+ * This module tries to detect some CPP, C, or C++ idioms so that we can
  * parse as-is files by adjusting or commenting some tokens.
  * Sometime we use some indentation information, sometimes we
  * do some kind of lalr(k) by finding patterns. We often try to
@@ -34,9 +34,9 @@ module TV = Token_views_cpp
  * complex patterns (cf token_views_cpp.ml).
  * We also try to get more contextual information such as whether the
  * token is in an initializer because many patterns are different
- * depending on context.
+ * depending on the context.
  * 
- * Example of cpp idioms:
+ * Example of CPP idioms:
  *  - if 0 for commenting stuff (not always code, sometimes just real comments)
  *  - ifdef old version
  *  - ifdef funheader
@@ -58,10 +58,10 @@ module TV = Token_views_cpp
  *    relational expressions, so a < followed later by a > is probably a
  *    template.
  * 
- * Cf the TMacroXxx in parser_c.mly and MacroXxx in ast_c.ml
+ * See the TIdent_MacroXxx in parser_cpp.mly and MacroXxx in ast_cpp.ml
  * 
- * We also do other stuff involving cpp like expanding macros,
- * and we try parse define body by finding the end of define virtual 
+ * We also do other stuff involving CPP like expanding macros,
+ * and we try to parse define body by finding the end of define virtual
  * end-of-line token. But now most of the code is actually in pp_token.ml
  * It is related to what is in the yacfe configuration file (e.g. standard.h)
  *)
@@ -187,6 +187,8 @@ let fix_tokens2 ~macro_defs tokens =
     let brace_grouped = TV.mk_braceised cleaner in
     (* tagging contextual info (InFunc, InStruct, etc). Better to do
      * that after the "ifdef-simplification" phase.
+     * 
+     * TODO: use multi view here instead, and make it more complete.
      *)
     Token_views_cpp.set_context_tag   brace_grouped;
 
@@ -200,8 +202,11 @@ let fix_tokens2 ~macro_defs tokens =
     Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
     Parsing_hacks_pp.find_macro_paren        paren_grouped;
 
-    (* todo: typedefs *)
-    Parsing_hacks_typedef.find_view_filtered_tokens cleaner;
+    
+
+    (* typedef inference *)
+    let xxs = Parsing_hacks_cpp.filter_for_typedef cleaner in
+    Parsing_hacks_typedef.find_view_filtered_tokens xxs;
 
     (* c++ stuff *)
     Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs cleaner;
