@@ -3,4 +3,5 @@
 #undef FOO
 
 void main() {
+  
 }

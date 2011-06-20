@@ -55,6 +55,9 @@ let rec have_a_tsup_quite_close xs =
       (* false positive. pad:???? *)
       | {t=tok} when TH.is_static_cast_like tok -> false
 
+      | {t=(TOBrace _ | TPtVirg _ )} -> 
+          false
+
       (* bugfix: but want allow some binary operator :) like '*' *)
       | {t=tok} when TH.is_binary_operator_except_star tok -> false
 

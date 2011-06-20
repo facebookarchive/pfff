@@ -424,15 +424,17 @@ let is_braceised = function
 (* Multi ('{', '(', '<')  (could also do '[' ?) *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo: check that it's consistent with the indentation? *)
+(* todo: check that it's consistent with the indentation? 
+ * todo? more fault tolerance, if col == 0 and { the reset!
+ *)
 let mk_multi xs =
 
   let rec consume x xs =
     match x with
-    | {t=TOBrace ii;_} -> 
+    | {t=(*TOBrace ii*)tok;_} when TH.is_obrace tok -> 
         let body, closing, rest = look_close_brace [] xs in
         Braces (x, body, closing), rest
-    | {t=TOPar ii;_} ->
+    | {t=(*TOPar ii*)tok;_} when TH.is_opar tok ->
         let body, closing, rest = look_close_paren [] xs in
         Parens (x, body, closing), rest
     | {t=TInf_Template ii;_} ->
@@ -462,9 +464,11 @@ let mk_multi xs =
     | [] -> failwith "PB look_close_paren"
     | x::xs -> 
         (match x with
-        | {t=TCPar ii;_} -> List.rev accbody, Some x, xs
-        | _ -> let (x', xs') = consume x xs in
-               look_close_paren (x'::accbody) xs'
+        | {t=(*TCPar ii*)tok;_} when TH.is_cpar tok -> 
+            List.rev accbody, Some x, xs
+        | _ -> 
+            let (x', xs') = consume x xs in
+            look_close_paren (x'::accbody) xs'
         )
 
   and look_close_template accbody xs =

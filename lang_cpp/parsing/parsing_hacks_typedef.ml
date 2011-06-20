@@ -77,6 +77,7 @@ let find_view_filtered_tokens xs =
       aux xs
 
   (* xx * yy
+   *
    * TODO: could be a multiplication too 
    * TODO: more confidence when xx terminates in _t ?
    * TODO: could be xx & y in c++
