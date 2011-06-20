@@ -41,7 +41,7 @@ type file_type =
   | Prolog of string
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
-  | C | Cplusplus | Java | Csharp
+  | C of string | Cplusplus of string | Java | Csharp
   | Perl | Python | Ruby
   | Erlang
   | Haxe
@@ -106,14 +106,15 @@ let file_type_of_file2 file =
   (* todo detect false C file, look for "Mode: Objective-C++" string in file ?
    * can also be a c++, use Parser_cplusplus.is_problably_cplusplus_file 
    *)
-  | "c" -> PL C
-  | "h" -> PL C
+  | "c" -> PL (C e)
+  | "h" -> PL (C e)
   (* todo? have a PL of xxx_kind * pl_kind ?  *)
-  | "y" | "l" -> PL C 
+  | "y" | "l" -> PL (C e)
 
-  | "hpp" -> PL Cplusplus | "hxx" -> PL Cplusplus | "hh" -> PL Cplusplus
-  | "cpp" -> PL Cplusplus | "C" -> PL Cplusplus
-  | "cc" -> PL Cplusplus  | "cxx" -> PL Cplusplus
+  | "hpp" -> PL (Cplusplus e) | "hxx" -> PL (Cplusplus e) 
+  | "hh" -> PL (Cplusplus e)
+  | "cpp" -> PL (Cplusplus e) | "C" -> PL (Cplusplus e)
+  | "cc" -> PL (Cplusplus e)  | "cxx" -> PL (Cplusplus e)
 
   | "java" -> PL Java
   | "cs" -> PL Csharp

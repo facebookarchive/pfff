@@ -5,3 +5,15 @@ void main()
         foo();
     }
 }
+
+
+inline double clampToRange(double value, double lower, double upper) {
+  return value < lower? lower : (value > upper? upper : value);
+}
+
+void main()
+{
+      while(is_greater && i < nneighbors)
+        is_greater &= v > *(pt + neighbors[i++]) ;
+
+}

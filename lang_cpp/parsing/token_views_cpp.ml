@@ -426,19 +426,22 @@ let is_braceised = function
 
 (* todo: check that it's consistent with the indentation? 
  * todo? more fault tolerance, if col == 0 and { the reset!
+ * 
+ * Assumes work on a list of tokens without comments, without ifdefs
+ * (todo? and without #define?)
  *)
 let mk_multi xs =
 
   let rec consume x xs =
     match x with
     | {t=(*TOBrace ii*)tok;_} when TH.is_obrace tok -> 
-        let body, closing, rest = look_close_brace [] xs in
+        let body, closing, rest = look_close_brace x [] xs in
         Braces (x, body, closing), rest
     | {t=(*TOPar ii*)tok;_} when TH.is_opar tok ->
-        let body, closing, rest = look_close_paren [] xs in
+        let body, closing, rest = look_close_paren x [] xs in
         Parens (x, body, closing), rest
     | {t=TInf_Template ii;_} ->
-        let body, closing, rest = look_close_template [] xs in
+        let body, closing, rest = look_close_template x [] xs in
         Angle (x, body, closing), rest
     | x -> Tok x, xs
   
@@ -449,36 +452,49 @@ let mk_multi xs =
       let x', xs' = consume x xs in
       x'::aux xs'
 
-  and look_close_brace accbody xs =
+  and look_close_brace tok_start accbody xs =
     match xs with
-    | [] -> failwith "PB look_close_brace"
+    | [] -> 
+        failwith (spf "PB look_close_brace (started at %d)" 
+                     (TH.line_of_tok tok_start.t))
     | x::xs -> 
         (match x with
         | {t=TCBrace ii;_} -> List.rev accbody, Some x, xs
+
+        (* Many macros have unclosed '{'. An alternative
+         * would be to work on a view where define has been filtered
+         *)
+        | {t=TCommentNewline_DefineEndOfMacro ii;_} ->
+            List.rev accbody, None, x::xs
+
         | _ -> let (x', xs') = consume x xs in
-               look_close_brace (x'::accbody) xs'
+               look_close_brace tok_start (x'::accbody) xs'
         )
 
-  and look_close_paren accbody xs =
+  and look_close_paren tok_start accbody xs =
     match xs with
-    | [] -> failwith "PB look_close_paren"
+    | [] -> 
+        failwith (spf "PB look_close_paren (started at %d)" 
+                     (TH.line_of_tok tok_start.t))
     | x::xs -> 
         (match x with
         | {t=(*TCPar ii*)tok;_} when TH.is_cpar tok -> 
             List.rev accbody, Some x, xs
         | _ -> 
             let (x', xs') = consume x xs in
-            look_close_paren (x'::accbody) xs'
+            look_close_paren tok_start (x'::accbody) xs'
         )
 
-  and look_close_template accbody xs =
+  and look_close_template tok_start accbody xs =
     match xs with
-    | [] -> failwith "PB look_close_template"
+    | [] -> 
+        failwith (spf "PB look_close_template (started at %d)" 
+                     (TH.line_of_tok tok_start.t))
     | x::xs -> 
         (match x with
         | {t=TSup_Template ii;_} -> List.rev accbody, Some x, xs
         | _ -> let (x', xs') = consume x xs in
-               look_close_template (x'::accbody) xs'
+               look_close_template tok_start (x'::accbody) xs'
         )
   in
   aux xs

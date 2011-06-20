@@ -55,7 +55,11 @@ let rec have_a_tsup_quite_close xs =
       (* false positive. pad:???? *)
       | {t=tok} when TH.is_static_cast_like tok -> false
 
-      | {t=(TOBrace _ | TPtVirg _ )} -> 
+      (* ugly: 
+       * TODO: should probably detect if template '<' if the ident
+       * just before the '<' has no space between
+       *)
+      | {t=(TOBrace _ | TPtVirg _ | TCol _ | TAssign _ )} -> 
           false
 
       (* bugfix: but want allow some binary operator :) like '*' *)
@@ -156,6 +160,7 @@ let find_template_inf_sup xs =
       aux rest
 
   | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)::xs
+    (* TODO: check if space between them ??? *)
     when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) -> 
       change_tok tok2 (TInf_Template i2);
       let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in

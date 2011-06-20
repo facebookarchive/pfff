@@ -185,6 +185,8 @@
 #define FBUNIT_TEST(a) void a()
 #define FBUNIT_FIXTURE_TEST(a, b) void a()
 
+#define TEST_F(a,b) void a()
+
 // boost?
 #define FOR_EACH(a,b) for(;;)
 
@@ -195,3 +197,7 @@
 // google gflags
 #define DEFINE_int32(a,b,c) int a = b
 #define DEFINE_string(a,b,c) int a = b
+
+#define SOAP_FMAC3
+#define SOAP_FMAC4
+

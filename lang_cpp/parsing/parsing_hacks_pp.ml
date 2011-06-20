@@ -140,8 +140,8 @@ let rec find_ifdef_mid xs =
           then 
             let counts = xxs +> List.map count_open_close_stuff_ifdef_clause in
             let cnt1, cnt2 = List.hd counts in 
-            if cnt1 <> 0 || cnt2 <> 0 && 
-               counts +> List.for_all (fun x -> x = (cnt1, cnt2))
+            if cnt1 <> 0 || cnt2 <> 0
+               (*???? && counts +> List.for_all (fun x -> x = (cnt1, cnt2)) *)
               (*
                 if counts +> List.exists (fun (cnt1, cnt2) -> 
                 cnt1 <> 0 || cnt2 <> 0 

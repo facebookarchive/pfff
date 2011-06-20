@@ -36,7 +36,8 @@ let find_cpp_files_of_dir_or_files xs =
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
-    | FT.PL (FT.C | FT.Cplusplus) ->
+    | FT.PL (FT.C ("l" | "y")) -> false
+    | FT.PL (FT.C _ | FT.Cplusplus _) ->
         true
     | _ -> false
 

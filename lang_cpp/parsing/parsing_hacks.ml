@@ -79,16 +79,21 @@ let filter_pp_stuff xs =
     | [] -> []
     | x::xs -> 
         (match x.TV.t with
-        | tok when TH.is_comment tok -> aux xs
+        | tok when TH.is_comment tok -> 
+            aux xs
         (* don't want drop the define, or if drop, have to drop
          * also its body otherwise the line heuristics may be lost
          * by not finding the TDefine in column 0 but by finding
          * a TDefineIdent in a column > 0
+         * 
+         * todo? but define often contain some unbalanced {
          *)
         | Parser.TDefine _ -> 
             x::aux xs
-        | tok when TH.is_pp_instruction tok -> aux xs
-        | _ -> x::aux xs
+        | tok when TH.is_pp_instruction tok -> 
+            aux xs
+        | _ -> 
+            x::aux xs
         )
   in
   aux xs
