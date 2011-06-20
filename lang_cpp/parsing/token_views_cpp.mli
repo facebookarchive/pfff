@@ -40,9 +40,9 @@ type body_function_grouped =
   | NotBodyLine of token_extended list
 
 type multi_grouped =
-  | Braces of token_extended * multi_grouped list * token_extended
-  | Parens of token_extended * multi_grouped list * token_extended
-  | Angle  of token_extended * multi_grouped list * token_extended
+  | Braces of token_extended * multi_grouped list * token_extended option
+  | Parens of token_extended * multi_grouped list * token_extended option
+  | Angle  of token_extended * multi_grouped list * token_extended option
   | Tok of token_extended
 
 val mk_parenthised: token_extended list -> paren_grouped list
