@@ -94,28 +94,13 @@ let rec find_tsup_quite_close xs =
 
 
 
+(* todo: remove qualifier too? 
+ * TODO: right now this is less useful because we actually
+ *  comment template args in a previous pass, but at some point this
+ *  will be useful.
+*)
+let rec filter_for_typedef multi_groups = 
 
-let rec filter_for_typedef xs = 
-  let xs =
-  xs +> Common.exclude (fun tok_ext ->
-    match tok_ext.TV.t with
-   (* const is a strong signal for having a typedef, so why skip it?
-    * because it forces to duplicate rules. We need to infer
-    * the type anyway even when there is no const around.
-    * todo? maybe could do a special pass first that infer typedef
-    * using only const rules, and then remove those const so 
-    * have best of both worlds.
-    *)
-    | Tconst _ | Tvolatile _
-    | Trestrict _
-      -> true
-    | _ -> false
-  )
-  in
-  let groups = TV.mk_multi xs in
-  filter_qualifier_and_template groups
-
-and filter_qualifier_and_template xs =
   let _template_args = ref [] in
 
   (* remove template *)
@@ -128,11 +113,24 @@ and filter_qualifier_and_template xs =
     | TV.Angle (t1, xs, t2) ->
         (* todo: analayze xs!! add in _template_args *)
         None
-    | TV.Tok t1 -> Some (TV.Tok t1)
+
+    (* remove other noise for the typedef inference *)
+    | TV.Tok t1 -> 
+        match t1.TV.t with
+        (* const is a strong signal for having a typedef, so why skip it?
+         * because it forces to duplicate rules. We need to infer
+         * the type anyway even when there is no const around.
+         * todo? maybe could do a special pass first that infer typedef
+         * using only const rules, and then remove those const so 
+         * have best of both worlds.
+         *)
+        | Tconst _ | Tvolatile _
+        | Trestrict _
+          -> None
+        | _ -> Some (TV.Tok t1)
     )
   in
-  
-  let xs = aux xs in
+  let xs = aux multi_groups in
   (* todo: look also for _template_args *)
   [TV.tokens_of_multi_grouped xs]
 
@@ -183,7 +181,7 @@ let find_template_inf_sup xs =
 
 
 let reclassify_tokens_before_idents_or_typedefs xs =
-  let groups = List.rev (TV.mk_multi xs) in
+  let groups = List.rev xs in
   
   let rec aux xs =
     match xs with

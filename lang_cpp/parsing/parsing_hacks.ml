@@ -27,13 +27,14 @@ module TV = Token_views_cpp
 (* 
  * This module tries to detect some CPP, C, or C++ idioms so that we can
  * parse as-is files by adjusting or commenting some tokens.
+ * 
  * Sometime we use some indentation information, sometimes we
  * do some kind of lalr(k) by finding patterns. We often try to
  * work on a better token representation, like ifdef-paren-ized, brace-ized,
  * paren-ized, so that we can pattern-match more easily
- * complex patterns (cf token_views_cpp.ml).
+ * complex idioms (cf token_views_cpp.ml).
  * We also try to get more contextual information such as whether the
- * token is in an initializer because many patterns are different
+ * token is in an initializer because many idioms are different
  * depending on the context.
  * 
  * Example of CPP idioms:
@@ -73,7 +74,7 @@ module TV = Token_views_cpp
 let filter_comment_stuff xs =
   xs +> List.filter (fun x -> not (TH.is_comment x.TV.t))
 
-let filter_pp_stuff xs = 
+let filter_pp_or_comment_stuff xs = 
   let rec aux xs = 
     match xs with
     | [] -> []
@@ -101,8 +102,9 @@ let filter_pp_stuff xs =
 let filter_template_and_class_qualifier xs =
   raise Todo
 
-let filter_for_typedef_inference xs =
-  raise Todo
+(* in Parsing_hacks_cpp. 
+ let filter_for_typedef_inference xs =
+*)
           
 let insert_virtual_positions l =
   let strlen x = String.length (Ast.str_of_info x) in
@@ -141,83 +143,83 @@ let insert_virtual_positions l =
 (* 
  * Main entry point for the token reclassifier which generates "fresh" tokens.
  * 
- * The order of the rules is important, if you put the action heuristic first,
- * then because of ifdef, can have not closed paren
- * and so may believe that higher order macro 
- * and it will eat too much tokens. So important to do 
+ * The order of the rules is important. For instance if you put the 
+ * action heuristic first, then because of ifdef, can have not closed paren
+ * and so may believe that higher order macro
+ * and it will eat too much tokens. So important to do
  * first the ifdef heuristic.
  * 
- * I recompute multiple times cleaner cos the mutable
+ * Note that the functions below work on a list of token_extended
+ * or on views on top of a list of token_extended. token_extended
+ * contains mutable field which explains the (ugly but working) imperative
+ * style of the code below.
+ * 
+ * I recompute multiple times 'cleaner' cos the mutable
  * can have be changed and so may have more comments
  * in the token original list.
  *)
 let fix_tokens2 ~macro_defs tokens = 
   let tokens2 = ref (tokens +> acc_map TV.mk_token_extended) in
   
-  begin 
+  (* ifdef *)
+  let cleaner = !tokens2 +> filter_comment_stuff in
+  
+  let ifdef_grouped = TV.mk_ifdef cleaner in
+  Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
+  Parsing_hacks_pp.find_ifdef_bool       ifdef_grouped;
+  Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
+  
+  (* macro part 1 *)
+  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  
+  (* find '<' '>' template symbols. We need that for the typedef
+   * heuristics. We actually need that even for the paren view 
+   * which is wrong without it.
+   * 
+   * todo? expand macro first? some expand to lexical_cast ...
+   * but need correct parenthized view to expand macros => deadlock.
+   *)
+  Parsing_hacks_cpp.find_template_inf_sup cleaner;
+  
+  let paren_grouped = TV.mk_parenthised  cleaner in
+  Pp_token.apply_macro_defs macro_defs paren_grouped;
+  
+  (* because the before field is used by apply_macro_defs *)
+  tokens2 := TV.rebuild_tokens_extented !tokens2; 
+  
+  (* could filter also #define/#include *)
+  let cleaner = !tokens2 +> filter_comment_stuff in
+  
+  (* tagging contextual info (InFunc, InStruct, etc). Better to do
+   * that after the "ifdef-simplification" phase.
+   * 
+   * TODO: use multi view here instead, and make it more complete.
+   *)
+  let brace_grouped = TV.mk_braceised cleaner in
+  Token_views_cpp.set_context_tag   brace_grouped;
+  
+  (* macro part 2 *)
+  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  
+  let paren_grouped      = TV.mk_parenthised  cleaner in
+  let line_paren_grouped = TV.mk_line_parenthised paren_grouped in
+  Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
+  Parsing_hacks_pp.find_string_macro_paren paren_grouped;
+  Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
+  Parsing_hacks_pp.find_macro_paren        paren_grouped;
+  
+  let multi_grouped = TV.mk_multi cleaner in
+  
+  (* typedef inference *)
+  let xxs = Parsing_hacks_cpp.filter_for_typedef multi_grouped in
+  Parsing_hacks_typedef.find_typedefs xxs;
+  
+  (* c++ stuff *)
+  Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs 
+    multi_grouped;
+  
+  insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.TV.t))
 
-    (* ifdef *)
-    let cleaner = !tokens2 +> filter_comment_stuff in
-
-    let ifdef_grouped = TV.mk_ifdef cleaner in
-    Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
-    Parsing_hacks_pp.find_ifdef_bool       ifdef_grouped;
-    Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
-
-    (* macro part 1 *)
-    let cleaner = !tokens2 +> filter_pp_stuff in
-
-    (* find '<' '>' template symbols (need that before typedef heuristic) 
-     * need that even any paren view (which is wrong without it)
-     * 
-     * todo? expand macro first? some expand to lexical_cast ...
-     * but need correct parenthized view to expand macros => deadlock.
-     *)
-    Parsing_hacks_cpp.find_template_inf_sup cleaner;
-
-    let paren_grouped = TV.mk_parenthised  cleaner in
-    Pp_token.apply_macro_defs macro_defs paren_grouped;
-
-    (* because the before field is used by apply_macro_defs *)
-    tokens2 := TV.rebuild_tokens_extented !tokens2; 
-
-    (* could filter also #define/#include *)
-    let cleaner = !tokens2 +> filter_comment_stuff in
-
-    let brace_grouped = TV.mk_braceised cleaner in
-    (* tagging contextual info (InFunc, InStruct, etc). Better to do
-     * that after the "ifdef-simplification" phase.
-     * 
-     * TODO: use multi view here instead, and make it more complete.
-     *)
-    Token_views_cpp.set_context_tag   brace_grouped;
-
-    (* macro part2 *)
-    let cleaner = !tokens2 +> filter_pp_stuff in
-
-    let paren_grouped      = TV.mk_parenthised  cleaner in
-    let line_paren_grouped = TV.mk_line_parenthised paren_grouped in
-    Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
-    Parsing_hacks_pp.find_string_macro_paren paren_grouped;
-    Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
-    Parsing_hacks_pp.find_macro_paren        paren_grouped;
-
-    
-
-    (* typedef inference *)
-    let xxs = Parsing_hacks_cpp.filter_for_typedef cleaner in
-    Parsing_hacks_typedef.find_view_filtered_tokens xxs;
-
-    (* c++ stuff *)
-    Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs cleaner;
-
-    (* actions *)
-    let cleaner = !tokens2 +> filter_pp_stuff in
-    let paren_grouped = TV.mk_parenthised  cleaner in
-    Parsing_hacks_pp.find_actions  paren_grouped;
-
-    insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.TV.t))
-  end
 
 let fix_tokens ~macro_defs a = 
   Common.profile_code "C++ parsing.fix_tokens" (fun () -> 
