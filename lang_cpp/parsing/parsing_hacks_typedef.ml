@@ -66,7 +66,7 @@ let is_top_or_struct = function
  * most of the heuristics below look for tokens after the ident
  * and qualifiers are usually before.
  *)
-let find_view_filtered_tokens xxs = 
+let find_typedefs xxs = 
 
  let rec aux xs =
   match xs with

@@ -539,6 +539,7 @@ let visit_toplevel
     | T.TIdent_MacroStmt _
 
     | T.TComment_Pp _
+    | T.TComment_Cpp _
       -> ()
 
 

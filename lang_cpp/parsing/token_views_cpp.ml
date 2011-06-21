@@ -528,6 +528,17 @@ let rec iter_token_ifdef f xs =
       xxs +> List.iter (iter_token_ifdef f)
   )
 
+let rec iter_token_multi f xs =
+  xs +> List.iter (function
+  | Tok t -> f t
+  | Braces (t1, xs, t2)
+  | Parens (t1, xs, t2)
+  | Angle (t1, xs, t2)
+      ->  
+      f t1;
+      iter_token_multi f xs;
+      Common.do_option f t2
+  )
 
 let tokens_of_paren xs = 
   let g = ref [] in

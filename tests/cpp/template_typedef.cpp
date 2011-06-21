@@ -15,3 +15,8 @@ void main() {
 void main() {
   std::vector<StringPiece const*> buffers;
 }
+
+void main() {
+ map<string, set<string> >::iterator iter;
+}
+

@@ -53,6 +53,8 @@ module LP = Lexer_parser_cpp
 
 /*(* fresh_token: cppext: appears after parsing_hack_pp and disappear *)*/
 %token <(Token_cpp.cppcommentkind * Ast_cpp.info)> TComment_Pp
+/*(* fresh_token: c++ext: appears after parsing_hack_pp and disappear *)*/
+%token <(Token_cpp.cpluspluscommentkind * Ast_cpp.info)> TComment_Cpp
 
 /*(*-----------------------------------------*)*/
 /*(*2 The C tokens *)*/
@@ -615,6 +617,9 @@ primary_cplusplus_id:
 cast_operator_expr: 
  | cpp_cast_operator TInf_Template type_id  TSup_Template TOPar expr TCPar 
      { mk_e (CplusplusCast (fst $1, $3, $6)) [snd $1;$2;$4;$5;$7] }
+/*(* TODO: remove once we don't skip template arguments *)*/
+ | cpp_cast_operator TOPar expr TCPar  
+     { $3 (* TODO AST *) }
 
 /*(*c++ext:*)*/
 cpp_cast_operator:

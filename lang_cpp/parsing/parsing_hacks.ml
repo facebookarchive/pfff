@@ -209,8 +209,20 @@ let fix_tokens2 ~macro_defs tokens =
   Parsing_hacks_pp.find_macro_paren        paren_grouped;
   
   let multi_grouped = TV.mk_multi cleaner in
+  (* todo: at some point need to remove that and use
+   * instead a better filter_for_typedef that also
+   * works on the nested template arguments.
+   *)
+  Parsing_hacks_cpp.find_template_commentize multi_grouped;
+  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  Parsing_hacks_cpp.find_qualifier_commentize cleaner;
+  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+
+  let multi_grouped = TV.mk_multi cleaner in
   
-  (* typedef inference *)
+  (* typedef inference. filter_for_typedef actually creates
+   * some new extended_token (TAnd -> TMul) so take care.
+   *)
   let xxs = Parsing_hacks_cpp.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
   

@@ -3,6 +3,3 @@ class Foo {
   void foo() { }
 };
 
-Foo::Foo() 
-{
-}

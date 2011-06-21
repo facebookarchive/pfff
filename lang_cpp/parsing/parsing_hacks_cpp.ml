@@ -62,6 +62,13 @@ let rec have_a_tsup_quite_close xs =
       | {t=(TOBrace _ | TPtVirg _ | TCol _ | TAssign _ )} -> 
           false
 
+      | {t=TInf i} -> 
+          (* probably nested template, still try
+           * TODO: bug when have i < DEG<...>::foo(...)
+           *  we should recurse!
+           *)
+          have_a_tsup_quite_close xs
+
       (* bugfix: but want allow some binary operator :) like '*' *)
       | {t=tok} when TH.is_binary_operator_except_star tok -> false
 
@@ -69,28 +76,30 @@ let rec have_a_tsup_quite_close xs =
       )
 
 
-(* precondition: there is a tsup *)
-let rec find_tsup_quite_close xs = 
+(* precondition: there is a tsup 
+ *)
+let rec find_tsup_quite_close tok_open xs = 
   let rec aux acc xs =
     match xs with
-    | [] -> failwith "PB: find_tsup_quite_close, no tsup"
+    | [] -> 
+        failwith (spf "PB: find_tsup_quite_close, no > for < at line %d"
+                     (TH.line_of_tok tok_open.t))
     | x::xs -> 
         (match x with
         | {t=TSup ii} -> 
-            acc, (x,ii), xs
+            List.rev acc, (x,ii), xs
               
         | {t=TInf ii} -> 
             (* recurse *)
-            let (before, (tsuptok,_), after) = find_tsup_quite_close xs in
+            let (before, (tsuptok,_), after) = find_tsup_quite_close x xs in
             (* we don't care about this one, it will be eventually be 
              * transformed by the caller *)
-            aux (x::(before++[tsuptok])) xs
+            aux (tsuptok:: (List.rev before) ++(x::acc)) after
               
         | x -> aux (x::acc) xs
         )
   in
-  let (before, tsup, after) = aux [] xs in
-  List.rev before, tsup, after
+  aux [] xs
 
 
 
@@ -127,12 +136,28 @@ let rec filter_for_typedef multi_groups =
         | Tconst _ | Tvolatile _
         | Trestrict _
           -> None
+
+        (* let's transform all '&' into '*' *)
+        | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
+
+        (* and operator into TIdent 
+         * TODO: skip the token just after the operator keyword?
+         * could help some heuristics too
+        *)
+        | Toperator ii -> 
+            Some (TV.Tok (mk_token_extended (TIdent ("operator", ii))))
+
         | _ -> Some (TV.Tok t1)
     )
   in
   let xs = aux multi_groups in
   (* todo: look also for _template_args *)
   [TV.tokens_of_multi_grouped xs]
+
+let no_space_between i1 i2 =
+  (Ast.line_of_info i1 = Ast.line_of_info i2) &&
+  (Ast.col_of_info i1 + String.length (Ast.str_of_info i1))= Ast.col_of_info i2
+
 
 (*****************************************************************************)
 (* Main heuristics *)
@@ -146,22 +171,41 @@ let find_template_inf_sup xs =
   match xs with
   | [] -> ()
 
+  (* template<...> *)
+  | {t=Ttemplate _}::({t=TInf i2} as tok2)::xs ->
+      change_tok tok2 (TInf_Template i2);
+      let (before_sup, (toksup, toksupi), rest) = 
+        find_tsup_quite_close tok2 xs in
+      change_tok toksup (TSup_Template toksupi);
+      
+      (* recurse *)
+      aux before_sup;
+      aux rest
+
   (* static_cast *)
   | {t=tok1}::({t=TInf i2} as tok2)::xs
     when TH.is_static_cast_like tok1 -> 
       change_tok tok2 (TInf_Template i2);
-      let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in
+      let (before_sup, (toksup, toksupi), rest) = 
+        find_tsup_quite_close tok2 xs in
       change_tok toksup (TSup_Template toksupi);
       
       (* recurse *)
-      aux before_inf;
+      aux before_sup;
       aux rest
 
+  (* check if space between them ??? 
+   * TODO: have_a_tsup_quite_close does not handle a relational < followed
+   *  by a regular template.
+  *)
   | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)::xs
-    (* TODO: check if space between them ??? *)
-    when have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) -> 
+    when
+      no_space_between i1 i2 &&
+      have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) 
+     -> 
       change_tok tok2 (TInf_Template i2);
-      let (before_inf, (toksup, toksupi), rest) = find_tsup_quite_close xs in
+      let (before_sup, (toksup, toksupi), rest) = 
+        find_tsup_quite_close tok2 xs in
       change_tok toksup (TSup_Template toksupi);
 
       (* old: was chaning to TIdent_Templatename but now first need
@@ -170,7 +214,7 @@ let find_template_inf_sup xs =
        *)
       
       (* recurse *)
-      aux before_inf;
+      aux before_sup;
       aux rest
 
   (* recurse *)
@@ -187,13 +231,18 @@ let reclassify_tokens_before_idents_or_typedefs xs =
     match xs with
     | [] -> ()
 
-    (* xx::yy     where yy is ident (funcall, variable, etc)  *)
-    | Tok{t=TIdent _}::Tok{t=TColCol _}
+    (* xx::yy     where yy is ident (funcall, variable, etc)
+     * need to do that recursively! if have a::b::c
+     *)
+    | Tok{t=TIdent _ | TIdent_ClassnameInQualifier _}
+      ::Tok{t=TColCol _}
       ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
         change_tok tok2 (TIdent_ClassnameInQualifier (s2, i2));
-        aux xs
+        aux ((Tok tok2)::xs)
 
-    (* xx::t      wher et is a type *)
+    (* xx::t      wher et is a type 
+     * TODO need to do that recursively! if have a::b::c
+     *)
     | Tok{t=TIdent_Typedef _}::Tok({t=TColCol icolcol} as tcolcol)
       ::Tok({t=TIdent (s2, i2)} as tok2)::xs ->
         change_tok tok2 (TIdent_ClassnameInQualifier_BeforeTypedef (s2, i2));
@@ -227,3 +276,61 @@ let reclassify_tokens_before_idents_or_typedefs xs =
   aux groups;
   ()
 
+
+(* quite similar to filter_for_typedef 
+ * TODO: at some point need have to remove this and instead
+ *  have a correct filter_for_typedef that also returns
+ *  nested types in template arguments (and some
+ *  typedef heuristics that work on template_arguments too)
+*)
+ 
+let find_template_commentize groups =
+  (* remove template *)
+  let rec aux xs =
+    xs +> List.iter (function
+    | TV.Braces (t1, xs, t2) ->
+        aux xs
+    | TV.Parens  (t1, xs, t2) ->
+        aux xs
+    | TV.Angle (t1, xs, t2) as angle ->
+        (* let's commentize everything *)
+        [angle] +> TV.iter_token_multi (fun tok ->
+          change_tok tok 
+            (TComment_Cpp (Token_cpp.CplusplusTemplate, TH.info_of_tok tok.t))
+        )
+
+    | TV.Tok tok ->
+        (* todo? should also pass the static_cast<...> which normally
+         * expect some TInf_Template after. Right mow I manage
+         * that by having some extra rules in the grammar
+         *)
+        (match tok.t with
+        | Ttemplate _ ->
+            change_tok tok 
+              (TComment_Cpp (Token_cpp.CplusplusTemplate, TH.info_of_tok tok.t))
+        | _ -> ()
+        )
+    )
+  in
+  aux groups
+
+(* assumes have a list of tokens where the template arguments have
+ * already been commentized too (and filtered)
+ *)
+let find_qualifier_commentize xs =
+  let rec aux xs =
+    match xs with
+    | [] -> ()
+
+    | ({t=TIdent _} as t1)::({t=TColCol _} as t2)::xs ->
+        [t1; t2] +> List.iter (fun tok ->
+          change_tok tok 
+            (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
+        );
+        aux xs
+
+    (* recurse *)
+    | x::xs ->
+        aux xs
+  in
+  aux xs

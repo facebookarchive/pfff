@@ -306,6 +306,12 @@ let options () = [
     "-pfff_filter", Arg.Unit (fun () -> 
       filter := treemap_pfff_filter),
     " ";
+    "-cpp_filter", Arg.Unit (fun () -> 
+      filter := (fun file -> 
+        match File_type.file_type_of_file file with
+        | File_type.PL (File_type.C _ | File_type.Cplusplus _) -> true 
+        | _ -> false)),
+    " ";
 
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";

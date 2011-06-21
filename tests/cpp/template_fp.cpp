@@ -17,3 +17,9 @@ void main()
         is_greater &= v > *(pt + neighbors[i++]) ;
 
 }
+
+void main()
+{
+      for (int j = 0; j < Polynomial<DEG>::size(); j++) {
+      }
+}

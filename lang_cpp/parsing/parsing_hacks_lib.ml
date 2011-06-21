@@ -176,6 +176,15 @@ let msg_change_tok tok =
   (* mostly in parsing_hacks_cpp.ml *)
 
   (* c++ext: *)
+  | TComment_Cpp (directive, ii) ->
+      let s = Ast.str_of_info ii in
+      (match directive, s with
+      | Token_cpp.CplusplusTemplate, _ ->
+          pr2_cplusplus (spf "COM-TEMPLATE: commented at %s" (pos ii))
+      | Token_cpp.CplusplusQualifier, _ ->
+          pr2_cplusplus (spf "COM-QUALIFIER: commented at %s" (pos ii))
+      )
+
   | TOPar_CplusplusInit ii ->
       pr2_cplusplus (spf "constructor initializer at %s" (pos ii))
 
@@ -207,6 +216,8 @@ let msg_change_tok tok =
       pr2_typedef (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
   | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
       pr2_typedef (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
+
+
 
   | _ -> 
       raise Todo

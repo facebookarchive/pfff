@@ -52,18 +52,15 @@ val mk_body_function_grouped: token_extended list -> body_function_grouped list
 val mk_line_parenthised: paren_grouped list -> paren_grouped line_grouped list
 val mk_multi: token_extended list -> multi_grouped list
 
-(* ---------------------------------------------------------------------- *)
 val iter_token_paren : (token_extended -> unit) -> paren_grouped list -> unit
 val iter_token_brace : (token_extended -> unit) -> brace_grouped list -> unit
 val iter_token_ifdef : (token_extended -> unit) -> ifdef_grouped list -> unit
+val iter_token_multi : (token_extended -> unit) -> multi_grouped list -> unit
 
 val tokens_of_paren:         paren_grouped list -> token_extended list
 val tokens_of_paren_ordered: paren_grouped list -> token_extended list
-
 val tokens_of_multi_grouped: multi_grouped list -> token_extended list
 
-(* ---------------------------------------------------------------------- *)
 val set_context_tag: brace_grouped list -> unit
-(* ---------------------------------------------------------------------- *)
 
 val string_of_multi_grouped: multi_grouped list -> string
