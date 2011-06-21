@@ -343,8 +343,29 @@ let find_qualifier_commentize xs =
  * - TODO public/protected/... ?
  *)
 let set_context_tag groups =
-  pr2 "TODO";
-  ()
+  let rec aux xs =
+  match xs with
+  | [] -> ()
+  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+    ::(Braces(t1, body, t2) as braces)::xs
+    ->
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
+      );
+      aux (braces::xs)
+
+  | x::xs ->
+      (match x with
+      | Tok t -> ()
+      | Braces (t1, xs, t2)
+      | Parens (t1, xs, t2)
+      | Angle  (t1, xs, t2)
+         ->
+          aux xs
+      );
+      aux xs
+  in
+  aux groups
 
 
 (* assumes a view where set_context_tag has been called.
@@ -354,6 +375,22 @@ let find_constructor xs =
   let rec aux xs = 
   match xs with
   | [] -> ()
+
+  (* { Foo(... *)
+  | {t=(TOBrace _ | TPtVirg _ | Texplicit _);_}
+    ::({t=TIdent (s1, i1); where=(TV.InClassStruct s2)::_; _} as tok1)
+    ::{t=TOPar _}::xs when s1 = s2 ->
+      change_tok tok1 (TIdent_Constructor(s1, i1));
+      aux xs
+
+  (* public: Foo(...   could also filter the privacy directives so 
+   * need only one rule
+   *)
+  | {t=(Tpublic _ | Tprotected _ | Tprivate _)}::{t=TCol _}
+    ::({t=TIdent (s1, i1); where=(TV.InClassStruct s2)::_; _} as tok1)
+    ::{t=TOPar _}::xs when s1 = s2 ->
+      change_tok tok1 (TIdent_Constructor(s1, i1));
+      aux xs
 
   (* recurse *)
   | x::xs -> aux xs
