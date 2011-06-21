@@ -346,6 +346,7 @@ let set_context_tag groups =
   let rec aux xs =
   match xs with
   | [] -> ()
+  (* TODO: class Foo : ... { *)
   | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
     ::(Braces(t1, body, t2) as braces)::xs
     ->
