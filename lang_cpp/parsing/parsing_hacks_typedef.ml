@@ -30,14 +30,18 @@ open Parsing_hacks_lib
  * In this module we use a view that is more convenient for 
  * typedefs detection. We get rid of:
  *  - template arguments, 
- *  - TODO qualifiers, 
- *  - TODO differences between & and *, 
- *  - TODO differences between TIdent and TOperator, 
- *  - const, inline, 
+ *  - qualifiers, 
+ *  - differences between & and *, 
+ *  - differences between TIdent and TOperator, 
+ *  - const, volatile, restrict keywords
  *  - TODO merge multiple ** or *& or whatever
  * 
- * At the same time certain tokens like const/inline are stronger
- * signals towards a typedef ident.
+ * See Parsing_hacks_cpp.filter_for_typedef and the 
+ * find_template_commentize and find_qualifier_commentize
+ * 
+ * todo? at the same time certain tokens like const are strong
+ * signals towards a typedef ident, so maybe could do a first
+ * pass first which use those tokens?
  *)
 
 (*****************************************************************************)
@@ -57,10 +61,14 @@ let is_top_or_struct = function
 (* Main heuristics *)
 (*****************************************************************************)
 
-(* assumes comments/cpp-directives have been removed.
- * TODO assumes template stuff and qualifiers have been removed
- *  (but not TIdent_ClassnameAsQualifier)
- *  so we can focus on simple typedef patterns.
+(* assumes a view without:
+ *  - comments and cpp-directives
+ *  - template stuff and qualifiers
+ *   (but not TIdent_ClassnameAsQualifier)
+ *  - const/volatile/restrict
+ *  - etc, see Prelude
+ * 
+ * With such a view we can write less patterns.
  * 
  * Note that qualifiers are slightly less important to filter because
  * most of the heuristics below look for tokens after the ident
@@ -110,6 +118,7 @@ let find_typedefs xxs =
 
    (* (xx * )
     * TODO: does not really need the closing paren?
+    * TODO: check that not InParameter or InArgument?
     *)
   | {t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TMul _}::{t=TCPar _}::xs ->
       change_tok tok3 (TIdent_Typedef (s, i1));
@@ -120,6 +129,21 @@ let find_typedefs xxs =
     ::{t=TMul _}::{t=TMul _}::{t=TCPar _}::xs ->
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
+
+  (* TODO: xx [,)]   only if InParameter *)
+ 
+
+  (* xx* [,)] *)
+  | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=(TComma _| TCPar _)}::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
+  (* xx** [,)] *)
+  | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=TMul _}
+    ::{t=(TComma _| TCPar _)}::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
 
   (* recurse *)
   | x::xs -> aux xs

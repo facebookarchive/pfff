@@ -120,7 +120,11 @@ let rec filter_for_typedef multi_groups =
     | TV.Parens  (t1, xs, t2) ->
         Some (TV.Parens (t1, aux xs, t2))
     | TV.Angle (t1, xs, t2) ->
-        (* todo: analayze xs!! add in _template_args *)
+        (* todo: analayze xs!! add in _template_args 
+         * todo: add the t1,t2 around xs to have
+         *  some sentinel for the typedef heuristics patterns
+         *  who often look for the token just before the typedef.
+         *)
         None
 
     (* remove other noise for the typedef inference *)
@@ -284,7 +288,9 @@ let reclassify_tokens_before_idents_or_typedefs xs =
  *  have a correct filter_for_typedef that also returns
  *  nested types in template arguments (and some
  *  typedef heuristics that work on template_arguments too)
-*)
+ * 
+ * TODO: once you don't use it, remove certain grammar rules (C-s TODO)
+ *)
 let find_template_commentize groups =
   (* remove template *)
   let rec aux xs =
@@ -317,6 +323,13 @@ let find_template_commentize groups =
 
 (* assumes a view without:
  * - template arguments
+ * 
+ * TODO: once you don't use it, remove certain grammar rules (C-s TODO)
+ * 
+ * note: passing qualifiers is slightly less important than passing template
+ * arguments because they are before the name (as opposed to templates
+ * which are after) and most of our heuristics for typedefs
+ * look tokens forward, not backward (actually a few now look backward too)
  *)
 let find_qualifier_commentize xs =
   let rec aux xs =
@@ -378,7 +391,7 @@ let find_constructor xs =
   | [] -> ()
 
   (* { Foo(... *)
-  | {t=(TOBrace _ | TPtVirg _ | Texplicit _);_}
+  | {t=(TOBrace _ | TCBrace _ | TPtVirg _ | Texplicit _);_}
     ::({t=TIdent (s1, i1); where=(TV.InClassStruct s2)::_; _} as tok1)
     ::{t=TOPar _}::xs when s1 = s2 ->
       change_tok tok1 (TIdent_Constructor(s1, i1));

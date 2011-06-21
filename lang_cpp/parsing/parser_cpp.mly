@@ -18,7 +18,6 @@
 open Common
 
 open Ast_cpp
-open Lexer_parser_cpp (* for the fields *)
 open Parser_cpp_mly_helper
 
 module Ast = Ast_cpp
@@ -1231,6 +1230,12 @@ using_declaration:
      { let name = ($3, $4, $5) in
        name, [$1;$6]++$2
      }
+/*(* TODO: remove once we don't skip qualifier ? *)*/
+ | Tusing typename_opt tcolcol_opt unqualified_id TPtVirg {
+     let name = ($3, [], $4) in
+     name, [$1;$5]++$2
+   }
+  
 
 /*(*----------------------------*)*/
 /*(*2 gccext: c++ext: *)*/

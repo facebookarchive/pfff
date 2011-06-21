@@ -20,6 +20,7 @@ int x = (foo8) 1;
 
 int x = (foo9 **) y;
 
+int foo(foo10 *, foo11 &);
 
 //class Foo {
 //  Foo & operator=(const Foo &);

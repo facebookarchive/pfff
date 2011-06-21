@@ -20,3 +20,5 @@ void main() {
  map<string, set<string> >::iterator iter;
 }
 
+static facebook::concurrency::ThreadLocal<unsigned int> state;
+

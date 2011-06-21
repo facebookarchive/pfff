@@ -184,6 +184,7 @@
 
 #define FBUNIT_TEST(a) void a()
 #define FBUNIT_FIXTURE_TEST(a, b) void a()
+#define BOOST_AUTO_TEST_CASE(a) void a()
 
 #define TEST_F(a,b) void a()
 #define TESTFUN(a) void a()
