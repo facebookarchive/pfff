@@ -22,7 +22,7 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
-(* This is a big file ... C++ is quite complicated ... 
+(* This is a big file ... C++ is a quite complicated language ... 
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  *)

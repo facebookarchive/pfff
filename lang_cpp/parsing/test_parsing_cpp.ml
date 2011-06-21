@@ -38,9 +38,7 @@ let test_parse_cpp ?c xs  =
     else Hashtbl.add newscore file (Common.Pb s)
   );
 
-  Stat.print_parsing_stat_list !stat_list;
   Stat.print_recurring_problematic_tokens !stat_list;
-
   (match xs with 
   | [dirname] when is_directory dirname ->
       pr2 "--------------------------------";
@@ -53,6 +51,8 @@ let test_parse_cpp ?c xs  =
             ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"))
   | _ -> ()
   );
+  Stat.print_parsing_stat_list !stat_list;
+
   ()
 
 let test_dump_cpp file =

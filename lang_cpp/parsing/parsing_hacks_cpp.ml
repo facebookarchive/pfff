@@ -103,7 +103,7 @@ let rec find_tsup_quite_close tok_open xs =
 
 
 
-(* todo: remove qualifier too? 
+(* 
  * TODO: right now this is less useful because we actually
  *  comment template args in a previous pass, but at some point this
  *  will be useful.
@@ -158,13 +158,15 @@ let no_space_between i1 i2 =
   (Ast.line_of_info i1 = Ast.line_of_info i2) &&
   (Ast.col_of_info i1 + String.length (Ast.str_of_info i1))= Ast.col_of_info i2
 
-
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
 
 (* note: some macros in standard.h may expand to static_cast, so perhaps
  * better to do template detection after macro expansion ?
+ * 
+ * C-s for TInf_Template in the grammar and you will see all cases
+ * should be covered.
  *)
 let find_template_inf_sup xs =
   let rec aux xs =
@@ -194,13 +196,13 @@ let find_template_inf_sup xs =
       aux before_sup;
       aux rest
 
-  (* check if space between them ??? 
+  (* 
    * TODO: have_a_tsup_quite_close does not handle a relational < followed
    *  by a regular template.
   *)
   | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)::xs
     when
-      no_space_between i1 i2 &&
+      no_space_between i1 i2 && (* safe guard, and good style anyway *)
       have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) 
      -> 
       change_tok tok2 (TInf_Template i2);
@@ -283,7 +285,6 @@ let reclassify_tokens_before_idents_or_typedefs xs =
  *  nested types in template arguments (and some
  *  typedef heuristics that work on template_arguments too)
 *)
- 
 let find_template_commentize groups =
   (* remove template *)
   let rec aux xs =
@@ -314,8 +315,8 @@ let find_template_commentize groups =
   in
   aux groups
 
-(* assumes have a list of tokens where the template arguments have
- * already been commentized too (and filtered)
+(* assumes a view without:
+ * - template arguments
  *)
 let find_qualifier_commentize xs =
   let rec aux xs =
@@ -334,3 +335,28 @@ let find_qualifier_commentize xs =
         aux xs
   in
   aux xs
+
+
+(* assumes a view without: 
+ * - template arguments, qualifiers, 
+ * - comments and cpp directives 
+ * - TODO public/protected/... ?
+ *)
+let set_context_tag groups =
+  pr2 "TODO";
+  ()
+
+
+(* assumes a view where set_context_tag has been called.
+ * TODO: filter the 'explicit' keyword?
+ *)
+let find_constructor xs =
+  let rec aux xs = 
+  match xs with
+  | [] -> ()
+
+  (* recurse *)
+  | x::xs -> aux xs
+  in
+  aux xs
+

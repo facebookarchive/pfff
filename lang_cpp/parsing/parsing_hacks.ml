@@ -188,7 +188,9 @@ let fix_tokens2 ~macro_defs tokens =
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let multi_grouped = TV.mk_multi cleaner in
-  
+  Parsing_hacks_cpp.set_context_tag multi_grouped;
+
+  Parsing_hacks_cpp.find_constructor cleaner;
   (* typedef inference. filter_for_typedef actually creates
    * some new extended_token (TAnd -> TMul) so take care.
    *)
