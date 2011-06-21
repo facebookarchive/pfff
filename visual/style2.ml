@@ -82,6 +82,8 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
 
     | Some (SH.ConstructorDef (use)) -> 1.2 *. multiplier_use use
+
+    | Some (SH.GrammarRule) -> 2.5
         
     (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.

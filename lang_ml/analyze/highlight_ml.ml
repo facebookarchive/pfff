@@ -494,6 +494,14 @@ let visit_toplevel
         tag ii2 (Parameter Def);
         aux_toks xs
 
+    (* grammar rules in ocamlyacc *)
+    | T.TLowerIdent (s, ii1)::T.TColon _::xs 
+      when Ast.col_of_info ii1 = 0
+        ->
+        tag ii1 GrammarRule;
+        aux_toks xs
+        
+
     | x::xs ->
         aux_toks xs
   in
@@ -506,6 +514,7 @@ let visit_toplevel
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
+  (* -------------------------------------------------------------------- *)
 
   if not disable_token_phase2 then
   toks +> List.iter (fun tok -> 

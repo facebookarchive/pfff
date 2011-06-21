@@ -262,6 +262,8 @@ type category =
   | EmbededStyle (* e.g. css *)
   | Verbatim (* for latex, noweb, html pre *)
 
+  (* misc *)
+  | GrammarRule
 
   (* Ccomment *)
   | CommentWordImportantNotion
@@ -817,6 +819,8 @@ let info_of_category = function
   | Verbatim ->
       [`FOREGROUND "plum"] 
 
+  | GrammarRule ->
+      [`FOREGROUND "plum"] 
 
 
   | Normal -> [`FOREGROUND "wheat";]
