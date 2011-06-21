@@ -186,9 +186,12 @@
 #define FBUNIT_FIXTURE_TEST(a, b) void a()
 
 #define TEST_F(a,b) void a()
+#define TESTFUN(a) void a()
+#define BENCHFUN(a) a
 
 // boost?
 #define FOR_EACH(a,b) for(;;)
+#define FOR_EACH_RANGE(a,b,c) for(;;) 
 
 // boost too?
 #define lexical_cast static_cast

@@ -19,6 +19,7 @@ module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
 
 module TH = Token_helpers_cpp
+module TV = Token_views_cpp
 module Parser = Parser_cpp
 
 open Parser_cpp
@@ -77,6 +78,31 @@ let rec is_really_foreach xs =
   is_foreach_aux xs +> fst
 
 (* TODO: set_ifdef_parenthize_info ?? from parsing_c/ *)
+
+let filter_pp_or_comment_stuff xs = 
+  let rec aux xs = 
+    match xs with
+    | [] -> []
+    | x::xs -> 
+        (match x.TV.t with
+        | tok when TH.is_comment tok -> 
+            aux xs
+        (* don't want drop the define, or if drop, have to drop
+         * also its body otherwise the line heuristics may be lost
+         * by not finding the TDefine in column 0 but by finding
+         * a TDefineIdent in a column > 0
+         * 
+         * todo? but define often contain some unbalanced {
+         *)
+        | Parser.TDefine _ -> 
+            x::aux xs
+        | tok when TH.is_pp_instruction tok -> 
+            aux xs
+        | _ -> 
+            x::aux xs
+        )
+  in
+  aux xs
 
 (*****************************************************************************)
 (* Ifdef keeping/passing *)

@@ -73,38 +73,6 @@ module TV = Token_views_cpp
 
 let filter_comment_stuff xs =
   xs +> List.filter (fun x -> not (TH.is_comment x.TV.t))
-
-let filter_pp_or_comment_stuff xs = 
-  let rec aux xs = 
-    match xs with
-    | [] -> []
-    | x::xs -> 
-        (match x.TV.t with
-        | tok when TH.is_comment tok -> 
-            aux xs
-        (* don't want drop the define, or if drop, have to drop
-         * also its body otherwise the line heuristics may be lost
-         * by not finding the TDefine in column 0 but by finding
-         * a TDefineIdent in a column > 0
-         * 
-         * todo? but define often contain some unbalanced {
-         *)
-        | Parser.TDefine _ -> 
-            x::aux xs
-        | tok when TH.is_pp_instruction tok -> 
-            aux xs
-        | _ -> 
-            x::aux xs
-        )
-  in
-  aux xs
-
-let filter_template_and_class_qualifier xs =
-  raise Todo
-
-(* in Parsing_hacks_cpp. 
- let filter_for_typedef_inference xs =
-*)
           
 let insert_virtual_positions l =
   let strlen x = String.length (Ast.str_of_info x) in
@@ -170,7 +138,7 @@ let fix_tokens2 ~macro_defs tokens =
   Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
   
   (* macro part 1 *)
-  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   
   (* find '<' '>' template symbols. We need that for the typedef
    * heuristics. We actually need that even for the paren view 
@@ -199,7 +167,7 @@ let fix_tokens2 ~macro_defs tokens =
   Token_views_cpp.set_context_tag   brace_grouped;
   
   (* macro part 2 *)
-  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   
   let paren_grouped      = TV.mk_parenthised  cleaner in
   let line_paren_grouped = TV.mk_line_parenthised paren_grouped in
@@ -209,14 +177,15 @@ let fix_tokens2 ~macro_defs tokens =
   Parsing_hacks_pp.find_macro_paren        paren_grouped;
   
   let multi_grouped = TV.mk_multi cleaner in
+
   (* todo: at some point need to remove that and use
    * instead a better filter_for_typedef that also
    * works on the nested template arguments.
    *)
   Parsing_hacks_cpp.find_template_commentize multi_grouped;
-  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   Parsing_hacks_cpp.find_qualifier_commentize cleaner;
-  let cleaner = !tokens2 +> filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let multi_grouped = TV.mk_multi cleaner in
   
