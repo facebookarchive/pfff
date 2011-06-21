@@ -196,6 +196,9 @@ let fix_tokens2 ~macro_defs tokens =
    *)
   let xxs = Parsing_hacks_cpp.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
+
+  (* must be done after the typedef inference *)
+  Parsing_hacks_cpp.find_constructed_object cleaner;
   
   (* c++ stuff *)
   Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs 

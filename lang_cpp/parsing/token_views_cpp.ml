@@ -81,8 +81,8 @@ type token_extended = {
     | InEnum
     | InInitializer
     | InParameter (* TODO *)
+    | InArgument
     | InTemplateParam (* TODO *)
-    (* | InArguments *)
 
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 

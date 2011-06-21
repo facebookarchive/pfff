@@ -162,6 +162,16 @@ let no_space_between i1 i2 =
   (Ast.line_of_info i1 = Ast.line_of_info i2) &&
   (Ast.col_of_info i1 + String.length (Ast.str_of_info i1))= Ast.col_of_info i2
 
+
+let look_like_argument xs =
+  xs +> List.exists (function
+  | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
+  | Tok {t=(Tnew _ )} -> true
+  | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
+  | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
+  | _ -> false
+  )
+
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
@@ -368,11 +378,27 @@ let set_context_tag groups =
       );
       aux (braces::xs)
 
+  (* need look what was before? look for a ident? *)
+  | (Parens(t1, body, t2) as parens)::xs ->
+      (* split at TComma? *)
+      (if look_like_argument body
+      then [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InArgument)::tok.TV.where;
+      )
+      else
+        (* TODO? look_like_parameter ? 
+         * else? could be a cast too ... or what else?
+        *)
+          ()
+      );
+      aux xs
+      
+
   | x::xs ->
       (match x with
       | Tok t -> ()
-      | Braces (t1, xs, t2)
       | Parens (t1, xs, t2)
+      | Braces (t1, xs, t2)
       | Angle  (t1, xs, t2)
          ->
           aux xs
@@ -411,3 +437,22 @@ let find_constructor xs =
   in
   aux xs
 
+(* assumes have:
+ * - the typedefs
+ * - the right context
+ *)
+let find_constructed_object xs =
+  let rec aux xs =
+    match xs with
+    | [] -> ()
+
+    | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
+        ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->
+
+        change_tok tok1 (TOPar_CplusplusInit ii);
+          aux xs
+
+    (* recurse *)
+    | x::xs -> aux xs
+  in
+  aux xs
