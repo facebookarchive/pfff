@@ -144,6 +144,12 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
+  (* [(,] xx [),] *)
+  | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
+    ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+
 
   (* new Xxx (c++ specific, grammar expect a typedef here) *)
   | {t=Tnew _}::({t=TIdent (s, i1)} as tok1)::xs ->

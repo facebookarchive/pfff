@@ -177,6 +177,12 @@ let look_like_argument xs =
   | _ -> false
   )
 
+let look_like_parameter xs =
+  xs +> List.exists (function
+  | Tok {t= tok} when TH.is_basic_type tok -> true
+  | _ -> false
+  )
+
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
@@ -408,11 +414,14 @@ let set_context_tag groups =
       then [parens] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InArgument)::tok.TV.where;
       )
-      else
-        (* TODO? look_like_parameter ? 
-         * else? could be a cast too ... or what else?
-        *)
-          ()
+      else 
+       if look_like_parameter body
+       then
+         [parens] +> TV.iter_token_multi (fun tok ->
+           tok.TV.where <- (TV.InParameter)::tok.TV.where;
+         )
+       else ()
+        (* could be a cast too ... or what else? *)
       );
       aux xs
       

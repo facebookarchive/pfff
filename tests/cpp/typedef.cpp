@@ -22,6 +22,8 @@ int x = (foo9 **) y;
 
 int foo(foo10 *, foo11 &);
 
+int foo(long, foo11);
+
 //class Foo {
 //  Foo & operator=(const Foo &);
 //};
