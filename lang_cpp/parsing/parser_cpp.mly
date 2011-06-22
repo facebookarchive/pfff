@@ -1024,8 +1024,12 @@ declarator_id:
            s, List.hd iis
        | IdOperator op, iis ->
            "TODOOPERATOR", List.hd iis
-       | _ ->
+       | IdConverter ft, iis ->
+           "TODOCONVERTED", List.hd iis
+       | _, iis ->
+           pr2 (Ast_cpp.string_of_info (List.hd iis));
            raise Todo
+
      }
 /*(* TODO ::opt nested-name-specifieropt type-name*) */
 
@@ -1634,9 +1638,13 @@ ctor_dtor_member:
      {  EmptyField, [](*TODO*) }
 
 
- | virtual_opt TTilde ident3 TOPar void_opt TCPar compound
+ | virtual_opt TTilde ident3 TOPar void_opt TCPar 
+     exception_specification_opt
+     compound
      { EmptyField, [](*TODO*) }
- | virtual_opt TTilde ident3 TOPar void_opt TCPar  TPtVirg
+ | virtual_opt TTilde ident3 TOPar void_opt TCPar
+     exception_specification_opt
+     TPtVirg
      { EmptyField, [](*TODO*) }
 
  | Tinline TTilde ident3 TOPar void_opt TCPar compound
@@ -1826,6 +1834,16 @@ ctor_dtor:
       checking if have a ~ before
    *)*/
  | nested_name_specifier TTilde ident3 TOPar void_opt TCPar
+     compound
+     { NameSpaceAnon [],[] }
+
+/*(* TODO: remove once we don't skip qualifiers *)*/
+ | TIdent_Constructor TOPar parameter_type_list_opt TCPar
+     ctor_mem_initializer_list_opt
+     compound
+     { NameSpaceAnon [],[] }
+ | TTilde ident3 TOPar void_opt TCPar
+     exception_specification_opt
      compound
      { NameSpaceAnon [],[] }
 

@@ -141,6 +141,10 @@ let rec filter_for_typedef multi_groups =
         | Trestrict _
           -> None
 
+        | Tregister _ | Tstatic _ | Tauto _ | Textern _
+        | Tunion _
+          -> None
+
         (* let's transform all '&' into '*' *)
         | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
 
@@ -166,6 +170,7 @@ let no_space_between i1 i2 =
 let look_like_argument xs =
   xs +> List.exists (function
   | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
+  | Tok {t=(Ttrue _ | Tfalse _) } -> true
   | Tok {t=(Tnew _ )} -> true
   | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
   | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
@@ -369,7 +374,7 @@ let set_context_tag groups =
   let rec aux xs =
   match xs with
   | [] -> ()
-  (* TODO: class Foo : ... { *)
+  (* class Foo { *)
   | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
     ::(Braces(t1, body, t2) as braces)::xs
     ->
@@ -377,6 +382,24 @@ let set_context_tag groups =
         tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
       );
       aux (braces::xs)
+
+  (* class Foo : ... { *)
+
+  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+    ::Tok{t= TCol _}::xs
+    ->
+      let (before, braces, after) =
+        xs +> Common.split_when (function
+        | Braces _ -> true
+        | _ -> false
+        )
+      in
+      aux before;
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
+      );
+      aux after
+
 
   (* need look what was before? look for a ident? *)
   | (Parens(t1, body, t2) as parens)::xs ->
@@ -408,7 +431,8 @@ let set_context_tag groups =
   aux groups
 
 
-(* assumes a view where set_context_tag has been called.
+(* assumes a view where:
+ * - set_context_tag has been called.
  * TODO: filter the 'explicit' keyword?
  *)
 let find_constructor xs =
@@ -437,14 +461,42 @@ let find_constructor xs =
   in
   aux xs
 
+(* assumes a view where:
+ * - template have been filtered but NOT the qualifiers!
+ *)
+let find_constructor_outside_class xs =
+  let rec aux xs =
+    match xs with
+    | [] -> ()
+
+    | {t=TIdent (s1, i1);_}::{t=TColCol _}::({t=TIdent (s2,i2);_} as tok)::xs 
+      when s1 = s2 ->
+        change_tok tok (TIdent_Constructor (s2, i2));
+        aux (tok::xs)
+                        
+
+    (* recurse *)
+    | x::xs -> aux xs
+  in
+  aux xs
+
+
+
 (* assumes have:
  * - the typedefs
  * - the right context
  *)
-let find_constructed_object xs =
+let find_constructed_object_and_more xs =
   let rec aux xs =
     match xs with
     | [] -> ()
+
+    | {t=(Tdelete _| Tnew _);_}
+      ::({t=TOCro i1} as tok1)::({t=TCCro i2} as tok2)::xs ->
+        change_tok tok1 (TOCro_new i1);
+        change_tok tok2 (TCCro_new i2);
+        aux xs
+        
 
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
         ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->

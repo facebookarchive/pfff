@@ -145,6 +145,11 @@ let find_typedefs xxs =
       aux xs
 
 
+  (* new Xxx (c++ specific, grammar expect a typedef here) *)
+  | {t=Tnew _}::({t=TIdent (s, i1)} as tok1)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
   (* recurse *)
   | x::xs -> aux xs
  in

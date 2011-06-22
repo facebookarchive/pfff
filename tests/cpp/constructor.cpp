@@ -9,3 +9,8 @@ public:
   void foo() { }
 };
 
+
+class Foo3 : public Foo {
+  Foo3() { }
+  void foo() { }
+};

@@ -184,6 +184,10 @@ let fix_tokens2 ~macro_defs tokens =
    *)
   Parsing_hacks_cpp.find_template_commentize multi_grouped;
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+
+  (* must be done before filtering the qualifier *)
+  Parsing_hacks_cpp.find_constructor_outside_class cleaner;
+
   Parsing_hacks_cpp.find_qualifier_commentize cleaner;
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
@@ -198,7 +202,7 @@ let fix_tokens2 ~macro_defs tokens =
   Parsing_hacks_typedef.find_typedefs xxs;
 
   (* must be done after the typedef inference *)
-  Parsing_hacks_cpp.find_constructed_object cleaner;
+  Parsing_hacks_cpp.find_constructed_object_and_more cleaner;
   
   (* c++ stuff *)
   Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs 

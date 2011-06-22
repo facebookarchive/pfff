@@ -193,6 +193,8 @@
 // boost?
 #define FOR_EACH(a,b) for(;;)
 #define FOR_EACH_RANGE(a,b,c) for(;;) 
+#define MY_FOR_EACH(a,b) for(;;) 
+#define MY_FOR_EACH_REVERSED(a,b) for(;;)
 
 // boost too?
 #define lexical_cast static_cast
