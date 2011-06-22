@@ -179,6 +179,38 @@ type layers_with_index = {
 }
 
 (*****************************************************************************)
+(* Reusable properties *)
+(*****************************************************************************)
+
+let red_green_properties = [
+  "ok", "green";
+  "bad", "red";
+  "no_info", "white";
+]
+
+let heat_map_properties = [
+  "cover 100%", "red3";
+  "cover 90%", "red1";
+  "cover 80%", "orange";
+  "cover 70%", "yellow";
+  "cover 60%", "YellowGreen";
+  "cover 50%", "green";
+  "cover 40%", "aquamarine3";
+  "cover 30%", "cyan";
+  "cover 20%", "DeepSkyBlue1";
+  "cover 10%", "blue";
+  (* we use "white" for 0 and not dark-blue (as it is the case usually with
+   * heatmaps) because ... the picture would be too blue otherwise.
+   *)
+  "cover 0%", "white";
+
+  (* when we zoom on a file we just show red/green coverage, no heat color *)
+  "ok", "green";
+  "bad", "red";
+]
+
+
+(*****************************************************************************)
 (* Multi layers indexing *)
 (*****************************************************************************)
 
@@ -595,6 +627,14 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
  * Common.write_value h "/tmp/bigh";
  * print_statistics h
  *)
+
+
+(* Generates a layer_red_green<output> and layer_heatmap<output> file.
+ * Take a list of files with a percentage and possibly micro_level
+ * information.
+ *)
+let layer_red_green_and_heatmap ~root ~output xs =
+  raise Todo
 
 (*****************************************************************************)
 (* Layer stat *)

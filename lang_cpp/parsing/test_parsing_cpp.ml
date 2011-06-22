@@ -48,11 +48,21 @@ let test_parse_cpp ?c xs  =
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
       Common.regression_testing newscore 
         (Filename.concat score_path
-            ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"))
+            ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"));
+
+
+      let layer_file = "/tmp/layer_parse_errors_red_green.json" in
+      pr2 (spf "generating parse error layer in %s" layer_file);
+      Layer_parse_errors.gen_red_green_layer ~root:dirname ~output:layer_file
+        !stat_list;
+
+      let layer_file = "/tmp/layer_parse_errors_heatmap.json" in
+      pr2 (spf "generating parse error layer in %s" layer_file);
+      Layer_parse_errors.gen_heatmap_layer ~root:dirname ~output:layer_file
+        !stat_list;
   | _ -> ()
   );
   Stat.print_parsing_stat_list !stat_list;
-
   ()
 
 let test_dump_cpp file =
