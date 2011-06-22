@@ -183,7 +183,7 @@ let look_like_argument xs =
         | Tok {t=(Tnew _ )} -> true
         | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
         | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
-        | Tok {t = (TOCro _)} -> true
+        (*| Tok {t = (TOCro _)} -> true *)
         | _ -> aux xs
         )
   in
@@ -570,6 +570,13 @@ let find_constructed_object_and_more xs =
 
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs
+
+    (* int(), probably part of operator declaration 
+     * could check that token before is a 'operator'
+     *)
+    | ({t=kind})::{t=TOPar _}::{t=TCPar _}::xs 
+     when TH.is_basic_type kind ->
+        aux xs
 
     (* int(...) *)
     | ({t=kind} as tok1)::{t=TOPar _}::xs 
