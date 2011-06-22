@@ -204,9 +204,13 @@
 #define DEFINE_int32(a,b,c) int a = b
 #define DEFINE_string(a,b,c) int a = b
 
-//#define EC_DECLARE_HOOK ...
+#define EC_DECLARE_HOOK(module,type,name,typedefargs,declargs,callargs,handleret) void name(void)
 
 #define ON_ERROR(a) if(a)
+#define DBLOG(a, stmt) stmt
+
+#define DISALLOW_EVIL_CONSTRUCTORS(a)
+
 
 #define _T(s) s
 

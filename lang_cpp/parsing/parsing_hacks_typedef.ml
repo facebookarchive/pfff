@@ -57,6 +57,17 @@ let is_top_or_struct = function
   | _ -> false
 *)
 
+let look_like_multiplication tok =
+  match tok with
+  | TEq _ | TAssign _
+  | TWhy _
+  | Treturn _
+  | TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _
+  | TOCro _
+   -> true
+  | tok when TH.is_binary_operator_except_star tok -> true
+  | _ -> false
+  
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
@@ -88,13 +99,22 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
+  (* xx * yy  with a token before like ., return, etc that probably mean
+   * it's a mulitplication
+   *)
+  | {t=tok_before}::{t=TIdent (s,i1)}::{t=TMul _}::{t=TIdent _}::xs
+    when look_like_multiplication tok_before ->
+      aux xs
+
   (* xx * yy
    *
-   * TODO: could be a multiplication too 
+   * could be a multiplication too, so cf rule before
    * TODO: more confidence when xx terminates in _t ?
    * TODO: could be xx & y in c++
    *)
-  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs ->
+  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs 
+    (* when InParameter? *)
+    ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 

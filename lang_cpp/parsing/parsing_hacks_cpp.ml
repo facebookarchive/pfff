@@ -524,6 +524,13 @@ let find_constructed_object_and_more xs =
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs
 
+    (* xx& yy(1 ... *)
+    | {t=TIdent_Typedef _;_}::{t=TAnd _}::{t=TIdent _;_}::
+        ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->
+
+        change_tok tok1 (TOPar_CplusplusInit ii);
+          aux xs
+
     (* xx yy(zz)
      * The InArgument heuristic can't guess anything when just have
      * idents inside the parenthesis. It's probably a constructed

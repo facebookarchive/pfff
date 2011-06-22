@@ -18,5 +18,7 @@ void main() {
   foo1 x(foo2, foo3[i]);
 
   foo1 x(&foo2);
+
+  string& x("foo");
 }
 
