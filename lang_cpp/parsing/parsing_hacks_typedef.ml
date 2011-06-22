@@ -67,7 +67,14 @@ let look_like_multiplication tok =
    -> true
   | tok when TH.is_binary_operator_except_star tok -> true
   | _ -> false
-  
+
+let look_like_declaration tok =
+  match tok with
+  | TOBrace _ | TCBrace _
+  | TPtVirg _
+      -> true
+  | _ -> false
+
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
@@ -106,14 +113,19 @@ let find_typedefs xxs =
     when look_like_multiplication tok_before ->
       aux xs
 
+  | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
+    when look_like_declaration tok_before ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
   (* xx * yy
    *
    * could be a multiplication too, so cf rule before
    * TODO: more confidence when xx terminates in _t ?
    * TODO: could be xx & y in c++
    *)
-  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs 
-    (* when InParameter? *)
+  | ({t=TIdent (s,i1);(*where=InParameter _::_*)} as tok1)::{t=TMul _}
+    ::{t=TIdent _}::xs 
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs

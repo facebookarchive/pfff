@@ -36,7 +36,8 @@ let verbose_pp_ast = ref false
 let filter_msg = ref false
 
 let filter_classic_passed = ref false
-let filter_define_error = ref false
+
+let filter_define_error = ref true
 
 let cmdline_flags_verbose () = [
 ]

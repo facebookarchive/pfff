@@ -20,5 +20,11 @@ void main() {
   foo1 x(&foo2);
 
   string& x("foo");
+
+  foo1 x(this);
+
+  int nAttempt(0);
+
+  x = int(2);
 }
 

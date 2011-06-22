@@ -179,6 +179,7 @@ let look_like_argument xs =
         (match x with
         | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
         | Tok {t=(Ttrue _ | Tfalse _) } -> true
+        | Tok {t=(Tthis _)} -> true
         | Tok {t=(Tnew _ )} -> true
         | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
         | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
@@ -523,6 +524,13 @@ let find_constructed_object_and_more xs =
 
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs
+    (* int yy(1 ... *)
+    | {t=tok;_}::{t=TIdent _;_}::
+      ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs 
+      when TH.is_basic_type tok 
+      ->
+        change_tok tok1 (TOPar_CplusplusInit ii);
+        aux xs
 
     (* xx& yy(1 ... *)
     | {t=TIdent_Typedef _;_}::{t=TAnd _}::{t=TIdent _;_}::
@@ -562,6 +570,23 @@ let find_constructed_object_and_more xs =
 
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs
+
+    (* int(...) *)
+    | ({t=kind} as tok1)::{t=TOPar _}::xs 
+     when TH.is_basic_type kind ->
+        let newone = 
+          match kind with
+          | Tchar ii -> Tchar_Constr ii
+          | Tshort ii -> Tshort_Constr ii
+          | Tint ii -> Tint_Constr ii
+          | Tdouble ii -> Tdouble_Constr ii
+          | Tfloat ii -> Tfloat_Constr ii
+          | Tlong ii -> Tlong_Constr ii
+          | Tbool ii -> Tbool_Constr ii
+          | _ -> raise Impossible
+        in
+        change_tok tok1 newone;
+        aux xs
 
     (* recurse *)
     | x::xs -> aux xs

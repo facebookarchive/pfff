@@ -93,6 +93,8 @@
 #define __volatile__ volatile
 #define __restrict __restrict__
 
+#define CONST const
+
 // ****************************************************************************
 // Prototype
 // ****************************************************************************
@@ -184,7 +186,11 @@
 
 #define FBUNIT_TEST(a) void a()
 #define FBUNIT_FIXTURE_TEST(a, b) void a()
+#define FBUNIT_DASHBOARD_OWNER(a)
+#define FBUNIT_DASHBOARD_EMAILS(a)
+
 #define BOOST_AUTO_TEST_CASE(a) void a()
+#define BOOST_STATIC_ASSERT(a)
 
 #define TEST_F(a,b) void a()
 #define TESTFUN(a) void a()
@@ -192,16 +198,20 @@
 
 // boost?
 #define FOR_EACH(a,b) for(;;)
+#define FOR_EACH_R(a,b) for(;;)
 #define FOR_EACH_RANGE(a,b,c) for(;;) 
 #define MY_FOR_EACH(a,b) for(;;) 
 #define MY_FOR_EACH_REVERSED(a,b) for(;;)
+#define PATRICIA_WALK(a,b) for(;;)
 
 // boost too?
 #define lexical_cast static_cast
 #define dynamic_pointer_cast static_cast
 
 // google gflags
+#define DEFINE_bool(a,b,c) int a = b
 #define DEFINE_int32(a,b,c) int a = b
+#define DEFINE_int64(a,b,c) int a = b
 #define DEFINE_string(a,b,c) int a = b
 
 #define EC_DECLARE_HOOK(module,type,name,typedefargs,declargs,callargs,handleret) void name(void)
@@ -219,3 +229,6 @@
 #define SOAP_FMAC3
 #define SOAP_FMAC4
 
+#define THRIFT_NOEXCEPT
+
+#define REMOTE_CATCH(a,b) catch() { }

@@ -371,7 +371,7 @@ let parse2 ?(c=false) file =
 
             (* was a define ? *)
             let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
-            if List.length xs >= 2 
+            (if List.length xs >= 2 
             then 
               (match Common.head_middle_tail xs with
               | Parser.TDefine _, _, Parser.TCommentNewline_DefineEndOfMacro _ 
@@ -379,16 +379,18 @@ let parse2 ?(c=false) file =
                   was_define := true
               | _ -> ()
               )
-            else pr2 "WIERD: length list of error recovery tokens < 2 ";
+            else pr2 "WIERD: length list of error recovery tokens < 2 "
+            );
             
-            if !was_define && !Flag.filter_define_error
+            (if !was_define && !Flag.filter_define_error
             then ()
             else 
               (* bugfix: *)
-              if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
+              (if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
               then print_bad line_error (checkpoint, checkpoint2) filelines
               else pr2 "PB: bad: but on tokens not from original file"
-              ;
+              )
+            );
 
             let info_of_bads = 
               Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
@@ -421,8 +423,9 @@ let parse2 ?(c=false) file =
     (match elem with
     | Ast.NotParsedCorrectly xs -> 
         if !was_define && !Flag.filter_define_error
-        then stat.Stat.correct <- stat.Stat.correct + diffline
+        then stat.Stat.commentized <- stat.Stat.commentized + diffline
         else stat.Stat.bad     <- stat.Stat.bad     + diffline
+
     | _ -> stat.Stat.correct <- stat.Stat.correct + diffline
     );
 
