@@ -168,14 +168,25 @@ let no_space_between i1 i2 =
 
 
 let look_like_argument xs =
-  xs +> List.exists (function
-  | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
-  | Tok {t=(Ttrue _ | Tfalse _) } -> true
-  | Tok {t=(Tnew _ )} -> true
-  | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
-  | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
-  | _ -> false
-  )
+  let rec aux xs =
+    match xs with
+    | [] -> false
+    (* a function call probably *)
+    | Tok{t=TIdent _}::Parens _::xs -> 
+        (* todo? look_like_argument recursively in Parens || aux xs ? *)
+        true
+    | x::xs ->
+        (match x with
+        | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
+        | Tok {t=(Ttrue _ | Tfalse _) } -> true
+        | Tok {t=(Tnew _ )} -> true
+        | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
+        | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
+        | Tok {t = (TOCro _)} -> true
+        | _ -> aux xs
+        )
+  in
+  aux xs
 
 let look_like_parameter xs =
   xs +> List.exists (function
@@ -506,9 +517,41 @@ let find_constructed_object_and_more xs =
         change_tok tok2 (TCCro_new i2);
         aux xs
         
-
+    (* xx yy(1 ... *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
         ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->
+
+        change_tok tok1 (TOPar_CplusplusInit ii);
+          aux xs
+
+    (* xx yy(zz)
+     * The InArgument heuristic can't guess anything when just have
+     * idents inside the parenthesis. It's probably a constructed
+     * object though.
+     * TODO? could be a function declaration, especially when at Toplevel.
+     * If inside a function, then very probably a constructed object.
+     *)
+    | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
+        ({t=TOPar (ii);} as tok1)::{t=TIdent _;_}::{t=TCPar _}::xs ->
+
+        change_tok tok1 (TOPar_CplusplusInit ii);
+          aux xs
+
+    (* xx yy(zz, ww) *)
+    | {t=TIdent_Typedef _;_}::{t=TIdent _;_}
+      ::({t=TOPar (ii);} as tok1)
+      ::{t=TIdent _;_}::{t=TComma _}::{t=TIdent _;_}
+      ::{t=TCPar _}::xs ->
+
+        change_tok tok1 (TOPar_CplusplusInit ii);
+          aux xs
+
+    (* xx yy(&zz) *)
+    | {t=TIdent_Typedef _;_}::{t=TIdent _;_}
+      ::({t=TOPar (ii);} as tok1)
+      ::{t=TAnd _}
+      ::{t=TIdent _;_}
+      ::{t=TCPar _}::xs ->
 
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs

@@ -204,6 +204,14 @@
 #define DEFINE_int32(a,b,c) int a = b
 #define DEFINE_string(a,b,c) int a = b
 
+//#define EC_DECLARE_HOOK ...
+
+#define ON_ERROR(a) if(a)
+
+#define _T(s) s
+
+#define SOAP_FMAC1
+#define SOAP_FMAC2
 #define SOAP_FMAC3
 #define SOAP_FMAC4
 

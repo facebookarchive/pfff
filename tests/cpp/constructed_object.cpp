@@ -10,5 +10,13 @@ void main() {
 
   stringstream ss (stringstream::in | stringstream::out);
 
+  foo1 x(foo2);
+
+  foo1 x(foo2());
+  foo1 x(foo2, foo3);
+
+  foo1 x(foo2, foo3[i]);
+
+  foo1 x(&foo2);
 }
 
