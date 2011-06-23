@@ -16,7 +16,23 @@ int foo(foo10 * b, foo11 b);
 
 int foo(foo10_t, foo11_t);
 
+int foo(foo10* x);
 
+void main() {
+  try {
+  } 
+  catch (foo10& x) {
+  }
+}
+
+Foo::Foo(foo10* x) {
+}
+
+ostream& operator<<(ostream &ostream, Node* node) {
+}
+
+
+void (*x)(foo10* x);
 
 extern size_t strbuf_fread(struct strbuf *, size_t, FILE *);
 void* dlcalloc(size_t, size_t);

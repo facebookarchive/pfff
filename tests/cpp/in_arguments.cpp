@@ -9,4 +9,9 @@ void main() {
   foo2 x(*y);
   foo2 x(&y);
 
+  return (x * y);
+
+  if(!(x & y)) {
+  }
+
 }

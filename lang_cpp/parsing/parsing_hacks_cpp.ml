@@ -182,7 +182,7 @@ let find_template_inf_sup xs =
 (* Parameter/Argument inference *)
 (*****************************************************************************)
 
-let look_like_argument xs =
+let look_like_argument tok_before xs =
 
   let xs = xs +> List.map (function
     | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
@@ -201,6 +201,8 @@ let look_like_argument xs =
 
     (* *xx *)
     | [Tok{t=TMul _}; Tok{t=TIdent _}] -> true
+
+    (* TODO: xx * yy  and space = 1 between the 2 :) *)
 
     | _ -> false
   in
@@ -245,7 +247,7 @@ let look_like_argument xs =
  * 
  * Many patterns should mimic some heuristics in parsing_hack_typedef.ml
  *)
-let look_like_parameter xs =
+let look_like_parameter tok_before xs =
   let xs = xs +> List.map (function
     | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
     | x -> x
@@ -267,10 +269,24 @@ let look_like_parameter xs =
     | [Tok {t=TIdent _}; Tok {t=TMul _}; Tok {t=TMul _}] -> true
 
     (* xx * y   
-     * TODO could be multiplication ...
+     * TODO could be multiplication (or xx & yy)
+     * TODO? could look if space around :) but because of the
+     *  filtering of template and qualifier the no_space_between
+     *  may not work here. May need lower level access to the list
+     *  of TCommentSpace and their position.
      * 
      *)
-    | [Tok {t=TIdent _}; Tok {t=TMul _};Tok {t=TIdent _};] -> true
+    | [Tok {t=TIdent _}; Tok {t=TMul _};Tok {t=TIdent _};] ->
+      (match tok_before with 
+      | Tok{t=(
+            TIdent _ 
+          | Tcatch _ 
+          (* ugly: TIdent_Constructor interaction between past heuristics *)
+          | TIdent_Constructor _
+          | Toperator _
+        )} -> true 
+      | _ -> false
+      )
 
     | _ -> false
   in
@@ -339,22 +355,24 @@ let set_context_tag groups =
   (* TODO xx(...) {  InFunction (can have some try or const or throw after 
    * the paren *)
 
-
-  (* need look what was before? look for a ident? 
+  (* need to look what was before to help the look_like_xxx heuristics 
    *
    * The order of the 3 rules below is important. We must first try
    * look_like_argument which has less FP than look_like_parameter
   *)
-  | (Parens(t1, body, t2) as parens)::xs 
-    when look_like_argument body ->
+  | x::(Parens(t1, body, t2) as parens)::xs 
+    when look_like_argument x body ->
       msg_context t1.t (TV.InArgument);
       [parens] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InArgument)::tok.TV.where;
       );
       (* todo? recurse on body? *)
-      aux xs
-  | (Parens(t1, body, t2) as parens)::xs 
-    when look_like_parameter body ->
+      aux [x];
+      aux (parens::xs)
+
+  (* special cases *)
+  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(t1, body, t2) as parens)::xs 
+    when look_like_parameter tok1 body ->
       msg_context t1.t (TV.InParameter);
       [parens] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
@@ -362,14 +380,28 @@ let set_context_tag groups =
       (* recurse on body? hmm if InParameter should not have nested 
        * stuff except when pass function pointer 
        *)
-      aux xs
+      aux [tok1;tok2];
+      aux (parens::xs)
+
+  | x::(Parens(t1, body, t2) as parens)::xs 
+    when look_like_parameter x body ->
+      msg_context t1.t (TV.InParameter);
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InParameter)::tok.TV.where;
+      );
+      (* recurse on body? hmm if InParameter should not have nested 
+       * stuff except when pass function pointer 
+       *)
+      aux [x];
+      aux (parens::xs)
 
   (* could be a cast too ... or what else? *)
-  | (Parens(t1, body, t2))::xs ->
+  | x::(Parens(t1, body, t2) as parens)::xs ->
       (* let's default to something? hmm, no, got lots of regressions then 
        *  old: msg_context t1.t (TV.InArgument); ...
        *)
-      aux xs
+      aux [x];
+      aux (parens::xs)
       
 
   | x::xs ->
@@ -590,7 +622,8 @@ let find_qualifier_commentize xs =
 
 (* assumes a view where:
  * - set_context_tag has been called.
- * TODO: filter the 'explicit' keyword?
+ * TODO: filter the 'explicit' keyword? filter the TCppDirectiveOther
+ *  have a filter_for_constructor?
  *)
 let find_constructor xs =
   let rec aux xs = 
@@ -642,6 +675,8 @@ let find_constructor_outside_class xs =
 (* assumes have:
  * - the typedefs
  * - the right context
+ * 
+ * TODO: filter the TCppDirectiveOther,  have a filter_for_constructed?
  *)
 let find_constructed_object_and_more xs =
   let rec aux xs =

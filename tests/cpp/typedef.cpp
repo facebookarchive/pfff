@@ -26,6 +26,8 @@ int foo(long, foo11);
 
 foo *bar(int);
 
+foo bar(foo10* x);
+
 class X {
 public:
   virtual foo *bar(int);
