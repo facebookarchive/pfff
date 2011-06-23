@@ -221,6 +221,9 @@
 
 #define EC_DECLARE_HOOK(module,type,name,typedefargs,declargs,callargs,handleret) void name(void)
 
+#define EC_MODULE_EXPORT
+
+
 #define ON_ERROR(a) if(a)
 #define DBLOG(a, stmt) stmt
 

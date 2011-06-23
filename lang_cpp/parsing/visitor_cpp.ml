@@ -739,6 +739,7 @@ and v_base_clausebis (v1, v2, v3) =
 and v_declaration v = v_wrap7 v_declarationbis v
 and v_declarationbis =
   function
+  | EmptyDef v1 -> let v1 = v_list v_tok v1 in ()
   | Declaration v1 -> let v1 = v_block_declaration v1 in ()
   | Definition v1 -> let v1 = v_definition v1 in ()
   | ConstructorTop ((v1, v2)) ->
@@ -816,7 +817,6 @@ and v_toplevel =
       and v2 = v_comma_list1 v_argument v2
       and v3 = v_list v_tok v3
       in ()
-  | EmptyDef v1 -> let v1 = v_list v_tok v1 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v

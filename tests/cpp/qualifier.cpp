@@ -4,6 +4,8 @@ void main() {
 
   std::vector x;
 
-//  std::vector<int> x;
-//  std<float>::vector<int> x;
+  std::vector<int> x;
+  std<float>::vector<int> x;
+
+  ::vector<int> x;
 }

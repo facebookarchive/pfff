@@ -818,6 +818,8 @@ and vof_declarationbis =
   | NameSpaceAnon v1 ->
       let v1 = Ocaml.vof_list vof_declaration_sequencable v1
       in Ocaml.VSum (("NameSpaceAnon", [ v1 ]))
+  | EmptyDef v1 ->
+      let v1 = Ocaml.vof_list vof_tok v1 in Ocaml.VSum (("EmptyDef", [ v1 ]))
 and vof_template_parameters v = vof_comma_list vof_template_parameter v
 and vof_template_parameter v = vof_parameterType v
 and vof_declaration_sequencable =
@@ -912,8 +914,6 @@ and vof_toplevel =
       and v2 = vof_comma_list vof_argument v2
       and v3 = Ocaml.vof_list vof_tok v3
       in Ocaml.VSum (("MacroTop", [ v1; v2; v3 ]))
-  | EmptyDef v1 ->
-      let v1 = Ocaml.vof_list vof_tok v1 in Ocaml.VSum (("EmptyDef", [ v1 ]))
   | NotParsedCorrectly v1 ->
       let v1 = Ocaml.vof_list vof_tok v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))

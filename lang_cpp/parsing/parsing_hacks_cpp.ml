@@ -341,7 +341,8 @@ let set_context_tag groups =
 
 
   (* need look what was before? look for a ident? 
-   * the order of the rule is important. Must first try
+   *
+   * The order of the 3 rules below is important. We must first try
    * look_like_argument which has less FP than look_like_parameter
   *)
   | (Parens(t1, body, t2) as parens)::xs 
@@ -350,6 +351,7 @@ let set_context_tag groups =
       [parens] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InArgument)::tok.TV.where;
       );
+      (* todo? recurse on body? *)
       aux xs
   | (Parens(t1, body, t2) as parens)::xs 
     when look_like_parameter body ->
@@ -357,10 +359,16 @@ let set_context_tag groups =
       [parens] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
       );
+      (* recurse on body? hmm if InParameter should not have nested 
+       * stuff except when pass function pointer 
+       *)
       aux xs
 
   (* could be a cast too ... or what else? *)
   | (Parens(t1, body, t2))::xs ->
+      (* let's default to something? hmm, no, got lots of regressions then 
+       *  old: msg_context t1.t (TV.InArgument); ...
+       *)
       aux xs
       
 
@@ -560,6 +568,14 @@ let find_qualifier_commentize xs =
 
     | ({t=TIdent _} as t1)::({t=TColCol _} as t2)::xs ->
         [t1; t2] +> List.iter (fun tok ->
+          change_tok tok 
+            (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
+        );
+        aux xs
+
+    (* need also to pass the top :: *)
+    | ({t=TColCol _} as t2)::xs ->
+        [t2] +> List.iter (fun tok ->
           change_tok tok 
             (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
         );

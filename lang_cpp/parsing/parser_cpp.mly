@@ -1215,6 +1215,7 @@ block_declaration:
 
 namespace_alias_definition:
  | Tnamespace TIdent TEq tcolcol_opt nested_name_specifier_opt namespace_name
+   TPtVirg
      { let name = ($4, $5, (IdIdent (fst $6), [snd $6])) in
        NameSpaceAlias (fst $2, name), [$1;snd $2;$3] 
      }
@@ -1758,6 +1759,8 @@ declaration:
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
 
+ /*(* sometimes the function ends with }; instead of just } *)*/
+ | TPtVirg    { EmptyDef [$1], noii } 
 
 declaration_list: 
  | declaration_seq                  { [$1]   }
@@ -1939,7 +1942,7 @@ cpp_other:
      { MacroTop (fst $1, $3,    [snd $1;$2;$4;fakeInfo()]) } 
 
   /*(* ex: EXPORT_NO_SYMBOLS; *)*/
- | TIdent TPtVirg { EmptyDef [snd $1;$2] }
+ | TIdent TPtVirg { MacroTop (fst $1, [], [snd $1;$2]) }
 
 /*(*************************************************************************)*/
 /*(*1 Celem *)*/
@@ -1948,16 +1951,13 @@ cpp_other:
 celem: 
  | declaration       { TopDecl $1 }
 
- | cpp_directive     { CppTop $1 }
- | cpp_ifdef_directive /* (*external_declaration_list ...*)*/ { IfdefTop $1 }
- | cpp_other     { $1 }
+ | cpp_directive       { CppTop $1 }
+ | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
+ | cpp_other           { $1 }
 
- /*(* sometimes the function ends with }; instead of just } *)*/
- | TPtVirg    { EmptyDef [$1] } 
+ | TCBrace { TopDecl (EmptyDef [$1], noii) (* TODO ??? *) }
 
- | TCBrace { EmptyDef [$1] (* TODO ??? *) }
-
- | EOF        { FinalDef $1 } 
+ | EOF        { FinalDef $1 }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/

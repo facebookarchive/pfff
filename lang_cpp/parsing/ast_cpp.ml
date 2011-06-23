@@ -643,8 +643,12 @@ and declaration = declarationbis wrap
 
   (* the list can be empty *)
   | NameSpace       of string * declaration_sequencable list
-  | NameSpaceExtend of string * declaration_sequencable list (* after have semantic info *)
+  (* after have semantic info *)
+  | NameSpaceExtend of string * declaration_sequencable list 
   | NameSpaceAnon   of          declaration_sequencable list
+
+  (* gccext: allow redundant ';' *)
+  | EmptyDef of tok list
 
 
  and template_parameters = template_parameter comma_list
@@ -744,9 +748,6 @@ and toplevel =
   | IfdefTop of ifdef_directive (* * toplevel list *)
   | MacroTop of string * argument comma_list * tok list
          
-  (* gccext: allow redundant ';' *)
-  | EmptyDef of tok list
-
   | NotParsedCorrectly of tok list
 
   | FinalDef of info (* EOF *)
