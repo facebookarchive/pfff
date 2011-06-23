@@ -114,6 +114,9 @@ let find_typedefs xxs =
     when look_like_multiplication tok_before ->
       aux xs
 
+  (* { xx * yy,  probably declaration
+   * TODO if first declaration in file?
+   *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
     when look_like_declaration tok_before ->
       change_tok tok1 (TIdent_Typedef (s, i1));
