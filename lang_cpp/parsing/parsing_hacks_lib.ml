@@ -222,6 +222,15 @@ let msg_change_tok tok =
   | _ -> 
       raise Todo
 
+let msg_context t ctx =
+  let ctx_str =
+    match ctx with
+    | InParameter -> "InParameter"
+    | InArgument -> "InArgument"
+    | _ -> raise Impossible
+  in
+  pr2_cplusplus (spf "CONTEXT: %s at %s" ctx_str (pos (TH.info_of_tok t)))
+                    
 
 let msg_foreach s = 
   pr2_pp ("MACRO: found foreach: " ^ s)

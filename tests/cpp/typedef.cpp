@@ -24,6 +24,14 @@ int foo(foo10 *, foo11 &);
 
 int foo(long, foo11);
 
+foo *bar(int);
+
+class X {
+public:
+  virtual foo *bar(int);
+};
+
+
 //class Foo {
 //  Foo & operator=(const Foo &);
 //};

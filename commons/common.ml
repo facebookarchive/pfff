@@ -3880,6 +3880,8 @@ let rec split_gen_when_aux f acc xs =
 let split_gen_when f xs = 
   split_gen_when_aux f [] xs
 
+let _ = example (split_gen_when (function (42::xs) -> Some xs | _ -> None)
+                    [1;2;42;4;5;6;42;7] =*= [[1;2];[4;5;6];[7]])
 
 
 (* generate exception (Failure "tl") if there is no element satisfying p *)

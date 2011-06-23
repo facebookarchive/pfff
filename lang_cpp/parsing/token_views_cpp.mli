@@ -46,6 +46,8 @@ type multi_grouped =
   | Angle  of token_extended * multi_grouped list * token_extended option
   | Tok of token_extended
 
+val split_comma: multi_grouped list -> multi_grouped list list
+
 val mk_parenthised: token_extended list -> paren_grouped list
 val mk_braceised:   token_extended list -> brace_grouped list
 val mk_ifdef:       token_extended list -> ifdef_grouped list

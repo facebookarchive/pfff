@@ -39,6 +39,14 @@ open Parsing_hacks_lib
 (* Helpers *)
 (*****************************************************************************)
 
+let no_space_between i1 i2 =
+  (Ast.line_of_info i1 = Ast.line_of_info i2) &&
+  (Ast.col_of_info i1 + String.length (Ast.str_of_info i1))= Ast.col_of_info i2
+
+(*****************************************************************************)
+(* Template inference *)
+(*****************************************************************************)
+
 let templateLOOKAHEAD = 30
   
 (* note: no need to check for TCPar to stop for instance the search, 
@@ -101,103 +109,6 @@ let rec find_tsup_quite_close tok_open xs =
   in
   aux [] xs
 
-
-
-(* 
- * TODO: right now this is less useful because we actually
- *  comment template args in a previous pass, but at some point this
- *  will be useful.
-*)
-let rec filter_for_typedef multi_groups = 
-
-  let _template_args = ref [] in
-
-  (* remove template *)
-  let rec aux xs =
-    xs +> Common.map_filter (function
-    | TV.Braces (t1, xs, t2) ->
-        Some (TV.Braces (t1, aux xs, t2))
-    | TV.Parens  (t1, xs, t2) ->
-        Some (TV.Parens (t1, aux xs, t2))
-    | TV.Angle (t1, xs, t2) ->
-        (* todo: analayze xs!! add in _template_args 
-         * todo: add the t1,t2 around xs to have
-         *  some sentinel for the typedef heuristics patterns
-         *  who often look for the token just before the typedef.
-         *)
-        None
-
-    (* remove other noise for the typedef inference *)
-    | TV.Tok t1 -> 
-        match t1.TV.t with
-        (* const is a strong signal for having a typedef, so why skip it?
-         * because it forces to duplicate rules. We need to infer
-         * the type anyway even when there is no const around.
-         * todo? maybe could do a special pass first that infer typedef
-         * using only const rules, and then remove those const so 
-         * have best of both worlds.
-         *)
-        | Tconst _ | Tvolatile _
-        | Trestrict _
-          -> None
-
-        | Tregister _ | Tstatic _ | Tauto _ | Textern _
-        | Tunion _
-          -> None
-
-        (* let's transform all '&' into '*' *)
-        | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
-
-        (* and operator into TIdent 
-         * TODO: skip the token just after the operator keyword?
-         * could help some heuristics too
-        *)
-        | Toperator ii -> 
-            Some (TV.Tok (mk_token_extended (TIdent ("operator", ii))))
-
-        | _ -> Some (TV.Tok t1)
-    )
-  in
-  let xs = aux multi_groups in
-  (* todo: look also for _template_args *)
-  [TV.tokens_of_multi_grouped xs]
-
-let no_space_between i1 i2 =
-  (Ast.line_of_info i1 = Ast.line_of_info i2) &&
-  (Ast.col_of_info i1 + String.length (Ast.str_of_info i1))= Ast.col_of_info i2
-
-
-let look_like_argument xs =
-  let rec aux xs =
-    match xs with
-    | [] -> false
-    (* a function call probably *)
-    | Tok{t=TIdent _}::Parens _::xs -> 
-        (* todo? look_like_argument recursively in Parens || aux xs ? *)
-        true
-    | x::xs ->
-        (match x with
-        | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
-        | Tok {t=(Ttrue _ | Tfalse _) } -> true
-        | Tok {t=(Tthis _)} -> true
-        | Tok {t=(Tnew _ )} -> true
-        | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
-        | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
-        (*| Tok {t = (TOCro _)} -> true *)
-        | _ -> aux xs
-        )
-  in
-  aux xs
-
-let look_like_parameter xs =
-  xs +> List.exists (function
-  | Tok {t= tok} when TH.is_basic_type tok -> true
-  | _ -> false
-  )
-
-(*****************************************************************************)
-(* Main heuristics *)
-(*****************************************************************************)
 
 (* note: some macros in standard.h may expand to static_cast, so perhaps
  * better to do template detection after macro expansion ?
@@ -262,6 +173,277 @@ let find_template_inf_sup xs =
   in
   aux xs
 
+
+(*****************************************************************************)
+(* Parameter/Argument inference *)
+(*****************************************************************************)
+
+let look_like_argument xs =
+
+  let xs = xs +> List.map (function
+    | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
+    | x -> x
+  )
+  in
+
+  (* split by comma so can easily check if have stuff like '*xx'
+   * that takes the full argument
+   *)
+  let xxs = split_comma xs in
+
+  let aux1 xs =
+    match xs with
+    | [] -> false
+
+    (* *xx *)
+    | [Tok{t=TMul _}; Tok{t=TIdent _}] -> true
+
+    | _ -> false
+  in
+
+  
+  let rec aux xs =
+    match xs with
+    | [] -> false
+    (* a function call probably *)
+    | Tok{t=TIdent _}::Parens _::xs -> 
+        (* todo? look_like_argument recursively in Parens || aux xs ? *)
+        true
+    (* TODO: if have = ... then must stop, could be default parameter
+     * of a method
+     *)
+
+    (* could be part of a type declaration *)
+    | Tok {t=TOCro _}::Tok {t=TCCro _}::xs -> false
+
+    | x::xs ->
+        (match x with
+        | Tok {t=(TInt _ | TFloat _ | TChar _ | TString _) } -> true
+        | Tok {t=(Ttrue _ | Tfalse _) } -> true
+        | Tok {t=(Tthis _)} -> true
+        | Tok {t=(Tnew _ )} -> true
+        | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
+        | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
+        | Tok {t = (TOCro _)} -> true
+        | _ -> aux xs
+        )
+  in
+  (* todo? what if they contradict each other? if one say arg and
+   * the other a parameter?
+   *)
+  xxs +> List.exists aux1 || aux xs
+
+(* todo: pass1, look for const, etc
+ * todo: pass2, look xx_t, xx&, xx*, xx**, see heuristics in typedef
+ * 
+ * Many patterns should mimic some heuristics in parsing_hack_typedef.ml
+ *)
+let look_like_parameter xs =
+  let xs = xs +> List.map (function
+    | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
+    | x -> x
+  )
+  in
+
+  let xxs = split_comma xs in
+
+  let aux1 xs =
+    match xs with
+    | [] -> false
+
+    | [Tok {t=TIdent (s, _)}] when s =~ ".*_t$" -> true
+
+    (* xx* *)
+    | [Tok {t=TIdent _}; Tok {t=TMul _}] -> true
+
+    (* xx** *)
+    | [Tok {t=TIdent _}; Tok {t=TMul _}; Tok {t=TMul _}] -> true
+
+    (* xx * y   
+     * TODO could be multiplication ...
+     * 
+     *)
+    | [Tok {t=TIdent _}; Tok {t=TMul _};Tok {t=TIdent _};] -> true
+
+    | _ -> false
+  in
+
+  let rec aux xs =
+    match xs with
+    | [] -> false
+
+    (* xx yy *)
+    | Tok {t=TIdent _}::Tok{t=TIdent _}::xs -> true
+
+    | x::xs ->
+        (match x with
+        | Tok {t= tok} when TH.is_basic_type tok -> true
+        | Tok {t = (Tconst _ | Tvolatile _)} -> true
+        | Tok {t = (Tstruct _ | Tunion _ | Tenum _ | Tclass _)} -> true
+        | _ -> 
+            aux xs
+        )
+  in
+
+  xxs +> List.exists aux1 || aux xs
+
+(* assumes a view without: 
+ * - template arguments, qualifiers, 
+ * - comments and cpp directives 
+ * - TODO public/protected/... ?
+ *)
+let set_context_tag groups =
+  let rec aux xs =
+  match xs with
+  | [] -> ()
+  (* class Foo { *)
+  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+    ::(Braces(t1, body, t2) as braces)::xs
+    ->
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
+      );
+      aux (braces::xs)
+
+  (* class Foo : ... { *)
+
+  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+    ::Tok{t= TCol _}::xs
+    ->
+      let (before, braces, after) =
+        xs +> Common.split_when (function
+        | Braces _ -> true
+        | _ -> false
+        )
+      in
+      aux before;
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
+      );
+      aux [braces];
+      aux after
+
+  (* TODO = {   InInitializer *)
+
+  (* TODO <...> InTemplateParam *)
+
+  (* TODO enum xxx { InEnum *)
+
+  (* TODO xx(...) {  InFunction (can have some try or const or throw after 
+   * the paren *)
+
+
+  (* need look what was before? look for a ident? 
+   * the order of the rule is important. Must first try
+   * look_like_argument which has less FP than look_like_parameter
+  *)
+  | (Parens(t1, body, t2) as parens)::xs 
+    when look_like_argument body ->
+      msg_context t1.t (TV.InArgument);
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InArgument)::tok.TV.where;
+      );
+      aux xs
+  | (Parens(t1, body, t2) as parens)::xs 
+    when look_like_parameter body ->
+      msg_context t1.t (TV.InParameter);
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InParameter)::tok.TV.where;
+      );
+      aux xs
+
+  (* could be a cast too ... or what else? *)
+  | (Parens(t1, body, t2))::xs ->
+      aux xs
+      
+
+  | x::xs ->
+      (match x with
+      | Tok t -> ()
+      | Parens (t1, xs, t2)
+      | Braces (t1, xs, t2)
+      | Angle  (t1, xs, t2)
+         ->
+          aux xs
+      );
+      aux xs
+  in
+  aux groups
+
+
+(*****************************************************************************)
+(* Other *)
+(*****************************************************************************)
+
+(* 
+ * TODO: right now this is less useful because we actually
+ *  comment template args in a previous pass, but at some point this
+ *  will be useful.
+*)
+let rec filter_for_typedef multi_groups = 
+
+  let _template_args = ref [] in
+
+  (* remove template *)
+  let rec aux xs =
+    xs +> Common.map_filter (function
+    | TV.Braces (t1, xs, t2) ->
+        Some (TV.Braces (t1, aux xs, t2))
+    | TV.Parens  (t1, xs, t2) ->
+        Some (TV.Parens (t1, aux xs, t2))
+    | TV.Angle (t1, xs, t2) ->
+        (* todo: analayze xs!! add in _template_args 
+         * todo: add the t1,t2 around xs to have
+         *  some sentinel for the typedef heuristics patterns
+         *  who often look for the token just before the typedef.
+         *)
+        None
+
+    (* remove other noise for the typedef inference *)
+    | TV.Tok t1 -> 
+        match t1.TV.t with
+        (* const is a strong signal for having a typedef, so why skip it?
+         * because it forces to duplicate rules. We need to infer
+         * the type anyway even when there is no const around.
+         * todo? maybe could do a special pass first that infer typedef
+         * using only const rules, and then remove those const so 
+         * have best of both worlds.
+         *)
+        | Tconst _ | Tvolatile _
+        | Trestrict _
+          -> None
+
+        | Tregister _ | Tstatic _ | Tauto _ | Textern _
+        | Tunion _
+          -> None
+
+        | Tvirtual _
+          -> None
+
+        (* let's transform all '&' into '*' *)
+        | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
+
+        (* and operator into TIdent 
+         * TODO: skip the token just after the operator keyword?
+         * could help some heuristics too
+        *)
+        | Toperator ii -> 
+            Some (TV.Tok (mk_token_extended (TIdent ("operator", ii))))
+
+        | _ -> Some (TV.Tok t1)
+    )
+  in
+  let xs = aux multi_groups in
+  (* todo: look also for _template_args *)
+  [TV.tokens_of_multi_grouped xs]
+
+
+
+
+
+(*****************************************************************************)
+(* Main heuristics *)
+(*****************************************************************************)
 
 let reclassify_tokens_before_idents_or_typedefs xs =
   let groups = List.rev xs in
@@ -381,75 +563,6 @@ let find_qualifier_commentize xs =
         aux xs
   in
   aux xs
-
-
-(* assumes a view without: 
- * - template arguments, qualifiers, 
- * - comments and cpp directives 
- * - TODO public/protected/... ?
- *)
-let set_context_tag groups =
-  let rec aux xs =
-  match xs with
-  | [] -> ()
-  (* class Foo { *)
-  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
-    ::(Braces(t1, body, t2) as braces)::xs
-    ->
-      [braces] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
-      );
-      aux (braces::xs)
-
-  (* class Foo : ... { *)
-
-  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
-    ::Tok{t= TCol _}::xs
-    ->
-      let (before, braces, after) =
-        xs +> Common.split_when (function
-        | Braces _ -> true
-        | _ -> false
-        )
-      in
-      aux before;
-      [braces] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
-      );
-      aux after
-
-
-  (* need look what was before? look for a ident? *)
-  | (Parens(t1, body, t2) as parens)::xs ->
-      (* split at TComma? *)
-      (if look_like_argument body
-      then [parens] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InArgument)::tok.TV.where;
-      )
-      else 
-       if look_like_parameter body
-       then
-         [parens] +> TV.iter_token_multi (fun tok ->
-           tok.TV.where <- (TV.InParameter)::tok.TV.where;
-         )
-       else ()
-        (* could be a cast too ... or what else? *)
-      );
-      aux xs
-      
-
-  | x::xs ->
-      (match x with
-      | Tok t -> ()
-      | Parens (t1, xs, t2)
-      | Braces (t1, xs, t2)
-      | Angle  (t1, xs, t2)
-         ->
-          aux xs
-      );
-      aux xs
-  in
-  aux groups
 
 
 (* assumes a view where:

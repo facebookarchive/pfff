@@ -133,10 +133,11 @@ let is_binary_operator = function
   | _ -> false 
 
 let is_binary_operator_except_star = function
-  | TOrLog _ | TAndLog _ |  TOr _ |  TXor _   (* | TAnd _ *)
+  (* | TAnd _ *) (*|  TMul _*)
+  | TOrLog _ | TAndLog _ |  TOr _ |  TXor _   
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _ 
   | TShl _ | TShr _  
-  | TPlus _ |  TMinus _ (*|  TMul _*) |  TDiv _ |  TMod _ 
+  | TPlus _ |  TMinus _  |  TDiv _ |  TMod _ 
         -> true
   | _ -> false 
 
@@ -250,6 +251,11 @@ let is_ident_like = function
   | TIdent_TypedefConstr _
       -> true
 
+  | _ -> false
+
+let is_privacy_keyword = function
+  | Tpublic _ | Tprivate _ | Tprotected _
+        -> true
   | _ -> false
 
 (*****************************************************************************)

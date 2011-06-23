@@ -84,6 +84,8 @@ type token_extended = {
     | InArgument
     | InTemplateParam (* TODO *)
 
+(* InCondition ? InParenExpr ? *)
+
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 
   | Parenthised   of paren_grouped list list * token_extended list
@@ -499,6 +501,12 @@ let mk_multi xs =
   in
   aux xs
 
+let split_comma xs =
+  xs +> Common.split_gen_when (function
+  | Tok{t=TComma _;_}::xs -> Some xs
+  | _ -> None
+  )
+  
 (*****************************************************************************)
 (* View iterators  *)
 (*****************************************************************************)

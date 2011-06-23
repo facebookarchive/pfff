@@ -20,6 +20,10 @@ void main() {
 
 //  int id = (int) (fp_foo3 * foo());
 
+  if (smc_tiername_given) {
+    Flags::addSmcConfig(FLAGS_smc_tiername);
+  }
+
 }
 
 template<typename T>

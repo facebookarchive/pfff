@@ -84,6 +84,7 @@ let look_like_declaration tok =
  *  - template stuff and qualifiers
  *   (but not TIdent_ClassnameAsQualifier)
  *  - const/volatile/restrict
+ *  - & => *
  *  - etc, see Prelude
  * 
  * With such a view we can write less patterns.
@@ -118,17 +119,24 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
+  (* public: x * y *)
+  | {t=privacy}::{t=TCol _}::
+      ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs 
+    when TH.is_privacy_keyword privacy ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
   (* xx * yy
    *
-   * could be a multiplication too, so cf rule before
-   * TODO: more confidence when xx terminates in _t ?
-   * TODO: could be xx & y in c++
+   * could be a multiplication too, so cf rule before and guard
+   * with InParameter.
    *)
-  | ({t=TIdent (s,i1);(*where=InParameter _::_*)} as tok1)::{t=TMul _}
+  | ({t=TIdent (s,i1);where=InParameter::_} as tok1)::{t=TMul _}
     ::{t=TIdent _}::xs 
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
+
 
   (* xx ** yy
    * TODO: could be a multiplication too, but with less probability
