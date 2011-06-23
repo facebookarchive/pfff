@@ -195,18 +195,33 @@
 #define DECLARE_BOOST_TYPES(a)
 
 #define DEFINE_STATIC_LIBRARY(a,b)
+#define DECLARE_STATIC_LIBRARY(a)
+
+#define PERFTOOLS_DLL_DECL
 
 #define TEST_F(a,b) void a()
 #define TESTFUN(a) void a()
 #define BENCHFUN(a) a
+//#define TEST(a, b) void a()
+#define MYUNIT_TEST(a) void a()
 
-// boost?
+//#define AUTO(a,b) a b
+
+#define BOOST_FOR_EACH(a,b) for(;;)
 #define FOR_EACH(a,b) for(;;)
 #define FOR_EACH_R(a,b) for(;;)
 #define FOR_EACH_RANGE(a,b,c) for(;;) 
 #define MY_FOR_EACH(a,b) for(;;) 
 #define MY_FOR_EACH_REVERSED(a,b) for(;;)
 #define PATRICIA_WALK(a,b) for(;;)
+#define FOR_EACH_ACTION(a,b) for(;;)
+
+//#define TAILQ_FOREACH(a,b,c) for(;;)
+//#define TAILQ_FOREACH_REVERSE_SAFE(a,b,c,d,e) for(;;)
+//#define TAILQ_FOREACH_SAFE(a,b,c,d) for(;;)
+//
+//#define TAILQ_HEAD(a,b) int
+//#define TAILQ_ENTRY(a) int
 
 // boost too?
 //#define lexical_cast static_cast
@@ -223,12 +238,10 @@
 
 #define EC_MODULE_EXPORT
 
-
 #define ON_ERROR(a) if(a)
 #define DBLOG(a, stmt) stmt
 
 #define DISALLOW_EVIL_CONSTRUCTORS(a)
-
 
 #define _T(s) s
 
@@ -248,3 +261,28 @@
 #define WEAK_LINK
 
 #define DEB(a) a
+
+#define __END_DECLS
+#define __BEGIN_DECLS
+
+#define __thread
+
+#define __LZO_CDECL
+#define __LZO_ENTRY
+#define LZO_EXTERN(a) a
+#define LZO_PUBLIC(a) a
+
+//#define UNUSED(a) a
+
+#define PRINTF_ATTRIBUTE(a,b)
+#define EV_CHECK_FMT(a,b)
+
+#define DEFINE_EXTRACTOR_FUNCTION(a) void a()
+#define DEFINE_STORY_EXTRACTOR_FUNCTION(a,b,c) void a()
+#define DECLARE_STORY_EXTRACTOR_FUNCTION(a)
+#define DEFINE_FEATURE(a,b,c)
+#define DECLARE_FEATURE(a)
+#define DEFINE_FEATURE_EXTRACTOR_EXTRACT_FN(a) void a()
+
+//#define PRIVATE
+//#define PUBLIC
