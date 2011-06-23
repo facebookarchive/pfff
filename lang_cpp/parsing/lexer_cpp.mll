@@ -238,7 +238,8 @@ rule token = parse
   (* The difference between a local "" and standard <> include is computed
    * later in parser_cpp.mly. So we redo a little bit of lexing there. It's
    * ugly but simpler to generate a single token here. *)
-  | (("#" [' ''\t']* ("include" | "include_next") [' ' '\t']*) as includes) 
+  | (("#" [' ''\t']* ("include" | "include_next" | "import") 
+   [' ' '\t']*) as includes) 
     (('"' ([^ '"']+) '"' | 
      '<' [^ '>']+ '>' | 
       ['A'-'Z''_']+ 

@@ -30,3 +30,28 @@ template<typename T>
 inline T sqr(T x) {
   return fp_foo13 * x;
 }
+
+void main() {
+
+  cha->nsize = icount * isize;
+
+  return x->num_objects * p1_step;
+
+  default_arg = xrealloc(default_arg, sizeof *default_arg * default_alloc);
+
+  int cmp = hashcmp(index + mi * stride, sha1);
+
+  if (v > XDL_K_HEUR * ec && v > best) {
+  }
+
+  if (n * old->ctype->bit_size == ctype->bit_size) {
+  }
+
+	return bytes * bits_in_char;
+
+  if(off + n > MAXFILE*BSIZE) {
+  }
+}
+
+// 	b2 = (char *)b + (n1 * s);
+

@@ -190,7 +190,11 @@
 #define FBUNIT_DASHBOARD_EMAILS(a)
 
 #define BOOST_AUTO_TEST_CASE(a) void a()
-#define BOOST_STATIC_ASSERT(a)
+#define BOOST_STATIC_ASSERT(a) static int x
+
+#define DECLARE_BOOST_TYPES(a)
+
+#define DEFINE_STATIC_LIBRARY(a,b)
 
 #define TEST_F(a,b) void a()
 #define TESTFUN(a) void a()
@@ -205,14 +209,15 @@
 #define PATRICIA_WALK(a,b) for(;;)
 
 // boost too?
-#define lexical_cast static_cast
-#define dynamic_pointer_cast static_cast
+//#define lexical_cast static_cast
+//#define dynamic_pointer_cast static_cast
 
 // google gflags
 #define DEFINE_bool(a,b,c) int a = b
 #define DEFINE_int32(a,b,c) int a = b
 #define DEFINE_int64(a,b,c) int a = b
 #define DEFINE_string(a,b,c) int a = b
+#define DEFINE_double(a,b,c) int a = b
 
 #define EC_DECLARE_HOOK(module,type,name,typedefargs,declargs,callargs,handleret) void name(void)
 
@@ -232,3 +237,11 @@
 #define THRIFT_NOEXCEPT
 
 #define REMOTE_CATCH(a,b) catch() { }
+
+#define CPPUNIT_TEST_SUITE(a) 
+#define CPPUNIT_TEST(a) 
+#define CPPUNIT_TEST_SUITE_END()
+
+#define WEAK_LINK
+
+#define DEB(a) a

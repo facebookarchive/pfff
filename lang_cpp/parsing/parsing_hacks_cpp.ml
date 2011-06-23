@@ -50,7 +50,7 @@ let no_space_between i1 i2 =
 let templateLOOKAHEAD = 30
   
 (* note: no need to check for TCPar to stop for instance the search, 
- * this is will be done automatically because we would be inside a 
+ * this is will be done automatically because we would be inside a
  * Parenthised expression.
  *)
 let rec have_a_tsup_quite_close xs =
@@ -60,13 +60,10 @@ let rec have_a_tsup_quite_close xs =
       (match x with
       | {t=TSup i} -> true
 
-      (* false positive. pad:???? *)
+      (* false positive *)
       | {t=tok} when TH.is_static_cast_like tok -> false
 
-      (* ugly: 
-       * TODO: should probably detect if template '<' if the ident
-       * just before the '<' has no space between
-       *)
+      (* ugly: *)
       | {t=(TOBrace _ | TPtVirg _ | TCol _ | TAssign _ )} -> 
           false
 
@@ -84,8 +81,7 @@ let rec have_a_tsup_quite_close xs =
       )
 
 
-(* precondition: there is a tsup 
- *)
+(* precondition: there is a tsup *)
 let rec find_tsup_quite_close tok_open xs = 
   let rec aux acc xs =
     match xs with
@@ -114,7 +110,7 @@ let rec find_tsup_quite_close tok_open xs =
  * better to do template detection after macro expansion ?
  * 
  * C-s for TInf_Template in the grammar and you will see all cases
- * should be covered.
+ * should be covered by the patterns below.
  *)
 let find_template_inf_sup xs =
   let rec aux xs =
@@ -132,7 +128,7 @@ let find_template_inf_sup xs =
       aux before_sup;
       aux rest
 
-  (* static_cast *)
+  (* static_cast<...> *)
   | {t=tok1}::({t=TInf i2} as tok2)::xs
     when TH.is_static_cast_like tok1 -> 
       change_tok tok2 (TInf_Template i2);
@@ -166,6 +162,14 @@ let find_template_inf_sup xs =
       (* recurse *)
       aux before_sup;
       aux rest
+
+  (* special cases which allow extra space between ident and <
+   * but I think it would be better for people to fix their code
+   * | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)
+   *  ::tok3::({t=TSup i4} as tok4)::xs ->
+   *  ...
+   * 
+   *)
 
   (* recurse *)
   | x::xs -> aux xs
@@ -209,9 +213,11 @@ let look_like_argument xs =
     | Tok{t=TIdent _}::Parens _::xs -> 
         (* todo? look_like_argument recursively in Parens || aux xs ? *)
         true
-    (* TODO: if have = ... then must stop, could be default parameter
+    (* if have = ... then must stop, could be default parameter
      * of a method
      *)
+    | Tok{t=TEq _}::xs ->
+        false
 
     (* could be part of a type declaration *)
     | Tok {t=TOCro _}::Tok {t=TCCro _}::xs -> false
@@ -225,6 +231,7 @@ let look_like_argument xs =
         | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
         | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
         | Tok {t = (TOCro _)} -> true
+        | Tok {t = (TWhy _)} -> true
         | _ -> aux xs
         )
   in
@@ -417,7 +424,7 @@ let rec filter_for_typedef multi_groups =
         | Tunion _
           -> None
 
-        | Tvirtual _
+        | Tvirtual _ | Tfriend _ | Tinline _
           -> None
 
         (* let's transform all '&' into '*' *)

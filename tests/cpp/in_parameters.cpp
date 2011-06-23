@@ -22,3 +22,9 @@ extern size_t strbuf_fread(struct strbuf *, size_t, FILE *);
 void* dlcalloc(size_t, size_t);
 void* dlrealloc(void*, size_t);
 
+
+static int64_t normalizeTimestamp(int64_t timestamp, int timeUnit = 60);
+
+class Util {
+  static int64_t normalizeTimestamp(int64_t timestamp, int timeUnit = 60);
+};
