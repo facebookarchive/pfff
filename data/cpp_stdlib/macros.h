@@ -7,12 +7,13 @@
 // MacroString
 // ****************************************************************************
 
-/* String macros are normally handle quite well by the lalr(k) technique,
- * but sometimes it's not enough. For instance in the XX YY case, it could
+/* String macros are normally handled quite well by the lalr(k) technique,
+ * but sometimes it's not enough. For instance with 'XX YY', it could
  * be considered as a declaration with XX being a typedef, so we would
  * have an ambiguity. So by adding a few special cases (e.g. KERN_WARNING
- * for the linux kernel), we can catch more correct string-macros.
- * I need to have at least one witness, a string.
+ * for the linux kernel), we can catch more string-macros. The idea is
+ * that we need to have at least one witness, a string to recognize
+ * a sequence of strings.
  */
 //#define KERN_WARNING "WARNING"
 
@@ -30,7 +31,6 @@
  */
 
 //#define EX_TABLE(x)  "TOTO"
-
 
 // ****************************************************************************
 // MacroIterator
@@ -166,18 +166,23 @@
 #define FOR_EACH_PTR(a,b) for(;;)
 #define FOR_EACH_PTR_NOTAG(a,b) for(;;)
 #define FOR_EACH_PTR_REVERSE(a,b) for(;;)
-
 #define RECURSE_PTR_REVERSE(a,b) for(;;)
-
 //#define DO_END_FOR_EACH_REVERSE(a,b,c,d)
 
 #define __percpu
 #define SENTINEL_ATTR
-
 #define __user
 
 #define FORMAT_ATTR(a)
 #define NORETURN_ATTR
+
+// ****************************************************************************
+// Boost
+// ****************************************************************************
+#define BOOST_AUTO_TEST_CASE(a) void a()
+#define BOOST_STATIC_ASSERT(a) static int x
+
+#define BOOST_FOR_EACH(a,b) for(;;)
 
 // ****************************************************************************
 // Facebook stuff
@@ -189,9 +194,6 @@
 #define FBUNIT_DASHBOARD_OWNER(a)
 #define FBUNIT_DASHBOARD_EMAILS(a)
 
-#define BOOST_AUTO_TEST_CASE(a) void a()
-#define BOOST_STATIC_ASSERT(a) static int x
-
 #define DECLARE_BOOST_TYPES(a)
 
 #define DEFINE_STATIC_LIBRARY(a,b)
@@ -202,12 +204,11 @@
 #define TEST_F(a,b) void a()
 #define TESTFUN(a) void a()
 #define BENCHFUN(a) a
-//#define TEST(a, b) void a()
+//regression? #define TEST(a, b) void a()
 #define MYUNIT_TEST(a) void a()
 
-//#define AUTO(a,b) a b
+//regression? #define AUTO(a,b) a b
 
-#define BOOST_FOR_EACH(a,b) for(;;)
 #define FOR_EACH(a,b) for(;;)
 #define FOR_EACH_R(a,b) for(;;)
 #define FOR_EACH_RANGE(a,b,c) for(;;) 
@@ -216,12 +217,12 @@
 #define PATRICIA_WALK(a,b) for(;;)
 #define FOR_EACH_ACTION(a,b) for(;;)
 
-//#define TAILQ_FOREACH(a,b,c) for(;;)
-//#define TAILQ_FOREACH_REVERSE_SAFE(a,b,c,d,e) for(;;)
-//#define TAILQ_FOREACH_SAFE(a,b,c,d) for(;;)
-//
-//#define TAILQ_HEAD(a,b) int
-//#define TAILQ_ENTRY(a) int
+#define TAILQ_FOREACH(a,b,c) for(;;)
+#define TAILQ_FOREACH_REVERSE_SAFE(a,b,c,d,e) for(;;)
+#define TAILQ_FOREACH_SAFE(a,b,c,d) for(;;)
+
+#define TAILQ_HEAD(a,b) int
+#define TAILQ_ENTRY(a) int
 
 // boost too?
 //#define lexical_cast static_cast
