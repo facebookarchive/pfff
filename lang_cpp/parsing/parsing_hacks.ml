@@ -28,8 +28,8 @@ module TV = Token_views_cpp
  * This module tries to detect some CPP, C, or C++ idioms so that we can
  * parse as-is files by adjusting or commenting some tokens.
  * 
- * Sometime we use some indentation information, sometimes we
- * do some kind of lalr(k) by finding patterns. We often try to
+ * Sometime we use some name conventions, sometimes indentation information, 
+ * sometimes we do some kind of lalr(k) by finding patterns. We often try to
  * work on a better token representation, like ifdef-paren-ized, brace-ized,
  * paren-ized, so that we can pattern-match more easily
  * complex idioms (cf token_views_cpp.ml).
@@ -107,7 +107,6 @@ let insert_virtual_positions l =
 (*****************************************************************************)
 (* Fix tokens *)
 (*****************************************************************************)
-
 (* 
  * Main entry point for the token reclassifier which generates "fresh" tokens.
  * 
@@ -178,14 +177,14 @@ let fix_tokens2 ~macro_defs tokens =
   
   let multi_grouped = TV.mk_multi cleaner in
 
-  (* todo: at some point need to remove that and use
-   * instead a better filter_for_typedef that also
+  (* todo: at some point we need to remove that and use
+   * a better filter_for_typedef that also
    * works on the nested template arguments.
    *)
   Parsing_hacks_cpp.find_template_commentize multi_grouped;
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
-  (* must be done before filtering the qualifier *)
+  (* must be done before the qualifier filtering *)
   Parsing_hacks_cpp.find_constructor_outside_class cleaner;
 
   Parsing_hacks_cpp.find_qualifier_commentize cleaner;
@@ -195,18 +194,13 @@ let fix_tokens2 ~macro_defs tokens =
   Parsing_hacks_cpp.set_context_tag multi_grouped;
 
   Parsing_hacks_cpp.find_constructor cleaner;
-  (* typedef inference. filter_for_typedef actually creates
-   * some new extended_token (TAnd -> TMul) so take care.
-   *)
   let xxs = Parsing_hacks_cpp.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
 
   (* must be done after the typedef inference *)
   Parsing_hacks_cpp.find_constructed_object_and_more cleaner;
   
-  (* c++ stuff *)
-  Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs 
-    multi_grouped;
+  Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs multi_grouped;
   
   insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.TV.t))
 

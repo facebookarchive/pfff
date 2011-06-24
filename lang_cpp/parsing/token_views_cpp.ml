@@ -139,6 +139,13 @@ let mk_token_extended x =
     new_tokens_before = [];
   }
 
+let mk_token_fake x = 
+  { t = x;
+    line = -1; col = -1;
+    where = [InTopLevel];
+    new_tokens_before = [];
+  }
+
 let rebuild_tokens_extented toks_ext = 
   let _tokens = ref [] in
   toks_ext +> List.iter (fun tok -> 

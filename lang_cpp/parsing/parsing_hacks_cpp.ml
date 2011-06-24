@@ -463,6 +463,13 @@ let set_context_tag groups =
 *)
 let rec filter_for_typedef multi_groups = 
 
+  (* a sentinel, which helps a few typedef heuristics which look
+   * for a token before which would not work for the first toplevel
+   * declaration.
+   *)
+  let multi_groups = 
+    Tok(mk_token_fake (TPtVirg (Ast.fakeInfo())))::multi_groups in
+
   let _template_args = ref [] in
 
   (* remove template *)

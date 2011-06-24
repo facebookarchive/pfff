@@ -18,6 +18,7 @@ type token_extended = {
     | InTemplateParam
 
 val mk_token_extended : Parser_cpp.token -> token_extended
+val mk_token_fake : Parser_cpp.token -> token_extended
 val rebuild_tokens_extented : token_extended list -> token_extended list
 
 type paren_grouped =
