@@ -26,5 +26,9 @@ void main() {
   int nAttempt(0);
 
   x = int(2);
+
+  foo1 x(foo1, foo2, foo3);
+
+  foo1 x((const char*)foo1, foo2);
 }
 

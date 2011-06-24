@@ -158,8 +158,10 @@ let is_static_cast_like = function
 let is_basic_type = function
   | Tchar _  | Tshort _ | Tint _ | Tdouble _ |  Tfloat _ | Tlong _ 
   | Tbool _ | Twchar_t _
+
+  | Tunsigned _ | Tsigned _
         -> true
-  (*| Tunsigned _ | Tsigned _ | Tvoid _  *)
+  (*| Tvoid _  *)
   | _ -> false
 
 
@@ -472,6 +474,9 @@ let info_of_tok = function
   | Tshort_Constr  (i) -> i
   | Tlong_Constr   (i) -> i
   | Tbool_Constr  (i) -> i
+
+  | Tunsigned_Constr i -> i
+  | Tsigned_Constr i -> i
       
   | EOF                  (i) -> i
   
@@ -697,6 +702,9 @@ let visitor_info_of_tok f = function
   | Tshort_Constr  (i) -> Tshort_Constr (f i)
   | Tlong_Constr   (i) -> Tlong_Constr (f i)
   | Tbool_Constr  (i) -> Tbool_Constr (f i)
+
+  | Tsigned_Constr  (i) -> Tsigned_Constr (f i)
+  | Tunsigned_Constr  (i) -> Tunsigned_Constr (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 

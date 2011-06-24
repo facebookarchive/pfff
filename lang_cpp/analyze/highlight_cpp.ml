@@ -511,6 +511,8 @@ let visit_toplevel
     | T.Tfloat_Constr ii
     | T.Tint_Constr ii
     | T.Tchar_Constr ii
+    | T.Tunsigned_Constr ii
+    | T.Tsigned_Constr ii
         -> tag ii TypeInt
 
 

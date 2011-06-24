@@ -202,6 +202,9 @@ let look_like_argument tok_before xs =
     (* *xx *)
     | [Tok{t=TMul _}; Tok{t=TIdent _}] -> true
 
+    (* *(xx) *)
+    | [Tok{t=TMul _}; Parens _] -> true
+
     (* TODO: xx * yy  and space = 1 between the 2 :) *)
 
     | _ -> false
@@ -231,9 +234,10 @@ let look_like_argument tok_before xs =
         | Tok {t=(Tthis _)} -> true
         | Tok {t=(Tnew _ )} -> true
         | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
+        | Tok {t=(TInc _ | TDec _)} -> true
         | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
         | Tok {t = (TOCro _)} -> true
-        | Tok {t = (TWhy _)} -> true
+        | Tok {t = (TWhy _ | TBang _)} -> true
         | _ -> aux xs
         )
   in
@@ -261,6 +265,12 @@ let look_like_parameter tok_before xs =
     | [] -> false
 
     | [Tok {t=TIdent (s, _)}] when s =~ ".*_t$" -> true
+    (* with DECLARE_BOOST_TYPE, but have some false positives
+     * when people do xx* indexPtr = const_cast<>(indexPtr);
+     * | [Tok {t=TIdent (s, _)}] when s =~ ".*Ptr$" -> true
+     *)
+    (* ugly!! *)
+    | [Tok {t=TIdent (s, _)}] when s = "StringPiece" -> true
 
     (* xx* *)
     | [Tok {t=TIdent _}; Tok {t=TMul _}] -> true
@@ -310,6 +320,15 @@ let look_like_parameter tok_before xs =
 
   xxs +> List.exists aux1 || aux xs
 
+let look_like_only_idents xs =
+  xs +> List.for_all (function
+  | Tok {t=(TComma _ | TIdent _)} -> true
+  (* when have cast *)
+  | Parens _ -> true
+  | _ -> false
+  )
+
+
 (* assumes a view without: 
  * - template arguments, qualifiers, 
  * - comments and cpp directives 
@@ -319,8 +338,8 @@ let set_context_tag groups =
   let rec aux xs =
   match xs with
   | [] -> ()
-  (* class Foo { *)
-  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+  (* class Foo {, also valid for struct (and union, hmmm) *)
+  | Tok{t=(Tclass _ | Tstruct _ | Tunion _);_}::Tok{t=TIdent(s,_);_}
     ::(Braces(t1, body, t2) as braces)::xs
     ->
       [braces] +> TV.iter_token_multi (fun tok ->
@@ -395,6 +414,19 @@ let set_context_tag groups =
       aux [x];
       aux (parens::xs)
 
+  (* second tentative on InArgument, if xx(xx, yy, ww) where have only
+   * identifiers, it's probably a constructed object!
+   *)
+  | Tok{t=TIdent _}::(Parens(t1, body, t2) as parens)::xs 
+    when List.length body > 0 && look_like_only_idents body ->
+      msg_context t1.t (TV.InArgument);
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InArgument)::tok.TV.where;
+      );
+      (* todo? recurse on body? *)
+      aux (parens::xs)
+
+
   (* could be a cast too ... or what else? *)
   | x::(Parens(t1, body, t2) as parens)::xs ->
       (* let's default to something? hmm, no, got lots of regressions then 
@@ -461,10 +493,11 @@ let rec filter_for_typedef multi_groups =
           -> None
 
         | Tregister _ | Tstatic _ | Tauto _ | Textern _
+        | Ttypedef _
         | Tunion _
           -> None
 
-        | Tvirtual _ | Tfriend _ | Tinline _
+        | Tvirtual _ | Tfriend _ | Tinline _ | Tmutable _
           -> None
 
         (* let's transform all '&' into '*' *)
@@ -694,7 +727,8 @@ let find_constructed_object_and_more xs =
         ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->
 
         change_tok tok1 (TOPar_CplusplusInit ii);
-          aux xs
+        aux xs
+
     (* int yy(1 ... *)
     | {t=tok;_}::{t=TIdent _;_}::
       ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs 
@@ -721,7 +755,7 @@ let find_constructed_object_and_more xs =
         ({t=TOPar (ii);} as tok1)::{t=TIdent _;_}::{t=TCPar _}::xs ->
 
         change_tok tok1 (TOPar_CplusplusInit ii);
-          aux xs
+        aux xs
 
     (* xx yy(zz, ww) *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}
@@ -761,6 +795,8 @@ let find_constructed_object_and_more xs =
           | Tfloat ii -> Tfloat_Constr ii
           | Tlong ii -> Tlong_Constr ii
           | Tbool ii -> Tbool_Constr ii
+          | Tunsigned ii -> Tunsigned_Constr ii
+          | Tsigned ii -> Tsigned_Constr ii
           | _ -> raise Impossible
         in
         change_tok tok1 newone;

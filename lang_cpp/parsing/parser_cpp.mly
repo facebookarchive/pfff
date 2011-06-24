@@ -199,6 +199,7 @@ module LP = Lexer_parser_cpp
 %token <Ast_cpp.info> 
   Tchar_Constr Tint_Constr Tfloat_Constr Tdouble_Constr Twchar_t_Constr
   Tshort_Constr Tlong_Constr Tbool_Constr
+  Tsigned_Constr Tunsigned_Constr
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Ast_cpp.info> TColCol_BeforeTypedef
 

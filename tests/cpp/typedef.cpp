@@ -1,4 +1,7 @@
 
+// need a sentinel for the first declaration
+foo0 *x;
+
 int x;
 
 foo1 x;
@@ -37,3 +40,8 @@ public:
 //class Foo {
 //  Foo & operator=(const Foo &);
 //};
+
+typedef const value* result;
+
+void foo() throw(Exception) {
+}

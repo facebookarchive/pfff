@@ -196,6 +196,7 @@ let msg_change_tok tok =
 
   | Tchar_Constr ii | Tint_Constr ii | Tfloat_Constr ii | Tdouble_Constr ii
   | Tshort_Constr ii | Tlong_Constr ii | Tbool_Constr ii
+  | Tunsigned_Constr ii | Tsigned_Constr ii
      ->
       pr2_cplusplus(spf "constructed object builtin at %s" (pos ii));
   | TIdent_TypedefConstr (s, ii) ->
