@@ -285,6 +285,8 @@ let look_like_parameter tok_before xs =
      *  may not work here. May need lower level access to the list
      *  of TCommentSpace and their position.
      * 
+     * C-s for parameter_decl in grammar to see that catch() is
+     * a InParameter.
      *)
     | [Tok {t=TIdent _}; Tok {t=TMul _};Tok {t=TIdent _};] ->
       (match tok_before with 
