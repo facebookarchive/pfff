@@ -171,9 +171,9 @@
 //#define DO_END_FOR_EACH_REVERSE(a,b,c,d)
 
 #define __percpu
-#define SENTINEL_ATTR
 #define __user
 
+#define SENTINEL_ATTR
 #define FORMAT_ATTR(a)
 #define NORETURN_ATTR
 

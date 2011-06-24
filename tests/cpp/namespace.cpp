@@ -11,3 +11,7 @@ namespace x {
 namespace fs = boost::filesystem;
 
 }
+
+namespace y {
+#define MACRO1 2
+}

@@ -1842,7 +1842,8 @@ ctor_dtor:
      { NameSpaceAnon [],[] }
 
 /*(* TODO: remove once we don't skip qualifiers *)*/
- | TIdent_Constructor TOPar parameter_type_list_opt TCPar
+
+ | inline_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
      { NameSpaceAnon [],[] }
@@ -2145,4 +2146,8 @@ ptvirg_opt:
 
 void_opt:
  | Tvoid         { Some $1 }
+ | /*(*empty*)*/ { None }
+
+inline_opt:
+ | Tinline         { Some $1 }
  | /*(*empty*)*/ { None }
