@@ -1890,6 +1890,10 @@ cpp_directive:
      }
 
  | TUndef { Undef (fst $1, [snd $1]) }
+ | TCppDirectiveOther { PragmaAndCo [$1] }
+
+
+
 /*
 (* perhaps better to use assign_expr ? but in that case need 
  * do a assign_expr_of_string in parse_c.
@@ -1956,6 +1960,10 @@ celem:
  | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
  | cpp_other           { $1 }
 
+ /*(* when have error recovery, we can end up skipping the
+    * beginning of the file, and so get trailing unclose } at
+    * end
+    *)*/
  | TCBrace { TopDecl (EmptyDef [$1], noii) (* TODO ??? *) }
 
  | EOF        { FinalDef $1 }
