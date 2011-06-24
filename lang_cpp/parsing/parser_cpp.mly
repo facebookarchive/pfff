@@ -1617,7 +1617,7 @@ constant_initializer:
 /*(*2 constructor method *)*/
 /*(*-----------------------------------------------------------------------*)*/
 
-/*(* special case for ctor/dtor cos they don't have a return type *)*/
+/*(* special case for ctor/dtor because they don't have a return type *)*/
 ctor_dtor_member:
  | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
