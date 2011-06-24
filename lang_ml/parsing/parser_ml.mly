@@ -938,6 +938,12 @@ simple_core_type2:
  | TOBracket tag_field TCBracket
       { TyTodo }
 
+ /*(* objects types *)*/
+  | TLess meth_list TGreater
+      { TyTodo }
+  | TLess TGreater
+      { TyTodo }
+
 
 core_type_comma_list:
  | core_type                                  { [Left $1] }
@@ -946,6 +952,14 @@ core_type_comma_list:
 core_type_list:
   | simple_core_type                         { [Left $1] }
   | core_type_list TStar simple_core_type    { $1 ++ [Right $2; Left $3] }
+
+meth_list:
+  | field TSemiColon meth_list                      { }
+  | field opt_semi                              {  }
+  | TDotDot                                      {  }
+
+field:
+    label TColon poly_type             { }
 
 /*(*----------------------------*)*/
 /*(*2 Misc *)*/
