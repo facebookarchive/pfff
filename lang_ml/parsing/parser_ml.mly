@@ -19,15 +19,15 @@
  *
  * other sources:
  * - http://caml.inria.fr/pub/docs/manual-ocaml/language.html
- *  (note that it unfortunately contains conflict when translated into yacc).
+ *  (note that it unfortunately contains conflicts when translated into yacc).
  * - http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
- *  itself derived from the official ocaml reference manual
- *  (note that it also contains conflict when translated into yacc).
+ *   itself derived from the official ocaml reference manual
+ *   (note that it also contains conflicts when translated into yacc).
  * - http://www.mpi-sws.org/~rossberg/sml.html
- *  (note that it also contains conflict when translated into yacc).
+ *   (note that it also contains conflicts when translated into yacc).
  * - http://www.mpi-sws.org/~rossberg/hamlet/
- *  solves ambiguities
- * - linear ML parser
+ *   solves ambiguities
+ * - linear-ML parser
  * 
  * alternatives: 
  *   - use menhir ? 
@@ -43,45 +43,38 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
   | xs, Name ident2 ->
       xs ++ [Name ident2, dottok], Name ident
 %}
+/*(*************************************************************************)*/
+/*(*1 Tokens *)*/
+/*(*************************************************************************)*/
 
-/*(*************************************************************************)*/
-/*(* Tokens *)*/
-/*(*************************************************************************)*/
+/*(* unrecognized token, will generate parse error *)*/
+%token <Ast_ml.info> TUnknown
+
+%token <Ast_ml.info> EOF
 
 /*(*-----------------------------------------*)*/
-/*(* the comment tokens *)*/
+/*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Ast_ml.info> TCommentSpace TCommentNewline   TComment
 %token <Ast_ml.info> TCommentMisc
 
 /*(*-----------------------------------------*)*/
-/*(* the normal tokens *)*/
+/*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_ml.info> TInt
-%token <string * Ast_ml.info> TFloat
-%token <string * Ast_ml.info> TChar
-%token <string * Ast_ml.info> TString
-
-%token <string * Ast_ml.info> TLowerIdent
-%token <string * Ast_ml.info> TUpperIdent
-%token <string * Ast_ml.info> TLabelUse
-%token <string * Ast_ml.info> TLabelDecl
-%token <string * Ast_ml.info> TOptLabelUse
-%token <string * Ast_ml.info> TOptLabelDecl
+%token <string * Ast_ml.info> TInt TFloat TChar TString
+%token <string * Ast_ml.info> TLowerIdent TUpperIdent
+%token <string * Ast_ml.info> TLabelUse TLabelDecl TOptLabelUse TOptLabelDecl
 
 /*(* keywords tokens *)*/
 %token <Ast_ml.info>
- Tfun Tfunction Trec
- Ttype Tof Tif Tthen Telse
+ Tfun Tfunction Trec Ttype Tof Tif Tthen Telse
  Tmatch Twith Twhen
- Tlet Tin
- Tas
+ Tlet Tin Tas
  Ttry Texception
- Tbegin Tend
- Tfor Tdo Tdone Tdownto Twhile Tto
+ Tbegin Tend Tfor Tdo Tdone Tdownto Twhile Tto
  Tval Texternal
  Ttrue Tfalse
  Tmodule Topen Tfunctor Tinclude Tsig Tstruct
@@ -92,54 +85,31 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
  Tor Tmod Tlor Tlsl Tlsr Tlxor Tasr Tland
 
 /*(* syntax *)*/
-%token <Ast_ml.info> TOParen TCParen TOBrace TCBrace TOBracket TCBracket
-%token <Ast_ml.info> TOBracketPipe TPipeCBracket
-%token <Ast_ml.info> TOBracketLess TGreaterCBracket
-%token <Ast_ml.info> TOBraceLess TGreaterCBrace
-
-%token <Ast_ml.info> TOBracketGreater
-%token <Ast_ml.info> TColonGreater
-
-%token <Ast_ml.info> TDot TDotDot 
-%token <Ast_ml.info> TComma
-%token <Ast_ml.info> TEq
-%token <Ast_ml.info> TAssign
-%token <Ast_ml.info> TAssignMutable
-%token <Ast_ml.info> TColon TColonColon
-%token <Ast_ml.info> TBang TBangEq
-%token <Ast_ml.info> TTilde
-%token <Ast_ml.info> TPipe
-%token <Ast_ml.info> TSemiColon TSemiColonSemiColon
-%token <Ast_ml.info> TQuestion TQuestionQuestion
-%token <Ast_ml.info> TUnderscore
-%token <Ast_ml.info> TStar
-%token <Ast_ml.info> TArrow
-%token <Ast_ml.info> TQuote TBackQuote
-%token <Ast_ml.info> TAnd TAndAnd
-%token <Ast_ml.info> TSharp
-
-%token <Ast_ml.info> TMinusDot TPlusDot
+%token <Ast_ml.info> 
+ TOParen TCParen TOBrace TCBrace TOBracket TCBracket
+ TOBracketPipe TPipeCBracket  TOBracketLess TGreaterCBracket
+ TOBraceLess TGreaterCBrace
+ TOBracketGreater TColonGreater
+ TDot TDotDot 
+ TComma TEq TAssign TAssignMutable TColon TColonColon
+ TBang TBangEq TTilde TPipe
+ TSemiColon TSemiColonSemiColon
+ TQuestion TQuestionQuestion
+ TUnderscore TStar TArrow TQuote TBackQuote TAnd TAndAnd TSharp
+ TMinusDot TPlusDot
 
 /*(* operators *)*/
-%token <Ast_ml.info> TPlus TMinus
-%token <Ast_ml.info> TLess TGreater
-%token <string * Ast_ml.info> TPrefixOperator
-%token <string * Ast_ml.info> TInfixOperator
+%token <Ast_ml.info> TPlus TMinus TLess TGreater
+%token <string * Ast_ml.info> TPrefixOperator TInfixOperator
 
 /*(*-----------------------------------------*)*/
-/*(* extra tokens: *)*/
+/*(*2 extra tokens: *)*/
 /*(*-----------------------------------------*)*/
-
 %token <Ast_ml.info> TSharpDirective
 
-/*(* classic *)*/
-%token <Ast_ml.info> TUnknown
-%token <Ast_ml.info> EOF
-
-/*(*-----------------------------------------*)*/
-/*(* priorities *)*/
-/*(*-----------------------------------------*)*/
-
+/*(*************************************************************************)*/
+/*(*1 Priorities *)*/
+/*(*************************************************************************)*/
 /*
 (* Precedences and associativities.
  *
@@ -207,7 +177,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
           Tnew TPrefixOperator TString Ttrue TUpperIdent
 
 /*(*************************************************************************)*/
-/*(* Rules type declaration *)*/
+/*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
 %start interface  implementation
@@ -217,7 +187,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 %%
 
 /*(*************************************************************************)*/
-/*(* TOC *)*/
+/*(*1 TOC *)*/
 /*(*************************************************************************)*/
 /*
 (*
@@ -233,11 +203,9 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
  *  - the type
  *  - the expression
  *  - the pattern
- *)
- */
-
+ *)*/
 /*(*************************************************************************)*/
-/*(* Toplevel, compilation units *)*/
+/*(*1 Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
 interface:      signature EOF                        { $1 ++ [FinalDef $2] }
@@ -245,7 +213,7 @@ interface:      signature EOF                        { $1 ++ [FinalDef $2] }
 implementation: structure EOF                        { $1 ++ [FinalDef $2] }
 
 /*(*************************************************************************)*/
-/*(* Signature *)*/
+/*(*1 Signature *)*/
 /*(*************************************************************************)*/
 
 signature:
@@ -272,10 +240,8 @@ signature_item:
  | Tmodule TUpperIdent module_declaration
      { ItemTodo $1 }
 
-
-
 /*(*----------------------------*)*/
-/*(* Misc *)*/
+/*(*2 Misc *)*/
 /*(*----------------------------*)*/
 
 primitive_declaration:
@@ -283,7 +249,7 @@ primitive_declaration:
  | TString primitive_declaration                { $1::$2 }
 
 /*(*************************************************************************)*/
-/*(* Structure *)*/
+/*(*1 Structure *)*/
 /*(*************************************************************************)*/
 
 /*(* pad: should not allow those toplevel seq_expr *)*/
@@ -337,10 +303,8 @@ structure_item:
   | Tclass class_declarations
       { ItemTodo $1 }
 
-
-
 /*(*************************************************************************)*/
-/*(* Names *)*/
+/*(*1 Names *)*/
 /*(*************************************************************************)*/
 
 val_ident:
@@ -393,7 +357,7 @@ label: TLowerIdent  { $1 }
 name_tag: TBackQuote ident   { }
 
 /*(*----------------------------*)*/
-/*(* Labels *)*/
+/*(*2 Labels *)*/
 /*(*----------------------------*)*/
 
 label_var:
@@ -405,7 +369,7 @@ label_ident:
 
  
 /*(*----------------------------*)*/
-/*(* Qualified names *)*/
+/*(*2 Qualified names *)*/
 /*(*----------------------------*)*/
 
 mod_longident:
@@ -449,13 +413,8 @@ mty_longident:
  | ident                                      { [], Name $1 }
  | mod_ext_longident TDot ident               { qufix $1 $2 $3 }
 
-/*(*----------------------------*)*/
-/*(* Misc names *)*/
-/*(*----------------------------*)*/
-
-
 /*(*************************************************************************)*/
-/*(* Expressions *)*/
+/*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
 seq_expr:
@@ -473,8 +432,7 @@ expr:
      { $1 }
  /*(* function application *)*/
  | simple_expr simple_labeled_expr_list
-     { 
-       match $1 with
+     { match $1 with
        | L name -> FunCallSimple (name, $2)
        | _      -> FunCall ($1, $2)
      }
@@ -717,7 +675,7 @@ direction_flag:
 
 
 /*(*----------------------------*)*/
-/*(* Constants *)*/
+/*(*2 Constants *)*/
 /*(*----------------------------*)*/
 
 constant:
@@ -727,7 +685,7 @@ constant:
  | TFloat   { Float $1 }
 
 /*(*----------------------------*)*/
-/*(* Labels *)*/
+/*(*2 Labels *)*/
 /*(*----------------------------*)*/
 
 label_expr:
@@ -741,7 +699,7 @@ label_expr:
       { ArgLabelQuestion (Name $1 (* TODO remove the ~ and : *), $2) }
 
 /*(*************************************************************************)*/
-/*(* Patterns *)*/
+/*(*1 Patterns *)*/
 /*(*************************************************************************)*/
 
 match_cases:
@@ -778,7 +736,6 @@ pattern:
 
 
 
-
 simple_pattern:
  | val_ident %prec below_EQUAL
       { PatVar (Name $1) }
@@ -811,8 +768,6 @@ simple_pattern:
       { ParenPat ($1, $2, $3) }
 
 
-
-
 lbl_pattern_list:
  | label_longident TEq pattern               { }
  | label_longident                             { }
@@ -842,7 +797,7 @@ signed_constant:
  | TPlus TFloat   { CPlus ($1, Float $2) }
 
 /*(*************************************************************************)*/
-/*(* Types *)*/
+/*(*1 Types *)*/
 /*(*************************************************************************)*/
 
 type_constraint:
@@ -852,7 +807,7 @@ type_constraint:
  | TColonGreater core_type    { }
 
 /*(*----------------------------*)*/
-/*(* Types definitions *)*/
+/*(*2 Types definitions *)*/
 /*(*----------------------------*)*/
 
 type_declarations:
@@ -932,7 +887,7 @@ mutable_flag:
 
 
 /*(*----------------------------*)*/
-/*(* Types expressions *)*/
+/*(*2 Types expressions *)*/
 /*(*----------------------------*)*/
 
 core_type:
@@ -993,7 +948,7 @@ core_type_list:
   | core_type_list TStar simple_core_type    { $1 ++ [Right $2; Left $3] }
 
 /*(*----------------------------*)*/
-/*(* Misc *)*/
+/*(*2 Misc *)*/
 /*(*----------------------------*)*/
 
 poly_type:
@@ -1026,7 +981,7 @@ amper_type_list:
 
 
 /*(*************************************************************************)*/
-/*(* Let/Fun definitions *)*/
+/*(*1 Let/Fun definitions *)*/
 /*(*************************************************************************)*/
 
 let_bindings:
@@ -1085,7 +1040,7 @@ rec_flag:
  | Trec            { Some $1 }
 
 /*(*----------------------------*)*/
-/*(* Labels *)*/
+/*(*2 Labels *)*/
 /*(*----------------------------*)*/
 
 label_pattern:
@@ -1102,19 +1057,19 @@ label_pattern:
       { }
 
 /*(*************************************************************************)*/
-/*(* Classes *)*/
+/*(*1 Classes *)*/
 /*(*************************************************************************)*/
 
 /*(*----------------------------*)*/
-/*(* Class types *)*/
+/*(*2 Class types *)*/
 /*(*----------------------------*)*/
 
 /*(*----------------------------*)*/
-/*(* Class expressions *)*/
+/*(*2 Class expressions *)*/
 /*(*----------------------------*)*/
 
 /*(*----------------------------*)*/
-/*(* Class definitions *)*/
+/*(*2 Class definitions *)*/
 /*(*----------------------------*)*/
 
 class_declarations:
@@ -1244,7 +1199,7 @@ private_flag:
   | Tprivate                                     { }
 
 /*(*************************************************************************)*/
-/*(* Modules *)*/
+/*(*1 Modules *)*/
 /*(*************************************************************************)*/
 
 module_binding:
@@ -1256,7 +1211,7 @@ module_declaration:
       { }
 
 /*(*----------------------------*)*/
-/*(* Module types *)*/
+/*(*2 Module types *)*/
 /*(*----------------------------*)*/
 
 module_type:
@@ -1269,7 +1224,7 @@ module_type:
       { }
 
 /*(*----------------------------*)*/
-/*(* Module expressions *)*/
+/*(*2 Module expressions *)*/
 /*(*----------------------------*)*/
 
 module_expr:
@@ -1287,11 +1242,7 @@ module_expr:
       { }
 
 /*(*************************************************************************)*/
-/*(* Misc *)*/
-/*(*************************************************************************)*/
-
-/*(*************************************************************************)*/
-/*(* xxx_opt, xxx_list *)*/
+/*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
 opt_semi:
@@ -1309,4 +1260,3 @@ opt_semi3:
 opt_bar:
  | /*(*empty*)*/    { [] }
  | TPipe            { [Right $1] }
-
