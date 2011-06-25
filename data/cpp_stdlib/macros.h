@@ -183,3 +183,11 @@
 #define BOOST_AUTO_TEST_CASE(a) void a()
 #define BOOST_STATIC_ASSERT(a) static int x
 #define BOOST_FOR_EACH(a,b) for(;;)
+#define BOOST_FOREACH(a,b) for(;;)
+
+// ****************************************************************************
+// KDE
+// ****************************************************************************
+#define Q_OBJECT
+#define Q_CLASSINFO(a,b)
+
