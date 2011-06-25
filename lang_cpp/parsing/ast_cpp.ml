@@ -208,8 +208,8 @@ and typeCbis =
     * 
     * TODO: use record for parameterType, like in parsing_c/
     *) 
-   and functionType = fullType * (parameterType comma_list * bool wrap)
-      and parameterType = (bool * string option * fullType) wrap (* reg s *)
+   and functionType = fullType * (parameter comma_list * bool wrap)
+      and parameter = (bool * string option * fullType) wrap (* reg s *)
               (* => (bool (register) * fullType) list * bool *)
 
 
@@ -305,7 +305,7 @@ and expressionbis =
   (* cppext: normmally just expression *)
   and argument = (expression, wierd_argument) Common.either
    and wierd_argument = 
-       | ArgType of parameterType
+       | ArgType of parameter
        | ArgAction of action_macro
       and action_macro = 
          | ActMisc of tok list
@@ -450,7 +450,7 @@ and statementbis =
   and handler = exception_declaration wrap (* catch () *) * compound wrap
    and exception_declaration = 
      | ExnDeclEllipsis of info
-     | ExnDecl of parameterType
+     | ExnDecl of parameter
 
 (* ------------------------------------------------------------------------- *)
 (* Block Declaration *)
@@ -583,7 +583,7 @@ and class_definition =
 
      | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
      | Destructor of definition
-     | ConstructorDecl of parameterType comma_list * bool (* explicit *)
+     | ConstructorDecl of parameter comma_list * bool (* explicit *)
      | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) (* ( ) void_opt *)
          
      | QualifiedIdInClass of name
@@ -652,7 +652,7 @@ and declaration = declarationbis wrap
 
 
  and template_parameters = template_parameter comma_list
-  and template_parameter = parameterType (* todo more *)
+  and template_parameter = parameter (* todo more *)
 
   (* TODO *)
   (* cppext: easier to put at statement_list level than statement level *)
@@ -777,7 +777,7 @@ and any =
 
   | Constant of constant
   | Argument of argument
-  | Parameter of parameterType
+  | Parameter of parameter
 
   | Body of compound (* brace *)
 
