@@ -39,6 +39,7 @@ and tok = info
 
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap  = 'a * info list (* TODO CHANGE to 'a * info *)
+and 'a wrap2  = 'a * info
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -209,8 +210,11 @@ and typeCbis =
     * TODO: use record for parameterType, like in parsing_c/
     *) 
    and functionType = fullType * (parameter comma_list * bool wrap)
-      and parameter = (bool * string option * fullType) wrap (* reg s *)
-              (* => (bool (register) * fullType) list * bool *)
+      and parameter = { 
+        p_name: string wrap2 option;
+        p_type: fullType;
+        p_register: bool wrap;
+      }
 
 
 and typeQualifier = typeQualifierbis wrap 

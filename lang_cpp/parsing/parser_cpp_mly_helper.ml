@@ -180,11 +180,13 @@ let fixDeclSpecForFuncDef x =
   | x -> (returnType, storage)
   )
 
-(* parameter: (this is the context where we give parameter only when
- * in func DEFINITION not in funct DECLARATION) We must have a name.
- * This function ensure that we give only parameterTypeDecl with well
- * formed Classic constructor todo?: do we accept other declaration
- * in ? so I must add them to the compound of the deffunc. I dont
+(* parameter: this function is used where we give parameters only when
+ * in func DEFINITION not in func DECLARATION. We must have a name.
+ * This function ensures that we give only parameterTypeDecl with well
+ * formed Classic constructor.
+ * 
+ * todo?: do we accept other declaration in ? 
+ * so I must add them to the compound of the deffunc. I dont
  * have to handle typedef pb here cos C forbid to do VF f { ... }
  * with VF a typedef of func cos here we dont see the name of the
  * argument (in the typedef)
@@ -198,16 +200,24 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
        * definition), then you must write a name within the declarator.
        * Otherwise, you can omit the name. *)
       (match params with
-      | [((reg, None, ((_qua, (BaseType Void,_)))),_), _] ->  
-          ty
+      | [{p_name = None; p_type = ty2;_},_] -> 
+          (match Ast.unwrap_typeC ty2 with
+          | BaseType Void ->
+              ty
+          | _ -> 
+              pr2 ("SEMANTIC:parameter name omitted, but I continue");
+              ty
+          )
+
       | params -> 
-          (params +> List.iter (function 
-          | (((b, None, _),  ii1),ii2) -> 
+          (params +> List.iter (fun (param,_) ->
+            match param with
+            | {p_name = None;_} -> 
               (* if majuscule, then certainly macro-parameter *)
               pr2 ("SEMANTIC:parameter name omitted, but I continue"); 
 	  | _ -> ()
-          );
-           ty)
+          ));
+          ty
       )
         (* todo? can we declare prototype in the decl or structdef,
            ... => length <> but good kan meme *)
@@ -223,16 +233,25 @@ let fixFunc = function
       (st,iist)
     ), 
     (cp,iicp)) -> 
+
       let iistart = Ast.fakeInfo () in
       assert (nQ =*= nullQualif);
       (match params with
-      | [((reg, None, ((_qua, (BaseType Void,_)))),_), _] ->  ()
+      [{p_name= None; p_type = ty2;_}, _] ->
+          (match Ast.unwrap_typeC ty2 with
+          | BaseType Void -> ()
+          | _ ->
+                (* failwith "internal errror: fixOldCDecl not good" *)
+              ()
+          )
+
       | params -> 
           params +> List.iter (function 
-          | (((bool, Some s, fullt), _), _) -> ()
+          | ({p_name = Some s;_}, _) -> ()
 	  | _ -> ()
                 (* failwith "internal errror: fixOldCDecl not good" *)
-          ));
+          )
+      );
       (* it must be nullQualif,cos parser construct only this*)
       (s, (fullt, (params, bool)), st, cp), 
       ([iis]++iifunc++iicp++[iistart]++iist) 

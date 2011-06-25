@@ -1049,28 +1049,33 @@ parameter_type_list:
 
 parameter_decl: 
  | decl_spec declarator
-     { let ((returnType,hasreg),iihasreg) = fixDeclSpecForParam $1 in 
-       (hasreg, Some (fst (fst $2)), ((snd $2) returnType)),    
-        (iihasreg ++ [snd (fst $2)])      }
+     { let ((treturn,b),ii) = fixDeclSpecForParam $1 in 
+       let (name, ftyp) = $2 in
+       { p_name = Some name; p_type = ftyp treturn;  p_register = (b, ii); }
+     }
  | decl_spec abstract_declarator
-     { let ((returnType,hasreg), iihasreg) = fixDeclSpecForParam $1 
-       in (hasreg, None, ($2 returnType)),      (iihasreg ++ [])  }
+     { let ((treturn,b), ii) = fixDeclSpecForParam $1 in
+       { p_name = None; p_type = $2 treturn; p_register = (b, ii); }
+     }
  | decl_spec
-     { let ((returnType,hasreg), iihasreg) = fixDeclSpecForParam $1 
-       in (hasreg, None, returnType),           (iihasreg ++ []) }
+     { let ((treturn,b), ii) = fixDeclSpecForParam $1 in
+       { p_name = None; p_type = treturn; p_register = (b,ii); }
+     }
 
 /*(*c++ext: default parameter value, copy paste, TODOAST *)*/
  | decl_spec declarator TEq assign_expr
-     { let ((returnType,hasreg),iihasreg) = fixDeclSpecForParam $1 
-       in 
-       (hasreg, Some (fst (fst $2)), ((snd $2) returnType)),    
-        (iihasreg ++ [snd (fst $2)]) }
+     { let ((treturn,b),ii) = fixDeclSpecForParam $1 in 
+       let (name, ftyp) = $2 in
+       { p_name = Some name; p_type = ftyp treturn;  p_register = (b, ii); }
+     }
  | decl_spec abstract_declarator TEq assign_expr
-     { let ((returnType,hasreg), iihasreg) = fixDeclSpecForParam $1 
-       in (hasreg, None, ($2 returnType)),      (iihasreg ++ []) }
+     { let ((treturn,b), ii) = fixDeclSpecForParam $1 in
+       { p_name = None; p_type = $2 treturn; p_register = (b, ii); }
+     }
  | decl_spec TEq assign_expr
-     { let ((returnType,hasreg), iihasreg) = fixDeclSpecForParam $1 
-       in (hasreg, None, returnType),           (iihasreg ++ []) }
+     { let ((treturn,b), ii) = fixDeclSpecForParam $1 in
+       { p_name = None; p_type = treturn; p_register = (b,ii); }
+     }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
