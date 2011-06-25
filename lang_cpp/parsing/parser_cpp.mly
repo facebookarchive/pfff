@@ -531,19 +531,19 @@ primary_expr:
  /*(*c++ext: cf below now. old: TIdent { mk_e(Ident  (fst $1)) [snd $1] }  *)*/
 
  /*(* constants a.k.a literal *)*/
- | TInt    { mk_e(Constant (Int    (fst $1))) [snd $1] }
- | TFloat  { mk_e(Constant (Float  (fst $1))) [snd $1] }
- | TString { mk_e(Constant (String (fst $1))) [snd $1] }
- | TChar   { mk_e(Constant (Char   (fst $1))) [snd $1] }
+ | TInt    { mk_e(C (Int    (fst $1))) [snd $1] }
+ | TFloat  { mk_e(C (Float  (fst $1))) [snd $1] }
+ | TString { mk_e(C (String (fst $1))) [snd $1] }
+ | TChar   { mk_e(C (Char   (fst $1))) [snd $1] }
  /*(*c++ext: *)*/
- | Ttrue   { mk_e(Constant (Bool false)) [$1] }
- | Tfalse  { mk_e(Constant (Bool false)) [$1] }
+ | Ttrue   { mk_e(C (Bool false)) [$1] }
+ | Tfalse  { mk_e(C (Bool false)) [$1] }
 
   /*(* forunparser: *)*/
  | TOPar expr TCPar { mk_e(ParenExpr ($2)) [$1;$3] }  
 
  /*(* gccext: cppext: *)*/
- | string_elem string_list { mk_e(Constant (MultiString)) ($1 ++ $2) }
+ | string_elem string_list { mk_e(C (MultiString)) ($1 ++ $2) }
  /*(* gccext: allow statement as expressions via ({ statement }) *)*/
  | TOPar compound TCPar    { mk_e(StatementExpr ($2)) [$1;$3] }
 

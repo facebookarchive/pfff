@@ -238,8 +238,8 @@ and expressionbis =
    * c++ext: Ident is now a 'name' instead of a 'string' and can for 
    *  instance correspond to an operator name.
    *)
-  | Ident          of name * (* semantic: *) ident_info
-  | Constant       of constant                                  
+  | Ident  of name * (* semantic: *) ident_info
+  | C      of constant                                  
   (* c++ext: *)
   | This 
 
@@ -662,6 +662,7 @@ and declaration = declarationbis wrap
     | CppDirectiveDecl of cpp_directive
     | IfdefDecl of ifdef_directive (* * statement list *)
 
+ and method_def = definition (* TODO: agglomerate method and ctor_dtor *)
 
 (* ------------------------------------------------------------------------- *)
 (* cppext: cpp directives, #ifdef, #define and #include body *)
@@ -761,8 +762,27 @@ and program = toplevel list
 and any = 
   | Program of program
   | Toplevel of toplevel
-  | Expr of expression
+  | Decl of declaration
+  | VarDecl of var_declaration
+  | BlockDecl of block_declaration
   | Stmt of statement
+  | Expr of expression
+  | Type of fullType
+  | Name of name
+
+  | Cpp of cpp_directive
+  | ClassDef of class_definition
+  | FuncDef of definition
+  | MethodDef of method_def
+
+  | Constant of constant
+  | Argument of argument
+  | Parameter of parameterType
+
+  | Body of compound (* brace *)
+
+  | Info of info
+  | InfoList of info list
 
  (* with tarzan *)
 
