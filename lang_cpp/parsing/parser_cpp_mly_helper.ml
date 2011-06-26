@@ -260,15 +260,11 @@ let fixFunc = function
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)
-
-let mk_e e ii = ((e, Ast.noType()), ii)
-(* todo: let mk_e e ii = Ast_c.mk_e e ii *)
+let mk_e e ii = (e, ii)
 
 let mk_funcall e1 args = 
   match e1 with
-  | (Ident (name, _idinfo), _t), ii_empty ->
+  | (Ident (name, _idinfo)), ii_empty ->
       FunCallSimple (name, args)
   | _ -> 
       FunCallExpr (e1, args)
-
-(*let mk_string_wrap (s,info) = (s, [info])*)

@@ -142,8 +142,7 @@ and typeCbis =
   | StructUnionName of structUnion * string (*ident_name*)
 
   (* c++note: TypeName can now correspond also to a classname or enumname *)
-  | TypeName   of string(*typedef_name*) 
-      * fullType option (* semantic: filled later *)
+  | TypeName   of string(*typedef_name*)  * fullType option (* semantic: *)
   (* c++ext: *)
   | TypeTemplate of string(*ident_name*) * template_arguments
 
@@ -225,8 +224,8 @@ and typeQualifierbis = { const: bool; volatile: bool; }
  * have an exprStatement and a new (local) struct defined. Same for
  * Constructor.
  *)
-and expression = (expressionbis * fullType option ref (* semantic: *)) wrap
-and expressionbis = 
+and expression = expressionbis wrap
+ and expressionbis = 
 
   (* Ident can be a enumeration constant, a simple variable, a name of a func.
    * cppext: Ident can also be the name of a macro. Sparse says
