@@ -1407,9 +1407,9 @@ mem_initializer_id:
 
 enum_specifier: 
  | Tenum        TOBrace enumerator_list gcc_comma_opt TCBrace
-     { Enum (None,    $3),           [$1;$2;$5] ++ $4 }
+     { Enum ($1, None, ($2, $3, $5)), (*$4*) noii }
  | Tenum ident  TOBrace enumerator_list gcc_comma_opt TCBrace
-     { Enum (Some (fst $2), $4),     [$1; snd $2; $3;$6] ++ $5 }
+     { Enum ($1, Some $2, ($3, $4, $6)), (*$5*) noii }
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }

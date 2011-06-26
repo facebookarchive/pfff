@@ -135,7 +135,8 @@ and typeCbis =
   | Array           of constExpression option * fullType
   | FunctionType    of functionType
 
-  | Enum            of string option * enumType    
+  | Enum of tok (*enum*) * string wrap2 option * 
+            enum_elem comma_list brace  (* => string * int list *)
   | StructUnion     of class_definition (* c++ext: bigger type now *)
 
   | EnumName        of string (*enum_name*)
@@ -184,7 +185,6 @@ and typeCbis =
 
       and floatType = CFloat | CDouble | CLongDouble
 
-   and enumType = enum_elem comma_list (* => string * int list *)
     and enum_elem = {
       e_name: string wrap2;
       e_val: (tok (*=*) * constExpression) option;
