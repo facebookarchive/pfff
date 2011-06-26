@@ -604,13 +604,15 @@ and declaration =
   | ExternCList of tok * tok * declaration_sequencable list brace
 
   (* the list can be empty *)
-  | NameSpace       of string * declaration_sequencable list
+  | NameSpace of tok * string wrap2 * declaration_sequencable list brace
   (* after have some semantic info *)
   | NameSpaceExtend of string * declaration_sequencable list 
-  | NameSpaceAnon   of          declaration_sequencable list
+  | NameSpaceAnon   of tok * declaration_sequencable list brace
 
   (* gccext: allow redundant ';' *)
   | EmptyDef of tok
+
+  | DeclTodo
 
  and template_parameter = parameter (* todo more *)
   and template_parameters = template_parameter comma_list angle

@@ -1723,11 +1723,11 @@ namespace_definition:
  *)*/
 named_namespace_definition: 
  | Tnamespace TIdent TOBrace declaration_list_opt TCBrace 
-     { NameSpace (fst $2, $4) (* TODO [$1; snd $2; $3; $5] *) }
+     { NameSpace ($1, $2, ($3, $4, $5)) }
 
 unnamed_namespace_definition:
  | Tnamespace TOBrace declaration_list_opt TCBrace 
-     { NameSpaceAnon $3 (* TODO [$1;$2;$4] *) }
+     { NameSpaceAnon ($1, ($2, $3, $4)) }
 
 
 /*
@@ -1738,25 +1738,21 @@ ctor_dtor:
  | nested_name_specifier TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     { NameSpaceAnon [] }
+     { DeclTodo }
  /*(* new_type_id, could also introduce a Tdestructorname or forbidy the
       TypedefIdent2 transfo by putting a guard in the lalr(k) rule by
       checking if have a ~ before
    *)*/
- | nested_name_specifier TTilde ident TOPar void_opt TCPar
-     compound
-     { NameSpaceAnon [] }
+ | nested_name_specifier TTilde ident TOPar void_opt TCPar compound
+     { DeclTodo }
 
 /*(* TODO: remove once we don't skip qualifiers *)*/
-
  | inline_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     { NameSpaceAnon [] }
- | TTilde ident TOPar void_opt TCPar
-     exception_specification_opt
-     compound
-     { NameSpaceAnon [] }
+     { DeclTodo }
+ | TTilde ident TOPar void_opt TCPar exception_specification_opt compound
+     { DeclTodo }
 
 /*(*************************************************************************)*/
 /*(*1 Function *)*/
