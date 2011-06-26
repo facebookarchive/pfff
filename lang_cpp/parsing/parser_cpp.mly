@@ -1195,15 +1195,11 @@ conversion_declarator:
 /*(* this can come from a simple_declaration/decl_spec *)*/
 class_specifier: 
  | class_head TOBrace member_specification_opt TCBrace 
-     { let ((su, iisu), nameopt, baseopt) = $1 in
-       let (baseopt, iibopt) = 
-         match baseopt with 
-         | None -> None, []
-         | Some (ii, base) -> Some base, [ii]
-       in
-       (su, nameopt, baseopt, $3), [iisu;$2;$4]++iibopt
+     { let (kind, nameopt, baseopt) = $1 in
+       { c_kind = kind; c_name = nameopt; c_inherit = baseopt;
+         c_members = $3 (* $2, $4 *)
+       }
      }
-
 /*
 (* todo in grammar they allow anon class with base_clause, wierd. 
  * bugfixc++: in c++ grammar they put identifier but when we do template 
@@ -1251,20 +1247,17 @@ base_clause:
 /*(* TODO: move the code in parse_cpp_mly_helper or shorten in some way *)*/
 base_specifier:
  | access_specifier class_name 
-     { 
-       let qid = IdIdent (fst $2), [snd $2] in 
+     { let qid = IdIdent (fst $2), [snd $2] in 
        let name = (None, noQscope, qid) in
        (name, false, Some (fst $1)), [snd $1]
      }
  | class_name 
-     { 
-       let qid = IdIdent (fst $1), [snd $1] in 
+     { let qid = IdIdent (fst $1), [snd $1] in 
        let name = (None, noQscope, qid) in
        (name, false, None), noii
      }
  | Tvirtual access_specifier class_name 
-     { 
-       let qid = IdIdent (fst $3), [snd $3] in 
+     { let qid = IdIdent (fst $3), [snd $3] in 
        let name = (None, noQscope, qid) in
        (name, true, Some (fst $2)), [$1;snd $2]
      }
@@ -1273,7 +1266,6 @@ base_specifier:
 class_name:
  | type_cplusplus_id { "todo", Ast.fakeInfo() (* TODOAST *) }
  | TIdent { $1 }
-
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: members *)*/

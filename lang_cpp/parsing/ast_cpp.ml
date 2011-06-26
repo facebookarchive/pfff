@@ -539,26 +539,20 @@ and definition = definitionbis wrap (* ( ) { } sto *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
 
-(* c++ext: the ident can be a template_id when do template specialization.
- *
- * TODO: use record
- *)
-and class_definition = 
- (structUnion * ident_name(*class_name??*) option * base_clause comma_list option * 
- class_member_sequencable list (* new scope *))
- wrap (* struct { } ':' of bopt *)
-
+(* c++ext: the ident can be a template_id when do template specialization. *)
+and class_definition = {
+  c_kind: structUnion wrap2; 
+  c_name: ident_name(*class_name??*) option;
+  c_inherit: (tok (*:*) * base_clause comma_list) option;
+  c_members: class_member_sequencable list (* new scope *); (* braces? *)
+}
   and structUnion =
-    | Struct
-    | Union
+    | Struct | Union
     (* c++ext: *)
     | Class
 
   (* used in inheritance spec (base_clause) and class_member *)
-  and access_spec =
-    | Public
-    | Private
-    | Protected
+  and access_spec = Public | Private | Protected
 
   (* was called field wrap before *)
   and class_member = class_memberbis wrap
@@ -573,9 +567,10 @@ and class_definition =
      | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
      | Destructor of definition
      | ConstructorDecl of parameter comma_list * bool (* explicit *)
-     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) (* ( ) void_opt *)
+     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
+         (* ( ) void_opt *)
          
-     | QualifiedIdInClass of name
+     | QualifiedIdInClass of name (* ?? *)
          
      | TemplateDeclInClass of (template_parameters * declaration)
      | UsingDeclInClass of name
