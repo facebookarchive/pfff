@@ -246,11 +246,13 @@ let fixFunc = function
                 (* failwith "internal errror: fixOldCDecl not good" *)
           )
       ); 
+      let (opar, cpar) = Common.tuple_of_list2 iifunc in
+      let (obar, cbar) = Common.tuple_of_list2 iicp in
       { f_name = semi_fake_name name;
-        f_type = ftyp;
+        f_type = (opar, ftyp, cpar);
         f_storage = sto;
-        f_body = cp;
-      }, (iifunc++iicp)
+        f_body = (obar, cp, cbar);
+      }
   | _ -> 
       raise 
         (Semantic 

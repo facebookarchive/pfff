@@ -510,14 +510,13 @@ and block_declaration =
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declarations and function definitions.
  *)
-and definition = definitionbis wrap (* ( ) { } *)
- and definitionbis = {
+and definition = {
    f_name: name;
-   f_type: functionType;
+   f_type: functionType paren;
    f_storage: storage wrap;
-   f_body: compound;
+   f_body: compound brace;
    (*f_attr: attribute list;*) (* gccext: *)
- }
+  }
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
