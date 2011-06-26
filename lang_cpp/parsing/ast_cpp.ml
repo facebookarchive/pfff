@@ -564,14 +564,13 @@ and class_definition = {
       * c++ext: FieldDecl was before Simple of string option * fullType
       * but in c++ field can also have storage so now reuse ondecl.
       *)
-      and fieldkind = fieldkindbis wrap (* pure spec *)
-        and fieldkindbis = 
-          | FieldDecl of onedecl
-           (* = 0 at end before the ';' *)
-          | MethodDecl of onedecl * bool (* pure virtual method *)
-          | BitField of string wrap2 option * tok(*:*) 
-              * fullType * constExpression
-             (* fullType => BitFieldInt | BitFieldUnsigned *) 
+      and fieldkind = 
+        | FieldDecl of onedecl
+        | MethodDecl of onedecl * 
+            (tok * tok) option (* =0, pure virtual method *)
+        | BitField of string wrap2 option * tok(*:*) 
+            * fullType * constExpression
+            (* fullType => BitFieldInt | BitFieldUnsigned *) 
    
   and class_member_sequencable = 
     | ClassElem of class_member

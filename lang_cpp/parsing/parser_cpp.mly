@@ -1294,7 +1294,7 @@ field_declaration:
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto) = fixDeclSpecForDecl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
-       ([(FieldDecl onedecl , noii),noii], [$2])
+       ([(FieldDecl onedecl),noii], [$2])
      }
  | decl_spec member_declarator_list TPtVirg 
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in
@@ -1307,13 +1307,13 @@ member_declarator:
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
          v_namei = Some (semi_fake_name name, None);
-         v_type = partialt t_ret; v_storage = sto; }, noii)
+         v_type = partialt t_ret; v_storage = sto; })
      }
  | declarator pure_specifier
      { let (name, partialt) = $1 in (fun t_ret sto -> 
-       (*TODO detect methodDecl *)
-       FieldDecl {v_namei = None; v_type = partialt t_ret; v_storage = sto;}, 
-       $2)
+       (*TODO detect methodDecl, use $2 *)
+       FieldDecl {v_namei = None; v_type = partialt t_ret; v_storage = sto;}
+       )
      }
  | declarator constant_initializer
      { let (name, partialt) = $1 in (fun t_ret sto -> 
@@ -1321,16 +1321,16 @@ member_declarator:
          v_namei = Some (semi_fake_name name, 
                         Some (fst $2, (InitExpr (snd $2), noii)));
          v_type = partialt t_ret; v_storage = sto;
-       }, noii)
+       })
      }
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
      { let (name, partialt) = $1 in (fun t_ret _stoTODO -> 
-       BitField (Some name, $2, t_ret, $3), noii)
+       BitField (Some name, $2, t_ret, $3))
      }
  | TCol const_expr            
-     { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2), noii) }
+     { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
 
 /*
 (* We could also solve the ambiguity without the special-token technique by
