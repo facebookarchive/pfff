@@ -154,7 +154,7 @@ let find_template_inf_sup xs =
         find_tsup_quite_close tok2 xs in
       change_tok toksup (TSup_Template toksupi);
 
-      (* old: was chaning to TIdent_Templatename but now first need
+      (* old: was changing to TIdent_Templatename but now first need
        * to do the typedef inference and then can transform the
        * TIdent_Typedef into a TIdent_Templatename
        *)
@@ -572,6 +572,10 @@ let reclassify_tokens_before_idents_or_typedefs xs =
         change_tok tok1 (TIdent_Templatename (s1, i1));
         (* recurse with tok1 too! *)
         aux (Tok tok1::xs)
+
+(* TODO 
+ * TIdent_TemplatenameInQualifier ?
+ *)
 
     | x::xs -> 
         (match x with

@@ -385,7 +385,7 @@ class_or_namespace_name_for_qualifier:
 enum_name_or_typedef_name_or_simple_class_name:
  | TIdent_Typedef { $1 }
 /*(* used only with namespace/using rules. We use Tclassname for stuff
-   * like std::... TODO: or just TIdent_Typedef *)*/
+   * like std::... todo? or just TIdent_Typedef? *)*/
 namespace_name:
  | TIdent { $1 }
 
@@ -556,7 +556,6 @@ primary_expr:
 
 /*(* can't factorize with following rule :(
    * | tcolcol_opt nested_name_specifier_opt TIdent
-   * TODO: move the code in parse_cpp_mly_helper or shorten in some way
    *)*/
 primary_cplusplus_id:
  | id_expression 
@@ -584,7 +583,7 @@ cast_operator_expr:
      { mk_e (CplusplusCast (fst $1, $3, $6)) [snd $1;$2;$4;$5;$7] }
 /*(* TODO: remove once we don't skip template arguments *)*/
  | cpp_cast_operator TOPar expr TCPar  
-     { $3 (* TODO AST *) }
+     { mk_e ExprTodo noii }
 
 /*(*c++ext:*)*/
 cpp_cast_operator:
@@ -615,7 +614,7 @@ cast_constructor_expr:
 /*(* c++ext: * simple case: new A(x1, x2); *)*/
 new_expr:
  | tcolcol_opt Tnew new_placement_opt   new_type_id  new_initializer_opt
-     { mk_e New [] (*TODO*)  }
+     { mk_e ExprTodo noii  }
 /*(* ambiguity then on the TOPar
  tcolcol_opt Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
   *)*/
@@ -719,12 +718,16 @@ statement:
 
  /*(* c++ext: TODO put at good place later *)*/
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
-     { (* TODO AST *) MacroStmt, [] }
+     { StmtTodo, noii }
 
  | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec SHIFTHERE
-     { MacroStmt, [] }
+     { StmtTodo, noii }
  | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
-     { MacroStmt, [] }
+     { StmtTodo, noii }
+
+ /*(* c++ext: for(int i = 0; i < n; i++)*)*/
+ | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
+     { StmtTodo, noii }
 
 
 compound: 
@@ -778,11 +781,7 @@ iteration:
      { DoWhile ($2,$5),              [$1;$3;$4;$6;$7] }
  | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
      { For ($3,$4,($5, []),$7), [$1;$2;$6] }
- /*(* c++ext: for(int i = 0; i < n; i++)*)*/
- | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
-     { (* TODOfake ast, TODO need decl2 ? *)
-       MacroIteration (("toto", $1), ($2, [], $6), $7),[]
-     }
+
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration ($1, ($2, $3, $4), $5), noii }
@@ -1057,7 +1056,7 @@ parameter_decl:
  | decl_spec declarator TEq assign_expr
      { let (t_ret, reg) = fixDeclSpecForParam $1 in 
        let (name, ftyp) = $2 in
-       { p_name = Some name; p_type = ftyp t_ret;  p_register = reg; }
+       { p_name = Some name; p_type = ftyp t_ret; p_register = reg; }
      }
  | decl_spec abstract_declarator TEq assign_expr
      { let (t_ret, reg) = fixDeclSpecForParam $1 in
@@ -1179,7 +1178,7 @@ class_specifier:
      }
 /*
 (* todo in grammar they allow anon class with base_clause, wierd. 
- * bugfixc++: in c++ grammar they put identifier but when we do template 
+ * bugfix_c++: in c++ grammar they put identifier but when we do template
  * specialization then we can get some template_id. Note that can
  * not introduce a class_key_name intermediate cos they get a 
  * r/r conflict as there is another place with a 'class_key ident'
@@ -1424,9 +1423,9 @@ simple_declaration:
        DeclList (
          ($2 +> List.map (fun (((name, f), iniopt), iivirg) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
-           (* TODO *)
            { v_namei = Some (semi_fake_name name, iniopt);
-             v_type = f t_ret; v_storage = sto},
+             v_type = f t_ret; v_storage = sto
+           },
            iivirg
          )), $3)
      } 
