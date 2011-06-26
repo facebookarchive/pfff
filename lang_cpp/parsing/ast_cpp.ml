@@ -730,14 +730,13 @@ and any =
 (*****************************************************************************)
 let nQ = ({const=false; volatile= false}, [])
 let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
-
-let fakeInfo pi  = 
-  { PI.token = PI.FakeTokStr ("",None); comments = ();transfo = PI.NoTransfo;}
-
 let noIdInfo () = { i_scope = Scope_code.NoScope; }
 let noii = []
 let noQscope = []
 let noTypedefDef () = None
+
+let fakeInfo pi  = 
+  { PI.token = PI.FakeTokStr ("",None); comments = ();transfo = PI.NoTransfo;}
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -745,7 +744,6 @@ let noTypedefDef () = None
 let unwrap = fst
 let untype = fst
 let uncomma xs = List.map fst xs
-
 let unwrap_typeC (qu, (typeC, ii)) = typeC
 
 let rewrap_str = PI.rewrap_str

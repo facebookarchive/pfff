@@ -659,10 +659,10 @@ argument:
 
 action_higherordermacro: 
  | taction_list 
-     { if null $1
-       then ActMisc [Ast.fakeInfo()]
-       else ActMisc $1
-     }
+    { if null $1
+      then ActMisc [Ast.fakeInfo()]
+      else ActMisc $1
+    }
 
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
@@ -897,8 +897,7 @@ type_cplusplus_id:
  * it can be a typedef-name, enum-name, class-name (not template-name
  * cos I detect them as they have a '<' just after),
  * so here type_name is simplified in consequence.
- *)
-*/
+ *)*/
 type_name:
  | enum_name_or_typedef_name_or_simple_class_name
      { (TypeName (fst $1,Ast.noTypedefDef())), [snd $1] }
@@ -932,7 +931,6 @@ cv_qualif:
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Declarator, right part of a type + second part of decl (the ident)  *)*/
 /*(*-----------------------------------------------------------------------*)*/
-
 /*
 (* declarator return a couple: 
  *  (name, partial type (a function to be applied to return type))
@@ -996,7 +994,6 @@ declarator_id:
        | _, iis ->
            pr2 (Ast_cpp.string_of_info (List.hd iis));
            raise Todo
-
      }
 /*(* TODO ::opt nested-name-specifieropt type-name*) */
 
@@ -1011,7 +1008,6 @@ abstract_declarator:
 direct_abstract_declarator: 
  | TOPar abstract_declarator TCPar /*(* forunparser: old: $2 *)*/
      { (fun x -> (nQ, (ParenType ($2 x), [$1;$3]))) }
-
  | TOCro            TCCro                            
      { fun x ->   (nQ, (Array (None, x),      [$1;$2]))}
  | TOCro const_expr TCCro                            
@@ -1034,7 +1030,6 @@ direct_abstract_declarator:
       const_opt exception_specification_opt
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = fst $3; ft_has_dots = snd $3;}, [$2;$4])) }
-
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
@@ -1095,7 +1090,6 @@ const_opt:
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 helper type rules *)*/
 /*(*-----------------------------------------------------------------------*)*/
-
 /*(* For type_id. No storage here. Was used before for field but 
    * now structure fields can have storage so fields now use decl_spec. *)*/
 spec_qualif_list: 
