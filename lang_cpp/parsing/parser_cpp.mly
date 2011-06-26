@@ -923,10 +923,10 @@ template_argument:
 
 /*(* was called type_qualif before *)*/
 cv_qualif: 
- | Tconst    { {const=true  ; volatile=false}, $1 }
- | Tvolatile { {const=false ; volatile=true},  $1 }
+ | Tconst    { {const=Some $1; volatile=None} }
+ | Tvolatile { {const=None ; volatile=Some $1} }
  /*(* C99 *)*/
- | Trestrict { (* TODO *) {const=false ; volatile=false},  $1 }
+ | Trestrict { (* TODO *) {const=None ; volatile=None} }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Declarator, right part of a type + second part of decl (the ident)  *)*/
@@ -1093,13 +1093,13 @@ const_opt:
    * now structure fields can have storage so fields now use decl_spec. *)*/
 spec_qualif_list: 
  | type_spec                    { addTypeD ($1, nullDecl) }
- | cv_qualif                    { {nullDecl with qualifD = (fst $1,[snd $1])}}
+ | cv_qualif                    { {nullDecl with qualifD = $1} }
  | type_spec   spec_qualif_list { addTypeD ($1,$2)   }
  | cv_qualif   spec_qualif_list { addQualifD ($1,$2) }
 
 /*(* for pointers in direct_declarator and abstract_declarator *)*/
 cv_qualif_list: 
- | cv_qualif                  { {nullDecl with qualifD = (fst $1,[snd $1])} }
+ | cv_qualif                  { {nullDecl with qualifD = $1 } }
  | cv_qualif_list cv_qualif   { addQualifD ($2,$1) }
 
 /*(*-----------------------------------------------------------------------*)*/
@@ -1464,7 +1464,7 @@ simple_declaration:
 decl_spec: 
  | storage_class_spec      { {nullDecl with storageD = (fst $1, [snd $1]) } }
  | type_spec               { addTypeD ($1,nullDecl) }
- | cv_qualif               { {nullDecl with qualifD  = (fst $1, [snd $1]) } }
+ | cv_qualif               { {nullDecl with qualifD  = $1 } }
  | function_spec           { {nullDecl with inlineD = (true, [snd $1]) } (*TODO*) }
  | Ttypedef     { {nullDecl with storageD = (StoTypedef,  [$1]) } }
  | Tfriend      { {nullDecl with inlineD = (true, [$1]) } (*TODO*) }

@@ -202,8 +202,7 @@ and typeCbis =
 
   (* c++ext: for class_definition (was structType) see below *)
 
-and typeQualifier = typeQualifierbis wrap 
-and typeQualifierbis = { const: bool; volatile: bool; }
+and typeQualifier = { const: tok option; volatile: tok option; }
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
@@ -723,7 +722,7 @@ and any =
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
-let nQ = ({const=false; volatile= false}, [])
+let nQ = {const=None; volatile= None}
 let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
 let noIdInfo () = { i_scope = Scope_code.NoScope; }
 let noii = []

@@ -30,7 +30,7 @@ type shortLong = Short | Long | LongLong
 type decl = { 
   storageD: storagebis wrap;
   typeD: ((sign option) * (shortLong option) * (typeCbis option)) wrap;
-  qualifD: typeQualifierbis wrap;
+  qualifD: typeQualifier;
   inlineD: bool             wrap;
   (* note: have a full_info: parse_info list; to remember ordering
    * between storage, qualifier, type ? well this info is already in
@@ -92,18 +92,18 @@ let addTypeD     = function
 
 
 let addQualif = function
-  | ({const=true; _},   ({const=true; _} as x)) -> 
+  | ({const=Some _; _},   ({const=Some _; _} as x)) -> 
       warning "duplicate 'const'" x
-  | ({volatile=true; _},({volatile=true; _} as x))-> 
+  | ({volatile=Some _; _},({volatile=Some _; _} as x))-> 
       warning "duplicate 'volatile'" x
-  | ({const=true; _},    v) -> 
-      {v with const=true}
-  | ({volatile=true; _}, v) -> 
-      {v with volatile=true}
+  | ({const=Some x; _},    v) -> 
+      {v with const=Some x}
+  | ({volatile=Some x; _}, v) -> 
+      {v with volatile=Some x}
   | _ -> internal_error "there is no noconst or novolatile keyword"
 
-let addQualifD ((qu,ii), ({qualifD = (v,ii2); _} as x)) =
-  { x with qualifD = (addQualif (qu, v),ii::ii2) }
+let addQualifD (qu, ({qualifD = v; _} as x)) =
+  { x with qualifD = addQualif (qu, v) }
 
 
 (*-------------------------------------------------------------------------- *)
@@ -116,12 +116,12 @@ let addQualifD ((qu,ii), ({qualifD = (v,ii2); _} as x)) =
  *)
 let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
  {storageD = (st,iist); 
-  qualifD = (qu,iiq); 
+  qualifD = qu; 
   typeD = (ty,iit); 
   inlineD = (inline,iinl);
   } -> 
   (
-   ((qu, iiq),
+   (qu,
    (match ty with 
  | (None,None,None)       -> warning "type defaults to 'int'" (defaultInt, [])
  | (None, None, Some t)   -> (t, iit)
