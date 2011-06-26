@@ -45,7 +45,7 @@ and 'a wrap2  = 'a * info
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
-and 'a angle = tok * 'a * tok 
+and 'a angle   = tok * 'a * tok 
 
 and 'a comma_list = 'a wrap list
 
@@ -455,12 +455,12 @@ and block_declaration =
   | MacroDecl of (string * argument comma_list) wrap
 
   (* c++ext: using namespace *)
-  | UsingDecl of (tok (*using*) * name * tok (*;*))
-  | UsingDirective of tok (*using*) * tok *  namespace_name * tok(*;*)
+  | UsingDecl of (tok * name * tok (*;*))
+  | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * tok(*;*)
   | NameSpaceAlias of tok * string wrap2 * tok (*=*) * namespace_name * tok(*;*)
 
   (* gccext: *)
-  | Asm of tok (* asm *) * tok option (*volatile*) * asmbody paren * tok (*;*)
+  | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
   and onedecl = {
     v_namei: (name *  (info (*=*) * initialiser) option)  option;
@@ -469,8 +469,8 @@ and block_declaration =
     (* v_attr: attribute list; *) (* gccext: *)
   }
    and storage       = storagebis * bool (* gccext: inline or not: *)
-   and storagebis    = NoSto | StoTypedef | Sto of storageClass
-   and storageClass  = Auto  | Static | Register | Extern (* Mutable? *)
+    and storagebis    = NoSto | StoTypedef | Sto of storageClass
+     and storageClass  = Auto  | Static | Register | Extern (* Mutable? *)
    (* Friend ???? *)
 
    (*c++ext: TODO *)
@@ -626,14 +626,14 @@ and declaration =
 (* cppext: cpp directives, #ifdef, #define and #include body *)
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
-  | Define of tok (* #define*) * string wrap2 * (define_kind * define_val)
+  | Define of tok (* #define*) * string wrap2 * define_kind * define_val
   | Include of tok (* #include s *) * inc_file
   | Undef of string wrap2 (* #undef xxx *)
   | PragmaAndCo of tok
 
   and define_kind =
    | DefineVar
-   | DefineFunc   of (string wrap comma_list) wrap
+   | DefineFunc   of string wrap comma_list paren
    and define_val = 
      | DefineExpr of expression
      | DefineStmt of statement
@@ -643,7 +643,6 @@ and cpp_directive =
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
      | DefineText of string wrap
      | DefineEmpty
-
      | DefineTodo
 
   and inc_file = 

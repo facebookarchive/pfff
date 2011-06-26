@@ -1799,7 +1799,7 @@ cpp_directive:
      }
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro
-     { Define ($1, $2, (DefineVar, $3) (*$4??*) ) }
+     { Define ($1, $2, DefineVar, $3) (*$4??*) }
  /*
  (* The TOPar_Define is introduced to avoid ambiguity with previous rules.
   * A TOPar_Define is a TOPar that was just next to the ident (no space).
@@ -1807,12 +1807,10 @@ cpp_directive:
   *)*/
  | TDefine TIdent_Define TOPar_Define param_define_list_opt TCPar 
     define_val TCommentNewline_DefineEndOfMacro
-     { Define ($1, $2, (DefineFunc ($4, [$3;$5]), $6) (*$7*)) }
+     { Define ($1, $2, (DefineFunc ($3, $4, $5)), $6) (*$7*) }
 
  | TUndef             { Undef $1 }
  | TCppDirectiveOther { PragmaAndCo $1 }
-
-
 
 /*
 (* perhaps better to use assign_expr ? but in that case need 
