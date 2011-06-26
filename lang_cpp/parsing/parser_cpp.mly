@@ -233,8 +233,7 @@ module Ast = Ast_cpp
 %type <Ast_cpp.statement> statement
 %type <Ast_cpp.expression> expr
 %type <Ast_cpp.fullType> type_id
-%type <(string * Ast_cpp.info) * (Ast_cpp.fullType -> Ast_cpp.fullType)> 
-   declarator
+%type <(Ast_cpp.name) * (Ast_cpp.fullType -> Ast_cpp.fullType)> declarator
 %%
 
 /*(*************************************************************************)*/
@@ -977,22 +976,11 @@ direct_d:
      }
 
 /*(*----------------------------*)*/
-/*(*2 c++ext: TODOAST *)*/
+/*(*2 c++ext: *)*/
 /*(*----------------------------*)*/
 declarator_id:
  | tcolcol_opt id_expression 
-     { let _name = ($1, fst $2, snd $2) in 
-       match snd $2 with
-       | IdIdent s, iis ->
-           s, List.hd iis
-       | IdOperator op, iis ->
-           "TODOOPERATOR", List.hd iis
-       | IdConverter ft, iis ->
-           "TODOCONVERTED", List.hd iis
-       | _, iis ->
-           pr2 (Ast_cpp.string_of_info (List.hd iis));
-           raise Todo
-     }
+     { ($1, fst $2, snd $2) }
 /*(* TODO ::opt nested-name-specifieropt type-name*) */
 
 /*(*-----------------------------------------------------------------------*)*/
@@ -1040,7 +1028,7 @@ parameter_type_list:
 parameter_decl: 
  | decl_spec declarator
      { let (t_ret,reg) = fixDeclSpecForParam $1 in
-       let (name, ftyp) = $2 in
+       let (name, ftyp) = fixNameForParam $2 in
        { p_name = Some name; p_type = ftyp t_ret;  p_register = reg; }
      }
  | decl_spec abstract_declarator
@@ -1055,7 +1043,7 @@ parameter_decl:
 /*(*c++ext: default parameter value, copy paste, TODOAST *)*/
  | decl_spec declarator TEq assign_expr
      { let (t_ret, reg) = fixDeclSpecForParam $1 in 
-       let (name, ftyp) = $2 in
+       let (name, ftyp) = fixNameForParam $2 in
        { p_name = Some name; p_type = ftyp t_ret; p_register = reg; }
      }
  | decl_spec abstract_declarator TEq assign_expr
@@ -1303,7 +1291,7 @@ member_declarator:
  | declarator                    
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
-         v_namei = Some (semi_fake_name name, None);
+         v_namei = Some (name, None);
          v_type = partialt t_ret; v_storage = sto; })
      }
  | declarator pure_specifier
@@ -1315,15 +1303,14 @@ member_declarator:
  | declarator constant_initializer
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
-         v_namei = Some (semi_fake_name name, 
-                        Some (fst $2, (InitExpr (snd $2), noii)));
+         v_namei = Some (name, Some (fst $2, (InitExpr (snd $2), noii)));
          v_type = partialt t_ret; v_storage = sto;
        })
      }
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
-     { let (name, partialt) = $1 in (fun t_ret _stoTODO -> 
+     { let (name, partialt) = fixNameForParam $1 in (fun t_ret _stoTODO -> 
        BitField (Some name, $2, t_ret, $3))
      }
  | TCol const_expr            
@@ -1421,7 +1408,7 @@ simple_declaration:
        DeclList (
          ($2 +> List.map (fun (((name, f), iniopt), iivirg) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
-           { v_namei = Some (semi_fake_name name, iniopt);
+           { v_namei = Some (name, iniopt);
              v_type = f t_ret; v_storage = sto
            },
            iivirg

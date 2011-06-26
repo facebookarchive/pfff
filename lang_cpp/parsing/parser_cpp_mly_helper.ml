@@ -169,6 +169,13 @@ let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) ->
         (Semantic ("storage class specified for parameter of function", 
                   fake_pi))
 
+let fixNameForParam (name, ftyp) =
+  match name with
+  | None, [], (IdIdent s, iis) ->
+      (s, List.hd iis), ftyp
+  | _ -> 
+      raise (Semantic ("parameter have qualifier", fake_pi))
+
 let fixDeclSpecForFuncDef x =
   let (returnType,storage) = fixDeclSpecForDecl x in
   (match fst (unwrap storage) with
@@ -247,7 +254,7 @@ let fixFunc = function
           )
       ); 
       let (obar, cbar) = Common.tuple_of_list2 iicp in
-      { f_name = semi_fake_name name;
+      { f_name = name;
         f_type = ftyp;
         f_storage = sto;
         f_body = (obar, cp, cbar);
