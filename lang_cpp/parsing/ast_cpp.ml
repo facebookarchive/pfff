@@ -192,7 +192,7 @@ and typeCbis =
            | CLongLong 
          and sign = Signed | UnSigned
 
-         and floatType = CFloat | CDouble | CLongDouble
+      and floatType = CFloat | CDouble | CLongDouble
 
    (* -------------------------------------- *)    
    (* c++ext: and structType, cf now below *)
@@ -206,22 +206,16 @@ and typeCbis =
    (* -------------------------------------- *)    
    (* return * (params * has "...") 
     * c++ext: TODO now const, throw spec, etc
-    * 
-    * TODO: use record for parameterType, like in parsing_c/
     *) 
    and functionType = fullType * (parameter comma_list * bool wrap)
-      and parameter = { 
+      and parameter = {
         p_name: string wrap2 option;
         p_type: fullType;
         p_register: bool wrap;
       }
 
-
 and typeQualifier = typeQualifierbis wrap 
-and typeQualifierbis = {
-  const: bool; 
-  volatile: bool
-}
+and typeQualifierbis = { const: bool; volatile: bool; }
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
@@ -239,8 +233,8 @@ and expressionbis =
   (* Ident can be a enumeration constant, a simple variable, a name of a func.
    * cppext: Ident can also be the name of a macro. Sparse says
    *  "an identifier with a meaning is a symbol". 
-   * c++ext: Ident is now a 'name' instead of a 'string' and can for 
-   *  instance correspond to an operator name.
+   * c++ext: Ident is now a 'name' instead of a 'string' and can be
+   *  also an operator name for example.
    *)
   | Ident  of name * (* semantic: *) ident_info
   | C      of constant                                  
@@ -252,7 +246,7 @@ and expressionbis =
    * FunCallSimple is also a StaticMethodCallSimple
    *)
   | FunCallSimple  of name  * argument comma_list
-  (* todo: MethodCallSimple, MethodCallExpr *)
+  (* todo? MethodCallSimple, MethodCallExpr *)
   | FunCallExpr    of expression * argument comma_list
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
@@ -281,8 +275,6 @@ and expressionbis =
   | SizeOfType     of fullType
 
   | Cast          of fullType * expression
-  (* c++ext: *)
-  | CplusplusCast of cast_operator * fullType * expression   (* c++ext: *)
 
   (* gccext: *)        
   | StatementExpr of compound wrap (* ( )     new scope *) 
@@ -292,6 +284,7 @@ and expressionbis =
   | ConstructedObject of fullType * argument comma_list
   | TypeIdOfExpr     of expression
   | TypeIdOfType     of fullType
+  | CplusplusCast of cast_operator * fullType * expression
 
   | New (* todo: of placement, init, etc *)
   | Delete of expression * qtop option
@@ -364,16 +357,11 @@ and expressionbis =
     | PtrOpOp of ptrOp
     | AccessOp of accessop
     | AllocOp of allocOp
-    | UnaryTildeOp
-    | UnaryNotOp
-    | CommaOp
+    | UnaryTildeOp | UnaryNotOp | CommaOp
 
  (* c++ext: *)
-  and cast_operator =
-    | Static_cast
-    | Dynamic_cast
-    | Const_cast
-    | Reinterpret_cast
+  and cast_operator = 
+    | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
 
  and constExpression = expression (* => int *)
 
@@ -504,12 +492,13 @@ and var_declaration =
   | MacroDecl of (string * argument comma_list) wrap
 
      (* TODO: use record as in parsing_c/ *)
-     and onedecl = 
-       ((name * initialiser option) wrap (* = *) option) * 
-         fullType * 
-         storage
-
-     and storage       = storagebis * bool (* inline or not, gccext: *)
+     and onedecl = {
+       v_namei: (name * (info (*=*) * initialiser) option) option;
+       v_type: fullType;
+       v_storage: storage;
+       (* v_attr: attribute list; *) (* gccext: *)
+     }
+     and storage       = storagebis * bool (* gccext: inline or not: *)
      and storagebis    = NoSto | StoTypedef | Sto of storageClass
      and storageClass  = Auto  | Static | Register | Extern (* Mutable? *)
      (* Friend ???? *)

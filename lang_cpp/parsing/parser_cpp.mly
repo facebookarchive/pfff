@@ -1310,48 +1310,45 @@ member_declaration:
 /*(*2 field declaration *)*/
 /*(*-----------------------------------------------------------------------*)*/
 field_declaration:
- | decl_spec member_declarator_list TPtVirg 
-     { let (returnType,storage) = fixDeclSpecForDecl $1 in
-       FieldDeclList ($2 +> (List.map (fun (f, iivirg) ->     
-         f returnType (unwrap storage), iivirg
-       )), $3::(snd storage))
-     }
  | decl_spec TPtVirg 
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
-       let (returnType,storage) = fixDeclSpecForDecl $1 in
-       let onedecl = (None, returnType, unwrap storage) in
+       let (t_ret, storage) = fixDeclSpecForDecl $1 in
+       let onedecl = { 
+         v_namei = None; v_type = t_ret; v_storage = unwrap storage } in
        FieldDeclList (
          [(FieldDecl onedecl , noii),noii], 
-         $2::(snd storage)) 
+         $2::(snd storage))
+     }
+ | decl_spec member_declarator_list TPtVirg 
+     { let (t_ret, storage) = fixDeclSpecForDecl $1 in
+       FieldDeclList ($2 +> (List.map (fun (f, iivirg) ->     
+         f t_ret (unwrap storage), iivirg
+       )), $3::(snd storage))
      }
 
 /*(* was called struct_declarator before *)*/
 member_declarator:
  | declarator                    
-     { let (name, partialt) = $1 in
-       (fun returnType unwrap_storage -> 
-         
-         let var = Some ((semi_fake_name name, None), [snd name]) in
-         let onedecl = (var, partialt returnType, unwrap_storage) in
-         (FieldDecl onedecl, noii)
-       )
+     { let (name, partialt) = $1 in (fun t_ret unwrap_storage -> 
+       FieldDecl {
+         v_namei = Some (semi_fake_name name, None);
+         v_type = partialt t_ret; v_storage = unwrap_storage;
+       }, noii)
      }
  | declarator pure_specifier
-     { let (name, partialt) = $1 in
-       (fun returnType unwrap_storage -> 
-         (*TODO detect methodDecl *)
-         let onedecl = (None, partialt returnType, unwrap_storage) in
-         (FieldDecl onedecl, $2)
-       )
+     { let (name, partialt) = $1 in (fun t_ret unwrap_storage -> 
+       (*TODO detect methodDecl *)
+       FieldDecl {
+         v_namei = None; v_type = partialt t_ret; v_storage = unwrap_storage;
+       }, $2)
      }
  | declarator constant_initializer
-     { let (name, partialt) = $1 in
-       (fun returnType unwrap_storage -> 
-         let ini = InitExpr (snd $2), noii in
-         let var = Some ((semi_fake_name name, Some ini), [snd name;fst $2]) in
-         let onedecl = (var, partialt returnType, unwrap_storage) in
-         (FieldDecl onedecl, noii)
-       )
+     { let (name, partialt) = $1 in (fun t_ret unwrap_storage -> 
+       FieldDecl {
+         v_namei = Some (semi_fake_name name, 
+                        Some (fst $2, (InitExpr (snd $2), noii)));
+         v_type = partialt t_ret; v_storage = unwrap_storage;
+       }, noii)
      }
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
@@ -1453,30 +1450,27 @@ enumerator:
 
 simple_declaration:
  | decl_spec TPtVirg
-     { let (returnType,storage) = fixDeclSpecForDecl $1 in 
-       let iistart = Ast.fakeInfo () in
-       DeclList ([(None, returnType, unwrap storage),noii],  
-                ($2::iistart::snd storage))
+     { let (t_ret, storage) = fixDeclSpecForDecl $1 in 
+       DeclList ([{ v_namei = None; 
+                    v_type = t_ret; v_storage = unwrap storage},noii],  
+                ($2::snd storage))
      } 
  | decl_spec init_declarator_list TPtVirg 
-     { let (returnType,storage) = fixDeclSpecForDecl $1 in
-       let iistart = Ast.fakeInfo () in
+     { let (t_ret, storage) = fixDeclSpecForDecl $1 in
        DeclList (
          ($2 +> List.map (fun ((((s,iis),f), ini), iivirg) -> 
-           let ini, iini = 
+           let iniopt = 
              match ini with
-             | None -> None, []
-             | Some (ini, iini) -> Some ini, [iini]
+             | None -> None
+             | Some (ini, iini) -> Some (iini, ini)
            in
-           (* old: if fst (unwrap storage) = StoTypedef 
-	    *  then LP.add_typedef s; *)
-
+           (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            (* TODO *)
-           (Some ((semi_fake_name (s, iis), ini), iis ::iini), 
-           f returnType, unwrap storage),
-           iivirg 
+           { v_namei = Some (semi_fake_name (s, iis), iniopt);
+             v_type = f t_ret; v_storage = unwrap storage},
+           iivirg
          )
-         ),  ($3::iistart::snd storage))
+         ), ($3::snd storage))
      } 
  /*(* cppext: *)*/
  | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
