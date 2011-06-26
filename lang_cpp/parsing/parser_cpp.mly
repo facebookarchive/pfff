@@ -966,16 +966,15 @@ direct_d:
             const_opt exception_specification_opt
      { (fst $1,
        fun x->(snd $1) 
-         (nQ,(FunctionType {ft_ret= x; ft_params = []; 
-                            ft_has_dots = (false, [])},[$2;$3])))
+         (nQ,(FunctionType {ft_ret= x; ft_params = ($2, [], $3); 
+                            ft_has_dots = (false, [])},[])))
      }
  | direct_d TOPar parameter_type_list TCPar 
            const_opt exception_specification_opt
      { (fst $1,
         fun x->(snd $1) 
-          (nQ,(FunctionType { ft_ret = x; ft_params = fst $3; 
-                              ft_has_dots = snd $3;
-           } , [$2;$4]))) 
+          (nQ,(FunctionType { ft_ret = x; ft_params = ($2,fst $3,$4); 
+                              ft_has_dots = snd $3;} , [])))
      }
 
 /*(*----------------------------*)*/
@@ -1018,18 +1017,18 @@ direct_abstract_declarator:
      { fun x ->$1 (nQ, (Array (Some $3,x),    [$2;$4])) }
  | TOPar TCPar                                       
      { fun x -> (nQ, (FunctionType {
-         ft_ret = x; ft_params = []; ft_has_dots = (false, [])}, [$1;$2])) }
+         ft_ret = x; ft_params = ($1,[],$2); ft_has_dots = (false, [])}, [])) }
  | TOPar parameter_type_list TCPar
      { fun x ->   (nQ, (FunctionType {
-         ft_ret = x; ft_params = fst $2; ft_has_dots = snd $2}, [$1;$3]))}
+         ft_ret = x; ft_params = ($1,fst $2,$3); ft_has_dots = snd $2}, []))}
  | direct_abstract_declarator TOPar TCPar 
       const_opt exception_specification_opt
      { fun x ->$1 (nQ, (FunctionType { (* TODOAST *)
-         ft_ret = x; ft_params = []; ft_has_dots = (false, [])},[$2;$3])) }
+         ft_ret = x; ft_params = ($2,[],$3); ft_has_dots = (false, [])},[])) }
  | direct_abstract_declarator TOPar parameter_type_list TCPar 
       const_opt exception_specification_opt
      { fun x -> $1 (nQ, (FunctionType {
-         ft_ret = x; ft_params = fst $3; ft_has_dots = snd $3;}, [$2;$4])) }
+         ft_ret = x; ft_params = ($2,fst $3,$4); ft_has_dots = snd $3;},[])) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/

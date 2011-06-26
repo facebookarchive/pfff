@@ -196,7 +196,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
        * function that you are defining (it is part of a function
        * definition), then you must write a name within the declarator.
        * Otherwise, you can omit the name. *)
-      (match params with
+      (match Ast.unparen params with
       | [{p_name = None; p_type = ty2;_},_] -> 
           (match Ast.unwrap_typeC ty2 with
           | BaseType Void ->
@@ -231,7 +231,7 @@ let fixFunc = function
       (* it must be nullQualif, cos parser construct only this *)
       assert (aQ =*= nQ);
 
-      (match params with
+      (match Ast.unparen params with
       [{p_name= None; p_type = ty2;_}, _] ->
           (match Ast.unwrap_typeC ty2 with
           | BaseType Void -> ()

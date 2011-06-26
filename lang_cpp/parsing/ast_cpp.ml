@@ -122,7 +122,6 @@ type name = qtop option * qualifier list * ident
  * grammar, you see that we can never specify const for the array
  * himself (but we can do it for pointer).
  *)
-
 and fullType = typeQualifier * typeC
 and  typeC = typeCbis wrap
 
@@ -141,7 +140,6 @@ and typeCbis =
 
   | EnumName        of string (*enum_name*)
   | StructUnionName of structUnion * string (*ident_name*)
-
   (* c++note: TypeName can now correspond also to a classname or enumname *)
   | TypeName   of string(*typedef_name*)  * fullType option (* semantic: *)
   (* c++ext: *)
@@ -193,7 +191,7 @@ and typeCbis =
    (* c++ext: TODO const, throw spec, etc *) 
    and functionType = { 
      ft_ret: fullType;
-     ft_params: parameter comma_list; (* TODO: paren *)
+     ft_params: parameter comma_list paren;
      ft_has_dots: bool wrap; (* (info * info) option? *)
    }
      and parameter = {
@@ -743,6 +741,7 @@ let unwrap = fst
 let untype = fst
 let uncomma xs = List.map fst xs
 let unwrap_typeC (qu, (typeC, ii)) = typeC
+let unparen (_, x, _) = x
 
 let rewrap_str = PI.rewrap_str
 let str_of_info = PI.str_of_info
