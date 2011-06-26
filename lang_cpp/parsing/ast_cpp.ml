@@ -145,6 +145,8 @@ and typeCbis =
   | TypeName   of string(*typedef_name*)  * fullType option (* semantic: *)
   (* c++ext: *)
   | TypeTemplate of string(*ident_name*) * template_arguments
+  (* only to disambiguate I think *)
+  | TypenameKwd of fullType (* in practice either type_name of template_name *)
 
   | TypeOfExpr of expression  
   (* gccext: TypeOfType may seems useless, why declare a __typeof__(int)
@@ -155,9 +157,6 @@ and typeCbis =
    * x), then it will generate invalid code, but with a '#define
    * macro(type, ident) __typeof(type) ident;' it will work. *)
   | TypeOfType of fullType    
-
-  (* c++ext: only to disambiguate I think *)
-  | TypenameKwd of fullType (* in practice either type_name of template_name *)
 
   (* forunparser: *)
   | ParenType of fullType 
@@ -226,7 +225,6 @@ and typeQualifierbis = { const: bool; volatile: bool; }
  *)
 and expression = expressionbis wrap
  and expressionbis = 
-
   (* Ident can be a enumeration constant, a simple variable, a name of a func.
    * cppext: Ident can also be the name of a macro. Sparse says
    *  "an identifier with a meaning is a symbol". 
@@ -234,7 +232,7 @@ and expression = expressionbis wrap
    *  also an operator name for example.
    *)
   | Ident of name * (* semantic: *) ident_info
-  | C of constant                                  
+  | C of constant
   (* c++ext: *)
   | This of tok
 
@@ -559,7 +557,7 @@ and class_definition = {
          
      | QualifiedIdInClass of name (* ?? *)
          
-     | TemplateDeclInClass of (template_parameters * declaration)
+     | TemplateDeclInClass of template_parameters * declaration
      | UsingDeclInClass of name
 
      | EmptyField  (* gccext: and maybe c++ext: ';' *)
@@ -591,9 +589,7 @@ and class_definition = {
 (* ------------------------------------------------------------------------- *)
 (* Declaration, in c++ sense *)
 (* ------------------------------------------------------------------------- *)
-
-and declaration = declarationbis wrap
- and declarationbis = 
+and declaration = 
   | BlockDecl of block_declaration (* include class definition *)
 
   | Definition of definition   (* include method definition *)
@@ -601,7 +597,7 @@ and declaration = declarationbis wrap
   | ConstructorTop of definition * bool (* explicit *) (* * chain_call*)
   | DestructorTop of definition
 
-  | TemplateDecl of (template_parameters * declaration)
+  | TemplateDecl of template_parameters * declaration
   | TemplateSpecialization of declaration
 
   (* the list can be empty *)

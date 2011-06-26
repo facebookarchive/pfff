@@ -278,8 +278,8 @@ translation_unit:
      { $1 ++ [$2] }
 
 external_declaration: 
- | function_definition            { TopDecl (Definition $1, noii) }
- | block_declaration              { TopDecl (BlockDecl $1, noii) }
+ | function_definition            { TopDecl (Definition $1) }
+ | block_declaration              { TopDecl (BlockDecl $1) }
 
 /*(*************************************************************************)*/
 /*(*1 Ident, scope *)*/
@@ -1288,7 +1288,7 @@ member_declaration:
        QualifiedIdInClass name, [$2]
      }
  | using_declaration      { UsingDeclInClass (fst $1), snd $1 }
- | template_declaration   { TemplateDeclInClass (fst $1), snd $1 }
+ | template_declaration   { TemplateDeclInClass (fst $1, snd $1), noii }
 
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor_member       { $1 }
@@ -1678,19 +1678,19 @@ asm_expr: assign_expr { $1 }
  * to template_declaration and so is ambiguous.
  *)*)*/
 declaration:
- | block_declaration                 { BlockDecl $1, noii }
- | function_definition               { Definition $1, noii }
+ | block_declaration                 { BlockDecl $1 }
+ | function_definition               { Definition $1 }
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
 
- | template_declaration              { TemplateDecl (fst $1), snd $1 }
+ | template_declaration              { TemplateDecl (fst $1, snd $1) }
  | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
 
  | namespace_definition              { $1 }
 
  /*(* sometimes the function ends with }; instead of just } *)*/
- | TPtVirg    { EmptyDef $1, noii } 
+ | TPtVirg    { EmptyDef $1 } 
 
 declaration_list: 
  | declaration_seq                  { [$1]   }
@@ -1713,11 +1713,11 @@ declaration_seq:
 /*(*todo: export_opt, but generates lots of conflicts *)*/ 
 template_declaration:
  | Ttemplate TInf_Template template_parameter_list TSup_Template declaration
-   { ($3, $5), [$1;$2;$4] (* todo ++ some_to_list $1*) }
+   { ($3, $5) (* [$1;$2;$4]*) (* TODO ++ some_to_list $1*) }
 
 explicit_specialization:
  | Ttemplate TInf_Template TSup_Template declaration 
-     { TemplateSpecialization $4,[$1;$2;$3]}
+     { TemplateSpecialization $4 (* TODO [$1;$2;$3] *)}
 
 /*(*todo: '| type_paramter' 
    * ambiguity with parameter_decl cos a type can also be 'class X'
@@ -1730,9 +1730,9 @@ template_parameter:
 /*(* c++ext: could also do a extern_string_opt to factorize stuff *)*/
 linkage_specification:
  | Textern TString declaration 
-     { ExternC $3, [$1;snd $2] }
+     { ExternC $3 (*TODO [$1;snd $2] *) }
  | Textern TString TOBrace declaration_list_opt TCBrace 
-     { ExternCList $4, [$1;snd $2;$3;$5] }
+     { ExternCList $4 (* TODO [$1;snd $2;$3;$5] *) }
 
 
 namespace_definition:
@@ -1746,11 +1746,11 @@ namespace_definition:
  *)*/
 named_namespace_definition: 
  | Tnamespace TIdent TOBrace declaration_list_opt TCBrace 
-     { NameSpace (fst $2, $4), [$1; snd $2; $3; $5] }
+     { NameSpace (fst $2, $4) (* TODO [$1; snd $2; $3; $5] *) }
 
 unnamed_namespace_definition:
  | Tnamespace TOBrace declaration_list_opt TCBrace 
-     { NameSpaceAnon $3, [$1;$2;$4] }
+     { NameSpaceAnon $3 (* TODO [$1;$2;$4] *) }
 
 
 /*
@@ -1761,25 +1761,25 @@ ctor_dtor:
  | nested_name_specifier TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     { NameSpaceAnon [],[] }
+     { NameSpaceAnon [] }
  /*(* new_type_id, could also introduce a Tdestructorname or forbidy the
       TypedefIdent2 transfo by putting a guard in the lalr(k) rule by
       checking if have a ~ before
    *)*/
  | nested_name_specifier TTilde ident TOPar void_opt TCPar
      compound
-     { NameSpaceAnon [],[] }
+     { NameSpaceAnon [] }
 
 /*(* TODO: remove once we don't skip qualifiers *)*/
 
  | inline_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     { NameSpaceAnon [],[] }
+     { NameSpaceAnon [] }
  | TTilde ident TOPar void_opt TCPar
      exception_specification_opt
      compound
-     { NameSpaceAnon [],[] }
+     { NameSpaceAnon [] }
 
 /*(*************************************************************************)*/
 /*(*1 Function *)*/
@@ -1900,7 +1900,7 @@ celem:
     * beginning of the file, and so get trailing unclose } at
     * end
     *)*/
- | TCBrace { TopDecl (EmptyDef $1, noii) (* TODO ??? *) }
+ | TCBrace { TopDecl (EmptyDef $1) (* TODO ??? *) }
 
  | EOF        { FinalDef $1 }
 
