@@ -562,30 +562,22 @@ primary_expr:
    *)*/
 primary_cplusplus_id:
  | id_expression 
-     { let qtop = None in 
-       let name = (qtop, fst $1, snd $1) in 
-       let idinfo = Ast.noIdentInfo () in
-       mk_e(Ident (name, idinfo)) [] 
+     { let name = (None, fst $1, snd $1) in 
+       mk_e (Ident (name, noIdInfo())) [] 
      }
  | TColCol TIdent  
-     { let qtop = Some (QTop, [$1]) in
-       let qid = IdIdent (fst $2), [snd $2] in 
-       let name = (qtop, noQscope, qid) in 
-       let idinfo = Ast.noIdentInfo () in
-       mk_e(Ident (name, idinfo)) [] 
+     { let qid = IdIdent (fst $2), [snd $2] in 
+       let name = (Some (QTop, $1), noQscope, qid) in 
+       mk_e (Ident (name, noIdInfo())) [] 
      }
  | TColCol operator_function_id 
-     { let qtop = Some (QTop, [$1]) in
-       let qop = $2 in
-       let name = (qtop, noQscope, qop) in 
-       let idinfo = Ast.noIdentInfo () in
-       mk_e(Ident (name, idinfo)) [] 
+     { let qop = $2 in
+       let name = (Some (QTop, $1), noQscope, qop) in 
+       mk_e (Ident (name, noIdInfo())) [] 
      }
  | TColCol qualified_id 
-     { let qtop = Some (QTop, [$1]) in
-       let name = (qtop, fst $2, snd $2) in 
-       let idinfo = Ast.noIdentInfo () in
-       mk_e(Ident (name, idinfo)) [] 
+     { let name = (Some (QTop, $1), fst $2, snd $2) in 
+       mk_e (Ident (name, noIdInfo())) [] 
      }
 
 /*(*could use TInf here *)*/
@@ -2100,5 +2092,5 @@ inline_opt:
  | /*(*empty*)*/ { None }
 
 tcolcol_opt:
- | TColCol         { Some (QTop, [$1]) }
+ | TColCol         { Some (QTop, $1) }
  | /*(* empty *)*/ { None }

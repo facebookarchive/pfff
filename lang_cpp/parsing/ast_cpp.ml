@@ -80,7 +80,7 @@ type name = qtop option * qualifier list * ident
      | QClassname of string (* classname or namespacename *)
      | QTemplateId of string * template_arguments
 
- and qtop = qtobis wrap (* :: *)
+ and qtop = qtobis wrap2 (* :: *)
    and qtobis = QTop
 
  and template_argument = (fullType, expression) Common.either
@@ -772,11 +772,10 @@ let fakeInfo pi  =
   }
 
 let noType () = ref None (* old: None, old: [] *)
-let noIdentInfo () = { i_scope = Scope_code.NoScope; }
+let noIdInfo () = { i_scope = Scope_code.NoScope; }
 
 let noii = []
 
-let noQtop = None
 let noQscope = []
 
 let noTypedefDef () = None
