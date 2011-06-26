@@ -1827,22 +1827,18 @@ cpp_directive:
      }
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro
-     { Define ((fst $2, [$1; snd $2;$4]), (DefineVar, $3)) }
+     { Define ($1, $2, (DefineVar, $3) (*$4??*) ) }
  /*
  (* The TOPar_Define is introduced to avoid ambiguity with previous rules.
   * A TOPar_Define is a TOPar that was just next to the ident (no space).
   * See parsing_hacks_define.ml
   *)*/
- | TDefine TIdent_Define 
-    TOPar_Define param_define_list_opt TCPar define_val 
-    TCommentNewline_DefineEndOfMacro
-     { Define 
-         ((fst $2, [$1; snd $2;$7]), 
-           (DefineFunc ($4, [$3;$5]), $6)) 
-     }
+ | TDefine TIdent_Define TOPar_Define param_define_list_opt TCPar 
+    define_val TCommentNewline_DefineEndOfMacro
+     { Define ($1, $2, (DefineFunc ($4, [$3;$5]), $6) (*$7*)) }
 
- | TUndef { Undef (fst $1, [snd $1]) }
- | TCppDirectiveOther { PragmaAndCo [$1] }
+ | TUndef             { Undef $1 }
+ | TCppDirectiveOther { PragmaAndCo $1 }
 
 
 

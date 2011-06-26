@@ -414,7 +414,7 @@ and statementbis =
 	      |	Default of statement
 
   and selection     = 
-   | If     of expression * statement * statement
+   | If of expression * statement * statement
    (* for Switch, we need to check that all elements in the compound start 
     * with a case:, otherwise it's unreachable code.
     *)
@@ -466,7 +466,7 @@ and block_declaration = block_declarationbis wrap
 (* ------------------------------------------------------------------------- *)
 (* Simple Declaration *)
 (* ------------------------------------------------------------------------- *)
-(* (string * ...) option cos can have empty declaration or struct tag 
+(* (name * ...) option cos can have empty declaration or struct tag 
  * declaration.
  *   
  * Before I had Typedef constructor, but why make this special case and not 
@@ -579,7 +579,7 @@ and class_definition = {
 
       (* before unparser, I didn't have a FieldDeclList but just a Field. *)
       and field_declaration = 
-       | FieldDeclList of fieldkind comma_list (* , *) wrap (* ';' *)
+       | FieldDeclList of fieldkind comma_list wrap (* ';' *)
 
       (* At first I thought that a bitfield could be only Signed/Unsigned.
        * But it seems that gcc allow char i:4. C rule must say that you
@@ -587,7 +587,7 @@ and class_definition = {
        * c++ext: FieldDecl was before Simple of string option * fullType
        * but in c++ field can also have storage so now reuse ondecl.
        *)
-        and fieldkind = fieldkindbis wrap (* s :  or pure spec *)
+        and fieldkind = fieldkindbis wrap (* :  or pure spec *)
           and fieldkindbis = 
             | FieldDecl of onedecl
             (* = 0 at end before the ';' *)
@@ -599,7 +599,7 @@ and class_definition = {
     | ClassElem of class_member
     (* cppext: *)
     | CppDirectiveStruct of cpp_directive
-    | IfdefStruct of ifdef_directive (* * field list *)
+    | IfdefStruct of ifdef_directive (*  * field list *)
 
   and base_clause = base_clausebis wrap (* virtual and access spec *)
     and base_clausebis = 
@@ -612,7 +612,6 @@ and class_definition = {
 and declaration = declarationbis wrap
  and declarationbis = 
   | Declaration of block_declaration (* include class definition *)
-
   | Definition of definition   (* include method definition *)
   (* c++ext: *)
   | ConstructorTop of definition * bool (* explicit *) (* * chain_call*)
@@ -627,13 +626,12 @@ and declaration = declarationbis wrap
 
   (* the list can be empty *)
   | NameSpace       of string * declaration_sequencable list
-  (* after have semantic info *)
+  (* after have some semantic info *)
   | NameSpaceExtend of string * declaration_sequencable list 
   | NameSpaceAnon   of          declaration_sequencable list
 
   (* gccext: allow redundant ';' *)
   | EmptyDef of tok list
-
 
  and template_parameters = template_parameter comma_list
   and template_parameter = parameter (* todo more *)
@@ -654,15 +652,15 @@ and declaration = declarationbis wrap
 and cpp_directive =
   | Define of define 
   | Include of includ 
-  | Undef of string * tok list
-  | PragmaAndCo of tok list
+  | Undef of string wrap2 (* #undef xxx *)
+  | PragmaAndCo of tok
 
 (* cppext *) 
-and define = string wrap * define_body   (* #define s *)
+and define = tok (* #define*) * string wrap2 * define_body
  and define_body = define_kind * define_val
    and define_kind =
    | DefineVar
-   | DefineFunc   of ((string wrap) comma_list) wrap
+   | DefineFunc   of (string wrap comma_list) wrap
    and define_val = 
      | DefineExpr of expression
      | DefineStmt of statement
@@ -682,20 +680,6 @@ and includ = inc_file wrap (* #include s *) *
   | Standard of inc_elem list
   | Wierd of string (* ex: #include SYSTEM_H *)
   and inc_elem = string
-
-(* Cocci: to tag the first of #include <xx/> and last of #include <yy/>
- * 
- * The first_of and last_of store the list of prefixes that was
- * introduced by the include. On #include <a/b/x>, if the include was
- * the first in the file, it would give in first_of the following
- * prefixes a/b/c; a/b/; a/ ; <empty> 
- * 
- * This is set after parsing, in cocci.ml, in update_rel_pos.
- * and include_rel_pos = { 
- * first_of : string list list;
- * last_of :  string list list;
- * }
- *)
 
 (* to specialize if someone need more info *)
 and ifdef_directive = 
@@ -723,9 +707,7 @@ and ifdef_directive =
 (* ------------------------------------------------------------------------- *)
 (* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
-
 and toplevel =
-
   | TopDecl of declaration
          
   (* cppext: *)
@@ -737,7 +719,6 @@ and toplevel =
 
   | FinalDef of info (* EOF *)
 
-(* ------------------------------------------------------------------------- *)
 and program = toplevel list
 
 (* ------------------------------------------------------------------------- *)
