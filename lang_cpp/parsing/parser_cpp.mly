@@ -1273,7 +1273,7 @@ member_declaration:
      { let name = (None, fst $1, snd $1) in
        QualifiedIdInClass name, [$2]
      }
- | using_declaration      { UsingDeclInClass (fst $1), snd $1 }
+ | using_declaration      { UsingDeclInClass $1, noii }
  | template_declaration   { TemplateDeclInClass (fst $1, snd $1), noii }
 
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
@@ -1422,7 +1422,7 @@ enumerator:
 simple_declaration:
  | decl_spec TPtVirg
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in 
-       DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],[$2])
+       DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],$2)
      }
  | decl_spec init_declarator_list TPtVirg 
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in
@@ -1433,7 +1433,7 @@ simple_declaration:
            { v_namei = Some (semi_fake_name name, iniopt);
              v_type = f t_ret; v_storage = sto},
            iivirg
-         )), [$3])
+         )), $3)
      } 
  /*(* cppext: *)*/
  | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
@@ -1461,7 +1461,6 @@ simple_declaration:
  * 
  * todo? can simplify by putting all in _opt ? must have at least one otherwise
  * decl_list is ambiguous ? (no cos have ';' between decl) 
- * 
  *)*/
 decl_spec: 
  | storage_class_spec      { {nullDecl with storageD = (fst $1, [snd $1]) } }
@@ -1525,10 +1524,9 @@ initialize:
  | assign_expr                                    
      { InitExpr $1,                [] }
  | TOBrace initialize_list gcc_comma_opt_struct  TCBrace
-     { InitList (List.rev $2),     [$1;$4]++$3 }
+     { InitList (List.rev $2),     [$1;$4] (*$3*) }
  | TOBrace TCBrace
      { InitList [],       [$1;$2] } /*(* gccext: *)*/
-
 
 /*
 (* opti: This time we use the weird order of non-terminal which requires in 
@@ -1547,7 +1545,7 @@ initialize2:
  | cond_expr 
      { InitExpr $1,   [] } 
  | TOBrace initialize_list gcc_comma_opt_struct TCBrace
-     { InitList (List.rev $2),   [$1;$4]++$3 }
+     { InitList (List.rev $2),   [$1;$4] (*$3*) }
  | TOBrace TCBrace
      { InitList [],  [$1;$2]  }
 
@@ -1575,22 +1573,21 @@ designator:
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/
-
 gcc_comma_opt_struct: 
- | TComma {  [$1] } 
- | /*(* empty *)*/  {  [Ast.fakeInfo() +> Ast.rewrap_str ","]  }
+ | TComma {  Some $1 } 
+ | /*(* empty *)*/  { None  }
 
 /*(*************************************************************************)*/
 /*(*1 Block declaration (namespace and asm) *)*/
 /*(*************************************************************************)*/
 
 block_declaration:
- | simple_declaration { $1, noii }
+ | simple_declaration { $1 }
  | asm_definition     { $1 }
 
  /*(*c++ext: *)*/
  | namespace_alias_definition { $1 }
- | using_declaration { UsingDecl (fst $1), snd $1 }
+ | using_declaration { UsingDecl $1 }
  | using_directive   { $1 }
 
 
@@ -1602,13 +1599,14 @@ namespace_alias_definition:
  | Tnamespace TIdent TEq tcolcol_opt nested_name_specifier_opt namespace_name
    TPtVirg
      { let name = ($4, $5, (IdIdent (fst $6), [snd $6])) in
-       NameSpaceAlias (fst $2, name), [$1;snd $2;$3] 
+       NameSpaceAlias ($1, $2, $3, name, $7)
      }
 
 using_directive:
- | Tusing Tnamespace tcolcol_opt nested_name_specifier_opt namespace_name TPtVirg
+ | Tusing Tnamespace tcolcol_opt nested_name_specifier_opt namespace_name 
+    TPtVirg
      { let name = ($3, $4, (IdIdent (fst $5), [snd $5])) in
-       UsingDirective name, [$1;$2;$6] 
+       UsingDirective ($1, $2, name, $6)
      }
 
 /*(* conflict on TColCol in 'Tusing TColCol unqualified_id TPtVirg'
@@ -1618,13 +1616,13 @@ using_directive:
 using_declaration:
  | Tusing typename_opt tcolcol_opt nested_name_specifier unqualified_id TPtVirg
      { let name = ($3, $4, $5) in
-       name, [$1;$6]++$2
+       $1, name, $6 (*$2*)
      }
 /*(* TODO: remove once we don't skip qualifier ? *)*/
- | Tusing typename_opt tcolcol_opt unqualified_id TPtVirg {
-     let name = ($3, [], $4) in
-     name, [$1;$5]++$2
-   }
+ | Tusing typename_opt tcolcol_opt unqualified_id TPtVirg 
+     { let name = ($3, [], $4) in
+       $1, name, $5 (*$2*)
+     }
   
 
 /*(*----------------------------*)*/
@@ -1633,14 +1631,14 @@ using_declaration:
 
 asm_definition:
  /*(* gccext: c++ext: also apparently *)*/
- | Tasm TOPar asmbody TCPar TPtVirg             { Asm $3, [$1;$2;$4;$5] }
- | Tasm Tvolatile TOPar asmbody TCPar TPtVirg   { Asm $4, [$1;$2;$3;$5;$6] }
-
+ | Tasm TOPar asmbody TCPar TPtVirg           
+     { Asm($1, None, ($2, $3, $4), $5) }
+ | Tasm Tvolatile TOPar asmbody TCPar TPtVirg 
+     { Asm($1, Some $2, ($3, $4, $5), $6) }
 
 asmbody: 
  | string_list colon_asm_list  { $1, $2 }
  | string_list { $1, [] } /*(* in old kernel *)*/
-
 
 colon_asm: 
  | TCol colon_option_list { Colon $2, [$1]   }

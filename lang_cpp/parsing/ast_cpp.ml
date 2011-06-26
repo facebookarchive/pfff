@@ -436,8 +436,7 @@ and statement = statementbis wrap
 (* Block Declaration *)
 (* ------------------------------------------------------------------------- *)
 (* a.k.a declaration_statement *)
-and block_declaration = block_declarationbis wrap
- and block_declarationbis =
+and block_declaration = 
  (* (name * ...) option cos can have empty declaration or struct tag 
   * declaration.
   *   
@@ -453,17 +452,17 @@ and block_declaration = block_declarationbis wrap
   * note: var_declaration include prototype declaration,
   * and class_declaration.
   *)
-  | DeclList of onedecl comma_list wrap (* ; *)
+  | DeclList of onedecl comma_list * tok (*;*)
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of (string * argument comma_list) wrap
 
   (* c++ext: using namespace *)
-  | UsingDecl of name
-  | UsingDirective of namespace_name
-  | NameSpaceAlias of string * namespace_name
+  | UsingDecl of (tok (*using*) * name * tok (*;*))
+  | UsingDirective of tok (*using*) * tok *  namespace_name * tok(*;*)
+  | NameSpaceAlias of tok * string wrap2 * tok (*=*) * namespace_name * tok(*;*)
 
   (* gccext: *)
-  | Asm of asmbody
+  | Asm of tok (* asm *) * tok option (*volatile*) * asmbody paren * tok (*;*)
 
   and onedecl = {
     v_namei: (name *  (info (*=*) * initialiser) option)  option;
@@ -558,7 +557,7 @@ and class_definition = {
      | QualifiedIdInClass of name (* ?? *)
          
      | TemplateDeclInClass of template_parameters * declaration
-     | UsingDeclInClass of name
+     | UsingDeclInClass of (tok (*using*) * name * tok (*;*))
 
      | EmptyField  (* gccext: and maybe c++ext: ';' *)
 
@@ -708,8 +707,8 @@ and any =
   | Expr of expression
   | Type of fullType
   | Name of name
-
   | Cpp of cpp_directive
+
   | ClassDef of class_definition
   | FuncDef of definition
   | MethodDef of method_def
