@@ -825,8 +825,8 @@ exception_decl:
 type_spec:
  | simple_type_specifier { $1 }
  | elaborated_type_specifier { $1 }
- | enum_specifier  { Right3 (fst $1), snd $1 }
- | class_specifier { Right3 (StructUnion $1),            [] }
+ | enum_specifier  { Right3 $1, noii }
+ | class_specifier { Right3 (StructUnion $1), noii }
 
 
 simple_type_specifier:
@@ -1327,12 +1327,10 @@ member_declarator:
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
      { let (name, partialt) = $1 in (fun t_ret _stoTODO -> 
-         let s = fst name in
-         let var = Some s in
-         BitField (var, t_ret, $3), [snd name; $2])
+       BitField (Some name, $2, t_ret, $3), noii)
      }
  | TCol const_expr            
-     { (fun t_ret _stoTODO -> BitField (None, t_ret, $2), [$1]) }
+     { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2), noii) }
 
 /*
 (* We could also solve the ambiguity without the special-token technique by
@@ -1404,9 +1402,9 @@ mem_initializer_id:
 
 enum_specifier: 
  | Tenum        TOBrace enumerator_list gcc_comma_opt TCBrace
-     { Enum ($1, None, ($2, $3, $5)), (*$4*) noii }
+     { Enum ($1, None, ($2, $3, $5)) (*$4*) }
  | Tenum ident  TOBrace enumerator_list gcc_comma_opt TCBrace
-     { Enum ($1, Some $2, ($3, $4, $6)), (*$5*) noii }
+     { Enum ($1, Some $2, ($3, $4, $6)) (*$5*) }
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }
