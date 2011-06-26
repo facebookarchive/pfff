@@ -25,6 +25,8 @@ module PI = Parse_info
  * This is a big file ... C++ is a quite complicated language ... 
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
+ * Some stuff are tagged 'semantic:' which means that they are computed
+ * after parsing. 
  *)
 (*****************************************************************************)
 (* The AST C++ related types *)
@@ -44,21 +46,23 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a angle = tok * 'a * tok 
+
 and 'a comma_list = 'a wrap list
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
 (* ------------------------------------------------------------------------- *)
 
-(* c++ext: in C 'name' and 'ident' are equivalent and equal to just string.
- * In C++ 'ident' can have a complex form like A::B::list<int>::size.
+(* c++ext: in C 'name' and 'ident' are equivalent and equal to just 'string'.
+ * In C++ 'ident' can have a complex form like 'A::B::list<int>::size'.
  * I use Q for qualified. I also have a special type to make the difference
- * between intermediate idents (the classname or template_id) and final idents,
- * but note that sometimes final idents are also classnames and can have final
+ * between intermediate idents (the classname or template_id) and final idents.
+ * Note that sometimes final idents are also classnames and can have final
  * template_id.
- * Sometimes some elements are not allowed at certain places, for 
- * instance converters can not have an associated Qtop. But I prefered
- * to simplify and have a unique type for all those idents.
+ * 
+ * Sometimes some elements are not allowed at certain places, for instance
+ * converters can not have an associated Qtop. But I prefered to simplify
+ * and have a unique type for all those different kind of idents.
  *)
 type name = qtop option * qualifier list * ident  
 
@@ -117,14 +121,6 @@ type name = qtop option * qualifier list * ident
  * dont have sense. I put this to factorise some code. If you look in
  * grammar, you see that we can never specify const for the array
  * himself (but we can do it for pointer).
- * 
- * Because of ExprStatement, we can have more 'new scope', but it's
- * rare I think. For instance with 'array of constExpression' we could
- * have an exprStatement and a new (local) struct defined. Same for
- * Constructor.
- * 
- * Some stuff are tagged semantic: which means that they are computed
- * after parsing. 
  *)
 
 and fullType = typeQualifier * typeC
@@ -223,6 +219,12 @@ and typeQualifierbis = { const: bool; volatile: bool; }
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
+
+(* Because of StatementExpr, we can have more 'new scope', but it's
+ * rare I think. For instance with 'array of constExpression' we could
+ * have an exprStatement and a new (local) struct defined. Same for
+ * Constructor.
+ *)
 and expression = (expressionbis * fullType option ref (* semantic: *)) wrap
 and expressionbis = 
 
@@ -232,8 +234,8 @@ and expressionbis =
    * c++ext: Ident is now a 'name' instead of a 'string' and can be
    *  also an operator name for example.
    *)
-  | Ident  of name * (* semantic: *) ident_info
-  | C      of constant                                  
+  | Ident of name * (* semantic: *) ident_info
+  | C of constant                                  
   (* c++ext: *)
   | This 
 
@@ -283,7 +285,7 @@ and expressionbis =
   | CplusplusCast of cast_operator * fullType * expression
 
   | New (* todo: of placement, init, etc *)
-  | Delete of expression * qtop option
+  | Delete      of expression * qtop option
   | DeleteArray of expression * qtop option
 
   | Throw of expression option 
@@ -331,12 +333,10 @@ and expressionbis =
   and fixOp    = Dec | Inc
 
   and binaryOp = Arith of arithOp | Logical of logicalOp
-
        and arithOp   = 
          | Plus | Minus | Mul | Div | Mod
          | DecLeft | DecRight 
          | And | Or | Xor
-
        and logicalOp = 
          | Inf | Sup | InfEq | SupEq 
          | Eq | NotEq 
@@ -447,7 +447,7 @@ and statementbis =
 (* a.k.a declaration_statement *)
 and block_declaration = block_declarationbis wrap
  and block_declarationbis =
-  | SimpleDecl of var_declaration (* include class_declaration *)
+  | SimpleDecl of var_declaration (* includes class_declaration ... *)
 
   (* c++ext: using namespace *)
   | UsingDecl of name
@@ -462,7 +462,6 @@ and block_declaration = block_declarationbis wrap
       and colon = Colon of colon_option comma_list
       and colon_option = colon_optionbis wrap
           and colon_optionbis = ColonMisc | ColonExpr of expression
-
 
 (* ------------------------------------------------------------------------- *)
 (* Simple Declaration *)
@@ -487,7 +486,6 @@ and var_declaration =
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of (string * argument comma_list) wrap
 
-     (* TODO: use record as in parsing_c/ *)
      and onedecl = {
        v_namei: (name * (info (*=*) * initialiser) option) option;
        v_type: fullType;
@@ -500,9 +498,7 @@ and var_declaration =
      (* Friend ???? *)
 
      (*c++ext: *)
-     and func_specifier =
-       | Inline
-       | Virtual
+     and func_specifier = Inline | Virtual
 
      and initialiser = initialiserbis wrap
        and initialiserbis = 
@@ -528,7 +524,7 @@ and var_declaration =
  * function. For instance a function declaration can omit the name of the
  * parameter wheras a function definition can not. But, in some cases such
  * as 'f(void) {', there is no name too, so I simplified and reused the 
- * same functionType type for both declaration and function definition.
+ * same functionType type for both declarations and function definitions.
  * 
  * TODO: use record like in parsing_c/
  *)
