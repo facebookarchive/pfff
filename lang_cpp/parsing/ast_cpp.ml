@@ -534,28 +534,29 @@ and class_definition = {
   and access_spec = Public | Private | Protected
 
   (* was called field wrap before *)
-  and class_member = class_memberbis wrap
-   and class_memberbis =
-     | Access of access_spec (* could put outside and take class_member list *)
+  and class_member = 
+    (* could put outside and take class_member list *)
+    | Access of access_spec wrap2 * tok (*:*)
 
-     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-     | DeclarationField of fieldkind comma_list wrap (* ';' *)
+    (* before unparser, I didn't have a FieldDeclList but just a Field. *)
+    | DeclarationField of fieldkind comma_list wrap (* ';' *)
     
-     | Method of definition
-     (* MethodDecl is inside field_declaration *)
-     | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
-     | Destructor of definition
+    | Method of definition
+    (* MethodDecl is inside field_declaration *)
+    | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
+    | Destructor of definition
 
-     | ConstructorDecl of parameter comma_list * bool (* explicit *)
-     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
+    | ConstructorDecl of parameter comma_list * bool (* explicit *)
+    | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
          (* ( ) void_opt *)
          
-     | QualifiedIdInClass of name (* ?? *)
+    | QualifiedIdInClass of name (* ?? *) * tok(*;*)
          
-     | TemplateDeclInClass of template_parameters * declaration
-     | UsingDeclInClass of (tok (*using*) * name * tok (*;*))
+    | TemplateDeclInClass of template_parameters * declaration
+    | UsingDeclInClass of (tok (*using*) * name * tok (*;*))
 
-     | EmptyField  (* gccext: and maybe c++ext: ';' *)
+     (* gccext: and maybe c++ext: *)
+    | EmptyField  of tok (*;*)
 
      (* At first I thought that a bitfield could be only Signed/Unsigned.
       * But it seems that gcc allow char i:4. C rule must say that you

@@ -1253,9 +1253,7 @@ member_specification:
  | member_declaration member_specification_opt    
      { ClassElem $1::$2 }
  | access_specifier TCol member_specification_opt 
-     { let access = Access (fst $1), [snd $1;$2] in
-       ClassElem access::$3
-     }
+     { ClassElem (Access ($1, $2))::$3 }
 
 access_specifier:
  | Tpublic    { Public, $1 }
@@ -1266,14 +1264,14 @@ access_specifier:
 /*(* in c++ grammar there is a ;opt after function_definition but 
    * there is a conflict as it can also be an EmptyField *)*/
 member_declaration:
- | field_declaration      { DeclarationField $1, noii }
- | function_definition    { Method $1, noii }
+ | field_declaration      { DeclarationField $1 }
+ | function_definition    { Method $1 }
  | qualified_id TPtVirg   
      { let name = (None, fst $1, snd $1) in
-       QualifiedIdInClass name, [$2]
+       QualifiedIdInClass (name, $2)
      }
- | using_declaration      { UsingDeclInClass $1, noii }
- | template_declaration   { TemplateDeclInClass (fst $1, snd $1), noii }
+ | using_declaration      { UsingDeclInClass $1 }
+ | template_declaration   { TemplateDeclInClass (fst $1, snd $1) }
 
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor_member       { $1 }
@@ -1286,7 +1284,7 @@ member_declaration:
     * 'x;' in a structure, maybe default to int but not practical for my way of
     * parsing
     *)*/
- | TPtVirg    { EmptyField, [$1] }
+ | TPtVirg    { EmptyField $1 }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 field declaration *)*/
@@ -1356,37 +1354,37 @@ ctor_dtor_member:
  | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     {  EmptyField, [](*TODO*) }
+     {  EmptyField $3 (*TODO*) }
 
  | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      TPtVirg 
-     { EmptyField, [](*TODO*) }
+     { EmptyField $3 (*TODO*) }
 
  | Tinline TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      TPtVirg 
-     { EmptyField, [](*TODO*) }
+     { EmptyField $3(*TODO*) }
 
  | Tinline TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     {  EmptyField, [](*TODO*) }
+     {  EmptyField $3(*TODO*) }
 
 
  | virtual_opt TTilde ident TOPar void_opt TCPar 
      exception_specification_opt
      compound
-     { EmptyField, [](*TODO*) }
+     { EmptyField $4 (*TODO*) }
  | virtual_opt TTilde ident TOPar void_opt TCPar
      exception_specification_opt
      TPtVirg
-     { EmptyField, [](*TODO*) }
+     { EmptyField $4 (*TODO*) }
 
  | Tinline TTilde ident TOPar void_opt TCPar compound
-     { EmptyField, [](*TODO*) }
+     { EmptyField $4 (*TODO*) }
  | Tinline TTilde ident TOPar void_opt TCPar  TPtVirg
-     { EmptyField, [](*TODO*) }
+     { EmptyField $4 (*TODO*) }
 
 ctor_mem_initializer_list_opt: 
  | TCol mem_initializer_list { () }
