@@ -73,18 +73,18 @@ type name = qtop option * qualifier list * ident
      | IdOperator of operator
      | IdConverter of fullType
      | IdDestructor of string (* todo: ident or template_id here too *)
-     | IdTemplateId of string * template_arguments
+     | IdTemplateId of string wrap2 * template_arguments
 
  and qualifier = qualifierbis wrap (* s :: *)
    and qualifierbis = 
      | QClassname of string (* classname or namespacename *)
-     | QTemplateId of string * template_arguments
+     | QTemplateId of string wrap2 * template_arguments
 
  and qtop = qtobis wrap2 (* :: *)
    and qtobis = QTop
 
  and template_argument = (fullType, expression) Common.either
- and template_arguments = template_argument comma_list
+ and template_arguments = template_argument comma_list angle
 
  (* special cases *)
  and class_name     = name (* only IdIdent or IdTemplateId *)
@@ -143,7 +143,7 @@ and typeCbis =
   (* c++note: TypeName can now correspond also to a classname or enumname *)
   | TypeName   of string(*typedef_name*)  * fullType option (* semantic: *)
   (* c++ext: *)
-  | TypeTemplate of string(*ident_name*) * template_arguments
+  | TypeTemplate of string wrap2 (*ident_name*) * template_arguments
   (* only to disambiguate I think *)
   | TypenameKwd of fullType (* in practice either type_name of template_name *)
 
@@ -552,7 +552,7 @@ and class_definition = {
          
     | QualifiedIdInClass of name (* ?? *) * tok(*;*)
          
-    | TemplateDeclInClass of template_parameters * declaration
+    | TemplateDeclInClass of (tok * template_parameters * declaration)
     | UsingDeclInClass of (tok (*using*) * name * tok (*;*))
 
      (* gccext: and maybe c++ext: *)
@@ -592,12 +592,12 @@ and declaration =
   | ConstructorTop of definition * bool (* explicit *) (* * chain_call*)
   | DestructorTop of definition
 
-  | TemplateDecl of template_parameters * declaration
-  | TemplateSpecialization of declaration
+  | TemplateDecl of (tok * template_parameters * declaration)
+  | TemplateSpecialization of tok * unit angle * declaration
 
   (* the list can be empty *)
-  | ExternC of declaration
-  | ExternCList of declaration_sequencable list
+  | ExternC     of tok * tok * declaration
+  | ExternCList of tok * tok * declaration_sequencable list brace
 
   (* the list can be empty *)
   | NameSpace       of string * declaration_sequencable list
@@ -609,7 +609,7 @@ and declaration =
   | EmptyDef of tok
 
  and template_parameter = parameter (* todo more *)
-  and template_parameters = template_parameter comma_list
+  and template_parameters = template_parameter comma_list angle
 
   (* TODO *)
   (* cppext: easier to put at statement_list level than statement level *)

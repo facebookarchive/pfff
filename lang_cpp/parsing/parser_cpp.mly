@@ -373,7 +373,7 @@ class_or_namespace_name_for_qualifier:
      { QClassname (fst $1), [snd $1] }
  | TIdent_TemplatenameInQualifier 
    TInf_Template template_argument_list TSup_Template
-     { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
+     { QTemplateId ($1, ($2, $3, $4)), [] }
 
 
 /*
@@ -402,7 +402,7 @@ class_or_namespace_name_for_qualifier2:
    { QClassname (fst $1), [snd $1]  }
  | TIdent_TemplatenameInQualifier_BeforeTypedef 
      TInf_Template template_argument_list TSup_Template
-   { QTemplateId (fst $1, $3), [snd $1;$2;$4] }
+   { QTemplateId ($1, ($2, $3, $4)), noii }
 
 /*
 (* Why this ? Why not s/ident/TIdent ? cos there is multiple namespaces in C, 
@@ -905,7 +905,7 @@ type_name:
 
 template_id:
  | TIdent_Templatename TInf_Template template_argument_list TSup_Template
-    { (TypeTemplate (fst $1,$3)), [snd $1;$2;$4] }
+    { TypeTemplate ($1, ($2, $3, $4)), noii }
 
 /*
 (*c++ext: in the c++ grammar they have also 'template-name' but this is catched 
@@ -1271,7 +1271,7 @@ member_declaration:
        QualifiedIdInClass (name, $2)
      }
  | using_declaration      { UsingDeclInClass $1 }
- | template_declaration   { TemplateDeclInClass (fst $1, snd $1) }
+ | template_declaration   { TemplateDeclInClass ($1) }
 
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor_member       { $1 }
@@ -1662,7 +1662,7 @@ declaration:
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
 
- | template_declaration              { TemplateDecl (fst $1, snd $1) }
+ | template_declaration              { TemplateDecl ($1) }
  | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
 
@@ -1693,11 +1693,11 @@ declaration_seq:
 /*(*todo: export_opt, but generates lots of conflicts *)*/ 
 template_declaration:
  | Ttemplate TInf_Template template_parameter_list TSup_Template declaration
-   { ($3, $5) (* [$1;$2;$4]*) (* TODO ++ some_to_list $1*) }
+   { ($1, ($2, $3, $4), $5) }
 
 explicit_specialization:
  | Ttemplate TInf_Template TSup_Template declaration 
-     { TemplateSpecialization $4 (* TODO [$1;$2;$3] *)}
+     { TemplateSpecialization ($1, ($2, (), $3), $4) }
 
 /*(*todo: '| type_paramter' 
    * ambiguity with parameter_decl cos a type can also be 'class X'
@@ -1710,9 +1710,9 @@ template_parameter:
 /*(* c++ext: could also do a extern_string_opt to factorize stuff *)*/
 linkage_specification:
  | Textern TString declaration 
-     { ExternC $3 (*TODO [$1;snd $2] *) }
+     { ExternC ($1, (snd $2), $3) }
  | Textern TString TOBrace declaration_list_opt TCBrace 
-     { ExternCList $4 (* TODO [$1;snd $2;$3;$5] *) }
+     { ExternCList ($1, (snd $2), ($3, $4, $5)) }
 
 
 namespace_definition:
