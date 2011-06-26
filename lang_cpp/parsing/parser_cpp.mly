@@ -1219,8 +1219,6 @@ base_clause:
    *  access-specifier virtualopt ::opt nested-name-specifieropt class-name
    * specialisation
    *)*/
-
-/*(* TODO: move the code in parse_cpp_mly_helper or shorten in some way *)*/
 base_specifier:
  | access_specifier class_name 
      { let qid = IdIdent (fst $2), [snd $2] in 
@@ -1247,7 +1245,7 @@ class_name:
 /*(*2 c++ext: members *)*/
 /*(*----------------------------*)*/
 
-/*(* TODO add cpp_directive possibility here too *)*/
+/*(* todo? add cpp_directive possibility here too *)*/
 member_specification:
  | member_declaration member_specification_opt    
      { ClassElem $1::$2 }
