@@ -27,8 +27,7 @@ module Ast = Ast_cpp
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 /*
-(* 
- * Some tokens below are not even used in this file because they are filtered
+(* Some tokens below are not even used in this file because they are filtered
  * in some intermediate phases (e.g. the comment tokens). Some tokens
  * also appear only here and are not in the lexer because they are
  * created in some intermediate phases. They are called "fresh" tokens
@@ -242,8 +241,7 @@ module Ast = Ast_cpp
 /*(*1 TOC *)*/
 /*(*************************************************************************)*/
 /*
-(* 
- * toplevel (obsolete)
+(* toplevel (obsolete)
  * 
  * ident
  * expression
@@ -634,7 +632,6 @@ new_placement:
 new_initializer: 
  | TOPar argument_list_opt TCPar { () }
 
-
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/
 /*(*----------------------------*)*/
@@ -675,16 +672,16 @@ action_higherordermacro:
 const_expr: cond_expr { $1  }
 
 basic_type_2: 
- | Tchar_Constr                { (BaseType (IntType CChar)), [$1]}
- | Tint_Constr                { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
- | Tfloat_Constr               { (BaseType (FloatType CFloat)),  [$1]}
- | Tdouble_Constr              { (BaseType (FloatType CDouble)), [$1] }
+ | Tchar_Constr    { (BaseType (IntType CChar)), [$1]}
+ | Tint_Constr     { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
+ | Tfloat_Constr   { (BaseType (FloatType CFloat)),  [$1]}
+ | Tdouble_Constr  { (BaseType (FloatType CDouble)), [$1] }
 
- | Twchar_t_Constr             { (BaseType (IntType WChar_t)),         [$1] }
+ | Twchar_t_Constr { (BaseType (IntType WChar_t)),         [$1] }
 
- | Tshort_Constr          { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
- | Tlong_Constr           { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
- | Tbool_Constr           { (BaseType (IntType CBool)),         [$1] }
+ | Tshort_Constr   { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
+ | Tlong_Constr    { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
+ | Tbool_Constr    { (BaseType (IntType CBool)),         [$1] }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
@@ -694,8 +691,8 @@ statement:
  | compound        { Compound     (fst $1), snd $1 }
  | expr_statement  { ExprStatement(fst $1), snd $1 }
  | labeled         { Labeled      (fst $1), snd $1 }
- | selection       { Selection    (fst $1), snd $1 ++ [fakeInfo()] }
- | iteration       { Iteration    (fst $1), snd $1 ++ [fakeInfo()] }
+ | selection       { Selection    (fst $1), snd $1 }
+ | iteration       { Iteration    (fst $1), snd $1 }
  | jump TPtVirg    { Jump         (fst $1), snd $1 ++ [$2] }
 
  /*(* cppext: *)*/
@@ -745,7 +742,7 @@ statement_list_opt:
 
 statement_seq:
  | statement { StmtElem $1 }
- /* (* cppext: *)*/
+ /*(* cppext: *)*/
  | cpp_directive 
      { CppDirectiveStmt $1 }
  | cpp_ifdef_directive/*(* stat_or_decl_list ...*)*/  
@@ -754,7 +751,6 @@ statement_seq:
 
 expr_statement: 
  | expr_opt TPtVirg { $1, [$2] }
-
 
 /*(* note that case 1: case 2: i++;    would be correctly parsed, but with 
    * a Case  (1, (Case (2, i++)))  :(  
@@ -765,7 +761,6 @@ labeled:
  | Tcase const_expr TEllipsis const_expr TCol statement 
      { CaseRange ($2, $4, $6), [$1;$3;$5] } /*(* gccext: allow range *)*/
  | Tdefault         TCol statement   { Default $3,             [$1; $2] } 
-
 
 /*(* classic else ambiguity resolved by a %prec *)*/
 selection: 
@@ -781,7 +776,6 @@ iteration:
      { While ($3,$5),                [$1;$2;$4] }
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
      { DoWhile ($2,$5),              [$1;$3;$4;$6;$7] }
-
  | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
      { For ($3,$4,($5, []),$7), [$1;$2;$6] }
  /*(* c++ext: for(int i = 0; i < n; i++)*)*/
@@ -792,7 +786,6 @@ iteration:
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration (fst $1, $3, $5), [snd $1;$2;$4] }
-
 
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 
@@ -809,7 +802,6 @@ jump:
 
 declaration_statement:
  | block_declaration { DeclStmt $1, noii }
-
 
 try_block: 
  | Ttry compound handler_list { Try ($2, $3), [$1] }
@@ -955,13 +947,13 @@ declarator:
 
 /*(* so must do  int * const p; if the pointer is constant, not the pointee *)*/
 pointer: 
- | TMul                          { fun x ->(nQ,         (Pointer x,     [$1]))}
+ | TMul                        { fun x ->(nQ,         (Pointer x,     [$1]))}
  | TMul cv_qualif_list         { fun x ->($2.qualifD, (Pointer x,     [$1]))}
- | TMul pointer                  { fun x ->(nQ,         (Pointer ($2 x),[$1]))}
+ | TMul pointer                { fun x ->(nQ,         (Pointer ($2 x),[$1]))}
  | TMul cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($3 x),[$1]))}
  /*(*c++ext: no qualif for ref *)*/
- | TAnd                          { fun x ->(nQ,    (Reference x,    [$1]))}
- | TAnd pointer                  { fun x ->(nQ,    (Reference ($2 x),[$1]))}
+ | TAnd                        { fun x ->(nQ,    (Reference x,    [$1]))}
+ | TAnd pointer                { fun x ->(nQ,    (Reference ($2 x),[$1]))}
 
 direct_d: 
  | declarator_id
@@ -1691,6 +1683,7 @@ declaration:
 
  /*(* sometimes the function ends with }; instead of just } *)*/
  | TPtVirg    { EmptyDef $1 } 
+
 
 declaration_list: 
  | declaration_seq                  { [$1]   }
