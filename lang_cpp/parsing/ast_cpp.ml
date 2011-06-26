@@ -525,7 +525,6 @@ and definition = definitionbis wrap (* ( ) { } *)
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
-
 and class_definition = {
   c_kind: structUnion wrap2; 
   (* the ident can be a template_id when do template specialization. *)
@@ -551,9 +550,9 @@ and class_definition = {
     
      | Method of definition
      (* MethodDecl is inside field_declaration *)
-
      | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
      | Destructor of definition
+
      | ConstructorDecl of parameter comma_list * bool (* explicit *)
      | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
          (* ( ) void_opt *)
@@ -596,6 +595,7 @@ and class_definition = {
 and declaration = declarationbis wrap
  and declarationbis = 
   | BlockDecl of block_declaration (* include class definition *)
+
   | Definition of definition   (* include method definition *)
   (* c++ext: *)
   | ConstructorTop of definition * bool (* explicit *) (* * chain_call*)
