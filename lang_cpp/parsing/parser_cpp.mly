@@ -122,7 +122,7 @@ module Ast = Ast_cpp
 %token <Ast_cpp.info> TOBrace_DefineInit
 
 /*(* cppext: include  *)*/
-%token <(string * string * bool ref * Ast_cpp.info)> TInclude
+%token <(string * string * Ast_cpp.info)> TInclude
 
 /*(* cppext: ifdef         *)*/
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
@@ -1802,9 +1802,7 @@ start_fun: decl_spec declarator
 /*(* cppext: *)*/
 cpp_directive: 
  | TInclude 
-     { 
-       let (include_str, filename, in_ifdef, tok) = $1 in
-
+     { let (include_str, filename, tok) = $1 in
        (* redo some lexing work :( *)
        let inc_file = 
          match () with
@@ -1815,7 +1813,7 @@ cpp_directive:
          | _ ->
              Wierd filename
        in
-       Include ((inc_file, [tok]), (Ast.noRelPos(), !in_ifdef))
+       Include (tok, inc_file)
      }
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro

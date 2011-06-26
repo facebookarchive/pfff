@@ -238,17 +238,16 @@ rule token = parse
   (* The difference between a local "" and standard <> include is computed
    * later in parser_cpp.mly. So we redo a little bit of lexing there. It's
    * ugly but simpler to generate a single token here. *)
-  | (("#" [' ''\t']* ("include" | "include_next" | "import") 
-   [' ' '\t']*) as includes) 
+  | (("#" [' ''\t']* ("include" | "include_next" | "import")
+     [' ' '\t']*) as includes) 
     (('"' ([^ '"']+) '"' | 
      '<' [^ '>']+ '>' | 
       ['A'-'Z''_']+ 
     ) as filename)
-      { let info = tokinfo lexbuf in 
-        (* todo? generate 2 info so highlight_cpp.ml can colorize the
+      { (* todo? generate 2 info so highlight_cpp.ml can colorize the
          * directive and the filename differently
          *)
-        TInclude (includes, filename, Ast.noInIfdef(), info)
+        TInclude (includes, filename, tokinfo lexbuf)
       }
 
   (* ---------------------- *)

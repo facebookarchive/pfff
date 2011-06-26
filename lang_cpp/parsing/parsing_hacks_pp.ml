@@ -262,8 +262,9 @@ let rec adjust_inifdef_include xs =
   | Ifdef (xxs, info_ifdef_stmt) | Ifdefbool (_, xxs, info_ifdef_stmt) -> 
       xxs +> List.iter (iter_token_ifdef (fun tokext -> 
         match tokext.t with
-        | Parser.TInclude (s1, s2, inifdef_ref, ii) -> 
-            inifdef_ref := true;
+        | Parser.TInclude (s1, s2, ii) -> 
+            (* todo: inifdef_ref := true; *)
+            ()
         | _ -> ()
       ));
   )

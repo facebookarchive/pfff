@@ -40,7 +40,7 @@ type decl = {
 let nullDecl = {
   storageD = NoSto, [];
   typeD = (None, None, None), [];
-  qualifD = Ast.nullQualif;
+  qualifD = Ast.nQ;
   inlineD = false, [];
 }
 let fake_pi = Parse_info.fake_parse_info
@@ -225,11 +225,11 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
 (* TODO: this is ugly ... use record! *)
 let fixFunc = function
   | (name, 
-    (nQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)), 
+    (aQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)), 
     sto
     ), (cp,iicp) -> 
       (* it must be nullQualif, cos parser construct only this *)
-      assert (nQ =*= nullQualif);
+      assert (aQ =*= nQ);
 
       (match params with
       [{p_name= None; p_type = ty2;_}, _] ->

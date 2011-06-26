@@ -281,7 +281,7 @@ let info_of_tok = function
 
   (*cppext:*) 
   | TDefine (ii) -> ii 
-  | TInclude (includes, filename, inifdef, i1) ->     i1
+  | TInclude (includes, filename, i1) ->     i1
 
   | TUndef (s, ii) -> ii
   | TCppDirectiveOther (ii) -> ii
@@ -500,8 +500,8 @@ let visitor_info_of_tok f = function
   | TUndef (s,i1) -> TUndef(s, f i1) 
   | TCppDirectiveOther (i1) -> TCppDirectiveOther(f i1) 
 
-  | TInclude (includes, filename, inifdef, i1) -> 
-      TInclude (includes, filename, inifdef, f i1)
+  | TInclude (includes, filename, i1) -> 
+      TInclude (includes, filename, f i1)
 
   | TCppEscapedNewline (i1) -> TCppEscapedNewline (f i1)
   | TCommentNewline_DefineEndOfMacro (i1) -> 
