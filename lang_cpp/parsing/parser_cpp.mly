@@ -1323,9 +1323,8 @@ field_declaration:
      }
  | decl_spec member_declarator_list TPtVirg 
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in
-       FieldDeclList ($2 +> (List.map (fun (f, iivirg) ->     
-         f t_ret sto, iivirg
-       )), [$3])
+       FieldDeclList 
+         ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), [$3])
      }
 
 /*(* was called struct_declarator before *)*/
@@ -1334,8 +1333,7 @@ member_declarator:
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
          v_namei = Some (semi_fake_name name, None);
-         v_type = partialt t_ret; v_storage = sto;
-       }, noii)
+         v_type = partialt t_ret; v_storage = sto; }, noii)
      }
  | declarator pure_specifier
      { let (name, partialt) = $1 in (fun t_ret sto -> 
@@ -1354,12 +1352,10 @@ member_declarator:
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
-     { let (name, partialt) = $1 in
-       (fun t_ret _stoTODO -> 
+     { let (name, partialt) = $1 in (fun t_ret _stoTODO -> 
          let s = fst name in
-         let var = Some (s) in
-         BitField (var, t_ret, $3), [snd name; $2]
-       )
+         let var = Some s in
+         BitField (var, t_ret, $3), [snd name; $2])
      }
  | TCol const_expr            
      { (fun t_ret _stoTODO -> BitField (None, t_ret, $2), [$1]) }
@@ -1454,15 +1450,10 @@ simple_declaration:
  | decl_spec init_declarator_list TPtVirg 
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in
        DeclList (
-         ($2 +> List.map (fun ((((s,iis),f), ini), iivirg) -> 
-           let iniopt = 
-             match ini with
-             | None -> None
-             | Some (ini, iini) -> Some (iini, ini)
-           in
+         ($2 +> List.map (fun (((name, f), iniopt), iivirg) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            (* TODO *)
-           { v_namei = Some (semi_fake_name (s, iis), iniopt);
+           { v_namei = Some (semi_fake_name name, iniopt);
              v_type = f t_ret; v_storage = sto},
            iivirg
          )), [$3])
@@ -1529,7 +1520,7 @@ storage_class_spec:
 /*(*-----------------------------------------------------------------------*)*/
 init_declarator:  
  | declaratori                  { ($1, None) }
- | declaratori TEq initialize   { ($1, Some ($3, $2)) }
+ | declaratori TEq initialize   { ($1, Some ($2, $3)) }
 
  /*(* c++ext: c++ initializer via call to constructor. Note that this
     * is different from TypedefIdent2, here the declaratori is an ident,

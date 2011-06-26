@@ -579,7 +579,7 @@ and class_definition = {
 
       (* before unparser, I didn't have a FieldDeclList but just a Field. *)
       and field_declaration = 
-       | FieldDeclList of fieldkind comma_list (* , *) wrap (* ';' sto *)
+       | FieldDeclList of fieldkind comma_list (* , *) wrap (* ';' *)
 
       (* At first I thought that a bitfield could be only Signed/Unsigned.
        * But it seems that gcc allow char i:4. C rule must say that you
