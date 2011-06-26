@@ -224,12 +224,10 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
 
 (* TODO: this is ugly ... use record! *)
 let fixFunc = function
-  | ((
-      (s,iis), 
-      (nQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)), 
-      (st,iist)
-    ), 
-    (cp,iicp)) -> 
+  | (name, 
+    (nQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)), 
+    sto
+    ), (cp,iicp) -> 
       (* it must be nullQualif, cos parser construct only this *)
       assert (nQ =*= nullQualif);
 
@@ -248,11 +246,11 @@ let fixFunc = function
                 (* failwith "internal errror: fixOldCDecl not good" *)
           )
       ); 
-      { f_name = semi_fake_name (s, iis);
+      { f_name = semi_fake_name name;
         f_type = ftyp;
-        f_storage = st;
+        f_storage = sto;
         f_body = cp;
-      }, (iifunc++iicp++iist)
+      }, (iifunc++iicp)
   | _ -> 
       raise 
         (Semantic 

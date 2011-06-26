@@ -1317,59 +1317,52 @@ member_declaration:
 field_declaration:
  | decl_spec TPtVirg 
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
-       let (t_ret, storage) = fixDeclSpecForDecl $1 in
-       let onedecl = { 
-         v_namei = None; v_type = t_ret; v_storage = unwrap storage } in
-       FieldDeclList (
-         [(FieldDecl onedecl , noii),noii], 
-         $2::(snd storage))
+       let (t_ret, sto) = fixDeclSpecForDecl $1 in
+       let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
+       FieldDeclList ([(FieldDecl onedecl , noii),noii], [$2])
      }
  | decl_spec member_declarator_list TPtVirg 
-     { let (t_ret, storage) = fixDeclSpecForDecl $1 in
+     { let (t_ret, sto) = fixDeclSpecForDecl $1 in
        FieldDeclList ($2 +> (List.map (fun (f, iivirg) ->     
-         f t_ret (unwrap storage), iivirg
-       )), $3::(snd storage))
+         f t_ret sto, iivirg
+       )), [$3])
      }
 
 /*(* was called struct_declarator before *)*/
 member_declarator:
  | declarator                    
-     { let (name, partialt) = $1 in (fun t_ret unwrap_storage -> 
+     { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
          v_namei = Some (semi_fake_name name, None);
-         v_type = partialt t_ret; v_storage = unwrap_storage;
+         v_type = partialt t_ret; v_storage = sto;
        }, noii)
      }
  | declarator pure_specifier
-     { let (name, partialt) = $1 in (fun t_ret unwrap_storage -> 
+     { let (name, partialt) = $1 in (fun t_ret sto -> 
        (*TODO detect methodDecl *)
-       FieldDecl {
-         v_namei = None; v_type = partialt t_ret; v_storage = unwrap_storage;
-       }, $2)
+       FieldDecl {v_namei = None; v_type = partialt t_ret; v_storage = sto;}, 
+       $2)
      }
  | declarator constant_initializer
-     { let (name, partialt) = $1 in (fun t_ret unwrap_storage -> 
+     { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
          v_namei = Some (semi_fake_name name, 
                         Some (fst $2, (InitExpr (snd $2), noii)));
-         v_type = partialt t_ret; v_storage = unwrap_storage;
+         v_type = partialt t_ret; v_storage = sto;
        }, noii)
      }
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
      { let (name, partialt) = $1 in
-       (fun t_ret unwrap_storage -> 
-         let s = (fst name) in
+       (fun t_ret _stoTODO -> 
+         let s = fst name in
          let var = Some (s) in
          BitField (var, t_ret, $3), [snd name; $2]
        )
      }
  | TCol const_expr            
-     { (fun t_ret unwrap_storage -> 
-         BitField (None, t_ret, $2), [$1]
-       )
-     }
+     { (fun t_ret _stoTODO -> BitField (None, t_ret, $2), [$1]) }
 
 /*
 (* We could also solve the ambiguity without the special-token technique by
@@ -1455,13 +1448,11 @@ enumerator:
 
 simple_declaration:
  | decl_spec TPtVirg
-     { let (t_ret, storage) = fixDeclSpecForDecl $1 in 
-       DeclList ([{ v_namei = None; 
-                    v_type = t_ret; v_storage = unwrap storage},noii],  
-                ($2::snd storage))
-     } 
+     { let (t_ret, sto) = fixDeclSpecForDecl $1 in 
+       DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],[$2])
+     }
  | decl_spec init_declarator_list TPtVirg 
-     { let (t_ret, storage) = fixDeclSpecForDecl $1 in
+     { let (t_ret, sto) = fixDeclSpecForDecl $1 in
        DeclList (
          ($2 +> List.map (fun ((((s,iis),f), ini), iivirg) -> 
            let iniopt = 
@@ -1472,10 +1463,9 @@ simple_declaration:
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            (* TODO *)
            { v_namei = Some (semi_fake_name (s, iis), iniopt);
-             v_type = f t_ret; v_storage = unwrap storage},
+             v_type = f t_ret; v_storage = sto},
            iivirg
-         )
-         ), ($3::snd storage))
+         )), [$3])
      } 
  /*(* cppext: *)*/
  | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
@@ -1818,8 +1808,8 @@ function_definition: start_fun compound
      { fixFunc ($1, $2) }
 
 start_fun: decl_spec declarator
-     { let (t_ret, storage) = fixDeclSpecForFuncDef $1 in
-       (fst $2, fixOldCDecl ((snd $2) t_ret) , storage)
+     { let (t_ret, sto) = fixDeclSpecForFuncDef $1 in
+       (fst $2, fixOldCDecl ((snd $2) t_ret), sto)
      }
 
 /*(*************************************************************************)*/

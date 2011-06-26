@@ -482,14 +482,14 @@ and block_declaration = block_declarationbis wrap
  * note: var_declaration include prototype declaration.
  *)
 and var_declaration = 
-  | DeclList of onedecl comma_list wrap (* ; sto *)
+  | DeclList of onedecl comma_list wrap (* ; *)
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of (string * argument comma_list) wrap
 
      and onedecl = {
-       v_namei: (name * (info (*=*) * initialiser) option) option;
+       v_namei: (name *  (info (*=*) * initialiser) option)  option;
        v_type: fullType;
-       v_storage: storage;
+       v_storage: storage wrap;
        (* v_attr: attribute list; *) (* gccext: *)
      }
      and storage       = storagebis * bool (* gccext: inline or not: *)
@@ -526,11 +526,11 @@ and var_declaration =
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declarations and function definitions.
  *)
-and definition = definitionbis wrap (* ( ) { } sto *)
+and definition = definitionbis wrap (* ( ) { } *)
  and definitionbis = {
    f_name: name;
    f_type: functionType;
-   f_storage: storage;
+   f_storage: storage wrap;
    f_body: compound;
    (*f_attr: attribute list;*) (* gccext: *)
  }
