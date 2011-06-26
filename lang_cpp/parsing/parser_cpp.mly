@@ -1443,12 +1443,12 @@ simple_declaration:
      } 
  /*(* cppext: *)*/
  | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
-     { MacroDecl ((fst $1, $3), [snd $1;$2;$4;$5;fakeInfo()]) }
+     { MacroDecl ((fst $1, $3), [snd $1;$2;$4;$5]) }
  | Tstatic TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
-     { MacroDecl ((fst $2, $4), [snd $2;$3;$5;$6;fakeInfo();$1]) }
+     { MacroDecl ((fst $2, $4), [snd $2;$3;$5;$6;$1]) }
  | Tstatic Tconst_MacroDeclConst 
     TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
-     { MacroDecl ((fst $3, $5), [snd $3;$4;$6;$7;fakeInfo();$1;$2])}
+     { MacroDecl ((fst $3, $5), [snd $3;$4;$6;$7;$1;$2])}
 
 
 /*(*-----------------------------------------------------------------------*)*/
@@ -1873,7 +1873,7 @@ cpp_other:
 
  /*(* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)*/
  | TIdent TOPar argument_list TCPar_EOL
-     { MacroTop (fst $1, $3,    [snd $1;$2;$4;fakeInfo()]) } 
+     { MacroTop (fst $1, $3,    [snd $1;$2;$4;]) } 
 
   /*(* ex: EXPORT_NO_SYMBOLS; *)*/
  | TIdent TPtVirg { MacroTop (fst $1, [], [snd $1;$2]) }
