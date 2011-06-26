@@ -566,10 +566,9 @@ and class_definition = {
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | MethodDecl of onedecl * 
-            (tok * tok) option (* =0, pure virtual method *)
-        | BitField of string wrap2 option * tok(*:*) 
-            * fullType * constExpression
+        | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *)
+        | BitField of string wrap2 option * tok(*:*) *
+            fullType * constExpression
             (* fullType => BitFieldInt | BitFieldUnsigned *) 
    
   and class_member_sequencable = 
