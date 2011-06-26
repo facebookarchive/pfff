@@ -980,14 +980,21 @@ direct_d:
      { (fst $1,fun x->(snd $1) (nQ,(Array (None,x),         [$2;$3]))) }
  | direct_d TOCro const_expr TCCro
      { (fst $1,fun x->(snd $1) (nQ,(Array (Some $3,x),      [$2;$4])))}
- | direct_d TOPar            TCPar const_opt exception_specification_opt
+ | direct_d TOPar            TCPar 
+            const_opt exception_specification_opt
      { (fst $1,
        fun x->(snd $1) 
-         (nQ,(FunctionType (x,(([],(false, [])))),[$2;$3])))
+         (nQ,(FunctionType {ft_ret= x; ft_params = []; 
+                            ft_has_dots = (false, [])},[$2;$3])))
      }
- | direct_d TOPar parameter_type_list TCPar const_opt exception_specification_opt
-     { (fst $1,fun x->(snd $1) (nQ,(FunctionType (x, $3),   [$2;$4]))) }
-
+ | direct_d TOPar parameter_type_list TCPar 
+           const_opt exception_specification_opt
+     { (fst $1,
+        fun x->(snd $1) 
+          (nQ,(FunctionType { ft_ret = x; ft_params = fst $3; 
+                              ft_has_dots = snd $3;
+           } , [$2;$4]))) 
+     }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: TODOAST *)*/
@@ -1030,21 +1037,27 @@ direct_abstract_declarator:
  | direct_abstract_declarator TOCro const_expr TCCro
      { fun x ->$1 (nQ, (Array (Some $3,x),    [$2;$4])) }
  | TOPar TCPar                                       
-     { fun x ->   (nQ, (FunctionType (x, ([], (false,  []))),   [$1;$2])) }
+     { fun x -> (nQ, (FunctionType {
+         ft_ret = x; ft_params = []; ft_has_dots = (false, [])}, [$1;$2])) }
  | TOPar parameter_type_list TCPar
-     { fun x ->   (nQ, (FunctionType (x, $2),           [$1;$3]))}
- | direct_abstract_declarator TOPar TCPar const_opt exception_specification_opt
-     { fun x ->$1 (nQ, (FunctionType (x, (([], (false, [])))),[$2;$3])) }
- | direct_abstract_declarator TOPar parameter_type_list TCPar const_opt exception_specification_opt
-     { fun x -> $1 (nQ, (FunctionType (x, $3), [$2;$4])) }
+     { fun x ->   (nQ, (FunctionType {
+         ft_ret = x; ft_params = fst $2; ft_has_dots = snd $2}, [$1;$3]))}
+ | direct_abstract_declarator TOPar TCPar 
+      const_opt exception_specification_opt
+     { fun x ->$1 (nQ, (FunctionType { (* TODOAST *)
+         ft_ret = x; ft_params = []; ft_has_dots = (false, [])},[$2;$3])) }
+ | direct_abstract_declarator TOPar parameter_type_list TCPar 
+      const_opt exception_specification_opt
+     { fun x -> $1 (nQ, (FunctionType {
+         ft_ret = x; ft_params = fst $3; ft_has_dots = snd $3;}, [$2;$4])) }
 
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
 /*(*-----------------------------------------------------------------------*)*/
 parameter_type_list: 
- | parameter_list                  { ($1, (false, []))}
- | parameter_list TComma TEllipsis { ($1, (true,  [$2;$3])) }
+ | parameter_list                  { $1, (false, [])}
+ | parameter_list TComma TEllipsis { $1, (true,  [$2;$3]) }
 
 
 parameter_decl: 

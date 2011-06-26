@@ -44,6 +44,7 @@ and 'a wrap2  = 'a * info
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
+and 'a angle = tok * 'a * tok 
 and 'a comma_list = 'a wrap list
 
 (* ------------------------------------------------------------------------- *)
@@ -51,14 +52,14 @@ and 'a comma_list = 'a wrap list
 (* ------------------------------------------------------------------------- *)
 
 (* c++ext: in C 'name' and 'ident' are equivalent and equal to just string.
- * In C++ ident can have a complex form like A::B::list<int>::size.
+ * In C++ 'ident' can have a complex form like A::B::list<int>::size.
  * I use Q for qualified. I also have a special type to make the difference
- * between intermediate idents (the classname or template_id) and final ident, 
+ * between intermediate idents (the classname or template_id) and final idents,
  * but note that sometimes final idents are also classnames and can have final
  * template_id.
  * Sometimes some elements are not allowed at certain places, for 
- * instance converters can not have an associated Qtop. But I prefer
- * to simplify the type again.
+ * instance converters can not have an associated Qtop. But I prefered
+ * to simplify and have a unique type for all those idents.
  *)
 type name = qtop option * qualifier list * ident  
 
@@ -167,23 +168,19 @@ and typeCbis =
   (* forunparser: *)
   | ParenType of fullType 
 
-      
-  (* -------------------------------------- *)    
   and  baseType = 
     | Void 
     | IntType   of intType 
     | FloatType of floatType
 
-     (* stdC: type section 
-      * add  a | SizeT ?
+     (* stdC: type section. add  a | SizeT ?
       * note: char and signed char are semantically different!! 
       *)
       and intType   = 
         | CChar (* obsolete? | CWchar  *)
         | Si of signed
          (* c++ext: maybe could be put in baseType instead ? *)
-        | CBool
-        | WChar_t 
+        | CBool | WChar_t 
 
         and signed = sign * base
          and base = 
@@ -194,25 +191,25 @@ and typeCbis =
 
       and floatType = CFloat | CDouble | CLongDouble
 
-   (* -------------------------------------- *)    
-   (* c++ext: and structType, cf now below *)
-
-   (* -------------------------------------- *)
    (* TODO? use a record ? *)
    and enumType = (string * constExpression option) wrap (* s = *) 
                   comma_list
                    (* => string * int list *)
 
-   (* -------------------------------------- *)    
-   (* return * (params * has "...") 
-    * c++ext: TODO now const, throw spec, etc
-    *) 
-   and functionType = fullType * (parameter comma_list * bool wrap)
-      and parameter = {
+
+   (* c++ext: TODO now const, throw spec, etc *) 
+   and functionType = { 
+     ft_ret: fullType;
+     ft_params: parameter comma_list; (* TODO: paren *)
+     ft_has_dots: bool wrap; (* (info * info) option? *)
+   }
+     and parameter = {
         p_name: string wrap2 option;
         p_type: fullType;
         p_register: bool wrap;
       }
+
+  (* c++ext: for class_definition (was structType) see below *)
 
 and typeQualifier = typeQualifierbis wrap 
 and typeQualifierbis = { const: bool; volatile: bool; }

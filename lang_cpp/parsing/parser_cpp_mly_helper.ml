@@ -193,7 +193,7 @@ let fixDeclSpecForFuncDef x =
  *)
 let (fixOldCDecl: fullType -> fullType) = fun ty ->
   match snd ty with
-  | ((FunctionType (fullt, (params, (b, iib)))),iifunc) -> 
+  | FunctionType ({ft_params=params;_}),iifunc -> 
 
       (* stdC: If the prototype declaration declares a parameter for a
        * function that you are defining (it is part of a function
@@ -225,16 +225,15 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       (* gcc say parse error but dont see why *)
       raise (Semantic ("seems this is not a function", fake_pi)) 
 
-
+(* TODO: this is ugly ... use record! *)
 let fixFunc = function
   | ((
       (s,iis), 
-      (nQ, (FunctionType (fullt, (params,bool)),iifunc)), 
+      (nQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)), 
       (st,iist)
     ), 
     (cp,iicp)) -> 
 
-      let iistart = Ast.fakeInfo () in
       assert (nQ =*= nullQualif);
       (match params with
       [{p_name= None; p_type = ty2;_}, _] ->
@@ -253,8 +252,8 @@ let fixFunc = function
           )
       );
       (* it must be nullQualif,cos parser construct only this*)
-      (s, (fullt, (params, bool)), st, cp), 
-      ([iis]++iifunc++iicp++[iistart]++iist) 
+      (s, ftyp, st, cp), 
+      ([iis]++iifunc++iicp++iist) 
   | _ -> 
       raise 
         (Semantic 
