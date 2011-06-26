@@ -504,7 +504,7 @@ postfix_expr:
  | postfix_expr TOCro expr TCCro                
      { mk_e(ArrayAccess ($1, $3)) [$2;$4] }
  | postfix_expr TOPar argument_list_opt TCPar  
-     { mk_e(mk_funcall $1 $3) [$2;$4] }
+     { mk_e(mk_funcall $1 ($2, $3, $4)) noii }
 
  /*(*c++ext: ident is now a id_expression *)*/
  | postfix_expr TDot   template_opt tcolcol_opt  id_expression
@@ -604,12 +604,12 @@ cpp_cast_operator:
 *)*/
 cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
-     { let ft = nQ, (TypeName (fst $1, Ast.noTypedefDef()), [snd $1]) in
-       mk_e(ConstructedObject (ft, $3)) [$2;$4]  
+     { let ft = nQ, (TypeName ($1, Ast.noTypedefDef()), noii) in
+       mk_e(ConstructedObject (ft, ($2, $3, $4))) noii  
      }
  | basic_type_2 TOPar argument_list_opt TCPar 
      { let ft = nQ, $1 in
-       mk_e(ConstructedObject (ft, $3)) [$2;$4] 
+       mk_e(ConstructedObject (ft, ($2, $3, $4))) noii
      }
 
 /*(* c++ext: * simple case: new A(x1, x2); *)*/
@@ -780,12 +780,12 @@ iteration:
      { For ($3,$4,($5, []),$7), [$1;$2;$6] }
  /*(* c++ext: for(int i = 0; i < n; i++)*)*/
  | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
-     { 
-       MacroIteration ("toto", [], $7),[] (* TODOfake ast, TODO need decl2 ? *)
+     { (* TODOfake ast, TODO need decl2 ? *)
+       MacroIteration (("toto", $1), ($2, [], $6), $7),[]
      }
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
-     { MacroIteration (fst $1, $3, $5), [snd $1;$2;$4] }
+     { MacroIteration ($1, ($2, $3, $4), $5), noii }
 
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 
@@ -868,8 +868,8 @@ elaborated_type_specifier:
      { Right3 (StructUnionName (fst $1, fst $2)), [snd $1;snd $2] }
  /*(* c++ext: *)*/
  | Ttypename ident 
-     { let typedef = (TypeName (fst $2,Ast.noTypedefDef())), [snd $2] in
-       Right3 (TypenameKwd (Ast.nQ,typedef)), [$1]
+     { let typedef = (TypeName ($2,Ast.noTypedefDef())), noii in
+       Right3 (TypenameKwd (Ast.nQ, typedef)), [$1]
      }
  | Ttypename template_id 
      { let template = $2 in
@@ -900,7 +900,7 @@ type_cplusplus_id:
  *)*/
 type_name:
  | enum_name_or_typedef_name_or_simple_class_name
-     { (TypeName (fst $1,Ast.noTypedefDef())), [snd $1] }
+     { (TypeName ($1, Ast.noTypedefDef())), noii }
  | template_id { $1 }
 
 template_id:
@@ -1854,14 +1854,14 @@ cpp_ifdef_directive:
 cpp_other:
 /*(* cppext: *)*/
  | TIdent TOPar argument_list TCPar TPtVirg
-     { MacroTop (fst $1, $3,    [snd $1;$2;$4;$5]) } 
+     { MacroTop ($1, ($2, $3, $4), Some $5) } 
 
  /*(* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)*/
  | TIdent TOPar argument_list TCPar_EOL
-     { MacroTop (fst $1, $3,    [snd $1;$2;$4;]) } 
+     { MacroTop ($1, ($2, $3, $4), None) } 
 
   /*(* ex: EXPORT_NO_SYMBOLS; *)*/
- | TIdent TPtVirg { MacroTop (fst $1, [], [snd $1;$2]) }
+ | TIdent TPtVirg { MacroVarTop ($1, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Celem *)*/

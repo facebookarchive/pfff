@@ -141,7 +141,7 @@ and typeCbis =
   | EnumName        of string (*enum_name*)
   | StructUnionName of structUnion * string (*ident_name*)
   (* c++note: TypeName can now correspond also to a classname or enumname *)
-  | TypeName   of string(*typedef_name*)  * fullType option (* semantic: *)
+  | TypeName of string wrap2(*typedef_name*) * fullType option (* semantic: *)
   (* c++ext: *)
   | TypeTemplate of string wrap2 (*ident_name*) * template_arguments
   (* only to disambiguate I think *)
@@ -237,9 +237,9 @@ and expression = expressionbis wrap
    * certain analysis. Note that because 'name' can be qualified,
    * FunCallSimple is also a StaticMethodCallSimple
    *)
-  | FunCallSimple  of name * argument comma_list
+  | FunCallSimple  of name * argument comma_list paren
   (* todo? MethodCallSimple, MethodCallExpr *)
-  | FunCallExpr    of expression * argument comma_list
+  | FunCallExpr    of expression * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
   | CondExpr       of expression * expression option * expression
@@ -273,7 +273,7 @@ and expression = expressionbis wrap
   | GccConstructor  of fullType * initialiser comma_list
 
   (* c++ext: *)
-  | ConstructedObject of fullType * argument comma_list
+  | ConstructedObject of fullType * argument comma_list paren
   | TypeIdOfExpr     of expression
   | TypeIdOfType     of fullType
   | CplusplusCast of cast_operator * fullType * expression
@@ -286,6 +286,8 @@ and expression = expressionbis wrap
 
   (* forunparser: *)
   | ParenExpr of expression 
+
+  | ExprTodo
 
   and ident_info = {
     mutable i_scope: Scope_code.scope;
@@ -381,6 +383,8 @@ and statement = statementbis wrap
   (* cppext: *)
   | MacroStmt
 
+  | StmtTodo
+
   (* cppext: c++ext:
    * old: compound = (declaration list * statement list)
    * old: (declaration, statement) either list 
@@ -414,7 +418,7 @@ and statement = statementbis wrap
     | For     of exprStatement wrap * exprStatement wrap * exprStatement wrap *
                  statement
     (* cppext: *)
-    | MacroIteration of string * argument comma_list * statement
+    | MacroIteration of string wrap2 * argument comma_list paren * statement
 
   and jump  = 
     | Goto of string
@@ -546,7 +550,7 @@ and class_definition = {
     | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
     | Destructor of definition
 
-    | ConstructorDecl of parameter comma_list * bool (* explicit *)
+    | ConstructorDecl of parameter comma_list paren * bool (* explicit *)
     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
          (* ( ) void_opt *)
          
@@ -682,7 +686,8 @@ and toplevel =
   (* cppext: *)
   | CppTop of cpp_directive
   | IfdefTop of ifdef_directive (* * toplevel list *)
-  | MacroTop of string * argument comma_list * tok list
+  | MacroTop of string wrap2 * argument comma_list paren * tok option
+  | MacroVarTop of string wrap2 * tok (* ; *)
          
   | NotParsedCorrectly of tok list
 
