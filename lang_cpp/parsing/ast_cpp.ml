@@ -455,7 +455,7 @@ and block_declaration =
   *)
   | DeclList of onedecl comma_list * tok (*;*)
   (* cppext: todo? now factorize with MacroTop ?  *)
-  | MacroDecl of (string * argument comma_list) wrap
+  | MacroDecl of tok list * string wrap2 * argument comma_list paren * tok
 
   (* c++ext: using namespace *)
   | UsingDecl of (tok * name * tok (*;*))

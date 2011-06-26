@@ -1431,13 +1431,12 @@ simple_declaration:
      } 
  /*(* cppext: *)*/
  | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
-     { MacroDecl ((fst $1, $3), [snd $1;$2;$4;$5]) }
+     { MacroDecl ([], $1, ($2, $3, $4), $5) }
  | Tstatic TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
-     { MacroDecl ((fst $2, $4), [snd $2;$3;$5;$6;$1]) }
+     { MacroDecl ([$1], $2, ($3, $4, $5), $6) }
  | Tstatic Tconst_MacroDeclConst 
     TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
-     { MacroDecl ((fst $3, $5), [snd $3;$4;$6;$7;$1;$2])}
-
+     { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*
@@ -1618,7 +1617,6 @@ using_declaration:
        $1, name, $5 (*$2*)
      }
   
-
 /*(*----------------------------*)*/
 /*(*2 gccext: c++ext: *)*/
 /*(*----------------------------*)*/
