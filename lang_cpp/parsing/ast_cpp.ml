@@ -192,7 +192,7 @@ and typeCbis =
    and functionType = { 
      ft_ret: fullType;
      ft_params: parameter comma_list paren;
-     ft_has_dots: bool wrap; (* (info * info) option? *)
+     ft_dots: (tok(*,*) * tok(*...*)) option;
    }
      and parameter = {
         p_name: string wrap2 option;
@@ -510,7 +510,7 @@ and block_declaration =
  *)
 and definition = {
    f_name: name;
-   f_type: functionType paren;
+   f_type: functionType;
    f_storage: storage wrap;
    f_body: compound brace;
    (*f_attr: attribute list;*) (* gccext: *)

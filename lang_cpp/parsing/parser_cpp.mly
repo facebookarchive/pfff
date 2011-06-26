@@ -967,14 +967,14 @@ direct_d:
      { (fst $1,
        fun x->(snd $1) 
          (nQ,(FunctionType {ft_ret= x; ft_params = ($2, [], $3); 
-                            ft_has_dots = (false, [])},[])))
+                            ft_dots = None},[])))
      }
  | direct_d TOPar parameter_type_list TCPar 
            const_opt exception_specification_opt
      { (fst $1,
         fun x->(snd $1) 
           (nQ,(FunctionType { ft_ret = x; ft_params = ($2,fst $3,$4); 
-                              ft_has_dots = snd $3;} , [])))
+                              ft_dots = snd $3;} , [])))
      }
 
 /*(*----------------------------*)*/
@@ -1017,25 +1017,25 @@ direct_abstract_declarator:
      { fun x ->$1 (nQ, (Array (Some $3,x),    [$2;$4])) }
  | TOPar TCPar                                       
      { fun x -> (nQ, (FunctionType {
-         ft_ret = x; ft_params = ($1,[],$2); ft_has_dots = (false, [])}, [])) }
+         ft_ret = x; ft_params = ($1,[],$2); ft_dots = None}, [])) }
  | TOPar parameter_type_list TCPar
      { fun x ->   (nQ, (FunctionType {
-         ft_ret = x; ft_params = ($1,fst $2,$3); ft_has_dots = snd $2}, []))}
+         ft_ret = x; ft_params = ($1,fst $2,$3); ft_dots = snd $2}, []))}
  | direct_abstract_declarator TOPar TCPar 
       const_opt exception_specification_opt
      { fun x ->$1 (nQ, (FunctionType { (* TODOAST *)
-         ft_ret = x; ft_params = ($2,[],$3); ft_has_dots = (false, [])},[])) }
+         ft_ret = x; ft_params = ($2,[],$3); ft_dots = None},[])) }
  | direct_abstract_declarator TOPar parameter_type_list TCPar 
       const_opt exception_specification_opt
      { fun x -> $1 (nQ, (FunctionType {
-         ft_ret = x; ft_params = ($2,fst $3,$4); ft_has_dots = snd $3;},[])) }
+         ft_ret = x; ft_params = ($2,fst $3,$4); ft_dots = snd $3;},[])) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
 /*(*-----------------------------------------------------------------------*)*/
 parameter_type_list: 
- | parameter_list                  { $1, (false, [])}
- | parameter_list TComma TEllipsis { $1, (true,  [$2;$3]) }
+ | parameter_list                  { $1, None }
+ | parameter_list TComma TEllipsis { $1, Some ($2,$3) }
 
 
 parameter_decl: 
