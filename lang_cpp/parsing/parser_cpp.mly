@@ -279,7 +279,7 @@ translation_unit:
 
 external_declaration: 
  | function_definition            { TopDecl (Definition $1, noii) }
- | block_declaration              { TopDecl (Declaration $1, noii) }
+ | block_declaration              { TopDecl (BlockDecl $1, noii) }
 
 /*(*************************************************************************)*/
 /*(*1 Ident, scope *)*/
@@ -548,7 +548,7 @@ primary_expr:
  | TOPar compound TCPar    { mk_e(StatementExpr ($2)) [$1;$3] }
 
  /*(* c++ext: *)*/
- | Tthis { mk_e(This) [$1] }
+ | Tthis { mk_e(This $1) [] }
  | primary_cplusplus_id { $1 }
 
 
@@ -617,16 +617,16 @@ cast_constructor_expr:
 /*(* c++ext: * simple case: new A(x1, x2); *)*/
 new_expr:
  | tcolcol_opt Tnew new_placement_opt   new_type_id  new_initializer_opt
-     { mk_e (This) [] (*TODO*)  }
+     { mk_e New [] (*TODO*)  }
 /*(* ambiguity then on the TOPar
  tcolcol_opt Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
   *)*/
 
 delete_expr:
  | tcolcol_opt Tdelete cast_expr 
-     { mk_e (Delete ($3, $1)) [$2] }
+     { mk_e (Delete ($1, $3)) [$2] }
  | tcolcol_opt Tdelete TOCro_new TCCro_new cast_expr 
-     { mk_e (DeleteArray ($5, $1)) [$2;$3;$4] }
+     { mk_e (DeleteArray ($1, $5)) [$2;$3;$4] }
 
 new_placement: 
  | TOPar argument_list TCPar { () }
@@ -1311,12 +1311,11 @@ field_declaration:
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto) = fixDeclSpecForDecl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
-       FieldDeclList ([(FieldDecl onedecl , noii),noii], [$2])
+       ([(FieldDecl onedecl , noii),noii], [$2])
      }
  | decl_spec member_declarator_list TPtVirg 
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in
-       FieldDeclList 
-         ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), [$3])
+       ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), [$3])
      }
 
 /*(* was called struct_declarator before *)*/
@@ -1600,7 +1599,7 @@ gcc_comma_opt_struct:
 /*(*************************************************************************)*/
 
 block_declaration:
- | simple_declaration { SimpleDecl $1, noii }
+ | simple_declaration { $1, noii }
  | asm_definition     { $1 }
 
  /*(*c++ext: *)*/
@@ -1679,8 +1678,7 @@ asm_expr: assign_expr { $1 }
  * to template_declaration and so is ambiguous.
  *)*)*/
 declaration:
- | block_declaration                 { Declaration $1, noii }
-
+ | block_declaration                 { BlockDecl $1, noii }
  | function_definition               { Definition $1, noii }
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
@@ -1692,7 +1690,7 @@ declaration:
  | namespace_definition              { $1 }
 
  /*(* sometimes the function ends with }; instead of just } *)*/
- | TPtVirg    { EmptyDef [$1], noii } 
+ | TPtVirg    { EmptyDef $1, noii } 
 
 declaration_list: 
  | declaration_seq                  { [$1]   }
@@ -1902,7 +1900,7 @@ celem:
     * beginning of the file, and so get trailing unclose } at
     * end
     *)*/
- | TCBrace { TopDecl (EmptyDef [$1], noii) (* TODO ??? *) }
+ | TCBrace { TopDecl (EmptyDef $1, noii) (* TODO ??? *) }
 
  | EOF        { FinalDef $1 }
 
