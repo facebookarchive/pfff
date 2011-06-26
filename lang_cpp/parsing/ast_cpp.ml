@@ -788,20 +788,5 @@ let string_of_info ii =
 (* Converters *)
 (*****************************************************************************)
 
-(* used while migrating the use of 'string' to 'name' *)
-let (string_of_name_tmp: name -> string) = fun name ->
-  let (_opt, _qu, id) = name in
-  match id with
-  | IdIdent s, _ -> s
-  | _ ->
-      "TODO_string_of_name_tmp"
-      (* raise Todo *)
-
-let (info_of_name_tmp: name -> info) = fun name ->
-  let (_opt, _qu, id) = name in
-  match id with
-  | IdIdent s, ii -> List.hd ii
-  | _ -> raise Todo
-
 let (semi_fake_name: (string * info) -> name) = fun (s, iis) ->
   None, [], (IdIdent s, [iis])
