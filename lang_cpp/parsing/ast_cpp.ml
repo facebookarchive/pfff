@@ -21,12 +21,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* This is a big file ... C++ is a quite complicated language ... 
+(* 
+ * This is a big file ... C++ is a quite complicated language ... 
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  *)
-
 (*****************************************************************************)
 (* The AST C++ related types *)
 (*****************************************************************************)
@@ -191,11 +190,11 @@ and typeCbis =
 
       and floatType = CFloat | CDouble | CLongDouble
 
-   (* TODO? use a record ? *)
-   and enumType = (string * constExpression option) wrap (* s = *) 
-                  comma_list
-                   (* => string * int list *)
-
+   and enumType = enum_elem comma_list (* => string * int list *)
+    and enum_elem = {
+      e_name: string wrap2;
+      e_val: (tok (*=*) * constExpression) option;
+    }
 
    (* c++ext: TODO now const, throw spec, etc *) 
    and functionType = { 

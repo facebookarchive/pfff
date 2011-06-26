@@ -1454,8 +1454,8 @@ enum_specifier:
      { Enum (Some (fst $2), $4),     [$1; snd $2; $3;$6] ++ $5 }
 
 enumerator: 
- | ident                 { (fst $1, None),      [snd $1]    }
- | ident  TEq const_expr { (fst $1, Some $3),   [snd $1; $2] }
+ | ident                { { e_name = $1; e_val = None; } }
+ | ident TEq const_expr { { e_name = $1; e_val = Some ($2, $3); } }
 
 /*(*************************************************************************)*/
 /*(*1 Simple declaration, initializers *)*/
