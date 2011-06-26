@@ -376,8 +376,8 @@ and statementbis =
   | Compound      of compound   (* new scope *)
   | ExprStatement of exprStatement
   | Labeled       of labeled
-  | Selection     of selection (* have fakeend *)
-  | Iteration     of iteration (* have fakeend *)
+  | Selection     of selection
+  | Iteration     of iteration
   | Jump          of jump
 
   (* c++ext: 
@@ -482,7 +482,7 @@ and block_declaration = block_declarationbis wrap
  * note: var_declaration include prototype declaration.
  *)
 and var_declaration = 
-  | DeclList of onedecl comma_list wrap (* ; fakestart sto *)
+  | DeclList of onedecl comma_list wrap (* ; sto *)
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of (string * argument comma_list) wrap
 
@@ -525,11 +525,15 @@ and var_declaration =
  * parameter wheras a function definition can not. But, in some cases such
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declarations and function definitions.
- * 
- * TODO: use record like in parsing_c/
  *)
-and definition = (string(*name*) * functionType * storage * compound) 
-                 wrap (* s ( ) { } fakestart sto *)
+and definition = definitionbis wrap (* ( ) { } sto *)
+ and definitionbis = {
+   f_name: name;
+   f_type: functionType;
+   f_storage: storage;
+   f_body: compound;
+   (*f_attr: attribute list;*) (* gccext: *)
+ }
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

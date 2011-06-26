@@ -7,8 +7,6 @@ module Flag = Flag_parsing_cpp
 
 open Semantic_cpp
 
-module LP = Lexer_parser_cpp
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -27,7 +25,7 @@ let warning s v =
 (* Type related *)
 (*-------------------------------------------------------------------------- *)
 
-type shortLong      = Short  | Long | LongLong
+type shortLong = Short | Long | LongLong
 
 type decl = { 
   storageD: storagebis wrap;
@@ -111,7 +109,6 @@ let addQualifD ((qu,ii), ({qualifD = (v,ii2); _} as x)) =
 (*-------------------------------------------------------------------------- *)
 (* Declaration/Function related *)
 (*-------------------------------------------------------------------------- *)
-
 
 (* stdC: type section, basic integer types (and ritchie)
  * To understand the code, just look at the result (right part of the PM) 
@@ -233,8 +230,9 @@ let fixFunc = function
       (st,iist)
     ), 
     (cp,iicp)) -> 
-
+      (* it must be nullQualif, cos parser construct only this *)
       assert (nQ =*= nullQualif);
+
       (match params with
       [{p_name= None; p_type = ty2;_}, _] ->
           (match Ast.unwrap_typeC ty2 with
@@ -243,17 +241,18 @@ let fixFunc = function
                 (* failwith "internal errror: fixOldCDecl not good" *)
               ()
           )
-
       | params -> 
           params +> List.iter (function 
           | ({p_name = Some s;_}, _) -> ()
 	  | _ -> ()
                 (* failwith "internal errror: fixOldCDecl not good" *)
           )
-      );
-      (* it must be nullQualif,cos parser construct only this*)
-      (s, ftyp, st, cp), 
-      ([iis]++iifunc++iicp++iist) 
+      ); 
+      { f_name = semi_fake_name (s, iis);
+        f_type = ftyp;
+        f_storage = st;
+        f_body = cp;
+      }, (iifunc++iicp++iist)
   | _ -> 
       raise 
         (Semantic 

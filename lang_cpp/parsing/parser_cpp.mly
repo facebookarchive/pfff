@@ -1132,9 +1132,9 @@ cv_qualif_list:
 /*(* For cast, sizeof, throw. Was called type_name in old C grammar. *)*/
 type_id: 
  | spec_qualif_list
-     { let (returnType, _) = fixDeclSpecForDecl $1 in  returnType }
+     { let (t_ret, _) = fixDeclSpecForDecl $1 in  t_ret }
  | spec_qualif_list abstract_declarator
-     { let (returnType, _) = fixDeclSpecForDecl $1 in $2 returnType }
+     { let (t_ret, _) = fixDeclSpecForDecl $1 in $2 t_ret }
 /*
 (* used for the type passed to new(). 
  * There is ambiguity with '*' and '&' cos when have new int *2, it can
@@ -1175,11 +1175,11 @@ direct_new_declarator:
 conversion_type_id: 
  | simple_type_specifier conversion_declarator 
      { let tx = addTypeD ($1, nullDecl) in
-       let (returnType, _) = fixDeclSpecForDecl tx in returnType 
+       let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
  | simple_type_specifier %prec SHIFTHERE 
      { let tx = addTypeD ($1, nullDecl) in
-       let (returnType, _) = fixDeclSpecForDecl tx in returnType 
+       let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
 
 conversion_declarator: 
@@ -1367,15 +1367,15 @@ member_declarator:
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
      { let (name, partialt) = $1 in
-       (fun returnType unwrap_storage -> 
+       (fun t_ret unwrap_storage -> 
          let s = (fst name) in
          let var = Some (s) in
-         BitField (var, returnType, $3), [snd name; $2]
+         BitField (var, t_ret, $3), [snd name; $2]
        )
      }
  | TCol const_expr            
-     { (fun returnType unwrap_storage -> 
-         BitField (None, returnType, $2), [$1]
+     { (fun t_ret unwrap_storage -> 
+         BitField (None, t_ret, $2), [$1]
        )
      }
 
@@ -1822,12 +1822,12 @@ ctor_dtor:
 /*(*1 Function *)*/
 /*(*************************************************************************)*/
 
-function_definition: start_fun compound                { fixFunc ($1, $2) }
+function_definition: start_fun compound 
+     { fixFunc ($1, $2) }
 
 start_fun: decl_spec declarator
-     { let (returnType,storage) = fixDeclSpecForFuncDef $1 in
-       let res = (fst $2, fixOldCDecl ((snd $2) returnType) , storage) in
-       res
+     { let (t_ret, storage) = fixDeclSpecForFuncDef $1 in
+       (fst $2, fixOldCDecl ((snd $2) t_ret) , storage)
      }
 
 /*(*************************************************************************)*/
