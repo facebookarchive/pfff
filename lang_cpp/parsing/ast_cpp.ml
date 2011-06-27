@@ -66,24 +66,21 @@ and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
  * converters can not have an associated Qtop. But I prefered to simplify
  * and have a unique type for all those different kinds of ident.
  *)
-type name = qtop option * qualifier list * ident  
+type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident  
 
  and ident = identbis wrap 
    and identbis = 
      (* function name, macro name, variable, classname, enumname, namespace *)
-     | IdIdent of string 
-     | IdOperator of operator
-     | IdConverter of fullType
-     | IdDestructor of string (* todo: ident or template_id here too *)
+     | IdIdent of string wrap2
+     | IdOperator of tok * (operator * tok list)
+     | IdConverter of tok * fullType
+    (* todo: ident or template_id here too *)
+     | IdDestructor of tok * string wrap2 
      | IdTemplateId of string wrap2 * template_arguments
 
- and qualifier = qualifierbis wrap (* s :: *)
-   and qualifierbis = 
-     | QClassname of string (* classname or namespacename *)
-     | QTemplateId of string wrap2 * template_arguments
-
- and qtop = qtobis wrap2 (* :: *)
-   and qtobis = QTop
+ and qualifier = 
+   | QClassname of string wrap2 (* classname or namespacename *)
+   | QTemplateId of string wrap2 * template_arguments
 
  and template_argument = (fullType, expression) Common.either
  and template_arguments = template_argument comma_list angle
@@ -140,8 +137,8 @@ and typeCbis =
             enum_elem comma_list brace  (* => string * int list *)
   | StructUnion     of class_definition (* c++ext: bigger type now *)
 
-  | EnumName        of string (*enum_name*)
-  | StructUnionName of structUnion * string (*ident_name*)
+  | EnumName        of tok * string wrap2 (*enum_name*)
+  | StructUnionName of structUnion wrap2 * string wrap2 (*ident_name*)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and is a name so can have some IdTemplateId in it.
    *)
@@ -269,8 +266,8 @@ and expression = expressionbis wrap
   | TypeIdOfType     of fullType
   | CplusplusCast of cast_operator * fullType * expression
   | New (* todo: of placement, init, etc *)
-  | Delete      of qtop option * expression
-  | DeleteArray of qtop option * expression
+  | Delete      of tok (*::*) option * expression
+  | DeleteArray of tok (*::*) option * expression
   | Throw of expression option 
 
   (* forunparser: *)

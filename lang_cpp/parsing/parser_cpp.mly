@@ -290,21 +290,21 @@ id_expression:
 
 /*
 (* todo:
- * ~id class_name,  conflict
+ * ~id class_name,  conflict  IdDestructor TODO
  * template-id,   conflict
  *)*/
 unqualified_id:
- | TIdent                 { IdIdent (fst $1), [snd $1] }
+ | TIdent                 { IdIdent $1, noii }
  | operator_function_id   { $1 }
  | conversion_function_id { $1 }
 
 operator_function_id: 
  | Toperator operator_kind
-    { IdOperator (fst $2), $1::(snd $2) }
+    { IdOperator ($1, $2), noii }
 
 conversion_function_id:
  | Toperator conversion_type_id
-    { IdConverter $2, [$1] }
+    { IdConverter ($1, $2), noii }
 /*
 (* no deref getref operator (cos ambiguity with Mul and And), 
  * no unaryplus/minus op either 
@@ -365,15 +365,15 @@ qualified_id:
 
 nested_name_specifier: 
  | class_or_namespace_name_for_qualifier TColCol nested_name_specifier_opt 
-   { (fst $1, snd $1++[$2])::$3 }
+   { ($1, $2)::$3 }
 
 /*(* context dependent *)*/
 class_or_namespace_name_for_qualifier:
  | TIdent_ClassnameInQualifier 
-     { QClassname (fst $1), [snd $1] }
+     { QClassname $1 }
  | TIdent_TemplatenameInQualifier 
-   TInf_Template template_argument_list TSup_Template
-     { QTemplateId ($1, ($2, $3, $4)), [] }
+    TInf_Template template_argument_list TSup_Template
+     { QTemplateId ($1, ($2, $3, $4)) }
 
 
 /*
@@ -394,15 +394,15 @@ namespace_name:
 /*(*----------------------------*)*/
 nested_name_specifier2: 
  | class_or_namespace_name_for_qualifier2 
-   TColCol_BeforeTypedef nested_name_specifier_opt2 
-  { (fst $1, snd $1++[$2])::$3 }
+    TColCol_BeforeTypedef nested_name_specifier_opt2 
+     { ($1, $2)::$3 }
 
 class_or_namespace_name_for_qualifier2:
  | TIdent_ClassnameInQualifier_BeforeTypedef 
-   { QClassname (fst $1), [snd $1]  }
+     { QClassname $1  }
  | TIdent_TemplatenameInQualifier_BeforeTypedef 
-     TInf_Template template_argument_list TSup_Template
-   { QTemplateId ($1, ($2, $3, $4)), noii }
+    TInf_Template template_argument_list TSup_Template
+     { QTemplateId ($1, ($2, $3, $4)) }
 
 /*
 (* Why this ? Why not s/ident/TIdent ? cos there is multiple namespaces in C, 
@@ -562,15 +562,14 @@ primary_cplusplus_id:
      { let name = (None, fst $1, snd $1) in 
        mk_e (Ident (name, noIdInfo())) []  }
  | TColCol TIdent  
-     { let qid = IdIdent (fst $2), [snd $2] in 
-       let name = (Some (QTop, $1), noQscope, qid) in 
+     { let name = Some $1, noQscope, (IdIdent $2, noii) in 
        mk_e (Ident (name, noIdInfo())) [] }
  | TColCol operator_function_id 
      { let qop = $2 in
-       let name = (Some (QTop, $1), noQscope, qop) in 
+       let name = (Some $1, noQscope, qop) in 
        mk_e (Ident (name, noIdInfo())) [] }
  | TColCol qualified_id 
-     { let name = (Some (QTop, $1), fst $2, snd $2) in 
+     { let name = (Some $1, fst $2, snd $2) in 
        mk_e (Ident (name, noIdInfo())) [] }
 
 /*(*could use TInf here *)*/
@@ -599,7 +598,7 @@ cpp_cast_operator:
 *)*/
 cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
-     { let name = None, noQscope, (IdIdent (fst $1), [snd $1]) in
+     { let name = None, noQscope, (IdIdent $1, noii) in
        let ft = nQ, (TypeName (name, Ast.noTypedefDef()), noii) in
        mk_e(ConstructedObject (ft, ($2, $3, $4))) noii  
      }
@@ -859,9 +858,9 @@ simple_type_specifier:
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
 elaborated_type_specifier: 
  | Tenum ident 
-     { Right3 (EnumName (fst $2)),       [$1; snd $2] }
+     { Right3 (EnumName ($1, $2)), noii }
  | class_key ident
-     { Right3 (StructUnionName (fst $1, fst $2)), [snd $1;snd $2] }
+     { Right3 (StructUnionName ($1, $2)), noii }
  /*(* c++ext:  *)*/
  | Ttypename type_cplusplus_id
      { Right3 (TypenameKwd ($1, $2)), noii }
@@ -874,9 +873,9 @@ elaborated_type_specifier:
 type_cplusplus_id:
  | type_name                        { None, noQscope, $1 }
  | nested_name_specifier2 type_name { None, $1, $2 }
- | TColCol_BeforeTypedef type_name  { Some (QTop, $1), noQscope, $2 }
+ | TColCol_BeforeTypedef type_name  { Some $1, noQscope, $2 }
  | TColCol_BeforeTypedef nested_name_specifier2 type_name 
-     { Some (QTop, $1), $2, $3 }
+     { Some $1, $2, $3 }
 
 /*
 (* in c++ grammar they put 
@@ -891,7 +890,7 @@ type_cplusplus_id:
  *)*/
 type_name:
  | enum_name_or_typedef_name_or_simple_class_name
-     { IdIdent (fst $1), [snd $1] }
+     { IdIdent $1, noii }
  | template_id { $1 }
 
 template_id:
@@ -1063,7 +1062,7 @@ exception_specification:
      { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
 
 exn_name: ident 
-     { (None, [], (IdIdent (fst $1), [snd $1])) }
+     { (None, [], (IdIdent $1, noii)) }
 
 /*(*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so*)*/
 const_opt:
@@ -1174,15 +1173,11 @@ class_head:
  | class_key 
      { $1, None, None }
  | class_key ident base_clause_opt
-     { let qid = IdIdent (fst $2), [snd $2] in
-       let name = (None, noQscope, qid) in
-       $1, Some name, $3
-     }
+     { let name = None, noQscope, (IdIdent $2, noii) in
+       $1, Some name, $3 }
  | class_key nested_name_specifier ident base_clause_opt
-     { let qid = IdIdent (fst $3), [snd $3] in
-       let name = (None, $2, qid) in
-       $1, Some name, $4
-     }
+     { let name = None, $2, (IdIdent $3, noii) in
+       $1, Some name, $4 }
 
 /*(* was called struct_union before *)*/
 class_key: 
@@ -1214,7 +1209,7 @@ base_specifier:
 /*(* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)*/
 class_name:
  | type_cplusplus_id  { $1 }
- | TIdent             { None, noQscope, (IdIdent (fst $1), [snd $1]) }
+ | TIdent             { None, noQscope, (IdIdent $1, noii) }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: members *)*/
@@ -1558,17 +1553,15 @@ block_declaration:
 
 namespace_alias_definition:
  | Tnamespace TIdent TEq tcolcol_opt nested_name_specifier_opt namespace_name
-   TPtVirg
-     { let name = ($4, $5, (IdIdent (fst $6), [snd $6])) in
-       NameSpaceAlias ($1, $2, $3, name, $7)
-     }
+    TPtVirg
+     { let name = ($4, $5, (IdIdent $6, noii)) in
+       NameSpaceAlias ($1, $2, $3, name, $7) }
 
 using_directive:
  | Tusing Tnamespace tcolcol_opt nested_name_specifier_opt namespace_name 
     TPtVirg
-     { let name = ($3, $4, (IdIdent (fst $5), [snd $5])) in
-       UsingDirective ($1, $2, name, $6)
-     }
+     { let name = ($3, $4, (IdIdent $5, noii)) in
+       UsingDirective ($1, $2, name, $6) }
 
 /*(* conflict on TColCol in 'Tusing TColCol unqualified_id TPtVirg'
    * need LALR(2) to see if after tcol have a nested_name_specifier
@@ -1577,13 +1570,11 @@ using_directive:
 using_declaration:
  | Tusing typename_opt tcolcol_opt nested_name_specifier unqualified_id TPtVirg
      { let name = ($3, $4, $5) in
-       $1, name, $6 (*$2*)
-     }
+       $1, name, $6 (*$2*) }
 /*(* TODO: remove once we don't skip qualifier ? *)*/
  | Tusing typename_opt tcolcol_opt unqualified_id TPtVirg 
      { let name = ($3, [], $4) in
-       $1, name, $5 (*$2*)
-     }
+       $1, name, $5 (*$2*) }
   
 /*(*----------------------------*)*/
 /*(*2 gccext: c++ext: *)*/
@@ -2029,5 +2020,5 @@ volatile_opt:
  | /*(*empty*)*/ { None }
 
 tcolcol_opt:
- | TColCol         { Some (QTop, $1) }
+ | TColCol         { Some $1 }
  | /*(* empty *)*/ { None }
