@@ -960,19 +960,17 @@ direct_d:
      { (fst $1,fun x->(snd $1) (nQ,(Array (None,x),         [$2;$3]))) }
  | direct_d TOCro const_expr TCCro
      { (fst $1,fun x->(snd $1) (nQ,(Array (Some $3,x),      [$2;$4])))}
- | direct_d TOPar            TCPar 
-            const_opt exception_specification_opt
-     { (fst $1,
-       fun x->(snd $1) 
-         (nQ,(FunctionType {ft_ret= x; ft_params = ($2, [], $3); 
-                            ft_dots = None},[])))
+ | direct_d TOPar TCPar const_opt exn_spec_opt
+     { (fst $1, fun x-> (snd $1) 
+         (nQ, (FunctionType {
+           ft_ret= x; ft_params = ($2, [], $3);
+           ft_dots = None; ft_const = $4; }, [])))
      }
- | direct_d TOPar parameter_type_list TCPar 
-           const_opt exception_specification_opt
-     { (fst $1,
-        fun x->(snd $1) 
-          (nQ,(FunctionType { ft_ret = x; ft_params = ($2,fst $3,$4); 
-                              ft_dots = snd $3;} , [])))
+ | direct_d TOPar parameter_type_list TCPar const_opt exn_spec_opt
+     { (fst $1, fun x-> (snd $1) 
+          (nQ,(FunctionType { 
+            ft_ret = x; ft_params = ($2,fst $3,$4); 
+            ft_dots = snd $3; ft_const = $5;} , [])))
      }
 
 /*(*----------------------------*)*/
@@ -1004,18 +1002,22 @@ direct_abstract_declarator:
      { fun x ->$1 (nQ, (Array (Some $3,x),    [$2;$4])) }
  | TOPar TCPar                                       
      { fun x -> (nQ, (FunctionType {
-         ft_ret = x; ft_params = ($1,[],$2); ft_dots = None}, [])) }
+       ft_ret = x; ft_params = ($1,[],$2); 
+       ft_dots = None; ft_const = None}, [])) }
  | TOPar parameter_type_list TCPar
-     { fun x ->   (nQ, (FunctionType {
-         ft_ret = x; ft_params = ($1,fst $2,$3); ft_dots = snd $2}, []))}
- | direct_abstract_declarator TOPar TCPar 
-      const_opt exception_specification_opt
-     { fun x ->$1 (nQ, (FunctionType { (* TODOAST *)
-         ft_ret = x; ft_params = ($2,[],$3); ft_dots = None},[])) }
+     { fun x -> (nQ, (FunctionType {
+         ft_ret = x; ft_params = ($1,fst $2,$3); 
+         ft_dots = snd $2; ft_const = None}, [])) }
+ | direct_abstract_declarator TOPar TCPar const_opt exn_spec_opt
+     { fun x ->$1 (nQ, (FunctionType {
+         ft_ret = x; ft_params = ($2,[],$3); 
+         ft_dots = None; ft_const = $4;
+     },[])) }
  | direct_abstract_declarator TOPar parameter_type_list TCPar 
-      const_opt exception_specification_opt
+     const_opt exn_spec_opt
      { fun x -> $1 (nQ, (FunctionType {
-         ft_ret = x; ft_params = ($2,fst $3,$4); ft_dots = snd $3;},[])) }
+         ft_ret = x; ft_params = ($2,fst $3,$4); 
+         ft_dots = snd $3; ft_const = $5;},[])) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
@@ -1354,13 +1356,9 @@ ctor_dtor_member:
      {  EmptyField $3(*TODO*) }
 
 
- | virtual_opt TTilde ident TOPar void_opt TCPar 
-     exception_specification_opt
-     compound
+ | virtual_opt TTilde ident TOPar void_opt TCPar exn_spec_opt compound
      { EmptyField $4 (*TODO*) }
- | virtual_opt TTilde ident TOPar void_opt TCPar
-     exception_specification_opt
-     TPtVirg
+ | virtual_opt TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
      { EmptyField $4 (*TODO*) }
 
  | Tinline TTilde ident TOPar void_opt TCPar compound
@@ -1736,7 +1734,7 @@ ctor_dtor:
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
- | TTilde ident TOPar void_opt TCPar exception_specification_opt compound
+ | TTilde ident TOPar void_opt TCPar exn_spec_opt compound
      { DeclTodo }
 
 /*(*************************************************************************)*/
@@ -1989,7 +1987,7 @@ nested_name_specifier_opt2:
 
 
 
-exception_specification_opt: 
+exn_spec_opt: 
  | exception_specification { Some $1 }
  | /*(*empty*)*/           { None }
 

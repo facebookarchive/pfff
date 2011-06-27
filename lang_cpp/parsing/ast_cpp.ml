@@ -187,17 +187,18 @@ and typeCbis =
       e_name: string wrap2;
       e_val: (tok (*=*) * constExpression) option;
     }
-
-   (* c++ext: TODO const, throw spec, etc *) 
    and functionType = { 
      ft_ret: fullType;
      ft_params: parameter comma_list paren;
      ft_dots: (tok(*,*) * tok(*...*)) option;
+    (* c++ext: TODO throw spec, etc *) 
+     ft_const: tok option; (* only for methods *)
    }
      and parameter = {
         p_name: string wrap2 option;
         p_type: fullType;
         p_register: bool wrap;
+        (* TODO default val *)
       }
 
   (* c++ext: for class_definition (was structType) see below *)
