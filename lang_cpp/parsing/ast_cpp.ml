@@ -468,14 +468,13 @@ and block_declaration =
      | EqInit of tok (*=*) * initialiser
      | ObjInit of argument comma_list paren
 
-    and initialiser = initialiserbis wrap
-     and initialiserbis = 
-       | InitExpr of expression 
-       | InitList of initialiser comma_list 
-       (* gccext: *)
-       | InitDesignators of designator list * initialiser
-       | InitFieldOld  of string * initialiser
-       | InitIndexOld  of expression * initialiser
+    and initialiser =
+      | InitExpr of expression 
+      | InitList of initialiser comma_list brace
+      (* gccext: *)
+      | InitDesignators of designator list * tok (*=*) * initialiser
+      | InitFieldOld  of string wrap2 * tok (*:*) * initialiser
+      | InitIndexOld  of expression * initialiser
 
       (* ex: [2].y = x,  or .y[2]  or .y.x. They can be nested *)
       and designator =

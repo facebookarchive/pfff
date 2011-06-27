@@ -1282,7 +1282,7 @@ member_declarator:
  | declarator TEq const_expr
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
-         v_namei = Some (name, Some (EqInit ($2, (InitExpr $3, noii))));
+         v_namei = Some (name, Some (EqInit ($2, InitExpr $3)));
          v_type = partialt t_ret; v_storage = sto;
        })
      }
@@ -1471,11 +1471,12 @@ gcc_asm_decl:
 /*(*-----------------------------------------------------------------------*)*/
 initialize: 
  | assign_expr                                    
-     { InitExpr $1,                [] }
+     { InitExpr $1 }
  | TOBrace initialize_list gcc_comma_opt_struct  TCBrace
-     { InitList (List.rev $2),     [$1;$4] (*$3*) }
+     { InitList ($1, List.rev $2, $4) (*$3*) }
+ /*(* gccext: *)*/
  | TOBrace TCBrace
-     { InitList [],       [$1;$2] } /*(* gccext: *)*/
+     { InitList ($1, [], $2) } 
 
 /*
 (* opti: This time we use the weird order of non-terminal which requires in 
@@ -1492,19 +1493,19 @@ initialize_list:
 /*(* gccext: condexpr and no assign_expr cos can have ambiguity with comma *)*/
 initialize2: 
  | cond_expr 
-     { InitExpr $1,   [] } 
+     { InitExpr $1 } 
  | TOBrace initialize_list gcc_comma_opt_struct TCBrace
-     { InitList (List.rev $2),   [$1;$4] (*$3*) }
+     { InitList ($1, List.rev $2, $4) (*$3*) }
  | TOBrace TCBrace
-     { InitList [],  [$1;$2]  }
+     { InitList ($1, [], $2) }
 
  /*(* gccext: labeled elements, a.k.a designators *)*/
  | designator_list TEq initialize2 
-     { InitDesignators ($1, $3), [$2] }
+     { InitDesignators ($1, $2, $3) }
 
- /*(* gccext: old format *)*/
+ /*(* gccext: old format, in old kernel for instance *)*/
  | ident TCol initialize2
-     { InitFieldOld (fst $1, $3),     [snd $1; $2] } /*(* in old kernel *)*/
+     { InitFieldOld ($1, $2, $3) }
 /*(*c++ext: remove conflict, but I think could be remove anyway
  | TOCro const_expr TCCro initialize2 
      { InitIndexOld ($2, $4),    [$1;$3] }
@@ -1766,7 +1767,7 @@ define_val:
      }
   *)*/
  | TOBrace_DefineInit initialize_list TCBrace comma_opt 
-    { DefineInit (InitList (List.rev $2), [$1;$3]++$4)  }
+    { DefineInit (InitList ($1, List.rev $2, $3) (*$4*))  }
  | /*(* empty *)*/ { DefineEmpty }
 
 
