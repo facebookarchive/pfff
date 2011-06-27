@@ -652,6 +652,8 @@ and cpp_directive =
  * inside namespaces or some extern. It's not really 'declaration'
  * either because it can defines stuff. But I keep the C++ standard
  * terminology.
+ * 
+ * note that we use 'block_declaration' below, not 'statement'.
  *)
 and declaration = 
   | BlockDecl of block_declaration (* include class definition *)
