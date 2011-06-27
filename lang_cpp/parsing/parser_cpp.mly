@@ -964,13 +964,13 @@ direct_d:
      { (fst $1, fun x-> (snd $1) 
          (nQ, (FunctionType {
            ft_ret= x; ft_params = ($2, [], $3);
-           ft_dots = None; ft_const = $4; }, [])))
+           ft_dots = None; ft_const = $4; ft_throw = $5; }, noii)))
      }
  | direct_d TOPar parameter_type_list TCPar const_opt exn_spec_opt
      { (fst $1, fun x-> (snd $1) 
           (nQ,(FunctionType { 
             ft_ret = x; ft_params = ($2,fst $3,$4); 
-            ft_dots = snd $3; ft_const = $5;} , [])))
+            ft_dots = snd $3; ft_const = $5; ft_throw = $6; }, noii)))
      }
 
 /*(*----------------------------*)*/
@@ -1003,21 +1003,20 @@ direct_abstract_declarator:
  | TOPar TCPar                                       
      { fun x -> (nQ, (FunctionType {
        ft_ret = x; ft_params = ($1,[],$2); 
-       ft_dots = None; ft_const = None}, noii)) }
+       ft_dots = None; ft_const = None; ft_throw = None;}, noii)) }
  | TOPar parameter_type_list TCPar
      { fun x -> (nQ, (FunctionType {
          ft_ret = x; ft_params = ($1,fst $2,$3); 
-         ft_dots = snd $2; ft_const = None}, noii)) }
+         ft_dots = snd $2; ft_const = None; ft_throw = None; }, noii)) }
  | direct_abstract_declarator TOPar TCPar const_opt exn_spec_opt
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,[],$3); 
-         ft_dots = None; ft_const = $4;
-         }, noii)) }
+         ft_dots = None; ft_const = $4; ft_throw = $5; }, noii)) }
  | direct_abstract_declarator TOPar parameter_type_list TCPar const_opt 
     exn_spec_opt
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,fst $3,$4); 
-         ft_dots = snd $3; ft_const = $5;},[])) }
+         ft_dots = snd $3; ft_const = $5; ft_throw = $6; }, noii)) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
@@ -1066,9 +1065,13 @@ parameter_decl:
  * need typedef heuristic for throw() but can be also an expression ...
  *)*/
 exception_specification: 
- | Tthrow TOPar TCPar { () }
- | Tthrow TOPar ident TCPar { () }
- | Tthrow TOPar ident TComma ident TCPar { () }
+ | Tthrow TOPar TCPar { ($1, ($2, [], $3)) }
+ | Tthrow TOPar exn_name TCPar { ($1, ($2, [Left $3], $4)) }
+ | Tthrow TOPar exn_name TComma exn_name TCPar 
+     { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
+
+exn_name: ident 
+     { (None, [], (IdIdent (fst $1), [snd $1])) }
 
 /*(*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so*)*/
 const_opt:

@@ -48,6 +48,8 @@ and 'a bracket = tok * 'a * tok
 and 'a angle   = tok * 'a * tok 
 
 and 'a comma_list = 'a wrap list
+and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
+
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
@@ -191,14 +193,15 @@ and typeCbis =
      ft_ret: fullType;
      ft_params: parameter comma_list paren;
      ft_dots: (tok(*,*) * tok(*...*)) option;
-    (* c++ext: TODO throw spec, etc *) 
+    (* c++ext: *) 
      ft_const: tok option; (* only for methods *)
+     ft_throw: (tok * name comma_list2 paren) option;
    }
      and parameter = {
         p_name: string wrap2 option;
         p_type: fullType;
         p_register: bool wrap;
-        (* TODO default val *)
+        (* c++ext: default val *)
       }
 
   (* c++ext: for class_definition (was structType) see below *)
@@ -377,8 +380,8 @@ and statement = statementbis wrap
    * decl type, because declarations are only at the beginning of a compound
    * normally. But in C++ we can freely mix declarations and statements.
    *)
-  | Try of compound wrap * handler list
   | DeclStmt  of block_declaration 
+  | Try of compound wrap * handler list
   (* gccext: *)
   | NestedFunc of definition
   (* cppext: *)
@@ -428,7 +431,7 @@ and statement = statementbis wrap
     (* gccext: goto *exp ';' *)
     | GotoComputed of expression
 
-  (* c++ext: *)
+  (* c++ext: TODO *)
   and handler = exception_declaration wrap (* catch () *) * compound wrap
    and exception_declaration = 
      | ExnDeclEllipsis of tok
@@ -527,6 +530,7 @@ and class_definition = {
   c_kind: structUnion wrap2; 
   (* the ident can be a template_id when do template specialization. *)
   c_name: ident_name(*class_name??*) option;
+  (* c++ext: *)
   c_inherit: (tok (*:*) * base_clause comma_list) option;
   c_members: class_member_sequencable list (* new scope *); (* braces? *)
   }
