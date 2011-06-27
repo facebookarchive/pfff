@@ -256,7 +256,7 @@ and expression = expressionbis wrap
   | Cast          of fullType paren * expression
 
   (* gccext: *)        
-  | StatementExpr of compound wrap paren (* ( )     new scope *) 
+  | StatementExpr of compound paren (* ( )     new scope *) 
   | GccConstructor  of fullType paren * initialiser comma_list brace
 
   (* c++ext: *)
@@ -362,7 +362,7 @@ and statement = statementbis wrap
    * normally. But in C++ we can freely mix declarations and statements.
    *)
   | DeclStmt  of block_declaration 
-  | Try of compound wrap * handler list
+  | Try of tok * compound * handler list
   (* gccext: *)
   | NestedFunc of definition
   (* cppext: *)
@@ -374,7 +374,7 @@ and statement = statementbis wrap
    * old: compound = (declaration list * statement list)
    * old: (declaration, statement) either list 
    *)
-  and compound = statement_sequencable list 
+  and compound = statement_sequencable list brace
 
   (* cppext: easier to put at statement_list level than statement level *)
   and statement_sequencable = 
@@ -413,7 +413,7 @@ and statement = statementbis wrap
     | GotoComputed of expression
 
   (* c++ext: TODO *)
-  and handler = tok * exception_declaration paren * compound wrap
+  and handler = tok * exception_declaration paren * compound
    and exception_declaration = 
      | ExnDeclEllipsis of tok
      | ExnDecl of parameter
@@ -502,7 +502,7 @@ and definition = {
    f_name: name;
    f_type: functionType;
    f_storage: storage wrap;
-   f_body: compound brace;
+   f_body: compound;
    (*f_attr: attribute list;*) (* gccext: *)
   }
    and functionType = { 
@@ -723,7 +723,7 @@ and any =
   | Argument of argument
   | Parameter of parameter
 
-  | Body of compound (* brace *)
+  | Body of compound
 
   | Info of info
   | InfoList of info list

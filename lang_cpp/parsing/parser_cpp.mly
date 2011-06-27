@@ -683,7 +683,7 @@ basic_type_2:
 /*(*************************************************************************)*/
 
 statement: 
- | compound        { Compound     (fst $1), snd $1 }
+ | compound        { Compound $1, noii }
  | expr_statement  { ExprStatement(fst $1), snd $1 }
  | labeled         { Labeled      (fst $1), snd $1 }
  | selection       { Selection    (fst $1), snd $1 }
@@ -727,7 +727,7 @@ statement:
 
 
 compound: 
- | TOBrace statement_list_opt TCBrace { $2, [$1; $3] (* TODO brace *)  }
+ | TOBrace statement_list_opt TCBrace { ($1, $2, $3) }
 
 
 statement_list:
@@ -799,7 +799,7 @@ declaration_statement:
  | block_declaration { DeclStmt $1, noii }
 
 try_block: 
- | Ttry compound handler_list { Try ($2, $3), [$1] }
+ | Ttry compound handler_list { Try ($1, $2, $3), noii }
 
 handler: 
  | Tcatch TOPar exception_decl TCPar compound { ($1, ($2, $3, $4), $5) }

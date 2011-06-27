@@ -230,10 +230,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
 
 (* TODO: this is ugly ... use record! *)
 let fixFunc = function
-  | (name, 
-    (aQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)), 
-    sto
-    ), (cp,iicp) -> 
+  | (name, (aQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)),sto),cp->
       (* it must be nullQualif, cos parser construct only this *)
       assert (aQ =*= nQ);
 
@@ -252,12 +249,7 @@ let fixFunc = function
                 (* failwith "internal errror: fixOldCDecl not good" *)
           )
       ); 
-      let (obar, cbar) = Common.tuple_of_list2 iicp in
-      { f_name = name;
-        f_type = ftyp;
-        f_storage = sto;
-        f_body = (obar, cp, cbar);
-      }
+      { f_name = name; f_type = ftyp; f_storage = sto; f_body = cp; }
   | _ -> 
       raise 
         (Semantic 
