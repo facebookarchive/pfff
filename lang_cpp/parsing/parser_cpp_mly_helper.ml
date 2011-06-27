@@ -171,8 +171,7 @@ let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) ->
 
 let fixNameForParam (name, ftyp) =
   match name with
-  | None, [], (IdIdent (s,ii),noii) ->
-      (s, ii), ftyp
+  | None, [], IdIdent id -> id, ftyp
   | _ -> 
       raise (Semantic ("parameter have qualifier", fake_pi))
 

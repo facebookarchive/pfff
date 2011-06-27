@@ -294,17 +294,17 @@ id_expression:
  * template-id,   conflict
  *)*/
 unqualified_id:
- | TIdent                 { IdIdent $1, noii }
+ | TIdent                 { IdIdent $1 }
  | operator_function_id   { $1 }
  | conversion_function_id { $1 }
 
 operator_function_id: 
  | Toperator operator_kind
-    { IdOperator ($1, $2), noii }
+    { IdOperator ($1, $2) }
 
 conversion_function_id:
  | Toperator conversion_type_id
-    { IdConverter ($1, $2), noii }
+    { IdConverter ($1, $2) }
 /*
 (* no deref getref operator (cos ambiguity with Mul and And), 
  * no unaryplus/minus op either 
@@ -562,7 +562,7 @@ primary_cplusplus_id:
      { let name = (None, fst $1, snd $1) in 
        mk_e (Ident (name, noIdInfo())) []  }
  | TColCol TIdent  
-     { let name = Some $1, noQscope, (IdIdent $2, noii) in 
+     { let name = Some $1, noQscope, IdIdent $2 in 
        mk_e (Ident (name, noIdInfo())) [] }
  | TColCol operator_function_id 
      { let qop = $2 in
@@ -598,7 +598,7 @@ cpp_cast_operator:
 *)*/
 cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
-     { let name = None, noQscope, (IdIdent $1, noii) in
+     { let name = None, noQscope, IdIdent $1 in
        let ft = nQ, (TypeName (name, Ast.noTypedefDef()), noii) in
        mk_e(ConstructedObject (ft, ($2, $3, $4))) noii  
      }
@@ -889,13 +889,12 @@ type_cplusplus_id:
  * so here type_name is simplified in consequence.
  *)*/
 type_name:
- | enum_name_or_typedef_name_or_simple_class_name
-     { IdIdent $1, noii }
+ | enum_name_or_typedef_name_or_simple_class_name { IdIdent $1 }
  | template_id { $1 }
 
 template_id:
  | TIdent_Templatename TInf_Template template_argument_list TSup_Template
-    { IdTemplateId ($1, ($2, $3, $4)), noii }
+    { IdTemplateId ($1, ($2, $3, $4)) }
 
 /*
 (*c++ext: in the c++ grammar they have also 'template-name' but this is catched 
@@ -1062,7 +1061,7 @@ exception_specification:
      { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
 
 exn_name: ident 
-     { (None, [], (IdIdent $1, noii)) }
+     { None, [], IdIdent $1 }
 
 /*(*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so*)*/
 const_opt:
@@ -1173,10 +1172,10 @@ class_head:
  | class_key 
      { $1, None, None }
  | class_key ident base_clause_opt
-     { let name = None, noQscope, (IdIdent $2, noii) in
+     { let name = None, noQscope, IdIdent $2 in
        $1, Some name, $3 }
  | class_key nested_name_specifier ident base_clause_opt
-     { let name = None, $2, (IdIdent $3, noii) in
+     { let name = None, $2, IdIdent $3 in
        $1, Some name, $4 }
 
 /*(* was called struct_union before *)*/
@@ -1209,7 +1208,7 @@ base_specifier:
 /*(* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)*/
 class_name:
  | type_cplusplus_id  { $1 }
- | TIdent             { None, noQscope, (IdIdent $1, noii) }
+ | TIdent             { None, noQscope, IdIdent $1 }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: members *)*/
@@ -1554,14 +1553,12 @@ block_declaration:
 namespace_alias_definition:
  | Tnamespace TIdent TEq tcolcol_opt nested_name_specifier_opt namespace_name
     TPtVirg
-     { let name = ($4, $5, (IdIdent $6, noii)) in
-       NameSpaceAlias ($1, $2, $3, name, $7) }
+     { let name = $4, $5, IdIdent $6 in NameSpaceAlias ($1, $2, $3, name, $7) }
 
 using_directive:
  | Tusing Tnamespace tcolcol_opt nested_name_specifier_opt namespace_name 
     TPtVirg
-     { let name = ($3, $4, (IdIdent $5, noii)) in
-       UsingDirective ($1, $2, name, $6) }
+     { let name = $3, $4, IdIdent $5 in UsingDirective ($1, $2, name, $6) }
 
 /*(* conflict on TColCol in 'Tusing TColCol unqualified_id TPtVirg'
    * need LALR(2) to see if after tcol have a nested_name_specifier
@@ -1569,12 +1566,10 @@ using_directive:
   *)*/
 using_declaration:
  | Tusing typename_opt tcolcol_opt nested_name_specifier unqualified_id TPtVirg
-     { let name = ($3, $4, $5) in
-       $1, name, $6 (*$2*) }
+     { let name = ($3, $4, $5) in $1, name, $6 (*$2*) }
 /*(* TODO: remove once we don't skip qualifier ? *)*/
  | Tusing typename_opt tcolcol_opt unqualified_id TPtVirg 
-     { let name = ($3, [], $4) in
-       $1, name, $5 (*$2*) }
+     { let name = ($3, [], $4) in $1, name, $5 (*$2*) }
   
 /*(*----------------------------*)*/
 /*(*2 gccext: c++ext: *)*/

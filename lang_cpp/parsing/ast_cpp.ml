@@ -68,22 +68,21 @@ and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
  *)
 type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident  
 
- and ident = identbis wrap 
-   and identbis = 
-     (* function name, macro name, variable, classname, enumname, namespace *)
-     | IdIdent of string wrap2
-     | IdOperator of tok * (operator * tok list)
-     | IdConverter of tok * fullType
-    (* todo: ident or template_id here too *)
-     | IdDestructor of tok * string wrap2 
-     | IdTemplateId of string wrap2 * template_arguments
+ and ident =
+   (* function name, macro name, variable, classname, enumname, namespace *)
+   | IdIdent of string wrap2
+   | IdOperator of tok * (operator * tok list)
+   | IdConverter of tok * fullType
+   (* todo: ident or template_id here too *)
+   | IdDestructor of tok * string wrap2 
+   | IdTemplateId of string wrap2 * template_arguments
+
+   and template_arguments = template_argument comma_list angle
+    and template_argument = (fullType, expression) Common.either
 
  and qualifier = 
    | QClassname of string wrap2 (* classname or namespacename *)
    | QTemplateId of string wrap2 * template_arguments
-
- and template_argument = (fullType, expression) Common.either
- and template_arguments = template_argument comma_list angle
 
  (* special cases *)
  and class_name     = name (* only IdIdent or IdTemplateId *)
