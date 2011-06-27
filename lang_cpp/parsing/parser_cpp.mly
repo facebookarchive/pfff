@@ -76,22 +76,22 @@ module Ast = Ast_cpp
 %token <Ast_cpp.assignOp * Ast_cpp.info> TAssign 
 %token <Ast_cpp.info> TEq  TWhy  TTilde TBang  TEllipsis  TCol  TPtVirg
 %token <Ast_cpp.info> 
-       TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
-       TShl TShr 
-       TPlus TMinus TMul TDiv TMod 
+  TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
+  TShl TShr 
+  TPlus TMinus TMul TDiv TMod 
 
 /*(*c++ext: see also TInf2 and TSup2 *)*/
 %token <Ast_cpp.info> TInf TSup 
 
 %token <Ast_cpp.info>
-       Tchar Tshort Tint Tdouble Tfloat Tlong Tunsigned Tsigned Tvoid
-       Tauto Tregister Textern Tstatic 
-       Ttypedef 
-       Tconst Tvolatile
-       Tstruct Tunion Tenum 
-       Tbreak Telse Tswitch Tcase Tcontinue Tfor Tdo Tif  Twhile Treturn
-       Tgoto Tdefault
-       Tsizeof  
+  Tchar Tshort Tint Tdouble Tfloat Tlong Tunsigned Tsigned Tvoid
+  Tauto Tregister Textern Tstatic 
+  Ttypedef 
+  Tconst Tvolatile
+  Tstruct Tunion Tenum 
+  Tbreak Telse Tswitch Tcase Tcontinue Tfor Tdo Tif  Twhile Treturn
+  Tgoto Tdefault
+  Tsizeof  
 
 /*(* C99 *)*/
 %token <Ast_cpp.info> Trestrict
@@ -150,19 +150,19 @@ module Ast = Ast_cpp
 /*(*2 c++ext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
 %token <Ast_cpp.info>
- Tclass Tthis 
- Tnew Tdelete 
- Ttemplate Ttypeid Ttypename 
- Tcatch Ttry Tthrow 
- Toperator 
- Tpublic Tprivate Tprotected    Tfriend 
- Tvirtual 
- Tnamespace Tusing 
- Tbool    Tfalse Ttrue 
- Twchar_t 
- Tconst_cast Tdynamic_cast Tstatic_cast Treinterpret_cast 
- Texplicit Tmutable 
- Texport
+   Tclass Tthis 
+   Tnew Tdelete 
+   Ttemplate Ttypeid Ttypename 
+   Tcatch Ttry Tthrow 
+   Toperator 
+   Tpublic Tprivate Tprotected    Tfriend 
+   Tvirtual 
+   Tnamespace Tusing 
+   Tbool    Tfalse Ttrue 
+   Twchar_t 
+   Tconst_cast Tdynamic_cast Tstatic_cast Treinterpret_cast 
+   Texplicit Tmutable 
+   Texport
 %token <Ast_cpp.info> TPtrOpStar TDotStar
 
 %token <Ast_cpp.info> TColCol 
@@ -559,22 +559,18 @@ primary_expr:
 primary_cplusplus_id:
  | id_expression 
      { let name = (None, fst $1, snd $1) in 
-       mk_e (Ident (name, noIdInfo())) [] 
-     }
+       mk_e (Ident (name, noIdInfo())) []  }
  | TColCol TIdent  
      { let qid = IdIdent (fst $2), [snd $2] in 
        let name = (Some (QTop, $1), noQscope, qid) in 
-       mk_e (Ident (name, noIdInfo())) [] 
-     }
+       mk_e (Ident (name, noIdInfo())) [] }
  | TColCol operator_function_id 
      { let qop = $2 in
        let name = (Some (QTop, $1), noQscope, qop) in 
-       mk_e (Ident (name, noIdInfo())) [] 
-     }
+       mk_e (Ident (name, noIdInfo())) [] }
  | TColCol qualified_id 
      { let name = (Some (QTop, $1), fst $2, snd $2) in 
-       mk_e (Ident (name, noIdInfo())) [] 
-     }
+       mk_e (Ident (name, noIdInfo())) [] }
 
 /*(*could use TInf here *)*/
 cast_operator_expr: 
