@@ -50,7 +50,6 @@ and 'a angle   = tok * 'a * tok
 and 'a comma_list = 'a wrap list
 and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
 
-
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
 (* ------------------------------------------------------------------------- *)
@@ -201,7 +200,8 @@ and typeCbis =
         p_name: string wrap2 option;
         p_type: fullType;
         p_register: bool wrap;
-        (* c++ext: default val *)
+        (* c++ext: *)
+        p_val: (tok (*=*) * expression) option;
       }
 
   (* c++ext: for class_definition (was structType) see below *)
@@ -281,11 +281,9 @@ and expression = expressionbis wrap
   | TypeIdOfExpr     of expression
   | TypeIdOfType     of fullType
   | CplusplusCast of cast_operator * fullType * expression
-
   | New (* todo: of placement, init, etc *)
   | Delete      of qtop option * expression
   | DeleteArray of qtop option * expression
-
   | Throw of expression option 
 
   (* forunparser: *)

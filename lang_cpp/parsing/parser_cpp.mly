@@ -1030,31 +1030,30 @@ parameter_decl:
  | decl_spec declarator
      { let (t_ret,reg) = fixDeclSpecForParam $1 in
        let (name, ftyp) = fixNameForParam $2 in
-       { p_name = Some name; p_type = ftyp t_ret;  p_register = reg; }
-     }
+       { p_name = Some name; p_type = ftyp t_ret;
+         p_register = reg; p_val = None } }
  | decl_spec abstract_declarator
      { let (t_ret, reg) = fixDeclSpecForParam $1 in
-       { p_name = None; p_type = $2 t_ret; p_register = reg; }
-     }
+       { p_name = None; p_type = $2 t_ret; 
+         p_register = reg; p_val = None } }
  | decl_spec
      { let (t_ret, reg) = fixDeclSpecForParam $1 in
-       { p_name = None; p_type = t_ret; p_register = reg; }
-     }
+       { p_name = None; p_type = t_ret; p_register = reg; p_val = None } }
 
-/*(*c++ext: default parameter value, copy paste, TODOAST *)*/
+/*(*c++ext: default parameter value, copy paste *)*/
  | decl_spec declarator TEq assign_expr
      { let (t_ret, reg) = fixDeclSpecForParam $1 in 
        let (name, ftyp) = fixNameForParam $2 in
-       { p_name = Some name; p_type = ftyp t_ret; p_register = reg; }
-     }
+       { p_name = Some name; p_type = ftyp t_ret; 
+         p_register = reg; p_val = Some ($3, $4) } }
  | decl_spec abstract_declarator TEq assign_expr
      { let (t_ret, reg) = fixDeclSpecForParam $1 in
-       { p_name = None; p_type = $2 t_ret; p_register = reg; }
-     }
+       { p_name = None; p_type = $2 t_ret; 
+         p_register = reg; p_val = Some ($3, $4) } }
  | decl_spec TEq assign_expr
      { let (t_ret, reg) = fixDeclSpecForParam $1 in
-       { p_name = None; p_type = t_ret; p_register = reg; }
-     }
+       { p_name = None; p_type = t_ret; 
+         p_register = reg; p_val = Some($2,$3) } }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
