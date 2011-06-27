@@ -32,7 +32,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* The AST C++ related types *)
 (*****************************************************************************)
-
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
@@ -186,7 +185,8 @@ and typeCbis =
   (* for functionType, see the function definition section now *)
   (* for class_definition (was structType) see below *)
 
-and typeQualifier = { const: tok option; volatile: tok option; }
+and typeQualifier = 
+  { const: tok option; volatile: tok option; }
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
@@ -214,8 +214,6 @@ and expression = expressionbis wrap
    *)
   | Ident of name * (* semantic: *) ident_info
   | C of constant
-  (* c++ext: *)
-  | This of tok
 
   (* specialized version of FunCallExpr that makes it easier to write
    * certain analysis. Note that because 'name' can be qualified,
@@ -257,6 +255,7 @@ and expression = expressionbis wrap
   | GccConstructor  of fullType paren * initialiser comma_list brace
 
   (* c++ext: *)
+  | This of tok
   | ConstructedObject of fullType * argument comma_list paren
   | TypeIdOfExpr     of tok * expression paren
   | TypeIdOfType     of tok * fullType paren
@@ -361,7 +360,7 @@ and statement = statementbis wrap
   | DeclStmt  of block_declaration 
   | Try of tok * compound * handler list
   (* gccext: *)
-  | NestedFunc of definition
+  | NestedFunc of func_definition
   (* cppext: *)
   | MacroStmt
 
@@ -382,10 +381,11 @@ and statement = statementbis wrap
 
   and exprStatement = expression option
 
-  and labeled = Label   of string * statement
-              | Case    of expression * statement 
-              | CaseRange of expression * expression * statement (* gccext: *)
-	      |	Default of statement
+  and labeled = 
+    | Label   of string * statement
+    | Case    of expression * statement 
+    | CaseRange of expression * expression * statement (* gccext: *)
+    | Default of statement
 
   and selection     = 
    | If of tok * expression paren * statement * tok option * statement
@@ -465,6 +465,7 @@ and block_declaration =
 
    and init = 
      | EqInit of tok (*=*) * initialiser
+     (* c++ext: constructed object *)
      | ObjInit of argument comma_list paren
 
     and initialiser =
@@ -497,7 +498,7 @@ and block_declaration =
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declarations and function definitions.
  *)
-and definition = {
+and func_definition = {
    f_name: name;
    f_type: functionType;
    f_storage: storage wrap;
@@ -536,6 +537,12 @@ and class_definition = {
     (* c++ext: *)
     | Class
 
+  and base_clause = {
+    i_name: class_name;
+    i_virtual: tok option;
+    i_access: access_spec wrap2 option;
+  }
+
   (* used in inheritance spec (base_clause) and class_member *)
   and access_spec = Public | Private | Protected
 
@@ -547,10 +554,10 @@ and class_definition = {
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
     | DeclarationField of fieldkind comma_list wrap (* ';' *)
     
-    | Method of definition
+    | Method of func_definition
     (* MethodDecl is inside field_declaration *)
-    | Constructor of definition * bool (* explicit *) (* * TODO chain_call*)
-    | Destructor of definition
+    | Constructor of func_definition * bool (* explicit *) (* * TODO chain_call*)
+    | Destructor of func_definition
 
     | ConstructorDecl of parameter comma_list paren * bool (* explicit *)
     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
@@ -583,13 +590,7 @@ and class_definition = {
     | CppDirectiveStruct of cpp_directive
     | IfdefStruct of ifdef_directive (*  * field list *)
 
-  and base_clause = {
-    i_name: class_name;
-    i_virtual: tok option;
-    i_access: access_spec wrap2 option;
-  }
-
- and method_def = definition (* TODO: agglomerate method and ctor_dtor *)
+ and method_def = func_definition (* TODO: agglomerate method and ctor_dtor *)
 
 (* ------------------------------------------------------------------------- *)
 (* Declaration, in c++ sense *)
@@ -597,10 +598,10 @@ and class_definition = {
 and declaration = 
   | BlockDecl of block_declaration (* include class definition *)
 
-  | Definition of definition   (* include method definition *)
+  | Definition of func_definition   (* include method definition *)
   (* c++ext: *)
-  | ConstructorTop of definition * bool (* explicit *) (* * chain_call*)
-  | DestructorTop of definition
+  | ConstructorTop of func_definition * bool (* explicit *) (* * chain_call*)
+  | DestructorTop of func_definition
 
   | TemplateDecl of (tok * template_parameters * declaration)
   | TemplateSpecialization of tok * unit angle * declaration
@@ -648,7 +649,7 @@ and cpp_directive =
      | DefineStmt of statement
      | DefineType of fullType
      | DefineDoWhileZero of statement wrap (* do { } while(0) *)
-     | DefineFunction of definition
+     | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
      | DefineText of string wrap
      | DefineEmpty
@@ -716,7 +717,7 @@ and any =
   | Cpp of cpp_directive
 
   | ClassDef of class_definition
-  | FuncDef of definition
+  | FuncDef of func_definition
   | MethodDef of method_def
 
   | Constant of constant
