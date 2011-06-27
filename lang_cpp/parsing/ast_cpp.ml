@@ -28,6 +28,7 @@ module PI = Parse_info
  * Some stuff are tagged 'semantic:' which means that they are computed
  * after parsing. 
  *)
+
 (*****************************************************************************)
 (* The AST C++ related types *)
 (*****************************************************************************)
@@ -188,23 +189,9 @@ and typeCbis =
       e_name: string wrap2;
       e_val: (tok (*=*) * constExpression) option;
     }
-   and functionType = { 
-     ft_ret: fullType;
-     ft_params: parameter comma_list paren;
-     ft_dots: (tok(*,*) * tok(*...*)) option;
-    (* c++ext: *) 
-     ft_const: tok option; (* only for methods *)
-     ft_throw: (tok * name comma_list2 paren) option;
-   }
-     and parameter = {
-        p_name: string wrap2 option;
-        p_type: fullType;
-        p_register: bool wrap;
-        (* c++ext: *)
-        p_val: (tok (*=*) * expression) option;
-      }
 
-  (* c++ext: for class_definition (was structType) see below *)
+  (* for functionType, see the function definition section now *)
+  (* for class_definition (was structType) see below *)
 
 and typeQualifier = { const: tok option; volatile: tok option; }
 
@@ -520,6 +507,21 @@ and definition = {
    f_body: compound brace;
    (*f_attr: attribute list;*) (* gccext: *)
   }
+   and functionType = { 
+     ft_ret: fullType;
+     ft_params: parameter comma_list paren;
+     ft_dots: (tok(*,*) * tok(*...*)) option;
+    (* c++ext: *) 
+     ft_const: tok option; (* only for methods *)
+     ft_throw: (tok * name comma_list2 paren) option;
+   }
+     and parameter = {
+        p_name: string wrap2 option;
+        p_type: fullType;
+        p_register: bool wrap;
+        (* c++ext: *)
+        p_val: (tok (*=*) * expression) option;
+      }
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -584,9 +586,12 @@ and class_definition = {
     | CppDirectiveStruct of cpp_directive
     | IfdefStruct of ifdef_directive (*  * field list *)
 
+  (* TODOAST *)
   and base_clause = base_clausebis wrap (* virtual and access spec *)
     and base_clausebis = 
          class_name * bool (* virtual inheritance *) * access_spec option
+
+ and method_def = definition (* TODO: agglomerate method and ctor_dtor *)
 
 (* ------------------------------------------------------------------------- *)
 (* Declaration, in c++ sense *)
@@ -627,8 +632,6 @@ and declaration =
     (* cppext: *) 
     | CppDirectiveDecl of cpp_directive
     | IfdefDecl of ifdef_directive (* * statement list *)
-
- and method_def = definition (* TODO: agglomerate method and ctor_dtor *)
 
 (* ------------------------------------------------------------------------- *)
 (* cppext: cpp directives, #ifdef, #define and #include body *)
@@ -786,7 +789,3 @@ let rewrap_pinfo pi ii =
 (* for error reporting *) 
 let string_of_info ii = 
   Parse_info.string_of_parse_info (parse_info_of_info ii)
-
-(*****************************************************************************)
-(* Converters *)
-(*****************************************************************************)

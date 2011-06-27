@@ -878,7 +878,7 @@ elaborated_type_specifier:
 /*(*2 c++ext:  *)*/
 /*(*----------------------------*)*/
 
-/*(* cant factorize with a tcolcol_opt2 *)*/
+/*(* cant factorize with a tcolcol_opt2 TODOAST *)*/
 type_cplusplus_id:
  | type_name  { $1 }
  | nested_name_specifier2 type_name { $2 }
@@ -895,6 +895,7 @@ type_cplusplus_id:
  * it can be a typedef-name, enum-name, class-name (not template-name
  * cos I detect them as they have a '<' just after),
  * so here type_name is simplified in consequence.
+ * TODOAST return name, not typeC
  *)*/
 type_name:
  | enum_name_or_typedef_name_or_simple_class_name
@@ -1212,26 +1213,17 @@ base_clause:
    * specialisation
    *)*/
 base_specifier:
- | access_specifier class_name 
-     { let qid = IdIdent (fst $2), [snd $2] in 
-       let name = (None, noQscope, qid) in
-       (name, false, Some (fst $1)), [snd $1]
-     }
  | class_name 
-     { let qid = IdIdent (fst $1), [snd $1] in 
-       let name = (None, noQscope, qid) in
-       (name, false, None), noii
-     }
+     { ($1, false, None), noii }
+ | access_specifier class_name 
+     { ($2, false, Some (fst $1)), [snd $1] }
  | Tvirtual access_specifier class_name 
-     { let qid = IdIdent (fst $3), [snd $3] in 
-       let name = (None, noQscope, qid) in
-       (name, true, Some (fst $2)), [$1;snd $2]
-     }
+     { ($3, true, Some (fst $2)), [$1;snd $2] }
 
-/*(* TODO? specialisation | ident { $1 } *)*/
+/*(* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)*/
 class_name:
- | type_cplusplus_id { "todo", Ast.fakeInfo() (* TODOAST *) }
- | TIdent { $1 }
+ | type_cplusplus_id  { raise Todo }
+ | TIdent { None, noQscope, (IdIdent (fst $1), [snd $1]) }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: members *)*/
@@ -1481,7 +1473,8 @@ init_declarator:
     * not the constructorname hence the need for a TOPar_CplusplusInit
     * TODOAST
     *)*/
- | declaratori TOPar_CplusplusInit argument_list_opt TCPar { ($1, None) }
+ | declaratori TOPar_CplusplusInit argument_list_opt TCPar 
+     { ($1, None) }
 
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/
@@ -1492,8 +1485,7 @@ declaratori:
  | declarator gcc_asm_decl   { $1 }
 
 gcc_asm_decl: 
- | Tasm TOPar asmbody TCPar              {  }
- | Tasm Tvolatile TOPar asmbody TCPar   {  }
+ | Tasm volatile_opt TOPar asmbody TCPar              {  }
 			  
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 initializers *)*/
@@ -1606,12 +1598,10 @@ using_declaration:
 /*(*2 gccext: c++ext: *)*/
 /*(*----------------------------*)*/
 
+/*(* gccext: c++ext: also apparently *)*/
 asm_definition:
- /*(* gccext: c++ext: also apparently *)*/
- | Tasm TOPar asmbody TCPar TPtVirg           
-     { Asm($1, None, ($2, $3, $4), $5) }
- | Tasm Tvolatile TOPar asmbody TCPar TPtVirg 
-     { Asm($1, Some $2, ($3, $4, $5), $6) }
+ | Tasm volatile_opt TOPar asmbody TCPar TPtVirg           
+     { Asm($1, $2, ($3, $4, $5), $6) }
 
 asmbody: 
  | string_list colon_asm_list  { $1, $2 }
@@ -2041,6 +2031,10 @@ void_opt:
 
 inline_opt:
  | Tinline         { Some $1 }
+ | /*(*empty*)*/ { None }
+
+volatile_opt:
+ | Tvolatile     { Some $1 }
  | /*(*empty*)*/ { None }
 
 tcolcol_opt:
