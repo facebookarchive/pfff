@@ -583,10 +583,11 @@ and class_definition = {
     | CppDirectiveStruct of cpp_directive
     | IfdefStruct of ifdef_directive (*  * field list *)
 
-  (* TODOAST *)
-  and base_clause = base_clausebis wrap (* virtual and access spec *)
-    and base_clausebis = 
-         class_name * bool (* virtual inheritance *) * access_spec option
+  and base_clause = {
+    i_name: class_name;
+    i_virtual: tok option;
+    i_access: access_spec wrap2 option;
+  }
 
  and method_def = definition (* TODO: agglomerate method and ctor_dtor *)
 

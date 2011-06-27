@@ -1196,11 +1196,11 @@ base_clause:
    *)*/
 base_specifier:
  | class_name 
-     { ($1, false, None), noii }
+     { { i_name = $1; i_virtual = None; i_access = None } }
  | access_specifier class_name 
-     { ($2, false, Some (fst $1)), [snd $1] }
+     { { i_name = $2; i_virtual = None; i_access = Some $1 } }
  | Tvirtual access_specifier class_name 
-     { ($3, true, Some (fst $2)), [$1;snd $2] }
+     { { i_name = $3; i_virtual = Some $1; i_access = Some $2 } }
 
 /*(* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)*/
 class_name:
@@ -1812,12 +1812,12 @@ celem:
  | cpp_directive       { CppTop $1 }
  | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
  | cpp_other           { $1 }
-
- /*(* when have error recovery, we can end up skipping the
-    * beginning of the file, and so get trailing unclose } at
-    * end
-    *)*/
- | TCBrace { TopDecl (EmptyDef $1) (* TODO ??? *) }
+ /*
+ (* when have error recovery, we can end up skipping the
+  * beginning of the file, and so get trailing unclose } at
+  * end
+  *)*/
+ | TCBrace { TopDecl (EmptyDef $1) }
 
  | EOF        { FinalDef $1 }
 
