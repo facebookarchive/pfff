@@ -473,15 +473,15 @@ pm_expr:
 
 cast_expr: 
  | unary_expr                        { $1 }
- | TOPar type_id TCPar cast_expr { mk_e(Cast ($2, $4)) [$1;$3] }
+ | TOPar type_id TCPar cast_expr { mk_e(Cast (($1, $2, $3), $4)) noii }
 
 unary_expr: 
  | postfix_expr                    { $1 }
  | TInc unary_expr                 { mk_e(Infix ($2, Inc))    [$1] }
  | TDec unary_expr                 { mk_e(Infix ($2, Dec))    [$1] }
  | unary_op cast_expr              { mk_e(Unary ($2, fst $1)) [snd $1] }
- | Tsizeof unary_expr              { mk_e(SizeOfExpr ($2))    [$1] }
- | Tsizeof TOPar type_id TCPar { mk_e(SizeOfType ($3))    [$1;$2;$4] }
+ | Tsizeof unary_expr              { mk_e(SizeOfExpr ($1, $2)) noii }
+ | Tsizeof TOPar type_id TCPar { mk_e(SizeOfType ($1, ($2, $3, $4))) noii }
  /*(*c++ext: *)*/
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -502,7 +502,7 @@ unary_op:
 postfix_expr: 
  | primary_expr               { $1 }
  | postfix_expr TOCro expr TCCro                
-     { mk_e(ArrayAccess ($1, $3)) [$2;$4] }
+     { mk_e(ArrayAccess ($1, ($2, $3, $4))) noii }
  | postfix_expr TOPar argument_list_opt TCPar  
      { mk_e(mk_funcall $1 ($2, $3, $4)) noii }
 
@@ -520,8 +520,8 @@ postfix_expr:
 
  /*(* c++ext: *)*/
  | cast_operator_expr { $1 }
- | Ttypeid TOPar unary_expr TCPar { mk_e(TypeIdOfExpr ($3))    [$1;$2;$4] }
- | Ttypeid TOPar type_id    TCPar { mk_e(TypeIdOfType ($3))    [$1;$2;$4] }
+ | Ttypeid TOPar unary_expr TCPar { mk_e(TypeIdOfExpr ($1, ($2, $3, $4))) noii }
+ | Ttypeid TOPar type_id    TCPar { mk_e(TypeIdOfType ($1, ($2, $3, $4))) noii }
  | cast_constructor_expr { $1 }
 
 
@@ -538,12 +538,12 @@ primary_expr:
  | Tfalse  { mk_e(C (Bool false)) [$1] }
 
   /*(* forunparser: *)*/
- | TOPar expr TCPar { mk_e(ParenExpr ($2)) [$1;$3] }  
+ | TOPar expr TCPar { mk_e(ParenExpr ($1, $2, $3)) noii }  
 
  /*(* gccext: cppext: *)*/
  | string_elem string_list { mk_e(C (MultiString)) ($1 ++ $2) }
  /*(* gccext: allow statement as expressions via ({ statement }) *)*/
- | TOPar compound TCPar    { mk_e(StatementExpr ($2)) [$1;$3] }
+ | TOPar compound TCPar    { mk_e(StatementExpr ($1, $2, $3)) noii }
 
  /*(* c++ext: *)*/
  | Tthis { mk_e(This $1) [] }
@@ -575,9 +575,9 @@ primary_cplusplus_id:
 /*(*could use TInf here *)*/
 cast_operator_expr: 
  | cpp_cast_operator TInf_Template type_id  TSup_Template TOPar expr TCPar 
-     { mk_e (CplusplusCast (fst $1, $3, $6)) [snd $1;$2;$4;$5;$7] }
+     { mk_e (CplusplusCast ($1, ($2, $3, $4), ($5, $6, $7))) noii }
 /*(* TODO: remove once we don't skip template arguments *)*/
- | cpp_cast_operator TOPar expr TCPar  
+ | cpp_cast_operator TOPar expr TCPar
      { mk_e ExprTodo noii }
 
 /*(*c++ext:*)*/
@@ -633,9 +633,9 @@ new_initializer:
 
 compound_literal_expr:
  | TOPar type_id TCPar TOBrace TCBrace 
-     { mk_e(GccConstructor ($2, [])) [$1;$3;$4;$5] }
+     { mk_e(GccConstructor (($1, $2, $3), ($4, [], $5))) noii }
  | TOPar type_id TCPar TOBrace initialize_list gcc_comma_opt TCBrace
-     { mk_e(GccConstructor ($2, List.rev $5)) ([$1;$3;$4;$7] ++ $6) }
+     { mk_e(GccConstructor (($1, $2, $3), ($4, List.rev $5, $7))) noii }
 
 string_elem:
  | TString { [snd $1] }
@@ -727,7 +727,7 @@ statement:
 
 
 compound: 
- | TOBrace statement_list_opt TCBrace { $2, [$1; $3]  }
+ | TOBrace statement_list_opt TCBrace { $2, [$1; $3] (* TODO brace *)  }
 
 
 statement_list:
@@ -764,19 +764,19 @@ labeled:
 /*(* classic else ambiguity resolved by a %prec *)*/
 selection: 
  | Tif TOPar expr TCPar statement              %prec SHIFTHERE
-     { If ($3, $5, (ExprStatement None, [])),   [$1;$2;$4] }
+     { If ($1, ($2, $3, $4), $5, None, (ExprStatement None, [])), noii }
  | Tif TOPar expr TCPar statement Telse statement 
-     { If ($3, $5, $7),  [$1;$2;$4;$6] }
+     { If ($1, ($2, $3, $4), $5, Some $6, $7), noii }
  | Tswitch TOPar expr TCPar statement             
-     { Switch ($3,$5),   [$1;$2;$4]  }
+     { Switch ($1, ($2, $3, $4), $5), noii }
 
 iteration: 
  | Twhile TOPar expr TCPar statement                             
-     { While ($3,$5),                [$1;$2;$4] }
+     { While ($1, ($2, $3, $4), $5), noii }
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
-     { DoWhile ($2,$5),              [$1;$3;$4;$6;$7] }
+     { DoWhile ($1, $2, $3, ($4, $5, $6), $7), noii }
  | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
-     { For ($3,$4,($5, []),$7), [$1;$2;$6] }
+     { For ($3,$4,($5, []),$7), [$1;$2;$6] (* TODO paren *) }
 
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
@@ -802,7 +802,7 @@ try_block:
  | Ttry compound handler_list { Try ($2, $3), [$1] }
 
 handler: 
- | Tcatch TOPar exception_decl TCPar compound { ($3, [$1;$2;$4]), $5 }
+ | Tcatch TOPar exception_decl TCPar compound { ($1, ($2, $3, $4), $5) }
 
 exception_decl:
  | parameter_decl { ExnDecl $1 }
@@ -839,8 +839,8 @@ simple_type_specifier:
  | Twchar_t             { Right3 (BaseType (IntType WChar_t)),         [$1] }
 
  /*(* gccext: *)*/
- | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOfExpr ($3)), [$1;$2;$4] }
- | Ttypeof TOPar type_id   TCPar   { Right3 (TypeOfType ($3)), [$1;$2;$4] }
+ | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOfExpr ($1, ($2,$3,$4))),noii }
+ | Ttypeof TOPar type_id     TCPar { Right3 (TypeOfType ($1, ($2,$3,$4))),noii }
 
  /*
  (* history: cant put TIdent {} cos it makes the grammar 
@@ -1155,12 +1155,10 @@ conversion_declarator:
 class_specifier: 
  | class_head TOBrace member_specification_opt TCBrace 
      { let (kind, nameopt, baseopt) = $1 in
-       { c_kind = kind; c_name = nameopt; c_inherit = baseopt;
-         c_members = $3 (* $2, $4 *)
-       }
-     }
+       { c_kind = kind; c_name = nameopt; 
+         c_inherit = baseopt; c_members = ($2, $3, $4) } }
 /*
-(* todo in grammar they allow anon class with base_clause, wierd. 
+(* todo in grammar they allow anon class with base_clause, weird. 
  * bugfix_c++: in c++ grammar they put identifier but when we do template
  * specialization then we can get some template_id. Note that can
  * not introduce a class_key_name intermediate cos they get a 
@@ -1515,17 +1513,17 @@ initialize2:
 /*(* they can be nested, can have a .x.[3].y *)*/
 designator: 
  | TDot ident 
-     { DesignatorField (fst $2), [$1;snd $2] } 
+     { DesignatorField ($1, $2) } 
  | TOCro const_expr TCCro     %prec SHIFTHERE
-     { DesignatorIndex ($2),  [$1;$3] }
+     { DesignatorIndex ($1, $2, $3) }
  | TOCro const_expr TEllipsis const_expr TCCro 
-     { DesignatorRange ($2, $4),  [$1;$3;$5] }
+     { DesignatorRange ($1, ($2, $3, $4), $5) }
 
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/
 gcc_comma_opt_struct: 
- | TComma {  Some $1 } 
+ | TComma           { Some $1 } 
  | /*(* empty *)*/  { None  }
 
 /*(*************************************************************************)*/
@@ -1585,10 +1583,10 @@ colon_asm:
 
 colon_option: 
  | TString                      { ColonMisc, [snd $1] }
- | TString TOPar asm_expr TCPar { ColonExpr $3, [snd $1; $2;$4] } 
+ | TString TOPar asm_expr TCPar { ColonExpr ($2, $3, $4), [snd $1] } 
  /*(* cppext: certainly a macro *)*/
  | TOCro TIdent TCCro TString TOPar asm_expr TCPar
-     { ColonExpr $6, [$1;snd $2;$3;snd $4; $5; $7 ] }
+     { ColonExpr ($5, $6, $7), [$1;snd $2;$3;snd $4] }
  | TIdent                           { ColonMisc, [snd $1] }
  | /*(* empty *)*/                  { ColonMisc, [] }
 
