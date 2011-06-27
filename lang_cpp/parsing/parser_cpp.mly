@@ -1281,10 +1281,10 @@ member_declarator:
        FieldDecl {v_namei = None; v_type = partialt t_ret; v_storage = sto;}
        )
      }
- | declarator constant_initializer
+ | declarator TEq const_expr
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
-         v_namei = Some (name, Some (fst $2, (InitExpr (snd $2), noii)));
+         v_namei = Some (name, Some (EqInit ($2, (InitExpr $3, noii))));
          v_type = partialt t_ret; v_storage = sto;
        })
      }
@@ -1304,9 +1304,6 @@ member_declarator:
  *)*/
 pure_specifier:
  | TEq TInt_ZeroVirtual { [$1;$2] }
-
-constant_initializer:
- | TEq const_expr { $1, $2 }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 constructor special case *)*/
@@ -1451,15 +1448,14 @@ storage_class_spec:
 /*(*-----------------------------------------------------------------------*)*/
 init_declarator:  
  | declaratori                  { ($1, None) }
- | declaratori TEq initialize   { ($1, Some ($2, $3)) }
-
- /*(* c++ext: c++ initializer via call to constructor. Note that this
-    * is different from TypedefIdent2, here the declaratori is an ident,
-    * not the constructorname hence the need for a TOPar_CplusplusInit
-    * TODOAST
-    *)*/
+ | declaratori TEq initialize   { ($1, Some (EqInit ($2, $3))) }
+ /*
+ (* c++ext: c++ initializer via call to constructor. Note that this
+  * is different from TypedefIdent2, here the declaratori is an ident,
+  * not the constructorname hence the need for a TOPar_CplusplusInit
+  *)*/
  | declaratori TOPar_CplusplusInit argument_list_opt TCPar 
-     { ($1, None) }
+     { ($1, Some (ObjInit ($2, $3, $4))) }
 
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/

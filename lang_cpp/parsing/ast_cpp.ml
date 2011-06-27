@@ -464,9 +464,11 @@ and block_declaration =
    (*c++ext: TODO *)
    and func_specifier = Inline | Virtual
 
-   and init = (info (*=*) * initialiser)
+   and init = 
+     | EqInit of tok (*=*) * initialiser
+     | ObjInit of argument comma_list paren
 
-   and initialiser = initialiserbis wrap
+    and initialiser = initialiserbis wrap
      and initialiserbis = 
        | InitExpr of expression 
        | InitList of initialiser comma_list 
