@@ -451,7 +451,7 @@ and block_declaration =
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
   and onedecl = {
-    v_namei: (name *  (info (*=*) * initialiser) option)  option;
+    v_namei: (name * init option) option;
     v_type: fullType;
     v_storage: storage wrap;
     (* v_attr: attribute list; *) (* gccext: *)
@@ -463,6 +463,8 @@ and block_declaration =
 
    (*c++ext: TODO *)
    and func_specifier = Inline | Virtual
+
+   and init = (info (*=*) * initialiser)
 
    and initialiser = initialiserbis wrap
      and initialiserbis = 
