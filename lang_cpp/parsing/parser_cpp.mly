@@ -955,11 +955,11 @@ direct_d:
  | declarator_id
      { ($1, fun x -> x) }
  | TOPar declarator TCPar      /*(* forunparser: old: $2 *)*/ 
-     { (fst $2, fun x -> (nQ, (ParenType ((snd $2) x), [$1;$3]))) }
+     { (fst $2, fun x -> (nQ, (ParenType ($1, (snd $2) x, $3), noii))) }
  | direct_d TOCro            TCCro         
-     { (fst $1,fun x->(snd $1) (nQ,(Array (None,x),         [$2;$3]))) }
+     { (fst $1, fun x->(snd $1) (nQ,(Array (($2,None,$3),x), noii))) }
  | direct_d TOCro const_expr TCCro
-     { (fst $1,fun x->(snd $1) (nQ,(Array (Some $3,x),      [$2;$4])))}
+     { (fst $1, fun x->(snd $1) (nQ,(Array (($2, Some $3, $4),x),noii))) }
  | direct_d TOPar TCPar const_opt exn_spec_opt
      { (fst $1, fun x-> (snd $1) 
          (nQ, (FunctionType {
@@ -991,30 +991,30 @@ abstract_declarator:
 
 direct_abstract_declarator: 
  | TOPar abstract_declarator TCPar /*(* forunparser: old: $2 *)*/
-     { (fun x -> (nQ, (ParenType ($2 x), [$1;$3]))) }
+     { (fun x -> (nQ, (ParenType ($1, $2 x, $3), noii))) }
  | TOCro            TCCro                            
-     { fun x ->   (nQ, (Array (None, x),      [$1;$2]))}
+     { fun x ->   (nQ, (Array (($1,None, $2), x), noii))}
  | TOCro const_expr TCCro                            
-     { fun x ->   (nQ, (Array (Some $2, x),   [$1;$3]))}
+     { fun x ->   (nQ, (Array (($1, Some $2, $3), x), noii))}
  | direct_abstract_declarator TOCro            TCCro 
-     { fun x ->$1 (nQ, (Array (None, x),      [$2;$3])) }
+     { fun x ->$1 (nQ, (Array (($2, None, $3), x), noii)) }
  | direct_abstract_declarator TOCro const_expr TCCro
-     { fun x ->$1 (nQ, (Array (Some $3,x),    [$2;$4])) }
+     { fun x ->$1 (nQ, (Array (($2, Some $3, $4), x), noii)) }
  | TOPar TCPar                                       
      { fun x -> (nQ, (FunctionType {
        ft_ret = x; ft_params = ($1,[],$2); 
-       ft_dots = None; ft_const = None}, [])) }
+       ft_dots = None; ft_const = None}, noii)) }
  | TOPar parameter_type_list TCPar
      { fun x -> (nQ, (FunctionType {
          ft_ret = x; ft_params = ($1,fst $2,$3); 
-         ft_dots = snd $2; ft_const = None}, [])) }
+         ft_dots = snd $2; ft_const = None}, noii)) }
  | direct_abstract_declarator TOPar TCPar const_opt exn_spec_opt
-     { fun x ->$1 (nQ, (FunctionType {
+     { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,[],$3); 
          ft_dots = None; ft_const = $4;
-     },[])) }
- | direct_abstract_declarator TOPar parameter_type_list TCPar 
-     const_opt exn_spec_opt
+         }, noii)) }
+ | direct_abstract_declarator TOPar parameter_type_list TCPar const_opt 
+    exn_spec_opt
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,fst $3,$4); 
          ft_dots = snd $3; ft_const = $5;},[])) }

@@ -131,7 +131,7 @@ and typeCbis =
   | Pointer         of fullType
   | Reference       of fullType (* c++ext: *)
 
-  | Array           of constExpression option * fullType
+  | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
 
   | Enum of tok (*enum*) * string wrap2 option * 
@@ -158,7 +158,7 @@ and typeCbis =
   | TypeOfType of fullType    
 
   (* forunparser: *)
-  | ParenType of fullType 
+  | ParenType of fullType paren
 
   and  baseType = 
     | Void 
