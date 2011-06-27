@@ -9,6 +9,7 @@ TARGET=lib
 SRC= flag_parsing_cpp.ml \
      token_cpp.ml ast_cpp.ml \
      type_cpp.ml semantic_cpp.ml \
+     meta_ast_cpp.ml export_ast_cpp.ml \
      lexer_parser_cpp.ml parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \
      parsing_stat_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml \
@@ -22,9 +23,6 @@ SRC= flag_parsing_cpp.ml \
      pp_ast.ml \
      test_parsing_cpp.ml \
 
-# parser_php_mly_helper.ml \
-
-#     meta_ast_cpp.ml export_ast_cpp.ml \
 #     visitor_cpp.ml lib_parsing_cpp.ml \
 
 SYSLIBS= str.cma unix.cma 
