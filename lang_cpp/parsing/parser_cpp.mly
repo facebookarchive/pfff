@@ -234,6 +234,7 @@ module Ast = Ast_cpp
 %type <Ast_cpp.expression> expr
 %type <Ast_cpp.fullType> type_id
 %type <(Ast_cpp.name) * (Ast_cpp.fullType -> Ast_cpp.fullType)> declarator
+%type <(Ast_cpp.name)> type_cplusplus_id
 %%
 
 /*(*************************************************************************)*/
@@ -593,12 +594,13 @@ cpp_cast_operator:
  * this as a function call. A semantic analysis could infer it was
  * actually a ConstructedObject.
  * 
- * todo can have nested specifier before the typedefident ... so 
+ * TODO: can have nested specifier before the typedefident ... so 
  * need a classname3 ?
 *)*/
 cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
-     { let ft = nQ, (TypeName ($1, Ast.noTypedefDef()), noii) in
+     { let name = None, noQscope, (IdIdent (fst $1), [snd $1]) in
+       let ft = nQ, (TypeName (name, Ast.noTypedefDef()), noii) in
        mk_e(ConstructedObject (ft, ($2, $3, $4))) noii  
      }
  | basic_type_2 TOPar argument_list_opt TCPar 
@@ -851,7 +853,7 @@ simple_type_specifier:
   * this was ugly too so now we use a typedef "inference" mechanism
   * in parsing_hacks_typedef.ml.
   *)*/
- | type_cplusplus_id { Right3 (fst $1), snd $1 }
+ | type_cplusplus_id { Right3 (TypeName ($1, noTypedefDef())), noii }
 
 
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
@@ -860,47 +862,41 @@ elaborated_type_specifier:
      { Right3 (EnumName (fst $2)),       [$1; snd $2] }
  | class_key ident
      { Right3 (StructUnionName (fst $1, fst $2)), [snd $1;snd $2] }
- /*(* c++ext: *)*/
- | Ttypename ident 
-     { let typedef = (TypeName ($2,Ast.noTypedefDef())), noii in
-       Right3 (TypenameKwd (Ast.nQ, typedef)), [$1]
-     }
- | Ttypename template_id 
-     { let template = $2 in
-       Right3 (TypenameKwd (Ast.nQ,template)), [$1]
-     }
+ /*(* c++ext:  *)*/
+ | Ttypename type_cplusplus_id
+     { Right3 (TypenameKwd ($1, $2)), noii }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext:  *)*/
 /*(*----------------------------*)*/
 
-/*(* cant factorize with a tcolcol_opt2 TODOAST *)*/
+/*(* cant factorize with a tcolcol_opt2 *)*/
 type_cplusplus_id:
- | type_name  { $1 }
- | nested_name_specifier2 type_name { $2 }
- | TColCol_BeforeTypedef type_name { $2 }
- | TColCol_BeforeTypedef nested_name_specifier2 type_name { $3 }
+ | type_name                        { None, noQscope, $1 }
+ | nested_name_specifier2 type_name { None, $1, $2 }
+ | TColCol_BeforeTypedef type_name  { Some (QTop, $1), noQscope, $2 }
+ | TColCol_BeforeTypedef nested_name_specifier2 type_name 
+     { Some (QTop, $1), $2, $3 }
 
 /*
 (* in c++ grammar they put 
  *  typename: enum-name | typedef-name | class-name 
- *   class-name:  identifier | template-id
+ *  class-name:  identifier | template-id
  *  template-id: template-name < template-argument-list > 
  * 
  * But in my case I don't have the contextual info so when I see an ident
- * it can be a typedef-name, enum-name, class-name (not template-name
- * cos I detect them as they have a '<' just after),
+ * it can be a typedef-name, enum-name, or class-name (but not template-name
+ * because I detect them as they have a '<' just after),
  * so here type_name is simplified in consequence.
- * TODOAST return name, not typeC
  *)*/
 type_name:
  | enum_name_or_typedef_name_or_simple_class_name
-     { (TypeName ($1, Ast.noTypedefDef())), noii }
+     { IdIdent (fst $1), [snd $1] }
  | template_id { $1 }
 
 template_id:
  | TIdent_Templatename TInf_Template template_argument_list TSup_Template
-    { TypeTemplate ($1, ($2, $3, $4)), noii }
+    { IdTemplateId ($1, ($2, $3, $4)), noii }
 
 /*
 (*c++ext: in the c++ grammar they have also 'template-name' but this is catched 
@@ -1173,7 +1169,6 @@ class_specifier:
  * r/r conflict as there is another place with a 'class_key ident'
  * in elaborated specifier. So need to duplicate the rule for
  * the template_id case.
- * TODO
 *)*/
 class_head: 
  | class_key 
@@ -1218,8 +1213,8 @@ base_specifier:
 
 /*(* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)*/
 class_name:
- | type_cplusplus_id  { raise Todo }
- | TIdent { None, noQscope, (IdIdent (fst $1), [snd $1]) }
+ | type_cplusplus_id  { $1 }
+ | TIdent             { None, noQscope, (IdIdent (fst $1), [snd $1]) }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: members *)*/

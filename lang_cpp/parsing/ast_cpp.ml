@@ -142,12 +142,12 @@ and typeCbis =
 
   | EnumName        of string (*enum_name*)
   | StructUnionName of structUnion * string (*ident_name*)
-  (* c++note: TypeName can now correspond also to a classname or enumname *)
-  | TypeName of string wrap2(*typedef_name*) * fullType option (* semantic: *)
-  (* c++ext: *)
-  | TypeTemplate of string wrap2 (*ident_name*) * template_arguments
+  (* c++ext: TypeName can now correspond also to a classname or enumname
+   * and is a name so can have some IdTemplateId in it.
+   *)
+  | TypeName of name(*typedef_name*) * fullType option (* semantic: *)
   (* only to disambiguate I think *)
-  | TypenameKwd of fullType (* in practice either type_name of template_name *)
+  | TypenameKwd of tok * name(*typedef_name*)
 
   | TypeOfExpr of expression  
   (* gccext: TypeOfType may seems useless, why declare a __typeof__(int)
