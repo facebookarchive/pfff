@@ -776,8 +776,7 @@ iteration:
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7), noii }
  | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
-     { For ($3,$4,($5, []),$7), [$1;$2;$6] (* TODO paren *) }
-
+     { For ($1, ($2, ($3,$4, ($5, [])), $6), $7), noii }
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration ($1, ($2, $3, $4), $5), noii }

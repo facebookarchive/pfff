@@ -73,8 +73,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
    | IdIdent of string wrap2
    | IdOperator of tok * (operator * tok list)
    | IdConverter of tok * fullType
-   (* todo: ident or template_id here too *)
-   | IdDestructor of tok * string wrap2 
+   | IdDestructor of tok(*~*) * string wrap2 
    | IdTemplateId of string wrap2 * template_arguments
 
    and template_arguments = template_argument comma_list angle
@@ -163,9 +162,7 @@ and typeCbis =
     | IntType   of intType 
     | FloatType of floatType
 
-     (* stdC: type section. todo? add  a SizeT ?
-      * note: 'char' and 'signed char' are semantically different!! 
-      *)
+     (* stdC: type section. 'char' and 'signed char' are different *)
       and intType   = 
         | CChar (* obsolete? | CWchar  *)
         | Si of signed
@@ -400,8 +397,10 @@ and statement = statementbis wrap
   and iteration     = 
     | While   of tok * expression paren * statement
     | DoWhile of tok * statement * tok * expression paren * tok (*;*)
-    | For     of exprStatement wrap * exprStatement wrap * exprStatement wrap *
-                 statement
+    | For of 
+        tok *
+        (exprStatement wrap * exprStatement wrap * exprStatement wrap) paren *
+        statement
     (* cppext: *)
     | MacroIteration of string wrap2 * argument comma_list paren * statement
 
@@ -412,7 +411,7 @@ and statement = statementbis wrap
     (* gccext: goto *exp ';' *)
     | GotoComputed of expression
 
-  (* c++ext: TODO *)
+  (* c++ext: *)
   and handler = tok * exception_declaration paren * compound
    and exception_declaration = 
      | ExnDeclEllipsis of tok
@@ -620,7 +619,7 @@ and declaration =
 
   | DeclTodo
 
- and template_parameter = parameter (* todo more *)
+ and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
 
   (* TODO *)
