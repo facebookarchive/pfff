@@ -162,8 +162,8 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
 let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) -> 
   let ((qu,ty) as v,_st) = fixDeclSpecForDecl r in
   match st with
-  | (Sto Register) -> v, (true, iist)
-  | NoSto -> v, (false, iist)
+  | (Sto Register) -> v, Some (List.hd iist)
+  | NoSto -> v, None
   | _ -> 
       raise 
         (Semantic ("storage class specified for parameter of function", 

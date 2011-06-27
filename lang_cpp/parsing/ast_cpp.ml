@@ -516,10 +516,16 @@ and func_definition = {
      and parameter = {
         p_name: string wrap2 option;
         p_type: fullType;
-        p_register: bool wrap;
+        p_register: tok option;
         (* c++ext: *)
         p_val: (tok (*=*) * expression) option;
       }
+
+ and func_or_else =
+  | FunctionOrMethod of func_definition
+  (* c++ext: special member function *)
+  | Constructor of func_definition * bool (* explicit *) (* * chain_call*)
+  | Destructor of func_definition
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -552,13 +558,10 @@ and class_definition = {
     | Access of access_spec wrap2 * tok (*:*)
 
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-    | DeclarationField of fieldkind comma_list wrap (* ';' *)
-    
-    | Method of func_definition
-    (* MethodDecl is inside field_declaration *)
-    | Constructor of func_definition * bool (* explicit *) (* * TODO chain_call*)
-    | Destructor of func_definition
+    | MemberField of fieldkind comma_list wrap (* ';' *)
+    | MemberFunc of func_or_else    
 
+    (* MethodDecl is inside field_declaration *)
     | ConstructorDecl of parameter comma_list paren * bool (* explicit *)
     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
          (* ( ) void_opt *)
@@ -589,48 +592,6 @@ and class_definition = {
     (* cppext: *)
     | CppDirectiveStruct of cpp_directive
     | IfdefStruct of ifdef_directive (*  * field list *)
-
- and method_def = func_definition (* TODO: agglomerate method and ctor_dtor *)
-
-(* ------------------------------------------------------------------------- *)
-(* Declaration, in c++ sense *)
-(* ------------------------------------------------------------------------- *)
-and declaration = 
-  | BlockDecl of block_declaration (* include class definition *)
-
-  | Definition of func_definition   (* include method definition *)
-  (* c++ext: *)
-  | ConstructorTop of func_definition * bool (* explicit *) (* * chain_call*)
-  | DestructorTop of func_definition
-
-  | TemplateDecl of (tok * template_parameters * declaration)
-  | TemplateSpecialization of tok * unit angle * declaration
-
-  (* the list can be empty *)
-  | ExternC     of tok * tok * declaration
-  | ExternCList of tok * tok * declaration_sequencable list brace
-
-  (* the list can be empty *)
-  | NameSpace of tok * string wrap2 * declaration_sequencable list brace
-  (* after have some semantic info *)
-  | NameSpaceExtend of string * declaration_sequencable list 
-  | NameSpaceAnon   of tok * declaration_sequencable list brace
-
-  (* gccext: allow redundant ';' *)
-  | EmptyDef of tok
-
-  | DeclTodo
-
- and template_parameter = parameter (* todo? more? *)
-  and template_parameters = template_parameter comma_list angle
-
-  (* TODO *)
-  (* cppext: easier to put at statement_list level than statement level *)
-  and declaration_sequencable = 
-    | DeclElem of declaration
-    (* cppext: *) 
-    | CppDirectiveDecl of cpp_directive
-    | IfdefDecl of ifdef_directive (* * statement list *)
 
 (* ------------------------------------------------------------------------- *)
 (* cppext: cpp directives, #ifdef, #define and #include body *)
@@ -687,9 +648,34 @@ and cpp_directive =
 (* ------------------------------------------------------------------------- *)
 (* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
-and toplevel =
-  | TopDecl of declaration
-         
+(* it's not really 'toplevel' because the elements below can be nested
+ * inside namespaces or some extern. It's not really 'declaration'
+ * either because it can defines stuff. But I keep the C++ standard
+ * terminology.
+ *)
+and declaration = 
+  | BlockDecl of block_declaration (* include class definition *)
+
+  | Func of func_or_else
+
+  | TemplateDecl of (tok * template_parameters * declaration)
+  | TemplateSpecialization of tok * unit angle * declaration
+
+  (* the list can be empty *)
+  | ExternC     of tok * tok * declaration
+  | ExternCList of tok * tok * declaration_sequencable list brace
+
+  (* the list can be empty *)
+  | NameSpace of tok * string wrap2 * declaration_sequencable list brace
+  (* after have some semantic info *)
+  | NameSpaceExtend of string * declaration_sequencable list 
+  | NameSpaceAnon   of tok * declaration_sequencable list brace
+
+  (* gccext: allow redundant ';' *)
+  | EmptyDef of tok
+
+  | DeclTodo
+
   (* cppext: *)
   | CppTop of cpp_directive
   | IfdefTop of ifdef_directive (* * toplevel list *)
@@ -700,6 +686,20 @@ and toplevel =
 
   | FinalDef of info (* EOF *)
 
+
+ and template_parameter = parameter (* todo? more? *)
+  and template_parameters = template_parameter comma_list angle
+
+  (* TODO *)
+  (* cppext: easier to put at statement_list level than statement level *)
+  and declaration_sequencable = 
+    | DeclElem of declaration
+    (* cppext: *) 
+    | CppDirectiveDecl of cpp_directive
+    | IfdefDecl of ifdef_directive (* * statement list *)
+
+and toplevel = declaration
+
 and program = toplevel list
 
 (* ------------------------------------------------------------------------- *)
@@ -708,7 +708,6 @@ and program = toplevel list
 and any = 
   | Program of program
   | Toplevel of toplevel
-  | Decl of declaration
   | BlockDecl2 of block_declaration
   | Stmt of statement
   | Expr of expression
@@ -718,7 +717,7 @@ and any =
 
   | ClassDef of class_definition
   | FuncDef of func_definition
-  | MethodDef of method_def
+  | FuncOrElse of func_or_else
 
   | Constant of constant
   | Argument of argument

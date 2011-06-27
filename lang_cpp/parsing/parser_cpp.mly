@@ -276,8 +276,8 @@ translation_unit:
      { $1 ++ [$2] }
 
 external_declaration: 
- | function_definition            { TopDecl (Definition $1) }
- | block_declaration              { TopDecl (BlockDecl $1) }
+ | function_definition            { Func (FunctionOrMethod $1) }
+ | block_declaration              { BlockDecl $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Ident, scope *)*/
@@ -1227,8 +1227,8 @@ access_specifier:
 /*(* in c++ grammar there is a ;opt after function_definition but 
    * there is a conflict as it can also be an EmptyField *)*/
 member_declaration:
- | field_declaration      { DeclarationField $1 }
- | function_definition    { Method $1 }
+ | field_declaration      { MemberField $1 }
+ | function_definition    { MemberFunc (FunctionOrMethod $1) }
  | qualified_id TPtVirg   
      { let name = (None, fst $1, snd $1) in
        QualifiedIdInClass (name, $2)
@@ -1601,7 +1601,7 @@ asm_expr: assign_expr { $1 }
  *)*)*/
 declaration:
  | block_declaration                 { BlockDecl $1 }
- | function_definition               { Definition $1 }
+ | function_definition               { Func (FunctionOrMethod $1) }
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
 
@@ -1807,7 +1807,7 @@ cpp_other:
 /*(*************************************************************************)*/
 
 celem: 
- | declaration       { TopDecl $1 }
+ | declaration       { $1 }
 
  | cpp_directive       { CppTop $1 }
  | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
@@ -1817,7 +1817,7 @@ celem:
   * beginning of the file, and so get trailing unclose } at
   * end
   *)*/
- | TCBrace { TopDecl (EmptyDef $1) }
+ | TCBrace { EmptyDef $1 }
 
  | EOF        { FinalDef $1 }
 
