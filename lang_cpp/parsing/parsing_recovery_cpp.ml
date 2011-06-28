@@ -81,10 +81,10 @@ let rec find_next_synchro ~next ~already_passed =
 and find_next_synchro_define next already_passed =
   match next with
   | [] ->  
-      pr2 "ERROR-RECOV: end of file while in recovery mode"; 
+      pr2_err "ERROR-RECOV: end of file while in recovery mode"; 
       already_passed, []
   | (Parser.TCommentNewline_DefineEndOfMacro i as v)::xs  -> 
-      pr2 ("ERROR-RECOV: found sync end of #define "^i_to_s(TH.line_of_tok v));
+      pr2_err ("ERROR-RECOV: found sync end of #define "^i_to_s(TH.line_of_tok v));
       v::already_passed, xs
   | v::xs -> 
       find_next_synchro_define xs (v::already_passed)
@@ -95,28 +95,28 @@ and find_next_synchro_define next already_passed =
 and find_next_synchro_orig next already_passed =
   match next with
   | [] ->  
-      pr2 "ERROR-RECOV: end of file while in recovery mode"; 
+      pr2_err "ERROR-RECOV: end of file while in recovery mode"; 
       already_passed, []
 
   | (Parser.TCBrace i as v)::xs when TH.col_of_tok v = 0 -> 
-      pr2 ("ERROR-RECOV: found sync '}' at line "^i_to_s (TH.line_of_tok v));
+      pr2_err ("ERROR-RECOV: found sync '}' at line "^i_to_s (TH.line_of_tok v));
 
       (match xs with
       | [] -> raise Impossible (* there is a EOF token normally *)
 
       (* still useful: now parser.mly allow empty ';' so normally no pb *)
       | Parser.TPtVirg iptvirg::xs -> 
-          pr2 "ERROR-RECOV: found sync bis, eating } and ;";
+          pr2_err "ERROR-RECOV: found sync bis, eating } and ;";
           (Parser.TPtVirg iptvirg)::v::already_passed, xs
 
       | Parser.TIdent x::Parser.TPtVirg iptvirg::xs -> 
-          pr2 "ERROR-RECOV: found sync bis, eating ident, }, and ;";
+          pr2_err "ERROR-RECOV: found sync bis, eating ident, }, and ;";
           (Parser.TPtVirg iptvirg)::(Parser.TIdent x)::v::already_passed, 
           xs
             
       | Parser.TCommentSpace sp::Parser.TIdent x::Parser.TPtVirg iptvirg
         ::xs -> 
-          pr2 "ERROR-RECOV: found sync bis, eating ident, }, and ;";
+          pr2_err "ERROR-RECOV: found sync bis, eating ident, }, and ;";
           (Parser.TCommentSpace sp)::
             (Parser.TPtVirg iptvirg)::
             (Parser.TIdent x)::
@@ -128,7 +128,7 @@ and find_next_synchro_orig next already_passed =
           v::already_passed, xs
       )
   | v::xs when TH.col_of_tok v = 0 && TH.is_start_of_something v  -> 
-      pr2 ("ERROR-RECOV: found sync col 0 at line "^ i_to_s(TH.line_of_tok v));
+      pr2_err ("ERROR-RECOV: found sync col 0 at line "^ i_to_s(TH.line_of_tok v));
       already_passed, v::xs
         
   | v::xs -> 
