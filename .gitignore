@@ -323,3 +323,4 @@ external/ocamlbdb/libcamlbdb.a
 /web/app_lxr_server.ml
 /web/client
 /web/client.js
+/tests/cpp/a.out

@@ -508,10 +508,10 @@ and func_definition = {
    (*f_attr: attribute list;*) (* gccext: *)
   }
    and functionType = { 
-     ft_ret: fullType;
+     ft_ret: fullType; (* fake return type for ctor/dtor *)
      ft_params: parameter comma_list paren;
      ft_dots: (tok(*,*) * tok(*...*)) option;
-    (* c++ext: *) 
+     (* c++ext: *) 
      ft_const: tok option; (* only for methods *)
      ft_throw: (tok * name comma_list2 paren) option;
    }

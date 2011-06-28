@@ -49,6 +49,7 @@ let fake_parse_info = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
+
 (* 
  * The token type is used to represent the leaves of ASTs, the token. 
  *  
@@ -134,6 +135,19 @@ and transformation =
     | AddNewlineAndIdent
 
  (* with tarzan *)
+
+let info_start_file file = {
+  token = OriginTok {
+      str = "";
+      charpos = 1;
+      line = 1;
+      column = 1;
+      file = file;
+  };
+  comments = ();
+  transfo = NoTransfo;
+}
+  
 
 type parsing_stat = {
   filename: Common.filename;
