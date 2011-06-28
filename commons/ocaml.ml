@@ -710,60 +710,32 @@ let (v_of_string_sexp: string -> v) = fun x ->
 
 let rec json_of_v v = 
   match v with
-  | VString s ->
-      J.String s
-
-  | VSum ((s, vs)) ->
-      J.Array ((J.String s)::(List.map json_of_v vs ))
-
-  | VTuple xs ->
-      J.Array (xs |> List.map json_of_v)
-
-  | VDict xs ->
-      J.Object (xs |> List.map (fun (s, v) ->
-        s, json_of_v v
-      ))
-
-  | VList xs ->
-      J.Array (xs |> List.map json_of_v)
-
-  | VNone -> 
-      J.Null
-  | VSome v -> 
-      J.Array [ J.String "Some"; json_of_v v]
-
-  | VRef v -> 
-      J.Array [ J.String "Ref"; json_of_v v]
-
-
-  | VUnit -> 
-      J.Null (* ? *)
-
-  | VBool b ->
-      J.Bool b
+  | VString s -> J.String s
+  | VSum ((s, vs)) ->J.Array ((J.String s)::(List.map json_of_v vs ))
+  | VTuple xs -> J.Array (xs |> List.map json_of_v)
+  | VDict xs -> J.Object (xs |> List.map (fun (s, v) ->
+      s, json_of_v v
+    ))
+  | VList xs -> J.Array (xs |> List.map json_of_v)
+  | VNone -> J.Null
+  | VSome v -> J.Array [ J.String "Some"; json_of_v v]
+  | VRef v -> J.Array [ J.String "Ref"; json_of_v v]
+  | VUnit -> J.Null (* ? *)
+  | VBool b -> J.Bool b
 
   (* Note that 'Inf' can be used as a constructor but is also recognized
    * by float_of_string as a float (infinity), so when I was implementing 
    * this code by reverse engineering the generated sexp, it was important
    * to guard certain code.
    *)
-  | VFloat f ->
-      J.Float f
-
-  | VChar c ->
-      J.String (string_of_char c)
-
-  | VInt i ->
-      J.Int i
-
-  | VTODO v1 ->
-      J.String "VTODO"
-
+  | VFloat f -> J.Float f
+  | VChar c -> J.String (string_of_char c)
+  | VInt i -> J.Int i
+  | VTODO v1 -> J.String "VTODO"
   | VVar v1 ->
       failwith "json_of_v: VVar not handled"
   | VArrow v1 ->
       failwith "json_of_v: VArrow not handled"
-
 
 (* 
  * Assumes the json was generated via 'ocamltarzan -choice json_of', which
@@ -771,16 +743,11 @@ let rec json_of_v v =
  *)
 let rec (v_of_json: Json_type.json_type -> v) = fun j ->
   match j with
-  | J.String s ->
-      VString s
-  | J.Int i ->
-      VInt i
-  | J.Float f ->
-      VFloat f
-  | J.Bool b ->
-      VBool b
-  | J.Null ->
-      raise Todo
+  | J.String s -> VString s
+  | J.Int i -> VInt i
+  | J.Float f -> VFloat f
+  | J.Bool b -> VBool b
+  | J.Null -> raise Todo
 
   (* Arrays are used for represent constructors or regular list. Have to 
    * go sligtly deeper to disambiguate.
@@ -807,7 +774,6 @@ let rec (v_of_json: Json_type.json_type -> v) = fun j ->
       VDict (flds +> List.map (fun (s, fld) ->
         s, v_of_json fld
       ))
-
 
 let save_json file json = 
   let s = Json_out.string_of_json json in
@@ -845,28 +811,19 @@ let add_sep xs =
  *)
 
 let string_of_v v = 
-
   Common.format_to_string (fun () ->
-
     let ppf = Format.printf in
-
     let rec aux v = 
       match v with
-      | VUnit ->
-          ppf "()"
+      | VUnit -> ppf "()"
       | VBool v1 ->
           if v1
           then ppf "true"
           else ppf "false"
-      | VFloat v1 ->
-          ppf "%f" v1
-      | VChar v1 ->
-          ppf "'%c'" v1
-      | VString v1 ->
-          ppf "\"%s\"" v1
-      | VInt i -> 
-          ppf "%d" i
-
+      | VFloat v1 -> ppf "%f" v1
+      | VChar v1 -> ppf "'%c'" v1
+      | VString v1 -> ppf "\"%s\"" v1
+      | VInt i -> ppf "%d" i
       | VTuple xs ->
           ppf "(@[";
               xs +> add_sep +> List.iter (function
@@ -874,8 +831,6 @@ let string_of_v v =
               | Right v -> aux v
               );
           ppf "@])";
-
-
       | VDict xs ->
           ppf "{@[";
           xs +> List.iter (fun (s, v) ->
@@ -884,7 +839,6 @@ let string_of_v v =
             ppf ";@ ";
           );
           ppf "@]}";
-
           
       | VSum ((s, xs)) ->
           (match xs with
@@ -897,28 +851,12 @@ let string_of_v v =
               );
               ppf "@])";
           )
-
           
-      | VVar (s, i64) ->
-          ppf "%s_%d" s (Int64.to_int i64)
-          
-      | VArrow v1 ->
-          failwith "Arrow TODO"
-          
-      | VNone -> 
-          ppf "None";
-
-      | VSome v -> 
-          ppf "Some(@[";
-          aux v;
-          ppf "@])";
-
-      | VRef v -> 
-          ppf "Ref(@[";
-          aux v;
-          ppf "@])";
-
-          
+      | VVar (s, i64) -> ppf "%s_%d" s (Int64.to_int i64)
+      | VArrow v1 -> failwith "Arrow TODO"
+      | VNone -> ppf "None";
+      | VSome v -> ppf "Some(@["; aux v; ppf "@])";
+      | VRef v -> ppf "Ref(@["; aux v; ppf "@])";
       | VList xs ->
           ppf "[@[<hov>";
           xs +> add_sep +> List.iter (function
@@ -926,9 +864,7 @@ let string_of_v v =
           | Right v -> aux v
           );
           ppf "@]]";
-
-      | VTODO v1 ->
-          ppf "VTODO"
+      | VTODO v1 -> ppf "VTODO"
     in
     aux v
   )
