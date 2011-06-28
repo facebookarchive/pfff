@@ -791,3 +791,13 @@ let rewrap_pinfo pi ii =
 (* for error reporting *) 
 let string_of_info ii = 
   Parse_info.string_of_parse_info (parse_info_of_info ii)
+
+
+(* used while migrating the use of 'string' to 'name' *)
+let (string_of_name_tmp: name -> string) = fun name ->
+  let (_opt, _qu, id) = name in
+  match id with
+  | IdIdent (s,_) -> s
+  | _ ->
+      "TODO_string_of_name_tmp"
+      (* raise Todo *)

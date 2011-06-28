@@ -19,6 +19,7 @@ open Ast_cpp
 
 module Ast = Ast_cpp
 module V = Visitor_cpp
+module Lib = Lib_parsing_cpp
 
 open Highlight_code
 
@@ -179,6 +180,8 @@ let visit_toplevel
 
   let hooks = { (*V.default_visitor with *)
 
+    V.kinfo =  (fun (k, vx) x -> () );
+
     (* -------------------------------------------------------------------- *)
     V.kcompound =  (fun (k, vx) x ->
       Common.save_excursion is_at_toplevel false (fun () ->
@@ -187,31 +190,35 @@ let visit_toplevel
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kvar_declaration = (fun (k, _) x ->
+    V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, ii) ->
           let xs = Ast.uncomma xs_comma in
           xs +> List.iter (fun onedecl ->
 
-            let (nameopt, ft, sto) = onedecl in
-            nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
+            onedecl.v_namei +> Common.do_option (fun (name, ini_opt) ->
 
               let categ = 
-                if Type.is_function_type ft
+                if Type.is_function_type onedecl.v_type
                 then FunctionDecl NoUse
                 else
                  (* could be a global too when the decl is at the top *)
-                  if !is_at_toplevel  || fst sto = (Sto Extern)
+                  if !is_at_toplevel  || 
+                     fst (unwrap onedecl.v_storage) = (Sto Extern)
                   then (Global (Def2 fake_no_def2))
                   else (Local Def)
               in
-                
+              let ii = Lib.ii_of_any (Name name) in
               ii +> List.iter (fun ii -> tag ii categ)
             );
           );
           k x
       | MacroDecl _ ->
            k x
+
+      |   (Asm (_, _, _, _) 
+        | NameSpaceAlias (_, _, _, _, _) | UsingDirective (_, _, _, _)
+        | UsingDecl _) -> ()
     );
     (* -------------------------------------------------------------------- *)
     V.kstmt = (fun (k, _) x ->
@@ -229,61 +236,70 @@ let visit_toplevel
 
     (* -------------------------------------------------------------------- *)
     V.kexpr = (fun (k, _) x ->
-      let (ebis, aref), ii = x in
+      let ebis, ii = x in
       match ebis with
 
       | Ident (name, idinfo) ->
-          let ii = Ast.info_of_name_tmp name in
-          let s = Ast.str_of_info ii in
-          if s =~ "[A-Z][A-Z_]*" &&
-            (* the FunCall case might have already tagged it with something *)
-            not (Hashtbl.mem already_tagged ii)
-          then 
-            tag ii (MacroVar (Use2 fake_no_use2))
-          else 
-            (match idinfo.Ast.i_scope with
-            | S.Local -> 
-                tag ii (Local Use)
-            | S.Param ->
-                tag ii (Parameter Use)
-            | S.Global ->
-                tag ii (Global (Use2 fake_no_use2));
-            | S.NoScope ->
-                ()
-            | S.Static ->
-                (* todo? could invent a Static in highlight_code ? *)
-                tag ii (Global (Use2 fake_no_use2));
+          (match name with
+          | (None, [], IdIdent (s, ii)) ->
+            if s =~ "[A-Z][A-Z_]*" &&
+             (* the FunCall case might have already tagged it with something *)
+              not (Hashtbl.mem already_tagged ii)
+            then 
+              tag ii (MacroVar (Use2 fake_no_use2))
+            else 
+              (match idinfo.Ast.i_scope with
+              | S.Local -> 
+                  tag ii (Local Use)
+              | S.Param ->
+                  tag ii (Parameter Use)
+              | S.Global ->
+                  tag ii (Global (Use2 fake_no_use2));
+              | S.NoScope ->
+                  ()
+              | S.Static ->
+                  (* todo? could invent a Static in highlight_code ? *)
+                  tag ii (Global (Use2 fake_no_use2));
                 
-            | 
-              (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class|S.Closed)
+              | 
+                  (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class|S.Closed)
                 -> failwith "scope not handled"
-            )
+              )
+          | _ -> ()
+          )
           
-
       | FunCallSimple (name, args) ->
-          let ii = Ast.info_of_name_tmp name in
-          let s = Ast.str_of_info ii in
-          (if Hashtbl.mem h_debug_functions s
-          then
-            tag ii BuiltinCommentColor
-          else
-            tag ii (Function (Use2 fake_no_use2))
+          (match name with
+          | None, [], IdIdent (s, ii) ->
+              (if Hashtbl.mem h_debug_functions s
+              then
+                tag ii BuiltinCommentColor
+                else
+                  tag ii (Function (Use2 fake_no_use2))
+              );
+          | _ -> ()
           );
           k x
 
       | RecordAccess (e, name)
       | RecordPtAccess (e, name) 
           ->
-          let ii = Ast.info_of_name_tmp name in
-          tag ii (Field (Use2 fake_no_use2));
+          (match name with
+          | None, [], IdIdent (s, ii) ->
+              tag ii (Field (Use2 fake_no_use2));
+          | _ -> ()
+          );
           k x
       | _ -> k x
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kparameterType = (fun (k, vx) x ->
-      let (_, ii) = x in
-      ii +> List.iter (fun ii -> tag ii (Parameter Def));
+    V.kparameter = (fun (k, vx) x ->
+      (match x.p_name with
+      | Some (s, ii) ->
+          tag ii (Parameter Def)
+      | None -> ()
+      );
       k x
     );
 
@@ -303,28 +319,25 @@ let visit_toplevel
     );
     (* -------------------------------------------------------------------- *)
     V.kfieldkind = (fun (k, vx) x -> 
-      match Ast.unwrap x with
+      match x with
       | FieldDecl onedecl ->
-          let (nameopt, ft, sto) = onedecl in
-          nameopt +> Common.do_option (fun ((s, ini_opt), ii) ->
-
+          onedecl.v_namei +> Common.do_option (fun (name, ini_opt) ->
             let kind = 
               (* poor's man object using function pointer; classic C idiom *)
-              if Type.is_method_type ft
+              if Type.is_method_type onedecl.v_type
               then Method (Def2 fake_no_def2)
               else Field (Def2 NoUse)
             in
+            let ii = Lib.ii_of_any (Name name) in
             ii +> List.iter (fun ii -> tag ii kind)
           );
           k x
 
-      | BitField (sopt, ft, e) ->
-          let (_, ii) = x in
-          (match ii with
-          | [iiname;iicolon] ->
+      | BitField (sopt, _tok, ft, e) ->
+          (match sopt with
+          | Some (s, iiname) ->
               tag iiname (Field (Def2 NoUse))
-          | [iicolon] -> ()
-          | _ -> failwith "wrong bitfield"
+          | None -> ()
           )
       | _ -> k x
     );
@@ -439,7 +452,7 @@ let visit_toplevel
         tag ii Include
      *)
 
-    | T.TInclude (_, _, _, ii) -> 
+    | T.TInclude (_, _, ii) -> 
         tag ii Include
 
     | T.TIfdef ii | T.TIfdefelse ii | T.TIfdefelif ii | T.TEndif ii ->

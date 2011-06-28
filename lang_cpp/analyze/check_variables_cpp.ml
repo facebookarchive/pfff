@@ -110,10 +110,12 @@ let add_in_scope namedef =
 (* ------------------------------------------------------------ *)
 let add_binding2 k v  = 
 
+(*
   let info = Ast.info_of_name_tmp k in
   if !Flag.debug_checker 
   then pr2 (spf "adding binding %s" 
                (Ast.string_of_info info));
+*)
 
   add_in_scope (k, v) 
 
@@ -158,30 +160,25 @@ let visit_prog prog =
     );
 
     (* 2: adding defs of name in environment *)
-    V.kparameterType = (fun (k, vx) x ->
+    V.kparameter = (fun (k, vx) param ->
 
-      let (pbis, ii) = x in
-      let (_, sopt, ft) = pbis in
-      sopt +> Common.do_option (fun s ->
-        let name = 
-          Ast.semi_fake_name (s, List.hd ii)
-        in
-        add_binding name (S.Param, ref 0);
+      param.p_name  +> Common.do_option (fun ident ->
+        add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
       );
-      k x
+      k param
     );
     (* -------------------------------------------------------------------- *)
-    V.kvar_declaration = (fun (k, _) x ->
+    V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, ii) ->
           let xs = Ast.uncomma xs_comma in
           xs +> List.iter (fun onedecl ->
 
-            let (nameopt, ft, sto) = onedecl in
-            nameopt +> Common.do_option (fun ((name, ini_opt), ii) ->
+            onedecl.v_namei +> Common.do_option (fun (name, ini_opt) ->
 
               let scope = 
-                if is_top_env !_scoped_env || fst sto = (Sto Extern)
+                if is_top_env !_scoped_env || 
+                   fst (unwrap onedecl.v_storage) = (Sto Extern)
                 then S.Global
                 else S.Local
               in
@@ -191,13 +188,16 @@ let visit_prog prog =
           k x
       | MacroDecl _ ->
           k x
+      | (Asm (_, _, _, _)
+        |NameSpaceAlias (_, _, _, _, _)|UsingDirective (_, _, _, _)
+        | UsingDecl _) -> ()
     );
 
 
     (* 3: checking uses *)
 
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype (Ast.unwrap x) with
+      match (Ast.unwrap x) with
       | Ident (name, idinfo) ->
           (* assert scope_ref = S.Unknown ? *)
 

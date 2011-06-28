@@ -42,3 +42,18 @@ let find_cpp_files_of_dir_or_files xs =
     | _ -> false
 
   ) +> Common.sort
+
+(*****************************************************************************)
+(* ii_of_any *)
+(*****************************************************************************)
+
+let ii_of_any any =
+  let globals = ref [] in
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kinfo = (fun (k,_) i -> Common.push2 i globals)
+  }
+  in
+  visitor any;
+  List.rev !globals
+
+
