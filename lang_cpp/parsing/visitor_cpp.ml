@@ -124,7 +124,10 @@ and v_enum_name v = v_name v
 and v_ident_name v = v_name v
 and v_fullType (v1, v2) =
   let v1 = v_typeQualifier v1 and v2 = v_typeC v2 in ()
-and v_typeC v = v_wrap v_typeCbis v
+and v_typeC v = 
+  let k v = v_wrap v_typeCbis v in
+  vin.ktypeC (k, all_functions) v
+
 and v_typeCbis =
   function
   | BaseType v1 -> let v1 = v_baseType v1 in ()
@@ -184,7 +187,10 @@ and v_enum_elem { e_name = v_e_name; e_val = v_e_val } =
 and v_typeQualifier { const = v_const; volatile = v_volatile } =
   let arg = v_option v_tok v_const in
   let arg = v_option v_tok v_volatile in ()
-and v_expression v = v_wrap v_expressionbis v
+and v_expression v = 
+  let k x = v_wrap v_expressionbis x in
+  vin.kexpr (k, all_functions) v
+
 and v_expressionbis =
   function
   | Ident ((v1, v2)) -> let v1 = v_name v1 and v2 = v_ident_info v2 in ()
@@ -351,7 +357,11 @@ and v_cast_operator =
   | Const_cast -> ()
   | Reinterpret_cast -> ()
 and v_constExpression v = v_expression v
-and v_statement v = v_wrap v_statementbis v
+
+and v_statement v = 
+  let k v = v_wrap v_statementbis v in
+  vin.kstmt (k, all_functions) v
+
 and v_statementbis =
   function
   | Compound v1 -> let v1 = v_compound v1 in ()
@@ -369,7 +379,10 @@ and v_statementbis =
   | NestedFunc v1 -> let v1 = v_func_definition v1 in ()
   | MacroStmt -> ()
   | StmtTodo -> ()
-and v_compound v = v_brace (v_list v_statement_sequencable) v
+and v_compound v = 
+  let k v = v_brace (v_list v_statement_sequencable) v in
+  vin.kcompound (k, all_functions) v
+
 and v_statement_sequencable =
   function
   | StmtElem v1 -> let v1 = v_statement v1 in ()
@@ -448,8 +461,8 @@ and v_exception_declaration =
   function
   | ExnDeclEllipsis v1 -> let v1 = v_tok v1 in ()
   | ExnDecl v1 -> let v1 = v_parameter v1 in ()
-and v_block_declaration =
-  function
+and v_block_declaration x =
+  let k = function
   | DeclList ((v1, v2)) ->
       let v1 = v_comma_list v_onedecl v1 and v2 = v_tok v2 in ()
   | MacroDecl ((v1, v2, v3, v4)) ->
@@ -483,6 +496,8 @@ and v_block_declaration =
       and v3 = v_paren v_asmbody v3
       and v4 = v_tok v4
       in ()
+  in
+  vin.kblock_decl (k, all_functions) x
 and
   v_onedecl { v_namei = v_v_namei; v_type = v_v_type; v_storage = v_v_storage
             } =
@@ -577,12 +592,13 @@ and
       v_ft_throw
   in ()
 and
-  v_parameter {
+  v_parameter x =
+  let k = function  {
                 p_name = v_p_name;
                 p_type = v_p_type;
                 p_register = v_p_register;
                 p_val = v_p_val
-              } =
+              } ->
   let arg = v_option (v_wrap2 v_string) v_p_name in
   let arg = v_fullType v_p_type in
   let arg = v_option v_tok v_p_register in
@@ -591,6 +607,8 @@ and
       (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expression v2 in ())
       v_p_val
   in ()
+  in
+  vin.kparameter (k, all_functions) x
 and v_func_or_else =
   function
   | FunctionOrMethod v1 -> let v1 = v_func_definition v1 in ()
@@ -650,8 +668,8 @@ and v_class_member =
              let v1 = v_tok v1 and v2 = v_name v2 and v3 = v_tok v3 in ())
       in ()
   | EmptyField v1 -> let v1 = v_tok v1 in ()
-and v_fieldkind =
-  function
+and v_fieldkind x =
+  let rec k = function
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
   | MethodDecl ((v1, v2)) ->
       let v1 = v_onedecl v1
@@ -665,6 +683,9 @@ and v_fieldkind =
       and v3 = v_fullType v3
       and v4 = v_constExpression v4
       in ()
+  in
+  vin.kfieldkind (k, all_functions) x
+
 and v_class_member_sequencable =
   function
   | ClassElem v1 -> let v1 = v_class_member v1 in ()
