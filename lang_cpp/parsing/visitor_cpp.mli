@@ -7,10 +7,12 @@ type visitor_in = {
   kstmt: statement vin;
 
   kfieldkind: fieldkind vin;
-  kparameterType: parameterType vin;
+  kparameter: parameter vin;
   ktypeC: typeC vin;
-  kvar_declaration: var_declaration vin;
+  kblock_decl: block_declaration vin;
   kcompound: compound vin;
+  
+  kinfo: info vin;
 }
 and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
