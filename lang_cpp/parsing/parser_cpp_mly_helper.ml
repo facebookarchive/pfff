@@ -267,3 +267,23 @@ let mk_funcall e1 args =
       FunCallSimple (name, args)
   | _ -> 
       FunCallExpr (e1, args)
+
+let mk_constructor id (lp, params, rp) cp =
+  let params, hasdots = 
+    match params with
+    | Some (params, ellipsis) ->
+        params, ellipsis
+    | None -> [], None
+  in
+  let ftyp = {
+    ft_ret = nQ, (BaseType Void, noii);
+    ft_params= (lp, params, rp);
+    ft_dots = None;
+    (* TODO *)
+    ft_const = None;
+    ft_throw = None;
+  }
+  in
+  { f_name = (None, noQscope, IdIdent id); f_type = ftyp; 
+    f_storage = (NoSto, false), noii; f_body = cp
+  }

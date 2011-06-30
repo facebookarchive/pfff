@@ -269,7 +269,13 @@ and v_expressionbis =
       and v2 = v_angle v_fullType v2
       and v3 = v_paren v_expression v3
       in ()
-  | New -> ()
+  | New ((v1, v2, v3, v4, v5)) ->
+      let v1 = v_option v_tok v1
+      and v2 = v_tok v2
+      and v3 = v_option (v_paren (v_comma_list v_argument)) v3
+      and v4 = v_fullType v4
+      and v5 = v_option (v_paren (v_comma_list v_argument)) v5
+      in ()
   | Delete ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_expression v2 in ()
   | DeleteArray ((v1, v2)) ->

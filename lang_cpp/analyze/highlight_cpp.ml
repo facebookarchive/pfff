@@ -277,12 +277,29 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           );
           k x
 
+      | FunCallExpr (e, args) ->
+          (match e with
+          | RecordAccess (e, name), _
+          | RecordPtAccess (e, name), _
+            ->
+              Ast.ii_of_id_name name +> List.iter (fun ii ->
+                tag ii (Method (Use2 fake_no_use2))
+              )
+
+          | _ -> 
+              (* dynamic stuff, should highlight! *)
+              let ii = Lib.ii_of_any (Expr e) in
+              ii +> List.iter (fun ii -> tag ii PointerCall);
+          );
+          k x
+
       | RecordAccess (e, name)
       | RecordPtAccess (e, name) 
           ->
           (match name with
           | _, _, IdIdent (s, ii) ->
-              tag ii (Field (Use2 fake_no_use2));
+              if not (Hashtbl.mem already_tagged ii)
+              then tag ii (Field (Use2 fake_no_use2));
           | _ -> ()
           );
           k x

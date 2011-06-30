@@ -262,7 +262,11 @@ and expression = expressionbis wrap
   | TypeIdOfExpr     of tok * expression paren
   | TypeIdOfType     of tok * fullType paren
   | CplusplusCast of cast_operator wrap2 * fullType angle * expression paren
-  | New (* todo: of placement, init, etc *)
+  | New of tok (*::*) option * tok * 
+      argument comma_list paren option (* placement *) *
+      fullType *
+      argument comma_list paren option (* initializer *)
+
   | Delete      of tok (*::*) option * expression
   | DeleteArray of tok (*::*) option * expression
   | Throw of expression option 

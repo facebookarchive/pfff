@@ -349,7 +349,13 @@ and vof_expressionbis =
       and v2 = vof_angle vof_fullType v2
       and v3 = vof_paren vof_expression v3
       in Ocaml.VSum (("CplusplusCast", [ v1; v2; v3 ]))
-  | New -> Ocaml.VSum (("New", []))
+  | New ((v1, v2, v3, v4, v5)) ->
+      let v1 = Ocaml.vof_option vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = Ocaml.vof_option (vof_paren (vof_comma_list vof_argument)) v3
+      and v4 = vof_fullType v4
+      and v5 = Ocaml.vof_option (vof_paren (vof_comma_list vof_argument)) v5
+      in Ocaml.VSum (("New", [ v1; v2; v3; v4; v5 ]))
   | Delete ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_tok v1
       and v2 = vof_expression v2

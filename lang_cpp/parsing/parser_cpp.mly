@@ -610,7 +610,7 @@ cast_constructor_expr:
 /*(* c++ext: * simple case: new A(x1, x2); *)*/
 new_expr:
  | tcolcol_opt Tnew new_placement_opt   new_type_id  new_initializer_opt
-     { mk_e ExprTodo noii  }
+     { mk_e (New ($1, $2, $3, $4, $5)) noii  }
 /*(* ambiguity then on the TOPar
  tcolcol_opt Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
   *)*/
@@ -622,10 +622,10 @@ delete_expr:
      { mk_e (DeleteArray ($1, $5)) [$2;$3;$4] }
 
 new_placement: 
- | TOPar argument_list TCPar { () }
+ | TOPar argument_list TCPar { ($1, $2, $3) }
 
 new_initializer: 
- | TOPar argument_list_opt TCPar { () }
+ | TOPar argument_list_opt TCPar { ($1, $2, $3) }
 
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/
@@ -1102,8 +1102,10 @@ type_id:
  * in new_declarator and its leading ptr_operator
  *)*/
 new_type_id: 
- | spec_qualif_list new_declarator  { }
- | spec_qualif_list %prec SHIFTHERE   { }
+ | spec_qualif_list %prec SHIFTHERE   
+     { let (t_ret, _) = fixDeclSpecForDecl $1 in  t_ret }
+ | spec_qualif_list new_declarator 
+     { let (t_ret, _) = fixDeclSpecForDecl $1 in (* TODOAST *) t_ret }
 
 new_declarator: 
  | ptr_operator new_declarator 
@@ -1306,12 +1308,12 @@ pure_specifier:
 /*(*2 constructor special case *)*/
 /*(*-----------------------------------------------------------------------*)*/
 
-/*(* special case for ctor/dtor because they don't have a return type *)*/
+/*(* special case for ctor/dtor because they don't have a return type. TODOAST*)*/
 ctor_dtor_member:
  | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     {  EmptyField $3 (*TODO*) }
+     {  MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7, false)) }
 
  | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
@@ -1957,12 +1959,12 @@ exn_spec_opt:
 
 /*(*c++ext: ??? *)*/
 new_placement_opt:
- | new_placement { () }
- | /*(*empty*)*/ { () }
+ | new_placement { Some $1 }
+ | /*(*empty*)*/ { None }
 
 new_initializer_opt:
- | new_initializer { () }
- | /*(*empty*)*/ { () }
+ | new_initializer { Some $1 }
+ | /*(*empty*)*/ { None }
 
 
 
