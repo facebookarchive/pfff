@@ -239,7 +239,7 @@ let string_of_program2_using_transfo ast2 =
               if is_a_remove_or_replace tok_prev
               then 
                 (match comments with
-                | TSpaces _::rest -> rest +> List.iter pp_tok
+                | (TSpaces _ | TNewline _)::rest -> rest +> List.iter pp_tok
                 | _ -> comments +> List.iter pp_tok
                 )
               else
