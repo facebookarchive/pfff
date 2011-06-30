@@ -45,3 +45,111 @@ let parse str =
   Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     Parse_php.any_of_string str
   )
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let sgrep ~hook pattern file =
+  let (ast2) = 
+    try 
+      Parse_php.parse file +> fst
+    with Parse_php.Parse_error err ->
+      Common.pr2 (spf "warning: parsing problem in %s" file);
+      []
+  in
+  let ast = Parse_php.program_of_program2 ast2 in
+
+  (* coupling: copy paste with lang_php/matcher/spatch_php.ml *)
+  let hook = 
+    match pattern with
+    (* bugfix: if we have an ExprVar, then a pattern such as 
+     * $foo->method() will not match expressions such as 
+     * $foo->method()->method because the full ExprVar will not
+     * match. The pb is that we need not only a match_e_e but also
+     * a match_v_v with the same visitor
+     *)
+    | Expr (Lv pattern_var, _t) ->
+        { V.default_visitor with
+          V.klvalue = (fun (k, _) x ->
+            let matches_with_env =  
+              Matching_php.match_v_v pattern_var x
+            in 
+            if matches_with_env = []
+            then k x
+            else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+              let matched_tokens = Lib_parsing_php.ii_of_any (Lvalue x) in
+              matches_with_env +> List.iter (fun env -> 
+                hook env matched_tokens
+              )
+            end
+          );
+        }
+    | Expr pattern_expr ->
+        { V.default_visitor with
+          V.kexpr = (fun (k, _) x ->
+            let matches_with_env =  
+              Matching_php.match_e_e pattern_expr  x
+            in
+            if matches_with_env = []
+            then k x
+            else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+              let matched_tokens = Lib_parsing_php.ii_of_any (Expr x) in
+              matches_with_env +> List.iter (fun env ->
+                hook env matched_tokens
+              )
+            end
+          );
+        }
+    | Stmt2 pattern ->
+        { V.default_visitor with
+          V.kstmt = (fun (k, _) x ->
+            let matches_with_env =  
+              Matching_php.match_st_st pattern x
+            in
+            if matches_with_env = []
+            then k x
+            else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+              let matched_tokens = Lib_parsing_php.ii_of_any (Stmt2 x) in
+              matches_with_env +> List.iter (fun env ->
+                hook env matched_tokens
+              )
+            end
+          );
+        }
+
+    | Toplevel pattern ->
+        { V.default_visitor with
+          V.ktop = (fun (k, _) x ->
+            let matches_with_env =  
+              Matching_php.match_top_top pattern x
+            in
+            if matches_with_env = []
+            then k x
+            else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+              let matched_tokens = Lib_parsing_php.ii_of_any (Toplevel x) in
+              matches_with_env +> List.iter (fun env ->
+                hook env matched_tokens
+              )
+            end
+          );
+        }
+          
+    | _ -> failwith (spf "pattern not yet supported:" ^ 
+                        Export_ast_php.ml_pattern_string_of_any pattern)
+  in
+  (* opti ? dont analyze func if no constant in it ?*)
+  (V.mk_visitor hook) (Program ast)
+    
