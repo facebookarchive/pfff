@@ -1,4 +1,3 @@
-
 (*
  * The author disclaims copyright to this source code.  In place of
  * a legal notice, here is a blessing:
@@ -25,7 +24,6 @@ open Parse_info
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
 (* 
  * A syntactical patch for PHP. https://github.com/facebook/pfff/wiki/Spatch
  * 
@@ -50,7 +48,6 @@ let spatch_file = ref ""
 
 (* action mode *)
 let action = ref ""
-
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -142,7 +139,6 @@ let apply_transfo transfo xs =
 (* Main action *)
 (*****************************************************************************)
 
-
 let main_action xs =
 
   if Common.null_string !spatch_file
@@ -151,7 +147,7 @@ let main_action xs =
   let spatch_file = !spatch_file in
 
   (* old: let pattern = dumb_spatch_pattern in *)
-  let pattern = Spatch_php.parse_spatch spatch_file in
+  let pattern = Spatch_php.parse spatch_file in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
@@ -168,7 +164,6 @@ let main_action xs =
       then Common.write_file ~file:file s;
     )
   )
-
 
 (*****************************************************************************)
 (* Extra actions *)
@@ -342,8 +337,6 @@ let add_action_ui_form_transfo = {
   trans_func = add_action_ui_form_transfo_func;
   grep_keywords = Some ["ui:form"];
 }
-
-
 
 (*---------------------------------------------------------------------------*)
 (* regression testing *)

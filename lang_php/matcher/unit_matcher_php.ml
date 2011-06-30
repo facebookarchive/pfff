@@ -131,7 +131,7 @@ let spatch_unittest = [
                 (Filename.basename phpfile)
                 (Filename.basename expfile));
         
-        let pattern = Spatch_php.parse_spatch spatchfile in
+        let pattern = Spatch_php.parse spatchfile in
         let resopt = Spatch_php.spatch pattern phpfile in
         
         let file_res = 
