@@ -510,7 +510,7 @@ let info_of_category = function
       
   | NotParsed -> [`BACKGROUND "grey42" (*"lightgray"*)]
   | NoType ->    [`BACKGROUND "dimGray"]
-  | Passed ->    [`BACKGROUND "gray"]
+  | Passed ->    [`BACKGROUND "DarkSlateGray4"]
   | Expanded ->  [`BACKGROUND "red"]
   | Error ->  [`BACKGROUND "red2"]
 

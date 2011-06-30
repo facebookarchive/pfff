@@ -130,7 +130,7 @@ let rec apply_macro_defs defs xs =
       | Left (), bodymacro -> 
           pr2 ("macro without param used before parenthize, wierd: " ^ s);
           (* ex: PRINTP("NCR53C400 card%s detected\n" ANDP(((struct ... *)
-          Hack.set_as_comment (Token_cpp.CppMacro) id;
+          Hack.set_as_comment (Token_cpp.CppMacroExpanded) id;
           id.new_tokens_before <- bodymacro;
       | Right params, bodymacro -> 
           if List.length params = List.length xxs
@@ -152,8 +152,8 @@ let rec apply_macro_defs defs xs =
            * are all TCommentCpp
            *)
           [Parenthised (xxs, info_parens)] +> 
-            iter_token_paren (Hack.set_as_comment Token_cpp.CppMacro);
-          Hack.set_as_comment Token_cpp.CppMacro id;
+            iter_token_paren (Hack.set_as_comment Token_cpp.CppMacroExpanded);
+          Hack.set_as_comment Token_cpp.CppMacroExpanded id;
 
            
 
@@ -176,7 +176,7 @@ let rec apply_macro_defs defs xs =
                 TH.info_of_tok id.t))
 
           | _ -> 
-              Hack.set_as_comment Token_cpp.CppMacro id;
+              Hack.set_as_comment Token_cpp.CppMacroExpanded id;
               id.new_tokens_before <- bodymacro;
           )
       );

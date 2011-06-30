@@ -6,11 +6,18 @@ type visitor_in = {
   kexpr: expression vin;
   kstmt: statement vin;
 
+  kclass_member: class_member vin;
   kfieldkind: fieldkind vin;
-  kparameter: parameter vin;
+
   ktypeC: typeC vin;
-  kblock_decl: block_declaration vin;
+  kparameter: parameter vin;
   kcompound: compound vin;
+
+  kclass_def: class_definition vin;
+  kfunc_def: func_definition vin;
+  kcpp: cpp_directive vin;
+  kblock_decl: block_declaration vin;
+  ktoplevel: toplevel vin;
   
   kinfo: info vin;
 }

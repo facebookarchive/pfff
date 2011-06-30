@@ -31,11 +31,20 @@ open Ast_cpp
 type visitor_in = {
   kexpr: expression vin;
   kstmt: statement vin;
+
+  kclass_member: class_member vin;
   kfieldkind: fieldkind vin;
-  kparameter: parameter vin;
+
   ktypeC: typeC vin;
-  kblock_decl: block_declaration vin;
+  kparameter: parameter vin;
   kcompound: compound vin;
+
+  kclass_def: class_definition vin;
+  kfunc_def: func_definition vin;
+  kcpp: cpp_directive vin;
+  kblock_decl: block_declaration vin;
+  ktoplevel: toplevel vin;
+  
   kinfo: info vin;
 }
 and visitor_out = any -> unit
@@ -50,6 +59,11 @@ let default_visitor =
     kcompound = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
+    kclass_def = (fun (k,_) x -> k x);
+    kfunc_def = (fun (k,_) x -> k x);
+    kclass_member = (fun (k,_) x -> k x);
+    kcpp = (fun (k,_) x -> k x);
+    ktoplevel = (fun (k,_) x -> k x);
   }
 
 
@@ -561,16 +575,20 @@ and v_colon_optionbis =
   | ColonMisc -> ()
   | ColonExpr v1 -> let v1 = v_paren v_expression v1 in ()
 and
-  v_func_definition {
+  v_func_definition x =
+  let k = function {
                       f_name = v_f_name;
                       f_type = v_f_type;
                       f_storage = v_f_storage;
                       f_body = v_f_body
-                    } =
+                    } ->
   let arg = v_name v_f_name in
   let arg = v_functionType v_f_type in
   let arg = v_wrap v_storage v_f_storage in
   let arg = v_compound v_f_body in ()
+  in
+  vin.kfunc_def (k, all_functions) x
+
 and
   v_functionType {
                    ft_ret = v_ft_ret;
@@ -616,12 +634,13 @@ and v_func_or_else =
       let v1 = v_func_definition v1 and v2 = v_bool v2 in ()
   | Destructor v1 -> let v1 = v_func_definition v1 in ()
 and
-  v_class_definition {
+  v_class_definition x =
+  let k = function {
                        c_kind = v_c_kind;
                        c_name = v_c_name;
                        c_inherit = v_c_inherit;
                        c_members = v_c_members
-                     } =
+                     } ->
   let arg = v_wrap2 v_structUnion v_c_kind in
   let arg = v_option v_ident_name v_c_name in
   let arg =
@@ -630,6 +649,9 @@ and
          let v1 = v_tok v1 and v2 = v_comma_list v_base_clause v2 in ())
       v_c_inherit in
   let arg = v_brace (v_list v_class_member_sequencable) v_c_members in ()
+  in
+  vin.kclass_def (k, all_functions) x
+
 and v_structUnion = function | Struct -> () | Union -> () | Class -> ()
 and
   v_base_clause {
@@ -641,7 +663,8 @@ and
   let arg = v_option v_tok v_i_virtual in
   let arg = v_option (v_wrap2 v_access_spec) v_i_access in ()
 and v_access_spec = function | Public -> () | Private -> () | Protected -> ()
-and v_class_member =
+and v_class_member x =
+  let k =
   function
   | Access ((v1, v2)) ->
       let v1 = v_wrap2 v_access_spec v1 and v2 = v_tok v2 in ()
@@ -668,6 +691,9 @@ and v_class_member =
              let v1 = v_tok v1 and v2 = v_name v2 and v3 = v_tok v3 in ())
       in ()
   | EmptyField v1 -> let v1 = v_tok v1 in ()
+  in
+  vin.kclass_member (k, all_functions) x
+
 and v_fieldkind x =
   let rec k = function
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
@@ -691,8 +717,8 @@ and v_class_member_sequencable =
   | ClassElem v1 -> let v1 = v_class_member v1 in ()
   | CppDirectiveStruct v1 -> let v1 = v_cpp_directive v1 in ()
   | IfdefStruct v1 -> let v1 = v_ifdef_directive v1 in ()
-and v_cpp_directive =
-  function
+and v_cpp_directive x =
+  let k = function
   | Define ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_wrap2 v_string v2
@@ -702,6 +728,8 @@ and v_cpp_directive =
   | Include ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_inc_file v2 in ()
   | Undef v1 -> let v1 = v_wrap2 v_string v1 in ()
   | PragmaAndCo v1 -> let v1 = v_tok v1 in ()
+  in
+  vin.kcpp (k, all_functions) x
 and v_define_kind =
   function
   | DefineVar -> ()
@@ -726,8 +754,8 @@ and v_inc_file =
 and v_inc_elem v = v_string v
 and v_ifdef_directive =
   function | IfdefDirective v1 -> let v1 = v_list v_tok v1 in ()
-and v_declaration =
-  function
+and v_declaration x =
+  let k = function
   | BlockDecl v1 -> let v1 = v_block_declaration v1 in ()
   | Func v1 -> let v1 = v_func_or_else v1 in ()
   | TemplateDecl v1 ->
@@ -775,6 +803,9 @@ and v_declaration =
       let v1 = v_wrap2 v_string v1 and v2 = v_tok v2 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
+  in
+  vin.ktoplevel (k, all_functions) x
+
 and v_template_parameter v = v_parameter v
 and v_template_parameters v = v_angle (v_comma_list v_template_parameter) v
 and v_declaration_sequencable =

@@ -801,3 +801,12 @@ let (string_of_name_tmp: name -> string) = fun name ->
   | _ ->
       "TODO_string_of_name_tmp"
       (* raise Todo *)
+
+let (ii_of_id_name: name -> info list) = fun name ->
+  let (_opt, _qu, id) = name in
+  match id with
+  | IdIdent (s,ii) -> [ii]
+  | IdOperator (_, (op, ii)) -> ii
+  | IdConverter (_tok, ft) -> [] (* TODO *)
+  | IdDestructor (tok, (s, ii)) -> [tok;ii]
+  | IdTemplateId ((s, ii), args) -> [ii]

@@ -60,6 +60,7 @@ type cppcommentkind =
   | CppDirective 
   | CppAttr 
   | CppMacro 
+  | CppMacroExpanded
   | CppPassingNormal (* ifdef 0, cplusplus, etc *) 
   | CppPassingCosWouldGetError (* expr passsing *)
 (* TODO  | CppPassingExplicit (* skip_start/end tag *) instead of CppOther? *)

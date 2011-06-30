@@ -49,12 +49,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_toplevel 
-    ~tag_hook
-    prefs 
-    (*db_opt *)
-    (toplevel, toks)
-  =
+let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -63,7 +58,8 @@ let visit_toplevel
   in
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 1 *)
+  (* Toks phase 1 *)
+  (* -------------------------------------------------------------------- *)
 
   let rec aux_toks xs = 
     match xs with
@@ -176,20 +172,19 @@ let visit_toplevel
   let is_at_toplevel = ref true in
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* Ast phase 1 *) 
+  (* -------------------------------------------------------------------- *)
 
-  let hooks = { (*V.default_visitor with *)
+  let visitor = V.mk_visitor { (*V.default_visitor with *)
 
     V.kinfo =  (fun (k, vx) x -> () );
 
-    (* -------------------------------------------------------------------- *)
     V.kcompound =  (fun (k, vx) x ->
       Common.save_excursion is_at_toplevel false (fun () ->
         k x
       )
     );
 
-    (* -------------------------------------------------------------------- *)
     V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, ii) ->
@@ -208,8 +203,7 @@ let visit_toplevel
                   then (Global (Def2 fake_no_def2))
                   else (Local Def)
               in
-              let ii = Lib.ii_of_any (Name name) in
-              ii +> List.iter (fun ii -> tag ii categ)
+              Ast.ii_of_id_name name +>List.iter (fun ii -> tag ii categ)
             );
           );
           k x
@@ -220,7 +214,7 @@ let visit_toplevel
         | NameSpaceAlias (_, _, _, _, _) | UsingDirective (_, _, _, _)
         | UsingDecl _) -> ()
     );
-    (* -------------------------------------------------------------------- *)
+
     V.kstmt = (fun (k, _) x ->
       match x with
       | Labeled (Ast.Label (_s, st)), ii ->
@@ -234,15 +228,14 @@ let visit_toplevel
       | _ -> k x
     );
 
-    (* -------------------------------------------------------------------- *)
     V.kexpr = (fun (k, _) x ->
       let ebis, ii = x in
       match ebis with
 
       | Ident (name, idinfo) ->
           (match name with
-          | (None, [], IdIdent (s, ii)) ->
-            if s =~ "[A-Z][A-Z_]*" &&
+          | (_, _, IdIdent (s, ii)) ->
+            if s ==~ Parsing_hacks_lib.regexp_macro &&
              (* the FunCall case might have already tagged it with something *)
               not (Hashtbl.mem already_tagged ii)
             then 
@@ -261,8 +254,11 @@ let visit_toplevel
                   (* todo? could invent a Static in highlight_code ? *)
                   tag ii (Global (Use2 fake_no_use2));
                 
-              | 
-                  (S.ListBinded|S.LocalIterator|S.LocalExn|S.Class|S.Closed)
+              | S.Class ->
+                  (* TODO *)
+                  ()
+              (* todo? valid only for PHP? *)
+              | (S.ListBinded|S.LocalIterator|S.LocalExn|S.Closed)
                 -> failwith "scope not handled"
               )
           | _ -> ()
@@ -270,7 +266,7 @@ let visit_toplevel
           
       | FunCallSimple (name, args) ->
           (match name with
-          | None, [], IdIdent (s, ii) ->
+          | _, _, IdIdent (s, ii) ->
               (if Hashtbl.mem h_debug_functions s
               then
                 tag ii BuiltinCommentColor
@@ -285,7 +281,7 @@ let visit_toplevel
       | RecordPtAccess (e, name) 
           ->
           (match name with
-          | None, [], IdIdent (s, ii) ->
+          | _, _, IdIdent (s, ii) ->
               tag ii (Field (Use2 fake_no_use2));
           | _ -> ()
           );
@@ -293,7 +289,6 @@ let visit_toplevel
       | _ -> k x
     );
 
-    (* -------------------------------------------------------------------- *)
     V.kparameter = (fun (k, vx) x ->
       (match x.p_name with
       | Some (s, ii) ->
@@ -303,21 +298,27 @@ let visit_toplevel
       k x
     );
 
-    (* -------------------------------------------------------------------- *)
     V.ktypeC = (fun (k, vx) x ->
-      let (typeCbis, ii)  = x in
+      let (typeCbis, _)  = x in
       match typeCbis with
-      | TypeName (s, opt) ->
-          ii +> List.iter (fun ii -> tag ii (TypeDef Use));
+      | TypeName (name, opt) ->
+          Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii (TypeDef Use));
           k x
 
-      | StructUnionName (su, s) ->
-          ii +> List.iter (fun ii -> tag ii (StructName Use));
+      | Ast_cpp.EnumName (_tok, (s, ii)) ->
+          tag ii (TypeDef Use)
+
+      | StructUnionName (su, (s, ii)) ->
+          tag ii (StructName Use);
+          k x
+
+      | TypenameKwd (tok, name) ->
+          Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii (TypeDef Use));
           k x
 
       | _ -> k x
     );
-    (* -------------------------------------------------------------------- *)
+
     V.kfieldkind = (fun (k, vx) x -> 
       match x with
       | FieldDecl onedecl ->
@@ -328,8 +329,7 @@ let visit_toplevel
               then Method (Def2 fake_no_def2)
               else Field (Def2 NoUse)
             in
-            let ii = Lib.ii_of_any (Name name) in
-            ii +> List.iter (fun ii -> tag ii kind)
+            Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii kind)
           );
           k x
 
@@ -341,37 +341,78 @@ let visit_toplevel
           )
       | _ -> k x
     );
+
+    V.kclass_def = (fun (k,_) def ->
+      let name = def.c_name in
+      name +> Common.do_option (fun name ->
+        Ast.ii_of_id_name name +> List.iter (fun ii -> 
+          tag ii (Class (Def2 fake_no_def2));
+        )
+      );
+      k def
+    );
+    V.kfunc_def = (fun (k,_) def ->
+      k def
+    );
+    V.kclass_member = (fun (k,_) def ->
+      (match def with
+      | MemberFunc x ->
+          let def =
+            match x with
+            | FunctionOrMethod def
+            | Constructor (def, _)
+            | Destructor def
+              -> def
+          in
+          let name = def.f_name in
+          Ast.ii_of_id_name name +> List.iter (fun ii -> 
+            tag ii (Method (Def2 fake_no_def2))
+          );
+      | 
+(EmptyField _|UsingDeclInClass _|TemplateDeclInClass _|
+QualifiedIdInClass (_, _)|DestructorDecl (_, _)|ConstructorDecl (_, _)|
+MemberField _|Access (_, _))
+          -> ()
+      );
+      k def
+    );
+    V.kcpp = (fun (k,_) def ->
+      k def
+    );
+    V.ktoplevel = (fun (k,_) def ->
+      (match def with
+      | NotParsedCorrectly ii ->
+          ii +> List.iter (fun ii -> tag ii NotParsed)
+      | _ ->()
+      );
+      k def
+    );
   }
   in
-  let visitor = V.mk_visitor hooks in
   visitor (Toplevel toplevel);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
-
+  (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok -> 
     match tok with
 
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
+        then tag ii Comment
 
     | T.TInt (_,ii) | T.TFloat (_,ii) ->
         tag ii Number
-
     | T.TString (s,ii) ->
         tag ii String
-
     | T.TChar (s,ii) ->
         tag ii String
-
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean
 
     | T.TPtVirg ii
-    | T.TOPar ii | T.TCPar ii
-    | T.TOBrace ii | T.TCBrace ii 
+    | T.TOPar ii | T.TOPar_CplusplusInit ii | T.TOPar_Define ii | T.TCPar ii
+    | T.TOBrace ii | T.TOBrace_DefineInit ii | T.TCBrace ii 
     | T.TOCro ii | T.TCCro ii
     | T.TDot ii | T.TComma ii | T.TPtrOp ii  
     | T.TAssign (_, ii)
@@ -403,6 +444,7 @@ let visit_toplevel
       -> tag ii TypeInt
     (* thrift stuff *)
 
+    (* needed only when have FP in the typedef inference *)
     | T.TIdent (
         ("string" | "i32" | "i64" | "i8" | "i16" | "byte"
           | "list" | "map" | "set" 
@@ -412,7 +454,7 @@ let visit_toplevel
 
 
     | T.Tauto ii | T.Tregister ii | T.Textern ii | T.Tstatic ii  
-    | T.Tconst ii | T.Tvolatile ii 
+    | T.Tconst ii | T.Tconst_MacroDeclConst ii | T.Tvolatile ii 
     | T.Tbreak ii | T.Tcontinue ii
     | T.Treturn ii
     | T.Tdefault ii 
@@ -427,17 +469,14 @@ let visit_toplevel
          *)
         tag ii Keyword
 
-    | T.Tasm ii 
-    | T.Tattribute ii 
-    | T.Tinline ii 
-    | T.Ttypeof ii 
+    | T.Tasm ii | T.Tattribute ii 
+    | T.Tinline ii | T.Ttypeof ii 
      -> 
         tag ii Keyword
 
     (* pp *)
     | T.TDefine ii -> 
         tag ii Define
-
     | T.TUndef (_, ii) ->
         tag ii Define
 
@@ -462,14 +501,19 @@ let visit_toplevel
 
     | T.TCppDirectiveOther _ -> 
         ()
+    | T.Tnamespace ii -> tag ii KeywordModule
 
-    | T.Tthis ii  
-    | T.Tnew ii | T.Tdelete ii  
+    | T.Tthis ii -> tag ii (Class (Use2 fake_no_use2))
+
+    | T.Tnew ii | T.Tdelete ii ->
+        tag ii KeywordObject
+    | T.Tvirtual ii  ->
+        tag ii KeywordObject
+
     | T.Ttemplate ii | T.Ttypeid ii | T.Ttypename ii  
     | T.Toperator ii  
     | T.Tpublic ii | T.Tprivate ii | T.Tprotected ii | T.Tfriend ii  
-    | T.Tvirtual ii  
-    | T.Tnamespace ii | T.Tusing ii  
+    | T.Tusing ii  
     | T.Tconst_cast ii | T.Tdynamic_cast ii
     | T.Tstatic_cast ii | T.Treinterpret_cast ii
     | T.Texplicit ii | T.Tmutable ii  
@@ -480,13 +524,10 @@ let visit_toplevel
     | T.TPtrOpStar ii | T.TDotStar ii  ->
         tag ii Punctuation
 
-    | T.TColCol ii  
-    | T.TColCol_BeforeTypedef ii ->
+    | T.TColCol ii  | T.TColCol_BeforeTypedef ii ->
         tag ii Punctuation
 
-
-    | T.Ttypedef ii | T.Tstruct ii |T.Tunion ii | T.Tenum ii  
-        ->
+    | T.Ttypedef ii | T.Tunion ii | T.Tenum ii ->
         tag ii TypeMisc (* TODO *)
 
     | T.Tif ii | T.Telse ii ->
@@ -506,28 +547,18 @@ let visit_toplevel
     | T.Tfor ii | T.Tdo ii | T.Twhile ii ->
         tag ii KeywordLoop
 
-    | T.Tclass ii ->
-        tag ii Keyword
+    | T.Tclass ii | T.Tstruct ii ->
+        tag ii KeywordObject
 
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->
         tag ii Keyword
 
-    | T.TIdent (_, ii) ->
+    (* should be covered by the xxx_namei case above *)
+    | T.TIdent (_, ii) -> 
         ()
-
-    | T.Tbool_Constr ii
-    | T.Tlong_Constr ii
-    | T.Tshort_Constr ii
-    | T.Twchar_t_Constr ii
-    | T.Tdouble_Constr ii
-    | T.Tfloat_Constr ii
-    | T.Tint_Constr ii
-    | T.Tchar_Constr ii
-    | T.Tunsigned_Constr ii
-    | T.Tsigned_Constr ii
-        -> tag ii TypeInt
-
+    (* should be covered by TypeName above *)
+    | T.TIdent_Typedef _ 
 
     | T.TIdent_TemplatenameInQualifier_BeforeTypedef _
     | T.TIdent_TemplatenameInQualifier _
@@ -536,47 +567,51 @@ let visit_toplevel
     | T.TIdent_Templatename _
     | T.TIdent_ClassnameInQualifier_BeforeTypedef _
     | T.TIdent_ClassnameInQualifier _
-    | T.TInt_ZeroVirtual _
-
-    | T.TCCro_new _
-    | T.TOCro_new _
-    | T.TSup_Template _
-    | T.TInf_Template _
-    | T.TOPar_CplusplusInit _
-
-    | T.TAny_Action _
-    | T.TCPar_EOL _
 
     | T.TIdent_MacroIterator _
-    | T.Tconst_MacroDeclConst _
     | T.TIdent_MacroDecl _
     | T.TIdent_MacroString _
     | T.TIdent_MacroStmt _
-
-    | T.TComment_Pp _
-    | T.TComment_Cpp _
-      -> ()
-
-
-
-    | T.TCommentNewline_DefineEndOfMacro _
-
-    | T.TOBrace_DefineInit _
-    | T.TOPar_Define _
-
-    | T.TCppEscapedNewline _
-    | T.TDefParamVariadic _
-
-    | T.TIdent_Typedef _
-
-    | T.TCommentNewline _
-    | T.TCommentSpace _
-
-    | T.EOF _
-    | T.TUnknown _
         -> ()
 
 
-  );
+    | T.Tbool_Constr ii | T.Tlong_Constr ii | T.Tshort_Constr ii
+    | T.Twchar_t_Constr ii | T.Tdouble_Constr ii | T.Tfloat_Constr ii
+    | T.Tint_Constr ii | T.Tchar_Constr ii | T.Tunsigned_Constr ii
+    | T.Tsigned_Constr ii
+        -> tag ii TypeInt
 
+    | T.TInt_ZeroVirtual _
+
+    | T.TCCro_new _ | T.TOCro_new _ -> ()
+
+    | T.TSup_Template ii | T.TInf_Template ii -> 
+        tag ii TypeMisc
+
+    | T.TAny_Action _
+    | T.TCPar_EOL _
+        -> ()
+
+    (* TODO *)
+    | T.TComment_Pp (kind, ii) -> 
+        (match kind with
+        | Token_cpp.CppMacroExpanded
+        | Token_cpp.CppPassingNormal
+          -> tag ii Expanded
+        | _ -> tag ii Passed
+        )
+    | T.TComment_Cpp (kind, ii) -> 
+        tag ii Passed
+
+    | T.TDefParamVariadic _
+
+    | T.TCommentNewline _ | T.TCommentNewline_DefineEndOfMacro _
+    | T.TCppEscapedNewline _
+    | T.TCommentSpace _
+
+    | T.EOF _ 
+        -> ()
+    | T.TUnknown ii -> tag ii Error
+
+  );
   ()
