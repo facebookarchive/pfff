@@ -25,7 +25,6 @@ module MV = Metavars_php
 (*
  * This module makes it possible to match one PHP AST against another PHP AST
  * providing a kind of grep but at a syntactical level.
- * 
  *)
 
 (*****************************************************************************)
