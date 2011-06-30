@@ -67,7 +67,9 @@ let sgrep ~hook pattern file =
      * $foo->method() will not match expressions such as 
      * $foo->method()->method because the full ExprVar will not
      * match. The pb is that we need not only a match_e_e but also
-     * a match_v_v with the same visitor
+     * a match_v_v with the same visitor. For each recursive
+     * types inside a recursive types, we need to do that
+     * (for now lvalue and xhp_html).
      *)
     | Expr (Lv pattern_var, _t) ->
         { V.default_visitor with
@@ -88,6 +90,26 @@ let sgrep ~hook pattern file =
             end
           );
         }
+    | Expr (XhpHtml xhp, _t) ->
+        { V.default_visitor with
+          V.kxhp_html = (fun (k, _) x ->
+            let matches_with_env =  
+              Matching_php.match_xhp_xhp xhp x
+            in 
+            if matches_with_env = []
+            then k x
+            else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+              let matched_tokens = Lib_parsing_php.ii_of_any (XhpHtml2 x) in
+              matches_with_env +> List.iter (fun env -> 
+                hook env matched_tokens
+              )
+            end
+          );
+        }
+
     | Expr pattern_expr ->
         { V.default_visitor with
           V.kexpr = (fun (k, _) x ->

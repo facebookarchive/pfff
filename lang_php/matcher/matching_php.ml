@@ -207,4 +207,8 @@ let match_st_st pattern e =
 let match_top_top pattern e = 
   let env = MV.empty_environment in
   MATCH.m_toplevel pattern e env +> extract_bindings
+
+let match_xhp_xhp pattern e = 
+  let env = MV.empty_environment in
+  MATCH.m_xhp_html pattern e env +> extract_bindings
   
