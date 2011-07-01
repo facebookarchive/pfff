@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -16,11 +16,8 @@
 open Common
 
 module Ast = Ast_cpp
-
 module Db = Database_code
-
 module HC = Highlight_code
-
 module T = Parser_cpp
 
 (*****************************************************************************)
@@ -34,6 +31,10 @@ module T = Parser_cpp
 (* Helpers *)
 (*****************************************************************************)
 
+(* pre: the info corresponds to a originTok, otherwise
+ * file_of_info could give the location of the macro file
+ * and filename_without_leading_path will not like it
+ *)
 let mk_entity ~root ~hcomplete_name_of_info info categ =
 
   let s = Ast.str_of_info info in
@@ -102,9 +103,11 @@ let compute_database ?(verbose=false) files_or_dirs =
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_cpp.visit_toplevel 
-        ~tag_hook:(fun info categ -> 
+      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
 
+        (* todo? could look at the info of the origintok of the expanded? *)
+        if not (Ast.is_origintok info) then ()
+        else 
           (* todo: use is_entity_def_category ? *)
           match categ with
           | HC.Function (HC.Def2 _) 
@@ -143,8 +146,9 @@ let compute_database ?(verbose=false) files_or_dirs =
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_cpp.visit_toplevel 
-        ~tag_hook:(fun info categ -> 
+      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
+        if not (Ast.is_origintok info) then ()
+        else 
           match categ with
           | HC.Function (HC.Use2 _) 
           | HC.Global (HC.Use2 _)

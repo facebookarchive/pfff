@@ -86,8 +86,9 @@ let rec find_tsup_quite_close tok_open xs =
   let rec aux acc xs =
     match xs with
     | [] -> 
-        failwith (spf "PB: find_tsup_quite_close, no > for < at line %d"
-                     (TH.line_of_tok tok_open.t))
+        raise (UnclosedSymbol 
+                  (spf "PB: find_tsup_quite_close, no > for < at line %d"
+                     (TH.line_of_tok tok_open.t)))
     | x::xs -> 
         (match x with
         | {t=TSup ii} -> 
@@ -352,13 +353,17 @@ let set_context_tag groups =
   (* class Foo : ... { *)
 
   | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
-    ::Tok{t= TCol _}::xs
+    ::Tok{t= TCol ii}::xs
     ->
       let (before, braces, after) =
-        xs +> Common.split_when (function
-        | Braces _ -> true
-        | _ -> false
-        )
+        try 
+          xs +> Common.split_when (function
+          | Braces _ -> true
+          | _ -> false
+          )
+        with Not_found ->
+          raise (UnclosedSymbol (spf "PB with split_when at %s"
+                                    (Ast.string_of_info ii)))
       in
       aux before;
       [braces] +> TV.iter_token_multi (fun tok ->

@@ -98,6 +98,7 @@ let options () =
   Flag_parsing_cpp.cmdline_flags_debugging () ++
 
   Flag_parsing_php.cmdline_flags_pp () ++
+  Flag_parsing_cpp.cmdline_flags_macrofile () ++
 
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++

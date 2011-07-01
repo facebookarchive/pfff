@@ -301,7 +301,13 @@ let parse2 ?(c=false) file =
   let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
   let toks = if c then fix_tokens_for_c toks else toks in
   (* todo: _defs_builtins *)
-  let toks = Parsing_hacks.fix_tokens ~macro_defs:!_defs toks in
+  let toks = 
+    try Parsing_hacks.fix_tokens ~macro_defs:!_defs toks
+    with Token_views_cpp.UnclosedSymbol s ->
+      pr2 (s);
+      if !Flag.debug_cplusplus then raise (Token_views_cpp.UnclosedSymbol s)
+      else toks
+  in
 
   let tr = Parse_info.mk_tokens_state toks in
 

@@ -126,6 +126,8 @@ type multi_grouped =
 
  (* with tarzan *)
 
+exception UnclosedSymbol of string
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -464,8 +466,8 @@ let mk_multi xs =
   and look_close_brace tok_start accbody xs =
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_brace (started at %d)" 
-                     (TH.line_of_tok tok_start.t))
+        raise (UnclosedSymbol (spf "PB look_close_brace (started at %d)" 
+                     (TH.line_of_tok tok_start.t)))
     | x::xs -> 
         (match x with
         | {t=TCBrace ii;_} -> List.rev accbody, Some x, xs
@@ -483,8 +485,8 @@ let mk_multi xs =
   and look_close_paren tok_start accbody xs =
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_paren (started at %d)" 
-                     (TH.line_of_tok tok_start.t))
+        raise (UnclosedSymbol (spf "PB look_close_paren (started at %d)" 
+                     (TH.line_of_tok tok_start.t)))
     | x::xs -> 
         (match x with
         | {t=(*TCPar ii*)tok;_} when TH.is_cpar tok -> 
@@ -497,8 +499,8 @@ let mk_multi xs =
   and look_close_template tok_start accbody xs =
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_template (started at %d)" 
-                     (TH.line_of_tok tok_start.t))
+        raise (UnclosedSymbol (spf "PB look_close_template (started at %d)" 
+                     (TH.line_of_tok tok_start.t)))
     | x::xs -> 
         (match x with
         | {t=TSup_Template ii;_} -> List.rev accbody, Some x, xs
