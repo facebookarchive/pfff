@@ -101,6 +101,7 @@ let rec light_db_of_files_or_dirs lang xs =
         Database_light_js.compute_database ~verbose xs
 
     | "cpp" ->
+        Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
         Database_light_cpp.compute_database ~verbose xs
 
 
@@ -250,11 +251,10 @@ let options () =
     (spf " <dir> output file (default = %s)" !pleac_dir);
 
   ] ++
-
+  Flag_parsing_cpp.cmdline_flags_macrofile() ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_other () ++
-
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff (console) version: %s" Config.version);

@@ -73,7 +73,6 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
 
 let compute_database ?(verbose=false) files_or_dirs = 
 
-
   (* when we want to merge this database with the db of another language
    * like PHP, the other database may use realpath for the path of the files
    * so we want to behave the same.
@@ -148,12 +147,13 @@ let compute_database ?(verbose=false) files_or_dirs =
         ~tag_hook:(fun info categ -> 
           match categ with
           | HC.Function (HC.Use2 _) 
+          | HC.Global (HC.Use2 _)
+          | HC.Class (HC.Use2 _) 
           | HC.StructName (HC.Use)
-
+          (*| HC.Method (HC.Use2 _) *)
           | HC.Field (HC.Use2 _)
           | HC.Macro (HC.Use2 _)
           | HC.MacroVar (HC.Use2 _)
-          | HC.Global (HC.Use2 _)
             ->
               let s = Ast.str_of_info info in
               Hashtbl.find_all hdefs s +> List.iter (fun entity ->

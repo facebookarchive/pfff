@@ -115,6 +115,8 @@ let file_type_of_file2 file =
   | "hh" -> PL (Cplusplus e)
   | "cpp" -> PL (Cplusplus e) | "C" -> PL (Cplusplus e)
   | "cc" -> PL (Cplusplus e)  | "cxx" -> PL (Cplusplus e)
+  (* used in libstdc++ *)
+  | "tcc" -> PL (Cplusplus e)
 
   | "java" -> PL Java
   | "cs" -> PL Csharp

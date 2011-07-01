@@ -34,6 +34,12 @@ module Type = Type_cpp
 (* Prelude *)
 (*****************************************************************************)
 
+(*
+ * TODO:
+ *  - take into account class qualifier as a use
+ *  - take inheritance as a class use
+ *)
+
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
@@ -303,6 +309,17 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           | _ -> ()
           );
           k x
+
+      | New (_colon, _tok, _placement, ft, _args) ->
+          (match ft with
+          | _nq, ((TypeName (name, opt)), _) ->
+              Ast.ii_of_id_name name +> List.iter (fun ii -> 
+                tag ii (Class (Use2 fake_no_use2));
+              )
+          | _ ->
+              ()
+          );
+          k x
       | _ -> k x
     );
 
@@ -319,7 +336,11 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       let (typeCbis, _)  = x in
       match typeCbis with
       | TypeName (name, opt) ->
-          Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii (TypeDef Use));
+          Ast.ii_of_id_name name +> List.iter (fun ii -> 
+            (* new Xxx and other places have priority *)
+            if not (Hashtbl.mem already_tagged ii)
+            then tag ii (TypeDef Use)
+          );
           k x
 
       | Ast_cpp.EnumName (_tok, (s, ii)) ->
@@ -369,6 +390,11 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       k def
     );
     V.kfunc_def = (fun (k,_) def ->
+      let name = def.f_name in
+      Ast.ii_of_id_name name +> List.iter (fun ii -> 
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii (Class (Def2 fake_no_def2));
+      );
       k def
     );
     V.kclass_member = (fun (k,_) def ->
