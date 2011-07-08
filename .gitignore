@@ -324,3 +324,4 @@ external/ocamlbdb/libcamlbdb.a
 /web/client
 /web/client.js
 /tests/cpp/a.out
+/lang_cpp/parsing/ocamldoc.out
