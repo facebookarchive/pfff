@@ -33,7 +33,6 @@ module PI = Parse_info
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
-type pinfo = Parse_info.token
 type info = Parse_info.info
 and tok = info
 
@@ -79,7 +78,6 @@ type expr = exprbis * exp_info
 
    (* includes new/delete/... *)
    | U of unop wrap * expr
-
    | B of expr * binop wrap * expr
 
    | Bracket of expr * expr bracket
@@ -102,56 +100,52 @@ type expr = exprbis * exp_info
    (* unparser: *)
    | Paren of expr paren
 
-  and extra = 
-    | DanglingComma
+     and extra = 
+       | DanglingComma
 
-  and litteral =
-    | Bool of bool wrap
-    | Num of string wrap
-    (* todo?  | Float of float | Int of int32 *)
+     and litteral =
+       | Bool of bool wrap
+       | Num of string wrap
+       (* todo?  | Float of float | Int of int32 *)
 
-    | String of string wrap
-    | Regexp of string wrap (* todo? should split the flags *)
-    | Null of tok
+       | String of string wrap
+       | Regexp of string wrap (* todo? should split the flags *)
+       | Null of tok
 
-    | Undefined (* ?? *)
+       | Undefined (* ?? *)
 
-  and unop =
-    | U_new
-    | U_delete
+     and unop =
+       | U_new | U_delete
+       | U_void | U_typeof
+       | U_bitnot
+       | U_pre_increment  | U_pre_decrement
+       | U_post_increment | U_post_decrement
+       | U_plus | U_minus | U_not
+             
+     and binop =
+       | B_instanceof  | B_in
 
-    | U_void
-    | U_typeof
+       | B_mul  | B_div  | B_mod  | B_add  | B_sub
+       | B_le  | B_ge  | B_lt  | B_gt
+       | B_lsr  | B_asr  | B_lsl
+       | B_equal
+       | B_notequal  | B_physequal  | B_physnotequal
+       | B_bitand  | B_bitor  | B_bitxor
+       | B_and  | B_or
 
-    | U_bitnot
-    | U_pre_increment  | U_pre_decrement
-    | U_post_increment | U_post_decrement
-    | U_plus | U_minus | U_not
-
-  and binop =
-    | B_instanceof  | B_in
-
-    | B_mul  | B_div  | B_mod  | B_add  | B_sub
-    | B_le  | B_ge  | B_lt  | B_gt
-    | B_lsr  | B_asr  | B_lsl
-    | B_equal
-    | B_notequal  | B_physequal  | B_physnotequal
-    | B_bitand  | B_bitor  | B_bitxor
-    | B_and  | B_or
-
-  and property_name =
-    | PN_String of name
-    | PN_Num of string (* todo? PN_Float of float | PN_Int of int32 *) wrap
-    | PN_Empty (* ?? *)
-        
-  and assignment_operator =
-    | A_eq
-    | A_mul  | A_div  | A_mod  | A_add  | A_sub
-    | A_lsl  | A_lsr  | A_asr
-    | A_and  | A_xor  | A_or
-
- and field =
-    (property_name * tok (* : *) * expr)
+     and property_name =
+       | PN_String of name
+       | PN_Num of string (* todo? PN_Float of float | PN_Int of int32 *) wrap
+       | PN_Empty (* ?? *)
+           
+     and assignment_operator =
+       | A_eq
+       | A_mul  | A_div  | A_mod  | A_add  | A_sub
+       | A_lsl  | A_lsr  | A_asr
+       | A_and  | A_xor  | A_or
+             
+   and field =
+      (property_name * tok (* : *) * expr)
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
@@ -190,17 +184,17 @@ and st =
       (tok * arg paren * st) option * (* catch *)
       (tok * st) option (* finally *)
 
-and label = string wrap
+  and label = string wrap
 
-and lhs_or_var =
-  | LHS of expr
-  | Vars of tok * variable_declaration comma_list
+  and lhs_or_var =
+    | LHS of expr
+    | Vars of tok * variable_declaration comma_list
 
-and case_clause = 
-  | Default of tok * tok (*:*) * toplevel list 
-  | Case of tok * expr * tok (*:*) * toplevel list
+  and case_clause = 
+    | Default of tok * tok (*:*) * toplevel list 
+    | Case of tok * expr * tok (*:*) * toplevel list
 
-and arg = string wrap
+  and arg = string wrap
 
 (* ------------------------------------------------------------------------- *)
 (* Function definition *)
@@ -210,13 +204,11 @@ and func_decl = tok * name option * name comma_list paren * toplevel list brace
 (* ------------------------------------------------------------------------- *)
 (* Variables definition *)
 (* ------------------------------------------------------------------------- *)
-
 and variable_declaration = name * (tok (*=*) * expr) option
 
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
-
 and toplevel =
   | St of st
   | FunDecl of func_decl
@@ -243,16 +235,15 @@ type any =
 (* Some constructors *)
 (*****************************************************************************)
 
-let fakeInfo () = 
-  { PI.
+let fakeInfo () = { PI.
     token = PI.FakeTokStr ("FAKE", None);
     transfo = PI.NoTransfo;
     comments = ();
-  }
+}
 
-let noType () = 
-  { t = ();
-  }
+let noType () = { 
+  t = ();
+}
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -309,8 +300,6 @@ let is_origintok = Parse_info.is_origintok
 
 let info_of_name (s, info) = info
 
-
-
 let get_type (e: expr) = (snd e).t
 let set_type (e: expr) (ty: Type_js.jstype) = 
   (snd e).t <- ty
@@ -335,7 +324,6 @@ let al_info x =
 
 (* examples: 
  * inline more static funcall in expr type or variable type
- * 
  *)
 
 (*****************************************************************************)
@@ -352,7 +340,6 @@ let fakeInfoAttach info =
   }
 
 let remove_quotes_if_present s =
-
   (* for JX the entity names are passed as strings when
    * defining the entity (e.g. JX.Install('Typeahead'. ...)
    * but use normally (e.g. var x = JX.Typeahead(...))
