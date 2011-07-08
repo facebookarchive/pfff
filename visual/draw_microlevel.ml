@@ -131,7 +131,9 @@ let set_source_rgba_and_font_size_of_categ
   
   attrs |> List.iter (fun attr ->
     match attr with
-    | `FOREGROUND s -> 
+    | `FOREGROUND s 
+    | `BACKGROUND s (* todo: should really draw the background of the text *)
+      -> 
         let (r,g,b) = Color.rgbf_of_string s in
         (* this seems needed only on old version of Cario, or at least
          * on the cairo I am using under Linux. Under Mac I don't need
@@ -286,7 +288,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.Web (FT.Js _))
     | FT.PL (FT.Web (FT.Html _))
     | FT.PL (FT.ML _)
-    | FT.PL (FT.Cplusplus | FT.C)
+    | FT.PL (FT.Cplusplus _ | FT.C _)
     | FT.PL (FT.Thrift)
     | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
     | FT.PL (FT.Lisp _)

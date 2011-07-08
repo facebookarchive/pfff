@@ -54,10 +54,31 @@ open Parser_cpp
 (* TODO: copy code in parsing_c/ *)
 
 (*****************************************************************************)
+(* Types  *)
+(*****************************************************************************)
+
+(* callgraph of macros *)
+
+(*
+type key = string
+type node = (Common.filename * Cpp_token_c.define_def) list ref
+type edge = Direct
+
+type callgraph_macros = (key, node, edge) Ograph_simple.ograph_mutable
+
+let rootname = "__ROOT__"
+*)
+
+(*****************************************************************************)
 (* Main entry point  *)
 (*****************************************************************************)
 
 (*
-let extract_dangerous_macro xs =
-  raise Todo
+build_callgraph_macros
+
+macro_expand_topological_order
+
+is_dangerous_macro
+
+extract_dangerous_macro
 *)

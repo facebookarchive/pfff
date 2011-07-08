@@ -5,6 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= flag_analyze_cpp.ml \
+     builtins_cpp.ml \
      highlight_cpp.ml \
      check_variables_cpp.ml \
      database_light_cpp.ml \

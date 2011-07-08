@@ -40,6 +40,9 @@ class ErrorException { }
 
 class OutOfBoundsException { }
 
+//http://us3.php.net/UnexpectedValueException
+class UnexpectedValueException { }
+
 // http://php.net/manual/en/book.reflection.php
 class ReflectionExtension { }
 class ReflectionClass { }

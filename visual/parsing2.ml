@@ -552,7 +552,7 @@ let tokens_with_categ_of_file file hentities =
       ) +> List.flatten
 
 
-  | FT.PL (FT.Cplusplus _ | FT.C | FT.Thrift) ->
+  | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift) ->
       let h = Hashtbl.create 101 in
 
       let ast2 = parse_cpp_cache file in

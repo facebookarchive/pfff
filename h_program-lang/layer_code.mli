@@ -19,6 +19,9 @@ type layer = {
   *)
  and kind = string
 
+val red_green_properties: (kind * Simple_color.emacs_color) list
+val heat_map_properties: (kind * Simple_color.emacs_color) list
+
 (* The filenames are in absolute path format in the index. *)
 type layers_with_index = {
   root: Common.dirname;

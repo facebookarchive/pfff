@@ -6,11 +6,20 @@ type visitor_in = {
   kexpr: expression vin;
   kstmt: statement vin;
 
+  kclass_member: class_member vin;
   kfieldkind: fieldkind vin;
-  kparameterType: parameterType vin;
+
   ktypeC: typeC vin;
-  kvar_declaration: var_declaration vin;
+  kparameter: parameter vin;
   kcompound: compound vin;
+
+  kclass_def: class_definition vin;
+  kfunc_def: func_definition vin;
+  kcpp: cpp_directive vin;
+  kblock_decl: block_declaration vin;
+  ktoplevel: toplevel vin;
+  
+  kinfo: info vin;
 }
 and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit

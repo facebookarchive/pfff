@@ -70,5 +70,23 @@ let pr2_debug, pr2_debug_once =
  *  processing and transform them in a tree with some IfdefStmt2.
  *)
 
+(*****************************************************************************)
+(* Types  *)
+(*****************************************************************************)
+
+(*
+type cpp_option =
+  | I of Common.dirname
+  | D of string * string option
+*)
 
 
+(* #include
+ * cpp_expand_include
+ * 
+ * #ifdef
+ * cpp_ifdef_statementize
+ * 
+ * #define
+ * cpp_expand_macro_expr
+ *)

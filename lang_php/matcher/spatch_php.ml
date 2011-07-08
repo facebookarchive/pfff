@@ -96,7 +96,7 @@ let (dumb_spatch_pattern: Ast_php.expr) =
  *  - go through all tokens and adjust its transfo field using the
  *    information in line_env
  *)
-let parse_spatch file =
+let parse file =
 
   let xs = Common.cat file +> Common.index_list_1 in
 
@@ -211,9 +211,9 @@ let parse_spatch file =
    *)
   pattern
 
-let parse_spatch_string spatch_str =
+let parse_string spatch_str =
   Common.with_tmp_file ~str:spatch_str ~ext:".spatch" 
-    parse_spatch
+    parse
 
 let spatch pattern file =
   let was_modifed = ref false in

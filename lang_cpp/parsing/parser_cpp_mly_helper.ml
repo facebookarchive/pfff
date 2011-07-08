@@ -7,8 +7,6 @@ module Flag = Flag_parsing_cpp
 
 open Semantic_cpp
 
-module LP = Lexer_parser_cpp
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -27,12 +25,12 @@ let warning s v =
 (* Type related *)
 (*-------------------------------------------------------------------------- *)
 
-type shortLong      = Short  | Long | LongLong
+type shortLong = Short | Long | LongLong
 
 type decl = { 
   storageD: storagebis wrap;
   typeD: ((sign option) * (shortLong option) * (typeCbis option)) wrap;
-  qualifD: typeQualifierbis wrap;
+  qualifD: typeQualifier;
   inlineD: bool             wrap;
   (* note: have a full_info: parse_info list; to remember ordering
    * between storage, qualifier, type ? well this info is already in
@@ -42,7 +40,7 @@ type decl = {
 let nullDecl = {
   storageD = NoSto, [];
   typeD = (None, None, None), [];
-  qualifD = Ast.nullQualif;
+  qualifD = Ast.nQ;
   inlineD = false, [];
 }
 let fake_pi = Parse_info.fake_parse_info
@@ -94,24 +92,23 @@ let addTypeD     = function
 
 
 let addQualif = function
-  | ({const=true; _},   ({const=true; _} as x)) -> 
+  | ({const=Some _; _},   ({const=Some _; _} as x)) -> 
       warning "duplicate 'const'" x
-  | ({volatile=true; _},({volatile=true; _} as x))-> 
+  | ({volatile=Some _; _},({volatile=Some _; _} as x))-> 
       warning "duplicate 'volatile'" x
-  | ({const=true; _},    v) -> 
-      {v with const=true}
-  | ({volatile=true; _}, v) -> 
-      {v with volatile=true}
+  | ({const=Some x; _},    v) -> 
+      {v with const=Some x}
+  | ({volatile=Some x; _}, v) -> 
+      {v with volatile=Some x}
   | _ -> internal_error "there is no noconst or novolatile keyword"
 
-let addQualifD ((qu,ii), ({qualifD = (v,ii2); _} as x)) =
-  { x with qualifD = (addQualif (qu, v),ii::ii2) }
+let addQualifD (qu, ({qualifD = v; _} as x)) =
+  { x with qualifD = addQualif (qu, v) }
 
 
 (*-------------------------------------------------------------------------- *)
 (* Declaration/Function related *)
 (*-------------------------------------------------------------------------- *)
-
 
 (* stdC: type section, basic integer types (and ritchie)
  * To understand the code, just look at the result (right part of the PM) 
@@ -119,12 +116,12 @@ let addQualifD ((qu,ii), ({qualifD = (v,ii2); _} as x)) =
  *)
 let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
  {storageD = (st,iist); 
-  qualifD = (qu,iiq); 
+  qualifD = qu; 
   typeD = (ty,iit); 
   inlineD = (inline,iinl);
   } -> 
   (
-   ((qu, iiq),
+   (qu,
    (match ty with 
  | (None,None,None)       -> warning "type defaults to 'int'" (defaultInt, [])
  | (None, None, Some t)   -> (t, iit)
@@ -165,12 +162,18 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
 let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) -> 
   let ((qu,ty) as v,_st) = fixDeclSpecForDecl r in
   match st with
-  | (Sto Register) -> (v, true), iist
-  | NoSto -> (v, false), iist
+  | (Sto Register) -> v, Some (List.hd iist)
+  | NoSto -> v, None
   | _ -> 
       raise 
         (Semantic ("storage class specified for parameter of function", 
                   fake_pi))
+
+let fixNameForParam (name, ftyp) =
+  match name with
+  | None, [], IdIdent id -> id, ftyp
+  | _ -> 
+      raise (Semantic ("parameter have qualifier", fake_pi))
 
 let fixDeclSpecForFuncDef x =
   let (returnType,storage) = fixDeclSpecForDecl x in
@@ -180,34 +183,44 @@ let fixDeclSpecForFuncDef x =
   | x -> (returnType, storage)
   )
 
-(* parameter: (this is the context where we give parameter only when
- * in func DEFINITION not in funct DECLARATION) We must have a name.
- * This function ensure that we give only parameterTypeDecl with well
- * formed Classic constructor todo?: do we accept other declaration
- * in ? so I must add them to the compound of the deffunc. I dont
+(* parameter: this function is used where we give parameters only when
+ * in func DEFINITION not in func DECLARATION. We must have a name.
+ * This function ensures that we give only parameterTypeDecl with well
+ * formed Classic constructor.
+ * 
+ * todo?: do we accept other declaration in ? 
+ * so I must add them to the compound of the deffunc. I dont
  * have to handle typedef pb here cos C forbid to do VF f { ... }
  * with VF a typedef of func cos here we dont see the name of the
  * argument (in the typedef)
  *)
 let (fixOldCDecl: fullType -> fullType) = fun ty ->
   match snd ty with
-  | ((FunctionType (fullt, (params, (b, iib)))),iifunc) -> 
+  | FunctionType ({ft_params=params;_}),iifunc -> 
 
       (* stdC: If the prototype declaration declares a parameter for a
        * function that you are defining (it is part of a function
        * definition), then you must write a name within the declarator.
        * Otherwise, you can omit the name. *)
-      (match params with
-      | [((reg, None, ((_qua, (BaseType Void,_)))),_), _] ->  
-          ty
+      (match Ast.unparen params with
+      | [{p_name = None; p_type = ty2;_},_] -> 
+          (match Ast.unwrap_typeC ty2 with
+          | BaseType Void ->
+              ty
+          | _ -> 
+              pr2 ("SEMANTIC:parameter name omitted, but I continue");
+              ty
+          )
+
       | params -> 
-          (params +> List.iter (function 
-          | (((b, None, _),  ii1),ii2) -> 
+          (params +> List.iter (fun (param,_) ->
+            match param with
+            | {p_name = None;_} -> 
               (* if majuscule, then certainly macro-parameter *)
               pr2 ("SEMANTIC:parameter name omitted, but I continue"); 
 	  | _ -> ()
-          );
-           ty)
+          ));
+          ty
       )
         (* todo? can we declare prototype in the decl or structdef,
            ... => length <> but good kan meme *)
@@ -215,74 +228,62 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       (* gcc say parse error but dont see why *)
       raise (Semantic ("seems this is not a function", fake_pi)) 
 
-
+(* TODO: this is ugly ... use record! *)
 let fixFunc = function
-  | ((
-      (s,iis), 
-      (nQ, (FunctionType (fullt, (params,bool)),iifunc)), 
-      (st,iist)
-    ), 
-    (cp,iicp)) -> 
-      let iistart = Ast.fakeInfo () in
-      assert (nQ =*= nullQualif);
-      (match params with
-      | [((reg, None, ((_qua, (BaseType Void,_)))),_), _] ->  ()
+  | (name, (aQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)),sto),cp->
+      (* it must be nullQualif, cos parser construct only this *)
+      assert (aQ =*= nQ);
+
+      (match Ast.unparen params with
+      [{p_name= None; p_type = ty2;_}, _] ->
+          (match Ast.unwrap_typeC ty2 with
+          | BaseType Void -> ()
+          | _ ->
+                (* failwith "internal errror: fixOldCDecl not good" *)
+              ()
+          )
       | params -> 
           params +> List.iter (function 
-          | (((bool, Some s, fullt), _), _) -> ()
+          | ({p_name = Some s;_}, _) -> ()
 	  | _ -> ()
                 (* failwith "internal errror: fixOldCDecl not good" *)
-          ));
-      (* it must be nullQualif,cos parser construct only this*)
-      (s, (fullt, (params, bool)), st, cp), 
-      ([iis]++iifunc++iicp++[iistart]++iist) 
+          )
+      ); 
+      { f_name = name; f_type = ftyp; f_storage = sto; f_body = cp; }
   | _ -> 
       raise 
         (Semantic 
             ("you are trying to do a function definition but you dont give " ^
              "any parameter", fake_pi))
 
-
-(*-------------------------------------------------------------------------- *)
-(* parse_typedef_fix2 *)
-(*-------------------------------------------------------------------------- *)
-
-let dt s () = 
-  if !Flag.debug_etdt then pr2 ("<" ^ s); 
-  LP.disable_typedef ()
-
-let et s () = 
-  if !Flag.debug_etdt then pr2 (">" ^ s);  
-  LP.enable_typedef ()
-
-
-let fix_add_params_ident = function
-  | ((s, (nQ, (FunctionType (fullt, (params, bool)),_)), st)) ->  
-
-      (match params with
-      | [((reg, None, ((_qua, (BaseType Void,_)))),_), _] ->  ()
-      | params -> 
-        params +> List.iter (function 
-         | (((bool, Some s, fullt), _), _) -> 
-            LP.add_ident s
-	 | _ -> 
-             ()
-             (* failwith "internal errror: fixOldCDecl not good" *)
-      )) 
-  | _ -> ()
-
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)
-
-let mk_e e ii = ((e, Ast.noType()), ii)
-(* todo: let mk_e e ii = Ast_c.mk_e e ii *)
+let mk_e e ii = (e, ii)
 
 let mk_funcall e1 args = 
   match e1 with
-  | (Ident (name, _idinfo), _t), ii_empty ->
+  | (Ident (name, _idinfo)), ii_empty ->
       FunCallSimple (name, args)
   | _ -> 
       FunCallExpr (e1, args)
 
-(*let mk_string_wrap (s,info) = (s, [info])*)
+let mk_constructor id (lp, params, rp) cp =
+  let params, hasdots = 
+    match params with
+    | Some (params, ellipsis) ->
+        params, ellipsis
+    | None -> [], None
+  in
+  let ftyp = {
+    ft_ret = nQ, (BaseType Void, noii);
+    ft_params= (lp, params, rp);
+    ft_dots = None;
+    (* TODO *)
+    ft_const = None;
+    ft_throw = None;
+  }
+  in
+  { f_name = (None, noQscope, IdIdent id); f_type = ftyp; 
+    f_storage = (NoSto, false), noii; f_body = cp
+  }

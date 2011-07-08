@@ -223,6 +223,3 @@ val parse_print_error_heuristic:
   Common.filename (*cfile*) -> (program2 * Statistics_parsing.parsing_stat)
 val parse_c_and_cpp : (* alias of previous func *)
   Common.filename (*cfile*) -> (program2 * Statistics_parsing.parsing_stat)
-
-
-

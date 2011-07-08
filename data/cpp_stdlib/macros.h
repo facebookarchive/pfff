@@ -1,18 +1,19 @@
 // ****************************************************************************
 // Prelude
 // ****************************************************************************
-// this file is to be used with the -macros option of the C/C++ parsers in pfff
+// this file must be passed to the -macros option of the C/C++ parsers in pfff
 
 // ****************************************************************************
 // MacroString
 // ****************************************************************************
 
-/* String macros are normally handle quite well by the lalr(k) technique,
- * but sometimes it's not enough. For instance in the XX YY case, it could
+/* String macros are normally handled quite well by the lalr(k) technique,
+ * but sometimes it's not enough. For instance with 'XX YY', it could
  * be considered as a declaration with XX being a typedef, so we would
  * have an ambiguity. So by adding a few special cases (e.g. KERN_WARNING
- * for the linux kernel), we can catch more correct string-macros.
- * For stringification I need to have at least a witness, a string.
+ * for the linux kernel), we can catch more string-macros. The idea is
+ * that we need to have at least one witness, a string to recognize
+ * a sequence of strings.
  */
 //#define KERN_WARNING "WARNING"
 
@@ -31,12 +32,12 @@
 
 //#define EX_TABLE(x)  "TOTO"
 
-
 // ****************************************************************************
 // MacroIterator
 // ****************************************************************************
 
 // foreach
+#define FOR_EACH(a,b) for(;;)
 
 // ****************************************************************************
 // MacroDeclarator
@@ -63,7 +64,6 @@
 
 // no PTVirg or shortcut for array designator
 
-
 // ****************************************************************************
 // MacroAttributes
 // ****************************************************************************
@@ -77,6 +77,8 @@
 // params (IN, OUT)
 
 // windows: WINAPI, STDCALL, ...
+#define WINAPI
+#define  __cdecl
 
 // ****************************************************************************
 // MacroKeywordAlias
@@ -86,6 +88,13 @@
 // I guess.
 
 // private/public
+
+#define __asm__ asm
+#define __attribute __attribute__
+#define __volatile__ volatile
+#define __restrict __restrict__
+
+#define CONST const
 
 // ****************************************************************************
 // Prototype
@@ -133,22 +142,52 @@
 
 //#define G_BEGIN_DECLS
 
+// ****************************************************************************
+// git stuff
+// ****************************************************************************
+
+#define internal_function
+#define NOINLINE
+#define FORCEINLINE
+#define THROWSPEC
+#define NORETURN
+#define NORETURN_PTR
+#define MAYBE_UNUSED
+
+#define __MINGW_NOTHROW
+#define WSAAPI
+
+#define for_each_string_list_item(a,b) for(;;)
 
 // ****************************************************************************
-// Facebook stuff
+// sparse stuff
 // ****************************************************************************
-// should be moved in a facebook.h at some point instead of abusing macros.h
 
-#define FBUNIT_TEST(a) void a()
-#define FBUNIT_FIXTURE_TEST(a, b) void a()
+//YACFE_MACROITERATOR
+#define FOR_EACH_PTR(a,b) for(;;)
+#define FOR_EACH_PTR_NOTAG(a,b) for(;;)
+#define FOR_EACH_PTR_REVERSE(a,b) for(;;)
+#define RECURSE_PTR_REVERSE(a,b) for(;;)
+//#define DO_END_FOR_EACH_REVERSE(a,b,c,d)
 
-// boost?
-#define FOR_EACH(a,b) for(;;)
+#define __percpu
+#define __user
 
-// boost too?
-#define lexical_cast static_cast
-#define dynamic_pointer_cast static_cast
+#define SENTINEL_ATTR
+#define FORMAT_ATTR(a)
+#define NORETURN_ATTR
 
-// google gflags
-#define DEFINE_int32(a,b,c) int a = b
-#define DEFINE_string(a,b,c) int a = b
+// ****************************************************************************
+// Boost
+// ****************************************************************************
+#define BOOST_AUTO_TEST_CASE(a) void a()
+#define BOOST_STATIC_ASSERT(a) static int x
+#define BOOST_FOR_EACH(a,b) for(;;)
+#define BOOST_FOREACH(a,b) for(;;)
+
+// ****************************************************************************
+// KDE
+// ****************************************************************************
+#define Q_OBJECT
+#define Q_CLASSINFO(a,b)
+

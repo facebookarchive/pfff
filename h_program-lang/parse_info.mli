@@ -47,6 +47,8 @@ val fake_parse_info : parse_info
 val string_of_parse_info : parse_info -> string
 val string_of_parse_info_bis : parse_info -> string
 
+val info_start_file: Common.filename -> info
+
 type parsing_stat = {
   filename: Common.filename;
   mutable correct: int;

@@ -43,14 +43,12 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
  * functions "filter" some messages. So our heuristics are still good,
  * there is no more (or not that much) hardcoded linux stuff.
  *)
-let msg_gen cond is_known printer s = 
-  if cond
-  then
-    if not (!Flag.filter_msg)
+let msg_gen is_known printer s = 
+  if not (!Flag.filter_msg)
+  then printer s
+  else
+    if not (is_known s)
     then printer s
-    else
-      if not (is_known s)
-      then printer s
 
 let pos ii = Ast.string_of_info ii
 
@@ -66,6 +64,10 @@ let pr2_cplusplus s =
   if !Flag.debug_cplusplus
   then Common.pr2 ("C++-" ^ s)
 
+let pr2_typedef s = 
+  if !Flag.debug_typedef
+  then Common.pr2 ("TYPEDEF-" ^ s)
+
 
 let msg_change_tok tok =
   match tok with
@@ -79,16 +81,11 @@ let msg_change_tok tok =
   | TCommentNewline_DefineEndOfMacro _ ->
       ()
 
-  | TInclude_Start ii -> 
-      ()
-  | TInclude_Filename ii -> 
-      ()
-
   (* mostly in parsing_hacks.ml *)
 
   | TIdent_Typedef (s, ii) ->
       (* todo? also do LP.add_typedef_root s ??? *)
-      s +> msg_gen (!Flag.debug_typedef) (fun s ->
+      s +> msg_gen (fun s ->
         match s with
         | "u_char"   | "u_short"  | "u_int"  | "u_long"
         | "u8" | "u16" | "u32" | "u64" 
@@ -100,13 +97,13 @@ let msg_change_tok tok =
         | s when s =~ ".*_t$"           -> true
         | _                             -> false 
       ) 
-      (fun s -> pr2_pp (spf "TYPEDEF: promoting %s at %s " s (pos ii)))
+      (fun s -> pr2_typedef (spf "promoting %s at %s " s (pos ii)))
 
   (* mostly in parsing_hacks_pp.ml *)
 
   (* cppext: *)
 
-  | TComment_Cpp (directive, ii) ->
+  | TComment_Pp (directive, ii) ->
       let s = Ast.str_of_info ii in
       (match directive, s with
       | Token_cpp.CppMacro, _ ->
@@ -132,7 +129,7 @@ let msg_change_tok tok =
 
   | TIdent_MacroString ii ->
       let s = Ast.str_of_info ii in
-      s +> msg_gen (!Flag.debug_pp) (fun s -> 
+      s +> msg_gen (fun s -> 
         match s with 
         | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
             -> true
@@ -145,7 +142,7 @@ let msg_change_tok tok =
       pr2_pp (spf "MACRO: stmt-macro at %s" (pos ii));
 
   | TIdent_MacroDecl (s, ii) ->
-      s +> msg_gen (!Flag.debug_pp) (fun s -> 
+      s +> msg_gen (fun s -> 
         match s with 
         | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
         | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
@@ -179,6 +176,15 @@ let msg_change_tok tok =
   (* mostly in parsing_hacks_cpp.ml *)
 
   (* c++ext: *)
+  | TComment_Cpp (directive, ii) ->
+      let s = Ast.str_of_info ii in
+      (match directive, s with
+      | Token_cpp.CplusplusTemplate, _ ->
+          pr2_cplusplus (spf "COM-TEMPLATE: commented at %s" (pos ii))
+      | Token_cpp.CplusplusQualifier, _ ->
+          pr2_cplusplus (spf "COM-QUALIFIER: commented at %s" (pos ii))
+      )
+
   | TOPar_CplusplusInit ii ->
       pr2_cplusplus (spf "constructor initializer at %s" (pos ii))
 
@@ -190,6 +196,7 @@ let msg_change_tok tok =
 
   | Tchar_Constr ii | Tint_Constr ii | Tfloat_Constr ii | Tdouble_Constr ii
   | Tshort_Constr ii | Tlong_Constr ii | Tbool_Constr ii
+  | Tunsigned_Constr ii | Tsigned_Constr ii
      ->
       pr2_cplusplus(spf "constructed object builtin at %s" (pos ii));
   | TIdent_TypedefConstr (s, ii) ->
@@ -204,16 +211,27 @@ let msg_change_tok tok =
       pr2_cplusplus (spf "TEMPLATENAME: found %s at %s" s (pos ii))
 
   | TColCol_BeforeTypedef ii ->
-      pr2_cplusplus (spf "RECLASSIF colcol to colcol2 at %s" (pos ii))
+      pr2_typedef (spf "RECLASSIF colcol to colcol2 at %s" (pos ii))
 
   | TIdent_ClassnameInQualifier_BeforeTypedef (s, ii) ->
-      pr2_cplusplus (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
+      pr2_typedef (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
   | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
-      pr2_cplusplus (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
+      pr2_typedef (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
+
+
 
   | _ -> 
       raise Todo
 
+let msg_context t ctx =
+  let ctx_str =
+    match ctx with
+    | InParameter -> "InParameter"
+    | InArgument -> "InArgument"
+    | _ -> raise Impossible
+  in
+  pr2_cplusplus (spf "CONTEXT: %s at %s" ctx_str (pos (TH.info_of_tok t)))
+                    
 
 let msg_foreach s = 
   pr2_pp ("MACRO: found foreach: " ^ s)
@@ -222,8 +240,7 @@ let msg_debug_macro s =
   pr2_pp ("MACRO: found debug-macro: " ^ s)
 
 let msg_macro_higher_order s = 
-  msg_gen (!Flag.debug_pp)
-    (fun s -> 
+  msg_gen (fun s -> 
       (match s with 
       | "DBGINFO"
       | "DBGPX"
@@ -244,9 +261,9 @@ let change_tok extended_tok tok =
    * why? because paren detection had a pb because of
    * some ifdef-exp?
    *)
-  if TH.is_eof extended_tok.tok
+  if TH.is_eof extended_tok.t
   then pr2 "PB: wierd, I try to tag an EOF token as something else"
-  else extended_tok.tok <- tok
+  else extended_tok.t <- tok
 
 let fresh_tok tok =
   msg_change_tok tok;
@@ -256,8 +273,8 @@ let fresh_tok tok =
  * a clearer "view" to work on
  *)
 let set_as_comment cppkind x = 
-  assert(not (TH.is_real_comment x.tok));
-  change_tok x (TComment_Cpp (cppkind, TH.info_of_tok x.tok))
+  assert(not (TH.is_real_comment x.t));
+  change_tok x (TComment_Pp (cppkind, TH.info_of_tok x.t))
 
 (*****************************************************************************)
 (* The regexp and basic view definitions *)

@@ -25,7 +25,6 @@ module MV = Metavars_php
 (*
  * This module makes it possible to match one PHP AST against another PHP AST
  * providing a kind of grep but at a syntactical level.
- * 
  *)
 
 (*****************************************************************************)
@@ -207,4 +206,8 @@ let match_st_st pattern e =
 let match_top_top pattern e = 
   let env = MV.empty_environment in
   MATCH.m_toplevel pattern e env +> extract_bindings
+
+let match_xhp_xhp pattern e = 
+  let env = MV.empty_environment in
+  MATCH.m_xhp_html pattern e env +> extract_bindings
   

@@ -22,11 +22,14 @@ val is_classkey_keyword : Parser_cpp.token -> bool
 val is_cpp_keyword : Parser_cpp.token -> bool
 val is_really_cpp_keyword : Parser_cpp.token -> bool
 val is_maybenot_cpp_keyword : Parser_cpp.token -> bool
+val is_privacy_keyword: Parser_cpp.token -> bool
 
 val is_opar : Parser_cpp.token -> bool
 val is_cpar : Parser_cpp.token -> bool
 val is_obrace : Parser_cpp.token -> bool
 val is_cbrace : Parser_cpp.token -> bool
+
+val is_ident_like: Parser_cpp.token -> bool
 
 val info_of_tok : Parser_cpp.token -> Ast_cpp.info
 

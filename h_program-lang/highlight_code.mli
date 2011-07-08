@@ -71,6 +71,8 @@ type category =
   | EmbededStyle (* e.g. css *)
   | Verbatim (* for latex, noweb, html pre *)
 
+  | GrammarRule
+
   | CommentWordImportantNotion | CommentWordImportantModal
 
   | CommentSection0 | CommentSection1 | CommentSection2 

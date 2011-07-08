@@ -307,6 +307,14 @@ let options () = [
       filter := treemap_pfff_filter),
     " ";
 
+    "-cpp_filter", Arg.Unit (fun () -> 
+      Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
+      filter := (fun file ->
+        match File_type.file_type_of_file file with
+        | File_type.PL (File_type.C _ | File_type.Cplusplus _) -> true 
+        | _ -> false)),
+    " ";
+
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";
     "-debug_gc", Arg.Set Flag.debug_gc,
@@ -323,6 +331,7 @@ let options () = [
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Flag_analyze_php.cmdline_flags_verbose () ++
+  Flag_parsing_cpp.cmdline_flags_macrofile () ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++
   [

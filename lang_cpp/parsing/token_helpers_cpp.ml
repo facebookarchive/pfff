@@ -31,7 +31,7 @@ let is_just_comment = function
 let is_comment = function
   | TCommentSpace _ | TCommentNewline _
   | TComment _    
-  | TComment_Cpp _ 
+  | TComment_Pp _ | TComment_Cpp _
       -> true
   | _ -> false
 
@@ -42,7 +42,7 @@ let is_real_comment = function
   | _ -> false
 
 let is_fake_comment = function
-  | TComment_Cpp _ -> true
+  | TComment_Pp _ | TComment_Cpp _ -> true
   | _ -> false
 
 let is_not_comment x = 
@@ -133,10 +133,11 @@ let is_binary_operator = function
   | _ -> false 
 
 let is_binary_operator_except_star = function
-  | TOrLog _ | TAndLog _ |  TOr _ |  TXor _   (* | TAnd _ *)
+  (* | TAnd _ *) (*|  TMul _*)
+  | TOrLog _ | TAndLog _ |  TOr _ |  TXor _   
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _ 
   | TShl _ | TShr _  
-  | TPlus _ |  TMinus _ (*|  TMul _*) |  TDiv _ |  TMod _ 
+  | TPlus _ |  TMinus _  |  TDiv _ |  TMod _ 
         -> true
   | _ -> false 
 
@@ -157,8 +158,10 @@ let is_static_cast_like = function
 let is_basic_type = function
   | Tchar _  | Tshort _ | Tint _ | Tdouble _ |  Tfloat _ | Tlong _ 
   | Tbool _ | Twchar_t _
+
+  | Tunsigned _ | Tsigned _
         -> true
-  (*| Tunsigned _ | Tsigned _ | Tvoid _  *)
+  (*| Tvoid _  *)
   | _ -> false
 
 
@@ -199,8 +202,6 @@ let is_cpp_keyword = function
   | Tmutable _
  
   | Texport _
-
-  | TColCol  _
       -> true
 
   | _ -> false
@@ -220,6 +221,43 @@ let is_maybenot_cpp_keyword = function
   | Ttemplate _ | Tnew _ | Ttypename _
   | Tnamespace _
     -> true
+  | _ -> false
+
+(* used in the algorithm for "10 most problematic tokens". C-s for TIdent
+ * in parser_cpp.mly
+ *)
+let is_ident_like = function
+  | TIdent _
+  | TIdent_Typedef _
+  | TIdent_Define  _
+(*  | TDefParamVariadic _*)
+
+  | TUnknown _
+
+  | TIdent_MacroStmt _
+  | TIdent_MacroString _
+  | TIdent_MacroIterator _
+  | TIdent_MacroDecl _
+(*  | TIdent_MacroDeclConst _ *)
+(*
+  | TIdent_MacroAttr _
+  | TIdent_MacroAttrStorage _
+*)
+
+  | TIdent_ClassnameInQualifier _
+  | TIdent_ClassnameInQualifier_BeforeTypedef _
+  | TIdent_Templatename _
+  | TIdent_TemplatenameInQualifier _
+  | TIdent_TemplatenameInQualifier_BeforeTypedef _
+  | TIdent_Constructor _
+  | TIdent_TypedefConstr _
+      -> true
+
+  | _ -> false
+
+let is_privacy_keyword = function
+  | Tpublic _ | Tprivate _ | Tprotected _
+        -> true
   | _ -> false
 
 (*****************************************************************************)
@@ -243,13 +281,10 @@ let info_of_tok = function
 
   (*cppext:*) 
   | TDefine (ii) -> ii 
-  | TInclude (includes, filename, inifdef, i1) ->     i1
+  | TInclude (includes, filename, i1) ->     i1
 
   | TUndef (s, ii) -> ii
   | TCppDirectiveOther (ii) -> ii
-
-  | TInclude_Start (i1, inifdef) ->     i1
-  | TInclude_Filename (s, i1) ->     i1
 
   | TCommentNewline_DefineEndOfMacro (i1) ->     i1
   | TOPar_Define (i1) ->     i1
@@ -274,6 +309,7 @@ let info_of_tok = function
 
   | TComment             (i) -> i
   | TCommentSpace        (i) -> i
+  | TComment_Pp          (cppkind, i) -> i
   | TComment_Cpp          (cppkind, i) -> i
   | TCommentNewline        (i) -> i
 
@@ -438,6 +474,9 @@ let info_of_tok = function
   | Tshort_Constr  (i) -> i
   | Tlong_Constr   (i) -> i
   | Tbool_Constr  (i) -> i
+
+  | Tunsigned_Constr i -> i
+  | Tsigned_Constr i -> i
       
   | EOF                  (i) -> i
   
@@ -461,11 +500,8 @@ let visitor_info_of_tok f = function
   | TUndef (s,i1) -> TUndef(s, f i1) 
   | TCppDirectiveOther (i1) -> TCppDirectiveOther(f i1) 
 
-  | TInclude (includes, filename, inifdef, i1) -> 
-      TInclude (includes, filename, inifdef, f i1)
-
-  | TInclude_Start (i1, inifdef) -> TInclude_Start (f i1, inifdef)
-  | TInclude_Filename (s, i1) -> TInclude_Filename (s, f i1)
+  | TInclude (includes, filename, i1) -> 
+      TInclude (includes, filename, f i1)
 
   | TCppEscapedNewline (i1) -> TCppEscapedNewline (f i1)
   | TCommentNewline_DefineEndOfMacro (i1) -> 
@@ -493,8 +529,10 @@ let visitor_info_of_tok f = function
 
   | TComment             (i) -> TComment             (f i) 
   | TCommentSpace        (i) -> TCommentSpace        (f i) 
-  | TComment_Cpp          (cppkind, i) -> TComment_Cpp          (cppkind, f i) 
   | TCommentNewline         (i) -> TCommentNewline         (f i) 
+
+  | TComment_Pp          (cppkind, i) -> TComment_Pp          (cppkind, f i) 
+  | TComment_Cpp          (cppkind, i) -> TComment_Cpp          (cppkind, f i) 
 
   | TIfdef               (i) -> TIfdef               (f i) 
   | TIfdefelse           (i) -> TIfdefelse           (f i) 
@@ -664,6 +702,9 @@ let visitor_info_of_tok f = function
   | Tshort_Constr  (i) -> Tshort_Constr (f i)
   | Tlong_Constr   (i) -> Tlong_Constr (f i)
   | Tbool_Constr  (i) -> Tbool_Constr (f i)
+
+  | Tsigned_Constr  (i) -> Tsigned_Constr (f i)
+  | Tunsigned_Constr  (i) -> Tunsigned_Constr (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 

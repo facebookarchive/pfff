@@ -4,10 +4,11 @@ type program2 = toplevel2 list
     (* the token list contains now also the comment-tokens  *)
      and info_item = (string * Parser_cpp.token list)
 
-(* This is the main function. It uses globals in Lexer_Parser and
- * and also _defs below which often comes from a standard.h macro file. 
+(* This is the main function. It uses _defs below which often comes 
+ * from a standard.h macro file 
  *)
-val parse:  
+val parse:
+  ?c:bool ->
   Common.filename -> (program2 * Statistics_parsing.parsing_stat)
 
 val parse_program:  
@@ -23,8 +24,8 @@ val _defs : (string, Pp_token.define_body) Hashtbl.t ref
 (* todo: init_defs_macros and init_defs_builtins *)
 val init_defs : Common.filename -> unit
 
-(* used to extract macros from standard.h, but also now from regular C files
- * in -extract_macros to later feed an automatically build standard.h *)
+(* used to extract macros from standard.h, but also now used on C files
+ * in -extract_macros to assist in building a macros.h *)
 val extract_macros: 
   Common.filename -> (string, Pp_token.define_body) Common.assoc
 

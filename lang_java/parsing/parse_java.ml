@@ -110,11 +110,7 @@ let token_to_strpos tok =
   (TH.str_of_tok tok, TH.pos_of_tok tok)
 
 let error_msg_tok tok = 
-  let file = TH.file_of_tok tok in
-  if !Flag.verbose_parsing
-  then Parse_info.error_message file (token_to_strpos tok) 
-  else ("error in " ^ file  ^ "set verbose_parsing for more info")
-
+  Parse_info.error_message_info (TH.info_of_tok tok)
 
 (*****************************************************************************)
 (* Lexing only *)

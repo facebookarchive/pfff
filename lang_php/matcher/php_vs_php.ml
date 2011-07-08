@@ -1343,6 +1343,22 @@ and m_exprbis a b =
        B.Print(b1, b2)
     )
     ))
+
+  (* pad, iso on  ... *)
+  | A.BackQuote(a1,
+               [A.EncapsString(("...", a2))],
+               a3), 
+    B.BackQuote(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (* TODO? distribute info of a2? *)
+    m_tok a3 b3 >>= (fun (a3, b3) ->
+      return (
+        A.BackQuote(a1, [A.EncapsString(("...", a2))], a3),
+        B.BackQuote(b1, b2, b3)
+      )
+    ))
+        
+
   | A.BackQuote(a1, a2, a3), B.BackQuote(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_list m_encaps a2 b2 >>= (fun (a2, b2) -> 

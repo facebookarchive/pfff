@@ -51,6 +51,7 @@ module PHP_VS_PHP :
       val m_variable : (Ast_php.lvalue, Ast_php.lvalue) matcher
       val m_stmt : (Ast_php.stmt, Ast_php.stmt) matcher
       val m_toplevel : (Ast_php.toplevel, Ast_php.toplevel) matcher
+      val m_xhp_html : (Ast_php.xhp_html, Ast_php.xhp_html) matcher
 
       (* there are far more functions in this functor but they 
        * do not have to be exported 

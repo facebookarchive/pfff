@@ -71,6 +71,25 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 (* the tokens in the body of the macro are all ExpandedTok *)
 type define_body = (unit,string list) either * Parser_cpp.token list
 
+(* TODO:
+type define_def = string * define_param * define_body
+ and define_param =
+   | NoParam
+   | Params of string list
+ and define_body =
+   | DefineBody of Parser_c.token list
+   | DefineHint of parsinghack_hint
+
+   and parsinghack_hint =
+     | HintIterator
+     | HintDeclarator
+     | HintMacroString
+     | HintMacroStatement
+     | HintAttribute
+     | HintMacroIdentBuilder
+*)
+
+
 (*****************************************************************************)
 (* Apply macro (using standard.h or other defs) *)
 (*****************************************************************************)
@@ -104,21 +123,21 @@ let rec apply_macro_defs defs xs =
   | [] -> ()
 
   (* recognized macro of standard.h (or other) *)
-  | PToken ({tok = TIdent (s,i1);_} as id)::Parenthised (xxs,info_parens)::xs 
+  | PToken ({t=TIdent (s,i1);_} as id)::Parenthised (xxs,info_parens)::xs 
       when Hashtbl.mem defs s -> 
       Hack.pr2_pp ("MACRO: found known macro = " ^ s);
       (match Hashtbl.find defs s with
       | Left (), bodymacro -> 
           pr2 ("macro without param used before parenthize, wierd: " ^ s);
           (* ex: PRINTP("NCR53C400 card%s detected\n" ANDP(((struct ... *)
-          Hack.set_as_comment (Token_cpp.CppMacro) id;
+          Hack.set_as_comment (Token_cpp.CppMacroExpanded) id;
           id.new_tokens_before <- bodymacro;
       | Right params, bodymacro -> 
           if List.length params = List.length xxs
           then
             let xxs' = xxs +> List.map (fun x -> 
               (tokens_of_paren_ordered x) +> List.map (fun x -> 
-                TH.visitor_info_of_tok Ast.make_expanded x.tok
+                TH.visitor_info_of_tok Ast.make_expanded x.t
               )
             ) in
             id.new_tokens_before <-
@@ -133,15 +152,15 @@ let rec apply_macro_defs defs xs =
            * are all TCommentCpp
            *)
           [Parenthised (xxs, info_parens)] +> 
-            iter_token_paren (Hack.set_as_comment Token_cpp.CppMacro);
-          Hack.set_as_comment Token_cpp.CppMacro id;
+            iter_token_paren (Hack.set_as_comment Token_cpp.CppMacroExpanded);
+          Hack.set_as_comment Token_cpp.CppMacroExpanded id;
 
            
 
       );
       apply_macro_defs xs
 
-  | PToken ({tok = TIdent (s,i1);_} as id)::xs 
+  | PToken ({t=TIdent (s,i1);_} as id)::xs 
       when Hashtbl.mem defs s -> 
       Hack.pr2_pp ("MACRO: found known macro = " ^ s);
       (match Hashtbl.find defs s with
@@ -153,11 +172,11 @@ let rec apply_macro_defs defs xs =
           (* special case when 1-1 substitution, we reuse the token *)
           (match bodymacro with
           | [newtok] -> 
-              id.tok <- (newtok +> TH.visitor_info_of_tok (fun _ -> 
-                TH.info_of_tok id.tok))
+              id.t <- (newtok +> TH.visitor_info_of_tok (fun _ -> 
+                TH.info_of_tok id.t))
 
           | _ -> 
-              Hack.set_as_comment Token_cpp.CppMacro id;
+              Hack.set_as_comment Token_cpp.CppMacroExpanded id;
               id.new_tokens_before <- bodymacro;
           )
       );

@@ -31,33 +31,6 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-let red_green_properties = [
-  "ok", "green";
-  "bad", "red";
-  "no_info", "white";
-]
-
-let heat_map_properties = [
-  "cover 100%", "red3";
-  "cover 90%", "red1";
-  "cover 80%", "orange";
-  "cover 70%", "yellow";
-  "cover 60%", "YellowGreen";
-  "cover 50%", "green";
-  "cover 40%", "aquamarine3";
-  "cover 30%", "cyan";
-  "cover 20%", "DeepSkyBlue1";
-  "cover 10%", "blue";
-  (* we use "white" for 0 and not dark-blue (as it is the case usually with
-   * heatmaps) because ... the picture would be too blue otherwise.
-   *)
-  "cover 0%", "white";
-
-  (* when we zoom on a file we just show red/green coverage, no heat color *)
-  "ok", "green";
-  "bad", "red";
-]
-
 (*****************************************************************************)
 (* Helper *)
 (*****************************************************************************)
@@ -96,7 +69,7 @@ let gen_red_green_layer lines_coverage ~output =
         ];
       }
     );
-    kinds = red_green_properties;
+    kinds = Layer_code.red_green_properties;
   }
   in
   Layer_code.save_layer layer output
@@ -133,7 +106,7 @@ let gen_heatmap_layer lines_coverage ~output =
         ];
       }
     );
-    kinds = heat_map_properties;
+    kinds = Layer_code.heat_map_properties;
   }
   in
   Layer_code.save_layer layer output

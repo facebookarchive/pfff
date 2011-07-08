@@ -3,7 +3,7 @@ open Common
 (* clone with parsing_c/parsing_stat.ml *) 
 
 (*****************************************************************************)
-(* Stat *)
+(* Types *)
 (*****************************************************************************)
 type parsing_stat = {
     filename: filename;
@@ -23,6 +23,10 @@ type parsing_stat = {
      * function to end of function.
      *)
 
+    (* for instance to report most problematic macros when parse c/c++ *)
+    mutable problematic_lines:
+      (string list (* ident in error line *) * int (* line_error *)) list;
+
   } 
 
 let default_stat file =  { 
@@ -30,7 +34,12 @@ let default_stat file =  {
     have_timeout = false;
     correct = 0; bad = 0;
     commentized = 0;
+    problematic_lines = [];
   }
+
+(*****************************************************************************)
+(* Stat *)
+(*****************************************************************************)
 
 (* todo: stat per dir ?  give in terms of func_or_decl numbers:   
  * nbfunc_or_decl pbs / nbfunc_or_decl total ?/ 
@@ -109,3 +118,45 @@ let print_parsing_stat_list ?(verbose=false) = fun statxs ->
   (sprintf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
    )
   )
+
+(*****************************************************************************)
+(* Most problematic tokens *)
+(*****************************************************************************)
+
+(* inspired by a comment by a reviewer of my CC'09 paper *)
+let lines_around_error_line ~context (file, line) =
+  let arr = Common.cat_array file in
+
+  let startl = max 0 (line - context) in
+  let endl   = min (Array.length arr) (line + context) in
+  let res = ref [] in
+
+  for i = startl to endl -1 do
+    Common.push2 arr.(i) res
+  done;
+  List.rev !res
+
+let print_recurring_problematic_tokens xs =
+  let h = Hashtbl.create 101 in
+  xs +> List.iter (fun x ->
+    let file = x.filename in
+    x.problematic_lines +> List.iter (fun (xs, line_error) ->
+      xs +> List.iter (fun s ->
+        Common.hupdate_default s
+          (fun (old, example)  -> old + 1, example)
+          (fun() -> 0, (file, line_error)) h;
+      )));
+  pr2_xxxxxxxxxxxxxxxxx();
+  pr2 ("maybe 10 most problematic tokens");
+  pr2_xxxxxxxxxxxxxxxxx();
+  Common.hash_to_list h
+  +> List.sort (fun (k1,(v1,_)) (k2,(v2,_)) -> compare v2 v1)
+  +> Common.take_safe 10
+  +> List.iter (fun (k,(i, (file_ex, line_ex))) ->
+    pr2 (spf "%s: present in %d parsing errors" k i);
+    pr2 ("example: ");
+    let lines = lines_around_error_line ~context:2 (file_ex, line_ex) in
+    lines +> List.iter (fun s -> pr2 ("       " ^ s));
+  );
+  pr2_xxxxxxxxxxxxxxxxx();
+  ()

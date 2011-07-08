@@ -31,7 +31,7 @@ module Ast = Ast_cpp
  *
  * This lexer generates tokens for C (int, while, ...), C++ (new, delete, ...),
  * and CPP (#define, #ifdef, ...). It also generate tokens for comments
- * and spaces. This means it can not be used as-is. Some post-filtering
+ * and spaces. This means that it can not be used as-is. Some post-filtering
  * has to be done to feed it to a parser. Note that C and C++ are not
  * context free languages and so some idents must be disambiguated
  * in some ways. TIdent below must thus be post-processed too (as well
@@ -47,7 +47,7 @@ module Ast = Ast_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing 
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing
 
 (*****************************************************************************)
 (* Helpers *)
@@ -113,7 +113,7 @@ let keyword_table = Common.hash_of_list [
   (* c99:  *)
   "__restrict__",    (fun ii -> Trestrict ii);  
 
-  (* c++ext: *)
+  (* c++ext: see also TH.is_cpp_keyword *)
   "class", (fun ii -> Tclass ii);
   "this", (fun ii -> Tthis ii);
 
@@ -238,13 +238,16 @@ rule token = parse
   (* The difference between a local "" and standard <> include is computed
    * later in parser_cpp.mly. So we redo a little bit of lexing there. It's
    * ugly but simpler to generate a single token here. *)
-  | (("#" [' ''\t']* ("include" | "include_next") [' ' '\t']*) as includes) 
+  | (("#" [' ''\t']* ("include" | "include_next" | "import")
+     [' ' '\t']*) as includes) 
     (('"' ([^ '"']+) '"' | 
      '<' [^ '>']+ '>' | 
       ['A'-'Z''_']+ 
     ) as filename)
-      { let info = tokinfo lexbuf in 
-        TInclude (includes, filename, Ast.noInIfdef(), info)
+      { (* todo? generate 2 info so highlight_cpp.ml can colorize the
+         * directive and the filename differently
+         *)
+        TInclude (includes, filename, tokinfo lexbuf)
       }
 
   (* ---------------------- *)
@@ -416,6 +419,7 @@ rule token = parse
 
   | "==" { TEqEq(tokinfo lexbuf) }  | "!=" { TNotEq(tokinfo lexbuf) } 
   | ">=" { TSupEq(tokinfo lexbuf) } | "<=" { TInfEq(tokinfo lexbuf) } 
+  (* c++ext: transformed in TInf_Template in parsing_hacks_cpp.ml *)
   | "<"  { TInf(tokinfo lexbuf) }   | ">"  { TSup(tokinfo lexbuf) }
 
   | "&&" { TAndLog(tokinfo lexbuf) } | "||" { TOrLog(tokinfo lexbuf) }
@@ -452,14 +456,14 @@ rule token = parse
           match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
           | Some f -> f info
 
-           (* parse_typedef_fix. note: now this is no more useful, cos
-            * as we use tokens_all, it first parse all as an ident and
-            * later transform an indent in a typedef. so this job is
-            * now done in parse_c.ml.
+           (* typedef_hack. note: now this is no more useful, cos
+            * as we use tokens_all, we first parse all as an ident and
+            * later transform some idents into typedefs. So this job is
+            * now done in parse_cpp.ml.
             * 
             * old:
             *    if Lexer_parser.is_typedef s 
-            *    then TypedefIdent (s, info)
+            *    then Ident_Typedef (s, info)
             *    else TIdent (s, info)
             *)
           | None -> TIdent (s, info)

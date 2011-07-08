@@ -37,7 +37,7 @@ open Parser_cpp
  * tedious. One way is to maintain next to the view a list of "actions"
  * (I was using a hash storing the charpos of the token and associating
  * the action) but it is tedious too. Simpler to use mutable/ref. We
- * use the same idea that we use when working on the Ast_c. 
+ * use the same idea that we use when working on the Ast. 
  *
  * old: when I was using the list of "actions" next to the views, the hash
  * indexed by the charpos, there could have been some problems:
@@ -50,7 +50,6 @@ open Parser_cpp
 (*****************************************************************************)
 (* Some debugging functions  *)
 (*****************************************************************************)
-
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
@@ -58,8 +57,12 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 (*****************************************************************************)
 
 type token_extended = { 
-  mutable tok: Parser_cpp.token;
-  mutable where: context;
+  (* chose 't' and not 'tok' to have a short name because we will write
+   * lots of ocaml patterns around this ... so better to be short
+   *)
+  mutable t: Parser_cpp.token;
+  (* In C++ we have functions inside classes, so need a stack of context *)
+  mutable where: context list; 
 
   (* less: need also a after ? *)
   mutable new_tokens_before : Parser_cpp.token list;
@@ -68,17 +71,20 @@ type token_extended = {
   line: int; 
   col : int;
 }
- (* update: 
-  *  - quite similar to the Place_c.Inxxx.
-  *  - now that can have complex nesting of class/func in c++,
-  *    this type is also present in duplicated form in lexer_parser2.ml
-  * 
-  * The strategy to set the tag is simply to look at the token 
-  * before the '{'.
-  *)
+ (* The strategy to tag is mostly to look at the token(s) before the '{' *)
   and context = 
-  InFunction | InEnum | InStruct | InInitializer | NoContext
+    | InTopLevel
+    | InFunction 
+    (* knowing the name is useful to recognize constructors *)
+    | InClassStruct of string  (* TODO *)
+    | InStructAnon (* TODO *)
+    | InEnum
+    | InInitializer
+    | InParameter (* TODO *)
+    | InArgument
+    | InTemplateParam (* TODO *)
 
+(* InCondition ? InParenExpr ? *)
 
 (* x list list, because x list separated by ',' *) 
 type paren_grouped = 
@@ -112,15 +118,33 @@ type body_function_grouped =
   | BodyFunction of token_extended list
   | NotBodyLine  of token_extended list
 
+type multi_grouped =
+  | Braces of token_extended * multi_grouped list * token_extended option
+  | Parens of token_extended * multi_grouped list * token_extended option
+  | Angle  of token_extended * multi_grouped list * token_extended option
+  | Tok of token_extended
+
+ (* with tarzan *)
+
+exception UnclosedSymbol of string
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
 let mk_token_extended x = 
   let (line, col) = TH.linecol_of_tok x in
-  { tok = x; 
+  { t = x; 
     line = line; col = col; 
-    where = NoContext; 
+    (* we use List.hd at a few places, so convenient to have a sentinel *)
+    where = [InTopLevel]; 
+    new_tokens_before = [];
+  }
+
+let mk_token_fake x = 
+  { t = x;
+    line = -1; col = -1;
+    where = [InTopLevel];
     new_tokens_before = [];
   }
 
@@ -128,7 +152,7 @@ let rebuild_tokens_extented toks_ext =
   let _tokens = ref [] in
   toks_ext +> List.iter (fun tok -> 
     tok.new_tokens_before +> List.iter (fun x -> push2 x _tokens);
-    push2 tok.tok _tokens 
+    push2 tok.t _tokens 
   );
   let tokens = List.rev !_tokens in
   (tokens +> acc_map mk_token_extended)
@@ -144,12 +168,20 @@ let rebuild_tokens_extented toks_ext =
 (* todo: synchro ! use more indentation 
  * if paren not closed and same indentation level, certainly because
  * part of a mid-ifdef-expression.
-*)
+ * 
+ * c++ext: TODO: need to handle templates here. 
+ * The parenthized view must not consider the ',' in expressions
+ * like foo(lexical cast<string,int>, ...) as a separator for the arguments
+ * of foo(), otherwise we will get [lexical_cast<string;  ...] which
+ * could confuse some heuristics.
+ * 
+ * pre: have done the TInf->TInf_Template translation.
+ *)
 let rec mk_parenthised xs = 
   match xs with
   | [] -> []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | xx when TH.is_opar xx -> 
           let body, extras, xs = mk_parameters [x] [] xs in
           Parenthised (body,extras)::mk_parenthised xs
@@ -165,7 +197,7 @@ and mk_parameters extras acc_before_sep  xs =
       pr2 "PB: not found closing paren in fuzzy parsing";
       [List.rev acc_before_sep], List.rev extras, []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       (* synchro *)
       | xx when TH.is_obrace xx && x.col = 0 -> 
           pr2 "PB: found synchro point } in paren";
@@ -193,7 +225,7 @@ let rec mk_braceised xs =
   match xs with
   | [] -> []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | xx when TH.is_obrace xx -> 
           let body, endbrace, xs = mk_braceised_aux [] xs in
           Braceised (body, x, endbrace)::mk_braceised xs
@@ -212,7 +244,7 @@ and mk_braceised_aux acc xs =
       pr2 "PB: not found closing brace in fuzzy parsing";
       [List.rev acc], None, []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | xx when TH.is_cbrace xx -> [List.rev acc], Some x, xs
       | xx when TH.is_obrace xx -> 
           let body, endbrace, xs = mk_braceised_aux [] xs in
@@ -221,16 +253,14 @@ and mk_braceised_aux acc xs =
           mk_braceised_aux (BToken x::acc) xs
       )
 
-          
 (* ------------------------------------------------------------------------- *)
 (* Ifdefs *)
 (* ------------------------------------------------------------------------- *)
-
 let rec mk_ifdef xs = 
   match xs with
   | [] -> []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | TIfdef _ -> 
           let body, extra, xs = mk_ifdef_parameters [x] [] xs in
           Ifdef (body, extra)::mk_ifdef xs
@@ -264,7 +294,7 @@ and mk_ifdef_parameters extras acc_before_sep xs =
       pr2 "PB: not found closing ifdef in fuzzy parsing";
       [List.rev acc_before_sep], List.rev extras, []
   | x::xs -> 
-      (match x.tok with 
+      (match x.t with 
       | TEndif _ -> 
           [List.rev acc_before_sep], List.rev (x::extras), xs
       | TIfdef _ -> 
@@ -314,7 +344,7 @@ let rec span_line_paren line = function
   | [] -> [],[]
   | x::xs -> 
       (match x with
-      | PToken tok when TH.is_eof tok.tok -> 
+      | PToken tok when TH.is_eof tok.t -> 
           [], x::xs
       | _ -> 
         if line_of_paren x = line 
@@ -348,7 +378,7 @@ let rec span_line_paren_range (imin, imax) = function
   | [] -> [],[]
   | x::xs -> 
       (match x with
-      | PToken tok when TH.is_eof tok.tok -> 
+      | PToken tok when TH.is_eof tok.t -> 
           [], x::xs
       | _ -> 
         if line_of_paren x >= imin && line_of_paren x <= imax
@@ -377,14 +407,14 @@ let rec mk_body_function_grouped xs =
   | [] -> []
   | x::xs -> 
       (match x with
-      | {tok = TOBrace _; col = 0; _} -> 
+      | {t=TOBrace _; col = 0; _} -> 
           let is_closing_brace = function 
-            | {tok = TCBrace _; col = 0; _ } -> true 
+            | {t = TCBrace _; col = 0; _ } -> true 
             | _ -> false 
           in
           let body, xs = Common.span (fun x -> not (is_closing_brace x)) xs in
           (match xs with
-          | ({tok = TCBrace _; col = 0; _ })::xs -> 
+          | ({t = TCBrace _; col = 0; _ })::xs -> 
               BodyFunction body::mk_body_function_grouped xs
           | [] -> 
               pr2 "PB:not found closing brace in fuzzy parsing";
@@ -401,7 +431,91 @@ let is_braceised = function
   | Braceised   _ -> true
   | BToken _ -> false
 
+(* ------------------------------------------------------------------------- *)
+(* Multi ('{', '(', '<')  (could also do '[' ?) *)
+(* ------------------------------------------------------------------------- *)
 
+(* todo: check that it's consistent with the indentation? 
+ * todo? more fault tolerance, if col == 0 and { the reset!
+ * 
+ * Assumes work on a list of tokens without comments, without ifdefs
+ * (todo? and without #define?)
+ *)
+let mk_multi xs =
+
+  let rec consume x xs =
+    match x with
+    | {t=(*TOBrace ii*)tok;_} when TH.is_obrace tok -> 
+        let body, closing, rest = look_close_brace x [] xs in
+        Braces (x, body, closing), rest
+    | {t=(*TOPar ii*)tok;_} when TH.is_opar tok ->
+        let body, closing, rest = look_close_paren x [] xs in
+        Parens (x, body, closing), rest
+    | {t=TInf_Template ii;_} ->
+        let body, closing, rest = look_close_template x [] xs in
+        Angle (x, body, closing), rest
+    | x -> Tok x, xs
+  
+  and aux xs =
+  match xs with
+  | [] -> []
+  | x::xs ->
+      let x', xs' = consume x xs in
+      x'::aux xs'
+
+  and look_close_brace tok_start accbody xs =
+    match xs with
+    | [] -> 
+        raise (UnclosedSymbol (spf "PB look_close_brace (started at %d)" 
+                     (TH.line_of_tok tok_start.t)))
+    | x::xs -> 
+        (match x with
+        | {t=TCBrace ii;_} -> List.rev accbody, Some x, xs
+
+        (* Many macros have unclosed '{'. An alternative
+         * would be to work on a view where define has been filtered
+         *)
+        | {t=TCommentNewline_DefineEndOfMacro ii;_} ->
+            List.rev accbody, None, x::xs
+
+        | _ -> let (x', xs') = consume x xs in
+               look_close_brace tok_start (x'::accbody) xs'
+        )
+
+  and look_close_paren tok_start accbody xs =
+    match xs with
+    | [] -> 
+        raise (UnclosedSymbol (spf "PB look_close_paren (started at %d)" 
+                     (TH.line_of_tok tok_start.t)))
+    | x::xs -> 
+        (match x with
+        | {t=(*TCPar ii*)tok;_} when TH.is_cpar tok -> 
+            List.rev accbody, Some x, xs
+        | _ -> 
+            let (x', xs') = consume x xs in
+            look_close_paren tok_start (x'::accbody) xs'
+        )
+
+  and look_close_template tok_start accbody xs =
+    match xs with
+    | [] -> 
+        raise (UnclosedSymbol (spf "PB look_close_template (started at %d)" 
+                     (TH.line_of_tok tok_start.t)))
+    | x::xs -> 
+        (match x with
+        | {t=TSup_Template ii;_} -> List.rev accbody, Some x, xs
+        | _ -> let (x', xs') = consume x xs in
+               look_close_template tok_start (x'::accbody) xs'
+        )
+  in
+  aux xs
+
+let split_comma xs =
+  xs +> Common.split_gen_when (function
+  | Tok{t=TComma _;_}::xs -> Some xs
+  | _ -> None
+  )
+  
 (*****************************************************************************)
 (* View iterators  *)
 (*****************************************************************************)
@@ -431,6 +545,17 @@ let rec iter_token_ifdef f xs =
       xxs +> List.iter (iter_token_ifdef f)
   )
 
+let rec iter_token_multi f xs =
+  xs +> List.iter (function
+  | Tok t -> f t
+  | Braces (t1, xs, t2)
+  | Parens (t1, xs, t2)
+  | Angle (t1, xs, t2)
+      ->  
+      f t1;
+      iter_token_multi f xs;
+      Common.do_option f t2
+  )
 
 let tokens_of_paren xs = 
   let g = ref [] in
@@ -473,14 +598,31 @@ let tokens_of_paren_ordered xs =
   xs +> List.iter aux_tokens_ordered;
   List.rev !g
 
+let tokens_of_multi_grouped xs =
+  let res = ref [] in
 
+  let add x = Common.push2 x res in
+
+  let rec aux xs =
+    xs +> List.iter (function
+    | Tok t1 -> add t1
+    | Braces (t1, xs, t2)
+    | Parens (t1, xs, t2)
+    | Angle (t1, xs, t2) ->
+        add t1;
+        aux xs;
+        Common.do_option add t2
+    )
+  in
+  aux xs;
+  List.rev !res
 
 (*****************************************************************************)
 (* Context *)
 (*****************************************************************************)
 (* 
- * All important contexts are introduced via some '{' '}'. To make the 
- * difference is it often enough to just look at the few tokens before the
+ * Most of the important contexts are introduced via some '{' '}'. To
+ * disambiguate is it often enough to just look at a few tokens before the
  * '{'.
  * 
  * TODO harder now that have c++, can have function inside struct so need
@@ -508,10 +650,10 @@ let rec set_in_function_tag xs =
 
   (* ) { and the closing } is in column zero, then certainly a function *)
 (*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({tok = TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
+  | BToken ({t=TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
       when tok1.col <> 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction
+        tok.where <- InFunction::tok.where;
       ));
       aux xs
 
@@ -521,7 +663,7 @@ let rec set_in_function_tag xs =
   | (Braceised (body, tok1, Some tok2))::xs 
       when tok1.col = 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction
+        tok.where <- InFunction::tok.where;
       ));
       aux xs
   | Braceised (body, tok1, tok2)::xs -> 
@@ -532,33 +674,35 @@ let rec set_in_function_tag xs =
 let rec set_in_other xs = 
   match xs with 
   | [] -> ()
+
   (* enum x { } *)
-  | BToken ({tok = Tenum _;_})::BToken ({tok = TIdent _;_})
+  | BToken ({t=Tenum _;_})::BToken ({t=TIdent _;_})
     ::Braceised(body, tok1, tok2)::xs 
-  | BToken ({tok = Tenum _;_})
+  | BToken ({t=Tenum _;_})
     ::Braceised(body, tok1, tok2)::xs 
     -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InEnum;
+        tok.where <- InEnum::tok.where;
       ));
       set_in_other xs
+
   (* struct/union/class x { } *)
-  | BToken ({tok = tokstruct; _})::BToken ({tok = TIdent _; _})
+  | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
     ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InStruct;
+        tok.where <- (InClassStruct s)::tok.where;
       ));
       set_in_other xs
 
   (* struct/union/class x : ... { } *)
-  | BToken ({tok = tokstruct; _})::BToken ({tok = TIdent _; _})
-    ::BToken ({tok = TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
+  | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
+    ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
       
       let (before, elem, after) = Common.split_when is_braceised xs in
       (match elem with 
       | Braceised(body, tok1, tok2) -> 
           body +> List.iter (iter_token_brace (fun tok -> 
-            tok.where <- InInitializer;
+            tok.where <- InInitializer::tok.where;
           ));
           set_in_other after
       | _ -> raise Impossible
@@ -566,10 +710,10 @@ let rec set_in_other xs =
           
 
   (* = { } *)
-  | BToken ({tok = TEq _; _})
+  | BToken ({t=TEq _; _})
     ::Braceised(body, tok1, tok2)::xs -> 
       body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InInitializer;
+        tok.where <- InInitializer::tok.where;
       ));
       set_in_other xs
 
@@ -580,10 +724,40 @@ let rec set_in_other xs =
       body +> List.iter set_in_other;
       set_in_other xs
 
-
+(* TODO: handle C++ context for real, and Parameter, and etc *)
 let set_context_tag xs = 
   begin
     (* order is important *)
     set_in_function_tag xs;
     set_in_other xs;
   end
+
+(*****************************************************************************)
+(* vof  *)
+(*****************************************************************************)
+
+let vof_token_extended t =
+  Ocaml.VString (TH.str_of_tok t.t)
+
+let rec vof_multi_grouped =
+  function
+  | Braces ((v1, v2, v3)) ->
+      let v1 = vof_token_extended v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = Ocaml.vof_option vof_token_extended v3
+      in Ocaml.VSum (("Braces", [ v1; v2; v3 ]))
+  | Parens ((v1, v2, v3)) ->
+      let v1 = vof_token_extended v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = Ocaml.vof_option vof_token_extended v3
+      in Ocaml.VSum (("Parens", [ v1; v2; v3 ]))
+  | Angle ((v1, v2, v3)) ->
+      let v1 = vof_token_extended v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = Ocaml.vof_option vof_token_extended v3
+      in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
+  | Tok v1 -> let v1 = vof_token_extended v1 in Ocaml.VSum (("Tok", [ v1 ]))
+
+let string_of_multi_grouped xs =
+  let v = Ocaml.VList (xs +> List.map vof_multi_grouped) in
+  Ocaml.string_of_v v

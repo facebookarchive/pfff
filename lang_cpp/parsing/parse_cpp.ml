@@ -14,11 +14,9 @@
 
 open Common
 
-module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
-
+module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
-module LP = Lexer_parser_cpp
 
 module Parser = Parser_cpp
 module Lexer = Lexer_cpp
@@ -36,8 +34,7 @@ module Hack = Parsing_hacks_lib
  * A heuristic based C/C++/CPP parser.
  * 
  * See "Parsing C/C++ Code without Pre-Preprocessing - Yoann Padioleau, CC'09"
- * avalaible at http://padator.org/papers/yacfe-cc09.pdf for more
- * information.
+ * avalaible at http://padator.org/papers/yacfe-cc09.pdf
  *)
 
 (*****************************************************************************)
@@ -112,7 +109,7 @@ let print_bad line_error (start_line, end_line) filelines  =
 (*****************************************************************************)
 
 let commentized xs = xs +> Common.map_filter (function
-  | Parser.TComment_Cpp (cppkind, ii) -> 
+  | Parser.TComment_Pp (cppkind, ii) -> 
       if !Flag.filter_classic_passed
       then 
         (match cppkind with
@@ -154,6 +151,25 @@ let count_lines_commentized xs =
       | _ -> ());
     !count
   end
+
+(* See also problematic_lines and parsing_stat.ml *)
+
+(* for most problematic tokens *)
+let is_same_line_or_close line tok =
+  TH.line_of_tok tok =|= line ||
+  TH.line_of_tok tok =|= line - 1 ||
+  TH.line_of_tok tok =|= line - 2
+
+(*****************************************************************************)
+(* C vs C++ *)
+(*****************************************************************************)
+let fix_tokens_for_c xs =
+  xs +> List.map (function
+  | x when TH.is_cpp_keyword x ->
+      let ii = TH.info_of_tok x in
+      Parser.TIdent (Ast.str_of_info ii, ii)
+  | x -> x
+  )
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -231,260 +247,32 @@ let extract_macros a =
 (* Helper for main entry point *)
 (*****************************************************************************)
 
-(* The use of local refs (remaining_tokens, passed_tokens, ...) makes
- * possible error recovery. Indeed, they allow to skip some tokens and
- * still be able to call again the ocamlyacc parser. It is ugly code
- * because we cant modify ocamllex and ocamlyacc. As we want some
- * extended lexing tricks, we have to use such refs.
- * 
- * Those refs are now also used for my lalr(k) technique. Indeed They
- * store the futur and previous tokens that were parsed, and so
- * provide enough context information for powerful lex trick.
- * 
- * - passed_tokens_last_ckp stores the passed tokens since last
- *   checkpoint. Used for NotParsedCorrectly and also to build the
- *   info_item attached to each program_element.
- * - passed_tokens_clean is used for lookahead, in fact for lookback.
- * - remaining_tokens_clean is used for lookahead. Now remaining_tokens
- *   contain some comments and so would make pattern matching difficult
- *   in lookahead. Hence this variable. We would like also to get rid 
- *   of cpp instruction because sometimes a cpp instruction is between
- *   two tokens and makes a pattern matching fail. But lookahead also
- *   transform some cpp instruction (in comment) so can't remove them.
- *   c++ext: update, want also get rid of useless nested_qualifier which
- *   do not help to infer typedef (as they can be used to qualify a type
- *   or variable).
- * 
- * So remaining_tokens, passed_tokens_last_ckp contain comment-tokens,
- * whereas passed_tokens_clean and remaining_tokens_clean does not contain
- * comment-tokens.
- * 
- * Normally we have:
- * toks = (reverse passed_tok) ++ cur_tok ++ remaining_tokens   
- *    after the call to pop2.
- * toks = (reverse passed_tok) ++ remaining_tokens   
- *     at the and of the lexer_function call.
- * At the very beginning, cur_tok and remaining_tokens overlap, but not after.
- * At the end of lexer_function call,  cur_tok  overlap  with passed_tok.
- * 
- * convention: I use "tr"  for "tokens refs"
- * 
- * I now also need this lexing trick because the lexer return comment
- * tokens.
- *)
-
-type tokens_state = {
-  mutable rest :         Parser.token list;
-  mutable rest_clean :   Parser.token list;
-  mutable current :      Parser.token;
-  (* it's passed since last "checkpoint", not passed from the beginning *)
-  mutable passed :       Parser.token list;
-  mutable passed_clean : Parser.token list;
-
-  (* c++ext: *)
-  mutable pending_qualifier: Parser.token list;
-  mutable already_disambiguated : bool;
-}
-
-(* ??? *)
-let useless_token x = 
-  match x with
-  | x when TH.is_comment x -> true
-  (* c++ext: *)
-  | Parser.TColCol _ -> true
-  | Parser.TIdent_ClassnameInQualifier _ -> true
-
-  | Parser.TColCol_BeforeTypedef _ -> true
-  | Parser.TIdent_ClassnameInQualifier_BeforeTypedef _ -> true
-
-  | _ -> false 
-
-let mk_tokens_state toks = { 
-    rest       = toks;
-    rest_clean = (toks +> Common.exclude useless_token);
-    current    = (List.hd toks);
-    passed = []; 
-    passed_clean = [];
-
-    (* c++ext: *)
-    pending_qualifier = [];
-    already_disambiguated = false;
-  }
-
-(* ??? *)
-let retag_for_typedef xs = 
-  xs +> List.map (function
-  | Parser.TColCol ii -> Parser.TColCol_BeforeTypedef ii
-  | Parser.TIdent_ClassnameInQualifier (s,ii) -> 
-      Parser.TIdent_ClassnameInQualifier_BeforeTypedef (s,ii)
-
-  | Parser.TIdent_ClassnameInQualifier_BeforeTypedef (s,ii) -> 
-      Parser.TIdent_ClassnameInQualifier_BeforeTypedef (s,ii)
-  | Parser.TColCol_BeforeTypedef ii -> Parser.TColCol_BeforeTypedef ii
-  | _ -> raise Impossible
-  )
-
-(* Hacked lex. This function use refs passed by parse_print_error_heuristic 
- * tr means token refs.
+(* Hacked lex. This function use refs passed by parse. 
+ * 'tr' means 'token refs'. This is used mostly to enable
+ * error recovery (This used to do lots of stuff, such as
+ * calling some lookahead heuristics to reclassify
+ * tokens such as TIdent into TIdent_Typeded but this is
+ * now done in a fix_tokens style in parsing_hacks_typedef.ml.
  *)
 let rec lexer_function tr = fun lexbuf -> 
-
-  (* ??? *)
-  if tr.already_disambiguated && not (null tr.pending_qualifier)
-  then
-    let x = List.hd tr.pending_qualifier  in
-    tr.pending_qualifier <- List.tl tr.pending_qualifier;
-    x
-  else begin
-
-  match tr.rest with
-  | [] -> pr2 "ALREADY AT END"; tr.current
+  match tr.PI.rest with
+  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
   | v::xs -> 
-    tr.rest <- xs;
-    tr.current <- v;
+      tr.PI.rest <- xs;
+      tr.PI.current <- v;
+      tr.PI.passed <- v::tr.PI.passed;
 
-    if !Flag.debug_lexer then Common.pr2_gen v;
+      if !Flag.debug_lexer then pr2_gen v;
 
-    if TH.is_comment v (* this will pass too the TCommentCpp *)
-    then begin
-      tr.passed <- v::tr.passed;
-      lexer_function tr lexbuf
-    end
-    else 
-      (* c++ext: in C there is an ambiguity that must be resolved by 
-       * tagging if an ident is a typedef or really an ident. With this
-       * info the LALR(1) yacc can know where to go. With c++ this typedef
-       * or ident may be preceded by some qualifiers which forbid the
-       * disambiguation. So we need to help yacc by tagging the qualifiers
-       * tokens before the ident or typedef.
-      *)
-      if useless_token v 
-      then begin
-        tr.passed <- v::tr.passed;
-        (*old: 
-          v
-        *)
-        tr.already_disambiguated <- false;
-        tr.pending_qualifier <- tr.pending_qualifier ++ [v];
-        lexer_function tr lexbuf
-      end
-      else 
-      begin
-      let x = List.hd tr.rest_clean  in
-      tr.rest_clean <- List.tl tr.rest_clean;
-      assert (x = v);
-      
-      (match v with
-      (* fix_define1 
-       * TODO: move to fix_tokens_xxx style
-       *)
-      | Parser.TDefine (tok) -> 
-          if not (LP.current_context () = LP.InTopLevel) 
-          then begin
-            let v' = 
-              Hack.fresh_tok 
-                (Parser.TComment_Cpp (Token_cpp.CppDirective,TH.info_of_tok v))
-            in
-            tr.passed <- v'::tr.passed;
-            tr.rest       <- Parsing_hacks_define.comment_until_defeol tr.rest;
-            tr.rest_clean <- Parsing_hacks_define.drop_until_defeol tr.rest_clean;
-            lexer_function tr lexbuf
-          end
-          else begin
-            tr.passed <- v::tr.passed;
-            tr.passed_clean <- v::tr.passed_clean;
-            v
-          end
-            
-      | Parser.TInclude (includes, filename, inifdef, info) -> 
-          if not (LP.current_context () = LP.InTopLevel) 
-          then begin
-            let v = 
-              Hack.fresh_tok
-                (Parser.TComment_Cpp (Token_cpp.CppDirective, info))
-            in
-            tr.passed <- v::tr.passed;
-            lexer_function tr lexbuf
-          end
-          else begin
-            let (v,new_tokens) = 
-              Parsing_hacks_define.tokens_include (info, includes, filename, inifdef) in
-            let new_tokens_clean = 
-              new_tokens +> List.filter TH.is_not_comment  in
-
-            tr.passed <- v::tr.passed;
-            tr.passed_clean <- v::tr.passed_clean;
-            tr.rest <- new_tokens ++ tr.rest;
-            tr.rest_clean <- new_tokens_clean ++ tr.rest_clean;
-            v
-          end
-            
-      | _ -> 
-          
-          (* typedef_fix1 *)
-          let v = match v with
-            | Parser.TIdent (s, ii) -> 
-                if LP.is_typedef s 
-                then Parsing_hacks_lib.fresh_tok (Parser.TIdent_Typedef (s, ii))
-                else Parser.TIdent (s, ii)
-            | x -> x
-          in
-          
-          let v = Parsing_hacks.lookahead (v::tr.rest_clean) tr.passed_clean in
-
-          tr.passed <- v::tr.passed;
-
-          (* the lookahead may have changed the status of the token and
-           * consider it as a comment, for instance some #include are
-           * turned into comments, hence this code. *)
-          match v with
-          | Parser.TComment_Cpp _ -> lexer_function tr lexbuf
-          | v -> 
-              tr.passed_clean <- v::tr.passed_clean;
-
-              (* ??? *)
-              (match v with
-              | Parser.TIdent_Typedef _ -> 
-                  tr.already_disambiguated <- true;
-                  tr.pending_qualifier <- 
-                    retag_for_typedef tr.pending_qualifier;
-                  tr.pending_qualifier <- 
-                    tr.pending_qualifier ++ [v];
-
-                  let x = List.hd tr.pending_qualifier  in
-                  tr.pending_qualifier <- List.tl tr.pending_qualifier;
-                  x
-              | Parser.TIdent _ -> 
-                  tr.already_disambiguated <- true;
-                  tr.pending_qualifier <- 
-                    tr.pending_qualifier ++ [v];
-
-                  let x = List.hd tr.pending_qualifier  in
-                  tr.pending_qualifier <- List.tl tr.pending_qualifier;
-                  x
-              | v -> 
-                  (* may have other stuff after a qualifier, like in ::new,
-                   * or in destructor, so for those cases just flush
-                   * the pending
-                   *)
-                  tr.already_disambiguated <- true;
-                  tr.pending_qualifier <- 
-                    tr.pending_qualifier ++ [v];
-
-                  let x = List.hd tr.pending_qualifier  in
-                  tr.pending_qualifier <- List.tl tr.pending_qualifier;
-                  x
-              )
-                  
-      )
-    end
-  end
-
+      if TH.is_comment v
+      then lexer_function (*~pass*) tr lexbuf
+      else v
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
+(* todo?: pass it as a parameter to parse_program instead ? *) 
 let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
   ref (Hashtbl.create 101)
 
@@ -493,15 +281,14 @@ let init_defs file =
   _defs := Common.hash_of_list (extract_macros file)
 
 (* 
- * note: as now we go in 2 passes, there is first all the error message of
+ * note: as now we go in two passes, there is first all the error message of
  * the lexer, and then the error of the parser. It is not anymore
  * interwinded.
  * 
  * !!!This function use refs, and is not reentrant !!! so take care.
- * It use globals defined in Lexer_parser and also the _defs global
- * defined above!!!!
+ * It uses the _defs global defined above!!!!
  *)
-let parse2 file = 
+let parse2 ?(c=false) file = 
 
   let stat = Statistics_parsing.default_stat file in
   let filelines = Common.cat_array file in
@@ -509,30 +296,24 @@ let parse2 file =
   (* -------------------------------------------------- *)
   (* call lexer and get all the tokens *)
   (* -------------------------------------------------- *)
-  LP.lexer_reset_state(); 
   let toks_orig = tokens file in
 
   let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
+  let toks = if c then fix_tokens_for_c toks else toks in
   (* todo: _defs_builtins *)
-  let toks = Parsing_hacks.fix_tokens_cpp ~macro_defs:!_defs toks in
+  let toks = 
+    try Parsing_hacks.fix_tokens ~macro_defs:!_defs toks
+    with Token_views_cpp.UnclosedSymbol s ->
+      pr2 (s);
+      if !Flag.debug_cplusplus then raise (Token_views_cpp.UnclosedSymbol s)
+      else toks
+  in
 
+  let tr = Parse_info.mk_tokens_state toks in
 
-  let tr = mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
 
   let rec loop () =
-
-    if not (LP.is_enabled_typedef()) && !Flag.debug_typedef
-    then pr2 "TYPEDEF:_handle_typedef=false. Not normal if dont come from exn";
-
-    (* normally have to do that only when come from an exception in which
-     * case the dt() may not have been done 
-     * TODO but if was in scoped scope ? have to let only the last scope
-     * so need do a LP.lexer_reset_typedef ();
-     *)
-    LP.enable_typedef();  
-    LP._lexer_hint := (LP.default_hint ());
-    LP.save_typedef_state();
 
     (* todo?: I am not sure that it represents current_line, cos maybe
      * tr.current partipated in the previous parsing phase, so maybe tr.current
@@ -540,15 +321,15 @@ let parse2 file =
      * It would be better to record when we have a } or ; in parser.mly,
      *  cos we know that they are the last symbols of external_declaration2.
      *)
-    let checkpoint = TH.line_of_tok tr.current in
+    let checkpoint = TH.line_of_tok tr.PI.current in
 
     (* bugfix: may not be equal to 'file' as after macro expansions we can
      * start to parse a new entity from the body of a macro, for instance
      * when parsing a define_machine() body, cf standard.h
      *)
-    let checkpoint_file = TH.file_of_tok tr.current in
+    let checkpoint_file = TH.file_of_tok tr.PI.current in
 
-    tr.passed <- [];
+    tr.PI.passed <- [];
     (* for some statistics *)
     let was_define = ref false in
 
@@ -563,40 +344,40 @@ let parse2 file =
             (match e with
             (* Lexical is not anymore launched I think *)
             | Lexer.Lexical s -> 
-                pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.current)
+                pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
             | Parsing.Parse_error -> 
-                pr2 ("parse error \n = " ^ error_msg_tok tr.current)
+                pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Semantic.Semantic (s, i) -> 
-                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
+                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
             | e -> raise e
             );
 
-            (* bugfix: otherwise get some List.hd exn *)
-            tr.pending_qualifier <- [];
-            tr.already_disambiguated <- false;
+            let line_error = TH.line_of_tok tr.PI.current in
 
-            (* choice: LP.restore_typedef_state(); ??? *)
-            LP.lexer_reset_state(); 
-
-            let line_error = TH.line_of_tok tr.current in
+            let pbline =
+              tr.PI.passed
+              +> Common.filter (is_same_line_or_close line_error)
+              +> Common.filter TH.is_ident_like
+            in
+            let error_info =(pbline +> List.map TH.str_of_tok), line_error in
+            stat.Stat.problematic_lines <-
+              error_info::stat.Stat.problematic_lines;
 
             (*  error recovery, go to next synchro point *)
             let (passed', rest') = 
-              Parsing_recovery_cpp.find_next_synchro tr.rest tr.passed in
-            tr.rest <- rest';
-            tr.passed <- passed';
+              Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
+            tr.PI.rest <- rest';
+            tr.PI.passed <- passed';
 
-            tr.current <- List.hd passed';
-            tr.passed_clean <- [];           (* enough ? *)
-            (* with error recovery, rest and rest_clean may not be in sync *)
-            tr.rest_clean <- (tr.rest +> Common.exclude useless_token);
+            tr.PI.current <- List.hd passed';
 
-            let checkpoint2 = TH.line_of_tok tr.current in (* <> line_error *)
-            let checkpoint2_file = TH.file_of_tok tr.current in
+            (* <> line_error *)
+            let checkpoint2 = TH.line_of_tok tr.PI.current in 
+            let checkpoint2_file = TH.file_of_tok tr.PI.current in
 
             (* was a define ? *)
-            let xs = tr.passed +> List.rev +> Common.exclude useless_token in
-            if List.length xs >= 2 
+            let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
+            (if List.length xs >= 2 
             then 
               (match Common.head_middle_tail xs with
               | Parser.TDefine _, _, Parser.TCommentNewline_DefineEndOfMacro _ 
@@ -604,26 +385,30 @@ let parse2 file =
                   was_define := true
               | _ -> ()
               )
-            else pr2 "WIERD: length list of error recovery tokens < 2 ";
+            else pr2 "WIERD: length list of error recovery tokens < 2 "
+            );
             
-            if !was_define && !Flag.filter_define_error
+            (if !was_define && !Flag.filter_define_error
             then ()
             else 
               (* bugfix: *)
-              if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
+              (if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
               then print_bad line_error (checkpoint, checkpoint2) filelines
               else pr2 "PB: bad: but on tokens not from original file"
-              ;
+              )
+            );
 
-            let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.passed in 
+            let info_of_bads = 
+              Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+
             Ast.NotParsedCorrectly info_of_bads
           end
       )
     in
 
     (* again not sure if checkpoint2 corresponds to end of bad region *)
-    let checkpoint2 = TH.line_of_tok tr.current in
-    let checkpoint2_file = TH.file_of_tok tr.current in
+    let checkpoint2 = TH.line_of_tok tr.PI.current in
+    let checkpoint2_file = TH.file_of_tok tr.PI.current in
 
     let diffline = 
       if (checkpoint_file = checkpoint2_file) && (checkpoint_file = file)
@@ -636,7 +421,7 @@ let parse2 file =
          * the lines in the token from the correct file ?
          *)
     in
-    let info = mk_info_item file (List.rev tr.passed) in 
+    let info = mk_info_item file (List.rev tr.PI.passed) in 
 
     (* some stat updates *)
     stat.Stat.commentized <- 
@@ -644,8 +429,9 @@ let parse2 file =
     (match elem with
     | Ast.NotParsedCorrectly xs -> 
         if !was_define && !Flag.filter_define_error
-        then stat.Stat.correct <- stat.Stat.correct + diffline
+        then stat.Stat.commentized <- stat.Stat.commentized + diffline
         else stat.Stat.bad     <- stat.Stat.bad     + diffline
+
     | _ -> stat.Stat.correct <- stat.Stat.correct + diffline
     );
 
@@ -658,8 +444,8 @@ let parse2 file =
   let v = with_program2 Parsing_consistency_cpp.consistency_checking v in
   (v, stat)
 
-let parse a  = 
-  Common.profile_code "Parse_cpp.parse" (fun () -> parse2 a)
+let parse ?c a  = 
+  Common.profile_code "Parse_cpp.parse" (fun () -> parse2 ?c a)
 
 let parse_program file = 
   let (ast2, _stat) = parse file in

@@ -150,7 +150,7 @@ let main files_or_dirs =
          *)
         | (Lv(
              (StaticMethodCallSimple(
-               Qualifier(Name(("ArgAssert", i_9)), i_10),
+               (ClassName(Name(("ArgAssert", i_9))), i_10),
                Name(("isString", i_11)),
                (i_left_paren,
                [Left(
@@ -171,7 +171,7 @@ let main files_or_dirs =
          *)
         | (Lv(
              (StaticMethodCallSimple(
-               Qualifier(Name(("ArgAssert", i_9)), i_10),
+               (ClassName(Name(("ArgAssert", i_9))), i_10),
                Name(("isArray", i_11)),
                (i_12,
                [Left(
@@ -200,7 +200,7 @@ let main files_or_dirs =
     visitor (Program ast);
 
     (* step3: unparse the annotated AST and show the diff *)
-    let s = Unparse_php.string_of_program2_using_tokens ast_and_tokens_list in
+    let s = Unparse_php.string_of_program2_using_transfo ast_and_tokens_list in
     
     let tmpfile = Common.new_temp_file "trans" ".php" in
     Common.write_file ~file:tmpfile s;
