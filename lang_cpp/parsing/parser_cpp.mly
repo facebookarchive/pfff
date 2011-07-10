@@ -1321,9 +1321,9 @@ ctor_dtor_member:
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
  | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt compound
-     { EmptyField $4 (*TODO*) }
+     { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
  | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
-     { EmptyField $4 (*TODO*) }
+     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
 
 
 ctor_spec:

@@ -288,6 +288,19 @@ let mk_constructor id (lp, params, rp) cp =
     f_storage = (NoSto, false), noii; f_body = cp
   }
 
+let mk_destructor tilde id (lp, voidopt, rp) exnopt cp =
+  let ftyp = {
+    ft_ret = nQ, (BaseType Void, noii);
+    ft_params= (lp,  [], rp);
+    ft_dots = None;
+    ft_const = None;
+    ft_throw = exnopt;
+  }
+  in
+  { f_name = (None, noQscope, IdDestructor (tilde, id)); f_type = ftyp;
+    f_storage = (NoSto, false), noii; f_body = cp;
+  }
+
 let opt_to_list_params params =
   match params with
   | Some (params, ellipsis) ->

@@ -517,7 +517,7 @@ and func_definition = {
      ft_dots: (tok(*,*) * tok(*...*)) option;
      (* c++ext: *) 
      ft_const: tok option; (* only for methods *)
-     ft_throw: (tok * name comma_list2 paren) option;
+     ft_throw: exn_spec option;
    }
      and parameter = {
         p_name: string wrap2 option;
@@ -526,6 +526,7 @@ and func_definition = {
         (* c++ext: *)
         p_val: (tok (*=*) * expression) option;
       }
+    and exn_spec = (tok * name comma_list2 paren)
 
  and func_or_else =
   | FunctionOrMethod of func_definition
@@ -533,13 +534,12 @@ and func_definition = {
   | Constructor of func_definition (* TODO explicit/inline, chain_call *)
   | Destructor of func_definition
 
-
  and method_decl =
    | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *)
    | ConstructorDecl of 
        string wrap2 * parameter comma_list paren * tok(*;*)
-   | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
-       (* ( ) void_opt *)
+   | DestructorDecl of 
+       tok(*~*) * string wrap2 * tok option paren * exn_spec option * tok(*;*)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

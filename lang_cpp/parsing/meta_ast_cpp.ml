@@ -790,13 +790,7 @@ and
                      ft_throw = v_ft_throw
                    } =
   let bnds = [] in
-  let arg =
-    Ocaml.vof_option
-      (fun (v1, v2) ->
-         let v1 = vof_tok v1
-         and v2 = vof_paren (vof_comma_list2 vof_name) v2
-         in Ocaml.VTuple [ v1; v2 ])
-      v_ft_throw in
+  let arg = Ocaml.vof_option vof_exn_spec v_ft_throw in
   let bnd = ("ft_throw", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_tok v_ft_const in
@@ -849,6 +843,11 @@ and vof_func_or_else =
       in Ocaml.VSum (("Constructor", [ v1 ]))
   | Destructor v1 ->
       let v1 = vof_func_definition v1 in Ocaml.VSum (("Destructor", [ v1 ]))
+and vof_exn_spec (v1, v2) =
+  let v1 = vof_tok v1
+  and v2 = vof_paren (vof_comma_list2 vof_name) v2
+  in Ocaml.VTuple [ v1; v2 ]
+
 and
   vof_class_definition {
                          c_kind = v_c_kind;
@@ -907,10 +906,13 @@ and vof_method_decl = function
       and v2 = vof_paren (vof_comma_list vof_parameter) v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("ConstructorDecl", [ v1; v2; v3 ]))
-  | DestructorDecl ((v1, v2)) ->
-      let v1 = vof_name v1
-      and v2 = Ocaml.vof_bool v2
-      in Ocaml.VSum (("DestructorDecl", [ v1; v2 ]))
+  | DestructorDecl ((v1, v2, v3, v4, v5)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_wrap2 Ocaml.vof_string v2
+      and v3 = vof_paren (Ocaml.vof_option vof_tok) v3
+      and v4 = Ocaml.vof_option vof_exn_spec v4
+      and v5 = vof_tok v5
+      in Ocaml.VSum (("DestructorDecl", [ v1; v2; v3; v4; v5 ]))
   | MethodDecl ((v1, v2)) ->
       let v1 = vof_onedecl v1
       and v2 =
