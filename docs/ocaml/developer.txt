@@ -1,9 +1,15 @@
 -*- org -*-
 
-
 have C-c C-t working to get type information under cursor
 
 ** style: 
+
+*** bad example of style: julien's original code
+
+huge files
+no mli
+no comment on general idea of the algorithm or module
+no comment at all
 
 *** bad example of style: ocamlnet/netstring/nethtml.ml.
 
