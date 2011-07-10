@@ -669,6 +669,20 @@ and
   let arg = v_option v_tok v_i_virtual in
   let arg = v_option (v_wrap2 v_access_spec) v_i_access in ()
 and v_access_spec = function | Public -> () | Private -> () | Protected -> ()
+
+and v_method_decl = function
+  | ConstructorDecl ((v1, v2, v3)) ->
+      let v1 = v_wrap2 v_string v1
+      and v2 = v_paren (v_comma_list v_parameter) v2
+      and v3 = v_tok v3 in ()
+  | DestructorDecl ((v1, v2)) -> let v1 = v_name v1 and v2 = v_bool v2 in ()
+  | MethodDecl ((v1, v2)) ->
+      let v1 = v_onedecl v1
+      and v2 =
+        v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_tok v2 in ())
+          v2
+      in ()
+
 and v_class_member x =
   let k =
   function
@@ -676,11 +690,7 @@ and v_class_member x =
       let v1 = v_wrap2 v_access_spec v1 and v2 = v_tok v2 in ()
   | MemberField v1 -> let v1 = v_wrap (v_comma_list v_fieldkind) v1 in ()
   | MemberFunc v1 -> let v1 = v_func_or_else v1 in ()
-  | ConstructorDecl ((v1, v2, v3)) ->
-      let v1 = v_wrap2 v_string v1
-      and v2 = v_paren (v_comma_list v_parameter) v2
-      and v3 = v_tok v3 in ()
-  | DestructorDecl ((v1, v2)) -> let v1 = v_name v1 and v2 = v_bool v2 in ()
+  | MemberDecl v1 -> let v1 = v_method_decl v1 in ()
   | QualifiedIdInClass ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_tok v2 in ()
   | TemplateDeclInClass v1 ->
@@ -705,12 +715,6 @@ and v_class_member x =
 and v_fieldkind x =
   let rec k = function
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
-  | MethodDecl ((v1, v2)) ->
-      let v1 = v_onedecl v1
-      and v2 =
-        v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_tok v2 in ())
-          v2
-      in ()
   | BitField ((v1, v2, v3, v4)) ->
       let v1 = v_option (v_wrap2 v_string) v1
       and v2 = v_tok v2

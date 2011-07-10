@@ -253,7 +253,7 @@ and expression = expressionbis wrap
   | Cast          of fullType paren * expression
 
   (* gccext: *)        
-  | StatementExpr of compound paren (* ( { } )     new scope *) 
+  | StatementExpr of compound paren (* ( {  } ) new scope*)
   | GccConstructor  of fullType paren * initialiser comma_list brace
 
   (* c++ext: *)
@@ -533,6 +533,14 @@ and func_definition = {
   | Constructor of func_definition (* TODO explicit/inline, chain_call *)
   | Destructor of func_definition
 
+
+ and method_decl =
+   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *)
+   | ConstructorDecl of 
+       string wrap2 * parameter comma_list paren * tok(*;*)
+   | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
+       (* ( ) void_opt *)
+
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
@@ -566,14 +574,7 @@ and class_definition = {
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
     | MemberField of fieldkind comma_list wrap (* ';' *)
     | MemberFunc of func_or_else    
-
-    (* MethodDecl is inside field_declaration. TODO? should we move
-     * this in MemberField too? but ctor/dtor obey to different rules.
-     *)
-    | ConstructorDecl of 
-        string wrap2 * parameter comma_list paren * tok(*;*)
-    | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
-         (* ( ) void_opt *)
+    | MemberDecl of method_decl
          
     | QualifiedIdInClass of name (* ?? *) * tok(*;*)
          
@@ -591,7 +592,6 @@ and class_definition = {
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *)
         | BitField of string wrap2 option * tok(*:*) *
             fullType * constExpression
             (* fullType => BitFieldInt | BitFieldUnsigned *) 

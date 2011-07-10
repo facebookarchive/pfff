@@ -377,7 +377,6 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
               tag iiname (Field (Def2 NoUse))
           | None -> ()
           )
-      | _ -> k x
     );
 
     V.kclass_def = (fun (k,_) def ->
@@ -413,8 +412,8 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           );
       | 
 (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _|
-QualifiedIdInClass (_, _)|DestructorDecl (_, _)|ConstructorDecl (_, _, _)|
-MemberField _|Access (_, _))
+QualifiedIdInClass (_, _)|
+MemberField _|MemberDecl _ | Access (_, _))
           -> ()
       );
       k def

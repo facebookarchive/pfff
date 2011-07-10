@@ -900,6 +900,28 @@ and vof_access_spec =
   | Public -> Ocaml.VSum (("Public", []))
   | Private -> Ocaml.VSum (("Private", []))
   | Protected -> Ocaml.VSum (("Protected", []))
+
+and vof_method_decl = function
+  | ConstructorDecl ((v1, v2, v3)) ->
+      let v1 = vof_wrap2 Ocaml.vof_string v1
+      and v2 = vof_paren (vof_comma_list vof_parameter) v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("ConstructorDecl", [ v1; v2; v3 ]))
+  | DestructorDecl ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = Ocaml.vof_bool v2
+      in Ocaml.VSum (("DestructorDecl", [ v1; v2 ]))
+  | MethodDecl ((v1, v2)) ->
+      let v1 = vof_onedecl v1
+      and v2 =
+        Ocaml.vof_option
+          (fun (v1, v2) ->
+             let v1 = vof_tok v1
+             and v2 = vof_tok v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v2
+      in Ocaml.VSum (("MethodDecl", [ v1; v2 ]))
+
 and vof_class_member =
   function
   | Access ((v1, v2)) ->
@@ -911,15 +933,9 @@ and vof_class_member =
       in Ocaml.VSum (("MemberField", [ v1 ]))
   | MemberFunc v1 ->
       let v1 = vof_func_or_else v1 in Ocaml.VSum (("MemberFunc", [ v1 ]))
-  | ConstructorDecl ((v1, v2, v3)) ->
-      let v1 = vof_wrap2 Ocaml.vof_string v1
-      and v2 = vof_paren (vof_comma_list vof_parameter) v2
-      and v3 = vof_tok v3
-      in Ocaml.VSum (("ConstructorDecl", [ v1; v2; v3 ]))
-  | DestructorDecl ((v1, v2)) ->
-      let v1 = vof_name v1
-      and v2 = Ocaml.vof_bool v2
-      in Ocaml.VSum (("DestructorDecl", [ v1; v2 ]))
+  | MemberDecl v1 ->
+      let v1 = vof_method_decl v1 in 
+      Ocaml.VSum (("MemberDecl", [ v1 ]))
   | QualifiedIdInClass ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_tok v2
@@ -948,16 +964,6 @@ and vof_fieldkind =
   function
   | FieldDecl v1 ->
       let v1 = vof_onedecl v1 in Ocaml.VSum (("FieldDecl", [ v1 ]))
-  | MethodDecl ((v1, v2)) ->
-      let v1 = vof_onedecl v1
-      and v2 =
-        Ocaml.vof_option
-          (fun (v1, v2) ->
-             let v1 = vof_tok v1
-             and v2 = vof_tok v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v2
-      in Ocaml.VSum (("MethodDecl", [ v1; v2 ]))
   | BitField ((v1, v2, v3, v4)) ->
       let v1 = Ocaml.vof_option (vof_wrap2 Ocaml.vof_string) v1
       and v2 = vof_tok v2

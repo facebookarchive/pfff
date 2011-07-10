@@ -1317,10 +1317,8 @@ ctor_dtor_member:
      compound
      { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
 
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar
-     ctor_mem_initializer_list_opt
-     TPtVirg 
-     { ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $7) }
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TPtVirg 
+     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
  | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt compound
      { EmptyField $4 (*TODO*) }
@@ -1964,10 +1962,6 @@ new_initializer_opt:
  | /*(*empty*)*/ { None }
 
 
-
-virtual_opt:
- | Tvirtual      { Some $1 }
- | /*(*empty*)*/ { None }
 
 base_clause_opt: 
  | base_clause   { Some $1 }
