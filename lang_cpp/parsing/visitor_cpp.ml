@@ -636,8 +636,8 @@ and
 and v_func_or_else =
   function
   | FunctionOrMethod v1 -> let v1 = v_func_definition v1 in ()
-  | Constructor ((v1, v2)) ->
-      let v1 = v_func_definition v1 and v2 = v_bool v2 in ()
+  | Constructor ((v1)) ->
+      let v1 = v_func_definition v1 in ()
   | Destructor v1 -> let v1 = v_func_definition v1 in ()
 and
   v_class_definition x =
@@ -676,8 +676,10 @@ and v_class_member x =
       let v1 = v_wrap2 v_access_spec v1 and v2 = v_tok v2 in ()
   | MemberField v1 -> let v1 = v_wrap (v_comma_list v_fieldkind) v1 in ()
   | MemberFunc v1 -> let v1 = v_func_or_else v1 in ()
-  | ConstructorDecl ((v1, v2)) ->
-      let v1 = v_paren (v_comma_list v_parameter) v1 and v2 = v_bool v2 in ()
+  | ConstructorDecl ((v1, v2, v3)) ->
+      let v1 = v_wrap2 v_string v1
+      and v2 = v_paren (v_comma_list v_parameter) v2
+      and v3 = v_tok v3 in ()
   | DestructorDecl ((v1, v2)) -> let v1 = v_name v1 and v2 = v_bool v2 in ()
   | QualifiedIdInClass ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_tok v2 in ()

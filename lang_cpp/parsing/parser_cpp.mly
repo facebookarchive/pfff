@@ -1308,38 +1308,35 @@ pure_specifier:
 /*(*2 constructor special case *)*/
 /*(*-----------------------------------------------------------------------*)*/
 
-/*(* special case for ctor/dtor because they don't have a return type. TODOAST*)*/
+/*(* special case for ctor/dtor because they don't have a return type.
+   * TODOAST on the ctor_spec and chain of calls
+   *)*/
 ctor_dtor_member:
- | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
-     {  MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7, false)) }
+     { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
 
- | explicit_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      TPtVirg 
-     { EmptyField $3 (*TODO*) }
+     { ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $7) }
 
- | Tinline TIdent_Constructor TOPar parameter_type_list_opt TCPar
-     ctor_mem_initializer_list_opt
-     TPtVirg 
-     { EmptyField $3(*TODO*) }
-
- | Tinline TIdent_Constructor TOPar parameter_type_list_opt TCPar
-     ctor_mem_initializer_list_opt
-     compound
-     {  EmptyField $3(*TODO*) }
-
-
- | virtual_opt TTilde ident TOPar void_opt TCPar exn_spec_opt compound
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt compound
      { EmptyField $4 (*TODO*) }
- | virtual_opt TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
      { EmptyField $4 (*TODO*) }
 
- | Tinline TTilde ident TOPar void_opt TCPar compound
-     { EmptyField $4 (*TODO*) }
- | Tinline TTilde ident TOPar void_opt TCPar  TPtVirg
-     { EmptyField $4 (*TODO*) }
+
+ctor_spec:
+ | Texplicit { }
+ | Tinline { }
+ | /*(*empty*)*/ { }
+
+dtor_spec:
+ | Tvirtual { }
+ | Tinline { }
+ | /*(*empty*)*/ { }
 
 ctor_mem_initializer_list_opt: 
  | TCol mem_initializer_list { () }
@@ -1970,10 +1967,6 @@ new_initializer_opt:
 
 virtual_opt:
  | Tvirtual      { Some $1 }
- | /*(*empty*)*/ { None }
-
-explicit_opt:
- | Texplicit     { Some $1 }
  | /*(*empty*)*/ { None }
 
 base_clause_opt: 

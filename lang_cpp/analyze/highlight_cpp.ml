@@ -403,7 +403,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           let def =
             match x with
             | FunctionOrMethod def
-            | Constructor (def, _)
+            | Constructor (def)
             | Destructor def
               -> def
           in
@@ -413,7 +413,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           );
       | 
 (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _|
-QualifiedIdInClass (_, _)|DestructorDecl (_, _)|ConstructorDecl (_, _)|
+QualifiedIdInClass (_, _)|DestructorDecl (_, _)|ConstructorDecl (_, _, _)|
 MemberField _|Access (_, _))
           -> ()
       );

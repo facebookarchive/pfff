@@ -287,3 +287,10 @@ let mk_constructor id (lp, params, rp) cp =
   { f_name = (None, noQscope, IdIdent id); f_type = ftyp; 
     f_storage = (NoSto, false), noii; f_body = cp
   }
+
+let opt_to_list_params params =
+  match params with
+  | Some (params, ellipsis) ->
+      (* todo? raise a warning that should not have ellipsis? *)
+      params
+  | None -> []

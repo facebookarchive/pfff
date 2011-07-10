@@ -253,7 +253,7 @@ and expression = expressionbis wrap
   | Cast          of fullType paren * expression
 
   (* gccext: *)        
-  | StatementExpr of compound paren (* ( )     new scope *) 
+  | StatementExpr of compound paren (* ( { } )     new scope *) 
   | GccConstructor  of fullType paren * initialiser comma_list brace
 
   (* c++ext: *)
@@ -530,7 +530,7 @@ and func_definition = {
  and func_or_else =
   | FunctionOrMethod of func_definition
   (* c++ext: special member function *)
-  | Constructor of func_definition * bool (* explicit *) (* * chain_call*)
+  | Constructor of func_definition (* TODO explicit/inline, chain_call *)
   | Destructor of func_definition
 
 (* ------------------------------------------------------------------------- *)
@@ -567,8 +567,11 @@ and class_definition = {
     | MemberField of fieldkind comma_list wrap (* ';' *)
     | MemberFunc of func_or_else    
 
-    (* MethodDecl is inside field_declaration *)
-    | ConstructorDecl of parameter comma_list paren * bool (* explicit *)
+    (* MethodDecl is inside field_declaration. TODO? should we move
+     * this in MemberField too? but ctor/dtor obey to different rules.
+     *)
+    | ConstructorDecl of 
+        string wrap2 * parameter comma_list paren * tok(*;*)
     | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
          (* ( ) void_opt *)
          
@@ -805,6 +808,7 @@ let (string_of_name_tmp: name -> string) = fun name ->
   | _ ->
       "TODO_string_of_name_tmp"
       (* raise Todo *)
+
 
 let (ii_of_id_name: name -> info list) = fun name ->
   let (_opt, _qu, id) = name in

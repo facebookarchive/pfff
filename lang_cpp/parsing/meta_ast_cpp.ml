@@ -844,10 +844,9 @@ and vof_func_or_else =
   | FunctionOrMethod v1 ->
       let v1 = vof_func_definition v1
       in Ocaml.VSum (("FunctionOrMethod", [ v1 ]))
-  | Constructor ((v1, v2)) ->
+  | Constructor ((v1)) ->
       let v1 = vof_func_definition v1
-      and v2 = Ocaml.vof_bool v2
-      in Ocaml.VSum (("Constructor", [ v1; v2 ]))
+      in Ocaml.VSum (("Constructor", [ v1 ]))
   | Destructor v1 ->
       let v1 = vof_func_definition v1 in Ocaml.VSum (("Destructor", [ v1 ]))
 and
@@ -912,10 +911,11 @@ and vof_class_member =
       in Ocaml.VSum (("MemberField", [ v1 ]))
   | MemberFunc v1 ->
       let v1 = vof_func_or_else v1 in Ocaml.VSum (("MemberFunc", [ v1 ]))
-  | ConstructorDecl ((v1, v2)) ->
-      let v1 = vof_paren (vof_comma_list vof_parameter) v1
-      and v2 = Ocaml.vof_bool v2
-      in Ocaml.VSum (("ConstructorDecl", [ v1; v2 ]))
+  | ConstructorDecl ((v1, v2, v3)) ->
+      let v1 = vof_wrap2 Ocaml.vof_string v1
+      and v2 = vof_paren (vof_comma_list vof_parameter) v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("ConstructorDecl", [ v1; v2; v3 ]))
   | DestructorDecl ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = Ocaml.vof_bool v2
