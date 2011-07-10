@@ -11,6 +11,11 @@ no mli
 no comment on general idea of the algorithm or module
 no comment at all
 
+put old code in comment to test stuff, or some && false for
+ debugging instead of using command line flags like -verbose
+
+no unit tests, no tests, no examples
+
 *** bad example of style: ocamlnet/netstring/nethtml.ml.
 
 bad nested functions,
