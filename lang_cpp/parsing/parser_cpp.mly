@@ -1229,7 +1229,7 @@ access_specifier:
 /*(* in c++ grammar there is a ;opt after function_definition but 
    * there is a conflict as it can also be an EmptyField *)*/
 member_declaration:
- | field_declaration      { MemberField $1 }
+ | field_declaration      { fixFieldOrMethodDecl $1 }
  | function_definition    { MemberFunc (FunctionOrMethod $1) }
  | qualified_id TPtVirg   
      { let name = (None, fst $1, snd $1) in
@@ -1259,11 +1259,11 @@ field_declaration:
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto) = fixDeclSpecForDecl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
-       ([(FieldDecl onedecl),noii], [$2])
+       ([(FieldDecl onedecl),noii], $2)
      }
  | decl_spec member_declarator_list TPtVirg 
      { let (t_ret, sto) = fixDeclSpecForDecl $1 in
-       ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), [$3])
+       ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
      }
 
 /*(* was called struct_declarator before *)*/
@@ -1274,12 +1274,7 @@ member_declarator:
          v_namei = Some (name, None);
          v_type = partialt t_ret; v_storage = sto; })
      }
- | declarator pure_specifier
-     { let (name, partialt) = $1 in (fun t_ret sto -> 
-       (*TODO detect methodDecl, use $2 *)
-       FieldDecl {v_namei = None; v_type = partialt t_ret; v_storage = sto;}
-       )
-     }
+ /*(* can also be an abstract when it's =0 on a function type *)*/
  | declarator TEq const_expr
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
@@ -1295,14 +1290,6 @@ member_declarator:
      }
  | TCol const_expr            
      { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
-
-/*
-(* We could also solve the ambiguity without the special-token technique by
- * merging pure_specifier and constant_initializer and disambiguating
- * by looking at the form of the declaratorsd.
- *)*/
-pure_specifier:
- | TEq TInt_ZeroVirtual { [$1;$2] }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 constructor special case *)*/

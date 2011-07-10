@@ -682,11 +682,12 @@ and v_method_decl = function
       and v5 = v_tok v5
       in ()
 
-  | MethodDecl ((v1, v2)) ->
+  | MethodDecl ((v1, v2, v3)) ->
       let v1 = v_onedecl v1
       and v2 =
         v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_tok v2 in ())
           v2
+      and v3 = v_tok v3
       in ()
 
 and v_class_member x =
@@ -694,7 +695,10 @@ and v_class_member x =
   function
   | Access ((v1, v2)) ->
       let v1 = v_wrap2 v_access_spec v1 and v2 = v_tok v2 in ()
-  | MemberField v1 -> let v1 = v_wrap (v_comma_list v_fieldkind) v1 in ()
+  | MemberField (v1, v2) -> 
+      let v1 = (v_comma_list v_fieldkind) v1 in 
+      let v2 = v_tok v2 in
+      ()
   | MemberFunc v1 -> let v1 = v_func_or_else v1 in ()
   | MemberDecl v1 -> let v1 = v_method_decl v1 in ()
   | QualifiedIdInClass ((v1, v2)) ->

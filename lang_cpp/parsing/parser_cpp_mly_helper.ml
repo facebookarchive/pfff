@@ -256,6 +256,30 @@ let fixFunc = function
             ("you are trying to do a function definition but you dont give " ^
              "any parameter", fake_pi))
 
+let fixFieldOrMethodDecl (xs, semicolon) =
+  match xs with
+  | [FieldDecl({
+      v_namei = Some (name, ini_opt);
+      v_type = (q, (FunctionType ft, ii_ft));
+      v_storage = sto;
+    }), noiicomma] ->
+      (* todo? define another type instead of onedecl? *)
+      MemberDecl (MethodDecl ({
+        v_namei = Some (name, None);
+        v_type = (q, (FunctionType ft, ii_ft));
+        v_storage = sto;
+      }, 
+      (match ini_opt with
+      | None -> None
+      | Some (EqInit(tokeq, InitExpr( ((C(Int("0"))), iizero)) )) ->
+          Some (tokeq, List.hd iizero)
+      | _ ->
+          raise (Semantic ("can't assign expression to method decl", fake_pi))
+      ), semicolon
+      ))
+
+  | _ -> MemberField (xs, semicolon)
+
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)

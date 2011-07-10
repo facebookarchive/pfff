@@ -535,7 +535,7 @@ and func_definition = {
   | Destructor of func_definition
 
  and method_decl =
-   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *)
+   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * tok(*;*)
    | ConstructorDecl of 
        string wrap2 * parameter comma_list paren * tok(*;*)
    | DestructorDecl of 
@@ -572,7 +572,7 @@ and class_definition = {
     | Access of access_spec wrap2 * tok (*:*)
 
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-    | MemberField of fieldkind comma_list wrap (* ';' *)
+    | MemberField of fieldkind comma_list * tok (*';'*)
     | MemberFunc of func_or_else    
     | MemberDecl of method_decl
          

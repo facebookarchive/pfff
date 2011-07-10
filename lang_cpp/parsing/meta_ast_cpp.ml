@@ -913,7 +913,7 @@ and vof_method_decl = function
       and v4 = Ocaml.vof_option vof_exn_spec v4
       and v5 = vof_tok v5
       in Ocaml.VSum (("DestructorDecl", [ v1; v2; v3; v4; v5 ]))
-  | MethodDecl ((v1, v2)) ->
+  | MethodDecl ((v1, v2, v3)) ->
       let v1 = vof_onedecl v1
       and v2 =
         Ocaml.vof_option
@@ -922,7 +922,8 @@ and vof_method_decl = function
              and v2 = vof_tok v2
              in Ocaml.VTuple [ v1; v2 ])
           v2
-      in Ocaml.VSum (("MethodDecl", [ v1; v2 ]))
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("MethodDecl", [ v1; v2; v3 ]))
 
 and vof_class_member =
   function
@@ -930,9 +931,10 @@ and vof_class_member =
       let v1 = vof_wrap2 vof_access_spec v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Access", [ v1; v2 ]))
-  | MemberField v1 ->
-      let v1 = vof_wrap (vof_comma_list vof_fieldkind) v1
-      in Ocaml.VSum (("MemberField", [ v1 ]))
+  | MemberField (v1, v2) ->
+      let v1 = (vof_comma_list vof_fieldkind) v1
+      and v2 = vof_tok v2
+      in Ocaml.VSum (("MemberField", [ v1; v2 ]))
   | MemberFunc v1 ->
       let v1 = vof_func_or_else v1 in Ocaml.VSum (("MemberFunc", [ v1 ]))
   | MemberDecl v1 ->
