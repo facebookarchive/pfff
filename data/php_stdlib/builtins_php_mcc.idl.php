@@ -87,10 +87,19 @@ const LEASE_GET_HIT = 0;
 const LEASE_GET_MISS = 0;
 const LEASE_GET_HOT_MISS = 0;
 const LEASE_GET_UNKNOWN = 0;
+const DETAILED_GET_UNKNOWN = 0;
 const DETAILED_GET_HIT = 0;
 const DETAILED_GET_MISS = 0;
 const DETAILED_GET_HOT_MISS = 0;
-const DETAILED_GET_UNKNOWN = 0;
+const DETAILED_GET_ERR_OOO = 0;
+const DETAILED_GET_ERR_TIMEOUT = 0;
+const DETAILED_GET_ERR_ABORTED = 0;
+const DETAILED_GET_ERR_LOCAL = 0;
+const DETAILED_GET_ERR_REMOTE = 0;
+const DETAILED_GET_ERR_BAD_KEY = 0;
+const DETAILED_GET_ERR_BAD_VALUE = 0;
+const DETAILED_GET_ERR_CONN = 0;
+const DETAILED_GET_WAITING = 0;
  function __construct($name, $persistent = true, $npoolprefix = k_MCC_POOLPREFIX_LEN, $mtu = k_MCC_MTU, $rxdgram_max = k_MCC_NODELAY, $nodelay = k_MCC_CONN_TMO_MS, $conn_tmo = k_MCC_CONN_TMO_MS, $conn_ntries = k_MCC_CONN_NTRIES, $tmo = k_MCC_TMO_MS, $dgram_ntries = k_MCC_DGRAM_NTRIES, $dgram_tmo_weight = k_MCC_DGRAM_TMO_WEIGHT, $server_retry_tmo = k_MCC_SERVER_RETRY_TMO_MS, $dgram_tmo_threshold = k_MCC_DGRAM_TMO_THRESHOLD, $window_max = k_MCC_WINDOW_MAX) { }
  function __destruct() { }
  function __tostring() { }

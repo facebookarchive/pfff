@@ -131,7 +131,3 @@ class PDOStatement {
  function __sleep() { }
  function __destruct() { }
 }
-class PDOException {
- function __construct() { }
- function __destruct() { }
-}

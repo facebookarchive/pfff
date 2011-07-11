@@ -5,6 +5,7 @@ function curl_copy_handle($ch) { }
 function curl_version($uversion = k_CURLVERSION_NOW) { }
 function curl_setopt($ch, $option, $value) { }
 function curl_setopt_array($ch, $options) { }
+function fb_curl_getopt($ch, $opt = 0) { }
 function curl_exec($ch) { }
 function curl_getinfo($ch, $opt = 0) { }
 function curl_errno($ch) { }

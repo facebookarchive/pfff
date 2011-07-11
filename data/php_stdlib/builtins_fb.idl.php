@@ -11,6 +11,12 @@ define('XHPROF_FLAGS_VTSC', 0);
 define('XHPROF_FLAGS_TRACE', 0);
 define('XHPROF_FLAGS_MEASURE_XHPROF_DISABLE', 0);
 define('XHPROF_FLAGS_MALLOC', 0);
+define('TAINT_NONE', 0);
+define('TAINT_HTML', 0);
+define('TAINT_SQL', 0);
+define('TAINT_MUTATED', 0);
+define('TAINT_ALL', 0);
+define('TAINT_TRACE', 0);
 function fb_thrift_serialize($thing) { }
 function fb_thrift_unserialize($thing, &$success, &$errcode = null_variant) { }
 function fb_serialize($thing) { }
@@ -39,7 +45,7 @@ function fb_parallel_query($sql_map, $max_thread = 50, $combine_result = true, $
 function fb_crossall_query($sql, $max_thread = 50, $retry_query_on_fail = true, $connect_timeout = -1, $read_timeout = -1, $timeout_in_ms = false) { }
 function fb_set_taint(&$str, $taint) { }
 function fb_unset_taint(&$str, $taint) { }
-function fb_get_taint($str) { }
+function fb_get_taint($str, $taint) { }
 function fb_const_fetch($key) { }
 function fb_output_compression($new_value) { }
 function fb_set_exit_callback($function) { }
