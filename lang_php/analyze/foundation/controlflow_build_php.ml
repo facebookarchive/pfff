@@ -495,10 +495,15 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            state.g |> add_arc (last_false_node, state.exiti)
        );
 
-       (* todo? if nobody connected to endi ? erase the node ? for instance
-        * if have only return in the try body ?
+       (* if nobody connected to endi erase the node. For instance
+        * if have only return in the try body.
         *)
-       Some endi
+       if (state.g#predecessors endi)#null then begin
+         state.g#del_node endi;
+         None
+       end
+       else 
+        Some endi
 
    (* 
     * For now we don't do any fancy analysis to statically detect
