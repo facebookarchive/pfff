@@ -1150,9 +1150,13 @@ val echo : string -> string
 
 val usleep : int -> unit
 
+exception CmdError of Unix.process_status * string
+
+val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.process_status
+
+(* will raise CmdError *)
 val process_output_to_list : ?verbose:bool -> string -> string list
 val cmd_to_list :            ?verbose:bool -> string -> string list (* alias *)
-val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.process_status
 
 val command2 : string -> unit
 val _batch_mode: bool ref
