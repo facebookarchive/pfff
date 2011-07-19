@@ -92,6 +92,7 @@ type directory_sort =
   | SortDirThenFiles
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
+val follow_symlinks: bool ref
 
 val tree_of_dir:
   ?filter_file:(Common.filename -> bool) ->

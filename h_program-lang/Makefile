@@ -9,6 +9,7 @@ SRC= programming_language.ml \
      scope_code.ml \
      archi_code.ml highlight_code.ml \
      archi_code_lexer.ml archi_code_parse.ml \
+     overlay_code.ml \
      tags_file.ml \
      pleac.ml \
      layer_code.ml \

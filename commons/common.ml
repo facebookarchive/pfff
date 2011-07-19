@@ -3163,7 +3163,9 @@ let cmd_to_list ?verbose command =
   let (l,exit_status) = process_output_to_list2 ?verbose command in 
   match exit_status with
   | Unix.WEXITED 0 -> l
-  | _ -> raise (CmdError (exit_status, String.concat "\n" l))
+  | _ -> raise (CmdError (exit_status, 
+                         (spf "CMD = %s, RESULT = %s" 
+                             command (String.concat "\n" l))))
 
 let process_output_to_list = cmd_to_list
 let cmd_to_list_and_status = process_output_to_list2
@@ -3284,12 +3286,26 @@ let is_executable file =
 (* _eff variant *)
 (* ---------------------------------------------------------------------- *)
 let _hmemo_unix_lstat_eff = Hashtbl.create 101 
+let _hmemo_unix_stat_eff = Hashtbl.create 101 
+
 let unix_lstat_eff file = 
-  profile_code "Unix.stat_eff" (fun () -> 
+  profile_code "Unix.lstat_eff" (fun () -> 
     if is_absolute file
     then 
       memoized _hmemo_unix_lstat_eff file (fun () ->
         Unix.lstat file
+      )
+    else 
+      (* this is for efficieny reason to be able to memoize the stats *)
+      failwith "must pass absolute path to unix_lstat_eff"
+  )
+
+let unix_stat_eff file = 
+  profile_code "Unix.stat_eff" (fun () -> 
+    if is_absolute file
+    then 
+      memoized _hmemo_unix_stat_eff file (fun () ->
+        Unix.stat file
       )
     else 
       (* this is for efficieny reason to be able to memoize the stats *)
@@ -3481,10 +3497,10 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
   xs +> List.map (fun x -> 
     if is_directory x
     then 
-      cmd_to_list 
+      cmd_to_list_and_status 
         ("find " ^ x  ^" -noleaf -type f " ^
             grep_dash_v_str
-        )
+        ) +> fst
     else [x]
   ) +> List.concat
 

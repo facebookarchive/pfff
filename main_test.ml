@@ -106,6 +106,11 @@ let pfff_extra_actions () = [
   Common.mk_action_1_arg test_json_pretty_printer;
   "-json_bench", " <file>",
   Common.mk_action_1_arg test_json_bench;
+  
+  "-check_overlay", " <dir_orig> <dir_overlay>",
+  Common.mk_action_2_arg (fun dir_orig dir_overlay ->
+    Overlay_code.check_overlay ~dir_orig ~dir_overlay;
+  )
 ]
 
 (*****************************************************************************)

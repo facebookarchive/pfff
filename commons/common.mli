@@ -1186,6 +1186,7 @@ val is_file      : path -> bool
 val is_executable : filename -> bool
 
 val unix_lstat_eff: filename -> Unix.stats
+val unix_stat_eff: filename -> Unix.stats
 
 (* require to pass absolute paths, and use internally a memoized lstat *)
 val filesize_eff : filename -> int

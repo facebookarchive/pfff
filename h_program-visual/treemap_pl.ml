@@ -235,7 +235,12 @@ let anamorphic_diviser_of_file ~root file =
 let treemap_file_size_hook2 ~root file =
 
   (* todo: should be passed to the hook!! *)
-  let filesize = Common.filesize_eff file in
+  let filesize = 
+    try (Common.unix_stat_eff file).Unix.st_size
+    with Unix.Unix_error _ ->
+      pr2 (spf "PB stating %s" file);
+      0
+  in
 
   (* anamorphic map :) *)
   let diviser_file = 
