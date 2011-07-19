@@ -74,7 +74,6 @@ type variable2 =
       (* PHP 5.3 *)
       | StaticMethodVar of ref_variable * tok * name
       | StaticObjVar of ref_variable * tok * var_without_obj
-      | LateStatic of tok * tok * name
 
 (*e: type variable2 *)
 
@@ -128,8 +127,6 @@ and basevarfun_to_variable basevarfun =
           let var = refvar_to_variable ref_var in
           let var2 = vwithoutobj_to_variable vwithoutobj in
           StaticObjCallVar (var, tok, var2, args)
-      | LateStatic (tok_static, tok_colcol, name) ->
-          LateStaticCall(tok_static, tok_colcol, name, args)
       )
       in
       mkvar v
@@ -195,7 +192,7 @@ and lift_qualifier_closer_to_var qu v =
         | Left3 qu -> 
             mkvar (ClassVar (qu, name))
         | Middle3 (tok1, tok2) ->
-            mkvar (LateStaticClassVar (tok1, tok2, name))
+            raise Impossible
         | Right3 (refvar, tok) ->
             let v = refvar_to_variable refvar in
             mkvar (DynamicClassVar (v, tok, name))

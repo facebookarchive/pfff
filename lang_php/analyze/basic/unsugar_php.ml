@@ -65,6 +65,8 @@ let resolve_class_name qu in_class =
   | (Parent (tok1), tok2), _ ->
       pr2 "PB: Use of parent:: in a class without a parent";
       Name ("UnkwnownUseOfParent", tok1), tok1, tok2
+  | (LateStatic tok1, _), _ ->
+      failwith "LateStatic"
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -88,16 +90,20 @@ let unsugar_self_parent_any2 any =
     );
 
     V.kqualifier = (fun (k, bigf) qu ->
-      let (unsugar_name, tok_orig, tok_colon) = 
-        resolve_class_name qu !in_class in
-      let name' = 
-        match unsugar_name with
-        | Name (s, _info_of_referenced_class) -> 
-            Name (s, tok_orig)
-        | XhpName (xs, _info_of_referenced_class) ->
-            XhpName (xs, tok_orig)
-      in
-      ClassName (name'), tok_colon
+      match qu with
+      | LateStatic tok, tok2 -> LateStatic tok, tok2
+      | _ ->
+
+          let (unsugar_name, tok_orig, tok_colon) = 
+            resolve_class_name qu !in_class in
+          let name' = 
+            match unsugar_name with
+            | Name (s, _info_of_referenced_class) -> 
+                Name (s, tok_orig)
+            | XhpName (xs, _info_of_referenced_class) ->
+                XhpName (xs, tok_orig)
+          in
+          ClassName (name'), tok_colon
     );
   })
   in

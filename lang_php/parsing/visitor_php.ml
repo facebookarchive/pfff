@@ -377,6 +377,7 @@ and v_class_name_or_selfparent =
   | ClassName v1 -> let v1 = v_fully_qualified_class_name v1 in ()
   | Self v1 -> let v1 = v_tok v1 in ()
   | Parent v1 -> let v1 = v_tok v1 in ()
+  | LateStatic v1 -> let v1 = v_tok v1 in ()
 
 and v_fully_qualified_class_name v = 
   let k x = v_name x in
@@ -631,7 +632,6 @@ and v_class_name_reference x =
       let v1 = v_variable v1
       and v2 = v_list v_obj_prop_access v2
       in ()
-  | ClassNameRefLateStatic v1 -> let v1 = v_tok v1 in ()
   in
   vin.kclass_name_reference (k, all_functions) x
 
@@ -738,9 +738,6 @@ and v_variablebis =
       let v1 = v_qualifier v1 and v2 = v_variable v2 in ()
   | ClassVar ((v1, v2)) ->
       let v1 = v_qualifier v1 and v2 = v_dname v2 in ()
-  | LateStaticClassVar (v1, v2, v3) ->
-      let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_dname v3 in
-      ()
   | DynamicClassVar (v1, v2, v3) ->
       let v1 = v_lvalue v1 and v2 = v_tok v2 and v3 = v_dname v3 in
       ()
@@ -757,12 +754,6 @@ and v_variablebis =
       in ()
   | StaticMethodCallVar ((v1, v2, v3, v4)) ->
       let v1 = v_variable v1
-      and v2 = v_tok v2
-      and v3 = v_name v3
-      and v4 = v_paren (v_comma_list v_argument) v4
-      in ()
-  | LateStaticCall ((v1, v2, v3, v4)) ->
-      let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_name v3
       and v4 = v_paren (v_comma_list v_argument) v4

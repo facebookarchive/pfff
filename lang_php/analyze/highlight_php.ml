@@ -309,6 +309,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (TypeMisc);
       | Hint (Self _ | Parent _) -> 
           ()
+      | Hint (LateStatic tok) -> 
+          tag tok BadSmell
       | HintArray tok ->
           tag tok (TypeMisc);
       );
@@ -537,11 +539,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           (* todo? special category for class variables ? *)
           tag info (Global (Use2 fake_no_use2))
 
-      | LateStaticClassVar (t1, t2, dname) ->
-          (* todo? colorize t1? *)
-          let info = Ast.info_of_dname dname in
-          tag info BadSmell
-
       | DynamicClassVar (v1, t2, dname) ->
           (* todo? colorize v1? bad to use dynamic variable ... *)
           let info = Ast.info_of_dname dname in
@@ -601,10 +598,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
         ->
           let ii = Lib_parsing_php.ii_of_any (Lvalue lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
-
-      | LateStaticCall (tok1, tok2, name, args) ->
-          (* todo? *)
-          ()
 
       | ObjAccess (_, _) 
       | VQualifier (_, _)
@@ -692,8 +685,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Class (Use2 fake_no_use2));
       | ClassNameRefStatic (Self _ | Parent _) ->
           ()
-      | ClassNameRefLateStatic _ ->
-          ()
+      | ClassNameRefStatic (LateStatic tok) ->
+          tag tok BadSmell
       | ClassNameRefDynamic _ ->
           ()
     );
@@ -710,6 +703,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag tok (Class (Use2 fake_no_use2));
       | ClassName _ ->
           k x
+      | LateStatic tok ->
+          tag tok BadSmell
     );
     (* -------------------------------------------------------------------- *)
 
