@@ -346,6 +346,54 @@ let visit_prog ?(find_entity=None) prog =
                 E.warning tok E.UglyGlobalDynamic
           )
 
+      (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php *)
+      | ExprStmt(
+         (Lv(
+          (FunCallSimple(Name((("param_post" | "param_get" | "param_request")
+                                  as kind, i_1)),
+            (i_2,
+             (Left(
+                Arg(
+                  (ConsArray(i_3, (i_4, array_args, i_20)),
+                   t_21))))::rest_param_xxx_args,
+             i_22)),
+          tlval_23)),
+         t_24), i_25) ->
+
+          let array_args = Ast.uncomma array_args in
+          let rest_param_xxx_args = Ast.uncomma rest_param_xxx_args in
+
+          (* have passed a 'prefix' arg, or nothing *)
+          if List.length rest_param_xxx_args <= 1
+          then begin
+              let prefix_opt =
+                match rest_param_xxx_args with
+                | [Arg (Sc(C(String(str_prefix, tok_prefix))),_t)] -> 
+                    Some str_prefix
+                | [] ->
+                    (match kind with
+                    | "param_post" -> Some "post_"
+                    | "param_get" -> Some "get_"
+                    | "param_request" -> Some "req_"
+                    | _ -> raise Impossible
+                    )
+                | _ -> 
+                    (* display an error? weird argument to param_xxx func? *)
+                    None
+              in
+              prefix_opt +> Common.do_option (fun prefix ->
+               array_args +> List.iter (function
+               | ArrayArrowExpr((Sc(C(String((param_string, tok_param)))), t_6),
+                               i_7,
+                               _typ_param) ->
+                   let dname = DName (prefix ^ param_string, tok_param) in
+                   add_binding dname (S.Local, ref 0);
+               | _ -> ()
+               );
+              )
+          end;
+          k x
+
       | StaticVars (_, vars_list, _) ->
           vars_list |> Ast.uncomma |> List.iter (fun (varname, affect_opt) ->
             add_binding varname (S.Static, ref 0);
@@ -643,7 +691,12 @@ let visit_prog ?(find_entity=None) prog =
     );
   }
   in
-  visitor (Program prog)
+  (* we must check if people used the variables declared in 
+   * param_post/param_get.
+   *)
+  do_in_new_scope_and_check (fun () -> 
+    visitor (Program prog)
+  )
 
 (*****************************************************************************)
 (* Main entry point *)
