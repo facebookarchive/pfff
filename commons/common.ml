@@ -1592,6 +1592,12 @@ let mk_action_3_arg f =
   | _ -> raise WrongNumberOfArguments
   )
 
+let mk_action_4_arg f = 
+  (function 
+  | [file1;file2;file3;file4] -> f file1 file2 file3 file4
+  | _ -> raise WrongNumberOfArguments
+  )
+
 let mk_action_n_arg f = f
 
 

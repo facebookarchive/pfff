@@ -575,6 +575,8 @@ val mk_action_0_arg : (unit -> unit)                       -> action_func
 val mk_action_1_arg : (string -> unit)                     -> action_func
 val mk_action_2_arg : (string -> string -> unit)           -> action_func
 val mk_action_3_arg : (string -> string -> string -> unit) -> action_func
+val mk_action_4_arg : (string -> string -> string -> string -> unit) -> 
+  action_func
 
 val mk_action_n_arg : (string list -> unit) -> action_func
 

@@ -28,6 +28,25 @@ open Common
  *)
 
 (*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+type overlay = {
+  orig_to_overlay: (Common.filename, Common.filename) Hashtbl.t;
+  overlay_to_orig: (Common.filename, Common.filename) Hashtbl.t;
+  data: (Common.filename (* overlay *) * Common.filename) list;
+}
+
+(*****************************************************************************)
+(* IO *)
+(*****************************************************************************)
+
+let load_overlay file =
+  Common.get_value file
+
+let save_overlay overlay file =
+  Common.write_value overlay file
+
+(*****************************************************************************)
 (* Check consistency *)
 (*****************************************************************************)
 
@@ -69,3 +88,117 @@ let check_overlay ~dir_orig ~dir_overlay =
   if not (null only_in_orig && null only_in_overlay)
   then failwith "Overlay is not OK"
   else pr2 "Overlay is OK"
+
+(*****************************************************************************)
+(* Generate equivalences *)
+(*****************************************************************************)
+
+let overlay_equivalences ~dir_orig ~dir_overlay  =
+  let dir_overlay = Common.realpath dir_overlay in
+  let dir_orig = Common.realpath dir_orig in
+  
+  let links = 
+    Common.cmd_to_list (spf "find %s -type l" dir_overlay) in
+  
+  let equiv = 
+    links +> List.map (fun link ->
+      let stat = Common.unix_stat_eff link in
+      match stat.Unix.st_kind with
+      | Unix.S_DIR ->
+          let children = 
+            Common.cmd_to_list (spf 
+              "cd %s; find * -type f" (link)) in
+          let dir = Common.realpath link in
+          
+          children +> List.map (fun child ->
+            let overlay = Filename.concat link child in
+            let orig = Filename.concat dir child in
+            overlay, orig
+          )
+      | Unix.S_REG ->
+          [(link, Common.realpath link)]
+      | _ ->
+          []
+    ) +> List.flatten
+  in
+  let data =
+  equiv +> Common.map_filter (fun (overlay, orig) ->
+    try 
+      Some (
+        Common.filename_without_leading_path dir_overlay overlay,
+        Common.filename_without_leading_path dir_orig orig
+      )
+    with exn ->
+      pr2 (spf "PB with %s, exn = %s" orig (Common.exn_to_s exn));
+      None
+  )
+  in
+  {
+    data = data;
+    overlay_to_orig = Common.hash_of_list data;
+    orig_to_overlay = Common.hash_of_list (data +> List.map Common.swap);
+  }
+
+let gen_overlay ~dir_orig ~dir_overlay ~output =
+  let equiv = overlay_equivalences ~dir_orig ~dir_overlay in
+  equiv.data +> List.iter pr2_gen;
+  save_overlay equiv output
+
+(*****************************************************************************)
+(* Adapt layer *)
+(*****************************************************************************)
+
+let adapt_layer layer overlay =
+  { layer with Layer_code.
+    files = layer.Layer_code.files +> Common.map_filter (fun (file, info) ->
+      try 
+        Some (Hashtbl.find overlay.orig_to_overlay file, info)
+      with Not_found ->
+        pr2 (spf "PB could not find %s in overlay" file);
+        None
+    );
+  }
+
+(* copy paste of the one in main_codemap.ml *)
+let layers_in_dir dir =
+  Common.readdir_to_file_list dir +> Common.map_filter (fun file ->
+    if file =~ "layer.*marshall"
+    then Some (Filename.concat dir file)
+    else None
+  )
+
+let adapt_layers ~overlay ~dir_layers_orig ~dir_layers_overlay =
+  let layers = layers_in_dir dir_layers_orig in
+  
+  layers +> List.iter (fun layer_filename ->
+    pr2 (spf "processing %s" layer_filename);
+    let layer = Layer_code.load_layer layer_filename in
+    let layer' = adapt_layer layer overlay in
+    Layer_code.save_layer layer' 
+      (Filename.concat dir_layers_overlay (Common.basename layer_filename))
+  )
+
+
+(*****************************************************************************)
+(* Adapt database code *)
+(*****************************************************************************)
+
+let adapt_database db overlay =
+  { db with Database_code.
+    files = db.Database_code.files +> Common.map_filter (fun (file, info) ->
+      try 
+        Some (Hashtbl.find overlay.orig_to_overlay file, info)
+      with Not_found ->
+        pr2 (spf "PB could not find %s in overlay" file);
+        None
+    );
+    entities = db.Database_code.entities +> Array.map (fun e ->
+      { e with Database_code.
+        e_file = 
+          try 
+            (Hashtbl.find overlay.orig_to_overlay e.Database_code.e_file)
+          with Not_found ->
+            "not_found_file_overlay";
+      }
+    );
+  }
