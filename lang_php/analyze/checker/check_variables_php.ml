@@ -346,7 +346,9 @@ let visit_prog ?(find_entity=None) prog =
                 E.warning tok E.UglyGlobalDynamic
           )
 
-      (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php *)
+      (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php 
+       * facebook specific? should be a hook instead to visit_prog?
+       *)
       | ExprStmt(
          (Lv(
           (FunCallSimple(Name((("param_post" | "param_get" | "param_request")
