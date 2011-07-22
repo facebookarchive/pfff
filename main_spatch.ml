@@ -124,7 +124,7 @@ let apply_transfo transfo xs =
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
       
-      let diff = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
+      let diff = Common.unix_diff file tmpfile in
       diff |> List.iter pr;
 
       if !apply_patch 
@@ -158,8 +158,7 @@ let main_action xs =
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
       
-      let (diff, _) = 
-        Common.cmd_to_list_and_status (spf "diff -u %s %s" file tmpfile) in
+      let diff = Common.unix_diff file tmpfile in
       diff |> List.iter pr;
       if !apply_patch 
       then Common.write_file ~file:file s;
@@ -210,7 +209,7 @@ let simple_transfo xs =
     let tmpfile = Common.new_temp_file "trans" ".php" in
     Common.write_file ~file:tmpfile s;
     
-    let diff = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
+    let diff = Common.unix_diff file tmpfile in
     diff |> List.iter pr;
   );
   ()

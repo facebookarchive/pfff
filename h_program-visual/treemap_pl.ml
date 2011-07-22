@@ -190,7 +190,7 @@ let anamorphic_diviser_of_file ~root file =
 
   | PL (Web Xml) -> 70.
 
-  | PL (Web Sql) -> 100.
+  | PL (Web Sql) -> 200.
 
   | PL (MiscPL "m4") -> 10.
 

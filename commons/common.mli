@@ -1126,6 +1126,7 @@ val nblines : filename -> int
 val nblines_eff : filename -> int
 (* better when really large file, but fork is slow so don't call it often *)
 val nblines_with_wc : filename -> int
+val unix_diff: filename -> filename -> string list
 
 val words_of_string_with_newlines: string -> string list
 

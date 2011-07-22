@@ -3183,6 +3183,12 @@ let nblines_with_wc2 file =
 let nblines_with_wc a = 
   profile_code "Common.nblines_with_wc" (fun () -> nblines_eff2 a)
 
+let unix_diff file1 file2 = 
+  let (xs, _status) = 
+    cmd_to_list_and_status (spf "diff -u %s %s" file1 file2) in
+  xs
+
+
 let get_mem() =
   cmd_to_list("grep VmData /proc/" ^ string_of_int (Unix.getpid()) ^ "/status")
   +> join ""

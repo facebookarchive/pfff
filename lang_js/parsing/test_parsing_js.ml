@@ -52,7 +52,7 @@ let test_unparse_js file =
   let s = Unparse_js.string_of_program2_using_tokens ast2 in
   pr2 s;
   Common.write_file ~file:tmpfile s;
-  let xs = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
+  let xs = Common.unix_diff file tmpfile in
   pr2 "diff = ";
   xs |> List.iter pr2;
   ()
