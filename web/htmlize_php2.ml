@@ -19,7 +19,7 @@ open Common
 module Ast = Ast_php
 module Db = Database_php
 
-module H = XHTML.M
+module H = HTML5.M
 
 module HC = Highlight_code
 
@@ -167,8 +167,10 @@ let htmlize_with_headers ~hook_token filename db =
   let html = 
     (H.html (*~a:[H.a_xmlns `W3_org_1999_xhtml; H.a_xml_lang "en"]*)
         (H.head
-            (H.title (H.pcdata "XHTML"))
-            [H.style ~contenttype:"text/css" [H.pcdata style ]])
+            (H.title (H.pcdata "XHTML")) [
+            (*H.style ~contenttype:"text/css" [H.pcdata style ]*)
+            ]
+        )
         (H.body
             ([H.h1 [H.pcdata filename];
               H.pre (inside_pre)
