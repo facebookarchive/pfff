@@ -12,16 +12,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
-
 open Common
 
 module Ast = Ast_php
 module Db = Database_php
+module HC = Highlight_code
 
 module H = HTML5.M
-
-module HC = Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -168,7 +165,7 @@ let htmlize_with_headers ~hook_token filename db =
     (H.html (*~a:[H.a_xmlns `W3_org_1999_xhtml; H.a_xml_lang "en"]*)
         (H.head
             (H.title (H.pcdata "XHTML")) [
-            (*H.style ~contenttype:"text/css" [H.pcdata style ]*)
+            H.style [H.pcdata style ]
             ]
         )
         (H.body

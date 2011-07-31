@@ -3,7 +3,6 @@ TOP=..
 # Configuration section
 #############################################################################
 
-
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/h_program-lang/ \
  $(TOP)/lang_php/parsing \

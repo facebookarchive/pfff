@@ -37,7 +37,7 @@ let htmlize_dir ~link dir db =
     (H.head
         (H.title (H.pcdata "XHTML"))
         [
-          (*H.style ~contenttype:"text/css" [H.pcdata Htmlize_php2.style ]*)
+          H.style [H.pcdata Htmlize_php2.style ]
         ])
     (H.body
         ((H.h1 [H.pcdata dir] )
@@ -60,12 +60,11 @@ let htmlize_dir ~link dir db =
 let main_service = 
   Eliom_services.service ["lxr"] (Eliom_parameters.string "path") ()
 
-(* from the eliom tutorial *)
 let _ = Eliom_output.Html5.register main_service
   (fun readable_path () ->
     (* todo? sanitized path ? *)
-
     let path = Db.readable_to_absolute_filename readable_path Global_db.db in
+
     let hook_token s tok categ =
       match categ with
       | Some (HC.Function (HC.Use2 _)) ->
@@ -75,14 +74,15 @@ let _ = Eliom_output.Html5.register main_service
               let file = Db.readable_filename_of_id id Global_db.db in
               Eliom_output.Html5.a main_service [H.pcdata s] file
             with (Not_found | Multi_found) as exn ->
-              Eliom_output.Html5.a main_service [H.pcdata s] (Common.exn_to_s exn)
+              Eliom_output.Html5.a main_service [H.pcdata s] 
+                (Common.exn_to_s exn)
             )
-        | _ -> H.pcdata s
-      in
-      let html = 
-        if Common.is_directory path
-        then htmlize_dir ~link:main_service path Global_db.db
-        else Htmlize_php2.htmlize_with_headers ~hook_token path Global_db.db 
-      in
-      Lwt.return html
+      | _ -> H.pcdata s
+    in
+    let html = 
+      if Common.is_directory path
+      then htmlize_dir ~link:main_service path Global_db.db
+      else Htmlize_php2.htmlize_with_headers ~hook_token path Global_db.db
+    in
+    Lwt.return html
   )

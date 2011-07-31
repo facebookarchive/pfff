@@ -42,5 +42,3 @@ for oclosure:
  cp -a * ~/pfff/external/ocsigen/oclosure/
  cd ~/pfff/external/ocsigen/oclosure/
  find -name "*.ml" | xargs rm -f
-
- 
