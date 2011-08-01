@@ -9,6 +9,8 @@ TOP=..
 
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/h_program-lang/ \
+ $(TOP)/h_visualization/ \
+ $(TOP)/h_program-visual/ \
  $(TOP)/lang_php/parsing \
   $(TOP)/lang_php/analyze \
   $(TOP)/lang_php/analyze/foundation \
@@ -27,6 +29,7 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
 #,oclosure
 
 OBJS_SERVER= \
+ _server/flag_web.cmo \
  _server/global_db.cmo _server/htmlize_php2.cmo \
  _server/lxr_server.cmo _server/dump_server.cmo \
  _server/server.cmo \
@@ -39,6 +42,16 @@ OBJS_CLIENT= \
  _client/codemap.cmo \
  _client/home.cmo \
 
+LIBS_CLIENT2= $(TOP)/commons/commons.cma \
+  $(TOP)/h_visualization/lib.cma
+
+SYSLIBS_CLIENT=str.cma unix.cma
+
+LIBS_SERVER2=
+SYSLIBS_SERVER=
+
+#JSOPT=-jsopt -pretty -jsopt -noinline
+
 ##############################################################################
 # Top rules
 ##############################################################################
@@ -48,7 +61,10 @@ all: var/app.cma var/static/app.js
 
 # server-side
 var/app.cma: $(OBJS_SERVER)
-	eliomc  -a -o $@ $^
+	eliomc -a -o $@ $(SYSLIBS_SERVER) $(LIBS_SERVER2) $^
+
+_server/flag_web.cmo: flag_web.ml
+	eliomc -c $(INCLUDES) $^
 
 _server/global_db.cmo: global_db.ml
 	eliomc -c $(INCLUDES) $^
@@ -78,24 +94,28 @@ var/static/app_oclosure.js: var/static/app.js
 	oclosure_req $^
 
 var/static/app.js: $(OBJS_CLIENT)
-	js_of_eliom -o $@  $^
+	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $^
 #-package oclosure
 
 _client/shared.cmo: shared.ml
-	js_of_eliom -c $^
+	js_of_eliom $(JSOPT) -c $^
 
 _client/client.cmo: client.ml
-	js_of_eliom -c $^
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
 #-package oclosure
 
 _client/home.cmo: home.eliom
 	eliomc  -infer $(INCLUDES) $^
-	js_of_eliom -c $^
+	js_of_eliom $(JSOPT) -c $^
 
 _client/codemap.cmo: codemap.eliom
 	eliomc  -infer $(INCLUDES) $^
-	js_of_eliom -c $^
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
 
+
+# dependencies
+_server/home.cmo: _server/codemap.cmo
+_client/codemap.cmo: _client/client.cmo
 
 
 run:
@@ -103,6 +123,7 @@ run:
 
 annot:
 	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) shared.ml
+	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) flag_web.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) global_db.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) htmlize_php2.mli
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) htmlize_php2.ml

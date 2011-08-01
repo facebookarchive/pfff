@@ -16,7 +16,7 @@ let main_service =
 
         H.h1 [Link.a Dump_server.main_service [H.pcdata "dumper"]  ()];
         H.h1 [Link.a Lxr_server.main_service  [H.pcdata "lxr"]     ""];
-        H.h1 [Link.a Codemap.main_service     [H.pcdata "codemap"] ()];
+        H.h1 [Link.a Codemap.main_service     [H.pcdata "codemap"] "."];
 
       ]))
   )

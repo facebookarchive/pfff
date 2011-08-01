@@ -1,5 +1,15 @@
+open Common
 module H = HTML5.M
 
+module Flag = Flag_web
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* App *)
+(*****************************************************************************)
 (* Without this, get some "sitedata" not defined js error.
  * Maybe some headers sent back by an eliom apps contains
  * some important information.
@@ -14,10 +24,14 @@ end)
 let main_service =
   App.register_service 
     ~path:["codemap"] 
-    ~get_params:Eliom_parameters.unit
-  (fun () () ->
+    ~get_params:(Eliom_parameters.string "path")
+  (fun path () ->
+    let path = Common.relative_to_absolute path in
+    let rects =
+      Server.treemap_generator [path]
+    in
     Eliom_services.onload
-      {{ Client.draw_canvas () }};
+      {{ Client.draw_treemap_rendering %rects }};
     Lwt.return
       (H.html
 	  (H.head
