@@ -201,9 +201,8 @@ let lex (string : string) =
     val_of_parser (alltokens (list_of_string string))
 
 
-
 let test1 () = 
-  Common.example
+  assert
   (lex "a x^2 + b x + c" 
     =
     [IDENT "a"; IDENT "x"; KWD "^"; INT "2"; KWD "+"; IDENT "b"; IDENT "x";

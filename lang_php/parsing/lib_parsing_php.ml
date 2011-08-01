@@ -183,7 +183,7 @@ let rec join_with_space_if_needed xs =
          y =~ "^[a-zA-Z0-9_]"
       then x ^ " " ^ (join_with_space_if_needed (y::xs))
       else x ^ (join_with_space_if_needed (y::xs))
-let _ = example
+let _ = assert
   (join_with_space_if_needed ["$x";"=";"print";"FOO"] = "$x=print FOO")
 
 
