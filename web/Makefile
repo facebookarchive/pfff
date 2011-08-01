@@ -109,6 +109,7 @@ annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) lxr_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) server.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) client.ml
 	rm -f *.cm*
 
 clean::
