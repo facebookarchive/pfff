@@ -21,9 +21,10 @@ LIBS_SHARED= -package deriving-ocsigen.syntax,js_of_ocaml.deriving.syntax \
   -syntax camlp4o
 LIBS_SERVER= -thread -package tyxml,eliom,eliom.server \
   $(LIBS_SHARED)
-LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client,oclosure \
+LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
   -package eliom.syntax,js_of_ocaml.syntax -syntax camlp4o \
   $(LIBS_SHARED)
+#,oclosure
 
 OBJS_SERVER= \
  _server/global_db.cmo _server/htmlize_php2.cmo \
@@ -42,7 +43,8 @@ OBJS_CLIENT= \
 # Top rules
 ##############################################################################
 
-all: var/app.cma var/static/app_oclosure.js
+all: var/app.cma var/static/app.js
+#_oclosure
 
 # server-side
 var/app.cma: $(OBJS_SERVER)
@@ -76,13 +78,15 @@ var/static/app_oclosure.js: var/static/app.js
 	oclosure_req $^
 
 var/static/app.js: $(OBJS_CLIENT)
-	js_of_eliom -o $@ -package oclosure  $^
+	js_of_eliom -o $@  $^
+#-package oclosure
 
 _client/shared.cmo: shared.ml
 	js_of_eliom -c $^
 
 _client/client.cmo: client.ml
-	js_of_eliom -c -package oclosure $^
+	js_of_eliom -c $^
+#-package oclosure
 
 _client/home.cmo: home.eliom
 	eliomc  -infer $(INCLUDES) $^

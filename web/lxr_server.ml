@@ -1,10 +1,14 @@
-open Eliom_pervasives
 open Common
+open Eliom_pervasives
 
 module Db = Database_php
 module HC = Highlight_code
 
 module H = HTML5.M
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (* 
  * The goal of this module is to provide a code browser a la LXR.
@@ -23,6 +27,10 @@ module H = HTML5.M
  * - http://en.wikipedia.org/wiki/OpenGrok
  * 
  *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 let htmlize_dir ~link dir db =
   let subdirs = Common.readdir_to_dir_list dir +> Common.sort in
@@ -57,6 +65,9 @@ let htmlize_dir ~link dir db =
     )
   )
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 let main_service = 
   Eliom_services.service ["lxr"] (Eliom_parameters.string "path") ()

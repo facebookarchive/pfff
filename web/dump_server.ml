@@ -2,15 +2,12 @@ open Eliom_pervasives
 
 module H = HTML5.M
 
-module App = Eliom_output.Eliom_appl (struct
-  let application_name = "app"
-end)
-
 (*****************************************************************************)
 (* main entry points *)
 (*****************************************************************************)
 
-let result_service = App.register_service ~path:["dumper_result"]
+let result_service = Eliom_output.Html5.register_service 
+  ~path:["dumper_result"]
   ~get_params:(Eliom_parameters.string "content")
   (fun (content) () ->
     let s =
@@ -25,7 +22,8 @@ let result_service = App.register_service ~path:["dumper_result"]
     ]
     )))
 
-let main_service = App.register_service ~path:["dumper"]
+let main_service = Eliom_output.Html5.register_service 
+  ~path:["dumper"]
   ~get_params:(Eliom_parameters.unit)
   (fun () () ->
     Lwt.return (H.html(H.head (H.title (H.pcdata "Demo")) []) (H.body [
@@ -36,9 +34,11 @@ let main_service = App.register_service ~path:["dumper"]
           [H.p [
             H.pcdata "File content: ";
             H.br ();
-            Eliom_output.Html5.textarea ~name ~rows:10 ~cols:80 ~value:"<?php\n" ();
+            Eliom_output.Html5.textarea ~name ~rows:10 ~cols:80 
+              ~value:"<?php\n" ();
             H.br ();
             Eliom_output.Html5.string_input ~input_type:`Submit ~value:"Go" ()
-          ]]);
+            ]
+          ]);
     ]
     )))
