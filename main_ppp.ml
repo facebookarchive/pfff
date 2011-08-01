@@ -570,6 +570,7 @@ let unparse_without_type_hints file =
       | Hint (ClassName name) -> Ast.info_of_name name
       | Hint (Self tok | Parent tok) -> tok
       | HintArray tok -> tok
+      | Hint (LateStatic tok) -> raise Impossible
     in
     token.Parse_info.transfo <- Remove;
   in

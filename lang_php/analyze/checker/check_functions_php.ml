@@ -73,6 +73,8 @@ let resolve_class_name qu =
   | ClassName (name) -> name
   | Self _ | Parent _ -> 
       failwith "check_functions_php: call unsugar_self_parent"
+  | LateStatic _ ->
+      failwith "late static: can't resolve, add a pattern match for LateStatic"
 
 (*****************************************************************************)
 (* Typing rules *)

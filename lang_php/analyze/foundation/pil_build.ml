@@ -173,7 +173,6 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
         let info = Ast_php.info_of_dname var in
         mkt (B.TodoLvalue info)
 
-    | A.LateStaticClassVar _ 
     | A.DynamicClassVar _ 
       ->
         raise Todo
@@ -223,8 +222,6 @@ let (linearize_expr: A.expr -> B.instr list * B.expr) = fun e ->
     | A.StaticObjCallVar _ ->
         raise Todo
     | A.StaticMethodCallVar _ ->
-        raise Todo
-    | A.LateStaticCall _ ->
         raise Todo
 
   and aux_args args = 

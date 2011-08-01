@@ -142,7 +142,7 @@ let spatch_unittest = [
               Common.write_file ~file:tmpfile s;
               tmpfile
         in
-        let diff = Common.cmd_to_list (spf "diff -u %s %s" file_res expfile) in
+        let diff = Common.unix_diff file_res expfile in
         diff |> List.iter pr;
         if List.length diff > 1
         then failwith (spf "PB with %s" expfile);

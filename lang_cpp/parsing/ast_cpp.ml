@@ -253,7 +253,7 @@ and expression = expressionbis wrap
   | Cast          of fullType paren * expression
 
   (* gccext: *)        
-  | StatementExpr of compound paren (* ( )     new scope *) 
+  | StatementExpr of compound paren (* ( {  } ) new scope*)
   | GccConstructor  of fullType paren * initialiser comma_list brace
 
   (* c++ext: *)
@@ -517,7 +517,7 @@ and func_definition = {
      ft_dots: (tok(*,*) * tok(*...*)) option;
      (* c++ext: *) 
      ft_const: tok option; (* only for methods *)
-     ft_throw: (tok * name comma_list2 paren) option;
+     ft_throw: exn_spec option;
    }
      and parameter = {
         p_name: string wrap2 option;
@@ -526,12 +526,20 @@ and func_definition = {
         (* c++ext: *)
         p_val: (tok (*=*) * expression) option;
       }
+    and exn_spec = (tok * name comma_list2 paren)
 
  and func_or_else =
   | FunctionOrMethod of func_definition
   (* c++ext: special member function *)
-  | Constructor of func_definition * bool (* explicit *) (* * chain_call*)
+  | Constructor of func_definition (* TODO explicit/inline, chain_call *)
   | Destructor of func_definition
+
+ and method_decl =
+   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * tok(*;*)
+   | ConstructorDecl of 
+       string wrap2 * parameter comma_list paren * tok(*;*)
+   | DestructorDecl of 
+       tok(*~*) * string wrap2 * tok option paren * exn_spec option * tok(*;*)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -564,13 +572,9 @@ and class_definition = {
     | Access of access_spec wrap2 * tok (*:*)
 
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-    | MemberField of fieldkind comma_list wrap (* ';' *)
+    | MemberField of fieldkind comma_list * tok (*';'*)
     | MemberFunc of func_or_else    
-
-    (* MethodDecl is inside field_declaration *)
-    | ConstructorDecl of parameter comma_list paren * bool (* explicit *)
-    | DestructorDecl of name(*IdDestructor*) * bool (* virtual*) 
-         (* ( ) void_opt *)
+    | MemberDecl of method_decl
          
     | QualifiedIdInClass of name (* ?? *) * tok(*;*)
          
@@ -588,7 +592,6 @@ and class_definition = {
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *)
         | BitField of string wrap2 option * tok(*:*) *
             fullType * constExpression
             (* fullType => BitFieldInt | BitFieldUnsigned *) 
@@ -805,6 +808,7 @@ let (string_of_name_tmp: name -> string) = fun name ->
   | _ ->
       "TODO_string_of_name_tmp"
       (* raise Todo *)
+
 
 let (ii_of_id_name: name -> info list) = fun name ->
   let (_opt, _qu, id) = name in

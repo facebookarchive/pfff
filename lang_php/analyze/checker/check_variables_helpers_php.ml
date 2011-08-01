@@ -213,9 +213,10 @@ let vars_passed_by_ref_in_any ~find_entity =
               (* TODO *)
               k x
 
-          | ClassNameRefLateStatic _ ->
-              (* todo ? *)
+          | ClassNameRefStatic (LateStatic _) ->
+              (* TODO *)
               k x
+
           | ClassNameRefDynamic _ ->
               (* todo ? *)
               k x

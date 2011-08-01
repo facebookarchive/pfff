@@ -4,6 +4,8 @@ function spl_classes() { }
 function spl_object_hash($obj) { }
 function hphp_object_pointer($obj) { }
 function hphp_get_this() { }
+function hphp_get_call_info($cls, $func) { }
+function hphp_get_call_info_extra($cls, $func) { }
 function class_implements($obj, $autoload = true) { }
 function class_parents($obj, $autoload = true) { }
 function iterator_apply($obj, $func, $params = null_array) { }

@@ -1067,6 +1067,7 @@ scalar:
     * special case rule in encaps. Maybe this is too restrictive.
     *)*/
   /*(* | T_STRING_VARNAME {  raise Todo } *)*/
+
 /*(*x: GRAMMAR scalar *)*/
 static_scalar: /* compile-time evaluated scalars */
  | common_scalar	 { StaticConstant $1 }
@@ -1107,7 +1108,8 @@ common_scalar:
   | T_RESOURCE_XDEBUG  { XdebugResource }
  /*(*e: common_scalar grammar rule hook *)*/
 
-class_constant: qualifier ident { $1, (Name $2) }
+class_constant: 
+  | qualifier ident { $1, (Name $2) }
 
 static_class_constant: class_constant { $1 } 
 /*(*x: GRAMMAR scalar *)*/
@@ -1158,17 +1160,6 @@ base_variable:
      { None,    $1 }
  | qualifier  variable_without_objects /*(*static_member*)*/ 
      { Some (Left3 $1), $2 }
-/*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
-   * for such a feature; it's everything except a static call ...
-   * 
-   * could be merged with the previous rule using qualifier if STATIC
-   * was made part of the qualifier type. Note that 5.3.0 refactored
-   * many parts of the grammar and I didn't really. Maybe I should
-   * more just copy what was done in Zend instead of adding my own
-   * new grammar rules because I think they are clearer.
-   *)*/
- | T_STATIC TCOLCOL variable_without_objects
-     { Some (Middle3 ($1, $2)), $3 }
  | variable_class_name TCOLCOL variable_without_objects 
      { Some (Right3 ($1, $2)), $3 }
 
@@ -1218,14 +1209,6 @@ function_head:
 /*(* PHP 5.3 *)*/
  | variable_class_name TCOLCOL ident { StaticMethodVar($1, $2, Name $3) }
  | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
-/*(* PHP 5.3 "late static binding". They could not have chosen a worst keyword
-   * for such a feature; it's everything except a static call ...
-   * 
-   * could be merged with the previous rule using qualifier if STATIC
-   * was made part of the qualifier type.
-   *)*/
- | T_STATIC TCOLCOL ident 
-     { LateStatic ($1, $2, Name $3) }
 
 /*(*x: GRAMMAR variable *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
@@ -1348,8 +1331,10 @@ qualifier: class_name_or_selfparent TCOLCOL { $1, $2 }
 
 class_name_or_selfparent:
  | fully_qualified_class_name { ClassName $1 }
- | T_SELF   { Self($1) }
- | T_PARENT { Parent($1) }
+ | T_SELF   { Self $1 }
+ | T_PARENT { Parent $1 }
+/*(* php 5.3 late static binding *)*/
+ | T_STATIC { LateStatic $1 }
 
 fully_qualified_class_name: 
  | ident { Name $1 }
@@ -1369,8 +1354,6 @@ variable_class_name: reference_variable { $1 }
 class_name_reference:
  | class_name_or_selfparent	{ ClassNameRefStatic $1 }
  | dynamic_class_name_reference	{ ClassNameRefDynamic (fst $1, snd $1) }
- /*(* PHP 5.3, "late static binding" *)*/
- | T_STATIC                     { ClassNameRefLateStatic $1 }
 
 dynamic_class_name_reference:
  | base_variable_bis { ($1, []) }

@@ -444,8 +444,9 @@ let (generate_patch:
    let tmpfile = Common.new_temp_file "genpatch" ".patch" in
    write_file ~file:tmpfile (Common.unlines lines');
    (* pr2 filename_in_project; *)
-   let xs = 
-     Common.cmd_to_list (spf "diff -u -p  \"%s\" \"%s\"" filename tmpfile) 
+   let (xs, _) = 
+     Common.cmd_to_list_and_status 
+       (spf "diff -u -p  \"%s\" \"%s\"" filename tmpfile) 
    in
    
    let xs' = xs +> List.map (fun s ->

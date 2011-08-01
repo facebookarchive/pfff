@@ -1592,6 +1592,12 @@ let mk_action_3_arg f =
   | _ -> raise WrongNumberOfArguments
   )
 
+let mk_action_4_arg f = 
+  (function 
+  | [file1;file2;file3;file4] -> f file1 file2 file3 file4
+  | _ -> raise WrongNumberOfArguments
+  )
+
 let mk_action_n_arg f = f
 
 
@@ -3146,6 +3152,8 @@ let do_in_fork f =
   else pid
 
 
+exception CmdError of Unix.process_status * string
+
 let process_output_to_list2 ?(verbose=false) command =
   let chan = Unix.open_process_in command in
   let res = ref ([] : string list) in
@@ -3158,7 +3166,13 @@ let process_output_to_list2 ?(verbose=false) command =
   with End_of_file ->
     let stat = Unix.close_process_in chan in (List.rev !res,stat)
 let cmd_to_list ?verbose command =
-  let (l,_) = process_output_to_list2 ?verbose command in l
+  let (l,exit_status) = process_output_to_list2 ?verbose command in 
+  match exit_status with
+  | Unix.WEXITED 0 -> l
+  | _ -> raise (CmdError (exit_status, 
+                         (spf "CMD = %s, RESULT = %s" 
+                             command (String.concat "\n" l))))
+
 let process_output_to_list = cmd_to_list
 let cmd_to_list_and_status = process_output_to_list2
 
@@ -3168,6 +3182,12 @@ let nblines_with_wc2 file =
   | _ -> failwith "pb in output of wc"
 let nblines_with_wc a = 
   profile_code "Common.nblines_with_wc" (fun () -> nblines_eff2 a)
+
+let unix_diff file1 file2 = 
+  let (xs, _status) = 
+    cmd_to_list_and_status (spf "diff -u %s %s" file1 file2) in
+  xs
+
 
 let get_mem() =
   cmd_to_list("grep VmData /proc/" ^ string_of_int (Unix.getpid()) ^ "/status")
@@ -3278,12 +3298,26 @@ let is_executable file =
 (* _eff variant *)
 (* ---------------------------------------------------------------------- *)
 let _hmemo_unix_lstat_eff = Hashtbl.create 101 
+let _hmemo_unix_stat_eff = Hashtbl.create 101 
+
 let unix_lstat_eff file = 
-  profile_code "Unix.stat_eff" (fun () -> 
+  profile_code "Unix.lstat_eff" (fun () -> 
     if is_absolute file
     then 
       memoized _hmemo_unix_lstat_eff file (fun () ->
         Unix.lstat file
+      )
+    else 
+      (* this is for efficieny reason to be able to memoize the stats *)
+      failwith "must pass absolute path to unix_lstat_eff"
+  )
+
+let unix_stat_eff file = 
+  profile_code "Unix.stat_eff" (fun () -> 
+    if is_absolute file
+    then 
+      memoized _hmemo_unix_stat_eff file (fun () ->
+        Unix.stat file
       )
     else 
       (* this is for efficieny reason to be able to memoize the stats *)
@@ -3475,10 +3509,10 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
   xs +> List.map (fun x -> 
     if is_directory x
     then 
-      cmd_to_list 
+      cmd_to_list_and_status 
         ("find " ^ x  ^" -noleaf -type f " ^
             grep_dash_v_str
-        )
+        ) +> fst
     else [x]
   ) +> List.concat
 

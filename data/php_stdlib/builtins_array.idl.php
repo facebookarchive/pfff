@@ -60,7 +60,7 @@ function shuffle(&$array) { }
 function count($var, $recursive = false) { }
 function sizeof($var, $recursive = false) { }
 function each(&$array) { }
-function current($array) { }
+function current(&$array) { }
 function hphp_current_ref(&$array) { }
 function next(&$array) { }
 function pos(&$array) { }
@@ -68,7 +68,8 @@ function prev(&$array) { }
 function reset(&$array) { }
 function end(&$array) { }
 function key(&$array) { }
-function hphp_get_iterator(&$iterable, $isMutable) { }
+function hphp_get_iterator($iterable) { }
+function hphp_get_mutable_iterator(&$iterable) { }
 function in_array($needle, $haystack, $strict = false) { }
 function range($low, $high, $step = 1) { }
 function array_diff($array1, $array2) { func_get_args();}

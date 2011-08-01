@@ -277,6 +277,14 @@ let options () = [
 
     "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
+    "-symlinks", Arg.Unit (fun () -> 
+      Treemap.follow_symlinks := true;
+    ),
+    " ";
+    "-no_symlinks", Arg.Unit (fun () ->
+      Treemap.follow_symlinks := false;
+    ),
+    " ";
 
     "-with_info", Arg.String (fun s -> db_file := Some s),
     " <db_light_file>";

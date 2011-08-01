@@ -891,6 +891,8 @@ type directory_sort =
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
 
+let follow_symlinks = ref false
+
 (*s: function tree_of_dir *)
 let tree_of_dir2 
   ?(filter_file=(fun _ -> true))  
@@ -942,6 +944,7 @@ let tree_of_dir2
   aux dir
 (*e: function tree_of_dir *)
 
+
 (* specialized version *)
 let tree_of_dir3
   ?(filter_file=(fun _ -> true))  
@@ -974,7 +977,22 @@ let tree_of_dir3
       | Unix.S_DIR -> 
           if filter_dir full
           then Common.push2 (aux full) res
-      (* symlink ?? *)
+      | Unix.S_LNK ->
+          if !follow_symlinks then
+          (try 
+          (match (Unix.stat full).Unix.st_kind with
+          | Unix.S_REG ->
+              if filter_file full
+              then Common.push2 (Leaf (full, file_hook full)) res
+          | Unix.S_DIR ->
+              if filter_dir full
+              then Common.push2 (aux full) res
+          | _ -> ()
+          )
+          with Unix.Unix_error _ ->
+            pr2 (spf "PB stat link at %s" full);
+          )
+          else ()
       | _ -> ()
     );
     Node(dir, List.rev !res)

@@ -28,13 +28,13 @@
      lang_html/parsing
      lang_cpp/parsing
      lang_php/analyze
-     lang_php/analyze/basic
-     lang_php/analyze/foundation
-     lang_php/analyze/database
-     lang_php/analyze/qa_test
-     lang_php/analyze/qa_code
-     lang_php/analyze/static_analysis
-     lang_php/analyze/checker
+      lang_php/analyze/basic
+      lang_php/analyze/foundation
+      lang_php/analyze/database
+      lang_php/analyze/qa_test
+      lang_php/analyze/qa_code
+      lang_php/analyze/static_analysis
+      lang_php/analyze/checker
      gui
      facebook
      mini_php
@@ -52,6 +52,7 @@
      facebook/visual
      facebook/qa_test
      facebook/qa_code
+     facebook/static_analysis
      facebook
      lang_php/matcher
      lang_php/compile
@@ -453,7 +454,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 10
+     (case 20
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -461,6 +462,8 @@
        (4 "-getMock_transfo /home/pad/pfff/tests/ppp/getMock_ex2.php")
 
        (10 "-test fb_coverage")
+
+       (20 "-test_abint /home/pad/pfff/demos/interpreter.php")
        )
      ))
    )
@@ -561,12 +564,14 @@
    (join-string 
     (list 
      "-debugger"
-     (case 10
+     (case 20
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
        (3 "-test_visualize_dependencies 1 /home/pad/pfff/facebook/tests/mini_www/flib/")
        (10 "-test")
+
+       (20 "/home/pad/www/flib/utils/async")
        )
      ))
    )

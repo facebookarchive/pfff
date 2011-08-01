@@ -1859,14 +1859,16 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   (* ugly *)
   text_with_user_pos := [];
 
+  (* coupling: with parsing2.ml *)
   (match FT.file_type_of_file file with
   | (
       FT.PL (FT.Web (FT.Php _))
     | FT.PL (FT.Web (FT.Js _))
+    | FT.PL (FT.Web (FT.Html _))
     | FT.PL (FT.ML _)
-    | FT.PL (FT.Cplusplus | FT.C)
+    | FT.PL (FT.Cplusplus _ | FT.C _)
     | FT.PL (FT.Thrift)
-    | FT.Text ("nw" | "tex"  | "texi" | "web")
+    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
     | FT.PL (FT.Lisp _)
     | FT.PL (FT.Haskell _)
     | FT.PL (FT.Python)
@@ -3248,6 +3250,7 @@ let icon_of_kind kind has_test =
   | Db.Field -> `CONNECT
   | Db.Macro -> `CONNECT
 
+  | (Db.TopStmt|Db.Interface) -> raise Todo
 
 
 module L=struct
@@ -3953,8 +3956,9 @@ type ast =
   | ML of Parse_ml.program2
   | Hs  of Parse_hs.program2
 
-  | Php of Parse_php.program2
+  | Html of Parse_html.program2
   | Js of Parse_js.program2
+  | Php of Parse_php.program2
 
   | Cpp of Parse_cpp.program2
 
@@ -3988,6 +3992,8 @@ module Db = Database_code
 
 open Highlight_code
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Parsing helpers *)
 (*****************************************************************************)
@@ -4000,8 +4006,9 @@ type ast =
   | ML  of Parse_ml.program2
   | Hs  of Parse_hs.program2
 
-  | Php of Parse_php.program2
+  | Html of Parse_html.program2
   | Js  of Parse_js.program2
+  | Php of Parse_php.program2
 
   | Cpp of Parse_cpp.program2
 
@@ -4014,6 +4021,8 @@ type ast =
   | Python of Parse_python.program2
 
   | Noweb of Parse_nw.program2
+
+  (* less? | Org of Org_mode.org ? *)
 
 let _hmemo_file = Hashtbl.create 101
 
@@ -4052,16 +4061,27 @@ let parse_lisp_cache a =
 
 let parse_php2 file = 
   Common.memoized _hmemo_file file (fun () -> 
+    Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
     let (ast2, stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast2 in
+    let ast = 
+      Parse_php.program_of_program2 ast2 in
     (* work by side effect on ast2 too *)
     Check_variables_php.check_and_annotate_program
       ast;
     Php ast2
+    )
   )
 let parse_php_cache a = 
   Common.profile_code "View.parse_php_cache" (fun () -> 
     match parse_php2 a with | Php a -> a | _ -> raise Impossible
+  )
+
+let parse_html2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Html (Parse_html.parse file))
+let parse_html_cache a = 
+  Common.profile_code "View.parse_html_cache" (fun () -> 
+    match parse_html2 a with | Html a -> a | _ -> raise Impossible
   )
 
 let parse_js2 file = 
@@ -4191,7 +4211,7 @@ let rewrite_categ_using_entities s categ file entities =
 (*****************************************************************************)
 
 (* coupling: right now if you add a language here, you need to whitelist it
- * also in draw2.draw_contents2.
+ * also in draw_microlevel.draw_contents2.
  * 
  * todo: ugly, lots of repetitive code. If factorize code in
  * parse_info.ml can at least factorize some of the Ast_xxx.str_of_xxx.
@@ -4199,7 +4219,6 @@ let rewrite_categ_using_entities s categ file entities =
 let tokens_with_categ_of_file file hentities = 
   let ftype = FT.file_type_of_file file in
   let prefs = Highlight_code.default_highlighter_preferences in
-
 
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
@@ -4500,7 +4519,7 @@ let tokens_with_categ_of_file file hentities =
       ) +> List.flatten
 
 
-  | FT.PL (FT.Cplusplus _ | FT.C | FT.Thrift) ->
+  | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift) ->
       let h = Hashtbl.create 101 in
 
       let ast2 = parse_cpp_cache file in
@@ -4569,6 +4588,42 @@ let tokens_with_categ_of_file file hentities =
       ) +> List.flatten
 
 
+  | FT.PL (FT.Web (FT.Html)) ->
+      let h = Hashtbl.create 101 in
+
+      let ast2 = parse_html_cache file in
+      ast2 +> (fun (ast, toks) ->
+        (* computing the token attributes *)
+        Highlight_html.visit_toplevel 
+          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+          prefs
+          (ast, toks)
+        ;
+
+        (* getting the text *)
+        toks |> Common.map_filter (fun tok -> 
+          let info = Token_helpers_html.info_of_tok tok in
+          let s = Token_helpers_html.str_of_tok tok in
+
+          if not (Parse_info.is_origintok info)
+          then None
+          else 
+            let categ = Common.hfind_option info h in
+            let categ = categ +> Common.fmap (fun categ ->
+                rewrite_categ_using_entities s categ file hentities
+              )
+            in
+            Some (s, categ,
+                 { l = PI.line_of_info info;
+                   c = PI.col_of_info info;
+                 })
+
+        )
+      )
+
+  | FT.Text ("org") ->
+      let org = Org_mode.parse file in
+      Org_mode.highlight org
 
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"
@@ -4666,6 +4721,14 @@ let async_set v a =
 
   "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
   " ";
+  "-symlinks", Arg.Unit (fun () -> 
+    Treemap.follow_symlinks := true;
+  ),
+  " ";
+  "-no_symlinks", Arg.Unit (fun () ->
+    Treemap.follow_symlinks := false;
+  ),
+  " ";
 
   "-with_info", Arg.String (fun s -> db_file := Some s),
   " <db_light_file>";
@@ -4687,6 +4750,21 @@ let async_set v a =
   " ";
   "-php_filter", Arg.Unit (fun () -> 
     filter := Treemap_pl.php_filter_file),
+  " ";
+  "-nw_filter", Arg.Unit (fun () -> 
+    filter := (fun file -> match File_type.file_type_of_file file with
+    | File_type.Text "nw" -> true | _ -> false)),
+  " ";
+  "-pfff_filter", Arg.Unit (fun () -> 
+    filter := treemap_pfff_filter),
+  " ";
+
+  "-cpp_filter", Arg.Unit (fun () -> 
+    Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
+    filter := (fun file ->
+      match File_type.file_type_of_file file with
+      | File_type.PL (File_type.C _ | File_type.Cplusplus _) -> true 
+      | _ -> false)),
   " ";
 
   "-verbose" , Arg.Set Flag.verbose_visual,
@@ -4778,6 +4856,8 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
 
     | Some (SH.ConstructorDef (use)) -> 1.2 *. multiplier_use use
+
+    | Some (SH.GrammarRule) -> 2.5
         
     (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
@@ -4787,8 +4867,10 @@ let size_font_multiplier_of_categ ~font_size_real categ =
         
     (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.
-    | Some (SH.CommentSection1) -> 4.
-    | Some (SH.CommentSection2) -> 3.5
+    | Some (SH.CommentSection1) -> 3.
+    | Some (SH.CommentSection2) -> 2.0
+    | Some (SH.CommentSection3) -> 1.2
+    | Some (SH.CommentSection4) -> 1.1
     | Some (SH.CommentEstet) -> 1.0
     | Some (SH.CommentCopyright) -> 0.5
 
@@ -4860,7 +4942,7 @@ let threshold_draw_label_font_size_real = ref
 
 let threshold_nb_rects_draw_content = ref 2500
 
-let threshold_too_many_entities = ref 300000
+let threshold_too_many_entities = ref 600000
 
 let top_n = ref 100
 
@@ -5214,6 +5296,17 @@ let set_gc () =
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
 
+let treemap_pfff_filter file =
+  match File_type.file_type_of_file file with
+  | File_type.PL (File_type.ML _)
+  | File_type.PL (File_type.Makefile) 
+      -> 
+      (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file)
+      && not (file =~ ".*commons/" || file =~ ".*external/")
+
+  | _ -> false
+
 (*****************************************************************************)
 (* Model helpers *)
 (*****************************************************************************)
@@ -5267,6 +5360,7 @@ let options () = [
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Flag_analyze_php.cmdline_flags_verbose () ++
+  Flag_parsing_cpp.cmdline_flags_macrofile () ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++
   [
@@ -5862,7 +5956,9 @@ let set_source_rgba_and_font_size_of_categ
   
   attrs |> List.iter (fun attr ->
     match attr with
-    | `FOREGROUND s -> 
+    | `FOREGROUND s 
+    | `BACKGROUND s (* todo: should really draw the background of the text *)
+      -> 
         let (r,g,b) = Color.rgbf_of_string s in
         (* this seems needed only on old version of Cario, or at least
          * on the cairo I am using under Linux. Under Mac I don't need

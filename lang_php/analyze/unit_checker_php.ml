@@ -38,6 +38,7 @@ let unittest =
     "tests/php/scheck/classes.php";
     "tests/php/scheck/static_methods.php";
     "tests/php/scheck/methods.php";
+    "tests/php/scheck/endpoint.php";
   ] 
   in
   let test_files = 

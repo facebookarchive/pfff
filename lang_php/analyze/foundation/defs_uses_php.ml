@@ -80,7 +80,12 @@ let defs_of_any any =
     V.kqualifier = (fun (k, bigf) x ->
       (match fst x with
       | ClassName _ -> () 
-      | Self _ | Parent _ -> failwith "defs_uses_php: call unsugar_self_parent"
+      | Self _ | Parent _ ->
+          pr2 "defs_uses_php: call unsugar_self_parent";
+          ()
+      | LateStatic _ -> 
+          pr2 "LateStatic";
+          ()
       );
       k x
     );
@@ -168,7 +173,12 @@ let uses_of_any any =
     V.kqualifier = (fun (k, bigf) x ->
       (match fst x with
       | ClassName _ -> ()
-      | Self _ | Parent _ -> failwith "defs_uses_php: call unsugar_self_parent"
+      | Self _ | Parent _ -> 
+          pr2 "defs_uses_php: call unsugar_self_parent";
+          ()
+      | LateStatic _ ->
+          pr2 "LateStatic";
+          ()
       );
       k x
     );

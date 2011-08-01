@@ -261,10 +261,6 @@ class DOMNodeList {
  function getIterator() { }
  function __destruct() { }
 }
-class DOMException {
- function __construct($message = "", $code = 0) { }
- function __destruct() { }
-}
 class DOMImplementation {
  function __construct() { }
  function createDocument($namespaceuri = null_string, $qualifiedname = null_string, $doctypeobj = null_object) { }

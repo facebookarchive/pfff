@@ -256,6 +256,30 @@ let fixFunc = function
             ("you are trying to do a function definition but you dont give " ^
              "any parameter", fake_pi))
 
+let fixFieldOrMethodDecl (xs, semicolon) =
+  match xs with
+  | [FieldDecl({
+      v_namei = Some (name, ini_opt);
+      v_type = (q, (FunctionType ft, ii_ft));
+      v_storage = sto;
+    }), noiicomma] ->
+      (* todo? define another type instead of onedecl? *)
+      MemberDecl (MethodDecl ({
+        v_namei = Some (name, None);
+        v_type = (q, (FunctionType ft, ii_ft));
+        v_storage = sto;
+      }, 
+      (match ini_opt with
+      | None -> None
+      | Some (EqInit(tokeq, InitExpr( ((C(Int("0"))), iizero)) )) ->
+          Some (tokeq, List.hd iizero)
+      | _ ->
+          raise (Semantic ("can't assign expression to method decl", fake_pi))
+      ), semicolon
+      ))
+
+  | _ -> MemberField (xs, semicolon)
+
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)
@@ -287,3 +311,23 @@ let mk_constructor id (lp, params, rp) cp =
   { f_name = (None, noQscope, IdIdent id); f_type = ftyp; 
     f_storage = (NoSto, false), noii; f_body = cp
   }
+
+let mk_destructor tilde id (lp, voidopt, rp) exnopt cp =
+  let ftyp = {
+    ft_ret = nQ, (BaseType Void, noii);
+    ft_params= (lp,  [], rp);
+    ft_dots = None;
+    ft_const = None;
+    ft_throw = exnopt;
+  }
+  in
+  { f_name = (None, noQscope, IdDestructor (tilde, id)); f_type = ftyp;
+    f_storage = (NoSto, false), noii; f_body = cp;
+  }
+
+let opt_to_list_params params =
+  match params with
+  | Some (params, ellipsis) ->
+      (* todo? raise a warning that should not have ellipsis? *)
+      params
+  | None -> []

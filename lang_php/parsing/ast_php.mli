@@ -80,8 +80,8 @@ and 'a comma_list_dots =
  (*e: type dname *)
 
  (*s: qualifiers *)
- and qualifier = class_name_or_selfparent * tok (* :: *)
-  and class_name_or_selfparent =
+ and qualifier = class_name_or_kwd * tok (* :: *)
+  and class_name_or_kwd =
    | ClassName of fully_qualified_class_name
    (* Could also transform at parsing time all occurences of self:: and
     * parent:: by their respective names. But I prefer to have all the 
@@ -89,6 +89,11 @@ and 'a comma_list_dots =
     *)
    | Self   of tok
    | Parent of tok
+   (* php 5.3 late static binding (no idea why it's useful ...) *)
+   | LateStatic of tok
+   (* todo? Put ClassVar of dname here so can factorize some of the
+    * StaticDynamicCall stuff in lvalue?
+    *)
 
  and fully_qualified_class_name = name
  (*e: qualifiers *)
@@ -299,10 +304,8 @@ type expr = exprbis * exp_info
      | ArrayArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
   (*x: AST expression rest *)
    and class_name_reference = 
-     | ClassNameRefStatic of class_name_or_selfparent
+     | ClassNameRefStatic of class_name_or_kwd
      | ClassNameRefDynamic of lvalue * obj_prop_access list
-     (* PHP 5.3 "late static binding" *)
-     | ClassNameRefLateStatic of tok (* static *)
      and obj_prop_access = tok (* -> *) * obj_property
   (*e: AST expression rest *)
 
@@ -364,11 +367,6 @@ and lvalue = lvaluebis * lvalue_info
      *)
     | VQualifier of qualifier * lvalue
     | ClassVar of qualifier * dname
-    (* we could merge with ClassVar, but I prefer different constructs for 
-     * very different programming language concept.
-     * todo? have also a LateStaticVQualifier?
-     *)
-    | LateStaticClassVar of tok (* static *) * tok (* :: *) * dname 
     | DynamicClassVar of lvalue * tok (* :: *) * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
@@ -381,10 +379,6 @@ and lvalue = lvaluebis * lvalue_info
         argument comma_list paren
     | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
         argument comma_list paren
-    (* PHP 5.3 "late static binding" *)
-    | LateStaticCall of tok (* static *) * tok (* ::: *) * name *
-        argument comma_list paren
-(*    | LateStaticVar of tok (* static *) * tok (* :: *) * dname *)
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name
     | ObjAccess of lvalue * obj_access
@@ -552,7 +546,7 @@ and func_def = {
     }
   (*x: AST function definition rest *)
       and hint_type = 
-        | Hint of class_name_or_selfparent
+        | Hint of class_name_or_kwd
         | HintArray  of tok
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option

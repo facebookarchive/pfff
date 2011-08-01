@@ -1,10 +1,14 @@
 open Common
+open Eliom_pervasives
 
 module Db = Database_php
 module HC = Highlight_code
 
-module H = XHTML.M
+module H = HTML5.M
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (* 
  * The goal of this module is to provide a code browser a la LXR.
@@ -24,6 +28,10 @@ module H = XHTML.M
  * 
  *)
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 let htmlize_dir ~link dir db =
   let subdirs = Common.readdir_to_dir_list dir +> Common.sort in
   let files = Common.readdir_to_file_list dir +> Common.sort in
@@ -37,7 +45,9 @@ let htmlize_dir ~link dir db =
   (H.html (*~a:[H.a_xmlns `W3_org_1999_xhtml; H.a_xml_lang "en"]*)
     (H.head
         (H.title (H.pcdata "XHTML"))
-        [H.style ~contenttype:"text/css" [H.pcdata Htmlize_php2.style ]])
+        [
+          H.style [H.pcdata Htmlize_php2.style ]
+        ])
     (H.body
         ((H.h1 [H.pcdata dir] )
           ::
@@ -46,7 +56,7 @@ let htmlize_dir ~link dir db =
             let readable = Db.absolute_to_readable_filename fullpath db in
             [(*H.h3 [H.pcdata subelement]; *)
              H.h1 [
-               Eliom_output.Xhtml.a link [H.pcdata readable] readable;
+               Eliom_output.Html5.a link [H.pcdata readable] readable;
              ];
              (* H.pre [H.pcdata readable]; *)
             ]
@@ -55,16 +65,18 @@ let htmlize_dir ~link dir db =
     )
   )
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 let main_service = 
   Eliom_services.service ["lxr"] (Eliom_parameters.string "path") ()
 
-(* from the eliom tutorial *)
-let _ = Eliom_output.Xhtml.register main_service
+let _ = Eliom_output.Html5.register main_service
   (fun readable_path () ->
     (* todo? sanitized path ? *)
-
     let path = Db.readable_to_absolute_filename readable_path Global_db.db in
+
     let hook_token s tok categ =
       match categ with
       | Some (HC.Function (HC.Use2 _)) ->
@@ -72,16 +84,17 @@ let _ = Eliom_output.Xhtml.register main_service
           (try 
               let id = Db.id_of_function s Global_db.db in
               let file = Db.readable_filename_of_id id Global_db.db in
-              Eliom_output.Xhtml.a main_service [H.pcdata s] file
+              Eliom_output.Html5.a main_service [H.pcdata s] file
             with (Not_found | Multi_found) as exn ->
-              Eliom_output.Xhtml.a main_service [H.pcdata s] (Common.exn_to_s exn)
+              Eliom_output.Html5.a main_service [H.pcdata s] 
+                (Common.exn_to_s exn)
             )
-        | _ -> H.pcdata s
-      in
-      let html = 
-        if Common.is_directory path
-        then htmlize_dir ~link:main_service path Global_db.db
-        else Htmlize_php2.htmlize_with_headers ~hook_token path Global_db.db 
-      in
-      Lwt.return html
+      | _ -> H.pcdata s
+    in
+    let html = 
+      if Common.is_directory path
+      then htmlize_dir ~link:main_service path Global_db.db
+      else Htmlize_php2.htmlize_with_headers ~hook_token path Global_db.db
+    in
+    Lwt.return html
   )

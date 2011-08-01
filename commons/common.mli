@@ -575,6 +575,8 @@ val mk_action_0_arg : (unit -> unit)                       -> action_func
 val mk_action_1_arg : (string -> unit)                     -> action_func
 val mk_action_2_arg : (string -> string -> unit)           -> action_func
 val mk_action_3_arg : (string -> string -> string -> unit) -> action_func
+val mk_action_4_arg : (string -> string -> string -> string -> unit) -> 
+  action_func
 
 val mk_action_n_arg : (string list -> unit) -> action_func
 
@@ -1124,6 +1126,7 @@ val nblines : filename -> int
 val nblines_eff : filename -> int
 (* better when really large file, but fork is slow so don't call it often *)
 val nblines_with_wc : filename -> int
+val unix_diff: filename -> filename -> string list
 
 val words_of_string_with_newlines: string -> string list
 
@@ -1150,9 +1153,13 @@ val echo : string -> string
 
 val usleep : int -> unit
 
+exception CmdError of Unix.process_status * string
+
+val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.process_status
+
+(* will raise CmdError *)
 val process_output_to_list : ?verbose:bool -> string -> string list
 val cmd_to_list :            ?verbose:bool -> string -> string list (* alias *)
-val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.process_status
 
 val command2 : string -> unit
 val _batch_mode: bool ref
@@ -1182,6 +1189,7 @@ val is_file      : path -> bool
 val is_executable : filename -> bool
 
 val unix_lstat_eff: filename -> Unix.stats
+val unix_stat_eff: filename -> Unix.stats
 
 (* require to pass absolute paths, and use internally a memoized lstat *)
 val filesize_eff : filename -> int

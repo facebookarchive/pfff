@@ -5,6 +5,7 @@ function stripcslashes($str) { }
 function addslashes($str) { }
 function stripslashes($str) { }
 function bin2hex($str) { }
+function hex2bin($str) { }
 function nl2br($str) { }
 function quotemeta($str) { }
 function str_shuffle($str) { }

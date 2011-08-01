@@ -144,7 +144,7 @@ let test_unparse_php file =
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
   let s = Unparse_php.string_of_program2_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;
-  let xs = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
+  let xs = Common.unix_diff file tmpfile in
   xs |> List.iter pr2;
   ()
 

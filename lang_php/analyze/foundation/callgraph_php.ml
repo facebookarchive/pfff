@@ -550,14 +550,18 @@ let static_method_callees_of_any any =
     V.klvalue = (fun (k,vx) x ->
       match Ast.untype  x with
       | StaticMethodCallSimple (qu, methname, args) ->
-          let sclass = 
+          let sclass_opt = 
             match fst qu with
             | ClassName (classname) ->
-                Ast.name classname
+                Some (Ast.name classname)
 
             | Self _ | Parent _ ->
                 failwith "use Unsugar_php.unsugar_self_parent"
+            | LateStatic _ ->
+                pr2 "LateStatic";
+                None
           in
+          sclass_opt +> Common.do_option (fun sclass ->
           (match methname with
           | Name (smeth, info2) ->
               let e = N.NameQualifiedS (sclass, smeth), info2 in
@@ -565,6 +569,7 @@ let static_method_callees_of_any any =
               k x
           | XhpName _ -> 
               failwith "TODO: XhpName"
+          )
           )
       | _ -> 
           k x
