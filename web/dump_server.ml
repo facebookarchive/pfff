@@ -1,3 +1,5 @@
+open Eliom_pervasives
+
 module H = HTML5.M
 
 module App = Eliom_output.Eliom_appl (struct

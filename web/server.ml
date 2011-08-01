@@ -1,3 +1,4 @@
+open Eliom_pervasives
 
 module H = HTML5.M
 module Link = Eliom_output.Html5

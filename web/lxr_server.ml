@@ -1,3 +1,4 @@
+open Eliom_pervasives
 open Common
 
 module Db = Database_php
