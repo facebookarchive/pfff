@@ -14,14 +14,13 @@
  *)
 
 open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
 
 module F = Figures
 module Color = Simple_color
 
 open Figures
-
-(* floats are the norm in graphics *)
-open Common.ArithFloatInfix
 
 (*****************************************************************************)
 (* Prelude *)
@@ -33,11 +32,15 @@ open Common.ArithFloatInfix
 
 type context = Dom_html.canvasRenderingContext2D Js.t
 
+type css_color = string
+
 (*****************************************************************************)
 (* Color *)
 (*****************************************************************************)
-let rgba_of_color (r,g,b) alpha =
-  raise Todo
+let rgba_of_rgbf (r,g,b) alpha =
+  let f_to_i f = int_of_float (100. * f) in
+  let (r, g, b) = f_to_i r, f_to_i g, f_to_i b in
+  spf "rgba(%d%%, %d%%, %d%%, %f)" r g b alpha
 
 (*****************************************************************************)
 (* Figures *)

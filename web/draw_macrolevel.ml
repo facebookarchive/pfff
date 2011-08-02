@@ -39,12 +39,7 @@ let draw_treemap_rectangle ?(color=None) ?(alpha=1.) ctx rect =
         let (r2,g2,b2) = c +> Color.rgbf_of_string in
         (r2 + r / 20., g2 + g / 20., b2 + b / 20.)
     in
-  let f_to_i f = int_of_float (100. * f) in
-   let (r, g, b) = f_to_i r, f_to_i g, f_to_i b in
-     
-   ctx##fillStyle <- Js.string 
-     (spf "rgba(%d%%, %d%%, %d%%, %f)" r g b alpha);
-   ()
+   ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha)
   );
   ctx##lineWidth <- 0.;
 

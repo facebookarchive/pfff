@@ -17,8 +17,7 @@ INCLUDEDIRS= $(TOP)/commons \
 
 INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
 
-FLAGS=-dtypes -g
-
+# for 'make annot'
 LIBS_SHARED= -package deriving-ocsigen.syntax,js_of_ocaml.deriving.syntax \
   -syntax camlp4o
 LIBS_SERVER= -thread -package tyxml,eliom,eliom.server \
@@ -29,6 +28,7 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
 #,oclosure
 
 OBJS_SERVER= \
+ _server/common_server.cmo \
  _server/flag_web.cmo \
  _server/dump_server.cmo \
  _server/server.cmo \
@@ -68,24 +68,9 @@ all: var/app.cma var/static/app.js
 var/app.cma: $(OBJS_SERVER)
 	eliomc -a -o $@ $(SYSLIBS_SERVER) $(LIBS_SERVER2) $^
 
-_server/flag_web.cmo: flag_web.ml
-	eliomc -c $(INCLUDES) $^
-
-_server/global_db.cmo: global_db.ml
-	eliomc -c $(INCLUDES) $^
-
 _server/htmlize_php2.cmo: htmlize_php2.ml
 	eliomc -c $(INCLUDES) -package tyxml htmlize_php2.mli
 	eliomc -c $(INCLUDES) -package tyxml $^
-
-_server/lxr_server.cmo: lxr_server.ml
-	eliomc -c $(INCLUDES) $^
-
-_server/dump_server.cmo: dump_server.ml
-	eliomc -c $(INCLUDES) $^
-
-_server/server.cmo: server.ml
-	eliomc -c $(INCLUDES) $^
 
 _server/home.cmo: home.eliom
 	eliomc  -c -noinfer $(INCLUDES) $^
@@ -117,21 +102,6 @@ _client/codemap.cmo: codemap.eliom
 	eliomc  -infer $(INCLUDES) $^
 	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
 
-_client/%.cmo: %.ml
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
-
-_client/%.cmi: %.mli
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
-
-
-# dependencies
-_server/home.cmo: _server/codemap.cmo
-_client/codemap.cmo: _client/client.cmo
-
-_client/canvas_helpers.cmo: _client/canvas_helpers.cmi
-_client/draw_macrolevel.cmo: _client/draw_macrolevel.cmi
-
-_client/client.cmo: _client/canvas_helpers.cmo _client/draw_macrolevel.cmo
 
 run:
 	CAML_LD_LIBRARY_PATH=../external/ocamlbdb ocsigenserver -c ocsigen.conf
@@ -145,6 +115,7 @@ annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) lxr_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) server.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) common_client.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.mli
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macrolevel.mli
@@ -155,6 +126,23 @@ annot:
 clean::
 	rm -rf _client _server
 
+depend::
+	eliomdep -client *.ml > .depend
+
 ##############################################################################
 # Generic ocaml rules
 ##############################################################################
+
+_server/%.cmo: %.ml
+	eliomc -c $(INCLUDES) $^
+
+_server/%.cmi: %.mli
+	eliomc -c $(INCLUDES) $^
+
+_client/%.cmo: %.ml
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+
+_client/%.cmi: %.mli
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+
+-include .depend
