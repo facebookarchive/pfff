@@ -1,61 +1,53 @@
-
-(*
 open Common
-*)
+open Common.ArithFloatInfix
+open Common_client
+
 module T = Treemap
+module F = Figures
+module Color = Simple_color
+module CanvasH = Canvas_helpers
 
-let pr2 s = 
-  Firebug.console##log(Js.string s)
-let spf = Printf.sprintf
+open Figures (* for the fields *)
 
-let draw_line ctx (color, size, (x1, y1), (x2, y2)) =
-  ctx##strokeStyle <- (Js.string color);
-  ctx##lineWidth <- float size;
-  ctx##beginPath();
-  ctx##moveTo(float x1, float y1);
-  ctx##lineTo(float x2, float y2);
-  ctx##stroke()
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
-let draw_line2 ctx (color, size, (x1, y1), (x2, y2)) =
-  ctx##strokeStyle <- (Js.string color);
-  ctx##lineWidth <- size;
-  ctx##beginPath();
-  ctx##moveTo(x1, y1);
-  ctx##lineTo(x2, y2);
-  ctx##stroke()
+(*****************************************************************************)
+(* Types, constants *)
+(*****************************************************************************)
+let width = 1200
+let height = 750
 
-let draw_canvas () =
-  pr2 "draw_canvas";
-  let width = 300 in
-  let height = 300 in
-  let canvas = Dom_html.createCanvas Dom_html.document in
-  let ctx = canvas##getContext (Dom_html._2d_) in
-  canvas##width <- width; 
-  canvas##height <- height;
-  ctx##lineCap <- Js.string "round";
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
-  Dom.appendChild Dom_html.document##body canvas;
-  draw_line ctx ("#ffaa33", 12, (10, 10), (200, 100))
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+let scale_zoom_pan_map ~width ~height ctx =
+  (* original matrix *)
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
 
+  ctx##scale (float_of_int width /. T.xy_ratio,
+              float_of_int height);
+  ()
 
 let draw_treemap_rendering (rects: Treemap.treemap_rendering) =
   pr2 "draw_treemap_rendering";
   pr2 (spf "# rects = %d " (List.length rects));
 
-  let width = 600 in
-  let height = 400 in
   let canvas = Dom_html.createCanvas Dom_html.document in
   let ctx = canvas##getContext (Dom_html._2d_) in
   canvas##width <- width; 
   canvas##height <- height;
+
+  scale_zoom_pan_map ~width ~height ctx;
+
+  rects +> List.iter (fun rect -> 
+    Draw_macrolevel.draw_treemap_rectangle ctx rect
+  );
+
   Dom.appendChild Dom_html.document##body canvas;
-
-  (*draw_line ctx ("#ffaa33", 12, (10, 10), (200, 100));*)
-
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
-  ctx##scale (float_of_int width /. T.xy_ratio,
-              float_of_int height);
-
-  draw_line2 ctx ("#ffaa33", 0.001, (0., 0.), (1.6, 1.0));
-
   ()

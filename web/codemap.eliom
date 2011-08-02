@@ -26,6 +26,7 @@ let main_service =
     ~path:["codemap"] 
     ~get_params:(Eliom_parameters.string "path")
   (fun path () ->
+    pr2 path;
     let path = Common.relative_to_absolute path in
     let rects =
       Server.treemap_generator [path]
@@ -43,6 +44,5 @@ let main_service =
                     (H.pcdata ""))
             ])
 	  (H.body [
-            H.h1 [H.pcdata "coucou"];
           ]))
   )

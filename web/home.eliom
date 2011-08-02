@@ -15,8 +15,9 @@ let main_service =
       (H.html (H.head (H.title (H.pcdata "Home")) []) (H.body [
 
         H.h1 [Link.a Dump_server.main_service [H.pcdata "dumper"]  ()];
-        H.h1 [Link.a Lxr_server.main_service  [H.pcdata "lxr"]     ""];
-        H.h1 [Link.a Codemap.main_service     [H.pcdata "codemap"] "."];
+(*        H.h1 [Link.a Lxr_server.main_service  [H.pcdata "lxr"]     ""]; *)
+        H.h1 [Link.a Codemap.main_service     [H.pcdata "codemap"] 
+                 "/home/pad/pfff/facebook/tests/mini_www"];
 
       ]))
   )

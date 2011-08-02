@@ -30,13 +30,18 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
 
 OBJS_SERVER= \
  _server/flag_web.cmo \
- _server/global_db.cmo _server/htmlize_php2.cmo \
- _server/lxr_server.cmo _server/dump_server.cmo \
+ _server/dump_server.cmo \
  _server/server.cmo \
  _server/codemap.cmo \
  _server/home.cmo \
 
+# _server/global_db.cmo _server/htmlize_php2.cmo \
+# _server/lxr_server.cmo \
+
 OBJS_CLIENT= \
+ _client/common_client.cmo \
+ _client/canvas_helpers.cmo \
+ _client/draw_macrolevel.cmo \
  _client/shared.cmo \
  _client/client.cmo \
  _client/codemap.cmo \
@@ -112,11 +117,21 @@ _client/codemap.cmo: codemap.eliom
 	eliomc  -infer $(INCLUDES) $^
 	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
 
+_client/%.cmo: %.ml
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+
+_client/%.cmi: %.mli
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+
 
 # dependencies
 _server/home.cmo: _server/codemap.cmo
 _client/codemap.cmo: _client/client.cmo
 
+_client/canvas_helpers.cmo: _client/canvas_helpers.cmi
+_client/draw_macrolevel.cmo: _client/draw_macrolevel.cmi
+
+_client/client.cmo: _client/canvas_helpers.cmo _client/draw_macrolevel.cmo
 
 run:
 	CAML_LD_LIBRARY_PATH=../external/ocamlbdb ocsigenserver -c ocsigen.conf
@@ -130,6 +145,10 @@ annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) lxr_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) server.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.mli
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macrolevel.mli
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macrolevel.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) client.ml
 	rm -f *.cm*
 
