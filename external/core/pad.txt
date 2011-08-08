@@ -5,4 +5,4 @@ the pfff emacs tag generator to find the builtins so one can jump easily
 to builtins too.
 
 I have removed outcometree.mli because it has a bad license.
-
+I've removed *Labels.mli because it's redundant with unix.mli IMHO.
