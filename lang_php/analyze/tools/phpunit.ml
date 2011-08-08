@@ -285,6 +285,7 @@ let is_phpunit_derived_class_heuristics def =
         | XhpDecl _ -> false
       ))
 
+(*
 let _ = example 
   (is_phpunit_derived_class_heuristics
     (Parse_php.class_def_of_string 
@@ -300,6 +301,8 @@ let _ = example
   (not (is_phpunit_derived_class_heuristics
       (Parse_php.class_def_of_string 
           "class a extends foo { }")))
+
+*)
 
 (* 
  * If you have a full code database, you can perform global analysis

@@ -256,7 +256,7 @@ val profile_code2 : string -> (unit -> 'a) -> 'a
 (* Test. But have a look at ounit.mli *)
 (*****************************************************************************)
 
-val example : bool -> unit
+(*old: val example : bool -> unit *)
 (* generate failwith <string> when pb *)
 val example2 : string -> bool -> unit 
 (* use Dumper to report when pb *)

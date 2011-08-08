@@ -147,10 +147,11 @@ let parse_caller_callee_string s =
   | _ ->
     failwith ("xhprof record wrong format: " ^ s)
 
-let _ = Common.example 
+(*
+let _ = example 
   (parse_caller_callee_string "foo::bar==>foobar" =*=
    { src = Method ("foo", "bar"); dest = Function "foobar"; })
-
+*)
 
 let remove_at_suffix s =
   if s =~ "\\(.*\\)@[0-9]+$"

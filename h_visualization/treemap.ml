@@ -323,8 +323,8 @@ let ratio_rect_dim (w,h) =
   (* assert (res >= 1.0); *)
   res
 
-let _ = example (ratio_rect_dim (6.0, 4.0) = 1.5) 
-let _ = example (ratio_rect_dim (4.0, 6.0) = 1.5) 
+let _ = assert (ratio_rect_dim (6.0, 4.0) = 1.5) 
+let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5) 
 (*e: function ratio_rect_dim *)
 
 (*s: function worst *)
@@ -346,11 +346,11 @@ let worst elems_in_row  size_side_row =
   max ((Common.square size_side_row *. rplus) /. Common.square s)
       (Common.square s /.  (Common.square size_side_row *. rminus))
 
-let _ = example
+let _ = assert
   (worst [6.0] 4.0 = 8.0 /. 3.0) (* 2.66667 *)
-let _ = example
+let _ = assert
   (worst [6.0;6.0] 4.0 = 3.0 /. 2.0) (* 1.5, which is close to 1 so better *)
-let _ = example
+let _ = assert
   (worst [6.0;6.0;4.0] 4.0 = 4.0) (* 4.0, we regress *)
 (*e: function worst *)
 
@@ -670,7 +670,7 @@ let balayer_right xs =
     Common.push2 (take i xs, drop i xs) res;
   done;
   List.rev !res
-let _ = example (balayer_right [1;2;3;2] = 
+let _ = assert (balayer_right [1;2;3;2] = 
     [
       [], [1;2;3;2];
       [1], [2;3;2];

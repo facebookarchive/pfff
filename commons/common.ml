@@ -712,9 +712,14 @@ let profile_code2 category f =
 
 (* See also OUnit *)
 
-let example b = assert b
-
-let _ex1 = example (enum 1 4 = [1;2;3;4])
+(* commented because does not play well with js_of_ocaml
+let example b =
+  assert b
+  if b 
+ then ()
+  else failwith ("ASSERT FAILURE: " ^ (Printexc.get_backtrace ()))
+*)
+let _ex1 = assert (enum 1 4 = [1;2;3;4])
 
 let assert_equal a b = 
   if not (a = b) 
@@ -1764,10 +1769,10 @@ let int_of_base s base =
     0  (List.rev (list_of_string s))
 
 let int_of_stringbits s = int_of_base s 2
-let _ = example (int_of_stringbits "1011" =|= 1*8 + 1*2 + 1*1)
+let _ = assert (int_of_stringbits "1011" =|= 1*8 + 1*2 + 1*1)
 
 let int_of_octal s = int_of_base s 8
-let _ = example (int_of_octal "017" =|= 15)
+let _ = assert (int_of_octal "017" =|= 15)
 
 (* let int_of_hex s = int_of_base s 16, NONONONO cos 'A' - '0' does not give 10 !! *)
 
@@ -2030,6 +2035,7 @@ let string_match_substring re s =
   try let _i = Str.search_forward re s 0 in true 
   with Not_found -> false
 
+(*
 let _ = 
   example(string_match_substring (Str.regexp "foo") "a foo b")
 let _ = 
@@ -2038,6 +2044,7 @@ let _ =
   example(string_match_substring (Str.regexp "\\bfoo\\b") "a\n\nfoo b")
 let _ = 
   example(string_match_substring (Str.regexp "\\bfoo_bar\\b") "a\n\nfoo_bar b")
+*)
 (* does not work :( 
 let _ = 
   example(string_match_substring (Str.regexp "\\bfoo_bar2\\b") "a\n\nfoo_bar2 b")
@@ -2065,10 +2072,15 @@ let (regexp_match: string -> string -> string) = fun s re ->
 
 
 let split sep s = Str.split (Str.regexp sep) s
+(*
 let _ = example (split "/" "" =*= [])
 let _ = example (split ":" ":a:b" =*= ["a";"b"])
+*)
 let join  sep xs = String.concat sep xs
+(*
 let _ = example (join "/" ["toto"; "titi"; "tata"] =$= "toto/titi/tata")
+*)
+
 (*
 let rec join str = function
   | [] -> ""
@@ -2108,9 +2120,10 @@ let all_match re s =
   ) s in
   List.rev !res
 
+(*
 let _ = example (all_match "\\(@[A-Za-z]+\\)" "ca va @Et toi @Comment" 
                   =*= ["@Et";"@Comment"])
-
+*)
 
 let global_replace_regexp re f_on_substr s = 
   let regexp = Str.regexp re in
@@ -2357,8 +2370,11 @@ let (filesuffix: filename -> string) = fun s ->
 let (fileprefix: filename -> string) = fun s -> 
   (try regexp_match s "\\(.+\\)\\.\\([a-zA-Z0-9_]+\\)?$" with _ ->  s)
 
+(*
 let _ = example (filesuffix "toto.c" =$= "c")
 let _ = example (fileprefix "toto.c" =$= "toto")
+*)
+
 
 (*
 assert (s = fileprefix s ^ filesuffix s)
@@ -2817,7 +2833,7 @@ let rough_days_between_dates d1 d2 =
   let (Days n2) = rough_days_since_jesus d2 in
   Days (n2 - n1)
 
-let _ = example 
+let _ = assert 
   (rough_days_between_dates 
       (DMY (Day 7, Jan, Year 1977))
       (DMY (Day 13, Jan, Year 1977)) =*= Days 6)
@@ -2978,7 +2994,7 @@ let timestamp () =
  * (enum 0 ((String.length s) - 1) +> List.map (String.get s))
  *)
 
-let _ = example (list_of_string "abcd" =*= ['a';'b';'c';'d'])
+let _ = assert (list_of_string "abcd" =*= ['a';'b';'c';'d'])
 
 (*
 let rec (list_of_stream: ('a Stream.t) -> 'a list) = 
@@ -3040,11 +3056,13 @@ let indent_string n s =
 (* todo opti ? *)
 let nblines s = 
   lines s +> List.length
+(*
 let _ = example (nblines "" =|= 0)
 let _ = example (nblines "toto" =|= 1)
 let _ = example (nblines "toto\n" =|= 1)
 let _ = example (nblines "toto\ntata" =|= 2)
 let _ = example (nblines "toto\ntata\n" =|= 2)
+*)
 
 (* old: fork sucks.
  * (* note: on MacOS wc outputs some spaces before the number of lines *)
@@ -3080,8 +3098,10 @@ let lines_with_nl_either s =
   | Str.Text s -> Left s
   )
 
+(*
 let _ = example (lines_with_nl_either "ab\n\nc" =*=
     [Left "ab"; Right (); Right (); Left "c"])
+*)
 
 (*****************************************************************************)
 (* Process/Files *)
@@ -3566,9 +3586,12 @@ let file_perm_of : u:rwx -> g:rwx -> o:rwx -> Unix.file_perm =
 
 (* pixel *)
 let has_env var = 
+  failwith "Common.has_env, TODO"
+(*
   try 
     let _ = Sys.getenv var in true
   with Not_found -> false
+*)
 
 (* emacs/lisp inspiration (eric cooper and yaron minsky use that too) *)
 let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) = 
@@ -3767,7 +3790,7 @@ let take_while p = take_until (p $ not)
 
 
 (* now in prelude: let rec drop n xs = ... *)
-let _ = example (drop 3 [1;2;3;4] =*= [4])
+let _ = assert (drop 3 [1;2;3;4] =*= [4])
 
 let rec drop_while p = function
   | [] -> []
@@ -3776,7 +3799,7 @@ let rec drop_while p = function
 
 let rec drop_until p xs = 
   drop_while (fun x -> not (p x)) xs
-let _ = example (drop_until (fun x -> x =|= 3) [1;2;3;4;5] =*= [3;4;5])
+let _ = assert (drop_until (fun x -> x =|= 3) [1;2;3;4;5] =*= [3;4;5])
 
 
 let span p xs = (take_while p xs, drop_while p xs)
@@ -3790,7 +3813,7 @@ let rec (span: ('a -> bool) -> 'a list -> 'a list * 'a list) =
         let (l1, l2) = span p xs in
         (x::l1, l2)
       else ([], x::xs)
-let _ = example ((span (fun x -> x <= 3) [1;2;3;4;1;2] =*= ([1;2;3],[4;1;2])))
+let _ = assert ((span (fun x -> x <= 3) [1;2;3;4;1;2] =*= ([1;2;3],[4;1;2])))
 
 let rec (span_tail_call: ('a -> bool) -> 'a list -> 'a list * 'a list) = 
  fun p xs ->
@@ -3804,7 +3827,7 @@ let rec (span_tail_call: ('a -> bool) -> 'a list -> 'a list * 'a list) =
            (List.rev acc, x::xs)
    in
    aux [] xs
-let _ = example (
+let _ = assert (
   (span_tail_call (fun x -> x <= 3) [1;2;3;4;1;2] =*= ([1;2;3],[4;1;2]))
  )
 
@@ -3846,7 +3869,7 @@ let (exclude_but_keep_attached: ('a -> bool) -> 'a list -> ('a * 'a list) list)=
        else (x, List.rev acc)::aux_filter [] xs
    in
    aux_filter [] xs
-let _ = example
+let _ = assert
   (exclude_but_keep_attached (fun x -> x =|= 3) [3;3;1;3;2;3;3;3] =*=
       [(1,[3;3]);(2,[3])])
 
@@ -3864,7 +3887,7 @@ let (group_by_post: ('a -> bool) -> 'a list -> ('a list * 'a) list * 'a list)=
    in
    aux_filter [] [] xs
 
-let _ = example
+let _ = assert
   (group_by_post (fun x -> x =|= 3) [1;1;3;2;3;4;5;3;6;6;6] =*= 
       ([([1;1],3);([2],3);[4;5],3], [6;6;6]))
 
@@ -3875,7 +3898,7 @@ let (group_by_pre: ('a -> bool) -> 'a list -> 'a list * ('a * 'a list) list)=
     List.rev unclassified,
     ys +> List.rev +> List.map (fun (xs, x) -> x, List.rev xs )
 
-let _ = example
+let _ = assert
   (group_by_pre (fun x -> x =|= 3) [1;1;3;2;3;4;5;3;6;6;6] =*= 
       ([1;1], [(3,[2]); (3,[4;5]); (3,[6;6;6])]))
                                            
@@ -3889,7 +3912,7 @@ let rec (split_when: ('a -> bool) -> 'a list -> 'a list * 'a * 'a list) =
       else 
         let (l1, a, l2) = split_when p xs in
         (x::l1, a, l2)
-let _ = example (split_when (fun x -> x =|= 3) 
+let _ = assert (split_when (fun x -> x =|= 3) 
                     [1;2;3;4;1;2] =*= ([1;2],3,[4;1;2]))
 
 
@@ -3914,14 +3937,14 @@ let rec split_gen_when_aux f acc xs =
 let split_gen_when f xs = 
   split_gen_when_aux f [] xs
 
-let _ = example (split_gen_when (function (42::xs) -> Some xs | _ -> None)
+let _ = assert (split_gen_when (function (42::xs) -> Some xs | _ -> None)
                     [1;2;42;4;5;6;42;7] =*= [[1;2];[4;5;6];[7]])
 
 
 (* generate exception (Failure "tl") if there is no element satisfying p *)
 let rec (skip_until: ('a list -> bool) -> 'a list -> 'a list) = fun p xs ->
   if p xs then xs else skip_until p (List.tl xs)
-let _ = example 
+let _ = assert 
   (skip_until (function 1::2::xs -> true | _ -> false) 
       [1;3;4;1;2;4;5] =*= [1;2;4;5])
 
@@ -4204,7 +4227,7 @@ let rec pack_safe n xs =
   | y::ys ->
       let (a, b) = splitAt n xs in
       a::pack_safe n b
-let _ = example      
+let _ = assert      
   (pack_safe 2 [1;2;3;4;5] =*= [[1;2];[3;4];[5]])
 
 let min_with f = function
@@ -4325,7 +4348,7 @@ let rec uncons_permut xs =
   let indexed = index_list xs in
   indexed +> List.map (fun (x, pos) -> (x, pos),  remove_elem_pos pos xs)
 let _ = 
-  example 
+  assert 
     (uncons_permut ['a';'b';'c'] =*= 
      [('a', 0),  ['b';'c'];
       ('b', 1),  ['a';'c'];
@@ -4429,8 +4452,8 @@ let sort_by_key_highfirst xs =
 let sort_by_key_lowfirst xs = 
   sort_prof (fun (k1,v1) (k2,v2) -> compare k1 k2) xs
 
-let _ = example (sort_by_key_lowfirst [4, (); 7,()] =*= [4,(); 7,()])
-let _ = example (sort_by_key_highfirst [4,(); 7,()] =*= [7,(); 4,()])
+let _ = assert (sort_by_key_lowfirst [4, (); 7,()] =*= [4,(); 7,()])
+let _ = assert (sort_by_key_highfirst [4,(); 7,()] =*= [7,(); 4,()])
 
 
 let sortgen_by_key_highfirst xs = 
@@ -4606,8 +4629,8 @@ let ex_columns1 =
     [1;4;7];
     [2;5;8];
   ]
-let _ = example (rows_of_matrix ex_matrix1 =*= ex_rows1)
-let _ = example (columns_of_matrix ex_matrix1 =*= ex_columns1)
+let _ = assert (rows_of_matrix ex_matrix1 =*= ex_rows1)
+let _ = assert (columns_of_matrix ex_matrix1 =*= ex_columns1)
 
 
 (*****************************************************************************)
@@ -4844,7 +4867,7 @@ let (lookup_list2: 'a -> ('a , 'b) assoc list -> ('b * int)) = fun el xxs ->
       with Not_found -> lookup_l_aux (i+1) xxs
   in lookup_l_aux 0 xxs
 
-let _ = example 
+let _ = assert 
   (lookup_list2 "c" [["a",1;"b",2];["a",1;"b",3];["a",1;"c",7]] =*= (7,2))
 
 
@@ -4909,11 +4932,13 @@ let hash_of_list xs =
     h
   end
 
+(*
 let _  =
   let h = Hashtbl.create 101 in
   Hashtbl.add h "toto" 1; 
   Hashtbl.add h "toto" 1;
   assert(hash_to_list h =*= ["toto",1; "toto",1])
+*)
  
 
 let hfind_default key value_if_not_found h = 
@@ -6245,12 +6270,14 @@ let find_common_root files =
   in
   aux [] dirs_part
 
+(*
 let _ = example 
   (find_common_root
       [(["home";"pad"], "foo.php");
        (["home";"pad";"bar"], "bar.php");
       ] 
     =*= ["home";"pad"])
+*)
 
 
 let dirs_and_base_of_file file = 
@@ -6263,8 +6290,11 @@ let dirs_and_base_of_file file =
   in
   dirs, base
 
+(*
 let _ = example
   (dirs_and_base_of_file "/home/pad/foo.php" =*= (["home";"pad"], "foo.php"))
+*)
+
 
 let inits_of_absolute_dir dir = 
   assert (is_absolute dir);
@@ -6295,12 +6325,13 @@ let inits_of_relative_dir dir =
    join "/" xs
   )
 
+(*
 let _ = example
   (inits_of_absolute_dir "/usr/bin" =*= (["/"; "/usr"; "/usr/bin"]))
 
 let _ = example
   (inits_of_relative_dir "usr/bin" =*= (["usr"; "usr/bin"]))
-
+*)
   
 
 (* main entry *)
@@ -6377,13 +6408,14 @@ let common_prefix_of_files_or_dirs xs =
   profile_code "Common.common_prefix_of" (fun () ->
     common_prefix_of_files_or_dirs2 xs)
 
+(*
 let _ = 
   example
     (common_prefix_of_files_or_dirs ["/home/pad/pfff/visual";
                                      "/home/pad/pfff/commons";]
      =*= "/home/pad/pfff"
     )
-
+*)
 
 (*****************************************************************************)
 (* Misc/test *)
