@@ -59,7 +59,13 @@ let check_overlay ~dir_orig ~dir_overlay =
   let links = 
     Common.cmd_to_list (spf "find %s -type l" dir_overlay) in
 
-  let links = links +> List.map Common.realpath in
+  let links = links +> Common.map_filter (fun file ->
+    try Some (Common.realpath file)
+    with Failure s ->
+      pr2 s;
+      None
+  )
+  in
   let files2 = 
     links +> List.map (fun file_or_dir -> 
       Common.files_of_dir_or_files_no_vcs_nofilter [file_or_dir]
