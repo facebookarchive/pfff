@@ -28,21 +28,37 @@ let main_service =
   (fun path () ->
     pr2 path;
     let path = Common.relative_to_absolute path in
-    let rects =
-      Server.treemap_generator [path]
-    in
+    let rects = Server.treemap_generator [path] in
+
     Eliom_services.onload
       {{ Client.draw_treemap_rendering %rects }};
     Lwt.return
-      (H.html
-	  (H.head
-	    (H.title (H.pcdata "Codemap"))
- 	    [ 
-              H.unique
-                (H.script
-                    ~a:[H.a_src (H.uri_of_string "app.js")]
-                    (H.pcdata ""))
-            ])
+      (H.html 
+          (H.head (H.title (H.pcdata "Codemap")) [ 
+            H.unique (H.script ~a:[H.a_src (H.uri_of_string "app.js")] 
+                         (H.pcdata ""))
+          ])
+	  (H.body [
+          ]))
+  )
+
+let test_codemap_micro =
+  App.register_service 
+    ~path:["micro"] 
+    ~get_params:(Eliom_parameters.string "path")
+  (fun path () ->
+    pr2 path;
+    let path = Common.relative_to_absolute path in
+    let lines = Common.cat path in
+
+    Eliom_services.onload
+      {{ Client.draw_file %lines }};
+    Lwt.return
+      (H.html 
+          (H.head (H.title (H.pcdata "Micro")) [ 
+            H.unique (H.script ~a:[H.a_src (H.uri_of_string "app.js")] 
+                         (H.pcdata ""))
+          ])
 	  (H.body [
           ]))
   )

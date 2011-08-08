@@ -72,9 +72,9 @@ _server/htmlize_php2.cmo: htmlize_php2.ml
 	eliomc -c $(INCLUDES) -package tyxml htmlize_php2.mli
 	eliomc -c $(INCLUDES) -package tyxml $^
 
+
 _server/home.cmo: home.eliom
 	eliomc  -c -noinfer $(INCLUDES) $^
-
 _server/codemap.cmo: codemap.eliom
 	eliomc  -c -noinfer $(INCLUDES) $^
 
@@ -87,17 +87,10 @@ var/static/app.js: $(OBJS_CLIENT)
 	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $^
 #-package oclosure
 
-_client/shared.cmo: shared.ml
-	js_of_eliom $(JSOPT) -c $^
-
-_client/client.cmo: client.ml
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
-#-package oclosure
 
 _client/home.cmo: home.eliom
 	eliomc  -infer $(INCLUDES) $^
 	js_of_eliom $(JSOPT) -c $^
-
 _client/codemap.cmo: codemap.eliom
 	eliomc  -infer $(INCLUDES) $^
 	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
@@ -127,7 +120,11 @@ clean::
 	rm -rf _client _server
 
 depend::
-	eliomdep -client *.ml > .depend
+	eliomdep -client *.ml *.eliom > .depend
+	eliomdep -server *.ml *.eliom >> .depend
+
+# eliomdep does not handle dependencies between .eliom files for now
+_server/home.cmo: _server/codemap.cmo
 
 ##############################################################################
 # Generic ocaml rules

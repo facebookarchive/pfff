@@ -51,3 +51,42 @@ let draw_treemap_rendering (rects: Treemap.treemap_rendering) =
 
   Dom.appendChild Dom_html.document##body canvas;
   ()
+
+
+let draw_file lines =
+  pr2 "draw_file";
+  pr2 (spf "# lines = %d " (List.length lines));
+
+  let canvas = Dom_html.createCanvas Dom_html.document in
+  let ctx = canvas##getContext (Dom_html._2d_) in
+  canvas##width <- width; 
+  canvas##height <- height;
+
+(* http://stackoverflow.com/questions/6278249/html5-canvas-font-size 
+ * with 200 px or more, firefox goes back to the default font
+ * (chrome is fine though).
+ *)
+
+  ctx##font <- Js.string (spf "%d px serif" 200);
+  ctx##fillStyle <- Js.string "#000";
+
+  let text = "foobar" in
+  let metric = ctx##measureText (Js.string text) in
+  let width_text = metric##width in
+  pr2 (spf "width text = %f" width_text);
+
+  ctx##fillText (Js.string "foobar", 100., 100.);
+
+(*
+  scale_zoom_pan_map ~width ~height ctx;
+  ctx##font <- Js.string (spf "%d%%" 2000);
+
+  ctx##fillText (Js.string "foobar", 0.5, 0.5);
+*)  
+
+(*
+  ctx##rotate(0.5);
+  ctx##fillText (Js.string "foobar", 200., 100.);
+*)
+  Dom.appendChild Dom_html.document##body canvas;
+  ()
