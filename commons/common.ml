@@ -2035,6 +2035,7 @@ let string_match_substring re s =
   try let _i = Str.search_forward re s 0 in true 
   with Not_found -> false
 
+(*
 let _ = 
   example(string_match_substring (Str.regexp "foo") "a foo b")
 let _ = 
@@ -2043,6 +2044,7 @@ let _ =
   example(string_match_substring (Str.regexp "\\bfoo\\b") "a\n\nfoo b")
 let _ = 
   example(string_match_substring (Str.regexp "\\bfoo_bar\\b") "a\n\nfoo_bar b")
+*)
 (* does not work :( 
 let _ = 
   example(string_match_substring (Str.regexp "\\bfoo_bar2\\b") "a\n\nfoo_bar2 b")
@@ -2070,10 +2072,15 @@ let (regexp_match: string -> string -> string) = fun s re ->
 
 
 let split sep s = Str.split (Str.regexp sep) s
+(*
 let _ = example (split "/" "" =*= [])
 let _ = example (split ":" ":a:b" =*= ["a";"b"])
+*)
 let join  sep xs = String.concat sep xs
+(*
 let _ = example (join "/" ["toto"; "titi"; "tata"] =$= "toto/titi/tata")
+*)
+
 (*
 let rec join str = function
   | [] -> ""
@@ -2113,9 +2120,10 @@ let all_match re s =
   ) s in
   List.rev !res
 
+(*
 let _ = example (all_match "\\(@[A-Za-z]+\\)" "ca va @Et toi @Comment" 
                   =*= ["@Et";"@Comment"])
-
+*)
 
 let global_replace_regexp re f_on_substr s = 
   let regexp = Str.regexp re in
@@ -2362,8 +2370,11 @@ let (filesuffix: filename -> string) = fun s ->
 let (fileprefix: filename -> string) = fun s -> 
   (try regexp_match s "\\(.+\\)\\.\\([a-zA-Z0-9_]+\\)?$" with _ ->  s)
 
+(*
 let _ = example (filesuffix "toto.c" =$= "c")
 let _ = example (fileprefix "toto.c" =$= "toto")
+*)
+
 
 (*
 assert (s = fileprefix s ^ filesuffix s)
@@ -3045,11 +3056,13 @@ let indent_string n s =
 (* todo opti ? *)
 let nblines s = 
   lines s +> List.length
+(*
 let _ = example (nblines "" =|= 0)
 let _ = example (nblines "toto" =|= 1)
 let _ = example (nblines "toto\n" =|= 1)
 let _ = example (nblines "toto\ntata" =|= 2)
 let _ = example (nblines "toto\ntata\n" =|= 2)
+*)
 
 (* old: fork sucks.
  * (* note: on MacOS wc outputs some spaces before the number of lines *)
@@ -3085,8 +3098,10 @@ let lines_with_nl_either s =
   | Str.Text s -> Left s
   )
 
+(*
 let _ = example (lines_with_nl_either "ab\n\nc" =*=
     [Left "ab"; Right (); Right (); Left "c"])
+*)
 
 (*****************************************************************************)
 (* Process/Files *)
@@ -3571,9 +3586,12 @@ let file_perm_of : u:rwx -> g:rwx -> o:rwx -> Unix.file_perm =
 
 (* pixel *)
 let has_env var = 
+  failwith "Common.has_env, TODO"
+(*
   try 
     let _ = Sys.getenv var in true
   with Not_found -> false
+*)
 
 (* emacs/lisp inspiration (eric cooper and yaron minsky use that too) *)
 let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) = 
@@ -4914,11 +4932,13 @@ let hash_of_list xs =
     h
   end
 
+(*
 let _  =
   let h = Hashtbl.create 101 in
   Hashtbl.add h "toto" 1; 
   Hashtbl.add h "toto" 1;
   assert(hash_to_list h =*= ["toto",1; "toto",1])
+*)
  
 
 let hfind_default key value_if_not_found h = 
@@ -6250,12 +6270,14 @@ let find_common_root files =
   in
   aux [] dirs_part
 
+(*
 let _ = example 
   (find_common_root
       [(["home";"pad"], "foo.php");
        (["home";"pad";"bar"], "bar.php");
       ] 
     =*= ["home";"pad"])
+*)
 
 
 let dirs_and_base_of_file file = 
@@ -6268,8 +6290,11 @@ let dirs_and_base_of_file file =
   in
   dirs, base
 
+(*
 let _ = example
   (dirs_and_base_of_file "/home/pad/foo.php" =*= (["home";"pad"], "foo.php"))
+*)
+
 
 let inits_of_absolute_dir dir = 
   assert (is_absolute dir);
@@ -6300,12 +6325,13 @@ let inits_of_relative_dir dir =
    join "/" xs
   )
 
+(*
 let _ = example
   (inits_of_absolute_dir "/usr/bin" =*= (["/"; "/usr"; "/usr/bin"]))
 
 let _ = example
   (inits_of_relative_dir "usr/bin" =*= (["usr"; "usr/bin"]))
-
+*)
   
 
 (* main entry *)
@@ -6382,13 +6408,14 @@ let common_prefix_of_files_or_dirs xs =
   profile_code "Common.common_prefix_of" (fun () ->
     common_prefix_of_files_or_dirs2 xs)
 
+(*
 let _ = 
   example
     (common_prefix_of_files_or_dirs ["/home/pad/pfff/visual";
                                      "/home/pad/pfff/commons";]
      =*= "/home/pad/pfff"
     )
-
+*)
 
 (*****************************************************************************)
 (* Misc/test *)

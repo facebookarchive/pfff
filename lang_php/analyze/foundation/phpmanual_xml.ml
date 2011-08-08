@@ -54,9 +54,11 @@ let function_name_of_xml_filename filename =
 
   Str.global_replace (Str.regexp "-") "_" b
 
+(*
 let _ = Common.example
   (function_name_of_xml_filename "array-intersect.xml" =$=
       "array_intersect")
+*)
 
 
 let parse_xml file =

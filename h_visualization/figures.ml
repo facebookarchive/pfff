@@ -62,11 +62,12 @@ let intersection_rectangles r1 r2 =
   in
   if valid_rect r then Some r else None
 
-
-let _ = example
+(* TODO: does not work with js_of_ocaml !!!!
+let _ = assert
  (intersection_rectangles 
     { p = { x=0.; y=0.}; q = { x=4.; y=4.};}
     { p = { x=2.; y=2.}; q = { x=6.; y=6.};}
   =
     Some { p = { x=2.; y=2.}; q = { x=4.; y=4.};}
  )
+*)

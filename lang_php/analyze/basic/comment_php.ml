@@ -58,11 +58,13 @@ let strip_comment_marks s =
   | _ when s =~ "^[ *]*\\(.*\\)" -> Common.matched1 s
   | _ -> s
 
+(*
 let _ = example (strip_comment_marks "// @emails" = "@emails")
 (* when the comment is part of a multiline comment, people use '*' for
  * esthetic reason, actually just like in this comment *)
 let _ = example (strip_comment_marks "* @emails"  = "@emails")
 let _ = example (strip_comment_marks " @emails foo"  = "@emails foo")
+*)
 
 (*****************************************************************************)
 (* Parsing *)
@@ -118,9 +120,10 @@ let (parse_comment: string -> comment) = fun s ->
       pr2 ("unknown comment format: " ^ s);
       OtherStyle s
 
+(*
 let _ = example(parse_comment "/**\n * foo\n */" = (DocBlock (["foo"],true)))
 let _ = example(parse_comment "/*\n * foo\n */" = (MultiLineSlashStar ["foo"]))
-
+*)
 
 (*****************************************************************************)
 (* UnParsing *)
@@ -145,9 +148,11 @@ let (unparse_comment: ?indent:int -> comment -> string) =
       ) +> Common.unlines
   | _ -> 
       raise Todo
-      
+
+(*      
 let _ = example(unparse_comment (DocBlock (["foo"],true)) = "/**\n * foo\n */\n" )
 let _ = example(unparse_comment (DocBlock ([""],true)) = "/**\n *\n */\n" )
+*)
     
 (*****************************************************************************)
 (* aux *)
@@ -168,9 +173,10 @@ let (index_comment: comment -> (int * string) list) = fun m ->
   | _ -> raise Todo
 
 
+(*
 let _ = example(index_comment (SingleLineSlashSlash "foo") = [0, "foo"])
 let _ = example(index_comment (DocBlock (["foo"],true)) = [1, "foo"])
-
+*)
 
 let comments_of_file file =
   let toks = Parse_php.tokens file in

@@ -30,8 +30,9 @@ let annotate_regexp =
   "\\([0-9]+\\)" ^ "):" ^ 
   ".*$" (* the rest is line of code *)
 
-let _ = example ("1.208        (imp      07-Jan-05): /*-" =~ annotate_regexp)
-
+(*
+let _ = assert ("1.208        (imp      07-Jan-05): /*-" =~ annotate_regexp)
+*)
 
 
 let annotate2 ?(basedir="") filename = 

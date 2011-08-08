@@ -195,6 +195,7 @@ let extract_annotations str =
         )
   )
 
+(*
 let _ = example 
   (extract_annotations "@emails foo@bar:immediate, bar-list@foo\n@owner pad" = 
       [Emails [("foo@bar",      Some Immediate);
@@ -211,6 +212,7 @@ let _ = example
   (extract_annotations "// @emails    foo@bar" = 
       [Emails [("foo@bar",      None);]]
   )
+*)
 
 (*****************************************************************************)
 (* annotation -> string *)
