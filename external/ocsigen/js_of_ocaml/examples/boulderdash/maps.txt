@@ -1,5 +1,0 @@
-"maps/level0.map"	"Level without boulders"
-"maps/level1.map"	"Simple falls"
-"maps/level2.map"	"More falls"
-"maps/level3.map"	"Real (yet little) puzzle"
-"maps/level4.map"	"Bigger puzzle (copie de BeeDeeDash)"

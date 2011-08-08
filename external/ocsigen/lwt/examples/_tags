@@ -1,7 +1,0 @@
-# -*- conf -*-
-<*>: syntax_camlp4o, pkg_lwt, pkg_lwt.unix, pkg_lwt.syntax, pkg_lwt.syntax.log
-<ex_gtk.*>: pkg_lwt.glib, pkg_lablgtk2
-<show_keys.*>: pkg_lwt.text
-<parallelize.*>: pkg_lwt.text
-<minishell.*>: thread, pkg_threads, pkg_lwt.preemptive, pkg_lwt.text
-<kikoolol_prompt.*>: pkg_lwt.text
