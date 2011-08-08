@@ -103,7 +103,7 @@ let annotate2 ?(basedir="") ?(use_cache=false) ?(use_dash_C=true) filename =
      * has been modified in the working tree.
      *)
     let cmd = (goto_dir basedir ^ 
-                  spf "git annotate %s HEAD -- %s 2>&1"
+                  spf "git annotate %s HEAD -- \"%s\" 2>&1"
                   (if use_dash_C then "-C" else "")
                   filename)
     in
