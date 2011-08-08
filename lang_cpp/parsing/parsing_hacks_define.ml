@@ -81,6 +81,8 @@ let mark_end_define ii =
   in
   (* fresh_tok *) TCommentNewline_DefineEndOfMacro (ii')
 
+let pos ii = Ast.string_of_info ii
+
 (*****************************************************************************)
 (* Parsing hacks for #define *)
 (*****************************************************************************)
@@ -93,7 +95,7 @@ let rec define_line_1 xs =
       let line = Ast.line_of_info ii in
       TDefine ii::define_line_2 line ii xs
   | TCppEscapedNewline ii::xs -> 
-      pr2 "WIERD: a \\ outside a #define";
+      pr2 (spf "WIERD: a \\ outside a #define at %s" (pos ii));
       (* fresh_tok*) TCommentSpace ii::define_line_1 xs
   | x::xs -> 
       x::define_line_1 xs
@@ -102,7 +104,7 @@ and define_line_2 line lastinfo xs =
   match xs with 
   | [] -> 
       (* should not happened, should meet EOF before *)
-      pr2 "PB: WIERD";   
+      pr2 "PB: WIERD in Parsing_hack_define.define_line_2";
       mark_end_define lastinfo::[]
   | x::xs -> 
       let line' = TH.line_of_tok x in
@@ -115,7 +117,7 @@ and define_line_2 line lastinfo xs =
           if (line' <> line) 
           then pr2 "PB: WIERD: not same line number";
           (* fresh_tok*) TCommentSpace ii::define_line_2 (line+1) info xs
-      | x -> 
+      | x ->
           if line' = line
           then x::define_line_2 line info xs 
           else 
@@ -143,7 +145,7 @@ let rec define_ident xs =
           ::Hack.fresh_tok (TIdent_Define (s,i2))
           ::define_ident xs
       | _ -> 
-          pr2 "wierd #define body"; 
+          pr2 (spf "WIERD #define body, at %s" (pos ii)); 
           define_ident xs
       )
   | x::xs -> 
@@ -154,4 +156,3 @@ let fix_tokens_define2 xs =
 
 let fix_tokens_define a = 
   Common.profile_code "Hack.fix_define" (fun () -> fix_tokens_define2 a)
-
