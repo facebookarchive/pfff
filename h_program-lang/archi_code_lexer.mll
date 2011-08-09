@@ -138,7 +138,7 @@ rule category = parse
    | "mini" { MiniLite } 
 *)
 
-  | "/tests/" 
+  | b "tests" b
   | "/test/" 
   | "/test2/" 
   | "/t/" 
@@ -168,7 +168,7 @@ rule category = parse
   | "/doc/" 
       { Doc }
 
-  | "unittest" { Unittester }
+  | "/unittest/" { Unittester }
   (* can not just say "profil" because at facebook profile means
    * something else
    *)
