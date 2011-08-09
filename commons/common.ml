@@ -1421,10 +1421,10 @@ let test_check_stack_size limit =
  * (adjustable by ulimit -s) 
  *)
 let _init_gc_stack = 
+  ()
+(*
   Gc.set {(Gc.get ()) with Gc.stack_limit = 100 * 1024 * 1024}
-
-
-
+*)
 
 (* if process a big set of files then dont want get overflow in the middle
  * so for this we are ready to spend some extra time at the beginning that
