@@ -1422,7 +1422,7 @@ let test_check_stack_size limit =
  *)
 let _init_gc_stack = 
   ()
-(*
+(* commented because cause pbs with js_of_ocaml
   Gc.set {(Gc.get ()) with Gc.stack_limit = 100 * 1024 * 1024}
 *)
 

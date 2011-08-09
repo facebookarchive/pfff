@@ -10,8 +10,8 @@ module Flag = Flag_web
 (*****************************************************************************)
 (* App *)
 (*****************************************************************************)
-(* Without this, get some "sitedata" not defined js error.
- * Maybe some headers sent back by an eliom apps contains
+(* Without this, I get some "sitedata not defined" js error.
+ * Maybe some headers sent back by eliom apps contain
  * some important information.
  *)
 module App = Eliom_output.Eliom_appl (struct
