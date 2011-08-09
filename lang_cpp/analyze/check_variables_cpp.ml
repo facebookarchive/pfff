@@ -22,7 +22,7 @@ module Flag = Flag_analyze_cpp
 module Ast = Ast_cpp
 module V = Visitor_cpp
 
-(*module E = Error_cpp*)
+module E = Error_cpp
 
 module S = Scope_code
 
@@ -137,8 +137,8 @@ let do_in_new_scope_and_check f =
     if !aref = 0 
     then 
       let s = Ast.string_of_name_tmp name in
-      pr ("Unused variable: " ^ s);
-      (*(E.UnusedVariable (name, scope)) *)
+      let ii = List.hd (Ast.ii_of_id_name name) in
+      E.fatal ii (E.UnusedVariable (s, scope))
   );
   res
 
