@@ -31,9 +31,17 @@ open Common
 (* Types *)
 (*****************************************************************************)
 type overlay = {
+  (* the filenames are in a readable path format *)
   orig_to_overlay: (Common.filename, Common.filename) Hashtbl.t;
   overlay_to_orig: (Common.filename, Common.filename) Hashtbl.t;
   data: (Common.filename (* overlay *) * Common.filename) list;
+
+  (* in realpath format. This information is then specific
+   * to one user ... but infering back the root_orig/root_overlay
+   * from an arbitrary directory can be tedious.
+   *)
+  root_orig: Common.dirname;
+  root_overlay: Common.dirname;
 }
 
 (*****************************************************************************)
@@ -143,6 +151,8 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
     data = data;
     overlay_to_orig = Common.hash_of_list data;
     orig_to_overlay = Common.hash_of_list (data +> List.map Common.swap);
+    root_overlay = dir_overlay;
+    root_orig = dir_orig;
   }
 
 let gen_overlay ~dir_orig ~dir_overlay ~output =
