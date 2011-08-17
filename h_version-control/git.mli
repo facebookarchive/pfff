@@ -68,3 +68,6 @@ val clean_git_patch: Patch.patch_raw -> Patch.patch_raw
 
 val ext_git_annot_cache: string
 val cleanup_cache_files: Common.dirname -> unit
+
+(* raise exception if the return code is not good *)
+val exec_cmd: basedir:Common.dirname -> string -> unit

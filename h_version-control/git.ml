@@ -63,6 +63,12 @@ let clean_git_patch xs =
     false
   )
 
+let exec_cmd ~basedir s =
+  let cmd = Lib_vcs.goto_dir basedir^ s in
+  pr2 (spf "executing: %s" s);
+  let ret = Sys.command cmd in
+  if (ret <> 0) then failwith "pb with command"
+
 
 (*****************************************************************************)
 (* Single file operations, "command output binding" *)
