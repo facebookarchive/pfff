@@ -10,6 +10,11 @@
 *.so
 *.o
 
+# ocsigen
+_client
+_server
+app.js
+
 # binaries
 *.opt
 *.byte 

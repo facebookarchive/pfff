@@ -1,8 +1,13 @@
 
 type overlay = {
+  (* the filenames are in a readable path format *)
   orig_to_overlay: (Common.filename, Common.filename) Hashtbl.t;
   overlay_to_orig: (Common.filename, Common.filename) Hashtbl.t;
   data: (Common.filename (* overlay *) * Common.filename) list;
+
+  (* in realpath format *)
+  root_orig: Common.dirname;
+  root_overlay: Common.dirname;
 }
 val overlay_equivalences:
   dir_orig:Common.dirname -> dir_overlay:Common.dirname ->

@@ -277,7 +277,7 @@ let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  =
   ref (Hashtbl.create 101)
 
 let init_defs file =     
-  pr2 (spf "using %s macro file" file);
+  pr2 (spf "Using %s macro file" file);
   _defs := Common.hash_of_list (extract_macros file)
 
 (* 

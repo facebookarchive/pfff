@@ -641,9 +641,8 @@ class_statement:
   /*(* static-php-ext: *)*/
  | variable_modifiers type_hint class_variable_declaration TSEMICOLON 
      { 
-       if not !Flag_parsing_php.type_hints_extension
+       if not !Flag_parsing_php.facebook_lang_extensions
        then raise Parsing.Parse_error;
-
        ClassVariables($1, Some $2, $3, $4) 
      }
 

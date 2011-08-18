@@ -63,6 +63,12 @@ let clean_git_patch xs =
     false
   )
 
+let exec_cmd ~basedir s =
+  let cmd = Lib_vcs.goto_dir basedir^ s in
+  pr2 (spf "executing: %s" s);
+  let ret = Sys.command cmd in
+  if (ret <> 0) then failwith "pb with command"
+
 
 (*****************************************************************************)
 (* Single file operations, "command output binding" *)
@@ -103,12 +109,15 @@ let annotate2 ?(basedir="") ?(use_cache=false) ?(use_dash_C=true) filename =
      * has been modified in the working tree.
      *)
     let cmd = (goto_dir basedir ^ 
-                  spf "git annotate %s HEAD -- %s 2>&1"
+                  spf "git annotate %s HEAD -- \"%s\" 2>&1"
                   (if use_dash_C then "-C" else "")
                   filename)
     in
     (* pr2 cmd; *)
-    let xs = Common.cmd_to_list cmd in
+    (* todo? check status. can have a file not under git in which case we
+     * get a 'fatal: no such path ... in HEAD
+     *)
+    let (xs, _status) = Common.cmd_to_list_and_status cmd in
     (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
 
     let annots = 

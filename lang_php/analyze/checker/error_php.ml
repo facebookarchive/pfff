@@ -186,7 +186,7 @@ let report_all_errors () =
   !_errors |> List.rev |> List.iter report_error
 
 (*****************************************************************************)
-(* Ranking bis *)
+(* Ranking *)
 (*****************************************************************************)
 
 (* ranking errors, inspired by Engler slides *)
