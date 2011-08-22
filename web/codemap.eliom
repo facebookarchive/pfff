@@ -35,7 +35,7 @@ let main_service =
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "Codemap")) [ 
-            H.unique (H.script ~a:[H.a_src (H.uri_of_string "app.js")] 
+            H.unique (H.script ~a:[H.a_src (H.uri_of_string "app.js")]
                          (H.pcdata ""))
           ])
 	  (H.body [
