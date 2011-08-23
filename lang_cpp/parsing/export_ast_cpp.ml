@@ -24,7 +24,7 @@ module M = Meta_ast_generic
 
 (* 
  * It can be useful for people who don't like OCaml to still benefit 
- * from pfff parsing by having at least a JSON representation
+ * from pfff parsing by having at least a JSON-like representation
  * of the Ast, hence this file.
  *)
 
@@ -38,6 +38,9 @@ let for_json = {
   M.token_info = false;
 }
 
+let no_info = 
+  for_json
+
 let string_json_of_program x = 
   x |> Meta_ast_cpp.vof_program for_json 
     |> Ocaml.json_of_v |> Json_out.string_of_json
@@ -46,7 +49,7 @@ let string_json_of_program x =
 (* ML Patterns *)
 (*****************************************************************************)
 
-let string_of_v v =
+let string_of_v precision v =
   let cnt = ref 0 in
 
   (* transformation to not have the parse info or type info in the output *)
@@ -56,7 +59,9 @@ let string_of_v v =
         incr cnt;
         (match () with
         | _ when xs +> List.exists (function ("token", _) -> true | _ -> false)->
-            Ocaml.VVar ("i", Int64.of_int !cnt)
+            if not precision.M.token_info
+            then Ocaml.VVar ("i", Int64.of_int !cnt)
+            else x
         | _ when xs +> List.exists (function ("t", _) -> true | _ -> false)->
             Ocaml.VVar ("t", Int64.of_int !cnt)
         | _ when xs +> List.exists (function ("tvar", _) -> true | _ -> false)->
@@ -73,13 +78,6 @@ let string_of_v v =
   s
 
 
-let ml_pattern_string_of_program ast = 
-
-  let precision = { Meta_ast_generic.
-    full_info = false;
-    token_info = false;
-    type_info = false;
-  }
-  in
-  Meta_ast_cpp.vof_program precision ast +> string_of_v
+let ml_pattern_string_of_program ?(precision=no_info) ast = 
+  Meta_ast_cpp.vof_program precision ast +> string_of_v precision
 

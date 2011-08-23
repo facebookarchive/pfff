@@ -3,6 +3,7 @@ open Common
 open Ast_cpp
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
+module TH = Token_helpers_cpp
 
 module Stat = Statistics_parsing
 
@@ -71,6 +72,27 @@ let test_dump_cpp file =
   let s = Export_ast_cpp.ml_pattern_string_of_program ast in
   pr s
 
+let test_dump_cpp_full file =
+  Parse_cpp.init_defs !Flag.macros_h;
+  let ast = Parse_cpp.parse_program file in
+  let toks = Parse_cpp.tokens file in
+  let precision = { Meta_ast_generic.
+     full_info = true; type_info = false; token_info = true;               
+  }
+  in
+  let s = Export_ast_cpp.ml_pattern_string_of_program ~precision ast in
+  pr s;
+  toks +> List.iter (fun tok ->
+    match tok with
+    | Parser_cpp.TComment (ii) ->
+        let v = Parse_info.vof_info ii in
+        let s = Ocaml.string_of_v v in
+        pr s
+    | _ -> ()
+  );
+  ()
+
+
 let test_view_cpp file =
   let toks = Parse_cpp.tokens file 
     +> Common.exclude Token_helpers_cpp.is_comment in
@@ -101,6 +123,8 @@ let actions () = [
     Common.mk_action_1_arg test_dump_cpp;
     "-view_cpp", "   <file>", 
     Common.mk_action_1_arg test_view_cpp;
+    "-dump_cpp_full", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp_full;
 
     "-parse_c", "   <file or dir>", 
     Common.mk_action_n_arg (fun xs -> test_parse_cpp ~c:true xs);
