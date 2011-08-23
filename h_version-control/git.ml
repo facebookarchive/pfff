@@ -249,9 +249,18 @@ let commit_raw_patch ~basedir commitid =
 let commit_summary ~basedir commitid = 
   let (VersionId scommit) = commitid in
   let cmd = (goto_dir basedir ^
-             (spf "git show --no-color --pretty=oneline %s" scommit)) in
+             (* (spf "git show --no-color --pretty=oneline %s" scommit)) in *)
+             (spf "git log --pretty=oneline -1 %s" scommit)) in
   let xs = Common.cmd_to_list cmd in
   List.hd xs +> id_and_summary_oneline +> snd
+
+let commit_info ~basedir commitid = 
+  let (VersionId scommit) = commitid in
+  let cmd = (goto_dir basedir ^
+             (* (spf "git show --no-color --pretty=oneline %s" scommit)) in *)
+             (spf "git log --format='%%b' -1 %s" scommit)) in
+  let xs = Common.cmd_to_list cmd in
+  xs
 
 let commit_patch ~basedir commitid = 
   let (VersionId scommit) = commitid in
@@ -271,11 +280,6 @@ let commit_of_relative_time ~basedir relative_data_string =
   let xs = Common.cmd_to_list cmd in
   let last = Common.list_last xs in
   id_and_summary_oneline last +> fst
-
-let commit_info ~basedir vid = 
-  let (VersionId _sid) = vid in
-  raise Todo
-
 
 (*****************************************************************************)
 (* multiple commits operations  *)

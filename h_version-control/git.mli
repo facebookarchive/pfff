@@ -34,7 +34,7 @@ val commits_between_commitids:
 (* single commit operation *)
 
 val commit_info: 
-  basedir:string -> Lib_vcs.versionid -> Common.date_dmy
+  basedir:string -> Lib_vcs.versionid -> string list
 val commit_summary: 
   basedir:string -> Lib_vcs.versionid -> string
 val commit_raw_patch: 
