@@ -762,6 +762,7 @@ let untype = fst
 let uncomma xs = List.map fst xs
 let unwrap_typeC (qu, (typeC, ii)) = typeC
 let unparen (_, x, _) = x
+let unbrace (_, x, _) = x
 
 let rewrap_str = PI.rewrap_str
 let str_of_info = PI.str_of_info
