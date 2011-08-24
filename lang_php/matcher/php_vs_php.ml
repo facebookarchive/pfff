@@ -29,8 +29,10 @@ open Common
  *    pfff/meta/gen_code -matcher_gen_all ast_php.ml
  * 
  * using ocaml pad-style reflection (see commons/ocaml.ml) on 
- * parsing_php/ast_php.ml. An alternative could have been to transform
- * ast_php.ml in a very simple term language and do the 1-vs-1 match
+ * parsing_php/ast_php.ml. 
+ * 
+ * An alternative could have been to transform ast_php.ml
+ * in a very simple term language and do the 1-vs-1 match
  * on this term language, but depending on the construct (a PHP variable,
  * a string) we may want to do special things so it's better to work
  * on the full AST. Working on a term language would be like working
@@ -44,7 +46,7 @@ open Common
  *)
 
 (* A is the pattern, and B the concrete source code. For now
- * we both use the same type, Ast_php, but they may differ later
+ * we both use the same module, Ast_php, but they may differ later
  * as the expressivity of the pattern language grows.
  *)
 module A = Ast_php 
@@ -1878,6 +1880,21 @@ and m_constant a b =
           A.String ("...", a), 
           B.String (s, b)
         ))
+
+  (* todo: handle spatch too! one could want to bind things to \1 \2
+   * and reference those \xxx in the + side of a semantic patch.
+   *)
+  | A.String(name, info_name), B.String(sb, info_sb)
+      when name =~ "^=~/\\(.*\\)/$" ->
+      let s = Common.matched1 name in
+      let rex = Pcre.regexp s in
+      if Pcre.pmatch ~rex sb
+      then
+        return (
+          A.String(name, info_name),
+          B.String(sb, info_sb)
+        )
+      else fail ()
 
   | A.String(a1), B.String(b1) ->
     m_wrap m_string a1 b1 >>= (fun (a1, b1) -> 
