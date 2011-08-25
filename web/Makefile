@@ -55,7 +55,8 @@ SYSLIBS_CLIENT=str.cma unix.cma
 LIBS_SERVER2=
 SYSLIBS_SERVER=
 
-JSOPT=-jsopt -pretty -jsopt -noinline
+#to debug
+#JSOPT=-jsopt -pretty -jsopt -noinline
 
 ##############################################################################
 # Top rules
