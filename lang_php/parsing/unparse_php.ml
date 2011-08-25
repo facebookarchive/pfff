@@ -134,7 +134,16 @@ let mk_unparser_visitor pp =
       match info.Parse_info.token with
       | Parse_info.OriginTok p ->
           let s =  p.Parse_info.str in
-          pp s; (* pp " "; *)
+          (match s with
+          (* certain tokens need a space after because they can be 
+           * followed by another identifier.
+           * todo: need the pretty printer of julien ... not this hack
+           *)
+          | "new" ->
+              pp s; pp " "
+          | _ -> 
+              pp s;
+          )
       | Parse_info.FakeTokStr (s, _opt) ->
           pp s; pp " ";
           if s = ";" || s = "{" || s = "}"
