@@ -19,12 +19,14 @@ open Common
 (*****************************************************************************)
 
 (*
- * Some code organization are really bad. But because it's harder
+ * Some code organizations are really bad. But because it's harder
  * to convince people to change it, sometimes it's simpler to create
  * a parallel organization, an "overlay" using simple symlinks
  * that represent a better organization. One can then show
  * statistics on those overlayed code organization, adapt layers,
  * etc
+ * 
+ * related: LFS on code.
  *)
 
 (*****************************************************************************)

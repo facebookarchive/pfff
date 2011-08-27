@@ -55,7 +55,7 @@ SYSLIBS_CLIENT=str.cma unix.cma
 LIBS_SERVER2=
 SYSLIBS_SERVER=
 
-# -pretty has a bug right now :( it inserts bad newlines
+#to debug
 #JSOPT=-jsopt -pretty -jsopt -noinline
 
 ##############################################################################
