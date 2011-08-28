@@ -29,6 +29,9 @@ let main_service =
     pr2 path;
     let path = Common.relative_to_absolute path in
     let rects = Server.treemap_generator [path] in
+    (* todo? could optimize and filter very small rectangles so
+     * that we send less data
+     *)
 
     Eliom_services.onload
       {{ Client.draw_treemap_rendering %rects }};
