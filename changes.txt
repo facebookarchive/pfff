@@ -1,5 +1,10 @@
 -*- org -*-
 
+* 0.17 (Q3 2011)
+
+** code overlay
+helps organize and visualize bad codebase
+
 * 0.16 beta (Q2 2011)
 
 ** better C++ parser

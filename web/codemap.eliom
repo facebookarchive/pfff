@@ -27,8 +27,24 @@ let main_service =
     ~get_params:(Eliom_parameters.string "path")
   (fun path () ->
     pr2 path;
+    Treemap.follow_symlinks := true;
     let path = Common.relative_to_absolute path in
-    let rects = Server.treemap_generator [path] in
+    let rects = 
+      Common.cache_computation ~verbose:true path "_treemap.marshall" (fun () ->
+        Server.treemap_generator [path] 
+      )
+    in
+    (* optimize and filter very small rectangles so
+     * that we send less data
+     *)
+    let rects = rects +> Common.exclude (fun rect ->
+      let r = rect.Treemap.tr_rect in
+      let w = Figures.rect_width r in
+      let h = Figures.rect_height r in
+      w *. h <= 0.000005
+    )
+    in
+    pr2 (spf "nb rects after filtering: %d" (List.length rects));
 
     Eliom_services.onload
       {{ Client.draw_treemap_rendering %rects }};
