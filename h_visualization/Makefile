@@ -11,7 +11,7 @@ TOP=..
 TARGET=lib
 
 SRC= figures.ml \
-     jgraph.ml \
+     jgraph.ml gephi.ml \
      treemap.ml treemap_json.ml
 #now in commons/ simple_color.ml 
 
@@ -20,7 +20,7 @@ SRC+=gnuplot.ml html.ml latex.ml
 #dot.ml
 
 LIBS=$(TOP)/commons/commons.cma
-INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-json
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-json $(TOP)/commons/lib-xml
 
 
 SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
