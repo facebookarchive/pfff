@@ -412,7 +412,13 @@ and
   let bnd = ("l_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_function_def v = Ocaml.vof_unit v
 and vof_module_type v = Ocaml.vof_unit v
-and vof_module_expr v = Ocaml.vof_unit v
+and vof_module_expr = function
+  | ModuleName v1 ->
+      let v1 = vof_long_name v1 in
+      Ocaml.VSum(("ModuleName", [ v1 ]))
+  | ModuleTodo ->
+      Ocaml.VSum(("ModuleTodo", []))
+
 and vof_item =
   function
   | Type ((v1, v2)) ->
@@ -447,6 +453,14 @@ and vof_item =
       and v2 = vof_rec_opt v2
       and v3 = vof_and_list vof_let_binding v3
       in Ocaml.VSum (("Let", [ v1; v2; v3 ]))
+  | ModuleAlias ((v1, v2, v3, v4)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_uname v2
+      and v3 = vof_tok v3
+      and v4 = vof_module_expr v4
+      in Ocaml.VSum (("ModuleAlias", [v1; v2; v3; v4]))
+      
+
   | ItemTodo v1 -> let v1 = vof_info v1 in Ocaml.VSum (("ItemTodo", [ v1 ]))
 and vof_sig_item v = vof_item v
 and vof_struct_item v = vof_item v

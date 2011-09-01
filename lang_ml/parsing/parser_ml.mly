@@ -293,7 +293,7 @@ structure_item:
 
  /*(* modules *)*/
  | Tmodule TUpperIdent module_binding
-      { ItemTodo $1 }
+      { ModuleAlias ($1, Name $2, fst $3, snd $3) }
  | Tmodule Ttype ident TEq module_type
       { ItemTodo $1 }
  | Tinclude module_expr
@@ -1218,7 +1218,7 @@ private_flag:
 
 module_binding:
  | TEq module_expr
-      { }
+      { $1, $2 }
 
 module_declaration:
  | TColon module_type
@@ -1244,16 +1244,16 @@ module_type:
 module_expr:
   /*(* when just do a module aliasing *)*/
   | mod_longident
-      { }
+      { ModuleName $1 }
   /*(* nested modules *)*/
   | Tstruct structure Tend
-      { }
+      { ModuleTodo }
   /*(* functor definition *)*/
   | Tfunctor TOParen TUpperIdent TColon module_type TCParen TArrow module_expr
-      { }
+      { ModuleTodo }
   /*(* module/functor application *)*/
   | module_expr TOParen module_expr TCParen
-      { }
+      { ModuleTodo }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/

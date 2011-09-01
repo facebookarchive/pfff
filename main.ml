@@ -53,6 +53,7 @@ let test_json_pretty_printer file =
 
 module V = Visitor_ml
 module G = Graph
+open Ast_ml
 
 (* filename in readable path *)
 type ml_graph = Common.filename Graph.graph
@@ -62,8 +63,11 @@ let pfff_gephi_dependencies dir output =
   let files = 
     Lib_parsing_ml.find_ml_files_of_dir_or_files [root]
     +> Common.exclude (fun file ->
+      (* less: could also do a pfff_dependencies that just care about mli
+       * like my make doti
+       *)
       file =~ ".*.mli$" ||
-      file =~ ".*/external/.*"
+      file =~ ".*external/.*"
     )
   in
   let tree = Treemap.tree_of_dirs_or_files 
@@ -92,28 +96,55 @@ let pfff_gephi_dependencies dir output =
     pr2 (spf "processing: %s (%d/%d)" file i total);
     let realpath = Common.filename_without_leading_path root file in
     let ast = 
-      Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun ()->
+      Common.save_excursion Flag_parsing_ml.show_parsing_error true (fun ()->
         Parse_ml.parse_program file 
       )
     in
 
+    let add_edge_if_existing_module s =
+      if Hashtbl.mem h_module_to_file s
+      then 
+        (match Hashtbl.find_all h_module_to_file s with
+        | [realpath2] ->
+            (* todo? do weighted graph? but then if do some pattern matching
+             * on 20 constructors, is it more important than
+             * 2 functions calls? Need to differentiate those different
+             * use of the qualifier
+             *)
+            g +> G.add_edge realpath realpath2
+        | _ -> ()
+        )
+      else pr2_once (spf "PB: could not find %s" s)
+    in
+
     let visitor = V.mk_visitor { V.default_visitor with
-      V.kqualifier = (fun (k, _) xs ->
-        (match xs with 
-        | [Ast_ml.Name (s, _), _tok] ->
-            if Hashtbl.mem h_module_to_file s
-            then 
-              (match Hashtbl.find_all h_module_to_file s with
-              | [realpath2] ->
-                  g +> G.add_edge realpath realpath2
-              | _ -> ()
-              )
+      V.kmodule_expr = (fun (k, _) x ->
+        (match x with
+        | ModuleName (qu, (Name (s,_))) ->
+            add_edge_if_existing_module s
         | _ -> ()
         );
+        k x
+      );
+      V.kitem = (fun (k, _) x ->
+        (match x with
+        | Open (_tok, (qu, (Name (s,_)))) ->
+            add_edge_if_existing_module s
+        | _ -> ()
+        );
+        k x
+      );
+      V.kqualifier = (fun (k, _) xs ->
+        (match xs with 
+        | [Name (s, _), _tok] ->
+            add_edge_if_existing_module s
+        | _ -> ()
+        );
+        k xs
       );
     }
     in
-    visitor (Ast_ml.Program ast);
+    visitor (Program ast);
   );
   g +> Gephi.graph_to_gefx 
     ~str_of_node:(fun s -> s)

@@ -23,6 +23,11 @@ open Ast_ml
 (* Prelude *)
 (*****************************************************************************)
 
+(*
+ * TODO: do a kmodule_name that is called by kqualifier and
+ * a few other places where the name in the long_name is actually
+ * also a module name
+ *)
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -40,6 +45,7 @@ type visitor_in = {
   klet_def: let_def vin;
   klet_binding: let_binding vin;
   kqualifier: qualifier vin;
+  kmodule_expr: module_expr vin;
 }
   and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
@@ -58,6 +64,7 @@ let default_visitor = {
   kpattern = (fun (k,_) x -> k x);
   klet_binding = (fun (k,_) x -> k x);
   kqualifier = (fun (k,_) x -> k x);
+  kmodule_expr = (fun (k,_) x -> k x);
 }
 
 
@@ -442,7 +449,17 @@ and
 
 and v_function_def v = v_unit v
 and v_module_type v = v_unit v
-and v_module_expr v = v_unit v
+and v_module_expr v = 
+  let rec k v = 
+  match v with
+  | ModuleName v1 ->
+      let v1 = v_long_name v1 in
+      ()
+  | ModuleTodo ->
+      ()
+  in
+  vin.kmodule_expr (k, all_functions) v
+
 and v_item x =
   let rec k x =
     match x with
@@ -473,6 +490,13 @@ and v_item x =
       and v2 = v_rec_opt v2
       and v3 = v_and_list1 v_let_binding v3
       in ()
+  | ModuleAlias ((v1, v2, v3, v4)) ->
+      let v1 = v_tok v1
+      and v2 = v_uname v2
+      and v3 = v_tok v3
+      and v4 = v_module_expr v4
+      in ()
+
   | ItemTodo v -> v_info v
   in
   vin.kitem (k, all_functions) x

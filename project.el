@@ -22,6 +22,7 @@
      h_version-control
      h_visualization
      h_program-lang
+     lang_ml/parsing
      lang_php/parsing
      lang_js/parsing
      lang_sql/parsing
@@ -92,7 +93,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 300
+     (case 400
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -604,10 +605,11 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 3
        (0 "all")
        (1 "sgrep")
        (2 "tags")
+       (3 "parsing_ml")
        )
      ))
    )
