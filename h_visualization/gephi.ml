@@ -13,7 +13,6 @@
  * license.txt for more details.
  *)
 
-
 open Common
 
 module G = Graph
@@ -23,28 +22,73 @@ open Xml_types
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* 
- * Wrappers to use Gephi (http://gephi.org/), and to generate data
+(*
+ * Wrappers to use Gephi (http://gephi.org/), to generate data
  * in its GEFX format.
  *)
-
 
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
 
 (* see http://gexf.net/format/ *)
-let graph_to_gefx ~str_of_node ~output g =
+let graph_to_gefx ~str_of_node ~output ~tree g =
   Common.with_open_outfile output (fun (pr_no_nl, _chan) ->
     let nodes = G.nodes g in
+(*
+    let x = ref 0 in
+    let hclass = Hashtbl.create 101 in
+*)
 
-    let nodes_xml = nodes +> List.map (fun n ->
-      Element ("node", [
-        "id", i_to_s (G.ivertex n g);
-        "label", str_of_node n;
-      ], [])
-    )
+    let nodes_xml = 
+      match tree with
+      | None -> 
+          nodes +> List.map (fun n ->
+            let modularity_class = 
+              let s = str_of_node n in
+              let xs = Common.split "/" s in
+              let str_class = List.hd xs in
+              str_class
+(*
+              if Hashtbl.mem hclass str_class
+              then Hashtbl.find hclass str_class
+              else begin
+                incr x;
+                Hashtbl.add hclass str_class !x;
+                !x
+              end
+*)
+            in
+            Element ("node", [
+              "id", i_to_s (G.ivertex n g);
+              "label", str_of_node n;
+            ], [Element ("attvalues", [], [
+              Element("attvalue", [
+                "for", "modularity_class";
+                "value", modularity_class;
+              ], [])
+              ])
+            ])
+          )
+      | Some tree ->
+          (* see: http://gexf.net/format/hierarchy.html *)
+          let rec aux tree =
+            match tree with
+            | Leaf f ->
+                Element ("node", [
+                  "id", i_to_s (G.ivertex f g);
+                  "label", str_of_node f;
+                ], [])
+            | Node (dir, xs) ->
+                let children = List.map aux xs in
+                Element ("node", [
+                  "id", i_to_s (G.ivertex dir g);
+                  "label", String.uppercase (str_of_node dir) ^ "/";
+                ], [
+                  Element ("nodes", [], children);
+                ])
+          in
+          [aux tree]
     in
     let edges_xml = nodes +> List.map (fun n ->
       let succ = G.succ n g in
@@ -73,6 +117,16 @@ let graph_to_gefx ~str_of_node ~output g =
               "mode", "static";
               "defaultedgetype", "directed";
             ], [
+              Element ("attributes", [
+                "class", "node";
+                "mode", "static";
+              ], [
+                Element("attribute", [
+                  "id", "modularity_class";
+                  "title", "Modularity Class";
+                  "type", "string";
+                ], [])
+              ]);
               Element ("nodes", [], nodes_xml);
               Element ("edges", [], edges_xml);
             ]

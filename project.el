@@ -92,7 +92,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 201
+     (case 300
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -127,6 +127,8 @@
 
        (200 "-parse_cpp /home/pad/pfff/tests/cpp/foo.h")
        (201 "-parse_cpp /tmp/test.cpp")
+
+       (300 "-pfff_gephi_dependencies /home/pad/pfff /tmp/pfff.gexf")
 
        )
      )
