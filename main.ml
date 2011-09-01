@@ -43,9 +43,6 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
-let action1 () = 
-  raise Todo
-
 let test_json_pretty_printer file =
   let json = Json_in.load_json file in
   let s = Json_io.string_of_json json in
@@ -58,66 +55,123 @@ open Ast_ml
 (* filename in readable path *)
 type ml_graph = Common.filename Graph.graph
 
+(* assumes get a readable path *)
+let project file =
+  let xs = Common.split "/" file in
+  let xs' =
+    match xs with
+    | "external"::_-> 
+        Common.take_safe 2 xs
+    | "facebook"::"external"::x::xs-> 
+        ["external";x]
+
+    | _ -> Common.list_init xs
+  in
+  let s = Common.join "/" xs' in
+  if s = "" then "."
+  else s
+
 let pfff_gephi_dependencies dir output =
   let root = Common.realpath dir in
+  let files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
   let files = 
-    Lib_parsing_ml.find_ml_files_of_dir_or_files [root]
-    +> Common.exclude (fun file ->
+    files +> Common.exclude (fun file ->
       (* less: could also do a pfff_dependencies that just care about mli
        * like my make doti
        *)
-      file =~ ".*.mli$" ||
-      file =~ ".*external/.*"
+      let (d,b,e) = Common.dbe_of_filename file in
+      let xs = Common.split "/" d in
+      let ml_file = Common.filename_of_dbe (d,b,"ml") in
+
+      let is_test_in_external =
+        List.mem "external" xs &&
+          xs +> List.exists (fun s ->
+           match s with
+           | "examples" | "tests" |  "test" 
+           | "dgraph" | "editor" | "view_graph" | "applications"
+               -> true
+           | _ -> false
+          )
+      in
+      let is_old = List.mem "old" xs in
+
+      let is_mli_with_a_ml =
+        e = "mli" && Sys.file_exists ml_file
+      in
+      is_test_in_external || is_mli_with_a_ml || is_old
     )
   in
-  let tree = Treemap.tree_of_dirs_or_files 
-    ~file_hook:(fun f -> ())
-    files in
-  let tree = tree +> Common.map_tree
+  let _tree = 
+    files 
+    +> Treemap.tree_of_dirs_or_files ~file_hook:(fun f -> ())
+    +> Common.map_tree
     ~fnode:(fun f -> Common.filename_without_leading_path root f)
     ~fleaf:(fun (f, _) -> Common.filename_without_leading_path root f)
   in
   
   let g = G.create () in
-  let h_module_to_file = Hashtbl.create 101 in
-
+  let h_module_to_node = Hashtbl.create 101 in
+(* 
+   in comment for now because screw the graph, and when project,
+   we don't want one of the file to make the whole package link
+   to PARSING_ERROR. Moreover with a parsing error only the out-edges
+   are missing. The in-edges will work.
+   g +> G.add_vertex_if_not_present "PARSING_ERROR"; 
+*)
   files +> List.iter (fun file ->
     let realpath = Common.filename_without_leading_path root file in
-    g +> G.add_vertex_if_not_present realpath;
+    let node = project realpath in
+    g +> G.add_vertex_if_not_present node;
     let m = Module_ml.module_name_of_filename realpath in
-    Hashtbl.add h_module_to_file m realpath;
+    Hashtbl.add h_module_to_node m node;
   );
+  (*
   let _ = tree +> Common.map_tree
     ~fnode:(fun dir -> g +> G.add_vertex_if_not_present dir)
     ~fleaf:(fun f -> f)
   in
+  *)
 
   files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
     pr2 (spf "processing: %s (%d/%d)" file i total);
     let realpath = Common.filename_without_leading_path root file in
+    let node1 = project realpath in
     let ast = 
-      Common.save_excursion Flag_parsing_ml.show_parsing_error true (fun ()->
+      Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun ()->
         Parse_ml.parse_program file 
       )
     in
+    let h_module_aliases = Hashtbl.create 101 in
 
     let add_edge_if_existing_module s =
-      if Hashtbl.mem h_module_to_file s
-      then 
-        (match Hashtbl.find_all h_module_to_file s with
-        | [realpath2] ->
+      if Hashtbl.mem h_module_aliases s
+      then () 
+      else 
+       if Hashtbl.mem h_module_to_node s
+       then 
+        (match Hashtbl.find_all h_module_to_node s with
+        | [node2] ->
             (* todo? do weighted graph? but then if do some pattern matching
              * on 20 constructors, is it more important than
              * 2 functions calls? Need to differentiate those different
              * use of the qualifier
              *)
-            g +> G.add_edge realpath realpath2
+            if node1 <> node2
+            then g +> G.add_edge node1 node2
+
         | _ -> ()
         )
-      else pr2_once (spf "PB: could not find %s" s)
+       else pr2_once (spf "PB: could not find %s" s)
     in
 
     let visitor = V.mk_visitor { V.default_visitor with
+      V.ktoplevel = (fun (k, _) x ->
+        match x with
+        | NotParsedCorrectly _ ->
+            (* g +> G.add_edge node1 "PARSING_ERROR"; *)
+            ()
+        | _ -> k x
+      );
       V.kmodule_expr = (fun (k, _) x ->
         (match x with
         | ModuleName (qu, (Name (s,_))) ->
@@ -130,6 +184,8 @@ let pfff_gephi_dependencies dir output =
         (match x with
         | Open (_tok, (qu, (Name (s,_)))) ->
             add_edge_if_existing_module s
+        | ModuleAlias (_, Name (s,_), _, _) ->
+            Hashtbl.add h_module_aliases s true;
         | _ -> ()
         );
         k x
@@ -146,6 +202,28 @@ let pfff_gephi_dependencies dir output =
     in
     visitor (Program ast);
   );
+  (* could put that in gephi.ml *)
+  g +> G.add_vertex_if_not_present "SINGLE"; 
+  g +> G.add_vertex_if_not_present "ONLY_TO_COMMON"; 
+  let nodes = G.nodes g in
+  nodes +> List.iter (fun n ->
+    let succ = G.succ n g in
+    let pred = G.pred n g in
+    match succ, pred with
+    | [], [] ->
+        g +> G.add_edge n "SINGLE"
+    | [x], [] ->
+        if x = "commons"
+        then g +> G.add_edge n "ONLY_TO_COMMON"
+
+    | [], _ ->
+        ()
+    | _, [] ->
+        ()
+    | x::xs, y::ys ->
+        ()
+  );
+
   g +> Gephi.graph_to_gefx 
     ~str_of_node:(fun s -> s)
     ~tree:None
