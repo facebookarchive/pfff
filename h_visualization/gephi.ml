@@ -44,11 +44,13 @@ let graph_to_gefx ~str_of_node ~output ~tree g =
       match tree with
       | None -> 
           nodes +> List.map (fun n ->
-            let modularity_class = 
+            let modularity_class = "nothing"
+(*
               let s = str_of_node n in
               let xs = Common.split "/" s in
               let str_class = List.hd xs in
               str_class
+*)
 (*
               if Hashtbl.mem hclass str_class
               then Hashtbl.find hclass str_class
