@@ -46,6 +46,7 @@ type visitor_in = {
   klet_binding: let_binding vin;
   kqualifier: qualifier vin;
   kmodule_expr: module_expr vin;
+  ktoplevel: toplevel vin;
 }
   and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
@@ -65,6 +66,7 @@ let default_visitor = {
   klet_binding = (fun (k,_) x -> k x);
   kqualifier = (fun (k,_) x -> k x);
   kmodule_expr = (fun (k,_) x -> k x);
+  ktoplevel = (fun (k,_) x -> k x);
 }
 
 
@@ -506,14 +508,17 @@ and v_struct_item v = v_item v
 and v_rec_opt v = v_option v_tok v
 
 
-and v_toplevel =
-  function
+and v_toplevel x =
+  let rec k = function
   | Item v1 -> let v1 = v_item v1 in ()
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()
+  in
+  vin.ktoplevel (k, all_functions) x
+
 and v_program v = v_list v_toplevel v
 
 and v_any = function

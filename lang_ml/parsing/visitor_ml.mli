@@ -13,6 +13,7 @@ type visitor_in = {
   klet_binding: let_binding vin;
   kqualifier: qualifier vin;
   kmodule_expr: module_expr vin;
+  ktoplevel: toplevel vin;
 }
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 and visitor_out = any -> unit
