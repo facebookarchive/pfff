@@ -51,6 +51,78 @@ let test_json_pretty_printer file =
   let s = Json_io.string_of_json json in
   pr s
 
+module V = Visitor_ml
+module G = Graph
+
+(* filename in readable path *)
+type ml_graph = Common.filename Graph.graph
+
+let pfff_gephi_dependencies dir output =
+  let root = Common.realpath dir in
+  let files = 
+    Lib_parsing_ml.find_ml_files_of_dir_or_files [root]
+    +> Common.exclude (fun file ->
+      file =~ ".*.mli$" ||
+      file =~ ".*/external/.*"
+    )
+  in
+  let tree = Treemap.tree_of_dirs_or_files 
+    ~file_hook:(fun f -> ())
+    files in
+  let tree = tree +> Common.map_tree
+    ~fnode:(fun f -> Common.filename_without_leading_path root f)
+    ~fleaf:(fun (f, _) -> Common.filename_without_leading_path root f)
+  in
+  
+  let g = G.create () in
+  let h_module_to_file = Hashtbl.create 101 in
+
+  files +> List.iter (fun file ->
+    let realpath = Common.filename_without_leading_path root file in
+    g +> G.add_vertex_if_not_present realpath;
+    let m = Module_ml.module_name_of_filename realpath in
+    Hashtbl.add h_module_to_file m realpath;
+  );
+  let _ = tree +> Common.map_tree
+    ~fnode:(fun dir -> g +> G.add_vertex_if_not_present dir)
+    ~fleaf:(fun f -> f)
+  in
+
+  files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
+    pr2 (spf "processing: %s (%d/%d)" file i total);
+    let realpath = Common.filename_without_leading_path root file in
+    let ast = 
+      Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun ()->
+        Parse_ml.parse_program file 
+      )
+    in
+
+    let visitor = V.mk_visitor { V.default_visitor with
+      V.kqualifier = (fun (k, _) xs ->
+        (match xs with 
+        | [Ast_ml.Name (s, _), _tok] ->
+            if Hashtbl.mem h_module_to_file s
+            then 
+              (match Hashtbl.find_all h_module_to_file s with
+              | [realpath2] ->
+                  g +> G.add_edge realpath realpath2
+              | _ -> ()
+              )
+        | _ -> ()
+        );
+      );
+    }
+    in
+    visitor (Ast_ml.Program ast);
+  );
+  g +> Gephi.graph_to_gefx 
+    ~str_of_node:(fun s -> s)
+    ~tree:None
+    ~output;
+  ()
+
+
+  
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
   "-json_pp", " <file>",
@@ -58,6 +130,9 @@ let pfff_extra_actions () = [
   
   "-layer_stat", " <file>",
   Common.mk_action_1_arg Test_program_lang.layer_stat;
+
+  "-pfff_gephi_dependencies", " <dir> <output>",
+  Common.mk_action_2_arg pfff_gephi_dependencies;
 ]
 
 (*****************************************************************************)
