@@ -39,6 +39,7 @@ type visitor_in = {
   kitem: item vin;
   klet_def: let_def vin;
   klet_binding: let_binding vin;
+  kqualifier: qualifier vin;
 }
   and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
@@ -56,6 +57,7 @@ let default_visitor = {
   klet_def  = (fun (k,_) x -> k x);
   kpattern = (fun (k,_) x -> k x);
   klet_binding = (fun (k,_) x -> k x);
+  kqualifier = (fun (k,_) x -> k x);
 }
 
 
@@ -158,7 +160,10 @@ and v_uname v = v_name v
 and v_long_name (v1, v2) =
   let v1 = v_qualifier v1 and v2 = v_name v2 in ()
 and v_qualifier v =
-  v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
+  let k x = 
+    v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
+  in
+  vin.kqualifier (k, all_functions) v
   
 and v_ty x =
   let rec k x = 

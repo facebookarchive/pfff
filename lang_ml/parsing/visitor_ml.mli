@@ -11,6 +11,7 @@ type visitor_in = {
   kitem: item vin;
   klet_def: let_def vin;
   klet_binding: let_binding vin;
+  kqualifier: qualifier vin;
 }
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 and visitor_out = any -> unit
