@@ -121,8 +121,8 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
       let stat = Common.unix_stat_eff link in
       match stat.Unix.st_kind with
       | Unix.S_DIR ->
-          let children = 
-            Common.cmd_to_list (spf 
+          let (children, _) = 
+            Common.cmd_to_list_and_status (spf 
               "cd %s; find * -type f" (link)) in
           let dir = Common.realpath link in
           
