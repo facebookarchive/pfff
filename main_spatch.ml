@@ -142,7 +142,7 @@ let apply_transfo transfo xs =
 let main_action xs =
 
   if Common.null_string !spatch_file
-  then failwith "I need a semantic patch file; use -c";
+  then failwith "I need a semantic patch file; use -f";
 
   let spatch_file = !spatch_file in
 
@@ -375,8 +375,6 @@ let all_actions () =
 let options () = 
   [
     "-f", Arg.Set_string spatch_file, 
-    " <spatch_file>";
-    "-c", Arg.Set_string spatch_file, 
     " <spatch_file>";
     "-apply_patch", Arg.Set apply_patch, 
     " ";
