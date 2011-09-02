@@ -10,6 +10,9 @@
 *.so
 *.o
 
+# ocamldoc
+*.out
+
 # ocsigen
 _client
 _server
