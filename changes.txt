@@ -2,19 +2,36 @@
 
 * 0.17 (Q3 2011)
 
-** code overlay
-helps organize and visualize bad codebase
+** introduce pm_depend
+a module/package dependency visualizer exporting data for gephi
+(only for ocaml code for now). Played with it on the code of pfff
+(in package mode) and some of its components: codemap, cpp, php, cmf
+(in module mode with and without extern mode).
 
-* 0.16 beta (Q2 2011)
+** introduce notion of code overlay
+with some helper functions to check the validity of an overlay.
+Also added some support for overlay in codemap.
+
+Overlay helps organize and visualize (bad) codebase from a different point
+of view.
+
+** started port of codemap to ocsigen
+can now display the treemap. Had to report many bugs to the ocsigen team
+to get this to work.
+
+* 0.16 (Q2 2011)
 
 ** better C++ parser
+complete refactoring of the parser. Far less heuristics techniques.
+Closer to what was described in the CC'09 paper.
 
 * 0.15 (Q1 2011)
 
-** introduce web-based source code navigator a la lxr using ocsigen
+** introduce web-based source code navigator a la LXR using ocsigen
+first play with ocsigen.
 
-** introduce lang_html/
-(using code from a stripped down version of ocamlnet)
+** introduce lang_html/ with clean ast_html.ml type
+(also using code from a stripped down version of ocamlnet)
 
 ** introduce lang_css/
 (using code from ccss by dario teixeira)
@@ -76,28 +93,25 @@ the documentation of pfff!)
 
 ** php analysis
 
-*** finalized the PIL
+*** dead? finalized the PIL
 
-*** dataflow analysis using PIL (thanks to iproctor)
+*** dead? dataflow analysis using PIL (thanks to iproctor)
 
 ** global analysis
 
 *** store additional attributes/properties per entities in the light code db
-
 - does it take argument by refs. 
 - does it contain dynamic calls ($fn(...))
 
 This can help the visualizer to give more semantic visual feedback.
 
-*** layer type, so can save results of global analysis and process them
+** layer type, so can save results of global analysis and process them
 later in codemap or pfff_statistics
 
 ** lang_ml
-
 more highlight
 
 ** documentation
-
 wrote wiki pages (intro, sgrep, spatch, features, vision, roadmap, etc)
 
 applied codemap on many open source project and generated screenshots.
@@ -112,6 +126,12 @@ and assist in the refactoring
 and put more generic stuff in h_program-lang/
 
 *** renamed pfff_visual in codemap
+
+** commons/graph.ml
+a polymorphic wrapper around ocamlgraph
+
+(to compute strongly connected components of php callgraph, in prevision
+of a bottom up analysis of php)
 
 * 0.13
 
@@ -153,32 +173,33 @@ or not, thanks to PLEAC for the builtin functions).
 Far more flexible and powerful than the previous treemap visualizer
 which was using Graphics. Now also render file content!
 
+** introduce parsing_ml/
+Allow to use and experiment the treemap code visualizer on the pfff
+source itself; to see if such features are useful.
 
 ** sgrep
 support linear patterns (e.g. sgrep -e 'X & X')
 and a -pvar option to print matched metavarables instead of matched code
 
-** introduce parsing_ml/
-Allow to use and experiment the treemap code visualizer on the pfff
-source itself; to see if such features are useful.
+** new tool, stags, a TAG generator using ASTs not fragle regexp
+support for PHP ocaml
 
 ** introduce parsing_cpp/
 
 ** introduce analyze_js/, analyze_cpp/, analyze_ml/ 
 very basic support. Just highlighting
 
-** internals
+** introduce database_code.ml, a generic code-information database
+using JSON as support. Will help make pfff less php-specific.
 
+** internals
 reorganized the treemap and h_program-lang/ to be less
 facebook and pfff specific. Have a commons/file_type.ml for instance.
 
-introduce database_code.ml, a generic code-information database
-using JSON as support. Will help make pfff less php-specific.
 
 * 0.11
 
 ** introduce checker
-
 warn about "unused variable" and "use of undefined variable".
 
 use fast global analysis (bonus: it's flib-aware and desugar
@@ -187,10 +208,7 @@ the require_module_xxx and other flib conventions).
 ** introduce php_etags
 a more precise TAGS file generator (bonus: it's xhp-aware).
 
-** checkModule part 2
-
 ** introduce javascript support, parsing_js/
-
 parsing/unparsing/dumping.
 preliminary refactoring support.
 
@@ -198,7 +216,7 @@ preliminary refactoring support.
 
 ** analysis
 
-introduce PIL, PHP Intermediate Language, a more conveninent AST to work on
+dead? introduce PIL, PHP Intermediate Language, a more conveninent AST to work on
 for doing complex analysis such as dataflow, type-inference, tainted
 analysis, etc.
 
@@ -208,10 +226,7 @@ to what gcc does with cpp. Provide a DFS and BFS algo.
 
 * 0.10 (Q2 2010)
 
-** introduce test coverage analysis using xdebug.ml and phpunit.ml
-
-used by arc unit.
-
+** finish test coverage analysis using xdebug.ml and phpunit.ml
 rank, filter, parallelize (using MPI), cronize.
 
 ** more refactorings with spatch_php
@@ -221,129 +236,75 @@ introduce the transfo field, mimicing part of coccinelle.
 
 improve support for XHP and refactoring, merging tokens heuristic.
 
-** introduce fixer
-extract and modularize code from reaper
-
-extract code from facebook/qa_code into analyze_php/qa_code
-
-dead variables/typo detection
-
 ** analysis
-
 static method calls analysis (with self/parent special cases handling)
-
-more work on include/require, now stored in the database.
-better environment handling (PHP_ROOT, THRIFT_ROOT, etc)
-
-more work on builtins, needed by checkModule
 
 users_of_class, users_of_define, extenders/implementers of class
 
 ** parser
-fix bugs in lexer
-
-now can parse <?=  code
+fix bugs in lexer, now can parse <?=  code
 
 ** internal
+*** split analyze_php/ in multiple dirs
+and moved code from facebook/ to analyze_php/
 
-split analyze_php/ in multiple dirs
-moved code from facebook/ to analyze_php/
-
-started to use OUnit.ml !
-
+*** started to use OUnit.ml !
 unit tests for parsing, analysis, deadcode, callgraph, xdebug
 
 ** first work on web gui
-
 extract and modularize php highlighting logic from gtk gui.
 
 started integrate treemap and web gui.
 
 ** first work on thrift interface to pfff services
 
-
 ** misc
-dead sitevars analysis
-update: not used
-
 static arrays lint checks
 
-proto of undeterministic PHP bugs finder using diff and xdebug
-
-proto for flib dependencies display
+dead? proto of undeterministic PHP bugs finder using diff and xdebug
 
 * 0.9
 
-** introduce facebook/check_code
-
-** introduce facebook/qa_test
-with 
- - test_rank, 
- - cyclomatic complexity, 
- - test_smells, 
- - email annotations and notifications
- - output results via R
-
-** introduce facebook/fb_phpunit_wrap 
-and tools/phpunit.ml
-update: supersed by 't'
-
-** introduce compile_php/
+** dead? introduce compile_php/
 but for now very rudimentary
 update: not used for now
 
 ** analysis
-
 control flow graph analysis:
  useful for cyclomatic complexity, and potentially useful or far more
  things (sgrep, dataflow, etc)
 
-start of dataflow analysis
+dead? start of dataflow analysis
 
 start of coverage analysis (static and dynamic)
 
 start of include_require static analysis (and flib file dependencies too)
 
-start of type unioning
+dead? start of type unioning
 
 ** phpunit result analysis and parsing
-used by fb_phpunit_wrap
-
-useful to get local regression information on tests.
-
-** bugfixes
-updated the deadcode reaper, fb_phpunit_wrap, and pfff_db
-to analyze the current code
-
-more xdebug parsing
 
 ** internals
-
-reorganized facebook/ with fb_common/www.ml, etc
-and fb_org/fb_employee.ml, etc
-
 reorganized json/sexp output, factorize code and use more ocaml.ml
 
 * 0.8 (Q1 2010)
 
-** xdebug trace parsing
+** xdebug trace parsing, can now do dynamic analysis! 
+Done for type "inference/extraction" at the beginnning and useful
+for coverage too!
 
-Can now do dynamic analysis! Done for type
-"inference/extraction".
+** dead: GUI, trivial type inference feedback based on xdebug info
+update: not really used for now, superseded by julien static type inference
 
 ** sgrep: introducing $V special metavar 
 
-** GUI 
-trivial type inference feedback based on xdebug info
-update: not really used for now
-
-** introducing parsing_sql/
+** dead? introducing parsing_sql/
 could be useful at some point for better type checking or type inference
 update: not sure for now
 
 * 0.7
 
-** introducing ppp, php pre processor, and implement closure
+** dead: introducing ppp, php pre processor, and implement closure
 by source-to-source transformation.
 
 now I can code in PHP :)
@@ -352,14 +313,11 @@ now I can code in PHP :)
 with map_php.ml. Used by ppp and closure implemetation. 
 
 ** sgrep: 
-
 - a -emacs flag
 - improved -xhp and made it the default operating mode
 
 ** deadcode:
 - do fixpoint analysis per file
-
-
 
 * 0.6 
 
@@ -369,21 +327,15 @@ a code matcher working at the AST level
 ** introducing treemap viewer using Graphics.mli
 update: superseded by cairo-based viewer (but reused most of the algorithms)
 
-** introducing code_rank
-
-** introducing checkModule 
-first part (with its literate programming manual)
-
-** introducing flib_navigator
-update: superseded by web gui
-
 ** treemap algorithms library and basic literate programming manual
+
+** dead? introducing code_rank
+ref from sebastien bergmann
 
 * 0.5
 
-** parser 
-
-XHP poor's man support. Just have A new -pp option to give opportunity to call
+** dead: XHP poor's man support. 
+Just have A new -pp option to give opportunity to call
 a preprocessor (eg 'xhpize -d').
 
 ** ffi/meta
@@ -394,7 +346,6 @@ also supported in sgrep.
 * 0.4
 
 ** doc
-
 programmer manual for parsing_php/
 internals manual for parsing_php/
 
@@ -402,23 +353,15 @@ internals manual for parsing_php/
 (hence the special marks in the source)
 
 ** analysis
-
 callgraph for methods (using weak heuristic), with optimisations
 to scale (partially because use weak heuristic)
 
 * 0.3 (Q4 2009)
 
 ** analysis
-
 deadcode analysis v2, v3, v4
-diffcamp/facebook integration (via mysql and git)
 
 ** infrastructure
-
-ORM for mysql (using camlmix)
-Mysql support (with ocamlmysql/)
-note: for diffcamp/facebook integration
-
 IRC support (adapting ocamlirc/)
 update: not used anymore
 
@@ -427,12 +370,11 @@ complement git.ml
 * 0.2 
 
 ** analysis
-
 deadcode analysis v1
 
 * 0.1
 
-** introducing PHP gui (with ocamlgtk/)
+** dead: introducing PHP gui (with ocamlgtk/)
 update: superseded by codemap, a fancy gui using cairo and gtk
 
 * beta
@@ -446,4 +388,4 @@ reused Zend flex/bison code.
 
 ** visitor (using ocamltarzan)
 
-** AST pretty printer (also using ocamltarzan and lib-sexp)
+** AST dumper (also using ocamltarzan and lib-sexp)
