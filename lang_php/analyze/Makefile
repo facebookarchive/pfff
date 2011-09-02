@@ -49,8 +49,9 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=basic foundation tools typing finder checker annotaters \
-  database dynamic_analysis static_analysis qa_test qa_code \
+MAKESUBDIRS=basic foundation tools typing finder checker \
+  database dynamic_analysis static_analysis qa_test \
+#qa_code annotaters
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \

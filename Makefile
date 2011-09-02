@@ -195,7 +195,6 @@ LIBS= commons/commons.cma \
      lang_php/analyze/foundation/lib.cma \
      lang_php/analyze/typing/lib.cma \
      lang_php/analyze/tools/lib.cma \
-     lang_php/analyze/annotaters/lib.cma \
      lang_php/analyze/checker/lib.cma \
      lang_php/mini/lib.cma \
      lang_php/matcher/lib.cma \
