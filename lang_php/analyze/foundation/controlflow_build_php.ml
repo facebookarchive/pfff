@@ -169,6 +169,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | ExprStmt _ 
    | EmptyStmt _
    | Echo (_, _, _)
+   | DeclConstant _
    | InlineHtml _
       ->
        let simple_stmt = F.TodoSimpleStmt in

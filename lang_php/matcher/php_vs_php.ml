@@ -2285,6 +2285,18 @@ and m_stmt a b =
        B.Declare(b1, b2, b3)
     )
     )))
+  | A.DeclConstant(a1, a2, a3, a4, a5), B.DeclConstant(b1, b2, b3, b4, b5) ->
+      m_tok a1 b1 >>= (fun (a1, b1) ->
+      m_name a2 b2 >>= (fun (a2, b2) ->
+      m_tok a3 b3 >>= (fun (a3, b3) ->
+      m_static_scalar a4 b4 >>= (fun (a4, b4) ->
+      m_tok a5 b5 >>= (fun (a5, b5) ->
+        return (
+          A.DeclConstant(a1, a2, a3, a4, a5), 
+          B.DeclConstant(b1, b2, b3, b4, b5)
+        )
+      )))))
+
   | A.TypedDeclaration(a1, a2, a3, a4), B.TypedDeclaration(b1, b2, b3, b4) ->
       fail2 "TypedDeclaration"
 
@@ -2311,6 +2323,7 @@ and m_stmt a b =
   | A.Unset _, _
   | A.Declare _, _
   | A.TypedDeclaration _, _
+  | A.DeclConstant _, _
    -> fail ()
 
 

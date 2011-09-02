@@ -917,6 +917,13 @@ and v_stmt xxx =
           v3
       and v4 = v_tok v4
       in ()
+  | DeclConstant (v1, v2, v3, v4, v5) ->
+      let v1 = v_tok v1 
+      and v2 = v_name v2
+      and v3 = v_tok v3
+      and v4 = v_static_scalar v4
+      and v5 = v_tok v5
+      in ()
 
   in
   vin.kstmt (k,all_functions) xxx

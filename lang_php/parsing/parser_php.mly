@@ -388,6 +388,10 @@ unticked_statement:
  | T_USE use_filename TSEMICOLON		  { Use($1,$2,$3) }
  | T_DECLARE  TOPAR declare_list TCPAR declare_statement 
      { Declare($1,($2,$3,$4),$5) }
+ /*(* PHP 5.3 *)*/
+ | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
+     { DeclConstant ($1, Name $2, $3, $4, $5) }
+
 /*(*x: GRAMMAR statement *)*/
 /*(*----------------------------*)*/
 /*(*2 auxillary statements *)*/

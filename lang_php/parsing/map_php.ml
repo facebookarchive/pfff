@@ -831,6 +831,15 @@ and map_stmt x =
           v3
       and v4 = map_tok v4
       in TypedDeclaration ((v1, v2, v3, v4))
+
+  | DeclConstant (v1, v2, v3, v4, v5) ->
+      let v1 = map_tok v1 
+      and v2 = map_name v2
+      and v3 = map_tok v3
+      and v4 = map_static_scalar v4
+      and v5 = map_tok v5
+      in DeclConstant (v1, v2, v3, v4, v5)
+
   in
   vin.kstmt (k, all_functions) x
 
