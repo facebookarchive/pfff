@@ -22,6 +22,8 @@ PROGS=pfff
 PROGS+=sgrep
 PROGS+=spatch
 PROGS+=stags
+PROGS+=pm_depend
+
 PROGS+=ppp
 
 # note that without bdb, pfff_db will be incomplete regarding PHP
@@ -392,6 +394,19 @@ stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
 
 clean::
 	rm -f stags
+
+#------------------------------------------------------------------------------
+# pm_depend targets
+#------------------------------------------------------------------------------
+
+pm_depend: $(LIBS) main_pm_depend.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+
+pm_depend.opt: $(LIBS:.cma=.cmxa) main_pm_depend.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
+
+clean::
+	rm -f pm_depend
 
 #------------------------------------------------------------------------------
 # sgrep targets

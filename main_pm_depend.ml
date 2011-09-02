@@ -9,7 +9,14 @@ open Common
 (* Purpose *)
 (*****************************************************************************)
 
-(* A "driver" for the different parsers in pfff *)
+(* A module/package dependency visualizer generating data for gephi.
+ * See http://gephi.org.
+ * 
+ * todo? have a backend for graphviz?
+ *
+ * usage: 
+ *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o pfff.gexf /path/to/dir
+ *)
 
 (*****************************************************************************)
 (* Flags *)
@@ -21,6 +28,13 @@ open Common
  *)
 
 let verbose = ref false
+
+let with_extern = ref false
+let package_depth = ref 0
+
+let lang = ref "ml"
+
+let output_file = ref "/tmp/pm.gexf"
 
 (* action mode *)
 let action = ref ""
@@ -34,27 +48,40 @@ let action = ref ""
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Language specific *)
+(*****************************************************************************)
+
+let rec dependencies_of_files_or_dirs lang xs = 
+  let verbose = !verbose in
+  match lang, xs with
+  | "ml", [dir] ->
+      Graph_modules_packages_ml.dependencies
+        ~verbose
+        ~with_extern:!with_extern
+        ~package_depth:!package_depth
+        dir
+  | _ -> failwith ("language not supported: " ^ lang)
+      
+(*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
 
-let main_action xs = 
-  raise Todo 
+let main_action xs =
+  let g = dependencies_of_files_or_dirs !lang xs in
+  pr2 (spf "Writing data in %s" !output_file);
+  g +> Gephi.graph_to_gefx 
+    ~str_of_node:(fun s -> s)
+    ~tree:None
+    ~weight_edges:None
+    ~output:!output_file;
+  ()
 
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
-let test_json_pretty_printer file =
-  let json = Json_in.load_json file in
-  let s = Json_io.string_of_json json in
-  pr s
-  
+
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
-  "-json_pp", " <file>",
-  Common.mk_action_1_arg test_json_pretty_printer;
-  
-  "-layer_stat", " <file>",
-  Common.mk_action_1_arg Test_program_lang.layer_stat;
 ]
 
 (*****************************************************************************)
@@ -62,55 +89,33 @@ let pfff_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  pfff_extra_actions() ++
-  Test_parsing_ml.actions()++
-  Test_parsing_php.actions()++
-  Test_parsing_js.actions()++
-  Test_parsing_cpp.actions()++
-  Test_parsing_nw.actions()++
-  Test_parsing_lisp.actions()++
-  Test_parsing_hs.actions()++
-  Test_parsing_python.actions()++
-  Test_parsing_csharp.actions()++
-  Test_parsing_java.actions()++
-  Test_parsing_erlang.actions()++
-  Test_mini_php.actions()++
-  Test_parsing_text.actions()++
-  Test_parsing_html.actions()++
-  Test_parsing_css.actions()++
-  Test_parsing_web.actions()++
-
-  Test_analyze_cpp.actions () ++
   []
 
 let options () = 
   [
+    "-with_extern", Arg.Set with_extern,
+    " includes external references";
+    "-package_mode", Arg.Set_int package_depth,
+    " <n> project at depth n";
     "-verbose", Arg.Set verbose, 
     " ";
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
+    "-o", Arg.Set_string output_file, 
+    (spf " <file> default = %s" !output_file);
   ] ++
-  Flag_parsing_php.cmdline_flags_verbose () ++
-  Flag_parsing_cpp.cmdline_flags_verbose () ++
-
-  Flag_parsing_php.cmdline_flags_debugging () ++
-  Flag_parsing_cpp.cmdline_flags_debugging () ++
-
-  Flag_parsing_php.cmdline_flags_pp () ++
-  Flag_parsing_cpp.cmdline_flags_macrofile () ++
-
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_other () ++
-
   [
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "pfff version: %s" Config.version);
+      pr2 (spf "pm_depend version: %s" Config.version);
       exit 0;
     ), 
     "  guess what";
-
     (* this can not be factorized in Common *)
     "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2011/03/26 00:44:57 $";
+      pr2 "version: $Date: 2011/09/01 00:44:57 $";
       raise (Common.UnixExit 0)
     ), 
     "   guess what";
@@ -122,11 +127,7 @@ let options () =
 (*****************************************************************************)
 
 let main () = 
-
-  (* Common_extra.set_link(); 
-     let argv = Features.Distribution.mpi_adjust_argv Sys.argv in
-  *)
-
+  (* Common_extra.set_link(); *)
   let usage_msg = 
     "Usage: " ^ basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
@@ -136,9 +137,7 @@ let main () =
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
   Common.profile_code "Main total" (fun () -> 
-    
     (match args with
-    
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
