@@ -32,7 +32,6 @@ INCLUDEDIRS= $(TOP)/commons \
    ../../parsing \
    .. \
    ../basic \
-   ../annotaters \
    ../foundation \
 
 ##############################################################################

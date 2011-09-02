@@ -65,7 +65,6 @@ INCLUDEDIRS= $(TOP)/commons \
    foundation \
    database \
    checker \
-   annotaters \
    tools \
    typing \
    static_analysis \
