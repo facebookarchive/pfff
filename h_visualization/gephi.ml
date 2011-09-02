@@ -32,7 +32,7 @@ open Xml_types
 (*****************************************************************************)
 
 (* see http://gexf.net/format/ *)
-let graph_to_gefx ~str_of_node ~output ~tree g =
+let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
   Common.with_open_outfile output (fun (pr_no_nl, _chan) ->
     let nodes = G.nodes g in
 (*
@@ -94,11 +94,22 @@ let graph_to_gefx ~str_of_node ~output ~tree g =
     in
     let edges_xml = nodes +> List.map (fun n ->
       let succ = G.succ n g in
-      succ +> List.map (fun n2 ->
+      succ +> Common.map_filter (fun n2 ->
+        let weight = 
+          match weight_edges with
+          | None -> 1.
+          | Some h ->
+              Hashtbl.find h (n, n2)
+        in
+        if weight = 0.
+        then None
+        else Some (
         Element ("edge", [
           "source", i_to_s (G.ivertex n g);
           "target", i_to_s (G.ivertex n2 g);
+          "weight", spf "%5.1f" weight;
         ], [])
+        )
     )) +> List.flatten
     in
     let xml =

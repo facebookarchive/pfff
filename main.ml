@@ -71,6 +71,8 @@ let project file =
   if s = "" then "."
   else s
 
+let project file = file
+
 let pfff_gephi_dependencies dir output =
   let root = Common.realpath dir in
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
@@ -161,7 +163,15 @@ let pfff_gephi_dependencies dir output =
 
         | _ -> ()
         )
-       else pr2_once (spf "PB: could not find %s" s)
+      else begin
+        pr2_once (spf "PB: could not find %s" s);
+(*
+        let node2 = "EXTERN/" ^ s in 
+        g +> G.add_vertex_if_not_present node2;
+        g +> G.add_edge node1 node2;
+*)
+      end
+          
     in
 
     let visitor = V.mk_visitor { V.default_visitor with
@@ -227,6 +237,7 @@ let pfff_gephi_dependencies dir output =
   g +> Gephi.graph_to_gefx 
     ~str_of_node:(fun s -> s)
     ~tree:None
+    ~weight_edges:None
     ~output;
   ()
 
