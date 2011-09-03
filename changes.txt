@@ -41,6 +41,8 @@ first play with ocsigen.
 ** introduce lang_css/
 (using code from ccss by dario teixeira)
 
+** introduce lang_web/ with combined html+js+css parser
+
 * 0.14 (Q4 2010)
 
 ** codemap
