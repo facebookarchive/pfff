@@ -1,12 +1,9 @@
 -*- org -*-
 
-* 0.17 (Q3 2011)
+* ???
+web ui in ocsigen??
 
-** introduce pm_depend
-a module/package dependency visualizer exporting data for gephi
-(only for ocaml code for now). Played with it on the code of pfff
-(in package mode) and some of its components: codemap, cpp, php, cmf
-(in module mode with and without extern mode).
+* 0.17 (Q3 2011)
 
 ** introduce notion of code overlay
 with some helper functions to check the validity of an overlay.
@@ -15,9 +12,17 @@ Also added some support for overlay in codemap.
 Overlay helps organize and visualize (bad) codebase from a different point
 of view.
 
+** introduce pm_depend
+a module/package dependency visualizer exporting data for gephi
+(only for ocaml code for now). Played with it on the code of pfff
+(in package mode) and some of its components: codemap, cpp, php, cmf
+(in module mode with and without extern mode).
+
 ** started port of codemap to ocsigen
 can now display the treemap. Had to report many bugs to the ocsigen team
 to get this to work.
+
+** sgrep: support for regexp when matching string constants
 
 * 0.16 (Q2 2011)
 
@@ -40,12 +45,16 @@ first play with ocsigen.
 
 ** codemap
 
-*** google-earth like layers!
+*** layer type, so can save results of global analysis and process them
+later in codemap or pfff_statistics
+
+*** layers! like in google earth
 
 - architecture/aspect layer (default one)
 - static dead code layer
-- dynamic live code layer (using xhprof data)
+- dead: dynamic live code layer (using xhprof data)
 - test coverage layer (using phpunit and xdebug data)
+- 
 - bugs layer
 - security layer
 - cyclomatic complexity, 
@@ -62,6 +71,7 @@ can now visualize the result of a git grep on a project
 *** better visualization of directories
 use different color for dirs and files labels, and highlight first
 letter of label at depth = 1
+
 
 ** introduce spatch, a syntactical patch
 a DSL to express easily refactoring on PHP.
@@ -91,6 +101,9 @@ the documentation of pfff!)
 
 ** introducing lang_erlang/
 
+** lang_ml
+more highlight
+
 ** php analysis
 
 *** dead? finalized the PIL
@@ -104,12 +117,6 @@ the documentation of pfff!)
 - does it contain dynamic calls ($fn(...))
 
 This can help the visualizer to give more semantic visual feedback.
-
-** layer type, so can save results of global analysis and process them
-later in codemap or pfff_statistics
-
-** lang_ml
-more highlight
 
 ** documentation
 wrote wiki pages (intro, sgrep, spatch, features, vision, roadmap, etc)
@@ -173,16 +180,12 @@ or not, thanks to PLEAC for the builtin functions).
 Far more flexible and powerful than the previous treemap visualizer
 which was using Graphics. Now also render file content!
 
+** new tool, stags, a TAG generator using ASTs not fragle regexp
+support for PHP ocaml
+
 ** introduce parsing_ml/
 Allow to use and experiment the treemap code visualizer on the pfff
 source itself; to see if such features are useful.
-
-** sgrep
-support linear patterns (e.g. sgrep -e 'X & X')
-and a -pvar option to print matched metavarables instead of matched code
-
-** new tool, stags, a TAG generator using ASTs not fragle regexp
-support for PHP ocaml
 
 ** introduce parsing_cpp/
 
@@ -192,6 +195,10 @@ very basic support. Just highlighting
 ** introduce database_code.ml, a generic code-information database
 using JSON as support. Will help make pfff less php-specific.
 
+** sgrep
+support linear patterns (e.g. sgrep -e 'X & X')
+and a -pvar option to print matched metavarables instead of matched code
+
 ** internals
 reorganized the treemap and h_program-lang/ to be less
 facebook and pfff specific. Have a commons/file_type.ml for instance.
@@ -199,7 +206,7 @@ facebook and pfff specific. Have a commons/file_type.ml for instance.
 
 * 0.11
 
-** introduce checker
+** introduce checker, scheck
 warn about "unused variable" and "use of undefined variable".
 
 use fast global analysis (bonus: it's flib-aware and desugar
@@ -216,11 +223,12 @@ preliminary refactoring support.
 
 ** analysis
 
-dead? introduce PIL, PHP Intermediate Language, a more conveninent AST to work on
+*** dead? introduce PIL, PHP Intermediate Language
+a more conveninent AST to work on
 for doing complex analysis such as dataflow, type-inference, tainted
 analysis, etc.
 
-include/require analysis as well as flib-unsugaring. Make it possible
+*** include/require analysis as well as flib-unsugaring. Make it possible
 to grab all the files needed to check one file, in a way similar
 to what gcc does with cpp. Provide a DFS and BFS algo.
 
@@ -229,7 +237,7 @@ to what gcc does with cpp. Provide a DFS and BFS algo.
 ** finish test coverage analysis using xdebug.ml and phpunit.ml
 rank, filter, parallelize (using MPI), cronize.
 
-** more refactorings with spatch_php
+** helpers to write some PHP refactorings
 fix parsing (lexer) and unparsing bugs
 
 introduce the transfo field, mimicing part of coccinelle.
@@ -245,6 +253,7 @@ users_of_class, users_of_define, extenders/implementers of class
 fix bugs in lexer, now can parse <?=  code
 
 ** internal
+
 *** split analyze_php/ in multiple dirs
 and moved code from facebook/ to analyze_php/
 
@@ -257,6 +266,7 @@ extract and modularize php highlighting logic from gtk gui.
 started integrate treemap and web gui.
 
 ** first work on thrift interface to pfff services
+used by web ui of acrichton
 
 ** misc
 static arrays lint checks
@@ -265,9 +275,7 @@ dead? proto of undeterministic PHP bugs finder using diff and xdebug
 
 * 0.9
 
-** dead? introduce compile_php/
-but for now very rudimentary
-update: not used for now
+** phpunit result analysis and parsing
 
 ** analysis
 control flow graph analysis:
@@ -282,7 +290,9 @@ start of include_require static analysis (and flib file dependencies too)
 
 dead? start of type unioning
 
-** phpunit result analysis and parsing
+** dead? introduce compile_php/
+but for now very rudimentary
+update: not used for now
 
 ** internals
 reorganized json/sexp output, factorize code and use more ocaml.ml
