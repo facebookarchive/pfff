@@ -26,21 +26,27 @@ module G = Graph
  * Dependency visualization for ocaml code.
  * 
  * alternatives:
- *  - ocamldoc -dot with graphviz
- *    But if there is one parse error or a module not found,
- *    then ocamldoc fails.
- *    Also there is no package "projection" so it's hard to apply on
- *    large projects. There is also no with-extern view.
+ *  - ocamldoc -dot ...
+ *    But if there is one parse error or a module not found, then 
+ *    ocamldoc fails. Also there is no package "projection" so it's 
+ *    hard to apply on large projects. There is also no with-extern view
+ *    with the slice of the graph to a directory.
+ *    TODO It supports better code using camlp4 though.
+ *  - ocamldoc with graphviz  
+ *    graphviz does not do variable node size for free as in gephi
  *  - ocamldoc -dot-reduce ... 
- *    The -dot-reduce is good for layering, but in the end
- *    I may prefer to see things without the reduction (especially
+ *    The -dot-reduce is good for layering, but sometimes
+ *    it's also good to see things without the reduction (especially
  *    with gephi). See for instance the graph for tiger with ocamldoc
- *    vs pm_depend. I can see all the real callers to option.ml
+ *    vs pm_depend. I can see all the real callers to option.ml.
+ *    TODO the reduce and layering is also useful ... try to do it in gephi too
  *  - ocamldoc -dot-colors
- *    this is useful. It's somehow covered by the strongly-connected +
- *    coloring in gephi.
+ *    TODO this is useful. 
+ *    It's somehow covered by the strongly-connected + coloring in gephi.
  *  - graphviz backend? graphviz is good for layers, but
- *    you lose space and it does not scale so well.
+ *    you lose space because the high-level stuff is at the top but alone.
+ *    With gephi/fatlas, by putting high-level stuff at the center, 
+ *    you lose less space? Also graphviz does not scale very well.
  * 
  * todo? there is no edge weight? But is it useful in an ocaml context?
  * We can't have mutually dependent files or directories; the ocaml compiler
@@ -125,6 +131,14 @@ let dependencies ?(verbose=true) ~with_extern ~package_depth dir =
            | _ -> false
           )
       in
+      let is_test =
+        xs +> List.exists (fun s ->
+          match s with
+          | "examples" | "tests" |  "test" -> true
+          | _ -> false
+        )
+      in
+
       (* pad specific *)
       let is_old = List.mem "old" xs in
 
@@ -134,7 +148,7 @@ let dependencies ?(verbose=true) ~with_extern ~package_depth dir =
       let is_mli_with_a_ml =
         e = "mli" && Sys.file_exists ml_file
       in
-      is_test_in_external || is_mli_with_a_ml || is_old
+      is_test_in_external || is_mli_with_a_ml || is_old || is_test
     )
   in
   let g = G.create () in
