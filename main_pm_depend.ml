@@ -89,6 +89,7 @@ let pfff_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
+  Test_parsing_ml.actions()++
   []
 
 let options () = 
