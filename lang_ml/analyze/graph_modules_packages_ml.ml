@@ -26,15 +26,21 @@ module G = Graph
  * Dependency visualization for ocaml code.
  * 
  * alternatives:
- *  - ocamldoc -dot -dot-reduce -dot-colors ... with graphviz
+ *  - ocamldoc -dot with graphviz
  *    But if there is one parse error or a module not found,
  *    then ocamldoc fails.
- *    Also there is no package "projection" or with-extern view.
- *    Finally the -dot-reduce is good for layering, but in the end
+ *    Also there is no package "projection" so it's hard to apply on
+ *    large projects. There is also no with-extern view.
+ *  - ocamldoc -dot-reduce ... 
+ *    The -dot-reduce is good for layering, but in the end
  *    I may prefer to see things without the reduction (especially
- *    with gephi).
+ *    with gephi). See for instance the graph for tiger with ocamldoc
+ *    vs pm_depend. I can see all the real callers to option.ml
+ *  - ocamldoc -dot-colors
+ *    this is useful. It's somehow covered by the strongly-connected +
+ *    coloring in gephi.
  *  - graphviz backend? graphviz is good for layers, but
- *    you lost space and it does not scale so well.
+ *    you lose space and it does not scale so well.
  * 
  * todo? there is no edge weight? But is it useful in an ocaml context?
  * We can't have mutually dependent files or directories; the ocaml compiler
@@ -67,23 +73,24 @@ type ml_graph = Common.filename Graph.graph
 (* assumes get a readable path *)
 let project ~package_depth file =
   let xs = Common.split "/" file in
-  match package_depth with
-  | 0 -> file
-  | n ->
-      (* todo? do something for n = 1? *)
-      let xs' =
-        match xs with
-        (* todo: pfff specific ... *)
-        | "external"::_-> 
-            Common.take_safe 2 xs
-        | "facebook"::"external"::x::xs-> 
-            ["external";x]
-        (* <=> dirname *)
-        | _ -> Common.list_init xs
-      in
-      let s = Common.join "/" xs' in
-      if s = "" then "."
-      else s
+
+  (* todo? do something for n = 1? *)
+  let xs' =
+    match xs with
+    (* todo: pad specific ... *)
+    | "external"::_-> 
+        Common.take_safe 2 xs
+    (* todo: pfff specific ... *)
+    | "facebook"::"external"::x::xs-> 
+        ["external";x]
+    (* <=> dirname *)
+    | _ ->
+        if package_depth = 0 then xs
+        else Common.list_init xs
+  in
+  let s = Common.join "/" xs' in
+  if s = "" then "."
+  else s
 
 (*****************************************************************************)
 (* Main entry point *)
