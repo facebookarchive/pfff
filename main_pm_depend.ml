@@ -69,7 +69,7 @@ let rec dependencies_of_files_or_dirs lang xs =
 let main_action xs =
   let g = dependencies_of_files_or_dirs !lang xs in
   pr2 (spf "Writing data in %s" !output_file);
-  g +> Gephi.graph_to_gefx 
+  g +> Graph_gephi.graph_to_gefx 
     ~str_of_node:(fun s -> s)
     ~tree:None
     ~weight_edges:None
