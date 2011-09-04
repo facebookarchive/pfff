@@ -11,7 +11,7 @@ TOP=..
 TARGET=lib
 
 SRC= figures.ml \
-     jgraph.ml gephi.ml \
+     jgraph.ml graph_gephi.ml \
      treemap.ml treemap_json.ml
 #now in commons/ simple_color.ml 
 
