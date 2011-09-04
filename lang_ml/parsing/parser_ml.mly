@@ -336,6 +336,8 @@ operator:
  | TLess     { }
  | TGreater  { }
 
+ | TAndAnd { }
+
 /*(* for polymorphic types both 'a and 'A is valid. Same for module types. *)*/
 ident:
  | TUpperIdent                                      { $1 }
