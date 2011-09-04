@@ -240,6 +240,10 @@ signature_item:
  | Tmodule TUpperIdent module_declaration
      { ItemTodo $1 }
 
+ /*(* objects *)*/
+ | Tclass class_descriptions
+      { ItemTodo $1 }
+
 /*(*----------------------------*)*/
 /*(*2 Misc *)*/
 /*(*----------------------------*)*/
@@ -293,7 +297,12 @@ structure_item:
 
  /*(* modules *)*/
  | Tmodule TUpperIdent module_binding
-      { ModuleAlias ($1, Name $2, fst $3, snd $3) }
+      { 
+        match $3 with
+        | None -> ItemTodo $1
+        | Some (x, y) ->
+            ModuleAlias ($1, Name $2, x, y) 
+      }
  | Tmodule Ttype ident TEq module_type
       { ItemTodo $1 }
  | Tinclude module_expr
@@ -414,6 +423,10 @@ class_longident:
 mty_longident:
  | ident                                      { [], Name $1 }
  | mod_ext_longident TDot ident               { qufix $1 $2 $3 }
+
+clty_longident:
+ | TLowerIdent                               { [], Name $1 }
+ | mod_longident TDot TLowerIdent            { qufix $1 $2 $3 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -765,9 +778,12 @@ simple_pattern:
  /*(* name tag extension *)*/
  | name_tag
       { PatTodo }
+ /*(* range extension *)*/
+ | TChar TDotDot TChar  
+    { PatTodo }
 
  | TOParen pattern TCParen
-      { ParenPat ($1, $2, $3) }
+    { ParenPat ($1, $2, $3) }
 
 
 lbl_pattern_list:
@@ -1079,6 +1095,49 @@ label_pattern:
 /*(*----------------------------*)*/
 /*(*2 Class types *)*/
 /*(*----------------------------*)*/
+class_description:
+ virtual_flag class_type_parameters TLowerIdent TColon class_type
+  { }
+
+class_type:
+  | class_signature { }
+  | simple_core_type_or_tuple TArrow class_type { }
+
+class_signature:
+  /*  LBRACKET core_type_comma_list RBRACKET clty_longident
+      {  }
+  */
+  | clty_longident
+      {  }
+  | Tobject class_sig_body Tend
+      {  }
+
+class_sig_body:
+    class_self_type class_sig_fields { }
+
+class_self_type:
+    TOParen core_type TCParen
+      { }
+  | /*(*empty*)*/ {  }
+
+class_sig_fields:
+  | class_sig_fields Tinherit class_signature    {  }
+  | class_sig_fields virtual_method_type        {  }
+  | class_sig_fields method_type                {  }
+/*
+  | class_sig_fields Tval value_type             {  }
+  | class_sig_fields Tconstraint constrain       {  }
+*/
+  | /*(*empty*)*/                               { }
+
+method_type:
+  | Tmethod private_flag label TColon poly_type { }
+
+virtual_method_type:
+  | Tmethod Tprivate Tvirtual label TColon poly_type
+      {  }
+  | Tmethod Tvirtual private_flag label TColon poly_type
+      {  }
 
 /*(*----------------------------*)*/
 /*(*2 Class expressions *)*/
@@ -1087,10 +1146,6 @@ label_pattern:
 /*(*----------------------------*)*/
 /*(*2 Class definitions *)*/
 /*(*----------------------------*)*/
-
-class_declarations:
-  | class_declarations TAnd class_declaration   { }
-  | class_declaration                           { }
 
 class_declaration:
     virtual_flag class_type_parameters TLowerIdent class_fun_binding
@@ -1202,10 +1257,13 @@ concrete_method :
   | Tmethod override_flag private_flag label TColon poly_type TEq seq_expr
       { }
 
+
+
 virtual_flag:
  | /*(* empty*)*/                               { }
  | Tvirtual                                     { }
 
+/*(* 3.12? *)*/
 override_flag:
  | /*(*empty*)*/                                 { }
  | TBang                                        { }
@@ -1220,11 +1278,15 @@ private_flag:
 
 module_binding:
  | TEq module_expr
-      { $1, $2 }
+      { Some ($1, $2) }
+ | TOParen TUpperIdent TColon module_type TCParen module_binding
+     { None }
 
 module_declaration:
  | TColon module_type
       { }
+ | TOParen TUpperIdent TColon module_type TCParen module_declaration
+     { }
 
 /*(*----------------------------*)*/
 /*(*2 Module types *)*/
@@ -1238,6 +1300,20 @@ module_type:
  | Tfunctor TOParen TUpperIdent TColon module_type TCParen TArrow module_type
       %prec below_WITH
       { }
+ | module_type Twith with_constraints
+     { }
+ | TOParen module_type TCParen
+      { }
+
+
+with_constraint:
+ | Ttype type_parameters label_longident with_type_binder core_type 
+    /*constraints*/
+   { }
+
+with_type_binder:
+ | TEq          {  }
+ | TEq Tprivate  {  }
 
 /*(*----------------------------*)*/
 /*(*2 Module expressions *)*/
@@ -1276,3 +1352,15 @@ opt_semi3:
 opt_bar:
  | /*(*empty*)*/    { [] }
  | TPipe            { [Right $1] }
+
+with_constraints:
+ | with_constraint                             { [Left $1] }
+ | with_constraints Tand with_constraint        { $1 @ [Right $2; Left $3] }
+
+class_declarations:
+  | class_declarations TAnd class_declaration   { }
+  | class_declaration                           { }
+
+class_descriptions:
+  | class_descriptions TAnd class_description   { }
+  | class_description                           { }
