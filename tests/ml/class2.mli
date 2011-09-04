@@ -4,3 +4,7 @@ class t : (Widget.widget) -> object
  method choose : string -> bool
  method ari : string -> int
 end
+
+
+class virtual hypertext : Widget.widget -> object
+end

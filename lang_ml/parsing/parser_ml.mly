@@ -311,6 +311,8 @@ structure_item:
  /*(* objects *)*/
   | Tclass class_declarations
       { ItemTodo $1 }
+  | Tclass Ttype class_type_declarations
+      { ItemTodo $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Names *)*/
@@ -346,6 +348,7 @@ operator:
  | TGreater  { }
 
  | TAndAnd { }
+ | TBangEq { }
 
 /*(* for polymorphic types both 'a and 'A is valid. Same for module types. *)*/
 ident:
@@ -424,9 +427,10 @@ mty_longident:
  | ident                                      { [], Name $1 }
  | mod_ext_longident TDot ident               { qufix $1 $2 $3 }
 
+/*(* it's mod_ext_longident, not mod_longident *)*/
 clty_longident:
  | TLowerIdent                               { [], Name $1 }
- | mod_longident TDot TLowerIdent            { qufix $1 $2 $3 }
+ | mod_ext_longident TDot TLowerIdent            { qufix $1 $2 $3 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -562,6 +566,10 @@ expr:
  | Tlazy simple_expr %prec below_SHARP
      { ExprTodo }
 
+  /*(* objects *)*/
+  | label TAssignMutable expr
+      { ExprTodo }
+
 
 simple_expr:
  | constant
@@ -623,6 +631,9 @@ simple_expr:
      { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident
      { New ($1, $2) }
+
+ | TOBraceLess field_expr_list opt_semi TGreaterCBrace
+      { ExprTodo }
 
 
  /*(* name tag extension *)*/
@@ -712,6 +723,17 @@ label_expr:
       { ArgLabelTilde (Name $1 (* TODO remove the ~ and : *), $2) }
  | TOptLabelDecl simple_expr %prec below_SHARP
       { ArgLabelQuestion (Name $1 (* TODO remove the ~ and : *), $2) }
+
+/*(*----------------------------*)*/
+/*(*3 objects *)*/
+/*(*----------------------------*)*/
+
+field_expr_list:
+ |  label TEq expr
+      { }
+  | field_expr_list TSemiColon label TEq expr
+      { }
+
 
 /*(*************************************************************************)*/
 /*(*1 Patterns *)*/
@@ -1099,6 +1121,10 @@ class_description:
  virtual_flag class_type_parameters TLowerIdent TColon class_type
   { }
 
+class_type_declaration:
+  virtual_flag class_type_parameters TLowerIdent TEq class_signature
+  { }
+
 class_type:
   | class_signature { }
   | simple_core_type_or_tuple TArrow class_type { }
@@ -1124,8 +1150,9 @@ class_sig_fields:
   | class_sig_fields Tinherit class_signature    {  }
   | class_sig_fields virtual_method_type        {  }
   | class_sig_fields method_type                {  }
+
+  | class_sig_fields Tval value_type            {  }
 /*
-  | class_sig_fields Tval value_type             {  }
   | class_sig_fields Tconstraint constrain       {  }
 */
   | /*(*empty*)*/                               { }
@@ -1137,6 +1164,14 @@ virtual_method_type:
   | Tmethod Tprivate Tvirtual label TColon poly_type
       {  }
   | Tmethod Tvirtual private_flag label TColon poly_type
+      {  }
+
+value_type:
+  | Tvirtual mutable_flag label TColon core_type
+      { }
+  | Tmutable virtual_flag label TColon core_type
+      {  }
+  | label TColon core_type
       {  }
 
 /*(*----------------------------*)*/
@@ -1251,7 +1286,7 @@ virtual_method:
   | Tmethod override_flag Tvirtual private_flag label TColon poly_type
       { }
 
-concrete_method :
+concrete_method:
   | Tmethod override_flag private_flag label strict_binding
       { }
   | Tmethod override_flag private_flag label TColon poly_type TEq seq_expr
@@ -1364,3 +1399,7 @@ class_declarations:
 class_descriptions:
   | class_descriptions TAnd class_description   { }
   | class_description                           { }
+
+class_type_declarations:
+  | class_type_declarations TAnd class_type_declaration  {  }
+  | class_type_declaration                               { }
