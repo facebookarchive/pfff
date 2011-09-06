@@ -10,6 +10,9 @@
 *.so
 *.o
 
+# ocamldoc
+*.out
+
 # ocsigen
 _client
 _server
@@ -330,3 +333,4 @@ external/ocamlbdb/libcamlbdb.a
 /web/client.js
 /tests/cpp/a.out
 /lang_cpp/parsing/ocamldoc.out
+/pm_depend

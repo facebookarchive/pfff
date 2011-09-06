@@ -904,7 +904,9 @@ let rec (linearize_stmt: Ast_php.stmt -> Pil.stmt list) = fun st ->
 
     | Try (_, _, _, _)
     | InlineHtml _
-    | TypedDeclaration _ ->
+    | TypedDeclaration _ 
+    | DeclConstant _
+      ->
         raise Todo
 
   and aux_colon_stmt colon = 

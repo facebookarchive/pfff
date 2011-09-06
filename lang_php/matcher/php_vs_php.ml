@@ -29,8 +29,10 @@ open Common
  *    pfff/meta/gen_code -matcher_gen_all ast_php.ml
  * 
  * using ocaml pad-style reflection (see commons/ocaml.ml) on 
- * parsing_php/ast_php.ml. An alternative could have been to transform
- * ast_php.ml in a very simple term language and do the 1-vs-1 match
+ * parsing_php/ast_php.ml. 
+ * 
+ * An alternative could have been to transform ast_php.ml
+ * in a very simple term language and do the 1-vs-1 match
  * on this term language, but depending on the construct (a PHP variable,
  * a string) we may want to do special things so it's better to work
  * on the full AST. Working on a term language would be like working
@@ -44,7 +46,7 @@ open Common
  *)
 
 (* A is the pattern, and B the concrete source code. For now
- * we both use the same type, Ast_php, but they may differ later
+ * we both use the same module, Ast_php, but they may differ later
  * as the expressivity of the pattern language grows.
  *)
 module A = Ast_php 
@@ -1879,6 +1881,21 @@ and m_constant a b =
           B.String (s, b)
         ))
 
+  (* todo: handle spatch too! one could want to bind things to \1 \2
+   * and reference those \xxx in the + side of a semantic patch.
+   *)
+  | A.String(name, info_name), B.String(sb, info_sb)
+      when name =~ "^=~/\\(.*\\)/$" ->
+      let s = Common.matched1 name in
+      let rex = Pcre.regexp s in
+      if Pcre.pmatch ~rex sb
+      then
+        return (
+          A.String(name, info_name),
+          B.String(sb, info_sb)
+        )
+      else fail ()
+
   | A.String(a1), B.String(b1) ->
     m_wrap m_string a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2285,6 +2302,18 @@ and m_stmt a b =
        B.Declare(b1, b2, b3)
     )
     )))
+  | A.DeclConstant(a1, a2, a3, a4, a5), B.DeclConstant(b1, b2, b3, b4, b5) ->
+      m_tok a1 b1 >>= (fun (a1, b1) ->
+      m_name a2 b2 >>= (fun (a2, b2) ->
+      m_tok a3 b3 >>= (fun (a3, b3) ->
+      m_static_scalar a4 b4 >>= (fun (a4, b4) ->
+      m_tok a5 b5 >>= (fun (a5, b5) ->
+        return (
+          A.DeclConstant(a1, a2, a3, a4, a5), 
+          B.DeclConstant(b1, b2, b3, b4, b5)
+        )
+      )))))
+
   | A.TypedDeclaration(a1, a2, a3, a4), B.TypedDeclaration(b1, b2, b3, b4) ->
       fail2 "TypedDeclaration"
 
@@ -2311,6 +2340,7 @@ and m_stmt a b =
   | A.Unset _, _
   | A.Declare _, _
   | A.TypedDeclaration _, _
+  | A.DeclConstant _, _
    -> fail ()
 
 

@@ -552,6 +552,8 @@ and stmt =
   (*e: stmt constructors *)
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
+    (* PHP 5.3, see http://us.php.net/const *)
+    | DeclConstant of tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
   (*s: AST statement rest *)
     and switch_case_list = 

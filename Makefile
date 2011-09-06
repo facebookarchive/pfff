@@ -22,6 +22,8 @@ PROGS=pfff
 PROGS+=sgrep
 PROGS+=spatch
 PROGS+=stags
+PROGS+=pm_depend
+
 PROGS+=ppp
 
 # note that without bdb, pfff_db will be incomplete regarding PHP
@@ -129,6 +131,10 @@ OCAMLNETCMA= \
 
 #  external/ocamlnet/netstring/netaccel.cma \
 
+PHYLOMELDIR=external/phylomel/src
+PHYLOMELINCLUDE=external/phylomel/src
+PHYLOMELCMA=external/phylomel/src/lib.cma
+
 
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
@@ -195,7 +201,6 @@ LIBS= commons/commons.cma \
      lang_php/analyze/foundation/lib.cma \
      lang_php/analyze/typing/lib.cma \
      lang_php/analyze/tools/lib.cma \
-     lang_php/analyze/annotaters/lib.cma \
      lang_php/analyze/checker/lib.cma \
      lang_php/mini/lib.cma \
      lang_php/matcher/lib.cma \
@@ -227,7 +232,7 @@ LIBS= commons/commons.cma \
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
-  $(GRAPHDIR) \
+  $(GRAPHDIR) $(PHYLOMELDIR) \
   $(THRIFTDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -281,7 +286,8 @@ MAKESUBDIRS=commons \
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
  commons/lib-json commons/lib-xml commons/lib-sexp \
- $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE)
+ $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE) \
+ $(PHYLOMELINCLUDE)
 
 ##############################################################################
 # Generic
@@ -395,14 +401,35 @@ clean::
 	rm -f stags
 
 #------------------------------------------------------------------------------
+# pm_depend targets
+#------------------------------------------------------------------------------
+
+SYSLIBS_PM= external/phylomel/src/lib.cma
+
+# external/ocamlgtk/src/lablgtk.cma \
+# external/ocamlcairo/src/cairo.cma \
+# external/ocamlcairo/src/cairo_lablgtk.cma \
+
+
+pm_depend: $(LIBS) $(SYSLIBS_PM) main_pm_depend.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
+
+pm_depend.opt: $(SYSLIBS_PM:.cma=.cmxa) $(LIBS:.cma=.cmxa) main_pm_depend.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
+
+clean::
+	rm -f pm_depend
+
+#------------------------------------------------------------------------------
 # sgrep targets
 #------------------------------------------------------------------------------
 
 sgrep: $(LIBS) main_sgrep.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $(REGEXPCMA) $^
 
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) main_sgrep.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
+	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) \
+	  $(REGEXPCMA:.cma=.cmxa) $^
 
 clean::
 	rm -f sgrep

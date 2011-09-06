@@ -22,6 +22,7 @@
      h_version-control
      h_visualization
      h_program-lang
+     lang_ml/parsing
      lang_php/parsing
      lang_js/parsing
      lang_sql/parsing
@@ -43,6 +44,7 @@
      external/ocamlthrift
      external/ocamlgl/SRC
      external/ocamlcairo/src
+     external/phylomel/src
      meta
      facebook/fb_common
      facebook/fb_org
@@ -92,7 +94,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 201
+     (case 400
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -127,6 +129,8 @@
 
        (200 "-parse_cpp /home/pad/pfff/tests/cpp/foo.h")
        (201 "-parse_cpp /tmp/test.cpp")
+
+       (300 "-pfff_gephi_dependencies /home/pad/pfff /tmp/pfff.gexf")
 
        )
      )
@@ -277,6 +281,23 @@
        (0 "-test")
        (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
        (2 "-debug_checker /home/pad/pfff/tests/php/scheck/closures.php")
+       )
+     )
+    )
+   )
+
+  ; --------------------------------------------------------------------------
+  ; pm_depend
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "pm_depend"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+
+       (0 "-test_phylomel /home/pad/pfff/external/phylomel/tests/geno0 ")
        )
      )
     )
@@ -602,10 +623,11 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 3
        (0 "all")
        (1 "sgrep")
        (2 "tags")
+       (3 "parsing_ml")
        )
      ))
    )

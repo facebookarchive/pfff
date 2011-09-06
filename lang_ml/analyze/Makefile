@@ -9,6 +9,7 @@ SRC= \
      highlight_ml.ml \
      tags_ml.ml \
      database_light_ml.ml \
+     graph_modules_packages_ml.ml \
      test_analyze_ml.ml
 
 -include $(TOP)/Makefile.config
@@ -35,7 +36,9 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
    $(TOP)/external/ocamlpcre/lib \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
+   $(TOP)/h_version-control  \
+   $(TOP)/h_visualization  \
    $(TOP)/globals \
    ../parsing \
 

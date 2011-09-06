@@ -15,8 +15,7 @@ SRC= flag_parsing_ml.ml \
      token_helpers_ml.ml \
      parse_ml.ml \
      unparse_ml.ml \
-     test_parsing_ml.ml
-
+     test_parsing_ml.ml unit_parsing_ml.ml
 
 SYSLIBS= str.cma unix.cma 
 

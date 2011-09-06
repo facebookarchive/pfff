@@ -74,6 +74,9 @@ let sgrep_unittest = [
       "return <x:frag foo=\"3\" border=\"1\" ></x:frag>;", 
       false;
 
+      (* regexp, pcre syntax *)
+      "foo('=~/.*CONSTANT/');", "foo('MY_CONSTANT');", true;
+      "foo('=~/.*CONSTANT/');", "foo('MY_CONSTAN');", false;
 
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->

@@ -57,7 +57,10 @@ let test regexp =
       Unit_checker_php.unittest;
 
       Unit_parsing_js.unittest;
+
       Unit_parsing_html.unittest;
+
+      Unit_parsing_ml.unittest;
     ]
   in
   let suite = 

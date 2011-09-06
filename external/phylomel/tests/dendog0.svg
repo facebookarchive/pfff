@@ -1,0 +1,160 @@
+<?xml version="1.0" standalone="no"?>
+            <svg width="1280" height="375" version="1.1"
+            baseProfile="full"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            xmlns:ev="http://www.w3.org/2001/xml-events"
+            onload="Init( evt )">
+<script type="text/ecmascript
+">//<![CDATA[
+
+var svgRoot;
+var toScale;
+var toTranslate;
+var myLine;
+var myLegend;
+
+var b_mouse_down = false;
+var b_drag = false;
+
+var last_pos = 909;
+
+function Init() {
+    svgRoot = document.documentElement;
+    toScale = document.getElementById("to_scale");
+    toTranslate = document.getElementById("to_translate");
+    myLine  = document.getElementById("line");
+    myLegend = document.getElementById("legend");
+}
+
+function getMouse(evt) {
+    var pos = svgRoot.createSVGPoint();
+    pos.x = evt.clientX;
+    pos.y = evt.clientY;
+    return pos;
+}
+	
+function onMouseDown(evt) {
+    b_mouse_down = true;
+    if(isPointInVertLine(getMouse(evt), myLine)) {
+	b_drag = true;
+    }
+}
+	
+function onMouseMove(evt) {
+    if(b_drag) {
+	doUpdate(evt);
+    }
+}
+	
+function onMouseUp(evt) {
+    var newP = getMouse(evt);
+    if(b_drag) {
+		toScale.setAttribute("transform", "matrix(" + newP.x / 909 + " 0 0 1 0 0)");
+		toTranslate.setAttribute("transform", "translate(" + (-(909 - newP.x)) + " 0)");
+		
+		//Update legend (10, 20, .. 100)
+		for (i=0; i<=10; i++) {
+			var text = document.getElementById("Legend" + i);
+			x0 = text.getAttribute("x0");
+			//text.setAttribute("x",x0 * newP.x / 909);
+			orig_pos = 9 + 9 * (i*10);
+			text.setAttribute("x",orig_pos * newP.x / 909);
+		}
+		
+		//Update legend marks
+		for (i=0; i<=20; i++) {
+			var text = document.getElementById("LegendLine" + i);
+			orig_pos = 9 + 9 * (i*5);
+			text.setAttribute("x1",orig_pos * newP.x / 909);
+			text.setAttribute("x2",orig_pos * newP.x / 909);
+		}
+
+    }
+    b_mouse_down = false;
+    b_drag = false;
+}
+	
+function doUpdate(evt) {
+    var newP = getMouse(evt);
+    myLine.setAttributeNS(null, "x1", newP.x );
+    myLine.setAttributeNS(null, "x2", newP.x );
+    
+}
+	
+function isPointInVertLine(p,line) {
+    x = line.getAttribute("x1");
+    return Math.abs(x - p.x) <= 4
+	}
+	
+// ]]></script>
+<g id="to_scale" transform="matrix(1 0 0 1 0 0)">
+<line id="" x1="8.10" y1="23.00" x2="909.90" y2="23.00" style="stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="769.56,246.97 9.00,246.97 9.00,337.50 839.28,337.50" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="804.42,206.45 769.56,206.45 769.56,287.50 839.28,287.50" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="839.28,175.39 804.42,175.39 804.42,237.50 839.28,237.50" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="839.28,150.78 839.28,150.78 839.28,200.00 909.00,200.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="839.28,126.56 839.28,126.56 839.28,175.00 909.00,175.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="839.28,103.12 839.28,103.12 839.28,150.00 909.00,150.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="839.28,81.25 839.28,81.25 839.28,125.00 909.00,125.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="839.28,62.50 839.28,62.50 839.28,100.00 909.00,100.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="909.00,50.00 839.28,50.00 839.28,75.00 909.00,75.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="909.00,225.00 839.28,225.00 839.28,250.00 909.00,250.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="909.00,275.00 839.28,275.00 839.28,300.00 909.00,300.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+<polyline id="" points="909.00,325.00 839.28,325.00 839.28,350.00 909.00,350.00" style="fill:none;stroke:black;stroke-width:2.000000"/>
+</g>
+<line id="LegendLine0" x1="9.00" y1="23.00" x2="9.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine1" x1="54.00" y1="23.00" x2="54.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine2" x1="99.00" y1="23.00" x2="99.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine3" x1="144.00" y1="23.00" x2="144.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine4" x1="189.00" y1="23.00" x2="189.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine5" x1="234.00" y1="23.00" x2="234.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine6" x1="279.00" y1="23.00" x2="279.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine7" x1="324.00" y1="23.00" x2="324.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine8" x1="369.00" y1="23.00" x2="369.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine9" x1="414.00" y1="23.00" x2="414.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine10" x1="459.00" y1="23.00" x2="459.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine11" x1="504.00" y1="23.00" x2="504.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine12" x1="549.00" y1="23.00" x2="549.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine13" x1="594.00" y1="23.00" x2="594.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine14" x1="639.00" y1="23.00" x2="639.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine15" x1="684.00" y1="23.00" x2="684.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine16" x1="729.00" y1="23.00" x2="729.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine17" x1="774.00" y1="23.00" x2="774.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine18" x1="819.00" y1="23.00" x2="819.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine19" x1="864.00" y1="23.00" x2="864.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<line id="LegendLine20" x1="909.00" y1="23.00" x2="909.00" y2="25.60" style="stroke:black;stroke-width:2.000000"/>
+<text id="Legend0" x="9.000000" y="36.000000" x0="9.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 0 </text>
+<text id="Legend1" x="99.000000" y="36.000000" x0="99.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 10 </text>
+<text id="Legend2" x="189.000000" y="36.000000" x0="189.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 20 </text>
+<text id="Legend3" x="279.000000" y="36.000000" x0="279.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 30 </text>
+<text id="Legend4" x="369.000000" y="36.000000" x0="369.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 40 </text>
+<text id="Legend5" x="459.000000" y="36.000000" x0="459.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 50 </text>
+<text id="Legend6" x="549.000000" y="36.000000" x0="549.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 60 </text>
+<text id="Legend7" x="639.000000" y="36.000000" x0="639.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 70 </text>
+<text id="Legend8" x="729.000000" y="36.000000" x0="729.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 80 </text>
+<text id="Legend9" x="819.000000" y="36.000000" x0="819.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 90 </text>
+<text id="Legend10" x="909.000000" y="36.000000" x0="909.000000" style="font-family:Arial;font-size:10px;text-anchor:middle"> 100 </text>
+<text id="" x="54" y="16" style="font-family: Arial; font-size:12px; text-anchor: left"> Homology percentage </text>
+<line id="line" x1="909" y1="23" x2="909" y2="350" style="stroke:black;stroke-width:1" opacity="0.5" />
+<rect id="canvas" x="0" y="0" width="1280" height="375" opacity="0"
+		pointer-events="visible"
+		onmousedown="onMouseDown(evt)"
+		onmousemove="onMouseMove(evt)"
+		onmouseup="onMouseUp(evt)"/>
+<g id="to_translate" transform="translate(0 0)">
+<text id="" x="918" y="54" style="font-family: Arial; font-size:10px; text-anchor: left">  425 France Bordeaux </text>
+<text id="" x="918" y="80" style="font-family: Arial; font-size:10px; text-anchor: left">  404 France Paris </text>
+<text id="" x="918" y="104" style="font-family: Arial; font-size:10px; text-anchor: left">  386 France Paris </text>
+<text id="" x="918" y="130" style="font-family: Arial; font-size:10px; text-anchor: left">  389 France Bordeaux </text>
+<text id="" x="918" y="154" style="font-family: Arial; font-size:10px; text-anchor: left">  422 France Paris </text>
+<text id="" x="918" y="180" style="font-family: Arial; font-size:10px; text-anchor: left">  392 France Bordeaux </text>
+<text id="" x="918" y="204" style="font-family: Arial; font-size:10px; text-anchor: left">  415 France Paris </text>
+<text id="" x="918" y="230" style="font-family: Arial; font-size:10px; text-anchor: left">  423 France Paris </text>
+<text id="" x="918" y="254" style="font-family: Arial; font-size:10px; text-anchor: left">  419 Germany Berlin </text>
+<text id="" x="918" y="280" style="font-family: Arial; font-size:10px; text-anchor: left">  413 France Paris </text>
+<text id="" x="918" y="304" style="font-family: Arial; font-size:10px; text-anchor: left">  421 France Bordeaux </text>
+<text id="" x="918" y="330" style="font-family: Arial; font-size:10px; text-anchor: left">  406 France Paris </text>
+<text id="" x="918" y="354" style="font-family: Arial; font-size:10px; text-anchor: left">  427 France Bordeaux </text>
+</g>
+</svg>

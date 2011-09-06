@@ -23,6 +23,11 @@ open Ast_ml
 (* Prelude *)
 (*****************************************************************************)
 
+(*
+ * TODO: do a kmodule_name that is called by kqualifier and
+ * a few other places where the name in the long_name is actually
+ * also a module name
+ *)
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -39,6 +44,9 @@ type visitor_in = {
   kitem: item vin;
   klet_def: let_def vin;
   klet_binding: let_binding vin;
+  kqualifier: qualifier vin;
+  kmodule_expr: module_expr vin;
+  ktoplevel: toplevel vin;
 }
   and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
@@ -56,6 +64,9 @@ let default_visitor = {
   klet_def  = (fun (k,_) x -> k x);
   kpattern = (fun (k,_) x -> k x);
   klet_binding = (fun (k,_) x -> k x);
+  kqualifier = (fun (k,_) x -> k x);
+  kmodule_expr = (fun (k,_) x -> k x);
+  ktoplevel = (fun (k,_) x -> k x);
 }
 
 
@@ -158,7 +169,10 @@ and v_uname v = v_name v
 and v_long_name (v1, v2) =
   let v1 = v_qualifier v1 and v2 = v_name v2 in ()
 and v_qualifier v =
-  v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
+  let k x = 
+    v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
+  in
+  vin.kqualifier (k, all_functions) v
   
 and v_ty x =
   let rec k x = 
@@ -437,7 +451,17 @@ and
 
 and v_function_def v = v_unit v
 and v_module_type v = v_unit v
-and v_module_expr v = v_unit v
+and v_module_expr v = 
+  let rec k v = 
+  match v with
+  | ModuleName v1 ->
+      let v1 = v_long_name v1 in
+      ()
+  | ModuleTodo ->
+      ()
+  in
+  vin.kmodule_expr (k, all_functions) v
+
 and v_item x =
   let rec k x =
     match x with
@@ -468,6 +492,13 @@ and v_item x =
       and v2 = v_rec_opt v2
       and v3 = v_and_list1 v_let_binding v3
       in ()
+  | ModuleAlias ((v1, v2, v3, v4)) ->
+      let v1 = v_tok v1
+      and v2 = v_uname v2
+      and v3 = v_tok v3
+      and v4 = v_module_expr v4
+      in ()
+
   | ItemTodo v -> v_info v
   in
   vin.kitem (k, all_functions) x
@@ -477,14 +508,17 @@ and v_struct_item v = v_item v
 and v_rec_opt v = v_option v_tok v
 
 
-and v_toplevel =
-  function
+and v_toplevel x =
+  let rec k = function
   | Item v1 -> let v1 = v_item v1 in ()
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()
+  in
+  vin.ktoplevel (k, all_functions) x
+
 and v_program v = v_list v_toplevel v
 
 and v_any = function

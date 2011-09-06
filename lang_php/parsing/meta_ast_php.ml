@@ -706,7 +706,14 @@ and vof_stmt =
           v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("TypedDeclaration", [ v1; v2; v3; v4 ]))
-      
+  | DeclConstant (v1, v2, v3, v4, v5) ->
+      let v1 = vof_tok v1 
+      and v2 = vof_name v2
+      and v3 = vof_tok v3
+      and v4 = vof_static_scalar v4
+      and v5 = vof_tok v5
+      in Ocaml.VSum (("DeclConstant", [v1; v2; v3; v4; v5]))
+
 and vof_switch_case_list =
   function
   | CaseList ((v1, v2, v3, v4)) ->
