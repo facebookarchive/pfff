@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="no"?>
+            <svg width="800" height="400" version="1.1"
+            baseProfile="full"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            xmlns:ev="http://www.w3.org/2001/xml-events">
+<line id="" x1="741.25" y1="312.89" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="712.69" y1="341.45" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="672.31" y1="341.45" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="643.75" y1="312.89" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="643.75" y1="272.51" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="672.31" y1="243.95" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="712.69" y1="243.95" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="732.89" y1="390.20" x2="712.69" y2="341.45" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="58.75" y1="30.19" x2="643.75" y2="272.51" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="351" y="155" style="font-family: Arial; font-size:10px; text-anchor: middle"> 12 </text>
+<line id="" x1="741.25" y1="272.51" x2="692.50" y2="292.70" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="790.00" y1="333.09" x2="741.25" y2="312.89" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="10.00" y1="10.00" x2="58.75" y2="30.19" style="stroke:black;stroke-width:2.000000"/>
+<circle id="" cx="692.500000" cy="292.700756" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="741.250000" cy="312.893667" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="712.692911" cy="341.450756" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="672.307089" cy="341.450756" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="643.750000" cy="312.893667" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="643.750000" cy="272.507845" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="672.307089" cy="243.950756" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="712.692911" cy="243.950756" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="732.885822" cy="390.200756" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="58.750000" cy="30.192911" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="741.250000" cy="272.507845" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="790.000000" cy="333.086579" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="10.000000" cy="10.000000" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+</svg>

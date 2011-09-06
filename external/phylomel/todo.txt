@@ -1,0 +1,8 @@
+- fix scale bug on legend in svg
+- add documentation
+- write Readme !
+- add mlva_eu
+- use *real* genotype file formats
+- use mlpost to output eps,pngs
+- write unit tests
+- document svg printing in clustering.ml

@@ -1,0 +1,295 @@
+<?xml version="1.0" standalone="no"?>
+            <svg width="800" height="1082" version="1.1"
+            baseProfile="full"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            xmlns:ev="http://www.w3.org/2001/xml-events">
+<line id="" x1="368.88" y1="718.06" x2="339.07" y2="713.50" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="339.07" y1="713.50" x2="327.18" y2="685.78" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="257.39" y1="467.57" x2="285.67" y2="478.04" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="308.76" y1="991.53" x2="308.76" y2="961.37" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="10.00" y1="14.12" x2="88.57" y2="105.65" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="49" y="64" style="font-family: Arial; font-size:10px; text-anchor: middle"> 8 </text>
+<line id="" x1="390.95" y1="242.33" x2="375.77" y2="316.18" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="383" y="283" style="font-family: Arial; font-size:10px; text-anchor: middle"> 5 </text>
+<line id="" x1="400.71" y1="563.39" x2="458.26" y2="545.34" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="429" y="558" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="393.58" y1="776.97" x2="366.51" y2="763.69" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="532.88" y1="543.88" x2="472.64" y2="540.82" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="503" y="546" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="757.20" y1="443.62" x2="731.61" y2="459.57" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="447.73" y1="803.53" x2="393.58" y2="776.97" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="421" y="794" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="287.51" y1="1064.76" x2="296.61" y2="1020.45" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="292" y="1047" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="327.18" y1="685.78" x2="343.16" y2="581.45" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="335" y="638" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="135.06" y1="200.41" x2="148.34" y2="227.49" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="307.53" y1="708.67" x2="327.18" y2="685.78" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="745.15" y1="452.93" x2="731.61" y2="459.57" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="374.31" y1="270.25" x2="363.63" y2="375.26" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="369" y="327" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="374.31" y1="270.25" x2="374.31" y2="270.25" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="304.13" y1="501.89" x2="331.82" y2="537.66" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="318" y="524" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="343.16" y1="581.45" x2="400.71" y2="563.39" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="372" y="576" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="308.76" y1="961.37" x2="333.04" y2="843.21" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="321" y="906" style="font-family: Arial; font-size:10px; text-anchor: middle"> 8 </text>
+<line id="" x1="76.25" y1="731.08" x2="165.68" y2="717.38" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="121" y="728" style="font-family: Arial; font-size:10px; text-anchor: middle"> 6 </text>
+<line id="" x1="774.03" y1="443.86" x2="731.61" y2="459.57" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="753" y="456" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="214.98" y1="451.86" x2="257.39" y2="467.57" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="236" y="464" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="363.63" y1="375.26" x2="345.36" y2="494.50" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="354" y="439" style="font-family: Arial; font-size:10px; text-anchor: middle"> 8 </text>
+<line id="" x1="345.36" y1="494.50" x2="331.82" y2="537.66" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="339" y="520" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="345.36" y1="494.50" x2="345.36" y2="494.50" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="345.36" y1="494.50" x2="345.36" y2="494.50" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="515.81" y1="527.28" x2="573.35" y2="509.23" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="545" y="522" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="304.18" y1="1006.38" x2="308.76" y2="961.37" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="306" y="988" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="296.61" y1="1020.45" x2="308.76" y2="961.37" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="303" y="995" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="270.69" y1="706.70" x2="298.40" y2="694.81" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="95.21" y1="119.19" x2="135.06" y2="200.41" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="115" y="164" style="font-family: Arial; font-size:10px; text-anchor: middle"> 6 </text>
+<line id="" x1="395.06" y1="869.01" x2="359.39" y2="785.88" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="377" y="831" style="font-family: Arial; font-size:10px; text-anchor: middle"> 6 </text>
+<line id="" x1="790.00" y1="444.46" x2="731.61" y2="459.57" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="761" y="456" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="152.07" y1="798.53" x2="173.92" y2="777.75" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="172.76" y1="467.87" x2="304.13" y2="501.89" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="238" y="489" style="font-family: Arial; font-size:10px; text-anchor: middle"> 9 </text>
+<line id="" x1="375.77" y1="316.18" x2="363.63" y2="375.26" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="370" y="350" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="82.61" y1="378.43" x2="177.37" y2="424.92" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="130" y="406" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="277.16" y1="1062.08" x2="308.76" y2="961.37" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="293" y="1016" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="135.32" y1="272.54" x2="146.25" y2="282.93" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="81.26" y1="92.47" x2="88.57" y2="105.65" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="146.25" y1="282.93" x2="157.18" y2="293.32" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="135.32" y1="272.54" x2="135.32" y2="272.54" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="285.67" y1="478.04" x2="304.13" y2="501.89" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="73.94" y1="79.28" x2="81.26" y2="92.47" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="44.67" y1="26.55" x2="59.30" y2="52.91" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="44.67" y1="26.55" x2="44.67" y2="26.55" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="437.13" y1="764.45" x2="349.54" y2="741.78" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="393" y="757" style="font-family: Arial; font-size:10px; text-anchor: middle"> 6 </text>
+<line id="" x1="173.92" y1="777.75" x2="206.71" y2="746.58" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="190" y="766" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="177.37" y1="424.92" x2="285.67" y2="478.04" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="232" y="455" style="font-family: Arial; font-size:10px; text-anchor: middle"> 8 </text>
+<line id="" x1="56.71" y1="54.53" x2="73.94" y2="79.28" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="59.30" y1="52.91" x2="73.94" y2="79.28" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="269.72" y1="452.45" x2="285.67" y2="478.04" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="206.71" y1="746.58" x2="270.69" y2="706.70" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="239" y="731" style="font-family: Arial; font-size:10px; text-anchor: middle"> 5 </text>
+<line id="" x1="331.82" y1="537.66" x2="343.16" y2="581.45" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="337" y="564" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="331.82" y1="537.66" x2="331.82" y2="537.66" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="331.82" y1="537.66" x2="331.82" y2="537.66" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="62.05" y1="51.57" x2="73.94" y2="79.28" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="364.61" y1="506.49" x2="331.82" y2="537.66" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="348" y="526" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="90.39" y1="721.20" x2="165.68" y2="717.38" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="128" y="723" style="font-family: Arial; font-size:10px; text-anchor: middle"> 5 </text>
+<line id="" x1="374.64" y1="441.76" x2="345.36" y2="494.50" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="360" y="472" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="374.64" y1="441.76" x2="374.64" y2="441.76" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="731.61" y1="459.57" x2="674.06" y2="477.63" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="703" y="473" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="731.61" y1="459.57" x2="731.61" y2="459.57" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="131.39" y1="796.23" x2="167.16" y2="768.54" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="149" y="786" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="44.21" y1="10.00" x2="62.05" y2="51.57" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="53" y="35" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="197.71" y1="725.60" x2="270.69" y2="706.70" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="234" y="720" style="font-family: Arial; font-size:10px; text-anchor: middle"> 5 </text>
+<line id="" x1="298.08" y1="1066.38" x2="304.18" y2="1006.38" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="301" y="1040" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="746.67" y1="458.81" x2="731.61" y2="459.57" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="113.18" y1="276.63" x2="138.78" y2="292.58" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="167.16" y1="768.54" x2="206.71" y2="746.58" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="187" y="762" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="167.16" y1="768.54" x2="167.16" y2="768.54" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="139.44" y1="780.43" x2="167.16" y2="768.54" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="261.18" y1="1072.22" x2="308.76" y2="961.37" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="285" y="1021" style="font-family: Arial; font-size:10px; text-anchor: middle"> 8 </text>
+<line id="" x1="458.26" y1="545.34" x2="472.64" y2="540.82" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="88.57" y1="105.65" x2="95.21" y2="119.19" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="88.57" y1="105.65" x2="88.57" y2="105.65" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="88.57" y1="105.65" x2="88.57" y2="105.65" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="472.64" y1="540.82" x2="515.81" y2="527.28" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="494" y="538" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="138.78" y1="292.58" x2="189.96" y2="324.48" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="164" y="313" style="font-family: Arial; font-size:10px; text-anchor: middle"> 4 </text>
+<line id="" x1="213.89" y1="362.87" x2="269.72" y2="452.45" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="242" y="412" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="189.96" y1="324.48" x2="213.89" y2="362.87" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="202" y="348" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="674.06" y1="477.63" x2="573.35" y2="509.23" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="624" y="497" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="379.45" y1="789.74" x2="355.61" y2="771.28" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="118.42" y1="269.11" x2="189.96" y2="324.48" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="154" y="301" style="font-family: Arial; font-size:10px; text-anchor: middle"> 6 </text>
+<line id="" x1="508.42" y1="513.14" x2="472.64" y2="540.82" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="491" y="531" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="304.13" y1="456.65" x2="304.13" y2="501.89" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="304" y="483" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="157.18" y1="293.32" x2="189.96" y2="324.48" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="174" y="313" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="148.34" y1="227.49" x2="189.96" y2="324.48" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="169" y="280" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="148.34" y1="227.49" x2="148.34" y2="227.49" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="112.37" y1="793.71" x2="139.44" y2="780.43" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="165.68" y1="717.38" x2="270.69" y2="706.70" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="218" y="716" style="font-family: Arial; font-size:10px; text-anchor: middle"> 7 </text>
+<line id="" x1="308.76" y1="1066.92" x2="308.76" y2="991.53" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="309" y="1033" style="font-family: Arial; font-size:10px; text-anchor: middle"> 5 </text>
+<line id="" x1="366.54" y1="781.67" x2="355.61" y2="771.28" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="377.82" y1="752.25" x2="349.54" y2="741.78" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="111.17" y1="790.90" x2="139.44" y2="780.43" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="365.43" y1="782.72" x2="355.61" y2="771.28" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="353.32" y1="756.37" x2="349.54" y2="741.78" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="363.90" y1="800.26" x2="359.39" y2="785.88" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="366.51" y1="763.69" x2="353.32" y2="756.37" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="366.51" y1="763.69" x2="366.51" y2="763.69" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="355.61" y1="771.28" x2="353.32" y2="756.37" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="355.61" y1="771.28" x2="355.61" y2="771.28" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="355.61" y1="771.28" x2="355.61" y2="771.28" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="349.54" y1="741.78" x2="339.07" y2="713.50" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="359.39" y1="785.88" x2="355.61" y2="771.28" style="stroke:black;stroke-width:2.000000"/>
+<line id="" x1="359.39" y1="785.88" x2="359.39" y2="785.88" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="359.39" y1="785.88" x2="359.39" y2="785.88" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="278.07" y1="742.99" x2="307.53" y2="708.67" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="293" y="730" style="font-family: Arial; font-size:10px; text-anchor: middle"> 3 </text>
+<line id="" x1="298.40" y1="694.81" x2="327.18" y2="685.78" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="298.40" y1="694.81" x2="298.40" y2="694.81" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="298.40" y1="694.81" x2="298.40" y2="694.81" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="333.04" y1="843.21" x2="355.61" y2="771.28" style="stroke:grey;stroke-width:1.000000;stroke-dasharray:9, 5"/>
+<text id="" x="344" y="811" style="font-family: Arial; font-size:10px; text-anchor: middle"> 5 </text>
+<line id="" x1="333.04" y1="843.21" x2="333.04" y2="843.21" style="stroke:black;stroke-width:1.000000"/>
+<line id="" x1="333.04" y1="843.21" x2="333.04" y2="843.21" style="stroke:black;stroke-width:1.000000"/>
+<circle id="" cx="573.353929" cy="509.227261" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="368.880253" cy="718.062936" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="339.070932" cy="713.496317" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="257.394862" cy="467.566600" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="308.755330" cy="991.529318" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="10.000000" cy="14.122734" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="390.949006" cy="242.331727" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="400.709592" cy="563.394771" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="393.583157" cy="776.972024" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="532.881484" cy="543.879838" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="757.203872" cy="443.621699" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="447.733488" cy="803.534029" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="287.508314" cy="1064.761414" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="327.178310" cy="685.783230" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="135.057484" cy="200.413538" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="307.534817" cy="708.665161" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="745.148820" cy="452.933209" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="374.309709" cy="270.252423" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="374.309709" cy="270.252423" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="304.134061" cy="501.887803" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="343.161480" cy="581.450608" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="308.755330" cy="961.372236" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="76.254960" cy="731.081925" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="774.031040" cy="443.863141" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="214.975060" cy="451.856031" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="363.631414" cy="375.260669" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="345.364934" cy="494.497952" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="345.364934" cy="494.497952" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="345.364934" cy="494.497952" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="515.805817" cy="527.283098" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="304.178918" cy="1006.375770" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="296.614178" cy="1020.451766" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="270.691168" cy="706.703770" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="95.214476" cy="119.188041" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="395.064770" cy="869.014485" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="790.000000" cy="444.455812" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="152.065492" cy="798.526879" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="172.759345" cy="467.872532" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="375.772566" cy="316.181139" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="82.610990" cy="378.432794" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="277.157616" cy="1062.081432" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="135.318574" cy="272.541425" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="81.256329" cy="92.466587" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="146.247392" cy="282.930041" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="135.318574" cy="272.541425" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="285.674730" cy="478.040314" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="73.938683" cy="79.282716" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="44.668101" cy="26.547230" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="44.668101" cy="26.547230" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="437.127789" cy="764.453032" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="173.923128" cy="777.749647" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="177.374069" cy="424.916303" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="56.710900" cy="54.530885" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="59.303392" cy="52.914973" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="269.722719" cy="452.447679" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="206.709581" cy="746.583798" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="331.823057" cy="537.659036" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="331.823057" cy="537.659036" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="331.823057" cy="537.659036" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="62.046061" cy="51.569630" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="364.609510" cy="506.493188" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="90.386982" cy="721.200643" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="374.635517" cy="441.762466" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="374.635517" cy="441.762466" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="731.611237" cy="459.573710" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="731.611237" cy="459.573710" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="131.386733" cy="796.225731" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="44.207128" cy="10.000000" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="197.705215" cy="725.601143" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="298.077035" cy="1066.380482" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="746.670425" cy="458.809995" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="113.184759" cy="276.628472" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="167.157967" cy="768.536735" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="167.157967" cy="768.536735" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="139.444880" cy="780.429357" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="261.184842" cy="1072.224582" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="458.257705" cy="545.338935" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="88.573974" cy="105.650459" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="88.573974" cy="105.650459" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="88.573974" cy="105.650459" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="472.644733" cy="540.824976" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="138.777394" cy="292.580483" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="213.890680" cy="362.873457" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="189.962663" cy="324.484505" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="674.063125" cy="477.629547" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="379.454919" cy="789.737366" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="118.420196" cy="269.106514" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="508.415966" cy="513.135980" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="304.134061" cy="456.652179" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="157.176210" cy="293.318657" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="148.338486" cy="227.488703" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="148.338486" cy="227.488703" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="112.369715" cy="793.710360" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="165.682922" cy="717.382065" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="308.755330" cy="1066.922024" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="366.536248" cy="781.666652" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="377.824514" cy="752.249898" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="111.165012" cy="790.903070" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="365.429177" cy="782.719001" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="353.324120" cy="756.373375" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="363.900864" cy="800.262254" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="366.507991" cy="763.691021" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="366.507991" cy="763.691021" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="355.607430" cy="771.278036" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="355.607430" cy="771.278036" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="355.607430" cy="771.278036" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="349.544645" cy="741.776185" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="359.386904" cy="785.875226" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="359.386904" cy="785.875226" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="359.386904" cy="785.875226" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="278.069576" cy="742.988058" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="298.404254" cy="694.811149" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="298.404254" cy="694.811149" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="298.404254" cy="694.811149" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="333.037634" cy="843.213176" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="333.037634" cy="843.213176" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+<circle id="" cx="333.037634" cy="843.213176" r="3.000000" fill="lightsteelblue" stroke="midnightblue" stroke-width="1.000000" />
+</svg>
