@@ -1,5 +1,4 @@
 open Printf
-open ExtLib
 
 let print_line line =
 	DynArray.iter (printf "%3.2f ") line;

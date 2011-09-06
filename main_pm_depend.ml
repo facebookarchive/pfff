@@ -13,6 +13,7 @@ open Common
  * See http://gephi.org.
  * 
  * todo? have a backend for graphviz?
+ * todo? use phylomel? and cairo?
  *
  * usage: 
  *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o pfff.gexf /path/to/dir

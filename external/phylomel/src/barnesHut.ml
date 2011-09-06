@@ -1,5 +1,5 @@
-open ExtLib
 open Vec2
+open ExtArray
 
 type body = {
 	p : Vec2.t;

@@ -1,5 +1,4 @@
 open Printf
-open ExtLib
 
 (** Creates phylogenetic trees with clustering methods (UPGMA, WPGMA) *)
 

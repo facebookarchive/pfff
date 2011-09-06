@@ -1,5 +1,3 @@
-open ExtLib
-
 (** Handles phylogenetic minimum spanning trees *)
 
 type t = {

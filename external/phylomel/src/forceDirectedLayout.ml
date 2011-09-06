@@ -1,4 +1,3 @@
-open ExtLib
 open Tree
 open Phylogram
 open BarnesHut

@@ -1,5 +1,3 @@
-open ExtLib
-
 (**
    Barnes-Hut tree code
 *)
