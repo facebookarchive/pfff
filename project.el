@@ -44,6 +44,7 @@
      external/ocamlthrift
      external/ocamlgl/SRC
      external/ocamlcairo/src
+     external/phylomel/src
      meta
      facebook/fb_common
      facebook/fb_org
@@ -280,6 +281,23 @@
        (0 "-test")
        (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
        (2 "-debug_checker /home/pad/pfff/tests/php/scheck/closures.php")
+       )
+     )
+    )
+   )
+
+  ; --------------------------------------------------------------------------
+  ; pm_depend
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "pm_depend"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+
+       (0 "-test_phylomel /home/pad/pfff/external/phylomel/tests/geno0 ")
        )
      )
     )
