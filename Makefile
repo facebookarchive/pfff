@@ -181,7 +181,7 @@ LIBS= commons/commons.cma \
        $(REGEXPCMA) \
        $(MPICMA) \
        $(OCAMLNETCMA) \
-       $(GRAPHCMA) \
+       $(GRAPHCMA) $(PHYLOMELCMA) \
        commons/commons_features.cma \
     h_version-control/lib.cma \
     h_visualization/lib.cma \
@@ -404,17 +404,16 @@ clean::
 # pm_depend targets
 #------------------------------------------------------------------------------
 
-SYSLIBS_PM= external/phylomel/src/lib.cma
+#SYSLIBS_PM= external/phylomel/src/lib.cma
 
 # external/ocamlgtk/src/lablgtk.cma \
 # external/ocamlcairo/src/cairo.cma \
 # external/ocamlcairo/src/cairo_lablgtk.cma \
 
-
-pm_depend: $(LIBS) $(SYSLIBS_PM) main_pm_depend.cmo 
+pm_depend: $(LIBS) main_pm_depend.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 
-pm_depend.opt: $(SYSLIBS_PM:.cma=.cmxa) $(LIBS:.cma=.cmxa) main_pm_depend.cmx
+pm_depend.opt: $(LIBS:.cma=.cmxa) main_pm_depend.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 
 clean::
