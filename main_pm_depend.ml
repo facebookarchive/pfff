@@ -81,13 +81,8 @@ let main_action xs =
 (* Extra Actions *)
 (*****************************************************************************)
 
-(*open Phylomel*)
-open Phylogram
 open Vec2
 open BarnesHut
-open Phylogram
-
-open Printf
 
 let update_state n fs bs fig =
   let delta = 0.05 in
@@ -129,16 +124,16 @@ let test_phylomel geno_file =
   (* Creates force array, bodies *)
   let n = Phylogram.size fig in
   let fs = Array.init n (fun _ -> Vec2.null ()) in
-  let bs = Array.map ForceDirectedLayout.body_of_pos fig.ps in
+  let bs = Array.map ForceDirectedLayout.body_of_pos fig.Phylogram.ps in
 
   for i=0 to 2000 do
     update_state n fs bs fig
   done;
 
   let x0, y0 = (10.,10.) in
-  unsafe_reframe (10.,10.) fig.ps;
-  unsafe_crop_width (800.-.2.*.x0) fig.ps;
-  fig.h <- height fig.ps +. 2. *. y0;  
+  Phylogram.unsafe_reframe (10.,10.) fig.Phylogram.ps;
+  Phylogram.unsafe_crop_width (800.-.2.*.x0) fig.Phylogram.ps;
+  fig.Phylogram.h <- Phylogram.height fig.Phylogram.ps +. 2. *. y0;  
     
   (* let x0 = 10. in *)
   (* unsafe_reframe (10., 10.) fig.ps; *)
@@ -150,7 +145,7 @@ let test_phylomel geno_file =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
-  "-test_phylomel", " ",
+  "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
 ]
 
