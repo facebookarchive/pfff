@@ -256,7 +256,7 @@ let dependencies ?(verbose=true) ~with_extern ~package_depth dir =
         (match x with
         | Open (_tok, (qu, (Name (s,_)))) ->
             add_edge_if_existing_module s
-        | ModuleAlias (_, Name (s,_), _, _) ->
+        | Module (_, Name (s,_), _, (ModuleName _)) ->
             Hashtbl.add h_module_aliases s true;
         | _ -> ()
         );

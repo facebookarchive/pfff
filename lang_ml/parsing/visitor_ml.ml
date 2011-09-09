@@ -457,6 +457,11 @@ and v_module_expr v =
   | ModuleName v1 ->
       let v1 = v_long_name v1 in
       ()
+  | ModuleStruct (v1, v2, v3) ->
+      let v1 = v_tok v1 in
+      let v2 = v_list v_item v2 in
+      let v3 = v_tok v3 in
+      ()
   | ModuleTodo ->
       ()
   in
@@ -492,7 +497,7 @@ and v_item x =
       and v2 = v_rec_opt v2
       and v3 = v_and_list1 v_let_binding v3
       in ()
-  | ModuleAlias ((v1, v2, v3, v4)) ->
+  | Module ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_uname v2
       and v3 = v_tok v3

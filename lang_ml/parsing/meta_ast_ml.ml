@@ -416,6 +416,11 @@ and vof_module_expr = function
   | ModuleName v1 ->
       let v1 = vof_long_name v1 in
       Ocaml.VSum(("ModuleName", [ v1 ]))
+  | ModuleStruct (v1, v2, v3) ->
+      let v1 = vof_tok v1 in
+      let v2 = Ocaml.vof_list vof_item v2 in
+      let v3 = vof_tok v3 in
+      Ocaml.VSum("ModuleStruct", [v1; v2; v3])
   | ModuleTodo ->
       Ocaml.VSum(("ModuleTodo", []))
 
@@ -453,12 +458,12 @@ and vof_item =
       and v2 = vof_rec_opt v2
       and v3 = vof_and_list vof_let_binding v3
       in Ocaml.VSum (("Let", [ v1; v2; v3 ]))
-  | ModuleAlias ((v1, v2, v3, v4)) ->
+  | Module ((v1, v2, v3, v4)) ->
       let v1 = vof_tok v1
       and v2 = vof_uname v2
       and v3 = vof_tok v3
       and v4 = vof_module_expr v4
-      in Ocaml.VSum (("ModuleAlias", [v1; v2; v3; v4]))
+      in Ocaml.VSum (("Module", [v1; v2; v3; v4]))
       
 
   | ItemTodo v1 -> let v1 = vof_info v1 in Ocaml.VSum (("ItemTodo", [ v1 ]))

@@ -119,7 +119,7 @@ let visit_toplevel
       | Let _
       | Type _ 
       | Open _
-      | ModuleAlias _
+      | Ast.Module _
       | ItemTodo _
          ->
           k x

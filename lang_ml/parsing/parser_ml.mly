@@ -42,6 +42,12 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
   match longname with
   | xs, Name ident2 ->
       xs ++ [Name ident2, dottok], Name ident
+
+let to_item xs =
+  xs +> Common.map_filter (function
+  | Item x -> Some x
+  | _ -> None
+  )
 %}
 /*(*************************************************************************)*/
 /*(*1 Tokens *)*/
@@ -301,7 +307,7 @@ structure_item:
         match $3 with
         | None -> ItemTodo $1
         | Some (x, y) ->
-            ModuleAlias ($1, Name $2, x, y) 
+            Module ($1, Name $2, x, y) 
       }
  | Tmodule Ttype ident TEq module_type
       { ItemTodo $1 }
@@ -1360,7 +1366,7 @@ module_expr:
       { ModuleName $1 }
   /*(* nested modules *)*/
   | Tstruct structure Tend
-      { ModuleTodo }
+      { ModuleStruct ($1, to_item $2, $3) }
   /*(* functor definition *)*/
   | Tfunctor TOParen TUpperIdent TColon module_type TCParen TArrow module_expr
       { ModuleTodo }
