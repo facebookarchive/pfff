@@ -5,7 +5,7 @@ open Common
 (*****************************************************************************)
 
 let test_git dir = 
-  let xs = Git.commits ~basedir:dir in
+  let xs = Git.commits ~basedir:dir () in
   xs +> List.iter pr2_gen
 
 

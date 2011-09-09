@@ -107,12 +107,13 @@ type hooks = {
    * git owner anymore (the guy left the company for instance ...)
    *)
   is_valid_author: string -> bool;
-
   (* to avoid generating patches for certain files, such as code in 
    * third party libraries or auto generated code. Will be called
    * with a filename without leading project.
    *)
   is_valid_file: filename -> bool;
+
+  skip_revs:Lib_vcs.versionid list;
 
   (* code annotated with @not-dead-code should not be considered *)
   false_positive_deadcode_annotations: Annotation_php.annotation list;
@@ -133,6 +134,7 @@ let default_hooks = {
 
   is_valid_author  = (fun s -> true);
   is_valid_file = (fun filename -> true);
+  skip_revs = [];
   false_positive_deadcode_annotations = [
     Annotation_php.CalledFromPhpsh;
     Annotation_php.CalledOutsideTfb;
@@ -488,6 +490,7 @@ let generate_deadcode_patch ~prj_path ~filename ~filename_in_project
         ~basedir:prj_path 
         ~use_cache:hooks.cache_git_blame
         ~is_valid_author:hooks.is_valid_author
+        ~skip_revs:hooks.skip_revs
         filename_in_project 
         lines_to_remove.just_code_lines
     in
@@ -521,6 +524,7 @@ let generate_deadcode_patch ~prj_path ~filename ~filename_in_project
     Git.max_date_of_lines
       ~basedir:prj_path
       ~use_cache:hooks.cache_git_blame
+      ~skip_revs:hooks.skip_revs
       filename_in_project
       lines_to_remove.just_code_lines
   in
