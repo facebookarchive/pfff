@@ -1,6 +1,4 @@
 open Vec2
-open Printf
-open Tree
 
 type tree_figure = {
   ps : Vec2.t array; (* points *)
@@ -123,7 +121,7 @@ let radial_layout ?(margin= (10.,10.)) ?(reframe = false) width tree =
         bs.(j) <- !b;
         b := !b +. ws.(j);
         iter i j)
-      tree.children.(i) in
+      tree.Tree.children.(i) in
 
   iter 0 0;
 
@@ -213,8 +211,8 @@ let put_lines out fig =
 
   let print_line i m =
     if i <> 0 then
-      let p = tree.parents.(i) in
-      let d = DistMat.get tree.dist_mat p i in
+      let p = tree.Tree.parents.(i) in
+      let d = DistMat.get tree.Tree.dist_mat p i in
       if d < 3 then (
         let _colorTODO = "black" in
         Svg.line out

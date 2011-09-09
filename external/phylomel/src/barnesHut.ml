@@ -1,5 +1,4 @@
 open Vec2
-open ExtArray
 
 type body = {
   p : Vec2.t;
@@ -213,7 +212,7 @@ let rec contains b t =
   | Cell c ->
       if not (in_bounds c.bds b) then false
       else
-        Array.exists (contains b) c.sub_ts
+        ExtArray.Array.exists (contains b) c.sub_ts
 
 (*
   let bs = [make 1. 1.; make 10. 4.; make 3. 5.];;

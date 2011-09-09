@@ -1,12 +1,12 @@
 (** Handles phylogenetic minimum spanning trees *)
 
 type t = {
-	adj_mat : bool DistMat.t;  (** Adjacency matrix *)
-	dist_mat : int DistMat.t;  (** Distance matrix  *)
-	children : int list array; (** Children list    *)
-	parents : int array;       (** Parents list     *)
+  adj_mat : bool DistMat.t;  (** Adjacency matrix *)
+  dist_mat : int DistMat.t;  (** Distance matrix  *)
+  children : int list array; (** Children list    *)
+  parents : int array;       (** Parents list     *)
 }
-
+  
 (** [create adj_mat dist_mat] @return a new tree *)
 val create : bool DistMat.t -> int DistMat.t -> t
 
@@ -18,5 +18,5 @@ val size : t -> int
 val leaves_nb : t -> int array
 
 (** Prim's algorithm finds a minimum spanning tree on a genotypes collection,
-	given a distance matrix *)
+        given a distance matrix *)
 val prim_complete : Genotypes.t -> int DistMat.t -> t

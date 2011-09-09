@@ -1,5 +1,3 @@
-open ExtArray
-
 type t = {
   id : string;
   markers : float array;
@@ -23,7 +21,7 @@ let markers_nb = function
   | genos ->
       let first_size = size genos.(0) in
       let has_wrong_size g = (size g) <> first_size in
-      if Array.exists has_wrong_size genos then
+      if ExtArray.Array.exists has_wrong_size genos then
         None
       else Some first_size
 

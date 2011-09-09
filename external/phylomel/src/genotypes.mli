@@ -10,21 +10,21 @@
 
 (** Genotype collection *)
 type t = {
-	genos : Genotype.t array;
-	fields : string array; (**exemple : [|"Country";"City";"Year"|]*)
-	geno_size : int; (** genos' number of markers *)
-	size : int; (** number of genotypes *)
+  genos : Genotype.t array;
+  fields : string array; (**exemple : [|"Country";"City";"Year"|]*)
+  geno_size : int; (** genos' number of markers *)
+  size : int; (** number of genotypes *)
 }
 
 (** [check_fields_nb c] @return true if the genotypes all have the
-	right number of infos (which is the size of [c.fields]) *)
+    right number of infos (which is the size of [c.fields]) *)
 val check_fields_nb : t -> bool
 
 (** [create genotypes fields ]
-	@return a new genotypes collection,
-	checks that all genotypes have the same size
-	and the right fields number
-	@raises Failure "Genotypes.create: failure reason" *)
+    @return a new genotypes collection,
+    checks that all genotypes have the same size
+    and the right fields number
+    @raises Failure "Genotypes.create: failure reason" *)
 val create : Genotype.t array -> string array -> t
 
 val remove_duplicates : t -> t
@@ -38,22 +38,22 @@ val remove_duplicates : t -> t
 (** Each line has at least a genotype id and markers *)
 
 (** [read_markers s]
-	@return an array of markers read from s
-	@raise Invalid_argument "Genotypes.read_markers" *)
+    @return an array of markers read from s
+    @raise Invalid_argument "Genotypes.read_markers" *)
 val read_markers : string -> float array
 
 (** [read_line s]
-	@return a genotype
-	@raise Invalid_argument "Genotypes.read_line" *)
+    @return a genotype
+    @raise Invalid_argument "Genotypes.read_line" *)
 val read_line : string -> Genotype.t
 
 (** [read_lines lines] reads an enumeration of lines
-	@return the collection
-	@raise Invalid_argument "Genotypes.read_lines"*)
+    @return the collection
+    @raise Invalid_argument "Genotypes.read_lines"*)
 val read_lines : string Enum.t -> t
 
 (** [read_file file_name] reads a file
-	@return the collection *)
+    @return the collection *)
 val read_file : string -> t
 
 (* - a line has the wrong format
