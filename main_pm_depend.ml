@@ -118,6 +118,25 @@ let test_phylomel geno_file =
   in
   let dmat = GenoMat.create collec in
   let tree = Tree.prim_complete collec dmat in
+(*
+  let dist_mat = 
+    [|
+      [||];
+      [|1|];
+      [|1;2|];
+    |]
+  in
+  let adj_mat = 
+    [|
+      [||];
+      [|true|];
+      [|true;false|];
+    |]
+  in
+
+  let tree = Tree.create adj_mat dist_mat in
+  let infos = [|"n0"; "n1"; "n2"|] in
+*)
 
   let fig = Phylogram.radial_layout ~reframe:false 800. tree in
   
@@ -138,8 +157,13 @@ let test_phylomel geno_file =
   (* let x0 = 10. in *)
   (* unsafe_reframe (10., 10.) fig.ps; *)
   (* unsafe_crop_width (800.-.2.*.x0) fig.ps; *)
+
+  let nodeinfo =
+    (fun i -> Genotype.description collec.Genotypes.genos.(i))
+    (* (fun i -> infos.(i)) *)
+  in
   
-  Phylogram.write_svg_file collec fig svg_file;
+  Phylogram.write_svg_file nodeinfo fig svg_file;
   ()
 
 
