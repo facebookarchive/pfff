@@ -526,6 +526,22 @@
 
 
   ; --------------------------------------------------------------------------
+  ; facebook/codestat
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "facebook/codestat"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "/home/pad/fbcode/ci_central_lookup")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
   ; facebook/fb_phpunit
   ; --------------------------------------------------------------------------
   (setq
