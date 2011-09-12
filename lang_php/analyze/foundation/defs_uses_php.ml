@@ -69,8 +69,8 @@ type use =
  * 
  * history: was previously duplicated in 
  *  - tags_php.ml
- *  - check_module.ml ?,
- *  - database_php_build.ml ?
+ *  - TODO check_module.ml and defs_module.ml
+ *  - TODO database_php_build.ml ?
  *)
 let defs_of_any any =
   let current_class = ref (None: Ast_php.name option) in
@@ -151,7 +151,7 @@ let defs_of_any any =
  *
  * history: was previously duplicated in 
  *  - class_php.ml, 
- *  - check_module.ml ?,
+ *  - TODO check_module.ml and uses_module.ml
  * 
  * todo: do for functions, and constants too ! see Database_code.entity_kind
  * 
@@ -166,7 +166,7 @@ let defs_of_any any =
  * return a special Tag ? DynamicStuff ? So at least know they
  * are connections to more entities than one can infer statically.
  *)
-let uses_of_any any = 
+let uses_of_any ?(verbose=false) any = 
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
@@ -174,11 +174,20 @@ let uses_of_any any =
       (match fst x with
       | ClassName _ -> ()
       | Self _ | Parent _ -> 
-          pr2 "defs_uses_php: call unsugar_self_parent";
+          if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
           ()
       | LateStatic _ ->
-          pr2 "LateStatic";
+          if verbose then pr2 "LateStatic";
           ()
+      );
+      k x
+    );
+
+    V.klvalue = (fun (k, bigf) x ->
+      (match Ast.untype x with
+      | FunCallSimple (name, args) ->
+          Common.push2 (Db.Function, name) aref;
+      | _ -> ()
       );
       k x
     );
@@ -195,7 +204,7 @@ let uses_of_any any =
       (* todo? can interface define constant ? in which case
        * there is some ambiguity when seeing X::cst ...
        * could be the use of a Class or Interface.
-       * So right now I just merge Class and Interace
+       * So right now I just merge Class and Interface
        *)
       Common.push2 (Db.Class, classname) aref;
       k classname
