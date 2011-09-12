@@ -1,6 +1,4 @@
 open Vec2
-open Printf
-open Tree
 
 type tree_figure = {
   ps : Vec2.t array; (* points *)
@@ -123,7 +121,7 @@ let radial_layout ?(margin= (10.,10.)) ?(reframe = false) width tree =
         bs.(j) <- !b;
         b := !b +. ws.(j);
         iter i j)
-      tree.children.(i) in
+      tree.Tree.children.(i) in
 
   iter 0 0;
 
@@ -166,7 +164,7 @@ let radial_layout ?(margin= (10.,10.)) ?(reframe = false) width tree =
   crop_height h' xs
 *)
 
-let put_points out ?(links_info = None) fig genos =
+let put_points out ?(links_info = None) fig nodeinfo =
   let printPoint i {x=x; y=y} =
 
     Svg.circle out
@@ -181,7 +179,7 @@ let put_points out ?(links_info = None) fig genos =
           Svg.text out
             ~anchor:"middle"
             ~weight:"bold"
-            (Genotype.description genos.(i))
+            (nodeinfo i)
             (x, y+.4.)
       | Some(links,target) ->
           let link = links.(i) in
@@ -190,7 +188,7 @@ let put_points out ?(links_info = None) fig genos =
             ~weight:"bold"
             ~link:link
             ~target:target
-            (Genotype.description genos.(i))
+            (nodeinfo i)
             (x, y+.4.)
     end;
     
@@ -213,8 +211,8 @@ let put_lines out fig =
 
   let print_line i m =
     if i <> 0 then
-      let p = tree.parents.(i) in
-      let d = DistMat.get tree.dist_mat p i in
+      let p = tree.Tree.parents.(i) in
+      let d = DistMat.get tree.Tree.dist_mat p i in
       if d < 3 then (
         let _colorTODO = "black" in
         Svg.line out
@@ -236,7 +234,7 @@ let put_lines out fig =
 
   Array.iteri print_line ps
 
-let write_svg ?(links_info = None) collec fig out =
+let write_svg ?(links_info = None) nodeinfo fig out =
   (*let x0, y0 = margin in
     let fig = reframe ~margin:margin fig in
     let fig = crop_width (float_of_int(w) -. 2.*.x0) fig in*)
@@ -246,14 +244,14 @@ let write_svg ?(links_info = None) collec fig out =
   Svg.put out (Svg.header w h);
 
   put_lines out fig;
-  put_points out ~links_info:links_info fig collec.Genotypes.genos;
 
+  put_points out ~links_info:links_info fig nodeinfo;
   Svg.close out
     
-let write_svg_file ?(links_info = None) collec fig file =
+let write_svg_file ?(links_info = None) nodeinfo fig file =
   let out = IO.output_channel (open_out file) in
-  write_svg ~links_info:links_info collec fig out
 
+  write_svg ~links_info:links_info nodeinfo fig out
 
 (*let test =
   let t = {

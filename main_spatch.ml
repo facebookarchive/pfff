@@ -378,6 +378,8 @@ let options () =
     " <spatch_file>";
     "-apply_patch", Arg.Set apply_patch, 
     " ";
+    "--apply-patch", Arg.Set apply_patch, 
+    " ";
     "-verbose", Arg.Set verbose, 
     " ";
   ] ++

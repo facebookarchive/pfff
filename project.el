@@ -295,9 +295,10 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 1
 
        (0 "-test_phylomel /home/pad/pfff/external/phylomel/tests/geno0 ")
+       (1 "-test_phylomel /home/pad/pfff/external/phylomel/tests/geno_simple")
        )
      )
     )

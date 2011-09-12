@@ -48,6 +48,11 @@ let is_php_script file =
     with End_of_file -> false
   )
 
+let is_php_file filename =
+  (filename =~ ".*\\.php$") ||
+    (filename =~ ".*\\.phpt$") ||
+    is_php_script filename
+
 (* 
  * In command line tools like git or mercurial, many operations works 
  * when a file, a set of files, or even dirs are passed as parameters.
@@ -57,11 +62,7 @@ let is_php_script file =
 let find_php_files_of_dir_or_files ?(verbose=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
-    let valid = 
-      (filename =~ ".*\\.php$") ||
-      (filename =~ ".*\\.phpt$") ||
-      is_php_script filename
-    in
+    let valid = is_php_file filename in
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
     valid

@@ -18,7 +18,9 @@ val annotate_raw :
 (* repository operations *)
 
 val branches: basedir:string -> string list
-val commits: basedir:string -> (Lib_vcs.versionid * string) list
+val commits: 
+  ?extra_args:string -> basedir:string -> unit -> 
+  (Lib_vcs.versionid * string) list
 
 (* commitids operations *)
 
@@ -50,13 +52,18 @@ val file_to_commits:
 val apply_patch: basedir:string -> string list -> unit
 
 val get_2_best_blamers_of_lines: 
-  basedir:string -> ?use_cache:bool ->
+  basedir:string -> 
+  ?use_cache:bool ->
   ?is_valid_author:(string -> bool) ->
-  Common.filename -> int list (* lines *) ->
+  ?skip_revs:Lib_vcs.versionid list ->
+  Common.filename -> 
+  int list (* lines *) ->
   string list (* 2, 1, or zero blamers *)
 
 val max_date_of_lines: 
-  basedir:string -> ?use_cache:bool ->
+  basedir:string -> 
+  ?use_cache:bool ->
+  ?skip_revs:Lib_vcs.versionid list ->
   Common.filename -> int list (* lines *) ->
   Common.date_dmy
 

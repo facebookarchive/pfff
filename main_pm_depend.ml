@@ -9,14 +9,14 @@ open Common
 (* Purpose *)
 (*****************************************************************************)
 
-(* A module/package dependency visualizer generating data for gephi.
- * See http://gephi.org.
+(* A module/package dependency visualizer generating data for 
+ * different graph visualizer (e.g. gephi, guess).
  * 
  * todo? have a backend for graphviz?
  * todo? use phylomel? and cairo?
  *
  * usage: 
- *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o pfff.gexf /path/to/dir
+ *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/to/dir
  *)
 
 (*****************************************************************************)
@@ -35,7 +35,8 @@ let package_depth = ref 0
 
 let lang = ref "ml"
 
-let output_file = ref "/tmp/pm.gexf"
+(* todo? gephi mode? that set default output file to something different? *)
+let output_file = ref "/tmp/pm.gdf"
 
 (* action mode *)
 let action = ref ""
@@ -67,27 +68,79 @@ let rec dependencies_of_files_or_dirs lang xs =
 (* Main action *)
 (*****************************************************************************)
 
+module G = Graph
+let to_gdf g ~str_of_node ~output =
+  Common.with_open_outfile output (fun (pr_no_nl, _chan) ->
+    let nodes = G.nodes g in
+    let pr s = pr_no_nl (s ^ "\n") in
+
+    
+    let node_name_of_n n =
+      let s = str_of_node n in
+      let (d,b,e) = Common.dbe_of_filename_noext_ok s in
+      
+      match e with
+      | "ml" -> 
+          let str = String.capitalize b in
+          if str = "Math" then "Math_xxx"
+          else str
+      | "mli" -> b ^ "." ^ e
+      | "NOEXT" ->
+          (* can be directory like external/foo *)
+          s ^ "/"
+      | _ ->
+          failwith (spf "PB: weird node: %s" s);
+    in
+
+    let dirs_of_n n =
+      let s = str_of_node n in
+      let (d,b,e) = Common.dbe_of_filename_noext_ok s in
+      let xs = Common.split "/" d in
+      match xs with
+      | x::y::xs -> x, x ^ "/" ^ y, d
+      | [x] -> x, x ^ "/_TOP_", d
+      | [] -> "_TOP_", "_TOP_", d
+    in
+
+    (* check that no ambiguity? *)
+    pr (spf "nodedef> name, dir1 varchar(200), dir2 varchar(200), dir varchar(200)");
+    nodes +> List.iter (fun n ->
+      let (dir1, dir2, dir) = dirs_of_n n in
+      (* don't add extra space for attributes, otherwise no match when
+       * use ==
+       *)
+      pr (spf "%s,%s,%s,%s" (node_name_of_n n) dir1 dir2 dir);
+    );
+    pr (spf "edgedef> node1,node2,directed");
+    nodes +> List.iter (fun n1 ->
+      let succ = G.succ n1 g in
+      succ +> List.iter (fun n2 ->
+        pr (spf "%s,%s,true" (node_name_of_n n1) (node_name_of_n n2));
+      )
+    );
+    ()
+  )
+
 let main_action xs =
   let g = dependencies_of_files_or_dirs !lang xs in
   pr2 (spf "Writing data in %s" !output_file);
+
+  to_gdf g ~str_of_node:(fun s -> s) ~output:!output_file;
+  (*
   g +> Graph_gephi.graph_to_gefx 
     ~str_of_node:(fun s -> s)
     ~tree:None
     ~weight_edges:None
     ~output:!output_file;
+  *)
   ()
 
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
 
-(*open Phylomel*)
-open Phylogram
 open Vec2
 open BarnesHut
-open Phylogram
-
-open Printf
 
 let update_state n fs bs fig =
   let delta = 0.05 in
@@ -123,34 +176,58 @@ let test_phylomel geno_file =
   in
   let dmat = GenoMat.create collec in
   let tree = Tree.prim_complete collec dmat in
+(*
+  let dist_mat = 
+    [|
+      [||];
+      [|1|];
+      [|1;2|];
+    |]
+  in
+  let adj_mat = 
+    [|
+      [||];
+      [|true|];
+      [|true;false|];
+    |]
+  in
+
+  let tree = Tree.create adj_mat dist_mat in
+  let infos = [|"n0"; "n1"; "n2"|] in
+*)
 
   let fig = Phylogram.radial_layout ~reframe:false 800. tree in
   
   (* Creates force array, bodies *)
   let n = Phylogram.size fig in
   let fs = Array.init n (fun _ -> Vec2.null ()) in
-  let bs = Array.map ForceDirectedLayout.body_of_pos fig.ps in
+  let bs = Array.map ForceDirectedLayout.body_of_pos fig.Phylogram.ps in
 
   for i=0 to 2000 do
     update_state n fs bs fig
   done;
 
   let x0, y0 = (10.,10.) in
-  unsafe_reframe (10.,10.) fig.ps;
-  unsafe_crop_width (800.-.2.*.x0) fig.ps;
-  fig.h <- height fig.ps +. 2. *. y0;  
+  Phylogram.unsafe_reframe (10.,10.) fig.Phylogram.ps;
+  Phylogram.unsafe_crop_width (800.-.2.*.x0) fig.Phylogram.ps;
+  fig.Phylogram.h <- Phylogram.height fig.Phylogram.ps +. 2. *. y0;  
     
   (* let x0 = 10. in *)
   (* unsafe_reframe (10., 10.) fig.ps; *)
   (* unsafe_crop_width (800.-.2.*.x0) fig.ps; *)
+
+  let nodeinfo =
+    (fun i -> Genotype.description collec.Genotypes.genos.(i))
+    (* (fun i -> infos.(i)) *)
+  in
   
-  Phylogram.write_svg_file collec fig svg_file;
+  Phylogram.write_svg_file nodeinfo fig svg_file;
   ()
 
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
-  "-test_phylomel", " ",
+  "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
 ]
 

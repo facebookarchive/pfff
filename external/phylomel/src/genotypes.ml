@@ -1,8 +1,3 @@
-open Printf
-(*open ExtLib*)
-open ExtArray
-open ExtString
-open Genotype
 
 type t = {
   genos : Genotype.t array;
@@ -13,8 +8,8 @@ type t = {
 
 let check_fields_nb collec =
   let fields_nb = Array.length collec.fields in
-  let wrong_fields_nb g = Array.length g.infos <> fields_nb in
-  not (Array.exists wrong_fields_nb collec.genos)
+  let wrong_fields_nb g = Array.length g.Genotype.infos <> fields_nb in
+  not (ExtArray.Array.exists wrong_fields_nb collec.genos)
 
 let create genos fields =
   let size = Array.length genos in
@@ -30,9 +25,9 @@ let create genos fields =
           
 let remove_duplicates coll =
   let set = Array.fold_left
-    (fun s g -> GenoSet.add g s) GenoSet.empty coll.genos in
+    (fun s g -> Genotype.GenoSet.add g s) Genotype.GenoSet.empty coll.genos in
   { coll with
-    genos = Array.of_list (GenoSet.elements set) }
+    genos = Array.of_list (Genotype.GenoSet.elements set) }
     
 (* READING A FILE *)
 
@@ -42,7 +37,7 @@ let (|>) x f = f x
 
 (* Splits a string s with sep, applies f to each *)
 let split_and_map s sep f =
-  String.nsplit s sep
+  ExtString.String.nsplit s sep
   |> Array.of_list
   |> Array.map f
 
@@ -52,14 +47,15 @@ let read_markers s =
     invalid_arg "Genotypes.read_markers"
 
 let read_line line =
-  let fields = String.nsplit line ";" in
+  let fields = ExtString.String.nsplit line ";" in
   if List.length fields < 2 then
     invalid_arg "Genotypes.read_line"
   else
-    try
-      { id = List.nth fields 0;
-        markers = read_markers (List.nth fields 1);
-        infos = Array.of_list (List.tl (List.tl fields)) }
+    try { Genotype.
+          id = List.nth fields 0;
+          markers = read_markers (List.nth fields 1);
+          infos = Array.of_list (List.tl (List.tl fields)) 
+         }
     with Invalid_argument _ ->
       invalid_arg "Genotypes.read_line"
         
@@ -74,10 +70,10 @@ let read_lines lines =
   | None ->
       invalid_arg "Genotypes.read_lines : no lines"
   | Some s ->
-      let fields = Array.of_list (String.nsplit s ";") in
+      let fields = Array.of_list (ExtString.String.nsplit s ";") in
       let genotypes = lines
   |> Enum.map read_line
-  |> Array.of_enum in
+  |> ExtArray.Array.of_enum in
       create genotypes fields
         
 let read_file file_name =

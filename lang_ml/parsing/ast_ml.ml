@@ -267,6 +267,7 @@ and module_type = unit
 
 and module_expr =
   | ModuleName of long_name
+  | ModuleStruct of tok (* struct *) * item list * tok (* end *)
   | ModuleTodo
 
 (* ------------------------------------------------------------------------- *)
@@ -295,7 +296,7 @@ and item =
   (* only in struct_item *)
   | Let of tok * rec_opt * let_binding and_list
 
-  | ModuleAlias of tok * uname * tok * module_expr
+  | Module of tok * uname * tok * module_expr
       
   | ItemTodo of info
 

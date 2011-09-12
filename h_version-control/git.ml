@@ -229,11 +229,12 @@ let id_and_summary_oneline s =
   else
     failwith ("wrong line in git log: " ^ s)
       
-let commits ~basedir = 
+let commits ?(extra_args="") ~basedir () = 
   let cmd = (goto_dir basedir ^
-                "git log --no-color --pretty=oneline") in
+                (spf "git log --no-color --pretty=oneline %s" extra_args)) in
   let xs = Common.cmd_to_list cmd in
   xs +> List.map id_and_summary_oneline
+
 
 (*****************************************************************************)
 (* single commit operations  *)
@@ -384,6 +385,7 @@ let get_2_best_blamers_of_lines
     ~basedir 
     ?use_cache 
     ?(is_valid_author=(fun _ -> true))
+    ?(skip_revs=[])
     filename 
     lines_to_remove 
   =
@@ -391,25 +393,33 @@ let get_2_best_blamers_of_lines
   let annots = annotate ~basedir ?use_cache filename in
 
   let toblame = 
-    lines_to_remove +> List.map (fun i -> 
+    lines_to_remove +> Common.map_filter (fun i ->
       let (version, Lib_vcs.Author author, date) = annots.(i) in
-      author
+      (* todo: commitid string sometimes are specified by their full
+       * length, somtimes only by its first 8 characters. Maybe should
+       * have a commitid_equal and use that. Right now
+       * I assume the skip_revs contain just like the result from
+       * git annotate 8-chars commit ids
+       *)
+      if is_valid_author author && not (List.mem version skip_revs)
+      then Some author
+      else None
     )
-    +> List.filter is_valid_author
   in
 
   let hblame = Common.hashset_of_list toblame in
   let other_authors = 
-    annots +> Array.to_list +> List.map (fun x ->
+    annots +> Array.to_list +> Common.map_filter (fun x ->
       let (version, Lib_vcs.Author author, date) = x in
-      author
-    )
-    +> List.filter (fun x -> 
-      is_valid_author x && not (Common.hmem x hblame)
+      if is_valid_author author 
+         && not (Common.hmem author hblame) 
+         && not (List.mem version skip_revs)
+      then Some author
+      else None
     )
   in
       
-  let counts = Common.count_elements_sorted_highfirst toblame +> 
+  let counts = Common.count_elements_sorted_highfirst toblame +>
     List.map fst in
   let counts' = Common.count_elements_sorted_highfirst other_authors +>
     List.map fst in
@@ -417,16 +427,19 @@ let get_2_best_blamers_of_lines
   Common.take_safe 2 (counts ++ counts')
 
 
-let max_date_of_lines ~basedir ?use_cache filename lines_to_remove =
+let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])
+  filename lines_to_remove =
 
   let annots = annotate ~basedir ?use_cache filename in
 
   (* todo? use only the lines_to_remove or the whole file to
    * decide of the "date" of the patch ? *)
   let toblame = 
-    lines_to_remove +> List.map (fun i -> 
+    lines_to_remove +> Common.map_filter (fun i -> 
       let (version, Lib_vcs.Author author, date) = annots.(i) in
-      date
+      if not (List.mem version skip_revs)
+      then Some date
+      else None
     )
   in
   Common.maximum_dmy toblame

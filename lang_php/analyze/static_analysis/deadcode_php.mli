@@ -15,6 +15,8 @@ type hooks = {
    *)
   is_valid_file: Common.filename -> bool;
 
+  skip_revs:Lib_vcs.versionid list;
+
   false_positive_deadcode_annotations: Annotation_php.annotation list;
 
   (* config *)
