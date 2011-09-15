@@ -44,7 +44,7 @@ let sgrep_unittest = [
 
       (* linear patterns *)
       "foo($V, $V);", "foo($x, $x);", true;
-      "X && X;", "($a||$b) && ($a|| $b);", true;
+      "X && X;", "($a || $b) && ($a || $b);", true;
 
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
