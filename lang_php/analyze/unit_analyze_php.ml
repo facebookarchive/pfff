@@ -34,6 +34,67 @@ let tmp_php_file_from_string s =
 (*****************************************************************************)
 
 (*---------------------------------------------------------------------------*)
+(* Defs/uses *)
+(*---------------------------------------------------------------------------*)
+
+let defs_uses_unittest =
+  "defs_uses" >::: [
+    "functions uses" >:: (fun () ->
+      let file_content = "
+foo1();
+"
+      in
+      let tmpfile = tmp_php_file_from_string file_content in
+      let ast = Parse_php.parse_program tmpfile in
+      let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
+      let uses_strings = 
+        uses +> List.map (fun (kind, name) -> Ast.name name) in
+      assert_equal 
+        (sort ["foo1"])
+        (sort uses_strings);
+    );
+
+    "classes uses" >:: (fun () ->
+      let file_content = "
+new Foo1();
+if($x instanceof Foo2) { }
+
+echo Foo3::Cst;
+echo Foo4::$var;
+Foo5::method();
+Foo6::$f();
+
+class X1 extends Foo7 { }
+class X2 implements Foo8 { }
+try { } catch(Foo9 $x) { }
+function foo1(Foo10 $x) { }
+
+$x = <x:xhp1></x:xhp1>;
+$x = <x:xhp2/>;
+"
+      in
+      let tmpfile = tmp_php_file_from_string file_content in
+      let ast = Parse_php.parse_program tmpfile in
+      let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
+      let str_of_name = function
+        | Ast.Name (s, _) -> s
+        | Ast.XhpName (xhp_tag, _) ->
+            Common.join ":" xhp_tag
+      in
+      let uses_strings = 
+        uses +> List.map (fun (kind, name) -> str_of_name name) in
+
+      let classes = 
+        (Common.enum 1 10) +> List.map (fun i -> spf "Foo%d" i) in
+      let xhp_classes = 
+        (Common.enum 1 2) +> List.map (fun i -> spf "x:xhp%d" i) in
+      assert_equal 
+        (sort (classes ++ xhp_classes))
+        (sort uses_strings);
+    );
+  ]
+
+(*---------------------------------------------------------------------------*)
 (* Tags *)
 (*---------------------------------------------------------------------------*)
 let tags_unittest =
@@ -135,6 +196,7 @@ let annotation_unittest =
 
 let unittest =
   "analyze_php" >::: [
+    defs_uses_unittest;
     tags_unittest;
     annotation_unittest;
   ]

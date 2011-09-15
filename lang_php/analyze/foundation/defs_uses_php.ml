@@ -48,7 +48,7 @@ module Db = Database_code
 (* the name option is a little bit ugly because it's valid only for
  * nested entities like Method. One could make a specific
  * entity_kind for PHP but this will go against the multi-languages
- * factorization we try to do oin h_program-lang/
+ * factorization we try to do in h_program-lang/
  *)
 type def =
   Database_code.entity_kind * Ast_php.name * Ast_php.name option
@@ -153,7 +153,7 @@ let defs_of_any any =
  *  - class_php.ml, 
  *  - TODO check_module.ml and uses_module.ml
  * 
- * todo: do for functions, and constants too ! see Database_code.entity_kind
+ * todo: do for constants too ! see Database_code.entity_kind
  * 
  * todo: check_module.ml and the places where we call checkClassName,
  * same than here ?
