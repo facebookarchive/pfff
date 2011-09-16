@@ -36,7 +36,7 @@ module E = Error_php
 (* Main entry point *)
 (*****************************************************************************)
 
-let check_program2 ?find_entity prog =
+let check_program2 prog =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kfunc_def = (fun (k, _) def ->
       try
@@ -63,5 +63,5 @@ let check_program2 ?find_entity prog =
   in
   visitor (Program prog)
 
-let check_program ?find_entity a = 
-  Common.profile_code "Checker.cfg" (fun () -> check_program2 ?find_entity a)
+let check_program a = 
+  Common.profile_code "Checker.cfg" (fun () -> check_program2 a)

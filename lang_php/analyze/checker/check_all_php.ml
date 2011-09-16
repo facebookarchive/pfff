@@ -32,7 +32,7 @@ let check_file ?(find_entity=None) file =
   let ast = Parse_php.parse_program file in
 
   Check_variables_php.check_and_annotate_program ~find_entity ast;
-  Check_cfg_php.check_program ~find_entity ast;
+  Check_cfg_php.check_program ast;
   (* not ready yet
   Check_dfg_php.check_program ?find_entity ast;
   *)
