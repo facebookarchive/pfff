@@ -4,9 +4,7 @@ open Common
 
 (* operations on a singular file *)
 
-(* note that returned array is 0-indexed but the first entry is
- * a dummy value.
- *)
+(* note that returned array is 0-indexed but the first entry is a dummy value.*)
 val annotate : 
   ?basedir:string -> ?use_cache:bool -> ?use_dash_C:bool ->
   Common.filename -> Lib_vcs.line_annotation array
@@ -22,6 +20,9 @@ val commits:
   ?extra_args:string -> basedir:string -> unit -> 
   (Lib_vcs.versionid * string) list
 
+val refactoring_commits:
+  ?since:string -> ?threshold:int -> Common.dirname -> unit
+
 (* commitids operations *)
 
 val commit_of_relative_time: 
@@ -30,7 +31,8 @@ val commit_of_relative_time:
 (* this will not include the old_id. It's ]old_id..recent_id] *)
 val commits_between_commitids: 
   basedir:string ->
-  old_id:Lib_vcs.versionid -> recent_id:Lib_vcs.versionid -> 
+  old_id:Lib_vcs.versionid -> 
+  recent_id:Lib_vcs.versionid -> 
   Lib_vcs.versionid list
 
 (* single commit operation *)

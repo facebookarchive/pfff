@@ -318,6 +318,34 @@ let file_to_commits ~basedir commits =
   );
   h#to_list
 
+let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
+  let basedir = Common.realpath repo in
+  let commits = commits ~basedir ~extra_args:since () in
+  pr2 (spf "#commits = %d" (List.length commits));
+  
+  let refactoring_ids = 
+  commits +> Common_extra.with_progress_list_metter (fun k xs ->
+    xs +> Common.filter (fun (id, x) ->
+      k ();
+      let (Lib_vcs.VersionId scommit) = id in
+      let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"
+                    basedir scommit) in
+      let xs = Common.cmd_to_list cmd in
+      (* basic heuristic: more than N files in a diff => refactoring diff *)
+      List.length xs > threshold
+    );
+  )
+  in
+  let tmpfile = "/tmp/refactoring_diffs.list" in
+  pr2 (spf "writing data in %s" tmpfile);
+  Common.with_open_outfile tmpfile (fun (pr, _chan) ->
+    refactoring_ids +> List.iter (fun (id, s) ->
+      pr2_gen (id, s);
+      pr (spf "%s %s\n" (Lib_vcs.s_of_versionid id) s);
+    );
+  );
+  ()
+
 (*****************************************************************************)
 (* line level operations, preparing commits *)
 (*****************************************************************************)
