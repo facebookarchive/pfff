@@ -1525,9 +1525,8 @@ and iso_m_list_m_xhp_attribute a b =
  *  we could add a -strict_xhp to sgrep/spatch or have a 
  *  special attribute like  NOATTR=true in the xhp expression itself).
  * 
- * It's also ok to have a Xhp pattern matching
- * a XhpSingleton or Xhp (hmmm but this may cause pb to
- * spatch). 
+ * todo: it's also ok to have a Xhp pattern matching
+ * a XhpSingleton or Xhp (hmmm but this may cause pb to spatch). 
  * 
  * Finally it's ok to have an empty xhp body. We may want 
  * to add a "..." syntax for that instead of doing it by default.
@@ -1535,17 +1534,11 @@ and iso_m_list_m_xhp_attribute a b =
 and m_xhp_html a b = 
   match a, b with
   | A.Xhp(a1, a2, a3, a4, a5), B.Xhp(b1, b2, b3, b4, b5) ->
-
     (m_wrap m_xhp_tag) a1 b1 >>= (fun (a1, b1) -> 
-
     (iso_m_list_m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 
-
     m_tok a3 b3 >>= (fun (a3, b3) -> 
-
     (iso_m_list_m_xhp_body) a4 b4 >>= (fun (a4, b4) -> 
-
     (m_wrap (m_option m_xhp_tag)) a5 b5 >>= (fun (a5, b5) -> 
-
 
     return (
        A.Xhp(a1, a2, a3, a4, a5),
@@ -1556,7 +1549,7 @@ and m_xhp_html a b =
 
   | A.XhpSingleton(a1, a2, a3), B.XhpSingleton(b1, b2, b3) ->
     (m_wrap m_xhp_tag) a1 b1 >>= (fun (a1, b1) -> 
-    (m_list m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 
+    (iso_m_list_m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 
     m_tok a3 b3 >>= (fun (a3, b3) -> 
     return (
        A.XhpSingleton(a1, a2, a3),

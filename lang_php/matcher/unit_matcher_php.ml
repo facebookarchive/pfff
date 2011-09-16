@@ -86,20 +86,14 @@ let sgrep_unittest = [
       "return <x:frag foo=\"2\" border=\"1\" ></x:frag>;", 
       true;
 
+      "return <x:frag />;", "return <x:frag border=\"1\" />;", true;
+
       (* can have a body *)
       "return <x:frag border=\"1\"></x:frag>;", 
       "return <x:frag border=\"1\" >this is text</x:frag>;", 
       true;
 
-(* TODO
-      "return <x:frag />;", 
-      "return <x:frag border=\"1\" />;", 
-      true;
-
-      "return <x:frag></x:frag>;", 
-      "return <x:frag />;", 
-      true;
-*)
+    (* TODO "return <x:frag></x:frag>;", "return <x:frag />;", true; *)
 
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
