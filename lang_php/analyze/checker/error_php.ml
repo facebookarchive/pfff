@@ -78,6 +78,7 @@ type error = {
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *)
   | UnusedVariable of string (* dname *) * Scope_php.phpscope
+  | UseOfUndefinedVariableInLambda of string (* dname *)
 
   (* classes *)
   | UseOfUndefinedMember of string (* name *)
@@ -90,7 +91,8 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
   | CfgPilError of Controlflow_build_pil.error_kind
 
-  | UseOfUndefinedVariableInLambda of string (* dname *)
+  | FileNotFound of Common.filename
+
   (* todo: type errors *)
 
   and severity2 =
@@ -154,6 +156,9 @@ let string_of_error_kind error_kind =
       Controlflow_build_php.string_of_error_kind err
   | CfgPilError err ->
       Controlflow_build_pil.string_of_error_kind err
+
+  | FileNotFound s ->
+      spf "File not found %s" s
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
