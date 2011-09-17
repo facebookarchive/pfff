@@ -1,7 +1,7 @@
 all: unimap_to_ocaml
 
 unimap_to_ocaml: unimap_to_ocaml.ml
-	ocamlfind ocamlc -g -package str -linkpkg \
+	ocamlc -g str.cma \
 		-o unimap_to_ocaml \
 		unimap_to_ocaml.ml
 
