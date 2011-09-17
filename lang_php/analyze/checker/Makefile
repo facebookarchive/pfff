@@ -8,10 +8,10 @@ TARGET=lib
 SRC= \
   error_php.ml \
   env_check_php.ml check_variables_helpers_php.ml check_variables_php.ml \
-  check_includes_php.ml \
   check_cfg_php.ml \
   check_dfg_php.ml \
 #  unit_checker_php.ml \
+#  check_includes_php.ml \
 
 # mostly global analysis
 SRC+= \
