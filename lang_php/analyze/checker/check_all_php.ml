@@ -35,6 +35,8 @@ let check_file ?(find_entity=None) file =
   Check_cfg_php.check_program ast;
   (* not ready yet:
    *  Check_dfg_php.check_program ?find_entity ast;
+   * need env:
+   *  Check_includes_php.check env? file ast
    *)
 
   (* work only when find_entity is not None; requires global analysis *)
