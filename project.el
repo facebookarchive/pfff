@@ -602,7 +602,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 20
+     (case 30
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
@@ -610,6 +610,7 @@
        (10 "-test")
 
        (20 "/home/pad/www/flib/utils/async")
+       (30 "/home/pad/www/html/ajax/payment/token_proxy.php")
        )
      ))
    )
