@@ -70,11 +70,14 @@ let mk_class_name s info =
 
 let resolve_class_name qu =
   match fst qu with
-  | ClassName (name) -> name
+  | ClassName (name) -> Some name
   | Self _ | Parent _ -> 
-      failwith "check_functions_php: call unsugar_self_parent"
+      pr2_once "check_functions_php: call unsugar_self_parent";
+      None
   | LateStatic _ ->
-      failwith "late static: can't resolve, add a pattern match for LateStatic"
+      pr2 "late static: can't resolve, add a pattern match for LateStatic";
+      None
+      
 
 (*****************************************************************************)
 (* Typing rules *)
@@ -164,11 +167,12 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
           k x
 
       | StaticMethodCallSimple (qu, callname, args) ->
-          let classname = resolve_class_name qu in
-          let sclassname = Ast.name classname in
-          let name' = rewrap_name_with_class_name sclassname callname in
-          E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
-          +> Common.do_option (fun id_ast -> match id_ast with
+          let classname_opt = resolve_class_name qu in
+          classname_opt +> Common.do_option (fun classname ->
+           let sclassname = Ast.name classname in
+           let name' = rewrap_name_with_class_name sclassname callname in
+           E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
+           +> Common.do_option (fun id_ast -> match id_ast with
            | Ast_php.MethodE def ->
 
                let contain_func_num_args = 
@@ -184,6 +188,7 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
                   (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma_dots)
                 
             | _ -> raise Impossible
+          )
           )
 
       | FunCallVar _ -> 
