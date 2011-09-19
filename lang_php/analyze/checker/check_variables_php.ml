@@ -205,7 +205,7 @@ let do_in_new_scope_and_check f =
     if !aref = 0 
     then 
       let s = Ast.dname dname in
-      if unused_ok s then ()
+      if Env_check_php.unused_ok s then ()
       else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (s, scope))
   );
   res
