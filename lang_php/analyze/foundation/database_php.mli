@@ -338,6 +338,7 @@ val readable_to_absolute_filename:
 val path_of_project:             project -> Common.dirname
 val default_metapath_of_project:  project -> Common.dirname
 val normalize_project: project -> project
+val prj_of_dir: Common.dirname -> project
 
 val database_tag_filename: string
 val check_is_database_dir: Common.dirname -> unit

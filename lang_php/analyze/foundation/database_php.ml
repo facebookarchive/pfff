@@ -378,6 +378,12 @@ let (normalize_project: project -> project) = function
   (Project (path, nameopt)) -> 
     Project (Common.chop_dirsymbol path, nameopt)
 
+let prj_of_dir dir =
+  let dir = Common.realpath dir |> Common.chop_dirsymbol in
+  let prj = Project (dir, None) in
+  let prj = normalize_project prj in 
+  prj
+
 let (metapath_of_database: database -> Common.dirname) = fun db -> 
   match db.db_support with
   | Disk metapath -> metapath
