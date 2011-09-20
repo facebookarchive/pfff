@@ -346,6 +346,14 @@ let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   );
   ()
 
+let parse_skip_revs_file file =
+  file +> Common.cat +> Common.map (fun s ->
+    if s =~ "^\\([^ ]+\\) "
+    (* git annotate returns commitid of length 8, so must match that *)
+    then Lib_vcs.VersionId (String.sub (Common.matched1 s) 0 8)
+    else failwith ("wrong entry in skiprevs file: " ^ s)
+  )
+
 (*****************************************************************************)
 (* line level operations, preparing commits *)
 (*****************************************************************************)

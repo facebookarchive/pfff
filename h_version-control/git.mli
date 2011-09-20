@@ -22,6 +22,8 @@ val commits:
 
 val refactoring_commits:
   ?since:string -> ?threshold:int -> Common.dirname -> unit
+val parse_skip_revs_file:
+  Common.filename -> Lib_vcs.versionid list
 
 (* commitids operations *)
 
