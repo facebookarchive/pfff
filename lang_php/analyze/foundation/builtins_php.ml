@@ -245,6 +245,7 @@ let generate_php_stdlib ~src ~phpmanual_dir ~dest =
    * let phpdoc_finder = 
    *   Phpmanual_xml.build_doc_function_finder phpmanual_dir in
    *)
+  (* todo: need also find .idl in hphp/facebook/extensions/ *)
 
   if not (Common.command2_y_or_no("rm -rf " ^ dest))
   then failwith "ok we stop";
