@@ -23,6 +23,10 @@ function dba_insert() { }
 function dba_delete() { }
 
 
+function fb_enable_html_taint_trace() { }
+
+function fb_get_taint_warning_counts() { }
+
 // ------------------------------------------
 // Now in HPHP idl files
 // ------------------------------------------

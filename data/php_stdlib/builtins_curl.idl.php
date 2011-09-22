@@ -28,3 +28,5 @@ function evhttp_recv($handle) { }
 define('CURLINFO_LOCAL_PORT', 0);
 define('CURLOPT_TIMEOUT_MS', 0);
 define('CURLOPT_CONNECTTIMEOUT_MS', 0);
+
+function fb_curl_multi_fdset($a, $b, $c, $d, $e) { }
