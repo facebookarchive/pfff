@@ -179,6 +179,9 @@ let gen_age_layer ~line_granularity ~skip_revs dir ~output =
             * line 0 which is a dummy value. See git.ml
             *)
            +> List.tl 
+           +> Common.exclude (fun (version, Lib_vcs.Author _, date_dmy) ->
+             Hashtbl.mem hskip_revs version
+           )
         in
         let now_dmy = 
           Common.today () 
@@ -190,13 +193,9 @@ let gen_age_layer ~line_granularity ~skip_revs dir ~output =
           | [] -> "no info"
           | xs ->
            (* could also decide to use the average date of the file instead *)
-           let max_date_dmy = 
+           let max_date_dmy =
             xs
-            +> Common.map_filter (fun (version, Lib_vcs.Author _, date_dmy) ->
-              if Hashtbl.mem hskip_revs version
-              then None
-              else Some date_dmy
-              )
+            +> List.map (fun (version, Lib_vcs.Author _, date_dmy) -> date_dmy)
             +> Common.maximum_dmy
            in
            let age_in_days = 
