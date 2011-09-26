@@ -1,3 +1,4 @@
+(*s: unit_parsing_php.ml *)
 open Common
 
 open Ast_php
@@ -194,3 +195,4 @@ let actions () = [
     "-unittest_parsing", "   ", 
     Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
 ]
+(*e: unit_parsing_php.ml *)

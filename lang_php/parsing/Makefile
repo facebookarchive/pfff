@@ -83,11 +83,14 @@ pretty_print_php.cmo: pretty_print_php.ml
 ##############################################################################
 
 # set of noweb (.nw) files
-SRCMLNW1=parse_php.mli.nw  ast_php.mli.nw visitor_php.mli.nw map_php.mli.nw \
+SRCMLNW1=parse_php.mli.nw  ast_php.mli.nw \
+      visitor_php.mli.nw map_php.mli.nw \
       export_ast_php.mli.nw \
       unparse_php.mli.nw \
       lib_parsing_php.mli.nw \
-      flag_parsing_php.ml.nw test_parsing_php.mli.nw 
+      flag_parsing_php.ml.nw \
+      test_parsing_php.mli.nw unit_parsing_php.mli.nw \
+      meta_ast_php.mli.nw
 
 SRCMLNW2=ast_php.ml.nw #type_php.mli scope_php.mli
 SRCMLNW3=lexer_php.mll.nw #token_helpers_php.mli
@@ -96,7 +99,7 @@ SRCMLNW5=parse_php.ml.nw
 SRCMLNW6=lib_parsing_php.ml.nw \
       export_ast_php.ml.nw \
       type_php.ml.nw scope_php.ml.nw \
-      test_parsing_php.ml.nw 
+      test_parsing_php.ml.nw unit_parsing_php.ml.nw 
 
 # must be in the same order of the #include for syncweb multi files support
 # to work

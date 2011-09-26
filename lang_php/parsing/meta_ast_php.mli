@@ -1,4 +1,4 @@
-
+(*s: meta_ast_php.mli *)
 val vof_program: Ast_php.program -> Ocaml.v
 
 val vof_toplevel: Ast_php.toplevel -> Ocaml.v
@@ -28,3 +28,4 @@ val vof_constant: Ast_php.constant -> Ocaml.v
 val vof_class_name_reference: Ast_php.class_name_reference -> Ocaml.v
 val vof_modifier: Ast_php.modifier -> Ocaml.v
 
+(*e: meta_ast_php.mli *)
