@@ -31,6 +31,13 @@ let check_file ?(find_entity=None) file =
 
   let ast = Parse_php.parse_program file in
 
+  (* we need to unsugar self/parent earlier now (we used to do it only
+   * before Check_functions_php) because check_and_annotate_program
+   * needs to tag if something is passed by reference, which requires
+   * now to lookup static methods, which requires the self/parent unsugaring
+   *)
+  let ast = Unsugar_php.unsugar_self_parent_program ast in
+
   Check_variables_php.check_and_annotate_program ~find_entity ast;
   Check_cfg_php.check_program ast;
   (* not ready yet:
@@ -41,7 +48,6 @@ let check_file ?(find_entity=None) file =
 
   (* work only when find_entity is not None; requires global analysis *)
   if find_entity <> None then begin
-    let ast = Unsugar_php.unsugar_self_parent_program ast in
     Check_functions_php.check_program ~find_entity ast;
     Check_classes_php.check_program ~find_entity ast;
   end;

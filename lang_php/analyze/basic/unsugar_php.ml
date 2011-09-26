@@ -34,7 +34,11 @@ module V = Map_php
  * 
  * todo? turns out people also use self:: or parent:: or static::
  * in strings, to pass callbacks, so may have to unsugar the strings
- * too ?
+ * too ? 
+ * 
+ * note that even if people use self::foo(), the foo() method may
+ * actually not be in self but possibly in its parents; so we need
+ * a lookup ancestor anyway ...
  *)
 
 (*****************************************************************************)
