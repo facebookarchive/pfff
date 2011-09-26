@@ -83,9 +83,14 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 <<type program2>>
 
 <<function program_of_program2>>
+let program_of_program_with_comments a = program_of_program2 a
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -244,16 +249,21 @@ Here is the skeleton of the main entry point:
 
 <<Parse_php.parse>>=
 
+(* could move that in h_program-lang/, but maybe clearer to put it closer
+ * to the parsing function.
+ *)
+exception Parse_error of Parse_info.info
+
 let parse2 ?(pp=(!Flag.pp_default)) filename =
 
   let orig_filename = filename in
   let filename =
+    (* note that now that pfff support XHP constructs directly, 
+     * this code is not that needed.
+     *)
     match pp with
     | None -> orig_filename
     | Some cmd ->
-        (* note that now that pfff support XHP constructs directly, 
-         * this code is not that needed.
-         *)
         Common.profile_code "Parse_php.pp_maybe" (fun () ->
 
           let pp_flag = if !Flag.verbose_pp then "-v" else "" in
@@ -291,6 +301,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
   let filelines = Common.cat_array filename in
 
   let toks = tokens filename in
+  (* note that now that pfff support XHP constructs directly, 
+   * this code is not that needed.
+   *)
   let toks = 
     if filename = orig_filename
     then toks
@@ -333,6 +346,9 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       distribute_info_items_toplevel xs toks filename, 
       stat
   | Right (info_of_bads, line_error, cur, exn) ->
+
+      if not !Flag.error_recovery 
+      then raise (Parse_error (TH.info_of_tok cur));
 
       (match exn with
       | Lexer_php.Lexical _ 
@@ -377,7 +393,9 @@ let parse_memo ?pp file =
   then parse2 ?pp file
   else
     Common.memoized _hmemo_parse_php file (fun () -> 
-      parse2 ?pp file
+      Common.profile_code "Parse_php.parse_no_memo" (fun () ->
+        parse2 ?pp file
+      )
     )
 
 let parse ?pp a = 
