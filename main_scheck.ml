@@ -225,6 +225,7 @@ let main_action xs =
       Check_all_php.check_file ~find_entity file
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
+(*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
                        (Common.string_of_exn exn)) errors;
