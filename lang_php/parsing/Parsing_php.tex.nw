@@ -107,7 +107,7 @@ and Implementation
 }
 \author{
 Yoann Padioleau\\
-\texttt{pad@facebook.com}
+\texttt{pad@fb.com}
 }
 %dup: authors.txt
 
@@ -178,10 +178,6 @@ starting with its first entry point, the parser.
 
 \chapter{Unparsing Services}
 \label{chapter:unparsing}
-#include "sexp_ast_php.mli.nw"
-
-#include "json_ast_php.mli.nw"
-
 #include "unparse_php.mli.nw"
 
 #include "export_ast_php.mli.nw"
@@ -261,18 +257,16 @@ See also [[pfff/ffi/]].
 
 
 \chapter{Auxillary parsing code}
+- exec(...)
+
+WARNING: Please use exec_manual() or execx() instead. See
+https://our.intern.facebook.com/intern/wiki/index.php/Articles/System_Commands
 
 \section{[[ast_php.ml]]}
 #include "ast_php.ml.nw"
 
 \section{[[lib_parsing_php.ml]]}
 #include "lib_parsing_php.ml.nw"
-
-\section{[[json_ast_php.ml]]}
-#include "json_ast_php.ml.nw"
-
-\section{[[sexp_ast_php.ml]]}
-#include "sexp_ast_php.ml.nw"
 
 \section{[[export_ast_php.ml]]}
 #include "export_ast_php.ml.nw"
@@ -283,6 +277,8 @@ See also [[pfff/ffi/]].
 
 \section{[[scope_php.ml]]}
 #include "scope_php.ml.nw"
+
+\section{misc}
 
 <<basic pfff module open and aliases>>=
 open Ast_php 

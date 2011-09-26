@@ -6,7 +6,6 @@ to parse a PHP file:
 
 <<parse_php.mli>>=
 
-<<type parsing_stat>>
 <<type program2>>
 
 exception Parse_error of Parse_info.info
@@ -96,11 +95,7 @@ val tokens:
 
 \section{Parsing statistics}
 
-<<type parsing_stat>>=
-@ 
-
-<<parse_php.mli>>=
-@ 
+Parsing statistics are available via functions in [[h_program-lang/]].
 
 \section{[[pfff -parse_php]]}
 

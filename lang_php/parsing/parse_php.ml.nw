@@ -91,8 +91,4 @@ let error_msg_tok tok =
   Parse_info.error_message_info (TH.info_of_tok tok)
 @
 
-<<parse_php stat function>>=
-@ 
-
-<<parse_php stat function>>=
-@
+% the stat functions that used to be here are now factorized in h_program-lang/

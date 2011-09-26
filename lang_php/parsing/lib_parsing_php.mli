@@ -9,6 +9,7 @@ val find_php_files_of_dir_or_files:
   ?verbose:bool ->
   Common.path list -> Common.filename list
 
+(*x: lib_parsing_php.mli *)
 val ii_of_any: Ast_php.any -> Ast_php.info list
 (*x: lib_parsing_php.mli *)
 (* do via side effects *)

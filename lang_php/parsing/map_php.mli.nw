@@ -1,4 +1,4 @@
-\section{A [[map]] like visitor}
+\section{A [[map]]-like visitor}
 
 
 <<map_php.mli>>=
