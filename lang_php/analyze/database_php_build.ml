@@ -570,7 +570,7 @@ let add_methodcallees_of_id (idcaller, methods) db =
 (* Build_entity_finder *)
 (*****************************************************************************)
 
-(* See Ast_entity_php.mli for the rational behing having both a database
+(* See Ast_entity_php.mli for the rational behind having both a database
  * type and an entity_finder type.
  *)
 let (build_entity_finder: database -> Entity_php.entity_finder) =
