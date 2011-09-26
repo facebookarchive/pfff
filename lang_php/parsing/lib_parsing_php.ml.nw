@@ -28,6 +28,11 @@ let is_php_script file =
 
     with End_of_file -> false
   )
+let is_php_filename filename =
+  (filename =~ ".*\\.php$") || (filename =~ ".*\\.phpt$")
+
+let is_php_file filename =
+  is_php_filename filename || is_php_script filename
 
 (* 
  * In command line tools like git or mercurial, many operations works 
@@ -38,11 +43,7 @@ let is_php_script file =
 let find_php_files_of_dir_or_files ?(verbose=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
-    let valid = 
-      (filename =~ ".*\\.php$") ||
-      (filename =~ ".*\\.phpt$") ||
-      is_php_script filename
-    in
+    let valid = is_php_file filename in
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
     valid
@@ -97,7 +98,7 @@ let rec join_with_space_if_needed xs =
          y =~ "^[a-zA-Z0-9_]"
       then x ^ " " ^ (join_with_space_if_needed (y::xs))
       else x ^ (join_with_space_if_needed (y::xs))
-let _ = example
+let _ = assert
   (join_with_space_if_needed ["$x";"=";"print";"FOO"] = "$x=print FOO")
 
 
@@ -122,6 +123,7 @@ let print_match ?(format = Normal) ii =
                             +> join_with_space_if_needed))
 
 
+(* obsolete: now catch Parse_php.Parse_error *)
 let print_warning_if_not_correctly_parsed ast file =
   if ast +> List.exists (function 
   | Ast_php.NotParsedCorrectly _ -> true
@@ -135,23 +137,8 @@ let print_warning_if_not_correctly_parsed ast file =
   end
 
 (*****************************************************************************)
-(* Ast getters *)
+(* Helpers *)
 (*****************************************************************************)
-<<ast getters>>
-
-let get_static_vars_any =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kstmt = (fun (k,vx) x ->
-      match x with
-      | StaticVars (tok, xs, tok2) ->
-          xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
-            Common.push2 dname aref
-          );
-      | _ -> 
-          k x
-    );
-  })
-
 
 (* todo: move where ? 
  * static_scalar does not have a direct mapping with scalar as some
@@ -186,6 +173,27 @@ and static_array_pair_to_array_pair x =
       ArrayArrowExpr (static_scalar_to_expr sc1, 
                      tok,
                      static_scalar_to_expr sc2)
+
+(*****************************************************************************)
+(* Ast getters *)
+(*****************************************************************************)
+<<ast getters>>
+
+let get_static_vars_any =
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.kstmt = (fun (k,vx) x ->
+      match x with
+      | StaticVars (tok, xs, tok2) ->
+          xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
+            Common.push2 dname aref
+          );
+      | _ -> 
+          k x
+    );
+  })
+
+
+
 
 (* do some isomorphisms for declaration vs assignement *)
 let get_vars_assignements_any recursor = 
@@ -252,6 +260,12 @@ let get_vars_any any =
       | _ -> k x
     )}) any
 
+(*****************************************************************************)
+(* Ast adapters *)
+(*****************************************************************************)
+
+(* todo? let lvalue_to_expr ?? *)
+
 let top_statements_of_program ast = 
   ast |> List.map (function
   | StmtList xs -> xs
@@ -259,7 +273,6 @@ let top_statements_of_program ast =
   | InterfaceDef _|ClassDef _| FuncDef _
       -> []
   ) |> List.flatten  
-
 
 let toplevel_to_entity x = 
   match x with
