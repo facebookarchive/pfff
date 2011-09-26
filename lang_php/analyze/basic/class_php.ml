@@ -29,6 +29,9 @@ module V = Visitor_php
 (* Helpers *)
 (*****************************************************************************)
 
+let rewrap_class_name qu name =
+  raise Todo
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -99,3 +102,11 @@ let class_variables_reorder_first def =
 let is_static_method def =
   let modifiers = def.m_modifiers +> List.map Ast.unwrap in
   List.mem Ast.Static modifiers
+
+
+(*****************************************************************************)
+(* Lookup *)
+(*****************************************************************************)
+
+let lookup_method qu name ~find_entity =
+  raise Todo
