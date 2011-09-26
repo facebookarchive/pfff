@@ -800,7 +800,7 @@ let info_of_category = function
   | (Label Def) ->
       [`FOREGROUND "cyan";]
   | (Label Use) ->
-      [`FOREGROUND "cyan2";]
+      [`FOREGROUND "CornflowerBlue";]
 
   | EnumName usedef
       -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
