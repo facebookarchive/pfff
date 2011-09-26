@@ -121,7 +121,7 @@ rule tex = parse
   | '(' { TSymbol (tok lexbuf, tokinfo lexbuf) }
   | ')' { TSymbol (tok lexbuf, tokinfo lexbuf) }
 
-  | ['-' '+' '=' '~' '\'' '\\' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
+  | ['-' '+' '=' '\'' '\\' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
      '_' '`' '?' '^' '|' '!' '&' ]+ {
       TSymbol (tok lexbuf, tokinfo lexbuf) 
     }
