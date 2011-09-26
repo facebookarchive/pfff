@@ -71,15 +71,13 @@ Here are the functions defined by [[json_ast_php.mli]]:
 <<json_ast_php.mli>>=
 
 <<json_ast_php flags>>
-
-val string_of_program:  Ast_php.program  -> string
-val string_of_toplevel: Ast_php.toplevel -> string
-val string_of_expr:     Ast_php.expr     -> string
-
+val json_string_of_program:  Ast_php.program  -> string
+val json_string_of_toplevel: Ast_php.toplevel -> string
+val json_string_of_expr:     Ast_php.expr     -> string
 (* The outputted JSON is not pretty printed, it's more compact,
  * so less readable, but it's faster. 
  *)
-val string_of_program_fast:  Ast_php.program  -> string
+val json_string_of_program_fast:  Ast_php.program  -> string
 @ 
 
 <<json_ast_php flags>>=
@@ -101,7 +99,7 @@ let test_json_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  let s = Json_ast_php.string_of_program ast in
+  let s = Export_ast_php.json_string_of_program ast in
   pr s;
   ()
 
@@ -109,7 +107,7 @@ let test_json_fast_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  let s = Json_ast_php.string_of_program_fast ast in
+  let s = Export_ast_php.json_string_of_program_fast ast in
   pr s;
   ()
 @ 
@@ -149,12 +147,10 @@ Here are the functions:
 <<sexp_ast_php.mli>>=
 
 <<sexp_ast_php flags>>
-
-val string_of_program:  Ast_php.program  -> string
-val string_of_toplevel: Ast_php.toplevel -> string
-val string_of_expr:     Ast_php.expr     -> string
-val string_of_phptype:  Type_php.phptype  -> string
-
+val sexp_string_of_program:  Ast_php.program  -> string
+val sexp_string_of_toplevel: Ast_php.toplevel -> string
+val sexp_string_of_expr:     Ast_php.expr     -> string
+val sexp_string_of_phptype:  Type_php.phptype  -> string
 <<sexp_ast_php raw sexp>>
 @ 
 
@@ -226,8 +222,8 @@ let test_sexp_php file =
   let ast = Parse_php.program_of_program2 ast2 in
   (* let _ast = Type_annoter.annotate_program !Type_annoter.initial_env ast *) 
 
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   ()
 @ 
@@ -243,8 +239,8 @@ let test_sexp_full_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  Sexp_ast_php.show_info := true;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := true;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   ()
 @ 
@@ -258,13 +254,7 @@ let test_sexp_full_php file =
 <<json_ast_php.mli>>
 
 <<sexp_ast_php.mli>>
-
-val ml_pattern_string_of_program: 
-  Ast_php.program -> string
-
-val ml_pattern_string_of_expr: 
-  Ast_php.expr -> string
-
-val ml_pattern_string_of_any: 
-  Ast_php.any -> string
+val ml_pattern_string_of_program: Ast_php.program -> string
+val ml_pattern_string_of_expr:    Ast_php.expr -> string
+val ml_pattern_string_of_any:     Ast_php.any -> string
 @ 

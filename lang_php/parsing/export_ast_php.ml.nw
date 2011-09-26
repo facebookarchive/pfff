@@ -18,16 +18,16 @@ module J = Json_type
 (* Entry points *)
 (*****************************************************************************)
 
-let string_of_expr x = 
+let json_string_of_expr x = 
   x |> Meta_ast_php.vof_expr |> Ocaml.json_of_v |> Json_out.string_of_json
-let string_of_toplevel x = 
+let json_string_of_toplevel x = 
   x |> Meta_ast_php.vof_toplevel |> Ocaml.json_of_v |> Json_out.string_of_json
-let string_of_program x = 
+let json_string_of_program x = 
   Common.profile_code "json_of_program" (fun () ->
     x |> Meta_ast_php.vof_program |> Ocaml.json_of_v |> Json_out.string_of_json
   )
 
-let string_of_program_fast x = 
+let json_string_of_program_fast x = 
   Common.profile_code "json_of_program_fast" (fun () ->
     let json = x |> Meta_ast_php.vof_program |> Ocaml.json_of_v 
     in
@@ -134,7 +134,6 @@ and sexp_of_arraytype =
 end
 (* pad addons end *)
 
-
 (*****************************************************************************)
 (* Algo *)
 (*****************************************************************************)
@@ -209,9 +208,6 @@ let rec sexp_of_v v =
   | Ocaml.VTODO v1 ->
       let v1 = Conv.sexp_of_string v1 in Sexp.List [ Sexp.Atom "VTODO"; v1 ]
 
-
-
-
 (*****************************************************************************)
 (* Entry points *)
 (*****************************************************************************)
@@ -224,7 +220,6 @@ let sexp_string_of_toplevel x =
   x |> Meta_ast_php.vof_toplevel |> sexp_of_v |> Sexp.to_string_hum
 let sexp_string_of_program x = 
   x |> Meta_ast_php.vof_program |> sexp_of_v |> Sexp.to_string_hum
-
 
 let sexp_string_of_phptype top = 
   raise Todo
@@ -243,7 +238,6 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
   let v = Ocaml.VList [
     Ocaml.VInt 10000; Ocaml.VInt 10000; Ocaml.VInt 10000; Ocaml.VInt 10000;
@@ -257,7 +251,6 @@ open Common
   let s = Ocaml.string_of_v v in
   pr2 s;
 *)
-
 
 let string_of_v v =
   let cnt = ref 0 in

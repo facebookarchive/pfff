@@ -40,8 +40,8 @@ let test_parse_xhp_with_xhpize file =
   let pp_cmd = "xhpize" in
   let (ast2, stat) = Parse_php.parse ~pp:(Some pp_cmd) file in
   let ast = Parse_php.program_of_program2 ast2 in
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   let s = Unparse_php.string_of_program2_using_transfo ast2 in
   pr2 s;
@@ -49,8 +49,8 @@ let test_parse_xhp_with_xhpize file =
 
 let test_parse_xdebug_expr s = 
   let e = Parse_php.xdebug_expr_of_string s in
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_expr e in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_expr e in
   pr2 s;
   ()
 
