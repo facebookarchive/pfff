@@ -14,3 +14,8 @@ class B extends A {
   public function foo($param1, $param2) {
   }
 }
+
+function test_method() {
+  $o = new B();
+  $o->foo(1, 2);
+}
