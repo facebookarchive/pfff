@@ -4,22 +4,23 @@ TOP=../../..
 ##############################################################################
 TARGET=lib
 
-SRC= \
-     defs_uses_php.ml \
-     pil.ml pretty_print_pil.ml controlflow_pil.ml \
-     meta_pil.ml visitor_pil.ml \
+SRC= defs_uses_php.ml \
      phpmanual_xml.ml builtins_php.ml \
-     pil_build.ml controlflow_build_pil.ml \
      controlflow_php.ml  controlflow_build_php.ml \
-     callgraph_php.ml aliasing_function_php.ml  \
-     dataflow_php.ml \
-     dataflow_pil.ml \
+     callgraph_php.ml \
      database_php.ml \
      graph_php.ml \
-     bottomup_analysis_php.ml \
 
-#todo: empty for now
-SRC+=cfa_pil.ml
+#     pil.ml pretty_print_pil.ml controlflow_pil.ml \
+#     meta_pil.ml visitor_pil.ml \
+#     pil_build.ml controlflow_build_pil.ml \
+#cfa_pil.ml
+
+#    dataflow_php.ml \
+#     dataflow_pil.ml \
+
+#aliasing_function_php.ml
+#     bottomup_analysis_php.ml \
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \

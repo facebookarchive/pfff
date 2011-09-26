@@ -199,7 +199,6 @@ LIBS= commons/commons.cma \
     lang_php/parsing/lib.cma \
      lang_php/analyze/basic/lib.cma \
      lang_php/analyze/foundation/lib.cma \
-     lang_php/analyze/typing/lib.cma \
      lang_php/analyze/tools/lib.cma \
      lang_php/analyze/checker/lib.cma \
      lang_php/matcher/lib.cma \
@@ -265,7 +264,6 @@ MAKESUBDIRS=commons \
   lang_php/analyze \
    lang_php/analyze/basic \
    lang_php/analyze/foundation \
-   lang_php/analyze/typing \
    lang_php/analyze/checker \
    lang_php/analyze/database \
    lang_php/analyze/tools \

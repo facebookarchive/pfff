@@ -24,8 +24,10 @@ module N = Namespace_php
 
 module T = Type_php
 
-module Typing = Typing_php
+(*
+module Typing = Typing_php 
 module TAC  = Type_annotater_php
+*)
 
 module CG = Callgraph_php
 
@@ -273,6 +275,9 @@ let database_info_to_typing_environment db = {
  * See also Test_analyze_php.test_type_xdebug_php.
  *) 
 let index_db_xdebug2 db dumpfile = 
+  raise Todo
+
+(* was typing via xdebug information
 
   let h_id = Hashtbl.create 100000 in
   let _h_count = Common.hash_with_default (fun () -> 0) in
@@ -331,6 +336,8 @@ let index_db_xdebug2 db dumpfile =
   pr_xxxxxxxxxxxxxxxxx ();
   pr (spf "nb entity not found: %d" !nb_not_found);
   ()
+
+*)
 
 let index_db_xdebug a b = 
   Common.profile_code "Db.index_db_xdebug" (fun () -> index_db_xdebug2 a b)

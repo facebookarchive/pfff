@@ -8,11 +8,12 @@ SRC= \
   cyclomatic_php.ml layer_cyclomatic_php.ml \
   code_rank_php.ml \
   coverage_static_php.ml \
-  dataflow_php_liveness.ml \
-  dataflow_php_array.ml \
   deadcode_php.ml   layer_deadcode_php.ml \
   statistics_php.ml \
-  tainted_php.ml \
+
+#  dataflow_php_liveness.ml \
+#  dataflow_php_array.ml \
+#  tainted_php.ml \
 
 
 SYSLIBS= str.cma unix.cma 

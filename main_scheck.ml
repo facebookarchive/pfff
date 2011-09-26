@@ -263,6 +263,9 @@ let main_action xs =
 (*---------------------------------------------------------------------------*)
 
 let type_inference file =
+  raise Todo
+(*
+
   let ast = Parse_php.parse_program file in
 
   (* PHP Intermediate Language *)
@@ -292,6 +295,7 @@ let type_inference file =
   with exn ->
     pr2 "File contain constructions not supported by the PIL; bailing out";
     raise exn
+*)
 
 (*---------------------------------------------------------------------------*)
 (* Regression testing *)

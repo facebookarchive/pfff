@@ -131,8 +131,7 @@ let info_of_error_and_kind err =
       )
   | CfgError ( _) ->
       "eCfgError"
-  | CfgPilError ( _) ->
-      "eCfgError"
+(*  | CfgPilError ( _) -> "eCfgError" *)
 
   | FileNotFound ( _) ->
       "eFileNotFound"

@@ -10,8 +10,12 @@ SRC= \
   check_includes_php.ml \
   env_check_php.ml check_variables_helpers_php.ml check_variables_php.ml \
   check_cfg_php.ml \
-  check_dfg_php.ml \
+
+# this is in lang_php/analyze/ and not in checker/ because our unit
+# tests needs a db or entity finder
 #  unit_checker_php.ml \
+
+#  check_dfg_php.ml \
 
 # use some global analysis via entity_finder
 SRC+= \

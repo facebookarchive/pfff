@@ -49,9 +49,10 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=basic foundation tools typing checker \
+MAKESUBDIRS=basic foundation tools checker \
   database dynamic_analysis static_analysis qa_test \
 #qa_code annotaters
+#typing finder
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
@@ -66,7 +67,6 @@ INCLUDEDIRS= $(TOP)/commons \
    database \
    checker \
    tools \
-   typing \
    static_analysis \
    dynamic_analysis \
    qa_test \
@@ -126,14 +126,11 @@ TEX=Analyze_php.tex
 # to work
 SRC_ORIG=Analyze_php.tex.nw Analyze_php_intro.tex.nw Analyze_php_use.tex.nw \
  Analyze_php_implem.tex.nw \
- foundation/pil.ml.nw \
  foundation/controlflow_php.ml.nw foundation/dataflow_php.ml.nw \
- typing/typing_trivial_php.ml.nw \
  tools/xdebug.ml.nw \
  static_analysis/code_rank_php.ml.nw \
  static_analysis/cyclomatic_php.ml.nw \
  static_analysis/deadcode_php.ml.nw \
- static_analysis/tainted_php.ml.nw \
  static_analysis/dataflow_php_array.ml.nw \
  foundation/builtins_php.ml.nw \
  tools/phpunit.ml.nw \
@@ -143,12 +140,16 @@ SRC_ORIG=Analyze_php.tex.nw Analyze_php_intro.tex.nw Analyze_php_use.tex.nw \
  test_analyze_php.ml.nw \
  test_analyze_db_php.ml.nw \
 
+# typing/typing_trivial_php.ml.nw \
+# foundation/pil.ml.nw \
+
+# static_analysis/tainted_php.ml.nw \
+
 
 # set of ml files, the views. Also used by make lpclean.
 
 # TODO later do via a filter-out
 SRC_ML= \
-       foundation/pil.ml foundation/pil_build.ml \
        foundation/controlflow_php.ml foundation/controlflow_build_php.ml \
        foundation/dataflow_php.ml static_analysis/dataflow_php_liveness.ml \
        foundation/builtins_php.ml \
@@ -164,6 +165,8 @@ SRC_ML= \
        dynamic_analysis/coverage_dynamic_php.ml \
        test_analyze_php.ml \
        test_analyze_db_php.ml \
+
+#       foundation/pil.ml foundation/pil_build.ml \
 
 SRC_MLI=$(SRC_ML:ml=mli)
 

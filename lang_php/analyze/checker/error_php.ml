@@ -94,7 +94,7 @@ type error = {
 
   (* cfg, mostly DeadCode statements *)
   | CfgError of Controlflow_build_php.error_kind
-  | CfgPilError of Controlflow_build_pil.error_kind
+(*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
   | FileNotFound of Common.filename
 
@@ -159,8 +159,9 @@ let string_of_error_kind error_kind =
 
   | CfgError err ->
       Controlflow_build_php.string_of_error_kind err
-  | CfgPilError err ->
+(*  | CfgPilError err ->
       Controlflow_build_pil.string_of_error_kind err
+*)
 
   | FileNotFound s ->
       spf "File not found %s" s

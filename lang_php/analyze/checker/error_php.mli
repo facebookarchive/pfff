@@ -27,7 +27,7 @@ type error = {
   | WeirdForeachNoIteratorVar
 
   | CfgError of Controlflow_build_php.error_kind
-  | CfgPilError of Controlflow_build_pil.error_kind
+(*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
   | FileNotFound of Common.filename
 
