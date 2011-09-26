@@ -46,11 +46,16 @@ let strict = ref false
  * error_kind (having a simple error_kind independent of location also
  * makes it easy to have "stable" errors independent of repository
  * which makes it easy to have cmf --only-new-errors working correctly).
+ * 
  *)
 type error = {
   typ: error_kind;
   loc: Ast_php.info;
-  sev: severity;
+  (* todo? maybe severity should be inferred from the error_kind. That
+   * way it will also avoid the need for 2 functions fatal()/warning()
+   * and just have error().
+   *)
+  sev: severity; 
 }
  (* todo? Advise | Noisy | Meticulous ? *)
  and severity = Fatal | Warning
@@ -265,7 +270,7 @@ let (find_entity_and_warn:
           if Hashtbl.mem h_already_error (kind, str) 
           then ()
           else begin
-            Hashtbl.replace h_already_error (kind, str) true;
+            Hashtbl.add h_already_error (kind, str) true;
             (* todo: to give 2 ex of defs *)
             let ex1 = str (* TODO *) in
             let ex2 = str (* TODO *) in
