@@ -92,12 +92,13 @@ type hooks = {
    * git owner anymore (the guy left the company for instance ...)
    *)
   is_valid_author: string -> bool;
-
   (* to avoid generating patches for certain files, such as code in 
    * third party libraries or auto generated code. Will be called
    * with a filename without leading project.
    *)
   is_valid_file: filename -> bool;
+
+  skip_revs:Lib_vcs.versionid list;
 
   (* code annotated with @not-dead-code should not be considered *)
   false_positive_deadcode_annotations: Annotation_php.annotation list;
@@ -118,6 +119,7 @@ let default_hooks = {
 
   is_valid_author  = (fun s -> true);
   is_valid_file = (fun filename -> true);
+  skip_revs = [];
   false_positive_deadcode_annotations = [
     Annotation_php.CalledFromPhpsh;
     Annotation_php.CalledOutsideTfb;
@@ -405,9 +407,14 @@ let get_lines_to_remove db ids =
         Token_helpers_php.pos_of_tok tok < min.Parse_info.charpos
       ) +> List.rev
     in
+    (* note that the tokens in toks_before_min are in reverse order.
+     * note also that for one-liner comment the tokens contain
+     * the newline. so //comment\nfunctionfoo will return 2 tokens,
+     * [T_COMMENT("//comment\n"); T_FUNCTION(...)].
+     *)
     let min_comment = 
       match toks_before_min with
-      | Parser_php.T_WHITESPACE i1::
+      | Parser_php.TNewline i1::
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
           if Ast_php.col_of_info i2 = 0 &&
              (* bugfix: dont want comment far away *)
@@ -417,7 +424,7 @@ let get_lines_to_remove db ids =
 
       (* bugfix *)
       | Parser_php.T_COMMENT i1first::
-          Parser_php.T_WHITESPACE i1::
+          Parser_php.TNewline i1::
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs
         ->
           if Ast_php.col_of_info i1first = 0 &&
@@ -431,7 +438,7 @@ let get_lines_to_remove db ids =
           then Ast_php.parse_info_of_info i2
           else min
 
-      | Parser_php.T_WHITESPACE i1::tok2::xs ->
+      | Parser_php.TNewline i1::tok2::xs ->
           let _ltok2 = Token_helpers_php.line_of_tok tok2 in
           let _lwhite = Ast_php.line_of_info i1 in
           if Ast_php.col_of_info i1 = 0 (* buggy: lwhite <> ltok2 *)
@@ -468,6 +475,7 @@ let generate_deadcode_patch ~prj_path ~filename ~filename_in_project
         ~basedir:prj_path 
         ~use_cache:hooks.cache_git_blame
         ~is_valid_author:hooks.is_valid_author
+        ~skip_revs:hooks.skip_revs
         filename_in_project 
         lines_to_remove.just_code_lines
     in
@@ -501,6 +509,7 @@ let generate_deadcode_patch ~prj_path ~filename ~filename_in_project
     Git.max_date_of_lines
       ~basedir:prj_path
       ~use_cache:hooks.cache_git_blame
+      ~skip_revs:hooks.skip_revs
       filename_in_project
       lines_to_remove.just_code_lines
   in
@@ -642,8 +651,10 @@ let deadcode_analysis hooks db =
       (dead_ids +> List.map snd) 
       hooks db
   in
+  let pbs = ref [] in
 
   grouped_by_file +> List.iter (fun (filename, ids) ->
+  try 
    if hooks.skip_patch_generation_for_file filename then ()
    else begin
     
@@ -667,7 +678,15 @@ let deadcode_analysis hooks db =
     else 
       if hooks.print_diff then xs' +> List.iter pr
    end
-  )
+   with 
+   | Timeout -> raise Timeout
+   | UnixExit n -> raise (UnixExit n)
+   | exn -> 
+       let err = spf "PB with %s, exn = %s" filename (Common.exn_to_s exn) in
+       pr2 err; Common.push2 err pbs;
+  );
+  !pbs +> List.iter pr2;
+  ()
 
 @ 
 

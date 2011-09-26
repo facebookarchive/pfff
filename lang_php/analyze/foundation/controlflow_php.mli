@@ -79,7 +79,6 @@ type node = {
           * a better expr type
           *)
          (*
-         | ExprStmt of expr * tok
 
          | EmptyStmt of expr * tok
            

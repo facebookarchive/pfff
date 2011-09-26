@@ -108,7 +108,7 @@ let var_name_of_lval lval =
       raise Todo
 
   | Pil.VQualifier _ -> raise Todo
-
+  | (Pil.TodoLvalue _|Pil.DynamicObjAccess (_, _)) -> raise Todo
 
 (* The PIL does not correspond to the original file. Some fake 
  * intermediate variables are sometimes introduced. We want to 
@@ -154,6 +154,7 @@ let node_contain_funcall func_name n =
           | _ -> false
           )
       | Pil.Eval _ | Pil.Assign _ -> false
+      |(Pil.TodoInstr _|Pil.AssignRef (_, _)) -> raise Todo
       )
   | _ -> false
 
@@ -166,6 +167,7 @@ let extract_var_name_assigned_of_node n =
       | Pil.Assign (lval, _, _) ->
           var_name_of_lval lval
       | Pil.Eval _ -> raise Todo
+      | (Pil.TodoInstr _|Pil.AssignRef (_, _)) -> raise Todo
       )
   | _ -> 
       failwith "extract_var_name_assigned_of_node: not a instr"
@@ -182,6 +184,7 @@ let node_contain_variable_rhs var_name n =
             vars_in_expr e
         | Pil.Eval _ ->
             raise Todo
+        | (Pil.TodoInstr _|Pil.AssignRef (_, _)) -> raise Todo
         )
     | CFG.Echo es -> es +> List.map vars_in_expr +> List.flatten
     | CFG.Return eopt -> 
@@ -200,6 +203,7 @@ let node_contain_variable_rhs var_name n =
     | CFG.FalseNode | CFG.TrueNode 
     | CFG.Exit | CFG.Enter
         -> []
+    | CFG.TodoNode _ -> raise Todo
   in
   List.mem var_name vars
           
@@ -212,6 +216,7 @@ let node_has_variable_lhs n =
       | Pil.Assign (lval, _, _) ->
           Some (var_name_of_lval lval)
       | Pil.Eval _ -> raise Todo
+      | (Pil.TodoInstr _|Pil.AssignRef (_, _)) -> raise Todo
       )
   | _ -> 
       None

@@ -49,7 +49,7 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=basic foundation tools typing finder checker \
+MAKESUBDIRS=basic foundation tools typing checker \
   database dynamic_analysis static_analysis qa_test \
 #qa_code annotaters
 
@@ -70,7 +70,6 @@ INCLUDEDIRS= $(TOP)/commons \
    static_analysis \
    dynamic_analysis \
    qa_test \
-   finder \
 
 #   $(PCREINCLUDE) $(JANEINCLUDE)
 #$(TOP)/matcher_php
@@ -184,16 +183,15 @@ SRC_MLI_NO_ML_NW= \
  typing/type_annotater_php.mli \
  typing/typing_php.mli \
  typing/typing_weak_php.mli \
- finder/finder_php.mli \
- finder/smpl_php.mli \
- annotaters/comment_annotater_php.mli \
- annotaters/info_annotater_php.mli \
  foundation/database_php.mli \
  database_php_build.mli \
  database_php_build2.mli \
  database/database_php_query.mli \
  database/database_php_statistics.mli \
  static_analysis/statistics_php.mli \
+
+# annotaters/comment_annotater_php.mli \
+# annotaters/info_annotater_php.mli \
 
 
 SRC_MLI+=$(SRC_MLI_NO_ML_NW)

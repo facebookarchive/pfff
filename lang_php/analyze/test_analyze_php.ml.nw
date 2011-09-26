@@ -21,8 +21,8 @@ let test_type_php file =
     )
   in
 
-  Sexp_ast_php.show_expr_info := true;
-  pr (Sexp_ast_php.string_of_program asts);
+  Export_ast_php.show_expr_info := true;
+  pr (Export_ast_php.sexp_string_of_program asts);
   ()
 
 let test_typing_weak_php file =
@@ -42,8 +42,8 @@ let test_scope_php file =
     ~find_entity:None
     asts;
 
-  Sexp_ast_php.show_expr_info := true;
-  pr (Sexp_ast_php.string_of_program asts);
+  Export_ast_php.show_expr_info := true;
+  pr (Export_ast_php.sexp_string_of_program asts);
   ()
 
 

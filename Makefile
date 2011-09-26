@@ -204,7 +204,6 @@ LIBS= commons/commons.cma \
      lang_php/analyze/checker/lib.cma \
      lang_php/matcher/lib.cma \
      lang_php/analyze/database/lib.cma \
-     lang_php/analyze/finder/lib.cma \
      lang_php/analyze/static_analysis/lib.cma \
      lang_php/analyze/dynamic_analysis/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
