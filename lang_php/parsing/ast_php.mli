@@ -777,11 +777,16 @@ and toplevel =
  (*e: tarzan annotation *)
 
 (*e: AST toplevel *)
-
 (* ------------------------------------------------------------------------- *)
 (* Entity and any *)
 (* ------------------------------------------------------------------------- *)
-
+(*s: AST entity *)
+(* The goal of the entity type is to lift up important entities which
+ * are originally nested in the AST such as methods.
+ * 
+ * history: was in ast_entity_php.ml before but better to put everything
+ * in one file.
+ *)
 type entity = 
   | FunctionE of func_def
   | ClassE of class_def
@@ -796,7 +801,8 @@ type entity =
   | XhpDeclE of xhp_decl
 
   | MiscE of info list
-
+(*e: AST entity *)
+(*s: AST any *)
 type any = 
   | Lvalue of lvalue
   | Expr of expr
@@ -829,6 +835,7 @@ type any =
   | InfoList of info list
 
   | Name2 of name
+(*e: AST any *)
 
   (* with tarzan *)
 
