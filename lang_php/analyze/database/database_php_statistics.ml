@@ -161,7 +161,7 @@ let typing_stat_ast ast db h_notfound_type_ident h_notfound_type_field =
       ;
 
       if not as_type_info && !verbose_typing_stat
-      then pr (Sexp_ast_php.string_of_expr expr);
+      then pr (Export_ast_php.sexp_string_of_expr expr);
 
 
       (*
