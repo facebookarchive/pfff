@@ -797,8 +797,11 @@ let info_of_category = function
   | Operator ->
       [`FOREGROUND "DeepSkyBlue3";] (* could do better ? *)
 
-  | (Label _) ->
+  | (Label Def) ->
       [`FOREGROUND "cyan";]
+  | (Label Use) ->
+      [`FOREGROUND "cyan2";]
+
   | EnumName usedef
       -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
 

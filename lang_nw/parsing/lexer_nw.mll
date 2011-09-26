@@ -17,19 +17,17 @@
 open Common 
 
 module Flag = Flag_parsing_nw
-
 open Parser_nw
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Alternatives:
- *  - heavea, but the code is quite complicated. I don't need all the
+ *  - hevea, but the code is quite complicated. I don't need all the
  *    features of TeX
  *  - extend the parser in syncweb, but it's not a parser. It is just
- *    a very specialized lexer that recognize only noweb constructs
+ *    a very specialized lexer that recognizes only noweb constructs
  *)
 
 (*****************************************************************************)
@@ -57,6 +55,8 @@ let keyword_table = Common.hash_of_list [
 ]
 *)
 
+(* ---------------------------------------------------------------------- *)
+(* Lexer State *)
 (* ---------------------------------------------------------------------- *)
 type state_mode = 
   (* aka TeX mode *)
@@ -89,9 +89,13 @@ let pop_mode () = ignore(Common.pop2 _mode_stack)
 }
 
 (*****************************************************************************)
+(* Regexps aliases *)
+(*****************************************************************************)
 let letter = ['a'-'z''A'-'Z']
 let digit = ['0'-'9']
 
+(*****************************************************************************)
+(* Rule in Tex *)
 (*****************************************************************************)
 rule tex = parse
   (* ----------------------------------------------------------------------- *)
@@ -170,6 +174,8 @@ rule tex = parse
     }
 
 (*****************************************************************************)
+(* Rule in Code noweb *)
+(*****************************************************************************)
 and noweb = parse
   | "\n@" { 
       pop_mode ();
@@ -187,6 +193,8 @@ and noweb = parse
     }
 
 
+(*****************************************************************************)
+(* Rule in verbatim *)
 (*****************************************************************************)
 and verbatim endname = parse
   | "\\end{verbatim}" { 
