@@ -33,6 +33,7 @@ let unittest =
 
   let test_files = [
     "tests/php/scheck/variables.php";
+    "tests/php/scheck/variables_fp.php";
     "tests/php/scheck/cfg.php";
     "tests/php/scheck/functions.php";
     "tests/php/scheck/classes.php";

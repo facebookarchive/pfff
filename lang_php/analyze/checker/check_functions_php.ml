@@ -167,8 +167,12 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
           k x
 
       | StaticMethodCallSimple (qu, callname, args) ->
-          let classname_opt = resolve_class_name qu in
-          classname_opt +> Common.do_option (fun classname ->
+(* TODO
+          (match resolve_class_name qu with 
+          | None ->
+              pr2 (spf "could not resolve callname at %s"
+                      (Ast.string_of_info (Ast.info_of_name callname)))
+          | Some classname ->
            let sclassname = Ast.name classname in
            let name' = rewrap_name_with_class_name sclassname callname in
            E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
@@ -188,9 +192,10 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
                   (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma_dots)
                 
             | _ -> raise Impossible
+           )
           )
-          )
-
+*)
+          k x
       | FunCallVar _ -> 
           pr2 "TODO: handling FuncVar";
           k x

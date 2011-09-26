@@ -172,11 +172,28 @@ let vars_passed_by_ref_in_any ~find_entity =
             | _ -> raise Impossible
           );
           k x
-      | FunCallVar _ 
-      | StaticMethodCallSimple _
-      | MethodCallSimple _
-          -> 
+      | StaticMethodCallSimple (qu, name, args) ->
+          (* TODO
+          (try (
+            find_entity +> Common.do_option (fun find_entity ->
+              let _def = Class_php.lookup_method qu name ~find_entity in
+              (* params_vs_args def.f_params (Some args) *)
+              pr2 "check_var_static_call Todo";
+            ))
+          with 
+             (* LateStaticNotHandled *)
+          | Not_found | Multi_found -> 
+              (* fatal special error? *)
+              raise Todo
+          );
+          *)
+          k x
+      | MethodCallSimple _ ->
           (* TODO !!! *)
+          k x
+
+      | FunCallVar _ -> 
+          (* can't do much *)
           k x
       | _ -> 
           k x
