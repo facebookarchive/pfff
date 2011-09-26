@@ -257,10 +257,6 @@ See also [[pfff/ffi/]].
 
 
 \chapter{Auxillary parsing code}
-- exec(...)
-
-WARNING: Please use exec_manual() or execx() instead. See
-https://our.intern.facebook.com/intern/wiki/index.php/Articles/System_Commands
 
 \section{[[ast_php.ml]]}
 #include "ast_php.ml.nw"
