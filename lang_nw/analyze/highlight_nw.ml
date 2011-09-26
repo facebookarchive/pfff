@@ -135,10 +135,20 @@ let visit_toplevel
        aux_toks xs
 
     (* noweb specific *)
-    |  T.TSymbol("[", _)::T.TSymbol("[", _)::xs ->
-         let (before, middle, after) = span_end_bracket xs in
-         tag_all_tok_with ~tag TypeMisc (* TODO *) before;
-         aux_toks (middle::after);
+    |  T.TSymbol("[", ii)::T.TSymbol("[", _)::xs ->
+         let rest =
+           try 
+             let (before, middle, after) =
+               span_end_bracket xs
+             in
+             tag_all_tok_with ~tag TypeMisc (* TODO *) before;
+             (middle::after)
+           with Not_found ->
+             pr2 (spf "PB span_end_bracket at %d" 
+                     (Parse_info.line_of_info ii));
+             xs
+         in
+         aux_toks (rest);
 
     (* specific to texinfo *)
     |    T.TSymbol("@", _)
