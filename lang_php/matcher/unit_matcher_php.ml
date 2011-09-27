@@ -8,7 +8,7 @@ open OUnit
 module Flag = Flag_parsing_php
 
 (*****************************************************************************)
-(* Unit tests *)
+(* Sgrep Unit tests *)
 (*****************************************************************************)
 
 (* See https://github.com/facebook/pfff/wiki/Sgrep *)
@@ -45,6 +45,7 @@ let sgrep_unittest = [
       (* linear patterns *)
       "foo($V, $V);", "foo($x, $x);", true;
       "X && X;", "($a || $b) && ($a || $b);", true;
+      "foo($V, $V);", "foo($x, $y);", false;
 
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
@@ -129,6 +130,10 @@ let sgrep_unittest = [
     )
   );
 ]
+
+(*****************************************************************************)
+(* Spatch Unit tests *)
+(*****************************************************************************)
 
 (* run by spatch -test *)
 let spatch_unittest = [
