@@ -20,7 +20,6 @@ SRC= \
      database_php_storage.ml \
      test_analyze_php.ml \
      test_analyze_db_php.ml \
-     unit_analyze_php.ml \
      unit_analyze_db_php.ml \
      unit_checker_php.ml \
 

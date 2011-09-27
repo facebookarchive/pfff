@@ -195,7 +195,7 @@ let annotation_unittest =
 (*---------------------------------------------------------------------------*)
 
 let unittest =
-  "analyze_php" >::: [
+  "foundation_php" >::: [
     defs_uses_unittest;
     tags_unittest;
     annotation_unittest;

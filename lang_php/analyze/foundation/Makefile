@@ -26,6 +26,8 @@ SRC+= defs_uses_php.ml \
 SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \
 
+SRC+= unit_foundation_php.ml
+
 #entities_php.ml
 
 #note: tools/phpmanual_xml.ml is related to builtins_php.ml
