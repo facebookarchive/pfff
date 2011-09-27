@@ -23,9 +23,10 @@ SRC+= defs_uses_php.ml \
      graph_php.ml \
 
 # used to be in ..
-SRC+= tags_php.ml entities_php.ml normalize_php.ml \
+SRC+= tags_php.ml normalize_php.ml \
      dependencies_php.ml database_light_php.ml \
 
+#entities_php.ml
 
 #note: tools/phpmanual_xml.ml is related to builtins_php.ml
 
