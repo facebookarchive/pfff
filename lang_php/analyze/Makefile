@@ -12,15 +12,10 @@ endif
 
 
 SRC= \
-     normalize_php.ml \
-     entities_php.ml \
      highlight_php.ml \
-     tags_php.ml \
      htmlize_php.ml \
      database_php_build.ml \
      database_php_build2.ml \
-     database_light_php.ml \
-     dependencies_php.ml \
      database_php_storage.ml \
      test_analyze_php.ml \
      test_analyze_db_php.ml \
