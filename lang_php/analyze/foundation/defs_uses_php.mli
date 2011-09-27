@@ -9,7 +9,7 @@
 type def = 
   Database_code.entity_kind * Ast_php.name * Ast_php.name option
 
-(* only for Class uses for now *)
+(* only for Function, Class uses for now *)
 type use = 
   Database_code.entity_kind * Ast_php.name
 
