@@ -18,7 +18,7 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_program-lang/lib.cma \
      $(TOP)/h_version-control/lib.cma \
      ../../parsing/lib.cma \
-     ../basic/lib.cma \
+     ../foundation/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
@@ -26,7 +26,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    ../../parsing \
-   ../basic \
    ../foundation \
 
 #   $(PCREINCLUDE) $(JANEINCLUDE)

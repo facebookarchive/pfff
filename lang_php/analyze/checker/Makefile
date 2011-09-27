@@ -35,7 +35,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/globals \
    ../../parsing \
    .. \
-   ../basic \
    ../foundation \
 
 ##############################################################################

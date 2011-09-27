@@ -49,7 +49,7 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=basic foundation tools checker \
+MAKESUBDIRS=foundation tools checker \
   database dynamic_analysis static_analysis qa_test \
 #qa_code annotaters
 #typing finder
@@ -62,7 +62,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/globals \
    $(BDBINCLUDE) \
    ../parsing \
-   basic \
    foundation \
    database \
    checker \
@@ -175,16 +174,16 @@ SRC_MLI=$(SRC_ML:ml=mli)
 SRC_NO_MLI=flag_analyze_php.ml 
 #TODO, mli files without their .ml counterpart included in the document
 SRC_MLI_NO_ML_NW= \
- basic/entity_php.mli \
- basic/lib_analyze_php.mli \
- basic/namespace_php.mli \
- basic/comment_php.mli \
- basic/annotation_php.mli \
+ foundation/entity_php.mli \
+ foundation/lib_analyze_php.mli \
+ foundation/namespace_php.mli \
+ foundation/comment_php.mli \
+ foundation/annotation_php.mli \
  foundation/aliasing_function_php.mli \
  foundation/bottomup_analysis_php.mli \
  foundation/callgraph_php.mli \
  foundation/graph_php.mli \
- basic/include_require_php.mli \
+ foundation/include_require_php.mli \
  foundation/database_php.mli \
  database_php_build.mli \
  database_php_build2.mli \

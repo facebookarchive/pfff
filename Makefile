@@ -197,7 +197,6 @@ LIBS= commons/commons.cma \
     lang_haskell/parsing/lib.cma \
      lang_haskell/analyze/lib.cma \
     lang_php/parsing/lib.cma \
-     lang_php/analyze/basic/lib.cma \
      lang_php/analyze/foundation/lib.cma \
      lang_php/analyze/tools/lib.cma \
      lang_php/analyze/checker/lib.cma \
@@ -262,7 +261,6 @@ MAKESUBDIRS=commons \
   lang_erlang/parsing \
    lang_erlang/analyze \
   lang_php/analyze \
-   lang_php/analyze/basic \
    lang_php/analyze/foundation \
    lang_php/analyze/checker \
    lang_php/analyze/database \

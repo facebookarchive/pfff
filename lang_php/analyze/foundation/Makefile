@@ -4,7 +4,18 @@ TOP=../../..
 ##############################################################################
 TARGET=lib
 
-SRC= defs_uses_php.ml \
+# used to be in basic/
+SRC= flag_analyze_php.ml   \
+     entity_php.ml \
+     namespace_php.ml \
+     unsugar_php.ml \
+     comment_php.ml annotation_php.ml \
+     scoping_php.ml \
+     env_php.ml \
+     define_php.ml func_php.ml include_require_php.ml class_php.ml \
+     lib_analyze_php.ml \
+
+SRC+= defs_uses_php.ml \
      builtins_php.ml \
      controlflow_php.ml  controlflow_build_php.ml \
      callgraph_php.ml \
@@ -34,7 +45,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    ../../parsing \
    .. \
-   ../basic \
 
 ##############################################################################
 # Generic variables
