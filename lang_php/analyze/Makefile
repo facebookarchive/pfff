@@ -14,6 +14,7 @@ endif
 SRC= \
      highlight_php.ml \
      htmlize_php.ml \
+     dependencies_php.ml \
      database_php_build.ml \
      database_php_build2.ml \
      database_php_storage.ml \
@@ -22,9 +23,6 @@ SRC= \
      unit_analyze_php.ml \
      unit_analyze_db_php.ml \
      unit_checker_php.ml \
-
-# could be moved elsewhere
-SRC+= dependencies_php.ml
 
 -include $(TOP)/Makefile.config
 
