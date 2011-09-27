@@ -73,9 +73,11 @@ let nodify_str s =
 
 
 let dir_to_dir_dependencies db =
-    
+  raise Todo
+(*
   let (g: dependency_graph) = new Ograph_simple.ograph_mutable in
 
+TODO: this is not under foundation/, move it to database_php.ml
   Database_php_build.iter_files_and_topids db "ANALYZING:" (fun id file ->
 
     let dependencies = 
@@ -105,3 +107,4 @@ let dir_to_dir_dependencies db =
     g;
   Ograph_extended.launch_gv_cmd tmpfile;
   ()
+*)
