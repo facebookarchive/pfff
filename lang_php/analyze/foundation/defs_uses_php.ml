@@ -61,9 +61,8 @@ type use =
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Main entry points *)
+(* Defs *)
 (*****************************************************************************)
-
 (* 
  * todo: similar to what is in database_php_build.ml
  * 
@@ -127,8 +126,9 @@ let defs_of_any any =
       | FunCallSimple((Name ("define", tok)), args) ->
           let args = args |> Ast.unparen |> Ast.uncomma in
           (match args with
-          (* TODO? maybe better to have a Define directly in the AST ? 
-           * is it specific to facebook ? 
+          (* Maybe better to have a Define directly in the AST. Note that
+           * PHP 5.3 has a new const features that makes the use of define
+           * obsolete.
            *)
           | (Arg ((Sc (C (String (s,info)))), _t))::xs -> 
               (* by default the info contains the '' or "" around the string,
@@ -144,7 +144,9 @@ let defs_of_any any =
 
   }) any
 
-
+(*****************************************************************************)
+(* Uses *)
+(*****************************************************************************)
 (* 
  * Cover every cases ? C-s for 'name' in ast_php.ml.
  * update: C-s for 'xhp_tag' too.

@@ -2,7 +2,7 @@
 
 (* 
  * The goal of database_php.ml is to give access to information computed
- * by a set of global static and dynamic analysis such as what are the
+ * by a set of (global) static and dynamic analysis such as what are the
  * set of callers to a certain function (static) or what is the test 
  * coverage of a file (dynamic).
  * 

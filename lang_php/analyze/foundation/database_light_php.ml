@@ -157,9 +157,6 @@ let good_examples_of_use external_callers db =
 (* For function can look in AST if contains dynamic calls.
  * Also look for parameters passed by ref.
  *)
-
-
-
 let properties_of_function_or_method id db =
   let id_ast = DbPHP.ast_of_id id db in
 
