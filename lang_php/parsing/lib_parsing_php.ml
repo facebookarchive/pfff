@@ -339,8 +339,8 @@ let get_funcvars_any any =
 
 (*e: ast getters *)
 
-let get_static_vars_any =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+let get_static_vars_any any =
+  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kstmt = (fun (k,vx) x ->
       match x with
       | StaticVars (tok, xs, tok2) ->
