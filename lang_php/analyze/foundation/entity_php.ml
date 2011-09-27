@@ -88,7 +88,8 @@ type id_kind =
 
   | IdMisc
 
-(*
+(* See comment in the .mli for more information about entity_finder.
+ * 
  * update: I now return a list of entities instead of a single entity
  * and raising a Not_found or Multi_found. The rational is that
  * the caller knows better what to do when there are multiple
