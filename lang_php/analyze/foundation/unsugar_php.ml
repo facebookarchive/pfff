@@ -19,7 +19,7 @@ open Ast_php
 
 module Ast = Ast_php
 
-module V = Map_php
+module M = Map_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -77,11 +77,12 @@ let resolve_class_name qu in_class =
 (*****************************************************************************)
 let unsugar_self_parent_any2 any =
 
+  (* dupe: this is also done in check_module/uses_module.ml *)
   let in_class = ref (None: (Ast.name * Ast.name option) option) in
 
-  let visitor = V.mk_visitor ({ V.default_visitor with
+  let visitor = M.mk_visitor ({ M.default_visitor with
 
-    V.kclass_def = (fun (k, _) def ->
+    M.kclass_def = (fun (k, _) def ->
       let classname = def.c_name in
       let parent_opt = 
         match def.c_extends with
@@ -93,7 +94,7 @@ let unsugar_self_parent_any2 any =
       )
     );
 
-    V.kqualifier = (fun (k, bigf) qu ->
+    M.kqualifier = (fun (k, bigf) qu ->
       match qu with
       | LateStatic tok, tok2 -> LateStatic tok, tok2
       | _ ->
@@ -111,7 +112,7 @@ let unsugar_self_parent_any2 any =
     );
   })
   in
-  visitor.V.vany any
+  visitor.M.vany any
 
 let unsugar_self_parent_any a =
   Common.profile_code "Unsugar_php.self_parent" (fun () -> 
