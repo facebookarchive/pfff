@@ -2180,7 +2180,7 @@ val actions: unit -> Common.cmdline_actions
 
 \chapter{PHP Intermediate Language}
 
-#include "foundation/pil.ml.nw"
+%#include "foundation/pil.ml.nw"
 
 \chapter{Control Flow Graph}
 
@@ -2189,13 +2189,13 @@ val actions: unit -> Common.cmdline_actions
 
 \chapter{Data Flow Analysis}
 
-#include "foundation/dataflow_php.ml.nw"
+%#include "foundation/dataflow_php.ml.nw"
 
 \chapter{Typing}
 
 \section{Trivial typing}
 
-#include "typing/typing_trivial_php.ml.nw"
+%#include "typing/typing_trivial_php.ml.nw"
 
 % and more 
 
@@ -2227,11 +2227,11 @@ val actions: unit -> Common.cmdline_actions
 
 \chapter{Tainted string analysis}
 
-#include "static_analysis/tainted_php.ml.nw"
+%#include "static_analysis/tainted_php.ml.nw"
 
 \chapter{Data flow for arrays}
 
-#include "static_analysis/dataflow_php_array.ml.nw"
+%#include "static_analysis/dataflow_php_array.ml.nw"
 
 \chapter{PHP Built-in Functions, Classes, and Globals}
 
