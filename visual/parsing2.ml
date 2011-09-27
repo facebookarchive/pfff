@@ -100,6 +100,7 @@ let parse_php2 file =
       Parse_php.program_of_program2 ast2 in
     (* work by side effect on ast2 too *)
     Check_variables_php.check_and_annotate_program
+      ~find_entity:None
       ast;
     Php ast2
     )

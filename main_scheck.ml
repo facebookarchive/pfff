@@ -187,6 +187,7 @@ let build_mem_db file =
                 ~phase:2 (* TODO ? *)
                 ~files:(Some all_files)
                 ~verbose_stats:false
+                ~annotate_variables_program:None
                 prj 
             )
   in

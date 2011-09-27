@@ -27,6 +27,7 @@ SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \
 
 SRC+= unit_foundation_php.ml
+SRC+= database_php_build.ml database_php_build2.ml
 
 #entities_php.ml
 

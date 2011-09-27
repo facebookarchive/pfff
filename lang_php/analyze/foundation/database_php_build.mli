@@ -8,6 +8,9 @@ val create_db :
   ?db_support:Database_php.db_support ->
   ?phase:int -> 
   ?files:Common.filename list option ->
+  annotate_variables_program:
+    (find_entity:Entity_php.entity_finder option -> Ast_php.program -> unit)
+    option ->
   Database_php.project -> 
   Database_php.database
 

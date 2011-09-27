@@ -60,6 +60,8 @@ let main_action xs =
         Database_php_build.create_db
           ~db_support:(Database_php.Disk !metapath)
           ~phase:!phase
+          ~annotate_variables_program:
+           (Some Check_variables_php.check_and_annotate_program)
           prj 
       in
       if !index_method then Database_php_build2.index_db_method db;

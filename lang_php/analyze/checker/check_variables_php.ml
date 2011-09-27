@@ -225,7 +225,7 @@ let do_in_new_scope_and_check_if_strict f =
  * We then check at use time if something was declared before. We then
  * finally check when we exit a scope that all variables were actually used.
  *)
-let visit_prog ?(find_entity=None) prog = 
+let visit_prog ~find_entity prog = 
 
   let is_top_expr = ref true in 
   let in_lambda = ref false in
@@ -704,14 +704,14 @@ let visit_prog ?(find_entity=None) prog =
 (* Main entry point *)
 (*****************************************************************************)
 
-let check_and_annotate_program2 ?find_entity prog =
+let check_and_annotate_program2 ~find_entity prog =
 
   (* globals (re)initialialisation *) 
   _scoped_env := !initial_env;
 
-  visit_prog ?find_entity prog;
+  visit_prog ~find_entity prog;
   ()
 
-let check_and_annotate_program ?find_entity a = 
+let check_and_annotate_program ~find_entity a = 
   Common.profile_code "Checker.variables" (fun () -> 
-    check_and_annotate_program2 ?find_entity a)
+    check_and_annotate_program2 ~find_entity a)

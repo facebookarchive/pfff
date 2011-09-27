@@ -12,5 +12,5 @@
  * in another file) has defined those protected variables.
  *)
 val check_and_annotate_program: 
-  ?find_entity: Entity_php.entity_finder option ->
+  find_entity: Entity_php.entity_finder option ->
   Ast_php.program -> unit

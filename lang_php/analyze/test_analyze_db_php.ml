@@ -37,9 +37,11 @@ let db_of_files_or_dirs files_or_dirs =
   in
   let db =
     Database_php_build.create_db
-      ~db_support:Database_php.Mem
-      ~files:(Some php_files)
-      prj
+     ~db_support:Database_php.Mem
+     ~files:(Some php_files)
+     ~annotate_variables_program:
+      (Some Check_variables_php.check_and_annotate_program)
+     prj
   in
   db
 

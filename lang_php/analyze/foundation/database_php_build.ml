@@ -1074,7 +1074,7 @@ let index_db3 a =
  *  - tags annotations for functions
  *  - local/global annotations
  *)
-let index_db4_2 db = 
+let index_db4_2 ~annotate_variables_program db = 
 
   let find_entity = build_entity_finder db in
   let msg = "ANALYZING4" in
@@ -1084,15 +1084,19 @@ let index_db4_2 db =
     
     let asts = ids +> List.map (fun id -> db.defs.toplevels#assoc id) in
 
-    Check_variables_php.check_and_annotate_program 
-      ~find_entity:(Some (fun x ->
-        (* we just want to annotate here *)
-        try 
-          find_entity x 
-        with Multi_found ->
-          raise Not_found
-      ))
-      asts;
+    (*Check_variables_php.check_and_annotate_program  *)
+    annotate_variables_program +> Common.do_option 
+      (fun annotate_variables_program ->
+        annotate_variables_program
+          ~find_entity:(Some (fun x ->
+            (* we just want to annotate here *)
+            try 
+              find_entity x 
+            with Multi_found ->
+              raise Not_found
+          ))
+          asts;
+      );
 
     zip ids asts +> List.iter (fun (id, ast) ->
       db.defs.toplevels#add2 (id, ast);
@@ -1135,8 +1139,9 @@ let index_db4_2 db =
   );
   ()
 
-let index_db4 a = 
-  Common.profile_code "Db.index_db4" (fun () -> index_db4_2 a)
+let index_db4 ~annotate_variables_program a = 
+  Common.profile_code "Db.index_db4" (fun () -> 
+    index_db4_2 ~annotate_variables_program a)
 
 (*****************************************************************************)
 (* create_db *)
@@ -1148,6 +1153,7 @@ let create_db
     ?(db_support=Db.Mem)
     ?(phase=max_phase) 
     ?(files=None) 
+    ~annotate_variables_program
     prj  
  = 
   let prj = normalize_project prj in 
@@ -1223,7 +1229,7 @@ let create_db
     if phase >= 3 then index_db3 db;
     db.flush_db();
 
-    if phase >= 4 then index_db4 db;
+    if phase >= 4 then index_db4 ~annotate_variables_program db;
     db.flush_db();
 
     if verbose_stats && !Flag.show_analyze_error then begin
