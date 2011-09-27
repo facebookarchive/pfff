@@ -45,8 +45,8 @@ let main_action file =
   let (ast2, _stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
   
-  Sexp_ast_php.show_info := true;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := true;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   pr2 "";
 
@@ -62,10 +62,15 @@ let main_action file =
 (* Extra actions *)
 (*****************************************************************************)
 let test_python_gen s = 
+  raise Todo
+(*
   let t = Ocaml.get_type s in
   Python_php.generate_classes (s, t)
+*)
 
 let test_python_all () = 
+  raise Todo
+(*
   pr (Python_php.prelude);
 
   let all_types = [
@@ -156,6 +161,7 @@ let test_python_all () =
   in
   all_types +> List.iter test_python_gen;
   ()
+*)
 
 let ffi_extra_actions () = [
   "-python_gen", "<type>",
