@@ -24,25 +24,16 @@ let error_recovery = ref false
 (*x: flag_parsing_php.ml *)
 let short_open_tag = ref true
 (*x: flag_parsing_php.ml *)
-(*s: flag_parsing_php.ml pp related flags *)
-let verbose_pp = ref false
-
-let caching_parsing = ref false
-
-let type_hints_extension = ref false
-
-open Common
-let sgrep_mode = ref false
-(* coupling: copy paste of Php_vs_php *)
-let is_metavar_name s = 
-  s =~ "[A-Z]\\([0-9]?_[A-Z]*\\)?"
-
-(* in facebook context, we want xhp support by default *)
-let xhp_builtin = ref true
 
 (* e.g. yield *)
 let facebook_lang_extensions = ref true
 
+let type_hints_extension = ref false
+
+(* in facebook context, we want xhp support by default *)
+let xhp_builtin = ref true
+
+let verbose_pp = ref false
 (* Alternative way to get xhp by calling xhpize as a preprocessor.
  * Slower than builtin_xhp and have some issues where the comments
  * are removed, unless you use the experimental_merge_tokens_xhp
@@ -52,6 +43,15 @@ let pp_default = ref (None: string option)
 let xhp_command = "xhpize" 
 let obsolete_merge_tokens_xhp = ref false
 
+(*s: flag_parsing_php.ml pp related flags *)
+
+let caching_parsing = ref false
+
+open Common
+let sgrep_mode = ref false
+(* coupling: copy paste of Php_vs_php *)
+let is_metavar_name s = 
+  s =~ "[A-Z]\\([0-9]?_[A-Z]*\\)?"
 
 let cmdline_flags_pp () = [
   "-pp", Arg.String (fun s -> pp_default := Some s),
