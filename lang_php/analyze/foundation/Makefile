@@ -28,6 +28,7 @@ SRC+= tags_php.ml normalize_php.ml \
 
 SRC+= unit_foundation_php.ml
 SRC+= database_php_build.ml database_php_build2.ml
+SRC+= unit_analyze_db_php.ml
 
 #entities_php.ml
 
@@ -52,8 +53,8 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/lib-json $(TOP)/commons/lib-xml \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   ../../parsing \
-   .. \
+   $(TOP)/globals \
+   $(TOP)/lang_php/parsing \
 
 ##############################################################################
 # Generic variables

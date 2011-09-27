@@ -30,6 +30,12 @@ val max_phase: int
 
 (* see also database_php_build2.mli for other analysis (e.g. method analysis *)
 
+(* helpers used also in unit_analyze_php.ml *)
+val db_of_files_or_dirs: 
+  ?annotate_variables_program:
+    (find_entity:Entity_php.entity_finder option -> Ast_php.program -> unit)
+    option ->
+  Common.path list -> Database_php.database
 
 (* helpers used internally that can be useful to other *)
 val iter_files: 

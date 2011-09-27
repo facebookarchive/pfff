@@ -10,6 +10,7 @@ SRC= \
   coverage_static_php.ml \
   deadcode_php.ml   layer_deadcode_php.ml \
   statistics_php.ml \
+  unit_static_analysis_simple_php.ml
 
 #  dataflow_php_liveness.ml \
 #  dataflow_php_array.ml \
@@ -24,10 +25,11 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/lib-json \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   ../../parsing \
-   .. \
-   ../foundation \
-   ../database \
+   $(TOP)/globals \
+   $(TOP)/lang_php/parsing \
+   $(TOP)/lang_php/analyze/foundation \
+
+#   $(TOP)/lang_php/analyze/database \
 
 ##############################################################################
 # Generic variables

@@ -12,39 +12,6 @@ module V = Visitor_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* The default way to analyze a set of PHP files is to first build
- * a database containing information about the code (stored internally
- * using Berkeley DB), e.g. with ./pfff_db ~/www -metapath /tmp/pfff_db,
- * and then run different analysis on this database, e.g. with
- * ./pfff_misc -deadcode_analysis /tmp/pfff_db.
- * In our testing code we want to test some of our analysis without
- * requiring to have a directory with a set of files, or some space on
- * disk to store the database. This small wrapper allows to build
- * a database in memory from a give set of files, usually temporary
- * files built with tmp_php_file_from_string() below.
- *)
-let db_of_files_or_dirs files_or_dirs =
-
-  (* prj is normally used in GUI to display files relative to a specific
-   * project base. Here we want to analyze a set of adhoc files or multiple
-   * dirs so there is no base so we use /
-   *)
-  let prj = Database_php.Project ("/", None) in
-
-  let php_files =
-    Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs
-    |> List.map Common.relative_to_absolute
-  in
-  let db =
-    Database_php_build.create_db
-     ~db_support:Database_php.Mem
-     ~files:(Some php_files)
-     ~annotate_variables_program:
-      (Some Check_variables_php.check_and_annotate_program)
-     prj
-  in
-  db
-
 (*****************************************************************************)
 (* Subsystem testing that requires a db *)
 (*****************************************************************************)
@@ -85,7 +52,7 @@ let test_deadcode_php files_or_dirs =
   (* create database of code information, used by our deadcode global
    * analysis below
    *)
-  let db = db_of_files_or_dirs files_or_dirs in
+  let db = Database_php_build.db_of_files_or_dirs files_or_dirs in
 
   let hooks_deadcode = { Deadcode_php.default_hooks with
     Deadcode_php.print_diff = true;
@@ -104,7 +71,7 @@ let test_deadcode_php files_or_dirs =
 
 let test_callgraph_php files_or_dirs =
 
-  let db = db_of_files_or_dirs files_or_dirs in
+  let db = Database_php_build.db_of_files_or_dirs files_or_dirs in
 
   (* converting the callgraph stored as two assocs in the db
    * into a ograph_mutable that can be displayed with gv.
@@ -140,7 +107,7 @@ let test_callgraph_php files_or_dirs =
 (* topological sort of strongly connected components *)
 let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
 
-  let db = db_of_files_or_dirs files_or_dirs in
+  let db = Database_php_build.db_of_files_or_dirs files_or_dirs in
   let str_of_key id = Db.complete_name_of_id id db in
 
   (* converting the callgraph stored as two assocs in the db
@@ -158,7 +125,7 @@ let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
 let test_track_function_result function_name file =
   raise Todo
 (*
-  let db = db_of_files_or_dirs [file] in
+  let db = Database_php_build.db_of_files_or_dirs [file] in
   pr2 (spf "Tracking %s in %s" function_name file);
   let usage = Dataflow_php_array.track_function_result function_name db in
   Dataflow_php_array.print_usage usage;
@@ -227,7 +194,7 @@ let generate_html_php file =
   let file = Common.realpath file in
   let nblines = Common.cat file |> List.length in
 
-  let db = db_of_files_or_dirs [file] in
+  let db = Database_php_build.db_of_files_or_dirs [file] in
   let xs = Htmlize_php.htmlize_pre 
     ~hook_token:(fun s tok categ -> XHTML2.M.pcdata s)
     file db in

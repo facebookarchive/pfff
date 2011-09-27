@@ -28,7 +28,7 @@ module T = Type_php
 module N = Namespace_php
 
 module Db = Database_php
-module DbQ = Database_php_query
+(* module DbQ = Database_php_query *)
 
 (*****************************************************************************)
 (* Prelude *)

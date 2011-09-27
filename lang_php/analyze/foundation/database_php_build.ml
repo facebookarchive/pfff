@@ -1256,6 +1256,42 @@ let fast_create_db_mem ?phase files_or_dirs =
   raise Todo
 
 (*****************************************************************************)
+(* Create db shortcuts *)
+(*****************************************************************************)
+
+(* The default way to analyze a set of PHP files is to first build
+ * a database containing information about the code (stored internally
+ * using Berkeley DB), e.g. with ./pfff_db ~/www -metapath /tmp/pfff_db,
+ * and then run different analysis on this database, e.g. with
+ * ./pfff_misc -deadcode_analysis /tmp/pfff_db.
+ * In our testing code we want to test some of our analysis without
+ * requiring to have a directory with a set of files, or some space on
+ * disk to store the database. This small wrapper allows to build
+ * a database in memory from a give set of files, usually temporary
+ * files built with tmp_php_file_from_string() below.
+ *)
+let db_of_files_or_dirs ?(annotate_variables_program=None) files_or_dirs =
+
+  (* prj is normally used in GUI to display files relative to a specific
+   * project base. Here we want to analyze a set of adhoc files or multiple
+   * dirs so there is no base so we use /
+   *)
+  let prj = Database_php.Project ("/", None) in
+
+  let php_files =
+    Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs
+    |> List.map Common.relative_to_absolute
+  in
+  let db =
+    create_db
+     ~db_support:Database_php.Mem
+     ~files:(Some php_files)
+     ~annotate_variables_program
+     prj
+  in
+  db
+
+(*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
