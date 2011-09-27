@@ -10,7 +10,7 @@ ifeq ($(FEATURE_BDB), 1)
 BDBINCLUDE=$(TOP)/external/ocamlbdb
 endif
 
-
+#todo? have a visual/ directory, where put highlight, htmlize, dependencies?
 SRC= \
      highlight_php.ml \
      htmlize_php.ml \
@@ -23,6 +23,8 @@ SRC= \
      unit_analyze_db_php.ml \
      unit_checker_php.ml \
 
+# could be moved elsewhere
+SRC+= dependencies_php.ml
 
 -include $(TOP)/Makefile.config
 
