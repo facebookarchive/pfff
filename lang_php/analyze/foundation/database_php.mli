@@ -9,6 +9,10 @@
  * The main type is 'database' defined below.
  *)
 
+(* ---------------------------------------------------------------------- *)
+(* Types *)
+(* ---------------------------------------------------------------------- *)
+
 (* The database of code that we will build usually refers to a set of 
  * source files belonging to a common project.
  *)
@@ -48,8 +52,6 @@ type id_other = id
 
 (* can be useful in gui to highlight part of text *)
 type range_pos = int * int (* charpos x charpos *)
-
-(* ---------------------------------------------------------------------- *)
 
 (* The PHP code database *)
 type database = {
@@ -156,7 +158,6 @@ type database = {
   | Mem
 
 
-(* ---------------------------------------------------------------------- *)
 type error = 
   | ErrorDb of string
 val report_error: error -> string
@@ -164,11 +165,11 @@ val report_error: error -> string
 exception Error of error
 
 (* ---------------------------------------------------------------------- *)
+(* Open/Close *)
+(* ---------------------------------------------------------------------- *)
 (* note that the open and closing of the database is now in 
  * database_backend.ml to make database_php.ml independent
  * of berkeley DB
- *
- * 
  * note: create_db is in database_php_build.mli 
  *)
 
