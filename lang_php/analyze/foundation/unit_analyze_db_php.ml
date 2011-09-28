@@ -13,7 +13,6 @@ open OUnit
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Normally it would be better to put the unittest code in the unit tested
  * file, but sometimes for instance for the callgraph we actually need
@@ -46,7 +45,6 @@ let db_from_string s =
   let _ast = Parse_php.parse_program tmp_file in
   Database_php_build.db_of_files_or_dirs [tmp_file]
 
-
 let db_from_fake_files xs =
   (* todo? would be better to create each time a fresh new dir *)
   let tmp_dir = "/tmp/pfff_fake_dir" in
@@ -63,7 +61,6 @@ let db_from_fake_files xs =
   in
   (* Common.command2 ("rm -rf " ^ tmp_dir); *)
   db
-
 
 (* A few shortcuts to make our testing code more compact and declarative.
  * Allow for instance to get the id of a class by using the special :: syntax
@@ -111,7 +108,6 @@ let database_unittest =
       let _db = Database_php_build.db_of_files_or_dirs [data_dir] in
       ()
     );
-    
     "accept files with parse error" >:: (fun () ->
       let data_dir = Config.path ^ "/tests/php/parsing_errors/" in
       let _db = Database_php_build.db_of_files_or_dirs [data_dir] in
@@ -201,9 +197,7 @@ let callgraph_unittest =
        *)
       "static method call and inheritance" >:: (fun () ->
         let file = "
-          class A {
-           static function a() { }
-          }
+          class A { static function a() { } }
           class B extends A { }
           function c() { B::a(); }
         "
@@ -225,9 +219,7 @@ let callgraph_unittest =
         let file = "
           class A {
            static function a() { }
-           function a2() {
-              $this->a();
-          }
+           function a2() { $this->a(); }
         }
         "
         in
@@ -249,9 +241,7 @@ let callgraph_unittest =
       (* Checking method calls. *)
       "simple method call" >:: (fun () ->
         let file = "
-          class A {
-           function foo() { }
-          }
+          class A { function foo() { } }
           function c() { $a = new A(); $a->foo(); }
         "
         in
@@ -273,12 +263,8 @@ let callgraph_unittest =
        *)
       "method call approximation" >:: (fun () ->
         let file = "
-          class A {
-           function foo() { }
-          }
-          class B {
-           function foo() { }
-          }
+          class A { function foo() { } }
+          class B { function foo() { } }
           function c() { $a = new A(); $a->foo(); }
         "
         in
@@ -302,12 +288,8 @@ let class_unittest =
 
       "users of a class" >:: (fun () ->
         let file = "
-          class A {
-           function foo() { }
-          }
-          class B {
-           function foo() { new A(); }
-          }
+          class A { function foo() { } }
+          class B { function foo() { new A(); } }
           function c() { $a = new A(); $a->foo(); }
         "
         in
@@ -333,7 +315,6 @@ let class_unittest =
         assert_equal
           [id "B::"]
           (Db.class_extenders_of_id (id "A::") db);
-
         assert_equal
           []
           (Db.class_extenders_of_id (id "C::") db);
