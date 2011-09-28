@@ -29,9 +29,6 @@ module E = Entity_php
 (* Helpers *)
 (*****************************************************************************)
 
-let rewrap_class_name qu name =
-  raise Todo
-
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -73,8 +70,7 @@ let get_public_or_protected_vars_of_class def =
 let get_constructor def =
   def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
     match class_stmt with
-    | Method def when 
-          Ast.name def.m_name = constructor_name ->
+    | Method def when Ast.name def.m_name = constructor_name ->
         Some def
     | _ -> None
   )
@@ -111,15 +107,13 @@ let is_static_method def =
 (* todo: for privacy aware lookup it will require to give some context
  * about where is coming from the lookup, from the class itself ?
  *)
-let lookup_method (s1, s2) find_entity =
+let lookup_method (aclass, amethod) find_entity =
   let rec aux aclass =
     match find_entity (E.Class, aclass) with
     | [ClassE def] ->
         (try 
-          def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
-            match class_stmt with
-            | Method def when Ast.name def.m_name =$= s2 ->
-                Some def
+          def.c_body +> Ast.unbrace +> Common.find_some (function
+            | Method def when Ast.name def.m_name =$= amethod -> Some def
             | _ -> None
           )
         with Not_found ->
@@ -131,9 +125,8 @@ let lookup_method (s1, s2) find_entity =
               aux str
           )
         )
-
     | [] -> raise Not_found
     | x::y::xs -> raise Multi_found
     | [_] -> raise Impossible
   in
-  aux s1
+  aux aclass

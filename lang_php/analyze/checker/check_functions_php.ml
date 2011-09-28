@@ -148,9 +148,9 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
     V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
+
           E.find_entity_and_warn ~find_entity (Ent.Function, callname)
-          +> Common.do_option (fun id_ast -> match id_ast with
-           | Ast_php.FunctionE def ->
+          +> Common.do_option (function Ast_php.FunctionE def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
                  contain_func_name_args_like (Body def.f_body) in

@@ -50,20 +50,18 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 let visit_and_check_new_and_extends  ?(find_entity = None) prog =
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k,vx) x ->
-      match Ast_php.untype  x with
+      match Ast_php.untype x with
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
           E.find_entity_and_warn ~find_entity (Entity_php.Class, class_name)
-          +> Common.do_option (fun id_ast ->
-            match id_ast with
-            | Ast_php.ClassE def ->
+          +> Common.do_option (function Ast_php.ClassE def ->
                 (*
                   Check_functions_php.check_args_vs_params 
                   (callname,   args +> Ast.unparen +> Ast.uncomma)
                   (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
                 *)
-                ()
-            | _ -> raise Impossible
+            ()
+          | _ -> raise Impossible
           );
           k x
 
@@ -84,7 +82,6 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
 
 let check_program2 ?find_entity prog = 
   visit_and_check_new_and_extends ?find_entity prog
-
 
 let check_program ?find_entity a = 
   Common.profile_code "Checker.classes" (fun () -> 
