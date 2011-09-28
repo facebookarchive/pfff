@@ -123,7 +123,13 @@ let lookup_method (s1, s2) find_entity =
             | _ -> None
           )
         with Not_found ->
-          raise Todo
+          (match def.c_extends with
+          | None -> raise Not_found
+          | Some (_, name) ->
+              let str = Ast.name name in
+              (* recurse *)
+              aux str
+          )
         )
 
     | [] -> raise Not_found
