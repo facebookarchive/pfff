@@ -22,17 +22,11 @@ open Database_php
 module Ast  = Ast_php
 module Flag = Flag_analyze_php
 module V = Visitor_php
-module Lib_parsing = Lib_parsing_php
 module N = Namespace_php
-module T = Type_php
-
 module Db = Database_php
-
 module TH   = Token_helpers_php
 module EC   = Entity_php
 module CG   = Callgraph_php
-
-module A = Annotation_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -64,7 +58,7 @@ let pr2_err s =
  * The default ordering of berkeley DB is based on filename but also
  * on their length, so not the best order. 
  * 
- * Does it really help ?
+ * update: does it really help ?
  *)
 let iter_files db f = 
   db.file_to_topids#tolist 
@@ -80,8 +74,7 @@ let iter_files db f =
   ()
 
 let iter_files_and_topids db msg f = 
-  iter_files db 
-   (fun ((file, ids), i, total) -> 
+  iter_files db (fun ((file, ids), i, total) -> 
      pr2 (spf "%s: %s %d/%d " msg file i total);
      ids +> List.iter (fun id -> 
        f id file
@@ -125,7 +118,7 @@ let rec first_filepos_origin ii =
       else first_filepos_origin xs
 
 let (fpos_of_toplevel: Ast.toplevel -> Entity_php.filepos) = fun top -> 
-  let allii = Lib_parsing.ii_of_any (Toplevel top) in
+  let allii = Lib_parsing_php.ii_of_any (Toplevel top) in
   first_filepos_origin allii 
 
 let (fpos_of_idast: Ast_php.entity -> Entity_php.filepos) = fun ast ->
@@ -139,7 +132,7 @@ let prange_of_origin_tokens toks =
   let ii = toks +> List.map TH.info_of_tok in
   
   try 
-    let (min, max) = Lib_parsing.min_max_ii_by_pos ii in
+    let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
     Ast.parse_info_of_info min, Ast.parse_info_of_info max
   with _ -> 
     (Parse_info.fake_parse_info, Parse_info.fake_parse_info)
@@ -192,7 +185,6 @@ let get_newid db =
   let id = EC.Id db.next_free_id in
   db.next_free_id <- db.next_free_id + 1;
   id
-
 
 let add_toplevel2 file (top, info_item) db = 
   let (str,toks) = info_item in
@@ -265,9 +257,8 @@ let (add_filename_and_topids: (filename * id list) -> database -> unit) =
 
 
 (* have to update tables similar to add_toplevel *)
-let (add_nested_id_and_ast: 
-  enclosing_id:id -> Ast_php.entity -> database -> id) = 
- fun ~enclosing_id ast db ->
+let (add_nested_id_and_ast: enclosing_id:id -> Ast_php.entity ->database -> id)
+ = fun ~enclosing_id ast db ->
 
   (* fullid_of_id, extra,   and the specific asts, enclosing and children *)
   let newfullid = 
@@ -289,12 +280,8 @@ let (add_nested_id_and_ast:
     (fun old -> newid::old) (fun() -> []);
 
   db.defs.asts#add2 (newid, ast);
-
   db.defs.extra#add2 (newid, Database_php.default_extra_id_info);
-
   newid
-
-
 
 (*---------------------------------------------------------------------------*)
 let (add_def: 
@@ -320,7 +307,6 @@ let (add_def:
     );
     db.symbols#add2 (idstr, ());
     ()
-
 
 (*---------------------------------------------------------------------------*)
 (* add_callees_of_f, add in callee table also add in its reversed index
@@ -502,8 +488,6 @@ let add_callees_of_id a b =
   )
 
 (*---------------------------------------------------------------------------*)
-
-
 (* Similar function but for the indirect function calling part.
  * Also add in reverse index. 
  * 
@@ -523,4 +507,3 @@ let add_callees_of_id a b =
  *)
 let add_methodcallees_of_id (idcaller, methods) db = 
   raise Todo
-
