@@ -57,7 +57,7 @@ function printf($format) { func_get_args();}
 function vprintf($format, $args) { }
 function sprintf($format) { func_get_args();}
 function vsprintf($format, $args) { }
-function sscanf($str, $format) { }
+function sscanf($str, $format) { func_get_args(); }
 function chr($ascii) { }
 function ord($str) { }
 function money_format($format, $number) { }

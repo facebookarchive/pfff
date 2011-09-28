@@ -25,3 +25,8 @@ function test_fp_undeclared2() {
   Foo::foo_ref2($x, $y);
   echo $y;
 }
+
+function test_fp_undeclared3() {
+  sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
+  echo $_PHP_MAJOR_VERSION;
+}
