@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (* for fields *)
@@ -22,42 +21,33 @@ open Database_php
 module Ast  = Ast_php
 module Flag = Flag_analyze_php
 module V = Visitor_php
-module Lib_parsing = Lib_parsing_php
-module Entity = Entity_php
-module N = Namespace_php
-module T = Type_php
-
-module Db = Database_php
-
-
-
-module TH   = Token_helpers_php
 module EC   = Entity_php
-module CG   = Callgraph_php
-
-module A = Annotation_php
+module Db = Database_php
 
 open Database_php_build_helpers
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* We build the full database in multiple steps as some
+(* 
+ * We build the full database in multiple steps as some
  * operations need the information computed globally by the
  * previous step:
  * 
- * - we first add the top ASTs in the database.
+ * - we first add the top ASTs in the database (index_db1)
+ * 
  * - we then add nested ASTs (methods, class vars, nested funcs), and their ids
  * - we add all strings found in the code in a global table
  * - before adding the callgraph, we need to 
  *   be able to decide given a function call what are the possible entities
  *   that define this function (there can be multiple candidates), so 
- *   we add some string->definitions (function, classes, ...) information. 
+ *   we add some string->definitions (function, classes, ...) information
+ *   (index_db2)
+ * 
  * - then we do the callgraph
  * - we add other reversed index like the callgraph, but for other 
  *   entities than functions, e.g. the places where a class in instantiated,
- *   or inherited.
+ *   or inherited (index_db3)
  * 
  * - TODO given this callgraph we can now run a type inference analysis, as 
  *   having the callgraph helps doing the analysis in a certain order (from
@@ -70,9 +60,8 @@ open Database_php_build_helpers
  *   - xxmin when storing method calls
  * cf also score.org !!!
  * 
- * TODO: can take value of _SERVER in params so can
- * partially evaluate things to statically find the 
- * file locations (or hardcode with ~/www ... ) 
+ * TODO: can take value of _SERVER in params so can partially evaluate
+ * things to statically find the file locations (or hardcode with ~/www ... ) 
  * or use a 'find' ...
  * 
  *    type php_config = ...
@@ -82,14 +71,12 @@ open Database_php_build_helpers
 (*****************************************************************************)
 (* Build_entity_finder *)
 (*****************************************************************************)
-
 (* See entity_php.mli for the rational behind having both a database
  * type and an entity_finder type.
  *)
-let (build_entity_finder: database -> Entity_php.entity_finder) =
- fun db ->
-  (fun (id_kind, s) ->
-    try (
+let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
+ (fun (id_kind, s) ->
+   try (
     match id_kind with
     | Entity_php.Class ->
         Db.class_ids_of_string s db 
@@ -113,7 +100,6 @@ let (build_entity_finder: database -> Entity_php.entity_finder) =
       then 
         pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
               s (Common.exn_to_s exn));
-
       raise exn
   )
 
@@ -126,7 +112,7 @@ let debug_index_db = ref true
 (* ---------------------------------------------------------------------- *)
 (* step1:  
  * - store toplevel asts
- * - store file to ids mapping
+ * - store file to toplevel ids mapping
  *)
 let index_db1_2 db files = 
 
@@ -138,59 +124,48 @@ let index_db1_2 db files =
   files +> Common.index_list +> List.iter (fun (file, i) -> 
     pr2 (spf "PARSING: %s (%d/%d)" file i nbfiles);
 
+    (* for undoing in case of pbs *)
     let all_ids = ref [] in
-    try (
 
-      Common.timeout_function 20 (fun () ->
-      let (ast2, stat) = 
-          (* parsing, the important call *)
-          Parse_php.parse file 
-      in
-      let file_info = {
-        parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD;
-      }
-      in
+    try (Common.timeout_function 20 (fun () ->
+        (* parsing, the important call *)
+      let (ast2, stat) = Parse_php.parse file in
+      let file_info = 
+        { parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD; } in
+
       db.file_info#add2 (file, file_info);
 
       Common.push2 stat  parsing_stat_list;
 
       Common.profile_code "Db.add db1" (fun () ->
-
         ast2 +> List.iter (fun (topelem, info_item) -> 
           match topelem with
           (* bugfix: the finaldef have the same id as the previous item so
            * do not add it otherwise id will not be a primary key.
            *)
           | Ast.FinalDef _ -> ()
-          (* do we want to add the NotParsedCorrectly in the db ? It
+          (* Do we want to add the NotParsedCorrectly in the db ? Yes, it
            * can be useful in the code visualizer to have all
            * the elements in a file, including the one that do not
-           * parse.
-           * Note that this id does not have a id_kind for now.
+           * parse. Note that this id does not have a id_kind for now.
            *)
           | _ ->
-              let topelem = 
-                Unsugar_php.unsugar_self_parent_toplevel topelem 
-              in
-
+              (* TODO: unsugar necessary? bench? useful only for phase3 *)
+              let topelem = Unsugar_php.unsugar_self_parent_toplevel topelem in
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
         );
         db +> add_filename_and_topids (file, (List.rev !all_ids));
       );
       db.flush_db();
-    )
-    )
+    ))
     with 
-    | Out_of_memory  (*| Stack_overflow*) 
-    | Timeout
+    | Out_of_memory  (*| Stack_overflow*) | Timeout
     | Parse_php.Parse_error _
     -> 
       (* Backtrace.print (); *)
       pr2_err ("PB: BIG PBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB: " ^ file);
-
       pr2 ("Undoing addition");
-      (* undoing partial addition *)
       db +> add_filename_and_topids(file, []);
       !all_ids +> List.iter (fun id -> 
         try 
@@ -205,35 +180,30 @@ let index_db1_2 db files =
 let index_db1 a b = 
   Common.profile_code "Db.index_db1" (fun () -> index_db1_2 a b)
 
-
 (* ---------------------------------------------------------------------- *)
 (* step2:  
- *  - add defs
+ *  - add defs (string -> entity mapping)
  *  - add strings
  *  - add nested ASTs and nested ids
  *    (and also update fullid_of_id, extra and children_ids tables)
  *  - add classes, methods, variables
  *  - add extra information (e.g. the 'kind' of an id)
- * 
  *)
-
 let index_db2_2 db =
   iter_files_and_topids db "ANALYZING2" (fun id file -> 
     let ast = db.defs.toplevels#assoc id in
 
-
     (* Extract all strings in the code. Can be used for instance by the
      * deadcode analyzer to remove some false positives if a function
-     * is mentionned in a string
+     * is mentionned in a string.
      *)
-    let strings = Lib_parsing.get_constant_strings_any (Toplevel ast) in
+    let strings = Lib_parsing_php.get_constant_strings_any (Toplevel ast) in
     strings +> List.iter (fun s ->
       db.strings#add2 (s, ());
     );
-
-    (* add stuff not parsed correctly *)
+    (* add strings in not parsed correctly too *)
     (match ast with
-    (* less: dead now that we don't do error_recovery *)
+    (* note: dead now that we don't do error_recovery *)
     | NotParsedCorrectly _infos -> 
         let toks = db.defs.tokens_of_topid#assoc id in
         toks +> List.iter (fun tok -> 
@@ -247,23 +217,17 @@ let index_db2_2 db =
     | (FinalDef _|Halt _|InterfaceDef _|ClassDef _|FuncDef _|StmtList _)
         -> ()
     );
-
   (* let's add definitions and nested asts and entities *)
   (*
-    let add_def_hook (s, kind) = 
-    db +> add_def (IdString s, kind, id)
-    in
-    let add_type_hook typ = 
-    db +> add_type (id, typ);
-    in
+    let add_def_hook (s, kind) = db +> add_def (IdString s, kind, id) in
+    let add_type_hook typ = db +> add_type (id, typ) in
     ~add_type:add_type_hook
   *)
     
-  (* old: Definitions_php.visit_definitions_of_ast ~add_def:add_def_hook ast
-   * we now need to add more information in the database (eg enclosing ids),
-   * so we have to inline the visit_definitions code here and expand it
-   *)
-
+   (* old: Definitions_php.visit_definitions_of_ast ~add_def:add_def_hook ast
+    * we now need to add more information in the database (e.g. enclosing ids),
+    * so we have to inline the visit_definitions code here and expand it
+    *)
     let enclosing_id = ref id in
 
     (* Classes can be empty, and so children_ids will not get a chance to 
@@ -274,13 +238,11 @@ let index_db2_2 db =
      *)
     db.children_ids#add2 (id, []);
 
-
     let hooks = { V.default_visitor with
       V.ktop = (fun (k, bigf) x ->
         match x with
         | FuncDef def -> 
             let s = Ast_php.name def.f_name in
-            (* pr2 s; *)
             add_def (s, EC.Function, id, Some def.f_name) db;
             (* add_type def.Ast_c.f_type; *)
             k x
@@ -317,30 +279,21 @@ let index_db2_2 db =
               (Ast_php.FunctionE def) db in
             let s = Ast_php.name def.f_name in
             add_def (s, EC.Function, newid, Some def.f_name) db;
-
-            Common.save_excursion enclosing_id newid  (fun () ->
-              k x
-            );
+            Common.save_excursion enclosing_id newid  (fun () -> k x);
             
         | ClassDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.ClassE def) db in
             let s = Ast_php.name def.c_name in
             add_def (s, EC.Class, newid, Some def.c_name) db;
-
-            Common.save_excursion enclosing_id newid (fun () ->
-              k x
-            );
+            Common.save_excursion enclosing_id newid (fun () -> k x);
 
         | InterfaceDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.InterfaceE def) db in
             let s = Ast_php.name def.i_name in
             add_def (s, EC.Interface, newid, Some def.i_name) db;
-
-            Common.save_excursion enclosing_id newid (fun () ->
-              k x
-            );
+            Common.save_excursion enclosing_id newid (fun () -> k x);
       );
       V.kclass_stmt = (fun (k, bigf) x ->
         match x with
@@ -358,12 +311,8 @@ let index_db2_2 db =
             (* todo? should we put just the method name, or also add 
              * the class name for the StaticMethod case ? 
              *)
-
             add_def (s, id_kind, newid, Some def.m_name) db;
-
-            Common.save_excursion enclosing_id newid (fun () ->
-              k x
-            );
+            Common.save_excursion enclosing_id newid (fun () -> k x);
 
         (* we generate one id per constant. Note that they can not have the 
          * same AST because then we would get some "fullid already in database"
@@ -379,7 +328,6 @@ let index_db2_2 db =
               in
               let s = Ast.name name in
               add_def (s, EC.ClassConstant, newid, None) db;
-              
             );
             (* not sure we need to recurse. There can't be more definitions
              * inside class declarations.
@@ -404,7 +352,6 @@ let index_db2_2 db =
               let s = "$" ^ Ast.dname dname in
               add_def (s, EC.ClassVariable, newid, None) db;
             );
-
             k x
 
         | XhpDecl decl ->
@@ -412,15 +359,12 @@ let index_db2_2 db =
               (Ast_php.XhpDeclE decl) db in
             let s = "XHPDECLTODO" in
             add_def (s, EC.XhpDecl, newid, None) db;
-
             k x
       );
     }
     in
     (V.mk_visitor hooks) (Toplevel ast)
-
   )
-
 
 let index_db2 a = 
   Common.profile_code "Db.index_db2" (fun () -> index_db2_2 a)
@@ -436,7 +380,6 @@ let index_db2 a =
  * than index_db2. Before they were together but I found this coupling
  * not intellectually satisfactory and it turns out later that we needed
  * anyway to do things in sequence. 
- * 
  * Indeed we would later need in the caller/callees phase to 
  * have run one time index_db2 on all the files to get access to 
  * all the possible definitions of a function call string.  So now split
@@ -451,14 +394,10 @@ let index_db2 a =
  * more probable than call to function with same name f in another file 
  * or directory.
  * 
- * Require now some whole-program information such as full list of 
- * definitions, so run after index_db2!
- * 
  * Note that add_callees_of_f can be quite expansive if not optimized, 
  * especially when want to store all call instances and for each instances,
  * even for the directcalls, all the possible targets (because even for
  * directcalls can have ambiguities and multiple candidates).
- * 
  * 
  * Note that in PHP the type inference will work
  * better if we have the information on the function at the call site,
@@ -468,29 +407,26 @@ let index_db2 a =
 let index_db3_2 db = 
 
   (* how assert no modif on those important tables ? *)
-
   iter_files_and_ids db "ANALYZING3" (fun id file -> 
     let ast = Db.ast_of_id id db in
     (* bugfix: was calling Unsugar_php.unsugar_self_parent_entity ast
-     * here but it's too later because an entity can be a nested id
+     * here but it's too late because an entity can be a nested id
      * which does not have an enclosing class_def to set the classname.
-     * So the unsugaring must be done in phase 1
+     * So the unsugaring must be done in phase 1.
      *)
-
     let idcaller = id in
 
     (* the regular function calls sites
      * todo: if the entity is a class, then right now we will consider
      * any calls inside its method. We used to use Visitor2 which was
      * not visiting the class_statements of a class but now that we
-     * removed it, we visit everything. Not sure it's an issue.
+     * removed it, we visit everything. Not sure if it's an issue.
      *)
-    let callees = 
-      Callgraph_php.callees_of_any (Entity ast) in
+    let callees = Callgraph_php.callees_of_any (Entity ast) in
 
     (* TODO: actually when have parent::foo it does not mean it's
      * a static method. It could be a regular inherited public/protected 
-     * method
+     * method. Should use class_php?
      *)
     let static_method_callees = 
       Callgraph_php.static_method_callees_of_any (Entity ast) in
@@ -512,7 +448,6 @@ let index_db3_2 db =
     (match ast with
     | Ast.ClassE def ->
         let idB = id in
-
         def.c_extends |> Common.do_option (fun (tok, classnameA) ->
          (* we are in a situation like: class B extends A *)
 
@@ -550,15 +485,13 @@ let index_db3_2 db =
         ()
 
     | Ast.MiscE _
-    | Ast.ClassVariableE _
-    | Ast.ClassConstantE _
+    | Ast.ClassVariableE _  | Ast.ClassConstantE _
     | Ast.XhpDeclE _
     | Ast.MethodE _
     | Ast.StmtListE _
     | Ast.FunctionE _ 
       ->  ()
     );
-
     (*
       let global_used = Relation_c.globals_of_ast ~also_def:false ast in
       db +> add_globals_in_toplevel (id, global_used);
@@ -582,11 +515,11 @@ let index_db3 a =
  *)
 let index_db4_2 ~annotate_variables_program db = 
 
+  (* todo: those mutual dependency between entity_finder and build_db is ugly *)
   let find_entity = build_entity_finder db in
   let msg = "ANALYZING4" in
   iter_files db (fun ((file, ids), i, total) -> 
    pr2 (spf "%s: %s %d/%d " msg file i total);
-
     
     let asts = ids +> List.map (fun id -> db.defs.toplevels#assoc id) in
 
@@ -603,13 +536,12 @@ let index_db4_2 ~annotate_variables_program db =
           ))
           asts;
       );
-
+    (* store back the AST *)
     zip ids asts +> List.iter (fun (id, ast) ->
       db.defs.toplevels#add2 (id, ast);
     );
 
    ids +> List.iter (fun id ->
-
     let ast = db.defs.toplevels#assoc id in
     
     (* tags, like @phpsh *)
@@ -620,7 +552,7 @@ let index_db4_2 ~annotate_variables_program db =
     comment_opt +> Common.do_option (fun info ->
       let str = info.Parse_info.str in
       let comment_tags = 
-        try A.extract_annotations str 
+        try Annotation_php.extract_annotations str 
         with exn ->
           pr2_err (spf "PB: EXTRACT ANNOTATION: %s on %s" 
                   (Common.exn_to_s exn) file);
@@ -633,7 +565,7 @@ let index_db4_2 ~annotate_variables_program db =
     (* facebook specific ... *)
     
     if List.mem "THIS_FUNCTION_EXPIRES_ON" callees
-    then Common.push2 A.Have_THIS_FUNCTION_EXPIRES_ON tags;
+    then Common.push2 Annotation_php.Have_THIS_FUNCTION_EXPIRES_ON tags;
 
     let extra = db.defs.extra#assoc id in
     let extra' = { extra with
@@ -667,18 +599,15 @@ let create_db
   let db = 
     match db_support with
     | Disk metapath ->
-
         let metapath = 
           if metapath = ""
           then Database_php.default_metapath_of_project prj
           else metapath
         in
-        
         (*
           if (Sys.file_exists (Filename.concat metapath "notes.txt"))
           then failwith "there is a notes.txt file";
         *)
-        
         if not (Common.command2_y_or_no("rm -rf " ^ metapath))
         then failwith "ok we stop";
         
@@ -687,6 +616,7 @@ let create_db
                            Database_php.database_tag_filename);
         Common.write_value prj (metapath ^ "/prj.raw");
 
+        (* berkeley DB usually *)
         let db = !Database_php._current_open_db_backend metapath in
 
         let logchan = open_out (metapath ^ "/log.log") in
@@ -699,13 +629,10 @@ let create_db
         open_db_mem prj
   in
   begin
-
     let files = 
       match files with
       | None ->
-          
           let dir = path_of_project db.project in
-          
           (* note that if dir is a symlink, files would be an empty list,
            * especially as we chop the / in path_of_project, so add an extra "/"
            * 
@@ -714,10 +641,8 @@ let create_db
            * 
            *      let ext = ".*\\.\\(php\\|phpt\\)$" in
            *)
-          
           Lib_parsing_php.find_php_files_of_dir_or_files [(dir ^ "/")]
-
-      | Some xs ->     xs
+      | Some xs -> xs
     in
 
     let _nbfiles = List.length files in
@@ -746,7 +671,6 @@ let create_db
     db
   end
 
-
 (*****************************************************************************)
 (* Fast db construction *)
 (*****************************************************************************)
@@ -758,7 +682,7 @@ let create_db
  * todo: see facebook/dependencies.ml for now
  * todo: factorize all the db_of_files_or_dirs out there.
  *)
-let fast_create_db_mem ?phase files_or_dirs =
+let fast_create_db_mem_a_la_cpp ?phase files_or_dirs =
   raise Todo
 
 (*****************************************************************************)
@@ -786,21 +710,17 @@ let db_of_files_or_dirs ?(annotate_variables_program=None) files_or_dirs =
 
   let php_files =
     Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs
-    |> List.map Common.relative_to_absolute
+    +> List.map Common.relative_to_absolute
   in
-  let db =
-    create_db
-     ~db_support:Database_php.Mem
-     ~files:(Some php_files)
-     ~annotate_variables_program
-     prj
-  in
-  db
+  create_db
+    ~db_support:Database_php.Mem
+    ~files:(Some php_files)
+    ~annotate_variables_program
+    prj
 
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
-
 let actions () = [
   (* no -create_db as it is offered as the default action in 
    * main_db,ml
