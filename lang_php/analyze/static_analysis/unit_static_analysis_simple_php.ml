@@ -226,17 +226,17 @@ let deadcode_unittest =
           (not (List.mem (id "NotDeadA::" db) dead_ids));
       );
 
-      (* todo: dead methods (quite hard) *)
-      (* less: dead defines *)
-
+      (* todo: dead methods (quite hard), actually we already have
+       * troubles with dead static methods ... hmmm
+       * 
+       * less: dead defines 
+       *)
     ])
 
 (*---------------------------------------------------------------------------*)
 (* Final suite *)
 (*---------------------------------------------------------------------------*)
-
 let unittest =
   "static_analyze_php" >::: [
     deadcode_unittest;
   ]
-
