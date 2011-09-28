@@ -27,6 +27,7 @@ module E = Error_php
 (* Main entry points *)
 (*****************************************************************************)
 
+(* coupling: if modify this, also modify lint_php.ml in pfff/facebook/... *)
 let check_file ?(find_entity=None) file =
 
   let ast = Parse_php.parse_program file in

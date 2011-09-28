@@ -69,6 +69,9 @@ let resolve_class_name qu in_class =
   | (Parent (tok1), tok2), _ ->
       pr2 "PB: Use of parent:: in a class without a parent";
       Name ("UnkwnownUseOfParent", tok1), tok1, tok2
+  (* this should never be reached, the caller will special case LateStatic
+   * before calling resolve_class_name
+   *)
   | (LateStatic tok1, _), _ ->
       failwith "LateStatic"
 

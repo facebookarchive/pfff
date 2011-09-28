@@ -175,11 +175,11 @@ let vars_passed_by_ref_in_any ~find_entity =
           );
           k x
       | StaticMethodCallSimple (qu, name, args) ->
-          (match qu with
-          | ClassName (classname), _ ->
+          find_entity +> Common.do_option (fun find_entity ->
+           match qu with
+           | ClassName (classname), _ ->
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
-              find_entity +> Common.do_option (fun find_entity ->
                 (try 
                   let def = 
                     Class_php.lookup_method (aclass, amethod) find_entity in
@@ -194,12 +194,11 @@ let vars_passed_by_ref_in_any ~find_entity =
                 | Multi_found ->
                     ()
                 )
-              )
-          | (Self _ | Parent _), _ ->
-              pr2_once "PB: should have called unsugar_self_parent"
-          | LateStatic _, _ ->
-              (* TODO ? *)
-              ()
+           | (Self _ | Parent _), _ ->
+               failwith "check_var_help: call unsugar_self_parent()"
+           | LateStatic _, _ ->
+               (* TODO ? *)
+               ()
           );
           k x
 
