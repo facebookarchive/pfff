@@ -1,5 +1,6 @@
 open Common
 
+open Ast_php
 module Ast = Ast_php
 
 module Db = Database_php
@@ -353,8 +354,12 @@ let lookup_unittest =
 class A { static function a() { return A; } }
 " in
       let find_entity = entity_finder_from_string file in
-      let def = Class_php.lookup_method ("A","a") ~find_entity in
+      let def = Class_php.lookup_method ("A","a") find_entity in
       (match def with
+      | { m_body = MethodBody (_, 
+         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))), _)), _))],
+                              _); _ }
+          -> ()
       | _ ->
           assert_failure "it should find simple static method"
       )

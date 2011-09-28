@@ -643,11 +643,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 3
+     (case 4
        (0 "all")
        (1 "sgrep")
        (2 "tags")
        (3 "parsing_ml")
+       (4 "lookup")
        )
      ))
    )

@@ -19,6 +19,7 @@ open Ast_php
 
 module Ast = Ast_php
 module V = Visitor_php
+module E = Entity_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -110,5 +111,23 @@ let is_static_method def =
 (* todo: for privacy aware lookup it will require to give some context
  * about where is coming from the lookup, from the class itself ?
  *)
-let lookup_method (s1, s2) ~find_entity =
-  raise Todo
+let lookup_method (s1, s2) find_entity =
+  let rec aux aclass =
+    match find_entity (E.Class, aclass) with
+    | [ClassE def] ->
+        (try 
+          def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
+            match class_stmt with
+            | Method def when Ast.name def.m_name =$= s2 ->
+                Some def
+            | _ -> None
+          )
+        with Not_found ->
+          raise Todo
+        )
+
+    | [] -> raise Not_found
+    | x::y::xs -> raise Multi_found
+    | [_] -> raise Impossible
+  in
+  aux s1
