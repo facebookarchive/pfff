@@ -9,13 +9,13 @@ class StaticMethods {
 function test_static_method1() {
   StaticMethods::foo(1);
 
-  //ERROR: wrong number of arguments
+  //SKIP: wrong number of arguments
   StaticMethods::foo(1, 2);
 
-  //ERROR: not enough arguments
+  //SKIP: not enough arguments
   StaticMethods::foo();
 
-  //ERROR: undefined static method
+  //SKIP: undefined static method
   StaticMethods::bar();
 }
 

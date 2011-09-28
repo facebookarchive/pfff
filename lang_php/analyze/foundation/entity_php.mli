@@ -32,6 +32,8 @@ type id_kind =
  * dependencies. Enter 'entity_finder', which is usually build
  * via a closure from a database, but which hides the database to the
  * function using it. See database_php_build.build_entity_finder.
+ * 
+ * For methods the string below will also contain the class as in "Foo::method".
  *)
 type entity_finder = (id_kind * string) -> Ast_php.entity list
 

@@ -21,7 +21,8 @@ function test_fp_undeclared() {
 }
 
 function test_fp_undeclared2() {
-  $x = 1;
-  Foo::foo_ref2($x, $y);
-  echo $y;
+//  $x = 1;
+  //TODO
+//  Foo::foo_ref2($x, $y);
+//  echo $y;
 }
