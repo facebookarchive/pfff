@@ -12,16 +12,12 @@ type fullid = filepos
 type id_kind =
   (* toplevels, which can also be nested *)
   | Function
-  | Class
-  | Interface
+  | Class | Interface
   | StmtList 
 
   (* only at nested level, inside a class *)
-  | Method 
-  | ClassConstant
-  | ClassVariable
-  | XhpDecl
-  | StaticMethod 
+  | Method  | StaticMethod 
+  | ClassConstant | ClassVariable | XhpDecl
 
   | IdMisc
 
@@ -36,6 +32,11 @@ type id_kind =
  * For methods the string below will also contain the class as in "Foo::method".
  *)
 type entity_finder = (id_kind * string) -> Ast_php.entity list
+
+type method_identifier = (string * string)
+val string_of_method_identifier: method_identifier -> string
+val method_identifier_of_string: string -> method_identifier
+
 
 val str_of_id: id -> string
 val str_of_fullid: fullid -> string

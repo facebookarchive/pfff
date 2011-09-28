@@ -18,7 +18,6 @@ open Common
 open Ast_php
 
 module Ast = Ast_php
-
 module V = Visitor_php
 
 (*****************************************************************************)
@@ -108,5 +107,8 @@ let is_static_method def =
 (* Lookup *)
 (*****************************************************************************)
 
-let lookup_method qu name ~find_entity =
+(* todo: for privacy aware lookup it will require to give some context
+ * about where is coming from the lookup, from the class itself ?
+ *)
+let lookup_method (s1, s2) ~find_entity =
   raise Todo

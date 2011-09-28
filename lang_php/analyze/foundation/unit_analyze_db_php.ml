@@ -45,6 +45,10 @@ let db_from_string s =
   let _ast = Parse_php.parse_program tmp_file in
   Database_php_build.db_of_files_or_dirs [tmp_file]
 
+let entity_finder_from_string s =
+  let db = db_from_string s in
+  Database_php_build.build_entity_finder db
+
 let db_from_fake_files xs =
   (* todo? would be better to create each time a fresh new dir *)
   let tmp_dir = "/tmp/pfff_fake_dir" in
@@ -206,6 +210,7 @@ let callgraph_unittest =
         (* shortcuts *)
         let id s = id s db in
         let callers id = callers id db in let _callees id = callees id db in
+        (* TODO: how this works?? I have code to solve this pb? where? *)                                  
         assert_equal
           (sort [id "c"])
           (sort (callers (id "A::a")));
@@ -337,6 +342,24 @@ let class_unittest =
       );
     ]
 
+(*---------------------------------------------------------------------------*)
+(* Inheritance semantic *)
+(*---------------------------------------------------------------------------*)
+let lookup_unittest =
+  "lookup method php" >::: [
+
+    "static lookup" >:: (fun () ->
+      let file = "
+class A { static function a() { return A; } }
+" in
+      let find_entity = entity_finder_from_string file in
+      let def = Class_php.lookup_method ("A","a") ~find_entity in
+      (match def with
+      | _ ->
+          assert_failure "it should find simple static method"
+      )
+    );
+  ]
 
 (*---------------------------------------------------------------------------*)
 (* Include use/def *)
@@ -419,6 +442,7 @@ let unittest =
     database_unittest;
     callgraph_unittest;
     class_unittest;
+    lookup_unittest;
     include_unittest;
     (* now in static_analysis/: deadcode_unittest; *)
     (* now in checker/: checkers_unittest; *)

@@ -3,7 +3,7 @@
 val rewrap_class_name: Ast_php.qualifier -> Ast_php.name -> Ast_php.name option
 
 val lookup_method: 
-  Ast_php.qualifier -> Ast_php.name -> 
+  Entity_php.method_identifier -> 
   find_entity: Entity_php.entity_finder ->
   Ast_php.method_def
 

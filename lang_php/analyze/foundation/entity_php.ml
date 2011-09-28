@@ -41,6 +41,11 @@ module Ast = Ast_php
  * same time a function can be called from many stuff, another func, a
  * toplevel stmt, a method, an expression in a variable declaration, etc
  * so maybe simpler to have indeed a single 'id'.
+ * 
+ * todo? hmmm but maybe we could have a entity_finder2: 
+ *  type entity_finder2 = { functions: ...; classes: ... }
+ * which would be close to what julien is using in his code when he
+ * needs some global analysis.
  *)
 
 (*****************************************************************************)
@@ -70,21 +75,20 @@ type fullid = filepos
  *)
 type id_kind =
   (* toplevels, which can also be nested *)
+
   | Function
-  | Class
-  | Interface
+  | Class | Interface
   | StmtList 
 
   (* only at nested level, inside a class *)
-  | Method 
-  | ClassConstant
-  | ClassVariable
-  | XhpDecl
-  (* could be considered a Function, because in PHP they mostly use
-   * static methods because PHP does not have namespace and so they 
-   * abuse classes for that
+
+  (* StaticMethod could be considered a Function, because in PHP they
+   * mostly use static methods because PHP (5.2) didn't have namespace and
+   * so they abuse classes for modules.
    *)
-  | StaticMethod 
+  | Method | StaticMethod
+  | ClassConstant | ClassVariable
+  | XhpDecl
 
   | IdMisc
 
@@ -100,14 +104,16 @@ type id_kind =
 
 type entity_finder = (id_kind * string) -> Ast_php.entity list
 
+type method_identifier = (string * string)
+
 (*****************************************************************************)
 (* String_of *)
 (*****************************************************************************)
-let str_of_fullid x = 
-  spf "%s:%d:%d" x.file x.line x.column
-
 let str_of_id (Id x) = 
   spf "id:%d" x
+
+let str_of_fullid x = 
+  spf "%s:%d:%d" x.file x.line x.column
 
 let fullid_regexp = 
  "^\\(.*\\):\\([0-9]+\\):\\([0-9]+\\)$"
@@ -136,6 +142,16 @@ let string_of_id_kind = function
   | StaticMethod -> "staticmethod"
 
   | IdMisc -> "idmisc"
+
+(*****************************************************************************)
+(* Method identifier helpers *)
+(*****************************************************************************)
+
+let method_identifier_of_string s =
+  raise Todo
+
+let string_of_method_identifier (s1, s2) =
+  raise Todo
 
 (*****************************************************************************)
 (* Meta *)
