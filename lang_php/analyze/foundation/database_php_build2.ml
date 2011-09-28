@@ -31,6 +31,7 @@ module TAC  = Type_annotater_php
 
 module CG = Callgraph_php
 
+module DbH = Database_php_build_helpers
 
 (*****************************************************************************)
 (* Helpers ast and tokens *)
@@ -80,7 +81,7 @@ let index_db_method2 db =
   let partial_callers = Hashtbl.create 101 in
   let partial_callees = Hashtbl.create 101 in
 
-  Database_php_build.iter_files_and_ids db "ANALYZING_METHODS" (fun id file -> 
+  DbH.iter_files_and_ids db "ANALYZING_METHODS" (fun id file -> 
 
     (* TODO!!!! do the same work twice when the entity is a class ?
      * need to add in db a class without its children
@@ -368,7 +369,7 @@ let index_db_includes_requires2
         Env_php.mk_env ~php_root
   in
   let msg = "ANALYZE_INCLUDE_REQUIRE" in
-  Database_php_build.iter_files db (fun ((file, topids), i, total) ->
+  DbH.iter_files db (fun ((file, topids), i, total) ->
     Common.pr2 (spf "%s: %s %d/%d " msg file i total);
 
     let program = topids +> List.map (fun id -> db.defs.toplevels#assoc id) in

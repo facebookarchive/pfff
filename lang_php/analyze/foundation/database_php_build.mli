@@ -1,6 +1,6 @@
 (*s: database_php_build.mli *)
 
-val _errors: string list ref
+(* in helpers now: val _errors: string list ref *)
 
 (* main entry point, does the whole job *)
 val create_db : 
@@ -37,21 +37,5 @@ val db_of_files_or_dirs:
     option ->
   Common.path list -> Database_php.database
 
-(* helpers used internally that can be useful to other *)
-val iter_files: 
-  Database_php.database -> 
-  ((Common.filename * Database_php.id list) * 
-  int (* idx *) * int (* total *) -> unit) ->
-  unit
-
-val iter_files_and_topids :
-  Database_php.database -> string -> 
-  (Database_php.id -> Common.filename -> unit) -> 
-  unit
-
-val iter_files_and_ids :
-  Database_php.database -> string -> 
-  (Database_php.id -> Common.filename -> unit) -> 
-  unit
 (*x: database_php_build.mli *)
 (*e: database_php_build.mli *)

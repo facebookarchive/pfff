@@ -4,17 +4,18 @@ TOP=../../..
 ##############################################################################
 TARGET=lib
 
-# used to be in basic/
+# used to be in analyze/basic/
 SRC= flag_analyze_php.ml   \
      entity_php.ml \
      namespace_php.ml \
-     unsugar_php.ml \
      comment_php.ml annotation_php.ml \
+     unsugar_php.ml \
      scoping_php.ml \
      env_php.ml \
-     define_php.ml func_php.ml include_require_php.ml class_php.ml \
+     include_require_php.ml define_php.ml func_php.ml class_php.ml \
      lib_analyze_php.ml \
 
+#note: tools/phpmanual_xml.ml is related to builtins_php.ml
 SRC+= defs_uses_php.ml \
      builtins_php.ml \
      controlflow_php.ml  controlflow_build_php.ml \
@@ -22,28 +23,23 @@ SRC+= defs_uses_php.ml \
      database_php.ml \
      graph_php.ml \
 
-# used to be in ..
-SRC+= tags_php.ml normalize_php.ml \
-     database_light_php.ml \
-
-SRC+= unit_foundation_php.ml
-SRC+= database_php_build.ml database_php_build2.ml
-SRC+= unit_analyze_db_php.ml
-
-#entities_php.ml
-
-#note: tools/phpmanual_xml.ml is related to builtins_php.ml
-
 #     pil.ml pretty_print_pil.ml controlflow_pil.ml \
 #     meta_pil.ml visitor_pil.ml \
 #     pil_build.ml controlflow_build_pil.ml \
-#cfa_pil.ml
+#     cfa_pil.ml
+#    dataflow_php.ml dataflow_pil.ml \
+#    aliasing_function_php.ml bottomup_analysis_php.ml
 
-#    dataflow_php.ml \
-#     dataflow_pil.ml \
+# used to be in analyze/
+SRC+= tags_php.ml normalize_php.ml \
+     database_light_php.ml
+SRC+= unit_foundation_php.ml
 
-#aliasing_function_php.ml
-#     bottomup_analysis_php.ml \
+SRC+= database_php_build_helpers.ml database_php_build.ml \
+      database_php_build2.ml
+SRC+= unit_analyze_db_php.ml
+
+#entities_php.ml
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \
@@ -82,5 +78,3 @@ clean::
 
 visitor_pil.cmo: visitor_pil.ml
 	$(OCAMLC) -w y -c $<
-
-
