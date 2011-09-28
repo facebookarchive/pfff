@@ -173,21 +173,27 @@ let vars_passed_by_ref_in_any ~find_entity =
           );
           k x
       | StaticMethodCallSimple (qu, name, args) ->
-          (* TODO
-          (try (
-            find_entity +> Common.do_option (fun find_entity ->
-              let _def = Class_php.lookup_method qu name ~find_entity in
-              (* params_vs_args def.f_params (Some args) *)
-              pr2 "check_var_static_call Todo";
-            ))
-          with 
-             (* LateStaticNotHandled *)
-          | Not_found | Multi_found -> 
-              (* fatal special error? *)
-              raise Todo
+          (match qu with
+          | ClassName (classname), _ ->
+              let aclass = Ast.name classname in
+              let amethod = Ast.name name in
+              find_entity +> Common.do_option (fun find_entity ->
+                (try 
+                  let def = 
+                    Class_php.lookup_method (aclass, amethod) find_entity in
+                  params_vs_args def.m_params (Some args)
+                with Not_found | Multi_found ->
+                  pr2 "Not_found | Multi_found"
+                )
+              )
+          | (Self _ | Parent _), _ ->
+              pr2_once "PB: should have called unsugar_self_parent"
+          | LateStatic _, _ ->
+              (* TODO ? *)
+              ()
           );
-          *)
           k x
+
       | MethodCallSimple _ ->
           (* TODO !!! *)
           k x
