@@ -29,6 +29,10 @@ type line_annotation = versionid * author * Common.date_dmy
 
 type commit_patch = (string list) (* header *) * Patch.patchinfo
 
+type file_commit_status =
+  | Modified
+  | Deleted
+  | Added
 
 (*****************************************************************************)
 (* Helpers *)

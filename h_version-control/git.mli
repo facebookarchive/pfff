@@ -52,6 +52,10 @@ val file_to_commits:
   basedir:string -> Lib_vcs.versionid list -> 
   (Common.filename * (Lib_vcs.versionid * Patch.fileinfo) list) list
 
+val files_involved_in_diff:
+  basedir:string -> Lib_vcs.versionid -> 
+  (Lib_vcs.file_commit_status * Common.filename) list
+
 (* line level operation (preparing commits) *)
 val apply_patch: basedir:string -> string list -> unit
 

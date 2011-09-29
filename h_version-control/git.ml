@@ -282,6 +282,29 @@ let commit_of_relative_time ~basedir relative_data_string =
   let last = Common.list_last xs in
   id_and_summary_oneline last +> fst
 
+let files_involved_in_diff ~basedir commitid =
+  let str_commit = Lib_vcs.s_of_versionid commitid in
+  let cmd = goto_dir basedir ^
+    spf "git show --name-status --pretty=\"format:\" %s" str_commit in
+  let xs = Common.cmd_to_list cmd in
+
+  (* the previous command has a first empty line before the list of files *)
+  let files_involved = List.tl xs +> List.map (fun s ->
+    if s=~ "\\([MAD]\\)[ \t]+\\([^ \t]+\\)"
+    then
+      let (status, name) = Common.matched2 s in
+      (match status with
+      | "A" -> Added
+      | "M" -> Modified
+      | "D" -> Deleted
+      | _ -> failwith (spf "unknown file commit status: %s" status)
+      ), name
+    else failwith (spf "wrong format in git result: %s" s)
+  )
+  in
+  assert(List.hd xs = "");
+  files_involved
+
 (*****************************************************************************)
 (* multiple commits operations  *)
 (*****************************************************************************)
@@ -318,6 +341,10 @@ let file_to_commits ~basedir commits =
   );
   h#to_list
 
+(* very useful when have to send automatic diffs to people, to not penalize
+ * the people who have just refactored the code and are actually not really
+ * responsible for the code in the file.
+ *)
 let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   let basedir = Common.realpath repo in
   let commits = commits ~basedir ~extra_args:since () in
@@ -479,8 +506,6 @@ let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])
     )
   in
   Common.maximum_dmy toblame
-
-
 
 (*****************************************************************************)
 (* Archeology *)
