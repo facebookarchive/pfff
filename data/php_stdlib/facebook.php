@@ -134,6 +134,16 @@ define('SCRIPT_IDENTIFIER', 0);
 define('SCRIPT_OWNER_FBID', 0);
 
 // ------------------------------------------
+// Covered by some if(function_exists(...))
+// ------------------------------------------
+
+// we need to include it there because scheck is not
+// aware of the if(function_exists(...) idion. todo?
+
+function hphp_murmurhash($key, $len, $seed) { }
+function syck_load($xs) { }
+
+// ------------------------------------------
 // Now in HPHP idl files
 // ------------------------------------------
 // see also static $extension_functions
@@ -145,4 +155,3 @@ define('SCRIPT_OWNER_FBID', 0);
 // function xhp_preprocess_code() { }
 
 //class phpmcc {}
-
