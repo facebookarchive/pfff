@@ -679,7 +679,11 @@ let create_db
  * relevant files, to be able to do interesting global analysis on a file
  * passed as a parameter to one of our command line program.
  * 
- * todo: see facebook/dependencies.ml for now
+ * The idea is to build a database with all the files included
+ * by the file. In a way it is similar to what gcc does when it calls
+ * 'cpp' to get the full information for a file.
+ * 
+ * todo: see facebook/fb_common/www_db_build.ml for now
  * todo: factorize all the db_of_files_or_dirs out there.
  *)
 let fast_create_db_mem_a_la_cpp ?phase files_or_dirs =
