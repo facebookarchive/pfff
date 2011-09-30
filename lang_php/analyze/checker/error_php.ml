@@ -98,7 +98,7 @@ type error = {
 
   | FileNotFound of Common.filename
 
-  (* todo: type errors *)
+  (* todo: type errors, protocol errors (statistical analysis), etc *)
 
   and severity2 =
    | Bad
