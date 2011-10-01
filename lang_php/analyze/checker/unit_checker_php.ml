@@ -75,9 +75,10 @@ let unittest =
       )
   in
   let find_entity = Some (Database_php_build.build_entity_finder db) in
+  let env = Env_php.mk_env ~php_root:"/" in
 
   (* run the bugs finders *)
-  test_files +> List.iter (Check_all_php.check_file ~find_entity);
+  test_files +> List.iter (Check_all_php.check_file ~find_entity env);
 
   !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e));
   

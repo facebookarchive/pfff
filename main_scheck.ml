@@ -223,7 +223,10 @@ let main_action xs =
           let db = build_mem_db file in
           Some (Database_php_build.build_entity_finder db) 
       in
-      Check_all_php.check_file ~find_entity file
+      let env = 
+        Env_php.mk_env (Common.dirname file)
+      in
+      Check_all_php.check_file ~find_entity env file
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
 (*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)

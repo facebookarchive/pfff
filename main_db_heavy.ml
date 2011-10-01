@@ -85,11 +85,12 @@ let layers = [
     let files = Lib_parsing_php.find_php_files_of_dir_or_files [dir] in
     let errors = ref [] in
     let find_entity = Some (Database_php_build.build_entity_finder db) in
+    let env = Env_php.mk_env dir in
 
     files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
       try 
         pr2 (spf "processing: %s (%d/%d)" file i total);
-        Check_all_php.check_file ~find_entity file;
+        Check_all_php.check_file ~find_entity env file;
       with 
       | (Timeout | UnixExit _) as exn -> raise exn
       | exn ->

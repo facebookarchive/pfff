@@ -28,7 +28,7 @@ module E = Error_php
 (*****************************************************************************)
 
 (* coupling: if modify this, also modify lint_php.ml in pfff/facebook/... *)
-let check_file ?(find_entity=None) file =
+let check_file ?(find_entity=None) env file =
 
   let ast = Parse_php.parse_program file in
 
@@ -43,9 +43,8 @@ let check_file ?(find_entity=None) file =
   Check_cfg_php.check_program ast;
   (* not ready yet:
    *  Check_dfg_php.check_program ?find_entity ast;
-   * need env:
-   *  Check_includes_php.check env? file ast
    *)
+  Check_includes_php.check env file ast;
 
   (* work only when find_entity is not None; requires global analysis *)
   if find_entity <> None then begin
