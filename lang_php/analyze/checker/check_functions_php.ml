@@ -166,36 +166,43 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
            );
           k x
 
-      | StaticMethodCallSimple (qu, callname, args) ->
-(* TODO
-          (match resolve_class_name qu with 
-          | None ->
-              pr2 (spf "could not resolve callname at %s"
-                      (Ast.string_of_info (Ast.info_of_name callname)))
-          | Some classname ->
-           let sclassname = Ast.name classname in
-           let name' = rewrap_name_with_class_name sclassname callname in
-           E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
-           +> Common.do_option (fun id_ast -> match id_ast with
-           | Ast_php.MethodE def ->
+      | StaticMethodCallSimple (qu, name, args) ->
+          find_entity +> Common.do_option (fun find_entity ->
+            (match fst qu with
+            | ClassName (classname) ->
+                let aclass = Ast.name classname in
+                let amethod = Ast.name name in
+                (try 
+                    let def =
+                      Class_php.lookup_method (aclass, amethod) find_entity in
+                    let contain_func_num_args = 
+                      contain_func_name_args_like (ClassStmt (Method def)) in
 
-               let contain_func_num_args = 
-                 contain_func_name_args_like (ClassStmt (Method def)) in
-
-               if contain_func_num_args
-               then pr2_once ("not checking functions containing calls to " ^
-                                 "func_num_args() or alike")
-               else 
-
-                check_args_vs_params 
-                  (callname,   args +> Ast.unparen +> Ast.uncomma)
-                  (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma_dots)
-                
-            | _ -> raise Impossible
-           )
-          )
-*)
+                    if contain_func_num_args
+                    then pr2_once ("not checking calls to code using " ^ 
+                                      "func_num_args() or alike")
+                    else 
+                      check_args_vs_params 
+                      (name, args +> Ast.unparen +> Ast.uncomma)
+                      (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma_dots)
+                 with
+                 (* could also be reported elsewhere too *)
+                 | Not_found ->
+                     let loc = Ast.info_of_name name in
+                     E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
+                 | Multi_found -> 
+                     (* is this possible? *)
+                     ()
+                )
+            | (Self _ | Parent _) ->
+                failwith "check_functions_php: call unsugar_self_parent()"
+            | LateStatic _ ->
+                (* TODO *)
+                ()
+            );
+          );
           k x
+               
       | FunCallVar _ -> 
           pr2 "TODO: handling FuncVar";
           k x
