@@ -418,7 +418,21 @@ let get_vars_any any =
       | Var (dname, _scope) ->
           Common.push2 dname aref
       | _ -> k x
-    )}) any
+    );
+    V.kexpr = (fun (k, vx) x ->
+      match Ast.untype x with
+      (* todo? sure ?? *)
+      | Lambda def ->
+          def.l_use +> Common.do_option (fun (_tok, xs) ->
+            xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
+            | LexicalVar (is_ref, dname) ->
+                Common.push2 dname aref
+            )
+          );
+          k x
+      | _ -> k x
+    );
+  }) any
 
 (*****************************************************************************)
 (* Ast adapters *)
