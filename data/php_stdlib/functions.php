@@ -6,13 +6,13 @@
 
 
 // http://us2.php.net/strToTime
-function strToTime() { }
+function strToTime($string) { }
 
 // http://us.php.net/ImageFontHeight
-function ImageFontHeight() { }
+function ImageFontHeight($font) { }
 
 // http://us.php.net/spl_autoload_register
-function spl_autoload_register() { }
+function spl_autoload_register($s) { }
 
 //http://us.php.net/dba_popen
 function dba_popen() { }
