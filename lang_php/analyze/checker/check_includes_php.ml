@@ -25,6 +25,10 @@ module E = Error_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* 
+ * Most of the hard work is done by include_require_php.ml. Here
+ * we just call this module and check if the resolved path exist.
+ *)
 
 (*****************************************************************************)
 (* Main entry point *)
