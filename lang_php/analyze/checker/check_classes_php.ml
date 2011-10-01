@@ -28,10 +28,12 @@ module Flag = Flag_analyze_php
 (* Prelude *)
 (*****************************************************************************)
 
-(* todo: see defs_uses_php.ml now 
+(* todo: see defs_uses_php.ml
  *  
- * todo: What about check for undefined class when call a static method or
- * extends something?
+ * What about check for undefined class when call a static method or
+ * extends something? This is done in check_variables_php.ml because
+ * we need there to gather information about class variables.
+ * Copy it here too?
  * 
  * todo: check on fields.
  * 
