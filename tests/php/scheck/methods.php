@@ -15,7 +15,19 @@ class B extends A {
   }
 }
 
+class C extends B {
+  public function bar() {
+    $this->foo("a", "b");
+
+    //ERROR: not enough arguments
+    $this->foo();
+  }
+}
+
 function test_method() {
   $o = new B();
   $o->foo(1, 2);
+  
+  //SKIP: requires dataflow (simple here, but still)
+  $o->foo();
 }

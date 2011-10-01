@@ -104,6 +104,30 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
   in
   aux all_args all_params
 
+let check_method_call (aclass, amethod) (name, args) find_entity =
+  try 
+    let def =
+      Class_php.lookup_method (aclass, amethod) find_entity in
+    let contain_func_num_args = 
+      contain_func_name_args_like (ClassStmt (Method def)) in
+    
+    if contain_func_num_args
+    then pr2_once ("not checking calls to code using " ^ 
+                      "func_num_args() or alike")
+    else 
+      check_args_vs_params 
+        (name, args +> Ast.unparen +> Ast.uncomma)
+        (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
+  with
+  (* could also be reported elsewhere too *)
+  | Not_found ->
+      let loc = Ast.info_of_name name in
+      E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
+  | Multi_found -> 
+      (* is this possible? *)
+      ()
+        
+
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
@@ -111,12 +135,24 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 (* pre: have a unsugar AST regarding self/parent *)
 let visit_and_check_funcalls ?(find_entity=None) prog =
 
+  (* todo: similar to what we do in unsugar_self_parent, do this
+   * unsugaring there too?
+   *)
+  let in_class = ref (None: string option) in
+
+
   let visitor = V.mk_visitor { V.default_visitor with
+
+    V.kclass_def = (fun (k, _) def ->
+      let s = Ast.name def.c_name in
+      Common.save_excursion in_class (Some s) (fun () ->
+        k def
+      )
+    );
 
     V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
-
           E.find_entity_and_warn ~find_entity (Ent.Function, callname)
           +> Common.do_option (function Ast_php.FunctionE def ->
                (* todo? memoize ? *)
@@ -140,28 +176,7 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
             | ClassName (classname) ->
                 let aclass = Ast.name classname in
                 let amethod = Ast.name name in
-                (try 
-                  let def =
-                    Class_php.lookup_method (aclass, amethod) find_entity in
-                  let contain_func_num_args = 
-                    contain_func_name_args_like (ClassStmt (Method def)) in
-
-                  if contain_func_num_args
-                  then pr2_once ("not checking calls to code using " ^ 
-                                    "func_num_args() or alike")
-                  else 
-                    check_args_vs_params 
-                     (name, args +> Ast.unparen +> Ast.uncomma)
-                     (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
-                 with
-                 (* could also be reported elsewhere too *)
-                 | Not_found ->
-                     let loc = Ast.info_of_name name in
-                     E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
-                 | Multi_found -> 
-                     (* is this possible? *)
-                     ()
-                )
+                check_method_call (aclass, amethod) (name, args) find_entity
             | (Self _ | Parent _) ->
                 failwith "check_functions_php: call unsugar_self_parent()"
             | LateStatic _ ->
@@ -169,12 +184,31 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
                 ()
           );
           k x
-      | MethodCallSimple _ ->
-          (* TODO if quite simple when use $this, eletuchy's idea?
-           * Being complete and handling any method call like $o->foo()
+      | MethodCallSimple (lval, _tok, name, args) ->
+          (* if one calls a method via $this, then it's quite easy to check
+           * the arity (eletuchy's idea?).
+           * Being complete and handling any method calls like $o->foo()
            * requires to know what is the type of $o which is quite
            * complicated ... so let's skip that for now.
+           * 
+           * todo: special case also id(new ...)-> ?
            *)
+          (match Ast.untype lval with
+          | This _ ->
+            find_entity +> Common.do_option (fun find_entity ->
+              (match !in_class with
+              | Some aclass ->
+                  let amethod = Ast.name name in
+                  check_method_call (aclass, amethod) (name, args) find_entity
+              | None ->
+                  (* TODO: use of $this outside class ??? *)
+                  ()
+              )
+            )
+          | _ -> 
+              (* todo: need dataflow ... *)
+              ()
+          );
           k x
                
       | FunCallVar _ -> 
