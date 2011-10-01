@@ -29,6 +29,39 @@ module E = Entity_php
 (* Helpers *)
 (*****************************************************************************)
 
+(* This is ugly. Some of the code requires to have a 'name' type
+ * for every "entities" we are defining and checking. For a class 
+ * constant we should really have a pair of name, one for the class
+ * and one for the constant itself. Instead we abuse 'name' and
+ * pack into it also the classname.
+ *)
+
+(*
+let rewrap_name_with_class_name classname name =
+  match name with 
+  | Name (s, info) ->
+      let new_str = spf "%s::%s" classname s in
+      Name (new_str, Ast.rewrap_str new_str info)
+  (* only classnames can be a XhpName. Constants (or functions)
+   * are always simple names
+   *)
+  | XhpName _ ->
+      failwith "Impossible: only classes can be XhpName"
+
+let mk_class_name s info = 
+  Name (s, info)
+
+let resolve_class_name qu =
+  match fst qu with
+  | ClassName (name) -> Some name
+  | Self _ | Parent _ -> 
+      pr2_once "check_functions_php: call unsugar_self_parent";
+      None
+  | LateStatic _ ->
+      pr2 "late static: can't resolve, add a pattern match for LateStatic";
+      None
+*)
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
