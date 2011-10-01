@@ -28,7 +28,17 @@ module Flag = Flag_analyze_php
 (* Prelude *)
 (*****************************************************************************)
 
-(* todo: see defs_uses_php.ml now *)
+(* todo: see defs_uses_php.ml now 
+ *  
+ * todo: What about check for undefined class when call a static method or
+ * extends something?
+ * 
+ * todo: check on fields.
+ * 
+ * Note that many checks on methods are actually done in 
+ * check_functions_php.ml as a method is a kind of function
+ * and that we factorized there code regarding arity checks.
+ *)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -45,9 +55,9 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
 (* some of those checks are also done in check_variables_php.ml which
  * needs also to access class information to knows which member variables
- * are ok
+ * are ok.
  *)
-let visit_and_check_new_and_extends  ?(find_entity = None) prog =
+let visit_and_check_new  ?(find_entity = None) prog =
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k,vx) x ->
       match Ast_php.untype x with
@@ -81,7 +91,7 @@ let visit_and_check_new_and_extends  ?(find_entity = None) prog =
 (*****************************************************************************)
 
 let check_program2 ?find_entity prog = 
-  visit_and_check_new_and_extends ?find_entity prog
+  visit_and_check_new ?find_entity prog
 
 let check_program ?find_entity a = 
   Common.profile_code "Checker.classes" (fun () -> 
