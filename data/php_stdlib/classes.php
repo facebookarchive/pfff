@@ -8,7 +8,7 @@ class Exception {
   protected /*string*/ $file ;
   protected /*int*/ $line ;
   /* Methods */
-  public function __construct($message, $code = 0, $previous = NULL) { }
+  public function __construct($message = "", $code = 0, $previous = NULL) { }
   //([ string $message = "" [, int $code = 0 [, Exception $previous = NULL ]]] )
 
 //final public string getMessage ( void )
