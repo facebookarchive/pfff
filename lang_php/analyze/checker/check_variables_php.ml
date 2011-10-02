@@ -12,12 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
-
-module Flag = Flag_analyze_php
 
 module Ast = Ast_php
 module V = Visitor_php
@@ -27,25 +24,24 @@ module E = Error_php
 module S = Scope_code
 module Ent = Entity_php
 
-
 open Env_check_php
 open Check_variables_helpers_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
- * Finding stupid PHP mistakes related to variables.
- * See tests/php/scheck/variables.php for example of bugs currently
- * detected by this checker.
- * See also tests/bugs/unused_var.php for corner cases to handle.
+ * This module helps Find stupid PHP mistakes related to variables. See
+ * tests/php/scheck/variables.php for examples of bugs currently
+ * detected by this checker. This module checks and also annotates
+ * the AST with scoping information as a side effect. This is useful
+ * in Codemap to display differently references to paramaters, local vars,
+ * global vars, etc.
  * 
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are 2 orthogonal programming language notions.
  * Some similar checks are done by JSlint.
- * 
- * This file is concerned with variables, that is Ast_php.dname 
+ * This file is concerned with variables, that is Ast_php.dname
  * entities, so for completness C-s for dname in ast_php.ml and
  * see if all uses of it are covered. Other files are more concerned
  * about checks related to entities, that is Ast_php.name.
@@ -54,44 +50,40 @@ open Check_variables_helpers_php
  *  - UseOfUndefinedVariable
  *  - UnusedVariable
  * 
- * 
  * Detecting such mistakes is made slightly more complicated
  * by PHP because of the lack of declaration in the language;
  * the first assgignement "declares" the variable. On the other side
  * the PHP language forces people to explicitly declared
  * the use of global variables (via the 'global' statement) which
- * helps.
+ * makes other things easier.
  * 
- * 
- * One issue is the handling of variables passed by reference
- * which can look like use_of_undeclared_variable bugs but which
+ * One important issue is the handling of variables passed by reference
+ * which can look like UseOfUndefinedVariable bugs but which
  * are not. One way to fix it is to do a global analysis that
  * remembers what are all the functions taking arguments by reference
- * and whitelist them here. But this is tedious. 
- * Another simpler way is to force programmers
- * to actually declare such variables before those kinds of
- * function calls.
+ * and whitelist them here. But it has a cost.
+ * Another way is to force programmers to actually declare such variables
+ * before those kinds of function calls.
  * 
  * Another issue is functions like extract(), param_get(), param_post()
  * or variable variables like $$x. Regarding the param_get/param_post()
- * one way to fix it is to just to not analyse toplevel code.
- * Another solution is to hardcode a few analysis that recognize
+ * one way to fix it is to just not analyse toplevel code.
+ * Another solution is to hardcode a few analysis that recognizes
  * the arguments of those functions.
  * For the extract() and $$x one can just bailout of such code or
  * as evan did remember the first line where such code happen and
  * don't do any analysis pass this point.
  * 
  * Another issue is that the analysis below will probably flag lots of 
- * warning on an existing PHP codebase. Some programmers may find
+ * warnings on an existing PHP codebase. Some programmers may find
  * legitimate certain things, for instance having variables declared in
- * in a foreach to escape its foreach scope. This would then hinder
+ * a foreach to escape its foreach scope. This would then hinder
  * the whole analysis because people would just not run the analysis.
  * You need the approval of the PHP developers on such analysis first
  * and get them ok to change their coding styles rules.
  * 
  * Another issue is the implicitly-declared-when-used-the-first-time
  * ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
- * 
  * 
  * Here are some notes by evan in his own variable linter:
  * 
@@ -107,7 +99,7 @@ open Check_variables_helpers_php
  *   (pad: variable mentionned for the first time)
  * 
  * "These things make lexical scope unknowable":
- * - TODO Use of extract()
+ * - DONE Use of extract()
  * - SEMI Assignment to variable variables ($$x)
  * - DONE Global with variable variables
  *   (pad: I actually bail out on such code)
@@ -117,19 +109,15 @@ open Check_variables_helpers_php
  * - TODO empty()
  * - SEMI Static class variables
  * 
- * 
  * Here are a few additional checks and features of this checker:
  *  - when the strict_scope flag is set, check_variables will
  *    emulate a block-scoped language as in JSLint and flags
  *    variables used outside their "block".
  *  - when passed the find_entity hook, check_variables will:
- *     - know  about functions taking parameters by reference which removes
- *       some false positives.
- *     - flag use of class without a constructor or use of undefined class
- *     - use of undefined member
- *     
- * 
- * todo?: cfg analysis
+ *     - know about functions taking parameters by refs, which removes
+ *       some false positives
+ *     - flag uses of class without a constructor or use of undefined classes
+ *     - use of undefined members
  * 
  * todo? create generic function extracting set of defs
  *  and set of uses regarding variable ? and make connection ?
@@ -164,30 +152,33 @@ open Check_variables_helpers_php
  *    variable (local, global, or param) is not good enough to find bugs 
  *    related to those weird scoping rules. So I've put all variable scope
  *    related stuff in this file and removed the duplication in scoping_php.ml
- *
  *)
 
 (*****************************************************************************)
 (* Types, constants *)
 (*****************************************************************************)
-
 (* see env_check_php.ml *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 (* see check_variables_helpers_php.ml *)
 
 (*****************************************************************************)
 (* checks *)
 (*****************************************************************************)
 
-let check_use_against_env ~in_lambda var env = 
+let check_use_against_env ~in_lambda ~has_extract var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
-  | None -> 
-      E.fatal (Ast.info_of_dname var) 
+  | None ->
+      (* todo? could still issue an error but with the information that
+       * there was an extract around?
+       *)
+      if has_extract
+      then ()
+      else 
+       E.fatal (Ast.info_of_dname var) 
         (if in_lambda 
         then (E.UseOfUndefinedVariableInLambda s)
         else (E.UseOfUndefinedVariable s)
@@ -229,6 +220,7 @@ let visit_prog ~find_entity prog =
 
   let is_top_expr = ref true in 
   let in_lambda = ref false in
+  let has_extract = ref false in
   let scope = ref Ent.StmtList in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
@@ -251,10 +243,12 @@ let visit_prog ~find_entity prog =
       do_in_new_scope_and_check_if_strict (fun () -> k x)
     );
 
+    (* regular function scope check at least *)
     V.kfunc_def = (fun (k, _) x ->
+      Common.save_excursion has_extract false (fun () ->
       Common.save_excursion scope Ent.Function (fun () ->
         do_in_new_scope_and_check (fun () -> k x);
-      )
+      ))
     );
     V.kmethod_def = (fun (k, _) x ->
       match x.m_body with
@@ -265,6 +259,7 @@ let visit_prog ~find_entity prog =
           ()
       | MethodBody _ ->
       (* todo: diff between Method and StaticMethod? *)
+      Common.save_excursion has_extract false (fun () ->
       Common.save_excursion scope Ent.Method (fun () ->
         do_in_new_scope_and_check (fun () -> 
           if not (Class_php.is_static_method x)
@@ -279,7 +274,7 @@ let visit_prog ~find_entity prog =
 
           k x
         );
-      )
+      ))
     );
     V.kclass_def = (fun (k, _) x ->
 
@@ -291,6 +286,9 @@ let visit_prog ~find_entity prog =
        * todo: actually need to get the protected/public of the full
        * ancestors (but I think it's bad to access some variables
        * from an inherited class far away ... I hate OO for that kind of stuff)
+       * 
+       * todo: move that in check_classes_php.ml instaed? fields are
+       * not really variables ...
        *)
       x.c_extends +> Common.do_option (fun (tok, name_class_parent) ->
         (* todo: ugly to have to "cast" *)
@@ -299,9 +297,8 @@ let visit_prog ~find_entity prog =
         +> Common.do_option (fun id_ast ->
           (match id_ast with
           | Ast_php.ClassE def2 ->
-              
-              let vars = Class_php.get_public_or_protected_vars_of_class def2
-              in
+              let vars = 
+                Class_php.get_public_or_protected_vars_of_class def2 in
               (* we put 1 as use_count because we are not interested
                * in error message related to the parent.
                * Moreover it's legitimate to not use the parent
@@ -310,17 +307,14 @@ let visit_prog ~find_entity prog =
               vars +> List.iter (fun dname ->
                 add_binding dname (S.Class, ref 1);
               )
-
           | _ -> raise Impossible
           )
       ));
-
       (* must reorder the class_stmts as we want class variables defined
        * after the method to be considered first for scope/variable
        * analysis
        *)
       let x' = Class_php.class_variables_reorder_first x in
-      
       do_in_new_scope_and_check (fun () -> k x');
     );
 
@@ -331,7 +325,6 @@ let visit_prog ~find_entity prog =
      * for the include/require at the top, which anyway are
      * not really, and should not be statements)
      *)
-
 
     (* adding defs of dname in environment *)
 
@@ -465,7 +458,6 @@ let visit_prog ~find_entity prog =
        *)
       | Unset (t1, lvals_list, t2) ->
           k x
-
       | _ -> k x
     );
 
@@ -486,7 +478,12 @@ let visit_prog ~find_entity prog =
 
     V.kcatch = (fun (k,vx) x ->
       let (_t, (_, (classname, dname), _), stmts) = x in
-      (* could use local ? could have a UnusedExceptionParameter ? *)
+      (* The scope of catch is actually also at the function level in PHP ...
+       * but for this one it is so ugly that I introduce a new scope
+       * even outside strict mode. It's just too ugly
+       * 
+       * todo?could use local ? could have a UnusedExceptionParameter ? 
+       *)
       do_in_new_scope_and_check (fun () -> 
         add_binding dname (S.LocalExn, ref 0);
         k x;
@@ -513,9 +510,7 @@ let visit_prog ~find_entity prog =
       match Ast.untype x with
       (* the checking is done upward, in kexpr, and only for topexpr *)
       | Var (dname, scope_ref) ->
-
           (* assert scope_ref = S.Unknown ? *)
-
           let s = Ast.dname dname in
     
           (match lookup_env_opt s !_scoped_env with
@@ -524,6 +519,10 @@ let visit_prog ~find_entity prog =
           | Some (scope, _) ->
               scope_ref := scope;
           )
+
+      | FunCallSimple (Name ("extract", _), _args) ->
+          has_extract := true;
+          k x
 
       | ObjAccessSimple (lval, tok, name) ->
           (match Ast.untype lval with
@@ -560,9 +559,7 @@ let visit_prog ~find_entity prog =
     );
 
     V.kexpr = (fun (k, vx) x ->
-
       match Ast.untype x with
-
       (* todo? if the ConsList is not at the toplevel, then 
        * the code below will be executed first, which means
        * vars_used_in_expr will wrongly think vars in list() expr
@@ -603,6 +600,7 @@ let visit_prog ~find_entity prog =
           (* reset completely the environment *)
           Common.save_excursion _scoped_env !initial_env (fun () ->
           Common.save_excursion in_lambda true (fun () ->
+          Common.save_excursion has_extract false (fun () ->
           Common.save_excursion is_top_expr true (fun () ->
             do_in_new_scope_and_check (fun () ->
 
@@ -613,9 +611,8 @@ let visit_prog ~find_entity prog =
                 );
               );
               k x
-            )))
+            ))))
           )
-          
       (* Include | ... ? *)
           
       | _ ->
@@ -646,7 +643,9 @@ let visit_prog ~find_entity prog =
           assigned |> Common.exclude (fun v -> List.mem v keyword_args) in
 
         used' |> List.iter (fun v -> 
-          check_use_against_env ~in_lambda:!in_lambda v !_scoped_env);
+          check_use_against_env 
+            ~in_lambda:!in_lambda ~has_extract:!has_extract
+            v !_scoped_env);
 
         assigned' |> List.iter (fun v -> 
 
@@ -683,7 +682,6 @@ let visit_prog ~find_entity prog =
               incr aref;
           )
         );
-
         k x;
         is_top_expr := true;
       end
@@ -693,8 +691,9 @@ let visit_prog ~find_entity prog =
     );
   }
   in
-  (* we must check if people used the variables declared in 
-   * param_post/param_get.
+  (* we must check if people used the variables declared in the toplevel
+   * context or the param_post/param_get variables, hence the 
+   * do_in_new_scope_and_check below.
    *)
   do_in_new_scope_and_check (fun () -> 
     visitor (Program prog)
@@ -709,8 +708,7 @@ let check_and_annotate_program2 ~find_entity prog =
   (* globals (re)initialialisation *) 
   _scoped_env := !initial_env;
 
-  visit_prog ~find_entity prog;
-  ()
+  visit_prog ~find_entity prog
 
 let check_and_annotate_program ~find_entity a = 
   Common.profile_code "Checker.variables" (fun () -> 

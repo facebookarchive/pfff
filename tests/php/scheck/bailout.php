@@ -15,3 +15,4 @@ function foo2_bailout() {
 
   echo $$s;
 }
+
