@@ -1,7 +1,5 @@
 (*s: parse_php.mli *)
 
-(*s: type parsing_stat *)
-(*e: type parsing_stat *)
 (*s: type program2 *)
 type program2 = toplevel2 list
   and toplevel2 = 
@@ -50,5 +48,4 @@ val program_of_program_with_comments : program_with_comments -> Ast_php.program
 val tokens: 
   ?init_state:Lexer_php.state_mode ->
   Common.filename -> Parser_php.token list
-(*x: parse_php.mli *)
 (*e: parse_php.mli *)

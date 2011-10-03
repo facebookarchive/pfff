@@ -6,7 +6,6 @@ to parse a PHP file:
 
 <<parse_php.mli>>=
 
-<<type parsing_stat>>
 <<type program2>>
 
 exception Parse_error of Parse_info.info
@@ -96,11 +95,7 @@ val tokens:
 
 \section{Parsing statistics}
 
-<<type parsing_stat>>=
-@ 
-
-<<parse_php.mli>>=
-@ 
+Parsing statistics are available via functions in [[h_program-lang/]].
 
 \section{[[pfff -parse_php]]}
 
@@ -127,7 +122,11 @@ let test_parse_php xs  =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_php.parse file in
+    let (xs, stat) = 
+    Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+      Parse_php.parse file 
+    )
+    in
 
     Common.push2 stat stat_list;
     <<add stat for regression testing in hash>>
@@ -201,6 +200,9 @@ let is_metavar_name s =
 (* in facebook context, we want xhp support by default *)
 let xhp_builtin = ref true
 
+(* e.g. yield *)
+let facebook_lang_extensions = ref true
+
 (* Alternative way to get xhp by calling xhpize as a preprocessor.
  * Slower than builtin_xhp and have some issues where the comments
  * are removed, unless you use the experimental_merge_tokens_xhp
@@ -234,6 +236,8 @@ XHP is something between a programmatic UI library and a full templating system.
   pp_default := Some xhp_command),
 "  parsing XHP using xhpize as a preprocessor";
 "-no_xhp", Arg.Clear xhp_builtin,
+" ";
+"-no_fb_ext", Arg.Clear facebook_lang_extensions,
 " ";
 @
 

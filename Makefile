@@ -197,15 +197,11 @@ LIBS= commons/commons.cma \
     lang_haskell/parsing/lib.cma \
      lang_haskell/analyze/lib.cma \
     lang_php/parsing/lib.cma \
-     lang_php/analyze/basic/lib.cma \
      lang_php/analyze/foundation/lib.cma \
-     lang_php/analyze/typing/lib.cma \
      lang_php/analyze/tools/lib.cma \
      lang_php/analyze/checker/lib.cma \
-     lang_php/mini/lib.cma \
      lang_php/matcher/lib.cma \
      lang_php/analyze/database/lib.cma \
-     lang_php/analyze/finder/lib.cma \
      lang_php/analyze/static_analysis/lib.cma \
      lang_php/analyze/dynamic_analysis/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
@@ -250,7 +246,6 @@ MAKESUBDIRS=commons \
   lang_haskell/parsing \
    lang_haskell/analyze \
   lang_php/parsing \
-   lang_php/mini \
    lang_php/matcher \
   lang_sql/parsing \
   lang_js/parsing \
@@ -266,9 +261,7 @@ MAKESUBDIRS=commons \
   lang_erlang/parsing \
    lang_erlang/analyze \
   lang_php/analyze \
-   lang_php/analyze/basic \
    lang_php/analyze/foundation \
-   lang_php/analyze/typing \
    lang_php/analyze/checker \
    lang_php/analyze/database \
    lang_php/analyze/tools \

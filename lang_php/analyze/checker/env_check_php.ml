@@ -46,8 +46,8 @@ let unused_ok s =
    s =~ "_.*"
   || s = "unused"
   || s = "dummy"
-  || s =~ "ignored.*"
-
+  || s =~ "ignore.*"
+  || s = "guard"
   || unused_ok_when_no_strict s
 
 let fake_dname s = 

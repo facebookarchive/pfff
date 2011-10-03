@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -133,12 +133,6 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (* Stat *)
 (*****************************************************************************)
-(*s: type parsing_stat *)
-(*e: type parsing_stat *)
-
-(*s: parse_php stat function *)
-(*x: parse_php stat function *)
-(*e: parse_php stat function *)
 
 (*****************************************************************************)
 (* Lexing only *)

@@ -10,9 +10,23 @@ open Parse_info
 (*****************************************************************************)
 
 (* 
- * COUPLING: 
+ * This module defines an Abstract Syntax Tree for PHP 5.2 with
+ * a few PHP 5.3 extensions (like closures) and support for XHP.
  * 
- * Note that some programs in other languages (e.g. Python) may
+ * This is actually more a concrete syntax tree than an AST. This
+ * is convenient in a refactoring context or code visualization
+ * context, but if you need to do some heavy static analysis, consider
+ * instead lang_php/analyze/foundation/pil.ml, which defines a
+ * PHP Intermediate Language a la CIL.
+ * 
+ * NOTE: data from this type are often marshalled in berkeley DB tables
+ * which means that if you add new constructor or field in the types below, 
+ * you must erase the berkeley DB databases otherwise pfff
+ * will probably finish with a segfault (OCaml serialization is not
+ * type-safe). A hacky solution is to add new constructors only at the end
+ * of the type definition.
+ * 
+ * COUPLING: some programs in other languages (e.g. Python) may
  * use some of the pfff binding, or JSON/sexp exporters, so if you
  * change the name of constructors in this file, don't forget
  * to regenerate the JSON/sexp exporters, but also to modify the
@@ -72,63 +86,11 @@ open Parse_info
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 <<AST toplevel>>
-
-(* The goal of the entity type is to lift up important entities which
- * are originally nested in the ast such as methods.
- * 
- * history: was in ast_entity_php.ml before but better to put everything
- * in one file.
- *)
-type entity = 
-  | FunctionE of func_def
-  | ClassE of class_def
-  | InterfaceE of interface_def
-  | StmtListE of stmt list
-
-  | MethodE of method_def
-
-  | ClassConstantE of class_constant
-  | ClassVariableE of class_variable * modifier list
-
-  | XhpDeclE of xhp_decl
-
-  | MiscE of info list
- (* with tarzan *)
-
-type any = 
-  | Lvalue of lvalue
-  | Expr of expr
-  | Stmt2 of stmt
-  | StmtAndDef of stmt_and_def
-  | StmtAndDefs of stmt_and_def list
-  | Toplevel of toplevel
-  | Program of program
-  | Entity of entity
-
-  | Argument of argument
-  | Parameter of parameter
-  | Parameters of parameter comma_list paren
-
-  | Body of stmt_and_def list brace
-
-  | ClassStmt of class_stmt
-  | ClassConstant2 of class_constant
-  | ClassVariable of class_variable
-
-  | ListAssign of list_assign
-  | ColonStmt2 of colon_stmt
-  | Case2 of case
- 
-  | XhpAttribute of xhp_attribute
-  | XhpAttrValue of xhp_attr_value
-  | XhpHtml2 of xhp_html
-
-  | StaticScalar of static_scalar
-
-  | Info of info
-  | InfoList of info list
-
-  (* with tarzan *)
+(* ------------------------------------------------------------------------- *)
+(* Entity and any *)
+(* ------------------------------------------------------------------------- *)
+<<AST entity>>
+<<AST any>>
 
 (*****************************************************************************)
 (* Comments *)
@@ -165,6 +127,11 @@ let unbracket = unparen
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right info -> None
+  ) xs
+
+let uncomma_dots xs = Common.map_filter (function
+  | Left3 e -> Some e
+  | Right3 info | Middle3 info -> None
   ) xs
 
 let map_paren f (lp, x, rp) = (lp, f x, rp)
@@ -228,11 +195,7 @@ let string_of_info ii =
 let is_origintok = Parse_info.is_origintok
 
 
-type posrv = 
-  | Real of Parse_info.parse_info 
-  | Virt of 
-      Parse_info.parse_info (* last real info before expanded tok *) * 
-      int (* virtual offset *)
+type posrv = Parse_info.posrv
 
 let compare_pos ii1 ii2 =
   let get_pos = function

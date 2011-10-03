@@ -67,56 +67,11 @@ open Common
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 <<AST toplevel>>
-
 (* ------------------------------------------------------------------------- *)
 (* Entity and any *)
 (* ------------------------------------------------------------------------- *)
-
-type entity = 
-  | FunctionE of func_def
-  | ClassE of class_def
-  | InterfaceE of interface_def
-  | StmtListE of stmt list
-
-  | MethodE of method_def
-
-  | ClassConstantE of class_constant
-  | ClassVariableE of class_variable * modifier list
-
-  | XhpDeclE of xhp_decl
-
-  | MiscE of info list
-
-type any = 
-  | Lvalue of lvalue
-  | Expr of expr
-  | Stmt2 of stmt
-  | StmtAndDef of stmt_and_def
-  | StmtAndDefs of stmt_and_def list
-  | Toplevel of toplevel
-  | Program of program
-  | Entity of entity
-
-  | Argument of argument
-  | Parameter of parameter
-  | Parameters of parameter comma_list paren
-  | Body of stmt_and_def list brace
-
-  | ClassStmt of class_stmt
-  | ClassConstant2 of class_constant
-  | ClassVariable of class_variable
-  | ListAssign of list_assign
-  | ColonStmt2 of colon_stmt
-  | Case2 of case
- 
-  | XhpAttribute of xhp_attribute
-  | XhpAttrValue of xhp_attr_value
-  | XhpHtml2 of xhp_html
-
-  | StaticScalar of static_scalar
-
-  | Info of info
-  | InfoList of info list
+<<AST entity>>
+<<AST any>>
 
   (* with tarzan *)
 
@@ -396,7 +351,19 @@ type expr = exprbis * exp_info
 
   <<exprbis other constructors>>
 
+  (* xhp: *)
   | XhpHtml of xhp_html
+  (* php-facebook-ext: 
+   *
+   * todo: this should be at the statement level as there are only a few
+   * forms of yield that hphp support (e.g. yield <expr>; and 
+   * <lval> = yield <expr>). One could then have a YieldReturn and YieldAssign
+   * but this may change and none of the analysis in pfff need to
+   * understand yield so for now just make it simple and add yield
+   * at the expression level.
+   *)
+  | Yield of tok * expr
+  | YieldBreak of tok * tok
 
   <<type exprbis hook>>
 
@@ -445,7 +412,7 @@ is in [[Foreach]] so it's not worthwhile to complicate things just for
 <<type scalar and constant and encaps>>=
   and scalar = 
     | C of constant
-    | ClassConstant of (qualifier * name)
+    | ClassConstant of qualifier * name
         
     | Guil    of tok (* '"' or b'"' *) * encaps list * tok (* '"' *)
     | HereDoc of 
@@ -641,7 +608,14 @@ expression):
 The ugly conditional ternary operator:
 
 <<exprbis other constructors>>=
-| CondExpr of expr * tok (* ? *) * expr * tok (* : *) * expr
+(* PHP 5.3 allow 'expr ?: expr' hence the 'option' type below
+ * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
+ * "Since PHP 5.3, it is possible to leave out the middle part of the
+ * ternary operator. Expression 
+ * expr1 ?: expr3 returns expr1 if expr1 evaluates to TRUE, and expr3
+ * otherwise."
+ *)
+| CondExpr of expr * tok (* ? *) * expr option * tok (* : *) * expr
 @ 
 
 
@@ -685,8 +659,9 @@ The ugly conditional ternary operator:
 
 <<AST expression rest>>=
  and class_name_reference = 
-   | ClassNameRefStatic of fully_qualified_class_name
-   | ClassNameRefDynamic of (lvalue * obj_prop_access list)
+   | ClassNameRefStatic of class_name_or_kwd
+   | ClassNameRefDynamic of lvalue * obj_prop_access list
+
    and obj_prop_access = tok (* -> *) * obj_property
 @ 
 \l (* originally base_ *) variable for ClassNameRefDynamic
@@ -727,7 +702,7 @@ and lambda_def = {
  l_tok: tok; (* function *)
  l_ref: is_ref;
  (* no l_name, anonymous *)
- l_params: parameter comma_list paren;
+ l_params: parameter comma_list_dots paren;
  l_use:  lexical_vars option;
  l_body: stmt_and_def list brace;
 }
@@ -809,7 +784,7 @@ The 'd' in [[dname]] stands for dollar (dollar name).
   (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
    * but with xhp we can.
    * 
-   * TODO? a VArrayAccessSimple with Constant string in expr ? 
+   * todo? a VArrayAccessSimple with Constant string in expr ? 
    *)
   | VArrayAccess of lvalue * expr option bracket
   | VArrayAccessXhp of expr * expr option bracket
@@ -836,9 +811,13 @@ The 'd' in [[dname]] stands for dollar (dollar name).
    * Even if A::$v['fld'] was parsed in the grammar
    * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
    * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+   * 
+   * todo: merge those 4 cases in one. ClassVar of qualifier * lvalue
    *)
   | VQualifier of qualifier * lvalue
+  (* note that can be a late static class var since php 5.3 *)
   | ClassVar of qualifier * dname
+  | DynamicClassVar of lvalue * tok (* :: *) * dname
 @
 
 \subsection{Function calls}
@@ -851,6 +830,7 @@ reference to variables (whereas additions can't).
 
 <<lvaluebis constructors>>=
   | FunCallSimple of name                      * argument comma_list paren
+  (* DynamicFunCall *)
   | FunCallVar    of qualifier option * lvalue * argument comma_list paren
 @ 
 
@@ -884,8 +864,14 @@ and I end up not coding the complex one so ...
 \end{verbatim}
 
 <<lvaluebis constructors>>=
+  (* note that can be a late static call since php 5.3 *)
   | StaticMethodCallSimple of qualifier * name * argument comma_list paren
   | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
+  (* PHP 5.3 *)
+  | StaticMethodCallVar of lvalue * tok (* :: *) * name *
+      argument comma_list paren
+  | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
+      argument comma_list paren
 @ 
 
 <<lvaluebis constructors>>=
@@ -922,6 +908,8 @@ and stmt =
   <<stmt constructors>>
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
+    (* PHP 5.3, see http://us.php.net/const *)
+    | DeclConstant of tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
   <<AST statement rest>>
 @ 
@@ -1035,7 +1023,7 @@ and static_var = dname * static_scalar_affect option
 <<AST other declaration>>=
   and static_scalar = 
     | StaticConstant of constant
-    | StaticClassConstant of (qualifier * name) (* semantic ? *)
+    | StaticClassConstant of qualifier * name (* semantic ? *)
         
     | StaticPlus  of tok * static_scalar
     | StaticMinus of tok * static_scalar
@@ -1167,7 +1155,7 @@ and func_def = {
   f_tok: tok; (* function *)
   f_ref: is_ref;
   f_name: name;
-  f_params: parameter comma_list paren;
+  f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
@@ -1187,7 +1175,7 @@ and func_def = {
 
 <<AST function definition rest>>=
     and hint_type = 
-      | Hint of fully_qualified_class_name
+      | Hint of class_name_or_kwd (* only self/parent, no static *)
       | HintArray  of tok
 @
 \fbnote{plug here for a better type system for HPHP, with 
@@ -1278,7 +1266,7 @@ and interface_def = {
    and xhp_attribute_type = 
      | XhpAttrType of name (* e.g. float, bool, var, array, :foo *)
      | XhpAttrEnum of tok (* enum *) * constant comma_list brace
-  and xhp_value_affect = tok (* = *) * constant
+  and xhp_value_affect = tok (* = *) * static_scalar
 
  (* Regexp-like syntax. The grammar actually restricts what kinds of
   * regexps can be written. For instance pcdata must be nested. But
@@ -1328,7 +1316,7 @@ and interface_def = {
       m_tok: tok; (* function *)
       m_ref: is_ref;
       m_name: name;
-      m_params: parameter comma_list paren;
+      m_params: parameter comma_list_dots paren;
      (* static-php-ext: *)
       m_return_type: hint_type option;
       m_body: method_body;
@@ -1397,7 +1385,7 @@ and toplevel =
 %  (* TODO? Define by lifting it up from a regular function call? *)
 
 <<toplevel constructors>>=
-  | NotParsedCorrectly of info list
+  | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
 @ 
 
 <<toplevel constructors>>=
@@ -1462,14 +1450,20 @@ and dname =
 @ 
 
 <<qualifiers>>=
-and qualifier = 
-  | Qualifier of fully_qualified_class_name * tok (* :: *)
+and qualifier = class_name_or_kwd * tok (* :: *)
+ and class_name_or_kwd =
+  | ClassName of fully_qualified_class_name
   (* Could also transform at parsing time all occurences of self:: and
    * parent:: by their respective names. But I prefer to have all the 
    * PHP features somehow explicitely represented in the AST.
    *)
-  | Self   of tok * tok (* :: *)
-  | Parent of tok * tok (* :: *)
+  | Self   of tok
+  | Parent of tok
+  (* php 5.3 late static binding (no idea why it's useful ...) *)
+  | LateStatic of tok
+  (* todo? Put ClassVar of dname here so can factorize some of the
+   * StaticDynamicCall stuff in lvalue?
+   *)
 
 and fully_qualified_class_name = name
 @ 
@@ -1504,6 +1498,8 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
+and 'a comma_list_dots = 
+  ('a, tok (* ... for sgrep *), tok (* the comma *)) Common.either3 list
 @ 
 
 <<AST info>>=
@@ -1859,6 +1855,7 @@ val unparen : tok * 'a * tok -> 'a
 val unbrace : tok * 'a * tok -> 'a
 val unbracket : tok * 'a * tok -> 'a
 val uncomma: 'a comma_list -> 'a list
+val uncomma_dots: 'a comma_list_dots -> 'a list
 
 val map_paren: ('a -> 'b) -> 'a paren -> 'b paren
 val map_comma_list: ('a -> 'b) -> 'a comma_list -> 'b comma_list
@@ -1895,3 +1892,65 @@ val noFtype : unit -> Type_php.phptype
 
 val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
 @ 
+
+\section{Entity and any}
+
+<<AST entity>>=
+(* The goal of the entity type is to lift up important entities which
+ * are originally nested in the AST such as methods.
+ * 
+ * history: was in ast_entity_php.ml before but better to put everything
+ * in one file.
+ *)
+type entity = 
+  | FunctionE of func_def
+  | ClassE of class_def
+  | InterfaceE of interface_def
+  | StmtListE of stmt list
+
+  | MethodE of method_def
+
+  | ClassConstantE of class_constant
+  | ClassVariableE of class_variable * modifier list
+
+  | XhpDeclE of xhp_decl
+
+  | MiscE of info list
+@ 
+
+<<AST any>>=
+type any = 
+  | Lvalue of lvalue
+  | Expr of expr
+  | Stmt2 of stmt
+  | StmtAndDef of stmt_and_def
+  | StmtAndDefs of stmt_and_def list
+  | Toplevel of toplevel
+  | Program of program
+  | Entity of entity
+
+  | Argument of argument
+  | Parameter of parameter
+  | Parameters of parameter comma_list_dots paren
+  | Body of stmt_and_def list brace
+
+  | ClassStmt of class_stmt
+  | ClassConstant2 of class_constant
+  | ClassVariable of class_variable
+  | ListAssign of list_assign
+  | ColonStmt2 of colon_stmt
+  | Case2 of case
+ 
+  | XhpAttribute of xhp_attribute
+  | XhpAttrValue of xhp_attr_value
+  | XhpHtml2 of xhp_html
+
+  | StaticScalar of static_scalar
+
+  | Info of info
+  | InfoList of info list
+
+  | Name2 of name
+@ 
+
+

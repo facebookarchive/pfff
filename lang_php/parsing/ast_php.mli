@@ -39,7 +39,7 @@ and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots = 
-  ('a, tok (* the comma *), tok (* ... *)) Common.either3 list
+  ('a, tok (* ... for sgrep *), tok (* the comma *)) Common.either3 list
 (*x: AST info *)
 (* old: transformation = ... now in parse_info.ml *)
  (*s: tarzan annotation *)
@@ -147,6 +147,13 @@ type expr = exprbis * exp_info
   | Postfix of rw_variable   * fixOp wrap
   | Infix   of fixOp wrap    * rw_variable
   (*x: exprbis other constructors *)
+  (* PHP 5.3 allow 'expr ?: expr' hence the 'option' type below
+   * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
+   * "Since PHP 5.3, it is possible to leave out the middle part of the
+   * ternary operator. Expression 
+   * expr1 ?: expr3 returns expr1 if expr1 evaluates to TRUE, and expr3
+   * otherwise."
+   *)
   | CondExpr of expr * tok (* ? *) * expr option * tok (* : *) * expr
   (*x: exprbis other constructors *)
   | AssignList  of tok (* list *)  * list_assign comma_list paren * 
@@ -189,8 +196,17 @@ type expr = exprbis * exp_info
   | Isset of tok * lvalue comma_list paren
   (*e: exprbis other constructors *)
 
+  (* xhp: *)
   | XhpHtml of xhp_html
-
+  (* php-facebook-ext: 
+   *
+   * todo: this should be at the statement level as there are only a few
+   * forms of yield that hphp support (e.g. yield <expr>; and 
+   * <lval> = yield <expr>). One could then have a YieldReturn and YieldAssign
+   * but this may change and none of the analysis in pfff need to
+   * understand yield so for now just make it simple and add yield
+   * at the expression level.
+   *)
   | Yield of tok * expr
   | YieldBreak of tok * tok
 
@@ -306,6 +322,7 @@ type expr = exprbis * exp_info
    and class_name_reference = 
      | ClassNameRefStatic of class_name_or_kwd
      | ClassNameRefDynamic of lvalue * obj_prop_access list
+
      and obj_prop_access = tok (* -> *) * obj_property
   (*e: AST expression rest *)
 
@@ -349,7 +366,7 @@ and lvalue = lvaluebis * lvalue_info
     (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
      * but with xhp we can.
      * 
-     * TODO? a VArrayAccessSimple with Constant string in expr ? 
+     * todo? a VArrayAccessSimple with Constant string in expr ? 
      *)
     | VArrayAccess of lvalue * expr option bracket
     | VArrayAccessXhp of expr * expr option bracket
@@ -364,14 +381,19 @@ and lvalue = lvaluebis * lvalue_info
      * Even if A::$v['fld'] was parsed in the grammar
      * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
      * generate a ArrayAccess(Qualifier(A, $v), 'fld').
+     * 
+     * todo: merge those 4 cases in one. ClassVar of qualifier * lvalue
      *)
     | VQualifier of qualifier * lvalue
+    (* note that can be a late static class var since php 5.3 *)
     | ClassVar of qualifier * dname
     | DynamicClassVar of lvalue * tok (* :: *) * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
+    (* DynamicFunCall *)
     | FunCallVar    of qualifier option * lvalue * argument comma_list paren
   (*x: lvaluebis constructors *)
+    (* note that can be a late static call since php 5.3 *)
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren
     | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
     (* PHP 5.3 *)
@@ -483,7 +505,7 @@ and stmt =
   (*e: stmt constructors *)
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
-    (* PHP 5.3 *)
+    (* PHP 5.3, see http://us.php.net/const *)
     | DeclConstant of tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
   (*s: AST statement rest *)
@@ -548,7 +570,7 @@ and func_def = {
     }
   (*x: AST function definition rest *)
       and hint_type = 
-        | Hint of class_name_or_kwd
+        | Hint of class_name_or_kwd (* only self/parent, no static *)
         | HintArray  of tok
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option
@@ -743,7 +765,7 @@ and toplevel =
   (*x: toplevel constructors *)
     | Halt of tok * unit paren * tok (* __halt__ ; *)
   (*x: toplevel constructors *)
-    | NotParsedCorrectly of info list
+    | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
   (*x: toplevel constructors *)
     | FinalDef of info (* EOF *)
   (*e: toplevel constructors *)
@@ -755,11 +777,16 @@ and toplevel =
  (*e: tarzan annotation *)
 
 (*e: AST toplevel *)
-
 (* ------------------------------------------------------------------------- *)
 (* Entity and any *)
 (* ------------------------------------------------------------------------- *)
-
+(*s: AST entity *)
+(* The goal of the entity type is to lift up important entities which
+ * are originally nested in the AST such as methods.
+ * 
+ * history: was in ast_entity_php.ml before but better to put everything
+ * in one file.
+ *)
 type entity = 
   | FunctionE of func_def
   | ClassE of class_def
@@ -774,7 +801,8 @@ type entity =
   | XhpDeclE of xhp_decl
 
   | MiscE of info list
-
+(*e: AST entity *)
+(*s: AST any *)
 type any = 
   | Lvalue of lvalue
   | Expr of expr
@@ -807,6 +835,7 @@ type any =
   | InfoList of info list
 
   | Name2 of name
+(*e: AST any *)
 
   (* with tarzan *)
 

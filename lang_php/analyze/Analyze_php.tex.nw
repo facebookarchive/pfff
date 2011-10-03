@@ -427,9 +427,8 @@ val short_string_of_node_kind: node_kind -> string
 
 <<type Controlflow_build_php.error>>
 
-val string_of_error: ?show_position_info:bool -> error -> string
-val info_of_error: error -> Ast_php.info option
-
+val string_of_error: error -> string
+val string_of_error_kind: error_kind -> string
 <<error exception and report_error signature>>
 @
 
@@ -597,6 +596,7 @@ type edge = Direct
 
 <<node_kind aux types>>=
    and simple_stmt = 
+       | ExprStmt of expr * tok
        | TodoSimpleStmt
        (* TODO? expr includes Exit, Eval, Include, etc which
         * also have an influence on the control flow ...
@@ -604,7 +604,6 @@ type edge = Direct
         * a better expr type
         *)
        (*
-       | ExprStmt of expr * tok
 
        | EmptyStmt of expr * tok
            
@@ -628,12 +627,13 @@ val deadcode_detection : Controlflow_php.flow -> unit
 @ 
 
 <<type Controlflow_build_php.error>>=
-type error = 
-  | DeadCode        of Ast_php.info * Controlflow_php.node_kind
-  | NoEnclosingLoop of Ast_php.info
-  | ColonSyntax     of Ast_php.info
-  | NoMethodBody    of Ast_php.info
-  | DynamicBreak    of Ast_php.info
+type error = error_kind * Ast_php.info
+ and error_kind = 
+  | DeadCode of Controlflow_php.node_kind
+  | NoEnclosingLoop
+  | ColonSyntax
+  | NoMethodBody
+  | DynamicBreak
 @ 
 
 
@@ -835,6 +835,8 @@ val unparse_comment: ?indent:int -> comment -> string
 val comment_style_new_line: comment -> string
 
 val index_comment: comment -> (int * string) list
+
+val comments_of_file: Common.filename -> Ast_php.info list
 
 @
 
@@ -1273,6 +1275,7 @@ val readable_to_absolute_filename:
 val path_of_project:             project -> Common.dirname
 val default_metapath_of_project:  project -> Common.dirname
 val normalize_project: project -> project
+val prj_of_dir: Common.dirname -> project
 
 val database_tag_filename: string
 val check_is_database_dir: Common.dirname -> unit
@@ -1699,6 +1702,8 @@ type hooks = {
    *)
   is_valid_file: Common.filename -> bool;
 
+  skip_revs:Lib_vcs.versionid list;
+
   false_positive_deadcode_annotations: Annotation_php.annotation list;
 
   (* config *)
@@ -1867,7 +1872,7 @@ val find_testcase_class_if_any:
 (* a poor's man test result database ... *)
 
 type test_status = 
-  | Pass of int (* nb tests *)
+  | Pass of int (* nb passing tests *) * int (* skipped *)
   | Fail of int (* fail *) * int (* pass *)
   | Fatal of string
 
@@ -2175,7 +2180,7 @@ val actions: unit -> Common.cmdline_actions
 
 \chapter{PHP Intermediate Language}
 
-#include "foundation/pil.ml.nw"
+%#include "foundation/pil.ml.nw"
 
 \chapter{Control Flow Graph}
 
@@ -2184,13 +2189,13 @@ val actions: unit -> Common.cmdline_actions
 
 \chapter{Data Flow Analysis}
 
-#include "foundation/dataflow_php.ml.nw"
+%#include "foundation/dataflow_php.ml.nw"
 
 \chapter{Typing}
 
 \section{Trivial typing}
 
-#include "typing/typing_trivial_php.ml.nw"
+%#include "typing/typing_trivial_php.ml.nw"
 
 % and more 
 
@@ -2222,11 +2227,11 @@ val actions: unit -> Common.cmdline_actions
 
 \chapter{Tainted string analysis}
 
-#include "static_analysis/tainted_php.ml.nw"
+%#include "static_analysis/tainted_php.ml.nw"
 
 \chapter{Data flow for arrays}
 
-#include "static_analysis/dataflow_php_array.ml.nw"
+%#include "static_analysis/dataflow_php_array.ml.nw"
 
 \chapter{PHP Built-in Functions, Classes, and Globals}
 

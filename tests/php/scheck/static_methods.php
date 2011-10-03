@@ -6,7 +6,7 @@ class StaticMethods {
   }
 }
 
-function static_foo1() {
+function test_static_method1() {
   StaticMethods::foo(1);
 
   //ERROR: wrong number of arguments
@@ -17,4 +17,17 @@ function static_foo1() {
 
   //ERROR: undefined static method
   StaticMethods::bar();
+
+  //ERROR: undefined class
+  UnknownClass::foo();
+}
+
+class StaticMethods2 extends StaticMethods {
+  static public function bar() {
+    // even calling a static method involves a kind of lookup in PHP
+    self::foo(1);
+
+    //ERROR:
+    self::foo(1, 2);
+  }
 }

@@ -23,28 +23,34 @@ let test_dump_php file =
 let test_unparse_php file = 
   let (ast2, stat) = Parse_php.parse file in
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
-  let s = Unparse_php.string_of_program2_using_tokens ast2 in
+  let s = Unparse_php.string_of_program2_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;
-  let xs = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
+  let xs = Common.unix_diff file tmpfile in
   xs |> List.iter pr2;
   ()
+
+let test_pretty_print_php file = 
+  let (ast2, stat) = Parse_php.parse file in
+  let _ast = Parse_php.program_of_program2 ast2 in
+  raise Todo
+  (* Pretty_print_php.pretty_print_program ast *)
 
 (* note that pfff can now parse XHP files without calling xhpize *)
 let test_parse_xhp_with_xhpize file = 
   let pp_cmd = "xhpize" in
   let (ast2, stat) = Parse_php.parse ~pp:(Some pp_cmd) file in
   let ast = Parse_php.program_of_program2 ast2 in
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
-  let s = Unparse_php.string_of_program2_using_tokens ast2 in
+  let s = Unparse_php.string_of_program2_using_transfo ast2 in
   pr2 s;
   ()
 
 let test_parse_xdebug_expr s = 
   let e = Parse_php.xdebug_expr_of_string s in
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_expr e in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_expr e in
   pr2 s;
   ()
 
@@ -56,6 +62,8 @@ let actions () = [
 
     "-unparse_php", "   <file>", 
     Common.mk_action_1_arg test_unparse_php;
+    "-pretty_print_php", "   <file>", 
+    Common.mk_action_1_arg test_pretty_print_php;
     "-parse_xdebug_expr", "   <string>", 
     Common.mk_action_1_arg test_parse_xdebug_expr;
     "-parse_xhp_with_xhpize", "   <file>", 

@@ -5,15 +5,10 @@ TOP=../..
 TARGET=lib
 
 SRC= flag_parsing_php.ml \
-     scope_php.ml \
-     type_php.ml \
-     ast_php.ml \
-     meta_ast_php.ml \
-     sexp_ast_php.ml \
-     json_ast_php.ml \
+     scope_php.ml type_php.ml \
+     ast_php.ml meta_ast_php.ml \
      export_ast_php.ml \
-     visitor_php.ml \
-     map_php.ml \
+     visitor_php.ml map_php.ml \
      lib_parsing_php.ml \
      parser_php_mly_helper.ml \
      parser_php.ml lexer_php.ml \
@@ -21,11 +16,7 @@ SRC= flag_parsing_php.ml \
      pp_php.ml \
      parse_php.ml \
      unparse_php.ml \
-     test_parsing_php.ml \
-     unit_parsing_php.ml \
-
-
-
+     test_parsing_php.ml unit_parsing_php.ml
 
 SYSLIBS= str.cma unix.cma 
 # globals.cma is used only for Config.patch in test_parse_php
@@ -92,20 +83,23 @@ pretty_print_php.cmo: pretty_print_php.ml
 ##############################################################################
 
 # set of noweb (.nw) files
-SRCMLNW1=parse_php.mli.nw  ast_php.mli.nw visitor_php.mli.nw map_php.mli.nw \
-      sexp_ast_php.mli.nw json_ast_php.mli.nw export_ast_php.mli.nw \
+SRCMLNW1=parse_php.mli.nw  ast_php.mli.nw \
+      visitor_php.mli.nw map_php.mli.nw \
+      export_ast_php.mli.nw \
       unparse_php.mli.nw \
       lib_parsing_php.mli.nw \
-      flag_parsing_php.ml.nw test_parsing_php.mli.nw 
+      flag_parsing_php.ml.nw \
+      test_parsing_php.mli.nw unit_parsing_php.mli.nw \
+      meta_ast_php.mli.nw
 
 SRCMLNW2=ast_php.ml.nw #type_php.mli scope_php.mli
 SRCMLNW3=lexer_php.mll.nw #token_helpers_php.mli
 SRCMLNW4=parser_php.mly.nw #parser_php_mly_helper.ml
 SRCMLNW5=parse_php.ml.nw
 SRCMLNW6=lib_parsing_php.ml.nw \
-      json_ast_php.ml.nw sexp_ast_php.ml.nw export_ast_php.ml.nw \
+      export_ast_php.ml.nw \
       type_php.ml.nw scope_php.ml.nw \
-      test_parsing_php.ml.nw 
+      test_parsing_php.ml.nw unit_parsing_php.ml.nw 
 
 # must be in the same order of the #include for syncweb multi files support
 # to work
@@ -116,7 +110,6 @@ SRCNW=Parsing_php.tex.nw Parsing_php_intro.tex.nw Parsing_php_use.tex.nw \
       unparse_php.ml.nw \
       ast_php.ml.nw \
       $(SRCMLNW6)
-
 
 TEXMAIN=Parsing_php.tex.nw
 TEX=Parsing_php.tex
@@ -175,7 +168,6 @@ lpclean::
 
 lpdistclean::
 	rm -f $(LPSRC) $(LPSRCOTHER) .md5sum_* $(TEX)
-
 
 
 OCAMLDOC=ocamldoc $(INCLUDES)

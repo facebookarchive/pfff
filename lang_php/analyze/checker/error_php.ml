@@ -46,11 +46,16 @@ let strict = ref false
  * error_kind (having a simple error_kind independent of location also
  * makes it easy to have "stable" errors independent of repository
  * which makes it easy to have cmf --only-new-errors working correctly).
+ * 
  *)
 type error = {
   typ: error_kind;
   loc: Ast_php.info;
-  sev: severity;
+  (* todo? maybe severity should be inferred from the error_kind. That
+   * way it will also avoid the need for 2 functions fatal()/warning()
+   * and just have error().
+   *)
+  sev: severity; 
 }
  (* todo? Advise | Noisy | Meticulous ? *)
  and severity = Fatal | Warning
@@ -78,6 +83,7 @@ type error = {
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *)
   | UnusedVariable of string (* dname *) * Scope_php.phpscope
+  | UseOfUndefinedVariableInLambda of string (* dname *)
 
   (* classes *)
   | UseOfUndefinedMember of string (* name *)
@@ -88,10 +94,11 @@ type error = {
 
   (* cfg, mostly DeadCode statements *)
   | CfgError of Controlflow_build_php.error_kind
-  | CfgPilError of Controlflow_build_pil.error_kind
+(*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
-  | UseOfUndefinedVariableInLambda of string (* dname *)
-  (* todo: type errors *)
+  | FileNotFound of Common.filename
+
+  (* todo: type errors, protocol errors (statistical analysis), etc *)
 
   and severity2 =
    | Bad
@@ -152,8 +159,12 @@ let string_of_error_kind error_kind =
 
   | CfgError err ->
       Controlflow_build_php.string_of_error_kind err
-  | CfgPilError err ->
+(*  | CfgPilError err ->
       Controlflow_build_pil.string_of_error_kind err
+*)
+
+  | FileNotFound s ->
+      spf "File not found %s" s
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
@@ -260,7 +271,7 @@ let (find_entity_and_warn:
           if Hashtbl.mem h_already_error (kind, str) 
           then ()
           else begin
-            Hashtbl.replace h_already_error (kind, str) true;
+            Hashtbl.add h_already_error (kind, str) true;
             (* todo: to give 2 ex of defs *)
             let ex1 = str (* TODO *) in
             let ex2 = str (* TODO *) in

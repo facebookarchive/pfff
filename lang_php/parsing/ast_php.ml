@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -824,9 +824,12 @@ and toplevel =
  (*e: tarzan annotation *)
 
 (*e: AST toplevel *)
-
+(* ------------------------------------------------------------------------- *)
+(* Entity and any *)
+(* ------------------------------------------------------------------------- *)
+(*s: AST entity *)
 (* The goal of the entity type is to lift up important entities which
- * are originally nested in the ast such as methods.
+ * are originally nested in the AST such as methods.
  * 
  * history: was in ast_entity_php.ml before but better to put everything
  * in one file.
@@ -845,8 +848,8 @@ type entity =
   | XhpDeclE of xhp_decl
 
   | MiscE of info list
- (* with tarzan *)
-
+(*e: AST entity *)
+(*s: AST any *)
 type any = 
   | Lvalue of lvalue
   | Expr of expr
@@ -860,13 +863,11 @@ type any =
   | Argument of argument
   | Parameter of parameter
   | Parameters of parameter comma_list_dots paren
-
   | Body of stmt_and_def list brace
 
   | ClassStmt of class_stmt
   | ClassConstant2 of class_constant
   | ClassVariable of class_variable
-
   | ListAssign of list_assign
   | ColonStmt2 of colon_stmt
   | Case2 of case
@@ -881,8 +882,7 @@ type any =
   | InfoList of info list
 
   | Name2 of name
-
-  (* with tarzan *)
+(*e: AST any *)
 
 (*****************************************************************************)
 (* Comments *)

@@ -11,7 +11,6 @@ TARGET3=gen_code
 SRC= meta_ast_php_tof.ml \
      meta_ast_php_ofv.ml \
      gen_ml_code.ml \
-     python_php.ml \
      test_meta_php.ml \
 
 # now in parsing_php/:     meta_ast_php_vof.ml

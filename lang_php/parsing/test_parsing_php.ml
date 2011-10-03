@@ -79,8 +79,8 @@ let test_sexp_php file =
   let ast = Parse_php.program_of_program2 ast2 in
   (* let _ast = Type_annoter.annotate_program !Type_annoter.initial_env ast *) 
 
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   ()
 (*x: test_sexp_php *)
@@ -88,8 +88,8 @@ let test_sexp_full_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  Sexp_ast_php.show_info := true;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := true;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   ()
 (*e: test_sexp_php *)
@@ -98,7 +98,7 @@ let test_json_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  let s = Json_ast_php.string_of_program ast in
+  let s = Export_ast_php.json_string_of_program ast in
   pr s;
   ()
 
@@ -106,7 +106,7 @@ let test_json_fast_php file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  let s = Json_ast_php.string_of_program_fast ast in
+  let s = Export_ast_php.json_string_of_program_fast ast in
   pr s;
   ()
 (*e: test_json_php *)
@@ -159,8 +159,8 @@ let test_parse_xhp_with_xhpize file =
   let pp_cmd = "xhpize" in
   let (ast2, stat) = Parse_php.parse ~pp:(Some pp_cmd) file in
   let ast = Parse_php.program_of_program2 ast2 in
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_program ast in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
   let s = Unparse_php.string_of_program2_using_transfo ast2 in
   pr2 s;
@@ -168,8 +168,8 @@ let test_parse_xhp_with_xhpize file =
 
 let test_parse_xdebug_expr s = 
   let e = Parse_php.xdebug_expr_of_string s in
-  Sexp_ast_php.show_info := false;
-  let s = Sexp_ast_php.string_of_expr e in
+  Export_ast_php.show_info := false;
+  let s = Export_ast_php.sexp_string_of_expr e in
   pr2 s;
   ()
 
@@ -185,6 +185,12 @@ let actions () = [
       Common.mk_action_1_arg test_visit_php;
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
+    "-json", "   <file> export the AST of file into JSON", 
+      Common.mk_action_1_arg test_json_php;
+    "-json_fast", "   <file> export the AST of file into a compact JSON", 
+      Common.mk_action_1_arg test_json_fast_php;
+  (*x: test_parsing_php actions *)
+    (* an alias for -sexp_php *)
     "-dump_php", "   <file>", 
     Common.mk_action_1_arg test_dump_php;
     "-dump_php_sexp", "   <file>", 
@@ -198,12 +204,6 @@ let actions () = [
     (* an alias for -sexp_php *)
     "-dump_full_ast", "   <file>", 
       Common.mk_action_1_arg test_sexp_full_php;
-  (*x: test_parsing_php actions *)
-    (* an alias for -sexp_php *)
-    "-json", "   <file> export the AST of file into JSON", 
-      Common.mk_action_1_arg test_json_php;
-    "-json_fast", "   <file> export the AST of file into a compact JSON", 
-      Common.mk_action_1_arg test_json_fast_php;
   (*x: test_parsing_php actions *)
     "-tokens_php", "   <file>", 
     Common.mk_action_1_arg test_tokens_php;

@@ -20,15 +20,17 @@ type error = {
         
   | UseOfUndefinedVariable of string (* dname *)
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope
+  | UseOfUndefinedVariableInLambda of string (* dname *)
 
   | UseOfUndefinedMember of string (* name *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
 
   | CfgError of Controlflow_build_php.error_kind
-  | CfgPilError of Controlflow_build_pil.error_kind
+(*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
-  | UseOfUndefinedVariableInLambda of string (* dname *)
+  | FileNotFound of Common.filename
+
   and severity2 =
     | Bad
     | ReallyBad

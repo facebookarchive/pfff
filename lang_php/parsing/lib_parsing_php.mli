@@ -1,10 +1,15 @@
 (*s: lib_parsing_php.mli *)
+val is_php_filename: Common.filename -> bool
+
+(* this will open the file and look possible for a #!/usr/bin/env php *)
 val is_php_file: Common.filename -> bool
 val is_php_script: Common.filename -> bool
+
 val find_php_files_of_dir_or_files: 
   ?verbose:bool ->
   Common.path list -> Common.filename list
 
+(*x: lib_parsing_php.mli *)
 val ii_of_any: Ast_php.any -> Ast_php.info list
 (*x: lib_parsing_php.mli *)
 (* do via side effects *)

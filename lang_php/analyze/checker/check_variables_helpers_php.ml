@@ -92,8 +92,8 @@ let rec get_assigned_var_lval_opt lval =
 (* update: does consider also function calls to function taking parameters via
  * reference. Use global info.
  *)
-let vars_assigned_in_any =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+let vars_assigned_in_any any =
+  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k,vx) x ->
       match Ast.untype x with
       | Assign (lval, _, _) 
@@ -113,8 +113,8 @@ let vars_assigned_in_any =
     }
   )
 
-let keyword_arguments_vars_in_any = 
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+let keyword_arguments_vars_in_any any = 
+  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kargument = (fun (k, vx) x ->
       match x with
       | Arg e ->
@@ -145,7 +145,11 @@ let vars_passed_by_ref_in_any ~find_entity =
         | None -> []
         | Some args -> args +> Ast.unparen +> Ast.uncomma 
       in
-               
+
+      (* maybe the #args does not match #params, but this is not our
+       * business here; this will be detected anyway by check_functions or
+       * check_class
+       *)
       Common.zip_safe params args +> List.iter (fun (param, arg) ->
                   
         (match arg with
@@ -164,19 +168,68 @@ let vars_passed_by_ref_in_any ~find_entity =
     V.klvalue = (fun (k, vx) x ->
       match Ast.untype x with
       | FunCallSimple (name, args) ->
-          E.find_entity_and_warn ~find_entity (Ent.Function, name)
-          +> Common.do_option (fun id_ast ->
-            match id_ast with
-            | Ast_php.FunctionE def ->
+          let s = Ast.name name in
+          (match s with
+          (* special case, ugly but hard do otherwise *)
+          | "sscanf" -> 
+              (match args +> Ast.unparen +> Ast.uncomma with
+              | x::y::vars ->
+                  vars +> List.iter (fun arg ->
+                    match arg with
+                    | Arg (Lv((Var(dname, _scope), tlval_49)), t_50) ->
+                        Common.push2 dname aref
+                    (* todo? wrong, it should be a variable *)
+                    | _ -> ()
+                  )
+              (* wrong number of arguments, not our business, it will
+               * be detected by another checker anyway
+               *)
+              | _ -> ()
+              )
+          | _ -> 
+           E.find_entity_and_warn ~find_entity (Ent.Function, name)
+           +> Common.do_option (function Ast_php.FunctionE def ->
                 params_vs_args def.f_params (Some args)
             | _ -> raise Impossible
+           )
           );
           k x
-      | FunCallVar _ 
-      | StaticMethodCallSimple _
-      | MethodCallSimple _
-          -> 
-          (* TODO !!! *)
+      | StaticMethodCallSimple (qu, name, args) ->
+          find_entity +> Common.do_option (fun find_entity ->
+           match qu with
+           | ClassName (classname), _ ->
+              let aclass = Ast.name classname in
+              let amethod = Ast.name name in
+                (try 
+                  let def = 
+                    Class_php.lookup_method (aclass, amethod) find_entity in
+                  params_vs_args def.m_params (Some args)
+                with 
+                | Not_found  ->
+                    (* could not find the method, this is bad, but
+                     * it's not our business here; this error will
+                     * be reported anyway in check_classes_php
+                     *)
+                    ()
+                | Multi_found ->
+                    ()
+                )
+           | (Self _ | Parent _), _ ->
+               failwith "check_var_help: call unsugar_self_parent()"
+           | LateStatic _, _ ->
+               (* TODO ? *)
+               ()
+          );
+          k x
+
+      | MethodCallSimple _ ->
+          (* TODO !!! if this-> then can use lookup_method, but
+           * need some context ... pass a in_class option
+           *)
+          k x
+
+      | FunCallVar _ -> 
+          (* can't do much *)
           k x
       | _ -> 
           k x
@@ -188,24 +241,19 @@ let vars_passed_by_ref_in_any ~find_entity =
           | ClassNameRefStatic (ClassName name) ->
               
               E.find_entity_and_warn ~find_entity (Ent.Class, name)
-              +> Common.do_option (fun id_ast ->
-                match id_ast with
-                | Ast_php.ClassE def ->
-                    (try 
-                        let constructor_def = 
-                          Class_php.get_constructor def in
-                        params_vs_args constructor_def.m_params args
-
-                     with Not_found ->
-                       (* TODO: too many FP for now
+              +> Common.do_option (function Ast_php.ClassE def ->
+                (try 
+                    let constructor_def = Class_php.get_constructor def in
+                    params_vs_args constructor_def.m_params args
+                 with Not_found ->
+                   (* TODO: too many FP for now
                        if !Flag.show_analyze_error
                        then pr2_once (spf "Could not find constructor for: %s" 
                                          (Ast.name name));
-                       *)
-                       ()
-                    );
-
-                | _ -> raise Impossible
+                   *)
+                   ()
+                );
+              | _ -> raise Impossible
               );
               k x
 

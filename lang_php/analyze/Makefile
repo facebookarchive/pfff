@@ -10,24 +10,14 @@ ifeq ($(FEATURE_BDB), 1)
 BDBINCLUDE=$(TOP)/external/ocamlbdb
 endif
 
-
+#todo? have a visual/ directory, where put highlight, htmlize, dependencies?
 SRC= \
-     normalize_php.ml \
-     entities_php.ml \
      highlight_php.ml \
-     tags_php.ml \
      htmlize_php.ml \
-     database_php_build.ml \
-     database_php_build2.ml \
-     database_light_php.ml \
      dependencies_php.ml \
      database_php_storage.ml \
      test_analyze_php.ml \
      test_analyze_db_php.ml \
-     unit_analyze_php.ml \
-     unit_analyze_db_php.ml \
-     unit_checker_php.ml \
-
 
 -include $(TOP)/Makefile.config
 
@@ -49,9 +39,10 @@ LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=basic foundation tools typing finder checker \
+MAKESUBDIRS=foundation tools checker \
   database dynamic_analysis static_analysis qa_test \
 #qa_code annotaters
+#typing finder
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
@@ -61,16 +52,13 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/globals \
    $(BDBINCLUDE) \
    ../parsing \
-   basic \
    foundation \
    database \
    checker \
    tools \
-   typing \
    static_analysis \
    dynamic_analysis \
    qa_test \
-   finder \
 
 #   $(PCREINCLUDE) $(JANEINCLUDE)
 #$(TOP)/matcher_php
@@ -127,15 +115,11 @@ TEX=Analyze_php.tex
 # to work
 SRC_ORIG=Analyze_php.tex.nw Analyze_php_intro.tex.nw Analyze_php_use.tex.nw \
  Analyze_php_implem.tex.nw \
- foundation/pil.ml.nw \
- foundation/controlflow_php.ml.nw foundation/dataflow_php.ml.nw \
- typing/typing_trivial_php.ml.nw \
+ foundation/controlflow_php.ml.nw \
  tools/xdebug.ml.nw \
  static_analysis/code_rank_php.ml.nw \
  static_analysis/cyclomatic_php.ml.nw \
  static_analysis/deadcode_php.ml.nw \
- static_analysis/tainted_php.ml.nw \
- static_analysis/dataflow_php_array.ml.nw \
  foundation/builtins_php.ml.nw \
  tools/phpunit.ml.nw \
  static_analysis/coverage_static_php.ml.nw \
@@ -144,56 +128,65 @@ SRC_ORIG=Analyze_php.tex.nw Analyze_php_intro.tex.nw Analyze_php_use.tex.nw \
  test_analyze_php.ml.nw \
  test_analyze_db_php.ml.nw \
 
+# typing/typing_trivial_php.ml.nw \
+# foundation/pil.ml.nw \
+
+# static_analysis/tainted_php.ml.nw \
+
+#foundation/dataflow_php.ml.nw
+# static_analysis/dataflow_php_array.ml.nw \
+
 
 # set of ml files, the views. Also used by make lpclean.
 
 # TODO later do via a filter-out
 SRC_ML= \
-       foundation/pil.ml foundation/pil_build.ml \
        foundation/controlflow_php.ml foundation/controlflow_build_php.ml \
-       foundation/dataflow_php.ml static_analysis/dataflow_php_liveness.ml \
        foundation/builtins_php.ml \
        static_analysis/coverage_static_php.ml \
-       typing/typing_trivial_php.ml \
        tools/xdebug.ml \
        tools/phpunit.ml \
        static_analysis/code_rank_php.ml \
        static_analysis/cyclomatic_php.ml \
        static_analysis/deadcode_php.ml \
-       static_analysis/tainted_php.ml \
-       static_analysis/dataflow_php_array.ml \
        dynamic_analysis/coverage_dynamic_php.ml \
        test_analyze_php.ml \
        test_analyze_db_php.ml \
+
+#       foundation/pil.ml foundation/pil_build.ml \
+#       foundation/dataflow_php.ml static_analysis/dataflow_php_liveness.ml \
+#       typing/typing_trivial_php.ml \
+#       static_analysis/tainted_php.ml \
+#       static_analysis/dataflow_php_array.ml \
 
 SRC_MLI=$(SRC_ML:ml=mli)
 
 SRC_NO_MLI=flag_analyze_php.ml 
 #TODO, mli files without their .ml counterpart included in the document
 SRC_MLI_NO_ML_NW= \
- basic/entity_php.mli \
- basic/lib_analyze_php.mli \
- basic/namespace_php.mli \
- basic/comment_php.mli \
- basic/annotation_php.mli \
+ foundation/entity_php.mli \
+ foundation/lib_analyze_php.mli \
+ foundation/namespace_php.mli \
+ foundation/comment_php.mli \
+ foundation/annotation_php.mli \
  foundation/aliasing_function_php.mli \
  foundation/bottomup_analysis_php.mli \
  foundation/callgraph_php.mli \
  foundation/graph_php.mli \
- basic/include_require_php.mli \
- typing/type_annotater_php.mli \
- typing/typing_php.mli \
- typing/typing_weak_php.mli \
- finder/finder_php.mli \
- finder/smpl_php.mli \
- annotaters/comment_annotater_php.mli \
- annotaters/info_annotater_php.mli \
+ foundation/include_require_php.mli \
  foundation/database_php.mli \
  database_php_build.mli \
  database_php_build2.mli \
  database/database_php_query.mli \
  database/database_php_statistics.mli \
  static_analysis/statistics_php.mli \
+
+# annotaters/comment_annotater_php.mli \
+# annotaters/info_annotater_php.mli \
+
+# typing/type_annotater_php.mli \
+# typing/typing_php.mli \
+# typing/typing_weak_php.mli \
 
 
 SRC_MLI+=$(SRC_MLI_NO_ML_NW)

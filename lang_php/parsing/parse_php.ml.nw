@@ -88,15 +88,7 @@ let distribute_info_items_toplevel a b c =
 
 <<parse_php error diagnostic>>=
 let error_msg_tok tok = 
-  let file = TH.file_of_tok tok in
-  if !Flag.verbose_parsing
-  then Parse_info.error_message file (token_to_strpos tok) 
-  else ("error in " ^ file  ^ "set verbose_parsing for more info")
-
+  Parse_info.error_message_info (TH.info_of_tok tok)
 @
 
-<<parse_php stat function>>=
-@ 
-
-<<parse_php stat function>>=
-@
+% the stat functions that used to be here are now factorized in h_program-lang/

@@ -276,11 +276,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 2
+     (case 3
 
        (0 "-test")
        (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
        (2 "-debug_checker /home/pad/pfff/tests/php/scheck/closures.php")
+       (3 "-debug_checker -heavy /home/pad/pfff/tests/php/scheck/variables_fp.php")
        )
      )
     )
@@ -476,7 +477,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 20
+     (case 21
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -486,6 +487,7 @@
        (10 "-test fb_coverage")
 
        (20 "-test_abint /home/pad/pfff/demos/interpreter.php")
+       (21 "-test abstract")
        )
      ))
    )
@@ -524,6 +526,22 @@
      ))
    )
 
+
+  ; --------------------------------------------------------------------------
+  ; facebook/codestat
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "facebook/codestat"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "/home/pad/fbcode/ci_central_lookup")
+       )
+     ))
+   )
 
   ; --------------------------------------------------------------------------
   ; facebook/fb_phpunit
@@ -586,7 +604,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 20
+     (case 30
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
@@ -594,6 +612,7 @@
        (10 "-test")
 
        (20 "/home/pad/www/flib/utils/async")
+       (30 "/home/pad/www/html/ajax/payment/token_proxy.php")
        )
      ))
    )
@@ -624,11 +643,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 3
+     (case 4
        (0 "all")
        (1 "sgrep")
        (2 "tags")
        (3 "parsing_ml")
+       (4 "lookup")
        )
      ))
    )

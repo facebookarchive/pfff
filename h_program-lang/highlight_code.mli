@@ -1,16 +1,10 @@
 
 type usedef = Use | Def
-
-type usedef2 = 
-  | Use2 of use_info
-  | Def2 of def_info
-
- and use_info = place * def_arity * use_arity
+type usedef2 = Use2 of use_info | Def2 of def_info
  and def_info = use_arity
-
-  and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
   and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
-
+ and use_info = place * def_arity * use_arity
+  and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
   and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
 
 type category =

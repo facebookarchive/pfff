@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -47,11 +47,11 @@ let is_php_script file =
 
     with End_of_file -> false
   )
+let is_php_filename filename =
+  (filename =~ ".*\\.php$") || (filename =~ ".*\\.phpt$")
 
 let is_php_file filename =
-  (filename =~ ".*\\.php$") ||
-    (filename =~ ".*\\.phpt$") ||
-    is_php_script filename
+  is_php_filename filename || is_php_script filename
 
 (* 
  * In command line tools like git or mercurial, many operations works 
@@ -339,8 +339,8 @@ let get_funcvars_any any =
 
 (*e: ast getters *)
 
-let get_static_vars_any =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+let get_static_vars_any any =
+  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kstmt = (fun (k,vx) x ->
       match x with
       | StaticVars (tok, xs, tok2) ->
@@ -418,7 +418,21 @@ let get_vars_any any =
       | Var (dname, _scope) ->
           Common.push2 dname aref
       | _ -> k x
-    )}) any
+    );
+    V.kexpr = (fun (k, vx) x ->
+      match Ast.untype x with
+      (* todo? sure ?? *)
+      | Lambda def ->
+          def.l_use +> Common.do_option (fun (_tok, xs) ->
+            xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
+            | LexicalVar (is_ref, dname) ->
+                Common.push2 dname aref
+            )
+          );
+          k x
+      | _ -> k x
+    );
+  }) any
 
 (*****************************************************************************)
 (* Ast adapters *)

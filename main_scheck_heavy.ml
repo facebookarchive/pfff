@@ -72,7 +72,8 @@ let main_action xs =
   files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
     try 
       pr2_dbg (spf "processing: %s (%d/%d)" file i total);
-      Check_all_php.check_file ~find_entity file;
+      let env = Env_php.mk_env (Common.dirname file) in
+      Check_all_php.check_file ~find_entity env file;
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
     | exn ->

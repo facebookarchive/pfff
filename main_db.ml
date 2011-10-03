@@ -85,6 +85,8 @@ let rec light_db_of_files_or_dirs lang xs =
                   in
                   Database_php_build.create_db
                     ~db_support:Database_php.Mem
+                    ~annotate_variables_program:
+                    (Some Check_variables_php.check_and_annotate_program)
                     ~files:(Some php_files)
                     prj 
               );

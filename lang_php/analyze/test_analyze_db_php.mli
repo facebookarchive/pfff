@@ -4,9 +4,4 @@
  * test_cfg_php function.
  *)
 val actions: unit -> Common.cmdline_actions
-
-(* helpers used also in unit_analyze_php.ml *)
-val db_of_files_or_dirs: Common.path list -> Database_php.database
-
-
 (*e: test_analyze_db_php.mli *)

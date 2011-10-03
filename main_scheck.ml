@@ -59,18 +59,19 @@ module S = Scope_code
  * 
  * current checks:
  *   - variable related (use of undeclared variable, unused variable, etc)
- *   - SEMI use/def of entities (e.g. use of undefined class/function/constant
+ *   - use/def of entities (e.g. use of undefined class/function/constant
  *     a la checkModule)
  *   - function call related (wrong number of arguments, bad keyword
  *     arguments, etc)
- *   - TODO class related (use of undefined member)
- *   - SEMI dead code (dead function in callgraph, dead block in CFG, 
+ *   - TODO class related (use of undefined member, wrong number of arguments
+ *     in method call, etc)
+ *   - include/require and file related (e.g. including file that do not
+ *     exist anymore); needs to pass an env
+ *   - SEMI dead code (dead function in callgraph, DONE dead block in CFG,
  *     dead assignement in dataflow)
- *   - TODO include/require and file related (including file that do not
- *     exist anymore)
  *   - TODO type related
  *   - TODO resource related (open/close match)
- *   - TODO security related ??
+ *   - TODO security related? via sgrep?
  *   - TODO require_strict() related (see facebook/.../main_linter.ml)
  * 
  * related: 
@@ -83,8 +84,9 @@ module S = Scope_code
  * todo: make it possible to take a db in parameter so
  * for other functions, we can also get their prototype.
  * 
- * todo: build info about builtins, so when call to preg_match,
- * know that this function takes things via reference.
+ * The check leverages info about builtins, so when call to preg_match(),
+ * we know that this function takes things by reference which avoids
+ * some false positives regarding use of undeclared variable for instance.
  * 
  * later: it could later also check javascript, CSS, sql, etc
  * 
@@ -185,6 +187,7 @@ let build_mem_db file =
                 ~phase:2 (* TODO ? *)
                 ~files:(Some all_files)
                 ~verbose_stats:false
+                ~annotate_variables_program:None
                 prj 
             )
   in
@@ -220,9 +223,13 @@ let main_action xs =
           let db = build_mem_db file in
           Some (Database_php_build.build_entity_finder db) 
       in
-      Check_all_php.check_file ~find_entity file
+      let env = 
+        Env_php.mk_env (Common.dirname file)
+      in
+      Check_all_php.check_file ~find_entity env file
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
+(*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
                        (Common.string_of_exn exn)) errors;
@@ -260,6 +267,9 @@ let main_action xs =
 (*---------------------------------------------------------------------------*)
 
 let type_inference file =
+  raise Todo
+(*
+
   let ast = Parse_php.parse_program file in
 
   (* PHP Intermediate Language *)
@@ -289,6 +299,7 @@ let type_inference file =
   with exn ->
     pr2 "File contain constructions not supported by the PIL; bailing out";
     raise exn
+*)
 
 (*---------------------------------------------------------------------------*)
 (* Regression testing *)

@@ -116,29 +116,55 @@ let visit_toplevel
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
-    |    T.TCommand("section",_)
-      :: T.TOBrace _
-      :: xs 
+    |    T.TCommand("section",_):: T.TOBrace _:: xs 
       ->
        let (before, _, _) = span_close_brace xs in
        tag_all_tok_with ~tag CommentSection1 before;
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
-    |    T.TCommand("subsection",_)
-      :: T.TOBrace _
-      :: xs 
+    |    T.TCommand("subsection",_):: T.TOBrace _:: xs 
       ->
        let (before, _, _) = span_close_brace xs in
        tag_all_tok_with ~tag CommentSection2 before;
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
+    |    T.TCommand("label",_):: T.TOBrace _:: xs 
+      ->
+       let (before, _, _) = span_close_brace xs in
+       tag_all_tok_with ~tag (Label Def) before;
+       (* repass on tokens, in case there are nested tex commands *)
+       aux_toks xs
+
+    |    T.TCommand("ref",_):: T.TOBrace _:: xs 
+      ->
+       let (before, _, _) = span_close_brace xs in
+       tag_all_tok_with ~tag (Label Use) before;
+       (* repass on tokens, in case there are nested tex commands *)
+       aux_toks xs
+
+
     (* noweb specific *)
-    |  T.TSymbol("[", _)::T.TSymbol("[", _)::xs ->
-         let (before, middle, after) = span_end_bracket xs in
-         tag_all_tok_with ~tag TypeMisc (* TODO *) before;
-         aux_toks (middle::after);
+    |  T.TSymbol("[", ii)::T.TSymbol("[", _)::xs ->
+         let rest =
+           try 
+             let (before, middle, after) =
+               span_end_bracket xs
+             in
+             tag_all_tok_with ~tag TypeMisc (* TODO *) before;
+             (middle::after)
+           with Not_found ->
+             pr2 (spf "PB span_end_bracket at %d" 
+                     (Parse_info.line_of_info ii));
+             xs
+         in
+         aux_toks (rest);
+
+    (* pad noweb specific *)
+    | T.TSymbol("#", ii)::T.TWord("include", ii2)::xs ->
+        tag ii2 Include;
+        aux_toks xs
 
     (* specific to texinfo *)
     |    T.TSymbol("@", _)
@@ -214,7 +240,18 @@ let visit_toplevel
         else ()
 
     | T.TCommentNewline ii -> ()
-    | T.TCommand (s, ii) ->    tag ii Keyword
+    | T.TCommand (s, ii) -> 
+        let categ = 
+          (match s with
+          | s when s =~ "^if" -> KeywordConditional
+          | s when s =~ ".*true" -> Boolean
+          | s when s =~ ".*false$" -> Boolean
+          | "fi" -> KeywordConditional
+          | "input" -> Include
+          | _ -> Keyword
+          )
+        in
+        tag ii categ
       
     | T.TWord (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)

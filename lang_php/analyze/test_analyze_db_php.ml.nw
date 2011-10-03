@@ -54,6 +54,8 @@ let test_dependencies_php metapath =
   )
 
 let test_function_pointer_analysis metapath =
+  raise Todo
+(*
   Database_php.with_db ~metapath (fun db ->
 
     (* move more code in aliasing_function_php.ml ? *)
@@ -75,7 +77,7 @@ let test_function_pointer_analysis metapath =
     pr2 "dangerous prefixes:";
     h +> Common.hashset_to_list +> List.iter pr2;
   )
-
+*)
 
 
 let test_deadcode_php files_or_dirs =
@@ -153,11 +155,14 @@ let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
 
 
 let test_track_function_result function_name file =
+  raise Todo
+(*
   let db = db_of_files_or_dirs [file] in
   pr2 (spf "Tracking %s in %s" function_name file);
   let usage = Dataflow_php_array.track_function_result function_name db in
   Dataflow_php_array.print_usage usage;
   ()
+*)
 
 (*---------------------------------------------------------------------------*)
 (* Code rank stuff *)

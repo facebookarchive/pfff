@@ -1,5 +1,8 @@
 <?php
 
+// ------------------------------------------
+// Flib constants
+// ------------------------------------------
 
 // see also static $builtin_defines = ...
 // in www/flib/_bin/_checkModuleLib.php
@@ -39,6 +42,10 @@ define('FLIB_CONTEXT_FBIPHONE_ENDPOINT', 19);
 define('FLIB_CONTEXT_CANVAS_ALITE', 20);
 define('FLIB_CONTEXT_EXTERNAL_DOMAIN', 21);
 
+// ------------------------------------------
+// Misc
+// ------------------------------------------
+
 define('T_XHP_TEXT', 1);
 
 // see http://www.intern.facebook.com/intern/hphp/doc/index.php?file=threading
@@ -75,7 +82,6 @@ define('T_XHP_TEXT', 1);
 
 //define('DEBUG_LOG_DEFAULT', 1);
 
-
 //from _checkModuleLib.php in $extension_defines
 define('MCC_NZLIB_COMPRESSION', 0);
 define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
@@ -85,6 +91,58 @@ define('MCC_COMPRESSION_THRESHHOLD', 0);
 // used to be in flib/utils/strings/ but now is core
 class StringBuffer {
 }
+
+// ------------------------------------------
+// In HPHP idl files ??
+// ------------------------------------------
+
+define('JSON_FB_LOOSE', 0);
+
+// ------------------------------------------
+// In hphp/facebook/extensions/ idl files
+// ------------------------------------------
+
+//TODO: autogenerate them too
+function photodna_jpeg_get_hashes($filename) { }
+
+function fbobj_hphp_register_config_func($str, $version) { }
+
+function fbobj_hphp_create(int $fbtype, int $profile, int $fbid, array
+                           $tao_response) { }
+
+// ------------------------------------------
+// used by third party code
+// ------------------------------------------
+
+define('_SYSTEM_TTFONTS', 0);
+
+// defined in flib/third-party/tfpdf/font/unifont/ttfonts.php
+// which is included via a dynamic include_once :( so hardcode it here
+class TTFontFile { }
+
+// defined ?? this flib/third-party/geojson/WKT/WKT.class.php defines
+// only class GeoJSONWKT. Maybe some magic done around class name
+class WKT { 
+  public static function load($x) { }
+}
+
+// ------------------------------------------
+// Defined in some scripts
+// ------------------------------------------
+// scripts/memcache/sync_mcconf_to_smc.php
+define('SCRIPT_IDENTIFIER', 0);
+define('SCRIPT_OWNER_FBID', 0);
+
+// ------------------------------------------
+// Covered by some if(function_exists(...))
+// ------------------------------------------
+
+// we need to include it there because scheck is not
+// aware of the if(function_exists(...) idion. todo?
+
+function hphp_murmurhash($key, $len, $seed) { }
+function syck_load($xs) { }
+
 // ------------------------------------------
 // Now in HPHP idl files
 // ------------------------------------------
@@ -97,4 +155,3 @@ class StringBuffer {
 // function xhp_preprocess_code() { }
 
 //class phpmcc {}
-

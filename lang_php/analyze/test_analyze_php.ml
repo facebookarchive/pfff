@@ -12,8 +12,11 @@ module V = Visitor_php
 (* Type/scope annotations *)
 (*****************************************************************************)
 
+(* todo: use julien's stuff *)
 let test_type_php file =
-  let asts = Parse_php.parse_program file in
+  let _asts = Parse_php.parse_program file in
+  raise Todo
+(*
 
   let env = ref (Hashtbl.create 101) in
   let asts = asts +> List.map (fun ast ->
@@ -21,16 +24,20 @@ let test_type_php file =
     )
   in
 
-  Sexp_ast_php.show_expr_info := true;
-  pr (Sexp_ast_php.string_of_program asts);
+  Export_ast_php.show_expr_info := true;
+  pr (Export_ast_php.sexp_string_of_program asts);
   ()
+*)
 
 let test_typing_weak_php file =
+  raise Todo
+(*
   let asts = Parse_php.parse_program file in
   asts +> List.iter (fun ast ->
     let xs = Typing_weak_php.extract_fields_per_var ast in
     pr2_gen xs
   )
+*)
 
 let test_check_php file =
   raise Todo
@@ -42,8 +49,8 @@ let test_scope_php file =
     ~find_entity:None
     asts;
 
-  Sexp_ast_php.show_expr_info := true;
-  pr (Sexp_ast_php.string_of_program asts);
+  Export_ast_php.show_expr_info := true;
+  pr (Export_ast_php.sexp_string_of_program asts);
   ()
 
 
@@ -80,6 +87,9 @@ let test_php_xdebug file =
 
 
 let test_type_xdebug_php file =
+  raise Todo
+
+(*
   let (d,b,e) = Common.dbe_of_filename file in
   assert(e = "php");
   let trace_file = Common.filename_of_dbe (d,b,"xt") in
@@ -118,6 +128,7 @@ let test_type_xdebug_php file =
     pr2 (spf "%s -> %s" s (Type_php.string_of_phptype t));
   );
   ()
+*)
 
 let test_phpdoc dir =
   let files = Phpmanual_xml.find_functions_reference_of_dir dir in
@@ -189,6 +200,8 @@ let test_cyclomatic_php file =
 
 (* todo: adapt to PIL *)
 let test_dfg_php file =
+  raise Todo
+(*
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
   ast |> List.iter (function
@@ -203,6 +216,7 @@ let test_dfg_php file =
       )
   | _ -> ()
   )
+*)
 
 (*****************************************************************************)
 (* Misc *)
@@ -239,6 +253,9 @@ let test_include_require file =
 (*****************************************************************************)
 
 let test_pil file =
+  raise Todo
+
+(*
   let ast = Parse_php.parse_program file in
 
   (* let's transform and print every expression *)
@@ -260,8 +277,11 @@ let test_pil file =
   } in
   let v = V.mk_visitor hooks in
   v (Ast.Program ast)
+*)
 
 let test_pretty_print_pil file =
+  raise Todo
+(*
   let ast = Parse_php.parse_program file in
   let v = V.mk_visitor { V.default_visitor with
     V.kstmt = (fun (k, vx) st ->
@@ -272,8 +292,11 @@ let test_pretty_print_pil file =
     );
   } in
   v (Ast.Program ast)
+*)
 
 let test_cfg_pil file =
+  raise Todo
+(*
   let ast = Parse_php.parse_program file in
   ast |> List.iter (function
   | Ast_php.FuncDef def ->
@@ -286,8 +309,11 @@ let test_cfg_pil file =
       )
   | _ -> ()
   )
+*)
 
 let test_dataflow_pil file =
+  raise Todo
+(*
   let ast = Parse_php.parse_program file in
   ast |> List.iter (function
   | Ast_php.FuncDef def ->
@@ -307,10 +333,12 @@ let test_dataflow_pil file =
       )
   | _ -> ()
   )
+*)
 
 (* collect all variables in a function using the PIL visitor *)
 let test_visitor_pil file =
-
+  raise Todo
+(*
   let ast = Parse_php.parse_program file in
   ast +> List.iter (function
   | Ast_php.FuncDef def ->
@@ -333,9 +361,7 @@ let test_visitor_pil file =
       pr2 (spf "vars in function %s = %s" funcname (Common.join ", " vars));
   | _ -> ()
   )
-
-
-
+*)
 
 (*****************************************************************************)
 (* Main entry for Arg *)

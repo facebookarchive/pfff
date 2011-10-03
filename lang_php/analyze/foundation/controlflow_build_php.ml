@@ -166,7 +166,12 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Stmt2 stmt))) in
 
    match stmt with
-   | ExprStmt _ 
+   | ExprStmt (e, tok) ->
+       let simple_stmt = F.ExprStmt (e, tok) in
+       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
+       state.g |> add_arc_opt (previ, newi);
+       Some newi
+
    | EmptyStmt _
    | Echo (_, _, _)
    | DeclConstant _

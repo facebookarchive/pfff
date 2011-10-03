@@ -9,6 +9,11 @@ type line_annotation =
 
 type commit_patch = (string list) (* header *) * Patch.patchinfo
 
+type file_commit_status =
+  | Modified
+  | Deleted
+  | Added
+
 (* helpers *)
 val s_of_versionid: versionid -> string
 

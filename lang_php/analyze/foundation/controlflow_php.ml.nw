@@ -100,15 +100,26 @@ exception Error of error
 (* Error management *)
 (*****************************************************************************)
 
-let string_of_error ?(show_position_info=true) error =
-  let spos info = 
-    let info = Ast.parse_info_of_info info in
-    if show_position_info
-    (* emacs compile-mode compatible output *)
-    then spf "%s:%d:%d: FLOW " 
-      info.Parse_info.file info.Parse_info.line info.Parse_info.column
-    else ""
-  in
+let string_of_error_kind error_kind =
+  match error_kind with
+  | ColonSyntax ->
+      "Dude, don't use the old PHP colon syntax: "
+  | DeadCode (node_kind) ->
+      "Deadcode path detected " ^
+        (F.short_string_of_node_kind node_kind)
+  | NoEnclosingLoop ->
+      "No enclosing loop found for break or continue"
+  | NoMethodBody ->
+      "Can't compute CFG of an abstract method"
+  | DynamicBreak ->
+      "Dynamic break/continue are not supported"
+
+(* note that the output is emacs compile-mode compliant *)
+let string_of_error (error_kind, info) =
+  let info = Ast.parse_info_of_info info in
+  spf "%s:%d:%d: FLOW %s" 
+    info.Parse_info.file info.Parse_info.line info.Parse_info.column
+    (string_of_error_kind error_kind)
  (* old:
   let error_from_info info = 
     let pinfo = Ast.parse_info_of_info info in
@@ -116,27 +127,6 @@ let string_of_error ?(show_position_info=true) error =
       pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
   in
  *)
-  match error with
-  | ColonSyntax info ->
-      spos info ^ "Dude, don't use the old PHP colon syntax: "
-  | DeadCode (info, node_kind) ->
-      spos info ^ "Deadcode path detected " ^
-        (F.short_string_of_node_kind node_kind)
-  | NoEnclosingLoop info ->
-      spos info ^ "No enclosing loop found for break or continue"
-  | NoMethodBody info ->
-      spos info ^ "Can't compute CFG of an abstract method"
-  | DynamicBreak info ->
-      spos info ^ "Dynamic break/continue are not supported"
-
-let info_of_error error =
-  match error with
-  | ColonSyntax info
-  | DeadCode (info, _)
-  | NoEnclosingLoop info
-  | NoMethodBody info
-  | DynamicBreak info
-      -> Some info
 
 <<function Controlflow_build_php.report_error>>
 
@@ -220,7 +210,7 @@ let (cfg_of_func: func_def -> F.flow) = fun def ->
 let (cfg_of_method: method_def -> F.flow) = fun def ->
   match def.m_body with
   | AbstractMethod _ ->
-      raise (Error (NoMethodBody (def.m_tok)))
+      raise (Error (NoMethodBody, def.m_tok))
   | MethodBody body ->
       let stmts = stmts_of_stmt_or_defs (Ast.unbrace body) in
       (* todo? could create a node with method name ? *)
@@ -255,9 +245,15 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Stmt2 stmt))) in
 
    match stmt with
-   | ExprStmt _ 
+   | ExprStmt (e, tok) ->
+       let simple_stmt = F.ExprStmt (e, tok) in
+       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
+       state.g |> add_arc_opt (previ, newi);
+       Some newi
+
    | EmptyStmt _
    | Echo (_, _, _)
+   | DeclConstant _
    | InlineHtml _
       ->
        let simple_stmt = F.TodoSimpleStmt in
@@ -340,7 +336,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
 
    | IfColon (_t1, _e, tok, _st, _elseifs, _else, _t2, _t3)  ->
-       raise (Error (ColonSyntax tok))
+       raise (Error (ColonSyntax, tok))
 
    | If (t, e, st_then, st_elseifs, st_else_opt) ->
      (* previ  -> newi --->   newfakethen -> ... -> finalthen --> lasti
@@ -412,7 +408,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
              | Some i -> i
              | None ->
                  (* a dynamic variable ? *)
-                 raise (Error (DynamicBreak t1))
+                 raise (Error (DynamicBreak, t1))
              )
        in
 
@@ -441,7 +437,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        | Some nodei ->
            state.g |> add_arc (newi, nodei);
        | None ->
-           raise (Error (NoEnclosingLoop t1))
+           raise (Error (NoEnclosingLoop, t1))
        );
        None
 
@@ -478,7 +474,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
              Some endi
 
        | CaseColonList (tok, _, _, _, _) ->
-           raise (Error (ColonSyntax tok))
+           raise (Error (ColonSyntax, tok))
        )
 
    (* 
@@ -584,10 +580,15 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            state.g |> add_arc (last_false_node, state.exiti)
        );
 
-       (* todo? if nobody connected to endi ? erase the node ? for instance
-        * if have only return in the try body ?
+       (* if nobody connected to endi erase the node. For instance
+        * if have only return in the try body.
         *)
-       Some endi
+       if (state.g#predecessors endi)#null then begin
+         state.g#del_node endi;
+         None
+       end
+       else 
+        Some endi
 
    (* 
     * For now we don't do any fancy analysis to statically detect
@@ -796,7 +797,7 @@ let stmts_of_stmt_or_defs xs =
 let stmts_of_colon_stmt colon = 
   match colon with
   | SingleStmt stmt -> [stmt]
-  | ColonStmt (tok, _, _, _) -> raise (Error (ColonSyntax tok))
+  | ColonStmt (tok, _, _, _) -> raise (Error (ColonSyntax, tok))
 @
 
 
@@ -864,7 +865,7 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
           | None ->
               pr2 "CFG: PB, found dead node but cant trace to location";
           | Some info ->
-              raise (Error (DeadCode (info, node.F.n)))
+              raise (Error (DeadCode node.F.n, info))
           )
       )
   )

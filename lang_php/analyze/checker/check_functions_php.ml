@@ -30,7 +30,7 @@ module Flag = Flag_analyze_php
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * history: repeat what iain wanted for his Strict mode that I first
+ * history: repeat what iproctor wanted for his Strict mode that I first
  * coded in hphpi
  * 
  * related work:
@@ -43,41 +43,12 @@ module Flag = Flag_analyze_php
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-(* This is ugly. Some of the code requires to have a 'name' type
- * for every "entities" we are defining and checking. For a class 
- * constant we should really have a pair of name, one for the class
- * and one for the constant itself. Instead we abuse 'name' and
- * pack into it also the classname.
- *)
-let rewrap_name_with_class_name classname name =
-  match name with 
-  | Name (s, info) ->
-      let new_str = spf "%s::%s" classname s in
-      Name (new_str, Ast.rewrap_str new_str info)
-  (* only classnames can be a XhpName. Constants (or functions)
-   * are always simple names
-   *)
-  | XhpName _ ->
-      failwith "Impossible: only classes can be XhpName"
-
-let mk_class_name s info = 
-  Name (s, info)
-
-let resolve_class_name qu =
-  match fst qu with
-  | ClassName (name) -> name
-  | Self _ | Parent _ -> 
-      failwith "check_functions_php: call unsugar_self_parent"
-  | LateStatic _ ->
-      failwith "late static: can't resolve, add a pattern match for LateStatic"
-
 (*****************************************************************************)
-(* Typing rules *)
+(* Arity check helpers *)
 (*****************************************************************************)
 (* cf also type_php.ml *)
 
@@ -109,6 +80,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
         E.fatal info (E.TooManyArguments str_def)
     | x::xs, y::ys ->
         (match x with
+        (* erling's idea of wrong keyword argument check *)
         | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
             if not (Ast.dname dn =$= Ast.dname y.p_name)
             then
@@ -132,22 +104,57 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
   in
   aux all_args all_params
 
+let check_method_call (aclass, amethod) (name, args) find_entity =
+  try 
+    let def =
+      Class_php.lookup_method (aclass, amethod) find_entity in
+    let contain_func_num_args = 
+      contain_func_name_args_like (ClassStmt (Method def)) in
+    
+    if contain_func_num_args
+    then pr2_once ("not checking calls to code using " ^ 
+                      "func_num_args() or alike")
+    else 
+      check_args_vs_params 
+        (name, args +> Ast.unparen +> Ast.uncomma)
+        (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
+  with
+  (* could also be reported elsewhere too *)
+  | Not_found ->
+      let loc = Ast.info_of_name name in
+      E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
+  | Multi_found -> 
+      (* is this possible? *)
+      ()
+        
+
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
 
-(* pre: have a unsugar AST regarding self/parent
- *)
+(* pre: have a unsugar AST regarding self/parent *)
 let visit_and_check_funcalls ?(find_entity=None) prog =
 
+  (* todo: similar to what we do in unsugar_self_parent, do this
+   * unsugaring there too?
+   *)
+  let in_class = ref (None: string option) in
+
+
   let visitor = V.mk_visitor { V.default_visitor with
+
+    V.kclass_def = (fun (k, _) def ->
+      let s = Ast.name def.c_name in
+      Common.save_excursion in_class (Some s) (fun () ->
+        k def
+      )
+    );
 
     V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
           E.find_entity_and_warn ~find_entity (Ent.Function, callname)
-          +> Common.do_option (fun id_ast -> match id_ast with
-           | Ast_php.FunctionE def ->
+          +> Common.do_option (function Ast_php.FunctionE def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
                  contain_func_name_args_like (Body def.f_body) in
@@ -163,29 +170,47 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
            );
           k x
 
-      | StaticMethodCallSimple (qu, callname, args) ->
-          let classname = resolve_class_name qu in
-          let sclassname = Ast.name classname in
-          let name' = rewrap_name_with_class_name sclassname callname in
-          E.find_entity_and_warn ~find_entity (Ent.StaticMethod, name')
-          +> Common.do_option (fun id_ast -> match id_ast with
-           | Ast_php.MethodE def ->
-
-               let contain_func_num_args = 
-                 contain_func_name_args_like (ClassStmt (Method def)) in
-
-               if contain_func_num_args
-               then pr2_once ("not checking functions containing calls to " ^
-                                 "func_num_args() or alike")
-               else 
-
-                check_args_vs_params 
-                  (callname,   args +> Ast.unparen +> Ast.uncomma)
-                  (def.m_name, def.m_params +> Ast.unparen +> Ast.uncomma_dots)
-                
-            | _ -> raise Impossible
-          )
-
+      | StaticMethodCallSimple (qu, name, args) ->
+          find_entity +> Common.do_option (fun find_entity ->
+            match fst qu with
+            | ClassName (classname) ->
+                let aclass = Ast.name classname in
+                let amethod = Ast.name name in
+                check_method_call (aclass, amethod) (name, args) find_entity
+            | (Self _ | Parent _) ->
+                failwith "check_functions_php: call unsugar_self_parent()"
+            | LateStatic _ ->
+                (* TODO *)
+                ()
+          );
+          k x
+      | MethodCallSimple (lval, _tok, name, args) ->
+          (* if one calls a method via $this, then it's quite easy to check
+           * the arity (eletuchy's idea?).
+           * Being complete and handling any method calls like $o->foo()
+           * requires to know what is the type of $o which is quite
+           * complicated ... so let's skip that for now.
+           * 
+           * todo: special case also id(new ...)-> ?
+           *)
+          (match Ast.untype lval with
+          | This _ ->
+            find_entity +> Common.do_option (fun find_entity ->
+              (match !in_class with
+              | Some aclass ->
+                  let amethod = Ast.name name in
+                  check_method_call (aclass, amethod) (name, args) find_entity
+              | None ->
+                  (* TODO: use of $this outside class ??? *)
+                  ()
+              )
+            )
+          | _ -> 
+              (* todo: need dataflow ... *)
+              ()
+          );
+          k x
+               
       | FunCallVar _ -> 
           pr2 "TODO: handling FuncVar";
           k x

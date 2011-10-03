@@ -17,7 +17,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    ../../parsing \
    .. \
-   ../basic \
    ../foundation \
 
 ##############################################################################

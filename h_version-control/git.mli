@@ -4,9 +4,7 @@ open Common
 
 (* operations on a singular file *)
 
-(* note that returned array is 0-indexed but the first entry is
- * a dummy value.
- *)
+(* note that returned array is 0-indexed but the first entry is a dummy value.*)
 val annotate : 
   ?basedir:string -> ?use_cache:bool -> ?use_dash_C:bool ->
   Common.filename -> Lib_vcs.line_annotation array
@@ -22,6 +20,11 @@ val commits:
   ?extra_args:string -> basedir:string -> unit -> 
   (Lib_vcs.versionid * string) list
 
+val refactoring_commits:
+  ?since:string -> ?threshold:int -> Common.dirname -> unit
+val parse_skip_revs_file:
+  Common.filename -> Lib_vcs.versionid list
+
 (* commitids operations *)
 
 val commit_of_relative_time: 
@@ -30,7 +33,8 @@ val commit_of_relative_time:
 (* this will not include the old_id. It's ]old_id..recent_id] *)
 val commits_between_commitids: 
   basedir:string ->
-  old_id:Lib_vcs.versionid -> recent_id:Lib_vcs.versionid -> 
+  old_id:Lib_vcs.versionid -> 
+  recent_id:Lib_vcs.versionid -> 
   Lib_vcs.versionid list
 
 (* single commit operation *)
@@ -47,6 +51,10 @@ val commit_patch:
 val file_to_commits: 
   basedir:string -> Lib_vcs.versionid list -> 
   (Common.filename * (Lib_vcs.versionid * Patch.fileinfo) list) list
+
+val files_involved_in_diff:
+  basedir:string -> Lib_vcs.versionid -> 
+  (Lib_vcs.file_commit_status * Common.filename) list
 
 (* line level operation (preparing commits) *)
 val apply_patch: basedir:string -> string list -> unit

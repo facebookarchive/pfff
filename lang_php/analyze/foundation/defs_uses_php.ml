@@ -48,7 +48,7 @@ module Db = Database_code
 (* the name option is a little bit ugly because it's valid only for
  * nested entities like Method. One could make a specific
  * entity_kind for PHP but this will go against the multi-languages
- * factorization we try to do oin h_program-lang/
+ * factorization we try to do in h_program-lang/
  *)
 type def =
   Database_code.entity_kind * Ast_php.name * Ast_php.name option
@@ -61,16 +61,15 @@ type use =
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Main entry points *)
+(* Defs *)
 (*****************************************************************************)
-
 (* 
  * todo: similar to what is in database_php_build.ml
  * 
  * history: was previously duplicated in 
  *  - tags_php.ml
- *  - check_module.ml ?,
- *  - database_php_build.ml ?
+ *  - TODO check_module.ml and defs_module.ml
+ *  - TODO database_php_build.ml ?
  *)
 let defs_of_any any =
   let current_class = ref (None: Ast_php.name option) in
@@ -127,8 +126,9 @@ let defs_of_any any =
       | FunCallSimple((Name ("define", tok)), args) ->
           let args = args |> Ast.unparen |> Ast.uncomma in
           (match args with
-          (* TODO? maybe better to have a Define directly in the AST ? 
-           * is it specific to facebook ? 
+          (* Maybe better to have a Define directly in the AST. Note that
+           * PHP 5.3 has a new const features that makes the use of define
+           * obsolete.
            *)
           | (Arg ((Sc (C (String (s,info)))), _t))::xs -> 
               (* by default the info contains the '' or "" around the string,
@@ -144,16 +144,18 @@ let defs_of_any any =
 
   }) any
 
-
+(*****************************************************************************)
+(* Uses *)
+(*****************************************************************************)
 (* 
  * Cover every cases ? C-s for 'name' in ast_php.ml.
  * update: C-s for 'xhp_tag' too.
  *
  * history: was previously duplicated in 
  *  - class_php.ml, 
- *  - check_module.ml ?,
+ *  - TODO check_module.ml and uses_module.ml
  * 
- * todo: do for functions, and constants too ! see Database_code.entity_kind
+ * todo: do for constants too ! see Database_code.entity_kind
  * 
  * todo: check_module.ml and the places where we call checkClassName,
  * same than here ?
@@ -166,7 +168,7 @@ let defs_of_any any =
  * return a special Tag ? DynamicStuff ? So at least know they
  * are connections to more entities than one can infer statically.
  *)
-let uses_of_any any = 
+let uses_of_any ?(verbose=false) any = 
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
@@ -174,11 +176,20 @@ let uses_of_any any =
       (match fst x with
       | ClassName _ -> ()
       | Self _ | Parent _ -> 
-          pr2 "defs_uses_php: call unsugar_self_parent";
+          if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
           ()
       | LateStatic _ ->
-          pr2 "LateStatic";
+          if verbose then pr2 "LateStatic";
           ()
+      );
+      k x
+    );
+
+    V.klvalue = (fun (k, bigf) x ->
+      (match Ast.untype x with
+      | FunCallSimple (name, args) ->
+          Common.push2 (Db.Function, name) aref;
+      | _ -> ()
       );
       k x
     );
@@ -195,7 +206,7 @@ let uses_of_any any =
       (* todo? can interface define constant ? in which case
        * there is some ambiguity when seeing X::cst ...
        * could be the use of a Class or Interface.
-       * So right now I just merge Class and Interace
+       * So right now I just merge Class and Interface
        *)
       Common.push2 (Db.Class, classname) aref;
       k classname

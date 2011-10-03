@@ -49,7 +49,7 @@ let test regexp =
   let tests = 
     "all" >::: [
       Unit_parsing_php.unittest;
-      Unit_analyze_php.unittest;
+      Unit_foundation_php.unittest;
       Unit_analyze_db_php.unittest;
       Unit_matcher_php.unittest;
       (* this one needs xdebug to work *)

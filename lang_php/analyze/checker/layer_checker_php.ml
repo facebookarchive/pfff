@@ -23,7 +23,6 @@ open Error_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Structure similar to other layer generator.
  *)
@@ -89,6 +88,8 @@ let properties = [
   "eDeadReturn", "tan2";
   "eCfgError", "tan";
 
+  "eFileNotFound", "tan";
+
 ]
 
 (*****************************************************************************)
@@ -129,9 +130,9 @@ let info_of_error_and_kind err =
       )
   | CfgError ( _) ->
       "eCfgError"
-  | CfgPilError ( _) ->
-      "eCfgError"
-
+(*  | CfgPilError ( _) -> "eCfgError" *)
+  | FileNotFound ( _) ->
+      "eFileNotFound"
   in
   err.loc, kind
 

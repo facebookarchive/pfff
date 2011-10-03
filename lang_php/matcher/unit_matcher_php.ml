@@ -8,7 +8,7 @@ open OUnit
 module Flag = Flag_parsing_php
 
 (*****************************************************************************)
-(* Unit tests *)
+(* Sgrep Unit tests *)
 (*****************************************************************************)
 
 (* See https://github.com/facebook/pfff/wiki/Sgrep *)
@@ -28,7 +28,7 @@ let sgrep_unittest = [
   );
 
   "misc sgrep features" >:: (fun () ->
-    (* pattern, code (must be full statements) *)
+    (* pattern, code (must be full statements), should_match *)
     let triples = [
       (* concrete match *)
       "foo(1,2);", "foo(1,2);", true;
@@ -44,7 +44,8 @@ let sgrep_unittest = [
 
       (* linear patterns *)
       "foo($V, $V);", "foo($x, $x);", true;
-      "X && X;", "($a||$b) && ($a|| $b);", true;
+      "X && X;", "($a || $b) && ($a || $b);", true;
+      "foo($V, $V);", "foo($x, $y);", false;
 
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
@@ -65,18 +66,35 @@ let sgrep_unittest = [
       (* more complex expressions *)
       "strstr(...) == false;", "strstr($x)==false;", true;
 
+      (* regexp, pcre syntax *)
+      "foo('=~/.*CONSTANT/');", "foo('MY_CONSTANT');", true;
+      "foo('=~/.*CONSTANT/');", "foo('MY_CONSTAN');", false;
+
+      (* ------------ *)
       (* xhp patterns *)
+      (* ------------ *)
+
+      (* order does not matter *)
       "return <x:frag border=\"1\" foo=\"2\" ></x:frag>;", 
       "return <x:frag foo=\"2\" border=\"1\" ></x:frag>;", 
       true;
-
       "return <x:frag border=\"1\" foo=\"2\" ></x:frag>;", 
       "return <x:frag foo=\"3\" border=\"1\" ></x:frag>;", 
       false;
 
-      (* regexp, pcre syntax *)
-      "foo('=~/.*CONSTANT/');", "foo('MY_CONSTANT');", true;
-      "foo('=~/.*CONSTANT/');", "foo('MY_CONSTAN');", false;
+      (* can have more fields *)
+      "return <x:frag border=\"1\"></x:frag>;", 
+      "return <x:frag foo=\"2\" border=\"1\" ></x:frag>;", 
+      true;
+
+      "return <x:frag />;", "return <x:frag border=\"1\" />;", true;
+
+      (* can have a body *)
+      "return <x:frag border=\"1\"></x:frag>;", 
+      "return <x:frag border=\"1\" >this is text</x:frag>;", 
+      true;
+
+    (* TODO "return <x:frag></x:frag>;", "return <x:frag />;", true; *)
 
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
@@ -112,6 +130,10 @@ let sgrep_unittest = [
     )
   );
 ]
+
+(*****************************************************************************)
+(* Spatch Unit tests *)
+(*****************************************************************************)
 
 (* run by spatch -test *)
 let spatch_unittest = [

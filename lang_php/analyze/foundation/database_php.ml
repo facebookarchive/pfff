@@ -339,6 +339,7 @@ let string_of_extra_id_info x =
 (*****************************************************************************)
 
 let pfff_special_dirname = "PFFFDB" 
+(* obsolete? git grep is fast on recent machines *)
 let glimpse_special_dirname = "GLIMPSEDB" 
 
 (* old:
@@ -378,11 +379,18 @@ let (normalize_project: project -> project) = function
   (Project (path, nameopt)) -> 
     Project (Common.chop_dirsymbol path, nameopt)
 
+let prj_of_dir dir =
+  let dir = Common.realpath dir |> Common.chop_dirsymbol in
+  let prj = Project (dir, None) in
+  let prj = normalize_project prj in 
+  prj
+
 let (metapath_of_database: database -> Common.dirname) = fun db -> 
   match db.db_support with
   | Disk metapath -> metapath
   | Mem -> failwith "the db has no disk support, and so no metapath"
 
+(* obsolete? git grep is fast on recent machines *)
 let (glimpse_metapath_of_database: database -> Common.dirname) = fun db -> 
   let metapath = metapath_of_database db in
   Filename.concat metapath glimpse_special_dirname

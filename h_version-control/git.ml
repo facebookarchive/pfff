@@ -282,6 +282,29 @@ let commit_of_relative_time ~basedir relative_data_string =
   let last = Common.list_last xs in
   id_and_summary_oneline last +> fst
 
+let files_involved_in_diff ~basedir commitid =
+  let str_commit = Lib_vcs.s_of_versionid commitid in
+  let cmd = goto_dir basedir ^
+    spf "git show --name-status --pretty=\"format:\" %s" str_commit in
+  let xs = Common.cmd_to_list cmd in
+
+  (* the previous command has a first empty line before the list of files *)
+  let files_involved = List.tl xs +> List.map (fun s ->
+    if s=~ "\\([MAD]\\)[ \t]+\\([^ \t]+\\)"
+    then
+      let (status, name) = Common.matched2 s in
+      (match status with
+      | "A" -> Added
+      | "M" -> Modified
+      | "D" -> Deleted
+      | _ -> failwith (spf "unknown file commit status: %s" status)
+      ), name
+    else failwith (spf "wrong format in git result: %s" s)
+  )
+  in
+  assert(List.hd xs = "");
+  files_involved
+
 (*****************************************************************************)
 (* multiple commits operations  *)
 (*****************************************************************************)
@@ -317,6 +340,46 @@ let file_to_commits ~basedir commits =
       (* TODO *)
   );
   h#to_list
+
+(* very useful when have to send automatic diffs to people, to not penalize
+ * the people who have just refactored the code and are actually not really
+ * responsible for the code in the file.
+ *)
+let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
+  let basedir = Common.realpath repo in
+  let commits = commits ~basedir ~extra_args:since () in
+  pr2 (spf "#commits = %d" (List.length commits));
+  
+  let refactoring_ids = 
+  commits +> Common_extra.with_progress_list_metter (fun k xs ->
+    xs +> Common.filter (fun (id, x) ->
+      k ();
+      let (Lib_vcs.VersionId scommit) = id in
+      let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"
+                    basedir scommit) in
+      let xs = Common.cmd_to_list cmd in
+      (* basic heuristic: more than N files in a diff => refactoring diff *)
+      List.length xs > threshold
+    );
+  )
+  in
+  let tmpfile = "/tmp/refactoring_diffs.list" in
+  pr2 (spf "writing data in %s" tmpfile);
+  Common.with_open_outfile tmpfile (fun (pr, _chan) ->
+    refactoring_ids +> List.iter (fun (id, s) ->
+      pr2_gen (id, s);
+      pr (spf "%s %s\n" (Lib_vcs.s_of_versionid id) s);
+    );
+  );
+  ()
+
+let parse_skip_revs_file file =
+  file +> Common.cat +> Common.map (fun s ->
+    if s =~ "^\\([^ ]+\\) "
+    (* git annotate returns commitid of length 8, so must match that *)
+    then Lib_vcs.VersionId (String.sub (Common.matched1 s) 0 8)
+    else failwith ("wrong entry in skiprevs file: " ^ s)
+  )
 
 (*****************************************************************************)
 (* line level operations, preparing commits *)
@@ -443,8 +506,6 @@ let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])
     )
   in
   Common.maximum_dmy toblame
-
-
 
 (*****************************************************************************)
 (* Archeology *)
