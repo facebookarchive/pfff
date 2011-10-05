@@ -59,13 +59,14 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
  * needs also to access class information to knows which member variables
  * are ok.
  *)
-let visit_and_check_new  ?(find_entity = None) prog =
+let visit_and_check_new  find_entity prog =
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k,vx) x ->
       match Ast_php.untype x with
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
-          E.find_entity_and_warn ~find_entity (Entity_php.Class, class_name)
+          E.find_entity_and_warn ~find_entity:(Some find_entity)
+          (Entity_php.Class, class_name)
           +> Common.do_option (function Ast_php.ClassE def ->
                 (*
                   Check_functions_php.check_args_vs_params 
@@ -92,9 +93,9 @@ let visit_and_check_new  ?(find_entity = None) prog =
 (* Entry point *)
 (*****************************************************************************)
 
-let check_program2 ?find_entity prog = 
-  visit_and_check_new ?find_entity prog
+let check_program2 find_entity prog = 
+  visit_and_check_new find_entity prog
 
-let check_program ?find_entity a = 
+let check_program a b = 
   Common.profile_code "Checker.classes" (fun () -> 
-    check_program2 ?find_entity a)
+    check_program2 a b)

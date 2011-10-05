@@ -39,16 +39,20 @@ let check_file ?(find_entity=None) env file =
    *)
   let ast = Unsugar_php.unsugar_self_parent_program ast in
 
-  Check_variables_php.check_and_annotate_program ~find_entity ast;
-  Check_cfg_php.check_program ast;
-  (* not ready yet:
-   *  Check_dfg_php.check_program ?find_entity ast;
+  (* even if find_entity=None, check_and_annotate_program can find
+   * interesting bugs on local variables. There will be false positives
+   * though because of variables passed by reference
    *)
+  Check_variables_php.check_and_annotate_program ~find_entity ast;
   Check_includes_php.check env file ast;
+  Check_cfg_php.check_program ast;
+  (* not ready yet: Check_dfg_php.check_program ?find_entity ast; *)
 
-  (* work only when find_entity is not None; requires global analysis *)
-  if find_entity <> None then begin
-    Check_functions_php.check_program ~find_entity ast;
-    Check_classes_php.check_program ~find_entity ast;
-  end;
+  (* work only when have a find_entity; requires global view of the code *)
+  (match find_entity with
+  | None -> ()
+  | Some find_entity ->
+      Check_functions_php.check_program find_entity ast;
+      Check_classes_php.check_program   find_entity ast;
+  );
   ()

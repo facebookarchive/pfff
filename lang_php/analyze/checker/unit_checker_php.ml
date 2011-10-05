@@ -19,17 +19,16 @@ module Ast = Ast_php
 
 let unittest =
  "checkers_php" >::: [
-
   "basic checkers" >:: (fun () ->
-
   let test_files = [
+    "tests/php/scheck/includes.php";
     "tests/php/scheck/variables.php";
     "tests/php/scheck/variables_fp.php";
-    "tests/php/scheck/cfg.php";
     "tests/php/scheck/functions.php";
-    "tests/php/scheck/classes.php";
     "tests/php/scheck/static_methods.php";
     "tests/php/scheck/methods.php";
+    "tests/php/scheck/classes.php";
+    "tests/php/scheck/cfg.php";
     "tests/php/scheck/endpoint.php";
   ] 
   in

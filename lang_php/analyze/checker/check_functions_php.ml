@@ -126,26 +126,22 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
   | Multi_found -> 
       (* is this possible? *)
       ()
-        
 
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
 
 (* pre: have a unsugar AST regarding self/parent *)
-let visit_and_check_funcalls ?(find_entity=None) prog =
-
+let visit_and_check_funcalls find_entity prog =
   (* todo: similar to what we do in unsugar_self_parent, do this
    * unsugaring there too?
    *)
   let in_class = ref (None: string option) in
 
-
   let visitor = V.mk_visitor { V.default_visitor with
 
     V.kclass_def = (fun (k, _) def ->
-      let s = Ast.name def.c_name in
-      Common.save_excursion in_class (Some s) (fun () ->
+      Common.save_excursion in_class (Some (Ast.name def.c_name)) (fun () ->
         k def
       )
     );
@@ -153,7 +149,8 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
     V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
-          E.find_entity_and_warn ~find_entity (Ent.Function, callname)
+          E.find_entity_and_warn ~find_entity:(Some find_entity) 
+          (Ent.Function, callname)
           +> Common.do_option (function Ast_php.FunctionE def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
@@ -171,17 +168,16 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
           k x
 
       | StaticMethodCallSimple (qu, name, args) ->
-          find_entity +> Common.do_option (fun find_entity ->
-            match fst qu with
-            | ClassName (classname) ->
-                let aclass = Ast.name classname in
-                let amethod = Ast.name name in
-                check_method_call (aclass, amethod) (name, args) find_entity
-            | (Self _ | Parent _) ->
-                failwith "check_functions_php: call unsugar_self_parent()"
-            | LateStatic _ ->
-                (* TODO *)
-                ()
+          (match fst qu with
+          | ClassName (classname) ->
+              let aclass = Ast.name classname in
+              let amethod = Ast.name name in
+              check_method_call (aclass, amethod) (name, args) find_entity
+          | (Self _ | Parent _) ->
+              failwith "check_functions_php: call unsugar_self_parent()"
+          | LateStatic _ ->
+              (* not much we can do? *)
+              ()
           );
           k x
       | MethodCallSimple (lval, _tok, name, args) ->
@@ -195,7 +191,6 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
            *)
           (match Ast.untype lval with
           | This _ ->
-            find_entity +> Common.do_option (fun find_entity ->
               (match !in_class with
               | Some aclass ->
                   let amethod = Ast.name name in
@@ -204,7 +199,6 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
                   (* TODO: use of $this outside class ??? *)
                   ()
               )
-            )
           | _ -> 
               (* todo: need dataflow ... *)
               ()
@@ -212,7 +206,7 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
           k x
                
       | FunCallVar _ -> 
-          pr2 "TODO: handling FuncVar";
+          (* not much we can do there too ... *)
           k x
       | _ -> k x
     );
@@ -225,10 +219,9 @@ let visit_and_check_funcalls ?(find_entity=None) prog =
 (*****************************************************************************)
 (* catch all the decl to grow the environment *)
 
-let check_program2 ?find_entity prog = 
-  visit_and_check_funcalls ?find_entity prog
+let check_program2 find_entity prog = 
+  visit_and_check_funcalls find_entity prog
 
-
-let check_program ?find_entity a = 
+let check_program a b = 
   Common.profile_code "Checker.functions" (fun () -> 
-    check_program2 ?find_entity a)
+    check_program2 a b)
