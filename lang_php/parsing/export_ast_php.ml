@@ -263,21 +263,23 @@ let sexp_string_of_phptype top =
 *)
 
 let string_of_v v =
-  let cnt = ref 0 in
+  let cnt_i = ref 0 in
+  let cnt_other = ref 0 in
 
   (* transformation to not have the parse info or type info in the output *)
   let v' = Ocaml.map_v ~f:(fun ~k x ->
     match x with
     | Ocaml.VDict (xs) ->
-        incr cnt;
         (match () with
         | _ when xs +> List.exists (function ("token", _) ->true | _ -> false)->
-            Ocaml.VVar ("i", Int64.of_int !cnt)
+            incr cnt_i;
+            Ocaml.VVar ("i", Int64.of_int !cnt_i)
         | _ when xs +> List.exists (function ("t", _) -> true | _ -> false)->
-            Ocaml.VVar ("t", Int64.of_int !cnt)
+            incr cnt_other;
+            Ocaml.VVar ("t", Int64.of_int !cnt_other)
         | _ when xs +> List.exists (function ("tvar", _) -> true | _ -> false)->
-            Ocaml.VVar ("tlval", Int64.of_int !cnt)
-
+            incr cnt_other;
+            Ocaml.VVar ("tlval", Int64.of_int !cnt_other)
         | _ -> 
             (* recurse, x can be a record containing itself some records *)
             k x
