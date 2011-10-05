@@ -120,6 +120,8 @@ let defs_of_any any =
       k def
     );
 
+    (* todo: const of php 5.3? *)
+
     V.klvalue = (fun (k, bigf) x ->
       match Ast.untype x with
 
@@ -150,23 +152,22 @@ let defs_of_any any =
 (* 
  * Cover every cases ? C-s for 'name' in ast_php.ml.
  * update: C-s for 'xhp_tag' too.
+ * See unit_foundation_php.ml for the unit tests.
  *
  * history: was previously duplicated in 
  *  - class_php.ml, 
  *  - TODO check_module.ml and uses_module.ml
  * 
- * todo: do for constants too ! see Database_code.entity_kind
- * 
- * todo: check_module.ml and the places where we call checkClassName,
- * same than here ?
- * 
- * todo? right now I don't make a difference between Class and Interface.
- * If want then just intercept in the clas_def hook the processing
- * of 'implements'.
- * 
- * todo? do stuff for dynamic stuff like ClassNameRefDynamic ?
- * return a special Tag ? DynamicStuff ? So at least know they
- * are connections to more entities than one can infer statically.
+ * todo: 
+ * - do for constants too ! see Database_code.entity_kind
+ * - check_module.ml and the places where we call checkClassName,
+ *   same than here ?
+ * - todo? right now I don't make a difference between Class and Interface.
+ *   If want then just intercept in the clas_def hook the processing
+ *   of 'implements'.
+ * - todo? todo? do stuff for dynamic stuff like ClassNameRefDynamic ?
+ *   return a special Tag ? DynamicStuff ? So at least know they
+ *   are connections to more entities than one can infer statically.
  *)
 let uses_of_any ?(verbose=false) any = 
 
