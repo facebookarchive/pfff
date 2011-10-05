@@ -218,8 +218,12 @@ let do_in_new_scope_and_check_if_strict f =
  *)
 let visit_prog ~find_entity prog = 
 
+  (* ugly: have to use all those save_excursion because the visitor interface
+   * is imperative. But threading an environment is tedious ...
+   *)
   let is_top_expr = ref true in 
   let in_lambda = ref false in
+  let in_class = ref None in
   let has_extract = ref false in
   let scope = ref Ent.StmtList in
 
@@ -315,7 +319,11 @@ let visit_prog ~find_entity prog =
        * analysis
        *)
       let x' = Class_php.class_variables_reorder_first x in
-      do_in_new_scope_and_check (fun () -> k x');
+      Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->
+        do_in_new_scope_and_check (fun () -> 
+          k x'
+        );
+      )
     );
 
     (* Introduce a new scope for StmtList ? this would forbid user to 
@@ -622,9 +630,12 @@ let visit_prog ~find_entity prog =
        then begin
         is_top_expr := false;
       
-        let used = vars_used_in_any (Expr x) in
-        let assigned = vars_assigned_in_any (Expr x) in
-        let passed_by_refs = vars_passed_by_ref_in_any ~find_entity (Expr x) in
+        let used = 
+          vars_used_in_any (Expr x) in
+        let assigned = 
+          vars_assigned_in_any (Expr x) in
+        let passed_by_refs = 
+          vars_passed_by_ref_in_any ~in_class:!in_class ~find_entity (Expr x) in
 
         (* keyword arguments should be ignored and treated as comment *)
         let keyword_args = keyword_arguments_vars_in_any (Expr x) in

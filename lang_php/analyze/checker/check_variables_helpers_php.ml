@@ -135,7 +135,7 @@ let keyword_arguments_vars_in_any any =
  * the caller to differentiate between regular assignements
  * and possibly assigned by being passed by ref
  *)
-let vars_passed_by_ref_in_any ~find_entity = 
+let vars_passed_by_ref_in_any ~in_class ~find_entity = 
   V.do_visit_with_ref (fun aref -> 
     let params_vs_args params args = 
 
@@ -167,6 +167,8 @@ let vars_passed_by_ref_in_any ~find_entity =
   { V.default_visitor with
     V.klvalue = (fun (k, vx) x ->
       match Ast.untype x with
+      (* quite similar to code in check_functions_php.ml *)
+
       | FunCallSimple (name, args) ->
           let s = Ast.name name in
           (match s with
@@ -222,11 +224,41 @@ let vars_passed_by_ref_in_any ~find_entity =
           );
           k x
 
-      | MethodCallSimple _ ->
-          (* TODO !!! if this-> then can use lookup_method, but
-           * need some context ... pass a in_class option
+      | MethodCallSimple (lval, _tok, name, args) ->
+          (* if this-> then can use lookup_method.
+           * Being complete and handling any method calls like $o->foo()
+           * requires to know what is the type of $o which is quite
+           * complicated ... so let's skip that for now.
+           * 
+           * todo: special case also id(new ...)-> ?
            *)
-          k x
+          (match Ast.untype lval with
+          | This _ ->
+            find_entity +> Common.do_option (fun find_entity ->
+              match in_class with
+              | Some aclass ->
+                let amethod = Ast.name name in
+                (try 
+                  let def = 
+                    Class_php.lookup_method (aclass, amethod) find_entity in
+                  params_vs_args def.m_params (Some args)
+                with 
+                | Not_found  ->
+                    (* could not find the method, this is bad, but
+                     * it's not our business here; this error will
+                     * be reported anyway in check_classes_php
+                     *)
+                    ()
+                | Multi_found ->
+                    ()
+                )
+              | None ->
+                  (* wtf? use of $this outside a class? *)
+                  ()
+            )
+          | _ -> ()
+          );
+          k x 
 
       | FunCallVar _ -> 
           (* can't do much *)
