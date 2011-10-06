@@ -106,7 +106,10 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 let check_method_call (aclass, amethod) (name, args) find_entity =
   try 
     let def =
-      Class_php.lookup_method (aclass, amethod) find_entity in
+      Class_php.lookup_method 
+        (* todo: remove at some point, but too many errors for now *)
+        ~case_insensitive:true
+        (aclass, amethod) find_entity in
     let contain_func_num_args = 
       contain_func_name_args_like (ClassStmt (Method def)) in
     

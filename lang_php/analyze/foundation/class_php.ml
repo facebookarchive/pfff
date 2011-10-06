@@ -140,13 +140,18 @@ let is_static_method def =
 (* todo: for privacy aware lookup it will require to give some context
  * about where is coming from the lookup, from the class itself ?
  *)
-let lookup_method (aclass, amethod) find_entity =
+let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
+  let equal a b = 
+    if case_insensitive 
+    then String.lowercase a =$= String.lowercase b
+    else a =$= b
+  in
   let rec aux aclass =
     match find_entity (E.Class, aclass) with
     | [ClassE def] ->
         (try 
           def.c_body +> Ast.unbrace +> Common.find_some (function
-            | Method def when Ast.name def.m_name =$= amethod -> Some def
+            | Method def when equal (Ast.name def.m_name) amethod -> Some def
             | _ -> None
           )
         with Not_found ->

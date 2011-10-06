@@ -1,6 +1,7 @@
 
 (* can raise Not_found or Multi_found *)
 val lookup_method: 
+  ?case_insensitive: bool ->
   Entity_php.method_identifier ->
   Entity_php.entity_finder ->
   Ast_php.method_def

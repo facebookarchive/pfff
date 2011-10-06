@@ -209,7 +209,9 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               let amethod = Ast.name name in
               (try 
                   let def = 
-                    Class_php.lookup_method (aclass, amethod) find_entity in
+                    Class_php.lookup_method 
+                      ~case_insensitive:true
+                      (aclass, amethod) find_entity in
                   params_vs_args def.m_params (Some args)
                 with 
                 (* could not find the method, this is bad, but
@@ -241,7 +243,9 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
                 let amethod = Ast.name name in
                 (try 
                   let def = 
-                    Class_php.lookup_method (aclass, amethod) find_entity in
+                    Class_php.lookup_method 
+                      ~case_insensitive:true
+                      (aclass, amethod) find_entity in
                   params_vs_args def.m_params (Some args)
                   with 
                   | Not_found | Multi_found  -> ()
