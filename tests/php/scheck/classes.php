@@ -9,6 +9,7 @@ class CDUP {
 class CDUP {
 }
 
+// TODO: check with new self, new parent, etc
 
 function classes_foo1() {
   $o = new CA();
