@@ -30,8 +30,8 @@ module Flag = Flag_analyze_php
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * history: repeat what iproctor wanted for his Strict mode that I first
- * coded in hphpi (except it was dynamic checking then).
+ * history: repeat what iproctor wanted for his strict-mode that I first
+ * coded in hphpi (except it was dynamic checking back then).
  * 
  * related work:
  *  - miyamide
@@ -152,19 +152,19 @@ let visit_and_check_funcalls find_entity prog =
       | FunCallSimple (callname, args)  ->
           E.find_entity_and_warn find_entity (Ent.Function, callname)
           (function Ast_php.FunctionE def ->
-               (* todo? memoize ? *)
-               let contain_func_num_args = 
-                 contain_func_name_args_like (Body def.f_body) in
+            (* todo? memoize ? *)
+            let contain_func_num_args = 
+              contain_func_name_args_like (Body def.f_body) in
 
-               if contain_func_num_args
-               then pr2_once ("not checking functions containing calls to " ^
-                                 "func_num_args() or alike")
-               else 
-                 check_args_vs_params 
-                   (callname,   args +> Ast.unparen +> Ast.uncomma)
-                   (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma_dots)
-           | _ -> raise Impossible
-           );
+            if contain_func_num_args
+            then pr2_once ("not checking functions containing calls to " ^
+                              "func_num_args() or alike")
+            else 
+              check_args_vs_params 
+                (callname,   args +> Ast.unparen +> Ast.uncomma)
+                (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma_dots)
+          | _ -> raise Impossible
+          );
           k x
 
       | StaticMethodCallSimple (qu, name, args) ->
@@ -172,7 +172,11 @@ let visit_and_check_funcalls find_entity prog =
           | ClassName (classname) ->
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
-              check_method_call (aclass, amethod) (name, args) find_entity
+
+              E.find_entity_and_warn find_entity (Ent.Class, classname)
+              (fun _ ->
+                 check_method_call (aclass, amethod) (name, args) find_entity
+                )
           | (Self _ | Parent _) ->
               failwith "check_functions_php: call unsugar_self_parent()"
           | LateStatic _ ->

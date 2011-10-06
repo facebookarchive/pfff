@@ -35,7 +35,12 @@ module Flag = Flag_analyze_php
  * as the logic for arity method checking is similar to function arity
  * checking.
  * 
- * todo: check on static class vars, check on constants, check on fields
+ * todo: 
+ *  - check on static class vars, 
+ *  - check on constants, 
+ *  - check on fields
+ *  - check in strict mode that calls a static method with a qualifier,
+ *    not with $this-> ... ugly
  * 
  * Note that many checks on methods are actually done in 
  * check_functions_php.ml .
