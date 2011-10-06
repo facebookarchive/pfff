@@ -30,14 +30,14 @@ module E = Error_php
 (* coupling: if modify this, also modify lint_php.ml in pfff/facebook/... *)
 let check_file ?(find_entity=None) env file =
 
-  let ast = Parse_php.parse_program file in
-
   (* we need to unsugar self/parent earlier now (we used to do it only
    * before Check_functions_php) because check_and_annotate_program
    * needs to tag if something is passed by reference, which requires
    * now to lookup static methods, which requires the self/parent unsugaring
    *)
-  let ast = Unsugar_php.unsugar_self_parent_program ast in
+  let ast = Parse_php.parse_program file 
+    +> Unsugar_php.unsugar_self_parent_program
+  in
 
   (* even if find_entity=None, check_and_annotate_program can find
    * interesting bugs on local variables. There will be false positives

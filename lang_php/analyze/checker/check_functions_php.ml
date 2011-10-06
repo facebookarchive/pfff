@@ -121,10 +121,11 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
   (* could also be reported elsewhere too *)
   | Not_found ->
       let loc = Ast.info_of_name name in
-      E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
+      (* todo? actually used to check both static and non static methods *)
+      E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
   | Multi_found -> 
       (* is this possible? *)
-      ()
+      raise Impossible
 
 (*****************************************************************************)
 (* Visitor *)
