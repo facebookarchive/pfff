@@ -27,7 +27,9 @@ module Ent = Entity_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* for now return only local vars, not class var like self::$x *)
+(* returns only local vars, not class vars like self::$x. For class vars
+ * see check_classes_php.ml.
+ *)
 let vars_used_in_any x =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k, vx) x ->
@@ -119,21 +121,29 @@ let keyword_arguments_vars_in_any any =
       match x with
       | Arg e ->
           (match e with
-          | (Assign((Var(dname, _scope), tlval_4), i_5,
-                     _e),
-                   t_8) ->
+          | (Assign((Var(dname, _scope), tlval_4), i_5, _e), t_8) ->
               Common.push2 dname aref;
-              k x
-          | _ ->
-              k x
-          )
+          | _ -> ()
+          );
+          k x
       | ArgRef _ -> ()
     );
   })
 
-(* maybe could be merged with vars_assigned_in but maybe we want
+(*****************************************************************************)
+(* Vars passed by ref *)
+(*****************************************************************************)
+(* 
+ * This is complicated in PHP because one does not have to use &$var
+ * at the call site in PHP ... This is ugly ... So to detect variables
+ * passed by reference, we need to look at the definition of the 
+ * function or method called, hence the find_entity argument.
+ * 
+ * less: maybe could be merged with vars_assigned_in but maybe we want
  * the caller to differentiate between regular assignements
  * and possibly assigned by being passed by ref
+ * 
+ * todo: factorize code, at least for the methods and new calls.
  *)
 let vars_passed_by_ref_in_any ~in_class find_entity = 
   V.do_visit_with_ref (fun aref -> 
@@ -168,7 +178,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
       | FunCallSimple (name, args) ->
           let s = Ast.name name in
           (match s with
-          (* special case, ugly but hard do otherwise *)
+          (* special case, ugly but hard to do otherwise *)
           | "sscanf" -> 
               (match args +> Ast.unparen +> Ast.uncomma with
               | x::y::vars ->
@@ -184,7 +194,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
                *)
               | _ -> ()
               )
-          | _ -> 
+          | s -> 
            E.find_entity_and_warn find_entity (Ent.Function, name) 
              (function Ast_php.FunctionE def ->
                 params_vs_args def.f_params (Some args)
@@ -202,19 +212,16 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
                     Class_php.lookup_method (aclass, amethod) find_entity in
                   params_vs_args def.m_params (Some args)
                 with 
-                | Not_found  ->
-                    (* could not find the method, this is bad, but
-                     * it's not our business here; this error will
-                     * be reported anyway in check_classes_php
-                     *)
-                    ()
-                | Multi_found ->
-                    ()
+                (* could not find the method, this is bad, but
+                 * it's not our business here; this error will
+                 * be reported anyway in check_functions_php.ml anyway
+                 *)
+                | Not_found | Multi_found  -> ()
                 )
            | (Self _ | Parent _), _ ->
                failwith "check_var_help: call unsugar_self_parent()"
            | LateStatic _, _ ->
-               (* TODO ? *)
+               (* not much we can do :( *)
                ()
           );
           k x
@@ -237,14 +244,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
                     Class_php.lookup_method (aclass, amethod) find_entity in
                   params_vs_args def.m_params (Some args)
                   with 
-                  | Not_found  ->
-                      (* could not find the method, this is bad, but
-                       * it's not our business here; this error will
-                       * be reported anyway in check_classes_php
-                       *)
-                      ()
-                  | Multi_found ->
-                      ()
+                  | Not_found | Multi_found  -> ()
                 )
               | None ->
                   (* wtf? use of $this outside a class? *)
@@ -265,6 +265,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->
+              (* todo: use lookup_method there too ! *)
               E.find_entity_and_warn find_entity (Ent.Class, name)
               (function Ast_php.ClassE def ->
                 (try 
@@ -283,11 +284,8 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           | ClassNameRefStatic (Self _ | Parent _) ->
               failwith "check_functions_php: call unsugar_self_parent()"
 
-          | ClassNameRefDynamic _
-          | ClassNameRefStatic (LateStatic _) 
-            ->
-              (* can't do much *)
-              ()
+          (* can't do much *)
+          | ClassNameRefDynamic _  | ClassNameRefStatic (LateStatic _) -> ()
           )
       | _ -> ()
       );

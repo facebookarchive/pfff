@@ -16,15 +16,22 @@ class B extends A {
 }
 
 class C extends B {
-  public function bar() {
+  function test_call_undefined_method() {
+    //ERROR: undefined method
+    $this->bar();
+  }
+
+  public function test_method_arity() {
     $this->foo("a", "b");
 
     //ERROR: not enough arguments
     $this->foo();
   }
+
 }
 
-function test_method() {
+
+function test_call_method_dataflow() {
   $o = new B();
   $o->foo(1, 2);
   

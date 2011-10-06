@@ -28,18 +28,17 @@ module Flag = Flag_analyze_php
 (* Prelude *)
 (*****************************************************************************)
 
-(* todo: see defs_uses_php.ml
- *  
- * What about check for undefined class when call a static method or
- * extends something? This is done in check_variables_php.ml because
- * we need there to gather information about class variables.
- * Copy it here too?
+(* 
+ * Checking the use of class variables, class constants, and class names.
  * 
- * todo: check on fields.
+ * For methods most of the checks are actually done in check_functions_php.ml
+ * as the logic for arity method checking is similar to function arity
+ * checking.
+ * 
+ * todo: check on static class vars, check on constants, check on fields
  * 
  * Note that many checks on methods are actually done in 
- * check_functions_php.ml as a method is a kind of function
- * and that we factorized there code regarding arity checks.
+ * check_functions_php.ml .
  *)
 
 (*****************************************************************************)
@@ -55,16 +54,13 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 (* Visitor *)
 (*****************************************************************************)
 
-(* some of those checks are also done in check_variables_php.ml which
- * needs also to access class information to knows which member variables
- * are ok.
- *)
 let visit_and_check_new  find_entity prog =
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k,vx) x ->
       match Ast_php.untype x with
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
+          (* todo: use lookup_method *)
           E.find_entity_and_warn find_entity (Entity_php.Class, class_name)
           (function Ast_php.ClassE def ->
             (*
@@ -78,10 +74,9 @@ let visit_and_check_new  find_entity prog =
           k x
 
       | New (tok, (ClassNameRefStatic (Self _ | Parent _)), args) ->
-          pr2 "TODO: handling ClassNameRefStatic of self or parent";
-          k x
+          failwith "check_functions_php: call unsugar_self_parent()"
       | New (tok, (ClassNameRefDynamic (class_name, _)), args) ->
-          pr2 "TODO: handling ClassNameRefDynamic";
+          (* can't do much *)
           k x
       | _ -> k x
     );

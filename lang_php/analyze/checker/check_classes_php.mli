@@ -1,6 +1,8 @@
 (*s: checking_php.mli *)
 
-(* Mainly checking if a class is defined *)
+(* Checking the use of class variables, class constants, and class names.
+ * Checking method calls arity is actually done in check_functions_php.ml.
+ *)
 val check_program: 
   Entity_php.entity_finder -> Ast_php.program -> unit
 

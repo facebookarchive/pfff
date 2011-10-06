@@ -6,15 +6,7 @@ class StaticMethods {
   }
 }
 
-function test_static_method1() {
-  StaticMethods::foo(1);
-
-  //ERROR: wrong number of arguments
-  StaticMethods::foo(1, 2);
-
-  //ERROR: not enough arguments
-  StaticMethods::foo();
-
+function test_undefined_static_method() {
   //ERROR: undefined static method
   StaticMethods::bar();
 
@@ -22,12 +14,22 @@ function test_static_method1() {
   UnknownClass::foo();
 }
 
+function test_static_method_arity() {
+  StaticMethods::foo(1);
+
+  //ERROR: wrong number of arguments
+  StaticMethods::foo(1, 2);
+
+  //ERROR: not enough arguments
+  StaticMethods::foo();
+}
+
 class StaticMethods2 extends StaticMethods {
   static public function bar() {
     // even calling a static method involves a kind of lookup in PHP
     self::foo(1);
 
-    //ERROR:
+    //ERROR: wrong number of arguments
     self::foo(1, 2);
   }
 }
