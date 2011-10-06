@@ -121,6 +121,9 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
         (name, args +> Ast.unparen +> Ast.uncomma)
         (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
   with
+  | Class_php.Use__Call ->
+      (* not much we can do then, let's bailout *)
+      ()
   (* could also be reported elsewhere too *)
   | Not_found ->
       let loc = Ast.info_of_name name in

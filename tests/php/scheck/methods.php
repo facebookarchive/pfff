@@ -28,8 +28,30 @@ class C extends B {
     $this->foo();
   }
 
+  public function test_call_method_insensitive() {
+    // this is ok for now ... PHP is case insensitive and I want
+    // to focus first on real errors
+    $this->FoO(1, 2);
+  }
+
 }
 
+class D {
+  public $delegate;
+  public function __construct() {
+    $this->delegate = new A();
+  }
+  public function __call($method, $args) {
+    return call_user_func_array(array($this->delegate, $method), $args);
+  }
+
+  public function test__call() {
+    $this->foo(1, 2);
+
+    //SKIP: this should be an error, but we bailout for now
+    $this->bar();
+  }
+}
 
 function test_call_method_dataflow() {
   $o = new B();
@@ -38,3 +60,4 @@ function test_call_method_dataflow() {
   //SKIP: requires dataflow (simple here, but still)
   $o->foo();
 }
+

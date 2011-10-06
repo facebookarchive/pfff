@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,26 +12,27 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 module Ast = Ast_php
 module E = Error_php
-module S = Scope_code
-module Flag = Flag_analyze_php
 module V = Visitor_php
 module Ent = Entity_php
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-(* returns only local vars, not class vars like self::$x. For class vars
+(* returns only local vars, not class vars like self::$x; for class vars
  * see check_classes_php.ml.
  *)
-let vars_used_in_any x =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+let vars_used_in_any any =
+  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k, vx) x ->
       match Ast.untype x with
       | Lambda def -> 
@@ -50,26 +51,25 @@ let vars_used_in_any x =
       | Var (dname, _scope) ->
           Common.push2 dname aref
 
-      (* Used to have a bad representation for A::$a[e]
-       * It was parsed asa VQualifier(VArrayAccesS($a, e))
-       * but e could contains variable too !! so should actually
-       * visit the lval. But we also don't want to visit certain
-       * parts of lval.
-         * Introducing ClassVar fixed the problem.
-       * The qualifier should be with Var, just like what I do for name.
-       * 
-       * old: | VQualifier (qu, lval) -> ()
-       *)
-
       (* transform This into a Var *)
       | This (tok) ->
           let dname = Ast.DName("this", tok) in
           Common.push2 dname aref
             
+      (* Used to have a bad representation for A::$a[e]
+       * It was parsed asa VQualifier(VArrayAccesS($a, e))
+       * but 'e' could contain variables too !! so should actually
+       * visit the lval. But we also don't want to visit certain
+       * parts of lval. Introducing ClassVar fixed the problem.
+       * The qualifier should be with Var, just like what I do for name.
+       * 
+       * old: | VQualifier (qu, lval) -> ()
+       *)
+
       | _ -> 
           k x
     );
-  }) x
+  })
     
 (* TODO: qualified_vars_in !!! *)
 
@@ -118,15 +118,12 @@ let vars_assigned_in_any any =
 let keyword_arguments_vars_in_any any = 
   any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kargument = (fun (k, vx) x ->
-      match x with
-      | Arg e ->
-          (match e with
-          | (Assign((Var(dname, _scope), tlval_4), i_5, _e), t_8) ->
-              Common.push2 dname aref;
-          | _ -> ()
-          );
-          k x
-      | ArgRef _ -> ()
+      (match x with
+      | Arg (Assign((Var(dname, _scope), tlval_4), i_5, _e), t_8) ->
+          Common.push2 dname aref;
+      | _ -> ()
+      );
+      k x
     );
   })
 
@@ -134,10 +131,11 @@ let keyword_arguments_vars_in_any any =
 (* Vars passed by ref *)
 (*****************************************************************************)
 (* 
- * This is complicated in PHP because one does not have to use &$var
- * at the call site in PHP ... This is ugly ... So to detect variables
- * passed by reference, we need to look at the definition of the 
- * function or method called, hence the find_entity argument.
+ * Detecting variables passed by reference is complicated in PHP because
+ * one does not have to use &$var at the call site ... This is ugly ... 
+ * So to detect variables passed by reference, we need to look at
+ * the definition of the function or method called, hence the 
+ * find_entity argument.
  * 
  * less: maybe could be merged with vars_assigned_in but maybe we want
  * the caller to differentiate between regular assignements
@@ -162,8 +160,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
        *)
       Common.zip_safe params args +> List.iter (fun (param, arg) ->
         match arg with
-        | Arg 
-            (Lv((Var(dname, _scope), tlval_49)), t_50) ->
+        | Arg (Lv((Var(dname, _scope), tlval_49)), t_50) ->
             if param.p_ref <> None
             then Common.push2 dname aref
         | _ -> ()
@@ -208,23 +205,21 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
               (try 
-                  let def = 
-                    Class_php.lookup_method 
-                      ~case_insensitive:true
-                      (aclass, amethod) find_entity in
-                  params_vs_args def.m_params (Some args)
-                with 
-                (* could not find the method, this is bad, but
-                 * it's not our business here; this error will
-                 * be reported anyway in check_functions_php.ml anyway
-                 *)
-                | Not_found | Multi_found  -> ()
-                )
-           | (Self _ | Parent _), _ ->
-               failwith "check_var_help: call unsugar_self_parent()"
-           | LateStatic _, _ ->
-               (* not much we can do :( *)
-               ()
+                let def = Class_php.lookup_method ~case_insensitive:true
+                  (aclass, amethod) find_entity 
+                in
+                params_vs_args def.m_params (Some args)
+             (* could not find the method, this is bad, but
+              * it's not our business here; this error will
+              * be reported anyway in check_functions_php.ml anyway
+              *)
+              with Not_found | Multi_found | Class_php.Use__Call  -> ()
+              )
+          | (Self _ | Parent _), _ ->
+              failwith "check_var_help: call unsugar_self_parent()"
+          | LateStatic _, _ ->
+              (* not much we can do :( *)
+              ()
           );
           k x
 
@@ -242,13 +237,11 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               | Some aclass ->
                 let amethod = Ast.name name in
                 (try 
-                  let def = 
-                    Class_php.lookup_method 
-                      ~case_insensitive:true
-                      (aclass, amethod) find_entity in
+                  let def = Class_php.lookup_method ~case_insensitive:true
+                    (aclass, amethod) find_entity 
+                  in
                   params_vs_args def.m_params (Some args)
-                  with 
-                  | Not_found | Multi_found  -> ()
+                with Not_found | Multi_found | Class_php.Use__Call -> ()
                 )
               | None ->
                   (* wtf? use of $this outside a class? *)
@@ -269,7 +262,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->
-              (* todo: use lookup_method there too ! *)
+              (* TODO: use lookup_method there too ! *)
               E.find_entity_and_warn find_entity (Ent.Class, name)
               (function Ast_php.ClassE def ->
                 (try 

@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -24,6 +24,18 @@ module E = Entity_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(*****************************************************************************)
+(* Types and globals *)
+(*****************************************************************************)
+
+(* PHP let people intercept a "UndefinedMethod" error, a la Perl ... *)
+exception Use__Call
+
+(* Actually sometimes it can also be the name of the class (especially in
+ * third party code)
+ *)
+let constructor_name = "__construct"
 
 (*****************************************************************************)
 (* Helpers *)
@@ -63,14 +75,13 @@ let resolve_class_name qu =
 *)
 
 (*****************************************************************************)
-(* Globals *)
-(*****************************************************************************)
-
-let constructor_name = "__construct"
-
-(*****************************************************************************)
 (* Ast Helpers *)
 (*****************************************************************************)
+
+let is_static_method def =
+  let modifiers = def.m_modifiers +> List.map Ast.unwrap in
+  List.mem Ast.Static modifiers
+
 
 (* This is used in check_variables_php.ml to allow inherited
  * visible variables to be used in scope
@@ -128,17 +139,16 @@ let class_variables_reorder_first def =
     c_body = (lb, body', rb);
   }
 
-let is_static_method def =
-  let modifiers = def.m_modifiers +> List.map Ast.unwrap in
-  List.mem Ast.Static modifiers
-
 
 (*****************************************************************************)
 (* Lookup *)
 (*****************************************************************************)
 
 (* todo: for privacy aware lookup it will require to give some context
- * about where is coming from the lookup, from the class itself ?
+ * about where is coming from the lookup (from the class itself?).
+ * 
+ * PHP is case insensitive, but we also want our PHP checkers to be
+ * case sensitive hence the parameter below.
  *)
 let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
   let equal a b = 
@@ -152,6 +162,8 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
         (try 
           def.c_body +> Ast.unbrace +> Common.find_some (function
             | Method def when equal (Ast.name def.m_name) amethod -> Some def
+            | Method def when (Ast.name def.m_name) =$= "__call" ->
+                raise Use__Call
             | _ -> None
           )
         with Not_found ->
