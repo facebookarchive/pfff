@@ -527,7 +527,7 @@ let index_db4_2 ~annotate_variables_program db =
     annotate_variables_program +> Common.do_option 
       (fun annotate_variables_program ->
         annotate_variables_program
-          ~find_entity:(Some (fun x ->
+          (Some (fun x ->
             (* we just want to annotate here *)
             try 
               find_entity x 

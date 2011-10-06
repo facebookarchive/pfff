@@ -63,7 +63,6 @@ let contain_func_name_args_like any =
     List.mem danger_func funcalls
   )
 
-
 let check_args_vs_params (callname, all_args) (defname, all_params) =
 
   let info = Ast_php.info_of_name callname in
@@ -149,9 +148,8 @@ let visit_and_check_funcalls find_entity prog =
     V.klvalue = (fun (k,vx) x ->
       match Ast_php.untype  x with
       | FunCallSimple (callname, args)  ->
-          E.find_entity_and_warn ~find_entity:(Some find_entity) 
-          (Ent.Function, callname)
-          +> Common.do_option (function Ast_php.FunctionE def ->
+          E.find_entity_and_warn find_entity (Ent.Function, callname)
+          (function Ast_php.FunctionE def ->
                (* todo? memoize ? *)
                let contain_func_num_args = 
                  contain_func_name_args_like (Body def.f_body) in

@@ -135,7 +135,7 @@ let keyword_arguments_vars_in_any any =
  * the caller to differentiate between regular assignements
  * and possibly assigned by being passed by ref
  *)
-let vars_passed_by_ref_in_any ~in_class ~find_entity = 
+let vars_passed_by_ref_in_any ~in_class find_entity = 
   V.do_visit_with_ref (fun aref -> 
     let params_vs_args params args = 
 
@@ -151,19 +151,15 @@ let vars_passed_by_ref_in_any ~in_class ~find_entity =
        * check_class
        *)
       Common.zip_safe params args +> List.iter (fun (param, arg) ->
-                  
-        (match arg with
+        match arg with
         | Arg 
             (Lv((Var(dname, _scope), tlval_49)), t_50) ->
             if param.p_ref <> None
-            then
-              Common.push2 dname aref
-        | _ ->
-            ()
-        )
+            then Common.push2 dname aref
+        | _ -> ()
       );
     in
-
+    
   { V.default_visitor with
     V.klvalue = (fun (k, vx) x ->
       match Ast.untype x with
@@ -189,20 +185,19 @@ let vars_passed_by_ref_in_any ~in_class ~find_entity =
               | _ -> ()
               )
           | _ -> 
-           E.find_entity_and_warn ~find_entity (Ent.Function, name)
-           +> Common.do_option (function Ast_php.FunctionE def ->
+           E.find_entity_and_warn find_entity (Ent.Function, name) 
+             (function Ast_php.FunctionE def ->
                 params_vs_args def.f_params (Some args)
-            | _ -> raise Impossible
+             | _ -> raise Impossible
            )
           );
           k x
       | StaticMethodCallSimple (qu, name, args) ->
-          find_entity +> Common.do_option (fun find_entity ->
-           match qu with
-           | ClassName (classname), _ ->
+          (match qu with
+          | ClassName (classname), _ ->
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
-                (try 
+              (try 
                   let def = 
                     Class_php.lookup_method (aclass, amethod) find_entity in
                   params_vs_args def.m_params (Some args)
@@ -225,6 +220,7 @@ let vars_passed_by_ref_in_any ~in_class ~find_entity =
           k x
 
       | MethodCallSimple (lval, _tok, name, args) ->
+          (match Ast.untype lval with
           (* if this-> then can use lookup_method.
            * Being complete and handling any method calls like $o->foo()
            * requires to know what is the type of $o which is quite
@@ -232,30 +228,28 @@ let vars_passed_by_ref_in_any ~in_class ~find_entity =
            * 
            * todo: special case also id(new ...)-> ?
            *)
-          (match Ast.untype lval with
           | This _ ->
-            find_entity +> Common.do_option (fun find_entity ->
-              match in_class with
+              (match in_class with
               | Some aclass ->
                 let amethod = Ast.name name in
                 (try 
                   let def = 
                     Class_php.lookup_method (aclass, amethod) find_entity in
                   params_vs_args def.m_params (Some args)
-                with 
-                | Not_found  ->
-                    (* could not find the method, this is bad, but
-                     * it's not our business here; this error will
-                     * be reported anyway in check_classes_php
-                     *)
-                    ()
-                | Multi_found ->
-                    ()
+                  with 
+                  | Not_found  ->
+                      (* could not find the method, this is bad, but
+                       * it's not our business here; this error will
+                       * be reported anyway in check_classes_php
+                       *)
+                      ()
+                  | Multi_found ->
+                      ()
                 )
               | None ->
                   (* wtf? use of $this outside a class? *)
                   ()
-            )
+              )
           | _ -> ()
           );
           k x 
@@ -267,17 +261,16 @@ let vars_passed_by_ref_in_any ~in_class ~find_entity =
           k x
     );
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      (match Ast.untype x with
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->
-              
-              E.find_entity_and_warn ~find_entity (Ent.Class, name)
-              +> Common.do_option (function Ast_php.ClassE def ->
+              E.find_entity_and_warn find_entity (Ent.Class, name)
+              (function Ast_php.ClassE def ->
                 (try 
                     let constructor_def = Class_php.get_constructor def in
                     params_vs_args constructor_def.m_params args
-                 with Not_found ->
+                  with Not_found ->
                    (* TODO: too many FP for now
                        if !Flag.show_analyze_error
                        then pr2_once (spf "Could not find constructor for: %s" 
@@ -287,21 +280,18 @@ let vars_passed_by_ref_in_any ~in_class ~find_entity =
                 );
               | _ -> raise Impossible
               );
-              k x
-
           | ClassNameRefStatic (Self _ | Parent _) ->
-              (* TODO *)
-              k x
+              failwith "check_functions_php: call unsugar_self_parent()"
 
-          | ClassNameRefStatic (LateStatic _) ->
-              (* TODO *)
-              k x
-
-          | ClassNameRefDynamic _ ->
-              (* todo ? *)
-              k x
+          | ClassNameRefDynamic _
+          | ClassNameRefStatic (LateStatic _) 
+            ->
+              (* can't do much *)
+              ()
           )
-      | _ -> k x
+      | _ -> ()
+      );
+      k x
     );
     }
   )

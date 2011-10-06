@@ -96,6 +96,7 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
 (*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
+  (* wrong include/require *)
   | FileNotFound of Common.filename
 
   (* todo: type errors, protocol errors (statistical analysis), etc *)
@@ -252,32 +253,28 @@ let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) =
   Hashtbl.create 101 
 
 let (find_entity_and_warn:
-  find_entity: Entity_php.entity_finder option ->
-  (Entity_php.id_kind * Ast_php.name) ->
-  Ast_php.entity option) = 
- fun ~find_entity (kind, name) ->
+  Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->
+  (Ast_php.entity -> unit) -> unit) =
+ fun find_entity (kind, name) callback ->
 
-  match find_entity with
-  | None -> None
-  | Some find_entity ->
-      let str = Ast.name name in
-      let ids_ast = find_entity (kind, str) in
-      (match ids_ast with
-      | [x] -> Some x
-      | [] ->
-          fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
-          None
-      | x::y::xs ->
-          if Hashtbl.mem h_already_error (kind, str) 
-          then ()
-          else begin
-            Hashtbl.add h_already_error (kind, str) true;
-            (* todo: to give 2 ex of defs *)
-            let ex1 = str (* TODO *) in
-            let ex2 = str (* TODO *) in
-            fatal (Ast.info_of_name name) 
-              (MultiDefinedEntity (kind, str, (ex1, ex2)));
-          end;
-          (* can give the first one ... *)
-          Some x
-      )
+   let str = Ast.name name in
+   let ids_ast = find_entity (kind, str) in
+   match ids_ast with
+   | [x] -> callback x
+   | [] ->
+       fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
+       
+   | x::y::xs ->
+       if Hashtbl.mem h_already_error (kind, str) 
+       then ()
+       else begin
+         Hashtbl.add h_already_error (kind, str) true;
+         (* todo: to give 2 ex of defs *)
+         let ex1 = str (* TODO *) in
+         let ex2 = str (* TODO *) in
+         fatal (Ast.info_of_name name) 
+           (MultiDefinedEntity (kind, str, (ex1, ex2)));
+       end;
+       (* can give the first one ... *)
+       callback x
+   

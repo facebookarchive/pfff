@@ -45,10 +45,7 @@ let test_check_php file =
 let test_scope_php file =
   let asts = Parse_php.parse_program file in
 
-  Check_variables_php.check_and_annotate_program
-    ~find_entity:None
-    asts;
-
+  Check_variables_php.check_and_annotate_program None asts;
   Export_ast_php.show_expr_info := true;
   pr (Export_ast_php.sexp_string_of_program asts);
   ()

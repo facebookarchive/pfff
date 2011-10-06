@@ -98,10 +98,11 @@ let parse_php2 file =
     let (ast2, stat) = Parse_php.parse file in
     let ast = 
       Parse_php.program_of_program2 ast2 in
+    let find_entity = None in
     (* work by side effect on ast2 too *)
     Check_variables_php.check_and_annotate_program
       (* todo: use database_light if given? *)
-      ~find_entity:None
+      find_entity
       ast;
     Php ast2
     )

@@ -1,16 +1,14 @@
 
-(* Use/def variables related checks, e.g. 
+(* Use/Def variables-related checks, e.g.
  *  - unused var, 
  *  - use of undefined var (which in PHP also accounts for use before defined)
- *  - ...
- * Does some side effect on program to set the scope ref of variables.
+ * 
+ * Does also some side effects on program to set the scope ref of variables
  * Also does side effects on Error_php._errors
  * Also dependent on Error_php.strict
  * 
- * update: can now pass a hook to find class definitions as 
- * some access to variables can be legit if the superclass (defined
- * in another file) has defined those protected variables.
+ * update: can now pass a hook to find class definitions and functions
+ * to remove false positives because of variables passed by reference.
  *)
 val check_and_annotate_program: 
-  find_entity: Entity_php.entity_finder option ->
-  Ast_php.program -> unit
+  Entity_php.entity_finder option -> Ast_php.program -> unit

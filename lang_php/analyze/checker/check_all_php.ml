@@ -41,9 +41,9 @@ let check_file ?(find_entity=None) env file =
 
   (* even if find_entity=None, check_and_annotate_program can find
    * interesting bugs on local variables. There will be false positives
-   * though because of variables passed by reference
+   * though when variables are passed by reference.
    *)
-  Check_variables_php.check_and_annotate_program ~find_entity ast;
+  Check_variables_php.check_and_annotate_program find_entity ast;
   Check_includes_php.check env file ast;
   Check_cfg_php.check_program ast;
   (* not ready yet: Check_dfg_php.check_program ?find_entity ast; *)

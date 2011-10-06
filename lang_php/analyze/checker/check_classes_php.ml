@@ -65,14 +65,13 @@ let visit_and_check_new  find_entity prog =
       match Ast_php.untype x with
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
-          E.find_entity_and_warn ~find_entity:(Some find_entity)
-          (Entity_php.Class, class_name)
-          +> Common.do_option (function Ast_php.ClassE def ->
-                (*
-                  Check_functions_php.check_args_vs_params 
-                  (callname,   args +> Ast.unparen +> Ast.uncomma)
-                  (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
-                *)
+          E.find_entity_and_warn find_entity (Entity_php.Class, class_name)
+          (function Ast_php.ClassE def ->
+            (*
+              Check_functions_php.check_args_vs_params 
+              (callname,   args +> Ast.unparen +> Ast.uncomma)
+              (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
+            *)
             ()
           | _ -> raise Impossible
           );

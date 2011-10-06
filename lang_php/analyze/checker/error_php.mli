@@ -63,6 +63,5 @@ val show_10_most_recurring_unused_variable_names: unit -> unit
  * it actually returns the right definition
  *)
 val find_entity_and_warn: 
-  find_entity: Entity_php.entity_finder option ->
-  (Entity_php.id_kind * Ast_php.name) ->
-  Ast_php.entity option
+  Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->
+  (Ast_php.entity -> unit) -> unit
