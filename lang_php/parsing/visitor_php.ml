@@ -121,6 +121,8 @@ type visitor_in = {
     class_name_reference -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
   kqualifier: (qualifier -> unit) * visitor_out -> qualifier -> unit;
+  kclass_name_or_kwd:
+    (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
   
   kcomma: (info -> unit) * visitor_out -> info -> unit; 
@@ -160,6 +162,7 @@ let default_visitor =
     kclass_name_reference = (fun (k,_) x -> k x);
     khint_type  = (fun (k,_) x -> k x);
     kqualifier  = (fun (k,_) x -> k x);
+    kclass_name_or_kwd  = (fun (k,_) x -> k x);
 
     kxhp_html = (fun (k,_) x -> k x);
     kxhp_tag = (fun (k,_) x -> k x);
@@ -372,12 +375,15 @@ and v_qualifier v =
     let v1 = v_class_name_or_selfparent v1 and v2 = v_tok v2 in ()
   in
   vin.kqualifier (k, all_functions) v
-and v_class_name_or_selfparent =
-  function
+and v_class_name_or_selfparent x =
+  let rec k x = 
+    match x with
   | ClassName v1 -> let v1 = v_fully_qualified_class_name v1 in ()
   | Self v1 -> let v1 = v_tok v1 in ()
   | Parent v1 -> let v1 = v_tok v1 in ()
   | LateStatic v1 -> let v1 = v_tok v1 in ()
+  in
+  vin.kclass_name_or_kwd (k, all_functions) x
 
 and v_fully_qualified_class_name v = 
   let k x = v_name x in

@@ -52,27 +52,27 @@ module M = Map_php
  *)
 let resolve_class_name qu in_class =
   match qu, in_class with
-  | (ClassName (name), tok2), _ ->
-      name, Ast.info_of_name name, tok2
-  | (Self (tok1), tok2), Some (name, _parent) ->
-      name, tok1, tok2
-  | (Parent (tok1), tok2), (Some (_, Some parent)) -> 
-      parent, tok1, tok2
-  | (Self (tok1), tok2), None ->
+  | (ClassName (name)), _ ->
+      name, Ast.info_of_name name
+  | (Self (tok1)), Some (name, _parent) ->
+      name, tok1
+  | (Parent (tok1)), (Some (_, Some parent)) -> 
+      parent, tok1
+  | (Self (tok1)), None ->
       (* I used to failwith, but our codebase contains such crap
        * and we don't want all of our analysis to fail on one file
        * just because of those wrong self/parent. Turns them
        * into regular unknwon class so get the same benefits.
        *)
       pr2 ("PB: Use of self:: outside of a class");
-      Name ("UnkwnownUseOfSelf", tok1), tok1, tok2
-  | (Parent (tok1), tok2), _ ->
+      Name ("UnkwnownUseOfSelf", tok1), tok1
+  | (Parent (tok1)), _ ->
       pr2 "PB: Use of parent:: in a class without a parent";
-      Name ("UnkwnownUseOfParent", tok1), tok1, tok2
+      Name ("UnkwnownUseOfParent", tok1), tok1
   (* this should never be reached, the caller will special case LateStatic
    * before calling resolve_class_name
    *)
-  | (LateStatic tok1, _), _ ->
+  | (LateStatic tok1), _ ->
       failwith "LateStatic"
 
 (*****************************************************************************)
@@ -97,12 +97,11 @@ let unsugar_self_parent_any2 any =
       )
     );
 
-    M.kqualifier = (fun (k, bigf) qu ->
+    M.kclass_name_or_kwd = (fun (k, bigf) qu ->
       match qu with
-      | LateStatic tok, tok2 -> LateStatic tok, tok2
+      | LateStatic tok -> LateStatic tok
       | _ ->
-
-          let (unsugar_name, tok_orig, tok_colon) = 
+          let (unsugar_name, tok_orig) = 
             resolve_class_name qu !in_class in
           let name' = 
             match unsugar_name with
@@ -111,7 +110,7 @@ let unsugar_self_parent_any2 any =
             | XhpName (xs, _info_of_referenced_class) ->
                 XhpName (xs, tok_orig)
           in
-          ClassName (name'), tok_colon
+          ClassName (name')
     );
   })
   in
