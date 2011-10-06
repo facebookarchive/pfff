@@ -132,7 +132,8 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
 
 (* pre: have a unsugar AST regarding self/parent *)
 let visit_and_check_funcalls find_entity prog =
-  (* todo: similar to what we do in unsugar_self_parent, do this
+
+  (* less: similar to what we do in unsugar_self_parent, do "$this"
    * unsugaring there too?
    *)
   let in_class = ref (None: string option) in
@@ -194,7 +195,7 @@ let visit_and_check_funcalls find_entity prog =
                   let amethod = Ast.name name in
                   check_method_call (aclass, amethod) (name, args) find_entity
               | None ->
-                  (* TODO: use of $this outside class ??? *)
+                  (* wtf? use of $this outside class ??? *)
                   ()
               )
           | _ -> 

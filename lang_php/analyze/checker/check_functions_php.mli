@@ -1,12 +1,14 @@
 (*s: checking_php.mli *)
 
 (* Mainly checking the arity of function calls. Does a function call matches
- * the function prototype signature. Handle also static method calls
+ * the function prototype "signature". Handle also static method calls
  * as it is easy to determine statically to what they correspond. Also
- * handle method calls using $this as it's also easy to determine statically
+ * handle method calls using $this-> as it's also easy to determine statically
  * to what they correspond.
  * 
  * pre: program without self/parent
+ * 
+ * todo: not only check arity but types ...
  *)
 val check_program: 
   Entity_php.entity_finder -> Ast_php.program -> unit
