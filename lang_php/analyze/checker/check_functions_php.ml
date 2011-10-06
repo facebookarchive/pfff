@@ -31,7 +31,7 @@ module Flag = Flag_analyze_php
 (*****************************************************************************)
 (* 
  * history: repeat what iproctor wanted for his Strict mode that I first
- * coded in hphpi
+ * coded in hphpi (except it was dynamic checking then).
  * 
  * related work:
  *  - miyamide
