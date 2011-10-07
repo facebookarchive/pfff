@@ -15,6 +15,8 @@ class B extends A {
   }
 }
 
+
+
 class C extends B {
   function test_call_undefined_method() {
     //ERROR: undefined method
@@ -29,8 +31,7 @@ class C extends B {
   }
 
   public function test_call_method_insensitive() {
-    // this is ok for now ... PHP is case insensitive and I want
-    // to focus first on real errors
+    //SKIP: ok for now PHP is case insensitive and I focus on real errors first
     $this->FoO(1, 2);
   }
 
@@ -60,4 +61,3 @@ function test_call_method_dataflow() {
   //SKIP: requires dataflow (simple here, but still)
   $o->foo();
 }
-

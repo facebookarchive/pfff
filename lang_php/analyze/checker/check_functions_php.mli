@@ -18,5 +18,6 @@ val check_args_vs_params:
   (Ast_php.name * Ast_php.argument list) ->
   (Ast_php.name * Ast_php.parameter list) ->
   unit
+val contain_func_name_args_like: Ast_php.any -> bool
 (*x: checking_php.mli *)
 (*e: checking_php.mli *)
