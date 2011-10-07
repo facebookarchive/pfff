@@ -17,6 +17,16 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * A driver for our different PHP checkers.
+ * 
+ * todo:
+ *  - type checker
+ *  - dataflow based unused var
+ *  - record checker (fields)
+ *  - protocol checker, statistical static analysis a la Engler
+ *  - ...
+ *)
 
 (*****************************************************************************)
 (* Main entry points *)
