@@ -74,6 +74,7 @@ type error = {
   | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
       (string * string) (* name * name *)
   | UndefinedClassWhileLookup of string
+  | UndefinedMethodInAbstractClass of string
 
   (* call sites *)
   | TooManyArguments   of string (* name *) (* def *)
@@ -129,6 +130,8 @@ let string_of_error_kind error_kind =
         name
   | UndefinedClassWhileLookup (name) ->
       spf "Undefined class while lookup inheritance tree: %s" name
+  | UndefinedMethodInAbstractClass (name) ->
+      spf "Undefined method in abstract class: %s" name
 
   | TooManyArguments defname ->
      (* todo? function was declared: %s     or use tbgs ... *)

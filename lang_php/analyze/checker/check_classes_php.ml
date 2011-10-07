@@ -53,7 +53,11 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 (* Helpers *)
 (*****************************************************************************)
 
-let check_method_call (aclass, amethod) (name, args) find_entity =
+type context_call =
+  | StaticCall
+  | MethodCall of bool (* abstract class ? *)
+
+let check_method_call context (aclass, amethod) (name, args) find_entity =
   try
     let def =
       Class_php.lookup_method 
@@ -62,10 +66,12 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
         (aclass, amethod) find_entity in
     if Check_functions_php.contain_func_name_args_like (ClassStmt (Method def))
     then pr2_once ("not checking calls to code using func_num_args() alike")
-    else 
+    else begin
+      (* todo? check if used in the right way ... *)
       Check_functions_php.check_args_vs_params 
         (name, args +> Ast.unparen +> Ast.uncomma)
         (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
+    end
   with
   | Class_php.Use__Call ->
       (* not much we can do then, let's bailout *)
@@ -76,8 +82,15 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
       E.fatal loc (E.UndefinedClassWhileLookup (s))
   | Not_found ->
       let loc = Ast.info_of_name name in
-      (* todo? actually used to check both static and non static methods *)
-      E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
+      (match context with
+      | StaticCall -> 
+          E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
+      | MethodCall false -> 
+          E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
+      | MethodCall true -> 
+          E.fatal loc (E.UndefinedMethodInAbstractClass amethod)
+      )
+
   | Multi_found -> 
       (* is this possible? *)
       raise Impossible
@@ -92,14 +105,20 @@ let visit_and_check  find_entity prog =
   (* less: similar to what we do in unsugar_self_parent, do "$this"
    * unsugaring there too?
    *)
-  let in_class = ref (None: string option) in
+  let in_class = ref (None: (string * bool) option) in
 
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
 
     V.kclass_def = (fun (k, _) def ->
-      Common.save_excursion in_class (Some (Ast.name def.c_name)) (fun () ->
-        k def
-      )
+      let is_abstract = 
+        match def.c_type with
+        | ClassAbstract _ -> true
+        | _ -> false
+      in
+      Common.save_excursion in_class (Some (Ast.name def.c_name, is_abstract)) 
+        (fun () ->
+          k def
+        )
     );
     V.klvalue = (fun (k,vx) x ->
       match Ast.untype x with
@@ -108,7 +127,8 @@ let visit_and_check  find_entity prog =
           | ClassName (classname) ->
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
-              check_method_call (aclass, amethod) (name, args) find_entity
+              check_method_call StaticCall
+                (aclass, amethod) (name, args) find_entity
 
           | (Self _ | Parent _) ->
               failwith "check_functions_php: call unsugar_self_parent()"
@@ -130,9 +150,10 @@ let visit_and_check  find_entity prog =
           (match Ast.untype lval with
           | This _ ->
               (match !in_class with
-              | Some aclass ->
+              | Some (aclass, is_abstract) ->
                   let amethod = Ast.name name in
-                  check_method_call (aclass, amethod) (name, args) find_entity
+                  check_method_call (MethodCall is_abstract)
+                    (aclass, amethod) (name, args) find_entity
               | None ->
                   (* wtf? use of $this outside class ??? *)
                   ()

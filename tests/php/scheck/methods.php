@@ -61,3 +61,12 @@ function test_call_method_dataflow() {
   //SKIP: requires dataflow (simple here, but still)
   $o->foo();
 }
+
+abstract class Ab {
+  public function foo() {
+
+    //ERROR: UndefinedMethodButMaybeOkBecauseAbstract
+    $this->bar();
+  }
+
+}
