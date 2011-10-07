@@ -73,6 +73,7 @@ type error = {
   | UndefinedEntity of Entity_php.id_kind * string (* name *)
   | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
       (string * string) (* name * name *)
+  | UndefinedClassWhileLookup of string
 
   (* call sites *)
   | TooManyArguments   of string (* name *) (* def *)
@@ -126,6 +127,8 @@ let string_of_error_kind error_kind =
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
       spf "Multiply defined entity %s %s"(Entity_php.string_of_id_kind kind)
         name
+  | UndefinedClassWhileLookup (name) ->
+      spf "Undefined class while lookup inheritance tree: %s" name
 
   | TooManyArguments defname ->
      (* todo? function was declared: %s     or use tbgs ... *)

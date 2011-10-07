@@ -12,6 +12,7 @@ type error = {
   | UndefinedEntity    of Entity_php.id_kind * string (* name *)
   | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
       (string * string) (* name * name *)
+  | UndefinedClassWhileLookup of string
 
   | TooManyArguments   of string (* name *) (* def *)
   | NotEnoughArguments of string (* name *) (* def *)

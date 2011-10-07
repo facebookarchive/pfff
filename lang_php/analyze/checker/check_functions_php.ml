@@ -104,7 +104,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
   aux all_args all_params
 
 let check_method_call (aclass, amethod) (name, args) find_entity =
-  try 
+  try
     let def =
       Class_php.lookup_method 
         (* todo: remove at some point, but too many errors for now *)
@@ -124,7 +124,10 @@ let check_method_call (aclass, amethod) (name, args) find_entity =
   | Class_php.Use__Call ->
       (* not much we can do then, let's bailout *)
       ()
-  (* could also be reported elsewhere too *)
+  | Class_php.UndefinedClassWhileLookup s ->
+      let loc = Ast.info_of_name name in
+      (* todo? actually used to check both static and non static methods *)
+      E.fatal loc (E.UndefinedClassWhileLookup (s))
   | Not_found ->
       let loc = Ast.info_of_name name in
       (* todo? actually used to check both static and non static methods *)
@@ -178,11 +181,8 @@ let visit_and_check_funcalls find_entity prog =
           | ClassName (classname) ->
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
+              check_method_call (aclass, amethod) (name, args) find_entity
 
-              E.find_entity_and_warn find_entity (Ent.Class, classname)
-              (fun _ ->
-                 check_method_call (aclass, amethod) (name, args) find_entity
-                )
           | (Self _ | Parent _) ->
               failwith "check_functions_php: call unsugar_self_parent()"
           | LateStatic _ ->

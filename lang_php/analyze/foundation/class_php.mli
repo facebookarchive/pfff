@@ -1,7 +1,9 @@
 
 exception Use__Call
 
-(* can raise Not_found or Multi_found or Use__Call *)
+exception UndefinedClassWhileLookup of string
+
+(* can raise UndefinedClassWhileLookup, Not_found, Multi_found, or Use__Call *)
 val lookup_method: 
   ?case_insensitive: bool ->
   Entity_php.method_identifier ->

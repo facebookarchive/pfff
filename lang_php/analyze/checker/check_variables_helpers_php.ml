@@ -213,7 +213,9 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               * it's not our business here; this error will
               * be reported anyway in check_functions_php.ml anyway
               *)
-              with Not_found | Multi_found | Class_php.Use__Call  -> ()
+              with 
+              | Not_found | Multi_found 
+              | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ -> ()
               )
           | (Self _ | Parent _), _ ->
               failwith "check_var_help: call unsugar_self_parent()"
@@ -241,7 +243,9 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
                     (aclass, amethod) find_entity 
                   in
                   params_vs_args def.m_params (Some args)
-                with Not_found | Multi_found | Class_php.Use__Call -> ()
+                with 
+                | Not_found | Multi_found
+                | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->()
                 )
               | None ->
                   (* wtf? use of $this outside a class? *)

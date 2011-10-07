@@ -104,6 +104,8 @@ let info_of_error_and_kind err =
       "eUndefinedEntity-" ^ Entity_php.string_of_id_kind kind
   | MultiDefinedEntity (kind, _, _) ->
       "eMultiDefinedEntity-" ^ Entity_php.string_of_id_kind kind
+  | UndefinedClassWhileLookup (_) -> 
+      "eUndefinedEntity-" ^ Entity_php.string_of_id_kind (Entity_php.Class)
 
   | TooManyArguments _ ->"eTooManyArguments"
   | NotEnoughArguments _ ->"eNotEnoughArguments"

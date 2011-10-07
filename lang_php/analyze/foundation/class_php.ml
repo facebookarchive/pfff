@@ -32,6 +32,8 @@ module E = Entity_php
 (* PHP let people intercept a "UndefinedMethod" error, a la Perl ... *)
 exception Use__Call
 
+exception UndefinedClassWhileLookup of string
+
 (* Actually sometimes it can also be the name of the class (especially in
  * third party code)
  *)
@@ -144,11 +146,11 @@ let class_variables_reorder_first def =
 (* Lookup *)
 (*****************************************************************************)
 
-(* todo: for privacy aware lookup it will require to give some context
+(* todo: for privacy aware lookup we will need more context
  * about where is coming from the lookup (from the class itself?).
  * 
  * PHP is case insensitive, but we also want our PHP checkers to be
- * case sensitive hence the parameter below.
+ * case sensitive (in strict mode for instance) hence the parameter below.
  *)
 let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
   let equal a b = 
@@ -177,7 +179,7 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
               aux str
           )
         )
-    | [] -> raise Not_found
+    | [] -> raise (UndefinedClassWhileLookup aclass)
     | x::y::xs -> raise Multi_found
     | [_] -> raise Impossible
   in
