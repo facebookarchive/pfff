@@ -164,6 +164,8 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
             | Method def when equal (Ast.name def.m_name) amethod -> Some def
             | Method def when (Ast.name def.m_name) =$= "__call" ->
                 raise Use__Call
+            | Method def when (Ast.name def.m_name) =$= "__callStatic" ->
+                raise Use__Call
             | _ -> None
           )
         with Not_found ->
