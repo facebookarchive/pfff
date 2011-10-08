@@ -11,7 +11,7 @@ class CDUP {
 
 // TODO: check with new self, new parent, etc
 
-function classes_foo1() {
+function test_new_unknown_class() {
   $o = new CA();
   echo $o;
 
@@ -30,7 +30,7 @@ class CB extends CA {
 
 
 //ERROR: undefined class
-class CC extends CUnknwown {
+class test_extend_unknown_class extends CUnknwown {
 }
 
 
@@ -54,7 +54,7 @@ class TestUndefinedMembers2 extends TestUndefinedMembers {
     //ERROR: undefined member
     $this->member3=0;
 
-    //ERROR: undefined member (private)
+    //SKIP: undefined member (private)
     $this->member0=0;
   }
 }

@@ -1,6 +1,5 @@
 
 exception Use__Call
-
 exception UndefinedClassWhileLookup of string
 
 (* can raise UndefinedClassWhileLookup, Not_found, Multi_found, or Use__Call *)
@@ -9,6 +8,12 @@ val lookup_method:
   Entity_php.method_identifier ->
   Entity_php.entity_finder ->
   Ast_php.method_def
+
+(* can raise UndefinedClassWhileLookup, Not_found, Multi_found *)
+val lookup_member: 
+  (string (* class *) * string (* field *)) ->
+  Entity_php.entity_finder ->
+  Ast_php.class_variable * Ast_php.class_var_modifier
 
 val get_public_or_protected_vars_of_class:
   Ast_php.class_def -> Ast_php.dname list

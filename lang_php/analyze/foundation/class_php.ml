@@ -84,6 +84,17 @@ let is_static_method def =
   let modifiers = def.m_modifiers +> List.map Ast.unwrap in
   List.mem Ast.Static modifiers
 
+(* TODO: it could also be one which has the same name than the class.
+ *  print a warning to tell to use __construct instead ?
+ *)
+let get_constructor def =
+  def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
+    match class_stmt with
+    | Method def when Ast.name def.m_name = constructor_name ->
+        Some def
+    | _ -> None
+  )
+
 
 (* This is used in check_variables_php.ml to allow inherited
  * visible variables to be used in scope
@@ -109,18 +120,6 @@ let get_public_or_protected_vars_of_class def =
       None
   ) +> List.flatten
 
-
-(* TODO: it could also be one which has the same name than the class.
- *  print a warning to tell to use __construct instead ?
- *)
-let get_constructor def =
-  def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
-    match class_stmt with
-    | Method def when Ast.name def.m_name = constructor_name ->
-        Some def
-    | _ -> None
-  )
-
 (* This is useful when one needs to add class variables in scope.
  * Because they may be at the end and that simple algorithm are just
  * one pass on the ast, just simple to reorder the variables so that
@@ -141,7 +140,6 @@ let class_variables_reorder_first def =
     c_body = (lb, body', rb);
   }
 
-
 (*****************************************************************************)
 (* Lookup *)
 (*****************************************************************************)
@@ -152,24 +150,12 @@ let class_variables_reorder_first def =
  * PHP is case insensitive, but we also want our PHP checkers to be
  * case sensitive (in strict mode for instance) hence the parameter below.
  *)
-let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
-  let equal a b = 
-    if case_insensitive 
-    then String.lowercase a =$= String.lowercase b
-    else a =$= b
-  in
+let lookup_gen aclass find_entity hook =
   let rec aux aclass =
     match find_entity (E.Class, aclass) with
     | [ClassE def] ->
         (try 
-          def.c_body +> Ast.unbrace +> Common.find_some (function
-            | Method def when equal (Ast.name def.m_name) amethod -> Some def
-            | Method def when (Ast.name def.m_name) =$= "__call" ->
-                raise Use__Call
-            | Method def when (Ast.name def.m_name) =$= "__callStatic" ->
-                raise Use__Call
-            | _ -> None
-          )
+          def.c_body +> Ast.unbrace +> Common.find_some hook
         with Not_found ->
           (match def.c_extends with
           | None -> raise Not_found
@@ -184,3 +170,37 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
     | [_] -> raise Impossible
   in
   aux aclass
+  
+
+let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
+  let equal a b = 
+    if case_insensitive 
+    then String.lowercase a =$= String.lowercase b
+    else a =$= b
+  in
+  lookup_gen aclass find_entity 
+    (function
+    | Method def when equal (Ast.name def.m_name) amethod -> Some def
+    | Method def when (Ast.name def.m_name) =$= "__call" ->
+        raise Use__Call
+    | Method def when (Ast.name def.m_name) =$= "__callStatic" ->
+        raise Use__Call
+    | _ -> None
+    )
+
+let lookup_member (aclass, afield) find_entity =
+  lookup_gen aclass find_entity 
+    (function
+    | ClassVariables (modifier, _opt_ty, class_vars, _tok) ->
+        (try 
+          Some (class_vars +> Ast.uncomma +> Common.find_some 
+            (fun (dname, affect_opt) ->
+              if Ast.dname dname =$= afield
+              then Some ((dname, affect_opt), modifier)
+              else None
+            ))
+        with Not_found -> None
+        )
+    | _ -> None
+    )
+

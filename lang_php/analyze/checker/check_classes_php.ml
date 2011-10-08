@@ -24,15 +24,9 @@ module Flag = Flag_analyze_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
- * Checking the use of method calls, class variables, class constants, 
- * and class names.
- * 
- * todo: 
- *  - check on static class vars, 
- *  - check on constants, 
- *  - check on fields
+ * Checking the use of method calls, member fields, TODO class variables, 
+ * TODO class constants, SEMI and class names.
  *)
 
 (*****************************************************************************)
@@ -75,9 +69,8 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
         (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
     end
   with
-  | Class_php.Use__Call ->
-      (* not much we can do then, let's bailout *)
-      ()
+  (* not much we can do then, let's bailout *)
+  | Class_php.Use__Call -> ()
   | Class_php.UndefinedClassWhileLookup s ->
       E.fatal loc (E.UndefinedClassWhileLookup (s))
   | Not_found ->
@@ -89,10 +82,8 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
       | MethodCall true -> 
           E.fatal loc (E.UndefinedMethodInAbstractClass amethod)
       )
-
-  | Multi_found -> 
-      (* this can happen with multiple classes with same name, not our job *)
-      ()
+  (* this can happen with multiple classes with same name, not our job *)
+  | Multi_found -> ()
 
 (*****************************************************************************)
 (* Visitor *)
@@ -114,6 +105,12 @@ let visit_and_check  find_entity prog =
         | ClassAbstract _ -> true
         | _ -> false
       in
+      def.c_extends +> Common.do_option (fun (tok, parent) ->
+        E.find_entity_and_warn find_entity (Entity_php.Class, parent) (fun _ ->
+          ()
+        )
+      );
+
       Common.save_excursion in_class (Some (Ast.name def.c_name, is_abstract)) 
         (fun () ->
           k def
@@ -131,9 +128,8 @@ let visit_and_check  find_entity prog =
 
           | (Self _ | Parent _) ->
               failwith "check_functions_php: call unsugar_self_parent()"
-          | LateStatic _ ->
-              (* not much we can do? *)
-              ()
+          (* not much we can do? *)
+          | LateStatic _ -> ()
           );
           k x
 
@@ -146,20 +142,15 @@ let visit_and_check  find_entity prog =
            * 
            * todo: special case also id(new ...)-> ?
            *)
-          (match Ast.untype lval with
-          | This _ ->
-              (match !in_class with
-              | Some (aclass, is_abstract) ->
-                  let amethod = Ast.name name in
-                  check_method_call (MethodCall is_abstract)
-                    (aclass, amethod) (name, args) find_entity
-              | None ->
-                  (* wtf? use of $this outside class ??? *)
-                  ()
-              )
-          | _ -> 
-              (* todo: need dataflow ... *)
-              ()
+          (match Ast.untype lval, !in_class with
+          | This _, Some (aclass, is_abstract) ->
+              let amethod = Ast.name name in
+              check_method_call (MethodCall is_abstract)
+                (aclass, amethod) (name, args) find_entity
+          (* wtf? use of $this outside class ??? *)
+          | _, None -> ()
+          (* todo: need dataflow ... *)
+          | _, _ -> ()
           );
           k x
                
@@ -167,6 +158,23 @@ let visit_and_check  find_entity prog =
           (* not much we can do there too ... *)
           k x
 
+      | ObjAccessSimple (lval, tok, name) ->
+          let field = Ast.name name in
+          (match Ast.untype lval, !in_class with
+          | This _, Some (aclass, is_abstract) ->
+              (try 
+                let _ = 
+                  Class_php.lookup_member (aclass, field) find_entity
+                in
+                ()
+               with
+               (* todo: Use__Get and other magic shit?  *)
+               | Not_found -> 
+                  E.fatal tok (E.UseOfUndefinedMember field)
+              )
+          (* todo: need dataflow ... *)
+          | _, _ -> ()
+          )
       | _ -> k x
     );
 
