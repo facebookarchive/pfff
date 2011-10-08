@@ -58,3 +58,12 @@ class TestUndefinedMembers2 extends TestUndefinedMembers {
     $this->member0=0;
   }
 }
+
+class TestUndefinedMembers3 extends TestUndefinedMembers2 {
+  public function test_three_levels() {
+    echo $this->member1;
+    
+    //ERROR:
+    echo $this->member_unknown;
+  }
+}
