@@ -32,4 +32,9 @@ class StaticMethods2 extends StaticMethods {
     //ERROR: wrong number of arguments
     self::foo(1, 2);
   }
+
+  public function test_use_static_as_non_static() {
+    //ERROR: use of static method with $this
+    $this->foo(1);
+  }
 }

@@ -266,25 +266,19 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->
-              (* TODO: use lookup_method there too ! *)
               E.find_entity_and_warn find_entity (Ent.Class, name)
               (function Ast_php.ClassE def ->
                 (try 
+                    (* TODO: use lookup_method there too ! *)
                     let constructor_def = Class_php.get_constructor def in
                     params_vs_args constructor_def.m_params args
-                  with Not_found ->
-                   (* TODO: too many FP for now
-                       if !Flag.show_analyze_error
-                       then pr2_once (spf "Could not find constructor for: %s" 
-                                         (Ast.name name));
-                   *)
-                   ()
+                  (* not our business *)
+                  with Not_found -> ()
                 );
               | _ -> raise Impossible
-              );
+              )
           | ClassNameRefStatic (Self _ | Parent _) ->
               failwith "check_functions_php: call unsugar_self_parent()"
-
           (* can't do much *)
           | ClassNameRefDynamic _  | ClassNameRefStatic (LateStatic _) -> ()
           )

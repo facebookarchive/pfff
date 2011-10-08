@@ -83,6 +83,8 @@ let properties = [
 *)
   "eUglyGlobalDynamic", "cyan";
   "eWeirdForeachNoIteratorVar", "cyan";
+  "eCallingStaticMethodWithoutQualifier", "cyan";
+  "eCallingMethodWithQualifier", "cyan";
 
   "eDeadBreak", "tan1";
   "eDeadReturn", "tan2";
@@ -114,7 +116,11 @@ let info_of_error_and_kind err =
 
   | WrongKeywordArgument (_, _, severity) ->
       "eWrongKeywordArgument-" ^ (Error_php.string_of_severity2 severity)
-
+  | CallingStaticMethodWithoutQualifier _ ->
+      "eCallingStaticMethodWithoutQualifier"
+  | CallingMethodWithQualifier _ ->
+      "eCallingMethodWithQualifier"
+      
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
     -> 

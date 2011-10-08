@@ -1,6 +1,9 @@
 <?php
 
 class A {
+  public function __construct() {
+  }
+
   public function foo($param1, $param2) {
     echo $param1;
     echo $param2;
@@ -18,6 +21,7 @@ class B extends A {
 
 
 class C extends B {
+
   function test_call_undefined_method() {
     //ERROR: undefined method
     $this->bar();
@@ -33,6 +37,15 @@ class C extends B {
   public function test_call_method_insensitive() {
     //SKIP: ok for now PHP is case insensitive and I focus on real errors first
     $this->FoO(1, 2);
+  }
+
+  public function test_non_static_method() {
+    //ERROR: calling non static method with a qualifier
+    self::foo();
+  }
+  function __construct() {
+    //this is the only exception, can call non static via qualifier for that
+    parent::__construct();
   }
 
 }
@@ -63,10 +76,9 @@ function test_call_method_dataflow() {
 }
 
 abstract class Ab {
-  public function foo() {
+  public function test_undefined_abstract_method() {
 
     //ERROR: UndefinedMethodButMaybeOkBecauseAbstract
     $this->bar();
   }
-
 }

@@ -136,10 +136,10 @@ let string_of_id_kind = function
   | StmtList  -> "stmtlist"
 
   | Method -> "method"
-  | ClassConstant -> "classconstant"
-  | ClassVariable -> "classvariable"
-  | XhpDecl -> "xhpdecl"
-  | StaticMethod -> "staticmethod"
+  | ClassConstant -> "classConstant"
+  | ClassVariable -> "classVariable"
+  | XhpDecl -> "xhpDecl"
+  | StaticMethod -> "staticMethod"
 
   | IdMisc -> "idmisc"
 

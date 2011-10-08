@@ -26,28 +26,19 @@ module Flag = Flag_analyze_php
 (*****************************************************************************)
 
 (* 
- * Checking the use of class variables, class constants, and class names
- * and the arity in method calls.
+ * Checking the use of method calls, class variables, class constants, 
+ * and class names.
  * 
  * todo: 
  *  - check on static class vars, 
  *  - check on constants, 
  *  - check on fields
- *  - check in strict mode that calls a static method with a qualifier,
- *    not with $this-> ... ugly
- * 
- * Note that many checks on methods are actually done in 
- * check_functions_php.ml .
  *)
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
-
-(*****************************************************************************)
-(* Typing rules *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -58,6 +49,7 @@ type context_call =
   | MethodCall of bool (* abstract class ? *)
 
 let check_method_call context (aclass, amethod) (name, args) find_entity =
+  let loc = Ast.info_of_name name in
   try
     let def =
       Class_php.lookup_method 
@@ -65,9 +57,19 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
         ~case_insensitive:true
         (aclass, amethod) find_entity in
     if Check_functions_php.contain_func_name_args_like (ClassStmt (Method def))
-    then pr2_once ("not checking calls to code using func_num_args() alike")
+    then pr2_once ("not checking calls to code using func_num_args()-like")
     else begin
-      (* todo? check if used in the right way ... *)
+      (* check if used in the right way ... *)
+      (match context, Class_php.is_static_method def with
+      | StaticCall, true -> ()
+      | MethodCall _, false -> ()
+      | StaticCall, false ->
+          if amethod =$= Class_php.constructor_name
+          then ()
+          else E.fatal loc (E.CallingMethodWithQualifier amethod)
+      | MethodCall _, true ->
+          E.fatal loc (E.CallingStaticMethodWithoutQualifier amethod)
+      );
       Check_functions_php.check_args_vs_params 
         (name, args +> Ast.unparen +> Ast.uncomma)
         (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
@@ -77,11 +79,8 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
       (* not much we can do then, let's bailout *)
       ()
   | Class_php.UndefinedClassWhileLookup s ->
-      let loc = Ast.info_of_name name in
-      (* todo? actually used to check both static and non static methods *)
       E.fatal loc (E.UndefinedClassWhileLookup (s))
   | Not_found ->
-      let loc = Ast.info_of_name name in
       (match context with
       | StaticCall -> 
           E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
@@ -92,8 +91,8 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
       )
 
   | Multi_found -> 
-      (* is this possible? *)
-      raise Impossible
+      (* this can happen with multiple classes with same name, not our job *)
+      ()
 
 (*****************************************************************************)
 (* Visitor *)
@@ -182,6 +181,10 @@ let visit_and_check  find_entity prog =
               Check_functions_php.check_args_vs_params 
               (callname,   args +> Ast.unparen +> Ast.uncomma)
               (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma)
+                    TODO: too many FP for now
+                       if !Flag.show_analyze_error
+                       then pr2_once (spf "Could not find constructor for: %s" 
+                                         (Ast.name name));
             *)
             ()
           | _ -> raise Impossible

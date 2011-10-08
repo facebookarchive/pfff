@@ -81,6 +81,8 @@ type error = {
   | NotEnoughArguments of string (* name *) (* def *)
   | WrongKeywordArgument of 
       string (* dname *) * string (* parameter *) * severity2
+  | CallingStaticMethodWithoutQualifier of string
+  | CallingMethodWithQualifier of string
 
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *)
@@ -122,11 +124,11 @@ let string_of_severity2 = function
 let string_of_error_kind error_kind =
   match error_kind with
   | UndefinedEntity(kind, name) ->
-      spf "Undefined entity %s %s" (Entity_php.string_of_id_kind kind) name
+      spf "Undefined %s %s" (Entity_php.string_of_id_kind kind) name
 
   | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
-      spf "Multiply defined entity %s %s"(Entity_php.string_of_id_kind kind)
+      spf "Multiply defined %s %s"(Entity_php.string_of_id_kind kind)
         name
   | UndefinedClassWhileLookup (name) ->
       spf "Undefined class while lookup inheritance tree: %s" name
@@ -142,12 +144,18 @@ let string_of_error_kind error_kind =
   | WrongKeywordArgument(dn, param, severity) ->
       spf "Wrong keyword argument, %s <> %s (%s)"
         dn param (string_of_severity2 severity)
+  | CallingStaticMethodWithoutQualifier name ->
+      spf "Calling static method %s without a qualifier" name
+  | CallingMethodWithQualifier name ->
+      spf "Calling non static method %s with a qualifier" name
 
   | UseOfUndefinedVariable (dname) ->
-      spf "Use of undeclared variable $%s. " dname ^
+      spf "Use of undeclared variable $%s. " dname
+(*
 "Declare variables prior to use (even if you are passing them as reference
     parameters). You may have misspelled this variable name.
 "
+*)
 
   | UseOfUndefinedVariableInLambda (dname) ->
       spf "Use of undeclared variable $%s in lambda. " dname ^
