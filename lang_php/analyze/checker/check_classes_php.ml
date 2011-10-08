@@ -87,6 +87,42 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
   (* this can happen with multiple classes with same name, not our job *)
   | Multi_found -> ()
 
+type context_access =
+  | StaticAccess
+  | ObjAccess
+
+let check_member_access ctx (aclass, afield) loc find_entity =
+  try 
+    let _ = 
+      Class_php.lookup_member (aclass, afield) find_entity
+    in
+    (* todo: check if used in the right way ... *)
+    ()
+  with
+  (* todo: Use__Get and other magic shit?  *)
+  | Not_found -> 
+      (match ctx with
+      | StaticAccess ->
+          E.fatal loc (E.UndefinedEntity (Ent.ClassVariable, afield))
+      | ObjAccess ->
+          E.fatal loc (E.UseOfUndefinedMember afield)
+      )
+  | Class_php.UndefinedClassWhileLookup s ->
+      E.fatal loc (E.UndefinedClassWhileLookup s)
+  | Multi_found -> ()
+
+let check_class_constant (aclass, s) tok find_entity =
+  try 
+    let _ = Class_php.lookup_constant (aclass, s) find_entity in
+    ()
+  with 
+  | Not_found -> 
+      E.fatal tok (E.UndefinedEntity (Ent.ClassConstant, s))
+  | Class_php.UndefinedClassWhileLookup s ->
+      E.fatal tok (E.UndefinedClassWhileLookup s)
+  | Multi_found -> ()
+
+
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
@@ -160,24 +196,19 @@ let visit_and_check  find_entity prog =
           (* not much we can do there too ... *)
           k x
 
+      | ClassVar ((ClassName classname, tok), dname) ->
+          check_member_access StaticAccess 
+            (Ast.name classname, Ast.dname dname) tok find_entity
+
       | ObjAccessSimple (lval, tok, name) ->
           let field = Ast.name name in
           (match Ast.untype lval, !in_class with
           | This _, Some (aclass, is_abstract) ->
-              (try 
-                let _ = 
-                  Class_php.lookup_member (aclass, field) find_entity
-                in
-                ()
-               with
-               (* todo: Use__Get and other magic shit?  *)
-               | Not_found -> 
-                  E.fatal tok (E.UseOfUndefinedMember field)
-               | Multi_found | Class_php.UndefinedClassWhileLookup _ -> ()
-              )
+              check_member_access ObjAccess (aclass, field) tok find_entity
           (* todo: need dataflow ... *)
           | _, _ -> ()
           )
+
       | _ -> k x
     );
 
@@ -212,36 +243,17 @@ let visit_and_check  find_entity prog =
     V.kscalar = (fun (k, _) x ->
       (match x with
       | ClassConstant ((ClassName classname, tok), name) ->
-          let s = Ast.name name in
-          (try 
-              Class_php.lookup_constant (Ast.name classname, s) find_entity
-              +> ignore;
-           with 
-           | Class_php.UndefinedClassWhileLookup s ->
-               E.fatal tok (E.UndefinedClassWhileLookup s)
-           | Not_found ->
-               E.fatal tok (E.UndefinedEntity (Ent.ClassConstant, s))
-           | Multi_found -> ()
-          )
+          check_class_constant (Ast.name classname, Ast.name name) tok
+            find_entity
       | _ -> ()
       );
       k x
     );
     V.kstatic_scalar = (fun (k, _) x ->
-      (* copy paste of the ClassConstant case *)
       (match x with
       | StaticClassConstant ((ClassName classname, tok), name) ->
-          let s = Ast.name name in
-          (try 
-              Class_php.lookup_constant (Ast.name classname, s) find_entity
-              +> ignore;
-           with 
-           | Class_php.UndefinedClassWhileLookup s ->
-               E.fatal tok (E.UndefinedClassWhileLookup s)
-           | Not_found ->
-               E.fatal tok (E.UndefinedEntity (Ent.ClassConstant, s))
-           | Multi_found -> ()
-          )
+          check_class_constant (Ast.name classname, Ast.name name) tok
+            find_entity
       | _ -> ()
       );
       k x

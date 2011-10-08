@@ -2,6 +2,7 @@
 
 class CA {
   const CstA = 0;
+  public static $vA;
 }
 
 class CB extends CA {
@@ -40,6 +41,19 @@ function test_unknown_class_constant() {
 
   //ERROR: not defined
   echo CB::UnknownConstant;
+}
+
+function test_unknown_class_variable() {
+  echo CA::$vA;
+
+  //ERROR: not defined
+  echo CA::$unknown;
+
+  // there is actually a lookup even on static class variable ... ugly
+  echo CB::$vA;
+
+  //ERROR: not defined
+  echo CB::$unknown;
 
 }
 
