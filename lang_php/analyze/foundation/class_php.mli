@@ -15,6 +15,12 @@ val lookup_member:
   Entity_php.entity_finder ->
   Ast_php.class_variable * Ast_php.class_var_modifier
 
+(* can raise UndefinedClassWhileLookup, Not_found, Multi_found *)
+val lookup_constant:
+  (string (* class *) * string (* constant *)) ->
+  Entity_php.entity_finder ->
+  Ast_php.class_constant
+
 val get_public_or_protected_vars_of_class:
   Ast_php.class_def -> Ast_php.dname list
 

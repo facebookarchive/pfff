@@ -204,3 +204,19 @@ let lookup_member (aclass, afield) find_entity =
     | _ -> None
     )
 
+let lookup_constant (aclass, aconstant) find_entity =
+  lookup_gen aclass find_entity 
+    (function
+    | ClassConstants (tok, xs, _tok) ->
+        (try 
+          Some (xs +> Ast.uncomma +> Common.find_some 
+            (fun (name, affect) ->
+              if Ast.name name =$= aconstant
+              then Some (name, affect)
+              else None
+            ))
+        with Not_found -> None
+        )
+    | _ -> None
+    )
+

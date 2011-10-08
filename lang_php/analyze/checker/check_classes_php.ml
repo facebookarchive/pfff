@@ -27,6 +27,8 @@ module Flag = Flag_analyze_php
 (* 
  * Checking the use of method calls, member fields, TODO class variables, 
  * TODO class constants, SEMI and class names.
+ * 
+ * TODO check interface.
  *)
 
 (*****************************************************************************)
@@ -171,6 +173,7 @@ let visit_and_check  find_entity prog =
                (* todo: Use__Get and other magic shit?  *)
                | Not_found -> 
                   E.fatal tok (E.UseOfUndefinedMember field)
+               | Multi_found | Class_php.UndefinedClassWhileLookup _ -> ()
               )
           (* todo: need dataflow ... *)
           | _, _ -> ()
@@ -206,6 +209,44 @@ let visit_and_check  find_entity prog =
           k x
       | _ -> k x
     );
+    V.kscalar = (fun (k, _) x ->
+      (match x with
+      | ClassConstant ((ClassName classname, tok), name) ->
+          let s = Ast.name name in
+          (try 
+              Class_php.lookup_constant (Ast.name classname, s) find_entity
+              +> ignore;
+           with 
+           | Class_php.UndefinedClassWhileLookup s ->
+               E.fatal tok (E.UndefinedClassWhileLookup s)
+           | Not_found ->
+               E.fatal tok (E.UndefinedEntity (Ent.ClassConstant, s))
+           | Multi_found -> ()
+          )
+      | _ -> ()
+      );
+      k x
+    );
+    V.kstatic_scalar = (fun (k, _) x ->
+      (* copy paste of the ClassConstant case *)
+      (match x with
+      | StaticClassConstant ((ClassName classname, tok), name) ->
+          let s = Ast.name name in
+          (try 
+              Class_php.lookup_constant (Ast.name classname, s) find_entity
+              +> ignore;
+           with 
+           | Class_php.UndefinedClassWhileLookup s ->
+               E.fatal tok (E.UndefinedClassWhileLookup s)
+           | Not_found ->
+               E.fatal tok (E.UndefinedEntity (Ent.ClassConstant, s))
+           | Multi_found -> ()
+          )
+      | _ -> ()
+      );
+      k x
+    );
+    
   } in
   visitor (Program prog)
 

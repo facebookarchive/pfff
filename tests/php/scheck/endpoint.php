@@ -3,7 +3,9 @@
 function param_post($a, $b=null) { echo "$a, $b"; }
 function param_get($a, $b=null)  { echo "$a, $b"; }
 function param_request($a, $b=null) { echo "$a, $b"; }
-class Param { }
+class Param { 
+  const STRING = 1;
+}
 
 param_post(array('post1'  => Param::STRING,
                  //ERROR: unused variable

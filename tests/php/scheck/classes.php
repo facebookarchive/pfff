@@ -1,6 +1,10 @@
 <?php
 
 class CA {
+  const CstA = 0;
+}
+
+class CB extends CA {
 }
 
 class CDUP {
@@ -25,9 +29,19 @@ function test_new_unknown_class() {
   $o = new CDUP();
 }
 
-class CB extends CA {
-}
+function test_unknown_class_constant() {
+  echo CA::CstA;
 
+  //ERROR: not defined
+  echo CA::UnknownConstant;
+
+  // there is actually a lookup even on class constant ... ugly
+  echo CB::CstA;
+
+  //ERROR: not defined
+  echo CB::UnknownConstant;
+
+}
 
 //ERROR: undefined class
 class test_extend_unknown_class extends CUnknwown {
