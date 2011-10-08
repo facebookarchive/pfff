@@ -89,7 +89,7 @@ type error = {
   | UnusedVariable of string (* dname *) * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
-  (* classes *)
+  (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *)
 
   (* bail-out constructs *)
