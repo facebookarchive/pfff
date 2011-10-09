@@ -43,6 +43,11 @@ let constructor_name = "__construct"
 (* Helpers *)
 (*****************************************************************************)
 
+let equal ~case_insensitive a b = 
+  if case_insensitive 
+  then String.lowercase a =$= String.lowercase b
+  else a =$= b
+
 (* This is ugly. Some of the code requires to have a 'name' type
  * for every "entities" we are defining and checking. For a class 
  * constant we should really have a pair of name, one for the class
@@ -173,14 +178,10 @@ let lookup_gen aclass find_entity hook =
   
 
 let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
-  let equal a b = 
-    if case_insensitive 
-    then String.lowercase a =$= String.lowercase b
-    else a =$= b
-  in
+  let eq = equal ~case_insensitive in
   lookup_gen aclass find_entity 
     (function
-    | Method def when equal (Ast.name def.m_name) amethod -> Some def
+    | Method def when eq (Ast.name def.m_name) amethod -> Some def
     | Method def when (Ast.name def.m_name) =$= "__call" ->
         raise Use__Call
     | Method def when (Ast.name def.m_name) =$= "__callStatic" ->
@@ -188,14 +189,15 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
     | _ -> None
     )
 
-let lookup_member (aclass, afield) find_entity =
+let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
+  let eq = equal ~case_insensitive in
   lookup_gen aclass find_entity 
     (function
     | ClassVariables (modifier, _opt_ty, class_vars, _tok) ->
         (try 
           Some (class_vars +> Ast.uncomma +> Common.find_some 
             (fun (dname, affect_opt) ->
-              if Ast.dname dname =$= afield
+              if eq (Ast.dname dname) afield
               then Some ((dname, affect_opt), modifier)
               else None
             ))

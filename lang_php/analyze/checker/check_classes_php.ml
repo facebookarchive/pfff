@@ -94,7 +94,10 @@ type context_access =
 let check_member_access ctx (aclass, afield) loc find_entity =
   try 
     let _ = 
-      Class_php.lookup_member (aclass, afield) find_entity
+      Class_php.lookup_member
+        (* todo: remove at some point, but too many errors for now *)
+        ~case_insensitive:true
+        (aclass, afield) find_entity
     in
     (* todo: check if used in the right way ... *)
     ()

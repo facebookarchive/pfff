@@ -11,6 +11,7 @@ val lookup_method:
 
 (* can raise UndefinedClassWhileLookup, Not_found, Multi_found *)
 val lookup_member: 
+  ?case_insensitive: bool ->
   (string (* class *) * string (* field *)) ->
   Entity_php.entity_finder ->
   Ast_php.class_variable * Ast_php.class_var_modifier
