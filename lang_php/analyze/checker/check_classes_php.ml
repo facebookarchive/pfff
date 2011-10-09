@@ -108,6 +108,11 @@ let check_member_access ctx (aclass, afield) loc find_entity =
           let allmembers = Class_php.collect_members aclass find_entity 
             +> List.map Ast.dname
           in
+          (* todo? could also show a strong warning when the list
+           * allmembers is big, in which case if most of the
+           * fields were defined, it makes sense to force people to 
+           * define them all.
+           *)
           let suggest = 
             try 
             Some (allmembers +> Common.find_some (fun s2 ->
