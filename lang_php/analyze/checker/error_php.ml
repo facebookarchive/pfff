@@ -90,7 +90,7 @@ type error = {
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
-  | UseOfUndefinedMember of string (* name *)
+  | UseOfUndefinedMember of string (* name *) * suggest option
 
   (* bail-out constructs *)
   | UglyGlobalDynamic
@@ -109,6 +109,8 @@ type error = {
    | Bad
    | ReallyBad
    | ReallyReallyBad
+  and suggest = string * int (* edit distance *)
+    
 
 exception Error of error
 
@@ -120,6 +122,12 @@ let string_of_severity2 = function
   | Bad -> "Bad" 
   | ReallyBad -> "ReallyBad"
   | ReallyReallyBad -> "ReallyReallyBad"
+
+let string_of_suggest_opt x =
+  match x with
+  | None -> ""
+  | Some (s, _i) -> 
+      spf " (did you mean %s?)" s
 
 let string_of_error_kind error_kind =
   match error_kind with
@@ -164,8 +172,8 @@ let string_of_error_kind error_kind =
   | UnusedVariable (dname, scope) ->
       spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) dname
 
-  | UseOfUndefinedMember (name) ->
-      spf "Use of undefined member $%s" name
+  | UseOfUndefinedMember (name, x) ->
+      spf "Use of undefined member $%s%s" name (string_of_suggest_opt x)
 
   | UglyGlobalDynamic ->
       "Ugly dynamic global declaration"

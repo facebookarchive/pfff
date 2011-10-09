@@ -26,7 +26,8 @@ type error = {
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
-  | UseOfUndefinedMember of string (* name *)
+  | UseOfUndefinedMember of string (* name *) * suggest option
+
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
 
@@ -39,6 +40,8 @@ type error = {
     | Bad
     | ReallyBad
     | ReallyReallyBad
+
+  and suggest = string * int (* edit distance *)
 
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string

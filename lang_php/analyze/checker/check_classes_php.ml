@@ -105,7 +105,20 @@ let check_member_access ctx (aclass, afield) loc find_entity =
       | StaticAccess ->
           E.fatal loc (E.UndefinedEntity (Ent.ClassVariable, afield))
       | ObjAccess ->
-          E.fatal loc (E.UseOfUndefinedMember afield)
+          let allmembers = Class_php.collect_members aclass find_entity 
+            +> List.map Ast.dname
+          in
+          let suggest = 
+            try 
+            Some (allmembers +> Common.find_some (fun s2 ->
+              let dist = Common.edit_distance afield s2 in
+              if dist <= 2
+              then Some (s2, dist)
+              else None
+            ))
+            with Not_found -> None
+          in
+          E.fatal loc (E.UseOfUndefinedMember (afield, suggest))
       )
   | Class_php.UndefinedClassWhileLookup s ->
       E.fatal loc (E.UndefinedClassWhileLookup s)

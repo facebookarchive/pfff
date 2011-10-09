@@ -220,3 +220,26 @@ let lookup_constant (aclass, aconstant) find_entity =
     | _ -> None
     )
 
+
+(*****************************************************************************)
+(* Collect *)
+(*****************************************************************************)
+
+let collect_members aclass find_entity =
+
+  let res = ref [] in
+  (try 
+    let _ = lookup_gen aclass find_entity (function
+    | ClassVariables (_, _, class_vars, _) ->
+        class_vars +> Ast.uncomma +> List.iter (fun (dname, affect) ->
+          Common.push2 dname res;
+        );
+        None
+    | _ -> None;
+    )
+    in
+    ()
+   with Not_found | UndefinedClassWhileLookup _ | Multi_found -> 
+    ()
+  );
+  !res
