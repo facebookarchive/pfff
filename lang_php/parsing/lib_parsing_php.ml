@@ -32,7 +32,6 @@ module V2 = Map_php
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 
-
 (*****************************************************************************)
 (* Filenames *)
 (*****************************************************************************)
@@ -223,44 +222,6 @@ let print_warning_if_not_correctly_parsed ast file =
   end
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(* todo: move where ? 
- * static_scalar does not have a direct mapping with scalar as some
- * elements like StaticArray have mapping only in expr.
-*)
-let rec static_scalar_to_expr x = 
-  let exprbis = 
-    match x with
-    | StaticConstant cst -> 
-        Sc (C cst)
-    | StaticClassConstant (qu, name) -> 
-        Sc (ClassConstant (qu, name))
-    | StaticPlus (tok, sc) -> 
-        Unary ((UnPlus, tok), static_scalar_to_expr sc)
-    | StaticMinus (tok, sc) -> 
-        Unary ((UnMinus, tok), static_scalar_to_expr sc)
-    | StaticArray (tok, array_pairs_paren) ->
-        ConsArray (tok, 
-                  Ast.map_paren 
-                    (Ast.map_comma_list static_array_pair_to_array_pair) 
-                    array_pairs_paren)
-    | XdebugStaticDots ->
-        failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
-  in
-  exprbis, Ast.noType ()
-
-and static_array_pair_to_array_pair x = 
-  match x with
-  | StaticArraySingle (sc) -> 
-      ArrayExpr (static_scalar_to_expr sc)
-  | StaticArrayArrow (sc1, tok, sc2) ->
-      ArrayArrowExpr (static_scalar_to_expr sc1, 
-                     tok,
-                     static_scalar_to_expr sc2)
-
-(*****************************************************************************)
 (* Ast getters *)
 (*****************************************************************************)
 (*s: ast getters *)
@@ -304,7 +265,6 @@ let get_constant_strings_any any =
   in
   (V.mk_visitor hooks) any;
   Common.hashset_to_list h
-
 (*x: ast getters *)
 
 let get_funcvars_any any =
@@ -336,7 +296,6 @@ let get_funcvars_any any =
   let visitor = V.mk_visitor hooks in
   visitor any;
   Common.hashset_to_list h
-
 (*e: ast getters *)
 
 let get_static_vars_any any =
@@ -351,55 +310,6 @@ let get_static_vars_any any =
           k x
     );
   })
-
-
-
-
-(* do some isomorphisms for declaration vs assignement *)
-let get_vars_assignements_any recursor = 
-  (* We want to group later assignement by variables, and 
-   * so we want to use function like Common.group_by_xxx 
-   * which requires to have identical key. Each dname occurence 
-   * below has a different location and so we can use dname as 
-   * key, but the name of the variable can be used, hence the use
-   * of Ast.dname
-   *)
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-      V.kstmt = (fun (k,vx) x ->
-        match x with
-        | StaticVars (tok, xs, tok2) ->
-            xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
-              let s = Ast.dname dname in
-              affect_opt |> Common.do_option (fun (_tok, scalar) ->
-                Common.push2 (s, static_scalar_to_expr scalar) aref;
-              );
-            );
-        | _ -> 
-            k x
-      );
-
-      V.kexpr = (fun (k,vx) x ->
-        match Ast.untype x with
-        | Assign (lval, _, e) 
-        | AssignOp (lval, _, e) ->
-            (* the expression itself can contain assignements *)
-            k x; 
-            
-            (* for now we handle only simple direct assignement to simple
-             * variables *)
-            (match Ast.untype lval with
-            | Var (dname, _scope) ->
-                let s = Ast.dname dname in
-                Common.push2 (s, e) aref;
-            | _ ->
-                ()
-            )
-        (* todo? AssignRef AssignNew ? *)
-        | _ -> 
-            k x
-      );
-    }
-  ) recursor |> Common.group_assoc_bykey_eff
   
 (* todo? do last_stmt_is_a_return isomorphism ? *)
 let get_returns_any any = 
@@ -498,5 +408,86 @@ let functions_methods_or_topstms_of_program prog =
   in
   visitor (Program prog);
   !funcs, !methods, !toplevels
+
+(* todo: move where ? 
+ * static_scalar does not have a direct mapping with scalar as some
+ * elements like StaticArray have mapping only in expr.
+*)
+let rec static_scalar_to_expr x = 
+  let exprbis = 
+    match x with
+    | StaticConstant cst -> 
+        Sc (C cst)
+    | StaticClassConstant (qu, name) -> 
+        Sc (ClassConstant (qu, name))
+    | StaticPlus (tok, sc) -> 
+        Unary ((UnPlus, tok), static_scalar_to_expr sc)
+    | StaticMinus (tok, sc) -> 
+        Unary ((UnMinus, tok), static_scalar_to_expr sc)
+    | StaticArray (tok, array_pairs_paren) ->
+        ConsArray (tok, 
+                  Ast.map_paren 
+                    (Ast.map_comma_list static_array_pair_to_array_pair) 
+                    array_pairs_paren)
+    | XdebugStaticDots ->
+        failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
+  in
+  exprbis, Ast.noType ()
+
+and static_array_pair_to_array_pair x = 
+  match x with
+  | StaticArraySingle (sc) -> 
+      ArrayExpr (static_scalar_to_expr sc)
+  | StaticArrayArrow (sc1, tok, sc2) ->
+      ArrayArrowExpr (static_scalar_to_expr sc1, 
+                     tok,
+                     static_scalar_to_expr sc2)
+
+
+(* do some isomorphisms for declaration vs assignement *)
+let get_vars_assignements_any recursor = 
+  (* We want to group later assignement by variables, and 
+   * so we want to use function like Common.group_by_xxx 
+   * which requires to have identical key. Each dname occurence 
+   * below has a different location and so we can use dname as 
+   * key, but the name of the variable can be used, hence the use
+   * of Ast.dname
+   *)
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+      V.kstmt = (fun (k,vx) x ->
+        match x with
+        | StaticVars (tok, xs, tok2) ->
+            xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
+              let s = Ast.dname dname in
+              affect_opt |> Common.do_option (fun (_tok, scalar) ->
+                Common.push2 (s, static_scalar_to_expr scalar) aref;
+              );
+            );
+        | _ -> 
+            k x
+      );
+
+      V.kexpr = (fun (k,vx) x ->
+        match Ast.untype x with
+        | Assign (lval, _, e) 
+        | AssignOp (lval, _, e) ->
+            (* the expression itself can contain assignements *)
+            k x; 
+            
+            (* for now we handle only simple direct assignement to simple
+             * variables *)
+            (match Ast.untype lval with
+            | Var (dname, _scope) ->
+                let s = Ast.dname dname in
+                Common.push2 (s, e) aref;
+            | _ ->
+                ()
+            )
+        (* todo? AssignRef AssignNew ? *)
+        | _ -> 
+            k x
+      );
+    }
+  ) recursor |> Common.group_assoc_bykey_eff
 
 (*e: lib_parsing_php.ml *)
