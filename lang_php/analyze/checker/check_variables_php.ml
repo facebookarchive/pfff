@@ -315,8 +315,9 @@ let visit_prog find_entity prog =
        *)
       | ExprStmt(
          (Lv(
-          (FunCallSimple(Name((("param_post" | "param_get" | "param_request")
-                                  as kind, i_1)),
+          (FunCallSimple(Name((
+            ("param_post" | "param_get" | "param_request" | "param_cookie")
+              as kind, i_1)),
             (i_2,
              (Left(
                 Arg(
@@ -341,6 +342,7 @@ let visit_prog find_entity prog =
                     | "param_post" -> Some "post_"
                     | "param_get" -> Some "get_"
                     | "param_request" -> Some "req_"
+                    | "param_cookie" -> Some "cookie_"
                     | _ -> raise Impossible
                     )
                 | _ -> 
