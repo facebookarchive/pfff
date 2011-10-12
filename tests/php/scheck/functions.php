@@ -1,10 +1,19 @@
 <?php
 
-// Analysis on function calls requires some form of global analysis
-// as one needs to get the information about a function usually
-// in another file to analyse a call to this function
+function test_call_undefined_function() {
+  //ERROR: undefined entity
+  unknown_foo3();
+}
 
-function func_foo1() {
+function func_foo2($i) {
+  echo $i;
+}
+
+// Analysis of function calls requires some form of global analysis
+// as one needs to get the information about a function usually
+// in another file to analyse a call to this function.
+
+function test_function_arity() {
   func_foo2(1);
 
   //ERROR: not enough arguments
@@ -14,8 +23,8 @@ function func_foo1() {
   func_foo2(1,2,3);
 }
 
-function test_nbargs_builtins() {
-  // this requires to have a good data/php_stdlib/
+// this requires to have a good data/php_stdlib/
+function test_arity_builtins() {
 
   //ERROR: not enough arguments
   $x = array_count_values();
@@ -26,20 +35,14 @@ function test_nbargs_builtins() {
   echo $x;
 }
 
-function func_foo2($i) {
-  echo $i;
-}
-
 //builtin, now in data/php_stdlib
 //function func_num_args() {}
-
 function func_var_args() {
   $args_count = func_num_args();
   echo $args_count;
 }
 
 function func_foo_call_var_args() {
-
   // this is ok
   func_var_args();
   func_var_args(1);
@@ -49,39 +52,34 @@ function func_foo_call_var_args() {
   compact();
   compact(1);
   compact(1,2);
-
 }
 
-function func_foo3() {
-  //ERROR: undefined entity
-  unknown_foo3();
-}
 
 function func_dup($a) {
   echo $a;
 }
 
+//SKIP: not detected at def time :(
 function func_dup($a) {
   echo $a;
 }
 
-
-function func_foo4() {
+function test_call_multiply_defined_function() {
   //ERROR: multiply defined entity
   func_dup(1);
 
+  // reported only once
   func_dup(1);
 
   //ERROR: too many args
   func_dup(1,2);
 }
 
-
 function func_keywords($x, $a = 1, $b = 2) {
   echo $x; echo $a; echo $b;
 }
 
-function func_call_keywords() {
+function test_wrong__keywords_arguments() {
 
   //ERROR: not enough arguments
   func_keywords();

@@ -12,17 +12,22 @@ type error = {
   | UndefinedEntity    of Entity_php.id_kind * string (* name *)
   | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
       (string * string) (* name * name *)
+  | UndefinedClassWhileLookup of string
+  | UndefinedMethodInAbstractClass of string
 
   | TooManyArguments   of string (* name *) (* def *)
   | NotEnoughArguments of string (* name *) (* def *)
   | WrongKeywordArgument of
       string (* dname *) * string (* parameter *) * severity2
+  | CallingStaticMethodWithoutQualifier of string
+  | CallingMethodWithQualifier of string
         
   | UseOfUndefinedVariable of string (* dname *)
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
-  | UseOfUndefinedMember of string (* name *)
+  | UseOfUndefinedMember of string (* name *) * suggest option
+
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
 
@@ -35,6 +40,8 @@ type error = {
     | Bad
     | ReallyBad
     | ReallyReallyBad
+
+  and suggest = string * int (* edit distance *)
 
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string
@@ -63,6 +70,5 @@ val show_10_most_recurring_unused_variable_names: unit -> unit
  * it actually returns the right definition
  *)
 val find_entity_and_warn: 
-  find_entity: Entity_php.entity_finder option ->
-  (Entity_php.id_kind * Ast_php.name) ->
-  Ast_php.entity option
+  Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->
+  (Ast_php.entity -> unit) -> unit

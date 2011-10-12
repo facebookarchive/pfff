@@ -73,20 +73,24 @@ type error = {
   | UndefinedEntity of Entity_php.id_kind * string (* name *)
   | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
       (string * string) (* name * name *)
+  | UndefinedClassWhileLookup of string
+  | UndefinedMethodInAbstractClass of string
 
   (* call sites *)
   | TooManyArguments   of string (* name *) (* def *)
   | NotEnoughArguments of string (* name *) (* def *)
   | WrongKeywordArgument of 
       string (* dname *) * string (* parameter *) * severity2
+  | CallingStaticMethodWithoutQualifier of string
+  | CallingMethodWithQualifier of string
 
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *)
   | UnusedVariable of string (* dname *) * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
-  (* classes *)
-  | UseOfUndefinedMember of string (* name *)
+  (* classes (could be put in UndefinedEntity (ClassMember)) *)
+  | UseOfUndefinedMember of string (* name *) * suggest option
 
   (* bail-out constructs *)
   | UglyGlobalDynamic
@@ -96,6 +100,7 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
 (*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
+  (* wrong include/require *)
   | FileNotFound of Common.filename
 
   (* todo: type errors, protocol errors (statistical analysis), etc *)
@@ -104,6 +109,8 @@ type error = {
    | Bad
    | ReallyBad
    | ReallyReallyBad
+  and suggest = string * int (* edit distance *)
+    
 
 exception Error of error
 
@@ -116,15 +123,25 @@ let string_of_severity2 = function
   | ReallyBad -> "ReallyBad"
   | ReallyReallyBad -> "ReallyReallyBad"
 
+let string_of_suggest_opt x =
+  match x with
+  | None -> ""
+  | Some (s, _i) -> 
+      spf " (did you mean %s?)" s
+
 let string_of_error_kind error_kind =
   match error_kind with
   | UndefinedEntity(kind, name) ->
-      spf "Undefined entity %s %s" (Entity_php.string_of_id_kind kind) name
+      spf "Undefined %s %s" (Entity_php.string_of_id_kind kind) name
 
   | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
-      spf "Multiply defined entity %s %s"(Entity_php.string_of_id_kind kind)
+      spf "Multiply defined %s %s"(Entity_php.string_of_id_kind kind)
         name
+  | UndefinedClassWhileLookup (name) ->
+      spf "Undefined class while lookup inheritance tree: %s" name
+  | UndefinedMethodInAbstractClass (name) ->
+      spf "Undefined method in abstract class: %s" name
 
   | TooManyArguments defname ->
      (* todo? function was declared: %s     or use tbgs ... *)
@@ -135,12 +152,18 @@ let string_of_error_kind error_kind =
   | WrongKeywordArgument(dn, param, severity) ->
       spf "Wrong keyword argument, %s <> %s (%s)"
         dn param (string_of_severity2 severity)
+  | CallingStaticMethodWithoutQualifier name ->
+      spf "Calling static method %s without a qualifier" name
+  | CallingMethodWithQualifier name ->
+      spf "Calling non static method %s with a qualifier" name
 
   | UseOfUndefinedVariable (dname) ->
-      spf "Use of undeclared variable $%s. " dname ^
+      spf "Use of undeclared variable $%s. " dname
+(*
 "Declare variables prior to use (even if you are passing them as reference
     parameters). You may have misspelled this variable name.
 "
+*)
 
   | UseOfUndefinedVariableInLambda (dname) ->
       spf "Use of undeclared variable $%s in lambda. " dname ^
@@ -149,8 +172,8 @@ let string_of_error_kind error_kind =
   | UnusedVariable (dname, scope) ->
       spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) dname
 
-  | UseOfUndefinedMember (name) ->
-      spf "Use of undefined member $%s" name
+  | UseOfUndefinedMember (name, x) ->
+      spf "Use of undefined member $%s%s" name (string_of_suggest_opt x)
 
   | UglyGlobalDynamic ->
       "Ugly dynamic global declaration"
@@ -252,32 +275,28 @@ let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) =
   Hashtbl.create 101 
 
 let (find_entity_and_warn:
-  find_entity: Entity_php.entity_finder option ->
-  (Entity_php.id_kind * Ast_php.name) ->
-  Ast_php.entity option) = 
- fun ~find_entity (kind, name) ->
+  Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->
+  (Ast_php.entity -> unit) -> unit) =
+ fun find_entity (kind, name) callback ->
 
-  match find_entity with
-  | None -> None
-  | Some find_entity ->
-      let str = Ast.name name in
-      let ids_ast = find_entity (kind, str) in
-      (match ids_ast with
-      | [x] -> Some x
-      | [] ->
-          fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
-          None
-      | x::y::xs ->
-          if Hashtbl.mem h_already_error (kind, str) 
-          then ()
-          else begin
-            Hashtbl.add h_already_error (kind, str) true;
-            (* todo: to give 2 ex of defs *)
-            let ex1 = str (* TODO *) in
-            let ex2 = str (* TODO *) in
-            fatal (Ast.info_of_name name) 
-              (MultiDefinedEntity (kind, str, (ex1, ex2)));
-          end;
-          (* can give the first one ... *)
-          Some x
-      )
+   let str = Ast.name name in
+   let ids_ast = find_entity (kind, str) in
+   match ids_ast with
+   | [x] -> callback x
+   | [] ->
+       fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
+       
+   | x::y::xs ->
+       if Hashtbl.mem h_already_error (kind, str) 
+       then ()
+       else begin
+         Hashtbl.add h_already_error (kind, str) true;
+         (* todo: to give 2 ex of defs *)
+         let ex1 = str (* TODO *) in
+         let ex2 = str (* TODO *) in
+         fatal (Ast.info_of_name name) 
+           (MultiDefinedEntity (kind, str, (ex1, ex2)));
+       end;
+       (* can give the first one ... *)
+       callback x
+   

@@ -834,7 +834,7 @@ let string_of_v v =
       | VDict xs ->
           ppf "{@[";
           xs +> List.iter (fun (s, v) ->
-            ppf "%s:@ " s;
+            ppf "%s=@ " s;
             aux v;
             ppf ";@ ";
           );

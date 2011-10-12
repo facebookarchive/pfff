@@ -31,16 +31,17 @@ open Check_variables_helpers_php
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This module helps Find stupid PHP mistakes related to variables. See
+ * This module helps find stupid PHP mistakes related to variables. See
  * tests/php/scheck/variables.php for examples of bugs currently
- * detected by this checker. This module checks and also annotates
+ * detected by this checker. This module checks but also annotates
  * the AST with scoping information as a side effect. This is useful
  * in Codemap to display differently references to paramaters, local vars,
  * global vars, etc.
  * 
  * This file mostly deals with scoping issues. Scoping is different
- * from typing! Those are 2 orthogonal programming language notions.
+ * from typing! Those are two orthogonal programming language concepts.
  * Some similar checks are done by JSlint.
+ * 
  * This file is concerned with variables, that is Ast_php.dname
  * entities, so for completness C-s for dname in ast_php.ml and
  * see if all uses of it are covered. Other files are more concerned
@@ -216,10 +217,15 @@ let do_in_new_scope_and_check_if_strict f =
  * We then check at use time if something was declared before. We then
  * finally check when we exit a scope that all variables were actually used.
  *)
-let visit_prog ~find_entity prog = 
+let visit_prog find_entity prog = 
 
+  (* ugly: have to use all those save_excursion below because of 
+   * the visitor interface which is imperative. But threading an 
+   * environment is also tedious so maybe not too ugly.
+   *)
   let is_top_expr = ref true in 
   let in_lambda = ref false in
+  let in_class = ref None in
   let has_extract = ref false in
   let scope = ref Ent.StmtList in
 
@@ -271,51 +277,16 @@ let visit_prog ~find_entity prog =
             let dname = Ast.DName ("this", Ast.fakeInfo "this") in
             add_binding dname (S.Class, ref 1);
           end;
-
           k x
         );
       ))
     );
     V.kclass_def = (fun (k, _) x ->
-
-      (* If inherits, then must grab the public and protected variables
-       * from the parent. If find_entity raise Not_found
-       * then it may be because of legitimate errors, but 
-       * such error reporting will be done in check_class_php.ml
-       * 
-       * todo: actually need to get the protected/public of the full
-       * ancestors (but I think it's bad to access some variables
-       * from an inherited class far away ... I hate OO for that kind of stuff)
-       * 
-       * todo: move that in check_classes_php.ml instaed? fields are
-       * not really variables ...
-       *)
-      x.c_extends +> Common.do_option (fun (tok, name_class_parent) ->
-        (* todo: ugly to have to "cast" *)
-
-        E.find_entity_and_warn ~find_entity (Ent.Class, name_class_parent)
-        +> Common.do_option (fun id_ast ->
-          (match id_ast with
-          | Ast_php.ClassE def2 ->
-              let vars = 
-                Class_php.get_public_or_protected_vars_of_class def2 in
-              (* we put 1 as use_count because we are not interested
-               * in error message related to the parent.
-               * Moreover it's legitimate to not use the parent
-               * var in a children class
-               *)
-              vars +> List.iter (fun dname ->
-                add_binding dname (S.Class, ref 1);
-              )
-          | _ -> raise Impossible
-          )
-      ));
-      (* must reorder the class_stmts as we want class variables defined
-       * after the method to be considered first for scope/variable
-       * analysis
-       *)
-      let x' = Class_php.class_variables_reorder_first x in
-      do_in_new_scope_and_check (fun () -> k x');
+      Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->
+        do_in_new_scope_and_check (fun () -> 
+          k x
+        )
+      );
     );
 
     (* Introduce a new scope for StmtList ? this would forbid user to 
@@ -344,8 +315,9 @@ let visit_prog ~find_entity prog =
        *)
       | ExprStmt(
          (Lv(
-          (FunCallSimple(Name((("param_post" | "param_get" | "param_request")
-                                  as kind, i_1)),
+          (FunCallSimple(Name((
+            ("param_post" | "param_get" | "param_request" | "param_cookie")
+              as kind, i_1)),
             (i_2,
              (Left(
                 Arg(
@@ -370,6 +342,7 @@ let visit_prog ~find_entity prog =
                     | "param_post" -> Some "post_"
                     | "param_get" -> Some "get_"
                     | "param_request" -> Some "req_"
+                    | "param_cookie" -> Some "cookie_"
                     | _ -> raise Impossible
                     )
                 | _ -> 
@@ -396,7 +369,10 @@ let visit_prog ~find_entity prog =
           )
 
       | TypedDeclaration (_, _, _, _) ->
-          pr2_once "TODO: TypedDeclaration"
+          (* was a PHP extension I made with dougli and asuhan during a
+           * hackathon but it's not there anymore
+           *)
+          ()
 
       | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
           vx (Expr e);
@@ -490,20 +466,6 @@ let visit_prog ~find_entity prog =
       );
     );
 
-    V.kclass_stmt = (fun (k, _) x ->
-      match x with
-      | ClassVariables (_modifier, _opt_ty, class_vars, _tok) ->
-          (* could use opt_ty to do type checking but this is better done
-           * in typing_php.ml *)
-
-          (* todo: add the modifier in the scope ? *)
-          class_vars |> Ast.uncomma |> List.iter (fun (dname, affect_opt) ->
-            add_binding dname (S.Class, ref 0);
-            (* todo? recurse on the affect *)
-          )
-      | _ -> k x
-    );
-
     (* uses *)
 
     V.klvalue = (fun (k,vx) x ->
@@ -524,38 +486,8 @@ let visit_prog ~find_entity prog =
           has_extract := true;
           k x
 
-      | ObjAccessSimple (lval, tok, name) ->
-          (match Ast.untype lval with
-          | This _ ->
-              (* access to $this->fld, have to look for $fld in
-               * the environment, with a Class scope.
-               *
-               * This is mostly a copy-paste of check_use_against_env
-               * but we additionnally check the scope.
-               * 
-               * TODO: but to be correct it requires entity_finder
-               * because the field may have been defined in the parent.
-               *)
-              let s = Ast.name name in
-              (match lookup_env_opt_for_class s !_scoped_env with
-              | None -> 
-                  E.fatal (Ast.info_of_name name) (E.UseOfUndefinedMember s)
-
-              | Some (scope, aref) ->
-                  if (scope <> S.Class)
-                  then 
-                    pr2 ("WEIRD, scope <> Class, " ^ (Ast.string_of_info tok));
-                    
-                  incr aref
-              )
-          (* todo: the other cases would require a complex class analysis ...
-           * maybe some simple dataflow can do the trick for 90% of the code.
-           * Just look for a new Xxx above in the CFG.
-           *)
-          | _ -> k x
-          )
       | _ -> 
-            k x
+          k x
     );
 
     V.kexpr = (fun (k, vx) x ->
@@ -592,7 +524,8 @@ let visit_prog ~find_entity prog =
           );
           vx (Expr e)
 
-      | Eval _ -> pr2_once "Eval: TODO";
+      | Eval _ -> 
+          pr2_once "Eval: TODO";
           k x
 
       | Lambda def ->
@@ -622,9 +555,17 @@ let visit_prog ~find_entity prog =
        then begin
         is_top_expr := false;
       
-        let used = vars_used_in_any (Expr x) in
-        let assigned = vars_assigned_in_any (Expr x) in
-        let passed_by_refs = vars_passed_by_ref_in_any ~find_entity (Expr x) in
+        let used = 
+          vars_used_in_any (Expr x) in
+        let assigned = 
+          vars_assigned_in_any (Expr x) in
+        let passed_by_refs =
+          match find_entity with
+          (* can't do much :( *)
+          | None -> []
+          | Some finder ->
+              vars_passed_by_ref_in_any ~in_class:!in_class finder (Expr x)
+        in
 
         (* keyword arguments should be ignored and treated as comment *)
         let keyword_args = keyword_arguments_vars_in_any (Expr x) in
@@ -703,13 +644,13 @@ let visit_prog ~find_entity prog =
 (* Main entry point *)
 (*****************************************************************************)
 
-let check_and_annotate_program2 ~find_entity prog =
+let check_and_annotate_program2 find_entity prog =
 
   (* globals (re)initialialisation *) 
   _scoped_env := !initial_env;
 
-  visit_prog ~find_entity prog
+  visit_prog find_entity prog
 
-let check_and_annotate_program ~find_entity a = 
+let check_and_annotate_program a b = 
   Common.profile_code "Checker.variables" (fun () -> 
-    check_and_annotate_program2 ~find_entity a)
+    check_and_annotate_program2 a b)

@@ -12,8 +12,7 @@ val create_db :
   ?files:Common.filename list option ->
   (* only if want to go to phase 4 *)
   annotate_variables_program:
-    (find_entity:Entity_php.entity_finder option -> Ast_php.program -> unit)
-    option ->
+    (Entity_php.entity_finder option -> Ast_php.program -> unit) option ->
   Database_php.project -> 
   Database_php.database
 (* see also database_php_build2.mli for other analysis (e.g. method analysis *)
@@ -25,7 +24,7 @@ val fast_create_db_mem_a_la_cpp:
 (* helpers used also in unit_analyze_php.ml *)
 val db_of_files_or_dirs: 
   ?annotate_variables_program:
-    (find_entity:Entity_php.entity_finder option -> Ast_php.program -> unit)
+    (Entity_php.entity_finder option -> Ast_php.program -> unit)
     option ->
   Common.path list -> Database_php.database
 

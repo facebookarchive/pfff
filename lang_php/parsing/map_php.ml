@@ -71,6 +71,9 @@ type visitor_in = {
     (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
   kqualifier: (qualifier -> qualifier) * visitor_out -> qualifier -> qualifier;
+  kclass_name_or_kwd: 
+    (class_name_or_kwd -> class_name_or_kwd) * visitor_out -> 
+     class_name_or_kwd -> class_name_or_kwd;
   kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
 
   kinfo: (info -> info) * visitor_out -> info -> info;
@@ -92,6 +95,7 @@ let default_visitor =
     kstmt_and_def = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
     kqualifier = (fun (k,_) x -> k x);
+    kclass_name_or_kwd = (fun (k,_) x -> k x);
     kclass_def = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
   }
@@ -244,13 +248,16 @@ and map_qualifier v =
   in
   vin.kqualifier (k, all_functions) v
 
-and map_class_name_or_selfparent =
-  function
-  | ClassName v1 ->
-      let v1 = map_fully_qualified_class_name v1 in ClassName ((v1))
-  | Self v1 -> let v1 = map_tok v1 in Self ((v1))
-  | Parent v1 -> let v1 = map_tok v1 in Parent ((v1))
-  | LateStatic v1 -> let v1 = map_tok v1 in LateStatic ((v1))
+and map_class_name_or_selfparent v =
+  let k v = 
+    match v with
+    | ClassName v1 ->
+        let v1 = map_fully_qualified_class_name v1 in ClassName ((v1))
+    | Self v1 -> let v1 = map_tok v1 in Self ((v1))
+    | Parent v1 -> let v1 = map_tok v1 in Parent ((v1))
+    | LateStatic v1 -> let v1 = map_tok v1 in LateStatic ((v1))
+  in
+  vin.kclass_name_or_kwd (k, all_functions) v
 
 and map_fully_qualified_class_name v = map_name v
 

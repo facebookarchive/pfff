@@ -181,6 +181,7 @@ let options () =
 
 let main () = 
 
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
   Common_extra.set_link(); 
 
   let usage_msg = 

@@ -165,9 +165,12 @@ function vars_ok1() {
   return 2;
 }
 
+class VA {
+  public static $dbGetters;
+}
 function vars_ok2() {
   $db_scb_key = 1;
-  if (!isset(A::$dbGetters[$db_scb_key])) {
+  if (!isset(VA::$dbGetters[$db_scb_key])) {
     return 2;
   }
 }

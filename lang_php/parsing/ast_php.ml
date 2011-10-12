@@ -688,6 +688,7 @@ and interface_def = {
           | NoModifiers of tok (* 'var' *)
           | VModifiers of modifier wrap list
     (*x: class_stmt types *)
+        (* a few special names: __construct, __call, __callStatic *)
         and method_def = {
           m_modifiers: modifier wrap list;
           m_tok: tok; (* function *)

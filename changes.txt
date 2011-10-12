@@ -3,6 +3,8 @@
 * ???
 web ui in ocsigen?
 
+** scheck: lots of new checks, and removed lots of false positives
+
 * 0.17 (Q3 2011)
 
 ** introduce notion of code overlay

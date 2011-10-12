@@ -83,6 +83,8 @@ let properties = [
 *)
   "eUglyGlobalDynamic", "cyan";
   "eWeirdForeachNoIteratorVar", "cyan";
+  "eCallingStaticMethodWithoutQualifier", "cyan";
+  "eCallingMethodWithQualifier", "cyan";
 
   "eDeadBreak", "tan1";
   "eDeadReturn", "tan2";
@@ -104,13 +106,21 @@ let info_of_error_and_kind err =
       "eUndefinedEntity-" ^ Entity_php.string_of_id_kind kind
   | MultiDefinedEntity (kind, _, _) ->
       "eMultiDefinedEntity-" ^ Entity_php.string_of_id_kind kind
+  | UndefinedClassWhileLookup (_) -> 
+      "eUndefinedEntity-" ^ Entity_php.string_of_id_kind (Entity_php.Class)
+  | UndefinedMethodInAbstractClass (_) -> 
+      "eUndefinedEntity-" ^ Entity_php.string_of_id_kind (Entity_php.Method)
 
   | TooManyArguments _ ->"eTooManyArguments"
   | NotEnoughArguments _ ->"eNotEnoughArguments"
 
   | WrongKeywordArgument (_, _, severity) ->
       "eWrongKeywordArgument-" ^ (Error_php.string_of_severity2 severity)
-
+  | CallingStaticMethodWithoutQualifier _ ->
+      "eCallingStaticMethodWithoutQualifier"
+  | CallingMethodWithQualifier _ ->
+      "eCallingMethodWithQualifier"
+      
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
     -> 

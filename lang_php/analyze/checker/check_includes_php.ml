@@ -15,8 +15,6 @@
 
 open Common
 
-open Ast_php
-
 module Ast = Ast_php
 module IR = Include_require_php
 
@@ -27,7 +25,7 @@ module E = Error_php
 (*****************************************************************************)
 (* 
  * Most of the hard work is done by include_require_php.ml. Here
- * we just call this module and check if the resolved path exist.
+ * we just call this module and check if the resolved path exists.
  *)
 
 (*****************************************************************************)
@@ -36,7 +34,7 @@ module E = Error_php
 
 let check ?(verbose=false) env file ast = 
 
-  let increqs = IR.all_increq_of_any (Program ast) in
+  let increqs = IR.all_increq_of_any (Ast.Program ast) in
   increqs |> List.iter (fun (inckind, tok, incexpr) ->
     try (
       let path_opt = IR.resolve_path (env, Filename.dirname file) incexpr in
