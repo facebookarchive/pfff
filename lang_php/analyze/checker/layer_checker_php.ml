@@ -91,7 +91,7 @@ let properties = [
   "eCfgError", "tan";
 
   "eFileNotFound", "tan";
-
+  "eInjection", "tan";
 ]
 
 (*****************************************************************************)
@@ -143,6 +143,8 @@ let info_of_error_and_kind err =
 (*  | CfgPilError ( _) -> "eCfgError" *)
   | FileNotFound ( _) ->
       "eFileNotFound"
+  | Injection (_) ->
+      "eInjection"
   in
   err.loc, kind
 

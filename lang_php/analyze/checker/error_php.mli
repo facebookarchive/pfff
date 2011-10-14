@@ -32,9 +32,9 @@ type error = {
   | WeirdForeachNoIteratorVar
 
   | CfgError of Controlflow_build_php.error_kind
-(*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
   | FileNotFound of Common.filename
+  | Injection of injection_kind
 
   and severity2 =
     | Bad
@@ -42,6 +42,7 @@ type error = {
     | ReallyReallyBad
 
   and suggest = string * int (* edit distance *)
+  and injection_kind = XSS | Sql | Shell
 
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string

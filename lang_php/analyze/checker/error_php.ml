@@ -103,6 +103,9 @@ type error = {
   (* wrong include/require *)
   | FileNotFound of Common.filename
 
+  (* tainting *)
+  | Injection of injection_kind (* todo: * explanation (e.g. a path?) *)
+
   (* todo: type errors, protocol errors (statistical analysis), etc *)
 
   and severity2 =
@@ -110,7 +113,7 @@ type error = {
    | ReallyBad
    | ReallyReallyBad
   and suggest = string * int (* edit distance *)
-    
+  and injection_kind = XSS | Sql | Shell
 
 exception Error of error
 
@@ -188,6 +191,15 @@ let string_of_error_kind error_kind =
 
   | FileNotFound s ->
       spf "File not found %s" s
+
+  | Injection kind ->
+      let s =
+        match kind with
+        | XSS -> "XSS"
+        | Sql -> "Sql"
+        | Shell -> "Shell"
+      in
+      spf "%s injection" s
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
