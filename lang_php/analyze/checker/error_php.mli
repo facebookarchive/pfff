@@ -21,6 +21,7 @@ type error = {
       string (* dname *) * string (* parameter *) * severity2
   | CallingStaticMethodWithoutQualifier of string
   | CallingMethodWithQualifier of string
+  | PassingUnexpectedRef
         
   | UseOfUndefinedVariable of string (* dname *)
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope

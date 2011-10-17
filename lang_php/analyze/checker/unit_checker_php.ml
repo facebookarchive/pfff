@@ -29,6 +29,7 @@ let unittest =
     "tests/php/scheck/methods.php";
     "tests/php/scheck/classes.php";
     "tests/php/scheck/cfg.php";
+    "tests/php/scheck/references.php";
     "tests/php/scheck/endpoint.php";
   ] 
   in

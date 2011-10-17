@@ -83,6 +83,7 @@ type error = {
       string (* dname *) * string (* parameter *) * severity2
   | CallingStaticMethodWithoutQualifier of string
   | CallingMethodWithQualifier of string
+  | PassingUnexpectedRef
 
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *)
@@ -159,6 +160,8 @@ let string_of_error_kind error_kind =
       spf "Calling static method %s without a qualifier" name
   | CallingMethodWithQualifier name ->
       spf "Calling non static method %s with a qualifier" name
+  | PassingUnexpectedRef ->
+      "passing a reference to a function not expecting one"
 
   | UseOfUndefinedVariable (dname) ->
       spf "Use of undeclared variable $%s. " dname

@@ -92,6 +92,21 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
               let s = Ast.dname dn in
               let param = Ast.dname y.p_name in
               E.fatal loc (E.WrongKeywordArgument(s, param, severity))
+
+        (* passing a ref to a function not expecting one is fail.
+         *
+         * todo: we could also force people to explicitly pass
+         * a reference to a function expecting one, making it clearer
+         * at the call site that this parameter is special, but
+         * this would generate too many errors right now. At least
+         * we should be consistent and do it nowhere or everywhere.
+         *)
+        | ArgRef (tok, var) ->
+            (match y.p_ref with
+            | None -> 
+                E.fatal tok (E.PassingUnexpectedRef)
+            | Some _ -> ()
+            )
         | _ -> ()
         );
         aux xs ys

@@ -92,6 +92,8 @@ let properties = [
 
   "eFileNotFound", "tan";
   "eInjection", "tan";
+
+  "eOther", "red";
 ]
 
 (*****************************************************************************)
@@ -120,6 +122,8 @@ let info_of_error_and_kind err =
       "eCallingStaticMethodWithoutQualifier"
   | CallingMethodWithQualifier _ ->
       "eCallingMethodWithQualifier"
+  | PassingUnexpectedRef -> 
+      "eOther"
       
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
