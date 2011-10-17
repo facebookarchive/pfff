@@ -1096,6 +1096,7 @@ common_scalar:
  | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
 
  | T_LINE    { PreProcess(Line, $1) }   | T_FILE { PreProcess(File, $1) }
+ | T_DIR     { PreProcess(Dir, $1) }
  | T_CLASS_C { PreProcess(ClassC, $1) } | T_METHOD_C { PreProcess(MethodC, $1) }
  | T_FUNC_C  { PreProcess(FunctionC, $1) }
 
