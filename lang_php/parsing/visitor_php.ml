@@ -566,6 +566,7 @@ and v_cpp_directive =
   function
   | Line -> ()
   | File -> ()
+  | Dir -> ()
   | ClassC -> ()
   | MethodC -> ()
   | FunctionC -> ()

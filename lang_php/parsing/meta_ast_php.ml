@@ -277,6 +277,7 @@ and vof_cpp_directive =
   function
   | Line -> Ocaml.VSum (("Line", []))
   | File -> Ocaml.VSum (("File", []))
+  | Dir -> Ocaml.VSum (("Dir", []))
   | ClassC -> Ocaml.VSum (("ClassC", []))
   | MethodC -> Ocaml.VSum (("MethodC", []))
   | FunctionC -> Ocaml.VSum (("FunctionC", []))

@@ -299,7 +299,7 @@ type expr = exprbis * exp_info
        (*s: constant rest *)
         (*s: type cpp_directive *)
           and cpp_directive = 
-              | Line  | File 
+              | Line  | File | Dir
               | ClassC  | MethodC  | FunctionC
         (*e: type cpp_directive *)
        (*e: constant rest *)

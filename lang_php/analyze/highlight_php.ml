@@ -892,7 +892,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_CLOSE_TAG ii -> tag ii Punctuation
 
       (* done in PreProcess *)
-      | T.T_FILE ii  | T.T_LINE ii 
+      | T.T_FILE ii  | T.T_LINE ii | T.T_DIR ii
       | T.T_FUNC_C ii | T.T_METHOD_C ii | T.T_CLASS_C ii
           -> ()
 
