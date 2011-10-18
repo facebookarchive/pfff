@@ -434,6 +434,7 @@ and map_cpp_directive =
   function
   | Line -> Line
   | File -> File
+  | Dir -> Dir
   | ClassC -> ClassC
   | MethodC -> MethodC
   | FunctionC -> FunctionC

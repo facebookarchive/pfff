@@ -175,9 +175,10 @@ let keyword_table = Common.hash_of_list [
 
   "__halt_compiler", (fun ii -> T_HALT_COMPILER ii);
 
-  "__class__",       (fun ii -> T_CLASS_C ii);
-  "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
   "__line__",  (fun ii -> T_LINE ii); "__file__", (fun ii -> T_FILE ii);
+  "__dir__",   (fun ii -> T_DIR ii);
+  "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
+  "__class__",       (fun ii -> T_CLASS_C ii);
 
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));

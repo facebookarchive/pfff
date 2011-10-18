@@ -54,6 +54,7 @@
      facebook/visual
      facebook/qa_test
      facebook/qa_code
+     facebook/ast_simple
      facebook/static_analysis
      facebook
      lang_php/matcher
@@ -477,7 +478,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 21
+     (case 22
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -488,6 +489,7 @@
 
        (20 "-test_abint /home/pad/pfff/demos/interpreter.php")
        (21 "-test abstract")
+       (22 "-test abstract")
        )
      ))
    )
@@ -604,7 +606,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 30
+     (case 50
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
@@ -613,6 +615,7 @@
 
        (20 "/home/pad/www/flib/utils/async")
        (30 "/home/pad/www/html/ajax/payment/token_proxy.php")
+       (50 "--bugs -juju /home/pad/pfff/facebook/tests/mini_www/html/injection/xss.php")
        )
      ))
    )

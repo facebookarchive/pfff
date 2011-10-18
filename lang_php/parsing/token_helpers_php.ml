@@ -110,6 +110,7 @@ let info_of_tok = function
   | T_FUNC_C ii -> ii
   | T_LINE ii -> ii
   | T_FILE ii -> ii
+  | T_DIR ii -> ii
   | T_COMMENT ii -> ii
   | T_DOC_COMMENT ii -> ii
   | T_OPEN_TAG ii -> ii
@@ -294,6 +295,7 @@ let visitor_info_of_tok f = function
   | T_FUNC_C ii -> T_FUNC_C(f ii)
   | T_LINE ii -> T_LINE(f ii)
   | T_FILE ii -> T_FILE(f ii)
+  | T_DIR ii -> T_DIR (f ii)
   | T_COMMENT ii -> T_COMMENT(f ii)
   | T_DOC_COMMENT ii -> T_DOC_COMMENT(f ii)
   | T_OPEN_TAG ii -> T_OPEN_TAG(f ii)

@@ -119,7 +119,7 @@ module Ast = Ast_php
  T_HALT_COMPILER
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
  T_LIST T_ARRAY
- T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE
+ T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE T_DIR
  T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
  T_NEW T_CLONE T_INSTANCEOF
  T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
@@ -290,6 +290,7 @@ top_statement:
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
  | statement EOF { Stmt2 $1 }
+ | statement statement EOF { Stmt2 $1 }
  | function_declaration_statement { Toplevel (FuncDef $1) }
 
 /*(*************************************************************************)*/
@@ -1095,6 +1096,7 @@ common_scalar:
  | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
 
  | T_LINE    { PreProcess(Line, $1) }   | T_FILE { PreProcess(File, $1) }
+ | T_DIR     { PreProcess(Dir, $1) }
  | T_CLASS_C { PreProcess(ClassC, $1) } | T_METHOD_C { PreProcess(MethodC, $1) }
  | T_FUNC_C  { PreProcess(FunctionC, $1) }
 

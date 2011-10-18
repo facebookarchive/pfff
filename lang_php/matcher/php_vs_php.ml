@@ -658,6 +658,11 @@ let m_cpp_directive a b =
        A.File,
        B.File
     )
+  | A.Dir, B.Dir ->
+      return (
+        A.Dir,
+        B.Dir
+      )
   | A.ClassC, B.ClassC ->
     return (
        A.ClassC,
@@ -675,6 +680,7 @@ let m_cpp_directive a b =
     )
   | A.Line, _
   | A.File, _
+  | A.Dir, _
   | A.ClassC, _
   | A.MethodC, _
   | A.FunctionC, _

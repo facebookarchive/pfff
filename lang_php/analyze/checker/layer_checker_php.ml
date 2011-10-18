@@ -91,7 +91,9 @@ let properties = [
   "eCfgError", "tan";
 
   "eFileNotFound", "tan";
+  "eInjection", "tan";
 
+  "eOther", "red";
 ]
 
 (*****************************************************************************)
@@ -120,6 +122,8 @@ let info_of_error_and_kind err =
       "eCallingStaticMethodWithoutQualifier"
   | CallingMethodWithQualifier _ ->
       "eCallingMethodWithQualifier"
+  | PassingUnexpectedRef -> 
+      "eOther"
       
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
@@ -143,6 +147,8 @@ let info_of_error_and_kind err =
 (*  | CfgPilError ( _) -> "eCfgError" *)
   | FileNotFound ( _) ->
       "eFileNotFound"
+  | Injection (_) ->
+      "eInjection"
   in
   err.loc, kind
 
