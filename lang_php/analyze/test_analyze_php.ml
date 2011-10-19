@@ -425,7 +425,7 @@ let actions () = [
 
   "-stat_php", " <file>",
   Common.mk_action_1_arg test_stat_php;
-  "-test_unsugar_php", " <file>",
+  "-unsugar_php", " <file>",
   Common.mk_action_1_arg test_unsugar_php;
 
 ]
