@@ -644,7 +644,7 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags db layers   visual
+.PHONY:: tags db layers   visual    tests test
 
 
 tags:
@@ -661,8 +661,9 @@ visual:
 	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
 
-test:
+tests:
 	./pfff_test all
+test: tests
 push:
 	git push origin master
 pull:
