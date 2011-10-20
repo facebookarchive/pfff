@@ -513,6 +513,22 @@
    )
 
   ; --------------------------------------------------------------------------
+  ; facebook/spatch
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "facebook/spatch"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-f /home/pad/pfff/tests/php/spatch/reindent_expr.spatch /home/pad/pfff/tests/php/spatch/reindent_expr.php")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
   ; facebook/reaper
   ; --------------------------------------------------------------------------
   (setq
