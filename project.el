@@ -55,6 +55,7 @@
      facebook/qa_test
      facebook/qa_code
      facebook/ast_simple
+     facebook/ast_pretty_print
      facebook/static_analysis
      facebook
      lang_php/matcher
