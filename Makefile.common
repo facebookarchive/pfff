@@ -30,7 +30,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 
 #dont use -custom, it makes the bytecode unportable.
 #-w +9 is for better warning on recorcs, needs ocaml 3.12
-OCAMLCFLAGS?=-g -dtypes -thread -w +9 -warn-error +a
+OCAMLCFLAGS?=-g -dtypes -thread -w +9 -w -21 -warn-error +a
 
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS?=-thread
