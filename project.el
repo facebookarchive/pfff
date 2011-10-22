@@ -479,7 +479,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 22
+     (case 23
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -491,6 +491,7 @@
        (20 "-test_abint /home/pad/pfff/demos/interpreter.php")
        (21 "-test abstract")
        (22 "-test abstract")
+       (23 "-test pretty")
        )
      ))
    )
