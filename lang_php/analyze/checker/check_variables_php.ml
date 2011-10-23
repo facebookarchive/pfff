@@ -67,7 +67,7 @@ open Check_variables_helpers_php
  * before those kinds of function calls.
  * 
  * Another issue is functions like extract(), param_get(), param_post()
- * or variable variables like $$x. Regarding the param_get/param_post()
+ * or variable variables like $$x. Regarding the param_get/param_post(),
  * one way to fix it is to just not analyse toplevel code.
  * Another solution is to hardcode a few analysis that recognizes
  * the arguments of those functions.
@@ -86,7 +86,7 @@ open Check_variables_helpers_php
  * Another issue is the implicitly-declared-when-used-the-first-time
  * ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
  * 
- * Here are some notes by evan in his own variable linter:
+ * Here are some notes by Evan in his own variable linter:
  * 
  * "These things declare variables in a function":
  * - DONE Explicit parameters
@@ -95,7 +95,7 @@ open Check_variables_helpers_php
  * - DONE foreach()
  * - DONE catch
  * - DONE Builtins ($this)
- * - TODO Lexical vars, in php 5.3 lambda expressions
+ * - DONE Lexical vars, in php 5.3 lambda expressions
  * - SEMI Assignment
  *   (pad: variable mentionned for the first time)
  * 
@@ -106,7 +106,7 @@ open Check_variables_helpers_php
  *   (pad: I actually bail out on such code)
  * 
  * These things don't count as "using" a variable:
- * - TODO isset()
+ * - TODO isset() (pad: this is a bad way to program)
  * - TODO empty()
  * - SEMI Static class variables
  * 
@@ -117,8 +117,6 @@ open Check_variables_helpers_php
  *  - when passed the find_entity hook, check_variables will:
  *     - know about functions taking parameters by refs, which removes
  *       some false positives
- *     - flag uses of class without a constructor or use of undefined classes
- *     - use of undefined members
  * 
  * todo? create generic function extracting set of defs
  *  and set of uses regarding variable ? and make connection ?
@@ -166,7 +164,7 @@ open Check_variables_helpers_php
 (* see check_variables_helpers_php.ml *)
 
 (*****************************************************************************)
-(* checks *)
+(* Checks *)
 (*****************************************************************************)
 
 let check_use_against_env ~in_lambda ~has_extract var env = 
