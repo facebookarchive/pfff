@@ -101,7 +101,10 @@ let rec lookup_env2_for_class s env =
 let lookup_env_opt_for_class a b = 
   Common.optionise (fun () -> lookup_env2_for_class a b)
 
-
+let collect_all_vars env =
+  env +> List.map (fun xs -> 
+    xs +> List.map fst)
+  +> List.flatten
 
 (*****************************************************************************)
 (* (Semi) Globals, Julia's style *)
@@ -126,10 +129,8 @@ let add_in_scope namedef =
   let (current, older) = Common.uncons !_scoped_env in
   _scoped_env := (namedef::current)::older
 
-
 (* ------------------------------------------------------------ *)
 let add_binding2 k v  = 
-
   if !Flag.debug_checker 
   then pr2 (spf "adding binding %s" (Ast.string_of_info (Ast.info_of_dname k)));
 

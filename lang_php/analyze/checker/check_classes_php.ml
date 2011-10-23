@@ -116,16 +116,7 @@ let check_member_access ctx (aclass, afield) loc find_entity =
            * fields were defined, it makes sense to force people to 
            * define them all.
            *)
-          let suggest = 
-            try 
-            Some (allmembers +> Common.find_some (fun s2 ->
-              let dist = Common.edit_distance afield s2 in
-              if dist <= 2
-              then Some (s2, dist)
-              else None
-            ))
-            with Not_found -> None
-          in
+          let suggest = Suggest_fix_php.suggest afield allmembers in
           E.fatal loc (E.UseOfUndefinedMember (afield, suggest))
       )
   | Class_php.UndefinedClassWhileLookup s ->

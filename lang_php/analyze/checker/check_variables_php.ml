@@ -24,6 +24,8 @@ module E = Error_php
 module S = Scope_code
 module Ent = Entity_php
 
+module Env = Env_check_php
+
 open Env_check_php
 open Check_variables_helpers_php
 
@@ -180,7 +182,10 @@ let check_use_against_env ~in_lambda ~has_extract var env =
        E.fatal (Ast.info_of_dname var) 
         (if in_lambda 
         then (E.UseOfUndefinedVariableInLambda s)
-        else (E.UseOfUndefinedVariable s)
+        else 
+            let allvars = Env.collect_all_vars env +> List.map Ast.dname in
+            let suggest = Suggest_fix_php.suggest s allvars in
+            (E.UseOfUndefinedVariable (s, suggest))
         )
   | Some (scope, aref) -> incr aref
 
