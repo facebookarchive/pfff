@@ -14,3 +14,20 @@ function not_related() {
 function test2() {
   return foo(1);
 }
+
+interface InterfaceFoo {
+  public function test1();
+}
+
+class Foo {
+  public function test1() {
+    return foo('a                                                         ');
+  }
+
+  public function not_related() {
+    bar(
+      1
+    );
+  }
+}
+
