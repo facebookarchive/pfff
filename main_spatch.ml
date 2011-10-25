@@ -141,10 +141,11 @@ let apply_transfo transfo xs =
 
 let main_action xs =
 
-  if Common.null_string !spatch_file
-  then failwith "I need a semantic patch file; use -f";
-
-  let spatch_file = !spatch_file in
+  let spatch_file = 
+    if Common.null_string !spatch_file
+    then failwith "I need a semantic patch file; use -f"
+    else  !spatch_file 
+  in
 
   (* old: let pattern = dumb_spatch_pattern in *)
   let pattern = Spatch_php.parse spatch_file in
