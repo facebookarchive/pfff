@@ -43,6 +43,14 @@ let vars_used_in_any any =
                 Common.push2 dname aref
             );
           )
+
+      (* Do not recurse there, isset() does not count as a use.
+       * Hardcoded the special case of isset($x). If do
+       * isset($arr[...]) then we may want to recurse and count as
+       * a use the things inside [...].
+       *)
+      | Isset (_, (i_2, [Left((Var(_, _), tlval_1))], i_4)) ->
+          ()
       | _ -> k x
     );
 
@@ -55,7 +63,7 @@ let vars_used_in_any any =
       | This (tok) ->
           let dname = Ast.DName("this", tok) in
           Common.push2 dname aref
-            
+
       (* Used to have a bad representation for A::$a[e]
        * It was parsed asa VQualifier(VArrayAccesS($a, e))
        * but 'e' could contain variables too !! so should actually

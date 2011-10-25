@@ -108,7 +108,7 @@ open Check_variables_helpers_php
  *   (pad: I actually bail out on such code)
  * 
  * These things don't count as "using" a variable:
- * - TODO isset() (pad: this is a bad way to program)
+ * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
  * - TODO empty()
  * - SEMI Static class variables
  * 
