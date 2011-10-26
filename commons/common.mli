@@ -824,6 +824,7 @@ val partition_either3 :
 val filter_some : 'a option list -> 'a list
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
 val find_some : ('a -> 'b option) -> 'a list -> 'b
+val find_some_opt : ('a -> 'b option) -> 'a list -> 'b option
 
 val list_to_single_or_exn: 'a list -> 'a
 
