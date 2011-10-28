@@ -378,17 +378,16 @@ and lvalue = lvaluebis * lvalue_info
     (* on the left of var *)
     | Indirect  of lvalue * indirect 
   (*x: lvaluebis constructors *)
-    (* This used to be VQualifier of qualifier * lvalue but it was wrong.
-     * Even if A::$v['fld'] was parsed in the grammar
-     * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
+    (* Note that even if A::$v['fld'] was parsed in the grammar
+     * as a Qualifier(A, ArrayAccess($v, 'fld') we
      * generate a ArrayAccess(Qualifier(A, $v), 'fld').
-     * 
-     * todo: merge those 4 cases in one. ClassVar of qualifier * lvalue
+     * todo? could merge 3 cases if qualifier allow some dname.
      *)
     | VQualifier of qualifier * lvalue
     (* note that can be a late static class var since php 5.3 *)
     | ClassVar of qualifier * dname
-    | DynamicClassVar of lvalue * tok (* :: *) * dname
+    (* used to be lvalue * dname but can have code like $class::$$prop *)
+    | DynamicClassVar of lvalue * tok (* :: *) * lvalue
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
     (* DynamicFunCall *)

@@ -96,7 +96,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 400
+     (case 6
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -112,6 +112,7 @@
 
        ;(5 "-typing_mini /home/pad/c-pfff/tests/typing/union.php")
        (5 "-typing_mini /home/pad/c-pfff/tests/typing/int.php")
+       (6 "-parse_php /home/pad/pfff/tests/php/parsing/static_variable_variable.php")
 
        (20 "-json /home/pad/pfff/tests/json/float_pb.php")
 
