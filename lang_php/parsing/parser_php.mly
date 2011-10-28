@@ -651,7 +651,7 @@ class_statement:
        ClassVariables($1, Some $2, $3, $4) 
      }
 
- | method_modifiers T_FUNCTION is_reference ident  
+ | method_modifiers T_FUNCTION is_reference ident_method  
      TOPAR parameter_list TCPAR
      optional_class_type
      method_body 
@@ -670,6 +670,12 @@ class_statement:
      { XhpDecl (XhpChildrenDecl ($1, $2, $3)) }
  | T_XHP_CATEGORY xhp_category_list TSEMICOLON 
      { XhpDecl (XhpCategoriesDecl ($1, $2, $3)) }
+
+/*(* ugly, php allows method names which should be IMHO reserved keywords *)*/
+ident_method: 
+ | ident { $1 }
+ | T_PARENT { "parent", $1 }
+ | T_SELF   { "self", $1 }
 
 /*(*x: GRAMMAR class declaration *)*/
 class_constant_declaration:
