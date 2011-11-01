@@ -129,6 +129,11 @@ let deadcode_analysis db =
           (List.length dead_ids_func) (List.length dead_ids_class));
    ()
 
+
+(*****************************************************************************)
+(* Prolog db *)
+(*****************************************************************************)
+
 (* todo: move in prolog_db_php.ml in foundation/ ? *)
 module EC = Entity_php
 
@@ -169,7 +174,6 @@ let name_id id db =
   with Not_found -> 
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
       
-
 let string_of_id_kind = function
   | EC.Function -> "function"
   (* todo? merge class/interface too? *)
@@ -188,8 +192,8 @@ let string_of_id_kind = function
   | EC.IdMisc -> "idmisc"
 
 let string_of_modifier = function
-  | Public -> "is_public"  
-  | Private -> "is_private" 
+  | Public    -> "is_public"  
+  | Private   -> "is_private" 
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
@@ -203,8 +207,8 @@ let gen_prolog_db db file =
    pr (":- discontiguous static/1, abstract/1, final/1.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
-
    pr (":- discontiguous extends/2, implements/2.");
+   pr (":- discontiguous docall/3.");
 
    db.Db.file_info#tolist +> List.iter (fun (file, _parsing_status) ->
      let file = Db.absolute_to_readable_filename file db in
@@ -228,10 +232,78 @@ let gen_prolog_db db file =
          * 
          * todo: refs, types for params?
          *)
-        (match kind, Db.ast_of_id id db with
+        let ast = Db.ast_of_id id db in
+
+        let add_callgraph () =
+          let h = Hashtbl.create 101 in
+  
+          let visitor = V.mk_visitor { V.default_visitor with
+            V.klvalue = (fun (k,vx) x ->
+              match Ast.untype x with
+              | FunCallSimple (callname, args) ->
+                  let str = Ast_php.name callname in
+                  if not (Hashtbl.mem h str)
+                  then begin
+                    Hashtbl.replace h str true;
+                    pr (spf "docall(%s, '%s', 'function')." (name_id id db) str)
+                  end;
+                  k x
+
+              | StaticMethodCallSimple(_, name, args)
+              | MethodCallSimple (_, _, name, args)
+              | StaticMethodCallVar (_, _, name, args)
+                ->
+                  let str = Ast_php.name name in
+                  (* use a different namespace than func? *)
+                  if not (Hashtbl.mem h str)
+                  then begin
+                    Hashtbl.replace h str true;
+                    pr (spf "docall(%s, '%s', 'method')." (name_id id db) str)
+                  end;
+
+                  k x
+              | _ -> k x
+            );
+            V.kexpr = (fun (k, vx) x ->
+              match Ast.untype x with
+              | New (_, classref, args)
+              | AssignNew (_, _, _, _, classref, args) ->
+                  (match classref with
+                  | ClassNameRefStatic x ->
+                      (match x with
+                      | ClassName name ->
+
+                          let str = Ast_php.name name in
+                          (* use a different namespace than func? *)
+                          if not (Hashtbl.mem h str)
+                          then begin
+                            Hashtbl.replace h str true;
+                            pr (spf "docall(%s, '%s', 'class')." 
+                                   (name_id id db) str)
+                          end;
+                          
+                      (* todo: do something here *)
+                      | Self _
+                      | Parent _
+                      | LateStatic _ ->
+                          ()
+                      )
+                  | ClassNameRefDynamic _ -> ()
+                  );
+                  k x
+              | _ -> k x
+            );
+          }
+          in
+          visitor (Entity ast);
+        in
+
+
+        (match kind, ast with
         | EC.Function, FunctionE def ->
             pr (spf "arity(%s, %d)." (name_id id db)
-             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)))
+             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
+            add_callgraph();
 
         | EC.Class, ClassE def ->
             (match def.c_type with
@@ -259,8 +331,10 @@ let gen_prolog_db db file =
             pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.m_params +> Ast.unparen +> Ast.uncomma_dots)));
             def.m_modifiers +> List.iter (fun (m, _) -> 
-              pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
-            )
+              pr (spf "%s(%s)." (string_of_modifier m) (name_id id db));
+            );
+            add_callgraph();
+
         | EC.ClassVariable, ClassVariableE (var, ms) ->
             ms +> List.iter (fun (m) -> 
               pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
@@ -268,7 +342,9 @@ let gen_prolog_db db file =
         | EC.ClassConstant, _ -> ()
         | EC.XhpDecl, _ -> ()
             
-        | (EC.StmtList | EC.IdMisc), _ -> ()
+        | (EC.StmtList | EC.IdMisc), _ ->
+            add_callgraph();
+
         | _ -> raise Impossible
         )
       ));
