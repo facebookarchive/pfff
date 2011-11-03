@@ -1745,7 +1745,7 @@ define_val:
  | Tdo statement Twhile TOPar TInt TCPar 
      {
        if fst $5 <> "0" 
-       then pr2 "WIERD: in macro and have not a while(0)";
+       then pr2 "WEIRD: in macro and have not a while(0)";
        DefineDoWhileZero ($2,  [$1;$3;$4;snd $5;$6])
      }
   *)*/
