@@ -56,7 +56,7 @@ and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
 (* Ident, name, scope qualifier *)
 (* ------------------------------------------------------------------------- *)
 
-(* c++ext: in C 'name' and 'ident' are equivalent and equal to just 'string'.
+(* c++ext: in C 'name' and 'ident' are equivalent and are just strings.
  * In C++ 'ident' can have a complex form like 'A::B::list<int>::size'.
  * I use Q for qualified. I also have a special type to make the difference
  * between intermediate idents (the classname or template_id) and final idents.
