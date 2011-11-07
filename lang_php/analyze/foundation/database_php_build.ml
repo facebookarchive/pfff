@@ -150,7 +150,6 @@ let index_db1_2 db files =
            * parse. Note that this id does not have a id_kind for now.
            *)
           | _ ->
-              (* TODO: unsugar necessary? bench? useful only for phase3 *)
               let topelem = Unsugar_php.unsugar_self_parent_toplevel topelem in
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
