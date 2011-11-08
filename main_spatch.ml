@@ -40,9 +40,11 @@ open Parse_info
 (* Flags *)
 (*****************************************************************************)
 
-let verbose = ref true
+let verbose = ref false
 
 let apply_patch = ref false
+(* too experimental for now *)
+let pretty_printer = ref false
 
 let spatch_file = ref ""
 
@@ -158,9 +160,13 @@ let main_action xs =
 
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
+
+      if !pretty_printer
+      then Unparse_pretty_print_mix.pretty_print_when_needit
+             ~oldfile:file ~newfile:tmpfile;
       
       let diff = Common.unix_diff file tmpfile in
-      diff |> List.iter pr;
+      diff +> List.iter pr;
       if !apply_patch 
       then Common.write_file ~file:file s;
     )
@@ -339,6 +345,26 @@ let add_action_ui_form_transfo = {
   grep_keywords = Some ["ui:form"];
 }
 
+
+(*---------------------------------------------------------------------------*)
+(* pretty printer testing *)
+(*---------------------------------------------------------------------------*)
+let test_pp file =
+  let tokens = Parse_php.tokens file in
+  let ast = Parse_php.parse_program file in
+
+  let ast = Ast_pp_build.program_with_comments tokens ast in
+
+  let buf = Buffer.create 256 in
+  let env = Pp2.empty (Buffer.add_string buf) in
+  Pretty_print.program_env env ast;
+  let s = Buffer.contents buf in
+
+  let tmp_file = Common.new_temp_file "pp" ".php" in
+  Common.write_file ~file:tmp_file s;
+  let xs = Common.unix_diff file tmp_file in
+  xs +> List.iter pr2
+
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
@@ -363,6 +389,8 @@ let spatch_extra_actions () = [
 
   "-test", "",
   Common.mk_action_0_arg test;
+  "-pp", "",
+  Common.mk_action_1_arg test_pp;
 ]
 
 (*****************************************************************************)
@@ -377,12 +405,14 @@ let options () =
   [
     "-f", Arg.Set_string spatch_file, 
     " <spatch_file>";
-    "-apply_patch", Arg.Set apply_patch, 
-    " ";
     "--apply-patch", Arg.Set apply_patch, 
     " ";
-    "-verbose", Arg.Set verbose, 
+    "--pretty-printer", Arg.Set pretty_printer, 
+    " reindent the modified code";
+    "--verbose", Arg.Set verbose, 
     " ";
+    "-v", Arg.Set verbose, 
+    " shortcut for --verbose";
   ] ++
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
