@@ -153,8 +153,11 @@ let main_action xs =
   let pattern = Spatch_php.parse spatch_file in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
-    pr2 (spf "processing: %s (%d/%d)" file i total);
+  let nbfiles = List.length files in
+
+  Common.execute_and_show_progress ~show_progress:!verbose nbfiles (fun k ->
+  files +> List.iter (fun file ->
+    k();
     let resopt = Spatch_php.spatch pattern file in
     resopt +> Common.do_option (fun (s) ->
 
@@ -170,7 +173,7 @@ let main_action xs =
       if !apply_patch 
       then Common.write_file ~file:file s;
     )
-  )
+  ))
 
 (*****************************************************************************)
 (* Extra actions *)
