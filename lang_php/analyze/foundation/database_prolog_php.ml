@@ -104,6 +104,15 @@ let string_of_modifier = function
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
+(*****************************************************************************)
+(* Defs/uses *)
+(*****************************************************************************)
+
+(* todo: yet another use/def ... factorize code with defs_uses_php.ml?
+ * but for defs we want more than just defs, we also want the arity
+ * of parameters for instance. And for uses we also want sometimes to
+ * process the arguments for instance with require_module.
+ *)
 let add_uses id ast pr db =
   let h = Hashtbl.create 101 in
   
