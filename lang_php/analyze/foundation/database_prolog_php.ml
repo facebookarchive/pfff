@@ -25,6 +25,21 @@ module V = Visitor_php
 (* Prelude *)
 (*****************************************************************************)
 
+(* 
+ * This module makes it possible to ask questions on the structure of
+ * a PHP codebase, for instance: "What are all the children of class Foo?".
+ * It is inspired by a similar tool for java called JQuery
+ * (http://jquery.cs.ubc.ca/).
+ * 
+ * todo:
+ *  - types, refs
+ *  - precise callgraph, using julien's pathup/pathdown tools
+ *  - ??
+ * 
+ * For more information look at h_program-lang/database_code.pl
+ * and its many predicates.
+ *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -93,6 +108,7 @@ let string_of_modifier = function
 (* Main entry point *)
 (*****************************************************************************)
 
+(* todo? could avoid going through database_php.ml and parse directly? *)
 let gen_prolog_db db file =
   Common.with_open_outfile file (fun (pr, _chan) ->
    let pr s = pr (s ^ "\n") in
