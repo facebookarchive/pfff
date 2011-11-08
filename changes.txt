@@ -1,7 +1,10 @@
 -*- org -*-
 
-* ???
+* ??? (Q4 2011)
 web ui in ocsigen?
+
+** introduce prolog backend so can do powerful query on the structure of
+the code a la JQuery.
 
 ** scheck: lots of new checks, and removed lots of false positives
 
