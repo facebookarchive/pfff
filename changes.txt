@@ -7,13 +7,13 @@ web ui in ocsigen?
 especially useful to query inheritance information.
 
 ** scheck: lots of new checks, and removed lots of false positives
-while still being reasonably fast thanks to the use of a lazy entity finder.
+while still being reasonably fast, thanks to the use of a lazy entity finder.
 
 ** spatch: leverage pretty printer so can reindent correctly the code
-after some transformation. Thx to julien.
+after some transformation. Thx to julien. spatch --pretty-printer.
 
-** lang_ml, more highlight so can parse julien's code which heavily
-use modules
+** lang_ml, more highlight
+so can parse julien's code which heavily use modules.
 
 * 0.17 (Q3 2011)
 
@@ -21,7 +21,7 @@ use modules
 with some helper functions to check the validity of an overlay.
 Also added some support for overlay in codemap.
 
-Overlay helps organize and visualize (bad) codebase from a different point
+Overlays help organize and visualize a (bad) codebase from a different point
 of view.
 
 ** introduce pm_depend
