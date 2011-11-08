@@ -10,7 +10,7 @@ especially useful to query inheritance information.
 while still being reasonably fast thanks to the use of a lazy entity finder.
 
 ** spatch: leverage pretty printer so can reindent correctly the code
-after some transformation.
+after some transformation. Thx to julien.
 
 ** lang_ml, more highlight so can parse julien's code which heavily
 use modules
