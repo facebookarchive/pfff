@@ -1,5 +1,7 @@
 <?php
 
+// use --pretty-printer
+
 function test1() {
 
   return foo('a                                                            ');
