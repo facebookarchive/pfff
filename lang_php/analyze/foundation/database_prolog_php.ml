@@ -104,6 +104,145 @@ let string_of_modifier = function
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
+let add_uses id ast pr db =
+  let h = Hashtbl.create 101 in
+  
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.klvalue = (fun (k,vx) x ->
+      match Ast.untype x with
+      | FunCallSimple (callname, args) ->
+          let str = Ast_php.name callname in
+          let args = args +> Ast.unparen +> Ast.uncomma in
+          (match str, args with
+          (* a little bit facebook specific ... *)
+          | "require_module", [Arg ((Sc (C (String (str,_))), _t1))] ->
+              pr (spf "require_module('%s', '%s')."
+                     (Db.readable_filename_of_id id db) str)
+          | _ -> ()
+          );
+
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "docall(%s, '%s', 'function')." (name_id id db) str)
+          end;
+          k x
+
+      | StaticMethodCallSimple(_, name, args)
+      | MethodCallSimple (_, _, name, args)
+      | StaticMethodCallVar (_, _, name, args)
+        ->
+          let str = Ast_php.name name in
+          (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "docall(%s, '%s', 'method')." (name_id id db) str)
+          end;
+          
+          k x
+      | _ -> k x
+    );
+    V.kexpr = (fun (k, vx) x ->
+      match Ast.untype x with
+      | New (_, classref, args)
+      | AssignNew (_, _, _, _, classref, args) ->
+          (match classref with
+          | ClassNameRefStatic x ->
+              (match x with
+              | ClassName name ->
+
+                  let str = Ast_php.name name in
+                  (* use a different namespace than func? *)
+                  if not (Hashtbl.mem h str)
+                  then begin
+                    Hashtbl.replace h str true;
+                    pr (spf "docall(%s, '%s', 'class')." 
+                           (name_id id db) str)
+                  end;
+                          
+              (* todo: do something here *)
+              | Self _
+              | Parent _
+              | LateStatic _ ->
+                  ()
+              )
+          | ClassNameRefDynamic _ -> ()
+          );
+          k x
+      | _ -> k x
+    );
+    V.kxhp_html = (fun (k, _) x ->
+      match x with
+      | Xhp (xhp_tag, _attrs, _tok, _, _) 
+      | XhpSingleton (xhp_tag, _attrs, _tok) 
+        ->
+          let str = Ast_php.name (Ast_php.XhpName xhp_tag) in
+          (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "docall(%s, '%s', 'class')." 
+                   (name_id id db) str)
+          end;
+          k x
+    );
+  }
+  in
+  visitor (Entity ast);
+  ()
+
+
+let add_defs_and_uses id kind ast pr db =
+  match kind, ast with
+  | EC.Function, FunctionE def ->
+      pr (spf "arity(%s, %d)." (name_id id db)
+             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
+      add_uses id ast pr db;
+
+  | EC.Class, ClassE def ->
+      (match def.c_type with
+      | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
+      | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
+      | ClassRegular _ -> ()
+      );
+      def.c_extends +> Common.do_option (fun (tok, x) ->
+        pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
+      );
+      def.c_implements +> Common.do_option (fun (tok, interface_list) ->
+        interface_list +> Ast.uncomma |> List.iter (fun x ->
+          pr (spf "implements(%s, '%s')." (name_id id db) (Ast.name x));
+        )
+      );
+
+  | EC.Interface, InterfaceE def ->
+      def.i_extends +> Common.do_option (fun (tok, interface_list) ->
+        interface_list +> Ast.uncomma |> List.iter (fun x ->
+          pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
+        )
+      )
+            
+  | (EC.Method | EC.StaticMethod), MethodE def -> 
+      pr (spf "arity(%s, %d)." (name_id id db)
+             (List.length (def.m_params +> Ast.unparen +> Ast.uncomma_dots)));
+      def.m_modifiers +> List.iter (fun (m, _) -> 
+        pr (spf "%s(%s)." (string_of_modifier m) (name_id id db));
+      );
+      add_uses id ast pr db;
+
+  | EC.ClassVariable, ClassVariableE (var, ms) ->
+      ms +> List.iter (fun (m) -> 
+        pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
+      )
+  | EC.ClassConstant, _ -> ()
+  | EC.XhpDecl, _ -> ()
+            
+  | (EC.StmtList | EC.IdMisc), _ ->
+      add_uses id ast pr db;
+      
+  | _ -> raise Impossible
+
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -121,6 +260,8 @@ let gen_prolog_db db file =
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
    pr (":- discontiguous extends/2, implements/2.");
    pr (":- discontiguous docall/3.");
+   pr (":- discontiguous include/2.");
+   pr (":- discontiguous require_module/2.");
 
    db.Db.file_info#tolist +> List.iter (fun (file, _parsing_status) ->
      let file = Db.absolute_to_readable_filename file db in
@@ -145,120 +286,8 @@ let gen_prolog_db db file =
          * todo: refs, types for params?
          *)
         let ast = Db.ast_of_id id db in
+        add_defs_and_uses id kind ast pr db;
 
-        let add_callgraph () =
-          let h = Hashtbl.create 101 in
-  
-          let visitor = V.mk_visitor { V.default_visitor with
-            V.klvalue = (fun (k,vx) x ->
-              match Ast.untype x with
-              | FunCallSimple (callname, args) ->
-                  let str = Ast_php.name callname in
-                  if not (Hashtbl.mem h str)
-                  then begin
-                    Hashtbl.replace h str true;
-                    pr (spf "docall(%s, '%s', 'function')." (name_id id db) str)
-                  end;
-                  k x
-
-              | StaticMethodCallSimple(_, name, args)
-              | MethodCallSimple (_, _, name, args)
-              | StaticMethodCallVar (_, _, name, args)
-                ->
-                  let str = Ast_php.name name in
-                  (* use a different namespace than func? *)
-                  if not (Hashtbl.mem h str)
-                  then begin
-                    Hashtbl.replace h str true;
-                    pr (spf "docall(%s, '%s', 'method')." (name_id id db) str)
-                  end;
-
-                  k x
-              | _ -> k x
-            );
-            V.kexpr = (fun (k, vx) x ->
-              match Ast.untype x with
-              | New (_, classref, args)
-              | AssignNew (_, _, _, _, classref, args) ->
-                  (match classref with
-                  | ClassNameRefStatic x ->
-                      (match x with
-                      | ClassName name ->
-
-                          let str = Ast_php.name name in
-                          (* use a different namespace than func? *)
-                          if not (Hashtbl.mem h str)
-                          then begin
-                            Hashtbl.replace h str true;
-                            pr (spf "docall(%s, '%s', 'class')." 
-                                   (name_id id db) str)
-                          end;
-                          
-                      (* todo: do something here *)
-                      | Self _
-                      | Parent _
-                      | LateStatic _ ->
-                          ()
-                      )
-                  | ClassNameRefDynamic _ -> ()
-                  );
-                  k x
-              | _ -> k x
-            );
-          }
-          in
-          visitor (Entity ast);
-        in
-
-
-        (match kind, ast with
-        | EC.Function, FunctionE def ->
-            pr (spf "arity(%s, %d)." (name_id id db)
-             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
-            add_callgraph();
-
-        | EC.Class, ClassE def ->
-            (match def.c_type with
-            | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
-            | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
-            | ClassRegular _ -> ()
-            );
-            def.c_extends +> Common.do_option (fun (tok, x) ->
-              pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
-            );
-            def.c_implements +> Common.do_option (fun (tok, interface_list) ->
-              interface_list +> Ast.uncomma |> List.iter (fun x ->
-              pr (spf "implements(%s, '%s')." (name_id id db) (Ast.name x));
-              )
-            );
-
-        | EC.Interface, InterfaceE def ->
-            def.i_extends +> Common.do_option (fun (tok, interface_list) ->
-              interface_list +> Ast.uncomma |> List.iter (fun x ->
-              pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
-              )
-            )
-            
-        | (EC.Method | EC.StaticMethod), MethodE def -> 
-            pr (spf "arity(%s, %d)." (name_id id db)
-             (List.length (def.m_params +> Ast.unparen +> Ast.uncomma_dots)));
-            def.m_modifiers +> List.iter (fun (m, _) -> 
-              pr (spf "%s(%s)." (string_of_modifier m) (name_id id db));
-            );
-            add_callgraph();
-
-        | EC.ClassVariable, ClassVariableE (var, ms) ->
-            ms +> List.iter (fun (m) -> 
-              pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
-            )
-        | EC.ClassConstant, _ -> ()
-        | EC.XhpDecl, _ -> ()
-            
-        | (EC.StmtList | EC.IdMisc), _ ->
-            add_callgraph();
-
-        | _ -> raise Impossible
-        )
       ));
    );
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
@@ -266,8 +295,7 @@ let gen_prolog_db db file =
      xs +> List.iter (fun file2 ->
        let file2 = 
          try Db.absolute_to_readable_filename file2 db 
-         with Failure _ ->
-           file2
+         with Failure _ -> file2
        in
        pr (spf "include('%s', '%s')." file1 file2)
      );

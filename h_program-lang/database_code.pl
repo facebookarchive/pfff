@@ -5,15 +5,15 @@
 %---------------------------------------------------------------------------
 
 % This file is the basis of an interactive tool a la SQL to query
-% information about the structure of a codebase, for instance "What
-% are all the children of class Foo?". The data is the code. The query
-% language is Prolog (http://en.wikipedia.org/wiki/Prolog), a
-% logic-based programming language used mainly in AI but also popular
-% in database (http://en.wikipedia.org/wiki/Datalog). The particular
-% Prolog implementation we use is SWI-prolog
+% information about a codebase, for instance "What are all the
+% children of class Foo?". The data is the code. The query language is
+% Prolog (http://en.wikipedia.org/wiki/Prolog), a logic-based
+% programming language used mainly in AI but also popular in database
+% (http://en.wikipedia.org/wiki/Datalog). The particular Prolog
+% implementation we use is SWI-prolog
 % (http://www.swi-prolog.org/pldoc/refman/). We've chosen Prolog over
-% SQL because it's really easy to define recursive predicates
-% like children (see below) in Prolog, and such predicates are necessary
+% SQL because it's really easy to define recursive predicates like
+% children/2 (see below) in Prolog, and such predicates are necessary
 % when dealing with object-oriented codebase.
 %
 % This tool is inspired by a similar tool for Java called JQuery
@@ -27,7 +27,8 @@
 % Here are the predicates that should be defined in facts.pl:
 %
 %  - entities: kind/2 with the function/class/method/constant/field/... atoms.
-%    ex: kind('array_map', function). kind(('Preparable', 'gen'), method).
+%      ex: kind('array_map', function). 
+%      ex: kind(('Preparable', 'gen'), method).
 %    The identifier for a function is its name in a string and for
 %    class members a pair with the name of the class and then the member name,
 %    both in a string. We don't differentiate methods from static methods;
@@ -35,7 +36,9 @@
 %
 %  - callgraph: docall/3 with the function/method/class atoms to differentiate
 %    regular function calls, method calls, and class instantiations via new.
-%    ex: docall('foo', 'bar', function). docall(('A', 'foo'), 'toInt', method).
+%      ex: docall('foo', 'bar', function). 
+%      ex: docall(('A', 'foo'), 'toInt', method).
+%      ex: docall('foo', ':x:frag', class).
 %    Note that for method calls we actually don't resolve to which class
 %    the method belongs to (that would require to leverage results from
 %    an interprocedural static analysis).
@@ -43,34 +46,40 @@
 %    in Prolog.
 %
 %  - function/method arity (number of parameters): arity/2
-%    ex: arity('foobar', 3). arity(('Preparable', 'gen'), 0).
+%      ex: arity('foobar', 3). 
+%      ex: arity(('Preparable', 'gen'), 0).
 %
 %  - TODO: parameter information (types, ref)
 %
 %  - class/method properties: static/1, abstract/1, final/1
-%    ex: static(('Filesystem', 'readFile')). abstract('AbstractTestCase').
+%      ex: static(('Filesystem', 'readFile')). 
+%      ex: abstract('AbstractTestCase').
 %
 %  - class members visibility: is_public/1, is_private/1, is_protected/1,
-%    ex: is_public(('Preparable', 'gen')).
+%      ex: is_public(('Preparable', 'gen')).
 %    We use 'is_public' and not 'public' because public is a reserved name
 %    in Prolog.
 % 
 %  - inheritance: extends/2, implements/2
-%    ex: extends('EntPhoto', 'Ent'). implements('MyTest', 'NeedSqlShim').
+%      ex: extends('EntPhoto', 'Ent'). 
+%      ex: implements('MyTest', 'NeedSqlShim').
 %
-%  - include/require: include/2
-%    ex: include('wap/index.php', 'flib/core/__init__.php').
-%    We don't differentiate 'include' from 'require'. Note that it works
+%  - include/require: include/2, require_module/2
+%      ex: include('wap/index.php', 'flib/core/__init__.php').
+%      ex: require_module('flib/core/__init__.php', 'core/db').
+%    We don't differentiate 'include' from 'require'. Note that include works
 %    on desugared flib code so the require_module() are translated in
 %    their equivalent includes. Finally path are resolved statically
 %    when we can, so for instance include $THRIFT_ROOT . '...' is resolved
 %    in its final path form 'lib/thrift/...'.
 %
 %  - position: at/3
-%    ex: at(('Preparable', 'gen'), 'flib/core/preparable.php', 10).
+%      ex: at(('Preparable', 'gen'), 'flib/core/preparable.php', 10).
 %
 %  - file information: file/2
-%    ex: file('wap/index.php', ['wap','index.php']).
+%       ex: file('wap/index.php', ['wap','index.php']).
+%    By having a list one then use member/3 to select subparts of the codebase
+%    easily.
 %
 % related work:
 %  - jquery, tyruba
@@ -86,13 +95,17 @@
 % (e.g. with pfff_db_heavy -gen_prolog_db /tmp/pfff_db /tmp/facts.pl)
 % and then:
 %
-%   $ swipl -s /tmp/facts.pl -f rules.pl
+%   $ swipl -s /tmp/facts.pl -f database_code.pl
 %
-% or compiles a version with
+% If you want to test a new predicate you can even do
 %
-%   $ swipl -c /tmp/facts.pl rules.pl; ./a.out
+%  $ swipl -s /tmp/facts.pl -f database_code.pl -t halt --quiet -g "children(X,'Foo'), writeln(X), fail"
 %
-% or use a precompiled version with
+% If you want to compile a database do:
+%
+%   $ swipl -c /tmp/facts.pl database_code.pl; ./a.out
+%
+% Finally you can also use a precompiled database with:
 %
 %   $ cmf --prolog or /home/engshare/pfff/prolog_www
 %
