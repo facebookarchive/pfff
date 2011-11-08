@@ -3,10 +3,11 @@
 * ??? (Q4 2011)
 web ui in ocsigen?
 
-** introduce codequery, a prolog-based code query engine
+** introduce codequery, a Prolog-based code query engine
 especially useful to query inheritance information.
 
 ** scheck: lots of new checks, and removed lots of false positives
+while still being reasonably fast thanks to the use of a lazy entity finder.
 
 ** spatch: leverage pretty printer so can reindent correctly the code
 after some transformation.
