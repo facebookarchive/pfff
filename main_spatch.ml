@@ -47,6 +47,7 @@ let apply_patch = ref false
 let pretty_printer = ref false
 
 let spatch_file = ref ""
+let sed_string = ref ""
 
 (* action mode *)
 let action = ref ""
@@ -144,9 +145,28 @@ let apply_transfo transfo xs =
 let main_action xs =
 
   let spatch_file = 
-    if Common.null_string !spatch_file
-    then failwith "I need a semantic patch file; use -f"
-    else  !spatch_file 
+    match !spatch_file, !sed_string with
+    | "", "" ->
+        failwith "I need a semantic patch file; use -f"
+    | "", s ->
+        (* does not handle nested /, does not handle s# alternate
+         * syntax as in perl, does not handle much ...
+         *)
+        if s =~ "s/\\(.*\\)/\\(.*\\)/"
+        then begin
+          let (before, after) = Common.matched2 s in
+          let tmpfile = Common.new_temp_file "spatch" ".spatch" in
+          Common.with_open_outfile tmpfile (fun (pr, _chan) ->
+            pr (spf "- %s\n" before);
+            pr (spf "+ %s\n" after);
+          );
+          tmpfile
+        end 
+        else failwith ("wrong format, use s/.../.../ not: " ^ s)
+    | s, "" ->
+        !spatch_file 
+    | s1, s2 ->
+        failwith "Can't use -f and -e at the same time"
   in
 
   (* old: let pattern = dumb_spatch_pattern in *)
@@ -408,6 +428,8 @@ let options () =
   [
     "-f", Arg.Set_string spatch_file, 
     " <spatch_file>";
+    "-e", Arg.Set_string sed_string, 
+    " <s/before/after/>, sed mode";
     "--apply-patch", Arg.Set apply_patch, 
     " ";
     "--pretty-printer", Arg.Set pretty_printer, 
