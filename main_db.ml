@@ -77,8 +77,6 @@ let rec light_db_of_files_or_dirs lang xs =
                 with _ ->
                   let root = Common.common_prefix_of_files_or_dirs xs in
 
-                  let prj = Database_php.Project (root, None) in
-
                   let php_files = 
                     Lib_parsing_php.find_php_files_of_dir_or_files xs 
                     +> List.map Common.relative_to_absolute 
@@ -88,7 +86,7 @@ let rec light_db_of_files_or_dirs lang xs =
                     ~annotate_variables_program:
                     (Some Check_variables_php.check_and_annotate_program)
                     ~files:(Some php_files)
-                    prj 
+                    (Database_php.Project (root, None))
               );
             in
             Common.finalize (fun () ->

@@ -53,16 +53,13 @@ let main_action xs =
         )
         +> Common.chop_dirsymbol 
       in
-      let prj = Database_php.Project (dir, None) in
-      let prj = Database_php.normalize_project prj in 
-
       let db = 
         Database_php_build.create_db
           ~db_support:(Database_php.Disk !metapath)
           ~phase:!phase
           ~annotate_variables_program:
-           (Some Check_variables_php.check_and_annotate_program)
-          prj 
+            (Some Check_variables_php.check_and_annotate_program)
+          (Database_php.prj_of_dir dir)
       in
       if !index_method then Database_php_build2.index_db_method db;
 

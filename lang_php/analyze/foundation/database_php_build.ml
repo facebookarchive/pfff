@@ -704,22 +704,19 @@ let fast_create_db_mem_a_la_cpp ?phase files_or_dirs =
  * files built with tmp_php_file_from_string() below.
  *)
 let db_of_files_or_dirs ?(annotate_variables_program=None) files_or_dirs =
-
-  (* prj is normally used in GUI to display files relative to a specific
-   * project base. Here we want to analyze a set of adhoc files or multiple
-   * dirs so there is no base so we use /
-   *)
-  let prj = Database_php.Project ("/", None) in
-
   let php_files =
     Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs
     +> List.map Common.relative_to_absolute
   in
+  (* prj is normally used in GUI to display files relative to a specific
+   * project base. Here we want to analyze a set of adhoc files or multiple
+   * dirs so there is no base so we use /
+   *)
   create_db
     ~db_support:Database_php.Mem
     ~files:(Some php_files)
     ~annotate_variables_program
-    prj
+    (Database_php.Project ("/", None))
 
 (*****************************************************************************)
 (* Main entry for Arg *)

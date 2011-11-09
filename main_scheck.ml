@@ -170,28 +170,18 @@ let build_mem_db file =
       ~depth_limit:!depth_limit
       env file
   in
-  (* adding builtins *)
   let builtin_files =
     Lib_parsing_php.find_php_files_of_dir_or_files [!php_stdlib]
   in
-        
-  let all_files = builtin_files ++ all_files in
-  let prj = Database_php.Project (root, None) in
-  let prj = Database_php.normalize_project prj in 
-  
-  let db = 
-          Common.save_excursion Flag_analyze_php.verbose_database !verbose 
-            (fun()->
-              Database_php_build.create_db
-                ~db_support:(Database_php.Mem)
-                ~phase:2 (* TODO ? *)
-                ~files:(Some all_files)
-                ~verbose_stats:false
-                ~annotate_variables_program:None
-                prj 
-            )
-  in
-  db
+  Common.save_excursion Flag_analyze_php.verbose_database !verbose (fun()->
+    Database_php_build.create_db
+      ~db_support:(Database_php.Mem)
+      ~phase:2 (* TODO ? *)
+      ~files:(Some (builtin_files ++ all_files))
+      ~verbose_stats:false
+      ~annotate_variables_program:None
+      (Database_php.prj_of_dir root) 
+  )
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -420,5 +410,5 @@ let main () =
 (*****************************************************************************)
 let _ =
   Common.main_boilerplate (fun () ->
-      main ();
+    main ();
   )
