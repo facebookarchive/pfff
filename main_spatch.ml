@@ -191,7 +191,7 @@ let main_action xs =
       let diff = Common.unix_diff file tmpfile in
       diff +> List.iter pr;
       if !apply_patch 
-      then Common.write_file ~file:file s;
+      then Common.write_file ~file:file (Common.read_file tmpfile);
     )
   ))
 
