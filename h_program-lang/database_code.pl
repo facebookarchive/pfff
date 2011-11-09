@@ -10,7 +10,7 @@
 % Prolog (http://en.wikipedia.org/wiki/Prolog), a logic-based
 % programming language used mainly in AI but also popular in database
 % (http://en.wikipedia.org/wiki/Datalog). The particular Prolog
-% implementation we use is SWI-prolog
+% implementation we use for now is SWI-prolog
 % (http://www.swi-prolog.org/pldoc/refman/). We've chosen Prolog over
 % SQL because it's really easy to define recursive predicates like
 % children/2 (see below) in Prolog, and such predicates are necessary
@@ -28,6 +28,7 @@
 %
 %  - entities: kind/2 with the function/class/method/constant/field/... atoms.
 %      ex: kind('array_map', function). 
+%      ex: kind('Preparable', class).
 %      ex: kind(('Preparable', 'gen'), method).
 %    The identifier for a function is its name in a string and for
 %    class members a pair with the name of the class and then the member name,
@@ -42,8 +43,8 @@
 %    Note that for method calls we actually don't resolve to which class
 %    the method belongs to (that would require to leverage results from
 %    an interprocedural static analysis).
-%    We use 'docall' and not 'call' because call is a reserved predicate
-%    in Prolog.
+%    Note that we use 'docall' and not 'call' because call is a 
+%    reserved predicate in Prolog.
 %
 %  - function/method arity (number of parameters): arity/2
 %      ex: arity('foobar', 3). 
@@ -63,6 +64,8 @@
 %  - inheritance: extends/2, implements/2
 %      ex: extends('EntPhoto', 'Ent'). 
 %      ex: implements('MyTest', 'NeedSqlShim').
+%    See also the children/2, parent/2, related/2, inherits/2 helpers 
+%    predicates defined below.
 %
 %  - include/require: include/2, require_module/2
 %      ex: include('wap/index.php', 'flib/core/__init__.php').
@@ -97,13 +100,13 @@
 %
 %   $ swipl -s /tmp/facts.pl -f database_code.pl
 %
-% If you want to test a new predicate you can even do
+% If you want to test a new predicate you can do for instance:
 %
 %  $ swipl -s /tmp/facts.pl -f database_code.pl -t halt --quiet -g "children(X,'Foo'), writeln(X), fail"
 %
 % If you want to compile a database do:
 %
-%   $ swipl -c /tmp/facts.pl database_code.pl; ./a.out
+%   $ swipl -c /tmp/facts.pl database_code.pl #this will generate a 'a.out'
 %
 % Finally you can also use a precompiled database with:
 %
@@ -134,13 +137,12 @@ children(GrandChild, Parent) :-
         extends_or_implements(GrandChild, Child),
         children(Child, Parent).
 
-% only extends
+%aran: only extends
 inherits(Child, Parent) :-
         extends(Child, Parent).
 inherits(GrandChild, Parent) :-
         extends(GrandChild, Child),
         inherits(Child, Parent).
-
 
 parent(X, Y) :-
         children(Y, X).
@@ -186,6 +188,7 @@ at_method((Class, Method), File, Line) :-
         method(Class, (Class2, Method)), 
         at((Class2, Method), File, Line).
 
+% aran's override bad smell detector
 overrides(ChildClass, Method) :-
         kind((ChildClass, Method), method),
         inherits(ChildClass, ParentClass),
@@ -213,15 +216,13 @@ overrides(ChildClass, ParentClass, Method) :-
 % Clown code
 %---------------------------------------------------------------------------
 
+%todo: histogram for kent of function arities :)
 too_many_params(X) :-
         arity(X, N), N > 20.
-
-%todo: histogram for kent of function arities :)
 
 include_not_www_code(X, Y) :-
         include(X, Y),
         \+ file(Y, _).
-
 
 % this is what makes the callgraph for methods more complicated
 same_method_in_unrelated_classes(Method, Class1, Class2) :-
@@ -238,6 +239,11 @@ too_many_public_methods(X) :-
         length(Res, N), 
         N > 10.
 
+%---------------------------------------------------------------------------
+% Refactoring opportunities
+%---------------------------------------------------------------------------
+
+% aran's code
 could_be_final(Class) :-
   kind(Class, class),
   not(final(Class)),
@@ -248,6 +254,11 @@ could_be_final(Class, Method) :-
   kind((Class, Method), method),
   not(final((Class, Method))),
   not(overrides(_ChildClass, Class, Method)).
+
+% for paul
+could_remove_delegate_method(Class, Method) :-
+        docall((Class, Method), 'delegateToYield', method), 
+        not((children(Class, Parent), kind((Parent, Method), Kind))).
 
 %---------------------------------------------------------------------------
 % checks
