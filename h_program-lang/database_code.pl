@@ -276,3 +276,7 @@ check_duplicated_field(Class, Class2, Var) :-
         Class \= 'Exception',
         children(Class2, Class), 
         kind((Class2, Var), field).
+
+check_call_unexisting_method_anywhere(Caller, Method) :-
+        docall(Caller, Method, method),
+        not (kind ((_X, Method), method)).
