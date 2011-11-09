@@ -1,6 +1,6 @@
 -*- org -*-
 
-* ??? (Q4 2011)
+* ??? (Q4 2011) (??)
 web ui in ocsigen?
 
 ** introduce codequery, a Prolog-based code query engine
@@ -15,7 +15,7 @@ after some transformation. Thx to julien. spatch --pretty-printer.
 ** lang_ml, more highlight
 so can parse julien's code which heavily use modules.
 
-* 0.17 (Q3 2011)
+* 0.17 (Q3 2011) (overlay)
 
 ** introduce notion of code overlay
 with some helper functions to check the validity of an overlay.
@@ -36,13 +36,13 @@ to get this to work.
 
 ** sgrep: support for regexp when matching string constants
 
-* 0.16 (Q2 2011)
+* 0.16 (Q2 2011) (c++ parser)
 
 ** better C++ parser
 complete refactoring of the parser. Far less heuristics techniques.
 Closer to what was described in the CC'09 paper.
 
-* 0.15 (Q1 2011)
+* 0.15 (Q1 2011) (html/css parsers, ocsigen)
 
 ** introduce web-based source code navigator a la LXR using ocsigen
 first play with ocsigen.
@@ -55,7 +55,7 @@ first play with ocsigen.
 
 ** introduce lang_web/ with combined html+js+css parser
 
-* 0.14 (Q4 2010)
+* 0.14 (Q4 2010) (spatch, layers, more languages highlighters)
 
 ** codemap
 
@@ -158,7 +158,7 @@ of a bottom up analysis of php)
 
 first public release!
 
-* 0.12 (Q3 2010)
+* 0.12 (Q3 2010) (codemap, tags, scheck, ocaml support)
 
 Real start of multi-language support.
 
@@ -246,7 +246,7 @@ analysis, etc.
 to grab all the files needed to check one file, in a way similar
 to what gcc does with cpp. Provide a DFS and BFS algo.
 
-* 0.10 (Q2 2010)
+* 0.10 (Q2 2010) (coverage)
 
 ** finish test coverage analysis using xdebug.ml and phpunit.ml
 rank, filter, parallelize (using MPI), cronize.
@@ -311,7 +311,7 @@ update: not used for now
 ** internals
 reorganized json/sexp output, factorize code and use more ocaml.ml
 
-* 0.8 (Q1 2010)
+* 0.8 (Q1 2010) (sgrep + treemap + dynamic analysis)
 
 ** xdebug trace parsing, can now do dynamic analysis! 
 Done for type "inference/extraction" at the beginnning and useful
@@ -380,7 +380,7 @@ internals manual for parsing_php/
 callgraph for methods (using weak heuristic), with optimisations
 to scale (partially because use weak heuristic)
 
-* 0.3 (Q4 2009)
+* 0.3 (Q4 2009) (PHP parser + db + deadcode)
 
 ** analysis
 deadcode analysis v2, v3, v4
