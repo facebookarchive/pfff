@@ -23,17 +23,24 @@
 % on PHP code for now.
 %
 % This file assumes the presence of another file, facts.pl, containing
-% the actual "database" of facts about a codebase.
+% the actual "database" of facts about a codebase. There is potentially
+% an infinite numbers of predicates we could define. For instance
+% does the method contains a for loop, does it call '+', etc. But for now
+% we focus on predicates related to entities, to names, e.g. defs and uses
+% of functions/classes/etc.
 % Here are the predicates that should be defined in facts.pl:
 %
 %  - entities: kind/2 with the function/class/method/constant/field/... atoms.
-%      ex: kind('array_map', function). 
+%      ex: kind('array_map', function).
 %      ex: kind('Preparable', class).
 %      ex: kind(('Preparable', 'gen'), method).
+%      ex: kind((Preparable', '__count'), field).
 %    The identifier for a function is its name in a string and for
 %    class members a pair with the name of the class and then the member name,
 %    both in a string. We don't differentiate methods from static methods;
 %    the static/1 predicate below can be used for that (same for fields).
+%    Note that for fields the name of the field does not contain the $ because
+%    when used, as in '$this->field, there is no $.
 %
 %  - callgraph: docall/3 with the function/method/class atoms to differentiate
 %    regular function calls, method calls, and class instantiations via new.
@@ -45,6 +52,13 @@
 %    an interprocedural static analysis).
 %    Note that we use 'docall' and not 'call' because call is a 
 %    reserved predicate in Prolog.
+%
+%  - datagraph: douse/4 with the field/array atoms to differentiate access
+%    to object members, access to fields of an array (often because people
+%    abuse arrays to represent records), and the read/write atoms to
+%    indicate in which position the field is use.
+%     ex: douse('foo', 'count', field, read).
+%     ex: douse(('A','foo'), 'name', array, write).
 %
 %  - function/method arity (number of parameters): arity/2
 %      ex: arity('foobar', 3). 

@@ -61,8 +61,15 @@ let name_id id db =
             (match id_kind with
             | EC.Method ->       spf "('%s','%s')" sclass s
             | EC.StaticMethod -> spf "('%s','%s')" sclass s
+
+            | EC.ClassVariable ->
+                (* remove the $ because in use-mode we don't use the $ *)
+                if s =~ "\\$\\(.*\\)"
+                then spf "('%s','%s')" sclass (Common.matched1 s)
+                else failwith ("wrong field, no $ found: " ^ s)
+
             (* todo? something special ? *)
-            | EC.ClassConstant | EC.ClassVariable 
+            | EC.ClassConstant 
             | EC.XhpDecl 
               -> spf "('%s','%s')" sclass s
 
