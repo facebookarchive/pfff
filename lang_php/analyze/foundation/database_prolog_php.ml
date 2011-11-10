@@ -113,6 +113,10 @@ let string_of_modifier = function
 
 let read_write in_lvalue =
   if in_lvalue then "write" else "read"
+    
+let escape_quote_array_field s =
+  Str.global_replace (Str.regexp "[']") "__" s
+ 
 
 (*****************************************************************************)
 (* Defs/uses *)
@@ -174,17 +178,17 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "douse(%s, '%s', field, %s)." 
+            pr (spf "use(%s, '%s', field, %s)." 
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
       | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))), t_2)), _)) ->
-          let str = fld in
+          let str = escape_quote_array_field fld in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "douse(%s, '%s', array, %s)." 
+            pr (spf "use(%s, '%s', array, %s)." 
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
@@ -315,13 +319,11 @@ let gen_prolog_db db file =
    
    pr (":- discontiguous kind/2, at/3.");
    pr (":- discontiguous static/1, abstract/1, final/1.");
-   pr (":- discontiguous arity/2.");
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
    pr (":- discontiguous extends/2, implements/2.");
-   pr (":- discontiguous docall/3.");
-   pr (":- discontiguous douse/4.");
-   pr (":- discontiguous include/2.");
-   pr (":- discontiguous require_module/2.");
+   pr (":- discontiguous arity/2.");
+   pr (":- discontiguous docall/3, use/4.");
+   pr (":- discontiguous include/2, require_module/2.");
 
    db.Db.file_info#tolist +> List.iter (fun (file, _parsing_status) ->
      let file = Db.absolute_to_readable_filename file db in

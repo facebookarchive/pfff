@@ -5,7 +5,8 @@
 %---------------------------------------------------------------------------
 
 % This file is the basis of an interactive tool a la SQL to query
-% information about a codebase, for instance "What are all the
+% information about the structure of a codebase (the inheritance tree, 
+% the call graph, the data graph), for instance "What are all the
 % children of class Foo?". The data is the code. The query language is
 % Prolog (http://en.wikipedia.org/wiki/Prolog), a logic-based
 % programming language used mainly in AI but also popular in database
@@ -53,12 +54,12 @@
 %    Note that we use 'docall' and not 'call' because call is a 
 %    reserved predicate in Prolog.
 %
-%  - datagraph: douse/4 with the field/array atoms to differentiate access
+%  - datagraph: use/4 with the field/array atoms to differentiate access
 %    to object members, and access to fields of an array (often because people
 %    abuse arrays to represent records), and the read/write atoms to
 %    indicate in which position the field is used.
-%     ex: douse('foo', 'count', field, read).
-%     ex: douse(('A','foo'), 'name', array, write).
+%     ex: use('foo', 'count', field, read).
+%     ex: use(('A','foo'), 'name', array, write).
 %
 %  - function/method arity (number of parameters): arity/2
 %      ex: arity('foobar', 3). 

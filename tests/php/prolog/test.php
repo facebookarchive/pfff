@@ -36,3 +36,7 @@ class C extends B implements I {
     bar();
   }
 }
+
+function test_long_field($o) {
+  echo $o["this is a'valid field too"];
+}
