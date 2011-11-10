@@ -111,6 +111,9 @@ let string_of_modifier = function
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
+let read_write in_lvalue =
+  if in_lvalue then "write" else "read"
+
 (*****************************************************************************)
 (* Defs/uses *)
 (*****************************************************************************)
@@ -123,10 +126,16 @@ let string_of_modifier = function
  *)
 let add_uses id ast pr db =
   let h = Hashtbl.create 101 in
+
+  let in_lvalue_pos = ref false in
   
   let visitor = V.mk_visitor { V.default_visitor with
+
     V.klvalue = (fun (k,vx) x ->
       match Ast.untype x with
+      (* todo: need to handle pass by ref too so set in_lvalue_pos
+       * for the right parameter. So need an entity_finder?
+       *)
       | FunCallSimple (callname, args) ->
           let str = Ast_php.name callname in
           let args = args +> Ast.unparen +> Ast.uncomma in
@@ -158,10 +167,43 @@ let add_uses id ast pr db =
           end;
           
           k x
+
+      | ObjAccessSimple (lval, tok, name) ->
+          let str = Ast_php.name name in
+          (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "douse(%s, '%s', field, %s)." 
+                   (name_id id db) str (read_write !in_lvalue_pos))
+          end;
+          k x
+      | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))), t_2)), _)) ->
+          let str = fld in
+          (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "douse(%s, '%s', array, %s)." 
+                   (name_id id db) str (read_write !in_lvalue_pos))
+          end;
+          k x
+          
+          
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
       match Ast.untype x with
+      (* todo: enough? hmm we need to handle pass by ref too *)
+      | Assign (lval, _, e)
+      | AssignOp(lval, _, e) 
+        ->
+          Common.save_excursion in_lvalue_pos true (fun () ->
+            vx (Lvalue lval)
+          );
+          vx (Expr e);
+          
+
       | New (_, classref, args)
       | AssignNew (_, _, _, _, classref, args) ->
           (match classref with
@@ -277,6 +319,7 @@ let gen_prolog_db db file =
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
    pr (":- discontiguous extends/2, implements/2.");
    pr (":- discontiguous docall/3.");
+   pr (":- discontiguous douse/4.");
    pr (":- discontiguous include/2.");
    pr (":- discontiguous require_module/2.");
 

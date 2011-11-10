@@ -54,9 +54,9 @@
 %    reserved predicate in Prolog.
 %
 %  - datagraph: douse/4 with the field/array atoms to differentiate access
-%    to object members, access to fields of an array (often because people
+%    to object members, and access to fields of an array (often because people
 %    abuse arrays to represent records), and the read/write atoms to
-%    indicate in which position the field is use.
+%    indicate in which position the field is used.
 %     ex: douse('foo', 'count', field, read).
 %     ex: douse(('A','foo'), 'name', array, write).
 %
