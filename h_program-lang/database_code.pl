@@ -258,7 +258,7 @@ could_be_final(Class, Method) :-
 % for paul
 could_remove_delegate_method(Class, Method) :-
         docall((Class, Method), 'delegateToYield', method), 
-        not((children(Class, Parent), kind((Parent, Method), Kind))).
+        not((children(Class, Parent), kind((Parent, Method), _Kind))).
 
 %---------------------------------------------------------------------------
 % checks
@@ -279,4 +279,4 @@ check_duplicated_field(Class, Class2, Var) :-
 
 check_call_unexisting_method_anywhere(Caller, Method) :-
         docall(Caller, Method, method),
-        not (kind ((_X, Method), method)).
+        not(kind((_X, Method), method)).
