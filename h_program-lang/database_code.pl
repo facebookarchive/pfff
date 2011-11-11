@@ -31,7 +31,8 @@
 % of functions/classes/etc.
 % Here are the predicates that should be defined in facts.pl:
 %
-%  - entities: kind/2 with the function/class/method/constant/field/... atoms.
+%  - entities: kind/2, or the isa/2 infix operator, with the 
+%    function/class/method/constant/field/... atoms.
 %      ex: kind('array_map', function).
 %      ex: kind('Preparable', class).
 %      ex: kind(('Preparable', 'gen'), method).
@@ -44,7 +45,8 @@
 %    when used, as in '$this->field, there is no $.
 %
 %  - callgraph: docall/3 with the function/method/class atoms to differentiate
-%    regular function calls, method calls, and class instantiations via new.
+%    regular function calls, method calls, and class instantiations via new,
+%    or the calls/2 infix operator.
 %      ex: docall('foo', 'bar', function). 
 %      ex: docall(('A', 'foo'), 'toInt', method).
 %      ex: docall('foo', ':x:frag', class).
@@ -80,7 +82,7 @@
 %      ex: extends('EntPhoto', 'Ent'). 
 %      ex: implements('MyTest', 'NeedSqlShim').
 %    See also the children/2, parent/2, related/2, inherits/2 helpers 
-%    predicates defined below.
+%    predicates defined below, where inherits is an infix operator.
 %
 %  - include/require: include/2, require_module/2
 %      ex: include('wap/index.php', 'flib/core/__init__.php').
@@ -213,6 +215,18 @@ overrides(ChildClass, ParentClass, Method) :-
         kind((ChildClass, Method), method),
         inherits(ChildClass, ParentClass),
         kind((ParentClass, Method), method).
+
+%---------------------------------------------------------------------------
+% Operators for erling
+%---------------------------------------------------------------------------
+calls(A,B) :- docall(A, B, _).
+:- op(42, xfx, calls).
+
+:- op(42, xfx, inherits).
+
+isa(A,B) :- kind(A,B).
+:- op(42, xfx, isa).
+
 
 %---------------------------------------------------------------------------
 % Statistics
