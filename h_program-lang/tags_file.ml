@@ -16,6 +16,7 @@
 open Common
 
 module PI = Parse_info
+module Db = Database_code (* for entity_kind *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -64,14 +65,17 @@ type tag = {
   tagname: string;
   line_number: int;
   (* offset of beginning of tag_definition_text, when have 0-indexed filepos *)
-  byte_offset: int; 
+  byte_offset: int;
+  (* only used by vim *)
+  kind: Database_code.entity_kind;
 }
 
-let mk_tag s1 s2 i1 i2 = {
+let mk_tag s1 s2 i1 i2 k = {
   tag_definition_text = s1;
   tagname = s2;
   line_number = i1;
   byte_offset = i2;
+  kind = k;
 }
 
 (*****************************************************************************)
@@ -95,12 +99,34 @@ let fake_defs = [
 
 
 (* helpers used externally by language taggers *)
-let tag_of_info filelines info =
+let tag_of_info filelines info kind =
   let line = PI.line_of_info info in
   let pos = PI.pos_of_info info in
   let col = PI.col_of_info info in
   let s = PI.str_of_info info in
-  mk_tag (filelines.(line)) s line (pos - col)
+  mk_tag (filelines.(line)) s line (pos - col) kind
+
+(* C-s for "kind" in http://ctags.sourceforge.net/FORMAT *)
+let vim_tag_kind_str tag_kind =
+  match tag_kind with
+  | Db.Class -> "c"
+  | Db.Constant -> "d"
+  | Db.Function -> "f"
+  | Db.Method -> "f"
+  | Db.StaticMethod -> "f"
+  | Db.Interface -> "i"
+  | Db.Type -> "t"
+  | Db.Field -> "m"
+
+  | Db.Module
+  | Db.Global
+  | Db.Macro
+  | Db.TopStmt
+
+  | Db.File
+  | Db.Dir
+  | Db.MultiDirs
+      -> ""
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -130,6 +156,7 @@ let generate_TAGS_file ~tags_file files_and_defs =
   );
   ()
 
+(* http://vimdoc.sourceforge.net/htmldoc/tagsrch.html#tags-file-format *)
 let generate_vi_tags_file ~tags_file files_and_defs =
   Common.with_open_outfile tags_file (fun (pr_no_nl, _chan) ->
 
@@ -147,11 +174,16 @@ let generate_vi_tags_file ~tags_file files_and_defs =
       +> Common.sort_by_key_lowfirst
     in
     all_tags +> List.iter (fun (tagname, (tag, file)) ->
-      (* {tagname}<Tab>{tagfile}<Tab>{tagaddress} *)
-      pr_no_nl (spf "%s\t%s\t/%s/\n"
+      (* {tagname}<Tab>{tagfile}<Tab>{tagaddress} 
+       * "The two characters semicolon and double quote [...] are
+       * interpreted by Vi as the start of a comment, which makes the
+       * following be ignored."
+       *)
+      pr_no_nl (spf "%s\t%s\t/%s/;\"\t%s\n"
                    tag.tagname
                    file
                    tag.tag_definition_text
+                   (vim_tag_kind_str tag.kind)
       );
     );
   )

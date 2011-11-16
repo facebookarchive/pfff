@@ -16,6 +16,7 @@
 open Common
 
 module Tags = Tags_file
+module Db = Database_code
 
 module Ast = Ast_js
 
@@ -24,15 +25,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* quite similar to tags_php.ml and tags_ml.ml *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let tag_of_name filelines name = 
-  let info = Ast.info_of_name name in
-  Tags.tag_of_info filelines info
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -78,7 +75,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
           | _ -> str
          in
          let info' = Parse_info.rewrap_str str' info in
-         Tags.tag_of_info filelines info'
+         Tags.tag_of_info filelines info' entity_kind
        )
     in
     file, tags
