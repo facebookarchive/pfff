@@ -281,6 +281,11 @@ let add_defs_and_uses id kind ast pr db =
   | EC.Interface, InterfaceE def ->
       def.i_extends +> Common.do_option (fun (tok, interface_list) ->
         interface_list +> Ast.uncomma |> List.iter (fun x ->
+          (* could put implements instead? it's not really the same
+           * kind of extends. Or have a extends_interface/2? maybe
+           * not worth it, just add kind(X, class) when using children/2
+           * if you want to restrict your query.
+           *)
           pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
         )
       )
