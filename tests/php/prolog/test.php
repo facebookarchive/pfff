@@ -1,5 +1,10 @@
 <?php
 
+//procedure:
+// $ ~/pfff/pfff_db_heavy -metapath /tmp/test_db/ .
+// $ ~/pfff/pfff_db_heavy -gen_prolog_db /tmp/test_db/ /tmp/facts.pl
+// $ swipl -s /tmp/facts.pl -f database_code.pl -t halt --quiet -g "..."
+
 function foo($o) {
   $o['name'] = "foo";
   bar();
@@ -39,4 +44,13 @@ class C extends B implements I {
 
 function test_long_field($o) {
   echo $o["this is a'valid field too"];
+}
+
+interface J {
+}
+
+interface K extends J {
+}
+
+class D extends K {
 }
