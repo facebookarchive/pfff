@@ -151,6 +151,7 @@ let generate_vi_tags_file ~tags_file files_and_defs =
       pr_no_nl (spf "%s\t%s\t/%s/\n"
                    tag.tagname
                    file
-                   tag.tag_definition_text);
+                   tag.tag_definition_text
+      );
     );
   )
