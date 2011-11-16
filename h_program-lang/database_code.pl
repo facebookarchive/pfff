@@ -31,7 +31,7 @@
 % of functions/classes/etc.
 % Here are the predicates that should be defined in facts.pl:
 %
-%  - entities: kind/2, or the isa/2 infix operator, with the 
+%  - entities: kind/2, with the 
 %    function/class/method/constant/field/... atoms.
 %      ex: kind('array_map', function).
 %      ex: kind('Preparable', class).
@@ -81,8 +81,8 @@
 %  - inheritance: extends/2, implements/2
 %      ex: extends('EntPhoto', 'Ent'). 
 %      ex: implements('MyTest', 'NeedSqlShim').
-%    See also the children/2, parent/2, related/2, inherits/2 helpers 
-%    predicates defined below, where inherits is an infix operator.
+%    See also the children/2, parent/2, related/2, isa/2, inherits/2 helpers 
+%    predicates defined below, where isa and inherits are infix operators.
 %
 %  - include/require: include/2, require_module/2
 %      ex: include('wap/index.php', 'flib/core/__init__.php').
@@ -224,9 +224,8 @@ calls(A,B) :- docall(A, B, _).
 
 :- op(42, xfx, inherits).
 
-isa(A,B) :- kind(A,B).
+isa(A,B) :- children(A,B).
 :- op(42, xfx, isa).
-
 
 %---------------------------------------------------------------------------
 % Statistics
@@ -267,6 +266,14 @@ too_many_public_methods(X) :-
         findall(M, (kind((X, M), method), public((X,M))), Res), 
         length(Res, N), 
         N > 10.
+
+%---------------------------------------------------------------------------
+% Security
+%---------------------------------------------------------------------------
+
+scary('XSS').
+scary('POTENTIAL_XSS_HOLE').
+scary('ToXHP_UNSAFE').
 
 %---------------------------------------------------------------------------
 % Refactoring opportunities
