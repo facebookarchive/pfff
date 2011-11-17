@@ -170,7 +170,7 @@ $error +=
 pr2 "";
 
 $error += check_config(
-  "make -v 2>&1 |grep Make|",
+  "make -v 2>&1 |grep --colour=never Make|",
   "GNU Make 3\.[0-9]+", #version 3.81
   "make (gnu version) is present.",
   "The program gnu make is missing or is not a good version.
@@ -223,7 +223,7 @@ if($mysql) {
         $MYSQL_LIBS="/opt/local/lib/mysql5/mysql";
     }
 
-    my $err += check_config("grep MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql/mysql_version.h |",
+    my $err += check_config("grep --colour=never MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql/mysql_version.h |",
 		       "#define MYSQL_BASE_VERSION		\"mysqld-5.*\"",
 		       "MySQL is present.",
 		       "The MySQL library is missing.",
@@ -239,7 +239,7 @@ if($pcre) {
         $PCRE_LIBS="/opt/local/lib";
     }
 
-    my $err += check_config("grep PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
+    my $err += check_config("grep --colour=never PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
 		       "#define PCRE_MAJOR       ",
 		       "PCRE is present.",
 		       "The PCRE library is missing.",
