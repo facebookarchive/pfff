@@ -121,7 +121,7 @@ function bar() { }
 
   "regression files" >:: (fun () ->
     let dir = 
-      Filename.concat Config.path "/facebook/ast_pretty_print/unit-test" in
+      Filename.concat Config.path "/tests/php/pretty" in
     let files = Common.glob (spf "%s/*.php" dir) in
     files +> List.iter (fun file ->
       let res = pp_file file in
