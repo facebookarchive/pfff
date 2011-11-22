@@ -334,3 +334,4 @@ external/ocamlbdb/libcamlbdb.a
 /tests/cpp/a.out
 /lang_cpp/parsing/ocamldoc.out
 /pm_depend
+/lang_php/pretty/prettyphp

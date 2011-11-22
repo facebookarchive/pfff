@@ -22,6 +22,7 @@ module Ast = Ast_cpp
 
 module M = Meta_ast_generic
 
+(* todo? could also do via a post processing phase with a OCaml.map_v ? *)
 let _current_precision = ref M.default_precision
 
 let rec vof_info v = 

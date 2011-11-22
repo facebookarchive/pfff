@@ -52,6 +52,7 @@ let test regexp =
       Unit_foundation_php.unittest;
       Unit_analyze_db_php.unittest;
       Unit_matcher_php.unittest;
+      Unit_pretty_print_php.unittest;
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest; 
       Unit_checker_php.unittest;

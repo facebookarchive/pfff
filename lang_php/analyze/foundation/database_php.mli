@@ -225,6 +225,8 @@ val parent_name_of_id: id_class -> database -> string option
 val class_extenders_of_id: id_class -> database -> id_class list
 val class_implementers_of_id: id_interface -> database -> id_class list
 
+val class_or_interface_id_of_nested_id_opt: id -> database -> id option
+
 val classdef_of_nested_id_opt: id -> database -> Ast_php.class_def option
 val self_parent_of_nested_id: id -> database -> 
   (string option * string option)

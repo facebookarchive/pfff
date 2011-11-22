@@ -52,7 +52,7 @@ type variable2 =
 
     and base_variable = 
       (qualifier, 
-       tok * tok, (* static:: *)
+       tok * tok, (* static::, not used anymore, static is in qualifier now *)
        ref_variable * tok (* $x:: *)
        ) either3 option 
       * var_without_obj
@@ -187,7 +187,7 @@ and lift_qualifier_closer_to_var qu v =
     | VArrayAccess (lval, e) ->
         let lval' = aux lval in
         VArrayAccess (lval', e), snd v
-    | Var (name, _scope) ->
+    | Var (name, scope) ->
         (match qu with
         | Left3 qu -> 
             mkvar (ClassVar (qu, name))
@@ -195,7 +195,7 @@ and lift_qualifier_closer_to_var qu v =
             raise Impossible
         | Right3 (refvar, tok) ->
             let v = refvar_to_variable refvar in
-            mkvar (DynamicClassVar (v, tok, name))
+            mkvar (DynamicClassVar (v, tok, mkvar (Var (name, scope))))
         )
     | This _ ->
         failwith "todo: what mean A::this ?"
@@ -214,8 +214,10 @@ and lift_qualifier_closer_to_var qu v =
     | Middle3 _ ->
         (* todo: static::$... ? *) 
         raise Parsing.Parse_error
-    | Right3 _ ->
-        raise Todo
+    | Right3 (refvar, tok) ->
+        let v2 = refvar_to_variable refvar in
+        (* e.g. when parse $class::$$prop *)
+        mkvar (DynamicClassVar (v2, tok, v))
     )
     
 

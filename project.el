@@ -55,6 +55,7 @@
      facebook/qa_test
      facebook/qa_code
      facebook/ast_simple
+     facebook/ast_pretty_print
      facebook/static_analysis
      facebook
      lang_php/matcher
@@ -95,7 +96,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 400
+     (case 6
 
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
        ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
@@ -111,6 +112,7 @@
 
        ;(5 "-typing_mini /home/pad/c-pfff/tests/typing/union.php")
        (5 "-typing_mini /home/pad/c-pfff/tests/typing/int.php")
+       (6 "-parse_php /home/pad/pfff/tests/php/parsing/static_variable_variable.php")
 
        (20 "-json /home/pad/pfff/tests/json/float_pb.php")
 
@@ -478,7 +480,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 22
+     (case 23
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -490,6 +492,7 @@
        (20 "-test_abint /home/pad/pfff/demos/interpreter.php")
        (21 "-test abstract")
        (22 "-test abstract")
+       (23 "-test pretty")
        )
      ))
    )
@@ -508,6 +511,22 @@
        (0 "/home/pad/www/html/ajax/groups/mall/ufi.php")
        (1 "-test_functions_json")
        (2 "/home/pad/pfff/demos/foo.php")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
+  ; facebook/spatch
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "facebook/spatch"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-f /home/pad/pfff/tests/php/spatch/reindent_expr.spatch /home/pad/pfff/tests/php/spatch/reindent_expr.php")
        )
      ))
    )

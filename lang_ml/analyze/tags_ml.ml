@@ -20,6 +20,7 @@ open Ast_ml
 module Ast = Ast_ml
 
 module Tags = Tags_file
+module Db = Database_code
 
 open Highlight_code
 
@@ -37,14 +38,6 @@ open Highlight_code
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let tag_of_info filelines info =
-  let line = Ast.line_of_info info in
-  let pos = Ast.pos_of_info info in
-  let col = Ast.col_of_info info in
-  let s = Ast.str_of_info info in
-  Tags.mk_tag (filelines.(line)) s line (pos - col)
-
 (*
 let tag_of_name filelines name = 
   let info = Ast.info_of_name name in
@@ -97,9 +90,18 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
           | TypeDef Def
 
           | FunctionDecl _
-
             -> 
-              Common.push2 (tag_of_info filelines info) defs;
+              let kind =
+                match x with
+                | Function (Def2 _) -> Db.Function
+                | Global (Def2 _) -> Db.Global
+                | Module Def -> Db.Module
+                | TypeDef Def -> Db.Type
+                | FunctionDecl _ -> Db.Function
+                | _ -> raise Impossible
+              in
+
+              Common.push2 (Tags.tag_of_info filelines info kind) defs;
 
               let (d,b,e) = Common.dbe_of_filename file in
               let module_name = String.capitalize b in
@@ -115,8 +117,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
                  (e = "mli" && not (Sys.file_exists
                                       (Common.filename_of_dbe (d,b, "ml"))))
               then
-                Common.push2 (tag_of_info filelines info') defs;
-
+                Common.push2 (Tags.tag_of_info filelines info' kind) defs;
           | _ -> ()
         )
       );

@@ -957,9 +957,15 @@ rule st_in_scripting = parse
 (*s: rule initial *)
 and initial = parse
 
-  | "<?php"([' ''\t']|NEWLINE) 
-      { set_mode ST_IN_SCRIPTING;
+  | "<?php" ([' ''\t']|NEWLINE)
+      { 
+        (* I now do a yyless to not eat the newline which is more
+         * consistent with how I treat newlines elsewhere
+         *)
+        yyless 1 lexbuf;
+        set_mode ST_IN_SCRIPTING;
         T_OPEN_TAG(tokinfo lexbuf)
+
       }
 
   | "<?PHP"([' ''\t']|NEWLINE) 

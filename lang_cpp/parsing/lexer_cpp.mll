@@ -606,7 +606,7 @@ and char = parse
 	 );
           x ^ char lexbuf
        }
-  | eof { pr2 "LEXER: WIERD end of file in char"; ""}
+  | eof { pr2 "LEXER: WEIRD end of file in char"; ""}
 
 (*****************************************************************************)
 (* Rule string *)
@@ -634,7 +634,7 @@ and string  = parse
 	 );
           x ^ string lexbuf
        }
-  | eof { pr2 "LEXER: WIERD end of file in string"; ""}
+  | eof { pr2 "LEXER: WEIRD end of file in string"; ""}
 
  (* Bug if add following code, cos match also the '"' that is needed
   * to finish the string, and so go until end of file.
@@ -661,7 +661,7 @@ and comment = parse
         pr2 ("LEXER: unrecognised symbol in comment:"^s);
         s ^ comment lexbuf
       }
-  | eof { pr2 "LEXER: WIERD end of file in comment"; ""}
+  | eof { pr2 "LEXER: WEIRD end of file in comment"; ""}
 
 (*****************************************************************************)
 (* Rule cpp_eat_until_nl *)

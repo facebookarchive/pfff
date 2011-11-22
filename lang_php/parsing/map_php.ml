@@ -624,7 +624,7 @@ and map_variablebis =
   | DynamicClassVar ((v1, v2, v3)) ->
       let v1 = map_lvalue v1
       and v2 = map_tok v2
-      and v3 = map_dname v3
+      and v3 = map_lvalue v3
       in DynamicClassVar ((v1, v2, v3))
   | FunCallSimple ((v2, v3)) ->
       let v2 = map_name v2

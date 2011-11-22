@@ -24,6 +24,8 @@ module E = Error_php
 module S = Scope_code
 module Ent = Entity_php
 
+module Env = Env_check_php
+
 open Env_check_php
 open Check_variables_helpers_php
 
@@ -67,7 +69,7 @@ open Check_variables_helpers_php
  * before those kinds of function calls.
  * 
  * Another issue is functions like extract(), param_get(), param_post()
- * or variable variables like $$x. Regarding the param_get/param_post()
+ * or variable variables like $$x. Regarding the param_get/param_post(),
  * one way to fix it is to just not analyse toplevel code.
  * Another solution is to hardcode a few analysis that recognizes
  * the arguments of those functions.
@@ -86,7 +88,7 @@ open Check_variables_helpers_php
  * Another issue is the implicitly-declared-when-used-the-first-time
  * ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
  * 
- * Here are some notes by evan in his own variable linter:
+ * Here are some notes by Evan in his own variable linter:
  * 
  * "These things declare variables in a function":
  * - DONE Explicit parameters
@@ -95,7 +97,7 @@ open Check_variables_helpers_php
  * - DONE foreach()
  * - DONE catch
  * - DONE Builtins ($this)
- * - TODO Lexical vars, in php 5.3 lambda expressions
+ * - DONE Lexical vars, in php 5.3 lambda expressions
  * - SEMI Assignment
  *   (pad: variable mentionned for the first time)
  * 
@@ -106,7 +108,7 @@ open Check_variables_helpers_php
  *   (pad: I actually bail out on such code)
  * 
  * These things don't count as "using" a variable:
- * - TODO isset()
+ * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
  * - TODO empty()
  * - SEMI Static class variables
  * 
@@ -117,8 +119,6 @@ open Check_variables_helpers_php
  *  - when passed the find_entity hook, check_variables will:
  *     - know about functions taking parameters by refs, which removes
  *       some false positives
- *     - flag uses of class without a constructor or use of undefined classes
- *     - use of undefined members
  * 
  * todo? create generic function extracting set of defs
  *  and set of uses regarding variable ? and make connection ?
@@ -166,7 +166,7 @@ open Check_variables_helpers_php
 (* see check_variables_helpers_php.ml *)
 
 (*****************************************************************************)
-(* checks *)
+(* Checks *)
 (*****************************************************************************)
 
 let check_use_against_env ~in_lambda ~has_extract var env = 
@@ -182,7 +182,10 @@ let check_use_against_env ~in_lambda ~has_extract var env =
        E.fatal (Ast.info_of_dname var) 
         (if in_lambda 
         then (E.UseOfUndefinedVariableInLambda s)
-        else (E.UseOfUndefinedVariable s)
+        else 
+            let allvars = Env.collect_all_vars env +> List.map Ast.dname in
+            let suggest = Suggest_fix_php.suggest s allvars in
+            (E.UseOfUndefinedVariable (s, suggest))
         )
   | Some (scope, aref) -> incr aref
 

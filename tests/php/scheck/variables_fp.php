@@ -71,3 +71,10 @@ function test_fb_undeclared5() {
   //SKIP: same
   //echo $y;
 }
+
+function test_isset() {
+  if(!isset($foo)) {
+    $foo = 1;
+    echo $foo;
+  }
+}

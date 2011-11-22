@@ -53,16 +53,13 @@ let main_action xs =
         )
         +> Common.chop_dirsymbol 
       in
-      let prj = Database_php.Project (dir, None) in
-      let prj = Database_php.normalize_project prj in 
-
       let db = 
         Database_php_build.create_db
           ~db_support:(Database_php.Disk !metapath)
           ~phase:!phase
           ~annotate_variables_program:
-           (Some Check_variables_php.check_and_annotate_program)
-          prj 
+            (Some Check_variables_php.check_and_annotate_program)
+          (Database_php.prj_of_dir dir)
       in
       if !index_method then Database_php_build2.index_db_method db;
 
@@ -117,7 +114,6 @@ let gen_layers metapath =
 (*****************************************************************************)
 
 let deadcode_analysis db =
-
   let hooks = { Deadcode_php.default_hooks with
     Deadcode_php.print_diff = false;
     Deadcode_php.with_blame = false;
@@ -128,13 +124,17 @@ let deadcode_analysis db =
   pr2 (spf "total dead functions = %d, total dead classes = %d"
           (List.length dead_ids_func) (List.length dead_ids_class));
    ()
-
+    
 let pfff_extra_actions () = [
   "-gen_layers", " <metapath>",
   Common.mk_action_1_arg gen_layers;
   "-deadcode_analysis", " <metapath>",
   Common.mk_action_1_arg (fun metapath ->
     Database_php.with_db ~metapath (fun db -> deadcode_analysis db));
+  "-gen_prolog_db", " <metapath> <file>",
+  Common.mk_action_2_arg (fun metapath file ->
+    Database_php.with_db ~metapath (fun db -> 
+      Database_prolog_php.gen_prolog_db db file));
 ]
 
 (*****************************************************************************)

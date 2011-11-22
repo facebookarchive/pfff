@@ -13,14 +13,14 @@ module Tags = Tags_file
 
 (* A more precise etags/ctags. 
  *
- * etags/ctags are essentially working at a lexical level
- * and so have lots of false positive for their definitions. For instance
- * on PHP a line containing $idx will be considered as a candidate when
+ * Both etags and ctags are working at a lexical level
+ * and so have lots of false positives for the definitions. For instance
+ * on PHP, a line containing $idx will be considered as a candidate when
  * searching for idx. By using a real parser tagging a file becomes
  * trivial and correct (but slower I have to admit).
  * 
- * Note that for OCaml the situation is reversed. The tags
- * generator 'otags' can work only at a AST level, which requires to
+ * Note that for OCaml the situation is kinda reversed. 'otags' 
+ * can work only at the AST level, which requires to
  * correctly parse the file. Nevertheless many files using camlp4 are
  * causing otags to fatal. One option is to help otags by passing it
  * the correct -pp flags. Another option is to at least default to
@@ -38,7 +38,6 @@ module Tags = Tags_file
  * full list of options in the "the options" section below), this 
  * program also depends on external files ?
  *)
-
 let verbose = ref false
 
 (* action mode *)
@@ -50,6 +49,9 @@ let heavy_tagging = ref false
 let lang = ref "php"
 
 let output_file = ref "TAGS"
+
+type format = Vim | Emacs
+let format = ref Emacs
 
 (*****************************************************************************)
 (* Some  debugging functions *)
@@ -101,7 +103,12 @@ let main_action xs =
   in
   let files_and_defs = defs_of_files_or_dirs !lang xs in
   pr2 (spf "Writing data in %s" tags_file);
-  Tags.generate_TAGS_file ~tags_file files_and_defs;
+
+
+  (match !format with
+  | Emacs ->Tags.generate_TAGS_file ~tags_file files_and_defs;
+  | Vim -> Tags_file.generate_vi_tags_file ~tags_file files_and_defs;
+  );
   ()
 
 (*****************************************************************************)
@@ -113,33 +120,34 @@ let all_actions () =
 
 let options () = 
   [
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
+    "-o", Arg.Set_string output_file, 
+    " <file> default = TAGS";
+    "-vim", Arg.Unit (fun () -> format := Vim),
+    " ";
+    "-emacs", Arg.Unit (fun () -> format := Emacs),
+    " ";
     "-verbose", Arg.Set verbose, 
     " ";
     "-heavy_tagging", Arg.Set heavy_tagging, 
     " generates some extra tags with semantic prefix: F_, C_, M_";
-
-    "-lang", Arg.Set_string lang, 
-    (spf " <str> choose language (default = %s)" !lang);
-
-    "-o", Arg.Set_string output_file, 
-    " <file> default = TAGS";
 
   ] ++
 
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_other () ++
-
   [
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "pfff (console) version: %s" Config.version);
+      pr2 (spf "stags version: %s" Config.version);
       exit 0;
     ), 
     "  guess what";
 
     (* this can not be factorized in Common *)
     "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2008/10/26 00:44:57 $";
+      pr2 "version: $Date: 2011/11/15 00:44:57 $";
       raise (Common.UnixExit 0)
     ), 
     "   guess what";

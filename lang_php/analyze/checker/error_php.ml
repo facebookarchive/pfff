@@ -86,7 +86,7 @@ type error = {
   | PassingUnexpectedRef
 
   (* variables *)
-  | UseOfUndefinedVariable of string (* dname *)
+  | UseOfUndefinedVariable of string (* dname *) * suggest option
   | UnusedVariable of string (* dname *) * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
@@ -163,8 +163,8 @@ let string_of_error_kind error_kind =
   | PassingUnexpectedRef ->
       "passing a reference to a function not expecting one"
 
-  | UseOfUndefinedVariable (dname) ->
-      spf "Use of undeclared variable $%s. " dname
+  | UseOfUndefinedVariable (dname, x) ->
+      spf "Use of undeclared variable $%s%s. " dname (string_of_suggest_opt x)
 (*
 "Declare variables prior to use (even if you are passing them as reference
     parameters). You may have misspelled this variable name.

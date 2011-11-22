@@ -542,6 +542,16 @@ let class_implementers_of_id id db =
 
 
 
+let class_or_interface_id_of_nested_id_opt id db = 
+  enclosing_ids id db +> Common.find_some_opt (fun id ->
+    let id_kind = db.defs.id_kind#assoc id in
+    match id_kind with
+    | EC.Class 
+    | EC.Interface
+      -> Some id
+    | _ -> None
+  )
+
 
 let classdef_of_nested_id_opt id db = 
   let enclosing = enclosing_ids id db in

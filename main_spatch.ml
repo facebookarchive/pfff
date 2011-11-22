@@ -40,11 +40,14 @@ open Parse_info
 (* Flags *)
 (*****************************************************************************)
 
-let verbose = ref true
+let verbose = ref false
 
 let apply_patch = ref false
+(* too experimental for now *)
+let pretty_printer = ref false
 
 let spatch_file = ref ""
+let sed_string = ref ""
 
 (* action mode *)
 let action = ref ""
@@ -141,29 +144,56 @@ let apply_transfo transfo xs =
 
 let main_action xs =
 
-  if Common.null_string !spatch_file
-  then failwith "I need a semantic patch file; use -f";
-
-  let spatch_file = !spatch_file in
+  let spatch_file = 
+    match !spatch_file, !sed_string with
+    | "", "" ->
+        failwith "I need a semantic patch file; use -f"
+    | "", s ->
+        (* does not handle nested /, does not handle s# alternate
+         * syntax as in perl, does not handle much ...
+         *)
+        if s =~ "s/\\(.*\\)/\\(.*\\)/"
+        then begin
+          let (before, after) = Common.matched2 s in
+          let tmpfile = Common.new_temp_file "spatch" ".spatch" in
+          Common.with_open_outfile tmpfile (fun (pr, _chan) ->
+            pr (spf "- %s\n" before);
+            pr (spf "+ %s\n" after);
+          );
+          tmpfile
+        end 
+        else failwith ("wrong format, use s/.../.../ not: " ^ s)
+    | s, "" ->
+        !spatch_file 
+    | s1, s2 ->
+        failwith "Can't use -f and -e at the same time"
+  in
 
   (* old: let pattern = dumb_spatch_pattern in *)
   let pattern = Spatch_php.parse spatch_file in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
-    pr2 (spf "processing: %s (%d/%d)" file i total);
+  let nbfiles = List.length files in
+
+  Common.execute_and_show_progress ~show_progress:!verbose nbfiles (fun k ->
+  files +> List.iter (fun file ->
+    k();
     let resopt = Spatch_php.spatch pattern file in
     resopt +> Common.do_option (fun (s) ->
 
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
+
+      if !pretty_printer
+      then Unparse_pretty_print_mix.pretty_print_when_needit
+             ~oldfile:file ~newfile:tmpfile;
       
       let diff = Common.unix_diff file tmpfile in
-      diff |> List.iter pr;
+      diff +> List.iter pr;
       if !apply_patch 
-      then Common.write_file ~file:file s;
+      then Common.write_file ~file:file (Common.read_file tmpfile);
     )
-  )
+  ))
 
 (*****************************************************************************)
 (* Extra actions *)
@@ -338,6 +368,26 @@ let add_action_ui_form_transfo = {
   grep_keywords = Some ["ui:form"];
 }
 
+
+(*---------------------------------------------------------------------------*)
+(* pretty printer testing *)
+(*---------------------------------------------------------------------------*)
+let test_pp file =
+  let tokens = Parse_php.tokens file in
+  let ast = Parse_php.parse_program file in
+
+  let ast = Ast_pp_build.program_with_comments tokens ast in
+
+  let buf = Buffer.create 256 in
+  let env = Pp2.empty (Buffer.add_string buf) in
+  Pretty_print.program_env env ast;
+  let s = Buffer.contents buf in
+
+  let tmp_file = Common.new_temp_file "pp" ".php" in
+  Common.write_file ~file:tmp_file s;
+  let xs = Common.unix_diff file tmp_file in
+  xs +> List.iter pr2
+
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
@@ -362,6 +412,8 @@ let spatch_extra_actions () = [
 
   "-test", "",
   Common.mk_action_0_arg test;
+  "-pp", "",
+  Common.mk_action_1_arg test_pp;
 ]
 
 (*****************************************************************************)
@@ -376,12 +428,16 @@ let options () =
   [
     "-f", Arg.Set_string spatch_file, 
     " <spatch_file>";
-    "-apply_patch", Arg.Set apply_patch, 
-    " ";
+    "-e", Arg.Set_string sed_string, 
+    " <s/before/after/>, sed mode";
     "--apply-patch", Arg.Set apply_patch, 
     " ";
-    "-verbose", Arg.Set verbose, 
+    "--pretty-printer", Arg.Set pretty_printer, 
+    " reindent the modified code";
+    "--verbose", Arg.Set verbose, 
     " ";
+    "-v", Arg.Set verbose, 
+    " shortcut for --verbose";
   ] ++
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++

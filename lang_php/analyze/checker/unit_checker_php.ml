@@ -59,20 +59,16 @@ let unittest =
   let all_files = builtin_files ++ test_files in
 
   Error_php._errors := [];
-
-  let prj = Database_php.Project ("/", None) in
-  let prj = Database_php.normalize_project prj in 
   let db = 
-    Common.save_excursion Flag_analyze_php.verbose_database true 
-      (fun()->
-        Database_php_build.create_db
-          ~db_support:(Database_php.Mem)
-          ~phase:2 (* TODO ? *)
-          ~files:(Some all_files)
-          ~verbose_stats:false
-          ~annotate_variables_program:None
-          prj 
-      )
+    Common.save_excursion Flag_analyze_php.verbose_database true (fun()->
+      Database_php_build.create_db
+        ~db_support:(Database_php.Mem)
+        ~phase:2 (* TODO ? *)
+        ~files:(Some all_files)
+        ~verbose_stats:false
+        ~annotate_variables_program:None
+        (Database_php.Project ("/", None))
+    )
   in
   let find_entity = Some (Database_php_build.build_entity_finder db) in
   let env = Env_php.mk_env ~php_root:"/" in

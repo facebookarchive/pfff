@@ -206,6 +206,7 @@ LIBS= commons/commons.cma \
      lang_php/analyze/dynamic_analysis/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
      lang_php/analyze/lib.cma \
+     lang_php/pretty/lib.cma \
     lang_sql/parsing/lib.cma \
     lang_js/parsing/lib.cma \
      lang_js/analyze/lib.cma \
@@ -247,6 +248,7 @@ MAKESUBDIRS=commons \
    lang_haskell/analyze \
   lang_php/parsing \
    lang_php/matcher \
+   lang_php/pretty \
   lang_sql/parsing \
   lang_js/parsing \
    lang_js/analyze \
@@ -644,7 +646,7 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags db layers   visual
+.PHONY:: tags db layers   visual    tests test
 
 
 tags:
@@ -661,8 +663,9 @@ visual:
 	./codemap -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
 
-test:
+tests:
 	./pfff_test all
+test: tests
 push:
 	git push origin master
 pull:

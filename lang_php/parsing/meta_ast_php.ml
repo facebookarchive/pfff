@@ -478,7 +478,7 @@ and vof_variablebis =
   | DynamicClassVar ((v1, v2, v3)) ->
       let v1 = vof_lvalue v1 in
       let v2 = vof_tok v2 in
-      let v3 = vof_dname v3 in
+      let v3 = vof_lvalue v3 in
       Ocaml.VSum (("DynamicClassVar", [ v1; v2; v3 ]))
   | FunCallSimple ((v2, v3)) ->
       let v2 = vof_name v2

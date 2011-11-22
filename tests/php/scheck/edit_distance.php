@@ -10,3 +10,8 @@ class XA {
 }
 
 
+function test_undeclared_var() {
+  $foo = 1;
+  echo $foa;
+  echo $bar;
+}

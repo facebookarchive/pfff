@@ -23,7 +23,7 @@ type error = {
   | CallingMethodWithQualifier of string
   | PassingUnexpectedRef
         
-  | UseOfUndefinedVariable of string (* dname *)
+  | UseOfUndefinedVariable of string (* dname *) * suggest option
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 

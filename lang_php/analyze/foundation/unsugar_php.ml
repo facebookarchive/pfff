@@ -19,6 +19,7 @@ open Ast_php
 
 module Ast = Ast_php
 
+module V = Visitor_php
 module M = Map_php
 
 (*****************************************************************************)
@@ -75,6 +76,19 @@ let resolve_class_name qu in_class =
   | (LateStatic tok1), _ ->
       failwith "LateStatic"
 
+let contain_self_or_parent def =
+  let aref = ref false in
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kclass_name_or_kwd = (fun (k, bigf) qu ->
+      match qu with
+      | Self _ | Parent _ -> aref := true
+      | LateStatic _ | ClassName _ -> ()
+    );
+    }
+  in
+  visitor (Toplevel (ClassDef def));
+  !aref
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -124,6 +138,25 @@ let unsugar_self_parent_any a =
 let unsugar_self_parent_program ast =
   unsugar_self_parent_any (Program ast) +> 
     (function Program x -> x | _ -> raise Impossible)
+
+(* this is used in database_php_build. It's quite expensive to do a map
+ * because of all the reallocation and because in most cases there is
+ * no self/parent in the code, we can optimize things and doing the
+ * map only when we really needs it.
+ *)
 let unsugar_self_parent_toplevel x =
-  unsugar_self_parent_any (Toplevel x) +> 
-    (function Toplevel x -> x | _ -> raise Impossible)
+  match x with
+  | StmtList _ 
+  | FuncDef _ 
+  | Halt _
+  | NotParsedCorrectly _
+  | FinalDef _
+  (* interface should not contain code so can skip that too *)
+  | InterfaceDef _
+    -> x
+  | ClassDef def ->
+      if contain_self_or_parent def
+      then
+        unsugar_self_parent_any (Toplevel x) +> 
+          (function Toplevel x -> x | _ -> raise Impossible)
+      else x

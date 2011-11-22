@@ -1961,6 +1961,13 @@ let rec find_some p = function
       |	Some v -> v
       |	None -> find_some p l
 
+let rec find_some_opt p = function
+  | [] -> None
+  | x :: l -> 
+      match p x with
+      |	Some v -> Some v
+      |	None -> find_some_opt p l
+
 (* same
 let map_find f xs =
   xs +> List.map f +> List.find (function Some x -> true | None -> false)
