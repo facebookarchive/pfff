@@ -87,6 +87,7 @@ let stmts_of_stmt_or_defs xs =
     | FuncDefNested _ | ClassDefNested _ | InterfaceDefNested _ ->
         pr2_once ("ignoring nested func/class/interface in CFG");
         None
+    | TraitDefNested _ -> raise Impossible
   )
 
 let stmts_of_colon_stmt colon = 

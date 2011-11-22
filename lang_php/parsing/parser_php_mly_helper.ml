@@ -18,6 +18,7 @@ let rec top_statements_to_toplevels topstatements eofinfo =
         | FuncDefNested      def -> FuncDef def,  xs
         | ClassDefNested     def -> ClassDef def, xs
         | InterfaceDefNested def -> InterfaceDef def, xs
+        | TraitDefNested def -> TraitDef def, xs
         | Stmt st -> 
             let stmts, rest = xs +> Common.span (function 
               | Stmt st -> true 

@@ -213,7 +213,9 @@ let index_db2_2 db =
               db.strings#add2 (s, ());
           | _ -> ()
         );
-    | (FinalDef _|Halt _|InterfaceDef _|ClassDef _|FuncDef _|StmtList _)
+    | ( FinalDef _|Halt _
+      | InterfaceDef _|ClassDef _|FuncDef _ | TraitDef _
+      | StmtList _)
         -> ()
     );
   (* let's add definitions and nested asts and entities *)
@@ -258,6 +260,10 @@ let index_db2_2 db =
             let s = Ast_php.name def.i_name in
             add_def (s, EC.Interface, id, Some def.i_name) db;
             k x
+        | TraitDef def ->
+            let s = Ast_php.name def.t_name in
+            add_def (s, EC.Trait, id, Some def.t_name) db;
+            k x
 
         | Halt _ -> ()
         | NotParsedCorrectly _ -> ()
@@ -293,6 +299,8 @@ let index_db2_2 db =
             let s = Ast_php.name def.i_name in
             add_def (s, EC.Interface, newid, Some def.i_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
+        | TraitDefNested def -> 
+            raise Impossible
       );
       V.kclass_stmt = (fun (k, bigf) x ->
         match x with
@@ -359,6 +367,10 @@ let index_db2_2 db =
             let s = "XHPDECLTODO" in
             add_def (s, EC.XhpDecl, newid, None) db;
             k x
+
+        (* todo? *)
+        | UseTrait _ ->
+            ()
       );
     }
     in
@@ -481,6 +493,10 @@ let index_db3_2 db =
      * extenders_of_interface at some point if it's useful
      *)
     | Ast.InterfaceE _ ->
+        ()
+
+    (* todo? *)
+    | Ast.TraitE _ ->
         ()
 
     | Ast.MiscE _

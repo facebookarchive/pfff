@@ -48,7 +48,11 @@ type chunk =
   | Func of Ast_php.func_def
   | ClassHeader of Ast_php.class_def (* no body *)
   | ClassFooter of Ast_php.info (* just the closing brace *)
+
+  (* pretty print interfaces/traits in one block *)
   | InterfaceDef of Ast_php.interface_def
+  | TraitDef of Ast_php.trait_def
+
   | FinalDef of Ast_php.info
   (* class_stmt *)
   | ClassStmt of Ast_php.class_stmt
@@ -117,6 +121,8 @@ let split_chunks tokens ast =
           (Func def, toks_before_max)::aux xs toks_after
       | Ast_php.InterfaceDef def ->
           (InterfaceDef def, toks_before_max)::aux xs toks_after
+      | Ast_php.TraitDef def ->
+          (TraitDef def, toks_before_max)::aux xs toks_after
       | Ast_php.ClassDef def ->
 
           let toks = toks_before_max in
@@ -171,6 +177,9 @@ let pretty_print buf env chunk =
       Pretty_print.stmts env ast
   | InterfaceDef def ->
       let ast = Ast_pp_build.toplevels toks [Ast_php.InterfaceDef def] in
+      Pretty_print.stmts env ast
+  | TraitDef def ->
+      let ast = Ast_pp_build.toplevels toks [Ast_php.TraitDef def] in
       Pretty_print.stmts env ast
 
   | ClassHeader def ->

@@ -12,7 +12,7 @@ type fullid = filepos
 type id_kind =
   (* toplevels, which can also be nested *)
   | Function
-  | Class | Interface
+  | Class | Interface | Trait
   | StmtList 
 
   (* only at nested level, inside a class *)

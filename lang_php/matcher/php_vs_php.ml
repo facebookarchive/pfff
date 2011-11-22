@@ -678,12 +678,18 @@ let m_cpp_directive a b =
        A.FunctionC,
        B.FunctionC
     )
+  | A.TraitC, B.TraitC ->
+    return (
+       A.TraitC,
+       B.TraitC
+    )
   | A.Line, _
   | A.File, _
   | A.Dir, _
   | A.ClassC, _
   | A.MethodC, _
   | A.FunctionC, _
+  | A.TraitC, _
    -> fail ()
 
 (* ---------------------------------------------------------------------- *)
@@ -2373,10 +2379,17 @@ and m_stmt_and_def a b =
        B.InterfaceDefNested(b1)
     )
     )
+  | A.TraitDefNested(a1), B.TraitDefNested(b1) ->
+    m_trait_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.TraitDefNested(a1),
+       B.TraitDefNested(b1)
+    ))
   | A.Stmt _, _
   | A.FuncDefNested _, _
   | A.ClassDefNested _, _
   | A.InterfaceDefNested _, _
+  | A.TraitDefNested _, _
    -> fail ()
 
 and m_colon_stmt a b = 
@@ -2581,6 +2594,9 @@ and m_class_def a b =
 and m_interface_def a b =
   fail2 "m_interface_def"
 
+and m_trait_def a b =
+  fail2 "m_trait_def"
+
 and m_method_def a b =
   fail2 "m_method_def"
 
@@ -2630,12 +2646,24 @@ and m_class_stmt a b =
        B.XhpDecl(b1)
     )
     )
+  | A.UseTrait(a1, a2, a3), B.UseTrait(b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    (m_comma_list m_name) a2 b2 >>= (fun (a2, b2) -> 
+    (m_either m_tok (m_brace (m_list m_trait_rule))) a3 b3 >>= (fun (a3, b3) -> 
+    return (
+       A.UseTrait(a1, a2, a3),
+       B.UseTrait(b1, b2, b3)
+    )
+    )))
+
   | A.ClassConstants _, _
   | A.ClassVariables _, _
   | A.Method _, _
   | A.XhpDecl _, _
+  | A.UseTrait _, _
    -> fail ()
 
+and m_trait_rule = m_unit
 
 and m_class_variable a b = 
   match a, b with
@@ -2842,8 +2870,13 @@ and m_toplevel a b =
     return (
        A.InterfaceDef(a1),
        B.InterfaceDef(b1)
-    )
-    )
+    ))
+  | A.TraitDef(a1), B.TraitDef(b1) ->
+    m_trait_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.TraitDef(a1),
+       B.TraitDef(b1)
+    ))
   | A.Halt(a1, a2, a3), B.Halt(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     (m_paren m_unit) a2 b2 >>= (fun (a2, b2) -> 
@@ -2871,6 +2904,7 @@ and m_toplevel a b =
   | A.FuncDef _, _
   | A.ClassDef _, _
   | A.InterfaceDef _, _
+  | A.TraitDef _, _
   | A.Halt _, _
   | A.NotParsedCorrectly _, _
   | A.FinalDef _, _
@@ -2900,6 +2934,12 @@ let m_entity a b =
        B.InterfaceE(b1)
     )
     )
+  | A.TraitE(a1), B.TraitE(b1) ->
+    m_trait_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.TraitE(a1),
+       B.TraitE(b1)
+    ))
   | A.StmtListE(a1), B.StmtListE(b1) ->
     (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2946,6 +2986,7 @@ let m_entity a b =
   | A.FunctionE _, _
   | A.ClassE _, _
   | A.InterfaceE _, _
+  | A.TraitE _, _
   | A.StmtListE _, _
   | A.MethodE _, _
   | A.ClassConstantE _, _

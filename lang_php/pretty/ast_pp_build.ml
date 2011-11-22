@@ -285,6 +285,10 @@ let rec toplevel env st acc =
       let _, _, end_ = id.i_body in
       let acc = add_stmt_comments env acc (line_of_info end_) in
       A.InterfaceDef (interface_def env id) :: acc
+  | TraitDef id ->
+      let _, _, end_ = id.t_body in
+      let acc = add_stmt_comments env acc (line_of_info end_) in
+      A.TraitDef (trait_def env id) :: acc
   | Halt _
   | NotParsedCorrectly _ -> assert false
 
@@ -392,6 +396,8 @@ and stmt_and_def env st acc =
       A.ClassDef (class_def env cd) :: acc
   | InterfaceDefNested id ->
       A.ClassDef (interface_def env id) :: acc
+  | TraitDefNested _ ->
+      raise Common.Impossible
 
 and expr env (eb, info) = exprbis env eb
 and exprbis env = function
@@ -531,6 +537,7 @@ and cpp_directive env = function
   | MethodC   -> A.Id "__METHOD__"
   | FunctionC -> A.Id "__FUNCTION__"
   | Dir       -> A.Id "__DIRECTORY__"
+  | TraitC    -> A.Id "__TRAIT__"
 
 and name env = function
   | Name (s, _) -> s
@@ -657,6 +664,7 @@ and class_def env c =
   let line = line_of_info (info_of_name c.c_name) in
   let acc = add_ce_comments env acc line in
   { A.c_is_interface = false;
+    A.c_is_trait = false;
     A.c_type = class_type env c.c_type ;
     A.c_name = name env c.c_name;
     A.c_extends =
@@ -763,6 +771,7 @@ and class_body env st acc =
        ) (comma_list cl) in
       A.CEconst consts :: acc
   | XhpDecl _ -> acc(* TODO failwith "TODO xhp decl" *)(* of xhp_decl *)
+  | UseTrait _ -> failwith "TODO: UseTrait"
 
 and method_def env m =
   let acc = [] in
@@ -868,12 +877,27 @@ and interface_def env i =
   let line = line_of_info (info_of_name i.i_name) in
   let acc = add_ce_comments env acc line in
   { A.c_is_interface = true;
+    A.c_is_trait = false;
     A.c_type = A.ClassRegular;
     A.c_name = name env i.i_name;
     A.c_extends =
     (match i.i_extends with
     | None -> []
     | Some x -> interfaces env x);
+    A.c_implements = [] ;
+    A.c_body = acc;
+  }
+
+and trait_def env i =
+  let _, body, _ = i.t_body in
+  let acc = List.fold_right (class_body env) body [] in
+  let line = line_of_info (info_of_name i.t_name) in
+  let acc = add_ce_comments env acc line in
+  { A.c_is_trait = true;
+    A.c_is_interface = false;
+    A.c_type = A.ClassRegular;
+    A.c_name = name env i.t_name;
+    A.c_extends = [];
     A.c_implements = [] ;
     A.c_body = acc;
   }

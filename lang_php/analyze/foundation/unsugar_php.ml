@@ -154,6 +154,9 @@ let unsugar_self_parent_toplevel x =
   (* interface should not contain code so can skip that too *)
   | InterfaceDef _
     -> x
+  (* todo? traits can contain self: ? semantic? *)
+  | TraitDef _
+    -> x
   | ClassDef def ->
       if contain_self_or_parent def
       then

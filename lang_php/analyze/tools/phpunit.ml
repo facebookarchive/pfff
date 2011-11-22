@@ -283,6 +283,7 @@ let is_phpunit_derived_class_heuristics def =
             s =~ "^test[A-Za-z_]+"
         | ClassConstants _  | ClassVariables _ -> false
         | XhpDecl _ -> false
+        | UseTrait _ -> false
       ))
 
 (*
@@ -358,7 +359,7 @@ let (find_testcase_class_if_any:
            )
                
 
-       | StmtList _ | FuncDef _ | InterfaceDef _  -> None
+       | StmtList _ | FuncDef _ | InterfaceDef _ | TraitDef _  -> None
        | Halt _ | FinalDef _ -> None
        | NotParsedCorrectly infos ->
            let info = List.hd infos in

@@ -253,8 +253,9 @@ type expr = exprbis * exp_info
         (*s: type cpp_directive *)
          (* http://php.net/manual/en/language.constants.predefined.php *)
            and cpp_directive = 
-             | Line  | File | Dir
-             | ClassC  | MethodC  | FunctionC
+              | Line  | File | Dir
+              | ClassC | TraitC 
+              | MethodC  | FunctionC
         (*e: type cpp_directive *)
        (*e: constant rest *)
    (*e: type constant *)
@@ -620,6 +621,11 @@ and interface_def = {
   i_extends: interface option;
   i_body: class_stmt list brace;
 }
+and trait_def = {
+  t_tok: tok; (* trait *)
+  t_name: name;
+  t_body: class_stmt list brace;
+}
 (*x: AST class definition *)
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
@@ -631,6 +637,9 @@ and interface_def = {
     | Method of method_def
 
     | XhpDecl of xhp_decl
+    (* php 5.4 *)
+    | UseTrait of tok (*use*) * name comma_list * 
+        (tok (* ; *), trait_rule list brace) Common.either
 
     (*s: class_stmt types *)
         and class_constant = name * static_scalar_affect
@@ -701,6 +710,9 @@ and interface_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
+(* todo *)
+and trait_rule = unit
+
 (*e: AST class definition *)
 (* ------------------------------------------------------------------------- *)
 (* Other declarations *)
@@ -745,6 +757,7 @@ and stmt_and_def =
   | FuncDefNested of func_def
   | ClassDefNested of class_def
   | InterfaceDefNested of interface_def
+  | TraitDefNested of trait_def
 
 (*e: AST statement bis *)
 (* ------------------------------------------------------------------------- *)
@@ -762,6 +775,7 @@ and toplevel =
     | FuncDef of func_def
     | ClassDef of class_def
     | InterfaceDef of interface_def
+    | TraitDef of trait_def
   (*x: toplevel constructors *)
     | Halt of tok * unit paren * tok (* __halt__ ; *)
   (*x: toplevel constructors *)
@@ -791,6 +805,7 @@ type entity =
   | FunctionE of func_def
   | ClassE of class_def
   | InterfaceE of interface_def
+  | TraitE of trait_def
   | StmtListE of stmt list
 
   | MethodE of method_def

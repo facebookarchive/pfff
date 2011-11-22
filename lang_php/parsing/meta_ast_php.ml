@@ -281,6 +281,7 @@ and vof_cpp_directive =
   | ClassC -> Ocaml.VSum (("ClassC", []))
   | MethodC -> Ocaml.VSum (("MethodC", []))
   | FunctionC -> Ocaml.VSum (("FunctionC", []))
+  | TraitC -> Ocaml.VSum (("TraitC", []))
 and vof_encaps =
   function
   | EncapsString v1 ->
@@ -946,6 +947,23 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_tok v_i_tok in
   let bnd = ("i_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_trait_def {
+                      t_tok = v_i_tok;
+                      t_name = v_i_name;
+                      t_body = v_i_body
+                    } =
+  let bnds = [] in
+  let arg = vof_brace (vof_list vof_class_stmt) v_i_body in
+  let bnd = ("t_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_i_name in
+  let bnd = ("t_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_i_tok in
+  let bnd = ("t_tok", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+
 and vof_class_stmt =
   function
   | ClassConstants ((v1, v2, v3)) ->
@@ -964,6 +982,15 @@ and vof_class_stmt =
 
   | XhpDecl v1 ->
       let v1 = vof_xhp_decl v1 in Ocaml.VSum (("XhpDecl", [ v1 ]))
+  | UseTrait (v1, v2, v3) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_comma_list vof_name v2 in
+      let v3 = Ocaml.vof_either vof_tok (vof_brace (vof_list vof_trait_rule)) v3
+      in
+      Ocaml.VSum (("UseTrait", [v1; v2; v3]))
+
+and vof_trait_rule = vof_unit
+
 and vof_class_constant (v1, v2) =
   let v1 = vof_name v1
   and v2 = vof_static_scalar_affect v2
@@ -1164,6 +1191,9 @@ and vof_stmt_and_def =
   | InterfaceDefNested v1 ->
       let v1 = vof_interface_def v1
       in Ocaml.VSum (("InterfaceDefNested", [ v1 ]))
+  | TraitDefNested v1 ->
+      let v1 = vof_trait_def v1 in
+      Ocaml.VSum (("TraitDefNested", [ v1 ]))
 and vof_toplevel =
   function
   | StmtList v1 ->
@@ -1174,6 +1204,8 @@ and vof_toplevel =
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
   | InterfaceDef v1 ->
       let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceDef", [ v1 ]))
+  | TraitDef v1 ->
+      let v1 = vof_trait_def v1 in Ocaml.VSum (("TraitDef", [ v1 ]))
   | Halt ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_paren vof_unit v2
@@ -1195,6 +1227,8 @@ and vof_entity =
   | ClassE v1 -> let v1 = vof_class_def v1 in Ocaml.VSum (("ClassE", [ v1 ]))
   | InterfaceE v1 ->
       let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceE", [ v1 ]))
+  | TraitE v1 ->
+      let v1 = vof_trait_def v1 in Ocaml.VSum (("TraitE", [ v1 ]))
   | StmtListE v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1
       in Ocaml.VSum (("StmtListE", [ v1 ]))

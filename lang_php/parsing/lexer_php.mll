@@ -98,6 +98,9 @@ let lang_ext_or_t_ident ii fii =
  * note: PHP is case insensitive so this hash table is used on
  * a lowercased string so don't put strings in uppercase below because
  * such key would never be reached!
+ * 
+ * coupling: if you add a new keyword, don't forget to also modify
+ * the xhp_attr_name_atom grammar rule in parser_php.mly
  *)
 let keyword_table = Common.hash_of_list [
 
@@ -150,6 +153,9 @@ let keyword_table = Common.hash_of_list [
   "extends",         (fun ii -> T_EXTENDS ii);
   "implements",      (fun ii -> T_IMPLEMENTS ii);
   "instanceof",      (fun ii -> T_INSTANCEOF ii);
+  (* php 5.4 traits ("use" and "as" are used for traits and other things) *)
+  "trait",           (fun ii -> T_TRAIT ii);
+  "insteadof",       (fun ii -> T_INSTEADOF ii);
 
   "abstract", (fun ii -> T_ABSTRACT ii); "final", (fun ii -> T_FINAL ii);
 
@@ -175,10 +181,10 @@ let keyword_table = Common.hash_of_list [
 
   "__halt_compiler", (fun ii -> T_HALT_COMPILER ii);
 
-  "__line__",  (fun ii -> T_LINE ii); "__file__", (fun ii -> T_FILE ii);
-  "__dir__",   (fun ii -> T_DIR ii);
+  "__line__",  (fun ii -> T_LINE ii); 
+  "__file__", (fun ii -> T_FILE ii); "__dir__",   (fun ii -> T_DIR ii);
   "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
-  "__class__",       (fun ii -> T_CLASS_C ii);
+  "__class__",  (fun ii -> T_CLASS_C ii);" __trait__", (fun ii ->T_TRAIT_C ii);
 
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
