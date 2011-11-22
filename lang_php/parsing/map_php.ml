@@ -188,6 +188,10 @@ and map_paren16 _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 
 
+and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3) 
+ ->
+  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
+
 and map_brace_body _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_brace_expr _of_a (v1, v2, v3) =
@@ -438,6 +442,7 @@ and map_cpp_directive =
   | ClassC -> ClassC
   | MethodC -> MethodC
   | FunctionC -> FunctionC
+  | TraitC -> TraitC
 and map_encaps =
   function
   | EncapsString v1 ->
@@ -1056,6 +1061,20 @@ and
     i_body = v_i_body
   }
 
+and map_trait_def {
+                      t_tok = v_i_tok;
+                      t_name = v_i_name;
+                      t_body = v_i_body
+                    } =
+  let v_i_body = map_brace_class_body (map_of_list map_class_stmt) v_i_body in
+  let v_i_name = map_name v_i_name in
+  let v_i_tok = map_tok v_i_tok in
+  {
+    t_tok = v_i_tok;
+    t_name = v_i_name;
+    t_body = v_i_body
+  }
+
 and map_class_stmt =
   function
   | ClassConstants ((v1, v2, v3)) ->
@@ -1071,7 +1090,14 @@ and map_class_stmt =
       in ClassVariables ((v1, opt_ty, v2, v3))
   | Method v1 -> let v1 = map_method_def v1 in Method ((v1))
   | XhpDecl v1 -> let v1 = map_xhp_decl v1 in XhpDecl ((v1))
+  | UseTrait (v1, v2, v3) ->
+      let v1 = map_tok v1 in
+      let v2 = map_comma_list map_name v2 in
+      let v3 = Ocaml.map_of_either map_tok (map_brace (List.map map_trait_rule))
+        v3 in
+      UseTrait (v1, v2, v3)
 
+and map_trait_rule = map_of_unit
 
 and map_xhp_decl =
   function
@@ -1252,6 +1278,7 @@ and map_stmt_and_def def =
   | ClassDefNested v1 -> let v1 = map_class_def v1 in ClassDefNested ((v1))
   | InterfaceDefNested v1 ->
       let v1 = map_interface_def v1 in InterfaceDefNested ((v1))
+  | TraitDefNested v1 -> let v1 = map_trait_def v1 in TraitDefNested v1
   in
   vin.kstmt_and_def (k, all_functions) def
 and map_toplevel =
@@ -1260,6 +1287,7 @@ and map_toplevel =
   | FuncDef v1 -> let v1 = map_func_def v1 in FuncDef ((v1))
   | ClassDef v1 -> let v1 = map_class_def v1 in ClassDef ((v1))
   | InterfaceDef v1 -> let v1 = map_interface_def v1 in InterfaceDef ((v1))
+  | TraitDef v1 -> let v1 = map_trait_def v1 in TraitDef v1
   | Halt ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_paren13 map_of_unit v2
@@ -1275,6 +1303,7 @@ and map_entity =
   | FunctionE v1 -> let v1 = map_func_def v1 in FunctionE ((v1))
   | ClassE v1 -> let v1 = map_class_def v1 in ClassE ((v1))
   | InterfaceE v1 -> let v1 = map_interface_def v1 in InterfaceE ((v1))
+  | TraitE v1 -> let v1 = map_trait_def v1 in TraitE ((v1))
   | StmtListE v1 -> let v1 = map_of_list map_stmt v1 in StmtListE ((v1))
   | MethodE v1 -> let v1 = map_method_def v1 in MethodE ((v1))
   | ClassConstantE v1 ->

@@ -67,7 +67,10 @@ and stmt =
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
   | FuncDef of func_def
+  (* todo? factorize with ClassDef here too? *)
   | InterfaceDef of class_def
+  (* only at toplevel *)
+  | TraitDef of class_def
 
   | StaticVars of (string * expr option) list
   | Global of expr list
@@ -154,7 +157,6 @@ and expr =
         | AttrString of encaps list
         | AttrExpr of expr
 
-
 and func_def = {
   f_ref: bool;
   f_name: string;
@@ -185,7 +187,9 @@ and func_def = {
   }
 
 and class_def = {
+  (* todo: move is_interface and is_trait into class_type *)
   c_is_interface: bool;
+  c_is_trait: bool;
   c_type: class_type;
   c_name: string;
   c_extends: string list;

@@ -77,7 +77,7 @@ type id_kind =
   (* toplevels, which can also be nested *)
 
   | Function
-  | Class | Interface
+  | Class | Interface | Trait
   | StmtList 
 
   (* only at nested level, inside a class *)
@@ -131,16 +131,13 @@ let fullid_of_string s =
 
 let string_of_id_kind = function
   | Function -> "function"
-  | Class -> "class"
-  | Interface -> "interface"
+  | Class -> "class" | Interface -> "interface" | Trait -> "trait"
   | StmtList  -> "stmtlist"
 
   | Method -> "method"
-  | ClassConstant -> "classConstant"
-  | ClassVariable -> "classVariable"
+  | ClassConstant -> "classConstant" | ClassVariable -> "classVariable"
   | XhpDecl -> "xhpDecl"
   | StaticMethod -> "staticMethod"
-
   | IdMisc -> "idmisc"
 
 (*****************************************************************************)

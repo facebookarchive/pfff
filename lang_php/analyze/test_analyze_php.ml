@@ -188,7 +188,7 @@ let test_cyclomatic_php file =
                   class_name method_name n);
       | Ast_php.ClassConstants _ | Ast_php.ClassVariables _ ->
           ()
-      | Ast_php.XhpDecl _ ->
+      | Ast_php.XhpDecl _ | Ast_php.UseTrait _ ->
           ()
       )
   | _ -> ()

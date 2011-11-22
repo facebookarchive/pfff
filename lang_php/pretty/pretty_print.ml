@@ -274,7 +274,9 @@ and stmt_ env = function
           | _ -> ())
       );
   | InterfaceDef c
-  | ClassDef c ->
+  | ClassDef c 
+  | TraitDef c
+    ->
       class_def env c
   | While (e, stl) ->
       Pp.print env "while (";

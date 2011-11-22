@@ -118,8 +118,9 @@ module Ast = Ast_php
  T_UNSET T_ISSET T_EMPTY
  T_HALT_COMPILER
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
+ T_TRAIT T_INSTEADOF
  T_LIST T_ARRAY
- T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE T_DIR
+ T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE T_DIR T_TRAIT_C
  T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
  T_NEW T_CLONE T_INSTANCEOF
  T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
@@ -286,6 +287,8 @@ top_statement:
      | Left x -> ClassDefNested x
      | Right x -> InterfaceDefNested x
    }
+ /*(* todo: refactor top_statement and inner_statement as in hphp.y *)*/
+ | trait_declaration_statement          { TraitDefNested $1 }
 /*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -605,6 +608,11 @@ unticked_class_declaration_statement:
      interface_extends_list
      TOBRACE class_statement_list TCBRACE 
      { Right { i_tok = $1; i_name = $2; i_extends = $3; i_body = $4, $5, $6; } }
+
+trait_declaration_statement:
+ | T_TRAIT ident TOBRACE class_statement_list TCBRACE 
+     { { t_tok = $1; t_name = (Name $2); t_body = ($3, $4, $5) } }
+
 /*(*x: GRAMMAR class declaration *)*/
 class_name: 
  | ident { Name $1 }
@@ -670,6 +678,11 @@ class_statement:
      { XhpDecl (XhpChildrenDecl ($1, $2, $3)) }
  | T_XHP_CATEGORY xhp_category_list TSEMICOLON 
      { XhpDecl (XhpCategoriesDecl ($1, $2, $3)) }
+/*(* php 5.4 traits *)*/
+ | T_USE trait_list TSEMICOLON 
+     { UseTrait ($1, $2, Left $3) }
+ | T_USE trait_list TOBRACE trait_rules TCBRACE 
+     { UseTrait ($1, $2, Right ($3, $4, $5)) }
 
 /*(* ugly, php allows method names which should be IMHO reserved keywords *)*/
 ident_method: 
@@ -769,7 +782,7 @@ xhp_attr_name_atom:
     * of regular PHP idents, it's ok to use PHP keywords in place
     * of XHP attribute names (but again not good IMHO).
     * 
-    * The list of tokens below are all identifier-like keywords mentionned in
+    * The list of tokens below are all identifier-like keywords mentioned in
     * the 'keyword tokens' section at the beginning of this file
     * (which roughly correspond to the tokens in Lexer_php.keywords_table).
     * There is no conflict introducing this big list of tokens.
@@ -793,6 +806,7 @@ xhp_attr_name_atom:
  | T_LOGICAL_XOR { $1 } | T_NEW { $1 } | T_CLONE { $1 } | T_INSTANCEOF { $1 }
  | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
  | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }    
+ | T_TRAIT { $1 } | T_INSTEADOF { $1 } | T_TRAIT_C { $1 }
 
 /*(*----------------------------*)*/
 /*(*2 XHP children *)*/
@@ -840,6 +854,29 @@ xhp_children_decl_tag:
 
 xhp_category:
  | T_XHP_PERCENTID_DEF { $1 }
+
+/*(*----------------------------*)*/
+/*(*2 Traits *)*/
+/*(*----------------------------*)*/
+
+trait_rule:
+ | trait_precedence_rule  { $1 }
+ | trait_alias_rule       { $1 }
+
+trait_precedence_rule:
+ | class_namespace_string TCOLCOL T_IDENT T_INSTEADOF trait_list TSEMICOLON
+   { raise Todo }
+
+trait_alias_rule:
+ | trait_alias_rule_method T_AS method_modifiers T_IDENT TSEMICOLON
+   { raise Todo }
+
+ | trait_alias_rule_method T_AS non_empty_member_modifiers TSEMICOLON
+   { raise Todo }
+
+trait_alias_rule_method:
+ | class_namespace_string TCOLCOL T_IDENT { raise Todo }
+ | T_IDENT { raise Todo }
 
 /*(*e: GRAMMAR class declaration *)*/
 /*(*************************************************************************)*/
@@ -1101,10 +1138,11 @@ common_scalar:
 
  | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
 
- | T_LINE    { PreProcess(Line, $1) }   | T_FILE { PreProcess(File, $1) }
- | T_DIR     { PreProcess(Dir, $1) }
- | T_CLASS_C { PreProcess(ClassC, $1) } | T_METHOD_C { PreProcess(MethodC, $1) }
- | T_FUNC_C  { PreProcess(FunctionC, $1) }
+ | T_LINE { PreProcess(Line, $1) } 
+ | T_FILE { PreProcess(File, $1) } | T_DIR { PreProcess(Dir, $1) }
+ | T_CLASS_C { PreProcess(ClassC, $1) } | T_TRAIT_C { PreProcess(TraitC, $1)}
+ | T_FUNC_C { PreProcess(FunctionC, $1) }|T_METHOD_C { PreProcess(MethodC, $1)}
+
 
  /*(*s: common_scalar grammar rule hook *)*/
   | T_CLASS_XDEBUG class_name TOBRACE class_statement_list TCBRACE { 
@@ -1354,6 +1392,10 @@ fully_qualified_class_name:
   | T_XHP_COLONID_DEF { XhpName $1 }
  /*(*e: fully_qualified_class_name grammar rule hook *)*/
 
+/*(* todo? no support for namespace for now *)*/
+class_namespace_string:
+  | ident { Name $1 }
+
 /*(*e: GRAMMAR namespace *)*/
 
 variable_class_name: reference_variable { $1 }
@@ -1545,6 +1587,9 @@ xhp_children:
  | xhp_children xhp_child { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
 
+trait_rules:
+ | trait_rules trait_rule { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
 /*(*e: repetitive xxx_list *)*/
 
 additional_catches:
@@ -1597,7 +1642,12 @@ isset_variables:
 
 interface_list:
  | fully_qualified_class_name			    { [Left $1] }
- | interface_list TCOMMA fully_qualified_class_name { $1 ++ [Right $2; Left $3] }
+ | interface_list TCOMMA fully_qualified_class_name { $1 ++ [Right $2; Left $3]}
+
+trait_list:
+ | fully_qualified_class_name			{ [Left $1] }
+ | trait_list TCOMMA fully_qualified_class_name { $1 ++ [Right $2; Left $3] }
+
 
 declare_list:
  | declare                    	{ [Left $1] }

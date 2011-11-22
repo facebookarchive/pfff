@@ -270,11 +270,16 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
           k x
 
+      (* don't differentiate class/interface/traits for now visually *)
       | InterfaceDef def -> 
           let name = def.i_name in
           let info = Ast.info_of_name name in
           tag info (Class (Def2 fake_no_def2));
-
+          k x
+      | TraitDef def -> 
+          let name = def.t_name in
+          let info = Ast.info_of_name name in
+          tag info (Class (Def2 fake_no_def2));
           k x
 
       | StmtList _ ->
@@ -326,6 +331,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           bigf (Toplevel (Ast.ClassDef def))
       | InterfaceDefNested def ->
           bigf (Toplevel (Ast.InterfaceDef def))
+      | TraitDefNested def -> 
+          raise Impossible
       | Stmt _ -> k x
     );
 
@@ -380,6 +387,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
             tag info (Field (Def2 fake_no_def2));
           );
           k x
+      | Ast.UseTrait (tok, names, rules_or_tok) ->
+          ()
     );
 
     (* -------------------------------------------------------------------- *)
@@ -895,7 +904,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       (* done in PreProcess *)
       | T.T_FILE ii  | T.T_LINE ii | T.T_DIR ii
-      | T.T_FUNC_C ii | T.T_METHOD_C ii | T.T_CLASS_C ii
+      | T.T_FUNC_C ii | T.T_METHOD_C ii | T.T_CLASS_C ii | T.T_TRAIT_C ii
           -> ()
 
       (* can be a type hint *)
@@ -916,6 +925,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_INTERFACE ii -> tag ii KeywordObject
 
       | T.T_CLASS ii -> tag ii KeywordObject
+      | T.T_TRAIT ii -> tag ii KeywordObject
+      | T.T_INSTEADOF ii -> tag ii KeywordObject
 
       | T.T_HALT_COMPILER ii -> tag ii Builtin
 

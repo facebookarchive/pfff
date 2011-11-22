@@ -120,7 +120,7 @@ let get_public_or_protected_vars_of_class def =
          Some dnames
        else None
 
-  | (XhpDecl _|Method _|ClassConstants (_, _, _)) ->
+  | (XhpDecl _|Method _|ClassConstants (_, _, _) | UseTrait _) ->
       (* could maybe do something with XhpDecl ? *)
       None
   ) +> List.flatten

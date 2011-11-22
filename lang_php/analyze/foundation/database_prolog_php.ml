@@ -81,7 +81,7 @@ let name_id id db =
         )
 
     | EC.StmtList -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    | EC.Interface | EC.Class | EC.Function -> spf "'%s'" s
+    | EC.Interface | EC.Class | EC.Function | EC.Trait -> spf "'%s'" s
     (* ?? *)
     | EC.IdMisc -> spf "'__IDMISC__%s'" (EC.str_of_id id)
     )
@@ -91,8 +91,7 @@ let name_id id db =
 let string_of_id_kind = function
   | EC.Function -> "function"
   (* todo? merge class/interface too? *)
-  | EC.Class -> "class"
-  | EC.Interface -> "interface"
+  | EC.Class -> "class" | EC.Interface -> "interface" | EC.Trait -> "trait"
 
   (* the static/1 predicate will say if static method (or class var) *)
   | EC.Method | EC.StaticMethod -> "method"

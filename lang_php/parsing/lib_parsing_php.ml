@@ -354,7 +354,7 @@ let top_statements_of_program ast =
   ast |> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _|Halt (_, _, _)
-  | InterfaceDef _|ClassDef _| FuncDef _
+  | InterfaceDef _|ClassDef _| FuncDef _ | TraitDef _
       -> []
   ) |> List.flatten  
 
@@ -368,6 +368,8 @@ let toplevel_to_entity x =
       ClassE v1
   | InterfaceDef v1 -> 
       InterfaceE v1
+  | TraitDef v1 ->
+      TraitE v1
 
   (* todo? *)
   | Halt ((v1, v2, v3)) ->

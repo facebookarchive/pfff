@@ -19,6 +19,7 @@ type chunk =
   | ClassHeader of Ast_php.class_def
   | ClassFooter of Ast_php.info
   | InterfaceDef of Ast_php.interface_def
+  | TraitDef of Ast_php.trait_def
   | FinalDef of Ast_php.info
   (* class_stmt *)
   | ClassStmt of Ast_php.class_stmt

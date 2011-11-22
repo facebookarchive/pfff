@@ -247,7 +247,7 @@ and v_paren19 _of_a (v1, v2, v3) =
 and v_paren20 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
-and v_brace _of_a (v1, v2, v3) =
+and v_brace: 'a. ('a -> unit) -> 'a brace -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_brace2 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
@@ -570,6 +570,7 @@ and v_cpp_directive =
   | ClassC -> ()
   | MethodC -> ()
   | FunctionC -> ()
+  | TraitC -> ()
 
 and v_encaps x =
   let k x = match x with
@@ -1098,6 +1099,21 @@ and
   in
   vin.kinterface_def (k, all_functions) x
 
+and  v_trait_def x =
+  let rec k {
+                    t_tok = v_i_tok;
+                    t_name = v_i_name;
+                    t_body = v_i_body
+                  } =
+  let arg = v_tok v_i_tok  in
+  let arg = v_name v_i_name in 
+  let arg = v_brace4 (v_list v_class_stmt) v_i_body in
+  ()
+  in
+  (*vin.kinterface_def (k, all_functions) x *)
+  k x
+
+
 and v_class_stmt x =
   let k x = match x with
   | ClassConstants ((v1, v2, v3)) ->
@@ -1114,8 +1130,16 @@ and v_class_stmt x =
   | Method v1 -> let v1 = v_method_def v1 in ()
   | XhpDecl v1 -> 
       let v1 = v_xhp_decl v1 in ()
+  | UseTrait (v1, v2, v3) ->
+      let v1 = v_tok v1 in
+      let v2 = v_comma_list v_name v2 in
+      let v3 = Ocaml.v_either v_tok (v_brace (v_list v_trait_rule)) v3 in
+      ()
   in
   vin.kclass_stmt (k, all_functions) x
+
+and v_trait_rule = v_unit
+
 and v_xhp_decl x = 
     match x with
   | XhpAttributesDecl ((v1, v2, v3)) ->
@@ -1241,6 +1265,7 @@ and v_topstatement x =
   | FuncDefNested v1 -> let v1 = v_func_def v1 in ()
   | ClassDefNested v1 -> let v1 = v_class_def v1 in ()
   | InterfaceDefNested v1 -> let v1 = v_interface_def v1 in ()
+  | TraitDefNested v1 -> let v1 = v_trait_def v1 in ()
   in
   vin.kstmt_and_def (k, all_functions) x
 and v_body x = v_brace3 (v_stmt_and_def_list_scope) x
@@ -1257,6 +1282,7 @@ and v_toplevel x =
   | FuncDef v1 -> let v1 = v_func_def v1 in ()
   | ClassDef v1 -> let v1 = v_class_def v1 in ()
   | InterfaceDef v1 -> let v1 = v_interface_def v1 in ()
+  | TraitDef v1 -> let v1 = v_trait_def v1 in ()
 
   | Halt ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_paren16 v_unit v2 and v3 = v_tok v3 in ()
@@ -1273,6 +1299,7 @@ and v_entity = function
   | FunctionE v1 -> let v1 = v_func_def v1 in ()
   | ClassE v1 -> let v1 = v_class_def v1 in ()
   | InterfaceE v1 -> let v1 = v_interface_def v1 in ()
+  | TraitE v1 -> let v1 = v_trait_def v1 in ()
   | StmtListE v1 -> let v1 = v_list v_stmt v1 in ()
   | MethodE v1 -> let v1 = v_method_def v1 in ()
   | ClassConstantE v1 -> let v1 = v_class_constant v1 in ()

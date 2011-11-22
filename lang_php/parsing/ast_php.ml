@@ -300,7 +300,8 @@ type expr = exprbis * exp_info
         (*s: type cpp_directive *)
           and cpp_directive = 
               | Line  | File | Dir
-              | ClassC  | MethodC  | FunctionC
+              | ClassC | TraitC 
+              | MethodC  | FunctionC
         (*e: type cpp_directive *)
        (*e: constant rest *)
    (*e: type constant *)
@@ -661,10 +662,22 @@ and class_def = {
   (*e: type interface *)
 (*x: AST class definition *)
 and interface_def = {
-  i_tok: tok; (* interface *)
+  i_tok: tok; (* 'interface' *)
   i_name: name;
   i_extends: interface option;
+  (* the class_stmt for interfaces are restricted to abstract method *)
   i_body: class_stmt list brace;
+}
+(* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
+ * Allow to mixin behaviors and data so it's really just
+ * multiple inheritance with a cooler name.
+ * todo? factorize things with class_def and interface_def?
+ *)
+and trait_def = {
+  t_tok: tok; (* 'trait' *)
+  t_name: name;
+  (* class_stmt seems to be unrestricted for traits *)
+  t_body: class_stmt list brace;
 }
 (*x: AST class definition *)
   and class_stmt = 
@@ -677,6 +690,9 @@ and interface_def = {
     | Method of method_def
 
     | XhpDecl of xhp_decl
+    (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
+    | UseTrait of tok (*use*) * name comma_list * 
+        (tok (* ; *), trait_rule list brace) Common.either
 
     (*s: class_stmt types *)
         and class_constant = name * static_scalar_affect
@@ -748,6 +764,9 @@ and interface_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
+(* todo *)
+and trait_rule = unit
+
 (*e: AST class definition *)
 (* ------------------------------------------------------------------------- *)
 (* Other declarations *)
@@ -792,6 +811,11 @@ and stmt_and_def =
   | FuncDefNested of func_def
   | ClassDefNested of class_def
   | InterfaceDefNested of interface_def
+  (* todo: actually traits as opposed to class/interfaces are allowed only
+   * at toplevel, but I have TraitDefNested because of the way the
+   * grammar is currently written
+   *)
+  | TraitDefNested of trait_def
 
 (*e: AST statement bis *)
 (* ------------------------------------------------------------------------- *)
@@ -809,6 +833,7 @@ and toplevel =
     | FuncDef of func_def
     | ClassDef of class_def
     | InterfaceDef of interface_def
+    | TraitDef of trait_def
   (*x: toplevel constructors *)
     | Halt of tok * unit paren * tok (* __halt__ ; *)
   (*x: toplevel constructors *)
@@ -838,6 +863,7 @@ type entity =
   | FunctionE of func_def
   | ClassE of class_def
   | InterfaceE of interface_def
+  | TraitE of trait_def
   | StmtListE of stmt list
 
   | MethodE of method_def

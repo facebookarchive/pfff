@@ -99,8 +99,7 @@ let is_id_with_entity id db =
   | Entity_php.Function
   | Entity_php.Method
   | Entity_php.StaticMethod  
-  | Entity_php.Class 
-  | Entity_php.Interface
+  | Entity_php.Class  | Entity_php.Interface | Entity_php.Trait
     -> 
       true
   | Entity_php.ClassConstant
@@ -293,6 +292,10 @@ let database_code_from_php_database ?(verbose=false) db =
                    ~root id 
                    (List.length external_users) good_ex_ids properties
                    db)
+
+      (* TODO *)
+      | Entity_php.Trait ->
+          None
 
       (* TODO *)
       | Entity_php.ClassConstant
