@@ -29,15 +29,15 @@ module Pp = Pp2
  * The general idea of the algorihm is to use backtracking.
  * You try to print something and if it fails you try a different strategy.
  * See for instance the use of Pp.fail() below.
- * 
+ *
  * If you want to look at a quite elaborated example of pretty printing,
  * check the code for the assignement (Expr (Assign...
- * 
+ *
  * Why not using just use a box model a la Format?
  * Because many facebook conventions wouldn't fit in the box model.
  * The backtracking model costs more at runtime, but you can write any rule
  * in it, as complex as you want.
- * 
+ *
  * notes:
  *  - we introduce a space after if/while/catch/...
  *)
@@ -182,7 +182,7 @@ let unaryOp = function
 
 let visibility env = function
   | A.Novis        -> ""
-  | A.Public       -> "public"  
+  | A.Public       -> "public"
   | A.Private      -> "private"
   | A.Protected    -> "protected"
   | A.Abstract     -> "abstract"
@@ -273,8 +273,9 @@ and stmt_ env = function
           | If _ -> Pp.newline_opt env
           | _ -> ())
       );
+      Pp.newline_opt env
   | InterfaceDef c
-  | ClassDef c 
+  | ClassDef c
   | TraitDef c
     ->
       class_def env c
@@ -330,7 +331,7 @@ and stmt_ env = function
   | Expr (Assign (bop, e1, e2)) ->
       expr env e1;
       assignOp env bop;
-      (match e2 with 
+      (match e2 with
       | Xhp _ ->
         Pp.choice_left env (fun env ->
           let line = env.Pp.line in
@@ -533,7 +534,7 @@ and expr_ env = function
           expr env e2;
       ))
   | Binop (bop, e1, e2) ->
-      Pp.nest env (fun env ->
+      Pp.nestc env (fun env ->
       Pp.choice_left env (
         fun env ->
           expr env e1;
@@ -541,6 +542,7 @@ and expr_ env = function
           Pp.print env (binaryOp bop);
           Pp.print env " ";
           expr env e2;
+          if env.Pp2.cmargin >= 75 then raise Pp.Fail;
       ) (
         fun env ->
           expr env e1;
@@ -564,9 +566,8 @@ and expr_ env = function
         Pp.print env "yield ";
         Pp.print env s2;
         Pp.print env "(";
-        Pp.nest env (fun env ->
-          Pp.fun_args env expr "" el "," ""
-        );
+        Pp.fun_args env expr "" el "," "";
+        Pp.spaces env;
         Pp.print env ")";
       )
 
@@ -655,7 +656,7 @@ and expr_ env = function
       );
       (match def.l_use with
       | [] -> ()
-      | x::xs -> 
+      | x::xs ->
           Pp.nest env (fun env ->
             Pp.choice_left env (fun env ->
               Pp.print env " use(";
@@ -676,7 +677,7 @@ and expr_ env = function
       Pp.spaces env;
       Pp.print env "}";
       ()
-      
+
 
 and fixop env = function
   | Inc -> Pp.print env "++"
@@ -1022,6 +1023,8 @@ and open_tag last env x =
  ) "" x.xml_attrs "" "" ;
   if last <> ""
   then Pp.print env " ";
+  if env.Pp2.last_nl
+  then Pp.spaces env;
   Pp.print env last;
   Pp.print env ">"
 
@@ -1066,7 +1069,7 @@ and class_footer env () =
   ()
 
 and class_header env xs =
-  List.iter (fun x -> 
+  List.iter (fun x ->
     match x with
     (* copy paste of class_def but without printing the body nor the ending
      * brace
@@ -1101,7 +1104,7 @@ and class_header env xs =
         Pp.nest_block env (fun env -> List.iter (class_element env) c.c_body);
         Pp.newline env
         *)
-        
+
     | _ -> stmt env x
   ) xs
-  
+

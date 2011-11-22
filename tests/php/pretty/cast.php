@@ -9,5 +9,5 @@ function foo($a) {
   yield result(new BackdatedTime(
     $assoc['time'] - TimelineConstants::ASSOC_BACKDATE_TIME_OFFSET,
     (int)$aassoc['data']
-   ));
+  ));
 }

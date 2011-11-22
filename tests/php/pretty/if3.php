@@ -1,8 +1,8 @@
 <?php
 
 function foo() {
-    if ($this->isCityPage() && 
-        $this->getName() == $this->getUntranslatedName()) {
-    }
+  if ($this->isCityPage() &&
+      $this->getName() == $this->getUntranslatedName()) {
+  }
 }
 
