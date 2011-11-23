@@ -665,7 +665,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 4
+     (case 2
        (0 "all")
        (1 "sgrep")
        (2 "tags")
