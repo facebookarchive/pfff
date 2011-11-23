@@ -37,7 +37,7 @@ SRC+= unit_foundation_php.ml
 
 SRC+= database_php_build_helpers.ml database_php_build.ml \
       database_php_build2.ml
-SRC+= database_prolog_php.ml
+SRC+= database_prolog_php.ml unit_prolog_php.ml
 SRC+= unit_analyze_db_php.ml
 
 #entities_php.ml

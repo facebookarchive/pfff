@@ -54,3 +54,14 @@ interface K extends J {
 
 class D extends K {
 }
+
+trait T {
+  //use X;
+  public function trait1() {
+    echo "trait1\n";
+  }
+}
+
+class E {
+  use T;
+}

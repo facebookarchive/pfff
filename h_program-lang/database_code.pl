@@ -32,7 +32,7 @@
 % Here are the predicates that should be defined in facts.pl:
 %
 %  - entities: kind/2, with the 
-%    function/class/method/constant/field/... atoms.
+%    function/method, class/interface/trait, constant/field/... atoms.
 %      ex: kind('array_map', function).
 %      ex: kind('Preparable', class).
 %      ex: kind(('Preparable', 'gen'), method).
@@ -53,7 +53,7 @@
 %    Note that for method calls we actually don't resolve to which class
 %    the method belongs to (that would require to leverage results from
 %    an interprocedural static analysis).
-%    Note that we use 'docall' and not 'call' because call is a 
+%    Note that we use 'docall' and not 'call' because call is a
 %    reserved predicate in Prolog.
 %
 %  - datagraph: use/4 with the field/array atoms to differentiate access
@@ -78,11 +78,13 @@
 %    We use 'is_public' and not 'public' because public is a reserved name
 %    in Prolog.
 % 
-%  - inheritance: extends/2, implements/2
+%  - inheritance: extends/2, implements/2, mixins/2
 %      ex: extends('EntPhoto', 'Ent'). 
 %      ex: implements('MyTest', 'NeedSqlShim').
-%    See also the children/2, parent/2, related/2, isa/2, inherits/2 helpers 
-%    predicates defined below, where isa and inherits are infix operators.
+%      ex: mixins('MyTest', 'TraitHaveFeedback').
+%    See also the children/2, parent/2, related/2, isa/2, inherits/2,
+%    reuses/2, predicates defined below, where isa and inherits are 
+%    infix operators.
 %
 %  - include/require: include/2, require_module/2
 %      ex: include('wap/index.php', 'flib/core/__init__.php').
@@ -139,6 +141,12 @@ extends_or_implements(Child, Parent) :-
 extends_or_implements(Child, Parent) :- 
         implements(Child, Parent).
 
+extends_or_mixins(Child, Parent) :-
+        extends(Child, Parent).
+extends_or_mixins(Class, Trait) :-
+        mixins(Class, Trait).
+
+
 public_or_protected(X) :-
         is_public(X).
 public_or_protected(X) :-
@@ -161,6 +169,13 @@ inherits(GrandChild, Parent) :-
         extends(GrandChild, Child),
         inherits(Child, Parent).
 
+%only for traits
+reuses(Child, Trait) :-
+        mixins(Child, Trait).
+reuses(GrandChild, Trait) :-
+        extends(GrandChild, Child),
+        reuses(Child, Trait).
+
 parent(X, Y) :-
         children(Y, X).
 
@@ -181,20 +196,22 @@ class_defining_method(Method, X) :-
         kind((X, Method), method).
 
 % get all methods/fields accessible from a class
-method(Class, (Class, Method)) :- kind((Class, Method), method).
-method(Class, (Class2, Method)) :- 
-        extends(Class, Parent), 
+% todo: for mixins it does not handle yet insteadof and as, but we should
+% not use those features anyway.
+method(Class, (Class, Method)) :-
+        kind((Class, Method), method).
+method(Class, (Class2, Method)) :-
+        extends_or_mixins(Class, Parent), 
         method(Parent, (Class2, Method)),
-        % don't care about the one we have actually overriden here
+        % ensure we don't count parent implementations of overridden functions
         \+ kind((Class, Method), method),
         public_or_protected((Class2, Method)).
 
-field(Class, (Class, Field)) :- kind((Class, Field), field).
+field(Class, (Class, Field)) :-
+        kind((Class, Field), field).
 field(Class, (Class2, Field)) :- 
-        extends(Class, Parent),
+        extends_or_mixins(Class, Parent),
         field(Parent, (Class2, Field)),
-        % don't care about the one we have actually overriden here
-        \+ kind((Class, Field), field),
         public_or_protected((Class2, Field)).
 
 all_methods(Class) :- findall(X, method(Class, X), XS), writeln(XS).
@@ -205,16 +222,20 @@ at_method((Class, Method), File, Line) :-
         method(Class, (Class2, Method)), 
         at((Class2, Method), File, Line).
 
-% aran's override bad smell detector
+% aran's override (shadowed methods) bad smell detector. People should use
+% @override to be more explicit.
+% todo: need then to extract annotations from php code and generate facts.
+overrides(ChildClass, Class, Method) :-
+        kind((ChildClass, Method), method),
+        (inherits(ChildClass, Class) ; reuses(ChildClass, Class)),
+        kind((Class, Method), method).
 overrides(ChildClass, Method) :-
-        kind((ChildClass, Method), method),
-        inherits(ChildClass, ParentClass),
-        kind((ParentClass, Method), method).
+        overrides(ChildClass, _Class, Method).
 
-overrides(ChildClass, ParentClass, Method) :-
-        kind((ChildClass, Method), method),
-        inherits(ChildClass, ParentClass),
-        kind((ParentClass, Method), method).
+% trait specific overriding
+overrides_trait(ChildClass, Method) :-
+        overrides(ChildClass, Class, Method),
+        kind(Class, trait).
 
 %---------------------------------------------------------------------------
 % Operators for erling
@@ -238,7 +259,6 @@ isa(A,B) :- children(A,B).
 %---------------------------------------------------------------------------
 % Reporting
 %---------------------------------------------------------------------------
-
 
 %---------------------------------------------------------------------------
 % Clown code

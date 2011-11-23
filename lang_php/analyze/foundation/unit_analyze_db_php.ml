@@ -1,13 +1,9 @@
 open Common
 
 open Ast_php
-module Ast = Ast_php
 
 module Db = Database_php
 module Cg = Callgraph_php
-
-module V = Visitor_php
-module A = Annotation_php
 
 open OUnit
 
@@ -15,19 +11,16 @@ open OUnit
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Normally it would be better to put the unittest code in the unit tested
- * file, but sometimes for instance for the callgraph we actually need
- * a db which would add extra dependencies between directories
- * (e.g. foundation/ depending on database/). So better then to put
- * those unit tests here.
- *
- * Some of the tests depends on PHP files in tests/. An alternative that
- * would make the test code clearer would be to include those tests
- * files in ML but:
- *   - don't get the highlighting so no help if the test files contains
+ * Some tests depend on PHP files under tests/. Some tests are
+ * included inline here as strings. There are pros and cons for both.
+ * For large test files it's better to have them under tests/ otherwise:
+ *   - you don't get the highlighting so no help if the test file contains
  *     bad PHP code
- *   - can not use the php interpreter on those files or xdebug or
- *     some of our command line tools like sgrep
+ *   - you can not use the php interpreter on those files or xdebug or
+ *     some of our command line tools that we also want to test like sgrep
+ * 
+ * todo: remove the callgraph from database_php.ml and port the unit
+ * tests below to unit_prolog_php.ml.
  *)
 
 (*****************************************************************************)
@@ -133,6 +126,11 @@ let database_unittest =
  * methods is not completely intuitive. Here are a few unit tests
  * to document this semantic and to get confidence in the callgraph
  * code which gets bigger.
+ * 
+ * todo: this is now less useful because julien's callgraph is actually
+ * more precise. We should really just extend prolog's database with
+ * the precise callgraph using the abstract interpreter and then
+ * have unit tests only on prolog's database.
  *)
 let callgraph_unittest =
     "callgraph_php" >::: [

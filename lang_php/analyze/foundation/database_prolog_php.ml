@@ -274,7 +274,22 @@ let add_defs_and_uses id kind ast pr db =
       def.c_implements +> Common.do_option (fun (tok, interface_list) ->
         interface_list +> Ast.uncomma |> List.iter (fun x ->
           pr (spf "implements(%s, '%s')." (name_id id db) (Ast.name x));
-        )
+        ));
+      def.c_body +> Ast.unbrace +> List.iter (function
+      | UseTrait (_tok, names, rules_or_tok) ->
+          names +> Ast.uncomma +> List.iter (fun name ->
+            pr (spf "mixins(%s, '%s')." (name_id id db) (Ast.name name))
+          )
+      | _ -> ()
+      );
+
+  | EC.Trait, TraitE def ->
+      def.t_body +> Ast.unbrace +> List.iter (function
+      | UseTrait (_tok, names, rules_or_tok) ->
+          names +> Ast.uncomma +> List.iter (fun name ->
+            pr (spf "mixins(%s, '%s')." (name_id id db) (Ast.name name))
+          )
+      | _ -> ()
       );
 
   | EC.Interface, InterfaceE def ->
@@ -287,7 +302,8 @@ let add_defs_and_uses id kind ast pr db =
            *)
           pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
         )
-      )
+      );
+      (* there is no use Trait; right now in interface *)
             
   | (EC.Method | EC.StaticMethod), MethodE def -> 
       pr (spf "arity(%s, %d)." (name_id id db)
@@ -324,7 +340,7 @@ let gen_prolog_db db file =
    pr (":- discontiguous kind/2, at/3.");
    pr (":- discontiguous static/1, abstract/1, final/1.");
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
-   pr (":- discontiguous extends/2, implements/2.");
+   pr (":- discontiguous extends/2, implements/2, mixins/2.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous docall/3, use/4.");
    pr (":- discontiguous include/2, require_module/2.");
