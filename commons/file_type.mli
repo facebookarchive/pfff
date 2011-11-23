@@ -55,6 +55,4 @@ val is_json_filename:
 val webpl_type_of_file: 
   Common.filename -> webpl_type option
 
-(*
-val string_of_pl: pl_kind -> string
-*)
+(* val string_of_pl: pl_kind -> string *)

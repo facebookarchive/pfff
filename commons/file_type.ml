@@ -1,5 +1,3 @@
-open Common 
-
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -14,6 +12,7 @@ open Common
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common 
 
 (*****************************************************************************)
 (* Prelude *)
@@ -55,12 +54,12 @@ type file_type =
 
    and lisp_type = CommonLisp | Elisp | Scheme
 
-    and webpl_type = 
-      | Php of string (* php or phpt or script *)
-      | Js
-      | Css
-      | Html | Xml | Json
-      | Sql
+   and webpl_type = 
+     | Php of string (* php or phpt or script *)
+     | Js
+     | Css
+     | Html | Xml | Json
+     | Sql
 
  and media_type =
    | Sound of string
@@ -74,7 +73,6 @@ type file_type =
 let file_type_of_file2 file = 
   let (d,b,e) = Common.dbe_of_filename_noext_ok file in
   match e with
-
 (* expensive ? *)
 (* todo:
   | _ when b =~ ".md5sum_.*" -> Obj ("syncweb")
@@ -82,11 +80,11 @@ let file_type_of_file2 file =
 *)
 
   | "ml" | "mli" 
-  | "mly" | "mll"    | "mlb" (* mlburg *)
+  | "mly" | "mll"    
       -> PL (ML e)
-  | "mlp" (* used in emacs source *)
-      -> PL (ML e)
-  | "eliom"
+  | "mlb" (* mlburg *)
+  | "mlp" (* used in some source *)
+  | "eliom" (* ocsigen, obviously *)
       -> PL (ML e)
 
   | "sml" -> PL (ML e)
@@ -286,21 +284,18 @@ let webpl_type_of_file file =
   | _ -> None
 
 
+(*
 let detect_pl_of_file file = 
   raise Todo
 
- 
-
 let string_of_pl x = 
   raise Todo
-(*
   | C -> "c"
   | Cplusplus -> "c++"
   | Java -> "java"
 
   | Web _ -> raise Todo
 *)
-
 
 let is_syncweb_obj_file file = 
   file =~ ".*md5sum_"
