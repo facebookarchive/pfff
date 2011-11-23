@@ -1,7 +1,8 @@
 
 type entity_kind = 
   | Function 
-  | Class | Interface | Module 
+  | Class | Interface | Trait
+  | Module 
   | Type 
   | Constant | Global 
   | Macro

@@ -101,10 +101,11 @@ let tags_unittest =
     "tags_php" >::: [
       "basic tags" >:: (fun () ->
         let file_content = "
-            function foo() { } 
+            function foo() { }
             class A { }
             define('Cst',1);
             interface B { }
+            trait C { }
         "
         in
         let tmpfile = tmp_php_file_from_string file_content in
@@ -114,8 +115,8 @@ let tags_unittest =
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
             assert_equal 
-              ~msg:"The tags should contain only 4 entries"
-              (List.length tags_in_file) 4;
+              ~msg:"The tags should contain only 5 entries"
+              (List.length tags_in_file) 5;
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )

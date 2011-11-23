@@ -101,14 +101,25 @@ let defs_of_any any =
       );
     );
     V.kinterface_def = (fun (k, _) def ->
-      (* todo? use Db.Interface ? but all we merge Class and Interface
-       * for the uses below right now so better to be consistence.
+      (* todo? use Db.Interface ? but we merge Class and Interface
+       * for the uses below right now, so better to be consistent.
        *)
       Common.push2 (Db.Class, def.i_name, None) aref;
       Common.save_excursion current_class (Some def.i_name) (fun () ->
         k def
       );
     );
+    V.ktop = (fun (k, _) x ->
+      match x with
+      | TraitDef def ->
+          Common.push2 (Db.Trait, def.t_name, None) aref;
+          Common.save_excursion current_class (Some def.t_name) (fun () ->
+            k x
+          );
+      | _ -> 
+          k x
+    );
+
     V.kmethod_def = (fun (k, _) def ->
       let classname =
         match !current_class with

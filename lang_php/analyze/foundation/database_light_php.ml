@@ -16,11 +16,9 @@
 open Common
 
 module Ast = Ast_php
-
 module Db = Database_code
-
+module E = Entity_php
 module DbPHP = Database_php
-
 module HC = Highlight_code
 
 (*****************************************************************************)
@@ -52,13 +50,15 @@ let mk_entity ~root id nb_users good_example_ids properties db =
     e_pos = { Common.l = l; Common.c = c };
     e_kind = 
       (match kind  with
-      | Entity_php.Function -> Db.Function
-      | Entity_php.Class -> Db.Class
-      | Entity_php.Method -> Db.Method
-      | Entity_php.StaticMethod -> Db.StaticMethod
-      | Entity_php.Interface -> Db.Interface
+      | E.Function -> Db.Function
+      | E.Class -> Db.Class
+      | E.Method -> Db.Method
+      | E.StaticMethod -> Db.StaticMethod
+      | E.Interface -> Db.Interface
+      | E.Trait -> Db.Trait
+      | (E.IdMisc|E.XhpDecl|E.ClassVariable|E.ClassConstant|E.StmtList) ->
+          raise Impossible
 
-      | _ -> raise Impossible
       );
     e_number_external_users = nb_users;
     e_good_examples_of_use = good_example_ids; 
@@ -293,9 +293,16 @@ let database_code_from_php_database ?(verbose=false) db =
                    (List.length external_users) good_ex_ids properties
                    db)
 
-      (* TODO *)
       | Entity_php.Trait ->
-          None
+          (* TODO *)
+          let external_users = [] in
+          let good_ex_ids = [] in
+          let properties = [] in
+          Some (id, mk_entity 
+                   ~root id 
+                   (List.length external_users) good_ex_ids properties
+                   db)
+
 
       (* TODO *)
       | Entity_php.ClassConstant

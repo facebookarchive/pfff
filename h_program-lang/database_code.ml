@@ -93,8 +93,7 @@ module HC = Highlight_code
  *)
 type entity_kind = 
   | Function
-  | Class
-  | Interface
+  | Class | Interface | Trait
   | Module
   | Type
   | Constant
@@ -249,6 +248,7 @@ let string_of_entity_kind e =
   | Function -> "Function"
   | Class -> "Class"
   | Interface -> "Interface"
+  | Trait -> "Trait"
   | Module -> "Module"
   | Type -> "Type"
   | Constant -> "Constant"

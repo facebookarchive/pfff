@@ -118,6 +118,9 @@ let vim_tag_kind_str tag_kind =
   | Db.Type -> "t"
   | Db.Field -> "m"
 
+  (* good? *)
+  | Db.Trait -> "i"
+
   | Db.Module
   | Db.Global
   | Db.Macro

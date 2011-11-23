@@ -59,8 +59,7 @@ let tags_of_ast ast filelines =
   defs +> List.map (fun (kind, name, enclosing_name_opt) ->
     match kind with
     | Db.Function
-    | Db.Class
-    | Db.Interface 
+    | Db.Class | Db.Interface | Db.Trait
     | Db.Constant
       ->
         [tag_of_name filelines name kind]
