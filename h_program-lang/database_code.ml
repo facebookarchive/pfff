@@ -89,7 +89,9 @@ module HC = Highlight_code
 
 (* Yet another entity type. Could perhaps factorize code with
  * highlight_code.ml.
- * If you add a constructor don't forget to modify entity_kind_of_string
+ * If you add a constructor don't forget to modify entity_kind_of_string.
+ * 
+ * see also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
  *)
 type entity_kind = 
   | Function
