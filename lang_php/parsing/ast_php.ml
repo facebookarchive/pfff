@@ -665,7 +665,7 @@ and interface_def = {
   i_tok: tok; (* 'interface' *)
   i_name: name;
   i_extends: interface option;
-  (* the class_stmt for interfaces are restricted to abstract method *)
+  (* the class_stmt for interfaces are restricted to only abstract methods *)
   i_body: class_stmt list brace;
 }
 (* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
@@ -676,7 +676,7 @@ and interface_def = {
 and trait_def = {
   t_tok: tok; (* 'trait' *)
   t_name: name;
-  (* class_stmt seems to be unrestricted for traits *)
+  (* class_stmt seems to be unrestricted for traits; can even have some 'use' *)
   t_body: class_stmt list brace;
 }
 (*x: AST class definition *)
