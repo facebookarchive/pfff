@@ -322,6 +322,7 @@ rule category = parse
       { Architecture }
 
   | "unix"
+  (* commented when analyze linux itself *)
   | "linux"
   | "macos"
   | "win32"
