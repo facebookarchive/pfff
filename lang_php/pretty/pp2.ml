@@ -101,7 +101,7 @@ let print env x =
     then begin env.print x; env.failed <- true end
     else raise Fail
   else env.print x
-    
+
 let spaces env =
   for i = 1 to List.hd env.margin do
     print env " ";
@@ -189,14 +189,17 @@ let flat_list env f opar l sep cpar =
 (* pad: used to take a last_nl parameter, but it was not used *)
 let nl_nested_list env f opar l sep cpar =
   print env opar;
-  nest_opt env (fun env ->
+  nest env (fun env ->
     newline env;
     spaces env;
     list_sep env f (fun env -> print env sep; newline env; spaces env) l;
     newline env;
+  );
+  if cpar <> ""
+  then begin
     spaces env;
     print env cpar
-  )
+  end
 
 (*****************************************************************************)
 (* Backtracking combinators *)

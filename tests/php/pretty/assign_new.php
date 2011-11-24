@@ -11,7 +11,7 @@ function foo() {
       $this->getMediaSource($media_type_mask)->getAssoc('album'),
       $this->countableAlbums,
       array(Ent::load('ApproximateCount'))
-      );
+    );
   }
 }
 

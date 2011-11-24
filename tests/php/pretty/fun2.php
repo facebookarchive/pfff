@@ -19,7 +19,7 @@ function deactivate_affiliations($userid) {
     $userid,
     AffilNetworkStatusConst::REMOVED,
     AffilMiscConst::NETWORK_CONFIRMED_YES
-    );
+  );
   while ($row = mysql_fetch_array($ret)) {
     list($network_key) = $row;
     remove_affiliation_link($userid, $network_key, $is_deactivate = true);

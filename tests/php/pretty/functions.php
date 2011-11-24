@@ -19,7 +19,7 @@ function deactivate_affiliations($userid) {
     $userid,
     AffilNetworkStatusConst::REMOVED,
     AffilMiscConst::NETWORK_CONFIRMED_YES
-    );
+  );
   while ($row = mysql_fetch_array($ret)) {
     list($network_key) = $row;
     remove_affiliation_link($userid, $network_key, $is_deactivate = true);
@@ -72,14 +72,14 @@ function remove_affiliation_link(
         ->removeMember($userid);
       } else {
         FBLogger('networks')->mustfix(
-        'Trying to add member to network with wrong version type'
+          'Trying to add member to network with wrong version type'
         );
       }
 
     } else if (extract_network_type($network_key) != $GLOBALS['TYPE_GEO']) {
       FBLogger('networks')->mustfix(
-      'Failed to retrieve network FBID for key: %s',
-      $network_key
+        'Failed to retrieve network FBID for key: %s',
+        $network_key
       );
     }
   }

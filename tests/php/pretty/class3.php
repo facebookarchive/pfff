@@ -21,6 +21,6 @@ class X {
     $script = jsprintf(
       f($this->getRequest()->getStr('__jsonp__')->getMNdaf(), 3232, 3232),
       0
-      );
+    );
   }
 }

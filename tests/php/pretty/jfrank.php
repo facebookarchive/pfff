@@ -3,10 +3,10 @@
 
 function foo() {
   $x = array(
-  'foo' => 'bar',
-  3 => 4,
-  5 => 6,
-  'aaaaaa' => 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+    'foo' => 'bar',
+    3 => 4,
+    5 => 6,
+    'aaaaaa' => 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
   );
 
   $html =
@@ -29,17 +29,17 @@ some_function(
     3 => 4,
     5 => 6,
     'aaaaaa' => 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-    )
-  );
+  )
+);
 
 $x = <div>fadsfd</div>;
 
 $x =
   <div
-  a="aaaaaaaaaaaaaa"
-  b="bbbbbbbbbbbbbbbbbbbbb"
-  z="ccccccccccccccc"
-  d="ddddddddddddddd"
+    a="aaaaaaaaaaaaaa"
+    b="bbbbbbbbbbbbbbbbbbbbb"
+    z="ccccccccccccccc"
+    d="ddddddddddddddd"
   >
     foo
   </div>;
