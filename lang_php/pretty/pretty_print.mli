@@ -19,3 +19,7 @@ val class_header:
 
 val class_footer:
   Pp2.env -> unit -> unit
+
+(* used by xhpize *)
+val stmt:
+  Pp2.env -> Ast_pp.stmt -> unit
