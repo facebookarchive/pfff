@@ -498,6 +498,7 @@ the C preprocessor [[cpp]]:
 @ 
 
 <<type cpp_directive>>=
+(* http://php.net/manual/en/language.constants.predefined.php *)
   and cpp_directive = 
       | Line  | File | Dir
       | ClassC | TraitC 

@@ -298,6 +298,7 @@ type expr = exprbis * exp_info
        (*e: type constant hook *)
        (*s: constant rest *)
         (*s: type cpp_directive *)
+        (* http://php.net/manual/en/language.constants.predefined.php *)
           and cpp_directive = 
               | Line  | File | Dir
               | ClassC | TraitC 
