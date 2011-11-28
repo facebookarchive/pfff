@@ -181,6 +181,8 @@ let main_action xs =
     let resopt = Spatch_php.spatch pattern file in
     resopt +> Common.do_option (fun (s) ->
 
+      pr2 (spf "transforming: %s" file);
+
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
 
