@@ -846,7 +846,7 @@ and xhp_attr_value env = function
       A.AttrString (List.map (encaps env) l)
   | XhpAttrExpr (_, e, _) ->
       A.AttrExpr (expr env e)
-  | SgrepXhpAttrValueMvar _ -> assert false
+  | SgrepXhpAttrValueMvar _ -> raise Common.Impossible
 
 and xhp_body env = function
   | XhpText (s, _) -> A.XhpText s
