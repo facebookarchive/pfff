@@ -8,26 +8,11 @@ open Common
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST info *)
-(*s: type pinfo *)
-type pinfo = Parse_info.token
-  (*s: pinfo constructors *)
-  (*x: pinfo constructors *)
-  (*x: pinfo constructors *)
-  (*e: pinfo constructors *)
-  (*s: tarzan annotation *)
-   (* with tarzan *)
-  (*e: tarzan annotation *)
-(*e: type pinfo *)
-
-(* contains among other things the position of the token through
- * the Common.parse_info embedded inside it.
+(* Contains among other things the position of the token through
+ * the Common.parse_info embedded inside it, which itself contains
+ * the transformation field that makes possible spatch.
  *)
 type info = Parse_info.info
-  (*s: type info hook *)
-  (* todo? comments: .... *)
-  (*x: type info hook *)
-  (* old: mutable transfo: transformation; *)
-  (*e: type info hook *)
 
 and tok = info
 (*x: AST info *)
@@ -41,7 +26,6 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots = 
   ('a, tok (* ... for sgrep *), tok (* the comma *)) Common.either3 list
 (*x: AST info *)
-(* old: transformation = ... now in parse_info.ml *)
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -872,7 +856,7 @@ type any =
 (*s: AST helpers interface *)
 val parse_info_of_info : info -> Parse_info.parse_info
 (*x: AST helpers interface *)
-val pinfo_of_info : info -> pinfo
+val pinfo_of_info : info -> Parse_info.token
 (*x: AST helpers interface *)
 val pos_of_info : info -> int
 val str_of_info : info -> string

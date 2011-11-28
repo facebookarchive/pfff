@@ -1503,13 +1503,11 @@ and fully_qualified_class_name = name
 % not really tokens 
 
 <<AST info>>=
-<<type pinfo>>
-
-(* contains among other things the position of the token through
- * the Common.parse_info embedded inside it.
+(* Contains among other things the position of the token through
+ * the Common.parse_info embedded inside it, which itself contains
+ * the transformation field that makes possible spatch.
  *)
 type info = Parse_info.info
-  <<type info hook>>
 
 and tok = info
 @ 
@@ -1529,18 +1527,7 @@ and 'a comma_list_dots =
 @ 
 
 <<AST info>>=
-(* old: transformation = ... now in parse_info.ml *)
  <<tarzan annotation>>
-@ 
-
-
-<<type pinfo>>=
-type pinfo = Parse_info.token
-  <<pinfo constructors>>
-  <<tarzan annotation>>
-@ 
-
-<<pinfo constructors>>=
 @ 
 
 For rerefence, here is the definition of [[Common.parse_info]]:
@@ -1556,18 +1543,7 @@ type parse_info = {
   } 
 \end{verbatim}
 
-
-<<pinfo constructors>>=
-@ 
-
-<<pinfo constructors>>=
-@ 
-
 \l see al_info function later 
-
-<<type info hook>>=
-(* todo? comments: .... *)
-@ 
 
 \section{Semantic annotations}
 \label{sec:annotations}
@@ -1765,9 +1741,8 @@ type:
 @ 
 
 
-<<type info hook>>=
-(* old: mutable transfo: transformation; *)
-@ 
+% (* old: mutable transfo: transformation; now in parse_info.ml *)
+ 
 
 \section{Support for Xdebug}
 \label{sec:ast-xdebug}
@@ -1845,7 +1820,7 @@ to extend the grammar and AST to include such extensions:
 val parse_info_of_info : info -> Parse_info.parse_info
 @ 
 <<AST helpers interface>>=
-val pinfo_of_info : info -> pinfo
+val pinfo_of_info : info -> Parse_info.token
 @ 
 
 \label{sec:ast-helper-tok}
