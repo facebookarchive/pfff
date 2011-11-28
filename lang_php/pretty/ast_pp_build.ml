@@ -22,7 +22,7 @@ module T = Parser_php
 (* Prelude *)
 (*****************************************************************************)
 (*
- * The goal of this module is to take an AST (see ast_php.ml) and its 
+ * The goal of this module is to take an AST (see ast_php.ml) and its
  * list of tokens (see parser_php.ml), including the newline and comment
  * tokens, and return an AST that will make it easy to pretty print
  * the code while still maintaining the comments of the original file
@@ -32,29 +32,29 @@ module T = Parser_php
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* 
+(*
  * An environment contains all "esthetic" newlines and all the comments
  * of the current chunk of code we are processing.
  * It also contains the line numbers where the newlines/comments appear
  * in the code.
- * 
+ *
  * An 'esthetic' newline is a newline used to better separate code.
  * For instance in
- * 
+ *
  *    $x = 1;
  *    $x = 2;
- * 
+ *
  * there is a newline, but we don't consider it an esthetic newline.
  * We don't consider those newlines because the pretty printer already knows
  * (and arguably knows better than the developer) where to insert them
  * in the code. Here is an example of an esthetic newline:
- * 
+ *
  *    $x = 1;
- *  
+ *
  *    $x = 2;
- * 
+ *
  * See extract_esthetic_newlines_and_comments for more information.
- * 
+ *
  * The environment is a ref that gets smaller as we build the ast_pp
  * from bottom to top (hence the use of fold_right in many places below).
  *)
@@ -193,7 +193,7 @@ let add_case_comments = add_comments
 
 
 let make_env l =
-  let l = List.map (fun (x, y) -> 
+  let l = List.map (fun (x, y) ->
     let tag =
       match y with
       | "\n" -> `Newline
@@ -242,13 +242,13 @@ let env_of_tokens tokens =
  * "\n  public function ....}\n".
  *)
 let env_of_tokens_for_spatch toks =
-  let toks = 
-    Common.exclude (function T.TSpaces _ -> true | _ -> false) toks in 
+  let toks =
+    Common.exclude (function T.TSpaces _ -> true | _ -> false) toks in
   let l info = Ast_php.line_of_info info in
   let str info = Ast_php.str_of_info info in
 
   let rec aux ~start xs =
-    match xs with 
+    match xs with
     | [] -> []
     | (T.T_COMMENT i1 | T.T_DOC_COMMENT i1 | T.T_OPEN_TAG i1)::xs ->
         (l i1, `Comment (str i1))::aux xs ~start:false
@@ -262,7 +262,7 @@ let env_of_tokens_for_spatch toks =
     | _::xs -> aux xs ~start:false
   in
   ref (List.rev (aux toks ~start:true))
-  
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -493,7 +493,7 @@ and lambda_def env ld =
   let _, body, _ = ld.l_body in
   { A.l_ref = ld.l_ref <> None;
     A.l_params = List.map (parameter env) params;
-    A.l_use = 
+    A.l_use =
       (match ld.l_use with
       | None -> []
       | Some (_tokuse, (_, lexical_vars, _)) ->
@@ -918,6 +918,7 @@ and switch_case_list env = function
 
 and case env x acc =
   match x with
+  | Case (_, e, _, []) -> A.Case (expr env e, []) :: acc
   | Case (_, e, _, stl) ->
       let line = last_line_of_stmt_and_defl stl in
       let acc = add_case_comments env acc line in
@@ -994,4 +995,4 @@ let class_stmts tokens xs =
   let acc = List.fold_right (class_body env) xs acc in
   let acc = add_ce_comments env acc 0 in
   acc
-  
+
