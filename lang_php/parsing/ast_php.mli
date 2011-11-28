@@ -251,8 +251,8 @@ type expr = exprbis * exp_info
        (*e: type constant hook *)
        (*s: constant rest *)
         (*s: type cpp_directive *)
-         (* http://php.net/manual/en/language.constants.predefined.php *)
-           and cpp_directive = 
+        (* http://php.net/manual/en/language.constants.predefined.php *)
+          and cpp_directive = 
               | Line  | File | Dir
               | ClassC | TraitC 
               | MethodC  | FunctionC
@@ -373,7 +373,7 @@ and lvalue = lvaluebis * lvalue_info
     | VArrayAccess of lvalue * expr option bracket
     | VArrayAccessXhp of expr * expr option bracket
   (*x: lvaluebis constructors *)
-    | VBrace       of tok      * expr brace
+    | VBrace       of tok    * expr brace
     | VBraceAccess of lvalue * expr brace
   (*x: lvaluebis constructors *)
     (* on the left of var *)
@@ -616,14 +616,21 @@ and class_def = {
   (*e: type interface *)
 (*x: AST class definition *)
 and interface_def = {
-  i_tok: tok; (* interface *)
+  i_tok: tok; (* 'interface' *)
   i_name: name;
   i_extends: interface option;
+  (* the class_stmt for interfaces are restricted to only abstract methods *)
   i_body: class_stmt list brace;
 }
+(* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
+ * Allow to mixin behaviors and data so it's really just
+ * multiple inheritance with a cooler name.
+ * todo? factorize things with class_def and interface_def?
+ *)
 and trait_def = {
-  t_tok: tok; (* trait *)
+  t_tok: tok; (* 'trait' *)
   t_name: name;
+  (* class_stmt seems to be unrestricted for traits; can even have some 'use' *)
   t_body: class_stmt list brace;
 }
 (*x: AST class definition *)
@@ -637,7 +644,7 @@ and trait_def = {
     | Method of method_def
 
     | XhpDecl of xhp_decl
-    (* php 5.4 *)
+    (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
     | UseTrait of tok (*use*) * name comma_list * 
         (tok (* ; *), trait_rule list brace) Common.either
 
@@ -650,6 +657,7 @@ and trait_def = {
           | NoModifiers of tok (* 'var' *)
           | VModifiers of modifier wrap list
     (*x: class_stmt types *)
+        (* a few special names: __construct, __call, __callStatic *)
         and method_def = {
           m_modifiers: modifier wrap list;
           m_tok: tok; (* function *)
@@ -757,6 +765,10 @@ and stmt_and_def =
   | FuncDefNested of func_def
   | ClassDefNested of class_def
   | InterfaceDefNested of interface_def
+  (* todo: actually traits as opposed to class/interfaces are allowed only
+   * at toplevel, but I have TraitDefNested because of the way the
+   * grammar is currently written
+   *)
   | TraitDefNested of trait_def
 
 (*e: AST statement bis *)
