@@ -56,7 +56,7 @@ open Parse_info
 (* ------------------------------------------------------------------------- *)
 (*s: AST info *)
 (* Contains among other things the position of the token through
- * the Common.parse_info embedded inside it, which itself contains
+ * the Common.parse_info embedded inside it, as well as the
  * the transformation field that makes possible spatch.
  *)
 type info = Parse_info.info
