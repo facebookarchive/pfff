@@ -17,7 +17,7 @@ module TH = Token_helpers_php
 (* Prelude *)
 (*****************************************************************************)
 
-(* 
+(*
  * There are multiple ways to unparse PHP code:
  *  - one can iterate over the AST, and print its leaves, but 
  *    comments and spaces are not in the AST right now so you need
@@ -25,6 +25,10 @@ module TH = Token_helpers_php
  *    visit of the AST with the tokens
  *  - one can iterate over the tokens, where comments and spaces are normal
  *    citizens, but this can be too low level.
+ *  - one can use a real pretty printer with a boxing or backtracking model
+ *    working on a AST extended with comments (see juline's ast_pretty_print/).
+ *    
+ * The token-based unparser handles transfo annotations (Add/Remove).
  * 
  * related: the sexp/json "exporters".
  * 
@@ -184,7 +188,7 @@ let string_of_program2_using_transfo ast2 =
 
    (* for some of the processing below, it is convenient to enclose
     * the list of tokens with some fake tokens so that the special
-    * case on the edges do not have to be handled.
+    * case on the edges do not have to be handled (aka sentinel trick).
     *)
    let fake_tok = Parser_php.T_ECHO (Ast.fakeInfo "fake_token") in
 
