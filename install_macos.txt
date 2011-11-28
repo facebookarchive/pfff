@@ -5,6 +5,7 @@ Then
  $ sudo port install pcre
  $ sudo port install cairo
  $ sudo port install gtk2
+ $ sudo port install swi-prolog
 
 => can configure and build all pfff tools :)
 
@@ -40,4 +41,3 @@ Troubles ?
 
 - For cairo and gtk don't use the quartz setting as it is currently
   buggy under macports.
-

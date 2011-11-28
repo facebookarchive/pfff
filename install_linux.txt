@@ -1,4 +1,5 @@
-Install pcre-devel, gtk2-devel, atk-devel, pango-devel, and cairo-devel.
+Install pcre-devel, gtk2-devel, atk-devel, pango-devel, and cairo-devel,
+swi-prolog.
 
 For instance:
 for redhat: sudo yum install pcre-devel
@@ -15,4 +16,3 @@ then
 For Ubuntu/Debian you want to install libpcre3-dev,
 libgtk2.0-dev, libcairo2-dev and libpango1.0-dev. These are the
 correct package names (pcre-devel does not exist, and so on).
-

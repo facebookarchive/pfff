@@ -10,6 +10,8 @@ You must first install a recent version of
    if you need to process huge codebase
  - Pcre
    if you want stuff I don't remember.
+ - SWI-prolog
+   if you want the interactive code query tool
 
 You will need both the runtime and the development library for
 those packages (e.g. pcre and pcre-devel packages under most Linux
