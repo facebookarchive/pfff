@@ -11,7 +11,7 @@ open Parse_info
 
 (* 
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
- * a few PHP 5.3 extensions (like closures) and support for XHP.
+ * a few PHP 5.3 extensions (e.g. closures) and support for XHP.
  * 
  * This is actually more a concrete syntax tree than an AST. This
  * is convenient in a refactoring context or code visualization

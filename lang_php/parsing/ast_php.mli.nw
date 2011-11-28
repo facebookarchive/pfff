@@ -499,8 +499,9 @@ the C preprocessor [[cpp]]:
 
 <<type cpp_directive>>=
   and cpp_directive = 
-      | Line  | File 
-      | ClassC  | MethodC  | FunctionC
+      | Line  | File | Dir
+      | ClassC | TraitC 
+      | MethodC  | FunctionC
 @ 
 
 
@@ -793,7 +794,7 @@ The 'd' in [[dname]] stands for dollar (dollar name).
 \subsection{Indirect variables}
 
 <<lvaluebis constructors>>=
-  | VBrace       of tok      * expr brace
+  | VBrace       of tok    * expr brace
   | VBraceAccess of lvalue * expr brace
 @ 
 
@@ -807,17 +808,16 @@ The 'd' in [[dname]] stands for dollar (dollar name).
 @ 
 
 <<lvaluebis constructors>>=
-  (* This used to be VQualifier of qualifier * lvalue but it was wrong.
-   * Even if A::$v['fld'] was parsed in the grammar
-   * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
+  (* Note that even if A::$v['fld'] was parsed in the grammar
+   * as a Qualifier(A, ArrayAccess($v, 'fld') we
    * generate a ArrayAccess(Qualifier(A, $v), 'fld').
-   * 
-   * todo: merge those 4 cases in one. ClassVar of qualifier * lvalue
+   * todo? could merge 3 cases if qualifier allow some dname.
    *)
   | VQualifier of qualifier * lvalue
   (* note that can be a late static class var since php 5.3 *)
   | ClassVar of qualifier * dname
-  | DynamicClassVar of lvalue * tok (* :: *) * dname
+  (* used to be lvalue * dname but can have code like $class::$$prop *)
+  | DynamicClassVar of lvalue * tok (* :: *) * lvalue
 @
 
 \subsection{Function calls}
@@ -1228,10 +1228,22 @@ below:
 
 <<AST class definition>>=
 and interface_def = {
-  i_tok: tok; (* interface *)
+  i_tok: tok; (* 'interface' *)
   i_name: name;
   i_extends: interface option;
+  (* the class_stmt for interfaces are restricted to only abstract methods *)
   i_body: class_stmt list brace;
+}
+(* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
+ * Allow to mixin behaviors and data so it's really just
+ * multiple inheritance with a cooler name.
+ * todo? factorize things with class_def and interface_def?
+ *)
+and trait_def = {
+  t_tok: tok; (* 'trait' *)
+  t_name: name;
+  (* class_stmt seems to be unrestricted for traits; can even have some 'use' *)
+  t_body: class_stmt list brace;
 }
 @ 
 
@@ -1248,6 +1260,9 @@ and interface_def = {
     | Method of method_def
 
     | XhpDecl of xhp_decl
+    (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
+    | UseTrait of tok (*use*) * name comma_list * 
+        (tok (* ; *), trait_rule list brace) Common.either
 
     <<class_stmt types>>
  and xhp_decl = 
@@ -1291,6 +1306,9 @@ and interface_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
+(* todo *)
+and trait_rule = unit
+
 @ 
 
 <<class_stmt types>>=
@@ -1311,6 +1329,7 @@ and interface_def = {
 \subsection{Method definitions}
 
 <<class_stmt types>>=
+    (* a few special names: __construct, __call, __callStatic *)
     and method_def = {
       m_modifiers: modifier wrap list;
       m_tok: tok; (* function *)
@@ -1377,6 +1396,7 @@ and toplevel =
   | FuncDef of func_def
   | ClassDef of class_def
   | InterfaceDef of interface_def
+  | TraitDef of trait_def
 @ 
 <<toplevel constructors>>=
   | Halt of tok * unit paren * tok (* __halt__ ; *)
@@ -1405,6 +1425,11 @@ and stmt_and_def =
   | FuncDefNested of func_def
   | ClassDefNested of class_def
   | InterfaceDefNested of interface_def
+  (* todo: actually traits as opposed to class/interfaces are allowed only
+   * at toplevel, but I have TraitDefNested because of the way the
+   * grammar is currently written
+   *)
+  | TraitDefNested of trait_def
 
 @ 
 
@@ -1906,6 +1931,7 @@ type entity =
   | FunctionE of func_def
   | ClassE of class_def
   | InterfaceE of interface_def
+  | TraitE of trait_def
   | StmtListE of stmt list
 
   | MethodE of method_def

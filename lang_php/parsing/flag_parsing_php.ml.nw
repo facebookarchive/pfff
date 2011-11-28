@@ -41,5 +41,24 @@ let short_open_tag = ref true
 
 % pp related stuff in parse_php.mli.nw
 <<flag_parsing_php.ml>>=
+
+(* e.g. yield *)
+let facebook_lang_extensions = ref true
+
+let type_hints_extension = ref false
+
+(* in facebook context, we want xhp support by default *)
+let xhp_builtin = ref true
+
+let verbose_pp = ref false
+(* Alternative way to get xhp by calling xhpize as a preprocessor.
+ * Slower than builtin_xhp and have some issues where the comments
+ * are removed, unless you use the experimental_merge_tokens_xhp
+ * but which has some issues itself. 
+ *)
+let pp_default = ref (None: string option)
+let xhp_command = "xhpize" 
+let obsolete_merge_tokens_xhp = ref false
+
 <<flag_parsing_php.ml pp related flags>>
 @ 

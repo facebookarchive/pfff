@@ -13,9 +13,8 @@ module V2 = Map_php
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 
-
 (*****************************************************************************)
-(* Filemames *)
+(* Filenames *)
 (*****************************************************************************)
 
 let is_php_script file = 
@@ -137,8 +136,122 @@ let print_warning_if_not_correctly_parsed ast file =
   end
 
 (*****************************************************************************)
-(* Helpers *)
+(* Ast getters *)
 (*****************************************************************************)
+<<ast getters>>
+
+let get_static_vars_any any =
+  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.kstmt = (fun (k,vx) x ->
+      match x with
+      | StaticVars (tok, xs, tok2) ->
+          xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
+            Common.push2 dname aref
+          );
+      | _ -> 
+          k x
+    );
+  })
+  
+(* todo? do last_stmt_is_a_return isomorphism ? *)
+let get_returns_any any = 
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.kstmt = (fun (k,vx) x ->
+      match x with
+      | Return (tok1, Some e, tok2) ->
+          Common.push2 e aref
+      | _ -> k x
+    )}) any
+
+let get_vars_any any = 
+  V.do_visit_with_ref (fun aref -> { V.default_visitor with
+    V.klvalue = (fun (k,vx) x ->
+      match Ast.untype x with
+      | Var (dname, _scope) ->
+          Common.push2 dname aref
+      | _ -> k x
+    );
+    V.kexpr = (fun (k, vx) x ->
+      match Ast.untype x with
+      (* todo? sure ?? *)
+      | Lambda def ->
+          def.l_use +> Common.do_option (fun (_tok, xs) ->
+            xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
+            | LexicalVar (is_ref, dname) ->
+                Common.push2 dname aref
+            )
+          );
+          k x
+      | _ -> k x
+    );
+  }) any
+
+(*****************************************************************************)
+(* Ast adapters *)
+(*****************************************************************************)
+
+(* todo? let lvalue_to_expr ?? *)
+
+let top_statements_of_program ast = 
+  ast |> List.map (function
+  | StmtList xs -> xs
+  | FinalDef _|NotParsedCorrectly _|Halt (_, _, _)
+  | InterfaceDef _|ClassDef _| FuncDef _ | TraitDef _
+      -> []
+  ) |> List.flatten  
+
+let toplevel_to_entity x = 
+  match x with
+  | StmtList v1 -> 
+      StmtListE v1
+  | FuncDef v1 ->
+      FunctionE v1
+  | ClassDef v1 -> 
+      ClassE v1
+  | InterfaceDef v1 -> 
+      InterfaceE v1
+  | TraitDef v1 ->
+      TraitE v1
+
+  (* todo? *)
+  | Halt ((v1, v2, v3)) ->
+      MiscE []
+  | NotParsedCorrectly xs ->
+      MiscE xs
+  | FinalDef v1 ->
+      MiscE [v1]
+
+(* We often do some analysis on "unit" of code like a function,
+ * a method, or toplevel statements. One can not use the
+ * 'toplevel' type for that because it contains Class and Interface which
+ * are too coarse grained; the method granularity is better.
+ * 
+ * For instance it makes sense to have a CFG for a function, a method,
+ * or toplevel statements but a CFG for a class does not make sense.
+ *)
+let functions_methods_or_topstms_of_program prog =
+  let funcs = ref [] in
+  let methods = ref [] in
+  let toplevels = ref [] in
+
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kfunc_def = (fun (k, _) def -> 
+      Common.push2 def funcs
+    );
+    V.kmethod_def = (fun (k, _) def -> 
+      Common.push2 def methods
+    );
+    V.ktop = (fun (k, _) top ->
+      match top with
+      | StmtList xs -> 
+          Common.push2 xs toplevels
+      | _ ->
+          k top
+    );
+  }
+  in
+  visitor (Program prog);
+  !funcs, !methods, !toplevels
 
 (* todo: move where ? 
  * static_scalar does not have a direct mapping with scalar as some
@@ -173,26 +286,6 @@ and static_array_pair_to_array_pair x =
       ArrayArrowExpr (static_scalar_to_expr sc1, 
                      tok,
                      static_scalar_to_expr sc2)
-
-(*****************************************************************************)
-(* Ast getters *)
-(*****************************************************************************)
-<<ast getters>>
-
-let get_static_vars_any =
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kstmt = (fun (k,vx) x ->
-      match x with
-      | StaticVars (tok, xs, tok2) ->
-          xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
-            Common.push2 dname aref
-          );
-      | _ -> 
-          k x
-    );
-  })
-
-
 
 
 (* do some isomorphisms for declaration vs assignement *)
@@ -240,90 +333,6 @@ let get_vars_assignements_any recursor =
       );
     }
   ) recursor |> Common.group_assoc_bykey_eff
-  
-(* todo? do last_stmt_is_a_return isomorphism ? *)
-let get_returns_any any = 
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kstmt = (fun (k,vx) x ->
-      match x with
-      | Return (tok1, Some e, tok2) ->
-          Common.push2 e aref
-      | _ -> k x
-    )}) any
-
-let get_vars_any any = 
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
-      | Var (dname, _scope) ->
-          Common.push2 dname aref
-      | _ -> k x
-    )}) any
-
-(*****************************************************************************)
-(* Ast adapters *)
-(*****************************************************************************)
-
-(* todo? let lvalue_to_expr ?? *)
-
-let top_statements_of_program ast = 
-  ast |> List.map (function
-  | StmtList xs -> xs
-  | FinalDef _|NotParsedCorrectly _|Halt (_, _, _)
-  | InterfaceDef _|ClassDef _| FuncDef _
-      -> []
-  ) |> List.flatten  
-
-let toplevel_to_entity x = 
-  match x with
-  | StmtList v1 -> 
-      StmtListE v1
-  | FuncDef v1 ->
-      FunctionE v1
-  | ClassDef v1 -> 
-      ClassE v1
-  | InterfaceDef v1 -> 
-      InterfaceE v1
-
-  (* todo? *)
-  | Halt ((v1, v2, v3)) ->
-      MiscE []
-  | NotParsedCorrectly xs ->
-      MiscE xs
-  | FinalDef v1 ->
-      MiscE [v1]
-
-(* We often do some analysis on "unit" of code like a function,
- * a method, or toplevel statements. One can not use the
- * 'toplevel' type for that because it contains Class and Interface which
- * are too coarse grained; the method granularity is better.
- * 
- * For instance it makes sense to have a CFG for a function, a method,
- * or toplevel statements but a CFG for a class does not make sense.
- *)
-let functions_methods_or_topstms_of_program prog =
-  let funcs = ref [] in
-  let methods = ref [] in
-  let toplevels = ref [] in
-
-  let visitor = V.mk_visitor { V.default_visitor with
-    V.kfunc_def = (fun (k, _) def -> 
-      Common.push2 def funcs
-    );
-    V.kmethod_def = (fun (k, _) def -> 
-      Common.push2 def methods
-    );
-    V.ktop = (fun (k, _) top ->
-      match top with
-      | StmtList xs -> 
-          Common.push2 xs toplevels
-      | _ ->
-          k top
-    );
-  }
-  in
-  visitor (Program prog);
-  !funcs, !methods, !toplevels
 
 @ 
 
@@ -453,7 +462,6 @@ let get_constant_strings_any any =
   in
   (V.mk_visitor hooks) any;
   Common.hashset_to_list h
-
 @ 
 
 <<ast getters>>=
@@ -487,5 +495,4 @@ let get_funcvars_any any =
   let visitor = V.mk_visitor hooks in
   visitor any;
   Common.hashset_to_list h
-
 @ 
