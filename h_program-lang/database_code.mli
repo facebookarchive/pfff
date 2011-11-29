@@ -4,7 +4,7 @@ type entity_kind =
   | Class of class_type
   | Module 
   | Type 
-  | Constant | Global 
+  | Constant | Global
   | Macro
   | TopStmts
 

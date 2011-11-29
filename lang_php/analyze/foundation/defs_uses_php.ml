@@ -76,19 +76,6 @@ let defs_of_any any =
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
-    V.kqualifier = (fun (k, bigf) x ->
-      (match fst x with
-      | ClassName _ -> () 
-      | Self _ | Parent _ ->
-          pr2 "defs_uses_php: call unsugar_self_parent";
-          ()
-      | LateStatic _ -> 
-          pr2 "LateStatic";
-          ()
-      );
-      k x
-    );
-
     V.kfunc_def = (fun (k, _) def ->
       Common.push2 (Db.Function, def.f_name, None) aref;
       (* could decide to not recurse, but could have nested function ?
@@ -124,7 +111,7 @@ let defs_of_any any =
       k def
     );
 
-    (* todo: const of php 5.3? *)
+    (* todo: const of php 5.3? globals? fields? class constants? *)
 
     V.klvalue = (fun (k, bigf) x ->
       match x with
@@ -191,6 +178,7 @@ let uses_of_any ?(verbose=false) any =
 
     V.klvalue = (fun (k, bigf) x ->
       (match x with
+      (* todo: what about functions passed as strings? *)
       | FunCallSimple (name, args) ->
           Common.push2 (Db.Function, name) aref;
       | _ -> ()

@@ -28,15 +28,13 @@ module Db = Database_code
 
 (* 
  * Making a better TAGS file. M-x idx => it finds it!
- * It does not go to $idx in a file. Work for XHP. Work with
- * completion.
+ * It does not go to $idx in a file. Works for XHP. Works with
+ * completion. Essentially a thin adapter over defs_uses_php.ml.
  * 
  * Bench: time to process ~/www ? 7min the first time, which
  * is quite longer than ctags. But what is the price of correctness ?
  * Moreover one can easily put this into a cron and even shares
  * the results of such a cron to multiple developers via NFS.
- * 
- * Essentially a thin adapter of defs_uses_php.ml
  *)
 
 (*****************************************************************************)
@@ -52,8 +50,6 @@ let tag_of_name filelines name kind =
 (*****************************************************************************)
 
 let tags_of_ast ast filelines = 
-
-  let ast = Unsugar_php.unsugar_self_parent_program ast in
   let defs = Defs_uses_php.defs_of_any (Program ast) in
     
   defs +> List.map (fun (kind, name, enclosing_name_opt) ->
@@ -87,7 +83,8 @@ let tags_of_ast ast filelines =
         | Db.Type | Db.Module | Db.TopStmts | Db.Macro | Db.Global
         | Db.MultiDirs | Db.Dir | Db.File
       ) -> 
-        []
+        (* see defs_of_any *)
+        raise Impossible
   ) +> List.flatten
 
 (* obsolete ? stuff with heavy_tagging ?
