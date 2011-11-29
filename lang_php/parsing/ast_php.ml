@@ -47,8 +47,8 @@ open Parse_info
  * file, or to only add new constructors.
  * 
  * todo: 
- *  - unify class_def/interface_def/trait_def
  *  - remove static_scalar
+ *  - unify class_def/interface_def/trait_def
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def?
  *  - unify expr and lvalue?

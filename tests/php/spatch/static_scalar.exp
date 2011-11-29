@@ -1,0 +1,7 @@
+<?php
+
+function foo() {
+  return 2;
+}
+
+const FOO = 2;
