@@ -178,14 +178,10 @@ let unittest =
 
     );
 
-
-
   (* todo: 
-   *  - unparser is identity when do no modif
    *  - ? sexp and json output
    *  - ? correctness of Ast (too many cases)
    *)
-
   ]
 
 (*****************************************************************************)

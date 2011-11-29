@@ -55,13 +55,10 @@ let json_string_of_program_fast x =
     )
   )
 (*e: json_ast_php.ml *)
-
 (*s: sexp_ast_php.ml *)
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * I was previously auto generating this file with 'ocamltarzan -choice sof'
  * but now that I use Ocaml.v and 'ocamltarzan -choice vof' in meta_ast_php.ml, 
