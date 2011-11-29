@@ -187,7 +187,7 @@ let visit_toplevel
             Common.hfind_option ii hcomplete_name_of_info 
           in
           (match kind_name_opt with
-          | Some (Db.Class, fullname) ->
+          | Some (Db.Class _, fullname) ->
             
               (* rewrite ii to remove the enclosing "" ?
                * but the Parsing2 then use the full info as
@@ -196,7 +196,7 @@ let visit_toplevel
                *)
               (*let ii' = Ast.rewrap_str s ii in*)
               tag ii (Class (Def2 fake_no_def2));
-          | Some ((Db.Method | Db.StaticMethod), _) ->
+          | Some ((Db.Method _), _) ->
               (* jsspec use strings for method names *)
               ()
 
@@ -213,11 +213,11 @@ let visit_toplevel
           Common.hfind_option ii hcomplete_name_of_info 
         in
         (match kind_name_opt with
-        | Some (Db.Class, fullname) ->
+        | Some (Db.Class _, fullname) ->
             tag ii (Class (Def2 fake_no_def2))
-        | Some (Db.Method, fullname) ->
+        | Some (Db.Method Db.RegularMethod, fullname) ->
             tag ii (Method (Def2 fake_no_def2))
-        | Some (Db.StaticMethod, fullname) ->
+        | Some (Db.Method Db.StaticMethod, fullname) ->
             tag ii (StaticMethod (Def2 fake_no_def2))
         | Some (_) ->
             failwith ("WEIRD: a identfier is not a class or method at " ^ 

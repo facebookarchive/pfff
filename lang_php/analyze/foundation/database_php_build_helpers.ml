@@ -92,7 +92,7 @@ let iter_files_and_ids db msg f =
 let users_of_class_in_any any =
   Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
     match kind with
-    | Database_code.Class -> Some name
+    | Database_code.Class _ -> Some name
     | _ -> None
   )
 

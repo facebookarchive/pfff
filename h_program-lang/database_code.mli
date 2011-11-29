@@ -1,16 +1,20 @@
 
 type entity_kind = 
   | Function 
-  | Class | Interface | Trait
+  | Class of class_type
   | Module 
   | Type 
   | Constant | Global 
   | Macro
   | TopStmt
 
-  | Method | StaticMethod | Field
+  | Method of method_type 
+  | Field
 
   | File | Dir | MultiDirs
+  and class_type = RegularClass | Interface | Trait
+  and method_type = RegularMethod | StaticMethod
+
 val string_of_entity_kind: entity_kind -> string
 
 type entity_id = int

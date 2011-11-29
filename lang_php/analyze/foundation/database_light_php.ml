@@ -51,8 +51,10 @@ let mk_entity ~root id nb_users good_example_ids properties db =
     e_kind = 
       (match kind  with
       | E.Function -> Db.Function
-      | E.Class -> Db.Class
-      | E.Method -> Db.Method
+      (* todo? regular? *)
+      | E.Class -> Db.Class Db.RegularClass
+      | E.Method -> Db.Method Db.RegularMethod
+
       | (E.IdMisc|E.XhpDecl|E.ClassVariable|E.ClassConstant|E.StmtList) ->
           raise Impossible
 

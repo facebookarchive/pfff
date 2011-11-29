@@ -94,7 +94,8 @@ let extract_complete_name_of_info ast =
                maybe_semicolumn)) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
-         Hashtbl.add h info_class (Db.Class, spf "Misc.%s" class_name);
+         Hashtbl.add h info_class (Db.Class Db.RegularClass, 
+                                  spf "Misc.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_members ? or in_statics ? *)
@@ -117,7 +118,8 @@ let extract_complete_name_of_info ast =
                    t_12), (i_13, [], i_14)),
                 t_15)))))], maybe_semicolumn)
         ->
-         Hashtbl.add h info_class (Db.Class, spf "Misc.%s" class_name);
+         Hashtbl.add h info_class (Db.Class Db.RegularClass, 
+                                  spf "Misc.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_members ? or in_statics ? *)
@@ -140,7 +142,8 @@ let extract_complete_name_of_info ast =
         t_5), (A_eq, i_6), (Object(body_object), t_9)),
        t_10) ->
 
-          Hashtbl.add h info_class (Db.Class, spf "Prototype.%s" class_name);
+          Hashtbl.add h info_class (Db.Class Db.RegularClass, 
+                                   spf "Prototype.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_members ? or in_statics ? *)
@@ -154,7 +157,8 @@ let extract_complete_name_of_info ast =
              (Object(body_object), t_59)), t_60)
         ->
        (* could restrict to only toplevel first column var declarations ? *)
-         Hashtbl.add h info_class (Db.Class, spf "Misc.%s" class_name);
+         Hashtbl.add h info_class (Db.Class Db.RegularClass, 
+                                  spf "Misc.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_members ? or in_statics ? *)
@@ -173,7 +177,8 @@ let extract_complete_name_of_info ast =
          i_13)),
       t_14)
       ->
-          Hashtbl.add h info_class (Db.Class, spf "JX.%s" class_name);
+          Hashtbl.add h info_class (Db.Class Db.RegularClass,
+                                   spf "JX.%s" class_name);
 
           (* was just %s before, but then get conflict between for instance
            * DOM.setContent and JX.DOM.setContent
@@ -193,7 +198,8 @@ let extract_complete_name_of_info ast =
          i_16)),
       t_17) ->
 
-          Hashtbl.add h info_class (Db.Class, spf "JX.%s" class_name);
+          Hashtbl.add h info_class (Db.Class Db.RegularClass, 
+                                   spf "JX.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_statics ? or in_members ? *)
@@ -211,7 +217,7 @@ let extract_complete_name_of_info ast =
          i_13)),
       t_14) ->
 
-          Hashtbl.add h info_class (Db.Class, spf "%s<%s" 
+          Hashtbl.add h info_class (Db.Class Db.RegularClass, spf "%s<%s" 
             class_name mixin_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
@@ -231,7 +237,7 @@ let extract_complete_name_of_info ast =
       t_17) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "%s" class_name);
+            (Db.Class Db.RegularClass, spf "%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_statics ? or in_members ? *)
@@ -248,7 +254,7 @@ let extract_complete_name_of_info ast =
       t_32) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "%s" class_name);
+            (Db.Class Db.RegularClass, spf "%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_statics ? or in_members ? *)
@@ -267,7 +273,7 @@ let extract_complete_name_of_info ast =
        t_26) ->
 
           Hashtbl.add h info_class 
-            (Db.Class, spf "Copy_properties.%s" class_name);
+            (Db.Class Db.RegularClass, spf "Copy_properties.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_statics ? or in_members ? *)
@@ -287,7 +293,7 @@ let extract_complete_name_of_info ast =
       t_14) ->
 
           Hashtbl.add h info_class 
-            (Db.Class, spf "Copy_properties.%s" class_name);
+            (Db.Class Db.RegularClass, spf "Copy_properties.%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
             (* todo? really in_statics ? or in_members ? *)
@@ -358,7 +364,8 @@ let extract_complete_name_of_info ast =
           )
           in
           Hashtbl.add h info_method_name 
-            ((if !in_statics then Db.StaticMethod else Db.Method), 
+            (Db.Method 
+                (if !in_statics then Db.StaticMethod else Db.RegularMethod), 
             fullname)
 
 

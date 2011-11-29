@@ -30,7 +30,7 @@ module HC = Highlight_code
  * number of callers to a certain function, what is the test coverage of
  * a file, etc.
  * 
- * Each programming language analysis library usually provide
+ * Each programming language analysis library usually provides
  * a more powerful database (e.g. analyze_php/database/database_php.mli)
  * with more information. Such a database is usually also efficiently stored
  * on disk via BerkeleyDB. Nevertheless generic tools like the
@@ -53,7 +53,6 @@ module HC = Highlight_code
  * two formats. Moreover ctags/cscope do just lexical-based analysis
  * so it's not a good basis and it contains only defition->position
  * information.
- * 
  * 
  * history: 
  *  - started when working for eurosys'06 in patchparse/ in a file called
@@ -95,7 +94,7 @@ module HC = Highlight_code
  *)
 type entity_kind = 
   | Function
-  | Class | Interface | Trait
+  | Class of class_type
   | Module
   | Type
   | Constant
@@ -104,20 +103,21 @@ type entity_kind =
   | TopStmt
 
   (* nested entities *)
-  | Method
-  | StaticMethod
+  | Method of method_type
   | Field
   (* todo? ClassConstant *)
 
   (* when we use the database for completion purpose, then files/dirs
    * are also useful "entities" to get completion for.
    *)
-  | File
-  | Dir
+  | File | Dir
   (* people often spread the same component in multiple dirs with the same
    * name
    *)
   | MultiDirs
+
+  and class_type = RegularClass | Interface | Trait
+  and method_type = RegularMethod | StaticMethod
 
 (* How to store the id of an entity ? A int ? A name and hope few conflicts ?
  * Using names will increase the size of the db which will slow down
@@ -248,17 +248,18 @@ let default_db_name =
 let string_of_entity_kind e = 
   match e with
   | Function -> "Function"
-  | Class -> "Class"
-  | Interface -> "Interface"
-  | Trait -> "Trait"
+  | Class RegularClass -> "Class"
+  | Class Interface -> "Interface"
+  | Class Trait -> "Trait"
+
   | Module -> "Module"
   | Type -> "Type"
   | Constant -> "Constant"
   | Global -> "Global"
   | Macro -> "Macro"
   | TopStmt -> "TopStmt"
-  | Method -> "Method"
-  | StaticMethod -> "StaticMethod"
+  | Method RegularMethod -> "Method"
+  | Method StaticMethod -> "StaticMethod"
   | Field -> "Field"
   | File -> "File"
   | Dir -> "Dir"
@@ -267,16 +268,17 @@ let string_of_entity_kind e =
 let entity_kind_of_string s =
   match s with
   | "Function" -> Function
-  | "Class" -> Class
-  | "Interface" -> Interface
+  | "Class" -> Class RegularClass
+  | "Interface" -> Class Interface 
+  | "Trait" -> Class Trait 
   | "Module" -> Module
   | "Type" -> Type
   | "Constant" -> Constant
   | "Global" -> Global
   | "Macro" -> Macro
   | "TopStmt" -> TopStmt
-  | "Method" -> Method
-  | "StaticMethod" -> StaticMethod
+  | "Method" -> Method RegularMethod
+  | "StaticMethod" -> Method StaticMethod
   | "Field" -> Field
   | "File" -> File
   | "Dir" -> Dir
@@ -472,10 +474,12 @@ let entity_kind_of_highlight_category_def categ =
   | HC.Function (HC.Def2 _) -> Function
   | HC.FunctionDecl _ -> Function
   | HC.Global (HC.Def2 _) -> Global
-  | HC.Class (HC.Def2 _) -> Class
-  | HC.Method (HC.Def2 _) -> Method
+  (* todo? interface? traits?*)
+  | HC.Class (HC.Def2 _) -> Class RegularClass
+  | HC.Method (HC.Def2 _) -> Method RegularMethod
+
   | HC.Field (HC.Def2 _) -> Field
-  | HC.StaticMethod (HC.Def2 _) -> StaticMethod
+  | HC.StaticMethod (HC.Def2 _) -> Method StaticMethod
   | HC.Macro (HC.Def2 _) -> Macro (* todo? want agglomerate ? *)
   | HC.MacroVar (HC.Def2 _) -> Macro
 
@@ -490,17 +494,17 @@ let entity_kind_of_highlight_category_use categ =
   | HC.Function (HC.Use2 _) -> Function
   | HC.FunctionDecl _ -> Function
   | HC.Global (HC.Use2 _) -> Global
-  | HC.Class (HC.Use2 _) -> Class
-  | HC.Method (HC.Use2 _) -> Method
+  | HC.Class (HC.Use2 _) -> Class RegularClass
+  | HC.Method (HC.Use2 _) -> Method RegularMethod
   | HC.Field (HC.Use2 _) -> Field
-  | HC.StaticMethod (HC.Use2 _) -> StaticMethod
+  | HC.StaticMethod (HC.Use2 _) -> Method StaticMethod
   | HC.Macro (HC.Use2 _) -> Macro (* todo? want agglomerate ? *)
   | HC.MacroVar (HC.Use2 _) -> Macro
 
   | HC.Module HC.Use -> Module
   | HC.TypeDef HC.Use -> Type
 
-  | HC.StructName HC.Use -> Class
+  | HC.StructName HC.Use -> Class RegularClass
   (* TODO? Interface ? *)
   | _ -> 
       failwith "this category has no Database_code counterpart"
@@ -741,7 +745,6 @@ let files_and_dirs_and_sorted_entities_for_completion
  * when we do very trivial class/methods analysis for some languages.
  * This helper function can compensate back this approximation.
  *)
-
 let adjust_method_or_field_external_users entities =
   (* phase1: collect all method counts *)
   let h_method_def_count = Common.hash_with_default (fun () -> 0) in
@@ -749,7 +752,7 @@ let adjust_method_or_field_external_users entities =
   entities +> Array.iter (fun e ->
     match e.e_kind with
     (* do also for staticMethods ? hmm should be less needed *)
-    | Method | Field ->
+    | Method RegularMethod | Field ->
         let k = e.e_name in
         h_method_def_count#update k (Common.add1)
     | _ -> ()
@@ -758,7 +761,7 @@ let adjust_method_or_field_external_users entities =
   (* phase2: adjust *)
   entities +> Array.iter (fun e ->
     match e.e_kind with
-    | Method | Field ->
+    | Method RegularMethod | Field ->
         let k = e.e_name in
         let nb_defs = h_method_def_count#assoc k in
         if nb_defs > 1

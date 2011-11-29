@@ -195,10 +195,11 @@ let compute_database ?(verbose=false) files_or_dirs =
               (* todo: should check that method of appropriate class
                * but class analysis is complicated in Javascript.
                *)
-              if entity.Db.e_kind = Db.Class
-              then
+              match entity.Db.e_kind with
+              |  Db.Class _ ->
                 entity.Db.e_number_external_users <-
                   entity.Db.e_number_external_users + 1;
+              | _ -> ()
             );
             aux_toks xs
 
@@ -215,10 +216,12 @@ let compute_database ?(verbose=false) files_or_dirs =
                * I compensate at least a little this problem by
                * calling adjust_method_external_users below.
                *)
-              if entity.Db.e_kind = Db.Method
-              then
+              (match entity.Db.e_kind with
+              | Db.Method _ ->
                 entity.Db.e_number_external_users <-
                   entity.Db.e_number_external_users + 1;
+              | _ -> ()
+              )
             );
             aux_toks xs
         |

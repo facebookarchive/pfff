@@ -81,10 +81,12 @@ let icon_of_kind kind has_test =
   | Db.Function -> 
       if has_test then `YES else `NO
   
-  (* TODO: do different symbols for unit tested class and methods ? 
+  (* todo: do different symbols for unit tested class and methods ? 
    * or add another column in completion popup
+   * todo? class vs interface ?
    *)
-  | Db.Class -> `CONNECT
+  | Db.Class _ -> `CONNECT
+
   | Db.Module -> `DISCONNECT
       
   | Db.Type -> `PROPERTIES
@@ -92,8 +94,8 @@ let icon_of_kind kind has_test =
   | Db.Constant -> `CONNECT
   | Db.Global -> `MEDIA_RECORD
       
-  | Db.Method -> `CONVERT
-  | Db.StaticMethod -> `EXECUTE
+  | Db.Method Db.RegularMethod -> `CONVERT
+  | Db.Method Db.StaticMethod -> `EXECUTE
       
   | Db.File -> `FILE
   | Db.Dir -> `DIRECTORY
@@ -103,7 +105,7 @@ let icon_of_kind kind has_test =
   | Db.Field -> `CONNECT
   | Db.Macro -> `CONNECT
 
-  | (Db.TopStmt|Db.Interface|Db.Trait) -> raise Todo
+  | (Db.TopStmt) -> raise Todo
 
 
 module L=struct

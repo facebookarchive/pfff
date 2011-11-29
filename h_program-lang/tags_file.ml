@@ -109,17 +109,13 @@ let tag_of_info filelines info kind =
 (* C-s for "kind" in http://ctags.sourceforge.net/FORMAT *)
 let vim_tag_kind_str tag_kind =
   match tag_kind with
-  | Db.Class -> "c"
+  | Db.Class Db.RegularClass -> "c"
   | Db.Constant -> "d"
   | Db.Function -> "f"
-  | Db.Method -> "f"
-  | Db.StaticMethod -> "f"
-  | Db.Interface -> "i"
+  | Db.Method _ -> "f"
+  | Db.Class (Db.Interface | Db.Trait) -> "i"
   | Db.Type -> "t"
   | Db.Field -> "m"
-
-  (* good? *)
-  | Db.Trait -> "i"
 
   | Db.Module
   | Db.Global

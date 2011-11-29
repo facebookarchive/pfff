@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -28,7 +28,7 @@ module Db = Database_code
 
 (* 
  * There are many places where we need to get access to the list of
- * entities defined in a file or used in a file.
+ * entities defined in a file or used in a file (e.g. for tags).
  * 
  * This file is concerned with entities, that is Ast_php.name.
  * For completness C-s for name in ast_php.ml and see if all uses of 
@@ -95,7 +95,13 @@ let defs_of_any any =
       k def
     );
     V.kclass_def = (fun (k, _) def ->
-      Common.push2 (Db.Class, def.c_name, None) aref;
+      let kind = 
+        match def.c_type with
+        | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> Db.RegularClass
+        | Interface _ -> Db.Interface
+        | Trait _ -> Db.Trait
+      in
+      Common.push2 (Db.Class kind, def.c_name, None) aref;
       Common.save_excursion current_class (Some def.c_name) (fun () ->
           k def;
       );
@@ -107,8 +113,12 @@ let defs_of_any any =
         | Some c -> c
         | None -> failwith "impossible: no current_class in defs_use_php.ml"
       in
-      (* todo? Method vs StaticMethod ? *)
-      Common.push2 (Db.Method, def.m_name, Some classname) aref;
+      let kind =
+        if Class_php.is_static_method def
+        then Db.StaticMethod
+        else Db.RegularMethod
+      in
+      Common.push2 (Db.Method kind, def.m_name, Some classname) aref;
       k def
     );
 
@@ -200,7 +210,12 @@ let uses_of_any ?(verbose=false) any =
        * could be the use of a Class or Interface.
        * So right now I just merge Class and Interface
        *)
-      Common.push2 (Db.Class, classname) aref;
+      (* todo?? how know? for new it's always a RegularClass, but for the 
+       * rest? 
+       *)
+      let kind = Db.RegularClass in
+
+      Common.push2 (Db.Class kind, classname) aref;
       k classname
     );
 
@@ -208,10 +223,10 @@ let uses_of_any ?(verbose=false) any =
     V.kxhp_html = (fun (k, _) x ->
       match x with
       | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-          Common.push2 (Db.Class, (XhpName xhp_tag)) aref;
+          Common.push2 (Db.Class Db.RegularClass, (XhpName xhp_tag)) aref;
           k x
       | XhpSingleton (xhp_tag, _attrs, _tok) ->
-          Common.push2 (Db.Class, (XhpName xhp_tag)) aref;
+          Common.push2 (Db.Class Db.RegularClass, (XhpName xhp_tag)) aref;
           k x
       (* todo: do it also for xhp attributes ? kxhp_tag then ?
        * (but take care to not include doublon because have
