@@ -166,7 +166,7 @@ let get_returns_any any =
 let get_vars_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | Var (dname, _scope) ->
           Common.push2 dname aref
       | _ -> k x
@@ -196,7 +196,7 @@ let top_statements_of_program ast =
   ast |> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
-  | InterfaceDef _|ClassDef _| FuncDef _ | TraitDef _
+  | ClassDef _| FuncDef _
       -> []
   ) |> List.flatten  
 
@@ -208,11 +208,6 @@ let toplevel_to_entity x =
       FunctionE v1
   | ClassDef v1 -> 
       ClassE v1
-  | InterfaceDef v1 -> 
-      InterfaceE v1
-  | TraitDef v1 ->
-      TraitE v1
-
   (* todo? *)
   | NotParsedCorrectly xs ->
       MiscE xs
@@ -251,37 +246,6 @@ let functions_methods_or_topstms_of_program prog =
   visitor (Program prog);
   !funcs, !methods, !toplevels
 
-(* todo: move where ? 
- * static_scalar does not have a direct mapping with scalar as some
- * elements like StaticArray have mapping only in expr.
-*)
-let rec static_scalar_to_expr x = 
-    match x with
-    | StaticConstant cst -> 
-        Sc (C cst)
-    | StaticClassConstant (qu, name) -> 
-        Sc (ClassConstant (qu, name))
-    | StaticPlus (tok, sc) -> 
-        Unary ((UnPlus, tok), static_scalar_to_expr sc)
-    | StaticMinus (tok, sc) -> 
-        Unary ((UnMinus, tok), static_scalar_to_expr sc)
-    | StaticArray (tok, array_pairs_paren) ->
-        ConsArray (tok, 
-                  Ast.map_paren 
-                    (Ast.map_comma_list static_array_pair_to_array_pair) 
-                    array_pairs_paren)
-    | XdebugStaticDots ->
-        failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
-
-and static_array_pair_to_array_pair x = 
-  match x with
-  | StaticArraySingle (sc) -> 
-      ArrayExpr (static_scalar_to_expr sc)
-  | StaticArrayArrow (sc1, tok, sc2) ->
-      ArrayArrowExpr (static_scalar_to_expr sc1, 
-                     tok,
-                     static_scalar_to_expr sc2)
-
 
 (* do some isomorphisms for declaration vs assignement *)
 let get_vars_assignements_any recursor = 
@@ -299,7 +263,7 @@ let get_vars_assignements_any recursor =
             xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
               let s = Ast.dname dname in
               affect_opt |> Common.do_option (fun (_tok, scalar) ->
-                Common.push2 (s, static_scalar_to_expr scalar) aref;
+                Common.push2 (s, scalar) aref;
               );
             );
         | _ -> 
@@ -315,7 +279,7 @@ let get_vars_assignements_any recursor =
             
             (* for now we handle only simple direct assignement to simple
              * variables *)
-            (match Ast.untype lval with
+            (match lval with
             | Var (dname, _scope) ->
                 let s = Ast.dname dname in
                 Common.push2 (s, e) aref;
@@ -397,7 +361,7 @@ let min_max_by_pos xs =
   let (i1, i2) = min_max_ii_by_pos xs in
   (info_to_fixpos i1, info_to_fixpos i2)
 
-let (range_of_origin_ii: Ast_php.info list -> (int * int) option) = 
+let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
  fun ii -> 
   let ii = List.filter Ast_php.is_origintok ii in
   try 
@@ -419,7 +383,7 @@ let get_funcalls_any any =
   let hooks = { V.default_visitor with
     (* TODO if nested function ??? still wants to report ? *)
     V.klvalue = (fun (k,vx) x ->
-      match untype x with
+      match x with
       | FunCallSimple (callname, args) ->
           let str = Ast_php.name callname in
           Hashtbl.replace h str true;
@@ -467,7 +431,7 @@ let get_funcvars_any any =
   let hooks = { V.default_visitor with
 
     V.klvalue = (fun (k,vx) x ->
-      match untype x with
+      match x with
       | FunCallVar (qu_opt, var, args) ->
           (* TODO enough ? what about qopt ? 
            * and what if not directly a Var ?
@@ -475,7 +439,7 @@ let get_funcvars_any any =
            * and what about call_user_func ? should be
            * transformed at parsing time into a FunCallVar ?
            *)
-          (match untype var with
+          (match var with
           | Var (dname, _scope) ->
               let str = Ast_php.dname dname in
               Hashtbl.replace h str true;

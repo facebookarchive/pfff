@@ -563,7 +563,6 @@ and logic expressions inherited from C:
 @ 
 
 <<AST expression operators>>=
-
  and fixOp    = Dec | Inc 
  and binaryOp    = Arith of arithOp | Logical of logicalOp 
    <<php concat operator>>
@@ -885,7 +884,8 @@ and I end up not coding the complex one so ...
 @ 
 
 <<type lvalue aux>>=
-  and obj_access = tok (* -> *) * obj_property * argument comma_list paren option
+  and obj_access = 
+   tok (* -> *) * obj_property * argument comma_list paren option
 
   and obj_property = 
     | ObjProp of obj_dim
@@ -908,7 +908,7 @@ and I end up not coding the complex one so ...
 \label{sec:ast-stmt}
 
 <<AST statement>>=
-(* by introducing Lambda, expr and stmt are now mutually recursive *)
+(* By introducing Lambda, expr and stmt are now mutually recursive *)
 and stmt = 
   <<stmt constructors>>
     (* static-php-ext: *)
@@ -1026,14 +1026,19 @@ and static_var = dname * static_scalar_affect option
 @ 
 
 <<AST other declaration>>=
-  and static_scalar = 
-    | StaticConstant of constant
-    | StaticClassConstant of qualifier * name (* semantic ? *)
-        
-    | StaticPlus  of tok * static_scalar
-    | StaticMinus of tok * static_scalar
-
-    | StaticArray of tok (* array *) * static_array_pair comma_list paren
+  (* static_scalar used to be a special type allowing constants and
+   * a restricted form of expressions. But it was yet
+   * another type and it turned out it was making things like spatch
+   * and visitors more complicated because stuff like "+ 1" could
+   * be an expr or a static_scalar. We don't need this "isomorphism".
+   * I never leveraged the specificities of static_scalar (maybe a compiler
+   * would, but my checker/refactorers/... don't).
+   * 
+   * Note that it's not 'type static_scalar = scalar' because static_scalar
+   * actually allows arrays (why the heck they called it a scalar then ....)
+   * and plus/minus which are only in expr.
+   *)
+  and static_scalar = expr
   <<type static_scalar hook>>
 @ 
 
@@ -1047,9 +1052,6 @@ evaluation, but it is very limited (to additions and substractions).
 
 
 <<AST other declaration>>=
-    and static_array_pair = 
-      | StaticArraySingle of static_scalar
-      | StaticArrayArrow  of static_scalar * tok (* => *) * static_scalar
 @ 
 
 \subsection{Inline HTML}
@@ -1198,11 +1200,26 @@ nothing will be enforced I believe.
 \subsection{Class definition}
 
 <<AST class definition>>=
+(* I used to have a class_def and interface_def because interface_def
+ * didn't allow certain forms of statements (methods with a body), but
+ * with the introduction of traits, it does not make that much sense
+ * to be so specific, so I factorized things. Classes/interfaces/traits
+ * are not that different. Interfaces are really just abstract traits.
+ *)
 and class_def = {
   c_type: class_type;
   c_name: name;
+  (* PHP uses single inheritance. Interfaces can also use 'extends'
+   * but we use the c_implements field for that (because it can be a list).
+   *)
   c_extends: extend option;
+  (* For classes it's a list of interfaces, for interface a list of other
+   * interfaces it extends, and for traits it must be empty.
+   *)
   c_implements: interface option;
+  (* The class_stmt for interfaces are restricted to only abstract methods.
+   * The class_stmt seems to be unrestricted for traits; can even 
+   * have some 'use' *)
   c_body: class_stmt list brace;
 }
   <<type class_type>>
@@ -1215,6 +1232,15 @@ and class_def = {
     | ClassRegular  of tok (* class *)
     | ClassFinal    of tok * tok (* final class *)
     | ClassAbstract of tok * tok (* abstract class *)
+
+    | Interface of tok (* interface *)
+    (* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
+     * Allow to mixin behaviors and data so it's really just
+     * multiple inheritance with a cooler name.
+     * 
+     * note: traits are allowed only at toplevel.
+     *)
+    | Trait of tok (* trait *)
 @ 
 
 PHP supports only single inheritance, hence the single name
@@ -1232,24 +1258,6 @@ below:
 \subsection{Interface definition}
 
 <<AST class definition>>=
-and interface_def = {
-  i_tok: tok; (* 'interface' *)
-  i_name: name;
-  i_extends: interface option;
-  (* the class_stmt for interfaces are restricted to only abstract methods *)
-  i_body: class_stmt list brace;
-}
-(* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
- * Allow to mixin behaviors and data so it's really just
- * multiple inheritance with a cooler name.
- * todo? factorize things with class_def and interface_def?
- *)
-and trait_def = {
-  t_tok: tok; (* 'trait' *)
-  t_name: name;
-  (* class_stmt seems to be unrestricted for traits; can even have some 'use' *)
-  t_body: class_stmt list brace;
-}
 @ 
 
 \subsection{Class variables and constants}
@@ -1311,7 +1319,9 @@ and trait_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
-(* todo *)
+(* todo: as and insteadof, but those are bad features ... noone should
+ * use them.
+ *)
 and trait_rule = unit
 
 @ 
@@ -1374,7 +1384,6 @@ type ptype =
 
   | ArrayTy 
   | ObjectTy
-
  <<tarzan annotation>>
 @ 
 
@@ -1390,9 +1399,7 @@ algorithm in [[pfff/analysis_php]].
 <<AST toplevel>>=
 and toplevel = 
   <<toplevel constructors>>
-
  and program = toplevel list
-
  <<tarzan annotation>>
 
 @ 
@@ -1400,18 +1407,16 @@ and toplevel =
   | StmtList of stmt list
   | FuncDef of func_def
   | ClassDef of class_def
-  | InterfaceDef of interface_def
-  | TraitDef of trait_def
  (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
 @ 
 %  (* TODO? Define by lifting it up from a regular function call? *)
 
 <<toplevel constructors>>=
-  | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
+  | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
 @ 
 
 <<toplevel constructors>>=
-  | FinalDef of info (* EOF *)
+  | FinalDef of tok (* EOF *)
 @ 
 
 <<AST statement bis>>=
@@ -1424,13 +1429,6 @@ and stmt_and_def =
   | Stmt of stmt
   | FuncDefNested of func_def
   | ClassDefNested of class_def
-  | InterfaceDefNested of interface_def
-  (* todo: actually traits as opposed to class/interfaces are allowed only
-   * at toplevel, but I have TraitDefNested because of the way the
-   * grammar is currently written
-   *)
-  | TraitDefNested of trait_def
-
 @ 
 
 \section{Names}
@@ -1446,7 +1444,6 @@ and stmt_and_def =
  <<type dname>>
 
  <<qualifiers>>
-
  <<tarzan annotation>>
 @ 
 
@@ -1489,7 +1486,6 @@ and qualifier = class_name_or_kwd * tok (* :: *)
   (* todo? Put ClassVar of dname here so can factorize some of the
    * StaticDynamicCall stuff in lvalue?
    *)
-
 and fully_qualified_class_name = name
 @ 
 
@@ -1506,14 +1502,13 @@ and fully_qualified_class_name = name
  * the Common.parse_info embedded inside it, as well as the
  * the transformation field that makes possible spatch.
  *)
-type info = Parse_info.info
-
-and tok = info
+type tok = Parse_info.info
+and info = tok
 @ 
 
 <<AST info>>=
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * info
+and 'a wrap = 'a * tok
 @ 
 
 <<AST info>>=
@@ -1645,8 +1640,6 @@ type phptype = phptypebis list  (* sorted list, cf typing_php.ml *)
 
 
 <<f_type mutable field>>=
-(* semantic: *)
-mutable f_type: Type_php.phptype; 
 @ 
 
 <<type phpfunction_type>>=
@@ -1686,7 +1679,7 @@ type phpscope = Scope_code.scope
 \section{Support for syntactical/semantic  [[grep]]}
 
 <<type exprbis hook>>=
-| SgrepExprDots of info
+| SgrepExprDots of tok
 @ 
 
 \section{Support for source-to-source transformations}
@@ -1776,11 +1769,10 @@ to extend the grammar and AST to include such extensions:
 
 <<type constant hook>>=
  | XdebugClass of name * class_stmt list
- | XdebugResource (* TODO *)
+ | XdebugResource
 @
 
 <<type static_scalar hook>>=
-  | XdebugStaticDots
 @
 
 
@@ -1808,23 +1800,23 @@ to extend the grammar and AST to include such extensions:
 \t constructor cools, but limited when modify stuff sometimes
 
 <<AST helpers interface>>=
-val parse_info_of_info : info -> Parse_info.parse_info
+val parse_info_of_info : tok -> Parse_info.parse_info
 @ 
 <<AST helpers interface>>=
-val pinfo_of_info : info -> Parse_info.token
+val pinfo_of_info : tok -> Parse_info.token
 @ 
 
 \label{sec:ast-helper-tok}
 <<AST helpers interface>>=
-val pos_of_info : info -> int
-val str_of_info : info -> string
-val file_of_info : info -> Common.filename
-val line_of_info : info -> int
-val col_of_info : info -> int
+val pos_of_info : tok -> int
+val str_of_info : tok -> string
+val file_of_info : tok -> Common.filename
+val line_of_info : tok -> int
+val col_of_info : tok -> int
 @ 
 
 <<AST helpers interface>>=
-val string_of_info : info -> string
+val string_of_info : tok -> string
 @ 
 
 <<AST helpers interface>>=
@@ -1833,8 +1825,8 @@ val dname : dname -> string
 @ 
 
 <<AST helpers interface>>=
-val info_of_name : name -> info
-val info_of_dname : dname -> info
+val info_of_name : name -> tok
+val info_of_dname : dname -> tok
 @
 
 
@@ -1858,7 +1850,6 @@ val unargs: argument comma_list -> expr list * w_variable list
 @ 
 
 <<AST helpers interface>>=
-val untype : 'a * 'b -> 'a
 @ 
 \label{sec:ast-extractor-unxxx}
 
@@ -1868,16 +1859,16 @@ val untype : 'a * 'b -> 'a
 
 
 <<AST helpers interface>>=
-val rewrap_str : string -> info -> info
-val is_origintok : info -> bool
-val al_info : info -> info
-val compare_pos : info -> info -> int
+val rewrap_str : string -> tok -> tok
+val is_origintok : tok -> bool
+val al_info : tok -> tok
+val compare_pos : tok -> tok -> int
 @ 
 
 <<AST helpers interface>>=
 val noScope : unit -> Scope_php.phpscope ref
 
-val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
+val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> tok
 @ 
 
 \section{Entity and any}
@@ -1892,8 +1883,6 @@ val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
 type entity = 
   | FunctionE of func_def
   | ClassE of class_def
-  | InterfaceE of interface_def
-  | TraitE of trait_def
   | StmtListE of stmt list
 
   | MethodE of method_def
@@ -1903,7 +1892,7 @@ type entity =
 
   | XhpDeclE of xhp_decl
 
-  | MiscE of info list
+  | MiscE of tok list
 @ 
 
 <<AST any>>=
@@ -1933,10 +1922,8 @@ type any =
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
 
-  | StaticScalar of static_scalar
-
-  | Info of info
-  | InfoList of info list
+  | Info of tok
+  | InfoList of tok list
 
   | Name2 of name
 @ 

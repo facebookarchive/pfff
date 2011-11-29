@@ -115,7 +115,7 @@ let unittest =
        * 2.1.2 for a tutorial on visitors in OCaml. *)
       let hooks = { Visitor_php.default_visitor with
         Visitor_php.kexpr = (fun (k, _) e ->
-          match Ast.untype e with
+          match e with
           | Sc _ -> incr cnt
           | _ -> k e
         )
@@ -131,9 +131,9 @@ let unittest =
       (* See bug reported by dreiss, because the lexer had a few todos
        * regarding objects. *)
       let e = Parse_php.expr_of_string "$o->foo" in
-      match Ast.untype e with
+      match e with
       | Lv v ->
-          (match Ast.untype v with
+          (match v with
           | ObjAccessSimple (v, tok, name) ->
               let info = Ast.info_of_name name in
               assert_equal 4 (Ast.col_of_info info)

@@ -35,8 +35,7 @@ Here is the toplevel structure of [[parser_php.mly]]:
 <<GRAMMAR type of main rule>>=
 %type <Ast_php.toplevel list> main
 %type <Ast_php.expr> expr
-%type <(Ast_php.class_def, Ast_php.interface_def) Common.either> 
-  class_declaration_statement
+%type <Ast_php.class_def> class_declaration_statement
 %type <Ast_php.any> sgrep_spatch_pattern
 @
 
@@ -118,13 +117,9 @@ start: top_statement_list { $1 }
 top_statement:
  | statement                            { Stmt $1 }
  | function_declaration_statement	{ FuncDefNested $1 }
- | class_declaration_statement		{ 
-     match $1 with
-     | Left x -> ClassDefNested x
-     | Right x -> InterfaceDefNested x
-   }
+ | class_declaration_statement		{ ClassDefNested $1 }
  /*(* todo: refactor top_statement and inner_statement as in hphp.y *)*/
- | trait_declaration_statement          { TraitDefNested $1 }
+ | trait_declaration_statement          { ClassDefNested $1 }
 @ 
 %/*??? | T_HALT_COMPILER TOPAR TCPAR TSEMICOLON   { Halt($1,($2,(),$3),$4)  } */
 
@@ -378,13 +373,13 @@ expr_without_variable:
     *)*/
   | expr TOBRA dim_offset TCBRA
    { 
-     match Ast.untype $1 with
+     match $1 with
      (* Lv corresponds to Lvalue which includes function calls so 
       * foo()[1] will be translated into a 
       * VArrayAccess(FunCallSimple(...), 1).
       *)
      | Lv v ->
-         let var = mkvar (VArrayAccess (v, ($2, $3, $4))) in
+         let var = (VArrayAccess (v, ($2, $3, $4))) in
          mk_e (Lv var)
 
      (* The 'lvalue' type was originally restricted to variables and 
@@ -407,7 +402,7 @@ expr_without_variable:
       * merge the 'expr' and 'lvalue' types together.
       *)
      | _ ->
-         let var = mkvar (VArrayAccessXhp ($1, ($2, $3, $4))) in
+         let var = (VArrayAccessXhp ($1, ($2, $3, $4))) in
          mk_e (Lv var)
    }
 
@@ -594,14 +589,14 @@ scalar:
 
 <<GRAMMAR scalar>>=
 static_scalar: /* compile-time evaluated scalars */
- | common_scalar	 { StaticConstant $1 }
- | ident 		 { StaticConstant (CName (Name $1)) }
- | static_class_constant { StaticClassConstant (fst $1, snd $1) }
+ | common_scalar	 { Sc (C $1) }
+ | ident 		 { Sc (C (CName (Name $1))) }
+ | static_class_constant { Sc (ClassConstant (fst $1, snd $1)) }
 
- | TPLUS static_scalar	 { StaticPlus($1,$2) }
- | TMINUS static_scalar	 { StaticMinus($1,$2) }
+ | TPLUS static_scalar	 { Unary ((UnPlus, $1),$2)  }
+ | TMINUS static_scalar	 { Unary ((UnMinus, $1),$2) }
  | T_ARRAY TOPAR static_array_pair_list TCPAR
-     { StaticArray($1, ($2, $3, $4)) }
+     { ConsArray($1, ($2, $3, $4)) }
 
  <<static_scalar grammar rule hook>>
 
@@ -632,9 +627,9 @@ static_array_pair_list: static_array_pair_list_rev { List.rev $1 }
 
 non_empty_static_array_pair_list_rev:
  | static_scalar                              
-     { [Left (StaticArraySingle $1)] }
+     { [Left (ArrayExpr $1)] }
  | static_scalar T_DOUBLE_ARROW static_scalar
-     { [Left (StaticArrayArrow ($1,$2,$3))]}
+     { [Left (ArrayArrowExpr ($1,$2,$3))]}
 
  <<repetitive non_empty_static_array_pair_list>>
 @
@@ -643,10 +638,10 @@ non_empty_static_array_pair_list_rev:
 <<repetitive non_empty_static_array_pair_list>>=
  | non_empty_static_array_pair_list_rev TCOMMA
      static_scalar 
-     { Left (StaticArraySingle $3)::Right $2::$1 }
+     { Left (ArrayExpr $3)::Right $2::$1 }
  | non_empty_static_array_pair_list_rev TCOMMA
      static_scalar T_DOUBLE_ARROW static_scalar	
-     { Left (StaticArrayArrow ($3,$4,$5))::Right $2::$1 }
+     { Left (ArrayArrowExpr ($3,$4,$5))::Right $2::$1 }
 @
 \fi
 
@@ -863,7 +858,7 @@ unticked_function_declaration_statement:
     if not !Flag_parsing_php.type_hints_extension && $7 <> None
     then raise Parsing.Parse_error;
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
-       f_return_type = $7;f_body = body; f_type = Ast.noFtype();
+       f_return_type = $7;f_body = body;
     })
   }
 @ 
@@ -943,19 +938,23 @@ unticked_class_declaration_statement:
  | class_entry_type class_name 
      extends_from implements_list
      TOBRACE  class_statement_list TCBRACE 
-     { Left { 
-       c_type = $1; c_name = $2;c_extends = $3; 
-       c_implements = $4; c_body = $5, $6, $7;
-       }
-     }
+     { { c_type = $1; c_name = $2;c_extends = $3; 
+         c_implements = $4; c_body = $5, $6, $7;
+       } }
+
  | interface_entry class_name
      interface_extends_list
      TOBRACE class_statement_list TCBRACE 
-     { Right { i_tok = $1; i_name = $2; i_extends = $3; i_body = $4, $5, $6; } }
+     { { c_type = Interface $1; c_name = $2; c_extends = None; 
+         (* we use c_implements for interface extension because
+          * it can be a list. ugly?
+          *)
+         c_implements = $3; c_body = $4, $5, $6; } }
 
 trait_declaration_statement:
  | T_TRAIT ident TOBRACE class_statement_list TCBRACE 
-     { { t_tok = $1; t_name = (Name $2); t_body = ($3, $4, $5) } }
+     { { c_type = Trait $1; c_name = (Name $2); c_extends = None;
+         c_implements = None; c_body = ($3, $4, $5) } }
 
 @ 
 
@@ -1489,7 +1488,7 @@ encaps_var_offset:
 
 <<static_scalar grammar rule hook>>=
  /* xdebug TODO AST  */
- | TDOTS { XdebugStaticDots  }
+ | TDOTS { sgrep_guard (SgrepExprDots $1)  }
 @
 
 <<common_scalar grammar rule hook>>=
@@ -1767,12 +1766,12 @@ and refvar_to_variable refvar =
 and lift_qualifier_closer_to_var qu v =
 
   let rec aux v =
-    match fst v with
+    match v with
     | Indirect _ | VBrace _ | VBraceAccess _ -> 
         raise Not_found
     | VArrayAccess (lval, e) ->
         let lval' = aux lval in
-        VArrayAccess (lval', e), snd v
+        VArrayAccess (lval', e)
     | Var (name, scope) ->
         (match qu with
         | Left3 qu -> 
@@ -1816,8 +1815,8 @@ let mk_param typ s =
     p_name = DName s;
     p_default = None;
   }
-
-let mk_e e = (e, Ast_php.noType())
+(* old:  e, Ast_php.noType() *)
+let mk_e e = e
 @ 
 
 
@@ -1832,8 +1831,6 @@ let rec top_statements_to_toplevels topstatements eofinfo =
         (match x with
         | FuncDefNested      def -> FuncDef def,  xs
         | ClassDefNested     def -> ClassDef def, xs
-        | InterfaceDefNested def -> InterfaceDef def, xs
-        | TraitDefNested def -> TraitDef def, xs
         | Stmt st -> 
             let stmts, rest = xs +> Common.span (function 
               | Stmt st -> true 

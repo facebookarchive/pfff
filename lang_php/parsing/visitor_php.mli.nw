@@ -265,7 +265,6 @@ type visitor_in = {
   klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
-  kstatic_scalar: (static_scalar -> unit) * visitor_out ->static_scalar -> unit;
   kstmt_and_def: (stmt_and_def -> unit) * visitor_out -> stmt_and_def  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
   kclass_stmt: (class_stmt -> unit) * visitor_out -> class_stmt -> unit;
@@ -291,8 +290,6 @@ type visitor_in = {
    *)
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;
-  kinterface_def: 
-    (interface_def -> unit) * visitor_out -> interface_def -> unit;
 
   kmethod_def: (method_def -> unit) * visitor_out -> method_def -> unit;
 
@@ -314,9 +311,8 @@ type visitor_in = {
     (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
-  kcomma: (info -> unit) * visitor_out -> info -> unit; 
-
-  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+  kcomma: (tok -> unit) * visitor_out -> tok -> unit; 
+  kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 @ 
 
@@ -357,7 +353,7 @@ let test_visit_php file =
     );
 
     Visitor_php.kexpr = (fun (k, vx) e -> 
-      match fst e with
+      match e with
       | Ast_php.Sc x ->
           pr2 "scalar";
           k e

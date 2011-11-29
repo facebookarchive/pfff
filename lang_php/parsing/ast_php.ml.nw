@@ -8,15 +8,14 @@ open Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 extensions (e.g. closures) and support for XHP.
  * 
- * This is actually more a concrete syntax tree than an AST. This
+ * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
- * instead lang_php/analyze/foundation/pil.ml, which defines a
+ * instead lang_php/analyze/foundation/pil.ml which defines a
  * PHP Intermediate Language a la CIL.
  * 
  * NOTE: data from this type are often marshalled in berkeley DB tables
@@ -32,6 +31,11 @@ open Parse_info
  * to regenerate the JSON/sexp exporters, but also to modify the
  * dependent programs !!!! An easier solution is to not change this
  * file, or to only add new constructors.
+ * 
+ * todo: 
+ *  - introduce QualifierDynamic and factorize things in lvalue type
+ *  - unify toplevel statement vs statements and stmt_and_def?
+ *  - unify expr and lvalue?
  *)
 
 (*****************************************************************************)
@@ -46,7 +50,7 @@ open Parse_info
 (* ------------------------------------------------------------------------- *)
 <<AST name>>
 (* ------------------------------------------------------------------------- *)
-(* Type. This is used in Cast, but for type analysis see type_php.ml  *)
+(* Type. This is used in Cast. For type analysis see type_php.ml *)
 (* ------------------------------------------------------------------------- *)
 <<AST type>>
 (* ------------------------------------------------------------------------- *)
@@ -159,7 +163,6 @@ let unmodifiers class_vars =
 
 
 <<ast_php.ml>>=
-let untype (e, xinfo) = e
 @ 
 
 <<ast_php.ml>>=
@@ -190,7 +193,6 @@ let string_of_info ii =
   Parse_info.string_of_parse_info (parse_info_of_info ii)
 
 let is_origintok = Parse_info.is_origintok
-
 
 type posrv = Parse_info.posrv
 
@@ -226,7 +228,6 @@ let compare_pos ii1 ii2 =
       |	0 -> compare o1 o2
       |	1 -> 1
       | _ -> raise Impossible
-
 @ 
 
 <<ast_php.ml>>=
