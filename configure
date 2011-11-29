@@ -149,6 +149,8 @@ my $error2 = 0;
 #---------------------------------------------------------------------
 # Compilers and runtimes
 #---------------------------------------------------------------------
+# needs 3.12 because use the forall 'a. new typing feature and the _ pattern
+# in records.
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
                  "Objective(.*) 3.12",

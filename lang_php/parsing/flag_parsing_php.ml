@@ -1,12 +1,10 @@
 (*s: flag_parsing_php.ml *)
-let verbose_parsing = ref true
 let verbose_lexing = ref true
-let verbose_visit = ref true
+let verbose_parsing = ref true
 (*x: flag_parsing_php.ml *)
 let cmdline_flags_verbose () = [
-  "-no_verbose_parsing", Arg.Clear verbose_parsing , "  ";
   "-no_verbose_lexing", Arg.Clear verbose_lexing , "  ";
-  "-no_verbose_visit", Arg.Clear verbose_visit , "  ";
+  "-no_verbose_parsing", Arg.Clear verbose_parsing , "  ";
 ]
 (*x: flag_parsing_php.ml *)
 let debug_lexer   = ref false

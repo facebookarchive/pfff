@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ocaml
@@ -61,8 +60,6 @@ and map_arraytype =
   
 end
 
-
-
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
@@ -103,8 +100,6 @@ let default_visitor =
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 (* start of auto generation *)
-
-
   
 let rec map_info x = 
   let rec k x = 
@@ -126,78 +121,12 @@ let rec map_info x =
   vin.kinfo (k, all_functions) x
 
 and map_tok v = map_info v
-and map_wrap _of_a (v1, v2) =
+and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) -> 
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap_string _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap_tag _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap_modif _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap_xhp_tag _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap2 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap3 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap4 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap5 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap6 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap7 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-
-and map_wrap10 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-and map_wrap11 _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
-
-and map_paren_args _of_a (v1, v2, v3) =
+and map_paren:'a. ('a -> 'a) -> 'a paren -> 'a paren = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren_expr _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren_params _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren_lexical_vars _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren2 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren3 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren4 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren5 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren6 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren8 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren9 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren10 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren11 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren12 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren16 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-
-
 and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3) 
  ->
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-
-and map_brace_body _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_brace_expr _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_brace_class_body _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-
-and map_brace_1 _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 
 and map_bracket _of_a (v1, v2, v3) =
@@ -206,43 +135,18 @@ and map_bracket _of_a (v1, v2, v3) =
 and map_comma_list_dots _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
 
-and map_comma_list_arg _of_a xs = 
+and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list = 
+  fun _of_a xs ->
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list_var _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list_expr _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list2 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list3 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list4 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list6 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list7 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list8 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list10 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list12 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list13 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list14 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-and map_comma_list15 _of_a xs = 
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
-  
+
 and map_name =
   function
-  | Name v1 -> let v1 = map_wrap_string map_of_string v1 in Name ((v1))
-  | XhpName v1 -> let v1 = map_wrap_tag (map_of_list map_of_string) v1 in 
+  | Name v1 -> let v1 = map_wrap map_of_string v1 in Name ((v1))
+  | XhpName v1 -> let v1 = map_wrap (map_of_list map_of_string) v1 in 
                   XhpName ((v1))
 and map_xhp_tag v = map_of_list map_of_string v
 and map_dname =
-  function | DName v1 -> let v1 = map_wrap_string map_of_string v1 in DName ((v1))
+  function | DName v1 -> let v1 = map_wrap map_of_string v1 in DName ((v1))
 
 and map_qualifier v =
   let k (v1, v2) =
@@ -285,11 +189,11 @@ and map_expr (x) =
   | Sc v1 -> let v1 = map_scalar v1 in Sc ((v1))
   | Binary ((v1, v2, v3)) ->
       let v1 = map_expr v1
-      and v2 = map_wrap2 map_binaryOp v2
+      and v2 = map_wrap map_binaryOp v2
       and v3 = map_expr v3
       in Binary ((v1, v2, v3))
   | Unary ((v1, v2)) ->
-      let v1 = map_wrap3 map_unaryOp v1
+      let v1 = map_wrap map_unaryOp v1
       and v2 = map_expr v2
       in Unary ((v1, v2))
   | Assign ((v1, v2, v3)) ->
@@ -299,15 +203,15 @@ and map_expr (x) =
       in Assign ((v1, v2, v3))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = map_variable v1
-      and v2 = map_wrap4 map_assignOp v2
+      and v2 = map_wrap map_assignOp v2
       and v3 = map_expr v3
       in AssignOp ((v1, v2, v3))
   | Postfix ((v1, v2)) ->
       let v1 = map_rw_variable v1
-      and v2 = map_wrap5 map_fixOp v2
+      and v2 = map_wrap map_fixOp v2
       in Postfix ((v1, v2))
   | Infix ((v1, v2)) ->
-      let v1 = map_wrap6 map_fixOp v1
+      let v1 = map_wrap map_fixOp v1
       and v2 = map_rw_variable v2
       in Infix ((v1, v2))
   | CondExpr ((v1, v2, v3, v4, v5)) ->
@@ -319,18 +223,18 @@ and map_expr (x) =
       in CondExpr ((v1, v2, v3, v4, v5))
   | AssignList ((v1, v2, v3, v4)) ->
       let v1 = map_tok v1
-      and v2 = map_paren2 (map_comma_list2 map_list_assign) v2
+      and v2 = map_paren (map_comma_list map_list_assign) v2
       and v3 = map_tok v3
       and v4 = map_expr v4
       in AssignList ((v1, v2, v3, v4))
   | ConsArray ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren3 (map_comma_list3 map_array_pair) v2
+      and v2 = map_paren (map_comma_list map_array_pair) v2
       in ConsArray ((v1, v2))
   | New ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_class_name_reference v2
-      and v3 = map_of_option (map_paren_args (map_comma_list_arg map_argument)) v3
+      and v3 = map_of_option (map_paren (map_comma_list map_argument)) v3
       in New ((v1, v2, v3))
   | Clone ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_expr v2 in Clone ((v1, v2))
@@ -346,10 +250,10 @@ and map_expr (x) =
       and v3 = map_tok v3
       and v4 = map_tok v4
       and v5 = map_class_name_reference v5
-      and v6 = map_of_option (map_paren_args (map_comma_list_arg map_argument)) v6
+      and v6 = map_of_option (map_paren (map_comma_list map_argument)) v6
       in AssignNew ((v1, v2, v3, v4, v5, v6))
   | Cast ((v1, v2)) ->
-      let v1 = map_wrap7 map_castOp v1 and v2 = map_expr v2 in Cast ((v1, v2))
+      let v1 = map_wrap map_castOp v1 and v2 = map_expr v2 in Cast ((v1, v2))
   | CastUnset ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_expr v2 in CastUnset ((v1, v2))
   | InstanceOf ((v1, v2, v3)) ->
@@ -358,11 +262,11 @@ and map_expr (x) =
       and v3 = map_class_name_reference v3
       in InstanceOf ((v1, v2, v3))
   | Eval ((v1, v2)) ->
-      let v1 = map_tok v1 and v2 = map_paren_expr map_expr v2 in Eval ((v1, v2))
+      let v1 = map_tok v1 and v2 = map_paren map_expr v2 in Eval ((v1, v2))
   | Lambda v1 -> let v1 = map_lambda_def v1 in Lambda ((v1))
   | Exit ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_of_option (map_paren4 (map_of_option map_expr)) v2
+      and v2 = map_of_option (map_paren (map_of_option map_expr)) v2
       in Exit ((v1, v2))
   | At ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_expr v2 in At ((v1, v2))
@@ -387,14 +291,14 @@ and map_expr (x) =
       let v1 = map_tok v1 and v2 = map_tok v2 in YieldBreak ((v1, v2))
   | Empty ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren5 map_variable v2
+      and v2 = map_paren map_variable v2
       in Empty ((v1, v2))
   | Isset ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren6 (map_comma_list_var map_variable) v2
+      and v2 = map_paren (map_comma_list map_variable) v2
       in Isset ((v1, v2))
   | SgrepExprDots v1 -> let v1 = map_info v1 in SgrepExprDots ((v1))
-  | ParenExpr v1 -> let v1 = map_paren_expr map_expr v1 in ParenExpr ((v1))
+  | ParenExpr v1 -> let v1 = map_paren map_expr v1 in ParenExpr ((v1))
   | XhpHtml v1 -> let v1 = map_xhp_html v1 in XhpHtml ((v1))
  in
  let v1 = map_exprbis v1 and v2 = map_exp_info v2  in
@@ -420,9 +324,9 @@ and map_scalar =
       in HereDoc ((v1, v2, v3))
 and map_constant =
   function
-  | Int v1 -> let v1 = map_wrap_string map_of_string v1 in Int ((v1))
-  | Double v1 -> let v1 = map_wrap_string map_of_string v1 in Double ((v1))
-  | String v1 -> let v1 = map_wrap_string map_of_string v1 in String ((v1))
+  | Int v1 -> let v1 = map_wrap map_of_string v1 in Int ((v1))
+  | Double v1 -> let v1 = map_wrap map_of_string v1 in Double ((v1))
+  | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
   | CName v1 -> let v1 = map_name v1 in CName ((v1))
   | PreProcess v1 ->
       let v1 = map_wrap map_cpp_directive v1 in PreProcess ((v1))
@@ -444,7 +348,7 @@ and map_cpp_directive =
 and map_encaps =
   function
   | EncapsString v1 ->
-      let v1 = map_wrap_string map_of_string v1 in EncapsString ((v1))
+      let v1 = map_wrap map_of_string v1 in EncapsString ((v1))
   | EncapsVar v1 -> let v1 = map_variable v1 in EncapsVar ((v1))
   | EncapsCurly ((v1, v2, v3)) ->
       let v1 = map_tok v1
@@ -510,7 +414,7 @@ and map_list_assign =
   | ListVar v1 -> let v1 = map_variable v1 in ListVar ((v1))
   | ListList ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren16 (map_comma_list4 map_list_assign) v2
+      and v2 = map_paren (map_comma_list map_list_assign) v2
       in ListList ((v1, v2))
   | ListEmpty -> ListEmpty
 and map_array_pair =
@@ -543,14 +447,14 @@ and map_obj_prop_access (v1, v2) =
 and map_xhp_html =
   function
   | Xhp ((v1, v2, v3, v4, v5)) ->
-      let v1 = map_wrap10 map_xhp_tag v1
+      let v1 = map_wrap map_xhp_tag v1
       and v2 = map_of_list map_xhp_attribute v2
       and v3 = map_tok v3
       and v4 = map_of_list map_xhp_body v4
-      and v5 = map_wrap11 (map_of_option map_xhp_tag) v5
+      and v5 = map_wrap (map_of_option map_xhp_tag) v5
       in Xhp ((v1, v2, v3, v4, v5))
   | XhpSingleton ((v1, v2, v3)) ->
-      let v1 = map_wrap10 map_xhp_tag v1
+      let v1 = map_wrap map_xhp_tag v1
       and v2 = map_of_list map_xhp_attribute v2
       and v3 = map_tok v3
       in XhpSingleton ((v1, v2, v3))
@@ -559,7 +463,7 @@ and map_xhp_attribute (v1, v2, v3) =
   and v2 = map_tok v2
   and v3 = map_xhp_attr_value v3
   in (v1, v2, v3)
-and map_xhp_attr_name v = map_wrap_string map_of_string v
+and map_xhp_attr_name v = map_wrap map_of_string v
 and map_xhp_attr_value =
   function
   | XhpAttrString ((v1, v2, v3)) ->
@@ -567,13 +471,13 @@ and map_xhp_attr_value =
       and v2 = map_of_list map_encaps v2
       and v3 = map_tok v3
       in XhpAttrString ((v1, v2, v3))
-  | XhpAttrExpr v1 -> let v1 = map_brace_expr map_expr v1 in XhpAttrExpr ((v1))
+  | XhpAttrExpr v1 -> let v1 = map_brace map_expr v1 in XhpAttrExpr ((v1))
   | SgrepXhpAttrValueMvar v1 ->
-      let v1 = map_wrap_string map_of_string v1 in SgrepXhpAttrValueMvar ((v1))
+      let v1 = map_wrap map_of_string v1 in SgrepXhpAttrValueMvar ((v1))
 and map_xhp_body =
   function
-  | XhpText v1 -> let v1 = map_wrap_string map_of_string v1 in XhpText ((v1))
-  | XhpExpr v1 -> let v1 = map_brace_expr map_expr v1 in XhpExpr ((v1))
+  | XhpText v1 -> let v1 = map_wrap map_of_string v1 in XhpText ((v1))
+  | XhpExpr v1 -> let v1 = map_brace map_expr v1 in XhpExpr ((v1))
   | XhpNested v1 -> let v1 = map_xhp_html v1 in XhpNested ((v1))
 
 
@@ -606,11 +510,11 @@ and map_variablebis =
       and v2 = map_bracket (map_of_option map_expr) v2
       in VArrayAccessXhp ((v1, v2))
   | VBrace ((v1, v2)) ->
-      let v1 = map_tok v1 and v2 = map_brace_expr map_expr v2 in 
+      let v1 = map_tok v1 and v2 = map_brace map_expr v2 in 
       VBrace ((v1, v2))
   | VBraceAccess ((v1, v2)) ->
       let v1 = map_variable v1
-      and v2 = map_brace_expr map_expr v2
+      and v2 = map_brace map_expr v2
       in VBraceAccess ((v1, v2))
   | Indirect ((v1, v2)) ->
       let v1 = map_variable v1
@@ -631,23 +535,23 @@ and map_variablebis =
       in DynamicClassVar ((v1, v2, v3))
   | FunCallSimple ((v2, v3)) ->
       let v2 = map_name v2
-      and v3 = map_paren_args (map_comma_list_arg map_argument) v3
+      and v3 = map_paren (map_comma_list map_argument) v3
       in FunCallSimple ((v2, v3))
   | FunCallVar ((v1, v2, v3)) ->
       let v1 = map_of_option map_qualifier v1
       and v2 = map_variable v2
-      and v3 = map_paren_args (map_comma_list_arg map_argument) v3
+      and v3 = map_paren (map_comma_list map_argument) v3
       in FunCallVar ((v1, v2, v3))
   | StaticMethodCallSimple ((v1, v2, v3)) ->
       let v1 = map_qualifier v1
       and v2 = map_name v2
-      and v3 = map_paren_args (map_comma_list_arg map_argument) v3
+      and v3 = map_paren (map_comma_list map_argument) v3
       in StaticMethodCallSimple ((v1, v2, v3))
   | MethodCallSimple ((v1, v2, v3, v4)) ->
       let v1 = map_variable v1
       and v2 = map_tok v2
       and v3 = map_name v3
-      and v4 = map_paren_args (map_comma_list_arg map_argument) v4
+      and v4 = map_paren (map_comma_list map_argument) v4
       in MethodCallSimple ((v1, v2, v3, v4))
   | StaticMethodCallVar ((v1, v2, v3, v4)) ->
       let v1 = map_lvalue v1
@@ -680,7 +584,7 @@ and map_argument =
 and map_obj_access (v1, v2, v3) =
   let v1 = map_tok v1
   and v2 = map_obj_property v2
-  and v3 = map_of_option (map_paren_args (map_comma_list_arg map_argument)) v3
+  and v3 = map_of_option (map_paren (map_comma_list map_argument)) v3
   in (v1, v2, v3)
 and map_obj_property =
   function
@@ -689,14 +593,14 @@ and map_obj_property =
 and map_obj_dim =
   function
   | OName v1 -> let v1 = map_name v1 in OName ((v1))
-  | OBrace v1 -> let v1 = map_brace_expr map_expr v1 in OBrace ((v1))
+  | OBrace v1 -> let v1 = map_brace map_expr v1 in OBrace ((v1))
   | OArrayAccess ((v1, v2)) ->
       let v1 = map_obj_dim v1
       and v2 = map_bracket (map_of_option map_expr) v2
       in OArrayAccess ((v1, v2))
   | OBraceAccess ((v1, v2)) ->
       let v1 = map_obj_dim v1
-      and v2 = map_brace_expr map_expr v2
+      and v2 = map_brace map_expr v2
       in OBraceAccess ((v1, v2))
 and map_rw_variable v = map_variable v
 and map_r_variable v = map_variable v
@@ -708,16 +612,16 @@ and map_stmt x =
       let v1 = map_expr v1 and v2 = map_tok v2 in ExprStmt ((v1, v2))
   | EmptyStmt v1 -> let v1 = map_tok v1 in EmptyStmt ((v1))
   | Block v1 ->
-      let v1 = map_brace_body (map_of_list map_stmt_and_def) v1 in Block ((v1))
+      let v1 = map_brace (map_of_list map_stmt_and_def) v1 in Block ((v1))
   | If ((v1, v2, v3, v4, v5)) ->
       let v1 = map_tok v1
-      and v2 = map_paren_expr map_expr v2
+      and v2 = map_paren map_expr v2
       and v3 = map_stmt v3
       and v4 =
         map_of_list
           (fun (v1, v2, v3) ->
              let v1 = map_tok v1
-             and v2 = map_paren_expr map_expr v2
+             and v2 = map_paren map_expr v2
              and v3 = map_stmt v3
              in (v1, v2, v3))
           v4
@@ -729,7 +633,7 @@ and map_stmt x =
       in If ((v1, v2, v3, v4, v5))
   | IfColon ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
       let v1 = map_tok v1
-      and v2 = map_paren_expr map_expr v2
+      and v2 = map_paren map_expr v2
       and v3 = map_tok v3
       and v4 = map_of_list map_stmt_and_def v4
       and v5 = map_of_list map_new_elseif v5
@@ -739,14 +643,14 @@ and map_stmt x =
       in IfColon ((v1, v2, v3, v4, v5, v6, v7, v8))
   | While ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_paren_expr map_expr v2
+      and v2 = map_paren map_expr v2
       and v3 = map_colon_stmt v3
       in While ((v1, v2, v3))
   | Do ((v1, v2, v3, v4, v5)) ->
       let v1 = map_tok v1
       and v2 = map_stmt v2
       and v3 = map_tok v3
-      and v4 = map_paren_expr map_expr v4
+      and v4 = map_paren map_expr v4
       and v5 = map_tok v5
       in Do ((v1, v2, v3, v4, v5))
   | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
@@ -762,7 +666,7 @@ and map_stmt x =
       in For ((v1, v2, v3, v4, v5, v6, v7, v8, v9))
   | Switch ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_paren_expr map_expr v2
+      and v2 = map_paren map_expr v2
       and v3 = map_switch_case_list v3
       in Switch ((v1, v2, v3))
   | Foreach ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
@@ -797,26 +701,26 @@ and map_stmt x =
       in Throw ((v1, v2, v3))
   | Try ((v1, v2, v3, v4)) ->
       let v1 = map_tok v1
-      and v2 = map_brace_body (map_of_list map_stmt_and_def) v2
+      and v2 = map_brace (map_of_list map_stmt_and_def) v2
       and v3 = map_catch v3
       and v4 = map_of_list map_catch v4
       in Try ((v1, v2, v3, v4))
   | Echo ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_comma_list_expr map_expr v2
+      and v2 = map_comma_list map_expr v2
       and v3 = map_tok v3
       in Echo ((v1, v2, v3))
   | Globals ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_comma_list6 map_global_var v2
+      and v2 = map_comma_list map_global_var v2
       and v3 = map_tok v3
       in Globals ((v1, v2, v3))
   | StaticVars ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_comma_list7 map_static_var v2
+      and v2 = map_comma_list map_static_var v2
       and v3 = map_tok v3
       in StaticVars ((v1, v2, v3))
-  | InlineHtml v1 -> let v1 = map_wrap_string map_of_string v1 in InlineHtml ((v1))
+  | InlineHtml v1 -> let v1 = map_wrap map_of_string v1 in InlineHtml ((v1))
   | Use ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_use_filename v2
@@ -824,12 +728,12 @@ and map_stmt x =
       in Use ((v1, v2, v3))
   | Unset ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_paren8 (map_comma_list_var map_variable) v2
+      and v2 = map_paren (map_comma_list map_variable) v2
       and v3 = map_tok v3
       in Unset ((v1, v2, v3))
   | Declare ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_paren9 (map_comma_list8 map_declare) v2
+      and v2 = map_paren (map_comma_list map_declare) v2
       and v3 = map_colon_stmt v3
       in Declare ((v1, v2, v3))
   | TypedDeclaration ((v1, v2, v3, v4)) ->
@@ -882,7 +786,7 @@ and map_case =
       and v2 = map_tok v2
       and v3 = map_of_list map_stmt_and_def v3
       in Default ((v1, v2, v3))
-and map_for_expr v = map_comma_list_expr map_expr v
+and map_for_expr v = map_comma_list map_expr v
 and map_foreach_arrow (v1, v2) =
   let v1 = map_tok v1 and v2 = map_foreach_variable v2 in (v1, v2)
 and map_foreach_variable (v1, v2) =
@@ -890,19 +794,19 @@ and map_foreach_variable (v1, v2) =
 and map_catch (v1, v2, v3) =
   let v1 = map_tok v1
   and v2 =
-    map_paren10
+    map_paren
       (fun (v1, v2) ->
          let v1 = map_fully_qualified_class_name v1
          and v2 = map_dname v2
          in (v1, v2))
       v2
-  and v3 = map_brace_body (map_of_list map_stmt_and_def) v3
+  and v3 = map_brace (map_of_list map_stmt_and_def) v3
   in (v1, v2, v3)
 and map_use_filename =
   function
-  | UseDirect v1 -> let v1 = map_wrap_string map_of_string v1 in UseDirect ((v1))
+  | UseDirect v1 -> let v1 = map_wrap map_of_string v1 in UseDirect ((v1))
   | UseParen v1 ->
-      let v1 = map_paren11 (map_wrap_string map_of_string) v1 in UseParen ((v1))
+      let v1 = map_paren (map_wrap map_of_string) v1 in UseParen ((v1))
 and map_declare (v1, v2) =
   let v1 = map_name v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
 and map_colon_stmt =
@@ -916,7 +820,7 @@ and map_colon_stmt =
       in ColonStmt ((v1, v2, v3, v4))
 and map_new_elseif (v1, v2, v3, v4) =
   let v1 = map_tok v1
-  and v2 = map_paren_expr map_expr v2
+  and v2 = map_paren map_expr v2
   and v3 = map_tok v3
   and v4 = map_of_list map_stmt_and_def v4
   in (v1, v2, v3, v4)
@@ -936,8 +840,8 @@ and
                  f_return_type = v_f_return_type;
                } =
   let v_f_type = Type_php.map_phptype v_f_type in
-  let v_f_body = map_brace_body (map_of_list map_stmt_and_def) v_f_body in
-  let v_f_params = map_paren_params (map_comma_list_dots map_parameter) v_f_params in
+  let v_f_body = map_brace (map_of_list map_stmt_and_def) v_f_body in
+  let v_f_params = map_paren (map_comma_list_dots map_parameter) v_f_params in
   let v_f_name = map_name v_f_name in
   let v_f_ref = map_is_ref v_f_ref in
   let v_f_tok = map_tok v_f_tok in
@@ -982,9 +886,9 @@ and
                    l_use = v_l_use;
                    l_body = v_l_body
                  } =
-  let v_l_body = map_brace_body (map_of_list map_stmt_and_def) v_l_body in
+  let v_l_body = map_brace (map_of_list map_stmt_and_def) v_l_body in
   let v_l_use = map_of_option map_lexical_vars v_l_use in
-  let v_l_params = map_paren_params (map_comma_list_dots map_parameter) v_l_params in
+  let v_l_params = map_paren (map_comma_list_dots map_parameter) v_l_params in
   let v_l_ref = map_is_ref v_l_ref in
   let v_l_tok = map_tok v_l_tok in 
   {
@@ -997,7 +901,7 @@ and
 
 and map_lexical_vars (v1, v2) =
   let v1 = map_tok v1
-  and v2 = map_paren_lexical_vars (map_comma_list10 map_lexical_var) v2
+  and v2 = map_paren (map_comma_list map_lexical_var) v2
   in (v1, v2)
 and map_lexical_var =
   function
@@ -1012,7 +916,7 @@ and
                   c_implements = v_c_implements;
                   c_body = v_c_body
                 } =
-  let v_c_body = map_brace_class_body (map_of_list map_class_stmt) v_c_body in
+  let v_c_body = map_brace (map_of_list map_class_stmt) v_c_body in
   let v_c_implements = map_of_option map_interface v_c_implements in
   let v_c_extends = map_of_option map_extend v_c_extends in
   let v_c_name = map_name v_c_name in
@@ -1039,7 +943,7 @@ and map_extend (v1, v2) =
   let v1 = map_tok v1 and v2 = map_fully_qualified_class_name v2 in (v1, v2)
 and map_interface (v1, v2) =
   let v1 = map_tok v1
-  and v2 = map_comma_list12 map_fully_qualified_class_name v2
+  and v2 = map_comma_list map_fully_qualified_class_name v2
   in (v1, v2)
 and
   map_interface_def {
@@ -1048,7 +952,7 @@ and
                       i_extends = v_i_extends;
                       i_body = v_i_body
                     } =
-  let v_i_body = map_brace_class_body (map_of_list map_class_stmt) v_i_body in
+  let v_i_body = map_brace (map_of_list map_class_stmt) v_i_body in
   let v_i_extends = map_of_option map_interface v_i_extends in
   let v_i_name = map_name v_i_name in
   let v_i_tok = map_tok v_i_tok in
@@ -1064,7 +968,7 @@ and map_trait_def {
                       t_name = v_i_name;
                       t_body = v_i_body
                     } =
-  let v_i_body = map_brace_class_body (map_of_list map_class_stmt) v_i_body in
+  let v_i_body = map_brace (map_of_list map_class_stmt) v_i_body in
   let v_i_name = map_name v_i_name in
   let v_i_tok = map_tok v_i_tok in
   {
@@ -1077,13 +981,13 @@ and map_class_stmt =
   function
   | ClassConstants ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_comma_list13 map_class_constant v2
+      and v2 = map_comma_list map_class_constant v2
       and v3 = map_tok v3
       in ClassConstants ((v1, v2, v3))
   | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = map_class_var_modifier v1
       and opt_ty = map_option map_hint_type opt_ty
-      and v2 = map_comma_list14 map_class_variable v2
+      and v2 = map_comma_list map_class_variable v2
       and v3 = map_tok v3
       in ClassVariables ((v1, opt_ty, v2, v3))
   | Method v1 -> let v1 = map_method_def v1 in Method ((v1))
@@ -1118,7 +1022,7 @@ and map_xhp_decl =
 and map_xhp_attribute_decl =
   function
   | XhpAttrInherit v1 ->
-      let v1 = map_wrap_xhp_tag map_xhp_tag v1 in XhpAttrInherit ((v1))
+      let v1 = map_wrap map_xhp_tag v1 in XhpAttrInherit ((v1))
   | XhpAttrDecl ((v1, v2, v3, v4)) ->
       let v1 = map_xhp_attribute_type v1
       and v2 = map_xhp_attr_name v2
@@ -1131,16 +1035,16 @@ and map_xhp_attribute_type =
   | XhpAttrType v1 -> let v1 = map_name v1 in XhpAttrType ((v1))
   | XhpAttrEnum ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_brace_1 (map_comma_list map_constant) v2
+      and v2 = map_brace (map_comma_list map_constant) v2
       in XhpAttrEnum ((v1, v2))
 and map_xhp_value_affect (v1, v2) =
   let v1 = map_tok v1 and v2 = map_static_scalar v2 in (v1, v2)
 
 and map_xhp_children_decl =
   function
-  | XhpChild v1 -> let v1 = map_wrap_xhp_tag map_xhp_tag v1 in XhpChild ((v1))
+  | XhpChild v1 -> let v1 = map_wrap map_xhp_tag v1 in XhpChild ((v1))
   | XhpChildCategory v1 ->
-      let v1 = map_wrap_xhp_tag map_xhp_tag v1 in XhpChildCategory ((v1))
+      let v1 = map_wrap map_xhp_tag v1 in XhpChildCategory ((v1))
   | XhpChildAny v1 -> let v1 = map_tok v1 in XhpChildAny ((v1))
   | XhpChildEmpty v1 -> let v1 = map_tok v1 in XhpChildEmpty ((v1))
   | XhpChildPcdata v1 -> let v1 = map_tok v1 in XhpChildPcdata ((v1))
@@ -1168,7 +1072,7 @@ and map_xhp_children_decl =
       in XhpChildPlus ((v1, v2))
   | XhpChildParen v1 ->
       let v1 = map_paren map_xhp_children_decl v1 in XhpChildParen ((v1))
-and map_xhp_category_decl v = map_wrap_xhp_tag map_xhp_tag v
+and map_xhp_category_decl v = map_wrap map_xhp_tag v
 
 
 and map_class_constant (v1, v2) =
@@ -1181,7 +1085,7 @@ and map_class_var_modifier =
   function
   | NoModifiers v1 -> let v1 = map_tok v1 in NoModifiers ((v1))
   | VModifiers v1 ->
-      let v1 = map_of_list (map_wrap_modif map_modifier) v1 in VModifiers ((v1))
+      let v1 = map_of_list (map_wrap map_modifier) v1 in VModifiers ((v1))
 and
   map_method_def {
                    m_modifiers = v_m_modifiers;
@@ -1193,11 +1097,11 @@ and
                    m_body = v_m_body
                  } =
   let v_m_body = map_method_body v_m_body in
-  let v_m_params = map_paren_params (map_comma_list_dots map_parameter) v_m_params in
+  let v_m_params = map_paren (map_comma_list_dots map_parameter) v_m_params in
   let v_m_name = map_name v_m_name in
   let v_m_ref = map_is_ref v_m_ref in
   let v_m_tok = map_tok v_m_tok in
-  let v_m_modifiers = map_of_list (map_wrap_modif map_modifier) v_m_modifiers in
+  let v_m_modifiers = map_of_list (map_wrap map_modifier) v_m_modifiers in
   let v_m_return_type = map_of_option map_hint_type v_m_return_type in
 
   {
@@ -1222,7 +1126,7 @@ and map_method_body =
   function
   | AbstractMethod v1 -> let v1 = map_tok v1 in AbstractMethod ((v1))
   | MethodBody v1 ->
-      let v1 = map_brace_body (map_of_list map_stmt_and_def) v1
+      let v1 = map_brace (map_of_list map_stmt_and_def) v1
       in MethodBody ((v1))
 and map_global_var =
   function
@@ -1233,7 +1137,7 @@ and map_global_var =
       in GlobalDollar ((v1, v2))
   | GlobalDollarExpr ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_brace_expr map_expr v2
+      and v2 = map_brace map_expr v2
       in GlobalDollarExpr ((v1, v2))
 and map_static_var (v1, v2) =
   let v1 = map_dname v1
@@ -1255,7 +1159,7 @@ and map_static_scalar =
       in StaticMinus ((v1, v2))
   | StaticArray ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren12 (map_comma_list15 map_static_array_pair) v2
+      and v2 = map_paren (map_comma_list map_static_array_pair) v2
       in StaticArray ((v1, v2))
   | XdebugStaticDots -> XdebugStaticDots
 and map_static_scalar_affect (v1, v2) =
@@ -1323,7 +1227,7 @@ and map_any =
       let v1 = map_paren (map_comma_list_dots map_parameter) v1
       in Parameters ((v1))
   | Body v1 ->
-      let v1 = map_brace_body (map_of_list map_stmt_and_def) v1 in Body ((v1))
+      let v1 = map_brace (map_of_list map_stmt_and_def) v1 in Body ((v1))
   | StmtAndDefs v1 ->
       let v1 = map_of_list map_stmt_and_def v1 in StmtAndDefs ((v1))
   | ClassStmt v1 -> let v1 = map_class_stmt v1 in ClassStmt ((v1))
