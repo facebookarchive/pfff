@@ -79,8 +79,6 @@ type variable2 =
 (*e: type variable2 *)
 
 (*s: variable2 to variable functions *)
-let mkvar var = var, noTypeVar()
-
 let method_object_simple x = 
   match x with
   | ObjAccess(var, (t1, obj, argsopt)) ->
@@ -101,7 +99,7 @@ let rec variable2_to_lvalue var =
       let v = basevarfun_to_variable basevar in
       (* TODO left ? right ? *)
       objs +> List.fold_left (fun acc obj ->
-        mkvar (method_object_simple (ObjAccess (acc, obj)))
+        (method_object_simple (ObjAccess (acc, obj)))
       ) v
 
 and basevarfun_to_variable basevarfun = 
@@ -130,7 +128,7 @@ and basevarfun_to_variable basevarfun =
           StaticObjCallVar (var, tok, var2, args)
       )
       in
-      mkvar v
+      v
 
 
 and basevar_to_variable basevar =
@@ -146,7 +144,7 @@ and vwithoutobj_to_variable vwithoutobj =
   let (indirects, refvar) = vwithoutobj in
   let v = refvar_to_variable refvar in
   indirects +> List.fold_left (fun acc indirect ->
-    mkvar (Indirect (acc, indirect))) v
+    (Indirect (acc, indirect))) v
   
 
 and refvar_to_variable refvar = 
@@ -168,7 +166,7 @@ and refvar_to_variable refvar =
         let v = refvar_to_variable refvar in
         VBraceAccess(v, exprb)
   in
-  mkvar v
+  v
 
 (* even if A::$v['fld'] is parsed in the grammar
  * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
@@ -182,21 +180,21 @@ and refvar_to_variable refvar =
 and lift_qualifier_closer_to_var qu v =
 
   let rec aux v =
-    match fst v with
+    match v with
     | Indirect _ | VBrace _ | VBraceAccess _ -> 
         raise Not_found
     | VArrayAccess (lval, e) ->
         let lval' = aux lval in
-        VArrayAccess (lval', e), snd v
+        VArrayAccess (lval', e)
     | Var (name, scope) ->
         (match qu with
         | Left3 qu -> 
-            mkvar (ClassVar (qu, name))
+            (ClassVar (qu, name))
         | Middle3 (tok1, tok2) ->
             raise Impossible
         | Right3 (refvar, tok) ->
             let v = refvar_to_variable refvar in
-            mkvar (DynamicClassVar (v, tok, mkvar (Var (name, scope))))
+            (DynamicClassVar (v, tok, (Var (name, scope))))
         )
     | This _ ->
         failwith "todo: what mean A::this ?"
@@ -211,14 +209,14 @@ and lift_qualifier_closer_to_var qu v =
   with Not_found -> 
     (match qu with
     | Left3 qu ->
-        mkvar (VQualifier (qu, v))
+        (VQualifier (qu, v))
     | Middle3 _ ->
         (* todo: static::$... ? *) 
         raise Parsing.Parse_error
     | Right3 (refvar, tok) ->
         let v2 = refvar_to_variable refvar in
         (* e.g. when parse $class::$$prop *)
-        mkvar (DynamicClassVar (v2, tok, v))
+        (DynamicClassVar (v2, tok, v))
     )
     
 
@@ -269,7 +267,7 @@ let mk_param typ s =
     p_name = DName s;
     p_default = None;
   }
-
-let mk_e e = (e, Ast_php.noType())
+(* old:  e, Ast_php.noType() *)
+let mk_e e = e
 (*e: AST builder *)
 (*e: parser_php_mly_helper.ml *)

@@ -525,7 +525,7 @@ unticked_function_declaration_statement:
     if not !Flag_parsing_php.type_hints_extension && $7 <> None
     then raise Parsing.Parse_error;
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
-       f_return_type = $7;f_body = body; f_type = Ast.noFtype();
+       f_return_type = $7;f_body = body;
     })
   }
 /*(*x: GRAMMAR function declaration *)*/
@@ -911,13 +911,13 @@ expr_without_variable:
     *)*/
   | expr TOBRA dim_offset TCBRA
    { 
-     match Ast.untype $1 with
+     match $1 with
      (* Lv corresponds to Lvalue which includes function calls so 
       * foo()[1] will be translated into a 
       * VArrayAccess(FunCallSimple(...), 1).
       *)
      | Lv v ->
-         let var = mkvar (VArrayAccess (v, ($2, $3, $4))) in
+         let var = (VArrayAccess (v, ($2, $3, $4))) in
          mk_e (Lv var)
 
      (* The 'lvalue' type was originally restricted to variables and 
@@ -940,7 +940,7 @@ expr_without_variable:
       * merge the 'expr' and 'lvalue' types together.
       *)
      | _ ->
-         let var = mkvar (VArrayAccessXhp ($1, ($2, $3, $4))) in
+         let var = (VArrayAccessXhp ($1, ($2, $3, $4))) in
          mk_e (Lv var)
    }
 

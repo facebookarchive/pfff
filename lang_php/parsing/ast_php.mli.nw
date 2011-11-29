@@ -341,9 +341,14 @@ in Section~\ref{sec:ast-helper-tok}.
 \label{sec:ast-expr-var}
 
 <<AST expression>>=
-type expr = exprbis * exp_info
+(* I used to have a 'type expr = exprbis * exp_type_info' but it complicates
+ * many patterns when working on expressions, and it turns out I never 
+ * implemented the type annotater. It's easier to do such annotater on
+ * a real AST like the PIL. So just have this file be a simple concrete
+ * syntax tree and no more.
+ *)
+type expr =
   <<type exp_info>>
-  and exprbis =
   | Lv of lvalue
 
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
@@ -755,9 +760,8 @@ but far less convenient type to use.
 because XHP also relaxed some constraints.}
 
 <<AST lvalue>>=
-and lvalue = lvaluebis * lvalue_info
+and lvalue =
   <<type lvalue_info>>
-  and lvaluebis =
   <<lvaluebis constructors>>
 
   <<type lvalue aux>>
@@ -1547,16 +1551,8 @@ type parse_info = {
 \label{sec:ast-type-annot}
 
 <<type exp_info>>=
-(* semantic: *)
-and exp_info = { 
-   mutable t: Type_php.phptype;
-}
 @ 
 <<type lvalue_info>>=
-  (* semantic: *)
-  and lvalue_info = { 
-    mutable tlval: Type_php.phptype;
-  }
 @ 
 
 \begin{verbatim}
@@ -1867,8 +1863,6 @@ val untype : 'a * 'b -> 'a
 \label{sec:ast-extractor-unxxx}
 
 <<AST helpers interface>>=
-val get_type : expr -> Type_php.phptype
-val set_type : expr -> Type_php.phptype -> unit
 @ 
 
 
@@ -1881,10 +1875,7 @@ val compare_pos : info -> info -> int
 @ 
 
 <<AST helpers interface>>=
-val noType : unit -> exp_info
-val noTypeVar : unit -> lvalue_info
 val noScope : unit -> Scope_php.phpscope ref
-val noFtype : unit -> Type_php.phptype
 
 val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
 @ 

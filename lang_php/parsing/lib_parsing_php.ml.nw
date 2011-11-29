@@ -172,7 +172,7 @@ let get_vars_any any =
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       (* todo? sure ?? *)
       | Lambda def ->
           def.l_use +> Common.do_option (fun (_tok, xs) ->
@@ -256,7 +256,6 @@ let functions_methods_or_topstms_of_program prog =
  * elements like StaticArray have mapping only in expr.
 *)
 let rec static_scalar_to_expr x = 
-  let exprbis = 
     match x with
     | StaticConstant cst -> 
         Sc (C cst)
@@ -273,8 +272,6 @@ let rec static_scalar_to_expr x =
                     array_pairs_paren)
     | XdebugStaticDots ->
         failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
-  in
-  exprbis, Ast.noType ()
 
 and static_array_pair_to_array_pair x = 
   match x with
@@ -310,7 +307,7 @@ let get_vars_assignements_any recursor =
       );
 
       V.kexpr = (fun (k,vx) x ->
-        match Ast.untype x with
+        match x with
         | Assign (lval, _, e) 
         | AssignOp (lval, _, e) ->
             (* the expression itself can contain assignements *)

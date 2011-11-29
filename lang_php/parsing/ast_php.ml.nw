@@ -101,10 +101,7 @@ open Parse_info
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
-let noType () = ({ t = [Type_php.Unknown]})
-let noTypeVar () = ({ tlval = [Type_php.Unknown]})
 let noScope () = ref (Scope_code.NoScope)
-let noFtype () = ([Type_php.Unknown])
 
 let fakeInfo ?(next_to=None) str = { 
   token = FakeTokStr (str, next_to);
@@ -233,9 +230,6 @@ let compare_pos ii1 ii2 =
 @ 
 
 <<ast_php.ml>>=
-let get_type (e: expr) = (snd e).t
-let set_type (e: expr) (ty: Type_php.phptype) = 
-  (snd e).t <- ty
 @ 
 
 <<ast_php.ml>>=

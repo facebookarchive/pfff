@@ -22,44 +22,6 @@ open Ast_php
 (* Prelude *)
 (*****************************************************************************)
 
-module Type_php = struct
-open Type_php
-let rec map_phptype v = map_of_list map_phptypebis v
-and map_phptypebis =
-  function
-  | Basic v1 -> let v1 = map_basictype v1 in Basic ((v1))
-  | ArrayFamily v1 -> let v1 = map_arraytype v1 in ArrayFamily ((v1))
-  | Object vs -> let v1 = map_of_list map_of_string vs in Object ((v1))
-  | Function ((v1, v2)) ->
-      let v1 = map_of_list (map_of_option map_phptype) v1 in
-      let v2 = map_phptype v2 in
-      Function ((v1, v2))
-  | Null -> Null
-  | Resource -> Resource
-  | TypeVar v1 -> let v1 = map_of_string v1 in TypeVar ((v1))
-  | Unknown -> Unknown
-  | Top -> Top
-and map_basictype =
-  function
-  | Bool -> Bool
-  | Int -> Int
-  | Float -> Float
-  | String -> String
-  | Unit -> Unit
-and map_arraytype =
-  function
-  | Array v1 -> let v1 = map_phptype v1 in Array ((v1))
-  | Hash v1 -> let v1 = map_phptype v1 in Hash ((v1))
-  | Record v1 ->
-      let v1 =
-        map_of_list
-          (fun (v1, v2) ->
-             let v1 = map_of_string v1 and v2 = map_phptype v2 in (v1, v2))
-          v1
-      in Record ((v1))
-  
-end
-
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
@@ -120,24 +82,22 @@ let rec map_info x =
   in
   vin.kinfo (k, all_functions) x
 
-and map_tok v = map_info v
+and map_tok v = 
+  map_info v
 and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) -> 
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 and map_paren:'a. ('a -> 'a) -> 'a paren -> 'a paren = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3) 
- ->
+and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-
 and map_bracket _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-
 and map_comma_list_dots _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
-
 and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list = 
   fun _of_a xs ->
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
+
 
 and map_name =
   function
@@ -178,13 +138,7 @@ and map_ptype =
   | ObjectTy -> ObjectTy
   
 and map_expr (x) =
-  let k x =  match x with (v1, v2) ->
-
- let map_exp_info { t = v_t } =
-  let v_t = Type_php.map_phptype v_t in { t = v_t }
- in
- let map_exprbis =
-  function
+  let k x =  match x with
   | Lv v1 -> let v1 = map_variable v1 in Lv ((v1))
   | Sc v1 -> let v1 = map_scalar v1 in Sc ((v1))
   | Binary ((v1, v2, v3)) ->
@@ -300,9 +254,6 @@ and map_expr (x) =
   | SgrepExprDots v1 -> let v1 = map_info v1 in SgrepExprDots ((v1))
   | ParenExpr v1 -> let v1 = map_paren map_expr v1 in ParenExpr ((v1))
   | XhpHtml v1 -> let v1 = map_xhp_html v1 in XhpHtml ((v1))
- in
- let v1 = map_exprbis v1 and v2 = map_exp_info v2  in
- (v1, v2)
  in
  vin.kexpr (k, all_functions) x
 
@@ -481,21 +432,12 @@ and map_xhp_body =
   | XhpNested v1 -> let v1 = map_xhp_html v1 in XhpNested ((v1))
 
 
-and map_variable (v1, v2) =
-  let k x = match v1, v2 with
-    | ((v1, v2)) ->
-        
-        let v1 = map_variablebis v1 and v2 = map_var_info v2 in 
-        (v1, v2)
-  in
- vin.klvalue (k, all_functions) (v1,v2)
 
 and map_lvalue a = map_variable a
 
-and map_var_info { tlval = v_tvar } =
-  let v_tvar = Type_php.map_phptype v_tvar in { tlval = v_tvar }
-and map_variablebis =
-  function
+and map_variable x =
+  let k x = 
+    match x with
   | Var ((v1, v2)) ->
       let v1 = map_dname v1
       and v2 = map_of_ref Scope_code.map_scope v2
@@ -574,6 +516,9 @@ and map_variablebis =
       let v1 = map_variable v1
       and v2 = map_obj_access v2
       in ObjAccess ((v1, v2))
+  in
+  vin.klvalue (k, all_functions) x
+
 and map_indirect =
   function | Dollar v1 -> let v1 = map_tok v1 in Dollar ((v1))
 and map_argument =
@@ -836,10 +781,8 @@ and
                  f_name = v_f_name;
                  f_params = v_f_params;
                  f_body = v_f_body;
-                 f_type = v_f_type;
                  f_return_type = v_f_return_type;
                } =
-  let v_f_type = Type_php.map_phptype v_f_type in
   let v_f_body = map_brace (map_of_list map_stmt_and_def) v_f_body in
   let v_f_params = map_paren (map_comma_list_dots map_parameter) v_f_params in
   let v_f_name = map_name v_f_name in
@@ -853,7 +796,6 @@ and
     f_params = v_f_params;
     f_return_type = v_f_return_type;
     f_body = v_f_body;
-    f_type = v_f_type;
   }
 and
   map_parameter {

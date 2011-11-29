@@ -27,10 +27,10 @@ open Parse_info
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 extensions (e.g. closures) and support for XHP.
  * 
- * This is actually more a concrete syntax tree than an AST. This
+ * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
- * instead lang_php/analyze/foundation/pil.ml, which defines a
+ * instead lang_php/analyze/foundation/pil.ml which defines a
  * PHP Intermediate Language a la CIL.
  * 
  * NOTE: data from this type are often marshalled in berkeley DB tables
@@ -125,16 +125,14 @@ and 'a comma_list_dots =
    (* todo? Put ClassVar of dname here so can factorize some of the
     * StaticDynamicCall stuff in lvalue?
     *)
-
  and fully_qualified_class_name = name
  (*e: qualifiers *)
-
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
 (*e: AST name *)
 (* ------------------------------------------------------------------------- *)
-(* Type. This is used in Cast, but for type analysis see type_php.ml  *)
+(* Type. This is used in Cast. For type analysis see type_php.ml *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST type *)
 type ptype =
@@ -146,7 +144,6 @@ type ptype =
 
   | ArrayTy 
   | ObjectTy
-
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -155,14 +152,15 @@ type ptype =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST expression *)
-type expr = exprbis * exp_info
+(* I used to have a 'type expr = exprbis * exp_type_info' but it complicates
+ * many patterns when working on expressions, and it turns out I never 
+ * implemented the type annotater. It's easier to do such annotater on
+ * a real AST like the PIL. So just have this file be a simple concrete
+ * syntax tree and no more.
+ *)
+type expr =
   (*s: type exp_info *)
-  (* semantic: *)
-  and exp_info = { 
-     mutable t: Type_php.phptype;
-  }
   (*e: type exp_info *)
-  and exprbis =
   | Lv of lvalue
 
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
@@ -309,7 +307,6 @@ type expr = exprbis * exp_info
   (*e: type scalar and constant and encaps *)
 
   (*s: AST expression operators *)
-
    and fixOp    = Dec | Inc 
    and binaryOp    = Arith of arithOp | Logical of logicalOp 
      (*s: php concat operator *)
@@ -381,14 +378,9 @@ type expr = exprbis * exp_info
 (* Variable (which in fact also contains function calls) *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST lvalue *)
-and lvalue = lvaluebis * lvalue_info
+and lvalue =
   (*s: type lvalue_info *)
-    (* semantic: *)
-    and lvalue_info = { 
-      mutable tlval: Type_php.phptype;
-    }
   (*e: type lvalue_info *)
-  and lvaluebis =
   (*s: lvaluebis constructors *)
     | Var of dname * 
      (*s: scope_php annotation *)
@@ -445,7 +437,8 @@ and lvalue = lvaluebis * lvalue_info
       | Arg    of expr
       | ArgRef of tok * w_variable
   (*x: type lvalue aux *)
-    and obj_access = tok (* -> *) * obj_property * argument comma_list paren option
+    and obj_access = 
+     tok (* -> *) * obj_property * argument comma_list paren option
 
     and obj_property = 
       | ObjProp of obj_dim
@@ -474,7 +467,7 @@ and w_variable = lvalue
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST statement *)
-(* by introducing Lambda, expr and stmt are now mutually recursive *)
+(* By introducing Lambda, expr and stmt are now mutually recursive *)
 and stmt = 
   (*s: stmt constructors *)
     | ExprStmt of expr * tok (* ; *)
@@ -589,8 +582,6 @@ and func_def = {
   f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
   (*s: f_type mutable field *)
-  (* semantic: *)
-  mutable f_type: Type_php.phptype; 
   (*e: f_type mutable field *)
 }
   (*s: AST function definition rest *)
@@ -749,7 +740,9 @@ and trait_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
-(* todo *)
+(* todo: as and insteadof, but those are bad features ... noone should
+ * use them.
+ *)
 and trait_rule = unit
 
 (*e: AST class definition *)
@@ -825,9 +818,7 @@ and toplevel =
   (*x: toplevel constructors *)
     | FinalDef of info (* EOF *)
   (*e: toplevel constructors *)
-
  and program = toplevel list
-
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -901,10 +892,7 @@ type any =
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
-let noType () = ({ t = [Type_php.Unknown]})
-let noTypeVar () = ({ tlval = [Type_php.Unknown]})
 let noScope () = ref (Scope_code.NoScope)
-let noFtype () = ([Type_php.Unknown])
 
 let fakeInfo ?(next_to=None) str = { 
   token = FakeTokStr (str, next_to);
@@ -957,7 +945,6 @@ let unmodifiers class_vars =
   | VModifiers xs -> List.map unwrap xs
 
 (*x: ast_php.ml *)
-let untype (e, xinfo) = e
 (*x: ast_php.ml *)
 let parse_info_of_info = Parse_info.parse_info_of_info
 (*x: ast_php.ml *)
@@ -978,7 +965,6 @@ let string_of_info ii =
   Parse_info.string_of_parse_info (parse_info_of_info ii)
 
 let is_origintok = Parse_info.is_origintok
-
 
 type posrv = Parse_info.posrv
 
@@ -1014,11 +1000,7 @@ let compare_pos ii1 ii2 =
       |	0 -> compare o1 o2
       |	1 -> 1
       | _ -> raise Impossible
-
 (*x: ast_php.ml *)
-let get_type (e: expr) = (snd e).t
-let set_type (e: expr) (ty: Type_php.phptype) = 
-  (snd e).t <- ty
 (*x: ast_php.ml *)
 (*****************************************************************************)
 (* Abstract line *)

@@ -231,7 +231,7 @@ let get_funcalls_any any =
   let hooks = { V.default_visitor with
     (* TODO if nested function ??? still wants to report ? *)
     V.klvalue = (fun (k,vx) x ->
-      match untype x with
+      match x with
       | FunCallSimple (callname, args) ->
           let str = Ast_php.name callname in
           Hashtbl.replace h str true;
@@ -273,7 +273,7 @@ let get_funcvars_any any =
   let hooks = { V.default_visitor with
 
     V.klvalue = (fun (k,vx) x ->
-      match untype x with
+      match x with
       | FunCallVar (qu_opt, var, args) ->
           (* TODO enough ? what about qopt ? 
            * and what if not directly a Var ?
@@ -281,7 +281,7 @@ let get_funcvars_any any =
            * and what about call_user_func ? should be
            * transformed at parsing time into a FunCallVar ?
            *)
-          (match untype var with
+          (match var with
           | Var (dname, _scope) ->
               let str = Ast_php.dname dname in
               Hashtbl.replace h str true;
@@ -324,13 +324,13 @@ let get_returns_any any =
 let get_vars_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | Var (dname, _scope) ->
           Common.push2 dname aref
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       (* todo? sure ?? *)
       | Lambda def ->
           def.l_use +> Common.do_option (fun (_tok, xs) ->
@@ -414,7 +414,6 @@ let functions_methods_or_topstms_of_program prog =
  * elements like StaticArray have mapping only in expr.
 *)
 let rec static_scalar_to_expr x = 
-  let exprbis = 
     match x with
     | StaticConstant cst -> 
         Sc (C cst)
@@ -431,8 +430,6 @@ let rec static_scalar_to_expr x =
                     array_pairs_paren)
     | XdebugStaticDots ->
         failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
-  in
-  exprbis, Ast.noType ()
 
 and static_array_pair_to_array_pair x = 
   match x with
@@ -468,7 +465,7 @@ let get_vars_assignements_any recursor =
       );
 
       V.kexpr = (fun (k,vx) x ->
-        match Ast.untype x with
+        match x with
         | Assign (lval, _, e) 
         | AssignOp (lval, _, e) ->
             (* the expression itself can contain assignements *)
@@ -476,7 +473,7 @@ let get_vars_assignements_any recursor =
             
             (* for now we handle only simple direct assignement to simple
              * variables *)
-            (match Ast.untype lval with
+            (match lval with
             | Var (dname, _scope) ->
                 let s = Ast.dname dname in
                 Common.push2 (s, e) aref;

@@ -108,14 +108,15 @@ type ptype =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST expression *)
-type expr = exprbis * exp_info
+(* I used to have a 'type expr = exprbis * exp_type_info' but it complicates
+ * many patterns when working on expressions, and it turns out I never 
+ * implemented the type annotater. It's easier to do such annotater on
+ * a real AST like the PIL. So just have this file be a simple concrete
+ * syntax tree and no more.
+ *)
+type expr =
   (*s: type exp_info *)
-  (* semantic: *)
-  and exp_info = { 
-     mutable t: Type_php.phptype;
-  }
   (*e: type exp_info *)
-  and exprbis =
   | Lv of lvalue
 
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
@@ -334,14 +335,9 @@ type expr = exprbis * exp_info
 (* Expression bis, lvalue *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST lvalue *)
-and lvalue = lvaluebis * lvalue_info
+and lvalue =
   (*s: type lvalue_info *)
-    (* semantic: *)
-    and lvalue_info = { 
-      mutable tlval: Type_php.phptype;
-    }
   (*e: type lvalue_info *)
-  and lvaluebis =
   (*s: lvaluebis constructors *)
     | Var of dname * 
      (*s: scope_php annotation *)
@@ -542,8 +538,6 @@ and func_def = {
   f_return_type: hint_type option;
   f_body: stmt_and_def list brace;
   (*s: f_type mutable field *)
-  (* semantic: *)
-  mutable f_type: Type_php.phptype; 
   (*e: f_type mutable field *)
 }
   (*s: AST function definition rest *)
@@ -886,20 +880,14 @@ val unarg: argument -> expr
 val unmodifiers: class_var_modifier -> modifier list
 val unargs: argument comma_list -> expr list * w_variable list 
 (*x: AST helpers interface *)
-val untype : 'a * 'b -> 'a
 (*x: AST helpers interface *)
-val get_type : expr -> Type_php.phptype
-val set_type : expr -> Type_php.phptype -> unit
 (*x: AST helpers interface *)
 val rewrap_str : string -> info -> info
 val is_origintok : info -> bool
 val al_info : info -> info
 val compare_pos : info -> info -> int
 (*x: AST helpers interface *)
-val noType : unit -> exp_info
-val noTypeVar : unit -> lvalue_info
 val noScope : unit -> Scope_php.phpscope ref
-val noFtype : unit -> Type_php.phptype
 
 val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
 (*e: AST helpers interface *)

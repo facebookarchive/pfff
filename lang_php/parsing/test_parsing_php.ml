@@ -128,7 +128,7 @@ let test_visit_php file =
     );
 
     Visitor_php.kexpr = (fun (k, vx) e -> 
-      match fst e with
+      match e with
       | Ast_php.Sc x ->
           pr2 "scalar";
           k e

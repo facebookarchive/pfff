@@ -88,14 +88,7 @@ let vof_ptype =
   | ArrayTy -> Ocaml.VSum (("ArrayTy", []))
   | ObjectTy -> Ocaml.VSum (("ObjectTy", []))
   
-let rec vof_expr (v1, v2) =
-  let v1 = vof_exprbis v1 and v2 = vof_exp_info v2 in Ocaml.VTuple [ v1; v2 ]
-and vof_exp_info { t = v_t } =
-  let bnds = [] in
-  let arg = Type_php.vof_phptype v_t in
-  let bnd = ("t", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_exprbis =
-  function
+let rec vof_expr = function
   | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | Sc v1 -> let v1 = vof_scalar v1 in Ocaml.VSum (("Sc", [ v1 ]))
   | Binary ((v1, v2, v3)) ->
@@ -433,16 +426,7 @@ and vof_xhp_body =
   | XhpNested v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpNested", [ v1 ]))
 and vof_lvalue x = vof_variable x
-and vof_variable (v1, v2) =
-  let v1 = vof_variablebis v1
-  and v2 = vof_var_info v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_var_info { tlval = v_tvar } =
-  let bnds = [] in
-  let arg = Type_php.vof_phptype v_tvar in
-  let bnd = ("tvar", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_variablebis =
-  function
+and vof_variable = function
   | Var ((v1, v2)) ->
       let v1 = vof_dname v1
       and v2 = vof_ref Scope_code.vof_scope v2
@@ -802,12 +786,8 @@ and
                  f_params = v_f_params;
                  f_return_type = v_f_return_type;
                  f_body = v_f_body;
-                 f_type = v_f_type
                } =
   let bnds = [] in
-  let arg = Type_php.vof_phpfunction_type v_f_type in
-  let bnd = ("f_type", arg) in
-  let bnds = bnd :: bnds in
   let arg = vof_brace (vof_list vof_stmt_and_def) v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in

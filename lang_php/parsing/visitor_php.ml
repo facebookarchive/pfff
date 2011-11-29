@@ -51,12 +51,6 @@ open Scope_php
 let v_phpscope x = ()
 end
 
-module Type_php = struct
-open Type_php
-(* TODO ? need visitor for type ? *)
-let v_phptype x = ()
-end
-
 (* todo? why don't use the one in Ocaml.ml ? because it generates
  * a compilation error :(
  *)
@@ -243,13 +237,7 @@ and v_fully_qualified_class_name v =
   
 and v_expr (x: expr) = 
   (* tweak *)
-  let k x =  match x with (v1, v2) ->
-
-  let v_exp_info { t = v_t } = let arg = Type_php.v_phptype v_t in ()
-  in
-
-  let v_exprbis =
-  function
+  let k x =  match x with
   | Lv v1 -> let v1 = v_variable v1 in ()
   | Sc v1 -> let v1 = v_scalar v1 in ()
   | Assign ((v1, v2, v3)) ->
@@ -337,8 +325,6 @@ and v_expr (x: expr) =
 
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
 
-  in
-  let v1 = v_exprbis v1 and v2 = v_ref v_exp_info v2 in ()
   in
   vin.kexpr (k, all_functions) x 
 and
@@ -558,19 +544,10 @@ and v_xhp_body =
   | XhpExpr v1 -> let v1 = v_brace v_expr v1 in ()
   | XhpNested v1 -> let v1 = v_xhp_html v1 in ()
 
-and v_variable (v1, v2) =
-  let k x = match v1, v2 with
-  | ((v1, v2)) ->
-
-      let v1 = v_variablebis v1 and v2 = v_var_info v2 in ()
- in
- vin.klvalue (k, all_functions) (v1,v2)
-
 and v_lvalue x = v_variable x
 
-and v_var_info { tlval = v_tvar } = let arg = Type_php.v_phptype v_tvar in ()
-and v_variablebis =
-  function
+and v_variable x =
+  let k x = match x with
   | Var ((v1, v2)) ->
       let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
   | This v1 -> let v1 = v_tok v1 in ()
@@ -628,6 +605,9 @@ and v_variablebis =
       let v1 = v_variable v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
   | ObjAccess ((v1, v2)) ->
       let v1 = v_variable v1 and v2 = v_obj_access v2 in ()
+ in
+  vin.klvalue (k, all_functions) x
+
 and v_argument x =
   let rec k = function
   | Arg v1 -> let v1 = v_expr v1 in ()
@@ -872,7 +852,6 @@ and
                f_params = v_f_params;
                f_body = v_f_body;
                f_return_type = v_f_return_type;
-               f_type = v_f_type;
              } ->
   let arg = v_tok v_f_tok in 
   let arg = v_is_ref v_f_ref in 
@@ -880,7 +859,6 @@ and
   let arg = v_parameters v_f_params in
   let arg = v_body v_f_body in
   let arg = v_option v_hint_type v_f_return_type in
-  let arg = Type_php.v_phptype v_f_type in
   ()
   in
   vin.kfunc_def (k, all_functions) x
