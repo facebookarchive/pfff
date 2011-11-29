@@ -188,20 +188,11 @@ let rec v_info x  =
   in
   vin.kinfo (k, all_functions) x
 
-(* todo: 3.12: could use polymorphic recursion instead of those ugly
- * functions. Just write v_wrap: 'a. 'a wrap -> unit
+(* since ocaml 3.12 we can now use polymorphic recursion instead of having
+ * to duplicate the same function again and again.
  *)
-and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap3 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap4 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap5 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap6 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap7 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap8 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap9 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap10 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap11 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
+and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) -> 
+  let v1 = _of_a v1 and v2 = v_info v2 in ()
 
 and v_tok v = v_info v
 
@@ -367,7 +358,7 @@ and v_name = function
 and v_dname = function | DName v1 -> let v1 = v_wrap v_string v1 in ()
 and v_xhp_tag v = v_list v_string v
 and v_xhp_tag_wrap x =
-  let k v = v_wrap9 v_xhp_tag v in
+  let k v = v_wrap v_xhp_tag v in
   vin.kxhp_tag (k, all_functions) x
 
 and v_qualifier v = 
@@ -418,19 +409,19 @@ and v_expr (x: expr) =
       in ()
   | AssignOp ((v1, v2, v3)) ->
       let v1 = v_variable v1
-      and v2 = v_wrap2 v_assignOp v2
+      and v2 = v_wrap v_assignOp v2
       and v3 = v_expr v3
       in ()
   | Postfix ((v1, v2)) ->
-      let v1 = v_rw_variable v1 and v2 = v_wrap3 v_fixOp v2 in ()
+      let v1 = v_rw_variable v1 and v2 = v_wrap v_fixOp v2 in ()
   | Infix ((v1, v2)) ->
-      let v1 = v_wrap3 v_fixOp v1 and v2 = v_rw_variable v2 in ()
+      let v1 = v_wrap v_fixOp v1 and v2 = v_rw_variable v2 in ()
   | Binary ((v1, v2, v3)) ->
       let v1 = v_expr v1
-      and v2 = v_wrap4 v_binaryOp v2
+      and v2 = v_wrap v_binaryOp v2
       and v3 = v_expr v3
       in ()
-  | Unary ((v1, v2)) -> let v1 = v_wrap5 v_unaryOp v1 and v2 = v_expr v2 in ()
+  | Unary ((v1, v2)) -> let v1 = v_wrap v_unaryOp v1 and v2 = v_expr v2 in ()
   | CondExpr ((v1, v2, v3, v4, v5)) ->
       let v1 = v_expr v1
       and v2 = v_tok v2
@@ -457,7 +448,7 @@ and v_expr (x: expr) =
       and v2 = v_tok v2
       and v3 = v_class_name_reference v3
       in ()
-  | Cast ((v1, v2)) -> let v1 = v_wrap6 v_castOp v1 and v2 = v_expr v2 in ()
+  | Cast ((v1, v2)) -> let v1 = v_wrap v_castOp v1 and v2 = v_expr v2 in ()
   | CastUnset ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Exit ((v1, v2)) ->
       let v1 = v_tok v1
@@ -554,7 +545,7 @@ and v_constant x =
   | Double v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | CName v1 -> let v1 = v_name v1 in ()
-  | PreProcess v1 -> let v1 = v_wrap7 v_cpp_directive v1 in ()
+  | PreProcess v1 -> let v1 = v_wrap v_cpp_directive v1 in ()
   | XdebugClass ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_class_stmt v2 in ()
   | XdebugResource -> ()
@@ -673,7 +664,7 @@ and v_xhp_html x =
       and v2 = v_list v_xhp_attribute v2
       and v3 = v_tok v3
       and v4 = v_list v_xhp_body v4
-      and v5 = v_wrap11 (v_option v_xhp_tag) v5
+      and v5 = v_wrap (v_option v_xhp_tag) v5
       in ()
    | XhpSingleton ((v1, v2, v3)) ->
       let v1 = v_xhp_tag_wrap v1
@@ -1163,7 +1154,7 @@ and v_class_constant (v1, v2) =
 and v_class_var_modifier =
   function
   | NoModifiers v1 -> let v1 = v_tok v1 in ()
-  | VModifiers v1 -> let v1 = v_list (v_wrap8 v_modifier) v1 in ()
+  | VModifiers v1 -> let v1 = v_list (v_wrap v_modifier) v1 in ()
 and v_class_variable (v1, v2) =
   let v1 = v_dname v1 and v2 = v_option v_static_scalar_affect v2 in ()
 and
@@ -1178,7 +1169,7 @@ and
                  m_body = v_m_body;
                  m_return_type = v_m_return_type;
                } ->
-  let arg = v_list (v_wrap8 v_modifier) v_m_modifiers in 
+  let arg = v_list (v_wrap v_modifier) v_m_modifiers in 
   let arg = v_tok v_m_tok in
   let arg = v_is_ref v_m_ref in
   let arg = v_name v_m_name in
