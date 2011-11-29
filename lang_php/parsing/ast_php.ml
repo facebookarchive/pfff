@@ -47,7 +47,6 @@ open Parse_info
  * file, or to only add new constructors.
  * 
  * todo: 
- *  - remove TraitNestedDef
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def?
  *  - unify expr and lvalue?
@@ -625,7 +624,7 @@ and lambda_def = {
  * didn't allow certain forms of statements (methods with a body), but
  * with the introduction of traits, it does not make that much sense
  * to be so specific, so I factorized things. Classes/interfaces/traits
- * are not that different.
+ * are not that different. Interfaces are really just abstract traits.
  *)
 and class_def = {
   c_type: class_type;
