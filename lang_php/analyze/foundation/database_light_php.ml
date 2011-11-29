@@ -53,7 +53,6 @@ let mk_entity ~root id nb_users good_example_ids properties db =
       | E.Function -> Db.Function
       | E.Class -> Db.Class
       | E.Method -> Db.Method
-      | E.StaticMethod -> Db.StaticMethod
       | (E.IdMisc|E.XhpDecl|E.ClassVariable|E.ClassConstant|E.StmtList) ->
           raise Impossible
 
@@ -96,7 +95,6 @@ let is_id_with_entity id db =
   match DbPHP.kind_of_id id db with
   | Entity_php.Function
   | Entity_php.Method
-  | Entity_php.StaticMethod  
   | Entity_php.Class
     -> 
       true
@@ -229,7 +227,6 @@ let database_code_from_php_database ?(verbose=false) db =
       match id_kind with
       | Entity_php.Function
       | Entity_php.Method
-      | Entity_php.StaticMethod  
         ->
           let callers = DbPHP.callers_of_id id db 
             +> List.map Callgraph_php.id_of_callerinfo in

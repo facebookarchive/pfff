@@ -51,16 +51,12 @@ let name_id id db =
     let id_kind = db.Db.defs.Db.id_kind#assoc id in
 
     (match id_kind with
-    | EC.Method | EC.StaticMethod 
-    | EC.ClassConstant | EC.ClassVariable 
-    | EC.XhpDecl
-      ->
+    | EC.Method | EC.ClassConstant | EC.ClassVariable  | EC.XhpDecl ->
         (match Db.class_or_interface_id_of_nested_id_opt id db with
         | Some id_class -> 
             let sclass = Db.name_of_id id_class db in
             (match id_kind with
             | EC.Method ->       spf "('%s','%s')" sclass s
-            | EC.StaticMethod -> spf "('%s','%s')" sclass s
 
             | EC.ClassVariable ->
                 (* remove the $ because in use-mode we don't use the $ *)
@@ -93,7 +89,7 @@ let string_of_id_kind = function
   (* the interface/1 trait/1 predicate will precise things *)
   | EC.Class -> "class"
   (* the static/1 predicate will say if static method (or class var) *)
-  | EC.Method | EC.StaticMethod -> "method"
+  | EC.Method -> "method"
 
   | EC.ClassConstant -> "constant"
   | EC.ClassVariable -> "field"
@@ -294,7 +290,7 @@ let add_defs_and_uses id kind ast pr db =
       | _ -> ()
       );
             
-  | (EC.Method | EC.StaticMethod), MethodE def -> 
+  | EC.Method, MethodE def -> 
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.m_params +> Ast.unparen +> Ast.uncomma_dots)));
       def.m_modifiers +> List.iter (fun (m, _) -> 

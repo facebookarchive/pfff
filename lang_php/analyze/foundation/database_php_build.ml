@@ -84,6 +84,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
     | Entity_php.Function ->
         Db.function_ids__of_string s db 
         +> List.map (fun id -> Db.ast_of_id id db)
+(*
     | Entity_php.StaticMethod ->
         if s =~ "\\(.*\\)::\\(.*\\)"
         then
@@ -92,6 +93,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
           +> List.map (fun id -> Db.ast_of_id id db)
         else
           failwith ("wong static method format: " ^ s)
+*)
     | _ ->
         raise Todo
     )
@@ -288,12 +290,14 @@ let index_db2_2 db =
             let newid = add_nested_id_and_ast  ~enclosing_id:!enclosing_id
               (Ast_php.MethodE def) db in
             let s = Ast_php.name def.m_name in
-            let id_kind = 
+            let id_kind = EC.Method
+              (*
               if def.m_modifiers |> List.exists (fun (modifier, ii) -> 
                 modifier = Ast.Static
               )
               then EC.StaticMethod
               else EC.Method
+              *)
             in
             (* todo? should we put just the method name, or also add 
              * the class name for the StaticMethod case ? 

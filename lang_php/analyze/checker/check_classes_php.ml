@@ -78,7 +78,7 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
   | Not_found ->
       (match context with
       | StaticCall -> 
-          E.fatal loc (E.UndefinedEntity (Ent.StaticMethod, amethod))
+          E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
       | MethodCall false -> 
           E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
       | MethodCall true -> 

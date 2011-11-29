@@ -491,8 +491,7 @@ let callees_of_id id db =
   with Not_found -> []
 
 let callers_of_id id db =
-  if not (List.mem (db.defs.id_kind#assoc id) 
-             [EC.Function; EC.Method; EC.StaticMethod])
+  if not (List.mem (db.defs.id_kind#assoc id) [EC.Function; EC.Method])
   then failwith "callers_of_id expect the id of a function or method";
 
   try
@@ -578,10 +577,7 @@ let complete_name_of_id id db =
     let id_kind = db.defs.id_kind#assoc id in
 
     (match id_kind with
-    | EC.Method | EC.StaticMethod 
-    | EC.ClassConstant | EC.ClassVariable 
-    | EC.XhpDecl
-      ->
+    | EC.Method | EC.ClassConstant | EC.ClassVariable  | EC.XhpDecl ->
 
         (match classdef_of_nested_id_opt id db with
         | Some def -> 
@@ -590,8 +586,7 @@ let complete_name_of_id id db =
             (match id_kind with
             | EC.Method ->
                 spf "%s->%s" sclass s
-            | EC.StaticMethod ->
-                spf "%s::%s" sclass s
+            (* todo?  EC.StaticMethod -> spf "%s::%s" sclass s *)
 
             (* todo? something special ? *)
             | EC.ClassConstant | EC.ClassVariable 
@@ -669,9 +664,6 @@ let functions_in_db db = filter_ids_in_db [EC.Function] db
 let classes_in_db db = filter_ids_in_db [EC.Class] db
 let methods_in_db db = filter_ids_in_db [EC.Method] db
 
-let functions_or_static_methods_in_db db = 
-  filter_ids_in_db [EC.Function;EC.StaticMethod] db
-
 let is_function_id id db = 
   try 
     let kind = db.defs.id_kind#assoc id in
@@ -705,8 +697,7 @@ let id_of_method ~theclass:sclass smethod db =
   let methods = 
     children +> List.filter (fun id ->
       let kind = db.defs.id_kind#assoc id in
-      (kind = EC.Method || kind = EC.StaticMethod) && 
-          db.defs.id_name#assoc id =$= smethod
+      (kind = EC.Method) && db.defs.id_name#assoc id =$= smethod
     )
   in
   Common.list_to_single_or_exn methods
@@ -720,6 +711,7 @@ let id_of_method ~theclass:sclass smethod db =
  *
  * todo? should factorize all those id_of_xxx and xxx_ids_of_string stuff 
  *)
+(*
 let rec static_function_ids_of_strings ~theclass smethod db = 
   let idclasses = class_ids_of_string theclass db in
 
@@ -751,7 +743,7 @@ let rec static_function_ids_of_strings ~theclass smethod db =
 
     else candidates
   ) |> List.flatten
-    
+*)
 
 let id_of_kind_call ?(file_disambiguator="") call db = 
   match call with

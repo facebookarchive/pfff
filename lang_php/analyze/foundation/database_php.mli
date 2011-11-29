@@ -276,9 +276,11 @@ val id_of_function: string -> database -> id_function
 val id_of_class:    string -> database -> id_class
 val id_of_method:   theclass:string -> string -> database -> id_method
 
+(* used by the build entity finder when looking for static method *)
+(*
 val static_function_ids_of_strings: 
   theclass:string -> string -> database -> id list
-
+*)
 
 (* get all entities *)
 val filter_ids_in_db: 
@@ -288,9 +290,10 @@ val functions_in_db: database -> (string, id_function list) Common.assoc
 val classes_in_db: database -> (string, id_class list) Common.assoc
 val methods_in_db: database -> (string, id_method list) Common.assoc
 
+(*
 val functions_or_static_methods_in_db: 
   database -> (string, id list) Common.assoc
-
+*)
 
 val id_of_phpname:   Ast_php.name -> database -> id
 

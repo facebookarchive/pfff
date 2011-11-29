@@ -75,20 +75,16 @@ type fullid = filepos
  *)
 type id_kind =
   (* toplevels, which can also be nested *)
-
   | Function
   | Class
   | StmtList 
 
   (* only at nested level, inside a class *)
-
   (* StaticMethod could be considered a Function, because in PHP they
    * mostly use static methods because PHP (5.2) didn't have namespace and
    * so they abuse classes for modules.
    *)
-  | Method | StaticMethod
-  | ClassConstant | ClassVariable
-  | XhpDecl
+  | Method | ClassConstant | ClassVariable | XhpDecl
 
   | IdMisc
 
@@ -137,7 +133,6 @@ let string_of_id_kind = function
   | Method -> "method"
   | ClassConstant -> "classConstant" | ClassVariable -> "classVariable"
   | XhpDecl -> "xhpDecl"
-  | StaticMethod -> "staticMethod"
   | IdMisc -> "idmisc"
 
 (*****************************************************************************)

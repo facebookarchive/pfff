@@ -413,7 +413,11 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
             * id.
             *)
            | N.NameQualifiedS (sclass, smethod) ->
+               (* TODO *)
+               []
+               (*
                Db.static_function_ids_of_strings ~theclass:sclass smethod db
+               *)
          in
          let s = N.nameS name in
          if null candidates && !Flag.show_analyze_error

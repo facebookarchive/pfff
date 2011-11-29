@@ -16,8 +16,7 @@ type id_kind =
   | StmtList 
 
   (* only at nested level, inside a class *)
-  | Method | StaticMethod 
-  | ClassConstant | ClassVariable | XhpDecl
+  | Method | ClassConstant | ClassVariable | XhpDecl
 
   | IdMisc
 
