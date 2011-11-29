@@ -171,14 +171,12 @@ let keyword_table = Common.hash_of_list [
   "unset",           (fun ii -> T_UNSET ii);
   "isset",           (fun ii -> T_ISSET ii);
  (*e: repetitive keywords table *)
-
-  "__halt_compiler", (fun ii -> T_HALT_COMPILER ii);
-
   "__line__", (fun ii -> T_LINE ii); 
   "__file__", (fun ii -> T_FILE ii); "__dir__",   (fun ii -> T_DIR ii);
   "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
   "__class__",  (fun ii -> T_CLASS_C ii);" __trait__", (fun ii ->T_TRAIT_C ii);
 
+  (* old: "__halt_compiler", (fun ii -> T_HALT_COMPILER ii); *)
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
 

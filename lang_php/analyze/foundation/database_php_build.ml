@@ -213,7 +213,7 @@ let index_db2_2 db =
               db.strings#add2 (s, ());
           | _ -> ()
         );
-    | ( FinalDef _|Halt _
+    | ( FinalDef _
       | InterfaceDef _|ClassDef _|FuncDef _ | TraitDef _
       | StmtList _)
         -> ()
@@ -265,7 +265,6 @@ let index_db2_2 db =
             add_def (s, EC.Trait, id, Some def.t_name) db;
             k x
 
-        | Halt _ -> ()
         | NotParsedCorrectly _ -> ()
             
         (* right now FinalDef are not in the database, because of possible 

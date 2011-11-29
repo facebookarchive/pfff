@@ -289,8 +289,7 @@ let rec toplevel env st acc =
       let _, _, end_ = id.t_body in
       let acc = add_stmt_comments env acc (line_of_info end_) in
       A.TraitDef (trait_def env id) :: acc
-  | Halt _
-  | NotParsedCorrectly _ -> assert false
+  | NotParsedCorrectly _ -> raise Common.Impossible
 
 and stmt env st acc =
   let line = last_line_of_stmt st in

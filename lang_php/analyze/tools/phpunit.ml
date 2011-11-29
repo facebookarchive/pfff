@@ -360,7 +360,7 @@ let (find_testcase_class_if_any:
                
 
        | StmtList _ | FuncDef _ | InterfaceDef _ | TraitDef _  -> None
-       | Halt _ | FinalDef _ -> None
+       | FinalDef _ -> None
        | NotParsedCorrectly infos ->
            let info = List.hd infos in
            let file = Ast.file_of_info info in

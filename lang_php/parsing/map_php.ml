@@ -182,8 +182,6 @@ and map_paren11 _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_paren12 _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_paren13 _of_a (v1, v2, v3) =
-  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_paren16 _of_a (v1, v2, v3) =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 
@@ -1288,11 +1286,6 @@ and map_toplevel =
   | ClassDef v1 -> let v1 = map_class_def v1 in ClassDef ((v1))
   | InterfaceDef v1 -> let v1 = map_interface_def v1 in InterfaceDef ((v1))
   | TraitDef v1 -> let v1 = map_trait_def v1 in TraitDef v1
-  | Halt ((v1, v2, v3)) ->
-      let v1 = map_tok v1
-      and v2 = map_paren13 map_of_unit v2
-      and v3 = map_tok v3
-      in Halt ((v1, v2, v3))
   | NotParsedCorrectly v1 ->
       let v1 = map_of_list map_info v1 in NotParsedCorrectly ((v1))
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))

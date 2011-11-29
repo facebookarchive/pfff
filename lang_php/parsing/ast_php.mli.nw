@@ -1398,11 +1398,8 @@ and toplevel =
   | ClassDef of class_def
   | InterfaceDef of interface_def
   | TraitDef of trait_def
+(* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
 @ 
-<<toplevel constructors>>=
-  | Halt of tok * unit paren * tok (* __halt__ ; *)
-@ 
-
 %  (* TODO? Define by lifting it up from a regular function call? *)
 
 <<toplevel constructors>>=
@@ -1412,8 +1409,6 @@ and toplevel =
 <<toplevel constructors>>=
   | FinalDef of info (* EOF *)
 @ 
-
-
 
 <<AST statement bis>>=
 (* Was originally called toplevel, but for parsing reasons and estet I think

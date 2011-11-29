@@ -2877,15 +2877,6 @@ and m_toplevel a b =
        A.TraitDef(a1),
        B.TraitDef(b1)
     ))
-  | A.Halt(a1, a2, a3), B.Halt(b1, b2, b3) ->
-    m_tok a1 b1 >>= (fun (a1, b1) -> 
-    (m_paren m_unit) a2 b2 >>= (fun (a2, b2) -> 
-    m_tok a3 b3 >>= (fun (a3, b3) -> 
-    return (
-       A.Halt(a1, a2, a3),
-       B.Halt(b1, b2, b3)
-    )
-    )))
   | A.NotParsedCorrectly(a1), B.NotParsedCorrectly(b1) ->
     (m_list m_info) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2905,7 +2896,6 @@ and m_toplevel a b =
   | A.ClassDef _, _
   | A.InterfaceDef _, _
   | A.TraitDef _, _
-  | A.Halt _, _
   | A.NotParsedCorrectly _, _
   | A.FinalDef _, _
    -> fail ()

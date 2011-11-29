@@ -1206,11 +1206,6 @@ and vof_toplevel =
       let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceDef", [ v1 ]))
   | TraitDef v1 ->
       let v1 = vof_trait_def v1 in Ocaml.VSum (("TraitDef", [ v1 ]))
-  | Halt ((v1, v2, v3)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_paren vof_unit v2
-      and v3 = vof_tok v3
-      in Ocaml.VSum (("Halt", [ v1; v2; v3 ]))
   | NotParsedCorrectly v1 ->
       let v1 = vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))

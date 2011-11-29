@@ -284,8 +284,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | StmtList _ ->
           k x
-      | Halt (_, _, _) ->
-          k x
       | NotParsedCorrectly _ -> 
           (* handled later *)
           ()
@@ -927,8 +925,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_CLASS ii -> tag ii KeywordObject
       | T.T_TRAIT ii -> tag ii KeywordObject
       | T.T_INSTEADOF ii -> tag ii KeywordObject
-
-      | T.T_HALT_COMPILER ii -> tag ii Builtin
 
       | T.T_EMPTY ii -> tag ii Builtin
       | T.T_ISSET ii -> tag ii Builtin

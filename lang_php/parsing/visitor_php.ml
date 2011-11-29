@@ -1284,8 +1284,6 @@ and v_toplevel x =
   | InterfaceDef v1 -> let v1 = v_interface_def v1 in ()
   | TraitDef v1 -> let v1 = v_trait_def v1 in ()
 
-  | Halt ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_paren16 v_unit v2 and v3 = v_tok v3 in ()
   | NotParsedCorrectly xs ->
       v_list v_info xs
   | FinalDef v1 ->

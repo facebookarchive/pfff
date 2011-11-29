@@ -148,7 +148,6 @@ let unsugar_self_parent_toplevel x =
   match x with
   | StmtList _ 
   | FuncDef _ 
-  | Halt _
   | NotParsedCorrectly _
   | FinalDef _
   (* interface should not contain code so can skip that too *)
