@@ -431,41 +431,34 @@ let index_db_glimpse db =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files [(dir ^ "/")] in
 
   (* todo? glimpse sub parts ? marshall ast, pack ? *)
-
   Glimpse.glimpseindex_files files 
     (glimpse_metapath_of_database db);
   ()
 
 (*
     ?(use_glimpse=false) 
-
     if phase >= 2 && use_glimpse && db.db_support <> Db.Mem  
     then index_db_glimpse db;
 ...
   "-index_db_glimpse", "   <db>", 
     Common.mk_action_1_arg (fun dbname -> 
       with_db ~metapath:dbname index_db_glimpse);
-
 ...
     (* perform some initialization on db ? populate with a few facts ? *)
     if use_glimpse && db.db_support <> Db.Mem 
     then Glimpse.check_have_glimpse ();
-
-
 *)
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
-
   "-index_db_xdebug", "   <db> <dumpfile>", 
     Common.mk_action_2_arg (fun dbname dumpfile -> 
       with_db ~metapath:dbname (fun db -> index_db_xdebug db dumpfile));
-
   "-index_db_includes_requires", "   <db>", 
     Common.mk_action_1_arg (fun dbname -> 
       with_db ~metapath:dbname (fun db -> index_db_includes_requires2 None db)
     );
-
 ]
