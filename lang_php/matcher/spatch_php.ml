@@ -41,6 +41,12 @@ module PI = Parse_info
  * the function call is the second argument of a call to
  * foo where its first argument is 2.
  * 
+ * 
+ * todo: can we produce syntactically incorrect code? Yes.
+ * Also now that static_scalar is actually a scalar, one could
+ * do - 1 + foo() which should not be allowed. But there are many
+ * things in spatch we actually allow (we don't really look at the + part),
+ * so ...
  *)
 
 (*****************************************************************************)
