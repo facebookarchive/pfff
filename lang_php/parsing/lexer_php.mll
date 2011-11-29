@@ -16,7 +16,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common 
 
 (*s: basic pfff module open and aliases *)
@@ -25,17 +24,15 @@ open Ast_php
 module Ast = Ast_php
 module Flag = Flag_parsing_php
 (*e: basic pfff module open and aliases *)
-
 open Parser_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* The PHP lexer.
  *
  * There are a few tricks to go around ocamllex restrictions
- * because PHP has different lexing rules depending on some "context"
+ * because PHP has different lexing rules depending on some "contexts"
  * (similar to Perl, e.g. the <<<END context).
  *)
 
@@ -62,7 +59,6 @@ let yyless n lexbuf =
 (*x: lexer helpers *)
 let tok lexbuf = 
   Lexing.lexeme lexbuf
-
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
@@ -71,20 +67,15 @@ let tok_add_s s ii  =
   Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
 (*e: lexer helpers *)
 
-
 let xhp_or_t_ident ii fii = 
   if !Flag.xhp_builtin 
   then fii ii 
-  else 
-    let s = Ast.str_of_info ii in
-    T_IDENT(s, ii)
+  else T_IDENT(Ast.str_of_info ii, ii)
 
 let lang_ext_or_t_ident ii fii =
   if !Flag.facebook_lang_extensions
   then fii ii
-  else 
-    let s = Ast.str_of_info ii in
-    T_IDENT(s, ii)
+  else T_IDENT(Ast.str_of_info ii, ii)
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -109,6 +100,7 @@ let keyword_table = Common.hash_of_list [
   "for",     (fun ii -> T_FOR ii);     "endfor", (fun ii -> T_ENDFOR ii);
   "foreach", (fun ii -> T_FOREACH ii); "endforeach",(fun ii -> T_ENDFOREACH ii);
 
+  (* obsolete: now that use hphp instead of xdebug for coverage analysis *)
   "class_xdebug",    (fun ii -> T_CLASS_XDEBUG ii);
   "resource_xdebug", (fun ii -> T_RESOURCE_XDEBUG ii);
 
@@ -139,11 +131,13 @@ let keyword_table = Common.hash_of_list [
   "exit",       (fun ii -> T_EXIT ii); "die",        (fun ii -> T_EXIT ii);
 
   "array",      (fun ii -> T_ARRAY ii); "list",       (fun ii -> T_LIST ii);
+  (* used for traits too *)
   "as",         (fun ii -> T_AS ii);
 
   "include",(fun ii ->T_INCLUDE ii);"include_once",(fun ii ->T_INCLUDE_ONCE ii);
   "require",(fun ii ->T_REQUIRE ii);"require_once",(fun ii ->T_REQUIRE_ONCE ii);
 
+  (* used for traits and namespace *)
   "use",             (fun ii -> T_USE ii);
 
   "class",           (fun ii -> T_CLASS ii);
@@ -153,7 +147,7 @@ let keyword_table = Common.hash_of_list [
   "extends",         (fun ii -> T_EXTENDS ii);
   "implements",      (fun ii -> T_IMPLEMENTS ii);
   "instanceof",      (fun ii -> T_INSTANCEOF ii);
-  (* php 5.4 traits ("use" and "as" are used for traits and other things) *)
+  (* php 5.4 traits ('use' and 'as' are used for traits and other things) *)
   "trait",           (fun ii -> T_TRAIT ii);
   "insteadof",       (fun ii -> T_INSTEADOF ii);
 
@@ -163,8 +157,7 @@ let keyword_table = Common.hash_of_list [
   "protected",       (fun ii -> T_PROTECTED ii);
   "public",          (fun ii -> T_PUBLIC ii);
 
-  "echo",            (fun ii -> T_ECHO ii);
-  "print",           (fun ii -> T_PRINT ii);
+  "echo",            (fun ii -> T_ECHO ii); "print", (fun ii -> T_PRINT ii);
 
   "eval",            (fun ii -> T_EVAL ii);
 
@@ -181,7 +174,7 @@ let keyword_table = Common.hash_of_list [
 
   "__halt_compiler", (fun ii -> T_HALT_COMPILER ii);
 
-  "__line__",  (fun ii -> T_LINE ii); 
+  "__line__", (fun ii -> T_LINE ii); 
   "__file__", (fun ii -> T_FILE ii); "__dir__",   (fun ii -> T_DIR ii);
   "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
   "__class__",  (fun ii -> T_CLASS_C ii);" __trait__", (fun ii ->T_TRAIT_C ii);
@@ -383,7 +376,6 @@ let is_in_binary_operator_position last_tok =
       -> true
   | _ -> false
 
-
 }
 
 (*****************************************************************************)
@@ -450,7 +442,6 @@ let HEREDOC_LITERAL_DOLLAR =
 let HEREDOC_NEWLINE = 
   (((LABEL";"?((("{"+|"$"+)'\\'?)|'\\'))|(("{"*|"$"*)'\\'?))NEWLINE)
 
-
 (*/*
  * This pattern is just used in the next 2 for matching { or literal $, and/or
  * \ escape sequence immediately at the beginning of a line or after a label
@@ -484,14 +475,10 @@ let HEREDOC_CHARS =
 
 (*x: regexp aliases *)
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
-
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
-
 (* is there some special restrictions for xhp attributes ? *)
 let XHPATTR = XHPLABEL
-
 (*e: regexp aliases *)
-
 
 (*****************************************************************************)
 (* Rule in script *)
