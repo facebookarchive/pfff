@@ -584,6 +584,15 @@ and class_def = {
       | ClassRegular  of tok (* class *)
       | ClassFinal    of tok * tok (* final class *)
       | ClassAbstract of tok * tok (* abstract class *)
+
+      | Interface of tok (* interface *)
+      (* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
+       * Allow to mixin behaviors and data so it's really just
+       * multiple inheritance with a cooler name.
+       * 
+       * note: traits are allowed only at toplevel.
+       *)
+      | Trait of tok (* trait *)
   (*e: type class_type *)
   (*s: type extend *)
     and extend =    tok * fully_qualified_class_name
@@ -592,24 +601,6 @@ and class_def = {
     and interface = tok * fully_qualified_class_name comma_list
   (*e: type interface *)
 (*x: AST class definition *)
-and interface_def = {
-  i_tok: tok; (* 'interface' *)
-  i_name: name;
-  i_extends: interface option;
-  (* the class_stmt for interfaces are restricted to only abstract methods *)
-  i_body: class_stmt list brace;
-}
-(* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
- * Allow to mixin behaviors and data so it's really just
- * multiple inheritance with a cooler name.
- * todo? factorize things with class_def and interface_def?
- *)
-and trait_def = {
-  t_tok: tok; (* 'trait' *)
-  t_name: name;
-  (* class_stmt seems to be unrestricted for traits; can even have some 'use' *)
-  t_body: class_stmt list brace;
-}
 (*x: AST class definition *)
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
@@ -735,13 +726,6 @@ and stmt_and_def =
   | Stmt of stmt
   | FuncDefNested of func_def
   | ClassDefNested of class_def
-  | InterfaceDefNested of interface_def
-  (* todo: actually traits as opposed to class/interfaces are allowed only
-   * at toplevel, but I have TraitDefNested because of the way the
-   * grammar is currently written
-   *)
-  | TraitDefNested of trait_def
-
 (*e: AST statement bis *)
 (* ------------------------------------------------------------------------- *)
 (* phpext: *)
@@ -757,8 +741,6 @@ and toplevel =
     | StmtList of stmt list
     | FuncDef of func_def
     | ClassDef of class_def
-    | InterfaceDef of interface_def
-    | TraitDef of trait_def
    (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
   (*x: toplevel constructors *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
@@ -786,8 +768,6 @@ and toplevel =
 type entity = 
   | FunctionE of func_def
   | ClassE of class_def
-  | InterfaceE of interface_def
-  | TraitE of trait_def
   | StmtListE of stmt list
 
   | MethodE of method_def

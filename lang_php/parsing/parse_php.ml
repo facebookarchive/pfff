@@ -519,14 +519,7 @@ let (xdebug_expr_of_string: string -> Ast_php.expr) = fun s ->
   let expr = Parser_php.expr basic_lexer_skip_comments lexbuf in
   expr
 
-
 let (class_def_of_string: string -> Ast_php.class_def) = fun s ->
   let lexbuf = Lexing.from_string s in
-  let x = 
-    Parser_php.class_declaration_statement basic_lexer_skip_comments lexbuf in
-  match x with
-  | Left class_def -> class_def
-  | Right interface_def -> 
-      failwith "was expecting a class def, not an interface"
-
+  Parser_php.class_declaration_statement basic_lexer_skip_comments lexbuf
 (*e: parse_php.ml *)

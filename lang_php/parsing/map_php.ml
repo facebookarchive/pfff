@@ -881,43 +881,14 @@ and map_class_type =
       let v1 = map_tok v1 and v2 = map_tok v2 in ClassFinal ((v1, v2))
   | ClassAbstract ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_tok v2 in ClassAbstract ((v1, v2))
+  | Interface v1 -> let v1 = map_tok v1 in Interface ((v1))
+  | Trait v1 -> let v1 = map_tok v1 in Trait ((v1))
 and map_extend (v1, v2) =
   let v1 = map_tok v1 and v2 = map_fully_qualified_class_name v2 in (v1, v2)
 and map_interface (v1, v2) =
   let v1 = map_tok v1
   and v2 = map_comma_list map_fully_qualified_class_name v2
   in (v1, v2)
-and
-  map_interface_def {
-                      i_tok = v_i_tok;
-                      i_name = v_i_name;
-                      i_extends = v_i_extends;
-                      i_body = v_i_body
-                    } =
-  let v_i_body = map_brace (map_of_list map_class_stmt) v_i_body in
-  let v_i_extends = map_of_option map_interface v_i_extends in
-  let v_i_name = map_name v_i_name in
-  let v_i_tok = map_tok v_i_tok in
-  {
-    i_tok = v_i_tok;
-    i_name = v_i_name;
-    i_extends = v_i_extends;
-    i_body = v_i_body
-  }
-
-and map_trait_def {
-                      t_tok = v_i_tok;
-                      t_name = v_i_name;
-                      t_body = v_i_body
-                    } =
-  let v_i_body = map_brace (map_of_list map_class_stmt) v_i_body in
-  let v_i_name = map_name v_i_name in
-  let v_i_tok = map_tok v_i_tok in
-  {
-    t_tok = v_i_tok;
-    t_name = v_i_name;
-    t_body = v_i_body
-  }
 
 and map_class_stmt =
   function
@@ -1093,9 +1064,6 @@ and map_stmt_and_def def =
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
   | FuncDefNested v1 -> let v1 = map_func_def v1 in FuncDefNested ((v1))
   | ClassDefNested v1 -> let v1 = map_class_def v1 in ClassDefNested ((v1))
-  | InterfaceDefNested v1 ->
-      let v1 = map_interface_def v1 in InterfaceDefNested ((v1))
-  | TraitDefNested v1 -> let v1 = map_trait_def v1 in TraitDefNested v1
   in
   vin.kstmt_and_def (k, all_functions) def
 and map_toplevel =
@@ -1103,8 +1071,6 @@ and map_toplevel =
   | StmtList v1 -> let v1 = map_of_list map_stmt v1 in StmtList ((v1))
   | FuncDef v1 -> let v1 = map_func_def v1 in FuncDef ((v1))
   | ClassDef v1 -> let v1 = map_class_def v1 in ClassDef ((v1))
-  | InterfaceDef v1 -> let v1 = map_interface_def v1 in InterfaceDef ((v1))
-  | TraitDef v1 -> let v1 = map_trait_def v1 in TraitDef v1
   | NotParsedCorrectly v1 ->
       let v1 = map_of_list map_info v1 in NotParsedCorrectly ((v1))
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
@@ -1114,8 +1080,6 @@ and map_entity =
   function
   | FunctionE v1 -> let v1 = map_func_def v1 in FunctionE ((v1))
   | ClassE v1 -> let v1 = map_class_def v1 in ClassE ((v1))
-  | InterfaceE v1 -> let v1 = map_interface_def v1 in InterfaceE ((v1))
-  | TraitE v1 -> let v1 = map_trait_def v1 in TraitE ((v1))
   | StmtListE v1 -> let v1 = map_of_list map_stmt v1 in StmtListE ((v1))
   | MethodE v1 -> let v1 = map_method_def v1 in MethodE ((v1))
   | ClassConstantE v1 ->

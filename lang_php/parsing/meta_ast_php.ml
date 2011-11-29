@@ -900,6 +900,11 @@ and vof_class_type =
       let v1 = vof_tok v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("ClassAbstract", [ v1; v2 ]))
+  | Interface v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("Interface", [ v1 ]))
+  | Trait v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("Trait", [ v1 ]))
+
 and vof_extend (v1, v2) =
   let v1 = vof_tok v1
   and v2 = vof_fully_qualified_class_name v2
@@ -908,41 +913,6 @@ and vof_interface (v1, v2) =
   let v1 = vof_tok v1
   and v2 = vof_comma_list vof_fully_qualified_class_name v2
   in Ocaml.VTuple [ v1; v2 ]
-and
-  vof_interface_def {
-                      i_tok = v_i_tok;
-                      i_name = v_i_name;
-                      i_extends = v_i_extends;
-                      i_body = v_i_body
-                    } =
-  let bnds = [] in
-  let arg = vof_brace (vof_list vof_class_stmt) v_i_body in
-  let bnd = ("i_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_option vof_interface v_i_extends in
-  let bnd = ("i_extends", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_name v_i_name in
-  let bnd = ("i_name", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_tok v_i_tok in
-  let bnd = ("i_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-
-and vof_trait_def {
-                      t_tok = v_i_tok;
-                      t_name = v_i_name;
-                      t_body = v_i_body
-                    } =
-  let bnds = [] in
-  let arg = vof_brace (vof_list vof_class_stmt) v_i_body in
-  let bnd = ("t_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_name v_i_name in
-  let bnd = ("t_name", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_tok v_i_tok in
-  let bnd = ("t_tok", arg) in let bnds = bnd :: bnds in 
-  Ocaml.VDict bnds
 
 and vof_class_stmt =
   function
@@ -1138,12 +1108,6 @@ and vof_stmt_and_def =
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDefNested", [ v1 ]))
   | ClassDefNested v1 ->
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDefNested", [ v1 ]))
-  | InterfaceDefNested v1 ->
-      let v1 = vof_interface_def v1
-      in Ocaml.VSum (("InterfaceDefNested", [ v1 ]))
-  | TraitDefNested v1 ->
-      let v1 = vof_trait_def v1 in
-      Ocaml.VSum (("TraitDefNested", [ v1 ]))
 and vof_toplevel =
   function
   | StmtList v1 ->
@@ -1152,10 +1116,6 @@ and vof_toplevel =
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDef", [ v1 ]))
   | ClassDef v1 ->
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
-  | InterfaceDef v1 ->
-      let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceDef", [ v1 ]))
-  | TraitDef v1 ->
-      let v1 = vof_trait_def v1 in Ocaml.VSum (("TraitDef", [ v1 ]))
   | NotParsedCorrectly v1 ->
       let v1 = vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
@@ -1170,10 +1130,6 @@ and vof_entity =
   | FunctionE v1 ->
       let v1 = vof_func_def v1 in Ocaml.VSum (("FunctionE", [ v1 ]))
   | ClassE v1 -> let v1 = vof_class_def v1 in Ocaml.VSum (("ClassE", [ v1 ]))
-  | InterfaceE v1 ->
-      let v1 = vof_interface_def v1 in Ocaml.VSum (("InterfaceE", [ v1 ]))
-  | TraitE v1 ->
-      let v1 = vof_trait_def v1 in Ocaml.VSum (("TraitE", [ v1 ]))
   | StmtListE v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1
       in Ocaml.VSum (("StmtListE", [ v1 ]))

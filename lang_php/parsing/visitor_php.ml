@@ -88,9 +88,6 @@ type visitor_in = {
     (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  
     (class_def -> unit) * visitor_out -> class_def -> unit;
-  kinterface_def: 
-    (interface_def -> unit) * visitor_out -> interface_def -> unit;
-
   kmethod_def: 
     (method_def -> unit) * visitor_out -> method_def -> unit;
 
@@ -136,7 +133,6 @@ let default_visitor =
     kfunc_def = (fun (k,_) x -> k x);
     kmethod_def = (fun (k,_) x -> k x);
     kclass_def = (fun (k,_) x -> k x);
-    kinterface_def = (fun (k,_) x -> k x);
 
     kcomma   = (fun (k,_) x -> k x);
 
@@ -883,40 +879,13 @@ and v_class_type =
   | ClassRegular v1 -> let v1 = v_tok v1 in ()
   | ClassFinal ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
   | ClassAbstract ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
+  | Interface v1 -> let v1 = v_tok v1 in ()
+  | Trait v1 -> let v1 = v_tok v1 in ()
+  
 and v_extend (v1, v2) =
   let v1 = v_tok v1 and v2 = v_fully_qualified_class_name v2 in ()
 and v_interface (v1, v2) =
   let v1 = v_tok v1 and v2 = v_comma_list v_fully_qualified_class_name v2 in ()
-and
-  v_interface_def x =
-  let rec k {
-                    i_tok = v_i_tok;
-                    i_name = v_i_name;
-                    i_extends = v_i_extends;
-                    i_body = v_i_body
-                  } =
-  let arg = v_tok v_i_tok  in
-  let arg = v_name v_i_name in 
-  let arg = v_option v_interface v_i_extends in
-  let arg = v_brace (v_list v_class_stmt) v_i_body in
-  ()
-  in
-  vin.kinterface_def (k, all_functions) x
-
-and  v_trait_def x =
-  let rec k {
-                    t_tok = v_i_tok;
-                    t_name = v_i_name;
-                    t_body = v_i_body
-                  } =
-  let arg = v_tok v_i_tok  in
-  let arg = v_name v_i_name in 
-  let arg = v_brace (v_list v_class_stmt) v_i_body in
-  ()
-  in
-  (*vin.kinterface_def (k, all_functions) x *)
-  k x
-
 
 and v_class_stmt x =
   let k x = match x with
@@ -1068,8 +1037,6 @@ and v_topstatement x =
   | Stmt v1 -> let v1 = v_stmt v1 in ()
   | FuncDefNested v1 -> let v1 = v_func_def v1 in ()
   | ClassDefNested v1 -> let v1 = v_class_def v1 in ()
-  | InterfaceDefNested v1 -> let v1 = v_interface_def v1 in ()
-  | TraitDefNested v1 -> let v1 = v_trait_def v1 in ()
   in
   vin.kstmt_and_def (k, all_functions) x
 and v_body x = v_brace (v_stmt_and_def_list_scope) x
@@ -1085,8 +1052,6 @@ and v_toplevel x =
   | StmtList v1 -> let v1 = v_list v_stmt v1 in ()
   | FuncDef v1 -> let v1 = v_func_def v1 in ()
   | ClassDef v1 -> let v1 = v_class_def v1 in ()
-  | InterfaceDef v1 -> let v1 = v_interface_def v1 in ()
-  | TraitDef v1 -> let v1 = v_trait_def v1 in ()
 
   | NotParsedCorrectly xs ->
       v_list v_info xs
@@ -1100,8 +1065,6 @@ and v_program v = v_list v_toplevel v
 and v_entity = function
   | FunctionE v1 -> let v1 = v_func_def v1 in ()
   | ClassE v1 -> let v1 = v_class_def v1 in ()
-  | InterfaceE v1 -> let v1 = v_interface_def v1 in ()
-  | TraitE v1 -> let v1 = v_trait_def v1 in ()
   | StmtListE v1 -> let v1 = v_list v_stmt v1 in ()
   | MethodE v1 -> let v1 = v_method_def v1 in ()
   | ClassConstantE v1 -> let v1 = v_class_constant v1 in ()

@@ -47,7 +47,7 @@ open Parse_info
  * file, or to only add new constructors.
  * 
  * todo: 
- *  - unify class_def/interface_def/trait_def
+ *  - remove TraitNestedDef
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def?
  *  - unify expr and lvalue?
@@ -621,11 +621,26 @@ and lambda_def = {
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST class definition *)
+(* I used to have a class_def and interface_def because interface_def
+ * didn't allow certain forms of statements (methods with a body), but
+ * with the introduction of traits, it does not make that much sense
+ * to be so specific, so I factorized things. Classes/interfaces/traits
+ * are not that different.
+ *)
 and class_def = {
   c_type: class_type;
   c_name: name;
+  (* PHP uses single inheritance. Interfaces can also use 'extends'
+   * but we use the c_implements field for that (because it can be a list).
+   *)
   c_extends: extend option;
+  (* For classes it's a list of interfaces, for interface a list of other
+   * interfaces it extends, and for traits it must be empty.
+   *)
   c_implements: interface option;
+  (* The class_stmt for interfaces are restricted to only abstract methods.
+   * The class_stmt seems to be unrestricted for traits; can even 
+   * have some 'use' *)
   c_body: class_stmt list brace;
 }
   (*s: type class_type *)
@@ -633,6 +648,15 @@ and class_def = {
       | ClassRegular  of tok (* class *)
       | ClassFinal    of tok * tok (* final class *)
       | ClassAbstract of tok * tok (* abstract class *)
+
+      | Interface of tok (* interface *)
+      (* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
+       * Allow to mixin behaviors and data so it's really just
+       * multiple inheritance with a cooler name.
+       * 
+       * note: traits are allowed only at toplevel.
+       *)
+      | Trait of tok (* trait *)
   (*e: type class_type *)
   (*s: type extend *)
     and extend =    tok * fully_qualified_class_name
@@ -641,24 +665,6 @@ and class_def = {
     and interface = tok * fully_qualified_class_name comma_list
   (*e: type interface *)
 (*x: AST class definition *)
-and interface_def = {
-  i_tok: tok; (* 'interface' *)
-  i_name: name;
-  i_extends: interface option;
-  (* the class_stmt for interfaces are restricted to only abstract methods *)
-  i_body: class_stmt list brace;
-}
-(* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php 
- * Allow to mixin behaviors and data so it's really just
- * multiple inheritance with a cooler name.
- * todo? factorize things with class_def and interface_def?
- *)
-and trait_def = {
-  t_tok: tok; (* 'trait' *)
-  t_name: name;
-  (* class_stmt seems to be unrestricted for traits; can even have some 'use' *)
-  t_body: class_stmt list brace;
-}
 (*x: AST class definition *)
   and class_stmt = 
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
@@ -793,13 +799,6 @@ and stmt_and_def =
   | Stmt of stmt
   | FuncDefNested of func_def
   | ClassDefNested of class_def
-  | InterfaceDefNested of interface_def
-  (* todo: actually traits as opposed to class/interfaces are allowed only
-   * at toplevel, but I have TraitDefNested because of the way the
-   * grammar is currently written
-   *)
-  | TraitDefNested of trait_def
-
 (*e: AST statement bis *)
 (* ------------------------------------------------------------------------- *)
 (* phpext: *)
@@ -815,8 +814,6 @@ and toplevel =
     | StmtList of stmt list
     | FuncDef of func_def
     | ClassDef of class_def
-    | InterfaceDef of interface_def
-    | TraitDef of trait_def
    (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
   (*x: toplevel constructors *)
     | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
@@ -842,8 +839,6 @@ and toplevel =
 type entity = 
   | FunctionE of func_def
   | ClassE of class_def
-  | InterfaceE of interface_def
-  | TraitE of trait_def
   | StmtListE of stmt list
 
   | MethodE of method_def

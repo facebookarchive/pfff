@@ -261,8 +261,7 @@ module Ast = Ast_php
 /*(*s: GRAMMAR type of main rule *)*/
 %type <Ast_php.toplevel list> main
 %type <Ast_php.expr> expr
-%type <(Ast_php.class_def, Ast_php.interface_def) Common.either> 
-  class_declaration_statement
+%type <Ast_php.class_def> class_declaration_statement
 %type <Ast_php.any> sgrep_spatch_pattern
 /*(*e: GRAMMAR type of main rule *)*/
 
@@ -281,13 +280,9 @@ start: top_statement_list { $1 }
 top_statement:
  | statement                            { Stmt $1 }
  | function_declaration_statement	{ FuncDefNested $1 }
- | class_declaration_statement		{ 
-     match $1 with
-     | Left x -> ClassDefNested x
-     | Right x -> InterfaceDefNested x
-   }
+ | class_declaration_statement		{ ClassDefNested $1 }
  /*(* todo: refactor top_statement and inner_statement as in hphp.y *)*/
- | trait_declaration_statement          { TraitDefNested $1 }
+ | trait_declaration_statement          { ClassDefNested $1 }
 /*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -598,19 +593,23 @@ unticked_class_declaration_statement:
  | class_entry_type class_name 
      extends_from implements_list
      TOBRACE  class_statement_list TCBRACE 
-     { Left { 
-       c_type = $1; c_name = $2;c_extends = $3; 
-       c_implements = $4; c_body = $5, $6, $7;
-       }
-     }
+     { { c_type = $1; c_name = $2;c_extends = $3; 
+         c_implements = $4; c_body = $5, $6, $7;
+       } }
+
  | interface_entry class_name
      interface_extends_list
      TOBRACE class_statement_list TCBRACE 
-     { Right { i_tok = $1; i_name = $2; i_extends = $3; i_body = $4, $5, $6; } }
+     { { c_type = Interface $1; c_name = $2; c_extends = None; 
+         (* we use c_implements for interface extension because
+          * it can be a list. ugly?
+          *)
+         c_implements = $3; c_body = $4, $5, $6; } }
 
 trait_declaration_statement:
  | T_TRAIT ident TOBRACE class_statement_list TCBRACE 
-     { { t_tok = $1; t_name = (Name $2); t_body = ($3, $4, $5) } }
+     { { c_type = Trait $1; c_name = (Name $2); c_extends = None;
+         c_implements = None; c_body = ($3, $4, $5) } }
 
 /*(*x: GRAMMAR class declaration *)*/
 class_name: 
