@@ -41,8 +41,9 @@ type 'a wrap = 'a * Ast_php.tok
 type program = stmt list
 
 and stmt =
-  | Comment of string
-  | Newline
+  (* todo? remove? this is better handled in ast_pp.ml no? *)
+  | Comment of string | Newline
+
   | Expr of expr
 
   (* pad: Noop could be Block [], but it's abused right now for debugging
