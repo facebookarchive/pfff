@@ -819,7 +819,7 @@ and toplevel =
     | ClassDef of class_def
     | InterfaceDef of interface_def
     | TraitDef of trait_def
-  (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
+   (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
   (*x: toplevel constructors *)
     | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
   (*x: toplevel constructors *)
