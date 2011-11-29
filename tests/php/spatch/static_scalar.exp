@@ -5,3 +5,8 @@ function foo() {
 }
 
 const FOO = 2;
+
+function bar($x = 2) {
+  return;
+}
+
