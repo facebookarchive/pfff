@@ -10,7 +10,6 @@ type visitor_in = {
   klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
-  kstatic_scalar: (static_scalar -> unit) * visitor_out ->static_scalar -> unit;
   kstmt_and_def: (stmt_and_def -> unit) * visitor_out -> stmt_and_def  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
   kclass_stmt: (class_stmt -> unit) * visitor_out -> class_stmt -> unit;

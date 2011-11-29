@@ -684,15 +684,7 @@ and interfaces env (_, intfs) =
   List.map (name env) intfs
 
 and static_scalar_affect env (_, ss) = static_scalar env ss
-and static_scalar env = function
-  | StaticConstant cs -> constant env cs
-  | StaticClassConstant (q, n) -> A.Class_get (A.Id (qualifier env q), A.Id (name env n))
-  | StaticPlus (_, e) -> static_scalar env e
-  | StaticMinus (_, e) -> A.Unop (UnMinus, static_scalar env e)
-  | StaticArray (_, (_, al, _)) ->
-      let al = comma_list al in
-      A.ConsArray (List.map (static_array_pair env) al)
-  | XdebugStaticDots _ -> failwith "TODO static_scalar XdebugStaticDots"
+and static_scalar env a = expr env a
 
 and class_variables env st acc =
   match st with
@@ -862,11 +854,6 @@ and array_pair env = function
   | ArrayRef (_, lv) -> A.Aval (A.Ref (lvalue env lv))
   | ArrayArrowExpr (e1, _, e2) -> A.Akval (expr env e1, expr env e2)
   | ArrayArrowRef (e1, _, _, lv) -> A.Akval (expr env e1, A.Ref (lvalue env lv))
-
-and static_array_pair env = function
-  | StaticArraySingle ss -> A.Aval (static_scalar env ss)
-  | StaticArrayArrow (ss1, _, ss2) ->
-      A.Akval (static_scalar env ss1, static_scalar env ss2)
 
 and interface_def env i =
   let _, body, _ = i.i_body in

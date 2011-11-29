@@ -2719,59 +2719,7 @@ and m_class_var_modifier a b =
 and m_xhp_decl a b =
   fail2 "m_xhp_decl"
 
-and m_static_scalar a b = 
-  match a, b with
-  | A.StaticConstant(a1), B.StaticConstant(b1) ->
-    m_constant a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.StaticConstant(a1),
-       B.StaticConstant(b1)
-    )
-    )
-  | A.StaticClassConstant(a1, a2), B.StaticClassConstant(b1, b2) ->
-    m_qualifier a1 b1 >>= (fun (a1, b1) -> 
-    m_name a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       A.StaticClassConstant(a1, a2),
-       B.StaticClassConstant(b1, b2)
-    )
-    ))
-  | A.StaticPlus(a1, a2), B.StaticPlus(b1, b2) ->
-    m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_static_scalar a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       A.StaticPlus(a1, a2),
-       B.StaticPlus(b1, b2)
-    )
-    ))
-  | A.StaticMinus(a1, a2), B.StaticMinus(b1, b2) ->
-    m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_static_scalar a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       A.StaticMinus(a1, a2),
-       B.StaticMinus(b1, b2)
-    )
-    ))
-  | A.StaticArray(a1, a2), B.StaticArray(b1, b2) ->
-    m_tok a1 b1 >>= (fun (a1, b1) -> 
-    (m_paren (m_comma_list m_static_array_pair)) a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       A.StaticArray(a1, a2),
-       B.StaticArray(b1, b2)
-    )
-    ))
-  | A.XdebugStaticDots, B.XdebugStaticDots ->
-    return (
-       A.XdebugStaticDots,
-       B.XdebugStaticDots
-    )
-  | A.StaticConstant _, _
-  | A.StaticClassConstant _, _
-  | A.StaticPlus _, _
-  | A.StaticMinus _, _
-  | A.StaticArray _, _
-  | A.XdebugStaticDots, _
-   -> fail ()
+and m_static_scalar a b = m_expr a b
 
 and m_static_scalar_affect a b = 
   match a, b with
@@ -2784,28 +2732,7 @@ and m_static_scalar_affect a b =
     )
     ))
 
-and m_static_array_pair a b = 
-  match a, b with
-  | A.StaticArraySingle(a1), B.StaticArraySingle(b1) ->
-    m_static_scalar a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.StaticArraySingle(a1),
-       B.StaticArraySingle(b1)
-    )
-    )
-  | A.StaticArrayArrow(a1, a2, a3), B.StaticArrayArrow(b1, b2, b3) ->
-    m_static_scalar a1 b1 >>= (fun (a1, b1) -> 
-    m_tok a2 b2 >>= (fun (a2, b2) -> 
-    m_static_scalar a3 b3 >>= (fun (a3, b3) -> 
-    return (
-       A.StaticArrayArrow(a1, a2, a3),
-       B.StaticArrayArrow(b1, b2, b3)
-    )
-    )))
-  | A.StaticArraySingle _, _
-  | A.StaticArrayArrow _, _
-   -> fail ()
-  
+ 
 
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
@@ -3108,13 +3035,6 @@ let m_any a b =
        B.XhpHtml2(b1)
     )
     )
-  | A.StaticScalar(a1), B.StaticScalar(b1) ->
-    m_static_scalar a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.StaticScalar(a1),
-       B.StaticScalar(b1)
-    )
-    )
   | A.Info(a1), B.Info(b1) ->
     m_info a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -3157,7 +3077,6 @@ let m_any a b =
   | A.XhpAttribute _, _
   | A.XhpAttrValue _, _
   | A.XhpHtml2 _, _
-  | A.StaticScalar _, _
   | A.Info _, _
   | A.InfoList _, _
   | A.Name2 _, _

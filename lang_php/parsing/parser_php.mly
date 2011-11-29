@@ -1116,18 +1116,18 @@ scalar:
 
 /*(*x: GRAMMAR scalar *)*/
 static_scalar: /* compile-time evaluated scalars */
- | common_scalar	 { StaticConstant $1 }
- | ident 		 { StaticConstant (CName (Name $1)) }
- | static_class_constant { StaticClassConstant (fst $1, snd $1) }
+ | common_scalar	 { Sc (C $1) }
+ | ident 		 { Sc (C (CName (Name $1))) }
+ | static_class_constant { Sc (ClassConstant (fst $1, snd $1)) }
 
- | TPLUS static_scalar	 { StaticPlus($1,$2) }
- | TMINUS static_scalar	 { StaticMinus($1,$2) }
+ | TPLUS static_scalar	 { Unary ((UnPlus, $1),$2)  }
+ | TMINUS static_scalar	 { Unary ((UnMinus, $1),$2) }
  | T_ARRAY TOPAR static_array_pair_list TCPAR
-     { StaticArray($1, ($2, $3, $4)) }
+     { ConsArray($1, ($2, $3, $4)) }
 
  /*(*s: static_scalar grammar rule hook *)*/
   /* xdebug TODO AST  */
-  | TDOTS { XdebugStaticDots  }
+  | TDOTS { sgrep_guard (SgrepExprDots $1)  }
  /*(*e: static_scalar grammar rule hook *)*/
 
 
@@ -1166,17 +1166,17 @@ static_array_pair_list: static_array_pair_list_rev { List.rev $1 }
 
 non_empty_static_array_pair_list_rev:
  | static_scalar                              
-     { [Left (StaticArraySingle $1)] }
+     { [Left (ArrayExpr $1)] }
  | static_scalar T_DOUBLE_ARROW static_scalar
-     { [Left (StaticArrayArrow ($1,$2,$3))]}
+     { [Left (ArrayArrowExpr ($1,$2,$3))]}
 
  /*(*s: repetitive non_empty_static_array_pair_list *)*/
   | non_empty_static_array_pair_list_rev TCOMMA
       static_scalar 
-      { Left (StaticArraySingle $3)::Right $2::$1 }
+      { Left (ArrayExpr $3)::Right $2::$1 }
   | non_empty_static_array_pair_list_rev TCOMMA
       static_scalar T_DOUBLE_ARROW static_scalar	
-      { Left (StaticArrayArrow ($3,$4,$5))::Right $2::$1 }
+      { Left (ArrayArrowExpr ($3,$4,$5))::Right $2::$1 }
  /*(*e: repetitive non_empty_static_array_pair_list *)*/
 /*(*e: GRAMMAR scalar *)*/
 

@@ -409,37 +409,6 @@ let functions_methods_or_topstms_of_program prog =
   visitor (Program prog);
   !funcs, !methods, !toplevels
 
-(* todo: move where ? 
- * static_scalar does not have a direct mapping with scalar as some
- * elements like StaticArray have mapping only in expr.
-*)
-let rec static_scalar_to_expr x = 
-    match x with
-    | StaticConstant cst -> 
-        Sc (C cst)
-    | StaticClassConstant (qu, name) -> 
-        Sc (ClassConstant (qu, name))
-    | StaticPlus (tok, sc) -> 
-        Unary ((UnPlus, tok), static_scalar_to_expr sc)
-    | StaticMinus (tok, sc) -> 
-        Unary ((UnMinus, tok), static_scalar_to_expr sc)
-    | StaticArray (tok, array_pairs_paren) ->
-        ConsArray (tok, 
-                  Ast.map_paren 
-                    (Ast.map_comma_list static_array_pair_to_array_pair) 
-                    array_pairs_paren)
-    | XdebugStaticDots ->
-        failwith "static_scalar_to_expr: should not get a XdebugStaticDots"
-
-and static_array_pair_to_array_pair x = 
-  match x with
-  | StaticArraySingle (sc) -> 
-      ArrayExpr (static_scalar_to_expr sc)
-  | StaticArrayArrow (sc1, tok, sc2) ->
-      ArrayArrowExpr (static_scalar_to_expr sc1, 
-                     tok,
-                     static_scalar_to_expr sc2)
-
 
 (* do some isomorphisms for declaration vs assignement *)
 let get_vars_assignements_any recursor = 
@@ -457,7 +426,7 @@ let get_vars_assignements_any recursor =
             xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
               let s = Ast.dname dname in
               affect_opt |> Common.do_option (fun (_tok, scalar) ->
-                Common.push2 (s, static_scalar_to_expr scalar) aref;
+                Common.push2 (s, scalar) aref;
               );
             );
         | _ -> 

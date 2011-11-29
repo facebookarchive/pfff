@@ -1126,41 +1126,11 @@ and vof_static_var (v1, v2) =
   let v1 = vof_dname v1
   and v2 = vof_option vof_static_scalar_affect v2
   in Ocaml.VTuple [ v1; v2 ]
-and vof_static_scalar =
-  function
-  | StaticConstant v1 ->
-      let v1 = vof_constant v1 in Ocaml.VSum (("StaticConstant", [ v1 ]))
-  | StaticClassConstant (v1, v2) ->
-      let v1 = vof_qualifier v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("StaticClassConstant", [ v1; v2 ]))
-  | StaticPlus ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_static_scalar v2
-      in Ocaml.VSum (("StaticPlus", [ v1; v2 ]))
-  | StaticMinus ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_static_scalar v2
-      in Ocaml.VSum (("StaticMinus", [ v1; v2 ]))
-  | StaticArray ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_paren (vof_comma_list vof_static_array_pair) v2
-      in Ocaml.VSum (("StaticArray", [ v1; v2 ]))
-  | XdebugStaticDots -> Ocaml.VSum (("XdebugStaticDots", []))
+and vof_static_scalar x = vof_expr x
 and vof_static_scalar_affect (v1, v2) =
   let v1 = vof_tok v1
   and v2 = vof_static_scalar v2
   in Ocaml.VTuple [ v1; v2 ]
-and vof_static_array_pair =
-  function
-  | StaticArraySingle v1 ->
-      let v1 = vof_static_scalar v1
-      in Ocaml.VSum (("StaticArraySingle", [ v1 ]))
-  | StaticArrayArrow ((v1, v2, v3)) ->
-      let v1 = vof_static_scalar v1
-      and v2 = vof_tok v2
-      and v3 = vof_static_scalar v3
-      in Ocaml.VSum (("StaticArrayArrow", [ v1; v2; v3 ]))
 and vof_stmt_and_def =
   function
   | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
@@ -1258,8 +1228,6 @@ and vof_any =
   | XhpHtml2 v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml2", [ v1 ]))
 
-  | StaticScalar v1 ->
-      let v1 = vof_static_scalar v1 in Ocaml.VSum (("StaticScalar", [ v1 ]))
   | Info v1 -> let v1 = vof_info v1 in Ocaml.VSum (("Info", [ v1 ]))
   | InfoList v1 ->
       let v1 = Ocaml.vof_list vof_info v1

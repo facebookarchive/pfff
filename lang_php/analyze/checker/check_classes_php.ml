@@ -261,15 +261,6 @@ let visit_and_check  find_entity prog =
       );
       k x
     );
-    V.kstatic_scalar = (fun (k, _) x ->
-      (match x with
-      | StaticClassConstant ((ClassName classname, tok), name) ->
-          check_class_constant (Ast.name classname, Ast.name name) tok
-            find_entity
-      | _ -> ()
-      );
-      k x
-    );
     
   } in
   visitor (Program prog)

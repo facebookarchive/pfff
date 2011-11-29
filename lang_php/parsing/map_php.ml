@@ -1085,36 +1085,9 @@ and map_static_var (v1, v2) =
   let v1 = map_dname v1
   and v2 = map_of_option map_static_scalar_affect v2
   in (v1, v2)
-and map_static_scalar =
-  function
-  | StaticConstant v1 -> let v1 = map_constant v1 in StaticConstant ((v1))
-  | StaticClassConstant (v1, v2) ->
-      let v1 = map_qualifier v1 and v2 = map_name v2
-      in StaticClassConstant (v1, v2)
-  | StaticPlus ((v1, v2)) ->
-      let v1 = map_tok v1
-      and v2 = map_static_scalar v2
-      in StaticPlus ((v1, v2))
-  | StaticMinus ((v1, v2)) ->
-      let v1 = map_tok v1
-      and v2 = map_static_scalar v2
-      in StaticMinus ((v1, v2))
-  | StaticArray ((v1, v2)) ->
-      let v1 = map_tok v1
-      and v2 = map_paren (map_comma_list map_static_array_pair) v2
-      in StaticArray ((v1, v2))
-  | XdebugStaticDots -> XdebugStaticDots
+and map_static_scalar x = map_expr x
 and map_static_scalar_affect (v1, v2) =
   let v1 = map_tok v1 and v2 = map_static_scalar v2 in (v1, v2)
-and map_static_array_pair =
-  function
-  | StaticArraySingle v1 ->
-      let v1 = map_static_scalar v1 in StaticArraySingle ((v1))
-  | StaticArrayArrow ((v1, v2, v3)) ->
-      let v1 = map_static_scalar v1
-      and v2 = map_tok v2
-      and v3 = map_static_scalar v3
-      in StaticArrayArrow ((v1, v2, v3))
 and map_stmt_and_def def =
   let rec k x = match x with
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
@@ -1185,7 +1158,6 @@ and map_any =
   | Info v1 -> let v1 = map_info v1 in Info ((v1))
   | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
-  | StaticScalar v1 -> let v1 = map_static_scalar v1 in StaticScalar v1
   | Name2 v1 -> let v1 = map_name v1 in Name2 v1
 
  and all_functions =   

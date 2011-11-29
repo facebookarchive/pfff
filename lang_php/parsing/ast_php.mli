@@ -710,23 +710,17 @@ and global_var =
 (*x: AST other declaration *)
 and static_var = dname * static_scalar_affect option
 (*x: AST other declaration *)
-  and static_scalar = 
-    | StaticConstant of constant
-    | StaticClassConstant of qualifier * name (* semantic ? *)
-        
-    | StaticPlus  of tok * static_scalar
-    | StaticMinus of tok * static_scalar
-
-    | StaticArray of tok (* array *) * static_array_pair comma_list paren
+  (* static_scalar used to be a special type allowing constants and
+   * a restricted form of expressions (plus and minus). But it was yet
+   * another type and it turned out it was making things like spatch
+   * and visitor more complicated.
+   *)
+  and static_scalar = expr
   (*s: type static_scalar hook *)
-    | XdebugStaticDots
   (*e: type static_scalar hook *)
 (*x: AST other declaration *)
    and static_scalar_affect = tok (* = *) * static_scalar
 (*x: AST other declaration *)
-    and static_array_pair = 
-      | StaticArraySingle of static_scalar
-      | StaticArrayArrow  of static_scalar * tok (* => *) * static_scalar
 (*e: AST other declaration *)
 (* ------------------------------------------------------------------------- *)
 (* Stmt bis *)
@@ -831,8 +825,6 @@ type any =
   | XhpAttribute of xhp_attribute
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
-
-  | StaticScalar of static_scalar
 
   | Info of tok
   | InfoList of tok list

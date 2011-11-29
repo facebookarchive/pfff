@@ -47,7 +47,6 @@ open Parse_info
  * file, or to only add new constructors.
  * 
  * todo: 
- *  - remove static_scalar
  *  - unify class_def/interface_def/trait_def
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def?
@@ -762,23 +761,24 @@ and global_var =
 (*x: AST other declaration *)
 and static_var = dname * static_scalar_affect option
 (*x: AST other declaration *)
-  and static_scalar = 
-    | StaticConstant of constant
-    | StaticClassConstant of qualifier * name (* semantic ? *)
-        
-    | StaticPlus  of tok * static_scalar
-    | StaticMinus of tok * static_scalar
-
-    | StaticArray of tok (* array *) * static_array_pair comma_list paren
+  (* static_scalar used to be a special type allowing constants and
+   * a restricted form of expressions. But it was yet
+   * another type and it turned out it was making things like spatch
+   * and visitors more complicated because stuff like "+ 1" could
+   * be an expr or a static_scalar. We don't need this "isomorphism".
+   * I never leveraged the specificities of static_scalar (maybe a compiler
+   * would, but my checker/refactorers/... don't).
+   * 
+   * Note that it's not 'type static_scalar = scalar' because static_scalar
+   * actually allows arrays (why the heck they called it a scalar then ....)
+   * and plus/minus which are only in expr.
+   *)
+  and static_scalar = expr
   (*s: type static_scalar hook *)
-    | XdebugStaticDots
   (*e: type static_scalar hook *)
 (*x: AST other declaration *)
    and static_scalar_affect = tok (* = *) * static_scalar
 (*x: AST other declaration *)
-    and static_array_pair = 
-      | StaticArraySingle of static_scalar
-      | StaticArrayArrow  of static_scalar * tok (* => *) * static_scalar
 (*e: AST other declaration *)
 (* ------------------------------------------------------------------------- *)
 (* Stmt bis *)
@@ -881,8 +881,6 @@ type any =
   | XhpAttribute of xhp_attribute
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
-
-  | StaticScalar of static_scalar
 
   | Info of info
   | InfoList of info list

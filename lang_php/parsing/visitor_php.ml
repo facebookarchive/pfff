@@ -64,7 +64,6 @@ type visitor_in = {
   klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
-  kstatic_scalar: (static_scalar -> unit) * visitor_out ->static_scalar -> unit;
   kstmt_and_def: (stmt_and_def -> unit) * visitor_out -> stmt_and_def  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
   kclass_stmt: (class_stmt -> unit) * visitor_out -> class_stmt -> unit;
@@ -122,7 +121,6 @@ let default_visitor =
     klvalue    = (fun (k,_) x -> k x);
     kconstant    = (fun (k,_) x -> k x);
     kscalar    = (fun (k,_) x -> k x);
-    kstatic_scalar    = (fun (k,_) x -> k x);
     kstmt_and_def    = (fun (k,_) x -> k x);
     kencaps = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
@@ -366,23 +364,7 @@ and v_scalar v =
   in
   vin.kscalar (k, all_functions) v
 
-and v_static_scalar v =
-  let k x =
-    match x with
-  | StaticConstant v1 -> let v1 = v_constant v1 in ()
-  | StaticClassConstant (v1, v2) ->
-      let v1 = v_qualifier v1 and v2 = v_name v2 in ()
-  | StaticPlus ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
-  | StaticMinus ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
-  | StaticArray ((v1, v2)) ->
-      let v1 = v_tok v1
-      and v2 = v_paren (v_comma_list v_static_array_pair) v2
-      in ()
-  | XdebugStaticDots -> ()
-  in
-  vin.kstatic_scalar (k, all_functions) v
+and v_static_scalar x = v_expr x
 
 and v_static_scalar_affect (v1, v2) =
   let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
@@ -423,14 +405,6 @@ and v_encaps x =
   in
   vin.kencaps (k, all_functions) x
 
-and v_static_array_pair =
-  function
-  | StaticArraySingle v1 -> let v1 = v_static_scalar v1 in ()
-  | StaticArrayArrow ((v1, v2, v3)) ->
-      let v1 = v_static_scalar v1
-      and v2 = v_tok v2
-      and v3 = v_static_scalar v3
-      in ()
 and v_fixOp = function | Dec -> () | Inc -> ()
 and v_binaryOp =
   function
@@ -1160,7 +1134,6 @@ and v_any = function
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()
   | Case2 v1 -> let v1 = v_case v1 in ()
-  | StaticScalar v1 -> let v1 = v_static_scalar v1 in ()
   | Name2 v1 -> let v1 = v_name v1 in ()
 
 (* end of auto generation *)
