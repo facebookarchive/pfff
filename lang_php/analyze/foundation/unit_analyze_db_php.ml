@@ -380,45 +380,9 @@ class B extends A { }
 (* Include use/def *)
 (*---------------------------------------------------------------------------*)
 
+(* see also unit_foundation_php.ml *)
 let include_unittest =
-  "include_require" >::: (
-      let env = {
-        Env_php.global_arrays = Common.hash_of_list [
-          "_SERVER", Common.hash_of_list [
-            "PHP_ROOT", "/home/foo/www";
-          ];
-        ];
-        Env_php.constants = Common.hash_of_list [];
-        Env_php.globals = Common.hash_of_list [];
-        Env_php.globals_specials = (fun s dir -> None);
-      }
-      in [
-      (* I was previously using Filename.concat in include_require_php.ml
-       * which generate paths like a/b//c/foo.php which is annoying
-       * and can confuse some of our analysis. Check that no regression
-       * on this issue.
-       *)
-      "resolving path" >:: (fun () ->
-        let file = "
-        require_once $_SERVER['PHP_ROOT'].'/lib/alerts/alerts.php';
-        "
-        in
-        let tmpfile = tmp_php_file_from_string file in
-        let ast = Parse_php.parse_program tmpfile in
-        let incs = Include_require_php.top_increq_of_program ast in
-        match incs with
-        | [(_inc_kind,_tok, incexpr)] ->
-            let path =
-              Include_require_php.resolve_path (env, "/") incexpr in
-            assert_equal
-              (Some "/home/foo/www/lib/alerts/alerts.php")
-              path;
-
-        | _ ->
-            assert_failure
-              "wrong number of elements returned by increq_of_program"
-      );
-
+  "include_require_db" >::: [
       (* It is useful to know the set of files that directly or indirectly
        * include a file.
        *)
@@ -446,7 +410,7 @@ let include_unittest =
           (sort [p "c.php"; p "b.php"; p "a.php"; p "w.php"])
           (sort includees_z);
       );
-    ])
+    ]
 
 (*---------------------------------------------------------------------------*)
 (* Final suite *)
