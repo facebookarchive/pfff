@@ -243,7 +243,7 @@ type expr =
   | YieldBreak of tok * tok
 
   (*s: type exprbis hook *)
-  | SgrepExprDots of info
+  | SgrepExprDots of tok
   (*x: type exprbis hook *)
   (* unparser: *)
   | ParenExpr of expr paren
@@ -815,9 +815,9 @@ and toplevel =
     | ClassDef of class_def
    (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
   (*x: toplevel constructors *)
-    | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
+    | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
   (*x: toplevel constructors *)
-    | FinalDef of info (* EOF *)
+    | FinalDef of tok (* EOF *)
   (*e: toplevel constructors *)
  and program = toplevel list
  (*s: tarzan annotation *)
@@ -847,7 +847,7 @@ type entity =
 
   | XhpDeclE of xhp_decl
 
-  | MiscE of info list
+  | MiscE of tok list
 (*e: AST entity *)
 (*s: AST any *)
 type any = 
@@ -876,8 +876,8 @@ type any =
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
 
-  | Info of info
-  | InfoList of info list
+  | Info of tok
+  | InfoList of tok list
 
   | Name2 of name
 (*e: AST any *)

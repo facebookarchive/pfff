@@ -77,10 +77,8 @@ and 'a comma_list_dots =
    (* todo? Put ClassVar of dname here so can factorize some of the
     * StaticDynamicCall stuff in lvalue?
     *)
-
  and fully_qualified_class_name = name
  (*e: qualifiers *)
-
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -98,7 +96,6 @@ type ptype =
 
   | ArrayTy 
   | ObjectTy
-
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
@@ -231,7 +228,7 @@ type expr =
        (*e: constant constructors *)
        (*s: type constant hook *)
         | XdebugClass of name * class_stmt list
-        | XdebugResource (* TODO *)
+        | XdebugResource
        (*e: type constant hook *)
        (*s: constant rest *)
         (*s: type cpp_directive *)
@@ -262,7 +259,6 @@ type expr =
   (*e: type scalar and constant and encaps *)
 
   (*s: AST expression operators *)
-
    and fixOp    = Dec | Inc 
    and binaryOp    = Arith of arithOp | Logical of logicalOp 
      (*s: php concat operator *)
@@ -393,7 +389,8 @@ and lvalue =
       | Arg    of expr
       | ArgRef of tok * w_variable
   (*x: type lvalue aux *)
-    and obj_access = tok (* -> *) * obj_property * argument comma_list paren option
+    and obj_access = 
+     tok (* -> *) * obj_property * argument comma_list paren option
 
     and obj_property = 
       | ObjProp of obj_dim
@@ -422,7 +419,7 @@ and w_variable = lvalue
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST statement *)
-(* by introducing Lambda, expr and stmt are now mutually recursive *)
+(* By introducing Lambda, expr and stmt are now mutually recursive *)
 and stmt = 
   (*s: stmt constructors *)
     | ExprStmt of expr * tok (* ; *)
@@ -572,11 +569,26 @@ and lambda_def = {
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST class definition *)
+(* I used to have a class_def and interface_def because interface_def
+ * didn't allow certain forms of statements (methods with a body), but
+ * with the introduction of traits, it does not make that much sense
+ * to be so specific, so I factorized things. Classes/interfaces/traits
+ * are not that different. Interfaces are really just abstract traits.
+ *)
 and class_def = {
   c_type: class_type;
   c_name: name;
+  (* PHP uses single inheritance. Interfaces can also use 'extends'
+   * but we use the c_implements field for that (because it can be a list).
+   *)
   c_extends: extend option;
+  (* For classes it's a list of interfaces, for interface a list of other
+   * interfaces it extends, and for traits it must be empty.
+   *)
   c_implements: interface option;
+  (* The class_stmt for interfaces are restricted to only abstract methods.
+   * The class_stmt seems to be unrestricted for traits; can even 
+   * have some 'use' *)
   c_body: class_stmt list brace;
 }
   (*s: type class_type *)
@@ -686,7 +698,9 @@ and class_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
-(* todo *)
+(* todo: as and insteadof, but those are bad features ... noone should
+ * use them.
+ *)
 and trait_rule = unit
 
 (*e: AST class definition *)
@@ -702,9 +716,16 @@ and global_var =
 and static_var = dname * static_scalar_affect option
 (*x: AST other declaration *)
   (* static_scalar used to be a special type allowing constants and
-   * a restricted form of expressions (plus and minus). But it was yet
+   * a restricted form of expressions. But it was yet
    * another type and it turned out it was making things like spatch
-   * and visitor more complicated.
+   * and visitors more complicated because stuff like "+ 1" could
+   * be an expr or a static_scalar. We don't need this "isomorphism".
+   * I never leveraged the specificities of static_scalar (maybe a compiler
+   * would, but my checker/refactorers/... don't).
+   * 
+   * Note that it's not 'type static_scalar = scalar' because static_scalar
+   * actually allows arrays (why the heck they called it a scalar then ....)
+   * and plus/minus which are only in expr.
    *)
   and static_scalar = expr
   (*s: type static_scalar hook *)
@@ -747,9 +768,7 @@ and toplevel =
   (*x: toplevel constructors *)
     | FinalDef of tok (* EOF *)
   (*e: toplevel constructors *)
-
  and program = toplevel list
-
  (*s: tarzan annotation *)
   (* with tarzan *)
  (*e: tarzan annotation *)
