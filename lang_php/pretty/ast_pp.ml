@@ -41,8 +41,9 @@ and stmt =
 
   | Expr of expr
 
-  (* pad: Noop could be Block [], but it's abused right now for debugging
-   * purpose in the abstract interpreter
+  (* Noop could be Block []? Maybe, but right now it's used to represent
+   * empty else branch in If below, and changing Noop to Block []
+   * introduces some regressions. So safer to keep Noop for now.
    *)
   | Noop
   | Block of stmt list
@@ -67,10 +68,6 @@ and stmt =
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
   | FuncDef of func_def
-  (* todo? factorize with ClassDef here too? *)
-  | InterfaceDef of class_def
-  (* only at toplevel *)
-  | TraitDef of class_def
 
   | StaticVars of (string * expr option) list
   | Global of expr list

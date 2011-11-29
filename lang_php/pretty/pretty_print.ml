@@ -274,11 +274,7 @@ and stmt_ env = function
           | _ -> ())
       );
       Pp.newline_opt env
-  | InterfaceDef c
-  | ClassDef c
-  | TraitDef c
-    ->
-      class_def env c
+  | ClassDef c -> class_def env c
   | While (e, stl) ->
       Pp.print env "while (";
       expr env e;
