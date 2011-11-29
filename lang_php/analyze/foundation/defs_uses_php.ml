@@ -91,7 +91,9 @@ let defs_of_any any =
 
     V.kfunc_def = (fun (k, _) def ->
       Common.push2 (Db.Function, def.f_name, None) aref;
-      (* could decide to not recurse, but could have nested function ? *)
+      (* could decide to not recurse, but could have nested function ?
+       * hmm they are usually under some toplevel ifs, not inside functions.
+       *)
       k def
     );
     V.kclass_def = (fun (k, _) def ->
