@@ -533,20 +533,11 @@ let class_extenders_of_id id db =
     db.uses.extenders_of_class#assoc id
   with Not_found -> []
 
-let class_implementers_of_id id db =
-  if not (List.mem (db.defs.id_kind#assoc id) [EC.Interface])
-  then failwith "class_implementers_of_id expects the id of an interface";
-  try 
-    db.uses.implementers_of_interface#assoc id
-  with Not_found -> []
-
-
-
 let class_or_interface_id_of_nested_id_opt id db = 
   enclosing_ids id db +> Common.find_some_opt (fun id ->
     let id_kind = db.defs.id_kind#assoc id in
     match id_kind with
-    | EC.Class | EC.Interface | EC.Trait -> Some id
+    | EC.Class -> Some id
     | _ -> None
   )
 
@@ -651,8 +642,6 @@ let filter_ids_of_string s kind db =
 let function_ids__of_string s db = filter_ids_of_string s EC.Function db
 let method_ids_of_string s db    = filter_ids_of_string s EC.Method db
 let class_ids_of_string s db    = filter_ids_of_string s EC.Class db
-let interface_ids_of_string s db    = filter_ids_of_string s EC.Interface db
-
 
 (* could also have .functions .methods .classes fields in db ?
  * that use name_defs and the appropriate filter ?
@@ -704,10 +693,6 @@ let id_of_function s db =
 
 let id_of_class s db = 
   class_ids_of_string s db +> Common.list_to_single_or_exn
-
-let id_of_interface s db = 
-  interface_ids_of_string s db +> Common.list_to_single_or_exn
-
 
 (* todo? do we want to handle inheritance ? also we could allow to have 
  * multiple classes with same name, and the method name can then be used 

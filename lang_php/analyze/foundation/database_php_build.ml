@@ -214,7 +214,7 @@ let index_db2_2 db =
           | _ -> ()
         );
     | ( FinalDef _
-      | InterfaceDef _|ClassDef _|FuncDef _ | TraitDef _
+      | ClassDef _| FuncDef _ 
       | StmtList _)
         -> ()
     );
@@ -251,20 +251,10 @@ let index_db2_2 db =
             let s = "__TOPSTMT__" in
             add_def (s, EC.StmtList, id, None) db;
             k x
-
         | ClassDef class_def ->
             let s = Ast_php.name class_def.c_name in
             add_def (s, EC.Class, id, Some class_def.c_name) db;
             k x
-        | InterfaceDef def ->
-            let s = Ast_php.name def.i_name in
-            add_def (s, EC.Interface, id, Some def.i_name) db;
-            k x
-        | TraitDef def ->
-            let s = Ast_php.name def.t_name in
-            add_def (s, EC.Trait, id, Some def.t_name) db;
-            k x
-
         | NotParsedCorrectly _ -> ()
             
         (* right now FinalDef are not in the database, because of possible 
@@ -291,15 +281,6 @@ let index_db2_2 db =
             let s = Ast_php.name def.c_name in
             add_def (s, EC.Class, newid, Some def.c_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
-
-        | InterfaceDefNested def ->
-            let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-              (Ast_php.InterfaceE def) db in
-            let s = Ast_php.name def.i_name in
-            add_def (s, EC.Interface, newid, Some def.i_name) db;
-            Common.save_excursion enclosing_id newid (fun () -> k x);
-        | TraitDefNested def -> 
-            raise Impossible
       );
       V.kclass_stmt = (fun (k, bigf) x ->
         match x with
@@ -479,8 +460,12 @@ let index_db3_2 db =
           interface_list |> Ast.uncomma |> List.iter (fun interfacenameA ->
             (* we are in a situation like: class B implements A *)
 
-            let s = Ast.name interfacenameA in
-            let candidates = interface_ids_of_string s db in
+            let _s = Ast.name interfacenameA in
+            let candidates =  []
+              (* TODO? 
+              interface_ids_of_string s db 
+              *)
+            in
             candidates |> List.iter (fun idA -> 
               db.uses.implementers_of_interface#apply_with_default idA
                 (fun old -> idB::old) (fun() -> []) +> ignore
@@ -488,16 +473,6 @@ let index_db3_2 db =
           );
         );
         
-    (* todo? interface can also be extended; maybe should add a 
-     * extenders_of_interface at some point if it's useful
-     *)
-    | Ast.InterfaceE _ ->
-        ()
-
-    (* todo? *)
-    | Ast.TraitE _ ->
-        ()
-
     | Ast.MiscE _
     | Ast.ClassVariableE _  | Ast.ClassConstantE _
     | Ast.XhpDeclE _

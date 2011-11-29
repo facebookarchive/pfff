@@ -359,7 +359,7 @@ let (find_testcase_class_if_any:
            )
                
 
-       | StmtList _ | FuncDef _ | InterfaceDef _ | TraitDef _  -> None
+       | StmtList _ | FuncDef _ -> None
        | FinalDef _ -> None
        | NotParsedCorrectly infos ->
            let info = List.hd infos in

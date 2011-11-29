@@ -38,10 +38,6 @@ let db_from_string s =
  *)
 let id s db =
   match s with
-  | s when s =~ "\\([A-Za-z]+\\):::$" ->
-      let (interface) = Common.matched1 s in
-      Db.id_of_interface interface db
-
   | s when s =~ "\\([A-Za-z]+\\)::$" ->
       let (sclass) = Common.matched1 s in
       Db.id_of_class sclass db

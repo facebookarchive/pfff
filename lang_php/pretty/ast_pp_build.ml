@@ -155,8 +155,7 @@ let rec last_line_of_stmt_and_defl = function
   | [] -> assert false
   | [Stmt st] -> last_line_of_stmt st
   | [FuncDefNested { f_body = (_, _, x); _ } |
-    ClassDefNested { c_body = (_, _, x); _ } |
-    InterfaceDefNested { i_body = (_, _, x); _}
+    ClassDefNested { c_body = (_, _, x); _ }
    ] -> line_of_info x
   | _ :: rl -> last_line_of_stmt_and_defl rl
 
@@ -281,14 +280,6 @@ let rec toplevel env st acc =
       let _, _, end_ = cd.c_body in
       let acc = add_stmt_comments env acc (line_of_info end_) in
       A.ClassDef (class_def env cd) :: acc
-  | InterfaceDef id ->
-      let _, _, end_ = id.i_body in
-      let acc = add_stmt_comments env acc (line_of_info end_) in
-      A.InterfaceDef (interface_def env id) :: acc
-  | TraitDef id ->
-      let _, _, end_ = id.t_body in
-      let acc = add_stmt_comments env acc (line_of_info end_) in
-      A.TraitDef (trait_def env id) :: acc
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and stmt env st acc =
@@ -393,10 +384,6 @@ and stmt_and_def env st acc =
       A.FuncDef (func_def env fd) :: acc
   | ClassDefNested cd ->
       A.ClassDef (class_def env cd) :: acc
-  | InterfaceDefNested id ->
-      A.ClassDef (interface_def env id) :: acc
-  | TraitDefNested _ ->
-      raise Common.Impossible
 
 and expr env = function
   | Sc sc -> scalar env sc
@@ -660,8 +647,7 @@ and class_def env c =
   let acc = List.fold_right (class_body env) body [] in
   let line = line_of_info (info_of_name c.c_name) in
   let acc = add_ce_comments env acc line in
-  { A.c_is_interface = false;
-    A.c_is_trait = false;
+  {
     A.c_type = class_type env c.c_type ;
     A.c_name = name env c.c_name;
     A.c_extends =
@@ -675,9 +661,11 @@ and class_def env c =
   }
 
 and class_type env = function
-  | ClassRegular _ -> A.ClassRegular
-  | ClassFinal _ -> A.ClassFinal
+  | ClassRegular _  -> A.ClassRegular
+  | ClassFinal _    -> A.ClassFinal
   | ClassAbstract _ -> A.ClassAbstract
+  | Interface _ -> A.Interface
+  | Trait _ -> A.Trait
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in
@@ -855,36 +843,6 @@ and array_pair env = function
   | ArrayArrowExpr (e1, _, e2) -> A.Akval (expr env e1, expr env e2)
   | ArrayArrowRef (e1, _, _, lv) -> A.Akval (expr env e1, A.Ref (lvalue env lv))
 
-and interface_def env i =
-  let _, body, _ = i.i_body in
-  let acc = List.fold_right (class_body env) body [] in
-  let line = line_of_info (info_of_name i.i_name) in
-  let acc = add_ce_comments env acc line in
-  { A.c_is_interface = true;
-    A.c_is_trait = false;
-    A.c_type = A.ClassRegular;
-    A.c_name = name env i.i_name;
-    A.c_extends =
-    (match i.i_extends with
-    | None -> []
-    | Some x -> interfaces env x);
-    A.c_implements = [] ;
-    A.c_body = acc;
-  }
-
-and trait_def env i =
-  let _, body, _ = i.t_body in
-  let acc = List.fold_right (class_body env) body [] in
-  let line = line_of_info (info_of_name i.t_name) in
-  let acc = add_ce_comments env acc line in
-  { A.c_is_trait = true;
-    A.c_is_interface = false;
-    A.c_type = A.ClassRegular;
-    A.c_name = name env i.t_name;
-    A.c_extends = [];
-    A.c_implements = [] ;
-    A.c_body = acc;
-  }
 
 and for_expr env el = List.map (expr env) (comma_list el)
 

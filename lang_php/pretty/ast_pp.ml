@@ -187,9 +187,6 @@ and func_def = {
   }
 
 and class_def = {
-  (* todo: move is_interface and is_trait into class_type *)
-  c_is_interface: bool;
-  c_is_trait: bool;
   c_type: class_type;
   c_name: string;
   c_extends: string list;
@@ -209,6 +206,8 @@ and class_def = {
     | ClassRegular
     | ClassFinal
     | ClassAbstract
+    | Interface
+    | Trait
 
   and class_vars_def = {
     cv_final: bool;

@@ -2350,24 +2350,9 @@ and m_stmt_and_def a b =
        B.ClassDefNested(b1)
     )
     )
-  | A.InterfaceDefNested(a1), B.InterfaceDefNested(b1) ->
-    m_interface_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.InterfaceDefNested(a1),
-       B.InterfaceDefNested(b1)
-    )
-    )
-  | A.TraitDefNested(a1), B.TraitDefNested(b1) ->
-    m_trait_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.TraitDefNested(a1),
-       B.TraitDefNested(b1)
-    ))
   | A.Stmt _, _
   | A.FuncDefNested _, _
   | A.ClassDefNested _, _
-  | A.InterfaceDefNested _, _
-  | A.TraitDefNested _, _
    -> fail ()
 
 and m_colon_stmt a b = 
@@ -2765,18 +2750,6 @@ and m_toplevel a b =
        B.ClassDef(b1)
     )
     )
-  | A.InterfaceDef(a1), B.InterfaceDef(b1) ->
-    m_interface_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.InterfaceDef(a1),
-       B.InterfaceDef(b1)
-    ))
-  | A.TraitDef(a1), B.TraitDef(b1) ->
-    m_trait_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.TraitDef(a1),
-       B.TraitDef(b1)
-    ))
   | A.NotParsedCorrectly(a1), B.NotParsedCorrectly(b1) ->
     (m_list m_info) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2794,8 +2767,6 @@ and m_toplevel a b =
   | A.StmtList _, _
   | A.FuncDef _, _
   | A.ClassDef _, _
-  | A.InterfaceDef _, _
-  | A.TraitDef _, _
   | A.NotParsedCorrectly _, _
   | A.FinalDef _, _
    -> fail ()
@@ -2817,19 +2788,6 @@ let m_entity a b =
        B.ClassE(b1)
     )
     )
-  | A.InterfaceE(a1), B.InterfaceE(b1) ->
-    m_interface_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.InterfaceE(a1),
-       B.InterfaceE(b1)
-    )
-    )
-  | A.TraitE(a1), B.TraitE(b1) ->
-    m_trait_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.TraitE(a1),
-       B.TraitE(b1)
-    ))
   | A.StmtListE(a1), B.StmtListE(b1) ->
     (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2875,8 +2833,6 @@ let m_entity a b =
     )
   | A.FunctionE _, _
   | A.ClassE _, _
-  | A.InterfaceE _, _
-  | A.TraitE _, _
   | A.StmtListE _, _
   | A.MethodE _, _
   | A.ClassConstantE _, _

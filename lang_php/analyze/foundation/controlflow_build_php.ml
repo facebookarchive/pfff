@@ -84,10 +84,9 @@ let stmts_of_stmt_or_defs xs =
   xs |> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
     | Stmt st -> Some st
-    | FuncDefNested _ | ClassDefNested _ | InterfaceDefNested _ ->
+    | FuncDefNested _ | ClassDefNested _ ->
         pr2_once ("ignoring nested func/class/interface in CFG");
         None
-    | TraitDefNested _ -> raise Impossible
   )
 
 let stmts_of_colon_stmt colon = 

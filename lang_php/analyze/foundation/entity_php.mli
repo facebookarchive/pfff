@@ -12,11 +12,11 @@ type fullid = filepos
 type id_kind =
   (* toplevels, which can also be nested *)
   | Function
-  | Class | Interface | Trait
+  | Class
   | StmtList 
 
   (* only at nested level, inside a class *)
-  | Method  | StaticMethod 
+  | Method | StaticMethod 
   | ClassConstant | ClassVariable | XhpDecl
 
   | IdMisc

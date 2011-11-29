@@ -270,18 +270,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
           k x
 
-      (* don't differentiate class/interface/traits for now visually *)
-      | InterfaceDef def -> 
-          let name = def.i_name in
-          let info = Ast.info_of_name name in
-          tag info (Class (Def2 fake_no_def2));
-          k x
-      | TraitDef def -> 
-          let name = def.t_name in
-          let info = Ast.info_of_name name in
-          tag info (Class (Def2 fake_no_def2));
-          k x
-
       | StmtList _ ->
           k x
       | NotParsedCorrectly _ -> 
@@ -327,10 +315,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           bigf (Toplevel (FuncDef def))
       | ClassDefNested def ->
           bigf (Toplevel (Ast.ClassDef def))
-      | InterfaceDefNested def ->
-          bigf (Toplevel (Ast.InterfaceDef def))
-      | TraitDefNested def -> 
-          raise Impossible
       | Stmt _ -> k x
     );
 

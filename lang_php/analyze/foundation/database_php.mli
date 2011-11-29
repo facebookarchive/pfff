@@ -223,7 +223,6 @@ val class_users_of_id: id_class -> database -> id list
 val parent_name_of_id: id_class -> database -> string option
 
 val class_extenders_of_id: id_class -> database -> id_class list
-val class_implementers_of_id: id_interface -> database -> id_class list
 
 val class_or_interface_id_of_nested_id_opt: id -> database -> id option
 
@@ -271,12 +270,10 @@ val filter_ids_of_string: string -> id_kind -> database -> id list
 val function_ids__of_string: string -> database -> id_function list
 val method_ids_of_string:    string -> database -> id_method list
 val class_ids_of_string:     string -> database -> id_class list
-val interface_ids_of_string: string -> database -> id_interface list
 
 (* Shortcuts when we know the entity is unambiguous *)
 val id_of_function: string -> database -> id_function
 val id_of_class:    string -> database -> id_class
-val id_of_interface:    string -> database -> id_interface
 val id_of_method:   theclass:string -> string -> database -> id_method
 
 val static_function_ids_of_strings: 

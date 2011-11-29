@@ -54,8 +54,6 @@ let mk_entity ~root id nb_users good_example_ids properties db =
       | E.Class -> Db.Class
       | E.Method -> Db.Method
       | E.StaticMethod -> Db.StaticMethod
-      | E.Interface -> Db.Interface
-      | E.Trait -> Db.Trait
       | (E.IdMisc|E.XhpDecl|E.ClassVariable|E.ClassConstant|E.StmtList) ->
           raise Impossible
 
@@ -99,7 +97,7 @@ let is_id_with_entity id db =
   | Entity_php.Function
   | Entity_php.Method
   | Entity_php.StaticMethod  
-  | Entity_php.Class  | Entity_php.Interface | Entity_php.Trait
+  | Entity_php.Class
     -> 
       true
   | Entity_php.ClassConstant
@@ -277,7 +275,7 @@ let database_code_from_php_database ?(verbose=false) db =
                    db)
 
 
-
+(*
       | Entity_php.Interface -> 
           let users = DbPHP.class_implementers_of_id id db in
 
@@ -292,7 +290,6 @@ let database_code_from_php_database ?(verbose=false) db =
                    ~root id 
                    (List.length external_users) good_ex_ids properties
                    db)
-
       | Entity_php.Trait ->
           (* TODO *)
           let external_users = [] in
@@ -302,6 +299,7 @@ let database_code_from_php_database ?(verbose=false) db =
                    ~root id 
                    (List.length external_users) good_ex_ids properties
                    db)
+*)
 
 
       (* TODO *)

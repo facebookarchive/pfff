@@ -70,10 +70,6 @@ let db_from_fake_files xs =
  *)
 let id s db =
   match s with
-  | s when s =~ "\\([A-Za-z]+\\):::$" ->
-      let (interface) = Common.matched1 s in
-      Db.id_of_interface interface db
-
   | s when s =~ "\\([A-Za-z]+\\)::$" ->
       let (sclass) = Common.matched1 s in
       Db.id_of_class sclass db
@@ -323,7 +319,7 @@ let class_unittest =
           []
           (Db.class_extenders_of_id (id "C::") db);
       );
-
+(*
       "implementers of interface" >:: (fun () ->
         let file = "
           interface A { }
@@ -339,6 +335,7 @@ let class_unittest =
           (sort [id "B::";id "C::"])
           (sort (Db.class_implementers_of_id (id "A:::") db));
       );
+*)
     ]
 
 (*---------------------------------------------------------------------------*)

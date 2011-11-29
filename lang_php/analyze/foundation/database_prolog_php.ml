@@ -81,7 +81,7 @@ let name_id id db =
         )
 
     | EC.StmtList -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    | EC.Interface | EC.Class | EC.Function | EC.Trait -> spf "'%s'" s
+    | EC.Class | EC.Function -> spf "'%s'" s
     (* ?? *)
     | EC.IdMisc -> spf "'__IDMISC__%s'" (EC.str_of_id id)
     )
@@ -90,9 +90,8 @@ let name_id id db =
       
 let string_of_id_kind = function
   | EC.Function -> "function"
-  (* todo? merge class/interface too? *)
-  | EC.Class -> "class" | EC.Interface -> "interface" | EC.Trait -> "trait"
-
+  (* the interface/1 trait/1 predicate will precise things *)
+  | EC.Class -> "class"
   (* the static/1 predicate will say if static method (or class var) *)
   | EC.Method | EC.StaticMethod -> "method"
 
@@ -267,13 +266,25 @@ let add_defs_and_uses id kind ast pr db =
       | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
       | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
       | ClassRegular _ -> ()
+      | Interface _ 
+      | Trait _ -> ()
       );
       def.c_extends +> Common.do_option (fun (tok, x) ->
         pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
       );
       def.c_implements +> Common.do_option (fun (tok, interface_list) ->
         interface_list +> Ast.uncomma |> List.iter (fun x ->
-          pr (spf "implements(%s, '%s')." (name_id id db) (Ast.name x));
+          (* could put implements instead? it's not really the same
+           * kind of extends. Or have a extends_interface/2? maybe
+           * not worth it, just add kind(X, class) when using children/2
+           * if you want to restrict your query.
+           *)
+          (match def.c_type with
+          | Interface _ ->
+             pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
+          | _ ->
+             pr (spf "implements(%s, '%s')." (name_id id db) (Ast.name x));
+          )
         ));
       def.c_body +> Ast.unbrace +> List.iter (function
       | UseTrait (_tok, names, rules_or_tok) ->
@@ -282,28 +293,6 @@ let add_defs_and_uses id kind ast pr db =
           )
       | _ -> ()
       );
-
-  | EC.Trait, TraitE def ->
-      def.t_body +> Ast.unbrace +> List.iter (function
-      | UseTrait (_tok, names, rules_or_tok) ->
-          names +> Ast.uncomma +> List.iter (fun name ->
-            pr (spf "mixins(%s, '%s')." (name_id id db) (Ast.name name))
-          )
-      | _ -> ()
-      );
-
-  | EC.Interface, InterfaceE def ->
-      def.i_extends +> Common.do_option (fun (tok, interface_list) ->
-        interface_list +> Ast.uncomma |> List.iter (fun x ->
-          (* could put implements instead? it's not really the same
-           * kind of extends. Or have a extends_interface/2? maybe
-           * not worth it, just add kind(X, class) when using children/2
-           * if you want to restrict your query.
-           *)
-          pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
-        )
-      );
-      (* there is no use Trait; right now in interface *)
             
   | (EC.Method | EC.StaticMethod), MethodE def -> 
       pr (spf "arity(%s, %d)." (name_id id db)

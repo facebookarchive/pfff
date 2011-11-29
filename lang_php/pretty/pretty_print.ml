@@ -712,12 +712,13 @@ and array_value pad env = function
 
 and class_def env c =
   (match c.c_type with
-  | ClassRegular _ -> ()
-  | ClassFinal _ -> Pp.print env "final "
-  | ClassAbstract _ -> Pp.print env "abstract ");
-  if c.c_is_interface
-  then Pp.print env "interface "
-  else Pp.print env "class ";
+  | ClassRegular -> Pp.print env "class "
+  | ClassFinal -> Pp.print env "final class"
+  | ClassAbstract -> Pp.print env "abstract class"
+  | Interface -> Pp.print env "interface "
+  | Trait -> Pp.print env "trait "
+  );
+
   Pp.print env c.c_name;
   (match c.c_extends with
   | [] -> ()
@@ -728,7 +729,11 @@ and class_def env c =
   (match c.c_implements with
   | [] -> Pp.print env " "
   | _ ->
-      Pp.print env " implements ";
+      (* ugly *)
+      (match c.c_type with
+      | Interface -> Pp.print env " extends "
+      | _ -> Pp.print env " implements ";
+      );
       interfaces env c.c_implements;
       Pp.print env " ";
   );
@@ -1077,12 +1082,13 @@ and class_header env xs =
     | ClassDef c ->
 
         (match c.c_type with
-        | ClassRegular _ -> ()
-        | ClassFinal _ -> Pp.print env "final "
-        | ClassAbstract _ -> Pp.print env "abstract ");
-        if c.c_is_interface
-        then Pp.print env "interface "
-        else Pp.print env "class ";
+        | ClassRegular -> Pp.print env "class "
+        | ClassFinal -> Pp.print env "final "
+        | ClassAbstract -> Pp.print env "abstract "
+        | Interface -> Pp.print env "interface "
+        | Trait -> Pp.print env "trait "
+        );
+
         Pp.print env c.c_name;
         (match c.c_extends with
         | [] -> ()
@@ -1093,7 +1099,12 @@ and class_header env xs =
         (match c.c_implements with
         | [] -> Pp.print env " "
         | _ ->
-            Pp.print env " implements ";
+
+            (* ugly *)
+            (match c.c_type with
+            | Interface -> Pp.print env " extends "
+            | _ -> Pp.print env " implements ";
+            );
             interfaces env c.c_implements;
             Pp.print env " ";
         );
