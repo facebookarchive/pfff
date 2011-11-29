@@ -6,7 +6,7 @@ type entity_kind =
   | Type 
   | Constant | Global 
   | Macro
-  | TopStmt
+  | TopStmts
 
   | Method of method_type 
   | Field

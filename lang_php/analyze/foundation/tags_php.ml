@@ -86,9 +86,9 @@ let tags_of_ast ast filelines =
               (Ast.name class_name  ^ "::" ^ Ast.name name) info in
             [Tags.tag_of_info filelines info' kind]
         )
-    | ( Db.MultiDirs| Db.Dir| Db.File
-        | Db.Field | Db.TopStmt | Db.Macro | Db.Global
-        | Db.Type | Db.Module
+    | (   Db.Field 
+        | Db.Type | Db.Module | Db.TopStmts | Db.Macro | Db.Global
+        | Db.MultiDirs | Db.Dir | Db.File
       ) -> 
         []
   ) +> List.flatten

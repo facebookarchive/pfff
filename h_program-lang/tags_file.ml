@@ -120,7 +120,7 @@ let vim_tag_kind_str tag_kind =
   | Db.Module
   | Db.Global
   | Db.Macro
-  | Db.TopStmt
+  | Db.TopStmts
 
   | Db.File
   | Db.Dir

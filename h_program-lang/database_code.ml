@@ -100,7 +100,7 @@ type entity_kind =
   | Constant
   | Global
   | Macro
-  | TopStmt
+  | TopStmts
 
   (* nested entities *)
   | Method of method_type
@@ -116,6 +116,7 @@ type entity_kind =
    *)
   | MultiDirs
 
+  (* todo? could also abuse property below to encode such information *)
   and class_type = RegularClass | Interface | Trait
   and method_type = RegularMethod | StaticMethod
 
@@ -257,7 +258,7 @@ let string_of_entity_kind e =
   | Constant -> "Constant"
   | Global -> "Global"
   | Macro -> "Macro"
-  | TopStmt -> "TopStmt"
+  | TopStmts -> "TopStmts"
   | Method RegularMethod -> "Method"
   | Method StaticMethod -> "StaticMethod"
   | Field -> "Field"
@@ -276,7 +277,7 @@ let entity_kind_of_string s =
   | "Constant" -> Constant
   | "Global" -> Global
   | "Macro" -> Macro
-  | "TopStmt" -> TopStmt
+  | "TopStmts" -> TopStmts
   | "Method" -> Method RegularMethod
   | "StaticMethod" -> Method StaticMethod
   | "Field" -> Field
