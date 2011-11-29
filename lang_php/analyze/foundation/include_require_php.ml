@@ -24,14 +24,13 @@ module Env = Env_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Most of the arguments to require/include are static strings or concatenation
  * of know variables (e.g. $_SERVER) to static strings. It is useful to 
  * statically analyze those arguments, e.g. to detect bugs such as missing
  * filenames, and so to resolve statically the filenames, hence this file.
  * We just provide a better "view" over the Include | Require | ... 
- * statements  present in Ast_php.
+ * statements present in Ast_php.
  *)
 
 (*****************************************************************************)
@@ -67,7 +66,6 @@ type increq =
    | Require
    | RequireOnce
 
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -78,31 +76,25 @@ type increq =
 let rec increq_expr_of_expr e = 
   match e with
 
-  | (Sc(C(String((sfilemame, i_1)))), t_1) ->
+  | (Sc(C(String((sfilemame, i_1))))) ->
       Direct sfilemame
 
-       
   (* generated from ./ffi -dump_php_ml ../tests/require_classic.php *)
   | (Binary(
       (Lv(
-        (VArrayAccess((Var(darray, scope_ref), tlval_3),
-                     (i_4,
-                     Some((Sc(C(String((sfld, i_5)))), t_6)),
-                     i_7)),
-        tlval_8)),
-      t_9), (BinaryConcat, i_10),
-      (Sc(C(String((sfilename, i_11)))), t_12)),
-    t_13) 
+        (VArrayAccess((Var(darray, scope_ref)),
+                     (i_4, Some((Sc(C(String((sfld, i_5)))))), i_7))
+        ))), (BinaryConcat, i_10),
+      (Sc(C(String((sfilename, i_11)))))))
     -> 
       ConcatArrrayVar (darray, sfld, sfilename)
 
   (* generated from ./ffi -dump_php_ml ../tests/require_classic_bis.php *)
   | (Binary(
-      (Lv((Var(dvar, scope_ref), tlval_3)), t_4),
+      (Lv((Var(dvar, scope_ref)))),
       (BinaryConcat, i_5),
-      (Sc(C(String((sfilename, i_6)))),
-      t_7)),
-    t_8) 
+      (Sc(C(String((sfilename, i_6))))
+      )))
     ->
       ConcatVar (dvar, sfilename)
 
@@ -111,18 +103,16 @@ let rec increq_expr_of_expr e =
       (Binary(
         (Lv(
           (VArrayAccess(
-            (Var(darray, _scope), tlval_3),
+            (Var(darray, _scope)),
             (i_4,
-            Some((Sc(C(String((sfld, i_5)))), t_6)),
-            i_7)),
-          tlval_8)),
-        t_9), (BinaryConcat, i_10),
-        (Sc(C(String((sfilename1, i_11)))),
-        t_12)),
-      t_13), (BinaryConcat, i_14),
-      (Sc(C(String((sfilename2, i_15)))),
-      t_16)),
-    t_17) 
+            Some((Sc(C(String((sfld, i_5)))))),
+            i_7))
+          ))
+        ), (BinaryConcat, i_10),
+        (Sc(C(String((sfilename1, i_11))))))), 
+         (BinaryConcat, i_14),
+      (Sc(C(String((sfilename2, i_15))))
+      )))
     -> 
       ConcatArrrayVar (darray, sfld, sfilename1 ^ sfilename2)
 
@@ -132,12 +122,10 @@ let rec increq_expr_of_expr e =
         (FunCallSimple(Name(("dirname", i_2)),
                       (i_3,
                       [Left (Arg(
-                        (Sc(C(CName(Name(("__FILE__", i_4))))), t_5)))],
-                      i_6)),
-        tlval_7)),
-      t_8), (BinaryConcat, i_9),
-      (Sc(C(String((sfilename, i_10)))), t_11)),
-    t_12) 
+                        (Sc(C(CName(Name(("__FILE__", i_4))))))))],
+                      i_6))))), 
+        (BinaryConcat, i_9),
+      (Sc(C(String((sfilename, i_10)))))))
     ->
       ConcatDirname(sfilename)
 
@@ -152,18 +140,17 @@ let rec increq_expr_of_expr e =
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
-                                            C(CName(Name(("__FILE__", i_6))))),
-                                          t_7)))],
-                                        i_8)),
-                          tlval_9)),
-                        t_10)))],
-                      i_11)),
-        tlval_12)),
-      t_13), (BinaryConcat, i_14),
+                                            C(CName(Name(("__FILE__", i_6)))))
+                                          )))],
+                                        i_8))
+                          ))
+                        )))],
+                      i_11))
+        ))
+      ), (BinaryConcat, i_14),
       (Sc(
-        C(String((sfilename, i_15)))),
-      t_16)),
-    t_17) 
+        C(String((sfilename, i_15))))
+      ))) 
     ->
       ConcatRealpathDirname(sfilename)
 
@@ -178,19 +165,18 @@ let rec increq_expr_of_expr e =
                                           (i_5,
                                           [Left Arg((
                                             (Sc(
-                                              C(CName(Name(("__FILE__", i_6))))),
-                                            t_7)))],
-                                          i_8)),
-                            tlval_9)),
-                          t_10), (BinaryConcat, i_11),
-                          (Sc(C(String((sfilename1, i_12)))), t_13)),
-                        t_14)))],
-                      i_15)),
-        tlval_16)),
-      t_17), (BinaryConcat, i_18),
-      (Sc(C(String((sfilename2, i_19)))),
-      t_20)),
-    t_21)
+                                              C(CName(Name(("__FILE__", i_6)))))
+                                            )))],
+                                          i_8))
+                            ))
+                          ), (BinaryConcat, i_11),
+                          (Sc(C(String((sfilename1, i_12))))))
+                        )))],
+                      i_15))
+        ))), 
+      (BinaryConcat, i_18),
+      (Sc(C(String((sfilename2, i_19))))
+      )))
     ->
       ConcatRealpathDirname(sfilename1 ^ sfilename2)
 
@@ -205,58 +191,53 @@ let rec increq_expr_of_expr e =
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
-                                            C(CName(Name(("__FILE__", i_6))))),
-                                          t_7)))],
-                                        i_8)),
-                          tlval_9)),
-                        t_10), (BinaryConcat, i_11),
+                                            C(CName(Name(("__FILE__", i_6)))))
+                                          )))],
+                                        i_8))
+                          ))
+                        ), (BinaryConcat, i_11),
                         (Sc(
                           C(
-                            String((sfilename, i_12)))),
-                       t_13)),
-                    t_14)))],
-                i_15)),
-             tlval_16)),
-          t_17)
+                            String((sfilename, i_12))))
+                       ))
+                    )))],
+                i_15))
+             ))
+          )
       ->
       ConcatRealpathDirname(sfilename)
 
 
   (* ./ffi -dump_php_ml ../tests/require_constant_concat.php *)
-  | (Binary((Sc(C(CName(name))), t_3),
+  | (Binary((Sc(C(CName(name)))),
            (BinaryConcat, i_4),
-           (Sc(C(String((sfilename, i_5)))), t_6)),
-    t_7)
+           (Sc(C(String((sfilename, i_5)))))))
     ->
       ConcatConstant (name, sfilename)
 
   (* ./ffi -dump_php_ml ../tests/require_classic_bis2.php *)
   | (Sc(
       Guil(i_3,
-          [EncapsVar((Var(dname, _scope), tlval_5));
-           EncapsString((sfilename, i_6))], i_7)),
-    t_8)
+          [EncapsVar((Var(dname, _scope)));
+           EncapsString((sfilename, i_6))], i_7)))
     ->
       ConcatVar (dname, sfilename)
 
   (* some simple isomorphisms *)
-  | (ParenExpr (eparen), t_1) ->
+  | ParenExpr (eparen) ->
       increq_expr_of_expr (Ast.unparen eparen)
         
 
-  | (Lv((Var(dvar, _scope), tlval_1)), t_1) ->
+  | Lv((Var(dvar, _scope))) ->
       SimpleVar dvar
 
   | _ -> Other e
 
 
 
-
-
-
 (* todo: check that the directives are at the toplevel ? *)
 let increq_of_include_stmt e = 
-  match Ast.untype e with
+  match e with
   | Ast.Include     (t, e) -> Some (Include,      t, increq_expr_of_expr e)
   | Ast.IncludeOnce (t, e) -> Some (IncludeOnce,  t, increq_expr_of_expr e)
   | Ast.Require     (t, e) -> Some (Require,      t, increq_expr_of_expr e)

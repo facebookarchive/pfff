@@ -135,7 +135,7 @@ let add_uses id ast pr db =
   let visitor = V.mk_visitor { V.default_visitor with
 
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       (* todo: need to handle pass by ref too so set in_lvalue_pos
        * for the right parameter. So need an entity_finder?
        *)
@@ -144,7 +144,7 @@ let add_uses id ast pr db =
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match str, args with
           (* a little bit facebook specific ... *)
-          | "require_module", [Arg ((Sc (C (String (str,_))), _t1))] ->
+          | "require_module", [Arg ((Sc (C (String (str,_)))))] ->
               pr (spf "require_module('%s', '%s')."
                      (Db.readable_filename_of_id id db) str)
           | _ -> ()
@@ -181,7 +181,7 @@ let add_uses id ast pr db =
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
-      | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))), t_2)), _)) ->
+      | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))))), _)) ->
           let str = escape_quote_array_field fld in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
@@ -196,7 +196,7 @@ let add_uses id ast pr db =
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       (* todo: enough? hmm we need to handle pass by ref too *)
       | Assign (lval, _, e)
       | AssignOp(lval, _, e) 

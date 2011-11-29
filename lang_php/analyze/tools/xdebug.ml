@@ -390,9 +390,9 @@ let iter_dumpfile2
                       let str = "foo(" ^ str ^ ")" in
                       let expr = parse_xdebug_expr str in
 
-                      match Ast.untype expr with
+                      match expr with
                       | Lv var ->
-                          (match Ast.untype var with
+                          (match var with
                           | FunCallSimple (name, args_paren) ->
                               assert(Ast.name name = "foo");
                               Ast.unparen args_paren 

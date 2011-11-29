@@ -75,7 +75,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
     | x::xs, y::ys ->
         (match x with
         (* erling's idea of wrong keyword argument check *)
-        | Arg(Assign((Var(dn, _), _),_ , expr), _) ->
+        | Arg(Assign((Var(dn, _)),_ , expr)) ->
             if not (Ast.dname dn =$= Ast.dname y.p_name)
             then
               
@@ -121,7 +121,7 @@ let visit_and_check_funcalls find_entity prog =
   let visitor = V.mk_visitor { V.default_visitor with
 
     V.klvalue = (fun (k,vx) x ->
-      match Ast_php.untype  x with
+      match x with
       | FunCallSimple (callname, args)  ->
          E.find_entity_and_warn find_entity (Ent.Function, callname)
          (function Ast_php.FunctionE def ->

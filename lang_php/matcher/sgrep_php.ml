@@ -71,7 +71,7 @@ let sgrep ~hook pattern file =
      * types inside a recursive types, we need to do that
      * (for now lvalue and xhp_html).
      *)
-    | Expr (Lv pattern_var, _t) ->
+    | Expr (Lv pattern_var) ->
         { V.default_visitor with
           V.klvalue = (fun (k, _) x ->
             let matches_with_env =  
@@ -90,7 +90,7 @@ let sgrep ~hook pattern file =
             end
           );
         }
-    | Expr (XhpHtml xhp, _t) ->
+    | Expr (XhpHtml xhp) ->
         { V.default_visitor with
           V.kxhp_html = (fun (k, _) x ->
             let matches_with_env =  

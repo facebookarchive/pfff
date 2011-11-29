@@ -167,7 +167,7 @@ let visit_and_check  find_entity prog =
         )
     );
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | StaticMethodCallSimple (qu, name, args) ->
           (match fst qu with
           | ClassName (classname) ->
@@ -192,7 +192,7 @@ let visit_and_check  find_entity prog =
            * 
            * todo: special case also id(new ...)-> ?
            *)
-          (match Ast.untype lval, !in_class with
+          (match lval, !in_class with
           | This _, Some (aclass, is_abstract) ->
               let amethod = Ast.name name in
               check_method_call (MethodCall is_abstract)
@@ -214,7 +214,7 @@ let visit_and_check  find_entity prog =
 
       | ObjAccessSimple (lval, tok, name) ->
           let field = Ast.name name in
-          (match Ast.untype lval, !in_class with
+          (match lval, !in_class with
           | This _, Some (aclass, is_abstract) ->
               check_member_access ObjAccess (aclass, field) tok find_entity
           (* todo: need dataflow ... *)
@@ -225,7 +225,7 @@ let visit_and_check  find_entity prog =
     );
 
     V.kexpr = (fun (k,vx) x ->
-      match Ast_php.untype x with
+      match x with
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
           (* todo: use lookup_method *)

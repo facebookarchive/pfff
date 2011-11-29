@@ -1,8 +1,8 @@
 (*s: database_php_statistics.mli *)
 
 val parsing_stat_db:   Database_php.database -> unit
-val typing_stat_db:    Database_php.database -> unit
 (*
+val typing_stat_db:    Database_php.database -> unit
 val callgraph_stat_db: Database_php.database -> unit
 val extra_stat_db:     Database_php.database -> unit
 *)

@@ -77,8 +77,7 @@ let (dumb_spatch_pattern: Ast_php.expr) =
      PI.comments = ();
     }
   in
-  let t_1 = Ast.noType () in
-  (Sc(C(Int(("1", i_1)))), t_1)
+  Sc(C(Int(("1", i_1))))
 
 (*****************************************************************************)
 (* Main entry points *)
@@ -237,7 +236,7 @@ let spatch pattern file =
      * a match_v_v with the same visitor
      *)
 
-    | Expr (Lv pattern_var, _t) ->
+    | Expr (Lv pattern_var) ->
       { V.default_visitor with
         V.klvalue = (fun (k, _) x ->
           let matches_with_env =  

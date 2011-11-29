@@ -34,7 +34,7 @@ module Ent = Entity_php
 let vars_used_in_any any =
   any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       | Lambda def -> 
           (* stop here, do not recurse in but count the use(...) as vars used *)
           def.l_use +> Common.do_option (fun (_tok, vars) ->
@@ -49,13 +49,13 @@ let vars_used_in_any any =
        * isset($arr[...]) then we may want to recurse and count as
        * a use the things inside [...].
        *)
-      | Isset (_, (i_2, [Left((Var(_, _), tlval_1))], i_4)) ->
+      | Isset (_, (i_2, [Left((Var(_, _)))], i_4)) ->
           ()
       | _ -> k x
     );
 
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | Var (dname, _scope) ->
           Common.push2 dname aref
 
@@ -89,15 +89,14 @@ let vars_used_in_any any =
  * 
  *)
 let rec get_assigned_var_lval_opt lval = 
-
-  (match Ast.untype lval with
+  match lval with
   | Var (dname,  _) ->
       Some dname
   | VArrayAccess (lval, e) ->
       get_assigned_var_lval_opt lval
   (* TODO *)
   | _ -> None
-  )
+  
 
 (* update: does consider also function calls to function taking parameters via
  * reference. Use global info.
@@ -105,29 +104,25 @@ let rec get_assigned_var_lval_opt lval =
 let vars_assigned_in_any any =
   any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | Assign (lval, _, _) 
       | AssignOp (lval, _, _) 
-          
       | AssignRef (lval, _, _, _) 
       | AssignNew (lval, _, _, _, _,  _) ->
-          
           let vopt = get_assigned_var_lval_opt lval in
           vopt |> Common.do_option (fun v -> Common.push2 v aref);
-          
           (* recurse, can have $x = $y = 1 *)
           k x
       | _ -> 
           k x
     );
-    }
-  )
+    })
 
 let keyword_arguments_vars_in_any any = 
   any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kargument = (fun (k, vx) x ->
       (match x with
-      | Arg (Assign((Var(dname, _scope), tlval_4), i_5, _e), t_8) ->
+      | Arg (Assign((Var(dname, _scope)), i_5, _e)) ->
           Common.push2 dname aref;
       | _ -> ()
       );
@@ -168,7 +163,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
        *)
       Common.zip_safe params args +> List.iter (fun (param, arg) ->
         match arg with
-        | Arg (Lv((Var(dname, _scope), tlval_49)), t_50) ->
+        | Arg (Lv((Var(dname, _scope)))) ->
             if param.p_ref <> None
             then Common.push2 dname aref
         | _ -> ()
@@ -177,7 +172,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
     
   { V.default_visitor with
     V.klvalue = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       (* quite similar to code in check_functions_php.ml *)
 
       | FunCallSimple (name, args) ->
@@ -189,7 +184,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               | x::y::vars ->
                   vars +> List.iter (fun arg ->
                     match arg with
-                    | Arg (Lv((Var(dname, _scope), tlval_49)), t_50) ->
+                    | Arg (Lv((Var(dname, _scope)))) ->
                         Common.push2 dname aref
                     (* todo? wrong, it should be a variable *)
                     | _ -> ()
@@ -234,7 +229,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           k x
 
       | MethodCallSimple (lval, _tok, name, args) ->
-          (match Ast.untype lval with
+          (match lval with
           (* if this-> then can use lookup_method.
            * Being complete and handling any method calls like $o->foo()
            * requires to know what is the type of $o which is quite
@@ -270,7 +265,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           k x
     );
     V.kexpr = (fun (k, vx) x ->
-      (match Ast.untype x with
+      (match x with
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->

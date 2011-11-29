@@ -443,9 +443,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | Some _ -> ()
         );
       *)
-      let (exprbis, tinfo) = expr in
-      match exprbis with
-
+      match expr with
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc
       | _ ->
@@ -509,7 +507,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
     (* -------------------------------------------------------------------- *)
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | Var (dname, aref) ->
           (* see scoping_php.ml *)
 
@@ -560,7 +558,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           (match Ast.unbracket exprbracket with
           | None -> 
               k x
-          | Some (exprbis, tbis) ->
+          | Some (exprbis) ->
               (match exprbis with
               | Sc (C (Ast.String (s, info))) ->
                   tag info (Field (Use2 fake_no_use2));

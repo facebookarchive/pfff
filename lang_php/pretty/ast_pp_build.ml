@@ -398,8 +398,7 @@ and stmt_and_def env st acc =
   | TraitDefNested _ ->
       raise Common.Impossible
 
-and expr env (eb, info) = exprbis env eb
-and exprbis env = function
+and expr env = function
   | Sc sc -> scalar env sc
   | Lv lv -> lvalue env lv
   | Binary (e1, (bop, _), e2) ->
@@ -567,8 +566,7 @@ and class_name_reference env = function
    | ClassNameRefDynamic _ ->
        failwith "TODO ClassNameRefDynamic" (* of lvalue * obj_prop_access list *)
 
-and lvalue env (lvb, _) = lvaluebis env lvb
-and lvaluebis env = function
+and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
   | This _ -> A.This
   | VArrayAccess (lv, (_, e, _)) ->

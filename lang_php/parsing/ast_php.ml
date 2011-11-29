@@ -22,7 +22,6 @@ open Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 extensions (e.g. closures) and support for XHP.
@@ -46,6 +45,12 @@ open Parse_info
  * to regenerate the JSON/sexp exporters, but also to modify the
  * dependent programs !!!! An easier solution is to not change this
  * file, or to only add new constructors.
+ * 
+ * todo: 
+ *  - unify class_def/interface_def/trait_def.
+ *  - remove static_scalar
+ *  - unify toplevel statement vs statements and stmt_and_def?
+ *  - unify expr and lvalue?
  *)
 
 (*****************************************************************************)

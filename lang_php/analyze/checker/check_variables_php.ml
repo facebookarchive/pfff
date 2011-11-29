@@ -324,11 +324,10 @@ let visit_prog find_entity prog =
             (i_2,
              (Left(
                 Arg(
-                  (ConsArray(i_3, (i_4, array_args, i_20)),
-                   t_21))))::rest_param_xxx_args,
-             i_22)),
-          tlval_23)),
-         t_24), i_25) ->
+                  (ConsArray(i_3, (i_4, array_args, i_20))
+                   ))))::rest_param_xxx_args,
+             i_22))
+          ))), i_25) ->
 
           let array_args = Ast.uncomma array_args in
           let rest_param_xxx_args = Ast.uncomma rest_param_xxx_args in
@@ -338,7 +337,7 @@ let visit_prog find_entity prog =
           then begin
               let prefix_opt =
                 match rest_param_xxx_args with
-                | [Arg (Sc(C(String(str_prefix, tok_prefix))),_t)] -> 
+                | [Arg (Sc(C(String(str_prefix, tok_prefix))))] -> 
                     Some str_prefix
                 | [] ->
                     (match kind with
@@ -354,7 +353,7 @@ let visit_prog find_entity prog =
               in
               prefix_opt +> Common.do_option (fun prefix ->
                array_args +> List.iter (function
-               | ArrayArrowExpr((Sc(C(String((param_string, tok_param)))), t_6),
+               | ArrayArrowExpr((Sc(C(String((param_string, tok_param))))),
                                i_7,
                                _typ_param) ->
                    let dname = DName (prefix ^ param_string, tok_param) in
@@ -387,7 +386,7 @@ let visit_prog find_entity prog =
             | Right lval ->
                 lval
           in
-          (match Ast.untype lval with
+          (match lval with
           | Var (dname, scope_ref) ->
               do_in_new_scope_and_check_if_strict (fun () ->
                 (* People often use only one of the iterator when
@@ -398,26 +397,20 @@ let visit_prog find_entity prog =
                  *)
                 let shared_ref = ref 0 in
                 add_binding dname (S.LocalIterator, shared_ref);
-
                 scope_ref := S.LocalIterator;
-
                 (match arrow_opt with
                 | None -> ()
                 | Some (_t, (is_ref, var)) -> 
-                    (match Ast.untype var with
+                    (match var with
                     | Var (dname, scope_ref) ->
                         add_binding dname (S.LocalIterator, shared_ref);
-
                         scope_ref := S.LocalIterator;
-
                     | _ ->
                         E.warning tok E.WeirdForeachNoIteratorVar
                     );
                 );
-                
                 vx (ColonStmt2 colon_stmt);
               );
-
           | _ -> 
               E.warning tok E.WeirdForeachNoIteratorVar
           )
@@ -472,7 +465,7 @@ let visit_prog find_entity prog =
     (* uses *)
 
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       (* the checking is done upward, in kexpr, and only for topexpr *)
       | Var (dname, scope_ref) ->
           (* assert scope_ref = S.Unknown ? *)
@@ -494,7 +487,7 @@ let visit_prog find_entity prog =
     );
 
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       (* todo? if the ConsList is not at the toplevel, then 
        * the code below will be executed first, which means
        * vars_used_in_expr will wrongly think vars in list() expr

@@ -355,7 +355,7 @@ class A { static function a() { return A; } }
       let def = Class_php.lookup_method ("A","a") find_entity in
       match def with
       | { m_body = MethodBody (_, 
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))), _)), _))],
+         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))))), _))],
                               _); _ }
           -> ()
       | _ ->assert_failure "it should find simple static method"
@@ -370,7 +370,7 @@ class B extends A { }
       let def = Class_php.lookup_method ("B","a") find_entity in
       match def with
       | { m_body = MethodBody (_, 
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))), _)), _))],
+         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))))), _))],
                               _); _ }
           -> ()
       | _ ->assert_failure "it should find static method in parent class"

@@ -503,9 +503,8 @@ let callees_of_any any =
 
     (* TODO if nested function ??? still wants to report ? *)
     Visitor_php.klvalue = (fun (k,vx) x ->
-      match Ast_php.untype  x with
+      match x with
       | FunCallSimple (callname, args) ->
-
          (* note that as opposed to C, f cant be the name of a local var or
           * a function pointer because the namespace are different 
           * (T_STRING vs T_VARIABLE).
@@ -526,7 +525,7 @@ let callees_of_any any =
 let method_callees_of_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype  x with
+      match x with
       | MethodCallSimple (var, t1, methname, args) ->
           Common.push2 (N.name_to_nameS_wrap methname) aref;
           k x
@@ -548,7 +547,7 @@ let method_callees_of_any any =
 let static_method_callees_of_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype  x with
+      match x with
       | StaticMethodCallSimple (qu, methname, args) ->
           let sclass_opt = 
             match fst qu with

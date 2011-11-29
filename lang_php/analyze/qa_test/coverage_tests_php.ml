@@ -95,7 +95,7 @@ let nblines_with_wc_cached file =
 let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.klvalue = (fun (k,vx) x ->
-      match Ast.untype x with
+      match x with
       | FunCallSimple (callname, (lp, args, rp)) ->
           let str = Ast_php.name callname in
           
@@ -121,7 +121,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
           k x
     );
     V.kexpr = (fun (k, vx) x ->
-      match Ast.untype x with
+      match x with
       | New (tok, class_name_ref, args_opt) ->
           (* can not use ')' here, so use the token for new *)
           Common.push2 (None, tok) aref;

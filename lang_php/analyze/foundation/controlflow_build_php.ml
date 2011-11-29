@@ -131,7 +131,7 @@ let rec (lookup_some_ctx:
    aux 1 xs
 
 let intvalue_of_expr e =
-  match Ast.untype e with
+  match e with
   | (Sc (C (Int (i_str, _)))) ->
       Some (s_to_i i_str)
   | _ -> None

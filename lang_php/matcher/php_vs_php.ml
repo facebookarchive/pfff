@@ -697,18 +697,6 @@ let m_cpp_directive a b =
 (* ---------------------------------------------------------------------- *)
 let rec m_variable a b = 
   match a, b with
-  | (a1, a2), (b1, b2) ->
-    m_variablebis a1 b1 >>= (fun (a1, b1) -> 
-    m_var_info a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       (a1, a2),
-       (b1, b2)
-    )
-    ))
-and m_lvalue a b = m_variable a b
-
-and m_variablebis a b = 
-  match a, b with
   (* pad: iso on $V metavar. Match any kind of PHP 'variable'.
    * Note that this includes function call. It's 'variable' in
    * the PHP original grammar sense, as usual.
@@ -716,9 +704,9 @@ and m_variablebis a b =
   | A.Var((A.DName (dname, info_dname)), a2),
     b when MV.is_metavar_variable_name dname ->
 
-      X.envf (dname, info_dname) (B.Lvalue (b, Ast_php.noTypeVar())) >>= 
+      X.envf (dname, info_dname) (B.Lvalue (b)) >>= 
       (function
-      | ((dname, info_dname), B.Lvalue (b, _))  ->
+      | ((dname, info_dname), B.Lvalue (b))  ->
         return (
           A.Var((A.DName (dname, info_dname)), a2), 
           b
@@ -730,9 +718,9 @@ and m_variablebis a b =
   | A.Var((A.DName (dname, info_dname)), a2), 
     B.Var(b1, b2) when MV.is_metavar_name dname ->
 
-      X.envf (dname, info_dname) (B.Lvalue (b, Ast_php.noTypeVar())) >>= 
+      X.envf (dname, info_dname) (B.Lvalue (b)) >>= 
       (function
-      | ((dname, info_dname), B.Lvalue (b, _))  ->
+      | ((dname, info_dname), B.Lvalue (b))  ->
         return (
           A.Var((A.DName (dname, info_dname)), a2), 
           b
@@ -928,6 +916,8 @@ and m_variablebis a b =
   | A.DynamicClassVar _, _
    -> fail ()
 
+and m_lvalue a b = m_variable a b
+
 and m_rw_variable a b = m_variable a b
 and m_w_variable a b = m_variable a b
 
@@ -1111,23 +1101,11 @@ and m_obj_prop_access a b =
 
 and m_expr a b = 
   match a, b with
-  | (a1, a2), (b1, b2) ->
-    m_exprbis a1 b1 >>= (fun (a1, b1) -> 
-    m_exp_info a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       (a1, a2),
-       (b1, b2)
-    )
-    ))
-
-
-and m_exprbis a b = 
-  match a, b with
   (* special case, metavars !! *)
   | ((A.Sc (A.C (A.CName (A.Name (name,info_name))))), 
     e2) when MV.is_metavar_name name ->
-      X.envf (name, info_name) (B.Expr (e2, Ast_php.noType())) >>= (function
-      | ((name, info_name), B.Expr (e2, _))  ->
+      X.envf (name, info_name) (B.Expr (e2)) >>= (function
+      | ((name, info_name), B.Expr (e2))  ->
         return (
           (A.Sc (A.C (A.CName (A.Name (name,info_name))))),
           e2
@@ -1864,12 +1842,12 @@ and m_constant a b =
       (* removing the surrounding quotes *)
       let any1 = B.Name2 (B.Name (sb, Ast_php.rewrap_str sb info_sb)) in
 
-      let any2 = B.Expr (B.Sc (B.C (B.String(sb, info_sb))), A.noType()) in
+      let any2 = B.Expr (B.Sc (B.C (B.String(sb, info_sb)))) in
 
     X.envf2 (name, info_name) (any1, any2) >>= 
       (function
       | ((name, info_name), 
-          (_any1, B.Expr (B.Sc (B.C (B.String(sb, info_sb))), _))) ->
+          (_any1, B.Expr (B.Sc (B.C (B.String(sb, info_sb)))))) ->
         return (
           A.String(name, info_name),
           B.String(sb, info_sb)
@@ -1957,7 +1935,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       return ([], [])
 
   (* iso on ... *)
-  | [Left (A.Arg (A.SgrepExprDots i, tok))], bbs ->
+  | [Left (A.Arg (A.SgrepExprDots i))], bbs ->
       (* TODO do the different combinaisons, and apply the possible
        * transfo in tok.
        *)
@@ -1969,10 +1947,10 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
   (* bugfix: we can have some Replace or AddAfter in the token of
    * the comma. We need to apply it to the code.
    *)
-  | [Right a; Left (A.Arg (A.SgrepExprDots i, tok))], Right b::bbs ->
+  | [Right a; Left (A.Arg (A.SgrepExprDots i))], Right b::bbs ->
       m_info a b >>= (fun (a, b) ->
         return (
-          [Right a; Left (A.Arg (A.SgrepExprDots i, tok))],
+          [Right a; Left (A.Arg (A.SgrepExprDots i))],
           Right b::bbs
         )
       )
@@ -1982,17 +1960,17 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
    * or SgrepExprDots could carry some transfo. What should we do?
    * Maybe just print warning.
    *)
-  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], [] ->
+  | [Right _; Left (A.Arg (A.SgrepExprDots i))], [] ->
       return (
         xsa,
         xsb
       )
       
 
-  | [Right _; Left (A.Arg (A.SgrepExprDots i, _))], bbs ->
+  | [Right _; Left (A.Arg (A.SgrepExprDots i))], bbs ->
       raise Impossible
 
-  | Left (A.Arg (A.SgrepExprDots i, _))::xs, bbs ->
+  | Left (A.Arg (A.SgrepExprDots i))::xs, bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->
@@ -2020,21 +1998,21 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
       return ([], [])
 
   (* iso on ... *)
-  | [Left (A.ArrayExpr (A.SgrepExprDots i, _))], bbs ->
+  | [Left (A.ArrayExpr (A.SgrepExprDots i))], bbs ->
       (* TODO do different combinaisons *)
       return (
         xsa,
         xsb
       )
 
-  | [Right _; Left (A.ArrayExpr (A.SgrepExprDots i, _))], bbs ->
+  | [Right _; Left (A.ArrayExpr (A.SgrepExprDots i))], bbs ->
       (* TODO do different combinaisons *)
       return (
         xsa,
         xsb
       )
 
-  | Left (A.ArrayExpr (A.SgrepExprDots i, _))::xs, bbs ->
+  | Left (A.ArrayExpr (A.SgrepExprDots i))::xs, bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->
@@ -2486,7 +2464,6 @@ and m_func_def a b =
   f_params = a4;
   f_return_type = a5;
   f_body = a6;
-  f_type = a7;
   },
   { B. 
   f_tok = b1;
@@ -2495,7 +2472,6 @@ and m_func_def a b =
   f_params = b4;
   f_return_type = b5;
   f_body = b6;
-  f_type = b7;
   } -> 
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_is_ref a2 b2 >>= (fun (a2, b2) -> 
@@ -2504,7 +2480,6 @@ and m_func_def a b =
     (m_paren (m_comma_list_dots m_parameter)) a4 b4 >>= (fun (a4, b4) -> 
     (m_option m_hint_type) a5 b5 >>= (fun (a5, b5) -> 
     (m_brace (m_list m_stmt_and_def)) a6 b6 >>= (fun (a6, b6) -> 
-    m_type a7 b7 >>= (fun (a7, b7) -> 
     return (
       { A. 
       f_tok = a1;
@@ -2513,7 +2488,6 @@ and m_func_def a b =
       f_params = a4;
       f_return_type = a5;
       f_body = a6;
-      f_type = a7;
       },
       { B.
       f_tok = b1;
@@ -2522,10 +2496,9 @@ and m_func_def a b =
       f_params = b4;
       f_return_type = b5;
       f_body = b6;
-      f_type = b7;
       } 
     )
-  )))))))
+  ))))))
 
 and m_type a b = return (a, b)
 

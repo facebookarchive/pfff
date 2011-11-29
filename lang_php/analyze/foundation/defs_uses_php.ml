@@ -134,8 +134,7 @@ let defs_of_any any =
     (* todo: const of php 5.3? *)
 
     V.klvalue = (fun (k, bigf) x ->
-      match Ast.untype x with
-
+      match x with
       | FunCallSimple((Name ("define", tok)), args) ->
           let args = args |> Ast.unparen |> Ast.uncomma in
           (match args with
@@ -143,7 +142,7 @@ let defs_of_any any =
            * PHP 5.3 has a new const features that makes the use of define
            * obsolete.
            *)
-          | (Arg ((Sc (C (String (s,info)))), _t))::xs -> 
+          | (Arg ((Sc (C (String (s,info))))))::xs -> 
               (* by default the info contains the '' or "" around the string,
                * which is not the case for s. See ast_php.ml
                *)
@@ -198,7 +197,7 @@ let uses_of_any ?(verbose=false) any =
     );
 
     V.klvalue = (fun (k, bigf) x ->
-      (match Ast.untype x with
+      (match x with
       | FunCallSimple (name, args) ->
           Common.push2 (Db.Function, name) aref;
       | _ -> ()
