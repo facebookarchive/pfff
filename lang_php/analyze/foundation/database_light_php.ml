@@ -48,17 +48,7 @@ let mk_entity ~root id nb_users good_example_ids properties db =
 
     e_file = Common.filename_without_leading_path root file;
     e_pos = { Common.l = l; Common.c = c };
-    e_kind = 
-      (match kind  with
-      | E.Function -> Db.Function
-      (* todo? regular? *)
-      | E.Class -> Db.Class Db.RegularClass
-      | E.Method -> Db.Method Db.RegularMethod
-
-      | (E.IdMisc|E.XhpDecl|E.ClassVariable|E.ClassConstant|E.StmtList) ->
-          raise Impossible
-
-      );
+    e_kind = kind;
     e_number_external_users = nb_users;
     e_good_examples_of_use = good_example_ids; 
     e_properties = properties;
@@ -95,19 +85,8 @@ let is_test_or_pleac_file file =
 (* coupling: with phase 1 where we collect entities *)
 let is_id_with_entity id db =
   match DbPHP.kind_of_id id db with
-  | Entity_php.Function
-  | Entity_php.Method
-  | Entity_php.Class
-    -> 
-      true
-  | Entity_php.ClassConstant
-  | Entity_php.ClassVariable
-  | Entity_php.XhpDecl
-  | Entity_php.IdMisc
-  | Entity_php.StmtList 
-    -> 
-      false
-
+  | Db.Function | Db.Method _ | Db.Class _ -> true
+  | _ -> false
 
 (* the number of callers in the "example_of_use" should
  * be small to be a good example of use
@@ -227,9 +206,7 @@ let database_code_from_php_database ?(verbose=false) db =
       k();
 
       match id_kind with
-      | Entity_php.Function
-      | Entity_php.Method
-        ->
+      | Db.Function | Db.Method _ ->
           let callers = DbPHP.callers_of_id id db 
             +> List.map Callgraph_php.id_of_callerinfo in
           let idfile = DbPHP.filename_of_id id db in
@@ -257,7 +234,7 @@ let database_code_from_php_database ?(verbose=false) db =
                    (List.length external_callers) good_ex_ids properties
                    db)
 
-      | Entity_php.Class -> 
+      | Db.Class _ -> 
           let users = DbPHP.class_users_of_id id db in
           let extenders = DbPHP.class_extenders_of_id id db in
 
@@ -299,21 +276,8 @@ let database_code_from_php_database ?(verbose=false) db =
                    (List.length external_users) good_ex_ids properties
                    db)
 *)
-
-
       (* TODO *)
-      | Entity_php.ClassConstant
-      | Entity_php.ClassVariable
-
-      | Entity_php.XhpDecl
-          
-
-          
-      | Entity_php.IdMisc
-
-      | Entity_php.StmtList -> 
-          None
-
+      | _ -> None
     )))
   in
   (* phase 2: adding the correct cross reference information *)

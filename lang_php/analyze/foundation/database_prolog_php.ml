@@ -20,6 +20,7 @@ module Ast = Ast_php
 module EC = Entity_php
 module Db = Database_php
 module V = Visitor_php
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -32,8 +33,8 @@ module V = Visitor_php
  * (http://jquery.cs.ubc.ca/).
  * 
  * todo:
- *  - types, refs
  *  - precise callgraph, using julien's pathup/pathdown tools
+ *  - types, refs
  *  - ??
  * 
  * For more information look at h_program-lang/database_code.pl
@@ -44,31 +45,28 @@ module V = Visitor_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* quite similar to Db.complete_name_of_id *)
+(* quite similar to Database_php.complete_name_of_id *)
 let name_id id db =
   try 
     let s = db.Db.defs.Db.id_name#assoc id in
     let id_kind = db.Db.defs.Db.id_kind#assoc id in
 
     (match id_kind with
-    | EC.Method | EC.ClassConstant | EC.ClassVariable  | EC.XhpDecl ->
+    | E.Method _ | E.ClassConstant | E.Field ->
         (match Db.class_or_interface_id_of_nested_id_opt id db with
         | Some id_class -> 
             let sclass = Db.name_of_id id_class db in
             (match id_kind with
-            | EC.Method ->       spf "('%s','%s')" sclass s
+            | E.Method _ ->       spf "('%s','%s')" sclass s
 
-            | EC.ClassVariable ->
+            (* todo? xhp decl ? *)
+            | E.Field ->
                 (* remove the $ because in use-mode we don't use the $ *)
                 if s =~ "\\$\\(.*\\)"
                 then spf "('%s','%s')" sclass (Common.matched1 s)
                 else failwith ("wrong field, no $ found: " ^ s)
 
-            (* todo? something special ? *)
-            | EC.ClassConstant 
-            | EC.XhpDecl 
-              -> spf "('%s','%s')" sclass s
-
+            | E.ClassConstant -> spf "('%s','%s')" sclass s
             | _ -> raise Impossible
             )
         | None ->
@@ -76,28 +74,33 @@ let name_id id db =
                     (Db.str_of_id id db))
         )
 
-    | EC.StmtList -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    | EC.Class | EC.Function -> spf "'%s'" s
+    | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
+    | E.Class _ | E.Function -> spf "'%s'" s
     (* ?? *)
-    | EC.IdMisc -> spf "'__IDMISC__%s'" (EC.str_of_id id)
+    | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
+
+    | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Constant|E.Type|E.Module) ->
+        (* not in db for now *)
+        raise Impossible
     )
   with Not_found -> 
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
       
+(* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
-  | EC.Function -> "function"
+  | E.Function -> "function"
   (* the interface/1 trait/1 predicate will precise things *)
-  | EC.Class -> "class"
+  | E.Class _ -> "class"
   (* the static/1 predicate will say if static method (or class var) *)
-  | EC.Method -> "method"
+  | E.Method _ -> "method"
 
-  | EC.ClassConstant -> "constant"
-  | EC.ClassVariable -> "field"
-  | EC.XhpDecl -> "xhpDecl"
+  | E.ClassConstant -> "constant"
+  | E.Field -> "field"
 
-  | EC.StmtList  -> "stmtlist"
-
-  | EC.IdMisc -> "idmisc"
+  | E.TopStmts  -> "stmtlist"
+  | E.Other _ -> "idmisc"
+  | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Constant|E.Type|E.Module) ->
+      raise Impossible
 
 let string_of_modifier = function
   | Public    -> "is_public"  
@@ -252,12 +255,12 @@ let add_uses id ast pr db =
 
 let add_defs_and_uses id kind ast pr db =
   match kind, ast with
-  | EC.Function, FunctionE def ->
+  | E.Function, FunctionE def ->
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
       add_uses id ast pr db;
 
-  | EC.Class, ClassE def ->
+  | E.Class _, ClassE def ->
       (match def.c_type with
       | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
       | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
@@ -290,7 +293,7 @@ let add_defs_and_uses id kind ast pr db =
       | _ -> ()
       );
             
-  | EC.Method, MethodE def -> 
+  | E.Method _, MethodE def -> 
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.m_params +> Ast.unparen +> Ast.uncomma_dots)));
       def.m_modifiers +> List.iter (fun (m, _) -> 
@@ -298,14 +301,13 @@ let add_defs_and_uses id kind ast pr db =
       );
       add_uses id ast pr db;
 
-  | EC.ClassVariable, ClassVariableE (var, ms) ->
+  | E.Field, ClassVariableE (var, ms) ->
       ms +> List.iter (fun (m) -> 
         pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
       )
-  | EC.ClassConstant, _ -> ()
-  | EC.XhpDecl, _ -> ()
+  | E.ClassConstant, _ -> ()
             
-  | (EC.StmtList | EC.IdMisc), _ ->
+  | (E.TopStmts | E.Other _), _ ->
       add_uses id ast pr db;
       
   | _ -> raise Impossible

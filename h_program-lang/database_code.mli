@@ -10,6 +10,9 @@ type entity_kind =
 
   | Method of method_type 
   | Field
+  | ClassConstant
+
+  | Other of string
 
   | File | Dir | MultiDirs
   and class_type = RegularClass | Interface | Trait

@@ -21,7 +21,7 @@ open Database_php
 module Ast  = Ast_php
 module Flag = Flag_analyze_php
 module V = Visitor_php
-module EC   = Entity_php
+module E   = Database_code
 module Db = Database_php
 
 open Database_php_build_helpers
@@ -78,10 +78,10 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
  (fun (id_kind, s) ->
    try (
     match id_kind with
-    | Entity_php.Class ->
+    | E.Class _ ->
         Db.class_ids_of_string s db 
         +> List.map (fun id -> Db.ast_of_id id db)
-    | Entity_php.Function ->
+    | E.Function ->
         Db.function_ids__of_string s db 
         +> List.map (fun id -> Db.ast_of_id id db)
 (*
@@ -246,16 +246,18 @@ let index_db2_2 db =
         match x with
         | FuncDef def -> 
             let s = Ast_php.name def.f_name in
-            add_def (s, EC.Function, id, Some def.f_name) db;
+            add_def (s, E.Function, id, Some def.f_name) db;
             (* add_type def.Ast_c.f_type; *)
             k x
         | StmtList stmt -> 
             let s = "__TOPSTMT__" in
-            add_def (s, EC.StmtList, id, None) db;
+            add_def (s, E.TopStmts, id, None) db;
             k x
         | ClassDef class_def ->
             let s = Ast_php.name class_def.c_name in
-            add_def (s, EC.Class, id, Some class_def.c_name) db;
+            (* todo? don't differentiate for now *)
+            let kind = E.RegularClass in
+            add_def (s, E.Class kind, id, Some class_def.c_name) db;
             k x
         | NotParsedCorrectly _ -> ()
             
@@ -274,14 +276,15 @@ let index_db2_2 db =
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.FunctionE def) db in
             let s = Ast_php.name def.f_name in
-            add_def (s, EC.Function, newid, Some def.f_name) db;
+            add_def (s, E.Function, newid, Some def.f_name) db;
             Common.save_excursion enclosing_id newid  (fun () -> k x);
             
         | ClassDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.ClassE def) db in
             let s = Ast_php.name def.c_name in
-            add_def (s, EC.Class, newid, Some def.c_name) db;
+            let kind = E.RegularClass in
+            add_def (s, E.Class kind, newid, Some def.c_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
       );
       V.kclass_stmt = (fun (k, bigf) x ->
@@ -290,19 +293,15 @@ let index_db2_2 db =
             let newid = add_nested_id_and_ast  ~enclosing_id:!enclosing_id
               (Ast_php.MethodE def) db in
             let s = Ast_php.name def.m_name in
-            let id_kind = EC.Method
-              (*
-              if def.m_modifiers |> List.exists (fun (modifier, ii) -> 
-                modifier = Ast.Static
-              )
-              then EC.StaticMethod
-              else EC.Method
-              *)
+            let kind =
+              if Class_php.is_static_method def
+              then E.StaticMethod
+              else E.RegularMethod
             in
-            (* todo? should we put just the method name, or also add 
+            (* todo? should we put just the method name, or also add
              * the class name for the StaticMethod case ? 
              *)
-            add_def (s, id_kind, newid, Some def.m_name) db;
+            add_def (s, E.Method kind, newid, Some def.m_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
 
         (* we generate one id per constant. Note that they can not have the 
@@ -318,7 +317,7 @@ let index_db2_2 db =
                 db
               in
               let s = Ast.name name in
-              add_def (s, EC.ClassConstant, newid, None) db;
+              add_def (s, E.ClassConstant, newid, None) db;
             );
             (* not sure we need to recurse. There can't be more definitions
              * inside class declarations.
@@ -341,7 +340,7 @@ let index_db2_2 db =
                 (Ast_php.ClassVariableE(class_var, modifier)) db in
 
               let s = "$" ^ Ast.dname dname in
-              add_def (s, EC.ClassVariable, newid, None) db;
+              add_def (s, E.Field, newid, None) db;
             );
             k x
 
@@ -349,7 +348,7 @@ let index_db2_2 db =
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.XhpDeclE decl) db in
             let s = "XHPDECLTODO" in
-            add_def (s, EC.XhpDecl, newid, None) db;
+            add_def (s, E.Field, newid, None) db;
             k x
 
         (* todo? *)

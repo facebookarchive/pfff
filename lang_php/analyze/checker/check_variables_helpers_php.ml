@@ -18,7 +18,7 @@ open Ast_php
 module Ast = Ast_php
 module E = Error_php
 module V = Visitor_php
-module Ent = Entity_php
+module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -269,7 +269,8 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
       | New (tok, class_name_ref, args) ->
           (match class_name_ref with
           | ClassNameRefStatic (ClassName name) ->
-              E.find_entity_and_warn find_entity (Ent.Class, name)
+              E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, 
+                                                 name)
               (function Ast_php.ClassE def ->
                 (try 
                     (* TODO: use lookup_method there too ! *)

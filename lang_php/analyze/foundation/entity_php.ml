@@ -29,9 +29,9 @@ module Ast = Ast_php
  * fullid described below but it takes quite some space (a string, 2
  * ints). Enter the 'id' type.
  * 
- * Update: we now also have "nested" ids which are ids about nested
- * entities like method (of a class) or nested functions. Could have
- * definied an id type and subid ... ? but seems tedious. Better to
+ * update: we now also have "nested" ids which are ids about nested
+ * entities like methods (of a class) or nested functions. Could have
+ * defined an id type and subid type but this seems tedious. Better to
  * have only 'id' and a 'id_kind' and associated tables that stores subasts
  * and other info (see children_id and enclosing_id tables in
  * database_php.ml)
@@ -42,10 +42,17 @@ module Ast = Ast_php
  * toplevel stmt, a method, an expression in a variable declaration, etc
  * so maybe simpler to have indeed a single 'id'.
  * 
+ * update: this file may be a little bit obsolete now that we use prolog
+ * and the abstract interpreter for most of our needs. The id
+ * in prolog is then simply the function name atom or the pair of atoms
+ * with the class and method names (and atoms are represented efficiently
+ * I hope in the Prolog engine).
+ * 
  * todo? hmmm but maybe we could have a entity_finder2: 
  *  type entity_finder2 = { functions: ...; classes: ... }
  * which would be close to what julien is using in his code when he
  * needs some global analysis.
+ * 
  *)
 
 (*****************************************************************************)
@@ -54,7 +61,6 @@ module Ast = Ast_php
 
 (* primary key (prefered) method *) 
 type id = Id of int
-
 
 (* also primary key, more readable, but less optimial spacewise *)
 type fullid = filepos
@@ -66,27 +72,19 @@ type fullid = filepos
  (* with tarzan *)
 
 (* todo? copy-paste/redundant with 
- *  - database_code.ml, highlight_code.ml
+ *  - highlight_code.ml
  *  - Ast_php.entity (but without the actual ast content)
  *  - view_widgets_source.ml ?
  *  - typing_c environment type 
  *  - type_annotater_c.ml namedef type
  * 
+ * note: StaticMethod could be considered a Function, because in PHP they
+ * mostly use static methods because PHP (5.2) didn't have namespace and
+ * so they abuse classes for modules. But right now we use Method.
+ * 
+ * Xhp declarations are considered Fields.
  *)
-type id_kind =
-  (* toplevels, which can also be nested *)
-  | Function
-  | Class
-  | StmtList 
-
-  (* only at nested level, inside a class *)
-  (* StaticMethod could be considered a Function, because in PHP they
-   * mostly use static methods because PHP (5.2) didn't have namespace and
-   * so they abuse classes for modules.
-   *)
-  | Method | ClassConstant | ClassVariable | XhpDecl
-
-  | IdMisc
+type id_kind = Database_code.entity_kind
 
 (* See comment in the .mli for more information about entity_finder.
  * 
@@ -124,26 +122,12 @@ let fullid_of_string s =
     }
   else failwith ("not a full_id:" ^ s)
 
-
-let string_of_id_kind = function
-  | Function -> "function"
-  | Class -> "class"
-  | StmtList  -> "stmtlist"
-
-  | Method -> "method"
-  | ClassConstant -> "classConstant" | ClassVariable -> "classVariable"
-  | XhpDecl -> "xhpDecl"
-  | IdMisc -> "idmisc"
+let string_of_id_kind x = 
+  Database_code.string_of_entity_kind x
 
 (*****************************************************************************)
 (* Method identifier helpers *)
 (*****************************************************************************)
-
-let method_identifier_of_string s =
-  raise Todo
-
-let string_of_method_identifier (s1, s2) =
-  raise Todo
 
 (*****************************************************************************)
 (* Meta *)

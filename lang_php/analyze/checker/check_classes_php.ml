@@ -18,7 +18,7 @@ open Ast_php
 module Ast = Ast_php
 module V = Visitor_php
 module E = Error_php
-module Ent = Entity_php
+module Ent = Database_code
 module Flag = Flag_analyze_php
 
 (*****************************************************************************)
@@ -78,9 +78,9 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
   | Not_found ->
       (match context with
       | StaticCall -> 
-          E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
+          E.fatal loc (E.UndefinedEntity (Ent.Method Ent.StaticMethod,amethod))
       | MethodCall false -> 
-          E.fatal loc (E.UndefinedEntity (Ent.Method, amethod))
+          E.fatal loc (E.UndefinedEntity (Ent.Method Ent.RegularMethod,amethod))
       | MethodCall true -> 
           E.fatal loc (E.UndefinedMethodInAbstractClass amethod)
       )
@@ -106,7 +106,7 @@ let check_member_access ctx (aclass, afield) loc find_entity =
   | Not_found -> 
       (match ctx with
       | StaticAccess ->
-          E.fatal loc (E.UndefinedEntity (Ent.ClassVariable, afield))
+          E.fatal loc (E.UndefinedEntity (Ent.Field, afield))
       | ObjAccess ->
           let allmembers = Class_php.collect_members aclass find_entity 
             +> List.map Ast.dname
@@ -156,7 +156,8 @@ let visit_and_check  find_entity prog =
         | _ -> false
       in
       def.c_extends +> Common.do_option (fun (tok, parent) ->
-        E.find_entity_and_warn find_entity (Entity_php.Class, parent) (fun _ ->
+        E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, parent)
+          (fun _ ->
           ()
         )
       );
@@ -229,7 +230,8 @@ let visit_and_check  find_entity prog =
       | New (tok, (ClassNameRefStatic (ClassName class_name)), args) ->
 
           (* todo: use lookup_method *)
-          E.find_entity_and_warn find_entity (Entity_php.Class, class_name)
+          E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, 
+                                             class_name)
           (function Ast_php.ClassE def ->
             (*
               Check_functions_php.check_args_vs_params 

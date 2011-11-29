@@ -86,17 +86,13 @@ let icon_of_kind kind has_test =
    * todo? class vs interface ?
    *)
   | Db.Class _ -> `CONNECT
-
   | Db.Module -> `DISCONNECT
-      
   | Db.Type -> `PROPERTIES
-      
   | Db.Constant -> `CONNECT
   | Db.Global -> `MEDIA_RECORD
-      
   | Db.Method Db.RegularMethod -> `CONVERT
   | Db.Method Db.StaticMethod -> `EXECUTE
-      
+
   | Db.File -> `FILE
   | Db.Dir -> `DIRECTORY
   | Db.MultiDirs -> `QUIT
@@ -105,7 +101,7 @@ let icon_of_kind kind has_test =
   | Db.Field -> `CONNECT
   | Db.Macro -> `CONNECT
 
-  | (Db.TopStmts) -> raise Todo
+  | (Db.TopStmts | Db.Other _ | Db.ClassConstant _) -> raise Todo
 
 
 module L=struct

@@ -230,7 +230,7 @@ let visit_prog find_entity prog =
   let in_lambda = ref false in
   let in_class = ref None in
   let has_extract = ref false in
-  let scope = ref Ent.StmtList in
+  let scope = ref Ent.TopStmts in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
@@ -269,7 +269,7 @@ let visit_prog find_entity prog =
       | MethodBody _ ->
       (* todo: diff between Method and StaticMethod? *)
       Common.save_excursion has_extract false (fun () ->
-      Common.save_excursion scope Ent.Method (fun () ->
+      Common.save_excursion scope (Ent.Method Ent.RegularMethod) (fun () ->
         do_in_new_scope_and_check (fun () -> 
           if not (Class_php.is_static_method x)
           then begin
@@ -440,7 +440,7 @@ let visit_prog find_entity prog =
          * people sometimes override a method and don't use all
          * the parameters
          *)
-        | Ent.Method -> 1
+        | Ent.Method _ -> 1
         | Ent.Function -> 0
         | _ -> 0
       in

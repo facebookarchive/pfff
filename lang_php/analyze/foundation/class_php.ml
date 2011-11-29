@@ -12,18 +12,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 
 module Ast = Ast_php
 module V = Visitor_php
-module E = Entity_php
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(* 
+ * todo: differentiate Interface/Trait in lookup?
+ *)
 
 (*****************************************************************************)
 (* Types and globals *)
@@ -157,7 +160,7 @@ let class_variables_reorder_first def =
  *)
 let lookup_gen aclass find_entity hook =
   let rec aux aclass =
-    match find_entity (E.Class, aclass) with
+    match find_entity (E.Class E.RegularClass, aclass) with
     | [ClassE def] ->
         (try 
           def.c_body +> Ast.unbrace +> Common.find_some hook

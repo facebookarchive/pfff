@@ -58,10 +58,7 @@ let tags_of_ast ast filelines =
     
   defs +> List.map (fun (kind, name, enclosing_name_opt) ->
     match kind with
-    | Db.Function
-    | Db.Class _
-    | Db.Constant
-      ->
+    | Db.Function | Db.Class _ | Db.Constant ->
         [tag_of_name filelines name kind]
     | Db.Method _ ->
         (match enclosing_name_opt with
@@ -86,7 +83,7 @@ let tags_of_ast ast filelines =
               (Ast.name class_name  ^ "::" ^ Ast.name name) info in
             [Tags.tag_of_info filelines info' kind]
         )
-    | (   Db.Field 
+    | (   Db.Field | Db.ClassConstant | Db.Other _
         | Db.Type | Db.Module | Db.TopStmts | Db.Macro | Db.Global
         | Db.MultiDirs | Db.Dir | Db.File
       ) -> 

@@ -9,16 +9,7 @@ type fullid = filepos
   column: int;
 }
 
-type id_kind =
-  (* toplevels, which can also be nested *)
-  | Function
-  | Class
-  | StmtList 
-
-  (* only at nested level, inside a class *)
-  | Method | ClassConstant | ClassVariable | XhpDecl
-
-  | IdMisc
+type id_kind = Database_code.entity_kind
 
 (* Being able to access the definition of a class from a a program requires
  * a global analysis to find where is the class. This should mean
@@ -33,9 +24,10 @@ type id_kind =
 type entity_finder = (id_kind * string) -> Ast_php.entity list
 
 type method_identifier = (string * string)
+(*
 val string_of_method_identifier: method_identifier -> string
 val method_identifier_of_string: string -> method_identifier
-
+*)
 
 val str_of_id: id -> string
 val str_of_fullid: fullid -> string

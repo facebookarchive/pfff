@@ -18,6 +18,7 @@ open Common
 open Ast_php
 
 module E = Error_php
+module Ent = Database_code
 open Error_php
 
 (*****************************************************************************)
@@ -109,9 +110,11 @@ let info_of_error_and_kind err =
   | MultiDefinedEntity (kind, _, _) ->
       "eMultiDefinedEntity-" ^ Entity_php.string_of_id_kind kind
   | UndefinedClassWhileLookup (_) -> 
-      "eUndefinedEntity-" ^ Entity_php.string_of_id_kind (Entity_php.Class)
+      "eUndefinedEntity-" ^ 
+        Entity_php.string_of_id_kind (Ent.Class Ent.RegularClass)
   | UndefinedMethodInAbstractClass (_) -> 
-      "eUndefinedEntity-" ^ Entity_php.string_of_id_kind (Entity_php.Method)
+      "eUndefinedEntity-" ^ 
+        Entity_php.string_of_id_kind (Ent.Method Ent.RegularMethod)
 
   | TooManyArguments _ ->"eTooManyArguments"
   | NotEnoughArguments _ ->"eNotEnoughArguments"

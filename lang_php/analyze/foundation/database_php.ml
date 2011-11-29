@@ -22,6 +22,7 @@ module Lib  = Lib_parsing_php
 module CG   = Callgraph_php
 module Flag = Flag_analyze_php
 module EC   = Entity_php
+module E = Database_code
 
 module G = Graph
 
@@ -85,7 +86,6 @@ type id_method = id
 type id_define = id
 
 type id_other = id 
-
 
 
 (*****************************************************************************)
@@ -333,7 +333,6 @@ let default_extra_id_info = {
 let string_of_extra_id_info x = 
   raise Todo
 
-
 (*****************************************************************************)
 (* Extra *)
 (*****************************************************************************)
@@ -352,7 +351,6 @@ let glimpse_special_dirname = "GLIMPSEDB"
  * (Database_php.open_db or Database_php_build.create_db ~db_support:Mem)
  * if you want the different behavior
  *)
-
 
 let is_database_dir ~metapath = 
   Sys.file_exists (metapath ^ "/prj.raw")
@@ -491,7 +489,8 @@ let callees_of_id id db =
   with Not_found -> []
 
 let callers_of_id id db =
-  if not (List.mem (db.defs.id_kind#assoc id) [EC.Function; EC.Method])
+  if not (List.mem (db.defs.id_kind#assoc id) 
+             [E.Function; E.Method E.RegularMethod])
   then failwith "callers_of_id expect the id of a function or method";
 
   try
@@ -519,14 +518,14 @@ let parent_name_of_id a b =
 
 (* safer wrappers around the database fields *)
 let class_users_of_id id db = 
-  if not (List.mem (db.defs.id_kind#assoc id) [EC.Class])
+  if not (List.mem (db.defs.id_kind#assoc id) [E.Class E.RegularClass])
   then failwith "class_users_of_id expect the id of a class";
   try 
     db.uses.users_of_class#assoc id
   with Not_found -> []
 
 let class_extenders_of_id id db =
-  if not (List.mem (db.defs.id_kind#assoc id) [EC.Class])
+  if not (List.mem (db.defs.id_kind#assoc id) [E.Class E.RegularClass])
   then failwith "class_extenders_of_id expects the id of a class";
   try 
     db.uses.extenders_of_class#assoc id
@@ -536,7 +535,7 @@ let class_or_interface_id_of_nested_id_opt id db =
   enclosing_ids id db +> Common.find_some_opt (fun id ->
     let id_kind = db.defs.id_kind#assoc id in
     match id_kind with
-    | EC.Class -> Some id
+    | E.Class _ -> Some id
     | _ -> None
   )
 
@@ -547,7 +546,7 @@ let classdef_of_nested_id_opt id db =
     enclosing |> Common.find_some (fun id ->
       let id_kind = db.defs.id_kind#assoc id in
       match id_kind with
-      | EC.Class -> 
+      | E.Class _ -> 
           let id_ast = ast_of_id id db in
           (match id_ast with
           | Ast_php.ClassE def -> Some def
@@ -577,23 +576,18 @@ let complete_name_of_id id db =
     let id_kind = db.defs.id_kind#assoc id in
 
     (match id_kind with
-    | EC.Method | EC.ClassConstant | EC.ClassVariable  | EC.XhpDecl ->
+    | E.Method _ | E.ClassConstant | E.Field ->
 
         (match classdef_of_nested_id_opt id db with
         | Some def -> 
             let sclass = Ast.name def.c_name in
-
             (match id_kind with
-            | EC.Method ->
+            | E.Method _ ->
                 spf "%s->%s" sclass s
             (* todo?  EC.StaticMethod -> spf "%s::%s" sclass s *)
-
             (* todo? something special ? *)
-            | EC.ClassConstant | EC.ClassVariable 
-            | EC.XhpDecl 
-              ->
+            | E.ClassConstant | E.Field ->
                 spf "%s::%s" sclass s
-
             | _ -> raise Impossible
             )
         | None ->
@@ -634,9 +628,12 @@ let filter_ids_of_string s kind db =
   )
   
 
-let function_ids__of_string s db = filter_ids_of_string s EC.Function db
-let method_ids_of_string s db    = filter_ids_of_string s EC.Method db
-let class_ids_of_string s db    = filter_ids_of_string s EC.Class db
+let function_ids__of_string s db = 
+  filter_ids_of_string s E.Function db
+let method_ids_of_string s db    = 
+  filter_ids_of_string s (E.Method E.RegularMethod) db
+let class_ids_of_string s db    = 
+  filter_ids_of_string s (E.Class E.RegularClass) db
 
 (* could also have .functions .methods .classes fields in db ?
  * that use name_defs and the appropriate filter ?
@@ -660,14 +657,14 @@ let filter_ids_in_db kinds db =
     else Some (id_str, goodone +> List.map fst)
   )
 
-let functions_in_db db = filter_ids_in_db [EC.Function] db
-let classes_in_db db = filter_ids_in_db [EC.Class] db
-let methods_in_db db = filter_ids_in_db [EC.Method] db
+let functions_in_db db = filter_ids_in_db [E.Function] db
+let classes_in_db db = filter_ids_in_db [E.Class E.RegularClass] db
+let methods_in_db db = filter_ids_in_db [E.Method E.RegularMethod] db
 
 let is_function_id id db = 
   try 
     let kind = db.defs.id_kind#assoc id in
-    kind = EC.Function
+    kind = E.Function
   with Not_found ->
     pr2 (spf "WEIRD: no id_kind for id: %s" (str_of_id id db));
     false
@@ -697,7 +694,7 @@ let id_of_method ~theclass:sclass smethod db =
   let methods = 
     children +> List.filter (fun id ->
       let kind = db.defs.id_kind#assoc id in
-      (kind = EC.Method) && db.defs.id_name#assoc id =$= smethod
+      (kind = E.Method E.RegularMethod) && db.defs.id_name#assoc id =$= smethod
     )
   in
   Common.list_to_single_or_exn methods
@@ -1006,7 +1003,7 @@ let kind_of_id id db =
     db.defs.id_kind#assoc id
   (* probably because of NotParsedCorrectly entities *)
   with Not_found -> 
-    EC.IdMisc
+    E.Other "kind_of_id:not_found"
 
 let readable_filename_of_id id db =
   let file = filename_of_id id db in

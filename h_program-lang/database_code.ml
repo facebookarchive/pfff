@@ -30,6 +30,9 @@ module HC = Highlight_code
  * number of callers to a certain function, what is the test coverage of
  * a file, etc.
  * 
+ * update: database_code.pl and Prolog may be the prefered way now to
+ *  represent a code database.
+ * 
  * Each programming language analysis library usually provides
  * a more powerful database (e.g. analyze_php/database/database_php.mli)
  * with more information. Such a database is usually also efficiently stored
@@ -65,6 +68,7 @@ module HC = Highlight_code
  *  - rewrite it for PHP in Nov 2009
  *  - adapted in Jan 2010 for flib_navigator
  *  - make it generic in Aug 2010 for my code/treemap visualizer
+ *  - make it a little bit obsolete now that use Prolog.
  * 
  * history bis:
  *  - Before, I was optimizing stuff by caching the ast in 
@@ -86,11 +90,11 @@ module HC = Highlight_code
 (* Type *)
 (*****************************************************************************)
 
-(* Yet another entity type. Could perhaps factorize code with
- * highlight_code.ml.
+(* Yet another entity type. Could perhaps factorize code with highlight_code.ml.
+ * 
  * If you add a constructor don't forget to modify entity_kind_of_string.
  * 
- * see also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
+ * See also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
  *)
 type entity_kind = 
   | Function
@@ -104,8 +108,10 @@ type entity_kind =
 
   (* nested entities *)
   | Method of method_type
-  | Field
-  (* todo? ClassConstant *)
+  | Field (* todo? could also be static or not *)
+  | ClassConstant
+
+  | Other of string
 
   (* when we use the database for completion purpose, then files/dirs
    * are also useful "entities" to get completion for.
@@ -262,6 +268,8 @@ let string_of_entity_kind e =
   | Method RegularMethod -> "Method"
   | Method StaticMethod -> "StaticMethod"
   | Field -> "Field"
+  | ClassConstant -> "ClassConstant"
+  | Other s -> "Other:" ^ s
   | File -> "File"
   | Dir -> "Dir"
   | MultiDirs -> "MultiDirs"
@@ -281,9 +289,12 @@ let entity_kind_of_string s =
   | "Method" -> Method RegularMethod
   | "StaticMethod" -> Method StaticMethod
   | "Field" -> Field
+  | "ClassConstant" -> ClassConstant
   | "File" -> File
   | "Dir" -> Dir
   | "MultiDirs" -> MultiDirs
+  | _ when s =~ "Other:\\(.*\\)" -> Other (Common.matched1 s)
+
   | _ -> failwith ("entity_of_string: bad string = " ^ s)
 
 (*****************************************************************************)

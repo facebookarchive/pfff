@@ -121,6 +121,8 @@ let vim_tag_kind_str tag_kind =
   | Db.Global
   | Db.Macro
   | Db.TopStmts
+  | Db.Other _
+  | Db.ClassConstant
 
   | Db.File
   | Db.Dir
