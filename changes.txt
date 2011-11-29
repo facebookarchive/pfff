@@ -12,14 +12,22 @@ while still being reasonably fast, thanks to the use of a lazy entity finder.
 ** spatch
 
 *** leverage pretty printer so can reindent correctly the code
-after some transformation. Thx to julien. spatch --pretty-printer.
+after some transformation. Thx to julien.
+spatch --pretty-printer.
 
 *** a "sed mode" so can do spatch -e 's/foo(X,Y)/foo(X)/' *.php
+
+** introduce simplified ast for PHP and abstract interpreter (julien)
 
 ** lang_ml, more highlight
 so can parse julien's code which heavily use modules.
 
 ** lang_cpp, better parsing
+
+** internals
+
+*** removed lots of dead code now that commited to use the abstract interpreter
+instead of a PIL + cflow + dataflow + db + ...
 
 * 0.17 (Q3 2011) (overlay)
 
