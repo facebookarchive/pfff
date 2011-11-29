@@ -137,12 +137,10 @@ let mk_obj_access s =
   (ObjAccessSimple
       ((Var
            (DName ("this", fkt "$this"),
-           Ast.noScope()),
-       Ast.noTypeVar()),
+           Ast.noScope())
+       ),
       fkt "->",
-      Name (s, fkt s)),
-  Ast.noTypeVar())
-
+      Name (s, fkt s)))
 
 (* use sgrimm technique 
  * TODO may have to prefix certain closed_vars with this because
@@ -176,20 +174,16 @@ let mk_new_anon_class_call s
              else
                (Var
                    (fkdname closed_var,
-                   {contents = S.NoScope}),
-               {tlval = [Type_php.Unknown]})
+                   {contents = S.NoScope})
+               )
            in        
            (* todo: should introduce some comma with Right too *)
-           Left (Arg
-           (Lv
-             var,
-            {t = [Type_php.Unknown]}
-           ))
+           Left (Arg (Lv var))
          )
          ,
         fkt ")"
-         )),
-      {t = [Type_php.Unknown]}));
+         ))
+      ));
     Right (fkt ",");
     Left (ArrayExpr
      (Sc
@@ -197,10 +191,10 @@ let mk_new_anon_class_call s
          (String
            ("eval_closure",
            fkt "'eval_closure'"
-            ))),
-      {t = [Type_php.Unknown]}))],
-   fkt ")")),
- {t = [Type_php.Unknown]})
+            )))
+      ))],
+   fkt ")"))
+ )
 
 
 
@@ -210,31 +204,29 @@ let mk_private_affect s =
         ((ObjAccessSimple
              ((Var
                   (DName ("this", fkt "$this"),
-                  Ast.noScope()),
-              Ast.noTypeVar()),
+                  Ast.noScope())
+              ),
              fkt "->",
-             Name (s, fkt s)),
-         Ast.noTypeVar()),
+             Name (s, fkt s))
+         ),
         fkt "=",
         fkt "&", (* want assign by ref *)
         (
             (Var
                 (fkdname s,
-                Ast.noScope ()),
-            Ast.noTypeVar())
-        )),
-    Ast.noType())
+                Ast.noScope ())
+            )
+        ))
+    )
   in
   Stmt (ExprStmt (expr, fkt ";"))
 
 let mk_call_user_func_call var args_paren =
   let (op, args, cp) = args_paren in
-  let arg1 = Arg (Lv var, Ast.noType ()) in
+  let arg1 = Arg (Lv var) in
   let args' = (Left arg1)::args in
   let str = "call_user_func" in
-  FunCallSimple ((Name (str, fkt str)), (op, args', cp)),
-  Ast.noTypeVar()
-
+  FunCallSimple ((Name (str, fkt str)), (op, args', cp))
 
 
 
@@ -247,9 +239,9 @@ let mk_aliasing_for_member_in_body () =
           (DName
             ("this",
              fkt "$this"),
-          {contents = S.NoScope}),
-         {tlval = [Type_php.Unknown]}),
-       {t = [Type_php.Unknown]}),
+          {contents = S.NoScope})
+         )
+       ),
       fkt "as",
       Common.Left
        (None,
@@ -257,8 +249,8 @@ let mk_aliasing_for_member_in_body () =
           (DName
             ("p",
              fkt "$p"),
-          {contents = S.NoScope}),
-         {tlval = [Type_php.Unknown]})),
+          {contents = S.NoScope})
+         )),
       Some
        (fkt "=>",
         (Some
@@ -267,8 +259,8 @@ let mk_aliasing_for_member_in_body () =
            (DName
              ("v",
               fkt "$v"),
-           {contents = S.NoScope}),
-          {tlval = [Type_php.Unknown]}))),
+           {contents = S.NoScope})
+          ))),
       fkt ")",
       SingleStmt
        (Block
@@ -281,20 +273,20 @@ let mk_aliasing_for_member_in_body () =
                        (DName
                          ("p",
                           fkt "$p"),
-                       {contents = S.NoScope}),
-                      {tlval = [Type_php.Unknown]}),
+                       {contents = S.NoScope})
+                      ),
                     Dollar
-                     (fkt "$")),
-                   {tlval = [Type_php.Unknown]}),
+                     (fkt "$"))
+                   ),
                  fkt "=",
                  fkt "&",
                  (Var
                    (DName
                      ("v",
                       fkt "$v"),
-                   {contents = S.NoScope}),
-                  {tlval = [Type_php.Unknown]})),
-                {t = [Type_php.Unknown]}),
+                   {contents = S.NoScope})
+                  ))
+                ),
               fkt ";"))],
           fkt "}")))
 )
@@ -331,7 +323,7 @@ let (add_this_to_closed_var_in_body:
     let hook = { Map_php.default_visitor with
       Map_php.klvalue = (fun (k, _) v ->
 
-        match Ast.untype v with
+        match v with
         | Var (v1, v2) -> 
             let s = Ast.dname v1 in
             if List.mem s closed_vars 
@@ -341,7 +333,7 @@ let (add_this_to_closed_var_in_body:
       );
       (* bugfix: and dont go inslide nested lambdas *)
       Map_php.kexpr = (fun (k, _) v ->
-        match Ast.untype v with
+        match v with
         | Lambda def -> 
             (* no recursive processing *)
             v
@@ -449,7 +441,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
 
    let hook = { Map_php.default_visitor with
      Map_php.kexpr = (fun (k, _) v ->
-       match Ast.untype v with
+       match v with
        | Lambda ldef -> 
            let info = ldef.l_tok in
            
@@ -493,7 +485,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
      Map_php.klvalue = (fun (k, _) v ->
       (* apply recursively first *)
       let res = k v in
-      match Ast.untype res with
+      match res with
       | FunCallVar (qu_opt, var, args) ->
 
           (* do we care wether var is a regular var ? 

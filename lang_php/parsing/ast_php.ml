@@ -47,8 +47,9 @@ open Parse_info
  * file, or to only add new constructors.
  * 
  * todo: 
- *  - unify class_def/interface_def/trait_def.
+ *  - unify class_def/interface_def/trait_def
  *  - remove static_scalar
+ *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def?
  *  - unify expr and lvalue?
  *)
@@ -281,7 +282,7 @@ type expr =
        (*e: constant constructors *)
        (*s: type constant hook *)
         | XdebugClass of name * class_stmt list
-        | XdebugResource (* TODO *)
+        | XdebugResource
        (*e: type constant hook *)
        (*s: constant rest *)
         (*s: type cpp_directive *)

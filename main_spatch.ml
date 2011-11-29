@@ -220,7 +220,7 @@ let simple_transfo xs =
 
     let hook = { V.default_visitor with
       V.klvalue = (fun (k, _) x ->
-        match Ast.untype x with
+        match x with
         | FunCallSimple((Name ("foo", info_foo)), (lp, args, rp)) ->
             pr2 "found match";
             
