@@ -1155,7 +1155,7 @@ xhp_attr_name_atom:
  | T_AS { $1 } | T_FUNCTION { $1 } | T_CONST { $1 } | T_STATIC { $1 }
  | T_ABSTRACT { $1 } | T_FINAL { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 }
  | T_PUBLIC { $1 } | T_VAR { $1 } | T_UNSET { $1 } | T_ISSET { $1 }
- | T_EMPTY { $1 } | T_HALT_COMPILER { $1 } | T_CLASS { $1 }
+ | T_EMPTY { $1 } | T_CLASS { $1 }
  | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_IMPLEMENTS { $1 } | T_LIST { $1 }
  | T_ARRAY { $1 } | T_CLASS_C { $1 } | T_METHOD_C { $1 } | T_FUNC_C { $1 }
  | T_LINE { $1 } | T_FILE { $1 } | T_LOGICAL_OR { $1 } | T_LOGICAL_AND { $1 }
@@ -1962,7 +1962,6 @@ generate them.
  /*(* pad: was declared via right ... ??? mean token ? *)*/
  T_STATIC  T_ABSTRACT  T_FINAL  T_PRIVATE T_PROTECTED T_PUBLIC
  T_UNSET T_ISSET T_EMPTY
- T_HALT_COMPILER
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
  T_TRAIT T_INSTEADOF
  T_LIST T_ARRAY

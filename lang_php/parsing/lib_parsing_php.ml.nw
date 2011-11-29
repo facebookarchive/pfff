@@ -195,7 +195,7 @@ let get_vars_any any =
 let top_statements_of_program ast = 
   ast |> List.map (function
   | StmtList xs -> xs
-  | FinalDef _|NotParsedCorrectly _|Halt (_, _, _)
+  | FinalDef _|NotParsedCorrectly _
   | InterfaceDef _|ClassDef _| FuncDef _ | TraitDef _
       -> []
   ) |> List.flatten  
@@ -214,8 +214,6 @@ let toplevel_to_entity x =
       TraitE v1
 
   (* todo? *)
-  | Halt ((v1, v2, v3)) ->
-      MiscE []
   | NotParsedCorrectly xs ->
       MiscE xs
   | FinalDef v1 ->

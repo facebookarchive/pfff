@@ -1398,7 +1398,7 @@ and toplevel =
   | ClassDef of class_def
   | InterfaceDef of interface_def
   | TraitDef of trait_def
-(* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
+ (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
 @ 
 %  (* TODO? Define by lifting it up from a regular function call? *)
 
