@@ -59,9 +59,8 @@ type visitor_in = {
     (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
-  kcomma: (info -> unit) * visitor_out -> info -> unit; 
-
-  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+  kcomma: (tok -> unit) * visitor_out -> tok -> unit; 
+  kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 (*e: type visitor_in *)
 (*s: type visitor_out *)

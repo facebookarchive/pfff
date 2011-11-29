@@ -65,12 +65,11 @@ open Parse_info
  * the Common.parse_info embedded inside it, as well as the
  * the transformation field that makes possible spatch.
  *)
-type info = Parse_info.info
-
-and tok = info
+type tok = Parse_info.info
+and info = tok
 (*x: AST info *)
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * info
+and 'a wrap = 'a * tok
 (*x: AST info *)
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok

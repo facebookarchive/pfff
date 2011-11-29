@@ -135,7 +135,7 @@ let min_max_by_pos xs =
   let (i1, i2) = min_max_ii_by_pos xs in
   (info_to_fixpos i1, info_to_fixpos i2)
 
-let (range_of_origin_ii: Ast_php.info list -> (int * int) option) = 
+let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
  fun ii -> 
   let ii = List.filter Ast_php.is_origintok ii in
   try 

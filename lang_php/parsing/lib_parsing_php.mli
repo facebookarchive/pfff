@@ -10,14 +10,14 @@ val find_php_files_of_dir_or_files:
   Common.path list -> Common.filename list
 
 (*x: lib_parsing_php.mli *)
-val ii_of_any: Ast_php.any -> Ast_php.info list
+val ii_of_any: Ast_php.any -> Ast_php.tok list
 (*x: lib_parsing_php.mli *)
 (* do via side effects *)
 val abstract_position_info_any: Ast_php.any -> Ast_php.any
 
 (*x: lib_parsing_php.mli *)
-val range_of_origin_ii: Ast_php.info list -> (int * int) option
-val min_max_ii_by_pos: Ast_php.info list -> Ast_php.info * Ast_php.info
+val range_of_origin_ii: Ast_php.tok list -> (int * int) option
+val min_max_ii_by_pos: Ast_php.tok list -> Ast_php.tok * Ast_php.tok
 
 type match_format =
   (* ex: tests/misc/foo4.php:3
@@ -31,7 +31,7 @@ type match_format =
   (* ex: tests/misc/foo4.php:3: foo(1,2) *)
   | OneLine
 
-val print_match: ?format:match_format -> Ast_php.info list -> unit
+val print_match: ?format:match_format -> Ast_php.tok list -> unit
 
 (*x: lib_parsing_php.mli *)
 val get_funcalls_any         : Ast_php.any -> string list

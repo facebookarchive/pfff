@@ -8,7 +8,7 @@ val vof_any: Ast_php.any -> Ocaml.v
 
 (* used by pil.ml or ast_php_simple.ml *)
 
-val vof_info: Ast_php.info -> Ocaml.v
+val vof_info: Ast_php.tok -> Ocaml.v
 val vof_tok: Ast_php.tok -> Ocaml.v
 
 val vof_dname: Ast_php.dname -> Ocaml.v

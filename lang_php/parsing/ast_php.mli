@@ -12,12 +12,11 @@ open Common
  * the Common.parse_info embedded inside it, as well as the
  * the transformation field that makes possible spatch.
  *)
-type info = Parse_info.info
-
-and tok = info
+type tok = Parse_info.info
+and info = tok
 (*x: AST info *)
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * info
+and 'a wrap = 'a * tok
 (*x: AST info *)
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -196,7 +195,7 @@ type expr =
   | YieldBreak of tok * tok
 
   (*s: type exprbis hook *)
-  | SgrepExprDots of info
+  | SgrepExprDots of tok
   (*x: type exprbis hook *)
   (* unparser: *)
   | ParenExpr of expr paren
@@ -768,9 +767,9 @@ and toplevel =
     | TraitDef of trait_def
    (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
   (*x: toplevel constructors *)
-    | NotParsedCorrectly of info list (* when Flag.error_recovery = true *)
+    | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
   (*x: toplevel constructors *)
-    | FinalDef of info (* EOF *)
+    | FinalDef of tok (* EOF *)
   (*e: toplevel constructors *)
 
  and program = toplevel list
@@ -804,7 +803,7 @@ type entity =
 
   | XhpDeclE of xhp_decl
 
-  | MiscE of info list
+  | MiscE of tok list
 (*e: AST entity *)
 (*s: AST any *)
 type any = 
@@ -835,8 +834,8 @@ type any =
 
   | StaticScalar of static_scalar
 
-  | Info of info
-  | InfoList of info list
+  | Info of tok
+  | InfoList of tok list
 
   | Name2 of name
 (*e: AST any *)
@@ -847,23 +846,23 @@ type any =
 (* AST helpers *)
 (*****************************************************************************)
 (*s: AST helpers interface *)
-val parse_info_of_info : info -> Parse_info.parse_info
+val parse_info_of_info : tok -> Parse_info.parse_info
 (*x: AST helpers interface *)
-val pinfo_of_info : info -> Parse_info.token
+val pinfo_of_info : tok -> Parse_info.token
 (*x: AST helpers interface *)
-val pos_of_info : info -> int
-val str_of_info : info -> string
-val file_of_info : info -> Common.filename
-val line_of_info : info -> int
-val col_of_info : info -> int
+val pos_of_info : tok -> int
+val str_of_info : tok -> string
+val file_of_info : tok -> Common.filename
+val line_of_info : tok -> int
+val col_of_info : tok -> int
 (*x: AST helpers interface *)
-val string_of_info : info -> string
+val string_of_info : tok -> string
 (*x: AST helpers interface *)
 val name : name -> string
 val dname : dname -> string
 (*x: AST helpers interface *)
-val info_of_name : name -> info
-val info_of_dname : dname -> info
+val info_of_name : name -> tok
+val info_of_dname : dname -> tok
 (*x: AST helpers interface *)
 val unwrap : 'a wrap -> 'a
 (*x: AST helpers interface *)
@@ -882,13 +881,13 @@ val unargs: argument comma_list -> expr list * w_variable list
 (*x: AST helpers interface *)
 (*x: AST helpers interface *)
 (*x: AST helpers interface *)
-val rewrap_str : string -> info -> info
-val is_origintok : info -> bool
-val al_info : info -> info
-val compare_pos : info -> info -> int
+val rewrap_str : string -> tok -> tok
+val is_origintok : tok -> bool
+val al_info : tok -> tok
+val compare_pos : tok -> tok -> int
 (*x: AST helpers interface *)
 val noScope : unit -> Scope_php.phpscope ref
 
-val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> info
+val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> tok
 (*e: AST helpers interface *)
 (*e: ast_php.mli *)
