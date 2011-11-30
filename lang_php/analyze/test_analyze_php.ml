@@ -361,6 +361,29 @@ let test_visitor_pil file =
 *)
 
 (*****************************************************************************)
+(* Abstract interpreter *)
+(*****************************************************************************)
+
+let test_dump file =
+  let ast = Parse_php.parse_program file in
+  let ast = Ast_php_simple_build.program ast in
+  let v = Meta_ast_php_simple.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+(* e.g. ./pfff_fb -test_abint tests/xss/abint.php *)
+let test_abstract_interpreter file =
+  let ast = Parse_php.parse_program file in
+  let ast = Ast_php_simple_build.program ast in
+  let heap = Env_interpreter_php.empty_heap in
+  let db = raise Todo in
+  let env = Env_interpreter_php.empty_env db file in
+  let heap = Abstract_interpreter_php.program env heap ast in
+  flush stdout; flush stderr;
+  pr2_gen(heap);
+  ()
+
+(*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
@@ -370,6 +393,12 @@ let test_visitor_pil file =
  *)
 
 let actions () = [
+  "-dump_simple", "   <file>",
+  Common.mk_action_1_arg test_dump;
+  "-test_abint", " <file>",
+  Common.mk_action_1_arg test_abstract_interpreter;
+
+
     "-test_pil",  " <file>",
     Common.mk_action_1_arg test_pil;
     "-test_pretty_print_pil", " <file>",
