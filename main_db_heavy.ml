@@ -61,7 +61,9 @@ let main_action xs =
             (Some Check_variables_php.check_and_annotate_program)
           (Database_php.prj_of_dir dir)
       in
-      if !index_method then Database_php_build2.index_db_method db;
+      if !index_method then 
+        raise Todo;
+        (* Database_php_build2.index_db_method db; *)
 
       Database_php.close_db db;
       ()
