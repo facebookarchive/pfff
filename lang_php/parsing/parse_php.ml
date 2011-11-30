@@ -479,7 +479,11 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
   Common.erase_this_temp_file tmpfile;
   res
 
-(* this function is useful mostly for our unit tests *)
+(* It is clearer for our testing code to programmatically build source files
+ * so that all the information about a test is in the same
+ * file. You don't have to open extra files to understand the test
+ * data. This function is useful mostly for our unit tests 
+*)
 let (program_of_string: string -> Ast_php.program) = fun s -> 
   let tmpfile = Common.new_temp_file "pfff_expr_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");

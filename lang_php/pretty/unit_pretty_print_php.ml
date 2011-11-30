@@ -12,11 +12,6 @@ module T = Parser_php
 (* Helpers *)
 (*****************************************************************************)
 
-let tmp_php_file_from_string s =
-  let tmp_file = Common.new_temp_file "test" ".php" in
-  Common.write_file ~file:tmp_file s;
-  tmp_file
-
 let pp_file file =
   let tokens = Parse_php.tokens file in
   let ast = Parse_php.parse_program file in
@@ -28,7 +23,7 @@ let pp_file file =
   Buffer.contents buf
 
 let pp_string s =
-  let file = tmp_php_file_from_string s in
+  let file = Parse_php.tmp_php_file_from_string s in
   pp_file file
 
 (*****************************************************************************)
@@ -66,7 +61,7 @@ function foo() {
     
   );  
 
-  "unparse/pretty-print mix" >:: (fun () ->
+  "unparse/pretty-print mix (chunk management)" >:: (fun () ->
     let content =
 "<?php
 
@@ -75,7 +70,7 @@ function foo() { }
 function bar() { }
 "
     in
-    let file = tmp_php_file_from_string content in
+    let file = Parse_php.tmp_php_file_from_string content in
     let toks = Parse_php.tokens file in
     let ast = Parse_php.parse_program file in
     let chunks = Unparse_pretty_print_mix.split_chunks toks ast in

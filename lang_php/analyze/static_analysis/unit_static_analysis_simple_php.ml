@@ -13,16 +13,8 @@ module Cg = Callgraph_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* TODO: dupe with unit_analyze_db_php.ml *)
-
-(* dup: with unit_analyze_php.ml *)
-let tmp_php_file_from_string s =
-  let tmp_file = Common.new_temp_file "test" ".php" in
-  Common.write_file ~file:tmp_file ("<?php\n" ^ s);
-  tmp_file
-
 let db_from_string s =
-  let tmp_file = tmp_php_file_from_string s in
+  let tmp_file = Parse_php.tmp_php_file_from_string s in
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program tmp_file in
   Database_php_build.db_of_files_or_dirs [tmp_file]

@@ -1,11 +1,6 @@
 open Common
 
 module Ast = Ast_php
-
-module Db = Database_php
-module Cg = Callgraph_php
-
-module V = Visitor_php
 module A = Annotation_php
 
 open OUnit
@@ -13,21 +8,6 @@ open OUnit
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(* It is clearer for our testing code to programmatically build source files
- * so that all the information about a test is in the same
- * file. You don't have to open extra files to understand the test
- * data.
- *)
-let tmp_php_file_from_string s =
-  let tmp_file = Common.new_temp_file "test" ".php" in
-  Common.write_file ~file:tmp_file ("<?php\n" ^ s);
-  tmp_file
-
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -44,8 +24,7 @@ let defs_uses_unittest =
 foo1();
 "
       in
-      let tmpfile = tmp_php_file_from_string file_content in
-      let ast = Parse_php.parse_program tmpfile in
+      let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let uses_strings = 
         uses +> List.map (fun (kind, name) -> Ast.name name) in
@@ -73,8 +52,7 @@ $x = <x:xhp1></x:xhp1>;
 $x = <x:xhp2/>;
 "
       in
-      let tmpfile = tmp_php_file_from_string file_content in
-      let ast = Parse_php.parse_program tmpfile in
+      let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let str_of_name = function
         | Ast.Name (s, _) -> s
@@ -108,7 +86,7 @@ let tags_unittest =
             trait C { }
         "
         in
-        let tmpfile = tmp_php_file_from_string file_content in
+        let tmpfile = Parse_php.tmp_php_file_from_string file_content in
         let tags = 
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         (match tags with
@@ -127,7 +105,7 @@ let tags_unittest =
               function a_method() { } 
            }
         " in
-        let tmpfile = tmp_php_file_from_string file_content in
+        let tmpfile = Parse_php.tmp_php_file_from_string file_content in
         let tags = 
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         (match tags with
@@ -175,7 +153,7 @@ let annotation_unittest =
 }
 "
       in
-      let tmpfile = tmp_php_file_from_string file_content in
+      let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let (ast_with_comments, _stat) = Parse_php.parse tmpfile in
       let annots = 
         Annotation_php.annotations_of_program_with_comments ast_with_comments
@@ -218,8 +196,7 @@ let include_unittest =
         require_once $_SERVER['PHP_ROOT'].'/lib/alerts/alerts.php';
         "
         in
-        let tmpfile = tmp_php_file_from_string file in
-        let ast = Parse_php.parse_program tmpfile in
+        let ast = Parse_php.program_of_string file in
         let incs = Include_require_php.top_increq_of_program ast in
         match incs with
         | [(_inc_kind,_tok, incexpr)] ->
