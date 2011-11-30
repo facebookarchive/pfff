@@ -1,10 +1,14 @@
 -*- org -*-
 
 * ??? (Q4 2011) (??)
-web ui in ocsigen?
 
-** introduce codequery, a Prolog-based code query engine
+** introduce codequery, an interactive Prolog-based code query engine,
 especially useful to query inheritance information.
+
+** introduce simplified AST for PHP and abstract interpreter (julien)
+which leads to a more precise callgraph, type information,
+and opens the way for many more checks (including security checks
+using tainting analysis).
 
 ** scheck: lots of new checks, and removed lots of false positives
 while still being reasonably fast, thanks to the use of a lazy entity finder.
@@ -17,8 +21,6 @@ spatch --pretty-printer.
 
 *** a "sed mode" so can do spatch -e 's/foo(X,Y)/foo(X)/' *.php
 
-** introduce simplified ast for PHP and abstract interpreter (julien)
-
 ** lang_ml, more highlight
 so can parse julien's code which heavily use modules.
 
@@ -27,7 +29,7 @@ so can parse julien's code which heavily use modules.
 ** internals
 
 *** removed lots of dead code now that commited to use the abstract interpreter
-instead of a PIL + cflow + dataflow + db + ...
+instead of a PIL+cflow+dataflow+db+...
 
 * 0.17 (Q3 2011) (overlay)
 
