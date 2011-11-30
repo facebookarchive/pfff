@@ -24,7 +24,6 @@ module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
 
 open Ast_php
-
 (*e: parse_php module aliases *)
 
 module PI = Parse_info
@@ -489,6 +488,13 @@ let (program_of_string: string -> Ast_php.program) = fun s ->
   Common.erase_this_temp_file tmpfile;
   ast
 
+(* use program_of_string when you can *)
+let tmp_php_file_from_string s =
+  let tmp_file = Common.new_temp_file "test" ".php" in
+  Common.write_file ~file:tmp_file ("<?php\n" ^ s);
+  tmp_file
+
+
 (* this function is useful mostly for our unit tests *)
 let (tokens_of_string: string -> Parser_php.token list) = fun s -> 
   let tmpfile = Common.new_temp_file "pfff_tokens_of_s" "php" in
@@ -522,4 +528,5 @@ let (xdebug_expr_of_string: string -> Ast_php.expr) = fun s ->
 let (class_def_of_string: string -> Ast_php.class_def) = fun s ->
   let lexbuf = Lexing.from_string s in
   Parser_php.class_declaration_statement basic_lexer_skip_comments lexbuf
+
 (*e: parse_php.ml *)

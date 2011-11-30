@@ -40,6 +40,7 @@ val expr_of_string: string -> Ast_php.expr
 val program_of_string: string -> Ast_php.program
 val tokens_of_string: string -> Parser_php.token list
 val any_of_string:  string -> Ast_php.any
+val tmp_php_file_from_string: string -> Common.filename
 (*e: extra parse function signature *)
 (*x: parse_php.mli *)
 val program_of_program2 : program2 -> Ast_php.program

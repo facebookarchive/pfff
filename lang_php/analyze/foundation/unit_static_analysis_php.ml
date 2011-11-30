@@ -14,20 +14,17 @@ module Env = Env_interpreter_php
 (* Helpers *)
 (*****************************************************************************)
 
-(* dup: with unit_analyze_php.ml *)
-let tmp_php_file_from_string s =
-  let tmp_file = Common.new_temp_file "test" ".php" in
-  Common.write_file ~file:tmp_file ("<?php\n" ^ s);
-  tmp_file
-
 let heap_of_program_at_checkpoint content =
-  let tmp_file = tmp_php_file_from_string content in
-  let ast = Parse_php.parse_program tmp_file in
-  let ast = Ast_php_simple_build.program ast in
-  let heap = Env_interpreter_php.empty_heap in
-  let juju_db = Env_interpreter_php.juju_db_of_files [tmp_file] in
-  let db = Env_interpreter_php.code_database_of_juju_db juju_db in
+  let tmp_file = Parse_php.tmp_php_file_from_string content in
+
+  let ast = 
+    Parse_php.parse_program tmp_file +> Ast_php_simple_build.program in
+  let db = Env_interpreter_php.code_database_of_juju_db  
+    (Env_interpreter_php.juju_db_of_files [tmp_file]) in
+
   let env = Env_interpreter_php.empty_env db tmp_file in
+  let heap = Env_interpreter_php.empty_heap in
+
   Abstract_interpreter_php.extract_paths := false;
   let _heap = Abstract_interpreter_php.program env heap ast in
   match !Abstract_interpreter_php._checkpoint_heap with
@@ -58,6 +55,9 @@ let info heap v = Env.string_of_value heap (List.hd v)
 let abstract_interpreter_unittest =
   "abstract interpreter" >::: [
 
+  (*-------------------------------------------------------------------------*)
+  (* Basic types and dataflow *)
+  (*-------------------------------------------------------------------------*)
     "basic" >:: (fun () ->
       let file ="
 $x = 42;
@@ -83,8 +83,11 @@ checkpoint();
       | [Vptr ix1; Vref _set; Vptr ix2; Vint 42],
         [Vptr iy1; Vref _set2; Vptr iy2; Vint 42]
         ->
-          assert_equal ix2 iy2;
-          assert_bool "variables should have different original pointers"
+          assert_equal
+            ~msg:"it should share the second pointer"
+            ix2 iy2;
+          assert_bool 
+            "variables should have different original pointers"
             (ix1 <> iy1)
 
       | _ -> assert_failure (spf "wrong value for $x: %s, $y = %s "
@@ -142,6 +145,10 @@ checkpoint(); // y: int
       | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
       | v -> assert_failure ("wrong value for $y: " ^ info heap v)
     );
+
+  (*-------------------------------------------------------------------------*)
+  (* Lookup semantic *)
+  (*-------------------------------------------------------------------------*)
 
     "semantic lookup static method" >:: (fun () ->
 
