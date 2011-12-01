@@ -9,27 +9,32 @@ open OUnit
 module Flag = Flag_parsing_php
 
 (*****************************************************************************)
-(* Unit tests *)
+(* Helpers *)
 (*****************************************************************************)
 
-(* Back when the PHP parser was quite fragile we used to do some error
- * recovery in case of a parse error and instead of failing hard we
+(* old: 
+ * Back when the PHP parser was quite fragile we used to do some error
+ * recovery in case of a parse error, and instead of failing hard we
  * were returning a NotParsedCorrectly toplevel element. Now
- * we fail hard because the PHP parse is better. So this function
+ * we fail hard because the PHP parser is better. So the function below
  * is not useful anymore:
  *
  * let assert_no_parser_error ast = 
- * assert_bool "bad: have a NotParsedCorrectly" 
- * (List.for_all (function NotParsedCorrectly _ -> false | _ -> true) ast);
- * ()
+ *  assert_bool "bad: have a NotParsedCorrectly" 
+ *  (List.for_all (function NotParsedCorrectly _ -> false | _ -> true) ast);
+ *  ()
  *)
+
+(*****************************************************************************)
+(* Unit tests *)
+(*****************************************************************************)
 
 let unittest =
   "parsing_php" >::: [
 
     "lexing regular code" >:: (fun () ->
       let toks = Parse_php.tokens_of_string "echo 1+2;" in
-      assert_bool "should have a Echo token" 
+      assert_bool "it should have a Echo token" 
         (toks +> List.exists (function 
           Parser_php.T_ECHO _ -> true | _ -> false));
     );
@@ -37,21 +42,17 @@ let unittest =
     "lexing and case sensitivity" >:: (fun () ->
       let toks = Parse_php.tokens_of_string 
           "function foo() { echo __function__; }" in
-      assert_bool "should have a __FUNCTION__ token" 
+      assert_bool "it should have a __FUNCTION__ token" 
         (toks +> List.exists (function 
           Parser_php.T_FUNC_C _ -> true | _ -> false));
     );
-    (* The PHP parser does not return an exception when a PHP file contains
-     * an error, to allow some form of error recovery by not stopping 
-     * at the first mistake. Instead it returns a NotParsedCorrectly 
-     * AST toplevel element for parts of the code that were not parsed.
-     * Here we check that correctly formed code do not contain such 
-     * NotParsedCorrectly element.
-     *)
+
+
     "parsing regular code" >:: (fun () ->
       let _ast = Parse_php.program_of_string "echo 1+2;" in
       ()
     );
+    (* had such a bug one day ... *)
     "parsing empty comments" >:: (fun () ->
       let _ast = Parse_php.program_of_string "$a/**/ =1;" in
       ()
@@ -61,37 +62,44 @@ let unittest =
       Flag_parsing_php.show_parsing_error := false;
       try 
         let _ = Parse_php.program_of_string "echo 1+" in
-        assert_failure "should have generated a parse error exn"
+        assert_failure "it should have thrown a Parse_error exception"
       with
        Parse_php.Parse_error _ -> 
          ()
       (* old:
+       * The PHP parser does not return an exception when a PHP file contains
+       * an error, to allow some form of error recovery by not stopping 
+       * at the first mistake. Instead it returns a NotParsedCorrectly 
+       * AST toplevel element for parts of the code that were not parsed.
+       * Here we check that correctly formed code do not contain such 
+       * NotParsedCorrectly element.
+       *
        *  assert_bool "bad: should have a NotParsedCorrectly" 
        * (List.exists (function NotParsedCorrectly _ -> true | _ -> false) ast)
        *)
     );
 
-    (* The PHP parser now understands PHP code containing XHP elements.
-     * In the past pfff would call a preprocessor before parsing a file. By
-     * setting this preprocessor to "xhpize", the XHP command line 
-     * preprocessor, we could then parse the regular preprocessed code.
-     * Now pfff can directly parse XHP code.
-     *)
     "parsing xhp code" >:: (fun () ->
-      (* old: Flag_parsing_php.pp_default := Some "xhpize"; *)
-
+      (* old: 
+       * The PHP parser now understands PHP code containing XHP elements.
+       * In the past, pfff would call a preprocessor before parsing a file. By
+       * setting the preprocessor to "xhpize", the XHP command line 
+       * preprocessor, we could then parse the regular preprocessed code.
+       * Now pfff can directly parse XHP code.
+       * 
+       * Flag_parsing_php.pp_default := Some "xhpize"; 
+       *)
       let _ast = Parse_php.program_of_string "return <x:frag />;"  in
       let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
       ()
     );
 
 
-    (* XHP is mainly a preprocessor to allow embbeding HTML-like tags in
+    (* XHP was mainly a preprocessor to allow embbeding HTML-like tags in
      * PHP. It also fixes some limitations of the original PHP grammar 
      * regarding array access. You can do foo()['fld'] in XHP, which is 
      * not allowed in PHP (for stupid reasons IMHO).
-     * The pfff PHP parser does not handle XHP tags but can handle 
-     * this syntactic sugar at least.
+     * The pfff PHP parser must handle  this syntactic sugar too.
      *)
     "parsing xhp fn_idx sugar code" >:: (fun () ->
 
@@ -102,6 +110,19 @@ let unittest =
       let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
       OUnit.skip_if true "grammar extension for XHP incomplete";
     );
+
+    "regression files" >:: (fun () ->
+      let dir = Filename.concat Config.path "/tests/php/parsing" in
+      let files = Common.glob (spf "%s/*.php" dir) in
+      files +> List.iter (fun file ->
+        try
+          let _ = Parse_php.parse_program file in
+          ()
+        with Parse_php.Parse_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+
 
     (* Check that the visitor implementation correctly visit all AST 
      * subelements, even when they are deep inside the AST tree (e.g. 
@@ -147,11 +168,11 @@ let unittest =
     "parsing sgrep expressions" >:: (fun () ->
       
       let _e = Parse_php.any_of_string "debug_rlog(1)" in
-      assert_bool "should not generate an error" true;
+      assert_bool "it should not generate an error" true;
       let _e = Parse_php.any_of_string "debug_rlog(X)" in
-      assert_bool "should not generate an error" true;
+      assert_bool "it should not generate an error" true;
       let _e = Parse_php.any_of_string "debug_rlog(X, 0)" in
-      assert_bool "should not generate an error" true;
+      assert_bool "it should not generate an error" true;
 
       (try 
         let _e = 
@@ -159,7 +180,7 @@ let unittest =
             Parse_php.any_of_string "debug_rlog(X, 0" 
           ) 
         in
-        assert_failure "should generate an error"
+        assert_failure "it should generate an error"
       with exn ->
         ()
       );
@@ -168,13 +189,13 @@ let unittest =
     "parsing sgrep patterns" >:: (fun () ->
       let any = Parse_php.any_of_string "foo();" in
       let ok = match any with Stmt2(ExprStmt( _)) -> true | _ -> false in
-      assert_bool "should be the AST of a statement" ok;
+      assert_bool "it should be the AST of a statement" ok;
       let any = Parse_php.any_of_string "foo()" in
       let ok = match any with Expr(_) -> true | _ -> false in
-      assert_bool "should be the AST of an expression" ok;
+      assert_bool "it should be the AST of an expression" ok;
       let any = Parse_php.any_of_string "<x:frag>x</x:frag>" in
       let ok = match any with Expr(_) -> true | _ -> false in
-      assert_bool "should be the AST of an expression" ok;
+      assert_bool "it should be the AST of an expression" ok;
 
     );
 
