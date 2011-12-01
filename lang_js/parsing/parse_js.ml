@@ -360,7 +360,6 @@ let rec lexer_function tr = fun lexbuf ->
 
 exception Parse_error of Parse_info.info
 
-
 let parse2 filename =
 
   let stat = Parse_info.default_stat filename in

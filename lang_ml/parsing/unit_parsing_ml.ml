@@ -12,6 +12,19 @@ open OUnit
 
 let unittest =
   "parsing_ml" >::: [
+
+    "regression files" >:: (fun () ->
+      let dir = Filename.concat Config.path "/tests/ml/parsing" in
+      let files = Common.glob (spf "%s/*.ml" dir) in
+      files +> List.iter (fun file ->
+        try
+          let _ = Parse_ml.parse_program file in
+          ()
+        with Parse_ml.Parse_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+
     (* Check that the visitor implementation correctly visit all AST 
      * subelements, even when they are deep inside the AST tree (e.g. 
      * sub-sub expressions inside parenthesis).
