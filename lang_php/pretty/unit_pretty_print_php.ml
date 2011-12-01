@@ -32,7 +32,7 @@ let pp_string s =
 let unittest = "pretty print php" >::: [
   "basic" >:: (fun () ->
       
-    let file = "function foo() { }" in
+    let content = "function foo() { }" in
     let expect =
 "<?php
 function foo() {
@@ -40,11 +40,11 @@ function foo() {
 " in
       
     assert_equal 
-      ~msg:"it should put ending function braces in another line"
-      expect (pp_string file);
+      ~msg:"it should put the ending brace on another line"
+      expect (pp_string content);
   );
   "comments" >:: (fun () ->
-    let file = " function foo() { // first comment\n $x = 1; }" in
+    let content = " function foo() { // first comment\n $x = 1; }" in
     let expect =
 "<?php
 function foo() {
@@ -54,7 +54,7 @@ function foo() {
 " in
     assert_equal 
       ~msg:"it should maintain comments"
-      expect (pp_string file);
+      expect (pp_string content);
     
   );  
 
@@ -111,14 +111,14 @@ function bar() { }
 
 
   "regression files" >:: (fun () ->
-    let dir = 
-      Filename.concat Config.path "/tests/php/pretty" in
+    let dir = Filename.concat Config.path "/tests/php/pretty" in
     let files = Common.glob (spf "%s/*.php" dir) in
     files +> List.iter (fun file ->
       let res = pp_file file in
       assert_equal
         ~msg:(spf "it should correctly pretty print %s" file)
-        (Common.read_file file) res
+        (Common.read_file file) 
+        res
     )
   );
 ]
