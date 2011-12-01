@@ -1063,7 +1063,8 @@ expr_without_variable_bis:
        in
        Lambda ldef
      }
- /*(* php-facebook-ext: *)*/
+ /*(* php-facebook-ext: todo? in hphp.y yield are at the statement level
+    * and are restricted to a few forms *)*/
  | T_YIELD expr { Yield ($1, $2) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
 
