@@ -61,7 +61,9 @@ let _hmemo_file = Hashtbl.create 101
 
 let parse_ml2 file = 
   Common.memoized _hmemo_file file (fun () -> 
-    ML (Parse_ml.parse file +> fst))
+    Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
+      ML (Parse_ml.parse file +> fst))
+  )
 let parse_ml_cache a = 
   Common.profile_code "View.parse_ml_cache" (fun () -> 
     match parse_ml2 a with | ML a -> a | _ -> raise Impossible
