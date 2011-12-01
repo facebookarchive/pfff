@@ -32,6 +32,10 @@ module Flag = Flag_parsing_php
 let unittest =
   "parsing_php" >::: [
 
+    (*-----------------------------------------------------------------------*)
+    (* Lexing *)
+    (*-----------------------------------------------------------------------*)
+
     "lexing regular code" >:: (fun () ->
       let toks = Parse_php.tokens_of_string "echo 1+2;" in
       assert_bool "it should have a Echo token" 
@@ -47,6 +51,9 @@ let unittest =
           Parser_php.T_FUNC_C _ -> true | _ -> false));
     );
 
+    (*-----------------------------------------------------------------------*)
+    (* Parsing *)
+    (*-----------------------------------------------------------------------*)
 
     "parsing regular code" >:: (fun () ->
       let _ast = Parse_php.program_of_string "echo 1+2;" in
@@ -78,6 +85,22 @@ let unittest =
        * (List.exists (function NotParsedCorrectly _ -> true | _ -> false) ast)
        *)
     );
+
+    "regression files" >:: (fun () ->
+      let dir = Filename.concat Config.path "/tests/php/parsing" in
+      let files = Common.glob (spf "%s/*.php" dir) in
+      files +> List.iter (fun file ->
+        try
+          let _ = Parse_php.parse_program file in
+          ()
+        with Parse_php.Parse_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+
+    (*-----------------------------------------------------------------------*)
+    (* XHP *)
+    (*-----------------------------------------------------------------------*)
 
     "parsing xhp code" >:: (fun () ->
       (* old: 
@@ -111,18 +134,9 @@ let unittest =
       OUnit.skip_if true "grammar extension for XHP incomplete";
     );
 
-    "regression files" >:: (fun () ->
-      let dir = Filename.concat Config.path "/tests/php/parsing" in
-      let files = Common.glob (spf "%s/*.php" dir) in
-      files +> List.iter (fun file ->
-        try
-          let _ = Parse_php.parse_program file in
-          ()
-        with Parse_php.Parse_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
-      )
-    );
-
+    (*-----------------------------------------------------------------------*)
+    (* Misc *)
+    (*-----------------------------------------------------------------------*)
 
     (* Check that the visitor implementation correctly visit all AST 
      * subelements, even when they are deep inside the AST tree (e.g. 
@@ -164,6 +178,10 @@ let unittest =
       | _ ->
           assert_failure "not good AST"
     );
+
+    (*-----------------------------------------------------------------------*)
+    (* Sgrep *)
+    (*-----------------------------------------------------------------------*)
 
     "parsing sgrep expressions" >:: (fun () ->
       
