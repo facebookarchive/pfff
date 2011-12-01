@@ -16,7 +16,6 @@
 open Common
 
 module J = Json_type
-
 module HC = Highlight_code
 
 (*****************************************************************************)
@@ -28,10 +27,12 @@ module HC = Highlight_code
  * codebase (a la CIA [1]). The goal is to give access to information computed
  * by a set of global static or dynamic analysis such as what are the
  * number of callers to a certain function, what is the test coverage of
- * a file, etc.
+ * a file, etc. This is mainly used by codemap to give semantic visual
+ * feedback on the code.
  * 
  * update: database_code.pl and Prolog may be the prefered way now to
- *  represent a code database.
+ * represent a code database, but for codemap it's still good to use
+ * this database.
  * 
  * Each programming language analysis library usually provides
  * a more powerful database (e.g. analyze_php/database/database_php.mli)
@@ -47,7 +48,7 @@ module HC = Highlight_code
  * process at the same time (there is currently a few problems with
  * concurrent access of Berkeley Db data; for instance one database
  * created by a user can not even be read by another user ...).
- * This also avoid forcing the user to spend time running all
+ * This also avoids forcing the user to spend time running all
  * the global analysis on his own codebase. We can factorize the essential
  * results of such long computation in a single file.
  * 
@@ -68,7 +69,8 @@ module HC = Highlight_code
  *  - rewrite it for PHP in Nov 2009
  *  - adapted in Jan 2010 for flib_navigator
  *  - make it generic in Aug 2010 for my code/treemap visualizer
- *  - make it a little bit obsolete now that use Prolog.
+ *  - added comments about Prolog database which may be a better db for
+ *    certain use cases.
  * 
  * history bis:
  *  - Before, I was optimizing stuff by caching the ast in 
@@ -124,6 +126,9 @@ type entity_kind =
 
   (* todo? could also abuse property below to encode such information *)
   and class_type = RegularClass | Interface | Trait
+  (* we distinguage regular from static because it's good to visually
+   * differentiate them in tools like codemap.
+   *)
   and method_type = RegularMethod | StaticMethod
 
 (* How to store the id of an entity ? A int ? A name and hope few conflicts ?
