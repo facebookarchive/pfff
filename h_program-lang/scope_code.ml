@@ -28,9 +28,9 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-(* todo? could use polymorphic variant for that ? the scoping will
+(* todo? could use open polymorphic variant for that ? the scoping will
  * be differerent for each language but they will also have stuff
- * in common which may be a good spot for polymorphic variant.
+ * in common which may be a good spot for open polymorphic variant.
  *)
 type scope = 
   | Global
@@ -45,8 +45,9 @@ type scope =
 
   (* php specific? *)
   | ListBinded
-  (* | Class ? *)
-
+  (* closure, could be same as Local, but can be good to visually
+   * differentiate them in codemap
+   *)
   | Closed
 
   | NoScope
