@@ -16,6 +16,19 @@ module Flag = Flag_parsing_js
 let unittest =
   "parsing_js" >::: [
 
+    "regression files" >:: (fun () ->
+      let dir = Filename.concat Config.path "/tests/js/parsing" in
+      let files = Common.glob (spf "%s/*.js" dir) in
+      files +> List.iter (fun file ->
+        try
+          let _ = Parse_js.parse_program file in
+          ()
+        with Parse_js.Parse_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+
+
     "the javascript AST mapper" >:: (fun () ->
       let js_ex = "foo(42, 101);" in
       Common.with_tmp_file ~str:js_ex ~ext:".js" (fun file ->

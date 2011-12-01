@@ -16,3 +16,8 @@ let cmdline_flags_debugging () = [
 ]
 
 let show_parsing_error = ref true
+(* Do not raise an exn when a parse error but use NotParsedCorrectly.
+ * Now that the JS parser is quite complete, it's better to set 
+ * error_recovery to false by default and raise a true ParseError exn.
+ *)
+let error_recovery = ref false

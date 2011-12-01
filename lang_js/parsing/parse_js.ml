@@ -18,9 +18,7 @@ open Common
 module Ast = Ast_js
 module Flag = Flag_parsing_js
 module TH   = Token_helpers_js
-
 module T = Parser_js
-
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -360,6 +358,9 @@ let rec lexer_function tr = fun lexbuf ->
 (* Main entry point *)
 (*****************************************************************************)
 
+exception Parse_error of Parse_info.info
+
+
 let parse2 filename =
 
   let stat = Parse_info.default_stat filename in
@@ -406,6 +407,9 @@ let parse2 filename =
       stat
   | Right (info_of_bads, line_error, cur, exn) ->
 
+      if not !Flag.error_recovery
+      then raise (Parse_error (TH.info_of_tok cur));
+
       (match exn with
       | Lexer_js.Lexical _ 
       | Parsing.Parse_error 
@@ -440,7 +444,6 @@ let parse2 filename =
 
 let parse a = 
   Common.profile_code "Parse_js.parse" (fun () -> parse2 a)
-
 
 let parse_program file = 
   let (ast2, _stat) = parse file in

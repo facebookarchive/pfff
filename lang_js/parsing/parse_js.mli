@@ -5,6 +5,8 @@ type program2 = toplevel2 list
      (* the token list contains also the comment-tokens *)
      and info_item = (string * Parser_js.token list)
 
+exception Parse_error of Parse_info.info
+
 (* This is the main function *)
 val parse : 
   Common.filename -> (program2 * Parse_info.parsing_stat)
