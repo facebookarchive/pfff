@@ -28,6 +28,7 @@ the use or other dealings in the software.
 *)
 
 (***********************************************************************)
+(* pad: just harmonized some APIs regarding the 'msg' label *)
 
 let bracket set_up f tear_down () =
   let fixture = set_up () in
@@ -51,7 +52,7 @@ let todo msg =
 let assert_failure msg = 
   failwith ("OUnit: " ^ msg)
 
-let assert_bool msg b =
+let assert_bool ~msg b =
   if not b then assert_failure msg
 
 let assert_string str =
@@ -104,7 +105,7 @@ let cmp_float ?(epsilon = 0.00001) a b =
     abs_float (a -. b) <= epsilon *. (abs_float b) 
       
 (* Now some handy shorthands *)
-let (@?) = assert_bool
+let (@?) msg a = assert_bool msg a
 
 (* The type of test function *)
 type test_fun = unit -> unit 

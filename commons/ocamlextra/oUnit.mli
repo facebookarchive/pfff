@@ -52,7 +52,7 @@ val assert_failure : string -> 'a
     failure.
     
     @raise Failure to signal a failure *)
-val assert_bool : string -> bool -> unit
+val assert_bool : msg:string -> bool -> unit
 
 (** Shorthand for assert_bool 
 
