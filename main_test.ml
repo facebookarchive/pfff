@@ -44,25 +44,23 @@ open OUnit
 let test regexp = 
 
   (* There is no reflection in OCaml so the unit test framework OUnit requires
-   * us to explicitely build the test suites.
+   * us to explicitely build the test suites (which is not that bad).
    *)
   let tests = 
     "all" >::: [
       Unit_parsing_php.unittest;
+      Unit_pretty_print_php.unittest;
+      Unit_matcher_php.unittest;
+      Unit_checker_php.unittest;
 
       Unit_foundation_php.unittest;
-      Unit_static_analysis_php.unittest;
       Unit_prolog_php.unittest;
+      Unit_static_analysis_php.unittest;
       Unit_analyze_db_php.unittest;
-
-      Unit_matcher_php.unittest;
-      Unit_pretty_print_php.unittest;
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest;
 
-      Unit_checker_php.unittest;
-
-      (* non php related tests *)
+      (* non PHP related tests *)
       Unit_parsing_js.unittest;
       Unit_parsing_html.unittest;
       Unit_parsing_ml.unittest;
