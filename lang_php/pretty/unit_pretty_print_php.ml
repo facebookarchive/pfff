@@ -32,10 +32,7 @@ let pp_string s =
 let unittest = "pretty print php" >::: [
   "basic" >:: (fun () ->
       
-    let file = 
-"<?php
-function foo() { }
-" in
+    let file = "function foo() { }" in
     let expect =
 "<?php
 function foo() {
@@ -47,7 +44,7 @@ function foo() {
       expect (pp_string file);
   );
   "comments" >:: (fun () ->
-    let file = "<?php\n function foo() { // first comment\n $x = 1; }" in
+    let file = " function foo() { // first comment\n $x = 1; }" in
     let expect =
 "<?php
 function foo() {
@@ -63,8 +60,7 @@ function foo() {
 
   "unparse/pretty-print mix (chunk management)" >:: (fun () ->
     let content =
-"<?php
-
+"
 function foo() { }
 
 function bar() { }
