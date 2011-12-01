@@ -58,7 +58,6 @@ let unittest =
   let builtin_files =
     Lib_parsing_php.find_php_files_of_dir_or_files [php_stdlib]
   in
-  let all_files = builtin_files ++ test_files in
 
   Error_php._errors := [];
   let db = 
@@ -66,7 +65,7 @@ let unittest =
       Database_php_build.create_db
         ~db_support:(Database_php.Mem)
         ~phase:2 (* TODO ? *)
-        ~files:(Some all_files)
+        ~files:(Some (builtin_files ++ test_files))
         ~verbose_stats:false
         ~annotate_variables_program:None
         (Database_php.Project ("/", None))
@@ -100,9 +99,8 @@ let unittest =
   only_in_actual |> List.iter (fun (src, l) ->
     pr2 (spf "this one error was not expected: %s:%d" src l);
   );
-
-  if not (null only_in_expected && null only_in_actual)
-  then failwith "scheck tests failed"
-  else pr2 "scheck tests passed OK"
+  assert_bool
+    ~msg:"it should find all reported errors and no more"
+    (null only_in_expected && null only_in_actual);
   )
   ]
