@@ -13,6 +13,8 @@ module Ast = Ast_php
 (* Helpers *)
 (*****************************************************************************)
 
+let verbose = false
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -60,7 +62,7 @@ let unittest =
 
   Error_php._errors := [];
   let db = 
-    Common.save_excursion Flag_analyze_php.verbose_database true (fun()->
+    Common.save_excursion Flag_analyze_php.verbose_database verbose (fun()->
       Database_php_build.create_db
         ~db_support:(Database_php.Mem)
         ~phase:2 (* TODO ? *)
@@ -76,7 +78,10 @@ let unittest =
   (* run the bugs finders *)
   test_files +> List.iter (Check_all_php.check_file ~find_entity env);
 
-  !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e));
+  if verbose then begin
+    !Error_php._errors +> List.iter (fun e -> 
+      pr (Error_php.string_of_error e));
+  end;
   
   let (actual_errors: (Common.filename * int (* line *)) list) = 
     !Error_php._errors +> Common.map (fun err ->
