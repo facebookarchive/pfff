@@ -21,17 +21,17 @@ let sgrep_unittest = [
     (match pattern, code with
     | Stmt2 pattern, Stmt2 code ->
         let matches_with_env = Matching_php.match_st_st pattern code in
-        assert_bool "should not match" (matches_with_env = []);
+        assert_bool "it should not match" (matches_with_env = []);
     | _ ->
         assert_failure "parsing problem in sgrep pattern parsing"
     );
   );
 
   "misc sgrep features" >:: (fun () ->
-    (* pattern, code (must be full statements), should_match *)
+    (* pattern string, code string (statement), should_match boolean *)
     let triples = [
-      (* concrete match *)
-      "foo(1,2);", "foo(1,2);", true;
+      (* concrete match with space "abstraction" *)
+      "foo(1,2);", "foo(1,  2);", true;
       "foo(1,3);", "foo(1,2);", false;
 
       (* '...' in funcall *)
@@ -41,8 +41,9 @@ let sgrep_unittest = [
       "foo(X,...);", "foo(1,2);", true;
       (* ... also match when there is no additional arguments *)
       "foo(X,...);", "foo(1);", true;
+      (* todo: foo(..., 3, ...), foo(1,2,3,4) *)
 
-      (* linear patterns *)
+      (* "linear" patterns, a la Prolog *)
       "foo($V, $V);", "foo($x, $x);", true;
       "X && X;", "($a || $b) && ($a || $b);", true;
       "foo($V, $V);", "foo($x, $y);", false;
@@ -53,7 +54,7 @@ let sgrep_unittest = [
       (* statements *)
       "if(X) { foo(); }", "if(true) { foo(); }", true;
 
-      (* metavariables *)
+      (* metavariable naming conventions *)
       "foo(X);"       ,  "foo(1);", true;
       "foo(X);"       ,  "foo(1+1);", true;
       "foo(X1);"      ,  "foo(1);", true;
@@ -114,7 +115,7 @@ let sgrep_unittest = [
   );
 
   "toplevel sgrep matching" >:: (fun () ->
-    (* pattern, code *)
+    (* pattern string, code string *)
     let pairs = [
       "function X(){ return Y(...); }","function foo(){ return bar(); }";
       "function X(...){ return Y(...); }","function foo($x){ return bar(); }";
@@ -135,9 +136,11 @@ let sgrep_unittest = [
 (* Spatch Unit tests *)
 (*****************************************************************************)
 
+(* See https://github.com/facebook/pfff/wiki/Spatch *)
+
 (* run by spatch -test *)
 let spatch_unittest = [
-  "spatch regressions" >:: (fun () ->
+  "spatch regressions files" >:: (fun () ->
 
     let testdir = Filename.concat Config.path "tests/php/spatch/" in
     let expfiles = Common.glob (testdir ^ "*.exp") in
@@ -151,10 +154,6 @@ let spatch_unittest = [
         let (prefix, variant) = Common.matched2 expfile in
         let spatchfile = prefix ^ ".spatch" in
         let phpfile = prefix ^ variant ^ ".php" in
-        pr2 (spf "Testing %s on %s expecting %s" 
-                (Filename.basename spatchfile)
-                (Filename.basename phpfile)
-                (Filename.basename expfile));
         
         let pattern = Spatch_php.parse spatchfile in
         let resopt = Spatch_php.spatch pattern phpfile in
@@ -170,7 +169,11 @@ let spatch_unittest = [
         let diff = Common.unix_diff file_res expfile in
         diff |> List.iter pr;
         if List.length diff > 1
-        then failwith (spf "PB with %s" expfile);
+        then assert_failure
+          (spf "spatch %s on %s should have resulted in %s" 
+              (Filename.basename spatchfile)
+              (Filename.basename phpfile)
+              (Filename.basename expfile))
       end 
       else failwith ("wrong format for expfile: " ^ expfile)
     )
