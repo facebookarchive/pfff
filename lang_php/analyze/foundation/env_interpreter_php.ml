@@ -198,6 +198,7 @@ let juju_db_of_files xs =
 
 let code_database_of_juju_db db = {
   funs = (fun s ->
+    (* todo: what if multiple matches?? *)
     let f = SMap.find s !(db.funs_juju) in
     unserial f
   );
@@ -232,9 +233,9 @@ let rec value ptrs o x =
       let n = ISet.choose s in
       (try
           o "{";
-        value (IMap.remove n ptrs) o (IMap.find n ptrs);
-        o "}"
-        with Not_found -> o "rec"
+          value (IMap.remove n ptrs) o (IMap.find n ptrs);
+          o "}"
+      with Not_found -> o "rec"
       )
   | Vptr n when IMap.mem n ptrs ->
       o "&";
