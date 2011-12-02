@@ -18,20 +18,20 @@ module A = Ast_php_simple
 
 module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make (Int)
+module IMap = Map.Make (Int)
+
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)
-module IMap = Map.Make (Int)
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (*
- * All variables are pointer of pointers of values.
- * So with '$x = 42;' we got this heap+vars: $x = &1{&2{42}}.
- * In env.vars we got "$x" -> Vptr 1
- * In heap we then got [1 -> Vptr 2; 2 -> Vint 42]
- *
+ * In the abstract interpreter all variables are pointer to pointers 
+ * of values. So with '$x = 42;' we got this: $x = &1{&2{42}}.
+ * In 'env.vars' we got "$x" -> Vptr 1
+ * and in the 'heap' we then got [1 -> Vptr 2; 2 -> Vint 42]
  * meaning that $x is a variable with address 1, where the content
  * of this cell is a pointer to address 2, where the content of
  * this cell is the value 42.
@@ -69,7 +69,7 @@ type value =
   (* try to differentiate the different usage of PHP arrays *)
   | Vrecord of value SMap.t
   | Varray  of value list
-  | Vaarray of value * value
+  | Vmap of value * value
 
   (* pad: ??? *)
   | Vmethod of value * (env -> heap -> expr list -> heap * value) IMap.t
@@ -86,6 +86,7 @@ type value =
     | Tbool
     | Tfloat
     | Tstring
+    (* useful for tainting analysis again *)
     | Txhp
 
 and heap = {
@@ -117,8 +118,8 @@ and env = {
 }
 
 (* opti: to avoid stressing the GC with a huge graph, we sometimes
- * change a big AST into a string, which reduce the size of the graph
- * to explore when collecting.
+ * change a big AST into a string, which reduces the size of the graph
+ * to explore when garbage collecting.
  *)
 type 'a cached = 'a serialized_maybe ref
  and 'a serialized_maybe =
@@ -177,16 +178,15 @@ let juju_db_of_files xs =
   in
   List.iter (fun file ->
   try
-    let ast = Parse_php.parse_program file in		
-    let ast = Ast_php_simple_build.program ast in
+    let cst = Parse_php.parse_program file in		
+    let ast = Ast_php_simple_build.program cst in
     List.iter (fun x ->
+      (* todo: print warning when duplicate class/func ? *)
       match x with
       | ClassDef c ->
-          Printf.printf "Class %s defined\n" (A.unwrap c.c_name); flush stdout;
           db.classes_juju := 
             SMap.add (A.unwrap c.c_name) (serial c) !(db.classes_juju)
       | FuncDef fd ->
-          Printf.printf "Function %s defined\n" (A.unwrap fd.f_name); flush stdout;
           db.funs_juju := 
             SMap.add (A.unwrap fd.f_name) (serial fd) !(db.funs_juju)
       | _ -> ()
@@ -262,7 +262,7 @@ let rec value ptrs o x =
       o "array(";
       list o (value ptrs) (List.rev vl);
       o ")";
-  | Vaarray (v1, v2) ->
+  | Vmap (v1, v2) ->
       o "[";
       value ptrs o v1;
       o " => ";

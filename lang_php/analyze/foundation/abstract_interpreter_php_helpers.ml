@@ -4,17 +4,9 @@ module Env = Env_interpreter_php
 
 module Utils = struct
 
-  let verbose = ref true
-
   let fresh =
     let i = ref 0 in
     fun () -> incr i; !i
-
-  let make_fun i x =
-    IMap.add i x IMap.empty
-
-  let map f l =
-    List.rev (List.rev_map f l)
 
   let rec lfold f env l =
     match l with
@@ -32,103 +24,6 @@ module Utils = struct
         acc, Some v
 end
 
-module Select = struct
-
-  let rec string sep s vl =
-    List.rev (char sep s vl [] 0)
-
-  and char sep s vl acc i =
-    if i >= String.length s
-    then acc
-    else match s.[i] with
-    | '\\' -> escape sep s vl acc (i+1)
-    | '%' when i + String.length sep <= String.length s ->
-        (match vl with
-        | [] -> acc
-        | x :: rl when String.sub s i (String.length sep) = sep ->
-            char sep s rl (x :: acc) (i + String.length sep)
-        | _ :: rl -> char sep s rl acc (i+1)
-        )
-    | _ -> char sep s vl acc (i+1)
-
-  and escape sep s vl acc i =
-    if i >= String.length s
-    then acc
-    else char sep s vl acc (i+1)
-
-end
-
-module Collect = struct
-
-  let rec pointer ptrs res alias n =
-    try res, alias, IMap.find n alias
-    with Not_found ->
-      let n' = Utils.fresh() in
-      let alias = IMap.add n n' alias in
-      let res, alias, v' = value ptrs res alias (IMap.find n ptrs) in
-      let res = IMap.add n' v' res in
-      res, alias, n'
-
-  and value ptrs res alias = function
-    | Vtaint _
-    | Vany
-    | Vnull
-    | Vabstr  _
-    | Vbool   _
-    | Vfloat  _
-    | Vstring _
-    | Vint    _ as x -> res, alias, x
-    | Vptr n ->
-        let res, alias, n' = pointer ptrs res alias n in
-        res, alias, Vptr n'
-    | Vref s ->
-        let res, alias, s =
-          ISet.fold (
-          fun x (res, alias, acc) ->
-            let res, alias, n' = pointer ptrs res alias x in
-            res, alias, ISet.add n' acc
-         ) s (res, alias, ISet.empty) in
-        res, alias, Vref s
-    | Vrecord m ->
-        let res, alias, m = record ptrs res alias m in
-        res, alias, Vrecord m
-    | Varray l ->
-        let (res, alias), x = list ptrs res alias l in
-        res, alias, Varray l
-    | Vaarray (v1, v2) ->
-        let res, alias, v1 = value ptrs res alias v1 in
-        let res, alias, v2 = value ptrs res alias v2 in
-        res, alias, Vaarray (v1, v2)
-    | Vmethod (v, m) ->
-        let res, alias, v = value ptrs res alias v in
-        res, alias, Vmethod (v, m)
-    | Vobject m ->
-        let res, alias, m = record ptrs res alias m in
-        res, alias, Vobject m
-    | Vsum l ->
-        let (res, alias), l = list ptrs res alias l in
-        res, alias, Vsum l
-
-  and list ptrs res alias l =
-    Utils.lfold (
-    fun (res, alias) x ->
-      let res, alias, x = value ptrs res alias x in
-      (res, alias), x
-   ) (res, alias) l
-
-  and record ptrs res alias m =
-    SMap.fold (
-    fun x y (res, alias, acc) ->
-      let res, alias, y = value ptrs res alias y in
-      res, alias, SMap.add x y acc
-   ) m (res, alias, SMap.empty)
-
-  let copy heap v =
-    let ptrs = heap.ptrs in
-    let ptrs, _, v = value ptrs ptrs IMap.empty v in
-    { heap with ptrs = ptrs }, v
-
-end
 
 module Ptr = struct
 
@@ -241,45 +136,6 @@ module Var = struct
 end
 let i = ref 0
 
-module Copy = struct
-
-  let rec value ptrs x =
-    match x with
-    | Vtaint _
-    | Vany
-    | Vnull
-    | Vabstr _
-    | Vbool _
-    | Vfloat _
-    | Vstring _
-    | Vref _
-    | Vsum _
-    | Vaarray _
-    | Vobject _
-    | Vmethod _
-    | Vint _ as x -> ptrs, x
-    | Vptr n ->
-        let ptrs, v' = value ptrs (IMap.find n ptrs) in
-        let n' = Utils.fresh() in
-        let ptrs = IMap.add n' v' ptrs in
-        ptrs, Vptr n'
-    | Vrecord m ->
-        let ptrs, m' = SMap.fold (
-          fun k v (ptrs, acc) ->
-            let ptrs, v' = value ptrs v in
-            ptrs, SMap.add k v' acc
-         ) m (ptrs, SMap.empty) in
-        ptrs, Vrecord m'
-    | Varray vl ->
-        let ptrs, vl = Utils.lfold value ptrs vl in
-        ptrs, Varray vl
-
-  let value heap v =
-    let ptrs, v = value heap.ptrs v in
-    { heap with ptrs = ptrs }, v
-
-end
-
 module Order = struct
 
   let rec value x =
@@ -296,7 +152,7 @@ module Order = struct
     | Vref _ -> 5
     | Vrecord _ -> 6
     | Varray _ -> 6
-    | Vaarray _ -> 6
+    | Vmap _ -> 6
     | Vmethod _ -> 39
     | Vobject _ -> 40
     | Vsum _ -> assert false
@@ -407,23 +263,23 @@ module Unify = struct
     | Vrecord m1, Vrecord m2 ->
         let ptrs, m = record stack ptrs m1 m2 in
         ptrs, Vrecord m
-    | (Varray _ | Vaarray _ as x), Vrecord m
-    | Vrecord m, (Varray _ | Vaarray _ as x) ->
+    | (Varray _ | Vmap _ as x), Vrecord m
+    | Vrecord m, (Varray _ | Vmap _ as x) ->
         let ptrs, k = Ptr.new_val_ ptrs (Vabstr Tstring) in
         let vl = SMap.fold (fun _ y acc -> y :: acc) m [] in
         let ptrs, v = fold_array stack ptrs vl in
-        value stack ptrs x (Vaarray (k, v))
+        value stack ptrs x (Vmap (k, v))
     | Varray vl1, Varray vl2 ->
         array stack ptrs vl1 vl2
-    | Varray l, (Vaarray _ as x)
-    | (Vaarray _ as x), Varray l ->
+    | Varray l, (Vmap _ as x)
+    | (Vmap _ as x), Varray l ->
         let ptrs, k = Ptr.new_val_ ptrs (Vabstr Tint) in
         let ptrs, v = fold_array stack ptrs l in
-        value stack ptrs x (Vaarray (k, v))
-    | Vaarray (v1, v2), Vaarray (v3, v4) ->
+        value stack ptrs x (Vmap (k, v))
+    | Vmap (v1, v2), Vmap (v3, v4) ->
         let ptrs, v1 = value stack ptrs v1 v3 in
         let ptrs, v2 = value stack ptrs v2 v4 in
-        let v1 = Vaarray (v1, v2) in
+        let v1 = Vmap (v1, v2) in
         ptrs, v1
     | Vmethod (st1, m1), Vmethod (st2, m2) ->
         let ptrs, st = value stack ptrs st1 st2 in
@@ -523,6 +379,45 @@ module NullNewVars = struct
         let heap, _, _ = Var.get env heap s in
         heap
     | _ -> heap
+
+end
+
+module Copy = struct
+
+  let rec value ptrs x =
+    match x with
+    | Vtaint _
+    | Vany
+    | Vnull
+    | Vabstr _
+    | Vbool _
+    | Vfloat _
+    | Vstring _
+    | Vref _
+    | Vsum _
+    | Vmap _
+    | Vobject _
+    | Vmethod _
+    | Vint _ as x -> ptrs, x
+    | Vptr n ->
+        let ptrs, v' = value ptrs (IMap.find n ptrs) in
+        let n' = Utils.fresh() in
+        let ptrs = IMap.add n' v' ptrs in
+        ptrs, Vptr n'
+    | Vrecord m ->
+        let ptrs, m' = SMap.fold (
+          fun k v (ptrs, acc) ->
+            let ptrs, v' = value ptrs v in
+            ptrs, SMap.add k v' acc
+         ) m (ptrs, SMap.empty) in
+        ptrs, Vrecord m'
+    | Varray vl ->
+        let ptrs, vl = Utils.lfold value ptrs vl in
+        ptrs, Varray vl
+
+  let value heap v =
+    let ptrs, v = value heap.ptrs v in
+    { heap with ptrs = ptrs }, v
 
 end
 

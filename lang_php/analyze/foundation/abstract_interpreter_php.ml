@@ -32,7 +32,7 @@ module SMap = Map.Make (String)
  * 'show($x)' in the PHP file helps to debug a variable.
  * Adding a noop (e.g. with ;;) shows the environment too.
  *
- * TODO: $x++ is ignored (we don't really care about int for now
+ * TODO: $x++ is ignored (we don't really care about int for now)
  *
  * pad's notes:
  *  - "*return*"
@@ -73,9 +73,11 @@ exception Really
 exception Todo of string
 
 (*****************************************************************************)
-(* This mode is used to get all the reachable paths without tainting         *)
+(* Callgraph generation *)
 (*****************************************************************************)
 let extract_paths = ref true
+
+(* string (function name, class+method?, ??) -> string set *)
 let (graph: SSet.t SMap.t ref) = ref SMap.empty
 
 let rec add_graph sl =
@@ -118,7 +120,7 @@ and get_function_list env heap = function
   | _ :: rl -> get_function_list env heap rl
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Hooks (tainting functor for now) *)
 (*****************************************************************************)
 
 module Taint = struct
@@ -175,7 +177,7 @@ module Taint = struct
             list (fun (x, v) -> value path ptrs v) vl;
         | Varray vl ->
             list (value path ptrs) vl;
-        | Vaarray (v1, v2) ->
+        | Vmap (v1, v2) ->
             value path ptrs v1;
             value path ptrs v2;
         | Vmethod _ -> ()
@@ -189,6 +191,9 @@ module Taint = struct
 
 end
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 let rec program env heap program =
   time := Sys.time();
@@ -312,7 +317,7 @@ and stmt_ env heap x =
             let heap, _, v = lvalue env heap v in
             heap, k, v
       in
-      let heap, a' = Ptr.new_val heap (Vaarray (k, v)) in
+      let heap, a' = Ptr.new_val heap (Vmap (k, v)) in
       let heap, a' = Ptr.get heap a' in
       let heap, a = Unify.value heap a a' in
       let heap = stmtl env heap stl in
@@ -541,7 +546,7 @@ and lvalue env heap x =
   | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
       let heap, k = Ptr.new_val heap (Vtaint s) in
       let heap, v = Ptr.new_val heap (Vtaint s) in
-      heap, false, Vaarray (k, v)
+      heap, false, Vmap (k, v)
 
 
   | Id (s,_) ->
@@ -604,10 +609,10 @@ and array_get env heap e k =
       heap, false, v
   | Varray l, Some (Vint k) when k >= 0 && k < List.length l ->
       heap, false, List.nth (List.rev l) k
-  | Vaarray (k, v), Some k' ->
+  | Vmap (k, v), Some k' ->
       let heap, _ = Unify.value heap k k' in
       heap, false, v
-  | Vaarray (_, v), None ->
+  | Vmap (_, v), None ->
       heap, false, v
   | _, kval ->
       let kval = match kval with None -> Vabstr Tint | Some v -> v in
@@ -615,7 +620,7 @@ and array_get env heap e k =
       let heap, k = Ptr.get heap kr in
       let heap = Ptr.set heap k kval in
       let heap, v = Ptr.new_ heap in
-      let a' = Vaarray (kr, v) in
+      let a' = Vmap (kr, v) in
       let heap, a = Unify.value heap a a' in
       let heap = Ptr.set heap ar a in
       heap, false, v
