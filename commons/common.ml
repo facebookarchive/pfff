@@ -3431,7 +3431,7 @@ let cache_computation2 ?(verbose=false) ?(use_cache=true) file ext_cache f =
   else begin
     if not (Sys.file_exists file)
     then begin
-      pr2 ("WARNING: cache_computation: can't find file"  ^ file);
+      pr2 ("WARNING: cache_computation: can't find file "  ^ file);
       pr2 ("defaulting to calling the function");
       f ()
     end else begin
