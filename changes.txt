@@ -5,7 +5,9 @@
 ** introduce codequery, an interactive Prolog-based code query engine,
 especially useful to query inheritance information.
 
-** introduce simplified AST for PHP and abstract interpreter (julien)
+** introduce simplified AST for PHP (julien)
+
+** introduce abstract interpreter for PHP (julien)
 which leads to a more precise callgraph, type information,
 and opens the way for many more checks (including security checks
 using tainting analysis).
