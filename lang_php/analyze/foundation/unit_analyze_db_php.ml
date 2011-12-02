@@ -98,10 +98,15 @@ let database_unittest =
     );
     "accept files with parse error" >:: (fun () ->
       let data_dir = Config.path ^ "/tests/php/parsing_errors/" in
+      Common.save_excursion Flag_parsing_php.verbose_lexing false (fun () ->
+      Common.save_excursion Flag_parsing_php.verbose_parsing false (fun () ->
+      Common.save_excursion Common.verbose_level 0 (fun () ->
       let _db = Database_php_build.db_of_files_or_dirs [data_dir] in
       ()
+      )))
     );
   ]
+
 
 (*---------------------------------------------------------------------------*)
 (* Functions use/def, callgraph *)
@@ -146,143 +151,13 @@ let callgraph_unittest =
         assert_equal [] (callees (id "z"));
         assert_raises Not_found (fun () -> id "w");
       );
-
-      (* Checking the semantic of static method calls. *)
-      "simple static method call" >:: (fun () ->
-        let file = "
-          class A { static function a() { } }
-          function b() { A::a(); }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        let callers id = callers id db in let callees id = callees id db in
-        assert_equal [id "A::a"] (callees (id "b"));
-        assert_equal [id "b"] (callers (id "A::a"));
-      );
-
-      "static method call with self:: and parent::" >:: (fun () ->
-        let file = "
-          class A {
-           static function a() { }
-           static function a2() { self::a(); }
-          }
-          class B extends A {
-           function b() { parent::a(); }
-          }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        let callers id = callers id db in let _callees id = callees id db in
-        assert_equal
-          (sort [id "A::a2"; id "B::b"; 
-                 (* todo? we now consider the class as callers too *)
-                 id "A::"; id "B::"])
-          (sort (callers (id "A::a")));
-      );
-
-      (* In PHP it is ok to call B::foo() even if B does not define
-       * a static method 'foo' provided that B inherits from a class
-       * that defines such a foo.
-       *)
-      "static method call and inheritance" >:: (fun () ->
-        let file = "
-          class A { static function a() { } }
-          class B extends A { }
-          function c() { B::a(); }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        let callers id = callers id db in let _callees id = callees id db in
-        (* TODO: how this works?? I have code to solve this pb? where? *)                                  
-        assert_equal
-          (sort [id "c"])
-          (sort (callers (id "A::a")));
-      );
-
-      (* PHP is very permissive regarding static method calls as one can
-       * do $this->foo() even if foo is a static method. PHP does not
-       * impose the X::foo() syntax, which IMHO is just wrong.
-       *)
-      "static method call and $this" >:: (fun () ->
-        let file = "
-          class A {
-           static function a() { }
-           function a2() { $this->a(); }
-        }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let _id s = id s db in
-        let _callers id = callers id db in let _callees id = callees id db in
-        (* This currently fails, and I am not sure I want to fix it. Our
-         * code should not use the $this->foo() syntax for static method
-         * calls
-         *
-         * assert_equal
-         * (sort [id "A::a2"])
-         * (sort (callers (id "A::a")));
-         *)
-         ()
-      );
-
-      (* Checking method calls. *)
-      "simple method call" >:: (fun () ->
-        let _file = "
-          class A { function foo() { } }
-          function c() { $a = new A(); $a->foo(); }
-        "
-        in
-(* TODO
-        let db = db_from_string file in
-        Database_php_build2.index_db_method db;
-        (* shortcuts *)
-        let id s = id s db in
-        let _callers id = callers id db in let callees id = callees id db in
-        assert_equal
-         (sort [id "A::foo"])
-         (sort (callees (id "c")));
-*)
-        ()
-      );
-
-      (* Right now the analysis is very simple and does some gross over
-       * approximation. With a call like $x->foo(), the analysis consider
-       * any method foo in any class as a viable candidate. Doing a better
-       * job would require some class and data-flow analysis.
-       * Once the analysis gets more precise, fix those tests.
-       *)
-      "method call approximation" >:: (fun () ->
-        let _file = "
-          class A { function foo() { } }
-          class B { function foo() { } }
-          function c() { $a = new A(); $a->foo(); }
-        "
-        in
-(* TODO
-        let db = db_from_string file in
-        Database_php_build2.index_db_method db;
-        (* shortcuts *)
-        let id s = id s db in
-        let _callers id = callers id db in let callees id = callees id db in
-        assert_equal
-         (sort [id "A::foo"; id "B::foo"]) (* sad, should have only A::foo *)
-         (sort (callees (id "c")));
-*)
-        ()
-      );
     ]
 
 (*---------------------------------------------------------------------------*)
 (* Classes use/def *)
 (*---------------------------------------------------------------------------*)
 
+(* todo: port this to prolog *)
 let class_unittest =
     "class analysis" >::: [
 
@@ -396,7 +271,9 @@ let include_unittest =
         ]
         in
         let db = db_from_fake_files data in
-        Database_php_build2.index_db_includes_requires None db;
+        Common.save_excursion Flag_analyze_php.verbose_database false (fun()->
+          Database_php_build2.index_db_includes_requires None db
+        );
 
         let p file = Db.readable_to_absolute_filename file db in
 

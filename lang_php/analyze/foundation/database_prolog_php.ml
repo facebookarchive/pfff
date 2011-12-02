@@ -318,7 +318,7 @@ let add_defs_and_uses id kind ast pr db =
 (*****************************************************************************)
 
 (* todo? could avoid going through database_php.ml and parse directly? *)
-let gen_prolog_db db file =
+let gen_prolog_db ?(show_progress=true) db file =
   Common.with_open_outfile file (fun (pr, _chan) ->
    let pr s = pr (s ^ "\n") in
    pr ("%% -*- prolog -*-");
@@ -340,8 +340,8 @@ let gen_prolog_db db file =
    );
 
    db.Db.defs.Db.id_kind#tolist
-   +> (fun xs -> Common_extra.execute_and_show_progress2 (List.length xs) 
-      (fun k -> xs +> List.iter (fun (id, kind) ->
+   +> Common_extra.with_progress_list_metter ~show_progress (fun k xs ->
+      xs +> List.iter (fun (id, kind) ->
         k();
         pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
         pr (spf "at(%s, '%s', %d)." 
@@ -357,7 +357,7 @@ let gen_prolog_db db file =
         let ast = Db.ast_of_id id db in
         add_defs_and_uses id kind ast pr db;
 
-      ));
+      );
    );
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
      let file1 = Db.absolute_to_readable_filename file1 db in

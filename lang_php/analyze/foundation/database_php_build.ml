@@ -165,7 +165,7 @@ let index_db1_2 db files =
     | Parse_php.Parse_error _
     -> 
       (* Backtrace.print (); *)
-      pr2_err ("PB: BIG PBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB: " ^ file);
+      pr2 ("PB: BIG PBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB: " ^ file);
       pr2 ("Undoing addition");
       db +> add_filename_and_topids(file, []);
       !all_ids +> List.iter (fun id -> 
@@ -705,11 +705,14 @@ let db_of_files_or_dirs ?(annotate_variables_program=None) files_or_dirs =
    * project base. Here we want to analyze a set of adhoc files or multiple
    * dirs so there is no base so we use /
    *)
+  Common.save_excursion Flag.verbose_database false (fun () ->
   create_db
     ~db_support:Database_php.Mem
     ~files:(Some php_files)
     ~annotate_variables_program
+    ~verbose_stats:false
     (Database_php.Project ("/", None))
+  )
 
 (*****************************************************************************)
 (* Main entry for Arg *)

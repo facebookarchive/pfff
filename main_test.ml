@@ -56,6 +56,7 @@ let test regexp =
       Unit_foundation_php.unittest;
       Unit_prolog_php.unittest;
       Unit_static_analysis_php.unittest;
+      Unit_static_analysis_simple_php.unittest;
       Unit_analyze_db_php.unittest;
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest;
@@ -80,7 +81,7 @@ let test regexp =
       Common.some (OUnit.test_filter keep tests)
   in
     
-  OUnit.run_test_tt suite |> ignore;
+  OUnit.run_test_tt ~verbose:!verbose suite +> ignore;
   ()
 
 let main_action x = 

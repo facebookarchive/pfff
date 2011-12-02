@@ -19,14 +19,12 @@ let db_from_string s =
   let _ast = Parse_php.parse_program tmp_file in
   Database_php_build.db_of_files_or_dirs [tmp_file]
 
-
 (* A few shortcuts to make our testing code more compact and declarative.
  * Allow for instance to get the id of a class by using the special :: syntax
  * as in (id "A::" db):
- *  - X::: for interface
  *  - X:: for a class
  *  - X::Y for a method
- *  - anything else for a function
+ *  - Anything else for a function
  *)
 let id s db =
   match s with
@@ -35,11 +33,11 @@ let id s db =
       Db.id_of_class sclass db
 
   | s when  s =~ "\\([A-Za-z0-9_]+\\)::\\(.*\\)" ->
-    let (sclass, smethod) = Common.matched2 s in
-    Db.id_of_method sclass smethod db
+      let (sclass, smethod) = Common.matched2 s in
+      Db.id_of_method sclass smethod db
 
   | _ ->
-    Db.id_of_function s db
+      Db.id_of_function s db
 
 let callers id db =
   Db.callers_of_id id db |> List.map Cg.id_of_callerinfo
@@ -50,8 +48,8 @@ let callees id db =
 (* Unit tests *)
 (*****************************************************************************)
 (* 
- * The deadcode analysis in pfff we do for facebook not only find
- * dead code. It also:
+ * The deadcode analysis in pfff we do for facebook does not only find
+ * dead code; It also:
  *  - generate patches to remove this code,
  *  - use blame information to know who wrote the code,
  *  - send code review request to diffcamp to the blamed person.
@@ -127,6 +125,7 @@ let deadcode_unittest =
        *)
       "dead static methods" >:: (fun () ->
 
+        (* TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *)
         OUnit.skip_if true "need have cleaner codebase so no false positif";
         let db = Database_php_build.db_of_files_or_dirs [deadcode_data_dir] in
         (* shortcut *)
@@ -180,7 +179,7 @@ let deadcode_unittest =
         let dead_ids =
           Deadcode_php.finding_dead_functions hooks db +> List.map snd in
 
-        (* TODO *)
+        (* TODO !!!!!!!!!!!!!!!!!!!!!!!!! *)
         OUnit.skip_if true "need better callgraph, or deadcode hook";
         assert_bool
           "SFTHIS::not_dead() should not be dead"

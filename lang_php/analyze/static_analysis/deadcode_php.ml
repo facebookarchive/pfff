@@ -95,6 +95,12 @@ module Db = Database_php
  *)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let verbose_reaper = ref false
+let pr2, pr2_once = Common.mk_pr2_wrappers verbose_reaper
+
+(*****************************************************************************)
 (* Types and globals *)
 (*****************************************************************************)
 
@@ -197,10 +203,10 @@ let false_positive fid hooks db =
       true
 
   | _ when hooks.is_probable_dynamic_funcname s ->
-      pr ("Probable dynamic call: " ^ s);
+      pr2 ("Probable dynamic call: " ^ s);
       true
   | _ when hooks.is_probable_dynamic_classname s ->
-      pr ("Probable dynamic class: " ^ s);
+      pr2 ("Probable dynamic class: " ^ s);
       true
 
   | _ when hooks.false_positive_deadcode_annotations +> 
@@ -241,7 +247,7 @@ let finding_dead_functions hooks db =
         in
         if is_dead_func
         then begin
-          pr (spf "DEAD FUNCTION: no caller for %s (in %s)" s file_project);
+          pr2 (spf "DEAD FUNCTION: no caller for %s (in %s)" s file_project);
           Common.push2 (s, id) dead_ids;
         end
       end
@@ -274,7 +280,7 @@ let finding_dead_classes hooks db =
         in
         if is_dead
         then begin
-          pr (spf "DEAD CLASS: no user/extender for %s (in %s)" s file_project);
+          pr2 (spf "DEAD CLASS: no user/extender for %s (in %s)" s file_project);
           Common.push2 (s, id) dead_ids;
         end
       end
@@ -362,7 +368,7 @@ let deadcode_fixpoint_per_file all_dead_ids hooks db =
     let info_new_dead = new_dead +> List.map (fun id ->
         let s = Db.name_of_id id db in
         let fullid = db.Db.fullid_of_id#assoc id in
-        pr ("DEAD FUNCTION: no caller when do fixpoint for " ^ s);
+        pr2 ("DEAD FUNCTION: no caller when do fixpoint for " ^ s);
         s, fullid, id
     )
     in

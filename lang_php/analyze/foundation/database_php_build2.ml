@@ -20,6 +20,8 @@ open Database_php
 module Db = Database_php
 module DbH = Database_php_build_helpers
 
+open Database_php_build_helpers
+
 (*****************************************************************************)
 (* Helpers ast and tokens *)
 (*****************************************************************************)
@@ -54,7 +56,7 @@ let index_db_includes_requires2
   in
   let msg = "ANALYZE_INCLUDE_REQUIRE" in
   DbH.iter_files db (fun ((file, topids), i, total) ->
-    Common.pr2 (spf "%s: %s %d/%d " msg file i total);
+    pr2 (spf "%s: %s %d/%d " msg file i total);
 
     let program = topids +> List.map (fun id -> db.defs.toplevels#assoc id) in
     let increq = Include_require_php.top_increq_of_program program in
@@ -68,7 +70,7 @@ let index_db_includes_requires2
       match path_opt with
       | Some path -> Some path
       | None ->
-          pr ("Bad include, can not statically determine the path");
+          pr2 ("Bad include, can not statically determine the path");
           Lib_parsing_php.print_match ~format:Lib_parsing_php.Emacs [tok];
           None
       )

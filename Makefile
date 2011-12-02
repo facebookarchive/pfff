@@ -664,7 +664,7 @@ visual:
 	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
 
 tests:
-	./pfff_test all
+	./pfff_test -verbose all
 test: tests
 push:
 	git push origin master

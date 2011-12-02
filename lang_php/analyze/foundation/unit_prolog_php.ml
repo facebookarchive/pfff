@@ -16,17 +16,20 @@ open OUnit
 
 (* todo? could perhaps be moved in its own database_prolog.ml file? *)
 let prolog_query ~file query =
-  let source_file = Common.new_temp_file "prolog_php" ".php" in
+  let source_file = Parse_php.tmp_php_file_from_string file in
   let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
   let helpers_pl_file = Config.path ^ "/h_program-lang/database_code.pl" in
 
-  Common.write_file ~file:source_file ("<?php\n" ^ file);
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
+  (* todo: at some point avoid using database_php_build and 
+   * gen_prolog_db directly from the sources (+ callgraph info of
+   * abstract interpreter)
+   *)
   let db = Database_php_build.db_of_files_or_dirs [source_file] in
-  Database_prolog_php.gen_prolog_db db facts_pl_file;
+  Database_prolog_php.gen_prolog_db ~show_progress:false db facts_pl_file;
   let cmd = 
-    spf "swipl -s %s -f %s -t halt --quiet -g \"%s\""
+    spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
       facts_pl_file helpers_pl_file query
   in
   let xs = Common.cmd_to_list cmd in
@@ -39,6 +42,10 @@ let prolog_query ~file query =
 let unittest =
   "prolog" >::: ([
 
+    (*-----------------------------------------------------------------------*)
+    (* Inheritance *)
+    (*-----------------------------------------------------------------------*)
+
     "inheritance" >:: (fun () ->
       let file = "
 class A { }
@@ -46,11 +53,15 @@ class B extends A { }
 class C extends B { }
 "
       in
-      let xs = prolog_query ~file "children(X, 'A'), writeln(X), fail" in
+      let xs = prolog_query ~file "children(X, 'A'), writeln(X)" in
       assert_equal ~msg:"it should find all children of a class"
         (sort ["B";"C"])
         (sort xs)
     );
+
+    (*-----------------------------------------------------------------------*)
+    (* Traits *)
+    (*-----------------------------------------------------------------------*)
 
     "traits" >:: (fun () ->
       let file = "
@@ -63,7 +74,7 @@ class A {
 }
 "
       in
-      let xs = prolog_query ~file "method('A', (_Class, X)), writeln(X), fail"
+      let xs = prolog_query ~file "method('A', (_Class, X)), writeln(X)"
       in
       assert_equal ~msg:"it should find all methods of a class using traits"
         (sort ["a";"trait1"])
@@ -84,6 +95,15 @@ class A { use TComp; }
         (sort xs)
     );
 
+    (*-----------------------------------------------------------------------*)
+    (* Privacy and inheritance *)
+    (*-----------------------------------------------------------------------*)
+    (* todo: tricky when traits *)
+
+    (*-----------------------------------------------------------------------*)
+    (* Override *)
+    (*-----------------------------------------------------------------------*)
+
     "overrides" >:: (fun () ->
       let file = "
 class A { 
@@ -100,5 +120,10 @@ class B extends A { public function foo() { } }
         (sort xs);
 
     );
+
+    (*-----------------------------------------------------------------------*)
+    (* Callgraph *)
+    (*-----------------------------------------------------------------------*)
+
   ]
   )

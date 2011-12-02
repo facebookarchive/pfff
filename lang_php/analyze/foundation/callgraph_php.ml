@@ -557,7 +557,7 @@ let static_method_callees_of_any any =
             | Self _ | Parent _ ->
                 failwith "use Unsugar_php.unsugar_self_parent"
             | LateStatic _ ->
-                pr2 "LateStatic";
+                (* pr2 "LateStatic"; *)
                 None
           in
           sclass_opt +> Common.do_option (fun sclass ->

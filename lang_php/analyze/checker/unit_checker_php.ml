@@ -75,7 +75,9 @@ let unittest =
   let env = Env_php.mk_env ~php_root:"/" in
 
   (* run the bugs finders *)
-  test_files +> List.iter (Check_all_php.check_file ~find_entity env);
+  Common.save_excursion Flag_analyze_php.verbose_checking false (fun()->
+    test_files +> List.iter (Check_all_php.check_file ~find_entity env)
+  );
 
   if verbose then begin
     !Error_php._errors +> List.iter (fun e -> 
