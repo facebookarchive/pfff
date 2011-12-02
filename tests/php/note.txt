@@ -1,1 +1,2 @@
-coverage/ and deadcode/ are used by -test all
+coverage/, deadcode/, parsing/, parsing_errors/, pretty, spatch/, scheck/
+ are used by -test all

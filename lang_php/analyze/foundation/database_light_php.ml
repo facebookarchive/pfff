@@ -189,7 +189,7 @@ let properties_of_function_or_method id db =
 let database_code_from_php_database ?(verbose=false) db =
 
   let root = DbPHP.path_of_project_in_database db in
-  pr2 (spf "generating PHP db_light with root = %s" root);
+  if verbose then pr2 (spf "generating PHP db_light with root = %s" root);
 
   let files = DbPHP.all_files db in
   let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
@@ -206,7 +206,7 @@ let database_code_from_php_database ?(verbose=false) db =
       k();
 
       match id_kind with
-      | Db.Function | Db.Method _ ->
+      | Db.Function (* | Db.Method _  TODO leverage pathup? *) ->
           let callers = DbPHP.callers_of_id id db 
             +> List.map Callgraph_php.id_of_callerinfo in
           let idfile = DbPHP.filename_of_id id db in

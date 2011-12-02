@@ -105,6 +105,17 @@ let database_unittest =
       ()
       )))
     );
+    "light database" >:: (fun () ->
+      let data_dir = Config.path ^ "/tests/php/db/" in
+      let db = Database_php_build.db_of_files_or_dirs [data_dir] in
+      let _dbcode = 
+        Database_light_php.database_code_from_php_database
+          ~verbose:false db
+      in
+      ()
+        
+    );
+
   ]
 
 
