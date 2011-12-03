@@ -6,6 +6,7 @@ class X {
 }
 
 $x = 'X';
-echo $x::TEST;
+//SKIP
+//echo $x::TEST;
 
 
