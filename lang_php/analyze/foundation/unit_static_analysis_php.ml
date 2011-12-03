@@ -49,6 +49,22 @@ let value_of_var s vars heap =
 
 let info heap v = Env.string_of_value heap (List.hd v)
 
+let callgraph_generation content =
+  let tmp_file = Parse_php.tmp_php_file_from_string content in
+  let ast = 
+    Parse_php.parse_program tmp_file +> Ast_php_simple_build.program in
+  let db = Env_interpreter_php.code_database_of_juju_db
+    (Env_interpreter_php.juju_db_of_files [tmp_file]) in
+
+  let env = Env_interpreter_php.empty_env db tmp_file in
+  let heap = Env_interpreter_php.empty_heap in
+
+  Abstract_interpreter_php.extract_paths := true;
+  let _heap = Abstract_interpreter_php.program env heap ast in
+  let graph = !(Abstract_interpreter_php.graph) in
+  graph
+  
+
 (*****************************************************************************)
 (* Abstract interpreter *)
 (*****************************************************************************)
@@ -206,7 +222,23 @@ checkpoint(); // y: int
       | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
       | v -> assert_failure ("wrong value for $y: " ^ info heap v)
     );
-  ]
+  (*-------------------------------------------------------------------------*)
+  (* Callgraph *)
+  (*-------------------------------------------------------------------------*)
+
+    "basic callgraph for direct functions" >:: (fun () ->
+      let file = "
+function foo() { }
+function bar() { foo(); }
+"
+      in
+      let g = callgraph_generation file in
+      let xs = SMap.find "bar" g +> SSet.elements in
+      assert_equal
+        ~msg:"it should handle simple direct calls:"
+        ["bar"]
+        xs;
+    );
 
 
 (*
@@ -343,6 +375,9 @@ checkpoint(); // y: int
 
 
 *)
+  ]
+
+
 
 (*****************************************************************************)
 (* Tainting analysis *)
