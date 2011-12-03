@@ -2704,6 +2704,9 @@ and m_class_var_modifier a b =
 and m_xhp_decl a b =
   fail2 "m_xhp_decl"
 
+and m_xhp_attribute_decl a b =
+  fail2 "m_xhp_decl"
+
 and m_static_scalar a b = m_expr a b
 
 and m_static_scalar_affect a b = 
@@ -2817,11 +2820,11 @@ let m_entity a b =
        B.ClassVariableE(b1, b2)
     )
     ))
-  | A.XhpDeclE(a1), B.XhpDeclE(b1) ->
-    m_xhp_decl a1 b1 >>= (fun (a1, b1) -> 
+  | A.XhpAttrE(a1), B.XhpAttrE(b1) ->
+    m_xhp_attribute_decl a1 b1 >>= (fun (a1, b1) -> 
     return (
-       A.XhpDeclE(a1),
-       B.XhpDeclE(b1)
+       A.XhpAttrE(a1),
+       B.XhpAttrE(b1)
     )
     )
   | A.MiscE(a1), B.MiscE(b1) ->
@@ -2837,7 +2840,7 @@ let m_entity a b =
   | A.MethodE _, _
   | A.ClassConstantE _, _
   | A.ClassVariableE _, _
-  | A.XhpDeclE _, _
+  | A.XhpAttrE _, _
   | A.MiscE _, _
    -> fail ()
 

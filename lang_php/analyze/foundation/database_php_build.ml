@@ -339,17 +339,35 @@ let index_db2_2 db =
               let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
                 (Ast_php.ClassVariableE(class_var, modifier)) db in
 
-              let s = "$" ^ Ast.dname dname in
+              (* old: was adding $, but not that useful for prolog,
+               * and is actually not consistent with how we use
+               * field (we do $this->fld, not $this->$fld).
+               * Finally xhp attributes don't have a $ so it's again
+               * more consistent to not add a $ here.
+               *)
+              let s = Ast.dname dname in
               add_def (s, E.Field, newid, None) db;
             );
             k x
 
         | XhpDecl decl ->
-            let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
-              (Ast_php.XhpDeclE decl) db in
-            let s = "XHPDECLTODO" in
-            add_def (s, E.Field, newid, None) db;
-            k x
+            (match decl with
+            | XhpAttributesDecl (_, xs, _) ->
+               xs +> Ast.uncomma +> List.iter (fun x ->
+                 match x with
+                 | XhpAttrDecl (_type, (s, tok), _affect_opt, _tokopt) ->
+                     let newid = 
+                       add_nested_id_and_ast ~enclosing_id:!enclosing_id
+                         (Ast_php.XhpAttrE x) db 
+                     in
+                     add_def (s, E.Field, newid, None) db;
+                 (* todo? *)
+                 | XhpAttrInherit _ ->
+                     ()
+               );
+            (* todo *)
+            | XhpChildrenDecl _ | XhpCategoriesDecl _ -> ()
+            )
 
         (* todo? *)
         | UseTrait _ ->
@@ -478,7 +496,7 @@ let index_db3_2 db =
         
     | Ast.MiscE _
     | Ast.ClassVariableE _  | Ast.ClassConstantE _
-    | Ast.XhpDeclE _
+    | Ast.XhpAttrE _
     | Ast.MethodE _
     | Ast.StmtListE _
     | Ast.FunctionE _ 

@@ -1142,8 +1142,8 @@ and vof_entity =
       let v1 = vof_class_variable v1
       and v2 = Ocaml.vof_list vof_modifier v2
       in Ocaml.VSum (("ClassVariableE", [ v1; v2 ]))
-  | XhpDeclE v1 ->
-      let v1 = vof_xhp_decl v1 in Ocaml.VSum (("XhpDeclE", [ v1 ]))
+  | XhpAttrE v1 ->
+      let v1 = vof_xhp_attribute_decl v1 in Ocaml.VSum (("XhpAttrE", [ v1 ]))
   | MiscE v1 ->
       let v1 = Ocaml.vof_list vof_info v1 in Ocaml.VSum (("MiscE", [ v1 ]))
 

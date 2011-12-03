@@ -1070,7 +1070,7 @@ and v_entity = function
   | ClassConstantE v1 -> let v1 = v_class_constant v1 in ()
   | ClassVariableE ((v1, v2)) ->
       let v1 = v_class_variable v1 and v2 = v_list v_modifier v2 in ()
-  | XhpDeclE v1 -> let v1 = v_xhp_decl v1 in ()
+  | XhpAttrE v1 -> let v1 = v_xhp_attribute_decl v1 in ()
   | MiscE v1 -> let v1 = v_list v_info v1 in ()
 
 and v_any = function

@@ -1088,7 +1088,7 @@ and map_entity =
       let v1 = map_class_variable v1
       and v2 = map_of_list map_modifier v2
       in ClassVariableE ((v1, v2))
-  | XhpDeclE v1 -> let v1 = map_xhp_decl v1 in XhpDeclE ((v1))
+  | XhpAttrE v1 -> let v1 = map_xhp_attribute_decl v1 in XhpAttrE ((v1))
   | MiscE v1 -> let v1 = map_of_list map_info v1 in MiscE ((v1))
 
 and map_any =

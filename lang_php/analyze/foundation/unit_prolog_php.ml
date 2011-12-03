@@ -22,12 +22,16 @@ let prolog_query ~file query =
 
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
+
   (* todo: at some point avoid using database_php_build and 
-   * gen_prolog_db directly from the sources (+ callgraph info of
-   * abstract interpreter)
+   * generate the prolog db directly from the sources (with
+   * also the callgraph info of the abstract interpreter)
    *)
   let db = Database_php_build.db_of_files_or_dirs [source_file] in
   Database_prolog_php.gen_prolog_db ~show_progress:false db facts_pl_file;
+
+  (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
+
   let cmd = 
     spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
       facts_pl_file helpers_pl_file query
@@ -40,7 +44,12 @@ let prolog_query ~file query =
 (*****************************************************************************)
 
 let unittest =
-  "prolog" >::: ([
+  "prolog" >::: (
+    [
+
+    (*-----------------------------------------------------------------------*)
+    (* Entities *)
+    (*-----------------------------------------------------------------------*)
 
     (*-----------------------------------------------------------------------*)
     (* Inheritance *)
@@ -124,6 +133,23 @@ class B extends A { public function foo() { } }
     (*-----------------------------------------------------------------------*)
     (* Callgraph *)
     (*-----------------------------------------------------------------------*)
+
+    (*-----------------------------------------------------------------------*)
+    (* XHP *)
+    (*-----------------------------------------------------------------------*)
+    "xhp" >:: (fun () ->
+      let file = "
+class :x:frag {
+ attribute string template;
+}
+"in
+      let xs = prolog_query ~file "field(':x:frag', (_, X)), writeln(X)" in
+      assert_equal ~msg:"it should understand xhp attributes"
+        (["template"])
+        xs
+    );
+
+    (* todo: handle also children, inherit, etc *)
 
   ]
   )

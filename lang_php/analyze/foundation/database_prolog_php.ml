@@ -61,10 +61,11 @@ let name_id id db =
 
             (* todo? xhp decl ? *)
             | E.Field ->
-                (* remove the $ because in use-mode we don't use the $ *)
-                if s =~ "\\$\\(.*\\)"
-                then spf "('%s','%s')" sclass (Common.matched1 s)
-                else failwith ("wrong field, no $ found: " ^ s)
+                (* old: remove the $ because in use-mode we don't use the $ 
+                 * update: now def don't have a $ too, and can be xhp
+                 * attributes too.
+                *)
+                spf "('%s','%s')" sclass s
 
             | E.ClassConstant -> spf "('%s','%s')" sclass s
             | _ -> raise Impossible
@@ -305,6 +306,11 @@ let add_defs_and_uses id kind ast pr db =
       ms +> List.iter (fun (m) -> 
         pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
       )
+
+  (* todo? *)
+  | E.Field, XhpAttrE _ ->
+      ()
+
   | E.ClassConstant, _ -> ()
             
   | (E.TopStmts | E.Other _), _ ->

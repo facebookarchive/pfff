@@ -851,8 +851,7 @@ type entity =
 
   | ClassConstantE of class_constant
   | ClassVariableE of class_variable * modifier list
-
-  | XhpDeclE of xhp_decl
+  | XhpAttrE of xhp_attribute_decl
 
   | MiscE of tok list
 (*e: AST entity *)
