@@ -1,0 +1,2 @@
+- $V->addQueryData(A, B)
++ V->addQueryData(array(A => B))
