@@ -53,9 +53,11 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
 
   files +> List.map (fun file ->
     if verbose then pr2 (spf "processing: %s" file);
-
-    let (ast2, _stat) = Parse_ml.parse file in
-
+    let (ast2, _stat) = 
+      Common.save_excursion Flag_parsing_ml.error_recovery true (fun() ->
+        Parse_ml.parse file 
+      ) in
+  
     let filelines = Common.cat_array file in
 
     let defs = ref [] in
