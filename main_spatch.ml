@@ -178,6 +178,7 @@ let main_action xs =
   Common.execute_and_show_progress ~show_progress:!verbose nbfiles (fun k ->
   files +> List.iter (fun file ->
     k();
+    try (
     let resopt = Spatch_php.spatch pattern file in
     resopt +> Common.do_option (fun (s) ->
 
@@ -195,6 +196,8 @@ let main_action xs =
       if !apply_patch 
       then Common.write_file ~file:file (Common.read_file tmpfile);
     )
+    ) with Parse_php.Parse_error tok ->
+      failwith ("PARSING PB: " ^ Parse_info.error_message_info tok);
   ))
 
 (*****************************************************************************)
