@@ -423,9 +423,11 @@ and catch env (c, v, stl) =
 
 and stmt_simple env = function
   | Expr e -> expr env e;
-  | Return e ->
+  | Return None ->
+      Pp.print env "return";
+  | Return (Some e) ->
       Pp.print env "return ";
-      maybe expr env e;
+      expr env e;
   | Break e ->
       Pp.print env "break";
       (match e with
