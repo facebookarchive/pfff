@@ -12,7 +12,6 @@ module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
 
 open Ast_php
-
 @
 
 <<function program_of_program2>>=

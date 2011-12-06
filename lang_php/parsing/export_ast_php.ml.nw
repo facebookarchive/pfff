@@ -38,11 +38,9 @@ let json_string_of_program_fast x =
 @
 
 <<sexp_ast_php.ml>>=
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * I was previously auto generating this file with 'ocamltarzan -choice sof'
  * but now that I use Ocaml.v and 'ocamltarzan -choice vof' in meta_ast_php.ml, 
@@ -232,7 +230,6 @@ let sexp_string_of_phptype top =
 open Common
 
 <<json_ast_php.ml>>
-
 <<sexp_ast_php.ml>>
 
 (*****************************************************************************)
