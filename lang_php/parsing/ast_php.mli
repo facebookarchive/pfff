@@ -742,6 +742,9 @@ and static_var = dname * static_scalar_affect option
  * it's better to differentiate nested func and top func. Also better to
  * group the toplevel statements together (StmtList below), so that
  * in the database later they share the same id.
+ * 
+ * Note that nested functions are usually under a if(defined(...)) at
+ * the toplevel. There is no ifdef in PHP so they reuse if.
  *)
 and stmt_and_def = 
   | Stmt of stmt
