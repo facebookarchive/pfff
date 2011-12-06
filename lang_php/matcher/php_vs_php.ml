@@ -1207,14 +1207,22 @@ and m_expr a b =
        B.AssignList(b1, b2, b3, b4)
     )
     ))))
-  | A.ConsArray(a1, a2), B.ConsArray(b1, b2) ->
+  (* todo: isomorphism to abstract away the array long vs short syntax ? *)
+  | A.ArrayLong(a1, a2), B.ArrayLong(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_paren (m_list__m_array_pair) a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.ConsArray(a1, a2),
-       B.ConsArray(b1, b2)
+       A.ArrayLong(a1, a2),
+       B.ArrayLong(b1, b2)
     )
     ))
+  | A.ArrayShort(a1), B.ArrayShort(b1) ->
+    m_bracket (m_list__m_array_pair) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ArrayShort(a1),
+       B.ArrayShort(b1)
+    )
+    )
   | A.New(a1, a2, a3), B.New(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_class_name_reference a2 b2 >>= (fun (a2, b2) -> 
@@ -1428,7 +1436,8 @@ and m_expr a b =
   | A.Infix _, _
   | A.CondExpr _, _
   | A.AssignList _, _
-  | A.ConsArray _, _
+  | A.ArrayLong _, _
+  | A.ArrayShort _, _
   | A.New _, _
   | A.Clone _, _
   | A.AssignRef _, _

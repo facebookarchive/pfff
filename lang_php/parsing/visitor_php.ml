@@ -175,7 +175,7 @@ and v_paren: 'a. ('a -> unit) -> 'a paren -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_brace: 'a. ('a -> unit) -> 'a brace -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_bracket _of_a (v1, v2, v3) =
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma x = 
   let k info = v_tok info
@@ -278,8 +278,10 @@ and v_expr (x: expr) =
       and v3 = v_tok v3
       and v4 = v_expr v4
       in ()
-  | ConsArray ((v1, v2)) ->
+  | ArrayLong ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren (v_comma_list v_array_pair) v2 in ()
+  | ArrayShort ((v1)) ->
+      let v1 = v_bracket (v_comma_list v_array_pair) v1 in ()
   | New ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_class_name_reference v2

@@ -154,7 +154,7 @@ let mk_obj_access s =
 let mk_new_anon_class_call s 
   private_vars_enclosing_closure_class 
   closed_vars_of_this_closure = 
- (ConsArray
+ (ArrayLong
   (fkt "array",
   (fkt "(",
    [Left (ArrayExpr

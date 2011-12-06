@@ -90,7 +90,8 @@ and map_paren:'a. ('a -> 'a) -> 'a paren -> 'a paren = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_bracket _of_a (v1, v2, v3) =
+and map_bracket: 'a. ('a -> 'a) -> 'a bracket -> 'a bracket = 
+ fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_comma_list_dots _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
@@ -181,10 +182,13 @@ and map_expr (x) =
       and v3 = map_tok v3
       and v4 = map_expr v4
       in AssignList ((v1, v2, v3, v4))
-  | ConsArray ((v1, v2)) ->
+  | ArrayLong ((v1, v2)) ->
       let v1 = map_tok v1
       and v2 = map_paren (map_comma_list map_array_pair) v2
-      in ConsArray ((v1, v2))
+      in ArrayLong ((v1, v2))
+  | ArrayShort ((v1)) ->
+      let v1 = map_bracket (map_comma_list map_array_pair) v1
+      in ArrayShort ((v1))
   | New ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_class_name_reference v2
