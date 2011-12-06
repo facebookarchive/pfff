@@ -665,12 +665,13 @@
    (join-string 
     (list 
      "-debugger"
-     (case 2
+     (case 5
        (0 "all")
        (1 "sgrep")
        (2 "tags")
        (3 "parsing_ml")
        (4 "lookup")
+       (5 "abstract")
        )
      ))
    )
