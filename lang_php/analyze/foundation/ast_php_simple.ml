@@ -16,26 +16,27 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree as
- * in ast_php.ml
+
+(* A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree
+ * as in ast_php.ml
  * 
  * This file contains a simplified version of the PHP abstract syntax
- * tree. The original PHP syntax tree is good for code refactoring;
- * the type used is very precise, However, for other algorithms, 
- * the nature of the AST makes the code a bit redondant.
- * Say I want to write a typer, I need to write a specific version for
- * static expressions, when really, the typer should do the same thing.
- * The same is true for a pretty-printer, topological sort etc ...
- * Hence the idea of a SimpleAST. Which is the original AST where
- * the specialised constructions have been factored back together.
+ * tree. The original PHP syntax tree is good for code refactoring or
+ * code visualization; the type used is very precise, However, for
+ * other algorithms, the nature of the AST makes the code a bit
+ * redundant. Say I want to write a typechecker, I need to write a
+ * specific version for static expressions, when really, the checker
+ * should do the same thing. The same is true for a pretty-printer,
+ * topological sort etc ... Hence the idea of a SimpleAST. Which is the
+ * original AST where the specialised constructions have been factored
+ * back together. 
  *)
 
 (*****************************************************************************)
 (* The AST related types *)
 (*****************************************************************************)
 
-(* to get position information for certain elemenents in the AST *)
+(* to get position information for certain elements in the AST *)
 type 'a wrap = 'a * Ast_php.tok
 
 type program = stmt list
@@ -61,12 +62,12 @@ and stmt =
   | Foreach of expr * expr * expr option * stmt list
 
   | Return of expr option
-  | Break of expr option
-  | Continue of expr option
+  | Break of expr option | Continue of expr option
 
   | Throw of expr
   | Try of stmt list * catch * catch list
 
+  (* pad: unify with expr? *)
   | InlineHtml of string
 
   (* only at toplevel in most of our code *)
@@ -89,6 +90,7 @@ and expr =
 
   | String of string
   | Guil of encaps list
+  (* pad: unify with Guil and String ? *)
   | HereDoc of string * encaps list * string
 
   (* valid for entities (functions, classes, constants) and variables, so
@@ -96,6 +98,7 @@ and expr =
    *)
   | Id of string wrap
 
+  (* with None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option
 
   (* often transformed in Id "$this" in the analysis *)
@@ -133,6 +136,7 @@ and expr =
     | Aval of expr
     | Akval of expr * expr
 
+  (* todo? simplify and unify with expr? *)
   and encaps =
     | EncapsString of string
     | EncapsVar of expr
@@ -140,6 +144,7 @@ and expr =
     | EncapsDollarCurly of expr
     | EncapsExpr of expr
 
+  (* pad: do we need that? could convert into something more basic *)
   and xhp =
     | XhpText of string
     | XhpExpr of expr
@@ -150,15 +155,19 @@ and expr =
       xml_attrs: (string * xhp_attr) list;
       xml_body: xhp list;
     }
-
+      (* pad: simplify again? *)
       and xhp_attr =
         | AttrString of encaps list
         | AttrExpr of expr
 
 
+(* pad: no uses field for lambda? because we will use ocaml closures
+ * for representing closures :) so during abstract interpretation for 
+ * instance the environment will be closed. TODO really the explanation?
+ *)
 and func_def = {
   f_ref: bool;
-  f_name: string wrap;
+  f_name: string wrap; (* _lambda when used for lambda *)
   f_params: parameter list;
   f_return_type: hint_type option;
   f_body: stmt list;
@@ -181,9 +190,10 @@ and class_def = {
   c_name: string wrap;
   c_extends: string list; (* pad: ?? *)
   c_implements: string list;
+
   c_constants: (string * expr) list;
   c_variables: class_vars list;
-  c_body: method_def list;
+  c_methods:   method_def list;
 }
 
   and class_type =
@@ -199,14 +209,18 @@ and class_def = {
     cv_abstract: bool;
     cv_visibility: visibility;
     cv_type: hint_type option;
+
+    (* todo: could have a cv_name, cv_val and inline the list *)
     cv_vars: (string * expr option) list;
   }
 
   and method_def = {
-    m_visibility: visibility;
+    (* factorize with class_vars? *)
     m_static: bool;
     m_final: bool;
     m_abstract: bool;
+    m_visibility: visibility;
+
     m_ref: bool;
     m_name: string wrap;
     m_params: parameter list;

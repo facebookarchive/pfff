@@ -330,6 +330,7 @@ and expr env = function
   | SgrepExprDots _ -> failwith "expr SgrepExprDots" (* of info *)
   | ParenExpr (_, e, _) -> expr env e
 
+(* TODO: uses ??? *)
 and lambda_def env ld =
   let _, params, _ = ld.l_params in
   let params = comma_list_dots params in
@@ -505,7 +506,7 @@ and class_def env c =
     | Some x -> interfaces env x);
     A.c_constants = List.fold_right (class_constants env) body [];
     A.c_variables = List.fold_right (class_variables env) body [];
-    A.c_body = List.fold_right (class_body env) body [];
+    A.c_methods = List.fold_right (class_body env) body [];
   }
 
 and class_type env = function

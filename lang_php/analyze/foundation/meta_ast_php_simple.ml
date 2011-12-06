@@ -276,7 +276,7 @@ and
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
                   c_variables = v_c_variables;
-                  c_body = v_c_body
+                  c_methods = v_c_body
                 } =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_method_def v_c_body in

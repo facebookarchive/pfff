@@ -218,7 +218,7 @@ and fake_root env heap = function
           let params = make_params m.m_params in
           fake_expr env heap
             (Call (Class_get (Id c.c_name, Id m.m_name), params))
-     ) c.c_body;
+     ) c.c_methods;
       List.iter (
       fun m ->
         if not m.m_static
@@ -227,7 +227,7 @@ and fake_root env heap = function
           fake_expr env heap
               (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
         end
-     ) c.c_body;
+     ) c.c_methods;
 | FuncDef fd -> ignore (call_fun fd env heap [])
   | _ -> ()
 
@@ -826,7 +826,7 @@ and class_def env heap c =
   let heap, m = List.fold_left (cconstants env) (heap, m) c.c_constants in
   let heap, m = List.fold_left (class_vars env true) (heap, m) c.c_variables in
   let heap, m = List.fold_left (method_def env true c.c_name parent self None)
-    (heap, m) c.c_body in
+    (heap, m) c.c_methods in
   let m = SMap.add "*BUILD*" (build_new env heap pname parent self c m) m in
   let v = Vobject m in
   let heap, _ = assign env heap true self v in
@@ -858,7 +858,7 @@ and build_new_ env heap pname parent self c m = fun env heap _ ->
     List.fold_left (class_vars env false) (heap, m) c.c_variables in
   let heap, m' =
     List.fold_left (method_def env false c.c_name parent self (Some ptr))
-      (heap, m') c.c_body in
+      (heap, m') c.c_methods in
   let heap, _ = assign env heap true ptr (Vobject m') in
   heap, ptr
 

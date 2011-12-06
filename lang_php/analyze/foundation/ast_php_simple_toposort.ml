@@ -167,7 +167,7 @@ module Dependencies = struct
     let acc = extends acc c.c_extends in
     let acc = cconstants acc c.c_constants in
     let acc = cvariables acc c.c_variables in
-    let acc = method_defl acc c.c_body in
+    let acc = method_defl acc c.c_methods in
     acc
 
   and extends acc l = List.fold_right SSet.add l acc
