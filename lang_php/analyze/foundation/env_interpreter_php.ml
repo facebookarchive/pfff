@@ -28,8 +28,8 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 
 (*
- * In the abstract interpreter all variables are pointer to pointers 
- * of values. So with '$x = 42;' we got this: $x = &1{&2{42}}.
+ * In the abstract interpreter all variables are pointers to pointers 
+ * of values. So with '$x = 42;' we got $x = &1{&2{42}}.
  * In 'env.vars' we got "$x" -> Vptr 1
  * and in the 'heap' we then got [1 -> Vptr 2; 2 -> Vint 42]
  * meaning that $x is a variable with address 1, where the content
@@ -75,7 +75,7 @@ type value =
   | Vmethod of value * (env -> heap -> expr list -> heap * value) IMap.t
   | Vobject of value SMap.t
 
-  (* pad: ? union of possible values. ex: todo? why need that? *)
+  (* union of possible types/values, ex: null | object, bool | string, etc *)
   | Vsum    of value list
 
   (* tainting analysis for security *)
@@ -94,7 +94,7 @@ and heap = {
   ptrs: value IMap.t;
 }
 
-(* recursive type because Vmethod above needs an env *)
+(* mutually recursive types because Vmethod above needs an env *)
 and env = {
   db: code_database;
 
@@ -140,8 +140,11 @@ let empty_heap = {
 let empty_env db file =
   let globals = ref SMap.empty in
   { file = ref file;
-    vars = globals;
     globals = globals;
+    (* why use same ref? because when we process toplevel statements,
+     * the vars are the globals.
+     *)
+    vars = globals; 
     cfun = "*TOPLEVEL*";
     stack   = SMap.empty ;
     safe = ref SMap.empty;
