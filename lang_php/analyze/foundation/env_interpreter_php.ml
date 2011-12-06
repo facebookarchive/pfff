@@ -90,8 +90,6 @@ type value =
     | Txhp
 
 and heap = {
-  (* pad: ??? *)
-  dummy: int;
   (* a heap maps addresses to values *)
   ptrs: value IMap.t;
 }
@@ -136,7 +134,6 @@ type code_database_juju = {
 (*****************************************************************************)
 
 let empty_heap = {
-  dummy = 0;
   ptrs  = IMap.empty;
 }
 

@@ -52,9 +52,6 @@ module SMap = Map.Make (String)
 (* Globals *)
 (*****************************************************************************)
 
-(* for profiling *)
-let time = ref 0.0
-
 (* call stack used for debugging when found an XSS hole
  * todo: could be put in the env too, next to stack and safe.
  *)
@@ -196,7 +193,6 @@ end
 (*****************************************************************************)
 
 let rec program env heap program =
-  time := Sys.time();
   path := [];
   if !extract_paths
   then (List.iter (fake_root env heap) program);
@@ -686,8 +682,7 @@ and call_fun f env heap el =
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
   save_path env (unw f.f_name);
   if n >= 2 || List.length !path >= 6 && is_clean
-(*    || Sys.time() -. !time >= 1.0
-    || SMap.mem f.f_name !(env.safe) *)
+  (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
   then
     let heap, v = Ptr.new_ heap in
     let heap, _ = assign env heap true v Vany in

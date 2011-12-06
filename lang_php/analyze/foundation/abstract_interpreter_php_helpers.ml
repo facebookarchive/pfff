@@ -31,14 +31,14 @@ module Ptr = struct
     try
       let v = IMap.find ptr heap.ptrs in
       let ptrs = IMap.add ptr v heap.ptrs in
-      let heap = { heap with ptrs = ptrs } in
+      let heap = { ptrs } in
       heap, v
     with Not_found ->
       heap, Vnull
 
   and set_ heap ptr v =
     let ptrs = IMap.add ptr v heap.ptrs in
-    { heap with ptrs = ptrs }
+    { ptrs }
 
   let get heap ptr =
     match ptr with
@@ -68,11 +68,11 @@ module Ptr = struct
 
   let new_val heap val_ =
     let ptrs, v = new_val_ heap.ptrs val_ in
-    { heap with ptrs = ptrs }, v
+    { ptrs }, v
 
   let new_ heap =
     let ptrs, v = new_val_ heap.ptrs Vnull in
-    { heap with ptrs = ptrs }, v
+    { ptrs }, v
 
 end
 
@@ -360,7 +360,7 @@ module Unify = struct
 
   let value heap v1 v2 =
     let ptrs, v = value ISet.empty heap.ptrs v1 v2 in
-    { heap with ptrs = ptrs }, v
+    { ptrs }, v
 end
 
 
@@ -417,7 +417,7 @@ module Copy = struct
 
   let value heap v =
     let ptrs, v = value heap.ptrs v in
-    { heap with ptrs = ptrs }, v
+    { ptrs = ptrs }, v
 
 end
 
