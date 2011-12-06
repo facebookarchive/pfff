@@ -1013,7 +1013,9 @@ expr_without_variable_bis:
  | T_LIST TOPAR assignment_list TCPAR TEQ expr 
      { AssignList($1,($2,$3,$4),$5,$6) }
  | T_ARRAY TOPAR array_pair_list TCPAR 
-     { ConsArray($1,($2,$3,$4)) }
+     { ArrayLong($1,($2,$3,$4)) }
+ | TOBRA static_array_pair_list TCBRA
+     { ArrayShort($1, $2, $3) }
 
  | T_NEW class_name_reference ctor_arguments 
      { New($1,$2,$3) }
@@ -1123,7 +1125,9 @@ static_scalar: /* compile-time evaluated scalars */
  | TPLUS static_scalar	 { Unary ((UnPlus, $1),$2)  }
  | TMINUS static_scalar	 { Unary ((UnMinus, $1),$2) }
  | T_ARRAY TOPAR static_array_pair_list TCPAR
-     { ConsArray($1, ($2, $3, $4)) }
+     { ArrayLong($1, ($2, $3, $4)) }
+ | TOBRA static_array_pair_list TCBRA
+     { ArrayShort($1, $2, $3) }
 
  /*(*s: static_scalar grammar rule hook *)*/
   /* xdebug TODO AST  */
