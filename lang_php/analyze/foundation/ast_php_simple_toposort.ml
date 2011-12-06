@@ -41,7 +41,6 @@ module Dependencies = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
-    | Newline | Comment _
     | Noop -> acc
     | Throw e
     | Expr e -> expr acc e

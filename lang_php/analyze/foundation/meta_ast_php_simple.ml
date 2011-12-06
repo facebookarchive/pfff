@@ -8,9 +8,6 @@ and vof_wrapped_string (s, tok) =
   Ocaml.VString s
 and vof_stmt =
   function
-  | Newline -> Ocaml.VSum (("Newline", []))
-  | Comment v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Comment", [ v1 ]))
   | Noop -> Ocaml.VSum (("Noop", []))
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Block v1 ->

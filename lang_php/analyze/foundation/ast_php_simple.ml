@@ -27,9 +27,23 @@
  * redundant. Say I want to write a typechecker, I need to write a
  * specific version for static expressions, when really, the checker
  * should do the same thing. The same is true for a pretty-printer,
- * topological sort etc ... Hence the idea of a SimpleAST. Which is the
+ * topological sort etc ... Hence the idea of a SimpleAST which is the
  * original AST where the specialised constructions have been factored
- * back together. 
+ * back together.
+ * 
+ * Here are a partial list of the simplications/factorizations:
+ *  - No tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
+ *    The only token information kept is for identifiers (see wrap below)
+ *    for error reporting. 
+ *  - Support for old syntax is removed such as IfColon
+ *  - Sugar is removed, no ArrayLong vs ArrayShort
+ *  - Some builtins for instance echo are transformed in "__builtin__echo"
+ *  - A simpler stmt type, no toplevel, stmt_and_def, stmt
+ *  - A simpler expr type, no lvalue vs expr, no FunCallSimple, FunCallVar,
+ *    etc
+ *  - ...
+ * 
+ * todo: factorize more? string vs Guil vs InlineHtml vs xhp?
  *)
 
 (*****************************************************************************)
@@ -42,9 +56,6 @@ type 'a wrap = 'a * Ast_php.tok
 type program = stmt list
 
 and stmt =
-  (* todo? remove? this is better handled in ast_pp.ml no? *)
-  | Comment of string | Newline
-
   | Expr of expr
 
   (* pad: Noop could be Block [], but it's abused right now for debugging
@@ -94,7 +105,7 @@ and expr =
   | HereDoc of string * encaps list * string
 
   (* valid for entities (functions, classes, constants) and variables, so
-   * can have Id "foo" and Id "$foo"
+   * can have Id "foo" and Id "$foo". Can also contain "self/parent".
    *)
   | Id of string wrap
 

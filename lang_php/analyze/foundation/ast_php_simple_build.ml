@@ -17,8 +17,8 @@ open Ast_php
 module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make(Int)
 module IMap = Map.Make(Int)
-module A = Ast_php_simple
 
+module A = Ast_php_simple
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -32,8 +32,8 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-(* pad: ?? *)
-type env = (int * Ast_php_simple.stmt) list ref
+(* not used for now *)
+type env = unit
 
 (*****************************************************************************)
 (* Helpers *)
@@ -56,104 +56,30 @@ let rec comma_list_dots = function
 
 let brace (_, x, _) = x
 
-let stmt_of_token x =
-  match x with
-  | "\n" -> A.Newline
-  | x -> A.Comment x
+let empty_env () = ()
 
-let make_env l =
-  let l = List.map (fun (x, y) -> x, stmt_of_token y) l in
-  let l = List.sort (fun (x, _) (y, _) -> y - x) l in
-  ref l
+let builtin x = "__builtin__" ^ x
 
-let rec pop_env stack line =
-  match !stack with
-  | [] -> None
-  | (x, v) :: rl when x >= line - 1 ->
-      stack := rl;
-      Some v
-  | _ -> None
-
-let info_of_stmt = function
-  | ExprStmt (_, x)
-  | EmptyStmt x
-  | Block (x, _, _)
-  | If (x, _, _, _, _)
-  | IfColon (x, _, _, _, _, _, _, _)
-  | While (x, _, _)
-  | Do (x, _, _, _, _)
-  | For (x, _, _, _, _, _, _, _, _)
-  | Switch (x, _, _)
-  | Foreach (x, _, _, _, _, _, _, _)
-  | Break (x, _, _)
-  | Continue (x, _, _)
-  | Return (x, _, _)
-  | Throw (x, _, _)
-  | Try (x, _, _, _)
-  | Echo (x, _, _)
-  | Globals (x, _, _)
-  | StaticVars (x, _, _)
-  | InlineHtml (_, x)
-  | Use (x, _, _)
-  | Unset (x, _, _)
-  | Declare (x, _, _)
-  | TypedDeclaration (_, _, _, x)
-  | DeclConstant (x, _, _, _, _) -> x
-
-let line_of_stmt x = line_of_info (info_of_stmt x)
-
-let rec top_comment env acc =
-  match env with
-  | [] -> acc
-  | (_, x) :: rl -> x :: top_comment rl acc
-
-let rec make_newlines l =
-  let k = make_newlines in
-  match l with
-  | [] -> []
-  | (_, _, "\n") :: (_, n, "\n") :: rl ->
-     (n, "\n") :: k rl
-  | (_, _, (" " | "\n")) :: rl -> k rl
-  | (x, n, v) :: rl when Token_helpers_php.is_comment x -> (n, v) :: k rl
-  | _ :: rl -> k rl
-
-let make_token x =
-  let info = Token_helpers_php.info_of_tok x in
-  let line = Parse_info.line_of_info info in
-  let str  = Ast_php.str_of_info info in
-  x, line, str
-
-let empty_env () = ref []
+let special x = "__special__" ^ x
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-let rec program tokens top_l acc =
-  let tokens = List.map make_token tokens in
-  let tokens = make_newlines tokens in
-  let env = make_env tokens in
-  let acc = List.fold_right (toplevel env) top_l acc in
-  let acc = top_comment (List.rev !env) acc in
-  acc
+let rec program top_l =
+  let env = empty_env () in
+  List.fold_right (toplevel env) top_l []
 
 and toplevel env st acc =
   match st with
-  | StmtList stmtl ->
-      let acc = List.fold_right (stmt env) stmtl acc in
-      acc
-  | FinalDef _ -> acc
+  | StmtList stmtl -> List.fold_right (stmt env) stmtl acc
   | FuncDef fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDef cd -> A.ClassDef (class_def env cd) :: acc
+  | FinalDef _ -> acc
+  (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and stmt env st acc =
-  let line = line_of_stmt st in
-  match pop_env env line with
-  | None -> stmt_ env st acc
-  | Some x -> x :: stmt env st acc
-
-and stmt_ env st acc =
   match st with
   | ExprStmt (e, _) ->
       let e = expr env e in
@@ -196,24 +122,30 @@ and stmt_ env st acc =
       let cl = List.map (catch env) cl in
       A.Try (stl, c, cl) :: acc
   | Echo (tok, el, _) ->
-      A.Expr (A.Call (A.Id ("echo", tok),
+      A.Expr (A.Call (A.Id (builtin "echo", tok),
                      (List.map (expr env) (comma_list el)))) :: acc
   | Globals (_, gvl, _) -> A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, _) -> A.InlineHtml s :: acc
-  | Use (tok, fn, _) -> A.Expr (A.Call (A.Id ("use", tok),
-                                       [A.String (use_filename env fn)])) :: acc
+  | Use (tok, fn, _) -> 
+      A.Expr (A.Call (A.Id (builtin "use", tok),
+                     [A.String (use_filename env fn)])) :: acc
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
-      A.Expr (A.Call (A.Id ("unset", tok), lp)) :: acc
-  | DeclConstant _
-  | Declare _ ->
-      (* TODO failwith "stmt Declare" of tok * declare comma_list paren * colon_stmt *)
+      A.Expr (A.Call (A.Id (builtin "unset", tok), lp)) :: acc
+  | DeclConstant _ ->
+      (* TODO? *)
       acc
-  | TypedDeclaration _ -> failwith "stmt TypedDeclaration" (* of hint_type * lvalue * (tok * expr) option * tok *)
-  | IfColon _ -> failwith "This is old crazy stuff"
+  | Declare _ ->
+      (* TODO failwith "stmt Declare" *)
+      acc
+  | TypedDeclaration _ ->
+      (* this is not yet used in our codebase *)
+      raise Common.Impossible
+  | IfColon _ -> 
+      failwith "This is old crazy stuff"
 
 
 and use_filename env = function
@@ -277,21 +209,24 @@ and expr env = function
       in
       let cn = class_name_reference env cn in
       A.New (cn, args)
-(*      failwith "expr New" (* of tok * class_name_reference * argument comma_list paren option *) *)
   | Clone (tok, e) ->
-      A.Call (A.Id ("clone", tok), [expr env e])
+      A.Call (A.Id (builtin "clone", tok), [expr env e])
   | AssignRef (e1, _, _, e2) ->
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  | AssignNew _ -> failwith "expr AssignNew" (* of lvalue * tok  * tok  * tok  * class_name_reference * argument comma_list paren option *)
-  | Cast ((c, _), e) -> A.Cast (c, expr env e)
-  | CastUnset _ -> failwith "expr CastUnset" (* of tok * expr  *)
+  | AssignNew _ -> 
+      failwith "expr AssignNew"
+  | Cast ((c, _), e) -> 
+      A.Cast (c, expr env e)
+  | CastUnset _ -> 
+      failwith "expr CastUnset"
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
       let cn = class_name_reference env cn in
       A.InstanceOf (e, cn)
-  | Eval (tok, (_, e, _)) -> A.Call (A.Id ("eval", tok), [expr env e])
+  | Eval (tok, (_, e, _)) -> 
+      A.Call (A.Id (builtin "eval", tok), [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
   | Exit (tok, e) ->
@@ -301,33 +236,38 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [expr env e]
       in
-      A.Call (A.Id ("exit", tok), arg)
+      A.Call (A.Id (builtin "exit", tok), arg)
   | At (tok, e) ->
       (* failwith "expr At" (* of tok  *) TODO look at this *)
-      A.Id ("@", tok)
+      A.Id (builtin "@", tok)
   | Print (tok, e) ->
-      A.Call (A.Id ("print", tok), [expr env e])
+      A.Call (A.Id (builtin "print", tok), [expr env e])
   | BackQuote (tok, el, _) ->
-      A.Call (A.Id ("exec", tok (* not really an exec token *)),
+      A.Call (A.Id (builtin "exec", tok (* not really an exec token *)),
              [A.Guil (List.map (encaps env) el)])
 (*      failwith "expr BackQuote" (* of tok * encaps list * tok *) *)
   | Include (tok, e) ->
-      A.Call (A.Id ("include", tok), [expr env e])
+      A.Call (A.Id (builtin "include", tok), [expr env e])
   | IncludeOnce (tok, e) ->
-      A.Call (A.Id ("include_once", tok), [expr env e])
+      A.Call (A.Id (builtin "include_once", tok), [expr env e])
   | Require (tok, e) ->
-      A.Call (A.Id ("require", tok), [expr env e])
+      A.Call (A.Id (builtin "require", tok), [expr env e])
   | RequireOnce (tok, e) ->
-      A.Call (A.Id ("require_once", tok), [expr env e])
+      A.Call (A.Id (builtin "require_once", tok), [expr env e])
   | Empty (tok, (_, lv, _)) ->
-      A.Call (A.Id ("empty", tok), [lvalue env lv])
+      A.Call (A.Id (builtin "empty", tok), [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
-      A.Call (A.Id ("isset", tok), List.map (lvalue env) (comma_list lvl))
+      A.Call (A.Id (builtin "isset", tok), 
+             List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
-  | Yield (tok, e) -> A.Call (A.Id ("yield", tok), [expr env e])
-  | YieldBreak (tok, tok2) -> A.Call (A.Id ("yield", tok),
-                                     [A.Id ("break", tok2)])
-  | SgrepExprDots _ -> failwith "expr SgrepExprDots" (* of info *)
+  | Yield (tok, e) -> 
+      A.Call (A.Id (builtin "yield", tok), [expr env e])
+  | YieldBreak (tok, tok2) -> 
+      A.Call (A.Id (builtin "yield", tok),
+             [A.Id (builtin "yield_break", tok2)])
+  | SgrepExprDots _ -> 
+      (* should never use the abstract interpreter on a sgrep pattern *)
+      raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
 
 (* TODO: uses ??? *)
@@ -336,7 +276,7 @@ and lambda_def env ld =
   let params = comma_list_dots params in
   let _, body, _ = ld.l_body in
   { A.f_ref = ld.l_ref <> None;
-    A.f_name = ("_lambda", Ast_php.fakeInfo "_lambda");
+    A.f_name = (special "_lambda", Ast_php.fakeInfo "_lambda");
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
@@ -731,9 +671,5 @@ and global_var env = function
   | GlobalDollar _ -> failwith "TODO GlobalDollar" (*of tok * r_variable *)
   | GlobalDollarExpr _ -> failwith "TODO GlobalDollarExpr" (* of tok * expr brace *)
 
-let program_with_comments tokl ast =
-  program tokl ast []
-
-let program ast =
-  program [] ast []
-
+let func_def x = func_def (empty_env()) x
+let class_def x = class_def (empty_env()) x
