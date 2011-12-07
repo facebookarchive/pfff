@@ -304,8 +304,7 @@ and stmt env heap x =
       let heap, a = Unify.value heap a a' in
       let heap = stmtl env heap stl in
       heap
-  | Continue e
-  | Break e ->
+  | Continue e | Break e ->
       let heap, _ = Utils.opt (expr env) heap e in
       heap
   | Throw e ->
