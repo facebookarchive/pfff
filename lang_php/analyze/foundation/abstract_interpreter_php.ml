@@ -96,6 +96,16 @@ and get_function_list env heap = function
   | Vstring s :: _ -> heap, env.db.funs s
   | _ :: rl -> get_function_list env heap rl
 
+let rec get_string = function
+  | [] -> ""
+  | Vstring s :: _ -> s
+  | Vsum l' :: rl ->
+      (match get_string l' with
+      | "" -> get_string rl
+      | x -> x
+      )
+  | _ :: rl -> get_string rl
+
 (* in extract_path mode to fake function/method calls *)
 and make_fake_params l =
   List.map (fun p ->
@@ -875,13 +885,3 @@ and get_class env heap c =
       let heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
-
-and get_string = function
-  | [] -> ""
-  | Vstring s :: _ -> s
-  | Vsum l' :: rl ->
-      (match get_string l' with
-      | "" -> get_string rl
-      | x -> x
-      )
-  | _ :: rl -> get_string rl
