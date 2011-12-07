@@ -27,7 +27,7 @@ module SMap = Map.Make (String)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Abstract interpreter for PHP, security oriented (tainting analysis).
+ * Abstract interpreter for PHP (with hooks for security tainting analysis).
  *
  * 'show($x)' in the PHP file helps to debug a variable.
  *
@@ -52,7 +52,8 @@ module SMap = Map.Make (String)
 (* Globals *)
 (*****************************************************************************)
 
-(* call stack used for debugging when found an XSS hole
+(* call stack used for debugging when found an XSS hole and used also
+ * for callgraph generation.
  * todo: could be put in the env too, next to 'stack' and 'safe'.
  *)
 let path = ref []
@@ -63,7 +64,7 @@ let _checkpoint_heap = ref
 
 (* for callgraph generation *)
 let extract_paths = ref true
-(* string (function name, class+method?, ??) -> string set *)
+(* string (function name, class+method, __TOP__file) -> string set *)
 let (graph: SSet.t SMap.t ref) = ref SMap.empty
 
 (*****************************************************************************)
@@ -113,75 +114,14 @@ and make_params l =
 (*****************************************************************************)
 (* Hooks (tainting functor for now) *)
 (*****************************************************************************)
-
-module Taint = struct
-    let taint_mode = ref false
-    let taint_expr a b c d e = failwith "taint_expr: Todo"
-    let fold_slist sl =
-      List.fold_left (fun acc x ->
-        match x with
-        | Vtaint _ as x -> x
-        | _ -> acc
-      ) (Vabstr Tstring) sl
-    let check_danger a b c d e f = ()
-    let binary_concat env heap v1 v2 path =
-      Vabstr Tstring
-
-    module GetTaint = struct
-      exception Found of string list
-
-      let rec list f l =
-        match l with
-        | [] -> ()
-        | [x] -> f x
-        | x :: rl -> f x; list f rl
-            
-      let rec value path ptrs x =
-        match x with
-        | Vany | Vnull -> ()
-        | Vtaint s -> raise (Found [s])
-        | Vabstr _ -> ()
-        | Vbool _ | Vint _ -> ()
-        | Vref s ->
-            let n = ISet.choose s in
-            if not (ISet.mem n path)
-            then
-              let path = ISet.union s path in
-              (try
-                  value path ptrs (IMap.find n ptrs);
-                with Not_found -> ()
-              )
-            else ()
-        | Vptr n when ISet.mem n path ->
-            let path = ISet.add n path in
-            value path ptrs (IMap.find n ptrs);
-        | Vptr _ -> ()
-        | Vfloat _ | Vstring _ -> ()
-        | Vrecord m ->
-            let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
-            list (fun (x, v) -> value path ptrs v) vl;
-        | Vobject m ->
-            let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
-            list (fun (x, v) -> value path ptrs v) vl;
-        | Varray vl ->
-            list (value path ptrs) vl;
-        | Vmap (v1, v2) ->
-            value path ptrs v1;
-            value path ptrs v2;
-        | Vmethod _ -> ()
-        | Vsum vl ->
-            list (value path ptrs) vl
-              
-      let value heap v =
-        try value ISet.empty heap.ptrs v; None with Found l -> Some l
-    end
-end
+module Taint = Tainting_fake_php.Taint
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let rec program env heap program =
+  (* todo: suffix with filename? *)
   path := ["__TOP__"];
   if !extract_paths
   then (List.iter (fake_root env heap) program);
@@ -192,7 +132,6 @@ let rec program env heap program =
 and fake_expr env heap =
   save_excursion env heap expr
 
- 
 and fake_root env heap = function
   | ClassDef c -> (* Nested ones need to be defined *)
       let heap = force_class env heap (unw c.c_name) in
@@ -214,8 +153,9 @@ and fake_root env heap = function
   | FuncDef fd -> ignore (call_fun fd env heap [])
   | _ -> ()
 
-(* pad: todo, what if break/continue or throw ? do we still abstract evaluate
- * the rest of the code?
+(* What if break/continue or throw? do we still abstract evaluate
+ * the rest of the code? Yes because we care about the pointfix
+ * of the values, and so we don't really care about the control flow.
  *)
 and stmtl env heap stl = List.fold_left (stmt env) heap stl
 
@@ -242,8 +182,13 @@ and stmt env heap x =
       heap
   | If (c, e1, e2) ->
       let heap, _ = expr env heap c in
+      (* Some variables may be defined only in one branch.
+       * To simplify the unifier we create some fake $x=null; before
+       * processing the statements.
+       *)
       let heap = NullNewVars.stmt env heap e1 in
       let heap = NullNewVars.stmt env heap e2 in
+
       let heap = stmt env heap e1 in
       let heap = stmt env heap e2 in
       heap
@@ -262,8 +207,12 @@ and stmt env heap x =
   | FuncDef fd ->
     (* todo? failwith if is a nested func because it will not be in the db *)
       heap
-  | Do (stl, e)
-  | While (e, stl) ->
+  (* this may seem incorrect to treat do and while in the same way,
+   * because the evaluation of e does not happen at the same time.
+   * But here we care about the pointfix of the values, and so
+   * the order does not matter.
+   *)
+  | Do (stl, e) | While (e, stl) ->
       let heap, _ = expr env heap e in
       let heap = stmtl env heap stl in
       heap
@@ -384,17 +333,7 @@ and expr_ env heap x =
       with LostControl | UnknownFunction _  ->
         save_path env s;
         let heap, vl = Utils.lfold (expr env) heap el in
-        let c = ref None in
-        List.iter (fun x -> 
-          let x = Taint.GetTaint.value heap x in 
-          if x <> None then c := x
-        ) vl;
-        let res =
-          (match !c with
-          | _ when not !Taint.taint_mode -> Vany
-          | None -> Vany
-          | Some x -> Vtaint (List.hd x)
-          ) in
+        let res = Taint.when_call_not_found heap vl in
         heap, res
       ) (* Lost control *)
   | Call (e, el) ->

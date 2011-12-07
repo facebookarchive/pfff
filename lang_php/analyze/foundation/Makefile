@@ -20,7 +20,7 @@ SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml \
       ast_php_simple_toposort.ml
 SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
-      abstract_interpreter_php.ml \
+      tainting_fake_php.ml abstract_interpreter_php.ml \
       unit_static_analysis_php.ml
 #old: pil, subsumed by ast_simple and abstract interpreter
 #     pil.ml pretty_print_pil.ml controlflow_pil.ml \
