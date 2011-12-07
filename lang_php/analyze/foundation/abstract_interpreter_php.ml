@@ -352,7 +352,11 @@ and expr_ env heap x =
   | String s -> heap, Vstring s
   | Int s -> heap, Vint (int_of_string s)
   | Double s -> heap, Vfloat (float_of_string s)
-  | HereDoc _ -> heap, Vabstr Tstring
+  (* pad: ugly special case, not sure why but the lfold below 
+   * leads to a Vabstr Tstring instead of a precise Vstring
+   *)
+  | Guil [EncapsString s] -> heap, Vstring s
+
   | Guil el ->
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in

@@ -92,11 +92,6 @@ and vof_expr =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("String", [ v1 ]))
   | Guil v1 ->
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
-  | HereDoc ((v1, v2, v3)) ->
-      let v1 = Ocaml.vof_string v1
-      and v2 = Ocaml.vof_list vof_encaps v2
-      and v3 = Ocaml.vof_string v3
-      in Ocaml.VSum (("HereDoc", [ v1; v2; v3 ]))
   | Id v1 -> 
       let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Id", [ v1 ]))
   | This -> Ocaml.VSum (("This", []))

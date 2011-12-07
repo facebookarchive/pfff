@@ -37,7 +37,8 @@
  *    for error reporting. 
  *  - support for old syntax is removed such as IfColon
  *  - support for extra tools is removed such as Xdebug or Sgrep
- *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml
+ *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
+ *    no HereDoc
  *  - some builtins, for instance echo are transformed in "__builtin__echo".
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
@@ -105,7 +106,6 @@ and expr =
 
   (* pad: generate Call (builtin "concat") instead? *)
   | Guil of encaps list
-  | HereDoc of string * encaps list * string
 
   (* valid for entities (functions, classes, constants) and variables, so
    * can have Id "foo" and Id "$foo". Can also contain "self/parent".

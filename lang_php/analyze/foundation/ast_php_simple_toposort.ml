@@ -86,7 +86,6 @@ module Dependencies = struct
   and expr_opt acc = function None -> acc | Some e -> expr acc e
   and expr acc = function
     | Int _ | Double _ | String _ -> acc
-    | HereDoc (_, el, _)
     | Guil el -> encapsl acc el
     (* pad: this is why it could be useful to have two different types *)
     | Id (s, _) when s.[0] <> '$' -> SSet.add s acc

@@ -287,11 +287,7 @@ and scalar env = function
   | ClassConstant (q, s) ->
       A.Class_get (A.Id (qualifier env q), A.Id (name env s))
   | Guil (_, el, _) -> A.Guil (List.map (encaps env) el)
-  | HereDoc ({ PI.token = PI.OriginTok x; _ },
-             el,
-             { PI.token = PI.OriginTok y; _ }) ->
-      A.HereDoc (x.PI.str, List.map (encaps env) el, y.PI.str)
-  | HereDoc _ -> assert false
+  | HereDoc (_, el, _) -> A.Guil (List.map (encaps env) el)
 
 and constant env = function
   | Int (n, _) -> A.Int n

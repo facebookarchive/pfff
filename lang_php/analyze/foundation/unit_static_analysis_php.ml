@@ -86,6 +86,20 @@ checkpoint(); // x:42
       | v -> assert_failure ("wrong value for $x: " ^ info heap v)
     );
 
+    "unsugaring" >:: (fun () ->
+      let file ="
+$x = <<<END
+hello
+END;
+checkpoint(); // x:'hello'
+" in
+      let (heap, vars) = heap_of_program_at_checkpoint file in
+      match value_of_var "$x" vars heap with
+      (* todo? it should maybe be "hello" without the newline *)
+      | [Vptr n1; Vptr n2; Vstring "hello\n"] -> ()
+      | v -> assert_failure ("wrong value for $x: " ^ info heap v)
+    );
+
     "aliasing" >:: (fun () ->
       let file ="
 $x = 42;
