@@ -31,16 +31,15 @@
  * original AST where the specialised constructions have been factored
  * back together.
  * 
- * Here are a partial list of the simplications/factorizations:
+ * Here is a partial list of the simplications/factorizations:
  *  - No tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
  *    The only token information kept is for identifiers (see wrap below)
  *    for error reporting. 
  *  - Support for old syntax is removed such as IfColon
  *  - Sugar is removed, no ArrayLong vs ArrayShort
  *  - Some builtins for instance echo are transformed in "__builtin__echo"
- *  - A simpler stmt type, no toplevel, stmt_and_def, stmt
- *  - A simpler expr type, no lvalue vs expr, no FunCallSimple, FunCallVar,
- *    etc
+ *  - A simpler stmt type, no extra toplevel, stmt_and_def types
+ *  - A simpler expr type, no lvalue vs expr, no FunCallSimple, FunCallVar
  *  - ...
  * 
  * todo: factorize more? string vs Guil vs InlineHtml vs xhp?
@@ -85,6 +84,7 @@ and stmt =
   | ClassDef of class_def
   | FuncDef of func_def
 
+  (* pad: ?? *)
   | StaticVars of (string wrap * expr option) list
   | Global of expr list
 
@@ -98,14 +98,16 @@ and stmt =
 and expr =
   | Int of string
   | Double of string
-
   | String of string
+
+  (* pad: generate Call (builtin "concat") instead? *)
   | Guil of encaps list
-  (* pad: unify with Guil and String ? *)
   | HereDoc of string * encaps list * string
 
   (* valid for entities (functions, classes, constants) and variables, so
    * can have Id "foo" and Id "$foo". Can also contain "self/parent".
+   * todo? Introduce a Var of string wrap? can be good to differentiate
+   * them no? At the same time OCaml does not ...
    *)
   | Id of string wrap
 
@@ -114,14 +116,18 @@ and expr =
 
   (* often transformed in Id "$this" in the analysis *)
   | This
-  (* e.g. Obj_get(Id "$o", Id "foo") when $o->foo *)
-  | Obj_get of expr * expr
-  (* e.g. Class_get(Id "A", Id "foo") when a::foo
+  (* e.g. Obj_get(Id "$o", Id "foo") when $o->foo 
+   * e.g. Class_get(Id "A", Id "foo") when a::foo
    * (can contain "self", "parent", "static")
    *)
+  | Obj_get of expr * expr
   | Class_get of expr * expr
 
   | Assign of Ast_php.binaryOp option * expr * expr
+  (* really a destructuring tuple let *)
+  | List of expr list
+
+  (* todo? transform into Call (builtin ...) ? *)
   | Infix of Ast_php.fixOp * expr
   | Postfix of Ast_php.fixOp * expr
   | Binop of Ast_php.binaryOp * expr * expr
@@ -131,9 +137,8 @@ and expr =
 
   | Ref of expr
 
-  | Xhp of xml
   | ConsArray of array_value list
-  | List of expr list
+  | Xhp of xml
 
   | New of expr * expr list
   | InstanceOf of expr * expr
@@ -204,7 +209,7 @@ and class_def = {
 
   c_constants: (string * expr) list;
   c_variables: class_vars list;
-  c_methods:   method_def list;
+  c_methods: method_def list;
 }
 
   and class_type =
@@ -219,8 +224,8 @@ and class_def = {
     cv_static: bool;
     cv_abstract: bool;
     cv_visibility: visibility;
-    cv_type: hint_type option;
 
+    cv_type: hint_type option;
     (* todo: could have a cv_name, cv_val and inline the list *)
     cv_vars: (string * expr option) list;
   }
