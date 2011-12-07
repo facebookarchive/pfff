@@ -542,11 +542,7 @@ and binaryOp env heap bop v1 v2 =
       )
   | Ast_php.Logical lop -> Vabstr Tbool
 
-  (* ---------------------------------------------------------------------- *)
-  (* Tainting *)
-  (* ---------------------------------------------------------------------- *)
-  | Ast_php.BinaryConcat _ ->
-      Taint.binary_concat env heap v1 v2 !path
+  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !path
 
 and unaryOp uop v =
   match uop, v with
