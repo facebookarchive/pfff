@@ -119,7 +119,7 @@ and expr =
    *)
   | Id of string wrap
 
-  (* with None it means add to the end when used in lvalue position *)
+  (* when None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option
 
   (* often transformed in Id "$this" in the analysis *)
@@ -217,7 +217,7 @@ and class_def = {
   (* todo: use_traits: string list; *)
 
   c_constants: (string * expr) list;
-  c_variables: class_vars list;
+  c_variables: class_var list;
   c_methods: method_def list;
 }
 
@@ -228,29 +228,24 @@ and class_def = {
     | Interface
     | Trait
 
-  and class_vars = {
-    cv_final: bool;
-    cv_static: bool;
-    cv_abstract: bool;
-    cv_visibility: visibility;
-
+  and class_var = {
+    cv_name: string;
     cv_type: hint_type option;
     (* todo: could have a cv_name, cv_val and inline the list *)
-    cv_vars: (string * expr option) list;
+    cv_value: expr option;
+    cv_final: bool; cv_static: bool; cv_abstract: bool;
+    cv_visibility: visibility;
   }
 
   and method_def = {
-    (* factorize with class_vars? *)
-    m_static: bool;
-    m_final: bool;
-    m_abstract: bool;
-    m_visibility: visibility;
-
-    m_ref: bool;
     m_name: string wrap;
+    m_ref: bool;
     m_params: parameter list;
     m_return_type: hint_type option;
     m_body: stmt list;
+    (* factorize with class_vars? *)
+    m_static: bool; m_final: bool;m_abstract: bool;
+    m_visibility: visibility;
   }
 
    and visibility =

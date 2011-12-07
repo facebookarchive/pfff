@@ -858,11 +858,11 @@ and class_vars env static (heap, m) cv =
   if static then
     if not cv.cv_static
     then heap, m
-    else List.fold_left (class_var env static) (heap, m) cv.cv_vars
+    else (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
   else
     if cv.cv_static
     then heap, m
-  else  List.fold_left (class_var env static) (heap, m) cv.cv_vars
+    else  (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
 
 and class_var env static (heap, m) (s, e) =
   let s = if static then s else String.sub s 1 (String.length s - 1) in

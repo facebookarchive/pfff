@@ -445,9 +445,12 @@ and class_def env c =
     A.c_implements =
     (match c.c_implements with None -> []
     | Some x -> interfaces env x);
-    A.c_constants = List.fold_right (class_constants env) body [];
-    A.c_variables = List.fold_right (class_variables env) body [];
-    A.c_methods = List.fold_right (class_body env) body [];
+    A.c_constants = 
+      List.fold_right (class_constants env) body [];
+    A.c_variables = 
+      List.fold_right (class_variables env) body [];
+    A.c_methods = 
+      List.fold_right (class_body env) body [];
   }
 
 and class_type env = function
@@ -487,19 +490,18 @@ and class_variables env st acc =
       let abstract = abstract env m in
       let final = final env m in
       let ht = opt hint_type env ht in
-      let vars = List.map (
+      List.map (
         fun (n, ss) ->
-          fst (dname n), opt static_scalar_affect env ss
-       ) cvl in
-      let cv = {
-        A.cv_final = final;
-        A.cv_static = static;
-        A.cv_abstract = abstract;
-        A.cv_visibility = vis;
-        A.cv_type = ht;
-        A.cv_vars = vars;
-        } in
-      cv :: acc
+          let name = fst (dname n) in
+          let value = opt static_scalar_affect env ss in
+          {
+            A.cv_name = name;
+            A.cv_value = value;
+            A.cv_final = final; A.cv_static = static; A.cv_abstract = abstract;
+            A.cv_visibility = vis;
+            A.cv_type = ht;
+          }
+       ) cvl @ acc
   | _ -> acc
 
 and visibility env = function

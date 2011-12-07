@@ -89,6 +89,7 @@ module Dependencies = struct
     | Int _ | Double _ | String _ -> acc
     | HereDoc (_, el, _)
     | Guil el -> encapsl acc el
+    (* pad: this is why it could be useful to have two different types *)
     | Id (s, _) when s.[0] <> '$' -> SSet.add s acc
     | This | Id _ -> acc
     | Array_get (e1, e2) -> expr (expr_opt acc e2) e1
@@ -177,11 +178,8 @@ module Dependencies = struct
 
   and class_var acc cv =
     let acc = hint_type acc cv.cv_type in
-    let acc = cv_vars acc cv.cv_vars in
+    let acc = expr_opt acc cv.cv_value in
     acc
-
-  and cv_vars acc l = List.fold_left cv_var acc l
-  and cv_var acc (_, e) = expr_opt acc e
 
   and method_def acc m =
     let acc = parameterl acc m.m_params in

@@ -279,7 +279,7 @@ and
   let arg = Ocaml.vof_list vof_method_def v_c_body in
   let bnd = ("c_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_class_vars v_c_variables in
+  let arg = Ocaml.vof_list vof_class_var v_c_variables in
   let bnd = ("c_variables", arg) in
   let bnds = bnd :: bnds in
   let arg =
@@ -312,27 +312,16 @@ and vof_class_type =
   | Interface -> Ocaml.VSum (("Interface", []))
   | Trait -> Ocaml.VSum (("Trait", []))
 and
-  vof_class_vars {
-                   cv_final = v_cv_final;
-                   cv_static = v_cv_static;
-                   cv_abstract = v_cv_abstract;
-                   cv_visibility = v_cv_visibility;
-                   cv_type = v_cv_type;
-                   cv_vars = v_cv_vars
-                 } =
+  vof_class_var {
+                  cv_name = v_cv_name;
+                  cv_type = v_cv_type;
+                  cv_value = v_cv_value;
+                  cv_final = v_cv_final;
+                  cv_static = v_cv_static;
+                  cv_abstract = v_cv_abstract;
+                  cv_visibility = v_cv_visibility
+                } =
   let bnds = [] in
-  let arg =
-    Ocaml.vof_list
-      (fun (v1, v2) ->
-         let v1 = Ocaml.vof_string v1
-         and v2 = Ocaml.vof_option vof_expr v2
-         in Ocaml.VTuple [ v1; v2 ])
-      v_cv_vars in
-  let bnd = ("cv_vars", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_hint_type v_cv_type in
-  let bnd = ("cv_type", arg) in
-  let bnds = bnd :: bnds in
   let arg = vof_visibility v_cv_visibility in
   let bnd = ("cv_visibility", arg) in
   let bnds = bnd :: bnds in
@@ -343,7 +332,17 @@ and
   let bnd = ("cv_static", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_bool v_cv_final in
-  let bnd = ("cv_final", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("cv_final", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_expr v_cv_value in
+  let bnd = ("cv_value", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_cv_type in
+  let bnd = ("cv_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_string v_cv_name in
+  let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in 
+   Ocaml.VDict bnds
 and
   vof_method_def {
                    m_visibility = v_m_visibility;
