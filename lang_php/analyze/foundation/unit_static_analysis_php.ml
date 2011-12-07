@@ -163,6 +163,10 @@ checkpoint(); // y:int
       | v -> assert_failure ("wrong value for $y: " ^ info heap v)
     );
 
+  (*-------------------------------------------------------------------------*)
+  (* Interprocedural dataflow *)
+  (*-------------------------------------------------------------------------*)
+
     "interprocedural dataflow" >:: (fun () ->
       let file ="
 $x = 2;
