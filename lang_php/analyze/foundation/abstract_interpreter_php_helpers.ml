@@ -1,6 +1,30 @@
+(* Julien Verlaguet
+ *
+ * Copyright (C) 2011 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
 open Ast_php_simple
-open Env_interpreter_php
+
+open Env_interpreter_php (* Imap, ptrs field, etc *)
 module Env = Env_interpreter_php
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 module Utils = struct
 
@@ -24,21 +48,22 @@ module Utils = struct
         acc, Some v
 end
 
+(*****************************************************************************)
+(* Ptr and globals *)
+(*****************************************************************************)
 
 module Ptr = struct
 
   let rec get_ heap ptr =
     try
       let v = IMap.find ptr heap.ptrs in
-      let ptrs = IMap.add ptr v heap.ptrs in
-      let heap = { ptrs } in
-      heap, v
+      { ptrs = IMap.add ptr v heap.ptrs }, 
+      v
     with Not_found ->
       heap, Vnull
 
   and set_ heap ptr v =
-    let ptrs = IMap.add ptr v heap.ptrs in
-    { ptrs }
+    { ptrs = IMap.add ptr v heap.ptrs }
 
   let get heap ptr =
     match ptr with
@@ -89,6 +114,8 @@ module Var = struct
       "$_SESSION";
       "$_REQUEST";
       "$_ENV";
+
+      (* pad: ??? why they are considered as superglobals? *)
       "self";
       "parent";
       "$this";
@@ -115,7 +142,11 @@ module Var = struct
 
   let get env heap v =
     try
-      let vars = if Hashtbl.mem super_globals v then !(env.globals) else !(env.vars) in
+      let vars = 
+        if Hashtbl.mem super_globals v 
+        then !(env.globals) 
+        else !(env.vars) 
+      in
       let v = SMap.find v vars in
       heap, false, v
     with Not_found ->
@@ -134,7 +165,10 @@ module Var = struct
       heap, true, x
 
 end
-let i = ref 0
+
+(*****************************************************************************)
+(* Unification *)
+(*****************************************************************************)
 
 module Order = struct
 
@@ -155,7 +189,7 @@ module Order = struct
     | Vmap _ -> 6
     | Vmethod _ -> 39
     | Vobject _ -> 40
-    | Vsum _ -> assert false
+    | Vsum _ -> raise Common.Impossible
 
   and type_ x =
     match x with
@@ -202,6 +236,9 @@ module Unify = struct
           value stack ptrs v x
        ) (ptrs, x) rl
 
+  (* Why not use the order and then do value a b = value b a
+   * to factorize some patterns below?
+   *)
   and value stack ptrs v1 v2 =
     match v1, v2 with
     | Vany, x
@@ -217,7 +254,7 @@ module Unify = struct
           fun acc x -> ISet.add x acc
          ) stack l in
         (match l with
-        | [] -> assert false
+        | [] -> raise Common.Impossible
         | [_] -> ptrs, Vref s
         | x :: rl ->
             let ptrs, _ = List.fold_left (
@@ -300,6 +337,7 @@ module Unify = struct
         let ptrs, vl = list stack ptrs vl1 [x] in
         let v = Vsum vl in
         ptrs, v
+    (* pad: dangerous :( lose exhaustive check *)
     | x, y ->
         let ptrs, vl = list stack ptrs [x] [y] in
         let v = Vsum vl in
@@ -365,8 +403,11 @@ end
 
 
 
-let empty = ()
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
+(* because assignements can be in conditionals ... have to extract them  *)
 module NullNewVars = struct
 
   let rec stmtl env heap stl =
@@ -375,6 +416,7 @@ module NullNewVars = struct
   and stmt env heap x =
     match x with
     | Block stl -> stmtl env heap stl
+    (* todo? enough? what about deeply nested assignement? *)
     | Expr (Assign (_, Id (s,_), _)) when not (SMap.mem s !(env.vars)) ->
         let heap, _, _ = Var.get env heap s in
         heap
@@ -433,12 +475,16 @@ module IsLvalue = struct
     | Obj_get _ -> true
     | Class_get _ -> true
     | List _ -> true
+
     | Lambda _
     | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _|
       Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)|
       HereDoc (_, _, _)|Guil _|String _|Double _|Int _) -> false
-
 end
+
+(*****************************************************************************)
+(* Toplevel functions *)
+(*****************************************************************************)
 
 let unw = Ast_php_simple.unwrap
 let w = Ast_php_simple.wrap
