@@ -96,7 +96,8 @@ and get_function_list env heap = function
   | Vstring s :: _ -> heap, env.db.funs s
   | _ :: rl -> get_function_list env heap rl
 
-and make_params l =
+(* in extract_path mode to fake function/method calls *)
+and make_fake_params l =
   List.map (fun p ->
     match p.p_type with
     | Some (Hint s) -> New (Id (w s), [])
@@ -121,29 +122,29 @@ let rec program env heap program =
   (* Env.penv print_string env heap; *)
   heap
 
-and fake_expr env heap =
-  save_excursion env heap expr
-
 and fake_root env heap = function
   | ClassDef c -> (* Nested ones need to be defined *)
       let heap = force_class env heap (unw c.c_name) in
-      (* pad: why first processing all static methods? can't interwind? *)
+      (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
-        if m.m_static
-        then
-          let params = make_params m.m_params in
-          fake_expr env heap
-            (Call (Class_get (Id c.c_name, Id m.m_name), params))
-      ) c.c_methods;
-      List.iter (fun m ->
-        if not m.m_static
-        then
-          let params = make_params m.m_params in
-          fake_expr env heap
-              (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
-     ) c.c_methods;
+        let params = make_fake_params m.m_params in
+        let e = 
+          if m.m_static
+          then (Call (Class_get (Id c.c_name, Id m.m_name), params))
+          else (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
+        in
+        fake_expr env heap e
+      ) c.c_methods
+              
   | FuncDef fd -> ignore (call_fun fd env heap [])
   | _ -> ()
+
+and fake_expr env heap =
+  save_excursion env heap expr
+
+(* ---------------------------------------------------------------------- *)
+(* Stmt *)
+(* ---------------------------------------------------------------------- *)
 
 (* What if break/continue or throw? do we still abstract evaluate
  * the rest of the code? Yes because we care about the pointfix
@@ -153,9 +154,6 @@ and stmtl env heap stl = List.fold_left (stmt env) heap stl
 
 and stmt env heap x =
   match x with
-  (* ---------------------------------------------------------------------- *)
-  (* Debugging support *)
-  (* ---------------------------------------------------------------------- *)
   (* special keyword in the code to debug the abstract interpreter state *)
   | Expr (Call (Id ("show",_), [e])) ->
       let heap, v = expr env heap e in
@@ -166,9 +164,6 @@ and stmt env heap x =
       _checkpoint_heap := Some (heap, !(env.vars));
       heap
 
-  (* ---------------------------------------------------------------------- *)
-  (* Generic code *)
-  (* ---------------------------------------------------------------------- *)
   | Expr e ->
       let heap, _ = expr env heap e in
       heap
@@ -190,14 +185,6 @@ and stmt env heap x =
       let e = match e with None -> Id (w "NULL") | Some e -> e in
       (* the special "*return*" variable is used in call_fun() below *)
       let heap, _ = expr env heap (Assign (None, Id (w "*return*"), e)) in
-      heap
-  | Global idl ->
-      List.fold_left (global env) heap idl
-  | ClassDef c ->
-    (* todo? failwith if is a nested class because it will not be in the db *)
-     heap
-  | FuncDef fd ->
-    (* todo? failwith if is a nested func because it will not be in the db *)
       heap
   (* this may seem incorrect to treat do and while in the same way,
    * because the evaluation of e does not happen at the same time.
@@ -245,8 +232,13 @@ and stmt env heap x =
       let heap = catch env heap c in
       let heap = List.fold_left (catch env) heap cl in
       heap
-  | StaticVars sl ->
-      List.fold_left (static_var env) heap sl
+
+  | Global idl -> List.fold_left (global env) heap idl
+  | StaticVars sl -> List.fold_left (static_var env) heap sl
+
+  (* todo? failwith if is a nested class/func cos it will not be in the db? *)
+  | ClassDef c -> heap
+  | FuncDef fd -> heap
 
 
 and case env heap x =
@@ -264,6 +256,9 @@ and case env heap x =
 and catch env heap (_, _, stl) =
   stmtl env heap stl
 
+(* ---------------------------------------------------------------------- *)
+(* Expr *)
+(* ---------------------------------------------------------------------- *)
 and expr env heap x =
   if !Taint.taint_mode
   then Taint.taint_expr env heap 
@@ -445,14 +440,10 @@ and array_value env id heap x =
 
 and lvalue env heap x =
   match x with
-  (* ---------------------------------------------------------------------- *)
-  (* Tainting *)
-  (* ---------------------------------------------------------------------- *)
   | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
       let heap, k = Ptr.new_val heap (Vtaint s) in
       let heap, v = Ptr.new_val heap (Vtaint s) in
       heap, false, Vmap (k, v)
-
 
   | Id (s,_) ->
       let heap, b, x = Var.get env heap s in
@@ -714,7 +705,7 @@ and static_var env heap (var, eopt) =
   | Some _ -> heap
 
 (* ---------------------------------------------------------------------- *)
-(* CLASSES *)
+(* Class *)
 (* ---------------------------------------------------------------------- *)
 
 and class_def env heap c =
@@ -735,7 +726,7 @@ and class_def env heap c =
   let m = match ddparent with Vobject m -> m | _ -> SMap.empty in
   let heap, m = List.fold_left (cconstants env) (heap, m) c.c_constants in
   let heap, m = List.fold_left (class_vars env true) (heap, m) c.c_variables in
-  let heap, m = List.fold_left (method_def env true c.c_name parent self None)
+  let heap, m = List.fold_left (method_def env c.c_name parent self None)
     (heap, m) c.c_methods in
   let m = SMap.add "*BUILD*" (build_new env heap pname parent self c m) m in
   let v = Vobject m in
@@ -767,7 +758,7 @@ and build_new_ env heap pname parent self c m = fun env heap _ ->
   let heap, m' =
     List.fold_left (class_vars env false) (heap, m) c.c_variables in
   let heap, m' =
-    List.fold_left (method_def env false c.c_name parent self (Some ptr))
+    List.fold_left (method_def env c.c_name parent self (Some ptr))
       (heap, m') c.c_methods in
   let heap, _ = assign env heap true ptr (Vobject m') in
   heap, ptr
@@ -798,10 +789,7 @@ and class_var env static (heap, m) (s, e) =
       let heap, _ = assign env heap true v1 v2 in
       heap, SMap.add s v1 m
 
-and method_def env static cname parent self this (heap, acc) m =
-  method_def_ env cname parent self this (heap, acc) m
-
-and method_def_ env cname parent self this (heap, acc) m =
+and method_def env cname parent self this (heap, acc) m =
   let fdef = {
     f_ref = false;
     f_name = w (unw cname ^ "::" ^ unw m.m_name);
