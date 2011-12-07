@@ -17,13 +17,11 @@ let test_type_php file =
   let _asts = Parse_php.parse_program file in
   raise Todo
 (*
-
   let env = ref (Hashtbl.create 101) in
   let asts = asts +> List.map (fun ast ->
       Typing_php.annotate_toplevel env ast
     )
   in
-
   Export_ast_php.show_expr_info := true;
   pr (Export_ast_php.sexp_string_of_program asts);
   ()
@@ -49,7 +47,6 @@ let test_scope_php file =
   Export_ast_php.show_expr_info := true;
   pr (Export_ast_php.sexp_string_of_program asts);
   ()
-
 
 (*****************************************************************************)
 (* External tools cooperation *)
@@ -80,8 +77,6 @@ let test_php_xdebug file =
     let line = call.Xdebug.f_line in
     pr (spf "%s:%d: %s" file line str);
   )
-
-
 
 let test_type_xdebug_php file =
   raise Todo
@@ -149,7 +144,6 @@ let test_php_serialize file =
 (*****************************************************************************)
 (* CFG/DFG *)
 (*****************************************************************************)
-
 
 (*s: test_cfg_php *)
 let test_cfg_php file =
@@ -251,7 +245,6 @@ let test_include_require file =
 
 let test_pil file =
   raise Todo
-
 (*
   let ast = Parse_php.parse_program file in
 
@@ -393,12 +386,12 @@ let test_abstract_interpreter file =
  *)
 
 let actions () = [
-  "-dump_simple", "   <file>",
-  Common.mk_action_1_arg test_dump;
+  "-dump_php_simple", "   <file>",
+  Common.mk_action_1_arg test_dump_simple;
   "-test_abint", " <file>",
   Common.mk_action_1_arg test_abstract_interpreter;
 
-
+(*
     "-test_pil",  " <file>",
     Common.mk_action_1_arg test_pil;
     "-test_pretty_print_pil", " <file>",
@@ -420,6 +413,9 @@ let actions () = [
 
   "-type_php", " <file>",
   Common.mk_action_1_arg test_type_php;
+  (* todo: adapt to PIL *)
+  "-dfg_php",  " <file>",
+    Common.mk_action_1_arg test_dfg_php;
 
   "-check_php", " <file>",
   Common.mk_action_1_arg test_check_php;
@@ -433,10 +429,6 @@ let actions () = [
   Common.mk_action_1_arg test_php_xdebug;
   "-type_xdebug_php", " <file>",
   Common.mk_action_1_arg test_type_xdebug_php;
-
-  (* todo: adapt to PIL *)
-  "-dfg_php",  " <file>",
-    Common.mk_action_1_arg test_dfg_php;
 
   "-test_phpdoc", " <dir>",
   Common.mk_action_1_arg test_phpdoc;
@@ -456,7 +448,6 @@ let actions () = [
   Common.mk_action_1_arg test_stat_php;
   "-unsugar_php", " <file>",
   Common.mk_action_1_arg test_unsugar_php;
-
 ]
 
 (*e: test_analyze_php.ml *)
