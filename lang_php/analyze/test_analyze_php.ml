@@ -354,10 +354,10 @@ let test_visitor_pil file =
 *)
 
 (*****************************************************************************)
-(* Abstract interpreter *)
+(* Simple AST and abstract interpreter *)
 (*****************************************************************************)
 
-let test_dump file =
+let test_dump_simple file =
   let ast = Parse_php.parse_program file in
   let ast = Ast_php_simple_build.program ast in
   let v = Meta_ast_php_simple.vof_program ast in
@@ -402,6 +402,7 @@ let actions () = [
     Common.mk_action_1_arg test_dataflow_pil;
     "-visitor_pil", " <file",
     Common.mk_action_1_arg test_visitor_pil;
+*)
 
   (*s: test_analyze_php actions *)
     "-cfg_php",  " <file>",

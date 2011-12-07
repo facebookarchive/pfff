@@ -55,8 +55,6 @@ and vof_stmt =
       and v2 = vof_catch v2
       and v3 = Ocaml.vof_list vof_catch v3
       in Ocaml.VSum (("Try", [ v1; v2; v3 ]))
-  | InlineHtml v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("InlineHtml", [ v1 ]))
   | StaticVars v1 ->
       let v1 =
         Ocaml.vof_list

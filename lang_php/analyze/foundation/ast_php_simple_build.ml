@@ -125,7 +125,9 @@ and stmt env st acc =
   | Globals (_, gvl, _) -> A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
-  | InlineHtml (s, _) -> A.InlineHtml s :: acc
+  | InlineHtml (s, tok) -> 
+      A.Expr (A.Call (A.Id (A.builtin "echo", tok),
+                     [A.String s])) :: acc
   | Use (tok, fn, _) -> 
       A.Expr (A.Call (A.Id (A.builtin "use", tok),
                      [A.String (use_filename env fn)])) :: acc

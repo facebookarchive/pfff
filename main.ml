@@ -80,6 +80,7 @@ let all_actions () =
   Test_parsing_web.actions()++
 
   Test_analyze_cpp.actions () ++
+  Test_analyze_php.actions () ++
   []
 
 let options () = 

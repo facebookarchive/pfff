@@ -37,7 +37,7 @@
  *    for error reporting. 
  *  - support for old syntax is removed such as IfColon
  *  - support for extra tools is removed such as Xdebug or Sgrep
- *  - sugar is removed, no ArrayLong vs ArrayShort
+ *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml
  *  - some builtins, for instance echo are transformed in "__builtin__echo".
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
@@ -48,7 +48,7 @@
  *  - a simpler name; identifiers, xhp names, variables are unified.
  *  - ...
  * 
- * todo: factorize more? string vs Guil vs InlineHtml vs xhp?
+ * todo: factorize more? string vs Guil vs xhp?
  *)
 
 (*****************************************************************************)
@@ -82,9 +82,6 @@ and stmt =
 
   | Throw of expr
   | Try of stmt list * catch * catch list
-
-  (* pad: unify with expr? *)
-  | InlineHtml of string
 
   (* only at toplevel in most of our code *)
   | ClassDef of class_def

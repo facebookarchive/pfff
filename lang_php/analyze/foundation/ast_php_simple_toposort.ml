@@ -67,7 +67,6 @@ module Dependencies = struct
         let acc = catch acc c in
         let acc = catchl acc cl in
         acc
-    | InlineHtml _ -> acc
     | StaticVars svl -> List.fold_left static_var acc svl
     | Global el -> exprl acc el
     | ClassDef c -> SSet.add (unwrap c.c_name) acc

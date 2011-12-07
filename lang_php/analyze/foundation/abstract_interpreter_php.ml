@@ -321,7 +321,7 @@ and stmt env heap x =
       heap
   | StaticVars sl ->
       List.fold_left (static_var env) heap sl
-  | InlineHtml _ -> heap
+
 
 and case env heap x =
   match x with
