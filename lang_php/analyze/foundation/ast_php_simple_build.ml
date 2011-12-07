@@ -60,10 +60,6 @@ let brace (_, x, _) = x
 
 let empty_env () = ()
 
-let builtin x = "__builtin__" ^ x
-
-let special x = "__special__" ^ x
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -124,19 +120,19 @@ and stmt env st acc =
       let cl = List.map (catch env) cl in
       A.Try (stl, c, cl) :: acc
   | Echo (tok, el, _) ->
-      A.Expr (A.Call (A.Id (builtin "echo", tok),
+      A.Expr (A.Call (A.Id (A.builtin "echo", tok),
                      (List.map (expr env) (comma_list el)))) :: acc
   | Globals (_, gvl, _) -> A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, _) -> A.InlineHtml s :: acc
   | Use (tok, fn, _) -> 
-      A.Expr (A.Call (A.Id (builtin "use", tok),
+      A.Expr (A.Call (A.Id (A.builtin "use", tok),
                      [A.String (use_filename env fn)])) :: acc
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
-      A.Expr (A.Call (A.Id (builtin "unset", tok), lp)) :: acc
+      A.Expr (A.Call (A.Id (A.builtin "unset", tok), lp)) :: acc
   | DeclConstant _ ->
       (* TODO? *)
       acc
@@ -212,7 +208,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.New (cn, args)
   | Clone (tok, e) ->
-      A.Call (A.Id (builtin "clone", tok), [expr env e])
+      A.Call (A.Id (A.builtin "clone", tok), [expr env e])
   | AssignRef (e1, _, _, e2) ->
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
@@ -228,7 +224,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.InstanceOf (e, cn)
   | Eval (tok, (_, e, _)) -> 
-      A.Call (A.Id (builtin "eval", tok), [expr env e])
+      A.Call (A.Id (A.builtin "eval", tok), [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
   | Exit (tok, e) ->
@@ -238,35 +234,35 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [expr env e]
       in
-      A.Call (A.Id (builtin "exit", tok), arg)
+      A.Call (A.Id (A.builtin "exit", tok), arg)
   | At (tok, e) ->
       (* failwith "expr At" (* of tok  *) TODO look at this *)
-      A.Id (builtin "@", tok)
+      A.Id (A.builtin "@", tok)
   | Print (tok, e) ->
-      A.Call (A.Id (builtin "print", tok), [expr env e])
+      A.Call (A.Id (A.builtin "print", tok), [expr env e])
   | BackQuote (tok, el, _) ->
-      A.Call (A.Id (builtin "exec", tok (* not really an exec token *)),
+      A.Call (A.Id (A.builtin "exec", tok (* not really an exec token *)),
              [A.Guil (List.map (encaps env) el)])
 (*      failwith "expr BackQuote" (* of tok * encaps list * tok *) *)
   | Include (tok, e) ->
-      A.Call (A.Id (builtin "include", tok), [expr env e])
+      A.Call (A.Id (A.builtin "include", tok), [expr env e])
   | IncludeOnce (tok, e) ->
-      A.Call (A.Id (builtin "include_once", tok), [expr env e])
+      A.Call (A.Id (A.builtin "include_once", tok), [expr env e])
   | Require (tok, e) ->
-      A.Call (A.Id (builtin "require", tok), [expr env e])
+      A.Call (A.Id (A.builtin "require", tok), [expr env e])
   | RequireOnce (tok, e) ->
-      A.Call (A.Id (builtin "require_once", tok), [expr env e])
+      A.Call (A.Id (A.builtin "require_once", tok), [expr env e])
   | Empty (tok, (_, lv, _)) ->
-      A.Call (A.Id (builtin "empty", tok), [lvalue env lv])
+      A.Call (A.Id (A.builtin "empty", tok), [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
-      A.Call (A.Id (builtin "isset", tok), 
+      A.Call (A.Id (A.builtin "isset", tok), 
              List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
   | Yield (tok, e) -> 
-      A.Call (A.Id (builtin "yield", tok), [expr env e])
+      A.Call (A.Id (A.builtin "yield", tok), [expr env e])
   | YieldBreak (tok, tok2) -> 
-      A.Call (A.Id (builtin "yield", tok),
-             [A.Id (builtin "yield_break", tok2)])
+      A.Call (A.Id (A.builtin "yield", tok),
+             [A.Id (A.builtin "yield_break", tok2)])
   | SgrepExprDots _ -> 
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible
@@ -278,7 +274,7 @@ and lambda_def env ld =
   let params = comma_list_dots params in
   let _, body, _ = ld.l_body in
   { A.f_ref = ld.l_ref <> None;
-    A.f_name = (special "_lambda", Ast_php.fakeInfo "_lambda");
+    A.f_name = (A.special "_lambda", Ast_php.fakeInfo "_lambda");
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
@@ -305,13 +301,13 @@ and constant env = function
   | XdebugClass _ | XdebugResource -> raise Common.Impossible
 
 and cpp_directive env tok = function
-  | Line      -> A.Id (builtin "__LINE__", tok)
-  | File      -> A.Id (builtin "__FILE__", tok)
-  | ClassC    -> A.Id (builtin "__CLASS__", tok)
-  | MethodC   -> A.Id (builtin "__METHOD__", tok)
-  | FunctionC -> A.Id (builtin "__FUNCTION__", tok)
-  | Dir       -> A.Id (builtin "__DIR__", tok)
-  | TraitC    -> A.Id (builtin "__TRAIT__", tok)
+  | Line      -> A.Id (A.builtin "__LINE__", tok)
+  | File      -> A.Id (A.builtin "__FILE__", tok)
+  | ClassC    -> A.Id (A.builtin "__CLASS__", tok)
+  | MethodC   -> A.Id (A.builtin "__METHOD__", tok)
+  | FunctionC -> A.Id (A.builtin "__FUNCTION__", tok)
+  | Dir       -> A.Id (A.builtin "__DIR__", tok)
+  | TraitC    -> A.Id (A.builtin "__TRAIT__", tok)
 
 and name env = function
   | Name (s, tok) -> s, tok
@@ -332,9 +328,9 @@ and qualifier env (cn, _) = class_name_or_selfparent env cn
 
 and class_name_or_selfparent env = function
    | ClassName fqcn -> name env fqcn
-   | Self tok -> (special "self", tok)
-   | Parent tok -> (special "parent", tok)
-   | LateStatic tok -> (special "static", tok)
+   | Self tok -> (A.special "self", tok)
+   | Parent tok -> (A.special "parent", tok)
+   | LateStatic tok -> (A.special "static", tok)
 
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
@@ -354,15 +350,15 @@ and lvalue env = function
       let e2 = opt expr env e2 in
       A.Array_get (e1, e2)
   | VBrace (tok, (_, e, _)) ->
-      A.Call (A.Id ((builtin "eval_var", tok)), [expr env e])
+      A.Call (A.Id ((A.builtin "eval_var", tok)), [expr env e])
   | VBraceAccess (lv, (_, e, _)) ->
       A.Array_get (lvalue env lv, Some (expr env e))
   | Indirect (e, (Dollar tok)) ->
-      A.Call (A.Id (builtin "eval_var", tok), [lvalue env e])
+      A.Call (A.Id (A.builtin "eval_var", tok), [lvalue env e])
   | VQualifier (q, v)  ->
       A.Class_get (A.Id (qualifier env q),
-                  A.Call (A.Id (builtin "eval_var", 
-                               Ast_php.fakeInfo (builtin "eval_var")),
+                  A.Call (A.Id (A.builtin "eval_var", 
+                               Ast_php.fakeInfo (A.builtin "eval_var")),
                                [lvalue env v]))
   | ClassVar (q, dn) -> A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
   | FunCallSimple (f, (_, args, _)) ->
@@ -415,8 +411,8 @@ and obj_access env obj (_, objp, args) =
 and obj_property env obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      A.Call (A.Id (builtin "ObjPropVar", 
-                   Ast_php.fakeInfo (builtin "ObjPropVar")),
+      A.Call (A.Id (A.builtin "ObjPropVar", 
+                   Ast_php.fakeInfo (A.builtin "ObjPropVar")),
              [lvalue env lv])
 
 and obj_dim env obj = function

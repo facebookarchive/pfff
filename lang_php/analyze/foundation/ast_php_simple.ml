@@ -20,8 +20,8 @@
 (* A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree
  * as in ast_php.ml
  * 
- * This file contains a simplified version of the PHP abstract syntax
- * tree. The original PHP syntax tree is good for code refactoring or
+ * This file contains a simplified PHP abstract syntax tree. The original
+ * PHP syntax tree (ast_php.ml) is good for code refactoring or
  * code visualization; the type used is very precise, However, for
  * other algorithms, the nature of the AST makes the code a bit
  * redundant. Say I want to write a typechecker, I need to write a
@@ -36,15 +36,16 @@
  *    The only token information kept is for identifiers (see wrap below)
  *    for error reporting. 
  *  - support for old syntax is removed such as IfColon
- *  - support for extra tools is removed such as Xdebug or sgrep
+ *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - sugar is removed, no ArrayLong vs ArrayShort
- *  - some builtins for instance echo are transformed in "__builtin__echo"
- *  - a simpler stmt type, no extra toplevel, stmt_and_def types
- *  - a simpler expr type, no lvalue vs expr vs static_scalar, 
+ *  - some builtins, for instance echo are transformed in "__builtin__echo".
+ *    See builtin() and special() below
+ *  - a simpler stmt type; no extra toplevel, stmt_and_def types
+ *  - a simpler expr type; no lvalue vs expr vs static_scalar, 
  *    no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
- *  - unified class or object access via Class_get and Obj_get instead
- *    of lots of duplication in many constructors.
- *  - simpler name, identifiers, xhp names, variables are unified.
+ *  - unified class and object access via Class_get and Obj_get instead
+ *    of lots of duplication in many constructors
+ *  - a simpler name; identifiers, xhp names, variables are unified.
  *  - ...
  * 
  * todo: factorize more? string vs Guil vs InlineHtml vs xhp?
@@ -263,6 +264,9 @@ and class_def = {
 
 let unwrap x = fst x
 let wrap s = s, Ast_php.fakeInfo s
+
+let builtin x = "__builtin__" ^ x
+let special x = "__special__" ^ x
 
 let has_modifier cv =
   cv.cv_final ||
