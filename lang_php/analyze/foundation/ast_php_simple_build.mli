@@ -1,4 +1,6 @@
 
+exception ObsoleteConstruct
+
 val program: Ast_php.program -> Ast_php_simple.program
 
 (* intermediate functions used by cmf *)

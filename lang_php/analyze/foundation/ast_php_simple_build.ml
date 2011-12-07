@@ -35,6 +35,8 @@ module PI = Parse_info
 (* not used for now *)
 type env = unit
 
+exception ObsoleteConstruct
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -145,7 +147,7 @@ and stmt env st acc =
       (* this is not yet used in our codebase *)
       raise Common.Impossible
   | IfColon _ -> 
-      failwith "This is old crazy stuff"
+      raise ObsoleteConstruct
 
 
 and use_filename env = function
@@ -299,17 +301,17 @@ and constant env = function
   | String (s, _) -> A.String s
   | CName n -> A.Id (name env n)
   | PreProcess (cpp, tok) -> cpp_directive env tok cpp
-  | XdebugClass _ -> failwith "stmt XdebugClass" (* of name * class_stmt list *)
-  | XdebugResource -> failwith "stmt XdebugResource" (* *)
+  (* no reason to use the abstract interpreter on xdebug traces *)
+  | XdebugClass _ | XdebugResource -> raise Common.Impossible
 
 and cpp_directive env tok = function
-  | Line      -> A.Id ("__LINE__", tok)
-  | File      -> A.Id ("__FILE__", tok)
-  | ClassC    -> A.Id ("__CLASS__", tok)
-  | MethodC   -> A.Id ("__METHOD__", tok)
-  | FunctionC -> A.Id ("__FUNCTION__", tok)
-  | Dir -> A.Id ("__DIR__", tok)
-  | TraitC -> A.Id ("__TRAIT__", tok)
+  | Line      -> A.Id (builtin "__LINE__", tok)
+  | File      -> A.Id (builtin "__FILE__", tok)
+  | ClassC    -> A.Id (builtin "__CLASS__", tok)
+  | MethodC   -> A.Id (builtin "__METHOD__", tok)
+  | FunctionC -> A.Id (builtin "__FUNCTION__", tok)
+  | Dir       -> A.Id (builtin "__DIR__", tok)
+  | TraitC    -> A.Id (builtin "__TRAIT__", tok)
 
 and name env = function
   | Name (s, tok) -> s, tok
@@ -319,6 +321,7 @@ and name env = function
 and dname = function
   | DName (s, tok) ->
       if s.[0] = '$' then (s, tok)
+      (* pad: when does this happen?? *)
       else ("$"^s, tok)
 
 and hint_type env = function
@@ -329,10 +332,9 @@ and qualifier env (cn, _) = class_name_or_selfparent env cn
 
 and class_name_or_selfparent env = function
    | ClassName fqcn -> name env fqcn
-   | Self tok -> ("self", tok)
-   | Parent tok -> ("parent", tok)
-   (* todo: late static binding *)
-   | LateStatic tok -> ("static", tok)
+   | Self tok -> (special "self", tok)
+   | Parent tok -> (special "parent", tok)
+   | LateStatic tok -> (special "static", tok)
 
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
@@ -352,14 +354,15 @@ and lvalue env = function
       let e2 = opt expr env e2 in
       A.Array_get (e1, e2)
   | VBrace (tok, (_, e, _)) ->
-      A.Call (A.Id (("eval_var", tok)), [expr env e])
+      A.Call (A.Id ((builtin "eval_var", tok)), [expr env e])
   | VBraceAccess (lv, (_, e, _)) ->
       A.Array_get (lvalue env lv, Some (expr env e))
   | Indirect (e, (Dollar tok)) ->
-      A.Call (A.Id ("eval_var", tok), [lvalue env e])
+      A.Call (A.Id (builtin "eval_var", tok), [lvalue env e])
   | VQualifier (q, v)  ->
       A.Class_get (A.Id (qualifier env q),
-                  A.Call (A.Id ("eval_var", Ast_php.fakeInfo "eval_var"),
+                  A.Call (A.Id (builtin "eval_var", 
+                               Ast_php.fakeInfo (builtin "eval_var")),
                                [lvalue env v]))
   | ClassVar (q, dn) -> A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
   | FunCallSimple (f, (_, args, _)) ->
@@ -389,7 +392,7 @@ and lvalue env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar _ -> failwith "expr StaticObjCallVar" (* of lvalue * tok (* :: *) * lvalue * argument comma_list paren *)
+  | StaticObjCallVar _ -> failwith "expr StaticObjCallVar"
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
   | ObjAccess (lv, oa) ->
@@ -412,7 +415,8 @@ and obj_access env obj (_, objp, args) =
 and obj_property env obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      A.Call (A.Id ("ObjPropVar", Ast_php.fakeInfo "ObjPropVar"),
+      A.Call (A.Id (builtin "ObjPropVar", 
+                   Ast_php.fakeInfo (builtin "ObjPropVar")),
              [lvalue env lv])
 
 and obj_dim env obj = function
@@ -432,6 +436,7 @@ and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)
 
+(* todo: use_traits! *)
 and class_def env c =
   let _, body, _ = c.c_body in
   { 
@@ -502,33 +507,26 @@ and class_variables env st acc =
   | _ -> acc
 
 and visibility env = function
-  | [] -> (* TODO CHECK *) A.Novis
+  (* juju: TODO CHECK, pad: ??? *) 
+  | [] -> A.Novis
   | Public :: _ -> A.Public
   | Private :: _ -> A.Private
   | Protected :: _ -> A.Protected
   | (Static | Abstract | Final) :: rl -> visibility env rl
 
-and static env = function
-  | [] -> false
-  | Static :: _ -> true
-  | _ :: rl -> static env rl
-
-and abstract env = function
-  | [] -> false
-  | Abstract :: _ -> true
-  | _ :: rl -> abstract env rl
-
-and final env = function
-  | [] -> false
-  | Final :: _ -> true
-  | _ :: rl -> final env rl
+and static env xs = List.mem Static xs
+and abstract env xs = List.mem Abstract xs
+and final env xs = List.mem Final xs
 
 and class_body env st acc =
   match st with
   | Method md ->
       method_def env md :: acc
-  | XhpDecl _ -> acc(* TODO failwith "TODO xhp decl" *)(* of xhp_decl *)
-  | _ -> acc
+  | XhpDecl _ -> 
+      (* TODO failwith "TODO xhp decl" *)
+      acc
+  | (UseTrait (_, _, _)|ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) 
+    -> acc
 
 and method_def env m =
   let _, params, _ = m.m_params in
@@ -599,6 +597,10 @@ and xhp_body env = function
   | XhpExpr (_, e, _) -> A.XhpExpr (expr env e)
   | XhpNested xml -> A.XhpXml (xhp_html env xml)
 
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
 and encaps env = function
   | EncapsString (s, _) -> A.EncapsString s
   | EncapsVar v -> A.EncapsVar (lvalue env v)
@@ -622,9 +624,7 @@ and colon_stmt env = function
 
 and switch_case_list env = function
   | CaseList (_, _, cl, _) -> List.map (case env) cl
-  | CaseColonList _ -> failwith "What's that?"
-(*      tok (* : *) * tok option (* ; *) * case list *
-        tok (* endswitch *) * tok (* ; *) *)
+  | CaseColonList _ -> raise ObsoleteConstruct
 
 and case env = function
   | Case (_, e, _, stl) ->
@@ -671,5 +671,8 @@ and global_var env = function
   | GlobalDollar _ -> failwith "TODO GlobalDollar" (*of tok * r_variable *)
   | GlobalDollarExpr _ -> failwith "TODO GlobalDollarExpr" (* of tok * expr brace *)
 
+(*****************************************************************************)
+(* For cmf *)
+(*****************************************************************************)
 let func_def x = func_def (empty_env()) x
 let class_def x = class_def (empty_env()) x

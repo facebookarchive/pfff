@@ -32,14 +32,19 @@
  * back together.
  * 
  * Here is a partial list of the simplications/factorizations:
- *  - No tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
+ *  - no tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
  *    The only token information kept is for identifiers (see wrap below)
  *    for error reporting. 
- *  - Support for old syntax is removed such as IfColon
- *  - Sugar is removed, no ArrayLong vs ArrayShort
- *  - Some builtins for instance echo are transformed in "__builtin__echo"
- *  - A simpler stmt type, no extra toplevel, stmt_and_def types
- *  - A simpler expr type, no lvalue vs expr, no FunCallSimple, FunCallVar
+ *  - support for old syntax is removed such as IfColon
+ *  - support for extra tools is removed such as Xdebug or sgrep
+ *  - sugar is removed, no ArrayLong vs ArrayShort
+ *  - some builtins for instance echo are transformed in "__builtin__echo"
+ *  - a simpler stmt type, no extra toplevel, stmt_and_def types
+ *  - a simpler expr type, no lvalue vs expr vs static_scalar, 
+ *    no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
+ *  - unified class or object access via Class_get and Obj_get instead
+ *    of lots of duplication in many constructors.
+ *  - simpler name, identifiers, xhp names, variables are unified.
  *  - ...
  * 
  * todo: factorize more? string vs Guil vs InlineHtml vs xhp?
@@ -206,6 +211,7 @@ and class_def = {
   c_name: string wrap;
   c_extends: string list; (* pad: ?? *)
   c_implements: string list;
+  (* todo: use_traits: string list; *)
 
   c_constants: (string * expr) list;
   c_variables: class_vars list;
