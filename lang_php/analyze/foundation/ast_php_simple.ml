@@ -1,4 +1,4 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
  * Copyright (C) 2011 Facebook
  *
@@ -96,6 +96,7 @@ and stmt =
   and catch = string  * string * stmt list
 
 and expr =
+  (* booleans are constants and really just Int in PHP :( *)
   | Int of string
   | Double of string
   | String of string
@@ -121,6 +122,10 @@ and expr =
   | Obj_get of expr * expr
   | Class_get of expr * expr
 
+  | New of expr * expr list
+  | InstanceOf of expr * expr
+
+  (* pad: could perhaps be at the statement level? *)
   | Assign of Ast_php.binaryOp option * expr * expr
   (* really a destructuring tuple let *)
   | List of expr list
@@ -135,14 +140,10 @@ and expr =
   (* pad: generate Call (builtin "concat") instead? *)
   | Guil of encaps list
 
-
   | Ref of expr
 
   | ConsArray of array_value list
   | Xhp of xml
-
-  | New of expr * expr list
-  | InstanceOf of expr * expr
 
   | CondExpr of expr * expr * expr
   | Cast of Ast_php.ptype * expr
@@ -255,7 +256,9 @@ and class_def = {
 let unwrap x = fst x
 let wrap s = s, Ast_php.fakeInfo s
 
+(* for echo, eval, print, unset, isset, etc *)
 let builtin x = "__builtin__" ^ x
+(* for self, parent, static, lambdas *)
 let special x = "__special__" ^ x
 
 let has_modifier cv =
@@ -264,16 +267,3 @@ let has_modifier cv =
   cv.cv_abstract ||
   cv.cv_visibility <> Novis
 
-let rec is_string_key = function
-  | [] -> true
-  | Aval _ :: _ -> false
-  | Akval (String _, _) :: rl -> is_string_key rl
-  | _ -> false
-
-let rec key_length_acc c = function
-  | Aval _ -> c
-  | Akval (String s, _) -> max (String.length s + 2) c
-  | _ -> c
-
-let key_length l =
-  List.fold_left key_length_acc 0 l
