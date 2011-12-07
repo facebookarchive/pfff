@@ -14,6 +14,7 @@
  *)
 
 open Ast_php_simple
+module A = Ast_php_simple
 
 open Env_interpreter_php (* Imap, ptrs field, etc *)
 module Env = Env_interpreter_php
@@ -115,7 +116,9 @@ module Var = struct
       "$_REQUEST";
       "$_ENV";
 
-      (* pad: ??? why they are considered as superglobals? *)
+      (* pad: ??? why they are considered as superglobals? 
+       * todo: use A.special "self" ?
+       *)
       "self";
       "parent";
       "$this";

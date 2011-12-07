@@ -18,6 +18,7 @@ open Ast_php_simple
 open Abstract_interpreter_php_helpers
 open Env_interpreter_php
 
+module A = Ast_php_simple
 module Env = Env_interpreter_php
 
 module SSet = Set.Make (String)
@@ -39,7 +40,8 @@ module SMap = Map.Make (String)
  *  - "*array*
  *  - "*myobj*
  *  - "*BUILD*"
- *  - "self"/"parent"
+ *  - special "self"/"parent"
+ *  - "$this"
  *  - How the method lookup mechanism works? there is no lookup,
  *    instead at the moment where we build the class, we put
  *    all the methods of the parents in the new class. But then
@@ -144,12 +146,10 @@ module Taint = struct
             
       let rec value path ptrs x =
         match x with
-        | Vany
-        | Vnull -> ()
+        | Vany | Vnull -> ()
         | Vtaint s -> raise (Found [s])
         | Vabstr _ -> ()
-        | Vbool _
-        | Vint _ -> ()
+        | Vbool _ | Vint _ -> ()
         | Vref s ->
             let n = ISet.choose s in
             if not (ISet.mem n path)
@@ -164,8 +164,7 @@ module Taint = struct
             let path = ISet.add n path in
             value path ptrs (IMap.find n ptrs);
         | Vptr _ -> ()
-        | Vfloat _ -> ()
-        | Vstring _ -> ()
+        | Vfloat _ | Vstring _ -> ()
         | Vrecord m ->
             let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
             list (fun (x, v) -> value path ptrs v) vl;
@@ -183,9 +182,7 @@ module Taint = struct
               
       let value heap v =
         try value ISet.empty heap.ptrs v; None with Found l -> Some l
-          
     end
-
 end
 
 (*****************************************************************************)
@@ -907,14 +904,16 @@ and method_def_ env cname parent self this (heap, acc) m =
 
 and make_method mname parent self this fdef =
   fun env heap el ->
+    let self_ = A.special "self" in
+    let parent_ = A.special "parent" in
     let old_self =
-      try Some (SMap.find "self" !(env.globals)) with Not_found -> None in
+      try Some (SMap.find self_ !(env.globals)) with Not_found -> None in
     let old_parent =
-      try Some (SMap.find "parent" !(env.globals)) with Not_found -> None in
+      try Some (SMap.find parent_ !(env.globals)) with Not_found -> None in
     let old_this =
       try Some (SMap.find "$this" !(env.globals)) with Not_found -> None in
-    Var.set_global env "self" self;
-    Var.set_global env "parent" parent;
+    Var.set_global env self_ self;
+    Var.set_global env parent_ parent;
     (match this with
     | None -> ()
     | Some v -> Var.set_global env "$this" v
@@ -925,8 +924,8 @@ and make_method mname parent self this fdef =
     if unw mname = "render"
     then Taint.check_danger env heap "return value of render" (snd mname) 
       !path res';
-    (match old_self with Some x -> Var.set_global env "self" x | None -> ());
-    (match old_parent with Some x -> Var.set_global env "parent" x | None ->());
+    (match old_self with Some x -> Var.set_global env self_ x | None -> ());
+    (match old_parent with Some x -> Var.set_global env parent_ x | None ->());
     (match old_this with Some x -> Var.set_global env "$this" x | None -> ());
     heap, res
 
