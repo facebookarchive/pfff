@@ -254,7 +254,7 @@ function bar() { foo(); }
       let xs = SMap.find "bar" g +> SSet.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
-        ["bar"]
+        ["foo"]
         xs;
     );
 

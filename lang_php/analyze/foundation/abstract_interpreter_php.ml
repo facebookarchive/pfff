@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Ast_php_simple
 
 open Abstract_interpreter_php_helpers
@@ -79,23 +78,15 @@ exception Todo of string
 (* Helpers *)
 (*****************************************************************************)
 
-let rec add_graph sl =
-  match sl with
-  | [] -> ()
-  | [_] -> ()
-  | x :: (y :: _ as rl) ->
-      let vs = try SMap.find y !graph with Not_found -> SSet.empty in
-      let vs = SSet.add x vs in
-      graph := SMap.add y vs !graph;
-      add_graph rl
+let rec add_graph src target =
+  let vs = try SMap.find src !graph with Not_found -> SSet.empty in
+  let vs = SSet.add target vs in
+  graph := SMap.add src vs !graph;
+  ()
 
-let save_path env fname =
+let save_path _env target =
   if !extract_paths
-  then begin
-    let path = !(env.file) :: (List.rev (fname :: !path)) in
-    add_graph path
-  end
-  else ()
+  then add_graph (List.hd !path) target
 
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
@@ -111,6 +102,13 @@ and get_function_list env heap = function
   | [] -> raise LostControl
   | Vstring s :: _ -> heap, env.db.funs s
   | _ :: rl -> get_function_list env heap rl
+
+and make_params l =
+  List.map (fun p ->
+    match p.p_type with
+    | Some (Hint s) -> New (Id (w s), [])
+    | _ -> Id (w "null")
+  ) l
 
 (*****************************************************************************)
 (* Hooks (tainting functor for now) *)
@@ -184,7 +182,7 @@ end
 (*****************************************************************************)
 
 let rec program env heap program =
-  path := [];
+  path := ["__TOP__"];
   if !extract_paths
   then (List.iter (fake_root env heap) program);
   let heap = stmtl env heap program in
@@ -194,32 +192,26 @@ let rec program env heap program =
 and fake_expr env heap =
   save_excursion env heap expr
 
+ 
 and fake_root env heap = function
   | ClassDef c -> (* Nested ones need to be defined *)
-      let make_params l =
-        List.map (fun p ->
-          match p.p_type with
-          | Some (Hint s) -> New (Id (w s), [])
-          | _ -> Id (w "null")) l in
       let heap = force_class env heap (unw c.c_name) in
-      List.iter (
-      fun m ->
+      (* pad: why first processing all static methods? can't interwind? *)
+      List.iter (fun m ->
         if m.m_static
         then
           let params = make_params m.m_params in
           fake_expr env heap
             (Call (Class_get (Id c.c_name, Id m.m_name), params))
-     ) c.c_methods;
-      List.iter (
-      fun m ->
+      ) c.c_methods;
+      List.iter (fun m ->
         if not m.m_static
-        then begin
+        then
           let params = make_params m.m_params in
           fake_expr env heap
               (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
-        end
      ) c.c_methods;
-| FuncDef fd -> ignore (call_fun fd env heap [])
+  | FuncDef fd -> ignore (call_fun fd env heap [])
   | _ -> ()
 
 (* pad: todo, what if break/continue or throw ? do we still abstract evaluate
@@ -439,20 +431,18 @@ and expr_ env heap x =
       let heap, v = expr env heap e in
       heap, cast env heap ty v
 
-  | List _ -> raise Really
-
   | Assign (None, List l, e) ->
       let n = ref 0 in
       let heap =
-        List.fold_left (
-          fun heap x ->
-            let v = Array_get (e, Some (Int (string_of_int !n))) in
-            let heap, _ = expr env heap (Assign (None, x, v)) in
-            incr n;
-            heap
+        List.fold_left (fun heap x ->
+          let v = Array_get (e, Some (Int (string_of_int !n))) in
+          let heap, _ = expr env heap (Assign (None, x, v)) in
+          incr n;
+          heap
         ) heap l in
       let heap, e = expr env heap e in
       heap, e
+  | List _ -> raise Really
 
   | Assign (None, e1, e2) ->
       let heap, b, root = lvalue env heap e1 in
@@ -461,17 +451,20 @@ and expr_ env heap x =
   | Assign (Some op, e1, e2) ->
       expr env heap (Assign (None, e1, Binop (op, e1, e2)))
 
-  | Id ("true",_) -> heap, Vbool true
+  | Id ("true",_)  -> heap, Vbool true
   | Id ("false",_) -> heap, Vbool false
-  | Id ("null",_) -> heap, Vnull
+  | Id ("null",_)  -> heap, Vnull
 
-  | Infix _ | Postfix _ -> (* TODO *) heap, Vany
-  | Id _ | Array_get _ | Class_get (_, _)|Obj_get (_, _)|This as lv ->
+  (* TODO *) 
+  | Infix _ | Postfix _ -> heap, Vany
+  (* TODO *) 
+  | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
       let heap, _, x = lvalue env heap lv in
       let heap, x = Ptr.get heap x in
       heap, x
 
-  | Lambda _ -> heap, Vany (* TODO *)
+  (* TODO *)
+  | Lambda _ -> heap, Vany
 
 and array_value env id heap x =
   match x with
@@ -567,6 +560,7 @@ and lvalue env heap x =
       | _ ->
           heap, false, Vany
         with Not_found -> heap, false, Vany)
+  (* TODO *)
   | Class_get (_, e) ->
       let heap, _ = expr env heap e in
       (*        failwith "TODO Obj_get" (* of expr * string *) *)
@@ -638,6 +632,10 @@ and unaryOp uop v =
   | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
   | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
 
+(* ---------------------------------------------------------------------- *)
+(* Call *)
+(* ---------------------------------------------------------------------- *)
+
 and sum_call env heap v el =
   (match v with
   | [] -> heap, Vany
@@ -658,10 +656,9 @@ and call env heap v el =
 
 and call_fun f env heap el =
   let is_clean =
-    (let _, vl = Utils.lfold (expr env) heap el in
-     List.fold_left (fun acc x -> 
-       Taint.GetTaint.value heap x = None && acc) 
-       true vl)
+    let _, vl = Utils.lfold (expr env) heap el in
+    List.fold_left (fun acc x -> Taint.GetTaint.value heap x = None && acc)
+      true vl
   in
   let n = try SMap.find (unw f.f_name) env.stack with Not_found -> 0 in
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
@@ -683,10 +680,7 @@ and call_fun f env heap el =
     let heap, r = Ptr.get heap r in
     path := List.tl !path;
     if Taint.GetTaint.value heap r = None
-    then begin
-      env.safe := SMap.add (unw f.f_name) r !(env.safe);
-    end;
-    (*      Printf.printf "Now Leaving %s\n" f.f_name; flush stdout; *)
+    then env.safe := SMap.add (unw f.f_name) r !(env.safe);
     heap, r
 
 and get_function env heap f e =
@@ -719,6 +713,10 @@ and parameters env heap l1 l2 =
       let heap, _, lv = lvalue env heap (Id p.p_name) in
       let heap, _ = assign env heap true lv v in
       parameters env heap rl rl2
+
+(* ---------------------------------------------------------------------- *)
+(* Misc *)
+(* ---------------------------------------------------------------------- *)
 
 and xhp env heap x =
   match x with
