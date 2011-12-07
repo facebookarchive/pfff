@@ -31,7 +31,6 @@ module SMap = Map.Make (String)
  * Abstract interpreter for PHP, security oriented (tainting analysis).
  *
  * 'show($x)' in the PHP file helps to debug a variable.
- * Adding a noop (e.g. with ;;) shows the environment too.
  *
  * TODO: $x++ is ignored (we don't really care about int for now)
  *
@@ -94,8 +93,6 @@ let save_path env fname =
   if !extract_paths
   then begin
     let path = !(env.file) :: (List.rev (fname :: !path)) in
-(*    List.iter (Printf.printf "%s ") path;
-    Printf.printf "\n"; *)
     add_graph path
   end
   else ()
