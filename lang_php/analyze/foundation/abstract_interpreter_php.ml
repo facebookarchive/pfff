@@ -55,13 +55,18 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 
 (* call stack used for debugging when found an XSS hole
- * todo: could be put in the env too, next to stack and safe.
+ * todo: could be put in the env too, next to 'stack' and 'safe'.
  *)
 let path = ref []
 
 (* used by unit testing when encountering the 'checkpoint()' function call *)
 let _checkpoint_heap = ref
   (None: (Env_interpreter_php.heap * value SMap.t) option)
+
+(* for callgraph generation *)
+let extract_paths = ref true
+(* string (function name, class+method?, ??) -> string set *)
+let (graph: SSet.t SMap.t ref) = ref SMap.empty
 
 (*****************************************************************************)
 (* Types *)
@@ -72,12 +77,8 @@ exception Really
 exception Todo of string
 
 (*****************************************************************************)
-(* Callgraph generation *)
+(* Helpers *)
 (*****************************************************************************)
-let extract_paths = ref true
-
-(* string (function name, class+method?, ??) -> string set *)
-let (graph: SSet.t SMap.t ref) = ref SMap.empty
 
 let rec add_graph sl =
   match sl with
@@ -98,10 +99,6 @@ let save_path env fname =
     add_graph path
   end
   else ()
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
 
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
@@ -231,13 +228,9 @@ and fake_root env heap = function
 (* pad: todo, what if break/continue or throw ? do we still abstract evaluate
  * the rest of the code?
  *)
-and stmtl env heap stl =
-  List.fold_left (stmt env) heap stl
+and stmtl env heap stl = List.fold_left (stmt env) heap stl
 
 and stmt env heap x =
-  stmt_ env heap x
-
-and stmt_ env heap x =
   match x with
   (* ---------------------------------------------------------------------- *)
   (* Debugging support *)
@@ -353,10 +346,9 @@ and expr env heap x =
 
 and expr_ env heap x =
   match x with
-  (* ---------------------------------------------------------------------- *)
-  (* Generic code *)
-  (* ---------------------------------------------------------------------- *)
+  (* hardcoded special case, not sure why we need that *)
   | Call (Id ("id",_), [x]) -> expr env heap x
+
   | String s -> heap, Vstring s
   | Int s -> heap, Vint (int_of_string s)
   | Double s -> heap, Vfloat (float_of_string s)

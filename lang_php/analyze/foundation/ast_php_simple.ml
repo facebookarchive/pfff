@@ -112,6 +112,8 @@ and expr =
 
   (* valid for entities (functions, classes, constants) and variables, so
    * can have Id "foo" and Id "$foo". Can also contain "self/parent".
+   * Can also be "true", "false", "null" and many other builtin constants.
+   * 
    * todo? Introduce a Var of string wrap? can be good to differentiate
    * them no? At the same time OCaml does not ...
    *)
