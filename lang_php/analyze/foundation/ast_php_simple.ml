@@ -64,10 +64,6 @@ type program = stmt list
 and stmt =
   | Expr of expr
 
-  (* pad: Noop could be Block [], but it's abused right now for debugging
-   * purpose in the abstract interpreter
-   *)
-  | Noop
   | Block of stmt list
 
   | If of expr * stmt * stmt
@@ -104,9 +100,6 @@ and expr =
   | Double of string
   | String of string
 
-  (* pad: generate Call (builtin "concat") instead? *)
-  | Guil of encaps list
-
   (* valid for entities (functions, classes, constants) and variables, so
    * can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
@@ -132,13 +125,16 @@ and expr =
   (* really a destructuring tuple let *)
   | List of expr list
 
+  | Call of expr * expr list
+
   (* todo? transform into Call (builtin ...) ? *)
   | Infix of Ast_php.fixOp * expr
   | Postfix of Ast_php.fixOp * expr
   | Binop of Ast_php.binaryOp * expr * expr
   | Unop of Ast_php.unaryOp * expr
+  (* pad: generate Call (builtin "concat") instead? *)
+  | Guil of encaps list
 
-  | Call of expr * expr list
 
   | Ref of expr
 

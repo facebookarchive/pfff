@@ -41,9 +41,7 @@ module Dependencies = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
-    | Noop -> acc
-    | Throw e
-    | Expr e -> expr acc e
+    | Expr e | Throw e -> expr acc e
     | Block stl -> stmtl acc stl
     | If (e, st1, st2) -> stmtl (expr acc e) [st1; st2]
     | Do (stl, e)

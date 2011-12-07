@@ -60,6 +60,8 @@ let brace (_, x, _) = x
 
 let empty_env () = ()
 
+let noop = A.Block []
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -82,7 +84,7 @@ and stmt env st acc =
   | ExprStmt (e, _) ->
       let e = expr env e in
       A.Expr e :: acc
-  | EmptyStmt _ -> A.Noop :: acc
+  | EmptyStmt _ -> noop :: acc
   | Block (_, stdl, _) -> List.fold_right (stmt_and_def env) stdl acc
   | If (_, (_, e, _), st, il, io) ->
       let e = expr env e in
@@ -158,7 +160,7 @@ and if_elseif env (_, (_, e, _), st) acc =
   A.If (e, st, acc)
 
 and if_else env = function
-  | None -> A.Noop
+  | None -> noop
   | Some (_, (If _ as st)) ->
       (match stmt env st [] with
       | [x] -> x

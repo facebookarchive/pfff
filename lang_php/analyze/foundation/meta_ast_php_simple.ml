@@ -8,7 +8,6 @@ and vof_wrapped_string (s, tok) =
   Ocaml.VString s
 and vof_stmt =
   function
-  | Noop -> Ocaml.VSum (("Noop", []))
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Block v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))

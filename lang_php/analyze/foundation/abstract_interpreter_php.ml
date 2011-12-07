@@ -239,9 +239,6 @@ and stmt env heap x =
   | Expr (Call (Id ("show",_), [e])) ->
       let heap, v = expr env heap e in
 (*      Env.debug heap v; *)
-      heap
-  (* ugly: another trick to debug the abstract interpreter, use double ;; *)
-  | Noop ->
 (*      Env.penv print_string env heap; *)
       heap
   | Expr (Call (Id ("checkpoint",_), [])) ->
