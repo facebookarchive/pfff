@@ -129,6 +129,9 @@ type code_database_juju = {
   classes_juju : Ast_php_simple.class_def cached SMap.t ref;
 }
 
+(* string (function name, class+method, __TOP__file) -> string set *)
+type callgraph = SSet.t SMap.t
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -150,6 +153,11 @@ let empty_env db file =
     safe = ref SMap.empty;
     db = db;
   }
+
+let add_graph src target graph =
+  let vs = try SMap.find src graph with Not_found -> SSet.empty in
+  let vs = SSet.add target vs in
+  SMap.add src vs graph
 
 (*****************************************************************************)
 (* Optimization *)

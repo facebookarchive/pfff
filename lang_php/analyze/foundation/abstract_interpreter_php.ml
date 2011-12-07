@@ -1,4 +1,4 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
  * Copyright (C) 2011 Facebook
  *
@@ -20,7 +20,6 @@ open Env_interpreter_php
 module A = Ast_php_simple
 module Env = Env_interpreter_php
 
-module SSet = Set.Make (String)
 module SMap = Map.Make (String)
 
 (*****************************************************************************)
@@ -64,8 +63,7 @@ let _checkpoint_heap = ref
 
 (* for callgraph generation *)
 let extract_paths = ref true
-(* string (function name, class+method, __TOP__file) -> string set *)
-let (graph: SSet.t SMap.t ref) = ref SMap.empty
+let (graph: Env_interpreter_php.callgraph ref) = ref SMap.empty
 
 (*****************************************************************************)
 (* Types *)
@@ -79,15 +77,9 @@ exception Todo of string
 (* Helpers *)
 (*****************************************************************************)
 
-let rec add_graph src target =
-  let vs = try SMap.find src !graph with Not_found -> SSet.empty in
-  let vs = SSet.add target vs in
-  graph := SMap.add src vs !graph;
-  ()
-
 let save_path _env target =
   if !extract_paths
-  then add_graph (List.hd !path) target
+  then graph := add_graph (List.hd !path) target !graph
 
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
