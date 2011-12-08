@@ -489,10 +489,14 @@ and lvalue env heap x =
       (try
           heap, false, SMap.find s m
         with Not_found -> try
-          (* pad: ???? *)
+          (* pad: ???? field access ?? *)
           heap, false, SMap.find ("$"^s) m
         with Not_found ->
-          if !strict then failwith "Obj_get not found";
+          (match s with
+          (* it's ok to not have a __construct method *)
+          | "__construct" -> ()
+          | _ -> if !strict then failwith "Obj_get not found";
+          );
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
           heap, true, k
