@@ -26,11 +26,9 @@ module SMap = Map.Make (String)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Abstract interpreter for PHP (with hooks for security tainting analysis).
+ * Abstract interpreter for PHP (with hooks for tainting analysis).
  *
  * 'show($x)' in the PHP file helps to debug a variable.
- *
- * TODO: $x++ is ignored (we don't really care about int for now)
  *
  * pad's notes:
  *  - "*return*"
@@ -45,6 +43,10 @@ module SMap = Map.Make (String)
  *    what about the use of self:: or parent:: when executing the
  *    code of a parent method?
  *  - the id() function semantic is hardcoded
+ * 
+ * TODO: 
+ *  - $x++ is ignored (we don't really care about int for now)
+ *  - many places where play with $ in s.(0)
  *)
 
 (*****************************************************************************)
@@ -53,7 +55,8 @@ module SMap = Map.Make (String)
 
 (* call stack used for debugging when found an XSS hole and used also
  * for callgraph generation.
- * todo: could be put in the env too, next to 'stack' and 'safe'.
+ * todo: could be put in the env too, next to 'stack' and 'safe'? take
+ * care of save_excursion though.
  *)
 let path = ref []
 
@@ -65,6 +68,7 @@ let _checkpoint_heap = ref
 let extract_paths = ref true
 let (graph: Env_interpreter_php.callgraph ref) = ref SMap.empty
 
+(* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
 
 (*****************************************************************************)
@@ -116,6 +120,9 @@ and make_fake_params l =
     | _ -> Id (w "null")
   ) l
 
+let exclude_toplevel_defs xs = 
+  List.filter (function ClassDef _ | FuncDef _ -> false | _ -> true) xs
+
 (*****************************************************************************)
 (* Hooks (tainting functor for now) *)
 (*****************************************************************************)
@@ -126,16 +133,14 @@ module Taint = Tainting_fake_php.Taint
 (*****************************************************************************)
 
 let rec program env heap program =
-  (* todo: suffix with filename? *)
-  path := ["__TOP__"];
+  path := ["__TOP__" ^ !(env.file)];
   if !extract_paths
-  then (List.iter (fake_root env heap) program);
-  let heap = stmtl env heap program in
-  (* Env.penv print_string env heap; *)
+  then List.iter (fake_root env heap) program;
+  let heap = stmtl env heap (exclude_toplevel_defs program) in
   heap
 
 and fake_root env heap = function
-  | ClassDef c -> (* Nested ones need to be defined *)
+  | ClassDef c ->
       let heap = force_class env heap (unw c.c_name) in
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
@@ -147,8 +152,9 @@ and fake_root env heap = function
         in
         fake_expr env heap e
       ) c.c_methods
-              
-  | FuncDef fd -> ignore (call_fun fd env heap [])
+  | FuncDef fd -> 
+      let params = make_fake_params fd.f_params in
+      ignore (call_fun fd env heap params)
   | _ -> ()
 
 and fake_expr env heap =
@@ -251,10 +257,9 @@ and stmt env heap x =
   | Global idl -> List.fold_left (global env) heap idl
   | StaticVars sl -> List.fold_left (static_var env) heap sl
 
-  (* todo? failwith if is a nested class/func cos it will not be in the db? *)
-  | ClassDef c -> heap
-  | FuncDef fd -> heap
-
+  | ClassDef _ | FuncDef _ -> 
+      if !strict then failwith "nested classes/functions";
+      heap
 
 and case env heap x =
   match x with
@@ -285,9 +290,9 @@ and expr_ env heap x =
   (* hardcoded special case, not sure why we need that *)
   | Call (Id ("id",_), [x]) -> expr env heap x
 
-  | String s -> heap, Vstring s
-  | Int s -> heap, Vint (int_of_string s)
-  | Double s -> heap, Vfloat (float_of_string s)
+  | String s  -> heap, Vstring s
+  | Int s     -> heap, Vint   (int_of_string s)
+  | Double s  -> heap, Vfloat (float_of_string s)
   (* pad: ugly special case, not sure why but the lfold below 
    * leads to a Vabstr Tstring instead of a precise Vstring
    *)
@@ -326,7 +331,10 @@ and expr_ env heap x =
       (try
           let heap, f = get_dynamic_function env heap f  in
           call_fun f env heap el
-        with _ -> heap, Vany)
+        with _ -> 
+          if !strict then failwith "call_user_func unknown function";
+          heap, Vany
+      )
   | Call (Id (s,_) as e, el) ->
       (try
         let heap, f = get_function env heap s e in
@@ -338,7 +346,7 @@ and expr_ env heap x =
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in
         heap, res
-      ) (* Lost control *)
+      )
   | Call (e, el) ->
       let heap, v = expr env heap e in
       call env heap v el
@@ -397,16 +405,17 @@ and expr_ env heap x =
   | Id ("false",_) -> heap, Vbool false
   | Id ("null",_)  -> heap, Vnull
 
-  (* TODO *) 
-  | Infix _ | Postfix _ -> heap, Vany
-  (* TODO *) 
+  | Infix _ | Postfix _ ->
+      if !strict then failwith "Infix/Postfix";
+      heap, Vany
   | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
+      if !strict then failwith "Id/Array_get/...";
       let heap, _, x = lvalue env heap lv in
       let heap, x = Ptr.get heap x in
       heap, x
-
-  (* TODO *)
-  | Lambda _ -> heap, Vany
+  | Lambda _ -> 
+      if !strict then failwith "Lambda";
+      heap, Vany
 
 and array_value env id heap x =
   match x with
@@ -450,7 +459,8 @@ and array_value env id heap x =
           let heap, _ = assign env heap true v e2 in
           heap
       | _ ->
-          let heap, _ = expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
+          let heap, _ = 
+            expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
           heap
       )
 
@@ -480,8 +490,10 @@ and lvalue env heap x =
       (try
           heap, false, SMap.find s m
         with Not_found -> try
+          (* pad: ???? *)
           heap, false, SMap.find ("$"^s) m
         with Not_found ->
+          if !strict then failwith "Obj_get not found";
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
           heap, true, k
@@ -492,21 +504,26 @@ and lvalue env heap x =
       let heap, _, v = Var.get_global env heap c in
       let heap, v = Ptr.get heap v in
       let heap, v = Ptr.get heap v in
-      (try match v with
-      | Vobject m when SMap.mem s m ->
-          heap, false, SMap.find s m
-      | _ ->
-          heap, false, Vany
-        with Not_found -> heap, false, Vany)
+      (try 
+          match v with
+          | Vobject m when SMap.mem s m ->
+              heap, false, SMap.find s m
+          | _ ->
+              if !strict then failwith "Class_get not a Vobject";
+              heap, false, Vany
+      with Not_found -> 
+        if !strict then failwith "Class_get not found";
+        heap, false, Vany
+      )
   (* TODO *)
   | Class_get (_, e) ->
       let heap, _ = expr env heap e in
-      (*        failwith "TODO Obj_get" (* of expr * string *) *)
+      if !strict then failwith "Class_get general case not handled";
       heap, false, Vany
   | List _ -> raise Really
-  | e -> heap, false, Vany
-      (*        App.expr (Pp.empty print_string) e;
-                failwith "TODO rest of lvalue" *)
+  | e -> 
+      if !strict then failwith "expression not handled";
+      heap, false, Vany
 
 and array_get env heap e k =
   let heap, new_, ar = lvalue env heap e in
@@ -528,6 +545,7 @@ and array_get env heap e k =
   | Vmap (_, v), None ->
       heap, false, v
   | _, kval ->
+      (* todo? strict mode? *)
       let kval = match kval with None -> Vabstr Tint | Some v -> v in
       let heap, kr = Ptr.new_ heap in
       let heap, k = Ptr.get heap kr in
@@ -579,7 +597,9 @@ and sum_call env heap v el =
   | Vmethod (_, fm) :: _ ->
       let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
       call_methods env heap fl el
-  | Vtaint _ as v :: _ -> heap, v
+  | Vtaint _ as v :: _ -> 
+      if !strict then failwith "sum_call Vtaint";
+      heap, v
   | _ :: rl -> sum_call env heap rl el
   )
 
@@ -597,6 +617,7 @@ and call_fun f env heap el =
   let n = try SMap.find (unw f.f_name) env.stack with Not_found -> 0 in
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
   save_path env (unw f.f_name);
+  (* stop when recurse in same function twice or when depth stack > 6 *)
   if n >= 2 || List.length !path >= 6 && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
   then
@@ -618,6 +639,7 @@ and call_fun f env heap el =
     heap, r
 
 and get_function env heap f e =
+  (* pad: ???? *)
   if f.[0] = '$' then
     let heap, v = expr env heap e in
     get_dynamic_function env heap v
@@ -671,8 +693,8 @@ and xhp_attr env heap x =
   | e -> fst (expr env heap e)
 
 and xml env heap x =
-  let heap = List.fold_left (
-    fun heap (_, x) -> xhp_attr env heap x
+  let heap = List.fold_left (fun heap (_, x) -> 
+    xhp_attr env heap x
   ) heap x.xml_attrs in
   let heap = List.fold_left (xhp env) heap x.xml_body in
   heap
@@ -719,7 +741,6 @@ and static_var env heap (var, eopt) =
 (* ---------------------------------------------------------------------- *)
 
 and class_def env heap c =
-  (*    Printf.printf "Defining %s\n" c.c_name; flush stdout; *)
   let heap, self = Ptr.new_ heap in
   let heap, pname, parent =
     match c.c_extends with
@@ -759,7 +780,8 @@ and build_new_ env heap pname parent self c m = fun env heap _ ->
             let fl = IMap.fold (fun _ y acc -> y :: acc) f [] in
             let heap, x = call_methods env heap fl [] in
             heap, x
-        | _ -> assert false)
+        | _ -> assert false
+        )
     | _ -> Ptr.new_ heap
   in
   let heap, up = Ptr.get heap ptr in
@@ -788,6 +810,7 @@ and class_vars env static (heap, m) cv =
     else  (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
 
 and class_var env static (heap, m) (s, e) =
+  (* pad: ??? *)
   let s = if static then s else String.sub s 1 (String.length s - 1) in
   match e with
   | None ->
@@ -865,7 +888,9 @@ and lazy_class env heap c =
       )
     then force_class env heap c
     else heap
-  with Not_found -> heap
+  with Not_found -> 
+    if !strict then failwith "lazy_class Not found";
+    heap
 
 and force_class env heap c =
   let c = env.db.classes c in
@@ -877,6 +902,7 @@ and force_class env heap c =
 
 and get_class env heap c =
   match c with
+  (* pad: ???? *)
   | Id ("",_) -> ""
   | Id (s,_) when s.[0] <> '$' -> s
   | Id _ ->
