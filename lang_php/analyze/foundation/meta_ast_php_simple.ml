@@ -164,18 +164,7 @@ and vof_array_value =
       let v1 = vof_expr v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("Akval", [ v1; v2 ]))
-and vof_encaps =
-  function
-  | EncapsString v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("EncapsString", [ v1 ]))
-  | EncapsVar v1 ->
-      let v1 = vof_expr v1 in Ocaml.VSum (("EncapsVar", [ v1 ]))
-  | EncapsCurly v1 ->
-      let v1 = vof_expr v1 in Ocaml.VSum (("EncapsCurly", [ v1 ]))
-  | EncapsDollarCurly v1 ->
-      let v1 = vof_expr v1 in Ocaml.VSum (("EncapsDollarCurly", [ v1 ]))
-  | EncapsExpr v1 ->
-      let v1 = vof_expr v1 in Ocaml.VSum (("EncapsExpr", [ v1 ]))
+and vof_encaps x = vof_expr x
 and vof_xhp =
   function
   | XhpText v1 ->
@@ -203,12 +192,7 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list Ocaml.vof_string v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_xhp_attr =
-  function
-  | AttrString v1 ->
-      let v1 = Ocaml.vof_list vof_encaps v1
-      in Ocaml.VSum (("AttrString", [ v1 ]))
-  | AttrExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("AttrExpr", [ v1 ]))
+and vof_xhp_attr x = vof_expr x
 and
   vof_func_def {
                  f_ref = v_f_ref;

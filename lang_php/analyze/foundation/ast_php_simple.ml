@@ -138,7 +138,7 @@ and expr =
   | Binop of Ast_php.binaryOp * expr * expr
   | Unop of Ast_php.unaryOp * expr
   (* pad: generate Call (builtin "concat") instead? *)
-  | Guil of encaps list
+  | Guil of expr list
 
   | Ref of expr
 
@@ -154,14 +154,6 @@ and expr =
     | Aval of expr
     | Akval of expr * expr
 
-  (* todo? simplify and unify with expr? *)
-  and encaps =
-    | EncapsString of string
-    | EncapsVar of expr
-    | EncapsCurly of expr
-    | EncapsDollarCurly of expr
-    | EncapsExpr of expr
-
   (* pad: do we need that? could convert into something more basic *)
   and xhp =
     | XhpText of string
@@ -173,11 +165,7 @@ and expr =
       xml_attrs: (string * xhp_attr) list;
       xml_body: xhp list;
     }
-      (* pad: simplify again? *)
-      and xhp_attr =
-        | AttrString of encaps list
-        | AttrExpr of expr
-
+     and xhp_attr = expr
 
 (* pad: no uses field for lambda? because we will use ocaml closures
  * for representing closures :) so during abstract interpretation for 

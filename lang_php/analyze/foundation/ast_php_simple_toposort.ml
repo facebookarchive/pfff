@@ -117,12 +117,7 @@ module Dependencies = struct
     | Akval (e1, e2) -> expr (expr acc e1) e2
 
   and encapsl acc l = List.fold_left encaps acc l
-  and encaps acc = function
-    | EncapsString _ -> acc
-    | EncapsVar e
-    | EncapsCurly e
-    | EncapsDollarCurly e
-    | EncapsExpr e -> expr acc e
+  and encaps acc x = expr acc x
 
   and xhpl acc l = List.fold_left xhp acc l
   and xhp acc = function
@@ -138,9 +133,7 @@ module Dependencies = struct
   and xml_attrs acc l = List.fold_left xml_attr acc l
   and xml_attr acc (_, x) = xhp_attr acc x
 
-  and xhp_attr acc = function
-    | AttrString el -> encapsl acc el
-    | AttrExpr e -> expr acc e
+  and xhp_attr acc e = expr acc e
 
   and func_def acc f =
     let acc = parameterl acc f.f_params in

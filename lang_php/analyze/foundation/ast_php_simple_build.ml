@@ -585,10 +585,12 @@ and xhp_attribute env ((n, _), _, v) =
 
 and xhp_attr_value env = function
   | XhpAttrString (_, l, _) ->
-      A.AttrString (List.map (encaps env) l)
+      A.Guil (List.map (encaps env) l)
   | XhpAttrExpr (_, e, _) ->
-      A.AttrExpr (expr env e)
-  | SgrepXhpAttrValueMvar _ -> assert false
+      (expr env e)
+  | SgrepXhpAttrValueMvar _ -> 
+      (* should never use the abstract interpreter on a sgrep pattern *)
+      raise Common.Impossible
 
 and xhp_body env = function
   | XhpText (s, _) -> A.XhpText s
@@ -600,11 +602,11 @@ and xhp_body env = function
 (*****************************************************************************)
 
 and encaps env = function
-  | EncapsString (s, _) -> A.EncapsString s
-  | EncapsVar v -> A.EncapsVar (lvalue env v)
-  | EncapsCurly (_, lv, _) -> A.EncapsCurly (lvalue env lv)
-  | EncapsDollarCurly (_, lv, _) -> A.EncapsDollarCurly (lvalue env lv)
-  | EncapsExpr (_, e, _) -> A.EncapsExpr (expr env e)
+  | EncapsString (s, _) -> A.String s
+  | EncapsVar v -> lvalue env v
+  | EncapsCurly (_, lv, _) ->  lvalue env lv
+  | EncapsDollarCurly (_, lv, _) -> lvalue env lv
+  | EncapsExpr (_, e, _) -> expr env e
 
 and array_pair env = function
   | ArrayExpr e -> A.Aval (expr env e)

@@ -291,7 +291,7 @@ and expr_ env heap x =
   (* pad: ugly special case, not sure why but the lfold below 
    * leads to a Vabstr Tstring instead of a precise Vstring
    *)
-  | Guil [EncapsString s] -> heap, Vstring s
+  | Guil [String s] -> heap, Vstring s
 
   | Guil el ->
       let heap, vl = Utils.lfold (encaps env) heap el in
@@ -662,13 +662,13 @@ and xhp env heap x =
 
 and xhp_attr env heap x =
   match x with
-  | AttrString el ->
+  | Guil el ->
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
       Taint.check_danger env heap "xhp attribute" (Ast_php.fakeInfo "") !path v;
       heap
-  | AttrExpr e -> fst (expr env heap e)
+  | e -> fst (expr env heap e)
 
 and xml env heap x =
   let heap = List.fold_left (
@@ -677,13 +677,7 @@ and xml env heap x =
   let heap = List.fold_left (xhp env) heap x.xml_body in
   heap
 
-and encaps env heap x =
-  match x with
-  | EncapsString s -> heap, Vstring s
-  | EncapsVar e
-  | EncapsCurly e
-  | EncapsDollarCurly e
-  | EncapsExpr e -> expr env heap e
+and encaps env heap x = expr env heap x
 
 and cast env heap ty v =
   match ty, v with

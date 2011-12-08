@@ -9,7 +9,7 @@ represent PHP code (the Abstract Syntax Tree of PHP). Any user of
 \pfff must thus understand and know those types as any code using the
 \pfff API will probably need to do some pattern matching over 
 those types.
-\l if dont remember, can use -dump_ast to refresh memory
+\l if dont remember, can use -dump_php to refresh memory
 
 Here is the toplevel structure of the [[Ast_php]] module:
 <<ast_php.mli>>=
