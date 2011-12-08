@@ -244,7 +244,6 @@ and expr env = function
   | BackQuote (tok, el, _) ->
       A.Call (A.Id (A.builtin "exec", tok (* not really an exec token *)),
              [A.Guil (List.map (encaps env) el)])
-(*      failwith "expr BackQuote" (* of tok * encaps list * tok *) *)
   | Include (tok, e) ->
       A.Call (A.Id (A.builtin "include", tok), [expr env e])
   | IncludeOnce (tok, e) ->
@@ -309,13 +308,17 @@ and cpp_directive env tok = function
 and name env = function
   | Name (s, tok) -> s, tok
   | XhpName (tl, tok) ->
-      (List.fold_right (fun x y -> x^":"^y) tl ""), tok
+      A.string_of_xhp_tag tl, tok
 
 and dname = function
   | DName (s, tok) ->
-      if s.[0] = '$' then (s, tok)
-      (* pad: when does this happen?? *)
-      else ("$"^s, tok)
+      if s.[0] = '$' 
+      then failwith "dname: the string has a dollar, weird";
+      (* We abuse Id to represent both variables and functions/classes
+       * identifiers in ast_ph_simple, so to avoid collision
+       * we prepend a $ (the $ was removed in ast_php.ml and parse_php.ml)
+       *)
+      ("$"^s, tok)
 
 and hint_type env = function
   | Hint q -> A.Hint (fst (class_name_or_selfparent env q))
