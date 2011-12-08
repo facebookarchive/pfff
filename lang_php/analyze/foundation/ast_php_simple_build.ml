@@ -138,11 +138,9 @@ and stmt env st acc =
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", tok), lp)) :: acc
   | DeclConstant _ ->
-      (* TODO? *)
-      acc
+      failwith "DeclConstant"
   | Declare _ ->
-      (* TODO failwith "stmt Declare" *)
-      acc
+      failwith "Declare"
   | TypedDeclaration _ ->
       (* this is not yet used in our codebase *)
       raise Common.Impossible
@@ -240,7 +238,6 @@ and expr env = function
       in
       A.Call (A.Id (A.builtin "exit", tok), arg)
   | At (tok, e) ->
-      (* failwith "expr At" (* of tok  *) TODO look at this *)
       A.Id (A.builtin "@", tok)
   | Print (tok, e) ->
       A.Call (A.Id (A.builtin "print", tok), [expr env e])
@@ -521,10 +518,11 @@ and class_body env st acc =
   | Method md ->
       method_def env md :: acc
   | XhpDecl _ -> 
-      (* TODO failwith "TODO xhp decl" *)
+      (* TODO failwith "TODO xhp decl" or we don't care and it's ok? *)
       acc
-  | (UseTrait (_, _, _)|ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) 
-    -> acc
+  | UseTrait _ ->
+      failwith "UseTrait"
+  | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) -> acc
 
 and method_def env m =
   let _, params, _ = m.m_params in
