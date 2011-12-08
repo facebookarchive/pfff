@@ -203,23 +203,7 @@ checkpoint(); // y: int
       assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
 
-  (*-------------------------------------------------------------------------*)
-  (* Lookup semantic *)
-  (*-------------------------------------------------------------------------*)
-
-    "semantic lookup static method" >:: (fun () ->
-
-      let file ="
-$x = 2;
-class A { static function foo($a) { return $a + 1; } }
-class B extends A { }
-$y = B::foo($x);
-checkpoint(); // y::int
-" in
-      assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
-    );
-
-    "semantic lookup self in parent" >:: (fun () ->
+    "interprocedural dataflow with static methods" >:: (fun () ->
 
       let file ="
 class A {
@@ -238,8 +222,7 @@ checkpoint(); // x: int, y: bool
       assert_final_value_at_checkpoint "$y" file (Vabstr Tbool);
     );
 
-    "semantic lookup method" >:: (fun () ->
-
+    "interprocedural dataflow with normal methods" >:: (fun () ->
       let file ="
 $x = 2;
 class A { function foo($a) { return $a + 1; } }
@@ -250,6 +233,7 @@ checkpoint(); // y: int
 " in
       assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
+
   (*-------------------------------------------------------------------------*)
   (* Callgraph *)
   (*-------------------------------------------------------------------------*)
@@ -288,9 +272,66 @@ function bar() { foo(); }
 class A { static function a() { } }
 function b() { A::a(); }
 " in
-      assert_graph file [
-        "b" --> ["A::a"];
-      ]
+      assert_graph file ["b" --> ["A::a"]];
+
+      let file = "
+class A { static function a() { } }
+function b() { A::unknown(); }
+" in
+      try 
+        let _ = callgraph_generation file in
+        assert_failure "it should throw an exception for unknown static method"
+      with (Interp.UnknownMethod ("unknown", "A", _)) -> ()
+    );
+
+    "lookup even for static method call" >:: (fun () ->
+      let file ="
+class A { static function a() { } }
+class B extends A { }
+function b() { A::a(); }
+" in
+      assert_graph file ["b" --> ["A::a"]]
+    );
+
+    "static lookup self in parent" >:: (fun () ->
+      let file ="
+class A {
+  static function foo() { self::bar(); }
+  static function bar() { }
+}
+class B extends A {
+ static function bar() { }
+}
+function b() { B::foo(); }
+function c() { B::bar(); }
+" in
+      assert_graph file 
+        ["b" --> ["A::foo"];"c" --> ["B::bar"];"A::foo" --> ["A::bar"]]
+    );
+
+    "lookup normal method" >:: (fun () ->
+      let file ="
+class A { function foo() { } }
+class B extends A { }
+function b() {
+  $o = new B();
+  $y = $o->foo();
+}
+" in
+      assert_graph file ["b" --> ["A::foo"]];
+
+      let file = "
+class A { function foo() { } }
+class B extends A { }
+function b() {
+  $o = new B();
+  $y = $o->unknown();
+}
+" in
+      try 
+        let _ = callgraph_generation file in
+        assert_failure "it should throw an exception for unknown method"
+      with (Interp.UnknownMethod ("unknown", _, _)) -> ()
     );
 
 (*
