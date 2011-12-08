@@ -1,8 +1,7 @@
 
-exception LostControl
 exception UnknownFunction of string
-exception Really
-exception Todo of string
+exception UnknownMethod of string * string * string list
+exception LostControl
 
 val program:
   Env_interpreter_php.env -> Env_interpreter_php.heap ->

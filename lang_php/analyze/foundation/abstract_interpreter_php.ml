@@ -77,10 +77,9 @@ let tracing = ref true
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-exception LostControl
 exception UnknownFunction of string
-exception Really
-exception Todo of string
+exception UnknownMethod of string * string * string list
+exception LostControl
 
 (*****************************************************************************)
 (* Helpers *)
@@ -131,6 +130,9 @@ let show_heap env heap =
   (* for ocamldebug, not sure why *)
   flush stdout; flush stderr; ()
 
+let methods m = 
+  List.map fst (SMap.bindings m)
+
 (*****************************************************************************)
 (* Hooks (tainting functor for now) *)
 (*****************************************************************************)
@@ -156,6 +158,7 @@ and fake_root env heap =
   H.save_excursion env heap (fun env heap x ->
     match x with
     | ClassDef c ->
+      if !tracing then Common.pr ("Processing " ^ (unw c.c_name));
       let heap = force_class env heap (unw c.c_name) in
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
@@ -168,6 +171,7 @@ and fake_root env heap =
         ignore(expr env heap e)
       ) c.c_methods
     | FuncDef fd ->
+        if !tracing then Common.pr ("Processing " ^ (unw fd.f_name));
         let params = make_fake_params fd.f_params in
         ignore (call_fun fd env heap params)
     | _ -> ()
@@ -406,7 +410,7 @@ and expr_ env heap x =
         ) heap l in
       let heap, e = expr env heap e in
       heap, e
-  | List _ -> raise Really
+  | List _ -> failwith "List outside assignement?"
 
   | Assign (None, e1, e2) ->
       let heap, b, root = lvalue env heap e1 in
@@ -509,7 +513,7 @@ and lvalue env heap x =
           (match s with
           (* it's ok to not have a __construct method *)
           | "__construct" -> ()
-          | _ -> if !strict then failwith "Obj_get not found";
+          | _ -> if !strict then raise (UnknownMethod (s, "?", methods m));
           );
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
@@ -525,6 +529,9 @@ and lvalue env heap x =
           match v with
           | Vobject m when SMap.mem s m ->
               heap, false, SMap.find s m
+          | Vobject m ->
+              if !strict then raise (UnknownMethod (s, c, methods m));
+              heap, false, Vany
           | _ ->
               if !strict then failwith "Class_get not a Vobject";
               heap, false, Vany
@@ -537,7 +544,7 @@ and lvalue env heap x =
       let heap, _ = expr env heap e in
       if !strict then failwith "Class_get general case not handled";
       heap, false, Vany
-  | List _ -> raise Really
+  | List _ -> failwith "List should be handled in caller"
   | e -> 
       if !strict then failwith "expression not handled";
       heap, false, Vany
@@ -740,7 +747,7 @@ and global env heap v =
       Var.set env x gv;
       heap
   | _ ->
-      raise (Todo  "rest of global")
+      failwith "global: rest of global"
 
 and static_var env heap (var, eopt) =
   let gvar = env.cfun ^ "**" ^ (unw var) in
