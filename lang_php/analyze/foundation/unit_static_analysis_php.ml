@@ -15,22 +15,32 @@ module Interp = Abstract_interpreter_php
 (* Helpers *)
 (*****************************************************************************)
 
-let heap_of_program_at_checkpoint content =
-  let tmp_file = Parse_php.tmp_php_file_from_string content in
-
+let prepare content =
+  let tmp_file = 
+    Parse_php.tmp_php_file_from_string content in
   let ast = 
-    Parse_php.parse_program tmp_file +> Ast_php_simple_build.program in
-  let db = Env_interpreter_php.code_database_of_juju_db  
-    (Env_interpreter_php.juju_db_of_files [tmp_file]) in
+    Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
+  let db = 
+    Env.code_database_of_juju_db  (Env.juju_db_of_files [tmp_file]) in
+  let env = 
+    Env_interpreter_php.empty_env db tmp_file in
+  let heap = 
+    Env_interpreter_php.empty_heap in
+  env, heap, ast
 
-  let env = Env_interpreter_php.empty_env db tmp_file in
-  let heap = Env_interpreter_php.empty_heap in
-
+let heap_of_program_at_checkpoint content =
+  let (env, heap, ast) = prepare content in
   Abstract_interpreter_php.extract_paths := false;
   let _heap = Abstract_interpreter_php.program env heap ast in
   match !Abstract_interpreter_php._checkpoint_heap with
   | None -> failwith "use checkpoint() in your unit test"
   | Some x -> x
+
+let callgraph_generation content =
+  let (env, heap, ast) = prepare content in
+  Abstract_interpreter_php.extract_paths := true;
+  let _heap = Abstract_interpreter_php.program env heap ast in
+  !(Abstract_interpreter_php.graph)
 
 let rec chain_ptrs heap v =
   match v with
@@ -48,21 +58,21 @@ let value_of_var s vars heap =
       chain_ptrs heap v
   | _ -> assert_failure "variable is not a Vptr"
 
-let info heap v = Env.string_of_value heap (List.hd v)
+let info heap v = 
+  Env.string_of_value heap (List.hd v)
 
-let callgraph_generation content =
-  let tmp_file = Parse_php.tmp_php_file_from_string content in
-  let ast = 
-    Parse_php.parse_program tmp_file +> Ast_php_simple_build.program in
-  let db = Env_interpreter_php.code_database_of_juju_db
-    (Env_interpreter_php.juju_db_of_files [tmp_file]) in
+let assert_value_at_checkpoint var file fpattern =
+  let (heap, vars) = heap_of_program_at_checkpoint file in
+  let v = value_of_var var vars heap in
+  if fpattern v
+  then ()
+  else assert_failure (spf "wrong value for %s: %s " var (info heap v))
 
-  let env = Env_interpreter_php.empty_env db tmp_file in
-  let heap = Env_interpreter_php.empty_heap in
-
-  Abstract_interpreter_php.extract_paths := true;
-  let _heap = Abstract_interpreter_php.program env heap ast in
-  !(Abstract_interpreter_php.graph)
+let assert_final_value_at_checkpoint var file v =
+  assert_value_at_checkpoint var file (function
+  | [Vptr n1; Vptr n2; x] -> x =*= v
+  | _ -> false
+  )
 
 (*****************************************************************************)
 (* Abstract interpreter *)
@@ -78,6 +88,8 @@ let abstract_interpreter_unittest =
 $x = 42;
 checkpoint(); // x:42
 " in
+      (* note: I don't use assert_final_value_at_checkpoint for teaching
+       * purpose here *)
       let (heap, vars) = heap_of_program_at_checkpoint file in
       match value_of_var "$x" vars heap with
       (* variables in PHP are pointers to a pointer to a value ... *)
@@ -92,11 +104,9 @@ hello
 END;
 checkpoint(); // x:'hello'
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$x" vars heap with
+      assert_value_at_checkpoint "$x" file (function
       (* todo? it should maybe be "hello" without the newline *)
-      | [Vptr n1; Vptr n2; Vstring "hello\n"] -> ()
-      | v -> assert_failure ("wrong value for $x: " ^ info heap v)
+      | [Vptr n1; Vptr n2; Vstring "hello\n"] -> true | _ -> false)
     );
 
     "aliasing" >:: (fun () ->
@@ -126,14 +136,11 @@ checkpoint();
     "abstraction when if" >:: (fun () ->
       let file ="
 $x = 1;
-$y = true; // TODO? could statically detect it's always $x = 2;
+$y = true; // path sensitivity would detect it's always $x = 2 ...
 if($y) { $x = 2;} else { $x = 3; }
 checkpoint(); // x: int
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$x" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
-      | v -> assert_failure ("wrong value for $x: " ^ info heap v)
+      assert_final_value_at_checkpoint "$x" file (Vabstr Tint);
     );
 
     "union types" >:: (fun () ->
@@ -143,10 +150,7 @@ $y = true;
 if($y) { $x = 2;} else { $x = 3; }
 checkpoint(); // x: null | int
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$x" vars heap with
-      | [Vptr n1; Vptr n2; Vsum [Vnull; Vabstr Tint]] -> ()
-      | v -> assert_failure ("wrong value for $x: " ^ info heap v)
+      assert_final_value_at_checkpoint "$x" file (Vsum [Vnull; Vabstr Tint]);
     );
 
     "simple dataflow" >:: (fun () ->
@@ -156,11 +160,14 @@ $x = 3;
 $y = $x;
 checkpoint(); // y:int
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$x" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
-      | v -> assert_failure ("wrong value for $y: " ^ info heap v)
+      assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
+
+  (*-------------------------------------------------------------------------*)
+  (* Fixpoint *)
+  (*-------------------------------------------------------------------------*)
+
+  (* TODO while loop, dowhile, recursion, 2 is enough? *)
 
   (*-------------------------------------------------------------------------*)
   (* Interprocedural dataflow *)
@@ -173,10 +180,7 @@ function foo($a) { return $a + 1; }
 $y = foo($x);
 checkpoint(); // y: int
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$y" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
-      | v -> assert_failure ("wrong value for $y: " ^ info heap v)
+      assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
 
   (*-------------------------------------------------------------------------*)
@@ -192,10 +196,7 @@ class B extends A { }
 $y = B::foo($x);
 checkpoint(); // y::int
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$y" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
-      | v -> assert_failure ("wrong value for $y: " ^ info heap v)
+      assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
 
     "semantic lookup self in parent" >:: (fun () ->
@@ -213,15 +214,8 @@ $x = B::foo();
 $y = B::bar();
 checkpoint(); // x: int, y: bool
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      (match value_of_var "$x" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
-      | v -> assert_failure ("wrong value for $x: " ^ info heap v)
-      );
-      (match value_of_var "$y" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tbool] -> ()
-      | v -> assert_failure ("wrong value for $y: " ^ info heap v)
-      );
+      assert_final_value_at_checkpoint "$x" file (Vabstr Tint);
+      assert_final_value_at_checkpoint "$y" file (Vabstr Tbool);
     );
 
     "semantic lookup method" >:: (fun () ->
@@ -234,10 +228,7 @@ $o = new B();
 $y = $o->foo($x);
 checkpoint(); // y: int
 " in
-      let (heap, vars) = heap_of_program_at_checkpoint file in
-      match value_of_var "$y" vars heap with
-      | [Vptr n1; Vptr n2; Vabstr Tint] -> ()
-      | v -> assert_failure ("wrong value for $y: " ^ info heap v)
+      assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
   (*-------------------------------------------------------------------------*)
   (* Callgraph *)
