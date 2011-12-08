@@ -409,7 +409,6 @@ and expr_ env heap x =
       if !strict then failwith "Infix/Postfix";
       heap, Vany
   | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
-      if !strict then failwith "Id/Array_get/...";
       let heap, _, x = lvalue env heap lv in
       let heap, x = Ptr.get heap x in
       heap, x
