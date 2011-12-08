@@ -73,6 +73,26 @@ let assert_final_value_at_checkpoint var file v =
   | _ -> false
   )
 
+(* todo: a pathdown, pathup specialization? *)
+let assert_graph file xs = 
+  let g = callgraph_generation file in
+  let _nb_nodes = List.length xs in
+  xs +> List.iter (fun (n, expected) ->
+    try 
+      let actual_child = SMap.find n g +> SSet.elements in
+      assert_equal
+        ~msg:"it should have the expected callees"
+        (sort actual_child)
+        (sort expected)
+    with Not_found ->
+      assert_failure (spf "could not find callees for %s" n)
+  );
+  (* todo? assert all the nodes are there *)
+  ()
+
+(* sugar to make a graph by adjacent list *)
+let (-->) a b = (a, b)
+
 (*****************************************************************************)
 (* Abstract interpreter *)
 (*****************************************************************************)
@@ -238,6 +258,7 @@ checkpoint(); // y: int
 function foo() { }
 function bar() { foo(); }
 " in
+      (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
       let xs = SMap.find "bar" g +> SSet.elements in
       assert_equal
@@ -255,22 +276,23 @@ function bar() { foo(); }
     );
 
 
-(*
-      (* Checking the semantic of static method calls. *)
-      "simple static method call" >:: (fun () ->
-        let file = "
-          class A { static function a() { } }
-          function b() { A::a(); }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        let callers id = callers id db in let callees id = callees id db in
-        assert_equal [id "A::a"] (callees (id "b"));
-        assert_equal [id "b"] (callers (id "A::a"));
-      );
+  (* todo: call_user_func, id wrapper preserve graph, ?? *)
 
+  (*-------------------------------------------------------------------------*)
+  (* Callgraph and lookup semantic *)
+  (*-------------------------------------------------------------------------*)
+
+    "simple static method call" >:: (fun () ->
+      let file = "
+class A { static function a() { } }
+function b() { A::a(); }
+" in
+      assert_graph file [
+        "b" --> ["A::a"];
+      ]
+    );
+
+(*
       "static method call with self:: and parent::" >:: (fun () ->
         let file = "
           class A {

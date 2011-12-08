@@ -19,6 +19,7 @@ open Env_interpreter_php
 
 module A = Ast_php_simple
 module Env = Env_interpreter_php
+module H = Abstract_interpreter_php_helpers
 
 module SMap = Map.Make (String)
 
@@ -70,6 +71,8 @@ let (graph: Env_interpreter_php.callgraph ref) = ref SMap.empty
 
 (* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
+
+let tracing = ref true
 
 (*****************************************************************************)
 (* Types *)
@@ -123,6 +126,11 @@ and make_fake_params l =
 let exclude_toplevel_defs xs = 
   List.filter (function ClassDef _ | FuncDef _ -> false | _ -> true) xs
 
+let show_heap env heap =
+  Env.penv print_string env heap;
+  (* for ocamldebug, not sure why *)
+  flush stdout; flush stderr; ()
+
 (*****************************************************************************)
 (* Hooks (tainting functor for now) *)
 (*****************************************************************************)
@@ -139,8 +147,15 @@ let rec program env heap program =
   let heap = stmtl env heap (exclude_toplevel_defs program) in
   heap
 
-and fake_root env heap = function
-  | ClassDef c ->
+and fake_root env heap =
+  (* we use save_excursion because the 'force_class' below will
+   * modify by side effect env.globals, but then when we would
+   * process FuncDef, env.globals would previous classes are in the
+   * heap when they are actually not.
+   *)
+  H.save_excursion env heap (fun env heap x ->
+    match x with
+    | ClassDef c ->
       let heap = force_class env heap (unw c.c_name) in
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
@@ -150,15 +165,13 @@ and fake_root env heap = function
           then (Call (Class_get (Id c.c_name, Id m.m_name), params))
           else (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
         in
-        fake_expr env heap e
+        ignore(expr env heap e)
       ) c.c_methods
-  | FuncDef fd -> 
-      let params = make_fake_params fd.f_params in
-      ignore (call_fun fd env heap params)
-  | _ -> ()
-
-and fake_expr env heap =
-  save_excursion env heap expr
+    | FuncDef fd ->
+        let params = make_fake_params fd.f_params in
+        ignore (call_fun fd env heap params)
+    | _ -> ()
+  )
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -211,6 +224,7 @@ and stmt env heap x =
    * because the evaluation of e does not happen at the same time.
    * But here we care about the pointfix of the values, and so
    * the order does not matter.
+   * todo: but need to process the stmts 2 times at least?
    *)
   | Do (stl, e) | While (e, stl) ->
       let heap, _ = expr env heap e in
@@ -612,6 +626,8 @@ and call env heap v el =
   | x -> sum_call env heap [x] el
 
 and call_fun f env heap el =
+  if !tracing 
+  then Common.pr (Common.spf "%s->%s" (List.hd !path) (unw f.f_name));
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
     List.fold_left (fun acc x -> Taint.GetTaint.value heap x = None && acc)
@@ -882,22 +898,15 @@ and call_method env el (heap, v) f =
 
 
 and lazy_class env heap c =
-  try
-    if not (SMap.mem c !(env.globals)) && 
-      (try 
-          let _ = env.db.classes c in
-          true
-        with Not_found -> false
-      )
-    then force_class env heap c
-    else heap
-  with Not_found -> 
-    if !strict then failwith "lazy_class Not found";
-    heap
+  if (SMap.mem c !(env.globals))
+  then heap
+  else force_class env heap c
 
 and force_class env heap c =
   let c = env.db.classes c in
+
   let heap, null = Ptr.new_ heap in
+  (* pad: ??? there is an overriding set_global below, so why creates this? *)
   Var.set_global env (unw c.c_name) null;
   let heap, cd = class_def env heap c in
   Var.set_global env (unw c.c_name) cd;
