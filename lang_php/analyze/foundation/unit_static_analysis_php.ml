@@ -38,6 +38,7 @@ let heap_of_program_at_checkpoint content =
 let callgraph_generation content =
   let (env, heap, ast) = prepare content in
   Abstract_interpreter_php.extract_paths := true;
+  Abstract_interpreter_php.graph := SMap.empty;
   let _heap = Abstract_interpreter_php.program env heap ast in
   !(Abstract_interpreter_php.graph)
 
@@ -82,8 +83,8 @@ let assert_graph file xs =
       let actual_child = SMap.find n g +> SSet.elements in
       assert_equal
         ~msg:"it should have the expected callees"
-        (sort actual_child)
         (sort expected)
+        (sort actual_child)
     with Not_found ->
       assert_failure (spf "could not find callees for %s" n)
   );
