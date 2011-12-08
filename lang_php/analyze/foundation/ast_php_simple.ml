@@ -38,7 +38,7 @@
  *  - support for old syntax is removed such as IfColon
  *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
- *    no HereDoc
+ *    no HereDoc, no EncapsXxx
  *  - some builtins, for instance echo are transformed in "__builtin__echo".
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
@@ -127,7 +127,7 @@ and expr =
 
   (* pad: could perhaps be at the statement level? *)
   | Assign of Ast_php.binaryOp option * expr * expr
-  (* really a destructuring tuple let *)
+  (* really a destructuring tuple let always used in an Assign *)
   | List of expr list
 
   | Call of expr * expr list
@@ -137,7 +137,6 @@ and expr =
   | Postfix of Ast_php.fixOp * expr
   | Binop of Ast_php.binaryOp * expr * expr
   | Unop of Ast_php.unaryOp * expr
-  (* pad: generate Call (builtin "concat") instead? *)
   | Guil of expr list
 
   | Ref of expr
@@ -255,3 +254,4 @@ let has_modifier cv =
   cv.cv_abstract ||
   cv.cv_visibility <> Novis
 
+let string_of_xhp_tag xs = Common.join ":" xs
