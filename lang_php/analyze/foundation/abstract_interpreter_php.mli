@@ -1,11 +1,16 @@
 
-val extract_paths: bool ref
-val graph: Env_interpreter_php.SSet.t Env_interpreter_php.SMap.t ref
+exception LostControl
+exception UnknownFunction of string
+exception Really
+exception Todo of string
 
 val program:
   Env_interpreter_php.env -> Env_interpreter_php.heap ->
   Ast_php_simple.program ->
   Env_interpreter_php.heap
+
+val extract_paths: bool ref
+val graph: Env_interpreter_php.SSet.t Env_interpreter_php.SMap.t ref
 
 (* used by unit testing *)
 val _checkpoint_heap:

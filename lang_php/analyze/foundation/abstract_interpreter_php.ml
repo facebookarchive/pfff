@@ -65,6 +65,8 @@ let _checkpoint_heap = ref
 let extract_paths = ref true
 let (graph: Env_interpreter_php.callgraph ref) = ref SMap.empty
 
+let strict = ref true
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -185,7 +187,10 @@ and stmt env heap x =
        *)
       let heap = NullNewVars.stmt env heap e1 in
       let heap = NullNewVars.stmt env heap e2 in
-
+      (* not that we are not doing any path sensitivity here ...
+       * even if we can statically determine that c is always true,
+       * we just parse both branches.
+       *)
       let heap = stmt env heap e1 in
       let heap = stmt env heap e2 in
       heap
@@ -327,7 +332,8 @@ and expr_ env heap x =
         let heap, f = get_function env heap s e in
         call_fun f env heap el
      (* pad: other? *)
-      with LostControl | UnknownFunction _  ->
+      with (LostControl | UnknownFunction _) as exn  ->
+        if !strict then raise exn;
         save_path env s;
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in

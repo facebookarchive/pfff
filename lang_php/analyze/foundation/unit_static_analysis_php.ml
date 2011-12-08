@@ -5,6 +5,7 @@ open OUnit
 
 open Env_interpreter_php
 module Env = Env_interpreter_php
+module Interp = Abstract_interpreter_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -61,9 +62,7 @@ let callgraph_generation content =
 
   Abstract_interpreter_php.extract_paths := true;
   let _heap = Abstract_interpreter_php.program env heap ast in
-  let graph = !(Abstract_interpreter_php.graph) in
-  graph
-  
+  !(Abstract_interpreter_php.graph)
 
 (*****************************************************************************)
 (* Abstract interpreter *)
@@ -248,14 +247,21 @@ checkpoint(); // y: int
       let file = "
 function foo() { }
 function bar() { foo(); }
-"
-      in
+" in
       let g = callgraph_generation file in
       let xs = SMap.find "bar" g +> SSet.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
         ["foo"]
         xs;
+
+      let file = "
+function bar() { foo(); }
+" in
+      try 
+        let _ = callgraph_generation file in
+        assert_failure "it should throw an exception for unknown function"
+      with (Interp.UnknownFunction "foo") -> ()
     );
 
 
