@@ -338,6 +338,23 @@ function b() {
       with (Interp.UnknownMethod ("unknown", _, _)) -> ()
     );
 
+    (* I used to have a very simple method analysis that did some gross over
+     * approximation. With a call like $x->foo(), the analysis considered
+     * any method foo in any class as a viable candidate. We can now
+     * do better thx to the abstract interpreter.
+     *)
+    "method call no over approximation" >:: (fun () ->
+        let file = "
+class A { function foo() { } }
+class B { function foo() { } }
+function c() { $a = new A(); $a->foo(); }
+" in
+        (* no B::foo over approximation! *)
+        assert_graph file ["c" --> ["A::foo"]];
+      );
+
+    (* todo: example of current limitations of the analysis *)
+
     "static method call with self:: and parent::" >:: (fun () ->
       let file = "
 class A {
@@ -351,49 +368,6 @@ class B extends A {
       );
 
 (*
-
-      "static method call and inheritance" >:: (fun () ->
-        let file = "
-          class A { static function a() { } }
-          class B extends A { }
-          function c() { B::a(); }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        let callers id = callers id db in let _callees id = callees id db in
-        (* TODO: how this works?? I have code to solve this pb? where? *)                                  
-        assert_equal
-          (sort [id "c"])
-          (sort (callers (id "A::a")));
-      );
-
-      (* Right now the analysis is very simple and does some gross over
-       * approximation. With a call like $x->foo(), the analysis consider
-       * any method foo in any class as a viable candidate. Doing a better
-       * job would require some class and data-flow analysis.
-       * Once the analysis gets more precise, fix those tests.
-       *)
-      "method call approximation" >:: (fun () ->
-        let _file = "
-          class A { function foo() { } }
-          class B { function foo() { } }
-          function c() { $a = new A(); $a->foo(); }
-        "
-        in
-(* TODO
-        let db = db_from_string file in
-        Database_php_build2.index_db_method db;
-        (* shortcuts *)
-        let id s = id s db in
-        let _callers id = callers id db in let callees id = callees id db in
-        assert_equal
-         (sort [id "A::foo"; id "B::foo"]) (* sad, should have only A::foo *)
-         (sort (callees (id "c")));
-*)
-        ()
-      );
 
       (* PHP is very permissive regarding static method calls as one can
        * do $this->foo() even if foo is a static method. PHP does not
