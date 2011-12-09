@@ -197,7 +197,7 @@ and expr env = function
       let la = List.fold_right (list_assign env) la [] in
       let e = expr env e in
       A.Assign (None, A.List la, e)
-  | ConsArray (_, (_, apl, _)) ->
+  | ArrayLong (_, (_, apl, _)) | ArrayShort (_, apl, _) ->
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
       A.ConsArray apl

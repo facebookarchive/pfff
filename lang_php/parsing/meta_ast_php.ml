@@ -131,10 +131,13 @@ let rec vof_expr = function
       and v3 = vof_tok v3
       and v4 = vof_expr v4
       in Ocaml.VSum (("AssignList", [ v1; v2; v3; v4 ]))
-  | ConsArray ((v1, v2)) ->
+  | ArrayLong ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_paren (vof_comma_list vof_array_pair) v2
-      in Ocaml.VSum (("ConsArray", [ v1; v2 ]))
+      in Ocaml.VSum (("ArrayLong", [ v1; v2 ]))
+  | ArrayShort ((v1)) ->
+      let v1 = vof_bracket (vof_comma_list vof_array_pair) v1
+      in Ocaml.VSum (("ArrayShort", [ v1]))
   | New ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_class_name_reference v2

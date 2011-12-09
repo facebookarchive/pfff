@@ -324,7 +324,7 @@ let visit_prog find_entity prog =
             (i_2,
              (Left(
                 Arg(
-                  (ConsArray(i_3, (i_4, array_args, i_20))
+                  (ArrayLong(i_3, (i_4, array_args, i_20))
                    ))))::rest_param_xxx_args,
              i_22))
           ))), i_25) ->
