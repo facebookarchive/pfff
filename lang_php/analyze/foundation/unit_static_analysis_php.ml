@@ -234,8 +234,12 @@ checkpoint(); // y: int
       assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
     );
 
+(*****************************************************************************)
+(* Callgraph *)
+(*****************************************************************************)
+
   (*-------------------------------------------------------------------------*)
-  (* Callgraph *)
+  (* Callgraph and functions *)
   (*-------------------------------------------------------------------------*)
 
     "basic callgraph for direct functions" >:: (fun () ->
@@ -264,7 +268,7 @@ function bar() { foo(); }
   (* todo: call_user_func, id wrapper preserve graph, ?? *)
 
   (*-------------------------------------------------------------------------*)
-  (* Callgraph and lookup semantic *)
+  (* Callgraph and static methods *)
   (*-------------------------------------------------------------------------*)
 
     "simple static method call" >:: (fun () ->
@@ -313,6 +317,35 @@ function c() { B::bar(); }
         ["b" --> ["A::foo"];"c" --> ["B::bar"];"A::foo" --> ["A::bar"]]
     );
 
+    "static method call with self:: and parent::" >:: (fun () ->
+      let file = "
+class A {
+ static function a() { }
+ static function a2() { self::a(); }
+}
+class B extends A {
+ function b() { parent::a(); }
+}" in
+        assert_graph file ["A::a2" --> ["A::a"]; "B::b" --> ["A::a"]]
+      );
+
+    (* PHP is very permissive regarding static method calls as one can
+     * do $this->foo() even if foo is a static method. PHP does not
+     * impose the X::foo() syntax, which IMHO is just wrong.
+     *)
+    "static method call and $this" >:: (fun () ->
+      let file = "
+class A {
+  static function a() { }
+  function a2() { $this->a(); }
+} " in
+      assert_graph file ["A::a2" --> ["A::a"]];
+    );
+
+  (*-------------------------------------------------------------------------*)
+  (* Callgraph and normal methods *)
+  (*-------------------------------------------------------------------------*)
+
     "lookup normal method" >:: (fun () ->
       let file ="
 class A { function foo() { } }
@@ -355,30 +388,6 @@ function c() { $a = new A(); $a->foo(); }
 
     (* todo: example of current limitations of the analysis *)
 
-    "static method call with self:: and parent::" >:: (fun () ->
-      let file = "
-class A {
- static function a() { }
- static function a2() { self::a(); }
-}
-class B extends A {
- function b() { parent::a(); }
-}" in
-        assert_graph file ["A::a2" --> ["A::a"]; "B::b" --> ["A::a"]]
-      );
-
-    (* PHP is very permissive regarding static method calls as one can
-     * do $this->foo() even if foo is a static method. PHP does not
-     * impose the X::foo() syntax, which IMHO is just wrong.
-     *)
-    "static method call and $this" >:: (fun () ->
-      let file = "
-class A {
-  static function a() { }
-  function a2() { $this->a(); }
-} " in
-      assert_graph file ["A::a2" --> ["A::a"]];
-    );
   ]
 
 
