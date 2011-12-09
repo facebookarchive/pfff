@@ -284,11 +284,15 @@ function b() { A::unknown(); }
       with (Interp.UnknownMethod ("unknown", "A", _)) -> ()
     );
 
+    (* In PHP it is ok to call B::foo() even if B does not define
+     * a static method 'foo' provided that B inherits from a class
+     * that defines such a foo.
+     *)
     "lookup even for static method call" >:: (fun () ->
       let file ="
 class A { static function a() { } }
 class B extends A { }
-function b() { A::a(); }
+function b() { B::a(); }
 " in
       assert_graph file ["b" --> ["A::a"]]
     );
@@ -334,33 +338,20 @@ function b() {
       with (Interp.UnknownMethod ("unknown", _, _)) -> ()
     );
 
-(*
-      "static method call with self:: and parent::" >:: (fun () ->
-        let file = "
-          class A {
-           static function a() { }
-           static function a2() { self::a(); }
-          }
-          class B extends A {
-           function b() { parent::a(); }
-          }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let id s = id s db in
-        let callers id = callers id db in let _callees id = callees id db in
-        assert_equal
-          (sort [id "A::a2"; id "B::b"; 
-                 (* todo? we now consider the class as callers too *)
-                 id "A::"; id "B::"])
-          (sort (callers (id "A::a")));
+    "static method call with self:: and parent::" >:: (fun () ->
+      let file = "
+class A {
+ static function a() { }
+ static function a2() { self::a(); }
+}
+class B extends A {
+ function b() { parent::a(); }
+}" in
+        assert_graph file ["A::a2" --> ["A::a"]; "B::b" --> ["A::a"]]
       );
 
-      (* In PHP it is ok to call B::foo() even if B does not define
-       * a static method 'foo' provided that B inherits from a class
-       * that defines such a foo.
-       *)
+(*
+
       "static method call and inheritance" >:: (fun () ->
         let file = "
           class A { static function a() { } }
