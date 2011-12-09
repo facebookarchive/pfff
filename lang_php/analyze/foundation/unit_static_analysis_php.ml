@@ -367,59 +367,19 @@ class B extends A {
         assert_graph file ["A::a2" --> ["A::a"]; "B::b" --> ["A::a"]]
       );
 
-(*
-
-      (* PHP is very permissive regarding static method calls as one can
-       * do $this->foo() even if foo is a static method. PHP does not
-       * impose the X::foo() syntax, which IMHO is just wrong.
-       *)
-      "static method call and $this" >:: (fun () ->
-        let file = "
-          class A {
-           static function a() { }
-           function a2() { $this->a(); }
-        }
-        "
-        in
-        let db = db_from_string file in
-        (* shortcuts *)
-        let _id s = id s db in
-        let _callers id = callers id db in let _callees id = callees id db in
-        (* This currently fails, and I am not sure I want to fix it. Our
-         * code should not use the $this->foo() syntax for static method
-         * calls
-         *
-         * assert_equal
-         * (sort [id "A::a2"])
-         * (sort (callers (id "A::a")));
-         *)
-         ()
-      );
-
-      (* Checking method calls. *)
-      "simple method call" >:: (fun () ->
-        let _file = "
-          class A { function foo() { } }
-          function c() { $a = new A(); $a->foo(); }
-        "
-        in
-(* TODO
-        let db = db_from_string file in
-        Database_php_build2.index_db_method db;
-        (* shortcuts *)
-        let id s = id s db in
-        let _callers id = callers id db in let callees id = callees id db in
-        assert_equal
-         (sort [id "A::foo"])
-         (sort (callees (id "c")));
-*)
-        ()
-      );
-
-
-*)
+    (* PHP is very permissive regarding static method calls as one can
+     * do $this->foo() even if foo is a static method. PHP does not
+     * impose the X::foo() syntax, which IMHO is just wrong.
+     *)
+    "static method call and $this" >:: (fun () ->
+      let file = "
+class A {
+  static function a() { }
+  function a2() { $this->a(); }
+} " in
+      assert_graph file ["A::a2" --> ["A::a"]];
+    );
   ]
-
 
 
 (*****************************************************************************)
