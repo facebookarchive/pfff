@@ -1252,7 +1252,9 @@ exception Timeout
  * 
  * The same is true for UnixExit (see below).
  *)
-val timeout_function : int -> (unit -> 'a) -> 'a
+val timeout_function :
+  ?verbose:bool ->
+  int -> (unit -> 'a) -> 'a
 
 val timeout_function_opt : int option -> (unit -> 'a) -> 'a
 

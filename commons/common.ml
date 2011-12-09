@@ -3649,7 +3649,7 @@ let (with_open_outfile_append: filename -> (((string -> unit) * out_channel) -> 
  *
  * question: can we have a signal and so exn when in a exn handler ?
  *)
-let timeout_function timeoutval = fun f ->
+let timeout_function ?(verbose=false) timeoutval = fun f ->
   try
     begin
       Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
@@ -3660,7 +3660,7 @@ let timeout_function timeoutval = fun f ->
     end
   with Timeout ->
     begin
-      log "timeout (we abort)";
+      if verbose then log "timeout (we abort)";
       raise Timeout;
     end
   | e ->
@@ -3675,7 +3675,7 @@ let timeout_function timeoutval = fun f ->
         (* log ("exn while in transaction (we abort too, even if ...) = " ^
            Printexc.to_string e);
         *)
-        log "exn while in timeout_function";
+        if verbose then log "exn while in timeout_function";
         raise e
       end
 
