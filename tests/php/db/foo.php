@@ -1,20 +1,24 @@
 <?php
 
+function foobar() {
+}
+
 function foo() {
   bar();
 }
 
 function bar() {
-  
 }
 
 class A {
-  static function foo() { }
-  public function bar() { }
+  static function mfoo() { foo(); }
+  public function mbar() { bar(); }
 }
 
-A::foo();
+A::mfoo();
 
 $o = new A();
-$o->bar();
+$o->mbar();
+
+class B extends A { }
 

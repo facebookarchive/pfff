@@ -66,11 +66,15 @@ let is_pleac_file file =
   let file = Common.lowercase file in
   file =~ ".*pleac*"
 
-(* todo? should perhaps be a property in database_php.ml, so
+(* todo? should perhaps be a property in database_php.ml, so   (fun xs -> Common_extra.execute_and_show_progress2 
+     ~show_progress:verbose (List.length xs) 
+    (fun k -> 
+
  * don't have to put facebook specific stuff here ?
  *)
 let is_test_file file =
   let file = Common.lowercase file in
+  (file =~ ".*test.php$") ||
   (file =~ ".*__tests__.*") ||
   (file =~ ".*tests/push-blocking/") ||
   (file =~ ".*tests/monitoring/") ||
@@ -85,7 +89,10 @@ let is_test_or_pleac_file file =
 (* coupling: with phase 1 where we collect entities *)
 let is_id_with_entity id db =
   match DbPHP.kind_of_id id db with
-  | Db.Function | Db.Method _ | Db.Class _ -> true
+  | Db.Function 
+  (* TODO  | Db.Method _ once leverage pathup? *)
+  | Db.Class _ 
+    -> true
   | _ -> false
 
 (* the number of callers in the "example_of_use" should
@@ -198,16 +205,15 @@ let database_code_from_php_database ?(verbose=false) db =
   if verbose then pr2 "phase 1: collecting entities";
 
   let entities = 
-    db.DbPHP.defs.DbPHP.id_kind#tolist +>
-   (fun xs -> Common_extra.execute_and_show_progress2 
-     ~show_progress:verbose (List.length xs) 
-    (fun k -> 
+    db.DbPHP.defs.DbPHP.id_kind#tolist 
+    +> Common_extra.with_progress_list_metter ~show_progress:verbose (fun k xs->
      xs +> Common.map_filter (fun (id, id_kind)->
       k();
 
+      (* coupling: with is_id_with_entity above *)
       match id_kind with
       | Db.Function (* | Db.Method _  TODO leverage pathup? *) ->
-          let callers = DbPHP.callers_of_id id db 
+          let callers = DbPHP.callers_of_id id db
             +> List.map Callgraph_php.id_of_callerinfo in
           let idfile = DbPHP.filename_of_id id db in
           let external_callers = exclude_ids_same_file callers idfile db in
@@ -238,6 +244,9 @@ let database_code_from_php_database ?(verbose=false) db =
           let users = DbPHP.class_users_of_id id db in
           let extenders = DbPHP.class_extenders_of_id id db in
 
+(* TODO: interface? traits?
+          let users = DbPHP.class_implementers_of_id id db in
+*)
           let idfile = DbPHP.filename_of_id id db in
           let external_users = 
             exclude_ids_same_file (users ++ extenders) idfile db in
@@ -249,36 +258,8 @@ let database_code_from_php_database ?(verbose=false) db =
                    ~root id 
                    (List.length external_users) good_ex_ids properties
                    db)
-
-
-(*
-      | Entity_php.Interface -> 
-          let users = DbPHP.class_implementers_of_id id db in
-
-          let idfile = DbPHP.filename_of_id id db in
-          let external_users = 
-            exclude_ids_same_file (users) idfile db in
-
-          let good_ex_ids = good_examples_of_use external_users db in
-          let properties = [] in (* TODO *)
-
-          Some (id, mk_entity 
-                   ~root id 
-                   (List.length external_users) good_ex_ids properties
-                   db)
-      | Entity_php.Trait ->
-          (* TODO *)
-          let external_users = [] in
-          let good_ex_ids = [] in
-          let properties = [] in
-          Some (id, mk_entity 
-                   ~root id 
-                   (List.length external_users) good_ex_ids properties
-                   db)
-*)
-      (* TODO *)
       | _ -> None
-    )))
+    ))
   in
   (* phase 2: adding the correct cross reference information *)
   if verbose then pr2 "phase 2: adding crossref information";
@@ -294,8 +275,11 @@ let database_code_from_php_database ?(verbose=false) db =
     entities_arr +> Array.map (fun e ->
       let ids_phpdb = e.Db.e_good_examples_of_use in
       e.Db.e_good_examples_of_use <- 
-        ids_phpdb +> List.map (fun id_phpdb -> 
-          Hashtbl.find h_id_phpdb_to_id_db (Entity_php.Id id_phpdb)
+        ids_phpdb +> List.map (fun id_phpdb ->
+          try 
+            Hashtbl.find h_id_phpdb_to_id_db (Entity_php.Id id_phpdb)
+          with Not_found ->
+            raise Not_found
         );
       e
     )
