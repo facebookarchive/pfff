@@ -90,8 +90,12 @@ let name_id id db =
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
   | E.Function -> "function"
-  (* the interface/1 trait/1 predicate will precise things *)
-  | E.Class _ -> "class"
+  | E.Class x -> 
+      (match x with
+      | E.RegularClass -> "class"
+      | E.Interface -> "interface"
+      | E.Trait -> "trait"
+      )
   (* the static/1 predicate will say if static method (or class var) *)
   | E.Method _ -> "method"
 

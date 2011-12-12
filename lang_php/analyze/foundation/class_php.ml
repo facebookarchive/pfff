@@ -148,6 +148,12 @@ let class_variables_reorder_first def =
     c_body = (lb, body', rb);
   }
 
+let class_type_of_class c =
+  match c.c_type with
+  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
+  | Interface _ -> E.Interface
+  | Trait _ -> E.Trait
+
 (*****************************************************************************)
 (* Lookup *)
 (*****************************************************************************)

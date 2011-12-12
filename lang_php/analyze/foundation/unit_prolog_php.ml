@@ -50,6 +50,22 @@ let unittest =
     (*-----------------------------------------------------------------------*)
     (* Entities *)
     (*-----------------------------------------------------------------------*)
+    "kinds" >:: (fun () ->
+      let file = "
+function foo() { }
+class A { }
+interface I { }
+trait T { }
+" in 
+      assert_equal 
+        ["function"] (prolog_query ~file "kind('foo', X), writeln(X)");
+      assert_equal 
+        ["class"] (prolog_query ~file "kind('A', X), writeln(X)");
+      assert_equal 
+        ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
+      assert_equal 
+        ["trait"] (prolog_query ~file "kind('T', X), writeln(X)");
+    );
 
     (*-----------------------------------------------------------------------*)
     (* Inheritance *)
