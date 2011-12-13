@@ -146,6 +146,8 @@ pr2 "Checking your configuration.\n";
 my $error = 0;
 my $error2 = 0;
 
+my $arch = `uname`;
+
 #---------------------------------------------------------------------
 # Compilers and runtimes
 #---------------------------------------------------------------------
@@ -171,8 +173,13 @@ $error +=
 
 pr2 "";
 
+my $MAKE_PROGRAM = "make";
+if($arch =~ /FreeBSD/) {
+  $MAKE_PROGRAM = "gmake";
+}
+
 $error += check_config(
-  "make -v 2>&1 |grep --colour=never Make|",
+  "$MAKE_PROGRAM -v 2>&1 |grep --colour=never Make|",
   "GNU Make 3\.[0-9]+", #version 3.81
   "make (gnu version) is present.",
   "The program gnu make is missing or is not a good version.
@@ -187,10 +194,13 @@ We need  3.XX",
 #---------------------------------------------------------------------
 # Librairies
 #---------------------------------------------------------------------
-my $arch = `uname`;
 
 # if darwin or cygwin then could just modify this variable ? enough ?
 my $prefix_distrib = "/usr";
+
+if($arch =~ /FreeBSD/) {
+  $prefix_distrib = "/usr/local";
+}
 
 my $BDB_INCLUDE="$prefix_distrib/include";
 my $BDB_LIBS="$prefix_distrib/lib";
@@ -207,6 +217,10 @@ if($bdb) {
     if($arch =~ /Darwin/) {
         $BDB_INCLUDE="/opt/local/include/db46";
         $BDB_LIBS="/opt/local/lib/db46";
+    }
+    if($arch =~ /FreeBSD/) {
+        $BDB_INCLUDE="/usr/local/include/db46";
+        $BDB_LIBS="/usr/local/lib/db46";
     }
     
     my $err += check_config("grep DB_VERSION_MAJOR  $BDB_INCLUDE/db.h |",
@@ -239,6 +253,11 @@ if($pcre) {
     if($arch =~ /Darwin/) {
         $PCRE_INCLUDE="/opt/local/include";
         $PCRE_LIBS="/opt/local/lib";
+    }
+
+    if($arch =~ /FreeBSD/) {
+        $PCRE_INCLUDE="/usr/local/include";
+        $PCRE_LIBS="/usr/local/lib";
     }
 
     my $err += check_config("grep --colour=never PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
@@ -331,8 +350,8 @@ OS.
     pr2 "
 ----------------------------------------------------------------------
 To compile $project type:
-  \$ make depend
-  \$ make
+  \$ $MAKE_PROGRAM depend
+  \$ $MAKE_PROGRAM 
 
 Then, to test $project simply type:
   \$ $projectcmdline
