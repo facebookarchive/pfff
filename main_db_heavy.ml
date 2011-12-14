@@ -194,6 +194,7 @@ let main () =
   Common_extra.set_link();
   (* let argv = Features.Distribution.mpi_adjust_argv Sys.argv in *)
   Database_php_storage.set_link();
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
 
   let usage_msg = 
     "Usage: " ^ basename Sys.argv.(0) ^ 
