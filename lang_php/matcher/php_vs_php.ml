@@ -38,6 +38,11 @@ open Common
  * on the full AST. Working on a term language would be like working
  * in an untyped language.
  * 
+ * update: todo: we may want to revisit that design choice. 
+ * I have to constantly update sgrep to handle more patterns
+ * e.g. X::foo() should match AClass::foo(), which would not happen
+ * if I just went with the simpler term language from the beginning.
+ * 
  * I then hardcoded a few isomorphisms by abusing some existing constructs,
  * for instance constants starting with a big X are considered metavars
  * for expression.
@@ -982,7 +987,11 @@ and m_class_name_or_selfparent a b =
 
 and m_fully_qualified_class_name a b = 
   match a, b with
-  (a, b) -> m_name a b
+  (a, b) -> 
+    (* iso on class name *)
+    m_name_metavar_ok a b >>= (fun (a, b) -> 
+      return (a, b)
+    )
 
 (*---------------------------------------------------------------------------*)
 (* argument *)
