@@ -518,15 +518,19 @@ let parent_name_of_id a b =
 
 (* safer wrappers around the database fields *)
 let class_users_of_id id db = 
-  if not (List.mem (db.defs.id_kind#assoc id) [E.Class E.RegularClass])
-  then failwith "class_users_of_id expect the id of a class";
+  (match (db.defs.id_kind#assoc id) with
+  | E.Class _ -> ()
+  | _ -> failwith "class_users_of_id expect the id of a class";
+  );
   try 
     db.uses.users_of_class#assoc id
   with Not_found -> []
 
 let class_extenders_of_id id db =
-  if not (List.mem (db.defs.id_kind#assoc id) [E.Class E.RegularClass])
-  then failwith "class_extenders_of_id expects the id of a class";
+  (match (db.defs.id_kind#assoc id) with
+  | E.Class _ -> ()
+  | _ -> failwith "class_extenders_of_id expects the id of a class";
+  );
   try 
     db.uses.extenders_of_class#assoc id
   with Not_found -> []

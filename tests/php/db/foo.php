@@ -15,10 +15,8 @@ class A {
   public function mbar() { bar(); }
 }
 
-A::mfoo();
-
-$o = new A();
-$o->mbar();
-
 class B extends A { }
 
+interface I { }
+
+trait T { }
