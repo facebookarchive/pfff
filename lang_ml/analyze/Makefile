@@ -10,7 +10,7 @@ SRC= \
      tags_ml.ml \
      database_light_ml.ml \
      graph_modules_packages_ml.ml \
-     test_analyze_ml.ml
+     test_analyze_ml.ml unit_analyze_ml.ml
 
 -include $(TOP)/Makefile.config
 
@@ -67,8 +67,9 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Top rules
 ##############################################################################
-all:: rec $(TARGET).cma
-all.opt:: rec.opt $(TARGET).cmxa
+# no rec yet
+all:: $(TARGET).cma
+all.opt:: $(TARGET).cmxa
 
 rec:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 

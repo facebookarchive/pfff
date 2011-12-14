@@ -16,18 +16,18 @@
 open Common
 
 module Ast = Ast_ml
-
 module Db = Database_code
-
 module HC = Highlight_code
-
 module T = Parser_ml
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
-(* We build the full database in multiple steps as some
+(* Light database building for OCaml code (mainly used by the codemap
+ * semantic code visualizer).
+ *
+ * We build the full database in multiple steps as some
  * operations need the information computed globally by the
  * previous step:
  * 
@@ -38,12 +38,11 @@ module T = Parser_ml
  * 
  * Currently many analysis are just lexical-based (yes I know, I am
  * ridiculous) so there is some ambiguity when we find a use such
- * as a function call. 
- * We don't always know to which precise entity it corresponds to.
- * To be precise would require to resolve module name. Fortunately
- * in my code I don't use 'open' that much and only use the
+ * as a function call. We don't always know to which precise entity 
+ * it corresponds to.To be precise would require to resolve module name. 
+ * Fortunately in my code I don't use 'open' that much and only use the
  * simple alias-module idiom which makes it tractable to
- * identify precisely to which entity a qualified function call refers to.
+ * identify in practice to which entity a qualified function call refers to.
  * 
  *)
 
@@ -64,13 +63,14 @@ type entity_poor_id =
 let is_pleac_file file = 
   let file = Common.lowercase file in
   file =~ ".*pleac*"
+
+(* todo? quite pad specific ... 
+ * try detect when use OUnit ?
+ *)
 let is_test_file file =
   let file = Common.lowercase file in
   (file =~ ".*test_*")
 
-(* todo? quite pad specific ... 
- * try detect when use OUnit ?
-*)
 let is_test_or_pleac_file file = 
   is_test_file file || is_pleac_file file
 
@@ -94,6 +94,12 @@ let rank_and_filter_examples_of_use ~root ids entities_arr =
   +> Common.sort_by_key_lowfirst 
   +> List.map snd
 
+let parse file =
+  Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
+  Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun () ->
+    Parse_ml.parse file 
+  ))
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -102,7 +108,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   let root = Common.common_prefix_of_files_or_dirs files_or_dirs in
   let root = Common.chop_dirsymbol root in
-  pr2 (spf "generating ML db_light with root = %s" root);
+  if verbose then pr2 (spf "generating ML db_light with root = %s" root);
 
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files files_or_dirs in
   let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
@@ -127,7 +133,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   files +> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);
 
-    let (ast2, _stat) = Parse_ml.parse file in
+    let (ast2, _stat) = parse file in
 
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
       let prefs = Highlight_code.default_highlighter_preferences in
@@ -170,8 +176,7 @@ let compute_database ?(verbose=false) files_or_dirs =
               
               let entity = { Database_code.
                 e_name = s;
-                e_fullname = 
-                  spf "%s.%s" module_name s;
+                e_fullname = spf "%s.%s" module_name s;
                 e_file = file;
                 e_pos = { Common.l = l; Common.c = c };
                 e_kind = Db.entity_kind_of_highlight_category_def categ;
@@ -180,7 +185,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                 e_good_examples_of_use = [];
 
                 (* TODO once we have a real parser, can at least
-                 * set the UseGlobal
+                 * set the UseGlobal property.
                  *)
                 e_properties = [];
               }
@@ -264,7 +269,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
-    let (ast2, _stat) = Parse_ml.parse file in
+    let (ast2, _stat) = parse file in
 
     let file = Common.filename_without_leading_path root file in
 

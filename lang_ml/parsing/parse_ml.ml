@@ -230,7 +230,6 @@ let parse2 filename =
       if not !Flag.error_recovery
       then raise (Parse_error (TH.info_of_tok cur));
 
-
       (match exn with
       | Lexer_ml.Lexical _ 
       | Parsing.Parse_error 

@@ -27,6 +27,13 @@ module T = Parser_ml
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* 
+ * Syntax highlighting for OCaml code for codemap.
+ * 
+ * This code is also actually abused to generate the light database 
+ * and the TAGS file (because codemap needs to know about
+ * def and use of entities).
+ *)
 
 (*****************************************************************************)
 (* Helpers when have global analysis information *)

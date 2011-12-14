@@ -64,7 +64,9 @@ let test regexp =
       (* non PHP related tests *)
       Unit_parsing_js.unittest;
       Unit_parsing_html.unittest;
+
       Unit_parsing_ml.unittest;
+      Unit_analyze_ml.unittest;
     ]
   in
   let suite = 

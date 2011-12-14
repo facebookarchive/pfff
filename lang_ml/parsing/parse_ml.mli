@@ -7,7 +7,7 @@ type program2 = toplevel2 list
 
 exception Parse_error of Parse_info.info
 
-(* This is the main function *)
+(* This is the main function. See flag_parsing_ml for settings. *)
 val parse:
   Common.filename -> (program2 * Parse_info.parsing_stat)
 
