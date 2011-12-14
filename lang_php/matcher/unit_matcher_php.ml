@@ -64,6 +64,9 @@ let sgrep_unittest = [
       (* metavariables on function name *)
       "X(1,2);", "foo(1,2);", true;
 
+      (* metavariable string for identifiers *)
+      "foo('X');", "foo('a_func');", true;
+
       (* more complex expressions *)
       "strstr(...) == false;", "strstr($x)==false;", true;
 
