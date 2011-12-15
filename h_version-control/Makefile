@@ -7,14 +7,14 @@ TARGET=lib
 SRC= patch.ml lib_vcs.ml  \
      git.ml  cvs.ml  mercurial.ml \
      version_control.ml \
-     test_version_control.ml
+     test_version_control.ml unit_version_control.ml
 
 #todo: empty for now
 SRC+=subversion.ml
 
 
 LIBS=../commons/commons.cma
-INCLUDEDIRS= ../commons ../commons/lib-sexp
+INCLUDEDIRS= ../commons ../commons/lib-sexp ../commons/ocamlextra
 
 TARGET1=vcs
 

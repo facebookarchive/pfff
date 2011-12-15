@@ -69,7 +69,6 @@ let exec_cmd ~basedir s =
   let ret = Sys.command cmd in
   if (ret <> 0) then failwith "pb with command"
 
-
 (*****************************************************************************)
 (* Single file operations, "command output binding" *)
 (*****************************************************************************)
@@ -288,22 +287,9 @@ let files_involved_in_diff ~basedir commitid =
     spf "git show --name-status --pretty=\"format:\" %s" str_commit in
   let xs = Common.cmd_to_list cmd in
 
-  (* the previous command has a first empty line before the list of files *)
-  let files_involved = List.tl xs +> List.map (fun s ->
-    if s=~ "\\([MAD]\\)[ \t]+\\([^ \t]+\\)"
-    then
-      let (status, name) = Common.matched2 s in
-      (match status with
-      | "A" -> Added
-      | "M" -> Modified
-      | "D" -> Deleted
-      | _ -> failwith (spf "unknown file commit status: %s" status)
-      ), name
-    else failwith (spf "wrong format in git result: %s" s)
-  )
-  in
   assert(List.hd xs = "");
-  files_involved
+  (* the previous command has a first empty line before the list of files *)
+  List.tl xs +> List.map Lib_vcs.parse_file_status
 
 (*****************************************************************************)
 (* multiple commits operations  *)

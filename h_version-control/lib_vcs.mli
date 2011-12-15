@@ -10,9 +10,17 @@ type line_annotation =
 type commit_patch = (string list) (* header *) * Patch.patchinfo
 
 type file_commit_status =
-  | Modified
-  | Deleted
   | Added
+  | Copied
+  | Deleted
+  | Modified
+  | Renamed of 
+      int (* probability of rename *) *
+      Common.filename (* original filename *)
+  | FileTypeChanged
+  | Unmerged
+  | Unknown
+  | Broken
 
 (* helpers *)
 val s_of_versionid: versionid -> string
@@ -22,6 +30,7 @@ val goto_dir : Common.filename (* basedir *) -> string
 
 val dummy_annotation : line_annotation
 
-val parse_commit_patch : string list -> commit_patch
+val parse_commit_patch: string list -> commit_patch
+val parse_file_status: string -> file_commit_status * Common.filename
 
 val filter_vcs_dir: Common.dirname -> bool

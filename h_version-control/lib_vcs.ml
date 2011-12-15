@@ -29,10 +29,19 @@ type line_annotation = versionid * author * Common.date_dmy
 
 type commit_patch = (string list) (* header *) * Patch.patchinfo
 
+(* see man git-diff and the "diff-filter section" *)
 type file_commit_status =
-  | Modified
-  | Deleted
   | Added
+  | Copied
+  | Deleted
+  | Modified
+  | Renamed of 
+      int (* probability of rename *) *
+      Common.filename (* original filename *)
+  | FileTypeChanged
+  | Unmerged
+  | Unknown
+  | Broken
 
 (*****************************************************************************)
 (* Helpers *)
@@ -79,3 +88,27 @@ let filter_vcs_dir x =
   Common.profile_code "Lib_vcs.filter_dir" (fun () ->
     filter_vcs_dir2 x
   )
+
+(* See man git-diff and the "diff-filter section".
+ * Could be in git.ml, but this look quite generic.
+ *)
+let parse_file_status s =
+  match s with
+  | _ when s=~ "\\([MADCTUXB]\\)[ \t]+\\([^ \t]+\\)" ->
+    let (status, name) = Common.matched2 s in
+    (match status with
+    | "A" -> Added
+    | "C" -> Copied
+    | "D" -> Deleted
+    | "M" -> Modified
+    | "T" -> FileTypeChanged
+    | "U" -> Unmerged
+    | "X" -> Unknown
+    | "B" -> Broken
+    | _ -> failwith (spf "unknown file commit status: %s" status)
+    ), name
+  | _ when s =~ "R\\([0-9]+\\)[ \t]+\\([^ \t]+\\)[ \t]+\\([^ \t]+\\)" ->
+      let (proba, src, target) = Common.matched3 s in
+      Renamed (int_of_string proba, src), target
+
+  | _ -> failwith (spf "wrong format in file commit status: %s" s)

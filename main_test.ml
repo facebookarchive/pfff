@@ -67,6 +67,8 @@ let test regexp =
 
       Unit_parsing_ml.unittest;
       Unit_analyze_ml.unittest;
+
+      Unit_version_control.unittest;
     ]
   in
   let suite = 
