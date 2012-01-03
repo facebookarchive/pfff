@@ -55,7 +55,6 @@ let layer_stat file =
     pr (spf " %s = %d" k v)
   )
   
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -63,11 +62,8 @@ let layer_stat file =
 let actions () = [
   "-test_load_db",  " <file>",
   Common.mk_action_1_arg test_load_light_db;
-  
   "-test_big_grep", " <file>",
   Common.mk_action_1_arg test_big_grep;
-
   "-test_layer", " <file>",
   Common.mk_action_1_arg test_layer;
-
 ]
