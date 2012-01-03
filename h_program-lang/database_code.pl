@@ -106,8 +106,8 @@
 % related work:
 %  - jquery, tyruba
 %  - CIA
-%  - LFS
-%  - ODASA
+%  - ODASA, codequest
+%  - LFS/PofFS
 
 %---------------------------------------------------------------------------
 % How to run/compile
