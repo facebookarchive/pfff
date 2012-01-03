@@ -755,7 +755,7 @@ and class_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
-(* todo: as and insteadof, but those are bad features ... noone should
+(* todo: 'as' and 'insteadof', but those are bad features ... noone should
  * use them.
  *)
 and trait_rule = unit
