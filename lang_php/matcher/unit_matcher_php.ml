@@ -64,6 +64,9 @@ let sgrep_unittest = [
       (* metavariables on function name *)
       "X(1,2);", "foo(1,2);", true;
 
+      (* metavariables on class name *)
+      "X::foo();", "Ent::foo();", true;
+
       (* metavariable string for identifiers *)
       "foo('X');", "foo('a_func');", true;
 
