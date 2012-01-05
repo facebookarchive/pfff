@@ -29,4 +29,4 @@ define('CURLINFO_LOCAL_PORT', 0);
 define('CURLOPT_TIMEOUT_MS', 0);
 define('CURLOPT_CONNECTTIMEOUT_MS', 0);
 
-function fb_curl_multi_fdset($a, $b, $c, $d, $e) { }
+function fb_curl_multi_fdset($mh, &$read_fd_set, &$write_fd_set, &$exc_fd_set, &$max_fd_set) { }
