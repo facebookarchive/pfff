@@ -237,6 +237,15 @@ let idl_type_of_string (s, info) =
 (* Main entry point *)
 (*****************************************************************************)
 
+let generate_builtin ~idlfile ~dest =
+  let base = Filename.basename idlfile in
+  let target = Filename.concat dest ("builtins_" ^ base) in
+  let cmd = spf " php -f %s/scripts/gen_builtins_php.php %s > %s"
+    (Sys.getenv "PFFF_HOME") idlfile target in
+  Common.command2 cmd;
+  ()
+  
+
 (* generating php_stdlib/ from idl files *)
 let generate_php_stdlib ~src ~phpmanual_dir ~dest = 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files [src] in
@@ -253,16 +262,9 @@ let generate_php_stdlib ~src ~phpmanual_dir ~dest =
 
   files +> List.iter (fun file -> 
     pr2 (spf "processing: %s" file);
-
     if not (file =~ ".*\\.idl.php")
     then pr2 (spf "SKIPPING: %s, files does not end in .idl.php" file)
-    else begin
-      let base = Filename.basename file in
-      let target = Filename.concat dest ("builtins_" ^ base) in
-      let cmd = spf " php -f %s/scripts/gen_builtins_php.php %s > %s"
-        (Sys.getenv "PFFF_HOME") file target in
-      Common.command2 cmd;
-    end
+    else generate_builtin ~idlfile:file ~dest
   );
   ()
 
@@ -281,5 +283,11 @@ let actions () = [
   "-generate_php_stdlib", " <src_idl> <src_phpmanual> <dest>",
   Common.mk_action_3_arg (fun src phpmanual_dir dest ->
     generate_php_stdlib ~src ~phpmanual_dir ~dest);
+  "-builtin_of_idl", " <idl>",
+  Common.mk_action_1_arg (fun idlfile ->
+    let cmd = spf " php -f %s/scripts/gen_builtins_php.php %s"
+      (Sys.getenv "PFFF_HOME") idlfile in
+    Common.command2 cmd;
+  );    
 ]
 (*e: builtins_php.ml *)
