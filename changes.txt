@@ -1,5 +1,9 @@
 -*- org -*-
 
+* ?? (Q1 2012) (??)
+
+* -----------------------------------------------------------
+
 * 0.18 (Q4 2011) (prolog)
 
 ** introduce codequery, an interactive Prolog-based code query engine,
@@ -33,7 +37,9 @@ so can parse julien's code which heavily use modules.
 *** removed lots of dead code now that commited to use the abstract interpreter
 instead of a PIL+cflow+dataflow+db+...
 
-* 0.17 (Q3 2011) (overlay)
+*** refacrored lang_php/analysis, get rid of directories
+
+* 0.17 (Q3 2011) (overlay, pm_depend)
 
 ** introduce notion of code overlay
 with some helper functions to check the validity of an overlay.
@@ -43,7 +49,7 @@ Overlays help organize and visualize a (bad) codebase from a different point
 of view.
 
 ** introduce pm_depend
-a module/package dependency visualizer exporting data for gephi
+a package/module dependency visualizer exporting data for Gephi
 (only for ocaml code for now). Played with it on the code of pfff
 (in package mode) and some of its components: codemap, cpp, php, cmf
 (in module mode with and without extern mode).
@@ -73,7 +79,9 @@ first play with ocsigen.
 
 ** introduce lang_web/ with combined html+js+css parser
 
-* 0.14 (Q4 2010) (spatch, layers, more languages highlighters)
+* -----------------------------------------------------------
+
+* 0.14 (Q4 2010) (layers, spatch, more language highlighters)
 
 ** codemap
 
@@ -176,7 +184,7 @@ of a bottom up analysis of php)
 
 first public release!
 
-* 0.12 (Q3 2010) (codemap, tags, scheck, ocaml support)
+* 0.12 (Q3 2010) (codemap, light db, tags, scheck, ocaml support)
 
 Real start of multi-language support.
 
@@ -264,7 +272,7 @@ analysis, etc.
 to grab all the files needed to check one file, in a way similar
 to what gcc does with cpp. Provide a DFS and BFS algo.
 
-* 0.10 (Q2 2010) (coverage)
+* 0.10 (Q2 2010) (test coverage)
 
 ** finish test coverage analysis using xdebug.ml and phpunit.ml
 rank, filter, parallelize (using MPI), cronize.
@@ -329,7 +337,7 @@ update: not used for now
 ** internals
 reorganized json/sexp output, factorize code and use more ocaml.ml
 
-* 0.8 (Q1 2010) (sgrep + treemap + dynamic analysis)
+* 0.8 (Q1 2010) (sgrep, treemap, xdebug dynamic analysis)
 
 ** xdebug trace parsing, can now do dynamic analysis! 
 Done for type "inference/extraction" at the beginnning and useful
@@ -398,7 +406,9 @@ internals manual for parsing_php/
 callgraph for methods (using weak heuristic), with optimisations
 to scale (partially because use weak heuristic)
 
-* 0.3 (Q4 2009) (PHP parser + db + deadcode)
+* -----------------------------------------------------------
+
+* 0.3 (Q4 2009) (PHP parser, berkeley db, deadcode)
 
 ** analysis
 deadcode analysis v2, v3, v4
