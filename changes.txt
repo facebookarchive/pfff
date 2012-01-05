@@ -1,6 +1,6 @@
 -*- org -*-
 
-* ??? (Q4 2011) (??)
+* 0.18 (Q4 2011) (prolog)
 
 ** introduce codequery, an interactive Prolog-based code query engine,
 especially useful to query inheritance information.
