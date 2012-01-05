@@ -26,3 +26,5 @@ function hphp_get_iostatus() { }
 function hphp_set_iostatus_address($name) { }
 function hphp_get_timers($get_as_float = true) { }
 function hphp_output_global_state($serialize = true) { }
+function hphp_instruction_counter() { }
+function hphp_get_hardware_counters() { }
