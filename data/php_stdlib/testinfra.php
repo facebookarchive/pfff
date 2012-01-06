@@ -6,5 +6,5 @@
 function some_fake_function_name() {
 }
 
-class SomeRandomClass() {
+class SomeRandomClass {
 }
