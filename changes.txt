@@ -35,7 +35,7 @@ so can parse julien's code which heavily use modules.
 ** internals
 
 *** removed lots of dead code now that commited to use the abstract interpreter
-instead of a PIL+cflow+dataflow+db+...
+(and prolog) instead of a PIL+cflow+dataflow+db+...
 
 *** refacrored lang_php/analysis, get rid of directories
 
