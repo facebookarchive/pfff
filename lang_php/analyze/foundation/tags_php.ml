@@ -54,7 +54,22 @@ let tags_of_ast ast filelines =
     
   defs +> List.map (fun (kind, name, enclosing_name_opt) ->
     match kind with
-    | Db.Function | Db.Class _ | Db.Constant ->
+    | Db.Class _ ->
+        (match name with
+        | Name _ -> [tag_of_name filelines name kind]
+        | XhpName (xs, tok) ->
+            (* XHP classes have a different syntax for their definitions
+             * (class :x:foo ...) and their uses ($xhp = <x:foo ...). People
+             * want to find such class using either forms so here we
+             * generate two tags.
+             *)
+            let s1 = ":" ^ Common.join ":" xs in
+            let s2 = Common.join ":" xs in
+            [Tags.tag_of_info filelines (Parse_info.rewrap_str s1 tok) kind;
+             Tags.tag_of_info filelines (Parse_info.rewrap_str s2 tok) kind;
+            ]
+        )
+    | Db.Function | Db.Constant ->
         [tag_of_name filelines name kind]
     | Db.Method _ ->
         (match enclosing_name_opt with

@@ -126,6 +126,23 @@ let tags_unittest =
         )
       );
 
+      "xhp tags" >:: (fun () ->
+        let file_content = "class :x:foo { }" in
+        let tmpfile = 
+          Parse_php.tmp_php_file_from_string file_content in
+        let tags = 
+          Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
+        let all_tags = tags +> List.map snd +> List.flatten in
+        assert_bool
+          ~msg:"it should contain an entry for the :x:... classname form"
+          (all_tags +> List.exists (fun t -> 
+            t.Tags_file.tagname =$= ":x:foo"));
+        assert_bool
+          ~msg:"it should contain an entry for the x:... classname form"
+          (all_tags +> List.exists (fun t -> 
+            t.Tags_file.tagname =$= "x:foo"));
+
+      );
     ]
 
 (*---------------------------------------------------------------------------*)
