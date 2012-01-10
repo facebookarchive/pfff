@@ -81,9 +81,10 @@ let tags_unittest =
         let file_content = "
             function foo() { }
             class A { }
-            define('Cst',1);
             interface B { }
             trait C { }
+            const CST = 1;
+            define('OldCst',1);
         "
         in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
@@ -93,8 +94,8 @@ let tags_unittest =
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
             assert_equal 
-              ~msg:"The tags should contain only 5 entries"
-              (List.length tags_in_file) 5;
+              ~msg:"The tags should contain only 6 entries"
+              (List.length tags_in_file) 6;
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
