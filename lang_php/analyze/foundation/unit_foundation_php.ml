@@ -81,9 +81,10 @@ let tags_unittest =
         let file_content = "
             function foo() { }
             class A { }
-            define('Cst',1);
             interface B { }
             trait C { }
+            const CST = 1;
+            define('OldCst',1);
         "
         in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
@@ -93,8 +94,8 @@ let tags_unittest =
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
             assert_equal 
-              ~msg:"The tags should contain only 5 entries"
-              (List.length tags_in_file) 5;
+              ~msg:"The tags should contain only 6 entries"
+              (List.length tags_in_file) 6;
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
@@ -126,6 +127,23 @@ let tags_unittest =
         )
       );
 
+      "xhp tags" >:: (fun () ->
+        let file_content = "class :x:foo { }" in
+        let tmpfile = 
+          Parse_php.tmp_php_file_from_string file_content in
+        let tags = 
+          Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
+        let all_tags = tags +> List.map snd +> List.flatten in
+        assert_bool
+          ~msg:"it should contain an entry for the :x:... classname form"
+          (all_tags +> List.exists (fun t -> 
+            t.Tags_file.tagname =$= ":x:foo"));
+        assert_bool
+          ~msg:"it should contain an entry for the x:... classname form"
+          (all_tags +> List.exists (fun t -> 
+            t.Tags_file.tagname =$= "x:foo"));
+
+      );
     ]
 
 (*---------------------------------------------------------------------------*)

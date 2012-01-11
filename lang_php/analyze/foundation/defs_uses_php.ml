@@ -110,8 +110,14 @@ let defs_of_any any =
       Common.push2 (Db.Method kind, def.m_name, Some classname) aref;
       k def
     );
-
-    (* todo: const of php 5.3? globals? fields? class constants? *)
+    V.kstmt = (fun (k, _) stmt ->
+      match stmt with
+      (* const of php 5.3 *)
+      | DeclConstant (tok, name, tok_equal, scalar, semicolon) ->
+          Common.push2 (Db.Constant, name, None) aref;
+          k stmt
+      | _ -> k stmt
+    );
 
     V.klvalue = (fun (k, bigf) x ->
       match x with
@@ -133,6 +139,8 @@ let defs_of_any any =
           )
       | _ -> k x
     );
+
+    (* todo: globals? fields? class constants? *)
 
   }) any
 

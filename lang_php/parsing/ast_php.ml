@@ -24,7 +24,7 @@ open Parse_info
 (*****************************************************************************)
 (* 
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
- * a few PHP 5.3 and 5.4 extensions (e.g. closures, traits) as well
+ * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
  * as support for XHP.
  * 
  * This is actually more a concrete syntax tree (CST) than an AST. This
@@ -52,8 +52,8 @@ open Parse_info
  * 
  * todo: 
  *  - introduce QualifierDynamic and factorize things in lvalue type
- *  - unify toplevel statement vs statements and stmt_and_def?
- *  - unify expr and lvalue?
+ *  - unify toplevel statement vs statements and stmt_and_def? hmmm maybe not
+ *  - unify expr and lvalue? hmmm maybe not
  *)
 
 (*****************************************************************************)
@@ -539,7 +539,7 @@ and stmt =
   (*e: stmt constructors *)
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
-    (* PHP 5.3, see http://us.php.net/const *)
+    (* PHP 5.3, see http://us.php.net/const. Allowed only at toplevel. *)
     | DeclConstant of tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
   (*s: AST statement rest *)
