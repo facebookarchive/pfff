@@ -4,9 +4,9 @@ val is_comment      : Parser_js.token -> bool
 val is_just_comment : Parser_js.token -> bool
 
 val info_of_tok : 
-  Parser_js.token -> Ast_js.info
+  Parser_js.token -> Ast_js.tok
 val visitor_info_of_tok : 
-  (Ast_js.info -> Ast_js.info) -> Parser_js.token -> Parser_js.token
+  (Ast_js.tok -> Ast_js.tok) -> Parser_js.token -> Parser_js.token
 
 val line_of_tok  : Parser_js.token -> int
 val str_of_tok   : Parser_js.token -> string

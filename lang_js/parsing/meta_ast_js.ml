@@ -93,18 +93,7 @@ and vof_sc v = Ocaml.vof_option vof_tok v
   
 let vof_name v = vof_wrap Ocaml.vof_string v
   
-let rec vof_expr (v1, v2) =
-  if !_current_precision.M.type_info
-  then
-    let v1 = vof_exprbis v1 and v2 = vof_exp_info v2 in Ocaml.VTuple [ v1; v2 ]
-  else
-    vof_exprbis v1
-
-and vof_exp_info { t = v_t } =
-  let bnds = [] in
-  let arg = Type_js.vof_jstype v_t in
-  let bnd = ("t", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_exprbis =
+let rec vof_expr =
   function
   | L v1 -> let v1 = vof_litteral v1 in Ocaml.VSum (("L", [ v1 ]))
   | V v1 -> let v1 = vof_name v1 in Ocaml.VSum (("V", [ v1 ]))

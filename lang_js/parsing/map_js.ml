@@ -38,7 +38,7 @@ type visitor_in = {
   ktoplevel: toplevel vin;
   kany: any vin;
   
-  kinfo: info vin;
+  kinfo: tok vin;
   kname: name vin;
 }
   and 'a vin = ('a  -> 'a) * visitor_out -> 'a  -> 'a
@@ -100,15 +100,8 @@ and map_name x =
   vin.kname (k, map_any) x
   
 and map_expr x =
-  let rec k (v1, v2) =
-  let v1 = map_exprbis v1 and v2 = map_exp_info v2 in (v1, v2)
-  in
-  vin.kexpr (k, map_any) x
-
-and map_exp_info { t = v_t } =
-  let v_t = Type_js.map_jstype v_t in { t = v_t; }
-and map_exprbis =
-  function
+  let k x =
+    match x with
   | L v1 -> let v1 = map_litteral v1 in L ((v1))
   | V v1 -> let v1 = map_name v1 in V ((v1))
   | This v1 -> let v1 = map_tok v1 in This ((v1))
@@ -156,6 +149,9 @@ and map_exprbis =
   | Function v1 -> let v1 = map_func_decl v1 in Function ((v1))
   | Extra v1 -> let v1 = map_extra v1 in Extra ((v1))
   | Paren v1 -> let v1 = map_paren map_expr v1 in Paren ((v1))
+  in
+  vin.kexpr (k, map_any) x
+
 and map_extra = function | DanglingComma -> DanglingComma
 and map_litteral =
   function

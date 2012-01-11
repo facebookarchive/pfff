@@ -16,5 +16,9 @@ val parse_program:
 
 val program_of_program2: program2 -> Ast_js.program
 
+(* to help write test code *)
+val program_of_string: string -> Ast_js.program
+val tmp_file_from_string: string -> Common.filename
+
 (* internal *)
 val tokens: Common.filename -> Parser_js.token list

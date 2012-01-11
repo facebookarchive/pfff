@@ -29,6 +29,15 @@ let unittest =
     );
 
 
+    "rejecting bad code" >:: (fun () ->
+      try 
+        Common.save_excursion Flag_parsing_js.show_parsing_error false (fun()->
+         let _ = Parse_js.program_of_string "echo 1+" in
+         assert_failure "it should have thrown a Parse_error exception"
+        )
+      with Parse_js.Parse_error _ -> ()
+    );
+
     "the javascript AST mapper" >:: (fun () ->
       let js_ex = "foo(42, 101);" in
       Common.with_tmp_file ~str:js_ex ~ext:".js" (fun file ->
@@ -36,9 +45,9 @@ let unittest =
         let map_visitor = M.mk_visitor { M.default_visitor with
           M.kexpr = (fun (k, _) x ->
             match x with
-            | L (Num (s, tok)), typ ->
+            | L (Num (s, tok)) ->
                 let i = s_to_i s in
-                L (Num (i_to_s (i+1), Ast.fakeInfo())), typ
+                L (Num (i_to_s (i+1), Ast.fakeInfo()))
             | _ -> k x
           );
         }
@@ -48,7 +57,7 @@ let unittest =
         let integers = 
           V.do_visit_with_ref (fun aref -> { V.default_visitor with
             V.kexpr = (fun (k, _) x ->
-              match Ast.untype x with
+              match x with
               | L (Num (s, tok)) -> 
                   Common.push2 (s_to_i s) aref
               | _ -> k x

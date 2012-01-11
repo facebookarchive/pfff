@@ -3,7 +3,7 @@ type visitor_in = {
   kst : Ast_js.st vin;
   ktoplevel : Ast_js.toplevel vin;
   kany : Ast_js.any vin;
-  kinfo : Ast_js.info vin;
+  kinfo : Ast_js.tok vin;
   kname : Ast_js.name vin;
 }
   and 'a vin = ('a -> 'a) * visitor_out -> 'a -> 'a

@@ -449,3 +449,18 @@ let parse_program file =
   program_of_program2 ast2
 
 (*****************************************************************************)
+(* Sub parsers *)
+(*****************************************************************************)
+
+(* use program_of_string when you can *)
+let tmp_file_from_string s =
+  let tmp_file = Common.new_temp_file "test" ".js" in
+  Common.write_file ~file:tmp_file s;
+  tmp_file
+
+let (program_of_string: string -> Ast_js.program) = fun s -> 
+  let tmpfile = tmp_file_from_string s in
+  let (ast2, _stat) = parse tmpfile in
+  let ast = program_of_program2 ast2 in
+  Common.erase_this_temp_file tmpfile;
+  ast

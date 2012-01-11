@@ -6,7 +6,7 @@ type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (st  -> unit) * visitor_out -> st  -> unit;
   kfield: (field -> unit) * visitor_out -> field -> unit;
-  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+  kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
 

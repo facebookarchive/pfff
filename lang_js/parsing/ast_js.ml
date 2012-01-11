@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,11 +33,14 @@ module PI = Parse_info
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
-type info = Parse_info.info
-and tok = info
+(* Contains among other things the position of the token through
+ * the Common.parse_info embedded inside it, as well as the
+ * the transformation field that makes possible spatch on javascript code.
+ *)
+type tok = Parse_info.info
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * info
+and 'a wrap = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -50,28 +53,15 @@ and sc = tok option
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
-(* Name. See also analyze_js/namespace_js.ml  *)
+(* Name *)
 (* ------------------------------------------------------------------------- *)
 type name = string wrap
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
-(* Type. For type analysis see type_js.ml  *)
-(* ------------------------------------------------------------------------- *)
-
-module Type_js = struct
-    type jstype = unit (* todo *)
-end
-
-(* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-type expr = exprbis * exp_info 
-  (* semantic: *)
-  and exp_info = { 
-     mutable t: Type_js.jstype;
-  }
- and exprbis = 
+type expr =
    | L of litteral
    | V of name
    | This of tok
@@ -96,11 +86,12 @@ type expr = exprbis * exp_info
 
    | Function of func_decl
 
-   | Extra of extra
    (* unparser: *)
+   | Extra of extra
    | Paren of expr paren
 
      and extra = 
+       (* ??? *)
        | DanglingComma
 
      and litteral =
@@ -199,11 +190,13 @@ and st =
 (* ------------------------------------------------------------------------- *)
 (* Function definition *)
 (* ------------------------------------------------------------------------- *)
+(* todo: use a record *)
 and func_decl = tok * name option * name comma_list paren * toplevel list brace
 
 (* ------------------------------------------------------------------------- *)
 (* Variables definition *)
 (* ------------------------------------------------------------------------- *)
+(* todo: use a record *)
 and variable_declaration = name * (tok (*=*) * expr) option
 
 (* ------------------------------------------------------------------------- *)
@@ -213,8 +206,8 @@ and toplevel =
   | St of st
   | FunDecl of func_decl
 
-  | NotParsedCorrectly of info list
-  | FinalDef of info (* EOF *)
+  | NotParsedCorrectly of tok list
+  | FinalDef of tok (* EOF *)
 
  and program = toplevel list
  (* with tarzan *)
@@ -228,10 +221,6 @@ type any =
  (* with tarzan *)
 
 (*****************************************************************************)
-(* Comments *)
-(*****************************************************************************)
-
-(*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
 
@@ -239,10 +228,6 @@ let fakeInfo () = { PI.
     token = PI.FakeTokStr ("FAKE", None);
     transfo = PI.NoTransfo;
     comments = ();
-}
-
-let noType () = { 
-  t = ();
 }
 
 (*****************************************************************************)
@@ -268,7 +253,6 @@ let map_comma_list f xs = List.map (fun x ->
   )
   xs
 
-let untype (e, xinfo) = e
 
 let parse_info_of_info = PI.parse_info_of_info
 (* todo: return a Real | Virt position ? *)
@@ -300,18 +284,14 @@ let is_origintok = Parse_info.is_origintok
 
 let info_of_name (s, info) = info
 
-let get_type (e: expr) = (snd e).t
-let set_type (e: expr) (ty: Type_js.jstype) = 
-  (snd e).t <- ty
-
 (*****************************************************************************)
 (* Abstract line *)
 (*****************************************************************************)
 
 (* When we have extended the AST to add some info about the tokens,
  * such as its line number in the file, we can not use anymore the
- * ocaml '=' to compare Ast elements. To overcome this problem, to be
- * able to use again '=', we just have to get rid of all those extra
+ * ocaml '=' operator to compare Ast elements. To overcome this problem, to
+ * be able to use again '=', we just have to get rid of all those extra
  * information, to "abstract those line" (al) information.
  *)
 

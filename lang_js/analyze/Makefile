@@ -5,11 +5,11 @@ TOP=../..
 TARGET=lib
 
 SRC= \
-     class_js.ml \
-     highlight_js.ml \
-     database_light_js.ml \
-     tags_js.ml \
-     test_analyze_js.ml
+  module_js.ml class_js.ml \
+  highlight_js.ml \
+  database_light_js.ml \
+  tags_js.ml \
+  test_analyze_js.ml unit_analyze_js.ml
 
 -include $(TOP)/Makefile.config
 
@@ -71,4 +71,3 @@ clean::
 ##############################################################################
 # Literate Programming rules
 ##############################################################################
-

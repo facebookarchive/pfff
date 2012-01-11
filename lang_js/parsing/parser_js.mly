@@ -25,7 +25,7 @@ open Common
 
 open Ast_js
 
-let e x = (x, Ast_js.noType())
+let e x = (x)
 let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
 %}
@@ -38,30 +38,30 @@ let uop op a b = e(U((op,a), b))
 /*(* the comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_js.info> TCommentSpace TCommentNewline   TComment
+%token <Ast_js.tok> TCommentSpace TCommentNewline   TComment
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with a value *)*/
-%token<string * Ast_js.info> T_NUMBER
-%token<string * Ast_js.info> T_IDENTIFIER 
-%token<string * Ast_js.info> T_STRING
-%token<string * Ast_js.info> T_REGEX
+%token<string * Ast_js.tok> T_NUMBER
+%token<string * Ast_js.tok> T_IDENTIFIER 
+%token<string * Ast_js.tok> T_STRING
+%token<string * Ast_js.tok> T_REGEX
 
 /*(* keywords tokens *)*/
-%token <Ast_js.info> 
+%token <Ast_js.tok> 
  T_FUNCTION T_IF T_IN T_INSTANCEOF T_RETURN T_SWITCH T_THIS T_THROW T_TRY
  T_VAR T_WHILE T_WITH T_CONST T_NULL T_FALSE T_TRUE
  T_BREAK T_CASE T_CATCH T_CONTINUE T_DEFAULT T_DO T_FINALLY T_FOR
 
-%token <Ast_js.info> T_ELSE
+%token <Ast_js.tok> T_ELSE
 
-%token <Ast_js.info> T_NEW 
+%token <Ast_js.tok> T_NEW 
 
 /*(* syntax *)*/
-%token <Ast_js.info>  
+%token <Ast_js.tok>  
  T_LCURLY T_RCURLY
  T_LPAREN T_RPAREN
  T_LBRACKET T_RBRACKET
@@ -70,12 +70,12 @@ let uop op a b = e(U((op,a), b))
  T_PERIOD
 
 /*(* operators *)*/
-%token <Ast_js.info>  
+%token <Ast_js.tok>  
  T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN 
  T_BIT_XOR_ASSIGN T_BIT_OR_ASSIGN T_BIT_AND_ASSIGN T_MOD_ASSIGN T_DIV_ASSIGN
  T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN T_ASSIGN
 
-%token <Ast_js.info>
+%token <Ast_js.tok>
  T_PLING T_COLON
  T_OR
  T_AND
@@ -94,11 +94,11 @@ let uop op a b = e(U((op,a), b))
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
-%token <Ast_js.info> T_VIRTUAL_SEMICOLON
+%token <Ast_js.tok> T_VIRTUAL_SEMICOLON
 
 /*(* classic *)*/
-%token <Ast_js.info> TUnknown
-%token <Ast_js.info> EOF
+%token <Ast_js.tok> TUnknown
+%token <Ast_js.tok> EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/

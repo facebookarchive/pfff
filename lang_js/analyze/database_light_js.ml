@@ -116,7 +116,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* remember the position of the def so avoid some false positives
    * when looking for uses.
    *)
-  let (hdefs_pos: (Ast.info, bool) Hashtbl.t) = Hashtbl.create 1001 in
+  let (hdefs_pos: (Ast.tok, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
   files +> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);

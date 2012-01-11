@@ -32,22 +32,13 @@ module Common = struct
       | Common.Right b -> of_b b
 end 
 
-
-module Type_js = struct
-open Type_js
-(* TODO ? need visitor for type ? *)
-let v_jstype x = ()
-end
-
-
-
 (* hooks *)
 type visitor_in = {
 
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (st  -> unit) * visitor_out -> st  -> unit;
   kfield: (field -> unit) * visitor_out -> field -> unit;
-  kinfo: (info -> unit)  * visitor_out -> info  -> unit;
+  kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
 
@@ -169,12 +160,7 @@ and v_name v = v_wrap v_string v
   
 and v_expr (x: expr) = 
   (* tweak *)
-  let k x =  match x with (v1, v2) ->
-
-  let  v_exp_info { t = v_t } = let arg = Type_js.v_jstype v_t in ()
-  in
-  let v_exprbis =
-  function
+  let k x =  match x with
   | L v1 -> let v1 = v_litteral v1 in ()
   | V v1 -> let v1 = v_name v1 in ()
   | This v1 -> let v1 = v_tok v1 in ()
@@ -213,9 +199,6 @@ and v_expr (x: expr) =
   | Function v1 -> let v1 = v_func_decl v1 in ()
   | Extra v1 -> let v1 = v_extra v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
-  in
-  let v1 = v_exprbis v1 and v2 = v_exp_info v2 in 
-  ()
   in
   vin.kexpr (k, all_functions) x 
 
