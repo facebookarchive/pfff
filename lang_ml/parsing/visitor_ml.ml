@@ -88,10 +88,8 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
-(* todo: 3.12: could use polymorphic recursion instead of those ugly
- * functions. Just write v_wrap: 'a. 'a wrap -> unit
- *)
-and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
+and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun  _of_a (v1, v2) ->
+  let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap1 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 
@@ -129,7 +127,8 @@ and v_brace11 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
 
-and v_bracket _of_a (v1, v2, v3) =
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun
+  _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
 and v_comma_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
@@ -151,7 +150,9 @@ and v_pipe_list11 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 and v_pipe_list12 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 and v_pipe_list13 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 
-and v_semicolon_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_semicolon_list: 'a. ('a -> unit) -> 'a semicolon_list -> unit = fun _of_a
+ -> v_list (Ocaml.v_either _of_a v_tok)
+
 and v_semicolon_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 and v_semicolon_list2 _of_a = v_list (Ocaml.v_either _of_a v_tok)
 
@@ -398,6 +399,7 @@ and v_pattern x =
   | PatConsInfix ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()
   | PatTuple v1 -> let v1 = v_comma_list11 v_pattern v1 in ()
+  | PatList v1 -> let v1 = v_bracket (v_semicolon_list v_pattern) v1 in ()
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
   | PatAs ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_name v3 in ()

@@ -347,6 +347,9 @@ and vof_pattern =
   | PatTuple v1 ->
       let v1 = vof_comma_list vof_pattern v1
       in Ocaml.VSum (("PatTuple", [ v1 ]))
+  | PatList v1 ->
+      let v1 = vof_bracket (vof_semicolon_list vof_pattern) v1
+      in Ocaml.VSum (("PatList", [ v1 ]))
   | PatUnderscore v1 ->
       let v1 = vof_tok v1 in Ocaml.VSum (("PatUnderscore", [ v1 ]))
   | PatAs ((v1, v2, v3)) ->

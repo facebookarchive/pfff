@@ -791,9 +791,9 @@ simple_pattern:
 
  | TOBrace lbl_pattern_list record_pattern_end TCBrace
       { PatTodo }
+ | TOBracket pattern_semi_list opt_semi4 TCBracket
+      { PatList (($1, $2 ++ $3, $4)) }
 
- | TOBracket pattern_semi_list opt_semi TCBracket
-      { PatTodo }
  | TOBracketPipe pattern_semi_list opt_semi TPipeCBracket
       { PatTodo }
  | TOBracketPipe TPipeCBracket
@@ -827,8 +827,8 @@ record_pattern_end:
 
 
 pattern_semi_list:
- | pattern                                     { }
- | pattern_semi_list TSemiColon pattern              { }
+ | pattern                                     { [Left $1] }
+ | pattern_semi_list TSemiColon pattern        { $1 ++[Right $2; Left $3] }
 
 pattern_comma_list:
  | pattern_comma_list TComma pattern            { $1 ++ [Right $2; Left $3] }
@@ -1387,6 +1387,10 @@ opt_semi2:
  | TSemiColon       { [Right $1] }
 
 opt_semi3:
+ | /*(*empty*)*/    { [] }
+ | TSemiColon       { [Right $1] }
+
+opt_semi4:
  | /*(*empty*)*/    { [] }
  | TSemiColon       { [Right $1] }
 

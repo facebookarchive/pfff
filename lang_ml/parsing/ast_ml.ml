@@ -213,6 +213,7 @@ and pattern =
   | PatConstr(*Algebric*) of long_name (* constr_longident *) * pattern option
   | PatConsInfix of pattern * tok (* :: *) * pattern
   | PatTuple of pattern comma_list
+  | PatList of pattern semicolon_list bracket
   | PatUnderscore of tok
 
   | PatAs of pattern * tok (* as *) * name
