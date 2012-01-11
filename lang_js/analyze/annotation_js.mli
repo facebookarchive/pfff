@@ -9,4 +9,4 @@ val extract_annotations: string -> annotation list
  * We use it in the tag generation.
  *)
 val annotations_of_program_with_comments: 
-  Ast_js.program2 -> (annotation * Parse_info.info) list
+  Parse_js.program2 -> (annotation * Parse_info.info) list
