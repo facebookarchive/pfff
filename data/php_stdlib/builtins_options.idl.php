@@ -35,6 +35,7 @@ function ini_get_all($extension = null_string) { }
 function ini_get($varname) { }
 function ini_restore($varname) { }
 function ini_set($varname, $newvalue) { }
+function memory_get_allocation() { }
 function memory_get_peak_usage($real_usage = false) { }
 function memory_get_usage($real_usage = false) { }
 function php_ini_scanned_files() { }
