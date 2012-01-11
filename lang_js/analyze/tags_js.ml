@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -15,12 +15,11 @@
 
 open Common
 
-module Tags = Tags_file
-module Db = Database_code
-
 module Ast = Ast_js
-
 module PI = Parse_info
+module Db = Database_code
+module Tags = Tags_file
+module Annot = Annotation_js
 
 (*****************************************************************************)
 (* Prelude *)
@@ -41,24 +40,24 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
   files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
     if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
 
-    let ast = 
+    let (ast_and_tokens, _) = 
       Common.save_excursion Flag_parsing_js.show_parsing_error false (fun ()->
       Common.save_excursion Flag_parsing_js.error_recovery true (fun ()->
-        Parse_js.parse_program file 
+        Parse_js.parse file 
       ))
     in
+    let ast = Parse_js.program_of_program2 ast_and_tokens in
 
     let filelines = Common.cat_array file in
 
-    (* many class idions are recognized in Class_js *)
+    (* many class idioms are recognized in Class_js *)
     let hcomplete_name_of_info = 
-      Class_js.extract_complete_name_of_info ast 
-    in
+      Class_js.extract_complete_name_of_info ast  in
     
-    let tags = 
-      hcomplete_name_of_info +> Common.hash_to_list 
-       +> List.map (fun (info, (entity_kind, str)) ->
-
+    let tags_classes = 
+      hcomplete_name_of_info 
+      +> Common.hash_to_list 
+      +> List.map (fun (info, (entity_kind, str)) ->
          let str' = 
           (* we standardize static vs member methods in class_js
            * for the light_db database building, but
@@ -79,5 +78,17 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
          Tags.tag_of_info filelines info' entity_kind
        )
     in
-    file, tags
+
+    (* the module idioms are contained in annotations *)
+    let annots = 
+      Annotation_js.annotations_of_program_with_comments ast_and_tokens in
+    let tags_modules =
+      annots +> Common.map_filter (function
+      | (Annot.ProvidesModule m | Annot.ProvidesLegacy m), info ->
+          let info' = Parse_info.rewrap_str m info in
+          Some (Tags.tag_of_info filelines info' (Db.Module))
+      | _ -> None
+      )
+    in
+    file, tags_classes ++ tags_modules
   )
