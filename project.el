@@ -25,6 +25,7 @@
      lang_ml/parsing
      lang_php/parsing
      lang_js/parsing
+      lang_js/analyze
      lang_sql/parsing
      lang_html/parsing
      lang_cpp/parsing

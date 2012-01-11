@@ -55,14 +55,17 @@ let test regexp =
 
       Unit_foundation_php.unittest;
       Unit_prolog_php.unittest;
-      Unit_static_analysis_php.unittest;
       Unit_static_analysis_simple_php.unittest;
+      Unit_static_analysis_php.unittest;
       Unit_analyze_db_php.unittest;
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest;
 
       (* non PHP related tests *)
+
       Unit_parsing_js.unittest;
+      Unit_analyze_js.unittest;
+
       Unit_parsing_html.unittest;
 
       Unit_parsing_ml.unittest;
