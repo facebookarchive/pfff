@@ -34,7 +34,7 @@ type annotation =
 val annotations_of_program_with_comments: 
   Parse_php.program_with_comments -> (annotation * Ast_php.info) list
 
-(* helpers *)
+(* Helper. The string is the string of a comment (with its markers). *)
 val extract_annotations: string -> annotation list
 
 val vof_annotation: annotation -> Ocaml.v
