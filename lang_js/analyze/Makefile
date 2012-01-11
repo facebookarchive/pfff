@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= \
-  module_js.ml class_js.ml \
+  module_js.ml class_js.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
   database_light_js.ml \
   tags_js.ml \

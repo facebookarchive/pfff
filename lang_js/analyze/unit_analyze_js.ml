@@ -1,6 +1,7 @@
 open Common
 
 module Ast = Ast_js
+module Db = Database_code
 
 open OUnit
 
@@ -17,8 +18,30 @@ open OUnit
 (*---------------------------------------------------------------------------*)
 let annotation_unittest =
   "annotation_js" >::: [
+
     "commonjs annotations" >:: (fun () ->
-      raise Todo
+      let file_content = "
+/**
+ * @providesModule my-module
+ */
+function foo() {}
+/**
+ * @providesLegacy other-module
+ */
+function bar() {}
+" in
+      let tmpfile = Parse_js.tmp_file_from_string file_content in
+      let (ast_and_tokens, _stat) = Parse_js.parse tmpfile in
+      let annots = 
+        Annotation_js.annotations_of_program_with_comments ast_and_tokens
+        +> List.map fst
+      in
+      assert_equal 
+        ~msg:"it should extract @providesModule annotations"
+        [Annotation_js.ProvidesModule "my-module";
+         Annotation_js.ProvidesLegacy "other-module";
+        ]
+        annots
     );
   ]
 
@@ -28,19 +51,20 @@ let annotation_unittest =
 
 let tags_unittest =
     "tags_js" >::: [
-      "XXX basic tags" >:: (fun () ->
-        let file_content = "
-function foo() { }
-" in
-        let tmpfile = Parse_js.tmp_file_from_string file_content in
-        let _tags = Tags_js.tags_of_files_or_dirs [tmpfile] in
-        raise Todo
-      );
-
       "commonjs tags support" >:: (fun () ->
-        raise Todo
+      let file_content = "
+/**
+ * @providesModule my-module
+ */
+function foo() {}
+" in
+      let tmpfile = Parse_js.tmp_file_from_string file_content in
+      let tags = Tags_js.tags_of_files_or_dirs ~verbose:false [tmpfile] in
+      let tags = tags +> List.map snd +> List.flatten in
+      match tags with
+      | [{ Tags_file.tagname = "my-module"; kind = Db.Module; _}] -> ()
+      | _ -> assert_failure "it should extract module names from comments"
       );
-
     ]
 
 (*---------------------------------------------------------------------------*)
