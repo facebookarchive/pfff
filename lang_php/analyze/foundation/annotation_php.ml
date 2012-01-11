@@ -296,7 +296,7 @@ let annotations_of_program_with_comments2 asts_and_tokens =
        * be good enough to locate the annotation when we
        * do checks related to annotations.
        *)
-      annots +> List.map (fun annot -> info, annot)
+      annots +> List.map (fun annot -> annot, info)
   | _ -> []
   ) +> List.flatten
  ) +> List.flatten

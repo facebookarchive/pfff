@@ -157,7 +157,7 @@ let annotation_unittest =
       let (ast_with_comments, _stat) = Parse_php.parse tmpfile in
       let annots = 
         Annotation_php.annotations_of_program_with_comments ast_with_comments
-          +> List.map snd
+          +> List.map fst
       in
       assert_equal ~msg:"should have the DataProvider annotations"
         (sort [A.DataProvider (A.Method "provider");
