@@ -26,6 +26,7 @@ open Common
 type annotation =
   | ProvidesModule of Module_js.module_
   | ProvidesLegacy of Module_js.module_
+  | RunWhenReady
   | Other of string
 
 (*****************************************************************************)
@@ -49,6 +50,7 @@ let extract_annotations str =
     | _ ->
         let xs = Common.all_match "\\(@[A-Za-z-]+\\)" str in
         xs +> List.map (function
+        | "@runWhenReady" -> RunWhenReady
         | s -> Other s
         )
   )

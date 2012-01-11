@@ -2,6 +2,7 @@
 type annotation =
   | ProvidesModule of Module_js.module_
   | ProvidesLegacy of Module_js.module_
+  | RunWhenReady
   | Other of string
 
 (* The returned parse_info is the one associated with the whole comment.
