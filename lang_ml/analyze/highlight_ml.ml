@@ -238,7 +238,7 @@ let visit_toplevel
           tag info (Method (Use2 fake_no_use2));
           k x
 
-      | Cons (long_name, eopt) ->
+      | Constr (long_name, eopt) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
           tag info (ConstructorUse fake_no_use2);
@@ -250,7 +250,7 @@ let visit_toplevel
 
     V.kpattern = (fun (k, _) x ->
       match x with
-      | PatCons (long_name, popt) ->
+      | PatConstr (long_name, popt) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
 

@@ -247,7 +247,7 @@ and v_expr v =
 
   | C v1 -> let v1 = v_constant v1 in ()
   | L v1 -> let v1 = v_long_name v1 in ()
-  | Cons ((v1, v2)) ->
+  | Constr ((v1, v2)) ->
       let v1 = v_long_name v1 and v2 = v_option v_expr v2 in ()
   | Tuple v1 -> let v1 = v_comma_list12 v_expr v1 in ()
   | List v1 -> let v1 = v_bracket (v_semicolon_list v_expr) v1 in ()
@@ -393,7 +393,7 @@ and v_pattern x =
    let k x = match x with
   | PatVar v1 -> let v1 = v_name v1 in ()
   | PatConstant v1 -> let v1 = v_signed_constant v1 in ()
-  | PatCons ((v1, v2)) ->
+  | PatConstr ((v1, v2)) ->
       let v1 = v_long_name v1 and v2 = v_option v_pattern v2 in ()
   | PatConsInfix ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()

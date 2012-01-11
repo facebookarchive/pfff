@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
@@ -26,11 +25,11 @@ open Common
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-type info = Parse_info.info
-and tok = info
+type tok = Parse_info.info
+and info = tok
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * info
+and 'a wrap = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -124,7 +123,7 @@ and expr =
   | C of constant
   | L of long_name (* val_longident *)
 
-  | Cons(*Algebric*) of long_name (* constr_longident *) * expr option
+  | Constr(*Algebric*) of long_name (* constr_longident *) * expr option
   | Tuple of expr comma_list
   | List of expr semicolon_list bracket
 
@@ -211,7 +210,7 @@ and seq_expr = expr semicolon_list
 and pattern = 
   | PatVar of name
   | PatConstant of signed_constant
-  | PatCons(*Algebric*) of long_name (* constr_longident *) * pattern option
+  | PatConstr(*Algebric*) of long_name (* constr_longident *) * pattern option
   | PatConsInfix of pattern * tok (* :: *) * pattern
   | PatTuple of pattern comma_list
   | PatUnderscore of tok

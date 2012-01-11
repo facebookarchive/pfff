@@ -137,10 +137,10 @@ and vof_expr =
   function
   | C v1 -> let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
   | L v1 -> let v1 = vof_long_name v1 in Ocaml.VSum (("L", [ v1 ]))
-  | Cons ((v1, v2)) ->
+  | Constr ((v1, v2)) ->
       let v1 = vof_long_name v1
       and v2 = Ocaml.vof_option vof_expr v2
-      in Ocaml.VSum (("Cons", [ v1; v2 ]))
+      in Ocaml.VSum (("Constr", [ v1; v2 ]))
   | Tuple v1 ->
       let v1 = vof_comma_list vof_expr v1 in Ocaml.VSum (("Tuple", [ v1 ]))
   | List v1 ->
@@ -335,10 +335,10 @@ and vof_pattern =
   | PatVar v1 -> let v1 = vof_name v1 in Ocaml.VSum (("PatVar", [ v1 ]))
   | PatConstant v1 ->
       let v1 = vof_signed_constant v1 in Ocaml.VSum (("PatConstant", [ v1 ]))
-  | PatCons ((v1, v2)) ->
+  | PatConstr ((v1, v2)) ->
       let v1 = vof_long_name v1
       and v2 = Ocaml.vof_option vof_pattern v2
-      in Ocaml.VSum (("PatCons", [ v1; v2 ]))
+      in Ocaml.VSum (("PatConstr", [ v1; v2 ]))
   | PatConsInfix ((v1, v2, v3)) ->
       let v1 = vof_pattern v1
       and v2 = vof_tok v2

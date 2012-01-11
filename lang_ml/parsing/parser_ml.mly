@@ -475,7 +475,7 @@ expr:
  | expr_comma_list %prec below_COMMA
      { Tuple $1 }
  | constr_longident simple_expr %prec below_SHARP
-     { Cons ($1, Some $2) }
+     { Constr ($1, Some $2) }
 
  | expr TColonColon expr
      { Infix ($1, ("::", $2), $3) (* TODO ? ConsList ? *) }
@@ -584,7 +584,7 @@ simple_expr:
      { L $1 }
  /*(* this includes 'false' *)*/
  | constr_longident %prec prec_constant_constructor
-     { Cons ($1, None) }
+     { Constr ($1, None) }
 
  | simple_expr TDot label_longident
      { FieldAccess ($1, $2, $3) }
@@ -759,7 +759,7 @@ pattern:
       { $1 }
 
  | constr_longident pattern %prec prec_constr_appl
-      { PatCons ($1, Some $2) }
+      { PatConstr ($1, Some $2) }
  | pattern_comma_list  %prec below_COMMA
       { PatTuple ($1) }
  | pattern TColonColon pattern
@@ -783,7 +783,7 @@ simple_pattern:
  | val_ident %prec below_EQUAL
       { PatVar (Name $1) }
  | constr_longident
-      { PatCons ($1, None) }
+      { PatConstr ($1, None) }
  | TUnderscore
       { PatUnderscore $1 }
  | signed_constant
