@@ -539,8 +539,6 @@ and stmt =
   (*e: stmt constructors *)
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
-    (* PHP 5.3, see http://us.php.net/const. Allowed only at toplevel. *)
-    | DeclConstant of tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
   (*s: AST statement rest *)
     and switch_case_list = 
@@ -620,6 +618,12 @@ and lambda_def = {
   and lexical_vars = tok (* use *) * lexical_var comma_list paren 
   and lexical_var = 
     | LexicalVar of is_ref * dname
+
+(* ------------------------------------------------------------------------- *)
+(* Constant definition *)
+(* ------------------------------------------------------------------------- *)
+(* todo use record *)
+and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
 (*e: AST lambda definition *)
 (* ------------------------------------------------------------------------- *)
@@ -822,7 +826,9 @@ and toplevel =
     | StmtList of stmt list
     | FuncDef of func_def
     | ClassDef of class_def
-   (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
+    (* PHP 5.3, see http://us.php.net/const *)
+    | ConstantDef of constant_def
+    (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
   (*x: toplevel constructors *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
   (*x: toplevel constructors *)
@@ -847,6 +853,8 @@ and toplevel =
 type entity = 
   | FunctionE of func_def
   | ClassE of class_def
+  | ConstantE of constant_def
+
   | StmtListE of stmt list
 
   | MethodE of method_def
