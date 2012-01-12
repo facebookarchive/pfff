@@ -269,6 +269,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           );
 
           k x
+      | Ast_php.ConstantDef def ->
+          (* todo? *)
+          k x
 
       | StmtList _ ->
           k x

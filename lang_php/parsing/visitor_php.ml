@@ -729,14 +729,6 @@ and v_stmt xxx =
           v3
       and v4 = v_tok v4
       in ()
-  | DeclConstant (v1, v2, v3, v4, v5) ->
-      let v1 = v_tok v1 
-      and v2 = v_name v2
-      and v3 = v_tok v3
-      and v4 = v_static_scalar v4
-      and v5 = v_tok v5
-      in ()
-
   in
   vin.kstmt (k,all_functions) xxx
 
@@ -1049,12 +1041,20 @@ and v_stmt_and_def_list_scope x =
   in
   vin.kstmt_and_def_list_scope (k, all_functions) x
 
+and v_constant_def (v1, v2, v3, v4, v5) =
+  let v1 = v_tok v1 
+  and v2 = v_name v2
+  and v3 = v_tok v3
+  and v4 = v_static_scalar v4
+  and v5 = v_tok v5
+  in ()
+
 and v_toplevel x =
   let k x = match x with
   | StmtList v1 -> let v1 = v_list v_stmt v1 in ()
   | FuncDef v1 -> let v1 = v_func_def v1 in ()
   | ClassDef v1 -> let v1 = v_class_def v1 in ()
-
+  | ConstantDef v1 -> let v1 = v_constant_def v1 in ()
   | NotParsedCorrectly xs ->
       v_list v_info xs
   | FinalDef v1 ->
@@ -1067,6 +1067,7 @@ and v_program v = v_list v_toplevel v
 and v_entity = function
   | FunctionE v1 -> let v1 = v_func_def v1 in ()
   | ClassE v1 -> let v1 = v_class_def v1 in ()
+  | ConstantE v1 -> let v1 = v_constant_def v1 in ()
   | StmtListE v1 -> let v1 = v_list v_stmt v1 in ()
   | MethodE v1 -> let v1 = v_method_def v1 in ()
   | ClassConstantE v1 -> let v1 = v_class_constant v1 in ()

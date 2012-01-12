@@ -146,7 +146,7 @@ let unsugar_self_parent_program ast =
  *)
 let unsugar_self_parent_toplevel x =
   match x with
-  | StmtList _ | FuncDef _ 
+  | StmtList _ | FuncDef _ | ConstantDef _
   | NotParsedCorrectly _ | FinalDef _ 
       -> x
 

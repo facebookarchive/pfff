@@ -354,18 +354,16 @@ let top_statements_of_program ast =
   ast |> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
-  | ClassDef _| FuncDef _
+  | ClassDef _| FuncDef _ | ConstantDef _
       -> []
   ) |> List.flatten  
 
 let toplevel_to_entity x = 
   match x with
-  | StmtList v1 -> 
-      StmtListE v1
-  | FuncDef v1 ->
-      FunctionE v1
-  | ClassDef v1 -> 
-      ClassE v1
+  | StmtList v1 -> StmtListE v1
+  | FuncDef v1  -> FunctionE v1
+  | ClassDef v1 -> ClassE v1
+  | ConstantDef v1 -> ConstantE v1
   (* todo? *)
   | NotParsedCorrectly xs ->
       MiscE xs

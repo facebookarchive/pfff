@@ -216,7 +216,7 @@ let index_db2_2 db =
           | _ -> ()
         );
     | ( FinalDef _
-      | ClassDef _| FuncDef _ 
+      | ClassDef _| FuncDef _ | ConstantDef _
       | StmtList _)
         -> ()
     );
@@ -258,6 +258,8 @@ let index_db2_2 db =
             let kind = Class_php.class_type_of_class class_def in
             add_def (s, E.Class kind, id, Some class_def.c_name) db;
             k x
+        | ConstantDef def ->
+            raise Todo
         | NotParsedCorrectly _ -> ()
             
         (* right now FinalDef are not in the database, because of possible 
@@ -499,6 +501,7 @@ let index_db3_2 db =
     | Ast.MethodE _
     | Ast.StmtListE _
     | Ast.FunctionE _ 
+    | Ast.ConstantE _ 
       ->  ()
     );
     (*

@@ -2303,17 +2303,6 @@ and m_stmt a b =
        B.Declare(b1, b2, b3)
     )
     )))
-  | A.DeclConstant(a1, a2, a3, a4, a5), B.DeclConstant(b1, b2, b3, b4, b5) ->
-      m_tok a1 b1 >>= (fun (a1, b1) ->
-      m_name a2 b2 >>= (fun (a2, b2) ->
-      m_tok a3 b3 >>= (fun (a3, b3) ->
-      m_static_scalar a4 b4 >>= (fun (a4, b4) ->
-      m_tok a5 b5 >>= (fun (a5, b5) ->
-        return (
-          A.DeclConstant(a1, a2, a3, a4, a5), 
-          B.DeclConstant(b1, b2, b3, b4, b5)
-        )
-      )))))
 
   | A.TypedDeclaration(a1, a2, a3, a4), B.TypedDeclaration(b1, b2, b3, b4) ->
       fail2 "TypedDeclaration"
@@ -2341,7 +2330,6 @@ and m_stmt a b =
   | A.Unset _, _
   | A.Declare _, _
   | A.TypedDeclaration _, _
-  | A.DeclConstant _, _
    -> fail ()
 
 
@@ -2748,8 +2736,29 @@ and m_program a b =
   match a, b with
   (a, b) -> (m_list m_toplevel) a b
 
+and m_constant_def a b =
+  match a, b with
+  | (a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5) ->
+      m_tok a1 b1 >>= (fun (a1, b1) ->
+      m_name a2 b2 >>= (fun (a2, b2) ->
+      m_tok a3 b3 >>= (fun (a3, b3) ->
+      m_static_scalar a4 b4 >>= (fun (a4, b4) ->
+      m_tok a5 b5 >>= (fun (a5, b5) ->
+        return (
+          (a1, a2, a3, a4, a5), 
+          (b1, b2, b3, b4, b5)
+        )
+      )))))
+
 and m_toplevel a b = 
   match a, b with
+  | A.ConstantDef(a1), B.ConstantDef(b1) ->
+      m_constant_def a1 b1 >>= (fun (a1, b1) ->
+        return (
+          A.ConstantDef(a1), 
+          B.ConstantDef(b1)
+        )
+      )
   | A.StmtList(a1), B.StmtList(b1) ->
     (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2788,6 +2797,7 @@ and m_toplevel a b =
   | A.StmtList _, _
   | A.FuncDef _, _
   | A.ClassDef _, _
+  | A.ConstantDef _, _
   | A.NotParsedCorrectly _, _
   | A.FinalDef _, _
    -> fail ()
@@ -2809,6 +2819,12 @@ let m_entity a b =
        B.ClassE(b1)
     )
     )
+  | A.ConstantE(a1), B.ConstantE(b1) ->
+    m_constant_def a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ConstantE(a1),
+       B.ConstantE(b1)
+    ))
   | A.StmtListE(a1), B.StmtListE(b1) ->
     (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2854,6 +2870,7 @@ let m_entity a b =
     )
   | A.FunctionE _, _
   | A.ClassE _, _
+  | A.ConstantE _, _
   | A.StmtListE _, _
   | A.MethodE _, _
   | A.ClassConstantE _, _

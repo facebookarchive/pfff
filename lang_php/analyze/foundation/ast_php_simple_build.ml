@@ -75,6 +75,7 @@ and toplevel env st acc =
   | StmtList stmtl -> List.fold_right (stmt env) stmtl acc
   | FuncDef fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDef cd -> A.ClassDef (class_def env cd) :: acc
+  | ConstantDef cd -> raise Common.Todo
   | FinalDef _ -> acc
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
@@ -137,8 +138,6 @@ and stmt env st acc =
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", tok), lp)) :: acc
-  | DeclConstant _ ->
-      failwith "DeclConstant"
   | Declare _ ->
       failwith "Declare"
   | TypedDeclaration _ ->

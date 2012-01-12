@@ -695,13 +695,6 @@ and vof_stmt =
           v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("TypedDeclaration", [ v1; v2; v3; v4 ]))
-  | DeclConstant (v1, v2, v3, v4, v5) ->
-      let v1 = vof_tok v1 
-      and v2 = vof_name v2
-      and v3 = vof_tok v3
-      and v4 = vof_static_scalar v4
-      and v5 = vof_tok v5
-      in Ocaml.VSum (("DeclConstant", [v1; v2; v3; v4; v5]))
 
 and vof_switch_case_list =
   function
@@ -1111,8 +1104,18 @@ and vof_stmt_and_def =
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDefNested", [ v1 ]))
   | ClassDefNested v1 ->
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDefNested", [ v1 ]))
+and vof_constant_def (v1, v2, v3, v4, v5) =
+  let v1 = vof_tok v1
+  and v2 = vof_name v2
+  and v3 = vof_tok v3
+  and v4 = vof_static_scalar v4
+  and v5 = vof_tok v5
+  in Ocaml.VTuple [ v1; v2; v3; v4; v5 ]
+
 and vof_toplevel =
   function
+  | ConstantDef v1 ->
+      let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantDef", [ v1 ]))
   | StmtList v1 ->
       let v1 = vof_list vof_stmt v1 in Ocaml.VSum (("StmtList", [ v1 ]))
   | FuncDef v1 ->
@@ -1136,6 +1139,8 @@ and vof_entity =
   | StmtListE v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1
       in Ocaml.VSum (("StmtListE", [ v1 ]))
+  | ConstantE v1 ->
+      let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantE", [ v1 ]))
   | MethodE v1 ->
       let v1 = vof_method_def v1 in Ocaml.VSum (("MethodE", [ v1 ]))
   | ClassConstantE v1 ->

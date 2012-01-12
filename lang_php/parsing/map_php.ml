@@ -696,14 +696,6 @@ and map_stmt x =
       and v4 = map_tok v4
       in TypedDeclaration ((v1, v2, v3, v4))
 
-  | DeclConstant (v1, v2, v3, v4, v5) ->
-      let v1 = map_tok v1 
-      and v2 = map_name v2
-      and v3 = map_tok v3
-      and v4 = map_static_scalar v4
-      and v5 = map_tok v5
-      in DeclConstant (v1, v2, v3, v4, v5)
-
   in
   vin.kstmt (k, all_functions) x
 
@@ -1070,11 +1062,19 @@ and map_stmt_and_def def =
   | ClassDefNested v1 -> let v1 = map_class_def v1 in ClassDefNested ((v1))
   in
   vin.kstmt_and_def (k, all_functions) def
+and map_constant_def (v1, v2, v3, v4, v5) =
+      let v1 = map_tok v1 
+      and v2 = map_name v2
+      and v3 = map_tok v3
+      and v4 = map_static_scalar v4
+      and v5 = map_tok v5
+      in (v1, v2, v3, v4, v5)
 and map_toplevel =
   function
   | StmtList v1 -> let v1 = map_of_list map_stmt v1 in StmtList ((v1))
   | FuncDef v1 -> let v1 = map_func_def v1 in FuncDef ((v1))
   | ClassDef v1 -> let v1 = map_class_def v1 in ClassDef ((v1))
+  | ConstantDef v1 -> let v1 = map_constant_def v1 in ConstantDef v1
   | NotParsedCorrectly v1 ->
       let v1 = map_of_list map_info v1 in NotParsedCorrectly ((v1))
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
@@ -1086,6 +1086,7 @@ and map_entity =
   | ClassE v1 -> let v1 = map_class_def v1 in ClassE ((v1))
   | StmtListE v1 -> let v1 = map_of_list map_stmt v1 in StmtListE ((v1))
   | MethodE v1 -> let v1 = map_method_def v1 in MethodE ((v1))
+  | ConstantE v1 -> let v1 = map_constant_def v1 in ConstantE v1
   | ClassConstantE v1 ->
       let v1 = map_class_constant v1 in ClassConstantE ((v1))
   | ClassVariableE ((v1, v2)) ->
