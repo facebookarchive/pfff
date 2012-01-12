@@ -2,6 +2,7 @@ open Common
 
 module Ast = Ast_php
 module A = Annotation_php
+module Db = Database_code
 
 open OUnit
 
@@ -93,9 +94,18 @@ let tags_unittest =
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            assert_equal 
-              ~msg:"The tags should contain only 6 entries"
-              (List.length tags_in_file) 6;
+            let xs = tags_in_file +> List.map (fun x -> 
+              x.Tags_file.tagname, x.Tags_file.kind
+            ) in
+            assert_equal ~msg:"it should contain the right 6 entries"
+              ["foo", Db.Function;
+               "A", Db.Class Db.RegularClass;
+               "B", Db.Class Db.Interface;
+               "C", Db.Class Db.Trait;
+               "CST", Db.Constant;
+               "OldCst", Db.Constant;
+              ]
+              xs
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
