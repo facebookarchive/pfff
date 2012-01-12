@@ -115,6 +115,8 @@ let split_chunks tokens ast =
           (Stmts stmts, toks_before_max)::aux xs toks_after
       | Ast_php.FuncDef def ->
           (Func def, toks_before_max)::aux xs toks_after
+      | Ast_php.ConstantDef def ->
+          raise Common.Todo
       | Ast_php.ClassDef def ->
 
           let toks = toks_before_max in

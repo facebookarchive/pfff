@@ -142,7 +142,7 @@ let rec last_info_of_stmt = function
   | Use (_, _, x)
   | Unset (_, _, x)
   | TypedDeclaration (_, _, _, x)
-  | DeclConstant (_, _, _, _, x) -> x
+   -> x
 
 let last_line_of_stmt x = line_of_info (last_info_of_stmt x)
 
@@ -280,6 +280,7 @@ let rec toplevel env st acc =
       let _, _, end_ = cd.c_body in
       let acc = add_stmt_comments env acc (line_of_info end_) in
       A.ClassDef (class_def env cd) :: acc
+  | ConstantDef cd -> raise Common.Todo
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and stmt env st acc =
@@ -347,7 +348,6 @@ and stmt_ env st acc =
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id "unset", lp)) :: acc
-  | DeclConstant _
   | Declare _ ->
       (* TODO failwith "stmt Declare" of tok * declare comma_list paren * colon_stmt *)
       acc
