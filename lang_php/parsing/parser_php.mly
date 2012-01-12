@@ -282,6 +282,10 @@ top_statement:
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
  | trait_declaration_statement          { ClassDef $1 }
+ /*(* PHP 5.3 *)*/
+ | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
+     { ConstantDef ($1, Name $2, $3, $4, $5) }
+
 /*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -389,9 +393,6 @@ unticked_statement:
  | T_USE use_filename TSEMICOLON		  { Use($1,$2,$3) }
  | T_DECLARE  TOPAR declare_list TCPAR declare_statement 
      { Declare($1,($2,$3,$4),$5) }
- /*(* PHP 5.3 *)*/
- | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
-     { DeclConstant ($1, Name $2, $3, $4, $5) }
 
 /*(*x: GRAMMAR statement *)*/
 /*(*----------------------------*)*/
