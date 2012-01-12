@@ -7,29 +7,28 @@ open Ast_php
 (* Parse helpers functions *)
 (*****************************************************************************)
 (*s: function top_statements_to_toplevels *)
-(* could have also created some fake Blocks, but simpler to have a 
- * dedicated constructor for toplevel statements *)
-let rec top_statements_to_toplevels topstatements eofinfo = 
-  match topstatements with
-  | [] -> [FinalDef eofinfo]
-  | x::xs ->
+let rec squash_stmt_list xs =
+  match xs with
+  | [] -> []
+  | x::xs->
       let v, rest = 
         (match x with
-        | FuncDefNested      def -> FuncDef def,  xs
-        | ClassDefNested     def -> ClassDef def, xs
-        | Stmt st -> 
+        | FuncDef      def -> FuncDef def,  xs
+        | ClassDef     def -> ClassDef def, xs
+        | StmtList [st] -> 
             let stmts, rest = xs +> Common.span (function 
-              | Stmt st -> true 
+              | StmtList st -> true 
               | _ -> false
               ) in
             let stmts' = stmts +> List.map (function 
-              | Stmt st -> st
+              | StmtList [st] -> st
               | _ -> raise Impossible
             ) in
             StmtList (st::stmts'), rest
+        | _ -> raise Impossible
         )
       in
-      v::top_statements_to_toplevels rest eofinfo
+      v::squash_stmt_list rest
 (*e: function top_statements_to_toplevels *)
 
 (*****************************************************************************)

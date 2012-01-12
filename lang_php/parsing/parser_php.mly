@@ -272,17 +272,16 @@ module Ast = Ast_php
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR toplevel *)*/
-main: start EOF { top_statements_to_toplevels $1 $2 }
+main: start EOF { squash_stmt_list $1 ++ [FinalDef $2] }
 
 start: top_statement_list { $1 }
 
 /*(*x: GRAMMAR toplevel *)*/
 top_statement:
- | statement                            { Stmt $1 }
- | function_declaration_statement	{ FuncDefNested $1 }
- | class_declaration_statement		{ ClassDefNested $1 }
- /*(* todo: refactor top_statement and inner_statement as in hphp.y *)*/
- | trait_declaration_statement          { ClassDefNested $1 }
+ | statement                            { StmtList [$1] }
+ | function_declaration_statement	{ FuncDef $1 }
+ | class_declaration_statement		{ ClassDef $1 }
+ | trait_declaration_statement          { ClassDef $1 }
 /*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -294,7 +293,11 @@ sgrep_spatch_pattern:
 /*(*1 Statements *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR statement *)*/
-inner_statement: top_statement { $1 }
+inner_statement:
+ | statement                            { Stmt $1 }
+ | function_declaration_statement	{ FuncDefNested $1 }
+ | class_declaration_statement		{ ClassDefNested $1 }
+
 statement: unticked_statement { $1 }
 /*(*x: GRAMMAR statement *)*/
 unticked_statement:
