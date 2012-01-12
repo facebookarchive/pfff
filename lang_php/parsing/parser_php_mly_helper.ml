@@ -13,19 +13,19 @@ let rec squash_stmt_list xs =
   | x::xs->
       let v, rest = 
         (match x with
-        | FuncDef      def -> FuncDef def,  xs
-        | ClassDef     def -> ClassDef def, xs
+        | (FuncDef _ | ClassDef _ | ConstantDef _) -> x,  xs
         | StmtList [st] -> 
-            let stmts, rest = xs +> Common.span (function 
+            let stmts, rest = xs +> Common.span (function
               | StmtList st -> true 
               | _ -> false
               ) in
-            let stmts' = stmts +> List.map (function 
+            let stmts' = stmts +> List.map (function
               | StmtList [st] -> st
               | _ -> raise Impossible
             ) in
             StmtList (st::stmts'), rest
-        | _ -> raise Impossible
+        | StmtList _ -> raise Impossible
+        | (FinalDef _|NotParsedCorrectly _) -> raise Impossible
         )
       in
       v::squash_stmt_list rest
