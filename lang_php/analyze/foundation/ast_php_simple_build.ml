@@ -75,10 +75,16 @@ and toplevel env st acc =
   | StmtList stmtl -> List.fold_right (stmt env) stmtl acc
   | FuncDef fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDef cd -> A.ClassDef (class_def env cd) :: acc
-  | ConstantDef cd -> raise Common.Todo
+  | ConstantDef x -> A.ConstantDef (constant_def env x) :: acc
   | FinalDef _ -> acc
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
+
+and constant_def env (_, cst_name, _, e, _) =
+  { 
+    A.cst_name = name env cst_name;
+    A.cst_body = expr env e;
+  }
 
 and stmt env st acc =
   match st with
@@ -676,3 +682,4 @@ and global_var env = function
 (*****************************************************************************)
 let func_def x = func_def (empty_env()) x
 let class_def x = class_def (empty_env()) x
+let constant_def x = constant_def (empty_env()) x

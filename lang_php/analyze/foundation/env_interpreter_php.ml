@@ -1,6 +1,6 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -47,6 +47,7 @@ module SMap = Map.Make (String)
 type code_database = {
   funs:    string -> Ast_php_simple.func_def;
   classes: string -> Ast_php_simple.class_def;
+  constants: string -> Ast_php_simple.constant_def;
 }
 
 type value =
@@ -56,6 +57,10 @@ type value =
 
   | Vabstr  of type_
 
+  (* Precise value. Especially useful for Vstring and interprocedural
+   * analysis as people use strings to represent functions or classnames
+   * (they are not first-class citizens in PHP).
+   *)
   | Vbool   of bool
   | Vint    of int
   | Vfloat  of float
@@ -66,7 +71,7 @@ type value =
   (* pad: because of some imprecision, we actually have a set of addresses ? *)
   | Vref    of ISet.t
 
-  (* try to differentiate the different usage of PHP arrays *)
+  (* try to differentiate the different (abusive) usage of PHP arrays *)
   | Vrecord of value SMap.t
   | Varray  of value list
   | Vmap of value * value
@@ -127,9 +132,12 @@ type 'a cached = 'a serialized_maybe ref
 type code_database_juju = {
   funs_juju    : Ast_php_simple.func_def cached SMap.t ref;
   classes_juju : Ast_php_simple.class_def cached SMap.t ref;
+  constants_juju: Ast_php_simple.constant_def cached SMap.t ref;
 }
 
-(* string (function name, class+method, __TOP__file) -> string set *)
+(* string (function name, class+method, __TOP__file) -> string set.
+ * todo: would be better to use an algebraic data type
+ *)
 type callgraph = SSet.t SMap.t
 
 (*****************************************************************************)
@@ -182,6 +190,7 @@ let juju_db_of_files xs =
   let db = {
     funs_juju = ref SMap.empty;
     classes_juju = ref SMap.empty;
+    constants_juju = ref SMap.empty;
   }
   in
   List.iter (fun file ->
@@ -197,6 +206,9 @@ let juju_db_of_files xs =
       | FuncDef fd ->
           db.funs_juju := 
             SMap.add (A.unwrap fd.f_name) (serial fd) !(db.funs_juju)
+      | ConstantDef c ->
+          db.constants_juju :=
+            SMap.add (A.unwrap c.cst_name) (serial c) !(db.constants_juju)
       | _ -> ()
     ) ast
   with e -> 
@@ -204,16 +216,11 @@ let juju_db_of_files xs =
   ) xs;
   db
 
+(* todo: what if multiple matches?? *)
 let code_database_of_juju_db db = {
-  funs = (fun s ->
-    (* todo: what if multiple matches?? *)
-    let f = SMap.find s !(db.funs_juju) in
-    unserial f
-  );
-  classes = (fun s ->
-    let c = SMap.find s !(db.classes_juju) in
-    unserial c
-  );
+  funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in unserial f);
+  classes   = (fun s -> let c = SMap.find s !(db.classes_juju) in unserial c);
+  constants = (fun s -> let c = SMap.find s !(db.constants_juju) in unserial c);
   }
 
 (*****************************************************************************)

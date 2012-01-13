@@ -83,6 +83,8 @@ and stmt =
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
   | FuncDef of func_def
+  (* only at toplevel *)
+  | ConstantDef of constant_def
 
   (* pad: ?? *)
   | StaticVars of (string wrap * expr option) list
@@ -189,6 +191,11 @@ and func_def = {
      | Hint of string
      | HintArray
 
+and constant_def = {
+  cst_name: string wrap;
+  (* normally a static scalar *)
+  cst_body: expr;
+}
 
 and class_def = {
   c_type: class_type;

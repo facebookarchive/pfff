@@ -69,6 +69,9 @@ and vof_stmt =
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
   | FuncDef v1 ->
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDef", [ v1 ]))
+  | ConstantDef v1 ->
+      let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantDef", [ v1 ]))
+
 and vof_case =
   function
   | Case ((v1, v2)) ->
@@ -193,8 +196,16 @@ and
   let arg = Ocaml.vof_list Ocaml.vof_string v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_xhp_attr x = vof_expr x
-and
-  vof_func_def {
+
+and vof_constant_def { cst_name = v_cst_name; cst_body = v_cst_body } =
+  let bnds = [] in
+  let arg = vof_expr v_cst_body in
+  let bnd = ("cst_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_wrapped_string v_cst_name in
+  let bnd = ("cst_name", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+and vof_func_def {
                  f_ref = v_f_ref;
                  f_name = v_f_name;
                  f_params = v_f_params;

@@ -69,6 +69,7 @@ module Dependencies = struct
     | Global el -> exprl acc el
     | ClassDef c -> SSet.add (unwrap c.c_name) acc
     | FuncDef f -> SSet.add (unwrap f.f_name) acc
+    | ConstantDef c -> SSet.add (unwrap c.cst_name) acc
 
   and static_var acc (_, e) = expr_opt acc e
 

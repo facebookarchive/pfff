@@ -29,11 +29,13 @@ let prepare content =
 
 let heap_of_program_at_checkpoint content =
   let (env, heap, ast) = prepare content in
-  Abstract_interpreter_php.extract_paths := false;
-  let _heap = Abstract_interpreter_php.program env heap ast in
-  match !Abstract_interpreter_php._checkpoint_heap with
-  | None -> failwith "use checkpoint() in your unit test"
-  | Some x -> x
+  Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
+  Common.save_excursion Abstract_interpreter_php.strict true (fun()->
+    let _heap = Abstract_interpreter_php.program env heap ast in
+    match !Abstract_interpreter_php._checkpoint_heap with
+    | None -> failwith "use checkpoint() in your unit test"
+    | Some x -> x
+  ))
 
 let callgraph_generation content =
   let (env, heap, ast) = prepare content in
@@ -181,6 +183,32 @@ $y = $x;
 checkpoint(); // y:int
 " in
       assert_final_value_at_checkpoint "$y" file (Vabstr Tint);
+    );
+
+    "constants" >:: (fun () ->
+      let file ="
+const CST = 2;
+$x = CST;
+checkpoint(); // x:int
+" in
+      assert_final_value_at_checkpoint "$x" file (Vint 2);
+    );
+
+  (*-------------------------------------------------------------------------*)
+  (* Error handling *)
+  (*-------------------------------------------------------------------------*)
+
+    "use of undefined" >:: (fun () ->
+      let file ="
+const CST = 2;
+$x = ANOTHER_CST;
+checkpoint(); // x:int
+" in
+      try 
+        let _ = heap_of_program_at_checkpoint file in
+        assert_failure 
+          "it should raise exns in strict mode on undefined entities"
+      with Interp.UnknownConstant "ANOTHER_CST" -> ()
     );
 
   (*-------------------------------------------------------------------------*)

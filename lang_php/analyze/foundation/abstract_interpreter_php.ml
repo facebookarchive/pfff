@@ -1,6 +1,6 @@
 (* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -77,7 +77,9 @@ let tracing = ref true
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+(* could maybe factorize in Unknown of Database_code.entity_kind *)
 exception UnknownFunction of string
+exception UnknownConstant of string
 exception UnknownMethod of string * string * string list
 exception LostControl
 
@@ -123,7 +125,10 @@ and make_fake_params l =
   ) l
 
 let exclude_toplevel_defs xs = 
-  List.filter (function ClassDef _ | FuncDef _ -> false | _ -> true) xs
+  List.filter (function 
+  | ClassDef _ | FuncDef _ | ConstantDef _ -> false 
+  | _ -> true
+  ) xs
 
 let show_heap env heap =
   Env.penv print_string env heap;
@@ -132,6 +137,11 @@ let show_heap env heap =
 
 let methods m = 
   List.map fst (SMap.bindings m)
+
+let is_variable s =
+  match s with
+  | "*myobj*" | "*return*" -> true
+  | _  -> Common.(=~) s "\\$.*"
 
 (*****************************************************************************)
 (* Hooks (tainting functor for now) *)
@@ -174,6 +184,13 @@ and fake_root env heap =
         if !tracing then Common.pr ("Processing " ^ (unw fd.f_name));
         let params = make_fake_params fd.f_params in
         ignore (call_fun fd env heap params)
+    | ConstantDef f ->
+        if !tracing then Common.pr ("Processing " ^ (unw f.cst_name));
+        (* the body of a constant definition is a static scalar
+         * so there is not much interesting things to do on it
+         *)
+        ()
+
     | _ -> ()
   )
 
@@ -278,6 +295,10 @@ and stmt env heap x =
   | ClassDef _ | FuncDef _ -> 
       if !strict then failwith "nested classes/functions";
       heap
+  | ConstantDef _ ->
+      (* see exclude_toplevel_defs above and parser_php.mly which
+       * shows we can't have nested constants by construction *)
+      raise Common.Impossible
 
 and case env heap x =
   match x with
@@ -423,6 +444,18 @@ and expr_ env heap x =
   | Id ("false",_) -> heap, Vbool false
   | Id ("null",_)  -> heap, Vnull
 
+  | Id (s,_) when not (is_variable s) ->
+      (* Must be a constant. Functions and classes are not in the heap;
+       * they are managed through the env.db instead and we handle
+       * them at the Call (Id ...) and New (Id ...) cases in
+       * this file above.
+       *)
+      let def = 
+        try env.db.constants s
+        with Not_found -> raise (UnknownConstant s)   
+      in
+      expr env heap def.cst_body
+
   | Infix _ | Postfix _ ->
       if !strict then failwith "Infix/Postfix";
       heap, Vany
@@ -489,8 +522,11 @@ and lvalue env heap x =
       heap, false, Vmap (k, v)
 
   | Id (s,_) ->
+      if not (is_variable s) && !strict
+      then failwith ("Id in lvalue should be variables: " ^ s);
       let heap, b, x = Var.get env heap s in
       heap, b, x
+
   | Array_get (e, k) ->
       let heap, b, x = array_get env heap e k in
       heap, b, x
