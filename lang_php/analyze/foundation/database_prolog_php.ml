@@ -76,11 +76,11 @@ let name_id id db =
         )
 
     | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    | E.Class _ | E.Function -> spf "'%s'" s
+    | E.Class _ | E.Function | E.Constant -> spf "'%s'" s
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
-    | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Constant|E.Type|E.Module) ->
+    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global | E.Type|E.Module) ->
         (* not in db for now *)
         raise Impossible
     )
@@ -90,6 +90,7 @@ let name_id id db =
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
   | E.Function -> "function"
+  | E.Constant -> "constant"
   | E.Class x -> 
       (match x with
       | E.RegularClass -> "class"
@@ -99,12 +100,12 @@ let string_of_id_kind = function
   (* the static/1 predicate will say if static method (or class var) *)
   | E.Method _ -> "method"
 
-  | E.ClassConstant -> "constant"
+  | E.ClassConstant -> "class_constant"
   | E.Field -> "field"
 
   | E.TopStmts  -> "stmtlist"
   | E.Other _ -> "idmisc"
-  | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Constant|E.Type|E.Module) ->
+  | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Type|E.Module) ->
       raise Impossible
 
 let string_of_modifier = function
@@ -264,6 +265,8 @@ let add_defs_and_uses id kind ast pr db =
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
       add_uses id ast pr db;
+  | E.Constant, ConstantE def ->
+      add_uses id ast pr db
 
   | E.Class _, ClassE def ->
       (match def.c_type with

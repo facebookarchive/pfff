@@ -53,18 +53,21 @@ let unittest =
     "kinds" >:: (fun () ->
       let file = "
 function foo() { }
+const BAR = 1;
 class A { }
 interface I { }
 trait T { }
 " in 
       assert_equal 
-        ["function"] (prolog_query ~file "kind('foo', X), writeln(X)");
+        ["function"]  (prolog_query ~file "kind('foo', X), writeln(X)");
       assert_equal 
-        ["class"] (prolog_query ~file "kind('A', X), writeln(X)");
+        ["constant"]  (prolog_query ~file "kind('BAR', X), writeln(X)");
+      assert_equal 
+        ["class"]     (prolog_query ~file "kind('A', X), writeln(X)");
       assert_equal 
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
       assert_equal 
-        ["trait"] (prolog_query ~file "kind('T', X), writeln(X)");
+        ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
     );
 
     (*-----------------------------------------------------------------------*)

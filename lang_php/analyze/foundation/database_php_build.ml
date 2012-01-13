@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -94,8 +94,9 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
         else
           failwith ("wong static method format: " ^ s)
 *)
-    | _ ->
-        raise Todo
+    | (E.Other _|E.Method _|E.MultiDirs|E.Dir|E.File
+      |E.ClassConstant|E.Field|E.TopStmts|E.Macro
+      |E.Global|E.Constant|E.Type|E.Module) -> raise Todo
     )
     with exn ->
       if !Flag.show_analyze_error
@@ -151,10 +152,12 @@ let index_db1_2 db files =
            * the elements in a file, including the one that do not
            * parse. Note that this id does not have a id_kind for now.
            *)
-          | _ ->
+          | Ast.StmtList _ 
+          | Ast.FuncDef _ | Ast.ConstantDef _ | Ast.ClassDef _ ->
               let topelem = Unsugar_php.unsugar_self_parent_toplevel topelem in
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
+          | Ast.NotParsedCorrectly _ -> ()
         );
         db +> add_filename_and_topids (file, (List.rev !all_ids));
       );
@@ -249,6 +252,9 @@ let index_db2_2 db =
             add_def (s, E.Function, id, Some def.f_name) db;
             (* add_type def.Ast_c.f_type; *)
             k x
+        | ConstantDef (_, name, _, scalar, _) -> 
+            add_def (Ast_php.name name, E.Constant, id, Some name) db;
+            k x
         | StmtList stmt -> 
             let s = "__TOPSTMT__" in
             add_def (s, E.TopStmts, id, None) db;
@@ -258,8 +264,6 @@ let index_db2_2 db =
             let kind = Class_php.class_type_of_class class_def in
             add_def (s, E.Class kind, id, Some class_def.c_name) db;
             k x
-        | ConstantDef def ->
-            raise Todo
         | NotParsedCorrectly _ -> ()
             
         (* right now FinalDef are not in the database, because of possible 

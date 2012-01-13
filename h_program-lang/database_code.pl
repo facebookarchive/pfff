@@ -32,7 +32,8 @@
 % Here are the predicates that should be defined in facts.pl:
 %
 %  - entities: kind/2, with the 
-%    function/method, class/interface/trait, constant/field/... atoms.
+%    function/method, constant, class/interface/trait, class_constant/field/...
+%    atoms.
 %      ex: kind('array_map', function).
 %      ex: kind('Preparable', class).
 %      ex: kind(('Preparable', 'gen'), method).
