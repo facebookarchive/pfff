@@ -274,14 +274,26 @@ and stmt_ env = function
           | _ -> ())
       );
       Pp.newline_opt env
+
+  | FuncDef fd ->
+      func_def env fd
   | ClassDef c -> class_def env c
+  | ConstantDef c -> 
+      Pp.print env "const ";
+      Pp.print env c.cst_name;
+      (* todo? what if we reach 80 col after the =?
+       * we will cut but then we will have a trailing space :(
+       *)
+      Pp.print env " = ";
+      expr env c.cst_body;
+      Pp.print env ";";
+      Pp.newline env
+
   | While (e, stl) ->
       Pp.print env "while (";
       expr env e;
       Pp.print env ") ";
       stmt_block_nl env stl
-  | FuncDef fd ->
-      func_def env fd
   | Do (stl, e) ->
       Pp.print env "do ";
       stmt_block env stl;

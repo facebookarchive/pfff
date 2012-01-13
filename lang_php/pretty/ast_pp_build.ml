@@ -1,6 +1,6 @@
 (* Julien Verlaguet
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -280,7 +280,11 @@ let rec toplevel env st acc =
       let _, _, end_ = cd.c_body in
       let acc = add_stmt_comments env acc (line_of_info end_) in
       A.ClassDef (class_def env cd) :: acc
-  | ConstantDef cd -> raise Common.Todo
+  | ConstantDef (_, cst_name, _, e, end_) ->
+      let acc = add_stmt_comments env acc (line_of_info end_) in
+      let e = expr env e in
+      let s = name env cst_name in
+      A.ConstantDef { Ast_pp.cst_name = s; cst_body = e } :: acc
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and stmt env st acc =

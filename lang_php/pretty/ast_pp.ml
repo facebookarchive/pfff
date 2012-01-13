@@ -25,7 +25,12 @@
  * Note that we assume all Newline below are esthetic newlines
  * (see ast_pp_build.ml).
  * 
- * todo: merge with ast_php_simple.ml ?
+ * Merge with ast_php_simple.ml? A few things are now unsugared
+ * in ast_php_simple.ml such as Encaps, InlineHtml, ShortArray,
+ * that we must keep in a refactoring/pretty-printing context.
+ * That means each time we add a feature we need to extend
+ * ast_php.ml, ast_php_simple.ml, and now ast_pp.ml :( Life is hard.
+ * 
  * todo: factorize the Newline and Comment constructors in one subtype ?
  *)
 
@@ -68,6 +73,7 @@ and stmt =
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
   | FuncDef of func_def
+  | ConstantDef of constant_def
 
   | StaticVars of (string * expr option) list
   | Global of expr list
@@ -183,6 +189,11 @@ and func_def = {
     l_body: stmt list;
   }
 
+and constant_def = {
+  cst_name: string;
+  (* normally a static scalar *)
+  cst_body: expr;
+}
 and class_def = {
   c_type: class_type;
   c_name: string;
