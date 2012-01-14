@@ -40,5 +40,3 @@ let detect_vcs_source_tree dir =
   | _ when Sys.file_exists (Filename.concat dir ".hg") -> Some Mercurial
   | _ when Sys.file_exists (Filename.concat dir ".svn") -> Some Subversion
   | _ -> None
-
-  

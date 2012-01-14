@@ -5,8 +5,8 @@ TOP=..
 TARGET=lib
 
 SRC= patch.ml lib_vcs.ml  \
-     git.ml  cvs.ml  mercurial.ml \
      version_control.ml \
+     git.ml  cvs.ml  mercurial.ml \
      test_version_control.ml unit_version_control.ml
 
 #todo: empty for now

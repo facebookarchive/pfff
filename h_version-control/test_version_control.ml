@@ -32,7 +32,7 @@ let actions () = [
   "-test_git3", "<dir>", 
   Common.mk_action_1_arg (fun basedir ->
 
-    pr2 (Git.parent_path_with_dotgit basedir);
+    (* pr2 (Git.parent_path_with_dotgit basedir); *)
 
     let old_id = Git.commit_of_relative_time ~basedir "2 weeks ago" in
     let recent_id = Git.commit_of_relative_time ~basedir "1 week ago" in

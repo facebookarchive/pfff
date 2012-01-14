@@ -1,21 +1,20 @@
-open Common
-
 (* filename below is assumed to be the path of the file relative to basedir *)
 
 (* operations on a singular file *)
 
 (* note that returned array is 0-indexed but the first entry is a dummy value.*)
-val annotate : 
+val annotate: 
   ?basedir:string -> ?use_cache:bool -> ?use_dash_C:bool ->
   Common.filename -> Lib_vcs.line_annotation array
 val date_file_creation: 
   ?basedir:string -> Common.filename -> Common.date_dmy
-val annotate_raw : 
+val annotate_raw: 
   ?basedir:string -> Common.filename -> string array
 
 (* repository operations *)
 
-val branches: basedir:string -> string list
+val branches:
+  basedir:string -> string list
 val commits: 
   ?extra_args:string -> basedir:string -> unit -> 
   (Lib_vcs.versionid * string) list
@@ -76,8 +75,11 @@ val max_date_of_lines:
   Common.date_dmy
 
 (* misc operations *)
+(*
 val parent_path_with_dotgit_opt: Common.dirname -> Common.dirname option
 val parent_path_with_dotgit: Common.dirname -> Common.dirname
+*)
+val is_git_repository: Common.dirname -> bool
 
 val clean_git_patch: Patch.patch_raw -> Patch.patch_raw
 
