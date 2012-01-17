@@ -48,6 +48,8 @@ let ext_git_annot_cache = ".git_annot"
  * 
  * let parent_path_with_dotgit a = 
  * Common.some (parent_path_with_dotgit_opt a)
+ * 
+ * todo: walking of the parent (subject to GIT_CEILING_DIRS)
  *)
 
 let is_git_repository basedir =
