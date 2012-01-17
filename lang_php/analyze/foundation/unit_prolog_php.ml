@@ -57,6 +57,7 @@ const BAR = 1;
 class A { }
 interface I { }
 trait T { }
+class B { const CST = 1; }
 " in 
       assert_equal 
         ["function"]  (prolog_query ~file "kind('foo', X), writeln(X)");
@@ -68,6 +69,9 @@ trait T { }
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
       assert_equal 
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
+      assert_equal 
+        ["class_constant"]
+          (prolog_query ~file "kind(('B','CST'), X), writeln(X)");
     );
 
     (*-----------------------------------------------------------------------*)

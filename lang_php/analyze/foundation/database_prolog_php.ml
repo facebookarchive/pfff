@@ -100,6 +100,9 @@ let string_of_id_kind = function
   (* the static/1 predicate will say if static method (or class var) *)
   | E.Method _ -> "method"
 
+  (* could also put 'constant' here as the pair of (class,cst) will already
+   * differentiate it from regular constants.
+   *)
   | E.ClassConstant -> "class_constant"
   | E.Field -> "field"
 
