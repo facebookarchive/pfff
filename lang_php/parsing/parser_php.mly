@@ -1018,7 +1018,7 @@ expr_without_variable_bis:
      { AssignList($1,($2,$3,$4),$5,$6) }
  | T_ARRAY TOPAR array_pair_list TCPAR 
      { ArrayLong($1,($2,$3,$4)) }
- | TOBRA static_array_pair_list TCBRA
+ | TOBRA array_pair_list TCBRA
      { ArrayShort($1, $2, $3) }
 
  | T_NEW class_name_reference ctor_arguments 
