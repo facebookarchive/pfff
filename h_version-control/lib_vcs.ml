@@ -110,5 +110,11 @@ let parse_file_status s =
   | _ when s =~ "R\\([0-9]+\\)[ \t]+\\([^ \t]+\\)[ \t]+\\([^ \t]+\\)" ->
       let (proba, src, target) = Common.matched3 s in
       Renamed (int_of_string proba, src), target
+  | _ when s =~ "MM[ \t]+\\([^ \t]+\\)" ->
+      let name = Common.matched1 s in
+      (* todo? really that? look 61be1edbf71adbbb6bd07fe451b7639df72c004b in
+       * facebook repo. Seems to be when modified in a merge-branch commit.
+       *)
+      Modified, name
 
   | _ -> failwith (spf "wrong format in file commit status: %s" s)
