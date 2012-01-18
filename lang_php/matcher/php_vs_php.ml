@@ -1024,6 +1024,19 @@ and m_argument a b =
               B.Arg(b1)
             ))
       )
+  (* an expression metavariable should also match a reference argument *)
+  | A.Arg (A.Sc (A.C (A.CName (A.Name (name,info_name))))), 
+    B.ArgRef(_,_) when MV.is_metavar_name name ->
+
+      X.envf (name, info_name) (B.Argument (b)) >>= (function
+      | ((name, info_name), B.Argument (b))  ->
+        return (
+          A.Arg (A.Sc (A.C (A.CName (A.Name (name,info_name))))),
+          b
+        )
+      | _ -> raise Impossible
+      )
+
   | A.ArgRef(a1, a2), B.ArgRef(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_w_variable a2 b2 >>= (fun (a2, b2) -> 

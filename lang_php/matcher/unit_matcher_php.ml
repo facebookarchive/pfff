@@ -67,6 +67,8 @@ let sgrep_unittest = [
       "X::foo();", "Ent::foo();", true;
       (* metavariable string for identifiers *)
       "foo('X');", "foo('a_func');", true;
+      (* metavariable on reference arguments *)
+      "foo(X,Y);", "foo(&$a, $b);", true;
       
       (* isomorphism on "keyword" arguments *)
       "foo(true);", "foo($x=true);", true;
