@@ -999,12 +999,31 @@ and m_fully_qualified_class_name a b =
 and m_argument a b = 
   match a, b with
   | A.Arg(a1), B.Arg(b1) ->
-    m_expr a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.Arg(a1),
-       B.Arg(b1)
-    )
-    )
+      (match a1, b1 with
+      | A.Assign(A.Var(aname, ascope), atok, aexpr), 
+        B.Assign(B.Var(bname, bscope), btok, bexpr) ->
+          m_expr a1 b1 >>= (fun (a1, b1) -> 
+            return (
+              A.Arg(a1),
+              B.Arg(b1)
+            ))
+
+      (* iso on keyword argument, keyword is optional in pattern *)
+      | a1, B.Assign(B.Var(bname, bscope), btok, bexpr) ->
+          (* todo: should allow this only in sgrep mode? what about spatch? *)
+          m_expr a1 bexpr >>= (fun (a1, bexpr) ->
+            return (
+              A.Arg(a1),
+              B.Arg(B.Assign(B.Var(bname, bscope), btok, bexpr))
+            )
+          )
+      | a1, b1 ->
+          m_expr a1 b1 >>= (fun (a1, b1) -> 
+            return (
+              A.Arg(a1),
+              B.Arg(b1)
+            ))
+      )
   | A.ArgRef(a1, a2), B.ArgRef(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_w_variable a2 b2 >>= (fun (a2, b2) -> 
