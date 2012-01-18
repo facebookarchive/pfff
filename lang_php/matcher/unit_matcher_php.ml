@@ -1,10 +1,8 @@
 open Common
+open OUnit
 
 open Ast_php
 module Ast = Ast_php
-
-open OUnit
-
 module Flag = Flag_parsing_php
 
 (*****************************************************************************)
@@ -31,7 +29,7 @@ let sgrep_unittest = [
     (* pattern string, code string (statement), should_match boolean *)
     let triples = [
       (* concrete match with space "abstraction" *)
-      "foo(1,2);", "foo(1,  2);", true;
+      "foo(1,2);", "foo(1,     2);", true;
       "foo(1,3);", "foo(1,2);", false;
 
       (* '...' in funcall *)
@@ -41,7 +39,7 @@ let sgrep_unittest = [
       "foo(X,...);", "foo(1,2);", true;
       (* ... also match when there is no additional arguments *)
       "foo(X,...);", "foo(1);", true;
-      (* todo: foo(..., 3, ...), foo(1,2,3,4) *)
+      (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
 
       (* "linear" patterns, a la Prolog *)
       "foo($V, $V);", "foo($x, $x);", true;
@@ -61,19 +59,19 @@ let sgrep_unittest = [
       "foo(X1_MISC);" ,  "foo(1);", true;
       "foo(X_MISC);"  ,  "foo(1);", true;
 
+      "foo(_MISC);"  ,  "foo(1);", false;
+
       (* metavariables on function name *)
       "X(1,2);", "foo(1,2);", true;
-
       (* metavariables on class name *)
       "X::foo();", "Ent::foo();", true;
-
       (* metavariable string for identifiers *)
       "foo('X');", "foo('a_func');", true;
 
       (* more complex expressions *)
       "strstr(...) == false;", "strstr($x)==false;", true;
 
-      (* regexp, pcre syntax *)
+      (* regexp, PCRE syntax *)
       "foo('=~/.*CONSTANT/');", "foo('MY_CONSTANT');", true;
       "foo('=~/.*CONSTANT/');", "foo('MY_CONSTAN');", false;
 
@@ -100,8 +98,7 @@ let sgrep_unittest = [
       "return <x:frag border=\"1\"></x:frag>;", 
       "return <x:frag border=\"1\" >this is text</x:frag>;", 
       true;
-
-    (* TODO "return <x:frag></x:frag>;", "return <x:frag />;", true; *)
+      (* TODO: "return <x:frag></x:frag>;", "return <x:frag />;", true; *)
 
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
