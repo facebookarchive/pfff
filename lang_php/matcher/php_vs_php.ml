@@ -18,7 +18,6 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * This module provides a big functor, PHP_VS_PHP, which can be used
  * to match some PHP AST elements against other PHP AST elements in
