@@ -456,9 +456,8 @@ val cache_computation_robust :
   (unit -> 'a) -> 
   'a
   
-
-
-val once : ('a -> unit) -> ('a -> unit)
+val oncef : ('a -> unit) -> ('a -> unit)
+val once: bool ref -> (unit -> unit) -> unit
 
 val before_leaving : ('a -> unit) -> 'a -> 'a
 

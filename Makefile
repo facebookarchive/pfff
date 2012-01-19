@@ -468,7 +468,7 @@ clean::
 	rm -f scheck_heavy
 
 #------------------------------------------------------------------------------
-# ppp targets
+# OBSOLETE: ppp targets (obsolete now that have closures in hphp)
 #------------------------------------------------------------------------------
 
 ppp: $(LIBS) main_ppp.cmo 
@@ -547,7 +547,6 @@ codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) mai
 clean::
 	rm -f codemap
 
-
 #------------------------------------------------------------------------------
 # pfff_misc targets
 #------------------------------------------------------------------------------
@@ -559,7 +558,6 @@ pfff_misc.opt: $(LIBS:.cma=.cmxa) main_misc.cmx
 
 clean:: 
 	rm -f pfff_misc
-
 
 #------------------------------------------------------------------------------
 # pfff_test targets
@@ -604,7 +602,6 @@ version:
 	@echo $(VERSION)
 
 
-
 update:
 	make opt
 	cp codemap.opt ~/bin
@@ -616,7 +613,6 @@ update:
 
 PACKAGE=$(TARGET)-$(VERSION)
 TMP=/tmp
-
 
 package: 
 	make srctar 
@@ -661,11 +657,12 @@ layers:
 
 visual:
 	./codemap -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . -ocaml_filter .
+	   -with_info DB_LIGHT.marshall -with_layers . -filter ocaml .
 
 tests:
 	./pfff_test -verbose all
 test: tests
+
 push:
 	git push origin master
 pull:

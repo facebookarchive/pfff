@@ -14,15 +14,16 @@ let show_analyze_error = ref true
 
 
 let cmdline_flags_verbose () = [
-  "-verbose_database", Arg.Set verbose_database , "  ";
-  "-debug_bdb", Arg.Set debug_bdb, "  ";
-
-  "no_verbose_checking", Arg.Clear verbose_checking,
+  "-verbose_database", Arg.Set verbose_database,
+  "  ";
+  "-debug_bdb", Arg.Set debug_bdb,
+  "  ";
+  "-no_verbose_checking", Arg.Clear verbose_checking,
   " ";
-  "-noverbose_database", Arg.Clear verbose_database , "  ";
-
-  "-debug_checker", Arg.Set debug_checker , "  ";
-
+  "-noverbose_database", Arg.Clear verbose_database,
+  " ";
+  "-debug_checker", Arg.Set debug_checker ,
+  "  ";
 ]
 
 (*****************************************************************************)

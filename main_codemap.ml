@@ -21,10 +21,8 @@ module Flag = Flag_visual
 
 (*s: main flags *)
 let screen_size = ref 2
-let filter = ref Treemap_pl.ex_filter_file
 
 let db_file = ref (None: Common.filename option)
-(* let db_path = ref (Database.database_dir "/home/pad/www") *)
 let layer_file = ref (None: Common.filename option)
 let layer_dir = ref (None: Common.dirname option)
 
@@ -36,6 +34,35 @@ let proto = ref false
 (* todo? config file ? 
  * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
  *)
+
+let filter = ref Treemap_pl.ex_filter_file
+
+let filters = [
+  "ocaml", Treemap_pl.ocaml_filter_file;
+  "mli", Treemap_pl.ocaml_mli_filter_file;
+  "php", Treemap_pl.php_filter_file;
+  "nw", (fun file -> 
+    match File_type.file_type_of_file file with
+    | File_type.Text "nw" -> true | _ -> false
+  );
+  "pfff", (fun file ->
+    match File_type.file_type_of_file file with
+    | File_type.PL (File_type.ML _)
+    | File_type.PL (File_type.Makefile) 
+      -> 
+        (* todo: should be done in file_type_of_file *)
+        not (File_type.is_syncweb_obj_file file)
+        && not (file =~ ".*commons/" || file =~ ".*external/")
+
+    | _ -> false
+  );
+  "cpp", let x = ref false in (fun file ->
+    Common.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
+    match File_type.file_type_of_file file with
+    | File_type.PL (File_type.C _ | File_type.Cplusplus _) -> true 
+    | _ -> false
+  );
+]
 
 (* action mode *)
 let action = ref ""
@@ -53,16 +80,6 @@ let set_gc () =
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
 
-let treemap_pfff_filter file =
-  match File_type.file_type_of_file file with
-  | File_type.PL (File_type.ML _)
-  | File_type.PL (File_type.Makefile) 
-      -> 
-      (* todo: should be done in file_type_of_file *)
-      not (File_type.is_syncweb_obj_file file)
-      && not (file =~ ".*commons/" || file =~ ".*external/")
-
-  | _ -> false
 
 (*****************************************************************************)
 (* Model helpers *)
@@ -263,20 +280,16 @@ let all_actions () =
 let options () = [ 
   (*s: options *)
     "-screen_size" , Arg.Set_int screen_size,
-    " <int> 1 = small, 2 = big";
+    " <int> (1 = small, 2 = big)";
     "-ss" , Arg.Set_int screen_size,
     " alias for -screen_size";
     "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
     " ";
     "-boost_lbl" , Arg.Set Flag.boost_label_size,
     " ";
-    "-bl" , Arg.Set Flag.boost_label_size,
-    " ";
-    "-no_bl" , Arg.Clear Flag.boost_label_size,
+    "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
     " ";
 
-    "-filter", Arg.String (fun s -> Flag.extra_filter := Some s),
-    " ";
     "-symlinks", Arg.Unit (fun () -> 
       Treemap.follow_symlinks := true;
     ),
@@ -298,48 +311,33 @@ let options () = [
     "-proto" , Arg.Set proto,
     " ";
 
-    "-ocaml_filter", Arg.Unit (fun () -> 
-      filter := Treemap_pl.ocaml_filter_file),
-    " ";
-    "-ocaml_mli_filter", Arg.Unit (fun () -> 
-      filter := Treemap_pl.ocaml_mli_filter_file),
-    " ";
-    "-php_filter", Arg.Unit (fun () -> 
-      filter := Treemap_pl.php_filter_file),
-    " ";
-    "-nw_filter", Arg.Unit (fun () -> 
-      filter := (fun file -> match File_type.file_type_of_file file with
-      | File_type.Text "nw" -> true | _ -> false)),
-    " ";
-    "-pfff_filter", Arg.Unit (fun () -> 
-      filter := treemap_pfff_filter),
-    " ";
+    "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
+     spf " filter certain files (available = %s)" 
+      (filters +> List.map fst +> Common.join ", ");
 
-    "-cpp_filter", Arg.Unit (fun () -> 
-      Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
-      filter := (fun file ->
-        match File_type.file_type_of_file file with
-        | File_type.PL (File_type.C _ | File_type.Cplusplus _) -> true 
-        | _ -> false)),
+    "-extra_filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
-
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";
     "-debug_gc", Arg.Set Flag.debug_gc,
     " ";
     "-debug_handlers", Arg.Set Gui.synchronous_actions,
     " ";
-   "-disable_ancient", Arg.Clear Flag.use_ancient,
+(*
+    "-disable_ancient", Arg.Clear Flag.use_ancient,
     " ";
-   "-enable_ancient", Arg.Set Flag.use_ancient,
+    "-enable_ancient", Arg.Set Flag.use_ancient,
     " ";
-   "-disable_fonts", Arg.Set Flag.disable_fonts,
+*)
+    "-disable_fonts", Arg.Set Flag.disable_fonts,
     " ";
   (*e: options *)
   ] ++
   Common.options_of_actions action (all_actions()) ++
+(*
   Flag_analyze_php.cmdline_flags_verbose () ++
   Flag_parsing_cpp.cmdline_flags_macrofile () ++
+*)
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++
   [

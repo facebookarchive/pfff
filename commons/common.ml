@@ -1252,12 +1252,19 @@ let cache_in_ref myref f =
       myref := Some e;
       e
 
-let once f =
+let oncef f =
   let already = ref false in
   (fun x ->
     if not !already
     then begin already := true; f x end
   )
+
+let once aref f =
+  if !aref then ()
+  else begin
+    aref := true;
+    f ()
+  end
 
 (* cache_file, cf below *)
 
