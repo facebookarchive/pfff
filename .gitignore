@@ -336,3 +336,6 @@ external/ocamlbdb/libcamlbdb.a
 /pm_depend
 /lang_php/pretty/prettyphp
 /lang_opa/parsing/parser_opa.output
+/lang_opa/parsing/lexer_opa.ml
+/lang_opa/parsing/parser_opa.ml
+/lang_opa/parsing/parser_opa.mli
