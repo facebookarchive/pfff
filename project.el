@@ -251,21 +251,24 @@
    (join-string 
     (list 
      "-debugger"
-     (case 20
+     (case 8
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
-       (2 "-c /home/pad/pfff/tests/php/spatch/foo.spatch /home/pad/pfff/tests/php/spatch/foo.php")
-       (3 "-c /home/pad/pfff/tests/php/spatch/border.spatch /home/pad/pfff/tests/php/spatch/border.php")
+       (2 "-f /home/pad/pfff/tests/php/spatch/foo.spatch /home/pad/pfff/tests/php/spatch/foo.php")
+       (3 "-f /home/pad/pfff/tests/php/spatch/border.spatch /home/pad/pfff/tests/php/spatch/border.php")
        (4 "-test")
-       (5 "-c /home/pad/redirect.spatch /home/pad/redirect.php")
+       (5 "-f /home/pad/redirect.spatch /home/pad/redirect.php")
 
        (6 " -f /home/pad/pfff/tests/php/sgrep/foreach.spatch /home/pad/pfff/tests/php/sgrep/foreach.php")
-       (7 "-c /home/pad/pfff/tests/php/spatch/space.spatch /home/pad/pfff/tests/php/spatch/space1.php")
+       (7 "-f /home/pad/pfff/tests/php/spatch/space.spatch /home/pad/pfff/tests/php/spatch/space1.php")
+       (8 "-f /home/pad/pfff/tests/php/spatch/remove_refarg.spatch /home/pad/pfff/tests/php/spatch/remove_refarg.php")
 
-       (10 "-c /home/pad/ex.spatch /home/pad/ex.php")
-       (11 "-c /home/pad/ex2.spatch /home/pad/ex2.php")
-       (20 "-c /tmp/test.spatch /tmp/test.php")
+       (10 "-f /home/pad/ex.spatch /home/pad/ex.php")
+       (11 "-f /home/pad/ex2.spatch /home/pad/ex2.php")
+       (20 "-f /tmp/test.spatch /tmp/test.php")
+
+       (100 "-test")
        )
      )
     )

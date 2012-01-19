@@ -124,6 +124,7 @@ module XMATCH = struct
     | A.Lvalue _, A.Lvalue _ 
     | A.XhpAttrValue _, A.XhpAttrValue _
     | A.Name2 _, B.Name2 _
+    | A.Argument _, B.Argument _
      ->
 
         (* Note that because we want to retain the position information
@@ -141,9 +142,16 @@ module XMATCH = struct
 
     | _, _ -> false
 
-  (* this is quite similar to the code in matching_php.ml *)
+  (* This is quite similar to the code in matching_php.ml 
+   * 
+   * Note that in spatch we actually first calls match_x_x to get the
+   * environment and then we redo another pass by calling transform_x_x.
+   * So tin will be already populated with all metavariables so
+   * equal_ast_binded_code will be called even when we don't use
+   * two times the same metavariable in the pattern.
+   *)
   let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
-    match Common.assoc_option mvar tin with
+    match Common.assoc_option (mvar: string) tin with
     | Some valu' ->
         (* TODO: have to ensure both matched ASTs are equal, valu =? valu'.
          *
