@@ -10,16 +10,16 @@ type file_type =
   | Other of string
 
  and pl_type = 
-  | ML of string | Haskell of string | Lisp of lisp_type 
+  | ML of string | Haskell of string | Lisp of lisp_type
   | Prolog of string
   | Makefile
   | Script of string
   | C of string | Cplusplus of string | Java | Csharp
   | Perl | Python | Ruby
   | Erlang
-  | Haxe
   | Beta
   | Pascal
+  | Haxe | Opa
   | Web of webpl_type
   | R of string
   | Asm

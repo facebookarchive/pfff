@@ -43,9 +43,9 @@ type file_type =
   | C of string | Cplusplus of string | Java | Csharp
   | Perl | Python | Ruby
   | Erlang
-  | Haxe
   | Beta
   | Pascal
+  | Haxe | Opa
   | Web of webpl_type
   | R of string
   | Asm
@@ -98,6 +98,7 @@ let file_type_of_file2 file =
   | "erl" | "hrl" -> PL Erlang
 
   | "hx" | "hxp" | "hxml" -> PL Haxe
+  | "opa" -> PL Opa
 
   | "bet" -> PL Beta
 
@@ -243,7 +244,6 @@ let file_type_of_file2 file =
 
 
   | "exe" -> Binary e
-
   | "mk" -> PL Makefile
 
   | _ when Common.is_executable file -> Binary e

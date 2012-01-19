@@ -6,6 +6,7 @@
 open Common
 
 module Flag = Flag_visual
+module FT = File_type
 
 (*****************************************************************************)
 (* Prelude *)
@@ -42,24 +43,26 @@ let filters = [
   "mli", Treemap_pl.ocaml_mli_filter_file;
   "php", Treemap_pl.php_filter_file;
   "nw", (fun file -> 
-    match File_type.file_type_of_file file with
-    | File_type.Text "nw" -> true | _ -> false
+    match FT.file_type_of_file file with
+    | FT.Text "nw" -> true | _ -> false
   );
   "pfff", (fun file ->
-    match File_type.file_type_of_file file with
-    | File_type.PL (File_type.ML _)
-    | File_type.PL (File_type.Makefile) 
-      -> 
+    match FT.file_type_of_file file with
+    | FT.PL (FT.ML _) | FT.PL (FT.Makefile) -> 
         (* todo: should be done in file_type_of_file *)
-        not (File_type.is_syncweb_obj_file file)
+        not (FT.is_syncweb_obj_file file)
         && not (file =~ ".*commons/" || file =~ ".*external/")
-
     | _ -> false
   );
-  "cpp", let x = ref false in (fun file ->
+  "cpp", (let x = ref false in (fun file ->
     Common.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
-    match File_type.file_type_of_file file with
-    | File_type.PL (File_type.C _ | File_type.Cplusplus _) -> true 
+    match FT.file_type_of_file file with
+    | FT.PL (FT.C _ | FT.Cplusplus _) -> true 
+    | _ -> false
+  ));
+  "opa", (fun file -> 
+    match FT.file_type_of_file file with
+    | FT.PL (FT.ML _) | FT.PL (FT.Opa) -> true
     | _ -> false
   );
 ]
