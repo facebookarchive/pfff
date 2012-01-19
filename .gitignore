@@ -335,3 +335,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_cpp/parsing/ocamldoc.out
 /pm_depend
 /lang_php/pretty/prettyphp
+/lang_opa/parsing/parser_opa.output

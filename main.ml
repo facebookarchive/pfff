@@ -78,6 +78,7 @@ let all_actions () =
   Test_parsing_html.actions()++
   Test_parsing_css.actions()++
   Test_parsing_web.actions()++
+  Test_parsing_opa.actions()++
 
   Test_analyze_cpp.actions () ++
   Test_analyze_php.actions () ++

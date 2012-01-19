@@ -166,6 +166,7 @@ BASICLIBS=commons/commons.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
+ lang_opa/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
  lang_html/parsing/lib.cma \
  lang_js/parsing/lib.cma \
@@ -218,6 +219,8 @@ LIBS= commons/commons.cma \
      lang_python/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
      lang_csharp/analyze/lib.cma \
+    lang_opa/parsing/lib.cma \
+     lang_opa/analyze/lib.cma \
     lang_erlang/parsing/lib.cma \
      lang_erlang/analyze/lib.cma \
     lang_text/lib.cma \
@@ -260,6 +263,8 @@ MAKESUBDIRS=commons \
    lang_python/analyze \
   lang_csharp/parsing \
    lang_csharp/analyze \
+  lang_opa/parsing \
+   lang_opa/analyze \
   lang_erlang/parsing \
    lang_erlang/analyze \
   lang_php/analyze \
