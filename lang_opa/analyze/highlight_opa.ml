@@ -293,6 +293,7 @@ let visit_toplevel
     | T.TAntiSlash ii
     | T.TAt ii
     | T.TUnderscore ii
+    | T.TTilde ii
         -> tag ii Punctuation
 
     | T.TIdent (s, ii) ->

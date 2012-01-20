@@ -201,6 +201,8 @@ rule token = parse
   (* | "&&" { TAndAnd(tokinfo lexbuf) } *)
   | "||" { TOrOr(tokinfo lexbuf) }
 
+  | "~" { TTilde(tokinfo lexbuf) }
+
   (* todo: can define operators in OPA *)
 
   (* ----------------------------------------------------------------------- *)
@@ -213,7 +215,7 @@ rule token = parse
       | Some f -> f info
       | None -> TIdent (s, info)
     }
-  (* todo? 'a, 'b'  type variables? *)
+  (* todo? 'a, 'b'  type variables? ~label ? *)
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

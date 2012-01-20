@@ -78,6 +78,7 @@ open Ast_opa
  TQuestion TAt TAntiSlash TSharp
  TAndAnd TOrOr
  THat
+ TTilde
 
 /*(* operators *)*/
 

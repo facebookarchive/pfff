@@ -51,6 +51,8 @@ let visitor_info_of_tok f = function
   | TComment ii -> TComment (f ii)
   | TCommentMisc ii -> TCommentMisc (f ii)
 
+  | TTilde ii -> TTilde (f ii)
+
   | TInt (s, ii) -> TInt (s, f ii)
   | TFloat (s, ii) -> TFloat (s, f ii)
   | TString (s, ii) -> TString (s, f ii)
