@@ -65,14 +65,6 @@ type ast =
 
 let _hmemo_file = Hashtbl.create 101
 
-let parse_hs2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Hs (Parse_hs.parse file +> fst))
-let parse_hs_cache a = 
-  Common.profile_code "View.parse_hs_cache" (fun () -> 
-    match parse_hs2 a with | Hs a -> a | _ -> raise Impossible
-  )
-
 let parse_nw2 file = 
   Common.memoized _hmemo_file file (fun () -> 
     Noweb (Parse_nw.parse file +> fst))
@@ -124,14 +116,6 @@ let parse_js2 file =
 let parse_js_cache a = 
   Common.profile_code "View.parse_js_cache" (fun () -> 
     match parse_js2 a with | Js a -> a | _ -> raise Impossible
-  )
-
-let parse_python2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Python (Parse_python.parse file +> fst))
-let parse_python_cache a = 
-  Common.profile_code "View.parse_python_cache" (fun () -> 
-    match parse_python2 a with | Python a -> a | _ -> raise Impossible
   )
 
 let parse_csharp2 file = 
@@ -313,7 +297,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Haskell _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_hs_cache
+        ~parse:(parse_cache 
+         (fun file -> Hs (Parse_hs.parse file +> fst))
+         (function Hs x -> x | _ -> raise Impossible))
         ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
           Highlight_hs.visit_toplevel ~tag_hook prefs (ast, toks))
         ~info_of_tok:Parser_hs.info_of_tok
@@ -322,7 +308,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Python) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_python_cache
+        ~parse:(parse_cache 
+         (fun file -> Python (Parse_python.parse file +> fst))
+         (function Python x -> x | _ -> raise Impossible))
         ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
           Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks))
         ~info_of_tok:Token_helpers_python.info_of_tok
