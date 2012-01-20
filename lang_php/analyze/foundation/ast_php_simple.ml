@@ -19,7 +19,7 @@
 
 (* A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree
  * as in ast_php.ml
- * 
+ *
  * This file contains a simplified PHP abstract syntax tree. The original
  * PHP syntax tree (ast_php.ml) is good for code refactoring or
  * code visualization; the type used is very precise, However, for
@@ -30,11 +30,11 @@
  * topological sort etc ... Hence the idea of a SimpleAST which is the
  * original AST where the specialised constructions have been factored
  * back together.
- * 
+ *
  * Here is a partial list of the simplications/factorizations:
  *  - no tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
  *    The only token information kept is for identifiers (see wrap below)
- *    for error reporting. 
+ *    for error reporting.
  *  - support for old syntax is removed such as IfColon
  *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
@@ -42,13 +42,13 @@
  *  - some builtins, for instance echo are transformed in "__builtin__echo".
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
- *  - a simpler expr type; no lvalue vs expr vs static_scalar, 
+ *  - a simpler expr type; no lvalue vs expr vs static_scalar,
  *    no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
  *    of lots of duplication in many constructors
  *  - a simpler name; identifiers, xhp names, variables are unified.
  *  - ...
- * 
+ *
  * todo: factorize more? string vs Guil vs xhp?
  *)
 
@@ -106,7 +106,7 @@ and expr =
   (* valid for entities (functions, classes, constants) and variables, so
    * can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
-   * 
+   *
    * todo? Introduce a Var of string wrap? can be good to differentiate
    * them no? At the same time OCaml does not ...
    *)
@@ -117,7 +117,7 @@ and expr =
 
   (* often transformed in Id "$this" in the analysis *)
   | This
-  (* e.g. Obj_get(Id "$o", Id "foo") when $o->foo 
+  (* e.g. Obj_get(Id "$o", Id "foo") when $o->foo
    * e.g. Class_get(Id "A", Id "foo") when a::foo
    * (can contain "self", "parent", "static")
    *)
@@ -169,7 +169,7 @@ and expr =
      and xhp_attr = expr
 
 (* pad: no uses field for lambda? because we will use ocaml closures
- * for representing closures :) so during abstract interpretation for 
+ * for representing closures :) so during abstract interpretation for
  * instance the environment will be closed. TODO really the explanation?
  *)
 and func_def = {
@@ -201,6 +201,7 @@ and class_def = {
   c_type: class_type;
   c_name: string wrap;
   c_extends: string list; (* pad: ?? *)
+  c_traits: string wrap list;
   c_implements: string list;
   (* todo: use_traits: string list; *)
 
