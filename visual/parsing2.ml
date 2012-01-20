@@ -65,16 +65,6 @@ type ast =
 
 let _hmemo_file = Hashtbl.create 101
 
-let parse_ml2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
-      ML (Parse_ml.parse file +> fst))
-  )
-let parse_ml_cache a = 
-  Common.profile_code "View.parse_ml_cache" (fun () -> 
-    match parse_ml2 a with | ML a -> a | _ -> raise Impossible
-  )
-
 let parse_hs2 file = 
   Common.memoized _hmemo_file file (fun () -> 
     Hs (Parse_hs.parse file +> fst))
@@ -192,11 +182,14 @@ let parse_cpp_cache a =
   )
 
 
-
-
 let disable_file_in_cache file =
   Hashtbl.remove _hmemo_file file
 
+let parse_cache parse_in extract file =
+  Common.profile_code "View.parse_cache" (fun () ->
+    let ast = Common.memoized _hmemo_file file (fun () -> parse_in file) in
+    extract ast
+  )
 
 (*****************************************************************************)
 (* Semantic ehancement *)
@@ -306,7 +299,12 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.ML _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_ml_cache
+        ~parse:(parse_cache 
+         (fun file -> 
+           Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
+             ML (Parse_ml.parse file +> fst))
+         )
+         (function ML x -> x | _ -> raise Impossible))
         ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
           Highlight_ml.visit_toplevel ~tag_hook prefs (ast, toks))
         ~info_of_tok:Token_helpers_ml.info_of_tok
