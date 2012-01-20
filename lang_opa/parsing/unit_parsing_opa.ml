@@ -19,6 +19,11 @@ let unittest =
     (*-----------------------------------------------------------------------*)
     (* Lexing *)
     (*-----------------------------------------------------------------------*)
+    (* todo: 
+     * - make sure parse int correctly, and float, and that actually does
+     *   not return multiple tokens for 42.42
+     * - make sure string interpolation generates multiple tokens
+     *)
 
     (*-----------------------------------------------------------------------*)
     (* Parsing *)

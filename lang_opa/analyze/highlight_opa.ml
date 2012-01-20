@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -16,14 +16,12 @@
 open Common
 
 open Ast_opa
-
-module Ast = Ast_opa
-(*module V = Visitor_opa *)
-
 open Highlight_code
 
+module Ast = Ast_opa
 module T = Parser_opa
 module TH = Token_helpers_opa
+(*module V = Visitor_opa *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -34,13 +32,12 @@ module TH = Token_helpers_opa
 (*****************************************************************************)
 
 (* we generate fake value here because the real one are computed in a
- * later phase in rewrite_categ_using_entities in pfff_visual.
+ * later phase in rewrite_categ_using_entities in codemap.
  *)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = true
-
 
 let is_module_name s = 
   s =~ "[A-Z].*"
@@ -54,7 +51,6 @@ let is_module_name s =
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
  *)
-
 let visit_toplevel 
     ~tag_hook
     prefs 
@@ -107,6 +103,7 @@ let visit_toplevel
     (* poor's man identifier tagger *)
 
     (* defs *)
+(*
     | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
@@ -131,10 +128,10 @@ let visit_toplevel
           if is_module_name s1 then tag ii1 (Module (Use));
         end;
         aux_toks xs
-
+*)
 
     (* uses *)
-
+(*
     |   T.TIdent (s1, ii1)::T.TDot ii2
       ::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
@@ -165,7 +162,7 @@ let visit_toplevel
           if is_module_name s1 then tag ii1 (Module Use)
         end;
         aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
-        
+*)        
 
     | x::xs ->
         aux_toks xs
@@ -186,15 +183,10 @@ let visit_toplevel
     (* comments *)
 
     | T.TComment ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
+        if not (Hashtbl.mem already_tagged ii) (* could be Estet tagged *)
+        then tag ii Comment
 
-    | T.TCommentSpace ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then ()
-        else ()
-
+    | T.TCommentSpace ii -> ()
     | T.TCommentNewline ii | T.TCommentMisc ii -> ()
 
     | T.TUnknown ii -> tag ii Error
@@ -204,139 +196,58 @@ let visit_toplevel
 
     | T.TString (s,ii) ->
         tag ii String
-    | T.TChar (s, ii) ->
-        tag ii String
     | T.TFloat (s,ii) | T.TInt (s,ii) ->
         tag ii Number
 
     (* keywords  *)
-    | T.Tbool ii
-        -> tag ii TypeMisc
+    | T.TIdent("bool", ii) -> tag ii TypeMisc
+    | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
+    | T.TIdent("string", ii) -> tag ii TypeMisc
 
-    | T.Tbyte ii
-    | T.Tchar ii
-        -> tag ii TypeInt (* TODO *)
-
-    | T.Tvoid ii
-        -> tag ii TypeVoid
-
-    | T.Tdouble ii
-    | T.Tfloat ii
-
-    | T.Tshort ii
-    | T.Tint ii
-    | T.Tlong ii
-    | T.Tushort ii
-    | T.Tuint ii
-    | T.Tulong ii
-       -> tag ii TypeInt
-
-    | T.Tstring ii
-    | T.Tsbyte ii
-        -> tag ii TypeMisc
-
-    | T.Tclass ii
-    | T.Tabstract ii
-    | T.Tvirtual ii
-    | T.Tdelegate ii
-    | T.Tthis ii
-    | T.Tinterface ii
-    | T.Tnew ii
-    | T.Tobject ii
-        -> tag ii KeywordObject
-
-    | T.Tprivate ii
-    | T.Tprotected ii
-    | T.Tpublic ii
+    | T.Tpublic ii | T.Tprivate ii
         -> tag ii Keyword
 
-    | T.Treturn ii
-    | T.Tbreak ii
-    | T.Tcontinue ii
-        -> tag ii Keyword
-
-    | T.Tswitch ii
-    | T.Tcase ii
+    | T.Tmatch ii | T.Tcase ii | T.Tdefault ii
         -> tag ii KeywordConditional
 
-    | T.Tstruct ii
-
-    | T.Tdefault ii
-    | T.Tenum ii
-    | T.Tconst ii
-    | T.Tunsafe ii
+    | T.Ttype ii
+    | T.Twith ii
+    | T.Tas ii
         -> tag ii Keyword
 
-    | T.Tnamespace ii
-    | T.Tusing ii
+    | T.Tpackage ii | T.Tmodule ii
+    | T.Timport ii
         -> tag ii KeywordModule
 
-    | T.Tstatic ii
-    | T.Tvolatile ii
-    | T.Textern ii
+    | T.Tif ii | T.Tthen ii | T.Telse ii -> tag ii KeywordConditional
+    | T.Tdo ii -> tag ii KeywordLoop
 
-    | T.Tif ii  | T.Telse ii -> tag ii KeywordConditional
-    | T.Tdo ii  | T.Twhile ii | T.Tfor ii | T.Tforeach ii
-          -> tag ii KeywordLoop
+    | T.TIdent(("true" | "false"), ii) -> tag ii Boolean
 
-    | T.Tgoto ii
+    | T.Tclient ii
         -> tag ii Keyword
 
-    | T.Tthrow ii | T.Ttry ii | T.Tcatch ii
-    | T.Tfinally ii
-    | T.Tchecked ii | T.Tunchecked ii
-        -> tag ii KeywordExn
-
-    | T.Tnull ii
-        -> tag ii Null
-
-    | T.Ttrue ii | T.Tfalse ii
-      ->  tag ii Boolean
-
-    | T.Tref ii
-    | T.Tout ii
-    | T.Tas ii
-    | T.Tbase ii
-    | T.Tdecimal ii
-    | T.Tevent ii
-    | T.Texplicit ii
-    | T.Tfixed ii
-    | T.Timplicit ii
-    | T.Tin ii
-    | T.Tinternal ii
-    | T.Tis ii
-    | T.Tlock ii
-    | T.Toperator ii
-    | T.Toverride ii
-    | T.Tparams ii
-    | T.Treadonly ii
-    | T.Tsealed ii
-    | T.Tsizeof ii
-    | T.Tstackalloc ii
-    | T.Ttypeof ii
+    | T.Tprotected ii
+    | T.Texposed ii
+    | T.Tforall ii
+    | T.Texternal ii
+    | T.Tserver ii
+    | T.Tparser ii
+    | T.Tdb ii
+    | T.Tcss ii
+    | T.Tend ii
+    | T.Tbegin ii
+    | T.Trec ii
+    | T.Tand ii
+    | T.Tval ii
+    | T.Tor ii
+    | T.Tfunction ii
         -> tag ii Keyword
-
-    | T.TCppLine ii
-    | T.TCppError ii
-    | T.TCppWarning ii
-    | T.TCppRegion ii
-    | T.TCppEndRegion ii
-        -> tag ii CppOther
-
-    | T.TDefine ii -> tag ii Define
-    | T.TUndef ii -> tag ii Define
-
-    | T.TIfdefIf ii
-    | T.TIfdefElif ii
-    | T.TIfdefElse ii
-    | T.TIfdefEndif ii
-        -> tag ii Ifdef
 
     (* symbols *)
     | T.TEq ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Punctuation
+        then tag ii Punctuation
 
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
@@ -349,39 +260,25 @@ let visit_toplevel
 
     | T.TDot (ii)
     | T.TColon (ii)
-        ->
-        tag ii Punctuation
+        -> tag ii Punctuation
 
-    | T.TTilde ii
     | T.TStar ii
       -> tag ii Operator
 
     | T.TAnd ii
         -> tag ii Operator
 
-    | T.TAssignOp (_, ii) -> tag ii Punctuation
-
     | T.TNotEq ii
-    | T.TLessEq ii
-    | T.TMoreEq ii
     | T.TEqEq ii
 
     | T.TXor ii
     | T.TOr ii
-    | T.TPercent ii
         -> tag ii Operator
 
     | T.TComma ii
-    | T.TCAngle ii
-    | T.TOAngle ii
         -> tag ii Punctuation
 
     | T.TDiv ii
-    | T.TDec ii
-    | T.TInc ii
-    | T.TOrOr ii 
-    | T.TAndAnd ii 
-    | T.TBang ii 
         -> tag ii Operator
 
     | T.TArrow ii
@@ -389,7 +286,16 @@ let visit_toplevel
     | T.TSemiColon ii
         -> tag ii Punctuation
 
-    | T.TIdent (s, ii) -> 
+    | T.THat ii
+    | T.TOrOr ii
+    | T.TAndAnd ii
+    | T.TSharp ii
+    | T.TAntiSlash ii
+    | T.TAt ii
+    | T.TUnderscore ii
+        -> tag ii Punctuation
+
+    | T.TIdent (s, ii) ->
         ()
   );
   (* -------------------------------------------------------------------- *)

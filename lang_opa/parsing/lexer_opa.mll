@@ -52,82 +52,59 @@ let tokinfo lexbuf  =
 (* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [
   "if", (fun ii -> Tif ii);
-  "as", (fun ii -> Tas ii);
-  "bool", (fun ii -> Tbool ii);
-  "break", (fun ii -> Tbreak ii);
-  "byte", (fun ii -> Tbyte ii);
-  "case", (fun ii -> Tcase ii);
-  "catch", (fun ii -> Tcatch ii);
-  "char", (fun ii -> Tchar ii);
-  "checked", (fun ii -> Tchecked ii);
-  "class", (fun ii -> Tclass ii);
-  "const", (fun ii -> Tconst ii);
-  "continue", (fun ii -> Tcontinue ii);
-  "decimal", (fun ii -> Tdecimal ii);
-  "default", (fun ii -> Tdefault ii);
-  "delegate", (fun ii -> Tdelegate ii);
-  "do", (fun ii -> Tdo ii);
-  "double", (fun ii -> Tdouble ii);
+  "then", (fun ii -> Tthen ii);
   "else", (fun ii -> Telse ii);
-  "enum", (fun ii -> Tenum ii);
-  "event", (fun ii -> Tevent ii);
-  "explicit", (fun ii -> Texplicit ii);
-  "extern", (fun ii -> Textern ii);
-  "finally", (fun ii -> Tfinally ii);
-  "fixed", (fun ii -> Tfixed ii);
-  "float", (fun ii -> Tfloat ii);
-  "for", (fun ii -> Tfor ii);
-  "foreach", (fun ii -> Tforeach ii);
-  "goto", (fun ii -> Tgoto ii);
-  "if", (fun ii -> Tif ii);
-  "implicit", (fun ii -> Timplicit ii);
-  "in", (fun ii -> Tin ii);
-  "int", (fun ii -> Tint ii);
-  "interface", (fun ii -> Tinterface ii);
-  "internal", (fun ii -> Tinternal ii);
-  "is", (fun ii -> Tis ii);
-  "lock", (fun ii -> Tlock ii);
-  "long", (fun ii -> Tlong ii);
-  "namespace", (fun ii -> Tnamespace ii);
-  "new", (fun ii -> Tnew ii);
-  "null", (fun ii -> Tnull ii);
-  "object", (fun ii -> Tobject ii);
-  "operator", (fun ii -> Toperator ii);
-  "out", (fun ii -> Tout ii);
-  "override", (fun ii -> Toverride ii);
-  "params", (fun ii -> Tparams ii);
-  "private", (fun ii -> Tprivate ii);
-  "protected", (fun ii -> Tprotected ii);
-  "public", (fun ii -> Tpublic ii);
-  "readonly", (fun ii -> Treadonly ii);
-  "ref", (fun ii -> Tref ii);
-  "return", (fun ii -> Treturn ii);
-  "sbyte", (fun ii -> Tsbyte ii);
-  "sealed", (fun ii -> Tsealed ii);
-  "short", (fun ii -> Tshort ii);
-  "sizeof", (fun ii -> Tsizeof ii);
-  "stackalloc", (fun ii -> Tstackalloc ii);
-  "static", (fun ii -> Tstatic ii);
-  "string", (fun ii -> Tstring ii);
-  "struct", (fun ii -> Tstruct ii);
-  "switch", (fun ii -> Tswitch ii);
-  "this", (fun ii -> Tthis ii);
-  "throw", (fun ii -> Tthrow ii);
-  "try", (fun ii -> Ttry ii);
-  "typeof", (fun ii -> Ttypeof ii);
-  "uint", (fun ii -> Tuint ii);
-  "ulong", (fun ii -> Tulong ii);
-  "unchecked", (fun ii -> Tunchecked ii);
-  "unsafe", (fun ii -> Tunsafe ii);
-  "ushort", (fun ii -> Tushort ii);
-  "using", (fun ii -> Tusing ii);
-  "virtual", (fun ii -> Tvirtual ii);
-  "void", (fun ii -> Tvoid ii);
-  "volatile", (fun ii -> Tvolatile ii);
-  "while" , (fun ii -> Twhile ii);
+  "as", (fun ii -> Tas ii);
 
-  "true", (fun ii -> Ttrue ii);
-  "false", (fun ii -> Tfalse ii);
+  "match", (fun ii -> Tmatch ii);
+  "case",  (fun ii -> Tcase ii); (* js syntax *)
+  "default",  (fun ii -> Tdefault ii); (* js syntax *)
+
+  "do", (fun ii -> Tdo ii); (* classic syntax *)
+
+  "function", (fun ii -> Tfunction ii); (* js syntax *)
+  "or", (fun ii -> Tor ii); (* js syntax *)
+
+  "with", (fun ii -> Twith ii);
+  "type", (fun ii -> Ttype ii);
+
+  (* apparently accepted as regular identifiers but frowned upon *)
+  "val", (fun ii -> Tval ii);
+  "rec", (fun ii -> Trec ii);
+  "and", (fun ii -> Tand ii);
+
+  "begin", (fun ii -> Tbegin ii);
+  "end", (fun ii -> Tend ii);
+
+  "css", (fun ii -> Tcss ii);
+  "db", (fun ii -> Tdb ii); (* classic syntax *)
+  "database", (fun ii -> Tdb ii); (* js syntax *)
+  "parser", (fun ii -> Tparser ii);
+
+  "external", (fun ii -> Texternal ii);
+  "forall", (fun ii -> Tforall ii);
+
+  "package", (fun ii -> Tpackage ii);
+  "import", (fun ii -> Timport ii);
+  "module", (fun ii -> Tmodule ii); (* js syntax *)
+  (* "xml_parser" *)
+
+  (* js syntax *)
+  "public", (fun ii -> Tpublic ii);
+  "private", (fun ii -> Tprivate ii);
+
+  "client", (fun ii -> Tclient ii);
+  "server", (fun ii -> Tserver ii);
+
+  "exposed",   (fun ii -> Texposed ii);
+  "protected", (fun ii -> Tprotected ii);
+
+  (* bool, int, float, string 
+   * list, option, map, set
+   * 
+   * true, false
+   * nil
+   *)
 ]
 
 (* ---------------------------------------------------------------------- *)
@@ -145,17 +122,13 @@ let digit  = ['0'-'9']
 let newline = '\n'
 let space = [' ' '\t']
 
+let ident = (letter | '_') (letter | digit | '_')*
+
+
 let nonzerodigit = ['1'-'9']
 let bindigit = ['0'-'1']
 let octdigit = ['0'-'7']
 let hexdigit = digit | ['a'-'f'] | ['A'-'F']
-
-let ident = (letter | '_') (letter | digit)*
-
-let escapeseq = 
-   ( '\\' 'x' hexdigit hexdigit? hexdigit? hexdigit?
-    '\\' ['\'' '"' '\\' '0' 'a' 'b' 'f' 'n' 'r' 't' 'v']
-   )
 
 (* note: most was was copied from python *)
 let decimalinteger = nonzerodigit digit* | '0'
@@ -190,48 +163,11 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
-  (*
-   * { } [ ] ( ) 
-   * . , : ; 
-   * + - * / % & | ^ ! ~ 
-   * = < > ? ++ -- && || << >> 
-   * 
-   * == != <= >= 
-   * += -= *= /= %= &= 
-   * |= ^= <<= >>= -> 
-   *)
 
   | "(" { TOParen(tokinfo lexbuf) }  | ")" { TCParen(tokinfo lexbuf) }
   | "{" { TOBrace(tokinfo lexbuf) }  | "}" { TCBrace(tokinfo lexbuf) }
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
-
-  | "<<" { TOAngle(tokinfo lexbuf) }  | ">>" { TCAngle(tokinfo lexbuf) }
-
-
-  | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
-  | "*" { TStar(tokinfo lexbuf) }  | "/" { TDiv(tokinfo lexbuf) }
-  | "%" { TPercent(tokinfo lexbuf) }
-
-  | "="  { TEq (tokinfo lexbuf) }
-  | "=="  { TEqEq (tokinfo lexbuf) }
-  | "!="  { TNotEq (tokinfo lexbuf) }
-  | "<=" { TLessEq(tokinfo lexbuf) }  | ">=" { TMoreEq(tokinfo lexbuf) }
-  | "<" { TLess(tokinfo lexbuf) }  | ">" { TMore(tokinfo lexbuf) }
-
-  | "?" { TQuestion(tokinfo lexbuf) }
-
-  | "++" { TInc(tokinfo lexbuf) }
-  | "--" { TDec(tokinfo lexbuf) }
-
-  | "!" { TBang(tokinfo lexbuf) }
-  | "~" { TTilde(tokinfo lexbuf) }
-
-  | "&" { TAnd(tokinfo lexbuf) }
-  | "|" { TOr(tokinfo lexbuf) }
-  | "^" { TXor(tokinfo lexbuf) }
-
-  | "&&" { TAndAnd(tokinfo lexbuf) }
-  | "||" { TOrOr(tokinfo lexbuf) }
+  (* todo? "{{" "}}" classic syntax *)
 
   | "." { TDot(tokinfo lexbuf) }
   | "," { TComma(tokinfo lexbuf) }
@@ -239,31 +175,56 @@ rule token = parse
   | ";" { TSemiColon(tokinfo lexbuf) }
 
   | "->" { TArrow(tokinfo lexbuf) }
+  | '_'  { TUnderscore(tokinfo lexbuf) }
 
-  | ("+=" | "-=" | "*=" | "/=" | "%=" | "&="
-     "|=" | "^=" | "<<=" | ">>=")
-   { TAssignOp (tok lexbuf, tokinfo lexbuf) }
+  | '\\'  { TAntiSlash(tokinfo lexbuf) } (* js syntax *)
+
+  (* operators *)
+  | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
+  | "*" { TStar(tokinfo lexbuf) }  | "/" { TDiv(tokinfo lexbuf) }
+  (* | "%" { TPercent(tokinfo lexbuf) } *)
+
+  | "="  { TEq (tokinfo lexbuf) } 
+  | "=="  { TEqEq (tokinfo lexbuf) } (* could be defined as regular operator? *)
+  | "!="  { TNotEq (tokinfo lexbuf) }
+  | "<" { TLess(tokinfo lexbuf) }  | ">" { TMore(tokinfo lexbuf) }
+  (* | "<=" { TLessEq(tokinfo lexbuf) }  | ">=" { TMoreEq(tokinfo lexbuf) } *)
+
+  | "?" { TQuestion(tokinfo lexbuf) }
+  | "@" { TAt(tokinfo lexbuf) }
+  | "#" { TSharp(tokinfo lexbuf) }
+
+  | "&" { TAnd(tokinfo lexbuf) } | "|" { TOr(tokinfo lexbuf) }
+
+  | "^" { THat(tokinfo lexbuf) }
+
+  (* | "&&" { TAndAnd(tokinfo lexbuf) } *)
+  | "||" { TOrOr(tokinfo lexbuf) }
+
+  (* todo: can define operators in OPA *)
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  | ident {
+  | ident | '`' [^ '`' '\n' '\r']+ '`' {
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
       match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> f info
       | None -> TIdent (s, info)
     }
+  (* todo? 'a, 'b'  type variables? *)
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
   | integer { TInt (tok lexbuf, tokinfo lexbuf) }
+  (* todo: float *)
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  (* opa allows string interpolation *)
+  (* todo: opa allows string interpolation => need a state in the lexer *)
   | '"' { 
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in
@@ -305,10 +266,14 @@ and comment = parse
 
 and string_double_quote = parse
   | '"' { "" }
+  (* todo: '{' *)
 
-  | [^ '\"' '\n']* { let s = tok lexbuf in s ^ string_double_quote lexbuf }
-  | escapeseq { let s = tok lexbuf in s ^ string_double_quote lexbuf }
+  | '\\' ['\\' 'n' 'r' 't' '{' '}'  '\'' '"']
+      { let s = tok lexbuf in s ^ string_double_quote lexbuf }
 
+  (* noteopti: must be the "negative" of the previous rules *)
+  | [^ '{' '\\' '\"' '\n']* 
+      { let s = tok lexbuf in s ^ string_double_quote lexbuf }
 
   | eof { error "LEXER: end of file in string_double_quote"; "'"}
   | _  { let s = tok lexbuf in
