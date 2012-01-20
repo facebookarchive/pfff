@@ -62,7 +62,7 @@ let filters = [
   ));
   "opa", (fun file -> 
     match FT.file_type_of_file file with
-    | FT.PL (FT.ML _) | FT.PL (FT.Opa) -> true
+    | FT.PL (FT.Opa) (* | FT.PL (FT.ML _) *)  -> true
     | _ -> false
   );
 ]
