@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -28,6 +28,10 @@ open Highlight_code
 module PI = Parse_info
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Parsing helpers *)
 (*****************************************************************************)
 
@@ -42,6 +46,8 @@ type ast =
   | Html of Parse_html.program2
   | Js  of Parse_js.program2
   | Php of Parse_php.program2
+
+  | Opa of Parse_opa.program2
 
   | Cpp of Parse_cpp.program2
 
@@ -146,6 +152,15 @@ let parse_csharp_cache a =
     match parse_csharp2 a with | Csharp a -> a | _ -> raise Impossible
   )
 
+let parse_opa2 file = 
+  Common.memoized _hmemo_file file (fun () -> 
+    Opa (Parse_opa.parse file +> fst))
+let parse_opa_cache a = 
+  Common.profile_code "View.parse_opa_cache" (fun () -> 
+    match parse_opa2 a with | Opa a -> a | _ -> raise Impossible
+  )
+
+
 let parse_erlang2 file = 
   Common.memoized _hmemo_file file (fun () -> 
     Erlang (Parse_erlang.parse file +> fst))
@@ -224,9 +239,9 @@ let rewrite_categ_using_entities s categ file entities =
        * 
        * update: TODO use Model2.readable_to_absolute_filename_under_root ?
        *)
-      Filename.basename e.Db.e_file = Filename.basename file &&
+      Filename.basename e.Db.e_file =$= Filename.basename file &&
       (* some file have both a function and class with the same name *)
-      e.Db.e_kind = e_kind
+      e.Db.e_kind =*= e_kind
     )
   in
   match entities with
@@ -244,15 +259,36 @@ let rewrite_categ_using_entities s categ file entities =
         pr2_once (spf "multi def found for %s in %s" s file);
       categ
 
+let tokens_with_categ_of_file_helper ~parse ~highlight_visit 
+  ~info_of_tok ~str_of_tok file prefs hentities =
+  
+  let h = Hashtbl.create 101 in
+  let ast2 = parse file in
+  ast2 +> List.map (fun (ast, (_str, toks)) ->
+
+    (* computing the token attributes *)
+    highlight_visit ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+      prefs (ast, toks);
+
+    (* getting the text *)
+    toks +> Common.map_filter (fun tok -> 
+      let info = info_of_tok tok in
+      let s = str_of_tok tok in
+      if not (Parse_info.is_origintok info)
+      then None
+      else 
+        let categ = Common.hfind_option info h +> Common.fmap (fun categ ->
+          rewrite_categ_using_entities s categ file hentities
+        ) in
+        Some (s, categ,{ l = PI.line_of_info info; c = PI.col_of_info info; })
+    )) +> List.flatten
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 (* coupling: right now if you add a language here, you need to whitelist it
  * also in draw_microlevel.draw_contents2.
- * 
- * todo: ugly, lots of repetitive code. If factorize code in
- * parse_info.ml can at least factorize some of the Ast_xxx.str_of_xxx.
  *)
 let tokens_with_categ_of_file file hentities = 
   let ftype = FT.file_type_of_file file in
@@ -260,404 +296,119 @@ let tokens_with_categ_of_file file hentities =
 
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_php_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_php.visit_toplevel 
-          ~tag:(fun info categ -> Hashtbl.add h info categ)
-          prefs hentities (ast, toks);
-      
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_php.info_of_tok tok in
-          let s = Token_helpers_php.str_of_tok tok in
-
-          if not (Ast_php.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ, 
-                 { l = Ast_php.line_of_info info;
-                   c = Ast_php.col_of_info info;
-                 })
-        )
-      ) +> List.flatten
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_php_cache
+        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) ->
+          Highlight_php.visit_toplevel ~tag:tag_hook prefs hentities (ast,toks))
+        ~info_of_tok:Token_helpers_php.info_of_tok
+        ~str_of_tok:Token_helpers_php.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.ML _) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_ml_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_ml.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_ml.info_of_tok tok in
-          let s = Token_helpers_ml.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Ast_ml.line_of_info info;
-                   c = Ast_ml.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_ml_cache
+        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_ml.visit_toplevel ~tag_hook prefs (ast, toks))
+        ~info_of_tok:Token_helpers_ml.info_of_tok
+        ~str_of_tok:Token_helpers_ml.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Haskell _) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_hs_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_hs.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Parser_hs.info_of_tok tok in
-          let s = Parser_hs.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_hs_cache
+        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_hs.visit_toplevel ~tag_hook prefs (ast, toks))
+        ~info_of_tok:Parser_hs.info_of_tok
+        ~str_of_tok:Parser_hs.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Python) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_python_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_python.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_python.info_of_tok tok in
-          let s = Token_helpers_python.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
-
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_python_cache
+        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks))
+        ~info_of_tok:Token_helpers_python.info_of_tok
+        ~str_of_tok:Token_helpers_python.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Csharp) ->
-      let h = Hashtbl.create 101 in
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_csharp_cache
+        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_csharp.visit_toplevel ~tag_hook prefs (ast, toks))
+        ~info_of_tok:Token_helpers_csharp.info_of_tok
+        ~str_of_tok:Token_helpers_csharp.str_of_tok
+        file prefs hentities
 
-      let ast2 = parse_csharp_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_csharp.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_csharp.info_of_tok tok in
-          let s = Token_helpers_csharp.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
+  | FT.PL (FT.Opa) ->
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_opa_cache
+        ~highlight_visit:Highlight_opa.visit_toplevel
+        ~info_of_tok:Token_helpers_opa.info_of_tok
+        ~str_of_tok:Token_helpers_opa.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Erlang) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_erlang_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_erlang.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_erlang.info_of_tok tok in
-          let s = Token_helpers_erlang.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_erlang_cache
+        ~highlight_visit:Highlight_erlang.visit_toplevel
+        ~info_of_tok:Token_helpers_erlang.info_of_tok
+        ~str_of_tok:Token_helpers_erlang.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Java) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_java_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_java.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_java.info_of_tok tok in
-          let s = Token_helpers_java.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_java_cache
+        ~highlight_visit:Highlight_java.visit_toplevel
+        ~info_of_tok:Token_helpers_java.info_of_tok
+        ~str_of_tok:Token_helpers_java.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Lisp _) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_lisp_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_lisp.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Parser_lisp.info_of_tok tok in
-          let s = Parser_lisp.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
-
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_lisp_cache
+        ~highlight_visit:Highlight_lisp.visit_toplevel
+        ~info_of_tok:Parser_lisp.info_of_tok
+        ~str_of_tok:Parser_lisp.str_of_tok
+        file prefs hentities
 
   | FT.Text ("nw" | "tex" | "texi" | "web") ->
-
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_nw_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_nw.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_nw.info_of_tok tok in
-          let s = Token_helpers_nw.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Parse_info.line_of_info info;
-                   c = Parse_info.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
-
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_nw_cache
+        ~highlight_visit:Highlight_nw.visit_toplevel
+        ~info_of_tok:Token_helpers_nw.info_of_tok
+        ~str_of_tok:Token_helpers_nw.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_cpp_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_cpp.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_cpp.info_of_tok tok in
-          let s = Token_helpers_cpp.str_of_tok tok in
-
-          if not (Ast_cpp.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Ast_cpp.line_of_info info;
-                   c = Ast_cpp.col_of_info info;
-                 })
-
-        )
-      ) +> List.flatten
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_cpp_cache
+        ~highlight_visit:Highlight_cpp.visit_toplevel
+        ~info_of_tok:Token_helpers_cpp.info_of_tok
+        ~str_of_tok:Token_helpers_cpp.str_of_tok
+        file prefs hentities
 
   | FT.PL (FT.Web (FT.Js _)) ->
-
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_js_cache file in
-      ast2 +> List.map (fun (ast, (_str, toks)) ->
-        (* computing the token attributes *)
-        Highlight_js.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_js.info_of_tok tok in
+      tokens_with_categ_of_file_helper 
+        ~parse:parse_js_cache
+        ~highlight_visit:Highlight_js.visit_toplevel
+        ~info_of_tok:Token_helpers_js.info_of_tok
+        ~str_of_tok:(fun tok -> 
           let s = Token_helpers_js.str_of_tok tok in
-          let s = Ast_js.remove_quotes_if_present s in
-
-          if not (Ast_js.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = Ast_js.line_of_info info;
-                   c = Ast_js.col_of_info info;
-                 })
-
+          Ast_js.remove_quotes_if_present s
         )
-      ) +> List.flatten
-
+        file prefs hentities
 
   | FT.PL (FT.Web (FT.Html)) ->
-      let h = Hashtbl.create 101 in
-
-      let ast2 = parse_html_cache file in
-      ast2 +> (fun (ast, toks) ->
-        (* computing the token attributes *)
-        Highlight_html.visit_toplevel 
-          ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-          prefs
-          (ast, toks)
-        ;
-
-        (* getting the text *)
-        toks |> Common.map_filter (fun tok -> 
-          let info = Token_helpers_html.info_of_tok tok in
-          let s = Token_helpers_html.str_of_tok tok in
-
-          if not (Parse_info.is_origintok info)
-          then None
-          else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
-                rewrite_categ_using_entities s categ file hentities
-              )
-            in
-            Some (s, categ,
-                 { l = PI.line_of_info info;
-                   c = PI.col_of_info info;
-                 })
-
+      tokens_with_categ_of_file_helper 
+        ~parse:(fun file -> 
+          let (ast, toks) = parse_html_cache file in
+          [ast, ("", toks)]
         )
-      )
+        ~highlight_visit:Highlight_html.visit_toplevel
+        ~info_of_tok:Token_helpers_html.info_of_tok
+        ~str_of_tok:Token_helpers_html.str_of_tok
+        file prefs hentities
 
   | FT.Text ("org") ->
       let org = Org_mode.parse file in
