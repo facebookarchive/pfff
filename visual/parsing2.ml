@@ -19,17 +19,19 @@
 open Common
 
 module FT = File_type
-
+module PI = Parse_info
 module HC = Highlight_code
 module Db = Database_code
 
 open Highlight_code
 
-module PI = Parse_info
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* 
+ * The main entry point of this module is tokens_with_categ_of_file
+ * which is called in Draw_microlevel to "render" the content of a file.
+ *)
 
 (*****************************************************************************)
 (* Parsing helpers *)
@@ -65,107 +67,10 @@ type ast =
 
 let _hmemo_file = Hashtbl.create 101
 
-let parse_nw2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Noweb (Parse_nw.parse file +> fst))
-let parse_nw_cache a = 
-  Common.profile_code "View.parse_nw_cache" (fun () -> 
-    match parse_nw2 a with | Noweb a -> a | _ -> raise Impossible
-  )
-
-let parse_lisp2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Lisp (Parse_lisp.parse file +> fst))
-let parse_lisp_cache a = 
-  Common.profile_code "View.parse_lisp_cache" (fun () -> 
-    match parse_lisp2 a with | Lisp a -> a | _ -> raise Impossible
-  )
-
-
-let parse_php2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
-    let (ast2, stat) = Parse_php.parse file in
-    let ast = 
-      Parse_php.program_of_program2 ast2 in
-    let find_entity = None in
-    (* work by side effect on ast2 too *)
-    Check_variables_php.check_and_annotate_program
-      (* todo: use database_light if given? *)
-      find_entity
-      ast;
-    Php ast2
-    )
-  )
-let parse_php_cache a = 
-  Common.profile_code "View.parse_php_cache" (fun () -> 
-    match parse_php2 a with | Php a -> a | _ -> raise Impossible
-  )
-
-let parse_html2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Html (Parse_html.parse file))
-let parse_html_cache a = 
-  Common.profile_code "View.parse_html_cache" (fun () -> 
-    match parse_html2 a with | Html a -> a | _ -> raise Impossible
-  )
-
-let parse_js2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Js (Parse_js.parse file +> fst))
-let parse_js_cache a = 
-  Common.profile_code "View.parse_js_cache" (fun () -> 
-    match parse_js2 a with | Js a -> a | _ -> raise Impossible
-  )
-
-let parse_csharp2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Csharp (Parse_csharp.parse file +> fst))
-let parse_csharp_cache a = 
-  Common.profile_code "View.parse_csharp_cache" (fun () -> 
-    match parse_csharp2 a with | Csharp a -> a | _ -> raise Impossible
-  )
-
-let parse_opa2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Opa (Parse_opa.parse file +> fst))
-let parse_opa_cache a = 
-  Common.profile_code "View.parse_opa_cache" (fun () -> 
-    match parse_opa2 a with | Opa a -> a | _ -> raise Impossible
-  )
-
-
-let parse_erlang2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Erlang (Parse_erlang.parse file +> fst))
-let parse_erlang_cache a = 
-  Common.profile_code "View.parse_erlang_cache" (fun () -> 
-    match parse_erlang2 a with | Erlang a -> a | _ -> raise Impossible
-  )
-
-let parse_java2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    Java (Parse_java.parse file +> fst))
-let parse_java_cache a = 
-  Common.profile_code "View.parse_java_cache" (fun () -> 
-    match parse_java2 a with | Java a -> a | _ -> raise Impossible
-  )
-
-let parse_cpp2 file = 
-  Common.memoized _hmemo_file file (fun () -> 
-    let (ast2, stat) = Parse_cpp.parse file in
-    let ast = Parse_cpp.program_of_program2 ast2 in
-    (* work by side effect on ast2 too *)
-    Check_variables_cpp.check_and_annotate_program
-      ast;
-    Cpp ast2
-  )
-let parse_cpp_cache a = 
-  Common.profile_code "View.parse_cpp_cache" (fun () -> 
-    match parse_cpp2 a with | Cpp a -> a | _ -> raise Impossible
-  )
-
-
+(* This is useful when we want to refresh the content of a file,
+ * because it has changed on the disk. 
+ * todo? could also look at the date of the file ...
+ *)
 let disable_file_in_cache file =
   Hashtbl.remove _hmemo_file file
 
@@ -236,6 +141,10 @@ let rewrite_categ_using_entities s categ file entities =
         pr2_once (spf "multi def found for %s in %s" s file);
       categ
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 let tokens_with_categ_of_file_helper ~parse ~highlight_visit 
   ~info_of_tok ~str_of_tok file prefs hentities =
   
@@ -274,7 +183,20 @@ let tokens_with_categ_of_file file hentities =
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_php_cache
+        ~parse:(parse_cache 
+        (fun file ->
+          Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+            let (ast2, stat) = Parse_php.parse file in
+            let ast = Parse_php.program_of_program2 ast2 in
+            let find_entity = None in
+            (* work by side effect on ast2 too *)
+            Check_variables_php.check_and_annotate_program
+              (* todo: use database_light if given? *)
+              find_entity
+              ast;
+            Php ast2
+          ))
+         (function Php x -> x | _ -> raise Impossible))
         ~highlight_visit:(fun ~tag_hook prefs (ast, toks) ->
           Highlight_php.visit_toplevel ~tag:tag_hook prefs hentities (ast,toks))
         ~info_of_tok:Token_helpers_php.info_of_tok
@@ -319,7 +241,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Csharp) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_csharp_cache
+        ~parse:(parse_cache 
+         (fun file -> Csharp (Parse_csharp.parse file +> fst))
+         (function Csharp x -> x | _ -> raise Impossible))
         ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
           Highlight_csharp.visit_toplevel ~tag_hook prefs (ast, toks))
         ~info_of_tok:Token_helpers_csharp.info_of_tok
@@ -328,7 +252,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Opa) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_opa_cache
+        ~parse:(parse_cache 
+         (fun file -> Opa (Parse_opa.parse file +> fst))
+         (function Opa x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_opa.visit_toplevel
         ~info_of_tok:Token_helpers_opa.info_of_tok
         ~str_of_tok:Token_helpers_opa.str_of_tok
@@ -336,7 +262,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Erlang) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_erlang_cache
+        ~parse:(parse_cache 
+         (fun file -> Erlang (Parse_erlang.parse file +> fst))
+         (function Erlang x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_erlang.visit_toplevel
         ~info_of_tok:Token_helpers_erlang.info_of_tok
         ~str_of_tok:Token_helpers_erlang.str_of_tok
@@ -344,7 +272,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Java) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_java_cache
+        ~parse:(parse_cache 
+         (fun file -> Java (Parse_java.parse file +> fst))
+         (function Java x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_java.visit_toplevel
         ~info_of_tok:Token_helpers_java.info_of_tok
         ~str_of_tok:Token_helpers_java.str_of_tok
@@ -352,7 +282,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Lisp _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_lisp_cache
+        ~parse:(parse_cache 
+         (fun file -> Lisp (Parse_lisp.parse file +> fst))
+         (function Lisp x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_lisp.visit_toplevel
         ~info_of_tok:Parser_lisp.info_of_tok
         ~str_of_tok:Parser_lisp.str_of_tok
@@ -360,7 +292,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.Text ("nw" | "tex" | "texi" | "web") ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_nw_cache
+        ~parse:(parse_cache 
+         (fun file -> Noweb (Parse_nw.parse file +> fst))
+         (function Noweb x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_nw.visit_toplevel
         ~info_of_tok:Token_helpers_nw.info_of_tok
         ~str_of_tok:Token_helpers_nw.str_of_tok
@@ -368,7 +302,16 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_cpp_cache
+        ~parse:(parse_cache 
+         (fun file -> 
+           let (ast2, stat) = Parse_cpp.parse file in
+           let ast = Parse_cpp.program_of_program2 ast2 in
+           (* work by side effect on ast2 too *)
+           Check_variables_cpp.check_and_annotate_program
+             ast;
+           Cpp ast2
+         )
+         (function Cpp x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_cpp.visit_toplevel
         ~info_of_tok:Token_helpers_cpp.info_of_tok
         ~str_of_tok:Token_helpers_cpp.str_of_tok
@@ -376,7 +319,9 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Web (FT.Js _)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:parse_js_cache
+        ~parse:(parse_cache
+          (fun file -> Js (Parse_js.parse file +> fst))
+          (function Js x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_js.visit_toplevel
         ~info_of_tok:Token_helpers_js.info_of_tok
         ~str_of_tok:(fun tok -> 
@@ -387,10 +332,11 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Web (FT.Html)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(fun file -> 
-          let (ast, toks) = parse_html_cache file in
-          [ast, ("", toks)]
-        )
+        ~parse:(parse_cache 
+          (fun file -> Html (Parse_html.parse file))
+          (function 
+          | Html (ast, toks) -> [ast, ("", toks)] 
+          | _ -> raise Impossible))
         ~highlight_visit:Highlight_html.visit_toplevel
         ~info_of_tok:Token_helpers_html.info_of_tok
         ~str_of_tok:Token_helpers_html.str_of_tok
