@@ -34,6 +34,14 @@ open Parser_opa
 (*****************************************************************************)
 exception Lexical of string
 
+let error s = 
+  if !Flag.error_recovery 
+  then 
+    if !Flag.verbose_lexing 
+    then pr2 s
+    else ()
+  else raise (Lexical s)
+
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
@@ -143,14 +151,13 @@ let octdigit = ['0'-'7']
 let hexdigit = digit | ['a'-'f'] | ['A'-'F']
 
 let ident = (letter | '_') (letter | digit)*
-(* TODO connect-char combine-char formating-char *)
 
 let escapeseq = 
    ( '\\' 'x' hexdigit hexdigit? hexdigit? hexdigit?
     '\\' ['\'' '"' '\\' '0' 'a' 'b' 'f' 'n' 'r' 't' 'v']
    )
 
-(* TODO, was copied from python *)
+(* note: most was was copied from python *)
 let decimalinteger = nonzerodigit digit* | '0'
 let octinteger = '0' 'o' octdigit+
 let hexinteger = '0' ('x' | 'X') hexdigit+
@@ -256,7 +263,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-
+  (* opa allows string interpolation *)
   | '"' { 
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in
@@ -274,8 +281,7 @@ rule token = parse
   | eof { EOF (tokinfo lexbuf) }
 
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+      error ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -291,10 +297,10 @@ and comment = parse
   | [ '*']   { let s = tok lexbuf in s ^ comment lexbuf }
   | _  
       { let s = tok lexbuf in
-        pr2 ("LEXER: unrecognised symbol in comment:"^s);
+        error ("LEXER: unrecognised symbol in comment:"^s);
         s ^ comment lexbuf
       }
-  | eof { pr2 "LEXER: WIERD end of file in comment"; ""}
+  | eof { error "LEXER: WIERD end of file in comment"; ""}
 
 
 and string_double_quote = parse
@@ -304,8 +310,8 @@ and string_double_quote = parse
   | escapeseq { let s = tok lexbuf in s ^ string_double_quote lexbuf }
 
 
-  | eof { pr2 "LEXER: end of file in string_double_quote"; "'"}
+  | eof { error "LEXER: end of file in string_double_quote"; "'"}
   | _  { let s = tok lexbuf in
-         pr2 ("LEXER: unrecognised symbol in string_double_quote:"^s);
+         error ("LEXER: unrecognised symbol in string_double_quote:"^s);
          s ^ string_double_quote lexbuf
     }

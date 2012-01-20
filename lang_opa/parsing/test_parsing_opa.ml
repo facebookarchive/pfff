@@ -11,8 +11,8 @@ open OUnit
 (*****************************************************************************)
 
 let test_tokens_opa file = 
-  if not (file =~ ".*\\.py") 
-  then pr2 "warning: seems not a python file";
+  if not (file =~ ".*\\.opa") 
+  then pr2 "warning: seems not an OPA file";
 
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
