@@ -40,11 +40,11 @@ let tokinfo lexbuf  =
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 (* ---------------------------------------------------------------------- *)
+(* Keywords *)
+(* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [
   "if", (fun ii -> Tif ii);
-  "abstract", (fun ii -> Tabstract ii);
   "as", (fun ii -> Tas ii);
-  "base", (fun ii -> Tbase ii);
   "bool", (fun ii -> Tbool ii);
   "break", (fun ii -> Tbreak ii);
   "byte", (fun ii -> Tbyte ii);
@@ -122,7 +122,13 @@ let keyword_table = Common.hash_of_list [
   "false", (fun ii -> Tfalse ii);
 ]
 
+(* ---------------------------------------------------------------------- *)
+(* Lexer State *)
+(* ---------------------------------------------------------------------- *)
+
 }
+(*****************************************************************************)
+(* Regexps aliases *)
 (*****************************************************************************)
 
 let letter = ['A'-'Z' 'a'-'z']
@@ -132,13 +138,12 @@ let newline = '\n'
 let space = [' ' '\t']
 
 let nonzerodigit = ['1'-'9']
+let bindigit = ['0'-'1']
 let octdigit = ['0'-'7']
 let hexdigit = digit | ['a'-'f'] | ['A'-'F']
 
-
 let ident = (letter | '_') (letter | digit)*
 (* TODO connect-char combine-char formating-char *)
-
 
 let escapeseq = 
    ( '\\' 'x' hexdigit hexdigit? hexdigit? hexdigit?
@@ -147,11 +152,14 @@ let escapeseq =
 
 (* TODO, was copied from python *)
 let decimalinteger = nonzerodigit digit* | '0'
-let octinteger = '0' octdigit+
+let octinteger = '0' 'o' octdigit+
 let hexinteger = '0' ('x' | 'X') hexdigit+
+let bininteger = '0' 'b' bindigit+
 
-let integer = (decimalinteger | octinteger | hexinteger)
+let integer = (decimalinteger | octinteger | hexinteger | bininteger)
 
+(*****************************************************************************)
+(* Main Rule *)
 (*****************************************************************************)
 
 rule token = parse
@@ -162,6 +170,7 @@ rule token = parse
 
   | "//" [^ '\n']* { TComment (tokinfo lexbuf) }
 
+  (* less: return a different token for /** comments ? TCommentDoc? *)
   | "/*" 
       { let info = tokinfo lexbuf in 
         let com = comment lexbuf in
@@ -170,24 +179,6 @@ rule token = parse
 
   | newline { TCommentNewline (tokinfo lexbuf) }
   | space+ { TCommentSpace (tokinfo lexbuf) }
-
-  (* ----------------------------------------------------------------------- *)
-  (* cpp *)
-  (* ----------------------------------------------------------------------- *)
-  | "#" [' ' '\t']* "line" { TCppLine (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "error" { TCppError (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "warning" { TCppWarning (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "region" { TCppRegion (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "endregion" { TCppEndRegion (tokinfo lexbuf) }
-
-  | "#" [' ' '\t']* "define" { TDefine (tokinfo lexbuf) } 
-  | "#" [' ' '\t']* "undef" { TUndef (tokinfo lexbuf) }
-
-  | "#" [' ' '\t']* "if"  { TIfdefIf (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "elif"  { TIfdefElif (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "else"  { TIfdefElse (tokinfo lexbuf) }
-  | "#" [' ' '\t']* "endif"  { TIfdefEndif (tokinfo lexbuf) }
-
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -289,7 +280,10 @@ rule token = parse
     }
 
 (*****************************************************************************)
+(* Comment Rule *)
+(*****************************************************************************)
 
+(* todo: OPA allow nested comments *)
 and comment = parse
   | "*/"     { tok lexbuf }
   (* noteopti: *)

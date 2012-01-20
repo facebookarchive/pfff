@@ -112,14 +112,17 @@ let tokens a =
 (* Main entry point *)
 (*****************************************************************************)
 
+(* could move that in h_program-lang/, but maybe clearer to put it closer
+ * to the parsing function.
+ *)
+exception Parse_error of Parse_info.info
+
 let parse2 filename = 
 
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
-
   (* TODO *)
   [(), ("", toks_orig)], stat
-
 
 let parse a = 
   Common.profile_code "Parse_opa.parse" (fun () -> parse2 a)

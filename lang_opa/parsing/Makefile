@@ -12,28 +12,27 @@ SRC= flag_parsing_opa.ml \
      parser_opa.ml lexer_opa.ml \
      token_helpers_opa.ml \
      parse_opa.ml \
-     test_parsing_opa.ml
+     unit_parsing_opa.ml test_parsing_opa.ml
 
-
-#     meta_ast_opa.ml \
-#     export_ast_opa.ml \
-#     visitor_opa.ml  \
-#     unparse_opa.ml \
-
+# meta_ast_opa.ml export_ast_opa.ml \
+# visitor_opa.ml 
+# unparse_opa.ml \
 
 SYSLIBS= str.cma unix.cma 
 
+# globals.cma is used only for Config.patch in test_parse_php
 LIBS=$(TOP)/commons/commons.cma \
+ $(TOP)/globals/globals.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
   $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
+  $(TOP)/globals \
   $(TOP)/h_program-lang \
 
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
