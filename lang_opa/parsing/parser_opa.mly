@@ -43,7 +43,8 @@ open Ast_opa
 %token <string * Ast_opa.tok> TInt
 %token <string * Ast_opa.tok> TFloat
 %token <string * Ast_opa.tok> TString
-
+%token <string * Ast_opa.tok> T_ENCAPSED
+%token <Ast_opa.tok> TGUIL
 %token <string * Ast_opa.tok> TIdent
 
 /*(* keywords tokens *)*/
