@@ -27,6 +27,10 @@ open Parser_opa
 
 (*
  * http://doc.opalang.org/#!/manual/The-core-language
+ *
+ * There are a few tricks to go around ocamllex restrictions
+ * because OPA has different lexing rules depending on some "contexts"
+ * like PHP, Perl, etc.
  *)
 
 (*****************************************************************************)
@@ -110,6 +114,35 @@ let keyword_table = Common.hash_of_list [
 (* ---------------------------------------------------------------------- *)
 (* Lexer State *)
 (* ---------------------------------------------------------------------- *)
+(* this is similar to what we do in lexer_php.mll, see the doc there *)
+type state_mode = 
+  (* initial mode, also started with '{' inside strings or html
+   * and terminated by '}'
+   *)
+  | ST_INITIAL
+  (* started with ", finished with ". In most languages strings 
+   * are a single tokens but OPA allows interpolation which means 
+   * a string can contain nested OPA expressions.
+   *)
+  | ST_DOUBLE_QUOTES
+
+let default_state = ST_INITIAL
+let _mode_stack = ref []
+
+let reset () = 
+  _mode_stack := [default_state];
+  ()
+
+let push_mode mode = Common.push2 mode _mode_stack
+let pop_mode () = ignore(Common.pop2 _mode_stack)
+
+let rec current_mode () = 
+  try 
+    Common.top !_mode_stack
+  with Failure("hd") -> 
+    error("LEXER: mode_stack is empty, defaulting to INITIAL");
+    reset();
+    current_mode ()
 
 }
 (*****************************************************************************)
@@ -142,7 +175,7 @@ let integer = (decimalinteger | octinteger | hexinteger | bininteger)
 (* Main Rule *)
 (*****************************************************************************)
 
-rule token = parse
+rule initial = parse
 
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
@@ -165,9 +198,16 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   | "(" { TOParen(tokinfo lexbuf) }  | ")" { TCParen(tokinfo lexbuf) }
-  | "{" { TOBrace(tokinfo lexbuf) }  | "}" { TCBrace(tokinfo lexbuf) }
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
   (* todo? "{{" "}}" classic syntax *)
+  | "{" { 
+      push_mode ST_INITIAL; 
+      TOBrace(tokinfo lexbuf) 
+    }  
+  | "}" { 
+      pop_mode (); 
+      TCBrace(tokinfo lexbuf) 
+    }
 
   | "." { TDot(tokinfo lexbuf) }
   | "," { TComma(tokinfo lexbuf) }
@@ -182,7 +222,6 @@ rule token = parse
   (* operators *)
   | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
   | "*" { TStar(tokinfo lexbuf) }  | "/" { TDiv(tokinfo lexbuf) }
-  (* | "%" { TPercent(tokinfo lexbuf) } *)
 
   | "="  { TEq (tokinfo lexbuf) } 
   | "=="  { TEqEq (tokinfo lexbuf) } (* could be defined as regular operator? *)
@@ -201,6 +240,8 @@ rule token = parse
   (* | "&&" { TAndAnd(tokinfo lexbuf) } *)
   | "||" { TOrOr(tokinfo lexbuf) }
 
+  | "~" { TTilde(tokinfo lexbuf) }
+
   (* todo: can define operators in OPA *)
 
   (* ----------------------------------------------------------------------- *)
@@ -213,7 +254,7 @@ rule token = parse
       | Some f -> f info
       | None -> TIdent (s, info)
     }
-  (* todo? 'a, 'b'  type variables? *)
+  (* todo? 'a, 'b'  type variables? ~label ? *)
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -224,11 +265,10 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  (* todo: opa allows string interpolation => need a state in the lexer *)
+  (* opa allows string interpolation => need a state in the lexer *)
   | '"' { 
-      let info = tokinfo lexbuf in
-      let s = string_double_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
+      push_mode ST_DOUBLE_QUOTES;
+      TGUIL(tokinfo lexbuf)
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -249,7 +289,6 @@ rule token = parse
 (*****************************************************************************)
 (* Comment Rule *)
 (*****************************************************************************)
-
 (* todo: OPA allow nested comments *)
 and comment = parse
   | "*/"     { tok lexbuf }
@@ -263,20 +302,35 @@ and comment = parse
       }
   | eof { error "LEXER: WIERD end of file in comment"; ""}
 
-
+(*****************************************************************************)
+(* String Rule *)
+(*****************************************************************************)
 and string_double_quote = parse
-  | '"' { "" }
-  (* todo: '{' *)
+  | '"' { 
+      pop_mode ();
+      TGUIL(tokinfo lexbuf)
+    }
+  | '{' {
+      push_mode ST_INITIAL;
+      TOBrace(tokinfo lexbuf)
+    }
 
   | '\\' ['\\' 'n' 'r' 't' '{' '}'  '\'' '"']
-      { let s = tok lexbuf in s ^ string_double_quote lexbuf }
+      { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
   (* noteopti: must be the "negative" of the previous rules *)
   | [^ '{' '\\' '\"' '\n']* 
-      { let s = tok lexbuf in s ^ string_double_quote lexbuf }
+      { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
-  | eof { error "LEXER: end of file in string_double_quote"; "'"}
+  | eof { 
+      error "LEXER: end of file in string_double_quote";
+      TGUIL(tokinfo lexbuf)
+    }
   | _  { let s = tok lexbuf in
          error ("LEXER: unrecognised symbol in string_double_quote:"^s);
-         s ^ string_double_quote lexbuf
+         T_ENCAPSED(s, tokinfo lexbuf)
     }
+
+(*****************************************************************************)
+(* Html Rule *)
+(*****************************************************************************)
