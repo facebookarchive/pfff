@@ -94,7 +94,7 @@ and vof_expr =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("String", [ v1 ]))
   | Guil v1 ->
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
-  | Id v1 -> 
+  | Id v1 ->
       let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Id", [ v1 ]))
   | This -> Ocaml.VSum (("This", []))
   | Array_get ((v1, v2)) ->
@@ -203,7 +203,7 @@ and vof_constant_def { cst_name = v_cst_name; cst_body = v_cst_body } =
   let bnd = ("cst_body", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_cst_name in
-  let bnd = ("cst_name", arg) in let bnds = bnd :: bnds in 
+  let bnd = ("cst_name", arg) in let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_func_def {
                  f_ref = v_f_ref;
@@ -257,6 +257,7 @@ and
                   c_type = v_c_type;
                   c_name = v_c_name;
                   c_extends = v_c_extends;
+                  c_traits = v_c_traits;
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
                   c_variables = v_c_variables;
@@ -328,7 +329,7 @@ and
   let bnd = ("cv_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_string v_cv_name in
-  let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in 
+  let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in
    Ocaml.VDict bnds
 and
   vof_method_def {

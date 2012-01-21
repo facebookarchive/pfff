@@ -81,7 +81,7 @@ and toplevel env st acc =
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and constant_def env (_, cst_name, _, e, _) =
-  { 
+  {
     A.cst_name = name env cst_name;
     A.cst_body = expr env e;
   }
@@ -134,10 +134,10 @@ and stmt env st acc =
   | Globals (_, gvl, _) -> A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
-  | InlineHtml (s, tok) -> 
+  | InlineHtml (s, tok) ->
       A.Expr (A.Call (A.Id (A.builtin "echo", tok),
                      [A.String s])) :: acc
-  | Use (tok, fn, _) -> 
+  | Use (tok, fn, _) ->
       A.Expr (A.Call (A.Id (A.builtin "use", tok),
                      [A.String (use_filename env fn)])) :: acc
   | Unset (tok, (_, lp, _), e) ->
@@ -149,7 +149,7 @@ and stmt env st acc =
   | TypedDeclaration _ ->
       (* this is not yet used in our codebase *)
       raise Common.Impossible
-  | IfColon _ -> 
+  | IfColon _ ->
       raise ObsoleteConstruct
 
 
@@ -220,17 +220,17 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  | AssignNew _ -> 
+  | AssignNew _ ->
       failwith "expr AssignNew"
-  | Cast ((c, _), e) -> 
+  | Cast ((c, _), e) ->
       A.Cast (c, expr env e)
-  | CastUnset _ -> 
+  | CastUnset _ ->
       failwith "expr CastUnset"
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
       let cn = class_name_reference env cn in
       A.InstanceOf (e, cn)
-  | Eval (tok, (_, e, _)) -> 
+  | Eval (tok, (_, e, _)) ->
       A.Call (A.Id (A.builtin "eval", tok), [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
@@ -260,15 +260,15 @@ and expr env = function
   | Empty (tok, (_, lv, _)) ->
       A.Call (A.Id (A.builtin "empty", tok), [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
-      A.Call (A.Id (A.builtin "isset", tok), 
+      A.Call (A.Id (A.builtin "isset", tok),
              List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
-  | Yield (tok, e) -> 
+  | Yield (tok, e) ->
       A.Call (A.Id (A.builtin "yield", tok), [expr env e])
-  | YieldBreak (tok, tok2) -> 
+  | YieldBreak (tok, tok2) ->
       A.Call (A.Id (A.builtin "yield", tok),
              [A.Id (A.builtin "yield_break", tok2)])
-  | SgrepExprDots _ -> 
+  | SgrepExprDots _ ->
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
@@ -317,7 +317,7 @@ and name env = function
 
 and dname = function
   | DName (s, tok) ->
-      if s.[0] = '$' 
+      if s.[0] = '$'
       then failwith "dname: the string has a dollar, weird";
       (* We abuse Id to represent both variables and functions/classes
        * identifiers in ast_ph_simple, so to avoid collision
@@ -362,7 +362,7 @@ and lvalue env = function
       A.Call (A.Id (A.builtin "eval_var", tok), [lvalue env e])
   | VQualifier (q, v)  ->
       A.Class_get (A.Id (qualifier env q),
-                  A.Call (A.Id (A.builtin "eval_var", 
+                  A.Call (A.Id (A.builtin "eval_var",
                                Ast_php.fakeInfo (A.builtin "eval_var")),
                                [lvalue env v]))
   | ClassVar (q, dn) -> A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
@@ -416,7 +416,7 @@ and obj_access env obj (_, objp, args) =
 and obj_property env obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      A.Call (A.Id (A.builtin "ObjPropVar", 
+      A.Call (A.Id (A.builtin "ObjPropVar",
                    Ast_php.fakeInfo (A.builtin "ObjPropVar")),
              [lvalue env lv])
 
@@ -440,21 +440,23 @@ and argument env = function
 (* todo: use_traits! *)
 and class_def env c =
   let _, body, _ = c.c_body in
-  { 
+  {
     A.c_type = class_type env c.c_type ;
     A.c_name = name env c.c_name;
     A.c_extends =
     (match c.c_extends with
     | None -> []
     | Some (_, x) -> [fst (name env x)]);
+    A.c_traits =
+      List.fold_right (class_traits env) body [];
     A.c_implements =
     (match c.c_implements with None -> []
     | Some x -> interfaces env x);
-    A.c_constants = 
+    A.c_constants =
       List.fold_right (class_constants env) body [];
-    A.c_variables = 
+    A.c_variables =
       List.fold_right (class_variables env) body [];
-    A.c_methods = 
+    A.c_methods =
       List.fold_right (class_body env) body [];
   }
 
@@ -468,6 +470,12 @@ and class_type env = function
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in
   List.map (fun x -> fst (name env x)) intfs
+
+and class_traits env x acc =
+  match x with
+  | UseTrait (_, l, _) ->
+      List.map (name env) (comma_list l) @ acc
+  | _ -> acc
 
 and class_constants env st acc =
   match st with
@@ -510,7 +518,7 @@ and class_variables env st acc =
   | _ -> acc
 
 and visibility env = function
-  (* juju: TODO CHECK, pad: ??? *) 
+  (* juju: TODO CHECK, pad: ??? *)
   | [] -> A.Novis
   | Public :: _ -> A.Public
   | Private :: _ -> A.Private
@@ -525,11 +533,11 @@ and class_body env st acc =
   match st with
   | Method md ->
       method_def env md :: acc
-  | XhpDecl _ -> 
+  | XhpDecl _ ->
       (* TODO failwith "TODO xhp decl" or we don't care and it's ok? *)
       acc
   | UseTrait _ ->
-      failwith "UseTrait"
+      acc
   | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) -> acc
 
 and method_def env m =
@@ -594,7 +602,7 @@ and xhp_attr_value env = function
       A.Guil (List.map (encaps env) l)
   | XhpAttrExpr (_, e, _) ->
       (expr env e)
-  | SgrepXhpAttrValueMvar _ -> 
+  | SgrepXhpAttrValueMvar _ ->
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible
 
