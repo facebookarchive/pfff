@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2012 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -16,10 +16,8 @@ open Common
 
 module Ast = Ast_opa
 module Flag = Flag_parsing_opa
-module TH   = Token_helpers_opa
-
 module T = Parser_opa
-
+module TH   = Token_helpers_opa
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -72,13 +70,18 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
+    Lexer_opa.reset();
+    
     try 
-      let mltoken lexbuf = 
-        Lexer_opa.token lexbuf
+      let opa_token lexbuf = 
+        (* old: Lexer_opa.token lexbuf *)
+        match Lexer_opa.current_mode () with
+        | Lexer_opa.ST_INITIAL -> Lexer_opa.initial lexbuf
+        | Lexer_opa.ST_DOUBLE_QUOTES -> Lexer_opa.string_double_quote lexbuf
       in
       
       let rec tokens_aux acc = 
-        let tok = mltoken lexbuf in
+        let tok = opa_token lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
