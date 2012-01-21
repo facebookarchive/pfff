@@ -114,8 +114,11 @@ let keyword_table = Common.hash_of_list [
 (* ---------------------------------------------------------------------- *)
 (* Lexer State *)
 (* ---------------------------------------------------------------------- *)
+(* this is similar to what we do in lexer_php.mll, see the doc there *)
 type state_mode = 
-  (* initial mode, also started with { inside strings and terminated by } *)
+  (* initial mode, also started with '{' inside strings or html
+   * and terminated by '}'
+   *)
   | ST_INITIAL
   (* started with ", finished with ". In most languages strings 
    * are a single tokens but OPA allows interpolation which means 
@@ -124,9 +127,7 @@ type state_mode =
   | ST_DOUBLE_QUOTES
 
 let default_state = ST_INITIAL
-
-let _mode_stack = 
-  ref []
+let _mode_stack = ref []
 
 let reset () = 
   _mode_stack := [default_state];
@@ -221,7 +222,6 @@ rule initial = parse
   (* operators *)
   | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
   | "*" { TStar(tokinfo lexbuf) }  | "/" { TDiv(tokinfo lexbuf) }
-  (* | "%" { TPercent(tokinfo lexbuf) } *)
 
   | "="  { TEq (tokinfo lexbuf) } 
   | "=="  { TEqEq (tokinfo lexbuf) } (* could be defined as regular operator? *)
@@ -289,7 +289,6 @@ rule initial = parse
 (*****************************************************************************)
 (* Comment Rule *)
 (*****************************************************************************)
-
 (* todo: OPA allow nested comments *)
 and comment = parse
   | "*/"     { tok lexbuf }
@@ -303,7 +302,9 @@ and comment = parse
       }
   | eof { error "LEXER: WIERD end of file in comment"; ""}
 
-
+(*****************************************************************************)
+(* String Rule *)
+(*****************************************************************************)
 and string_double_quote = parse
   | '"' { 
       pop_mode ();
@@ -329,3 +330,7 @@ and string_double_quote = parse
          error ("LEXER: unrecognised symbol in string_double_quote:"^s);
          T_ENCAPSED(s, tokinfo lexbuf)
     }
+
+(*****************************************************************************)
+(* Html Rule *)
+(*****************************************************************************)
