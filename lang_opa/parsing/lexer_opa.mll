@@ -295,6 +295,15 @@ rule initial = parse
            yyless (String.length tag) lexbuf;
            TLess(tokinfo lexbuf)
      }
+   | "<>" {
+       (* can't just put ("<" xmltag?) because then the previous rule
+        * on the < symbol would take over
+        *)
+       yyless 1 lexbuf;
+       let tag = "" in
+       push_mode (ST_IN_XML_TAG tag);
+       T_XML_OPEN_TAG(tag, tokinfo lexbuf)
+     }
 
 
   (* ----------------------------------------------------------------------- *)
