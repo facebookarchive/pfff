@@ -286,7 +286,13 @@ rule initial = parse
    | "<" (xmltag as tag) { 
        match !_last_non_whitespace_like_token with
        | Some (
-           TEq _
+             TOParen _ | TCParen _
+           | TOBrace _ | TCBrace _
+           | TOBracket _ | TCBracket _
+           | TEq _ | TComma _ | TColon _ 
+           | Tif _ | Tthen _ | Telse _
+           | TArrow _
+           | TQuestion _
          )
          ->
            push_mode (ST_IN_XML_TAG tag);
