@@ -78,11 +78,15 @@ let tokens2 file =
         match Lexer_opa.current_mode () with
         | Lexer_opa.ST_INITIAL -> Lexer_opa.initial lexbuf
         | Lexer_opa.ST_DOUBLE_QUOTES -> Lexer_opa.string_double_quote lexbuf
+        | Lexer_opa.ST_IN_XML_TAG tag -> Lexer_opa.in_xml_tag tag lexbuf
+        | Lexer_opa.ST_IN_XML_TEXT tag -> Lexer_opa.in_xml_text tag lexbuf
       in
       
       let rec tokens_aux acc = 
         let tok = opa_token lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
+        if not (TH.is_comment tok)
+        then Lexer_opa._last_non_whitespace_like_token := Some tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=

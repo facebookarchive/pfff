@@ -45,7 +45,7 @@ open Ast_opa
 %token <string * Ast_opa.tok> TString
 %token <string * Ast_opa.tok> T_ENCAPSED
 %token <Ast_opa.tok> TGUIL
-%token <string * Ast_opa.tok> TIdent
+%token <string * Ast_opa.tok> TIdent TSharpIdent
 
 /*(* keywords tokens *)*/
 %token <Ast_opa.tok>
@@ -82,6 +82,14 @@ open Ast_opa
  TTilde
 
 /*(* operators *)*/
+
+/*(* xml *)*/
+%token <Ast_opa.tag * Ast_opa.tok> T_XML_OPEN_TAG
+%token <Ast_opa.tag option * Ast_opa.tok> T_XML_CLOSE_TAG
+%token <Ast_opa.attr * Ast_opa.tok> T_XML_ATTR
+%token <Ast_opa.tok> T_XML_MORE
+/*(* could be merged with T_ENCAPSED *)*/
+%token <string * Ast_opa.tok> T_XML_TEXT
 
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/

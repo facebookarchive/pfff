@@ -51,6 +51,14 @@ let tok     lexbuf  =
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
+(* pad: hack around ocamllex to emulate the yyless feature of flex *)
+let yyless n lexbuf = 
+  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
+  let currp = lexbuf.Lexing.lex_curr_p in
+  lexbuf.Lexing.lex_curr_p <- { currp with 
+    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
+  }
+
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
 (* ---------------------------------------------------------------------- *)
@@ -125,12 +133,27 @@ type state_mode =
    * a string can contain nested OPA expressions.
    *)
   | ST_DOUBLE_QUOTES
+  (* started with <xx when preceded by a certain token (e.g. '='),
+   * finished by '>' by transiting to ST_IN_XML_TEXT, or really finished
+   * by '/>'.
+   *)
+  | ST_IN_XML_TAG of Ast_opa.tag (* the current tag, e,g, "span" *)
+  (* started with the '>' of an opening tag, finished when '</x>' *)
+  | ST_IN_XML_TEXT of Ast_opa.tag (* the current tag *)
 
 let default_state = ST_INITIAL
 let _mode_stack = ref []
+(* The logic to modify _last_non_whitespace_like_token is in the 
+ * caller of the lexer, that is in Parse_opa.tokens.
+ * We use it for XML parsing, to disambiguate the use of '<' we need to
+ * look at the token before.
+ *)
+let _last_non_whitespace_like_token = 
+  ref (None: Parser_opa.token option)
 
 let reset () = 
   _mode_stack := [default_state];
+  _last_non_whitespace_like_token := None;
   ()
 
 let push_mode mode = Common.push2 mode _mode_stack
@@ -156,6 +179,9 @@ let newline = '\n'
 let space = [' ' '\t']
 
 let ident = (letter | '_') (letter | digit | '_')*
+
+let xmltag = ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
+let xmlattr = xmltag
 
 
 let nonzerodigit = ['1'-'9']
@@ -243,6 +269,33 @@ rule initial = parse
   | "~" { TTilde(tokinfo lexbuf) }
 
   (* todo: can define operators in OPA *)
+
+
+  (* We need to disambiguate the different use of '<' to know whether 
+   * we are in a position where an XML construct can be started. Knowing
+   * what was the previous token seems enough; no need to hack the
+   * grammar to have a global shared by the lexer and parser.
+   * 
+   * We could maybe even return a TSMALLER in both cases and still
+   * not generate any conflict in the grammar, but it feels cleaner to 
+   * generate a different token, because we will really change the lexing
+   * mode when we will see a '>' which makes the parser enter in the
+   * ST_IN_XML_TEXT state where it's ok to write "I don't like you"
+   * in which the quote does not need to be ended.
+   *)
+   | "<" (xmltag as tag) { 
+       match !_last_non_whitespace_like_token with
+       | Some (
+           TEq _
+         )
+         ->
+           push_mode (ST_IN_XML_TAG tag);
+           T_XML_OPEN_TAG(tag, tokinfo lexbuf)
+       | _ -> 
+           yyless (String.length tag) lexbuf;
+           TLess(tokinfo lexbuf)
+     }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -334,3 +387,70 @@ and string_double_quote = parse
 (*****************************************************************************)
 (* Html Rule *)
 (*****************************************************************************)
+and in_xml_tag current_tag = parse
+  (* todo? allow comments too there ? *)
+  | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
+  | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
+
+  (* attribute management *)
+  | xmlattr { T_XML_ATTR(tok lexbuf, tokinfo lexbuf) }
+  | "="     { TEq(tokinfo lexbuf) }
+  | '"' {
+      push_mode ST_DOUBLE_QUOTES;
+      TGUIL(tokinfo lexbuf)
+    }
+  | "{" {
+      push_mode ST_INITIAL; 
+      TOBrace(tokinfo lexbuf)
+    }
+  (* todo: concat them? *)
+  | "#" (ident as s) { TSharpIdent(s, tokinfo lexbuf) }
+
+  (* When we see a ">", it means it's just the end of 
+   * the opening tag. Transit to IN_XML_TEXT.
+   *)
+  | ">" { 
+      pop_mode();
+      push_mode (ST_IN_XML_TEXT current_tag);
+      T_XML_MORE (tokinfo lexbuf)
+    }
+
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _  { let s = tok lexbuf in
+         error ("LEXER: unrecognised symbol in in_xml_tag:"^s);
+         TUnknown(tokinfo lexbuf)
+   }
+
+and in_xml_text current_tag = parse
+
+  (* a nested xml construct *)
+  | "<" (xmltag as tag) { 
+      push_mode (ST_IN_XML_TAG tag);
+      T_XML_OPEN_TAG(tag, tokinfo lexbuf)
+    }
+
+  | "<" "/" (xmltag as tag) ">" { 
+      if (tag <> current_tag)
+      then error (spf "XML: wrong closing tag for, %s != %s" tag current_tag);
+      pop_mode ();
+      T_XML_CLOSE_TAG(Some tag, tokinfo lexbuf)
+    }
+
+  | "</>" { 
+      (* no check :( *)
+      pop_mode ();
+      T_XML_CLOSE_TAG(None, tokinfo lexbuf)
+    }
+
+  (* Interpolation *)
+  | "{" {
+      push_mode ST_INITIAL; 
+      TOBrace(tokinfo lexbuf)
+    }
+
+  (* opti: *)
+  | [^'<' '{']+ { T_XML_TEXT (tok lexbuf, tokinfo lexbuf) }
+  | _  { let s = tok lexbuf in
+         error ("LEXER: unrecognised symbol in in_xml_text:"^s);
+         TUnknown(tokinfo lexbuf)
+   }
