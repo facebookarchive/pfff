@@ -125,7 +125,7 @@ open Ast_opa
 
 main: program EOF { [] }
 
-program: declaration_star { }
+program: declaration_star { $1 }
 
 declaration:
  | type_definition { }
@@ -141,6 +141,11 @@ declaration:
 long_ident:
  | TIdent { }
  | long_ident TDot TIdent { }
+
+/*(* less: why they dont just use <ident> in grammar? *)*/
+package_ident: TIdent { }
+
+field: TIdent { }
 
 /*(*************************************************************************)*/
 /*(* Types *)*/
@@ -220,9 +225,15 @@ type_definition: Ttype { }
 /*(* Module/Package *)*/
 /*(*************************************************************************)*/
 
-package_declaration: Tpackage TIdent { }
+package_declaration: Tpackage package_ident { }
 
-package_import: Timport { }
+/*(* was package_expression_star in original grammar but weird *)*/
+package_import: Timport package_expression_plus { }
+
+package_expression:
+ | package_ident { }
+ | package_expression TStar { }
+ | TOBrace package_expression_plus TCBrace { }
 
 /*(*************************************************************************)*/
 /*(* xxx_opt, xxx_list *)*/
@@ -235,6 +246,10 @@ declaration_star:
 rec_binding_plus:
  | rec_binding { }
  | rec_binding_plus Tand rec_binding { }
+
+package_expression_plus:
+ | package_expression { }
+ | package_expression_plus TComma package_expression { }
 
 pattern_params_star:
  | /*(*empty*)*/    { }
