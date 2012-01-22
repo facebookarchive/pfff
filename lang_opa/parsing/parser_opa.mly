@@ -20,15 +20,23 @@
 open Common
 
 open Ast_opa
-
 %}
 
 /*(*************************************************************************)*/
-/*(* tokens *)*/
+/*(*1 Tokens *)*/
 /*(*************************************************************************)*/
+/*
+(* Some tokens below are not even used in this file because they are filtered
+ * in some intermediate phases (e.g. the comment tokens).
+ *)*/
+
+/*(* unrecognized token, will generate parse error *)*/
+%token <Ast_opa.tok> TUnknown
+
+%token <Ast_opa.tok> EOF
 
 /*(*-----------------------------------------*)*/
-/*(* the comment tokens *)*/
+/*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
@@ -36,7 +44,7 @@ open Ast_opa
 %token <Ast_opa.tok> TCommentMisc
 
 /*(*-----------------------------------------*)*/
-/*(* the normal tokens *)*/
+/*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
@@ -96,18 +104,20 @@ open Ast_opa
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
+/*(*************************************************************************)*/
+/*(*1 Priorities *)*/
+/*(*************************************************************************)*/
+/*(* must be at the top so that it has the lowest priority *)*/
+%nonassoc SHIFTHERE
 
-/*(* classic *)*/
-%token <Ast_opa.tok> TUnknown
-%token <Ast_opa.tok> EOF
+%nonassoc Telse
 
-/*(*-----------------------------------------*)*/
-/*(* priorities *)*/
-/*(*-----------------------------------------*)*/
+%left TPlus TMinus
+%left TStar TDiv
 
 
 /*(*************************************************************************)*/
-/*(* Rules type declaration *)*/
+/*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
 %start main
@@ -116,11 +126,11 @@ open Ast_opa
 %%
 
 /*(*************************************************************************)*/
-/*(* TOC *)*/
+/*(*1 TOC *)*/
 /*(*************************************************************************)*/
 
 /*(*************************************************************************)*/
-/*(* Toplevel, compilation units *)*/
+/*(*1 Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
 main: program EOF { [] }
@@ -135,7 +145,7 @@ declaration:
  | do_ { }
 
 /*(*************************************************************************)*/
-/*(* Names *)*/
+/*(*1 Names *)*/
 /*(*************************************************************************)*/
 
 long_ident:
@@ -148,21 +158,28 @@ package_ident: TIdent { }
 field: TIdent { }
 
 /*(*************************************************************************)*/
-/*(* Types *)*/
+/*(*1 Types *)*/
 /*(*************************************************************************)*/
 
+/*(* TODO *)*/
 type_:
  | Tint { }
  | Tstring { }
  | Tfloat { }
 
 /*(*************************************************************************)*/
-/*(* Expressions *)*/
+/*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
+/*(* TODO *)*/
 expr:
  | literal { }
-
+ | TIdent { }
+ | Tif expr Tthen expr %prec SHIFTHERE { }
+ | Tif expr Tthen expr Telse  expr { }
+/* conflict
+ | expr TColon type_ { }
+*/
 literal:
  | TInt { }
  | TFloat { }
@@ -171,35 +188,40 @@ literal:
 do_: Tdo expr { }
 
 /*(*************************************************************************)*/
-/*(* HTML *)*/
+/*(*2 HTML *)*/
 /*(*************************************************************************)*/
 
 /*(*************************************************************************)*/
-/*(* CSS *)*/
+/*(*2 CSS *)*/
 /*(*************************************************************************)*/
 
 /*(*************************************************************************)*/
-/*(* Pattern *)*/
+/*(*2 Pattern *)*/
 /*(*************************************************************************)*/
 
+/*(* TODO *)*/
 pattern:
  | literal { }
 
 /*(*************************************************************************)*/
-/*(* Function/Var Binding *)*/
+/*(*1 Function/Var Binding *)*/
 /*(*************************************************************************)*/
 
 binding:
 | non_rec_binding { }
 | Trec rec_binding_plus { }
 
+/*(* less: was just binding_directive in original grammar, weird *)*/
 non_rec_binding:
-| binding_directive ident_binding { }
-| binding_directive val_binding { }
+| binding_directive_star ident_binding { }
+| binding_directive_star val_binding { }
 
-binding_directive:
- | /*(*empty*)*/    { }
+rec_binding:
+ | ident_binding { }
+ | Tval val_binding { }
 
+
+/*(* less: was params+ in original grammar, weird *)*/
 ident_binding:
  | TIdent TOParen pattern_params_star TCParen coerce_opt TEq expr { }
  | TIdent coerce_opt TEq expr { }
@@ -209,20 +231,20 @@ val_binding:
 
 pattern_params: pattern { }
 
-rec_binding:
- | ident_binding { }
- | Tval val_binding { }
+
+binding_directive:
+ | TAt    { }
 
 coerce: TColon type_ { }
 
 /*(*************************************************************************)*/
-/*(* Type Binding *)*/
+/*(*1 Type Binding *)*/
 /*(*************************************************************************)*/
 
 type_definition: Ttype { }
 
 /*(*************************************************************************)*/
-/*(* Module/Package *)*/
+/*(*1 Module/Package *)*/
 /*(*************************************************************************)*/
 
 package_declaration: Tpackage package_ident { }
@@ -236,7 +258,7 @@ package_expression:
  | TOBrace package_expression_plus TCBrace { }
 
 /*(*************************************************************************)*/
-/*(* xxx_opt, xxx_list *)*/
+/*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
 declaration_star:
@@ -255,6 +277,11 @@ pattern_params_star:
  | /*(*empty*)*/    { }
  | pattern_params_star TComma pattern_params { }
 
+binding_directive_star:
+ | /*(*empty*)*/    { }
+ | binding_directive_star binding_directive { }
+
 coerce_opt:
  | /*(*empty*)*/    { }
  | coerce { }
+
