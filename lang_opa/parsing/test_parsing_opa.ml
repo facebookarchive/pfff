@@ -24,15 +24,15 @@ let test_tokens_opa file =
 let test_parse_opa xs =
 
   let fullxs = Lib_parsing_opa.find_opa_files_of_dir_or_files xs in
-  let stat_list = ref [] in
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_opa.parse file in
-    Common.push2 stat stat_list;
+    Common.save_excursion Flag.error_recovery true (fun () ->
+      let _xs = Parse_opa.parse file in
+      ()
+    )
   );
-  Parse_info.print_parsing_stat_list !stat_list;
   ()
 
 (*****************************************************************************)
