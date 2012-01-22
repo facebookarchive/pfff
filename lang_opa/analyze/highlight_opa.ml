@@ -202,8 +202,11 @@ let visit_toplevel
 
     (* keywords  *)
     | T.TIdent("bool", ii) -> tag ii TypeMisc
+
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
     | T.TIdent("string", ii) -> tag ii TypeMisc
+    | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
+    | T.Tstring ii -> tag ii TypeMisc
 
     | T.Tpublic ii | T.Tprivate ii
         -> tag ii Keyword

@@ -126,7 +126,7 @@ let rec lexer_function tr = fun lexbuf ->
       tr.PI.rest <- xs;
       tr.PI.current <- v;
       tr.PI.passed <- v::tr.PI.passed;
-      if (match v with T.TComment _ -> true | _ -> false)
+      if TH.is_comment v
       then lexer_function (*~pass*) tr lexbuf
       else v
 

@@ -111,7 +111,10 @@ let keyword_table = Common.hash_of_list [
   "exposed",   (fun ii -> Texposed ii);
   "protected", (fun ii -> Tprotected ii);
 
-  (* bool, int, float, string 
+  "int", (fun ii -> Tint ii);
+  "float", (fun ii -> Tfloat ii);
+  "string", (fun ii -> Tstring ii);
+  (* bool
    * list, option, map, set
    * 
    * true, false

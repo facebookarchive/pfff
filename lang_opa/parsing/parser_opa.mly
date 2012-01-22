@@ -61,7 +61,8 @@ open Ast_opa
  Tpackage Tmodule Timport 
  Tpublic Tprivate   Tclient Tserver  Texposed Tprotected
  Tdo
-
+ /*(* was not defined as keywords in manual, but used as keywords in grammar*)*/
+ Tint Tstring Tfloat
 
 /*(* syntax *)*/
 %token <Ast_opa.tok> TOParen TCParen 
@@ -131,7 +132,7 @@ declaration:
  | binding { }
  | package_declaration { }
  | package_import { }
-
+ | do_ { }
 
 /*(*************************************************************************)*/
 /*(* Names *)*/
@@ -145,9 +146,24 @@ long_ident:
 /*(* Types *)*/
 /*(*************************************************************************)*/
 
+type_:
+ | Tint { }
+ | Tstring { }
+ | Tfloat { }
+
 /*(*************************************************************************)*/
 /*(* Expressions *)*/
 /*(*************************************************************************)*/
+
+expr:
+ | literal { }
+
+literal:
+ | TInt { }
+ | TFloat { }
+ | TString { }
+
+do_: Tdo expr { }
 
 /*(*************************************************************************)*/
 /*(* HTML *)*/
@@ -161,12 +177,38 @@ long_ident:
 /*(* Pattern *)*/
 /*(*************************************************************************)*/
 
+pattern:
+ | literal { }
+
 /*(*************************************************************************)*/
 /*(* Function/Var Binding *)*/
 /*(*************************************************************************)*/
 
-binding: Tfunction { }
+binding:
+| non_rec_binding { }
+| Trec rec_binding_plus { }
 
+non_rec_binding:
+| binding_directive ident_binding { }
+| binding_directive val_binding { }
+
+binding_directive:
+ | /*(*empty*)*/    { }
+
+ident_binding:
+ | TIdent TOParen pattern_params_star TCParen coerce_opt TEq expr { }
+ | TIdent coerce_opt TEq expr { }
+
+val_binding:
+ | pattern TEq expr { }
+
+pattern_params: pattern { }
+
+rec_binding:
+ | ident_binding { }
+ | Tval val_binding { }
+
+coerce: TColon type_ { }
 
 /*(*************************************************************************)*/
 /*(* Type Binding *)*/
@@ -190,3 +232,14 @@ declaration_star:
  | /*(*empty*)*/    { }
  | declaration_star declaration { }
 
+rec_binding_plus:
+ | rec_binding { }
+ | rec_binding_plus Tand rec_binding { }
+
+pattern_params_star:
+ | /*(*empty*)*/    { }
+ | pattern_params_star TComma pattern_params { }
+
+coerce_opt:
+ | /*(*empty*)*/    { }
+ | coerce { }

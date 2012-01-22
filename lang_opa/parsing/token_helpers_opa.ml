@@ -119,6 +119,10 @@ let visitor_info_of_tok f = function
   | Tthen ii -> Tthen (f ii)
   | Tif ii -> Tif (f ii)
 
+  | Tint ii -> Tint (f ii)
+  | Tstring ii -> Tstring (f ii)
+  | Tfloat ii -> Tfloat (f ii)
+
   | Tprotected ii -> Tprotected (f ii)
   | Texposed ii -> Texposed (f ii)
   | Tclient ii -> Tclient (f ii)
