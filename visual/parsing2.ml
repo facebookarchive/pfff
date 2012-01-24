@@ -49,7 +49,7 @@ type ast =
   | Js  of Parse_js.program2
   | Php of Parse_php.program2
 
-  | Opa of Parse_opa.program2
+  | Opa of Parse_opa.program_with_tokens
 
   | Cpp of Parse_cpp.program2
 
@@ -253,8 +253,10 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Opa) ->
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache 
-         (fun file -> Opa (Parse_opa.parse file +> fst))
-         (function Opa x -> x | _ -> raise Impossible))
+         (fun file -> Opa (Parse_opa.parse file))
+         (function 
+         | Opa (ast, toks) -> [ast, ("", toks)] 
+         | _ -> raise Impossible))
         ~highlight_visit:Highlight_opa.visit_toplevel
         ~info_of_tok:Token_helpers_opa.info_of_tok
         ~str_of_tok:Token_helpers_opa.str_of_tok

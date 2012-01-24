@@ -45,7 +45,7 @@ open Ast_opa
 %token <string * Ast_opa.tok> TString
 %token <string * Ast_opa.tok> T_ENCAPSED
 %token <Ast_opa.tok> TGUIL
-%token <string * Ast_opa.tok> TIdent
+%token <string * Ast_opa.tok> TIdent TSharpIdent
 
 /*(* keywords tokens *)*/
 %token <Ast_opa.tok>
@@ -61,7 +61,8 @@ open Ast_opa
  Tpackage Tmodule Timport 
  Tpublic Tprivate   Tclient Tserver  Texposed Tprotected
  Tdo
-
+ /*(* was not defined as keywords in manual, but used as keywords in grammar*)*/
+ Tint Tstring Tfloat
 
 /*(* syntax *)*/
 %token <Ast_opa.tok> TOParen TCParen 
@@ -82,6 +83,14 @@ open Ast_opa
  TTilde
 
 /*(* operators *)*/
+
+/*(* xml *)*/
+%token <Ast_opa.tag * Ast_opa.tok> T_XML_OPEN_TAG
+%token <Ast_opa.tag option * Ast_opa.tok> T_XML_CLOSE_TAG
+%token <Ast_opa.attr * Ast_opa.tok> T_XML_ATTR
+%token <Ast_opa.tok> T_XML_MORE
+/*(* could be merged with T_ENCAPSED *)*/
+%token <string * Ast_opa.tok> T_XML_TEXT
 
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/
@@ -114,21 +123,138 @@ open Ast_opa
 /*(* Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-main: EOF { () }
+main: program EOF { [] }
+
+program: declaration_star { $1 }
+
+declaration:
+ | type_definition { }
+ | binding { }
+ | package_declaration { }
+ | package_import { }
+ | do_ { }
 
 /*(*************************************************************************)*/
 /*(* Names *)*/
 /*(*************************************************************************)*/
 
+long_ident:
+ | TIdent { }
+ | long_ident TDot TIdent { }
+
+/*(* less: why they dont just use <ident> in grammar? *)*/
+package_ident: TIdent { }
+
+field: TIdent { }
+
+/*(*************************************************************************)*/
+/*(* Types *)*/
+/*(*************************************************************************)*/
+
+type_:
+ | Tint { }
+ | Tstring { }
+ | Tfloat { }
+
 /*(*************************************************************************)*/
 /*(* Expressions *)*/
 /*(*************************************************************************)*/
 
+expr:
+ | literal { }
+
+literal:
+ | TInt { }
+ | TFloat { }
+ | TString { }
+
+do_: Tdo expr { }
+
 /*(*************************************************************************)*/
-/*(* Misc *)*/
+/*(* HTML *)*/
 /*(*************************************************************************)*/
+
+/*(*************************************************************************)*/
+/*(* CSS *)*/
+/*(*************************************************************************)*/
+
+/*(*************************************************************************)*/
+/*(* Pattern *)*/
+/*(*************************************************************************)*/
+
+pattern:
+ | literal { }
+
+/*(*************************************************************************)*/
+/*(* Function/Var Binding *)*/
+/*(*************************************************************************)*/
+
+binding:
+| non_rec_binding { }
+| Trec rec_binding_plus { }
+
+non_rec_binding:
+| binding_directive ident_binding { }
+| binding_directive val_binding { }
+
+binding_directive:
+ | /*(*empty*)*/    { }
+
+ident_binding:
+ | TIdent TOParen pattern_params_star TCParen coerce_opt TEq expr { }
+ | TIdent coerce_opt TEq expr { }
+
+val_binding:
+ | pattern TEq expr { }
+
+pattern_params: pattern { }
+
+rec_binding:
+ | ident_binding { }
+ | Tval val_binding { }
+
+coerce: TColon type_ { }
+
+/*(*************************************************************************)*/
+/*(* Type Binding *)*/
+/*(*************************************************************************)*/
+
+type_definition: Ttype { }
+
+/*(*************************************************************************)*/
+/*(* Module/Package *)*/
+/*(*************************************************************************)*/
+
+package_declaration: Tpackage package_ident { }
+
+/*(* was package_expression_star in original grammar but weird *)*/
+package_import: Timport package_expression_plus { }
+
+package_expression:
+ | package_ident { }
+ | package_expression TStar { }
+ | TOBrace package_expression_plus TCBrace { }
 
 /*(*************************************************************************)*/
 /*(* xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
+declaration_star:
+ | /*(*empty*)*/    { }
+ | declaration_star declaration { }
+
+rec_binding_plus:
+ | rec_binding { }
+ | rec_binding_plus Tand rec_binding { }
+
+package_expression_plus:
+ | package_expression { }
+ | package_expression_plus TComma package_expression { }
+
+pattern_params_star:
+ | /*(*empty*)*/    { }
+ | pattern_params_star TComma pattern_params { }
+
+coerce_opt:
+ | /*(*empty*)*/    { }
+ | coerce { }

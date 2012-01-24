@@ -54,11 +54,17 @@ let visitor_info_of_tok f = function
   | TTilde ii -> TTilde (f ii)
   | TGUIL ii -> TGUIL (f ii)
   | T_ENCAPSED (s, ii) -> T_ENCAPSED (s, f ii)
+  | T_XML_OPEN_TAG (s, ii) -> T_XML_OPEN_TAG (s, f ii)
+  | T_XML_CLOSE_TAG (s, ii) -> T_XML_CLOSE_TAG (s, f ii)
+  | T_XML_ATTR (s, ii) -> T_XML_ATTR (s, f ii)
+  | T_XML_MORE (ii) -> T_XML_MORE (f ii)
+  | T_XML_TEXT (s, ii) -> T_XML_TEXT (s, f ii)
 
   | TInt (s, ii) -> TInt (s, f ii)
   | TFloat (s, ii) -> TFloat (s, f ii)
   | TString (s, ii) -> TString (s, f ii)
   | TIdent (s, ii) -> TIdent (s, f ii)
+  | TSharpIdent (s, ii) -> TSharpIdent (s, f ii)
 
 
   | TOParen ii -> TOParen (f ii)
@@ -112,6 +118,10 @@ let visitor_info_of_tok f = function
   | Telse ii -> Telse (f ii)
   | Tthen ii -> Tthen (f ii)
   | Tif ii -> Tif (f ii)
+
+  | Tint ii -> Tint (f ii)
+  | Tstring ii -> Tstring (f ii)
+  | Tfloat ii -> Tfloat (f ii)
 
   | Tprotected ii -> Tprotected (f ii)
   | Texposed ii -> Texposed (f ii)

@@ -16,10 +16,8 @@ open Common
 
 module Ast = Ast_ml
 module Flag = Flag_parsing_ml
-module TH   = Token_helpers_ml
-
 module T = Parser_ml
-
+module TH   = Token_helpers_ml
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -159,8 +157,10 @@ let tokens a =
 (* Helper for main entry point *)
 (*****************************************************************************)
 
-(* Hacked lex. This function use refs passed by parse.
- * 'tr' means 'token refs'.
+(* Hacked lex. Ocamlyacc expects a function returning one token at a time
+ * but we actually lex all the file so we need a wrapper to turn that
+ * into a stream.
+ * This function use refs passed by parse. 'tr' means 'token refs'. 
  *)
 let rec lexer_function tr = fun lexbuf ->
   match tr.PI.rest with

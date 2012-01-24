@@ -32,14 +32,9 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_opa.token list)
-
-let program_of_program2 xs = 
-  xs +> List.map fst
+(* the token list contains also the comment-tokens *)
+type program_with_tokens = 
+  Ast_opa.program * Parser_opa.token list
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -59,6 +54,8 @@ let lexbuf_to_strpos lexbuf     =
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
+let error_msg_tok tok = 
+  Parse_info.error_message_info (TH.info_of_tok tok)
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -78,11 +75,15 @@ let tokens2 file =
         match Lexer_opa.current_mode () with
         | Lexer_opa.ST_INITIAL -> Lexer_opa.initial lexbuf
         | Lexer_opa.ST_DOUBLE_QUOTES -> Lexer_opa.string_double_quote lexbuf
+        | Lexer_opa.ST_IN_XML_TAG tag -> Lexer_opa.in_xml_tag tag lexbuf
+        | Lexer_opa.ST_IN_XML_TEXT tag -> Lexer_opa.in_xml_text tag lexbuf
       in
       
       let rec tokens_aux acc = 
         let tok = opa_token lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
+        if not (TH.is_comment tok)
+        then Lexer_opa._last_non_whitespace_like_token := Some tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=
@@ -106,30 +107,70 @@ let tokens2 file =
                  (PI.error_message file (lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
-          
-
 let tokens a = 
   Common.profile_code "Parse_opa.tokens" (fun () -> tokens2 a)
+
+(*****************************************************************************)
+(* Helper for main entry point *)
+(*****************************************************************************)
+
+(* Hacked lex. Ocamlyacc expects a function returning one token at a time
+ * but we actually lex all the file so we need a wrapper to turn that
+ * into a stream.
+ * This function use refs passed by parse. 'tr' means 'token refs'. 
+ *)
+let rec lexer_function tr = fun lexbuf ->
+  match tr.PI.rest with
+  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
+  | v::xs -> 
+      tr.PI.rest <- xs;
+      tr.PI.current <- v;
+      tr.PI.passed <- v::tr.PI.passed;
+      if TH.is_comment v
+      then lexer_function (*~pass*) tr lexbuf
+      else v
+
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-(* could move that in h_program-lang/, but maybe clearer to put it closer
- * to the parsing function.
- *)
 exception Parse_error of Parse_info.info
 
 let parse2 filename = 
 
-  let stat = Parse_info.default_stat filename in
-  let toks_orig = tokens filename in
-  (* TODO *)
-  [(), ("", toks_orig)], stat
+  let toks = tokens filename in
+
+  let tr = Parse_info.mk_tokens_state toks in
+  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+
+  (* -------------------------------------------------- *)
+  (* Call parser *)
+  (* -------------------------------------------------- *)
+  try 
+    (Common.profile_code "Parser_opa.main" (fun () ->
+      Parser_opa.main (lexer_function tr) lexbuf_fake, toks
+    ))
+  with exn ->
+    let current = tr.PI.current in
+
+    if not !Flag.error_recovery 
+    then raise (Parse_error (TH.info_of_tok current));
+
+    if !Flag.show_parsing_error
+    then 
+      (match exn with
+      (* Lexical is not anymore launched I think *)
+      | Lexer_opa.Lexical s -> 
+          pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok current)
+      | Parsing.Parse_error -> 
+          pr2 ("parse error \n = " ^ error_msg_tok current)
+            (* | Semantic_java.Semantic (s, i) -> 
+               pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
+            *)
+      | e -> raise Impossible
+      );
+    [], toks
 
 let parse a = 
   Common.profile_code "Parse_opa.parse" (fun () -> parse2 a)
-
-let parse_program file = 
-  let (ast2, _stat) = parse file in
-  program_of_program2 ast2

@@ -320,6 +320,10 @@ and toplevel =
   | TopDirective of info
 
   | NotParsedCorrectly of info list
+  (* todo: could maybe get rid of that now that we don't really use
+   * berkeley DB and prefer Prolog, and so we don't need a sentinel
+   * ast elements to associate the comments with it
+   *)
   | FinalDef of info (* EOF *)
 
  and program = toplevel list

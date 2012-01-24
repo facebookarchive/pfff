@@ -202,8 +202,11 @@ let visit_toplevel
 
     (* keywords  *)
     | T.TIdent("bool", ii) -> tag ii TypeMisc
+
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
     | T.TIdent("string", ii) -> tag ii TypeMisc
+    | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
+    | T.Tstring ii -> tag ii TypeMisc
 
     | T.Tpublic ii | T.Tprivate ii
         -> tag ii Keyword
@@ -244,6 +247,32 @@ let visit_toplevel
     | T.Tor ii
     | T.Tfunction ii
         -> tag ii Keyword
+
+    (* xml  *)
+    | T.T_XML_OPEN_TAG (s, ii) ->
+        (* todo: match s with ...
+         * look the html highlighter in lang_html/ ?
+         *)
+        tag ii Keyword
+    | T.T_XML_CLOSE_TAG (sopt, ii) ->
+        (* todo: match s with ... *)
+        tag ii Keyword
+
+    | T.T_XML_ATTR (s, ii) ->
+        (* todo: match s with ...
+         * look the html highlighter in lang_html/ ?
+         *)
+        tag ii Keyword
+    | T.T_XML_MORE ii ->
+        tag ii Keyword
+    | T.T_XML_TEXT (s, ii) -> tag ii String
+
+    (* css *)
+    | T.TSharpIdent (s, ii) ->
+        ()
+
+    | T.TSharp ii
+        -> tag ii Punctuation
 
     (* symbols *)
     | T.TEq ii ->
@@ -290,7 +319,6 @@ let visit_toplevel
     | T.THat ii
     | T.TOrOr ii
     | T.TAndAnd ii
-    | T.TSharp ii
     | T.TAntiSlash ii
     | T.TAt ii
     | T.TUnderscore ii

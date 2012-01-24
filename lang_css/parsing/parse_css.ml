@@ -16,10 +16,8 @@ open Common
 
 module Ast = Ast_css
 module Flag = Flag_parsing_css
-module TH   = Token_helpers_css
-
 module T = Parser_css
-
+module TH   = Token_helpers_css
 module PI = Parse_info
 
 (*****************************************************************************)

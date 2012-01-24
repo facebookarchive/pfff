@@ -16,9 +16,7 @@ open Common
 
 module Ast = Ast_lisp
 module Flag = Flag_parsing_lisp
-
 module PI = Parse_info
-
 (* we don't need a full grammar for lisp code, so we put everything,
  * the token type, the helper in parser_ml. No token_helpers_lisp.ml
  *)
@@ -27,7 +25,6 @@ module TH = Parser_lisp
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * alt: 
  *  - Could reuse the parser in ocamlsexp ? but they just have Atom | Sexp
@@ -102,7 +99,6 @@ let tokens2 file =
                  (PI.error_message file (lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
-
 
 let tokens a = 
   Common.profile_code "Parse_lisp.tokens" (fun () -> tokens2 a)
