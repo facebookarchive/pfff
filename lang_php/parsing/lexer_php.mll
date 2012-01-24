@@ -1370,10 +1370,28 @@ and st_in_xhp_tag current_tag = parse
    * certain places. Not sure I need to enforce this too.
    * Simpler to ignore whitespaces.
    * 
-   * todo? allow comments too there ? 
+   * todo? factorize with st_in_scripting rule?
    *)
   | [' ' '\t']+ { TSpaces(tokinfo lexbuf) }
   | ['\n' '\r'] { TNewline(tokinfo lexbuf) }
+  | "/*" { 
+        let info = tokinfo lexbuf in 
+        let com = st_comment lexbuf in
+        T_COMMENT(info +> tok_add_s com)
+      }
+  | "/**/" { T_COMMENT(tokinfo lexbuf) }
+
+  | "/**" { (* RESET_DOC_COMMENT(); *)
+      let info = tokinfo lexbuf in 
+      let com = st_comment lexbuf in
+      T_DOC_COMMENT(info +> tok_add_s com)
+    }
+  | "//" {
+      let info = tokinfo lexbuf in
+      let com = st_one_line_comment lexbuf in
+      T_COMMENT(info +> tok_add_s com)
+    }
+
 
   (* attribute management *)
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
