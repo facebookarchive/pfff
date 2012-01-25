@@ -180,12 +180,23 @@ expr:
 /* conflict
  | expr TColon type_ { }
 */
+ | expr TPlus expr { }
+ | expr TMinus expr { }
+ | expr TStar expr { }
+ | expr TDiv expr { }
+
 literal:
  | TInt { }
  | TFloat { }
  | TString { }
+ | TGUIL encap_star TGUIL { }
 
 do_: Tdo expr { }
+
+encap:
+ | T_ENCAPSED { }
+ | TOBrace expr TCBrace { }
+
 
 /*(*************************************************************************)*/
 /*(*2 HTML *)*/
@@ -264,6 +275,10 @@ package_expression:
 declaration_star:
  | /*(*empty*)*/    { }
  | declaration_star declaration { }
+
+encap_star:
+ | /*(*empty*)*/    { }
+ | encap_star encap { }
 
 rec_binding_plus:
  | rec_binding { }
