@@ -175,6 +175,7 @@ type_:
 expr:
  | literal { }
  | TIdent { }
+ | record { }
  | Tif expr Tthen expr %prec SHIFTHERE { }
  | Tif expr Tthen expr Telse  expr { }
 /* conflict
@@ -184,6 +185,7 @@ expr:
  | expr TMinus expr { }
  | expr TStar expr { }
  | expr TDiv expr { }
+
 
 literal:
  | TInt { }
@@ -197,6 +199,13 @@ encap:
  | T_ENCAPSED { }
  | TOBrace expr TCBrace { }
 
+record:
+ | tilde_opt TOBrace record_field_star sc_opt TCBrace { }
+
+record_field:
+ |        field coerce_opt { }
+ | TTilde field coerce_opt { }
+ | field coerce_opt TEq expr { }
 
 /*(*************************************************************************)*/
 /*(*2 HTML *)*/
@@ -292,6 +301,11 @@ pattern_params_star:
  | /*(*empty*)*/    { }
  | pattern_params_star TComma pattern_params { }
 
+record_field_star:
+ | /*(*empty*)*/    { }
+ | record_field_star TSemiColon record_field { }
+ | record_field_star record_field { }
+
 binding_directive_star:
  | /*(*empty*)*/    { }
  | binding_directive_star binding_directive { }
@@ -299,4 +313,12 @@ binding_directive_star:
 coerce_opt:
  | /*(*empty*)*/    { }
  | coerce { }
+
+sc_opt:
+ | /*(*empty*)*/    { }
+ | TSemiColon { }
+
+tilde_opt:
+ | /*(*empty*)*/    { }
+ | TTilde { }
 
