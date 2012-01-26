@@ -112,6 +112,7 @@ open Ast_opa
 
 %nonassoc Telse
 
+%left TEqEq
 %left TPlus TMinus
 %left TStar TDiv
 
@@ -189,6 +190,9 @@ expr:
  | expr TStar expr { }
  | expr TDiv expr { }
 
+ | expr TEqEq expr { }
+
+ | TOParen expr TCParen { }
 
 literal:
  | TInt { }
