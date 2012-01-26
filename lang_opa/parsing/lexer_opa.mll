@@ -198,8 +198,6 @@ let octinteger = '0' 'o' octdigit+
 let hexinteger = '0' ('x' | 'X') hexdigit+
 let bininteger = '0' 'b' bindigit+
 
-let integer = (decimalinteger | octinteger | hexinteger | bininteger)
-
 (*****************************************************************************)
 (* Main Rule *)
 (*****************************************************************************)
@@ -330,8 +328,13 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
-  | integer { TInt (tok lexbuf, tokinfo lexbuf) }
-  (* todo: float *)
+  | (decimalinteger | octinteger | hexinteger | bininteger)
+    { TInt (tok lexbuf, tokinfo lexbuf) }
+
+  | digit (digit)* ('.' (digit)*)? ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
+  | '.' (digit)+ ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
