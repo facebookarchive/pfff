@@ -180,6 +180,7 @@ expr:
  | TIdent { }
  | record { }
  | tuple { }
+ | list { }
  | Tif expr Tthen expr %prec SHIFTHERE { }
  | Tif expr Tthen expr Telse  expr { }
 /* conflict
@@ -192,7 +193,7 @@ expr:
 
  | expr TEqEq expr { }
 
- | TOParen expr TCParen { }
+ | grouping { }
 
 literal:
  | TInt { }
@@ -236,10 +237,19 @@ ident_plus:
  | TIdent { }
  | ident_plus TDot TIdent { }
 
-
 tuple:
  | TOParen expr TComma TCParen { }
  | TOParen expr TComma expr_plus_comma comma_opt TCParen { }
+
+/*(* conflict: had to specialize [] empty case again *)*/
+list:
+ | TOBracket TCBracket { }
+ | TOBracket expr_plus_comma TCBracket { }
+ | TOBracket expr_plus_comma TOr expr TCBracket { }
+
+grouping:
+ | TOParen expr TCParen { }
+ | Tbegin expr Tend { }
 
 /*(*************************************************************************)*/
 /*(*2 HTML *)*/
