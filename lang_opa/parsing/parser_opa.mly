@@ -178,6 +178,7 @@ expr:
  | literal { }
  | TIdent { }
  | record { }
+ | tuple { }
  | Tif expr Tthen expr %prec SHIFTHERE { }
  | Tif expr Tthen expr Telse  expr { }
 /* conflict
@@ -230,6 +231,11 @@ field_long: TIdent TDot ident_plus { }
 ident_plus: 
  | TIdent { }
  | ident_plus TDot TIdent { }
+
+
+tuple:
+ | TOParen expr TComma TCParen { }
+ | TOParen expr TComma expr_plus_comma comma_opt TCParen { }
 
 /*(*************************************************************************)*/
 /*(*2 HTML *)*/
@@ -325,6 +331,10 @@ pattern_params_star:
  | /*(*empty*)*/    { }
  | pattern_params_star TComma pattern_params { }
 
+expr_plus_comma:
+ | expr    { }
+ | expr_plus_comma TComma expr { }
+
 
 /*(* can't use it, generate conflicts *)*/
 /*
@@ -355,6 +365,10 @@ coerce_opt:
 sc_opt:
  | /*(*empty*)*/    { }
  | TSemiColon { }
+
+comma_opt:
+ | /*(*empty*)*/    { }
+ | TComma { }
 
 /*(* can't use it, generate conflicts *)*/
 /*
