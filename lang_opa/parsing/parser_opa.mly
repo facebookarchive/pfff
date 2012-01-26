@@ -148,9 +148,11 @@ declaration:
 /*(*1 Names *)*/
 /*(*************************************************************************)*/
 
+/*
 long_ident:
  | TIdent { }
  | long_ident TDot TIdent { }
+*/
 
 /*(* less: why they dont just use <ident> in grammar? *)*/
 package_ident: TIdent { }
@@ -199,13 +201,35 @@ encap:
  | T_ENCAPSED { }
  | TOBrace expr TCBrace { }
 
+/*(* conflict: had to specialize TOBrace TCBrace empty case instead
+   * of using record_field_star, otherwise shift/reduce conflict.
+   * Same reason I don't use tilde_opt and duplicate rules with TTilde.
+   *)*/
 record:
- | tilde_opt TOBrace record_field_star sc_opt TCBrace { }
+ |        TOBrace TCBrace { }
+ |        TOBrace record_field_plus sc_opt TCBrace { }
+ | TTilde TOBrace record_field_plus sc_opt TCBrace { }
+ |        TOBrace expr_with Twith record_field_with_plus sc_opt TCBrace { }
+ | TTilde TOBrace expr_with Twith record_field_with_plus sc_opt TCBrace { }
 
 record_field:
  |        field coerce_opt { }
  | TTilde field coerce_opt { }
  | field coerce_opt TEq expr { }
+
+/*(* mostly dupe of record_field but also allow the with a.c = ... *)*/
+record_field_with:
+ |        field coerce_opt { }
+ | TTilde field coerce_opt { }
+ | field coerce_opt TEq expr { }
+ | field_long coerce_opt TEq expr { }
+
+expr_with: TIdent { }
+
+field_long: TIdent TDot ident_plus { }
+ident_plus: 
+ | TIdent { }
+ | ident_plus TDot TIdent { }
 
 /*(*************************************************************************)*/
 /*(*2 HTML *)*/
@@ -301,10 +325,24 @@ pattern_params_star:
  | /*(*empty*)*/    { }
  | pattern_params_star TComma pattern_params { }
 
+
+/*(* can't use it, generate conflicts *)*/
+/*
 record_field_star:
- | /*(*empty*)*/    { }
+ | { }
  | record_field_star TSemiColon record_field { }
  | record_field_star record_field { }
+*/
+
+record_field_plus:
+ | record_field   { }
+ | record_field_plus TSemiColon record_field { }
+ | record_field_plus record_field { }
+
+record_field_with_plus:
+ | record_field_with   { }
+ | record_field_with_plus TSemiColon record_field_with { }
+ | record_field_with_plus record_field_with { }
 
 binding_directive_star:
  | /*(*empty*)*/    { }
@@ -318,7 +356,9 @@ sc_opt:
  | /*(*empty*)*/    { }
  | TSemiColon { }
 
+/*(* can't use it, generate conflicts *)*/
+/*
 tilde_opt:
- | /*(*empty*)*/    { }
+ |     { }
  | TTilde { }
-
+*/
