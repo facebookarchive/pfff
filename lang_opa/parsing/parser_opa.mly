@@ -63,7 +63,7 @@ open Ast_opa
  Tfunction 
  Ttype Tor Tval Tand Trec
  Tbegin Tend
- Tcss Tdb Tparser Tserver
+ Tcss Tdb Tparser
  Texternal
  Tforall
  Tpackage Tmodule Timport 
@@ -111,11 +111,6 @@ open Ast_opa
 %nonassoc SHIFTHERE
 
 %nonassoc Telse
-
-%left TEqEq
-%left TPlus TMinus
-%left TStar TDiv
-
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
@@ -178,24 +173,42 @@ type_:
 
 /*(* TODO *)*/
 expr:
+ | ident_binding expr { }
+ | ident_binding TSemiColon expr { }
+ | cond_expr { }
+
+cond_expr:
+ | Tif comp_expr Tthen cond_expr Telse cond_expr      { }
+ | Tif comp_expr Tthen cond_expr %prec SHIFTHERE { }
+ | comp_expr { }
+
+comp_expr:
+ | comp_expr TEqEq arith_expr { }
+ | arith_expr { }
+
+arith_expr:
+ | arith_expr TPlus term { }
+ | arith_expr TMinus term { }
+ | term { }
+
+term: 
+ | term TStar factor { }
+ | term TDiv factor { }
+ | factor { }
+
+/* conflict
+ | expr TColon type_ { }
+*/
+
+factor:
  | literal { }
  | TIdent { }
  | record { }
  | tuple { }
  | list { }
- | Tif expr Tthen expr %prec SHIFTHERE { }
- | Tif expr Tthen expr Telse  expr { }
-/* conflict
- | expr TColon type_ { }
-*/
- | expr TPlus expr { }
- | expr TMinus expr { }
- | expr TStar expr { }
- | expr TDiv expr { }
-
- | expr TEqEq expr { }
-
- | grouping { }
+ /*(* was called grouping *)*/
+ | TOParen expr TCParen { }
+ | Tbegin expr Tend     { }
 
 literal:
  | TInt { }
@@ -249,9 +262,6 @@ list:
  | TOBracket expr_plus_comma TCBracket { }
  | TOBracket expr_plus_comma TOr expr TCBracket { }
 
-grouping:
- | TOParen expr TCParen { }
- | Tbegin expr Tend { }
 
 /*(*************************************************************************)*/
 /*(*2 HTML *)*/
@@ -277,29 +287,35 @@ binding:
 | non_rec_binding { }
 | Trec rec_binding_plus { }
 
-/*(* less: was just binding_directive in original grammar, weird *)*/
+/*(* less: was just binding_directive in original grammar, weird 
+   * todo: binding_directive_star generates conflict with 'expr: binding expr'
+   *)*/
 non_rec_binding:
-| binding_directive_star ident_binding { }
-| binding_directive_star val_binding { }
+| ident_binding { }
+| val_binding { }
 
 rec_binding:
  | ident_binding { }
  | Tval val_binding { }
 
 
-/*(* less: was params+ in original grammar, weird *)*/
+/*(* less: was params+ in original grammar, weird.
+   * note that expr can contain nested bindings too.
+   * can't use coerce_opt, conflict when add  expr: binding expr
+   *)*/
 ident_binding:
- | TIdent TOParen pattern_params_star TCParen coerce_opt TEq expr { }
- | TIdent coerce_opt TEq expr { }
+ | TIdent TOParen pattern_params_star TCParen /*coerce_opt*/ TEq expr { }
+ | TIdent /*coerce_opt*/ TEq expr { }
 
 val_binding:
  | pattern TEq expr { }
 
 pattern_params: pattern { }
 
-
+/*
 binding_directive:
  | TAt    { }
+*/
 
 coerce: TColon type_ { }
 
@@ -370,9 +386,11 @@ record_field_with_plus:
  | record_field_with_plus TSemiColon record_field_with { }
  | record_field_with_plus record_field_with { }
 
+/*
 binding_directive_star:
- | /*(*empty*)*/    { }
+ | { }
  | binding_directive_star binding_directive { }
+*/
 
 coerce_opt:
  | /*(*empty*)*/    { }
