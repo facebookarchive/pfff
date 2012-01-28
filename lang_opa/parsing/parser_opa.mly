@@ -60,7 +60,7 @@ open Ast_opa
 %token <string * Ast_opa.tok> TFloat
 %token <string * Ast_opa.tok> T_ENCAPSED
 %token <Ast_opa.tok> TGUIL
-%token <string * Ast_opa.tok> TIdent TSharpIdent
+%token <string * Ast_opa.tok> TIdent TSharpIdent TOp
 
 /*(* keywords tokens *)*/
 %token <Ast_opa.tok>
@@ -204,6 +204,10 @@ term:
  | factor { }
 
 factor:
+ | factor TOp type_expr { }
+ | type_expr { }
+
+type_expr:
  | call_expr coerce { }
  | call_expr { }
 
