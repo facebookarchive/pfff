@@ -16,6 +16,14 @@
 
 (*
  * http://doc.opalang.org/#!/manual/The-core-language
+ * We support only the js-like syntax.
+ * 
+ * Note that the original syntax can not be parsed with Yacc probably;
+ * function calls and local function definitions are too similar.
+ * I've also decided to not use the %left directives and manually
+ * encode the associativity/priorities of operators because of some
+ * ambiguities I was not able to resolve when adding other rules
+ * (e.g. local bindings).
  *)
 open Common
 
@@ -50,7 +58,6 @@ open Ast_opa
 /*(* tokens with "values" *)*/
 %token <string * Ast_opa.tok> TInt
 %token <string * Ast_opa.tok> TFloat
-%token <string * Ast_opa.tok> TString
 %token <string * Ast_opa.tok> T_ENCAPSED
 %token <Ast_opa.tok> TGUIL
 %token <string * Ast_opa.tok> TIdent TSharpIdent
@@ -150,7 +157,7 @@ long_ident:
  | long_ident TDot TIdent { }
 */
 
-/*(* less: why they dont just use <ident> in grammar? *)*/
+/*(* less: why they dont just use <ident> in reference manual? *)*/
 package_ident: TIdent { }
 
 field: TIdent { }
@@ -173,8 +180,8 @@ type_:
 
 /*(* TODO *)*/
 expr:
- | ident_binding expr { }
- | ident_binding TSemiColon expr { }
+ | ident_binding cond_expr { }
+ | ident_binding TSemiColon cond_expr { }
  | cond_expr { }
 
 cond_expr:
@@ -196,11 +203,16 @@ term:
  | term TDiv factor { }
  | factor { }
 
-/* conflict
- | expr TColon type_ { }
-*/
-
 factor:
+ | call_expr coerce { }
+ | call_expr { }
+
+call_expr:
+ | primitive_expr TOParen TCParen { }
+ | primitive_expr TOParen expr_plus_comma TCParen { }
+ | primitive_expr { }
+
+primitive_expr:
  | literal { }
  | TIdent { }
  | record { }
@@ -213,7 +225,6 @@ factor:
 literal:
  | TInt { }
  | TFloat { }
- | TString { }
  | TGUIL encap_star TGUIL { }
 
 do_: Tdo expr { }
@@ -222,9 +233,13 @@ encap:
  | T_ENCAPSED { }
  | TOBrace expr TCBrace { }
 
+/*(*----------------------------*)*/
+/*(*2 composed expressions      *)*/
+/*(*----------------------------*)*/
+
 /*(* conflict: had to specialize TOBrace TCBrace empty case instead
-   * of using record_field_star, otherwise shift/reduce conflict.
-   * Same reason I don't use tilde_opt and duplicate rules with TTilde.
+   * of using record_field_star. Same reason I don't use tilde_opt
+   * and duplicate rules with TTilde.
    *)*/
 record:
  |        TOBrace TCBrace { }
@@ -278,6 +293,7 @@ list:
 /*(* TODO *)*/
 pattern:
  | literal { }
+ | TIdent { }
 
 /*(*************************************************************************)*/
 /*(*1 Function/Var Binding *)*/
@@ -299,13 +315,21 @@ rec_binding:
  | Tval val_binding { }
 
 
-/*(* less: was params+ in original grammar, weird.
-   * note that expr can contain nested bindings too.
-   * can't use coerce_opt, conflict when add  expr: binding expr
-   *)*/
+/*
+ (* less: was params+ in original grammar because of curried syntax support.
+  * Note that expr can contain nested bindings too.
+  * conflict: can't use coerce_opt, conflict when add  expr: binding expr.
+  * conflict: The old syntax is not parseable with yacc I think;
+  * local function definitions and function calls start the same way.
+  * Similar to the problem of decl vs expr in C++ I think.
+  *)*/
 ident_binding:
- | TIdent TOParen pattern_params_star TCParen /*coerce_opt*/ TEq expr { }
- | TIdent /*coerce_opt*/ TEq expr { }
+ | Tfunction TIdent TOParen TCParen coerce_opt 
+    TOBrace expr TCBrace { }
+ | Tfunction TIdent TOParen pattern_params_plus TCParen coerce_opt
+    TOBrace expr TCBrace { }
+ | TIdent TEq expr { }
+ | TIdent coerce TEq expr { }
 
 val_binding:
  | pattern TEq expr { }
@@ -359,9 +383,9 @@ package_expression_plus:
  | package_expression { }
  | package_expression_plus TComma package_expression { }
 
-pattern_params_star:
- | /*(*empty*)*/    { }
- | pattern_params_star TComma pattern_params { }
+pattern_params_plus:
+ | pattern_params    { }
+ | pattern_params_plus TComma pattern_params { }
 
 expr_plus_comma:
  | expr    { }

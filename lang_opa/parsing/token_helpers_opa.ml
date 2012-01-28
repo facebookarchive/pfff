@@ -62,7 +62,6 @@ let visitor_info_of_tok f = function
 
   | TInt (s, ii) -> TInt (s, f ii)
   | TFloat (s, ii) -> TFloat (s, f ii)
-  | TString (s, ii) -> TString (s, f ii)
   | TIdent (s, ii) -> TIdent (s, f ii)
   | TSharpIdent (s, ii) -> TSharpIdent (s, f ii)
 
