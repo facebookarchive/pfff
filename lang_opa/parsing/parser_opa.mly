@@ -138,14 +138,15 @@ open Ast_opa
 
 main: program EOF { [] }
 
-program: declaration_star { $1 }
+program:
+ | declaration_plus { $1 }
+ | expr { $1 }
 
 declaration:
  | type_definition { }
  | binding { }
  | package_declaration { }
  | package_import { }
- | do_ { }
 
 /*(*************************************************************************)*/
 /*(*1 Names *)*/
@@ -212,8 +213,12 @@ type_expr:
  | call_expr { }
 
 call_expr:
- | primitive_expr TOParen TCParen { }
- | primitive_expr TOParen expr_plus_comma TCParen { }
+ | field_expr TOParen TCParen { }
+ | field_expr TOParen expr_plus_comma TCParen { }
+ | field_expr { }
+
+field_expr: 
+ | primitive_expr TDot field { }
  | primitive_expr { }
 
 primitive_expr:
@@ -225,17 +230,22 @@ primitive_expr:
  /*(* was called grouping *)*/
  | TOParen expr TCParen { }
  | Tbegin expr Tend     { }
+ | lambda { }
 
 literal:
  | TInt { }
  | TFloat { }
  | TGUIL encap_star TGUIL { }
 
-do_: Tdo expr { }
-
 encap:
  | T_ENCAPSED { }
  | TOBrace expr TCBrace { }
+
+lambda: 
+ | Tfunction TOParen TCParen coerce_opt
+    TOBrace expr TCBrace { }
+ | Tfunction TOParen pattern_params_plus TCParen coerce_opt
+    TOBrace expr TCBrace { }
 
 /*(*----------------------------*)*/
 /*(*2 composed expressions      *)*/
@@ -247,22 +257,24 @@ encap:
    *)*/
 record:
  |        TOBrace TCBrace { }
- |        TOBrace record_field_plus sc_opt TCBrace { }
- | TTilde TOBrace record_field_plus sc_opt TCBrace { }
- |        TOBrace expr_with Twith record_field_with_plus sc_opt TCBrace { }
- | TTilde TOBrace expr_with Twith record_field_with_plus sc_opt TCBrace { }
+ |        TOBrace record_field_plus TCBrace { }
+ | TTilde TOBrace record_field_plus TCBrace { }
+ |        TOBrace expr_with Twith record_field_with_plus TCBrace { }
+ | TTilde TOBrace expr_with Twith record_field_with_plus TCBrace { }
 
 record_field:
- |        field coerce_opt { }
- | TTilde field coerce_opt { }
- | field coerce_opt TEq expr { }
+ |        field  { }
+ | TTilde field  { }
+ /*(* js-syntax: use : instead of = *)*/
+ | field TColon expr { }
 
 /*(* mostly dupe of record_field but also allow the with a.c = ... *)*/
 record_field_with:
- |        field coerce_opt { }
- | TTilde field coerce_opt { }
- | field coerce_opt TEq expr { }
- | field_long coerce_opt TEq expr { }
+ |        field  { }
+ | TTilde field  { }
+ /*(* js-syntax: use : instead of = *)*/
+ | field  TColon expr { }
+ | field_long TEq expr { }
 
 expr_with: TIdent { }
 
@@ -312,7 +324,9 @@ binding:
    *)*/
 non_rec_binding:
 | ident_binding { }
+/* conflict with toplevel expr
 | val_binding { }
+*/
 
 rec_binding:
  | ident_binding { }
@@ -337,6 +351,7 @@ ident_binding:
 
 val_binding:
  | pattern TEq expr { }
+
 
 pattern_params: pattern { }
 
@@ -371,9 +386,9 @@ package_expression:
 /*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
-declaration_star:
- | /*(*empty*)*/    { }
- | declaration_star declaration { }
+declaration_plus:
+ | declaration    { }
+ | declaration_plus declaration { }
 
 encap_star:
  | /*(*empty*)*/    { }
@@ -404,14 +419,15 @@ record_field_star:
  | record_field_star record_field { }
 */
 
+ /*(* js-syntax: use , instead of ; *)*/
 record_field_plus:
  | record_field   { }
- | record_field_plus TSemiColon record_field { }
+ | record_field_plus TComma record_field { }
  | record_field_plus record_field { }
 
 record_field_with_plus:
  | record_field_with   { }
- | record_field_with_plus TSemiColon record_field_with { }
+ | record_field_with_plus TComma record_field_with { }
  | record_field_with_plus record_field_with { }
 
 /*
@@ -421,12 +437,14 @@ binding_directive_star:
 */
 
 coerce_opt:
- | /*(*empty*)*/    { }
+ |  { }
  | coerce { }
 
+/*
 sc_opt:
- | /*(*empty*)*/    { }
+ | { }
  | TSemiColon { }
+*/
 
 comma_opt:
  | /*(*empty*)*/    { }
