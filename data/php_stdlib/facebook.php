@@ -97,6 +97,7 @@ class StringBuffer {
 // ------------------------------------------
 
 //define('JSON_FB_LOOSE', 0);
+define('JSON_FB_EXTRA_ESCAPES', 0);
 
 // ------------------------------------------
 // In hphp/facebook/extensions/ idl files
