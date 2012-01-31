@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -128,10 +128,10 @@ let escape_quote_array_field s =
 (* Defs/uses *)
 (*****************************************************************************)
 
-(* todo: yet another use/def ... factorize code with defs_uses_php.ml?
+(* todo: yet another use/def, factorize code with defs_uses_php.ml?
  * But for defs we want more than just defs, we also want the arity
  * of parameters for instance. And for uses we also want sometimes to
- * process the arguments for instance with require_module so hard
+ * process the arguments for instance with require_module, so it's hard
  * to factorize I think. Copy paste is fine sometimes ...
  *)
 let add_uses id ast pr db =
@@ -173,6 +173,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
+            (* todo: imprecise, need julien's precise callgraph *)
             pr (spf "docall(%s, '%s', 'method')." (name_id id db) str)
           end;
           
@@ -204,7 +205,7 @@ let add_uses id ast pr db =
     );
     V.kexpr = (fun (k, vx) x ->
       match x with
-      (* todo: enough? hmm we need to handle pass by ref too *)
+      (* todo: enough? need to handle pass by ref too here *)
       | Assign (lval, _, e)
       | AssignOp(lval, _, e) 
         ->
