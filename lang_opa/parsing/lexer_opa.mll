@@ -292,6 +292,8 @@ rule initial = parse
            | Tif _ | Tthen _ | Telse _
            | TArrow _
            | TQuestion _
+           (* can have a serie of xml at toplevel *)
+           | T_XML_CLOSE_TAG _ | T_XML_SLASH_GT _
          )
          ->
            push_mode (ST_IN_XML_TAG tag);
