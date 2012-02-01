@@ -103,7 +103,7 @@ open Ast_opa
 %token <Ast_opa.tag * Ast_opa.tok> T_XML_OPEN_TAG
 %token <Ast_opa.tag option * Ast_opa.tok> T_XML_CLOSE_TAG
 %token <Ast_opa.attr * Ast_opa.tok> T_XML_ATTR
-%token <Ast_opa.tok> T_XML_MORE
+%token <Ast_opa.tok> T_XML_MORE T_XML_SLASH_GT
 /*(* could be merged with T_ENCAPSED *)*/
 %token <string * Ast_opa.tok> T_XML_TEXT
 

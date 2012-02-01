@@ -266,6 +266,8 @@ let visit_toplevel
         tag ii Keyword
     | T.T_XML_MORE ii ->
         tag ii Keyword
+    | T.T_XML_SLASH_GT ii ->
+        tag ii Keyword
     | T.T_XML_TEXT (s, ii) -> tag ii String
 
     (* css *)

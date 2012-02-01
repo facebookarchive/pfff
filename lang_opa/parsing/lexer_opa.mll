@@ -445,6 +445,12 @@ and in_xml_tag current_tag = parse
       T_XML_MORE (tokinfo lexbuf)
     }
 
+  (* a singleton tag. Was not mentionned in reference manual I think *)
+  | "/>" { 
+      pop_mode ();
+      T_XML_SLASH_GT (tokinfo lexbuf) 
+    }
+
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
   | _  { let s = tok lexbuf in
          error ("LEXER: unrecognised symbol in in_xml_tag:"^s);

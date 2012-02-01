@@ -58,6 +58,7 @@ let visitor_info_of_tok f = function
   | T_XML_CLOSE_TAG (s, ii) -> T_XML_CLOSE_TAG (s, f ii)
   | T_XML_ATTR (s, ii) -> T_XML_ATTR (s, f ii)
   | T_XML_MORE (ii) -> T_XML_MORE (f ii)
+  | T_XML_SLASH_GT (ii) -> T_XML_SLASH_GT (f ii)
   | T_XML_TEXT (s, ii) -> T_XML_TEXT (s, f ii)
 
   | TInt (s, ii) -> TInt (s, f ii)
