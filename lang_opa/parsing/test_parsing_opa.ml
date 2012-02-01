@@ -16,6 +16,7 @@ let test_tokens_opa file =
 
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
+  Flag.debug_lexer := true;
 
   let toks = Parse_opa.tokens file in
   toks +> List.iter (fun x -> pr2_gen x);

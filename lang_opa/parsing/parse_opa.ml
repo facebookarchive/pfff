@@ -72,6 +72,7 @@ let tokens2 file =
     try 
       let opa_token lexbuf = 
         (* old: Lexer_opa.token lexbuf *)
+        if !Flag.debug_lexer then Common.pr2_gen (Lexer_opa.current_mode());
         match Lexer_opa.current_mode () with
         | Lexer_opa.ST_INITIAL -> Lexer_opa.initial lexbuf
         | Lexer_opa.ST_DOUBLE_QUOTES -> Lexer_opa.string_double_quote lexbuf
