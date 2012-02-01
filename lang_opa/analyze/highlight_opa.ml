@@ -194,11 +194,12 @@ let visit_toplevel
 
     (* values  *)
 
-    | T.TString (_,ii) 
     | T.TGUIL ii | T.T_ENCAPSED (_, ii) ->
         tag ii String
     | T.TFloat (s,ii) | T.TInt (s,ii) ->
         tag ii Number
+
+    | T.TOp(_, ii) -> tag ii Operator
 
     (* keywords  *)
     | T.TIdent("bool", ii) -> tag ii TypeMisc

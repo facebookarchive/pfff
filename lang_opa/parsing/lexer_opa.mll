@@ -177,6 +177,7 @@ let rec current_mode () =
 
 let letter = ['A'-'Z' 'a'-'z']
 let digit  = ['0'-'9']
+let operator = ['+' '\\' '-' '^' '*' '/' '<' '>' '=' '@' '|' '&' '!']
 
 let newline = '\n'
 let space = [' ' '\t']
@@ -198,8 +199,6 @@ let octinteger = '0' 'o' octdigit+
 let hexinteger = '0' ('x' | 'X') hexdigit+
 let bininteger = '0' 'b' bindigit+
 
-let integer = (decimalinteger | octinteger | hexinteger | bininteger)
-
 (*****************************************************************************)
 (* Main Rule *)
 (*****************************************************************************)
@@ -213,7 +212,7 @@ rule initial = parse
   | "//" [^ '\n']* { TComment (tokinfo lexbuf) }
 
   (* less: return a different token for /** comments ? TCommentDoc? *)
-  | "/*" 
+  | "/*" | "/**"
       { let info = tokinfo lexbuf in 
         let com = comment lexbuf in
         TComment(info +> Parse_info.tok_add_s com) 
@@ -271,7 +270,11 @@ rule initial = parse
 
   | "~" { TTilde(tokinfo lexbuf) }
 
-  (* todo: can define operators in OPA *)
+  (* Can define operators in OPA. This rule must be after other operators
+   * lexing ruke (lex pick the first longest). Also need to define /**
+   * above otherwise it would be parsed as an operator.
+   *)
+  | operator+ { TOp(tok lexbuf, tokinfo lexbuf) }
 
 
   (* We need to disambiguate the different use of '<' to know whether 
@@ -330,8 +333,13 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
-  | integer { TInt (tok lexbuf, tokinfo lexbuf) }
-  (* todo: float *)
+  | (decimalinteger | octinteger | hexinteger | bininteger)
+    { TInt (tok lexbuf, tokinfo lexbuf) }
+
+  | digit (digit)* ('.' (digit)*)? ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
+  | '.' (digit)+ ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
