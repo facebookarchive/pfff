@@ -329,6 +329,9 @@ rule initial = parse
       | None -> TIdent (s, info)
     }
   (* todo? 'a, 'b'  type variables? ~label ? *)
+  | "%%" ((letter | '_' | ['.'] | digit)+ as s) "%%" {
+      TExternalIdent (s, tokinfo lexbuf)
+    }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

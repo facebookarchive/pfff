@@ -326,6 +326,8 @@ let visit_toplevel
     | T.TTilde ii
         -> tag ii Punctuation
 
+    | T.TExternalIdent (s, ii) ->
+        ()
     | T.TIdent (s, ii) ->
         ()
   );
