@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_opa
@@ -29,7 +28,7 @@ open Parser_opa
  * http://doc.opalang.org/#!/manual/The-core-language
  *
  * There are a few tricks to go around ocamllex restrictions
- * because OPA has different lexing rules depending on some "contexts"
+ * because OPA has different lexing rules depending on the "context"
  * like PHP, Perl, etc.
  *)
 
@@ -227,7 +226,7 @@ rule initial = parse
 
   | "(" { TOParen(tokinfo lexbuf) }  | ")" { TCParen(tokinfo lexbuf) }
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
-  (* todo? "{{" "}}" classic syntax *)
+  (* there was also "{{" "}}" in the classic syntax *)
   | "{" { 
       push_mode ST_INITIAL; 
       TOBrace(tokinfo lexbuf) 
@@ -245,7 +244,7 @@ rule initial = parse
   | "->" { TArrow(tokinfo lexbuf) }
   | '_'  { TUnderscore(tokinfo lexbuf) }
 
-  | '\\'  { TAntiSlash(tokinfo lexbuf) } (* js syntax *)
+  | '\\'  { TAntiSlash(tokinfo lexbuf) } (* classic syntax *)
 
   (* operators *)
   | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
@@ -329,6 +328,8 @@ rule initial = parse
       | None -> TIdent (s, info)
     }
   (* todo? 'a, 'b'  type variables? ~label ? *)
+
+  (* this was not mentioned in reference manual *)
   | "%%" ((letter | '_' | ['.'] | digit)+ as s) "%%" {
       TExternalIdent (s, tokinfo lexbuf)
     }
