@@ -253,7 +253,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Opa) ->
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache 
-         (fun file -> Opa (Parse_opa.parse file))
+         (fun file -> Opa (Parse_opa.parse_just_tokens file))
          (function 
          | Opa (ast, toks) -> [ast, ("", toks)] 
          | _ -> raise Impossible))

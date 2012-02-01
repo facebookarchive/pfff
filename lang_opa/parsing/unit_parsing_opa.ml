@@ -34,7 +34,7 @@ let unittest =
       let files = Common.glob (spf "%s/*.opa" dir) in
       files +> List.iter (fun file ->
         try
-          let _ = Parse_opa.parse file in
+          let _ = Parse_opa.parse_just_tokens file in
           ()
         with Parse_opa.Parse_error _ ->
           assert_failure (spf "it should correctly parse %s" file)

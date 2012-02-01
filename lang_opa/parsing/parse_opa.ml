@@ -175,3 +175,7 @@ let parse2 filename =
 
 let parse a = 
   Common.profile_code "Parse_opa.parse" (fun () -> parse2 a)
+
+let parse_just_tokens file =
+  let toks = tokens file in
+  [], toks
