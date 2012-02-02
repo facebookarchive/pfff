@@ -14,6 +14,7 @@
 open Common
 
 open Parser_opa
+module TH = Token_helpers_opa
 
 (*****************************************************************************)
 (* Prelude  *)
@@ -39,13 +40,24 @@ type tree =
   | T of token
   | Paren of tree list list (* grouped by comma *)
   | Brace of tree list list (* grouped by comma too, as in type defs *)
-  | Bracket of tree list
+  | Bracket of tree list list (* should not have comma, but to factorize code *)
   | Xml of tree list (* attributes *) * tree list (* children *)
  (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers  *)
 (*****************************************************************************)
+let is_closing_of start x = 
+  match start, x with
+  | TOParen _, TCParen _
+  | TOBrace _, TCBrace _
+  | TOBracket _, TCBracket _
+      -> true
+  | _ -> false
+
+let error tok =
+  let info = TH.info_of_tok tok in
+  Parse_info.error_message_info info
 
 (*****************************************************************************)
 (* View builder  *)
@@ -57,41 +69,61 @@ let rec mk_tree xs =
   | [EOF _] -> []
   | x::xs ->
       (match x with
+
       | TOParen ii ->
-          let body, xs = mk_comma_group [] xs in
+          let body, xs = mk_comma_group x [] xs in
           (Paren body)::mk_tree xs
       | TOBrace ii ->
-          raise Todo
+          let body, xs = mk_comma_group x [] xs in
+          (Brace body)::mk_tree xs
       | TOBracket ii ->
-          raise Todo
+          let body, xs = mk_comma_group x [] xs in
+          (Bracket body)::mk_tree xs
+
+      (* todo *)
       | T_XML_OPEN_TAG ii ->
-          raise Todo
+          (T x)::mk_tree xs
+          
 
       | TCParen ii | TCBrace ii | TCBracket ii 
       | T_XML_CLOSE_TAG (_, ii)
           -> 
-          failwith ("wrongly parenthised code")
+          failwith ("wrongly parenthised code: " ^ error x)
       | x ->
           (T x)::mk_tree xs
       )
-and mk_comma_group acc_before_sep xs =
+and mk_comma_group start acc_before_sep xs =
   match xs with
-  | [] -> failwith "could not find end of parenthesis"
+  | [] -> failwith ("could not find end of parenthesis: " ^ error start)
   | x::xs ->
       (match x with
-      | TCParen ii ->
+      | x when is_closing_of start x ->
           [List.rev acc_before_sep], xs
+
+      | TCParen ii | TCBrace ii | TCBracket ii -> 
+          failwith ("wrongly parenthised code: " ^ error x)
+
       | TComma _ ->
-          let body, xs = mk_comma_group [] xs in
+          let body, xs = mk_comma_group start [] xs in
           (List.rev acc_before_sep)::body, xs
 
-      (* recurse *)
+      (* recurse. todo? factorize with code above? *)
       | TOParen ii ->
-          let body, xs = mk_comma_group [] xs in
-          mk_comma_group ((Paren body)::acc_before_sep) xs
+          let body, xs = mk_comma_group x [] xs in
+          mk_comma_group start ((Paren body)::acc_before_sep) xs
+      | TOBrace ii ->
+          let body, xs = mk_comma_group x [] xs in
+          mk_comma_group start ((Brace body)::acc_before_sep) xs
+      | TOBracket ii ->
+          let body, xs = mk_comma_group x [] xs in
+          mk_comma_group start ((Bracket body)::acc_before_sep) xs
+
+      (* todo *)
+      | T_XML_CLOSE_TAG (_, ii) ->
+          mk_comma_group start ((T x)::acc_before_sep) xs
 
       | _ ->
-          mk_comma_group ((T x)::acc_before_sep) xs
+          mk_comma_group start ((T x)::acc_before_sep) xs
       )
 
 (*****************************************************************************)
@@ -111,7 +143,8 @@ let rec vof_tree =
       let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
       in Ocaml.VSum (("Brace", [ v1 ]))
   | Bracket v1 ->
-      let v1 = Ocaml.vof_list vof_tree v1 in Ocaml.VSum (("Bracket", [ v1 ]))
+      let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
+      in Ocaml.VSum (("Bracket", [ v1 ]))
   | Xml ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_tree v1
       and v2 = Ocaml.vof_list vof_tree v2

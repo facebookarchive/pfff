@@ -20,6 +20,7 @@ open Highlight_code
 module Ast = Ast_opa
 module T = Parser_opa
 module TH = Token_helpers_opa
+module TV = Token_views_opa
 module V = Visitor_opa
 
 (*****************************************************************************)
@@ -68,6 +69,24 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
   (* -------------------------------------------------------------------- *)
+  (* parsing OPA turns out to be difficult so for now the best we have
+   * is this degenerated AST, a tree of (){}[]<tag chunks.
+   *)
+  let toks_for_tree = toks +> Common.exclude (function
+    | x when TH.is_comment x -> true
+    (* todo? could try to relocate the following token to column 0? *)
+    | T.Tclient _ -> true
+    | T.Tprotected _ -> true
+    | _ -> false
+  )
+  in
+  let tree = TV.mk_tree toks_for_tree in
+  let rec aux_tree xs =
+    match xs with
+    | [] -> ()
+    | x::xs -> aux_tree xs
+  in
+  aux_tree tree;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
