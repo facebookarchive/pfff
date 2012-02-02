@@ -322,7 +322,10 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Web (FT.Js _)) ->
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache
-          (fun file -> Js (Parse_js.parse file +> fst))
+          (fun file -> 
+            Common.save_excursion Flag_parsing_js.error_recovery true (fun () ->
+              Js (Parse_js.parse file +> fst))
+          )
           (function Js x -> x | _ -> raise Impossible))
         ~highlight_visit:Highlight_js.visit_toplevel
         ~info_of_tok:Token_helpers_js.info_of_tok

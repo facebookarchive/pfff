@@ -63,6 +63,7 @@ let filters = [
   "opa", (fun file -> 
     match FT.file_type_of_file file with
     | FT.PL (FT.Opa) (* | FT.PL (FT.ML _) *)  -> true
+(*    | FT.PL (FT.Web (_)) -> true *)
     | _ -> false
   );
 ]
