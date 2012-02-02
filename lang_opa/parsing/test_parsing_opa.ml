@@ -3,6 +3,7 @@ open Common
 open Ast_opa
 module Ast = Ast_opa
 module Flag = Flag_parsing_opa
+module TH = Token_helpers_opa
 
 open OUnit
 
@@ -38,6 +39,10 @@ let test_parse_opa xs =
 
 let test_view_opa file =
   let (_, toks) = Parse_opa.parse_just_tokens file in
+  let toks = toks +> Common.exclude (fun t ->
+    TH.is_comment t
+  )
+  in
   let tree = Token_views_opa.mk_tree toks in
   let v = Token_views_opa.vof_tree_list tree in
   let s = Ocaml.string_of_v v in

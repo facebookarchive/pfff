@@ -78,5 +78,23 @@ let rec mk_tree xs =
 (* Meta  *)
 (*****************************************************************************)
 
-let vof_tree_list xs =
-  raise Todo
+let vof_token t =
+  Ocaml.VString (Token_helpers_opa.str_of_tok t)
+
+let rec vof_tree =
+  function
+  | T v1 -> let v1 = vof_token v1 in Ocaml.VSum (("T", [ v1 ]))
+  | Paren v1 ->
+      let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
+      in Ocaml.VSum (("Paren", [ v1 ]))
+  | Brace v1 ->
+      let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
+      in Ocaml.VSum (("Brace", [ v1 ]))
+  | Bracket v1 ->
+      let v1 = Ocaml.vof_list vof_tree v1 in Ocaml.VSum (("Bracket", [ v1 ]))
+  | Xml ((v1, v2)) ->
+      let v1 = Ocaml.vof_list vof_tree v1
+      and v2 = Ocaml.vof_list vof_tree v2
+      in Ocaml.VSum (("Xml", [ v1; v2 ]))
+  
+let vof_tree_list xs = Ocaml.vof_list vof_tree xs
