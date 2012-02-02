@@ -117,10 +117,16 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* poor's man identifier tagger *)
 
     (* defs *)
+    | T.Tpackage ii1::T.TIdent (s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Module Def);
+        aux_toks xs
+
     | T.Tmodule ii1::T.TIdent (s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Module Def);
         aux_toks xs
+
 
     | (T.Ttype ii1 | T.Tand ii1)::T.TIdent (s, ii2)::xs ->
         tag ii2 (TypeDef Def);
@@ -195,7 +201,8 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
     | T.TIdent("bool", ii) -> tag ii TypeMisc
     | T.TIdent("string", ii) -> tag ii TypeMisc
-    | T.TIdent(("list" | "option" | "intmap"), ii) -> tag ii TypeMisc
+    | T.TIdent(("list" | "option" | "intmap" | "stringmap"), ii) -> 
+        tag ii TypeMisc
     | T.TIdent("void", ii) -> tag ii TypeVoid
 
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
