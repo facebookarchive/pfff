@@ -88,8 +88,8 @@ let keyword_table = Common.hash_of_list [
   "end", (fun ii -> Tend ii);
 
   "css", (fun ii -> Tcss ii);
-  "db", (fun ii -> Tdb ii); (* classic syntax *)
-  "database", (fun ii -> Tdb ii); (* js syntax *)
+  "db", (fun ii -> Tdatabase ii); (* classic syntax *)
+  "database", (fun ii -> Tdatabase ii); (* js syntax *)
   "parser", (fun ii -> Tparser ii);
 
   "external", (fun ii -> Texternal ii);

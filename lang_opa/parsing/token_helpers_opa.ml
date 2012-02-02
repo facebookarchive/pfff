@@ -106,7 +106,7 @@ let visitor_info_of_tok f = function
   | Texternal ii -> Texternal (f ii)
   | Tserver ii -> Tserver (f ii)
   | Tparser ii -> Tparser (f ii)
-  | Tdb ii -> Tdb (f ii)
+  | Tdatabase ii -> Tdatabase (f ii)
   | Tcss ii -> Tcss (f ii)
   | Tend ii -> Tend (f ii)
   | Tbegin ii -> Tbegin (f ii)

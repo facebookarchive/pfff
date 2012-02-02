@@ -52,14 +52,24 @@ let is_module_name s =
 
 type context =
   | InTop
-  (* inside { }, overloaded in OPA like in C *)
+
+  (* inside { }. Braces are overloaded in OPA like in C *)
   | InFunction
-  | InTypedef (* because type xx = { } or type xx = ( ) when tuple *)
-  | InParameter
-  (*
+  | InRecord (* expr vs pattern ? *)
+  | InStringInterpolation
+  | InXmlInterpolation
+  | InCompound
   | InCase
+  (* braces and also (),  type xx = { } or type xx = ( ) when tuple *)
+  | InTypedef 
+
+  (* inside ( ) *)
+  | InParameter
+
+  | InType
+
+  (* misc *)
   | InImport
-  *)
 
 (*****************************************************************************)
 (* Code highlighter *)
@@ -88,7 +98,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* todo? could try to relocate the following token to column 0? *)
     | T.Tclient _ | T.Tserver _ -> true
     | T.Tpublic _ | T.Tprivate _ -> true
-    | T.Tprotected _ -> true
+    | T.Tprotected _ | T.Texposed _ -> true
     | _ -> false
   )
   in
@@ -96,7 +106,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   let ctx = InTop in
 
   (* poor's man identifier tagger.
-   * todo: have a ast_fuzzy_opa.ml
+   * todo: move this code in an ast_fuzzy_opa.ml
    *)
   let rec aux_tree ctx xs =
     match xs with
@@ -119,6 +129,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
       ::(TV.Paren params)
       ::(TV.Brace body)
       ::xs ->
+        aux_tree InType [(TV.T (T.TIdent (s0, ii0)))];
         tag ii1 (Function (Def2 fake_no_def2));
         aux_tree InParameter [(TV.Paren params)];
         aux_tree InFunction [(TV.Brace body)];
@@ -127,14 +138,44 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* function yy(zz) x(...) { ... } *)
     |   (TV.T T.Tfunction _)
       ::(TV.T T.TIdent (s0, ii0))
-      ::(TV.Paren _)
+      ::(TV.Paren paramstype)
       ::(TV.T T.TIdent (s1, ii1))
       ::(TV.Paren params)
       ::(TV.Brace body)
       ::xs ->
+        aux_tree InType [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)];
         tag ii1 (Function (Def2 fake_no_def2));
         aux_tree InParameter [(TV.Paren params)];
         aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+    (* database yy /x *)
+    |   (TV.T T.Tdatabase _)
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.T T.TDiv _)
+      ::(TV.T T.TIdent (s2, ii2))
+      ::xs ->
+        aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
+        tag ii2 (Global (Def2 fake_no_def2));
+        aux_tree ctx xs
+
+    (* database yy(zz) /x *)
+    |   (TV.T T.Tdatabase _)
+      ::(TV.T T.TIdent (s0, ii0))
+      ::(TV.Paren paramstype)
+      ::(TV.T T.TDiv _)
+      ::(TV.T T.TIdent (s2, ii2))
+      ::xs ->
+        aux_tree InType [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)];
+        tag ii2 (Global (Def2 fake_no_def2));
+        aux_tree ctx xs
+
+    (* database /xxx *)
+    |   (TV.T T.Tdatabase _)
+      ::(TV.T T.TDiv _)
+      ::(TV.T T.TIdent (s, ii1))
+      ::xs ->
+        tag ii1 (Global (Def2 fake_no_def2));
         aux_tree ctx xs
 
     | x::xs -> 
@@ -226,6 +267,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii (Global (Def2 fake_no_def2));
         aux_toks xs
 
+    | T.T_XML_ATTR("id", _)::T.TEq(_)
+      ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
+        (* this is for style, not for modification *)
+        aux_toks xs
+
     | T.T_XML_ATTR(("class"|"style"), _)::T.TEq(_)
         ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
         tag ii1 EmbededStyle;
@@ -261,6 +307,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     | T.TSharp _::T.TIdent(s1, ii1)::xs ->
         tag ii1 (Global (Use2 fake_no_use2));
+        aux_toks xs
+
+    | x::T.TDiv _::T.TIdent(s1, ii1)::xs ->
+        if not (Hashtbl.mem already_tagged ii1)
+        then tag ii1 (Global (Use2 fake_no_use2));
         aux_toks xs
 
     | x::xs ->
@@ -339,7 +390,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.Tforall ii
     | T.Texternal ii
     | T.Tparser ii
-    | T.Tdb ii
+    | T.Tdatabase ii
     | T.Tcss ii
     | T.Tend ii
     | T.Tbegin ii

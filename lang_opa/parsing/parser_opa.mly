@@ -71,7 +71,7 @@ open Ast_opa
  Tfunction 
  Ttype Tor Tval Tand Trec
  Tbegin Tend
- Tcss Tdb Tparser
+ Tcss Tdatabase Tparser
  Texternal
  Tforall
  Tpackage Tmodule Timport 
