@@ -58,7 +58,8 @@ let rec mk_tree xs =
   | x::xs ->
       (match x with
       | TOParen ii ->
-          raise Todo
+          let body, xs = mk_comma_group [] xs in
+          (Paren body)::mk_tree xs
       | TOBrace ii ->
           raise Todo
       | TOBracket ii ->
@@ -72,6 +73,25 @@ let rec mk_tree xs =
           failwith ("wrongly parenthised code")
       | x ->
           (T x)::mk_tree xs
+      )
+and mk_comma_group acc_before_sep xs =
+  match xs with
+  | [] -> failwith "could not find end of parenthesis"
+  | x::xs ->
+      (match x with
+      | TCParen ii ->
+          [List.rev acc_before_sep], xs
+      | TComma _ ->
+          let body, xs = mk_comma_group [] xs in
+          (List.rev acc_before_sep)::body, xs
+
+      (* recurse *)
+      | TOParen ii ->
+          let body, xs = mk_comma_group [] xs in
+          mk_comma_group ((Paren body)::acc_before_sep) xs
+
+      | _ ->
+          mk_comma_group ((T x)::acc_before_sep) xs
       )
 
 (*****************************************************************************)
