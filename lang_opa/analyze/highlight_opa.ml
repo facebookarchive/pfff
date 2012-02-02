@@ -30,8 +30,8 @@ module V = Visitor_opa
  * Syntax highlighting for OPA code for codemap.
  * 
  * todo: this code should actually be abused to generate the light
- * database and the TAGS file (because codemap needs to know about
- * def and use of entities).
+ * database and the TAGS file (because codemap needs/detects def and
+ * use of entities).
  *)
 
 (*****************************************************************************)
@@ -49,6 +49,17 @@ let lexer_based_tagger = true
 
 let is_module_name s = 
   s =~ "[A-Z].*"
+
+type context =
+  | InTop
+  (* inside { }, overloaded in OPA like in C *)
+  | InFunction
+  | InTypedef (* because type xx = { } or type xx = ( ) when tuple *)
+  | InParameter
+  (*
+  | InCase
+  | InImport
+  *)
 
 (*****************************************************************************)
 (* Code highlighter *)
@@ -75,18 +86,72 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   let toks_for_tree = toks +> Common.exclude (function
     | x when TH.is_comment x -> true
     (* todo? could try to relocate the following token to column 0? *)
-    | T.Tclient _ -> true
+    | T.Tclient _ | T.Tserver _ -> true
+    | T.Tpublic _ | T.Tprivate _ -> true
     | T.Tprotected _ -> true
     | _ -> false
   )
   in
   let tree = TV.mk_tree toks_for_tree in
-  let rec aux_tree xs =
+  let ctx = InTop in
+
+  (* poor's man identifier tagger.
+   * todo: have a ast_fuzzy_opa.ml
+   *)
+  let rec aux_tree ctx xs =
     match xs with
     | [] -> ()
-    | x::xs -> aux_tree xs
+    (* function x(...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        tag ii1 (Function (Def2 fake_no_def2));
+        aux_tree InParameter [(TV.Paren params)];
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+    (* function yy x(...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.T T.TIdent (s0, ii0))
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        tag ii1 (Function (Def2 fake_no_def2));
+        aux_tree InParameter [(TV.Paren params)];
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+    (* function yy(zz) x(...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.T T.TIdent (s0, ii0))
+      ::(TV.Paren _)
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        tag ii1 (Function (Def2 fake_no_def2));
+        aux_tree InParameter [(TV.Paren params)];
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+    | x::xs -> 
+        (match x with
+        | TV.T _ -> ()
+        | TV.Paren xxs ->
+            List.iter (aux_tree ctx) xxs
+        | TV.Brace xxs ->
+            List.iter (aux_tree ctx) xxs
+        | TV.Bracket xxs ->
+            List.iter (aux_tree ctx) xxs
+        | TV.Xml (xxs, yys) ->
+            raise Todo
+        );
+        aux_tree ctx xs
   in
-  aux_tree tree;
+  aux_tree ctx tree;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
@@ -121,19 +186,19 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         );
         aux_toks xs
 
-    (* If had a parse error, then the AST will not contain the definitions,
-     * but we can still try to tag certain things. Here is a
-     * poor's man semantic tagger. Infer if ident is a func, or type,
-     * or module based on the few tokens around. 
+    (* When there is a parse error, the AST will not contain anything,
+     * but we can still try to tag certain things. We can infer if an
+     * ident is a func, or type, or module based on the few tokens around.
      * 
      * This may look ridiculous to do such semantic tagging using tokens 
      * instead of the full AST but many OPA files could not parse with
      * the default parser so having a solid token-based tagger
-     * is still useful as a last resort. This is quite close to
-     * what you would do with emacs font-lock-mode.
+     * is still useful as a last resort. 
+     * 
+     * This is quite close to what you would do with emacs font-lock-mode.
      *)
 
-    (* poor's man identifier tagger *)
+    (* another poor's man identifier tagger *)
 
     (* defs *)
     | T.Tpackage ii1::T.TIdent (s, ii2)::xs ->
@@ -142,8 +207,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
 
     | T.Tmodule ii1::T.TIdent (s, ii2)::xs ->
-        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Module Def);
+        tag ii2 (Module Def);
         aux_toks xs
 
 
@@ -151,8 +215,25 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii2 (TypeDef Def);
         aux_toks xs
 
+     (* can't put (Function Def) here because the function keyword
+      * can also be followed by the return type.
+      *)
     | T.TIdent (s, ii1)::T.TEq _::T.Tparser _::xs ->
         tag ii1 (Function (Def2 fake_no_def2));
+        aux_toks xs
+
+    | T.T_XML_ATTR("id", _)::T.TEq(_)::T.TSharpIdent(s, ii)::xs ->
+        tag ii (Global (Def2 fake_no_def2));
+        aux_toks xs
+
+    | T.T_XML_ATTR(("class"|"style"), _)::T.TEq(_)
+        ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
+        tag ii1 EmbededStyle;
+        aux_toks xs
+
+    | T.T_XML_ATTR(("href"|"src"|"xmlns"), _)::T.TEq(_)
+        ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
+        tag ii1 EmbededUrl;
         aux_toks xs
 
     (* uses *)
@@ -174,10 +255,12 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     |   T.TIdent (s1, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::xs ->
         if is_module_name s1 
-        then begin 
-          tag ii1 (Module (Use));
-        end
-        else tag ii3 (Field (Use2 fake_no_use2));
+        then tag ii1 (Module (Use));
+        (* too many FPs: tag ii3 (Field (Use2 fake_no_use2)); *)
+        aux_toks xs
+
+    | T.TSharp _::T.TIdent(s1, ii1)::xs ->
+        tag ii1 (Global (Use2 fake_no_use2));
         aux_toks xs
 
     | x::xs ->
@@ -214,7 +297,8 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TInt (s,ii) | T.TFloat (s,ii) ->
         tag ii Number
     | T.TGUIL ii | T.T_ENCAPSED (_, ii) ->
-        tag ii String
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii String
 
     (* keyword types  *)
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
@@ -236,9 +320,6 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.Tmatch ii | T.Tcase ii | T.Tdefault ii
         -> tag ii KeywordConditional
 
-    | T.Tpublic ii | T.Tprivate ii
-        -> tag ii Keyword
-
     | T.Ttype ii
     | T.Twith ii
     | T.Tas ii
@@ -249,14 +330,14 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     | T.Tdo ii -> tag ii KeywordLoop
 
-    | T.Tclient ii
-        -> tag ii Keyword
 
-    | T.Tprotected ii
-    | T.Texposed ii
+    | T.Tprotected ii | T.Texposed ii
+    | T.Tclient ii    | T.Tserver ii
+    | T.Tpublic ii | T.Tprivate ii
+          -> tag ii Keyword
+
     | T.Tforall ii
     | T.Texternal ii
-    | T.Tserver ii
     | T.Tparser ii
     | T.Tdb ii
     | T.Tcss ii

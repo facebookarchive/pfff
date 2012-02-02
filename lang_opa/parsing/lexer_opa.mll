@@ -110,9 +110,11 @@ let keyword_table = Common.hash_of_list [
   "exposed",   (fun ii -> Texposed ii);
   "protected", (fun ii -> Tprotected ii);
 
+(* simplify highlighter to have this commented
   "int", (fun ii -> Tint ii);
   "float", (fun ii -> Tfloat ii);
   "string", (fun ii -> Tstring ii);
+*)
   (* bool, void
    * list, option, map, set
    * 

@@ -85,10 +85,14 @@ let rec mk_tree xs =
           (T x)::mk_tree xs
           
 
-      | TCParen ii | TCBrace ii | TCBracket ii 
+      | TCParen ii | TCBrace ii | TCBracket ii ->
+          failwith ("wrongly parenthised code: " ^ error x)
+
+      (* todo *)
       | T_XML_CLOSE_TAG (_, ii)
           -> 
-          failwith ("wrongly parenthised code: " ^ error x)
+          (T x)::mk_tree xs
+
       | x ->
           (T x)::mk_tree xs
       )
