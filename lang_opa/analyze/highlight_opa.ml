@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_opa
@@ -21,18 +20,26 @@ open Highlight_code
 module Ast = Ast_opa
 module T = Parser_opa
 module TH = Token_helpers_opa
-(*module V = Visitor_opa *)
+module V = Visitor_opa
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* 
+ * Syntax highlighting for OPA code for codemap.
+ * 
+ * todo: this code should actually be abused to generate the light
+ * database and the TAGS file (because codemap needs to know about
+ * def and use of entities).
+ *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
 (* we generate fake value here because the real one are computed in a
- * later phase in rewrite_categ_using_entities in codemap.
+ * later phase in rewrite_categ_using_entities in codemap when a light
+ * database is passed to -with_info to codemap.
  *)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
@@ -48,28 +55,23 @@ let is_module_name s =
 
 (* The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
- * number and basic entities. The Ast is better for tagging idents
- * to figure out what kind of ident it is.
+ * number and basic entities. The Ast is better for tagging idents,
+ * to figure out what kind of ident it is (a field, a function, a type, etc).
  *)
-let visit_toplevel 
-    ~tag_hook
-    prefs 
-    (*db_opt *)
-    (toplevel, toks)
-  =
+let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
     Hashtbl.replace already_tagged ii true
   )
   in
-
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
+  (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
-
+  (* -------------------------------------------------------------------- *)
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
@@ -99,6 +101,18 @@ let visit_toplevel
             ()
         );
         aux_toks xs
+
+    (* If had a parse error, then the AST will not contain the definitions,
+     * but we can still try to tag certain things. Here is a
+     * poor's man semantic tagger. Infer if ident is a func, or type,
+     * or module based on the few tokens around. 
+     * 
+     * This may look ridiculous to do such semantic tagging using tokens 
+     * instead of the full AST but many OPA files could not parse with
+     * the default parser so having a solid token-based tagger
+     * is still useful as a last resort. This is quite close to
+     * what you would do with emacs font-lock-mode.
+     *)
 
     (* poor's man identifier tagger *)
 
@@ -176,7 +190,7 @@ let visit_toplevel
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
-
+  (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok -> 
     match tok with
 
@@ -186,50 +200,50 @@ let visit_toplevel
         if not (Hashtbl.mem already_tagged ii) (* could be Estet tagged *)
         then tag ii Comment
 
-    | T.TCommentSpace ii -> ()
-    | T.TCommentNewline ii | T.TCommentMisc ii -> ()
+    | T.TCommentSpace ii | T.TCommentNewline ii | T.TCommentMisc ii -> ()
 
     | T.TUnknown ii -> tag ii Error
     | T.EOF ii-> ()
 
     (* values  *)
 
+    | T.TIdent(("true" | "false"), ii) -> 
+        tag ii Boolean
+    | T.TInt (s,ii) | T.TFloat (s,ii) ->
+        tag ii Number
     | T.TGUIL ii | T.T_ENCAPSED (_, ii) ->
         tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) ->
-        tag ii Number
 
-    | T.TOp(_, ii) -> tag ii Operator
-
-    (* keywords  *)
-    | T.TIdent("bool", ii) -> tag ii TypeMisc
-
+    (* keyword types  *)
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
+    | T.TIdent("bool", ii) -> tag ii TypeMisc
     | T.TIdent("string", ii) -> tag ii TypeMisc
+    | T.TIdent(("list" | "option" | "intmap"), ii) -> tag ii TypeMisc
+
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
     | T.Tstring ii -> tag ii TypeMisc
 
     | T.TTypeVar(_, ii) -> tag ii TypeMisc
 
-    | T.Tpublic ii | T.Tprivate ii
-        -> tag ii Keyword
+    (* keywords *)
 
+    | T.Tif ii | T.Tthen ii | T.Telse ii -> 
+        tag ii KeywordConditional
     | T.Tmatch ii | T.Tcase ii | T.Tdefault ii
         -> tag ii KeywordConditional
+
+    | T.Tpublic ii | T.Tprivate ii
+        -> tag ii Keyword
 
     | T.Ttype ii
     | T.Twith ii
     | T.Tas ii
         -> tag ii Keyword
 
-    | T.Tpackage ii | T.Tmodule ii
-    | T.Timport ii
+    | T.Tpackage ii | T.Tmodule ii | T.Timport ii
         -> tag ii KeywordModule
 
-    | T.Tif ii | T.Tthen ii | T.Telse ii -> tag ii KeywordConditional
     | T.Tdo ii -> tag ii KeywordLoop
-
-    | T.TIdent(("true" | "false"), ii) -> tag ii Boolean
 
     | T.Tclient ii
         -> tag ii Keyword
@@ -284,6 +298,8 @@ let visit_toplevel
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Punctuation
 
+    | T.TOp(_, ii) -> tag ii Operator
+
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
@@ -330,6 +346,8 @@ let visit_toplevel
     | T.TTilde ii
         -> tag ii Punctuation
 
+    (* rest *)
+
     | T.TExternalIdent (s, ii) ->
         ()
     | T.TIdent (s, ii) ->
@@ -337,5 +355,6 @@ let visit_toplevel
   );
   (* -------------------------------------------------------------------- *)
   (* ast phase 2 *)  
+  (* -------------------------------------------------------------------- *)
 
   ()
