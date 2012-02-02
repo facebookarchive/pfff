@@ -118,7 +118,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
       ::(TV.Brace body)
       ::xs ->
         tag ii1 (Function (Def2 fake_no_def2));
-        aux_tree InParameter [(TV.Paren params)];
+        List.iter (aux_tree InParameter) params;
         aux_tree InFunction [(TV.Brace body)];
         aux_tree ctx xs
 
@@ -131,7 +131,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
       ::xs ->
         aux_tree InType [(TV.T (T.TIdent (s0, ii0)))];
         tag ii1 (Function (Def2 fake_no_def2));
-        aux_tree InParameter [(TV.Paren params)];
+        List.iter (aux_tree InParameter) params;
         aux_tree InFunction [(TV.Brace body)];
         aux_tree ctx xs
 
@@ -145,7 +145,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
       ::xs ->
         aux_tree InType [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)];
         tag ii1 (Function (Def2 fake_no_def2));
-        aux_tree InParameter [(TV.Paren params)];
+        List.iter (aux_tree InParameter) params;
         aux_tree InFunction [(TV.Brace body)];
         aux_tree ctx xs
 
@@ -177,6 +177,15 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
       ::xs ->
         tag ii1 (Global (Def2 fake_no_def2));
         aux_tree ctx xs
+
+    (* todo: type x = *)
+
+    (* todo: type x(yy) = *)
+
+    (* todo? package ... *)
+    (* todo? module x = {...} *)
+
+    (* todo? x = ... at toplevel *)
 
     | x::xs -> 
         (match x with
@@ -355,8 +364,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
     | T.TIdent("bool", ii) -> tag ii TypeMisc
     | T.TIdent("string", ii) -> tag ii TypeMisc
-    | T.TIdent(("list" | "option" | "intmap" | "stringmap"), ii) -> 
-        tag ii TypeMisc
+    | T.TIdent(("list" | "option" | "intmap" | "stringmap"), ii) -> tag ii TypeMisc
     | T.TIdent("void", ii) -> tag ii TypeVoid
 
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
