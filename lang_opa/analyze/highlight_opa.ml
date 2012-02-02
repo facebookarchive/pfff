@@ -39,7 +39,7 @@ module V = Visitor_opa
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in codemap when a light
- * database is passed to -with_info to codemap.
+ * database is passed via -with_info to codemap.
  *)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
@@ -117,66 +117,43 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* poor's man identifier tagger *)
 
     (* defs *)
-(*
-    | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
+    | T.Tmodule ii1::T.TIdent (s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Class (Def2 fake_no_def2));
+        then tag ii2 (Module Def);
         aux_toks xs
 
-    | (T.Tvoid ii | T.Tint ii)
-      ::T.TIdent (s, ii2)
-      ::T.TOParen (ii3)
-      ::xs ->
-        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Method (Def2 fake_no_def2));
+    | (T.Ttype ii1 | T.Tand ii1)::T.TIdent (s, ii2)::xs ->
+        tag ii2 (TypeDef Def);
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2
-      ::T.TIdent (s3, ii3)::T.TIdent (s4,ii4)::xs 
-       ->
-        if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
-        then begin 
-          tag ii4 (Field (Def2 fake_no_def2));
-
-          tag ii3 (TypeMisc);
-          if is_module_name s1 then tag ii1 (Module (Use));
-        end;
+    | T.TIdent (s, ii1)::T.TEq _::T.Tparser _::xs ->
+        tag ii1 (Function (Def2 fake_no_def2));
         aux_toks xs
-*)
 
     (* uses *)
-(*
+    | T.TIdent(s, ii1)::T.TColon ii2::xs ->
+        tag ii1 (Field (Use2 fake_no_use2));
+        aux_toks xs
+
+    | T.TTilde(ii1)::T.TIdent (_,ii2)::xs ->
+        tag ii2 (Field (Use2 fake_no_use2));
+        aux_toks xs
+
     |   T.TIdent (s1, ii1)::T.TDot ii2
       ::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
-        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then begin 
-          tag ii3 (Method (Use2 fake_no_use2));
-          (*
-          if not (Hashtbl.mem already_tagged ii1)
-          then tag ii1 (Local Use);
-          *)
-          if is_module_name s1 then tag ii1 (Module (Use))
-        end;
+        if is_module_name s1 
+        then tag ii1 (Module (Use));
+        tag ii3 (Function (Use2 fake_no_use2));
+        
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2
-      ::T.TIdent (s3, ii3)::T.TEq ii4::xs ->
-        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+    |   T.TIdent (s1, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::xs ->
+        if is_module_name s1 
         then begin 
-          tag ii3 (Field (Use2 fake_no_use2));
-          if is_module_name s1 then tag ii1 (Module (Use))
-        end;
+          tag ii1 (Module (Use));
+        end
+        else tag ii3 (Field (Use2 fake_no_use2));
         aux_toks xs
-
-
-    |  T.TIdent (s1, ii1)::T.TDot ii2
-     ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
-        if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
-        then begin 
-          if is_module_name s1 then tag ii1 (Module Use)
-        end;
-        aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
-*)        
 
     | x::xs ->
         aux_toks xs
@@ -219,6 +196,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TIdent("bool", ii) -> tag ii TypeMisc
     | T.TIdent("string", ii) -> tag ii TypeMisc
     | T.TIdent(("list" | "option" | "intmap"), ii) -> tag ii TypeMisc
+    | T.TIdent("void", ii) -> tag ii TypeVoid
 
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
     | T.Tstring ii -> tag ii TypeMisc

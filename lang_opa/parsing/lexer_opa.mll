@@ -113,7 +113,7 @@ let keyword_table = Common.hash_of_list [
   "int", (fun ii -> Tint ii);
   "float", (fun ii -> Tfloat ii);
   "string", (fun ii -> Tstring ii);
-  (* bool
+  (* bool, void
    * list, option, map, set
    * 
    * true, false
