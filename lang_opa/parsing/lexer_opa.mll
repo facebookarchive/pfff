@@ -408,7 +408,10 @@ and string_double_quote = parse
       { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
   (* noteopti: must be the "negative" of the previous rules *)
-  | [^ '{' '\\' '\"' '\n']* 
+  | [^ '{' '\\' '\"']* 
+      { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
+  (* multiline strings are supported in OPA, generate different token? *)
+  | '\n'
       { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
   | eof { 
@@ -428,13 +431,25 @@ and in_xml_tag current_tag = parse
   | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
   | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
 
-  (* attribute management *)
+  (* attribute management. todo: have another extra state? after = ? *)
   | xmlattr { T_XML_ATTR(tok lexbuf, tokinfo lexbuf) }
   | "="     { TEq(tokinfo lexbuf) }
+
   | '"' {
       push_mode ST_DOUBLE_QUOTES;
       TGUIL(tokinfo lexbuf)
     }
+
+  (* ugly: copy paste *)
+  | (decimalinteger | octinteger | hexinteger | bininteger)
+    { TInt (tok lexbuf, tokinfo lexbuf) }
+
+  | digit (digit)* ('.' (digit)*)? ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
+  | '.' (digit)+ ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
+
+
   | "{" {
       push_mode ST_INITIAL; 
       TOBrace(tokinfo lexbuf)
