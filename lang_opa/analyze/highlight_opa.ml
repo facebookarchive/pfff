@@ -209,6 +209,8 @@ let visit_toplevel
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
     | T.Tstring ii -> tag ii TypeMisc
 
+    | T.TTypeVar(_, ii) -> tag ii TypeMisc
+
     | T.Tpublic ii | T.Tprivate ii
         -> tag ii Keyword
 

@@ -329,10 +329,14 @@ rule initial = parse
       | Some f -> f info
       | None -> TIdent (s, info)
     }
-  (* todo? 'a, 'b'  type variables? ~label ? *)
+  (* 'a, 'b'  type variables, was not mentionned in reference manual *)
+  | "'" (ident as s) {
+      TTypeVar(s, tokinfo lexbuf)
+    }
+  (* todo? ~label ? *)
 
   (* this was not mentioned in reference manual *)
-  | "%%" ((letter | '_' | ['.'] | digit)+ as s) "%%" {
+  | "%%" space* ((letter | '_' | ['.'] | digit)+ as s) space* "%%" {
       TExternalIdent (s, tokinfo lexbuf)
     }
 
@@ -435,8 +439,12 @@ and in_xml_tag current_tag = parse
       push_mode ST_INITIAL; 
       TOBrace(tokinfo lexbuf)
     }
-  (* todo: concat them? *)
   | "#" (ident as s) { TSharpIdent(s, tokinfo lexbuf) }
+  (* ugly, should have just # but then lexed as T_XML_ATTR? *)
+  | "#{" {
+      push_mode ST_INITIAL; 
+      TOBrace(tokinfo lexbuf)
+    }
 
   (* When we see a ">", it means it's just the end of 
    * the opening tag. Transit to IN_XML_TEXT.
