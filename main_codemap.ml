@@ -22,6 +22,7 @@ module FT = File_type
 
 (*s: main flags *)
 let screen_size = ref 2
+let legend = ref true
 
 let db_file = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
@@ -233,7 +234,8 @@ let main_action xs =
 
   Common.finalize (fun () -> 
     View2.mk_gui 
-      ~screen_size:!screen_size 
+      ~screen_size:!screen_size
+      ~legend:!legend
       !test_mode
       (root, model, dw, db_file)
   ) (fun() -> 
@@ -292,6 +294,8 @@ let options () = [
     "-boost_lbl" , Arg.Set Flag.boost_label_size,
     " ";
     "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
+    " ";
+    "-no_legend" , Arg.Clear legend,
     " ";
 
     "-symlinks", Arg.Unit (fun () -> 

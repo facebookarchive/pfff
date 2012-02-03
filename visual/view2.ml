@@ -189,7 +189,7 @@ let expose_legend da dw_ref ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
+let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
   let dw = ref dw in
   Common.push2 !dw Controller.dw_stack;
@@ -528,23 +528,24 @@ let mk_gui ~screen_size test_mode (root, model, dw, dbfile_opt) =
     let hpane = GPack.paned `HORIZONTAL
       ~packing:(vbox#pack ~expand:true ~fill:true) () in
 
-    let da = GMisc.drawing_area
-      ~packing:(hpane#add1) () in
+    let da = GMisc.drawing_area () in
     da#misc#set_double_buffered false;
 
-    let vpane = GPack.paned `VERTICAL
-      ~packing:(hpane#add2) () in
+    hpane#add1 da#coerce;
+
+    let vpane = GPack.paned `VERTICAL () in
     hpane#set_position minimap_hpos;
-    
 
-    let da2 = GMisc.drawing_area
-      ~packing:(vpane#add1) () in
+    if legend then hpane#add2 vpane#coerce;
+
+    let da2 = GMisc.drawing_area () in
     da2#misc#set_double_buffered false;
+    vpane#add1 da2#coerce;
 
     
-    let da3 = GMisc.drawing_area
-      ~packing:(vpane#add2) () in
+    let da3 = GMisc.drawing_area () in
     vpane#set_position minimap_vpos;
+    vpane#add2 da3#coerce;
 
     da#misc#set_can_focus true ;
     da#event#add [ `KEY_PRESS;

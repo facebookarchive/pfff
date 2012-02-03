@@ -2,6 +2,7 @@
 (*s: mk_gui sig *)
 val mk_gui :
   screen_size:int ->
+  legend:bool ->
   'b option -> 
   (string (* root *) * 
    Model2.model Async.t * 
