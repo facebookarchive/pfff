@@ -225,6 +225,31 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag_type ~tag s1 ii1;
         aux_tree ctx xs
 
+    (* INSIDE Parameter *)
+
+    (* yy x *)
+    |  (TV.T T.TIdent (s1, ii1))
+     ::(TV.T T.TIdent (s2, ii2))
+     ::xs when ctx = InParameter ->
+       aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
+       tag ii2 (Parameter Def);
+       aux_tree ctx xs
+
+    (* yy(zz) x *)
+    |  (TV.T T.TIdent (s1, ii1))
+     ::(TV.Paren paramstype)
+     ::(TV.T T.TIdent (s2, ii2))
+     ::xs when ctx = InParameter ->
+        aux_tree InType [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)];
+        tag ii2 (Parameter Def);
+        aux_tree ctx xs
+
+    (* x *)
+    | TV.T (T.TIdent (s1, ii1))::xs when ctx = InParameter  ->
+        tag ii1 (Parameter Def);
+        aux_tree ctx xs
+        
+
     (* REST *)
     | x::xs -> 
         (match x with
