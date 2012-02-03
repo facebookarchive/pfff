@@ -211,6 +211,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
        tag ii2 (Field (Def2 fake_no_def2));
        aux_tree ctx xs
 
+    (* INSIDE Type *)
+    | TV.T (T.TIdent (s1, ii1))::xs when ctx = InType ->
+        tag_type ~tag s1 ii1;
+        aux_tree ctx xs
+
     (* REST *)
     | x::xs -> 
         (match x with
