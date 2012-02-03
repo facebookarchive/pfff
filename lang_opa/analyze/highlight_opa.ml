@@ -70,6 +70,7 @@ type context =
 
   (* misc *)
   | InImport
+  | InPackage
 
 let tag_type ~tag s ii =
   let kind = TypeMisc
@@ -154,6 +155,27 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_tree InFunction [(TV.Brace body)];
         aux_tree ctx xs
 
+    (* function (...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        List.iter (aux_tree InParameter) params;
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+    (* function (...) (...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.Paren paramstype)
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        aux_tree InType [(TV.Paren paramstype)];
+        List.iter (aux_tree InParameter) params;
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+
     (* database yy /x *)
     |   (TV.T T.Tdatabase _)
       ::(TV.T T.TIdent (s1, ii1))
@@ -163,6 +185,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
         tag ii2 (Global (Def2 fake_no_def2));
         aux_tree ctx xs
+
 
     (* database yy(zz) /x *)
     |   (TV.T T.Tdatabase _)
@@ -315,14 +338,17 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* another poor's man identifier tagger *)
 
     (* defs *)
+    | T.Tmodule ii1::T.TIdent (s, ii2)::xs ->
+        tag ii2 (Module Def);
+        aux_toks xs
+
+    (* FPs, can be the ident after that
     | T.Tpackage ii1::T.TIdent (s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Module Def);
         aux_toks xs
+    *)
 
-    | T.Tmodule ii1::T.TIdent (s, ii2)::xs ->
-        tag ii2 (Module Def);
-        aux_toks xs
 
 
     | (T.Ttype ii1 | T.Tand ii1)::T.TIdent (s, ii2)::xs ->
