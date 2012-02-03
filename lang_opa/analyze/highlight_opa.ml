@@ -283,6 +283,14 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     |  (TV.T (T.TIdent (s1, ii1)))
      ::(TV.T (T.TEq _))
+     ::(TV.T (T.TExternalIdent (s2, ii2)))
+     ::xs when ctx = InTop ->
+       tag ii1 (Function (Def2 fake_no_def2));
+       tag ii2 CppOther;
+       aux_tree ctx xs
+
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
      ::xs when ctx = InTop ->
        tag ii1 (Global (Def2 fake_no_def2));
        aux_tree ctx xs
