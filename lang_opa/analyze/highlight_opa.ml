@@ -207,9 +207,18 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     |  (TV.T T.TIdent (s1, ii1))
      ::(TV.T T.TIdent (s2, ii2))
      ::xs when ctx = InTypedef ->
-       tag_type ~tag s1 ii1;
+       aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
        tag ii2 (Field (Def2 fake_no_def2));
        aux_tree ctx xs
+
+    (* yy(zz) x *)
+    |  (TV.T T.TIdent (s1, ii1))
+     ::(TV.Paren paramstype)
+     ::(TV.T T.TIdent (s2, ii2))
+     ::xs when ctx = InTypedef ->
+        aux_tree InType [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)];
+        tag ii2 (Field (Def2 fake_no_def2));
+        aux_tree ctx xs
 
     (* INSIDE Type *)
     | TV.T (T.TIdent (s1, ii1))::xs when ctx = InType ->
