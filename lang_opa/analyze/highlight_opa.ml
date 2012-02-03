@@ -71,6 +71,11 @@ type context =
   (* misc *)
   | InImport
 
+let tag_type ~tag s ii =
+  let kind = TypeMisc
+  in
+  tag ii kind
+  
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -178,7 +183,15 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii1 (Global (Def2 fake_no_def2));
         aux_tree ctx xs
 
-    (* todo: type x = *)
+    (* type x = { ... } *)
+    |   (TV.T T.Ttype _)
+      ::(TV.T (T.TIdent (s, ii1)))
+      ::(TV.T (T.TEq ii2))
+      ::TV.Brace bodytype
+      ::xs ->
+        tag ii1 (TypeDef Def);
+        List.iter (aux_tree InTypedef) bodytype;
+        aux_tree ctx xs
 
     (* todo: type x(yy) = *)
 
@@ -187,6 +200,18 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     (* todo? x = ... at toplevel *)
 
+
+    (* INSIDE Typedef *)
+    
+    (* yy x *)
+    |  (TV.T T.TIdent (s1, ii1))
+     ::(TV.T T.TIdent (s2, ii2))
+     ::xs when ctx = InTypedef ->
+       tag_type ~tag s1 ii1;
+       tag ii2 (Field (Def2 fake_no_def2));
+       aux_tree ctx xs
+
+    (* REST *)
     | x::xs -> 
         (match x with
         | TV.T _ -> ()
