@@ -3221,7 +3221,7 @@ let unix_diff file1 file2 =
   let (xs, _status) =
     cmd_to_list_and_status (spf "diff -u %s %s" file1 file2) in
   xs
-
+(* see also unix_diff_strings at the bottom *)
 
 let get_mem() =
   cmd_to_list("grep VmData /proc/" ^ string_of_int (Unix.getpid()) ^ "/status")
@@ -6440,6 +6440,13 @@ let _ =
      =*= "/home/pad/pfff"
     )
 *)
+
+let unix_diff_strings s1 s2 =
+  let tmp1 = new_temp_file "s1" "" in
+  write_file tmp1 s1;
+  let tmp2 = new_temp_file "s2" "" in
+  write_file tmp2 s2;
+  unix_diff tmp1 tmp2
 
 (*****************************************************************************)
 (* Misc/test *)
