@@ -271,7 +271,13 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | TV.T (T.TIdent (s1, ii1))::xs when ctx = InParameter  ->
         tag ii1 (Parameter Def);
         aux_tree ctx xs
-        
+
+    (* INSIDE Function *)
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
+     ::xs when ctx = InFunction ->
+       tag ii1 (Local Def);
+       aux_tree ctx xs
 
     (* REST *)
     | x::xs -> 
@@ -349,8 +355,6 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
     *)
 
-
-
     | (T.Ttype ii1 | T.Tand ii1)::T.TIdent (s, ii2)::xs ->
         tag ii2 (TypeDef Def);
         aux_toks xs
@@ -379,6 +383,10 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.T_XML_ATTR(("href"|"src"|"xmlns"), _)::T.TEq(_)
         ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
         tag ii1 EmbededUrl;
+        aux_toks xs
+
+    | T.T_XML_ATTR(s, ii)::T.TEq(_)::xs when s =~ "on.*" ->
+        tag ii (Method (Def2 fake_no_def2));
         aux_toks xs
 
     (* uses *)
@@ -504,20 +512,23 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         (* todo: match s with ...
          * look the html highlighter in lang_html/ ?
          *)
-        tag ii Keyword
+        tag ii EmbededHtml
+
     | T.T_XML_CLOSE_TAG (sopt, ii) ->
         (* todo: match s with ... *)
-        tag ii Keyword
+        tag ii EmbededHtml
 
     | T.T_XML_ATTR (s, ii) ->
         (* todo: match s with ...
          * look the html highlighter in lang_html/ ?
          *)
-        tag ii Keyword
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii Keyword
+
     | T.T_XML_MORE ii ->
-        tag ii Keyword
+        tag ii EmbededHtml
     | T.T_XML_SLASH_GT ii ->
-        tag ii Keyword
+        tag ii EmbededHtml
     | T.T_XML_TEXT (s, ii) -> tag ii String
 
     (* css *)
