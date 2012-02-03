@@ -279,6 +279,14 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
        tag ii1 (Local Def);
        aux_tree ctx xs
 
+    (* INSIDE Top *)
+
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
+     ::xs when ctx = InTop ->
+       tag ii1 (Global (Def2 fake_no_def2));
+       aux_tree ctx xs
+
     (* REST *)
     | x::xs -> 
         (match x with
@@ -523,7 +531,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
          * look the html highlighter in lang_html/ ?
          *)
         if not (Hashtbl.mem already_tagged ii)
-        then tag ii Keyword
+        then tag ii EmbededHtmlAttr
 
     | T.T_XML_MORE ii ->
         tag ii EmbededHtml

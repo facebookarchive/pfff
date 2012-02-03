@@ -257,6 +257,7 @@ type category =
 
   (* web related *)
   | EmbededHtml (* e.g. xhp *)
+  | EmbededHtmlAttr
   | EmbededUrl (* e.g. xhp *)
   | EmbededCode (* e.g. javascript *)
   | EmbededStyle (* e.g. css *)
@@ -808,6 +809,10 @@ let info_of_category = function
   | EmbededHtml ->
       (* to be consistent with Archi_code.Ui color *)
       [`FOREGROUND "RosyBrown"] 
+
+  | EmbededHtmlAttr ->
+      (* to be consistent with Archi_code.Ui color *)
+      [`FOREGROUND "burlywood3"] 
 
   | EmbededUrl ->
       (* yellow-like color, like function, because it's often
