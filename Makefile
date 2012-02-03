@@ -661,7 +661,7 @@ layers:
           layer_age.json
 
 visual:
-	./codemap -profile -ss 2 \
+	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -filter ocaml .
 
 tests:
