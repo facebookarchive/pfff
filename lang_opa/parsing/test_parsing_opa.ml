@@ -50,10 +50,7 @@ let test_token_view_opa file =
 
 let test_fuzzy_opa file =
   let (_, toks) = Parse_opa.parse_just_tokens file in
-  let toks = toks +> Common.exclude (fun t ->
-    TH.is_comment t
-  )
-  in
+  let toks = Ast_fuzzy_opa.toks_for_ast_fuzzy toks in
   let tree = Token_views_opa.mk_tree toks in
   let tree = Ast_fuzzy_opa.mk_tree tree in
   let v = Ast_fuzzy_opa.vof_tree_list tree in

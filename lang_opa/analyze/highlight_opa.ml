@@ -117,6 +117,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   let rec aux_tree ctx xs =
     match xs with
     | [] -> ()
+
     (* function x(...) { ... } *)
     |   (TV.T T.Tfunction _)
       ::(TV.T T.TIdent (s1, ii1))
@@ -494,40 +495,38 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         -> tag ii KeywordConditional
 
     | T.Ttype ii
+    | T.Tor ii
+        -> tag ii Keyword
     | T.Twith ii
     | T.Tas ii
         -> tag ii Keyword
 
-    | T.Tpackage ii | T.Tmodule ii | T.Timport ii
+    | T.Tpackage ii | T.Timport ii
+    | T.Tmodule ii 
         -> tag ii KeywordModule
 
     | T.Tdo ii -> tag ii KeywordLoop
-
 
     | T.Tprotected ii | T.Texposed ii
     | T.Tclient ii    | T.Tserver ii
     | T.Tpublic ii | T.Tprivate ii
           -> tag ii Keyword
 
-    | T.Tforall ii
-    | T.Texternal ii
     | T.Tparser ii
     | T.Tdatabase ii
     | T.Tcss ii
-    | T.Tend ii
-    | T.Tbegin ii
-    | T.Trec ii
-    | T.Tand ii
-    | T.Tval ii
-    | T.Tor ii
+
+    | T.Tval ii | T.Texternal ii
+    | T.Tforall ii
+
+    | T.Tbegin ii | T.Tend ii
+    | T.Trec ii | T.Tand ii
     | T.Tfunction ii
         -> tag ii Keyword
 
     (* xml  *)
     | T.T_XML_OPEN_TAG (s, ii) ->
-        (* todo: match s with ...
-         * look the html highlighter in lang_html/ ?
-         *)
+        (* todo: match s with ...? look html highlighter in lang_html/ ? *)
         tag ii EmbededHtml
 
     | T.T_XML_CLOSE_TAG (sopt, ii) ->
@@ -535,9 +534,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii EmbededHtml
 
     | T.T_XML_ATTR (s, ii) ->
-        (* todo: match s with ...
-         * look the html highlighter in lang_html/ ?
-         *)
+        (* todo: match s with ...? look html highlighter in lang_html/ ? *)
         if not (Hashtbl.mem already_tagged ii)
         then tag ii EmbededHtmlAttr
 
@@ -551,6 +548,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TSharpIdent (s, ii) ->
         ()
 
+    (* ?? *)
     | T.TSharp ii
         -> tag ii Punctuation
 
@@ -577,14 +575,10 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TStar ii
       -> tag ii Operator
 
-    | T.TAnd ii
+    | T.TEqEq ii | T.TNotEq ii
         -> tag ii Operator
 
-    | T.TNotEq ii
-    | T.TEqEq ii
-
-    | T.TXor ii
-    | T.TOr ii
+    | T.TAnd ii | T.TOr ii | T.TXor ii 
         -> tag ii Operator
 
     | T.TComma ii
