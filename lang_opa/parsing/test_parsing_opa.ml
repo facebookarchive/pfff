@@ -37,7 +37,7 @@ let test_parse_opa xs =
   );
   ()
 
-let test_view_opa file =
+let test_token_view_opa file =
   let (_, toks) = Parse_opa.parse_just_tokens file in
   let toks = toks +> Common.exclude (fun t ->
     TH.is_comment t
@@ -45,6 +45,18 @@ let test_view_opa file =
   in
   let tree = Token_views_opa.mk_tree toks in
   let v = Token_views_opa.vof_tree_list tree in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+let test_fuzzy_opa file =
+  let (_, toks) = Parse_opa.parse_just_tokens file in
+  let toks = toks +> Common.exclude (fun t ->
+    TH.is_comment t
+  )
+  in
+  let tree = Token_views_opa.mk_tree toks in
+  let tree = Ast_fuzzy_opa.mk_tree tree in
+  let v = Ast_fuzzy_opa.vof_tree_list tree in
   let s = Ocaml.string_of_v v in
   pr s
 
@@ -61,6 +73,8 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_opa;
   "-parse_opa", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_opa;
+  "-tview_opa", "   <file>", 
+  Common.mk_action_1_arg test_token_view_opa;
   "-dump_opa", "   <file>", 
-  Common.mk_action_1_arg test_view_opa;
+  Common.mk_action_1_arg test_fuzzy_opa;
 ]
