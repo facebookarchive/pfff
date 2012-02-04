@@ -2,14 +2,14 @@
 You must first install a recent version of 
  - OCaml (at least 3.11), 
    see http://caml.inria.fr/download.en.html
+ - Pcre
+   if you want stuff I don't remember.
  - GTK (at least gtk 2.10)
    if you want the GUI capabilities.
  - Cairo
    if you want the fancy graphics capabilities.
  - Berkeley DB (at least 4.3)
    if you need to process huge codebase
- - Pcre
-   if you want stuff I don't remember.
  - SWI-prolog
    if you want the interactive code query tool
 
@@ -26,7 +26,6 @@ If you want most of the good things just type:
 
 This should generate a few binaries at the toplevel directory such
 as pfff or codemap.
-
 
 
 If you just want to compile the parsing frontend, then type 
