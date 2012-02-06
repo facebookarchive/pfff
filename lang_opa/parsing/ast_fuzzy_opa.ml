@@ -33,8 +33,24 @@ module T = Parser_opa
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+type 'a wrap = 'a Ast_opa.wrap
+
+type name = 
+  Name of string wrap
+ (* with tarzan *)
+
+type long_name = qualifier * name
+ and qualifier = name list
+ (* with tarzan *)
 
 type tree =
+  | Function of func_def
+
+  (* Database of type_ option * path * value_ option *)
+  (* TypeDef of name * type_ option *)
+  (* Package of ... *)
+  (* Module of name * tree list *)
+  (* VarDef of type_option * name * value_ *)
 
   | TreeTodo
   (* a copy of Token_views_opa.tree *)
@@ -44,6 +60,24 @@ type tree =
   | Bracket of tree list list
   | Xml of tree list * tree list
 
+ and func_def = {
+   (* f_name = None when have lambda *)
+   f_name: name option;
+   f_ret_type: type_ option;
+   f_params: parameter list;
+   f_body: body;
+ }
+   and parameter =
+     | Param of type_ option * name
+     | ParamOther of tree list
+
+  and body = tree list
+
+  and type_ =
+    | TyName of long_name
+    | TyVar of (* ' *) name
+    | TyApp of long_name * type_ list
+    | TyOther of tree list
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -93,27 +127,56 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
   let top_ctx = () in
 
   (* poor's man parser ... *)
-  let rec aux ctx = function
+  let rec tree ctx = function
 
   | TV.T tok -> T tok
   | TV.Paren xxs ->
-      let xxs = xxs +> List.map (aux_list ctx) in
+      let xxs = xxs +> List.map (tree_list ctx) in
       Paren xxs
   | TV.Brace xxs ->
-      let xxs = xxs +> List.map (aux_list ctx) in
+      let xxs = xxs +> List.map (tree_list ctx) in
       Brace xxs
   | TV.Bracket xxs ->
-      let xxs = xxs +> List.map (aux_list ctx) in
+      let xxs = xxs +> List.map (tree_list ctx) in
       Bracket xxs
   | TV.Xml ((v1, v2)) ->
       raise Todo
 
-  and aux_list ctx xs = 
+  and tree_list ctx xs = 
 
     match xs with
     | [] -> []
+
+    (* function x(...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.Paren params)
+      ::(TV.Brace bdy)
+      ::xs ->
+        let params = List.map (parameter ctx) params in
+        let bdy = body ctx bdy in
+        Function ({
+          f_name = Some (Name (s1, ii1));
+          f_ret_type = None;
+          f_params = params;
+          f_body = bdy;
+        })::tree_list ctx xs
+
+(*
+        tag ii1 (Function (Def2 fake_no_def2));
+        List.iter (tree_tree InParameter) params;
+        tree_tree InFunction [(TV.Brace body)];
+        tree_tree ctx xs
+*)
+
     | x::xs ->
-        aux ctx x::aux_list ctx xs
+        tree ctx x::tree_list ctx xs
+
+  and parameter ctx param = 
+    raise Todo
+  and body ctx body =
+    raise Todo
   in
 
-  aux_list top_ctx xs
+
+  tree_list top_ctx xs

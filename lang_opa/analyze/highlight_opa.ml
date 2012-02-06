@@ -47,7 +47,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = true
 
-let is_module_name s = 
+let is_module_name s =
   s =~ "[A-Z].*"
 
 type context =
