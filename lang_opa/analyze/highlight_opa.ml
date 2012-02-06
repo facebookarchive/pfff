@@ -78,13 +78,16 @@ type in_context =
 
 type context = {
   ctx: in_context;
+
   params: string list;
-  vars: string list;
+  locals: string list;
+  globals: string list;
 }
 let default_ctx = {
   ctx = InTop;
   params = [];
-  vars = [];
+  locals = [];
+  globals = [];
 }
  
 (*****************************************************************************)
@@ -130,6 +133,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
           ctx = InFunction;
         } def.f_body;
         ()
+
     | Ast.TypeDef (name, tdef) ->
         let info = info_of_name name in
         tag info (TypeDef Def);
@@ -140,18 +144,16 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag info (Module Def);
         tree_list ctx xs
 
-    | TreeTodo -> ()
-    | T tok ->
-        (match tok with
-        | T.TIdent (s, info) ->
-            (match () with
-            | _ when List.mem s (ctx.params) ->
-                tag info (Parameter Use)
-            | _ -> ()
-            )
-        | _ -> ()
-        )
+    | Ast.VarDef (typ, name) ->
+        let info = info_of_name name in
+        Common.do_option (type_ ctx) typ;
 
+        if ctx.ctx =*= InTop
+        then tag info (Global (Def2 fake_no_def2))
+        else tag info (Local Def)
+
+    | TreeTodo -> ()
+    | T tok -> ()
     | Paren xxs ->
         xxs +> List.iter (tree_list ctx)
     | Brace xxs ->
@@ -201,6 +203,37 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   and tree_list ctx xs =
     match xs with
     | [] -> ()
+
+    | (T (T.TIdent (s, info)))::xs ->
+        (match () with
+        | _ when List.mem s (ctx.params) ->
+            tag info (Parameter Use)
+        | _ when List.mem s (ctx.locals) ->
+            tag info (Local Use)
+        | _ when List.mem s (ctx.globals) ->
+            tag info (Global (Use2 fake_no_use2))
+        | _ -> ()
+        );
+        tree_list ctx xs
+
+    | (Ast.VarDef (typ, name) as x)::xs ->
+        let s = str_of_name name in
+        tree ctx x;
+        let ctx = 
+          if ctx.ctx =*= InTop
+          then { ctx with globals = s::ctx.globals; }
+          else { ctx with locals = s::ctx.locals; }
+        in
+        tree_list ctx xs
+
+(*
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
+     ::(TV.T (T.TExternalIdent (s2, ii2)))
+       tag ii1 (Function (Def2 fake_no_def2));
+       tag ii2 CppOther;
+*)
+        
     | x::xs ->
         tree ctx x;
         tree_list ctx xs

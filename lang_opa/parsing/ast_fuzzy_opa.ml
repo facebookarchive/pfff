@@ -56,7 +56,7 @@ type tree =
   | TypeDef of name * type_def
   (* Database of type_ option * path * value_ option *)
 
-  (* VarDef of type_option * name * value_ *)
+  | VarDef of type_ option * name (* todo: value_ *)
 
   (* Package of ... *)
   | Module of name * tree list
@@ -292,36 +292,19 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     (*-------------------------------------------------------------------*)
 
     (*-------------------------------------------------------------------*)
+    (* Assign *)
+    (*-------------------------------------------------------------------*)
+    (* todo: yy x =, but need check on same line? *)
+
+    (* x = *)
+    |  (TV.T (T.TIdent (s1, ii1)))::(TV.T (T.TEq _))::xs ->
+         VarDef (None, (Name(s1, ii1)))::tree_list ctx xs
+
+
+    (*-------------------------------------------------------------------*)
     (* Other *)
     (*-------------------------------------------------------------------*)
 
-(*
-    (* todo? x = ... at toplevel *)
-
-    (* INSIDE Function *)
-    |  (TV.T (T.TIdent (s1, ii1)))
-     ::(TV.T (T.TEq _))
-     ::xs when ctx = InFunction ->
-       tag ii1 (Local Def);
-       aux_tree ctx xs
-
-    (* INSIDE Top *)
-
-    |  (TV.T (T.TIdent (s1, ii1)))
-     ::(TV.T (T.TEq _))
-     ::(TV.T (T.TExternalIdent (s2, ii2)))
-     ::xs when ctx = InTop ->
-       tag ii1 (Function (Def2 fake_no_def2));
-       tag ii2 CppOther;
-       aux_tree ctx xs
-
-    |  (TV.T (T.TIdent (s1, ii1)))
-     ::(TV.T (T.TEq _))
-     ::xs when ctx = InTop ->
-       tag ii1 (Global (Def2 fake_no_def2));
-       aux_tree ctx xs
-
-       *)
     | x::xs ->
         tree ctx x::tree_list ctx xs
 

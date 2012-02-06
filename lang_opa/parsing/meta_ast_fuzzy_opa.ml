@@ -28,6 +28,11 @@ let rec vof_tree =
       let v1 = vof_name v1
       and v2 = Ocaml.vof_list vof_tree v2
       in Ocaml.VSum (("Module", [ v1; v2 ]))
+  | VarDef ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_type_ v1
+      and v2 = vof_name v2
+      in Ocaml.VSum (("VarDef", [ v1; v2 ]))
+
  | TreeTodo -> Ocaml.VSum (("TreeTodo", []))
 
   | T v1 -> let v1 = vof_token v1 in Ocaml.VSum (("T", [ v1 ]))
