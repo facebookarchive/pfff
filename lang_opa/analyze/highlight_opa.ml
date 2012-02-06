@@ -122,7 +122,13 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         );
         Common.do_option (type_ ctx) def.f_ret_type;
         List.iter (parameter ctx) def.f_params;
-        body ctx def.f_body;
+        body { ctx with 
+          params = def.f_params +> Common.map_filter (function
+          | Param (_, name) -> Some (str_of_name name)
+          | ParamOther _ -> None
+          );
+          ctx = InFunction;
+        } def.f_body;
         ()
     | Ast.TypeDef (name, tdef) ->
         let info = info_of_name name in
@@ -135,7 +141,17 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tree_list ctx xs
 
     | TreeTodo -> ()
-    | T tok -> ()
+    | T tok ->
+        (match tok with
+        | T.TIdent (s, info) ->
+            (match () with
+            | _ when List.mem s (ctx.params) ->
+                tag info (Parameter Use)
+            | _ -> ()
+            )
+        | _ -> ()
+        )
+
     | Paren xxs ->
         xxs +> List.iter (tree_list ctx)
     | Brace xxs ->
@@ -189,7 +205,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tree ctx x;
         tree_list ctx xs
   in
-  tree_list () xs;
+  tree_list (default_ctx) xs;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
