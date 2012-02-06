@@ -60,6 +60,12 @@ type tree =
   | Bracket of tree list list
   | Xml of tree list * tree list
 
+ and type_ =
+   | TyName of long_name
+   | TyVar of (* ' *) name
+   | TyApp of long_name * type_ list
+   | TyOther of tree list
+
  and func_def = {
    (* f_name = None when have lambda *)
    f_name: name option;
@@ -73,16 +79,13 @@ type tree =
 
   and body = tree list
 
-  and type_ =
-    | TyName of long_name
-    | TyVar of (* ' *) name
-    | TyApp of long_name * type_ list
-    | TyOther of tree list
  (* with tarzan *)
 
 (*****************************************************************************)
-(* Meta *)
+(* Helpers *)
 (*****************************************************************************)
+let info_of_name (Name (s, ii)) = ii
+let str_of_name (Name (s, ii))  = s
 
 (*****************************************************************************)
 (* Builder *)
@@ -96,7 +99,6 @@ let toks_for_ast_fuzzy toks = toks +> Common.exclude (function
     | T.Tprotected _ | T.Texposed _ -> true
     | _ -> false
   )
-
 
 let (mk_tree: TV.tree list -> tree list) = fun xs ->
   
@@ -166,49 +168,57 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
           f_body = body ctx bdy;
         })::tree_list ctx xs
 
+    (* function (...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.Paren params)::(TV.Brace bdy)::xs ->
+        Function ({
+          f_ret_type = None;
+          f_name = None;
+          f_params = List.map (parameter ctx) params;
+          f_body = body ctx bdy;
+        })::tree_list ctx xs
 
-    (*-------------------------------------------------------------------*)
-    (* Database *)
-    (*-------------------------------------------------------------------*)
+    (* function (...) (...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.Paren [typ])
+      ::(TV.Paren params)::(TV.Brace bdy)
+      ::xs ->
+        Function ({
+          f_ret_type = Some (type_ ctx typ);
+          f_name = None;
+          f_params = List.map (parameter ctx) params;
+          f_body = body ctx bdy;
+        })::tree_list ctx xs
 
     (*-------------------------------------------------------------------*)
     (* Types *)
     (*-------------------------------------------------------------------*)
+(*
+    (* type x = { ... } *)
+    |   (TV.T T.Ttype _)
+      ::(TV.T (T.TIdent (s, ii1)))
+      ::(TV.T (T.TEq ii2))
+      ::TV.Brace bodytype
+      ::xs ->
+        tag ii1 (TypeDef Def);
+        List.iter (aux_tree InTypedef) bodytype;
+        aux_tree ctx xs
+
+    (* todo: type x(yy) = *)
+*)
 
     (*-------------------------------------------------------------------*)
     (* Modules/packages *)
     (*-------------------------------------------------------------------*)
-
-    (*-------------------------------------------------------------------*)
-    (* Record *)
-    (*-------------------------------------------------------------------*)
-
-    (*-------------------------------------------------------------------*)
-    (* String interpolation *)
-    (*-------------------------------------------------------------------*)
-
 (*
-    (* function (...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
+    (* todo? package ... *)
+    (* todo? module x = {...} *)
+*)
 
-    (* function (...) (...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.Paren paramstype)
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        aux_tree InType [(TV.Paren paramstype)];
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
-
-
+    (*-------------------------------------------------------------------*)
+    (* Database *)
+    (*-------------------------------------------------------------------*)
+(*
     (* database yy /x *)
     |   (TV.T T.Tdatabase _)
       ::(TV.T T.TIdent (s1, ii1))
@@ -218,7 +228,6 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
         aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
         tag ii2 (Global (Def2 fake_no_def2));
         aux_tree ctx xs
-
 
     (* database yy(zz) /x *)
     |   (TV.T T.Tdatabase _)
@@ -239,23 +248,22 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
         tag ii1 (Global (Def2 fake_no_def2));
         aux_tree ctx xs
 
-    (* type x = { ... } *)
-    |   (TV.T T.Ttype _)
-      ::(TV.T (T.TIdent (s, ii1)))
-      ::(TV.T (T.TEq ii2))
-      ::TV.Brace bodytype
-      ::xs ->
-        tag ii1 (TypeDef Def);
-        List.iter (aux_tree InTypedef) bodytype;
-        aux_tree ctx xs
+*)
 
-    (* todo: type x(yy) = *)
+    (*-------------------------------------------------------------------*)
+    (* Record *)
+    (*-------------------------------------------------------------------*)
 
-    (* todo? package ... *)
-    (* todo? module x = {...} *)
+    (*-------------------------------------------------------------------*)
+    (* String interpolation *)
+    (*-------------------------------------------------------------------*)
 
+    (*-------------------------------------------------------------------*)
+    (* Other *)
+    (*-------------------------------------------------------------------*)
+
+(*
     (* todo? x = ... at toplevel *)
-
 
     (* INSIDE Typedef *)
     

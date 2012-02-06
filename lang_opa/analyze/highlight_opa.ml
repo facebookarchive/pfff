@@ -17,7 +17,7 @@ open Common
 open Ast_opa
 open Highlight_code
 
-module Ast = Ast_opa
+module A = Ast_fuzzy_opa
 module T = Parser_opa
 module TH = Token_helpers_opa
 module TV = Token_views_opa
@@ -50,8 +50,10 @@ let lexer_based_tagger = true
 let is_module_name s =
   s =~ "[A-Z].*"
 
-type context =
+type in_context =
   | InTop
+
+(*
 
   (* inside { }. Braces are overloaded in OPA like in C *)
   | InFunction
@@ -71,12 +73,16 @@ type context =
   (* misc *)
   | InImport
   | InPackage
-
-let tag_type ~tag s ii =
-  let kind = TypeMisc
-  in
-  tag ii kind
-  
+*)
+type context = {
+  ctx: in_context;
+  params: string list;
+}
+let default_ctx = {
+  ctx = InTop;
+  params = [];
+}
+ 
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -97,221 +103,59 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
   (* ast phase 1 *) 
   (* -------------------------------------------------------------------- *)
   (* parsing OPA turns out to be difficult so for now the best we have
-   * is this degenerated AST, a tree of (){}[]<tag chunks.
+   * is this fuzzy AST.
    *)
-  let toks_for_tree = toks +> Common.exclude (function
-    | x when TH.is_comment x -> true
-    (* todo? could try to relocate the following token to column 0? *)
-    | T.Tclient _ | T.Tserver _ -> true
-    | T.Tpublic _ | T.Tprivate _ -> true
-    | T.Tprotected _ | T.Texposed _ -> true
-    | _ -> false
-  )
-  in
-  let tree = TV.mk_tree toks_for_tree in
-  let ctx = InTop in
+  let toks_for_fuzzy_ast = Ast_fuzzy_opa.toks_for_ast_fuzzy toks in
+  let xs = Token_views_opa.mk_tree toks_for_fuzzy_ast in
+  let xs = Ast_fuzzy_opa.mk_tree xs in
 
-  (* poor's man identifier tagger.
-   * todo: move this code in an ast_fuzzy_opa.ml
-   *)
-  let rec aux_tree ctx xs =
-    match xs with
-    | [] -> ()
-
-    (* function x(...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.T T.TIdent (s1, ii1))
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        tag ii1 (Function (Def2 fake_no_def2));
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
-
-    (* function yy x(...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.T T.TIdent (s0, ii0))
-      ::(TV.T T.TIdent (s1, ii1))
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        aux_tree InType [(TV.T (T.TIdent (s0, ii0)))];
-        tag ii1 (Function (Def2 fake_no_def2));
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
-
-    (* function yy(zz) x(...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.T T.TIdent (s0, ii0))
-      ::(TV.Paren paramstype)
-      ::(TV.T T.TIdent (s1, ii1))
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        aux_tree InType [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)];
-        tag ii1 (Function (Def2 fake_no_def2));
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
-
-    (* function (...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
-
-    (* function (...) (...) { ... } *)
-    |   (TV.T T.Tfunction _)
-      ::(TV.Paren paramstype)
-      ::(TV.Paren params)
-      ::(TV.Brace body)
-      ::xs ->
-        aux_tree InType [(TV.Paren paramstype)];
-        List.iter (aux_tree InParameter) params;
-        aux_tree InFunction [(TV.Brace body)];
-        aux_tree ctx xs
-
-
-    (* database yy /x *)
-    |   (TV.T T.Tdatabase _)
-      ::(TV.T T.TIdent (s1, ii1))
-      ::(TV.T T.TDiv _)
-      ::(TV.T T.TIdent (s2, ii2))
-      ::xs ->
-        aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
-        tag ii2 (Global (Def2 fake_no_def2));
-        aux_tree ctx xs
-
-
-    (* database yy(zz) /x *)
-    |   (TV.T T.Tdatabase _)
-      ::(TV.T T.TIdent (s0, ii0))
-      ::(TV.Paren paramstype)
-      ::(TV.T T.TDiv _)
-      ::(TV.T T.TIdent (s2, ii2))
-      ::xs ->
-        aux_tree InType [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)];
-        tag ii2 (Global (Def2 fake_no_def2));
-        aux_tree ctx xs
-
-    (* database /xxx *)
-    |   (TV.T T.Tdatabase _)
-      ::(TV.T T.TDiv _)
-      ::(TV.T T.TIdent (s, ii1))
-      ::xs ->
-        tag ii1 (Global (Def2 fake_no_def2));
-        aux_tree ctx xs
-
-    (* type x = { ... } *)
-    |   (TV.T T.Ttype _)
-      ::(TV.T (T.TIdent (s, ii1)))
-      ::(TV.T (T.TEq ii2))
-      ::TV.Brace bodytype
-      ::xs ->
-        tag ii1 (TypeDef Def);
-        List.iter (aux_tree InTypedef) bodytype;
-        aux_tree ctx xs
-
-    (* todo: type x(yy) = *)
-
-    (* todo? package ... *)
-    (* todo? module x = {...} *)
-
-    (* todo? x = ... at toplevel *)
-
-
-    (* INSIDE Typedef *)
-    
-    (* yy x *)
-    |  (TV.T T.TIdent (s1, ii1))
-     ::(TV.T T.TIdent (s2, ii2))
-     ::xs when ctx = InTypedef ->
-       aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
-       tag ii2 (Field (Def2 fake_no_def2));
-       aux_tree ctx xs
-
-    (* yy(zz) x *)
-    |  (TV.T T.TIdent (s1, ii1))
-     ::(TV.Paren paramstype)
-     ::(TV.T T.TIdent (s2, ii2))
-     ::xs when ctx = InTypedef ->
-        aux_tree InType [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)];
-        tag ii2 (Field (Def2 fake_no_def2));
-        aux_tree ctx xs
-
-    (* INSIDE Type *)
-    | TV.T (T.TIdent (s1, ii1))::xs when ctx = InType ->
-        tag_type ~tag s1 ii1;
-        aux_tree ctx xs
-
-    (* INSIDE Parameter *)
-
-    (* yy x *)
-    |  (TV.T T.TIdent (s1, ii1))
-     ::(TV.T T.TIdent (s2, ii2))
-     ::xs when ctx = InParameter ->
-       aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
-       tag ii2 (Parameter Def);
-       aux_tree ctx xs
-
-    (* yy(zz) x *)
-    |  (TV.T T.TIdent (s1, ii1))
-     ::(TV.Paren paramstype)
-     ::(TV.T T.TIdent (s2, ii2))
-     ::xs when ctx = InParameter ->
-        aux_tree InType [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)];
-        tag ii2 (Parameter Def);
-        aux_tree ctx xs
-
-    (* x *)
-    | TV.T (T.TIdent (s1, ii1))::xs when ctx = InParameter  ->
-        tag ii1 (Parameter Def);
-        aux_tree ctx xs
-
-    (* INSIDE Function *)
-    |  (TV.T (T.TIdent (s1, ii1)))
-     ::(TV.T (T.TEq _))
-     ::xs when ctx = InFunction ->
-       tag ii1 (Local Def);
-       aux_tree ctx xs
-
-    (* INSIDE Top *)
-
-    |  (TV.T (T.TIdent (s1, ii1)))
-     ::(TV.T (T.TEq _))
-     ::(TV.T (T.TExternalIdent (s2, ii2)))
-     ::xs when ctx = InTop ->
-       tag ii1 (Function (Def2 fake_no_def2));
-       tag ii2 CppOther;
-       aux_tree ctx xs
-
-    |  (TV.T (T.TIdent (s1, ii1)))
-     ::(TV.T (T.TEq _))
-     ::xs when ctx = InTop ->
-       tag ii1 (Global (Def2 fake_no_def2));
-       aux_tree ctx xs
-
-    (* REST *)
-    | x::xs -> 
-        (match x with
-        | TV.T _ -> ()
-        | TV.Paren xxs ->
-            List.iter (aux_tree ctx) xxs
-        | TV.Brace xxs ->
-            List.iter (aux_tree ctx) xxs
-        | TV.Bracket xxs ->
-            List.iter (aux_tree ctx) xxs
-        | TV.Xml (xxs, yys) ->
-            raise Todo
+  (* poor's man identifier tagger *)
+  let rec tree ctx = function
+    | A.Function def ->
+        def.A.f_name +> Common.do_option (fun name ->
+          let info = A.info_of_name name in
+          tag info (Function (Def2 fake_no_def2));
         );
-        aux_tree ctx xs
+        Common.do_option (type_ ctx) def.A.f_ret_type;
+        List.iter (parameter ctx) def.A.f_params;
+        body ctx def.A.f_body;
+        ()
+
+    | A.TreeTodo -> ()
+    | A.T tok -> ()
+    | A.Paren xxs ->
+        xxs +> List.iter (tree_list ctx)
+    | A.Brace xxs ->
+        xxs +> List.iter (tree_list ctx)
+    | A.Bracket xxs ->
+        xxs +> List.iter (tree_list ctx)
+    | A.Xml ((v1, v2)) ->
+        raise Todo
+  and type_ ctx = function
+    | A.TyName (qu, name) ->
+        let info = A.info_of_name name in
+        (* todo: different color for int/bool/list/void etc? *)
+        tag info TypeMisc
+        
+    | A.TyVar name -> ()
+    | A.TyApp (long_name, xs) ->
+        List.iter (type_ ctx) xs
+    | A.TyOther xs -> tree_list ctx xs
+  and parameter ctx = function
+    | A.Param (typ, name) ->
+        let info = A.info_of_name name in
+        tag info (Parameter Def);
+        Common.do_option (type_ ctx) typ
+
+    | A.ParamOther xs ->
+        tree_list ctx xs
+  and body ctx xs = 
+    tree_list ctx xs
+
+  and tree_list ctx xs =
+    xs +> List.iter (tree ctx)
   in
-  aux_tree ctx tree;
+  tree_list () xs;
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
