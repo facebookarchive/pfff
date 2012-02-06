@@ -53,7 +53,7 @@ let test_fuzzy_opa file =
   let toks = Ast_fuzzy_opa.toks_for_ast_fuzzy toks in
   let tree = Token_views_opa.mk_tree toks in
   let tree = Ast_fuzzy_opa.mk_tree tree in
-  let v = Ast_fuzzy_opa.vof_tree_list tree in
+  let v = Meta_ast_fuzzy_opa.vof_tree_list tree in
   let s = Ocaml.string_of_v v in
   pr s
 

@@ -84,30 +84,6 @@ type tree =
 (* Meta *)
 (*****************************************************************************)
 
-let vof_token t =
-  Ocaml.VString (Token_helpers_opa.str_of_tok t)
-
-let rec vof_tree =
-  function
-
-  | T v1 -> let v1 = vof_token v1 in Ocaml.VSum (("T", [ v1 ]))
-  | Paren v1 ->
-      let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
-      in Ocaml.VSum (("Paren", [ v1 ]))
-  | Brace v1 ->
-      let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
-      in Ocaml.VSum (("Brace", [ v1 ]))
-  | Bracket v1 ->
-      let v1 = Ocaml.vof_list (Ocaml.vof_list vof_tree) v1
-      in Ocaml.VSum (("Bracket", [ v1 ]))
-  | Xml ((v1, v2)) ->
-      let v1 = Ocaml.vof_list vof_tree v1
-      and v2 = Ocaml.vof_list vof_tree v2
-      in Ocaml.VSum (("Xml", [ v1; v2 ]))
-  | _ -> raise Todo
-  
-let vof_tree_list xs = Ocaml.vof_list vof_tree xs
-
 (*****************************************************************************)
 (* Builder *)
 (*****************************************************************************)
@@ -146,36 +122,222 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
 
     match xs with
     | [] -> []
+    (*-------------------------------------------------------------------*)
+    (* functions *)
+    (*-------------------------------------------------------------------*)
 
     (* function x(...) { ... } *)
     |   (TV.T T.Tfunction _)
       ::(TV.T T.TIdent (s1, ii1))
-      ::(TV.Paren params)
-      ::(TV.Brace bdy)
+      ::(TV.Paren params)::(TV.Brace bdy)
       ::xs ->
-        let params = List.map (parameter ctx) params in
-        let bdy = body ctx bdy in
         Function ({
-          f_name = Some (Name (s1, ii1));
           f_ret_type = None;
-          f_params = params;
-          f_body = bdy;
+          f_name = Some (Name (s1, ii1));
+          f_params = List.map (parameter ctx) params;
+          f_body = body ctx bdy;
         })::tree_list ctx xs
 
-(*
-        tag ii1 (Function (Def2 fake_no_def2));
-        List.iter (tree_tree InParameter) params;
-        tree_tree InFunction [(TV.Brace body)];
-        tree_tree ctx xs
-*)
+    (* function yy x(...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.T T.TIdent (s0, ii0))
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.Paren params)::(TV.Brace bdy)
+      ::xs ->
+        Function ({
+          f_ret_type = Some (type_ ctx [(TV.T (T.TIdent (s0, ii0)))]);
+          f_name = Some (Name (s1, ii1));
+          f_params = List.map (parameter ctx) params;
+          f_body = body ctx bdy;
+        })::tree_list ctx xs
 
+    (* function yy(zz) x(...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.T T.TIdent (s0, ii0))
+      ::(TV.Paren paramstype)
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.Paren params)::(TV.Brace bdy)
+      ::xs ->
+        Function ({
+          f_ret_type = Some 
+            (type_ ctx [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)]);
+          f_name = Some (Name (s1, ii1));
+          f_params = List.map (parameter ctx) params;
+          f_body = body ctx bdy;
+        })::tree_list ctx xs
+
+
+    (*-------------------------------------------------------------------*)
+    (* Database *)
+    (*-------------------------------------------------------------------*)
+
+    (*-------------------------------------------------------------------*)
+    (* Types *)
+    (*-------------------------------------------------------------------*)
+
+    (*-------------------------------------------------------------------*)
+    (* Modules/packages *)
+    (*-------------------------------------------------------------------*)
+
+    (*-------------------------------------------------------------------*)
+    (* Record *)
+    (*-------------------------------------------------------------------*)
+
+    (*-------------------------------------------------------------------*)
+    (* String interpolation *)
+    (*-------------------------------------------------------------------*)
+
+(*
+    (* function (...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        List.iter (aux_tree InParameter) params;
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+    (* function (...) (...) { ... } *)
+    |   (TV.T T.Tfunction _)
+      ::(TV.Paren paramstype)
+      ::(TV.Paren params)
+      ::(TV.Brace body)
+      ::xs ->
+        aux_tree InType [(TV.Paren paramstype)];
+        List.iter (aux_tree InParameter) params;
+        aux_tree InFunction [(TV.Brace body)];
+        aux_tree ctx xs
+
+
+    (* database yy /x *)
+    |   (TV.T T.Tdatabase _)
+      ::(TV.T T.TIdent (s1, ii1))
+      ::(TV.T T.TDiv _)
+      ::(TV.T T.TIdent (s2, ii2))
+      ::xs ->
+        aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
+        tag ii2 (Global (Def2 fake_no_def2));
+        aux_tree ctx xs
+
+
+    (* database yy(zz) /x *)
+    |   (TV.T T.Tdatabase _)
+      ::(TV.T T.TIdent (s0, ii0))
+      ::(TV.Paren paramstype)
+      ::(TV.T T.TDiv _)
+      ::(TV.T T.TIdent (s2, ii2))
+      ::xs ->
+        aux_tree InType [(TV.T (T.TIdent (s0, ii0)));(TV.Paren paramstype)];
+        tag ii2 (Global (Def2 fake_no_def2));
+        aux_tree ctx xs
+
+    (* database /xxx *)
+    |   (TV.T T.Tdatabase _)
+      ::(TV.T T.TDiv _)
+      ::(TV.T T.TIdent (s, ii1))
+      ::xs ->
+        tag ii1 (Global (Def2 fake_no_def2));
+        aux_tree ctx xs
+
+    (* type x = { ... } *)
+    |   (TV.T T.Ttype _)
+      ::(TV.T (T.TIdent (s, ii1)))
+      ::(TV.T (T.TEq ii2))
+      ::TV.Brace bodytype
+      ::xs ->
+        tag ii1 (TypeDef Def);
+        List.iter (aux_tree InTypedef) bodytype;
+        aux_tree ctx xs
+
+    (* todo: type x(yy) = *)
+
+    (* todo? package ... *)
+    (* todo? module x = {...} *)
+
+    (* todo? x = ... at toplevel *)
+
+
+    (* INSIDE Typedef *)
+    
+    (* yy x *)
+    |  (TV.T T.TIdent (s1, ii1))
+     ::(TV.T T.TIdent (s2, ii2))
+     ::xs when ctx = InTypedef ->
+       aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
+       tag ii2 (Field (Def2 fake_no_def2));
+       aux_tree ctx xs
+
+    (* yy(zz) x *)
+    |  (TV.T T.TIdent (s1, ii1))
+     ::(TV.Paren paramstype)
+     ::(TV.T T.TIdent (s2, ii2))
+     ::xs when ctx = InTypedef ->
+        aux_tree InType [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)];
+        tag ii2 (Field (Def2 fake_no_def2));
+        aux_tree ctx xs
+
+    (* INSIDE Function *)
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
+     ::xs when ctx = InFunction ->
+       tag ii1 (Local Def);
+       aux_tree ctx xs
+
+    (* INSIDE Top *)
+
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
+     ::(TV.T (T.TExternalIdent (s2, ii2)))
+     ::xs when ctx = InTop ->
+       tag ii1 (Function (Def2 fake_no_def2));
+       tag ii2 CppOther;
+       aux_tree ctx xs
+
+    |  (TV.T (T.TIdent (s1, ii1)))
+     ::(TV.T (T.TEq _))
+     ::xs when ctx = InTop ->
+       tag ii1 (Global (Def2 fake_no_def2));
+       aux_tree ctx xs
+
+       *)
     | x::xs ->
         tree ctx x::tree_list ctx xs
 
+  and type_ ctx xs =
+    match xs with
+    | [(TV.T T.TIdent (s1, ii1))] -> 
+        TyName ([], Name (s1, ii1))
+    | [(TV.T T.TIdent (s1, ii1));TV.Paren paramstype] -> 
+        TyApp (([], Name (s1, ii1)), 
+               List.map (type_ ctx) paramstype)
+    | xs -> 
+        TyOther (tree_list ctx xs)
+
   and parameter ctx param = 
-    raise Todo
+    match param with
+    (* x *)
+    |  [(TV.T T.TIdent (s1, ii1))] ->
+         Param (None, Name (s1, ii1))
+
+    (* yy x *)
+    |  [(TV.T T.TIdent (s1, ii1));(TV.T T.TIdent (s2, ii2))] ->
+         Param (Some (type_ ctx [(TV.T (T.TIdent (s1, ii1)))]), 
+               Name (s2, ii2))
+
+    (* yy(zz) x *)
+    |  [(TV.T T.TIdent (s1, ii1));(TV.Paren paramstype)
+       ;(TV.T T.TIdent (s2, ii2))] ->
+         Param (Some (type_ ctx 
+                         [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)]),
+               Name (s2, ii2))
+
+    | xs -> ParamOther (tree_list ctx xs)
+
   and body ctx body =
-    raise Todo
+    match body with
+    | [] -> []
+    | [xs] -> tree_list ctx xs
+    | x::y::xs -> failwith "the body should have no comma"
   in
 
 
