@@ -35,6 +35,10 @@ module T = Parser_opa
 (*****************************************************************************)
 type 'a wrap = 'a Ast_opa.wrap
 
+(* ------------------------------------------------------------------------- *)
+(* Names *)
+(* ------------------------------------------------------------------------- *)
+
 type name = 
   Name of string wrap
  (* with tarzan *)
@@ -43,14 +47,19 @@ type long_name = qualifier * name
  and qualifier = name list
  (* with tarzan *)
 
+(* ------------------------------------------------------------------------- *)
+(* Top *)
+(* ------------------------------------------------------------------------- *)
+
 type tree =
   | Function of func_def
-
+  | TypeDef of name * type_def
   (* Database of type_ option * path * value_ option *)
-  (* TypeDef of name * type_ option *)
+
+  (* VarDef of type_option * name * value_ *)
+
   (* Package of ... *)
   (* Module of name * tree list *)
-  (* VarDef of type_option * name * value_ *)
 
   | TreeTodo
   (* a copy of Token_views_opa.tree *)
@@ -60,11 +69,28 @@ type tree =
   | Bracket of tree list list
   | Xml of tree list * tree list
 
+(* ------------------------------------------------------------------------- *)
+(* Types *)
+(* ------------------------------------------------------------------------- *)
+
  and type_ =
    | TyName of long_name
    | TyVar of (* ' *) name
    | TyApp of long_name * type_ list
    | TyOther of tree list
+
+ and type_def =
+   | TyRecord of field_decl list
+   (* TyAlgebric of ctor_decl list *)
+   | TypeDefOther of tree list
+
+ and field_decl =
+   | Field of type_ option * name
+   | FieldOther of tree list
+
+(* ------------------------------------------------------------------------- *)
+(* Function def *)
+(* ------------------------------------------------------------------------- *)
 
  and func_def = {
    (* f_name = None when have lambda *)
@@ -193,26 +219,26 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     (*-------------------------------------------------------------------*)
     (* Types *)
     (*-------------------------------------------------------------------*)
-(*
+    (* todo: type x = { ... } or ... *)
+
     (* type x = { ... } *)
     |   (TV.T T.Ttype _)
       ::(TV.T (T.TIdent (s, ii1)))
       ::(TV.T (T.TEq ii2))
       ::TV.Brace bodytype
       ::xs ->
-        tag ii1 (TypeDef Def);
-        List.iter (aux_tree InTypedef) bodytype;
-        aux_tree ctx xs
+        (TypeDef (Name (s, ii1),
+                TyRecord (List.map (field_decl ctx) bodytype)))
+          ::tree_list ctx xs
 
     (* todo: type x(yy) = *)
-*)
 
     (*-------------------------------------------------------------------*)
     (* Modules/packages *)
     (*-------------------------------------------------------------------*)
+    (* todo? module x = {...} *)
 (*
     (* todo? package ... *)
-    (* todo? module x = {...} *)
 *)
 
     (*-------------------------------------------------------------------*)
@@ -265,25 +291,6 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
 (*
     (* todo? x = ... at toplevel *)
 
-    (* INSIDE Typedef *)
-    
-    (* yy x *)
-    |  (TV.T T.TIdent (s1, ii1))
-     ::(TV.T T.TIdent (s2, ii2))
-     ::xs when ctx = InTypedef ->
-       aux_tree InType [(TV.T (T.TIdent (s1, ii1)))];
-       tag ii2 (Field (Def2 fake_no_def2));
-       aux_tree ctx xs
-
-    (* yy(zz) x *)
-    |  (TV.T T.TIdent (s1, ii1))
-     ::(TV.Paren paramstype)
-     ::(TV.T T.TIdent (s2, ii2))
-     ::xs when ctx = InTypedef ->
-        aux_tree InType [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)];
-        tag ii2 (Field (Def2 fake_no_def2));
-        aux_tree ctx xs
-
     (* INSIDE Function *)
     |  (TV.T (T.TIdent (s1, ii1)))
      ::(TV.T (T.TEq _))
@@ -320,6 +327,23 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
                List.map (type_ ctx) paramstype)
     | xs -> 
         TyOther (tree_list ctx xs)
+
+  and field_decl ctx xs =
+    match xs with
+    (* yy x *)
+    | [(TV.T T.TIdent (s1, ii1));(TV.T T.TIdent (s2, ii2))] ->
+        Field (Some (type_ ctx [(TV.T (T.TIdent (s1, ii1)))]),
+               Name (s2, ii2))
+
+    (* yy(zz) x *)
+    | [(TV.T T.TIdent (s1, ii1));
+       (TV.Paren paramstype);
+       (TV.T T.TIdent (s2, ii2))] ->
+
+        Field (Some (type_ ctx
+                        [(TV.T (T.TIdent (s1, ii1)));(TV.Paren paramstype)]),
+              Name (s2, ii2))
+    | xs -> FieldOther (tree_list ctx xs)
 
   and parameter ctx param = 
     match param with

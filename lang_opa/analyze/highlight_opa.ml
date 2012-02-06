@@ -14,10 +14,11 @@
  *)
 open Common
 
-open Ast_opa
+open Ast_fuzzy_opa
 open Highlight_code
 
-module A = Ast_fuzzy_opa
+module Ast = Ast_fuzzy_opa
+module HC = Highlight_code
 module T = Parser_opa
 module TH = Token_helpers_opa
 module TV = Token_views_opa
@@ -111,46 +112,67 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
   (* poor's man identifier tagger *)
   let rec tree ctx = function
-    | A.Function def ->
-        def.A.f_name +> Common.do_option (fun name ->
-          let info = A.info_of_name name in
-          tag info (Function (Def2 fake_no_def2));
+    | Ast.Function def ->
+        def.f_name +> Common.do_option (fun name ->
+          let info = info_of_name name in
+          tag info (HC.Function (Def2 fake_no_def2));
         );
-        Common.do_option (type_ ctx) def.A.f_ret_type;
-        List.iter (parameter ctx) def.A.f_params;
-        body ctx def.A.f_body;
+        Common.do_option (type_ ctx) def.f_ret_type;
+        List.iter (parameter ctx) def.f_params;
+        body ctx def.f_body;
         ()
+    | Ast.TypeDef (name, tdef) ->
+        let info = info_of_name name in
+        tag info (TypeDef Def);
+        type_def ctx tdef
 
-    | A.TreeTodo -> ()
-    | A.T tok -> ()
-    | A.Paren xxs ->
+    | TreeTodo -> ()
+    | T tok -> ()
+    | Paren xxs ->
         xxs +> List.iter (tree_list ctx)
-    | A.Brace xxs ->
+    | Brace xxs ->
         xxs +> List.iter (tree_list ctx)
-    | A.Bracket xxs ->
+    | Bracket xxs ->
         xxs +> List.iter (tree_list ctx)
-    | A.Xml ((v1, v2)) ->
+    | Xml ((v1, v2)) ->
         raise Todo
   and type_ ctx = function
-    | A.TyName (qu, name) ->
-        let info = A.info_of_name name in
+    | TyName (qu, name) ->
+        let info = info_of_name name in
         (* todo: different color for int/bool/list/void etc? *)
         tag info TypeMisc
         
-    | A.TyVar name -> ()
-    | A.TyApp (long_name, xs) ->
+    | TyVar name -> ()
+    | TyApp (long_name, xs) ->
         List.iter (type_ ctx) xs
-    | A.TyOther xs -> tree_list ctx xs
+    | TyOther xs -> tree_list ctx xs
+  and type_def ctx = function
+    | TyRecord xs ->
+        List.iter (field ctx) xs
+    | TypeDefOther xs ->
+        tree_list ctx xs
+
+  and field ctx = function
+    | Ast.Field (typ, name) ->
+        let info = info_of_name name in
+        tag info (Field (Def2 fake_no_def2));
+        Common.do_option (type_ ctx) typ
+    | FieldOther xs -> 
+        tree_list ctx xs
+
   and parameter ctx = function
-    | A.Param (typ, name) ->
-        let info = A.info_of_name name in
+    | Param (typ, name) ->
+        let info = info_of_name name in
         tag info (Parameter Def);
         Common.do_option (type_ ctx) typ
 
-    | A.ParamOther xs ->
+    | ParamOther xs ->
         tree_list ctx xs
   and body ctx xs = 
     tree_list ctx xs
+
+(*
+*)
 
   and tree_list ctx xs =
     xs +> List.iter (tree ctx)
@@ -322,7 +344,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* keyword types  *)
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
     | T.TIdent("bool", ii) -> tag ii TypeMisc
+(* FPs because sometimes used as a function name, as in Random.string 
     | T.TIdent("string", ii) -> tag ii TypeMisc
+*)
     | T.TIdent(("list" | "option" | "intmap" | "stringmap"), ii) -> tag ii TypeMisc
     | T.TIdent("void", ii) -> tag ii TypeVoid
 

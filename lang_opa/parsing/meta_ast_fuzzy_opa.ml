@@ -20,6 +20,10 @@ let rec vof_tree =
   function
   | Function v1 ->
       let v1 = vof_func_def v1 in Ocaml.VSum (("Function", [ v1 ]))
+  | TypeDef ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = vof_type_def v2
+      in Ocaml.VSum (("TypeDef", [ v1; v2 ]))
   | TreeTodo -> Ocaml.VSum (("TreeTodo", []))
 
   | T v1 -> let v1 = vof_token v1 in Ocaml.VSum (("T", [ v1 ]))
@@ -36,6 +40,24 @@ let rec vof_tree =
       let v1 = Ocaml.vof_list vof_tree v1
       and v2 = Ocaml.vof_list vof_tree v2
       in Ocaml.VSum (("Xml", [ v1; v2 ]))
+
+and vof_type_def =
+  function
+  | TyRecord v1 ->
+      let v1 = Ocaml.vof_list vof_field_decl v1
+      in Ocaml.VSum (("TyRecord", [ v1 ]))
+  | TypeDefOther v1 ->
+      let v1 = Ocaml.vof_list vof_tree v1
+      in Ocaml.VSum (("TypeDefOther", [ v1 ]))
+and vof_field_decl =
+  function
+  | Field ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_type_ v1
+      and v2 = vof_name v2
+      in Ocaml.VSum (("Field", [ v1; v2 ]))
+  | FieldOther v1 ->
+      let v1 = Ocaml.vof_list vof_tree v1
+      in Ocaml.VSum (("FieldOther", [ v1 ]))
 
 and vof_func_def {
                  f_name = v_f_name;
