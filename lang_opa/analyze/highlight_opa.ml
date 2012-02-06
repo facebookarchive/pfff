@@ -54,17 +54,17 @@ let is_module_name s =
 type in_context =
   | InTop
 
-(*
-
   (* inside { }. Braces are overloaded in OPA like in C *)
   | InFunction
+  (* braces and also (),  type xx = { } or type xx = ( ) when tuple *)
+  (* InTypedef, see type_def  *)
+
+(*
   | InRecord (* expr vs pattern ? *)
   | InStringInterpolation
   | InXmlInterpolation
   | InCompound
   | InCase
-  (* braces and also (),  type xx = { } or type xx = ( ) when tuple *)
-  | InTypedef 
 
   (* inside ( ) *)
   | InParameter
@@ -75,13 +75,16 @@ type in_context =
   | InImport
   | InPackage
 *)
+
 type context = {
   ctx: in_context;
   params: string list;
+  vars: string list;
 }
 let default_ctx = {
   ctx = InTop;
   params = [];
+  vars = [];
 }
  
 (*****************************************************************************)
@@ -125,6 +128,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         let info = info_of_name name in
         tag info (TypeDef Def);
         type_def ctx tdef
+
+    | Ast.Module (name, xs) ->
+        let info = info_of_name name in
+        tag info (Module Def);
+        tree_list ctx xs
 
     | TreeTodo -> ()
     | T tok -> ()
@@ -175,7 +183,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 *)
 
   and tree_list ctx xs =
-    xs +> List.iter (tree ctx)
+    match xs with
+    | [] -> ()
+    | x::xs ->
+        tree ctx x;
+        tree_list ctx xs
   in
   tree_list () xs;
 
@@ -227,9 +239,6 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* another poor's man identifier tagger *)
 
     (* defs *)
-    | T.Tmodule ii1::T.TIdent (s, ii2)::xs ->
-        tag ii2 (Module Def);
-        aux_toks xs
 
     (* FPs, can be the ident after that
     | T.Tpackage ii1::T.TIdent (s, ii2)::xs ->

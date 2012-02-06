@@ -59,7 +59,7 @@ type tree =
   (* VarDef of type_option * name * value_ *)
 
   (* Package of ... *)
-  (* Module of name * tree list *)
+  | Module of name * tree list
 
   | TreeTodo
   (* a copy of Token_views_opa.tree *)
@@ -237,6 +237,13 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     (* Modules/packages *)
     (*-------------------------------------------------------------------*)
     (* todo? module x = {...} *)
+    |   (TV.T T.Tmodule _)
+      ::(TV.T (T.TIdent (s, ii1)))
+      ::TV.Brace [bodytype]
+      ::xs ->
+      Module (Name (s, ii1), 
+              tree_list ctx bodytype)::
+        tree_list ctx xs
 (*
     (* todo? package ... *)
 *)

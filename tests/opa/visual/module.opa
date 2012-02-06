@@ -1,0 +1,3 @@
+module Xx {
+       function foo() { }
+}
