@@ -31,9 +31,10 @@ let test_parse_opa xs =
     pr2 ("PARSING: " ^ file);
 
     Common.save_excursion Flag.error_recovery true (fun () ->
+    Common.save_excursion Flag.verbose_lexing true (fun () ->
       let _xs = Parse_opa.parse file in
       ()
-    )
+    ))
   );
   ()
 

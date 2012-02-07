@@ -38,7 +38,7 @@ open Parser_opa
 exception Lexical of string
 
 let error s = 
-  if !Flag.error_recovery 
+  if !Flag.error_recovery
   then 
     if !Flag.verbose_lexing 
     then pr2 s
@@ -320,6 +320,8 @@ rule initial = parse
    *)
   | operator+ { TOp(tok lexbuf, tokinfo lexbuf) }
 
+  (* used in some parser rules *)
+  | '`' { TUnknown(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -407,6 +409,10 @@ and string_double_quote = parse
     }
 
   | '\\' ['\\' 'n' 'r' 't' '{' '}'  '\'' '"']
+      { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
+
+  (* not documented in reference manual *)
+  | '\\' digit+
       { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
   (* noteopti: must be the "negative" of the previous rules *)
