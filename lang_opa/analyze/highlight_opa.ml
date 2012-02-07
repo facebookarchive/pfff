@@ -376,6 +376,10 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         then tag ii1 (Global (Use2 fake_no_use2));
         aux_toks xs
 
+    | T.TAt _::T.TIdent(s1, ii1)::xs ->
+        tag ii1 CppOther;
+        aux_toks xs
+
     | x::xs ->
         aux_toks xs
   in
