@@ -367,6 +367,8 @@ define('ENCQUOTEDPRINTABLE', 4);
 define('ENT_COMPAT', 2);
 define('ENT_NOQUOTES', 0);
 define('ENT_QUOTES', 3);
+define('ENT_FB_UTF8', 4);
+define('ENT_FB_UTF8_ONLY', 8);
 define('ERA', 131116);
 define('ERA_D_FMT', 131118);
 define('ERA_D_T_FMT', 131120);
