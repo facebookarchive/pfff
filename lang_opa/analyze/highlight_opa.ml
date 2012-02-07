@@ -82,12 +82,14 @@ type context = {
   params: string list;
   locals: string list;
   globals: string list;
+  functions: string list;
 }
 let default_ctx = {
   ctx = InTop;
   params = [];
   locals = [];
   globals = [];
+  functions = [];
 }
  
 (*****************************************************************************)
@@ -212,9 +214,26 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
             tag info (Local Use)
         | _ when List.mem s (ctx.globals) ->
             tag info (Global (Use2 fake_no_use2))
+(*
+        | _ when List.mem s (ctx.functions) ->
+            tag info (PointerCall)
+*)
         | _ -> ()
         );
         tree_list ctx xs
+
+    | (Ast.Function (def) as x)::xs ->
+        tree ctx x;
+        let ctx =
+          match def.f_name with
+          | None -> ctx
+          | Some name ->
+              let s = str_of_name name in
+              { ctx with functions = s::ctx.functions; }
+        in
+        tree_list ctx xs
+        
+
 
     | (Ast.VarDef (typ, name) as x)::xs ->
         let s = str_of_name name in

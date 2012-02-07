@@ -51,23 +51,35 @@ type long_name = qualifier * name
 (* Top *)
 (* ------------------------------------------------------------------------- *)
 
+(* 
+ * - '{}' are used for: funcdef, module def, TODO compound,
+ *   record def, TODO algebraic def, TODO interpolation, TODO records.
+ * - '.' used for: TODO module access, TODO field access
+ * - '=' is used for: typedef, variable def (for function def
+ *    in classic syntax)
+ * - '()' are used for: TODO funcall, TODO tuples,  type application,
+ *    TODO polymorphic types
+ *)
 type tree =
   | Function of func_def
   | TypeDef of name * type_def
-  (* Database of type_ option * path * value_ option *)
+  (* todo: Database of type_ option * path * value_ option *)
 
   | VarDef of type_ option * name (* todo: value_ *)
 
-  (* Package of ... *)
+  (* todo: Package of ... *)
   | Module of name * tree list
 
   | TreeTodo
+
   (* a copy of Token_views_opa.tree *)
   | T of Parser_opa.token
   | Paren of tree list list
   | Brace of tree list list
   | Bracket of tree list list
+  (* todo *)
   | Xml of tree list * tree list
+  (* todo: String of encaps list *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -365,6 +377,5 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     | [xs] -> tree_list ctx xs
     | x::y::xs -> failwith "the body should have no comma"
   in
-
 
   tree_list top_ctx xs
