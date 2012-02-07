@@ -206,6 +206,10 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     match xs with
     | [] -> ()
 
+    | (T (T.TIdent (s, info)))::(Paren parens)::xs ->
+        tag info (Function (Use2 fake_no_use2));
+        tree_list ctx ((Paren parens)::xs)
+
     | (T (T.TIdent (s, info)))::xs ->
         (match () with
         | _ when List.mem s (ctx.params) ->
@@ -251,11 +255,6 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
      ::(TV.T (T.TExternalIdent (s2, ii2)))
        tag ii1 (Function (Def2 fake_no_def2));
        tag ii2 CppOther;
-
-ident paren
-        tag ii3 (Function (Use2 fake_no_use2));
-        
-
 *)
         
     | x::xs ->
