@@ -321,7 +321,7 @@ rule initial = parse
   | operator+ { TOp(tok lexbuf, tokinfo lexbuf) }
 
   (* used in some parser rules *)
-  | '`' { TUnknown(tokinfo lexbuf) }
+  | '`' | '$' | '%' { TUnknown(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -523,3 +523,11 @@ and in_xml_text current_tag = parse
          error ("LEXER: unrecognised symbol in in_xml_text:"^s);
          TUnknown(tokinfo lexbuf)
    }
+
+(*****************************************************************************)
+(* Css Rule *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Parser Rule *)
+(*****************************************************************************)
