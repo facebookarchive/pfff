@@ -144,6 +144,7 @@ let rec toks_for_ast_fuzzy toks =
       | T.Tpublic _ | T.Tprivate _ 
       | T.Tprotected _ | T.Texposed _
       )::xs -> aux xs
+    (* similar to what I do for c++, skipping templates and qualifiers *)
     | T.TIdent (s, i)::T.TDot i2::xs when is_module_name s ->
         aux xs
     | T.TAt _::T.TIdent _::xs ->
