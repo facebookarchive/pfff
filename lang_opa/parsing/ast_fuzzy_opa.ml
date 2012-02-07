@@ -295,6 +295,10 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     (* Assign *)
     (*-------------------------------------------------------------------*)
     (* todo: yy x =, but need check on same line? *)
+    |  (TV.T (T.TIdent (s0, ii0)))::
+        (TV.T (T.TIdent (s1, ii1)))::(TV.T (T.TEq _))::xs ->
+         VarDef (Some (type_ ctx [TV.T (T.TIdent (s0, ii0))]),
+                (Name (s1, ii1)))::tree_list ctx xs
 
     (* x = *)
     |  (TV.T (T.TIdent (s1, ii1)))::(TV.T (T.TEq _))::xs ->
