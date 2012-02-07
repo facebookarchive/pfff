@@ -251,6 +251,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
      ::(TV.T (T.TExternalIdent (s2, ii2)))
        tag ii1 (Function (Def2 fake_no_def2));
        tag ii2 CppOther;
+
+ident paren
+        tag ii3 (Function (Use2 fake_no_use2));
+        
+
 *)
         
     | x::xs ->
@@ -358,18 +363,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii2 (Field (Use2 fake_no_use2));
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2
-      ::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
+    |   T.TIdent (s1, ii1)::T.TDot ii2::xs ->
         if is_module_name s1 
         then tag ii1 (Module (Use));
-        tag ii3 (Function (Use2 fake_no_use2));
-        
-        aux_toks xs
-
-    |   T.TIdent (s1, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::xs ->
-        if is_module_name s1 
-        then tag ii1 (Module (Use));
-        (* too many FPs: tag ii3 (Field (Use2 fake_no_use2)); *)
         aux_toks xs
 
     | T.TSharp _::T.TIdent(s1, ii1)::xs ->

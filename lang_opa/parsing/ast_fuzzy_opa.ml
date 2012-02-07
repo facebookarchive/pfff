@@ -14,9 +14,9 @@
  *)
 open Common
 
-module TV = Token_views_opa
-module TH = Token_helpers_opa
 module T = Parser_opa
+module TH = Token_helpers_opa
+module TV = Token_views_opa
 
 (*****************************************************************************)
 (* Prelude *)
@@ -54,11 +54,11 @@ type long_name = qualifier * name
 (* 
  * - '{}' are used for: funcdef, module def, TODO compound,
  *   record def, TODO algebraic def, TODO interpolation, TODO records.
- * - '.' used for: TODO module access, TODO field access
- * - '=' is used for: typedef, variable def (for function def
- *    in classic syntax)
  * - '()' are used for: TODO funcall, TODO tuples,  type application,
  *    TODO polymorphic types
+ * - '.' used for: module access, TODO field access
+ * - '=' is used for: typedef, variable def (for function def
+ *    in classic syntax)
  *)
 type tree =
   | Function of func_def
@@ -125,18 +125,33 @@ type tree =
 let info_of_name (Name (s, ii)) = ii
 let str_of_name (Name (s, ii))  = s
 
+let is_module_name s =
+  s =~ "[A-Z].*"
+
 (*****************************************************************************)
 (* Builder *)
 (*****************************************************************************)
 
-let toks_for_ast_fuzzy toks = toks +> Common.exclude (function
-  | x when TH.is_comment x -> true
+(* skipping comments, qualifiers, annotations *)
+let rec toks_for_ast_fuzzy toks =
+  let toks = toks +> Common.exclude TH.is_comment in
+  let rec aux toks =
+    match toks with
+    | [] -> []
     (* todo? could try to relocate the following token to column 0? *)
-    | T.Tclient _ | T.Tserver _ -> true
-    | T.Tpublic _ | T.Tprivate _ -> true
-    | T.Tprotected _ | T.Texposed _ -> true
-    | _ -> false
-  )
+    | (
+        T.Tclient _ | T.Tserver _
+      | T.Tpublic _ | T.Tprivate _ 
+      | T.Tprotected _ | T.Texposed _
+      )::xs -> aux xs
+    | T.TIdent (s, i)::T.TDot i2::xs when is_module_name s ->
+        aux xs
+    | T.TAt _::T.TIdent _::xs ->
+        aux xs
+
+    | x::xs -> x::aux xs
+  in
+  aux toks
 
 let (mk_tree: TV.tree list -> tree list) = fun xs ->
   
