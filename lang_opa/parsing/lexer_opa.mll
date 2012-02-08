@@ -147,8 +147,10 @@ type state_mode =
   (* started with the '>' of an opening tag, finished when '</x>' *)
   | ST_IN_XML_TEXT of Ast_opa.tag (* the current tag *)
 
-  (* started with 'parser' and terminated by '->' *)
-  | ST_IN_PARSER
+  (* started with 'css {' and terminated by '}' *)
+  | ST_IN_CSS
+
+  (* todo:: started with 'parser' ??' *)
 
 let default_state = ST_INITIAL
 let _mode_stack = ref []
@@ -235,7 +237,10 @@ rule initial = parse
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
   (* there was also "{{" "}}" in the classic syntax *)
   | "{" { 
-      push_mode ST_INITIAL; 
+       (match !_last_non_whitespace_like_token with
+       | Some (Tcss _) -> push_mode ST_IN_CSS; 
+       | _ -> push_mode ST_INITIAL; 
+       );
       TOBrace(tokinfo lexbuf) 
     }  
   | "}" { 
@@ -335,7 +340,9 @@ rule initial = parse
       | Some f -> 
           let res = f info in
           (match res with
-          | Tparser ii -> push_mode (ST_IN_PARSER)
+          | Tparser ii -> 
+              (* todo? push_mode (ST_IN_PARSER) *)
+              ()
           | _ -> ()
           );
           res
@@ -406,7 +413,7 @@ and comment = parse
 (*****************************************************************************)
 (* String Rule *)
 (*****************************************************************************)
-and string_double_quote = parse
+and in_double_quote = parse
   | '"' { 
       pop_mode ();
       TGUIL(tokinfo lexbuf)
@@ -535,25 +542,29 @@ and in_xml_text current_tag = parse
 (*****************************************************************************)
 (* Css Rule *)
 (*****************************************************************************)
+and in_css = parse
+  | "}" {
+      pop_mode();
+      TCBrace(tokinfo lexbuf)
+    }
+  | "{" {
+      (* recurse *)
+      push_mode ST_IN_CSS;
+      TOBrace(tokinfo lexbuf)
+    }
+  | [^'{''}']+ { 
+      T_CSS_TEXT(tokinfo lexbuf)
+    }
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _  { let s = tok lexbuf in
+         error ("LEXER: unrecognised symbol in in_css:"^s);
+         TUnknown(tokinfo lexbuf)
+   }
+
 
 (*****************************************************************************)
 (* Parser Rule *)
 (*****************************************************************************)
-(* todo: right now we just skip everything until next ->, which is
- * incorrect. We should have intermediate states for x=(...)
+(* todo: skipping everything until next -> is not enough, can have code
+ * like parser | ... -> ... | ... ->
  *)
-and in_parser = parse
-  | "->" { 
-      pop_mode();
-      TArrow(tokinfo lexbuf)
-    }
-  (* todo:  "parser" ? for error recovery? *)
-  (* noteopti: negative of the previous rules *)
-  | [^'-']+ { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
-  | '-' { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
-
-  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
-  | _  { let s = tok lexbuf in
-         error ("LEXER: unrecognised symbol in in_parser:"^s);
-         TUnknown(tokinfo lexbuf)
-   }

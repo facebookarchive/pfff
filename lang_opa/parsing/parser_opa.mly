@@ -115,7 +115,6 @@ open Ast_opa
 %token <Ast_opa.tok> T_CSS_TEXT
 
 /*(* parser, todo: actually parse this *)*/
-%token <Ast_opa.tok> T_PARSER_BEFORE_ARROW
 
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/
