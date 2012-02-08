@@ -61,6 +61,9 @@ let visitor_info_of_tok f = function
   | T_XML_SLASH_GT (ii) -> T_XML_SLASH_GT (f ii)
   | T_XML_TEXT (s, ii) -> T_XML_TEXT (s, f ii)
 
+  | T_CSS_TEXT (ii) -> T_CSS_TEXT(f ii)
+  | T_PARSER_BEFORE_ARROW ii -> T_PARSER_BEFORE_ARROW (f ii)
+
   | TInt (s, ii) -> TInt (s, f ii)
   | TFloat (s, ii) -> TFloat (s, f ii)
   | TIdent (s, ii) -> TIdent (s, f ii)

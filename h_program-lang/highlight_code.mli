@@ -2,13 +2,13 @@
 type category =
   | Comment 
   | String | Number | Boolean | Null
-  | Keyword | Operator | Builtin
-  | Punctuation
-
-  | BuiltinCommentColor | BuiltinBoolean
-
+  | Keyword 
   | KeywordConditional | KeywordLoop 
   | KeywordExn | KeywordObject | KeywordModule
+
+  | Builtin | BuiltinCommentColor | BuiltinBoolean
+
+  | Operator | Punctuation
 
   | Function of usedef2
   | FunctionDecl of def_info

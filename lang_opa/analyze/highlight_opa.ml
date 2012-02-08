@@ -417,6 +417,11 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
 
+    | T.T_CSS_TEXT ii ->
+        tag ii EmbededStyle
+    | T.T_PARSER_BEFORE_ARROW ii ->
+        tag ii Verbatim
+
     (* keyword types  *)
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
     | T.TIdent("bool", ii) -> tag ii TypeMisc

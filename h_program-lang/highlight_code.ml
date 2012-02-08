@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
@@ -20,7 +19,7 @@ open Common
 (*****************************************************************************)
 
 (* 
- * Emacs-like (font-lock) mode, or Source-insight like display.
+ * Emacs-like font-lock mode, or Source-insight like display.
  * 
  * This file contains the generic part that is programming language
  * independent. See highlight_xxx.ml for the code specific to the xxx
@@ -31,11 +30,10 @@ open Common
  * (as in source-insight, probably because they call cpp).
  *  
  * Augmented visual, augmented intellect, see what can not see, like in
- * movie where HUD show invisible things.
- * 
+ * movies where HUD show invisible things.
  * 
  * history: 
- * Some code, such as the visitor code was using Emacs_mode_xxx
+ * Some code such as the visitor code was using Emacs_mode_xxx
  * visitors before, but now we use directly the raw visitor, cos 
  * emacs_mode_xxx was not a big win as we must colorize
  * and so visit and so get hooks for almost every programming constructs.
@@ -51,7 +49,6 @@ open Common
  * - better see local macro
  * - better see that some func are local too, the via_pram_writebyte
  * - better see if local, or parameter
- * 
  * - better see in comments that important words such as interrupts, 
  *   and disabled, and must
  * 
@@ -76,7 +73,6 @@ open Common
  * 
  * estet?: redundant with - place_code ?  - entity_c ?
  *)
-
 
 (*****************************************************************************)
 (* Types helpers *)
@@ -166,14 +162,6 @@ type category =
 
   (* classic emacs mode *)
   | Keyword  (* SEMI multi *)
-  | Operator (* TODO multi *)
-  | Builtin
-
-  | Punctuation
-
-  | BuiltinCommentColor (* e.g. for "pr", "pr2", "spf". etc *)
-  | BuiltinBoolean (* e.g. "not" *)
-      
   | KeywordConditional
   | KeywordLoop
 
@@ -181,6 +169,13 @@ type category =
   | KeywordObject
   | KeywordModule
 
+  | Builtin
+  | BuiltinCommentColor (* e.g. for "pr", "pr2", "spf". etc *)
+  | BuiltinBoolean (* e.g. "not" *)
+
+  | Operator (* TODO multi *)
+  | Punctuation
+     
   (* functions, macros. By default global scope (macro can have local
    * but not that used), so no need to like for variables and have a
    * global/local dichotomy of scope. (But even if functions are globals,
