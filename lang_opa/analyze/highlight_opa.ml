@@ -419,10 +419,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     | T.T_CSS_TEXT ii ->
         tag ii EmbededStyle
-(*
     | T.T_PARSER_BEFORE_ARROW ii ->
         tag ii Verbatim
-*)
+
 
     (* keyword types  *)
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt

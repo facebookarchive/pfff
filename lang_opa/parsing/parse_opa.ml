@@ -79,6 +79,7 @@ let tokens2 file =
         | Lexer_opa.ST_IN_XML_TAG tag -> Lexer_opa.in_xml_tag tag lexbuf
         | Lexer_opa.ST_IN_XML_TEXT tag -> Lexer_opa.in_xml_text tag lexbuf
         | Lexer_opa.ST_IN_CSS -> Lexer_opa.in_css lexbuf
+        | Lexer_opa.ST_IN_PARSER -> Lexer_opa.in_parser lexbuf
       in
       
       let rec tokens_aux acc = 

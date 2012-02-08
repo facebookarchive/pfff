@@ -15,8 +15,8 @@
  *)
 open Common 
 
-open Parser_opa
 module Flag = Flag_parsing_opa
+open Parser_opa
 
 (*****************************************************************************)
 (* Prelude *)
@@ -148,7 +148,8 @@ type state_mode =
   (* started with 'css {' and terminated by '}' *)
   | ST_IN_CSS
 
-  (* todo:: started with 'parser' ??' *)
+  (* todo:: started with '= parser' ??' *)
+  | ST_IN_PARSER
 
 let default_state = ST_INITIAL
 let _mode_stack = ref []
@@ -337,9 +338,9 @@ rule initial = parse
       match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> 
           let res = f info in
-          (match res with
-          | Tparser ii -> 
-              (* todo? push_mode (ST_IN_PARSER) *)
+          (match res, !_last_non_whitespace_like_token with
+          | Tparser ii, Some (TEq _) -> 
+              push_mode (ST_IN_PARSER);
               ()
           | _ -> ()
           );
@@ -566,3 +567,21 @@ and in_css = parse
 (* todo: skipping everything until next -> is not enough, can have code
  * like parser | ... -> ... | ... ->
  *)
+(* todo: right now we just skip everything until next ->, which is
+ * incorrect. We should have intermediate states for x=(...)
+ *)
+and in_parser = parse
+  | "->" { 
+      pop_mode();
+      TArrow(tokinfo lexbuf)
+    }
+  (* todo:  "parser" ? for error recovery? *)
+  (* noteopti: negative of the previous rules *)
+  | [^'-']+ { T_PARSER_BEFORE_ARROW(tokinfo lexbuf) }
+  | '-' { T_PARSER_BEFORE_ARROW(tokinfo lexbuf) }
+
+   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+   | _  { let s = tok lexbuf in
+           error ("LEXER: unrecognised symbol in in_parser:"^s);
+          TUnknown(tokinfo lexbuf)
+     }
