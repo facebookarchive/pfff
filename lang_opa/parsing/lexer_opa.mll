@@ -15,10 +15,8 @@
  *)
 open Common 
 
-module Ast = Ast_opa
-module Flag = Flag_parsing_opa
-
 open Parser_opa
+module Flag = Flag_parsing_opa
 
 (*****************************************************************************)
 (* Prelude *)
