@@ -320,9 +320,6 @@ rule initial = parse
    *)
   | operator+ { TOp(tok lexbuf, tokinfo lexbuf) }
 
-  (* used in some parser rules *)
-  | '`' | '$' | '%' { TUnknown(tokinfo lexbuf) }
-
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)

@@ -21,14 +21,14 @@ module TH = Token_helpers_opa
 (*****************************************************************************)
 (*
  * Parsing OPA turns out to be quite difficult. The official grammar 
- * is not yacc compliant (mlstate uses a PEG parser, not a LALR(1) one).
- * This module provides a degenerated AST for OPA, one where
- * things at least are grouped together in a tree: parenthesis
- * chunk, braced chunks, xml tree, etc).
+ * is not yacc compliant (opalang/ uses a PEG parser, not a LALR(1) one).
+ * This module provides a view of tokens, a view where
+ * tokens at least are grouped together in a tree: parenthesis
+ * chunks, braced chunks, xml chunks, etc.
  * This is similar to what I do in token_views_cpp.ml.
  * 
- * This tree can then be used in highlight_opa.ml to at least
- * detect and colorize appropriately functions, types, etc.
+ * This tree can then be used in highlight_opa.ml or ast_fuzzy_opa.ml to
+ * at least detect and colorize appropriately functions, types, etc.
  *)
 
 (*****************************************************************************)
@@ -41,6 +41,7 @@ type tree =
   | Paren of tree list list (* grouped by comma *)
   | Brace of tree list list (* grouped by comma too, as in type defs *)
   | Bracket of tree list list (* should not have comma, but to factorize code *)
+  (* TODO *)
   | Xml of tree list (* attributes *) * tree list (* children *)
  (* with tarzan *)
 

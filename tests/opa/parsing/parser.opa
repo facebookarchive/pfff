@@ -1,4 +1,3 @@
-
   char = parser
   | x = { Rule.alphanum_char } -> x
   | x = "-" -> x

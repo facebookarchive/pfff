@@ -23,11 +23,12 @@ module TV = Token_views_opa
 (*****************************************************************************)
 
 (* 
- * Parsing OPA turns out to be difficult. The grammar is not yacc-able.
- * There is a degenerated AST in token_views_opa.ml, essentially a
- * tree of (){}[]<tag chunks. This tree helps, using heuristics, to
- * identify function names, types, etc. This module brings a little
- * bit more organization over this degenerated AST.
+ * Parsing OPA turns out to be difficult. The grammar is not yacc compliant.
+ * There is a tree of tokens in token_views_opa.ml, essentially a
+ * tree of (){}[]<tag chunks. This tree helps, using heuristics encoded
+ * in this file, to identify function names, types, etc. This module
+ * thus brings a little bit more organization over this tree by having 
+ * a kind of fuzzy AST.
  *)
 
 (*****************************************************************************)
@@ -52,12 +53,19 @@ type long_name = qualifier * name
 (* ------------------------------------------------------------------------- *)
 
 (* 
+ * Many symbols in OPA are "overloaded" which requires to use some context
+ * and heuristics to identify AST elements:
+ *
  * - '{}' are used for: funcdef, module def, TODO compound,
- *   record def, TODO algebraic def, TODO interpolation, TODO records.
+ *   record def, TODO algebraic def, TODO interpolation, TODO records,
+ *   TODO record patterns
+ *
  * - '()' are used for: TODO funcall, TODO tuples,  type application,
  *    TODO polymorphic types
+ *
  * - '.' used for: module access, TODO field access
- * - '=' is used for: typedef, variable def (for function def
+ *
+ * - '=' is used for: typedef, variable def (and for function def
  *    in classic syntax)
  *)
 type tree =
@@ -89,15 +97,18 @@ type tree =
    | TyName of long_name
    | TyVar of (* ' *) name
    | TyApp of long_name * type_ list
+
    | TyOther of tree list
 
  and type_def =
    | TyRecord of field_decl list
    (* TyAlgebric of ctor_decl list *)
+
    | TypeDefOther of tree list
 
  and field_decl =
    | Field of type_ option * name
+
    | FieldOther of tree list
 
 (* ------------------------------------------------------------------------- *)
@@ -113,6 +124,7 @@ type tree =
  }
    and parameter =
      | Param of type_ option * name
+
      | ParamOther of tree list
 
   and body = tree list
@@ -127,10 +139,6 @@ let str_of_name (Name (s, ii))  = s
 
 let is_module_name s =
   s =~ "[A-Z].*"
-
-(*****************************************************************************)
-(* Builder *)
-(*****************************************************************************)
 
 (* skipping comments, qualifiers, annotations *)
 let rec toks_for_ast_fuzzy toks =
@@ -153,6 +161,10 @@ let rec toks_for_ast_fuzzy toks =
     | x::xs -> x::aux xs
   in
   aux toks
+
+(*****************************************************************************)
+(* Builder *)
+(*****************************************************************************)
 
 let (mk_tree: TV.tree list -> tree list) = fun xs ->
   
@@ -245,7 +257,7 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
         })::tree_list ctx xs
 
     (*-------------------------------------------------------------------*)
-    (* Types *)
+    (* Type defs *)
     (*-------------------------------------------------------------------*)
     (* todo: type x = { ... } or ... *)
 
@@ -312,11 +324,11 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
 *)
 
     (*-------------------------------------------------------------------*)
-    (* Record *)
+    (* String interpolation *)
     (*-------------------------------------------------------------------*)
 
     (*-------------------------------------------------------------------*)
-    (* String interpolation *)
+    (* Record *)
     (*-------------------------------------------------------------------*)
 
     (*-------------------------------------------------------------------*)
@@ -340,6 +352,9 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     | x::xs ->
         tree ctx x::tree_list ctx xs
 
+  (*-------------------------------------------------------------------*)
+  (* Types *)
+  (*-------------------------------------------------------------------*)
   and type_ ctx xs =
     match xs with
     | [(TV.T T.TIdent (s1, ii1))] -> 
@@ -387,6 +402,9 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
 
     | xs -> ParamOther (tree_list ctx xs)
 
+  (*-------------------------------------------------------------------*)
+  (* body *)
+  (*-------------------------------------------------------------------*)
   and body ctx body =
     match body with
     | [] -> []

@@ -19,8 +19,11 @@ open Common
 (*****************************************************************************)
 
 (* 
- * For now see ast_fuzzy_opa.ml; this is the best I have to make sense
- * of OPA code ...
+ * For now see ast_fuzzy_opa.ml if you want to work on OPA code. 
+ * This is the best I have right now to make sense of OPA.
+ * 
+ * An alternative would be to take surfaceAst.ml and the generated
+ * parser in opalang/, but those files have too many dependencies.
  *)
 
 (*****************************************************************************)
