@@ -132,11 +132,13 @@ type state_mode =
    * and terminated by '}'
    *)
   | ST_INITIAL
-  (* started with ", finished with ". In most languages strings 
+
+  (* started with '"', finished with '"'. In most languages strings 
    * are a single tokens but OPA allows interpolation which means 
    * a string can contain nested OPA expressions.
    *)
   | ST_DOUBLE_QUOTES
+
   (* started with <xx when preceded by a certain token (e.g. '='),
    * finished by '>' by transiting to ST_IN_XML_TEXT, or really finished
    * by '/>'.
@@ -145,12 +147,15 @@ type state_mode =
   (* started with the '>' of an opening tag, finished when '</x>' *)
   | ST_IN_XML_TEXT of Ast_opa.tag (* the current tag *)
 
+  (* started with 'parser' and terminated by '->' *)
+  | ST_IN_PARSER
+
 let default_state = ST_INITIAL
 let _mode_stack = ref []
 (* The logic to modify _last_non_whitespace_like_token is in the 
  * caller of the lexer, that is in Parse_opa.tokens.
  * We use it for XML parsing, to disambiguate the use of '<' we need to
- * look at the token before.
+ * look at the token before (ugly).
  *)
 let _last_non_whitespace_like_token = 
   ref (None: Parser_opa.token option)
@@ -327,7 +332,13 @@ rule initial = parse
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
       match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
-      | Some f -> f info
+      | Some f -> 
+          let res = f info in
+          (match res with
+          | Tparser ii -> push_mode (ST_IN_PARSER)
+          | _ -> ()
+          );
+          res
       | None -> TIdent (s, info)
     }
   (* 'a, 'b'  type variables, was not mentionned in reference manual *)
@@ -528,3 +539,21 @@ and in_xml_text current_tag = parse
 (*****************************************************************************)
 (* Parser Rule *)
 (*****************************************************************************)
+(* todo: right now we just skip everything until next ->, which is
+ * incorrect. We should have intermediate states for x=(...)
+ *)
+and in_parser = parse
+  | "->" { 
+      pop_mode();
+      TArrow(tokinfo lexbuf)
+    }
+  (* todo:  "parser" ? for error recovery? *)
+  (* noteopti: negative of the previous rules *)
+  | [^'-']+ { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
+  | '-' { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
+
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _  { let s = tok lexbuf in
+         error ("LEXER: unrecognised symbol in in_parser:"^s);
+         TUnknown(tokinfo lexbuf)
+   }
