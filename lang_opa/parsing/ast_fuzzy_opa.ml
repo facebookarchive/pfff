@@ -62,6 +62,8 @@ type long_name = qualifier * name
  *
  * - '()' are used for: TODO funcall, TODO tuples,  type application,
  *    TODO polymorphic types
+ * 
+ * - '[]' are used for: TODO list, TODO parser character classes
  *
  * - '.' used for: module access, TODO field access
  *
