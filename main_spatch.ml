@@ -143,6 +143,7 @@ let apply_transfo transfo xs =
 (*****************************************************************************)
 
 let main_action xs =
+  Common.logger Config.logger "spatch";
 
   let spatch_file = 
     match !spatch_file, !sed_string with

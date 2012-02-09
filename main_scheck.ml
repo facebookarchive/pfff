@@ -194,6 +194,7 @@ let pr2_dbg s =
 (*****************************************************************************)
 
 let main_action xs =
+  Common.logger Config.logger "scheck";
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   let errors = ref [] in
