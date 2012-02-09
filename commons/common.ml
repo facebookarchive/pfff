@@ -3426,6 +3426,12 @@ let (readdir_to_dir_size_list: string -> (string * int) list) = fun path ->
     else None
     )
 
+let unixname () =
+  let uid = Unix.getuid () in
+  let entry = Unix.getpwuid uid in
+  entry.Unix.pw_name
+
+
 (* could be in control section too *)
 
 (* Why a use_cache argument ? because sometimes want disable it but dont
