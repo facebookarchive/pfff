@@ -51,3 +51,23 @@ function test_dead_ifdef_like() {
   $a = 1;
   return $a;
 }
+
+function test_dynamic_break() {
+  while(1) {
+    $x = 1;
+    //ERROR: dynamic break
+    break $x;
+  }
+}
+
+function test_dynamic_break_ok() {
+  while(1) {
+    //this is ok
+    break 1;
+  }
+
+  while(1) {
+    //this is ok too
+    break (1);
+  }
+}
