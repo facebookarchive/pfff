@@ -3752,14 +3752,14 @@ let uncat xs file =
 (* see opa/pfff_logger.opa *)
 let logger config cmd =
   config +> do_option (fun server ->
-    let port = 9080 in
     let unixname = unixname() in
     let extra_args = "" in
     let json = 
       spf "{ unixname: \"%s\", extra_args: \"%s\" }" unixname extra_args
     in
     let cmd = 
-      spf "curl http://%s:%d/_rest_/%s/ -d '%s'" server port cmd json in
+      spf "curl http://%s/_rest_/%s/ -d '%s' 2>/dev/null 1>/dev/null" 
+        server cmd json in
     (* todo? timeout? *)
     profile_code "pfff_logger" (fun () ->
       command2 cmd
