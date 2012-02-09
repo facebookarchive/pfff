@@ -5,6 +5,8 @@
 ** introduce lang_opa
 basic support
 
+** introduce pfff_logger (in OPA), monitoring the use of pfff tools
+
 * -----------------------------------------------------------
 
 * 0.18 (Q4 2011) (prolog)
