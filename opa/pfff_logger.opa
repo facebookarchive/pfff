@@ -10,6 +10,8 @@
  *  - use RPC (thrift), which would be more typed than abusing urls and
  *    json
  *  - use ocamlnet
+ *
+ * todo: too slow, need to use /db[cmd][date]?. or use mongo?
  */
 
 //****************************************************************************
