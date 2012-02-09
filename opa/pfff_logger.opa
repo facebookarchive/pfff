@@ -5,6 +5,11 @@
  * My poor's man version of scribe and ODS ... to log the use of the different
  * pfff tools: codemap, codequery, sgrep, spatch, cmf (--fix, --strict/--bugs,
  * --deadcode, -mv_module), etc
+ *
+ * alternatives:
+ *  - use RPC (thrift), which would be more typed than abusing urls and
+ *    json
+ *  - use ocamlnet
  */
 
 //****************************************************************************
