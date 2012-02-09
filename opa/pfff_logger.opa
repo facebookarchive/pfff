@@ -10,8 +10,12 @@
  *  - use RPC (thrift), which would be more typed than abusing urls and
  *    json
  *  - use ocamlnet
+ *  - use couchdb or mongodb directly
  *
- * todo: too slow, need to use /db[cmd][date]?. or use mongo?
+ * todo: too slow, 
+ *  - need to use /db[cmd][date]? cos reinsert full list is too slow?
+ *  - how to efficiently get the keys at the first level (all tools)?
+ *  - how to allow concurrent access to the db?
  */
 
 //****************************************************************************
@@ -47,7 +51,7 @@ function string_of_command_run(command_run x) {
 
 function view_list() {
   strmap = /db1;
-  //henry: is this efficient?
+  //todo: this is really slow
   keys = Map.To.key_list(strmap);
   String.concat("\n", keys)
 }

@@ -3760,9 +3760,11 @@ let logger config cmd =
     let cmd = 
       spf "curl http://%s/_rest_/%s/ -d '%s' 2>/dev/null 1>/dev/null" 
         server cmd json in
-    (* todo? timeout? *)
     profile_code "pfff_logger" (fun () ->
-      command2 cmd
+      try
+       timeout_function 1 (fun () ->
+        command2 cmd
+      ) with Timeout -> ()
     )
   )
 
