@@ -13,8 +13,8 @@
  *  - use couchdb or mongodb directly
  *
  * todo: too slow, 
- *  - need to use /db[cmd][date]? cos reinsert full list is too slow?
  *  - how to efficiently get the keys at the first level (all tools)?
+ *  - need to use /db[cmd][date]? cos reinsert full list is too slow?
  *  - how to allow concurrent access to the db?
  */
 
