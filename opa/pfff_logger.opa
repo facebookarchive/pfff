@@ -16,7 +16,8 @@
  * todo: too slow, 
  *  - how to efficiently get the keys at the first level (all tools)?
  *  - need to use /db[cmd][date]? cos reinsert full list is too slow?
- *  - how to allow concurrent access to the db?
+ *  - how to allow concurrent access to the db? need run multiple opa?
+ *    use opa-cloud with its load balancer? but is db itself concurrent?
  */
 
 //****************************************************************************
