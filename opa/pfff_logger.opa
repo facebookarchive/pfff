@@ -10,7 +10,8 @@
  *  - use RPC (thrift), which would be more typed than abusing urls and
  *    json
  *  - use ocamlnet
- *  - use couchdb or mongodb directly
+ *  - use couchdb or mongodb, via OPA api, or just curl them?
+ *  - use couchdb or mongodb directly without OPA at all ...
  *
  * todo: too slow, 
  *  - how to efficiently get the keys at the first level (all tools)?
