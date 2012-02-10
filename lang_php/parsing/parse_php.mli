@@ -27,6 +27,8 @@ val parse_program:
   ?pp:string option ->
   Common.filename -> Ast_php.program
 
+val ast_and_tokens: 
+  Common.filename -> Ast_php.program * Parser_php.token list
 
 (* for sgrep/spatch patterns *)
 val parse_any:
