@@ -6,16 +6,22 @@
  * pfff tools: codemap, codequery, sgrep, spatch, cmf (--fix, --strict/--bugs,
  * --deadcode, -mv_module), etc
  *
+ * It's a good OPA exercice: need a state (db), some simple
+ * visualization (web ui), and it needs to be accessible from anywhere
+ * (web service). No need to install any special things on the machine 
+ * of the user (does it handle scribe, how to aggregate scribe of
+ * all machines, etc).
+ *
  * history:
  *  - opti: need to use /db[cmd][date] cos reinsert full list is too slow
  *  
  *
  * alternatives:
- *  - use RPC (thrift), which would be more typed than abusing urls and
- *    json
- *  - use ocamlnet
+ *  - log in a file on a shared NFS dir and then elsewhere do the aggregation
+ *  - use RPC (thrift), which would be more typed than abusing urls and json
  *  - use couchdb or mongodb, via OPA api, or just curl them?
  *  - use couchdb or mongodb directly without OPA at all ...
+ *  - use ocamlnet
  *
  * todo: too slow, 
  *  - how to efficiently get the keys at the first level (all tools)?
@@ -129,7 +135,6 @@ function start(Uri.relative url) {
     Resource.raw_status({bad_request})
    }
 }
-
 
 Server.start(Server.http, [
    { dispatch: start }
