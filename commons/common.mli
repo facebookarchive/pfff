@@ -1188,8 +1188,10 @@ val nblines_file : filename -> int
 val filesize : filename -> int
 val filemtime : filename -> float
 val lfile_exists : filename -> bool
+
 val is_directory : path -> bool
 val is_file      : path -> bool
+val is_symlink: filename -> bool
 val is_executable : filename -> bool
 
 val unix_lstat_eff: filename -> Unix.stats

@@ -3320,6 +3320,8 @@ let is_directory file =
   (unix_stat file).Unix.st_kind =*= Unix.S_DIR
 let is_file file =
   (unix_stat file).Unix.st_kind =*= Unix.S_REG
+let is_symlink file =
+  (Unix.lstat file).Unix.st_kind =*= Unix.S_LNK
 
 let is_executable file =
   let stat = unix_stat file in
