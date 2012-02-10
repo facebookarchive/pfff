@@ -27,7 +27,9 @@ clean:
 ##############################################################################
 deploy:
 	make kill
-	nohup ./pfff_logger.exe -p $(DEPLOY_PORT) &
+	nohup opa-cloud --host localhost,3 ./pfff_logger.exe --port $(DEPLOY_PORT)
+
+#old:nohup ./pfff_logger.exe -p $(DEPLOY_PORT) &
 
 kill:
 	pkill pfff_logger.exe || echo no process killed
@@ -48,4 +50,3 @@ test_view:
 
 view:
 	curl http://localhost:$(DEPLOY_PORT)/view/codemap
-

@@ -6,6 +6,10 @@
  * pfff tools: codemap, codequery, sgrep, spatch, cmf (--fix, --strict/--bugs,
  * --deadcode, -mv_module), etc
  *
+ * history:
+ *  - opti: need to use /db[cmd][date] cos reinsert full list is too slow
+ *  
+ *
  * alternatives:
  *  - use RPC (thrift), which would be more typed than abusing urls and
  *    json
@@ -15,7 +19,6 @@
  *
  * todo: too slow, 
  *  - how to efficiently get the keys at the first level (all tools)?
- *  - need to use /db[cmd][date]? cos reinsert full list is too slow?
  *  - how to allow concurrent access to the db? need run multiple opa?
  *    use opa-cloud with its load balancer? but is db itself concurrent?
  */
@@ -32,8 +35,7 @@ type command_run = {
 }
 
 // command_name -> list(command_run)
-database stringmap(list(command_run)) /db1
-database /db1[_] = []
+database stringmap(intmap(command_run)) /db1
 
 database int /counter = 0
 
@@ -59,8 +61,9 @@ function view_list() {
 }
 
 function view(string cmd) {
-  xs = /db1[cmd];
-  ys = List.rev(List.map(string_of_command_run, xs));
+  intmap = /db1[cmd];
+  vals = Map.To.val_list(intmap);
+  ys = List.map(string_of_command_run, vals);
   String.concat("\n", ys)
 }
 
@@ -75,10 +78,11 @@ function save_command_run(command_name cmd, option(RPC.Json.json) json) {
     case {Record: [("unixname", x), ("extra_args", y)]}:
       match ((x, y)) {
       case ({String: s1}, {String:s2}):
-        entry = { unixname: s1, extra_args: s2, date: Date.now() }
+        now = Date.now();
+        entry = { unixname: s1, extra_args: s2, date: now }
         /counter <- /counter + 1;
-        
-        /db1[cmd] <- [ entry | /db1[cmd] ];
+        //old: slow  /db1[cmd] <- [ entry | /db1[cmd] ];
+        /db1[cmd][Date.in_milliseconds(now)] <- entry;
         {success}
       default:
         {bad_request}
