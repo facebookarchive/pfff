@@ -59,6 +59,7 @@ interface I { }
 trait T { }
 class B { const CST = 1; }
 " in 
+      (* quite similar to the unit test for tags in unit_foundation_php.ml *)
       assert_equal 
         ["function"]  (prolog_query ~file "kind('foo', X), writeln(X)");
       assert_equal 

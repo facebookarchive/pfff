@@ -203,7 +203,6 @@ and class_def = {
   c_extends: string list; (* pad: ?? *)
   c_traits: string wrap list;
   c_implements: string list;
-  (* todo: use_traits: string list; *)
 
   c_constants: (string * expr) list;
   c_variables: class_var list;
