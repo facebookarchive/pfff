@@ -29,7 +29,8 @@ deploy:
 	make kill
 	nohup opa-cloud --host localhost,3 ./pfff_logger.exe --port $(DEPLOY_PORT)
 
-#old:nohup ./pfff_logger.exe -p $(DEPLOY_PORT) &
+deploy_interactive:
+	./pfff_logger.exe -p $(DEPLOY_PORT) --display-logs
 
 kill:
 	pkill pfff_logger.exe || echo no process killed
