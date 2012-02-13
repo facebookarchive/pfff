@@ -72,7 +72,7 @@ let (graph: Env_interpreter_php.callgraph ref) = ref SMap.empty
 (* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
 
-let tracing = ref true
+let tracing = ref false
 
 (*****************************************************************************)
 (* Types *)
