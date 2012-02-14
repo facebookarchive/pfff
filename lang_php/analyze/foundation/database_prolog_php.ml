@@ -160,7 +160,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', 'function')." (name_id id db) str)
+            pr (spf "docall(%s, '%s', function)." (name_id id db) str)
           end;
           k x
 
@@ -174,7 +174,7 @@ let add_uses id ast pr db =
           then begin
             Hashtbl.replace h str true;
             (* todo: imprecise, need julien's precise callgraph *)
-            pr (spf "docall(%s, '%s', 'method')." (name_id id db) str)
+            pr (spf "docall(%s, '%s', method)." (name_id id db) str)
           end;
           
           k x
@@ -227,7 +227,7 @@ let add_uses id ast pr db =
                   if not (Hashtbl.mem h str)
                   then begin
                     Hashtbl.replace h str true;
-                    pr (spf "docall(%s, '%s', 'class')." 
+                    pr (spf "docall(%s, '%s', class)." 
                            (name_id id db) str)
                   end;
                           
@@ -252,7 +252,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', 'class')." 
+            pr (spf "docall(%s, '%s', class)." 
                    (name_id id db) str)
           end;
           k x
@@ -387,3 +387,6 @@ let gen_prolog_db ?(show_progress=true) db file =
      );
    );
   )
+
+let append_callgraph_to_prolog_db ?(show_progress=true) db file =
+  raise Todo

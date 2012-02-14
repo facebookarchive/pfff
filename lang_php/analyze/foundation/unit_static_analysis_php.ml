@@ -411,7 +411,7 @@ class A { function foo() { } }
 class B { function foo() { } }
 function c() { $a = new A(); $a->foo(); }
 " in
-        (* no B::foo over approximation! *)
+        (* no B::foo, no over approximation! *)
         assert_graph file ["c" --> ["A::foo"]];
       );
 
