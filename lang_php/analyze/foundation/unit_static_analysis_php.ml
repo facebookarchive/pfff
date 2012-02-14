@@ -17,14 +17,14 @@ module Interp = Abstract_interpreter_php
 let prepare content =
   let tmp_file = 
     Parse_php.tmp_php_file_from_string content in
-  let ast = 
-    Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
   let db = 
     Env.code_database_of_juju_db  (Env.juju_db_of_files [tmp_file]) in
   let env = 
     Env_interpreter_php.empty_env db tmp_file in
   let heap = 
     Env_interpreter_php.empty_heap in
+  let ast = 
+    Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
   env, heap, ast
 
 let heap_of_program_at_checkpoint content =
