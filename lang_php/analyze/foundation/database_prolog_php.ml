@@ -52,6 +52,8 @@ let name_id id db =
     let id_kind = db.Db.defs.Db.id_kind#assoc id in
 
     (match id_kind with
+    | E.Class _ | E.Function | E.Constant -> 
+        spf "'%s'" s
     | E.Method _ | E.ClassConstant | E.Field ->
         (match Db.class_or_interface_id_of_nested_id_opt id db with
         | Some id_class -> 
@@ -76,7 +78,6 @@ let name_id id db =
         )
 
     | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    | E.Class _ | E.Function | E.Constant -> spf "'%s'" s
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
@@ -277,6 +278,7 @@ let add_defs_and_uses id kind ast pr db =
       | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
       | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
       | ClassRegular _ -> ()
+      (* the kind/2 will cover those different cases *)
       | Interface _ 
       | Trait _ -> ()
       );
