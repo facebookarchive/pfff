@@ -27,6 +27,8 @@ module T = Parser_php
  * tokens, and return an AST that will make it easy to pretty print
  * the code while still maintaining the comments of the original file
  * (see ast_pp.ml).
+ * 
+ * This is mostly a copy paste of ast_php_simple_build.ml.
  *)
 
 (*****************************************************************************)
