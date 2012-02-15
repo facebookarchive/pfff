@@ -176,7 +176,9 @@ function bar() { foo(); }
         ["bar"]
         (sort xs);
 
-      (* this one requires more sophisticated analysis *)
+      (* this one requires more sophisticated analysis, with
+       * append_callgraph_to_prolog_db 
+       *)
       let file ="
 class A { function foo() { } }
 class B extends A { }
