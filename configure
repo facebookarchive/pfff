@@ -456,6 +456,8 @@ if($facebook) {
     `perl -p -i -e 's#Not_found2.\*#Not_found-> Some \\\"$server\\\"#' globals/config.ml`;
 }
 
+`perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config.ml`;
+
 `touch test.ml`;
 
 ######################################################################
