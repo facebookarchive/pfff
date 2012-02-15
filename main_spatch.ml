@@ -86,8 +86,7 @@ let apply_transfo transfo xs =
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
 
-  files +> Common_extra.progress (fun k ->
-  files +> List.iter (fun file ->
+  files +> Common_extra.progress (fun k -> List.iter (fun file ->
     let file = Common.relative_to_absolute file in
     pr2 (spf "processing: %s" file);
     k();
@@ -170,8 +169,8 @@ let main_action xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
-  files +> Common_extra.progress ~show:!verbose (fun k ->
-  files +> List.iter (fun file ->
+  files +> Common_extra.progress ~show:!verbose (fun k -> 
+   List.iter (fun file->
     k();
     try (
     let resopt = Spatch_php.spatch pattern file in

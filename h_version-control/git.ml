@@ -351,16 +351,15 @@ let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   pr2 (spf "#commits = %d" (List.length commits));
   
   let refactoring_ids = 
-  commits +> Common_extra.with_progress_list_metter (fun k ->
-  commits +> Common.filter (fun (id, x) ->
-      k ();
-      let (Lib_vcs.VersionId scommit) = id in
-      let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"
-                    basedir scommit) in
-      let xs = Common.cmd_to_list cmd in
-      (* basic heuristic: more than N files in a diff => refactoring diff *)
-      List.length xs > threshold
-    ))
+  commits +> Common_extra.progress (fun k -> Common.filter (fun (id, x) ->
+    k ();
+    let (Lib_vcs.VersionId scommit) = id in
+    let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"
+                  basedir scommit) in
+    let xs = Common.cmd_to_list cmd in
+    (* basic heuristic: more than N files in a diff => refactoring diff *)
+    List.length xs > threshold
+  ))
   in
   let tmpfile = "/tmp/refactoring_diffs.list" in
   pr2 (spf "writing data in %s" tmpfile);

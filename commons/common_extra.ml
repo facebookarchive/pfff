@@ -51,7 +51,7 @@ let execute_and_show_progress2 ?(show=true) len f =
 let with_progress_list_metter ?show fk xs =
   let len = List.length xs in
   execute_and_show_progress2 ?show len 
-    (fun k -> fk k)
+    (fun k -> fk k xs)
 
 let progress ?show fk xs = 
   with_progress_list_metter ?show fk xs

@@ -384,7 +384,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    );
    let ids = db.Db.defs.Db.id_kind#tolist in
    ids +> Common_extra.progress ~show:show_progress (fun k ->
-   ids +> List.iter (fun (id, kind) ->
+    List.iter (fun (id, kind) ->
         k();
         pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
         pr (spf "at(%s, '%s', %d)." 
@@ -439,7 +439,7 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
     Abstract_interpreter_php.graph := Map_poly.empty;
 
     all_files +> Common_extra.progress ~show:show_progress (fun k ->
-    all_files +> List.iter (fun file ->
+      List.iter (fun file ->
       k ();
       let ast = 
         try 

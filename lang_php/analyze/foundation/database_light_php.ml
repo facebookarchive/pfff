@@ -214,7 +214,7 @@ let database_code_from_php_database ?(verbose=false) db =
   let entities = db.DbPHP.defs.DbPHP.id_kind#tolist in
   let entities =
     entities +> Common_extra.progress ~show:verbose (fun k ->
-    entities +> Common.map_filter (fun (id, id_kind) ->
+     Common.map_filter (fun (id, id_kind) ->
       k();
 
       (* coupling: with is_id_with_entity above *)

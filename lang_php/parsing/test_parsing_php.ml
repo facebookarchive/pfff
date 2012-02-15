@@ -31,8 +31,7 @@ let test_parse_php xs  =
 
   Common.check_stack_nbfiles (List.length fullxs);
 
-  fullxs +> Common_extra.with_progress_list_metter (fun k -> 
-  fullxs +> List.iter (fun file -> 
+  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
      k ();
 
     let (xs, stat) = 
