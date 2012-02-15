@@ -40,7 +40,6 @@ let prolog_query ~file query =
     ~show_progress:false db facts_pl_file;
 
   (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
-  Common.cat facts_pl_file +> List.iter pr2;
   let cmd = 
     spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
       facts_pl_file helpers_pl_file query

@@ -40,10 +40,11 @@ let heap_of_program_at_checkpoint content =
 let callgraph_generation content =
   let (env, heap, ast) = prepare content in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
+  Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
     let _heap = Abstract_interpreter_php.program env heap ast in
     !(Abstract_interpreter_php.graph)
-  )
+  ))
 
 let rec chain_ptrs heap v =
   match v with
