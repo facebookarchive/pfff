@@ -34,7 +34,10 @@ let prolog_query ~file query =
    * also the callgraph info of the abstract interpreter)
    *)
   let db = Database_php_build.db_of_files_or_dirs [source_file] in
-  Database_prolog_php.gen_prolog_db ~show_progress:false db facts_pl_file;
+  Database_prolog_php.gen_prolog_db 
+    ~show_progress:false db facts_pl_file;
+  Database_prolog_php.append_callgraph_to_prolog_db
+    ~show_progress:false db facts_pl_file;
 
   (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
   Common.cat facts_pl_file +> List.iter pr2;
@@ -173,7 +176,21 @@ function bar() { foo(); }
       assert_equal ~msg:"it should find basic callers to a function"
         ["bar"]
         (sort xs);
-      ()
+
+      (* this one requires more sophisticated analysis *)
+      let file ="
+class A { function foo() { } }
+class B extends A { }
+function bar() {
+  $o = new B();
+  $y = $o->foo();
+} " in
+      let xs = prolog_query ~file 
+        "docall('bar', (X,Y), method), writeln((X,Y)), fail" in
+      assert_equal ~msg:"it should find basic callers to a function"
+        ["A,foo"]
+        (sort xs);
+      
 
     );
 

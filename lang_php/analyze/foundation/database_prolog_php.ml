@@ -22,6 +22,10 @@ module Db = Database_php
 module V = Visitor_php
 module E = Database_code
 
+module Env = Env_interpreter_php
+module Interp = Abstract_interpreter_php
+open Env_interpreter_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -32,8 +36,17 @@ module E = Database_code
  * It is inspired by a similar tool for java called JQuery
  * (http://jquery.cs.ubc.ca/).
  * 
+ * history:
+ *  - basic defs (kinds, at) 
+ *  - inheritance tree
+ *  - basic callgraph
+ *  - basic datagraph
+ *  - include/require (and possibly desugared wrappers like require_module())
+ *  - precise callgraph, using julien's abstract interpreter (was called
+ *    previously pathup/pathdown)
+ * 
  * todo:
- *  - precise callgraph, using julien's pathup/pathdown tools
+ *  - precise datagraph
  *  - types, refs
  *  - ??
  * 
@@ -87,6 +100,12 @@ let name_id id db =
     )
   with Not_found -> 
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
+
+let name_of_node = function
+  | Env.File s -> spf "'__TOPSTMT__%s'" s
+  | Env.Function s -> spf "'%s'" s
+  | Env.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
+  | Env.FakeRoot -> "'__FAKE_ROOT__'"
       
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
@@ -123,7 +142,7 @@ let read_write in_lvalue =
     
 let escape_quote_array_field s =
   Str.global_replace (Str.regexp "[']") "__" s
- 
+
 
 (*****************************************************************************)
 (* Defs/uses *)
@@ -350,12 +369,17 @@ let gen_prolog_db ?(show_progress=true) db file =
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous docall/3, use/4.");
    pr (":- discontiguous include/2, require_module/2.");
+   pr (":- discontiguous problem/2.");
 
-   db.Db.file_info#tolist +> List.iter (fun (file, _parsing_status) ->
+   db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
      let file = Db.absolute_to_readable_filename file db in
      let parts = Common.split "/" file in
      pr (spf "file('%s', [%s])." file
             (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ","));
+     (match file_info.Db.parsing_status with
+     | `OK -> ()
+     | `BAD -> pr2 (spf "problem('%s', parse_error)." file)
+     );
    );
 
    db.Db.defs.Db.id_kind#tolist
@@ -390,5 +414,77 @@ let gen_prolog_db ?(show_progress=true) db file =
    );
   )
 
+(* todo: 
+ * - could also improve precision of use/4 
+ * - detect higher order functions so that function call
+ *   through generic higher order functions is present in callgraph
+ *)
 let append_callgraph_to_prolog_db ?(show_progress=true) db file =
-  raise Todo
+
+  let h_oldcallgraph = Hashtbl.create 101 in
+  file +> Common.cat +> List.iter (fun s ->
+    if s =~ "^docall(.*" 
+    then Hashtbl.add h_oldcallgraph s true
+  );
+
+  let all_files = 
+    db.Db.file_info#tolist +> List.map fst in
+  let db = 
+    Env.code_database_of_juju_db  (Env.juju_db_of_files all_files) in
+  
+  Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
+  Common.save_excursion Abstract_interpreter_php.strict false (fun()->
+    Abstract_interpreter_php.graph := Map_poly.empty;
+
+    all_files
+      +> Common_extra.with_progress_list_metter ~show_progress (fun k xs ->
+      xs +> List.iter (fun (file) ->
+        let ast = 
+          Ast_php_simple_build.program (Parse_php.parse_program file) in
+        let env = 
+          Env_interpreter_php.empty_env db file in
+        let heap = 
+          Env_interpreter_php.empty_heap in
+        let _heap = Abstract_interpreter_php.program env heap ast in
+        ()
+      )
+    )
+  ));
+
+  (* look previous information, to avoid introduce duplication
+   * todo: and also to check/compare with the abstract interpreter.
+   * Should be a superset.
+   *  - should find more functions when can resolve statically dynamic funcall
+   *  - 
+   *)
+
+  Common.with_open_outfile_append file (fun (pr, _chan) ->
+    let pr s = pr (s ^ "\n") in
+    let g = !(Abstract_interpreter_php.graph) in
+    pr "";
+    g +> Map_poly.iter (fun src xs ->
+      xs +> Set_poly.iter (fun target ->
+        let kind =
+          match target with
+          (* can't call a file ... *)
+          | Env.File _ -> raise Impossible
+          (* can't call a fake root*)
+          | Env.FakeRoot -> raise Impossible
+          | Env.Function _ -> "function"
+          | Env.Method _ -> "method"
+        in
+        (* do not count those fake edges *)
+        if src <> Env.FakeRoot
+        then begin
+          let s =(spf "docall(%s, %s, %s)." 
+                     (name_of_node src) (name_of_node target) kind) in
+          if Hashtbl.mem h_oldcallgraph s
+          then ()
+          else pr s
+        end
+        )
+      )
+    )
+  
+
+

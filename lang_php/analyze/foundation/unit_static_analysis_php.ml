@@ -40,7 +40,7 @@ let heap_of_program_at_checkpoint content =
 let callgraph_generation content =
   let (env, heap, ast) = prepare content in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
-    Abstract_interpreter_php.graph := SMap.empty;
+    Abstract_interpreter_php.graph := Map_poly.empty;
     let _heap = Abstract_interpreter_php.program env heap ast in
     !(Abstract_interpreter_php.graph)
   )
@@ -81,15 +81,20 @@ let assert_final_value_at_checkpoint var file v =
 let assert_graph file xs = 
   let g = callgraph_generation file in
   let _nb_nodes = List.length xs in
-  xs +> List.iter (fun (n, expected) ->
-    try 
-      let actual_child = SMap.find n g +> SSet.elements in
+  xs +> List.iter (fun (s, expected) ->
+    try
+      let n = Env.node_of_string s in
+      let actual_child = 
+        Map_poly.find n g 
+        +> Set_poly.elements 
+        +> List.map Env.string_of_node 
+      in
       assert_equal
         ~msg:"it should have the expected callees"
         (sort expected)
         (sort actual_child)
     with Not_found ->
-      assert_failure (spf "could not find callees for %s" n)
+      assert_failure (spf "could not find callees for %s" s)
   );
   (* todo? assert all the nodes are there *)
   ()
@@ -278,10 +283,10 @@ function bar() { foo(); }
 " in
       (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
-      let xs = SMap.find "bar" g +> SSet.elements in
+      let xs = Map_poly.find (Env.Function "bar") g +> Set_poly.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
-        ["foo"]
+        [Env.Function "foo"]
         xs;
 
       let file = "
@@ -362,7 +367,7 @@ class B extends A {
      * do $this->foo() even if foo is a static method. PHP does not
      * impose the X::foo() syntax, which IMHO is just wrong.
      *)
-    "static method call and $this" >:: (fun () ->
+    "XXX static method call and $this" >:: (fun () ->
       let file = "
 class A {
   static function a() { }

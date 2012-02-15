@@ -67,7 +67,7 @@ let _checkpoint_heap = ref
 
 (* for callgraph generation *)
 let extract_paths = ref true
-let (graph: Env_interpreter_php.callgraph ref) = ref SMap.empty
+let (graph: Env_interpreter_php.callgraph ref) = ref Map_poly.empty
 
 (* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
@@ -153,9 +153,12 @@ module Taint = Tainting_fake_php.Taint
 (*****************************************************************************)
 
 let rec program env heap program =
-  path := ["__TOP__" ^ !(env.file)];
   if !extract_paths
-  then List.iter (fake_root env heap) program;
+  then begin 
+    path := [Env.FakeRoot];
+    List.iter (fake_root env heap) program;
+  end;
+  path := [Env.File !(env.file)];
   let heap = stmtl env heap (exclude_toplevel_defs program) in
   heap
 
@@ -381,7 +384,7 @@ and expr_ env heap x =
      (* pad: other? *)
       with (LostControl | UnknownFunction _) as exn  ->
         if !strict then raise exn;
-        save_path env s;
+        save_path env (Env.node_of_string s);
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in
         heap, res
@@ -670,7 +673,9 @@ and call env heap v el =
 
 and call_fun f env heap el =
   if !tracing 
-  then Common.pr (Common.spf "%s->%s" (List.hd !path) (unw f.f_name));
+  then Common.pr 
+       (Common.spf "%s->%s" (Env.string_of_node (List.hd !path)) 
+           (unw f.f_name));
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
     List.fold_left (fun acc x -> Taint.GetTaint.value heap x = None && acc)
@@ -678,7 +683,8 @@ and call_fun f env heap el =
   in
   let n = try SMap.find (unw f.f_name) env.stack with Not_found -> 0 in
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
-  save_path env (unw f.f_name);
+  (* pad: ugly, call_fun should also accept method_def *)
+  save_path env (Env.node_of_string (unw f.f_name));
   (* stop when recurse in same function twice or when depth stack > 6 *)
   if n >= 2 || List.length !path >= 6 && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
@@ -691,7 +697,7 @@ and call_fun f env heap el =
     let heap = parameters env heap f.f_params el in
     let vars = fun_nspace f !(env.vars) in
     let env = { env with vars = ref vars } in
-    path := unw f.f_name :: !path;
+    path := (Env.node_of_string (unw f.f_name)) :: !path;
     let heap = stmtl env heap f.f_body in
     let heap, _, r = Var.get env heap "*return*" in
     let heap, r = Ptr.get heap r in
@@ -887,7 +893,12 @@ and class_var env static (heap, m) (s, e) =
 and method_def env cname parent self this (heap, acc) m =
   let fdef = {
     f_ref = false;
-    f_name = w (unw cname ^ "::" ^ unw m.m_name);
+    (* pad: this is ugly, but right now call_fun accepts only
+     * func_def, not method_def, so have to do that.
+     * There is a (ugly) corresponding call to node_of_string in
+     * call_fun().
+     *)
+    f_name = w (Env.string_of_node (Env.Method (unw cname, unw m.m_name)));
     f_params = m.m_params;
     f_return_type = m.m_return_type;
     f_body = m.m_body;
