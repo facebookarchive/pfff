@@ -231,7 +231,14 @@ let juju_db_of_files xs =
       | ConstantDef c ->
           db.constants_juju :=
             SMap.add (A.unwrap c.cst_name) (serial c) !(db.constants_juju)
-      | _ -> ()
+
+      | (Global _|StaticVars _
+        |Try (_, _, _)|Throw _
+        |Continue _|Break _|Return _
+        |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
+        |Switch (_, _)|If (_, _, _)
+        |Block _|Expr _
+        ) -> ()
     ) ast
   with e -> 
     Printf.printf "ERROR %s\n" (Marshal.to_string e [])

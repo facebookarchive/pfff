@@ -27,6 +27,9 @@ module HC = Highlight_code
 
 (* Light database building for PHP code (mainly used by the codemap
  * semantic code visualizer).
+ * 
+ * todo? get rid of database_php.ml too? use prolog instead as the starting
+ * point?
  *)
 
 (*****************************************************************************)

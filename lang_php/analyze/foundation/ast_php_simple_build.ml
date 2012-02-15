@@ -36,6 +36,7 @@ module PI = Parse_info
 type env = unit
 
 exception ObsoleteConstruct
+exception TodoConstruct of string
 
 (*****************************************************************************)
 (* Helpers *)
@@ -145,7 +146,7 @@ and stmt env st acc =
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", tok), lp)) :: acc
   | Declare _ ->
-      failwith "Declare"
+      raise (TodoConstruct "Declare")
   | TypedDeclaration _ ->
       (* this is not yet used in our codebase *)
       raise Common.Impossible
@@ -221,11 +222,11 @@ and expr env = function
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
   | AssignNew _ ->
-      failwith "expr AssignNew"
+      raise (TodoConstruct "expr AssignNew")
   | Cast ((c, _), e) ->
       A.Cast (c, expr env e)
   | CastUnset _ ->
-      failwith "expr CastUnset"
+      raise (TodoConstruct "expr CastUnset")
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
       let cn = class_name_reference env cn in
@@ -341,7 +342,8 @@ and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
    | ClassNameRefDynamic _ ->
-       failwith "TODO ClassNameRefDynamic" (* of lvalue * obj_prop_access list *)
+       (* of lvalue * obj_prop_access list *)
+       raise (TodoConstruct "TODO ClassNameRefDynamic")
 
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
@@ -393,7 +395,8 @@ and lvalue env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar _ -> failwith "expr StaticObjCallVar"
+  | StaticObjCallVar _ -> 
+      raise (TodoConstruct "expr StaticObjCallVar")
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
   | ObjAccess (lv, oa) ->
@@ -428,10 +431,12 @@ and obj_dim env obj = function
       let e = opt expr env e in
       let x = obj_dim env obj x in
       A.Array_get (x, e)
-  | OBraceAccess _ -> failwith "TODO brace access"(*  of obj_dim * expr brace *)
+  | OBraceAccess _ -> 
+      raise (TodoConstruct "TODO brace access")(*  of obj_dim * expr brace *)
 
 and indirect env = function
-  | Dollar _ -> failwith "expr Dollar" (* of tok *)
+  | Dollar _ -> 
+      raise (TodoConstruct "expr Dollar") (* of tok *)
 
 and argument env = function
   | Arg e -> expr env e
@@ -682,8 +687,10 @@ and assignOp env = function
 
 and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
-  | GlobalDollar _ -> failwith "TODO GlobalDollar" (*of tok * r_variable *)
-  | GlobalDollarExpr _ -> failwith "TODO GlobalDollarExpr" (* of tok * expr brace *)
+  | GlobalDollar _ -> 
+      raise (TodoConstruct "TODO GlobalDollar") (*of tok * r_variable *)
+  | GlobalDollarExpr _ -> 
+      raise (TodoConstruct "TODO GlobalDollarExpr") (* of tok * expr brace *)
 
 (*****************************************************************************)
 (* For cmf *)

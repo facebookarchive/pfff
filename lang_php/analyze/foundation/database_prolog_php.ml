@@ -46,6 +46,7 @@ open Env_interpreter_php
  *    previously pathup/pathdown)
  * 
  * todo:
+ *  - get rid of berkeley db prerequiste
  *  - precise datagraph
  *  - types, refs
  *  - ??
@@ -356,7 +357,7 @@ let add_defs_and_uses id kind ast pr db =
 (*****************************************************************************)
 
 (* todo? could avoid going through database_php.ml and parse directly? *)
-let gen_prolog_db ?(show_progress=true) db file =
+let gen_prolog_db2 ?(show_progress=true) db file =
   Common.with_open_outfile file (fun (pr, _chan) ->
    let pr s = pr (s ^ "\n") in
    pr ("%% -*- prolog -*-");
@@ -413,13 +414,16 @@ let gen_prolog_db ?(show_progress=true) db file =
      );
    );
   )
+let gen_prolog_db ?show_progress a b = 
+  Common.profile_code "Prolog_php.gen" (fun () -> 
+    gen_prolog_db2 ?show_progress a b)
 
 (* todo: 
  * - could also improve precision of use/4 
  * - detect higher order functions so that function call
  *   through generic higher order functions is present in callgraph
  *)
-let append_callgraph_to_prolog_db ?(show_progress=true) db file =
+let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
 
   let h_oldcallgraph = Hashtbl.create 101 in
   file +> Common.cat +> List.iter (fun s ->
@@ -440,7 +444,11 @@ let append_callgraph_to_prolog_db ?(show_progress=true) db file =
       +> Common_extra.with_progress_list_metter ~show_progress (fun k xs ->
       xs +> List.iter (fun (file) ->
         let ast = 
-          Ast_php_simple_build.program (Parse_php.parse_program file) in
+          try 
+            Ast_php_simple_build.program (Parse_php.parse_program file) 
+          with Ast_php_simple_build.TodoConstruct s ->
+            []
+        in
         let env = 
           Env_interpreter_php.empty_env db file in
         let heap = 
@@ -485,6 +493,9 @@ let append_callgraph_to_prolog_db ?(show_progress=true) db file =
         )
       )
     )
+let append_callgraph_to_prolog_db ?show_progress a b = 
+  Common.profile_code "Prolog_php.callgraph" (fun () -> 
+    append_callgraph_to_prolog_db2 ?show_progress a b)
   
 
 

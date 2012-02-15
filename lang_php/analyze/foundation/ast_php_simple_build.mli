@@ -1,5 +1,6 @@
 
 exception ObsoleteConstruct
+exception TodoConstruct of string
 
 val program: Ast_php.program -> Ast_php_simple.program
 
