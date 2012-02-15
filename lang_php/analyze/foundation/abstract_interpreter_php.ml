@@ -80,6 +80,7 @@ let tracing = ref false
 (* could maybe factorize in Unknown of Database_code.entity_kind *)
 exception UnknownFunction of string
 exception UnknownConstant of string
+exception UnknownClass of string
 exception UnknownMethod of string * string * string list
 exception LostControl
 
@@ -453,11 +454,13 @@ and expr_ env heap x =
        * them at the Call (Id ...) and New (Id ...) cases in
        * this file above.
        *)
-      let def = 
-        try env.db.constants s
-        with Not_found -> raise (UnknownConstant s)   
-      in
-      expr env heap def.cst_body
+       (try 
+           let def = env.db.constants s in
+           expr env heap def.cst_body    
+       with Not_found -> 
+         if !strict then raise (UnknownConstant s);
+         heap, Vany
+       )
 
   | Infix _ | Postfix _ ->
       if !strict then failwith "Infix/Postfix";
@@ -957,14 +960,18 @@ and lazy_class env heap c =
   else force_class env heap c
 
 and force_class env heap c =
-  let c = env.db.classes c in
+  try 
+    let c = env.db.classes c in
 
-  let heap, null = Ptr.new_ heap in
-  (* pad: ??? there is an overriding set_global below, so why creates this? *)
-  Var.set_global env (unw c.c_name) null;
-  let heap, cd = class_def env heap c in
-  Var.set_global env (unw c.c_name) cd;
-  heap
+    let heap, null = Ptr.new_ heap in
+    (* pad: ??? there is an overriding set_global below, so why creates this? *)
+    Var.set_global env (unw c.c_name) null;
+    let heap, cd = class_def env heap c in
+    Var.set_global env (unw c.c_name) cd;
+    heap
+  with Not_found ->
+    if !strict then raise (UnknownClass c);
+    heap
 
 and get_class env heap c =
   match c with

@@ -1,6 +1,7 @@
 
 exception UnknownFunction of string
 exception UnknownConstant of string
+exception UnknownClass of string
 exception UnknownMethod of string * string * string list
 exception LostControl
 
