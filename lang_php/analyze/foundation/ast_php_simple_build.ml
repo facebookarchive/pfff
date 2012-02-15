@@ -145,13 +145,10 @@ and stmt env st acc =
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", tok), lp)) :: acc
-  | Declare _ ->
-      raise (TodoConstruct "Declare")
-  | TypedDeclaration _ ->
-      (* this is not yet used in our codebase *)
-      raise Common.Impossible
-  | IfColon _ ->
-      raise ObsoleteConstruct
+  | Declare _ -> raise (TodoConstruct "Declare")
+   (* this is not yet used in our codebase *)
+  | TypedDeclaration _ -> raise Common.Impossible
+  | IfColon _ -> raise ObsoleteConstruct
 
 
 and use_filename env = function
@@ -341,9 +338,7 @@ and class_name_or_selfparent env = function
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
-   | ClassNameRefDynamic _ ->
-       (* of lvalue * obj_prop_access list *)
-       raise (TodoConstruct "TODO ClassNameRefDynamic")
+   | ClassNameRefDynamic _ -> raise (TodoConstruct "ClassNameRefDynamic")
 
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
@@ -395,8 +390,7 @@ and lvalue env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar _ -> 
-      raise (TodoConstruct "expr StaticObjCallVar")
+  | StaticObjCallVar _ -> raise (TodoConstruct "StaticObjCallVar")
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
   | ObjAccess (lv, oa) ->
@@ -431,12 +425,10 @@ and obj_dim env obj = function
       let e = opt expr env e in
       let x = obj_dim env obj x in
       A.Array_get (x, e)
-  | OBraceAccess _ -> 
-      raise (TodoConstruct "TODO brace access")(*  of obj_dim * expr brace *)
+  | OBraceAccess _ -> raise (TodoConstruct "brace access")
 
 and indirect env = function
-  | Dollar _ -> 
-      raise (TodoConstruct "expr Dollar") (* of tok *)
+  | Dollar _ -> raise (TodoConstruct "expr Dollar")
 
 and argument env = function
   | Arg e -> expr env e
@@ -539,9 +531,10 @@ and class_body env st acc =
   | Method md ->
       method_def env md :: acc
   | XhpDecl _ ->
-      (* TODO failwith "TODO xhp decl" or we don't care and it's ok? *)
+      (* TODO? or we don't care and it's ok? *)
       acc
   | UseTrait _ ->
+      (* TODO!! *)
       acc
   | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) -> acc
 
@@ -687,10 +680,8 @@ and assignOp env = function
 
 and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
-  | GlobalDollar _ -> 
-      raise (TodoConstruct "TODO GlobalDollar") (*of tok * r_variable *)
-  | GlobalDollarExpr _ -> 
-      raise (TodoConstruct "TODO GlobalDollarExpr") (* of tok * expr brace *)
+  | GlobalDollar _ -> raise (TodoConstruct "GlobalDollar")
+  | GlobalDollarExpr _ -> raise (TodoConstruct "GlobalDollarExpr")
 
 (*****************************************************************************)
 (* For cmf *)
