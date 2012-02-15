@@ -6035,17 +6035,15 @@ let add_in_scope_h x (k,v) =
 (* let ansi_terminal = ref true *)
 
 let (_execute_and_show_progress_func:
-   (show_progress:bool ->
+   (show:bool ->
     int (* length *) -> ((unit -> unit) -> 'a) -> 'a) ref)
  = ref
-  (fun ~show_progress a b ->
+  (fun ~show a b ->
     failwith "no execute  yet, have you included common_extra.cmo?"
   )
 
-
-
-let execute_and_show_progress ?(show_progress=true) len f =
-    !_execute_and_show_progress_func ~show_progress len f
+let execute_and_show_progress ?(show=true) len f =
+    !_execute_and_show_progress_func ~show len f
 
 
 (* now in common_extra.ml:

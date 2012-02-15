@@ -382,10 +382,9 @@ let gen_prolog_db2 ?(show_progress=true) db file =
      | `BAD -> pr2 (spf "problem('%s', parse_error)." file)
      );
    );
-
-   db.Db.defs.Db.id_kind#tolist
-   +> Common_extra.with_progress_list_metter ~show_progress (fun k xs ->
-      xs +> List.iter (fun (id, kind) ->
+   let ids = db.Db.defs.Db.id_kind#tolist in
+   ids +> Common_extra.progress ~show:show_progress (fun k ->
+   ids +> List.iter (fun (id, kind) ->
         k();
         pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
         pr (spf "at(%s, '%s', %d)." 
@@ -401,8 +400,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
         let ast = Db.ast_of_id id db in
         add_defs_and_uses id kind ast pr db;
 
-      );
-   );
+   ));
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
      let file1 = Db.absolute_to_readable_filename file1 db in
      xs +> List.iter (fun file2 ->
@@ -440,23 +438,22 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
   Common.save_excursion Abstract_interpreter_php.strict false (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
 
-    all_files
-      +> Common_extra.with_progress_list_metter ~show_progress (fun k xs ->
-      xs +> List.iter (fun (file) ->
-        let ast = 
-          try 
-            Ast_php_simple_build.program (Parse_php.parse_program file) 
-          with Ast_php_simple_build.TodoConstruct s ->
-            []
-        in
-        let env = 
-          Env_interpreter_php.empty_env db file in
-        let heap = 
-          Env_interpreter_php.empty_heap in
-        let _heap = Abstract_interpreter_php.program env heap ast in
-        ()
-      )
-    )
+    all_files +> Common_extra.progress ~show:show_progress (fun k ->
+    all_files +> List.iter (fun file ->
+      k ();
+      let ast = 
+        try 
+          Ast_php_simple_build.program (Parse_php.parse_program file) 
+        with Ast_php_simple_build.TodoConstruct s ->
+          []
+      in
+      let env = 
+        Env_interpreter_php.empty_env db file in
+      let heap = 
+        Env_interpreter_php.empty_heap in
+      let _heap = Abstract_interpreter_php.program env heap ast in
+      ()
+    ))
   ));
 
   (* look previous information, to avoid introduce duplication

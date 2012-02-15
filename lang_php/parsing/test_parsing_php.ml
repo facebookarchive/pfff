@@ -22,10 +22,7 @@ let test_tokens_php file =
 (*e: test_tokens_php *)
 (*s: test_parse_php *)
 let test_parse_php xs  =
-  let ext = ".*\\.\\(php\\|phpt\\)$" in
-
-  (* could now use Lib_parsing_php.find_php_files_of_dir_or_files *)
-  let fullxs = Common.files_of_dir_or_files_no_vcs_post_filter ext xs in
+  let fullxs = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
   let stat_list = ref [] in
   (*s: initialize -parse_php regression testing hash *)
@@ -34,15 +31,15 @@ let test_parse_php xs  =
 
   Common.check_stack_nbfiles (List.length fullxs);
 
+  fullxs +> Common_extra.with_progress_list_metter (fun k -> 
   fullxs +> List.iter (fun file -> 
-    pr2 ("PARSING: " ^ file);
+     k ();
 
     let (xs, stat) = 
-    Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
-      Parse_php.parse file 
-    )
+      Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+        Parse_php.parse file 
+      )
     in
-
     Common.push2 stat stat_list;
     (*s: add stat for regression testing in hash *)
         let s = sprintf "bad = %d" stat.Parse_info.bad in
@@ -51,7 +48,7 @@ let test_parse_php xs  =
         else Hashtbl.add newscore file (Common.Pb s)
         ;
     (*e: add stat for regression testing in hash *)
-  );
+  ));
 
   Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
@@ -68,7 +65,7 @@ let test_parse_php xs  =
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
       Common.regression_testing newscore 
         (Filename.concat score_path
-         ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+         ("score_parsing__" ^str ^ "php.marshalled"))
     );
     ()
   (*e: print regression testing results *)

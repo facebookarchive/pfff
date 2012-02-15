@@ -2129,10 +2129,10 @@ val add_in_scope_h : ('a, 'b) scoped_h_env ref -> 'a * 'b -> unit
 (* don't forget to call Common_extra.set_link () *)
 
 val _execute_and_show_progress_func :
-  (show_progress:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit)
+  (show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit)
   ref 
 val execute_and_show_progress : 
- ?show_progress:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
+ ?show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
 
 (*e: common.mli misc *)
 
