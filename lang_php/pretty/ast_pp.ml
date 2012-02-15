@@ -35,14 +35,17 @@
 (* The AST related types *)
 (*****************************************************************************)
 
+type esthetic =
+  | Comment of string
+  | Newline
+
 type program = stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 and stmt =
-  | Comment of string
-  | Newline
+  | StmtEsthet of esthetic
 
   | Expr of expr
 
@@ -78,8 +81,7 @@ and stmt =
   | Global of expr list
 
   and case =
-  | Ccomment of string
-  | Cnewline
+  | CaseEsthet of esthetic
 
   | Case of expr * stmt list
   | Default of stmt list
@@ -199,8 +201,7 @@ and class_def = {
 }
 
   and class_element =
-    | CEcomment of string
-    | CEnewline
+    | CEEsthet of esthetic
 
     | CEconst of (string * expr) list
     | CEdef of class_vars_def

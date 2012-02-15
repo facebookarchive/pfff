@@ -60,7 +60,7 @@ module T = Parser_php
  * The environment is a ref that gets smaller as we build the ast_pp
  * from bottom to top (hence the use of fold_right in many places below).
  *)
-type env = (int * [`Comment of string | `Newline ]) list ref
+type env = (int * Ast_pp.esthetic) list ref
 
 exception ObsoleteConstruct of string
 exception TodoConstruct of string
@@ -185,23 +185,16 @@ let rec add_comments convert env acc line =
   comments @ acc
 
 
-let add_stmt_comments = add_comments
-    (function `Newline -> A.Newline | `Comment s -> A.Comment s)
-
-let add_ce_comments = add_comments
-    (function `Newline -> A.CEnewline | `Comment s -> A.CEcomment s)
-
-let add_case_comments = add_comments
-    (function `Newline -> A.Cnewline | `Comment s -> A.Ccomment s)
-
-
+let add_stmt_comments = add_comments (fun x -> A.StmtEsthet x)
+let add_ce_comments = add_comments (fun x -> A.CEEsthet x)
+let add_case_comments = add_comments (fun x -> A.CaseEsthet x)
 
 let make_env l =
   let l = List.map (fun (x, y) ->
     let tag =
       match y with
-      | "\n" -> `Newline
-      | x -> `Comment x
+      | "\n" -> A.Newline
+      | x -> A.Comment x
     in
     x, tag) l in
   let l = List.sort (fun (x, _) (y, _) -> y - x) l in
@@ -255,13 +248,13 @@ let env_of_tokens_for_spatch toks =
     match xs with
     | [] -> []
     | (T.T_COMMENT i1 | T.T_DOC_COMMENT i1 | T.T_OPEN_TAG i1)::xs ->
-        (l i1, `Comment (str i1))::aux xs ~start:false
+        (l i1, A.Comment (str i1))::aux xs ~start:false
     (* two consecutive newlines, this is an esthetic newline *)
     | T.TNewline i1::T.TNewline i2::xs ->
-        (l i1, `Newline)::aux (T.TNewline i2::xs) ~start:false
+        (l i1, A.Newline)::aux (T.TNewline i2::xs) ~start:false
 
     | T.TNewline i1::xs when start ->
-        (l i1, `Newline)::aux xs ~start:false
+        (l i1, A.Newline)::aux xs ~start:false
 
     | _::xs -> aux xs ~start:false
   in

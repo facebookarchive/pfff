@@ -84,7 +84,9 @@ function bar() { }
             assert_failure "it should chunk w/ the open tag and ending newline"
         );
         (match ast1 with
-        | [Ast_pp.Comment "<?php"; Ast_pp.Newline; Ast_pp.FuncDef _] -> ()
+        | [Ast_pp.StmtEsthet Ast_pp.Comment "<?php"; 
+           Ast_pp.StmtEsthet Ast_pp.Newline; 
+           Ast_pp.FuncDef _] -> ()
         | _ ->
             assert_failure (spf "wrong ast1: %s " (Common.dump ast1))
         );
@@ -99,7 +101,7 @@ function bar() { }
          * newline.
          *)
         (match ast2 with
-        | [Ast_pp.Newline; Ast_pp.FuncDef _] -> ()
+        | [Ast_pp.StmtEsthet Ast_pp.Newline; Ast_pp.FuncDef _] -> ()
         | _ ->
             assert_failure (spf "wrong ast2: %s " (Common.dump ast2))
         )
