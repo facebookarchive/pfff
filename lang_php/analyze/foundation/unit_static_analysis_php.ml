@@ -11,7 +11,7 @@ module Interp = Abstract_interpreter_php
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers *)
+(* Run analysis *)
 (*****************************************************************************)
 
 let prepare content =
@@ -21,14 +21,13 @@ let prepare content =
     Env.code_database_of_juju_db  (Env.juju_db_of_files [tmp_file]) in
   let env = 
     Env_interpreter_php.empty_env db tmp_file in
-  let heap = 
-    Env_interpreter_php.empty_heap in
   let ast = 
     Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
-  env, heap, ast
+  env, ast
 
 let heap_of_program_at_checkpoint content =
-  let (env, heap, ast) = prepare content in
+  let (env, ast) = prepare content in
+  let heap = Env_interpreter_php.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     let _heap = Abstract_interpreter_php.program env heap ast in
@@ -38,13 +37,18 @@ let heap_of_program_at_checkpoint content =
   ))
 
 let callgraph_generation content =
-  let (env, heap, ast) = prepare content in
+  let (env, ast) = prepare content in
+  let heap = Env_interpreter_php.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
     let _heap = Abstract_interpreter_php.program env heap ast in
     !(Abstract_interpreter_php.graph)
   ))
+
+(*****************************************************************************)
+(* Examine value *)
+(*****************************************************************************)
 
 let rec chain_ptrs heap v =
   match v with
@@ -64,6 +68,10 @@ let value_of_var s vars heap =
 
 let info heap v = 
   Env.string_of_value heap (List.hd v)
+
+(*****************************************************************************)
+(* Assert helpers *)
+(*****************************************************************************)
 
 let assert_value_at_checkpoint var file fpattern =
   let (heap, vars) = heap_of_program_at_checkpoint file in
@@ -368,7 +376,7 @@ class B extends A {
      * do $this->foo() even if foo is a static method. PHP does not
      * impose the X::foo() syntax, which IMHO is just wrong.
      *)
-    "XXX static method call and $this" >:: (fun () ->
+    "static method call and $this" >:: (fun () ->
       let file = "
 class A {
   static function a() { }
