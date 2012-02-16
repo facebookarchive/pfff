@@ -2,9 +2,14 @@ Install macports http://www.macports.org/
 
 Then
  $ sudo port install ocaml
+ $ sudo port install db46
  $ sudo port install pcre
+
+For codemap:
  $ sudo port install cairo
  $ sudo port install gtk2
+
+For codequery:
  $ sudo port install swi-prolog
 
 => can configure and build all pfff tools :)

@@ -25,6 +25,13 @@ module HC = Highlight_code
 (* Prelude *)
 (*****************************************************************************)
 
+(* Light database building for PHP code (mainly used by the codemap
+ * semantic code visualizer).
+ * 
+ * todo? get rid of database_php.ml too? use prolog instead as the starting
+ * point?
+ *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -204,10 +211,10 @@ let database_code_from_php_database ?(verbose=false) db =
   (* phase 1: collecting entities and basic information *)
   if verbose then pr2 "phase 1: collecting entities";
 
-  let entities = 
-    db.DbPHP.defs.DbPHP.id_kind#tolist 
-    +> Common_extra.with_progress_list_metter ~show_progress:verbose (fun k xs->
-     xs +> Common.map_filter (fun (id, id_kind)->
+  let entities = db.DbPHP.defs.DbPHP.id_kind#tolist in
+  let entities =
+    entities +> Common_extra.progress ~show:verbose (fun k ->
+     Common.map_filter (fun (id, id_kind) ->
       k();
 
       (* coupling: with is_id_with_entity above *)

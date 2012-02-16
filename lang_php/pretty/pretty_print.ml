@@ -235,16 +235,16 @@ and stmt_block_nl env stl =
 
 and stmt env st =
   match st with
-  | Newline -> Pp.newline env
+  | StmtEsthet Newline -> Pp.newline env
   (* pad: ?? *)
-  | Comment "" -> ()
+  | StmtEsthet (Comment "") -> ()
   | _ ->
       Pp.spaces env;
       stmt_ env st
 
 and stmt_ env = function
-  | Newline -> assert false
-  | Comment s ->
+  | StmtEsthet Newline -> raise Common.Impossible
+  | StmtEsthet (Comment s) ->
       Pp.print env s;
       Pp.newline env
   | Global el ->
@@ -404,8 +404,8 @@ and assignOp env = function
       Pp.print env "=";
 
 and case env = function
-  | Cnewline -> Pp.newline env
-  | Ccomment s -> Pp.print env s; Pp.newline env
+  | CaseEsthet (Newline) -> Pp.newline env
+  | CaseEsthet (Comment s) -> Pp.print env s; Pp.newline env
   | Case (e, stl) ->
       Pp.spaces env;
       Pp.print env "case ";
@@ -459,7 +459,7 @@ and stmt_simple env = function
   | Throw e ->
       Pp.print env "throw ";
       expr env e
-  | _ -> assert false
+  | _ -> raise Common.Impossible
 
 and obj_get_flat e env =
   match e with
@@ -751,10 +751,10 @@ and class_def env c =
   Pp.newline env
 
 and class_element env = function
-  | CEnewline -> Pp.newline env
+  | CEEsthet (Newline) -> Pp.newline env
   (* pad: ?? *)
-  | CEcomment "" -> ()
-  | CEcomment s ->
+  | CEEsthet (Comment "") -> ()
+  | CEEsthet (Comment s) ->
       Pp.spaces env;
       Pp.print env s;
       Pp.newline env

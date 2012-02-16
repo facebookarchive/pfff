@@ -15,6 +15,8 @@
 
 open Common
 
+module Ast = Ast_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -82,6 +84,10 @@ type annotation =
 
   (* phpunit *)
   | DataProvider of method_callback
+
+  (* dependency injection *)
+  | Inject
+  | Generics of string
 
   | Other of string
 
@@ -174,6 +180,10 @@ let extract_annotations str =
         let name = Common.matched1 str in
         [Author name]
 
+    | _ when str =~ "^<\\([a-zA-Z0-9_]+\\)>$" ->
+        let name = Common.matched1 str in
+        [Generics name]
+
     | _ when 
           str =~ "@dataProvider[ ]+\\([a-zA-Z_0-9]+\\)::\\([a-zA-Z_0-9]+\\)" ->
         let (aclass, amethod) = Common.matched2 str in
@@ -190,6 +200,8 @@ let extract_annotations str =
         | "@called-outside-tfb" -> CalledOutsideTfb
         | "@called-dynamically" -> CalledDynamically
         | "@not-dead-code" -> NotDeadCode
+
+        | "@Inject" -> Inject
         | s -> Other s
         )
   )
@@ -247,6 +259,10 @@ let rec vof_annotation =
   | CalledOutsideTfb -> Ocaml.VSum (("CalledOutsideTfb", []))
   | CalledDynamically -> Ocaml.VSum (("CalledDynamically", []))
   | NotDeadCode -> Ocaml.VSum (("NotDeadCode", []))
+  | Inject -> Ocaml.VSum (("Inject", []))
+  | Generics v1 ->
+      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Generics", [ v1 ]))
+
   | Have_THIS_FUNCTION_EXPIRES_ON ->
       Ocaml.VSum (("Have_THIS_FUNCTION_EXPIRES_ON", []))
   | DataProvider v1 ->
@@ -304,3 +320,19 @@ let annotations_of_program_with_comments2 asts_and_tokens =
 let annotations_of_program_with_comments a = 
   Common.profile_code "Annotation_php.annotations" (fun () ->
     annotations_of_program_with_comments2 a)
+
+let annotations_before tok all_toks =
+  let comment_opt = Comment_php.comment_before tok all_toks in
+  match comment_opt with
+  | Some ii ->
+      let s = Ast.str_of_info ii in
+      extract_annotations s
+  | None -> []
+
+let annotations_after tok all_toks =
+  let comment_opt = Comment_php.comment_after tok all_toks in
+  match comment_opt with
+  | Some ii ->
+      let s = Ast.str_of_info ii in
+      extract_annotations s
+  | None -> []

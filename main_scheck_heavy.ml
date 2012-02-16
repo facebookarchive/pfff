@@ -59,6 +59,7 @@ let pr2_dbg s =
 
 (* mostly a copy paste of main_scheck.ml but now use metapath *)
 let main_action xs =
+  Common.logger Config.logger "scheck_heavy";
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   let errors = ref [] in

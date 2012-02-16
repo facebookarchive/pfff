@@ -606,12 +606,6 @@ uninstall:
 version:
 	@echo $(VERSION)
 
-
-update:
-	make opt
-	cp codemap.opt ~/bin
-	cp scheck.opt ~/bin
-
 ##############################################################################
 # Package rules
 ##############################################################################
@@ -661,12 +655,16 @@ layers:
           layer_age.json
 
 visual:
-	./codemap -profile -ss 2 \
+	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -filter ocaml .
+visual2:
+	./codemap -no_legend -profile -ss 2 \
+	   -with_info DB_LIGHT.marshall -with_layers . .
 
 tests:
 	./pfff_test -verbose all
-test: tests
+test: 
+	make tests
 
 push:
 	git push origin master
@@ -694,16 +692,6 @@ archi:
 	ps2pdf Fig_graph_ml.ps
 	rm -f Fig_graph_ml.ps
 
-
-visual_bis:
-	./codemap -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . -pfff_filter .
-visualopt:
-	./codemap.opt -profile -ss 2 \
-	   -with_info DB_LIGHT .
-visual_test: codemap
-	./codemap -verbose -profile -ss 1 -ft 1. \
-          -with_info DB_LIGHT -filter 'pad:ml' commons/
 visualhead:
 	./codemap -ss 1 -ft 0.5 -commitid HEAD
 

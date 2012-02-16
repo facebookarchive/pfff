@@ -79,22 +79,16 @@ type transformation = {
 let apply_transfo transfo xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-
   let pbs = ref [] in
   (* xhp and transformation was not mixing well, but now it's better
    * thanks to builtin xhp support
    *)
-
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
 
-  let nbfiles = List.length files in
-
-  Common.execute_and_show_progress ~show_progress:true nbfiles (fun k ->
-  files +> List.iter (fun file ->
+  files +> Common_extra.progress (fun k -> List.iter (fun file ->
     let file = Common.relative_to_absolute file in
     pr2 (spf "processing: %s" file);
-
     k();
 
     let worth_trying = 
@@ -143,6 +137,7 @@ let apply_transfo transfo xs =
 (*****************************************************************************)
 
 let main_action xs =
+  Common.logger Config.logger "spatch";
 
   let spatch_file = 
     match !spatch_file, !sed_string with
@@ -173,10 +168,9 @@ let main_action xs =
   let pattern = Spatch_php.parse spatch_file in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  let nbfiles = List.length files in
 
-  Common.execute_and_show_progress ~show_progress:!verbose nbfiles (fun k ->
-  files +> List.iter (fun file ->
+  files +> Common_extra.progress ~show:!verbose (fun k -> 
+   List.iter (fun file->
     k();
     try (
     let resopt = Spatch_php.spatch pattern file in

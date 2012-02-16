@@ -1,7 +1,7 @@
 (* 
  * Yoann Padioleau 
  *
- * Copyright (C) 2009-2010 Facebook
+ * Copyright (C) 2009-2012 Facebook
  * 
  * Most of the code in this file was inspired by code by Gazagnaire.
  * Here is the original copyright:
@@ -189,8 +189,8 @@ module J = Json_type
 
 (* OCaml type definitions *)
 type t =
-  | Unit | Bool | Float | Char | String
-  | Int
+  | Unit 
+  | Bool | Float | Char | String | Int
 
   | Tuple of t list
   | Dict of (string * [`RW|`RO] * t) list
@@ -220,8 +220,9 @@ type t =
 
 (* OCaml values (a restricted form of expressions) *)
 type v = 
-  | VUnit | VBool of bool | VFloat of float | VChar of char | VString of string
-  | VInt of int (* was int64 *)
+  | VUnit 
+  | VBool of bool | VFloat of float | VInt of int (* was int64 *)
+  | VChar of char | VString of string
 
   | VTuple of v list
   | VDict of (string * v) list

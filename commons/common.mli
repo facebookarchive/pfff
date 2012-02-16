@@ -208,6 +208,9 @@ val debugon : unit -> unit
 val debugoff : unit -> unit
 val debug : (unit -> unit) -> unit
 
+(* distributed logging posting log to OPA server *)
+val logger: string option -> string -> unit
+
 (* see flag: val debugger : bool ref *)
 (*x: common.mli basic features *)
 (*****************************************************************************)
@@ -1127,6 +1130,7 @@ val nblines_eff : filename -> int
 (* better when really large file, but fork is slow so don't call it often *)
 val nblines_with_wc : filename -> int
 val unix_diff: filename -> filename -> string list
+val unix_diff_strings: string -> string -> string list
 
 val words_of_string_with_newlines: string -> string list
 
@@ -1184,8 +1188,10 @@ val nblines_file : filename -> int
 val filesize : filename -> int
 val filemtime : filename -> float
 val lfile_exists : filename -> bool
+
 val is_directory : path -> bool
 val is_file      : path -> bool
+val is_symlink: filename -> bool
 val is_executable : filename -> bool
 
 val unix_lstat_eff: filename -> Unix.stats
@@ -1206,6 +1212,8 @@ val readdir_to_dir_list : string -> dirname list
 val readdir_to_file_list : string -> filename list
 val readdir_to_link_list : string -> string list
 val readdir_to_dir_size_list : string -> (string * int) list
+
+val unixname: unit -> string
 
 val glob : string -> filename list
 val files_of_dir_or_files : 
@@ -2121,10 +2129,10 @@ val add_in_scope_h : ('a, 'b) scoped_h_env ref -> 'a * 'b -> unit
 (* don't forget to call Common_extra.set_link () *)
 
 val _execute_and_show_progress_func :
-  (show_progress:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit)
+  (show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit)
   ref 
 val execute_and_show_progress : 
- ?show_progress:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
+ ?show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
 
 (*e: common.mli misc *)
 

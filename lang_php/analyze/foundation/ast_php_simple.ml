@@ -61,6 +61,9 @@ type 'a wrap = 'a * Ast_php.tok
 
 type program = stmt list
 
+(* ------------------------------------------------------------------------- *)
+(* Statement *)
+(* ------------------------------------------------------------------------- *)
 and stmt =
   | Expr of expr
 
@@ -95,16 +98,20 @@ and stmt =
     | Default of stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
+  (* todo: use wrap *)
   and catch = string  * string * stmt list
 
+(* ------------------------------------------------------------------------- *)
+(* Expression *)
+(* ------------------------------------------------------------------------- *)
 and expr =
-  (* booleans are constants and really just Int in PHP :( *)
+  (* booleans are really just Int in PHP :( *)
   | Int of string
   | Double of string
   | String of string
 
-  (* valid for entities (functions, classes, constants) and variables, so
-   * can have Id "foo" and Id "$foo". Can also contain "self/parent".
+  (* Id is valid for "entities" (functions, classes, constants) and variables.
+   * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
    *
    * todo? Introduce a Var of string wrap? can be good to differentiate
@@ -117,9 +124,10 @@ and expr =
 
   (* often transformed in Id "$this" in the analysis *)
   | This
-  (* e.g. Obj_get(Id "$o", Id "foo") when $o->foo
-   * e.g. Class_get(Id "A", Id "foo") when a::foo
-   * (can contain "self", "parent", "static")
+  (* Unified method call access.
+   * ex: $o->foo ==> Obj_get(Id "$o", Id "foo")
+   * ex: A::foo  ==> Class_get(Id "A", Id "foo")
+   * note that Id can be "self", "parent", "static".
    *)
   | Obj_get of expr * expr
   | Class_get of expr * expr
@@ -149,6 +157,7 @@ and expr =
   | CondExpr of expr * expr * expr
   | Cast of Ast_php.ptype * expr
 
+  (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
 
   and array_value =
@@ -161,6 +170,7 @@ and expr =
     | XhpExpr of expr
     | XhpXml of xml
 
+    (* todo: use some string wrap *)
     and xml = {
       xml_tag: string list;
       xml_attrs: (string * xhp_attr) list;
@@ -168,9 +178,13 @@ and expr =
     }
      and xhp_attr = expr
 
-(* pad: no uses field for lambda? because we will use ocaml closures
+(* ------------------------------------------------------------------------- *)
+(* Definitions *)
+(* ------------------------------------------------------------------------- *)
+
+(* TODO: no 'uses' field for lambda? because we will use ocaml closures
  * for representing closures :) so during abstract interpretation for
- * instance the environment will be closed. TODO really the explanation?
+ * instance the environment will be closed?
  *)
 and func_def = {
   f_ref: bool;
@@ -203,7 +217,6 @@ and class_def = {
   c_extends: string list; (* pad: ?? *)
   c_traits: string wrap list;
   c_implements: string list;
-  (* todo: use_traits: string list; *)
 
   c_constants: (string * expr) list;
   c_variables: class_var list;

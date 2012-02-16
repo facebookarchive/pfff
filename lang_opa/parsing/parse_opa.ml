@@ -72,11 +72,14 @@ let tokens2 file =
     try 
       let opa_token lexbuf = 
         (* old: Lexer_opa.token lexbuf *)
+        if !Flag.debug_lexer then Common.pr2_gen (Lexer_opa.current_mode());
         match Lexer_opa.current_mode () with
         | Lexer_opa.ST_INITIAL -> Lexer_opa.initial lexbuf
-        | Lexer_opa.ST_DOUBLE_QUOTES -> Lexer_opa.string_double_quote lexbuf
+        | Lexer_opa.ST_DOUBLE_QUOTES -> Lexer_opa.in_double_quote lexbuf
         | Lexer_opa.ST_IN_XML_TAG tag -> Lexer_opa.in_xml_tag tag lexbuf
         | Lexer_opa.ST_IN_XML_TEXT tag -> Lexer_opa.in_xml_text tag lexbuf
+        | Lexer_opa.ST_IN_CSS -> Lexer_opa.in_css lexbuf
+        | Lexer_opa.ST_IN_PARSER -> Lexer_opa.in_parser lexbuf
       in
       
       let rec tokens_aux acc = 
@@ -174,3 +177,7 @@ let parse2 filename =
 
 let parse a = 
   Common.profile_code "Parse_opa.parse" (fun () -> parse2 a)
+
+let parse_just_tokens file =
+  let toks = tokens file in
+  [], toks

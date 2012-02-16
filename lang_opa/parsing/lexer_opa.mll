@@ -13,12 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
-module Ast = Ast_opa
 module Flag = Flag_parsing_opa
-
 open Parser_opa
 
 (*****************************************************************************)
@@ -29,7 +26,7 @@ open Parser_opa
  * http://doc.opalang.org/#!/manual/The-core-language
  *
  * There are a few tricks to go around ocamllex restrictions
- * because OPA has different lexing rules depending on some "contexts"
+ * because OPA has different lexing rules depending on the "context"
  * like PHP, Perl, etc.
  *)
 
@@ -39,7 +36,7 @@ open Parser_opa
 exception Lexical of string
 
 let error s = 
-  if !Flag.error_recovery 
+  if !Flag.error_recovery
   then 
     if !Flag.verbose_lexing 
     then pr2 s
@@ -89,8 +86,8 @@ let keyword_table = Common.hash_of_list [
   "end", (fun ii -> Tend ii);
 
   "css", (fun ii -> Tcss ii);
-  "db", (fun ii -> Tdb ii); (* classic syntax *)
-  "database", (fun ii -> Tdb ii); (* js syntax *)
+  "db", (fun ii -> Tdatabase ii); (* classic syntax *)
+  "database", (fun ii -> Tdatabase ii); (* js syntax *)
   "parser", (fun ii -> Tparser ii);
 
   "external", (fun ii -> Texternal ii);
@@ -111,10 +108,12 @@ let keyword_table = Common.hash_of_list [
   "exposed",   (fun ii -> Texposed ii);
   "protected", (fun ii -> Tprotected ii);
 
+(* simplify highlighter to have this commented
   "int", (fun ii -> Tint ii);
   "float", (fun ii -> Tfloat ii);
   "string", (fun ii -> Tstring ii);
-  (* bool
+*)
+  (* bool, void
    * list, option, map, set
    * 
    * true, false
@@ -131,11 +130,13 @@ type state_mode =
    * and terminated by '}'
    *)
   | ST_INITIAL
-  (* started with ", finished with ". In most languages strings 
+
+  (* started with '"', finished with '"'. In most languages strings 
    * are a single tokens but OPA allows interpolation which means 
    * a string can contain nested OPA expressions.
    *)
   | ST_DOUBLE_QUOTES
+
   (* started with <xx when preceded by a certain token (e.g. '='),
    * finished by '>' by transiting to ST_IN_XML_TEXT, or really finished
    * by '/>'.
@@ -144,12 +145,18 @@ type state_mode =
   (* started with the '>' of an opening tag, finished when '</x>' *)
   | ST_IN_XML_TEXT of Ast_opa.tag (* the current tag *)
 
+  (* started with 'css {' and terminated by '}' *)
+  | ST_IN_CSS
+
+  (* todo:: started with '= parser' ??' *)
+  | ST_IN_PARSER
+
 let default_state = ST_INITIAL
 let _mode_stack = ref []
 (* The logic to modify _last_non_whitespace_like_token is in the 
  * caller of the lexer, that is in Parse_opa.tokens.
  * We use it for XML parsing, to disambiguate the use of '<' we need to
- * look at the token before.
+ * look at the token before (ugly).
  *)
 let _last_non_whitespace_like_token = 
   ref (None: Parser_opa.token option)
@@ -227,9 +234,12 @@ rule initial = parse
 
   | "(" { TOParen(tokinfo lexbuf) }  | ")" { TCParen(tokinfo lexbuf) }
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
-  (* todo? "{{" "}}" classic syntax *)
+  (* there was also "{{" "}}" in the classic syntax *)
   | "{" { 
-      push_mode ST_INITIAL; 
+       (match !_last_non_whitespace_like_token with
+       | Some (Tcss _) -> push_mode ST_IN_CSS; 
+       | _ -> push_mode ST_INITIAL; 
+       );
       TOBrace(tokinfo lexbuf) 
     }  
   | "}" { 
@@ -245,7 +255,7 @@ rule initial = parse
   | "->" { TArrow(tokinfo lexbuf) }
   | '_'  { TUnderscore(tokinfo lexbuf) }
 
-  | '\\'  { TAntiSlash(tokinfo lexbuf) } (* js syntax *)
+  | '\\'  { TAntiSlash(tokinfo lexbuf) } (* classic syntax *)
 
   (* operators *)
   | "+" { TPlus(tokinfo lexbuf) }  | "-" { TMinus(tokinfo lexbuf) }
@@ -270,12 +280,6 @@ rule initial = parse
 
   | "~" { TTilde(tokinfo lexbuf) }
 
-  (* Can define operators in OPA. This rule must be after other operators
-   * lexing ruke (lex pick the first longest). Also need to define /**
-   * above otherwise it would be parsed as an operator.
-   *)
-  | operator+ { TOp(tok lexbuf, tokinfo lexbuf) }
-
 
   (* We need to disambiguate the different use of '<' to know whether 
    * we are in a position where an XML construct can be started. Knowing
@@ -299,6 +303,8 @@ rule initial = parse
            | Tif _ | Tthen _ | Telse _
            | TArrow _
            | TQuestion _
+           (* can have a serie of xml at toplevel *)
+           | T_XML_CLOSE_TAG _ | T_XML_SLASH_GT _
          )
          ->
            push_mode (ST_IN_XML_TAG tag);
@@ -317,6 +323,11 @@ rule initial = parse
        T_XML_OPEN_TAG(tag, tokinfo lexbuf)
      }
 
+  (* Can define operators in OPA. This rule must be after other operators
+   * lexing ruke (lex pick the first longest). Also need to define /**
+   * above otherwise it would be parsed as an operator.
+   *)
+  | operator+ { TOp(tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -325,10 +336,27 @@ rule initial = parse
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
       match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
-      | Some f -> f info
+      | Some f -> 
+          let res = f info in
+          (match res, !_last_non_whitespace_like_token with
+          | Tparser ii, Some (TEq _) -> 
+              push_mode (ST_IN_PARSER);
+              ()
+          | _ -> ()
+          );
+          res
       | None -> TIdent (s, info)
     }
-  (* todo? 'a, 'b'  type variables? ~label ? *)
+  (* 'a, 'b'  type variables, was not mentionned in reference manual *)
+  | "'" (ident as s) {
+      TTypeVar(s, tokinfo lexbuf)
+    }
+  (* todo? ~label ? *)
+
+  (* this was not mentioned in reference manual *)
+  | "%%" space* ((letter | '_' | ['.'] | digit)+ as s) space* "%%" {
+      TExternalIdent (s, tokinfo lexbuf)
+    }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -384,7 +412,7 @@ and comment = parse
 (*****************************************************************************)
 (* String Rule *)
 (*****************************************************************************)
-and string_double_quote = parse
+and in_double_quote = parse
   | '"' { 
       pop_mode ();
       TGUIL(tokinfo lexbuf)
@@ -397,8 +425,15 @@ and string_double_quote = parse
   | '\\' ['\\' 'n' 'r' 't' '{' '}'  '\'' '"']
       { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
+  (* not documented in reference manual *)
+  | '\\' digit+
+      { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
+
   (* noteopti: must be the "negative" of the previous rules *)
-  | [^ '{' '\\' '\"' '\n']* 
+  | [^ '{' '\\' '\"']* 
+      { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
+  (* multiline strings are supported in OPA, generate different token? *)
+  | '\n'
       { T_ENCAPSED(tok lexbuf, tokinfo lexbuf) }
 
   | eof { 
@@ -418,19 +453,35 @@ and in_xml_tag current_tag = parse
   | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
   | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
 
-  (* attribute management *)
+  (* attribute management. todo: have another extra state? after = ? *)
   | xmlattr { T_XML_ATTR(tok lexbuf, tokinfo lexbuf) }
   | "="     { TEq(tokinfo lexbuf) }
+
   | '"' {
       push_mode ST_DOUBLE_QUOTES;
       TGUIL(tokinfo lexbuf)
     }
+
+  (* ugly: copy paste *)
+  | (decimalinteger | octinteger | hexinteger | bininteger)
+    { TInt (tok lexbuf, tokinfo lexbuf) }
+
+  | digit (digit)* ('.' (digit)*)? ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
+  | '.' (digit)+ ( ('e' |'E') ['+' '-']? digit (digit)* )?
+     { TFloat (tok lexbuf, tokinfo lexbuf) }
+
+
   | "{" {
       push_mode ST_INITIAL; 
       TOBrace(tokinfo lexbuf)
     }
-  (* todo: concat them? *)
   | "#" (ident as s) { TSharpIdent(s, tokinfo lexbuf) }
+  (* ugly, should have just # but then lexed as T_XML_ATTR? *)
+  | "#{" {
+      push_mode ST_INITIAL; 
+      TOBrace(tokinfo lexbuf)
+    }
 
   (* When we see a ">", it means it's just the end of 
    * the opening tag. Transit to IN_XML_TEXT.
@@ -439,6 +490,12 @@ and in_xml_tag current_tag = parse
       pop_mode();
       push_mode (ST_IN_XML_TEXT current_tag);
       T_XML_MORE (tokinfo lexbuf)
+    }
+
+  (* a singleton tag. Was not mentionned in reference manual I think *)
+  | "/>" { 
+      pop_mode ();
+      T_XML_SLASH_GT (tokinfo lexbuf) 
     }
 
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
@@ -480,3 +537,51 @@ and in_xml_text current_tag = parse
          error ("LEXER: unrecognised symbol in in_xml_text:"^s);
          TUnknown(tokinfo lexbuf)
    }
+
+(*****************************************************************************)
+(* Css Rule *)
+(*****************************************************************************)
+and in_css = parse
+  | "}" {
+      pop_mode();
+      TCBrace(tokinfo lexbuf)
+    }
+  | "{" {
+      (* recurse *)
+      push_mode ST_IN_CSS;
+      TOBrace(tokinfo lexbuf)
+    }
+  | [^'{''}']+ { 
+      T_CSS_TEXT(tokinfo lexbuf)
+    }
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _  { let s = tok lexbuf in
+         error ("LEXER: unrecognised symbol in in_css:"^s);
+         TUnknown(tokinfo lexbuf)
+   }
+
+
+(*****************************************************************************)
+(* Parser Rule *)
+(*****************************************************************************)
+(* todo: skipping everything until next -> is not enough, can have code
+ * like parser | ... -> ... | ... ->
+ *)
+(* todo: right now we just skip everything until next ->, which is
+ * incorrect. We should have intermediate states for x=(...)
+ *)
+and in_parser = parse
+  | "->" { 
+      pop_mode();
+      TArrow(tokinfo lexbuf)
+    }
+  (* todo:  "parser" ? for error recovery? *)
+  (* noteopti: negative of the previous rules *)
+  | [^'-']+ { T_PARSER_BEFORE_ARROW(tokinfo lexbuf) }
+  | '-' { T_PARSER_BEFORE_ARROW(tokinfo lexbuf) }
+
+   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+   | _  { let s = tok lexbuf in
+           error ("LEXER: unrecognised symbol in in_parser:"^s);
+          TUnknown(tokinfo lexbuf)
+     }

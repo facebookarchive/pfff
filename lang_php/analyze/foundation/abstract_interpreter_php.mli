@@ -1,6 +1,7 @@
 
 exception UnknownFunction of string
 exception UnknownConstant of string
+exception UnknownClass of string
 exception UnknownMethod of string * string * string list
 exception LostControl
 
@@ -12,7 +13,7 @@ val program:
 
 
 val extract_paths: bool ref
-val graph: Env_interpreter_php.SSet.t Env_interpreter_php.SMap.t ref
+val graph: Env_interpreter_php.callgraph ref
 
 (* used by unit testing *)
 val _checkpoint_heap:

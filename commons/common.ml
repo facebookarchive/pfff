@@ -3221,7 +3221,7 @@ let unix_diff file1 file2 =
   let (xs, _status) =
     cmd_to_list_and_status (spf "diff -u %s %s" file1 file2) in
   xs
-
+(* see also unix_diff_strings at the bottom *)
 
 let get_mem() =
   cmd_to_list("grep VmData /proc/" ^ string_of_int (Unix.getpid()) ^ "/status")
@@ -3320,6 +3320,8 @@ let is_directory file =
   (unix_stat file).Unix.st_kind =*= Unix.S_DIR
 let is_file file =
   (unix_stat file).Unix.st_kind =*= Unix.S_REG
+let is_symlink file =
+  (Unix.lstat file).Unix.st_kind =*= Unix.S_LNK
 
 let is_executable file =
   let stat = unix_stat file in
@@ -3425,6 +3427,12 @@ let (readdir_to_dir_size_list: string -> (string * int) list) = fun path ->
     then Some (s, stat.Unix.st_size)
     else None
     )
+
+let unixname () =
+  let uid = Unix.getuid () in
+  let entry = Unix.getpwuid uid in
+  entry.Unix.pw_name
+
 
 (* could be in control section too *)
 
@@ -3741,6 +3749,25 @@ let uncat xs file =
   with_open_outfile file (fun (pr,_chan) ->
     xs +> List.iter (fun s -> pr s; pr "\n");
 
+  )
+
+(* see opa/pfff_logger.opa *)
+let logger config cmd =
+  config +> do_option (fun server ->
+    let unixname = unixname() in
+    let extra_args = "" in
+    let json = 
+      spf "{ unixname: \"%s\", extra_args: \"%s\" }" unixname extra_args
+    in
+    let cmd = 
+      spf "curl http://%s/_rest_/%s/ -d '%s' 2>/dev/null 1>/dev/null" 
+        server cmd json in
+    profile_code "pfff_logger" (fun () ->
+      try
+       timeout_function 1 (fun () ->
+        command2 cmd
+      ) with Timeout -> ()
+    )
   )
 
 (*###########################################################################*)
@@ -6008,17 +6035,15 @@ let add_in_scope_h x (k,v) =
 (* let ansi_terminal = ref true *)
 
 let (_execute_and_show_progress_func:
-   (show_progress:bool ->
+   (show:bool ->
     int (* length *) -> ((unit -> unit) -> 'a) -> 'a) ref)
  = ref
-  (fun ~show_progress a b ->
+  (fun ~show a b ->
     failwith "no execute  yet, have you included common_extra.cmo?"
   )
 
-
-
-let execute_and_show_progress ?(show_progress=true) len f =
-    !_execute_and_show_progress_func ~show_progress len f
+let execute_and_show_progress ?(show=true) len f =
+    !_execute_and_show_progress_func ~show len f
 
 
 (* now in common_extra.ml:
@@ -6440,6 +6465,13 @@ let _ =
      =*= "/home/pad/pfff"
     )
 *)
+
+let unix_diff_strings s1 s2 =
+  let tmp1 = new_temp_file "s1" "" in
+  write_file tmp1 s1;
+  let tmp2 = new_temp_file "s2" "" in
+  write_file tmp2 s2;
+  unix_diff tmp1 tmp2
 
 (*****************************************************************************)
 (* Misc/test *)

@@ -154,6 +154,12 @@ let class_type_of_class c =
   | Interface _ -> E.Interface
   | Trait _ -> E.Trait
 
+let interfaces c =
+  match c.c_implements with
+  | None -> []
+  | Some (_, xs) ->
+      xs +> Ast.uncomma
+
 (*****************************************************************************)
 (* Lookup *)
 (*****************************************************************************)

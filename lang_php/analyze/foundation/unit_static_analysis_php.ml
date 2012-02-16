@@ -11,24 +11,23 @@ module Interp = Abstract_interpreter_php
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers *)
+(* Run analysis *)
 (*****************************************************************************)
 
 let prepare content =
   let tmp_file = 
     Parse_php.tmp_php_file_from_string content in
-  let ast = 
-    Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
   let db = 
     Env.code_database_of_juju_db  (Env.juju_db_of_files [tmp_file]) in
   let env = 
     Env_interpreter_php.empty_env db tmp_file in
-  let heap = 
-    Env_interpreter_php.empty_heap in
-  env, heap, ast
+  let ast = 
+    Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
+  env, ast
 
 let heap_of_program_at_checkpoint content =
-  let (env, heap, ast) = prepare content in
+  let (env, ast) = prepare content in
+  let heap = Env_interpreter_php.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     let _heap = Abstract_interpreter_php.program env heap ast in
@@ -38,11 +37,18 @@ let heap_of_program_at_checkpoint content =
   ))
 
 let callgraph_generation content =
-  let (env, heap, ast) = prepare content in
-  Abstract_interpreter_php.extract_paths := true;
-  Abstract_interpreter_php.graph := SMap.empty;
-  let _heap = Abstract_interpreter_php.program env heap ast in
-  !(Abstract_interpreter_php.graph)
+  let (env, ast) = prepare content in
+  let heap = Env_interpreter_php.empty_heap in
+  Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
+  Common.save_excursion Abstract_interpreter_php.strict true (fun()->
+    Abstract_interpreter_php.graph := Map_poly.empty;
+    let _heap = Abstract_interpreter_php.program env heap ast in
+    !(Abstract_interpreter_php.graph)
+  ))
+
+(*****************************************************************************)
+(* Examine value *)
+(*****************************************************************************)
 
 let rec chain_ptrs heap v =
   match v with
@@ -63,6 +69,10 @@ let value_of_var s vars heap =
 let info heap v = 
   Env.string_of_value heap (List.hd v)
 
+(*****************************************************************************)
+(* Assert helpers *)
+(*****************************************************************************)
+
 let assert_value_at_checkpoint var file fpattern =
   let (heap, vars) = heap_of_program_at_checkpoint file in
   let v = value_of_var var vars heap in
@@ -80,15 +90,20 @@ let assert_final_value_at_checkpoint var file v =
 let assert_graph file xs = 
   let g = callgraph_generation file in
   let _nb_nodes = List.length xs in
-  xs +> List.iter (fun (n, expected) ->
-    try 
-      let actual_child = SMap.find n g +> SSet.elements in
+  xs +> List.iter (fun (s, expected) ->
+    try
+      let n = Env.node_of_string s in
+      let actual_child = 
+        Map_poly.find n g 
+        +> Set_poly.elements 
+        +> List.map Env.string_of_node 
+      in
       assert_equal
         ~msg:"it should have the expected callees"
         (sort expected)
         (sort actual_child)
     with Not_found ->
-      assert_failure (spf "could not find callees for %s" n)
+      assert_failure (spf "could not find callees for %s" s)
   );
   (* todo? assert all the nodes are there *)
   ()
@@ -277,10 +292,10 @@ function bar() { foo(); }
 " in
       (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
-      let xs = SMap.find "bar" g +> SSet.elements in
+      let xs = Map_poly.find (Env.Function "bar") g +> Set_poly.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
-        ["foo"]
+        [Env.Function "foo"]
         xs;
 
       let file = "
@@ -410,7 +425,7 @@ class A { function foo() { } }
 class B { function foo() { } }
 function c() { $a = new A(); $a->foo(); }
 " in
-        (* no B::foo over approximation! *)
+        (* no B::foo, no over approximation! *)
         assert_graph file ["c" --> ["A::foo"]];
       );
 

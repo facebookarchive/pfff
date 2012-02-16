@@ -12,16 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_ml
-
 module Ast = Ast_ml
 module V = Visitor_ml
-
 open Highlight_code
-
 module T = Parser_ml
 
 (*****************************************************************************)

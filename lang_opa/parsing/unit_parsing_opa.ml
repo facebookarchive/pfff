@@ -1,8 +1,8 @@
 open Common
 open OUnit
 
-open Ast_opa
-module Ast = Ast_opa
+open Ast_fuzzy_opa
+module Ast = Ast_fuzzy_opa
 module Flag = Flag_parsing_opa
 
 (*****************************************************************************)
@@ -23,6 +23,7 @@ let unittest =
      * - make sure parse int correctly, and float, and that actually does
      *   not return multiple tokens for 42.42
      * - make sure string interpolation generates multiple tokens
+     * - ...
      *)
 
     (*-----------------------------------------------------------------------*)
@@ -34,8 +35,11 @@ let unittest =
       let files = Common.glob (spf "%s/*.opa" dir) in
       files +> List.iter (fun file ->
         try
-          let _ = Parse_opa.parse file in
-          ()
+          let (_, toks) = Parse_opa.parse_just_tokens file in
+          let toks = Ast_fuzzy_opa.toks_for_ast_fuzzy toks in
+          let tree = Token_views_opa.mk_tree toks in
+          let _tree = Ast_fuzzy_opa.mk_tree tree in
+            ()
         with Parse_opa.Parse_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )

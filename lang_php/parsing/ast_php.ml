@@ -249,6 +249,7 @@ type expr =
   | YieldBreak of tok * tok
 
   (*s: type exprbis hook *)
+  (* only appear when process sgrep patterns *)
   | SgrepExprDots of tok
   (*x: type exprbis hook *)
   (* unparser: *)
@@ -284,6 +285,7 @@ type expr =
         | PreProcess of cpp_directive wrap
        (*e: constant constructors *)
        (*s: type constant hook *)
+        (* only appear when process xdebug coverage file *)
         | XdebugClass of name * class_stmt list
         | XdebugResource
        (*e: type constant hook *)

@@ -54,7 +54,11 @@ type comment =
 
 let strip_comment_marks s = 
   match () with
+  (* single line comment using /* */ syntax, stupid but it happens *)
+  | _ when s =~ "/\\*\\(.*\\)\\*/" -> Common.matched1 s
   | _ when s =~ "^//[ ]*\\(.*\\)" -> Common.matched1 s
+
+  (* must be put after previous cases *)
   | _ when s =~ "^[ *]*\\(.*\\)" -> Common.matched1 s
   | _ -> s
 
@@ -186,3 +190,46 @@ let comments_of_file file =
       -> Some info
   | _ -> None
   )
+
+(* todo? some code duplication with deadcode_php.ml 
+ * todo: optimize things ...
+ *)
+let comment_before tok all_toks =
+  let pos = Ast_php.pos_of_info tok in
+  let before = 
+    all_toks +> Common.take_while (fun tok2 ->
+      let pos2 = Token_helpers_php.pos_of_tok tok2 in
+      pos2 < pos
+    )
+  in
+  let first_non_space =
+    List.rev before +> Common.drop_while (function
+    | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
+    | _ -> false
+    )
+  in
+  match first_non_space with
+  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::xs ->
+      Some ii
+  | _ -> None
+
+
+let comment_after tok all_toks =
+  let pos = Ast_php.pos_of_info tok in
+  let after = 
+    all_toks +> Common.drop_while (fun tok2 ->
+      let pos2 = Token_helpers_php.pos_of_tok tok2 in
+      pos2 <= pos
+    )
+  in
+  let first_non_space =
+    after +> Common.drop_while (function
+    | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
+    | _ -> false
+    )
+  in
+  match first_non_space with
+  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::xs ->
+      Some ii
+  | _ -> None
+

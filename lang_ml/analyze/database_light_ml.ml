@@ -69,7 +69,7 @@ let is_pleac_file file =
  *)
 let is_test_file file =
   let file = Common.lowercase file in
-  (file =~ ".*test_*")
+  (file =~ ".*/test_" || file =~ ".*/unit_")
 
 let is_test_or_pleac_file file = 
   is_test_file file || is_pleac_file file

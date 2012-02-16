@@ -22,6 +22,10 @@ module Db = Database_php
 module V = Visitor_php
 module E = Database_code
 
+module Env = Env_interpreter_php
+module Interp = Abstract_interpreter_php
+open Env_interpreter_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -32,8 +36,18 @@ module E = Database_code
  * It is inspired by a similar tool for java called JQuery
  * (http://jquery.cs.ubc.ca/).
  * 
+ * history:
+ *  - basic defs (kinds, at) 
+ *  - inheritance tree
+ *  - basic callgraph
+ *  - basic datagraph
+ *  - include/require (and possibly desugared wrappers like require_module())
+ *  - precise callgraph, using julien's abstract interpreter (was called
+ *    previously pathup/pathdown)
+ * 
  * todo:
- *  - precise callgraph, using julien's pathup/pathdown tools
+ *  - get rid of berkeley db prerequiste
+ *  - precise datagraph
  *  - types, refs
  *  - ??
  * 
@@ -52,6 +66,8 @@ let name_id id db =
     let id_kind = db.Db.defs.Db.id_kind#assoc id in
 
     (match id_kind with
+    | E.Class _ | E.Function | E.Constant -> 
+        spf "'%s'" s
     | E.Method _ | E.ClassConstant | E.Field ->
         (match Db.class_or_interface_id_of_nested_id_opt id db with
         | Some id_class -> 
@@ -76,7 +92,6 @@ let name_id id db =
         )
 
     | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    | E.Class _ | E.Function | E.Constant -> spf "'%s'" s
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
@@ -86,6 +101,12 @@ let name_id id db =
     )
   with Not_found -> 
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
+
+let name_of_node = function
+  | Env.File s -> spf "'__TOPSTMT__%s'" s
+  | Env.Function s -> spf "'%s'" s
+  | Env.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
+  | Env.FakeRoot -> "'__FAKE_ROOT__'"
       
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
@@ -122,7 +143,7 @@ let read_write in_lvalue =
     
 let escape_quote_array_field s =
   Str.global_replace (Str.regexp "[']") "__" s
- 
+
 
 (*****************************************************************************)
 (* Defs/uses *)
@@ -160,7 +181,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', 'function')." (name_id id db) str)
+            pr (spf "docall(%s, '%s', function)." (name_id id db) str)
           end;
           k x
 
@@ -174,7 +195,7 @@ let add_uses id ast pr db =
           then begin
             Hashtbl.replace h str true;
             (* todo: imprecise, need julien's precise callgraph *)
-            pr (spf "docall(%s, '%s', 'method')." (name_id id db) str)
+            pr (spf "docall(%s, '%s', method)." (name_id id db) str)
           end;
           
           k x
@@ -227,7 +248,7 @@ let add_uses id ast pr db =
                   if not (Hashtbl.mem h str)
                   then begin
                     Hashtbl.replace h str true;
-                    pr (spf "docall(%s, '%s', 'class')." 
+                    pr (spf "docall(%s, '%s', class)." 
                            (name_id id db) str)
                   end;
                           
@@ -252,7 +273,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', 'class')." 
+            pr (spf "docall(%s, '%s', class)." 
                    (name_id id db) str)
           end;
           k x
@@ -277,6 +298,7 @@ let add_defs_and_uses id kind ast pr db =
       | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
       | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
       | ClassRegular _ -> ()
+      (* the kind/2 will cover those different cases *)
       | Interface _ 
       | Trait _ -> ()
       );
@@ -335,7 +357,7 @@ let add_defs_and_uses id kind ast pr db =
 (*****************************************************************************)
 
 (* todo? could avoid going through database_php.ml and parse directly? *)
-let gen_prolog_db ?(show_progress=true) db file =
+let gen_prolog_db2 ?(show_progress=true) db file =
   Common.with_open_outfile file (fun (pr, _chan) ->
    let pr s = pr (s ^ "\n") in
    pr ("%% -*- prolog -*-");
@@ -348,17 +370,21 @@ let gen_prolog_db ?(show_progress=true) db file =
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous docall/3, use/4.");
    pr (":- discontiguous include/2, require_module/2.");
+   pr (":- discontiguous problem/2.");
 
-   db.Db.file_info#tolist +> List.iter (fun (file, _parsing_status) ->
+   db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
      let file = Db.absolute_to_readable_filename file db in
      let parts = Common.split "/" file in
      pr (spf "file('%s', [%s])." file
             (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ","));
+     (match file_info.Db.parsing_status with
+     | `OK -> ()
+     | `BAD -> pr2 (spf "problem('%s', parse_error)." file)
+     );
    );
-
-   db.Db.defs.Db.id_kind#tolist
-   +> Common_extra.with_progress_list_metter ~show_progress (fun k xs ->
-      xs +> List.iter (fun (id, kind) ->
+   let ids = db.Db.defs.Db.id_kind#tolist in
+   ids +> Common_extra.progress ~show:show_progress (fun k ->
+    List.iter (fun (id, kind) ->
         k();
         pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
         pr (spf "at(%s, '%s', %d)." 
@@ -374,8 +400,7 @@ let gen_prolog_db ?(show_progress=true) db file =
         let ast = Db.ast_of_id id db in
         add_defs_and_uses id kind ast pr db;
 
-      );
-   );
+   ));
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
      let file1 = Db.absolute_to_readable_filename file1 db in
      xs +> List.iter (fun file2 ->
@@ -387,3 +412,87 @@ let gen_prolog_db ?(show_progress=true) db file =
      );
    );
   )
+let gen_prolog_db ?show_progress a b = 
+  Common.profile_code "Prolog_php.gen" (fun () -> 
+    gen_prolog_db2 ?show_progress a b)
+
+(* todo: 
+ * - could also improve precision of use/4 
+ * - detect higher order functions so that function call
+ *   through generic higher order functions is present in callgraph
+ *)
+let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
+
+  let h_oldcallgraph = Hashtbl.create 101 in
+  file +> Common.cat +> List.iter (fun s ->
+    if s =~ "^docall(.*" 
+    then Hashtbl.add h_oldcallgraph s true
+  );
+
+  let all_files = 
+    db.Db.file_info#tolist +> List.map fst in
+  let db = 
+    Env.code_database_of_juju_db  (Env.juju_db_of_files all_files) in
+  
+  Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
+  Common.save_excursion Abstract_interpreter_php.strict false (fun()->
+    Abstract_interpreter_php.graph := Map_poly.empty;
+
+    all_files +> Common_extra.progress ~show:show_progress (fun k ->
+      List.iter (fun file ->
+      k ();
+      let ast = 
+        try 
+          Ast_php_simple_build.program (Parse_php.parse_program file) 
+        with Ast_php_simple_build.TodoConstruct s ->
+          []
+      in
+      let env = 
+        Env_interpreter_php.empty_env db file in
+      let heap = 
+        Env_interpreter_php.empty_heap in
+      let _heap = Abstract_interpreter_php.program env heap ast in
+      ()
+    ))
+  ));
+
+  (* look previous information, to avoid introduce duplication
+   * todo: and also to check/compare with the abstract interpreter.
+   * Should be a superset.
+   *  - should find more functions when can resolve statically dynamic funcall
+   *  - 
+   *)
+
+  Common.with_open_outfile_append file (fun (pr, _chan) ->
+    let pr s = pr (s ^ "\n") in
+    let g = !(Abstract_interpreter_php.graph) in
+    pr "";
+    g +> Map_poly.iter (fun src xs ->
+      xs +> Set_poly.iter (fun target ->
+        let kind =
+          match target with
+          (* can't call a file ... *)
+          | Env.File _ -> raise Impossible
+          (* can't call a fake root*)
+          | Env.FakeRoot -> raise Impossible
+          | Env.Function _ -> "function"
+          | Env.Method _ -> "method"
+        in
+        (* do not count those fake edges *)
+        if src <> Env.FakeRoot
+        then begin
+          let s =(spf "docall(%s, %s, %s)." 
+                     (name_of_node src) (name_of_node target) kind) in
+          if Hashtbl.mem h_oldcallgraph s
+          then ()
+          else pr s
+        end
+        )
+      )
+    )
+let append_callgraph_to_prolog_db ?show_progress a b = 
+  Common.profile_code "Prolog_php.callgraph" (fun () -> 
+    append_callgraph_to_prolog_db2 ?show_progress a b)
+  
+
+

@@ -18,11 +18,16 @@ type annotation =
 
   | DataProvider of method_callback
 
+  | Inject
+  | Generics of string
+
   | Other of string
+
  and notification_kind = 
    | Immediate
    | Consistent
    | Daily
+
  and method_callback =
    | Method of string
    | MethodExternal of string (* class *) * string
@@ -40,5 +45,7 @@ val extract_annotations: string -> annotation list
 val vof_annotation: annotation -> Ocaml.v
 val str_debug_of_annotation: annotation -> string
 
+val annotations_before: Ast_php.tok -> Parser_php.token list -> annotation list
+val annotations_after: Ast_php.tok -> Parser_php.token list -> annotation list
 (*x: annotation_php.mli *)
 (*e: annotation_php.mli *)

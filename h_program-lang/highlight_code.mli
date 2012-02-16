@@ -1,22 +1,14 @@
 
-type usedef = Use | Def
-type usedef2 = Use2 of use_info | Def2 of def_info
- and def_info = use_arity
-  and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
- and use_info = place * def_arity * use_arity
-  and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
-  and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
-
 type category =
   | Comment 
   | String | Number | Boolean | Null
-  | Keyword | Operator | Builtin
-  | Punctuation
-
-  | BuiltinCommentColor | BuiltinBoolean
-
+  | Keyword 
   | KeywordConditional | KeywordLoop 
   | KeywordExn | KeywordObject | KeywordModule
+
+  | Builtin | BuiltinCommentColor | BuiltinBoolean
+
+  | Operator | Punctuation
 
   | Function of usedef2
   | FunctionDecl of def_info
@@ -60,6 +52,7 @@ type category =
   | Ifdef | Include | IncludeFilePath | Define | CppOther
 
   | EmbededHtml (* e.g. xhp *)
+  | EmbededHtmlAttr
   | EmbededUrl (* e.g. xhp *)
   | EmbededCode (* e.g. javascript *)
   | EmbededStyle (* e.g. css *)
@@ -83,6 +76,14 @@ type category =
   | NoType
 
   | Normal
+
+and usedef = Use | Def
+and usedef2 = Use2 of use_info | Def2 of def_info
+ and def_info = use_arity
+  and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
+ and use_info = place * def_arity * use_arity
+  and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
+  and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
 
 type highlighter_preferences = {
   mutable show_type_error : bool;

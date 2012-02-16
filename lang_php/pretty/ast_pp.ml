@@ -1,6 +1,6 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,33 +20,36 @@
  * This file is mostly a copy paste of ast_php_simple.ml but with some
  * additional constructors for comments or newlines so that we can
  * pretty print code while maintaining the comments and newlines
- * of the original file.
- * 
- * Note that we assume all Newline below are esthetic newlines
- * (see ast_pp_build.ml).
- * 
- * Merge with ast_php_simple.ml? A few things are now unsugared
+ * of the original file. Moreover a few things are now unsugared
  * in ast_php_simple.ml such as Encaps, InlineHtml, ShortArray,
- * that we must keep in a refactoring/pretty-printing context.
- * That means each time we add a feature we need to extend
+ * that we must keep here because of the refactoring/pretty-printing context.
+ * 
+ * coupling: that means each time we add a feature in PHP we need to extend
  * ast_php.ml, ast_php_simple.ml, and now ast_pp.ml :( Life is hard.
  * 
- * todo: factorize the Newline and Comment constructors in one subtype ?
+ * Note that we assume all Newline below are esthetic newlines
+ * (see the prelude comment in ast_pp_build.ml).
  *)
 
 (*****************************************************************************)
 (* The AST related types *)
 (*****************************************************************************)
 
-type program = stmt list
-
-and stmt =
+type esthetic =
   | Comment of string
   | Newline
 
+type program = stmt list
+
+(* ------------------------------------------------------------------------- *)
+(* Statement *)
+(* ------------------------------------------------------------------------- *)
+and stmt =
+  | StmtEsthet of esthetic
+
   | Expr of expr
 
-  (* Noop could be Block []? Maybe, but right now it's used to represent
+  (* Can Noop be Block []? Maybe, but right now it's used to represent
    * empty else branch in If below, and changing Noop to Block []
    * introduces some regressions. So safer to keep Noop for now.
    *)
@@ -62,8 +65,7 @@ and stmt =
   | Foreach of expr * expr * expr option * stmt list
 
   | Return of expr option
-  | Break of expr option
-  | Continue of expr option
+  | Break of expr option | Continue of expr option
 
   | Throw of expr
   | Try of stmt list * catch * catch list
@@ -79,8 +81,7 @@ and stmt =
   | Global of expr list
 
   and case =
-  | Ccomment of string
-  | Cnewline
+  | CaseEsthet of esthetic
 
   | Case of expr * stmt list
   | Default of stmt list
@@ -88,6 +89,9 @@ and stmt =
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
   and catch = string  * string * stmt list
 
+(* ------------------------------------------------------------------------- *)
+(* Expression *)
+(* ------------------------------------------------------------------------- *)
 and expr =
   | Int of string
   | Double of string
@@ -96,20 +100,12 @@ and expr =
   | Guil of encaps list
   | HereDoc of string * encaps list * string
 
-  (* valid for entities (functions, classes, constants) and variables, so
-   * can have Id "foo" and Id "$foo"
-   *)
   | Id of string
 
   | Array_get of expr * expr option
 
-  (* often transformed in Id "$this" in the analysis *)
   | This
-  (* e.g. Obj_get(Id "$o", Id "foo") when $o->foo *)
   | Obj_get of expr * expr
-  (* e.g. Class_get(Id "A", Id "foo") when a::foo
-   * (can contain "self", "parent", "static")
-   *)
   | Class_get of expr * expr
 
   | Assign of Ast_php.binaryOp option * expr * expr
@@ -160,6 +156,9 @@ and expr =
         | AttrString of encaps list
         | AttrExpr of expr
 
+(* ------------------------------------------------------------------------- *)
+(* Definitions *)
+(* ------------------------------------------------------------------------- *)
 and func_def = {
   f_ref: bool;
   f_name: string;
@@ -191,7 +190,6 @@ and func_def = {
 
 and constant_def = {
   cst_name: string;
-  (* normally a static scalar *)
   cst_body: expr;
 }
 and class_def = {
@@ -203,8 +201,7 @@ and class_def = {
 }
 
   and class_element =
-    | CEcomment of string
-    | CEnewline
+    | CEEsthet of esthetic
 
     | CEconst of (string * expr) list
     | CEdef of class_vars_def

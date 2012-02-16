@@ -10,11 +10,14 @@ SRC= flag_parsing_opa.ml \
      ast_opa.ml \
      lib_parsing_opa.ml \
      parser_opa.ml lexer_opa.ml \
-     token_helpers_opa.ml parse_opa.ml \
+     token_helpers_opa.ml \
+     token_views_opa.ml ast_fuzzy_opa.ml meta_ast_fuzzy_opa.ml \
+     parse_opa.ml \
+     visitor_opa.ml \
      unit_parsing_opa.ml test_parsing_opa.ml
 
 # meta_ast_opa.ml export_ast_opa.ml \
-# visitor_opa.ml unparse_opa.ml \
+# unparse_opa.ml \
 
 SYSLIBS= str.cma unix.cma 
 

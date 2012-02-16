@@ -421,6 +421,14 @@ let parse_program ?pp file =
   let (ast2, _stat) = parse ?pp file in
   program_of_program2 ast2
 
+let ast_and_tokens file =
+  let (ast2, _stat) = parse file in
+  let ast = 
+    ast2 +> List.map (fun (top, (_, toks)) -> top) in
+  let toks = 
+    ast2 +> List.map (fun (_top, (_, toks)) -> toks) +> List.flatten in
+  ast, toks
+
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)

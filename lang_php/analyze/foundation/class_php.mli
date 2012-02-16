@@ -42,3 +42,6 @@ val class_type_of_class:
 val constructor_name: string 
 val get_constructor: Ast_php.class_def -> Ast_php.method_def
 
+val interfaces:
+  Ast_php.class_def -> Ast_php.name list
+

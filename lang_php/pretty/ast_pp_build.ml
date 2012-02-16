@@ -27,6 +27,8 @@ module T = Parser_php
  * tokens, and return an AST that will make it easy to pretty print
  * the code while still maintaining the comments of the original file
  * (see ast_pp.ml).
+ * 
+ * This is mostly a copy paste of ast_php_simple_build.ml.
  *)
 
 (*****************************************************************************)
@@ -58,7 +60,10 @@ module T = Parser_php
  * The environment is a ref that gets smaller as we build the ast_pp
  * from bottom to top (hence the use of fold_right in many places below).
  *)
-type env = (int * [`Comment of string | `Newline ]) list ref
+type env = (int * Ast_pp.esthetic) list ref
+
+exception ObsoleteConstruct of string
+exception TodoConstruct of string
 
 (*****************************************************************************)
 (* Helpers *)
@@ -180,23 +185,16 @@ let rec add_comments convert env acc line =
   comments @ acc
 
 
-let add_stmt_comments = add_comments
-    (function `Newline -> A.Newline | `Comment s -> A.Comment s)
-
-let add_ce_comments = add_comments
-    (function `Newline -> A.CEnewline | `Comment s -> A.CEcomment s)
-
-let add_case_comments = add_comments
-    (function `Newline -> A.Cnewline | `Comment s -> A.Ccomment s)
-
-
+let add_stmt_comments = add_comments (fun x -> A.StmtEsthet x)
+let add_ce_comments = add_comments (fun x -> A.CEEsthet x)
+let add_case_comments = add_comments (fun x -> A.CaseEsthet x)
 
 let make_env l =
   let l = List.map (fun (x, y) ->
     let tag =
       match y with
-      | "\n" -> `Newline
-      | x -> `Comment x
+      | "\n" -> A.Newline
+      | x -> A.Comment x
     in
     x, tag) l in
   let l = List.sort (fun (x, _) (y, _) -> y - x) l in
@@ -250,13 +248,13 @@ let env_of_tokens_for_spatch toks =
     match xs with
     | [] -> []
     | (T.T_COMMENT i1 | T.T_DOC_COMMENT i1 | T.T_OPEN_TAG i1)::xs ->
-        (l i1, `Comment (str i1))::aux xs ~start:false
+        (l i1, A.Comment (str i1))::aux xs ~start:false
     (* two consecutive newlines, this is an esthetic newline *)
     | T.TNewline i1::T.TNewline i2::xs ->
-        (l i1, `Newline)::aux (T.TNewline i2::xs) ~start:false
+        (l i1, A.Newline)::aux (T.TNewline i2::xs) ~start:false
 
     | T.TNewline i1::xs when start ->
-        (l i1, `Newline)::aux xs ~start:false
+        (l i1, A.Newline)::aux xs ~start:false
 
     | _::xs -> aux xs ~start:false
   in
@@ -342,21 +340,22 @@ and stmt_ env st acc =
       let cl = List.map (catch env) cl in
       A.Try (stl, c, cl) :: acc
   | Echo (_, el, _) ->
-      A.Expr (A.Call (A.Id "echo", (List.map (expr env) (comma_list el)))) :: acc
-  | Globals (_, gvl, _) -> A.Global (List.map (global_var env) (comma_list gvl)) :: acc
+      A.Expr (A.Call (A.Id "echo", (List.map (expr env) (comma_list el))))
+      :: acc
+  | Globals (_, gvl, _) -> 
+      A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, _) -> A.InlineHtml s :: acc
-  | Use (_, fn, _) -> A.Expr (A.Call (A.Id "use", [A.String (use_filename env fn)])) :: acc
+  | Use (_, fn, _) -> 
+      A.Expr (A.Call (A.Id "use", [A.String (use_filename env fn)])) :: acc
   | Unset (_, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id "unset", lp)) :: acc
-  | Declare _ ->
-      (* TODO failwith "stmt Declare" of tok * declare comma_list paren * colon_stmt *)
-      acc
-  | TypedDeclaration _ -> failwith "stmt TypedDeclaration" (* of hint_type * lvalue * (tok * expr) option * tok *)
-  | IfColon _ -> failwith "This is old crazy stuff"
+  | Declare _ -> raise (TodoConstruct "Declare")
+  | TypedDeclaration _ -> raise (ObsoleteConstruct "TypedDeclaration")
+  | IfColon _ -> raise (ObsoleteConstruct "IfColo is old crazy stuff")
 
 
 and use_filename env = function
@@ -427,16 +426,17 @@ and expr env = function
       in
       let cn = class_name_reference env cn in
       A.New (cn, args)
-(*      failwith "expr New" (* of tok * class_name_reference * argument comma_list paren option *) *)
   | Clone (_, e) ->
       A.Call (A.Id "clone", [expr env e])
   | AssignRef (e1, _, _, e2) ->
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  | AssignNew _ -> failwith "expr AssignNew" (* of lvalue * tok  * tok  * tok  * class_name_reference * argument comma_list paren option *)
+  | AssignNew _ -> 
+      raise (TodoConstruct "expr AssignNew")
   | Cast ((c, _), e) -> A.Cast (c, expr env e)
-  | CastUnset _ -> failwith "expr CastUnset" (* of tok * expr  *)
+  | CastUnset _ -> 
+      raise (TodoConstruct "expr CastUnset")
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
       let cn = class_name_reference env cn in
@@ -452,12 +452,12 @@ and expr env = function
         | Some (_, Some e, _) -> [expr env e]
       in
       A.Call (A.Id "exit", arg)
-  | At _ -> A.Id "@" (* failwith "expr At" (* of tok  *) TODO look at this *)
+  | At _ -> A.Id "@" (* TODO look at this *)
   | Print (_, e) ->
       A.Call (A.Id "print", [expr env e])
   | BackQuote (_, el, _) ->
-      A.Call (A.Id "exec", [A.Guil (List.map (encaps env) el)])
-(*      failwith "expr BackQuote" (* of tok * encaps list * tok *) *)
+      raise (TodoConstruct "BackQuote")
+      (* A.Call (A.Id "exec", [A.Guil (List.map (encaps env) el)]) *)
   | Include (_, e) ->
       A.Call (A.Id "include", [expr env e])
   | IncludeOnce (_, e) ->
@@ -473,7 +473,8 @@ and expr env = function
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
   | Yield (_, e) -> A.Call (A.Id "yield", [expr env e])
   | YieldBreak _ -> A.Call (A.Id "yield", [A.Id "break"])
-  | SgrepExprDots _ -> failwith "expr SgrepExprDots" (* of info *)
+  (* only appear in sgrep pattern *)
+  | SgrepExprDots _ -> raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
 
 and lambda_def env ld =
@@ -516,8 +517,9 @@ and constant env = function
   | String (s, _) -> A.String s
   | CName n -> A.Id (name env n)
   | PreProcess (cpp, _) -> cpp_directive env cpp
-  | XdebugClass _ -> failwith "stmt XdebugClass" (* of name * class_stmt list *)
-  | XdebugResource -> failwith "stmt XdebugResource" (* *)
+  (* only appear when process xdebug coverage file *)
+  | XdebugClass _ -> raise Common.Impossible
+  | XdebugResource -> raise Common.Impossible
 
 and cpp_directive env = function
   | Line      -> A.Id "__LINE__"
@@ -548,14 +550,12 @@ and class_name_or_selfparent env = function
    | ClassName fqcn -> name env fqcn
    | Self _ -> "self"
    | Parent _ -> "parent"
-   (* todo: late static binding *)
    | LateStatic _ -> "static"
 
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
-   | ClassNameRefDynamic _ ->
-       failwith "TODO ClassNameRefDynamic" (* of lvalue * obj_prop_access list *)
+   | ClassNameRefDynamic _ -> raise (TodoConstruct "ClassNameRefDynamic")
 
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
@@ -604,7 +604,7 @@ and lvalue env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar _ -> failwith "expr StaticObjCallVar" (* of lvalue * tok (* :: *) * lvalue * argument comma_list paren *)
+  | StaticObjCallVar _ -> raise (TodoConstruct "expr StaticObjCallVar")
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
   | ObjAccess (lv, oa) ->
@@ -637,10 +637,10 @@ and obj_dim env obj = function
       let e = opt expr env e in
       let x = obj_dim env obj x in
       A.Array_get (x, e)
-  | OBraceAccess _ -> failwith "TODO brace access"(*  of obj_dim * expr brace *)
+  | OBraceAccess _ -> raise (TodoConstruct "brace access")
 
 and indirect env = function
-  | Dollar _ -> failwith "expr Dollar" (* of tok *)
+  | Dollar _ -> raise (TodoConstruct "expr Dollar")
 
 and argument env = function
   | Arg e -> expr env e
@@ -751,8 +751,8 @@ and class_body env st acc =
           (name env n, static_scalar_affect env ss)
        ) (comma_list cl) in
       A.CEconst consts :: acc
-  | XhpDecl _ -> acc(* TODO failwith "TODO xhp decl" *)(* of xhp_decl *)
-  | UseTrait _ -> failwith "TODO: UseTrait"
+  | XhpDecl _ -> acc (* TODO xhp decl *)
+  | UseTrait _ -> raise (TodoConstruct "UseTrait")
 
 and method_def env m =
   let acc = [] in
@@ -858,9 +858,7 @@ and colon_stmt env = function
 and switch_case_list env = function
   | CaseList (_, _, cl, _) ->
       List.fold_right (case env) cl []
-  | CaseColonList _ -> failwith "What's that?"
-(*      tok (* : *) * tok option (* ; *) * case list *
-        tok (* endswitch *) * tok (* ; *) *)
+  | CaseColonList _ -> raise (ObsoleteConstruct "CaseColonList")
 
 and case env x acc =
   match x with
@@ -910,8 +908,8 @@ and assignOp env = function
 
 and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
-  | GlobalDollar _ -> failwith "TODO GlobalDollar" (*of tok * r_variable *)
-  | GlobalDollarExpr _ -> failwith "TODO GlobalDollarExpr" (* of tok * expr brace *)
+  | GlobalDollar _ -> raise (TodoConstruct "GlobalDollar")
+  | GlobalDollarExpr _ -> raise (TodoConstruct "GlobalDollarExpr")
 
 (*****************************************************************************)
 (* Entry points used by prettyphp *)

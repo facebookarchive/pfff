@@ -1,14 +1,14 @@
 
 (* 
- * OCaml hacks to support reflection (work with ocamltarzan).
+ * OCaml hacks to support reflection (works with ocamltarzan).
  *
  * See also sexp.ml and json.ml for other "reflective" techniques.
  *)
 
-(* OCaml type definitions (the core part of OCaml, no objects, no modules) *)
+(* OCaml core type definitions (no objects, no modules) *)
 type t =
-  | Unit | Bool | Float | Char | String
-  | Int
+  | Unit 
+  | Bool | Float | Char | String | Int
 
   | Tuple of t list
   | Dict of (string * [`RW|`RO] * t) list (* aka record *)
@@ -31,8 +31,9 @@ val get_type: string -> t
 
 (* OCaml values (a restricted form of expressions) *)
 type v = 
-  | VUnit | VBool of bool | VFloat of float | VChar of char | VString of string
-  | VInt of int
+  | VUnit 
+  | VBool of bool | VFloat of float | VInt of int
+  | VChar of char | VString of string
 
   | VTuple of v list
   | VDict of (string * v) list

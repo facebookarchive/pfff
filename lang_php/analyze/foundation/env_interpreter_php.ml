@@ -135,10 +135,14 @@ type code_database_juju = {
   constants_juju: Ast_php_simple.constant_def cached SMap.t ref;
 }
 
-(* string (function name, class+method, __TOP__file) -> string set.
- * todo: would be better to use an algebraic data type
- *)
-type callgraph = SSet.t SMap.t
+type node =
+  | Function of string
+  | Method of string * string
+  | File of Common.filename
+  (* used to simplify code to provoke the call to toplevel functions *)
+  | FakeRoot
+
+type callgraph = (node, node Set_poly.t) Map_poly.t
 
 (*****************************************************************************)
 (* Helpers *)
@@ -162,10 +166,28 @@ let empty_env db file =
     db = db;
   }
 
-let add_graph src target graph =
-  let vs = try SMap.find src graph with Not_found -> SSet.empty in
-  let vs = SSet.add target vs in
-  SMap.add src vs graph
+let string_of_node = function
+  | File s -> "__TOP__" ^ s
+  | Function s -> s
+  | Method (s1, s2) -> s1 ^ "::" ^ s2
+  | FakeRoot -> "__FAKE_ROOT__"
+
+let node_of_string s =
+  match s with
+  | _ when Common.(=~) s "__TOP__\\(.*\\)" -> 
+      File (Common.matched1 s)
+  | _ when Common.(=~) s "\\(.*\\)::\\(.*\\)" -> 
+      let (a, b) = Common.matched2 s in
+      Method (a, b)
+  | "__FAKE_ROOT__" -> FakeRoot
+  | _ -> Function s
+
+
+let (add_graph: node -> node -> callgraph -> callgraph) =
+ fun src target graph ->
+  let vs = try Map_poly.find src graph with Not_found -> Set_poly.empty in
+  let vs = Set_poly.add target vs in
+  Map_poly.add src vs graph
 
 (*****************************************************************************)
 (* Optimization *)
@@ -209,7 +231,14 @@ let juju_db_of_files xs =
       | ConstantDef c ->
           db.constants_juju :=
             SMap.add (A.unwrap c.cst_name) (serial c) !(db.constants_juju)
-      | _ -> ()
+
+      | (Global _|StaticVars _
+        |Try (_, _, _)|Throw _
+        |Continue _|Break _|Return _
+        |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
+        |Switch (_, _)|If (_, _, _)
+        |Block _|Expr _
+        ) -> ()
     ) ast
   with e -> 
     Printf.printf "ERROR %s\n" (Marshal.to_string e [])

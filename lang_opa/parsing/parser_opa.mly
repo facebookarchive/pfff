@@ -18,7 +18,7 @@
  * http://doc.opalang.org/#!/manual/The-core-language
  * We support only the js-like syntax.
  * 
- * Note that the original syntax can not be parsed with Yacc probably;
+ * Note that the original syntax can not be parsed with Yacc;
  * function calls and local function definitions are too similar.
  * I've also decided to not use the %left directives and manually
  * encode the associativity/priorities of operators because of some
@@ -60,7 +60,11 @@ open Ast_opa
 %token <string * Ast_opa.tok> TFloat
 %token <string * Ast_opa.tok> T_ENCAPSED
 %token <Ast_opa.tok> TGUIL
-%token <string * Ast_opa.tok> TIdent TSharpIdent TOp
+%token <string * Ast_opa.tok> TIdent
+%token <string * Ast_opa.tok> TSharpIdent
+%token <string * Ast_opa.tok> TTypeVar 
+%token <string * Ast_opa.tok> TOp
+%token <string * Ast_opa.tok> TExternalIdent
 
 /*(* keywords tokens *)*/
 %token <Ast_opa.tok>
@@ -70,7 +74,7 @@ open Ast_opa
  Tfunction 
  Ttype Tor Tval Tand Trec
  Tbegin Tend
- Tcss Tdb Tparser
+ Tcss Tdatabase Tparser
  Texternal
  Tforall
  Tpackage Tmodule Timport 
@@ -99,13 +103,19 @@ open Ast_opa
 
 /*(* operators *)*/
 
-/*(* xml *)*/
+/*(* html *)*/
 %token <Ast_opa.tag * Ast_opa.tok> T_XML_OPEN_TAG
 %token <Ast_opa.tag option * Ast_opa.tok> T_XML_CLOSE_TAG
 %token <Ast_opa.attr * Ast_opa.tok> T_XML_ATTR
-%token <Ast_opa.tok> T_XML_MORE
+%token <Ast_opa.tok> T_XML_MORE T_XML_SLASH_GT
 /*(* could be merged with T_ENCAPSED *)*/
 %token <string * Ast_opa.tok> T_XML_TEXT
+
+/*(* css, todo: actually parse this, use lang_css/ ? *)*/
+%token <Ast_opa.tok> T_CSS_TEXT
+
+/*(* parser, todo: actually parse this *)*/
+%token <Ast_opa.tok> T_PARSER_BEFORE_ARROW
 
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/

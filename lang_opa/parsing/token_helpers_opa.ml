@@ -58,11 +58,17 @@ let visitor_info_of_tok f = function
   | T_XML_CLOSE_TAG (s, ii) -> T_XML_CLOSE_TAG (s, f ii)
   | T_XML_ATTR (s, ii) -> T_XML_ATTR (s, f ii)
   | T_XML_MORE (ii) -> T_XML_MORE (f ii)
+  | T_XML_SLASH_GT (ii) -> T_XML_SLASH_GT (f ii)
   | T_XML_TEXT (s, ii) -> T_XML_TEXT (s, f ii)
+
+  | T_CSS_TEXT (ii) -> T_CSS_TEXT(f ii)
+  | T_PARSER_BEFORE_ARROW ii -> T_PARSER_BEFORE_ARROW (f ii)
 
   | TInt (s, ii) -> TInt (s, f ii)
   | TFloat (s, ii) -> TFloat (s, f ii)
   | TIdent (s, ii) -> TIdent (s, f ii)
+  | TTypeVar (s, ii) -> TTypeVar (s, f ii)
+  | TExternalIdent (s, ii) -> TExternalIdent (s, f ii)
   | TOp (s, ii) -> TOp (s, f ii)
   | TSharpIdent (s, ii) -> TSharpIdent (s, f ii)
 
@@ -103,7 +109,7 @@ let visitor_info_of_tok f = function
   | Texternal ii -> Texternal (f ii)
   | Tserver ii -> Tserver (f ii)
   | Tparser ii -> Tparser (f ii)
-  | Tdb ii -> Tdb (f ii)
+  | Tdatabase ii -> Tdatabase (f ii)
   | Tcss ii -> Tcss (f ii)
   | Tend ii -> Tend (f ii)
   | Tbegin ii -> Tbegin (f ii)

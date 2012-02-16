@@ -1,4 +1,7 @@
 
+exception ObsoleteConstruct of string
+exception TodoConstruct of string
+
 (* used by prettyphp *)
 val program_with_comments:
   Parser_php.token list -> Ast_php.program -> Ast_pp.program

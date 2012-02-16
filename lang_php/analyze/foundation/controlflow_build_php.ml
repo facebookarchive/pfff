@@ -129,10 +129,11 @@ let rec (lookup_some_ctx:
    in
    aux 1 xs
 
-let intvalue_of_expr e =
+let rec intvalue_of_expr e =
   match e with
   | (Sc (C (Int (i_str, _)))) ->
       Some (s_to_i i_str)
+  | ParenExpr (_, e, _) -> intvalue_of_expr e
   | _ -> None
 
 (*e: controlflow_php helpers *)

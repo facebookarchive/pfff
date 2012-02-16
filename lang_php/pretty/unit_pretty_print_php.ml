@@ -13,12 +13,11 @@ module T = Parser_php
 (*****************************************************************************)
 
 let pp_file file =
-  let tokens = Parse_php.tokens file in
-  let ast = Parse_php.parse_program file in
+  let (ast, tokens) = Parse_php.ast_and_tokens file in
   let ast = Ast_pp_build.program_with_comments tokens ast in
 
   let buf = Buffer.create 256 in
-  let env = Pp2.empty (Buffer.add_string buf) in
+  let env = Pp2.empty (fun s -> Buffer.add_string buf s) in
   Pretty_print.program_env env ast;
   Buffer.contents buf
 
@@ -31,20 +30,22 @@ let pp_string s =
 (*****************************************************************************)
 let unittest = "pretty print php" >::: [
   "basic" >:: (fun () ->
-      
-    let content = "function foo() { }" in
+
+    let content = 
+      "function foo() { }" in
     let expect =
 "<?php
 function foo() {
 }
 " in
-      
     assert_equal 
       ~msg:"it should put the ending brace on another line"
       expect (pp_string content);
   );
+
   "comments" >:: (fun () ->
-    let content = " function foo() { // first comment\n $x = 1; }" in
+    let content = 
+      " function foo() { // first comment\n $x = 1; }" in
     let expect =
 "<?php
 function foo() {
@@ -55,7 +56,6 @@ function foo() {
     assert_equal 
       ~msg:"it should maintain comments"
       expect (pp_string content);
-    
   );  
 
   "unparse/pretty-print mix (chunk management)" >:: (fun () ->
@@ -67,8 +67,7 @@ function bar() { }
 "
     in
     let file = Parse_php.tmp_php_file_from_string content in
-    let toks = Parse_php.tokens file in
-    let ast = Parse_php.parse_program file in
+    let (ast, toks) = Parse_php.ast_and_tokens file in
     let chunks = Unparse_pretty_print_mix.split_chunks toks ast in
     (match chunks with
     | [(Unparse_pretty_print_mix.Func def1, toks1);
@@ -85,7 +84,9 @@ function bar() { }
             assert_failure "it should chunk w/ the open tag and ending newline"
         );
         (match ast1 with
-        | [Ast_pp.Comment "<?php"; Ast_pp.Newline; Ast_pp.FuncDef _] -> ()
+        | [Ast_pp.StmtEsthet Ast_pp.Comment "<?php"; 
+           Ast_pp.StmtEsthet Ast_pp.Newline; 
+           Ast_pp.FuncDef _] -> ()
         | _ ->
             assert_failure (spf "wrong ast1: %s " (Common.dump ast1))
         );
@@ -100,7 +101,7 @@ function bar() { }
          * newline.
          *)
         (match ast2 with
-        | [Ast_pp.Newline; Ast_pp.FuncDef _] -> ()
+        | [Ast_pp.StmtEsthet Ast_pp.Newline; Ast_pp.FuncDef _] -> ()
         | _ ->
             assert_failure (spf "wrong ast2: %s " (Common.dump ast2))
         )

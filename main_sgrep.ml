@@ -118,6 +118,7 @@ let gen_layer ~root ~query file =
 (* Main action *)
 (*****************************************************************************)
 let main_action xs =
+  Common.logger Config.logger "sgrep";
 
   let pattern, query_string = 
     match !pattern_file, !pattern_string with

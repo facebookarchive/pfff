@@ -22,6 +22,7 @@ module FT = File_type
 
 (*s: main flags *)
 let screen_size = ref 2
+let legend = ref true
 
 let db_file = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
@@ -48,10 +49,12 @@ let filters = [
   );
   "pfff", (fun file ->
     match FT.file_type_of_file file with
-    | FT.PL (FT.ML _) | FT.PL (FT.Makefile) -> 
+    | FT.PL ((FT.ML _) | FT.Makefile | FT.Opa) -> 
         (* todo: should be done in file_type_of_file *)
         not (FT.is_syncweb_obj_file file)
-        && not (file =~ ".*commons/" || file =~ ".*external/")
+        && not (file =~ ".*commons/" || 
+                file =~ ".*external/" || 
+                 file =~ ".*_build/")
     | _ -> false
   );
   "cpp", (let x = ref false in (fun file ->
@@ -63,6 +66,7 @@ let filters = [
   "opa", (fun file -> 
     match FT.file_type_of_file file with
     | FT.PL (FT.Opa) (* | FT.PL (FT.ML _) *)  -> true
+(*    | FT.PL (FT.Web (_)) -> true *)
     | _ -> false
   );
 ]
@@ -156,6 +160,7 @@ let layers_in_dir dir =
 (*s: main_action() *)
 let main_action xs = 
   set_gc ();
+  Common.logger Config.logger "codemap";
 
   let root = Common.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);
@@ -232,7 +237,8 @@ let main_action xs =
 
   Common.finalize (fun () -> 
     View2.mk_gui 
-      ~screen_size:!screen_size 
+      ~screen_size:!screen_size
+      ~legend:!legend
       !test_mode
       (root, model, dw, db_file)
   ) (fun() -> 
@@ -291,6 +297,8 @@ let options () = [
     "-boost_lbl" , Arg.Set Flag.boost_label_size,
     " ";
     "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
+    " ";
+    "-no_legend" , Arg.Clear legend,
     " ";
 
     "-symlinks", Arg.Unit (fun () -> 
