@@ -37,8 +37,9 @@ module Annot = Annotation_js
 let tags_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_js.find_js_files_of_dir_or_files xs in
 
-  files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
-    if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
+  files +> Common_extra.progress ~show:verbose (fun k ->
+   List.map (fun file ->
+    k();
 
     let (ast_and_tokens, _) = 
       Common.save_excursion Flag_parsing_js.show_parsing_error false (fun ()->
@@ -91,4 +92,4 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
       )
     in
     file, tags_classes ++ tags_modules
-  )
+  ))

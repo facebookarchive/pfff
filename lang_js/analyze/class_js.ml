@@ -299,8 +299,10 @@ let extract_complete_name_of_info ast =
               if  raw_str =~ "^[']"
               then ()
               else begin
+                (* TODO too many FPs
                 pr2 ("WEIRD: no class but function field at " ^
                         Ast.string_of_info info_method_name);
+                *)
               end;
               ""
           )

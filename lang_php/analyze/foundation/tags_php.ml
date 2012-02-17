@@ -128,27 +128,23 @@ let tags_of_ast ast filelines =
 let php_defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
-  files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
-    if verbose then pr2 (spf "tagger: %s (%d/%d)" file i total);
-
-    let (ast2) = 
-      try 
-        Parse_php.parse file +> fst
+  files +> Common_extra.progress ~show:verbose (fun k ->
+   List.map (fun file ->
+    k ();
+    let (ast) = 
+      try  Parse_php.parse_program file
       with Parse_php.Parse_error err ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         []
     in
-    let ast = Parse_php.program_of_program2 ast2 in
-
     let filelines = Common.cat_array file in
     let defs = 
-      try tags_of_ast ast filelines 
+      try tags_of_ast ast filelines
       with 
       | Timeout -> raise Timeout
       | exn -> 
           pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
           []
     in
-      
     (file, defs)
-  )
+  ))
