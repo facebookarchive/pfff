@@ -92,7 +92,8 @@ module HC = Highlight_code
 (* Type *)
 (*****************************************************************************)
 
-(* Yet another entity type. Could perhaps factorize code with highlight_code.ml.
+(* Yet another entity type. Could perhaps factorize code with 
+ * highlight_code.ml.
  * 
  * If you add a constructor don't forget to modify entity_kind_of_string.
  * 
@@ -126,22 +127,19 @@ type entity_kind =
 
   (* todo? could also abuse property below to encode such information *)
   and class_type = RegularClass | Interface | Trait
-  (* we distinguage regular from static because it's good to visually
-   * differentiate them in tools like codemap.
+  (* we distinguate regular methods from static methods because it's good
+   * to visually differentiate them in tools like codemap.
    *)
   and method_type = RegularMethod | StaticMethod
 
 (* How to store the id of an entity ? A int ? A name and hope few conflicts ?
  * Using names will increase the size of the db which will slow down
  * the loading of the database.
- * 
  * So it's better to use an id. Moreover at some point we want to provide
  * callers/callees navigations and more entities relationships
  * so we need a real way to reference an entity.
  *)
-
 type entity_id = int
-
 
 type entity = {
   e_kind: entity_kind;
@@ -159,8 +157,8 @@ type entity = {
    * do another pass where we adjust numbers of other entity references.
    *)
   
-  (* todo: could give more importance when used externally not just from
-   * another file but from another directory!
+  (* todo: could give more importance when used externally not just
+   * from another file but from another directory!
    * or could refine this int with more information.
    *)
   mutable e_number_external_users: int;
@@ -237,6 +235,7 @@ type database = {
 
   (* indexed by entity_id *)
   entities: entity array;
+
   (* TODO: leverage git information *)
   (* TODO: leverage dynamic information *)
   (* TODO: leverage owners information *)
@@ -252,6 +251,7 @@ let empty_database () = {
 
 let default_db_name = 
   "PFFF_DB.marshall"
+
 (*****************************************************************************)
 (* String of *)
 (*****************************************************************************)
@@ -537,7 +537,6 @@ let entity_kind_of_highlight_category_use categ =
 let entity_and_highlight_category_correpondance entity categ =
   let entity_kind_use = entity_kind_of_highlight_category_use categ in
   entity.e_kind = entity_kind_use
-
 
 (*****************************************************************************)
 (* Misc *)
