@@ -4004,6 +4004,9 @@ let index_list xs =
   if null xs then [] (* enum 0 (-1) generate an exception *)
   else zip xs (enum 0 ((List.length xs) -1))
 
+(* if you want to use this to show the progress while processing huge list,
+ * consider instead Common_extra.progress
+ *)
 let index_list_and_total xs =
   let total = List.length xs in
   if null xs then [] (* enum 0 (-1) generate an exception *)
@@ -6049,6 +6052,30 @@ let execute_and_show_progress ?(show=true) len f =
 (* now in common_extra.ml:
  * let execute_and_show_progress len f = ...
  *)
+
+(*****************************************************************************)
+(* Gc optimisation (pfff) *)
+(*****************************************************************************)
+
+(* opti: to avoid stressing the GC with a huge graph, we sometimes
+ * change a big AST into a string, which reduces the size of the graph
+ * to explore when garbage collecting.
+ *)
+type 'a cached = 'a serialized_maybe ref
+ and 'a serialized_maybe =
+    | Serial of string
+    | Unfold of 'a
+
+let serial x =
+  ref (Serial (Marshal.to_string x []))
+
+let unserial x =
+  match !x with
+  | Unfold c -> c
+  | Serial s ->
+      let res = Marshal.from_string s 0 in
+      (*        x := Unfold res; *)
+      res
 
 (*****************************************************************************)
 (* Random *)

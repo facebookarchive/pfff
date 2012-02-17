@@ -2136,6 +2136,22 @@ val execute_and_show_progress :
 
 (*e: common.mli misc *)
 
+(*****************************************************************************)
+(* Gc optimisation (pfff) *)
+(*****************************************************************************)
+
+(* opti: to avoid stressing the GC with a huge graph, we sometimes
+ * change a big AST into a string, which reduces the size of the graph
+ * to explore when garbage collecting.
+ *)
+type 'a cached = 'a serialized_maybe ref
+ and 'a serialized_maybe =
+    | Serial of string
+    | Unfold of 'a
+
+val serial: 'a -> 'a cached
+val unserial: 'a cached -> 'a
+
 (*###########################################################################*)
 (* Postlude *)
 (*###########################################################################*)
