@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 open Ast_php_simple
 module A = Ast_php_simple
@@ -120,19 +121,10 @@ and env = {
   stack   : int SMap.t;
 }
 
-(* opti: to avoid stressing the GC with a huge graph, we sometimes
- * change a big AST into a string, which reduces the size of the graph
- * to explore when garbage collecting.
- *)
-type 'a cached = 'a serialized_maybe ref
- and 'a serialized_maybe =
-    | Serial of string
-    | Unfold of 'a
-
 type code_database_juju = {
-  funs_juju    : Ast_php_simple.func_def cached SMap.t ref;
-  classes_juju : Ast_php_simple.class_def cached SMap.t ref;
-  constants_juju: Ast_php_simple.constant_def cached SMap.t ref;
+  funs_juju    : Ast_php_simple.func_def Common.cached SMap.t ref;
+  classes_juju : Ast_php_simple.class_def Common.cached SMap.t ref;
+  constants_juju: Ast_php_simple.constant_def Common.cached SMap.t ref;
 }
 
 type node =
@@ -190,66 +182,55 @@ let (add_graph: node -> node -> callgraph -> callgraph) =
   Map_poly.add src vs graph
 
 (*****************************************************************************)
-(* Optimization *)
-(*****************************************************************************)
-
-(* less: could move that in common.ml, it's pretty generic and useful *)
-let serial x =
-  ref (Serial (Marshal.to_string x []))
-
-let unserial x =
-  match !x with
-  | Unfold c -> c
-  | Serial s ->
-      let res = Marshal.from_string s 0 in
-      (*        x := Unfold res; *)
-      res
-
-(*****************************************************************************)
 (* Code database *)
 (*****************************************************************************)
-let juju_db_of_files xs =
+let juju_db_of_files ?(show_progress=false) xs =
   let db = {
     funs_juju = ref SMap.empty;
     classes_juju = ref SMap.empty;
     constants_juju = ref SMap.empty;
   }
   in
-  List.iter (fun file ->
-  try
-    let cst = Parse_php.parse_program file in		
-    let ast = Ast_php_simple_build.program cst in
-    List.iter (fun x ->
-      (* todo: print warning when duplicate class/func ? *)
-      match x with
-      | ClassDef c ->
-          db.classes_juju := 
-            SMap.add (A.unwrap c.c_name) (serial c) !(db.classes_juju)
-      | FuncDef fd ->
-          db.funs_juju := 
-            SMap.add (A.unwrap fd.f_name) (serial fd) !(db.funs_juju)
-      | ConstantDef c ->
-          db.constants_juju :=
-            SMap.add (A.unwrap c.cst_name) (serial c) !(db.constants_juju)
+  xs +> Common_extra.progress ~show:show_progress (fun k -> 
+   List.iter (fun file ->
+    k();
+    try
+      let cst = Parse_php.parse_program file in		
+      let ast = Ast_php_simple_build.program cst in
+      List.iter (fun x ->
+        (* todo: print warning when duplicate class/func ? *)
+        match x with
+        | ClassDef c ->
+            db.classes_juju := 
+              SMap.add (A.unwrap c.c_name) (Common.serial c) !(db.classes_juju)
+        | FuncDef fd ->
+            db.funs_juju := 
+              SMap.add (A.unwrap fd.f_name) (Common.serial fd) !(db.funs_juju)
+        | ConstantDef c ->
+            db.constants_juju :=
+              SMap.add (A.unwrap c.cst_name) (Common.serial c) !(db.constants_juju)
 
-      | (Global _|StaticVars _
-        |Try (_, _, _)|Throw _
-        |Continue _|Break _|Return _
-        |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
-        |Switch (_, _)|If (_, _, _)
-        |Block _|Expr _
-        ) -> ()
-    ) ast
-  with e -> 
-    Printf.printf "ERROR %s\n" (Marshal.to_string e [])
-  ) xs;
+        | (Global _|StaticVars _
+          |Try (_, _, _)|Throw _
+          |Continue _|Break _|Return _
+          |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
+          |Switch (_, _)|If (_, _, _)
+          |Block _|Expr _
+          ) -> ()
+      ) ast
+    with e -> 
+      Common.pr2 (spf "ERROR in %s, exn = %s" file (Common.exn_to_s e))
+  ));
   db
 
 (* todo: what if multiple matches?? *)
 let code_database_of_juju_db db = {
-  funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in unserial f);
-  classes   = (fun s -> let c = SMap.find s !(db.classes_juju) in unserial c);
-  constants = (fun s -> let c = SMap.find s !(db.constants_juju) in unserial c);
+  funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in 
+                        Common.unserial f);
+  classes   = (fun s -> let c = SMap.find s !(db.classes_juju) in 
+                        Common.unserial c);
+  constants = (fun s -> let c = SMap.find s !(db.constants_juju) in 
+                        Common.unserial c);
   }
 
 (*****************************************************************************)
