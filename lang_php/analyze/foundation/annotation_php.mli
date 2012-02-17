@@ -1,7 +1,4 @@
 (*s: annotation_php.mli *)
-type email = string
-type unixname = string
-
 type annotation = 
   | Owner of unixname
   | Emails of (email * notification_kind option) list
@@ -23,6 +20,9 @@ type annotation =
 
   | Other of string
 
+ and unixname = string
+
+ and email = string
  and notification_kind = 
    | Immediate
    | Consistent
@@ -34,7 +34,8 @@ type annotation =
 
 (* The returned parse_info is the one associated with the whole comment.
  * We use it in cmf to raise errors like use of undefined function when
- * giving a bad function name for a data provider.
+ * a a comment references a bad function name as a data provider for
+ * a test.
  *)
 val annotations_of_program_with_comments: 
   Parse_php.program_with_comments -> (annotation * Ast_php.info) list
