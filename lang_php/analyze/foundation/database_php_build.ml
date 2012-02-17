@@ -121,7 +121,7 @@ let index_db1_2 db files =
 
   let parsing_stat_list = ref [] in
 
-  pr2 ("Phase 1, parsing and add ASTs in berkeley DB");
+  pr2 ("PHASE 1, parsing and add ASTs in berkeley DB");
   files +> Common_extra.progress ~show:!Flag.verbose_database (fun k -> 
    List.iter (fun file -> 
     k();
@@ -196,7 +196,7 @@ let index_db1 a b =
  *)
 let index_db2_2 db =
 
-  pr2 ("Phase 2, add defs (string->entity), strings, nested ids");
+  pr2 ("PHASE 2, add defs (string->entity), strings, nested ids");
   DbH.iter_files_and_topids db (fun id file -> 
     let ast = db.defs.toplevels#assoc id in
 
@@ -424,7 +424,7 @@ let index_db2 a =
  *)
 let index_db3_2 db = 
 
-  pr2 ("Phase 3, add uses (callers, users of a class, etc)");
+  pr2 ("PHASE 3, add uses (callers, users of a class, etc)");
 
   (* how assert no modif on those important tables ? *)
   DbH.iter_files_and_ids db (fun id file -> 
@@ -531,7 +531,7 @@ let index_db3 a =
  *)
 let index_db4_2 ~annotate_variables_program db = 
 
-  pr2 ("Phase 4, tagging variables (local, global), extract annotations");
+  pr2 ("PHASE 4, tagging variables (local, global), extract annotations");
 
   (* todo: those mutual dependency between entity_finder and build_db is ugly *)
   let find_entity = build_entity_finder db in
