@@ -54,9 +54,8 @@ let index_db_includes_requires2
         let php_root = Db.path_of_project db.project in
         Env_php.mk_env ~php_root
   in
-  let msg = "ANALYZE_INCLUDE_REQUIRE" in
-  DbH.iter_files db (fun ((file, topids), i, total) ->
-    pr2 (spf "%s: %s %d/%d " msg file i total);
+  pr2 "Phase extra 1: analyze include/require";
+  DbH.iter_files db (fun (file, topids) ->
 
     let program = topids +> List.map (fun id -> db.defs.toplevels#assoc id) in
     let increq = Include_require_php.top_increq_of_program program in
@@ -95,7 +94,6 @@ let index_db_includes_requires2
         (fun old -> file::old) (fun() -> []) +> ignore
     );
   )
-
 
 let index_db_includes_requires ?hook_additional_includes a b =
   Common.profile_code "Db.index_db_includes_requires" (fun () ->

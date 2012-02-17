@@ -38,16 +38,15 @@ val add_methodcallees_of_id : 'a * 'b -> 'c -> 'd
 (* helpers used internally that can be useful to other *)
 val iter_files: 
   Database_php.database -> 
-  ((Common.filename * Database_php.id list) * 
-  int (* idx *) * int (* total *) -> unit) ->
+  ((Common.filename * Database_php.id list) -> unit) ->
   unit
 
 val iter_files_and_topids :
-  Database_php.database -> string -> 
+  Database_php.database ->  
   (Database_php.id -> Common.filename -> unit) -> 
   unit
 
 val iter_files_and_ids :
-  Database_php.database -> string -> 
+  Database_php.database ->
   (Database_php.id -> Common.filename -> unit) -> 
   unit

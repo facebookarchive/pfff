@@ -25,12 +25,13 @@ module E   = Database_code
 module Db = Database_php
 
 open Database_php_build_helpers
+module DbH = Database_php_build_helpers
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * We build the full database in multiple steps as some
+ * We build the full PHP database in multiple steps as some
  * operations need the information computed globally by the
  * previous step:
  * 
@@ -38,16 +39,15 @@ open Database_php_build_helpers
  * 
  * - we then add nested ASTs (methods, class vars, nested funcs), and their ids
  * - we add all strings found in the code in a global table
- * - before adding the callgraph, we need to 
- *   be able to decide given a function call what are the possible entities
- *   that define this function (there can be multiple candidates), so 
- *   we add some string->definitions (function, classes, ...) information
- *   (index_db2)
+ * - before adding the callgraph, we need to be able to decide given
+ *   a function call what are the possible entities that define this
+ *   function (there can be multiple candidates), so we add some 
+ *   string->definitions (function, classes, ...) information  (index_db2)
  * 
  * - then we do the callgraph
  * - we add other reversed index like the callgraph, but for other 
- *   entities than functions, e.g. the places where a class in instantiated,
- *   or inherited (index_db3)
+ *   entities than functions, e.g. the places where a class is 
+ *   instantiated or inherited (index_db3)
  * 
  * - TODO given this callgraph we can now run a type inference analysis, as 
  *   having the callgraph helps doing the analysis in a certain order (from
@@ -73,6 +73,8 @@ open Database_php_build_helpers
 (*****************************************************************************)
 (* See entity_php.mli for the rational behind having both a database
  * type and an entity_finder type.
+ * This function is defined here because it's actually used by
+ * index_db4 below.
  *)
 let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
  (fun (id_kind, s) ->
@@ -96,21 +98,19 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
 *)
     | (E.Other _|E.Method _|E.MultiDirs|E.Dir|E.File
       |E.ClassConstant|E.Field|E.TopStmts|E.Macro
-      |E.Global|E.Constant|E.Type|E.Module) -> raise Todo
+      |E.Global|E.Constant|E.Type|E.Module) 
+      -> raise Todo
     )
     with exn ->
       if !Flag.show_analyze_error
-      then 
-        pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
-              s (Common.exn_to_s exn));
+      then pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
+                   s (Common.exn_to_s exn));
       raise exn
   )
 
 (*****************************************************************************)
 (* Build database intermediate steps *)
 (*****************************************************************************)
-
-let debug_index_db = ref true
 
 (* ---------------------------------------------------------------------- *)
 (* step1:  
@@ -119,20 +119,20 @@ let debug_index_db = ref true
  *)
 let index_db1_2 db files = 
 
-  let nbfiles = List.length files in
-
-  let pbs = ref [] in
   let parsing_stat_list = ref [] in
 
-  files +> Common.index_list +> List.iter (fun (file, i) -> 
-    pr2 (spf "PARSING: %s (%d/%d)" file i nbfiles);
+  pr2 ("Phase 1, parsing and add ASTs in berkeley DB");
+  files +> Common_extra.progress ~show:!Flag.verbose_database (fun k -> 
+   List.iter (fun file -> 
+    k();
 
     (* for undoing in case of pbs *)
     let all_ids = ref [] in
 
     try (Common.timeout_function 20 (fun () ->
-        (* parsing, the important call *)
-      let (ast2, stat) = Parse_php.parse file in
+      (* parsing, the important call *)
+      let (ast2, stat) = 
+        Parse_php.parse file in
       let file_info = 
         { parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD; } in
 
@@ -147,16 +147,17 @@ let index_db1_2 db files =
            * do not add it otherwise id will not be a primary key.
            *)
           | Ast.FinalDef _ -> ()
-          (* Do we want to add the NotParsedCorrectly in the db ? Yes, it
-           * can be useful in the code visualizer to have all
-           * the elements in a file, including the one that do not
-           * parse. Note that this id does not have a id_kind for now.
-           *)
+          | Ast.FuncDef _ | Ast.ConstantDef _ | Ast.ClassDef _
           | Ast.StmtList _ 
-          | Ast.FuncDef _ | Ast.ConstantDef _ | Ast.ClassDef _ ->
+            ->
               let topelem = Unsugar_php.unsugar_self_parent_toplevel topelem in
               let id = db +> add_toplevel2 file (topelem, info_item) in
               Common.push2 id all_ids;
+          (* Do we want to add the NotParsedCorrectly in the db ? It
+           * could be useful in the code visualizer to have all
+           * the elements in a file, including the one that do not
+           * parse. Note that this id does not have a id_kind for now.
+           *)
           | Ast.NotParsedCorrectly _ -> ()
         );
         db +> add_filename_and_topids (file, (List.rev !all_ids));
@@ -164,12 +165,12 @@ let index_db1_2 db files =
       db.flush_db();
     ))
     with 
-    | Out_of_memory  (*| Stack_overflow*) | Timeout
-    | Parse_php.Parse_error _
+    (Out_of_memory  (*| Stack_overflow*) | Timeout
+    | Parse_php.Parse_error _) as exn
     -> 
       (* Backtrace.print (); *)
-      pr2 ("PB: BIG PBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB: " ^ file);
-      pr2 ("Undoing addition");
+      pr2 (spf "PB with %s, exn = %s, undoing addition" 
+              file (Common.exn_to_s exn));
       db +> add_filename_and_topids(file, []);
       !all_ids +> List.iter (fun id -> 
         try 
@@ -178,8 +179,8 @@ let index_db1_2 db files =
           (* todo? del also the fullid and id info ? *)
         with Not_found -> ()
       );
-  );
-  !parsing_stat_list, !pbs
+  ));
+  !parsing_stat_list
 
 let index_db1 a b = 
   Common.profile_code "Db.index_db1" (fun () -> index_db1_2 a b)
@@ -194,12 +195,14 @@ let index_db1 a b =
  *  - add extra information (e.g. the 'kind' of an id)
  *)
 let index_db2_2 db =
-  iter_files_and_topids db "ANALYZING2" (fun id file -> 
+
+  pr2 ("Phase 2, add defs (string->entity), strings, nested ids");
+  DbH.iter_files_and_topids db (fun id file -> 
     let ast = db.defs.toplevels#assoc id in
 
     (* Extract all strings in the code. Can be used for instance by the
      * deadcode analyzer to remove some false positives if a function
-     * is mentionned in a string.
+     * is mentioned in a string.
      *)
     let strings = Lib_parsing_php.get_constant_strings_any (Toplevel ast) in
     strings +> List.iter (fun s ->
@@ -223,15 +226,15 @@ let index_db2_2 db =
       | StmtList _)
         -> ()
     );
-  (* let's add definitions and nested asts and entities *)
-  (*
-    let add_def_hook (s, kind) = db +> add_def (IdString s, kind, id) in
-    let add_type_hook typ = db +> add_type (id, typ) in
-    ~add_type:add_type_hook
-  *)
-    
-   (* old: Definitions_php.visit_definitions_of_ast ~add_def:add_def_hook ast
-    * we now need to add more information in the database (e.g. enclosing ids),
+
+   (* let's add definitions and nested asts and entities
+    * old: 
+    *  Definitions_php.visit_definitions_of_ast ~add_def:add_def_hook ast
+    *  let add_def_hook (s, kind) = db +> add_def (IdString s, kind, id) in
+    *  let add_type_hook typ = db +> add_type (id, typ) in
+    *  ~add_type:add_type_hook
+    * 
+    * We now need to add more information in the database (e.g. enclosing ids),
     * so we have to inline the visit_definitions code here and expand it
     *)
     let enclosing_id = ref id in
@@ -265,10 +268,8 @@ let index_db2_2 db =
             add_def (s, E.Class kind, id, Some class_def.c_name) db;
             k x
         | NotParsedCorrectly _ -> ()
-            
         (* right now FinalDef are not in the database, because of possible 
-         * fullid ambiguity 
-         *)
+         * fullid ambiguity *)
         | FinalDef _ -> raise Impossible
       );
 
@@ -423,8 +424,10 @@ let index_db2 a =
  *)
 let index_db3_2 db = 
 
+  pr2 ("Phase 3, add uses (callers, users of a class, etc)");
+
   (* how assert no modif on those important tables ? *)
-  iter_files_and_ids db "ANALYZING3" (fun id file -> 
+  DbH.iter_files_and_ids db (fun id file -> 
     let ast = Db.ast_of_id id db in
     (* bugfix: was calling Unsugar_php.unsugar_self_parent_entity ast
      * here but it's too late because an entity can be a nested id
@@ -451,7 +454,8 @@ let index_db3_2 db =
     db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
 
     (* the new, X::, extends, etc *)
-    let classes_used = users_of_class_in_any (Entity ast) in
+    let classes_used = 
+      users_of_class_in_any (Entity ast) in
     let candidates = 
       classes_used +> List.map Ast.name +> Common.set 
       +> Common.map_flatten (fun s -> class_ids_of_string s db)
@@ -499,13 +503,9 @@ let index_db3_2 db =
           );
         );
         
+    | Ast.ClassVariableE _  | Ast.ClassConstantE _ | Ast.XhpAttrE _
+    | Ast.MethodE _ | Ast.StmtListE _ | Ast.FunctionE _  | Ast.ConstantE _ 
     | Ast.MiscE _
-    | Ast.ClassVariableE _  | Ast.ClassConstantE _
-    | Ast.XhpAttrE _
-    | Ast.MethodE _
-    | Ast.StmtListE _
-    | Ast.FunctionE _ 
-    | Ast.ConstantE _ 
       ->  ()
     );
     (*
@@ -526,16 +526,16 @@ let index_db3 a =
 
 (* ---------------------------------------------------------------------- *)
 (* step4:
- *  - tags annotations for functions
- *  - local/global annotations
+ *  - extract javadoc like annotations for functions
+ *  - variables local vs global vs param AST "annotation"
  *)
 let index_db4_2 ~annotate_variables_program db = 
 
+  pr2 ("Phase 4, tagging variables (local, global), extract annotations");
+
   (* todo: those mutual dependency between entity_finder and build_db is ugly *)
   let find_entity = build_entity_finder db in
-  let msg = "ANALYZING4" in
-  iter_files db (fun ((file, ids), i, total) -> 
-   pr2 (spf "%s: %s %d/%d " msg file i total);
+  DbH.iter_files db (fun (file, ids) -> 
     
     let asts = ids +> List.map (fun id -> db.defs.toplevels#assoc id) in
 
@@ -587,7 +587,6 @@ let index_db4_2 ~annotate_variables_program db =
     let extra' = { extra with
       tags = !tags;
     } in
-
     db.defs.extra#add2 (id, extra');
    );
   );
@@ -602,6 +601,7 @@ let index_db4 ~annotate_variables_program a =
 (*****************************************************************************)
 let max_phase = 4
 
+(* see also Flag.verbose_database *)
 let create_db 
     ?(verbose_stats=true)
     ?(db_support=Db.Mem)
@@ -666,7 +666,7 @@ let create_db
     (* Common.check_stack_nbfiles nbfiles;  *)
 
     (* ?default_depth_limit_cpp *)
-    let parsing_stats, bigpbs = 
+    let parsing_stats = 
       index_db1 db files
     in
     db.flush_db();
@@ -675,14 +675,13 @@ let create_db
     db.flush_db();
     if phase >= 3 then index_db3 db;
     db.flush_db();
-
     if phase >= 4 then index_db4 ~annotate_variables_program db;
     db.flush_db();
 
     if verbose_stats && !Flag.show_analyze_error then begin
       (* Parsing_stat.print_stat_numbers (); *)
       Parse_info.print_parsing_stat_list   parsing_stats;
-      !_errors +> List.iter pr2;
+      !DbH._errors +> List.iter pr2;
     end;
     db
   end
@@ -699,7 +698,7 @@ let create_db
  * by the file. In a way it is similar to what gcc does when it calls
  * 'cpp' to get the full information for a file.
  * 
- * todo: see facebook/fb_common/www_db_build.ml for now
+ * todo: see facebook/fb_common/www_db_build.ml for now.
  * todo: factorize all the db_of_files_or_dirs out there.
  *)
 let fast_create_db_mem_a_la_cpp ?phase files_or_dirs =
@@ -730,7 +729,7 @@ let db_of_files_or_dirs ?(annotate_variables_program=None) files_or_dirs =
    * dirs so there is no base so we use /
    *)
   Common.save_excursion Flag.verbose_database false (fun () ->
-  create_db
+   create_db
     ~db_support:Database_php.Mem
     ~files:(Some php_files)
     ~annotate_variables_program

@@ -63,26 +63,23 @@ let pr2_err s =
 let iter_files db f = 
   db.file_to_topids#tolist 
   +> Common.sortgen_by_key_lowfirst (* does it really help ? real opti ? *)
-  +> Common.index_list_and_total 
-  +> List.iter (fun x -> 
-    let ((file, topids), i, total) = x in
-    try f x 
-    with exn -> 
-      pr2 (Common.exn_to_s_with_backtrace exn);
-      pr2_err (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
-  );
+  +> Common_extra.progress ~show:!Flag.verbose_database (fun k ->
+    List.iter (fun (file, ids) -> 
+      k ();
+      try f (file, ids)
+      with exn -> 
+        pr2 (Common.exn_to_s_with_backtrace exn);
+        pr2_err (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+    ));
   ()
 
-let iter_files_and_topids db msg f = 
-  iter_files db (fun ((file, ids), i, total) -> 
-     pr2 (spf "%s: %s %d/%d " msg file i total);
-     ids +> List.iter (fun id -> 
-       f id file
-     )
-   )
+let iter_files_and_topids db f = 
+  iter_files db (fun (file, ids) -> 
+    ids +> List.iter (fun id -> f id file)
+  )
 
-let iter_files_and_ids db msg f = 
-  iter_files_and_topids db msg (fun id file ->
+let iter_files_and_ids db f = 
+  iter_files_and_topids db (fun id file ->
     Db.recurse_children (fun id -> f id file) db id;
   )
 
