@@ -63,7 +63,7 @@ let resolve_class_name qu in_class =
       (* I used to failwith, but our codebase contains such crap
        * and we don't want all of our analysis to fail on one file
        * just because of those wrong self/parent. Turns them
-       * into regular unknwon class so get the same benefits.
+       * into regular unknown class so get the same benefits.
        *)
       pr2 ("PB: Use of self:: outside of a class");
       Name ("UnkwnownUseOfSelf", tok1), tok1
