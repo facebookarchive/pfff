@@ -13,17 +13,19 @@ open Common
 (*****************************************************************************)
 
 (* src: harrop article on fork-based parallelism *)
-let invoke (f : 'a -> 'b) x : unit -> 'b =
+let invoke f x =
   let input, output = Unix.pipe() in
   match Unix.fork() with
   (* pad: what is this ?? *)
   | -1 -> (let v = f x in fun () -> v)
+  (* child *)
   | 0 ->
       Unix.close input;
       let output = Unix.out_channel_of_descr output in
       Marshal.to_channel output (try `Res(f x) with e -> `Exn e) [];
       close_out output;
       exit 0
+  (* parent *)
   | pid ->
       Unix.close output;
       let input = Unix.in_channel_of_descr input in
@@ -36,8 +38,9 @@ let invoke (f : 'a -> 'b) x : unit -> 'b =
         | `Exn e -> raise e;;
 
 let parallel_map f xs =
+  (* create all the fork *)
   let futures = List.map (invoke f) xs in
-  (* sync *)
+  (* sync, get all parents to waitpid *)
   List.map (fun futur -> futur ()) futures
 
 (*****************************************************************************)
@@ -49,7 +52,7 @@ type 'a jobs = ('a job) list
 
 (* 
  * This is a very naive job scheduler. One limitation is that before
- * launching another run we must wait for the slowest process. A
+ * launching another round we must wait for the slowest process. A
  * set of workers and a master model would be more efficient by always
  * feeding processors. A partial fix is to give a tasks number that
  * is quite superior to the actual number of processors.
