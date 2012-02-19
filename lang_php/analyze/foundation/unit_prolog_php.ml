@@ -36,11 +36,13 @@ let prolog_query ~file query =
   let db = Database_php_build.db_of_files_or_dirs [source_file] in
   Database_prolog_php.gen_prolog_db 
     ~show_progress:false db facts_pl_file;
-  (*
+  let jujudb = 
+    Database_juju_php.juju_db_of_files ~show_progress:false [source_file] in
+  let codedb = 
+    Database_juju_php.code_database_of_juju_db jujudb in
+  let cg = Callgraph_php_build.create_graph [source_file] codedb in
   Database_prolog_php.append_callgraph_to_prolog_db
-    ~show_progress:false db facts_pl_file;
-   TODO get callgraph
-  *)
+    ~show_progress:false cg facts_pl_file;
 
   (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
   let cmd = 
