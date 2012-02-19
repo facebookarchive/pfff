@@ -16,6 +16,7 @@ open Common
 
 open Ast_php_simple
 module A = Ast_php_simple
+module CG = Callgraph_php2
 
 module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make (Int)
@@ -121,21 +122,6 @@ and env = {
   stack   : int SMap.t;
 }
 
-type code_database_juju = {
-  funs_juju    : Ast_php_simple.func_def Common.cached SMap.t ref;
-  classes_juju : Ast_php_simple.class_def Common.cached SMap.t ref;
-  constants_juju: Ast_php_simple.constant_def Common.cached SMap.t ref;
-}
-
-type node =
-  | Function of string
-  | Method of string * string
-  | File of Common.filename
-  (* used to simplify code to provoke the call to toplevel functions *)
-  | FakeRoot
-
-type callgraph = (node, node Set_poly.t) Map_poly.t
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -156,81 +142,6 @@ let empty_env db file =
     stack   = SMap.empty ;
     safe = ref SMap.empty;
     db = db;
-  }
-
-let string_of_node = function
-  | File s -> "__TOP__" ^ s
-  | Function s -> s
-  | Method (s1, s2) -> s1 ^ "::" ^ s2
-  | FakeRoot -> "__FAKE_ROOT__"
-
-let node_of_string s =
-  match s with
-  | _ when Common.(=~) s "__TOP__\\(.*\\)" -> 
-      File (Common.matched1 s)
-  | _ when Common.(=~) s "\\(.*\\)::\\(.*\\)" -> 
-      let (a, b) = Common.matched2 s in
-      Method (a, b)
-  | "__FAKE_ROOT__" -> FakeRoot
-  | _ -> Function s
-
-
-let (add_graph: node -> node -> callgraph -> callgraph) =
- fun src target graph ->
-  let vs = try Map_poly.find src graph with Not_found -> Set_poly.empty in
-  let vs = Set_poly.add target vs in
-  Map_poly.add src vs graph
-
-(*****************************************************************************)
-(* Code database *)
-(*****************************************************************************)
-let juju_db_of_files ?(show_progress=false) xs =
-  let db = {
-    funs_juju = ref SMap.empty;
-    classes_juju = ref SMap.empty;
-    constants_juju = ref SMap.empty;
-  }
-  in
-  xs +> Common_extra.progress ~show:show_progress (fun k -> 
-   List.iter (fun file ->
-    k();
-    try
-      let cst = Parse_php.parse_program file in		
-      let ast = Ast_php_simple_build.program cst in
-      List.iter (fun x ->
-        (* todo: print warning when duplicate class/func ? *)
-        match x with
-        | ClassDef c ->
-            db.classes_juju := 
-              SMap.add (A.unwrap c.c_name) (Common.serial c) !(db.classes_juju)
-        | FuncDef fd ->
-            db.funs_juju := 
-              SMap.add (A.unwrap fd.f_name) (Common.serial fd) !(db.funs_juju)
-        | ConstantDef c ->
-            db.constants_juju :=
-              SMap.add (A.unwrap c.cst_name) (Common.serial c) !(db.constants_juju)
-
-        | (Global _|StaticVars _
-          |Try (_, _, _)|Throw _
-          |Continue _|Break _|Return _
-          |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
-          |Switch (_, _)|If (_, _, _)
-          |Block _|Expr _
-          ) -> ()
-      ) ast
-    with e -> 
-      Common.pr2 (spf "ERROR in %s, exn = %s" file (Common.exn_to_s e))
-  ));
-  db
-
-(* todo: what if multiple matches?? *)
-let code_database_of_juju_db db = {
-  funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in 
-                        Common.unserial f);
-  classes   = (fun s -> let c = SMap.find s !(db.classes_juju) in 
-                        Common.unserial c);
-  constants = (fun s -> let c = SMap.find s !(db.constants_juju) in 
-                        Common.unserial c);
   }
 
 (*****************************************************************************)

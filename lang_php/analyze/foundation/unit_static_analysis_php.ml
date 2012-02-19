@@ -5,6 +5,7 @@ open OUnit
 open Env_interpreter_php
 module Env = Env_interpreter_php
 module Interp = Abstract_interpreter_php
+module Db = Database_juju_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -18,16 +19,16 @@ let prepare content =
   let tmp_file = 
     Parse_php.tmp_php_file_from_string content in
   let db = 
-    Env.code_database_of_juju_db  (Env.juju_db_of_files [tmp_file]) in
+    Db.code_database_of_juju_db  (Db.juju_db_of_files [tmp_file]) in
   let env = 
-    Env_interpreter_php.empty_env db tmp_file in
+    Env.empty_env db tmp_file in
   let ast = 
     Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
   env, ast
 
 let heap_of_program_at_checkpoint content =
   let (env, ast) = prepare content in
-  let heap = Env_interpreter_php.empty_heap in
+  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     let _heap = Abstract_interpreter_php.program env heap ast in
@@ -38,7 +39,7 @@ let heap_of_program_at_checkpoint content =
 
 let callgraph_generation content =
   let (env, ast) = prepare content in
-  let heap = Env_interpreter_php.empty_heap in
+  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
@@ -92,11 +93,11 @@ let assert_graph file xs =
   let _nb_nodes = List.length xs in
   xs +> List.iter (fun (s, expected) ->
     try
-      let n = Env.node_of_string s in
+      let n = CG.node_of_string s in
       let actual_child = 
         Map_poly.find n g 
         +> Set_poly.elements 
-        +> List.map Env.string_of_node 
+        +> List.map CG.string_of_node 
       in
       assert_equal
         ~msg:"it should have the expected callees"
@@ -292,10 +293,10 @@ function bar() { foo(); }
 " in
       (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
-      let xs = Map_poly.find (Env.Function "bar") g +> Set_poly.elements in
+      let xs = Map_poly.find (CG.Function "bar") g +> Set_poly.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
-        [Env.Function "foo"]
+        [CG.Function "foo"]
         xs;
 
       let file = "

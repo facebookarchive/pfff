@@ -24,6 +24,7 @@ module E = Database_code
 
 module Env = Env_interpreter_php
 module Interp = Abstract_interpreter_php
+module CG = Callgraph_php2
 open Env_interpreter_php
 
 (*****************************************************************************)
@@ -103,10 +104,10 @@ let name_id id db =
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
 
 let name_of_node = function
-  | Env.File s -> spf "'__TOPSTMT__%s'" s
-  | Env.Function s -> spf "'%s'" s
-  | Env.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
-  | Env.FakeRoot -> "'__FAKE_ROOT__'"
+  | CG.File s -> spf "'__TOPSTMT__%s'" s
+  | CG.Function s -> spf "'%s'" s
+  | CG.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
+  | CG.FakeRoot -> "'__FAKE_ROOT__'"
       
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
@@ -421,7 +422,7 @@ let gen_prolog_db ?show_progress a b =
  * - detect higher order functions so that function call
  *   through generic higher order functions is present in callgraph
  *)
-let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
+let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
 
   let h_oldcallgraph = Hashtbl.create 101 in
   file +> Common.cat +> List.iter (fun s ->
@@ -429,57 +430,28 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
     then Hashtbl.add h_oldcallgraph s true
   );
 
-  let all_files = 
-    db.Db.file_info#tolist +> List.map fst in
-  let db = 
-    Env.code_database_of_juju_db  (Env.juju_db_of_files all_files) in
-  
-  Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
-  Common.save_excursion Abstract_interpreter_php.strict false (fun()->
-    Abstract_interpreter_php.graph := Map_poly.empty;
-
-    all_files +> Common_extra.progress ~show:show_progress (fun k ->
-      List.iter (fun file ->
-      k ();
-      let ast = 
-        try 
-          Ast_php_simple_build.program (Parse_php.parse_program file) 
-        with Ast_php_simple_build.TodoConstruct s ->
-          []
-      in
-      let env = 
-        Env_interpreter_php.empty_env db file in
-      let heap = 
-        Env_interpreter_php.empty_heap in
-      let _heap = Abstract_interpreter_php.program env heap ast in
-      ()
-    ))
-  ));
-
   (* look previous information, to avoid introduce duplication
    * todo: and also to check/compare with the abstract interpreter.
    * Should be a superset.
    *  - should find more functions when can resolve statically dynamic funcall
    *  - 
    *)
-
   Common.with_open_outfile_append file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
-    let g = !(Abstract_interpreter_php.graph) in
     pr "";
     g +> Map_poly.iter (fun src xs ->
       xs +> Set_poly.iter (fun target ->
         let kind =
           match target with
           (* can't call a file ... *)
-          | Env.File _ -> raise Impossible
+          | CG.File _ -> raise Impossible
           (* can't call a fake root*)
-          | Env.FakeRoot -> raise Impossible
-          | Env.Function _ -> "function"
-          | Env.Method _ -> "method"
+          | CG.FakeRoot -> raise Impossible
+          | CG.Function _ -> "function"
+          | CG.Method _ -> "method"
         in
         (* do not count those fake edges *)
-        if src <> Env.FakeRoot
+        if src <> CG.FakeRoot
         then begin
           let s =(spf "docall(%s, %s, %s)." 
                      (name_of_node src) (name_of_node target) kind) in

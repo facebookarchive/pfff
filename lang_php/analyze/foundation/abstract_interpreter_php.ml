@@ -20,6 +20,7 @@ open Env_interpreter_php
 module A = Ast_php_simple
 module Env = Env_interpreter_php
 module H = Abstract_interpreter_php_helpers
+module CG = Callgraph_php2
 
 module SMap = Map.Make (String)
 
@@ -67,7 +68,7 @@ let _checkpoint_heap = ref
 
 (* for callgraph generation *)
 let extract_paths = ref true
-let (graph: Env_interpreter_php.callgraph ref) = ref Map_poly.empty
+let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
 
 (* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
@@ -90,7 +91,7 @@ exception LostControl
 
 let save_path _env target =
   if !extract_paths
-  then graph := add_graph (List.hd !path) target !graph
+  then graph := CG.add_graph (List.hd !path) target !graph
 
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
@@ -104,7 +105,10 @@ let rec get_dynamic_function env heap v =
 
 and get_function_list env heap = function
   | [] -> raise LostControl
-  | Vstring s :: _ -> heap, env.db.funs s
+  | Vstring s :: _ -> 
+      (try heap, env.db.funs s
+      with Not_found -> raise (UnknownFunction s)
+      )
   | _ :: rl -> get_function_list env heap rl
 
 let rec get_string = function
@@ -156,10 +160,10 @@ module Taint = Tainting_fake_php.Taint
 let rec program env heap program =
   if !extract_paths
   then begin 
-    path := [Env.FakeRoot];
+    path := [CG.FakeRoot];
     List.iter (fake_root env heap) program;
   end;
-  path := [Env.File !(env.file)];
+  path := [CG.File !(env.file)];
   let heap = stmtl env heap (exclude_toplevel_defs program) in
   heap
 
@@ -385,7 +389,7 @@ and expr_ env heap x =
      (* pad: other? *)
       with (LostControl | UnknownFunction _) as exn  ->
         if !strict then raise exn;
-        save_path env (Env.node_of_string s);
+        save_path env (CG.node_of_string s);
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in
         heap, res
@@ -677,7 +681,7 @@ and call env heap v el =
 and call_fun f env heap el =
   if !tracing 
   then Common.pr 
-       (Common.spf "%s->%s" (Env.string_of_node (List.hd !path)) 
+       (Common.spf "%s->%s" (CG.string_of_node (List.hd !path)) 
            (unw f.f_name));
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
@@ -687,7 +691,7 @@ and call_fun f env heap el =
   let n = try SMap.find (unw f.f_name) env.stack with Not_found -> 0 in
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
   (* pad: ugly, call_fun should also accept method_def *)
-  save_path env (Env.node_of_string (unw f.f_name));
+  save_path env (CG.node_of_string (unw f.f_name));
   (* stop when recurse in same function twice or when depth stack > 6 *)
   if n >= 2 || List.length !path >= 6 && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
@@ -700,7 +704,7 @@ and call_fun f env heap el =
     let heap = parameters env heap f.f_params el in
     let vars = fun_nspace f !(env.vars) in
     let env = { env with vars = ref vars } in
-    path := (Env.node_of_string (unw f.f_name)) :: !path;
+    path := (CG.node_of_string (unw f.f_name)) :: !path;
     let heap = stmtl env heap f.f_body in
     let heap, _, r = Var.get env heap "*return*" in
     let heap, r = Ptr.get heap r in
@@ -901,7 +905,7 @@ and method_def env cname parent self this (heap, acc) m =
      * There is a (ugly) corresponding call to node_of_string in
      * call_fun().
      *)
-    f_name = w (Env.string_of_node (Env.Method (unw cname, unw m.m_name)));
+    f_name = w (CG.string_of_node (CG.Method (unw cname, unw m.m_name)));
     f_params = m.m_params;
     f_return_type = m.m_return_type;
     f_body = m.m_body;

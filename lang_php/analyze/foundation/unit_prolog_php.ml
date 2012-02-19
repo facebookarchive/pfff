@@ -36,8 +36,11 @@ let prolog_query ~file query =
   let db = Database_php_build.db_of_files_or_dirs [source_file] in
   Database_prolog_php.gen_prolog_db 
     ~show_progress:false db facts_pl_file;
+  (*
   Database_prolog_php.append_callgraph_to_prolog_db
     ~show_progress:false db facts_pl_file;
+   TODO get callgraph
+  *)
 
   (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
   let cmd = 

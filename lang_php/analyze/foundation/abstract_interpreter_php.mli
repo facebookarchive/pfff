@@ -13,7 +13,7 @@ val program:
 
 
 val extract_paths: bool ref
-val graph: Env_interpreter_php.callgraph ref
+val graph: Callgraph_php2.callgraph ref
 
 (* used by unit testing *)
 val _checkpoint_heap:
