@@ -2,8 +2,8 @@ open Common
 
 open OUnit
 
-module AstT  = Ast_php_simple_typing
-module AstH = Ast_php_simple_typing_helpers
+module AstT  = Typing_php
+module AstH = Typing_helpers_php
 module Env = Env_typing_php
 module Ast = Ast_php_simple
 

@@ -47,7 +47,7 @@ module SSet = Set.Make(String)
 *)
 
 open Env_typing_php
-open Ast_php_simple_typing_helpers
+open Typing_helpers_php
 
 (*****************************************************************************)
 (* Prelude *)

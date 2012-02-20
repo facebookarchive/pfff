@@ -26,8 +26,7 @@ SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
       tainting_fake_php.ml abstract_interpreter_php.ml \
       callgraph_php_build.ml
-SRC+= env_typing_php.ml \
-      ast_php_simple_typing_helpers.ml ast_php_simple_typing.ml 
+SRC+= env_typing_php.ml typing_helpers_php.ml typing_php.ml
 SRC+= database_php.ml database_juju_php.ml
 # used to be in analyze/
 SRC+= tags_php.ml normalize_php.ml \
