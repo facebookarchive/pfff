@@ -23,9 +23,9 @@ val fast_create_db_mem_a_la_cpp:
 
 (* helpers used also in unit_analyze_php.ml *)
 val db_of_files_or_dirs: 
+  ?show_progress:bool ->
   ?annotate_variables_program:
-    (Entity_php.entity_finder option -> Ast_php.program -> unit)
-    option ->
+    (Entity_php.entity_finder option -> Ast_php.program -> unit) option ->
   Common.path list -> Database_php.database
 
 (* wrapper that makes it easier for some code to not depend on database_php *)

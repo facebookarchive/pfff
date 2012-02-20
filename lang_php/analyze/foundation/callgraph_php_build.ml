@@ -22,5 +22,18 @@ open Common
 (* Main entry point *)
 (*****************************************************************************)
 
-let create_graph files db =
-  raise Todo
+let create_graph ?(show_progress=false) ?(strict=false) files db =
+
+  Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
+  Common.save_excursion Abstract_interpreter_php.strict strict (fun()->
+    Abstract_interpreter_php.graph := Map_poly.empty;
+
+    files +> Common_extra.progress ~show:show_progress (fun k ->
+     List.iter (fun file ->
+       k();
+       raise Todo
+     )
+    )
+  ));
+  !Abstract_interpreter_php.graph
+

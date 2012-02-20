@@ -37,6 +37,7 @@ let heap_of_program_at_checkpoint content =
     | Some x -> x
   ))
 
+(* less: use Callgraph_php_build.create_graph *)
 let callgraph_generation content =
   let (env, ast) = prepare content in
   let heap = Env.empty_heap in
@@ -282,6 +283,8 @@ checkpoint(); // y: int
 (* Callgraph *)
 (*****************************************************************************)
 
+  (* less: move in unit_callgraph_php.ml *)
+  
   (*-------------------------------------------------------------------------*)
   (* Callgraph and functions *)
   (*-------------------------------------------------------------------------*)
