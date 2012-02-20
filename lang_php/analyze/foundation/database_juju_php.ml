@@ -22,6 +22,10 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Yet another "code database" for php functions/classes/constants.
+ * This one is used by the abstract interpreter.
+ *)
 
 (*****************************************************************************)
 (* Types *)
@@ -36,6 +40,8 @@ type database = {
 (*****************************************************************************)
 (* Code database *)
 (*****************************************************************************)
+
+(* todo: position_info flag *)
 let juju_db_of_files ?(show_progress=false) xs =
   let db = {
     funs_juju = ref SMap.empty;
@@ -75,7 +81,9 @@ let juju_db_of_files ?(show_progress=false) xs =
   ));
   db
 
-(* todo: what if multiple matches?? *)
+(* todo: what if multiple matches?
+ * todo: profiling information
+ *)
 let code_database_of_juju_db db = { Env.
   funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in 
                         Common.unserial f);
