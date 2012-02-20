@@ -29,10 +29,15 @@ module E = Error_php
  *)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-let check ?(verbose=false) env file ast = 
+let check env file ast = 
 
   let increqs = IR.all_increq_of_any (Ast.Program ast) in
   increqs |> List.iter (fun (inckind, tok, incexpr) ->
@@ -44,11 +49,11 @@ let check ?(verbose=false) env file ast =
           then E.fatal tok (E.FileNotFound path)
             
       | None -> 
-          if verbose then
-            pr2 (spf "(not a static include/require %s)" 
-                       (Ast.string_of_info tok));
+          pr2 (spf "(not a static include/require %s)"(Ast.string_of_info tok))
     ) 
-    with exn -> 
+    with 
+    | (Timeout | UnixExit _) as exn -> raise exn
+    | exn -> 
       pr2 (spf "PB: treating a include/require: %s" (Ast.string_of_info tok));
       raise exn
   );

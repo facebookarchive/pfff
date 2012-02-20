@@ -74,29 +74,24 @@ let name_id id db =
         | Some id_class -> 
             let sclass = Db.name_of_id id_class db in
             (match id_kind with
-            | E.Method _ ->       spf "('%s','%s')" sclass s
-
             (* todo? xhp decl ? *)
-            | E.Field ->
-                (* old: remove the $ because in use-mode we don't use the $ 
-                 * update: now def don't have a $ too, and can be xhp
-                 * attributes too.
-                *)
+            (* old: I used to do something different for Field amd remove
+             * the $ because in use-mode but we don't use the $ anymore.
+             * now def don't have a $ too, and can be xhp attribute too.
+             *)
+            | E.Method _ | E.Field | E.ClassConstant ->
                 spf "('%s','%s')" sclass s
-
-            | E.ClassConstant -> spf "('%s','%s')" sclass s
             | _ -> raise Impossible
             )
         | None ->
             failwith (spf "could not find enclosing class for %s"
-                    (Db.str_of_id id db))
+                         (Db.str_of_id id db))
         )
-
     | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
-    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global | E.Type|E.Module) ->
+    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global|E.Type|E.Module) ->
         (* not in db for now *)
         raise Impossible
     )
@@ -285,7 +280,7 @@ let add_uses id ast pr db =
   ()
 
 
-let add_defs_and_uses id kind ast pr db =
+let add_uses_and_properties id kind ast pr db =
   match kind, ast with
   | E.Function, FunctionE def ->
       pr (spf "arity(%s, %d)." (name_id id db)
@@ -399,7 +394,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
          * todo: refs, types for params?
          *)
         let ast = Db.ast_of_id id db in
-        add_defs_and_uses id kind ast pr db;
+        add_uses_and_properties id kind ast pr db;
 
    ));
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
@@ -419,23 +414,24 @@ let gen_prolog_db ?show_progress a b =
 
 (* todo: 
  * - could also improve precision of use/4 
- * - detect higher order functions so that function call
- *   through generic higher order functions is present in callgraph
+ * - detect higher order functions so that function calls through
+ *   generic higher order functions are present in the callgraph
  *)
 let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
 
+  (* look previous information, to avoid introduce duplication
+   *
+   * todo: check/compare with the basic callgraph I do in add_uses?
+   * it should be a superset.
+   *  - should find more functions when can resolve statically dynamic funcall
+   *  - 
+   *)
   let h_oldcallgraph = Hashtbl.create 101 in
   file +> Common.cat +> List.iter (fun s ->
     if s =~ "^docall(.*" 
     then Hashtbl.add h_oldcallgraph s true
   );
 
-  (* look previous information, to avoid introduce duplication
-   * todo: and also to check/compare with the abstract interpreter.
-   * Should be a superset.
-   *  - should find more functions when can resolve statically dynamic funcall
-   *  - 
-   *)
   Common.with_open_outfile_append file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
     pr "";
