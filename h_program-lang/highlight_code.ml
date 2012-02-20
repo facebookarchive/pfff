@@ -153,12 +153,13 @@ type usedef2 =
 (* color, foreground or background will be changed *)
 type category =  
 
-  (* generic emacs mode  *)
-  | Comment 
+  | Comment
 
-  | String
   (* pad addons *)
-  | Number | Boolean | Null
+  | Number | Boolean 
+  | Null
+
+  | String | Regexp
 
   (* classic emacs mode *)
   | Keyword  (* SEMI multi *)
@@ -766,7 +767,8 @@ let info_of_category = function
 
   | Number -> [`FOREGROUND "yellow3";]
   | Boolean -> [`FOREGROUND "pink3";]
-  | String -> [`FOREGROUND "green3";]
+  | String -> [`FOREGROUND "MediumSeaGreen";]
+  | Regexp -> [`FOREGROUND "green3";]
   | Null -> [`FOREGROUND "cyan3";]
 
 

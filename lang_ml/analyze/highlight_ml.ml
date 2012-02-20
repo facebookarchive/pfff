@@ -240,6 +240,10 @@ let visit_toplevel
           tag info (ConstructorUse fake_no_use2);
           k x
 
+      (* very pad specific ... *)
+      | Infix (l1, ("=~", _), C(Ast.String(s, tok))) ->
+          tag tok Regexp;
+          k x
 
       | _ -> k x
     );
@@ -556,7 +560,10 @@ let visit_toplevel
     | T.TSharpDirective ii -> tag ii Ifdef
 
     | T.TString (s,ii) ->
-        tag ii String
+        (* can have been tagged as a regexp *)
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii String
+
     | T.TChar (s, ii) ->
         tag ii String
     | T.TFloat (s,ii) | T.TInt (s,ii) ->

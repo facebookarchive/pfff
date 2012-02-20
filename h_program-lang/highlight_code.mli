@@ -1,13 +1,12 @@
 
 type category =
   | Comment 
-  | String | Number | Boolean | Null
+  | Number | Boolean | Null | String | Regexp
+
   | Keyword 
   | KeywordConditional | KeywordLoop 
   | KeywordExn | KeywordObject | KeywordModule
-
   | Builtin | BuiltinCommentColor | BuiltinBoolean
-
   | Operator | Punctuation
 
   | Function of usedef2
@@ -34,15 +33,11 @@ type category =
   | FunctionEquation
 
   | BadSmell
-
   | UseOfRef
-
   | PointerCall
   | CallByRef
   | ParameterRef
-
   | IdentUnknown
-
 
   | Local of usedef
   | Parameter of usedef
@@ -51,8 +46,7 @@ type category =
 
   | Ifdef | Include | IncludeFilePath | Define | CppOther
 
-  | EmbededHtml (* e.g. xhp *)
-  | EmbededHtmlAttr
+  | EmbededHtml (* e.g. xhp *) | EmbededHtmlAttr
   | EmbededUrl (* e.g. xhp *)
   | EmbededCode (* e.g. javascript *)
   | EmbededStyle (* e.g. css *)
@@ -61,7 +55,6 @@ type category =
   | GrammarRule
 
   | CommentWordImportantNotion | CommentWordImportantModal
-
   | CommentSection0 | CommentSection1 | CommentSection2 
   | CommentSection3 | CommentSection4
   | CommentEstet | CommentCopyright | CommentSyncweb
