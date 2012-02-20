@@ -7,6 +7,8 @@ basic support
 
 ** introduce pfff_logger (in OPA), monitoring the use of pfff tools
 
+** introduce type inference for PHP (julien)
+
 ** internals
 
 *** refacrored lang_php/analysis/, less error messages, progress meter,
