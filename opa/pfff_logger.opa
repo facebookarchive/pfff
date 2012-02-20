@@ -59,14 +59,26 @@ function string_of_command_run(command_run x) {
 // Query
 //****************************************************************************
 
-function view_list() {
-  strmap = /db1;
-  //todo: this is really slow
-  keys = Map.To.key_list(strmap);
-  String.concat("\n", keys)
+function users_of_cmd(string cmd) {
+  intmap = /db1[cmd];
+  vals = Map.To.val_list(intmap);
+  users = List.map(function (x) { x.unixname }, vals);
+  set = Set.From.list(users);
+  set
 }
 
-function view(string cmd) {
+function view_all_cmds() {
+  strmap = /db1;
+  keys = Map.To.key_list(strmap);
+  keys_with_stats = List.map(function (cmd) {
+    users = users_of_cmd(cmd);
+    (cmd, Set.size(users))
+    }, keys);
+  String.concat("\n", 
+    List.map(function ((cmd, n)) {"{cmd}({n})"}, keys_with_stats))
+}
+
+function view_cmd(string cmd) {
   intmap = /db1[cmd];
   vals = Map.To.val_list(intmap);
   ys = List.map(string_of_command_run, vals);
@@ -127,9 +139,9 @@ function start(Uri.relative url) {
   case {path: ["view", "counter"] ...}:
     Resource.raw_text("counter = {/counter}\n")
   case {path: ["view", "list"] ...}:
-    Resource.raw_text(view_list())
+    Resource.raw_text(view_all_cmds())
   case {path: ["view", cmd] ...}:
-    Resource.raw_text(view(cmd))
+    Resource.raw_text(view_cmd(cmd))
 
   default:
     Resource.raw_status({bad_request})
