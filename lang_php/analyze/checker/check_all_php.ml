@@ -33,8 +33,9 @@ open Common
 (*****************************************************************************)
 
 (* coupling: if modify this, also modify lint_php.ml in pfff/facebook/... *)
-let check_file ?(find_entity=None) env file =
+let check_file ?(verbose=true) ?(find_entity=None) env file =
 
+ Common.save_excursion Flag_analyze_php.verbose_checking verbose (fun() ->
   (* we need to unsugar self/parent earlier now (we used to do it only
    * before Check_functions_php) because check_and_annotate_program
    * needs to tag if something is passed by reference, which requires
@@ -61,3 +62,4 @@ let check_file ?(find_entity=None) env file =
       Check_classes_php.check_program   find_entity ast;
   );
   ()
+ )
