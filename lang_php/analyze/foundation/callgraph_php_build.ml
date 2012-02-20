@@ -14,9 +14,15 @@
  *)
 open Common
 
+module Env = Env_interpreter_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Small wrapper around Abstract_interpreter_php.program with more
+ * functional interface (it returns a callgraph).
+ *)
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -31,7 +37,14 @@ let create_graph ?(show_progress=false) ?(strict=false) files db =
     files +> Common_extra.progress ~show:show_progress (fun k ->
      List.iter (fun file ->
        k();
-       raise Todo
+
+       let env = Env.empty_env db file in
+       let heap = Env.empty_heap in
+       let ast = 
+         Ast_php_simple_build.program (Parse_php.parse_program file) in
+
+       let _heap = Abstract_interpreter_php.program env heap ast in
+       ()
      )
     )
   ));
