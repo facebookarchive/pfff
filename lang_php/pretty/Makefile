@@ -7,7 +7,7 @@ BIN=prettyphp
 
 SRC= \
   ast_pp.ml ast_pp_build.ml \
-  pp2.ml pretty_print.ml\
+  pretty_print.ml\
   unparse_pretty_print_mix.ml \
   unit_pretty_print_php.ml
 

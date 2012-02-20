@@ -26,6 +26,8 @@ SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
       tainting_fake_php.ml abstract_interpreter_php.ml \
       callgraph_php_build.ml
+SRC+= env_typing_php.ml \
+      ast_php_simple_typing_helpers.ml ast_php_simple_typing.ml 
 SRC+= database_php.ml database_juju_php.ml
 # used to be in analyze/
 SRC+= tags_php.ml normalize_php.ml \
@@ -33,7 +35,8 @@ SRC+= tags_php.ml normalize_php.ml \
      database_php_build_helpers.ml database_php_build.ml database_php_build2.ml\
      database_prolog_php.ml \
      unit_foundation_php.ml unit_analyze_db_php.ml \
-     unit_static_analysis_php.ml unit_prolog_php.ml  
+     unit_static_analysis_php.ml   unit_typeinfer_php.ml \
+     unit_prolog_php.ml  
 
 #old: pil is now subsumed by ast_simple and the abstract interpreter
 # pil.ml pretty_print_pil.ml controlflow_pil.ml \
