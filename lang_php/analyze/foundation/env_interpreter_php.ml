@@ -16,7 +16,6 @@ open Common
 
 open Ast_php_simple
 module A = Ast_php_simple
-module CG = Callgraph_php2
 
 module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make (Int)

@@ -6,6 +6,7 @@ open Env_interpreter_php
 module Env = Env_interpreter_php
 module Interp = Abstract_interpreter_php
 module Db = Database_juju_php
+module CG = Callgraph_php2
 
 (*****************************************************************************)
 (* Prelude *)
