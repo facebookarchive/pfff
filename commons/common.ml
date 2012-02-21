@@ -85,7 +85,7 @@ let exclude p xs =
 let last_n n l = List.rev (take n (List.rev l))
 (*let last l = List.hd (last_n 1 l) *)
 let rec list_last = function
- | [] -> raise Not_found
+  | [] -> raise Not_found
   | [x] -> x
   | x::y::xs -> list_last (y::xs)
 
