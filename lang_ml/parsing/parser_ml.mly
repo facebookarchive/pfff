@@ -649,7 +649,9 @@ simple_expr:
  | TOParen seq_expr type_constraint TCParen
      { ExprTodo }
 
-
+ /*(* scoped open, 3.12 *)*/
+ | mod_longident TDot TOParen seq_expr TCParen
+     { ExprTodo }
 
 simple_labeled_expr_list:
  | labeled_simple_expr

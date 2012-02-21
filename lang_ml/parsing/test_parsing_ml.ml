@@ -29,7 +29,11 @@ let test_parse_ml_or_mli xs =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_ml.parse file in
+    let (xs, stat) = 
+      Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
+        Parse_ml.parse file 
+      )
+      in
     Common.push2 stat stat_list;
   );
   Parse_info.print_parsing_stat_list !stat_list;
@@ -81,8 +85,6 @@ let test_dump_ml file =
   let ast = Parse_ml.parse_program file in
   let s = Export_ast_ml.ml_pattern_string_of_program ast in
   pr s
-          
-
 
 (*****************************************************************************)
 (* Unit tests *)
