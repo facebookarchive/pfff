@@ -20,7 +20,7 @@ module SSet = Set.Make(String)
 module SMap = Map.Make(String)
 
 module Topo = Ast_php_simple_toposort
-module Graph = Topo.Graph
+module Graph = Ast_php_simple_toposort.Graph
 
 (*****************************************************************************)
 (* Prelude *)
@@ -66,14 +66,14 @@ type t =
      *)
     | Tclosed of SSet.t * t SMap.t
 
-(* We keep the abstract syntax trees in their serialized form to ease the exploration
-   phase of the GC
-*)
+(* todo: reuse 'a cached and code database *)
 type cached_ast = string
 
 type env = {
+    (* todo: use db *)
     classes: cached_ast SMap.t ref;
     funcs: cached_ast SMap.t ref;
+
     builtins: SSet.t ref;
     (* The graph of dependencies *)
     graph: Graph.t;
@@ -82,6 +82,7 @@ type env = {
     env: t SMap.t ref;
     (* The global variable envirnoment *)
     genv: t SMap.t ref;
+
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
     (* The current substitution (for type variables) *)
@@ -149,30 +150,6 @@ let or_ l =
   let l = List.sort (fun x y -> proj x - proj y) l in
   Tsum l
 
-let pbool = Tabstr "bool"
-let pint = Tabstr "int"
-let pfloat = Tabstr "float"
-let pstring = Tabstr "string"
-let pnull = Tabstr "null"
-let phtml = Tabstr "html"
-
-let fvar() = Tvar (fresh())
-let bool = Tsum [pbool]
-let int = Tsum [pint]
-let thtml = Tsum [phtml]
-let float = Tsum [pfloat]
-let string = Tsum [pstring]
-let null = Tsum [pnull]
-let any = Tsum []
-
-let empty = Tsum [Trecord SMap.empty]
-let array(t1, t2) = Tsum [Tarray (SSet.empty, t1, t2)]
-let srecord(s, v) = Tsum [Trecord (SMap.add s v SMap.empty)]
-let sobject(s, v) = Tsum [Tobject (SMap.add s v SMap.empty)]
-let fun_ l b = Tsum [Tfun (List.map (fun x -> "", x) l, b)]
-let afun l b = Tsum [Tfun (l, b)]
-
-
 let make_env () = {
   env     = ref SMap.empty;
   genv    = ref SMap.empty;
@@ -199,3 +176,32 @@ let make_env () = {
   collect_count = ref 0;
   cumul = ref 0.0;
 }
+
+(*****************************************************************************)
+(* Shortcuts *)
+(*****************************************************************************)
+
+let pbool = Tabstr "bool"
+let pint = Tabstr "int"
+let pfloat = Tabstr "float"
+let pstring = Tabstr "string"
+let pnull = Tabstr "null"
+let phtml = Tabstr "html"
+
+let fvar() = Tvar (fresh())
+
+let bool = Tsum [pbool]
+let int = Tsum [pint]
+let thtml = Tsum [phtml]
+let float = Tsum [pfloat]
+let string = Tsum [pstring]
+let null = Tsum [pnull]
+
+let any = Tsum []
+
+let empty = Tsum [Trecord SMap.empty]
+let array(t1, t2) = Tsum [Tarray (SSet.empty, t1, t2)]
+let srecord(s, v) = Tsum [Trecord (SMap.add s v SMap.empty)]
+let sobject(s, v) = Tsum [Tobject (SMap.add s v SMap.empty)]
+let fun_ l b = Tsum [Tfun (List.map (fun x -> "", x) l, b)]
+let afun l b = Tsum [Tfun (l, b)]
