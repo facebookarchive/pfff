@@ -6,6 +6,7 @@
 basic support
 
 ** introduce pfff_logger (in OPA), monitoring the use of pfff tools
+(please rerun ./configure if you have compilation pbs)
 
 ** introduce type inference for PHP (julien)
 
