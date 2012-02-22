@@ -152,6 +152,8 @@ let info_of_error_and_kind err =
       "eFileNotFound"
   | Injection (_) ->
       "eInjection"
+  | CaseWithSemiColon | CaseSensitivityKeyword ->
+      "eOther"
   in
   err.loc, kind
 

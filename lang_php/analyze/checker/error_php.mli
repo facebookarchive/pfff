@@ -36,6 +36,8 @@ type error = {
 
   | FileNotFound of Common.filename
   | Injection of injection_kind
+  | CaseWithSemiColon
+  | CaseSensitivityKeyword
 
   and severity2 =
     | Bad

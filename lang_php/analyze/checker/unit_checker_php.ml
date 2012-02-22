@@ -31,6 +31,7 @@ let unittest =
     "tests/php/scheck/cfg.php";
     "tests/php/scheck/references.php";
     "tests/php/scheck/endpoint.php";
+    "tests/php/scheck/misc.php";
   ] 
   in
   let test_files = 
