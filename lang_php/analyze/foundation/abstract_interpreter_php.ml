@@ -56,13 +56,6 @@ module SMap = Map.Make (String)
 (* Globals *)
 (*****************************************************************************)
 
-(* call stack used for debugging when found an XSS hole and used also
- * for callgraph generation.
- * todo: could be put in the env too, next to 'stack' and 'safe'? take
- * care of save_excursion though.
- *)
-let path = ref []
-
 (* used by unit testing when encountering the 'checkpoint()' function call *)
 let _checkpoint_heap = ref
   (None: (Env_interpreter_php.heap * value SMap.t) option)
@@ -94,9 +87,9 @@ exception LostControl
 (* Helpers *)
 (*****************************************************************************)
 
-let save_path _env target =
+let save_path env target =
   if !extract_paths
-  then graph := CG.add_graph (List.hd !path) target !graph
+  then graph := CG.add_graph (List.hd !(env.path)) target !graph
 
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
@@ -165,10 +158,10 @@ module Taint = Tainting_fake_php.Taint
 let rec program env heap program =
   if !extract_paths
   then begin 
-    path := [CG.FakeRoot];
+    env.path := [CG.FakeRoot];
     List.iter (fake_root env heap) program;
   end;
-  path := [CG.File !(env.file)];
+  env.path := [CG.File !(env.file)];
   let heap = stmtl env heap (exclude_toplevel_defs program) in
   heap
 
@@ -334,7 +327,7 @@ and catch env heap (_, _, stl) =
 and expr env heap x =
   if !Taint.taint_mode
   then Taint.taint_expr env heap 
-    (expr_, lvalue, get_dynamic_function, call_fun, call) !path x
+    (expr_, lvalue, get_dynamic_function, call_fun, call) !(env.path) x
   else expr_ env heap x
 
 and expr_ env heap x =
@@ -379,7 +372,7 @@ and expr_ env heap x =
       heap, unaryOp uop v
   | Call (Id ("call_user_func" as fname,tok), f :: el) ->
       let heap, f = expr env heap f in
-      Taint.check_danger env heap fname tok !path f;
+      Taint.check_danger env heap fname tok !(env.path) f;
       (try
           let heap, f = get_dynamic_function env heap f  in
           call_fun f env heap el
@@ -643,7 +636,7 @@ and binaryOp env heap bop v1 v2 =
       )
   | Ast_php.Logical lop -> Vabstr Tbool
 
-  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !path
+  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
 
 and unaryOp uop v =
   match uop, v with
@@ -685,7 +678,7 @@ and call env heap v el =
   | x -> sum_call env heap [x] el
 
 and call_fun f env heap el =
-  Trace.call (unw f.f_name) !path;
+  Trace.call (unw f.f_name) !(env.path);
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
     List.fold_left (fun acc x -> Taint.GetTaint.value heap x = None && acc)
@@ -696,7 +689,7 @@ and call_fun f env heap el =
   (* pad: ugly, call_fun should also accept method_def *)
   save_path env (CG.node_of_string (unw f.f_name));
   (* stop when recurse in same function twice or when depth stack > 6 *)
-  if n >= 2 || List.length !path >= !max_depth && is_clean
+  if n >= 2 || List.length !(env.path) >= !max_depth && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
   then
     let heap, v = Ptr.new_ heap in
@@ -707,11 +700,11 @@ and call_fun f env heap el =
     let heap = parameters env heap f.f_params el in
     let vars = fun_nspace f !(env.vars) in
     let env = { env with vars = ref vars } in
-    path := (CG.node_of_string (unw f.f_name)) :: !path;
+    env.path := (CG.node_of_string (unw f.f_name)) :: !(env.path);
     let heap = stmtl env heap f.f_body in
     let heap, _, r = Var.get env heap "*return*" in
     let heap, r = Ptr.get heap r in
-    path := List.tl !path;
+    env.path := List.tl !(env.path);
     if Taint.GetTaint.value heap r = None
     then env.safe := SMap.add (unw f.f_name) r !(env.safe);
     heap, r
@@ -766,7 +759,8 @@ and xhp_attr env heap x =
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
-      Taint.check_danger env heap "xhp attribute" (Ast_php.fakeInfo "") !path v;
+      Taint.check_danger env heap "xhp attribute" (Ast_php.fakeInfo "") 
+        !(env.path) v;
       heap
   | e -> fst (expr env heap e)
 
@@ -941,7 +935,7 @@ and make_method mname parent self this fdef =
     let heap, res' = Ptr.get heap res' in
     if unw mname = "render"
     then Taint.check_danger env heap "return value of render" (snd mname) 
-      !path res';
+      !(env.path) res';
     (match old_self with Some x -> Var.set_global env self_ x | None -> ());
     (match old_parent with Some x -> Var.set_global env parent_ x | None ->());
     (match old_this with Some x -> Var.set_global env "$this" x | None -> ());

@@ -14,8 +14,7 @@
  *)
 open Common
 
-open Ast_php_simple
-module A = Ast_php_simple
+module Ast = Ast_php_simple
 
 module ISet = Set.Make (Int)
 module IMap = Map.Make (Int)
@@ -43,9 +42,9 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 
 type code_database = {
-  funs:    string -> Ast_php_simple.func_def;
-  classes: string -> Ast_php_simple.class_def;
-  constants: string -> Ast_php_simple.constant_def;
+  funs:      string -> Ast.func_def;
+  classes:   string -> Ast.class_def;
+  constants: string -> Ast.constant_def;
 }
 
 type value =
@@ -55,7 +54,7 @@ type value =
 
   | Vabstr  of type_
 
-  (* Precise value. Especially useful for Vstring and interprocedural
+  (* Precise value. Especially useful for Vstring for interprocedural
    * analysis as people use strings to represent functions or classnames
    * (they are not first-class citizens in PHP).
    *)
@@ -75,7 +74,7 @@ type value =
   | Vmap of value * value
 
   (* pad: ??? *)
-  | Vmethod of value * (env -> heap -> expr list -> heap * value) IMap.t
+  | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
   | Vobject of value SMap.t
 
   (* union of possible types/values, ex: null | object, bool | string, etc *)
@@ -112,6 +111,13 @@ and env = {
    * to add fake "<function>**$var" in globals *)
   cfun    : string;
 
+  (* call stack used for debugging when found an XSS hole and used also
+   * for callgraph generation.
+   * todo: could be put in the env too, next to 'stack' and 'safe'? take
+   * care of save_excursion though.
+   *)
+  path: Callgraph_php2.node list ref;
+
   (* opti: cache of already processed functions safe for tainting *)
   safe    : value SMap.t ref;
   (* opti: number of recursive calls to a function f. if > 2 then stop. *)
@@ -138,6 +144,7 @@ let empty_env db file =
     stack   = SMap.empty ;
     safe = ref SMap.empty;
     db = db;
+    path = ref [];
   }
 
 (*****************************************************************************)

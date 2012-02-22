@@ -25,7 +25,6 @@ module E = Database_code
 module Env = Env_interpreter_php
 module Interp = Abstract_interpreter_php
 module CG = Callgraph_php2
-open Env_interpreter_php
 
 (*****************************************************************************)
 (* Prelude *)
