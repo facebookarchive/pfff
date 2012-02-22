@@ -24,7 +24,7 @@ SRC+= defs_uses_php.ml \
 # used to be in facebook/static_analysis/
 SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
-      tainting_fake_php.ml abstract_interpreter_php.ml \
+      tainting_fake_php.ml tracing_php.ml abstract_interpreter_php.ml \
       callgraph_php_build.ml
 SRC+= env_typing_php.ml typing_helpers_php.ml typing_php.ml
 SRC+= database_php.ml database_juju_php.ml

@@ -6,6 +6,8 @@ exception UnknownMethod of string * string * string list
 exception LostControl
 
 val strict: bool ref
+val max_depth: int ref
+
 val program:
   Env_interpreter_php.env -> Env_interpreter_php.heap ->
   Ast_php_simple.program ->

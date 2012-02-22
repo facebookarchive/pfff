@@ -57,16 +57,16 @@ let juju_db_of_files ?(show_progress=false) xs =
       let ast = Ast_php_simple_build.program cst in
       List.iter (fun x ->
         (* todo: print warning when duplicate class/func ? *)
+        let add aref name c =
+          let s = (A.unwrap name) in
+          if SMap.mem s !aref
+          then pr2 (spf "ERROR in %s, %s is already present" file s);
+          aref := SMap.add s (Common.serial c) !aref
+        in
         match x with
-        | ClassDef c ->
-            db.classes_juju := 
-              SMap.add (A.unwrap c.c_name) (Common.serial c) !(db.classes_juju)
-        | FuncDef fd ->
-            db.funs_juju := 
-              SMap.add (A.unwrap fd.f_name) (Common.serial fd) !(db.funs_juju)
-        | ConstantDef c ->
-            db.constants_juju :=
-              SMap.add (A.unwrap c.cst_name) (Common.serial c) !(db.constants_juju)
+        | ClassDef c -> add db.classes_juju c.c_name c
+        | FuncDef fd -> add db.funs_juju fd.f_name fd
+        | ConstantDef c -> add db.constants_juju c.cst_name c
 
         | (Global _|StaticVars _
           |Try (_, _, _)|Throw _
@@ -77,18 +77,19 @@ let juju_db_of_files ?(show_progress=false) xs =
           ) -> ()
       ) ast
     with e -> 
-      Common.pr2 (spf "ERROR in %s, exn = %s" file (Common.exn_to_s e))
+      pr2 (spf "ERROR in %s, exn = %s" file (Common.exn_to_s e))
   ));
   db
 
 (* todo: what if multiple matches?
  * todo: profiling information
  *)
-let code_database_of_juju_db db = { Env.
-  funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in 
-                        Common.unserial f);
-  classes   = (fun s -> let c = SMap.find s !(db.classes_juju) in 
-                        Common.unserial c);
-  constants = (fun s -> let c = SMap.find s !(db.constants_juju) in 
-                        Common.unserial c);
-  }
+let code_database_of_juju_db db = 
+  let get s aref =
+    let x = SMap.find s !aref in Common.unserial x
+  in
+ { Env.
+   funs      = (fun s -> get s db.funs_juju);
+   classes   = (fun s -> get s db.classes_juju); 
+   constants = (fun s -> get s db.constants_juju);
+ }

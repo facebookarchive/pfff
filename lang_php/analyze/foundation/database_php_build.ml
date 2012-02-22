@@ -80,12 +80,10 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
  (fun (id_kind, s) ->
    try (
     match id_kind with
-    | E.Class _ ->
-        Db.class_ids_of_string s db 
+    | E.Function  | E.Constant | E.Class _ ->
+        Db.filter_ids_of_string s id_kind db
         +> List.map (fun id -> Db.ast_of_id id db)
-    | E.Function ->
-        Db.function_ids__of_string s db 
-        +> List.map (fun id -> Db.ast_of_id id db)
+        
 (*
     | Entity_php.StaticMethod ->
         if s =~ "\\(.*\\)::\\(.*\\)"
@@ -98,10 +96,12 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
 *)
     | (E.Other _|E.Method _|E.MultiDirs|E.Dir|E.File
       |E.ClassConstant|E.Field|E.TopStmts|E.Macro
-      |E.Global|E.Constant|E.Type|E.Module) 
+      |E.Global|E.Type|E.Module) 
       -> raise Todo
     )
-    with exn ->
+    with 
+    | Timeout -> raise Timeout
+    | exn ->
       if !Flag.show_analyze_error
       then pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
                    s (Common.exn_to_s exn));

@@ -21,6 +21,7 @@ module A = Ast_php_simple
 module Env = Env_interpreter_php
 module H = Abstract_interpreter_php_helpers
 module CG = Callgraph_php2
+module Trace = Tracing_php
 
 module SMap = Map.Make (String)
 
@@ -70,10 +71,14 @@ let _checkpoint_heap = ref
 let extract_paths = ref true
 let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
 
+(* Julien thinks it's the value above which there is diminushing return
+ * regarding the callgraph. The size of the callgraph does not grow that
+ * much when goes from 6 to 7.
+ *)
+let max_depth = ref 6
+
 (* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
-
-let tracing = ref false
 
 (*****************************************************************************)
 (* Types *)
@@ -176,7 +181,7 @@ and fake_root env heap =
   H.save_excursion env heap (fun env heap x ->
     match x with
     | ClassDef c ->
-      if !tracing then Common.pr ("Processing " ^ (unw c.c_name));
+      Trace.process_entity (unw c.c_name);
       let heap = force_class env heap (unw c.c_name) in
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
@@ -189,11 +194,11 @@ and fake_root env heap =
         ignore(expr env heap e)
       ) c.c_methods
     | FuncDef fd ->
-        if !tracing then Common.pr ("Processing " ^ (unw fd.f_name));
+        Trace.process_entity (unw fd.f_name);
         let params = make_fake_params fd.f_params in
         ignore (call_fun fd env heap params)
     | ConstantDef f ->
-        if !tracing then Common.pr ("Processing " ^ (unw f.cst_name));
+        Trace.process_entity (unw f.cst_name);
         (* the body of a constant definition is a static scalar
          * so there is not much interesting things to do on it
          *)
@@ -451,6 +456,7 @@ and expr_ env heap x =
   | Id ("true",_)  -> heap, Vbool true
   | Id ("false",_) -> heap, Vbool false
   | Id ("null",_)  -> heap, Vnull
+  | Id ("NULL",_)  -> heap, Vnull
 
   | Id (s,_) when not (is_variable s) ->
       (* Must be a constant. Functions and classes are not in the heap;
@@ -679,10 +685,7 @@ and call env heap v el =
   | x -> sum_call env heap [x] el
 
 and call_fun f env heap el =
-  if !tracing 
-  then Common.pr 
-       (Common.spf "%s->%s" (CG.string_of_node (List.hd !path)) 
-           (unw f.f_name));
+  Trace.call (unw f.f_name) !path;
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
     List.fold_left (fun acc x -> Taint.GetTaint.value heap x = None && acc)
@@ -693,7 +696,7 @@ and call_fun f env heap el =
   (* pad: ugly, call_fun should also accept method_def *)
   save_path env (CG.node_of_string (unw f.f_name));
   (* stop when recurse in same function twice or when depth stack > 6 *)
-  if n >= 2 || List.length !path >= 6 && is_clean
+  if n >= 2 || List.length !path >= !max_depth && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
   then
     let heap, v = Ptr.new_ heap in
