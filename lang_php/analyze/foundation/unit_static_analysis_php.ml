@@ -4,7 +4,7 @@ open OUnit
 
 open Env_interpreter_php
 module Env = Env_interpreter_php
-module Interp = Abstract_interpreter_php
+module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
 module Db = Database_juju_php
 module CG = Callgraph_php2
 
@@ -32,7 +32,7 @@ let heap_of_program_at_checkpoint content =
   let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
-    let _heap = Abstract_interpreter_php.program env heap ast in
+    let _heap = Interp.program env heap ast in
     match !Abstract_interpreter_php._checkpoint_heap with
     | None -> failwith "use checkpoint() in your unit test"
     | Some x -> x
@@ -45,7 +45,7 @@ let callgraph_generation content =
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
-    let _heap = Abstract_interpreter_php.program env heap ast in
+    let _heap = Interp.program env heap ast in
     !(Abstract_interpreter_php.graph)
   ))
 
@@ -226,7 +226,7 @@ checkpoint(); // x:int
         let _ = heap_of_program_at_checkpoint file in
         assert_failure 
           "it should raise exns in strict mode on undefined entities"
-      with Interp.UnknownConstant "ANOTHER_CST" -> ()
+      with Abstract_interpreter_php.UnknownConstant "ANOTHER_CST" -> ()
     );
 
   (*-------------------------------------------------------------------------*)
@@ -309,7 +309,7 @@ function bar() { foo(); }
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown function"
-      with (Interp.UnknownFunction "foo") -> ()
+      with (Abstract_interpreter_php.UnknownFunction "foo") -> ()
     );
 
 
@@ -333,7 +333,7 @@ function b() { A::unknown(); }
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown static method"
-      with (Interp.UnknownMethod ("unknown", "A", _)) -> ()
+      with (Abstract_interpreter_php.UnknownMethod ("unknown", "A", _)) -> ()
     );
 
     (* In PHP it is ok to call B::foo() even if B does not define
@@ -416,7 +416,7 @@ function b() {
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown method"
-      with (Interp.UnknownMethod ("unknown", _, _)) -> ()
+      with (Abstract_interpreter_php.UnknownMethod ("unknown", _, _)) -> ()
     );
 
     (* I used to have a very simple method analysis that did some gross over

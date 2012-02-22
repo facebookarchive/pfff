@@ -248,7 +248,7 @@ let test_dump_simple file =
 (*****************************************************************************)
 (* Abstract interpreter *)
 (*****************************************************************************)
-
+module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
 (* e.g. ./pfff_fb -test_ia tests/xss/abint.php *)
 let test_abstract_interpreter file =
   let ast = 
@@ -265,7 +265,7 @@ let test_abstract_interpreter file =
   Abstract_interpreter_php.strict := true;
   Abstract_interpreter_php.max_depth := 1;
   let _heap = 
-    Abstract_interpreter_php.program env Env_interpreter_php.empty_heap ast in
+    Interp.program env Env_interpreter_php.empty_heap ast in
   ()
 
 (*****************************************************************************)

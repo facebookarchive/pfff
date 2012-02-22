@@ -15,6 +15,7 @@
 open Common
 
 module Env = Env_interpreter_php
+module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -43,7 +44,7 @@ let create_graph ?(show_progress=false) ?(strict=false) files db =
        let ast = 
          Ast_php_simple_build.program (Parse_php.parse_program file) in
 
-       let _heap = Abstract_interpreter_php.program env heap ast in
+       let _heap = Interp.program env heap ast in
        ()
      )
     )
