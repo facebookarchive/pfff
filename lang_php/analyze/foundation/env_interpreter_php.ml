@@ -35,6 +35,15 @@ module SMap = Map.Make (String)
  *
  * Why this model? why not just variables be pointer to values? Because
  * of references.
+ * 
+ * Retrospecively, was it good to try to manage references correctly?
+ * After all, many other things are not that well handled in the interpreter
+ * or imprecise or passed over silently (e.g. many functions/classes not
+ * found, traits not handled, some constructs not handled, choosing
+ * arbitrarily one object in a Vsum when there could actually be many
+ * different classes).
+ * juju: yes, maybe it was not a good idea to focus so much on references.
+ *       Moreover it slows down things a lot.
  *)
 
 (*****************************************************************************)
@@ -110,18 +119,17 @@ and env = {
   (* current function processed, used for handling static variables,
    * to add fake "<function>**$var" in globals *)
   cfun    : string;
-
   (* call stack used for debugging when found an XSS hole and used also
    * for callgraph generation.
    * todo: could be put in the env too, next to 'stack' and 'safe'? take
    * care of save_excursion though.
    *)
   path: Callgraph_php2.node list ref;
+  (* opti: number of recursive calls to a function f. if > 2 then stop. *)
+  stack   : int SMap.t;
 
   (* opti: cache of already processed functions safe for tainting *)
   safe    : value SMap.t ref;
-  (* opti: number of recursive calls to a function f. if > 2 then stop. *)
-  stack   : int SMap.t;
 }
 
 (*****************************************************************************)
