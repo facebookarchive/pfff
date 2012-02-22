@@ -11,6 +11,7 @@ TARGET=commons
 # note: if you add a file (a .mli or .ml), dont forget to redo a 'make depend'
 MYSRC=common.ml common_extra.ml \
       interfaces.ml objet.ml \
+      int.ml \
       ocollection.ml \
       seti.ml \
       oset.ml oassoc.ml osequence.ml ograph.ml \

@@ -17,17 +17,14 @@ open Common
 open Ast_php_simple
 module A = Ast_php_simple
 
-module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make (Int)
 module IMap = Map.Make (Int)
-
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * In the abstract interpreter all variables are pointers to pointers 
  * of values. So with '$x = 42;' we got $x = &1{&2{42}}.
