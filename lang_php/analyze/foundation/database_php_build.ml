@@ -422,13 +422,18 @@ let index_db3_2 db =
 
   (* how assert no modif on those important tables ? *)
   DbH.iter_files_and_ids db (fun id file -> 
-    let ast = Db.ast_of_id id db in
     (* bugfix: was calling Unsugar_php.unsugar_self_parent_entity ast
      * here but it's too late because an entity can be a nested id
      * which does not have an enclosing class_def to set the classname.
      * So the unsugaring must be done in phase 1.
      *)
+    let ast = Db.ast_of_id id db in
+
     let idcaller = id in
+
+    (* ----------------------------------------------- *)
+    (* callgraph *)
+    (* ----------------------------------------------- *)
 
     (* the regular function calls sites
      * todo: if the entity is a class, then right now we will consider
@@ -436,7 +441,8 @@ let index_db3_2 db =
      * not visiting the class_statements of a class but now that we
      * removed it, we visit everything. Not sure if it's an issue.
      *)
-    let callees = Callgraph_php.callees_of_any (Entity ast) in
+    let callees = 
+      Callgraph_php.callees_of_any (Entity ast) in
 
     (* TODO: actually when have parent::foo it does not mean it's
      * a static method. It could be a regular inherited public/protected 
@@ -447,6 +453,9 @@ let index_db3_2 db =
 
     db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
 
+    (* ----------------------------------------------- *)
+    (* class graph *)
+    (* ----------------------------------------------- *)
     (* the new, X::, extends, etc *)
     let classes_used = 
       users_of_class_in_any (Entity ast) in
@@ -459,11 +468,14 @@ let index_db3_2 db =
         (fun old -> id::old) (fun() -> []) +> ignore
     );
 
+    (* ----------------------------------------------- *)
+    (* inheritance tree *)
+    (* ----------------------------------------------- *)
     (* the extends and implements *)
     (match ast with
     | Ast.ClassE def ->
         let idB = id in
-        def.c_extends |> Common.do_option (fun (tok, classnameA) ->
+        def.c_extends +> Common.do_option (fun (tok, classnameA) ->
          (* we are in a situation like: class B extends A *)
 
           let s = Ast.name classnameA in
@@ -474,14 +486,14 @@ let index_db3_2 db =
            * scope/file analysis so that there is no ambiguity.
            *)
           let candidates = class_ids_of_string s db in
-          candidates |> List.iter (fun idA -> 
+          candidates +> List.iter (fun idA -> 
             db.uses.extenders_of_class#apply_with_default idA
               (fun old -> idB::old) (fun() -> []) +> ignore
           );
         );
 
-        def.c_implements |> Common.do_option (fun (tok, interface_list) ->
-          interface_list |> Ast.uncomma |> List.iter (fun interfacenameA ->
+        def.c_implements +> Common.do_option (fun (tok, interface_list) ->
+          interface_list +> Ast.uncomma +> List.iter (fun interfacenameA ->
             (* we are in a situation like: class B implements A *)
 
             let _s = Ast.name interfacenameA in
@@ -490,7 +502,7 @@ let index_db3_2 db =
               interface_ids_of_string s db 
               *)
             in
-            candidates |> List.iter (fun idA -> 
+            candidates +> List.iter (fun idA -> 
               db.uses.implementers_of_interface#apply_with_default idA
                 (fun old -> idB::old) (fun() -> []) +> ignore
             );
@@ -530,8 +542,8 @@ let index_db4_2 ~annotate_variables_program db =
 
   (* todo: those mutual dependency between entity_finder and build_db is ugly *)
   let find_entity = build_entity_finder db in
+
   DbH.iter_files db (fun (file, ids) -> 
-    
     let asts = ids +> List.map (fun id -> db.defs.toplevels#assoc id) in
 
     (*Check_variables_php.check_and_annotate_program  *)

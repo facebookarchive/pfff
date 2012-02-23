@@ -27,6 +27,7 @@ module Db = Database_php
 module TH   = Token_helpers_php
 module EC   = Entity_php
 module CG   = Callgraph_php
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -258,25 +259,35 @@ let (add_def:
  (id_string * id_kind * id * Ast_php.name option) -> database -> unit) =  
   fun (idstr, idkind, id, nameopt) db -> 
 
-    db.defs.name_defs#apply_with_default2 idstr 
-      (fun old -> id::old) (fun() -> []);
+    (* check if already has a function/class/constant with the same name *)
+    (match idkind with
+    | E.Function | E.Class _ | E.Constant ->
+        let before = 
+          db.defs.name_defs#find_opt idstr 
+          +> Common.option_to_list +> List.flatten 
+        in
+        if before +> List.exists (fun id -> db.defs.id_kind#find id =*= idkind)
+        then pr2 (spf "PB: duplicate entity %s" idstr);
+    | _ -> ()
+    );
+
+    db.defs.name_defs#apply_with_default2 idstr (fun old -> id::old)(fun()->[]);
 
     (* the same id can not have multiple kind in PHP, as it can not contain
      * for instance both a variable and struct declaration as in ugly C.
      *)
     if db.defs.id_kind#haskey id 
-    then failwith ("WEIRD: An id cant have multiple kinds:" ^ 
-                      Db.str_of_id id db);
+    then failwith ("WEIRD: An id cant have multiple kinds:"^Db.str_of_id id db);
     db.defs.id_kind#add2 (id, idkind);
 
     (* old: add2 (id, idkind); *)
     db.defs.id_name#add2 (id, idstr);
 
-    nameopt +> Common.do_option (fun name ->
-      db.defs.id_phpname#add2 (id, name);
+    (match nameopt with
+    | None -> ()
+    | Some name -> db.defs.id_phpname#add2 (id, name);
     );
-    db.symbols#add2 (idstr, ());
-    ()
+    db.symbols#add2 (idstr, ())
 
 (*---------------------------------------------------------------------------*)
 (* add_callees_of_f, add in callee table also add in its reversed index
@@ -363,7 +374,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
        let grouped_instances_same_name = 
          Common.group_by_mapped_key (fun (name, ii) -> name) funcalls in
 
-       grouped_instances_same_name +> List.map (fun (name, name_ii_list) -> 
+       grouped_instances_same_name +> List.map (fun (name, name_ii_list) ->
          let candidates = 
            match name with
            | N.NameS s -> 
@@ -393,7 +404,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
          if null candidates
          then pr2 (spf "PB: no candidate for function call: %s" s);
 
-         name, name_ii_list |> List.map snd, candidates
+         name, name_ii_list +> List.map snd, candidates
        ) 
      )
    in
