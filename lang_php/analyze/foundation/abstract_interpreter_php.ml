@@ -147,41 +147,10 @@ let is_variable s =
   | _  -> Common.(=~) s "\\$.*"
 
 (*****************************************************************************)
-(* Hooks (tainting functor for now) *)
-(*****************************************************************************)
-
-module type TAINT =
-  sig
-    val taint_mode : bool ref
-    val taint_expr : 'a -> 'b -> 'c -> 'd -> 'e -> 'f
-    val fold_slist :
-      Env_interpreter_php.value list -> Env_interpreter_php.value
-    val check_danger : 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> unit
-    val binary_concat :
-      'a -> 'b -> 'c -> 'd -> 'e -> Env_interpreter_php.value
-    module GetTaint :
-      sig
-        exception Found of string list
-        val list : ('a -> unit) -> 'a list -> unit
-        val value :
-          Env_interpreter_php.heap ->
-          Env_interpreter_php.value -> string list option
-      end
-    val when_call_not_found :
-      Env_interpreter_php.heap ->
-      Env_interpreter_php.value list -> Env_interpreter_php.value
-  end
-
-module DefaultTaint = Tainting_fake_php.Taint
-
-
-(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-module Interp =
- functor (Taint: TAINT) ->
-struct
+module Interp = functor (Taint: Env_interpreter_php.TAINT) -> struct
 
 let rec program env heap program =
   if !extract_paths

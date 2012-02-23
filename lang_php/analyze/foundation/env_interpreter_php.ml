@@ -132,6 +132,42 @@ and env = {
   safe    : value SMap.t ref;
 }
 
+module type TAINT =
+  sig
+    val taint_mode : bool ref
+
+    val taint_expr : env -> heap ->
+      (env -> heap -> Ast_php_simple.expr -> heap * value) *
+      (env -> heap -> Ast_php_simple.expr -> heap * bool * value) *
+      (env -> heap -> value -> 'a * 'b) *
+      ('b -> env -> 'a -> Ast_php_simple.expr list -> heap * value) *
+      (env -> heap -> value -> Ast_php_simple.expr list -> heap * value) ->
+      Callgraph_php2.node list ->
+      Ast_php_simple.expr -> 
+      heap * value
+
+    val binary_concat : env -> heap ->
+      value -> value -> 
+      Callgraph_php2.node list (* path *) -> 
+      value
+
+    val check_danger :  env -> heap ->
+      string -> Ast_php.info -> Callgraph_php2.node list (* path *) -> 
+      value -> unit
+
+    val fold_slist : value list -> value
+
+    val when_call_not_found : heap -> value list -> value
+
+    module GetTaint :
+      sig
+        exception Found of string list
+        val list : ('a -> unit) -> 'a list -> unit
+        val value : heap -> value -> string list option
+      end
+  end
+
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
