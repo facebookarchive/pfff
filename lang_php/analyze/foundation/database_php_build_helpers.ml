@@ -38,7 +38,7 @@ module CG   = Callgraph_php
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
 
 (*****************************************************************************)
-(* Helpers *)
+(* Iter Helpers *)
 (*****************************************************************************)
 
 (* should perhaps be moved in database_php.ml ? *)
@@ -70,16 +70,6 @@ let iter_files_and_topids db f =
 let iter_files_and_ids db f = 
   iter_files_and_topids db (fun id file ->
     Db.recurse_children (fun id -> f id file) db id;
-  )
-
-(* todo: refactor the code of database_php_build.ml so needs
- * less this specific class case
- *)
-let users_of_class_in_any any =
-  Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
-    match kind with
-    | Database_code.Class _ -> Some name
-    | _ -> None
   )
 
 (*****************************************************************************)
@@ -234,12 +224,6 @@ let add_toplevel2 file (top, info_item) db =
   db.defs.extra#add2 (newid, Database_php.default_extra_id_info);
 
   newid
-
-
-let (add_filename_and_topids: (filename * id list) -> database -> unit) = 
- fun (file, ids) db -> 
-   db.file_to_topids#add2 (file, ids);
-   ()
 
 
 (* have to update tables similar to add_toplevel *)
@@ -497,3 +481,17 @@ let add_callees_of_id a b =
  *)
 let add_methodcallees_of_id (idcaller, methods) db = 
   raise Todo
+
+(*****************************************************************************)
+(* Misc Helpers *)
+(*****************************************************************************)
+
+(* todo: refactor the code of database_php_build.ml so needs
+ * less this specific class case
+ *)
+let users_of_class_in_any any =
+  Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
+    match kind with
+    | Database_code.Class _ -> Some name
+    | _ -> None
+  )

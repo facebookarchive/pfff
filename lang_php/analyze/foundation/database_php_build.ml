@@ -155,7 +155,7 @@ let index_db1_2 db files =
            *)
           | Ast.FinalDef _ -> ()
         );
-        db +> add_filename_and_topids (file, (List.rev !all_ids));
+        db.file_to_topids#add2 (file, (List.rev !all_ids))
       );
       db.flush_db();
     ))
@@ -165,7 +165,7 @@ let index_db1_2 db files =
     -> 
       pr2 (spf "PB with %s, exn = %s, undoing addition" 
               file (Common.exn_to_s exn));
-      db +> add_filename_and_topids(file, []);
+      db.file_to_topids#add2 (file, []);
       !all_ids +> List.iter (fun id -> 
         try 
           let _ = db.defs.toplevels#assoc id in
