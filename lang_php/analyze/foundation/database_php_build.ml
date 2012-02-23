@@ -14,8 +14,8 @@
  *)
 open Common
 
-(* for fields *)
 open Ast_php
+(* for fields *)
 open Database_php
 
 module Ast  = Ast_php
@@ -37,28 +37,33 @@ module DbH = Database_php_build_helpers
  * 
  * - we first add the top ASTs in the database (index_db1)
  * 
- * - we then add nested ASTs (methods, class vars, nested funcs), and their ids
+ * - we then add nested ASTs (methods, class vars, nested funcs)
  * - we add all strings found in the code in a global table
+ *   (useful for instance for the reaper to know when a function name
+ *   is passed as a string somewhere)
  * - before adding the callgraph, we need to be able to decide given
  *   a function call what are the possible entities that define this
  *   function (there can be multiple candidates), so we add some 
  *   string->definitions (function, classes, ...) information  (index_db2)
  * 
- * - then we do the callgraph
- * - we add other reversed index like the callgraph, but for other 
- *   entities than functions, e.g. the places where a class is 
- *   instantiated or inherited (index_db3)
+ * - then we try to do the callgraph, but it's imprecise for methods
+ *   and incomplete because of function names passed a strings and dynamic
+ *   calls
+ * - we add other reversed index for other entities than functions, 
+ *   e.g. the places where a class is instantiated or inherited (index_db3)
  * 
- * - TODO given this callgraph we can now run a type inference analysis, as 
+ * - TODO given this callgraph we could now run a type inference analysis, as 
  *   having the callgraph helps doing the analysis in a certain order (from
  *   the bottom of the callgraph to the top, with some fixpoint in the 
- *   middle).
+ *   middle). The problem is that the callgraph is not precise.
  * 
- * time to build the db on www: 
+ * - extract annotations (@xxx) and tag variables as Local/Param/.. (index_db4)
+ * 
+ * Time to build the db on www: 
  *   - 15min in bytecode
  *   - 26min when storing the string and tokens
  *   - xxmin when storing method calls
- * cf also score.org !!!
+ * See also score.org !!!
  * 
  * TODO: can take value of _SERVER in params so can partially evaluate
  * things to statically find the file locations (or hardcode with ~/www ... ) 
@@ -83,17 +88,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
     | E.Function  | E.Constant | E.Class _ ->
         Db.filter_ids_of_string s id_kind db
         +> List.map (fun id -> Db.ast_of_id id db)
-        
-(*
-    | Entity_php.StaticMethod ->
-        if s =~ "\\(.*\\)::\\(.*\\)"
-        then
-          let (sclass, smethod) = Common.matched2 s in
-          Db.static_function_ids_of_strings ~theclass:sclass smethod db
-          +> List.map (fun id -> Db.ast_of_id id db)
-        else
-          failwith ("wong static method format: " ^ s)
-*)
+
     | (E.Method _|E.ClassConstant|E.Field
       |E.Global|E.Type|E.Module|E.Macro
       |E.TopStmts
@@ -101,10 +96,9 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
       |E.Other _
       )
       -> raise Todo
-    )
-    with 
-    | Timeout -> raise Timeout
-    | exn ->
+   ) with 
+   | Timeout -> raise Timeout
+   | exn ->
       if !Flag.show_analyze_error
       then pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
                    s (Common.exn_to_s exn));
@@ -115,7 +109,6 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
 (* Build database intermediate steps *)
 (*****************************************************************************)
 
-(* ---------------------------------------------------------------------- *)
 (* step1:  
  * - store toplevel asts
  * - store file to toplevel ids mapping
@@ -135,22 +128,17 @@ let index_db1_2 db files =
 
     try (Common.timeout_function 20 (fun () ->
       (* parsing, the important call *)
-      let (ast2, stat) = 
-        Parse_php.parse file in
+      let (ast2, stat) = Parse_php.parse file in
+
       let file_info = 
-        { parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD; } in
-
+        { parsing_status = if stat.Parse_info.bad = 0 then `OK else `BAD; } 
+      in
       db.file_info#add2 (file, file_info);
-
       Common.push2 stat  parsing_stat_list;
 
       Common.profile_code "Db.add db1" (fun () ->
         ast2 +> List.iter (fun (topelem, info_item) -> 
           match topelem with
-          (* bugfix: the finaldef have the same id as the previous item so
-           * do not add it otherwise id will not be a primary key.
-           *)
-          | Ast.FinalDef _ -> ()
           | Ast.FuncDef _ | Ast.ConstantDef _ | Ast.ClassDef _
           | Ast.StmtList _ 
             ->
@@ -163,6 +151,10 @@ let index_db1_2 db files =
            * parse. Note that this id does not have a id_kind for now.
            *)
           | Ast.NotParsedCorrectly _ -> ()
+          (* bugfix: the finaldef have the same id as the previous item so
+           * do not add it otherwise id will not be a primary key.
+           *)
+          | Ast.FinalDef _ -> ()
         );
         db +> add_filename_and_topids (file, (List.rev !all_ids));
       );
@@ -172,7 +164,6 @@ let index_db1_2 db files =
     (Out_of_memory  (*| Stack_overflow*) | Timeout
     | Parse_php.Parse_error _) as exn
     -> 
-      (* Backtrace.print (); *)
       pr2 (spf "PB with %s, exn = %s, undoing addition" 
               file (Common.exn_to_s exn));
       db +> add_filename_and_topids(file, []);
@@ -210,9 +201,7 @@ let index_db2_2 db =
      * is mentioned in a string.
      *)
     let strings = Lib_parsing_php.get_constant_strings_any (Toplevel ast) in
-    strings +> List.iter (fun s ->
-      db.strings#add2 (s, ());
-    );
+    strings +> List.iter (fun s -> db.strings#add2 (s, ()););
     (* add strings in not parsed correctly too *)
     (match ast with
     (* note: dead now that we don't do error_recovery *)
@@ -220,9 +209,9 @@ let index_db2_2 db =
         let toks = db.defs.tokens_of_topid#assoc id in
         toks +> List.iter (fun tok -> 
           match tok with
-          | Parser_php.T_CONSTANT_ENCAPSED_STRING (s, _) ->
-              db.strings#add2 (s, ());
-          | Parser_php.T_IDENT(s, _) ->
+          | Parser_php.T_CONSTANT_ENCAPSED_STRING (s, _)
+          | Parser_php.T_IDENT(s, _) 
+            ->
               db.strings#add2 (s, ());
           | _ -> ()
         );
@@ -547,15 +536,12 @@ let index_db4_2 ~annotate_variables_program db =
     let asts = ids +> List.map (fun id -> db.defs.toplevels#assoc id) in
 
     (*Check_variables_php.check_and_annotate_program  *)
-    annotate_variables_program +> Common.do_option 
-      (fun annotate_variables_program ->
-        annotate_variables_program
+    annotate_variables_program +> Common.do_option (fun annotatef ->
+        annotatef
           (Some (fun x ->
             (* we just want to annotate here *)
-            try 
-              find_entity x 
-            with Multi_found ->
-              raise Not_found
+            try find_entity x 
+            with Multi_found -> raise Not_found
           ))
           asts;
       );
@@ -586,7 +572,6 @@ let index_db4_2 ~annotate_variables_program db =
 
     let callees = Lib_parsing_php.get_funcalls_any (Toplevel ast) in
     (* facebook specific ... *)
-    
     if List.mem "THIS_FUNCTION_EXPIRES_ON" callees
     then Common.push2 Annotation_php.Have_THIS_FUNCTION_EXPIRES_ON tags;
 
@@ -646,7 +631,10 @@ let create_db
         Common._chan_pr2 := Some logchan;
         db
     (* note that is is in practice less efficient than Disk :( because
-     * probably of the GC that needs to traverse more heap cells
+     * probably of the GC that needs to traverse more heap cells.
+     * 
+     * todo? do like julien who instead stores the marshalled string
+     * representation of the ASTs so the graph has far less edges.
      *)
     | Mem -> 
         open_db_mem prj
@@ -688,6 +676,7 @@ let create_db
     if verbose_stats && !Flag.show_analyze_error then begin
       (* Parsing_stat.print_stat_numbers (); *)
       Parse_info.print_parsing_stat_list   parsing_stats;
+      (* less useful now that use Common_extra.progress_meter *)
       !DbH._errors +> List.iter pr2;
     end;
     db
@@ -706,7 +695,6 @@ let create_db
  * 'cpp' to get the full information for a file.
  * 
  * todo: see facebook/fb_common/www_db_build.ml for now.
- * todo: factorize all the db_of_files_or_dirs out there.
  *)
 let fast_create_db_mem_a_la_cpp ?phase files_or_dirs =
   raise Todo
@@ -720,7 +708,8 @@ let fast_create_db_mem_a_la_cpp ?phase files_or_dirs =
  * using Berkeley DB), e.g. with ./pfff_db ~/www -metapath /tmp/pfff_db,
  * and then run different analysis on this database, e.g. with
  * ./pfff_misc -deadcode_analysis /tmp/pfff_db.
- * In our testing code we want to test some of our analysis without
+ * 
+ * But in our testing code we want to test some of our analysis without
  * requiring to have a directory with a set of files, or some space on
  * disk to store the database. This small wrapper allows to build
  * a database in memory from a give set of files, usually temporary
@@ -754,15 +743,11 @@ let actions () = [
   (* no -create_db as it is offered as the default action in 
    * main_db,ml
    *)
-(*
-  "-index_db1", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db1);
-*)
+(* "-index_db1", "   <db>", 
+ *   Common.mk_action_1_arg (fun dbname -> with_db ~metapath:dbname index_db1);
+ *)
   "-index_db2", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db2);
+    Common.mk_action_1_arg (fun dbname -> with_db ~metapath:dbname index_db2);
   "-index_db3", "   <db>", 
-    Common.mk_action_1_arg (fun dbname -> 
-      with_db ~metapath:dbname index_db3);
+    Common.mk_action_1_arg (fun dbname -> with_db ~metapath:dbname index_db3);
 ]
