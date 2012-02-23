@@ -54,7 +54,7 @@ let index_db_includes_requires2
         let php_root = Db.path_of_project db.project in
         Env_php.mk_env ~php_root
   in
-  pr2 "Phase extra 1: analyze include/require";
+  pr2 "PHASE EXTRA 1: analyze include/require";
   DbH.iter_files db (fun (file, topids) ->
 
     let program = topids +> List.map (fun id -> db.defs.toplevels#assoc id) in

@@ -94,9 +94,12 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
         else
           failwith ("wong static method format: " ^ s)
 *)
-    | (E.Other _|E.Method _|E.MultiDirs|E.Dir|E.File
-      |E.ClassConstant|E.Field|E.TopStmts|E.Macro
-      |E.Global|E.Type|E.Module) 
+    | (E.Method _|E.ClassConstant|E.Field
+      |E.Global|E.Type|E.Module|E.Macro
+      |E.TopStmts
+      |E.MultiDirs|E.Dir|E.File
+      |E.Other _
+      )
       -> raise Todo
     )
     with 
