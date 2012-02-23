@@ -817,6 +817,7 @@ val do_option : ('a -> unit) -> 'a option -> unit
 val optionise : (unit -> 'a) -> 'a option
 
 val some_or : 'a option -> 'a -> 'a
+val option_to_list: 'a option -> 'a list
 
 val partition_either :
   ('a -> ('b, 'c) either) -> 'a list -> 'b list * 'c list

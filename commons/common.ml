@@ -1932,6 +1932,10 @@ let some_or = function
   | None -> id
   | Some e -> fun _ -> e
 
+let option_to_list = function
+  | None -> []
+  | Some x -> [x]
+
 
 let partition_either f l =
   let rec part_either left right = function
