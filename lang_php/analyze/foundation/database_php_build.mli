@@ -1,7 +1,5 @@
 (*s: database_php_build.mli *)
 
-(* in helpers now: val _errors: string list ref *)
-
 val max_phase: int
 
 (* main entry point, does the whole job *)

@@ -1,8 +1,6 @@
 
-val _errors : string Common.stack ref
 val pr2 : string -> unit
 val pr2_once : string -> unit
-val pr2_err : string -> unit
 
 val users_of_class_in_any : Ast_php.any -> Ast_php.name list
 exception NoII

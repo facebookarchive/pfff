@@ -99,8 +99,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
    ) with 
    | Timeout -> raise Timeout
    | exn ->
-      if !Flag.show_analyze_error
-      then pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
+       pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
                    s (Common.exn_to_s exn));
       raise exn
   )
@@ -563,7 +562,7 @@ let index_db4_2 ~annotate_variables_program db =
       let comment_tags = 
         try Annotation_php.extract_annotations str 
         with exn ->
-          pr2_err (spf "PB: EXTRACT ANNOTATION: %s on %s" 
+          pr2 (spf "PB: EXTRACT ANNOTATION: %s on %s" 
                   (Common.exn_to_s exn) file);
           []
       in
@@ -673,11 +672,9 @@ let create_db
     if phase >= 4 then index_db4 ~annotate_variables_program db;
     db.flush_db();
 
-    if verbose_stats && !Flag.show_analyze_error then begin
+    if verbose_stats then begin
       (* Parsing_stat.print_stat_numbers (); *)
       Parse_info.print_parsing_stat_list   parsing_stats;
-      (* less useful now that use Common_extra.progress_meter *)
-      !DbH._errors +> List.iter pr2;
     end;
     db
   end

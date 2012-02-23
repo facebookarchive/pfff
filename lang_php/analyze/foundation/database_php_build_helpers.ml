@@ -33,20 +33,9 @@ module CG   = Callgraph_php
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Globals *)
-(*****************************************************************************)
-
-let _errors = ref []
-
-(*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
-
-let pr2_err s = 
-  Common.pr2 s;
-  Common.push2 s _errors;
-  ()
 
 (*****************************************************************************)
 (* Helpers *)
@@ -69,7 +58,7 @@ let iter_files db f =
       try f (file, ids)
       with exn -> 
         pr2 (Common.exn_to_s_with_backtrace exn);
-        pr2_err (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+        pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
     ));
   ()
 
@@ -190,7 +179,7 @@ let add_toplevel2 file (top, info_item) db =
     try 
       fpos_of_toplevel top 
     with NoII -> 
-      pr2_err ("PB: pb NoII with:" ^ file);
+      pr2 ("PB: pb NoII with:" ^ file);
       (*
       toput before: let cnt = ref 0 
 
@@ -417,7 +406,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
                *)
          in
          let s = N.nameS name in
-         if null candidates && !Flag.show_analyze_error
+         if null candidates
          then pr2 (spf "PB: no candidate for function call: %s" s);
 
          name, name_ii_list |> List.map snd, candidates
