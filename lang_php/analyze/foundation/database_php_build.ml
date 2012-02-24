@@ -447,11 +447,13 @@ let index_db3_2 db =
     (* TODO: actually when have parent::foo it does not mean it's
      * a static method. It could be a regular inherited public/protected 
      * method. Should use class_php?
+     * TODO: must actually also resolve things and so pass an entity
+     * finder to add_callees_of_id, so skipped for now.
      *)
-    let static_method_callees = 
+    let _static_method_callees = 
       Callgraph_php.static_method_callees_of_any (Entity ast) in
 
-    db +> add_callees_of_id (idcaller,  callees ++ static_method_callees);
+    db +> add_callees_of_id (idcaller,  callees (* ++ static_method_callees*));
 
     (* ----------------------------------------------- *)
     (* class graph *)
