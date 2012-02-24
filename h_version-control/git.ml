@@ -66,7 +66,7 @@ let cleanup_cache_files dir =
     ));
   ()
 
-let clean_git_patch xs = 
+let clean_git_patch xs =
   xs +> Common.exclude (fun s -> 
     s =~ "^index[ \t]" ||
     s =~ "^deleted file mode" ||
