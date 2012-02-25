@@ -63,7 +63,9 @@ let save_overlay overlay file =
 let check_overlay ~dir_orig ~dir_overlay =
   let dir_orig = Common.realpath dir_orig in
   let files = 
-    Common.files_of_dir_or_files_no_vcs_nofilter [dir_orig] in
+    Common.files_of_dir_or_files_no_vcs_nofilter [dir_orig] 
+    +> Common.exclude (fun file -> file =~ ".*/OVERLAY/.*")
+  in
 
   let dir_overlay = Common.realpath dir_overlay in
   let links = 
