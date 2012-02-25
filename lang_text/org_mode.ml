@@ -62,7 +62,16 @@ let highlight org =
     | Comment s -> 
         s, Some (HC.Comment), filepos
     | Other s ->
-        s, Some (HC.Normal), filepos
+        let categ = 
+          (match s with
+          | _ when s =~ "http://"  ->
+              HC.EmbededUrl
+          | _ when s =~ "https://"  ->
+              HC.EmbededStyle
+          | _ -> HC.Normal
+          )
+        in
+        s, Some categ , filepos
     | Header (int, s) ->
         let categ = 
           (match int with

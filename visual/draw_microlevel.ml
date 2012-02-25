@@ -281,10 +281,9 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   (* ugly *)
   text_with_user_pos := [];
 
-  (* coupling: with parsing2.ml *)
-  (match FT.file_type_of_file file with
-  | (
-      FT.PL (FT.Web (FT.Php _))
+  let use_fancy_highlighting =
+  match FT.file_type_of_file file with
+  | ( FT.PL (FT.Web (FT.Php _))
     | FT.PL (FT.Web (FT.Js _))
     | FT.PL (FT.Web (FT.Html _))
     | FT.PL (FT.ML _)
@@ -299,7 +298,13 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.Prolog _)
     | FT.PL (FT.Erlang)
     | FT.PL (FT.Opa)
-    ) ->
+    ) -> true
+  | (FT.Text "txt") when Common.basename file =$= "info.txt" -> true
+  | _ -> false
+  in
+
+  (* coupling: with parsing2.ml *)
+  if use_fancy_highlighting then begin
 
     let column = ref 0 in
     let line_in_column = ref 1 in
@@ -363,6 +368,8 @@ let draw_content2 ~cr ~layout ~context ~file rect =
           
       );
     )
+  end else begin
+  match FT.file_type_of_file file with
   | FT.PL _ | FT.Text _ ->      
    (* This was causing some "out_of_memory" cairo error on linux. Not
     * sure why.
@@ -396,7 +403,8 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       ()
   | _ ->
       ()
-  )
+  end
+
 
 let draw_content ~cr ~layout ~context ~file rect =
   Common.profile_code "View.draw_content" (fun () ->

@@ -351,6 +351,14 @@ let tokens_with_categ_of_file file hentities =
       let org = Org_mode.parse file in
       Org_mode.highlight org
 
+  (* ugly, hardcoded, should instead look at the head of the file for a
+   * # -*- org   indication.
+   * very pad and code-overlay specific.
+   *)
+  | FT.Text ("txt") when Common.basename file =$= "info.txt" ->
+      let org = Org_mode.parse file in
+      Org_mode.highlight org
+
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"
 (*e: parsing2.ml *)
