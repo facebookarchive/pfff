@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009, 2010, 2011 Facebook
+ * Copyright (C) 2009, 2010, 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,30 +12,32 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
-open Common 
+open Common
 
 open Ast_php
+module V = Visitor_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
- * PHP does not have the notion of a main(), and so some PHP files contain
- * only function definitions while other contain toplevel statements.
- * It can be useful to know which kind a PHP file is. For instance
- * in the endpoints and scripts reaper we want to identify the files
- * under certain directories which are the starting points. This is
- * usually files with many toplevel statements which are not just
- * "directives" (e.g. ini_set(...) or require_xxx() or xxx_init()).
+ * Compute different statistics on PHP code.
+ * 
+ * history:
+ *  - used it to infer if a php file was a script, endpoint, or library
+ *    file
+ *  - used it to try to evaluate the coverage of the abstract interpreter
+ *    and its callgraph computation, how many method calls are not "resolved"
+ * 
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* todo? move this in h_program-lang/ ? quite similar to
+type stat2 = (string, int) Common.hash_with_default
+
+(* todo? move this in h_program-lang/ ? This is quite similar to
  * statistics_code.mli ? but want the kinds of the toplevel funcalls,
  * which is probably quite PHP specific.
  *)
@@ -52,6 +54,15 @@ type stat = {
   (* toplevels_assign_kinds? *)
 }
 
+(*
+ * PHP does not have the notion of a main(), and so some PHP files contain
+ * only function definitions while other contain toplevel statements.
+ * It can be useful to know which kind a PHP file is. For instance
+ * in the endpoints and scripts reaper we want to identify the files
+ * under certain directories which are the starting points. This is
+ * usually files with many toplevel statements which are not just
+ * "directives" (e.g. ini_set(...) or require_xxx() or xxx_init()).
+ *)
 type php_file_kind =
   | LibFile
   | IncluderFile
@@ -94,6 +105,34 @@ spf "
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
+
+
+let stat2_of_program h ast =
+  let inc fld = h#update fld (fun old -> old + 1); () in
+
+  (Program ast) +> V.mk_visitor { V.default_visitor with
+    V.ktop = (fun (k, _) x ->
+      (match x with
+      | FuncDef _ -> inc "function"
+      | ConstantDef _ -> inc "constant"
+      | ClassDef def ->
+          (match def.c_type with
+          | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> inc "class"
+          | Interface _ -> inc "interface"
+          | Trait _ -> inc "trait"
+          )
+      | StmtList _ -> ()
+      | FinalDef _|NotParsedCorrectly _ -> ()
+      );
+      k x
+    );
+    V.klvalue = (fun (k, _) x ->
+      (match x with
+      | _ -> ()
+      );
+    );
+  }
+
 
 let stat_of_program ast =
   let (funcs, classes, topstmts) = 

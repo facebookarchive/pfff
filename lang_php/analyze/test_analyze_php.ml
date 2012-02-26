@@ -298,8 +298,9 @@ let test_stat_php xs =
   files +> Common_extra.progress (fun k -> List.iter (fun file ->
     k();
     try 
-      let _ast = Parse_php.parse_program file in
+      let ast = Parse_php.parse_program file in
       h#update "parsing correct" (fun x -> x + 1);
+      Statistics_php.stat2_of_program h ast;
       ()
       
     with Parse_php.Parse_error (_) ->
