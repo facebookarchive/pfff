@@ -38,14 +38,24 @@ let create_graph ?(show_progress=false) ?(strict=false) files db =
     files +> Common_extra.progress ~show:show_progress (fun k ->
      List.iter (fun file ->
        k();
-
+       try 
        let env = Env.empty_env db file in
        let heap = Env.empty_heap in
        let ast = 
          Ast_php_simple_build.program (Parse_php.parse_program file) in
 
-       let _heap = Interp.program env heap ast in
+       let _heap = 
+        Common.timeout_function 20 (fun () ->
+          Interp.program env heap ast
+        )
+       in
        ()
+       with 
+       | Timeout ->
+           pr2 (spf "PB with %s, exn = Timeout" file)
+       | exn ->
+           pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn))
+
      )
     )
   ));
