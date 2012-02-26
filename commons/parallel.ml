@@ -5,7 +5,9 @@ open Common
 (*****************************************************************************)
 
 (* 
- * related work:  https://gitorious.org/parmap
+ * related work:  
+ *  - https://gitorious.org/parmap
+ *  - https://github.com/MyLifeLabs/nproc
  *)
 
 (*****************************************************************************)
@@ -56,6 +58,10 @@ type 'a jobs = ('a job) list
  * set of workers and a master model would be more efficient by always
  * feeding processors. A partial fix is to give a tasks number that
  * is quite superior to the actual number of processors.
+ * 
+ * This will create (List.length xs) forks.
+ * 
+ * I use it for now to //ize the code coverage computation for PHP.
  *)
 let map_jobs ~tasks xs =
   if tasks = 1 
@@ -66,3 +72,33 @@ let map_jobs ~tasks xs =
       (* do in parallel a batch of job *)
       parallel_map (fun job -> job ()) xs
     ) +> List.flatten
+
+
+(* 
+ * For some computation, it doesn't help to process every item in a 
+ * separate process because the cost of fork is higher than the
+ * computation cost. But it can still makes sense to group the files
+ * into batches and process them in parallel.
+ * 
+ * This will create (tasks) forks.
+ * 
+ * I use it for now to //ize the abstract-interpreter-based callgraph
+ * generation.
+ * 
+ * Thx to Michal burger for the initial idea.
+ *)
+let map_batch_jobs ~tasks xs =
+  if tasks = 1
+  then List.map (fun job -> job ()) xs
+  else
+    (* todo? a double pack ? because the initial pack/chunks can 
+     * be computationaly "inbalanced" 
+     *)
+    let xxs = Common.pack_safe tasks xs in
+    let jobs = xxs +> List.map (fun xs ->
+      (fun () ->
+        xs +> List.map (fun job -> job ())
+      ))
+    in
+    parallel_map (fun job -> job ()) jobs +> List.flatten
+
