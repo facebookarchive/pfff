@@ -4278,6 +4278,24 @@ let rec pack_safe n xs =
 let _ = assert
   (pack_safe 2 [1;2;3;4;5] =*= [[1;2];[3;4];[5]])
 
+let chunks n xs =
+  let size = List.length xs in
+  let chunksize = 
+    if size mod n =|= 0 
+    then size / n
+    else 1 + (size / n)
+  in
+  let xxs = pack_safe chunksize xs in
+  if List.length xxs <> n 
+  then failwith "chunks: impossible, wrong size";
+  xxs
+
+let _ = assert
+  (chunks 2 [1;2;3;4] =*= [[1;2];[3;4]])
+let _ = assert
+  (chunks 2 [1;2;3;4;5] =*= [[1;2;3];[4;5]])
+
+
 let min_with f = function
   | [] -> raise Not_found
   | e :: l ->

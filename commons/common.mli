@@ -1345,8 +1345,11 @@ val splitAt : int -> 'a list -> 'a list * 'a list
 val split_when: ('a -> bool) -> 'a list -> 'a list * 'a * 'a list
 val split_gen_when: ('a list -> 'a list option) -> 'a list -> 'a list list
 
+(* return a list of with lots of chunks of size n *)
 val pack : int -> 'a list -> 'a list list
 val pack_safe: int -> 'a list -> 'a list list
+(* return a list of size n which chunks from original list *)
+val chunks: int -> 'a list -> 'a list list
 
 
 val enum : int -> int -> int list
