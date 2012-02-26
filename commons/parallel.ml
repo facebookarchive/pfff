@@ -95,9 +95,7 @@ let map_batch_jobs ~tasks xs =
     (* todo? a double pack ? because the initial pack/chunks can 
      * be computationaly "inbalanced" 
      *)
-    let chunk_size = (length xs / tasks) in
-
-    let xxs = Common.pack_safe chunk_size xs in
+    let xxs = Common.chunks tasks xs in
     let jobs = xxs +> List.map (fun xs ->
       (fun () ->
         xs +> List.map (fun job -> job ())
