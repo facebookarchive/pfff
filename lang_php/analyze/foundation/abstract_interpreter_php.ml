@@ -76,11 +76,14 @@ let strict = ref true
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* could maybe factorize in Unknown of Database_code.entity_kind *)
+(* less: could maybe factorize in Unknown of Database_code.entity_kind 
+ * todo? have a type error = ... exception Error of error ?
+ *)
 exception UnknownFunction of string
 exception UnknownConstant of string
 exception UnknownClass of string
 exception UnknownMethod of string * string * string list
+exception UnknownObject
 exception LostControl
 
 (*****************************************************************************)
@@ -555,7 +558,13 @@ and lvalue env heap x =
           (match s with
           (* it's ok to not have a __construct method *)
           | "__construct" -> ()
-          | _ -> if !strict then raise (UnknownMethod (s, "?", methods m));
+          | _ -> 
+              if !strict then begin
+                let ms = methods m in
+                if Common.null ms
+                then raise UnknownObject
+                else raise (UnknownMethod (s, "?", ms))
+              end
           );
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
