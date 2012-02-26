@@ -859,8 +859,8 @@ let ratio_rect_dim (w,h) =
   (* assert (res >= 1.0); *)
   res
 
-let _ = example (ratio_rect_dim (6.0, 4.0) = 1.5) 
-let _ = example (ratio_rect_dim (4.0, 6.0) = 1.5) 
+let _ = assert (ratio_rect_dim (6.0, 4.0) = 1.5) 
+let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5) 
 @ 
 
 
@@ -883,11 +883,11 @@ let worst elems_in_row  size_side_row =
   max ((Common.square size_side_row *. rplus) /. Common.square s)
       (Common.square s /.  (Common.square size_side_row *. rminus))
 
-let _ = example
+let _ = assert
   (worst [6.0] 4.0 = 8.0 /. 3.0) (* 2.66667 *)
-let _ = example
+let _ = assert
   (worst [6.0;6.0] 4.0 = 3.0 /. 2.0) (* 1.5, which is close to 1 so better *)
-let _ = example
+let _ = assert
   (worst [6.0;6.0;4.0] 4.0 = 4.0) (* 4.0, we regress *)
 @ 
 
@@ -1292,7 +1292,7 @@ let balayer_right xs =
     Common.push2 (take i xs, drop i xs) res;
   done;
   List.rev !res
-let _ = example (balayer_right [1;2;3;2] = 
+let _ = assert (balayer_right [1;2;3;2] = 
     [
       [], [1;2;3;2];
       [1], [2;3;2];
@@ -1805,6 +1805,7 @@ type directory_sort =
   | SortDirThenFiles
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
+val follow_symlinks: bool ref
 
 val tree_of_dir:
   ?filter_file:(Common.filename -> bool) ->
@@ -2303,7 +2304,10 @@ type directory_sort =
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
 
+let follow_symlinks = ref false
+
 <<function tree_of_dir>>
+
 
 (* specialized version *)
 let tree_of_dir3
@@ -2337,7 +2341,22 @@ let tree_of_dir3
       | Unix.S_DIR -> 
           if filter_dir full
           then Common.push2 (aux full) res
-      (* symlink ?? *)
+      | Unix.S_LNK ->
+          if !follow_symlinks then
+          (try 
+          (match (Unix.stat full).Unix.st_kind with
+          | Unix.S_REG ->
+              if filter_file full
+              then Common.push2 (Leaf (full, file_hook full)) res
+          | Unix.S_DIR ->
+              if filter_dir full
+              then Common.push2 (aux full) res
+          | _ -> ()
+          )
+          with Unix.Unix_error _ ->
+            pr2 (spf "PB stat link at %s" full);
+          )
+          else ()
       | _ -> ()
     );
     Node(dir, List.rev !res)
@@ -2501,13 +2520,13 @@ let actions () = [
 <<function treemap accessors>>=
 let color_of_treemap_node x = 
   match x with 
-  | Node (({color = c}, _), _) -> c
-  | Leaf (({color = c}, _)) -> c
+  | Node (({color = c; _}, _), _) -> c
+  | Leaf (({color = c; _}, _)) -> c
 
 let size_of_treemap_node x = 
   match x with 
-  | Node (({size = s}, _), _) -> s
-  | Leaf (({size = s}, _)) -> s
+  | Node (({size = s; _}, _), _) -> s
+  | Leaf (({size = s; _}, _)) -> s
 @ 
 
 
@@ -2929,9 +2948,13 @@ and
                           tr_rect = v_tr_rect;
                           tr_color = v_tr_color;
                           tr_label = v_tr_label;
-                          tr_depth = v_tr_depth
+                          tr_depth = v_tr_depth;
+                          tr_is_node = v_tr_is_node;
                         } =
   let bnds = [] in
+  let arg = Ocaml.vof_bool v_tr_is_node in
+  let bnd = ("tr_is_node", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_int v_tr_depth in
   let bnd = ("tr_depth", arg) in
   let bnds = bnd :: bnds in
@@ -2942,7 +2965,9 @@ and
   let bnd = ("tr_color", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_rectangle v_tr_rect in
-  let bnd = ("tr_rect", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("tr_rect", arg) in 
+  let bnds = bnd :: bnds in
+  Ocaml.VDict bnds
 
 
 let json_of_treemap_rendering rendering = 
