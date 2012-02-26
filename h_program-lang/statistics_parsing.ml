@@ -6,36 +6,36 @@ open Common
 (* Types *)
 (*****************************************************************************)
 type parsing_stat = {
-    filename: filename;
-    mutable have_timeout: bool;
+  filename: filename;
+  mutable have_timeout: bool;
 
-    mutable correct: int;  
-    mutable bad: int;
+  mutable correct: int;  
+  mutable bad: int;
 
-    mutable commentized: int; (* by our cpp commentizer *)
+  mutable commentized: int; (* by our cpp commentizer *)
 
-    (* if want to know exactly what was passed through, uncomment:
-     *  
-     * mutable passing_through_lines: int;
-     * 
-     * it differs from bad by starting from the error to
-     * the synchro point instead of starting from start of
-     * function to end of function.
-     *)
+  (* if want to know exactly what was passed through, uncomment:
+   *  
+   * mutable passing_through_lines: int;
+   * 
+   * it differs from bad by starting from the error to
+   * the synchro point instead of starting from start of
+   * function to end of function.
+   *)
 
-    (* for instance to report most problematic macros when parse c/c++ *)
-    mutable problematic_lines:
-      (string list (* ident in error line *) * int (* line_error *)) list;
-
-  } 
+  (* for instance to report most problematic macros when parse c/c++ *)
+  mutable problematic_lines:
+    (string list (* ident in error line *) * int (* line_error *)) list;
+  
+} 
 
 let default_stat file =  { 
-    filename = file;
-    have_timeout = false;
-    correct = 0; bad = 0;
-    commentized = 0;
-    problematic_lines = [];
-  }
+  filename = file;
+  have_timeout = false;
+  correct = 0; bad = 0;
+  commentized = 0;
+  problematic_lines = [];
+}
 
 (*****************************************************************************)
 (* Stat *)

@@ -12,8 +12,9 @@ basic support
 
 ** internals
 
-*** refacrored lang_php/analysis/, less error messages, progress meter,
-split files, each PHP database has its own file
+*** refactored lang_php/analysis/, less error messages, progress meter,
+split files, each PHP database has its own file, refactored
+abstract interpreter.
 
 * -----------------------------------------------------------
 
