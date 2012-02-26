@@ -1,45 +1,38 @@
 
-
-(* entities_stat is independent of comments so we put it in
- * another file but as the visitor for comments extraction already talk
- * about all the entities we want stat about, it's easier to do
- * everything in the same visitor, so the entities_stat computation
- * are still actually in comments_extraction.ml.
- *)
 type entities_stat = { 
-  mutable nb_define_var: int;
-  mutable nb_define_func: int;
-  mutable nb_include: int;
+  mutable define_var: int;
+  mutable define_func: int;
+  mutable include_: int;
 
-  mutable nb_function: int;
-  mutable nb_parameter: int;
-  mutable nb_prototype: int;
-  mutable nb_variable: int;
-  mutable nb_struct: int;
-  mutable nb_field: int;
-  mutable nb_enum: int;
-  mutable nb_enum_value: int;
+  mutable function_: int;
+  mutable parameter: int;
+  mutable prototype: int;
+  mutable variable: int;
+  mutable struct_: int;
+  mutable field: int;
+  mutable enum: int;
+  mutable enum_value: int;
 
-  mutable nb_class: int;
-  mutable nb_method: int;
+  mutable class_: int;
+  mutable method_: int;
 
-  mutable nb_loop: int;
-  mutable nb_if: int;
-  mutable nb_else: int;
-  mutable nb_goto: int;
-  mutable nb_continue: int;
-  mutable nb_break: int;
-  mutable nb_return: int;
-  mutable nb_label: int;
-  mutable nb_case: int;
+  mutable loop: int;
+  mutable if_: int;
+  mutable else_: int;
+  mutable goto: int;
+  mutable continue: int;
+  mutable break: int;
+  mutable return: int;
+  mutable label: int;
+  mutable case: int;
 
-  mutable nb_try: int;
+  mutable try_: int;
 
-  mutable nb_simple_funcall: int;
-  mutable nb_method_call: int;
-  mutable nb_simple_assign: int;
-  mutable nb_simple_field_assign: int;
-  mutable nb_initializer: int;
+  mutable simple_funcall: int;
+  mutable method_call: int;
+  mutable simple_assign: int;
+  mutable simple_field_assign: int;
+  mutable initializer_: int;
   
 }
 val default_entities_stat : unit -> entities_stat
