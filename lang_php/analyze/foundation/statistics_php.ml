@@ -163,12 +163,12 @@ let stat2_of_program h ast =
     V.klvalue = (fun (k, _) x ->
       (match x with
       | FunCallSimple _ -> inc "fun call"
-      | FunCallVar _ -> inc "Dynamic call"
+      | FunCallVar _ -> inc "fun call Dynamic"
 
       | StaticMethodCallSimple _ -> 
           inc "static method call"
       | StaticMethodCallVar _ ->
-          inc "Dynamic static method call"
+          inc "static method call Dynamic"
 
       | MethodCallSimple (lval, _, name, xs) ->
           (* look at lval if simple form *)
