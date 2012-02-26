@@ -5155,6 +5155,13 @@ type ('k,'v) hash_with_default = {
   default_value: unit -> 'v;
 }
 *)
+type ('a, 'b) hash_with_default =
+  < add : 'a -> 'b -> unit; 
+    to_list : ('a * 'b) list;
+    to_h: ('a, 'b) Hashtbl.t;
+    update : 'a -> ('b -> 'b) -> unit;
+    assoc: 'a -> 'b;
+  >
 
 let hash_with_default fv =
 object
