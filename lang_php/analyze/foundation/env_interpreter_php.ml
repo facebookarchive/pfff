@@ -152,7 +152,7 @@ module type TAINT =
       value
 
     val check_danger :  env -> heap ->
-      string -> Ast_php.info -> Callgraph_php2.node list (* path *) -> 
+      string -> Ast_php.info option -> Callgraph_php2.node list (* path *) -> 
       value -> unit
 
     val fold_slist : value list -> value

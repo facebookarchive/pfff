@@ -40,10 +40,10 @@ let get_signature fun_ =
   match last ast with
   | Ast.FuncDef fd ->
       Infer.func_def env fd;
-      normalize (InferH.GEnv.get_fun env (Ast_php.unwrap fd.Ast.f_name))
+      normalize (InferH.GEnv.get_fun env (Ast.unwrap fd.Ast.f_name))
   | Ast.ClassDef cd ->
       Infer.class_def env cd;
-      normalize (InferH.GEnv.get_class env (Ast_php.unwrap cd.Ast.c_name))
+      normalize (InferH.GEnv.get_class env (Ast.unwrap cd.Ast.c_name))
   | _ -> assert false
 
 (*****************************************************************************)

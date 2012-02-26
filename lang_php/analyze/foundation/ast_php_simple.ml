@@ -56,8 +56,12 @@
 (* The AST related types *)
 (*****************************************************************************)
 
-(* to get position information for certain elements in the AST *)
-type 'a wrap = 'a * Ast_php.tok
+(* To get position information for certain elements in the AST 
+ * Can be None when want to optimize things and have a very
+ * small marshalled AST. See Ast_php_simple.build.store_position flag.
+ * todo? does it really speedup things?
+ *)
+type 'a wrap = 'a * Ast_php.tok option
 
 type program = stmt list
 
@@ -182,8 +186,8 @@ and expr =
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: no 'uses' field for lambda? because we will use ocaml closures
- * for representing closures :) so during abstract interpretation for
+(* TODO: no 'uses' field for lambda? because we will use OCaml closures
+ * for representing closures :) During abstract interpretation for
  * instance the environment will be closed?
  *)
 and func_def = {
@@ -201,6 +205,7 @@ and func_def = {
      p_default: expr option;
    }
 
+   (* todo: add the generic types of sphp *)
    and hint_type =
      | Hint of string
      | HintArray
@@ -239,6 +244,9 @@ and class_def = {
     cv_visibility: visibility;
   }
 
+  (* factorize with function_def ? after all methods are
+   * transformed into functions in the abstract interpreter.
+   *)
   and method_def = {
     m_name: string wrap;
     m_ref: bool;
@@ -262,7 +270,7 @@ and class_def = {
 (*****************************************************************************)
 
 let unwrap x = fst x
-let wrap s = s, Ast_php.fakeInfo s
+let wrap s = s, Some (Ast_php.fakeInfo s)
 
 (* for echo, eval, print, unset, isset, etc *)
 let builtin x = "__builtin__" ^ x

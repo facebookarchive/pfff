@@ -370,7 +370,7 @@ and expr_ env heap x =
   | Unop (uop, e) ->
       let heap, v = expr env heap e in
       heap, unaryOp uop v
-  | Call (Id ("call_user_func" as fname,tok), f :: el) ->
+  | Call (Id ("call_user_func" as fname, tok), f :: el) ->
       let heap, f = expr env heap f in
       Taint.check_danger env heap fname tok !(env.path) f;
       (try
@@ -765,7 +765,7 @@ and xhp_attr env heap x =
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
-      Taint.check_danger env heap "xhp attribute" (Ast_php.fakeInfo "") 
+      Taint.check_danger env heap "xhp attribute" (Some (Ast_php.fakeInfo ""))
         !(env.path) v;
       heap
   | e -> fst (expr env heap e)
