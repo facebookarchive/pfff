@@ -15,7 +15,7 @@ open Common
 (*****************************************************************************)
 
 (* src: harrop article on fork-based parallelism *)
-let invoke f x =
+let invoke2 f x =
   let input, output = Unix.pipe() in
   match Unix.fork() with
   (* pad: what is this ?? *)
@@ -38,6 +38,7 @@ let invoke f x =
         match v with
         | `Res x -> x
         | `Exn e -> raise e;;
+let invoke a b = Common.profile_code "Parallel.invoke" (fun () -> invoke2 a b)
 
 let parallel_map f xs =
   (* create all the fork *)
@@ -94,7 +95,9 @@ let map_batch_jobs ~tasks xs =
     (* todo? a double pack ? because the initial pack/chunks can 
      * be computationaly "inbalanced" 
      *)
-    let xxs = Common.pack_safe tasks xs in
+    let chunk_size = (length xs / tasks) in
+
+    let xxs = Common.pack_safe chunk_size xs in
     let jobs = xxs +> List.map (fun xs ->
       (fun () ->
         xs +> List.map (fun job -> job ())
