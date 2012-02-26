@@ -105,7 +105,10 @@ spf "
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-
+let string_of_class_type = function
+  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> "class"
+  | Interface _ -> "interface"
+  | Trait _ -> "trait"
 
 let stat2_of_program h ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
@@ -116,18 +119,77 @@ let stat2_of_program h ast =
       | FuncDef _ -> inc "function"
       | ConstantDef _ -> inc "constant"
       | ClassDef def ->
-          (match def.c_type with
-          | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> inc "class"
-          | Interface _ -> inc "interface"
-          | Trait _ -> inc "trait"
-          )
+          inc (string_of_class_type def.c_type)
       | StmtList _ -> ()
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
       k x
     );
+    V.kstmt_and_def = (fun (k,_) x ->
+      (match x with
+      | FuncDefNested _ -> inc "function"; inc "Nested function"
+      | ClassDefNested def -> 
+          let str = string_of_class_type def.c_type in
+          inc str; 
+          inc ("Nested " ^ str)
+      | Stmt _ -> ()
+      );
+      k x
+    );
+    V.kclass_name_or_kwd = (fun (k,_) x ->
+      (match x with
+      | Self _ | Parent _ | ClassName _ -> ()
+      | LateStatic _ -> inc "Late static"
+      );
+    );
+    V.kexpr = (fun (k, _) x ->
+      (match x with
+      | Eval _ -> inc "Eval"
+      | Lambda _ -> inc "lambda"
+
+      | Include (_, e) | IncludeOnce (_, e)
+      | Require (_, e) | RequireOnce (_, e)
+          -> 
+          inc "include/require"
+          (* todo: resolve? *)
+
+      (* todo: x = yield ... *)
+          
+      
+      | _ -> ()
+      );
+      k x
+    );
     V.klvalue = (fun (k, _) x ->
       (match x with
+      | FunCallSimple _ -> inc "fun call"
+      | FunCallVar _ -> inc "Dynamic call"
+
+      | StaticMethodCallSimple _ -> 
+          inc "static method call"
+      | StaticMethodCallVar _ ->
+          inc "Dynamic static method call"
+
+      | MethodCallSimple (lval, _, name, xs) ->
+          (* look at lval if simple form *)
+          (match lval with
+          | This _ -> inc "method call with $this"
+          | _ -> inc "method call not $this"
+          )
+
+      | ObjAccessSimple (lval, _, name) ->
+          (match lval with
+          | This _ -> inc "obj access with $this"
+          | _ -> inc "obj access not $this"
+          )
+      | ObjAccess _ ->
+          inc "ObjAccess"
+
+ 
+      | Indirect _ -> inc "Indirect"
+      | DynamicClassVar _ -> inc "DynamicClassVar"
+      | StaticObjCallVar _ -> inc "StaticObjCallVar"
+
       | _ -> ()
       );
     );
