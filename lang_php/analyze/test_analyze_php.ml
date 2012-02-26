@@ -290,17 +290,35 @@ let test_include_require file =
 (* Misc *)
 (*****************************************************************************)
 
+let test_stat_php xs =
+
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let h = Common.hash_with_default (fun () -> 0) in
+
+  files +> Common_extra.progress (fun k -> List.iter (fun file ->
+    k();
+    try 
+      let _ast = Parse_php.parse_program file in
+      h#update "parsing correct" (fun x -> x + 1);
+      ()
+      
+    with Parse_php.Parse_error (_) ->
+      h#update "parsing error" (fun x -> x + 1);
+  ));
+  (* old:      
+   * let stat = Statistics_php.stat_of_program ast in
+   * let str = Statistics_php.string_of_stat stat in
+   * pr2 str
+   *)
+  pr2_xxxxxxxxxxxxxxxxx();
+  h#to_list +> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
+  ()
+
 let test_unsugar_php file = 
   let ast = Parse_php.parse_program file in
   let ast = Unsugar_php.unsugar_self_parent_program ast in
   let s = Export_ast_php.ml_pattern_string_of_program ast in
   pr2 s
-
-let test_stat_php file = 
-  let ast = Parse_php.parse_program file in
-  let stat = Statistics_php.stat_of_program ast in
-  let str = Statistics_php.string_of_stat stat in
-  pr2 str
 
 
 (*****************************************************************************)
@@ -460,8 +478,8 @@ let actions () = [
   "-include_require_static", " <file>",
   Common.mk_action_1_arg test_include_require;
 
-  "-stat_php", " <file>",
-  Common.mk_action_1_arg test_stat_php;
+  "-stat_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_stat_php;
   "-unsugar_php", " <file>",
   Common.mk_action_1_arg test_unsugar_php;
 ]

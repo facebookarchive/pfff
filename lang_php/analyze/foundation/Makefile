@@ -33,6 +33,7 @@ SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \
      database_php_build_helpers.ml database_php_build.ml database_php_build2.ml\
      database_prolog_php.ml \
+     statistics_php.ml \
      unit_foundation_php.ml unit_analyze_db_php.ml \
      unit_static_analysis_php.ml   unit_typeinfer_php.ml \
      unit_prolog_php.ml  
