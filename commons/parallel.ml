@@ -3,11 +3,18 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
+ * Some simple helpers around harrop's invoke to do some
+ * map-reduce like parallel programming using fork.
+ * 
  * related work:  
- *  - https://gitorious.org/parmap
- *  - https://github.com/MyLifeLabs/nproc
+ *  - https://gitorious.org/parmap, very similar, but also contains
+ *    a master/workers model which helps do some form of load balancing
+ * 
+ *  - https://github.com/MyLifeLabs/nproc, but it uses lwt
+ * 
+ *  - distribution.ml which use MPI and so can leverage multiple
+ *    machines (but MPI turned out to be quite unstable in my experience)
  *)
 
 (*****************************************************************************)
@@ -102,4 +109,3 @@ let map_batch_jobs ~tasks xs =
       ))
     in
     parallel_map (fun job -> job ()) jobs +> List.flatten
-
