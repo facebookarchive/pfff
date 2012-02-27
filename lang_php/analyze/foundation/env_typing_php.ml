@@ -13,14 +13,13 @@
  * license.txt for more details.
  *)
 
-module Int = struct type t = int let compare = (-) end
+module Topo = Ast_php_simple_toposort
+module Graph = Ast_php_simple_toposort.Graph
+
 module ISet = Set.Make(Int)
 module IMap = Map.Make(Int)
 module SSet = Set.Make(String)
 module SMap = Map.Make(String)
-
-module Topo = Ast_php_simple_toposort
-module Graph = Ast_php_simple_toposort.Graph
 
 (*****************************************************************************)
 (* Prelude *)
