@@ -48,8 +48,13 @@ module SMap = Map.Make (String)
  *  - the id() function semantic is hardcoded
  * 
  * TODO: 
+ *  - before processing the file, maybe should update the code database
+ *    with all the entities in the file, cos when one process a script,
+ *    many scripts have a main() or usage() but the code database
+ *    stores only one.
  *  - $x++ is ignored (we don't really care about int for now)
  *  - many places where play with $ in s.(0)
+
  *)
 
 (*****************************************************************************)
