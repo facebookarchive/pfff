@@ -364,6 +364,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous extends/2, implements/2, mixins/2.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous docall/3, use/4.");
+   pr (":- discontiguous docall2/3.");
    pr (":- discontiguous include/2, require_module/2.");
    pr (":- discontiguous problem/2.");
 
@@ -446,17 +447,22 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
           | CG.Method _ -> "method"
         in
         (* do not count those fake edges *)
-        if src <> CG.FakeRoot
-        then begin
-          let s =(spf "docall(%s, %s, %s)." 
-                     (name_of_node src) (name_of_node target) kind) in
-          if Hashtbl.mem h_oldcallgraph s
-          then ()
-          else pr s
-        end
+        (match src, target with
+        | CG.FakeRoot, _
+        | CG.File _, _ -> ()
+        | _, CG.Function s when s =~ "__builtin" -> ()
+        | _ ->
+            let s1 =(spf "docall(%s, %s, %s)." 
+                       (name_of_node src) (name_of_node target) kind) in
+            let s =(spf "docall2(%s, %s, %s)." 
+                       (name_of_node src) (name_of_node target) kind) in
+            if Hashtbl.mem h_oldcallgraph s1
+            then ()
+            else pr s
         )
       )
     )
+  )
 let append_callgraph_to_prolog_db ?show_progress a b = 
   Common.profile_code "Prolog_php.callgraph" (fun () -> 
     append_callgraph_to_prolog_db2 ?show_progress a b)
