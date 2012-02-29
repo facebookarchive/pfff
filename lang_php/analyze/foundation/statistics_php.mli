@@ -16,14 +16,19 @@ type php_file_kind =
   | IncluderFile
   | ScriptOrEndpointFile
 
-type stat2 = (string, int) Common.hash_with_default
-
 val default_stat: unit -> stat
 val string_of_stat: stat -> string
 val stat_of_program: Ast_php.program -> stat
 
-(* works by side effect on stat2 *)
-val stat2_of_program: stat2 -> Ast_php.program -> unit
+
+type stat2 = (string, int) Common.hash_with_default
+
+type stat_hooks = {
+  entity: (Database_code.entity_kind * string) -> unit;
+}
+(* works by side effect on stat2 hash *)
+val stat2_of_program: 
+  ?hooks:stat_hooks -> stat2 -> Ast_php.program -> unit
 
 (* helpers *)
 val kind_of_file_using_stat: stat -> php_file_kind

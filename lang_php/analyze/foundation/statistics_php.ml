@@ -15,6 +15,8 @@
 open Common
 
 open Ast_php
+module Ast = Ast_php
+module E = Database_code
 module V = Visitor_php
 
 (*****************************************************************************)
@@ -105,21 +107,30 @@ spf "
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-let string_of_class_type = function
-  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> "class"
-  | Interface _ -> "interface"
-  | Trait _ -> "trait"
 
-let stat2_of_program h ast =
+type stat_hooks = {
+  entity: (Database_code.entity_kind * string) -> unit;
+}
+let default_hooks = {
+  entity = (fun _ -> ());
+}
+
+let stat2_of_program ?(hooks=default_hooks) h ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
 
   (Program ast) +> V.mk_visitor { V.default_visitor with
     V.ktop = (fun (k, _) x ->
       (match x with
-      | FuncDef _ -> inc "function"
-      | ConstantDef _ -> inc "constant"
+      | FuncDef def ->
+          inc "function";
+          hooks.entity (E.Function, Ast.str_of_name def.f_name);
+      | ConstantDef (_, name, _, _, _) -> 
+          inc "constant";
+          hooks.entity (E.Constant, Ast.str_of_name name);
       | ClassDef def ->
-          inc (string_of_class_type def.c_type)
+          inc (Class_php.string_of_class_type def.c_type);
+          let kind = Class_php.class_type_of_ctype def.c_type in
+          hooks.entity (E.Class kind, Ast.str_of_name def.c_name);
       | StmtList _ -> ()
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
@@ -129,7 +140,7 @@ let stat2_of_program h ast =
       (match x with
       | FuncDefNested _ -> inc "function"; inc "Nested function"
       | ClassDefNested def -> 
-          let str = string_of_class_type def.c_type in
+          let str = Class_php.string_of_class_type def.c_type in
           inc str; 
           inc ("Nested " ^ str)
       | Stmt _ -> ()
