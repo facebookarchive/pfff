@@ -257,7 +257,7 @@ let index_db2_2 db =
             k x
         | ClassDef class_def ->
             let s = Ast_php.name class_def.c_name in
-            let kind = Class_php.class_type_of_class class_def in
+            let kind = Class_php.class_type_of_ctype class_def.c_type in
             add_def (s, E.Class kind, id, Some class_def.c_name) db;
             k x
         | NotParsedCorrectly _ -> ()
@@ -282,7 +282,7 @@ let index_db2_2 db =
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.ClassE def) db in
             let s = Ast_php.name def.c_name in
-            let kind = Class_php.class_type_of_class def in
+            let kind = Class_php.class_type_of_ctype def.c_type in
             add_def (s, E.Class kind, newid, Some def.c_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
       );
