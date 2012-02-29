@@ -860,6 +860,7 @@ val col_of_info : tok -> int
 (*x: AST helpers interface *)
 val string_of_info : tok -> string
 (*x: AST helpers interface *)
+val str_of_name: name -> string
 val name : name -> string
 val dname : dname -> string
 (*x: AST helpers interface *)
