@@ -656,7 +656,7 @@ layers:
 
 visual:
 	./codemap -no_legend -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . -filter ocaml .
+	   -with_info DB_LIGHT.marshall -with_layers . -filter pfff .
 visual2:
 	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . .

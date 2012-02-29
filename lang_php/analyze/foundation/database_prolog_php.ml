@@ -24,7 +24,7 @@ module E = Database_code
 
 module Env = Env_interpreter_php
 module Interp = Abstract_interpreter_php
-open Env_interpreter_php
+module CG = Callgraph_php2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -73,29 +73,24 @@ let name_id id db =
         | Some id_class -> 
             let sclass = Db.name_of_id id_class db in
             (match id_kind with
-            | E.Method _ ->       spf "('%s','%s')" sclass s
-
             (* todo? xhp decl ? *)
-            | E.Field ->
-                (* old: remove the $ because in use-mode we don't use the $ 
-                 * update: now def don't have a $ too, and can be xhp
-                 * attributes too.
-                *)
+            (* old: I used to do something different for Field amd remove
+             * the $ because in use-mode but we don't use the $ anymore.
+             * now def don't have a $ too, and can be xhp attribute too.
+             *)
+            | E.Method _ | E.Field | E.ClassConstant ->
                 spf "('%s','%s')" sclass s
-
-            | E.ClassConstant -> spf "('%s','%s')" sclass s
             | _ -> raise Impossible
             )
         | None ->
             failwith (spf "could not find enclosing class for %s"
-                    (Db.str_of_id id db))
+                         (Db.str_of_id id db))
         )
-
     | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
-    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global | E.Type|E.Module) ->
+    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global|E.Type|E.Module) ->
         (* not in db for now *)
         raise Impossible
     )
@@ -103,10 +98,10 @@ let name_id id db =
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
 
 let name_of_node = function
-  | Env.File s -> spf "'__TOPSTMT__%s'" s
-  | Env.Function s -> spf "'%s'" s
-  | Env.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
-  | Env.FakeRoot -> "'__FAKE_ROOT__'"
+  | CG.File s -> spf "'__TOPSTMT__%s'" s
+  | CG.Function s -> spf "'%s'" s
+  | CG.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
+  | CG.FakeRoot -> "'__FAKE_ROOT__'"
       
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
@@ -284,7 +279,7 @@ let add_uses id ast pr db =
   ()
 
 
-let add_defs_and_uses id kind ast pr db =
+let add_uses_and_properties id kind ast pr db =
   match kind, ast with
   | E.Function, FunctionE def ->
       pr (spf "arity(%s, %d)." (name_id id db)
@@ -369,6 +364,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous extends/2, implements/2, mixins/2.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous docall/3, use/4.");
+   pr (":- discontiguous docall2/3.");
    pr (":- discontiguous include/2, require_module/2.");
    pr (":- discontiguous problem/2.");
 
@@ -398,7 +394,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
          * todo: refs, types for params?
          *)
         let ast = Db.ast_of_id id db in
-        add_defs_and_uses id kind ast pr db;
+        add_uses_and_properties id kind ast pr db;
 
    ));
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
@@ -418,78 +414,55 @@ let gen_prolog_db ?show_progress a b =
 
 (* todo: 
  * - could also improve precision of use/4 
- * - detect higher order functions so that function call
- *   through generic higher order functions is present in callgraph
+ * - detect higher order functions so that function calls through
+ *   generic higher order functions are present in the callgraph
  *)
-let append_callgraph_to_prolog_db2 ?(show_progress=true) db file =
+let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
 
+  (* look previous information, to avoid introduce duplication
+   *
+   * todo: check/compare with the basic callgraph I do in add_uses?
+   * it should be a superset.
+   *  - should find more functions when can resolve statically dynamic funcall
+   *  - 
+   *)
   let h_oldcallgraph = Hashtbl.create 101 in
   file +> Common.cat +> List.iter (fun s ->
     if s =~ "^docall(.*" 
     then Hashtbl.add h_oldcallgraph s true
   );
 
-  let all_files = 
-    db.Db.file_info#tolist +> List.map fst in
-  let db = 
-    Env.code_database_of_juju_db  (Env.juju_db_of_files all_files) in
-  
-  Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
-  Common.save_excursion Abstract_interpreter_php.strict false (fun()->
-    Abstract_interpreter_php.graph := Map_poly.empty;
-
-    all_files +> Common_extra.progress ~show:show_progress (fun k ->
-      List.iter (fun file ->
-      k ();
-      let ast = 
-        try 
-          Ast_php_simple_build.program (Parse_php.parse_program file) 
-        with Ast_php_simple_build.TodoConstruct s ->
-          []
-      in
-      let env = 
-        Env_interpreter_php.empty_env db file in
-      let heap = 
-        Env_interpreter_php.empty_heap in
-      let _heap = Abstract_interpreter_php.program env heap ast in
-      ()
-    ))
-  ));
-
-  (* look previous information, to avoid introduce duplication
-   * todo: and also to check/compare with the abstract interpreter.
-   * Should be a superset.
-   *  - should find more functions when can resolve statically dynamic funcall
-   *  - 
-   *)
-
   Common.with_open_outfile_append file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
-    let g = !(Abstract_interpreter_php.graph) in
     pr "";
     g +> Map_poly.iter (fun src xs ->
       xs +> Set_poly.iter (fun target ->
         let kind =
           match target with
           (* can't call a file ... *)
-          | Env.File _ -> raise Impossible
+          | CG.File _ -> raise Impossible
           (* can't call a fake root*)
-          | Env.FakeRoot -> raise Impossible
-          | Env.Function _ -> "function"
-          | Env.Method _ -> "method"
+          | CG.FakeRoot -> raise Impossible
+          | CG.Function _ -> "function"
+          | CG.Method _ -> "method"
         in
         (* do not count those fake edges *)
-        if src <> Env.FakeRoot
-        then begin
-          let s =(spf "docall(%s, %s, %s)." 
-                     (name_of_node src) (name_of_node target) kind) in
-          if Hashtbl.mem h_oldcallgraph s
-          then ()
-          else pr s
-        end
+        (match src, target with
+        | CG.FakeRoot, _
+        | CG.File _, _ -> ()
+        | _, CG.Function s when s =~ "__builtin" -> ()
+        | _ ->
+            let s1 =(spf "docall(%s, %s, %s)." 
+                       (name_of_node src) (name_of_node target) kind) in
+            let s =(spf "docall2(%s, %s, %s)." 
+                       (name_of_node src) (name_of_node target) kind) in
+            if Hashtbl.mem h_oldcallgraph s1
+            then ()
+            else pr s
         )
       )
     )
+  )
 let append_callgraph_to_prolog_db ?show_progress a b = 
   Common.profile_code "Prolog_php.callgraph" (fun () -> 
     append_callgraph_to_prolog_db2 ?show_progress a b)

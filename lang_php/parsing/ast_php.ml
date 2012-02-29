@@ -1048,6 +1048,7 @@ let name e =
   | Name x -> unwrap x
   | XhpName (xs, _tok) -> 
       ":" ^ (Common.join ":" xs)
+let str_of_name x = name x
 
 let dname (DName x) = unwrap x
 (*x: ast_php.ml *)

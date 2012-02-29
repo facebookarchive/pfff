@@ -71,11 +71,14 @@ type fullid = filepos
 }
  (* with tarzan *)
 
-(* todo? copy-paste/redundant with 
+(* id_kind is now just an alias. Indeed it was copy-paste/redundant with
+ * Datbase_code.ml.
+ * 
+ * todo? there are still some duplications:
  *  - highlight_code.ml
  *  - Ast_php.entity (but without the actual ast content)
  *  - view_widgets_source.ml ?
- *  - typing_c environment type 
+ *  - typing_c environment type
  *  - type_annotater_c.ml namedef type
  * 
  * note: StaticMethod could be considered a Function, because in PHP they

@@ -2,6 +2,8 @@
 exception ObsoleteConstruct
 exception TodoConstruct of string
 
+val store_position: bool ref
+
 val program: Ast_php.program -> Ast_php_simple.program
 
 (* intermediate functions used by cmf *)

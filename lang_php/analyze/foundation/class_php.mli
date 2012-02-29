@@ -35,8 +35,10 @@ val class_variables_reorder_first:
 val is_static_method:
   Ast_php.method_def -> bool
 
-val class_type_of_class:
-  Ast_php.class_def -> Database_code.class_type
+val class_type_of_ctype:
+  Ast_php.class_type -> Database_code.class_type
+val string_of_class_type:
+  Ast_php.class_type -> string
 
 (* __construct *)
 val constructor_name: string 

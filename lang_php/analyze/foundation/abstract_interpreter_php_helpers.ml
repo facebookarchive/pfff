@@ -614,6 +614,7 @@ let save_excursion env heap f e =
      globals = ref !(env.Env.globals);
      cfun    = env.Env.cfun;
      safe = ref !(env.Env.safe);
+     path = ref !(env.Env.path);
      db = env.db;
   } in
   ignore (f env heap e)

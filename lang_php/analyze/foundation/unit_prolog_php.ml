@@ -26,18 +26,28 @@ let prolog_query ~file query =
   let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
   let helpers_pl_file = Config.path ^ "/h_program-lang/database_code.pl" in
 
+  let show_progress = false in
+
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
 
   (* todo: at some point avoid using database_php_build and 
-   * generate the prolog db directly from the sources (with
-   * also the callgraph info of the abstract interpreter)
+   * generate the prolog db directly from the sources.
    *)
-  let db = Database_php_build.db_of_files_or_dirs [source_file] in
-  Database_prolog_php.gen_prolog_db 
-    ~show_progress:false db facts_pl_file;
-  Database_prolog_php.append_callgraph_to_prolog_db
-    ~show_progress:false db facts_pl_file;
+  let db = 
+    Database_php_build.db_of_files_or_dirs ~show_progress [source_file] in
+
+  Database_prolog_php.gen_prolog_db ~show_progress db facts_pl_file;
+
+  let jujudb = 
+    Database_juju_php.juju_db_of_files ~show_progress [source_file] in
+  let codedb = 
+    Database_juju_php.code_database_of_juju_db jujudb in
+  let cg = 
+    Callgraph_php_build.create_graph ~show_progress [source_file] codedb in
+
+  Database_prolog_php.append_callgraph_to_prolog_db 
+    ~show_progress cg facts_pl_file;
 
   (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
   let cmd = 

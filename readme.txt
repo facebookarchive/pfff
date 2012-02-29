@@ -31,7 +31,7 @@ pfff is also made of few tools:
  - scheck, a bug finder
  - scheck_heavy, a bug finder leveraging the information computed previously
    by pfff_db_heavy
- - pfff_tags, an Emacs tag generator
+ - stags, an Emacs tag generator
 
 For more information, look at the pfff wiki here:
  http://github.com/facebook/pfff/wiki/Main

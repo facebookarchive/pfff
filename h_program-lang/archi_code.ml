@@ -29,6 +29,7 @@ open Common
  * Right now the "aspects" are slightly modeled according to my
  * own code and facebook flib code.
  *
+ * This is used by codemap for now.
  *)
 
 (*****************************************************************************)

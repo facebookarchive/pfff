@@ -36,11 +36,12 @@
 type command_name = string
 type command_run = {
    string unixname,
+   // todo: do a generic key/value list
    string extra_args,
    Date.date date
 }
 
-// command_name -> list(command_run)
+// command_name -> date -> command_run
 database stringmap(intmap(command_run)) /db1
 
 database int /counter = 0
@@ -50,23 +51,56 @@ database int /counter = 0
 //****************************************************************************
 
 function string_of_command_run(command_run x) {
-  "{Date.to_debug_string(x.date)}| " ^
-  "{x.unixname}|" ^
-  "args = {x.extra_args}"
+  "{Date.to_debug_string(x.date)}| {x.unixname}| args = {x.extra_args}"
 }
 
 //****************************************************************************
 // Query
 //****************************************************************************
 
-function view_list() {
-  strmap = /db1;
-  //todo: this is really slow
-  keys = Map.To.key_list(strmap);
-  String.concat("\n", keys)
+function users_of_cmd(string cmd, (command_run -> bool) pred) {
+  intmap = /db1[cmd];
+  vals = Map.To.val_list(intmap);
+  vals = List.filter(pred, vals);
+  users = List.map(function (x) { x.unixname }, vals);
+  set = Set.From.list(users);
+  set
 }
 
-function view(string cmd) {
+function view_all_cmds() {
+  strmap = /db1;
+  keys = Map.To.key_list(strmap);
+  keys_with_stats = List.map(function (cmd) {
+    users = users_of_cmd(cmd, (function(_) { true }));
+    (cmd, Set.size(users))
+    }, keys);
+  keys_with_stats_before = List.map(function (cmd) {
+    users = users_of_cmd(cmd, (function(x) {
+      Date.in_milliseconds(x.date) < Date.in_milliseconds(Common.last_week())
+    }));
+    (cmd, Set.size(users))
+    }, keys);
+
+  String.concat("\n", 
+    List.map(function ((cmd, n)) {
+      now = n;
+      before = 
+        match (List.assoc(cmd, keys_with_stats_before)) {
+          // none should never happen actually, cos all past commands
+          // in keys_with_stats_before are also in keys_with_stats
+          // are also in the most recent
+          case {none}: "IMPOSSIBLE"
+          case {some: x}: {
+            diff = n - x;
+            prefix = if (diff > 0) { "+" } else { "" };
+            if (diff == n) { "NEW" } else { "{prefix}{diff}" }
+          }
+        };
+    "{cmd}({now}, {before})"
+    }, keys_with_stats))
+}
+
+function view_cmd(string cmd) {
   intmap = /db1[cmd];
   vals = Map.To.val_list(intmap);
   ys = List.map(string_of_command_run, vals);
@@ -127,9 +161,9 @@ function start(Uri.relative url) {
   case {path: ["view", "counter"] ...}:
     Resource.raw_text("counter = {/counter}\n")
   case {path: ["view", "list"] ...}:
-    Resource.raw_text(view_list())
+    Resource.raw_text(view_all_cmds())
   case {path: ["view", cmd] ...}:
-    Resource.raw_text(view(cmd))
+    Resource.raw_text(view_cmd(cmd))
 
   default:
     Resource.raw_status({bad_request})

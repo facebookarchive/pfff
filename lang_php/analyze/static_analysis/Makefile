@@ -9,7 +9,6 @@ SRC= \
   code_rank_php.ml \
   coverage_static_php.ml \
   deadcode_php.ml   layer_deadcode_php.ml \
-  statistics_php.ml \
   unit_static_analysis_simple_php.ml
 
 #  dataflow_php_liveness.ml \

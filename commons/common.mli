@@ -817,6 +817,7 @@ val do_option : ('a -> unit) -> 'a option -> unit
 val optionise : (unit -> 'a) -> 'a option
 
 val some_or : 'a option -> 'a -> 'a
+val option_to_list: 'a option -> 'a list
 
 val partition_either :
   ('a -> ('b, 'c) either) -> 'a list -> 'b list * 'c list
@@ -1344,8 +1345,11 @@ val splitAt : int -> 'a list -> 'a list * 'a list
 val split_when: ('a -> bool) -> 'a list -> 'a list * 'a * 'a list
 val split_gen_when: ('a list -> 'a list option) -> 'a list -> 'a list list
 
+(* return a list of with lots of chunks of size n *)
 val pack : int -> 'a list -> 'a list list
 val pack_safe: int -> 'a list -> 'a list list
+(* return a list of size n which chunks from original list *)
+val chunks: int -> 'a list -> 'a list list
 
 
 val enum : int -> int -> int list
@@ -1806,6 +1810,14 @@ val hashset_of_list : 'a list -> 'a hashset
 (*****************************************************************************)
 (* Hash  with default value *)
 (*****************************************************************************)
+type ('a, 'b) hash_with_default =
+  < add : 'a -> 'b -> unit; 
+    to_list : ('a * 'b) list;
+    to_h: ('a, 'b) Hashtbl.t;
+    update : 'a -> ('b -> 'b) -> unit;
+    assoc: 'a -> 'b;
+  >
+
 val hash_with_default: (unit -> 'b) ->
   < add : 'a -> 'b -> unit; 
     to_list : ('a * 'b) list;
@@ -2135,6 +2147,22 @@ val execute_and_show_progress :
  ?show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
 
 (*e: common.mli misc *)
+
+(*****************************************************************************)
+(* Gc optimisation (pfff) *)
+(*****************************************************************************)
+
+(* opti: to avoid stressing the GC with a huge graph, we sometimes
+ * change a big AST into a string, which reduces the size of the graph
+ * to explore when garbage collecting.
+ *)
+type 'a cached = 'a serialized_maybe ref
+ and 'a serialized_maybe =
+    | Serial of string
+    | Unfold of 'a
+
+val serial: 'a -> 'a cached
+val unserial: 'a cached -> 'a
 
 (*###########################################################################*)
 (* Postlude *)

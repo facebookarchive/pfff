@@ -9,26 +9,41 @@ module V = Visitor_php
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Type/scope annotations *)
+(* Scope annotations *)
+(*****************************************************************************)
+
+(* Will annotate with Local or Param or Global the Var AST elements. 
+ * See also codemap which does the same and use different colors for
+ * different scopes.
+ *)
+let test_scope_php file =
+  let asts = Parse_php.parse_program file in
+
+  (* Annotating variables requires actually a code database because
+   * functions can take variables by reference without any annotation
+   * at the call site (ugly language)
+   *)
+  let entity_finder = None in
+  Check_variables_php.check_and_annotate_program entity_finder asts;
+  Export_ast_php.show_expr_info := true;
+  pr (Export_ast_php.sexp_string_of_program asts);
+  ()
+
+(*****************************************************************************)
+(* Typing *)
 (*****************************************************************************)
 
 (* todo: use julien's stuff *)
 let test_type_php file =
-  let _asts = Parse_php.parse_program file in
   raise Todo
 (*
   let env = ref (Hashtbl.create 101) in
-  let asts = asts +> List.map (fun ast ->
-      Typing_php.annotate_toplevel env ast
-    )
+  let asts = asts +> List.map (fun ast ->Typing_php.annotate_toplevel env ast)
   in
   Export_ast_php.show_expr_info := true;
   pr (Export_ast_php.sexp_string_of_program asts);
   ()
 *)
-
-let test_typing_weak_php file =
-  raise Todo
 (*
   let asts = Parse_php.parse_program file in
   asts +> List.iter (fun ast ->
@@ -37,16 +52,275 @@ let test_typing_weak_php file =
   )
 *)
 
-let test_check_php file =
+(*****************************************************************************)
+(* CFG *)
+(*****************************************************************************)
+
+(*s: test_cfg_php *)
+let test_cfg_php file =
+  let (ast2,_stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      (try
+        let flow = Controlflow_build_php.cfg_of_func def in
+        Controlflow_php.display_flow flow;
+      with Controlflow_build_php.Error err ->
+        Controlflow_build_php.report_error err
+      )
+  | _ -> ()
+  )
+
+(*e: test_cfg_php *)
+(*s: test_cyclomatic_php *)
+let test_cyclomatic_php file =
+  let (ast2,_stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      let name = Ast_php.name def.Ast_php.f_name in
+      let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
+      pr2 (spf "cyclomatic complexity for function %s is %d" name n);
+  | Ast_php.ClassDef def ->
+      let class_stmts = Ast_php.unbrace def.Ast_php.c_body in
+      let class_name = Ast_php.name def.Ast_php.c_name in
+      class_stmts +> List.iter (function
+      | Ast_php.Method def ->
+          let method_name = Ast_php.name def.Ast_php.m_name in
+          let n = Cyclomatic_php.cyclomatic_complexity_method ~verbose:true def
+          in
+          pr2 (spf "cyclomatic complexity for method %s::%s is %d"
+                  class_name method_name n);
+      | Ast_php.ClassConstants _ | Ast_php.ClassVariables _ ->
+          ()
+      | Ast_php.XhpDecl _ | Ast_php.UseTrait _ ->
+          ()
+      )
+  | _ -> ()
+  )
+(*e: test_cyclomatic_php *)
+
+(*****************************************************************************)
+(* PIL *)
+(*****************************************************************************)
+
+let test_pil file =
   raise Todo
+(*
+  let ast = Parse_php.parse_program file in
 
-let test_scope_php file =
-  let asts = Parse_php.parse_program file in
+  (* let's transform and print every expression *)
+  let hooks = { V.default_visitor with
+    (* old:
+    V.kexpr = (fun (k, vx) e ->
+      let instrs = Pil_build.linearize_expr e in
+      instrs +> List.iter (fun instr ->
+        pr2 (Pil.string_of_instr instr);
+      );
+    );
+    *)
+    V.kstmt = (fun (k, vx) st ->
+      let stmts = Pil_build.linearize_stmt st in
+      stmts +> List.iter (fun st ->
+        pr2 (Meta_pil.string_of_stmt st)
+      )
+    );
+  } in
+  let v = V.mk_visitor hooks in
+  v (Ast.Program ast)
+*)
 
-  Check_variables_php.check_and_annotate_program None asts;
-  Export_ast_php.show_expr_info := true;
-  pr (Export_ast_php.sexp_string_of_program asts);
+let test_pretty_print_pil file =
+  raise Todo
+(*
+  let ast = Parse_php.parse_program file in
+  let v = V.mk_visitor { V.default_visitor with
+    V.kstmt = (fun (k, vx) st ->
+      let stmts = Pil_build.linearize_stmt st in
+      stmts +> List.iter (fun st ->
+        pr2 (Pretty_print_pil.string_of_stmt st)
+      )
+    );
+  } in
+  v (Ast.Program ast)
+*)
+
+let test_cfg_pil file =
+  raise Todo
+(*
+  let ast = Parse_php.parse_program file in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      (try
+         let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
+         let flow = Controlflow_build_pil.cfg_of_stmts pil in
+         Controlflow_pil.display_flow flow;
+      with Controlflow_build_pil.Error err ->
+        Controlflow_build_pil.report_error err
+      )
+  | _ -> ()
+  )
+*)
+
+let test_dataflow_pil file =
+  raise Todo
+(*
+  let ast = Parse_php.parse_program file in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      (try
+         let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
+         let flow = Controlflow_build_pil.cfg_of_stmts pil in
+
+         let reach = Dataflow_pil.reaching_fixpoint flow in
+         let liveness = Dataflow_pil.liveness_fixpoint flow in
+         pr "Reaching:";
+         Dataflow_pil.display_reaching_dflow flow reach;
+         pr "Liveness:";
+         Dataflow_pil.display_liveness_dflow flow liveness
+
+      with Controlflow_build_pil.Error err ->
+        Controlflow_build_pil.report_error err
+      )
+  | _ -> ()
+  )
+*)
+
+(* todo: adapt to PIL *)
+let test_dfg_php file =
+  raise Todo
+(*
+  let (ast2,_stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      (try
+        let flow = Controlflow_build_php.cfg_of_func def in
+        let mapping = Dataflow_php_liveness.liveness_analysis flow in
+        pr2_gen mapping
+        (* Controlflow_php.display_flow flow; *)
+      with Controlflow_build_php.Error err ->
+        Controlflow_build_php.report_error err
+      )
+  | _ -> ()
+  )
+*)
+
+(* collect all variables in a function using the PIL visitor *)
+let test_visitor_pil file =
+  raise Todo
+(*
+  let ast = Parse_php.parse_program file in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+      let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
+      let funcname = Ast_php.name def.Ast_php.f_name in
+
+      let h = Hashtbl.create 101 in
+      let visitor = Visitor_pil.mk_visitor { Visitor_pil.default_visitor with
+        Visitor_pil.kvar = (fun (k, _) var ->
+          match var with
+          | Pil.Var dname ->
+              let s = Ast_php.dname dname in
+              Hashtbl.replace h s true
+          | _ -> k var
+        );
+      }
+      in
+      visitor (Controlflow_pil.StmtList pil);
+      let vars = Common.hashset_to_list h in
+      pr2 (spf "vars in function %s = %s" funcname (Common.join ", " vars));
+  | _ -> ()
+  )
+*)
+
+(*****************************************************************************)
+(* Simple AST *)
+(*****************************************************************************)
+
+let test_dump_simple file =
+  let ast = Parse_php.parse_program file in
+  let ast = Ast_php_simple_build.program ast in
+  let v = Meta_ast_php_simple.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+(*****************************************************************************)
+(* Abstract interpreter *)
+(*****************************************************************************)
+module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
+(* e.g. ./pfff_fb -test_ia tests/xss/abint.php *)
+let test_abstract_interpreter file =
+  let ast = 
+    Ast_php_simple_build.program (Parse_php.parse_program file) in
+  let jujudb = 
+    Database_juju_php.juju_db_of_files ~show_progress:false [file] in
+  let db = 
+    Database_juju_php.code_database_of_juju_db jujudb in
+  let env = 
+    Env_interpreter_php.empty_env db file in
+
+  Abstract_interpreter_php.extract_paths := false;
+  Tracing_php.tracing := true;
+  Abstract_interpreter_php.strict := true;
+  Abstract_interpreter_php.max_depth := 1;
+  let _heap = 
+    Interp.program env Env_interpreter_php.empty_heap ast in
   ()
+
+(*****************************************************************************)
+(* Includes *)
+(*****************************************************************************)
+
+(* printing not static include *)
+let test_include_require file =
+  let ast = Parse_php.parse_program file in
+
+  let increqs = Include_require_php.top_increq_of_program ast in
+  increqs +> List.iter (fun (inckind, tok, incexpr) ->
+    match incexpr with
+    | Include_require_php.SimpleVar _
+    | Include_require_php.Other _ ->
+        Lib_parsing_php.print_match [tok]
+    | _ -> ()
+  );
+  ()
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
+let test_stat_php xs =
+
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let h = Common.hash_with_default (fun () -> 0) in
+
+  files +> Common_extra.progress (fun k -> List.iter (fun file ->
+    k();
+    try 
+      let ast = Parse_php.parse_program file in
+      h#update "parsing correct" (fun x -> x + 1);
+      Statistics_php.stat2_of_program h ast;
+      ()
+      
+    with Parse_php.Parse_error (_) ->
+      h#update "parsing error" (fun x -> x + 1);
+  ));
+  (* old:      
+   * let stat = Statistics_php.stat_of_program ast in
+   * let str = Statistics_php.string_of_stat stat in
+   * pr2 str
+   *)
+  pr2_xxxxxxxxxxxxxxxxx();
+  h#to_list +> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
+  ()
+
+let test_unsugar_php file = 
+  let ast = Parse_php.parse_program file in
+  let ast = Unsugar_php.unsugar_self_parent_program ast in
+  let s = Export_ast_php.ml_pattern_string_of_program ast in
+  pr2 s
+
 
 (*****************************************************************************)
 (* External tools cooperation *)
@@ -54,15 +328,8 @@ let test_scope_php file =
 
 let test_xdebug_dumpfile file =
   file +> Xdebug.iter_dumpfile (fun acall ->
-    (* pr2 s *)
-    ()
+    pr2_gen acall;
   )
-
-let test_parse_phpunit_json file =
-
-  let json = Json_in.load_json file in
-  let tr = Phpunit.test_results_of_json json in
-  Phpunit.final_report tr
 
 let test_php_xdebug file =
   let trace_file = Common.new_temp_file "xdebug" ".xt" in
@@ -122,6 +389,11 @@ let test_type_xdebug_php file =
   ()
 *)
 
+let test_parse_phpunit_json file =
+  let json = Json_in.load_json file in
+  let tr = Phpunit.test_results_of_json json in
+  Phpunit.final_report tr
+
 let test_phpdoc dir =
   let files = Phpmanual_xml.find_functions_reference_of_dir dir in
   files +> List.iter (fun file ->
@@ -142,241 +414,6 @@ let test_php_serialize file =
   pr2 s
 
 (*****************************************************************************)
-(* CFG/DFG *)
-(*****************************************************************************)
-
-(*s: test_cfg_php *)
-let test_cfg_php file =
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  ast |> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-        let flow = Controlflow_build_php.cfg_of_func def in
-        Controlflow_php.display_flow flow;
-      with Controlflow_build_php.Error err ->
-        Controlflow_build_php.report_error err
-      )
-  | _ -> ()
-  )
-
-(*e: test_cfg_php *)
-(*s: test_cyclomatic_php *)
-let test_cyclomatic_php file =
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  ast |> List.iter (function
-  | Ast_php.FuncDef def ->
-      let name = Ast_php.name def.Ast_php.f_name in
-      let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
-      pr2 (spf "cyclomatic complexity for function %s is %d" name n);
-  | Ast_php.ClassDef def ->
-      let class_stmts = Ast_php.unbrace def.Ast_php.c_body in
-      let class_name = Ast_php.name def.Ast_php.c_name in
-      class_stmts |> List.iter (function
-      | Ast_php.Method def ->
-          let method_name = Ast_php.name def.Ast_php.m_name in
-          let n = Cyclomatic_php.cyclomatic_complexity_method ~verbose:true def
-          in
-          pr2 (spf "cyclomatic complexity for method %s::%s is %d"
-                  class_name method_name n);
-      | Ast_php.ClassConstants _ | Ast_php.ClassVariables _ ->
-          ()
-      | Ast_php.XhpDecl _ | Ast_php.UseTrait _ ->
-          ()
-      )
-  | _ -> ()
-  )
-(*e: test_cyclomatic_php *)
-
-(* todo: adapt to PIL *)
-let test_dfg_php file =
-  raise Todo
-(*
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  ast |> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-        let flow = Controlflow_build_php.cfg_of_func def in
-        let mapping = Dataflow_php_liveness.liveness_analysis flow in
-        pr2_gen mapping
-        (* Controlflow_php.display_flow flow; *)
-      with Controlflow_build_php.Error err ->
-        Controlflow_build_php.report_error err
-      )
-  | _ -> ()
-  )
-*)
-
-(*****************************************************************************)
-(* Misc *)
-(*****************************************************************************)
-
-let test_unsugar_php file = 
-  let ast = Parse_php.parse_program file in
-  let ast = Unsugar_php.unsugar_self_parent_program ast in
-  let s = Export_ast_php.ml_pattern_string_of_program ast in
-  pr2 s
-
-let test_stat_php file = 
-  let ast = Parse_php.parse_program file in
-  let stat = Statistics_php.stat_of_program ast in
-  let str = Statistics_php.string_of_stat stat in
-  pr2 str
-
-(* printing not static include *)
-let test_include_require file =
-  let ast = Parse_php.parse_program file in
-
-  let increqs = Include_require_php.top_increq_of_program ast in
-  increqs |> List.iter (fun (inckind, tok, incexpr) ->
-    match incexpr with
-    | Include_require_php.SimpleVar _
-    | Include_require_php.Other _ ->
-        Lib_parsing_php.print_match [tok]
-    | _ -> ()
-  );
-  ()
-
-(*****************************************************************************)
-(* PIL *)
-(*****************************************************************************)
-
-let test_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-
-  (* let's transform and print every expression *)
-  let hooks = { V.default_visitor with
-    (* old:
-    V.kexpr = (fun (k, vx) e ->
-      let instrs = Pil_build.linearize_expr e in
-      instrs +> List.iter (fun instr ->
-        pr2 (Pil.string_of_instr instr);
-      );
-    );
-    *)
-    V.kstmt = (fun (k, vx) st ->
-      let stmts = Pil_build.linearize_stmt st in
-      stmts +> List.iter (fun st ->
-        pr2 (Meta_pil.string_of_stmt st)
-      )
-    );
-  } in
-  let v = V.mk_visitor hooks in
-  v (Ast.Program ast)
-*)
-
-let test_pretty_print_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  let v = V.mk_visitor { V.default_visitor with
-    V.kstmt = (fun (k, vx) st ->
-      let stmts = Pil_build.linearize_stmt st in
-      stmts +> List.iter (fun st ->
-        pr2 (Pretty_print_pil.string_of_stmt st)
-      )
-    );
-  } in
-  v (Ast.Program ast)
-*)
-
-let test_cfg_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  ast |> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-         let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
-         let flow = Controlflow_build_pil.cfg_of_stmts pil in
-         Controlflow_pil.display_flow flow;
-      with Controlflow_build_pil.Error err ->
-        Controlflow_build_pil.report_error err
-      )
-  | _ -> ()
-  )
-*)
-
-let test_dataflow_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  ast |> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-         let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
-         let flow = Controlflow_build_pil.cfg_of_stmts pil in
-
-         let reach = Dataflow_pil.reaching_fixpoint flow in
-         let liveness = Dataflow_pil.liveness_fixpoint flow in
-         pr "Reaching:";
-         Dataflow_pil.display_reaching_dflow flow reach;
-         pr "Liveness:";
-         Dataflow_pil.display_liveness_dflow flow liveness
-
-      with Controlflow_build_pil.Error err ->
-        Controlflow_build_pil.report_error err
-      )
-  | _ -> ()
-  )
-*)
-
-(* collect all variables in a function using the PIL visitor *)
-let test_visitor_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  ast +> List.iter (function
-  | Ast_php.FuncDef def ->
-      let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
-      let funcname = Ast_php.name def.Ast_php.f_name in
-
-      let h = Hashtbl.create 101 in
-      let visitor = Visitor_pil.mk_visitor { Visitor_pil.default_visitor with
-        Visitor_pil.kvar = (fun (k, _) var ->
-          match var with
-          | Pil.Var dname ->
-              let s = Ast_php.dname dname in
-              Hashtbl.replace h s true
-          | _ -> k var
-        );
-      }
-      in
-      visitor (Controlflow_pil.StmtList pil);
-      let vars = Common.hashset_to_list h in
-      pr2 (spf "vars in function %s = %s" funcname (Common.join ", " vars));
-  | _ -> ()
-  )
-*)
-
-(*****************************************************************************)
-(* Simple AST and abstract interpreter *)
-(*****************************************************************************)
-
-let test_dump_simple file =
-  let ast = Parse_php.parse_program file in
-  let ast = Ast_php_simple_build.program ast in
-  let v = Meta_ast_php_simple.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
-
-(* e.g. ./pfff_fb -test_abint tests/xss/abint.php *)
-let test_abstract_interpreter file =
-  let ast = Parse_php.parse_program file in
-  let ast = Ast_php_simple_build.program ast in
-  let heap = Env_interpreter_php.empty_heap in
-  let db = raise Todo in
-  let env = Env_interpreter_php.empty_env db file in
-  let heap = Abstract_interpreter_php.program env heap ast in
-  flush stdout; flush stderr;
-  pr2_gen(heap);
-  ()
-
-(*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
@@ -386,9 +423,27 @@ let test_abstract_interpreter file =
  *)
 
 let actions () = [
+  "-scope_php", " <file>",
+  Common.mk_action_1_arg test_scope_php;
+
+  "-type_php", " <file>",
+  Common.mk_action_1_arg test_type_php;
+
+  (*s: test_analyze_php actions *)
+    "-cfg_php",  " <file>",
+    Common.mk_action_1_arg test_cfg_php;
+  (*x: test_analyze_php actions *)
+    "-cyclomatic_php", " <file>",
+    Common.mk_action_1_arg test_cyclomatic_php;
+  (*e: test_analyze_php actions *)
+
+  (* todo: adapt to PIL *)
+  "-dfg_php",  " <file>",
+    Common.mk_action_1_arg test_dfg_php;
+
   "-dump_php_simple", "   <file>",
   Common.mk_action_1_arg test_dump_simple;
-  "-test_abint", " <file>",
+  "-test_ia", " <file>",
   Common.mk_action_1_arg test_abstract_interpreter;
 
 (*
@@ -404,28 +459,7 @@ let actions () = [
     Common.mk_action_1_arg test_visitor_pil;
 *)
 
-  (*s: test_analyze_php actions *)
-    "-cfg_php",  " <file>",
-    Common.mk_action_1_arg test_cfg_php;
-  (*x: test_analyze_php actions *)
-    "-cyclomatic_php", " <file>",
-    Common.mk_action_1_arg test_cyclomatic_php;
-  (*e: test_analyze_php actions *)
 
-  "-type_php", " <file>",
-  Common.mk_action_1_arg test_type_php;
-  (* todo: adapt to PIL *)
-  "-dfg_php",  " <file>",
-    Common.mk_action_1_arg test_dfg_php;
-
-  "-check_php", " <file>",
-  Common.mk_action_1_arg test_check_php;
-
-  "-scope_php", " <file>",
-  Common.mk_action_1_arg test_scope_php;
-
-  "-weak_php", " <file>",
-  Common.mk_action_1_arg test_typing_weak_php;
   "-php_xdebug", " <file>",
   Common.mk_action_1_arg test_php_xdebug;
   "-type_xdebug_php", " <file>",
@@ -445,8 +479,8 @@ let actions () = [
   "-include_require_static", " <file>",
   Common.mk_action_1_arg test_include_require;
 
-  "-stat_php", " <file>",
-  Common.mk_action_1_arg test_stat_php;
+  "-stat_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_stat_php;
   "-unsugar_php", " <file>",
   Common.mk_action_1_arg test_unsugar_php;
 ]

@@ -12,21 +12,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
-open Ast_php_simple
-module A = Ast_php_simple
+module Ast = Ast_php_simple
 
-module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make (Int)
 module IMap = Map.Make (Int)
-
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * In the abstract interpreter all variables are pointers to pointers 
  * of values. So with '$x = 42;' we got $x = &1{&2{42}}.
@@ -38,6 +35,15 @@ module SMap = Map.Make (String)
  *
  * Why this model? why not just variables be pointer to values? Because
  * of references.
+ * 
+ * Retrospecively, was it good to try to manage references correctly?
+ * After all, many other things are not that well handled in the interpreter
+ * or imprecise or passed over silently (e.g. many functions/classes not
+ * found, traits not handled, some constructs not handled, choosing
+ * arbitrarily one object in a Vsum when there could actually be many
+ * different classes).
+ * juju: yes, maybe it was not a good idea to focus so much on references.
+ *       Moreover it slows down things a lot.
  *)
 
 (*****************************************************************************)
@@ -45,9 +51,9 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 
 type code_database = {
-  funs:    string -> Ast_php_simple.func_def;
-  classes: string -> Ast_php_simple.class_def;
-  constants: string -> Ast_php_simple.constant_def;
+  funs:      string -> Ast.func_def;
+  classes:   string -> Ast.class_def;
+  constants: string -> Ast.constant_def;
 }
 
 type value =
@@ -57,7 +63,7 @@ type value =
 
   | Vabstr  of type_
 
-  (* Precise value. Especially useful for Vstring and interprocedural
+  (* Precise value. Especially useful for Vstring for interprocedural
    * analysis as people use strings to represent functions or classnames
    * (they are not first-class citizens in PHP).
    *)
@@ -77,7 +83,7 @@ type value =
   | Vmap of value * value
 
   (* pad: ??? *)
-  | Vmethod of value * (env -> heap -> expr list -> heap * value) IMap.t
+  | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
   | Vobject of value SMap.t
 
   (* union of possible types/values, ex: null | object, bool | string, etc *)
@@ -113,36 +119,54 @@ and env = {
   (* current function processed, used for handling static variables,
    * to add fake "<function>**$var" in globals *)
   cfun    : string;
+  (* call stack used for debugging when found an XSS hole and used also
+   * for callgraph generation.
+   * todo: could be put in the env too, next to 'stack' and 'safe'? take
+   * care of save_excursion though.
+   *)
+  path: Callgraph_php2.node list ref;
+  (* opti: number of recursive calls to a function f. if > 2 then stop. *)
+  stack   : int SMap.t;
 
   (* opti: cache of already processed functions safe for tainting *)
   safe    : value SMap.t ref;
-  (* opti: number of recursive calls to a function f. if > 2 then stop. *)
-  stack   : int SMap.t;
 }
 
-(* opti: to avoid stressing the GC with a huge graph, we sometimes
- * change a big AST into a string, which reduces the size of the graph
- * to explore when garbage collecting.
- *)
-type 'a cached = 'a serialized_maybe ref
- and 'a serialized_maybe =
-    | Serial of string
-    | Unfold of 'a
+module type TAINT =
+  sig
+    val taint_mode : bool ref
 
-type code_database_juju = {
-  funs_juju    : Ast_php_simple.func_def cached SMap.t ref;
-  classes_juju : Ast_php_simple.class_def cached SMap.t ref;
-  constants_juju: Ast_php_simple.constant_def cached SMap.t ref;
-}
+    val taint_expr : env -> heap ->
+      (env -> heap -> Ast_php_simple.expr -> heap * value) *
+      (env -> heap -> Ast_php_simple.expr -> heap * bool * value) *
+      (env -> heap -> value -> 'a * 'b) *
+      ('b -> env -> 'a -> Ast_php_simple.expr list -> heap * value) *
+      (env -> heap -> value -> Ast_php_simple.expr list -> heap * value) ->
+      Callgraph_php2.node list ->
+      Ast_php_simple.expr -> 
+      heap * value
 
-type node =
-  | Function of string
-  | Method of string * string
-  | File of Common.filename
-  (* used to simplify code to provoke the call to toplevel functions *)
-  | FakeRoot
+    val binary_concat : env -> heap ->
+      value -> value -> 
+      Callgraph_php2.node list (* path *) -> 
+      value
 
-type callgraph = (node, node Set_poly.t) Map_poly.t
+    val check_danger :  env -> heap ->
+      string -> Ast_php.info option -> Callgraph_php2.node list (* path *) -> 
+      value -> unit
+
+    val fold_slist : value list -> value
+
+    val when_call_not_found : heap -> value list -> value
+
+    module GetTaint :
+      sig
+        exception Found of string list
+        val list : ('a -> unit) -> 'a list -> unit
+        val value : heap -> value -> string list option
+      end
+  end
+
 
 (*****************************************************************************)
 (* Helpers *)
@@ -164,92 +188,7 @@ let empty_env db file =
     stack   = SMap.empty ;
     safe = ref SMap.empty;
     db = db;
-  }
-
-let string_of_node = function
-  | File s -> "__TOP__" ^ s
-  | Function s -> s
-  | Method (s1, s2) -> s1 ^ "::" ^ s2
-  | FakeRoot -> "__FAKE_ROOT__"
-
-let node_of_string s =
-  match s with
-  | _ when Common.(=~) s "__TOP__\\(.*\\)" -> 
-      File (Common.matched1 s)
-  | _ when Common.(=~) s "\\(.*\\)::\\(.*\\)" -> 
-      let (a, b) = Common.matched2 s in
-      Method (a, b)
-  | "__FAKE_ROOT__" -> FakeRoot
-  | _ -> Function s
-
-
-let (add_graph: node -> node -> callgraph -> callgraph) =
- fun src target graph ->
-  let vs = try Map_poly.find src graph with Not_found -> Set_poly.empty in
-  let vs = Set_poly.add target vs in
-  Map_poly.add src vs graph
-
-(*****************************************************************************)
-(* Optimization *)
-(*****************************************************************************)
-
-(* less: could move that in common.ml, it's pretty generic and useful *)
-let serial x =
-  ref (Serial (Marshal.to_string x []))
-
-let unserial x =
-  match !x with
-  | Unfold c -> c
-  | Serial s ->
-      let res = Marshal.from_string s 0 in
-      (*        x := Unfold res; *)
-      res
-
-(*****************************************************************************)
-(* Code database *)
-(*****************************************************************************)
-let juju_db_of_files xs =
-  let db = {
-    funs_juju = ref SMap.empty;
-    classes_juju = ref SMap.empty;
-    constants_juju = ref SMap.empty;
-  }
-  in
-  List.iter (fun file ->
-  try
-    let cst = Parse_php.parse_program file in		
-    let ast = Ast_php_simple_build.program cst in
-    List.iter (fun x ->
-      (* todo: print warning when duplicate class/func ? *)
-      match x with
-      | ClassDef c ->
-          db.classes_juju := 
-            SMap.add (A.unwrap c.c_name) (serial c) !(db.classes_juju)
-      | FuncDef fd ->
-          db.funs_juju := 
-            SMap.add (A.unwrap fd.f_name) (serial fd) !(db.funs_juju)
-      | ConstantDef c ->
-          db.constants_juju :=
-            SMap.add (A.unwrap c.cst_name) (serial c) !(db.constants_juju)
-
-      | (Global _|StaticVars _
-        |Try (_, _, _)|Throw _
-        |Continue _|Break _|Return _
-        |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
-        |Switch (_, _)|If (_, _, _)
-        |Block _|Expr _
-        ) -> ()
-    ) ast
-  with e -> 
-    Printf.printf "ERROR %s\n" (Marshal.to_string e [])
-  ) xs;
-  db
-
-(* todo: what if multiple matches?? *)
-let code_database_of_juju_db db = {
-  funs      = (fun s -> let f = SMap.find s !(db.funs_juju) in unserial f);
-  classes   = (fun s -> let c = SMap.find s !(db.classes_juju) in unserial c);
-  constants = (fun s -> let c = SMap.find s !(db.constants_juju) in unserial c);
+    path = ref [];
   }
 
 (*****************************************************************************)

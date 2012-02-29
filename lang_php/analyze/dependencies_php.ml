@@ -39,6 +39,9 @@ module Db = Database_php
  * history: I was doing that for Eurosys'06 but in an ugly way 
  * where I was generating the dot instead of generating a graph 
  * that then will generically call a function to generate a dot file.
+ * 
+ * todo: see also facebook/flib_dependencies/ and 
+ * facebook/check_module/graph_module.ml
  *)
 
 (*****************************************************************************)

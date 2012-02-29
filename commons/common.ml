@@ -85,7 +85,7 @@ let exclude p xs =
 let last_n n l = List.rev (take n (List.rev l))
 (*let last l = List.hd (last_n 1 l) *)
 let rec list_last = function
- | [] -> raise Not_found
+  | [] -> raise Not_found
   | [x] -> x
   | x::y::xs -> list_last (y::xs)
 
@@ -1931,6 +1931,10 @@ let optionise f =
 let some_or = function
   | None -> id
   | Some e -> fun _ -> e
+
+let option_to_list = function
+  | None -> []
+  | Some x -> [x]
 
 
 let partition_either f l =
@@ -4004,6 +4008,9 @@ let index_list xs =
   if null xs then [] (* enum 0 (-1) generate an exception *)
   else zip xs (enum 0 ((List.length xs) -1))
 
+(* if you want to use this to show the progress while processing huge list,
+ * consider instead Common_extra.progress
+ *)
 let index_list_and_total xs =
   let total = List.length xs in
   if null xs then [] (* enum 0 (-1) generate an exception *)
@@ -4270,6 +4277,24 @@ let rec pack_safe n xs =
       a::pack_safe n b
 let _ = assert
   (pack_safe 2 [1;2;3;4;5] =*= [[1;2];[3;4];[5]])
+
+let chunks n xs =
+  let size = List.length xs in
+  let chunksize = 
+    if size mod n =|= 0 
+    then size / n
+    else 1 + (size / n)
+  in
+  let xxs = pack_safe chunksize xs in
+  if List.length xxs <> n 
+  then failwith "chunks: impossible, wrong size";
+  xxs
+
+let _ = assert
+  (chunks 2 [1;2;3;4] =*= [[1;2];[3;4]])
+let _ = assert
+  (chunks 2 [1;2;3;4;5] =*= [[1;2;3];[4;5]])
+
 
 let min_with f = function
   | [] -> raise Not_found
@@ -5148,6 +5173,13 @@ type ('k,'v) hash_with_default = {
   default_value: unit -> 'v;
 }
 *)
+type ('a, 'b) hash_with_default =
+  < add : 'a -> 'b -> unit; 
+    to_list : ('a * 'b) list;
+    to_h: ('a, 'b) Hashtbl.t;
+    update : 'a -> ('b -> 'b) -> unit;
+    assoc: 'a -> 'b;
+  >
 
 let hash_with_default fv =
 object
@@ -6049,6 +6081,30 @@ let execute_and_show_progress ?(show=true) len f =
 (* now in common_extra.ml:
  * let execute_and_show_progress len f = ...
  *)
+
+(*****************************************************************************)
+(* Gc optimisation (pfff) *)
+(*****************************************************************************)
+
+(* opti: to avoid stressing the GC with a huge graph, we sometimes
+ * change a big AST into a string, which reduces the size of the graph
+ * to explore when garbage collecting.
+ *)
+type 'a cached = 'a serialized_maybe ref
+ and 'a serialized_maybe =
+    | Serial of string
+    | Unfold of 'a
+
+let serial x =
+  ref (Serial (Marshal.to_string x []))
+
+let unserial x =
+  match !x with
+  | Unfold c -> c
+  | Serial s ->
+      let res = Marshal.from_string s 0 in
+      (*        x := Unfold res; *)
+      res
 
 (*****************************************************************************)
 (* Random *)

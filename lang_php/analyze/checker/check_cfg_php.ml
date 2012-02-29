@@ -16,18 +16,13 @@
 open Common
 
 open Ast_php
-
-module Flag = Flag_analyze_php
-
 module Ast = Ast_php
 module V = Visitor_php
-
 module E = Error_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * TODO: check dead statements for toplevel blocks ?
  *)

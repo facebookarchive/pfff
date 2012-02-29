@@ -4,7 +4,7 @@
 ##############################################################################
 
 DEPLOY_PORT=9081
-OPAFLAGS=--parser js-like
+OPAFLAGS=--parser js-like --no-color
 
 ##############################################################################
 # Top rules
@@ -12,8 +12,8 @@ OPAFLAGS=--parser js-like
 
 all: pfff_logger.exe
 
-pfff_logger.exe: pfff_logger.opa
-	opa $(OPAFLAGS) $<
+pfff_logger.exe: common.opa pfff_logger.opa 
+	opa $(OPAFLAGS) $^
 
 run: pfff_logger.exe
 	./pfff_logger.exe

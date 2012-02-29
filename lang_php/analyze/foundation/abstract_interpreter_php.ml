@@ -20,6 +20,8 @@ open Env_interpreter_php
 module A = Ast_php_simple
 module Env = Env_interpreter_php
 module H = Abstract_interpreter_php_helpers
+module CG = Callgraph_php2
+module Trace = Tracing_php
 
 module SMap = Map.Make (String)
 
@@ -46,20 +48,18 @@ module SMap = Map.Make (String)
  *  - the id() function semantic is hardcoded
  * 
  * TODO: 
+ *  - before processing the file, maybe should update the code database
+ *    with all the entities in the file, cos when one process a script,
+ *    many scripts have a main() or usage() but the code database
+ *    stores only one.
  *  - $x++ is ignored (we don't really care about int for now)
  *  - many places where play with $ in s.(0)
+
  *)
 
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
-
-(* call stack used for debugging when found an XSS hole and used also
- * for callgraph generation.
- * todo: could be put in the env too, next to 'stack' and 'safe'? take
- * care of save_excursion though.
- *)
-let path = ref []
 
 (* used by unit testing when encountering the 'checkpoint()' function call *)
 let _checkpoint_heap = ref
@@ -67,30 +67,37 @@ let _checkpoint_heap = ref
 
 (* for callgraph generation *)
 let extract_paths = ref true
-let (graph: Env_interpreter_php.callgraph ref) = ref Map_poly.empty
+let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
+
+(* Julien thinks it's the value above which there is diminushing return
+ * regarding the callgraph. The size of the callgraph does not grow that
+ * much when goes from 6 to 7.
+ *)
+let max_depth = ref 6
 
 (* throw exn instead of passing over unhandled constructs *)
 let strict = ref true
 
-let tracing = ref false
-
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* could maybe factorize in Unknown of Database_code.entity_kind *)
+(* less: could maybe factorize in Unknown of Database_code.entity_kind 
+ * todo? have a type error = ... exception Error of error ?
+ *)
 exception UnknownFunction of string
 exception UnknownConstant of string
 exception UnknownClass of string
 exception UnknownMethod of string * string * string list
+exception UnknownObject
 exception LostControl
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-let save_path _env target =
+let save_path env target =
   if !extract_paths
-  then graph := add_graph (List.hd !path) target !graph
+  then graph := CG.add_graph (List.hd !(env.path)) target !graph
 
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
@@ -104,7 +111,10 @@ let rec get_dynamic_function env heap v =
 
 and get_function_list env heap = function
   | [] -> raise LostControl
-  | Vstring s :: _ -> heap, env.db.funs s
+  | Vstring s :: _ -> 
+      (try heap, env.db.funs s
+      with Not_found -> raise (UnknownFunction s)
+      )
   | _ :: rl -> get_function_list env heap rl
 
 let rec get_string = function
@@ -145,21 +155,18 @@ let is_variable s =
   | _  -> Common.(=~) s "\\$.*"
 
 (*****************************************************************************)
-(* Hooks (tainting functor for now) *)
-(*****************************************************************************)
-module Taint = Tainting_fake_php.Taint
-
-(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
+
+module Interp = functor (Taint: Env_interpreter_php.TAINT) -> struct
 
 let rec program env heap program =
   if !extract_paths
   then begin 
-    path := [Env.FakeRoot];
+    env.path := [CG.FakeRoot];
     List.iter (fake_root env heap) program;
   end;
-  path := [Env.File !(env.file)];
+  env.path := [CG.File !(env.file)];
   let heap = stmtl env heap (exclude_toplevel_defs program) in
   heap
 
@@ -172,7 +179,7 @@ and fake_root env heap =
   H.save_excursion env heap (fun env heap x ->
     match x with
     | ClassDef c ->
-      if !tracing then Common.pr ("Processing " ^ (unw c.c_name));
+      Trace.process_entity (unw c.c_name);
       let heap = force_class env heap (unw c.c_name) in
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
@@ -185,11 +192,11 @@ and fake_root env heap =
         ignore(expr env heap e)
       ) c.c_methods
     | FuncDef fd ->
-        if !tracing then Common.pr ("Processing " ^ (unw fd.f_name));
+        Trace.process_entity (unw fd.f_name);
         let params = make_fake_params fd.f_params in
         ignore (call_fun fd env heap params)
     | ConstantDef f ->
-        if !tracing then Common.pr ("Processing " ^ (unw f.cst_name));
+        Trace.process_entity (unw f.cst_name);
         (* the body of a constant definition is a static scalar
          * so there is not much interesting things to do on it
          *)
@@ -325,7 +332,7 @@ and catch env heap (_, _, stl) =
 and expr env heap x =
   if !Taint.taint_mode
   then Taint.taint_expr env heap 
-    (expr_, lvalue, get_dynamic_function, call_fun, call) !path x
+    (expr_, lvalue, get_dynamic_function, call_fun, call) !(env.path) x
   else expr_ env heap x
 
 and expr_ env heap x =
@@ -368,9 +375,9 @@ and expr_ env heap x =
   | Unop (uop, e) ->
       let heap, v = expr env heap e in
       heap, unaryOp uop v
-  | Call (Id ("call_user_func" as fname,tok), f :: el) ->
+  | Call (Id ("call_user_func" as fname, tok), f :: el) ->
       let heap, f = expr env heap f in
-      Taint.check_danger env heap fname tok !path f;
+      Taint.check_danger env heap fname tok !(env.path) f;
       (try
           let heap, f = get_dynamic_function env heap f  in
           call_fun f env heap el
@@ -385,7 +392,7 @@ and expr_ env heap x =
      (* pad: other? *)
       with (LostControl | UnknownFunction _) as exn  ->
         if !strict then raise exn;
-        save_path env (Env.node_of_string s);
+        save_path env (CG.node_of_string s);
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in
         heap, res
@@ -447,6 +454,7 @@ and expr_ env heap x =
   | Id ("true",_)  -> heap, Vbool true
   | Id ("false",_) -> heap, Vbool false
   | Id ("null",_)  -> heap, Vnull
+  | Id ("NULL",_)  -> heap, Vnull
 
   | Id (s,_) when not (is_variable s) ->
       (* Must be a constant. Functions and classes are not in the heap;
@@ -555,7 +563,13 @@ and lvalue env heap x =
           (match s with
           (* it's ok to not have a __construct method *)
           | "__construct" -> ()
-          | _ -> if !strict then raise (UnknownMethod (s, "?", methods m));
+          | _ -> 
+              if !strict then begin
+                let ms = methods m in
+                if Common.null ms
+                then raise UnknownObject
+                else raise (UnknownMethod (s, "?", ms))
+              end
           );
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
@@ -633,7 +647,7 @@ and binaryOp env heap bop v1 v2 =
       )
   | Ast_php.Logical lop -> Vabstr Tbool
 
-  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !path
+  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
 
 and unaryOp uop v =
   match uop, v with
@@ -675,10 +689,7 @@ and call env heap v el =
   | x -> sum_call env heap [x] el
 
 and call_fun f env heap el =
-  if !tracing 
-  then Common.pr 
-       (Common.spf "%s->%s" (Env.string_of_node (List.hd !path)) 
-           (unw f.f_name));
+  Trace.call (unw f.f_name) !(env.path);
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
     List.fold_left (fun acc x -> Taint.GetTaint.value heap x = None && acc)
@@ -687,9 +698,9 @@ and call_fun f env heap el =
   let n = try SMap.find (unw f.f_name) env.stack with Not_found -> 0 in
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
   (* pad: ugly, call_fun should also accept method_def *)
-  save_path env (Env.node_of_string (unw f.f_name));
+  save_path env (CG.node_of_string (unw f.f_name));
   (* stop when recurse in same function twice or when depth stack > 6 *)
-  if n >= 2 || List.length !path >= 6 && is_clean
+  if n >= 2 || List.length !(env.path) >= !max_depth && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
   then
     let heap, v = Ptr.new_ heap in
@@ -700,11 +711,11 @@ and call_fun f env heap el =
     let heap = parameters env heap f.f_params el in
     let vars = fun_nspace f !(env.vars) in
     let env = { env with vars = ref vars } in
-    path := (Env.node_of_string (unw f.f_name)) :: !path;
+    env.path := (CG.node_of_string (unw f.f_name)) :: !(env.path);
     let heap = stmtl env heap f.f_body in
     let heap, _, r = Var.get env heap "*return*" in
     let heap, r = Ptr.get heap r in
-    path := List.tl !path;
+    env.path := List.tl !(env.path);
     if Taint.GetTaint.value heap r = None
     then env.safe := SMap.add (unw f.f_name) r !(env.safe);
     heap, r
@@ -759,7 +770,8 @@ and xhp_attr env heap x =
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
-      Taint.check_danger env heap "xhp attribute" (Ast_php.fakeInfo "") !path v;
+      Taint.check_danger env heap "xhp attribute" (Some (Ast_php.fakeInfo ""))
+        !(env.path) v;
       heap
   | e -> fst (expr env heap e)
 
@@ -901,7 +913,7 @@ and method_def env cname parent self this (heap, acc) m =
      * There is a (ugly) corresponding call to node_of_string in
      * call_fun().
      *)
-    f_name = w (Env.string_of_node (Env.Method (unw cname, unw m.m_name)));
+    f_name = w (CG.string_of_node (CG.Method (unw cname, unw m.m_name)));
     f_params = m.m_params;
     f_return_type = m.m_return_type;
     f_body = m.m_body;
@@ -934,7 +946,7 @@ and make_method mname parent self this fdef =
     let heap, res' = Ptr.get heap res' in
     if unw mname = "render"
     then Taint.check_danger env heap "return value of render" (snd mname) 
-      !path res';
+      !(env.path) res';
     (match old_self with Some x -> Var.set_global env self_ x | None -> ());
     (match old_parent with Some x -> Var.set_global env parent_ x | None ->());
     (match old_this with Some x -> Var.set_global env "$this" x | None -> ());
@@ -984,3 +996,4 @@ and get_class env heap c =
       let heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
+end

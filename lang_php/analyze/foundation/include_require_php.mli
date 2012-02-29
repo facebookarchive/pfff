@@ -22,7 +22,6 @@ type increq =
 
 val top_increq_of_program: Ast_php.program -> increq list
 val all_increq_of_any: Ast_php.any -> increq list
-
 val increq_expr_of_expr: Ast_php.expr -> increq_expr
 
 val resolve_path: 
@@ -32,11 +31,14 @@ val resolve_path:
 val includes_of_file: 
   Env_php.env -> Common.filename -> Common.filename list
 
+(* The hook below is to let reuse this code by having another "includers"
+ * preprocessor, for instance one that understand facebook flib specificities
+ * like require_module() directives.
+ * 
+ * This functions helps doing what gcc does by first calling 'cpp' on a file
+ * to get all information.
+ *)
 val recursive_included_files_of_file:
- (* this hook is to let reuse this code by having another "includers"
-  * preprocessor, for instance one that understand facebook flib specificities
-  * like require_module() directives.
-  *)
  ?verbose:bool -> ?depth_limit: int option ->
  ?includes_of_file:(Env_php.env -> Common.filename -> Common.filename list) ->
  Env_php.env -> Common.filename -> Common.filename list

@@ -13,6 +13,7 @@ SRC= programming_language.ml \
      statistics_code.ml statistics_parsing.ml layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml \
+     pp2.ml \
      test_program_lang.ml
 
 SYSLIBS= str.cma unix.cma 

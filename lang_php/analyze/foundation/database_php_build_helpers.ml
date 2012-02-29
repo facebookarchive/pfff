@@ -27,29 +27,19 @@ module Db = Database_php
 module TH   = Token_helpers_php
 module EC   = Entity_php
 module CG   = Callgraph_php
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Globals *)
-(*****************************************************************************)
-
-let _errors = ref []
-
-(*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
 
-let pr2_err s = 
-  Common.pr2 s;
-  Common.push2 s _errors;
-  ()
-
 (*****************************************************************************)
-(* Helpers *)
+(* Iter Helpers *)
 (*****************************************************************************)
 
 (* should perhaps be moved in database_php.ml ? *)
@@ -63,37 +53,24 @@ let pr2_err s =
 let iter_files db f = 
   db.file_to_topids#tolist 
   +> Common.sortgen_by_key_lowfirst (* does it really help ? real opti ? *)
-  +> Common.index_list_and_total 
-  +> List.iter (fun x -> 
-    let ((file, topids), i, total) = x in
-    try f x 
-    with exn -> 
-      pr2 (Common.exn_to_s_with_backtrace exn);
-      pr2_err (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
-  );
+  +> Common_extra.progress ~show:!Flag.verbose_database (fun k ->
+    List.iter (fun (file, ids) -> 
+      k ();
+      try f (file, ids)
+      with exn -> 
+        pr2 (Common.exn_to_s_with_backtrace exn);
+        pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+    ));
   ()
 
-let iter_files_and_topids db msg f = 
-  iter_files db (fun ((file, ids), i, total) -> 
-     pr2 (spf "%s: %s %d/%d " msg file i total);
-     ids +> List.iter (fun id -> 
-       f id file
-     )
-   )
-
-let iter_files_and_ids db msg f = 
-  iter_files_and_topids db msg (fun id file ->
-    Db.recurse_children (fun id -> f id file) db id;
+let iter_files_and_topids db f = 
+  iter_files db (fun (file, ids) -> 
+    ids +> List.iter (fun id -> f id file)
   )
 
-(* todo: refactor the code of database_php_build.ml so needs
- * less this specific class case
- *)
-let users_of_class_in_any any =
-  Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
-    match kind with
-    | Database_code.Class _ -> Some name
-    | _ -> None
+let iter_files_and_ids db f = 
+  iter_files_and_topids db (fun id file ->
+    Db.recurse_children (fun id -> f id file) db id;
   )
 
 (*****************************************************************************)
@@ -193,7 +170,7 @@ let add_toplevel2 file (top, info_item) db =
     try 
       fpos_of_toplevel top 
     with NoII -> 
-      pr2_err ("PB: pb NoII with:" ^ file);
+      pr2 ("PB: pb NoII with:" ^ file);
       (*
       toput before: let cnt = ref 0 
 
@@ -250,12 +227,6 @@ let add_toplevel2 file (top, info_item) db =
   newid
 
 
-let (add_filename_and_topids: (filename * id list) -> database -> unit) = 
- fun (file, ids) db -> 
-   db.file_to_topids#add2 (file, ids);
-   ()
-
-
 (* have to update tables similar to add_toplevel *)
 let (add_nested_id_and_ast: enclosing_id:id -> Ast_php.entity ->database -> id)
  = fun ~enclosing_id ast db ->
@@ -288,25 +259,35 @@ let (add_def:
  (id_string * id_kind * id * Ast_php.name option) -> database -> unit) =  
   fun (idstr, idkind, id, nameopt) db -> 
 
-    db.defs.name_defs#apply_with_default2 idstr 
-      (fun old -> id::old) (fun() -> []);
+    (* check if already has a function/class/constant with the same name *)
+    (match idkind with
+    | E.Function | E.Class _ | E.Constant ->
+        let before = 
+          db.defs.name_defs#find_opt idstr 
+          +> Common.option_to_list +> List.flatten 
+        in
+        if before +> List.exists (fun id -> db.defs.id_kind#find id =*= idkind)
+        then pr2 (spf "PB: duplicate entity %s" idstr);
+    | _ -> ()
+    );
+
+    db.defs.name_defs#apply_with_default2 idstr (fun old -> id::old)(fun()->[]);
 
     (* the same id can not have multiple kind in PHP, as it can not contain
      * for instance both a variable and struct declaration as in ugly C.
      *)
     if db.defs.id_kind#haskey id 
-    then failwith ("WEIRD: An id cant have multiple kinds:" ^ 
-                      Db.str_of_id id db);
+    then failwith ("WEIRD: An id cant have multiple kinds:"^Db.str_of_id id db);
     db.defs.id_kind#add2 (id, idkind);
 
     (* old: add2 (id, idkind); *)
     db.defs.id_name#add2 (id, idstr);
 
-    nameopt +> Common.do_option (fun name ->
-      db.defs.id_phpname#add2 (id, name);
+    (match nameopt with
+    | None -> ()
+    | Some name -> db.defs.id_phpname#add2 (id, name);
     );
-    db.symbols#add2 (idstr, ());
-    ()
+    db.symbols#add2 (idstr, ())
 
 (*---------------------------------------------------------------------------*)
 (* add_callees_of_f, add in callee table also add in its reversed index
@@ -393,7 +374,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
        let grouped_instances_same_name = 
          Common.group_by_mapped_key (fun (name, ii) -> name) funcalls in
 
-       grouped_instances_same_name +> List.map (fun (name, name_ii_list) -> 
+       grouped_instances_same_name +> List.map (fun (name, name_ii_list) ->
          let candidates = 
            match name with
            | N.NameS s -> 
@@ -420,10 +401,10 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
                *)
          in
          let s = N.nameS name in
-         if null candidates && !Flag.show_analyze_error
+         if null candidates
          then pr2 (spf "PB: no candidate for function call: %s" s);
 
-         name, name_ii_list |> List.map snd, candidates
+         name, name_ii_list +> List.map snd, candidates
        ) 
      )
    in
@@ -511,3 +492,17 @@ let add_callees_of_id a b =
  *)
 let add_methodcallees_of_id (idcaller, methods) db = 
   raise Todo
+
+(*****************************************************************************)
+(* Misc Helpers *)
+(*****************************************************************************)
+
+(* todo: refactor the code of database_php_build.ml so needs
+ * less this specific class case
+ *)
+let users_of_class_in_any any =
+  Defs_uses_php.uses_of_any any +> Common.map_filter (fun (kind, name) ->
+    match kind with
+    | Database_code.Class _ -> Some name
+    | _ -> None
+  )

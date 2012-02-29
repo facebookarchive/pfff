@@ -49,12 +49,14 @@ let filters = [
   );
   "pfff", (fun file ->
     match FT.file_type_of_file file with
-    | FT.PL ((FT.ML _) | FT.Makefile | FT.Opa) -> 
+    | FT.PL (
+       (FT.ML _) | FT.Makefile | FT.Opa | FT.Prolog _ | FT.Web (FT.Php _))
+      -> 
         (* todo: should be done in file_type_of_file *)
         not (FT.is_syncweb_obj_file file)
         && not (file =~ ".*commons/" || 
                 file =~ ".*external/" || 
-                 file =~ ".*_build/")
+                file =~ ".*_build/")
     | _ -> false
   );
   "cpp", (let x = ref false in (fun file ->

@@ -25,10 +25,9 @@ module Flag = Flag_analyze_php
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Checking the use of method calls, member fields, TODO class variables, 
- * TODO class constants, SEMI and class names.
- * 
- * TODO check interface.
+ * Checking the use of method calls, member fields, 
+ * TODO class variables, TODO class constants, SEMI and class names.
+ * TODO check interface, traits.
  *)
 
 (*****************************************************************************)
@@ -37,12 +36,20 @@ module Flag = Flag_analyze_php
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
 (*****************************************************************************)
-(* Helpers *)
+(* Types *)
 (*****************************************************************************)
 
 type context_call =
   | StaticCall
   | MethodCall of bool (* abstract class ? *)
+
+type context_access =
+  | StaticAccess
+  | ObjAccess
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 let check_method_call context (aclass, amethod) (name, args) find_entity =
   let loc = Ast.info_of_name name in
@@ -71,8 +78,9 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
         (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
     end
   with
-  (* not much we can do then, let's bailout *)
-  | Class_php.Use__Call -> ()
+  (* not much we can do then, let's bailout? *)
+  | Class_php.Use__Call ->
+      pr2_once "not analyzing code using __call"
   | Class_php.UndefinedClassWhileLookup s ->
       E.fatal loc (E.UndefinedClassWhileLookup (s))
   | Not_found ->
@@ -86,10 +94,6 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
       )
   (* this can happen with multiple classes with same name, not our job *)
   | Multi_found -> ()
-
-type context_access =
-  | StaticAccess
-  | ObjAccess
 
 let check_member_access ctx (aclass, afield) loc find_entity =
   try 

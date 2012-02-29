@@ -4,7 +4,9 @@ open OUnit
 
 open Env_interpreter_php
 module Env = Env_interpreter_php
-module Interp = Abstract_interpreter_php
+module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
+module Db = Database_juju_php
+module CG = Callgraph_php2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -18,31 +20,32 @@ let prepare content =
   let tmp_file = 
     Parse_php.tmp_php_file_from_string content in
   let db = 
-    Env.code_database_of_juju_db  (Env.juju_db_of_files [tmp_file]) in
+    Db.code_database_of_juju_db  (Db.juju_db_of_files [tmp_file]) in
   let env = 
-    Env_interpreter_php.empty_env db tmp_file in
+    Env.empty_env db tmp_file in
   let ast = 
     Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
   env, ast
 
 let heap_of_program_at_checkpoint content =
   let (env, ast) = prepare content in
-  let heap = Env_interpreter_php.empty_heap in
+  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
-    let _heap = Abstract_interpreter_php.program env heap ast in
+    let _heap = Interp.program env heap ast in
     match !Abstract_interpreter_php._checkpoint_heap with
     | None -> failwith "use checkpoint() in your unit test"
     | Some x -> x
   ))
 
+(* less: use Callgraph_php_build.create_graph *)
 let callgraph_generation content =
   let (env, ast) = prepare content in
-  let heap = Env_interpreter_php.empty_heap in
+  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
-    let _heap = Abstract_interpreter_php.program env heap ast in
+    let _heap = Interp.program env heap ast in
     !(Abstract_interpreter_php.graph)
   ))
 
@@ -92,11 +95,11 @@ let assert_graph file xs =
   let _nb_nodes = List.length xs in
   xs +> List.iter (fun (s, expected) ->
     try
-      let n = Env.node_of_string s in
+      let n = CG.node_of_string s in
       let actual_child = 
         Map_poly.find n g 
         +> Set_poly.elements 
-        +> List.map Env.string_of_node 
+        +> List.map CG.string_of_node 
       in
       assert_equal
         ~msg:"it should have the expected callees"
@@ -223,7 +226,7 @@ checkpoint(); // x:int
         let _ = heap_of_program_at_checkpoint file in
         assert_failure 
           "it should raise exns in strict mode on undefined entities"
-      with Interp.UnknownConstant "ANOTHER_CST" -> ()
+      with Abstract_interpreter_php.UnknownConstant "ANOTHER_CST" -> ()
     );
 
   (*-------------------------------------------------------------------------*)
@@ -281,6 +284,8 @@ checkpoint(); // y: int
 (* Callgraph *)
 (*****************************************************************************)
 
+  (* less: move in unit_callgraph_php.ml *)
+  
   (*-------------------------------------------------------------------------*)
   (* Callgraph and functions *)
   (*-------------------------------------------------------------------------*)
@@ -292,10 +297,10 @@ function bar() { foo(); }
 " in
       (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
-      let xs = Map_poly.find (Env.Function "bar") g +> Set_poly.elements in
+      let xs = Map_poly.find (CG.Function "bar") g +> Set_poly.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
-        [Env.Function "foo"]
+        [CG.Function "foo"]
         xs;
 
       let file = "
@@ -304,7 +309,7 @@ function bar() { foo(); }
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown function"
-      with (Interp.UnknownFunction "foo") -> ()
+      with (Abstract_interpreter_php.UnknownFunction "foo") -> ()
     );
 
 
@@ -328,7 +333,7 @@ function b() { A::unknown(); }
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown static method"
-      with (Interp.UnknownMethod ("unknown", "A", _)) -> ()
+      with (Abstract_interpreter_php.UnknownMethod ("unknown", "A", _)) -> ()
     );
 
     (* In PHP it is ok to call B::foo() even if B does not define
@@ -411,7 +416,7 @@ function b() {
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown method"
-      with (Interp.UnknownMethod ("unknown", _, _)) -> ()
+      with (Abstract_interpreter_php.UnknownMethod ("unknown", _, _)) -> ()
     );
 
     (* I used to have a very simple method analysis that did some gross over

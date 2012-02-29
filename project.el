@@ -629,7 +629,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 60
+     (case 100
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
@@ -640,7 +640,9 @@
        (30 "/home/pad/www/html/ajax/payment/token_proxy.php")
        (50 "--bugs -juju /home/pad/pfff/facebook/tests/mini_www/html/injection/xss.php")
        (60 "--di-gen /home/pad/pfff/facebook/tests/mini_www/flib/dependency_injection/foo.php")
+       (100 "--debug -juju /home/pad/www/html/intern/colbert/index.php")
        )
+     
      ))
    )
 

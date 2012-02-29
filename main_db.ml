@@ -10,7 +10,7 @@ open Common
 (*****************************************************************************)
 
 (* Something lighter than a full berkeley database but more powerful than
- * just a TAGS file. Such a light_database can be leverage by
+ * just a TAGS file. Such a light_database can be leveraged by
  * the code/treemap visualizer to convey visually semantic
  * information that can help navigate a big codebase with huge API.
  * 

@@ -128,7 +128,9 @@ let file_type_of_file2 file =
   | "lisp" -> PL (Lisp CommonLisp)
   | "el" -> PL (Lisp Elisp)
 
-  | "pl" | "perl" -> PL Perl (* could be prolog too *)
+  (* Perl or Prolog ... *)
+  | "pl" -> PL (Prolog "pl")
+  | "perl" -> PL Perl 
   | "py" -> PL Python
   | "rb" -> PL Ruby
 
