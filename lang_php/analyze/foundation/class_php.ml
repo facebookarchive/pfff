@@ -148,11 +148,16 @@ let class_variables_reorder_first def =
     c_body = (lb, body', rb);
   }
 
-let class_type_of_class c =
-  match c.c_type with
+let class_type_of_ctype ctype =
+  match ctype with
   | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
   | Interface _ -> E.Interface
   | Trait _ -> E.Trait
+
+let string_of_class_type = function
+  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> "class"
+  | Interface _ -> "interface"
+  | Trait _ -> "trait"
 
 let interfaces c =
   match c.c_implements with
