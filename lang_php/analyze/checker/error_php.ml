@@ -107,6 +107,13 @@ type error = {
   (* tainting *)
   | Injection of injection_kind (* todo: * explanation (e.g. a path?) *)
 
+  (* some code is using 'case 1;' instead of 'case 1:', ugly *)
+  | CaseWithSemiColon
+  (* php is case insensitive but it's better to have consistent code
+   * that always use the lowercase version of a keyword
+   *)
+  | CaseSensitivityKeyword
+
   (* todo: type errors, protocol errors (statistical analysis), etc *)
 
   and severity2 =
@@ -203,6 +210,10 @@ let string_of_error_kind error_kind =
         | Shell -> "Shell"
       in
       spf "%s injection" s
+  | CaseWithSemiColon ->
+      "Use a colon not a semicolon"
+  | CaseSensitivityKeyword ->
+      "Use the lowercase version of the keyword"
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =

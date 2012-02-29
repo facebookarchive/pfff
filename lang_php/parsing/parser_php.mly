@@ -428,6 +428,7 @@ case_list_rev:
 
 case_separator:
  | TCOLON     { $1 }
+ /*(* ugly php ... *)*/
  | TSEMICOLON { $1 }
 
  | T_XHP_COLONID_DEF { failwith_xhp_ambiguity_colon (snd $1) }
