@@ -300,7 +300,7 @@ let test_stat_php xs =
     try 
       let ast = Parse_php.parse_program file in
       h#update "parsing correct" (fun x -> x + 1);
-      Statistics_php.stat2_of_program h file ast;
+      Statistics_php.stat_of_program h file ast;
       ()
       
     with Parse_php.Parse_error (_) ->

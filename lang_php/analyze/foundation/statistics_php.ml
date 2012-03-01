@@ -38,13 +38,13 @@ module CG = Callgraph_php2
 (* Types *)
 (*****************************************************************************)
 
-type stat2 = (string, int) Common.hash_with_default
+type stat = (string, int) Common.hash_with_default
 
 (* todo? move this in h_program-lang/ ? This is quite similar to
  * statistics_code.mli ? but want the kinds of the toplevel funcalls,
  * which is probably quite PHP specific.
  *)
-type stat = {
+type stat2 = {
   mutable functions: int;
   mutable classes: int;
 
@@ -71,7 +71,7 @@ type php_file_kind =
   | IncluderFile
   | ScriptOrEndpointFile
 
-let default_stat () = {
+let default_stat2 () = {
   functions = 0;
   classes = 0;
 
@@ -118,7 +118,7 @@ let default_hooks = {
   call = (fun _ -> ());
 }
 
-let stat2_of_program ?(hooks=default_hooks) h file ast =
+let stat_of_program ?(hooks=default_hooks) h file ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
 
   let current_node = ref (CG.File file) in
@@ -241,11 +241,11 @@ let stat2_of_program ?(hooks=default_hooks) h file ast =
   }
 
 
-let stat_of_program ast =
+let stat2_of_program ast =
   let (funcs, classes, topstmts) = 
     Lib_parsing_php.functions_methods_or_topstms_of_program ast in
 
-  let _stat = { (default_stat ()) with
+  let _stat = { (default_stat2 ()) with
     functions = List.length funcs;
     classes = List.length classes;
   }
