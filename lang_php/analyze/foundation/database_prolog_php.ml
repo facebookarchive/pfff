@@ -256,6 +256,10 @@ let add_uses id ast pr db =
           | ClassNameRefDynamic _ -> ()
           );
           k x
+      | Yield _ | YieldBreak _ ->
+          pr (spf "yield(%s)." (name_id id db));
+          k x
+
       | _ -> k x
     );
     V.kxhp_html = (fun (k, _) x ->
@@ -366,6 +370,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous docall/3, use/4.");
    pr (":- discontiguous docall2/3.");
    pr (":- discontiguous include/2, require_module/2.");
+   pr (":- discontiguous yield/1.");
    pr (":- discontiguous problem/2.");
 
    db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->

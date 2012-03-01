@@ -96,6 +96,8 @@
 %    when we can, so for instance include $THRIFT_ROOT . '...' is resolved
 %    in its final path form 'lib/thrift/...'.
 %
+%  - yield/1.
+%
 %  - position: at/3
 %      ex: at(('Preparable', 'gen'), 'flib/core/preparable.php', 10).
 %
