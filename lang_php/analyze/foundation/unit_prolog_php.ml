@@ -7,7 +7,7 @@ open OUnit
 (*****************************************************************************)
 (*
  * What to put here? Should we duplicate things from unit_static_analysis_php
- * as many results from static analysis are now translated into prolog
+ * as many results from static analysis are now translated into Prolog
  * facts? No, no need to duplicate, just copy here the basic
  * versions of some tests, e.g. for the callgraph just the basic
  * function and method calls for instance.
@@ -197,7 +197,7 @@ function bar() {
   $y = $o->foo();
 } " in
       let xs = prolog_query ~file 
-        "docall('bar', (X,Y), method), writeln((X,Y)), fail" in
+        "docall2('bar', (X,Y), method), writeln((X,Y)), fail" in
       assert_equal ~msg:"it should find basic callers to a function"
         ["A,foo"]
         (sort xs);
