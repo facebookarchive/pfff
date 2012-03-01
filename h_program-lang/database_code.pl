@@ -317,6 +317,12 @@ could_remove_delegate_method(Class, Method) :-
         docall((Class, Method), 'delegateToYield', method), 
         not((children(Class, Parent), kind((Parent, Method), _Kind))).
 
+% for paul
+wrong_public_genRender(X) :-
+        kind((X, 'genRender'), _), 
+        children(X, 'GenXHP'), 
+        is_public((X, 'genRender')).
+
 %---------------------------------------------------------------------------
 % checks
 %---------------------------------------------------------------------------
