@@ -30,7 +30,7 @@ module CG = Callgraph_php2
  *  - used it to infer if a php file was a script, endpoint, or library
  *    file
  *  - used it to try to evaluate the coverage of the abstract interpreter
- *    and its callgraph computation, how many method calls are not "resolved"
+ *    and its callgraph computation, how many method calls are not "resolved"?
  * 
  *)
 
@@ -240,6 +240,10 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
     );
   }
 
+
+(*****************************************************************************)
+(* Old entry point *)
+(*****************************************************************************)
 
 let stat2_of_program ast =
   let (funcs, classes, topstmts) = 
