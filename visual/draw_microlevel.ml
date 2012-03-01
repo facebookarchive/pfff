@@ -295,7 +295,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.Python)
     | FT.PL (FT.Csharp)
     | FT.PL (FT.Java)
-    | FT.PL (FT.Prolog _)
+(*    | FT.PL (FT.Prolog _) *)
     | FT.PL (FT.Erlang)
     | FT.PL (FT.Opa)
     ) -> true
