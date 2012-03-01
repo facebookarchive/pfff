@@ -18,6 +18,7 @@ open Ast_php
 module Ast = Ast_php
 module E = Database_code
 module V = Visitor_php
+module CG = Callgraph_php2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -110,42 +111,75 @@ spf "
 
 type stat_hooks = {
   entity: (Database_code.entity_kind * string) -> unit;
+  call: (Callgraph_php2.node * Callgraph_php2.node) -> unit;
 }
 let default_hooks = {
   entity = (fun _ -> ());
+  call = (fun _ -> ());
 }
 
-let stat2_of_program ?(hooks=default_hooks) h ast =
+let stat2_of_program ?(hooks=default_hooks) h file ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
+
+  let current_node = ref (CG.File file) in
+  h#update "LOC" (fun old -> old + Common.nblines_with_wc file);
+  h#update "SOC" (fun old -> old + Common.filesize file);
+  
 
   (Program ast) +> V.mk_visitor { V.default_visitor with
     V.ktop = (fun (k, _) x ->
       (match x with
       | FuncDef def ->
+          let s = Ast.str_of_name def.f_name in
           inc "function";
-          hooks.entity (E.Function, Ast.str_of_name def.f_name);
+          hooks.entity (E.Function, s);
+          Common.save_excursion current_node (CG.Function s) (fun() ->
+            k x
+          )
       | ConstantDef (_, name, _, _, _) -> 
           inc "constant";
           hooks.entity (E.Constant, Ast.str_of_name name);
+          (* there should be no call inside constant definitions so
+           * don't care about current_node
+           *)
+          k x
       | ClassDef def ->
+          let s = Ast.str_of_name def.c_name in
           inc (Class_php.string_of_class_type def.c_type);
           let kind = Class_php.class_type_of_ctype def.c_type in
-          hooks.entity (E.Class kind, Ast.str_of_name def.c_name);
-      | StmtList _ -> ()
+          hooks.entity (E.Class kind, s);
+          let fake = "UGLY" in
+          Common.save_excursion current_node (CG.Method (s, fake))(fun()->
+            k x
+          )
+
+      | StmtList _ -> 
+          k x
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
-      k x
     );
     V.kstmt_and_def = (fun (k,_) x ->
       (match x with
-      | FuncDefNested _ -> inc "function"; inc "Nested function"
+      | FuncDefNested def -> 
+          let s = Ast.str_of_name def.f_name in
+          inc "function"; inc "Nested function";
+          Common.save_excursion current_node (CG.Function s) (fun() ->
+            k x
+          )
+
       | ClassDefNested def -> 
           let str = Class_php.string_of_class_type def.c_type in
           inc str; 
-          inc ("Nested " ^ str)
-      | Stmt _ -> ()
+          inc ("Nested " ^ str);
+          let s = Ast.str_of_name def.c_name in
+          let fake = "UGLY" in
+          Common.save_excursion current_node (CG.Method (s, fake))(fun()->
+            k x
+          )
+
+      | Stmt _ -> 
+          k x
       );
-      k x
     );
     V.kclass_name_or_kwd = (fun (k,_) x ->
       (match x with

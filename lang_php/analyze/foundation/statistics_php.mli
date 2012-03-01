@@ -25,10 +25,14 @@ type stat2 = (string, int) Common.hash_with_default
 
 type stat_hooks = {
   entity: (Database_code.entity_kind * string) -> unit;
+  (* the second node contains partial information, such as only
+   * the method
+   *)
+  call: (Callgraph_php2.node * Callgraph_php2.node) -> unit;
 }
 (* works by side effect on stat2 hash *)
 val stat2_of_program: 
-  ?hooks:stat_hooks -> stat2 -> Ast_php.program -> unit
+  ?hooks:stat_hooks -> stat2 -> Common.filename -> Ast_php.program -> unit
 
 (* helpers *)
 val kind_of_file_using_stat: stat -> php_file_kind
