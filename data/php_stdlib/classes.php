@@ -24,7 +24,7 @@ class Exception {
 }
 
 //http://us2.php.net/RuntimeException 
-class RuntimeException { }
+class RuntimeException extends Exception { }
 
 class LogicException extends  Exception { 
   public function __construct($message, $code = 0, $previous = NULL) { }
@@ -36,12 +36,12 @@ class InvalidArgumentException extends  LogicException {
 }
 
 //http://us.php.net/ErrorException
-class ErrorException { }
+class ErrorException extends Exception { }
 
-class OutOfBoundsException { }
+class OutOfBoundsException extends Exception { }
 
 //http://us3.php.net/UnexpectedValueException
-class UnexpectedValueException { }
+class UnexpectedValueException extends Exception { }
 
 // http://php.net/manual/en/book.reflection.php
 class ReflectionExtension { }

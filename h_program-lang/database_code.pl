@@ -341,7 +341,9 @@ could_remove_delegate_method(Class, Method) :-
 check_exception_inheritance(X) :-
         throw(_, X),
         not(children(X, 'Exception')),
-        X \= 'Exception'.
+        X \= 'Exception',
+        % make sure it's defined
+        kind(X, class).
 
 check_duplicated_entity(X, File1, File2, Kind) :-
         kind(X, Kind), 
