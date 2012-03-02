@@ -206,6 +206,45 @@ function bar() {
     );
 
     (*-----------------------------------------------------------------------*)
+    (* Exceptions *)
+    (*-----------------------------------------------------------------------*)
+    "exceptions" >:: (fun () ->
+      let file = "
+class Exception { }
+class ViolationException extends Exception { }
+class ForgotExtendsException { }
+class UnrelatedClass { }
+
+function foo() { 
+  throw new Exception(); 
+}
+function bar() { 
+  try { 
+    throw new ViolationException();
+  } catch (ViolationException $e) {
+  }
+}
+function bad() { 
+  throw new ForgotExtendsException(); 
+}
+" in
+      let xs = prolog_query ~file "throw('foo', X), writeln(X)" in
+      assert_equal ~msg:"it should find basic throw"
+        ["Exception"]
+        xs;
+      let xs = prolog_query ~file "catch('bar', X), writeln(X)" in
+      assert_equal ~msg:"it should find basic catch"
+        ["ViolationException"]
+        xs;
+      let xs = prolog_query ~file 
+        ("throw(_, X), not(children(X, 'Exception')), X \\= 'Exception', " ^ 
+        "writeln(X)") in
+      assert_equal ~msg:"it should find exceptions not deriving from Exception"
+        ["ForgotExtendsException"]
+        xs;
+    );
+
+    (*-----------------------------------------------------------------------*)
     (* XHP *)
     (*-----------------------------------------------------------------------*)
     "xhp" >:: (fun () ->

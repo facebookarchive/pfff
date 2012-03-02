@@ -277,6 +277,21 @@ let add_uses id ast pr db =
           end;
           k x
     );
+    V.kstmt = (fun (k, _) x ->
+      (match x with
+      | Throw (_, New (_, ClassNameRefStatic (ClassName name), _), _) ->
+          pr (spf "throw(%s, '%s')."
+                 (name_id id db) (Ast.str_of_name name))
+      | Try (_, _, c1, cs) ->
+          (c1::cs) +> List.iter (fun (_, (_, (classname, dname), _), _) ->
+            pr (spf "catch(%s, '%s')."
+                   (name_id id db) (Ast.str_of_name classname))
+          );
+      | _ -> ()
+      );
+      k x
+         
+    );
   }
   in
   visitor (Entity ast);
@@ -371,6 +386,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous docall2/3.");
    pr (":- discontiguous include/2, require_module/2.");
    pr (":- discontiguous yield/1.");
+   pr (":- discontiguous throw/2, catch/2.");
    pr (":- discontiguous problem/2.");
 
    db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
