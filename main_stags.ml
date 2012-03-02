@@ -88,7 +88,7 @@ let rec defs_of_files_or_dirs lang xs =
 (*****************************************************************************)
 
 let main_action xs =
-  Common.logger Config.logger "stags";
+  Logger.log Config.logger "stags" None;
 
   (* This can augment the size of the tags file
      let xs = List.map relative_to_absolute xs in 

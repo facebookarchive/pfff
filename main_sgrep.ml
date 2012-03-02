@@ -118,8 +118,6 @@ let gen_layer ~root ~query file =
 (* Main action *)
 (*****************************************************************************)
 let main_action xs =
-  Common.logger Config.logger "sgrep";
-
   let pattern, query_string = 
     match !pattern_file, !pattern_string with
     | "", "" -> 
@@ -131,6 +129,7 @@ let main_action xs =
         Sgrep_php.parse s, s
     | _ -> raise Impossible
   in
+  Logger.log Config.logger "sgrep" (Some query_string);
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 

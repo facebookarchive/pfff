@@ -83,6 +83,8 @@ INCLUDEDIRS+=lib-json
 SUBDIRS+=lib-json
 endif
 
+SRC+=logger.ml
+
 ifeq ($(FEATURE_XML_BUILTIN_COMMONS),1)
 SRC+= \
   lib-xml/xml_types.ml \

@@ -137,8 +137,6 @@ let apply_transfo transfo xs =
 (*****************************************************************************)
 
 let main_action xs =
-  Common.logger Config.logger "spatch";
-
   let spatch_file = 
     match !spatch_file, !sed_string with
     | "", "" ->
@@ -163,6 +161,8 @@ let main_action xs =
     | s1, s2 ->
         failwith "Can't use -f and -e at the same time"
   in
+
+  Logger.log Config.logger "spatch" (Some (Common.read_file spatch_file));
 
   (* old: let pattern = dumb_spatch_pattern in *)
   let pattern = Spatch_php.parse spatch_file in

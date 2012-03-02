@@ -208,8 +208,7 @@ val debugon : unit -> unit
 val debugoff : unit -> unit
 val debug : (unit -> unit) -> unit
 
-(* distributed logging posting log to OPA server *)
-val logger: string option -> string -> unit
+(* see also logger.ml *)
 
 (* see flag: val debugger : bool ref *)
 (*x: common.mli basic features *)
