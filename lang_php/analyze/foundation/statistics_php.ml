@@ -117,6 +117,8 @@ let default_hooks = {
   entity = (fun _ -> ());
   call = (fun _ -> ());
 }
+(* todo: we abuse CG.node to represent class and partial methods *)
+let fake = "UGLY"
 
 let stat_of_program ?(hooks=default_hooks) h file ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
@@ -148,7 +150,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           inc (Class_php.string_of_class_type def.c_type);
           let kind = Class_php.class_type_of_ctype def.c_type in
           hooks.entity (E.Class kind, s);
-          let fake = "UGLY" in
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
@@ -157,6 +158,15 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           k x
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
+    );
+    V.kmethod_def = (fun (k, _) def ->
+      match !current_node with
+      | CG.Method (classname, _) ->
+          let s = Ast.str_of_name def.m_name in
+          Common.save_excursion current_node (CG.Method (classname, s))(fun()->
+            k def
+          )
+      | _ -> raise Impossible
     );
     V.kstmt_and_def = (fun (k,_) x ->
       (match x with
@@ -172,7 +182,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           inc str; 
           inc ("Nested " ^ str);
           let s = Ast.str_of_name def.c_name in
-          let fake = "UGLY" in
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
@@ -198,8 +207,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           inc "include/require"
           (* todo: resolve? *)
 
-      (* todo: x = yield ... *)
-          
+      | Yield _ | YieldBreak _ -> inc "yield"
       
       | _ -> ()
       );
@@ -207,8 +215,10 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
     );
     V.klvalue = (fun (k, _) x ->
       (match x with
-      | FunCallSimple _ -> inc "fun call"
-      | FunCallVar _ -> inc "fun call Dynamic"
+      | FunCallSimple _ -> 
+          inc "fun call"
+      | FunCallVar _ -> 
+          inc "fun call Dynamic"
 
       | StaticMethodCallSimple _ -> 
           inc "static method call"
@@ -218,8 +228,12 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | MethodCallSimple (lval, _, name, xs) ->
           (* look at lval if simple form *)
           (match lval with
-          | This _ -> inc "method call with $this"
-          | _ -> inc "method call not $this"
+          | This _ -> 
+              inc "method call with $this"
+          | _ -> 
+              inc "method call not $this";
+              hooks.call (!current_node, 
+                         CG.Method (fake, Ast.str_of_name name))
           )
 
       | ObjAccessSimple (lval, _, name) ->

@@ -100,7 +100,7 @@ let name_id id db =
 let name_of_node = function
   | CG.File s -> spf "'__TOPSTMT__%s'" s
   | CG.Function s -> spf "'%s'" s
-  | CG.Method (s1, s2) -> spf "('%s', '%s')" s1 s2
+  | CG.Method (s1, s2) -> spf "('%s','%s')" s1 s2
   | CG.FakeRoot -> "'__FAKE_ROOT__'"
       
 (* quite similar to database_code.string_of_id_kind *)
