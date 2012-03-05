@@ -4,6 +4,19 @@ have C-c C-t working to get type information under cursor
 
 ** style: 
 
+*** prefer match () ... when over nested elsif
+
+if X1 then ...
+else if X2 then ...
+else if X3
+
+==>
+
+match () with
+ | _ when X1 -> 
+ | _ when X2 -> 
+ | _ when X3 -> 
+
 *** bad example of style: julien's original code
 
 huge files
