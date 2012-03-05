@@ -1,11 +1,11 @@
 open Common
-
 open OUnit
 
 module Ast = Ast_php_simple
 module Env = Env_typing_php
 module Infer  = Typing_php
 module InferH = Typing_helpers_php
+module Builtins = Builtins_typed_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -24,20 +24,15 @@ let to_string env t =
   let ()  = InferH.Print.show_type env o t in
   Buffer.contents buf
 
-let rec last = function
-  | [x] -> x 
-  | _ :: rl -> last rl 
-  | _ -> assert false
-
 let get_signature fun_ =
   let source_file = Parse_php.tmp_php_file_from_string fun_ in
   let env = Env_typing_php.make_env () in
   let env = { env with Env_typing_php.verbose = false } in
-  Infer.Builtins.make env;
+  Builtins.make env;
   let ast = Parse_php.parse_program source_file in
   let ast = Ast_php_simple_build.program ast in
   Infer.decls env ast;
-  match last ast with
+  match Common.list_last ast with
   | Ast.FuncDef fd ->
       Infer.func_def env fd;
       normalize (InferH.GEnv.get_fun env (Ast.unwrap fd.Ast.f_name))
