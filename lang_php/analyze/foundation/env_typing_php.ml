@@ -65,13 +65,10 @@ type t =
      *)
     | Tclosed of SSet.t * t SMap.t
 
-(* todo: reuse 'a cached and code database *)
-type cached_ast = string
-
 type env = {
     (* todo: use db *)
-    classes: cached_ast SMap.t ref;
-    funcs: cached_ast SMap.t ref;
+    classes: Ast_php_simple.class_def Common.cached SMap.t ref;
+    funcs: Ast_php_simple.func_def Common.cached SMap.t ref;
 
     builtins: SSet.t ref;
     (* The graph of dependencies *)

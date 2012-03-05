@@ -45,6 +45,8 @@ module Builtins = Builtins_typed_php
  *      'f' => function unit -> unit
  *    )
  *  )
+ * 
+ * This module is also (ab)used to provide autocompletion.
  *)
 
 (*****************************************************************************)

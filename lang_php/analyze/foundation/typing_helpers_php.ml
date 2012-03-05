@@ -49,13 +49,11 @@ module Classes: sig
 end = struct
 
   let add env n x =
-    let x = Marshal.to_string x [] in
-    env.classes := SMap.add n x !(env.classes)
+    env.classes := SMap.add n (Common.serial x) !(env.classes)
 
   let get env n =
     let x = SMap.find n !(env.classes) in
-    let x = Marshal.from_string x 0 in
-    x
+    Common.unserial x
 
   let remove env x =
     env.classes := SMap.remove x !(env.classes)
@@ -73,13 +71,11 @@ module Functions: sig
 end = struct
 
   let add env n x =
-    let x = Marshal.to_string x [] in
-    env.funcs := SMap.add n x !(env.funcs)
+    env.funcs := SMap.add n (Common.serial x) !(env.funcs)
 
   let get env n =
     let x = SMap.find n !(env.funcs) in
-    let x = Marshal.from_string x 0 in
-    x
+    Common.unserial x
 
   let remove env x =
     env.funcs := SMap.remove x !(env.funcs)
