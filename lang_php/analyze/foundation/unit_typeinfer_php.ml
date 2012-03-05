@@ -79,11 +79,21 @@ function f() { $a = new A(); return $a->foo(); }
 
     "use of undefined" >:: (fun () ->
 
-      let _file ="
+      let file = "
 function foo() {
   undefined();
 }" in
-      raise Todo
+      try 
+        let _ = get_signature file in
+        assert_failure 
+          "it should raise exns in strict mode on undefined entities"
+      with Typing_php.Error err ->
+        (match err with
+        | Typing_php.UnknownEntity (Database_code.Function, "undefined") -> ()
+        | _ ->
+            assert_failure
+              "it should throw the right exception"
+        )
     );
   ])
 
