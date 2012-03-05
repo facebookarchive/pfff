@@ -29,9 +29,9 @@ module Builtins = Builtins_typed_php
  * Every class is first sorted in their topological order, they are then
  * typed independently (hence bottom-up).
  * The type representation is fairly standard (Cf Env_typing_php),
- * except for one encoding: classes.
- * A class is represented as an object with a special field called __obj
- * that contains the type of the instanciated object.
+ * except for classes. A class is represented as an object with 
+ * a special field called __obj that contains the type of the
+ * instanciated object.
  *
  * Example:
  *  class A {
@@ -216,7 +216,7 @@ module Type = struct
 end
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Collect *)
 (*****************************************************************************)
 
 module Collect = struct
@@ -255,12 +255,18 @@ module Collect = struct
         | Tsstring _
         | Tsenum _ as x -> x
         | Trecord m -> Trecord (SMap.map (ty env subst tenv mem depth) m)
-        | Tarray (s, t1, t2) -> Tarray (s, ty env subst tenv mem depth t1, ty env subst tenv mem depth t2)
-        | Tfun (tl, t) -> Tfun (List.map (fun (s, x) -> s, ty env subst tenv mem depth x) tl, ty env subst tenv mem depth t)
+        | Tarray (s, t1, t2) -> 
+            Tarray (s, 
+                   ty env subst tenv mem depth t1, 
+                   ty env subst tenv mem depth t2)
+        | Tfun (tl, t) -> Tfun (
+            List.map (fun (s, x) -> s, ty env subst tenv mem depth x) tl,
+            ty env subst tenv mem depth t)
         | Tobject m ->
             let m = SMap.map (ty env subst tenv mem depth) m in
             Tobject m
-        | Tclosed (s, m) -> Tclosed (s, SMap.map (ty env subst tenv mem depth) m)
+        | Tclosed (s, m) -> 
+            Tclosed (s, SMap.map (ty env subst tenv mem depth) m)
       in
       Hashtbl.add mem.prims t t';
       t'
@@ -300,6 +306,10 @@ module Collect = struct
     else ()
 end
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
 let rec program env =
   Printf.printf "Topological sort:  "; flush stdout;
   let l = TopoSort.sort env.graph in
@@ -324,19 +334,21 @@ and type_def env x =
   else ()
 
 and decls env stl =
-  List.iter (
-  function
-    | ClassDef cd ->
-        Graph.class_def env.graph cd;
-        Classes.add env (A.unwrap cd.c_name) cd
-    | FuncDef fd ->
-        Graph.func_def env.graph fd;
-        Functions.add env (A.unwrap fd.f_name) fd
-    | ConstantDef _ ->
-        raise Common.Todo
-    | _ -> ()
- ) stl
+  List.iter (function
+  | ClassDef cd ->
+      Graph.class_def env.graph cd;
+      Classes.add env (A.unwrap cd.c_name) cd
+  | FuncDef fd ->
+      Graph.func_def env.graph fd;
+      Functions.add env (A.unwrap fd.f_name) fd
+  | ConstantDef _ ->
+      raise Common.Todo
+  | _ -> ()
+  ) stl
 
+(* ---------------------------------------------------------------------- *)
+(* Stmt *)
+(* ---------------------------------------------------------------------- *)
 and stmtl env l =
   List.iter (stmt env) l
 
@@ -426,6 +438,9 @@ and iexprl env l = ignore (exprl env l)
 
 and iexpr env e = ignore (expr env e)
 
+(* ---------------------------------------------------------------------- *)
+(* Expr *)
+(* ---------------------------------------------------------------------- *)
 and expr env e =
   expr_ env false e
 
@@ -444,6 +459,7 @@ and expr_ env lv = function
   | Id (("true" | "false"),_) -> bool
   | Id (s, tok) ->
       let is_marked = has_marker env s in
+      (* todo: use match () trick *)
       if env.infer_types && is_marked
       then begin
         let s = get_marked_id env s in
@@ -662,6 +678,9 @@ and xhp_attr env = function
       let t = expr env e in
       ignore (Type.unify env t string)
 
+(* ---------------------------------------------------------------------- *)
+(* Functions *)
+(* ---------------------------------------------------------------------- *)
 and func_id env fname =
   if GEnv.mem_fun env fname then () else
   try func_def env (Functions.get env fname)
@@ -713,6 +732,9 @@ and parameter env p =
   Env.set env (Ast.unwrap p.p_name) pval;
   (Ast.unwrap p.p_name), pval
 
+(* ---------------------------------------------------------------------- *)
+(* Classes *)
+(* ---------------------------------------------------------------------- *)
 and class_id env x =
   if GEnv.mem_class env x then () else
   if not (Classes.mem env x) then () else
