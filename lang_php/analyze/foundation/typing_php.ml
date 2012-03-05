@@ -1,6 +1,6 @@
 (* Julien Verlaguet
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -67,13 +67,13 @@ exception Error of error
 
 module Type = struct
 
+  (* contain both array and objects *)
   let rec mixed has_array has_object l =
     match l with
     | [] -> has_array && has_object
     | (Tobject _ | Tclosed _) :: rl -> mixed has_array true rl
     | (Trecord _ | Tarray _) :: rl -> mixed true has_object rl
     | _ :: rl -> mixed has_array has_object rl
-
   let mixed l = mixed false false l
 
   let rec unify env t1 t2 =
@@ -90,30 +90,13 @@ module Type = struct
         unify env x (Tvar n')
     | Tsum x, Tsum y ->
         let l = unify_sum env x y in
-        if mixed l
-        then Tsum []
-        else if List.length l > 3
-        then Tsum []
-        else Tsum l
-(*        (match l with
-        | []
-        | [_] -> Tsum l
-        | _ -> Tpoly
-        ) *)
+        (match () with
+        | _ when mixed l           -> Tsum []
+        | _ when List.length l > 3 -> Tsum []
+        | _                        -> Tsum l
+        )
 
   and unify_vars env n1 n2 =
-(*    let n1' = Subst.get env n1 in
-    let n2' = Subst.get env n2 in
-    if n1' = n2' then Tvar n1' else
-    let t1 = TEnv.get env n1' in
-    let t2 = TEnv.get env n2' in
-    let n = fresh() in
-    Subst.replace env n1 n;
-    Subst.replace env n2 n;
-    let t = unify env t1 t2 in
-    let n = Subst.get env n in
-    TEnv.set env n t;
-    (Tvar n) *)
     let n1' = Subst.get env n1 in
     let n2' = Subst.get env n2 in
     if n1' = n2' then Tvar n1' else
@@ -221,7 +204,6 @@ module Type = struct
         else if c > 0
         then x2 :: unify_sum env l1 rl2
         else unify_ env x1 x2 :: unify_sum env rl1 rl2
-
 
 end
 
@@ -403,16 +385,14 @@ and stmt env = function
       catch env c;
       catchl env cl
   | StaticVars svarl ->
-      List.iter (
-      fun (s, e) ->
+      List.iter (fun (s, e) ->
         match e with
         | None -> ()
         | Some e ->
             iexpr env (Assign (None, Id s, e))
      ) svarl
   | Global el ->
-      List.iter (
-      function
+      List.iter (function
         | Id (x, tok) ->
             let gid = String.sub x 1 (String.length x -1) in
             let gl = Array_get (Id (wrap "$GLOBALS"), Some (String gid)) in
@@ -457,19 +437,24 @@ and expr env e =
 and expr_ env lv = function
   | Int _ -> int
   | Double _ -> float
-  | String s when env.auto_complete && has_marker env s ->
-      let t = Tvar (fresh()) in
-      env.show := Sauto_complete (s, t);
-      t
-  | String s when String.contains s '<' -> thtml
-  | String s -> Tsum [Tsstring (SSet.singleton s)]
+  | String s ->
+      (match () with
+      | _ when env.auto_complete && has_marker env s ->
+          let t = Tvar (fresh()) in
+          env.show := Sauto_complete (s, t);
+          t
+      | _ when String.contains s '<' -> 
+          thtml
+      | _ -> Tsum [Tsstring (SSet.singleton s)]
+      )
   | Guil el ->
       List.iter (encaps env) el;
       string
   | Id (("true" | "false"),_) -> bool
   | Id (s, tok) ->
       let is_marked = has_marker env s in
-      (* todo: use match () trick *)
+
+
       if env.infer_types && is_marked
       then begin
         let s = get_marked_id env s in

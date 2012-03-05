@@ -6,6 +6,7 @@ module Env = Env_typing_php
 module Infer  = Typing_php
 module InferH = Typing_helpers_php
 module Builtins = Builtins_typed_php
+module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -32,6 +33,7 @@ let get_signature file =
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
     verbose = false;
+    strict = true;
   } in
   Builtins.make env;
 
@@ -87,9 +89,9 @@ function foo() {
         let _ = get_signature file in
         assert_failure 
           "it should raise exns in strict mode on undefined entities"
-      with Typing_php.Error err ->
+      with Infer.Error err ->
         (match err with
-        | Typing_php.UnknownEntity (Database_code.Function, "undefined") -> ()
+        | Infer.UnknownEntity (Ent.Function, "undefined") -> ()
         | _ ->
             assert_failure
               "it should throw the right exception"

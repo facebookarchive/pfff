@@ -93,6 +93,8 @@ type env = {
     marker: string;
 
     verbose: bool;
+    (* throw exception instead of passing over undefined constructs *)
+    strict: bool;
     (* pad: ?? *)
     depth: int;
     (* The types to show *)
@@ -163,6 +165,7 @@ let make_env () = {
   infer_types = false;
   auto_complete = false;
   verbose = true;
+  strict = false;
   marker = "JUJUMARKER";
   builtins = ref SSet.empty;
 
