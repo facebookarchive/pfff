@@ -20,6 +20,7 @@ open Env_typing_php
 open Typing_helpers_php
 
 module Builtins = Builtins_typed_php
+module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -47,6 +48,9 @@ module Builtins = Builtins_typed_php
  *  )
  * 
  * This module is also (ab)used to provide autocompletion.
+ * 
+ * pad's notes:
+ *  - "$;return"
  *)
 
 (*****************************************************************************)
@@ -677,19 +681,22 @@ and xhp_attr env = function
 (* Functions *)
 (* ---------------------------------------------------------------------- *)
 and func_id env fname =
-  if GEnv.mem_fun env fname then () else
-  try func_def env (Functions.get env fname)
-  with Not_found ->
-    GEnv.set_fun env fname (Tvar (fresh()));
-    if env.verbose then begin
-    Printf.printf "Function not found: %s\n" fname; flush stdout;
-    end
+  if GEnv.mem_fun env fname then () 
+  else
+    try func_def env (Functions.get env fname)
+    with Not_found ->
+      if env.strict 
+      then raise (Error (Ent.Function, fname));
+      GEnv.set_fun env fname (Tvar (fresh()))
 
 and func_def env fd =
-  if GEnv.mem_fun env (Ast.unwrap fd.f_name) then () else
-  if env.verbose then begin
-    incr env.count;
-  Printf.printf "Typing function(%d/%d)[%d]: %s\n" !(env.count) !(env.total) env.depth (Ast.unwrap fd.f_name); flush stdout;
+  if GEnv.mem_fun env (Ast.unwrap fd.f_name) then () 
+  else
+    if env.verbose then begin
+      incr env.count;
+      Printf.printf "Typing function(%d/%d)[%d]: %s\n" 
+        !(env.count) !(env.total) env.depth (Ast.unwrap fd.f_name); 
+      flush stdout;
   end;
   Collect.collect env;
   let env = { env with env = ref SMap.empty } in
