@@ -12,10 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ast_php_simple
-
-open Abstract_interpreter_php_helpers
 open Env_interpreter_php
+open Abstract_interpreter_php_helpers
+open Ast_php_simple
 
 module A = Ast_php_simple
 module Env = Env_interpreter_php
@@ -23,13 +22,12 @@ module H = Abstract_interpreter_php_helpers
 module CG = Callgraph_php2
 module Trace = Tracing_php
 
-module SMap = Map.Make (String)
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Abstract interpreter for PHP (with hooks for tainting analysis).
+ * Abstract interpreter for PHP, with hooks for tainting analysis,
+ * and hooks for callgraph generation.
  *
  * 'show($x)' in the PHP file helps to debug a variable.
  *
@@ -54,20 +52,17 @@ module SMap = Map.Make (String)
  *    stores only one.
  *  - $x++ is ignored (we don't really care about int for now)
  *  - many places where play with $ in s.(0)
-
+ * 
  *)
 
 (*****************************************************************************)
-(* Globals *)
+(* Configuration *)
 (*****************************************************************************)
 
-(* used by unit testing when encountering the 'checkpoint()' function call *)
-let _checkpoint_heap = ref
-  (None: (Env_interpreter_php.heap * value SMap.t) option)
-
-(* for callgraph generation *)
+(* Generating callgraph or not. Could be put in the environment, but
+ * it's more about a configuration option than a local information in
+ * an environment *)
 let extract_paths = ref true
-let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
 
 (* Julien thinks it's the value above which there is diminushing return
  * regarding the callgraph. The size of the callgraph does not grow that
@@ -79,9 +74,22 @@ let max_depth = ref 6
 let strict = ref true
 
 (*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+
+(* used by unit testing when encountering the 'checkpoint()' function call *)
+let _checkpoint_heap = ref
+  (None: (Env_interpreter_php.heap * value SMap.t) option)
+
+(* for callgraph generation *)
+let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* less: could maybe factorize in Unknown of Database_code.entity_kind 
+(* less: could maybe factorize in Unknown of Database_code.entity_kind,
+ *  but  for methods for instance we also want to show also some
+ *  extra information like the available methods.
  * todo? have a type error = ... exception Error of error ?
  *)
 exception UnknownFunction of string
@@ -304,11 +312,13 @@ and stmt env heap x =
   | StaticVars sl -> List.fold_left (static_var env) heap sl
 
   | ClassDef _ | FuncDef _ -> 
-      if !strict then failwith "nested classes/functions";
+      if !strict 
+      then failwith "nested classes/functions";
       heap
   | ConstantDef _ ->
       (* see exclude_toplevel_defs above and parser_php.mly which
-       * shows we can't have nested constants by construction *)
+       * shows we can't have nested constants by construction 
+       *)
       raise Common.Impossible
 
 and case env heap x =
@@ -379,7 +389,7 @@ and expr_ env heap x =
       let heap, f = expr env heap f in
       Taint.check_danger env heap fname tok !(env.path) f;
       (try
-          let heap, f = get_dynamic_function env heap f  in
+          let heap, f = get_dynamic_function env heap f in
           call_fun f env heap el
         with _ -> 
           if !strict then failwith "call_user_func unknown function";
