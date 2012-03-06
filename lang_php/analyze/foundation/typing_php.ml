@@ -686,7 +686,7 @@ and func_id env fname =
     try func_def env (Functions.get env fname)
     with Not_found ->
       if env.strict 
-      then raise (Error (Ent.Function, fname));
+      then raise (Error (UnknownEntity (Ent.Function, fname)));
       GEnv.set_fun env fname (Tvar (fresh()))
 
 and func_def env fd =
