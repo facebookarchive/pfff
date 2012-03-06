@@ -880,6 +880,25 @@ and get_class env heap e =
       get_string [v]
   | _ -> ""
 
+and lazy_class env heap c =
+  if (SMap.mem c !(env.globals))
+  then heap
+  else force_class env heap c
+
+and force_class env heap c =
+  try 
+    let c = env.db.classes c in
+
+    let heap, null = Ptr.new_ heap in
+    (* pad: ??? there is an overriding set_global below, so why create this? *)
+    Var.set_global env (unw c.c_name) null;
+    let heap, cd = class_def env heap c in
+    Var.set_global env (unw c.c_name) cd;
+    heap
+  with Not_found ->
+    if !strict then raise (UnknownClass c);
+    heap
+
 and class_def env heap c =
   let heap, self = Ptr.new_ heap in
   let heap, pname, parent =
@@ -903,6 +922,7 @@ and class_def env heap c =
   let v = Vobject m in
   let heap, _ = assign env heap true self v in
   heap, self
+
 
 and build_new env heap pname parent self c m =
   let mid = Utils.fresh() in
@@ -934,6 +954,7 @@ and build_new_ env heap pname parent self c m = fun env heap _ ->
       (heap, m') c.c_methods in
   let heap, _ = assign env heap true ptr (Vobject m') in
   heap, ptr
+
 
 and cconstants env (heap, m) (s, e) =
   let heap, v = expr env heap e in
@@ -1021,25 +1042,5 @@ and call_method env el (heap, v) f =
   let heap, v' = f env heap el in
   let heap, v = Unify.value heap v v' in
   heap, v
-
-
-and lazy_class env heap c =
-  if (SMap.mem c !(env.globals))
-  then heap
-  else force_class env heap c
-
-and force_class env heap c =
-  try 
-    let c = env.db.classes c in
-
-    let heap, null = Ptr.new_ heap in
-    (* pad: ??? there is an overriding set_global below, so why creates this? *)
-    Var.set_global env (unw c.c_name) null;
-    let heap, cd = class_def env heap c in
-    Var.set_global env (unw c.c_name) cd;
-    heap
-  with Not_found ->
-    if !strict then raise (UnknownClass c);
-    heap
 
 end
