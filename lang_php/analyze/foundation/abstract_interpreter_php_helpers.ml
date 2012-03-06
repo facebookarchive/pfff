@@ -12,11 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Ast_php_simple
-module A = Ast_php_simple
-
 open Env_interpreter_php (* Imap, ptrs field, etc *)
+module A = Ast_php_simple
 module Env = Env_interpreter_php
 
 (*****************************************************************************)
@@ -27,6 +25,7 @@ module Env = Env_interpreter_php
 (* Helpers *)
 (*****************************************************************************)
 
+(* less: could be put in common.ml *)
 module Utils = struct
 
   let fresh =
@@ -53,23 +52,49 @@ end
 (* Ptr and globals *)
 (*****************************************************************************)
 
+(* Heap access *)
 module Ptr = struct
+
+  (* in PHP, variables are pointer to pointer of values *)
+  let new_val_ ptrs val_ =
+    let x = Utils.fresh() in
+    let v = val_ in
+    let ptrs = IMap.add x v ptrs in
+    let y = Utils.fresh() in
+    let v = Vptr x in
+    let ptrs = IMap.add y v ptrs in
+    ptrs , Vptr y
+
+  let new_val heap val_ =
+    let ptrs, v = new_val_ heap.ptrs val_ in
+    { ptrs }, v
+
+  let new_ heap =
+    new_val heap Vnull
+
 
   let rec get_ heap ptr =
     try
       let v = IMap.find ptr heap.ptrs in
+      (* pad: ??? *)
       { ptrs = IMap.add ptr v heap.ptrs }, 
       v
     with Not_found ->
+      (* todo: throw exn when in strict? *)
       heap, Vnull
 
   and set_ heap ptr v =
     { ptrs = IMap.add ptr v heap.ptrs }
 
+  (* Double dereference when a pointer.
+   * todo: should have different functions when we know it's always
+   * a pointer. Same when we know it's not already in the heap.
+   *)
   let get heap ptr =
     match ptr with
     | Vptr n -> get_ heap n
     | Vref s -> get_ heap (ISet.choose s)
+    (* todo: throw exception? *)
     | _ -> heap, ptr
 
   let set heap ptr v =
@@ -83,25 +108,9 @@ module Ptr = struct
        ) heap l
     | _ -> heap
 
-  let new_val_ ptrs val_ =
-    let x = Utils.fresh() in
-    let v = val_ in
-    let ptrs = IMap.add x v ptrs in
-    let y = Utils.fresh() in
-    let v = Vptr x in
-    let ptrs = IMap.add y v ptrs in
-    ptrs, Vptr y
-
-  let new_val heap val_ =
-    let ptrs, v = new_val_ heap.ptrs val_ in
-    { ptrs }, v
-
-  let new_ heap =
-    let ptrs, v = new_val_ heap.ptrs Vnull in
-    { ptrs }, v
-
 end
 
+(* env.vars access *)
 module Var = struct
 
   let super_globals =
@@ -135,36 +144,39 @@ module Var = struct
 
   let set env s v =
     if Hashtbl.mem super_globals s
-    then
-      set_global env s v
-    else
-      env.vars := SMap.add s v !(env.vars)
+    then set_global env s v
+    else env.vars := SMap.add s v !(env.vars)
 
   let unset env s =
     env.vars := SMap.remove s !(env.vars)
 
-  let get env heap v =
+  (* get or create a variable in env.vars or env.globals,
+   * returns whether the variable was created.
+   * todo? again have different function when know it's not
+   * already in env.vars ?
+   *)
+  let get env heap str =
     try
       let vars = 
-        if Hashtbl.mem super_globals v 
+        if Hashtbl.mem super_globals str 
         then !(env.globals) 
         else !(env.vars) 
       in
-      let v = SMap.find v vars in
+      let v = SMap.find str vars in
       heap, false, v
     with Not_found ->
       let heap, x = Ptr.new_ heap in
-      set env v x;
+      set env str x;
       heap, true, x
 
-  let get_global env heap v =
+  let get_global env heap str =
     try
       let vars = !(env.globals) in
-      let v = SMap.find v vars in
+      let v = SMap.find str vars in
       heap, false, v
     with Not_found ->
       let heap, x = Ptr.new_ heap in
-      set_global env v x;
+      set_global env str x;
       heap, true, x
 
 end
@@ -419,7 +431,9 @@ module NullNewVars = struct
   and stmt env heap x =
     match x with
     | Block stl -> stmtl env heap stl
-    (* todo? enough? what about deeply nested assignement? *)
+    (* todo? enough? what about deeply nested assignements?
+     * what if had some 'global' directives in previous statements?
+     *)
     | Expr (Assign (_, Id (s,_), _)) when not (SMap.mem s !(env.vars)) ->
         let heap, _, _ = Var.get env heap s in
         heap

@@ -15,16 +15,11 @@ exception UnknownObject
 exception LostControl
 
 module Interp: functor (Taint: Env_interpreter_php.TAINT) -> sig
-  (* Main entry point. Its main use is to call Taint.check_danger
+  (* Main entry point. Its main use is not to return an heap
+   * but to call Taint.check_danger by side effect
    * when it finds XSS holes. Another use it to generate
-   * a callgraph (see graph below) by side effect when
+   * a callgraph (see graph below), also by by side effect, when
    * extract_paths is true. 
-   * 
-   * todo: It could be used also to find general bugs that
-   * the current checker can't (e.g. undefined methods because
-   * of the better class analysis, wrong type, etc). 
-   * todo: It could also be used for program understanding purpose
-   * by providing a kind of tracer.
    *)
   val program:
     Env_interpreter_php.env -> Env_interpreter_php.heap ->

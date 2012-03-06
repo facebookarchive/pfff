@@ -5,6 +5,7 @@ module Taint = struct
 
     let taint_expr a b c d e = failwith "taint_expr: Todo"
 
+    (* if one thing is tainted, then the whole thing is tainted *)
     let fold_slist sl =
       List.fold_left (fun acc x ->
         match x with

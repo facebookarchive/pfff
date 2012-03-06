@@ -12,9 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
+
+open Ast_php_simple
 open Env_interpreter_php
 open Abstract_interpreter_php_helpers
-open Ast_php_simple
 
 module A = Ast_php_simple
 module Env = Env_interpreter_php
@@ -26,8 +28,8 @@ module Trace = Tracing_php
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Abstract interpreter for PHP, with hooks for tainting analysis,
- * and hooks for callgraph generation.
+ * Abstract interpreter for PHP, with hooks for tainting analysis
+ * (to find XSS holes), and hooks for callgraph generation.
  *
  * 'show($x)' in the PHP file helps to debug a variable.
  *
@@ -46,13 +48,27 @@ module Trace = Tracing_php
  *  - the id() function semantic is hardcoded
  * 
  * TODO: 
+ *  - the places where expect a VPtr, and so need to call Ptr.get,
+ *    and the places where expect a final value is not clear.
  *  - before processing the file, maybe should update the code database
  *    with all the entities in the file, cos when one process a script,
  *    many scripts have a main() or usage() but the code database
  *    stores only one.
  *  - $x++ is ignored (we don't really care about int for now)
  *  - many places where play with $ in s.(0)
+ *  - C-s for Vany, it's usually a Todo
  * 
+ * 
+ * TODO long term: 
+ *  - It could be used also to find bugs that the current
+ *    checkers can't find (e.g. undefined methods because
+ *    of the better interprocedural class analysis, wrong type, 
+ *    passing null, etc). But it first needs to be correct
+ *    and to work on www without so many exceptions.
+ *  - It could also be used for program understanding purpose
+ *    by providing a kind of tracer.
+ *  - maybe it could be combined with the type inference to give
+ *    more precise results and find even more bugs.
  *)
 
 (*****************************************************************************)
@@ -61,16 +77,18 @@ module Trace = Tracing_php
 
 (* Generating callgraph or not. Could be put in the environment, but
  * it's more about a configuration option than a local information in
- * an environment *)
+ * an environment 
+ *)
 let extract_paths = ref true
 
-(* Julien thinks it's the value above which there is diminushing return
+(* Number of function calls to handle.
+ * Julien thinks it's the value above which there is diminushing return
  * regarding the callgraph. The size of the callgraph does not grow that
  * much when goes from 6 to 7.
  *)
 let max_depth = ref 6
 
-(* throw exn instead of passing over unhandled constructs *)
+(* throw exn instead of passing-over silently unhandled constructs *)
 let strict = ref true
 
 (*****************************************************************************)
@@ -93,20 +111,25 @@ let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
  * todo? have a type error = ... exception Error of error ?
  *)
 exception UnknownFunction of string
-exception UnknownConstant of string
 exception UnknownClass of string
+exception UnknownConstant of string
+
 exception UnknownMethod of string * string * string list
 exception UnknownObject
+
+(* ?? *)
 exception LostControl
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
+(* add an edge in callgraph *)
 let save_path env target =
   if !extract_paths
   then graph := CG.add_graph (List.hd !(env.path)) target !graph
 
+(* in PHP functions are passed via strings *)
 let rec get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
   match v with
@@ -125,6 +148,7 @@ and get_function_list env heap = function
       )
   | _ :: rl -> get_function_list env heap rl
 
+(* ?? used by get_class *)
 let rec get_string = function
   | [] -> ""
   | Vstring s :: _ -> s
@@ -135,7 +159,7 @@ let rec get_string = function
       )
   | _ :: rl -> get_string rl
 
-(* in extract_path mode to fake function/method calls *)
+(* used in extract_path mode to fake function/method calls *)
 and make_fake_params l =
   List.map (fun p ->
     match p.p_type with
@@ -148,11 +172,6 @@ let exclude_toplevel_defs xs =
   | ClassDef _ | FuncDef _ | ConstantDef _ -> false 
   | _ -> true
   ) xs
-
-let show_heap env heap =
-  Env.penv print_string env heap;
-  (* for ocamldebug, not sure why *)
-  flush stdout; flush stderr; ()
 
 let methods m = 
   List.map fst (SMap.bindings m)
@@ -175,13 +194,18 @@ let rec program env heap program =
     List.iter (fake_root env heap) program;
   end;
   env.path := [CG.File !(env.file)];
-  let heap = stmtl env heap (exclude_toplevel_defs program) in
-  heap
+  stmtl env heap (exclude_toplevel_defs program)
 
+(* Normally the abstract interpreter needs a main(), a starting point
+ * to start interpret; a file with just functions can't really be
+ * interpreted. But some code may not be easily reachable,
+ * so for callgraph and tracing purposes, it's good to fake
+ * calls to the toplevel functions and classes in a file.
+ *)
 and fake_root env heap =
   (* we use save_excursion because the 'force_class' below will
    * modify by side effect env.globals, but then when we would
-   * process FuncDef, env.globals would previous classes are in the
+   * process FuncDef, env.globals would think previous classes are in the
    * heap when they are actually not.
    *)
   H.save_excursion env heap (fun env heap x ->
@@ -238,20 +262,20 @@ and stmt env heap x =
   | Expr e ->
       let heap, _ = expr env heap e in
       heap
-  | If (c, e1, e2) ->
+  | If (c, st1, st2) ->
       let heap, _ = expr env heap c in
       (* Some variables may be defined only in one branch.
        * To simplify the unifier we create some fake $x=null; before
        * processing the statements.
        *)
-      let heap = NullNewVars.stmt env heap e1 in
-      let heap = NullNewVars.stmt env heap e2 in
+      let heap = NullNewVars.stmt env heap st1 in
+      let heap = NullNewVars.stmt env heap st2 in
       (* not that we are not doing any path sensitivity here ...
        * even if we can statically determine that c is always true,
        * we just parse both branches.
        *)
-      let heap = stmt env heap e1 in
-      let heap = stmt env heap e2 in
+      let heap = stmt env heap st1 in
+      let heap = stmt env heap st2 in
       heap
   | Block stl ->
       stmtl env heap stl
@@ -264,7 +288,7 @@ and stmt env heap x =
    * because the evaluation of e does not happen at the same time.
    * But here we care about the pointfix of the values, and so
    * the order does not matter.
-   * todo: but need to process the stmts 2 times at least?
+   * todo: but need to process the stmts 2 times at least to get a fixpoing?
    *)
   | Do (stl, e) | While (e, stl) ->
       let heap, _ = expr env heap e in
@@ -325,10 +349,12 @@ and case env heap x =
   match x with
   | Case (e, stl) ->
       let heap, _ = expr env heap e in
+      (* pad: useful? *)
       let heap = NullNewVars.stmtl env heap stl in
       let heap = stmtl env heap stl in
       heap
   | Default stl ->
+      (* pad: useful? *)
       let heap = NullNewVars.stmtl env heap stl in
       let heap = stmtl env heap stl in
       heap
@@ -353,8 +379,9 @@ and expr_ env heap x =
   | String s  -> heap, Vstring s
   | Int s     -> heap, Vint   (int_of_string s)
   | Double s  -> heap, Vfloat (float_of_string s)
-  (* pad: ugly special case, not sure why but the lfold below 
-   * leads to a Vabstr Tstring instead of a precise Vstring
+  (* pad: ugly special case.
+   * todo: fix Taint.fold_slist to not return a
+   * a 'Vabstr Tstring' but instead a precise 'Vstring xxx'
    *)
   | Guil [String s] -> heap, Vstring s
 
@@ -363,6 +390,11 @@ and expr_ env heap x =
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
       heap, v
+
+  | Id ("true",_)  -> heap, Vbool true
+  | Id ("false",_) -> heap, Vbool false
+  | Id ("null",_)  -> heap, Vnull
+  | Id ("NULL",_)  -> heap, Vnull
 
   | Ref e ->
       let heap, _, x = lvalue env heap e in
@@ -379,6 +411,7 @@ and expr_ env heap x =
   | Binop (bop, e1, e2) ->
       let heap, v1 = expr env heap e1 in
       let heap, v2 = expr env heap e2 in
+      (* pad: why do Ptr.get here and not in Unop too? *)
       let heap, v1 = Ptr.get heap v1 in
       let heap, v2 = Ptr.get heap v2 in
       heap, binaryOp env heap bop v1 v2
@@ -391,18 +424,18 @@ and expr_ env heap x =
       (try
           let heap, f = get_dynamic_function env heap f in
           call_fun f env heap el
-        with _ -> 
+        with (LostControl | UnknownFunction _) -> 
           if !strict then failwith "call_user_func unknown function";
           heap, Vany
       )
   | Call (Id (s,_) as e, el) ->
       (try
-        let heap, f = get_function env heap s e in
-        call_fun f env heap el
+        let heap, def = get_function env heap s e in
+        call_fun def env heap el
      (* pad: other? *)
       with (LostControl | UnknownFunction _) as exn  ->
         if !strict then raise exn;
-        save_path env (CG.node_of_string s);
+        save_path env (CG.Function s);
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in
         heap, res
@@ -414,10 +447,12 @@ and expr_ env heap x =
       let heap = xml env heap x in
       heap, Vabstr Txhp
 
-  | New (c, el) ->
-      let c = get_class env heap c in
+  | New (e, el) ->
+      let c = get_class env heap e in
       let heap = lazy_class env heap c in
-      (* pad: ?? *)
+      (* *myobj* = c::*BUILD*(el);
+       * *myobj->__construct(el);
+       *)
       let stl = [
         Expr (Assign (None, Id (w "*myobj*"),
                      Call (Class_get (Id (w c), Id (w "*BUILD*")), el)));
@@ -461,11 +496,6 @@ and expr_ env heap x =
   | Assign (Some op, e1, e2) ->
       expr env heap (Assign (None, e1, Binop (op, e1, e2)))
 
-  | Id ("true",_)  -> heap, Vbool true
-  | Id ("false",_) -> heap, Vbool false
-  | Id ("null",_)  -> heap, Vnull
-  | Id ("NULL",_)  -> heap, Vnull
-
   | Id (s,_) when not (is_variable s) ->
       (* Must be a constant. Functions and classes are not in the heap;
        * they are managed through the env.db instead and we handle
@@ -481,15 +511,16 @@ and expr_ env heap x =
        )
 
   | Infix _ | Postfix _ ->
-      if !strict then failwith "Infix/Postfix";
+      if !strict then failwith "todo: handle Infix/Postfix";
       heap, Vany
+  | Lambda _ -> 
+      if !strict then failwith "todo: handle Lambda";
+      heap, Vany
+
   | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
       let heap, _, x = lvalue env heap lv in
       let heap, x = Ptr.get heap x in
       heap, x
-  | Lambda _ -> 
-      if !strict then failwith "Lambda";
-      heap, Vany
 
 and array_value env id heap x =
   match x with
@@ -513,7 +544,8 @@ and array_value env id heap x =
           let heap, _ = assign env heap true v e in
           heap
       | _ ->
-          let heap, _ = expr env heap (Assign (None, Array_get (id, None), e)) in
+          let heap, _ = expr env heap (Assign (None, Array_get (id, None), e)) 
+          in
           heap
       )
   | Akval (e1, e2) ->
@@ -538,6 +570,10 @@ and array_value env id heap x =
           heap
       )
 
+(* will return a boolean indicating whether a variable was created
+ * and will return the lvalue, that is the pointer to pointer, and not
+ * the actual value, so that the caller can modify it.
+ *)
 and lvalue env heap x =
   match x with
   | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
@@ -585,11 +621,12 @@ and lvalue env heap x =
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
           heap, true, k
       )
-  | Class_get (c, Id (s,_)) ->
-      let c = get_class env heap c in
+  | Class_get (e, Id (s,_)) ->
+      let c = get_class env heap e in
       let heap = lazy_class env heap c in
       let heap, _, v = Var.get_global env heap c in
       let heap, v = Ptr.get heap v in
+      (* pad: why double??? *)
       let heap, v = Ptr.get heap v in
       (try 
           match v with
@@ -650,13 +687,10 @@ and binaryOp env heap bop v1 v2 =
   match bop with
   | Ast_php.Arith aop ->
       (match v1, v2 with
-      | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) ->
-          Vabstr Tint
-      | _ ->
-          Vsum [Vnull; Vabstr Tint]
+      | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
+      | _ -> Vsum [Vnull; Vabstr Tint]
       )
   | Ast_php.Logical lop -> Vabstr Tbool
-
   | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
 
 and unaryOp uop v =
@@ -674,29 +708,19 @@ and unaryOp uop v =
   | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
   | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
 
+and cast env heap ty v =
+  match ty, v with
+  | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
+  | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
+  | Ast_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
+  | Ast_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
+  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
+  (* pad: ?? should be more ty? *)
+  | _ -> v
+
 (* ---------------------------------------------------------------------- *)
 (* Call *)
 (* ---------------------------------------------------------------------- *)
-
-and sum_call env heap v el =
-  (match v with
-  | [] -> heap, Vany
-  | Vstring s :: _ ->
-      let heap, r = expr env heap (Call (Id (w s), el)) in
-      heap, r
-  | Vmethod (_, fm) :: _ ->
-      let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
-      call_methods env heap fl el
-  | Vtaint _ as v :: _ -> 
-      if !strict then failwith "sum_call Vtaint";
-      heap, v
-  | _ :: rl -> sum_call env heap rl el
-  )
-
-and call env heap v el =
-  match v with
-  | Vsum l -> sum_call env heap l el
-  | x -> sum_call env heap [x] el
 
 and call_fun f env heap el =
   Trace.call (unw f.f_name) !(env.path);
@@ -709,6 +733,7 @@ and call_fun f env heap el =
   let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
   (* pad: ugly, call_fun should also accept method_def *)
   save_path env (CG.node_of_string (unw f.f_name));
+
   (* stop when recurse in same function twice or when depth stack > 6 *)
   if n >= 2 || List.length !(env.path) >= !max_depth && is_clean
   (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
@@ -729,6 +754,28 @@ and call_fun f env heap el =
     if Taint.GetTaint.value heap r = None
     then env.safe := SMap.add (unw f.f_name) r !(env.safe);
     heap, r
+
+and call env heap v el =
+  match v with
+  | Vsum l -> sum_call env heap l el
+  | x -> sum_call env heap [x] el
+
+and sum_call env heap v el =
+  (match v with
+  (* todo: if strict then exception? *)
+  | [] -> heap, Vany
+  | Vstring s :: _ ->
+      let heap, r = expr env heap (Call (Id (w s), el)) in
+      heap, r
+  | Vmethod (_, fm) :: _ ->
+      let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
+      call_methods env heap fl el
+  | Vtaint _ as v :: _ -> 
+      if !strict then failwith "sum_call Vtaint";
+      heap, v
+  | _ :: rl -> sum_call env heap rl el
+  )
+
 
 and get_function env heap f e =
   (* pad: ???? *)
@@ -794,19 +841,6 @@ and xml env heap x =
 
 and encaps env heap x = expr env heap x
 
-and cast env heap ty v =
-  match ty, v with
-  | Ast_php.BoolTy, Vbool _ -> v
-  | Ast_php.BoolTy, Vabstr Tbool -> v
-  | Ast_php.IntTy, Vint _ -> v
-  | Ast_php.IntTy, Vabstr Tint -> v
-  | Ast_php.DoubleTy, Vfloat _ -> v
-  | Ast_php.DoubleTy, Vabstr Tfloat -> v
-  | Ast_php.StringTy, Vstring _ -> v
-  | Ast_php.StringTy, Vabstr Tstring -> v
-  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
-  | _ -> v
-
 and global env heap v =
   match v with
   | Id (x,_) ->
@@ -832,6 +866,19 @@ and static_var env heap (var, eopt) =
 (* ---------------------------------------------------------------------- *)
 (* Class *)
 (* ---------------------------------------------------------------------- *)
+
+and get_class env heap e =
+  match e with
+  (* pad: ???? *)
+  | Id ("",_) -> ""
+  | Id (s,_) when s.[0] <> '$' -> s
+  | Id _ ->
+      let env, v = expr env heap e in
+      let heap, v = Ptr.get heap v in
+      (* pad: ?? why double? *)
+      let heap, v = Ptr.get heap v in
+      get_string [v]
+  | _ -> ""
 
 and class_def env heap c =
   let heap, self = Ptr.new_ heap in
@@ -995,15 +1042,4 @@ and force_class env heap c =
     if !strict then raise (UnknownClass c);
     heap
 
-and get_class env heap c =
-  match c with
-  (* pad: ???? *)
-  | Id ("",_) -> ""
-  | Id (s,_) when s.[0] <> '$' -> s
-  | Id _ ->
-      let env, v = expr env heap c in
-      let heap, v = Ptr.get heap v in
-      let heap, v = Ptr.get heap v in
-      get_string [v]
-  | _ -> ""
 end
