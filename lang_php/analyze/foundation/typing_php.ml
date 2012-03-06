@@ -1,4 +1,4 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
  * Copyright (C) 2011, 2012 Facebook
  *
@@ -12,6 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
+
 open Ast_php_simple
 open Ast_php_simple_toposort
 module A = Ast_php_simple
@@ -50,16 +52,15 @@ module Ent = Database_code
  * This module is also (ab)used to provide autocompletion.
  * 
  * pad's notes:
- *  - "$;return"
+ *  - abused strings:
+ *    * "$;return"
+ *    * "$;tmp"
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type error =
-  | UnknownEntity of Database_code.entity_kind * string
-
-exception Error of error
+exception UnknownEntity of string
 
 (*****************************************************************************)
 (* Helpers *)
@@ -449,45 +450,44 @@ and expr_ env lv = function
           t
       | _ when String.contains s '<' -> 
           thtml
-      | _ -> Tsum [Tsstring (SSet.singleton s)]
+      | _ -> 
+          Tsum [Tsstring (SSet.singleton s)]
       )
   | Guil el ->
       List.iter (encaps env) el;
       string
   | Id (("true" | "false"),_) -> bool
+
   | Id (s, tok) ->
       let is_marked = has_marker env s in
-
-
-      if env.infer_types && is_marked
-      then begin
-        let s = get_marked_id env s in
-        let t = expr env (Id (s, tok)) in
-        env.show := Stype_infer t;
-        t
-      end
-      else if env.auto_complete && is_marked
-      then begin
-        if s.[0] = '$'
-        then
-          let locals = SMap.fold (fun x _ acc -> SSet.add x acc) !(env.env) SSet.empty in
-          env.show := Slocal (get_marked_id env s, locals)
-        else env.show := Sglobal (get_marked_id env s);
-        any
-      end
-      else if s.[0] = '$' || Env.mem env s
-      then Env.get env s
-      else if GEnv.mem_fun env s
-      then GEnv.get_fun env s
-      else if GEnv.mem_class env s
-      then GEnv.get_class env s
-      else if Classes.mem env s || Functions.mem env s
-      then (type_def env s; expr env (Id (s, tok)))
-      else begin
-        if env.debug then
-          (Printf.printf "Unknown identifier: %s\n" s; flush stdout);
-        any
-      end
+      (match () with
+      | _ when env.infer_types && is_marked ->
+          let s = get_marked_id env s in
+          let t = expr env (Id (s, tok)) in
+          env.show := Stype_infer t;
+          t
+      | _ when env.auto_complete && is_marked ->
+          if s.[0] = '$'
+          then
+            let locals = 
+              SMap.fold (fun x _ acc -> SSet.add x acc) !(env.env) SSet.empty 
+            in
+            env.show := Slocal (get_marked_id env s, locals)
+          else env.show := Sglobal (get_marked_id env s);
+          any
+      | _ when s.[0] = '$' || Env.mem env s ->
+          Env.get env s
+      | _ when GEnv.mem_fun env s ->
+          GEnv.get_fun env s
+      | _ when GEnv.mem_class env s ->
+          GEnv.get_class env s
+      | _ when Classes.mem env s || Functions.mem env s ->
+          (type_def env s; expr env (Id (s, tok)))
+      | _ ->
+          if env.strict
+          then raise (UnknownEntity s);
+          any
+      )
   | This -> expr env (Id (wrap "$this"))
   | Array_get (e, None) ->
       let t1 = expr env e in
@@ -579,7 +579,7 @@ and expr_ env lv = function
   | Ref e -> expr env e
   | Xhp x ->
       xml env x;
-      let name = List.fold_right (fun x acc -> x^":"^acc) x.xml_tag "" in
+      let name = A.string_of_xhp_tag x.xml_tag in
       let t = expr env (New (Id (wrap name), [])) in
       t
   | List el ->
@@ -686,17 +686,14 @@ and func_id env fname =
     try func_def env (Functions.get env fname)
     with Not_found ->
       if env.strict 
-      then raise (Error (UnknownEntity (Ent.Function, fname)));
+      then raise (UnknownEntity fname);
       GEnv.set_fun env fname (Tvar (fresh()))
 
 and func_def env fd =
-  if GEnv.mem_fun env (Ast.unwrap fd.f_name) then () 
-  else
-    if env.verbose then begin
-      incr env.count;
-      Printf.printf "Typing function(%d/%d)[%d]: %s\n" 
-        !(env.count) !(env.total) env.depth (Ast.unwrap fd.f_name); 
-      flush stdout;
+  if not (GEnv.mem_fun env (Ast.unwrap fd.f_name)) && env.verbose then begin
+    incr env.count;
+    pr (spf "Typing function(%d/%d)[%d]: %s" 
+           !(env.count) !(env.total) env.depth (Ast.unwrap fd.f_name)); 
   end;
   Collect.collect env;
   let env = { env with env = ref SMap.empty } in

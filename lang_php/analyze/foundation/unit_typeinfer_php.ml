@@ -89,13 +89,7 @@ function foo() {
         let _ = get_signature file in
         assert_failure 
           "it should raise exns in strict mode on undefined entities"
-      with Infer.Error err ->
-        (match err with
-        | Infer.UnknownEntity (Ent.Function, "undefined") -> ()
-        | _ ->
-            assert_failure
-              "it should throw the right exception"
-        )
+      with Infer.UnknownEntity ("undefined") -> ()
     );
   ])
 
