@@ -38,12 +38,17 @@ module SMap = Map.Make (String)
  * 
  * Retrospecively, was it good to try to manage references correctly?
  * After all, many other things are not that well handled in the interpreter
- * or imprecise or passed over silently (e.g. many functions/classes not
- * found, traits not handled, some constructs not handled, choosing
+ * or imprecise or passed-over silently, e.g. many functions/classes not
+ * found, traits not handled, other constructs not handled, choosing
  * arbitrarily one object in a Vsum when there could actually be many
- * different classes).
+ * different classes, not really doing a fixpoint on loops, etc.
  * juju: yes, maybe it was not a good idea to focus so much on references.
- *       Moreover it slows down things a lot.
+ *  Moreover it slows down things a lot.
+ * One advantage though of managing references correctly is to force you
+ * to really understand how Zend PHP internally works (zvalues).
+ * Note that HPHP may do certain optimizations so those pointers of
+ * pointers may actually not exist for many local variables which
+ * statically are never "referenced".
  *)
 
 (*****************************************************************************)
@@ -58,7 +63,7 @@ type code_database = {
 
 type value =
   | Vany
-  (* can be useful for nullpointer analysis *)
+  (* could be useful for nullpointer analysis *)
   | Vnull
 
   | Vabstr  of type_
@@ -100,6 +105,7 @@ type value =
     (* useful for tainting analysis again *)
     | Txhp
 
+(* this could be one field of env too, close to .vars and .globals *)
 and heap = {
   (* a heap maps addresses to values *)
   ptrs: value IMap.t;
@@ -132,9 +138,17 @@ and env = {
   safe    : value SMap.t ref;
 }
 
+(* The code of the abstract interpreter and tainting analysis used to be
+ * in the same file, but it's better to separate concerns, hence this module
+ * which contains hooks that a tainting analysis can fill in.
+ *)
 module type TAINT =
   sig
     val taint_mode : bool ref
+
+    val check_danger :  env -> heap ->
+      string -> Ast_php.info option -> Callgraph_php2.node list (* path *) -> 
+      value -> unit
 
     val taint_expr : env -> heap ->
       (env -> heap -> Ast_php_simple.expr -> heap * value) *
@@ -151,10 +165,6 @@ module type TAINT =
       Callgraph_php2.node list (* path *) -> 
       value
 
-    val check_danger :  env -> heap ->
-      string -> Ast_php.info option -> Callgraph_php2.node list (* path *) -> 
-      value -> unit
-
     val fold_slist : value list -> value
 
     val when_call_not_found : heap -> value list -> value
@@ -167,7 +177,6 @@ module type TAINT =
       end
   end
 
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -178,16 +187,16 @@ let empty_heap = {
 
 let empty_env db file =
   let globals = ref SMap.empty in
-  { file = ref file;
+  { db = db;
+    file = ref file;
     globals = globals;
-    (* why use same ref? because when we process toplevel statements,
+    (* Why use same ref? because when we process toplevel statements,
      * the vars are the globals.
      *)
     vars = globals; 
     cfun = "*TOPLEVEL*";
     stack   = SMap.empty ;
     safe = ref SMap.empty;
-    db = db;
     path = ref [];
   }
 
