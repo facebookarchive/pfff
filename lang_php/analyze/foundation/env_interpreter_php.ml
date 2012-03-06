@@ -131,7 +131,9 @@ and env = {
    * care of save_excursion though.
    *)
   path: Callgraph_php2.node list ref;
-  (* opti: number of recursive calls to a function f. if > 2 then stop. *)
+  (* number of recursive calls to a function f. if > 2 then stop, 
+   * for fixpoint. 
+   *)
   stack   : int SMap.t;
 
   (* opti: cache of already processed functions safe for tainting *)
@@ -146,6 +148,7 @@ module type TAINT =
   sig
     val taint_mode : bool ref
 
+    (* main entry point to warn when found XSS *)
     val check_danger :  env -> heap ->
       string -> Ast_php.info option -> Callgraph_php2.node list (* path *) -> 
       value -> unit
