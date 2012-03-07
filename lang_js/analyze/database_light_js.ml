@@ -258,7 +258,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let entities_arr = 
     Common.hash_to_list hdefs +> List.map snd +> Array.of_list
   in
-  Db.adjust_method_or_field_external_users entities_arr;
+  Db.adjust_method_or_field_external_users ~verbose entities_arr;
 
   let dirs = dirs +> List.map (fun s -> 
     Common.filename_without_leading_path root s) in
