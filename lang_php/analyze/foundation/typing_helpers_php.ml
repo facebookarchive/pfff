@@ -24,18 +24,21 @@ module Pp = Pp2
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* s =~ ".*" ^ env.marker *)
 let has_marker env s =
   let marker_size = String.length env.marker in
   String.length s >= marker_size &&
   String.sub s (String.length s - marker_size) marker_size = env.marker
 
+(* s =~ "\\(.*\\)" ^ env.marker *)
 let get_marked_id env s =
   let marker_size = String.length env.marker in
   let s = String.sub s 0 (String.length s - marker_size) in
   s
 
 (*****************************************************************************)
-(* Modules *)
+(* Code database *)
 (*****************************************************************************)
 
 module Classes: sig
@@ -84,6 +87,9 @@ end = struct
 
 end
 
+(*****************************************************************************)
+(* TEnv, GEnv, Subst, Env *)
+(*****************************************************************************)
 
 module TEnv = struct
   let get env x = try IMap.find x !(env.tenv) with Not_found -> Tsum []
@@ -93,8 +99,6 @@ end
 
 
 module GEnv: sig
-
-  type genv
 
   val get_class: env -> string -> t
   val set_class: env -> string -> t -> unit
@@ -117,10 +121,8 @@ module GEnv: sig
 
 end = struct
 
-  type genv = t SMap.t SMap.t * t SMap.t
-
-  let get env x =
-    try SMap.find x !(env.genv)
+  let get env str =
+    try SMap.find str !(env.genv)
     with Not_found -> Tvar (fresh())
 
   let set env x t = env.genv := SMap.add x t !(env.genv)
@@ -200,6 +202,10 @@ module Subst = struct
 
 end
 
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
 module Fun = struct
 
   let rec is_fun env stack = function
@@ -258,6 +264,10 @@ module FindCommonAncestor = struct
     with Found c -> Some c
 
 end
+
+(*****************************************************************************)
+(* String of *)
+(*****************************************************************************)
 
 module Print2 = struct
 
@@ -531,6 +541,10 @@ module Print = struct
     Print2.ty env (Pp.empty o) ISet.empty 0 t;
     o "\n"
 end
+
+(*****************************************************************************)
+(* Instantiate/Generalize/Normalize *)
+(*****************************************************************************)
 
 module Instantiate = struct
 

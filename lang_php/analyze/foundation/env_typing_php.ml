@@ -144,10 +144,6 @@ let rec proj = function
 (* Helpers *)
 (*****************************************************************************)
 
-let fresh =
-  let i = ref 0 in
-  fun () -> incr i; !i
-
 let make_env () = {
   env     = ref SMap.empty;
   genv    = ref SMap.empty;
@@ -187,6 +183,10 @@ let pfloat  = Tabstr "float"
 let pstring = Tabstr "string"
 let pnull   = Tabstr "null"
 let phtml   = Tabstr "html"
+
+let fresh =
+  let i = ref 0 in
+  fun () -> incr i; !i
 
 let fvar() = Tvar (fresh())
 
