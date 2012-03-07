@@ -269,7 +269,7 @@ let database_code_from_php_database ?(verbose=false) db =
     ))
   in
   (* phase 2: adding the correct cross reference information *)
-  if verbose then pr2 "phase 2: adding crossref information";
+  if verbose then pr2 "\nphase 2: adding crossref information";
 
   let entities_arr = Array.of_list entities in
 
