@@ -153,6 +153,7 @@ and expr =
   | Unop of Ast_php.unaryOp * expr
   | Guil of expr list
 
+  (* $y =& $x is transformed into an Assign(Id "$y", Ref (Id "$x")) *)
   | Ref of expr
 
   | ConsArray of array_value list

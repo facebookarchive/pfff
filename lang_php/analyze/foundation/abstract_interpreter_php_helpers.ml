@@ -1,6 +1,6 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -86,7 +86,15 @@ module Ptr = struct
   and set_ heap ptr v =
     { ptrs = IMap.add ptr v heap.ptrs }
 
-  (* Double dereference when a pointer.
+  (* 'get' dereference a pointer when the value is a pointer. 
+   * When we do '2 + $x' where $x = 3,the abstract interpreter will
+   * have for values for the operand of plus a (Vint 2) and a (Vptr 1)
+   * where 1 points to a (Vint 3). The Vint of $x is kinda boxed.
+   * But in the code of binaryOp we don't want to handle the many
+   * variations of having a Vptr or not, so in many places we
+   * call Ptr.get which will dereference the pointer when
+   * the value is a boxed integers.
+   * 
    * todo: should have different functions when we know it's always
    * a pointer. Same when we know it's not already in the heap.
    *)
@@ -94,7 +102,7 @@ module Ptr = struct
     match ptr with
     | Vptr n -> get_ heap n
     | Vref s -> get_ heap (ISet.choose s)
-    (* todo: throw exception? *)
+    (* throw exception? no *)
     | _ -> heap, ptr
 
   let set heap ptr v =
@@ -506,118 +514,12 @@ end
 let unw = Ast_php_simple.unwrap
 let w = Ast_php_simple.wrap
 
-let array_new_entry env heap ar a k m =
-  let heap, v = Ptr.new_ heap in
-  let m = SMap.add k v m in
-  let heap = Ptr.set heap ar (Vrecord m) in
-  heap, v
-
 let make_ref e =
   match e with
   | Ref _ -> e
   | _ when IsLvalue.expr e -> Ref e
   | _ -> e
 
-(* pad: ?? looks like subtle code *)
-let assign env heap is_new root v_root =
-  let heap, ptr = Ptr.get heap root in
-  let heap, v = Ptr.get heap v_root in
-  match v with
-  | Vref _
-  | Vptr _ ->
-      let vr = match v with Vptr n -> Vref (ISet.singleton n) | x -> x in
-      if is_new
-      then
-        let heap = Ptr.set heap root vr in
-        let heap = Ptr.set heap v_root vr in
-        heap, v
-      else
-        let heap, v = Unify.value heap v vr in
-        let heap = Ptr.set heap root v in
-        let heap = Ptr.set heap v_root v in
-        heap, v
-  | _ ->
-      if is_new
-      then
-        let heap, v' = Copy.value heap v in
-        let heap = Ptr.set heap ptr v' in
-        heap, v
-      else
-        let heap, v' = Ptr.get heap ptr in
-        let heap, v = Unify.value heap v v' in
-        let heap = Ptr.set heap ptr v in
-        heap, v
-
-let rec obj_get mem env heap v s =
-  (match v with
-  | [] -> SMap.empty
-  | Vref a :: rl ->
-      let l = ISet.fold (fun x acc -> x :: acc) a [] in
-      let vl = List.map (fun x -> Vptr x) l in
-      obj_get mem env heap (vl @ rl) s
-  | Vobject m :: _ -> m
-  | Vsum l :: l' ->
-      obj_get mem env heap (l@l') s
-  | Vptr n :: rl when ISet.mem n mem ->
-      obj_get mem env heap rl s
-  | Vptr n as x :: rl ->
-      let mem = ISet.add n mem in
-      let heap, x = Ptr.get heap x in
-      obj_get mem env heap (x :: rl) s
-  | x :: rl -> obj_get mem env heap rl s
-  )
-
-let param_get env heap prefix a =
-  match a with
-  | Vrecord m ->
-      SMap.fold (
-        fun s v heap ->
-          let heap, _, k = Var.get env heap (prefix^s) in
-          let heap, v' = Ptr.get heap v in
-          let heap, v'' = Ptr.get heap v' in
-          let heap =
-            match v'' with
-            | Vtaint _ ->
-                Ptr.set heap v' (Vtaint ("parameter "^s))
-            | _ -> heap
-          in
-          let heap, _ = assign env heap true k v in
-          heap
-      ) m heap
-  | _ -> heap
-
-let param_array_get env heap a x =
-  match a with
-  | Vrecord m ->
-      let heap, m =
-        SMap.fold (
-          fun s v (heap, acc) ->
-            let heap, k = Ptr.new_ heap in
-            let heap, v' = Ptr.get heap v in
-            let heap, v'' = Ptr.get heap v' in
-            let heap =
-              match v'' with
-              | Vtaint _ ->
-                  Ptr.set heap v' (Vtaint ("parameter "^s))
-              | _ -> heap
-            in
-            let heap, _ = assign env heap true k v in
-            heap, SMap.add s k acc
-        ) m (heap, SMap.empty) in
-      let heap, ptr = Ptr.new_ heap in
-      let heap, ptr' = Ptr.get heap ptr in
-      let heap = Ptr.set heap ptr' (Vrecord m) in
-      Var.set env x ptr;
-      heap
-  | _ -> heap
-
-let fun_nspace f roots =
-  List.fold_left (
-    fun acc p ->
-      (try SMap.add (unw p.p_name) (SMap.find (unw p.p_name) roots) acc
-        with Not_found -> acc
-      )
-  ) SMap.empty f.f_params
 
 (* Allez ... pour faire plaisir a yoyo *)
 let save_excursion env heap f e =

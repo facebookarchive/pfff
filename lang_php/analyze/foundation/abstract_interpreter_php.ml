@@ -369,7 +369,8 @@ and catch env heap (_, _, stl) =
 and expr env heap x =
   if !Taint.taint_mode
   then Taint.taint_expr env heap 
-    (expr_, lvalue, get_dynamic_function, call_fun, call) !(env.path) x
+    (expr_, lvalue, get_dynamic_function, call_fun, call, assign) 
+    !(env.path) x
   else expr_ env heap x
 
 and expr_ env heap x =
@@ -519,7 +520,13 @@ and expr_ env heap x =
       heap, Vany
 
   | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
+      (* the lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
+       * so someone can modify it.
+       *)
       let heap, _, x = lvalue env heap lv in
+      (* but in an expr context, we actually want the value, hence
+       * the dereference, so we will return &1{...}
+       *)
       let heap, x = Ptr.get heap x in
       heap, x
 
@@ -571,6 +578,51 @@ and array_value env id heap x =
           heap
       )
 
+(* could be moved in helper *)
+and array_new_entry env heap ar a k m =
+  let heap, v = Ptr.new_ heap in
+  let m = SMap.add k v m in
+  let heap = Ptr.set heap ar (Vrecord m) in
+  heap, v
+
+and binaryOp env heap bop v1 v2 =
+  match bop with
+  | Ast_php.Arith aop ->
+      (match v1, v2 with
+      | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
+      | _ -> Vsum [Vnull; Vabstr Tint]
+      )
+  | Ast_php.Logical lop -> Vabstr Tbool
+  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
+
+and unaryOp uop v =
+  match uop, v with
+  | Ast_php.UnPlus, Vint n       -> Vint n
+  | Ast_php.UnPlus, Vabstr Tint  -> Vabstr Tint
+  | Ast_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
+  | Ast_php.UnMinus, Vint n      -> Vint (-n)
+  | Ast_php.UnMinus, Vabstr Tint -> Vabstr Tint
+  | Ast_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
+  | Ast_php.UnBang, Vbool b      -> Vbool (not b)
+  | Ast_php.UnBang, Vabstr Tbool -> Vabstr Tbool
+  | Ast_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
+  | Ast_php.UnTilde, Vint n      -> Vint (lnot n)
+  | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
+  | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
+
+and cast env heap ty v =
+  match ty, v with
+  | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
+  | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
+  | Ast_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
+  | Ast_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
+  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
+  (* pad: ?? should be more ty? *)
+  | _ -> v
+
+(* ---------------------------------------------------------------------- *)
+(* Lvalue *)
+(* ---------------------------------------------------------------------- *)
 (* will return a boolean indicating whether a variable was created
  * and will return the lvalue, that is the pointer to pointer, and not
  * the actual value, so that the caller can modify it.
@@ -684,40 +736,60 @@ and array_get env heap e k =
       let heap = Ptr.set heap ar a in
       heap, false, v
 
-and binaryOp env heap bop v1 v2 =
-  match bop with
-  | Ast_php.Arith aop ->
-      (match v1, v2 with
-      | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
-      | _ -> Vsum [Vnull; Vabstr Tint]
-      )
-  | Ast_php.Logical lop -> Vabstr Tbool
-  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
+(* could be put in helper *)
+and obj_get mem env heap v s =
+  (match v with
+  | [] -> SMap.empty
+  | Vref a :: rl ->
+      let l = ISet.fold (fun x acc -> x :: acc) a [] in
+      let vl = List.map (fun x -> Vptr x) l in
+      obj_get mem env heap (vl @ rl) s
+  | Vobject m :: _ -> m
+  | Vsum l :: l' ->
+      obj_get mem env heap (l@l') s
+  | Vptr n :: rl when ISet.mem n mem ->
+      obj_get mem env heap rl s
+  | Vptr n as x :: rl ->
+      let mem = ISet.add n mem in
+      let heap, x = Ptr.get heap x in
+      obj_get mem env heap (x :: rl) s
+  | x :: rl -> obj_get mem env heap rl s
+  )
 
-and unaryOp uop v =
-  match uop, v with
-  | Ast_php.UnPlus, Vint n       -> Vint n
-  | Ast_php.UnPlus, Vabstr Tint  -> Vabstr Tint
-  | Ast_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
-  | Ast_php.UnMinus, Vint n      -> Vint (-n)
-  | Ast_php.UnMinus, Vabstr Tint -> Vabstr Tint
-  | Ast_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
-  | Ast_php.UnBang, Vbool b      -> Vbool (not b)
-  | Ast_php.UnBang, Vabstr Tbool -> Vabstr Tbool
-  | Ast_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
-  | Ast_php.UnTilde, Vint n      -> Vint (lnot n)
-  | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
-  | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
+(* ---------------------------------------------------------------------- *)
+(* Assign *)
+(* ---------------------------------------------------------------------- *)
 
-and cast env heap ty v =
-  match ty, v with
-  | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
-  | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
-  | Ast_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
-  | Ast_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
-  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
-  (* pad: ?? should be more ty? *)
-  | _ -> v
+(* could be moved in helper *)
+
+(* pad: ?? looks like subtle code *)
+and assign env heap is_new root v_root =
+  let heap, ptr = Ptr.get heap root in
+  let heap, v = Ptr.get heap v_root in
+  match v with
+  | Vref _ | Vptr _ ->
+      let vr = match v with Vptr n -> Vref (ISet.singleton n) | x -> x in
+      if is_new
+      then
+        let heap = Ptr.set heap root vr in
+        let heap = Ptr.set heap v_root vr in
+        heap, v
+      else
+        let heap, v = Unify.value heap v vr in
+        let heap = Ptr.set heap root v in
+        let heap = Ptr.set heap v_root v in
+        heap, v
+  | _ ->
+      if is_new
+      then
+        let heap, v' = Copy.value heap v in
+        let heap = Ptr.set heap ptr v' in
+        heap, v
+      else
+        let heap, v' = Ptr.get heap ptr in
+        let heap, v = Unify.value heap v v' in
+        let heap = Ptr.set heap ptr v in
+        heap, v
 
 (* ---------------------------------------------------------------------- *)
 (* Call *)
@@ -778,6 +850,15 @@ and sum_call env heap v el =
   | _ :: rl -> sum_call env heap rl el
   )
 
+(* could be moved in helper *)
+and fun_nspace f roots =
+  List.fold_left (
+    fun acc p ->
+      (try SMap.add (unw p.p_name) (SMap.find (unw p.p_name) roots) acc
+        with Not_found -> acc
+      )
+  ) SMap.empty f.f_params
+
 
 and get_function env heap f e =
   (* pad: ???? *)
@@ -796,7 +877,7 @@ and parameters env heap l1 l2 =
       (match p.p_default with
       | None -> parameters env heap rl []
       | Some e ->
-          let e = if p.p_ref then make_ref e else e in
+          let e = if p.p_ref then H.make_ref e else e in
           let heap, v = expr env heap e in
           Var.unset env (unw p.p_name);
           let heap, _, lv = lvalue env heap (Id p.p_name) in
@@ -804,7 +885,7 @@ and parameters env heap l1 l2 =
           parameters env heap rl []
       )
   | p :: rl, e :: rl2 ->
-      let e = if p.p_ref then make_ref e else e in
+      let e = if p.p_ref then H.make_ref e else e in
       let heap, v = expr env heap e in
       Var.unset env (unw p.p_name);
       let heap, _, lv = lvalue env heap (Id p.p_name) in

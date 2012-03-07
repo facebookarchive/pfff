@@ -26,15 +26,27 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 (*
  * In the abstract interpreter all variables are pointers to pointers 
- * of values. So with '$x = 42;' we got $x = &1{&2{42}}.
- * In 'env.vars' we got "$x" -> Vptr 1
- * and in the 'heap' we then got [1 -> Vptr 2; 2 -> Vint 42]
- * meaning that $x is a variable with address 1, where the content
- * of this cell is a pointer to address 2, where the content of
- * this cell is the value 42.
+ * of values. So with '$x = 42;' we got $x = &2{&1{42}}.
+ * In 'env.vars' we got "$x" = Vptr 2
+ * and in the 'heap' we then got [2 -> Vptr 1; 1 -> Vint 42]
+ * meaning that $x is a variable with address 2, where the content
+ * of this cell is a pointer to address 1, where the content of
+ * this cell is the value 42. This is consistent with how Zend
+ * PHP manages values and variables at runtime (the "zval").
  *
  * Why this model? why not just variables be pointer to values? Because
- * of references.
+ * of references. With this code:
+ * 
+ *   $x = 2;
+ *   var_dump($x);
+ *   $y =& $x;
+ *   var_dump($x);
+ * 
+ * We will have at the first var_dump: $x = &2{&1{2}}
+ * And at the second var_dump: $x = &2{&REF 1{2}}, $y = &4{&REF 1{2}}
+ * See the code of Assign (..., Ref ...) in the interpreter for
+ * more information.
+ * 
  * 
  * Retrospecively, was it good to try to manage references correctly?
  * After all, many other things are not that well handled in the interpreter
@@ -158,7 +170,9 @@ module type TAINT =
       (env -> heap -> Ast_php_simple.expr -> heap * bool * value) *
       (env -> heap -> value -> 'a * 'b) *
       ('b -> env -> 'a -> Ast_php_simple.expr list -> heap * value) *
-      (env -> heap -> value -> Ast_php_simple.expr list -> heap * value) ->
+      (env -> heap -> value -> Ast_php_simple.expr list -> heap * value) *
+      (env -> heap -> bool -> value -> value -> heap * value)
+      ->
       Callgraph_php2.node list ->
       Ast_php_simple.expr -> 
       heap * value
