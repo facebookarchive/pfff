@@ -23,7 +23,6 @@ module V = Visitor_php
 module E = Database_code
 
 module Env = Env_interpreter_php
-module Interp = Abstract_interpreter_php
 module CG = Callgraph_php2
 
 (*****************************************************************************)
