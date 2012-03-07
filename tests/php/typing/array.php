@@ -1,3 +1,6 @@
 <?php
 
-echo $a[0][1];
+function foo($a) {
+  return $a[0][1];
+}
+

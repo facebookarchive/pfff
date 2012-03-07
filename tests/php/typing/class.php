@@ -2,8 +2,11 @@
 
 class A {
   function foo($i) {
-    echo $i++;
-    echo ++$i;
+    return $i + 1;
+  }
+  static function bar($b) {
+    return $b === true;
   }
 }
+
 
