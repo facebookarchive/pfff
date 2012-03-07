@@ -16,9 +16,7 @@ val class_def:
   Env_typing_php.env -> Ast_php_simple.class_def -> unit
 
 
-(* adding toplevel functions/classes in code database in env
- * and adjust the graph of dependencies.
- *)
+(* preparing env for infer_using_topological_sort_dependencies *)
 val add_defs_code_database_and_update_dependencies: 
   Env_typing_php.env -> Ast_php_simple.program -> unit
 
