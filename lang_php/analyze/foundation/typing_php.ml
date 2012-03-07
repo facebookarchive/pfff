@@ -694,6 +694,9 @@ and func_def env fd =
   let return = Tvar ret in
   let f = Tsum [Tfun (pl, return)] in
   GEnv.set_fun env (A.unwrap fd.f_name) f;
+  (* todo? do we need that? if the toplogical sort has been done
+   * correctly we should not need that no?
+   *)
   List.iter (infer_type_definition env) 
     (Graph.get_deps !(env.graph) (A.unwrap fd.f_name));
   Env.set env "$;return" return;

@@ -680,7 +680,7 @@
        (6 "abstract")
        (7 "light")
        (8 "-ia_php /home/pad/pfff/tests/php/ia/foo.php 6")
-       (9 "-type_php /home/pad/pfff/tests/php/typing/null.php")
+       (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
        )
      ))
    )

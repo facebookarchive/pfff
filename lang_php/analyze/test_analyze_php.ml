@@ -49,7 +49,7 @@ let test_type_php file =
     Parse_php.parse_program file +> Ast_php_simple_build.program 
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
-    verbose = false;
+    verbose = true;
     strict = true;
   } in
   Builtins_typed_php.make env;
