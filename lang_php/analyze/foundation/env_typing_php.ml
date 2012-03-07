@@ -145,6 +145,13 @@ let rec proj = function
 (*****************************************************************************)
 
 let make_env () = {
+  db = {
+    classes = ref SMap.empty;
+    funcs = ref SMap.empty;
+  };
+  builtins = ref SSet.empty;
+  graph = Graph.empty();
+
   env     = ref SMap.empty;
   genv    = ref SMap.empty;
 
@@ -153,10 +160,6 @@ let make_env () = {
 
   depth   = 0;
   show   = ref Snone;
-  db = {
-    classes = ref SMap.empty;
-    funcs = ref SMap.empty;
-  };
 
   debug = false;
   infer_types = false;
@@ -164,9 +167,7 @@ let make_env () = {
   verbose = true;
   strict = false;
   marker = "JUJUMARKER";
-  builtins = ref SSet.empty;
 
-  graph = Graph.empty();
   total = ref 0;
   count = ref 0;
   collect_count = ref 0;
