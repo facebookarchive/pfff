@@ -1,5 +1,7 @@
 <?php
 
+// this one is now done in cmf at least
+
 //FATAL
 throw Exception();
 

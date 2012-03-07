@@ -23,3 +23,5 @@ function f5() {
 
 function f6() {
 }
+
+f();

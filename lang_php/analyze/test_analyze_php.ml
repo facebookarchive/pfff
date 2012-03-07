@@ -251,7 +251,7 @@ let test_dump_simple file =
 module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
 
 (* e.g. ./pfff_fb -test_ia tests/xss/abint.php *)
-let test_abstract_interpreter file =
+let test_abstract_interpreter file depth =
   let ast = 
     Ast_php_simple_build.program (Parse_php.parse_program file) in
   let jujudb = 
@@ -264,7 +264,7 @@ let test_abstract_interpreter file =
   Abstract_interpreter_php.extract_paths := false;
   Tracing_php.tracing := true;
   Abstract_interpreter_php.strict := true;
-  Abstract_interpreter_php.max_depth := 1;
+  Abstract_interpreter_php.max_depth := depth;
   let _heap = 
     Interp.program env Env_interpreter_php.empty_heap ast in
   ()
@@ -444,8 +444,10 @@ let actions () = [
 
   "-dump_php_simple", "   <file>",
   Common.mk_action_1_arg test_dump_simple;
-  "-test_ia", " <file>",
-  Common.mk_action_1_arg test_abstract_interpreter;
+  "-test_ia", " <file> <depth",
+  Common.mk_action_2_arg (fun file n ->
+    test_abstract_interpreter file (int_of_string n)
+  );
 
   "-stat_php", " <files_or_dirs>",
   Common.mk_action_n_arg test_stat_php;

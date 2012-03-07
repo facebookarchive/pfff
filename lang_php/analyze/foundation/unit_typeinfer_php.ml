@@ -92,5 +92,3 @@ function foo() {
       with Infer.UnknownEntity ("undefined") -> ()
     );
   ])
-
-
