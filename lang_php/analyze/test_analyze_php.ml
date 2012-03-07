@@ -283,6 +283,7 @@ let test_callgraph_php file =
     ~show_progress:false ~strict:true 
     [file] db
   in
+  (* todo: could also show a dot? *)
   g +> Map_poly.iter (fun n1 v ->
     v +> Set_poly.iter (fun n2 ->
       pr (spf "%s --> %s"
