@@ -25,7 +25,7 @@ module SMap = Map.Make (String)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * In the abstract interpreter all variables are pointers to pointers 
+ * In the abstract interpreter all variables are pointers to pointers
  * of values. So with '$x = 42;' we got $x = &2{&1{42}}.
  * In 'env.vars' we got "$x" = Vptr 2
  * and in the 'heap' we then got [2 -> Vptr 1; 1 -> Vint 42]
@@ -34,7 +34,10 @@ module SMap = Map.Make (String)
  * this cell is the value 42. This is consistent with how Zend
  * PHP manages values and variables at runtime (the "zval").
  *
- * Why this model? why not just variables be pointer to values? Because
+ * Why this model? Why not having variables contain directly values,
+ * that is $x = {42}? TODO??
+ * 
+ * Why not just variables be pointer to values then? Because
  * of references. With this code:
  * 
  *   $x = 2;
@@ -43,9 +46,8 @@ module SMap = Map.Make (String)
  *   var_dump($x);
  * 
  * We will have at the first var_dump: $x = &2{&1{2}}
- * And at the second var_dump: $x = &2{&REF 1{2}}, $y = &4{&REF 1{2}}
- * See the code of Assign (..., Ref ...) in the interpreter for
- * more information.
+ * and at the second var_dump: $x = &2{&REF 1{2}}, $y = &4{&REF 1{2}}
+ * See the code of assign in the interpreter for more information.
  * 
  * 
  * Retrospecively, was it good to try to manage references correctly?
@@ -54,13 +56,15 @@ module SMap = Map.Make (String)
  * found, traits not handled, other constructs not handled, choosing
  * arbitrarily one object in a Vsum when there could actually be many
  * different classes, not really doing a fixpoint on loops, etc.
+ * 
  * juju: yes, maybe it was not a good idea to focus so much on references.
  *  Moreover it slows down things a lot.
- * One advantage though of managing references correctly is to force you
+ * 
+ * One advantage though of managing references correctly is that it forces
  * to really understand how Zend PHP internally works (zvalues).
  * Note that HPHP may do certain optimizations so those pointers of
- * pointers may actually not exist for many local variables which
- * statically are never "referenced".
+ * pointers may actually not exist for many local variables when
+ * we statically know they are never "referenced".
  *)
 
 (*****************************************************************************)
@@ -256,6 +260,7 @@ let rec value ptrs o x =
       o "{";
       value (IMap.remove n ptrs) o (IMap.find n ptrs);
       o "}"
+  (* pad: when this happens? *)
   | Vptr _ -> o "rec"
   | Vrecord m ->
       let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in

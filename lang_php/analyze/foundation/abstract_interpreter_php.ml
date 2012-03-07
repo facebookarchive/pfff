@@ -782,6 +782,10 @@ and assign env heap is_new root v_root =
   | _ ->
       if is_new
       then
+        (* PHP has a copy-on-write semantic, so for '$y = $x'
+         * we will copy the value of $x in $y. There will be
+         * no sharing.
+         *)
         let heap, v' = Copy.value heap v in
         let heap = Ptr.set heap ptr v' in
         heap, v
