@@ -107,7 +107,7 @@ type value =
 
 (* this could be one field of env too, close to .vars and .globals *)
 and heap = {
-  (* a heap maps addresses to values *)
+  (* a heap maps addresses to values (which can also be addresses (Vptr)) *)
   ptrs: value IMap.t;
 }
 
@@ -219,8 +219,12 @@ let rec value ptrs o x =
   | Vnull -> o "Null"
   | Vtaint s -> o "PARAM:"; o s
   | Vabstr ty -> type_ o ty
+
   | Vbool b -> o (string_of_bool b)
   | Vint n -> o (string_of_int n)
+  | Vfloat f -> o (string_of_float f)
+  | Vstring s -> o "'"; o s; o "'"
+
   | Vref s ->
       o "&REF ";
       let l = ISet.elements s in
@@ -239,11 +243,6 @@ let rec value ptrs o x =
       value (IMap.remove n ptrs) o (IMap.find n ptrs);
       o "}"
   | Vptr _ -> o "rec"
-  | Vfloat f -> o (string_of_float f)
-  | Vstring s ->
-      o "'";
-      o s;
-      o "'"
   | Vrecord m ->
       let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
       o "record(";
@@ -282,21 +281,13 @@ and type_ o x =
 (* Printing *)
 (*****************************************************************************)
 
-and penv o env heap =
+and print_locals_and_globals o env heap =
   SMap.iter (fun s v ->
-      o s ; o " = "; value heap.ptrs o v; o "\n"
+    o s ; o " = "; value heap.ptrs o v; o "\n"
   ) !(env.vars);
   SMap.iter (fun s v ->
-      o "GLOBAL "; o s ; o " = "; value heap.ptrs o v; o "\n"
+    o "GLOBAL "; o s ; o " = "; value heap.ptrs o v; o "\n"
   ) !(env.globals)
-
-let debug heap x =
-  value heap.ptrs print_string x;
-  print_newline()
-
-let sdebug s heap x =
-  print_string (s^": ");
-  debug heap x
 
 (*****************************************************************************)
 (* Debugging *)
@@ -307,6 +298,3 @@ let string_of_value heap v =
     let pr s = Buffer.add_string buf s in
     value heap.ptrs pr v
   )
-
-let string_of_chained_values heap xs =
-  "[" ^ (Common.join ", " (List.map (fun x -> string_of_value heap x) xs)) ^ "]"

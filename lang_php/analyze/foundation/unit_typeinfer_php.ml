@@ -6,7 +6,6 @@ module Env = Env_typing_php
 module Infer  = Typing_php
 module InferH = Typing_helpers_php
 module Builtins = Builtins_typed_php
-module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -38,6 +37,7 @@ let get_signature file =
   Builtins.make env;
 
   Infer.decls env ast;
+
   match Common.list_last ast with
   | Ast.FuncDef fd ->
       Infer.func_def env fd;
