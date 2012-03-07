@@ -94,7 +94,6 @@ let compute_database ?(verbose=false) files_or_dirs =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k ();
-    try (
     let (ast2, _stat) = Parse_cpp.parse file in
 
     let hcomplete_name_of_info = 
@@ -131,9 +130,6 @@ let compute_database ?(verbose=false) files_or_dirs =
         (ast, toks)
       ;
     );
-    ) 
-    with Stack_overflow ->
-      pr2 (spf "PB: stack overflow on %s" file);
   ));
 
   (* step2: collecting uses *)
@@ -142,7 +138,6 @@ let compute_database ?(verbose=false) files_or_dirs =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
-    try (
     let (ast2, _stat) = Parse_cpp.parse file in
 
     let ast = Parse_cpp.program_of_program2 ast2 in
@@ -186,9 +181,6 @@ let compute_database ?(verbose=false) files_or_dirs =
       ;
     );
     ()
-    )
-    with Stack_overflow ->
-      pr2 (spf "PB: stack overflow on %s" file);
   ));
 
   (* step3: adding cross reference information *)
