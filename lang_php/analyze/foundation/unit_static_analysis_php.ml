@@ -28,10 +28,9 @@ let prepare content =
 
 let heap_of_program_at_checkpoint content =
   let (env, ast) = prepare content in
-  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
-    let _heap = Interp.program env heap ast in
+    let _heap = Interp.program env Env.empty_heap ast in
     match !Abstract_interpreter_php._checkpoint_heap with
     | None -> failwith "use checkpoint() in your unit test"
     | Some x -> x
@@ -40,11 +39,10 @@ let heap_of_program_at_checkpoint content =
 (* less: use Callgraph_php_build.create_graph *)
 let callgraph_generation content =
   let (env, ast) = prepare content in
-  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
-    let _heap = Interp.program env heap ast in
+    let _heap = Interp.program env Env.empty_heap ast in
     !(Abstract_interpreter_php.graph)
   ))
 
@@ -437,13 +435,8 @@ function c() { $a = new A(); $a->foo(); }
 
   ]
 
-
 (*****************************************************************************)
 (* Tainting analysis *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Type inference *)
 (*****************************************************************************)
 
 (*****************************************************************************)
@@ -453,7 +446,3 @@ let unittest =
   "static_analysis_php" >::: [
     abstract_interpreter_unittest;
   ]
-
-(*****************************************************************************)
-(* Main entry for args *)
-(*****************************************************************************)
