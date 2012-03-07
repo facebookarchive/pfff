@@ -38,7 +38,7 @@ type t =
   and prim_ty =
     (* A set of static strings *)
     | Tsstring of SSet.t
-    (* Any abstract type, int bool string etc ... *)
+    (* Any abstract type, e.g. int, bool, string, etc. *)
     | Tabstr of string
     (* An enum of integers, class MyEnum { static const XX = 0; } *)
     | Tienum of SSet.t
@@ -101,6 +101,7 @@ type env = {
     show: show ref;
     (* Are we in debug mode *)
     debug: bool;
+
     (* The total amount of classes/functions to type *)
     total: int ref;
     (* The total amount of classes/functions typed so far *)
@@ -180,21 +181,21 @@ let make_env () = {
 (* Shortcuts *)
 (*****************************************************************************)
 
-let pbool = Tabstr "bool"
-let pint = Tabstr "int"
-let pfloat = Tabstr "float"
+let pbool   = Tabstr "bool"
+let pint    = Tabstr "int"
+let pfloat  = Tabstr "float"
 let pstring = Tabstr "string"
-let pnull = Tabstr "null"
-let phtml = Tabstr "html"
+let pnull   = Tabstr "null"
+let phtml   = Tabstr "html"
 
 let fvar() = Tvar (fresh())
 
-let bool = Tsum [pbool]
-let int = Tsum [pint]
-let thtml = Tsum [phtml]
-let float = Tsum [pfloat]
+let bool   = Tsum [pbool]
+let int    = Tsum [pint]
+let thtml  = Tsum [phtml]
+let float  = Tsum [pfloat]
 let string = Tsum [pstring]
-let null = Tsum [pnull]
+let null   = Tsum [pnull]
 
 let any = Tsum []
 
