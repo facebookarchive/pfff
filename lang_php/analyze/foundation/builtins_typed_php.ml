@@ -270,11 +270,8 @@ let super_globals =
 (*****************************************************************************)
 
 let make env =
-  let add_name x = 
-    env.builtins := SSet.add ("^Fun:"^x) !(env.builtins)
-  in
   let add x y = 
-    add_name x; 
+    env.builtins := SSet.add ("^Fun:"^x) !(env.builtins);
     GEnv.set_fun env x y 
   in
 
@@ -287,6 +284,7 @@ let make env =
   add "float" float;
   add "string" string;
   add "u" (fun_ [string] string);
+
   add "null" null;
 
   (*-------------------------------------------------------------------*)

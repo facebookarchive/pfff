@@ -323,9 +323,10 @@ end
 let rec infer_type_definition env str =
   match () with
   | _ when Classes.mem env str && not (GEnv.mem_class env str) ->
-        class_id env str
+      class_id env str
   | _ when Functions.mem env str && not (GEnv.mem_fun env str) ->
       func_id env str
+  | _ when SSet.mem ("^Fun:" ^ str) !(env.builtins) -> ()
   | _ ->
       if env.strict
       then failwith ("infer_type_definition, unknown def: " ^ str)
@@ -465,6 +466,7 @@ and expr_ env lv = function
 
       | _ when s.[0] = '$' || Env.mem env s ->
           Env.get env s
+      (* this covers functions but also builtin constants such as null *)
       | _ when GEnv.mem_fun env s -> GEnv.get_fun env s
       | _ when GEnv.mem_class env s -> GEnv.get_class env s
       | _ when Classes.mem env s || Functions.mem env s ->

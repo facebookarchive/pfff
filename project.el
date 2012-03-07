@@ -670,7 +670,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 8
+     (case 9
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
@@ -680,6 +680,7 @@
        (6 "abstract")
        (7 "light")
        (8 "-ia_php /home/pad/pfff/tests/php/ia/foo.php 6")
+       (9 "-type_php /home/pad/pfff/tests/php/typing/null.php")
        )
      ))
    )

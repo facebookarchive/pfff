@@ -36,7 +36,7 @@ type t =
   and prim_ty =
     (* A set of static strings *)
     | Tsstring of SSet.t
-    (* Any abstract type, e.g. int, bool, string, etc. *)
+    (* Any abstract type, e.g. int, bool, string, etc. but also null *)
     | Tabstr of string
     (* An enum of integers, class MyEnum { static const XX = 0; } *)
     | Tienum of SSet.t
@@ -71,9 +71,14 @@ type code_database = {
 type env = {
     db: code_database;
 
-    builtins: SSet.t ref;
     (* The graph of dependencies *)
     graph: Graph.t;
+
+    (* less: this is just used to remember the builtins and
+     * not print them when we list all the infered types. Could
+     * be removed.
+     *)
+    builtins: SSet.t ref;
 
     (* The local variables environment *)
     env: t SMap.t ref;
@@ -81,6 +86,7 @@ type env = {
      * information for functions and classes. The "^Class:", "^Function:"
      * and "^Global:" prefixes are (ab)used for "namespace" (ugly, abusing
      * strings again).
+     * Builtin constants such as 'null' are stored here as functions.
      *)
     genv: t SMap.t ref;
 
