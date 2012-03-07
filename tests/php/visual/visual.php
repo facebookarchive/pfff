@@ -1,6 +1,5 @@
 <?php
 
-
 function string_use() {
   $a = "<html> is bad in string </html>";
   $xhp = <this-is-good>$a</this-is-good>;
