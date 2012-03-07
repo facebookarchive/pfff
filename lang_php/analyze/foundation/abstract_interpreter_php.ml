@@ -445,25 +445,14 @@ and expr_ env heap x =
   | Call (e, el) ->
       let heap, v = expr env heap e in
       call env heap v el
-  | Xhp x ->
-      let heap = xml env heap x in
-      heap, Vabstr Txhp
 
-  | New (e, el) ->
-      let c = get_class env heap e in
-      let heap = lazy_class env heap c in
-      (* *myobj* = c::*BUILD*(el);
-       * *myobj->__construct(el);
-       *)
-      let stl = [
-        Expr (Assign (None, Id (w "*myobj*"),
-                     Call (Class_get (Id (w c), Id (w "*BUILD*")), el)));
-        Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
-      ] in
-      let heap = stmtl env heap stl in
-      let heap, _, v = Var.get env heap "*myobj*" in
-      Var.unset env "*myobj*";
-      heap, v
+  | New (c, el) ->
+      new_ env heap c el
+
+  | Xhp x ->
+      let heap, v = xml env heap x in
+      heap, if !Taint.taint_mode then Vabstr Txhp else v
+
   | InstanceOf (e1, e2) ->
       let heap, _ = expr env heap e1 in
       let heap, _ = expr env heap e2 in
@@ -896,6 +885,22 @@ and parameters env heap l1 l2 =
       let heap, _ = assign env heap true lv v in
       parameters env heap rl rl2
 
+and new_ env heap c el =
+  let c = get_class env heap c in
+  let heap = lazy_class env heap c in
+  (* *myobj* = c::*BUILD*(el);
+   * *myobj->__construct(el);
+   *)
+  let stl = [
+    Expr (Assign (None, Id (w "*myobj*"),
+                 Call (Class_get (Id (w c), Id (w "*BUILD*")), el)));
+    Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
+  ] in
+  let heap = stmtl env heap stl in
+  let heap, _, v = Var.get env heap "*myobj*" in
+  Var.unset env "*myobj*";
+  heap, v
+
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
@@ -906,7 +911,10 @@ and xhp env heap x =
   | XhpExpr e ->
       let heap, _ = expr env heap e in
       heap
-  | XhpXml x -> xml env heap x
+  | XhpXml x -> 
+      (* todo: should set the children field of the enclosing xhp? *)
+      let heap, _v = xml env heap x in
+      heap
 
 and xhp_attr env heap x =
   match x with
@@ -924,7 +932,9 @@ and xml env heap x =
     xhp_attr env heap x
   ) heap x.xml_attrs in
   let heap = List.fold_left (xhp env) heap x.xml_body in
-  heap
+  (* todo? args = ? *)
+  let args = [] in
+  new_ env heap (Id (A.string_of_xhp_tag x.xml_tag, None)) args
 
 and encaps env heap x = expr env heap x
 

@@ -24,6 +24,9 @@ open Common
 
 type node =
   | Function of string
+  (* xhp classes do not have the : prefix, so x:frag::foo for calling
+   * foo method on the x:frag XHP class
+   *)
   | Method of string * string
   | File of Common.filename
   (* used to simplify code to provoke the call to toplevel functions *)
