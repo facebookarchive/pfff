@@ -17,6 +17,10 @@ match () with
  | _ when X2 -> 
  | _ when X3 -> 
 
+*** use regexps, not complex String.sub/String.length expressions
+
+*** use Common.profile_code(), not printf and manual Sys.time()
+
 *** bad example of style: julien's original code
 
 huge files
