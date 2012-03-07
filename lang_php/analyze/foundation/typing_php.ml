@@ -888,13 +888,13 @@ and cheat_method env parent this m =
 (*****************************************************************************)
 
 let rec infer_using_topological_sort_dependencies env =
-  let l = Ast_php_simple_toposort.TopoSort.sort env.graph in
+  let l = Dependencies_toposort_php.TopoSort.sort env.graph in
   List.iter (infer_type_definition env) l;
   ()
 
 let rec infer_using_topological_sort_dependencies_and_save_typingbin env =
   Printf.printf "Topological sort:  "; flush stdout;
-  let l = Ast_php_simple_toposort.TopoSort.sort env.graph in
+  let l = Dependencies_toposort_php.TopoSort.sort env.graph in
   Printf.printf "DONE\n"; flush stdout;
   env.total := List.length l;
   List.iter (infer_type_definition env) l;

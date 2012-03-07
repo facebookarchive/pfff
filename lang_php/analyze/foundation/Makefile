@@ -14,8 +14,7 @@ SRC= flag_analyze_php.ml \
      func_php.ml class_php.ml define_php.ml include_require_php.ml  \
      lib_analyze_php.ml \
 # used to be in ast_simple/
-SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml \
-      ast_php_simple_toposort.ml
+SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml
 #note: tools/phpmanual_xml.ml is related to builtins_php.ml
 SRC+= defs_uses_php.ml \
       builtins_php.ml \
@@ -26,8 +25,11 @@ SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
       tainting_fake_php.ml tracing_php.ml abstract_interpreter_php.ml \
       callgraph_php_build.ml
-SRC+= env_typing_php.ml typing_helpers_php.ml\
-      builtins_typed_php.ml typing_php.ml
+# used to be in facebook/static_analysis/
+SRC+= dependencies_toposort_php.ml \
+      env_typing_php.ml typing_helpers_php.ml\
+      builtins_typed_php.ml \
+      typing_php.ml
 SRC+= database_php.ml database_juju_php.ml
 # used to be in analyze/
 SRC+= tags_php.ml normalize_php.ml \

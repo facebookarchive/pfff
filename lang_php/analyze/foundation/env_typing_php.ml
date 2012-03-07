@@ -12,9 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
-module Topo = Ast_php_simple_toposort
-module Graph = Ast_php_simple_toposort.Graph
+module Graph = Dependencies_toposort_php.Graph
 
 module ISet = Set.Make(Int)
 module IMap = Map.Make(Int)
