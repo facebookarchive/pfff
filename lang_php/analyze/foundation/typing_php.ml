@@ -43,9 +43,9 @@ module Ent = Database_code
  *  }
  *  is represented as
  *  Tclosed (SSet('A'), SMap(
- *    'g': function unit -> unit
+ *    'f': function unit -> unit
  *    '__obj': SMap (
- *      'f' => function unit -> unit
+ *      'g' => function unit -> unit
  *    )
  *  )
  * 
@@ -320,31 +320,18 @@ module Collect = struct
 end
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Algorithm *)
 (*****************************************************************************)
 
-let rec infer_using_topological_sort_dependencies env =
-  Printf.printf "Topological sort:  "; flush stdout;
-  let l = TopoSort.sort env.graph in
-  Printf.printf "DONE\n"; flush stdout;
-  env.total := List.length l;
-  List.iter (infer_type_definition env) l;
-(*  Classes.iter (class_def env);
-  Functions.iter (func_def env); *)
-  if env.debug then Print2.penv env;
-  let oc = open_out "typing_env.bin" in
-  Printf.printf "Saving environment (typing_env.bin): "; flush stdout;
-  Collect.run env;
-  GEnv.save env oc;
-  close_out oc;
-  Printf.printf "DONE\n"
-
-and infer_type_definition env x =
-  if Classes.mem env x && not (GEnv.mem_class env x)
-  then (class_id env x);
-  if Functions.mem env x && not (GEnv.mem_fun env x)
-  then (func_id env x)
-  else ()
+let rec infer_type_definition env str =
+  match () with
+  | _ when Classes.mem env str && not (GEnv.mem_class env str) ->
+        class_id env str
+  | _ when Functions.mem env str && not (GEnv.mem_fun env str) ->
+      func_id env str
+  | _ ->
+      if env.strict
+      then failwith ("infer_type_definition, unknown def: " ^ str)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -478,12 +465,11 @@ and expr_ env lv = function
             env.show := Slocal (get_marked_id env s, locals)
           else env.show := Sglobal (get_marked_id env s);
           any
+
       | _ when s.[0] = '$' || Env.mem env s ->
           Env.get env s
-      | _ when GEnv.mem_fun env s ->
-          GEnv.get_fun env s
-      | _ when GEnv.mem_class env s ->
-          GEnv.get_class env s
+      | _ when GEnv.mem_fun env s -> GEnv.get_fun env s
+      | _ when GEnv.mem_class env s -> GEnv.get_class env s
       | _ when Classes.mem env s || Functions.mem env s ->
           infer_type_definition env s; 
           expr env (Id (s, tok))
@@ -503,6 +489,7 @@ and expr_ env lv = function
       expr env (Array_get (e, Some (String s)))
   | Array_get (Id (s,_), Some (String x))
       when Hashtbl.mem Builtins.super_globals s ->
+
       let marked = env.auto_complete && has_marker env x in
       let t1 = GEnv.get_global env s in
       if marked then (env.show := Sauto_complete (x, t1); any) else
@@ -510,6 +497,7 @@ and expr_ env lv = function
       let t2 = srecord (x, v) in
       let _ = Type.unify env t1 t2 in
       Instantiate.approx env ISet.empty v
+
   | Array_get (e, Some (String s))->
       let marked = env.auto_complete && has_marker env s in
       let t1 = expr env e in
@@ -518,6 +506,7 @@ and expr_ env lv = function
       let t2 = srecord (s, v) in
       let _ = Type.unify env t1 t2 in
       v
+
   | Call (Id (("idx" | "edx" | "adx" | "sdx"),_), (e :: k :: r)) ->
       let e = expr env (Array_get (e, Some k)) in
       (match r with
@@ -624,14 +613,6 @@ and encaps env e =
   let t = expr env e in
   ignore (Type.unify env t string)
 
-and ptype env = function
-  | Ast_php.BoolTy -> bool
-  | Ast_php.IntTy -> int
-  | Ast_php.DoubleTy -> float
-  | Ast_php.StringTy -> string
-  | Ast_php.ArrayTy -> Tsum [Trecord SMap.empty]
-  | Ast_php.ObjectTy -> Tsum [Tobject SMap.empty]
-
 and array_value env t = function
   | Aval e ->
       let t' = array (int, expr env e) in
@@ -643,10 +624,18 @@ and array_value env t = function
       let t' = array (expr env e1, expr env e2) in
       Type.unify env t t'
 
+
+and ptype env = function
+  | Ast_php.BoolTy -> bool
+  | Ast_php.IntTy -> int
+  | Ast_php.DoubleTy -> float
+  | Ast_php.StringTy -> string
+  | Ast_php.ArrayTy -> Tsum [Trecord SMap.empty]
+  | Ast_php.ObjectTy -> Tsum [Tobject SMap.empty]
+
 and binaryOp env t1 t2 = function
   | Ast_php.Arith _ ->
-      let t = Type.unify env t1 t2 in
-      t
+      Type.unify env t1 t2
   | Ast_php.Logical lop ->
       logicalOp env t1 t2 lop;
       bool
@@ -888,6 +877,7 @@ and method_def static env acc m =
   env.env := env_cpy;
   SMap.add (Ast.unwrap m.m_name) f acc
 
+(* ??? *)
 and cheat_method env parent this m =
   match m with
   | Tsum [Tfun (x, Tsum [Tclosed (s, _)])] when SSet.mem parent s ->
@@ -895,3 +885,26 @@ and cheat_method env parent this m =
       let v = Type.unify env v this in
       Tsum [Tfun (x, v)]
   | x -> x
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let rec infer_using_topological_sort_dependencies env =
+  let l = TopoSort.sort env.graph in
+  List.iter (infer_type_definition env) l;
+  ()
+
+let rec infer_using_topological_sort_dependencies_and_save_typingbin env =
+  Printf.printf "Topological sort:  "; flush stdout;
+  let l = TopoSort.sort env.graph in
+  Printf.printf "DONE\n"; flush stdout;
+  env.total := List.length l;
+  List.iter (infer_type_definition env) l;
+  if env.debug then Print2.penv env;
+  let oc = open_out "typing_env.bin" in
+  Printf.printf "Saving environment (typing_env.bin): "; flush stdout;
+  Collect.run env;
+  GEnv.save env oc;
+  close_out oc;
+  Printf.printf "DONE\n"

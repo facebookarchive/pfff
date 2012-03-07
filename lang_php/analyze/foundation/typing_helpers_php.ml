@@ -336,7 +336,8 @@ module Print2 = struct
         then Pp.print penv "(...)"
         else
           let l = SMap.fold (fun x y l -> (x, y) :: l) m [] in
-          Pp.list penv (fun penv -> print_field env ": " penv stack depth) "(" l ";" ")";
+          Pp.list penv (fun penv -> print_field env ": " penv stack depth) 
+            "(" l ";" ")"
     | Tclosed (s, _) ->
         if SSet.cardinal s = 1 then Pp.print penv (SSet.choose s) else
         (match FindCommonAncestor.go env s with
