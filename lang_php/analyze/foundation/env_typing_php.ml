@@ -65,10 +65,13 @@ type t =
      *)
     | Tclosed of SSet.t * t SMap.t
 
-type env = {
-    (* todo: use db *)
+(* todo: reuse Env_interpreter_php.code_database? *)
+type code_database = {
     classes: Ast_php_simple.class_def Common.cached SMap.t ref;
     funcs: Ast_php_simple.func_def Common.cached SMap.t ref;
+}
+type env = {
+    db: code_database;
 
     builtins: SSet.t ref;
     (* The graph of dependencies *)
@@ -158,9 +161,10 @@ let make_env () = {
 
   depth   = 0;
   show   = ref Snone;
-
-  classes = ref SMap.empty;
-  funcs = ref SMap.empty;
+  db = {
+    classes = ref SMap.empty;
+    funcs = ref SMap.empty;
+  };
 
   debug = false;
   infer_types = false;

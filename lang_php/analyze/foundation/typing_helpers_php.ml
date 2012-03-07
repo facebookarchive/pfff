@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Ast_php_simple
 open Env_typing_php
 
@@ -25,11 +24,6 @@ module Pp = Pp2
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(*****************************************************************************)
-(* Modules *)
-(*****************************************************************************)
-
 let has_marker env s =
   let marker_size = String.length env.marker in
   String.length s >= marker_size &&
@@ -40,6 +34,10 @@ let get_marked_id env s =
   let s = String.sub s 0 (String.length s - marker_size) in
   s
 
+(*****************************************************************************)
+(* Modules *)
+(*****************************************************************************)
+
 module Classes: sig
   val add: env -> string -> Ast_php_simple.class_def -> unit
   val get: env -> string -> Ast_php_simple.class_def
@@ -49,17 +47,17 @@ module Classes: sig
 end = struct
 
   let add env n x =
-    env.classes := SMap.add n (Common.serial x) !(env.classes)
+    env.db.classes := SMap.add n (Common.serial x) !(env.db.classes)
 
   let get env n =
-    let x = SMap.find n !(env.classes) in
+    let x = SMap.find n !(env.db.classes) in
     Common.unserial x
 
   let remove env x =
-    env.classes := SMap.remove x !(env.classes)
+    env.db.classes := SMap.remove x !(env.db.classes)
 
-  let mem env n = SMap.mem n !(env.classes)
-  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.classes)
+  let mem env n = SMap.mem n !(env.db.classes)
+  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.db.classes)
 end
 
 module Functions: sig
@@ -71,17 +69,17 @@ module Functions: sig
 end = struct
 
   let add env n x =
-    env.funcs := SMap.add n (Common.serial x) !(env.funcs)
+    env.db.funcs := SMap.add n (Common.serial x) !(env.db.funcs)
 
   let get env n =
-    let x = SMap.find n !(env.funcs) in
+    let x = SMap.find n !(env.db.funcs) in
     Common.unserial x
 
   let remove env x =
-    env.funcs := SMap.remove x !(env.funcs)
+    env.db.funcs := SMap.remove x !(env.db.funcs)
 
-  let mem env n = SMap.mem n !(env.funcs)
-  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.funcs)
+  let mem env n = SMap.mem n !(env.db.funcs)
+  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.db.funcs)
 
 
 end
