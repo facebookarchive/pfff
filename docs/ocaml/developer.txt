@@ -29,6 +29,8 @@ put old code in comment to test stuff, or some && false for
 
 no unit tests, no tests, no examples
 
+many dead functions
+
 *** bad example of style: ocamlnet/netstring/nethtml.ml.
 
 bad nested functions,
