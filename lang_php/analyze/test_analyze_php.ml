@@ -9,6 +9,16 @@ module V = Visitor_php
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Simple AST *)
+(*****************************************************************************)
+let test_dump_simple file =
+  let ast = Parse_php.parse_program file in
+  let ast = Ast_php_simple_build.program ast in
+  let v = Meta_ast_php_simple.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+(*****************************************************************************)
 (* Scope annotations *)
 (*****************************************************************************)
 
@@ -36,6 +46,8 @@ let test_scope_php file =
 (* todo: use julien's stuff *)
 let test_type_php file =
   raise Todo
+
+
 (*
   let env = ref (Hashtbl.create 101) in
   let asts = asts +> List.map (fun ast ->Typing_php.annotate_toplevel env ast)
@@ -235,17 +247,6 @@ let test_visitor_pil file =
 *)
 
 (*****************************************************************************)
-(* Simple AST *)
-(*****************************************************************************)
-
-let test_dump_simple file =
-  let ast = Parse_php.parse_program file in
-  let ast = Ast_php_simple_build.program ast in
-  let v = Meta_ast_php_simple.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
-
-(*****************************************************************************)
 (* Abstract interpreter *)
 (*****************************************************************************)
 module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
@@ -268,6 +269,27 @@ let test_abstract_interpreter file depth =
   let _heap = 
     Interp.program env Env_interpreter_php.empty_heap ast in
   ()
+
+(*****************************************************************************)
+(* Callgraph *)
+(*****************************************************************************)
+module Db = Database_juju_php
+module CG = Callgraph_php2
+
+let test_callgraph_php file =
+  let db = 
+    Db.code_database_of_juju_db  (Db.juju_db_of_files [file]) in
+  let g = Callgraph_php_build.create_graph
+    ~show_progress:false ~strict:true 
+    [file] db
+  in
+  g +> Map_poly.iter (fun n1 v ->
+    v +> Set_poly.iter (fun n2 ->
+      pr (spf "%s --> %s"
+             (CG.string_of_node n1) (CG.string_of_node n2));
+    )
+  )
+
 
 (*****************************************************************************)
 (* Includes *)
@@ -321,7 +343,6 @@ let test_unsugar_php file =
   let ast = Unsugar_php.unsugar_self_parent_program ast in
   let s = Export_ast_php.ml_pattern_string_of_program ast in
   pr2 s
-
 
 (*****************************************************************************)
 (* External tools cooperation *)
@@ -420,13 +441,13 @@ let test_php_serialize file =
 
 (* Note that other files in this directory define some cmdline actions:
  *  - database_php_build.ml
- *
  *)
-
 let actions () = [
+  "-dump_php_simple", "   <file>",
+  Common.mk_action_1_arg test_dump_simple;
+
   "-scope_php", " <file>",
   Common.mk_action_1_arg test_scope_php;
-
   "-type_php", " <file>",
   Common.mk_action_1_arg test_type_php;
 
@@ -437,28 +458,12 @@ let actions () = [
     "-cyclomatic_php", " <file>",
     Common.mk_action_1_arg test_cyclomatic_php;
   (*e: test_analyze_php actions *)
-
-  (* todo: adapt to PIL *)
-  "-dfg_php",  " <file>",
-    Common.mk_action_1_arg test_dfg_php;
-
-  "-dump_php_simple", "   <file>",
-  Common.mk_action_1_arg test_dump_simple;
-  "-test_ia", " <file> <depth",
-  Common.mk_action_2_arg (fun file n ->
-    test_abstract_interpreter file (int_of_string n)
-  );
-
-  "-stat_php", " <files_or_dirs>",
-  Common.mk_action_n_arg test_stat_php;
-
-  "-include_require_static", " <file>",
-  Common.mk_action_1_arg test_include_require;
-
-  "-unsugar_php", " <file>",
-  Common.mk_action_1_arg test_unsugar_php;
+  "-callgraph_php", "   <file>",
+  Common.mk_action_1_arg test_callgraph_php;
 
 (*
+  "-dfg_php",  " <file>",
+    Common.mk_action_1_arg test_dfg_php;
     "-test_pil",  " <file>",
     Common.mk_action_1_arg test_pil;
     "-test_pretty_print_pil", " <file>",
@@ -471,22 +476,31 @@ let actions () = [
     Common.mk_action_1_arg test_visitor_pil;
 *)
 
+  "-ia_php", " <file> <depth>",
+  Common.mk_action_2_arg (fun file n ->
+    test_abstract_interpreter file (int_of_string n)
+  );
+
+  "-stat_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_stat_php;
+
+  "-include_require_static", " <file>",
+  Common.mk_action_1_arg test_include_require;
+  "-unsugar_php", " <file>",
+  Common.mk_action_1_arg test_unsugar_php;
+
   "-php_xdebug", " <file>",
   Common.mk_action_1_arg test_php_xdebug;
   "-type_xdebug_php", " <file>",
   Common.mk_action_1_arg test_type_xdebug_php;
-
+  "-parse_xdebug_dumpfile", " <dumpfile>",
+  Common.mk_action_1_arg test_xdebug_dumpfile;
+  "-parse_phpunit_json", " <jsonfile>",
+  Common.mk_action_1_arg test_parse_phpunit_json;
   "-test_phpdoc", " <dir>",
   Common.mk_action_1_arg test_phpdoc;
   "-test_php_serialize", " <file>",
   Common.mk_action_1_arg test_php_serialize;
-
-  "-parse_xdebug_dumpfile", " <dumpfile>",
-  Common.mk_action_1_arg test_xdebug_dumpfile;
-
-  "-parse_phpunit_json", " <jsonfile>",
-  Common.mk_action_1_arg test_parse_phpunit_json;
-
 ]
 
 (*e: test_analyze_php.ml *)

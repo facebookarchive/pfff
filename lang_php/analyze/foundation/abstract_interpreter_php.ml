@@ -741,7 +741,7 @@ and call_fun f env heap el =
     let heap, v = Ptr.new_ heap in
     let heap, _ = assign env heap true v Vany in
     heap, v
-  else
+  else begin
     let env = { env with vars = ref !(env.vars); cfun = unw f.f_name } in
     let heap = parameters env heap f.f_params el in
     let vars = fun_nspace f !(env.vars) in
@@ -754,6 +754,7 @@ and call_fun f env heap el =
     if Taint.GetTaint.value heap r = None
     then env.safe := SMap.add (unw f.f_name) r !(env.safe);
     heap, r
+  end
 
 and call env heap v el =
   match v with
