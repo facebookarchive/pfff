@@ -249,6 +249,7 @@ let test_dump_simple file =
 (* Abstract interpreter *)
 (*****************************************************************************)
 module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
+
 (* e.g. ./pfff_fb -test_ia tests/xss/abint.php *)
 let test_abstract_interpreter file =
   let ast = 
@@ -446,6 +447,15 @@ let actions () = [
   "-test_ia", " <file>",
   Common.mk_action_1_arg test_abstract_interpreter;
 
+  "-stat_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_stat_php;
+
+  "-include_require_static", " <file>",
+  Common.mk_action_1_arg test_include_require;
+
+  "-unsugar_php", " <file>",
+  Common.mk_action_1_arg test_unsugar_php;
+
 (*
     "-test_pil",  " <file>",
     Common.mk_action_1_arg test_pil;
@@ -458,7 +468,6 @@ let actions () = [
     "-visitor_pil", " <file",
     Common.mk_action_1_arg test_visitor_pil;
 *)
-
 
   "-php_xdebug", " <file>",
   Common.mk_action_1_arg test_php_xdebug;
@@ -476,13 +485,6 @@ let actions () = [
   "-parse_phpunit_json", " <jsonfile>",
   Common.mk_action_1_arg test_parse_phpunit_json;
 
-  "-include_require_static", " <file>",
-  Common.mk_action_1_arg test_include_require;
-
-  "-stat_php", " <files_or_dirs>",
-  Common.mk_action_n_arg test_stat_php;
-  "-unsugar_php", " <file>",
-  Common.mk_action_1_arg test_unsugar_php;
 ]
 
 (*e: test_analyze_php.ml *)
