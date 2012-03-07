@@ -79,7 +79,11 @@ type env = {
 
     (* The local variables environment *)
     env: t SMap.t ref;
-    (* The global variable envirnoment *)
+    (* The global variable environment. This also contains typing
+     * information for functions and classes. The "^Class:", "^Function:"
+     * and "^Global:" prefixes are (ab)used for "namespace" (ugly, abusing
+     * strings again).
+     *)
     genv: t SMap.t ref;
 
     (* The typing environment (pad: mapping type variables to types?) *)

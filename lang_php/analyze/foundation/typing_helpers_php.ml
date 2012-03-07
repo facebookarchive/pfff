@@ -91,13 +91,9 @@ end
 (* TEnv, GEnv, Subst, Env *)
 (*****************************************************************************)
 
-module TEnv = struct
-  let get env x = try IMap.find x !(env.tenv) with Not_found -> Tsum []
-  let set env x y = env.tenv := IMap.add x y !(env.tenv)
-  let mem env x = IMap.mem x !(env.tenv)
-end
-
-
+(* global variables, functions and classes.
+ * todo: constants?
+ *)
 module GEnv: sig
 
   val get_class: env -> string -> t
@@ -117,13 +113,15 @@ module GEnv: sig
   val iter: env -> (string -> t -> unit) -> unit
 
   val save: env -> out_channel -> unit
-  val load: in_channel -> (string -> unit) -> env
+  val load: in_channel -> env
 
 end = struct
 
   let get env str =
     try SMap.find str !(env.genv)
-    with Not_found -> Tvar (fresh())
+    with Not_found ->
+      (* todo: error when in strict mode? *)
+      Tvar (fresh())
 
   let set env x t = env.genv := SMap.add x t !(env.genv)
   let unset env x = env.genv := SMap.remove x !(env.genv)
@@ -144,23 +142,21 @@ end = struct
   let set_class env x t = set env ("^Class:"^x) t
   let set_fun env x t = set env ("^Fun:"^x) t
 
+  let remove_class env x = unset env ("^Class:"^x)
+  let remove_fun env x = unset env ("^Fun:"^x)
+
   let mem_class env x = mem env ("^Class:"^x)
   let mem_fun env x = mem env ("^Fun:"^x)
 
   let iter env f = SMap.iter f !(env.genv)
+
   let save env oc =
     Marshal.to_channel oc env []
-
-  let load ic o =
-    let env = Marshal.from_channel ic in
-    env
-
-  let remove env x = env.genv := SMap.remove x !(env.genv)
-  let remove_class env x = remove env ("^Class:"^x)
-  let remove_fun env x = remove env ("^Fun:"^x)
-
+  let load ic =
+    Marshal.from_channel ic
 end
 
+(* local variables *)
 module Env = struct
   let set env x t = env.env := SMap.add x t !(env.env)
   let unset env x = env.env := SMap.remove x !(env.env)
@@ -171,6 +167,12 @@ module Env = struct
       let n = Tvar (fresh()) in
       set env x n;
       n
+end
+
+module TEnv = struct
+  let get env x = try IMap.find x !(env.tenv) with Not_found -> Tsum []
+  let set env x y = env.tenv := IMap.add x y !(env.tenv)
+  let mem env x = IMap.mem x !(env.tenv)
 end
 
 module Subst = struct

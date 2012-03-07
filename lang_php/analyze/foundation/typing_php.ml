@@ -67,6 +67,22 @@ exception UnknownEntity of string
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Preparing work *)
+(*****************************************************************************)
+let add_defs_code_database_and_update_dependencies env stl =
+  List.iter (function
+  | ClassDef cd ->
+      Graph.class_def env.graph cd;
+      Classes.add env (A.unwrap cd.c_name) cd
+  | FuncDef fd ->
+      Graph.func_def env.graph fd;
+      Functions.add env (A.unwrap fd.f_name) fd
+  | ConstantDef _ ->
+      raise Common.Todo
+  | _ -> ()
+  ) stl
+
+(*****************************************************************************)
 (* Unification *)
 (*****************************************************************************)
 
@@ -307,12 +323,12 @@ end
 (* Main entry point *)
 (*****************************************************************************)
 
-let rec program env =
+let rec infer_using_topological_sort_dependencies env =
   Printf.printf "Topological sort:  "; flush stdout;
   let l = TopoSort.sort env.graph in
   Printf.printf "DONE\n"; flush stdout;
   env.total := List.length l;
-  List.iter (type_def env) l;
+  List.iter (infer_type_definition env) l;
 (*  Classes.iter (class_def env);
   Functions.iter (func_def env); *)
   if env.debug then Print2.penv env;
@@ -323,25 +339,12 @@ let rec program env =
   close_out oc;
   Printf.printf "DONE\n"
 
-and type_def env x =
+and infer_type_definition env x =
   if Classes.mem env x && not (GEnv.mem_class env x)
   then (class_id env x);
   if Functions.mem env x && not (GEnv.mem_fun env x)
   then (func_id env x)
   else ()
-
-and decls env stl =
-  List.iter (function
-  | ClassDef cd ->
-      Graph.class_def env.graph cd;
-      Classes.add env (A.unwrap cd.c_name) cd
-  | FuncDef fd ->
-      Graph.func_def env.graph fd;
-      Functions.add env (A.unwrap fd.f_name) fd
-  | ConstantDef _ ->
-      raise Common.Todo
-  | _ -> ()
-  ) stl
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -482,7 +485,8 @@ and expr_ env lv = function
       | _ when GEnv.mem_class env s ->
           GEnv.get_class env s
       | _ when Classes.mem env s || Functions.mem env s ->
-          (type_def env s; expr env (Id (s, tok)))
+          infer_type_definition env s; 
+          expr env (Id (s, tok))
       | _ ->
           if env.strict
           then raise (UnknownEntity s);
@@ -702,7 +706,8 @@ and func_def env fd =
   let return = Tvar ret in
   let f = Tsum [Tfun (pl, return)] in
   GEnv.set_fun env (Ast.unwrap fd.f_name) f;
-  List.iter (type_def env) (Graph.get_deps !(env.graph) (Ast.unwrap fd.f_name));
+  List.iter (infer_type_definition env) 
+    (Graph.get_deps !(env.graph) (Ast.unwrap fd.f_name));
   Env.set env "$;return" return;
   stmtl env fd.f_body;
   make_return env ret;

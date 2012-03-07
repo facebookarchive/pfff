@@ -4,8 +4,9 @@ exception UnknownEntity of string
 (* will modify env by side effects, for instance env.genv will
  * contain the infered types for all functions and classes.
  *)
-val program:
+val infer_using_topological_sort_dependencies:
   Env_typing_php.env -> unit
+
 val stmtl:
   Env_typing_php.env -> Ast_php_simple.program -> unit
 (* used by unit testing *)
@@ -15,8 +16,10 @@ val class_def:
   Env_typing_php.env -> Ast_php_simple.class_def -> unit
 
 
-(* adding toplevel functions/classes in code database in env *)
-val decls: 
+(* adding toplevel functions/classes in code database in env
+ * and adjust the graph of dependencies.
+ *)
+val add_defs_code_database_and_update_dependencies: 
   Env_typing_php.env -> Ast_php_simple.program -> unit
 
 module Type : sig

@@ -36,7 +36,7 @@ let get_signature file =
   } in
   Builtins.make env;
 
-  Infer.decls env ast;
+  Infer.add_defs_code_database_and_update_dependencies env ast;
 
   match Common.list_last ast with
   | Ast.FuncDef fd ->
