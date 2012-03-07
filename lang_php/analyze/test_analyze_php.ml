@@ -27,42 +27,37 @@ let test_dump_simple file =
  * different scopes.
  *)
 let test_scope_php file =
-  let asts = Parse_php.parse_program file in
+  let ast = Parse_php.parse_program file in
 
-  (* Annotating variables requires actually a code database because
-   * functions can take variables by reference without any annotation
-   * at the call site (ugly language)
+  (* Annotating variables requires a code database because
+   * functions can take variables by reference without any
+   * annotation at the call site (ugly language). Here
+   * we pass an empty code database though.
    *)
   let entity_finder = None in
-  Check_variables_php.check_and_annotate_program entity_finder asts;
+  Check_variables_php.check_and_annotate_program entity_finder ast;
   Export_ast_php.show_expr_info := true;
-  pr (Export_ast_php.sexp_string_of_program asts);
+  pr (Export_ast_php.sexp_string_of_program ast);
   ()
 
 (*****************************************************************************)
 (* Typing *)
 (*****************************************************************************)
 
-(* todo: use julien's stuff *)
 let test_type_php file =
-  raise Todo
-
-
-(*
-  let env = ref (Hashtbl.create 101) in
-  let asts = asts +> List.map (fun ast ->Typing_php.annotate_toplevel env ast)
+  let ast = 
+    Parse_php.parse_program file +> Ast_php_simple_build.program 
   in
-  Export_ast_php.show_expr_info := true;
-  pr (Export_ast_php.sexp_string_of_program asts);
+  let env = { (Env_typing_php.make_env ()) with Env_typing_php.
+    verbose = false;
+    strict = true;
+  } in
+  Builtins_typed_php.make env;
+  Typing_php.add_defs_code_database_and_update_dependencies env ast;
+
+  Typing_php.infer_using_topological_sort_dependencies env;
+  Typing_helpers_php.Print2.penv env;
   ()
-*)
-(*
-  let asts = Parse_php.parse_program file in
-  asts +> List.iter (fun ast ->
-    let xs = Typing_weak_php.extract_fields_per_var ast in
-    pr2_gen xs
-  )
-*)
 
 (*****************************************************************************)
 (* CFG *)
@@ -311,7 +306,7 @@ let test_include_require file =
   ()
 
 (*****************************************************************************)
-(* Misc *)
+(* Stat *)
 (*****************************************************************************)
 
 let test_stat_php xs =
@@ -338,6 +333,10 @@ let test_stat_php xs =
   pr2_xxxxxxxxxxxxxxxxx();
   h#to_list +> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
   ()
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 let test_unsugar_php file = 
   let ast = Parse_php.parse_program file in
