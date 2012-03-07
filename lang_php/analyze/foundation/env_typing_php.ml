@@ -148,10 +148,6 @@ let fresh =
   let i = ref 0 in
   fun () -> incr i; !i
 
-let or_ l =
-  let l = List.sort (fun x y -> proj x - proj y) l in
-  Tsum l
-
 let make_env () = {
   env     = ref SMap.empty;
   genv    = ref SMap.empty;
