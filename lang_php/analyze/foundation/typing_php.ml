@@ -214,8 +214,8 @@ module Type = struct
     | [], l
     | l, [] -> l
     | x1 :: rl1, x2 :: rl2 ->
-        let c1 = proj x1 in
-        let c2 = proj x2 in
+        let c1 = Env_typing_php.proj x1 in
+        let c2 = Env_typing_php.proj x2 in
         let c = c1 - c2 in
         if c < 0
         then x1 :: unify_sum env rl1 l2

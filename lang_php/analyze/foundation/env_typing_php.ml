@@ -129,7 +129,10 @@ and show =
 (* Projection *)
 (*****************************************************************************)
 
-(* pad: ?? *)
+(* In a Tsum we want the different possibile types to be sorted so
+ * that unifying two Tsum and finding common stuff can be done quickly.
+ * Proj is used to give an order between types.
+ *)
 let rec proj = function
   | Tabstr ("int" | "bool" | "string" | "html") -> Hashtbl.hash "string"
   | Tabstr x -> Hashtbl.hash x

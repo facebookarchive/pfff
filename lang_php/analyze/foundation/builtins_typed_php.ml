@@ -14,6 +14,7 @@
  *)
 
 open Env_typing_php
+module Env = Env_typing_php
 module GEnv = Typing_helpers_php.GEnv
 
 (*****************************************************************************)
@@ -25,7 +26,7 @@ module GEnv = Typing_helpers_php.GEnv
 (*****************************************************************************)
 
 let or_ l =
-  let l = List.sort (fun x y -> proj x - proj y) l in
+  let l = List.sort (fun x y -> Env.proj x - Env.proj y) l in
   Tsum l
 
 (*****************************************************************************)
