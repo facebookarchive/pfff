@@ -250,10 +250,11 @@ and stmtl env heap stl = List.fold_left (stmt env) heap stl
 and stmt env heap x =
   match x with
   (* special keyword in the code to debug the abstract interpreter state *)
-  | Expr (Call (Id ("show",_), [e])) ->
+
+  | Expr (Call (Id (("show" | "var_dump"),_), [e])) ->
       let heap, v = expr env heap e in
-(*      Env.debug heap v; *)
-(*      Env.penv print_string env heap; *)
+      Env.print_locals_and_globals print_string env heap;
+      pr (Env.string_of_value heap v);
       heap
   | Expr (Call (Id ("checkpoint",_), [])) ->
       _checkpoint_heap := Some (heap, !(env.vars));
