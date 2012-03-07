@@ -15,14 +15,11 @@
 open Common
 
 open Ast_php_simple
-open Ast_php_simple_toposort
 module A = Ast_php_simple
 
 open Env_typing_php
 open Typing_helpers_php
-
 module Builtins = Builtins_typed_php
-module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -683,10 +680,10 @@ and func_id env fname =
       GEnv.set_fun env fname (Tvar (fresh()))
 
 and func_def env fd =
-  if not (GEnv.mem_fun env (Ast.unwrap fd.f_name)) && env.verbose then begin
+  if not (GEnv.mem_fun env (A.unwrap fd.f_name)) && env.verbose then begin
     incr env.count;
     pr (spf "Typing function(%d/%d)[%d]: %s" 
-           !(env.count) !(env.total) env.depth (Ast.unwrap fd.f_name)); 
+           !(env.count) !(env.total) env.depth (A.unwrap fd.f_name)); 
   end;
   Collect.collect env;
   let env = { env with env = ref SMap.empty } in
@@ -694,13 +691,13 @@ and func_def env fd =
   let ret = fresh() in
   let return = Tvar ret in
   let f = Tsum [Tfun (pl, return)] in
-  GEnv.set_fun env (Ast.unwrap fd.f_name) f;
+  GEnv.set_fun env (A.unwrap fd.f_name) f;
   List.iter (infer_type_definition env) 
-    (Graph.get_deps !(env.graph) (Ast.unwrap fd.f_name));
+    (Graph.get_deps !(env.graph) (A.unwrap fd.f_name));
   Env.set env "$;return" return;
   stmtl env fd.f_body;
   make_return env ret;
-  GEnv.set_fun env (Ast.unwrap fd.f_name) (Generalize.ty env ISet.empty f)
+  GEnv.set_fun env (A.unwrap fd.f_name) (Generalize.ty env ISet.empty f)
 
 and make_return env r =
   match TEnv.get env r with
@@ -722,8 +719,8 @@ and parameter env p =
   | None -> ()
   | Some e -> ignore (Type.unify env pval (expr env e))
   );
-  Env.set env (Ast.unwrap p.p_name) pval;
-  (Ast.unwrap p.p_name), pval
+  Env.set env (A.unwrap p.p_name) pval;
+  (A.unwrap p.p_name), pval
 
 (* ---------------------------------------------------------------------- *)
 (* Classes *)
@@ -752,8 +749,8 @@ and get_class env x =
   GEnv.get_class env x
 
 and class_def env c =
-  if GEnv.mem_class env (Ast.unwrap c.c_name) then () else begin
-  GEnv.set_class env (Ast.unwrap c.c_name) any;
+  if GEnv.mem_class env (A.unwrap c.c_name) then () else begin
+  GEnv.set_class env (A.unwrap c.c_name) any;
   Collect.collect env;
   let parent, parent_name =
     match c.c_extends with
@@ -761,7 +758,7 @@ and class_def env c =
     | _ -> Tvar (fresh()), "" in
   if env.verbose then begin
     incr env.count;
-    Printf.printf "Typing class(%d/%d)[%d]: %s\n" !(env.count) !(env.total) env.depth (Ast.unwrap c.c_name); flush stdout;
+    Printf.printf "Typing class(%d/%d)[%d]: %s\n" !(env.count) !(env.total) env.depth (A.unwrap c.c_name); flush stdout;
   end;
   let env = { env with env = ref SMap.empty } in
   let class_ = match parent with Tsum [Tobject o] -> o | _ -> SMap.empty in
@@ -782,10 +779,10 @@ and class_def env c =
   let obj = List.fold_left (class_vars false env) obj_parent c.c_variables in
   let obj = List.fold_left (method_decl false env) obj c.c_methods in
 
-  let this = Tsum [Tclosed (SSet.singleton (Ast.unwrap c.c_name), obj)] in
+  let this = Tsum [Tclosed (SSet.singleton (A.unwrap c.c_name), obj)] in
   let self = Type.unify env parent (Tsum [Tobject class_]) in
 
-  GEnv.set_class env (Ast.unwrap c.c_name) self;
+  GEnv.set_class env (A.unwrap c.c_name) self;
   Env.set env (special "self") self;
   Env.set env "$this" this;
   Env.set env (special "parent") (Tsum [Tobject obj_parent]);
@@ -811,7 +808,7 @@ and class_def env c =
 
 (*  let class_ = Generalize.ty env class_ in
   make_globals env; *)
-  GEnv.set_class env (Ast.unwrap c.c_name) class_
+  GEnv.set_class env (A.unwrap c.c_name) class_
   end
 
 and private_vars privates cv =
@@ -821,7 +818,7 @@ and private_vars privates cv =
 
 and private_methods privates m =
   if m.m_visibility = Private
-  then SSet.add (Ast.unwrap m.m_name) privates
+  then SSet.add (A.unwrap m.m_name) privates
   else privates
 
 and filter_privates privates obj =
@@ -834,8 +831,8 @@ and filter_privates privates obj =
 
 and constant_enum is_enum cname (ien, sen) (x, e) =
   match e with
-  | Int _ -> SSet.add (Ast.unwrap cname^"::"^x) ien, sen
-  | String _ -> ien, SSet.add (Ast.unwrap cname^"::"^x) sen
+  | Int _ -> SSet.add (A.unwrap cname^"::"^x) ien, sen
+  | String _ -> ien, SSet.add (A.unwrap cname^"::"^x) sen
   | _ -> ien, sen
 
 and constant is_enum env ien sen acc (x, e) =
@@ -860,7 +857,7 @@ and method_decl static env acc m =
   let pl = List.map (parameter env) m.m_params in
   let ret = fresh() in
   let f = afun pl (Tvar ret) in
-  SMap.add (Ast.unwrap m.m_name) f acc
+  SMap.add (A.unwrap m.m_name) f acc
 
 and method_def static env acc m =
   if m.m_static && not static then acc else
@@ -873,9 +870,9 @@ and method_def static env acc m =
   stmtl env m.m_body;
   make_return env ret;
   let f = afun pl (Env.get env "$;return") in
-  let _ = Type.unify env (SMap.find (Ast.unwrap m.m_name) acc) f in
+  let _ = Type.unify env (SMap.find (A.unwrap m.m_name) acc) f in
   env.env := env_cpy;
-  SMap.add (Ast.unwrap m.m_name) f acc
+  SMap.add (A.unwrap m.m_name) f acc
 
 (* ??? *)
 and cheat_method env parent this m =
@@ -891,13 +888,13 @@ and cheat_method env parent this m =
 (*****************************************************************************)
 
 let rec infer_using_topological_sort_dependencies env =
-  let l = TopoSort.sort env.graph in
+  let l = Ast_php_simple_toposort.TopoSort.sort env.graph in
   List.iter (infer_type_definition env) l;
   ()
 
 let rec infer_using_topological_sort_dependencies_and_save_typingbin env =
   Printf.printf "Topological sort:  "; flush stdout;
-  let l = TopoSort.sort env.graph in
+  let l = Ast_php_simple_toposort.TopoSort.sort env.graph in
   Printf.printf "DONE\n"; flush stdout;
   env.total := List.length l;
   List.iter (infer_type_definition env) l;
