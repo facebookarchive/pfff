@@ -477,6 +477,10 @@ let actions () = [
 *)
 
   "-ia_php", " <file> <depth>",
+  Common.mk_action_1_arg (fun file ->
+    test_abstract_interpreter file 6
+  );
+  "-ia_php_depth", " <file> <depth>",
   Common.mk_action_2_arg (fun file n ->
     test_abstract_interpreter file (int_of_string n)
   );
