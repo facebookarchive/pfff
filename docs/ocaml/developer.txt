@@ -1,10 +1,10 @@
 -*- org -*-
 
-have C-c C-t working to get type information under cursor
+Have C-c C-t working to get type information under cursor! It's really useful.
 
 ** style: 
 
-*** prefer match () ... when over nested elsif
+*** prefer 'match () ... when' over nested elsif
 
 if X1 then ...
 else if X2 then ...
@@ -18,6 +18,20 @@ match () with
  | _ when X3 -> 
 
 *** use regexps, not complex String.sub/String.length expressions
+
+*** do not use the same variable name if it has a different types
+
+It's ok to do
+ let heap = foo heap in
+ let heap = bar heap in
+ ...
+when you "thread" the same thing again and again.
+
+But don't do
+
+let x = int_expr() in
+let x = float_expr x in
+
 
 *** use Common.profile_code(), not printf and manual Sys.time()
 
@@ -83,6 +97,6 @@ unindented mutually recursive types. When have lots of type definitions,
  as it's the case usually with AST of languages, indent the types
  to convey grouping information.
 
-use less than 80 columns!
+use more than 80 columns!
 
 don't use TABS, use space, and indent 2 space, not 4 (and especially not 8!)
