@@ -9,7 +9,7 @@
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the file
  * license.txt for more details.
  *)
 open Common
@@ -26,7 +26,7 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 (*
  * Main types and data structures used by the PHP abstract interpreter:
- * The "environment".
+ * The "environment" and "heap".
  * 
  * In the abstract interpreter, all variables are pointers to pointers
  * of values. So with '$x = 42;' we got $x = &2{&1{42}}.
@@ -142,6 +142,11 @@ type value =
    * $x = &2{REF 1{Vobject (["foo" -> Vmethod (&2, [0x42-> (<foo closure>)])])}}
    *)
   | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
+  (* We would need a Vfun too if we were handling closures. But for
+   * regular function calls, we just handle 'Call (Id "...")' specially
+   * in the interpreter (but we don't for 'Call (Obj_get ...)', hence
+   * this intermediate Vmethod value above).
+   *)
 
   | Vobject of value SMap.t
 
