@@ -25,19 +25,27 @@ module SMap = Map.Make (String)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * In the abstract interpreter all variables are pointers to pointers
+ * Main types and data structures used by the PHP abstract interpreter:
+ * The "environment".
+ * 
+ * In the abstract interpreter, all variables are pointers to pointers
  * of values. So with '$x = 42;' we got $x = &2{&1{42}}.
  * In 'env.vars' we got "$x" = Vptr 2
  * and in the 'heap' we then got [2 -> Vptr 1; 1 -> Vint 42]
  * meaning that $x is a variable with address 2, where the content
  * of this cell is a pointer to address 1, where the content of
  * this cell is the value 42. This is consistent with how Zend
- * PHP manages values and variables at runtime (the "zval").
+ * manages values and variables at runtime (the "zval").
+ * 
+ * References:
+ *  - todo: there was a doc about zvalues
+ *  - todo: POPL paper on PHP copy-on-write semantic?
  *
  * Why this model? Why not having variables contain directly values,
- * that is $x = {42} Without a Vptr? Because dealing with lvalues in the
- * interpreter would be then tedious. With $x = array(1,2,3); 
- * how would you handle '$x[0] = 1;' without any Vptr and a heap?
+ * that is $x = {42} without any Vptr? Because dealing with lvalues in the
+ * interpreter would then be tedious. For instance with '$x = array(1,2,3);'
+ * How would you handle '$x[0] = 1;' without any Vptr and a heap?
+ * You would need to use ocaml references to mimic those Vptr.
  * 
  * Why not just variables be pointer to values then? Because
  * of references. With this code:
@@ -73,6 +81,11 @@ module SMap = Map.Make (String)
 (* Types *)
 (*****************************************************************************)
 
+(* In practice a huge codebase contains multiple times the same
+ * function name or class, but here we will just return one
+ * of those possible entities :( At least we detect and warn 
+ * about dupes when building the code database (see database_juju_php.ml).
+ *)
 type code_database = {
   funs:      string -> Ast.func_def;
   classes:   string -> Ast.class_def;
@@ -80,27 +93,29 @@ type code_database = {
 }
 
 type value =
-  (* usually used when we don't handle certain constructs or when
-   * the code is too dynamic
-   *)
-  | Vany
-  (* could be useful for nullpointer analysis *)
-  | Vnull
-
-  | Vabstr  of type_
-
   (* Precise value. Especially useful for Vstring for interprocedural
    * analysis as people use strings to represent functions or classnames
-   * (they are not first-class citizens in PHP).
+   * (they are not first-class citizens in PHP). Maybe also useful
+   * for Vint when use ints for array indices and we want the precise
+   * value in the array.
    *)
   | Vbool   of bool
   | Vint    of int
   | Vfloat  of float
   | Vstring of string
 
+  (* We converge quickly to a very abstract value. Values are either
+   * a single precise value (e.g. 42), or a type (e.g. int). No
+   * intermediate range for instance.
+   *)
+  | Vabstr  of type_
+
+  (* could be useful for nullpointer analysis *)
+  | Vnull
+
   (* a pointer is an int address in the heap *)
   | Vptr of int
-  (* todo: sortir vptr de value, to have clear different types.
+  (* todo: extract Vptr out of 'value', to have clear different types.
    * | Vptr1    of ptr1
    * | Vptr2    of ptr2
    * where ptr1 and ptr2 are abstract types, with a module with a
@@ -114,27 +129,35 @@ type value =
   | Varray  of value list
   | Vmap of value * value
 
-  (* pad: The integer of the IMap is a unique identifier for a method 
-   * (the name is not enough). The first value is $this. There is
-   * a Imap that is a set of methods because when we unify objects,
+  (* pad: The integer key of the IMap below is a unique identifier for a 
+   * method (the name is not enough). The first 'value' is for '$this'. The
+   * Imap is a set of methods because when we unify objects,
    * we merge methods and remember all possible values for this method.
    * See sum_call in the interpreter and call_methods.
    * 
    * What is the value of $x given: 
    *   class A { public function foo() { } }
    *   $x = new A();
-   * ?
+   * It should be:
    * $x = &2{REF 1{Vobject (["foo" -> Vmethod (&2, [0x42-> (<foo closure>)])])}}
    *)
   | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
 
   | Vobject of value SMap.t
 
-  (* union of possible types/values, ex: null | object, bool | string, etc *)
+  (* Union of possible types/values, ex: null | object, bool | string, etc.
+   * This could grow a lot so the abstract interpreter need to turn
+   * that into a Vany at some point ???
+   *)
   | Vsum    of value list
 
   (* tainting analysis for security *)
   | Vtaint of string
+
+  (* usually used when we don't handle certain constructs or when
+   * the code is too dynamic
+   *)
+  | Vany
 
   and type_ =
     | Tint
@@ -154,7 +177,7 @@ and heap = {
 and env = {
   db: code_database;
 
-  (* local variables and parameters *)
+  (* local variables and parameters (will be pointer to pointer to values) *)
   vars    : value SMap.t ref;
   (* globals and static variables (prefixed with a "<function>**" *)
   globals : value SMap.t ref;
@@ -283,7 +306,7 @@ let rec value ptrs o x =
       o "{";
       value (IMap.remove n ptrs) o (IMap.find n ptrs);
       o "}"
-  (* pad: when this happens? *)
+  (* pad: when this happens??? *)
   | Vptr _ -> o "rec"
   | Vrecord m ->
       let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
@@ -305,7 +328,7 @@ let rec value ptrs o x =
       o " => ";
       value ptrs o v2;
       o "]"
-  | Vmethod _ -> o "method"
+  | Vmethod (v, _imap) -> o "method("; value ptrs o v; o ")"
   | Vsum vl ->
       o "choice(";
       list o (value ptrs) vl;
@@ -325,10 +348,10 @@ and type_ o x =
 
 and print_locals_and_globals o env heap =
   SMap.iter (fun s v ->
-    o s ; o " = "; value heap.ptrs o v; o "\n"
+    o "|"; o s ; o " = "; value heap.ptrs o v; o "\n"
   ) !(env.vars);
   SMap.iter (fun s v ->
-    o "GLOBAL "; o s ; o " = "; value heap.ptrs o v; o "\n"
+    o "|"; o "GLOBAL "; o s ; o " = "; value heap.ptrs o v; o "\n"
   ) !(env.globals)
 
 (*****************************************************************************)
