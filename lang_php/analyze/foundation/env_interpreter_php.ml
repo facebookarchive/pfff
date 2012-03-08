@@ -63,12 +63,12 @@ module SMap = Map.Make (String)
  * Retrospecively, was it good to try to manage references correctly?
  * After all, many other things are not that well handled in the interpreter
  * or imprecise or passed-over silently, e.g. many functions/classes not
- * found, traits not handled, other constructs not handled, choosing
+ * found, traits not handled, lambda not handled, choosing
  * arbitrarily one object in a Vsum when there could actually be many
  * different classes, not really doing a fixpoint on loops, etc.
  * 
  * juju: yes, maybe it was not a good idea to focus so much on references.
- *  Moreover it slows down things a lot.
+ * Moreover it slows down things a lot.
  * 
  * One advantage though of managing references correctly is that it forces
  * to really understand how Zend PHP internally works (zvalues).
