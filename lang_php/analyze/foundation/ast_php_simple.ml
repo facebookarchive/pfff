@@ -226,7 +226,7 @@ and class_def = {
   c_type: class_type;
   (* for XHP classes it's x:frag (and not :x:frag), see string_of_xhp_tag *)
   c_name: string wrap;
-  c_extends: string list; (* pad: ?? *)
+  c_extends: string list; (* pad: ?? string option no? *)
   c_traits: string wrap list;
   c_implements: string list;
 
