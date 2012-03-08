@@ -35,7 +35,9 @@ module SMap = Map.Make (String)
  * PHP manages values and variables at runtime (the "zval").
  *
  * Why this model? Why not having variables contain directly values,
- * that is $x = {42}? TODO??
+ * that is $x = {42} Without a Vptr? Because dealing with lvalues in the
+ * interpreter would be then tedious. With $x = array(1,2,3); 
+ * how would you handle '$x[0] = 1;' without any Vptr and a heap?
  * 
  * Why not just variables be pointer to values then? Because
  * of references. With this code:
@@ -78,6 +80,9 @@ type code_database = {
 }
 
 type value =
+  (* usually used when we don't handle certain constructs or when
+   * the code is too dynamic
+   *)
   | Vany
   (* could be useful for nullpointer analysis *)
   | Vnull
@@ -94,7 +99,13 @@ type value =
   | Vstring of string
 
   (* a pointer is an int address in the heap *)
-  | Vptr    of int
+  | Vptr of int
+  (* todo: sortir vptr de value, to have clear different types.
+   * | Vptr1    of ptr1
+   * | Vptr2    of ptr2
+   * where ptr1 and ptr2 are abstract types, with a module with a
+   * set_ptr1 taking only a value, and set_ptr2 take only a Vptr
+   *)
   (* pad: because of some imprecision, we actually have a set of addresses ? *)
   | Vref    of ISet.t
 
@@ -103,8 +114,20 @@ type value =
   | Varray  of value list
   | Vmap of value * value
 
-  (* pad: ??? *)
+  (* pad: The integer of the IMap is a unique identifier for a method 
+   * (the name is not enough). The first value is $this. There is
+   * a Imap that is a set of methods because when we unify objects,
+   * we merge methods and remember all possible values for this method.
+   * See sum_call in the interpreter and call_methods.
+   * 
+   * What is the value of $x given: 
+   *   class A { public function foo() { } }
+   *   $x = new A();
+   * ?
+   * $x = &2{REF 1{Vobject (["foo" -> Vmethod (&2, [0x42-> (<foo closure>)])])}}
+   *)
   | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
+
   | Vobject of value SMap.t
 
   (* union of possible types/values, ex: null | object, bool | string, etc *)
