@@ -56,7 +56,15 @@ module Trace = Tracing_php
  * 
  * Actually the unify/merge/abstract in the example above will happen 
  * as soon as processing the else branch in the current algorithm. 
- * So there will be no Vint 3 in the heap. See tests/php/ia/if.php.
+ * So there will be no (Vint 3) in the heap. See tests/php/ia/if.php.
+ * 
+ * The algorithm is kinda:
+ *  - flow insensitive, because??
+ *  - path insensitive, because we don't look for instance
+ *    at the resulting value of a condition in a 'if' to determine
+ *    unreachable path
+ *  - BUT context sensitive, because we treat different calls
+ *    to the same function differently (we unroll each call).
  * 
  * There is a limit on the depth of the call stack, see max_depth.
  * For a bottom-up approach see typing_php.ml.
@@ -223,20 +231,9 @@ let is_variable s =
 module Interp = functor (Taint: Env_interpreter_php.TAINT) -> struct
 
 let rec program env heap program =
-  if !extract_paths
-  then begin 
-    (* Normally the abstract interpreter needs a main(), a starting point
-     * to start interpret; a file with just functions can't really be
-     * interpreted. But some code may not be easily reachable,
-     * so for callgraph and tracing purposes, it's good to fake
-     * calls to the toplevel functions and classes/methods in a file.
-     *)
-    env.path := [CG.FakeRoot];
-    List.iter (fake_root env heap) program;
-  end;
 
   env.path := [CG.File !(env.file)];
-  (* Ok, let's interpret the toplevel statements. env.db should
+  (* Ok, let's interpret the toplevel statements. env.db must
    * be populated with all the functions/classes/constants necessary.
    * 
    * Note that Include/Require are transformed into __builtin__require()
@@ -244,7 +241,25 @@ let rec program env heap program =
    * (because the definitions of those __builtin__ are empty in
    * pfff/data/php_stdlib/pfff.php).
    *)
-  stmtl env heap (exclude_toplevel_defs program)
+  let finalheap = stmtl env heap (exclude_toplevel_defs program) in
+
+  if !extract_paths
+  then begin 
+    (* Normally the abstract interpreter needs a starting point, like
+     * a toplevel call to 'main();' to start interpret. A file with just
+     * functions can't really be interpreted. But some code may not be
+     * easily reachable, so for callgraph and tracing purposes, it's
+     * good to fake calls to the toplevel functions and classes/methods
+     * in a file. *)
+    env.path := [CG.FakeRoot];
+    List.iter (fake_root env heap) program;
+  end;
+  (* we return the heap so people can start from this heap to
+   * analyze another file, like the .phpt of a .php, so there
+   * is a continuity.
+   *)
+  finalheap
+
 
 (* used only when generating the callgraph *)
 and fake_root env heap =
@@ -302,6 +317,7 @@ and stmt env heap x =
   | Expr e ->
       let heap, _ = expr env heap e in
       heap
+
   (* With 'if(true) { $x = 1; } else { $x = 2; }'
    * we will endup with a heap with $x = &2{&1{int}}.
    * Going in first branch will populate the heap
@@ -339,6 +355,7 @@ and stmt env heap x =
       (* the special "*return*" variable is used in call_fun() below *)
       let heap, _ = expr env heap (Assign (None, Id (w "*return*"), e)) in
       heap
+
   (* this may seem incorrect to treat 'do' and 'while' in the same way,
    * because the evaluation of e does not happen at the same time.
    * But here we care about the pointfix of the values, and so
@@ -454,8 +471,7 @@ and catch env heap (_, _, stl) =
 and expr env heap x =
   if !Taint.taint_mode
   then Taint.taint_expr env heap 
-    (expr_, lvalue, get_dynamic_function, call_fun, call, assign) 
-    !(env.path) x
+    (expr_, lvalue, get_dynamic_function, call_fun, call, assign) !(env.path) x
   else expr_ env heap x
 
 (* will return a concrete value, or a pointer to a concrete value
@@ -549,9 +565,9 @@ and expr_ env heap x =
   | List _ -> failwith "List outside assignement?"
 
   | Assign (None, e1, e2) ->
-      let heap, b, root = lvalue env heap e1 in
-      let heap, v = expr env heap e2 in
-      assign env heap b root v
+      let heap, new_var_created, lval = lvalue env heap e1 in
+      let heap, rval = expr env heap e2 in
+      assign env heap new_var_created lval rval
   | Assign (Some op, e1, e2) ->
       expr env heap (Assign (None, e1, Binop (op, e1, e2)))
 
@@ -580,18 +596,18 @@ and expr_ env heap x =
   (* hardcoded special case, not sure why we need that *)
   | Call (Id ("id",_), [x]) -> expr env heap x
 
-  | Call (Id ("call_user_func" as fname, tok), f :: el) ->
-      let heap, f = expr env heap f in
-      Taint.check_danger env heap fname tok !(env.path) f;
+  | Call (Id ("call_user_func", tok), e :: el) ->
+      let heap, v = expr env heap e in
+      Taint.check_danger env heap "call_user_func" tok !(env.path) v;
       (try
           (* todo: fname can also reference a static method *)
-          let heap, def = get_dynamic_function env heap f in
+          let heap, def = get_dynamic_function env heap v in
           call_fun def env heap el
         with (LostControl | UnknownFunction _) -> 
           if !strict then failwith "call_user_func unknown function";
           heap, Vany
       )
-  (* simple function call *)
+  (* simple function call or $x() call *)
   | Call (Id (s,_), el) ->
       (try
         let heap, def = get_function env heap s in
@@ -604,21 +620,22 @@ and expr_ env heap x =
         let res = Taint.when_call_not_found heap vl in
         heap, res
       )
-  (* dynamic function call or method call (Call (Obj_get...)) or
+  (* expression call or method call (Call (Obj_get...)) or
    * static method call (Call (Class_get ...))
    *)
   | Call (e, el) ->
       let heap, v = expr env heap e in
       call env heap v el
 
-  | New (c, el) ->
-      new_ env heap c el
+  | New (e, el) ->
+      new_ env heap e el
   | Xhp x ->
       let heap, v = xml env heap x in
       let v = if !Taint.taint_mode then Vabstr Txhp else v in
       heap, v
 
-  | Lambda _ -> 
+  | Lambda _ ->
+      (* todo? could try to process its body? *)
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
 
@@ -733,11 +750,11 @@ and lvalue env heap x =
           let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
           heap, true, k
       )
-  (* will return a classvar or Vmethod depending on s *)
+  (* will return a classvar reference or Vmethod depending on s *)
   | Class_get (e, Id (s,_)) ->
-      let c = get_class env heap e in
-      let heap = lazy_class env heap c in
-      let heap, _, v = Var.get_global env heap c in
+      let str = get_class env heap e in
+      let heap = lazy_class env heap str in
+      let heap, _, v = Var.get_global env heap str in
       let heap, v = Ptr.get heap v in
       (* pad: why double??? *)
       let heap, v = Ptr.get heap v in
@@ -746,7 +763,7 @@ and lvalue env heap x =
           | Vobject m when SMap.mem s m ->
               heap, false, SMap.find s m
           | Vobject m ->
-              if !strict then raise (UnknownMethod (s, c, methods m));
+              if !strict then raise (UnknownMethod (s, str, methods m));
               heap, false, Vany
           | _ ->
               if !strict then failwith "Class_get not a Vobject";
@@ -852,15 +869,14 @@ and get_function_list env heap = function
       )
   | _ :: rl -> get_function_list env heap rl
 
+(* call_fun and func_def is abused to also call methods *)
+and call_fun (def: A.func_def) env heap (el: A.expr list) =
+  Trace.call (unw def.f_name) !(env.path);
 
-(* func_def was abused to also deal with methods *)
-and call_fun (f: A.func_def) env heap (el: A.expr list) =
-  Trace.call (unw f.f_name) !(env.path);
-
-  let n = try SMap.find (unw f.f_name) env.stack with Not_found -> 0 in
-  let env = { env with stack = SMap.add (unw f.f_name) (n+1) env.stack } in
+  let n = try SMap.find (unw def.f_name) env.stack with Not_found -> 0 in
+  let env = { env with stack = SMap.add (unw def.f_name) (n+1) env.stack } in
   (* pad: ugly, call_fun should also accept method_def *)
-  save_path env (CG.node_of_string (unw f.f_name));
+  save_path env (CG.node_of_string (unw def.f_name));
 
   let is_clean =
     let _, vl = Utils.lfold (expr env) heap el in
@@ -870,7 +886,7 @@ and call_fun (f: A.func_def) env heap (el: A.expr list) =
 
   (* stop when recurse in same function twice or when depth stack > 6 *)
   if n >= 2 || List.length !(env.path) >= !max_depth && is_clean
-  (* || Sys.time() -. !time >= 1.0|| SMap.mem f.f_name !(env.safe) *)
+  (* || Sys.time() -. !time >= 1.0|| SMap.mem def.f_name !(env.safe) *)
   then
     (* ??? why not just return Vany instead? *)
     let heap, v = Ptr.new_ heap in
@@ -878,17 +894,17 @@ and call_fun (f: A.func_def) env heap (el: A.expr list) =
     heap, v
   else begin
     (* ?? why keep old env.vars too? *)
-    let env = { env with vars = ref !(env.vars); cfun = unw f.f_name } in
-    let heap = parameters env heap f.f_params el in
-    let vars = fun_nspace f !(env.vars) in
+    let env = { env with vars = ref !(env.vars); cfun = unw def.f_name } in
+    let heap = parameters env heap def.f_params el in
+    let vars = fun_nspace def !(env.vars) in
     let env = { env with vars = ref vars } in
-    env.path := (CG.node_of_string (unw f.f_name)) :: !(env.path);
-    let heap = stmtl env heap f.f_body in
+    env.path := (CG.node_of_string (unw def.f_name)) :: !(env.path);
+    let heap = stmtl env heap def.f_body in
     env.path := List.tl !(env.path);
     let heap, _, r = Var.get env heap "*return*" in
     let heap, r = Ptr.get heap r in
     if Taint.GetTaint.value heap r = None
-    then env.safe := SMap.add (unw f.f_name) r !(env.safe);
+    then env.safe := SMap.add (unw def.f_name) r !(env.safe);
     heap, r
   end
 
@@ -929,8 +945,8 @@ and fun_nspace f roots =
 
 and call env heap v el =
   match v with
-  | Vsum l -> sum_call env heap l el
-  | x -> sum_call env heap [x] el
+  | Vsum l -> sum_call env heap l   el
+  | x      -> sum_call env heap [x] el
 
 and sum_call env heap v el =
   (match v with
@@ -1095,15 +1111,20 @@ and encaps env heap x = expr env heap x
 (* Class *)
 (* ---------------------------------------------------------------------- *)
 
-and new_ env heap c el =
-  let c = get_class env heap c in
-  let heap = lazy_class env heap c in
-  (* *myobj* = c::*BUILD*(el);
-   * *myobj->__construct(el);
+and new_ env heap e el =
+  let str = get_class env heap e in
+  (* todo? not necessary I think. the class loading will be done
+   * when processing the Class_get below in lvalue()
    *)
+  let heap = lazy_class env heap str in
   let stl = [
+  (* *myobj* = str::*BUILD*(el);
+   * *myobj->__construct(el);
+   * todo: why passing el to both BUILD and construct? I think it's
+   * not used anyway so can pass [].
+   *)
     Expr (Assign (None, Id (w "*myobj*"),
-                 Call (Class_get (Id (w c), Id (w "*BUILD*")), el)));
+                 Call (Class_get (Id (w str), Id (w "*BUILD*")), el)));
     Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
   ] in
   let heap = stmtl env heap stl in
@@ -1131,7 +1152,7 @@ and obj_get mem env heap v s =
   | x :: rl -> obj_get mem env heap rl s
   )
 
-
+(* todo: make it mimic more get_function and get_dynamic_function ? *)
 and get_class env heap e =
   match e with
   (* pad: ???? *)
@@ -1145,8 +1166,6 @@ and get_class env heap e =
       let heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
-
-(* usedby get_class *)
 and get_string = function
   | [] -> ""
   | Vstring s :: _ -> s
@@ -1157,26 +1176,27 @@ and get_string = function
       )
   | _ :: rl -> get_string rl
 
-and lazy_class env heap c =
-  if (SMap.mem c !(env.globals))
+and lazy_class env heap classname =
+  if (SMap.mem classname !(env.globals))
   then heap
-  else force_class env heap c
+  else force_class env heap classname
 
-and force_class env heap c =
+and force_class env heap classname =
   try 
-    let c = env.db.classes c in
+    let def = env.db.classes classname in
 
     let heap, null = Ptr.new_ heap in
     (* pad: ??? there is an overriding set_global below, so why create this? *)
-    Var.set_global env (unw c.c_name) null;
-    let heap, cd = class_def env heap c in
-    Var.set_global env (unw c.c_name) cd;
+    Var.set_global env (unw def.c_name) null;
+    let heap, v = class_def env heap def in
+    (* def.c_name should be the same than classname no? *)
+    Var.set_global env (unw def.c_name) v;
     heap
   with Not_found ->
-    if !strict then raise (UnknownClass c);
+    if !strict then raise (UnknownClass classname);
     heap
 
-and class_def env heap c =
+and class_def env heap (c: Ast.class_def) =
   let heap, self = Ptr.new_ heap in
   let heap, pname, parent =
     match c.c_extends with
@@ -1184,17 +1204,31 @@ and class_def env heap c =
         let heap = lazy_class env heap p in
         let heap, _, ptr = Var.get_global env heap p in
         heap, p, ptr
+    (* no parents *)
     | _ ->
         let heap, ptr = Ptr.new_ heap in
+        (* todo: return a None *)
         heap, "", ptr
   in
   let heap, ddparent = Ptr.get heap parent in
   let heap, ddparent = Ptr.get heap ddparent in
-  let m = match ddparent with Vobject m -> m | _ -> SMap.empty in
+  (* 'm' for members, not only methods *)
+  let m = 
+    match ddparent with 
+    | Vobject m -> m 
+    (* todo: strict, exn/ *)
+    | _ -> SMap.empty 
+  in
   let heap, m = List.fold_left (cconstants env) (heap, m) c.c_constants in
   let heap, m = List.fold_left (class_vars env true) (heap, m) c.c_variables in
   let heap, m = List.fold_left (method_def env c.c_name parent self None)
     (heap, m) c.c_methods in
+
+  (* *BUILD* is a special method that will be called when creating
+   * new object as in 'new A()' which will be translated in
+   * a '*myobj* = A::*BUILD*; *myobj->__construct().
+   * "New est une methode comme une autre" :)
+   *)
   let m = SMap.add "*BUILD*" (build_new env heap pname parent self c m) m in
   let v = Vobject m in
   let heap, _ = assign env heap true self v in
@@ -1204,9 +1238,11 @@ and class_def env heap c =
 and build_new env heap pname parent self c m =
   let mid = Utils.fresh() in
   let f = build_new_ env heap pname parent self c m in
-  Vmethod (Vnull, IMap.add mid f IMap.empty)
+  Vmethod (Vnull (* no this, BUILD is static method *), 
+          IMap.add mid f IMap.empty)
 
-and build_new_ env heap pname parent self c m = fun env heap _ ->
+and build_new_ env heap pname parent self c m = 
+ fun env heap _ ->
   let heap, dparent = Ptr.get heap parent in
   let heap, dparent = Ptr.get heap dparent in
   let heap, ptr =

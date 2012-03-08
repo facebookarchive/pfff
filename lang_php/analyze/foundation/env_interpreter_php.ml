@@ -81,10 +81,10 @@ module SMap = Map.Make (String)
 (* Types *)
 (*****************************************************************************)
 
-(* In practice a huge codebase contains multiple times the same
- * function name or class, but here we will just return one
- * of those possible entities :( At least we detect and warn 
- * about dupes when building the code database (see database_juju_php.ml).
+(* In practice a huge codebase contains unfortunately multiple times
+ * the same function name or class, but here we will just return one of
+ * those possible entities :( At least we detect and warn about dupes
+ * when building the code database (see database_juju_php.ml). 
  *)
 type code_database = {
   funs:      string -> Ast.func_def;
@@ -129,17 +129,26 @@ type value =
   | Varray  of value list
   | Vmap of value * value
 
-  (* pad: The integer key of the IMap below is a unique identifier for a 
-   * method (the name is not enough). The first 'value' is for '$this'. The
-   * Imap is a set of methods because when we unify objects,
+  (* 
+   * The first 'value' is for '$this' which will be a pointer to
+   * the object. Where it's used???
+   * The integer key of the IMap below is a unique identifier for a 
+   * method (we could have chosen the full name as in "A::foo"). The
+   * Imap is a set of methods because when we unify/merge objects,
    * we merge methods and remember all possible values for this method.
-   * See sum_call in the interpreter and call_methods.
+   * It's essentially a (closures Set.t) but because we can't compare
+   * for equality closures in OCaml we need this method id intermediate
+   * and IMap.
+   * 
+   * See sum_call in the interpreter and call_methods, and make_method
+   * which build the method closure with self/parent/this correctly
+   * binded to the right class and object pointers.
    * 
    * What is the value of $x given: 
    *   class A { public function foo() { } }
    *   $x = new A();
    * It should be:
-   * $x = &2{REF 1{Vobject (["foo" -> Vmethod (&2, [0x42-> (<foo closure>)])])}}
+   * $x = &2{REF 1{Vobject (["foo"->Vmethod (&2{rec}, [0x42-> (<foo closure>)])])}}
    *)
   | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
   (* We would need a Vfun too if we were handling closures. But for
@@ -148,6 +157,11 @@ type value =
    * this intermediate Vmethod value above).
    *)
 
+  (* Representation for objects, a set of members where a member can be
+   * a constant, or variable, or method.
+   * A class is actually also represented as an object, with a special
+   * *BUILD* method
+   *)
   | Vobject of value SMap.t
 
   (* Union of possible types/values, ex: null | object, bool | string, etc.
