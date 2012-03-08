@@ -49,6 +49,8 @@
  *  - a simpler name; identifiers, xhp names, variables are unified
  *    (not a good idea retrospectively, cos it forces in many places
  *     anyway to do some s =~ "$.*")
+ *  - there is no include/require, they are transformed in call
+ *    to __builtin__require (not sure it's a good idea)
  *  - ...
  *
  * todo: factorize more? string vs Guil vs xhp?
