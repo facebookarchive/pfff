@@ -31,7 +31,7 @@ module Trace = Tracing_php
  * Abstract interpreter for PHP, with hooks for tainting analysis
  * (to find XSS holes), and hooks for callgraph generation.
  *
- * 'show($x)' in the PHP file helps to debug a variable.
+ * 'var_dump($x)' in the PHP file helps to debug a variable.
  *
  * pad's notes:
  *  - "*return*"

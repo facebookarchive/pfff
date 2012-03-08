@@ -6,7 +6,7 @@ val extract_paths: bool ref
 
 (* exceptions thrown when in strict mode *)
 exception UnknownFunction of string
-exception UnknownClass of string
+exception UnknownClass    of string
 exception UnknownConstant of string
 
 exception UnknownMethod of string * string * string list
