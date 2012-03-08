@@ -430,7 +430,11 @@ end
 (* Misc *)
 (*****************************************************************************)
 
-(* because assignements can be in conditionals ... have to extract them  *)
+(* because assignements can be in conditionals ... have to extract them.
+ * todo: could delete that. It was used in a first version of the
+ * interpreter where we were unifying heaps. But we don't unify
+ * heaps anymore.
+ *)
 module NullNewVars = struct
 
   let rec stmtl env heap stl =
