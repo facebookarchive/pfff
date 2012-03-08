@@ -30,25 +30,56 @@ module Trace = Tracing_php
 (*
  * Abstract interpreter for PHP, with hooks for tainting analysis
  * (to find XSS holes), and hooks for callgraph generation.
+ * 
+ * An abstract interpreter kinda mimics a normal interpreter by
+ * also executing a program, in a top-down manner, modifying a heap,
+ * managing local and global variables, etc, but maintains abstract
+ * values for variables instead of concrete values as in a regular
+ * interpreter. See env_interpreter_php.ml.
+ * 
+ * For instance on 'if(cond()) { $x = 42; } else { $x = 3;}'
+ * the abstract interpreter will actually execute both branches and
+ * merge/unify the different values for the variable in a more
+ * abstract value. So, while processing the first branch the interpreter
+ * will add a new local variable $x, allocate space in the abstract
+ * heap, and sets its value to the precise (Vint 42). But after
+ * both branches, the abstract interpreter will unify/merge/abstract 
+ * the different values for $x to a Vabstr Tint and from now on, 
+ * the value for $x will be that abstract. 
+ * 
+ * Actually the unify/merge/abstract will happen as soon as processing
+ * the else branch in the current algorithm. So there will be no Vint 3
+ * in the heap. See tests/php/ia/if.php.
+ * 
+ * There is a limit on the depth of the call stack, see max_depth.
+ * For a bottom-up approach see typing_php.ml.
+ * 
+ * References:
+ *  - http://en.wikipedia.org/wiki/Abstract_interpretation
  *
- * 'var_dump($x)' in the PHP file helps to debug a variable.
+ * To help you debug the interpreter you can put some
+ * 'var_dump($x)' in the PHP file to see the abstract value
+ * of a variable at a certain point in the program.
  *
- * pad's notes:
- *  - "*return*"
- *  - "*array*
- *  - "*myobj*
- *  - "*BUILD*"
- *  - special "self"/"parent"
- *  - "$this"
+ * pad's notes: 
+ *  - strings are sometimes abused to not only represent
+ *    variables and entities but also special variables:
+ *    * "*return*", to communicate the return value to the caller
+ *    * "*array*, to build an array
+ *    * "*myobj*, to build an object
+ *    * "*BUILD*", to build a class
+ *    * special "self"/"parent", ???
+ *    * "$this", ???
  *  - How the method lookup mechanism works? there is no lookup,
  *    instead at the moment where we build the class, we put
  *    all the methods of the parents in the new class. But then
  *    what about the use of self:: or parent:: when executing the
- *    code of a parent method?
+ *    code of a parent method???
  *  - the id() function semantic is hardcoded
  * 
  * TODO: 
  *  - the places where expect a VPtr, and so need to call Ptr.get,
+ *    or even a VptrVptrr and so where need to call Ptr.get two times,
  *    and the places where expect a final value is not clear.
  *  - before processing the file, maybe should update the code database
  *    with all the entities in the file, cos when one process a script,
@@ -60,15 +91,37 @@ module Trace = Tracing_php
  * 
  * 
  * TODO long term: 
- *  - It could be used also to find bugs that the current
+ *  - we could use the ia also to find bugs that my current
  *    checkers can't find (e.g. undefined methods because
  *    of the better interprocedural class analysis, wrong type, 
  *    passing null, etc). But it first needs to be correct
- *    and to work on www without so many exceptions.
+ *    and to work on www/ without so many exceptions.
  *  - It could also be used for program understanding purpose
  *    by providing a kind of tracer.
  *  - maybe it could be combined with the type inference to give
  *    more precise results and find even more bugs.
+ * 
+ * history:
+ *  - basic values (Vint 2, Vstring "foo"), abstract value by types
+ *    (Vabstr Tint), also range for ints. Special care for PHP references
+ *    by using pointer to pointer to val via the Vptr, as in Zend.
+ *  - loop, recursive functions, by fixpoint on the heap. Could configure
+ *    the number of times we run the loop to allow to converge
+ *    to a fixpoint after more than 2 iterations. When the fixpoint
+ *    is not reached for certain variables, then set a more abstract
+ *    value (for instance if the range for ints grows, then turn it into
+ *    a Vabstr Tint). Manage branches such as ifthenelse by unifying/merging
+ *    heaps
+ *  - unfiying heaps was too costly, so just unify what
+ *    was needed (unifying pointers), process ifthenelse sequentially,
+ *    not independently
+ *  - fixpoint was too costly, and when '$i = 1;for() { $i=$i+1 }' it does
+ *    not converge if use range so make in such a way to reach the fixpoint
+ *    in one step when unify. So no need to unify heaps,
+ *    no need to do fixpoint. So for the loop example before, 
+ *    first have $i = Vint 1, but as soon as have $i=$i+1, we say it's a 
+ *    Vabstr Tint (and this is the fixpoint, in just one step).
+ *  - handle objects and other constructs.
  *)
 
 (*****************************************************************************)
@@ -117,7 +170,11 @@ exception UnknownConstant of string
 exception UnknownMethod of string * string * string list
 exception UnknownObject
 
-(* ?? *)
+(* Exception thrown when a call to a function or method is not known.
+ * This happens when the code is intrisically far too dynamic or
+ * when we have done too aggressive approximation in the interpreter
+ * on certain values.
+ *)
 exception LostControl
 
 (*****************************************************************************)
