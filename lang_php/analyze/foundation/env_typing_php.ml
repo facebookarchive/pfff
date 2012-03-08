@@ -52,7 +52,7 @@ type t =
     (* The SSet contains all the field names we have seen so far *)
     (* Example: $x = array('foo' => 0); $x[] = 12; will translate in
      * Tarray (SSet('foo'), int | string, int)
-    *)
+     *)
     | Tarray  of SSet.t * t * t
 
     | Tfun    of (string * t) list * t
