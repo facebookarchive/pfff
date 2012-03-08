@@ -131,7 +131,9 @@ type value =
 
   (* 
    * The first 'value' is for '$this' which will be a pointer to
-   * the object. Where it's used???
+   * the object. Where it's used??? todo: think it can be removed
+   * as we handle self/parent/this via closures in make_method()
+   * 
    * The integer key of the IMap below is a unique identifier for a 
    * method (we could have chosen the full name as in "A::foo"). The
    * Imap is a set of methods because when we unify/merge objects,
@@ -139,10 +141,10 @@ type value =
    * It's essentially a (closures Set.t) but because we can't compare
    * for equality closures in OCaml we need this method id intermediate
    * and IMap.
-   * 
-   * See sum_call in the interpreter and call_methods, and make_method
-   * which build the method closure with self/parent/this correctly
-   * binded to the right class and object pointers.
+   * See sum_call in the interpreter and call_methods.
+   
+   * make_method() builds the method closure with self/parent/this
+   * correctly binded to the right class and object pointers.
    * 
    * What is the value of $x given: 
    *   class A { public function foo() { } }
@@ -198,7 +200,9 @@ and env = {
 
   (* local variables and parameters (will be pointer to pointer to values) *)
   vars    : value SMap.t ref;
-  (* globals and static variables (prefixed with a "<function>**" *)
+  (* globals and static variables (prefixed with a "<function>**".
+   * This also used for self/parent, and $this.
+   *)
   globals : value SMap.t ref;
 
   (* for debugging, to print for instance in which file we have XSS  *)

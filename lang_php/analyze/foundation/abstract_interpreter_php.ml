@@ -1315,7 +1315,7 @@ and method_def env cname parent self this (heap, acc) m =
   let v = Vmethod (v, IMap.add mid cls IMap.empty) in
   heap, SMap.add (unw m.m_name) v acc
 
-
+(* we use OCaml closures to deal with self/parent scoping issues *)
 and make_method mname parent self this fdef =
   fun env heap el ->
     let self_ = A.special "self" in
@@ -1333,11 +1333,14 @@ and make_method mname parent self this fdef =
     | Some v -> Var.set_global env "$this" v
     );
     let heap, res = call_fun fdef env heap el in
+
+    (* tainting special code *)
     let heap, res' = Ptr.get heap res in
     let heap, res' = Ptr.get heap res' in
     if unw mname = "render"
     then Taint.check_danger env heap "return value of render" (snd mname) 
       !(env.path) res';
+
     (match old_self with Some x -> Var.set_global env self_ x | None -> ());
     (match old_parent with Some x -> Var.set_global env parent_ x | None ->());
     (match old_this with Some x -> Var.set_global env "$this" x | None -> ());
