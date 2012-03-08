@@ -44,22 +44,23 @@ type t =
     | Tsenum of SSet.t
 
     (* arrays are used for everything in PHP, but for the type inference
-     * we actually want to differentiate those different usages, record
+     * we actually want to differentiate those different usages: record
      * vs real array vs hash.
      *)
     | Trecord of t SMap.t
-    (* An array, where we don't know what all the possible field names are. *)
-    (* The SSet contains all the field names we have seen so far *)
-    (* Example: $x = array('foo' => 0); $x[] = 12; will translate in
+    (* An array, where we don't know what all the possible field names are.
+     * The SSet contains all the field names we have seen so far.
+     * Example: $x = array('foo' => 0); $x[] = 12; will translate in
      * Tarray (SSet('foo'), int | string, int)
      *)
     | Tarray  of SSet.t * t * t
 
+    (* this is also used for methods *)
     | Tfun    of (string * t) list * t
-    | Tobject of t SMap.t
 
+    | Tobject of t SMap.t
     (* Same as Tobject, except that we know the set of possible classes that
-       were used to instanciate the object.
+     * were used to instanciate the object.
      *)
     | Tclosed of SSet.t * t SMap.t
 
@@ -71,7 +72,11 @@ type code_database = {
 type env = {
     db: code_database;
 
-    (* The graph of dependencies *)
+    (* The graph of dependencies. If foo() calls bar(), then
+     * there will be a dependency between foo and bar and
+     * we will want to first infer the type of bar before foo
+     * (because we do a bottom-up type inference).
+     *)
     graph: Graph.t;
 
     (* less: this is just used to remember the builtins and
@@ -92,7 +97,10 @@ type env = {
 
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
-    (* The current substitution (for type variables) *)
+    (* The current substitution (for type variables). This will
+     * tell if 'a -> 'b, that is 'a was unified at some point with 'b.
+     * This will grow a lot when we process the whole codebase.
+     *)
     subst: int IMap.t ref;
 
     (* Shall we show types with the special marker? *)
@@ -123,6 +131,9 @@ type env = {
     cumul: float ref;
   }
 
+(* This is used for the autocompletion and interactive type inference
+ * in Emacs (Tab and C-c C-t).
+ *)
 and show =
   | Snone
   | Stype_infer of t
@@ -137,7 +148,9 @@ and show =
 
 (* In a Tsum we want the different possibile types to be sorted so
  * that unifying two Tsum and finding common stuff can be done quickly.
- * Proj is used to give an order between types.
+ * Proj is used to give an order between types, and when two things
+ * are equivalent (such as a Tobject and Tclosed), we project on
+ * the same value.
  *)
 let rec proj = function
   | Tabstr ("int" | "bool" | "string" | "html") -> Hashtbl.hash "string"
