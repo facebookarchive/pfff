@@ -186,42 +186,12 @@ let save_path env target =
   if !extract_paths
   then graph := CG.add_graph (List.hd !(env.path)) target !graph
 
-(* in PHP functions are passed via strings *)
-let rec get_dynamic_function env heap v =
-  let heap, v = Ptr.get heap v in
-  match v with
-  | Vstring s ->
-      (try heap, env.db.funs s
-       with Not_found -> raise (UnknownFunction s)
-      )
-  | Vsum l -> get_function_list env heap l
-  | _ -> raise LostControl
-
-and get_function_list env heap = function
-  | [] -> raise LostControl
-  | Vstring s :: _ -> 
-      (try heap, env.db.funs s
-      with Not_found -> raise (UnknownFunction s)
-      )
-  | _ :: rl -> get_function_list env heap rl
-
-(* ?? used by get_class *)
-let rec get_string = function
-  | [] -> ""
-  | Vstring s :: _ -> s
-  | Vsum l' :: rl ->
-      (match get_string l' with
-      | "" -> get_string rl
-      | x -> x
-      )
-  | _ :: rl -> get_string rl
-
 (* used in extract_path mode to fake function/method calls *)
 and make_fake_params l =
   List.map (fun p ->
     match p.p_type with
     | Some (Hint s) -> New (Id (w s), [])
-    | _ -> Id (w "null")
+    | None | Some (HintArray) -> Id (w "null")
   ) l
 
 let exclude_toplevel_defs xs = 
@@ -236,7 +206,7 @@ let methods m =
 let is_variable s =
   match s with
   | "*myobj*" | "*return*" -> true
-  | _  -> Common.(=~) s "\\$.*"
+  | _  -> s =~ "\\$.*"
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -250,6 +220,7 @@ let rec program env heap program =
     env.path := [CG.FakeRoot];
     List.iter (fake_root env heap) program;
   end;
+
   env.path := [CG.File !(env.file)];
   stmtl env heap (exclude_toplevel_defs program)
 
@@ -301,18 +272,19 @@ and fake_root env heap =
 (* What if break/continue or throw? do we still abstract evaluate
  * the rest of the code? Yes because we care about the pointfix
  * of the values, and so we don't really care about the control flow.
+ * The analysis is kinda of flow insensitive.
  *)
 and stmtl env heap stl = List.fold_left (stmt env) heap stl
 
 and stmt env heap x =
   match x with
   (* special keyword in the code to debug the abstract interpreter state *)
-
   | Expr (Call (Id (("show" | "var_dump"),_), [e])) ->
       let heap, v = expr env heap e in
       Env.print_locals_and_globals print_string env heap;
       pr (Env.string_of_value heap v);
       heap
+  (* used by unit testing *)
   | Expr (Call (Id ("checkpoint",_), [])) ->
       _checkpoint_heap := Some (heap, !(env.vars));
       heap
@@ -320,11 +292,20 @@ and stmt env heap x =
   | Expr e ->
       let heap, _ = expr env heap e in
       heap
+  (* With 'if(true) { $x = 1; } else { $x = 2; }'
+   * we will endup with a heap with $x = &2{&1{int}}.
+   * Going in first branch will populate the heap
+   * and env.vars with an entry for $x, and when visiting
+   * the second branch the second assignment will
+   * cause a generalization for $x to an int.
+   *) 
   | If (c, st1, st2) ->
+      (* todo: warn type error if value/type of c is not ok? *)
       let heap, _ = expr env heap c in
       (* Some variables may be defined only in one branch.
        * To simplify the unifier we create some fake $x=null; before
        * processing the statements.
+       * todo: dead code apparently
        *)
       let heap = NullNewVars.stmt env heap st1 in
       let heap = NullNewVars.stmt env heap st2 in
@@ -338,7 +319,11 @@ and stmt env heap x =
   | Block stl ->
       stmtl env heap stl
   | Return e ->
-      let e = match e with None -> Id (w "NULL") | Some e -> e in
+      let e = 
+        match e with 
+        | None -> Id (w "null")
+        | Some e -> e 
+      in
       (* the special "*return*" variable is used in call_fun() below *)
       let heap, _ = expr env heap (Assign (None, Id (w "*return*"), e)) in
       heap
@@ -346,7 +331,7 @@ and stmt env heap x =
    * because the evaluation of e does not happen at the same time.
    * But here we care about the pointfix of the values, and so
    * the order does not matter.
-   * todo: but need to process the stmts 2 times at least to get a fixpoing?
+   * todo: but need to process the stmts 2 times at least to get a fixpoint?
    *)
   | Do (stl, e) | While (e, stl) ->
       let heap, _ = expr env heap e in
@@ -361,6 +346,7 @@ and stmt env heap x =
       let heap, _ = expr env heap e in
       let heap = List.fold_left (case env) heap cl in
       heap
+  (* todo: explain *)
   | Foreach (a, k, vopt, stl) ->
       let heap, a = expr env heap a in
       let heap, _, k = lvalue env heap k in
@@ -407,12 +393,13 @@ and case env heap x =
   match x with
   | Case (e, stl) ->
       let heap, _ = expr env heap e in
-      (* pad: useful? *)
+      (* pad: useful? toremove now *)
       let heap = NullNewVars.stmtl env heap stl in
+
       let heap = stmtl env heap stl in
       heap
   | Default stl ->
-      (* pad: useful? *)
+      (* pad: useful? reremove now *)
       let heap = NullNewVars.stmtl env heap stl in
       let heap = stmtl env heap stl in
       heap
@@ -430,34 +417,54 @@ and expr env heap x =
     !(env.path) x
   else expr_ env heap x
 
+(* will return a concrete value, or a pointer to a concrete value
+ * or a pointer to a pointer to a concrete value when Ref.
+ *)
 and expr_ env heap x =
   match x with
-  (* hardcoded special case, not sure why we need that *)
-  | Call (Id ("id",_), [x]) -> expr env heap x
-
-  | String s  -> heap, Vstring s
+  | Id ("true",_)  -> heap, Vbool true
+  | Id ("false",_) -> heap, Vbool false
   | Int s     -> heap, Vint   (int_of_string s)
   | Double s  -> heap, Vfloat (float_of_string s)
+
+  | String s  -> heap, Vstring s
   (* pad: ugly special case.
    * todo: fix Taint.fold_slist to not return a
    * a 'Vabstr Tstring' but instead a precise 'Vstring xxx'
    *)
   | Guil [String s] -> heap, Vstring s
-
   | Guil el ->
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
       heap, v
 
-  | Id ("true",_)  -> heap, Vbool true
-  | Id ("false",_) -> heap, Vbool false
+  (* will probably return some Vabstr (Tint|Tbool|...) *)
+  | Binop (bop, e1, e2) ->
+      let heap, v1 = expr env heap e1 in
+      let heap, v2 = expr env heap e2 in
+      (* we do some Ptr.get to get the final value, to "normalize"
+       * variables and direct values
+       *)
+      let heap, v1 = Ptr.get heap v1 in
+      let heap, v2 = Ptr.get heap v2 in
+      heap, binaryOp env heap bop v1 v2
+  | Unop (uop, e) ->
+      let heap, v = expr env heap e in
+      let heap, v = Ptr.get heap v in
+      heap, unaryOp uop v
+
+  (* with $x = (true)? 45 : "foo" will return a Tsum(Vint 42, Vstring "foo") *)
+  | CondExpr (e1, e2, e3) ->
+      let heap, _ = expr env heap e1 in
+      let heap, v1 = expr env heap e2 in
+      let heap, v2 = expr env heap e3 in
+      let heap, v = Unify.value heap v1 v2 in
+      heap, v
+
   | Id ("null",_)  -> heap, Vnull
   | Id ("NULL",_)  -> heap, Vnull
 
-  | Ref e ->
-      let heap, _, x = lvalue env heap e in
-      heap, x
   | ConsArray [] ->
       heap, Varray []
   | ConsArray avl ->
@@ -467,16 +474,14 @@ and expr_ env heap x =
       let heap, v = Ptr.get heap v in
       Var.unset env "*array*";
       heap, v
-  | Binop (bop, e1, e2) ->
-      let heap, v1 = expr env heap e1 in
-      let heap, v2 = expr env heap e2 in
-      (* pad: why do Ptr.get here and not in Unop too? *)
-      let heap, v1 = Ptr.get heap v1 in
-      let heap, v2 = Ptr.get heap v2 in
-      heap, binaryOp env heap bop v1 v2
-  | Unop (uop, e) ->
-      let heap, v = expr env heap e in
-      heap, unaryOp uop v
+
+  | Ref e ->
+      let heap, _, x = lvalue env heap e in
+      heap, x
+
+  (* hardcoded special case, not sure why we need that *)
+  | Call (Id ("id",_), [x]) -> expr env heap x
+
   | Call (Id ("call_user_func" as fname, tok), f :: el) ->
       let heap, f = expr env heap f in
       Taint.check_danger env heap fname tok !(env.path) f;
@@ -513,17 +518,13 @@ and expr_ env heap x =
   | InstanceOf (e1, e2) ->
       let heap, _ = expr env heap e1 in
       let heap, _ = expr env heap e2 in
+      (* pad: why vnull? *)
       heap, Vsum [Vnull; Vabstr Tbool]
-  | CondExpr (e1, e2, e3) ->
-      let heap, _ = expr env heap e1 in
-      let heap, v1 = expr env heap e2 in
-      let heap, v2 = expr env heap e3 in
-      let heap, v = Unify.value heap v1 v2 in
-      heap, v
   | Cast (ty, e) ->
       let heap, v = expr env heap e in
       heap, cast env heap ty v
 
+  (* list($a, $b) = $y  where $y is an array *)
   | Assign (None, List l, e) ->
       let n = ref 0 in
       let heap =
@@ -553,11 +554,16 @@ and expr_ env heap x =
        (try 
            let def = env.db.constants s in
            expr env heap def.cst_body    
-       with Not_found -> 
+       with Not_found ->
+         (* todo: when used in an instanceof context, as in
+          * $x instanceof A, then Id will contain actually
+          * the name of a class.
+          *)
          if !strict then raise (UnknownConstant s);
          heap, Vany
        )
 
+  (* todo: just desugar in $x = $x + 1 ? *)
   | Infix _ | Postfix _ ->
       if !strict then failwith "todo: handle Infix/Postfix";
       heap, Vany
@@ -566,8 +572,8 @@ and expr_ env heap x =
       heap, Vany
 
   | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
-      (* the lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
-       * so someone can modify it.
+      (* The lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
+       * so someone can modify it. See also assign() below.
        *)
       let heap, _, x = lvalue env heap lv in
       (* but in an expr context, we actually want the value, hence
@@ -576,6 +582,133 @@ and expr_ env heap x =
       let heap, x = Ptr.get heap x in
       heap, x
 
+(* related to Unify *)
+and binaryOp env heap bop v1 v2 =
+  match bop with
+  | Ast_php.Arith aop ->
+      (match v1, v2 with
+      | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
+      (* todo: warn on type error? *)
+      | _ -> Vsum [Vnull; Vabstr Tint]
+      )
+  | Ast_php.Logical lop -> Vabstr Tbool
+  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
+
+and unaryOp uop v =
+  match uop, v with
+  | Ast_php.UnPlus, Vint n       -> Vint n
+  | Ast_php.UnPlus, Vabstr Tint  -> Vabstr Tint
+  | Ast_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
+  | Ast_php.UnMinus, Vint n      -> Vint (-n)
+  | Ast_php.UnMinus, Vabstr Tint -> Vabstr Tint
+  | Ast_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
+  | Ast_php.UnBang, Vbool b      -> Vbool (not b)
+  | Ast_php.UnBang, Vabstr Tbool -> Vabstr Tbool
+  | Ast_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
+  | Ast_php.UnTilde, Vint n      -> Vint (lnot n)
+  | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
+  | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
+
+and cast env heap ty v =
+  match ty, v with
+  | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
+  | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
+  | Ast_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
+  | Ast_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
+  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
+  (* pad: ?? should be more ty? raise exception? warn type error? *)
+  | _ -> v
+
+(* ---------------------------------------------------------------------- *)
+(* Lvalue *)
+(* ---------------------------------------------------------------------- *)
+(* will return a boolean indicating whether a variable was created
+ * and will return the lvalue, that is the pointer to pointer, and not
+ * the actual value, so that the caller can modify it.
+ * todo: Why do we care to return if a variable was created?
+ *)
+and lvalue env heap x =
+  match x with
+  | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
+      let heap, k = Ptr.new_val heap (Vtaint s) in
+      let heap, v = Ptr.new_val heap (Vtaint s) in
+      heap, false, Vmap (k, v)
+
+  | Id (s,_) ->
+      if not (is_variable s) && !strict
+      then failwith ("Id in lvalue should be variables: " ^ s);
+      Var.get env heap s
+
+  | Array_get (e, k) ->
+      array_get env heap e k
+
+  | ConsArray l as e ->
+      let heap, a = expr env heap e in
+      let heap, v = Ptr.new_ heap in
+      let heap, _ = assign env heap true v a in
+      heap, true, v
+  | This -> 
+      lvalue env heap (Id (w "$this"))
+
+  | Obj_get (e, Id (s,_)) ->
+      let heap, v = expr env heap e in
+      let heap, v' = Ptr.get heap v in
+      let m = obj_get ISet.empty env heap [v'] s in
+      (try
+          heap, false, SMap.find s m
+        with Not_found -> try
+          (* pad: ???? field access ?? *)
+          heap, false, SMap.find ("$"^s) m
+        with Not_found ->
+          (match s with
+          (* it's ok to not have a __construct method *)
+          | "__construct" -> ()
+          | _ -> 
+              if !strict then begin
+                let ms = methods m in
+                if Common.null ms
+                then raise UnknownObject
+                else raise (UnknownMethod (s, "?", ms))
+              end
+          );
+          let heap, k = Ptr.new_val heap Vnull in
+          let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
+          heap, true, k
+      )
+  | Class_get (e, Id (s,_)) ->
+      let c = get_class env heap e in
+      let heap = lazy_class env heap c in
+      let heap, _, v = Var.get_global env heap c in
+      let heap, v = Ptr.get heap v in
+      (* pad: why double??? *)
+      let heap, v = Ptr.get heap v in
+      (try 
+          match v with
+          | Vobject m when SMap.mem s m ->
+              heap, false, SMap.find s m
+          | Vobject m ->
+              if !strict then raise (UnknownMethod (s, c, methods m));
+              heap, false, Vany
+          | _ ->
+              if !strict then failwith "Class_get not a Vobject";
+              heap, false, Vany
+      with Not_found -> 
+        if !strict then failwith "Class_get not found";
+        heap, false, Vany
+      )
+  (* TODO *)
+  | Class_get (_, e) ->
+      let heap, _ = expr env heap e in
+      if !strict then failwith "Class_get general case not handled";
+      heap, false, Vany
+  | List _ -> failwith "List should be handled in caller"
+  | e -> 
+      if !strict then failwith "lvalue not handled";
+      heap, false, Vany
+
+(* ---------------------------------------------------------------------- *)
+(* Arrays *)
+(* ---------------------------------------------------------------------- *)
 and array_value env id heap x =
   match x with
   | Aval e ->
@@ -631,126 +764,6 @@ and array_new_entry env heap ar a k m =
   let heap = Ptr.set heap ar (Vrecord m) in
   heap, v
 
-and binaryOp env heap bop v1 v2 =
-  match bop with
-  | Ast_php.Arith aop ->
-      (match v1, v2 with
-      | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
-      | _ -> Vsum [Vnull; Vabstr Tint]
-      )
-  | Ast_php.Logical lop -> Vabstr Tbool
-  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
-
-and unaryOp uop v =
-  match uop, v with
-  | Ast_php.UnPlus, Vint n       -> Vint n
-  | Ast_php.UnPlus, Vabstr Tint  -> Vabstr Tint
-  | Ast_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
-  | Ast_php.UnMinus, Vint n      -> Vint (-n)
-  | Ast_php.UnMinus, Vabstr Tint -> Vabstr Tint
-  | Ast_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
-  | Ast_php.UnBang, Vbool b      -> Vbool (not b)
-  | Ast_php.UnBang, Vabstr Tbool -> Vabstr Tbool
-  | Ast_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
-  | Ast_php.UnTilde, Vint n      -> Vint (lnot n)
-  | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
-  | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
-
-and cast env heap ty v =
-  match ty, v with
-  | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
-  | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
-  | Ast_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
-  | Ast_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
-  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
-  (* pad: ?? should be more ty? *)
-  | _ -> v
-
-(* ---------------------------------------------------------------------- *)
-(* Lvalue *)
-(* ---------------------------------------------------------------------- *)
-(* will return a boolean indicating whether a variable was created
- * and will return the lvalue, that is the pointer to pointer, and not
- * the actual value, so that the caller can modify it.
- *)
-and lvalue env heap x =
-  match x with
-  | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
-      let heap, k = Ptr.new_val heap (Vtaint s) in
-      let heap, v = Ptr.new_val heap (Vtaint s) in
-      heap, false, Vmap (k, v)
-
-  | Id (s,_) ->
-      if not (is_variable s) && !strict
-      then failwith ("Id in lvalue should be variables: " ^ s);
-      let heap, b, x = Var.get env heap s in
-      heap, b, x
-
-  | Array_get (e, k) ->
-      let heap, b, x = array_get env heap e k in
-      heap, b, x
-  | ConsArray l as e ->
-      let heap, a = expr env heap e in
-      let heap, v = Ptr.new_ heap in
-      let heap, _ = assign env heap true v a in
-      heap, true, v
-  | This -> lvalue env heap (Id (w "$this"))
-  | Obj_get (e, Id (s,_)) ->
-      let heap, v = expr env heap e in
-      let heap, v' = Ptr.get heap v in
-      let m = obj_get ISet.empty env heap [v'] s in
-      (try
-          heap, false, SMap.find s m
-        with Not_found -> try
-          (* pad: ???? field access ?? *)
-          heap, false, SMap.find ("$"^s) m
-        with Not_found ->
-          (match s with
-          (* it's ok to not have a __construct method *)
-          | "__construct" -> ()
-          | _ -> 
-              if !strict then begin
-                let ms = methods m in
-                if Common.null ms
-                then raise UnknownObject
-                else raise (UnknownMethod (s, "?", ms))
-              end
-          );
-          let heap, k = Ptr.new_val heap Vnull in
-          let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
-          heap, true, k
-      )
-  | Class_get (e, Id (s,_)) ->
-      let c = get_class env heap e in
-      let heap = lazy_class env heap c in
-      let heap, _, v = Var.get_global env heap c in
-      let heap, v = Ptr.get heap v in
-      (* pad: why double??? *)
-      let heap, v = Ptr.get heap v in
-      (try 
-          match v with
-          | Vobject m when SMap.mem s m ->
-              heap, false, SMap.find s m
-          | Vobject m ->
-              if !strict then raise (UnknownMethod (s, c, methods m));
-              heap, false, Vany
-          | _ ->
-              if !strict then failwith "Class_get not a Vobject";
-              heap, false, Vany
-      with Not_found -> 
-        if !strict then failwith "Class_get not found";
-        heap, false, Vany
-      )
-  (* TODO *)
-  | Class_get (_, e) ->
-      let heap, _ = expr env heap e in
-      if !strict then failwith "Class_get general case not handled";
-      heap, false, Vany
-  | List _ -> failwith "List should be handled in caller"
-  | e -> 
-      if !strict then failwith "expression not handled";
-      heap, false, Vany
-
 and array_get env heap e k =
   let heap, new_, ar = lvalue env heap e in
   let heap, ar = Ptr.get heap ar in
@@ -781,26 +794,6 @@ and array_get env heap e k =
       let heap, a = Unify.value heap a a' in
       let heap = Ptr.set heap ar a in
       heap, false, v
-
-(* could be put in helper *)
-and obj_get mem env heap v s =
-  (match v with
-  | [] -> SMap.empty
-  | Vref a :: rl ->
-      let l = ISet.fold (fun x acc -> x :: acc) a [] in
-      let vl = List.map (fun x -> Vptr x) l in
-      obj_get mem env heap (vl @ rl) s
-  | Vobject m :: _ -> m
-  | Vsum l :: l' ->
-      obj_get mem env heap (l@l') s
-  | Vptr n :: rl when ISet.mem n mem ->
-      obj_get mem env heap rl s
-  | Vptr n as x :: rl ->
-      let mem = ISet.add n mem in
-      let heap, x = Ptr.get heap x in
-      obj_get mem env heap (x :: rl) s
-  | x :: rl -> obj_get mem env heap rl s
-  )
 
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
@@ -920,6 +913,27 @@ and get_function env heap f e =
     with Not_found ->
       raise (UnknownFunction f)
 
+(* in PHP functions are passed via strings *)
+and get_dynamic_function env heap v =
+  let heap, v = Ptr.get heap v in
+  match v with
+  | Vstring s ->
+      (try heap, env.db.funs s
+       with Not_found -> raise (UnknownFunction s)
+      )
+  (* when will this happen? usually either have a Vstring or
+   * a Vabstr Tstring.
+   *)
+  | Vsum l -> get_function_list env heap l
+  | _ -> raise LostControl
+and get_function_list env heap = function
+  | [] -> raise LostControl
+  | Vstring s :: _ -> 
+      (try heap, env.db.funs s
+      with Not_found -> raise (UnknownFunction s)
+      )
+  | _ :: rl -> get_function_list env heap rl
+
 and parameters env heap l1 l2 =
   match l1, l2 with
   | [], _ -> heap
@@ -941,22 +955,6 @@ and parameters env heap l1 l2 =
       let heap, _, lv = lvalue env heap (Id p.p_name) in
       let heap, _ = assign env heap true lv v in
       parameters env heap rl rl2
-
-and new_ env heap c el =
-  let c = get_class env heap c in
-  let heap = lazy_class env heap c in
-  (* *myobj* = c::*BUILD*(el);
-   * *myobj->__construct(el);
-   *)
-  let stl = [
-    Expr (Assign (None, Id (w "*myobj*"),
-                 Call (Class_get (Id (w c), Id (w "*BUILD*")), el)));
-    Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
-  ] in
-  let heap = stmtl env heap stl in
-  let heap, _, v = Var.get env heap "*myobj*" in
-  Var.unset env "*myobj*";
-  heap, v
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
@@ -1021,10 +1019,48 @@ and static_var env heap (var, eopt) =
 (* Class *)
 (* ---------------------------------------------------------------------- *)
 
+and new_ env heap c el =
+  let c = get_class env heap c in
+  let heap = lazy_class env heap c in
+  (* *myobj* = c::*BUILD*(el);
+   * *myobj->__construct(el);
+   *)
+  let stl = [
+    Expr (Assign (None, Id (w "*myobj*"),
+                 Call (Class_get (Id (w c), Id (w "*BUILD*")), el)));
+    Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
+  ] in
+  let heap = stmtl env heap stl in
+  let heap, _, v = Var.get env heap "*myobj*" in
+  Var.unset env "*myobj*";
+  heap, v
+
+(* could be put in helper *)
+and obj_get mem env heap v s =
+  (match v with
+  | [] -> SMap.empty
+  | Vref a :: rl ->
+      let l = ISet.fold (fun x acc -> x :: acc) a [] in
+      let vl = List.map (fun x -> Vptr x) l in
+      obj_get mem env heap (vl @ rl) s
+  | Vobject m :: _ -> m
+  | Vsum l :: l' ->
+      obj_get mem env heap (l@l') s
+  | Vptr n :: rl when ISet.mem n mem ->
+      obj_get mem env heap rl s
+  | Vptr n as x :: rl ->
+      let mem = ISet.add n mem in
+      let heap, x = Ptr.get heap x in
+      obj_get mem env heap (x :: rl) s
+  | x :: rl -> obj_get mem env heap rl s
+  )
+
+
 and get_class env heap e =
   match e with
   (* pad: ???? *)
   | Id ("",_) -> ""
+
   | Id (s,_) when s.[0] <> '$' -> s
   | Id _ ->
       let env, v = expr env heap e in
@@ -1033,6 +1069,17 @@ and get_class env heap e =
       let heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
+
+(* usedby get_class *)
+and get_string = function
+  | [] -> ""
+  | Vstring s :: _ -> s
+  | Vsum l' :: rl ->
+      (match get_string l' with
+      | "" -> get_string rl
+      | x -> x
+      )
+  | _ :: rl -> get_string rl
 
 and lazy_class env heap c =
   if (SMap.mem c !(env.globals))
