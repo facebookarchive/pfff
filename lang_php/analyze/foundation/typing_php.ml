@@ -114,6 +114,14 @@ module Type = struct
         | _                        -> Tsum l
         )
 
+  (* 
+   * function($x: 'a, $y: 'b) {
+   *   // here we need to unify 'a and 'b
+   *   return (true)? $x: $y;
+   * }
+   * at the end, in subst we will have 'a -> 'c, 'b -> 'c, 
+   * and in tenv we will have 'c --> Tany.
+   *)
   and unify_vars env n1 n2 =
     let n1' = Subst.get env n1 in
     let n2' = Subst.get env n2 in
@@ -229,6 +237,7 @@ end
 (* Collect *)
 (*****************************************************************************)
 
+(* The substitution grows and grows, so we need to do stuff? *)
 module Collect = struct
 
   type mem = {
@@ -696,6 +705,9 @@ and func_def env fd =
   GEnv.set_fun env (A.unwrap fd.f_name) f;
   (* todo? do we need that? if the toplogical sort has been done
    * correctly we should not need that no?
+   * We can have some cycles, so the topological sort is not
+   * enough. We need to process the dependencies. The topological
+   * sort is just some kind of optimisations (to converge more quicky??)
    *)
   List.iter (infer_type_definition env) 
     (Graph.get_deps !(env.graph) (A.unwrap fd.f_name));
@@ -879,7 +891,15 @@ and method_def static env acc m =
   env.env := env_cpy;
   SMap.add (A.unwrap m.m_name) f acc
 
-(* ??? *)
+(* 
+ * When we have:
+ *   class A { function foo() { return $this; } }
+ *   class B extends A { }
+ * without doing anything special, the return type of B::foo would
+ * be A, but we actually want B. This is useful for completion purpose,
+ * and returning $this is a very frequent idiom in our codebase.
+ * Hence this cheat_method function below.
+ *)
 and cheat_method env parent this m =
   match m with
   | Tsum [Tfun (x, Tsum [Tclosed (s, _)])] when SSet.mem parent s ->
