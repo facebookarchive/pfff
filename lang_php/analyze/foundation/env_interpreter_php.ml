@@ -26,12 +26,12 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 (*
  * Main types and data structures used by the PHP abstract interpreter:
- * The "environment" and "heap".
+ * The "environment" and the "heap".
  * 
  * In the abstract interpreter, all variables are pointers to pointers
  * of values. So with '$x = 42;' we got $x = &2{&1{42}}.
  * In 'env.vars' we got "$x" = Vptr 2
- * and in the 'heap' we then got [2 -> Vptr 1; 1 -> Vint 42]
+ * and in the 'heap' we then got [0 -> ...; 1 -> Vint 42; 2 -> Vptr 1]
  * meaning that $x is a variable with address 2, where the content
  * of this cell is a pointer to address 1, where the content of
  * this cell is the value 42. This is consistent with how Zend
@@ -45,7 +45,7 @@ module SMap = Map.Make (String)
  * that is $x = {42} without any Vptr? Because dealing with lvalues in the
  * interpreter would then be tedious. For instance with '$x = array(1,2,3);'
  * How would you handle '$x[0] = 1;' without any Vptr and a heap?
- * You would need to use ocaml references to mimic those Vptr.
+ * You would need to use OCaml references to mimic those Vptr.
  * 
  * Why not just variables be pointer to values then? Because
  * of references. With this code:
@@ -131,7 +131,7 @@ type value =
 
   (* 
    * The first 'value' is for '$this' which will be a pointer to
-   * the object. Where it's used??? todo: think it can be removed
+   * the object. Where it's used??? todo: I think it can be removed
    * as we handle self/parent/this via closures in make_method()
    * 
    * The integer key of the IMap below is a unique identifier for a 
@@ -153,7 +153,7 @@ type value =
    * $x = &2{REF 1{Vobject (["foo"->Vmethod (&2{rec}, [0x42-> (<foo closure>)])])}}
    *)
   | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
-  (* We would need a Vfun too if we were handling closures. But for
+  (* We would need a Vfun too if we were handling Lambda. But for
    * regular function calls, we just handle 'Call (Id "...")' specially
    * in the interpreter (but we don't for 'Call (Obj_get ...)', hence
    * this intermediate Vmethod value above).
@@ -162,7 +162,7 @@ type value =
   (* Representation for objects, a set of members where a member can be
    * a constant, or variable, or method.
    * A class is actually also represented as an object, with a special
-   * *BUILD* method
+   * *BUILD* method which is called when we do 'new A()'.
    *)
   | Vobject of value SMap.t
 
@@ -200,8 +200,9 @@ and env = {
 
   (* local variables and parameters (will be pointer to pointer to values) *)
   vars    : value SMap.t ref;
-  (* globals and static variables (prefixed with a "<function>**".
-   * This also used for self/parent, and $this.
+  (* globals and static variables (prefixed with a "<function>**").
+   * This is also used for self/parent, and $this (set/unset
+   * respectively when entering/leaving the method)
    *)
   globals : value SMap.t ref;
 
@@ -307,10 +308,25 @@ let rec value ptrs o x =
   | Vtaint s -> o "PARAM:"; o s
   | Vabstr ty -> type_ o ty
 
-  | Vbool b -> o (string_of_bool b)
-  | Vint n -> o (string_of_int n)
-  | Vfloat f -> o (string_of_float f)
+  | Vbool b   -> o (string_of_bool b)
+  | Vint n    -> o (string_of_int n)
+  | Vfloat f  -> o (string_of_float f)
   | Vstring s -> o "'"; o s; o "'"
+
+  | Vptr n ->
+      if IMap.mem n ptrs then begin
+        o "&";
+        o (string_of_int n);
+        o "{";
+        value (IMap.remove n ptrs) o (IMap.find n ptrs);
+        o "}"
+      end else
+        (* this happens for instance for objects which are pointer
+         * to pointer to Vobject with for members a set of Vmethod
+         * where the first element $this backward points to the
+         * object.
+         *)
+        o "rec"
 
   | Vref s ->
       o "&REF ";
@@ -323,14 +339,6 @@ let rec value ptrs o x =
           o "}"
       with Not_found -> o "rec"
       )
-  | Vptr n when IMap.mem n ptrs ->
-      o "&";
-      o (string_of_int n);
-      o "{";
-      value (IMap.remove n ptrs) o (IMap.find n ptrs);
-      o "}"
-  (* pad: when this happens??? *)
-  | Vptr _ -> o "rec"
   | Vrecord m ->
       let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
       o "record(";
@@ -364,6 +372,7 @@ and type_ o x =
   | Tfloat -> o "float"
   | Tstring -> o "string"
   | Txhp -> o "xhp"
+
 
 (*****************************************************************************)
 (* Printing *)
