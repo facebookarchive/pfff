@@ -76,7 +76,7 @@ module Ptr = struct
   let rec get_ heap ptr =
     try
       let v = IMap.find ptr heap.ptrs in
-      (* pad: ??? *)
+      (* XXX pad: ??? *)
       { ptrs = IMap.add ptr v heap.ptrs }, 
       v
     with Not_found ->
@@ -87,7 +87,7 @@ module Ptr = struct
     { ptrs = IMap.add ptr v heap.ptrs }
 
   (* 'get' dereference a pointer when the value is a pointer. 
-   * When we do '2 + $x' where $x = 3,the abstract interpreter will
+   * When we do '2 + $x' where $x = 3, the abstract interpreter will
    * have for values for the operand of plus a (Vint 2) and a (Vptr 1)
    * where 1 points to a (Vint 3). The Vint of $x is kinda boxed.
    * But in the code of binaryOp we don't want to handle the many
@@ -224,6 +224,11 @@ module Order = struct
 
 end
 
+(* Should be called more "generalize" or "abstractize" because
+ * it just tries to give a more general value, e.g. in
+ * $x = true ? 3: 4; the goal is to return a Vabstr Tint which
+ * generalize the Vint 3 and Vint 4.
+ *)
 module Unify = struct
 
   let make_ref ptrs x =
@@ -236,6 +241,28 @@ module Unify = struct
         )
     | _ -> ptrs
 
+  (*
+    The stack is used to keep track of cyclic data structures.
+    We need to stop when this is the case.
+    Otherwise what we do is we dereference the left pointer
+    then dereference the right pointer, unify the two values
+    that we found (let's call this new value v).
+    
+    Vptr 0 --> Vint
+    Vptr 1 --> Vbool
+    pointers stack ptrs 0 1
+
+    if(true) {
+      $x = 42; &2&1 Vint 42
+    } else { 
+      $x = 55; &2&1 Vint 55
+    }
+     // the pointer in $x must point to the same abstract value,
+     // in this case Vint
+     // $x &2&1 Vint
+     mais attention
+     &3&4 Vint
+  *)
   let rec pointers stack ptrs n1 n2 =
     if ISet.mem n1 stack && ISet.mem n2 stack || n1 = n2
     then ptrs, n1
@@ -523,7 +550,6 @@ let make_ref e =
   | Ref _ -> e
   | _ when IsLvalue.expr e -> Ref e
   | _ -> e
-
 
 (* Allez ... pour faire plaisir a yoyo *)
 let save_excursion env heap f e =
