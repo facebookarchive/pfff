@@ -177,7 +177,10 @@ $y = true; // path sensitivity would detect it's always $x = 2 ...
 if($y) { $x = 2;} else { $x = 3; }
 checkpoint(); // x: int
 " in
-      assert_final_value_at_checkpoint "$x" file (Vabstr Tint);
+      (* there is no range, we go from a very precise value to a
+       * very general abstraction (the type) very quickly
+       *)
+      assert_final_value_at_checkpoint "$x" file (Vabstr Tint); 
     );
 
     "union types" >:: (fun () ->
@@ -230,7 +233,11 @@ checkpoint(); // x:int
   (* Fixpoint *)
   (*-------------------------------------------------------------------------*)
 
-  (* TODO while loop, dowhile, recursion, 2 is enough? *)
+  (* TODO while loop, dowhile, recursion, 2 is enough?
+   * Because of the abstraction we've chosen (no int range for instance),
+   * we achieve the fixpoint in one step so probably has
+   * no fixpoint issues.
+   *)
 
   (*-------------------------------------------------------------------------*)
   (* Interprocedural dataflow *)
