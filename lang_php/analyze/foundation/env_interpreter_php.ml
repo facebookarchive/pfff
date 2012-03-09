@@ -55,7 +55,7 @@ module SMap = Map.Make (String)
  *   $y =& $x;
  *   var_dump($x);
  * 
- * We will have at the first var_dump: $x = &2{&1{2}}
+ * We will have at the first var_dump(): $x = &2{&1{2}}
  * and at the second var_dump: $x = &2{&REF 1{2}}, $y = &4{&REF 1{2}}
  * See the code of assign in the interpreter for more information.
  * 
@@ -93,8 +93,9 @@ type code_database = {
   constants: string -> Ast.constant_def;
 }
 
+(* The abstract interpreter manipulate "values" *)
 type value =
-  (* Precise value. Especially useful for Vstring for interprocedural
+  (* Precise values. Especially useful for Vstring for interprocedural
    * analysis as people use strings to represent functions or classnames
    * (they are not first-class citizens in PHP). Maybe also useful
    * for Vint when use ints for array indices and we want the precise
@@ -102,7 +103,7 @@ type value =
    *)
   | Vbool   of bool
   | Vint    of int
-  | Vfloat  of float
+  | Vfloat  of float (* not that useful *)
   | Vstring of string
 
   (* We converge quickly to a very abstract value. Values are either
@@ -150,20 +151,51 @@ type value =
    *)
 
   (* Representation for objects, a set of members where a member can be
-   * a constant, or variable, or method.
-   * A class is actually also represented as an object, with a special
-   * *BUILD* method which is called when we do 'new A()'.
+   * a constant, a field, a static variable, or a method. With:
+   * 
+   *    class A {
+   *      public $fld = 1;
+   *      static public $fld2 = 2;
+   *      public function foo() { }
+   *      static public function bar() { }
+   *      const CST = 2;
+   *    }
+   *    $o = new A();
+   * 
+   * we will get:
+   * $o = &2{&REF 16{object(
+   *   'foo' => method(&17{&REF 16{rec}), 
+   *   'fld' => &19{&18{1}}, 
+   *   'bar' => method(&17{&REF 16{rec}), 
+   *   'CST' => 2, 
+   *   '$fld2' => &10{&9{2}})}}
+   * 
+   * Note that static variables keep their $ in their name but not
+   * regular fields. They are also shared by all objects of this class.
+   * 
+   * A class is actually also represented as a Vobject, with a special
+   * *BUILD* method which is called when we do 'new A()', so on previous
+   * example we will get in env.globals:
+   * A = &6{&5{object(
+   *     'foo' => method(Null), 
+   *     'bar' => method(Null), 
+   *     'CST' => 2, 
+   *     '*BUILD*' => method(Null), 
+   *     '$fld2' => &10{&9{2}})}}
+   * 
+   * TODO, not sure why we get foo() here there too.
    *)
   | Vobject of value SMap.t
 
   (* Union of possible types/values, ex: null | object, bool | string, etc.
-   * This could grow a lot so the abstract interpreter need to turn
+   * This could grow a lot, so the abstract interpreter needs to turn
    * that into a Vany at some point ???
    *)
   | Vsum    of value list
 
   (* A pointer is an int address in the heap. A variable is a pointer
-   * to a pointer to a value.
+   * to a pointer to a value. A field is also a pointer to a pointer to
+   * a value. A class is a pointer to pointer to Vobject. An object too.
    *)
   | Vptr of int
   (* todo: extract Vptr out of 'value', to have clear different types.
@@ -206,7 +238,7 @@ and env = {
   vars    : value SMap.t ref;
   (* globals and static variables (prefixed with a "<function>**").
    * This is also used for classes which are considered as globals
-   * pointing to a vobject with a method *BUILD* that can build objects
+   * pointing to a Vobject with a method *BUILD* that can build objects
    * of this class.
    * 'globals' is also used for self/parent, and $this (set/unset
    * respectively when entering/leaving the method)

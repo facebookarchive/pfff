@@ -243,6 +243,7 @@ let rec program env heap program =
    * (because the definitions of those __builtin__ are empty in
    * pfff/data/php_stdlib/pfff.php).
    *)
+  Trace.process_entity !(env.file);
   let finalheap = stmtl env heap (exclude_toplevel_defs program) in
 
   if !extract_paths
@@ -269,6 +270,7 @@ and fake_root env heap =
    * modify by side effect env.globals, but then when we would
    * process FuncDef, env.globals would think previous classes are in the
    * heap when they are actually not.
+   * todo?? why it matters?
    *)
   H.save_excursion env heap (fun env heap x ->
     match x with
@@ -295,7 +297,6 @@ and fake_root env heap =
          * so there is not much interesting things to do on it
          *)
         ()
-
     | _ -> ()
   )
 
@@ -476,7 +477,7 @@ and expr env heap x =
     (expr_, lvalue, get_dynamic_function, call_fun, call, assign) !(env.path) x
   else expr_ env heap x
 
-(* will return a concrete value, or a pointer to a concrete value
+(* will return a "concrete" value, or a pointer to a concrete value,
  * or a pointer to a pointer to a concrete value when Ref.
  *)
 and expr_ env heap x =
@@ -648,7 +649,7 @@ and expr_ env heap x =
        * the Ptr.get dereference, so we will return &1{...}
        *)
       let heap, _, x = lvalue env heap lv in
-      (* could probably do another call to Ptr.get here? *)
+      (* could probably do another call to Ptr.get here *)
       let heap, x = Ptr.get heap x in
       heap, x
 
@@ -721,6 +722,8 @@ and lvalue env heap x =
 
   | This -> 
       (* $this is present in env.globals (see make_method())
+       * todo: so with this actually look for the value of $this in
+       * env.globals??
       *)
       lvalue env heap (Id (w "$this"))
 
@@ -740,7 +743,11 @@ and lvalue env heap x =
       let members = obj_get ISet.empty env heap [v'] s in
       (try heap, false, SMap.find s members
       with Not_found -> 
-        (* pad: ???? field access ?? *)
+        (* This will actually access static class variables
+         * See class_vars() below. 
+         * todo: We should throw an exception here in strict mode,
+         * people should not access static member via $o->.
+         *)
         try heap, false, SMap.find ("$"^s) members
         with Not_found ->
           (match s with
