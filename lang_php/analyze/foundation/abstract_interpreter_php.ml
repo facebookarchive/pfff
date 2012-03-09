@@ -747,7 +747,7 @@ and lvalue env heap x =
   | Obj_get (e, Id (s,_)) ->
       let heap, v = expr env heap e in
       let heap, v' = Ptr.get heap v in
-      let members = obj_get ISet.empty env heap [v'] s in
+      let members = obj_get_members ISet.empty env heap [v'] in
       (try heap, false, SMap.find s members
       with Not_found -> 
         (* This will actually try access to a static class variables
@@ -1169,27 +1169,26 @@ and new_ env heap e el =
   Var.unset env "*myobj*";
   heap, v
 
-(* could be put in helper
- * todo: 's' seems unused
+(* could be put in helper.
  * todo: what mem is for?
  *)
-and obj_get mem env heap v s =
+and obj_get_members mem env heap v =
   (match v with
   | [] -> SMap.empty
   | Vref a :: rl ->
       let l = ISet.fold (fun x acc -> x :: acc) a [] in
       let vl = List.map (fun x -> Vptr x) l in
-      obj_get mem env heap (vl @ rl) s
+      obj_get_members mem env heap (vl @ rl)
   | Vobject m :: _ -> m
   | Vsum l :: l' ->
-      obj_get mem env heap (l@l') s
+      obj_get_members mem env heap (l@l')
   | Vptr n :: rl when ISet.mem n mem ->
-      obj_get mem env heap rl s
+      obj_get_members mem env heap rl
   | Vptr n as x :: rl ->
       let mem = ISet.add n mem in
       let heap, x = Ptr.get heap x in
-      obj_get mem env heap (x :: rl) s
-  | x :: rl -> obj_get mem env heap rl s
+      obj_get_members mem env heap (x :: rl)
+  | x :: rl -> obj_get_members mem env heap rl
   )
 
 (* todo: make it mimic more get_function and get_dynamic_function ? *)
