@@ -23,6 +23,10 @@ module SMap = Map.Make(String)
 (* Prelude *)
 (*****************************************************************************)
 
+(* Main types and data structures used by the PHP type inference:
+ * The PHP types representation and the "environment".
+ *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)

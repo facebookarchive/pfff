@@ -27,10 +27,10 @@ open Typing_helpers_php
  * This module implements a bottom-up type-inference for PHP.
  * 
  * Every classes/functions are sorted in their topological order, 
- * and are then typed independently (hence bottom-up).
+ * and are then typed independently (hence the term "bottom-up").
  * 
  * The type representation is fairly standard (see Env_typing_php),
- * except for classes. A class is represented as an object with 
+ * except for classes. A class is represented as a Tclosed/Tobject with 
  * a special field called __obj that contains the type of the
  * instanciated object.
  *
@@ -57,7 +57,7 @@ open Typing_helpers_php
  * history:
  *  - wanted first to (ab)use the (top-down) abstract interpreter to
  *    also do type inference, but the interpreter is kinda hacky already
- *    and full of heuristics. pad had the idea of instead trying 
+ *    and full of heuristics. pad had the idea of trying 
  *    a bottom-up approach
  *  - algo unification a la leroy.
  *)
@@ -76,12 +76,12 @@ exception UnknownEntity of string
 (*****************************************************************************)
 let add_defs_code_database_and_update_dependencies env stl =
   List.iter (function
-  | ClassDef cd ->
-      Graph.class_def env.graph cd;
-      Classes.add env (A.unwrap cd.c_name) cd
-  | FuncDef fd ->
-      Graph.func_def env.graph fd;
-      Functions.add env (A.unwrap fd.f_name) fd
+  | ClassDef def ->
+      Graph.class_def env.graph def;
+      Classes.add env (A.unwrap def.c_name) def
+  | FuncDef def ->
+      Graph.func_def env.graph def;
+      Functions.add env (A.unwrap def.f_name) def
   | ConstantDef _ ->
       raise Common.Todo
   | _ -> ()
@@ -103,74 +103,95 @@ module Type = struct
   let mixed l = mixed false false l
 
   let rec unify env t1 t2 =
-    if t1 == t2 then t1 else
-    match t1, t2 with
-    | Tsum ([] | [Tabstr "null"]), x
-    | x, Tsum ([] | [Tabstr "null"]) -> x
-    | x, y when x == y -> x
-    | Tvar x, Tvar y when x = y -> t1
-    | Tvar n1, Tvar n2 -> unify_vars env n1 n2
-    | (Tvar n as x), y | y, (Tvar n as x) ->
-        let n' = fresh() in
-        TEnv.set env n' y;
-        unify env x (Tvar n')
-    | Tsum x, Tsum y ->
-        let l = unify_sum env x y in
-        (match () with
-        | _ when mixed l           -> Tsum []
-        | _ when List.length l > 3 -> Tsum []
-        | _                        -> Tsum l
-        )
+    if t1 == t2 
+    then t1 
+    else
+      match t1, t2 with
+      (* null get absorbed :( could change that to find null bugs? *)
+      | Tsum ([] | [Tabstr "null"]), x | x, Tsum ([] | [Tabstr "null"]) -> 
+          x
+      (* pad: ??? redundant with t1 == t2 above no ?*)
+      | x, y when x == y -> x
+      | Tvar x, Tvar y when x = y -> 
+          t1
+      | Tvar n1, Tvar n2 -> 
+          unify_vars env n1 n2
+      | (Tvar n as x), y | y, (Tvar n as x) ->
+          let n' = fresh() in
+          TEnv.set env n' y;
+          unify env x (Tvar n')
+      | Tsum x, Tsum y ->
+          let l = unify_sum env x y in
+          (match () with
+          (* let's not grow too much, abstract things quite fast *)
+          | _ when mixed l           -> Tsum []
+          | _ when List.length l > 3 -> Tsum []
+          | _                        -> Tsum l
+          )
 
   (* 
    * function($x: 'a, $y: 'b) {
    *   // here we need to unify 'a and 'b
-   *   return (true)? $x: $y;
+   *   return (true)? $x : $y;
    * }
    * at the end, in subst we will have 'a -> 'c, 'b -> 'c, 
-   * and in tenv we will have 'c --> Tany.
+   * and in tenv we will have 'c --> Tany, and we will
+   * return 'c here.
+   * 
+   * This is very subtle code.
    *)
   and unify_vars env n1 n2 =
     let n1' = Subst.get env n1 in
     let n2' = Subst.get env n2 in
-    if n1' = n2' then Tvar n1' else
-    let t1 = TEnv.get env n1' in
-    let t2 = TEnv.get env n2' in
-    let n = fresh() in
-    Subst.replace env n1 n;
-    Subst.replace env n2 n;
-    let t = unify env t1 t2 in
-    let n = Subst.get env n in
-    TEnv.set env n t;
-    (Tvar n)
+    if n1' = n2' 
+    then Tvar n1' 
+    else (* todo: begin here no? *)
+      let t1 = TEnv.get env n1' in
+      let t2 = TEnv.get env n2' in
+      let n = fresh() in
+      Subst.replace env n1 n;
+      Subst.replace env n2 n;
+      let t = unify env t1 t2 in
+      let n = Subst.get env n in
+      TEnv.set env n t;
+      (Tvar n)
 
-  and unify_ env t1 t2 =
+  and unify_ env (t1: prim_ty) (t2: prim_ty) =
     match t1, t2 with
-    | Tsstring s1, Tsstring s2 when s1 == s2 -> t1
+    | Tsstring s1, Tsstring s2 when s1 == s2 -> 
+        t1
     | Tsstring s1, Tsstring s2 ->
         let s = SSet.union s1 s2 in
+        (* absorb *)
         if SSet.cardinal s > 200
         then Tabstr "string"
         else Tsstring s1
-    | (Tsstring _ as t), _ | _, (Tsstring _ as t) -> t
-    | Tienum s1, Tienum s2 when s1 == s2 -> t1
-    | Tienum s1, Tienum s2 -> Tienum (SSet.union s1 s2)
-    | Tienum _, t
-    | t, Tienum _ -> unify_ env t (Tabstr "int")
-    | Tsenum s1, Tsenum s2 when s1 == s2 -> t1
-    | Tsenum s1, Tsenum s2 -> Tsenum (SSet.union s1 s2)
-    | Tsenum _, t
-    | t, Tsenum _ -> unify_ env (Tabstr "string") t
-    | Tabstr "bool", t (* We want them in this order bool < int < string < html *)
-    | t, Tabstr "bool" -> t
-    | Tabstr "int", t
-    | t, Tabstr "int" -> t
-    | Tabstr "string", t
-    | t, Tabstr "string" -> t
+    (* todo: ??? why not unify_ env t (Tabstr "string") ? *)
+    | (Tsstring _ as t), _ | _, (Tsstring _ as t) -> 
+        t
+    | Tienum s1, Tienum s2 when s1 == s2 -> 
+        t1
+    | Tienum s1, Tienum s2 -> 
+        Tienum (SSet.union s1 s2)
+    | Tienum _, t | t, Tienum _ -> 
+        unify_ env t (Tabstr "int")
+
+    | Tsenum s1, Tsenum s2 when s1 == s2 -> 
+        t1
+    | Tsenum s1, Tsenum s2 -> 
+        Tsenum (SSet.union s1 s2)
+    | Tsenum _, t | t, Tsenum _ -> 
+        unify_ env (Tabstr "string") t
+    (* We want them in this order bool < int < string < html *)
+    | Tabstr "bool", t | t, Tabstr "bool" -> t
+    | Tabstr "int", t  | t, Tabstr "int" -> t
+    | Tabstr "string", t | t, Tabstr "string" -> t
     | Tabstr _, _ -> t1
+
     | Trecord s1, Trecord s2 ->
-        if s1 == s2 then t1 else
-        Trecord (unify_map env s1 s2)
+        if s1 == s2 
+        then t1 
+        else Trecord (unify_map env s1 s2)
     | Trecord x, t | t, Trecord x ->
         if SMap.is_empty x
         then t
@@ -185,8 +206,7 @@ module Type = struct
         let l = unifyl env l1 l2 in
         let t = unify env t1 t2 in
         Tfun (l, t)
-    | Tobject o, Tclosed (s, c)
-    | Tclosed (s, c), Tobject o ->
+    | Tobject o, Tclosed (s, c) | Tclosed (s, c), Tobject o ->
         let o = unify_map env o c in
         Tclosed (s, o)
     | Tobject o1, Tobject o2 ->
@@ -212,12 +232,13 @@ module Type = struct
     match l1, l2 with
     | [], l | l, [] -> l
     | (s1, x1) :: rl1, (s2, x2) :: rl2 ->
-        let s = if s1 = s2 then s1 else "" in
+        let s = 
+          if s1 = s2 then s1 else ""
+        in
         (s, unify env x1 x2) :: unifyl env rl1 rl2
 
   and unify_map env s1 s2 =
-    SMap.fold (
-    fun x t acc ->
+    SMap.fold (fun x t acc ->
       if SMap.mem x s2
       then
         let t = unify env t (SMap.find x s2) in
@@ -227,18 +248,19 @@ module Type = struct
 
   and unify_sum env l1 l2 =
     match l1, l2 with
-    | [], l
-    | l, [] -> l
+    | [], l | l, [] -> 
+        l
     | x1 :: rl1, x2 :: rl2 ->
         let c1 = Env_typing_php.proj x1 in
         let c2 = Env_typing_php.proj x2 in
+        (* todo: use Cmp *)
         let c = c1 - c2 in
         if c < 0
         then x1 :: unify_sum env rl1 l2
-        else if c > 0
-        then x2 :: unify_sum env l1 rl2
-        else unify_ env x1 x2 :: unify_sum env rl1 rl2
-
+        else 
+          if c > 0
+          then x2 :: unify_sum env l1 rl2
+          else unify_ env x1 x2 :: unify_sum env rl1 rl2
 end
 
 (*****************************************************************************)
@@ -358,6 +380,7 @@ and stmt env = function
   | Expr e -> iexpr env e
   | Block stl -> stmtl env stl
   | If (e, st1, st2) ->
+      (* todo? should we unify e with bool? *)
       iexpr env e;
       stmt env st1;
       stmt env st2
@@ -387,8 +410,7 @@ and stmt env = function
   | Return None -> ()
   | Return (Some e) ->
       iexpr env (Assign (None, Id (wrap "$;return"), e))
-  | Break eopt -> expr_opt env eopt
-  | Continue eopt -> expr_opt env eopt
+  | Break eopt | Continue eopt -> expr_opt env eopt
   | Throw e -> iexpr env e
   | Try (stl, c, cl) ->
       stmtl env stl;
@@ -445,6 +467,8 @@ and expr env e =
   expr_ env false e
 
 and expr_ env lv = function
+
+  | Id (("true" | "false"),_) -> bool
   | Int _ -> int
   | Double _ -> float
   | String s ->
@@ -453,15 +477,33 @@ and expr_ env lv = function
           let t = Tvar (fresh()) in
           env.show := Sauto_complete (s, t);
           t
-      | _ when String.contains s '<' -> 
-          thtml
-      | _ -> 
-          Tsum [Tsstring (SSet.singleton s)]
+      | _ when String.contains s '<' -> thtml
+      | _                            -> Tsum [Tsstring (SSet.singleton s)]
       )
   | Guil el ->
       List.iter (encaps env) el;
       string
-  | Id (("true" | "false"),_) -> bool
+
+  | Binop (bop, e1, e2) ->
+      let t1 = expr env e1 in
+      let t2 = expr env e2 in
+      binaryOp env t1 t2 bop
+  | Unop (uop, e) ->
+      let _ = expr env e in
+      unaryOp uop
+  | Infix (_, e) -> expr env e
+  | Postfix (_, e) -> expr env e
+
+  | CondExpr (e1, e2, e3) ->
+      iexpr env e1;
+      let e2 = expr env e2 in
+      let e3 = expr env e3 in
+      Type.unify env e2 e3
+  | Cast (pty, e) ->
+      iexpr env e;
+      ptype env pty
+
+  | Ref e -> expr env e
 
   | Id (s, tok) ->
       let is_marked = has_marker env s in
@@ -481,8 +523,13 @@ and expr_ env lv = function
           else env.show := Sglobal (get_marked_id env s);
           any
 
+      (* a local variable, lookup in env. This can create a new
+       * variable and assigns it a fresh type variable. This is
+       * how PHP works ... there is no variable declaration.
+       *)
       | _ when s.[0] = '$' || Env.mem env s ->
           Env.get env s
+
       (* this covers functions but also builtin constants such as null *)
       | _ when GEnv.mem_fun env s -> GEnv.get_fun env s
       | _ when GEnv.mem_class env s -> GEnv.get_class env s
@@ -495,12 +542,15 @@ and expr_ env lv = function
           any
       )
   | This -> expr env (Id (wrap "$this"))
+
+
   | Array_get (e, None) ->
       let t1 = expr env e in
       let v = Tvar (fresh()) in
       let t2 = array (int, v) in
       let _ = Type.unify env t1 t2 in
       v
+  (* ??? *)
   | Array_get (e, Some (Id (s,_))) when s.[0] <> '$' ->
       expr env (Array_get (e, Some (String s)))
   | Array_get (Id (s,_), Some (String x))
@@ -523,6 +573,7 @@ and expr_ env lv = function
       let _ = Type.unify env t1 t2 in
       v
 
+  (* disguised array access *)
   | Call (Id (("idx" | "edx" | "adx" | "sdx"),_), (e :: k :: r)) ->
       let e = expr env (Array_get (e, Some k)) in
       (match r with
@@ -536,6 +587,10 @@ and expr_ env lv = function
       let t2 = array (k, v) in
       let _ = Type.unify env t1 t2 in
       v
+
+  (* ?? why this special case? the code handling Id() should do the
+   * GEnv.get_class so no need this special case.
+   *)
   | Class_get (Id (c,_), Id (x,_)) when c <> special "self" && c <> special "parent" ->
       let marked = env.auto_complete && has_marker env x in
       let t1 = GEnv.get_class env c in
@@ -544,8 +599,7 @@ and expr_ env lv = function
       let t2 = sobject (x, v) in
       let _ = Type.unify env t1 t2 in
       v
-  | Class_get (e, Id (x,_))
-  | Obj_get (e, Id (x,_)) ->
+  | Class_get (e, Id (x,_)) | Obj_get (e, Id (x,_)) ->
       let marked = env.auto_complete && has_marker env x in
       let t1 = expr env e in
       if marked then (env.show := Sauto_complete (x, t1); any) else
@@ -553,8 +607,9 @@ and expr_ env lv = function
       let t2 = sobject (x, v) in
       let _ = Type.unify env t1 t2 in
       v
-  | Class_get _
-  | Obj_get _ -> any
+  | Class_get _ | Obj_get _ -> 
+      any
+
   | Assign (None, e1, e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
@@ -562,19 +617,18 @@ and expr_ env lv = function
       t
   | Assign (Some bop, e1, e2) ->
       expr env (Assign (None, e1, Binop (bop, e1, e2)))
+
   | ConsArray avl ->
       let t = Tvar (fresh()) in
       let t = List.fold_left (array_value env) t avl in
       t
-  | Infix (_, e) -> expr env e
-  | Postfix (_, e) -> expr env e
-  | Binop (bop, e1, e2) ->
-      let t1 = expr env e1 in
-      let t2 = expr env e2 in
-      binaryOp env t1 t2 bop
-  | Unop (uop, e) ->
-      let _ = expr env e in
-      unaryOp uop
+
+  | List el ->
+      let t = Tvar (fresh()) in
+      let el = List.map (expr env) el in
+      let t = List.fold_left (Type.unify env) t el in
+      array (int, t)
+
   | Call (e, [Id ("JUJUMARKER",_)]) ->
       env.show := Sargs (expr env e);
       any
@@ -585,17 +639,13 @@ and expr_ env lv = function
       let f' = fun_ (exprl env el) v in
       let _ = Type.unify env f f' in
       v
-  | Ref e -> expr env e
+
   | Xhp x ->
       xml env x;
       let name = A.string_of_xhp_tag x.xml_tag in
       let t = expr env (New (Id (wrap name), [])) in
       t
-  | List el ->
-      let t = Tvar (fresh()) in
-      let el = List.map (expr env) el in
-      let t = List.fold_left (Type.unify env) t el in
-      array (int, t)
+
   | New (Id (x,_), _) when env.auto_complete && has_marker env x ->
       env.show := Sglobal (get_marked_id env x);
       any
@@ -610,19 +660,13 @@ and expr_ env lv = function
         | _ -> SSet.empty
       in
       Type.unify env t (Tsum [Tclosed (set, SMap.empty)])
+
   | InstanceOf (e1, e2) ->
       iexpr env e1;
       iexpr env e2;
       bool
-  | CondExpr (e1, e2, e3) ->
-      iexpr env e1;
-      let e2 = expr env e2 in
-      let e3 = expr env e3 in
-      Type.unify env e2 e3
-  | Cast (pty, e) ->
-      iexpr env e;
-      ptype env pty
-  | Lambda _ -> (* TODO *)
+  (* TODO *)
+  | Lambda _ -> 
       any
 
 and encaps env e =
@@ -665,6 +709,7 @@ and logicalOp env t1 t2 = function
       ignore (Type.unify env t1 t2)
   | Ast_php.AndLog | Ast_php.OrLog | Ast_php.XorLog
   | Ast_php.AndBool | Ast_php.OrBool ->
+      (* ?? why nothing there? *)
       ()
 
 and unaryOp = function
@@ -726,6 +771,7 @@ and func_def env fd =
 
 and make_return env r =
   match TEnv.get env r with
+  (* ??? *)
   | Tsum _ -> TEnv.set env r null
   | _ -> ()
 
@@ -761,10 +807,10 @@ and get_hard_object env c =
   SMap.find "__obj" class_
 
 (* the type of an object is always in the field __obj of the class
-   all the other fields are static methods/vars
-*)
+ * all the other fields are static methods/vars
+ *)
 and get_object = function
-  | Tsum [Tobject o] when SMap.mem "__obj" o->
+  | Tsum [Tobject o] when SMap.mem "__obj" o ->
       (match SMap.find "__obj" o with Tsum [Tobject o] -> o
       | _ -> SMap.empty)
   | _ -> SMap.empty
@@ -809,8 +855,8 @@ and class_def env c =
 
   GEnv.set_class env (A.unwrap c.c_name) self;
   Env.set env (special "self") self;
-  Env.set env "$this" this;
   Env.set env (special "parent") (Tsum [Tobject obj_parent]);
+  Env.set env "$this" this;
 
   let class_ = List.fold_left (method_def true env) class_ c.c_methods in
   let obj = List.fold_left (method_def false env) obj c.c_methods in
@@ -830,7 +876,6 @@ and class_def env c =
   let class_ = filter_privates privates class_ in
   let class_ = SMap.add "__obj" obj class_ in
   let class_ = (Tsum [Tobject class_]) in
-
 (*  let class_ = Generalize.ty env class_ in
   make_globals env; *)
   GEnv.set_class env (A.unwrap c.c_name) class_
@@ -847,8 +892,7 @@ and private_methods privates m =
   else privates
 
 and filter_privates privates obj =
-  SMap.fold (
-  fun x t acc ->
+  SMap.fold (fun x t acc ->
     if SSet.mem x privates
     then acc
     else SMap.add x t acc

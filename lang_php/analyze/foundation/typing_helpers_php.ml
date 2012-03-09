@@ -163,14 +163,17 @@ module Env = struct
   let mem env x = SMap.mem x !(env.env)
 
   let get env x =
-    try SMap.find x !(env.env) with Not_found ->
+    try SMap.find x !(env.env) 
+    with Not_found ->
       let n = Tvar (fresh()) in
       set env x n;
       n
 end
 
 module TEnv = struct
-  let get env x = try IMap.find x !(env.tenv) with Not_found -> Tsum []
+  let get env x = 
+    try IMap.find x !(env.tenv) 
+    with Not_found -> Tsum []
   let set env x y = env.tenv := IMap.add x y !(env.tenv)
   let mem env x = IMap.mem x !(env.tenv)
 end
