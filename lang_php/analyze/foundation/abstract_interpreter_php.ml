@@ -943,7 +943,7 @@ and parameters env heap l1 l2 =
       (match p.p_default with
       | None -> parameters env heap rl []
       | Some e ->
-          let e = if p.p_ref then H.make_ref e else e in
+          let e = if p.p_ref then make_ref e else e in
           let heap, v = expr env heap e in
           Var.unset env (unw p.p_name);
           let heap, _, lv = lvalue env heap (Id p.p_name) in
@@ -951,12 +951,19 @@ and parameters env heap l1 l2 =
           parameters env heap rl []
       )
   | p :: rl, e :: rl2 ->
-      let e = if p.p_ref then H.make_ref e else e in
+      let e = if p.p_ref then make_ref e else e in
       let heap, v = expr env heap e in
       Var.unset env (unw p.p_name);
       let heap, _, lv = lvalue env heap (Id p.p_name) in
       let heap, _ = assign env heap true lv v in
       parameters env heap rl rl2
+
+(* could be in helper *)
+and make_ref e =
+  match e with
+  | Ref _ -> e
+  | _ when IsLvalue.expr e -> Ref e
+  | _ -> e
 
 (* ???
  * could be moved in helper 
