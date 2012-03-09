@@ -178,7 +178,9 @@ if($y) { $x = 2;} else { $x = 3; }
 checkpoint(); // x: int
 " in
       (* there is no range, we go from a very precise value to a
-       * very general abstraction (the type) very quickly
+       * very general abstraction (the type) very quickly.
+       * If forget the initial $x = 1; then $x will be instead
+       * a 'choice(null,int)'.
        *)
       assert_final_value_at_checkpoint "$x" file (Vabstr Tint); 
     );
@@ -233,7 +235,7 @@ checkpoint(); // x:int
   (* Fixpoint *)
   (*-------------------------------------------------------------------------*)
 
-  (* TODO while loop, dowhile, recursion, 2 is enough?
+  (* TODO while loop, dowhile, recursion, iterate 2 times is enough?
    * Because of the abstraction we've chosen (no int range for instance),
    * we achieve the fixpoint in one step so probably has
    * no fixpoint issues.
@@ -438,15 +440,15 @@ function c() { $a = new A(); $a->foo(); }
         assert_graph file ["c" --> ["A::foo"]];
       );
 
-    (* todo: example of current limitations of the analysis *)
-
-    "XHP method call XXX" >:: (fun () ->
+    "XHP method call" >:: (fun () ->
       let file = "
 class :x:frag { public function foo() { } }
 function bar() { $x = <x:frag></x:frag>; $x->foo(); }
 " in
       assert_graph file ["bar" --> ["x:frag::foo"]];
     );
+
+    (* todo: example of current limitations of the analysis *)
 
   ]
 
