@@ -9,7 +9,7 @@ exception UnknownFunction of string
 exception UnknownClass    of string
 exception UnknownConstant of string
 
-exception UnknownMethod of string * string * string list
+exception UnknownMember of string * string * string list
 exception UnknownObject
 
 exception LostControl

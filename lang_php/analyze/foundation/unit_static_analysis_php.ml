@@ -337,7 +337,7 @@ function b() { A::unknown(); }
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown static method"
-      with (Abstract_interpreter_php.UnknownMethod ("unknown", "A", _)) -> ()
+      with (Abstract_interpreter_php.UnknownMember ("unknown", "A", _)) -> ()
     );
 
     (* In PHP it is ok to call B::foo() even if B does not define
@@ -420,7 +420,7 @@ function b() {
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown method"
-      with (Abstract_interpreter_php.UnknownMethod ("unknown", _, _)) -> ()
+      with (Abstract_interpreter_php.UnknownMember ("unknown", _, _)) -> ()
     );
 
     (* I used to have a very simple method analysis that did some gross over

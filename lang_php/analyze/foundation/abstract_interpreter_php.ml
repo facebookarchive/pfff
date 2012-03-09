@@ -70,8 +70,8 @@ module Trace = Tracing_php
  * For a bottom-up approach see typing_php.ml.
  * 
  * To help you debug the interpreter you can put some
- * 'var_dump($x)' in the PHP file to see the abstract value
- * of a variable at a certain point in the program.
+ * 'var_dump($x)' in the PHP file to see the abstract
+ * value of a variable at a certain point in the program.
  *
  *
  * pad's notes: 
@@ -81,13 +81,15 @@ module Trace = Tracing_php
  *    * "*array*, to build an array
  *    * "*myobj*, to build an object
  *    * "*BUILD*", to build a class
- *    * special "self"/"parent", ???
- *    * "$this", ???
+ *    * special "self"/"parent", in env.globals
+ *    * "$this", also in env.globals
  *  - How the method lookup mechanism works? there is no lookup,
- *    instead at the moment where we build the class, we put
- *    all the methods of the parents in the new class. But then
+ *    instead at the moment where we build the object, we put
+ *    all the methods of the parents in the new object. But then
  *    what about the use of self:: or parent:: when executing the
- *    code of a parent method???
+ *    code of a parent method? The references to self and parent
+ *    are in the closure of the method and are pointers to
+ *    the fake object that represents the class.
  *  - the id() function semantic is hardcoded
  * 
  * TODO: 
@@ -176,14 +178,14 @@ let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
 (* Types *)
 (*****************************************************************************)
 (* less: could maybe factorize in Unknown of Database_code.entity_kind,
- *  but for methods for instance we also want to show also some
- *  extra information like the available methods.
+ *  but for members for instance we also want to show also some
+ *  extra information like the available methods and fields.
  *)
 exception UnknownFunction of string
 exception UnknownClass    of string
 exception UnknownConstant of string
 
-exception UnknownMethod of string * string * string list
+exception UnknownMember of string * string * string list
 exception UnknownObject
 
 (* Exception thrown when a call to a function or method is not known.
@@ -216,8 +218,8 @@ let exclude_toplevel_defs xs =
   | _ -> true
   ) xs
 
-let methods m = 
-  List.map fst (SMap.bindings m)
+let methods_and_fields members = 
+  List.map fst (SMap.bindings members)
 
 let is_variable s =
   match s with
@@ -237,7 +239,7 @@ let rec program env heap program =
    * be populated with all the functions/classes/constants necessary.
    * 
    * Note that Include/Require are transformed into __builtin__require()
-   * calls in ast_php_simple and we will silently skip them here
+   * calls in ast_php_simple and we will silently skip them below
    * (because the definitions of those __builtin__ are empty in
    * pfff/data/php_stdlib/pfff.php).
    *)
@@ -564,6 +566,7 @@ and expr_ env heap x =
       heap, e
   | List _ -> failwith "List outside assignement?"
 
+  (* $x = ..., $o->fld = ..., etc *)
   | Assign (None, e1, e2) ->
       let heap, new_var_created, lval = lvalue env heap e1 in
       let heap, rval = expr env heap e2 in
@@ -615,7 +618,6 @@ and expr_ env heap x =
      (* pad: other? *)
       with (LostControl | UnknownFunction _) as exn  ->
         if !strict then raise exn;
-        save_path env (CG.Function s);
         let heap, vl = Utils.lfold (expr env) heap el in
         let res = Taint.when_call_not_found heap vl in
         heap, res
@@ -635,7 +637,7 @@ and expr_ env heap x =
       heap, v
 
   | Lambda _ ->
-      (* todo? could try to process its body? *)
+      (* todo? could try to process its body? return a Vfun ? *)
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
 
@@ -646,6 +648,7 @@ and expr_ env heap x =
        * the Ptr.get dereference, so we will return &1{...}
        *)
       let heap, _, x = lvalue env heap lv in
+      (* could probably do another call to Ptr.get here? *)
       let heap, x = Ptr.get heap x in
       heap, x
 
@@ -655,11 +658,13 @@ and binaryOp env heap bop v1 v2 =
   | Ast_php.Arith aop ->
       (match v1, v2 with
       | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
-      (* todo: warn on type error? *)
+      (* todo: warn on type error? why vnull? *)
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
   | Ast_php.Logical lop -> Vabstr Tbool
-  | Ast_php.BinaryConcat _ -> Taint.binary_concat env heap v1 v2 !(env.path)
+  | Ast_php.BinaryConcat _ -> 
+      (* Vabstr Tstring by default *)
+      Taint.binary_concat env heap v1 v2 !(env.path)
 
 and unaryOp uop v =
   match uop, v with
@@ -696,6 +701,7 @@ and cast env heap ty v =
  *)
 and lvalue env heap x =
   match x with
+  (* for taiting *)
   | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
       let heap, k = Ptr.new_val heap (Vtaint s) in
       let heap, v = Ptr.new_val heap (Vtaint s) in
@@ -713,6 +719,11 @@ and lvalue env heap x =
        *)
       Var.get env heap s
 
+  | This -> 
+      (* $this is present in env.globals (see make_method())
+      *)
+      lvalue env heap (Id (w "$this"))
+
   | Array_get (e, k) ->
       array_get env heap e k
 
@@ -721,33 +732,30 @@ and lvalue env heap x =
       let heap, v = Ptr.new_ heap in
       let heap, _ = assign env heap true v a in
       heap, true, v
-  | This -> 
-      lvalue env heap (Id (w "$this"))
 
   (* will return the field reference or Vmethod depending on s *)
   | Obj_get (e, Id (s,_)) ->
       let heap, v = expr env heap e in
       let heap, v' = Ptr.get heap v in
-      let m = obj_get ISet.empty env heap [v'] s in
-      (try
-          heap, false, SMap.find s m
-        with Not_found -> try
-          (* pad: ???? field access ?? *)
-          heap, false, SMap.find ("$"^s) m
+      let members = obj_get ISet.empty env heap [v'] s in
+      (try heap, false, SMap.find s members
+      with Not_found -> 
+        (* pad: ???? field access ?? *)
+        try heap, false, SMap.find ("$"^s) members
         with Not_found ->
           (match s with
           (* it's ok to not have a __construct method *)
           | "__construct" -> ()
           | _ -> 
               if !strict then begin
-                let ms = methods m in
-                if Common.null ms
+                let xs = methods_and_fields members in
+                if Common.null xs
                 then raise UnknownObject
-                else raise (UnknownMethod (s, "?", ms))
+                else raise (UnknownMember (s, "?", xs))
               end
           );
           let heap, k = Ptr.new_val heap Vnull in
-          let heap = Ptr.set heap v' (Vobject (SMap.add s k m)) in
+          let heap = Ptr.set heap v' (Vobject (SMap.add s k members)) in
           heap, true, k
       )
   (* will return a classvar reference or Vmethod depending on s *)
@@ -756,14 +764,14 @@ and lvalue env heap x =
       let heap = lazy_class env heap str in
       let heap, _, v = Var.get_global env heap str in
       let heap, v = Ptr.get heap v in
-      (* pad: why double??? *)
       let heap, v = Ptr.get heap v in
       (try 
           match v with
-          | Vobject m when SMap.mem s m ->
-              heap, false, SMap.find s m
-          | Vobject m ->
-              if !strict then raise (UnknownMethod (s, str, methods m));
+          | Vobject members when SMap.mem s members ->
+              heap, false, SMap.find s members
+          | Vobject members ->
+              if !strict 
+              then raise (UnknownMember (s, str, methods_and_fields members));
               heap, false, Vany
           | _ ->
               if !strict then failwith "Class_get not a Vobject";
@@ -792,8 +800,8 @@ and lvalue env heap x =
  * part is a reference (as in $x = &$y), then it will create instead
  * a shared reference.
  * 
- * root can be a pointer to pointer resulting from a $x = ...
- * but also from a A::$x = ..., or $o->x = ....
+ * root is a pointer to pointer resulting from '$x = ...'
+ * but also from 'A::$x = ...', or '$o->x = ....'
  * 
  * TODO explain
  * note:could be moved in helper
@@ -851,7 +859,7 @@ and get_function env heap id =
 and get_dynamic_function env heap v =
   let heap, v = Ptr.get heap v in
   match v with
-  (* todo: this could reference a static method too *)
+  (* todo: this could be a static method too *)
   | Vstring s ->
       (try heap, env.db.funs s
        with Not_found -> raise (UnknownFunction s)
@@ -903,8 +911,10 @@ and call_fun (def: A.func_def) env heap (el: A.expr list) =
     env.path := List.tl !(env.path);
     let heap, _, r = Var.get env heap "*return*" in
     let heap, r = Ptr.get heap r in
+
     if Taint.GetTaint.value heap r = None
     then env.safe := SMap.add (unw def.f_name) r !(env.safe);
+
     heap, r
   end
 
@@ -1132,7 +1142,10 @@ and new_ env heap e el =
   Var.unset env "*myobj*";
   heap, v
 
-(* could be put in helper *)
+(* could be put in helper
+ * todo: s seems unused
+ * todo: what mem is for?
+ *)
 and obj_get mem env heap v s =
   (match v with
   | [] -> SMap.empty
@@ -1332,7 +1345,9 @@ and make_method mname parent self this fdef =
     | None -> ()
     | Some v -> Var.set_global env "$this" v
     );
-    let heap, res = call_fun fdef env heap el in
+    let heap, res = 
+      (* the actual call! *)
+      call_fun fdef env heap el in
 
     (* tainting special code *)
     let heap, res' = Ptr.get heap res in

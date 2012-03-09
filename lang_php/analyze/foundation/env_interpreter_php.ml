@@ -114,17 +114,6 @@ type value =
   (* could be useful for nullpointer analysis *)
   | Vnull
 
-  (* a pointer is an int address in the heap *)
-  | Vptr of int
-  (* todo: extract Vptr out of 'value', to have clear different types.
-   * | Vptr1    of ptr1
-   * | Vptr2    of ptr2
-   * where ptr1 and ptr2 are abstract types, with a module with a
-   * set_ptr1 taking only a value, and set_ptr2 take only a Vptr
-   *)
-  (* pad: because of some imprecision, we actually have a set of addresses ? *)
-  | Vref    of ISet.t
-
   (* try to differentiate the different (abusive) usage of PHP arrays *)
   | Vrecord of value SMap.t
   | Varray  of value list
@@ -173,6 +162,20 @@ type value =
    *)
   | Vsum    of value list
 
+  (* A pointer is an int address in the heap. A variable is a pointer
+   * to a pointer to a value.
+   *)
+  | Vptr of int
+  (* todo: extract Vptr out of 'value', to have clear different types.
+   * | Vptr1    of ptr1
+   * | Vptr2    of ptr2
+   * where ptr1 and ptr2 are abstract types, with a module with a
+   * set_ptr1 taking only a value, and set_ptr2 take only a Vptr
+   *)
+  (* pad: because of some imprecision, we actually have a set of addresses ? *)
+  | Vref    of ISet.t
+
+
   (* tainting analysis for security *)
   | Vtaint of string
 
@@ -202,7 +205,10 @@ and env = {
   (* local variables and parameters (will be pointer to pointer to values) *)
   vars    : value SMap.t ref;
   (* globals and static variables (prefixed with a "<function>**").
-   * This is also used for self/parent, and $this (set/unset
+   * This is also used for classes which are considered as globals
+   * pointing to a vobject with a method *BUILD* that can build objects
+   * of this class.
+   * 'globals' is also used for self/parent, and $this (set/unset
    * respectively when entering/leaving the method)
    *)
   globals : value SMap.t ref;
@@ -377,10 +383,10 @@ and type_ o x =
 
 
 (*****************************************************************************)
-(* Printing *)
+(* Debugging *)
 (*****************************************************************************)
 
-and print_locals_and_globals o env heap =
+let print_locals_and_globals o env heap =
   SMap.iter (fun s v ->
     o "|"; o s ; o " = "; value heap.ptrs o v; o "\n"
   ) !(env.vars);
@@ -388,9 +394,6 @@ and print_locals_and_globals o env heap =
     o "|"; o "GLOBAL "; o s ; o " = "; value heap.ptrs o v; o "\n"
   ) !(env.globals)
 
-(*****************************************************************************)
-(* Debugging *)
-(*****************************************************************************)
 
 let string_of_value heap v =
   Common.with_open_stringbuf (fun (_pr, buf) ->
