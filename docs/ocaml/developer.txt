@@ -37,6 +37,14 @@ foo x a true c
 ==>
 foo x a is_static:true c
 
+*** indent the code ...
+dont do:
+
+ ...
+ if ... then ... else
+ ...
+
+
 *** use Common.profile_code(), not printf and manual Sys.time()
 
 *** bad example of style: julien's original code
