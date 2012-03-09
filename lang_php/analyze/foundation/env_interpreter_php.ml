@@ -30,8 +30,8 @@ module SMap = Map.Make (String)
  * 
  * In the abstract interpreter, all variables are pointers to pointers
  * of values. So with '$x = 42;' we got $x = &2{&1{42}}.
- * In 'env.vars' we got "$x" = Vptr 2
- * and in the 'heap' we then got [0 -> ...; 1 -> Vint 42; 2 -> Vptr 1]
+ * In 'env.vars' we got "$x" = Vptr 2 and in the 'heap' we
+ * then got [0 -> ...; 1 -> Vint 42; 2 -> Vptr 1]
  * meaning that $x is a variable with address 2, where the content
  * of this cell is a pointer to address 1, where the content of
  * this cell is the value 42. This is consistent with how Zend
@@ -81,11 +81,12 @@ module SMap = Map.Make (String)
 (* Types *)
 (*****************************************************************************)
 
-(* In practice a huge codebase contains unfortunately multiple times
- * the same function name or class, but here we will just return one of
- * those possible entities :( At least we detect and warn about dupes
- * when building the code database (see database_juju_php.ml). 
- *)
+(* In practice a huge codebase contains unfortunately sometimes
+ * functions (or classes) with the same name, but here we will
+ * just return one of those possible entities :( At least we detect and
+ * warn about dupes when building the code database (see
+ * database_juju_php.ml). 
+*)
 type code_database = {
   funs:      string -> Ast.func_def;
   classes:   string -> Ast.class_def;
@@ -130,7 +131,7 @@ type value =
   | Vmap of value * value
 
   (* 
-   * The first 'value' is for '$this' which will be a pointer to
+   * The first 'value' below is for '$this' which will be a pointer to
    * the object. Where it's used??? todo: I think it can be removed
    * as we handle self/parent/this via closures in make_method()
    * 
@@ -218,7 +219,8 @@ and env = {
    *)
   path: Callgraph_php2.node list ref;
   (* number of recursive calls to a function f. if > 2 then stop, 
-   * for fixpoint. 
+   * for fixpoint. todo: should not be called stack. Path above is
+   * actually the call stack.
    *)
   stack   : int SMap.t;
 
@@ -321,9 +323,9 @@ let rec value ptrs o x =
         value (IMap.remove n ptrs) o (IMap.find n ptrs);
         o "}"
       end else
-        (* this happens for instance for objects which are pointer
-         * to pointer to Vobject with for members a set of Vmethod
-         * where the first element $this backward points to the
+        (* this happens for instance for objects which are pointers
+         * to pointers to Vobject with for members a set of Vmethod
+         * where the first element, $this, backward points to the
          * object.
          *)
         o "rec"
