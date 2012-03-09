@@ -76,9 +76,7 @@ module Ptr = struct
   let rec get_ heap ptr =
     try
       let v = IMap.find ptr heap.ptrs in
-      (* XXX pad: ??? *)
-      { ptrs = IMap.add ptr v heap.ptrs }, 
-      v
+      heap, v
     with Not_found ->
       (* todo: throw exn when in strict? *)
       heap, Vnull

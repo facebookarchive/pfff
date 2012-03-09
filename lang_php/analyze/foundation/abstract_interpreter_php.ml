@@ -1363,7 +1363,7 @@ and class_var env static (heap, m) (s, e) =
       let heap, _ = assign env heap true v1 v2 in
       heap, SMap.add s v1 m
 
-and method_def env cname parent self this (heap, acc) m =
+and method_def env cname parent self this (heap, acc) def =
   let fdef = {
     f_ref = false;
     (* pad: this is ugly, but right now call_fun accepts only
@@ -1371,16 +1371,16 @@ and method_def env cname parent self this (heap, acc) m =
      * There is a (ugly) corresponding call to node_of_string in
      * call_fun().
      *)
-    f_name = w (CG.string_of_node (CG.Method (unw cname, unw m.m_name)));
-    f_params = m.m_params;
-    f_return_type = m.m_return_type;
-    f_body = m.m_body;
+    f_name = w (CG.string_of_node (CG.Method (unw cname, unw def.m_name)));
+    f_params = def.m_params;
+    f_return_type = def.m_return_type;
+    f_body = def.m_body;
   } in
-  let cls = make_method m.m_name parent self this fdef in
+  let cls = make_method def.m_name parent self this fdef in
   let mid = Utils.fresh() in
   let v = match this with None -> Vnull | Some v -> v in
   let v = Vmethod (v, IMap.add mid cls IMap.empty) in
-  heap, SMap.add (unw m.m_name) v acc
+  heap, SMap.add (unw def.m_name) v acc
 
 (* we use OCaml closures to deal with self/parent scoping issues *)
 and make_method mname parent self this fdef =
