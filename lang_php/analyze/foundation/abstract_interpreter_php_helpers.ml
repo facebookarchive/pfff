@@ -377,6 +377,7 @@ module Unify = struct
         let ptrs, v2 = value stack ptrs v2 v4 in
         let v1 = Vmap (v1, v2) in
         ptrs, v1
+    (* this is the only place where we use the 'this' of Vmethod *)
     | Vmethod (st1, m1), Vmethod (st2, m2) ->
         let ptrs, st = value stack ptrs st1 st2 in
         let m = IMap.fold IMap.add m1 m2 in

@@ -122,9 +122,9 @@ type value =
 
   (* 
    * The first 'value' below is for '$this' which will be a pointer to
-   * the object. 
-   * todo: Where it's used??? I think it can be removed
-   * as we handle self/parent/this via closures in make_method()
+   * the object. The only place where it's used is in Unify.value.
+   * Note that $this, as well as self/parent, are also handled
+   * via closures in make_method().
    * 
    * The integer key of the IMap below is a unique identifier for a 
    * method (we could have chosen the full name as in "A::foo"). The
