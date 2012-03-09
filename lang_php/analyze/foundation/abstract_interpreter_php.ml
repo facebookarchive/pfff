@@ -200,6 +200,8 @@ exception UnknownObject
  *)
 exception LostControl
 
+type field = Static | NonStatic
+  
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -1264,8 +1266,8 @@ and class_def env heap (c: Ast.class_def) =
      *)
     | _ -> SMap.empty 
   in
-  let heap, m = List.fold_left (cconstants env) (heap, m) c.c_constants in
-  let heap, m = List.fold_left (class_vars env true) (heap, m) c.c_variables in
+  let heap, m = List.fold_left (cconstants env) (heap,m) c.c_constants in
+  let heap, m = List.fold_left (class_vars env Static) (heap,m) c.c_variables in
   let heap, m = List.fold_left (method_def env c.c_name parent self None)
     (heap, m) c.c_methods in
   (* todo: handle traits! pure inlining, so have same self and parent *)
@@ -1320,7 +1322,7 @@ and build_new_ env heap pname parent self c m =
     | _ -> m 
   in
   let heap, m' =
-    List.fold_left (class_vars env false) (heap, m) c.c_variables in
+    List.fold_left (class_vars env NonStatic) (heap, m) c.c_variables in
   (* this will naturally override previous methods as the last binding
    * in the SMap of the members is what matters.
    *)
@@ -1337,18 +1339,19 @@ and cconstants env (heap, m) (s, e) =
 
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
-  if static then
-    if not cv.cv_static
-    then heap, m
-    else (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
-  else
-    if cv.cv_static
-    then heap, m
-    else  (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
+  match static, cv.cv_static with
+  | Static, true 
+  | NonStatic, false -> 
+      (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
+  | _ -> heap, m
 
 and class_var env static (heap, m) (s, e) =
-  (* static variables keep their $, regular field don't *)
-  let s = if static then s else String.sub s 1 (String.length s - 1) in
+  (* static variables keep their $, regular fields don't *)
+  let s = 
+    match static with
+    | Static -> s 
+    | NonStatic -> String.sub s 1 (String.length s - 1)
+  in
   match e with
   | None ->
       let heap, v = Ptr.new_ heap in
