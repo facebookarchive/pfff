@@ -68,13 +68,14 @@ type t =
 type code_database = {
     classes: Ast_php_simple.class_def Common.cached SMap.t ref;
     funcs: Ast_php_simple.func_def Common.cached SMap.t ref;
+    (* todo: constants?? *)
 }
 type env = {
     db: code_database;
 
     (* The graph of dependencies. If foo() calls bar(), then
-     * there will be a dependency between foo and bar and
-     * we will want to first infer the type of bar before foo
+     * there will be a dependency between 'foo' and 'bar' and
+     * we will want to first infer the type of 'bar' before 'foo'
      * (because we do a bottom-up type inference).
      *)
     graph: Graph.t;
@@ -87,6 +88,7 @@ type env = {
 
     (* The local variables environment *)
     env: t SMap.t ref;
+
     (* The global variable environment. This also contains typing
      * information for functions and classes. The "^Class:", "^Function:"
      * and "^Global:" prefixes are (ab)used for "namespace" (ugly, abusing
@@ -133,6 +135,7 @@ type env = {
 
 (* This is used for the autocompletion and interactive type inference
  * in Emacs (Tab and C-c C-t).
+ * todo: meaning?
  *)
 and show =
   | Snone
@@ -146,7 +149,7 @@ and show =
 (* Projection *)
 (*****************************************************************************)
 
-(* In a Tsum we want the different possibile types to be sorted so
+(* In a Tsum we want the different possible types to be sorted so
  * that unifying two Tsum and finding common stuff can be done quickly.
  * Proj is used to give an order between types, and when two things
  * are equivalent (such as a Tobject and Tclosed), we project on
