@@ -13,10 +13,12 @@ define('XHPROF_FLAGS_MEASURE_XHPROF_DISABLE', 0);
 define('XHPROF_FLAGS_MALLOC', 0);
 define('TAINT_NONE', 0);
 define('TAINT_HTML', 0);
-define('TAINT_SQL', 0);
 define('TAINT_MUTATED', 0);
+define('TAINT_SQL', 0);
+define('TAINT_SHELL', 0);
+define('TAINT_TRACE_HTML', 0);
 define('TAINT_ALL', 0);
-define('TAINT_TRACE', 0);
+define('TAINT_TRACE_SELF', 0);
 function fb_thrift_serialize($thing) { }
 function fb_thrift_unserialize($thing, &$success, &$errcode = null_variant) { }
 function fb_serialize($thing) { }
@@ -31,6 +33,8 @@ function fb_call_user_func_safe($function) { func_get_args();}
 function fb_call_user_func_safe_return($function, $def) { func_get_args();}
 function fb_call_user_func_array_safe($function, $params) { }
 function fb_get_code_coverage($flush) { }
+function fb_enable_code_coverage() { }
+function fb_disable_code_coverage() { }
 function xhprof_enable($flags = 0, $args = null_array) { }
 function xhprof_disable() { }
 function xhprof_network_enable() { }
@@ -46,7 +50,10 @@ function fb_crossall_query($sql, $max_thread = 50, $retry_query_on_fail = true, 
 function fb_set_taint(&$str, $taint) { }
 function fb_unset_taint(&$str, $taint) { }
 function fb_get_taint($str, $taint) { }
+function fb_get_taint_warning_counts() { }
+function fb_enable_html_taint_trace() { }
 function fb_const_fetch($key) { }
 function fb_output_compression($new_value) { }
 function fb_set_exit_callback($function) { }
 function fb_get_flush_stat() { }
+function fb_get_last_flush_size() { }
