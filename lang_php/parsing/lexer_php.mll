@@ -47,9 +47,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing
 exception Lexical of string
 
 (*s: lexer helpers *)
-(* pad: hack around ocamllex to emulate the yyless of flex. It seems
- * to work.
- *)
+(* pad: hack around ocamllex to emulate the yyless of flex *)
 let yyless n lexbuf = 
   lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
   let currp = lexbuf.Lexing.lex_curr_p in
@@ -82,13 +80,13 @@ let lang_ext_or_t_ident ii fii =
 (* ---------------------------------------------------------------------- *)
 (*s: keywords_table hash *)
 (* opti: less convenient, but using a hash is faster than using a match.
- * Note that PHP allow those keywords to be used in certain places,
- * for instance as object flds as in $o->while, so the transformation
+ * Note that PHP allows those keywords to be used in certain places,
+ * for instance as object fields as in $o->while, so the transformation
  * from a LABEL to those keywords is done only in a few cases.
  * 
  * note: PHP is case insensitive so this hash table is used on
  * a lowercased string so don't put strings in uppercase below because
- * such key would never be reached!
+ * such keyword would never be reached!
  * 
  * coupling: if you add a new keyword, don't forget to also modify
  * the xhp_attr_name_atom grammar rule in parser_php.mly
