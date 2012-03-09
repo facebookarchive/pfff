@@ -1157,13 +1157,11 @@ and new_ env heap e el =
    *)
   let heap = lazy_class env heap str in
   let stl = [
-  (* *myobj* = str::*BUILD*(el);
+  (* *myobj* = str::*BUILD*();
    * *myobj->__construct(el);
-   * todo: why passing el to both BUILD and construct? I think it's
-   * not used anyway so can pass [].
    *)
     Expr (Assign (None, Id (w "*myobj*"),
-                 Call (Class_get (Id (w str), Id (w "*BUILD*")), el)));
+                 Call (Class_get (Id (w str), Id (w "*BUILD*")), [])));
     Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
   ] in
   let heap = stmtl env heap stl in
@@ -1295,10 +1293,9 @@ and build_new env heap pname parent self c m =
  * class and parents.
  *)
 and build_new_ env heap pname parent self c m = 
- fun env heap _ ->
-  (* todo: we should always call *BUILD* without arguments, so assert
-   * the list is empty here?
-   *)
+ fun env heap args ->
+  (* we should always call *BUILD* without arguments *)
+  if args <> [] then raise Common.Impossible;
   let heap, dparent = Ptr.get heap parent in
   let heap, dparent = Ptr.get heap dparent in
   let heap, ptr =
