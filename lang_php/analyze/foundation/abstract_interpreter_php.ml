@@ -65,9 +65,9 @@ module Trace = Tracing_php
  *    unreachable path
  *  - BUT context sensitive, because we treat different calls
  *    to the same function differently (we unroll each call).
- * 
- * There is a limit on the depth of the call stack, see max_depth.
- * 
+ *    There is a limit on the depth of the call stack though, 
+ *    see max_depth.
+ *
  * For a bottom-up approach see typing_php.ml.
  * 
  * To help you debug the interpreter you can put some
@@ -81,7 +81,7 @@ module Trace = Tracing_php
  *    * "*return*", to communicate the return value to the caller
  *    * "*array*, to build an array
  *    * "*myobj*, to build an object
- *    * "*BUILD*", to build a class
+ *    * "*BUILD*", to call the 'new' method of a class
  *    * special "self"/"parent", in env.globals
  *    * "$this", also in env.globals
  *  - How the method lookup mechanism works? there is no lookup,
@@ -122,7 +122,7 @@ module Trace = Tracing_php
  *    more precise results and find even more bugs.
  * 
  * history:
- *  - basic values (Vint 2, Vstring "foo"), abstract value by types
+ *  - basic values (Vint 2, Vstring "foo"), abstract value with types
  *    (Vabstr Tint), also range for ints. Special care for PHP references
  *    by using pointer to pointer to val via the Vptr, as in Zend.
  *    Basically handling simple sequences of assignements.
@@ -134,15 +134,18 @@ module Trace = Tracing_php
  *    a Vabstr Tint). Manage branches such as ifthenelse by unifying/merging
  *    heaps
  *  - unfiying heaps was too costly, so just unify what
- *    was needed (unifying pointers), process ifthenelse "sequentially"
+ *    is needed (unifying pointers), process ifthenelse "sequentially"
  *    not independently.
  *  - fixpoint was too costly, and when '$i = 1;for() { $i=$i+1 }' it does
  *    not converge if use range so make it in such a way to reach the fixpoint
- *    in one step when unify. So no need to unify heaps,
- *    no need to do fixpoint. So for the loop example before, 
+ *    in one step when unify. In the end we don't unify heaps,
+ *    we don't do fixpoint. So for the loop example before, 
  *    first have $i = Vint 1, but as soon as have $i=$i+1, we say it's a 
  *    Vabstr Tint (and this is the fixpoint, in just one step).
  *  - handle objects and other constructs.
+ * 
+ *  - all comments added by pad, split files, add mli, add unit tests, 
+ *    add tests/ia/*.php, fixed bugs, added strict mode, etc
  *)
 
 (*****************************************************************************)
