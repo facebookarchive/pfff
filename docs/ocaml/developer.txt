@@ -4,14 +4,12 @@ Have C-c C-t working to get type information under cursor! It's really useful.
 
 ** style: 
 
-*** prefer 'match () ... when' over nested elsif
+*** prefer 'match () with | _ ... when ->' over nested elsif
 
 if X1 then ...
 else if X2 then ...
 else if X3
-
 ==>
-
 match () with
  | _ when X1 -> 
  | _ when X2 -> 
@@ -20,18 +18,24 @@ match () with
 *** use regexps, not complex String.sub/String.length expressions
 
 *** do not use the same variable name if it has a different types
-
-It's ok to do
+It's ok to do:
  let heap = foo heap in
  let heap = bar heap in
  ...
 when you "thread" the same thing again and again.
 
-But don't do
+But don't do:
+ let x = int_expr() in
+ let x = float_expr x in
 
-let x = int_expr() in
-let x = float_expr x in
+*** don't use the same abbreviation for very different things
+for instance if use 'm' to stand for members, then don't use
+it elsewhere to mean a method_def
 
+*** use label arguments when passing bool
+foo x a true c
+==>
+foo x a is_static:true c
 
 *** use Common.profile_code(), not printf and manual Sys.time()
 
