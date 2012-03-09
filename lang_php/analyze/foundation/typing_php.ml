@@ -367,8 +367,11 @@ let rec infer_type_definition env str =
       func_id env str
   | _ when SSet.mem ("^Fun:" ^ str) !(env.builtins) -> ()
   | _ ->
+      (* TODO: 
       if env.strict
       then failwith ("infer_type_definition, unknown def: " ^ str)
+      *)
+      ()
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
