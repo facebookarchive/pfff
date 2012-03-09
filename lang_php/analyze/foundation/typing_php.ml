@@ -19,16 +19,17 @@ module A = Ast_php_simple
 
 open Env_typing_php
 open Typing_helpers_php
-module Builtins = Builtins_typed_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This module implements a bottom-up type-inference scheme for PHP.
- * Every class is first sorted in their topological order, they are then
- * typed independently (hence bottom-up).
- * The type representation is fairly standard (Cf Env_typing_php),
+ * This module implements a bottom-up type-inference for PHP.
+ * 
+ * Every classes/functions are sorted in their topological order, 
+ * and are then typed independently (hence bottom-up).
+ * 
+ * The type representation is fairly standard (see Env_typing_php),
  * except for classes. A class is represented as an object with 
  * a special field called __obj that contains the type of the
  * instanciated object.
@@ -52,6 +53,13 @@ module Builtins = Builtins_typed_php
  *  - abused strings:
  *    * "$;return"
  *    * "$;tmp"
+ * 
+ * history:
+ *  - wanted first to (ab)use the (top-down) abstract interpreter to
+ *    also do type inference, but the interpreter is kinda hacky already
+ *    and full of heuristics. pad had the idea of instead trying 
+ *    a bottom-up approach
+ *  - algo unification a la leroy.
  *)
 
 (*****************************************************************************)
@@ -496,7 +504,7 @@ and expr_ env lv = function
   | Array_get (e, Some (Id (s,_))) when s.[0] <> '$' ->
       expr env (Array_get (e, Some (String s)))
   | Array_get (Id (s,_), Some (String x))
-      when Hashtbl.mem Builtins.super_globals s ->
+      when Hashtbl.mem Builtins_typed_php.super_globals s ->
 
       let marked = env.auto_complete && has_marker env x in
       let t1 = GEnv.get_global env s in
