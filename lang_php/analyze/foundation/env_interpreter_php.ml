@@ -83,8 +83,8 @@ module SMap = Map.Make (String)
 
 (* In practice a huge codebase contains unfortunately sometimes
  * functions (or classes) with the same name, but here we will
- * just return one of those possible entities :( At least we detect and
- * warn about dupes when building the code database (see
+ * just return one of those possible entities :( (at least we detect and
+ * warn about dupes when building the code database, see
  * database_juju_php.ml). 
 *)
 type code_database = {
@@ -122,7 +122,8 @@ type value =
 
   (* 
    * The first 'value' below is for '$this' which will be a pointer to
-   * the object. Where it's used??? todo: I think it can be removed
+   * the object. 
+   * todo: Where it's used??? I think it can be removed
    * as we handle self/parent/this via closures in make_method()
    * 
    * The integer key of the IMap below is a unique identifier for a 
@@ -131,11 +132,10 @@ type value =
    * we merge methods and remember all possible values for this method.
    * It's essentially a (closures Set.t) but because we can't compare
    * for equality closures in OCaml we need this method id intermediate
-   * and IMap.
-   * See sum_call in the interpreter and call_methods.
+   * and IMap. See sum_call() in the interpreter and call_methods().
    
    * make_method() builds the method closure with self/parent/this
-   * correctly binded to the right class and object pointers.
+   * correctly bind to the right class and object pointers.
    * 
    * What is the value of $x given: 
    *   class A { public function foo() { } }
@@ -150,7 +150,7 @@ type value =
    * this intermediate Vmethod value above).
    *)
 
-  (* Representation for objects, a set of members where a member can be
+  (* Objects are represented as a set of members where a member can be
    * a constant, a field, a static variable, or a method. With:
    * 
    *    class A {
@@ -158,30 +158,33 @@ type value =
    *      static public $fld2 = 2;
    *      public function foo() { }
    *      static public function bar() { }
-   *      const CST = 2;
+   *      const CST = 3;
    *    }
    *    $o = new A();
    * 
    * we will get:
+   * 
    * $o = &2{&REF 16{object(
-   *   'foo' => method(&17{&REF 16{rec}), 
    *   'fld' => &19{&18{1}}, 
+   *   '$fld2' => &10{&9{2}})
+   *   'foo' => method(&17{&REF 16{rec}), 
    *   'bar' => method(&17{&REF 16{rec}), 
    *   'CST' => 2, 
-   *   '$fld2' => &10{&9{2}})}}
+   *   }}
    * 
    * Note that static variables keep their $ in their name but not
-   * regular fields. They are also shared by all objects of this class.
+   * regular fields. They are also shared by all objects of the class.
    * 
    * A class is actually also represented as a Vobject, with a special
    * *BUILD* method which is called when we do 'new A()', so on previous
    * example we will get in env.globals:
    * A = &6{&5{object(
+   *     '$fld2' => &10{&9{2}})
    *     'foo' => method(Null), 
    *     'bar' => method(Null), 
    *     'CST' => 2, 
    *     '*BUILD*' => method(Null), 
-   *     '$fld2' => &10{&9{2}})}}
+   *  }}
    * 
    * TODO, not sure why we get foo() here there too.
    *)
@@ -206,7 +209,6 @@ type value =
    *)
   (* pad: because of some imprecision, we actually have a set of addresses ? *)
   | Vref    of ISet.t
-
 
   (* tainting analysis for security *)
   | Vtaint of string
@@ -257,8 +259,8 @@ and env = {
    *)
   path: Callgraph_php2.node list ref;
   (* number of recursive calls to a function f. if > 2 then stop, 
-   * for fixpoint. todo: should not be called stack. Path above is
-   * actually the call stack.
+   * for fixpoint. 
+   * todo: should not be called stack. Path above is actually the call stack.
    *)
   stack   : int SMap.t;
 
