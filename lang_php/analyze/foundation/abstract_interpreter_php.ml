@@ -1203,8 +1203,6 @@ and get_class env heap e =
   | Id _ ->
       let env, v = expr env heap e in
       let heap, v = Ptr.get heap v in
-      (* pad: ?? why double? *)
-      let heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
 and get_string = function
