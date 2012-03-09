@@ -67,6 +67,7 @@ module Trace = Tracing_php
  *    to the same function differently (we unroll each call).
  * 
  * There is a limit on the depth of the call stack, see max_depth.
+ * 
  * For a bottom-up approach see typing_php.ml.
  * 
  * To help you debug the interpreter you can put some
@@ -108,9 +109,10 @@ module Trace = Tracing_php
  * 
  * TODO long term: 
  *  - we could use the ia also to find bugs that my current
- *    checkers can't find (e.g. undefined methods because
+ *    checkers can't find (e.g. undefined methods in $o->m() because
  *    of the better interprocedural class analysis, wrong type, 
- *    passing null, etc). But it first needs to be correct
+ *    passing null, use of undeclared field in $o->fld, etc). 
+ *    But the interpreter first needs to be correct
  *    and to work on www/ without so many exceptions.
  *    TODO just go through all constructs and find opportunities
  *    to detect bugs?
@@ -236,7 +238,7 @@ let rec program env heap program =
 
   env.path := [CG.File !(env.file)];
   (* Ok, let's interpret the toplevel statements. env.db must
-   * be populated with all the functions/classes/constants necessary.
+   * be populated with all the necessary functions/classes/constants.
    * 
    * Note that Include/Require are transformed into __builtin__require()
    * calls in ast_php_simple and we will silently skip them below
@@ -431,7 +433,7 @@ and stmtl env heap stl = List.fold_left (stmt env) heap stl
 and global env heap v =
   match v with
   | Id (x,_) ->
-      let heap, _, gv = Var.get_global env heap x in
+      let heap, new_, gv = Var.get_global env heap x in
       Var.set env x gv;
       heap
   | _ ->
@@ -444,8 +446,10 @@ and static_var env heap (var, eopt) =
   let heap, _ = assign env heap new_ v gval in
   match eopt with
   | None -> heap
+  (* first time see this variable, so evaluate expression (once) *)
   | Some e when new_ ->
       let heap, e = expr env heap e in
+      (* todo: why care passing new_ here? *)
       let heap, _ = assign env heap new_ gval e in
       heap
   | Some _ -> heap
@@ -567,7 +571,7 @@ and expr_ env heap x =
       heap, e
   | List _ -> failwith "List outside assignement?"
 
-  (* $x = ..., $o->fld = ..., etc *)
+  (* code for $x = ..., $o->fld = ..., etc *)
   | Assign (None, e1, e2) ->
       let heap, new_var_created, lval = lvalue env heap e1 in
       let heap, rval = expr env heap e2 in
@@ -743,10 +747,11 @@ and lvalue env heap x =
       let members = obj_get ISet.empty env heap [v'] s in
       (try heap, false, SMap.find s members
       with Not_found -> 
-        (* This will actually access static class variables
+        (* This will actually try access to a static class variables
          * See class_vars() below. 
          * todo: We should throw an exception here in strict mode,
          * people should not access static member via $o->.
+         * I don't even know how to do that actually.
          *)
         try heap, false, SMap.find ("$"^s) members
         with Not_found ->
@@ -761,6 +766,9 @@ and lvalue env heap x =
                 else raise (UnknownMember (s, "?", xs))
               end
           );
+          (* argh, PHP allow to access an undeclared field.
+           * todo: should warn error
+           *)
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v' (Vobject (SMap.add s k members)) in
           heap, true, k
@@ -810,7 +818,7 @@ and lvalue env heap x =
  * root is a pointer to pointer resulting from '$x = ...'
  * but also from 'A::$x = ...', or '$o->x = ....'
  * 
- * TODO explain
+ * TODO explain. Why need is_new?
  * note:could be moved in helper
  *)
 and assign env heap is_new root(*lvalue*) v_root(*rvalue*) =
@@ -853,7 +861,9 @@ and assign env heap is_new root(*lvalue*) v_root(*rvalue*) =
 (* Call *)
 (* ---------------------------------------------------------------------- *)
 
-(* getting the func_def corresponding to the Id *)
+(* Getting the func_def corresponding to the Id.
+ * We would not need this if we had a Vfun.
+ *)
 and get_function env heap id =
   if not (id.[0] = '$') then
     try heap, env.db.funs id
@@ -1106,10 +1116,12 @@ and xhp_attr env heap x =
   match x with
   | Guil el ->
       let heap, vl = Utils.lfold (encaps env) heap el in
+
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
       Taint.check_danger env heap "xhp attribute" (Some (Ast_php.fakeInfo ""))
         !(env.path) v;
+
       heap
   | e -> fst (expr env heap e)
 
@@ -1150,7 +1162,7 @@ and new_ env heap e el =
   heap, v
 
 (* could be put in helper
- * todo: s seems unused
+ * todo: 's' seems unused
  * todo: what mem is for?
  *)
 and obj_get mem env heap v s =
@@ -1206,7 +1218,10 @@ and force_class env heap classname =
     let def = env.db.classes classname in
 
     let heap, null = Ptr.new_ heap in
-    (* pad: ??? there is an overriding set_global below, so why create this? *)
+    (* pad: ??? there is an overriding set_global below, so why create this?
+     * because in class_def we can reference the class name and
+     * want to find its pointer?
+     *)
     Var.set_global env (unw def.c_name) null;
     let heap, v = class_def env heap def in
     (* def.c_name should be the same than classname no? *)
@@ -1235,14 +1250,18 @@ and class_def env heap (c: Ast.class_def) =
   (* 'm' for members, not only methods *)
   let m = 
     match ddparent with 
+    (* we inherit all previous members *)
     | Vobject m -> m 
-    (* todo: strict, exn/ *)
+    (* todo: strict, exn/? hmm can happen when have no parents so Vnull 
+     * so put | Vnull->Smap.empty | _ -> raise Impossible?
+     *)
     | _ -> SMap.empty 
   in
   let heap, m = List.fold_left (cconstants env) (heap, m) c.c_constants in
   let heap, m = List.fold_left (class_vars env true) (heap, m) c.c_variables in
   let heap, m = List.fold_left (method_def env c.c_name parent self None)
     (heap, m) c.c_methods in
+  (* todo: handle traits! pure inlining, so have same self and parent *)
 
   (* *BUILD* is a special method that will be called when creating
    * new object as in 'new A()' which will be translated in
@@ -1257,17 +1276,25 @@ and class_def env heap (c: Ast.class_def) =
 
 and build_new env heap pname parent self c m =
   let mid = Utils.fresh() in
-  let f = build_new_ env heap pname parent self c m in
+  let closure = build_new_ env heap pname parent self c m in
   Vmethod (Vnull (* no this, BUILD is static method *), 
-          IMap.add mid f IMap.empty)
+          IMap.add mid closure IMap.empty)
 
+(* "new est une method comme les autres". 
+ * m contains all the methods, static vars, and constants of this
+ * class and parents.
+ *)
 and build_new_ env heap pname parent self c m = 
  fun env heap _ ->
+  (* todo: we should always call *BUILD* without arguments, so assert
+   * the list is empty here?
+   *)
   let heap, dparent = Ptr.get heap parent in
   let heap, dparent = Ptr.get heap dparent in
   let heap, ptr =
     match dparent with
     | Vobject x ->
+        (* recursivly call new on the parent *)
         (match SMap.find "*BUILD*" x with
         | Vmethod (_, f) ->
             let fl = IMap.fold (fun _ y acc -> y :: acc) f [] in
@@ -1275,13 +1302,22 @@ and build_new_ env heap pname parent self c m =
             heap, x
         | _ -> assert false
         )
+    (* no parents, ok let's allocate a new naked object (->Vnull) *)
     | _ -> Ptr.new_ heap
   in
   let heap, up = Ptr.get heap ptr in
   let heap, up = Ptr.get heap up in
-  let m = match up with Vobject m' -> SMap.fold SMap.add m' m | _ -> m in
+  (* get all members of the parent *)
+  let m = 
+    match up with 
+    | Vobject m' -> SMap.fold SMap.add m' m 
+    | _ -> m 
+  in
   let heap, m' =
     List.fold_left (class_vars env false) (heap, m) c.c_variables in
+  (* this will naturally override previous methods as the last binding
+   * in the SMap of the members is what matters.
+   *)
   let heap, m' =
     List.fold_left (method_def env c.c_name parent self (Some ptr))
       (heap, m') c.c_methods in
@@ -1293,6 +1329,7 @@ and cconstants env (heap, m) (s, e) =
   let heap, v = expr env heap e in
   heap, SMap.add s v m
 
+(* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
   if static then
     if not cv.cv_static
@@ -1304,7 +1341,7 @@ and class_vars env static (heap, m) cv =
     else  (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
 
 and class_var env static (heap, m) (s, e) =
-  (* pad: ??? *)
+  (* static variables keep their $, regular field don't *)
   let s = if static then s else String.sub s 1 (String.length s - 1) in
   match e with
   | None ->
