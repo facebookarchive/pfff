@@ -15,6 +15,10 @@ open Common
  * 
  *  - distribution.ml which use MPI and so can leverage multiple
  *    machines (but MPI turned out to be quite unstable in my experience)
+ *  
+ * less: could be useful to autodetect a good number based on the
+ * number of cores and available memory like we do in our libphutil 'Future'
+ * library.
  *)
 
 (*****************************************************************************)
