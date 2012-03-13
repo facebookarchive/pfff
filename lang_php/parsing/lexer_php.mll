@@ -1227,8 +1227,9 @@ and st_start_heredoc stopdoc = parse
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(s, varinfo)
       }
-    (* bugfix: can have strings like "$$foo$" *)
+    (* bugfix: can have strings like "$$foo$", or {{$foo}} *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
+    | "{" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
 
   (*x: encapsulated dollar stuff rules *)
     | "{$" { 
