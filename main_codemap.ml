@@ -336,12 +336,12 @@ let options () = [
     " ";
     "-debug_handlers", Arg.Set Gui.synchronous_actions,
     " ";
-(*
+    (*
     "-disable_ancient", Arg.Clear Flag.use_ancient,
     " ";
     "-enable_ancient", Arg.Set Flag.use_ancient,
     " ";
-*)
+    *)
     "-disable_fonts", Arg.Set Flag.disable_fonts,
     " ";
   (*e: options *)
