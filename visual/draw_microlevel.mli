@@ -1,6 +1,7 @@
 (*s: draw_microlevel.mli *)
 
 (*s: draw_treemap_rectangle_content_maybe sig *)
+(* will render (maybe) the filecontent of treemap_rectangle.tr_label *)
 val draw_treemap_rectangle_content_maybe :
   cr:Cairo.t ->
   clipping:Figures.rectangle ->
