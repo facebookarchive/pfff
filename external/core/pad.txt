@@ -2,7 +2,9 @@ This directory is a copy of the header files in the ocaml standard
 library. This is useful for me when using codemap so that I can see
 almost all the code involved in the program. This is also useful for
 the pfff emacs tag generator to find the builtins so one can jump easily
-to builtins too.
+to builtins too. Moreover it makes it easy to track new functions
+and new core APIs by just diffing with the latest ocaml-3.xxx/stdlib/.
 
 I have removed outcometree.mli because it has a bad license.
 I've removed *Labels.mli because it's redundant with unix.mli IMHO.
+
