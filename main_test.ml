@@ -48,30 +48,31 @@ let test regexp =
    *)
   let tests = 
     "all" >::: [
+
+      (* PHP related tests *)
+
       Unit_parsing_php.unittest;
       Unit_pretty_print_php.unittest;
       Unit_matcher_php.unittest;
-      Unit_checker_php.unittest;
 
       Unit_foundation_php.unittest;
-      Unit_prolog_php.unittest;
       Unit_static_analysis_simple_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
       Unit_analyze_db_php.unittest;
+      Unit_prolog_php.unittest;
+      Unit_checker_php.unittest;
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest;
 
       (* non PHP related tests *)
 
-      Unit_parsing_js.unittest;
-      Unit_analyze_js.unittest;
-
-      Unit_parsing_html.unittest;
-
       Unit_parsing_ml.unittest;
       Unit_analyze_ml.unittest;
 
+      Unit_parsing_js.unittest;
+      Unit_analyze_js.unittest;
+      Unit_parsing_html.unittest;
       Unit_parsing_opa.unittest;
 
       Unit_version_control.unittest;
