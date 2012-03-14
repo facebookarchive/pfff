@@ -1245,8 +1245,8 @@ and st_start_heredoc stopdoc = parse
   (*e: encapsulated dollar stuff rules *)
 
 
-(*/* Match everything up to and including a possible ending label, so if the label
- * doesn't match, it's kept with the rest of the string
+(*/* Match everything up to and including a possible ending label, 
+ * so if the label doesn't match, it's kept with the rest of the string
  *
  * {HEREDOC_NEWLINE}+ handles the case of more than one newline sequence that
  * couldn't be matched with HEREDOC_CHARS, because of the following label
@@ -1257,7 +1257,6 @@ and st_start_heredoc stopdoc = parse
        (";"? as semi) (['\n' '\r'] as space) {
 
       let info = tokinfo lexbuf in 
-
       let here_info = rewrap_str str info in
 
       let pos = Ast.pos_of_info info in
