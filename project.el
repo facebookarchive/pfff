@@ -95,13 +95,9 @@
    (join-string 
     (list 
      "-debugger"
-     (case 6
+     (case 0
 
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/encaps_array.php")
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/here_doc_simple.php")
-       (0 "-tokens_php /home/pad/c-pfff/tests/interpolation_curly_brace.php")
+       (0 "-tokens_php /home/pad/pfff/tests/php/parsing/heredoc4.php")
 
        (1 "-parse_php /home/pad/c-pfff/tests/position.php")
        (2 "-sexp_php /home/pad/c-pfff/tests/foo.php")
