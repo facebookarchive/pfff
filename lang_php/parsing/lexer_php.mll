@@ -422,53 +422,7 @@ let DOUBLE_QUOTES_CHARS =
 let BACKQUOTE_CHARS = 
   ("{"*([^'$' '`' '\\' '{']|('\\' ANY_CHAR))| BACKQUOTE_LITERAL_DOLLAR)
 (*x: regexp aliases *)
-let HEREDOC_LITERAL_DOLLAR =
-  ("$"+([^'a'-'z''A'-'Z''_''$''\n' '\r' '\\' '{' ]|('\\'[^'\n' '\r' ])))
-
-(*/*
- * Usually, HEREDOC_NEWLINE will just function like a simple NEWLINE, but some
- * special cases need to be handled. HEREDOC_CHARS doesn't allow a line to
- * match when { or $, and/or \ is at the end. (("{"*|"$"* )"\\"?) handles that,
- * along with cases where { or $, and/or \ is the ONLY thing on a line
- *
- * The other case is when a line contains a label, followed by ONLY
- * { or $, and/or \  Handled by ({LABEL}";"?((("{"+|"$"+)"\\"?)|"\\"))
- */
- *)
-let HEREDOC_NEWLINE = 
-  (((LABEL";"?((("{"+|"$"+)'\\'?)|'\\'))|(("{"*|"$"*)'\\'?))NEWLINE)
-
-(*/*
- * This pattern is just used in the next 2 for matching { or literal $, and/or
- * \ escape sequence immediately at the beginning of a line or after a label
- */
- *)
-let HEREDOC_CURLY_OR_ESCAPE_OR_DOLLAR =
-  (("{"+[^'$' '\n' '\r' '\\' '{'])|("{"*'\\'[^'\n' '\r'])|
-   HEREDOC_LITERAL_DOLLAR)
-
-(*/*
- * These 2 label-related patterns allow HEREDOC_CHARS to continue "regular"
- * matching after a newline that starts with either a non-label character or a
- * label that isn't followed by a newline. Like HEREDOC_CHARS, they won't match
- * a variable or "{$"  Matching a newline, and possibly label, up TO a variable
- * or "{$", is handled in the heredoc rules
- *
- * The HEREDOC_LABEL_NO_NEWLINE pattern (";"[^$\n\r\\{]) handles cases where ;
- * follows a label. [^a-zA-Z0-9_\x7f-\xff;$\n\r\\{] is needed to prevent a label
- * character or ; from matching on a possible (real) ending label
- */*)
-let HEREDOC_NON_LABEL =
-  ([^'a'-'z''A'-'Z''_' '$' '\n''\r''\\' '{']|HEREDOC_CURLY_OR_ESCAPE_OR_DOLLAR)
-let HEREDOC_LABEL_NO_NEWLINE = 
- (LABEL([^'a'-'z''A'-'Z''0'-'9''_'';''$''\n' '\r' '\\' '{']|
-   (";"[^'$' '\n' '\r' '\\' '{' ])|(";"? HEREDOC_CURLY_OR_ESCAPE_OR_DOLLAR)))
-
 (*x: regexp aliases *)
-let HEREDOC_CHARS =
-  ("{"*([^'$' '\n' '\r' '\\' '{']|('\\'[^'\n' '\r']))| 
-   HEREDOC_LITERAL_DOLLAR|(HEREDOC_NEWLINE+(HEREDOC_NON_LABEL|HEREDOC_LABEL_NO_NEWLINE)))
-
 (*x: regexp aliases *)
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
@@ -1180,8 +1134,11 @@ and st_backquote = parse
 
 (* ----------------------------------------------------------------------- *)
 (*s: rule st_start_heredoc *)
-(* as heredoc have some of the semantic of double quote strings, again some
+(* As heredoc have some of the semantic of double quote strings, again some
  * rules from st_double_quotes are copy pasted here.
+ * 
+ * todo? the rules below are not what was in the original Zend lexer, 
+ * but the original lexer was doing very complicated stuff ...
  *)
 and st_start_heredoc stopdoc = parse
 
@@ -1210,7 +1167,11 @@ and st_start_heredoc stopdoc = parse
       end else 
         T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
     }
-  (* | ANY_CHAR { set_mode ST_HERE_DOC; yymore() ??? } *)
+
+  | [^ '\n' '\r' '$' '{' '\\']+ {
+      T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
+    }
+  | "\\" ANY_CHAR { T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf) }
 
   (*s: encapsulated dollar stuff rules *)
     | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
@@ -1231,6 +1192,8 @@ and st_start_heredoc stopdoc = parse
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
     | "{" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
 
+  | ['\n' '\r'] { TNewline (tokinfo lexbuf) }
+
   (*x: encapsulated dollar stuff rules *)
     | "{$" { 
         yyless 1 lexbuf;
@@ -1243,60 +1206,6 @@ and st_start_heredoc stopdoc = parse
         T_DOLLAR_OPEN_CURLY_BRACES(tokinfo lexbuf);
       }
   (*e: encapsulated dollar stuff rules *)
-
-
-(*/* Match everything up to and including a possible ending label, 
- * so if the label doesn't match, it's kept with the rest of the string
- *
- * {HEREDOC_NEWLINE}+ handles the case of more than one newline sequence that
- * couldn't be matched with HEREDOC_CHARS, because of the following label
- */
- *)
-  | ((HEREDOC_CHARS* HEREDOC_NEWLINE+) as str)
-       (LABEL as s)
-       (";"? as semi) (['\n' '\r'] as space) {
-
-      let info = tokinfo lexbuf in 
-      let here_info = rewrap_str str info in
-
-      let pos = Ast.pos_of_info info in
-      let pos_after_here = pos + String.length str in
-      let pos_after_label = pos_after_here + String.length s in
-      let pos_after_semi = pos_after_label + String.length semi in
-
-      let lbl_info = 
-        Parse_info.tokinfo_str_pos s pos_after_here in
-      let colon_info = 
-        Parse_info.tokinfo_str_pos semi pos_after_label in
-      let space_info = 
-        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
-      
-
-      if s = stopdoc 
-      then begin
-        set_mode ST_IN_SCRIPTING;
-        push_token (TNewline(space_info));
-        if semi = ";"
-        then push_token (TSEMICOLON (colon_info));
-        push_token (T_END_HEREDOC(lbl_info));
-        T_ENCAPSED_AND_WHITESPACE(str, here_info)
-      end
-      else begin
-        T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf)
-      end
-    }
-
-(*/* ({HEREDOC_NEWLINE}+({LABEL}";"?)?)? handles the possible case of newline
- * sequences, possibly followed by a label, that couldn't be matched with
- * HEREDOC_CHARS because of a following variable or "{$"
- *
- * This doesn't affect real ending labels, as they are followed by a newline,
- * which will result in a longer match for the correct rule if present
- */
- *)
-  | HEREDOC_CHARS*(HEREDOC_NEWLINE+(LABEL";"?)?)? {
-      T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
-    }
 
   (*s: repetitive st_start_heredoc rules for error handling *)
     | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
@@ -1352,8 +1261,6 @@ and st_start_nowdoc stopdoc = parse
       then pr2_once ("LEXER:unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
     }
-
-      
 (*e: rule st_start_heredoc *)
 
 (*****************************************************************************)
