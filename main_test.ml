@@ -56,10 +56,10 @@ let test regexp =
       Unit_matcher_php.unittest;
 
       Unit_foundation_php.unittest;
-      Unit_static_analysis_simple_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
       Unit_analyze_db_php.unittest;
+      Unit_static_analysis_simple_php.unittest;
       Unit_prolog_php.unittest;
       Unit_checker_php.unittest;
       (* this one needs xdebug to work *)
