@@ -16,5 +16,6 @@ class B extends A {
   }
 }
 
-// will print A::bar()
+// will print A::bar(). Use static: if you want the (retarded) other
+// behavior
 B::foo();

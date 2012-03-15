@@ -7,4 +7,6 @@ class A {
 }
 
 $o = new A();
+//HipHop Fatal error: Attempt to call protected A::foo()
+//Good, PHP is retarded but not that retarded
 $o->foo();

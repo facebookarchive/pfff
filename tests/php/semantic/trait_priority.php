@@ -25,5 +25,5 @@ class C extends B {
 }
 
 $o = new C();
-// this will call T::foo()
+// this will call T::foo(), traits are look first, before inheritance
 $o->foo();
