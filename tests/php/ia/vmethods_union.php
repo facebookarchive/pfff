@@ -24,3 +24,6 @@ else {
 }
 
 var_dump($x);
+
+//TODO we are not path sensitive, so it should call both classes
+$x->m();

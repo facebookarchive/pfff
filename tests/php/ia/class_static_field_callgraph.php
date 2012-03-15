@@ -23,6 +23,7 @@ class B {
 }
 
 function main() {
+  // the interpreter should correctly go to A::foo
   A::getInstance()->foo();
 }
 
