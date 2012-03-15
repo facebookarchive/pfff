@@ -24,10 +24,3 @@ val class_def:
 (* preparing env for infer_using_topological_sort_dependencies *)
 val add_defs_code_database_and_update_dependencies: 
   Env_typing_php.env -> Ast_php_simple.program -> unit
-
-module Type : sig
-    val unify: 
-      Env_typing_php.env ->
-      Env_typing_php.t -> Env_typing_php.t ->
-      Env_typing_php.t
-end
