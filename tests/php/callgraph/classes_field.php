@@ -5,7 +5,6 @@ function __builtin__echo($xs) {
 
 class A {
   public function __construct() { }
-
   public function foo() {
     echo "A::foo\n";
   }
@@ -13,13 +12,15 @@ class A {
 
 class B {
   public function __construct() { }
-
   public function foo() {
     echo "B::foo\n";
   }
 }
 
 class C {
+  // callgraph for this program is trickier, need to
+  // do some kind of interprocedural analysis to
+  // remember what $this->fld could be
   private $fld;
   public function __construct() {
     $this->fld = new B();

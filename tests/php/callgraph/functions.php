@@ -1,5 +1,7 @@
 <?php
 
+// simple direct function calls should be simple to handle
+
 function f() {
   f2();
 }
