@@ -1,13 +1,17 @@
 
+val interfaces:
+  Ast_php.class_def -> Ast_php.name list
+val traits:
+  Ast_php.class_def -> Ast_php.name list
+
 exception Use__Call
 exception UndefinedClassWhileLookup of string
 
 (* can raise UndefinedClassWhileLookup, Not_found, Multi_found, or Use__Call *)
 val lookup_method: 
   ?case_insensitive: bool ->
-  Entity_php.method_identifier ->
-  Entity_php.entity_finder ->
-  Ast_php.method_def
+  (string (* class *) * string (* method *)) ->
+  Entity_php.entity_finder -> Ast_php.method_def
 
 (* can raise UndefinedClassWhileLookup, Not_found, Multi_found *)
 val lookup_member: 
@@ -21,6 +25,7 @@ val lookup_constant:
   (string (* class *) * string (* constant *)) ->
   Entity_php.entity_finder ->
   Ast_php.class_constant
+
 
 (* does not raise exception *)
 val collect_members: 
@@ -43,7 +48,3 @@ val string_of_class_type:
 (* __construct *)
 val constructor_name: string 
 val get_constructor: Ast_php.class_def -> Ast_php.method_def
-
-val interfaces:
-  Ast_php.class_def -> Ast_php.name list
-

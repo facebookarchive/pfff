@@ -165,6 +165,20 @@ let interfaces c =
   | Some (_, xs) ->
       xs +> Ast.uncomma
 
+let traits c =
+  c.c_body +> Ast.unbrace +> Common.map_filter (function
+  | UseTrait (_, names, rewrite_rule) ->
+      (match rewrite_rule with
+      | Left _nowrite -> ()
+      | Right _ -> failwith "not handling rewrite rules in traits"
+      );
+      Some (Ast.uncomma names)
+  | (XhpDecl _|Method _|ClassVariables (_, _, _, _)|ClassConstants (_, _, _))
+      -> None
+  ) +> List.flatten
+
+
+
 (*****************************************************************************)
 (* Lookup *)
 (*****************************************************************************)
@@ -176,18 +190,37 @@ let interfaces c =
  * case sensitive (in strict mode for instance) hence the parameter below.
  *)
 let lookup_gen aclass find_entity hook =
+
+  let find_class_or_trait x =
+    let xs = find_entity (E.Class E.RegularClass, x) in
+    if null xs
+    then find_entity (E.Class E.Trait, x)
+    else xs
+  in
+  (* all those try are ugly, should maybe use the Option monad *)
   let rec aux aclass =
-    match find_entity (E.Class E.RegularClass, aclass) with
+    match find_class_or_trait aclass with
     | [ClassE def] ->
-        (try 
-          def.c_body +> Ast.unbrace +> Common.find_some hook
+        (try def.c_body +> Ast.unbrace +> Common.find_some hook
         with Not_found ->
-          (match def.c_extends with
-          | None -> raise Not_found
-          | Some (_, name) ->
-              let str = Ast.name name in
+          (* traits have priority over inheritance *)
+          let xs = traits def in
+          (try 
+            xs +> Common.return_when (fun trait ->
+              let str = Ast.str_of_name trait in
               (* recurse *)
-              aux str
+              try Some (aux str)
+              with Not_found -> None
+            )
+          with Not_found ->
+            (* ok try inheritance now *)
+            (match def.c_extends with
+            | None -> raise Not_found
+            | Some (_, name) ->
+                let str = Ast.name name in
+                (* recurse *)
+                aux str
+            )
           )
         )
     | [] -> raise (UndefinedClassWhileLookup aclass)
