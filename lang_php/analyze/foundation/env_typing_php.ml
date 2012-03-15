@@ -24,13 +24,18 @@ module SMap = Map.Make(String)
 (*****************************************************************************)
 
 (* Main types and data structures used by the PHP type inference:
- * The PHP types representation and the "environment".
+ * The PHP types representation 't' and the 'environment'.
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
+(* Our PHP type system. It has polymorphic types, union types,
+ * and object types. It also has some special support for constants
+ * and arrays because they are abused respectively to represent
+ * enums and records and we want to infer this information back.
+ *)
 type t =
   (* polymorphic type variable, 'a, 'b, ... *)
   | Tvar of int
@@ -38,10 +43,11 @@ type t =
   | Tsum of prim_ty list
 
   and prim_ty =
-    (* A set of static strings *)
-    | Tsstring of SSet.t
     (* Any abstract type, e.g. int, bool, string, etc. but also null *)
     | Tabstr of string
+
+    (* A set of static strings *)
+    | Tsstring of SSet.t
     (* An enum of integers, class MyEnum { static const XX = 0; } *)
     | Tienum of SSet.t
     (* An enum of strings, class MyEnum { static const XX = 'foo'; } *)
@@ -62,6 +68,23 @@ type t =
     (* this is also used for methods *)
     | Tfun    of (string * t) list * t
 
+    (* A class is represented as a Tclosed/Tobject with 
+     * a special field called __obj that contains the type of the
+     * instanciated object.
+     *
+     * Example:
+     *  class A {
+     *    public static function f() { }
+     *    public function g() { }
+     *  }
+     *  is represented as
+     *  Tclosed (SSet('A'), SMap(
+     *    'f': function unit -> unit
+     *    '__obj': SMap (
+     *      'g' => function unit -> unit
+     *    )
+     *  )
+     *)
     | Tobject of t SMap.t
     (* Same as Tobject, except that we know the set of possible classes that
      * were used to instanciate the object.
@@ -97,7 +120,7 @@ type env = {
      * information for functions and classes. The "^Class:", "^Function:"
      * and "^Global:" prefixes are (ab)used for "namespace" (ugly, abusing
      * strings again).
-     * Builtin constants such as 'null' are stored here as functions.
+     * Builtins constants such as 'null' are stored here as functions.
      *)
     genv: t SMap.t ref;
 
@@ -106,8 +129,11 @@ type env = {
     (* The current substitution (for type variables). This will
      * tell if 'a -> 'b, that is 'a was unified at some point with 'b.
      * This will grow a lot when we process the whole codebase.
+     * See typing_unify_php.ml for more information.
      *)
     subst: int IMap.t ref;
+
+
 
     (* Shall we show types with the special marker? *)
     infer_types: bool;

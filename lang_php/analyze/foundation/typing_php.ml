@@ -31,22 +31,7 @@ module Unify = Typing_unify_php
  * and are then typed independently (hence the term "bottom-up").
  * 
  * The type representation is fairly standard (see Env_typing_php),
- * except for classes. A class is represented as a Tclosed/Tobject with 
- * a special field called __obj that contains the type of the
- * instanciated object.
- *
- * Example:
- *  class A {
- *    public static function f() { }
- *    public function g() { }
- *  }
- *  is represented as
- *  Tclosed (SSet('A'), SMap(
- *    'f': function unit -> unit
- *    '__obj': SMap (
- *      'g' => function unit -> unit
- *    )
- *  )
+ * except for classes. 
  * 
  * This module is also (ab)used to provide autocompletion.
  * 
