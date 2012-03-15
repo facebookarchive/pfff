@@ -7,7 +7,8 @@ function foo($x) {
   $y = $x;
   // Note that type inference is flow insensitive, so
   // growing the type of $x (union(int, array)) will grow the
-  // type of $y too. Is it good? I think yes.
+  // type of $y too. Is it good? I think yes. An assignement
+  // is a dataflow between two variables.
   
   // You cant use a technique a la W, or compose_subst
   // and have alpha->int, beta->alpha so beta->int
