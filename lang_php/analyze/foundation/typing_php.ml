@@ -25,8 +25,8 @@ open Typing_helpers_php
 (*****************************************************************************)
 (* 
  * This module implements a bottom-up type-inference for PHP.
- * 
- * Every classes/functions are sorted in their topological order, 
+ * It's using union types, polymorphic types, and object types.
+ * Every functions/classes are sorted in their topological order, 
  * and are then typed independently (hence the term "bottom-up").
  * 
  * The type representation is fairly standard (see Env_typing_php),
@@ -49,17 +49,55 @@ open Typing_helpers_php
  * 
  * This module is also (ab)used to provide autocompletion.
  * 
+ * TODO: explain
+ * 
+ *  - the subsitution technique, and why it's better than the alternatives:
+ *     * W: simple gauss like, but slow fixpoint, bad error message (too late)
+ *     * compose_subst: nice algo, but strong invariant which makes it easy
+ *       to make mistake. One has to "thread" the subsitution carefully
+ *       while visiting the AST.
+ *     * use_ref_a_la_prolog: may not handle cyclic types (necessary for
+ *       objects)
+ *     * constraints: complex solver
+ *     * leroy levels: ??
+ * 
+ *    Typical algorithms for type inference use equality,
+ *    but here we manage sets that grow, so not pure equality but
+ *    set inclusion (a constraint). $y = $x means all types of $x
+ *    should go in $y.
+ *    Julien's techniques makes it easy to manage union types.
+ * 
+ *  - absorbtion (string -> int -> bool -> null)
+ * 
+ *  - it's not really bottom-up, in the sense that a call site
+ *    can influence globally the type of the called function or method
+ * 
  * pad's notes:
  *  - abused strings:
  *    * "$;return"
  *    * "$;tmp"
  * 
  * history:
- *  - wanted first to (ab)use the (top-down) abstract interpreter to
+ *  - pad wanted to do type inference for PHP a long time ago, like many
+ *    other people at Facebook such as iproctor, yiding, etc. He reads
+ *    a few papers on it: 
+ *     * soft typing for scheme, 
+ *     * inferring types for dynamic languages javascript/ruby/python/php/..., 
+ *     * the cartesian product of ole agesen,
+ *     * constraint-based type inference of pottier
+ *     * didier's remy extensible record typing
+ *     * ...
+ *    He also reread chapters in general books on typing (pierce), but failed
+ *    to read something that explains simply how to handle union types.
+ *    The traditional algorithms have a strong equality model, not a 
+ *    set model.
+ * 
+ *  - julien wanted first to (ab)use the (top-down) abstract interpreter to
  *    also do type inference, but the interpreter is kinda hacky already
- *    and full of heuristics. pad had the idea of trying 
- *    a bottom-up approach
- *  - algo unification a la leroy.
+ *    and full of heuristics. Pad had the idea of trying 
+ *    a bottom-up approach, but failed to know how to use W or
+ *    compose_subst with union types that grows. Julien did it.
+ *  - algo unification and managing subsitution a la ?? coq?
  *)
 
 (*****************************************************************************)
@@ -74,6 +112,7 @@ exception UnknownEntity of string
 (*****************************************************************************)
 (* Preparing work *)
 (*****************************************************************************)
+(* for the topological order and bottom-up approach *)
 let add_defs_code_database_and_update_dependencies env stl =
   List.iter (function
   | ClassDef def ->
@@ -93,7 +132,7 @@ let add_defs_code_database_and_update_dependencies env stl =
 
 module Type = struct
 
-  (* contain both array and objects *)
+  (* mixed means contain both arrays and objects *)
   let rec mixed has_array has_object l =
     match l with
     | [] -> has_array && has_object
@@ -102,28 +141,34 @@ module Type = struct
     | _ :: rl -> mixed has_array has_object rl
   let mixed l = mixed false false l
 
+  (* Unify types (polymorphic type or union types). Will modify
+   * env.subst and returned the unified type.
+   *)
   let rec unify env t1 t2 =
     if t1 == t2 
     then t1 
     else
       match t1, t2 with
-      (* null get absorbed :( could change that to find null bugs? *)
+      (* CONFIG: null get absorbed :( could change that to find null bugs? *)
       | Tsum ([] | [Tabstr "null"]), x | x, Tsum ([] | [Tabstr "null"]) -> 
           x
       (* pad: ??? redundant with t1 == t2 above no ?*)
       | x, y when x == y -> x
+
       | Tvar x, Tvar y when x = y -> 
           t1
       | Tvar n1, Tvar n2 -> 
+          (* tricky *)
           unify_vars env n1 n2
       | (Tvar n as x), y | y, (Tvar n as x) ->
+          (* TODO Why using a fresh type variable? what is wrong with n? *)
           let n' = fresh() in
           TEnv.set env n' y;
           unify env x (Tvar n')
       | Tsum x, Tsum y ->
           let l = unify_sum env x y in
           (match () with
-          (* let's not grow too much, abstract things quite fast *)
+          (* CONFIG: let's not grow too much, abstract things quite fast *)
           | _ when mixed l           -> Tsum []
           | _ when List.length l > 3 -> Tsum []
           | _                        -> Tsum l
@@ -138,14 +183,14 @@ module Type = struct
    * and in tenv we will have 'c --> Tany, and we will
    * return 'c here.
    * 
-   * This is very subtle code.
+   * TODO This is very subtle code.
    *)
   and unify_vars env n1 n2 =
     let n1' = Subst.get env n1 in
     let n2' = Subst.get env n2 in
     if n1' = n2' 
     then Tvar n1' 
-    else (* todo: begin here no? *)
+    else (* TODO: begin here no? *)
       let t1 = TEnv.get env n1' in
       let t2 = TEnv.get env n2' in
       let n = fresh() in
@@ -156,33 +201,32 @@ module Type = struct
       TEnv.set env n t;
       (Tvar n)
 
+  (* unify prim simple types *)
   and unify_ env (t1: prim_ty) (t2: prim_ty) =
     match t1, t2 with
     | Tsstring s1, Tsstring s2 when s1 == s2 -> 
         t1
     | Tsstring s1, Tsstring s2 ->
         let s = SSet.union s1 s2 in
-        (* absorb *)
+        (* CONFIG: absorb *)
         if SSet.cardinal s > 200
         then Tabstr "string"
         else Tsstring s1
-    (* todo: ??? why not unify_ env t (Tabstr "string") ? *)
+    (* TODO: ??? why not unify_ env t (Tabstr "string") ? *)
     | (Tsstring _ as t), _ | _, (Tsstring _ as t) -> 
         t
-    | Tienum s1, Tienum s2 when s1 == s2 -> 
-        t1
-    | Tienum s1, Tienum s2 -> 
-        Tienum (SSet.union s1 s2)
-    | Tienum _, t | t, Tienum _ -> 
-        unify_ env t (Tabstr "int")
 
-    | Tsenum s1, Tsenum s2 when s1 == s2 -> 
-        t1
-    | Tsenum s1, Tsenum s2 -> 
-        Tsenum (SSet.union s1 s2)
-    | Tsenum _, t | t, Tsenum _ -> 
-        unify_ env (Tabstr "string") t
-    (* We want them in this order bool < int < string < html *)
+    | Tienum s1, Tienum s2 when s1 == s2 ->  t1
+    | Tienum s1, Tienum s2               ->  Tienum (SSet.union s1 s2)
+    | Tienum _, t | t, Tienum _          ->  unify_ env t (Tabstr "int")
+
+    | Tsenum s1, Tsenum s2 when s1 == s2 -> t1
+    | Tsenum s1, Tsenum s2               -> Tsenum (SSet.union s1 s2)
+    | Tsenum _, t | t, Tsenum _          -> unify_ env (Tabstr "string") t
+
+    (* We want them in this order bool < int < string < html. Absorb. 
+     * TODO: CONFIG: can be desactivated?
+     *)
     | Tabstr "bool", t | t, Tabstr "bool" -> t
     | Tabstr "int", t  | t, Tabstr "int" -> t
     | Tabstr "string", t | t, Tabstr "string" -> t
@@ -199,13 +243,16 @@ module Type = struct
           let v = SMap.fold (fun _ t acc -> unify env t acc) x any in
           let s = SMap.fold (fun x _ acc -> SSet.add x acc) x SSet.empty in
           unify_ env (Tarray (s, string, v)) t
+
     | Tarray (s1, t1, t2), Tarray (s2, t3, t4) ->
         let s = SSet.union s1 s2 in
         Tarray (s, unify env t1 t3, unify env t2 t4)
+
     | Tfun (l1, t1), Tfun (l2, t2) ->
         let l = unifyl env l1 l2 in
         let t = unify env t1 t2 in
         Tfun (l, t)
+
     | Tobject o, Tclosed (s, c) | Tclosed (s, c), Tobject o ->
         let o = unify_map env o c in
         Tclosed (s, o)
@@ -226,6 +273,7 @@ module Type = struct
             else acc
          ) c2 SMap.empty in
         Tclosed (SSet.union s1 s2, unify_map env c1 c2)
+
     | _ -> assert false
 
   and unifyl env l1 l2 =
@@ -875,7 +923,9 @@ and class_def env c =
   let obj = Tsum [Tobject obj] in
 (*  let obj = Generalize.ty env obj in
   let obj = Tlazy obj in *)
-  let class_ = SMap.map (fun t -> Generalize.ty env ISet.empty t) class_ in
+(* XXX
+ let class_ = SMap.map (fun t -> Generalize.ty env ISet.empty t) class_ in
+*)
   let class_ = filter_privates privates class_ in
   let class_ = SMap.add "__obj" obj class_ in
   let class_ = (Tsum [Tobject class_]) in
