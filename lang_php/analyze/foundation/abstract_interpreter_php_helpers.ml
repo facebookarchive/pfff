@@ -76,9 +76,7 @@ module Ptr = struct
   let rec get_ heap ptr =
     try
       let v = IMap.find ptr heap.ptrs in
-      (* XXX pad: ??? *)
-      { ptrs = IMap.add ptr v heap.ptrs }, 
-      v
+      heap, v
     with Not_found ->
       (* todo: throw exn when in strict? *)
       heap, Vnull
@@ -379,6 +377,9 @@ module Unify = struct
         let ptrs, v2 = value stack ptrs v2 v4 in
         let v1 = Vmap (v1, v2) in
         ptrs, v1
+    (* this is the only place where we use the 'this' of Vmethod,
+     * but julien is not sure it's still useful
+     *)
     | Vmethod (st1, m1), Vmethod (st2, m2) ->
         let ptrs, st = value stack ptrs st1 st2 in
         let m = IMap.fold IMap.add m1 m2 in

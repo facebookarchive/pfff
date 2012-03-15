@@ -200,6 +200,8 @@ exception UnknownObject
  *)
 exception LostControl
 
+type field = Static | NonStatic
+  
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -747,7 +749,7 @@ and lvalue env heap x =
   | Obj_get (e, Id (s,_)) ->
       let heap, v = expr env heap e in
       let heap, v' = Ptr.get heap v in
-      let members = obj_get ISet.empty env heap [v'] s in
+      let members = obj_get_members ISet.empty env heap [v'] in
       (try heap, false, SMap.find s members
       with Not_found -> 
         (* This will actually try access to a static class variables
@@ -1157,13 +1159,11 @@ and new_ env heap e el =
    *)
   let heap = lazy_class env heap str in
   let stl = [
-  (* *myobj* = str::*BUILD*(el);
+  (* *myobj* = str::*BUILD*();
    * *myobj->__construct(el);
-   * todo: why passing el to both BUILD and construct? I think it's
-   * not used anyway so can pass [].
    *)
     Expr (Assign (None, Id (w "*myobj*"),
-                 Call (Class_get (Id (w str), Id (w "*BUILD*")), el)));
+                 Call (Class_get (Id (w str), Id (w "*BUILD*")), [])));
     Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
   ] in
   let heap = stmtl env heap stl in
@@ -1171,27 +1171,26 @@ and new_ env heap e el =
   Var.unset env "*myobj*";
   heap, v
 
-(* could be put in helper
- * todo: 's' seems unused
+(* could be put in helper.
  * todo: what mem is for?
  *)
-and obj_get mem env heap v s =
+and obj_get_members mem env heap v =
   (match v with
   | [] -> SMap.empty
   | Vref a :: rl ->
       let l = ISet.fold (fun x acc -> x :: acc) a [] in
       let vl = List.map (fun x -> Vptr x) l in
-      obj_get mem env heap (vl @ rl) s
+      obj_get_members mem env heap (vl @ rl)
   | Vobject m :: _ -> m
   | Vsum l :: l' ->
-      obj_get mem env heap (l@l') s
+      obj_get_members mem env heap (l@l')
   | Vptr n :: rl when ISet.mem n mem ->
-      obj_get mem env heap rl s
+      obj_get_members mem env heap rl
   | Vptr n as x :: rl ->
       let mem = ISet.add n mem in
       let heap, x = Ptr.get heap x in
-      obj_get mem env heap (x :: rl) s
-  | x :: rl -> obj_get mem env heap rl s
+      obj_get_members mem env heap (x :: rl)
+  | x :: rl -> obj_get_members mem env heap rl
   )
 
 (* todo: make it mimic more get_function and get_dynamic_function ? *)
@@ -1203,8 +1202,6 @@ and get_class env heap e =
   | Id (s,_) when s.[0] <> '$' -> s
   | Id _ ->
       let env, v = expr env heap e in
-      let heap, v = Ptr.get heap v in
-      (* pad: ?? why double? *)
       let heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
@@ -1267,8 +1264,8 @@ and class_def env heap (c: Ast.class_def) =
      *)
     | _ -> SMap.empty 
   in
-  let heap, m = List.fold_left (cconstants env) (heap, m) c.c_constants in
-  let heap, m = List.fold_left (class_vars env true) (heap, m) c.c_variables in
+  let heap, m = List.fold_left (cconstants env) (heap,m) c.c_constants in
+  let heap, m = List.fold_left (class_vars env Static) (heap,m) c.c_variables in
   let heap, m = List.fold_left (method_def env c.c_name parent self None)
     (heap, m) c.c_methods in
   (* todo: handle traits! pure inlining, so have same self and parent *)
@@ -1295,10 +1292,9 @@ and build_new env heap pname parent self c m =
  * class and parents.
  *)
 and build_new_ env heap pname parent self c m = 
- fun env heap _ ->
-  (* todo: we should always call *BUILD* without arguments, so assert
-   * the list is empty here?
-   *)
+ fun env heap args ->
+  (* we should always call *BUILD* without arguments *)
+  if args <> [] then raise Common.Impossible;
   let heap, dparent = Ptr.get heap parent in
   let heap, dparent = Ptr.get heap dparent in
   let heap, ptr =
@@ -1324,7 +1320,7 @@ and build_new_ env heap pname parent self c m =
     | _ -> m 
   in
   let heap, m' =
-    List.fold_left (class_vars env false) (heap, m) c.c_variables in
+    List.fold_left (class_vars env NonStatic) (heap, m) c.c_variables in
   (* this will naturally override previous methods as the last binding
    * in the SMap of the members is what matters.
    *)
@@ -1341,18 +1337,19 @@ and cconstants env (heap, m) (s, e) =
 
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
-  if static then
-    if not cv.cv_static
-    then heap, m
-    else (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
-  else
-    if cv.cv_static
-    then heap, m
-    else  (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
+  match static, cv.cv_static with
+  | Static, true 
+  | NonStatic, false -> 
+      (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
+  | _ -> heap, m
 
 and class_var env static (heap, m) (s, e) =
-  (* static variables keep their $, regular field don't *)
-  let s = if static then s else String.sub s 1 (String.length s - 1) in
+  (* static variables keep their $, regular fields don't *)
+  let s = 
+    match static with
+    | Static -> s 
+    | NonStatic -> String.sub s 1 (String.length s - 1)
+  in
   match e with
   | None ->
       let heap, v = Ptr.new_ heap in
@@ -1363,7 +1360,7 @@ and class_var env static (heap, m) (s, e) =
       let heap, _ = assign env heap true v1 v2 in
       heap, SMap.add s v1 m
 
-and method_def env cname parent self this (heap, acc) m =
+and method_def env cname parent self this (heap, acc) def =
   let fdef = {
     f_ref = false;
     (* pad: this is ugly, but right now call_fun accepts only
@@ -1371,16 +1368,16 @@ and method_def env cname parent self this (heap, acc) m =
      * There is a (ugly) corresponding call to node_of_string in
      * call_fun().
      *)
-    f_name = w (CG.string_of_node (CG.Method (unw cname, unw m.m_name)));
-    f_params = m.m_params;
-    f_return_type = m.m_return_type;
-    f_body = m.m_body;
+    f_name = w (CG.string_of_node (CG.Method (unw cname, unw def.m_name)));
+    f_params = def.m_params;
+    f_return_type = def.m_return_type;
+    f_body = def.m_body;
   } in
-  let cls = make_method m.m_name parent self this fdef in
+  let cls = make_method def.m_name parent self this fdef in
   let mid = Utils.fresh() in
   let v = match this with None -> Vnull | Some v -> v in
   let v = Vmethod (v, IMap.add mid cls IMap.empty) in
-  heap, SMap.add (unw m.m_name) v acc
+  heap, SMap.add (unw def.m_name) v acc
 
 (* we use OCaml closures to deal with self/parent scoping issues *)
 and make_method mname parent self this fdef =
