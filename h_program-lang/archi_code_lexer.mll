@@ -464,7 +464,7 @@ rule category = parse
   | "/hi/"
   | "/hr/"
   | "/hu/"
-  | "/ia/"
+(*  | "/ia/", can mean interpreteur abstrait *)
   | "/id/"
   | "/id-ni/"
   | "/is/"
