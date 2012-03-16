@@ -225,6 +225,20 @@ function foo($x) {
       ["foo"] (xs);
     );
 
+    "fields use" >:: (fun () ->
+      let file = "
+class A {
+ public $bar = 0;
+}
+function foo(A $o) {
+  echo $o->bar;
+}
+" in
+    let xs = prolog_query ~file "use(X, 'bar', field, read), writeln(X)" in
+    assert_equal ~msg:"it should find read accesses to an object field"
+      ["foo"] (xs);
+    );
+
     (*-----------------------------------------------------------------------*)
     (* XHP *)
     (*-----------------------------------------------------------------------*)
