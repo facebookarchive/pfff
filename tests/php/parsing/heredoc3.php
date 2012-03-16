@@ -8,5 +8,6 @@ $x = <<<END
   This_is_$id_0
   This is {$id}
   This is {{$id}}
+  This is ${id}
 END;
 var_dump($x);
