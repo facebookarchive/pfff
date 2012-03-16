@@ -1051,6 +1051,8 @@ let name e =
 let str_of_name x = name x
 
 let dname (DName x) = unwrap x
+let str_of_dname x = dname x
+
 (*x: ast_php.ml *)
 let info_of_name e = 
   match e with 
