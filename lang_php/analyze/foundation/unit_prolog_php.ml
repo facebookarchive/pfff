@@ -20,42 +20,9 @@ open OUnit
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo? could perhaps be moved in its own database_prolog.ml file? *)
 let prolog_query ~file query =
   let source_file = Parse_php.tmp_php_file_from_string file in
-  let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
-  let helpers_pl_file = Config.path ^ "/h_program-lang/database_code.pl" in
-
-  let show_progress = false in
-
-  (* make sure it's a valid PHP file *)
-  let _ast = Parse_php.parse_program source_file in
-
-  (* todo: at some point avoid using database_php_build and 
-   * generate the prolog db directly from the sources.
-   *)
-  let db = 
-    Database_php_build.db_of_files_or_dirs ~show_progress [source_file] in
-
-  Database_prolog_php.gen_prolog_db ~show_progress db facts_pl_file;
-
-  let jujudb = 
-    Database_juju_php.juju_db_of_files ~show_progress [source_file] in
-  let codedb = 
-    Database_juju_php.code_database_of_juju_db jujudb in
-  let cg = 
-    Callgraph_php_build.create_graph ~show_progress [source_file] codedb in
-
-  Database_prolog_php.append_callgraph_to_prolog_db 
-    ~show_progress cg facts_pl_file;
-
-  (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
-  let cmd = 
-    spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
-      facts_pl_file helpers_pl_file query
-  in
-  let xs = Common.cmd_to_list cmd in
-  xs
+  Database_prolog_php.prolog_query ~verbose:false ~source_file ~query
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -242,6 +209,20 @@ function bad() {
       assert_equal ~msg:"it should find exceptions not deriving from Exception"
         ["ForgotExtendsException"]
         xs;
+    );
+
+    (*-----------------------------------------------------------------------*)
+    (* Data graph *)
+    (*-----------------------------------------------------------------------*)
+    "arrays used as records" >:: (fun () ->
+      let file = "
+function foo($x) {
+  echo $x['bar'];
+}
+" in
+    let xs = prolog_query ~file "use(X, 'bar', array, read), writeln(X)" in
+    assert_equal ~msg:"it should find read accesses to a record field"
+      ["foo"] (xs);
     );
 
     (*-----------------------------------------------------------------------*)

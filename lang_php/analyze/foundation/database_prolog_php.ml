@@ -28,7 +28,6 @@ module CG = Callgraph_php2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * This module makes it possible to ask questions on the structure of
  * a PHP codebase, for instance: "What are all the children of class Foo?".
@@ -366,7 +365,7 @@ let add_uses_and_properties id kind ast pr db =
 
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Build db *)
 (*****************************************************************************)
 
 (* todo? could avoid going through database_php.ml and parse directly? *)
@@ -488,4 +487,41 @@ let append_callgraph_to_prolog_db ?show_progress a b =
     append_callgraph_to_prolog_db2 ?show_progress a b)
   
 
+(*****************************************************************************)
+(* Query helpers *)
+(*****************************************************************************)
 
+(* used for testing *)
+let prolog_query ?(verbose=false) ~source_file ~query =
+  let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
+  let helpers_pl_file = Config.path ^ "/h_program-lang/database_code.pl" in
+
+  let show_progress = false in
+
+  (* make sure it's a valid PHP file *)
+  let _ast = Parse_php.parse_program source_file in
+
+  (* todo: at some point avoid using database_php_build and 
+   * generate the prolog db directly from the sources.
+   *)
+  let db = 
+    Database_php_build.db_of_files_or_dirs ~show_progress [source_file] in
+
+  gen_prolog_db ~show_progress db facts_pl_file;
+
+  let jujudb = 
+    Database_juju_php.juju_db_of_files ~show_progress [source_file] in
+  let codedb = 
+    Database_juju_php.code_database_of_juju_db jujudb in
+  let cg = 
+    Callgraph_php_build.create_graph ~show_progress [source_file] codedb in
+
+  append_callgraph_to_prolog_db 
+    ~show_progress cg facts_pl_file;
+  if verbose then Common.cat facts_pl_file +> List.iter pr2;
+  let cmd = 
+    spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
+      facts_pl_file helpers_pl_file query
+  in
+  let xs = Common.cmd_to_list cmd in
+  xs

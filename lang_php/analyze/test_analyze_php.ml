@@ -306,6 +306,14 @@ let test_include_require file =
   ()
 
 (*****************************************************************************)
+(* Prolog *)
+(*****************************************************************************)
+let test_prolog_php file query =
+  let xs = 
+    Database_prolog_php.prolog_query ~verbose:true ~source_file:file ~query in
+  pr2_gen xs
+
+(*****************************************************************************)
 (* Stat *)
 (*****************************************************************************)
 
@@ -483,6 +491,11 @@ let actions () = [
   "-ia_php_depth", " <file> <depth>",
   Common.mk_action_2_arg (fun file n ->
     test_abstract_interpreter file (int_of_string n)
+  );
+
+  "-prolog_php", " <file> <query>",
+  Common.mk_action_2_arg (fun file query ->
+    test_prolog_php file query;
   );
 
   "-stat_php", " <files_or_dirs>",
