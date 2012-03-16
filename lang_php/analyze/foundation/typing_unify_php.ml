@@ -22,8 +22,12 @@ open Typing_helpers_php
 (*****************************************************************************)
 (*
  * This module implements the unification of PHP types. It's using
- * a tricky technique.
+ * a tricky technique. TODO explain.
  *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (* mixed means contain both arrays and objects *)
 let rec mixed has_array has_object l =
@@ -33,6 +37,10 @@ let rec mixed has_array has_object l =
   | (Trecord _ | Tarray _) :: rl -> mixed true has_object rl
   | _ :: rl -> mixed has_array has_object rl
 let mixed l = mixed false false l
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 (* Unify types (polymorphic type or union types). Will modify
  * env.subst and returned the unified type.

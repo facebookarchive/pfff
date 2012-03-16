@@ -26,12 +26,10 @@ module Unify = Typing_unify_php
 (*****************************************************************************)
 (* 
  * This module implements a bottom-up type-inference for PHP.
- * It's using union types, polymorphic types, and object types.
+ * It's using union types, polymorphic types, and object types
+ * (see Env_typing_php.t)
  * Every functions/classes are sorted in their topological order, 
  * and are then typed independently (hence the term "bottom-up").
- * 
- * The type representation is fairly standard (see Env_typing_php),
- * except for classes. 
  * 
  * This module is also (ab)used to provide autocompletion.
  * 
@@ -67,22 +65,23 @@ module Unify = Typing_unify_php
  *  - pad wanted to do type inference for PHP a long time ago, like many
  *    other people at Facebook such as iproctor, yiding, etc. He reads
  *    a few papers on it: 
- *     * soft typing for scheme, 
- *     * inferring types for dynamic languages javascript/ruby/python/php/..., 
- *     * the cartesian product of ole agesen,
+ *     * soft typing for scheme,
+ *     * inferring types for dynamic languages javascript/ruby/python/php/...,
+ *     * the cartesian product inference algorithm of ole agesen,
  *     * constraint-based type inference of pottier
  *     * didier's remy extensible record typing
  *     * ...
  *    He also reread chapters in general books on typing (pierce), but failed
  *    to read something that explains simply how to handle union types.
- *    The traditional algorithms have a strong equality model, not a 
- *    set model.
+ *    The traditional algorithms have a strong equality model, not a
+ *    set model, which is required for union types.
  * 
  *  - julien wanted first to (ab)use the (top-down) abstract interpreter to
  *    also do type inference, but the interpreter is kinda hacky already
  *    and full of heuristics. Pad had the idea of trying 
  *    a bottom-up approach, but failed to know how to use W or
  *    compose_subst with union types that grows. Julien did it.
+ * 
  *  - algo unification and managing subsitution a la ?? coq?
  *)
 
