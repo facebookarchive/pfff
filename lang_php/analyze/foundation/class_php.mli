@@ -4,6 +4,14 @@ val interfaces:
 val traits:
   Ast_php.class_def -> Ast_php.name list
 
+(* __construct *)
+val constructor_name: string 
+val get_constructor: Ast_php.class_def -> Ast_php.method_def
+
+val get_public_or_protected_vars_of_class:
+  Ast_php.class_def -> Ast_php.dname list
+
+
 exception Use__Call
 exception UndefinedClassWhileLookup of string
 
@@ -26,13 +34,11 @@ val lookup_constant:
   Entity_php.entity_finder ->
   Ast_php.class_constant
 
-
 (* does not raise exception *)
 val collect_members: 
   string (* class *) -> Entity_php.entity_finder -> Ast_php.dname list
 
-val get_public_or_protected_vars_of_class:
-  Ast_php.class_def -> Ast_php.dname list
+
 
 val class_variables_reorder_first:
   Ast_php.class_def -> Ast_php.class_def
@@ -45,6 +51,3 @@ val class_type_of_ctype:
 val string_of_class_type:
   Ast_php.class_type -> string
 
-(* __construct *)
-val constructor_name: string 
-val get_constructor: Ast_php.class_def -> Ast_php.method_def
