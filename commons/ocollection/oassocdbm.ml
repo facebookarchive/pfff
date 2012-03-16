@@ -2,7 +2,27 @@ open Common
 
 open Oassoc
 
-(* !!take care!!: this class does side effect, not a pure oassoc.
+(* !!take care!!: this class does side effect, it's not a pure oassoc!
+ *
+ * Why using a gdbm-like data store? Why not use the filesystem
+ * and represent the "foo"->"data" key/value as a file /mystore/foo
+ * containing "data"? This is what git does for instance with
+ * its .git/objects/ directory.
+ * 
+ *  - looking up a key in a directory can be slow on certain filesystems.
+ *    This is less true with modern fs which use btrees to represent
+ *    directories. Moreover you can use the same trick than
+ *    git by having intermediate directories
+ *  - you are limited to 256 characters for the key (the maximal length
+ *    of a file)
+ *  - if your value is small, you can lose lots of space. But again
+ *    this is less true on certain fs which use "extents"
+ *  - gdbm is really simple, if you just need a persistent hashtbl,
+ *    it's pretty simple to use. Using a filesystem will force
+ *    you to implement yourself the lookup/add/get/etc.
+ *  - gdbm is probably faster than using a fs
+ *  - you can have transactions with certain gdbm-like store
+ *    (e.g. berkeley DB)
  * 
  * The fv/unv are here to give the opportunity to translate the value
  * from the dbm, before marshalling. This is useful for instance if you
@@ -14,7 +34,8 @@ open Oassoc
  * to rebuild the object from the traditionnal data structure when you
  * get them from the dbm. Hence fv/unv. You can do the same for the key
  * with fkey/unkey, but as key are usually simple data structures,
- * there is less need for them, so I have commented them. *)
+ * there is less need for them, so I have commented them. 
+ *)
 class ['a,'b] oassocdbm   xs db (*fkey unkey*) fv unv = 
 object(o)
   inherit ['a,'b] oassoc
