@@ -39,10 +39,13 @@ let unittest =
       let file = "
 function foo() { }
 const BAR = 1;
-class A { }
+class A { 
+  public $fld = 0;
+  public function bar() { }
+  const CST = 1;
+}
 interface I { }
 trait T { }
-class B { const CST = 1; }
 " in 
       (* quite similar to the unit test for tags in unit_foundation_php.ml *)
       assert_equal 
@@ -52,12 +55,16 @@ class B { const CST = 1; }
       assert_equal 
         ["class"]     (prolog_query ~file "kind('A', X), writeln(X)");
       assert_equal 
+        ["method"]     (prolog_query ~file "kind(('A','bar'), X), writeln(X)");
+      assert_equal 
+        ["field"]     (prolog_query ~file "kind(('A','fld'), X), writeln(X)");
+      assert_equal 
+        ["class_constant"]
+          (prolog_query ~file "kind(('A','CST'), X), writeln(X)");
+      assert_equal 
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
       assert_equal 
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
-      assert_equal 
-        ["class_constant"]
-          (prolog_query ~file "kind(('B','CST'), X), writeln(X)");
     );
 
     (*-----------------------------------------------------------------------*)
@@ -219,10 +226,16 @@ function bad() {
 function foo($x) {
   echo $x['bar'];
 }
+function foo2($x) {
+  $x['bar'] = 1;
+}
 " in
     let xs = prolog_query ~file "use(X, 'bar', array, read), writeln(X)" in
     assert_equal ~msg:"it should find read accesses to a record field"
       ["foo"] (xs);
+    let xs = prolog_query ~file "use(X, 'bar', array, write), writeln(X)" in
+    assert_equal ~msg:"it should find write accesses to a record field"
+      ["foo2"] (xs);
     );
 
     "fields use" >:: (fun () ->
@@ -233,10 +246,13 @@ class A {
 function foo(A $o) {
   echo $o->bar;
 }
+function foo2(A $o) {
+  $o->bar = 1;
+}
 " in
-    let xs = prolog_query ~file "use(X, 'bar', field, read), writeln(X)" in
-    assert_equal ~msg:"it should find read accesses to an object field"
-      ["foo"] (xs);
+    let xs = prolog_query ~file "use(X, 'bar', field, write), writeln(X)" in
+    assert_equal ~msg:"it should find write accesses to an object field"
+      ["foo2"] (xs);
     );
 
     (*-----------------------------------------------------------------------*)
