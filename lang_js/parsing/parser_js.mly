@@ -19,6 +19,11 @@
  *  http://www.ecma-international.org/publications/standards/ecma-262.htm
  * 
  * see also http://en.wikipedia.org/wiki/ECMAScript_syntax
+ * 
+ * related work:
+ *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
+ *    (which has been since ported to javascript by nodejs people)
+ *  - jslint
  *)
 
 open Common
