@@ -12,11 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 
 (*****************************************************************************)
@@ -60,7 +58,10 @@ type error = {
  (* less: Advice | Noisy | Meticulous/Pedantic ? *)
  and severity = Fatal | Warning
 
-(* coupling: if you add a constructor here, don't forget to extend
+(* Mostly use/def kind of errors
+ * (for functions/classes/constants, variables, members, files, etc)
+ * 
+ * coupling: if you add a constructor here, don't forget to extend
  * layer_checker_php.ml too.
  * 
  * note: try to not put structure that have position information in 
@@ -115,7 +116,11 @@ type error = {
    *)
   | CaseSensitivityKeyword
 
-  (* todo: type errors, protocol errors (statistical analysis), etc *)
+  (* todo: 
+   *  - type errors, 
+   *  - protocol errors (statistical analysis), 
+   *  - etc 
+   *)
 
   and severity2 =
    | Bad
