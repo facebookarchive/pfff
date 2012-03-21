@@ -51,13 +51,13 @@ let strict = ref false
 type error = {
   typ: error_kind;
   loc: Ast_php.info;
-  (* todo? maybe severity should be inferred from the error_kind. That
+  (* less: maybe severity should be inferred from the error_kind. That
    * way it will also avoid the need for 2 functions fatal()/warning()
    * and just have error().
    *)
   sev: severity; 
 }
- (* todo? Advise | Noisy | Meticulous ? *)
+ (* less: Advice | Noisy | Meticulous/Pedantic ? *)
  and severity = Fatal | Warning
 
 (* coupling: if you add a constructor here, don't forget to extend
@@ -93,6 +93,9 @@ type error = {
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option
 
+  (* wrong include/require *)
+  | FileNotFound of Common.filename
+
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
@@ -101,8 +104,6 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
 (*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
-  (* wrong include/require *)
-  | FileNotFound of Common.filename
 
   (* tainting *)
   | Injection of injection_kind (* todo: * explanation (e.g. a path?) *)

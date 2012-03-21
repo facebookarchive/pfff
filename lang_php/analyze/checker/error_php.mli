@@ -9,12 +9,14 @@ type error = {
  and severity = Fatal | Warning
 
  and error_kind = 
+  (* entities *)
   | UndefinedEntity    of Entity_php.id_kind * string (* name *)
   | MultiDefinedEntity of Entity_php.id_kind * string (* name *) *
       (string * string) (* name * name *)
   | UndefinedClassWhileLookup of string
   | UndefinedMethodInAbstractClass of string
 
+  (* call sites *)
   | TooManyArguments   of string (* name *) (* def *)
   | NotEnoughArguments of string (* name *) (* def *)
   | WrongKeywordArgument of
@@ -23,19 +25,25 @@ type error = {
   | CallingMethodWithQualifier of string
   | PassingUnexpectedRef
         
+  (* variables *)
   | UseOfUndefinedVariable of string (* dname *) * suggest option
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
 
+  (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option
 
+  (* wrong include/require *)
+  | FileNotFound of Common.filename
+
+  (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
 
   | CfgError of Controlflow_build_php.error_kind
 
-  | FileNotFound of Common.filename
   | Injection of injection_kind
+
   | CaseWithSemiColon
   | CaseSensitivityKeyword
 
