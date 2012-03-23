@@ -1,4 +1,4 @@
-  help_div(id) =
+function help_div(id) {
     src_id = "{id}_source"
     res_id = "{id}_result"
     bg_style = css {
@@ -10,3 +10,4 @@
       opacity:0.7;
     }
     1
+}
