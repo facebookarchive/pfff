@@ -3,7 +3,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2011 Facebook
+ * Copyright (C) 2009-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,7 +33,7 @@ open Parser_php
  *
  * There are a few tricks to go around ocamllex restrictions
  * because PHP has different lexing rules depending on some "contexts"
- * (similar to Perl, e.g. the <<<END context).
+ * (this is similar to Perl, e.g. the <<<END context).
  *)
 
 (*****************************************************************************)

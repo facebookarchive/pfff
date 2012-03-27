@@ -1,6 +1,6 @@
 -*- org -*-
 
-* ?? (Q1 2012) (pfff_logger, ??)
+* 0.19 (Q1 2012) (pfff_logger, ??)
 
 ** introduce lang_opa
 basic support

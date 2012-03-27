@@ -169,9 +169,9 @@ let test () =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let sgrep_extra_actions () = [
-  "-dump_pattern", " <file>",
+  "-dump_pattern", " <file> (internal)",
   Common.mk_action_1_arg dump_sgrep_pattern;
-  "-test", " ",
+  "-test", " run regression tests",
   Common.mk_action_0_arg test;
 ]
 
@@ -199,7 +199,7 @@ let options () =
     " <metavar> print the metavariable, not the matched code";
 
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
-    " <file> save result in pfff layer file";
+    " <file> save result in a pfff layer file";
 
     "-verbose", Arg.Set verbose, 
     " ";
@@ -207,21 +207,12 @@ let options () =
   (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "sgrep_php version: %s" Config.version);
     exit 0;
   ), 
     "  guess what";
-
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
-    pr2 "version: $Date: 2008/10/26 00:44:57 $";
-    raise (Common.UnixExit 0)
-    ), 
-  "   guess what";
   ] ++
   []
 

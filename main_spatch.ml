@@ -409,7 +409,7 @@ let spatch_extra_actions () = [
   "-add_action_ui_form", " <files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo add_action_ui_form_transfo);
 
-  "-test", "",
+  "-test", " run regression tests",
   Common.mk_action_0_arg test;
   "-pp", "",
   Common.mk_action_1_arg test_pp;
@@ -441,23 +441,13 @@ let options () =
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
     Common.pr2 (spf "spatch_php version: %s" Config.version);
     exit 0;
   ), 
     "  guess what";
-
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
-    Common.pr2 "version: $Date: 2010/04/25 00:44:57 $";
-    raise (Common.UnixExit 0)
-    ), 
-  "   guess what";
-  ] ++
-  []
+  ]
 
 (*****************************************************************************)
 (* Main entry point *)

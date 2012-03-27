@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,21 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 open Parse_info
-
 module Ast = Ast_php
 module V = Visitor_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * See https://github.com/facebook/pfff/wiki/Spatch
  * 
@@ -53,7 +49,7 @@ module PI = Parse_info
 (* Type *)
 (*****************************************************************************)
 
-(* but right now only Expr and Stmt are supported *)
+(* right now only Expr and Stmt are supported *)
 type pattern = Ast_php.any
 
 type line_kind = 

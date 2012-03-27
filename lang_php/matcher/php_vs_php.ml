@@ -27,13 +27,13 @@ open Common
  * 
  *    pfff/meta/gen_code -matcher_gen_all ast_php.ml
  * 
- * using ocaml pad-style reflection (see commons/ocaml.ml) on 
+ * using OCaml pad-style reflection (see commons/ocaml.ml) on 
  * parsing_php/ast_php.ml. 
  * 
  * An alternative could have been to transform ast_php.ml
  * in a very simple term language and do the 1-vs-1 match
- * on this term language, but depending on the construct (a PHP variable,
- * a string) we may want to do special things so it's better to work
+ * on this term language, but depending on the construct, a PHP variable,
+ * a string, we may want to do special things so it's better to work
  * on the full AST. Working on a term language would be like working
  * in an untyped language.
  * 
