@@ -65,15 +65,22 @@ let tok_add_s s ii  =
   Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
 (*e: lexer helpers *)
 
+(* all string passed to T_IDENT or T_VARIABLE should go through case_str *)
+let case_str s =
+  if !Flag.case_sensitive
+  then s
+  else String.lowercase s
+
+
 let xhp_or_t_ident ii fii = 
   if !Flag.xhp_builtin 
   then fii ii 
-  else T_IDENT(Ast.str_of_info ii, ii)
+  else T_IDENT(case_str (Ast.str_of_info ii), ii)
 
 let lang_ext_or_t_ident ii fii =
   if !Flag.facebook_lang_extensions
   then fii ii
-  else T_IDENT(Ast.str_of_info ii, ii)
+  else T_IDENT(case_str (Ast.str_of_info ii), ii)
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -201,7 +208,7 @@ let keyword_table = Common.hash_of_list [
   "pcdata", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_PCDATA x));
 ]
 let _ = assert ((Common.hkeys keyword_table) +> 
-                 List.for_all (fun s -> s = lowercase s))
+                 List.for_all (fun s -> s = String.lowercase s))
 (*e: keywords_table hash *)
 
 (* ---------------------------------------------------------------------- *)
@@ -579,7 +586,7 @@ rule st_in_scripting = parse
         let whiteinfo = Parse_info.tokinfo_str_pos white pos_after_sym in
         let lblinfo = Parse_info.tokinfo_str_pos label pos_after_white in
         
-        push_token (T_IDENT (label, lblinfo));
+        push_token (T_IDENT (case_str label, lblinfo));
        (* todo: could be newline ... *)
         push_token (TSpaces (whiteinfo));
 
@@ -705,8 +712,8 @@ rule st_in_scripting = parse
      * at least the uppercase form to be used as identifier, hence those
      * two rules below.
      *)
-    | "SELF"   { T_IDENT (tok lexbuf, tokinfo lexbuf) }
-    | "PARENT" { T_IDENT (tok lexbuf, tokinfo lexbuf) }
+    | "SELF"   { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
+    | "PARENT" { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
   (*s: keyword and ident rules *)
     | LABEL
         { let info = tokinfo lexbuf in
@@ -717,7 +724,8 @@ rule st_in_scripting = parse
           with
           | Some f -> f info
           (* was called T_STRING in original grammar *)
-          | None -> T_IDENT (s, info) 
+          | None ->
+              T_IDENT (case_str s, info) 
         }
 
     (* Could put a special rule for "$this", but there are multiple places here
@@ -725,7 +733,9 @@ rule st_in_scripting = parse
      * like ${this}, so it is simpler to do the "this-analysis" in the grammar, 
      * later when we generate a Var or This.
      *)
-    | "$" (LABEL as s) { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s) {
+        T_VARIABLE(case_str s, tokinfo lexbuf) 
+      }
 
   (*e: keyword and ident rules *)
 
@@ -964,7 +974,7 @@ and st_looking_for_property = parse
   | "->" { T_OBJECT_OPERATOR(tokinfo lexbuf) }
   | LABEL {
       pop_mode();
-      T_IDENT(tok lexbuf, tokinfo lexbuf)
+      T_IDENT(case_str (tok lexbuf), tokinfo lexbuf)
     }
 (*
   | ANY_CHAR {
@@ -997,8 +1007,8 @@ and st_var_offset = parse
       T_NUM_STRING (tok lexbuf, tokinfo lexbuf)
     }
 
-  | "$" (LABEL as s) { T_VARIABLE(s, tokinfo lexbuf) }
-  | LABEL            { T_IDENT(tok lexbuf, tokinfo lexbuf)  }
+  | "$" (LABEL as s) { T_VARIABLE(case_str s, tokinfo lexbuf) }
+  | LABEL            { T_IDENT(case_str (tok lexbuf), tokinfo lexbuf)  }
 
   | "]" { 
       pop_mode();
@@ -1029,7 +1039,7 @@ and st_double_quotes = parse
   | "{" {  T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)  }
 
   (*s: encapsulated dollar stuff rules *)
-    | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
   (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
@@ -1041,7 +1051,7 @@ and st_double_quotes = parse
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
-          T_VARIABLE(s, varinfo)
+          T_VARIABLE(case_str s, varinfo)
       }
     (* bugfix: can have strings like "$$foo$" *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
@@ -1087,7 +1097,7 @@ and st_backquote = parse
     }
 
   (*s: encapsulated dollar stuff rules *)
-    | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
   (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
@@ -1099,7 +1109,7 @@ and st_backquote = parse
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
-          T_VARIABLE(s, varinfo)
+          T_VARIABLE(case_str s, varinfo)
       }
     (* bugfix: can have strings like "$$foo$" *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
@@ -1174,7 +1184,7 @@ and st_start_heredoc stopdoc = parse
   | "\\" ANY_CHAR { T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf) }
 
   (*s: encapsulated dollar stuff rules *)
-    | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
   (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
@@ -1186,7 +1196,7 @@ and st_start_heredoc stopdoc = parse
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
-          T_VARIABLE(s, varinfo)
+          T_VARIABLE(case_str s, varinfo)
       }
     (* bugfix: can have strings like "$$foo$", or {{$foo}} *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }

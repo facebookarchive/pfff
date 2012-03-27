@@ -73,6 +73,11 @@ let sgrep_unittest = [
       (* isomorphism on "keyword" arguments *)
       "foo(true);", "foo($x=true);", true;
       "foo(true);", "foo(true);", true;
+  
+      (* we want sgrep/spatch to be case insensitive, like PHP *)
+      "foo(...);", "Foo(true);", true;
+      "Foo(...);", "foo(true);", true;
+      "foo(...);", "Fo0(true);", false;
 
       (* more complex expressions *)
       "strstr(...) == false;", "strstr($x)==false;", true;
@@ -108,7 +113,12 @@ let sgrep_unittest = [
 
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
-      match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
+      let parse str =
+        Common.save_excursion Flag_parsing_php.case_sensitive false (fun() ->
+          Parse_php.any_of_string str
+        )
+      in
+      match Sgrep_php.parse spattern, parse scode with
       | Stmt2 pattern, Stmt2 code ->
           let matches_with_env = Matching_php.match_st_st pattern code in
           if should_match

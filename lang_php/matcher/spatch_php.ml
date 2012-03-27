@@ -214,15 +214,15 @@ let parse file =
 
 let parse_string spatch_str =
   Common.with_tmp_file ~str:spatch_str ~ext:".spatch" 
-    parse
+    (fun file -> parse file)
 
-let spatch pattern file =
+let spatch ?(case_sensitive=false) pattern file =
   let was_modifed = ref false in
     
   (* quite similar to what we do in main_sgrep.ml *)
   let ast2 = 
     try 
-      Parse_php.parse file +> fst
+        Parse_php.parse file +> fst
     with Parse_php.Parse_error err ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       []
@@ -292,7 +292,9 @@ let spatch pattern file =
     | _ -> failwith (spf "pattern not yet supported:" ^ 
                        Export_ast_php.ml_pattern_string_of_any pattern)
   in
-  (V.mk_visitor hook) (Program ast);
+  Common.save_excursion Php_vs_php.case_sensitive case_sensitive (fun() ->
+    (V.mk_visitor hook) (Program ast)
+  );
 
   if !was_modifed 
   then Some (Unparse_php.string_of_program2_using_transfo ast2)

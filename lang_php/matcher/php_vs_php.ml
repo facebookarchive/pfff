@@ -59,6 +59,21 @@ module B = Ast_php
 module MV = Metavars_php
 
 (*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+
+(* PHP is case insensitive, which I think is a bad idea, so
+ * tools like scheck enforce case sensitivity. But we want sgrep/spatch
+ * to match/transform as much code as possible, including badly written
+ * code with weird cases, hence this flag.
+ * 
+ * Note that sgrep/spatch patterns can contain metavariables which are
+ * in uppercase so we can't lowercase all idents at parsing time.
+ * We have instead to do case insensitive string comparisons here.
+ *)
+let case_sensitive = ref false
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -236,22 +251,20 @@ let m_unit a b = return (a, b)
 (* ---------------------------------------------------------------------- *)
 (* m_string *)
 (* ---------------------------------------------------------------------- *)
-
 let m_string a b = 
   if a = b then return (a, b) else fail ()
+
+(* iso on case sensitivity *)
+let m_string_case a b =
+  if !case_sensitive
+  then m_string a b
+  else m_string (String.lowercase a) (String.lowercase b)
 
 (* ---------------------------------------------------------------------- *)
 (* scope, type (don't care for now) *)
 (* ---------------------------------------------------------------------- *)
 let m_xxx_scope a b = 
   (* dont care about scope for now *)
-  return (a, b)
-
-let m_var_info a b =
-  (* dont care about type for now *)
-  return (a, b)
-
-let m_exp_info a b =
   return (a, b)
 
 (* ---------------------------------------------------------------------- *)
@@ -310,7 +323,7 @@ let m_dname a b =
 let m_name a b = 
   match a, b with
   | A.Name(a1), B.Name(b1) ->
-    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    (m_wrap m_string_case) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.Name(a1),
        B.Name(b1)
@@ -344,7 +357,7 @@ let m_name_metavar_ok a b =
       )
 
   | A.Name(a1), B.Name(b1) ->
-    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    (m_wrap m_string_case) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.Name(a1),
        B.Name(b1)
@@ -586,7 +599,6 @@ let m_assignOp a b =
   | A.AssignConcat, _
    -> fail ()
 
-
 let m_fixOp a b = 
   match a, b with
   | A.Dec, B.Dec ->
@@ -821,7 +833,6 @@ let rec m_variable a b =
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     (* iso on function name *)
     m_name_metavar_ok a2 b2 >>= (fun (a2, b2) -> 
-
     m_paren (m_list__m_argument) a3 b3 >>= (fun (a3, b3) -> 
     return (
        A.FunCallSimple(a2, a3),
@@ -3108,4 +3119,3 @@ let m_any a b =
    -> fail ()
 
 end
-

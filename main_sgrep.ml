@@ -38,6 +38,7 @@ let verbose = ref false
 let pattern_file = ref ""
 let pattern_string = ref ""
 
+let case_sensitive = ref false
 let match_format = ref Lib_parsing_php.Normal
 
 let mvars = ref ([]: Metavars_php.mvar list)
@@ -136,9 +137,13 @@ let main_action xs =
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
 
-    Sgrep_php.sgrep pattern file ~hook:(fun env matched_tokens -> 
-      print_match !mvars env matched_tokens
-    )
+    Sgrep_php.sgrep 
+      ~case_sensitive:!case_sensitive 
+      ~hook:(fun env matched_tokens -> 
+        print_match !mvars env matched_tokens
+      )
+      pattern 
+      file 
   );
 
   !layer_file +> Common.do_option (fun file ->
@@ -189,6 +194,9 @@ let options () =
     " <pattern> expression pattern";
     "-f", Arg.Set_string pattern_file, 
     " <file> obtain pattern from file";
+
+    "-case_sensitive", Arg.Set case_sensitive, 
+    " match code in a case sensitive manner";
 
     "-emacs", Arg.Unit (fun () -> match_format := Lib_parsing_php.Emacs ),
     " print matches on the same line than the match position";

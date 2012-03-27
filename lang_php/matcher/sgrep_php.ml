@@ -12,35 +12,39 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 open Parse_info
-
 module Ast = Ast_php
 module V = Visitor_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* See https://github.com/facebook/pfff/wiki/Sgrep
-*)
+(* See https://github.com/facebook/pfff/wiki/Sgrep *)
 
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
 
-(* but right now only Expr and Stmt are supported *)
+(* right now only Expr and Stmt are actually supported *)
 type pattern = Ast_php.any
 
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
 
+(* We can't have Flag_parsing_php.case_sensitive set to false here
+ * because metavariables in sgrep patterns are in uppercase
+ * and we don't want to lowercase them.
+ * 
+ * We actually can't use Flag_parsing_php.case_sensitive at all
+ * because we also want the Foo() pattern to match foo() code
+ * so we have anyway to do some case insensitive string
+ * comparisons in php_vs_php.ml
+ *)
 let parse str =
   Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     Parse_php.any_of_string str
@@ -50,7 +54,7 @@ let parse str =
 (* Main entry point *)
 (*****************************************************************************)
 
-let sgrep ~hook pattern file =
+let sgrep ?(case_sensitive=false) ~hook pattern file =
   let (ast2) = 
     try 
       Parse_php.parse file +> fst
@@ -173,5 +177,7 @@ let sgrep ~hook pattern file =
                         Export_ast_php.ml_pattern_string_of_any pattern)
   in
   (* opti ? dont analyze func if no constant in it ?*)
-  (V.mk_visitor hook) (Program ast)
-    
+  Common.save_excursion Php_vs_php.case_sensitive case_sensitive (fun() ->
+    (V.mk_visitor hook) (Program ast)
+  )
+

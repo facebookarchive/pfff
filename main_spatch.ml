@@ -42,6 +42,8 @@ open Parse_info
 
 let verbose = ref false
 
+let case_sensitive = ref false
+
 let apply_patch = ref false
 (* too experimental for now *)
 let pretty_printer = ref false
@@ -165,7 +167,8 @@ let main_action xs =
   Logger.log Config.logger "spatch" (Some (Common.read_file spatch_file));
 
   (* old: let pattern = dumb_spatch_pattern in *)
-  let pattern = Spatch_php.parse spatch_file in
+  let pattern = 
+    Spatch_php.parse spatch_file in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
@@ -173,7 +176,9 @@ let main_action xs =
    List.iter (fun file->
     k();
     try (
-    let resopt = Spatch_php.spatch pattern file in
+    let resopt = 
+      Spatch_php.spatch ~case_sensitive:!case_sensitive pattern file
+    in
     resopt +> Common.do_option (fun (s) ->
 
       pr2 (spf "transforming: %s" file);
@@ -433,6 +438,8 @@ let options () =
     " ";
     "--pretty-printer", Arg.Set pretty_printer, 
     " reindent the modified code";
+    "--case-sensitive", Arg.Set case_sensitive, 
+    " match code in a case sensitive manner";
     "--verbose", Arg.Set verbose, 
     " ";
     "-v", Arg.Set verbose, 

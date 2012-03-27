@@ -10,6 +10,9 @@ basic support
 
 ** introduce type inference for PHP (julien)
 
+** sgrep_php/spatch_php
+case insensitive mode by default
+
 ** internals
 
 *** refactored lang_php/analysis/, less error messages, progress meter,
