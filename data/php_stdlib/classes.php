@@ -1,5 +1,13 @@
 <?php
 
+//http://php.net/manual/en/reserved.classes.php
+class stdClass { }
+//class Directory
+
+// ***************************************************************************
+// Exceptions
+// ***************************************************************************
+
 // http://us.php.net/manual/en/class.exception.php
 class Exception { 
   /* Properties */
@@ -43,6 +51,10 @@ class OutOfBoundsException extends Exception { }
 //http://us3.php.net/UnexpectedValueException
 class UnexpectedValueException extends Exception { }
 
+// ***************************************************************************
+// Reflection
+// ***************************************************************************
+
 // http://php.net/manual/en/book.reflection.php
 class ReflectionExtension { }
 class ReflectionClass { }
@@ -52,9 +64,10 @@ class ReflectionMethod { }
 //http://php.net/manual/en/class.reflectionobject.php
 class ReflectionObject  { }
 
-//http://php.net/manual/en/reserved.classes.php
-class stdClass { }
-//class Directory
+
+// ***************************************************************************
+// Iterators
+// ***************************************************************************
 
 //http://us.php.net/ArrayIterator
 class ArrayIterator { }
@@ -68,13 +81,9 @@ class RecursiveIteratorIterator { }
 //http://php.net/manual/en/class.recursivedirectoryiterator.php
 class RecursiveDirectoryIterator { }
 
-//http://php.net/manual/en/class.iterator.php
-class Iterator { }
-
-
-//http://php.net/manual/en/class.serializable.php
-class Serializable { }
-
+// ***************************************************************************
+// Iterators
+// ***************************************************************************
 // ------------------------------------------
 // Now in HPHP idl files
 // ------------------------------------------
