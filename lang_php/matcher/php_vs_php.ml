@@ -252,7 +252,7 @@ let m_unit a b = return (a, b)
 (* m_string *)
 (* ---------------------------------------------------------------------- *)
 let m_string a b = 
-  if a = b then return (a, b) else fail ()
+  if a =$= b then return (a, b) else fail ()
 
 (* iso on case sensitivity *)
 let m_string_case a b =
@@ -330,7 +330,7 @@ let m_name a b =
     )
     )
   | A.XhpName(a1), B.XhpName(b1) ->
-    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    (m_wrap (m_list m_string)) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.XhpName(a1),
        B.XhpName(b1)
@@ -364,7 +364,7 @@ let m_name_metavar_ok a b =
     )
     )
   | A.XhpName(a1), B.XhpName(b1) ->
-    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    (m_wrap (m_list m_string)) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.XhpName(a1),
        B.XhpName(b1)
