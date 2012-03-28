@@ -23,7 +23,19 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* See https://github.com/facebook/pfff/wiki/Sgrep *)
+(* See https://github.com/facebook/pfff/wiki/Sgrep 
+ *
+ * todo? many things are easier in sgrep than in spatch. For instance
+ * many isomorphisms are ok to do in sgrep but would result in badly
+ * generated code for spatch (e.g. the order of the attributes in Xhp
+ * does not matter). Using ast_php.ml has many disadvantages
+ * for sgrep; it complicates things. Maybe we should use
+ * a unsugar AST a la PIL to do the maching and the concrete AST for
+ * transforming. For instance the Xhp vs XhpSingleton isomorphisms would
+ * not even be needed in an unsugared AST. At the same time it's
+ * convenient to have a single php_vs_php.ml that kinda works
+ * both for sgrep and spatch at the same time.
+ *)
 
 (*****************************************************************************)
 (* Type *)
@@ -59,6 +71,10 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
     try 
       Parse_php.parse file +> fst
     with Parse_php.Parse_error err ->
+      (* we usually do sgrep on a set of files or directories,
+       * so we don't want on error in one file to stop the
+       * whole process.
+       *)
       Common.pr2 (spf "warning: parsing problem in %s" file);
       []
   in

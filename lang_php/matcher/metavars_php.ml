@@ -34,8 +34,8 @@ type metavars_binding = (mvar, Ast_php.any) Common.assoc
 
 let empty_environment = []
 
-(* bugfix: don't forget $, otherwise string like FBredirect would match
- * such regexp (the starting F) even if it's not a metavar at all.
+(* bugfix: don't forget $ or \\b, otherwise a string like FBredirect would
+ * match such regexp (the starting F) even if it's not a metavar at all.
  * 
  * examples: X, X1, X1_ILOVEPUPPIES
  *)
@@ -47,11 +47,11 @@ let metavar_regexp  = Str.regexp metavar_regexp_string
 (* 
  * Hacks abusing existing PHP constructs to encode extra constructions.
  * One day we will have a pattern_php_ast.ml that mimic mostly
- * ast_php.ml and extend it.
+ * ast_php.ml and extends it with sgrep special constructs.
  *)
 let is_metavar_name s = 
   s ==~ metavar_regexp
 
-(* todo: replace this hack by allowing X->method(...) in php grammar *)
+(* todo: replace this hack by allowing X->method(...) in PHP grammar *)
 let is_metavar_variable_name s = 
   s =~ "V\\(_[A-Z]*\\)?"
