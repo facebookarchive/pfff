@@ -12,14 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module MV = Metavars_php
-
 module A = Ast_php
 module B = Ast_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -29,8 +26,6 @@ module PI = Parse_info
  * This module makes it possible to match and transform one PHP AST 
  * against another PHP AST providing a kind of patch but at a 
  * syntactical level.
- * 
- * See https://github.com/facebook/pfff/wiki/Spatch
  * 
  * To understand the logic behind this code it may help to first read
  * this: http://coccinelle.lip6.fr/papers/eurosys08.pdf
@@ -48,7 +43,7 @@ module XMATCH = struct
    * version0: 
    *   type ('a, 'b) matcher = 'a -> 'b -> bool
    * 
-   *   This just let you know if you matched something.
+   *   This just lets you know if you matched something.
    * 
    * version1:
    *   type ('a, 'b) matcher = 'a -> 'b -> unit -> ('a, 'b) option
@@ -153,9 +148,7 @@ module XMATCH = struct
   let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
     match Common.assoc_option (mvar: string) tin with
     | Some valu' ->
-        (* TODO: have to ensure both matched ASTs are equal, valu =? valu'.
-         *
-         * Should we use php_vs_php itself for comparing the binded code ?
+        (* Should we use php_vs_php itself for comparing the binded code ?
          * Hmmm, we can't because it leads to a circular dependencies.
          * Moreover here we know both valu and valu' are regular PHP code,
          * not PHP patterns, so we can just use the generic '=' of OCaml.
@@ -288,13 +281,10 @@ type ('a, 'b) transformer = 'a -> 'b ->
   Metavars_php.metavars_binding list
 
 let transform_e_e pattern e   env = 
-  ignore (MATCH.m_expr pattern e   env);
-  ()
+  ignore (MATCH.m_expr pattern e   env)
 
 let transform_st_st pattern e   env = 
-  ignore (MATCH.m_stmt pattern e   env);
-  ()
+  ignore (MATCH.m_stmt pattern e   env)
 
 let transform_v_v pattern e   env = 
-  ignore (MATCH.m_variable pattern e   env);
-  ()
+  ignore (MATCH.m_variable pattern e   env)
