@@ -28,7 +28,7 @@ let sgrep_unittest = [
   "misc sgrep features" >:: (fun () ->
     (* pattern string, code string (statement), should_match boolean *)
     let triples = [
-      (* concrete match with space "abstraction" *)
+      (* match even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
       "foo(1,3);", "foo(1,2);", false;
 
@@ -48,9 +48,6 @@ let sgrep_unittest = [
 
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
-
-      (* statements *)
-      "if(X) { foo(); }", "if(true) { foo(); }", true;
 
       (* metavariable naming conventions *)
       "foo(X);"       ,  "foo(1);", true;
@@ -85,6 +82,9 @@ let sgrep_unittest = [
       (* regexp, PCRE syntax *)
       "foo('=~/.*CONSTANT/');", "foo('MY_CONSTANT');", true;
       "foo('=~/.*CONSTANT/');", "foo('MY_CONSTAN');", false;
+
+      (* statements *)
+      "if(X) { foo(); }", "if(true) { foo(); }", true;
 
       (* ------------ *)
       (* xhp patterns *)
@@ -186,7 +186,7 @@ let spatch_unittest = [
               tmpfile
         in
         let diff = Common.unix_diff file_res expfile in
-        diff |> List.iter pr;
+        diff +> List.iter pr;
         if List.length diff > 1
         then assert_failure
           (spf "spatch %s on %s should have resulted in %s" 
@@ -212,5 +212,5 @@ let unittest =
 (*****************************************************************************)
 let actions () = [
     "-unittest_matcher", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
+    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest +> ignore);
 ]

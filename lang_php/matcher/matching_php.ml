@@ -26,6 +26,11 @@ module MV = Metavars_php
  *)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag_matcher_php.verbose
+
+(*****************************************************************************)
 (* The functor argument *)
 (*****************************************************************************)
 
@@ -157,8 +162,10 @@ module XMATCH = struct
    fun (mvar, imvar) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
+        pr2 (spf "envf: fail, %s" mvar);
         fail tin
     | Some new_binding ->
+        pr2 (spf "envf: success, %s" mvar);
         return ((mvar, imvar), any) new_binding
 
   let (envf2: (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher) =

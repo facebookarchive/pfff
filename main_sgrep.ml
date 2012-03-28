@@ -209,7 +209,10 @@ let options () =
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in a pfff layer file";
 
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Unit (fun () -> 
+      verbose := true;
+      Flag_matcher_php.verbose := true;
+    ),
     " ";
   ] ++
   (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
@@ -230,7 +233,7 @@ let options () =
 
 let main () = 
   let usage_msg = 
-    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+    spf "Usage: %s [options] <pattern> <file or dir> \nDoc: %s\nOptions:"
       (Common.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Sgrep"
   in
