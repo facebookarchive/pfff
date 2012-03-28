@@ -99,9 +99,18 @@ let sgrep_unittest = [
       "return <x:frag border=\"1\" >this is text</x:frag>;", 
       true;
 
+      (* metavariable on xhp tag *)
+      "return <X label=\"1\"></X>;", "return <x:frag label=\"1\"></x:frag>;",
+      true;
+      (* TODO
+      "return <X>{X::foo()}</X>;", "return <x:frag>{:x:frag::foo()}</x:frag>;",
+      true;
+      *)
+
       (* TODO:
-       *  Xhp should also match XhpSingleton
+       *  Xhp should also match XhpSingleton or optional closing tag
        * "return <x:frag></x:frag>;", "return <x:frag />;", true; 
+       * "return <x:frag></x:frag>;", "return <x:frag></>;", true; 
        *)
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
