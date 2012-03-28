@@ -13,20 +13,9 @@ module Flag = Flag_parsing_php
 
 (* run by sgrep -test *)
 let sgrep_unittest = [
-  "sgrep variable metavars matching" >:: (fun () ->
-    let pattern = Parse_php.any_of_string "foo($V, $V);" in
-    let code = Parse_php.any_of_string "foo($x, $y);" in
-    (match pattern, code with
-    | Stmt2 pattern, Stmt2 code ->
-        let matches_with_env = Matching_php.match_st_st pattern code in
-        assert_bool "it should not match" (matches_with_env = []);
-    | _ ->
-        assert_failure "parsing problem in sgrep pattern parsing"
-    );
-  );
 
-  "misc sgrep features" >:: (fun () ->
-    (* pattern string, code string (statement), should_match boolean *)
+  "sgrep features" >:: (fun () ->
+    (* spec: pattern string, code string (statement), should_match boolean *)
     let triples = [
       (* match even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
@@ -98,27 +87,25 @@ let sgrep_unittest = [
       "return <x:frag foo=\"3\" border=\"1\" ></x:frag>;", 
       false;
 
-      (* can have more fields *)
+      (* concrete code can have more fields *)
       "return <x:frag border=\"1\"></x:frag>;", 
       "return <x:frag foo=\"2\" border=\"1\" ></x:frag>;", 
       true;
 
       "return <x:frag />;", "return <x:frag border=\"1\" />;", true;
 
-      (* can have a body *)
+      (* concrete code can have a body *)
       "return <x:frag border=\"1\"></x:frag>;", 
       "return <x:frag border=\"1\" >this is text</x:frag>;", 
       true;
-      (* TODO: "return <x:frag></x:frag>;", "return <x:frag />;", true; *)
 
+      (* TODO:
+       *  Xhp should also match XhpSingleton
+       * "return <x:frag></x:frag>;", "return <x:frag />;", true; 
+       *)
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
-      let parse str =
-        Common.save_excursion Flag_parsing_php.case_sensitive false (fun() ->
-          Parse_php.any_of_string str
-        )
-      in
-      match Sgrep_php.parse spattern, parse scode with
+      match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
       | Stmt2 pattern, Stmt2 code ->
           let matches_with_env = Matching_php.match_st_st pattern code in
           if should_match
@@ -131,6 +118,18 @@ let sgrep_unittest = [
     | _ ->
         assert_failure "parsing problem in sgrep pattern parsing"
     )
+  );
+
+  "sgrep variable metavars matching" >:: (fun () ->
+    let pattern = Parse_php.any_of_string "foo($V, $V);" in
+    let code = Parse_php.any_of_string "foo($x, $y);" in
+    (match pattern, code with
+    | Stmt2 pattern, Stmt2 code ->
+        let matches_with_env = Matching_php.match_st_st pattern code in
+        assert_bool "it should not match" (matches_with_env = []);
+    | _ ->
+        assert_failure "parsing problem in sgrep pattern parsing"
+    );
   );
 
   "toplevel sgrep matching" >:: (fun () ->
