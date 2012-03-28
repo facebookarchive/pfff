@@ -88,8 +88,10 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
+(*
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
-          -> 1.5
+          -> 1.2
+*)
         
     (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.
