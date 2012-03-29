@@ -92,8 +92,8 @@ val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
 
 
-val adjust_method_or_field_external_users: 
-  entity array -> unit
+val adjust_method_or_field_external_users:
+  verbose:bool -> entity array -> unit
 
 val entity_kind_of_highlight_category_def: 
   Highlight_code.category -> entity_kind

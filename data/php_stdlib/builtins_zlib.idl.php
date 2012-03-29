@@ -26,3 +26,5 @@ function qlzcompress($data, $level = 1) { }
 function qlzuncompress($data, $level = 1) { }
 function sncompress($data) { }
 function snuncompress($data) { }
+function nzcompress($uncompressed) { }
+function nzuncompress($compressed) { }

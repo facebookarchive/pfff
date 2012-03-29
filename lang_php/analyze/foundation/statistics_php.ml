@@ -18,6 +18,7 @@ open Ast_php
 module Ast = Ast_php
 module E = Database_code
 module V = Visitor_php
+module CG = Callgraph_php2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,7 +30,7 @@ module V = Visitor_php
  *  - used it to infer if a php file was a script, endpoint, or library
  *    file
  *  - used it to try to evaluate the coverage of the abstract interpreter
- *    and its callgraph computation, how many method calls are not "resolved"
+ *    and its callgraph computation, how many method calls are not "resolved"?
  * 
  *)
 
@@ -37,13 +38,13 @@ module V = Visitor_php
 (* Types *)
 (*****************************************************************************)
 
-type stat2 = (string, int) Common.hash_with_default
+type stat = (string, int) Common.hash_with_default
 
 (* todo? move this in h_program-lang/ ? This is quite similar to
  * statistics_code.mli ? but want the kinds of the toplevel funcalls,
  * which is probably quite PHP specific.
  *)
-type stat = {
+type stat2 = {
   mutable functions: int;
   mutable classes: int;
 
@@ -70,7 +71,7 @@ type php_file_kind =
   | IncluderFile
   | ScriptOrEndpointFile
 
-let default_stat () = {
+let default_stat2 () = {
   functions = 0;
   classes = 0;
 
@@ -110,42 +111,84 @@ spf "
 
 type stat_hooks = {
   entity: (Database_code.entity_kind * string) -> unit;
+  call: (Callgraph_php2.node * Callgraph_php2.node) -> unit;
 }
 let default_hooks = {
   entity = (fun _ -> ());
+  call = (fun _ -> ());
 }
+(* todo: we abuse CG.node to represent class and partial methods *)
+let fake = "UGLY"
 
-let stat2_of_program ?(hooks=default_hooks) h ast =
+let stat_of_program ?(hooks=default_hooks) h file ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
+
+  let current_node = ref (CG.File file) in
+  h#update "LOC" (fun old -> old + Common.nblines_with_wc file);
+  h#update "SOC" (fun old -> old + Common.filesize file);
+  
 
   (Program ast) +> V.mk_visitor { V.default_visitor with
     V.ktop = (fun (k, _) x ->
       (match x with
       | FuncDef def ->
+          let s = Ast.str_of_name def.f_name in
           inc "function";
-          hooks.entity (E.Function, Ast.str_of_name def.f_name);
+          hooks.entity (E.Function, s);
+          Common.save_excursion current_node (CG.Function s) (fun() ->
+            k x
+          )
       | ConstantDef (_, name, _, _, _) -> 
           inc "constant";
           hooks.entity (E.Constant, Ast.str_of_name name);
+          (* there should be no call inside constant definitions so
+           * don't care about current_node
+           *)
+          k x
       | ClassDef def ->
+          let s = Ast.str_of_name def.c_name in
           inc (Class_php.string_of_class_type def.c_type);
           let kind = Class_php.class_type_of_ctype def.c_type in
-          hooks.entity (E.Class kind, Ast.str_of_name def.c_name);
-      | StmtList _ -> ()
+          hooks.entity (E.Class kind, s);
+          Common.save_excursion current_node (CG.Method (s, fake))(fun()->
+            k x
+          )
+
+      | StmtList _ -> 
+          k x
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
-      k x
+    );
+    V.kmethod_def = (fun (k, _) def ->
+      match !current_node with
+      | CG.Method (classname, _) ->
+          let s = Ast.str_of_name def.m_name in
+          Common.save_excursion current_node (CG.Method (classname, s))(fun()->
+            k def
+          )
+      | _ -> raise Impossible
     );
     V.kstmt_and_def = (fun (k,_) x ->
       (match x with
-      | FuncDefNested _ -> inc "function"; inc "Nested function"
+      | FuncDefNested def -> 
+          let s = Ast.str_of_name def.f_name in
+          inc "function"; inc "Nested function";
+          Common.save_excursion current_node (CG.Function s) (fun() ->
+            k x
+          )
+
       | ClassDefNested def -> 
           let str = Class_php.string_of_class_type def.c_type in
           inc str; 
-          inc ("Nested " ^ str)
-      | Stmt _ -> ()
+          inc ("Nested " ^ str);
+          let s = Ast.str_of_name def.c_name in
+          Common.save_excursion current_node (CG.Method (s, fake))(fun()->
+            k x
+          )
+
+      | Stmt _ -> 
+          k x
       );
-      k x
     );
     V.kclass_name_or_kwd = (fun (k,_) x ->
       (match x with
@@ -164,8 +207,7 @@ let stat2_of_program ?(hooks=default_hooks) h ast =
           inc "include/require"
           (* todo: resolve? *)
 
-      (* todo: x = yield ... *)
-          
+      | Yield _ | YieldBreak _ -> inc "yield"
       
       | _ -> ()
       );
@@ -173,8 +215,10 @@ let stat2_of_program ?(hooks=default_hooks) h ast =
     );
     V.klvalue = (fun (k, _) x ->
       (match x with
-      | FunCallSimple _ -> inc "fun call"
-      | FunCallVar _ -> inc "fun call Dynamic"
+      | FunCallSimple _ -> 
+          inc "fun call"
+      | FunCallVar _ -> 
+          inc "fun call Dynamic"
 
       | StaticMethodCallSimple _ -> 
           inc "static method call"
@@ -184,8 +228,12 @@ let stat2_of_program ?(hooks=default_hooks) h ast =
       | MethodCallSimple (lval, _, name, xs) ->
           (* look at lval if simple form *)
           (match lval with
-          | This _ -> inc "method call with $this"
-          | _ -> inc "method call not $this"
+          | This _ -> 
+              inc "method call with $this"
+          | _ -> 
+              inc "method call not $this";
+              hooks.call (!current_node, 
+                         CG.Method (fake, Ast.str_of_name name))
           )
 
       | ObjAccessSimple (lval, _, name) ->
@@ -207,11 +255,15 @@ let stat2_of_program ?(hooks=default_hooks) h ast =
   }
 
 
-let stat_of_program ast =
+(*****************************************************************************)
+(* Old entry point *)
+(*****************************************************************************)
+
+let stat2_of_program ast =
   let (funcs, classes, topstmts) = 
     Lib_parsing_php.functions_methods_or_topstms_of_program ast in
 
-  let _stat = { (default_stat ()) with
+  let _stat = { (default_stat2 ()) with
     functions = List.length funcs;
     classes = List.length classes;
   }

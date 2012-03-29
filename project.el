@@ -55,8 +55,6 @@
      facebook/visual
      facebook/qa_test
      facebook/qa_code
-     facebook/ast_simple
-     facebook/ast_pretty_print
      facebook/static_analysis
      facebook
      lang_php/matcher
@@ -97,13 +95,9 @@
    (join-string 
     (list 
      "-debugger"
-     (case 6
+     (case 0
 
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call_in_heredoc.php")
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/test_db/foo_embeded_call.php")
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/encaps_array.php")
-       ;(0 "-tokens_php /home/pad/c-pfff/tests/here_doc_simple.php")
-       (0 "-tokens_php /home/pad/c-pfff/tests/interpolation_curly_brace.php")
+       (0 "-tokens_php /home/pad/pfff/tests/php/parsing/heredoc4.php")
 
        (1 "-parse_php /home/pad/c-pfff/tests/position.php")
        (2 "-sexp_php /home/pad/c-pfff/tests/foo.php")
@@ -222,22 +216,16 @@
    (join-string 
     (list 
      "-debugger"
-     (case 10
+     (case 5
        
        (0 "-e 1 /home/pad/c-pfff/tests/")
        (1 "-f /home/pad/c-pfff/tests/semantic_grep/method_call.php  /home/pad/c-pfff/tests/method_call.php")
        (2 " -e foo(X,X) /home/pad/pfff/tests/sgrep/linear_pattern.php")
-
-
-
        (3 " -find_run_once_pattern tests/sgrep/run_once_pattern.php ")
-
        (4 " -f /home/pad/pfff/tests/php/sgrep/foreach.sgrep /home/pad/pfff/tests/php/sgrep/foreach.php")
+       (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar.php")
        (10 "-test")
        )
-
-     
-     
      )
     )
    )
@@ -672,7 +660,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 9
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
@@ -681,6 +669,8 @@
        (5 "lookup")
        (6 "abstract")
        (7 "light")
+       (8 "-ia_php /home/pad/pfff/tests/php/ia/foo.php 6")
+       (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
        )
      ))
    )

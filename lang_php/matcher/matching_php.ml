@@ -26,6 +26,11 @@ module MV = Metavars_php
  *)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag_matcher_php.verbose
+
+(*****************************************************************************)
 (* The functor argument *)
 (*****************************************************************************)
 
@@ -37,7 +42,7 @@ module XMATCH = struct
    * version0: 
    *   type ('a, 'b) matcher = 'a -> 'b -> bool
    * 
-   *   This just let you know if you matched something.
+   *   This just lets you know if you matched something.
    * 
    * version1:
    *   type ('a, 'b) matcher = 'a -> 'b -> unit -> ('a, 'b) option
@@ -51,6 +56,7 @@ module XMATCH = struct
    *   point to return multiple possible bindings for one matching code.
    *   For instance with the pattern do 'f(..., X, ...)', X could be binded
    *   to different parts of the code.
+   * 
    *   Note that the empty list means a match failure.
    *)
 
@@ -139,42 +145,41 @@ module XMATCH = struct
   let check_and_add_metavar_binding((mvar:Metavars_php.mvar), valu) = fun tin ->
     match Common.assoc_option mvar tin with
     | Some valu' ->
-        (* TODO: have to ensure both matched ASTs are equal, valu =? valu'.
-         *
-         * Should we use php_vs_php itself for comparing the binded code ?
+        (* Should we use php_vs_php itself for comparing the binded code ?
          * Hmmm, we can't because it leads to a circular dependencies.
          * Moreover here we know both valu and valu' are regular PHP code,
          * not PHP patterns, so we can just use the generic '=' of OCaml.
-        *)
+         *)
         if equal_ast_binded_code valu valu'
         then Some tin
         else None
     | None ->
-        (* first time the metavar is binded. Just add it to the environment *)
+        (* first time the metavar is binded, just add it to the environment *)
         Some (Common.insert_assoc (mvar, valu) tin)
 
   let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
    fun (mvar, imvar) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
+        pr2 (spf "envf: fail, %s" mvar);
         fail tin
     | Some new_binding ->
+        pr2 (spf "envf: success, %s" mvar);
         return ((mvar, imvar), any) new_binding
 
   let (envf2: (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher) =
    fun (mvar, imvar) (any1, any2)  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any1) tin with
     | None ->
+        pr2 (spf "envf2: fail, %s" mvar);
         fail tin
     | Some new_binding ->
+        pr2 (spf "envf2: success, %s" mvar);
         return ((mvar, imvar), (any1, any2)) new_binding
-
-
 
   let tokenf a b = 
     (* dont care about position, space/indent/comment isomorphism *)
     return (a, b)
-    
 end
 
 (*****************************************************************************)
@@ -189,11 +194,10 @@ type ('a, 'b) matcher = 'a -> 'b ->
 let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
   tout +> List.map (fun (term, env) -> env)
   
-
+(* todo: should maybe have a match_any_any *)
 let match_e_e pattern e = 
   let env = MV.empty_environment in
   MATCH.m_expr pattern e env +> extract_bindings
-
 
 let match_v_v pattern e = 
   let env = MV.empty_environment in
@@ -210,4 +214,4 @@ let match_top_top pattern e =
 let match_xhp_xhp pattern e = 
   let env = MV.empty_environment in
   MATCH.m_xhp_html pattern e env +> extract_bindings
-  
+

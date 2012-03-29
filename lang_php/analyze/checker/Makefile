@@ -7,7 +7,7 @@ TARGET=lib
 # mostly local analysis
 SRC= \
   error_php.ml suggest_fix_php.ml \
-  check_includes_php.ml \
+  check_includes_php.ml check_misc_php.ml \
   env_check_php.ml check_variables_helpers_php.ml check_variables_php.ml \
   check_cfg_php.ml \
 

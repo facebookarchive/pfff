@@ -12,11 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 
 (*****************************************************************************)
@@ -51,16 +49,19 @@ let strict = ref false
 type error = {
   typ: error_kind;
   loc: Ast_php.info;
-  (* todo? maybe severity should be inferred from the error_kind. That
+  (* less: maybe severity should be inferred from the error_kind. That
    * way it will also avoid the need for 2 functions fatal()/warning()
    * and just have error().
    *)
   sev: severity; 
 }
- (* todo? Advise | Noisy | Meticulous ? *)
+ (* less: Advice | Noisy | Meticulous/Pedantic ? *)
  and severity = Fatal | Warning
 
-(* coupling: if you add a constructor here, don't forget to extend
+(* Mostly use/def kind of errors
+ * (for functions/classes/constants, variables, members, files, etc)
+ * 
+ * coupling: if you add a constructor here, don't forget to extend
  * layer_checker_php.ml too.
  * 
  * note: try to not put structure that have position information in 
@@ -93,6 +94,9 @@ type error = {
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option
 
+  (* wrong include/require *)
+  | FileNotFound of Common.filename
+
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
@@ -101,13 +105,22 @@ type error = {
   | CfgError of Controlflow_build_php.error_kind
 (*  | CfgPilError of Controlflow_build_pil.error_kind *)
 
-  (* wrong include/require *)
-  | FileNotFound of Common.filename
 
   (* tainting *)
   | Injection of injection_kind (* todo: * explanation (e.g. a path?) *)
 
-  (* todo: type errors, protocol errors (statistical analysis), etc *)
+  (* some code is using 'case 1;' instead of 'case 1:', ugly *)
+  | CaseWithSemiColon
+  (* php is case insensitive but it's better to have consistent code
+   * that always use the lowercase version of a keyword
+   *)
+  | CaseSensitivityKeyword
+
+  (* todo: 
+   *  - type errors, 
+   *  - protocol errors (statistical analysis), 
+   *  - etc 
+   *)
 
   and severity2 =
    | Bad
@@ -203,6 +216,10 @@ let string_of_error_kind error_kind =
         | Shell -> "Shell"
       in
       spf "%s injection" s
+  | CaseWithSemiColon ->
+      "Use a colon not a semicolon"
+  | CaseSensitivityKeyword ->
+      "Use the lowercase version of the keyword"
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =

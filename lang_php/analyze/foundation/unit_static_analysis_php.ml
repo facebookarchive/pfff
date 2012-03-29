@@ -1,5 +1,4 @@
 open Common
-
 open OUnit
 
 open Env_interpreter_php
@@ -11,6 +10,8 @@ module CG = Callgraph_php2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(* See also tests/php/ia/*.php *)
 
 (*****************************************************************************)
 (* Run analysis *)
@@ -29,10 +30,9 @@ let prepare content =
 
 let heap_of_program_at_checkpoint content =
   let (env, ast) = prepare content in
-  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths false (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
-    let _heap = Interp.program env heap ast in
+    let _heap = Interp.program env Env.empty_heap ast in
     match !Abstract_interpreter_php._checkpoint_heap with
     | None -> failwith "use checkpoint() in your unit test"
     | Some x -> x
@@ -41,11 +41,10 @@ let heap_of_program_at_checkpoint content =
 (* less: use Callgraph_php_build.create_graph *)
 let callgraph_generation content =
   let (env, ast) = prepare content in
-  let heap = Env.empty_heap in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
-    let _heap = Interp.program env heap ast in
+    let _heap = Interp.program env Env.empty_heap ast in
     !(Abstract_interpreter_php.graph)
   ))
 
@@ -180,7 +179,12 @@ $y = true; // path sensitivity would detect it's always $x = 2 ...
 if($y) { $x = 2;} else { $x = 3; }
 checkpoint(); // x: int
 " in
-      assert_final_value_at_checkpoint "$x" file (Vabstr Tint);
+      (* there is no range, we go from a very precise value to a
+       * very general abstraction (the type) very quickly.
+       * If forget the initial $x = 1; then $x will be instead
+       * a 'choice(null,int)'.
+       *)
+      assert_final_value_at_checkpoint "$x" file (Vabstr Tint); 
     );
 
     "union types" >:: (fun () ->
@@ -233,7 +237,11 @@ checkpoint(); // x:int
   (* Fixpoint *)
   (*-------------------------------------------------------------------------*)
 
-  (* TODO while loop, dowhile, recursion, 2 is enough? *)
+  (* TODO while loop, dowhile, recursion, iterate 2 times is enough?
+   * Because of the abstraction we've chosen (no int range for instance),
+   * we achieve the fixpoint in one step so probably has
+   * no fixpoint issues.
+   *)
 
   (*-------------------------------------------------------------------------*)
   (* Interprocedural dataflow *)
@@ -333,7 +341,7 @@ function b() { A::unknown(); }
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown static method"
-      with (Abstract_interpreter_php.UnknownMethod ("unknown", "A", _)) -> ()
+      with (Abstract_interpreter_php.UnknownMember ("unknown", "A", _)) -> ()
     );
 
     (* In PHP it is ok to call B::foo() even if B does not define
@@ -416,7 +424,7 @@ function b() {
       try 
         let _ = callgraph_generation file in
         assert_failure "it should throw an exception for unknown method"
-      with (Abstract_interpreter_php.UnknownMethod ("unknown", _, _)) -> ()
+      with (Abstract_interpreter_php.UnknownMember ("unknown", _, _)) -> ()
     );
 
     (* I used to have a very simple method analysis that did some gross over
@@ -434,17 +442,20 @@ function c() { $a = new A(); $a->foo(); }
         assert_graph file ["c" --> ["A::foo"]];
       );
 
+    "XHP method call" >:: (fun () ->
+      let file = "
+class :x:frag { public function foo() { } }
+function bar() { $x = <x:frag></x:frag>; $x->foo(); }
+" in
+      assert_graph file ["bar" --> ["x:frag::foo"]];
+    );
+
     (* todo: example of current limitations of the analysis *)
 
   ]
 
-
 (*****************************************************************************)
 (* Tainting analysis *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Type inference *)
 (*****************************************************************************)
 
 (*****************************************************************************)
@@ -454,7 +465,3 @@ let unittest =
   "static_analysis_php" >::: [
     abstract_interpreter_unittest;
   ]
-
-(*****************************************************************************)
-(* Main entry for args *)
-(*****************************************************************************)

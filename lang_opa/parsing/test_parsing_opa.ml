@@ -32,7 +32,12 @@ let test_parse_opa xs =
 
     Common.save_excursion Flag.error_recovery true (fun () ->
     Common.save_excursion Flag.verbose_lexing true (fun () ->
-      let _xs = Parse_opa.parse file in
+      (* old: let _xs = Parse_opa.parse file in *)
+
+      let (_, toks) = Parse_opa.parse_just_tokens file in
+      let toks = Ast_fuzzy_opa.toks_for_ast_fuzzy toks in
+      let tree = Token_views_opa.mk_tree toks in
+      let _tree = Ast_fuzzy_opa.mk_tree tree in
       ()
     ))
   );
@@ -58,6 +63,30 @@ let test_fuzzy_opa file =
   let s = Ocaml.string_of_v v in
   pr s
 
+let translate_opa dir1 dir2 =
+  let fullxs = Common.cmd_to_list (spf "find %s -name '*.opa'" dir1) in
+  Common.command2(spf "mkdir -p %s" dir2);
+  fullxs +> List.iter (fun src ->
+    pr2 (spf "processing %s" src);
+    let readable = Common.filename_without_leading_path dir1 src in
+    let dirname = Filename.dirname readable in
+    let dest = spf "%s/%s" dir2 readable in
+    Common.command2(spf "mkdir -p %s/%s" dir2 dirname);
+    try 
+      Common.timeout_function 200 (fun () ->
+        Common.command2(spf "otr %s > %s" src dest);
+
+        let (_, toks) = Parse_opa.parse_just_tokens dest in
+        let toks = Ast_fuzzy_opa.toks_for_ast_fuzzy toks in
+        let tree = Token_views_opa.mk_tree toks in
+        let _tree = Ast_fuzzy_opa.mk_tree tree in
+        ()
+      )
+    with (Timeout | Failure _) as exn ->
+      pr2 (spf "PB %s on %s" (Common.exn_to_s exn) src);
+  );
+  ()
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -75,4 +104,6 @@ let actions () = [
   Common.mk_action_1_arg test_token_view_opa;
   "-dump_opa", "   <file>", 
   Common.mk_action_1_arg test_fuzzy_opa;
+  "-translate_opa", "   <src> <tgt>", 
+  Common.mk_action_2_arg translate_opa;
 ]

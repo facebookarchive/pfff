@@ -1,6 +1,6 @@
 -*- org -*-
 
-* ?? (Q1 2012) (pfff_logger, ??)
+* 0.19 (Q1 2012) (pfff_logger, ??)
 
 ** introduce lang_opa
 basic support
@@ -9,6 +9,9 @@ basic support
 (please rerun ./configure if you have compilation pbs)
 
 ** introduce type inference for PHP (julien)
+
+** sgrep_php/spatch_php
+case insensitive mode by default
 
 ** internals
 

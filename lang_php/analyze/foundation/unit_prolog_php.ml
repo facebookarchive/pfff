@@ -7,7 +7,7 @@ open OUnit
 (*****************************************************************************)
 (*
  * What to put here? Should we duplicate things from unit_static_analysis_php
- * as many results from static analysis are now translated into prolog
+ * as many results from static analysis are now translated into Prolog
  * facts? No, no need to duplicate, just copy here the basic
  * versions of some tests, e.g. for the callgraph just the basic
  * function and method calls for instance.
@@ -20,42 +20,9 @@ open OUnit
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo? could perhaps be moved in its own database_prolog.ml file? *)
 let prolog_query ~file query =
   let source_file = Parse_php.tmp_php_file_from_string file in
-  let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
-  let helpers_pl_file = Config.path ^ "/h_program-lang/database_code.pl" in
-
-  let show_progress = false in
-
-  (* make sure it's a valid PHP file *)
-  let _ast = Parse_php.parse_program source_file in
-
-  (* todo: at some point avoid using database_php_build and 
-   * generate the prolog db directly from the sources.
-   *)
-  let db = 
-    Database_php_build.db_of_files_or_dirs ~show_progress [source_file] in
-
-  Database_prolog_php.gen_prolog_db ~show_progress db facts_pl_file;
-
-  let jujudb = 
-    Database_juju_php.juju_db_of_files ~show_progress [source_file] in
-  let codedb = 
-    Database_juju_php.code_database_of_juju_db jujudb in
-  let cg = 
-    Callgraph_php_build.create_graph ~show_progress [source_file] codedb in
-
-  Database_prolog_php.append_callgraph_to_prolog_db 
-    ~show_progress cg facts_pl_file;
-
-  (* debug: Common.cat facts_pl_file +> List.iter pr2; *)
-  let cmd = 
-    spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
-      facts_pl_file helpers_pl_file query
-  in
-  let xs = Common.cmd_to_list cmd in
-  xs
+  Database_prolog_php.prolog_query ~verbose:false ~source_file ~query
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -72,10 +39,13 @@ let unittest =
       let file = "
 function foo() { }
 const BAR = 1;
-class A { }
+class A { 
+  public $fld = 0;
+  public function bar() { }
+  const CST = 1;
+}
 interface I { }
 trait T { }
-class B { const CST = 1; }
 " in 
       (* quite similar to the unit test for tags in unit_foundation_php.ml *)
       assert_equal 
@@ -85,12 +55,16 @@ class B { const CST = 1; }
       assert_equal 
         ["class"]     (prolog_query ~file "kind('A', X), writeln(X)");
       assert_equal 
+        ["method"]     (prolog_query ~file "kind(('A','bar'), X), writeln(X)");
+      assert_equal 
+        ["field"]     (prolog_query ~file "kind(('A','fld'), X), writeln(X)");
+      assert_equal 
+        ["class_constant"]
+          (prolog_query ~file "kind(('A','CST'), X), writeln(X)");
+      assert_equal 
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
       assert_equal 
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
-      assert_equal 
-        ["class_constant"]
-          (prolog_query ~file "kind(('B','CST'), X), writeln(X)");
     );
 
     (*-----------------------------------------------------------------------*)
@@ -197,12 +171,88 @@ function bar() {
   $y = $o->foo();
 } " in
       let xs = prolog_query ~file 
-        "docall('bar', (X,Y), method), writeln((X,Y)), fail" in
+        "docall2('bar', (X,Y), method), writeln((X,Y)), fail" in
       assert_equal ~msg:"it should find basic callers to a function"
         ["A,foo"]
         (sort xs);
       
 
+    );
+
+    (*-----------------------------------------------------------------------*)
+    (* Exceptions *)
+    (*-----------------------------------------------------------------------*)
+    "exceptions" >:: (fun () ->
+      let file = "
+class Exception { }
+class ViolationException extends Exception { }
+class ForgotExtendsException { }
+class UnrelatedClass { }
+
+function foo() { 
+  throw new Exception(); 
+}
+function bar() { 
+  try { 
+    throw new ViolationException();
+  } catch (ViolationException $e) {
+  }
+}
+function bad() { 
+  throw new ForgotExtendsException(); 
+}
+" in
+      let xs = prolog_query ~file "throw('foo', X), writeln(X)" in
+      assert_equal ~msg:"it should find basic throw"
+        ["Exception"]
+        xs;
+      let xs = prolog_query ~file "catch('bar', X), writeln(X)" in
+      assert_equal ~msg:"it should find basic catch"
+        ["ViolationException"]
+        xs;
+      let xs = prolog_query ~file 
+        ("throw(_, X), not(children(X, 'Exception')), X \\= 'Exception', " ^ 
+        "writeln(X)") in
+      assert_equal ~msg:"it should find exceptions not deriving from Exception"
+        ["ForgotExtendsException"]
+        xs;
+    );
+
+    (*-----------------------------------------------------------------------*)
+    (* Data graph *)
+    (*-----------------------------------------------------------------------*)
+    "arrays used as records" >:: (fun () ->
+      let file = "
+function foo($x) {
+  echo $x['bar'];
+}
+function foo2($x) {
+  $x['bar'] = 1;
+}
+" in
+    let xs = prolog_query ~file "use(X, 'bar', array, read), writeln(X)" in
+    assert_equal ~msg:"it should find read accesses to a record field"
+      ["foo"] (xs);
+    let xs = prolog_query ~file "use(X, 'bar', array, write), writeln(X)" in
+    assert_equal ~msg:"it should find write accesses to a record field"
+      ["foo2"] (xs);
+    );
+
+    "fields use" >:: (fun () ->
+      let file = "
+class A {
+ public $bar = 0;
+}
+function foo(A $o) {
+  echo $o->bar;
+}
+function foo2(A $o) {
+  $o->bar = 1;
+}
+" in
+    let xs = prolog_query ~file "use(X, 'bar', field, write), writeln(X)" in
+    assert_equal ~msg:"it should find write accesses to an object field"
+      ["foo2"] (xs);
     );
 
     (*-----------------------------------------------------------------------*)

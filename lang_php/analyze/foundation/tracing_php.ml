@@ -61,5 +61,5 @@ let call s path =
       then spf "      <%d>" depth
       else String.make depth ' '
     in
-    pr (prefix ^ s)
+    pr (prefix ^ ">" ^ s)
   end

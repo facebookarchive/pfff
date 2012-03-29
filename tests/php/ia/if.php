@@ -1,30 +1,16 @@
 <?php
 
-class A {
-  public function __construct() {
-  }
-  public function foo() {
-    echo "A::foo\n";
-  }
-}
+// the current algorithm for the interpreter is not to manage
+// branches independently and merge unify heaps after, but 
+// instead process branch sequentially and unify/merge/abstract
+// as you go.
 
-class B extends A {
-  public function __construct() {
-  }
-  public function foo() {
-    echo "B::foo\n";
-  }
-}
-
-
-$o = null;
-$cond = true;
-if($cond) {
-  $o = new A();
+if(true) {
+  $x = 42;
+  //$x will be precise while processing the then branch ({42})
+  var_dump($x);
 } else {
-  $o = new B();
+  $x = 55;
+  //$x will be abstract while processing the else {int} :(
+  var_dump($x);
 }
-
-// When in tracing mode it should say A::foo or B::foo
-// TODO: right now julien picks one in the Vsum :(
-$o->foo();

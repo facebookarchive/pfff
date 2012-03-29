@@ -21,7 +21,7 @@
 % (http://jquery.cs.ubc.ca/, nothing to do with the JS library), itself
 % inspired by CIA (C Information Abstractor). The code below is mostly
 % generic (programming language agnostic) but it was tested only
-% on PHP code for now.
+% on PHP code for now (see lang_php/analyze/foundation/unit_prolog_php.ml)
 %
 % This file assumes the presence of another file, facts.pl, containing
 % the actual "database" of facts about a codebase. There is potentially
@@ -56,6 +56,10 @@
 %    an interprocedural static analysis).
 %    Note that we use 'docall' and not 'call' because call is a
 %    reserved predicate in Prolog.
+%
+%  - exception graph: throw/2, catch/2.
+%     ex: throw('foo', 'ViolationException').
+%     ex: catch('bar', 'Exception').
 %
 %  - datagraph: use/4 with the field/array atoms to differentiate access
 %    to object members, and access to fields of an array (often because people
@@ -95,6 +99,8 @@
 %    their equivalent includes. Finally path are resolved statically
 %    when we can, so for instance include $THRIFT_ROOT . '...' is resolved
 %    in its final path form 'lib/thrift/...'.
+%
+%  - yield/1.
 %
 %  - position: at/3
 %      ex: at(('Preparable', 'gen'), 'flib/core/preparable.php', 10).
@@ -239,6 +245,17 @@ overrides_trait(ChildClass, Method) :-
         kind(Class, trait).
 
 %---------------------------------------------------------------------------
+% Callgraph
+%---------------------------------------------------------------------------
+
+%---------------------------------------------------------------------------
+% Exception
+%---------------------------------------------------------------------------
+
+% todo: could try to find uncaught exception by using docall, throw, and 
+% catch predicates? would require a precise callgraph though.
+
+%---------------------------------------------------------------------------
 % Operators for erling
 %---------------------------------------------------------------------------
 calls(A,B) :- docall(A, B, _).
@@ -321,6 +338,13 @@ could_remove_delegate_method(Class, Method) :-
 % checks
 %---------------------------------------------------------------------------
 
+check_exception_inheritance(X) :-
+        throw(_, X),
+        not(children(X, 'Exception')),
+        X \= 'Exception',
+        % make sure it's defined
+        kind(X, class).
+
 check_duplicated_entity(X, File1, File2, Kind) :-
         kind(X, Kind), 
         at(X, File1, _),
@@ -337,3 +361,9 @@ check_duplicated_field(Class, Class2, Var) :-
 check_call_unexisting_method_anywhere(Caller, Method) :-
         docall(Caller, Method, method),
         not(kind((_X, Method), method)).
+
+% for paul
+wrong_public_genRender(X) :-
+        kind((X, 'genRender'), _), 
+        children(X, 'GenXHP'), 
+        is_public((X, 'genRender')).

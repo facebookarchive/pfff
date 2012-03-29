@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -88,8 +88,10 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
+(*
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
-          -> 1.5
+          -> 1.2
+*)
         
     (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.

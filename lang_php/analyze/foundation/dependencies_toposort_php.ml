@@ -41,11 +41,16 @@ module Dependencies = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
+    (* adding names of entities *)
+    | ClassDef c -> SSet.add (unwrap c.c_name) acc
+    | FuncDef f -> SSet.add (unwrap f.f_name) acc
+    | ConstantDef c -> SSet.add (unwrap c.cst_name) acc
+
+    (* boilerplate to recurse *)
     | Expr e | Throw e -> expr acc e
     | Block stl -> stmtl acc stl
     | If (e, st1, st2) -> stmtl (expr acc e) [st1; st2]
-    | Do (stl, e)
-    | While (e, stl) -> stmtl (expr acc e) stl
+    | Do (stl, e)| While (e, stl) -> stmtl (expr acc e) stl
     | For (el1, el2, el3, stl) ->
         let acc = exprl acc el1 in
         let acc = exprl acc el2 in
@@ -57,9 +62,7 @@ module Dependencies = struct
         let acc = expr acc e2 in
         let acc = expr_opt acc e3 in
         stmtl acc stl
-    | Return e
-    | Break e
-    | Continue e -> expr_opt acc e
+    | Return e | Break e | Continue e -> expr_opt acc e
     | Try (stl, c, cl) ->
         let acc = stmtl acc stl in
         let acc = catch acc c in
@@ -67,9 +70,7 @@ module Dependencies = struct
         acc
     | StaticVars svl -> List.fold_left static_var acc svl
     | Global el -> exprl acc el
-    | ClassDef c -> SSet.add (unwrap c.c_name) acc
-    | FuncDef f -> SSet.add (unwrap f.f_name) acc
-    | ConstantDef c -> SSet.add (unwrap c.cst_name) acc
+
 
   and static_var acc (_, e) = expr_opt acc e
 
@@ -83,12 +84,15 @@ module Dependencies = struct
 
   and exprl acc l = List.fold_left expr acc l
   and expr_opt acc = function None -> acc | Some e -> expr acc e
+
   and expr acc = function
-    | Int _ | Double _ | String _ -> acc
-    | Guil el -> encapsl acc el
     (* pad: this is why it could be useful to have two different types *)
     | Id (s, _) when s.[0] <> '$' -> SSet.add s acc
-    | This | Id _ -> acc
+    | Id _ -> acc
+
+    | Int _ | Double _ | String _ -> acc
+    | Guil el -> encapsl acc el
+    | This -> acc
     | Array_get (e1, e2) -> expr (expr_opt acc e2) e1
     | Obj_get (e1, e2)
     | Binop (_, e1, e2)
@@ -103,7 +107,7 @@ module Dependencies = struct
     | Call (e, el) -> exprl (expr acc e) el
     | Xhp x ->
         let acc = xml acc x in
-        let name = List.fold_right (fun x acc -> x^":"^acc) x.xml_tag "" in
+        let name = Ast.string_of_xhp_tag x.xml_tag in
         SSet.add name acc
     | ConsArray avl -> array_valuel acc avl
     | List el -> exprl acc el
@@ -150,10 +154,12 @@ module Dependencies = struct
 
   and hint_type acc = function None -> acc | Some x -> hint_type_ acc x
   and hint_type_ acc = function
+    (* not sure a type hints counts as a dependency *)
     | Hint s -> SSet.add s acc
     | HintArray -> acc
 
   and class_def acc c =
+    (* todo? implements? traits? *)
     let acc = extends acc c.c_extends in
     let acc = cconstants acc c.c_constants in
     let acc = cvariables acc c.c_variables in
@@ -176,7 +182,6 @@ module Dependencies = struct
     let acc = hint_type acc m.m_return_type in
     let acc = stmtl acc m.m_body in
     acc
-
 end
 
 module Graph = struct
@@ -186,12 +191,13 @@ module Graph = struct
   let empty () = ref SMap.empty
 
   let func_def acc fd =
-    let x = Ast.unwrap fd.Ast_php_simple.f_name in
+    let x = Ast.unwrap fd.Ast.f_name in
     acc := SMap.add x (Dependencies.func_def SSet.empty fd) !acc
 
   let class_def acc cd =
-    let x = Ast.unwrap cd.Ast_php_simple.c_name in
+    let x = Ast.unwrap cd.Ast.c_name in
     acc := SMap.add x (Dependencies.class_def SSet.empty cd) !acc
+
 
   let get_deps g x =
     let ss = try SMap.find x g with Not_found -> SSet.empty in

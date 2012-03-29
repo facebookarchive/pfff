@@ -61,17 +61,17 @@ function t6($x) {
   return foo($x);
 }
 
-//-----------------------------------------------------------------------------
-// Type inference for methods and object field access
-//-----------------------------------------------------------------------------
-
-// :: object(fields => $x :: string; methods => foo :: string -> string)
-class A {
-  public $x;
-  public function foo($s) { return $s . $x; }
-}
-
-// :: object(A) -> string
-function t7(A $o) {
-  return $o->foo("bar");
-}
+////-----------------------------------------------------------------------------
+//// Type inference for methods and object field access
+////-----------------------------------------------------------------------------
+//
+//// :: object(fields => $x :: string; methods => foo :: string -> string)
+//class A {
+//  public $x;
+//  public function foo($s) { return $s . $x; }
+//}
+//
+//// :: object(A) -> string
+//function t7(A $o) {
+//  return $o->foo("bar");
+//}

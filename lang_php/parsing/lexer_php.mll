@@ -3,7 +3,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009-2011 Facebook
+ * Copyright (C) 2009-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,7 +33,7 @@ open Parser_php
  *
  * There are a few tricks to go around ocamllex restrictions
  * because PHP has different lexing rules depending on some "contexts"
- * (similar to Perl, e.g. the <<<END context).
+ * (this is similar to Perl, e.g. the <<<END context).
  *)
 
 (*****************************************************************************)
@@ -47,9 +47,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing
 exception Lexical of string
 
 (*s: lexer helpers *)
-(* pad: hack around ocamllex to emulate the yyless of flex. It seems
- * to work.
- *)
+(* pad: hack around ocamllex to emulate the yyless of flex *)
 let yyless n lexbuf = 
   lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
   let currp = lexbuf.Lexing.lex_curr_p in
@@ -67,28 +65,35 @@ let tok_add_s s ii  =
   Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
 (*e: lexer helpers *)
 
+(* all string passed to T_IDENT or T_VARIABLE should go through case_str *)
+let case_str s =
+  if !Flag.case_sensitive
+  then s
+  else String.lowercase s
+
+
 let xhp_or_t_ident ii fii = 
   if !Flag.xhp_builtin 
   then fii ii 
-  else T_IDENT(Ast.str_of_info ii, ii)
+  else T_IDENT(case_str (Ast.str_of_info ii), ii)
 
 let lang_ext_or_t_ident ii fii =
   if !Flag.facebook_lang_extensions
   then fii ii
-  else T_IDENT(Ast.str_of_info ii, ii)
+  else T_IDENT(case_str (Ast.str_of_info ii), ii)
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
 (* ---------------------------------------------------------------------- *)
 (*s: keywords_table hash *)
 (* opti: less convenient, but using a hash is faster than using a match.
- * Note that PHP allow those keywords to be used in certain places,
- * for instance as object flds as in $o->while, so the transformation
+ * Note that PHP allows those keywords to be used in certain places,
+ * for instance as object fields as in $o->while, so the transformation
  * from a LABEL to those keywords is done only in a few cases.
  * 
  * note: PHP is case insensitive so this hash table is used on
  * a lowercased string so don't put strings in uppercase below because
- * such key would never be reached!
+ * such keyword would never be reached!
  * 
  * coupling: if you add a new keyword, don't forget to also modify
  * the xhp_attr_name_atom grammar rule in parser_php.mly
@@ -203,7 +208,7 @@ let keyword_table = Common.hash_of_list [
   "pcdata", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_PCDATA x));
 ]
 let _ = assert ((Common.hkeys keyword_table) +> 
-                 List.for_all (fun s -> s = lowercase s))
+                 List.for_all (fun s -> s = String.lowercase s))
 (*e: keywords_table hash *)
 
 (* ---------------------------------------------------------------------- *)
@@ -424,53 +429,7 @@ let DOUBLE_QUOTES_CHARS =
 let BACKQUOTE_CHARS = 
   ("{"*([^'$' '`' '\\' '{']|('\\' ANY_CHAR))| BACKQUOTE_LITERAL_DOLLAR)
 (*x: regexp aliases *)
-let HEREDOC_LITERAL_DOLLAR =
-  ("$"+([^'a'-'z''A'-'Z''_''$''\n' '\r' '\\' '{' ]|('\\'[^'\n' '\r' ])))
-
-(*/*
- * Usually, HEREDOC_NEWLINE will just function like a simple NEWLINE, but some
- * special cases need to be handled. HEREDOC_CHARS doesn't allow a line to
- * match when { or $, and/or \ is at the end. (("{"*|"$"* )"\\"?) handles that,
- * along with cases where { or $, and/or \ is the ONLY thing on a line
- *
- * The other case is when a line contains a label, followed by ONLY
- * { or $, and/or \  Handled by ({LABEL}";"?((("{"+|"$"+)"\\"?)|"\\"))
- */
- *)
-let HEREDOC_NEWLINE = 
-  (((LABEL";"?((("{"+|"$"+)'\\'?)|'\\'))|(("{"*|"$"*)'\\'?))NEWLINE)
-
-(*/*
- * This pattern is just used in the next 2 for matching { or literal $, and/or
- * \ escape sequence immediately at the beginning of a line or after a label
- */
- *)
-let HEREDOC_CURLY_OR_ESCAPE_OR_DOLLAR =
-  (("{"+[^'$' '\n' '\r' '\\' '{'])|("{"*'\\'[^'\n' '\r'])|
-   HEREDOC_LITERAL_DOLLAR)
-
-(*/*
- * These 2 label-related patterns allow HEREDOC_CHARS to continue "regular"
- * matching after a newline that starts with either a non-label character or a
- * label that isn't followed by a newline. Like HEREDOC_CHARS, they won't match
- * a variable or "{$"  Matching a newline, and possibly label, up TO a variable
- * or "{$", is handled in the heredoc rules
- *
- * The HEREDOC_LABEL_NO_NEWLINE pattern (";"[^$\n\r\\{]) handles cases where ;
- * follows a label. [^a-zA-Z0-9_\x7f-\xff;$\n\r\\{] is needed to prevent a label
- * character or ; from matching on a possible (real) ending label
- */*)
-let HEREDOC_NON_LABEL =
-  ([^'a'-'z''A'-'Z''_' '$' '\n''\r''\\' '{']|HEREDOC_CURLY_OR_ESCAPE_OR_DOLLAR)
-let HEREDOC_LABEL_NO_NEWLINE = 
- (LABEL([^'a'-'z''A'-'Z''0'-'9''_'';''$''\n' '\r' '\\' '{']|
-   (";"[^'$' '\n' '\r' '\\' '{' ])|(";"? HEREDOC_CURLY_OR_ESCAPE_OR_DOLLAR)))
-
 (*x: regexp aliases *)
-let HEREDOC_CHARS =
-  ("{"*([^'$' '\n' '\r' '\\' '{']|('\\'[^'\n' '\r']))| 
-   HEREDOC_LITERAL_DOLLAR|(HEREDOC_NEWLINE+(HEREDOC_NON_LABEL|HEREDOC_LABEL_NO_NEWLINE)))
-
 (*x: regexp aliases *)
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
@@ -627,7 +586,7 @@ rule st_in_scripting = parse
         let whiteinfo = Parse_info.tokinfo_str_pos white pos_after_sym in
         let lblinfo = Parse_info.tokinfo_str_pos label pos_after_white in
         
-        push_token (T_IDENT (label, lblinfo));
+        push_token (T_IDENT (case_str label, lblinfo));
        (* todo: could be newline ... *)
         push_token (TSpaces (whiteinfo));
 
@@ -753,8 +712,8 @@ rule st_in_scripting = parse
      * at least the uppercase form to be used as identifier, hence those
      * two rules below.
      *)
-    | "SELF"   { T_IDENT (tok lexbuf, tokinfo lexbuf) }
-    | "PARENT" { T_IDENT (tok lexbuf, tokinfo lexbuf) }
+    | "SELF"   { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
+    | "PARENT" { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
   (*s: keyword and ident rules *)
     | LABEL
         { let info = tokinfo lexbuf in
@@ -765,7 +724,8 @@ rule st_in_scripting = parse
           with
           | Some f -> f info
           (* was called T_STRING in original grammar *)
-          | None -> T_IDENT (s, info) 
+          | None ->
+              T_IDENT (case_str s, info) 
         }
 
     (* Could put a special rule for "$this", but there are multiple places here
@@ -773,7 +733,9 @@ rule st_in_scripting = parse
      * like ${this}, so it is simpler to do the "this-analysis" in the grammar, 
      * later when we generate a Var or This.
      *)
-    | "$" (LABEL as s) { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s) {
+        T_VARIABLE(case_str s, tokinfo lexbuf) 
+      }
 
   (*e: keyword and ident rules *)
 
@@ -1012,7 +974,7 @@ and st_looking_for_property = parse
   | "->" { T_OBJECT_OPERATOR(tokinfo lexbuf) }
   | LABEL {
       pop_mode();
-      T_IDENT(tok lexbuf, tokinfo lexbuf)
+      T_IDENT(case_str (tok lexbuf), tokinfo lexbuf)
     }
 (*
   | ANY_CHAR {
@@ -1045,8 +1007,8 @@ and st_var_offset = parse
       T_NUM_STRING (tok lexbuf, tokinfo lexbuf)
     }
 
-  | "$" (LABEL as s) { T_VARIABLE(s, tokinfo lexbuf) }
-  | LABEL            { T_IDENT(tok lexbuf, tokinfo lexbuf)  }
+  | "$" (LABEL as s) { T_VARIABLE(case_str s, tokinfo lexbuf) }
+  | LABEL            { T_IDENT(case_str (tok lexbuf), tokinfo lexbuf)  }
 
   | "]" { 
       pop_mode();
@@ -1077,7 +1039,7 @@ and st_double_quotes = parse
   | "{" {  T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)  }
 
   (*s: encapsulated dollar stuff rules *)
-    | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
   (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
@@ -1089,7 +1051,7 @@ and st_double_quotes = parse
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
-          T_VARIABLE(s, varinfo)
+          T_VARIABLE(case_str s, varinfo)
       }
     (* bugfix: can have strings like "$$foo$" *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
@@ -1135,7 +1097,7 @@ and st_backquote = parse
     }
 
   (*s: encapsulated dollar stuff rules *)
-    | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
   (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
@@ -1147,7 +1109,7 @@ and st_backquote = parse
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
-          T_VARIABLE(s, varinfo)
+          T_VARIABLE(case_str s, varinfo)
       }
     (* bugfix: can have strings like "$$foo$" *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
@@ -1182,8 +1144,11 @@ and st_backquote = parse
 
 (* ----------------------------------------------------------------------- *)
 (*s: rule st_start_heredoc *)
-(* as heredoc have some of the semantic of double quote strings, again some
+(* As heredoc have some of the semantic of double quote strings, again some
  * rules from st_double_quotes are copy pasted here.
+ * 
+ * todo? the rules below are not what was in the original Zend lexer, 
+ * but the original lexer was doing very complicated stuff ...
  *)
 and st_start_heredoc stopdoc = parse
 
@@ -1212,10 +1177,14 @@ and st_start_heredoc stopdoc = parse
       end else 
         T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
     }
-  (* | ANY_CHAR { set_mode ST_HERE_DOC; yymore() ??? } *)
+
+  | [^ '\n' '\r' '$' '{' '\\']+ {
+      T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
+    }
+  | "\\" ANY_CHAR { T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf) }
 
   (*s: encapsulated dollar stuff rules *)
-    | "$" (LABEL as s)     { T_VARIABLE(s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
   (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
@@ -1227,10 +1196,13 @@ and st_start_heredoc stopdoc = parse
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
-          T_VARIABLE(s, varinfo)
+          T_VARIABLE(case_str s, varinfo)
       }
-    (* bugfix: can have strings like "$$foo$" *)
+    (* bugfix: can have strings like "$$foo$", or {{$foo}} *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
+    | "{" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
+
+  | ['\n' '\r'] { TNewline (tokinfo lexbuf) }
 
   (*x: encapsulated dollar stuff rules *)
     | "{$" { 
@@ -1244,61 +1216,6 @@ and st_start_heredoc stopdoc = parse
         T_DOLLAR_OPEN_CURLY_BRACES(tokinfo lexbuf);
       }
   (*e: encapsulated dollar stuff rules *)
-
-
-(*/* Match everything up to and including a possible ending label, so if the label
- * doesn't match, it's kept with the rest of the string
- *
- * {HEREDOC_NEWLINE}+ handles the case of more than one newline sequence that
- * couldn't be matched with HEREDOC_CHARS, because of the following label
- */
- *)
-  | ((HEREDOC_CHARS* HEREDOC_NEWLINE+) as str)
-       (LABEL as s)
-       (";"? as semi) (['\n' '\r'] as space) {
-
-      let info = tokinfo lexbuf in 
-
-      let here_info = rewrap_str str info in
-
-      let pos = Ast.pos_of_info info in
-      let pos_after_here = pos + String.length str in
-      let pos_after_label = pos_after_here + String.length s in
-      let pos_after_semi = pos_after_label + String.length semi in
-
-      let lbl_info = 
-        Parse_info.tokinfo_str_pos s pos_after_here in
-      let colon_info = 
-        Parse_info.tokinfo_str_pos semi pos_after_label in
-      let space_info = 
-        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
-      
-
-      if s = stopdoc 
-      then begin
-        set_mode ST_IN_SCRIPTING;
-        push_token (TNewline(space_info));
-        if semi = ";"
-        then push_token (TSEMICOLON (colon_info));
-        push_token (T_END_HEREDOC(lbl_info));
-        T_ENCAPSED_AND_WHITESPACE(str, here_info)
-      end
-      else begin
-        T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf)
-      end
-    }
-
-(*/* ({HEREDOC_NEWLINE}+({LABEL}";"?)?)? handles the possible case of newline
- * sequences, possibly followed by a label, that couldn't be matched with
- * HEREDOC_CHARS because of a following variable or "{$"
- *
- * This doesn't affect real ending labels, as they are followed by a newline,
- * which will result in a longer match for the correct rule if present
- */
- *)
-  | HEREDOC_CHARS*(HEREDOC_NEWLINE+(LABEL";"?)?)? {
-      T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
-    }
 
   (*s: repetitive st_start_heredoc rules for error handling *)
     | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
@@ -1354,8 +1271,6 @@ and st_start_nowdoc stopdoc = parse
       then pr2_once ("LEXER:unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
     }
-
-      
 (*e: rule st_start_heredoc *)
 
 (*****************************************************************************)

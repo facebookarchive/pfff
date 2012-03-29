@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -36,6 +36,10 @@ module FT = File_type
 module Parsing = Parsing2
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
@@ -57,7 +61,7 @@ type draw_content_layout = {
 (* globals *)
 (*****************************************************************************)
 
-(* ugly *)
+(* ugly, see mli for explanation *)
 let text_with_user_pos = ref []
 
 (*****************************************************************************)
@@ -164,8 +168,8 @@ let set_source_rgba_and_font_size_of_categ
 (*****************************************************************************)
 
 (*s: font_size_when_have_x_columns *)
-let font_size_when_have_x_columns ~nblines ~nbcolumns ~w ~h ~with_n_columns = 
-  let size_x = (w / with_n_columns) / nbcolumns in
+let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns = 
+  let size_x = (w / with_n_columns) / chars_per_column in
   let size_y = (h / (nblines / with_n_columns)) in
 
   let min_font = min size_x size_y in
@@ -179,11 +183,11 @@ let font_size_when_have_x_columns ~nblines ~nbcolumns ~w ~h ~with_n_columns =
  * and see if by adding columns we can have a bigger font.
  * We try to maximize the font_size.
  *)
-let optimal_nb_columns ~nblines ~nbcolumns ~w ~h = 
+let optimal_nb_columns ~nblines ~chars_per_column ~w ~h = 
   
   let rec aux current_font_size current_nb_columns = 
     let min_font = font_size_when_have_x_columns 
-      ~nblines ~nbcolumns ~w ~h ~with_n_columns:current_nb_columns
+      ~nblines ~chars_per_column ~w ~h ~with_n_columns:current_nb_columns
     in
     if min_font > current_font_size
     then aux min_font (current_nb_columns + 1.)
@@ -243,6 +247,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
     let alpha = 
       match context.nb_rects_on_screen with
+      | n when n <= 1 -> 0.95
       | n when n <= 2 -> 0.8
       | n when n <= 10 -> 0.6
       | _ -> 0.3
@@ -295,7 +300,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.Python)
     | FT.PL (FT.Csharp)
     | FT.PL (FT.Java)
-    | FT.PL (FT.Prolog _)
+(*    | FT.PL (FT.Prolog _) *)
     | FT.PL (FT.Erlang)
     | FT.PL (FT.Opa)
     ) -> true
@@ -417,7 +422,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
 
-  if intersection_rectangles r clipping = None
+  if F.intersection_rectangles r clipping = None
   then (* pr2 ("not drawing: " ^ file) *) ()
   else begin
 
@@ -441,18 +446,18 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
      * we would need a fast absolute_to_readable then.
      *)
     let nblines = Common.nblines_eff file +> float_of_int in
+
     (* assume our code follow certain conventions. Could infer from file. 
      * we should put 80, but a font is higher than large, so 
      * I manually readjust things. todo: should readjust something
      * else.
      *)
-
-    let nbcolumns = 41.0 in
+    let chars_per_column = 41.0 in
     
     let split_nb_columns = 
-      optimal_nb_columns ~nblines ~nbcolumns ~h ~w in
+      optimal_nb_columns ~nblines ~chars_per_column ~h ~w in
     let font_size = 
-      font_size_when_have_x_columns ~nblines ~nbcolumns ~h ~w 
+      font_size_when_have_x_columns ~nblines ~chars_per_column ~h ~w 
         ~with_n_columns:split_nb_columns in
     let w_per_column = 
       w / split_nb_columns in

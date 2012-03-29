@@ -12,9 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
-module Topo = Ast_php_simple_toposort
-module Graph = Ast_php_simple_toposort.Graph
+module Graph = Dependencies_toposort_php.Graph
 
 module ISet = Set.Make(Int)
 module IMap = Map.Make(Int)
@@ -25,10 +23,19 @@ module SMap = Map.Make(String)
 (* Prelude *)
 (*****************************************************************************)
 
+(* Main types and data structures used by the PHP type inference:
+ * The PHP types representation 't' and the 'environment'.
+ *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
+(* Our PHP type system. It has polymorphic types, union types,
+ * and object types. It also has some special support for constants
+ * and arrays because they are abused respectively to represent
+ * enums and records and we want to infer this information back.
+ *)
 type t =
   (* polymorphic type variable, 'a, 'b, ... *)
   | Tvar of int
@@ -36,56 +43,97 @@ type t =
   | Tsum of prim_ty list
 
   and prim_ty =
+    (* Any abstract type, e.g. int, bool, string, etc. but also null *)
+    | Tabstr of string
+
     (* A set of static strings *)
     | Tsstring of SSet.t
-    (* Any abstract type, int bool string etc ... *)
-    | Tabstr of string
     (* An enum of integers, class MyEnum { static const XX = 0; } *)
     | Tienum of SSet.t
     (* An enum of strings, class MyEnum { static const XX = 'foo'; } *)
     | Tsenum of SSet.t
 
     (* arrays are used for everything in PHP, but for the type inference
-     * we actually want to differentiate those different usages, record
+     * we actually want to differentiate those different usages: record
      * vs real array vs hash.
      *)
     | Trecord of t SMap.t
-    (* An array, where we don't know what all the possible field names are. *)
-    (* The SSet contains all the field names we have seen so far *)
-    (* Example: $x = array('foo' => 0); $x[] = 12; will translate in
+    (* An array, where we don't know what all the possible field names are.
+     * The SSet contains all the field names we have seen so far.
+     * Example: $x = array('foo' => 0); $x[] = 12; will translate in
      * Tarray (SSet('foo'), int | string, int)
-    *)
+     *)
     | Tarray  of SSet.t * t * t
 
+    (* this is also used for methods *)
     | Tfun    of (string * t) list * t
-    | Tobject of t SMap.t
 
+    (* A class is represented as a Tclosed/Tobject with 
+     * a special field called __obj that contains the type of the
+     * instanciated object.
+     *
+     * Example:
+     *  class A {
+     *    public static function f() { }
+     *    public function g() { }
+     *  }
+     *  is represented as
+     *  Tclosed (SSet('A'), SMap(
+     *    'f': function unit -> unit
+     *    '__obj': SMap (
+     *      'g' => function unit -> unit
+     *    )
+     *  )
+     *)
+    | Tobject of t SMap.t
     (* Same as Tobject, except that we know the set of possible classes that
-       were used to instanciate the object.
+     * were used to instanciate the object.
      *)
     | Tclosed of SSet.t * t SMap.t
 
-(* todo: reuse 'a cached and code database *)
-type cached_ast = string
-
+(* todo: reuse Env_interpreter_php.code_database? *)
+type code_database = {
+    classes: Ast_php_simple.class_def Common.cached SMap.t ref;
+    funcs: Ast_php_simple.func_def Common.cached SMap.t ref;
+    (* todo: constants?? *)
+}
 type env = {
-    (* todo: use db *)
-    classes: cached_ast SMap.t ref;
-    funcs: cached_ast SMap.t ref;
+    db: code_database;
 
-    builtins: SSet.t ref;
-    (* The graph of dependencies *)
+    (* The graph of dependencies. If foo() calls bar(), then
+     * there will be a dependency between 'foo' and 'bar' and
+     * we will want to first infer the type of 'bar' before 'foo'
+     * (because we do a bottom-up type inference).
+     *)
     graph: Graph.t;
+
+    (* less: this is just used to remember the builtins and
+     * not print them when we list all the infered types. Could
+     * be removed.
+     *)
+    builtins: SSet.t ref;
 
     (* The local variables environment *)
     env: t SMap.t ref;
-    (* The global variable envirnoment *)
+
+    (* The global variable environment. This also contains typing
+     * information for functions and classes. The "^Class:", "^Function:"
+     * and "^Global:" prefixes are (ab)used for "namespace" (ugly, abusing
+     * strings again).
+     * Builtins constants such as 'null' are stored here as functions.
+     *)
     genv: t SMap.t ref;
 
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
-    (* The current substitution (for type variables) *)
+    (* The current substitution (for type variables). This will
+     * tell if 'a -> 'b, that is 'a was unified at some point with 'b.
+     * This will grow a lot when we process the whole codebase.
+     * See typing_unify_php.ml for more information.
+     *)
     subst: int IMap.t ref;
+
+
 
     (* Shall we show types with the special marker? *)
     infer_types: bool;
@@ -96,12 +144,15 @@ type env = {
     marker: string;
 
     verbose: bool;
+    (* throw exception instead of passing over undefined constructs *)
+    strict: bool;
     (* pad: ?? *)
     depth: int;
     (* The types to show *)
     show: show ref;
     (* Are we in debug mode *)
     debug: bool;
+
     (* The total amount of classes/functions to type *)
     total: int ref;
     (* The total amount of classes/functions typed so far *)
@@ -112,6 +163,10 @@ type env = {
     cumul: float ref;
   }
 
+(* This is used for the autocompletion and interactive type inference
+ * in Emacs (Tab and C-c C-t).
+ * todo: meaning?
+ *)
 and show =
   | Snone
   | Stype_infer of t
@@ -124,7 +179,12 @@ and show =
 (* Projection *)
 (*****************************************************************************)
 
-(* pad: ?? *)
+(* In a Tsum we want the different possible types to be sorted so
+ * that unifying two Tsum and finding common stuff can be done quickly.
+ * Proj is used to give an order between types, and when two things
+ * are equivalent (such as a Tobject and Tclosed), we project on
+ * the same value.
+ *)
 let rec proj = function
   | Tabstr ("int" | "bool" | "string" | "html") -> Hashtbl.hash "string"
   | Tabstr x -> Hashtbl.hash x
@@ -141,15 +201,14 @@ let rec proj = function
 (* Helpers *)
 (*****************************************************************************)
 
-let fresh =
-  let i = ref 0 in
-  fun () -> incr i; !i
-
-let or_ l =
-  let l = List.sort (fun x y -> proj x - proj y) l in
-  Tsum l
-
 let make_env () = {
+  db = {
+    classes = ref SMap.empty;
+    funcs = ref SMap.empty;
+  };
+  builtins = ref SSet.empty;
+  graph = Graph.empty();
+
   env     = ref SMap.empty;
   genv    = ref SMap.empty;
 
@@ -159,17 +218,13 @@ let make_env () = {
   depth   = 0;
   show   = ref Snone;
 
-  classes = ref SMap.empty;
-  funcs = ref SMap.empty;
-
   debug = false;
   infer_types = false;
   auto_complete = false;
   verbose = true;
+  strict = false;
   marker = "JUJUMARKER";
-  builtins = ref SSet.empty;
 
-  graph = Graph.empty();
   total = ref 0;
   count = ref 0;
   collect_count = ref 0;
@@ -180,21 +235,25 @@ let make_env () = {
 (* Shortcuts *)
 (*****************************************************************************)
 
-let pbool = Tabstr "bool"
-let pint = Tabstr "int"
-let pfloat = Tabstr "float"
+let pbool   = Tabstr "bool"
+let pint    = Tabstr "int"
+let pfloat  = Tabstr "float"
 let pstring = Tabstr "string"
-let pnull = Tabstr "null"
-let phtml = Tabstr "html"
+let pnull   = Tabstr "null"
+let phtml   = Tabstr "html"
+
+let fresh =
+  let i = ref 0 in
+  fun () -> incr i; !i
 
 let fvar() = Tvar (fresh())
 
-let bool = Tsum [pbool]
-let int = Tsum [pint]
-let thtml = Tsum [phtml]
-let float = Tsum [pfloat]
+let bool   = Tsum [pbool]
+let int    = Tsum [pint]
+let thtml  = Tsum [phtml]
+let float  = Tsum [pfloat]
 let string = Tsum [pstring]
-let null = Tsum [pnull]
+let null   = Tsum [pnull]
 
 let any = Tsum []
 

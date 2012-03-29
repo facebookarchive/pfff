@@ -269,7 +269,7 @@ let database_code_from_php_database ?(verbose=false) db =
     ))
   in
   (* phase 2: adding the correct cross reference information *)
-  if verbose then pr2 "phase 2: adding crossref information";
+  if verbose then pr2 "\nphase 2: adding crossref information";
 
   let entities_arr = Array.of_list entities in
 
@@ -294,7 +294,7 @@ let database_code_from_php_database ?(verbose=false) db =
   if verbose then pr2 "phase 3: last fixes";
 
   (* our current method/field analysis is imprecise; need to compensate back *)
-  Db.adjust_method_or_field_external_users entities_arr;
+  Db.adjust_method_or_field_external_users ~verbose entities_arr;
 
   let dirs = dirs +> List.map (fun s -> 
     Common.filename_without_leading_path root s) in

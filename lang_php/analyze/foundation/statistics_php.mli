@@ -1,6 +1,20 @@
 (*s: statistics_php.mli *)
 (*x: statistics_php.mli *)
-type stat = {
+type stat = (string, int) Common.hash_with_default
+
+type stat_hooks = {
+  entity: (Database_code.entity_kind * string) -> unit;
+  (* the second node contains partial information, such as only
+   * the method
+   *)
+  call: (Callgraph_php2.node * Callgraph_php2.node) -> unit;
+}
+(* works by side effect on stat2 hash *)
+val stat_of_program: 
+  ?hooks:stat_hooks -> stat -> Common.filename -> Ast_php.program -> unit
+
+
+type stat2 = {
   mutable functions: int;
   mutable classes: int;
   mutable toplevels_funcalls: int;
@@ -16,19 +30,10 @@ type php_file_kind =
   | IncluderFile
   | ScriptOrEndpointFile
 
-val default_stat: unit -> stat
-val string_of_stat: stat -> string
-val stat_of_program: Ast_php.program -> stat
+val default_stat2: unit -> stat2
+val string_of_stat: stat2 -> string
+val stat2_of_program: Ast_php.program -> stat2
 
-
-type stat2 = (string, int) Common.hash_with_default
-
-type stat_hooks = {
-  entity: (Database_code.entity_kind * string) -> unit;
-}
-(* works by side effect on stat2 hash *)
-val stat2_of_program: 
-  ?hooks:stat_hooks -> stat2 -> Ast_php.program -> unit
 
 (* helpers *)
 val kind_of_file_using_stat: stat -> php_file_kind

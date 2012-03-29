@@ -14,11 +14,20 @@
  *)
 
 open Env_typing_php
+module Env = Env_typing_php
 module GEnv = Typing_helpers_php.GEnv
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let or_ l =
+  let l = List.sort (fun x y -> Env.proj x - Env.proj y) l in
+  Tsum l
 
 (*****************************************************************************)
 (* Types *)
@@ -261,11 +270,8 @@ let super_globals =
 (*****************************************************************************)
 
 let make env =
-  let add_name x = 
-    env.builtins := SSet.add ("^Fun:"^x) !(env.builtins)
-  in
   let add x y = 
-    add_name x; 
+    env.builtins := SSet.add ("^Fun:"^x) !(env.builtins);
     GEnv.set_fun env x y 
   in
 
@@ -278,6 +284,7 @@ let make env =
   add "float" float;
   add "string" string;
   add "u" (fun_ [string] string);
+
   add "null" null;
 
   (*-------------------------------------------------------------------*)

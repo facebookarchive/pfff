@@ -16,3 +16,6 @@ then
 For Ubuntu/Debian you want to install libpcre3-dev,
 libgtk2.0-dev, libcairo2-dev and libpango1.0-dev. These are the
 correct package names (pcre-devel does not exist, and so on).
+
+On Fedora you may need to install the camlp4 packages too: 
+ ocaml-camlp4 ocaml-camlp4-devel

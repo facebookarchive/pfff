@@ -232,13 +232,13 @@ let lookup_unittest =
 
     "static lookup" >:: (fun () ->
       let file = "
-class A { static function a() { return A; } }
+class A { static function a() { return CST; } }
 " in
       let find_entity = entity_finder_from_string file in
       let def = Class_php.lookup_method ("A","a") find_entity in
       match def with
       | { m_body = MethodBody (_, 
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))))), _))],
+         [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
                               _); _ }
           -> ()
       | _ ->assert_failure "it should find simple static method"
@@ -246,17 +246,33 @@ class A { static function a() { return A; } }
 
     "static method recursive lookup" >:: (fun () ->
       let file = "
-class A { static function a() { return A; } }
+class A { static function a() { return CST; } }
 class B extends A { }
 " in
       let find_entity = entity_finder_from_string file in
       let def = Class_php.lookup_method ("B","a") find_entity in
       match def with
       | { m_body = MethodBody (_, 
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("A",_)))))), _))],
+         [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
                               _); _ }
           -> ()
       | _ ->assert_failure "it should find static method in parent class"
+    );
+
+    "method lookup and traits" >:: (fun () ->
+      let file = "
+trait T { static function t() { return CST; } }
+class A { use T; }
+class B extends A { }
+" in
+      let find_entity = entity_finder_from_string file in
+      let def = Class_php.lookup_method ("B","t") find_entity in
+      match def with
+      | { m_body = MethodBody (_, 
+         [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
+                              _); _ }
+          -> ()
+      | _ ->assert_failure "it should find static method in mixin trait"
     );
 
     (* TODO: works with xhp classes? *)

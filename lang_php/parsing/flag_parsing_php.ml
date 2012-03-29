@@ -23,6 +23,11 @@ let error_recovery = ref false
 let short_open_tag = ref true
 (*x: flag_parsing_php.ml *)
 
+(* PHP is case insensitive, which is I think a bad idea, so
+ * by default let's have a case sensitive lexer.
+ *)
+let case_sensitive = ref true
+
 (* e.g. yield *)
 let facebook_lang_extensions = ref true
 

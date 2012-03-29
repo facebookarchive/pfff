@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,21 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 open Parse_info
-
 module Ast = Ast_php
 module V = Visitor_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * See https://github.com/facebook/pfff/wiki/Spatch
  * 
@@ -53,7 +49,7 @@ module PI = Parse_info
 (* Type *)
 (*****************************************************************************)
 
-(* but right now only Expr and Stmt are supported *)
+(* right now only Expr and Stmt are supported *)
 type pattern = Ast_php.any
 
 type line_kind = 
@@ -218,15 +214,15 @@ let parse file =
 
 let parse_string spatch_str =
   Common.with_tmp_file ~str:spatch_str ~ext:".spatch" 
-    parse
+    (fun file -> parse file)
 
-let spatch pattern file =
+let spatch ?(case_sensitive=false) pattern file =
   let was_modifed = ref false in
     
   (* quite similar to what we do in main_sgrep.ml *)
   let ast2 = 
     try 
-      Parse_php.parse file +> fst
+        Parse_php.parse file +> fst
     with Parse_php.Parse_error err ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       []
@@ -296,7 +292,9 @@ let spatch pattern file =
     | _ -> failwith (spf "pattern not yet supported:" ^ 
                        Export_ast_php.ml_pattern_string_of_any pattern)
   in
-  (V.mk_visitor hook) (Program ast);
+  Common.save_excursion Php_vs_php.case_sensitive case_sensitive (fun() ->
+    (V.mk_visitor hook) (Program ast)
+  );
 
   if !was_modifed 
   then Some (Unparse_php.string_of_program2_using_transfo ast2)

@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,35 +12,51 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 open Parse_info
-
 module Ast = Ast_php
 module V = Visitor_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* See https://github.com/facebook/pfff/wiki/Sgrep
-*)
+(* See https://github.com/facebook/pfff/wiki/Sgrep 
+ *
+ * todo? many things are easier in sgrep than in spatch. For instance
+ * many isomorphisms are ok to do in sgrep but would result in badly
+ * generated code for spatch (e.g. the order of the attributes in Xhp
+ * does not matter). Using ast_php.ml has many disadvantages
+ * for sgrep; it complicates things. Maybe we should use
+ * a unsugar AST a la PIL to do the maching and the concrete AST for
+ * transforming. For instance the Xhp vs XhpSingleton isomorphisms would
+ * not even be needed in an unsugared AST. At the same time it's
+ * convenient to have a single php_vs_php.ml that kinda works
+ * both for sgrep and spatch at the same time.
+ *)
 
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
 
-(* but right now only Expr and Stmt are supported *)
+(* right now only Expr and Stmt are actually supported *)
 type pattern = Ast_php.any
 
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
 
+(* We can't have Flag_parsing_php.case_sensitive set to false here
+ * because metavariables in sgrep patterns are in uppercase
+ * and we don't want to lowercase them.
+ * 
+ * We actually can't use Flag_parsing_php.case_sensitive at all
+ * because we also want the Foo() pattern to match foo() code
+ * so we have anyway to do some case insensitive string
+ * comparisons in php_vs_php.ml
+ *)
 let parse str =
   Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
     Parse_php.any_of_string str
@@ -50,11 +66,15 @@ let parse str =
 (* Main entry point *)
 (*****************************************************************************)
 
-let sgrep ~hook pattern file =
+let sgrep ?(case_sensitive=false) ~hook pattern file =
   let (ast2) = 
     try 
       Parse_php.parse file +> fst
     with Parse_php.Parse_error err ->
+      (* we usually do sgrep on a set of files or directories,
+       * so we don't want on error in one file to stop the
+       * whole process.
+       *)
       Common.pr2 (spf "warning: parsing problem in %s" file);
       []
   in
@@ -173,5 +193,7 @@ let sgrep ~hook pattern file =
                         Export_ast_php.ml_pattern_string_of_any pattern)
   in
   (* opti ? dont analyze func if no constant in it ?*)
-  (V.mk_visitor hook) (Program ast)
-    
+  Common.save_excursion Php_vs_php.case_sensitive case_sensitive (fun() ->
+    (V.mk_visitor hook) (Program ast)
+  )
+

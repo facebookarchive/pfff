@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Ast_php_simple
 open Env_typing_php
 
@@ -26,19 +25,21 @@ module Pp = Pp2
 (* Helpers *)
 (*****************************************************************************)
 
-(*****************************************************************************)
-(* Modules *)
-(*****************************************************************************)
-
+(* s =~ ".*" ^ env.marker *)
 let has_marker env s =
   let marker_size = String.length env.marker in
   String.length s >= marker_size &&
   String.sub s (String.length s - marker_size) marker_size = env.marker
 
+(* s =~ "\\(.*\\)" ^ env.marker *)
 let get_marked_id env s =
   let marker_size = String.length env.marker in
   let s = String.sub s 0 (String.length s - marker_size) in
   s
+
+(*****************************************************************************)
+(* Code database *)
+(*****************************************************************************)
 
 module Classes: sig
   val add: env -> string -> Ast_php_simple.class_def -> unit
@@ -49,19 +50,17 @@ module Classes: sig
 end = struct
 
   let add env n x =
-    let x = Marshal.to_string x [] in
-    env.classes := SMap.add n x !(env.classes)
+    env.db.classes := SMap.add n (Common.serial x) !(env.db.classes)
 
   let get env n =
-    let x = SMap.find n !(env.classes) in
-    let x = Marshal.from_string x 0 in
-    x
+    let x = SMap.find n !(env.db.classes) in
+    Common.unserial x
 
   let remove env x =
-    env.classes := SMap.remove x !(env.classes)
+    env.db.classes := SMap.remove x !(env.db.classes)
 
-  let mem env n = SMap.mem n !(env.classes)
-  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.classes)
+  let mem env n = SMap.mem n !(env.db.classes)
+  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.db.classes)
 end
 
 module Functions: sig
@@ -73,34 +72,29 @@ module Functions: sig
 end = struct
 
   let add env n x =
-    let x = Marshal.to_string x [] in
-    env.funcs := SMap.add n x !(env.funcs)
+    env.db.funcs := SMap.add n (Common.serial x) !(env.db.funcs)
 
   let get env n =
-    let x = SMap.find n !(env.funcs) in
-    let x = Marshal.from_string x 0 in
-    x
+    let x = SMap.find n !(env.db.funcs) in
+    Common.unserial x
 
   let remove env x =
-    env.funcs := SMap.remove x !(env.funcs)
+    env.db.funcs := SMap.remove x !(env.db.funcs)
 
-  let mem env n = SMap.mem n !(env.funcs)
-  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.funcs)
+  let mem env n = SMap.mem n !(env.db.funcs)
+  let iter env f = SMap.iter (fun n _ -> f (get env n)) !(env.db.funcs)
 
 
 end
 
+(*****************************************************************************)
+(* TEnv, GEnv, Subst, Env *)
+(*****************************************************************************)
 
-module TEnv = struct
-  let get env x = try IMap.find x !(env.tenv) with Not_found -> Tsum []
-  let set env x y = env.tenv := IMap.add x y !(env.tenv)
-  let mem env x = IMap.mem x !(env.tenv)
-end
-
-
+(* global variables, functions and classes.
+ * todo: constants?
+ *)
 module GEnv: sig
-
-  type genv
 
   val get_class: env -> string -> t
   val set_class: env -> string -> t -> unit
@@ -119,15 +113,15 @@ module GEnv: sig
   val iter: env -> (string -> t -> unit) -> unit
 
   val save: env -> out_channel -> unit
-  val load: in_channel -> (string -> unit) -> env
+  val load: in_channel -> env
 
 end = struct
 
-  type genv = t SMap.t SMap.t * t SMap.t
-
-  let get env x =
-    try SMap.find x !(env.genv)
-    with Not_found -> Tvar (fresh())
+  let get env str =
+    try SMap.find str !(env.genv)
+    with Not_found ->
+      (* todo: error when in strict mode? *)
+      Tvar (fresh())
 
   let set env x t = env.genv := SMap.add x t !(env.genv)
   let unset env x = env.genv := SMap.remove x !(env.genv)
@@ -148,33 +142,40 @@ end = struct
   let set_class env x t = set env ("^Class:"^x) t
   let set_fun env x t = set env ("^Fun:"^x) t
 
+  let remove_class env x = unset env ("^Class:"^x)
+  let remove_fun env x = unset env ("^Fun:"^x)
+
   let mem_class env x = mem env ("^Class:"^x)
   let mem_fun env x = mem env ("^Fun:"^x)
 
   let iter env f = SMap.iter f !(env.genv)
+
   let save env oc =
     Marshal.to_channel oc env []
-
-  let load ic o =
-    let env = Marshal.from_channel ic in
-    env
-
-  let remove env x = env.genv := SMap.remove x !(env.genv)
-  let remove_class env x = remove env ("^Class:"^x)
-  let remove_fun env x = remove env ("^Fun:"^x)
-
+  let load ic =
+    Marshal.from_channel ic
 end
 
+(* local variables *)
 module Env = struct
   let set env x t = env.env := SMap.add x t !(env.env)
   let unset env x = env.env := SMap.remove x !(env.env)
   let mem env x = SMap.mem x !(env.env)
 
   let get env x =
-    try SMap.find x !(env.env) with Not_found ->
+    try SMap.find x !(env.env) 
+    with Not_found ->
       let n = Tvar (fresh()) in
       set env x n;
       n
+end
+
+module TEnv = struct
+  let get env x = 
+    try IMap.find x !(env.tenv) 
+    with Not_found -> Tsum []
+  let set env x y = env.tenv := IMap.add x y !(env.tenv)
+  let mem env x = IMap.mem x !(env.tenv)
 end
 
 module Subst = struct
@@ -205,6 +206,10 @@ module Subst = struct
   let replace env x y = replace env ISet.empty x y
 
 end
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 module Fun = struct
 
@@ -264,6 +269,10 @@ module FindCommonAncestor = struct
     with Found c -> Some c
 
 end
+
+(*****************************************************************************)
+(* String of *)
+(*****************************************************************************)
 
 module Print2 = struct
 
@@ -330,7 +339,8 @@ module Print2 = struct
         then Pp.print penv "(...)"
         else
           let l = SMap.fold (fun x y l -> (x, y) :: l) m [] in
-          Pp.list penv (fun penv -> print_field env ": " penv stack depth) "(" l ";" ")";
+          Pp.list penv (fun penv -> print_field env ": " penv stack depth) 
+            "(" l ";" ")"
     | Tclosed (s, _) ->
         if SSet.cardinal s = 1 then Pp.print penv (SSet.choose s) else
         (match FindCommonAncestor.go env s with
@@ -537,6 +547,10 @@ module Print = struct
     Print2.ty env (Pp.empty o) ISet.empty 0 t;
     o "\n"
 end
+
+(*****************************************************************************)
+(* Instantiate/Generalize/Normalize *)
+(*****************************************************************************)
 
 module Instantiate = struct
 

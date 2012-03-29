@@ -1,6 +1,6 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,11 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Ast_php_simple
+open Env_interpreter_php (* IMap, ptrs field, etc *)
 module A = Ast_php_simple
-
-open Env_interpreter_php (* Imap, ptrs field, etc *)
 module Env = Env_interpreter_php
 
 (*****************************************************************************)
@@ -27,6 +25,7 @@ module Env = Env_interpreter_php
 (* Helpers *)
 (*****************************************************************************)
 
+(* less: could be put in common.ml *)
 module Utils = struct
 
   let fresh =
@@ -53,36 +52,10 @@ end
 (* Ptr and globals *)
 (*****************************************************************************)
 
+(* Heap access *)
 module Ptr = struct
 
-  let rec get_ heap ptr =
-    try
-      let v = IMap.find ptr heap.ptrs in
-      { ptrs = IMap.add ptr v heap.ptrs }, 
-      v
-    with Not_found ->
-      heap, Vnull
-
-  and set_ heap ptr v =
-    { ptrs = IMap.add ptr v heap.ptrs }
-
-  let get heap ptr =
-    match ptr with
-    | Vptr n -> get_ heap n
-    | Vref s -> get_ heap (ISet.choose s)
-    | _ -> heap, ptr
-
-  let set heap ptr v =
-    match ptr with
-    | Vptr n -> set_ heap n v
-    | Vref s ->
-        let l = ISet.elements s in
-        List.fold_left (
-        fun heap x ->
-          set_ heap x v
-       ) heap l
-    | _ -> heap
-
+  (* in PHP, variables are pointer to pointer of values *)
   let new_val_ ptrs val_ =
     let x = Utils.fresh() in
     let v = val_ in
@@ -90,18 +63,60 @@ module Ptr = struct
     let y = Utils.fresh() in
     let v = Vptr x in
     let ptrs = IMap.add y v ptrs in
-    ptrs, Vptr y
+    ptrs , Vptr y
 
   let new_val heap val_ =
     let ptrs, v = new_val_ heap.ptrs val_ in
     { ptrs }, v
 
   let new_ heap =
-    let ptrs, v = new_val_ heap.ptrs Vnull in
-    { ptrs }, v
+    new_val heap Vnull
+
+
+  let rec get_ heap ptr =
+    try
+      let v = IMap.find ptr heap.ptrs in
+      heap, v
+    with Not_found ->
+      (* todo: throw exn when in strict? *)
+      heap, Vnull
+
+  and set_ heap ptr v =
+    { ptrs = IMap.add ptr v heap.ptrs }
+
+  (* 'get' dereference a pointer when the value is a pointer. 
+   * 
+   * todo: should have different functions when we know it's always
+   * a pointer. Same when we know it's not already in the heap.
+   *)
+  let get heap ptr =
+    match ptr with
+    | Vptr n -> get_ heap n
+    | Vref s -> get_ heap (ISet.choose s)
+    (* Throw exception? no
+     * When we do '2 + $x' where $x = 3, the abstract interpreter will
+     * have for values for the operand of plus a (Vint 2) and a (Vptr 1)
+     * where 1 points to a (Vint 3). The Vint of $x is kinda boxed.
+     * But in the code of binaryOp we don't want to handle the many
+     * variations of having a Vptr or not, so in many places we
+     * call Ptr.get which will dereference the pointer when
+     * the value is a boxed integers, or return the value where we
+     * already have a "final" value
+     *)
+    | _ -> heap, ptr
+
+  let set heap ptr v =
+    match ptr with
+    | Vptr n -> set_ heap n v
+    | Vref shared ->
+        (* todo: when need that? when have multiple elements here? *)
+        let l = ISet.elements shared in
+        List.fold_left (fun heap x -> set_ heap x v) heap l
+    | _ -> heap
 
 end
 
+(* env.vars access *)
 module Var = struct
 
   let super_globals =
@@ -121,6 +136,9 @@ module Var = struct
        *)
       "self";
       "parent";
+      (* todo? why consider this super globals? why not
+       * set $this in env.vars instead?
+       *)
       "$this";
     ] in
     let h = Hashtbl.create 23 in
@@ -135,36 +153,43 @@ module Var = struct
 
   let set env s v =
     if Hashtbl.mem super_globals s
-    then
-      set_global env s v
-    else
-      env.vars := SMap.add s v !(env.vars)
+    then set_global env s v
+    else env.vars := SMap.add s v !(env.vars)
 
   let unset env s =
     env.vars := SMap.remove s !(env.vars)
 
-  let get env heap v =
+  (* get or create a variable in env.vars or env.globals.
+   * Returns whether the variable was created.
+   * It creates a new variable because that's the semantic
+   * of PHP which does not have construction to declare
+   * variable. The first use of the variable is its declaration.
+   * 
+   * todo? again have different function when know it's not
+   * already in env.vars ?
+   *)
+  let get env heap str =
     try
       let vars = 
-        if Hashtbl.mem super_globals v 
+        if Hashtbl.mem super_globals str 
         then !(env.globals) 
         else !(env.vars) 
       in
-      let v = SMap.find v vars in
+      let v = SMap.find str vars in
       heap, false, v
     with Not_found ->
       let heap, x = Ptr.new_ heap in
-      set env v x;
+      set env str x;
       heap, true, x
 
-  let get_global env heap v =
+  let get_global env heap str =
     try
       let vars = !(env.globals) in
-      let v = SMap.find v vars in
+      let v = SMap.find str vars in
       heap, false, v
     with Not_found ->
       let heap, x = Ptr.new_ heap in
-      set_global env v x;
+      set_global env str x;
       heap, true, x
 
 end
@@ -181,15 +206,20 @@ module Order = struct
     | Vany -> 31
     | Vnull -> 0
     | Vabstr ty -> type_ ty
-    | Vbool _ -> 2
+
+    (* project on corresponding type_ *)
     | Vint _ -> 1
+    | Vbool _ -> 2
     | Vfloat _ -> 3
     | Vstring _ -> 4
+
     | Vptr _ -> 5
     | Vref _ -> 5
+
     | Vrecord _ -> 6
     | Varray _ -> 6
     | Vmap _ -> 6
+
     | Vmethod _ -> 39
     | Vobject _ -> 40
     | Vsum _ -> raise Common.Impossible
@@ -200,12 +230,22 @@ module Order = struct
     | Tbool -> 2
     | Tfloat -> 3
     | Tstring -> 4
+
     | Txhp -> 30
 
 end
 
+(* Should be called more "generalize" or "abstractize" because
+ * it just tries to give a more general value, e.g. in
+ * $x = true ? 3: 4; the goal is to return a Vabstr Tint which
+ * generalize the Vint 3 and Vint 4.
+ *)
 module Unify = struct
 
+  (* todo: this whole code is complicated and mysterious,
+   * need more examples
+   *)
+  
   let make_ref ptrs x =
     match x with
     | Vptr n ->
@@ -216,6 +256,28 @@ module Unify = struct
         )
     | _ -> ptrs
 
+  (*
+    The stack is used to keep track of cyclic data structures.
+    We need to stop when this is the case.
+    Otherwise what we do is we dereference the left pointer
+    then dereference the right pointer, unify the two values
+    that we found (let's call this new value v).
+    
+    Vptr 0 --> Vint
+    Vptr 1 --> Vbool
+    pointers stack ptrs 0 1
+
+    if(true) {
+      $x = 42; &2&1 Vint 42
+    } else { 
+      $x = 55; &2&1 Vint 55
+    }
+     // the pointer in $x must point to the same abstract value,
+     // in this case Vint
+     // $x &2&1 Vint
+     mais attention
+     &3&4 Vint
+  *)
   let rec pointers stack ptrs n1 n2 =
     if ISet.mem n1 stack && ISet.mem n2 stack || n1 = n2
     then ptrs, n1
@@ -244,24 +306,21 @@ module Unify = struct
    *)
   and value stack ptrs v1 v2 =
     match v1, v2 with
-    | Vany, x
-    | x, Vany -> ptrs, Vany
-    | Vtaint s, _
-    | _, Vtaint s -> ptrs, Vtaint s
-    | Vptr n, Vref s
-    | Vref s, Vptr n -> value stack ptrs (Vref s) (Vref (ISet.singleton n))
+    | Vany, x | x, Vany -> 
+        ptrs, Vany
+    | Vtaint s, _ | _, Vtaint s -> 
+        ptrs, Vtaint s
+    | Vptr n, Vref s | Vref s, Vptr n -> 
+        value stack ptrs (Vref s) (Vref (ISet.singleton n))
     | Vref s1, Vref s2 ->
         let s = ISet.union s1 s2 in
         let l = ISet.elements s in
-        let stack = List.fold_left (
-          fun acc x -> ISet.add x acc
-         ) stack l in
+        let stack = List.fold_left (fun acc x -> ISet.add x acc) stack l in
         (match l with
         | [] -> raise Common.Impossible
         | [_] -> ptrs, Vref s
         | x :: rl ->
-            let ptrs, _ = List.fold_left (
-              fun (ptrs, acc) x ->
+            let ptrs, _ = List.fold_left (fun (ptrs, acc) x ->
                 pointers stack ptrs acc x
              ) (ptrs, x) rl
             in
@@ -276,30 +335,27 @@ module Unify = struct
         ptrs, Vnull
     | Vabstr ty1, Vabstr ty2 when ty1 = ty2 ->
         ptrs, v1
+
     | Vbool b1, Vbool b2 when b1 = b2 ->
         ptrs, v1
-    | Vbool _, Vabstr Tbool
-    | Vabstr Tbool, Vbool _
-    | Vbool _, Vbool _ ->
+    | Vbool _, Vabstr Tbool | Vabstr Tbool, Vbool _ | Vbool _, Vbool _ ->
         ptrs, Vabstr Tbool
+
     | Vint n1, Vint n2 when n1 = n2 ->
         ptrs, v1
-    | Vint _, Vabstr Tint
-    | Vabstr Tint, Vint _
-    | Vint _, Vint _ ->
+    | Vint _, Vabstr Tint | Vabstr Tint, Vint _ | Vint _, Vint _ ->
         ptrs, Vabstr Tint
+
     | Vfloat f1, Vfloat f2 when f1 = f2 ->
         ptrs, v1
-    | Vfloat _, Vabstr Tfloat
-    | Vabstr Tfloat, Vfloat _
-    | Vfloat _, Vfloat _ ->
+    | Vfloat _, Vabstr Tfloat | Vabstr Tfloat, Vfloat _ | Vfloat _, Vfloat _ ->
         ptrs, Vabstr Tfloat
+
     | Vstring s1, Vstring s2 when s1 = s2 ->
         ptrs, v1
-    | Vstring _, Vabstr Tstring
-    | Vabstr Tstring, Vstring _
-    | Vstring _, Vstring _ ->
+    | Vstring _, Vabstr Tstring | Vabstr Tstring, Vstring _ | Vstring _, Vstring _ ->
         ptrs, Vabstr Tstring
+
     | Vrecord m1, Vrecord m2 ->
         let ptrs, m = record stack ptrs m1 m2 in
         ptrs, Vrecord m
@@ -321,6 +377,9 @@ module Unify = struct
         let ptrs, v2 = value stack ptrs v2 v4 in
         let v1 = Vmap (v1, v2) in
         ptrs, v1
+    (* this is the only place where we use the 'this' of Vmethod,
+     * but julien is not sure it's still useful
+     *)
     | Vmethod (st1, m1), Vmethod (st2, m2) ->
         let ptrs, st = value stack ptrs st1 st2 in
         let m = IMap.fold IMap.add m1 m2 in
@@ -404,13 +463,16 @@ module Unify = struct
     { ptrs }, v
 end
 
-
-
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
 
-(* because assignements can be in conditionals ... have to extract them  *)
+(* Because assignements can be in conditionals ... have to extract them.
+ *  
+ * todo: could delete that. It was used in a first version of the
+ * interpreter where we were unifying heaps. But we don't unify
+ * heaps anymore. Moreover it's incomplete.
+ *)
 module NullNewVars = struct
 
   let rec stmtl env heap stl =
@@ -419,7 +481,9 @@ module NullNewVars = struct
   and stmt env heap x =
     match x with
     | Block stl -> stmtl env heap stl
-    (* todo? enough? what about deeply nested assignement? *)
+    (* todo? enough? what about deeply nested assignements?
+     * what if had some 'global' directives in previous statements?
+     *)
     | Expr (Assign (_, Id (s,_), _)) when not (SMap.mem s !(env.vars)) ->
         let heap, _, _ = Var.get env heap s in
         heap
@@ -435,23 +499,20 @@ module Copy = struct
     | Vany
     | Vnull
     | Vabstr _
-    | Vbool _
-    | Vfloat _
-    | Vstring _
+    | Vint _  | Vbool _ | Vfloat _| Vstring _
     | Vref _
     | Vsum _
     | Vmap _
-    | Vobject _
-    | Vmethod _
-    | Vint _ as x -> ptrs, x
+    | Vobject _ | Vmethod _
+      -> 
+        ptrs, x
     | Vptr n ->
         let ptrs, v' = value ptrs (IMap.find n ptrs) in
         let n' = Utils.fresh() in
         let ptrs = IMap.add n' v' ptrs in
         ptrs, Vptr n'
     | Vrecord m ->
-        let ptrs, m' = SMap.fold (
-          fun k v (ptrs, acc) ->
+        let ptrs, m' = SMap.fold (fun k v (ptrs, acc) ->
             let ptrs, v' = value ptrs v in
             ptrs, SMap.add k v' acc
          ) m (ptrs, SMap.empty) in
@@ -482,130 +543,21 @@ module IsLvalue = struct
     | Lambda _
     | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _|
       Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)|
-      Guil _|String _|Double _|Int _) -> false
+      Guil _|String _|Double _|Int _) -> 
+        false
 end
 
 (*****************************************************************************)
 (* Toplevel functions *)
 (*****************************************************************************)
 
+(* shortcuts *)
 let unw = Ast_php_simple.unwrap
 let w = Ast_php_simple.wrap
 
-let array_new_entry env heap ar a k m =
-  let heap, v = Ptr.new_ heap in
-  let m = SMap.add k v m in
-  let heap = Ptr.set heap ar (Vrecord m) in
-  heap, v
-
-let make_ref e =
-  match e with
-  | Ref _ -> e
-  | _ when IsLvalue.expr e -> Ref e
-  | _ -> e
-
-(* pad: ?? looks like subtle code *)
-let assign env heap is_new root v_root =
-  let heap, ptr = Ptr.get heap root in
-  let heap, v = Ptr.get heap v_root in
-  match v with
-  | Vref _
-  | Vptr _ ->
-      let vr = match v with Vptr n -> Vref (ISet.singleton n) | x -> x in
-      if is_new
-      then
-        let heap = Ptr.set heap root vr in
-        let heap = Ptr.set heap v_root vr in
-        heap, v
-      else
-        let heap, v = Unify.value heap v vr in
-        let heap = Ptr.set heap root v in
-        let heap = Ptr.set heap v_root v in
-        heap, v
-  | _ ->
-      if is_new
-      then
-        let heap, v' = Copy.value heap v in
-        let heap = Ptr.set heap ptr v' in
-        heap, v
-      else
-        let heap, v' = Ptr.get heap ptr in
-        let heap, v = Unify.value heap v v' in
-        let heap = Ptr.set heap ptr v in
-        heap, v
-
-let rec obj_get mem env heap v s =
-  (match v with
-  | [] -> SMap.empty
-  | Vref a :: rl ->
-      let l = ISet.fold (fun x acc -> x :: acc) a [] in
-      let vl = List.map (fun x -> Vptr x) l in
-      obj_get mem env heap (vl @ rl) s
-  | Vobject m :: _ -> m
-  | Vsum l :: l' ->
-      obj_get mem env heap (l@l') s
-  | Vptr n :: rl when ISet.mem n mem ->
-      obj_get mem env heap rl s
-  | Vptr n as x :: rl ->
-      let mem = ISet.add n mem in
-      let heap, x = Ptr.get heap x in
-      obj_get mem env heap (x :: rl) s
-  | x :: rl -> obj_get mem env heap rl s
-  )
-
-let param_get env heap prefix a =
-  match a with
-  | Vrecord m ->
-      SMap.fold (
-        fun s v heap ->
-          let heap, _, k = Var.get env heap (prefix^s) in
-          let heap, v' = Ptr.get heap v in
-          let heap, v'' = Ptr.get heap v' in
-          let heap =
-            match v'' with
-            | Vtaint _ ->
-                Ptr.set heap v' (Vtaint ("parameter "^s))
-            | _ -> heap
-          in
-          let heap, _ = assign env heap true k v in
-          heap
-      ) m heap
-  | _ -> heap
-
-let param_array_get env heap a x =
-  match a with
-  | Vrecord m ->
-      let heap, m =
-        SMap.fold (
-          fun s v (heap, acc) ->
-            let heap, k = Ptr.new_ heap in
-            let heap, v' = Ptr.get heap v in
-            let heap, v'' = Ptr.get heap v' in
-            let heap =
-              match v'' with
-              | Vtaint _ ->
-                  Ptr.set heap v' (Vtaint ("parameter "^s))
-              | _ -> heap
-            in
-            let heap, _ = assign env heap true k v in
-            heap, SMap.add s k acc
-        ) m (heap, SMap.empty) in
-      let heap, ptr = Ptr.new_ heap in
-      let heap, ptr' = Ptr.get heap ptr in
-      let heap = Ptr.set heap ptr' (Vrecord m) in
-      Var.set env x ptr;
-      heap
-  | _ -> heap
-
-let fun_nspace f roots =
-  List.fold_left (
-    fun acc p ->
-      (try SMap.add (unw p.p_name) (SMap.find (unw p.p_name) roots) acc
-        with Not_found -> acc
-      )
-  ) SMap.empty f.f_params
-
-(* Allez ... pour faire plaisir a yoyo *)
+(* Allez ... pour faire plaisir a yoyo.
+ * pad: not sure we need that.
+ *)
 let save_excursion env heap f e =
   let env = { Env_interpreter_php.
      file    = ref !(env.Env.file);

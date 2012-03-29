@@ -11,6 +11,7 @@ class CB extends CA {
 class CDUP {
 }
 
+//should return an error there too.
 class CDUP {
 }
 

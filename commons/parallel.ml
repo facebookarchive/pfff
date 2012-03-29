@@ -15,6 +15,10 @@ open Common
  * 
  *  - distribution.ml which use MPI and so can leverage multiple
  *    machines (but MPI turned out to be quite unstable in my experience)
+ *  
+ * less: could be useful to autodetect a good number based on the
+ * number of cores and available memory like we do in our libphutil 'Future'
+ * library.
  *)
 
 (*****************************************************************************)
@@ -67,7 +71,8 @@ type 'a jobs = ('a job) list
  * feeding processors. A partial fix is to give a tasks number that
  * is quite superior to the actual number of processors.
  * 
- * This will create (List.length xs) forks.
+ * This will create (List.length xs) forks, but n at a time, in multiple
+ * rounds, where n=tasks.
  * 
  * I use it for now to //ize the code coverage computation for PHP.
  *)
@@ -100,7 +105,7 @@ let map_batch_jobs ~tasks xs =
   then List.map (fun job -> job ()) xs
   else
     (* todo? a double pack ? because the initial pack/chunks can 
-     * be computationaly "inbalanced" 
+     * be computationaly "inbalanced".
      *)
     let xxs = Common.chunks tasks xs in
     let jobs = xxs +> List.map (fun xs ->

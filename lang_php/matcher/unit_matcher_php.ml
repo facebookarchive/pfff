@@ -13,22 +13,11 @@ module Flag = Flag_parsing_php
 
 (* run by sgrep -test *)
 let sgrep_unittest = [
-  "sgrep variable metavars matching" >:: (fun () ->
-    let pattern = Parse_php.any_of_string "foo($V, $V);" in
-    let code = Parse_php.any_of_string "foo($x, $y);" in
-    (match pattern, code with
-    | Stmt2 pattern, Stmt2 code ->
-        let matches_with_env = Matching_php.match_st_st pattern code in
-        assert_bool "it should not match" (matches_with_env = []);
-    | _ ->
-        assert_failure "parsing problem in sgrep pattern parsing"
-    );
-  );
 
-  "misc sgrep features" >:: (fun () ->
-    (* pattern string, code string (statement), should_match boolean *)
+  "sgrep features" >:: (fun () ->
+    (* spec: pattern string, code string (statement), should_match boolean *)
     let triples = [
-      (* concrete match with space "abstraction" *)
+      (* match even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
       "foo(1,3);", "foo(1,2);", false;
 
@@ -48,9 +37,6 @@ let sgrep_unittest = [
 
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
-
-      (* statements *)
-      "if(X) { foo(); }", "if(true) { foo(); }", true;
 
       (* metavariable naming conventions *)
       "foo(X);"       ,  "foo(1);", true;
@@ -73,6 +59,11 @@ let sgrep_unittest = [
       (* isomorphism on "keyword" arguments *)
       "foo(true);", "foo($x=true);", true;
       "foo(true);", "foo(true);", true;
+  
+      (* we want sgrep/spatch to be case insensitive, like PHP *)
+      "foo(...);", "Foo(true);", true;
+      "Foo(...);", "foo(true);", true;
+      "foo(...);", "Fo0(true);", false;
 
       (* more complex expressions *)
       "strstr(...) == false;", "strstr($x)==false;", true;
@@ -80,6 +71,9 @@ let sgrep_unittest = [
       (* regexp, PCRE syntax *)
       "foo('=~/.*CONSTANT/');", "foo('MY_CONSTANT');", true;
       "foo('=~/.*CONSTANT/');", "foo('MY_CONSTAN');", false;
+
+      (* statements *)
+      "if(X) { foo(); }", "if(true) { foo(); }", true;
 
       (* ------------ *)
       (* xhp patterns *)
@@ -93,19 +87,22 @@ let sgrep_unittest = [
       "return <x:frag foo=\"3\" border=\"1\" ></x:frag>;", 
       false;
 
-      (* can have more fields *)
+      (* concrete code can have more fields *)
       "return <x:frag border=\"1\"></x:frag>;", 
       "return <x:frag foo=\"2\" border=\"1\" ></x:frag>;", 
       true;
 
       "return <x:frag />;", "return <x:frag border=\"1\" />;", true;
 
-      (* can have a body *)
+      (* concrete code can have a body *)
       "return <x:frag border=\"1\"></x:frag>;", 
       "return <x:frag border=\"1\" >this is text</x:frag>;", 
       true;
-      (* TODO: "return <x:frag></x:frag>;", "return <x:frag />;", true; *)
 
+      (* TODO:
+       *  Xhp should also match XhpSingleton
+       * "return <x:frag></x:frag>;", "return <x:frag />;", true; 
+       *)
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
       match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
@@ -121,6 +118,18 @@ let sgrep_unittest = [
     | _ ->
         assert_failure "parsing problem in sgrep pattern parsing"
     )
+  );
+
+  "sgrep variable metavars matching" >:: (fun () ->
+    let pattern = Parse_php.any_of_string "foo($V, $V);" in
+    let code = Parse_php.any_of_string "foo($x, $y);" in
+    (match pattern, code with
+    | Stmt2 pattern, Stmt2 code ->
+        let matches_with_env = Matching_php.match_st_st pattern code in
+        assert_bool "it should not match" (matches_with_env = []);
+    | _ ->
+        assert_failure "parsing problem in sgrep pattern parsing"
+    );
   );
 
   "toplevel sgrep matching" >:: (fun () ->
@@ -176,7 +185,7 @@ let spatch_unittest = [
               tmpfile
         in
         let diff = Common.unix_diff file_res expfile in
-        diff |> List.iter pr;
+        diff +> List.iter pr;
         if List.length diff > 1
         then assert_failure
           (spf "spatch %s on %s should have resulted in %s" 
@@ -202,5 +211,5 @@ let unittest =
 (*****************************************************************************)
 let actions () = [
     "-unittest_matcher", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
+    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest +> ignore);
 ]

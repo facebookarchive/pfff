@@ -444,8 +444,21 @@ let parse2 ?(c=false) file =
   let v = with_program2 Parsing_consistency_cpp.consistency_checking v in
   (v, stat)
 
-let parse ?c a  = 
-  Common.profile_code "Parse_cpp.parse" (fun () -> parse2 ?c a)
+let parse ?c file  = 
+  Common.profile_code "Parse_cpp.parse" (fun () -> 
+    try 
+      parse2 ?c file
+    with Stack_overflow ->
+      pr2 (spf "PB stack overflow in %s" file);
+      [(Ast.NotParsedCorrectly [], ("", []))], {Stat.
+        correct = 0;
+        bad = Common.nblines_with_wc file;
+        filename = file;
+        have_timeout = true;
+        commentized = 0;
+        problematic_lines = [];
+      }
+  )
 
 let parse_program file = 
   let (ast2, _stat) = parse file in

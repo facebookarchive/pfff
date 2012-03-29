@@ -2,7 +2,7 @@
 (*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -31,6 +31,10 @@ module HC = Highlight_code
 
 module CairoH = Cairo_helpers
 module  Parsing = Parsing2
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Drawing a treemap rectangle *)

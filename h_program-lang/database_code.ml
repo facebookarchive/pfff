@@ -761,7 +761,7 @@ let files_and_dirs_and_sorted_entities_for_completion
  * when we do very trivial class/methods analysis for some languages.
  * This helper function can compensate back this approximation.
  *)
-let adjust_method_or_field_external_users entities =
+let adjust_method_or_field_external_users ~verbose entities =
   (* phase1: collect all method counts *)
   let h_method_def_count = Common.hash_with_default (fun () -> 0) in
   
@@ -780,7 +780,7 @@ let adjust_method_or_field_external_users entities =
     | Method RegularMethod | Field ->
         let k = e.e_name in
         let nb_defs = h_method_def_count#assoc k in
-        if nb_defs > 1
+        if nb_defs > 1 && verbose
         then pr2 ("Adjusting: " ^ e.e_fullname);
 
         let orig_number = e.e_number_external_users in

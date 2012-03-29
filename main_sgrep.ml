@@ -38,6 +38,7 @@ let verbose = ref false
 let pattern_file = ref ""
 let pattern_string = ref ""
 
+let case_sensitive = ref false
 let match_format = ref Lib_parsing_php.Normal
 
 let mvars = ref ([]: Metavars_php.mvar list)
@@ -118,8 +119,6 @@ let gen_layer ~root ~query file =
 (* Main action *)
 (*****************************************************************************)
 let main_action xs =
-  Common.logger Config.logger "sgrep";
-
   let pattern, query_string = 
     match !pattern_file, !pattern_string with
     | "", "" -> 
@@ -131,15 +130,20 @@ let main_action xs =
         Sgrep_php.parse s, s
     | _ -> raise Impossible
   in
+  Logger.log Config.logger "sgrep" (Some query_string);
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
 
-    Sgrep_php.sgrep pattern file ~hook:(fun env matched_tokens -> 
-      print_match !mvars env matched_tokens
-    )
+    Sgrep_php.sgrep 
+      ~case_sensitive:!case_sensitive 
+      ~hook:(fun env matched_tokens -> 
+        print_match !mvars env matched_tokens
+      )
+      pattern 
+      file 
   );
 
   !layer_file +> Common.do_option (fun file ->
@@ -170,9 +174,9 @@ let test () =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let sgrep_extra_actions () = [
-  "-dump_pattern", " <file>",
+  "-dump_pattern", " <file> (internal)",
   Common.mk_action_1_arg dump_sgrep_pattern;
-  "-test", " ",
+  "-test", " run regression tests",
   Common.mk_action_0_arg test;
 ]
 
@@ -191,6 +195,9 @@ let options () =
     "-f", Arg.Set_string pattern_file, 
     " <file> obtain pattern from file";
 
+    "-case_sensitive", Arg.Set case_sensitive, 
+    " match code in a case sensitive manner";
+
     "-emacs", Arg.Unit (fun () -> match_format := Lib_parsing_php.Emacs ),
     " print matches on the same line than the match position";
     "-oneline", Arg.Unit (fun () -> match_format := Lib_parsing_php.OneLine),
@@ -200,29 +207,23 @@ let options () =
     " <metavar> print the metavariable, not the matched code";
 
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
-    " <file> save result in pfff layer file";
+    " <file> save result in a pfff layer file";
 
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Unit (fun () -> 
+      verbose := true;
+      Flag_matcher_php.verbose := true;
+    ),
     " ";
   ] ++
   (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "sgrep_php version: %s" Config.version);
     exit 0;
   ), 
     "  guess what";
-
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
-    pr2 "version: $Date: 2008/10/26 00:44:57 $";
-    raise (Common.UnixExit 0)
-    ), 
-  "   guess what";
   ] ++
   []
 
@@ -232,7 +233,7 @@ let options () =
 
 let main () = 
   let usage_msg = 
-    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+    spf "Usage: %s [options] <pattern> <file or dir> \nDoc: %s\nOptions:"
       (Common.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Sgrep"
   in

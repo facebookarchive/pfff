@@ -42,6 +42,8 @@ open Parse_info
 
 let verbose = ref false
 
+let case_sensitive = ref false
+
 let apply_patch = ref false
 (* too experimental for now *)
 let pretty_printer = ref false
@@ -137,8 +139,6 @@ let apply_transfo transfo xs =
 (*****************************************************************************)
 
 let main_action xs =
-  Common.logger Config.logger "spatch";
-
   let spatch_file = 
     match !spatch_file, !sed_string with
     | "", "" ->
@@ -164,8 +164,11 @@ let main_action xs =
         failwith "Can't use -f and -e at the same time"
   in
 
+  Logger.log Config.logger "spatch" (Some (Common.read_file spatch_file));
+
   (* old: let pattern = dumb_spatch_pattern in *)
-  let pattern = Spatch_php.parse spatch_file in
+  let pattern = 
+    Spatch_php.parse spatch_file in
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
@@ -173,7 +176,9 @@ let main_action xs =
    List.iter (fun file->
     k();
     try (
-    let resopt = Spatch_php.spatch pattern file in
+    let resopt = 
+      Spatch_php.spatch ~case_sensitive:!case_sensitive pattern file
+    in
     resopt +> Common.do_option (fun (s) ->
 
       pr2 (spf "transforming: %s" file);
@@ -409,7 +414,7 @@ let spatch_extra_actions () = [
   "-add_action_ui_form", " <files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo add_action_ui_form_transfo);
 
-  "-test", "",
+  "-test", " run regression tests",
   Common.mk_action_0_arg test;
   "-pp", "",
   Common.mk_action_1_arg test_pp;
@@ -433,6 +438,8 @@ let options () =
     " ";
     "--pretty-printer", Arg.Set pretty_printer, 
     " reindent the modified code";
+    "--case-sensitive", Arg.Set case_sensitive, 
+    " match code in a case sensitive manner";
     "--verbose", Arg.Set verbose, 
     " ";
     "-v", Arg.Set verbose, 
@@ -441,23 +448,13 @@ let options () =
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
     Common.pr2 (spf "spatch_php version: %s" Config.version);
     exit 0;
   ), 
     "  guess what";
-
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
-    Common.pr2 "version: $Date: 2010/04/25 00:44:57 $";
-    raise (Common.UnixExit 0)
-    ), 
-  "   guess what";
-  ] ++
-  []
+  ]
 
 (*****************************************************************************)
 (* Main entry point *)

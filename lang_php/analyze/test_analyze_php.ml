@@ -9,6 +9,16 @@ module V = Visitor_php
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Simple AST *)
+(*****************************************************************************)
+let test_dump_simple file =
+  let ast = Parse_php.parse_program file in
+  let ast = Ast_php_simple_build.program ast in
+  let v = Meta_ast_php_simple.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+(*****************************************************************************)
 (* Scope annotations *)
 (*****************************************************************************)
 
@@ -17,40 +27,38 @@ module V = Visitor_php
  * different scopes.
  *)
 let test_scope_php file =
-  let asts = Parse_php.parse_program file in
+  let ast = Parse_php.parse_program file in
 
-  (* Annotating variables requires actually a code database because
-   * functions can take variables by reference without any annotation
-   * at the call site (ugly language)
+  (* Annotating variables requires a code database because
+   * functions can take variables by reference without any
+   * annotation at the call site (ugly language). Here
+   * we pass an empty code database though.
    *)
   let entity_finder = None in
-  Check_variables_php.check_and_annotate_program entity_finder asts;
+  Check_variables_php.check_and_annotate_program entity_finder ast;
   Export_ast_php.show_expr_info := true;
-  pr (Export_ast_php.sexp_string_of_program asts);
+  pr (Export_ast_php.sexp_string_of_program ast);
   ()
 
 (*****************************************************************************)
 (* Typing *)
 (*****************************************************************************)
 
-(* todo: use julien's stuff *)
+(* bin/iphp *)
 let test_type_php file =
-  raise Todo
-(*
-  let env = ref (Hashtbl.create 101) in
-  let asts = asts +> List.map (fun ast ->Typing_php.annotate_toplevel env ast)
+  let ast = 
+    Parse_php.parse_program file +> Ast_php_simple_build.program 
   in
-  Export_ast_php.show_expr_info := true;
-  pr (Export_ast_php.sexp_string_of_program asts);
+  let env = { (Env_typing_php.make_env ()) with Env_typing_php.
+    verbose = true;
+    strict = true;
+  } in
+  Builtins_typed_php.make env;
+  Typing_php.add_defs_code_database_and_update_dependencies env ast;
+
+  Typing_php.infer_using_topological_sort_dependencies env;
+  Typing_helpers_php.Print2.penv env;
   ()
-*)
-(*
-  let asts = Parse_php.parse_program file in
-  asts +> List.iter (fun ast ->
-    let xs = Typing_weak_php.extract_fields_per_var ast in
-    pr2_gen xs
-  )
-*)
 
 (*****************************************************************************)
 (* CFG *)
@@ -101,156 +109,12 @@ let test_cyclomatic_php file =
 (*e: test_cyclomatic_php *)
 
 (*****************************************************************************)
-(* PIL *)
-(*****************************************************************************)
-
-let test_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-
-  (* let's transform and print every expression *)
-  let hooks = { V.default_visitor with
-    (* old:
-    V.kexpr = (fun (k, vx) e ->
-      let instrs = Pil_build.linearize_expr e in
-      instrs +> List.iter (fun instr ->
-        pr2 (Pil.string_of_instr instr);
-      );
-    );
-    *)
-    V.kstmt = (fun (k, vx) st ->
-      let stmts = Pil_build.linearize_stmt st in
-      stmts +> List.iter (fun st ->
-        pr2 (Meta_pil.string_of_stmt st)
-      )
-    );
-  } in
-  let v = V.mk_visitor hooks in
-  v (Ast.Program ast)
-*)
-
-let test_pretty_print_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  let v = V.mk_visitor { V.default_visitor with
-    V.kstmt = (fun (k, vx) st ->
-      let stmts = Pil_build.linearize_stmt st in
-      stmts +> List.iter (fun st ->
-        pr2 (Pretty_print_pil.string_of_stmt st)
-      )
-    );
-  } in
-  v (Ast.Program ast)
-*)
-
-let test_cfg_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  ast +> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-         let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
-         let flow = Controlflow_build_pil.cfg_of_stmts pil in
-         Controlflow_pil.display_flow flow;
-      with Controlflow_build_pil.Error err ->
-        Controlflow_build_pil.report_error err
-      )
-  | _ -> ()
-  )
-*)
-
-let test_dataflow_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  ast +> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-         let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
-         let flow = Controlflow_build_pil.cfg_of_stmts pil in
-
-         let reach = Dataflow_pil.reaching_fixpoint flow in
-         let liveness = Dataflow_pil.liveness_fixpoint flow in
-         pr "Reaching:";
-         Dataflow_pil.display_reaching_dflow flow reach;
-         pr "Liveness:";
-         Dataflow_pil.display_liveness_dflow flow liveness
-
-      with Controlflow_build_pil.Error err ->
-        Controlflow_build_pil.report_error err
-      )
-  | _ -> ()
-  )
-*)
-
-(* todo: adapt to PIL *)
-let test_dfg_php file =
-  raise Todo
-(*
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  ast +> List.iter (function
-  | Ast_php.FuncDef def ->
-      (try
-        let flow = Controlflow_build_php.cfg_of_func def in
-        let mapping = Dataflow_php_liveness.liveness_analysis flow in
-        pr2_gen mapping
-        (* Controlflow_php.display_flow flow; *)
-      with Controlflow_build_php.Error err ->
-        Controlflow_build_php.report_error err
-      )
-  | _ -> ()
-  )
-*)
-
-(* collect all variables in a function using the PIL visitor *)
-let test_visitor_pil file =
-  raise Todo
-(*
-  let ast = Parse_php.parse_program file in
-  ast +> List.iter (function
-  | Ast_php.FuncDef def ->
-      let pil = Pil_build.linearize_body (Ast.unbrace def.Ast.f_body) in
-      let funcname = Ast_php.name def.Ast_php.f_name in
-
-      let h = Hashtbl.create 101 in
-      let visitor = Visitor_pil.mk_visitor { Visitor_pil.default_visitor with
-        Visitor_pil.kvar = (fun (k, _) var ->
-          match var with
-          | Pil.Var dname ->
-              let s = Ast_php.dname dname in
-              Hashtbl.replace h s true
-          | _ -> k var
-        );
-      }
-      in
-      visitor (Controlflow_pil.StmtList pil);
-      let vars = Common.hashset_to_list h in
-      pr2 (spf "vars in function %s = %s" funcname (Common.join ", " vars));
-  | _ -> ()
-  )
-*)
-
-(*****************************************************************************)
-(* Simple AST *)
-(*****************************************************************************)
-
-let test_dump_simple file =
-  let ast = Parse_php.parse_program file in
-  let ast = Ast_php_simple_build.program ast in
-  let v = Meta_ast_php_simple.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
-
-(*****************************************************************************)
 (* Abstract interpreter *)
 (*****************************************************************************)
 module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
-(* e.g. ./pfff_fb -test_ia tests/xss/abint.php *)
-let test_abstract_interpreter file =
+
+(* bin/aphp *)
+let test_abstract_interpreter file depth =
   let ast = 
     Ast_php_simple_build.program (Parse_php.parse_program file) in
   let jujudb = 
@@ -263,10 +127,32 @@ let test_abstract_interpreter file =
   Abstract_interpreter_php.extract_paths := false;
   Tracing_php.tracing := true;
   Abstract_interpreter_php.strict := true;
-  Abstract_interpreter_php.max_depth := 1;
+  Abstract_interpreter_php.max_depth := depth;
   let _heap = 
     Interp.program env Env_interpreter_php.empty_heap ast in
   ()
+
+(*****************************************************************************)
+(* Callgraph *)
+(*****************************************************************************)
+module Db = Database_juju_php
+module CG = Callgraph_php2
+
+let test_callgraph_php file =
+  let db = 
+    Db.code_database_of_juju_db  (Db.juju_db_of_files [file]) in
+  let g = Callgraph_php_build.create_graph
+    ~show_progress:false ~strict:true 
+    [file] db
+  in
+  (* todo: could also show a dot? *)
+  g +> Map_poly.iter (fun n1 v ->
+    v +> Set_poly.iter (fun n2 ->
+      pr (spf "%s --> %s"
+             (CG.string_of_node n1) (CG.string_of_node n2));
+    )
+  )
+
 
 (*****************************************************************************)
 (* Includes *)
@@ -287,7 +173,16 @@ let test_include_require file =
   ()
 
 (*****************************************************************************)
-(* Misc *)
+(* Prolog *)
+(*****************************************************************************)
+(* bin/pphp *)
+let test_prolog_php file query =
+  let xs = 
+    Database_prolog_php.prolog_query ~verbose:true ~source_file:file ~query in
+  pr2_gen xs
+
+(*****************************************************************************)
+(* Stat *)
 (*****************************************************************************)
 
 let test_stat_php xs =
@@ -300,7 +195,7 @@ let test_stat_php xs =
     try 
       let ast = Parse_php.parse_program file in
       h#update "parsing correct" (fun x -> x + 1);
-      Statistics_php.stat2_of_program h ast;
+      Statistics_php.stat_of_program h file ast;
       ()
       
     with Parse_php.Parse_error (_) ->
@@ -315,12 +210,15 @@ let test_stat_php xs =
   h#to_list +> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
   ()
 
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
 let test_unsugar_php file = 
   let ast = Parse_php.parse_program file in
   let ast = Unsugar_php.unsugar_self_parent_program ast in
   let s = Export_ast_php.ml_pattern_string_of_program ast in
   pr2 s
-
 
 (*****************************************************************************)
 (* External tools cooperation *)
@@ -419,13 +317,13 @@ let test_php_serialize file =
 
 (* Note that other files in this directory define some cmdline actions:
  *  - database_php_build.ml
- *
  *)
-
 let actions () = [
+  "-dump_php_simple", "   <file>",
+  Common.mk_action_1_arg test_dump_simple;
+
   "-scope_php", " <file>",
   Common.mk_action_1_arg test_scope_php;
-
   "-type_php", " <file>",
   Common.mk_action_1_arg test_type_php;
 
@@ -436,17 +334,12 @@ let actions () = [
     "-cyclomatic_php", " <file>",
     Common.mk_action_1_arg test_cyclomatic_php;
   (*e: test_analyze_php actions *)
-
-  (* todo: adapt to PIL *)
-  "-dfg_php",  " <file>",
-    Common.mk_action_1_arg test_dfg_php;
-
-  "-dump_php_simple", "   <file>",
-  Common.mk_action_1_arg test_dump_simple;
-  "-test_ia", " <file>",
-  Common.mk_action_1_arg test_abstract_interpreter;
+  "-callgraph_php", "   <file>",
+  Common.mk_action_1_arg test_callgraph_php;
 
 (*
+  "-dfg_php",  " <file>",
+    Common.mk_action_1_arg test_dfg_php;
     "-test_pil",  " <file>",
     Common.mk_action_1_arg test_pil;
     "-test_pretty_print_pil", " <file>",
@@ -459,30 +352,40 @@ let actions () = [
     Common.mk_action_1_arg test_visitor_pil;
 *)
 
+  "-ia_php", " <file> <depth>",
+  Common.mk_action_1_arg (fun file ->
+    test_abstract_interpreter file 6
+  );
+  "-ia_php_depth", " <file> <depth>",
+  Common.mk_action_2_arg (fun file n ->
+    test_abstract_interpreter file (int_of_string n)
+  );
+
+  "-prolog_php", " <file> <query>",
+  Common.mk_action_2_arg (fun file query ->
+    test_prolog_php file query;
+  );
+
+  "-stat_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_stat_php;
+
+  "-include_require_static", " <file>",
+  Common.mk_action_1_arg test_include_require;
+  "-unsugar_php", " <file>",
+  Common.mk_action_1_arg test_unsugar_php;
 
   "-php_xdebug", " <file>",
   Common.mk_action_1_arg test_php_xdebug;
   "-type_xdebug_php", " <file>",
   Common.mk_action_1_arg test_type_xdebug_php;
-
+  "-parse_xdebug_dumpfile", " <dumpfile>",
+  Common.mk_action_1_arg test_xdebug_dumpfile;
+  "-parse_phpunit_json", " <jsonfile>",
+  Common.mk_action_1_arg test_parse_phpunit_json;
   "-test_phpdoc", " <dir>",
   Common.mk_action_1_arg test_phpdoc;
   "-test_php_serialize", " <file>",
   Common.mk_action_1_arg test_php_serialize;
-
-  "-parse_xdebug_dumpfile", " <dumpfile>",
-  Common.mk_action_1_arg test_xdebug_dumpfile;
-
-  "-parse_phpunit_json", " <jsonfile>",
-  Common.mk_action_1_arg test_parse_phpunit_json;
-
-  "-include_require_static", " <file>",
-  Common.mk_action_1_arg test_include_require;
-
-  "-stat_php", " <files_or_dirs>",
-  Common.mk_action_n_arg test_stat_php;
-  "-unsugar_php", " <file>",
-  Common.mk_action_1_arg test_unsugar_php;
 ]
 
 (*e: test_analyze_php.ml *)

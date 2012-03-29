@@ -509,7 +509,7 @@ let info_of_category = function
   | NoType ->    [`BACKGROUND "DimGray"]
   | Passed ->    [`BACKGROUND "DarkSlateGray4"]
   | Expanded ->  [`BACKGROUND "red"]
-  | Error ->  [`BACKGROUND "red2"]
+  | Error ->     [`BACKGROUND "red2"]
 
 
  (* a flashy one that hurts the eye :) *) 
@@ -562,21 +562,21 @@ let info_of_category = function
 
   (* defs *)
   | Function (Def2 _) -> [`FOREGROUND "gold"; 
-                    `WEIGHT `BOLD;
-                    `STYLE `ITALIC; 
-                    `SCALE `MEDIUM;
-                   ]
+                          `WEIGHT `BOLD;
+                          `STYLE `ITALIC; 
+                          `SCALE `MEDIUM;
+                         ]
 
   | FunctionDecl (_) -> [`FOREGROUND "gold2"; 
-                    `WEIGHT `BOLD;
-                    `STYLE `ITALIC; 
-                    `SCALE `MEDIUM;
-                   ]
+                         `WEIGHT `BOLD;
+                         `STYLE `ITALIC; 
+                         `SCALE `MEDIUM;
+    ]
   | Macro (Def2 _) -> [`FOREGROUND "gold"; 
-                 `WEIGHT `BOLD;
-                 `STYLE `ITALIC; 
-                 `SCALE `MEDIUM;
-                   ]
+                       `WEIGHT `BOLD;
+                       `STYLE `ITALIC; 
+                       `SCALE `MEDIUM;
+    ]
 
   | Global (Def2 _) ->   
       [`FOREGROUND "cyan"; 
@@ -687,10 +687,7 @@ let info_of_category = function
   (* | FunCallMultiDef ->[`FOREGROUND "LightGoldenrod";] *)
 
   | Method (Use2 _) -> 
-      [`FOREGROUND "gold3";
-       `WEIGHT `BOLD; 
-       `SCALE `XX_LARGE;
-      ]
+      [`FOREGROUND "gold3";]
 
   | Method (Def2 _) -> 
       [`FOREGROUND "gold3";

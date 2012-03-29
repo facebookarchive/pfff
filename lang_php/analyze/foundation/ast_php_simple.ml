@@ -42,11 +42,15 @@
  *  - some builtins, for instance echo are transformed in "__builtin__echo".
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
- *  - a simpler expr type; no lvalue vs expr vs static_scalar,
- *    no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
+ *  - a simpler expr type; no lvalue vs expr vs static_scalar
+ * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
  *    of lots of duplication in many constructors
- *  - a simpler name; identifiers, xhp names, variables are unified.
+ *  - a simpler name; identifiers, xhp names, variables are unified
+ *    (not a good idea retrospectively, cos it forces in many places
+ *     anyway to do some s =~ "$.*")
+ *  - there is no include/require, they are transformed in call
+ *    to __builtin__require (not sure it's a good idea)
  *  - ...
  *
  * todo: factorize more? string vs Guil vs xhp?
@@ -56,10 +60,11 @@
 (* The AST related types *)
 (*****************************************************************************)
 
-(* To get position information for certain elements in the AST 
- * Can be None when want to optimize things and have a very
+(* The wrap is to get position information for certain elements in the AST.
+ * Can be None when we want to optimize things and have a very
  * small marshalled AST. See Ast_php_simple.build.store_position flag.
- * todo? does it really speedup things?
+ * Right now with None the marshalled AST for www is 190MB instead of 
+ * 380MB.
  *)
 type 'a wrap = 'a * Ast_php.tok option
 
@@ -141,7 +146,7 @@ and expr =
 
   (* pad: could perhaps be at the statement level? *)
   | Assign of Ast_php.binaryOp option * expr * expr
-  (* really a destructuring tuple let always used in an Assign *)
+  (* really a destructuring tuple let; always used in an Assign *)
   | List of expr list
 
   | Call of expr * expr list
@@ -153,6 +158,7 @@ and expr =
   | Unop of Ast_php.unaryOp * expr
   | Guil of expr list
 
+  (* $y =& $x is transformed into an Assign(Id "$y", Ref (Id "$x")) *)
   | Ref of expr
 
   | ConsArray of array_value list
@@ -205,7 +211,7 @@ and func_def = {
      p_default: expr option;
    }
 
-   (* todo: add the generic types of sphp *)
+   (* todo: add the generics of sphp? *)
    and hint_type =
      | Hint of string
      | HintArray
@@ -218,8 +224,9 @@ and constant_def = {
 
 and class_def = {
   c_type: class_type;
+  (* for XHP classes it's x:frag (and not :x:frag), see string_of_xhp_tag *)
   c_name: string wrap;
-  c_extends: string list; (* pad: ?? *)
+  c_extends: string list; (* pad: ?? string option no? *)
   c_traits: string wrap list;
   c_implements: string list;
 

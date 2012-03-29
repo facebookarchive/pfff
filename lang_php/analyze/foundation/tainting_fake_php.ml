@@ -2,9 +2,12 @@ open Env_interpreter_php
 
 module Taint = struct
     let taint_mode = ref false
-
     let taint_expr a b c d e = failwith "taint_expr: Todo"
 
+    (* If one thing is tainted, then the whole thing is tainted. 
+     * todo: if got a single element, can return a precise Vstring
+     * instead of a Vabstr Tstring
+     *)
     let fold_slist sl =
       List.fold_left (fun acc x ->
         match x with
