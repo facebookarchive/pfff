@@ -2,18 +2,18 @@
 type parse_info = {
     str: string;
     charpos: int;
-
-    line: int;
-    column: int;
+    line: int; column: int;
     file: Common.filename;
-  } 
+} 
 
 type info = {
   (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
+   * the Common.parse_info embedded inside the token type.
    *)
   mutable token: token; 
-  mutable comments: unit; (* TODO *)
+  (* TODO? *)
+  mutable comments: unit; 
+  (* for spatch *)
   mutable transfo: transformation;
 }
 
@@ -39,7 +39,6 @@ type posrv =
   | Virt of 
       parse_info (* last real info before expanded tok *) * 
       int (* virtual offset *)
-
 
 
 (* see also type filepos = { l: int; c: int; } in common.mli *)
@@ -109,6 +108,9 @@ val col_of_info: info -> int
 val file_of_info: info -> Common.filename
 val pos_of_info: info -> int
 val pinfo_of_info: info -> token
+
+(* small error reporting, for longer reports use error_message above *)
+val string_of_info: info -> string
 
 val is_origintok: info -> bool
 

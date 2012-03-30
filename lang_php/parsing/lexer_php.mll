@@ -578,7 +578,7 @@ rule st_in_scripting = parse
         
         let syminfo = rewrap_str sym info in
 
-        let parse_info = Ast.parse_info_of_info info in
+        let parse_info = Parse_info.parse_info_of_info info in
         let pos_after_sym   = 
           parse_info.Parse_info.charpos + String.length sym in
         let pos_after_white = pos_after_sym + String.length white in

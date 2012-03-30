@@ -848,7 +848,6 @@ type any =
 (* AST helpers *)
 (*****************************************************************************)
 (*s: AST helpers interface *)
-val parse_info_of_info : tok -> Parse_info.parse_info
 (*x: AST helpers interface *)
 val pinfo_of_info : tok -> Parse_info.token
 (*x: AST helpers interface *)
