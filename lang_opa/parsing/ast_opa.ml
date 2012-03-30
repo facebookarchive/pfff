@@ -23,7 +23,7 @@ open Common
  * This is the best I have right now to make sense of OPA.
  * 
  * An alternative would be to take surfaceAst.ml and the generated
- * parser in opalang/, but those files have too many dependencies.
+ * parser in opalang/, but those files have so many dependencies ...
  *)
 
 (*****************************************************************************)
