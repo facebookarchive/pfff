@@ -961,24 +961,20 @@ let unmodifiers class_vars =
 
 (*x: ast_php.ml *)
 (*x: ast_php.ml *)
-let parse_info_of_info = Parse_info.parse_info_of_info
 (*x: ast_php.ml *)
+let str_of_info x = Parse_info.str_of_info x
+let col_of_info x = Parse_info.col_of_info x
+let line_of_info x = Parse_info.line_of_info x
 (* todo: return a Real | Virt position ? *)
-let pos_of_info  ii = (parse_info_of_info ii).Parse_info.charpos
-
-let str_of_info  ii = (parse_info_of_info ii).Parse_info.str 
-let file_of_info ii = (parse_info_of_info ii).Parse_info.file
-let line_of_info ii = (parse_info_of_info ii).Parse_info.line
-let col_of_info  ii = (parse_info_of_info ii).Parse_info.column
+let pos_of_info x = Parse_info.pos_of_info x
+let file_of_info x = Parse_info.file_of_info x
 (*x: ast_php.ml *)
 let pinfo_of_info = Parse_info.pinfo_of_info
 (*x: ast_php.ml *)
 let rewrap_str = Parse_info.rewrap_str
 (*x: ast_php.ml *)
 (* for error reporting *) 
-let string_of_info ii = 
-  Parse_info.string_of_parse_info (parse_info_of_info ii)
-
+let string_of_info x = Parse_info.string_of_info x
 let is_origintok = Parse_info.is_origintok
 
 type posrv = Parse_info.posrv

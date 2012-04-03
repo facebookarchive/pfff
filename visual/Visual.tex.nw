@@ -164,6 +164,7 @@ Yoann Padioleau\\
  * That's lots of features. In a way tools like Powerpoint also provide
  * multiple displays on the same data and with zoomable slides, global
  * view on the set of slides, slides thumnails, etc.
+
  *)
 
 \end{verbatim}
@@ -177,6 +178,13 @@ can copy also what is inside Treemap.tex.nw
 %later: integrate more artifacts. See vision.txt
 
 whole program visualization. To actually see the architecture.
+\end{verbatim}
+
+\begin{verbatim}
+%It also abstract away like PofFS how you organize your information.
+If have one big test file or many small test files for instance,
+then it does not matter, you can see all of the information at once
+as it was a giant tiling plane.
 \end{verbatim}
 
 Note that this is not a replacement for Emacs or Vi, but more a

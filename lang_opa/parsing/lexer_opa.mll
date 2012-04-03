@@ -70,6 +70,7 @@ let keyword_table = Common.hash_of_list [
   "default",  (fun ii -> Tdefault ii); (* js syntax *)
 
   "do", (fun ii -> Tdo ii); (* classic syntax *)
+  (* todo? return? *)
 
   "function", (fun ii -> Tfunction ii); (* js syntax *)
   "or", (fun ii -> Tor ii); (* js syntax *)

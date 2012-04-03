@@ -224,7 +224,7 @@ let string_of_error_kind error_kind =
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
   (* todo? use severity? *)
-  let info = Ast.parse_info_of_info error.loc in
+  let info = Parse_info.parse_info_of_info error.loc in
   spf "%s:%d:%d: CHECK: %s" 
     info.Parse_info.file info.Parse_info.line info.Parse_info.column
     (string_of_error_kind error.typ)

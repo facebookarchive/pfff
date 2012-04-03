@@ -12,23 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_ml
-(*module V = Visitor_ml *)
 module Ast = Ast_ml
-
 module Tags = Tags_file
 module Db = Database_code
-
 open Highlight_code
-
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Alternatives:
  *  - otags, but does not work very well recursively as it groks easily
@@ -51,18 +45,20 @@ let tag_of_name filelines name =
 let defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
 
-  files +> List.map (fun file ->
-    if verbose then pr2 (spf "processing: %s" file);
-    let (ast2, _stat) = 
-      Common.save_excursion Flag_parsing_ml.error_recovery true (fun() ->
-        Parse_ml.parse file 
-      ) in
-  
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.map (fun file ->
+    k();
+     let (ast2) = 
+       try 
+         Common.save_excursion Flag_parsing_ml.show_parsing_error false(fun()->
+           Parse_ml.parse file +> fst
+         )
+       with Parse_ml.Parse_error pos ->
+         pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
+         []
+     in
     let filelines = Common.cat_array file in
-
     let defs = ref [] in
-    (*let current_class = ref "" in*)
-
     let h = Hashtbl.create 101 in
 
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
@@ -77,7 +73,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       ;
 
       (* processing the tokens in order *)
-      toks |> List.iter (fun tok -> 
+      toks +> List.iter (fun tok -> 
 
         let info = Token_helpers_ml.info_of_tok tok in
         let s = Token_helpers_ml.str_of_tok tok in
@@ -179,5 +175,5 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       
     let defs = List.rev (!defs) in
     (file, defs)
-  )
+  ))
   
