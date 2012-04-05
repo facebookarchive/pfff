@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_ml
@@ -23,7 +22,6 @@ module T = Parser_ml
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Light database building for OCaml code (mainly used by the codemap
  * semantic code visualizer).
  *
@@ -31,7 +29,7 @@ module T = Parser_ml
  * operations need the information computed globally by the
  * previous step:
  * 
- * - collect all definitions and their file
+ * - collect all definitions and their files
  * - collect all uses, updating the count number of the
  *   corresponding entity (if it's used in a different file)
  *   as well as the entity->test_files_using_it hash.
@@ -114,6 +112,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
 
   (* PHASE 1: collecting definitions *)
+  if verbose then pr2 (spf "PHASE 1: collecting definitions");
 
   let (hdefs: (string, Db.entity) Hashtbl.t) = Hashtbl.create 1001 in
 
@@ -130,10 +129,12 @@ let compute_database ?(verbose=false) files_or_dirs =
   let (hfile_to_entities: (filename, entity_poor_id) Hashtbl.t) = 
     Hashtbl.create 1001 in
 
-  files +> List.iter (fun file ->
-    if verbose then pr2 (spf "PHASE 1: %s" file);
-
-    let (ast2, _stat) = parse file in
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
+    k();
+    let (ast2, _stat) = 
+      parse file 
+    in
 
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
       let prefs = Highlight_code.default_highlighter_preferences in
@@ -204,11 +205,11 @@ let compute_database ?(verbose=false) files_or_dirs =
         )
         prefs
         (ast, toks)
-      ;
-    );
-  );
+    )
+  ));
 
   (* PHASE 2: collecting uses *)
+  if verbose then pr2 (spf "PHASE 2: collecting uses");
 
   let entities_arr = 
     Common.hash_to_list hdefs +> List.map snd +> Array.of_list
@@ -255,9 +256,9 @@ let compute_database ?(verbose=false) files_or_dirs =
   in
 
 
-  files +> List.iter (fun file ->
-    if verbose 
-    then pr2 (spf "PHASE 2: %s" file);
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
+    k ();
 
     if file =~ ".*external/" && 
       (* I don't really want pleac files to participate in the
@@ -281,7 +282,6 @@ let compute_database ?(verbose=false) files_or_dirs =
     let hmodule_aliases = Hashtbl.create 11 in
 
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
-
       let toks = toks +> Common.exclude (function
         | T.TCommentSpace _ -> true
         | _ -> false
@@ -340,9 +340,11 @@ let compute_database ?(verbose=false) files_or_dirs =
       aux_toks toks;
     )
     end
-  );
+  ));
 
   (* PHASE 3: adjusting entities *)
+  if verbose then pr2 (spf "PHASE 3: adjusting entities");
+
   entities_arr +> Array.iter (fun e ->
     let ids = e.Db.e_good_examples_of_use in
     e.Db.e_good_examples_of_use <- 
