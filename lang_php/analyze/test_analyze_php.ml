@@ -124,10 +124,13 @@ let test_abstract_interpreter file depth =
   let env = 
     Env_interpreter_php.empty_env db file in
 
-  Abstract_interpreter_php.extract_paths := false;
   Tracing_php.tracing := true;
+  Abstract_interpreter_php.extract_paths := false;
+
   Abstract_interpreter_php.strict := true;
   Abstract_interpreter_php.max_depth := depth;
+  Abstract_interpreter_php.show_vardump := true;
+
   let _heap = 
     Interp.program env Env_interpreter_php.empty_heap ast in
   ()
