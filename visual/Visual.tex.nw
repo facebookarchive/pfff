@@ -185,6 +185,7 @@ whole program visualization. To actually see the architecture.
 If have one big test file or many small test files for instance,
 then it does not matter, you can see all of the information at once
 as it was a giant tiling plane.
+So poffs is a kind of a precursor to codemap :)
 \end{verbatim}
 
 Note that this is not a replacement for Emacs or Vi, but more a
