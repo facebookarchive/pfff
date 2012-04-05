@@ -363,8 +363,16 @@ let m_name_metavar_ok a b =
        B.Name(b1)
     )
     )
-  | A.XhpName(a1), B.XhpName(b1) ->
+  | A.XhpName([name], info_name), B.XhpName(b1) 
+      when MV.is_metavar_name name ->
 
+      X.envf (name, info_name) (B.Name2 b) >>= (function
+      | ((name, info_name), B.Name2 (b))  ->
+        return (A.XhpName([name], info_name), b)
+      | _ -> raise Impossible
+      )
+
+  | A.XhpName(a1), B.XhpName(b1) ->
     (m_wrap (m_list m_string)) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.XhpName(a1),
@@ -1523,6 +1531,29 @@ and m_xhp_tag a b =
   match a, b with
   (a, b) -> (m_list m_string) a b
 
+and m_wrap_m_xhp_tag a b =
+  m_name_metavar_ok (A.XhpName a) (B.XhpName b) >>= (function
+  | (A.XhpName a), (B.XhpName b) -> return (a, b)
+  | _ -> raise Impossible
+  )
+
+and m_wrap_m_option_m_xhp_tag (a,toka) (b, tokb) =
+  match a, b with
+  | None, None -> m_info toka tokb >>= (fun (toka, tokb) ->
+      return ((a, toka), (b, tokb))
+    )
+  | Some a1, Some b1 ->
+      m_wrap_m_xhp_tag (a1, toka) (b1, tokb) >>= (fun ((a1,toka), (b1,tokb)) ->
+        return ((Some a1, toka), (Some b1, tokb))
+      )
+  (* todo: should be ok to use </> instead of explicit tag *)
+  | None, Some _
+  | Some _, None ->
+      fail ()
+
+
+       
+
 and iso_m_list_m_xhp_body a b =
   match a with
   (* iso-by-absence: it's ok to have an empty body in the pattern *)
@@ -1585,11 +1616,11 @@ and iso_m_list_m_xhp_attribute a b =
 and m_xhp_html a b = 
   match a, b with
   | A.Xhp(a1, a2, a3, a4, a5), B.Xhp(b1, b2, b3, b4, b5) ->
-    (m_wrap m_xhp_tag) a1 b1 >>= (fun (a1, b1) -> 
+    (m_wrap_m_xhp_tag) a1 b1 >>= (fun (a1, b1) -> 
     (iso_m_list_m_xhp_attribute) a2 b2 >>= (fun (a2, b2) -> 
     m_tok a3 b3 >>= (fun (a3, b3) -> 
     (iso_m_list_m_xhp_body) a4 b4 >>= (fun (a4, b4) -> 
-    (m_wrap (m_option m_xhp_tag)) a5 b5 >>= (fun (a5, b5) -> 
+    m_wrap_m_option_m_xhp_tag a5 b5 >>= (fun (a5, b5) -> 
 
     return (
        A.Xhp(a1, a2, a3, a4, a5),

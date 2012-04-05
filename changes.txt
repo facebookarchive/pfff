@@ -10,14 +10,17 @@ basic support
 
 ** introduce type inference for PHP (julien)
 
-** sgrep_php/spatch_php
-case insensitive mode by default
+** sgrep:
+
+*** case insensitive mode by default
+
+*** metavariables for XHP tags
 
 ** internals
 
-*** refactored lang_php/analysis/, less error messages, progress meter,
-split files, each PHP database has its own file, refactored
-abstract interpreter.
+*** refactored lang_php/analysis/
+less error messages, progress meter, split files, each PHP database
+has its own file, refactored abstract interpreter, etc.
 
 * -----------------------------------------------------------
 
