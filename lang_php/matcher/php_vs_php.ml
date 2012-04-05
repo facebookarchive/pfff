@@ -343,7 +343,7 @@ let m_name_metavar_ok a b =
   match a, b with
 
   (* iso on name *)
-  | A.Name(name, info_name), B.Name(b1)
+  | A.Name(name, info_name), (B.Name _ | B.XhpName _)
       when MV.is_metavar_name name ->
 
       X.envf (name, info_name) (B.Name2 b) >>= (function

@@ -223,7 +223,7 @@
        (2 " -e foo(X,X) /home/pad/pfff/tests/sgrep/linear_pattern.php")
        (3 " -find_run_once_pattern tests/sgrep/run_once_pattern.php ")
        (4 " -f /home/pad/pfff/tests/php/sgrep/foreach.sgrep /home/pad/pfff/tests/php/sgrep/foreach.php")
-       (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar.php")
+       (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar2.php")
        (10 "-test")
        )
      )
