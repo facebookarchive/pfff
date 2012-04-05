@@ -122,6 +122,7 @@ function save_command_run(command_name cmd, option(RPC.Json.json) json) {
         entry = { unixname: s1, extra_args: s2, date: now }
         /counter <- /counter + 1;
         //old: slow  /db1[cmd] <- [ entry | /db1[cmd] ];
+        //todo: apparently you can also do /db1[cmd] <+ entry;
         /db1[cmd][Date.in_milliseconds(now)] <- entry;
         {success}
       default:
