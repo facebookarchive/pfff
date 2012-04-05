@@ -411,6 +411,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     | T.TIdent(("true" | "false"), ii) -> 
         tag ii Boolean
+    | T.TIdent(("none"), ii) -> 
+        tag ii Null
+
     | T.TInt (s,ii) | T.TFloat (s,ii) ->
         tag ii Number
     | T.TGUIL ii | T.T_ENCAPSED (_, ii) ->
@@ -429,7 +432,8 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 (* FPs because sometimes used as a function name, as in Random.string 
     | T.TIdent("string", ii) -> tag ii TypeMisc
 *)
-    | T.TIdent(("list" | "option" | "intmap" | "stringmap"), ii) -> tag ii TypeMisc
+    | T.TIdent(("list" | "option" | "either" | "intmap" | "stringmap"), ii) -> 
+        tag ii TypeMisc
     | T.TIdent("void", ii) -> tag ii TypeVoid
 
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt

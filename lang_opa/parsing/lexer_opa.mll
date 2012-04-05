@@ -119,6 +119,7 @@ let keyword_table = Common.hash_of_list [
    * 
    * true, false
    * nil
+   * none
    *)
 ]
 
