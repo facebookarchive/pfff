@@ -22,14 +22,20 @@ SRC= flag_parsing_cpp.ml \
      parsing_recovery_cpp.ml parsing_consistency_cpp.ml \
      parse_cpp.ml \
      pp_ast.ml \
-     test_parsing_cpp.ml \
+     test_parsing_cpp.ml unit_parsing_cpp.ml \
 
 SYSLIBS= str.cma unix.cma 
+
+# globals.cma is used only for Config. in unit_parse_cpp
 LIBS=$(TOP)/commons/commons.cma \
-   $(TOP)/h_program-lang/lib.cma
+ $(TOP)/globals/globals.cma \
+ $(TOP)/h_program-lang/lib.cma
+
 INCLUDEDIRS= \
- $(TOP)/commons $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
-  $(TOP)/h_program-lang
+ $(TOP)/commons $(TOP)/commons/ocamlextra \
+ $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
+ $(TOP)/globals \
+ $(TOP)/h_program-lang
 
 ##############################################################################
 # Generic variables

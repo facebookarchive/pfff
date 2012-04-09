@@ -280,6 +280,8 @@ let init_defs file =
   pr2 (spf "Using %s macro file" file);
   _defs := Common.hash_of_list (extract_macros file)
 
+exception Parse_error of Parse_info.info
+
 (* 
  * note: as now we go in two passes, there is first all the error message of
  * the lexer, and then the error of the parser. It is not anymore
@@ -340,17 +342,22 @@ let parse2 ?(c=false) file =
           (* -------------------------------------------------- *)
           Parser.celem (lexer_function tr) lexbuf_fake
         with e -> 
+
+          if not !Flag.error_recovery 
+          then raise (Parse_error (TH.info_of_tok tr.PI.current));
+
           begin
-            (match e with
-            (* Lexical is not anymore launched I think *)
-            | Lexer.Lexical s -> 
+            if !Flag.show_parsing_error then
+              (match e with
+              (* Lexical is not anymore launched I think *)
+              | Lexer.Lexical s -> 
                 pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
-            | Parsing.Parse_error -> 
+              | Parsing.Parse_error -> 
                 pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
-            | Semantic.Semantic (s, i) -> 
+              | Semantic.Semantic (s, i) -> 
                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
-            | e -> raise e
-            );
+              | e -> raise e
+              );
 
             let line_error = TH.line_of_tok tr.PI.current in
 
