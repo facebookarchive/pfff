@@ -38,13 +38,25 @@ let unittest =
         Common.glob (spf "%s/*.cpp" dir) ++ Common.glob (spf "%s/*.h" dir) in
       files +> List.iter (fun file ->
         try
-          let _ast = Parse_cpp.parse_program file in
+          let _ast = parse file in
           ()
         with Parse_cpp.Parse_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
 
+    "rejecting bad code" >:: (fun () ->
+      let dir = Filename.concat Config.path "/tests/cpp/parsing_errors" in
+      let files = 
+        Common.glob (spf "%s/*.cpp" dir) in
+      files +> List.iter (fun file ->
+        try 
+          let _ast = parse file in
+          assert_failure (spf "it should have thrown a Parse_error %s" file)
+        with Parse_cpp.Parse_error _ ->
+          ()
+      )
+    );
     (*-----------------------------------------------------------------------*)
     (* Misc *)
     (*-----------------------------------------------------------------------*)

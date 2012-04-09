@@ -5,5 +5,3 @@
  *)
 val unittest: OUnit.test
 
-val actions : unit -> Common.cmdline_actions
-

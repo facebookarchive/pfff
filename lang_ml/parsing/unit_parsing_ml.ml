@@ -70,11 +70,3 @@ module A = Foo2
       )
     );
   ]
-
-(*****************************************************************************)
-(* Main entry for Arg *)
-(*****************************************************************************)
-let actions () = [
-    "-unittest_parsing_ml", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
-]

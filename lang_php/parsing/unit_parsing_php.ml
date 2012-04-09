@@ -1,11 +1,9 @@
 (*s: unit_parsing_php.ml *)
 open Common
+open OUnit
 
 open Ast_php
 module Ast = Ast_php
-
-open OUnit
-
 module Flag = Flag_parsing_php
 
 (*****************************************************************************)
@@ -222,12 +220,4 @@ let unittest =
    *  - ? correctness of Ast (too many cases)
    *)
   ]
-
-(*****************************************************************************)
-(* Main entry for Arg *)
-(*****************************************************************************)
-let actions () = [
-    "-unittest_parsing", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
-]
 (*e: unit_parsing_php.ml *)
