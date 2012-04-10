@@ -75,8 +75,8 @@ define('MCC_DELETE_ERROR_NOLOG', 0);
 define('PHPMCC_NEW_HANDLE', 0);
 define('PHPMCC_USED_FAST_PATH', 0);
 define('PHPMCC_USED_SLOW_PATH', 0);
-//pad: defined already
-//define('PHPMCC_VERSION', 0);
+//pad: used to be defined in flib/core/memcache/client/memcache.php
+define('PHPMCC_VERSION', 0);
 class phpmcc {
 const IPPROTO_TCP = 0;
 const IPPROTO_UDP = 0;
