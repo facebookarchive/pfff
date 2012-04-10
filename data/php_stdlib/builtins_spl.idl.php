@@ -8,6 +8,7 @@ function hphp_get_call_info($cls, $func) { }
 function hphp_get_call_info_extra($cls, $func) { }
 function class_implements($obj, $autoload = true) { }
 function class_parents($obj, $autoload = true) { }
+function class_uses($obj, $autoload = true) { }
 function iterator_apply($obj, $func, $params = null_array) { }
 function iterator_count($obj) { }
 function iterator_to_array($obj, $use_keys = true) { }
