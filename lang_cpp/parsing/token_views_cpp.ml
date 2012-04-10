@@ -696,17 +696,20 @@ let rec set_in_other xs =
   (* struct/union/class x : ... { } *)
   | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
     ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
-      
-      let (before, elem, after) = Common.split_when is_braceised xs in
-      (match elem with 
-      | Braceised(body, tok1, tok2) -> 
-          body +> List.iter (iter_token_brace (fun tok -> 
-            tok.where <- InInitializer::tok.where;
-          ));
-          set_in_other after
-      | _ -> raise Impossible
+
+      (try 
+        let (before, elem, after) = Common.split_when is_braceised xs in
+        (match elem with 
+        | Braceised(body, tok1, tok2) -> 
+            body +> List.iter (iter_token_brace (fun tok -> 
+              tok.where <- InInitializer::tok.where;
+            ));
+            set_in_other after
+        | _ -> raise Impossible
+        )
+      with Not_found ->
+        pr2 ("PB: could not find braces after struct/union/class x : ...");
       )
-          
 
   (* = { } *)
   | BToken ({t=TEq _; _})
