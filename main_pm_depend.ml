@@ -2,14 +2,12 @@
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
  *)
-
 open Common
 
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
-(* A module/package dependency visualizer generating data for 
+(* A module/package dependency visualizer generating data for
  * different graph visualizer (e.g. gephi, guess).
  * 
  * todo? have a backend for graphviz?
@@ -74,7 +72,6 @@ let to_gdf g ~str_of_node ~output =
     let nodes = G.nodes g in
     let pr s = pr_no_nl (s ^ "\n") in
 
-    
     let node_name_of_n n =
       let s = str_of_node n in
       let (d,b,e) = Common.dbe_of_filename_noext_ok s in
@@ -242,16 +239,18 @@ let all_actions () =
 
 let options () = 
   [
-    "-with_extern", Arg.Set with_extern,
-    " includes external references";
-    "-package_mode", Arg.Set_int package_depth,
-    " <n> project at depth n";
-    "-verbose", Arg.Set verbose, 
-    " ";
     "-lang", Arg.Set_string lang, 
     (spf " <str> choose language (default = %s)" !lang);
     "-o", Arg.Set_string output_file, 
     (spf " <file> default = %s" !output_file);
+
+    "-with_extern", Arg.Set with_extern,
+    " includes external references";
+    "-package_mode", Arg.Set_int package_depth,
+    " <n> project at depth n";
+
+    "-verbose", Arg.Set verbose, 
+    " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
@@ -262,14 +261,7 @@ let options () =
       exit 0;
     ), 
     "  guess what";
-    (* this can not be factorized in Common *)
-    "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2011/09/01 00:44:57 $";
-      raise (Common.UnixExit 0)
-    ), 
-    "   guess what";
-  ] ++
-  []
+  ]
 
 (*****************************************************************************)
 (* Main entry point *)
