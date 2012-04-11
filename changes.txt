@@ -1,12 +1,14 @@
 -*- org -*-
 
-* 0.19 (Q1 2012) (pfff_logger, ??)
+* 0.20 (Q2 2012) (??)
 
-** introduce lang_opa
-basic support
+* 0.19 (Q1 2012) (pfff_logger)
 
 ** introduce pfff_logger (in OPA), monitoring the use of pfff tools
 (please rerun ./configure if you have compilation pbs)
+
+** introduce lang_opa
+basic support
 
 ** introduce type inference for PHP (julien)
 
@@ -17,6 +19,8 @@ basic support
 *** metavariables for XHP tags
 
 ** internals
+
+*** heavily commented abstract interpreter and type inference
 
 *** refactored lang_php/analysis/
 less error messages, progress meter, split files, each PHP database
