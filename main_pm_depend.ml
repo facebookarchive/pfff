@@ -15,6 +15,12 @@ open Common
  *
  * usage: 
  *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/to/dir
+ * 
+ * 
+ * related work:
+ *  - http://mcis.polymtl.ca/~bram/makao/index.html
+ *    also use GUESS and prolog :)
+ *  - google search images: dependency+graph+visualization
  *)
 
 (*****************************************************************************)
