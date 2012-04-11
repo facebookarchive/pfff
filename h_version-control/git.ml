@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  * 
  * Copyright (C) 2009 Yoann Padioleau
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Lib_vcs 
@@ -51,9 +50,19 @@ let ext_git_annot_cache = ".git_annot"
  * 
  * todo: walking of the parent (subject to GIT_CEILING_DIRS)
  *)
-
 let is_git_repository basedir =
   Version_control.detect_vcs_source_tree basedir =*= Some (Version_control.Git)
+
+let find_root_from_absolute_path file =
+  let xs = Common.split "/" (Common.dirname file) in
+  let xxs = Common.inits xs in
+  xxs +> List.rev +> Common.find_some (fun xs ->
+    let dir = "/" ^ Common.join "/" xs in
+    let gitdir = Filename.concat dir ".git" in
+    if Sys.file_exists gitdir
+    then Some dir
+    else None
+  )
 
 let cleanup_cache_files dir = 
   let cache_ext = [ext_git_annot_cache] in
@@ -81,7 +90,8 @@ let exec_cmd ~basedir s =
   let cmd = Lib_vcs.goto_dir basedir^ s in
   pr2 (spf "executing: %s" s);
   let ret = Sys.command cmd in
-  if (ret <> 0) then failwith "pb with command"
+  if (ret <> 0) 
+  then failwith ("pb with command: " ^ s)
 
 (*****************************************************************************)
 (* Single file operations, "command output binding" *)
@@ -95,7 +105,6 @@ move of lines in same file or accross file in same commit.
 does git annotate follow rename ?
 
 *)
-
 let annotate_regexp = 
   "^\\([A-Za-z0-9]+\\)[ \t]+" ^ "([ \t]*\\(.*\\)" ^ "[ \t]+" ^ 
   "\\([0-9]+\\)" ^ "-" ^
@@ -233,7 +242,6 @@ let branches ~basedir =
   )
 
 
-
 let id_and_summary_oneline s = 
   if s=~ "\\([^ ]+\\) \\(.*\\)"
   then 
@@ -247,7 +255,6 @@ let commits ?(extra_args="") ~basedir () =
                 (spf "git log --no-color --pretty=oneline %s" extra_args)) in
   let xs = Common.cmd_to_list cmd in
   xs +> List.map id_and_summary_oneline
-
 
 (*****************************************************************************)
 (* single commit operations  *)
