@@ -1,10 +1,9 @@
 open Common
+open OUnit
 
 module Ast = Ast_php
 module A = Annotation_php
 module Db = Database_code
-
-open OUnit
 
 (*****************************************************************************)
 (* Prelude *)
@@ -23,8 +22,7 @@ let defs_uses_unittest =
     "functions uses" >:: (fun () ->
       let file_content = "
 foo1();
-"
-      in
+" in
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let uses_strings = 
@@ -51,8 +49,7 @@ function foo1(Foo10 $x) { }
 
 $x = <x:xhp1></x:xhp1>;
 $x = <x:xhp2/>;
-"
-      in
+" in
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let str_of_name = function
@@ -78,6 +75,7 @@ $x = <x:xhp2/>;
 (*---------------------------------------------------------------------------*)
 let tags_unittest =
     "tags_php" >::: [
+
       "basic tags" >:: (fun () ->
         let file_content = "
             function foo() { }
@@ -139,8 +137,7 @@ let tags_unittest =
 
       "xhp tags" >:: (fun () ->
         let file_content = "class :x:foo { }" in
-        let tmpfile = 
-          Parse_php.tmp_php_file_from_string file_content in
+        let tmpfile = Parse_php.tmp_php_file_from_string file_content in
         let tags = 
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         let all_tags = tags +> List.map snd +> List.flatten in
