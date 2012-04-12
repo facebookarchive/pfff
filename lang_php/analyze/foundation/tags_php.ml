@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -25,7 +24,6 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Making a better TAGS file. M-x idx => it finds it!
  * It does not go to $idx in a file. Works for XHP. Works with
