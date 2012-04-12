@@ -76,16 +76,6 @@ let tags_of_ast ast filelines =
             (* Generate a 'class::method tag. Can then have
              * a nice completion and know all the methods available
              * in a class (the short Eiffel-like profile).
-             * 
-             * It used to also generate a 'method' tag with just
-             * the method name, but if there is also a function
-             * somewhere using the same name then this function
-             * could be hard to reach.
-             * 
-             * alternative: could do first global analysis pass
-             * to find all the functions and generate also the short
-             * 'method' tag name when we are sure it would not
-             * conflict with an existing function.
              *)
             let info = Ast.info_of_name name in
             let info' = Ast.rewrap_str 
@@ -146,3 +136,4 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
     in
     (file, defs)
   ))
+  +> Tags_file.add_method_tags_when_unambiguous

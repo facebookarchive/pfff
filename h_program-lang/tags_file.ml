@@ -127,6 +127,56 @@ let vim_tag_kind_str tag_kind =
   | Db.MultiDirs
       -> ""
 
+(* For methods, in addition to the tag for the precise 'class::method'
+ * name, it can be convenient to generate another tag with just the
+ * 'method' name so people can quickly jump to some code with just the
+ * method name. Of course if there is also a function somewhere using the
+ * same name then this function could be hard to reach so we generate
+ * an (imprecise) method tag only when there is no ambiguity. 
+ *)
+let add_method_tags_when_unambiguous files_and_defs =
+
+  (* step1: global analysis on all defs, remember all names and methods *)
+  let h_toplevel_names = 
+    files_and_defs +> List.map (fun (file, tags) ->
+      tags +> Common.map_filter (fun t ->
+        match t.kind with
+        | Db.Class _ | Db.Function | Db.Constant -> Some t.tagname
+        | _ -> None
+      )
+    ) +> List.flatten +> Common.hashset_of_list
+  in
+  let h_grouped_methods =
+    files_and_defs +> List.map (fun (file, tags) ->
+      tags +> Common.map_filter (fun t ->
+        match t.kind with
+        | Db.Method _ ->
+            if t.tagname =~ ".*::\\(.*\\)"
+            then Some (Common.matched1 t.tagname, t)
+            else failwith ("method tag should contain '::[, got: " ^ t.tagname)
+        | _ -> None
+      )
+    (* could skip the group_assoc_bykey and do Hashtbl.find_all below instead *)
+    ) +> List.flatten +> Common.group_assoc_bykey_eff +> Common.hash_of_list
+  in
+  (* step2: add method tag when no ambiguity *)
+  files_and_defs +> List.map (fun (file, tags) ->
+    file,
+    tags +> List.map (fun t ->
+      match t.kind with
+      | Db.Method _ ->
+          if t.tagname =~ ".*::\\(.*\\)"
+          then
+            let methodname = Common.matched1 t.tagname in
+            if not (Hashtbl.mem h_toplevel_names methodname) &&
+               List.length (Hashtbl.find h_grouped_methods methodname) = 1
+            then [t; { t with tagname = methodname }]
+            else [t]
+          else failwith("method tag should contain '::[, got: " ^ t.tagname)
+      | _ -> [t]
+    ) +> List.flatten
+  )
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
