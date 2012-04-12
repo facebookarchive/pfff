@@ -152,7 +152,6 @@ let tags_unittest =
           ~msg:"it should contain an entry for the x:... classname form"
           (all_tags +> List.exists (fun t -> 
             t.Tags_file.tagname =$= "x:foo"));
-
       );
     ]
 

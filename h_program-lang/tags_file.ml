@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module PI = Parse_info
@@ -21,7 +20,6 @@ module Db = Database_code (* for entity_kind *)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Supposed syntax for emacs TAGS (.tags) files, as analysed from output
  * of etags, read in etags.c and discussed with Francesco Potorti.
