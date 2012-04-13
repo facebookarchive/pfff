@@ -11,16 +11,24 @@ open Common
  * different graph visualizer (e.g. gephi, guess).
  * 
  * todo? have a backend for graphviz?
- * todo? use phylomel? and cairo?
+ * todo? use phylomel? 
+ * todo? use cairo?
  *
  * usage: 
  *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/to/dir
  * 
- * 
  * related work:
+ *  - ndepend.com, 
+ *    http://www.ndepend.com/Doc_VS_Arch.aspx
+ *    http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
+ * 
+ *  - structure101?
+ * 
  *  - http://mcis.polymtl.ca/~bram/makao/index.html
  *    also use GUESS and prolog :)
- *  - google search images: dependency+graph+visualization
+ * 
+ *  - google search images: dependency+graph+visualization, get many
+ *    links from there
  *)
 
 (*****************************************************************************)
