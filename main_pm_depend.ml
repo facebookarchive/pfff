@@ -22,7 +22,8 @@ open Common
  *    http://www.ndepend.com/Doc_VS_Arch.aspx
  *    http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * 
- *  - structure101?
+ *  - structure101
+ *    http://www.headwaysoftware.com/products/index.php#page-top
  * 
  *  - http://mcis.polymtl.ca/~bram/makao/index.html
  *    also use GUESS and prolog :)
