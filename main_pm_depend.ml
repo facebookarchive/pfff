@@ -18,6 +18,9 @@ open Common
  *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/to/dir
  * 
  * related work:
+ *  - http://lattix.com/
+ *    the startup built from the original paper on DSM at oopsla
+ * 
  *  - ndepend.com, 
  *    http://www.ndepend.com/Doc_VS_Arch.aspx
  *    http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
