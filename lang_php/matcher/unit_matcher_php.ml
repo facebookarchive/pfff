@@ -22,15 +22,13 @@ let sgrep_unittest = [
       "foo(1,3);", "foo(1,2);", false;
 
       (* expression metavariable *)
-      "foo(X);", "foo(1+2);", true;
-
-      (* metavariable naming conventions *)
       "foo(X);"       ,  "foo(1);", true;
       "foo(X);"       ,  "foo(1+1);", true;
+
+      (* metavariable naming conventions *)
       "foo(X1);"      ,  "foo(1);", true;
       "foo(X1_MISC);" ,  "foo(1);", true;
       "foo(X_MISC);"  ,  "foo(1);", true;
-
       "foo(_MISC);"  ,  "foo(1);", false;
 
       (* variable metavariable *)
@@ -44,8 +42,8 @@ let sgrep_unittest = [
       *)
 
       (* "linear" patterns, a la Prolog *)
-      "foo($V, $V);", "foo($x, $x);", true;
       "X && X;", "($a || $b) && ($a || $b);", true;
+      "foo($V, $V);", "foo($x, $x);", true;
       "foo($V, $V);", "foo($x, $y);", false;
 
       (* '...' in funcall *)
