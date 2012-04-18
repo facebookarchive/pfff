@@ -50,22 +50,22 @@ function bar() {}
 (*---------------------------------------------------------------------------*)
 
 let tags_unittest =
-    "tags_js" >::: [
-      "commonjs tags support" >:: (fun () ->
-      let file_content = "
+ "tags_js" >::: [
+   "commonjs tags support" >:: (fun () ->
+     let file_content = "
 /**
  * @providesModule my-module
  */
 function foo() {}
 " in
-      let tmpfile = Parse_js.tmp_file_from_string file_content in
-      let tags = Tags_js.tags_of_files_or_dirs ~verbose:false [tmpfile] in
-      let tags = tags +> List.map snd +> List.flatten in
-      match tags with
-      | [{ Tags_file.tagname = "my-module"; kind = Db.Module; _}] -> ()
-      | _ -> assert_failure "it should extract module names from comments"
-      );
-    ]
+     let tmpfile = Parse_js.tmp_file_from_string file_content in
+     let tags = Tags_js.tags_of_files_or_dirs ~verbose:false [tmpfile] in
+     let tags = tags +> List.map snd +> List.flatten in
+     match tags with
+     | [{ Tags_file.tagname = "my-module"; kind = Db.Module; _}] -> ()
+     | _ -> assert_failure "it should extract module names from comments"
+   );
+ ]
 
 (*---------------------------------------------------------------------------*)
 (* Final suite *)
