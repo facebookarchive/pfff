@@ -17,9 +17,36 @@ let sgrep_unittest = [
   "sgrep features" >:: (fun () ->
     (* spec: pattern string, code string (statement), should_match boolean *)
     let triples = [
-      (* match even when space differs *)
+      (* matches even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
       "foo(1,3);", "foo(1,2);", false;
+
+      (* expression metavariable *)
+      "foo(X);", "foo(1+2);", true;
+
+      (* metavariable naming conventions *)
+      "foo(X);"       ,  "foo(1);", true;
+      "foo(X);"       ,  "foo(1+1);", true;
+      "foo(X1);"      ,  "foo(1);", true;
+      "foo(X1_MISC);" ,  "foo(1);", true;
+      "foo(X_MISC);"  ,  "foo(1);", true;
+
+      "foo(_MISC);"  ,  "foo(1);", false;
+
+      (* variable metavariable *)
+      "foo($X);"  ,  "foo($var);", true;
+
+      (* lvalue metavariable *)
+      "$V->method();"  ,  "$this->method();", true;
+      "$V->method();"  ,  "$this->foo()->method();", true;
+      (* todo? would be good to have this working too 
+      "X->method();"  ,  "$this->foo()->method();", true;
+      *)
+
+      (* "linear" patterns, a la Prolog *)
+      "foo($V, $V);", "foo($x, $x);", true;
+      "X && X;", "($a || $b) && ($a || $b);", true;
+      "foo($V, $V);", "foo($x, $y);", false;
 
       (* '...' in funcall *)
       "foo(...);", "foo();", true;
@@ -30,22 +57,11 @@ let sgrep_unittest = [
       "foo(X,...);", "foo(1);", true;
       (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
 
-      (* "linear" patterns, a la Prolog *)
-      "foo($V, $V);", "foo($x, $x);", true;
-      "X && X;", "($a || $b) && ($a || $b);", true;
-      "foo($V, $V);", "foo($x, $y);", false;
-
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
 
-      (* metavariable naming conventions *)
-      "foo(X);"       ,  "foo(1);", true;
-      "foo(X);"       ,  "foo(1+1);", true;
-      "foo(X1);"      ,  "foo(1);", true;
-      "foo(X1_MISC);" ,  "foo(1);", true;
-      "foo(X_MISC);"  ,  "foo(1);", true;
-
-      "foo(_MISC);"  ,  "foo(1);", false;
+      (* '...' in strings *)
+      "foo(\"...\");", "foo(\"a string\");", true;
 
       (* metavariables on function name *)
       "X(1,2);", "foo(1,2);", true;
