@@ -1654,8 +1654,11 @@ and m_xhp_attribute a b =
     )))
 
 and m_xhp_attr_name a b = 
-  match a, b with
-  (a, b) -> (m_wrap m_string) a b
+  m_name_metavar_ok (A.Name a) (B.Name b) >>= (function
+  | (A.Name a), (B.Name b) -> return (a, b)
+  | _ -> raise Impossible
+  )
+
 
 and m_xhp_attr_value a b = 
   match a, b with

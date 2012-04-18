@@ -116,6 +116,11 @@ let sgrep_unittest = [
       (* metavariable on xhp tag *)
       "return <X label=\"1\"></X>;", "return <x:frag label=\"1\"></x:frag>;",
       true;
+
+      (* metavariable on xhp label *)
+      "return <X Y=\"1\"></X>;", "return <x:frag label=\"1\"></x:frag>;",
+      true;
+
       (* xhp classes have a different syntax when used in xml context (<tag...)
        * and when used as regular classes (:tag...), but a metavariable should
        * accomodate both syntax
