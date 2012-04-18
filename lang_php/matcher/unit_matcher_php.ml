@@ -22,22 +22,22 @@ let sgrep_unittest = [
       "foo(1,3);", "foo(1,2);", false;
 
       (* expression metavariable *)
-      "foo(X);"       ,  "foo(1);", true;
-      "foo(X);"       ,  "foo(1+1);", true;
+      "foo(X);",  "foo(1);", true;
+      "foo(X);",  "foo(1+1);", true;
 
       (* metavariable naming conventions *)
-      "foo(X1);"      ,  "foo(1);", true;
-      "foo(X1_MISC);" ,  "foo(1);", true;
-      "foo(X_MISC);"  ,  "foo(1);", true;
-      "foo(_MISC);"  ,  "foo(1);", false;
+      "foo(X1);",       "foo(1);", true;
+      "foo(X1_MISC);",  "foo(1);", true;
+      "foo(X_MISC);",   "foo(1);", true;
+      "foo(_MISC);",    "foo(1);", false;
 
       (* variable metavariable *)
-      "foo($X);"  ,  "foo($var);", true;
+      "foo($X);",  "foo($var);", true;
 
       (* lvalue metavariable *)
-      "$V->method();"  ,  "$this->method();", true;
-      "$V->method();"  ,  "$this->foo()->method();", true;
-      (* todo? would be good to have this working too 
+      "$V->method();",  "$this->method();", true;
+      "$V->method();",  "$this->foo()->method();", true;
+      (* TODO: would be good to have this working too 
       "X->method();"  ,  "$this->foo()->method();", true;
       *)
 
@@ -229,11 +229,3 @@ let unittest =
   "matcher_php" >::: (
     sgrep_unittest ++ spatch_unittest
   )
-
-(*****************************************************************************)
-(* Main entry for Arg *)
-(*****************************************************************************)
-let actions () = [
-    "-unittest_matcher", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest +> ignore);
-]
