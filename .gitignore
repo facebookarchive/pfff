@@ -341,3 +341,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_opa/parsing/lexer_opa.ml
 /lang_opa/parsing/parser_opa.ml
 /lang_opa/parsing/parser_opa.mli
+/codegraph

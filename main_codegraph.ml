@@ -7,33 +7,35 @@ open Common
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-(* A module/package dependency visualizer generating data for
- * different graph visualizer (e.g. gephi, guess).
+(* A package/module/functions/... dependency visualizer using mainly
+ * Dependency Structure Matrix (DSM).
  * 
- * todo? have a backend for graphviz?
- * todo? use phylomel? 
- * todo? use cairo?
- *
- * usage: 
+ * It can also generate data for different graph visualizer (e.g.
+ * gephi, guess).
+ * 
+ * todo? have a backend for graphviz? todo? use phylomel? todo? use
+ * cairo?
+ * 
+ * usage: $ codegraph 
+ * old: 
  *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/to/dir
  * 
- * related work:
- *  - http://lattix.com/
- *    the startup built from the original paper on DSM at oopsla
+ * related work: - http://lattix.com/ the startup built from the
+ * original paper on DSM at oopsla. Hierarchical dependency matrix is
+ * nice. (hierarchical graphs would be nice too, but they are more
+ * complex to draw).
  * 
- *  - ndepend.com, 
- *    http://www.ndepend.com/Doc_VS_Arch.aspx
- *    http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
+ * - ndepend.com, http://www.ndepend.com/Doc_VS_Arch.aspx
+ * http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * 
- *  - structure101
- *    http://www.headwaysoftware.com/products/index.php#page-top
+ * - structure101
+ * http://www.headwaysoftware.com/products/index.php#page-top
  * 
- *  - http://mcis.polymtl.ca/~bram/makao/index.html
- *    also use GUESS and prolog :)
+ * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS and
+ * prolog :)
  * 
- *  - google search images: dependency+graph+visualization, get many
- *    links from there
- *)
+ * - google search images: dependency+graph+visualization, get many
+ * links from there *)
 
 (*****************************************************************************)
 (* Flags *)

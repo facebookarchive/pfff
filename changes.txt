@@ -1,6 +1,10 @@
 -*- org -*-
 
-* 0.20 (Q2 2012) (??)
+* 0.20 (Q2 2012) (?? codegraph?)
+
+** sgrep:
+
+*** metavariables for XHP attributes
 
 * 0.19 (Q1 2012) (pfff_logger)
 
