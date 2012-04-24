@@ -44,9 +44,11 @@ module G = Graph
  * 
  * 
  * history:
- *  - quick look at work on software arechitecture because of banatre
+ *  - quick look at work on software architecture because of banatre
  *    and later schmidt, looking at work of garlan and the different
  *    architecture patterns (whiteboard, pipe, layers, etc).
+ *  - very nice picture of architecture of Linux kernel sent by Gilles,
+ *    the "map of the linux kernel"
  *  - started to draw hypergraphs of architecture while supervising a
  *    student project at EMN (submarine game), and advocated they were
  *    better than UML diagrams (I think after reading Harel's papers on
