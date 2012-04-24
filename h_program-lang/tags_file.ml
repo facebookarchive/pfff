@@ -116,6 +116,7 @@ let vim_tag_kind_str tag_kind =
   | Db.Field -> "m"
 
   | Db.Module
+  | Db.Package
   | Db.Global
   | Db.Macro
   | Db.TopStmts

@@ -90,7 +90,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
         +> List.map (fun id -> Db.ast_of_id id db)
 
     | (E.Method _|E.ClassConstant|E.Field
-      |E.Global|E.Type|E.Module|E.Macro
+      |E.Global|E.Type|E.Module|E.Package|E.Macro
       |E.TopStmts
       |E.MultiDirs|E.Dir|E.File
       |E.Other _

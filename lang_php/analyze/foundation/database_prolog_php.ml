@@ -88,7 +88,9 @@ let name_id id db =
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
-    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global|E.Type|E.Module) ->
+    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global|E.Type
+      |E.Module|E.Package
+      ) ->
         (* not in db for now *)
         raise Impossible
     )
@@ -122,7 +124,7 @@ let string_of_id_kind = function
 
   | E.TopStmts  -> "stmtlist"
   | E.Other _ -> "idmisc"
-  | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Type|E.Module) ->
+  | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Type|E.Module|E.Package) ->
       raise Impossible
 
 let string_of_modifier = function

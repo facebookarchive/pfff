@@ -83,7 +83,7 @@ let tags_of_ast ast filelines =
             [Tags.tag_of_info filelines info' kind]
         )
     | (   Db.Field | Db.ClassConstant | Db.Other _
-        | Db.Type | Db.Module | Db.TopStmts | Db.Macro | Db.Global
+        | Db.Type | Db.Module | Db.Package | Db.TopStmts | Db.Macro | Db.Global
         | Db.MultiDirs | Db.Dir | Db.File
       ) -> 
         (* see defs_of_any *)
