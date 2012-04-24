@@ -103,6 +103,7 @@ type entity_kind =
   | Function
   | Class of class_type
   | Module
+  | Package
   | Type
   | Constant
   | Global
@@ -265,6 +266,7 @@ let string_of_entity_kind e =
   | Class Trait -> "Trait"
 
   | Module -> "Module"
+  | Package -> "Package"
   | Type -> "Type"
   | Constant -> "Constant"
   | Global -> "Global"
