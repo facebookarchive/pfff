@@ -10,9 +10,9 @@ module G = Graph
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * A package/module/functions/... hierarchical dependency visualizer
+ * A package/module/function/type/... hierarchical dependency visualizer
  * using mainly Dependency Structure Matrix (DSM).
- * Hierarchical graphs or hypergraphs would be nice too, but they are far
+ * Hierarchical graphs (or hypergraphs) would be nice too, but they are far
  * more complex to draw than matrices and do not scale as well visually
  * apparently. 
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
@@ -44,7 +44,7 @@ module G = Graph
  * 
  * 
  * history:
- *  - dir to dir dependencies. Projection hardcoded each time for each use. 
+ *  - dir to dir dependencies. Projections hardcoded each time for each use. 
  *    No generic framework (like the hierarchical dependency matrix).
  *    Done for C, then for PHP, then for OCaml.
  *  - flibotonomy by greg scheschte for PHP, but focus on the nodes
