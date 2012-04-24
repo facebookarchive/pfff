@@ -14,6 +14,11 @@ module FT = File_type
 
 (* 
  * Main entry point of codemap.
+ * 
+ * history:
+ *  - talked about fancy code visualizer while at cleanmake with YY, 
+ *    spiros, etc.
+ *  - saw treemap of Linux kernel by fekete?
  *)
 
 (*****************************************************************************)
@@ -24,9 +29,9 @@ module FT = File_type
 let screen_size = ref 2
 let legend = ref true
 
-let db_file = ref (None: Common.filename option)
+let db_file    = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
-let layer_dir = ref (None: Common.dirname option)
+let layer_dir  = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -83,12 +88,10 @@ let action = ref ""
 let set_gc () =
   if !Flag.debug_gc
   then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
-
   (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
-
 
 (*****************************************************************************)
 (* Model helpers *)
@@ -414,5 +417,4 @@ let _ =
       pr2 (Common.profile_diagnostic ());
       Common.erase_temp_files ();
     )
-
 (*e: main_codemap.ml *)
