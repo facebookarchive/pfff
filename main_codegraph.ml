@@ -4,38 +4,43 @@
  *)
 open Common
 
+module G = Graph
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-(* A package/module/functions/... dependency visualizer using mainly
- * Dependency Structure Matrix (DSM).
+(* A package/module/functions/... hierarchical dependency visualizer
+ * using mainly Dependency Structure Matrix (DSM).
+ * Hierarchical graphs would be nice too, but they are far
+ * more complex to draw than matrix and do not scale as well.
+ * http://en.wikipedia.org/wiki/Design_structure_matrix
  * 
- * It can also generate data for different graph visualizer (e.g.
- * gephi, guess).
+ * This tool also contains some actions to generate data for different
+ * graph visualizer (e.g. gephi, guess).
+ * todo? have a backend for graphviz? use phylomel?
+ * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
- * todo? have a backend for graphviz? todo? use phylomel? todo? use
- * cairo?
+ * related work: 
  * 
- * usage: $ codegraph 
- * old: 
- *  $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/to/dir
- * 
- * related work: - http://lattix.com/ the startup built from the
- * original paper on DSM at oopsla. Hierarchical dependency matrix is
- * nice. (hierarchical graphs would be nice too, but they are more
- * complex to draw).
+ * - http://lattix.com/, the startup where the original paper on DSM
+ *   at OOPSLA'05 comes from.
  * 
  * - ndepend.com, http://www.ndepend.com/Doc_VS_Arch.aspx
- * http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
+ *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * 
  * - structure101
- * http://www.headwaysoftware.com/products/index.php#page-top
+ *    http://www.headwaysoftware.com/products/index.php#page-top
  * 
- * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS and
- * prolog :)
+ * - http://depfind.sourceforge.net/, a dependency extraction tool for
+ *   Java
+ * 
+ * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS
+ *   and Prolog :)
  * 
  * - google search images: dependency+graph+visualization, get many
- * links from there *)
+ *   links from there 
+ * 
+ *)
 
 (*****************************************************************************)
 (* Flags *)
@@ -48,11 +53,10 @@ open Common
 
 let verbose = ref false
 
+(* old *)
 let with_extern = ref false
 let package_depth = ref 0
-
 let lang = ref "ml"
-
 (* todo? gephi mode? that set default output file to something different? *)
 let output_file = ref "/tmp/pm.gdf"
 
@@ -65,6 +69,10 @@ let action = ref ""
 
 (*****************************************************************************)
 (* Helpers *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Model Helpers *)
 (*****************************************************************************)
 
 (*****************************************************************************)
@@ -86,7 +94,23 @@ let rec dependencies_of_files_or_dirs lang xs =
 (* Main action *)
 (*****************************************************************************)
 
-module G = Graph
+(* Find root of project with the dependencies.marshall
+ * and display slice of dependency using arguments in xs.
+ * todo: use -with_extern ?
+ * 
+ * How load graph? 
+ * build on demand? easier to test things that way ... 
+ *)
+let main_action xs =
+  raise Todo
+
+(*****************************************************************************)
+(* Extra Actions *)
+(*****************************************************************************)
+
+(* ---------------------------------------------------------------------- *)
+(* Gephi *)
+(* ---------------------------------------------------------------------- *)
 let to_gdf g ~str_of_node ~output =
   Common.with_open_outfile output (fun (pr_no_nl, _chan) ->
     let nodes = G.nodes g in
@@ -138,7 +162,7 @@ let to_gdf g ~str_of_node ~output =
     ()
   )
 
-let main_action xs =
+let test_gdf xs =
   let g = dependencies_of_files_or_dirs !lang xs in
   pr2 (spf "Writing data in %s" !output_file);
 
@@ -152,9 +176,9 @@ let main_action xs =
   *)
   ()
 
-(*****************************************************************************)
-(* Extra Actions *)
-(*****************************************************************************)
+(* ---------------------------------------------------------------------- *)
+(* Phylomel *)
+(* ---------------------------------------------------------------------- *)
 
 open Vec2
 open BarnesHut
@@ -244,6 +268,8 @@ let test_phylomel geno_file =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
+  "-test_gdf", " <dirs>",
+  Common.mk_action_n_arg test_gdf;
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
 ]
@@ -253,7 +279,6 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  Test_parsing_ml.actions()++
   extra_actions () ++
   []
 
@@ -274,10 +299,9 @@ let options () =
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_other () ++
   [
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "pm_depend version: %s" Config.version);
+      pr2 (spf "codegraph version: %s" Config.version);
       exit 0;
     ), 
     "  guess what";
