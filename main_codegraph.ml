@@ -23,22 +23,17 @@ module G = Graph
  * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
  * related work: 
- * 
  * - http://lattix.com/, the startup where the original paper on DSM
  *   at OOPSLA'05 comes from.
- * 
  * - ndepend.com, http://www.ndepend.com/Doc_VS_Arch.aspx
  *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
- * 
  * - structure101
  *    http://www.headwaysoftware.com/products/index.php#page-top
- * 
  * - http://depfind.sourceforge.net/, a dependency extraction tool for
  *   Java
  * 
  * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS
  *   and Prolog :)
- * 
  * - google search images: dependency+graph+visualization, get many
  *   links from there 
  * 
@@ -60,10 +55,12 @@ module G = Graph
  *  - flibotonomy by greg scheschte for PHP, but focus on the nodes
  *    instead of the edges (which I think are more important).
  *  - overlay, and cmf -y to display dependencies at "package" level
- *  - ocaml dependencies backend, ~package_depth, ~with_extern
- *  - gephi visualization, but even with -no_extern, it does not
+ *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern
+ *  - gephi/guess visualization, but even with -no_extern, it does not
  *    scale very well for www. It's ok for pfff, but even for 
  *    the full source of pfff the graph is quite noisy.
+ *  - discover DSM of ndepend.com while doing a google search images on
+ *    "dependency+graph+visualization"
  * 
  *  - gradually realize the importance of layered structures,
  *    which are actually enforced in OCaml by the linker.
