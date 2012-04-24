@@ -16,9 +16,15 @@ module FT = File_type
  * Main entry point of codemap.
  * 
  * history:
+ *  - talked about mixing sgrep/spatch with code visualization, 
+ *    highlighting with a certain color different architecture aspect
+ *    of the linux kernel (influenced by work on aspect browser)
  *  - talked about fancy code visualizer while at cleanmake with YY, 
  *    spiros, etc.
- *  - saw treemap of Linux kernel by fekete?
+ *  - saw SeeSoft code visualizer
+ *  - code thumbnails by MSR
+ *  - saw treemap of Linux kernel by fekete? idea of mixing 
+ *    tree-map + code-thumbnails
  *)
 
 (*****************************************************************************)
