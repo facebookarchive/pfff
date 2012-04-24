@@ -44,7 +44,15 @@ module G = Graph
  * 
  * 
  * history:
- *  - dir to dir dependencies. Projections hardcoded each time for each use. 
+ *  - quick look at work on software arechitecture because of banatre
+ *    and later schmidt, looking at work of garlan and the different
+ *    architecture patterns (whiteboard, pipe, layers, etc).
+ *  - started to draw hypergraphs of architecture while supervising a
+ *    student project at EMN (submarine game), and advocated they were
+ *    better than UML diagrams (I think after reading Harel's papers on
+ *    history of statecharts in HOPL-III)
+ *  - dir to dir dependencies during coccinelle project? 
+ *    Projections were hardcoded each time for each use. 
  *    No generic framework (like the hierarchical dependency matrix).
  *    Done for C, then for PHP, then for OCaml.
  *  - flibotonomy by greg scheschte for PHP, but focus on the nodes
@@ -54,6 +62,11 @@ module G = Graph
  *  - gephi visualization, but even with -no_extern, it does not
  *    scale very well for www. It's ok for pfff, but even for 
  *    the full source of pfff the graph is quite noisy.
+ * 
+ *  - gradually realize the importance of layered structures,
+ *    which are actually enforced in OCaml by the linker.
+ *  - gradually realize the importance of dependencies and how
+ *    they are at the essence of software architecture.
  *)
 
 (*****************************************************************************)
