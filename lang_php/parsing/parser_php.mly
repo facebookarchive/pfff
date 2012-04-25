@@ -19,7 +19,12 @@
 /*(*s: GRAMMAR prelude *)*/
 %{
 (* src: ocamlyaccified from zend_language_parser.y in PHP source code.
- * update: extended to deal with XHP based on XHP bison grammar.
+ * update: 
+ *  - extended to deal with XHP based on XHP bison grammar.
+ *  - added support for a few PHP 5.3 extensions (e.g. lambda, const, but
+ *    not namespace)
+ *  - added support for yield (facebook extension)
+ *  - added support for a few PHP 5.4 extensions (e.g. traits)
  * 
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+
@@ -279,12 +284,10 @@ start: top_statement_list { $1 }
 /*(*x: GRAMMAR toplevel *)*/
 top_statement:
  | statement                            { StmtList [$1] }
+ | constant_declaration_statement       { ConstantDef $1 }
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
  | trait_declaration_statement          { ClassDef $1 }
- /*(* PHP 5.3 *)*/
- | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
-     { ConstantDef ($1, Name $2, $3, $4, $5) }
 
 /*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
@@ -505,6 +508,15 @@ use_filename:
  |       T_CONSTANT_ENCAPSED_STRING		{ UseDirect $1 }
  | TOPAR T_CONSTANT_ENCAPSED_STRING TCPAR	{ UseParen ($1, $2, $3) }
 /*(*e: GRAMMAR statement *)*/
+
+/*(*************************************************************************)*/
+/*(*1 Constant declaration *)*/
+/*(*************************************************************************)*/
+
+ /*(* PHP 5.3 *)*/
+constant_declaration_statement:
+ | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
+     { ($1, Name $2, $3, $4, $5) }
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
