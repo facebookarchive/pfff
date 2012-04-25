@@ -102,11 +102,9 @@ module HC = Highlight_code
 type entity_kind = 
   | Function
   | Class of class_type
-  | Module
-  | Package
+  | Module | Package
   | Type
-  | Constant
-  | Global
+  | Constant | Global
   | Macro
   | TopStmts
 
@@ -122,7 +120,7 @@ type entity_kind =
    *)
   | File | Dir
   (* people often spread the same component in multiple dirs with the same
-   * name
+   * name (hmm could be merged with Package)
    *)
   | MultiDirs
 
