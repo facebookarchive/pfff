@@ -1141,15 +1141,19 @@ static_scalar: /* compile-time evaluated scalars */
 
  | TPLUS static_scalar	 { Unary ((UnPlus, $1),$2)  }
  | TMINUS static_scalar	 { Unary ((UnMinus, $1),$2) }
+ /*(* arrays are considered scalars in the PHP grammar, brilliant *)*/
  | T_ARRAY TOPAR static_array_pair_list TCPAR
      { ArrayLong($1, ($2, $3, $4)) }
  | TOBRA static_array_pair_list TCBRA
      { ArrayShort($1, $2, $3) }
-
+ /*(* todo? ensure encaps_list contains only constant strings? *)*/
+ | T_START_HEREDOC encaps_list T_END_HEREDOC 
+     { Sc (HereDoc ($1, $2, $3)) }
  /*(*s: static_scalar grammar rule hook *)*/
   /* xdebug TODO AST  */
   | TDOTS { sgrep_guard (SgrepExprDots $1)  }
  /*(*e: static_scalar grammar rule hook *)*/
+
 
 
 common_scalar:

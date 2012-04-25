@@ -727,10 +727,10 @@ and static_var = dname * static_scalar_affect option
    * and visitors more complicated because stuff like "+ 1" could
    * be an expr or a static_scalar. We don't need this "isomorphism".
    * I never leveraged the specificities of static_scalar (maybe a compiler
-   * would, but my checker/refactorers/... don't).
+   * would, but my checker/refactorer/... didn't).
    * 
    * Note that it's not 'type static_scalar = scalar' because static_scalar
-   * actually allows arrays (why the heck they called it a scalar then ....)
+   * actually allows arrays (why the heck they called it a scalar then ...)
    * and plus/minus which are only in expr.
    *)
   and static_scalar = expr
