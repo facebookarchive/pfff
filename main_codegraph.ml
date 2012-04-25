@@ -4,8 +4,6 @@
  *)
 open Common
 
-module G = Graph
-
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -28,7 +26,7 @@ module G = Graph
  * - ndepend.com, http://www.ndepend.com/Doc_VS_Arch.aspx
  *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * - structure101
- *    http://www.headwaysoftware.com/products/index.php#page-top
+ *   http://www.headwaysoftware.com/products/index.php#page-top
  * - http://depfind.sourceforge.net/, a dependency extraction tool for
  *   Java
  * 
@@ -90,32 +88,15 @@ let output_file = ref "/tmp/pm.gdf"
 let action = ref ""
 
 (*****************************************************************************)
-(* Some  debugging functions *)
-(*****************************************************************************)
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
 (*****************************************************************************)
 (* Model Helpers *)
 (*****************************************************************************)
+let build_model root =
+  ()
 
-(*****************************************************************************)
-(* Language specific *)
-(*****************************************************************************)
-
-let rec dependencies_of_files_or_dirs lang xs = 
-  let verbose = !verbose in
-  match lang, xs with
-  | "ml", [dir] ->
-      Graph_modules_packages_ml.dependencies
-        ~verbose
-        ~with_extern:!with_extern
-        ~package_depth:!package_depth
-        dir
-  | _ -> failwith ("language not supported: " ^ lang)
-      
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
@@ -128,11 +109,31 @@ let rec dependencies_of_files_or_dirs lang xs =
  * How load graph? Build on demand? easier to test things that way ... 
  *)
 let main_action xs =
-  raise Todo
+  Logger.log Config.logger "codegraph" None;
+
+  let root = Common.common_prefix_of_files_or_dirs xs in
+  pr2 (spf "Using root = %s" root);
+  
+  (* todo: 
+   *  - find dependencies.marshall file 
+   *  - build model
+   *)
+  View3.mk_gui ()
 
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+
+let rec dependencies_of_files_or_dirs lang xs = 
+  let verbose = !verbose in
+  match lang, xs with
+  | "ml", [dir] ->
+      Graph_modules_packages_ml.dependencies
+        ~verbose
+        ~with_extern:!with_extern
+        ~package_depth:!package_depth
+        dir
+  | _ -> failwith ("language not supported: " ^ lang)
 
 let test_gdf xs =
   let _g = dependencies_of_files_or_dirs !lang xs in
