@@ -32,6 +32,9 @@ open Common
  * 
  * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS
  *   and Prolog :)
+ * - http://infotectonica.com/juliet/tour/, seems more oriented on
+ *   query, anserwing questions like who uses this field.
+ * 
  * - google search images: dependency+graph+visualization, get many
  *   links from there 
  * 

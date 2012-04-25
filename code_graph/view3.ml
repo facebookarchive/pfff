@@ -45,7 +45,7 @@ let mk_gui () =
   let width = 1350 in
   let height = 800 in
 
-  let w = GWindow.window
+  let _w = GWindow.window
     ~title:"CodeGraph"
     ~width ~height
     ~allow_shrink:true ~allow_grow:true
