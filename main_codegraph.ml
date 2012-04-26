@@ -58,6 +58,8 @@ open Common
  *    Projections were hardcoded each time for each use. 
  *    No generic framework (like the hierarchical dependency matrix).
  *    Done for C, then for PHP, then for OCaml.
+ *  - found that having graph of module dependencies was very useful
+ *    when refactored c-- and mmm codebase
  *  - flibotonomy by Greg Scheschte for PHP, but focus on the nodes
  *    instead of the edges (which I think are more important).
  *  - overlay, and cmf -y to display dependencies at "package" level
