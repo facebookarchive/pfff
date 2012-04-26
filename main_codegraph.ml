@@ -14,19 +14,24 @@ open Common
  * more complex to draw than matrices and do not scale as well visually
  * apparently. 
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
+ * It seems there are a few commercial projects using DSM (Ndepend,
+ * Structure101), so this looks like a viable direction to pursue to
+ * visualize or model software architecture.
  * 
  * This tool also contains some actions to generate data for different
- * graph visualizer, e.g. gephi, guess.
- * todo? have a backend for graphviz? use phylomel?
+ * graph visualizer, e.g. Gephi, Guess.
+ * todo? have a backend for Graphviz? use Phylomel?
  * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
  * related work: 
- * - http://lattix.com/, the startup where the original paper on DSM
+ * - lattix.com, the startup where the original paper on DSM
  *   at OOPSLA'05 comes from.
- * - ndepend.com, http://www.ndepend.com/Doc_VS_Arch.aspx
+ * - ndepend.com, 
+ *   http://www.ndepend.com/Doc_VS_Arch.aspx
  *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * - structure101
  *   http://www.headwaysoftware.com/products/index.php#page-top
+ * 
  * - http://depfind.sourceforge.net/, a dependency extraction tool for
  *   Java
  * 
@@ -40,9 +45,9 @@ open Common
  * 
  * 
  * history:
- *  - quick look at work on software architecture because of banatre
- *    and later schmidt, looking at work of garlan and the different
- *    architecture patterns (whiteboard, pipe, layers, etc).
+ *  - quick look at work on software architecture because of Banatre
+ *    and later Schmidt, looking at work of Shaw and Garlan and the
+ *     different architecture patterns (whiteboard, pipe, layers, etc).
  *  - very nice picture of architecture of Linux kernel sent by Gilles,
  *    the "map of the linux kernel"
  *  - started to draw hypergraphs of architecture while supervising a
@@ -53,7 +58,7 @@ open Common
  *    Projections were hardcoded each time for each use. 
  *    No generic framework (like the hierarchical dependency matrix).
  *    Done for C, then for PHP, then for OCaml.
- *  - flibotonomy by greg scheschte for PHP, but focus on the nodes
+ *  - flibotonomy by Greg Scheschte for PHP, but focus on the nodes
  *    instead of the edges (which I think are more important).
  *  - overlay, and cmf -y to display dependencies at "package" level
  *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern
