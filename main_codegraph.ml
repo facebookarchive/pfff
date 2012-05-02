@@ -46,8 +46,8 @@ open Common
  * 
  * history:
  *  - quick look at work on software architecture because of Banatre
- *    and later Schmidt, looking at work of Shaw and Garlan and the
- *     different architecture patterns (whiteboard, pipe, layers, etc).
+ *    and later Schmidt; looking at work of Shaw and Garlan and the
+ *    different architecture patterns (whiteboard, pipe, layers, etc).
  *  - very nice picture of architecture of Linux kernel sent by Gilles,
  *    the "map of the linux kernel"
  *  - started to draw hypergraphs of architecture while supervising a
@@ -63,7 +63,10 @@ open Common
  *  - flibotonomy by Greg Scheschte for PHP, but focus on the nodes
  *    instead of the edges (which I think are more important).
  *  - overlay, and cmf -y to display dependencies at "package" level
- *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern
+ *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern.
+ *    In some ways it extracts the dependency information I have when
+ *    I write my Makefiles where I care about the order of the directories
+ *    and files.
  *  - gephi/guess visualization, but even with -no_extern, it does not
  *    scale very well for www. It's ok for pfff, but even for 
  *    the full source of pfff the graph is quite noisy.
@@ -73,7 +76,9 @@ open Common
  *  - gradually realize the importance of layered structures,
  *    which are actually enforced in OCaml by the linker.
  *  - gradually realize the importance of dependencies and how
- *    they are at the essence of software architecture.
+ *    they are at the essence of software architecture. Code is
+ *    a tree when look locally (AST), but it's really more a graph
+ *    of dependencies when look globally.
  *)
 
 (*****************************************************************************)
