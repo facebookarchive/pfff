@@ -9,10 +9,11 @@ open Oassocb
 open Osetb
 
 
-(* Difference with ograph_extended ? why not share code ? could, but
+(* 
+ * Difference with ograph_extended? Why not share code? We could, but
  * in ograph_extended we dont force the user to have a key and we
- * generate those keys as he add nodes. Here we assume the user already
- * have an idea of what kind of key he wants to use (a string, a
+ * generate those keys as he adds nodes. Here we assume the user already
+ * has an idea of what kind of key he wants to use (a string, a
  * filename, a, int, whatever) 
 *)
 
@@ -22,7 +23,6 @@ class ['key, 'a,'b] ograph_mutable =
 
 object(o)
   
-
   val mutable succ = build_assoc()
   val mutable pred = build_assoc()
   val mutable nods = (build_assoc() : ('key, 'a) Oassocb.oassocb)
@@ -109,9 +109,6 @@ object(o)
     let set = set#del k in
     set
 
-
-
-
 end   
 
 
@@ -134,4 +131,3 @@ let print_ograph_generic ~str_of_key ~str_of_node filename g =
     );
   Ograph_extended.launch_gv_cmd filename;
   ()
-
