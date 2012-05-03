@@ -4,6 +4,8 @@
  *)
 open Common
 
+module G = Graph_code
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -16,11 +18,10 @@ open Common
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101), so this looks like a viable direction to pursue to
- * visualize or model software architecture.
+ * visualize a software architecture.
  * 
  * This tool also contains some actions to generate data for different
- * graph visualizer, e.g. Gephi, Guess.
- * todo? have a backend for Graphviz? use Phylomel?
+ * graph visualizer, e.g. Gephi, Guess. todo? backend for Graphviz? Phylomel?
  * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
  * related work: 
@@ -46,10 +47,9 @@ open Common
  * 
  * history:
  *  - quick look at work on software architecture because of Banatre
- *    and later Schmidt; looking at work of Shaw and Garlan and the
+ *    while a master student at IRISA, and later Schmidt, while a PHP; 
+ *    looking at work of Shaw and Garlan and the
  *    different architecture patterns (whiteboard, pipe, layers, etc).
- *  - very nice picture of architecture of Linux kernel sent by Gilles,
- *    the "map of the linux kernel"
  *  - started to draw hypergraphs of architecture while supervising a
  *    student project at EMN (submarine game), and advocated they were
  *    better than UML diagrams (I think after reading Harel's papers on
@@ -58,6 +58,8 @@ open Common
  *    Projections were hardcoded each time for each use. 
  *    No generic framework (like the hierarchical dependency matrix).
  *    Done for C, then for PHP, then for OCaml.
+ *  - very nice picture of architecture of Linux kernel sent by Gilles,
+ *    the "map of the linux kernel"
  *  - found that having graph of module dependencies was very useful
  *    when refactored c-- and mmm codebase
  *  - flibotonomy by Greg Scheschte for PHP, but focus on the nodes
@@ -138,6 +140,19 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+
+(* ---------------------------------------------------------------------- *)
+(* Code graph *)
+(* ---------------------------------------------------------------------- *)
+let test_graph_code () =
+  raise Todo
+
+(* ---------------------------------------------------------------------- *)
+(* ML *)
+(* ---------------------------------------------------------------------- *)
+
+let test_graph_code_ml dir =
+  raise Todo
 
 let rec dependencies_of_files_or_dirs lang xs = 
   let verbose = !verbose in
@@ -258,6 +273,10 @@ let test_phylomel geno_file =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
+  "-test_graph_code", " <>",
+  Common.mk_action_0_arg test_graph_code;
+  "-test_graph_code_ml", " <dir>",
+  Common.mk_action_1_arg test_graph_code_ml;
   "-test_gdf", " <dirs>",
   Common.mk_action_n_arg test_gdf;
   "-test_phylomel", " <geno file>",

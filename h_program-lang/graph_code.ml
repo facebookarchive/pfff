@@ -14,21 +14,22 @@
  *)
 open Common
 
-module Db = Database_code
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
- * Programs are hierarchies of entities (package/module/class/...)
- * linked to each other through different dependencies (call, extend, 
- * use, etc). This module is the basis for codegraph, a tool
- * to help visualize code dependencies or code relationships. It
- * provides the core data structure of codegraph, an (hyper)graph of
- * all the entities in a program linked either via a 'has-a' relation,
- * which represent the hierarchies, or 'use-a', which represent
- * the dependencies.
+ * Programs can be seen as hierarchies of entities 
+ * (package/module/class/function/method/field/...)
+ * linked to each other through different mechanisms 
+ * (import/reference/extend/instantiate/call/access/...), 
+ * This module is the basis for codegraph, a tool to help
+ * visualize code dependencies or code relationships. 
+ * It provides the core data structure of codegraph, 
+ * an (hyper)graph of all the entities in a program linked
+ * either via a 'has-a' relation, which represent the
+ * hierarchies, or 'use-a', which represent the dependencies.
  * 
  * This file could have been named dependency_code.ml or
  * relation_code.ml 
@@ -38,18 +39,60 @@ module Db = Database_code
 (* Types *)
 (*****************************************************************************)
 
+(* todo? how to handle duplicate entities? prepend a ___number suffix? *)
+type node = string * E.entity_kind
+
 type edge =
   | Has
   (* todo? refine by having different cases? Use of `Call|`Extend|...? *)
   | Use
 
-(* todo? how handle duplicate entities? prepend then a ___number suffix? *)
-type node = string * Db.entity_kind
 
 (* 
- * note: file information are in readable path format 
+ * This is an imperative, directed, with no intermediate node index, 
+ * graph.
+ * 
+ * We use two different graphs because we need an efficient way to
+ * go up in the hierarchy to increment cells in the dependency matrix
+ * so it's better to separate the two usages.
+ * 
+ * note: file information are in readable path format in Dir and File
+ * nodes.
  *)
 type graph = {
-  g: (node, Parse_info.info, edge) Ograph_simple.ograph_mutable;
+  (* Actually a tree, but we need convenient access to the children or
+   * parent of a node, which are provided by the graph API.
+   *)
+  has: unit;
+  (* The source and target should be enough information to understand
+   * the kind of use. For instance a class referencing another class
+   * is an 'extends'. A class referencing an Interface is an 'implements'.
+   *)
+  use: unit;
 }
 
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+let root = "/", E.Dir
+
+(*****************************************************************************)
+(* Graph construction *)
+(*****************************************************************************)
+let create () =
+  raise Todo
+
+
+let add_node n g =
+  raise Todo
+
+let add_edge (n1, n2) e g =
+  raise Todo
+
+
+(*****************************************************************************)
+(* Debugging *)
+(*****************************************************************************)
+
+let display_with_gv g =
+  raise Todo
