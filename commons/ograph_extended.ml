@@ -8,20 +8,31 @@ open Oassoc
 open Oassocb
 open Osetb
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 (* 
- * todo?: prend en parametre le type de finitemap et set a prendre
- * todo?: add_arc doit ramer, car del la key, puis add => better to 
- * have a ref to a set.
+ * An imperative directed polymorphic graph.
+ * 
+ * todo?: prendre en parametre le type de finitemap et set?
+ * todo?: add_arc doit ramer, car del la key, puis add. Better to 
+ *  have a ref to a set?
  * 
  * opti: graph with pointers and a tag visited => need keep global value 
- * visited_counter.  check(that node is in, ...), display.
+ *  visited_counter.  check(that node is in, ...), display.
  * opti: when the graph structure is stable, have a method compact,  that 
- * transforms that in a matrix (assert that all number between 0 and 
- * free_index are used,  or do some defrag-like-move/renaming).
- * 
+ *  transforms that in a matrix (assert that all number between 0 and 
+ *  free_index are used,  or do some defrag-like-move/renaming).
  *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 type nodei = int
+
+(*****************************************************************************)
+(* Pure version *)
+(*****************************************************************************)
 
 class ['a,'b] ograph_extended =
   let build_assoc () = new oassocb [] in (* opti?: = oassoch *)
@@ -117,8 +128,9 @@ class ['a,'b] ograph_extended =
 
   end   
 
-
-
+(*****************************************************************************)
+(* Mutable version *)
+(*****************************************************************************)
 
 class ['a,'b] ograph_mutable =
   let build_assoc () = new oassocb [] in
@@ -186,6 +198,9 @@ class ['a,'b] ograph_mutable =
 
   end   
 
+(*****************************************************************************)
+(* API *)
+(*****************************************************************************)
 
 (* depth first search *)
 let dfs_iter xi f g =

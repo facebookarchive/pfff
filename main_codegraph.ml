@@ -5,6 +5,7 @@
 open Common
 
 module G = Graph_code
+module E = Database_code
 
 (*****************************************************************************)
 (* Purpose *)
@@ -145,7 +146,22 @@ let main_action xs =
 (* Code graph *)
 (* ---------------------------------------------------------------------- *)
 let test_graph_code () =
-  raise Todo
+  let g = G.create () in
+  g +> G.add_node G.root;
+
+  g +> G.add_node ("a", E.Dir);
+  g +> G.add_node ("c", E.Dir);
+  g +> G.add_node ("a/b", E.Dir);
+  g +> G.add_node ("a/b/foo.php", E.File);
+  g +> G.add_node ("c/bar.php", E.File);
+
+  g +> G.add_edge (("a", E.Dir), ("a/b", E.Dir)) G.Has;
+  g +> G.add_edge (("a/b", E.Dir), ("a/b/foo.php", E.File)) G.Has;
+  g +> G.add_edge (("c", E.Dir), ("c/bar.php", E.File)) G.Has;
+
+  g +> G.add_edge (("a/b/foo.php", E.File), ("c/bar.php", E.File)) G.Use;
+  G.display_with_gv g;
+  ()
 
 (* ---------------------------------------------------------------------- *)
 (* ML *)

@@ -5433,10 +5433,12 @@ let find_multi_treeref_with_parents_some f tree =
 (*****************************************************************************)
 (* Graph. Have a look too at Ograph_*.mli  *)
 (*****************************************************************************)
-(* todo: generalise to put in common (need 'edge (and 'c ?),
- * and take in param a display func, cos caml sux, no overloading of show :(
- * Simple impelemntation. Can do also matrix, or adjacent list, or pointer(ref)
+(* 
+ * Very simple implementation of a (directed) graph by list of pairs.
+ * Could also use a matrix, or adjacent list, or pointer(ref).
  * todo: do some check (dont exist already, ...)
+ * todo: generalise to put in common (need 'edge (and 'c ?),
+ *  and take in param a display func, cos caml sux, no overloading of show :(
  *)
 
 type 'node graph = ('node set) * (('node * 'node) set)
