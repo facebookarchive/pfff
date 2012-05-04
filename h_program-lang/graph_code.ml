@@ -123,4 +123,5 @@ let add_edge (n1, n2) e g =
 (*****************************************************************************)
 
 let display_with_gv g =
-  raise Todo
+  G.display_with_gv g.has
+
