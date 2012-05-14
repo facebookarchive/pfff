@@ -17,7 +17,7 @@ SRC= programming_language.ml \
      pp2.ml \
      test_program_lang.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 LIBS=../commons/commons.cma
 INCLUDEDIRS= ../commons ../commons/lib-sexp ../commons/lib-json
 
