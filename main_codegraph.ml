@@ -225,7 +225,10 @@ let test_graph_code () =
 (* ---------------------------------------------------------------------- *)
 
 let test_graph_code_ml dir =
-  raise Todo
+  let verbose = !verbose in
+  let g = Graph_code_ml.build ~verbose dir in
+  pr2_gen g
+
 
 let rec dependencies_of_files_or_dirs lang xs = 
   let verbose = !verbose in
