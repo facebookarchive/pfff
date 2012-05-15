@@ -11,8 +11,9 @@ module E = Database_code
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * A package/module/function/type/... hierarchical dependency visualizer
- * using mainly a Dependency Structure Matrix (DSM).
+ * Main entry point of codegraph, a package/module/type/function/... 
+ * hierarchical dependency visualizer using mainly a Dependency
+ * Structure Matrix (DSM).
  * Node-link display of hierarchical graphs (or hypergraphs) would be nice
  * too, but they are far more complex to draw than matrices and do
  * not scale as well visually apparently.
@@ -20,6 +21,22 @@ module E = Database_code
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101), so this looks like a viable direction to pursue to
  * visualize a software architecture.
+ * 
+ * requirements:
+ *  - different granularities for x-to-x relationships
+ *    (packages to packages, modules to packages, functions, constructors, etc),
+ *    so one can get:
+ *    * package/directory projection to reduce the size of graph and get
+ *      a high-level view of the architecture ("package mode")
+ *    * with or without external/ dependencies
+ *    * possibiltiy to get a slice of the graph for just a directory
+ *      with a package/directory projection for external dependencies
+ *     ("module mode")
+ *    * possiblity to zoom to see the actual functions of a package involved
+ *      in a dependency. This is especially useful for edges
+ *      where we don't understand why there is a dependency.
+ *  - variable node size (but the count number in same row does that too)
+ *  - variable arrow size (but the count number in the matrix does that too)
  * 
  * This tool also contains some actions to generate data for different
  * graph visualizer, e.g. Gephi, Guess. todo? backend for Graphviz? Phylomel?
@@ -61,15 +78,24 @@ module E = Database_code
  *    Done for C, then for PHP, then for OCaml.
  *  - very nice picture of architecture of Linux kernel sent by Gilles,
  *    the "map of the linux kernel"
- *  - found that having graph of module dependencies was very useful
- *    when refactored c-- and mmm codebase, thx to ocamldot
+ *  - found that having a graph of module dependencies was very useful
+ *    when refactored the c-- and mmm codebase, thx to ocamldot.
+ *    But felt the need to have variable-size arrows (and nodes) and also
+ *    the ability to get more information when clicking on an edge, 
+ *    to actually see what are the functions involved in the dependency
+ *    for instance.
  *  - flibotonomy by Greg Scheschte for PHP, but focused on the nodes
  *    instead of the edges (which I think are more important).
  *  - overlay, and cmf -y to display dependencies at "package" level
  *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern.
  *    In some ways it extracts the dependency information I have 
  *    in my Makefiles where I care about the order of the directories
- *    and files.
+ *    and files. Moreover package_depth and with_extern are just
+ *    special cases of the general idea of displaying at different
+ *    granularity dependencies depending on the directory.
+ *    Finally it was limited to just package/module (pm_depend) but quickly
+ *    you want to know the actual functions/classes that are involved in
+ *    a dependency.
  *  - gephi/guess visualization, but even with -no_extern, it does not
  *    scale very well for www. It's ok for pfff, but even for 
  *    the full source of pfff the graph is quite noisy.
@@ -80,21 +106,23 @@ module E = Database_code
  *    which are actually enforced in OCaml by the linker.
  *  - gradually realize the importance of dependencies and how
  *    they are at the essence of software architecture. Code is
- *    a tree when looked locally (AST), but it's really more a graph
+ *    a tree when looked locally (AST), but it's really a graph
  *    of dependencies when looked globally.
  * 
- * todo: maybe edge-bundles could make the node-link display approach
- * scale better.
+ * todo: 
+ *  - maybe edge-bundles could make the node-link display approach
+ *    scale better.
+ *  - generate a node-link graph for the current matrix configuration; use
+ *    graphviz as a first step.
  * 
- * Comments that were in graph_modules_packages_ml.ml:
-
+ * (comments that were in graph_modules_packages_ml.ml)
  * alternatives:
  *  - ocamldoc -dot ...
  *    But if there is one parse error or a module not found, then 
  *    ocamldoc fails. Also there is no package "projection" so it's 
  *    hard to apply on large projects. There is also no with-extern view
  *    with the slice of the graph to a directory.
- *    TODO It supports better code using camlp4 though.
+ *    TODO it can potentially support more code though, by using camlp4.
  *  - ocamldoc with graphviz  
  *    graphviz does not do variable node size for free as in gephi
  *  - ocamldoc -dot-reduce ... 
@@ -110,22 +138,6 @@ module E = Database_code
  *    you lose space because the high-level stuff is at the top but alone.
  *    With gephi/fatlas, by putting high-level stuff at the center, 
  *    you lose less space? Also graphviz does not scale very well.
- * 
- * todo? there is no edge weight? But is it useful in an ocaml context?
- * We can't have mutually dependent files or directories; the ocaml compiler
- * imposes a layering, so the in-edge will be enough information to give
- * more weight to some nodes. Thx to this layering the connected components
- * module of gephi also does some good work.
- * 
- * todo? if give edge weight, then need to modulate depending on
- * the type of the reference. 2 references to a function in another
- * module is more important than 10 references to some constructors.
- * Type|Exception > Function|Class|Global > Constructors|constants ?
- * 
- * todo: could annotate edges with the actual dependency
- * (a function name example, a type name example), that way maybe
- * in gephi we could see what an edge corresponds too (especially useful
- * with edge where we don't understand why there is a dependency).
  * 
  *)
 
@@ -164,7 +176,7 @@ let build_model root =
 (* Main action *)
 (*****************************************************************************)
 
-(* Find root of project with a dependencies.marshall file
+(* Find root of project with a graph_code.marshall file
  * and display slice of the dependency hieararchical matrix 
  * using arguments in xs.
  * todo: use -with_extern ?
@@ -178,7 +190,7 @@ let main_action xs =
   pr2 (spf "Using root = %s" root);
   
   (* todo: 
-   *  - find dependencies.marshall file 
+   *  - find marshall file 
    *  - build model
    *)
   View3.mk_gui ()
