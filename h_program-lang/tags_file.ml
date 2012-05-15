@@ -21,21 +21,16 @@ module Db = Database_code (* for entity_kind *)
 (* Prelude *)
 (*****************************************************************************)
 (*
+ * Generating TAGS file (for emacs or vim)
+ *
  * Supposed syntax for emacs TAGS (.tags) files, as analysed from output
  * of etags, read in etags.c and discussed with Francesco Potorti.
- * 
  * src: otags readme:
- * Supposed syntax for emacs TAGS (.tags) files, as analysed from output
- * of etags, read in etags.c.
  * 
  * <file> ::= <page>+
- * 
  * <page> ::= <header><body>
- * 
  * <header> ::= <NP><CR><file-name>,<body-length><CR>
- * 
  * <body> ::= <tag-line>*
- * 
  * <tag-line> ::= <prefix><DEL><tag><SOH><line-number>,<begin-char-index><CR>
  * pad: when tag is already at the beginning of the line:
  * <tag-line> ::=<tag><DEL><line-number>,<begin-char-index><CR>
@@ -44,7 +39,6 @@ module Db = Database_code (* for entity_kind *)
  * <DEL> ::= ascii DEL, (emacs ^?)
  * <SOH> ::= ascii SOH, (emacs ^A)
  * <CR> :: ascii CR
- * 
  * 
  * See also http://en.wikipedia.org/wiki/Ctags#Tags_file_formats
  *)
