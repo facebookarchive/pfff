@@ -25,7 +25,7 @@ module G = Graph
  * (directory/package/module/file/class/function/method/field/...)
  * linked to each other through different mechanisms
  * (import/reference/extend/implement/instantiate/call/access/...),
- * This module is the basis for codegraph, a tool to help
+ * This module is the basis for 'codegraph', a tool to help
  * visualize code dependencies or code relationships. 
  * It provides the core data structure of codegraph, 
  * an (hyper)graph of all the entities in a program linked
@@ -48,6 +48,9 @@ module G = Graph
  * special code to handle directories or files, they are
  * just considered regular entities like module or classes 
  * and can have sub-entities.
+ * 
+ * todo? maybe I can generate the light database and prolog database
+ * from this graph_code.ml.
  *)
 
 (*****************************************************************************)
