@@ -14,6 +14,7 @@
  *)
 open Common
 
+module E = Database_code
 module G = Graph_code
 
 (*****************************************************************************)
@@ -37,9 +38,14 @@ module G = Graph_code
  * more weight to some nodes. Thx to this layering the connected components
  * module of gephi also does some good work.
  * 
- * todo?
- *  - ml vs mli? just get rid of mli? but could also do a pfff_dependencies
- *    that just care about mli like my 'make doti' ?
+ * notes:
+ *  - ml vs mli? just get rid of mli? but one can also want to
+ *    care only about mli dependencies, like I did with my 'make doti'. 
+ *    We can introduce a Module entity that is the parent of the
+ *    ml and mli file (this entity has-graph unify many things).
+ *    TODO but there is still the issue about where to put the edge
+ *    when one module call a function in another module. Do we
+ *    link the call to the def in the mli or in the ml?
  *)
 
 (*****************************************************************************)
@@ -47,12 +53,40 @@ module G = Graph_code
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Helpers graph_code *)
+(*****************************************************************************)
+
+(* todo: put in graph_code.ml at some point, this is generic code *)
+let create_intermediate_directories_if_not_present g dir =
+  let dirs = Common.inits_of_relative_dir dir in
+
+  let rec aux current xs =
+    match xs with
+    | [] -> ()
+    | x::xs ->
+        let entity = x, E.Dir in
+        if G.has_node entity g
+        then aux entity xs
+        else begin
+          g +> G.add_node entity;
+          g +> G.add_edge (current, entity) G.Has;
+          aux entity xs
+        end
+  in
+  aux G.root dirs
+
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
 let parse file =
   Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun ()->
-    Parse_ml.parse_program file 
+    try 
+      Parse_ml.parse_program file 
+    with Parse_ml.Parse_error _ ->
+      pr2 ("PARSING problem in: " ^ file);
+      []
   )
 
 (* Adjust the set of files, to exclude noisy modules (e.g. tests in external/)
@@ -100,7 +134,40 @@ let filter_ml_files files =
     is_test_in_external || is_mli_with_a_ml || is_old || is_test
   )
 
+(*****************************************************************************)
+(* Defs *)
+(*****************************************************************************)
 
+(* 
+ * For now we just create the Dir, File, and Module entities.
+ * 
+ * todo: extract Function, Type, Constructor, Field, etc.
+ *)
+let extract_defs ~g ~ast ~readable ~file =
+  let dir = Common.dirname readable in
+  create_intermediate_directories_if_not_present g dir;
+
+  (* dir -> module -> file (.ml and mli) *)
+  let dir = (dir, E.Dir) in
+  let m = (Module_ml.module_name_of_filename file, E.Module) in
+  let file = (readable, E.File) in
+
+  if G.has_node m g
+  then
+    if G.parent m g =*= dir
+    (* probably because processed .mli or .ml before which created the node *)
+    then ()
+    (* todo? we could also attach two parents *)
+    else failwith (spf "module %s is already present" (fst m))
+  else begin
+    g+> G.add_edge (dir, m) G.Has;
+  end;
+  g+> G.add_edge (m, file) G.Has;
+  ()
+
+(*****************************************************************************)
+(* Uses *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -114,13 +181,14 @@ let build ?(verbose=true) dir =
   let files = filter_ml_files files in
 
   let g = G.create () in
+  g +> G.add_node G.root;
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   files +> Common_extra.progress ~show:verbose (fun k -> List.iter (fun file ->
     k();
-    let _readable = Common.filename_without_leading_path root file in
-    let _ast = parse file in
-    raise Todo
+    let readable = Common.filename_without_leading_path root file in
+    let ast = parse file in
+    extract_defs ~g ~ast ~readable ~file;
   ));
 
   (* step2: creating the 'Use' edges, the uses *)

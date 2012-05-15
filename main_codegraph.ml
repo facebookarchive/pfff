@@ -199,37 +199,10 @@ let main_action xs =
 (* Extra Actions *)
 (*****************************************************************************)
 
-(* ---------------------------------------------------------------------- *)
-(* Code graph *)
-(* ---------------------------------------------------------------------- *)
-let test_graph_code () =
-  let g = G.create () in
-  g +> G.add_node G.root;
-
-  g +> G.add_node ("a", E.Dir);
-  g +> G.add_node ("c", E.Dir);
-  g +> G.add_node ("a/b", E.Dir);
-  g +> G.add_node ("a/b/foo.php", E.File);
-  g +> G.add_node ("c/bar.php", E.File);
-
-  g +> G.add_edge (("a", E.Dir), ("a/b", E.Dir)) G.Has;
-  g +> G.add_edge (("a/b", E.Dir), ("a/b/foo.php", E.File)) G.Has;
-  g +> G.add_edge (("c", E.Dir), ("c/bar.php", E.File)) G.Has;
-
-  g +> G.add_edge (("a/b/foo.php", E.File), ("c/bar.php", E.File)) G.Use;
-  G.display_with_gv g;
-  ()
 
 (* ---------------------------------------------------------------------- *)
 (* ML *)
 (* ---------------------------------------------------------------------- *)
-
-let test_graph_code_ml dir =
-  let verbose = !verbose in
-  let g = Graph_code_ml.build ~verbose dir in
-  pr2_gen g
-
-
 let rec dependencies_of_files_or_dirs lang xs = 
   let verbose = !verbose in
   match lang, xs with
@@ -349,10 +322,6 @@ let test_phylomel geno_file =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
-  "-test_graph_code", " <>",
-  Common.mk_action_0_arg test_graph_code;
-  "-test_graph_code_ml", " <dir>",
-  Common.mk_action_1_arg test_graph_code_ml;
   "-test_gdf", " <dirs>",
   Common.mk_action_n_arg test_gdf;
   "-test_phylomel", " <geno file>",

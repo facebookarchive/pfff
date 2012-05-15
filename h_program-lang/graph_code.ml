@@ -49,24 +49,34 @@ module G = Graph
  * just considered regular entities like module or classes 
  * and can have sub-entities.
  * 
- * todo? maybe I can generate the light database and prolog database
- * from this graph_code.ml.
+ * todo:
+ *  - how to handle duplicate entities (e.g. we can have two different
+ *    files have the same module name, or two functions with the same
+ *    name but one in a library and the other in a script).
+ *    prepend a ___number suffix?
+ *    Or just have one node with multiple parents :)
+ * 
+ *  - change API to allow by default to automatically create nodes
+ *    when create edges with unexisting nodes? After all graphviz
+ *    allow to specify graphs like this, which shorten graph
+ *    description significantly. Can still have a 
+ *    add_edge_throw_exn_if_not_present for the cases where we
+ *    want extra security.
+ * 
+ *  - maybe I can generate the light database and prolog database
+ *    from this graph_code.ml.
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* todo? how to handle duplicate entities? prepend a ___number suffix?
- * Or just have one node with multiple parents :)
- *)
 type node = string * E.entity_kind
 
 type edge =
   | Has
   (* todo? refine by having different cases? Use of `Call|`Extend|...? *)
   | Use
-
 
 (* 
  * We use an imperative, directed, with no intermediate node-index, 
@@ -115,11 +125,21 @@ let add_node n g =
   G.add_vertex_if_not_present n g.use;
   ()
 
-
 let add_edge (n1, n2) e g =
   match e with
   | Has -> G.add_edge n1 n2 g.has
   | Use -> G.add_edge n1 n2 g.use
+
+(*****************************************************************************)
+(* Graph access *)
+(*****************************************************************************)
+
+let has_node n g =
+  G.has_node n g.has
+
+let parent n g =
+  let xs = G.pred n g.has in
+  Common.list_to_single_or_exn xs
 
 (*****************************************************************************)
 (* Debugging *)
@@ -127,4 +147,3 @@ let add_edge (n1, n2) e g =
 
 let display_with_gv g =
   G.display_with_gv g.has
-

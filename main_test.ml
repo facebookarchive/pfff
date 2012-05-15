@@ -161,6 +161,7 @@ let all_actions () =
   pfff_extra_actions() ++
  Test_parsing_php.actions()++
  Test_analyze_php.actions()++
+ Test_analyze_ml.actions()++
  Builtins_php.actions()++
   []
 
