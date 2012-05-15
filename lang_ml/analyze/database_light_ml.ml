@@ -23,7 +23,9 @@ module T = Parser_ml
 (* Prelude *)
 (*****************************************************************************)
 (* Light database building for OCaml code (mainly used by the codemap
- * semantic code visualizer).
+ * semantic code visualizer). We currently abuse the code highlighter
+ * to extract the entity defintions, and for the uses we are mainly using
+ * the list of tokens ... not the AST.
  *
  * We build the full database in multiple steps as some
  * operations need the information computed globally by the
@@ -136,6 +138,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       parse file 
     in
 
+    (* this is quite similar to what we do in tags_ml.ml *)
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
