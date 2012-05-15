@@ -24,19 +24,31 @@ open Highlight_code
 (* Prelude *)
 (*****************************************************************************)
 (* 
+ * (ab)Using the code highlighter to extract tags.
+ * 
  * Alternatives:
- *  - otags, but does not work very well recursively as it groks easily
+ *  - otags, but does not work very well recursively as it groks
  *    on unparable files.
  *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
 (*
 let tag_of_name filelines name = 
   let info = Ast.info_of_name name in
   tag_of_info filelines info
 *)
+
+let entity_of_highlight_category_opt x =
+  match x with
+  | Function (Def2 _) -> Some Db.Function
+  | Global (Def2 _) -> Some Db.Global
+  | Module Def -> Some Db.Module
+  | TypeDef Def -> Some Db.Type
+  | FunctionDecl _ -> Some Db.Function
+  | _ -> None
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -81,23 +93,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         let categ = Common.hfind_option info h in
         
         categ +> Common.do_option (fun x ->
-          match x with
-          | Function (Def2 _)
-          | Global (Def2 _)
-          | Module Def
-          | TypeDef Def
-
-          | FunctionDecl _
-            -> 
-              let kind =
-                match x with
-                | Function (Def2 _) -> Db.Function
-                | Global (Def2 _) -> Db.Global
-                | Module Def -> Db.Module
-                | TypeDef Def -> Db.Type
-                | FunctionDecl _ -> Db.Function
-                | _ -> raise Impossible
-              in
+          entity_of_highlight_category_opt x +> Common.do_option (fun kind ->
 
               Common.push2 (Tags.tag_of_info filelines info kind) defs;
 
@@ -116,7 +112,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
                                       (Common.filename_of_dbe (d,b, "ml"))))
               then
                 Common.push2 (Tags.tag_of_info filelines info' kind) defs;
-          | _ -> ()
+          )
         )
       );
     );
