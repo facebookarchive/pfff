@@ -4,8 +4,8 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= \
-     module_ml.ml \
+SRC= module_ml.ml \
+     graph_code_ml.ml \
      highlight_ml.ml \
      tags_ml.ml \
      database_light_ml.ml \
@@ -14,20 +14,13 @@ SRC= \
 
 -include $(TOP)/Makefile.config
 
-#ifeq ($(FEATURES_PCRE), 1)
-#PCRECMA=pcre.cma
-#PCREINCLUDE= +pcre
-#PCREINCLUDE=$(TOP)/ocamlpcre/lib
-#endif
-
-SYSLIBS= str.cma unix.cma $(PCRECMA)
+SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/commons.cma \
      $(TOP)/h_program-lang/lib.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 MAKESUBDIRS=
-
 #database \
 # dynamic_analysis static_analysis \
 # qa_test qa_code \
@@ -62,7 +55,6 @@ INCLUDEDIRS= $(TOP)/commons \
 # Generic variables
 ##############################################################################
 -include $(TOP)/Makefile.common
-
 
 ##############################################################################
 # Top rules
@@ -99,4 +91,3 @@ clean::
 ##############################################################################
 # Literate Programming rules
 ##############################################################################
-
