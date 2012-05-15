@@ -113,6 +113,8 @@ type entity_kind =
   | Field (* todo? could also be static or not *)
   | ClassConstant
 
+  (* todo: constructor *)
+
   | Other of string
 
   (* when we use the database for completion purpose, then files/dirs
@@ -120,7 +122,7 @@ type entity_kind =
    *)
   | File | Dir
   (* people often spread the same component in multiple dirs with the same
-   * name (hmm could be merged with Package)
+   * name (hmm could be merged now with Package)
    *)
   | MultiDirs
 
