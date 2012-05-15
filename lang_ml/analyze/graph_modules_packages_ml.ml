@@ -22,7 +22,7 @@ module G = Graph
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Dependency visualization for OCaml code, the obsolete code.
+ * Dependency visualization for OCaml code (obsolete).
  * See main_codegraph.ml for discussions about alternatives and
  * graph_code_ml.ml for the new way to visualize dependencies.
  * 
@@ -32,7 +32,7 @@ module G = Graph
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* filename in readable path *)
+(* a special case of graph_code.ml *)
 type ml_graph = Common.filename Graph.graph
 
 (*****************************************************************************)
@@ -71,55 +71,16 @@ let dependencies ?(verbose=true) ~with_extern ~package_depth dir =
 
   (* step0: adjust the set of files, to exclude noisy modules
    * or modules that would introduce false positive when do the 
-   * modulename ->file lookup.
+   * modulename->file lookup.
    *)
-  let files = 
-    files +> Common.exclude (fun file ->
-      (* less: could also do a pfff_dependencies that just care about mli
-       * like my make doti
-       *)
-      let (d,b,e) = Common.dbe_of_filename file in
-      let xs = Common.split "/" d in
-      let ml_file = Common.filename_of_dbe (d,b,"ml") in
+  let files = Graph_code_ml.filter_ml_files files in
 
-      (* todo: pfff specific ... *)
-      let is_test_in_external =
-        List.mem "external" xs &&
-          xs +> List.exists (fun s ->
-           match s with
-           | "examples" | "tests" |  "test" 
-           (* ocamlgraph and ocamlgtk specific *)
-           | "dgraph" | "editor" | "view_graph" | "applications"
-               -> true
-           | _ -> false
-          )
-      in
-      let is_test =
-        xs +> List.exists (fun s ->
-          match s with
-          | "examples" | "tests" |  "test" -> true
-          | _ -> false
-        )
-      in
-
-      (* pad specific *)
-      let is_old = List.mem "old" xs in
-
-      (* some files like in pfff/external/core/ do not have a .ml
-       * so at least index the mli. otherwise skip the mli
-       *)
-      let is_mli_with_a_ml =
-        e = "mli" && Sys.file_exists ml_file
-      in
-      is_test_in_external || is_mli_with_a_ml || is_old || is_test
-    )
-  in
   let g = G.create () in
 
   (* step1: creating the nodes *)
   let h_module_to_node = Hashtbl.create 101 in
 
-  (* The PARSING_ERROR node beliw is in comment for now because 
+  (* The PARSING_ERROR node below is in comment for now because 
    * it screws the graph. Moreover when in package mode, we don't want one 
    * of the file to make the whole package link to PARSING_ERROR. 
    * Moreover with a parsing error only the out-edges are missing;
@@ -172,11 +133,6 @@ let dependencies ?(verbose=true) ~with_extern ~package_depth dir =
        then 
         (match Hashtbl.find_all h_module_to_node s with
         | [node2] ->
-            (* todo? do weighted graph? but then if do some pattern matching
-             * on 20 constructors, is it more important than
-             * 2 functions calls? Need to differentiate those different
-             * use of the qualifier
-             *)
             if node1 <> node2
             then g +> G.add_edge node1 node2
 
