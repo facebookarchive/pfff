@@ -1,16 +1,15 @@
 open Common
+open OUnit
 
 open Ast_ml
 module Ast = Ast_ml
 module Flag = Flag_parsing_ml
 
-open OUnit
-
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_tokens_ml file = 
+let test_tokens_ml file =
   if not (file =~ ".*\\.ml[iyl]?") 
   then pr2 "warning: seems not a ocaml file";
 
@@ -26,8 +25,8 @@ let test_parse_ml_or_mli xs =
   let fullxs = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
-  fullxs +> List.iter (fun file -> 
-    pr2 ("PARSING: " ^ file);
+  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
+    k();
 
     let (xs, stat) = 
       Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
@@ -35,10 +34,14 @@ let test_parse_ml_or_mli xs =
       )
       in
     Common.push2 stat stat_list;
-  );
+  ));
   Parse_info.print_parsing_stat_list !stat_list;
   ()
 
+let test_dump_ml file =
+  let ast = Parse_ml.parse_program file in
+  let s = Export_ast_ml.ml_pattern_string_of_program ast in
+  pr s
 
 
 let refactor_grammar subst_file file =
@@ -80,16 +83,6 @@ let refactor_grammar subst_file file =
   );
   ()
 
-
-let test_dump_ml file =
-  let ast = Parse_ml.parse_program file in
-  let s = Export_ast_ml.ml_pattern_string_of_program ast in
-  pr s
-
-(*****************************************************************************)
-(* Unit tests *)
-(*****************************************************************************)
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -99,7 +92,6 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_ml;
   "-parse_ml", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_ml_or_mli;
-
   "-dump_ml", "   <file>", 
   Common.mk_action_1_arg test_dump_ml;
 
