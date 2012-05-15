@@ -12,10 +12,10 @@ module E = Database_code
 (*****************************************************************************)
 (* 
  * A package/module/function/type/... hierarchical dependency visualizer
- * using mainly Dependency Structure Matrix (DSM).
- * Hierarchical graphs (or hypergraphs) would be nice too, but they are far
- * more complex to draw than matrices and do not scale as well visually
- * apparently. 
+ * using mainly a Dependency Structure Matrix (DSM).
+ * Node-link display of hierarchical graphs (or hypergraphs) would be nice
+ * too, but they are far more complex to draw than matrices and do
+ * not scale as well visually apparently.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101), so this looks like a viable direction to pursue to
@@ -48,7 +48,7 @@ module E = Database_code
  * 
  * history:
  *  - quick look at work on software architecture because of Banatre
- *    while a master student at IRISA, and later Schmidt, while a PHP; 
+ *    while a master student at IRISA, and later Schmidt, while a phd,
  *    looking at work of Shaw and Garlan and the
  *    different architecture patterns (whiteboard, pipe, layers, etc).
  *  - started to draw hypergraphs of architecture while supervising a
@@ -62,13 +62,13 @@ module E = Database_code
  *  - very nice picture of architecture of Linux kernel sent by Gilles,
  *    the "map of the linux kernel"
  *  - found that having graph of module dependencies was very useful
- *    when refactored c-- and mmm codebase
- *  - flibotonomy by Greg Scheschte for PHP, but focus on the nodes
+ *    when refactored c-- and mmm codebase, thx to ocamldot
+ *  - flibotonomy by Greg Scheschte for PHP, but focused on the nodes
  *    instead of the edges (which I think are more important).
  *  - overlay, and cmf -y to display dependencies at "package" level
  *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern.
- *    In some ways it extracts the dependency information I have when
- *    I write my Makefiles where I care about the order of the directories
+ *    In some ways it extracts the dependency information I have 
+ *    in my Makefiles where I care about the order of the directories
  *    and files.
  *  - gephi/guess visualization, but even with -no_extern, it does not
  *    scale very well for www. It's ok for pfff, but even for 
@@ -80,8 +80,12 @@ module E = Database_code
  *    which are actually enforced in OCaml by the linker.
  *  - gradually realize the importance of dependencies and how
  *    they are at the essence of software architecture. Code is
- *    a tree when look locally (AST), but it's really more a graph
- *    of dependencies when look globally.
+ *    a tree when looked locally (AST), but it's really more a graph
+ *    of dependencies when looked globally.
+ * 
+ * todo: maybe edge-bundles could make the node-link display approach
+ * scale better.
+ * 
  *)
 
 (*****************************************************************************)

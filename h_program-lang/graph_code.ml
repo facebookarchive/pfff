@@ -35,16 +35,16 @@ module G = Graph
  * This file could have been named dependency_code.ml or
  * relation_code.ml 
  * 
- * Is this yet another code database? For PHP we have
+ * Is this yet another code database? For PHP we already have
  * database_php.ml, tags_php.ml, database_light_php.ml, 
  * and now even a prolog database, ... that's a lot of code database.
- * They all have things in common, but by focusing on one thing,
- * here by just having a single graph, it's
+ * They all have things in common, but by focusing here on one thing,
+ * by just having a single graph, it's then
  * easier to reason and implement certain features.
  * I could have probably done the DSM using database_php.ml
  * but it was not made for that. Here the graph is
  * the core and simplest data structure that is needed.
- * This graph also unify many things. For instance there is no
+ * This graph also unifies many things. For instance there is no
  * special code to handle directories or files, they are
  * just considered regular entities like module or classes 
  * and can have sub-entities.
@@ -66,7 +66,7 @@ type edge =
 
 
 (* 
- * This is an imperative, directed, with no intermediate node index, 
+ * We use an imperative, directed, with no intermediate node-index, 
  * graph.
  * 
  * We use two different graphs because we need an efficient way to
