@@ -132,11 +132,11 @@ let filter_ml_files files =
     (* some files like in pfff/external/core/ do not have a .ml
      * so at least index the mli. otherwise skip the mli
      *)
-    let is_mli_with_a_ml =
+    let _is_mli_with_a_ml =
       e = "mli" && Sys.file_exists ml_file
     in
     is_test_in_external || (*is_test || *)
-    is_mli_with_a_ml || 
+    (* is_mli_with_a_ml ||  *)
     is_old || 
     is_generated_dupe ||
     false
@@ -174,7 +174,9 @@ let extract_defs ~g ~ast ~readable ~file =
          * nobody will reference this module (e.g. because it's an 
          * entry point)
          *)
-        | s when (s =~ "Main.*") || s =~ "Demo.*" || s =~ "Test.*" ->
+        | s when s =~ "Main.*" || s =~ "Demo.*" ||
+                 s =~ "Test.*" || s =~ "Foo.*"
+            ->
             g +> G.add_edge (dir, m) G.Has
         | _ ->
             pr2 (spf "PB: module %s is already present (%s and %s)"
