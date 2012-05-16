@@ -27,8 +27,8 @@ open Highlight_code
  * (ab)Using the code highlighter to extract tags.
  * 
  * Alternatives:
- *  - otags, but does not work very well recursively as it groks
- *    on unparable files.
+ *  - otags, but does not work very well cos it stops everything
+ *    when it encounters an unparable file.
  *)
 
 (*****************************************************************************)
@@ -116,60 +116,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         )
       );
     );
-
-(*
-    let visitor = V.mk_visitor { V.default_visitor with
-      V.kfunc_def = (fun (k, _) def ->
-        let name = def.f_name in
-        let info = Ast.info_of_name name in
-        Common.push2 (tag_of_name filelines name) defs;
-        let s = Ast.name name in
-
-        if heavy_tagging then begin
-          let info' = Ast.rewrap_str ("F_" ^ s) info in
-          Common.push2 (tag_of_info filelines info') defs;
-        end;
-        
-        k def
-      );
-
-      V.kclass_def = (fun (k, _) def ->
-        let name = def.c_name in
-        let info = Ast.info_of_name name in
-        let s = Ast.name name in
-        Common.push2 (tag_of_name filelines name) defs;
-        
-        if heavy_tagging then begin
-          let info' = Ast.rewrap_str ("C_" ^ s) info in
-          Common.push2 (tag_of_info filelines info') defs;
-        end;
-        
-        Common.save_excursion current_class s (fun () ->
-          k def;
-        );
-      );
-
-      V.kmethod_def = (fun (k, _) def ->
-        let name = def.m_name in
-        let info = Ast.info_of_name name in
-        
-        Common.push2 (tag_of_name filelines name) defs;
-        (* also generate a A::xxx tag to help completion *)
-        let s = Ast.str_of_info info in
-        let info' = Ast.rewrap_str (!current_class ^ "::" ^ s) info in
-        Common.push2 (tag_of_info filelines info') defs;
-        
-        if heavy_tagging then begin
-          let info' = Ast.rewrap_str ("M_" ^ s) info in
-          Common.push2 (tag_of_info filelines info') defs;
-        end;
-      );
-    }
-    in
-    visitor.V.vprogram ast;
-*)
       
     let defs = List.rev (!defs) in
     (file, defs)
   ))
-  
