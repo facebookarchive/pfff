@@ -140,6 +140,7 @@ let keyword_table = Common.hash_of_list [
 let letter = ['A'-'Z' 'a'-'z']
 let digit  = ['0'-'9']
 let hexa = digit | ['A' 'F' 'a' 'f']
+(* could add ['\n' '\r'], or just use dos2unix on your files *)
 let newline = '\n'
 let space = [' ' '\t']
 
