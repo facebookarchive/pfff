@@ -82,12 +82,13 @@ let create_intermediate_directories_if_not_present g dir =
 
 let parse file =
   Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun ()->
+  Common.save_excursion Flag_parsing_ml.exn_when_lexical_error true (fun ()->
     try 
       Parse_ml.parse_program file 
     with Parse_ml.Parse_error _ ->
       (* pr2 ("PARSING problem in: " ^ file); *)
       []
-  )
+  ))
 
 (* Adjust the set of files, to exclude noisy modules (e.g. tests in external/)
  * or modules that would introduce false positive when we do the
@@ -95,9 +96,6 @@ let parse file =
  *)
 let filter_ml_files files =
   files +> Common.exclude (fun file ->
-    (* less: could also do a pfff_dependencies that just care about mli
-     * like my make doti
-     *)
     let (d,b,e) = Common.dbe_of_filename file in
     let xs = Common.split "/" d in
     let ml_file = Common.filename_of_dbe (d,b,"ml") in
@@ -121,20 +119,21 @@ let filter_ml_files files =
         | _ -> false
       )
     in
+    (* pad specific *)
+    let is_old = 
+      List.mem "old" xs in
+
     let is_generated_dupe = 
       List.mem "_build" xs ||
       b = "myocamlbuild"
     in
-
-    (* pad specific *)
-    let is_old = List.mem "old" xs in
-
     (* some files like in pfff/external/core/ do not have a .ml
      * so at least index the mli. otherwise skip the mli
      *)
     let _is_mli_with_a_ml =
       e = "mli" && Sys.file_exists ml_file
     in
+
     is_test_in_external || (*is_test || *)
     (* is_mli_with_a_ml ||  *)
     is_old || 
