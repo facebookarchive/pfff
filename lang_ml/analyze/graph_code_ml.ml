@@ -24,28 +24,27 @@ module G = Graph_code
  * Graph of dependencies for OCaml. See graph_code.ml and main_codegraph.ml
  * for more information.
  * 
- * todo? if give edge weight, then need to modulate depending on
- * the type of the reference. 2 references to a function in another
- * module is more important than 10 references to some constructors.
- * Type|Exception > Function|Class|Global > Constructors|constants ?
+ * todo? if give edge count/weight, then need to modulate depending on
+ * the type of the reference. Two references to a function in another
+ * module is more important than 10 references to some constructors?
+ * Type|Exception > Function|Class|Global >> Constructors|constants ?
  * If we do some pattern matching on 20 constructors, is it more
- * important than 2 functions calls? Need to differentiate those
- * different use of the qualifier
- * 
- * todo? there is no edge weight? But is it useful in an ocaml context?
- * We can't have mutually dependent files or directories; the ocaml compiler
- * imposes a layering, so the in-edge will be enough information to give
- * more weight to some nodes. Thx to this layering the connected components
- * module of gephi also does some good work.
+ * important than two functions calls?
  * 
  * notes:
  *  - ml vs mli? just get rid of mli? but one can also want to
  *    care only about mli dependencies, like I did with my 'make doti'. 
  *    We can introduce a Module entity that is the parent of the
- *    ml and mli file (this entity has-graph unify many things).
+ *    ml and mli file (this has-graph unify many things :) ).
  *    TODO but there is still the issue about where to put the edge
  *    when one module call a function in another module. Do we
  *    link the call to the def in the mli or in the ml?
+ * 
+ * schema:
+ *  Dir -> Dir -> Module -> File (.ml) -> TODO
+ * 
+ *                       -> File (.mli)
+ *      -> Dir -> ...
  *)
 
 (*****************************************************************************)
@@ -55,8 +54,8 @@ module G = Graph_code
 (*****************************************************************************)
 (* Helpers graph_code *)
 (*****************************************************************************)
-
 (* todo: put in graph_code.ml at some point, this is generic code *)
+
 let create_intermediate_directories_if_not_present g dir =
   let dirs = Common.inits_of_relative_dir dir in
 
@@ -200,16 +199,19 @@ let extract_defs ~g ~ast ~readable ~file =
 
 let build ?(verbose=true) dir =
   let root = Common.realpath dir in
-  let files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
+  let all_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
-  let files = filter_ml_files files in
+  let files = filter_ml_files all_files in
+  
+  (* less: print what was skipped *)
 
   let g = G.create () in
   g +> G.add_node G.root;
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
-  files +> Common_extra.progress ~show:verbose (fun k -> List.iter (fun file ->
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
     k();
     let readable = Common.filename_without_leading_path root file in
     let ast = parse file in
@@ -217,7 +219,8 @@ let build ?(verbose=true) dir =
   ));
 
   (* step2: creating the 'Use' edges, the uses *)
-  files +> Common_extra.progress ~show:verbose (fun k -> List.iter (fun file ->
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
     k();
   ));
 
