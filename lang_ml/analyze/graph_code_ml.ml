@@ -121,6 +121,7 @@ let filter_ml_files files =
         | _ -> false
       )
     in
+    let is_generated_dupe = List.mem "_build" xs in
 
     (* pad specific *)
     let is_old = List.mem "old" xs in
@@ -131,7 +132,9 @@ let filter_ml_files files =
     let is_mli_with_a_ml =
       e = "mli" && Sys.file_exists ml_file
     in
-    is_test_in_external || is_mli_with_a_ml || is_old || is_test
+    is_test_in_external || is_mli_with_a_ml || is_old || is_test ||
+    is_generated_dupe
+
   )
 
 (*****************************************************************************)
@@ -158,11 +161,15 @@ let extract_defs ~g ~ast ~readable ~file =
     (* probably because processed .mli or .ml before which created the node *)
     then ()
     (* todo? we could also attach two parents *)
-    else failwith (spf "module %s is already present" (fst m))
+    else pr2 (spf "PB: module %s is already present (%s and %s)" 
+                      (fst m) (fst dir) (fst (G.parent m g)))
+
   else begin
-    g+> G.add_edge (dir, m) G.Has;
+    g +> G.add_node m;
+    g +> G.add_edge (dir, m) G.Has;
   end;
-  g+> G.add_edge (m, file) G.Has;
+  g +> G.add_node file;
+  g +> G.add_edge (m, file) G.Has;
   ()
 
 (*****************************************************************************)
