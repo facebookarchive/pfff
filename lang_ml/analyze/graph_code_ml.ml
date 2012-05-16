@@ -121,7 +121,10 @@ let filter_ml_files files =
         | _ -> false
       )
     in
-    let is_generated_dupe = List.mem "_build" xs in
+    let is_generated_dupe = 
+      List.mem "_build" xs ||
+      b = "myocamlbuild"
+    in
 
     (* pad specific *)
     let is_old = List.mem "old" xs in
