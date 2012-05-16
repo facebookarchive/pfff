@@ -36,15 +36,19 @@ module G = Graph_code
  *    care only about mli dependencies, like I did with my 'make doti'. 
  *    We can introduce a Module entity that is the parent of the
  *    ml and mli file (this has-graph unify many things :) ).
+ * 
  *    TODO but there is still the issue about where to put the edge
  *    when one module call a function in another module. Do we
  *    link the call to the def in the mli or in the ml?
  * 
  * schema:
- *  Dir -> Dir -> Module -> File (.ml) -> TODO
+ *  Root -> Dir -> Module -> File (.ml) -> # TODO
  * 
- *                       -> File (.mli)
- *      -> Dir -> ...
+ *                        -> File (.mli)
+ *       -> Dir -> File  # no Module when there is a dupe on
+ *                       # module name (e.g. Main))
+ * 
+ *       -> Dir -> Dir -> ...
  *)
 
 (*****************************************************************************)
@@ -91,7 +95,7 @@ let parse file =
 
 (* Adjust the set of files, to exclude noisy modules (e.g. tests in external/)
  * or modules that would introduce false positive when we do the
- * modulename->file lookup.
+ * modulename->file lookup (e.g. applications of external packages)
  *)
 let filter_ml_files files =
   files +> Common.exclude (fun file ->
@@ -99,7 +103,7 @@ let filter_ml_files files =
     let xs = Common.split "/" d in
     let ml_file = Common.filename_of_dbe (d,b,"ml") in
 
-    (* todo: pfff specific ... *)
+    (* pfff specific ... *)
     let is_test_in_external =
       List.mem "external" xs &&
         xs +> List.exists (fun s ->
@@ -124,8 +128,10 @@ let filter_ml_files files =
     let is_unparsable_on_purpose =
       List.mem "parsing_errors" xs in
 
-    let is_generated_dupe = 
-      List.mem "_build" xs ||
+    let is_generated = 
+      List.mem "_build" xs
+    in
+    let is_garbage =
       b = "myocamlbuild"
     in
     (* some files like in pfff/external/core/ do not have a .ml
@@ -139,7 +145,7 @@ let filter_ml_files files =
     is_unparsable_on_purpose ||
     (* is_mli_with_a_ml ||  *)
     is_old || 
-    is_generated_dupe ||
+    is_generated || is_garbage ||
     false
   )
 
