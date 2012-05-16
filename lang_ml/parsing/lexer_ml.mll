@@ -1,7 +1,7 @@
 {
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -30,12 +30,24 @@ open Parser_ml
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(* Parse_ml.tokens will catch this exception and print the position
+ * of the offending token using the current state of lexbuf, so
+ * no need to add position information here.
+ *)
 exception Lexical of string
 
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+
+let error s =
+  if !Flag.exn_when_lexical_error
+  then raise (Lexical (s))
+  else 
+    if !Flag.verbose_lexing
+    then pr2_once ("LEXER: " ^ s)
+    else ()
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -346,8 +358,7 @@ rule token = parse
     }
 
   | "'" "\\" _ {
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised escape, in token rule:"^tok lexbuf);
+      error ("unrecognised escape, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -361,9 +372,8 @@ rule token = parse
 
   | eof { EOF (tokinfo lexbuf) }
 
-  | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+  | _ {
+      error ("unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -390,9 +400,7 @@ and string buf = parse
       Buffer.add_string buf x;
       string buf lexbuf
     }
-  | eof { 
-      pr2 "LEXER: WIERD end of file in double quoted string";
-    }
+  | eof { error "WIERD end of file in double quoted string" }
 
 (*****************************************************************************)
 (* Rule comment *)
@@ -411,9 +419,12 @@ and comment = parse
   | [^'*''(']+ { let s = tok lexbuf in s ^ comment lexbuf } 
   | "*"     { let s = tok lexbuf in s ^ comment lexbuf }
   | "("     { let s = tok lexbuf in s ^ comment lexbuf }
-  | eof { pr2 "LEXER: end of file in comment"; "*)"}
+  | eof { 
+      error "end of file in comment";
+      "*)"
+    }
   | _  { 
       let s = tok lexbuf in
-      pr2 ("LEXER: unrecognised symbol in comment:"^s);
+      error ("unrecognised symbol in comment:"^s);
       s ^ comment lexbuf
     }
