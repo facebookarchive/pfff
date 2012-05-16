@@ -121,6 +121,8 @@ let filter_ml_files files =
     (* pad specific *)
     let is_old = 
       List.mem "old" xs in
+    let is_unparsable_on_purpose =
+      List.mem "parsing_errors" xs in
 
     let is_generated_dupe = 
       List.mem "_build" xs ||
@@ -134,6 +136,7 @@ let filter_ml_files files =
     in
 
     is_test_in_external || (*is_test || *)
+    is_unparsable_on_purpose ||
     (* is_mli_with_a_ml ||  *)
     is_old || 
     is_generated_dupe ||
@@ -222,6 +225,7 @@ let build ?(verbose=true) dir =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
+     (* skip files under external/ for now *)
   ));
 
   g

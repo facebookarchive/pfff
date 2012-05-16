@@ -401,7 +401,7 @@ and string buf = parse
       Buffer.add_string buf x;
       string buf lexbuf
     }
-  | eof { error "WIERD end of file in double quoted string" }
+  | eof { error "WEIRD end of file in double quoted string" }
 
 (*****************************************************************************)
 (* Rule comment *)
