@@ -11,7 +11,9 @@ with the need for findlib, -pack options, etc, I have rewritten a Makefile.
 
 -- pad 
 
-Here are the modifications I've made to the sexplib lib/ directory.
+Here are the modifications I've made to the sexplib lib/ directory:
+ - I've renamed path.ml to sexp_path.ml (conflict with ocamlgraph)
+ - this diff below:
 
 diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs -x *.cm[iao] -x *.[oa] -x *.class /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/ /home/pad/c-coccinelle/ocamlsexp
 Only in /home/pad/reference/dev-ocaml/orig/ocamljane-orig/sexplib310-3.7.4/lib/: META
