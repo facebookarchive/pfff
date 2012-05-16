@@ -18,6 +18,7 @@ val add_edge: (node * node) -> edge -> graph -> unit
 val has_node: node -> graph -> bool
 (* can raise exception *)
 val parent: node -> graph -> node
+val parents: node -> graph -> node list
 
 (* algorithms *)
 

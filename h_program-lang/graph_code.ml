@@ -141,6 +141,9 @@ let parent n g =
   let xs = G.pred n g.has in
   Common.list_to_single_or_exn xs
 
+let parents n g =
+  G.pred n g.has
+
 (*****************************************************************************)
 (* Debugging *)
 (*****************************************************************************)

@@ -162,16 +162,25 @@ let extract_defs ~g ~ast ~readable ~file =
 
   if G.has_node m g
   then
-    if G.parent m g =*= dir
+    (match G.parents m g with
     (* probably because processed .mli or .ml before which created the node *)
-    then ()
-    else begin
-      (* we attach to two parents when we are almost sure that
-       * nobody will reference this module (because it's an entry point)
-       *)
-       pr2 (spf "PB: module %s is already present (%s and %s)" 
-                      (fst m) (fst dir) (fst (G.parent m g)))
-    end
+    | [] -> 
+        raise Impossible
+    | [p] when p =*= dir -> 
+        ()
+    | _ ->
+        (match fst m with
+        (* we attach to two parents when we are almost sure that
+         * nobody will reference this module (e.g. because it's an 
+         * entry point)
+         *)
+        | s when (s =~ "Main.*") || s =~ "Demo.*" || s =~ "Test.*" ->
+            g +> G.add_edge (dir, m) G.Has
+        | _ ->
+            pr2 (spf "PB: module %s is already present (%s and %s)"
+                    (fst m) (fst dir) (fst (G.parent m g)))
+        )
+    )
   else begin
     g +> G.add_node m;
     g +> G.add_edge (dir, m) G.Has;
