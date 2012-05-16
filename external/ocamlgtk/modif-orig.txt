@@ -1,2 +1,6 @@
 added a make clean and modified src/Makefile to not crash
 when running 'make depend'
+
+Also renamed src/xml_lexer.* to src/xml2_lexer.* to avoid
+conflict with my commons/lib-xml/.
+
