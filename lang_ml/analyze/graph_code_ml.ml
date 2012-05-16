@@ -45,8 +45,8 @@ module G = Graph_code
  *  Root -> Dir -> Module -> File (.ml) -> # TODO
  * 
  *                        -> File (.mli)
- *       -> Dir -> File  # no Module when there is a dupe on
- *                       # module name (e.g. Main))
+ *       -> Dir -> File  # no intermediate Module node when there is a dupe
+ *                       # on a module name (e.g. for main.ml)
  * 
  *       -> Dir -> Dir -> ...
  *)
@@ -158,11 +158,11 @@ let filter_ml_files files =
  * 
  * todo: extract Function, Type, Constructor, Field, etc.
  *)
-let extract_defs ~g ~ast ~readable ~file =
+let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   let dir = Common.dirname readable in
   create_intermediate_directories_if_not_present g dir;
 
-  (* dir -> module -> file (.ml and mli) *)
+  (* Dir -> Module -> File (.ml and mli) *)
   let dir = (dir, E.Dir) in
   let m = (Module_ml.module_name_of_filename file, E.Module) in
   let file = (readable, E.File) in
@@ -170,9 +170,9 @@ let extract_defs ~g ~ast ~readable ~file =
   if G.has_node m g
   then
     (match G.parents m g with
-    (* probably because processed .mli or .ml before which created the node *)
     | [] -> 
         raise Impossible
+    (* probably because processed .mli or .ml before which created the node *)
     | [p] when p =*= dir -> 
         ()
     | _ ->
@@ -218,13 +218,21 @@ let build ?(verbose=true) dir =
   let g = G.create () in
   g +> G.add_node G.root;
 
+  let duplicate_modules =
+    files 
+    +> List.map (fun f -> Common.basename f)
+    +> Common.get_duplicates
+    +> List.map Module_ml.module_name_of_filename
+    +> Common.uniq
+  in
+
   (* step1: creating the nodes and 'Has' edges, the defs *)
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let readable = Common.filename_without_leading_path root file in
     let ast = parse file in
-    extract_defs ~g ~ast ~readable ~file;
+    extract_defs ~g ~duplicate_modules ~ast ~readable ~file;
   ));
 
   (* step2: creating the 'Use' edges, the uses *)
