@@ -85,7 +85,7 @@ let parse file =
     try 
       Parse_ml.parse_program file 
     with Parse_ml.Parse_error _ ->
-      pr2 ("PARSING problem in: " ^ file);
+      (* pr2 ("PARSING problem in: " ^ file); *)
       []
   )
 
@@ -114,7 +114,7 @@ let filter_ml_files files =
           | _ -> false
         )
     in
-    let is_test =
+    let _is_test =
       xs +> List.exists (fun s ->
         match s with
         | "examples" | "tests" |  "test" -> true
@@ -132,9 +132,11 @@ let filter_ml_files files =
     let is_mli_with_a_ml =
       e = "mli" && Sys.file_exists ml_file
     in
-    is_test_in_external || is_mli_with_a_ml || is_old || is_test ||
-    is_generated_dupe
-
+    is_test_in_external || (*is_test || *)
+    is_mli_with_a_ml || 
+    is_old || 
+    is_generated_dupe ||
+    false
   )
 
 (*****************************************************************************)
@@ -160,10 +162,13 @@ let extract_defs ~g ~ast ~readable ~file =
     if G.parent m g =*= dir
     (* probably because processed .mli or .ml before which created the node *)
     then ()
-    (* todo? we could also attach two parents *)
-    else pr2 (spf "PB: module %s is already present (%s and %s)" 
+    else begin
+      (* we attach to two parents when we are almost sure that
+       * nobody will reference this module (because it's an entry point)
+       *)
+       pr2 (spf "PB: module %s is already present (%s and %s)" 
                       (fst m) (fst dir) (fst (G.parent m g)))
-
+    end
   else begin
     g +> G.add_node m;
     g +> G.add_edge (dir, m) G.Has;
