@@ -132,6 +132,12 @@ let filter_ml_files files =
     let is_unparsable_on_purpose =
       List.mem "parsing_errors" xs in
 
+    let is_build_variant = 
+      (* mmm *)
+      List.mem "safe" xs 
+      (* ocaml: arch *)
+    in
+
     let is_generated = 
       List.mem "_build" xs
     in
@@ -150,6 +156,7 @@ let filter_ml_files files =
     (* is_mli_with_a_ml ||  *)
     is_old || 
     is_generated || is_garbage ||
+    is_build_variant ||
     false
   )
 
