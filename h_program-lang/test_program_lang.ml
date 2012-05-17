@@ -80,7 +80,9 @@ let test_graph_code () =
 
 let test_dsm file =
   let g = Graph_code.load file in
-  pr2_gen g
+  let dm = Dependencies_matrix_code.build [] g in
+  Dependencies_matrix_code.display dm;
+  ()
 
 (*****************************************************************************)
 (* Main entry for Arg *)
