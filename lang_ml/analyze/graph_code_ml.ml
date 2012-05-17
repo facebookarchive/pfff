@@ -17,6 +17,10 @@ open Common
 module E = Database_code
 module G = Graph_code
 
+open Ast_ml
+module V = Visitor_ml
+module Ast = Ast_ml
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -149,6 +153,12 @@ let filter_ml_files files =
     false
   )
 
+(* todo: move this code in another file? module_analysis_ml.ml ? *)
+let lookup_module_name h_module_aliases s =
+  try  Hashtbl.find h_module_aliases s
+  with Not_found -> s
+
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
@@ -161,46 +171,99 @@ let filter_ml_files files =
 let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   let dir = Common.dirname readable in
   create_intermediate_directories_if_not_present g dir;
+  let m = Module_ml.module_name_of_filename file in
 
-  (* Dir -> Module -> File (.ml and mli) *)
-  let dir = (dir, E.Dir) in
-  let m = (Module_ml.module_name_of_filename file, E.Module) in
-  let file = (readable, E.File) in
+  g +> G.add_node (readable, E.File);
 
-  if G.has_node m g
-  then
-    (match G.parents m g with
-    | [] -> 
-        raise Impossible
-    (* probably because processed .mli or .ml before which created the node *)
-    | [p] when p =*= dir -> 
-        ()
+  if List.mem m (Common.keys duplicate_modules)
+  then begin
+    g +> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
+    (match m with
+    (* we could attach to two parents when we are almost sure that
+     * nobody will reference this module (e.g. because it's an 
+     * entry point), but then all the uses in those files would
+     * propagate to two parents, so when we have a dupe, we
+     * don't create the intermediate Module node. If it's referenced
+     * somewhere then it will generate a lookup failure.
+     *)
+    | s when s =~ "Main.*" || s =~ "Demo.*" ||
+             s =~ "Test.*" || s =~ "Foo.*"
+        -> ()
+    | _ when file =~ ".*external/" -> ()
     | _ ->
-        (match fst m with
-        (* we attach to two parents when we are almost sure that
-         * nobody will reference this module (e.g. because it's an 
-         * entry point)
-         *)
-        | s when s =~ "Main.*" || s =~ "Demo.*" ||
-                 s =~ "Test.*" || s =~ "Foo.*"
-            ->
-            g +> G.add_edge (dir, m) G.Has
-        | _ ->
-            pr2 (spf "PB: module %s is already present (%s and %s)"
-                    (fst m) (fst dir) (fst (G.parent m g)))
-        )
+        pr2 (spf "PB: module %s is already present (%s)"
+                m (Common.dump (List.assoc m duplicate_modules)));
+        g +> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
     )
-  else begin
-    g +> G.add_node m;
-    g +> G.add_edge (dir, m) G.Has;
-  end;
-  g +> G.add_node file;
-  g +> G.add_edge (m, file) G.Has;
+  end
+  else
+    if G.has_node (m, E.Module) g
+    then
+      match G.parents (m, E.Module) g with
+      (* probably because processed .mli or .ml before which created the node *)
+      | [p] when p =*= (dir, E.Dir) -> 
+          g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
+      | _ -> raise Impossible
+    else begin 
+      g +> G.add_node (m, E.Module);
+      g +> G.add_edge ((dir, E.Dir), (m, E.Module))  G.Has;
+      g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
+    end
+  ;
   ()
 
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
+let extract_uses ~g ~ast ~readable =
+  let src = (readable, E.File) in
+
+  (* when do module A = Foo, A.foo is actually a reference to Foo.foo *)
+  let h_module_aliases = Hashtbl.create 101 in
+
+  let add_edge_if_existing_module s =
+    let s = lookup_module_name h_module_aliases s in
+
+    let target = (s, E.Module) in
+    if G.has_node target g
+    then g +> G.add_edge (src, target) G.Use
+    else begin
+      pr2_once (spf "PB: lookup fail on module %s in %s" 
+                   (fst target) readable)
+    end
+  in
+    
+  let visitor = V.mk_visitor { V.default_visitor with
+    (* todo? does it cover all use cases of modules ? maybe need
+     * to introduce a kmodule_name_ref helper in the visitor
+     * that does that for us.
+     * todo: if want to give more information on edges, need
+     * to intercept the module name reference at a upper level
+     * like in FunCallSimple. C-s for long_name in ast_ml.ml
+     *)
+    V.kitem = (fun (k, _) x ->
+      (match x with
+      | Open (_tok, (qu, (Name (s,_)))) ->
+          add_edge_if_existing_module s
+
+      | Module (_, Name (s,_), _, (ModuleName ([], Name (s2,__)))) ->
+          Hashtbl.add h_module_aliases s s2;
+      | _ -> ()
+      );
+      k x
+    );
+
+    V.kqualifier = (fun (k,_) qu ->
+      (match qu with
+      | [] -> ()
+      | (Name (s, _), _tok)::rest ->
+          add_edge_if_existing_module s
+      );
+      k qu
+    );
+  } in
+  visitor (Program ast);
+  ()
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -220,26 +283,33 @@ let build ?(verbose=true) dir =
 
   let duplicate_modules =
     files 
-    +> List.map (fun f -> Common.basename f)
-    +> Common.get_duplicates
-    +> List.map Module_ml.module_name_of_filename
-    +> Common.uniq
+    +> Common.group_by_mapped_key (fun f -> Common.basename f)
+    +> List.filter (fun (k, xs) -> List.length xs >= 2)
+    +> List.map (fun (k, xs) -> Module_ml.module_name_of_filename k, xs)
   in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
+  if verbose then pr2 "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let readable = Common.filename_without_leading_path root file in
-    let ast = parse file in
+    let ast = (* parse file *) () in
     extract_defs ~g ~duplicate_modules ~ast ~readable ~file;
   ));
 
   (* step2: creating the 'Use' edges, the uses *)
+  if verbose then pr2 "\nstep2: extract uses";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
-    k();
+     k();
+     let readable = Common.filename_without_leading_path root file in
      (* skip files under external/ for now *)
+     if readable =~ ".*external/" || readable =~ "web/.*" then ()
+     else begin
+       let ast = parse file in
+       extract_uses ~g ~ast ~readable;
+     end
   ));
 
   g
