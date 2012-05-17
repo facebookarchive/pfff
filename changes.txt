@@ -32,7 +32,7 @@ has its own file, refactored abstract interpreter, etc.
 
 * -----------------------------------------------------------
 
-* 0.18 (Q4 2011) (prolog)
+* 0.18 (Q4 2011) (codequery)
 
 ** introduce codequery, an interactive Prolog-based code query engine,
 especially useful to query inheritance information.
