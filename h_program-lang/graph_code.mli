@@ -4,6 +4,9 @@ type edge = Has | Use
 
 type graph
 
+val save: graph -> Common.filename -> unit
+val load: Common.filename -> graph
+
 val root: node
 
 (* similar API to graph.ml *)

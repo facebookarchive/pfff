@@ -77,7 +77,11 @@ let test_graph_code () =
   g +> G.add_edge (("a/b/foo.php", E.File), ("c/bar.php", E.File)) G.Use;
   G.display_with_gv g;
   ()
-  
+
+let test_dsm file =
+  let g = Graph_code.load file in
+  pr2_gen g
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -91,4 +95,7 @@ let actions () = [
   Common.mk_action_1_arg test_layer;
   "-test_graph_code", " <>",
   Common.mk_action_0_arg test_graph_code;
+  "-test_dsm", " <file>",
+  Common.mk_action_1_arg test_dsm;
+  
 ]

@@ -162,6 +162,7 @@ let all_actions () =
  Test_parsing_php.actions()++
  Test_analyze_php.actions()++
  Test_analyze_ml.actions()++
+ Test_program_lang.actions()++
  Builtins_php.actions()++
   []
 
