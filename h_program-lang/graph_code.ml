@@ -146,6 +146,17 @@ let load file =
 let has_node n g =
   G.has_node n g.has
 
+let pred n e g =
+  match e with
+  | Has -> G.pred n g.has
+  | Use -> G.pred n g.use
+
+let succ n e g =
+  match e with
+  | Has -> G.succ n g.has
+  | Use -> G.succ n g.use
+
+
 let parent n g =
   let xs = G.pred n g.has in
   Common.list_to_single_or_exn xs

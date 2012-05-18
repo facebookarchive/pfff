@@ -32,7 +32,11 @@ module G = Graph_code
 (*****************************************************************************)
 
 (* dependency structure matrix *)
-type dm = unit
+type dm = {
+  matrix: int array array;
+  (* could be a tree *)
+  names: Graph_code.node array;
+}
 
 (* list of nodes to expand *)
 type config = Graph_code.node list
@@ -47,11 +51,25 @@ type config = Graph_code.node list
 
 (* poor's man DSM visualizer; use codegraph for a real visualization *)
 let display dm =
-  raise Todo
+  pr2_gen dm;
+  ()
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let build config g =
-  raise Todo
+  
+  let top_nodes = G.succ G.root G.Has g in
+
+  (* todo: iterate while in config *)
+  let nodes = top_nodes in
+  let n = List.length nodes in
+
+  let dm = {
+    matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
+    names = Array.of_list nodes;
+  }
+  in
+  dm
+
