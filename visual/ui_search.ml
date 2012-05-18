@@ -109,5 +109,4 @@ let run_tbgs_query ~root s =
   xs
 (*e: run_tbgs_query *)
 
-
 (*e: ui_search.ml *)

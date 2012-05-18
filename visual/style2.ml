@@ -15,11 +15,9 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
 module SH = Highlight_code
-
 module Flag = Flag_visual
 
 (*****************************************************************************)

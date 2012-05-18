@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
 module CairoH = Cairo_helpers
@@ -264,7 +263,6 @@ let find_rectangle_at_user_point2 dw user =
    | [] -> None
    | [x] -> Some (x, [], x)
    | _ -> Some (Common.head_middle_tail matching_rects)
-
 
 let find_rectangle_at_user_point a b = 
   Common.profile_code "Model.find_rectangle_at_point" (fun () ->

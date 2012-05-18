@@ -205,7 +205,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
   Controller._set_title := (fun s -> w#set_title s);
   Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
-    
 
   let accel_group = GtkData.AccelGroup.create () in
   w#misc#set_name "main window";
