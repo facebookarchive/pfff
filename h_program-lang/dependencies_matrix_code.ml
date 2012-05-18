@@ -34,8 +34,8 @@ module G = Graph_code
 (* dependency structure matrix *)
 type dm = {
   matrix: int array array;
-  (* could be a tree *)
-  names: Graph_code.node array;
+  name_to_i: (Graph_code.node, int) Hashtbl.t;
+  i_to_name: (int, Graph_code.node) Hashtbl.t;
 }
 
 (* list of nodes to expand *)
@@ -68,7 +68,10 @@ let build config g =
 
   let dm = {
     matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
-    names = Array.of_list nodes;
+    name_to_i = 
+      Common.index_list_0 nodes +> Common.hash_of_list;
+    i_to_name = 
+      Common.index_list_0 nodes +> List.map Common.swap +> Common.hash_of_list;
   }
   in
   dm
