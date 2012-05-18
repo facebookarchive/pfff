@@ -13,7 +13,6 @@ val root: node
 
 (* graph construction *)
 val create: unit -> graph
-
 val add_node: node -> graph -> unit
 val add_edge: (node * node) -> edge -> graph -> unit
 
@@ -24,7 +23,6 @@ val pred: node -> edge -> graph -> node list
 (* can raise exception *)
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
-
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
 
 (* algorithms *)
