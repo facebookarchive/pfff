@@ -13,16 +13,18 @@
  * license.txt for more details.
  *)
 open Common
-
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
+
+open Figures
+module F = Figures
+module Color = Simple_color
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (* todo: factorize with codemap/cairo_helpers.ml *)
-
 
 (*****************************************************************************)
 (* Text related *)
@@ -31,6 +33,7 @@ open Common.ArithFloatInfix
 (*****************************************************************************)
 (* Distance conversion *)
 (*****************************************************************************)
+let origin = { Cairo. x = 0.; y = 0. }
 
 (*****************************************************************************)
 (* Surface *)
@@ -39,3 +42,7 @@ open Common.ArithFloatInfix
 let surface_of_pixmap pm =
   let cr = Cairo_lablgtk.create pm#pixmap in
   Cairo.get_target cr
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
