@@ -129,6 +129,8 @@ let filter_ml_files files =
     (* pad specific *)
     let is_old = 
       List.mem "old" xs in
+    let is_todo = 
+      List.mem "todo" xs in
     let is_unparsable_on_purpose =
       List.mem "parsing_errors" xs in
 
@@ -154,7 +156,7 @@ let filter_ml_files files =
     is_test_in_external || (*is_test || *)
     is_unparsable_on_purpose ||
     (* is_mli_with_a_ml ||  *)
-    is_old || 
+    is_old || is_todo ||
     is_generated || is_garbage ||
     is_build_variant ||
     false
