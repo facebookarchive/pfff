@@ -137,9 +137,8 @@ type drawing = {
 (*s: new_pixmap() *)
 let new_pixmap ~width ~height =
   let drawable = GDraw.pixmap ~width ~height () in
-  drawable#set_foreground `WHITE ;
-  drawable#rectangle
-    ~x:0 ~y:0 ~width ~height ~filled:true () ;
+  drawable#set_foreground `WHITE;
+  drawable#rectangle ~x:0 ~y:0 ~width ~height ~filled:true () ;
   drawable
 (*e: new_pixmap() *)
 

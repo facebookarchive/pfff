@@ -15,29 +15,26 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
-
 
 module G = Gui
 module K = GdkKeysyms
 module GR = Gdk.Rectangle
 
+open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
+
 module CairoH = Cairo_helpers
 
-open Figures (* for the fields *)
 open Model2 (* for the fields *)
 module M = Model2
-
+module Controller = Controller2
 
 module Flag = Flag_visual
 module Style = Style2
-
-module Controller = Controller2
 
 module Db = Database_code
 
@@ -140,10 +137,8 @@ let configure2_bis da dw_ref ev =
   dw.width <- w;
   dw.height <- h;
   dw.pm <- Model2.new_pixmap dw.width dw.height;
-  let cr_src = Cairo_lablgtk.create dw.pm#pixmap in
-  let sur_src = Cairo.get_target cr_src in
   dw.overlay <- 
-    Cairo.surface_create_similar sur_src 
+    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
     Cairo.CONTENT_COLOR_ALPHA w h;
     
   View_mainmap.paint dw;
@@ -599,7 +594,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
-
 (*
     da#event#connect#key_press ~callback:(key_pressed da dw);
 *)

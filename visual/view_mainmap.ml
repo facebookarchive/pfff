@@ -35,8 +35,8 @@ module Ctl = Controller2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* This module calls Draw_macrolevel and Draw_microlevel and assembles
+(* 
+ * This module calls Draw_macrolevel and Draw_microlevel and assembles
  * the final "painting" of the code "main map". It is called mainly by
  * View2.configure and Ui_navigation.go_dirs_and_file.
  * 
