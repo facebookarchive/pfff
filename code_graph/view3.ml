@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
@@ -25,6 +24,7 @@ module CairoH = Cairo_helpers3
 module Model = Model3
 module Controller = Controller3
 open Model3
+module View_overlays = View_overlays3
 
 (*****************************************************************************)
 (* Prelude *)
@@ -63,7 +63,7 @@ let expose da w ev =
   let gwin = da#misc#window in
   let cr = Cairo_lablgtk.create gwin in
   assemble_layers cr w;
-  ()
+  true
 
 let configure da w ev =
   let width = GdkEvent.Configure.width ev in
@@ -178,10 +178,43 @@ let mk_gui w =
     (*-------------------------------------------------------------------*)
     (* toolbar *)
     (*-------------------------------------------------------------------*)
+    vbox#pack (G.mk (GButton.toolbar) (fun tb ->
+
+      tb#insert_widget (G.mk (GButton.button ~stock:`GO_BACK) (fun b -> 
+        b#connect#clicked ~callback:(fun () -> 
+          raise Todo
+          (* !Controller._go_back dw;*)
+        )
+      ));
+    ));
 
     (*-------------------------------------------------------------------*)
     (* main view *)
     (*-------------------------------------------------------------------*)
+
+    let vpane = GPack.paned `VERTICAL
+      ~packing:(vbox#pack ~expand:true ~fill:true) () in
+
+    let da = GMisc.drawing_area () in
+    da#misc#set_double_buffered false;
+
+    vpane#add1 da#coerce;
+
+    da#misc#set_can_focus true ;
+    da#event#add [ `KEY_PRESS;
+                   `BUTTON_MOTION; `POINTER_MOTION;
+                   `BUTTON_PRESS; `BUTTON_RELEASE ];
+
+    da#event#connect#expose ~callback:(expose da w) +> ignore;
+    da#event#connect#configure ~callback:(configure da w) +> ignore;
+
+    da#event#connect#button_press   
+      (View_matrix.button_action da w) +> ignore;
+    da#event#connect#button_release 
+      (View_matrix.button_action da w) +> ignore;
+
+    da#event#connect#motion_notify  
+      (View_overlays.motion_notify da w) +> ignore; 
 
     (*-------------------------------------------------------------------*)
     (* status bar *)

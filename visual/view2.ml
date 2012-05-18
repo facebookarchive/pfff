@@ -544,8 +544,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
     da#misc#set_can_focus true ;
     da#event#add [ `KEY_PRESS;
-   `BUTTON_MOTION; `POINTER_MOTION;
-   `BUTTON_PRESS; `BUTTON_RELEASE ];
+                   `BUTTON_MOTION; `POINTER_MOTION;
+                   `BUTTON_PRESS; `BUTTON_RELEASE ];
 
     da2#misc#set_can_focus true ;
     da2#event#add [ `KEY_PRESS;
@@ -553,8 +553,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
                   * POINTER_MOTION here, the minimap still
                   * gets an event for mouse over :(
                   *)
-   `BUTTON_MOTION; `POINTER_MOTION;
-   `BUTTON_PRESS; `BUTTON_RELEASE ];
+                    `BUTTON_MOTION; `POINTER_MOTION;
+                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
 
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
