@@ -216,9 +216,14 @@ let mk_gui w =
     da#event#connect#motion_notify  
       (View_overlays.motion_notify da w) +> ignore; 
 
+    Controller._refresh_da := (fun () ->
+      GtkBase.Widget.queue_draw da#as_widget;
+    );
+
     (*-------------------------------------------------------------------*)
     (* status bar *)
     (*-------------------------------------------------------------------*)
+    vbox#pack (*~from: `END*) statusbar#coerce;
 
   (*-------------------------------------------------------------------*)
   (* End *)

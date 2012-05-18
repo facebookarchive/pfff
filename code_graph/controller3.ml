@@ -20,8 +20,6 @@ let _statusbar_addtext = ref (fun s ->
   failwith "_statusbar_addtext not defined"
 )
 
-(*
 let _refresh_da = ref (fun () ->
   failwith "_refresh_da not defined"
 )
-*)
