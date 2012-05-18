@@ -25,6 +25,8 @@ val out_degree: 'a -> 'a graph -> int
 val in_degree: 'a -> 'a graph -> int
 val has_node: 'a -> 'a graph -> bool
 
+val iter_edges: ('a -> 'a -> unit) -> 'a graph -> unit
+
 (* internal vertex number *)
 val ivertex: 'a -> 'a graph -> int
 

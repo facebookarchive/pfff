@@ -25,6 +25,8 @@ val pred: node -> edge -> graph -> node list
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
 
+val iter_use_edges: (node -> node -> unit) -> graph -> unit
+
 (* algorithms *)
 
 (* debugging support *)

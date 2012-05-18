@@ -27,13 +27,12 @@ module G = Graph
  * (import/reference/extend/implement/instantiate/call/access/...),
  * This module is the basis for 'codegraph', a tool to help
  * visualize code dependencies or code relationships. 
- * It provides the core data structure of codegraph, 
+ * It provides one of the core data structure of codegraph
  * an (hyper)graph of all the entities in a program linked
  * either via a 'has-a' relation, which represent the
- * hierarchies, or 'use-a', which represent the dependencies.
- * 
- * This file could have been named dependency_code.ml or
- * relation_code.ml 
+ * hierarchies, or 'use-a', which represent the dependencies
+ * (the other core data structure of codegraph is in
+ * dependencies_matrix_code.ml).
  * 
  * Is this yet another code database? For PHP we already have
  * database_php.ml, tags_php.ml, database_light_php.ml, 
@@ -163,6 +162,12 @@ let parent n g =
 
 let parents n g =
   G.pred n g.has
+
+(*****************************************************************************)
+(* Iteration *)
+(*****************************************************************************)
+let iter_use_edges f g =
+  G.iter_edges f g.use
 
 (*****************************************************************************)
 (* Debugging *)

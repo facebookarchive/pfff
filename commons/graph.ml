@@ -86,7 +86,6 @@ open Common
  * to use the graph algorithm provided by ocamlgraph or ocamldot, then
  * use the adapters.
  * 
- * 
  * Alternatives in other languages:
  *  - boost C++ BGL, 
  *    http://www.boost.org/doc/libs/1_45_0/libs/graph/doc/index.html
@@ -333,6 +332,16 @@ let has_node k g =
     let _ = ivertex k g in
     true
   with Not_found -> false
+
+(*****************************************************************************)
+(* Iteration *)
+(*****************************************************************************)
+let iter_edges f g =
+  g.og +> OG.iter_edges (fun v1 v2 ->
+    let k1 = key_of_vertex v1 g in
+    let k2 = key_of_vertex v2 g in
+    f k1 k2
+  )
 
 (*****************************************************************************)
 (* Graph deconstruction *)
