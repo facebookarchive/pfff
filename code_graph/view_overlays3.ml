@@ -37,4 +37,3 @@ open Common.ArithFloatInfix
 let motion_notify da w ev =
   pr2 "View_overlay: motion_notify Todo";
   true
-

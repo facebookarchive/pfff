@@ -40,4 +40,3 @@ let paint w =
 
 let button_action da w ev =
   raise Todo
-

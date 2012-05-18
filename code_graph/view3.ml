@@ -243,6 +243,5 @@ let mk_gui w =
   win#connect#destroy         ~callback:(fun () -> quit(); ) +> ignore;
   win#show ();
 
-
   GtkThread.main ();
   ()
