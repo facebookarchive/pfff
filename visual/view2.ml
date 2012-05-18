@@ -653,5 +653,5 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
   GtkThread.main ();
   ()
 (*e: mk_gui() *)
-  
+
 (*e: view2.ml *)

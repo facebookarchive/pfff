@@ -117,11 +117,63 @@ let mk_gui w =
   (* if use my G.mk style for that, then get some pbs when trying
    * to draw stuff :(
    *)
-  let _vbox = GPack.vbox ~packing:win#add () in
+  let vbox = GPack.vbox ~packing:win#add () in
 
     (*-------------------------------------------------------------------*)
     (* Menu *)
     (*-------------------------------------------------------------------*)
+    vbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
+
+      let factory = new GMenu.factory m in
+      factory#add_submenu "_File" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+
+        fc#add_item "_Open stuff from db" ~key:K._O ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+        fc#add_separator () +> ignore;
+
+        fc#add_item "_Quit" ~key:K._Q ~callback:quit +> ignore;
+      );
+
+      factory#add_submenu "_Edit" +> (fun menu -> 
+        GToolbox.build_menu menu ~entries:[
+          `S;
+        ];
+      ) +> ignore;
+
+      factory#add_submenu "_Move" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+
+        fc#add_item "_Go back" ~key:K._B ~callback:(fun () -> 
+          raise Todo
+          (*!Controller._go_back dw *)
+        ) +> ignore;
+      );
+
+      factory#add_submenu "_Search" +> (fun menu -> 
+        let _fc = new GMenu.factory menu ~accel_group in
+        ()
+      );
+
+      factory#add_submenu "_Misc" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+
+        fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+      );
+
+      factory#add_submenu "_Help" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+
+        fc#add_separator () +> ignore;
+        fc#add_item "About" ~callback:(fun () -> 
+            G.dialog_text "Brought to you by pad\nwith love" "About"
+        ) +> ignore;
+      );
+
+    ));
 
     (*-------------------------------------------------------------------*)
     (* toolbar *)
