@@ -14,10 +14,11 @@ module E = Database_code
  * Main entry point of codegraph, a package/module/type/function/... 
  * hierarchical dependency visualizer using mainly a Dependency
  * Structure Matrix (DSM).
- * Node-link display of hierarchical graphs (or hypergraphs) would be nice
- * too, but they are far more complex to draw than matrices and do
+ * A node-link display of hierarchical graphs (or hypergraphs) would be nice
+ * too, but it is far more complex to draw than matrices and does
  * not scale as well visually apparently.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
+ * 
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101), so this looks like a viable direction to pursue to
  * visualize a software architecture.
@@ -218,7 +219,6 @@ let test_gdf xs =
   let _g = dependencies_of_files_or_dirs !lang xs in
   pr2 (spf "Writing data in %s" !output_file);
   raise Todo
-
   (*
   g +> Graph_guess.to_gdf  
     ~str_of_node:(fun s -> s) 
@@ -228,7 +228,6 @@ let test_gdf xs =
     ~tree:None~weight_edges:None
     ~output:!output_file;
   *)
- 
 
 (* ---------------------------------------------------------------------- *)
 (* Phylomel *)
