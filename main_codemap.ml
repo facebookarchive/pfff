@@ -12,7 +12,14 @@ module FT = File_type
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Main entry point of codemap.
+ * Main entry point of codemap, a semantic source code visualizer
+ * using treemaps and code thumbnails.
+ * 
+ * requirements:
+ *  - see all the code at macro level (hence treemaps)
+ *  - see code at micro level (hence code thumbnails)
+ *  - important code should be bigger. Just like in google maps
+ *    important road are more visible.
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
@@ -20,12 +27,12 @@ module FT = File_type
  *    different views
  *  - talked about mixing sgrep/spatch with code visualization,
  *    highlighting with a certain color different architecture aspects
- *    of the linux kernel (influenced by work on aspect browser)
+ *    of the Linux kernel (influenced by work on aspect browser)
  *  - talked about fancy code visualizer while at cleanmake with YY,
  *    spiros, etc.
  *  - saw SeeSoft code visualizer while doing some bibliographic work
  *  - saw code thumbnails by MSR, and Rob Deline
- *  - saw treemap of Linux kernel by fekete => idea of mixing both
+ *  - saw treemap of Linux kernel by fekete => idea of mixing
  *    tree-map+code-thumbnails+seesoft = codemap
  *  - saw talk at CC about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
