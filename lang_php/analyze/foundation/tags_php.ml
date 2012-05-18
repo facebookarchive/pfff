@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -25,7 +24,6 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Making a better TAGS file. M-x idx => it finds it!
  * It does not go to $idx in a file. Works for XHP. Works with
@@ -78,16 +76,6 @@ let tags_of_ast ast filelines =
             (* Generate a 'class::method tag. Can then have
              * a nice completion and know all the methods available
              * in a class (the short Eiffel-like profile).
-             * 
-             * It used to also generate a 'method' tag with just
-             * the method name, but if there is also a function
-             * somewhere using the same name then this function
-             * could be hard to reach.
-             * 
-             * alternative: could do first global analysis pass
-             * to find all the functions and generate also the short
-             * 'method' tag name when we are sure it would not
-             * conflict with an existing function.
              *)
             let info = Ast.info_of_name name in
             let info' = Ast.rewrap_str 
@@ -95,7 +83,7 @@ let tags_of_ast ast filelines =
             [Tags.tag_of_info filelines info' kind]
         )
     | (   Db.Field | Db.ClassConstant | Db.Other _
-        | Db.Type | Db.Module | Db.TopStmts | Db.Macro | Db.Global
+        | Db.Type | Db.Module | Db.Package | Db.TopStmts | Db.Macro | Db.Global
         | Db.MultiDirs | Db.Dir | Db.File
       ) -> 
         (* see defs_of_any *)
@@ -148,3 +136,4 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
     in
     (file, defs)
   ))
+  +> Tags_file.add_method_tags_when_unambiguous

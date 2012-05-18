@@ -164,6 +164,7 @@ Yoann Padioleau\\
  * That's lots of features. In a way tools like Powerpoint also provide
  * multiple displays on the same data and with zoomable slides, global
  * view on the set of slides, slides thumnails, etc.
+
  *)
 
 \end{verbatim}
@@ -177,6 +178,14 @@ can copy also what is inside Treemap.tex.nw
 %later: integrate more artifacts. See vision.txt
 
 whole program visualization. To actually see the architecture.
+\end{verbatim}
+
+\begin{verbatim}
+%It also abstract away like PofFS how you organize your information.
+If have one big test file or many small test files for instance,
+then it does not matter, you can see all of the information at once
+as it was a giant tiling plane.
+So poffs is a kind of a precursor to codemap :)
 \end{verbatim}
 
 Note that this is not a replacement for Emacs or Vi, but more a
@@ -343,9 +352,9 @@ Dependencies diagram and Tabular.
 let screen_size = ref 2
 let legend = ref true
 
-let db_file = ref (None: Common.filename option)
+let db_file    = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
-let layer_dir = ref (None: Common.dirname option)
+let layer_dir  = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -371,19 +380,16 @@ let main_action xs =
         layers_in_dir dir +> List.map Layer_code.load_layer
     | _ -> []
   in
-  let layers = 
-    Layer_code.build_index_of_layers 
-      ~root 
+  let layers_with_index = 
+    Layer_code.build_index_of_layers ~root 
       (match layers with 
-      | [layer] -> 
-          (* not active by default ? it causes some problems  *)
-          [layer, false]
-      | _ -> 
-          layers +> List.map (fun x -> x, false)
+      (* not active by default ? it causes some problems  *)
+      | [layer] -> [layer, false]
+      | _ -> layers +> List.map (fun x -> x, false)
       )
   in
 
-  let dw = Model2.init_drawing treemap_generator model layers xs in
+  let dw = Model2.init_drawing treemap_generator model layers_with_index xs in
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -1685,6 +1691,7 @@ type draw_content_layout = {
 
 
 <<draw_treemap_rectangle_content_maybe sig>>=
+(* will render (maybe) the filecontent of treemap_rectangle.tr_label *)
 val draw_treemap_rectangle_content_maybe :
   cr:Cairo.t ->
   clipping:Figures.rectangle ->
@@ -1745,8 +1752,8 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
 \subsection{Column layout}
 
 <<font_size_when_have_x_columns>>=
-let font_size_when_have_x_columns ~nblines ~nbcolumns ~w ~h ~with_n_columns = 
-  let size_x = (w / with_n_columns) / nbcolumns in
+let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns = 
+  let size_x = (w / with_n_columns) / chars_per_column in
   let size_y = (h / (nblines / with_n_columns)) in
 
   let min_font = min size_x size_y in
@@ -1761,11 +1768,11 @@ let font_size_when_have_x_columns ~nblines ~nbcolumns ~w ~h ~with_n_columns =
  * and see if by adding columns we can have a bigger font.
  * We try to maximize the font_size.
  *)
-let optimal_nb_columns ~nblines ~nbcolumns ~w ~h = 
+let optimal_nb_columns ~nblines ~chars_per_column ~w ~h = 
   
   let rec aux current_font_size current_nb_columns = 
     let min_font = font_size_when_have_x_columns 
-      ~nblines ~nbcolumns ~w ~h ~with_n_columns:current_nb_columns
+      ~nblines ~chars_per_column ~w ~h ~with_n_columns:current_nb_columns
     in
     if min_font > current_font_size
     then aux min_font (current_nb_columns + 1.)
@@ -1826,6 +1833,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
     let alpha = 
       match context.nb_rects_on_screen with
+      | n when n <= 1 -> 0.95
       | n when n <= 2 -> 0.8
       | n when n <= 10 -> 0.6
       | _ -> 0.3
@@ -2000,7 +2008,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
 
-  if intersection_rectangles r clipping = None
+  if F.intersection_rectangles r clipping = None
   then (* pr2 ("not drawing: " ^ file) *) ()
   else begin
 
@@ -2024,18 +2032,18 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
      * we would need a fast absolute_to_readable then.
      *)
     let nblines = Common.nblines_eff file +> float_of_int in
+
     (* assume our code follow certain conventions. Could infer from file. 
      * we should put 80, but a font is higher than large, so 
      * I manually readjust things. todo: should readjust something
      * else.
      *)
-
-    let nbcolumns = 41.0 in
+    let chars_per_column = 41.0 in
     
     let split_nb_columns = 
-      optimal_nb_columns ~nblines ~nbcolumns ~h ~w in
+      optimal_nb_columns ~nblines ~chars_per_column ~h ~w in
     let font_size = 
-      font_size_when_have_x_columns ~nblines ~nbcolumns ~h ~w 
+      font_size_when_have_x_columns ~nblines ~chars_per_column ~h ~w 
         ~with_n_columns:split_nb_columns in
     let w_per_column = 
       w / split_nb_columns in
@@ -3248,6 +3256,7 @@ let icon_of_kind kind has_test =
    *)
   | Db.Class _ -> `CONNECT
   | Db.Module -> `DISCONNECT
+  | Db.Package -> `DIRECTORY
   | Db.Type -> `PROPERTIES
   | Db.Constant -> `CONNECT
   | Db.Global -> `MEDIA_RECORD
@@ -4539,8 +4548,10 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     (* entities uses *)
     | Some (SH.Global (SH.Use2 _)) when font_size_real > 7.
           -> 1.5
+(*
     | Some (SH.Method (SH.Use2 _)) when font_size_real > 7.
-          -> 1.5
+          -> 1.2
+*)
         
     (* "literate programming" *)
     | Some (SH.CommentSection0) -> 5.
@@ -4943,9 +4954,25 @@ module FT = File_type
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Main entry point of codemap.
+ * 
+ * history:
+ *  - saw Aspect Browser while working on aspects as an intern at IRISA
+ *  - work on Poffs and idea of visualizing the same code through 
+ *    different views
+ *  - talked about mixing sgrep/spatch with code visualization,
+ *    highlighting with a certain color different architecture aspects
+ *    of the linux kernel (influenced by work on aspect browser)
+ *  - talked about fancy code visualizer while at cleanmake with YY,
+ *    spiros, etc.
+ *  - saw SeeSoft code visualizer while doing some bibliographic work
+ *  - saw code thumbnails by MSR, and Rob Deline
+ *  - saw treemap of Linux kernel by fekete => idea of mixing both
+ *    tree-map+code-thumbnails+seesoft = codemap
+ *  - saw talk at CC about improving javadoc by putting in bigger fonts
+ *    really often used API functions => idea of light db and semantic
+ *    visual feedback
  *)
 
 (*****************************************************************************)
@@ -5004,12 +5031,10 @@ let action = ref ""
 let set_gc () =
   if !Flag.debug_gc
   then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
-
   (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
-
 
 (*****************************************************************************)
 (* Model helpers *)
@@ -5106,7 +5131,6 @@ let main () =
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-
     | (x::xs) -> 
         main_action (x::xs)
 
@@ -5119,18 +5143,9 @@ let main () =
 
 (*****************************************************************************)
 let _ = 
-  if Sys.argv +> Array.to_list +> List.exists (fun x -> x ="-debugger")
-  then Common.debugger := true;
-
-  Common.finalize
-    (fun ()-> 
-      main ()
-    )
-    (fun()-> 
-      pr2 (Common.profile_diagnostic ());
-      Common.erase_temp_files ();
-    )
-
+  Common.main_boilerplate (fun () ->
+    main ()
+  )
 @ 
 
 \subsection{[[flag_visual.ml]]}
@@ -5503,6 +5518,10 @@ module CairoH = Cairo_helpers
 module  Parsing = Parsing2
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Drawing a treemap rectangle *)
 (*****************************************************************************)
 
@@ -5600,6 +5619,10 @@ module FT = File_type
 module Parsing = Parsing2
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
@@ -5609,7 +5632,7 @@ module Parsing = Parsing2
 (* globals *)
 (*****************************************************************************)
 
-(* ugly *)
+(* ugly, see mli for explanation *)
 let text_with_user_pos = ref []
 
 (*****************************************************************************)

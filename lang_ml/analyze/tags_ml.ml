@@ -12,37 +12,43 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_ml
-(*module V = Visitor_ml *)
 module Ast = Ast_ml
-
 module Tags = Tags_file
 module Db = Database_code
-
 open Highlight_code
-
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
+ * (ab)Using the code highlighter to extract tags.
+ * 
  * Alternatives:
- *  - otags, but does not work very well recursively as it groks easily
- *    on unparable files.
+ *  - otags, but does not work very well cos it stops everything
+ *    when it encounters an unparable file.
  *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
 (*
 let tag_of_name filelines name = 
   let info = Ast.info_of_name name in
   tag_of_info filelines info
 *)
+
+let entity_of_highlight_category_opt x =
+  match x with
+  | Function (Def2 _) -> Some Db.Function
+  | Global (Def2 _) -> Some Db.Global
+  | Module Def -> Some Db.Module
+  | TypeDef Def -> Some Db.Type
+  | FunctionDecl _ -> Some Db.Function
+  | _ -> None
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -51,18 +57,20 @@ let tag_of_name filelines name =
 let defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
 
-  files +> List.map (fun file ->
-    if verbose then pr2 (spf "processing: %s" file);
-    let (ast2, _stat) = 
-      Common.save_excursion Flag_parsing_ml.error_recovery true (fun() ->
-        Parse_ml.parse file 
-      ) in
-  
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.map (fun file ->
+    k();
+     let (ast2) = 
+       try 
+         Common.save_excursion Flag_parsing_ml.show_parsing_error false(fun()->
+           Parse_ml.parse file +> fst
+         )
+       with Parse_ml.Parse_error pos ->
+         pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
+         []
+     in
     let filelines = Common.cat_array file in
-
     let defs = ref [] in
-    (*let current_class = ref "" in*)
-
     let h = Hashtbl.create 101 in
 
     ast2 +> List.iter (fun (ast, (_str, toks)) ->
@@ -77,7 +85,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       ;
 
       (* processing the tokens in order *)
-      toks |> List.iter (fun tok -> 
+      toks +> List.iter (fun tok -> 
 
         let info = Token_helpers_ml.info_of_tok tok in
         let s = Token_helpers_ml.str_of_tok tok in
@@ -85,23 +93,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         let categ = Common.hfind_option info h in
         
         categ +> Common.do_option (fun x ->
-          match x with
-          | Function (Def2 _)
-          | Global (Def2 _)
-          | Module Def
-          | TypeDef Def
-
-          | FunctionDecl _
-            -> 
-              let kind =
-                match x with
-                | Function (Def2 _) -> Db.Function
-                | Global (Def2 _) -> Db.Global
-                | Module Def -> Db.Module
-                | TypeDef Def -> Db.Type
-                | FunctionDecl _ -> Db.Function
-                | _ -> raise Impossible
-              in
+          entity_of_highlight_category_opt x +> Common.do_option (fun kind ->
 
               Common.push2 (Tags.tag_of_info filelines info kind) defs;
 
@@ -120,64 +112,11 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
                                       (Common.filename_of_dbe (d,b, "ml"))))
               then
                 Common.push2 (Tags.tag_of_info filelines info' kind) defs;
-          | _ -> ()
+          )
         )
       );
     );
-
-(*
-    let visitor = V.mk_visitor { V.default_visitor with
-      V.kfunc_def = (fun (k, _) def ->
-        let name = def.f_name in
-        let info = Ast.info_of_name name in
-        Common.push2 (tag_of_name filelines name) defs;
-        let s = Ast.name name in
-
-        if heavy_tagging then begin
-          let info' = Ast.rewrap_str ("F_" ^ s) info in
-          Common.push2 (tag_of_info filelines info') defs;
-        end;
-        
-        k def
-      );
-
-      V.kclass_def = (fun (k, _) def ->
-        let name = def.c_name in
-        let info = Ast.info_of_name name in
-        let s = Ast.name name in
-        Common.push2 (tag_of_name filelines name) defs;
-        
-        if heavy_tagging then begin
-          let info' = Ast.rewrap_str ("C_" ^ s) info in
-          Common.push2 (tag_of_info filelines info') defs;
-        end;
-        
-        Common.save_excursion current_class s (fun () ->
-          k def;
-        );
-      );
-
-      V.kmethod_def = (fun (k, _) def ->
-        let name = def.m_name in
-        let info = Ast.info_of_name name in
-        
-        Common.push2 (tag_of_name filelines name) defs;
-        (* also generate a A::xxx tag to help completion *)
-        let s = Ast.str_of_info info in
-        let info' = Ast.rewrap_str (!current_class ^ "::" ^ s) info in
-        Common.push2 (tag_of_info filelines info') defs;
-        
-        if heavy_tagging then begin
-          let info' = Ast.rewrap_str ("M_" ^ s) info in
-          Common.push2 (tag_of_info filelines info') defs;
-        end;
-      );
-    }
-    in
-    visitor.V.vprogram ast;
-*)
       
     let defs = List.rev (!defs) in
     (file, defs)
-  )
-  
+  ))

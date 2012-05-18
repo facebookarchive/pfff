@@ -18,12 +18,14 @@ val copy:
 
 
 (* graph access *)
-val nodes:
-  'a graph -> 'a list
+val nodes: 'a graph -> 'a list
 val succ: 'a -> 'a graph -> 'a list
 val pred: 'a -> 'a graph -> 'a list
 val out_degree: 'a -> 'a graph -> int
 val in_degree: 'a -> 'a graph -> int
+val has_node: 'a -> 'a graph -> bool
+
+val iter_edges: ('a -> 'a -> unit) -> 'a graph -> unit
 
 (* internal vertex number *)
 val ivertex: 'a -> 'a graph -> int

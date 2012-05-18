@@ -91,7 +91,7 @@ let rec first_filepos_origin ii =
   | [] -> raise NoII
   | x::xs -> 
       if Ast.is_origintok x 
-      then x +> Ast.parse_info_of_info +> EC.filepos_of_parse_info
+      then x +> Parse_info.parse_info_of_info +> EC.filepos_of_parse_info
       else first_filepos_origin xs
 
 let (fpos_of_toplevel: Ast.toplevel -> Entity_php.filepos) = fun top -> 
@@ -110,7 +110,7 @@ let prange_of_origin_tokens toks =
   
   try 
     let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
-    Ast.parse_info_of_info min, Ast.parse_info_of_info max
+    Parse_info.parse_info_of_info min, Parse_info.parse_info_of_info max
   with _ -> 
     (Parse_info.fake_parse_info, Parse_info.fake_parse_info)
 
@@ -119,7 +119,7 @@ let first_comment ast toks =
   let ii = Lib_parsing_php.ii_of_any (Toplevel ast) in
   let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
-  let min = Ast_php.parse_info_of_info min in
+  let min = Parse_info.parse_info_of_info min in
 
   let toks_before_min = 
     toks +> List.filter (fun tok ->
@@ -137,13 +137,13 @@ let first_comment ast toks =
     | Parser_php.TNewline i1::
         (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
         if Ast_php.col_of_info i2 = 0
-        then Some (Ast_php.parse_info_of_info i2)
+        then Some (Parse_info.parse_info_of_info i2)
         else None
 
     (* for one-liner comment, there is no newline token before *)
     | Parser_php.T_COMMENT i2::xs ->
         if Ast_php.col_of_info i2 = 0
-        then Some (Ast_php.parse_info_of_info i2)
+        then Some (Parse_info.parse_info_of_info i2)
         else None
     | _ -> None
   in

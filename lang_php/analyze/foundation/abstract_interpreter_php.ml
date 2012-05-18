@@ -168,6 +168,8 @@ let max_depth = ref 6
 (* throw exn instead of passing-over silently unhandled constructs *)
 let strict = ref true
 
+let show_vardump = ref false
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -313,11 +315,17 @@ and fake_root env heap =
 
 and stmt env heap x =
   match x with
-  (* special keywords in the code to debug the abstract interpreter state *)
+  (* special keywords in the code to debug the abstract interpreter state.
+   * I've added var_dump() so that one can easily run a PHP test file
+   * with php or aphp and get both run working (show() is an
+   * undefined function in HPHP).
+   *)
   | Expr (Call (Id (("show" | "var_dump"),_), [e])) ->
       let heap, v = expr env heap e in
-      Env.print_locals_and_globals print_string env heap;
-      pr (Env.string_of_value heap v);
+      if !show_vardump then begin
+        Env.print_locals_and_globals print_string env heap;
+        pr (Env.string_of_value heap v);
+      end;
       heap
   (* used by unit testing *)
   | Expr (Call (Id ("checkpoint",_), [])) ->

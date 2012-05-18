@@ -57,11 +57,9 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
   Check_misc_php.check ast;
 
   (* work only when have a find_entity; requires global view of the code *)
-  (match find_entity with
-  | None -> ()
-  | Some find_entity ->
-      Check_functions_php.check_program find_entity ast;
-      Check_classes_php.check_program   find_entity ast;
+  find_entity +> Common.do_option (fun find_entity ->
+    Check_functions_php.check_program find_entity ast;
+    Check_classes_php.check_program   find_entity ast;
   );
   ()
  )

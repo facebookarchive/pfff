@@ -4,6 +4,8 @@ type program2 = toplevel2 list
     (* the token list contains now also the comment-tokens  *)
      and info_item = (string * Parser_cpp.token list)
 
+exception Parse_error of Parse_info.info
+
 (* This is the main function. It uses _defs below which often comes 
  * from a standard.h macro file 
  *)

@@ -739,7 +739,7 @@ let string_of_error_kind error_kind =
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error (error_kind, info) =
-  let info = Ast.parse_info_of_info info in
+  let info = Parse_info.parse_info_of_info info in
   spf "%s:%d:%d: FLOW %s" 
     info.Parse_info.file info.Parse_info.line info.Parse_info.column
     (string_of_error_kind error_kind)

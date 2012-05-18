@@ -1,5 +1,9 @@
 (* filename below is assumed to be the path of the file relative to basedir *)
 
+(* finding the repository *)
+val is_git_repository: Common.dirname -> bool
+val find_root_from_absolute_path: Common.filename -> Common.dirname
+
 (* operations on a singular file *)
 
 (* note that returned array is 0-indexed but the first entry is a dummy value.*)
@@ -75,12 +79,6 @@ val max_date_of_lines:
   Common.date_dmy
 
 (* misc operations *)
-val is_git_repository: Common.dirname -> bool
-(*
-val parent_path_with_dotgit_opt: Common.dirname -> Common.dirname option
-val parent_path_with_dotgit: Common.dirname -> Common.dirname
-*)
-
 val clean_git_patch: Patch.patch_raw -> Patch.patch_raw
 
 val ext_git_annot_cache: string

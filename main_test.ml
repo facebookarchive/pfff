@@ -74,6 +74,7 @@ let test regexp =
       Unit_analyze_js.unittest;
       Unit_parsing_html.unittest;
       Unit_parsing_opa.unittest;
+      Unit_parsing_cpp.unittest;
 
       Unit_version_control.unittest;
     ]
@@ -160,6 +161,8 @@ let all_actions () =
   pfff_extra_actions() ++
  Test_parsing_php.actions()++
  Test_analyze_php.actions()++
+ Test_analyze_ml.actions()++
+ Test_program_lang.actions()++
  Builtins_php.actions()++
   []
 

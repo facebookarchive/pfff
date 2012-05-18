@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module J = Json_type
@@ -22,13 +21,14 @@ module HC = Highlight_code
 (* Prelude *)
 (*****************************************************************************)
 
-(*
- * This module provides a generic "database" of semantic information on a 
- * codebase (a la CIA [1]). The goal is to give access to information computed
- * by a set of global static or dynamic analysis such as what are the
- * number of callers to a certain function, what is the test coverage of
- * a file, etc. This is mainly used by codemap to give semantic visual
- * feedback on the code.
+(* 
+ * This module provides a generic "database" of semantic information
+ * on a codebase (a la CIA [1]). The goal is to give access to
+ * information computed by a set of global static or dynamic analysis
+ * such as what are the number of callers to a certain function, what
+ * is the test coverage of a file, etc. This is mainly used by codemap
+ * to give semantic visual feedback on the code.
+ * 
  * 
  * update: database_code.pl and Prolog may be the prefered way now to
  * represent a code database, but for codemap it's still good to use
@@ -102,10 +102,9 @@ module HC = Highlight_code
 type entity_kind = 
   | Function
   | Class of class_type
-  | Module
+  | Module | Package
   | Type
-  | Constant
-  | Global
+  | Constant | Global
   | Macro
   | TopStmts
 
@@ -114,6 +113,8 @@ type entity_kind =
   | Field (* todo? could also be static or not *)
   | ClassConstant
 
+  (* todo: constructor *)
+
   | Other of string
 
   (* when we use the database for completion purpose, then files/dirs
@@ -121,7 +122,7 @@ type entity_kind =
    *)
   | File | Dir
   (* people often spread the same component in multiple dirs with the same
-   * name
+   * name (hmm could be merged now with Package)
    *)
   | MultiDirs
 
@@ -265,6 +266,7 @@ let string_of_entity_kind e =
   | Class Trait -> "Trait"
 
   | Module -> "Module"
+  | Package -> "Package"
   | Type -> "Type"
   | Constant -> "Constant"
   | Global -> "Global"

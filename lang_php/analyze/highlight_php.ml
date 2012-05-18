@@ -231,9 +231,42 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   in
 
   (* toks phase 1 *)
-  toks +> List.iter (fun tok -> 
-    ()
-  );
+  let rec aux_toks xs = 
+    match xs with
+    | [] -> ()
+
+    (* a little bit pad specific *)
+    |   T.T_COMMENT(ii)
+      ::T.TNewline (ii2)
+      ::T.T_COMMENT(ii3)
+      ::T.TNewline (ii4)
+      ::T.T_COMMENT(ii5)
+      ::xs ->
+        let s = Ast.str_of_info ii in
+        let s5 =  Ast.str_of_info ii5 in
+        (match () with
+        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection1
+        | _ when s =~ ".*------" && s5 =~ ".*------" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection2
+        | _ when s =~ ".*####" && s5 =~ ".*####" ->
+          tag ii CommentEstet;
+          tag ii5 CommentEstet;
+          tag ii3 CommentSection0
+        | _ ->
+            ()
+        );
+        aux_toks xs
+
+    | x::xs ->
+        aux_toks xs
+  in
+  aux_toks toks;
+
 
   (* ast phase 1 *) 
   let hooks = { V.default_visitor with

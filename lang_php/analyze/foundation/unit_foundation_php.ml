@@ -1,10 +1,9 @@
 open Common
+open OUnit
 
 module Ast = Ast_php
 module A = Annotation_php
 module Db = Database_code
-
-open OUnit
 
 (*****************************************************************************)
 (* Prelude *)
@@ -23,8 +22,7 @@ let defs_uses_unittest =
     "functions uses" >:: (fun () ->
       let file_content = "
 foo1();
-"
-      in
+" in
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let uses_strings = 
@@ -51,8 +49,7 @@ function foo1(Foo10 $x) { }
 
 $x = <x:xhp1></x:xhp1>;
 $x = <x:xhp2/>;
-"
-      in
+" in
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let str_of_name = function
@@ -78,6 +75,7 @@ $x = <x:xhp2/>;
 (*---------------------------------------------------------------------------*)
 let tags_unittest =
     "tags_php" >::: [
+
       "basic tags" >:: (fun () ->
         let file_content = "
             function foo() { }
@@ -97,24 +95,31 @@ let tags_unittest =
             let xs = tags_in_file +> List.map (fun x -> 
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
-            assert_equal ~msg:"it should contain the right 6 entries"
-              ["foo", Db.Function;
-               "A", Db.Class Db.RegularClass;
-               "B", Db.Class Db.Interface;
-               "C", Db.Class Db.Trait;
-               "CST", Db.Constant;
-               "OldCst", Db.Constant;
-              ]
-              xs
+            assert_equal ~msg:"it should contain the right 6 entries" [
+              "foo", Db.Function;
+              "A", Db.Class Db.RegularClass;
+              "B", Db.Class Db.Interface;
+              "C", Db.Class Db.Trait;
+              "CST", Db.Constant;
+              "OldCst", Db.Constant;
+            ]
+            xs
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
       );
+
       "method tags" >:: (fun () ->
         let file_content = "
            class A {
-              function a_method() { } 
+              function a_method() { }
+              function ambiguous_with_function() { }
+              function ambiguous_with_another_class() { }
            }
+           class B {
+              function ambiguous_with_another_class() { }
+           }
+           function ambiguous_with_function() { }
         " in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
         let tags = 
@@ -122,16 +127,27 @@ let tags_unittest =
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            (* we used to generate 2 tags per method, one for 'a_method',
-             * and one for 'A::a_method', but if there is also somewhere
-             * a function called a_method() and that it's located in an
-             * alphabetically higher filenames, then M-. a_method
-             * will unfortunately go the method. So just simpler to not
-             * generate the a_method tag.
+            let xs = tags_in_file +> List.map (fun x -> 
+              x.Tags_file.tagname, x.Tags_file.kind
+            ) in
+            (* we now generate two tags per method, one for 'a_method',
+             * and one for 'A::a_method', but only if there is not somewhere
+             * a function called a_method() or another class with the same
+             * method name.
              *)
-            assert_equal 
-              ~msg:"The tags should contain only 2 entries"
-              (List.length tags_in_file) 2;
+            assert_equal ~msg:"The tags should contain the right entries" [
+              "A", Db.Class Db.RegularClass;
+              "A::a_method", Db.Method Db.RegularMethod;
+              (* this tag is safe to generate, no ambiguity *)
+              "a_method", Db.Method Db.RegularMethod;
+              "A::ambiguous_with_function", Db.Method Db.RegularMethod;
+              "A::ambiguous_with_another_class", Db.Method Db.RegularMethod;
+              "B", Db.Class Db.RegularClass;
+              "B::ambiguous_with_another_class", Db.Method Db.RegularMethod;
+              "ambiguous_with_function", Db.Function;
+            ]
+            xs
+
         | _ ->
             assert_failure "The tags should contain only one entry for one file"
         )
@@ -139,8 +155,7 @@ let tags_unittest =
 
       "xhp tags" >:: (fun () ->
         let file_content = "class :x:foo { }" in
-        let tmpfile = 
-          Parse_php.tmp_php_file_from_string file_content in
+        let tmpfile = Parse_php.tmp_php_file_from_string file_content in
         let tags = 
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         let all_tags = tags +> List.map snd +> List.flatten in
@@ -152,7 +167,6 @@ let tags_unittest =
           ~msg:"it should contain an entry for the x:... classname form"
           (all_tags +> List.exists (fun t -> 
             t.Tags_file.tagname =$= "x:foo"));
-
       );
     ]
 

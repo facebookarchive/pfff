@@ -2,7 +2,7 @@
 type entity_kind = 
   | Function 
   | Class of class_type
-  | Module 
+  | Module | Package
   | Type 
   | Constant | Global
   | Macro

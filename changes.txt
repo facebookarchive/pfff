@@ -1,27 +1,38 @@
 -*- org -*-
 
-* 0.19 (Q1 2012) (pfff_logger, ??)
+* 0.20 (Q2 2012) (?? codegraph?)
 
-** introduce lang_opa
-basic support
+** sgrep:
+
+*** metavariables for XHP attributes
+
+* 0.19 (Q1 2012) (pfff_logger)
 
 ** introduce pfff_logger (in OPA), monitoring the use of pfff tools
 (please rerun ./configure if you have compilation pbs)
 
+** introduce lang_opa
+basic support
+
 ** introduce type inference for PHP (julien)
 
-** sgrep_php/spatch_php
-case insensitive mode by default
+** sgrep:
+
+*** case insensitive mode by default
+
+*** metavariables for XHP tags
 
 ** internals
 
-*** refactored lang_php/analysis/, less error messages, progress meter,
-split files, each PHP database has its own file, refactored
-abstract interpreter.
+*** heavily commented abstract interpreter and type inference
+
+*** refactored lang_php/analysis/
+less error messages, progress meter, split files, each PHP database
+has its own file, refactored abstract interpreter, etc.
 
 * -----------------------------------------------------------
 
-* 0.18 (Q4 2011) (prolog)
+* 0.18 (Q4 2011) (codequery)
 
 ** introduce codequery, an interactive Prolog-based code query engine,
 especially useful to query inheritance information.

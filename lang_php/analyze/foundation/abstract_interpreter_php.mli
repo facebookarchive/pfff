@@ -3,6 +3,7 @@
 val strict: bool ref
 val max_depth: int ref
 val extract_paths: bool ref
+val show_vardump: bool ref
 
 (* exceptions thrown when in strict mode *)
 exception UnknownFunction of string

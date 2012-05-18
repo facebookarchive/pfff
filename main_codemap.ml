@@ -11,9 +11,25 @@ module FT = File_type
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Main entry point of codemap.
+ * 
+ * history:
+ *  - saw Aspect Browser while working on aspects as an intern at IRISA
+ *  - work on Poffs and idea of visualizing the same code through 
+ *    different views
+ *  - talked about mixing sgrep/spatch with code visualization,
+ *    highlighting with a certain color different architecture aspects
+ *    of the linux kernel (influenced by work on aspect browser)
+ *  - talked about fancy code visualizer while at cleanmake with YY,
+ *    spiros, etc.
+ *  - saw SeeSoft code visualizer while doing some bibliographic work
+ *  - saw code thumbnails by MSR, and Rob Deline
+ *  - saw treemap of Linux kernel by fekete => idea of mixing both
+ *    tree-map+code-thumbnails+seesoft = codemap
+ *  - saw talk at CC about improving javadoc by putting in bigger fonts
+ *    really often used API functions => idea of light db and semantic
+ *    visual feedback
  *)
 
 (*****************************************************************************)
@@ -24,9 +40,9 @@ module FT = File_type
 let screen_size = ref 2
 let legend = ref true
 
-let db_file = ref (None: Common.filename option)
+let db_file    = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
-let layer_dir = ref (None: Common.dirname option)
+let layer_dir  = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -83,12 +99,10 @@ let action = ref ""
 let set_gc () =
   if !Flag.debug_gc
   then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
-
   (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
-
 
 (*****************************************************************************)
 (* Model helpers *)
@@ -178,19 +192,16 @@ let main_action xs =
         layers_in_dir dir +> List.map Layer_code.load_layer
     | _ -> []
   in
-  let layers = 
-    Layer_code.build_index_of_layers 
-      ~root 
+  let layers_with_index = 
+    Layer_code.build_index_of_layers ~root 
       (match layers with 
-      | [layer] -> 
-          (* not active by default ? it causes some problems  *)
-          [layer, false]
-      | _ -> 
-          layers +> List.map (fun x -> x, false)
+      (* not active by default ? it causes some problems  *)
+      | [layer] -> [layer, false]
+      | _ -> layers +> List.map (fun x -> x, false)
       )
   in
 
-  let dw = Model2.init_drawing treemap_generator model layers xs in
+  let dw = Model2.init_drawing treemap_generator model layers_with_index xs in
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -390,7 +401,6 @@ let main () =
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-
     | (x::xs) -> 
         main_action (x::xs)
 
@@ -403,16 +413,7 @@ let main () =
 
 (*****************************************************************************)
 let _ = 
-  if Sys.argv +> Array.to_list +> List.exists (fun x -> x ="-debugger")
-  then Common.debugger := true;
-
-  Common.finalize
-    (fun ()-> 
-      main ()
-    )
-    (fun()-> 
-      pr2 (Common.profile_diagnostic ());
-      Common.erase_temp_files ();
-    )
-
+  Common.main_boilerplate (fun () ->
+    main ()
+  )
 (*e: main_codemap.ml *)

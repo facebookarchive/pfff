@@ -253,7 +253,9 @@ let parse_info_of_info ii =
   | Ab 
     -> failwith "parse_info_of_info: no OriginTok"
 
-
+(* for error reporting *)
+let string_of_info x =
+  string_of_parse_info (parse_info_of_info x)
 
 let str_of_info  ii = (parse_info_of_info ii).str 
 let file_of_info ii = (parse_info_of_info ii).file

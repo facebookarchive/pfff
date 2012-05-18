@@ -60,9 +60,9 @@ SRC+= \
   lib-sexp/pre_sexp.ml \
   lib-sexp/sexp_intf.ml \
   lib-sexp/sexp.ml \
-  lib-sexp/path.ml \
   lib-sexp/conv.ml \
   lib-sexp/conv_error.ml
+#  lib-sexp/sexp_path.ml
 #for make depend
 INCLUDEDIRS+=lib-sexp
 #for make clean

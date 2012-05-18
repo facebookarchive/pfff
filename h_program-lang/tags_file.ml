@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module PI = Parse_info
@@ -21,23 +20,17 @@ module Db = Database_code (* for entity_kind *)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
+ * Generating TAGS file (for emacs or vim)
+ *
  * Supposed syntax for emacs TAGS (.tags) files, as analysed from output
  * of etags, read in etags.c and discussed with Francesco Potorti.
- * 
  * src: otags readme:
- * Supposed syntax for emacs TAGS (.tags) files, as analysed from output
- * of etags, read in etags.c.
  * 
  * <file> ::= <page>+
- * 
  * <page> ::= <header><body>
- * 
  * <header> ::= <NP><CR><file-name>,<body-length><CR>
- * 
  * <body> ::= <tag-line>*
- * 
  * <tag-line> ::= <prefix><DEL><tag><SOH><line-number>,<begin-char-index><CR>
  * pad: when tag is already at the beginning of the line:
  * <tag-line> ::=<tag><DEL><line-number>,<begin-char-index><CR>
@@ -46,7 +39,6 @@ module Db = Database_code (* for entity_kind *)
  * <DEL> ::= ascii DEL, (emacs ^?)
  * <SOH> ::= ascii SOH, (emacs ^A)
  * <CR> :: ascii CR
- * 
  * 
  * See also http://en.wikipedia.org/wiki/Ctags#Tags_file_formats
  *)
@@ -118,6 +110,7 @@ let vim_tag_kind_str tag_kind =
   | Db.Field -> "m"
 
   | Db.Module
+  | Db.Package
   | Db.Global
   | Db.Macro
   | Db.TopStmts
@@ -128,6 +121,56 @@ let vim_tag_kind_str tag_kind =
   | Db.Dir
   | Db.MultiDirs
       -> ""
+
+(* For methods, in addition to the tag for the precise 'class::method'
+ * name, it can be convenient to generate another tag with just the
+ * 'method' name so people can quickly jump to some code with just the
+ * method name. Of course if there is also a function somewhere using the
+ * same name then this function could be hard to reach so we generate
+ * an (imprecise) method tag only when there is no ambiguity. 
+ *)
+let add_method_tags_when_unambiguous files_and_defs =
+
+  (* step1: global analysis on all defs, remember all names and methods *)
+  let h_toplevel_names = 
+    files_and_defs +> List.map (fun (file, tags) ->
+      tags +> Common.map_filter (fun t ->
+        match t.kind with
+        | Db.Class _ | Db.Function | Db.Constant -> Some t.tagname
+        | _ -> None
+      )
+    ) +> List.flatten +> Common.hashset_of_list
+  in
+  let h_grouped_methods =
+    files_and_defs +> List.map (fun (file, tags) ->
+      tags +> Common.map_filter (fun t ->
+        match t.kind with
+        | Db.Method _ ->
+            if t.tagname =~ ".*::\\(.*\\)"
+            then Some (Common.matched1 t.tagname, t)
+            else failwith ("method tag should contain '::[, got: " ^ t.tagname)
+        | _ -> None
+      )
+    (* could skip the group_assoc_bykey and do Hashtbl.find_all below instead *)
+    ) +> List.flatten +> Common.group_assoc_bykey_eff +> Common.hash_of_list
+  in
+  (* step2: add method tag when no ambiguity *)
+  files_and_defs +> List.map (fun (file, tags) ->
+    file,
+    tags +> List.map (fun t ->
+      match t.kind with
+      | Db.Method _ ->
+          if t.tagname =~ ".*::\\(.*\\)"
+          then
+            let methodname = Common.matched1 t.tagname in
+            if not (Hashtbl.mem h_toplevel_names methodname) &&
+               List.length (Hashtbl.find h_grouped_methods methodname) = 1
+            then [t; { t with tagname = methodname }]
+            else [t]
+          else failwith("method tag should contain '::[, got: " ^ t.tagname)
+      | _ -> [t]
+    ) +> List.flatten
+  )
 
 (*****************************************************************************)
 (* Main entry point *)

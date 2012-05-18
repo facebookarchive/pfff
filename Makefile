@@ -22,7 +22,6 @@ PROGS=pfff
 PROGS+=sgrep
 PROGS+=spatch
 PROGS+=stags
-PROGS+=pm_depend
 
 PROGS+=ppp
 
@@ -39,6 +38,7 @@ endif
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=codemap
+PROGS+=codegraph
 endif
 
 OPTPROGS= $(PROGS:=.opt)
@@ -141,7 +141,7 @@ ifeq ($(FEATURE_GRAPHICS), 1)
 endif
 
 ifeq ($(FEATURE_VISUAL),1)
-VISUALDIR=visual
+VISUALDIRS=visual code_graph
 endif
 
 ifeq ($(FEATURE_FACEBOOK),1)
@@ -280,7 +280,7 @@ MAKESUBDIRS=commons \
   lang_css/parsing \
   lang_web/parsing \
   lang_text \
-  $(VISUALDIR) \
+  $(VISUALDIRS) \
   $(FACEBOOKDIR)
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
@@ -399,25 +399,6 @@ stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
 
 clean::
 	rm -f stags
-
-#------------------------------------------------------------------------------
-# pm_depend targets
-#------------------------------------------------------------------------------
-
-#SYSLIBS_PM= external/phylomel/src/lib.cma
-
-# external/ocamlgtk/src/lablgtk.cma \
-# external/ocamlcairo/src/cairo.cma \
-# external/ocamlcairo/src/cairo_lablgtk.cma \
-
-pm_depend: $(LIBS) main_pm_depend.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
-
-pm_depend.opt: $(LIBS:.cma=.cmxa) main_pm_depend.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
-
-clean::
-	rm -f pm_depend
 
 #------------------------------------------------------------------------------
 # sgrep targets
@@ -551,6 +532,22 @@ codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) mai
 
 clean::
 	rm -f codemap
+
+#------------------------------------------------------------------------------
+# codegraph (was pm_depend)
+#------------------------------------------------------------------------------
+
+#SYSLIBS_PM= external/phylomel/src/lib.cma
+OBJS4=code_graph/lib.cma
+
+codegraph: $(LIBS) commons/commons_gui.cma $(OBJS4) main_codegraph.cmo
+	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma  $(SYSLIBS3) $(GTKLOOP) $^
+
+codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS4:.cma=.cmxa) main_codegraph.cmx
+	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa  $(SYSLIBS3:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
+
+clean::
+	rm -f codegraph
 
 #------------------------------------------------------------------------------
 # pfff_misc targets

@@ -2,10 +2,7 @@
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
  *)
-
 open Common
-
-module Tags = Tags_file
 
 (*****************************************************************************)
 (* Purpose *)
@@ -107,7 +104,7 @@ let main_action xs =
 
 
   (match !format with
-  | Emacs ->Tags.generate_TAGS_file ~tags_file files_and_defs;
+  | Emacs -> Tags_file.generate_TAGS_file ~tags_file files_and_defs;
   | Vim -> Tags_file.generate_vi_tags_file ~tags_file files_and_defs;
   );
   ()
@@ -143,17 +140,8 @@ let options () =
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "stags version: %s" Config.version);
       exit 0;
-    ), 
-    "  guess what";
-
-    (* this can not be factorized in Common *)
-    "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2011/11/15 00:44:57 $";
-      raise (Common.UnixExit 0)
-    ), 
-    "   guess what";
-  ] ++
-  []
+    ), "  guess what";
+  ]
 
 (*****************************************************************************)
 (* Main entry point *)

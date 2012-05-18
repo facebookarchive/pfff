@@ -118,10 +118,10 @@ module XMATCH = struct
    *)
   let equal_ast_binded_code a b =
     match a, b with
+    | Ast.Name2 _, Ast.Name2 _
     | Ast.Expr _, Ast.Expr _ 
     | Ast.Lvalue _, Ast.Lvalue _ 
     | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
-    | Ast.Name2 _, Ast.Name2 _
     | Ast.Argument _, Ast.Argument _
       ->
         (* Note that because we want to retain the position information

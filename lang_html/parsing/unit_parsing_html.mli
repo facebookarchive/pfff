@@ -4,5 +4,3 @@
  * run via OUnit.run_test_tt 
  *)
 val unittest: OUnit.test
-
-val actions : unit -> Common.cmdline_actions

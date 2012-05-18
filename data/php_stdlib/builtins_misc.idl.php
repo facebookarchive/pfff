@@ -25,3 +25,4 @@ function unpack($format, $data) { }
 function sys_getloadavg() { }
 function token_get_all($source) { }
 function token_name($token) { }
+function hphp_process_abort($magic) { }

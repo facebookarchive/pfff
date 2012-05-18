@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module J = Json_type 
@@ -21,7 +20,6 @@ module M = Meta_ast_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * It can be useful for people who don't like OCaml to still benefit 
  * from pfff parsing by having at least a JSON-like representation
@@ -42,8 +40,8 @@ let no_info =
   for_json
 
 let string_json_of_program x = 
-  x |> Meta_ast_cpp.vof_program for_json 
-    |> Ocaml.json_of_v |> Json_out.string_of_json
+  x +> Meta_ast_cpp.vof_program for_json 
+    +> Ocaml.json_of_v +> Json_out.string_of_json
 
 (*****************************************************************************)
 (* ML Patterns *)
@@ -73,10 +71,7 @@ let string_of_v precision v =
     | _ -> k x
   ) v
   in
-
-  let s = Ocaml.string_of_v v' in
-  s
-
+  Ocaml.string_of_v v'
 
 let ml_pattern_string_of_program ?(precision=no_info) ast = 
   Meta_ast_cpp.vof_program precision ast +> string_of_v precision

@@ -23,12 +23,8 @@
      h_visualization
      h_program-lang
      lang_ml/parsing
+      lang_ml/analyze
      lang_php/parsing
-     lang_js/parsing
-      lang_js/analyze
-     lang_sql/parsing
-     lang_html/parsing
-     lang_cpp/parsing
      lang_php/analyze
       lang_php/analyze/basic
       lang_php/analyze/foundation
@@ -37,16 +33,14 @@
       lang_php/analyze/qa_code
       lang_php/analyze/static_analysis
       lang_php/analyze/checker
-     gui
+     lang_js/parsing
+      lang_js/analyze
+     lang_sql/parsing
+     lang_html/parsing
+     lang_cpp/parsing
+     visual
+     codegraph
      facebook
-     mini_php
-     external/ocamlmysql
-     external/ocamlmysql/orm-mysql
-     external/ocamlthrift
-     external/ocamlgl/SRC
-     external/ocamlcairo/src
-     external/phylomel/src
-     meta
      facebook/fb_common
      facebook/fb_org
      facebook/fb_db
@@ -56,12 +50,14 @@
      facebook/qa_test
      facebook/qa_code
      facebook/static_analysis
-     facebook
-     lang_php/matcher
-     lang_php/compile
+     external/ocamlmysql
+     external/ocamlmysql/orm-mysql
+     external/ocamlthrift
+     external/ocamlgl/SRC
+     external/ocamlcairo/src
+     external/phylomel/src
      facebook/thrift
      facebook/thrift/gen-ocaml
-     lang_cpp/parsing
     ")
    pad-ocaml-project-toplevel "pfff.top"
    )
@@ -223,7 +219,7 @@
        (2 " -e foo(X,X) /home/pad/pfff/tests/sgrep/linear_pattern.php")
        (3 " -find_run_once_pattern tests/sgrep/run_once_pattern.php ")
        (4 " -f /home/pad/pfff/tests/php/sgrep/foreach.sgrep /home/pad/pfff/tests/php/sgrep/foreach.php")
-       (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar.php")
+       (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar2.php")
        (10 "-test")
        )
      )
@@ -472,7 +468,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 23
+     (case 24
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -485,6 +481,7 @@
        (21 "-test abstract")
        (22 "-test abstract")
        (23 "-test pretty")
+       (24 "-overlayize_dry /home/pad/Overlays/www pegasus")
        )
      ))
    )
@@ -651,6 +648,22 @@
    )
 
   ; --------------------------------------------------------------------------
+  ; codegraph
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "codegraph"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-verbose -test_graph_code_ml /home/pad/pfff")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
   ; pfff_test
   ; --------------------------------------------------------------------------
   (setq
@@ -660,7 +673,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 9
+     (case 10
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
@@ -671,6 +684,7 @@
        (7 "light")
        (8 "-ia_php /home/pad/pfff/tests/php/ia/foo.php 6")
        (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
+       (10 "-test_graph_code_ml /home/pad/pfff/commons")
        )
      ))
    )

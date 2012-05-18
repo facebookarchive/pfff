@@ -17,9 +17,34 @@ let sgrep_unittest = [
   "sgrep features" >:: (fun () ->
     (* spec: pattern string, code string (statement), should_match boolean *)
     let triples = [
-      (* match even when space differs *)
+      (* matches even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
       "foo(1,3);", "foo(1,2);", false;
+
+      (* expression metavariable *)
+      "foo(X);",  "foo(1);", true;
+      "foo(X);",  "foo(1+1);", true;
+
+      (* metavariable naming conventions *)
+      "foo(X1);",       "foo(1);", true;
+      "foo(X1_MISC);",  "foo(1);", true;
+      "foo(X_MISC);",   "foo(1);", true;
+      "foo(_MISC);",    "foo(1);", false;
+
+      (* variable metavariable *)
+      "foo($X);",  "foo($var);", true;
+
+      (* lvalue metavariable *)
+      "$V->method();",  "$this->method();", true;
+      "$V->method();",  "$this->foo()->method();", true;
+      (* TODO: would be good to have this working too 
+      "X->method();"  ,  "$this->foo()->method();", true;
+      *)
+
+      (* "linear" patterns, a la Prolog *)
+      "X && X;", "($a || $b) && ($a || $b);", true;
+      "foo($V, $V);", "foo($x, $x);", true;
+      "foo($V, $V);", "foo($x, $y);", false;
 
       (* '...' in funcall *)
       "foo(...);", "foo();", true;
@@ -30,22 +55,11 @@ let sgrep_unittest = [
       "foo(X,...);", "foo(1);", true;
       (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
 
-      (* "linear" patterns, a la Prolog *)
-      "foo($V, $V);", "foo($x, $x);", true;
-      "X && X;", "($a || $b) && ($a || $b);", true;
-      "foo($V, $V);", "foo($x, $y);", false;
-
       (* '...' in arrays *)
       "foo(X, array(...));",  "foo(1, array(2, 3));", true;
 
-      (* metavariable naming conventions *)
-      "foo(X);"       ,  "foo(1);", true;
-      "foo(X);"       ,  "foo(1+1);", true;
-      "foo(X1);"      ,  "foo(1);", true;
-      "foo(X1_MISC);" ,  "foo(1);", true;
-      "foo(X_MISC);"  ,  "foo(1);", true;
-
-      "foo(_MISC);"  ,  "foo(1);", false;
+      (* '...' in strings *)
+      "foo(\"...\");", "foo(\"a string\");", true;
 
       (* metavariables on function name *)
       "X(1,2);", "foo(1,2);", true;
@@ -99,9 +113,24 @@ let sgrep_unittest = [
       "return <x:frag border=\"1\" >this is text</x:frag>;", 
       true;
 
+      (* metavariable on xhp tag *)
+      "return <X label=\"1\"></X>;", "return <x:frag label=\"1\"></x:frag>;",
+      true;
+
+      (* metavariable on xhp label *)
+      "return <X Y=\"1\"></X>;", "return <x:frag label=\"1\"></x:frag>;",
+      true;
+
+      (* xhp classes have a different syntax when used in xml context (<tag...)
+       * and when used as regular classes (:tag...), but a metavariable should
+       * accomodate both syntax
+       *)
+      "return <X>{X::foo()}</X>;", "return <x:frag>{:x:frag::foo()}</x:frag>;",
+      true;
       (* TODO:
-       *  Xhp should also match XhpSingleton
+       *  Xhp should also match XhpSingleton or optional closing tag
        * "return <x:frag></x:frag>;", "return <x:frag />;", true; 
+       * "return <x:frag></x:frag>;", "return <x:frag></>;", true; 
        *)
     ] in
     triples +> List.iter (fun (spattern, scode, should_match) ->
@@ -205,11 +234,3 @@ let unittest =
   "matcher_php" >::: (
     sgrep_unittest ++ spatch_unittest
   )
-
-(*****************************************************************************)
-(* Main entry for Arg *)
-(*****************************************************************************)
-let actions () = [
-    "-unittest_matcher", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest +> ignore);
-]

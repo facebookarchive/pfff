@@ -31,12 +31,13 @@ let cmdline_flags_macrofile () = [
 let verbose_lexing = ref true
 let verbose_parsing = ref true
 
+let error_recovery = ref true
+let show_parsing_error = ref true
+
 let verbose_pp_ast = ref false
 
 let filter_msg = ref false
-
 let filter_classic_passed = ref false
-
 let filter_define_error = ref true
 
 let cmdline_flags_verbose () = [

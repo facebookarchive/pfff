@@ -12,14 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_ml
 
 module Ast = Ast_ml
 module Flag = Flag_parsing_ml
-
 module V = Visitor_ml
 
 (*****************************************************************************)
@@ -33,12 +31,12 @@ module V = Visitor_ml
 let find_ml_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
-    let ftype = File_type.file_type_of_file filename in
-    match ftype with
+    match File_type.file_type_of_file filename with
     | File_type.PL (File_type.ML ("ml" | "mli")) -> 
+        (* a little bit pad specfic, syncweb metadata *)
         not (filename =~ ".*\\.md5sum")
     | _ -> false
-  ) |> Common.sort
+  ) +> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)
@@ -69,7 +67,6 @@ let min_max_ii_by_pos xs = Parse_info.min_max_ii_by_pos xs
 
 let is_function_body x = 
   match Ast.uncomma x with
-  | (Fun _ | Function _)::xs ->
-      true
+  | (Fun _ | Function _)::xs -> true
   | _ -> false
 

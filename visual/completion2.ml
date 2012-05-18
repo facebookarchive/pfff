@@ -87,6 +87,7 @@ let icon_of_kind kind has_test =
    *)
   | Db.Class _ -> `CONNECT
   | Db.Module -> `DISCONNECT
+  | Db.Package -> `DIRECTORY
   | Db.Type -> `PROPERTIES
   | Db.Constant -> `CONNECT
   | Db.Global -> `MEDIA_RECORD

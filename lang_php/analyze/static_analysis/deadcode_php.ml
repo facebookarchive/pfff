@@ -22,6 +22,7 @@ open Ast_php
 
 module Flag = Flag_analyze_php
 module Ast = Ast_php
+module PI = Parse_info
 
 module V = Visitor_php
 module T = Type_php
@@ -420,8 +421,8 @@ let get_lines_to_remove db ids =
     let ii = Lib_parsing_php.ii_of_any (Entity ast) in
     let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
-    let min = Ast_php.parse_info_of_info min in
-    let max = Ast_php.parse_info_of_info max in
+    let min = PI.parse_info_of_info min in
+    let max = PI.parse_info_of_info max in
 
     let toks_before_min = 
       toks +> List.filter (fun tok ->
@@ -440,7 +441,7 @@ let get_lines_to_remove db ids =
           if Ast_php.col_of_info i2 = 0 &&
              (* bugfix: dont want comment far away *)
              Ast_php.line_of_info i1 = min.Parse_info.line - 1
-          then Ast_php.parse_info_of_info i2
+          then PI.parse_info_of_info i2
           else min
 
       (* bugfix *)
@@ -450,13 +451,13 @@ let get_lines_to_remove db ids =
         ->
           if Ast_php.col_of_info i1first = 0 &&
              Ast_php.col_of_info i2 = 0
-          then Ast_php.parse_info_of_info i2
+          then PI.parse_info_of_info i2
           else min
 
       (* for one-liner comment, there is no newline token before *)
       | Parser_php.T_COMMENT i2::xs ->
           if Ast_php.col_of_info i2 = 0
-          then Ast_php.parse_info_of_info i2
+          then PI.parse_info_of_info i2
           else min
 
       | Parser_php.TNewline i1::tok2::xs ->
@@ -464,7 +465,7 @@ let get_lines_to_remove db ids =
           let _lwhite = Ast_php.line_of_info i1 in
           if Ast_php.col_of_info i1 = 0 (* buggy: lwhite <> ltok2 *)
           then (* safe to remove the previous newline too *)
-            Ast_php.parse_info_of_info i1
+            PI.parse_info_of_info i1
           else min
       | _ -> min
     in

@@ -225,7 +225,7 @@ let (idl_type_of_string, str_of_idl_type) =
 let idl_type_of_string (s, info) =
     try idl_type_of_string s
     with Not_found ->
-      let pinfo = Ast.parse_info_of_info info in
+      let pinfo = Parse_info.parse_info_of_info info in
       pr2 (Parse_info.error_message_parse_info pinfo);
       failwith ("not a idl type: " ^ s)
 

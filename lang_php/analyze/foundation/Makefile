@@ -19,7 +19,7 @@ SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml
 SRC+= defs_uses_php.ml \
       builtins_php.ml \
       controlflow_php.ml  controlflow_build_php.ml \
-      callgraph_php.ml callgraph_php2.ml graph_php.ml \
+      callgraph_php.ml callgraph_php2.ml \
 # used to be in facebook/static_analysis/
 SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
@@ -31,6 +31,7 @@ SRC+= dependencies_toposort_php.ml \
       builtins_typed_php.ml typing_unify_php.ml \
       typing_php.ml
 SRC+= database_php.ml database_juju_php.ml
+SRC+=graph_php.ml
 # used to be in analyze/
 SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \

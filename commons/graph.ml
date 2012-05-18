@@ -12,19 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * There are multiple libraries for graphs in OCaml, incorporating each
  * different graph algorithms:
  * 
- *  - Ocamlgraph, by Filliatre, Signoles, and more. It has transitive closure,
- *    kruskal, floyd, topological sort, CFC, etc. Probably the best, but it is
+ *  - OCamlGraph, by Filliatre, Signoles, et al. It has transitive closure,
+ *    kruskal, floyd, topological sort, CFC, etc. Probably the best. But it is
  *    heavily functorized. I thought it was too complicated because of all
  *    those functors but they also provide an easy interface without functor
  *    in pack.mli and sig_pack.mli which makes it almost usable
@@ -47,6 +45,7 @@ open Common
  * 
  *  - common.ml type 'a graph. No algorithm, just builder/accessors.
  *  - ograph.ml object version of Common.graph, just the interface.
+ * 
  *  - ograph2way.ml a generic version, inherit ograph.
  *  - ograph_extended.ml, implicit nodei = int for key.
  *  - ograph_simple.ml, key can be specified, for instance can be a string,
@@ -61,7 +60,7 @@ open Common
  * ograph_extended is more generic, but you pay a little for that by
  * forcing the user to have this intermediate 'nodei'. The people 
  * from ocamlgraph have well realized that and made it possible
- * to have different graph inteface (imperative/pure, directed/undirected,
+ * to have different graph interface (imperative/pure, directed/undirected,
  * with/witout nodes, paramemtrized vertex or not, ...) and reuse
  * lots of code for the algorithm. Unfortunately, just like for the C++
  * STL, it comes at a price: lots of functors. The sig_pack.mli and pack.ml
@@ -87,8 +86,6 @@ open Common
  * to use the graph algorithm provided by ocamlgraph or ocamldot, then
  * use the adapters.
  * 
- * 
- * 
  * Alternatives in other languages:
  *  - boost C++ BGL, 
  *    http://www.boost.org/doc/libs/1_45_0/libs/graph/doc/index.html
@@ -96,10 +93,6 @@ open Common
  *    apparently inspired by the boost one
  *  - c++ GTL, graph template library
  *  - c++ ASTL, automata library
- *  
- * 
- * 
- * 
  *)
 
 (*****************************************************************************)
@@ -299,9 +292,9 @@ let add_vertex_if_not_present key g =
     (* not necessary as add_edge automatically do that *)
     OG.add_vertex g.og v; 
   end
-let vertex_of_key key g = 
+let vertex_of_key key g =
   Hashtbl.find g.vertex_of_key key
-let key_of_vertex v g = 
+let key_of_vertex v g =
   Hashtbl.find g.key_of_vertex v
 
 let add_edge k1 k2 g = 
@@ -333,6 +326,22 @@ let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
 let ivertex k g = 
   let v = vertex_of_key k g in
   OG.V.label v
+
+let has_node k g =
+  try 
+    let _ = ivertex k g in
+    true
+  with Not_found -> false
+
+(*****************************************************************************)
+(* Iteration *)
+(*****************************************************************************)
+let iter_edges f g =
+  g.og +> OG.iter_edges (fun v1 v2 ->
+    let k1 = key_of_vertex v1 g in
+    let k2 = key_of_vertex v2 g in
+    f k1 k2
+  )
 
 (*****************************************************************************)
 (* Graph deconstruction *)

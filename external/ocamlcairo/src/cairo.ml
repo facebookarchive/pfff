@@ -384,7 +384,7 @@ external font_options_status : Font_Options.t -> status = "ml_cairo_font_options
 external string_of_status : status -> string = "ml_cairo_status_to_string"
 
 
-
+
 (* surface *)
 external surface_create_similar : [> `Any] surface -> content -> width:int -> height:int -> [`Any] surface = "ml_cairo_surface_create_similar"
 
@@ -423,7 +423,7 @@ external surface_get_device_offset : [> `Any] surface -> float * float = "ml_cai
 
 external surface_set_fallback_resolution : [> `Any] surface -> float -> float -> unit = "ml_cairo_surface_set_fallback_resolution"
 
-
+
 type image_surface = [`Any|`Image] surface
 
 type format =
@@ -439,7 +439,7 @@ external image_surface_get_height : [>`Image] surface -> int = "ml_cairo_image_s
 external image_surface_get_stride  : [>`Image] surface -> int = "ml_cairo_image_surface_get_stride"
 
 
-
+
 (* pattern *)
 type extend = 
     EXTEND_NONE
@@ -498,7 +498,7 @@ external set_filter : [> `Surface] pattern -> filter -> unit = "ml_cairo_pattern
 external get_filter : [> `Surface] pattern -> filter = "ml_cairo_pattern_get_filter"
 end
 
-
+
 (* matrix *)
 module Matrix = struct
 let init_identity = { xx = 1.; yx = 0.; xy = 0.; yy = 1.; x0 = 0.; y0 = 0. }

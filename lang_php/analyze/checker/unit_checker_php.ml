@@ -1,6 +1,4 @@
-
 open Common
-
 open OUnit
 
 module Ast = Ast_php

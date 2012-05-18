@@ -8,13 +8,22 @@ open Oassoc
 open Oassocb
 open Osetb
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* An imperative directed polymorphic graph.
+ * 
+ * What is the difference with ograph_extended? With ograph_extended we
+ * dont force the user to have a key; we generate those keys as he
+ * adds nodes. Here we assume the user already has an idea of what kind
+ * of key he wants to use (a string, a filename, a, int, whatever).
+ * This removes the need to remember some 'node -> nodeindex' mapping.
+ * It's very easy to add edge between entities with ograph_simple.
+ *)
 
-(* Difference with ograph_extended ? why not share code ? could, but
- * in ograph_extended we dont force the user to have a key and we
- * generate those keys as he add nodes. Here we assume the user already
- * have an idea of what kind of key he wants to use (a string, a
- * filename, a, int, whatever) 
-*)
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
 
 class ['key, 'a,'b] ograph_mutable =
   let build_assoc () = new oassocb [] in
@@ -22,7 +31,6 @@ class ['key, 'a,'b] ograph_mutable =
 
 object(o)
   
-
   val mutable succ = build_assoc()
   val mutable pred = build_assoc()
   val mutable nods = (build_assoc() : ('key, 'a) Oassocb.oassocb)
@@ -109,11 +117,11 @@ object(o)
     let set = set#del k in
     set
 
-
-
-
 end   
 
+(*****************************************************************************)
+(* Debugging *)
+(*****************************************************************************)
 
 let print_ograph_generic ~str_of_key ~str_of_node filename g =
   Common.with_open_outfile filename (fun (pr,_) ->
@@ -134,4 +142,3 @@ let print_ograph_generic ~str_of_key ~str_of_node filename g =
     );
   Ograph_extended.launch_gv_cmd filename;
   ()
-

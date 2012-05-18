@@ -1942,7 +1942,7 @@ module Header =
       in mh#update_field "Cookie" s
       
     (* CHECK
-       let nv_re = Pcre.regexp "^([a-zA-Z0-9_.]+)(=(.*))?$"
+       let nv_re = Pcre.regexp "^([a-zA-Z0-9_.]+)(=( . * ) )?$"
      *)
     let nv_re = Pcre.regexp "^([^=;]+)(=(.*))?$"
       

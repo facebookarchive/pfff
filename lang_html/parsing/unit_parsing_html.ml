@@ -44,18 +44,8 @@ let unittest =
           assert_failure (spf "wrong ast for %s, got %s"
                           s 
                           (Export_html.ml_pattern_string_of_html_tree ast))
-
     );
-
   ]
-
-(*****************************************************************************)
-(* Main entry for Arg *)
-(*****************************************************************************)
-let actions () = [
-    "-unittest_parsing_html", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
-]
 
     
 
