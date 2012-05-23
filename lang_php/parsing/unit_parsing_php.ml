@@ -214,6 +214,31 @@ let unittest =
       assert_bool "it should be the AST of an expression" ok;
 
     );
+                    
+    "sphp" >:: (fun () ->
+      let t x = ignore (Parse_php.program_of_string x) in
+      t "class A<T> { }";
+      t "class A<T1, T2> { }";
+      t "trait A<T1, T2> { }";
+      t "interface A<T1, T2> { }";
+      t "class A<T> extends B<int> { }";
+      t "interface A extends B<int>, C {}";
+      t "class A { use B<int>; }";
+      t "function foo(): int { }";
+      t "class A { public function foo(): int { }}";
+      t "function foo(mixed $x): int { }";
+      t "function foo(): void { }";
+      t "function id<T>(T $x): T { return $x; }";
+      t "function id((A, B) $x): T { return $x; }";
+      t "function id(?(A, B) $x): ?int { return $x; }";
+      t "function id( (function(?A) : int) $x): int { return $x; }"; 
+      t "function id( (function() : int) $x): int { }"; 
+      t "function test(int $x) { return 0; }";
+      t "class A { private ?(int, int) $x; }";
+      t "class A { const ?A<T1, T2> X = 0; }";
+      t "$x = function(): ?int { return null; };";
+      t "function foo(A<A<int>> $x): ?int { return null; };";
+    );
 
   (* todo: 
    *  - ? sexp and json output

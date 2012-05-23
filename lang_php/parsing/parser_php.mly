@@ -525,21 +525,19 @@ constant_declaration_statement:
 function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
 
 unticked_function_declaration_statement:
-  T_FUNCTION is_reference ident
+  T_FUNCTION is_reference ident class_params_opt
   TOPAR parameter_list TCPAR 
   /*(* static-php-ext: *)*/
-  optional_class_type
+  return_type_opt
   TOBRACE inner_statement_list TCBRACE
   { 
-    let params = ($4, $5, $6) in
-    let body = ($8, $9, $10) in
-
-    if not !Flag_parsing_php.type_hints_extension && $7 <> None
-    then raise Parsing.Parse_error;
+    let params = ($5, $6, $7) in
+    let body = ($9, $10, $11) in
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
-       f_return_type = $7;f_body = body;
+       f_return_type = $8;f_body = body;
     })
   }
+
 /*(*x: GRAMMAR function declaration *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
 non_empty_parameter_list:
@@ -576,10 +574,50 @@ non_empty_parameter_list:
 optional_class_type:
  | /*(*empty*)*/	{ None }
  | type_hint            { Some $1 }
+ | type_hint_extensions { None }
+
+return_type_opt:
+ | /*(*empty*)*/                   { None }
+ | non_empty_return_type           { $1 }
+
+non_empty_return_type:
+ | TCOLON type_hint                { Some $2 }
+ | TCOLON type_hint_extensions     { None }
 
 type_hint:
- | class_name_or_selfparent { Hint $1 }
- | T_ARRAY		    { HintArray $1 }
+ | class_name_or_selfparent type_params { Hint $1 }
+ | T_ARRAY		                { HintArray $1 }
+
+/*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
+ext_type_hint:
+ | type_hint                            { Some $1 }
+ | type_hint_extensions                 { None }
+
+type_hint_extensions:
+ | TQUESTION ext_type_hint                      {}
+ | TOPAR non_empty_ext_type_hint_list TCPAR     {}
+ | TOPAR T_FUNCTION
+     TOPAR ext_type_hint_list TCPAR
+     non_empty_return_type
+   TCPAR                                        {}
+
+ext_type_hint_list:
+ | {}
+ | non_empty_ext_type_hint_list {}
+
+non_empty_ext_type_hint_list:
+ | ext_type_hint                                     {}
+ | ext_type_hint TCOMMA non_empty_ext_type_hint_list {}
+
+type_params:
+  | {}
+  | TSMALLER type_arg_list_gt {}
+
+/*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
+type_arg_list_gt:
+  | class_name_or_selfparent TSMALLER non_empty_ext_type_hint_list T_SR {}
+  | type_hint TGREATER {}
+  | type_hint TCOMMA type_arg_list_gt {}
 
 is_reference:
  | /*(*empty*)*/  { None }
@@ -624,17 +662,26 @@ unticked_class_declaration_statement:
          c_implements = $3; c_body = $4, $5, $6; } }
 
 trait_declaration_statement:
- | T_TRAIT ident TOBRACE class_statement_list TCBRACE 
-     { { c_type = Trait $1; c_name = (Name $2); c_extends = None;
-         c_implements = None; c_body = ($3, $4, $5) } }
+ | T_TRAIT ident class_params_opt TOBRACE class_statement_list TCBRACE 
+     { (* TODO: store $3, right now the info is thrown away! *)
+       { c_type = Trait $1; c_name = (Name $2); c_extends = None;
+         c_implements = None; c_body = ($4, $5, $6) } }
 
 /*(*x: GRAMMAR class declaration *)*/
 class_name: 
- | ident { Name $1 }
+ | ident class_params_opt { Name $1 }
  /*(*s: class_name grammar rule hook *)*/
   /*(* xhp: an XHP element def *)*/
-  | T_XHP_COLONID_DEF { XhpName $1 }
+  | T_XHP_COLONID_DEF class_params_opt { XhpName $1 }
  /*(*e: class_name grammar rule hook *)*/
+
+class_params_opt:
+  | {}
+  | TSMALLER class_param_list TGREATER {}
+
+class_param_list:
+  | ident {}
+  | ident TCOMMA class_param_list {}
 
 class_entry_type:
  | T_CLASS  	      { ClassRegular $1 }
@@ -646,7 +693,7 @@ interface_entry:
 /*(*x: GRAMMAR class declaration *)*/
 extends_from:
  | /*(*empty*)*/			{ None }
- | T_EXTENDS fully_qualified_class_name	{ Some ($1, $2) }
+ | T_EXTENDS fully_qualified_class_name	type_params { Some ($1, $2) }
 
 interface_extends_list:
  | /*(*empty*)*/            { None }
@@ -663,24 +710,24 @@ implements_list:
 class_statement:
  | T_CONST class_constant_declaration            TSEMICOLON 
      { ClassConstants($1, $2, $3) }
+ | T_CONST ext_type_hint class_constant_declaration            TSEMICOLON 
+     { ClassConstants($1, $3, $4) }
  | variable_modifiers class_variable_declaration TSEMICOLON 
      { ClassVariables($1, None, $2, $3) }
 
   /*(* static-php-ext: *)*/
- | variable_modifiers type_hint class_variable_declaration TSEMICOLON 
+ | variable_modifiers ext_type_hint class_variable_declaration TSEMICOLON 
      { 
        if not !Flag_parsing_php.facebook_lang_extensions
        then raise Parsing.Parse_error;
-       ClassVariables($1, Some $2, $3, $4) 
+       ClassVariables($1, $2, $3, $4) 
      }
 
  | method_modifiers T_FUNCTION is_reference ident_method  
      TOPAR parameter_list TCPAR
-     optional_class_type
+     return_type_opt
      method_body 
      { 
-       if not !Flag_parsing_php.type_hints_extension && $8 <> None
-       then raise Parsing.Parse_error;
        Method {
          m_modifiers = $1; m_tok = $2; m_ref = $3; m_name = Name $4;
          m_params = ($5, $6, $7); m_return_type = $8; m_body = $9;
@@ -1072,12 +1119,12 @@ expr_without_variable_bis:
 
  | TBACKQUOTE encaps_list TBACKQUOTE   { BackQuote($1,$2,$3) }
  /*(* PHP 5.3 *)*/
- | T_FUNCTION is_reference TOPAR parameter_list TCPAR lexical_vars 
+ | T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt lexical_vars 
    TOBRACE inner_statement_list TCBRACE 
      { let params = ($3, $4, $5) in
-       let body = ($7, $8, $9) in
+       let body = ($8, $9, $10) in
        let ldef = {
-         l_tok = $1; l_ref = $2; l_params = params; l_use = $6; l_body = body;
+         l_tok = $1; l_ref = $2; l_params = params; l_use = $7; l_body = body;
        }
        in
        Lambda ldef
@@ -1665,12 +1712,13 @@ isset_variables:
  | isset_variables TCOMMA variable     { $1 ++ [Right $2; Left $3] }
 
 interface_list:
- | fully_qualified_class_name			    { [Left $1] }
- | interface_list TCOMMA fully_qualified_class_name { $1 ++ [Right $2; Left $3]}
+ | fully_qualified_class_name type_params { [Left $1] }
+ | interface_list TCOMMA
+   fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3]}
 
 trait_list:
- | fully_qualified_class_name			{ [Left $1] }
- | trait_list TCOMMA fully_qualified_class_name { $1 ++ [Right $2; Left $3] }
+ | fully_qualified_class_name type_params		{ [Left $1] }
+ | trait_list TCOMMA fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3] }
 
 
 declare_list:
