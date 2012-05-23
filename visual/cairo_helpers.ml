@@ -15,16 +15,13 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
-
-module F = Figures
-module Color = Simple_color
-
-open Figures
-
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
+
+open Figures
+module F = Figures
+module Color = Simple_color
 
 (*****************************************************************************)
 (* Prelude *)

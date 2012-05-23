@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
 module G = Gui
@@ -31,7 +30,6 @@ open Custom_list_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Gtk is quite "fragile". You change what looks to be an innoncent line
  * and then suddenly your performance goes down or you get some

@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
 module FT = File_type
@@ -92,12 +91,11 @@ let use_arity_of_use_count n =
    * you will miss some cases
    *)
   | _ when n >= 100 -> HugeUse
-
-  | _ when n > 20 -> LotsOfUse
+  | _ when n > 20   -> LotsOfUse
   | _ when n >= 10  -> MultiUse
-  | _ when n >= 2 -> SomeUse
-  | _ when n = 1 -> UniqueUse
-  | _ -> NoUse
+  | _ when n >= 2   -> SomeUse
+  | _ when n = 1    -> UniqueUse
+  | _               -> NoUse
 
 let rewrite_categ_using_entities s categ file entities =
 
@@ -109,7 +107,6 @@ let rewrite_categ_using_entities s categ file entities =
   | None -> categ
   | Some e_kind ->
 
-  
    let entities = 
     Hashtbl.find_all entities s +> List.filter (fun e ->
       (* we could have the full www dbcode but run the treemap on

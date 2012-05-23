@@ -15,15 +15,13 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
+open Model2
+module M = Model2
 module Controller = Controller2
 
 module L = Layer_code
-module M = Model2
-
-open Model2
 
 (*****************************************************************************)
 (* Prelude *)

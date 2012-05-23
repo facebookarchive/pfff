@@ -1,8 +1,6 @@
-(*s: editor_connection.ml *)
-(*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010-2012 Facebook
+ * Copyright (C) 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,42 +12,31 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(*e: Facebook copyright *)
 open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+module CairoH = Cairo_helpers3
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Emacs *)
+(* Scaling *)
 (*****************************************************************************)
 
-(*s: emacs configuration *)
-let emacsclient_path_mac =
-  "/home/pad/Dropbox/apps/Emacs.app/Contents/MacOS/bin/emacsclient"
+(*****************************************************************************)
+(* Painting *)
+(*****************************************************************************)
 
-let emacsclient_path = "emacsclient"
-
-(* you need to have done a M-x server-start first *)
-let run_emacsclient ~file ~line =
-  Common.command2 (spf "%s -n %s" emacsclient_path file);
-  Common.command2 (spf 
-    "%s -e '(with-current-buffer (window-buffer (selected-window)) (goto-line %d))'"
-    emacsclient_path line);
+let paint w =
+  pr2 "View_matrix.paint Todo";
   ()
-(*e: emacs configuration *)
 
 (*****************************************************************************)
-(* Vi *)
+(* Events *)
 (*****************************************************************************)
 
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-
-(*s: open_file_in_current_editor() *)
-let open_file_in_current_editor ~file ~line =
-  run_emacsclient ~file ~line
-(*e: open_file_in_current_editor() *)
-(*e: editor_connection.ml *)
+let button_action da w ev =
+  raise Todo

@@ -15,9 +15,7 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
-
 open Common.ArithFloatInfix
 
 module CairoH = Cairo_helpers
@@ -91,6 +89,5 @@ let draw_legend_layer ~cr layers_idx =
     ) +> List.flatten +> List.map (fun (a, b) -> (b, a))
   in
   draw_legend_of_color_string_pairs ~cr pairs
-
 
 (*e: draw_legend.ml *)

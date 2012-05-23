@@ -15,10 +15,7 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
-
 open Common
-
 open Common.ArithFloatInfix
 
 open Figures (* for the fields *)

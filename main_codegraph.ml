@@ -4,8 +4,8 @@
  *)
 open Common
 
-module G = Graph_code
-module E = Database_code
+module Model = Model3
+module View = View3
 
 (*****************************************************************************)
 (* Purpose *)
@@ -14,10 +14,11 @@ module E = Database_code
  * Main entry point of codegraph, a package/module/type/function/... 
  * hierarchical dependency visualizer using mainly a Dependency
  * Structure Matrix (DSM).
- * Node-link display of hierarchical graphs (or hypergraphs) would be nice
- * too, but they are far more complex to draw than matrices and do
+ * A node-link display of hierarchical graphs (or hypergraphs) would be nice
+ * too, but it is far more complex to draw than matrices and does
  * not scale as well visually apparently.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
+ * 
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101), so this looks like a viable direction to pursue to
  * visualize a software architecture.
@@ -26,17 +27,17 @@ module E = Database_code
  *  - different granularities for x-to-x relationships
  *    (packages to packages, modules to packages, functions, constructors, etc),
  *    so one can get:
- *    * package/directory projection to reduce the size of graph and get
+ *    * package (or directory) projection to reduce the size of graph and get
  *      a high-level view of the architecture ("package mode")
  *    * with or without external/ dependencies
  *    * possibiltiy to get a slice of the graph for just a directory
- *      with a package/directory projection for external dependencies
- *     ("module mode")
+ *      with a package (or directory) projection for external dependencies
+ *      ("module mode")
  *    * possiblity to zoom to see the actual functions of a package involved
- *      in a dependency. This is especially useful for edges
- *      where we don't understand why there is a dependency.
- *  - variable node size (but the count number in same row does that too)
+ *      in a dependency. This is especially useful for edges where
+ *      we don't understand why there exists a dependency.
  *  - variable arrow size (but the count number in the matrix does that too)
+ *  - variable node size (but the count number in same row does that too)
  * 
  * This tool also contains some actions to generate data for different
  * graph visualizer, e.g. Gephi, Guess. todo? backend for Graphviz? Phylomel?
@@ -65,7 +66,7 @@ module E = Database_code
  * 
  * history:
  *  - quick look at work on software architecture because of Banatre
- *    while a master student at IRISA, and later Schmidt, while a phd,
+ *    while a master student at IRISA, and later Schmidt, while a PhD,
  *    looking at work of Shaw and Garlan and the
  *    different architecture patterns (whiteboard, pipe, layers, etc).
  *  - started to draw hypergraphs of architecture while supervising a
@@ -75,14 +76,14 @@ module E = Database_code
  *  - dir to dir dependencies during coccinelle project? 
  *    Projections were hardcoded each time for each use. 
  *    No generic framework (like the hierarchical dependency matrix).
- *    Done for C, then for PHP, then for OCaml.
+ *    Done for C (then for PHP later, and then for OCaml far later).
  *  - very nice picture of architecture of Linux kernel sent by Gilles,
- *    the "map of the linux kernel"
+ *    the "map of the Linux kernel"
  *  - found that having a graph of module dependencies was very useful
  *    when refactored the c-- and mmm codebase, thx to ocamldot.
  *    But felt the need to have variable-size arrows (and nodes) and also
  *    the ability to get more information when clicking on an edge, 
- *    to actually see what are the functions involved in the dependency
+ *    to actually see what are the functions involved in a dependency
  *    for instance.
  *  - flibotonomy by Greg Scheschte for PHP, but focused on the nodes
  *    instead of the edges (which I think are more important).
@@ -110,6 +111,10 @@ module E = Database_code
  *    of dependencies when looked globally.
  * 
  * todo: 
+ *  - can codegraph does a good job to convey the software architecture
+ *    of codegraph itself? does it show clearly that Graph_code.graph and
+ *    dependencies_matrix_code.dm are the essential data structures? And
+ *    can it show the important fields?
  *  - maybe edge-bundles could make the node-link display approach
  *    scale better.
  *  - generate a node-link graph for the current matrix configuration; use
@@ -145,16 +150,12 @@ module E = Database_code
 (* Flags *)
 (*****************************************************************************)
 
-(* In addition to flags that can be tweaked via -xxx options (cf the
- * full list of options in the "the options" section below), this 
- * program also depends on external files ?
- *)
-
 let verbose = ref false
 
 (* old *)
 let with_extern = ref false
 let package_depth = ref 0
+
 let lang = ref "ml"
 (* todo? gephi mode? that set default output file to something different? *)
 let output_file = ref "/tmp/pm.gdf"
@@ -169,19 +170,23 @@ let action = ref ""
 (*****************************************************************************)
 (* Model Helpers *)
 (*****************************************************************************)
+
 let build_model root =
-  ()
+  let file = Filename.concat root "dependencies.marshall" in
+  let g = Graph_code.load file in
+  { Model.g = g; root = root; }
 
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
 
-(* Find root of project with a graph_code.marshall file
+(* Find root of project with a dependencies.marshall file
  * and display slice of the dependency hieararchical matrix 
  * using arguments in xs.
- * todo: use -with_extern ?
+ * todo? use -with_extern ?
  * 
- * How load graph? Build on demand? easier to test things that way ... 
+ * todo: How load graph? Build on demand? easier to test things that way ... 
+ * maybe can just cache and look if need to recompute the code graph?
  *)
 let main_action xs =
   Logger.log Config.logger "codegraph" None;
@@ -189,21 +194,21 @@ let main_action xs =
   let root = Common.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);
   
-  (* todo: 
-   *  - find marshall file 
-   *  - build model
-   *)
-  View3.mk_gui ()
+  let model = build_model root in
+  (* todo: take command line argument to propose a specific slice of the graph*)
+  let config = [] in
+
+  let w = Model.init_world config model in
+  View.mk_gui w
 
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
 
-
 (* ---------------------------------------------------------------------- *)
 (* ML *)
 (* ---------------------------------------------------------------------- *)
-let rec dependencies_of_files_or_dirs lang xs = 
+let rec dependencies_of_files_or_dirs lang xs =
   let verbose = !verbose in
   match lang, xs with
   | "ml", [dir] ->
@@ -218,7 +223,6 @@ let test_gdf xs =
   let _g = dependencies_of_files_or_dirs !lang xs in
   pr2 (spf "Writing data in %s" !output_file);
   raise Todo
-
   (*
   g +> Graph_guess.to_gdf  
     ~str_of_node:(fun s -> s) 
@@ -228,7 +232,6 @@ let test_gdf xs =
     ~tree:None~weight_edges:None
     ~output:!output_file;
   *)
- 
 
 (* ---------------------------------------------------------------------- *)
 (* Phylomel *)
@@ -319,7 +322,6 @@ let test_phylomel geno_file =
   Phylogram.write_svg_file nodeinfo fig svg_file;
   ()
 
-
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
   "-test_gdf", " <dirs>",
@@ -355,7 +357,7 @@ let options () =
   Common.cmdline_flags_devel () ++
   [
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "codegraph version: %s" Config.version);
+      pr2 (spf "CodeGraph version: %s" Config.version);
       exit 0;
     ), 
     "  guess what";
@@ -368,8 +370,9 @@ let options () =
 let main () = 
   (* Common_extra.set_link(); *)
   let usage_msg = 
-    "Usage: " ^ basename Sys.argv.(0) ^ 
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+      (Common.basename Sys.argv.(0))
+      "https://github.com/facebook/pfff/wiki/Codegraph"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in

@@ -4,7 +4,9 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC=model3.ml controller3.ml \
+SRC=cairo_helpers3.ml \
+    model3.ml controller3.ml \
+    view_matrix.ml view_overlays3.ml \
     view3.ml
 
 SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma

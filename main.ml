@@ -7,8 +7,9 @@ open Common
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
-(* A "driver" for the different parsers in pfff *)
+(*  
+ * A "driver" for the different parsers in pfff.
+ *)
 
 (*****************************************************************************)
 (* Flags *)
@@ -25,7 +26,7 @@ let verbose = ref false
 let action = ref ""
 
 (*****************************************************************************)
-(* Some  debugging functions *)
+(* Some debugging functions *)
 (*****************************************************************************)
 
 (*****************************************************************************)
@@ -51,7 +52,6 @@ let test_json_pretty_printer file =
 let pfff_extra_actions () = [
   "-json_pp", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
-  
   "-layer_stat", " <file>",
   Common.mk_action_1_arg Test_program_lang.layer_stat;
 ]
@@ -100,22 +100,13 @@ let options () =
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_other () ++
-
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff version: %s" Config.version);
       exit 0;
-    ), 
-    "  guess what";
+    ), "  guess what";
+  ]
 
-    (* this can not be factorized in Common *)
-    "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2011/03/26 00:44:57 $";
-      raise (Common.UnixExit 0)
-    ), 
-    "   guess what";
-  ] ++
-  []
 
 (*****************************************************************************)
 (* Main entry point *)

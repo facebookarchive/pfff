@@ -8,11 +8,23 @@ open Common
 module Flag = Flag_visual
 module FT = File_type
 
+module Model = Model2
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Main entry point of codemap.
+ * Main entry point of codemap, a semantic source code visualizer
+ * using treemaps and code thumbnails.
+ * 
+ * requirements:
+ *  - get a bird's eye view of all the code (hence treemaps)
+ *  - get a bird's eye view of a file (hence code thumbnails)
+ *  - better syntax highlighting than Emacs, use real parsers so
+ *    can colorize differently identifiers (a function vs a field vs
+ *    a constant etc)
+ *  - important code should be bigger. Just like in google maps
+ *    the important roads are more visible.
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
@@ -20,12 +32,12 @@ module FT = File_type
  *    different views
  *  - talked about mixing sgrep/spatch with code visualization,
  *    highlighting with a certain color different architecture aspects
- *    of the linux kernel (influenced by work on aspect browser)
+ *    of the Linux kernel (influenced by work on aspect browser)
  *  - talked about fancy code visualizer while at cleanmake with YY,
  *    spiros, etc.
  *  - saw SeeSoft code visualizer while doing some bibliographic work
  *  - saw code thumbnails by MSR, and Rob Deline
- *  - saw treemap of Linux kernel by fekete => idea of mixing both
+ *  - saw treemap of Linux kernel by fekete => idea of mixing
  *    tree-map+code-thumbnails+seesoft = codemap
  *  - saw talk at CC about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
@@ -46,12 +58,7 @@ let layer_dir  = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
-let proto = ref false
 (*e: main flags *)
-
-(* todo? config file ? 
- * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
- *)
 
 let filter = ref Treemap_pl.ex_filter_file
 
@@ -89,6 +96,10 @@ let filters = [
   );
 ]
 
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
+
 (* action mode *)
 let action = ref ""
 
@@ -121,22 +132,17 @@ let treemap_generator paths =
 
 (*s: build_model *)
 let build_model2 root dbfile_opt =   
-  let db_opt = dbfile_opt +> Common.fmap (fun file ->
-    if file =~ ".*.json"
-    then Database_code.load_database file
-    else Common.get_value file
-  )
-  in
-  let hentities = Model2.hentities root db_opt in
-  let hfiles_entities = Model2.hfiles_and_top_entities root db_opt in
-  let all_entities = Model2.all_entities db_opt root in
+  let db_opt = Common.fmap Database_code.load_database dbfile_opt in
+  let hentities = Model.hentities root db_opt in
+  let hfiles_entities = Model.hfiles_and_top_entities root db_opt in
+  let all_entities = Model.all_entities db_opt root in
   let idx = Completion2.build_completion_defs_index all_entities in
   
-  let model = { Model2.
-           db = db_opt;
-           hentities = hentities;
-           hfiles_entities = hfiles_entities;
-           big_grep_idx = idx;
+  let model = { Model.
+        db = db_opt;
+        hentities = hentities;
+        hfiles_entities = hfiles_entities;
+        big_grep_idx = idx;
   }
   in
   (*
@@ -145,7 +151,7 @@ let build_model2 root dbfile_opt =
   *)
 (*
   (* sanity check *)
-  let hentities = (Ancient2.follow model).Model2.hentities in
+  let hentities = (Ancient2.follow model).Model.hentities in
   let n = Hashtbl.length hentities in
   pr2 (spf "before = %d" n);
   let cnt = ref 0 in
@@ -201,7 +207,7 @@ let main_action xs =
       )
   in
 
-  let dw = Model2.init_drawing treemap_generator model layers_with_index xs in
+  let dw = Model.init_drawing treemap_generator model layers_with_index xs in
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -242,7 +248,7 @@ let main_action xs =
     Async.async_set (build_model root db_file) model;
    (*
     GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
-      Model2.async_set (build_model root dbfile_opt) model;
+      Model.async_set (build_model root dbfile_opt) model;
       false
     ) +> ignore
    *)
@@ -264,7 +270,7 @@ let main_action xs =
 (*****************************************************************************)
 
 (*s: visual_commitid() action *)
-let visual_commitid id = 
+let visual_commitid id =
   let files = Common.cmd_to_list
     (spf "git show --pretty=\"format:\" --name-only %s"
         id) 
@@ -316,12 +322,10 @@ let options () = [
 
     "-symlinks", Arg.Unit (fun () -> 
       Treemap.follow_symlinks := true;
-    ),
-    " ";
+    ), " ";
     "-no_symlinks", Arg.Unit (fun () ->
       Treemap.follow_symlinks := false;
-    ),
-    " ";
+    ), " ";
 
     "-with_info", Arg.String (fun s -> db_file := Some s),
     " <db_light_file>";
@@ -332,8 +336,6 @@ let options () = [
 
     "-test" , Arg.String (fun s -> test_mode := Some s),
     " <str> execute an internal script";
-    "-proto" , Arg.Set proto,
-    " ";
 
     "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
      spf " filter certain files (available = %s)" 
@@ -358,10 +360,6 @@ let options () = [
   (*e: options *)
   ] ++
   Common.options_of_actions action (all_actions()) ++
-(*
-  Flag_analyze_php.cmdline_flags_verbose () ++
-  Flag_parsing_cpp.cmdline_flags_macrofile () ++
-*)
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++
   [

@@ -78,7 +78,7 @@ type edge =
   | Use
 
 (* 
- * We use an imperative, directed, with no intermediate node-index, 
+ * We use an imperative, directed, with no intermediate node-index,
  * graph.
  * 
  * We use two different graphs because we need an efficient way to

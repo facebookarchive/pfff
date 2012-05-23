@@ -15,11 +15,8 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
-
 open Common.ArithFloatInfix
-
 module CairoH = Cairo_helpers
 
 (*****************************************************************************)

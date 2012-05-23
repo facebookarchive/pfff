@@ -21,9 +21,8 @@ open Common.ArithFloatInfix
 
 module G = Gui
 
-module Controller = Controller2
-
 open Model2
+module Controller = Controller2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -98,6 +97,5 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   !Controller._refresh_da ();
   ()
 (*e: go_dirs_or_file *)
-
 
 (*e: ui_navigation.ml *)

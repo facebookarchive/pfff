@@ -15,29 +15,26 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
-
 
 module G = Gui
 module K = GdkKeysyms
 module GR = Gdk.Rectangle
 
+open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
+
 module CairoH = Cairo_helpers
 
-open Figures (* for the fields *)
 open Model2 (* for the fields *)
 module M = Model2
-
+module Controller = Controller2
 
 module Flag = Flag_visual
 module Style = Style2
-
-module Controller = Controller2
 
 module Db = Database_code
 
@@ -140,10 +137,8 @@ let configure2_bis da dw_ref ev =
   dw.width <- w;
   dw.height <- h;
   dw.pm <- Model2.new_pixmap dw.width dw.height;
-  let cr_src = Cairo_lablgtk.create dw.pm#pixmap in
-  let sur_src = Cairo.get_target cr_src in
   dw.overlay <- 
-    Cairo.surface_create_similar sur_src 
+    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
     Cairo.CONTENT_COLOR_ALPHA w h;
     
   View_mainmap.paint dw;
@@ -210,7 +205,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
   Controller._set_title := (fun s -> w#set_title s);
   Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
-    
 
   let accel_group = GtkData.AccelGroup.create () in
   w#misc#set_name "main window";
@@ -549,8 +543,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
     da#misc#set_can_focus true ;
     da#event#add [ `KEY_PRESS;
-   `BUTTON_MOTION; `POINTER_MOTION;
-   `BUTTON_PRESS; `BUTTON_RELEASE ];
+                   `BUTTON_MOTION; `POINTER_MOTION;
+                   `BUTTON_PRESS; `BUTTON_RELEASE ];
 
     da2#misc#set_can_focus true ;
     da2#event#add [ `KEY_PRESS;
@@ -558,8 +552,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
                   * POINTER_MOTION here, the minimap still
                   * gets an event for mouse over :(
                   *)
-   `BUTTON_MOTION; `POINTER_MOTION;
-   `BUTTON_PRESS; `BUTTON_RELEASE ];
+                    `BUTTON_MOTION; `POINTER_MOTION;
+                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
 
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
@@ -599,7 +593,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
-
 (*
     da#event#connect#key_press ~callback:(key_pressed da dw);
 *)
@@ -659,5 +652,5 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
   GtkThread.main ();
   ()
 (*e: mk_gui() *)
-  
+
 (*e: view2.ml *)

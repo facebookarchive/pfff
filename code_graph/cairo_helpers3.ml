@@ -1,8 +1,6 @@
-(*s: editor_connection.ml *)
-(*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010-2012 Facebook
+ * Copyright (C) 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,42 +12,37 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(*e: Facebook copyright *)
 open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
+
+open Figures
+module F = Figures
+module Color = Simple_color
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
-(*****************************************************************************)
-(* Emacs *)
-(*****************************************************************************)
-
-(*s: emacs configuration *)
-let emacsclient_path_mac =
-  "/home/pad/Dropbox/apps/Emacs.app/Contents/MacOS/bin/emacsclient"
-
-let emacsclient_path = "emacsclient"
-
-(* you need to have done a M-x server-start first *)
-let run_emacsclient ~file ~line =
-  Common.command2 (spf "%s -n %s" emacsclient_path file);
-  Common.command2 (spf 
-    "%s -e '(with-current-buffer (window-buffer (selected-window)) (goto-line %d))'"
-    emacsclient_path line);
-  ()
-(*e: emacs configuration *)
+(* todo: factorize with codemap/cairo_helpers.ml *)
 
 (*****************************************************************************)
-(* Vi *)
+(* Text related *)
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Wrappers *)
+(* Distance conversion *)
+(*****************************************************************************)
+let origin = { Cairo. x = 0.; y = 0. }
+
+(*****************************************************************************)
+(* Surface *)
 (*****************************************************************************)
 
-(*s: open_file_in_current_editor() *)
-let open_file_in_current_editor ~file ~line =
-  run_emacsclient ~file ~line
-(*e: open_file_in_current_editor() *)
-(*e: editor_connection.ml *)
+let surface_of_pixmap pm =
+  let cr = Cairo_lablgtk.create pm#pixmap in
+  Cairo.get_target cr
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)

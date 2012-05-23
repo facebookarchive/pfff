@@ -16,7 +16,6 @@
  *)
 (*e: Facebook copyright *)
 open Common
-
 open Common.ArithFloatInfix
 
 open Figures (* for the fields *)

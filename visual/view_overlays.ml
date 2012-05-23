@@ -15,11 +15,9 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
-
 
 module F = Figures
 module T = Treemap
