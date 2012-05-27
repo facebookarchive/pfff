@@ -156,6 +156,19 @@ let mk_gui w =
         ()
       );
 
+      factory#add_submenu "_Filter" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+        fc#add_item "Types only" ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+        fc#add_item "Functions only" ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+        fc#add_item "mli only" ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+      );
+
       factory#add_submenu "_Misc" +> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
