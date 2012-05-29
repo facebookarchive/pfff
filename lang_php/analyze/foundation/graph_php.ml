@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_php 
@@ -89,4 +88,3 @@ let display_with_gv g db =
   g +> G.print_graph_generic  ~str_of_key:(fun id ->
     Db.complete_name_of_id id db
   ) tmpfile
-
