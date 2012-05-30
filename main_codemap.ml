@@ -20,11 +20,12 @@ module Model = Model2
  * requirements:
  *  - get a bird's eye view of all the code (hence treemaps)
  *  - get a bird's eye view of a file (hence code thumbnails)
- *  - better syntax highlighting than Emacs, use real parsers so
- *    can colorize differently identifiers (a function vs a field vs
+ *  - better syntax highlighting than Emacs, using real parsers so
+ *    we can colorize differently identifiers (a function vs a field vs
  *    a constant etc)
  *  - important code should be bigger. Just like in google maps
- *    the important roads are more visible.
+ *    the important roads are more visible. So need some sort of
+ *    global analysis.
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
