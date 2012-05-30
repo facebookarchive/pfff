@@ -45,6 +45,7 @@ type world = {
 
   (* device coordinates *)
   mutable pm: GDraw.pixmap;
+  (* todo: could make pm also a Cairo.surface? *)
   mutable overlay: [ `Any ] Cairo.surface;
 
   (* viewport, device coordinates *)
@@ -63,6 +64,10 @@ let new_pixmap ~width ~height =
   drawable#rectangle ~x:0 ~y:0 ~width ~height ~filled:true () ;
   drawable
 
+let surface_of_gtk_pixmap pm =
+  let cr = Cairo_lablgtk.create pm#pixmap in
+  Cairo.get_target cr
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -80,6 +85,6 @@ let init_world ?(width = 600) ?(height = 600) config model =
     m;
     width; height;
     pm;
-    overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm)
+    overlay = Cairo.surface_create_similar (surface_of_gtk_pixmap pm)
       Cairo.CONTENT_COLOR_ALPHA width height;
   }

@@ -48,7 +48,7 @@ module View_overlays = View_overlays3
  * those pixels copying from one layer to the other (but this is fast enough).
  *)
 let assemble_layers cr_final w =
-  let surface_src = CairoH.surface_of_pixmap w.pm in
+  let surface_src = Model.surface_of_gtk_pixmap w.pm in
 
   Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
   Cairo.set_source_surface cr_final surface_src 0. 0.;
@@ -74,7 +74,7 @@ let configure da w ev =
   w.height <- height;
   w.pm <- Model.new_pixmap w.width w.height;
   w.overlay <- 
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap w.pm)
+    Cairo.surface_create_similar (Model.surface_of_gtk_pixmap w.pm)
      Cairo.CONTENT_COLOR_ALPHA width height;
   View_matrix.paint w;
   true

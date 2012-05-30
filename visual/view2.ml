@@ -76,7 +76,12 @@ let root_orig () =
 (*s: assemble_layers *)
 (* Composing the "layers". See cairo/tests/knockout.ml example.
  * Each move of the cursor will call assemble_layers which does all
- * those pixels copying but this is fast enough.
+ * those pixels copying (which is very fast).
+ * 
+ * The final target is the actual gtk window which is represented by cr_final.
+ * We copy the pixels from the pixmap dw.pm on the window. Then
+ * we copy the pixels from the pixmap dw.overlay on the windown
+ * getting the final result.
  *)
 let assemble_layers cr_final dw ~width ~height =
 
