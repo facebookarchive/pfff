@@ -21,9 +21,9 @@ module K = GdkKeysyms
 
 module CairoH = Cairo_helpers3
 
+open Model3
 module Model = Model3
 module Controller = Controller3
-open Model3
 module View_overlays = View_overlays3
 
 (*****************************************************************************)
@@ -45,7 +45,7 @@ module View_overlays = View_overlays3
 
 (* Composing the "layers". See cairo/tests/knockout.ml example.
  * Each move of the cursor will call assemble_layers which does all
- * those pixels copying (but this is fast enough).
+ * those pixels copying from one layer to the other (but this is fast enough).
  *)
 let assemble_layers cr_final w =
   let surface_src = CairoH.surface_of_pixmap w.pm in
