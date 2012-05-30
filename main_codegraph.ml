@@ -11,7 +11,7 @@ module View = View3
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * Main entry point of codegraph, a package/module/type/function/... 
+ * Main entry point of codegraph, a package/module/type/function/...
  * hierarchical dependency visualizer using mainly a Dependency
  * Structure Matrix (DSM).
  * A node-link display of hierarchical graphs (or hypergraphs) would be nice
@@ -27,8 +27,8 @@ module View = View3
  *  - different granularities for x-to-x relationships
  *    (packages to packages, modules to packages, functions, constructors, etc),
  *    so one can get:
- *    * package (or directory) projection to reduce the size of graph and get
- *      a high-level view of the architecture ("package mode")
+ *    * package (or directory) projection to reduce the size of the graph and
+ *      get a high-level view of the architecture ("package mode")
  *    * with or without external/ dependencies
  *    * possibiltiy to get a slice of the graph for just a directory
  *      with a package (or directory) projection for external dependencies
@@ -67,8 +67,8 @@ module View = View3
  * history:
  *  - quick look at work on software architecture because of Banatre
  *    while a master student at IRISA, and later Schmidt, while a PhD,
- *    looking at work of Shaw and Garlan and the
- *    different architecture patterns (whiteboard, pipe, layers, etc).
+ *    looking at work of Shaw and Garlan and the different
+ *    architecture patterns (whiteboard, pipe, layers, etc).
  *  - started to draw hypergraphs of architecture while supervising a
  *    student project at EMN (submarine game), and advocated they were
  *    better than UML diagrams (I think after reading Harel's papers on
@@ -91,7 +91,7 @@ module View = View3
  *  - pm_depend, ocaml dependencies backend, ~package_depth, ~with_extern.
  *    In some ways it extracts the dependency information I have 
  *    in my Makefiles where I care about the order of the directories
- *    and files. Moreover package_depth and with_extern are just
+ *    and files. The ~package_depth and ~with_extern parameters are just
  *    special cases of the general idea of displaying at different
  *    granularity dependencies depending on the directory.
  *    Finally it was limited to just package/module (pm_depend) but quickly
@@ -135,9 +135,9 @@ module View = View3
  *    it's also good to see things without the reduction (especially
  *    with gephi). See for instance the graph for tiger with ocamldoc
  *    vs pm_depend. I can see all the real callers to option.ml.
- *    TODO the reduce and layering is also useful ... try to do it in gephi too
+ *    TODO the reduce and layering is also useful
  *  - ocamldoc -dot-colors
- *    TODO this is useful. 
+ *    TODO this is useful.
  *    It's somehow covered by the strongly-connected + coloring in gephi.
  *  - graphviz backend? graphviz is good for layers, but
  *    you lose space because the high-level stuff is at the top but alone.
@@ -224,13 +224,9 @@ let test_gdf xs =
   pr2 (spf "Writing data in %s" !output_file);
   raise Todo
   (*
-  g +> Graph_guess.to_gdf  
-    ~str_of_node:(fun s -> s) 
-    ~output:!output_file;
-  g +> Graph_gephi.graph_to_gefx 
-    ~str_of_node:(fun s -> s)
-    ~tree:None~weight_edges:None
-    ~output:!output_file;
+  g +> Graph_guess.to_gdf        ~str_of_node:(fun s -> s) ~output:!output_file
+  g +> Graph_gephi.graph_to_gefx ~str_of_node:(fun s -> s) ~output:!output_file
+      ~tree:None~weight_edges:None
   *)
 
 (* ---------------------------------------------------------------------- *)
@@ -338,20 +334,19 @@ let all_actions () =
   extra_actions () ++
   []
 
-let options () = 
-  [
-    "-lang", Arg.Set_string lang, 
-    (spf " <str> choose language (default = %s)" !lang);
-    "-o", Arg.Set_string output_file, 
-    (spf " <file> default = %s" !output_file);
+let options () = [
+  "-lang", Arg.Set_string lang, 
+  (spf " <str> choose language (default = %s)" !lang);
+  "-o", Arg.Set_string output_file, 
+  (spf " <file> default = %s" !output_file);
 
-    "-with_extern", Arg.Set with_extern,
-    " includes external references";
-    "-package_mode", Arg.Set_int package_depth,
-    " <n> project at depth n";
-
-    "-verbose", Arg.Set verbose, 
-    " ";
+  "-with_extern", Arg.Set with_extern,
+  " includes external references";
+  "-package_mode", Arg.Set_int package_depth,
+  " <n> project at depth n";
+  
+  "-verbose", Arg.Set verbose, 
+  " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
