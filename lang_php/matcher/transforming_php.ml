@@ -170,15 +170,28 @@ module XMATCH = struct
     | PI.AddNewlineAndIdent -> 
         PI.AddNewlineAndIdent
     | PI.AddStr s ->
-        let s' = Common.global_replace_regexp MV.metavar_regexp_string
+        (* transforming first metavar variable ($X) and then
+         * mevar (X)
+         *)
+        let s = 
+         s +> Common.global_replace_regexp MV.metavar_variable_regexp_string
          (fun matched ->
           try List.assoc matched env
           with Not_found -> 
             failwith (spf "metavariable %s was not found in environment" 
                          matched)
-         ) s
+         )
         in
-        PI.AddStr s'
+
+        let s = s +> Common.global_replace_regexp MV.metavar_regexp_string
+         (fun matched ->
+          try List.assoc matched env
+          with Not_found -> 
+            failwith (spf "metavariable %s was not found in environment" 
+                         matched)
+         )
+        in
+        PI.AddStr s
 
   (* when a transformation contains a '+' part, as in 
    * - 2

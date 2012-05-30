@@ -12,10 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
-open Ast_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -34,7 +31,7 @@ type metavars_binding = (mvar, Ast_php.any) Common.assoc
 
 let empty_environment = []
 
-(* bugfix: don't forget $ or \\b, otherwise a string like FBredirect would
+(* bugfix: don't forget \\b, otherwise a string like FBredirect would
  * match such regexp (the starting F) even if it's not a metavar at all.
  * 
  * examples: X, X1, X1_ILOVEPUPPIES
@@ -42,7 +39,12 @@ let empty_environment = []
 let metavar_regexp_string = 
   "\\b\\([A-Z][0-9]?\\(_[A-Z0-9]*\\)?\\)\\b"
 
-let metavar_regexp  = Str.regexp metavar_regexp_string
+(* examples: $X *)
+let metavar_variable_regexp_string = 
+  "\\(\\$[A-Z]\\)\\b"
+
+let metavar_lvalue_regexp_string =
+  "\\(\\$V\\(_[A-Z]*\\)?\\)"
 
 (* 
  * Hacks abusing existing PHP constructs to encode extra constructions.
@@ -50,8 +52,11 @@ let metavar_regexp  = Str.regexp metavar_regexp_string
  * ast_php.ml and extends it with sgrep special constructs.
  *)
 let is_metavar_name s = 
-  s ==~ metavar_regexp
+  s =~ metavar_regexp_string
 
 (* todo: replace this hack by allowing X->method(...) in PHP grammar *)
+let is_metavar_lvalue_name s = 
+  s =~ metavar_lvalue_regexp_string
+
 let is_metavar_variable_name s = 
-  s =~ "V\\(_[A-Z]*\\)?"
+  s =~ metavar_variable_regexp_string

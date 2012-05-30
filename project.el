@@ -33,6 +33,7 @@
       lang_php/analyze/qa_code
       lang_php/analyze/static_analysis
       lang_php/analyze/checker
+     lang_php/matcher
      lang_js/parsing
       lang_js/analyze
      lang_sql/parsing
@@ -235,7 +236,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 8
+     (case 9
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
@@ -247,6 +248,7 @@
        (6 " -f /home/pad/pfff/tests/php/sgrep/foreach.spatch /home/pad/pfff/tests/php/sgrep/foreach.php")
        (7 "-f /home/pad/pfff/tests/php/spatch/space.spatch /home/pad/pfff/tests/php/spatch/space1.php")
        (8 "-f /home/pad/pfff/tests/php/spatch/remove_refarg.spatch /home/pad/pfff/tests/php/spatch/remove_refarg.php")
+       (9 "-f /home/pad/pfff/tests/php/spatch/add_statement.spatch /home/pad/pfff/tests/php/spatch/add_statement.php")
 
        (10 "-f /home/pad/ex.spatch /home/pad/ex.php")
        (11 "-f /home/pad/ex2.spatch /home/pad/ex2.php")

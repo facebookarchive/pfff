@@ -726,9 +726,9 @@ let rec m_variable a b =
    * the PHP original grammar sense, as usual.
    *)
   | A.Var((A.DName (dname, info_dname)), a2),
-    b when MV.is_metavar_variable_name dname ->
+    b when MV.is_metavar_lvalue_name ("$" ^ dname) ->
 
-      X.envf (dname, info_dname) (B.Lvalue (b)) >>= 
+      X.envf ("$" ^ dname, info_dname) (B.Lvalue (b)) >>= 
       (function
       | ((dname, info_dname), B.Lvalue (b))  ->
         return (
@@ -740,9 +740,11 @@ let rec m_variable a b =
 
   (* pad, iso on variable name *)
   | A.Var((A.DName (dname, info_dname)), a2), 
-    B.Var(b1, b2) when MV.is_metavar_name dname ->
-
-      X.envf (dname, info_dname) (B.Lvalue (b)) >>= 
+    B.Var(b1, b2) when MV.is_metavar_variable_name ("$" ^ dname) ->
+      (* we don't want expr metavariable and variable metavariable
+       * to collide, so X and $X are different keys in the environment
+       *)
+      X.envf ("$" ^ dname, info_dname) (B.Lvalue (b)) >>= 
       (function
       | ((dname, info_dname), B.Lvalue (b))  ->
         return (
