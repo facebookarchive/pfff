@@ -3,13 +3,15 @@
 function hphpd_install_user_command($cmd, $clsname) { }
 function hphpd_get_user_commands() { }
 function hphpd_break($condition = true) { }
-class DebuggerProxy {
+function hphpd_get_client($name = null) { }
+function hphpd_client_ctrl($name, $op) { }
+class DebuggerProxyCmdUser {
  function __construct() { }
  function isLocal() { }
  function send($cmd) { }
  function __destruct() { }
 }
-class DebuggerClient {
+class DebuggerClientCmdUser {
 const AUTO_COMPLETE_FILENAMES = 0;
 const AUTO_COMPLETE_VARIABLES = 0;
 const AUTO_COMPLETE_CONSTANTS = 0;
@@ -50,3 +52,15 @@ const AUTO_COMPLETE_CODE = 0;
  function addCompletion($list) { }
  function __destruct() { }
 }
+class DebuggerClient {
+const STATE_INVALID = 0;
+const STATE_UNINIT = 0;
+const STATE_INITIALIZING = 0;
+const STATE_READY_FOR_COMMAND = 0;
+const STATE_BUSY = 0;
+ function __construct() { }
+ function getState() { }
+ function init($options) { }
+ function processCmd($cmdName, $args) { }
+}
+
