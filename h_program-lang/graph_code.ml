@@ -36,7 +36,7 @@ module G = Graph
  * 
  * Is this yet another code database? For PHP we already have
  * database_php.ml, tags_php.ml, database_light_php.ml, 
- * and now even a prolog database, ... that's a lot of code database.
+ * and now even a Prolog database, ... that's a lot of code database.
  * They all have things in common, but by focusing here on one thing,
  * by just having a single graph, it's then
  * easier to reason and implement certain features.
@@ -46,14 +46,18 @@ module G = Graph
  * This graph also unifies many things. For instance there is no
  * special code to handle directories or files, they are
  * just considered regular entities like module or classes 
- * and can have sub-entities.
+ * and can have sub-entities. Moreover like database_light.ml,
+ * this file is language independent so one can have one tool
+ * that can handle ML, PHP, C++, etc.
  * 
  * todo:
  *  - how to handle duplicate entities (e.g. we can have two different
- *    files have the same module name, or two functions with the same
+ *    files with the same module name, or two functions with the same
  *    name but one in a library and the other in a script).
  *    prepend a ___number suffix?
- *    Or just have one node with multiple parents :)
+ *    Or just have one node with multiple parents :) But having
+ *    multiple parents would not solve the problem because then
+ *    an edge will increment unrelated cells in the DSM.
  * 
  *  - change API to allow by default to automatically create nodes
  *    when create edges with unexisting nodes? After all graphviz
@@ -78,8 +82,7 @@ type edge =
   | Use
 
 (* 
- * We use an imperative, directed, with no intermediate node-index,
- * graph.
+ * We use an imperative, directed, with no intermediate node-index, graph.
  * 
  * We use two different graphs because we need an efficient way to
  * go up in the hierarchy to increment cells in the dependency matrix
@@ -174,4 +177,5 @@ let iter_use_edges f g =
 (*****************************************************************************)
 
 let display_with_gv g =
+  (* TODO? use different colors for the different kind of edges? *)
   G.display_with_gv g.has

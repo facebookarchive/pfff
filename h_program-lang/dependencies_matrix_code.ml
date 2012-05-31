@@ -21,7 +21,7 @@ module G = Graph_code
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Module to create a Depdency Structure Matrix (DSM) based on
+ * Module to create a Dependency Structure Matrix (DSM) based on
  * a code graph.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
  * See also main_codegraph.ml
@@ -32,8 +32,8 @@ module G = Graph_code
 (*****************************************************************************)
 
 (* Dependency Structure Matrix.
- * The relation between nodes is not stored here. But you
- * can get such information in the code graph.
+ * The relation between nodes is not stored here. you
+ * can get such information in the code graph instead.
  *)
 type dm = {
   matrix: int array array;
@@ -52,7 +52,7 @@ type config = Graph_code.node list
 (* Display *)
 (*****************************************************************************)
 
-(* poor's man DSM visualizer; use codegraph for a real visualization *)
+(* poor's man DSM visualizer (use codegraph for a real visualization) *)
 let display dm =
   pr2_gen dm;
   ()

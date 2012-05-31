@@ -21,9 +21,9 @@ module K = GdkKeysyms
 
 module CairoH = Cairo_helpers3
 
+open Model3
 module Model = Model3
 module Controller = Controller3
-open Model3
 module View_overlays = View_overlays3
 
 (*****************************************************************************)
@@ -45,10 +45,10 @@ module View_overlays = View_overlays3
 
 (* Composing the "layers". See cairo/tests/knockout.ml example.
  * Each move of the cursor will call assemble_layers which does all
- * those pixels copying (but this is fast enough).
+ * those pixels copying from one layer to the other (but this is fast enough).
  *)
 let assemble_layers cr_final w =
-  let surface_src = CairoH.surface_of_pixmap w.pm in
+  let surface_src = Model.surface_of_gtk_pixmap w.pm in
 
   Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
   Cairo.set_source_surface cr_final surface_src 0. 0.;
@@ -74,7 +74,7 @@ let configure da w ev =
   w.height <- height;
   w.pm <- Model.new_pixmap w.width w.height;
   w.overlay <- 
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap w.pm)
+    Cairo.surface_create_similar (Model.surface_of_gtk_pixmap w.pm)
      Cairo.CONTENT_COLOR_ALPHA width height;
   View_matrix.paint w;
   true
@@ -154,6 +154,19 @@ let mk_gui w =
       factory#add_submenu "_Search" +> (fun menu -> 
         let _fc = new GMenu.factory menu ~accel_group in
         ()
+      );
+
+      factory#add_submenu "_Filter" +> (fun menu -> 
+        let fc = new GMenu.factory menu ~accel_group in
+        fc#add_item "Types only" ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+        fc#add_item "Functions only" ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
+        fc#add_item "mli only" ~callback:(fun () -> 
+          raise Todo
+        ) +> ignore;
       );
 
       factory#add_submenu "_Misc" +> (fun menu -> 

@@ -28,12 +28,12 @@ module Ast = Ast_ml
  * Graph of dependencies for OCaml. See graph_code.ml and main_codegraph.ml
  * for more information.
  * 
- * todo? if give edge count/weight, then need to modulate depending on
+ * todo? if give edges a weight, then we need to modulate it depending on
  * the type of the reference. Two references to a function in another
  * module is more important than 10 references to some constructors?
- * Type|Exception > Function|Class|Global >> Constructors|constants ?
  * If we do some pattern matching on 20 constructors, is it more
  * important than two functions calls?
+ * So Type|Exception > Function|Class|Global >> Constructors|constants ?
  * 
  * notes:
  *  - ml vs mli? just get rid of mli? but one can also want to
@@ -175,7 +175,7 @@ let lookup_module_name h_module_aliases s =
 (* 
  * For now we just create the Dir, File, and Module entities.
  * 
- * todo: extract Function, Type, Constructor, Field, etc.
+ * TODO: extract Function, Type, Constructor, Field, etc.
  *)
 let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   let dir = Common.dirname readable in

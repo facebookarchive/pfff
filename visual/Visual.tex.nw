@@ -358,7 +358,6 @@ let layer_dir  = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
-let proto = ref false
 @
 
 <<main_action()>>=
@@ -389,7 +388,7 @@ let main_action xs =
       )
   in
 
-  let dw = Model2.init_drawing treemap_generator model layers_with_index xs in
+  let dw = Model.init_drawing treemap_generator model layers_with_index xs in
 
   (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
@@ -430,7 +429,7 @@ let main_action xs =
     Async.async_set (build_model root db_file) model;
    (*
     GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
-      Model2.async_set (build_model root dbfile_opt) model;
+      Model.async_set (build_model root dbfile_opt) model;
       false
     ) +> ignore
    *)
@@ -461,22 +460,17 @@ type model = {
 
 <<build_model>>=
 let build_model2 root dbfile_opt =   
-  let db_opt = dbfile_opt +> Common.fmap (fun file ->
-    if file =~ ".*.json"
-    then Database_code.load_database file
-    else Common.get_value file
-  )
-  in
-  let hentities = Model2.hentities root db_opt in
-  let hfiles_entities = Model2.hfiles_and_top_entities root db_opt in
-  let all_entities = Model2.all_entities db_opt root in
+  let db_opt = Common.fmap Database_code.load_database dbfile_opt in
+  let hentities = Model.hentities root db_opt in
+  let hfiles_entities = Model.hfiles_and_top_entities root db_opt in
+  let all_entities = Model.all_entities db_opt root in
   let idx = Completion2.build_completion_defs_index all_entities in
   
-  let model = { Model2.
-           db = db_opt;
-           hentities = hentities;
-           hfiles_entities = hfiles_entities;
-           big_grep_idx = idx;
+  let model = { Model.
+        db = db_opt;
+        hentities = hentities;
+        hfiles_entities = hfiles_entities;
+        big_grep_idx = idx;
   }
   in
   (*
@@ -485,7 +479,7 @@ let build_model2 root dbfile_opt =
   *)
 (*
   (* sanity check *)
-  let hentities = (Ancient2.follow model).Model2.hentities in
+  let hentities = (Ancient2.follow model).Model.hentities in
   let n = Hashtbl.length hentities in
   pr2 (spf "before = %d" n);
   let cnt = ref 0 in
@@ -846,7 +840,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
   Controller._set_title := (fun s -> w#set_title s);
   Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
-    
 
   let accel_group = GtkData.AccelGroup.create () in
   w#misc#set_name "main window";
@@ -1185,8 +1178,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
     da#misc#set_can_focus true ;
     da#event#add [ `KEY_PRESS;
-   `BUTTON_MOTION; `POINTER_MOTION;
-   `BUTTON_PRESS; `BUTTON_RELEASE ];
+                   `BUTTON_MOTION; `POINTER_MOTION;
+                   `BUTTON_PRESS; `BUTTON_RELEASE ];
 
     da2#misc#set_can_focus true ;
     da2#event#add [ `KEY_PRESS;
@@ -1194,8 +1187,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
                   * POINTER_MOTION here, the minimap still
                   * gets an event for mouse over :(
                   *)
-   `BUTTON_MOTION; `POINTER_MOTION;
-   `BUTTON_PRESS; `BUTTON_RELEASE ];
+                    `BUTTON_MOTION; `POINTER_MOTION;
+                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
 
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
@@ -1235,7 +1228,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
-
 (*
     da#event#connect#key_press ~callback:(key_pressed da dw);
 *)
@@ -2358,15 +2350,13 @@ val choose_layer:
 
 <<ui_layers.ml>>=
 <<Facebook copyright>>
-
 open Common
 
+open Model2
+module M = Model2
 module Controller = Controller2
 
 module L = Layer_code
-module M = Model2
-
-open Model2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -2708,7 +2698,6 @@ let find_rectangle_at_user_point2 dw user =
    | [] -> None
    | [x] -> Some (x, [], x)
    | _ -> Some (Common.head_middle_tail matching_rects)
-
 
 let find_rectangle_at_user_point a b = 
   Common.profile_code "Model.find_rectangle_at_point" (fun () ->
@@ -3200,7 +3189,6 @@ let all_entities db_opt root =
 
 <<completion2.ml>>=
 <<Facebook copyright>>
-
 open Common
 
 module G = Gui
@@ -3216,7 +3204,6 @@ open Custom_list_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Gtk is quite "fragile". You change what looks to be an innoncent line
  * and then suddenly your performance goes down or you get some
@@ -3864,10 +3851,8 @@ let configure2_bis da dw_ref ev =
   dw.width <- w;
   dw.height <- h;
   dw.pm <- Model2.new_pixmap dw.width dw.height;
-  let cr_src = Cairo_lablgtk.create dw.pm#pixmap in
-  let sur_src = Cairo.get_target cr_src in
   dw.overlay <- 
-    Cairo.surface_create_similar sur_src 
+    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
     Cairo.CONTENT_COLOR_ALPHA w h;
     
   View_mainmap.paint dw;
@@ -3894,7 +3879,12 @@ let configure a b c =
 <<assemble_layers>>=
 (* Composing the "layers". See cairo/tests/knockout.ml example.
  * Each move of the cursor will call assemble_layers which does all
- * those pixels copying but this is fast enough.
+ * those pixels copying (which is very fast).
+ * 
+ * The final target is the actual gtk window which is represented by cr_final.
+ * We copy the pixels from the pixmap dw.pm on the window. Then
+ * we copy the pixels from the pixmap dw.overlay on the windown
+ * getting the final result.
  *)
 let assemble_layers cr_final dw ~width ~height =
 
@@ -3986,7 +3976,6 @@ val use_arity_of_use_count :
 
 <<parsing2.ml>>=
 <<Facebook copyright>>
-
 open Common
 
 module FT = File_type
@@ -4063,12 +4052,11 @@ let use_arity_of_use_count n =
    * you will miss some cases
    *)
   | _ when n >= 100 -> HugeUse
-
-  | _ when n > 20 -> LotsOfUse
+  | _ when n > 20   -> LotsOfUse
   | _ when n >= 10  -> MultiUse
-  | _ when n >= 2 -> SomeUse
-  | _ when n = 1 -> UniqueUse
-  | _ -> NoUse
+  | _ when n >= 2   -> SomeUse
+  | _ when n = 1    -> UniqueUse
+  | _               -> NoUse
 
 let rewrite_categ_using_entities s categ file entities =
 
@@ -4080,7 +4068,6 @@ let rewrite_categ_using_entities s categ file entities =
   | None -> categ
   | Some e_kind ->
 
-  
    let entities = 
     Hashtbl.find_all entities s +> List.filter (fun e ->
       (* we could have the full www dbcode but run the treemap on
@@ -4426,12 +4413,10 @@ let async_set v a =
 
   "-symlinks", Arg.Unit (fun () -> 
     Treemap.follow_symlinks := true;
-  ),
-  " ";
+  ), " ";
   "-no_symlinks", Arg.Unit (fun () ->
     Treemap.follow_symlinks := false;
-  ),
-  " ";
+  ), " ";
 
   "-with_info", Arg.String (fun s -> db_file := Some s),
   " <db_light_file>";
@@ -4442,8 +4427,6 @@ let async_set v a =
 
   "-test" , Arg.String (fun s -> test_mode := Some s),
   " <str> execute an internal script";
-  "-proto" , Arg.Set proto,
-  " ";
 
   "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
    spf " filter certain files (available = %s)" 
@@ -4652,7 +4635,7 @@ let extra_filter = ref (None: string option) (* regexp *)
 \section{Other Features}
 
 <<visual_commitid() action>>=
-let visual_commitid id = 
+let visual_commitid id =
   let files = Common.cmd_to_list
     (spf "git show --pretty=\"format:\" --name-only %s"
         id) 
@@ -4713,9 +4696,8 @@ val new_pixmap :
 <<new_pixmap()>>=
 let new_pixmap ~width ~height =
   let drawable = GDraw.pixmap ~width ~height () in
-  drawable#set_foreground `WHITE ;
-  drawable#rectangle
-    ~x:0 ~y:0 ~width ~height ~filled:true () ;
+  drawable#set_foreground `WHITE;
+  drawable#rectangle ~x:0 ~y:0 ~width ~height ~filled:true () ;
   drawable
 @
 
@@ -4951,11 +4933,24 @@ open Common
 module Flag = Flag_visual
 module FT = File_type
 
+module Model = Model2
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Main entry point of codemap.
+ * Main entry point of codemap, a semantic source code visualizer
+ * using treemaps and code thumbnails.
+ * 
+ * requirements:
+ *  - get a bird's eye view of all the code (hence treemaps)
+ *  - get a bird's eye view of a file (hence code thumbnails)
+ *  - better syntax highlighting than Emacs, using real parsers so
+ *    we can colorize differently identifiers (a function vs a field vs
+ *    a constant etc)
+ *  - important code should be bigger. Just like in google maps
+ *    the important roads are more visible. So need some sort of
+ *    global analysis.
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
@@ -4963,12 +4958,12 @@ module FT = File_type
  *    different views
  *  - talked about mixing sgrep/spatch with code visualization,
  *    highlighting with a certain color different architecture aspects
- *    of the linux kernel (influenced by work on aspect browser)
+ *    of the Linux kernel (influenced by work on aspect browser)
  *  - talked about fancy code visualizer while at cleanmake with YY,
  *    spiros, etc.
  *  - saw SeeSoft code visualizer while doing some bibliographic work
  *  - saw code thumbnails by MSR, and Rob Deline
- *  - saw treemap of Linux kernel by fekete => idea of mixing both
+ *  - saw treemap of Linux kernel by fekete => idea of mixing
  *    tree-map+code-thumbnails+seesoft = codemap
  *  - saw talk at CC about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
@@ -4980,10 +4975,6 @@ module FT = File_type
 (*****************************************************************************)
 
 <<main flags>>
-
-(* todo? config file ? 
- * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
- *)
 
 let filter = ref Treemap_pl.ex_filter_file
 
@@ -5020,6 +5011,10 @@ let filters = [
     | _ -> false
   );
 ]
+
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
 
 (* action mode *)
 let action = ref ""
@@ -5088,10 +5083,6 @@ let options () = [
   <<options>>
   ] ++
   Common.options_of_actions action (all_actions()) ++
-(*
-  Flag_analyze_php.cmdline_flags_verbose () ++
-  Flag_parsing_cpp.cmdline_flags_macrofile () ++
-*)
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_verbose () ++
   [
@@ -5187,7 +5178,6 @@ val context_of_drawing: drawing -> context
 
 <<model2.ml>>=
 <<Facebook copyright>>
-
 open Common
 
 module CairoH = Cairo_helpers
@@ -5275,29 +5265,26 @@ let context_of_drawing dw = {
 
 <<view2.ml>>=
 <<Facebook copyright>>
-
 open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
-
 
 module G = Gui
 module K = GdkKeysyms
 module GR = Gdk.Rectangle
 
+open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
+
 module CairoH = Cairo_helpers
 
-open Figures (* for the fields *)
 open Model2 (* for the fields *)
 module M = Model2
-
+module Controller = Controller2
 
 module Flag = Flag_visual
 module Style = Style2
-
-module Controller = Controller2
 
 module Db = Database_code
 
@@ -5344,7 +5331,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 (*****************************************************************************)
 
 <<mk_gui()>>
-  
+
 @ 
 
 
@@ -5459,11 +5446,8 @@ val final_font_size_when_multiplier:
 
 <<draw_common.ml>>=
 <<Facebook copyright>>
-
 open Common
-
 open Common.ArithFloatInfix
-
 module CairoH = Cairo_helpers
 
 (*****************************************************************************)
@@ -5501,7 +5485,6 @@ val draw_trect_using_layers:
 <<draw_macrolevel.ml>>=
 <<Facebook copyright>>
 open Common
-
 open Common.ArithFloatInfix
 
 open Figures (* for the fields *)
@@ -5598,10 +5581,7 @@ let draw_trect_using_layers ~cr layers_with_index rect =
 
 <<draw_microlevel.ml>>=
 <<Facebook copyright>>
-
-
 open Common
-
 open Common.ArithFloatInfix
 
 open Figures (* for the fields *)
@@ -5748,9 +5728,7 @@ let set_source_rgba_and_font_size_of_categ
 
 <<draw_labels.ml>>=
 <<Facebook copyright>>
-
 open Common
-
 open Common.ArithFloatInfix
 
 open Figures (* for the fields *)
@@ -5763,7 +5741,6 @@ module F = Figures
 module Color = Simple_color
 
 module CairoH = Cairo_helpers
-
 
 (*****************************************************************************)
 (* Label *)
@@ -5786,9 +5763,7 @@ val draw_legend_layer: cr:Cairo.t -> Layer_code.layers_with_index -> unit
 
 <<draw_legend.ml>>=
 <<Facebook copyright>>
-
 open Common
-
 open Common.ArithFloatInfix
 
 module CairoH = Cairo_helpers
@@ -5844,7 +5819,6 @@ let draw_legend_layer ~cr layers_idx =
   in
   draw_legend_of_color_string_pairs ~cr pairs
 
-
 @
 
 
@@ -5890,8 +5864,8 @@ module Ctl = Controller2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* This module calls Draw_macrolevel and Draw_microlevel and assembles
+(* 
+ * This module calls Draw_macrolevel and Draw_microlevel and assembles
  * the final "painting" of the code "main map". It is called mainly by
  * View2.configure and Ui_navigation.go_dirs_and_file.
  * 
@@ -6016,11 +5990,9 @@ val motion_notify:
 
 <<view_overlays.ml>>=
 <<Facebook copyright>>
-
 open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
-
 
 module F = Figures
 module T = Treemap
@@ -6121,7 +6093,6 @@ module G = Gui
 
 <<run_tbgs_query>>
 
-
 @ 
 
 \subsection{[[ui_navigation.mli]]}
@@ -6149,9 +6120,8 @@ open Common.ArithFloatInfix
 
 module G = Gui
 
-module Controller = Controller2
-
 open Model2
+module Controller = Controller2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -6164,7 +6134,6 @@ open Model2
 <<go_back>>
 
 <<go_dirs_or_file>>
-
 
 @ 
 
@@ -6185,11 +6154,9 @@ open Model2
 
 <<style2.ml>>=
 <<Facebook copyright>>
-
 open Common
 
 module SH = Highlight_code
-
 module Flag = Flag_visual
 
 (*****************************************************************************)
@@ -6229,7 +6196,6 @@ let font_text =
 
 <<editor_connection.ml>>=
 <<Facebook copyright>>
-
 open Common
 
 (*****************************************************************************)
@@ -6267,7 +6233,6 @@ open Common
 
 <<async.ml>>=
 <<Facebook copyright>>
-
 open Common
 
 (*****************************************************************************)
@@ -6292,16 +6257,13 @@ open Common
 
 <<cairo_helpers.ml>>=
 <<Facebook copyright>>
-
 open Common
-
-module F = Figures
-module Color = Simple_color
-
-open Figures
-
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
+
+open Figures
+module F = Figures
+module Color = Simple_color
 
 (*****************************************************************************)
 (* Prelude *)
