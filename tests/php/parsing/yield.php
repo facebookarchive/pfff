@@ -1,5 +1,6 @@
 <?php
 
+// facebook extension
 function foo() {
   yield 1;
   $v = yield 2;

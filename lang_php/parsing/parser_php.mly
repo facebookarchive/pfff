@@ -24,7 +24,7 @@
  *  - added support for a few PHP 5.3 extensions (e.g. lambda, const), but
  *    not namespace.
  *  - added support for yield (facebook extension).
- *  - added support for a few PHP 5.4 extensions (e.g. traits).
+ *  - added support for a few PHP 5.4 extensions (e.g. traits, short array).
  *  - added support for generics (another facebook extensions).
  * 
  /*(*s: Zend copyright *)*/
@@ -517,7 +517,7 @@ constant_declaration_statement:
 function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
 
 unticked_function_declaration_statement:
-  T_FUNCTION is_reference ident class_params_opt
+  T_FUNCTION is_reference ident type_params_opt
   TOPAR parameter_list TCPAR 
   return_type_opt
   TOBRACE inner_statement_list TCBRACE
@@ -532,13 +532,13 @@ unticked_function_declaration_statement:
 /*(*x: GRAMMAR function declaration *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
 non_empty_parameter_list:
- | optional_class_type T_VARIABLE			
+ | type_hint_opt T_VARIABLE			
      { let p = mk_param $1 $2 in [Left3 p] }
- | optional_class_type TAND T_VARIABLE			
+ | type_hint_opt TAND T_VARIABLE			
      { let p = mk_param $1 $3 in [Left3 {p with p_ref = Some $2}] }
- | optional_class_type T_VARIABLE         TEQ static_scalar
+ | type_hint_opt T_VARIABLE         TEQ static_scalar
      { let p = mk_param $1 $2 in [Left3 {p with p_default = Some ($3,$4)}] }
- | optional_class_type TAND T_VARIABLE    TEQ static_scalar
+ | type_hint_opt TAND T_VARIABLE    TEQ static_scalar
      { let p = mk_param $1 $3 in 
        [Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}]
      }
@@ -549,13 +549,13 @@ non_empty_parameter_list:
      { sgrep_guard ($1 ++ [Right3 $2; Middle3 $3]) }
 
  /*(*s: repetitive non_empty_parameter_list *)*/
-  | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE 	
+  | non_empty_parameter_list TCOMMA  type_hint_opt T_VARIABLE 	
       { let p = mk_param $3 $4 in $1 ++ [Right3 $2; Left3 p] }
-  | non_empty_parameter_list TCOMMA  optional_class_type TAND T_VARIABLE	
+  | non_empty_parameter_list TCOMMA  type_hint_opt TAND T_VARIABLE	
       { let p = mk_param $3 $5 in $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4}] }
-  | non_empty_parameter_list TCOMMA  optional_class_type T_VARIABLE TEQ static_scalar 	
+  | non_empty_parameter_list TCOMMA  type_hint_opt T_VARIABLE TEQ static_scalar 	
       { let p = mk_param $3 $4 in $1 ++ [Right3 $2; Left3 {p with p_default = Some ($5,$6)}] }
-  | non_empty_parameter_list TCOMMA  optional_class_type TAND T_VARIABLE	 TEQ static_scalar 
+  | non_empty_parameter_list TCOMMA  type_hint_opt TAND T_VARIABLE	 TEQ static_scalar 
       { let p = mk_param $3 $5 in 
         $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4; p_default = Some ($6, $7)}]
       }
@@ -589,38 +589,36 @@ lexical_var_list:
 class_declaration_statement: unticked_class_declaration_statement { $1 }
 
 unticked_class_declaration_statement:
- | class_entry_type class_name
-     extends_from implements_list
-     TOBRACE  class_statement_list TCBRACE 
-     { { c_type = $1; c_name = $2;c_extends = $3; 
-         c_implements = $4; c_body = $5, $6, $7;
-       } }
-
- | interface_entry class_name
+ | class_entry_type  class_name  type_params_opt
+     extends_from   implements_list
+     TOBRACE class_statement_list TCBRACE 
+     { { c_type = $1; c_name = $2;c_extends = $4; 
+         c_implements = $5; c_body = $6, $7, $8;
+       } 
+     }
+ | interface_entry class_name type_params_opt
      interface_extends_list
      TOBRACE class_statement_list TCBRACE 
      { { c_type = Interface $1; c_name = $2; c_extends = None; 
          (* we use c_implements for interface extension because
           * it can be a list. ugly?
           *)
-         c_implements = $3; c_body = $4, $5, $6; } }
+         c_implements = $4; c_body = $5, $6, $7; } 
+     }
 
 trait_declaration_statement:
- | T_TRAIT ident class_params_opt 
+ | T_TRAIT class_name type_params_opt
     TOBRACE class_statement_list TCBRACE 
      { (* TODO: store $3, right now the info is thrown away! *)
-       { c_type = Trait $1; c_name = (Name $2); c_extends = None;
+       { c_type = Trait $1; c_name = $2; c_extends = None;
          c_implements = None; c_body = ($4, $5, $6) } }
 
 /*(*x: GRAMMAR class declaration *)*/
-/*(* This is the class name in a 'definition' context. For the use of class
-   * names in a 'use' context, see fully_qualified_class_name.
-   *)*/
 class_name: 
- | ident class_params_opt { Name $1 }
+  | ident             { Name $1 }
  /*(*s: class_name grammar rule hook *)*/
   /*(* xhp: an XHP element def *)*/
-  | T_XHP_COLONID_DEF class_params_opt { XhpName $1 }
+  | T_XHP_COLONID_DEF { XhpName $1 }
  /*(*e: class_name grammar rule hook *)*/
 
 
@@ -634,7 +632,7 @@ interface_entry:
 /*(*x: GRAMMAR class declaration *)*/
 extends_from:
  | /*(*empty*)*/			{ None }
- | T_EXTENDS fully_qualified_class_name	type_params { Some ($1, $2) }
+ | T_EXTENDS fully_qualified_class_name	type_arguments { Some ($1, $2) }
 
 interface_extends_list:
  | /*(*empty*)*/            { None }
@@ -645,13 +643,13 @@ implements_list:
  | T_IMPLEMENTS interface_list { Some($1, $2) }
 
 interface_list:
- | fully_qualified_class_name type_params { [Left $1] }
+ | fully_qualified_class_name type_arguments { [Left $1] }
  | interface_list TCOMMA
-   fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3]}
+   fully_qualified_class_name type_arguments { $1 ++ [Right $2; Left $3]}
 
 trait_list:
- | fully_qualified_class_name type_params		{ [Left $1] }
- | trait_list TCOMMA fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3] }
+ | fully_qualified_class_name type_arguments		{ [Left $1] }
+ | trait_list TCOMMA fully_qualified_class_name type_arguments { $1 ++ [Right $2; Left $3] }
 
 /*(*x: GRAMMAR class declaration *)*/
 /*(*----------------------------*)*/
@@ -889,26 +887,28 @@ trait_alias_rule_method:
  | T_IDENT { raise Todo }
 
 /*(*************************************************************************)*/
-/*(*1 Generics declaration *)*/
+/*(*1 Generics parameters *)*/
 /*(*************************************************************************)*/
-class_params_opt:
+type_params_opt:
   | {}
-  | TSMALLER class_param_list TGREATER {}
+  | TSMALLER type_params_list TGREATER {}
 
-class_param_list:
+type_params_list:
   | ident {}
-  | ident TCOMMA class_param_list {}
+  | ident TCOMMA type_params_list {}
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
 
 type_hint:
- | class_name_or_selfparent type_params { Hint $1 }
+ | fully_qualified_class_name type_arguments { Hint (ClassName $1) }
+ | T_SELF   { Hint (Self $1) }
+ | T_PARENT { Hint (Parent $1) }
  | T_ARRAY		                { HintArray $1 }
 /*(* TODO inline type_hint_extensions here and remove ext_type_hint *)*/
 
-optional_class_type:
+type_hint_opt:
  | /*(*empty*)*/	{ None }
  | type_hint            { Some $1 }
  | type_hint_extensions { None }
@@ -934,17 +934,19 @@ non_empty_ext_type_hint_list:
  | ext_type_hint                                     {}
  | ext_type_hint TCOMMA non_empty_ext_type_hint_list {}
 
-/*(* Do not confuse class_params and type_params. Class parameters
+/*(* Do not confuse type_parameters and type_arguments. Type parameters
    * can only be simple identifiers, as in class Foo<T1, T2> { ... },
-   * and are used in a 'definition' context, whereas type parameters 
+   * and are used in a 'definition' context, whereas type arguments 
    * can be complex types, as in class X extends Foo<int, vector<float>>,
    * and are used in a 'use' context.
    *)*/
-type_params:
+type_arguments:
   | {}
   | TSMALLER type_arg_list_gt {}
 
-/*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
+/*(* A dirty hack to get A<A<...>> to work without an additional space 
+   * TODO: why this is class_name_or_selfparent ??
+   *)*/
 type_arg_list_gt:
   | class_name_or_selfparent TSMALLER non_empty_ext_type_hint_list T_SR { }
   | type_hint TGREATER { }
@@ -1474,8 +1476,15 @@ class_name_or_selfparent:
 /*(* php 5.3 late static binding *)*/
  | T_STATIC { LateStatic $1 }
 
+/*(* Should we have 'ident type_arguments' below? No because
+   * we allow type arguments only at a few places, for instance
+   * in 'class X extends A<int> { ... }' but not inside expressions
+   * as in 'new X<int>(...)'.
+   * This is currently equivalent to 'class_name' but adding
+   * namespace at some point may change that.
+   *)*/
 fully_qualified_class_name: 
- | ident { Name $1 }
+  | ident { Name $1 }
  /*(*s: fully_qualified_class_name grammar rule hook *)*/
   /*(* xhp: an XHP element use *)*/
   | T_XHP_COLONID_DEF { XhpName $1 }
