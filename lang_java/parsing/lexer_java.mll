@@ -16,13 +16,11 @@
 open Common 
 
 open Lexer_helper
-
 open Parser_java
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 
 (*****************************************************************************)
 (* Helpers *)
@@ -37,8 +35,8 @@ let tokinfo lexbuf  =
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 (* ---------------------------------------------------------------------- *)
-(* Java reserved words. *)
-
+(* Keywords *)
+(* ---------------------------------------------------------------------- *)
 let literal v = (v, (fun ii -> LITERAL (v,ii)))
 let primitive_type t = (t, (fun ii -> PRIMITIVE_TYPE (t, ii)))
 
@@ -109,6 +107,8 @@ let keyword_table = Common.hash_of_list [
   "assert", (fun ii -> ASSERT ii);
 ]
 }
+(*****************************************************************************)
+(* Regexps aliases *)
 (*****************************************************************************)
 
 (* CHAPTER 3: Lexical Structure *)
@@ -222,7 +222,13 @@ let AssignmentOperator =
 let newline = '\n'
 
 (*****************************************************************************)
+(* Token rule *)
+(*****************************************************************************)
 rule token = parse
+
+  (* ----------------------------------------------------------------------- *)
+  (* spacing/comments *)
+  (* ----------------------------------------------------------------------- *)
 (* old:
 | WhiteSpace
     { token lexbuf }
@@ -248,7 +254,9 @@ rule token = parse
    { TComment(tokinfo lexbuf) }
 
 
-
+  (* ----------------------------------------------------------------------- *)
+  (* Keywords and ident *)
+  (* ----------------------------------------------------------------------- *)
 | Identifier
     { 
       let info = tokinfo lexbuf in
@@ -260,6 +268,10 @@ rule token = parse
           
     }
 
+  (* ----------------------------------------------------------------------- *)
+  (* Constant *)
+  (* ----------------------------------------------------------------------- *)
+
 | IntegerLiteral  { TInt (tok lexbuf, tokinfo lexbuf) }
 | FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
 | CharacterLiteral { TChar (tok lexbuf, tokinfo lexbuf) }
@@ -267,6 +279,9 @@ rule token = parse
 | BooleanLiteral { LITERAL (tok lexbuf, tokinfo lexbuf) }
 | NullLiteral { LITERAL (tok lexbuf, tokinfo lexbuf) }
 
+  (* ----------------------------------------------------------------------- *)
+  (* Symbols *)
+  (* ----------------------------------------------------------------------- *)
 
 (* 3.11 Separators *)
 | '('  { LP(tokinfo lexbuf) } | ')'  { RP(tokinfo lexbuf) }
@@ -312,6 +327,9 @@ rule token = parse
       }
 
 (*****************************************************************************)
+(* Comments *)
+(*****************************************************************************)
+
 (* less: allow only char-'*' ? *)
 and comment = parse
   | "*/"     { tok lexbuf }
