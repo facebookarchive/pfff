@@ -11,7 +11,11 @@
  * 
  * Some modifications by Yoann Padioleau.
  * 
- * TODO: support for generics!
+ * TODO: 
+ *  - support for generics
+ *  - support annotations
+ *  - support enums
+ *  - etc.
  *)
 */
 %{
