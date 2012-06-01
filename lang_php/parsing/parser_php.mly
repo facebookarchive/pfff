@@ -960,7 +960,6 @@ non_empty_return_type:
  | TCOLON type_hint                { Some $2 }
  | TCOLON type_hint_extensions     { None }
 
-
 /*(*e: GRAMMAR class declaration *)*/
 /*(*************************************************************************)*/
 /*(*1 Expressions (and variables) *)*/
