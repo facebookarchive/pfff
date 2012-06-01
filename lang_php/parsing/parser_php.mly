@@ -946,11 +946,9 @@ type_arguments:
   | {}
   | TSMALLER type_arg_list_gt {}
 
-/*(* A dirty hack to get A<A<...>> to work without an additional space 
-   * TODO: why this is class_name_or_selfparent ??
-   *)*/
+/*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
 type_arg_list_gt:
-  | class_name_or_selfparent TSMALLER non_empty_ext_type_hint_list T_SR { }
+  | fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR { }
   | type_hint TGREATER { }
   | type_hint TCOMMA type_arg_list_gt { }
 
