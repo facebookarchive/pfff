@@ -137,7 +137,14 @@ let unittest =
     (*-----------------------------------------------------------------------*)
 
     "sphp" >:: (fun () ->
-      let t x = ignore (Parse_php.program_of_string x) in
+      let t x = 
+        try
+          let _ = Parse_php.program_of_string x in
+          ()
+        with Parse_php.Parse_error _ ->
+          assert_failure (spf "it should correctly parse %s" x)
+      in
+
       t "class A<T> { }";
       t "class A<T1, T2> { }";
       t "trait A<T1, T2> { }";
