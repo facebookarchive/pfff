@@ -671,7 +671,7 @@ class_statement:
        ClassVariables($1, $2, $3, $4) 
      }
 
- | method_modifiers T_FUNCTION is_reference ident_method
+ | method_modifiers T_FUNCTION is_reference method_name
      TOPAR parameter_list TCPAR
      return_type_opt
      method_body 
@@ -695,7 +695,7 @@ class_statement:
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
 
 /*(* ugly, php allows method names which should be IMHO reserved keywords *)*/
-ident_method: 
+method_name: 
  | ident { $1 }
  | T_PARENT { "parent", $1 }
  | T_SELF   { "self", $1 }
