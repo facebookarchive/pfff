@@ -18,13 +18,14 @@
 
 /*(*s: GRAMMAR prelude *)*/
 %{
-(* src: ocamlyaccified from zend_language_parser.y in PHP source code.
- * update: 
+(* src: ocamlyaccified from zend_language_parser.y in Zend PHP source code.
+ * updates: 
  *  - extended to deal with XHP based on XHP bison grammar.
- *  - added support for a few PHP 5.3 extensions (e.g. lambda, const, but
- *    not namespace)
- *  - added support for yield (facebook extension)
- *  - added support for a few PHP 5.4 extensions (e.g. traits)
+ *  - added support for a few PHP 5.3 extensions (e.g. lambda, const), but
+ *    not namespace.
+ *  - added support for yield (facebook extension).
+ *  - added support for a few PHP 5.4 extensions (e.g. traits).
+ *  - added support for generics (another facebook extensions).
  * 
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+
@@ -44,17 +45,12 @@
   * |          Zeev Suraski <zeev@zend.com>                                |
   * +----------------------------------------------------------------------+
  /*(*e: Zend copyright *)*/
- * 
  * /* Id: zend_language_parser.y 263383 2008-07-24 11:47:14Z dmitry */
- * 
  * LALR shift/reduce conflicts and how they are resolved:
- *
  *  - 2 shift/reduce conflicts due to the dangeling elseif/else ambiguity.  
  *  Solved by shift.
- * 
  * %pure_parser
  * %expect 2
- * 
  *)
 open Common
 
@@ -147,12 +143,15 @@ module Ast = Ast_php
  TOBRA 
  TPLUS TMINUS TMUL TDIV TMOD
  TAND TOR TXOR
- TEQ TSMALLER TGREATER
+ TEQ 
+ /*(* now also used for types/generics, as in vector<int> *)*/
+ TSMALLER TGREATER
  T_PLUS_EQUAL  T_MINUS_EQUAL  T_MUL_EQUAL  T_DIV_EQUAL
  T_CONCAT_EQUAL  T_MOD_EQUAL 
  T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
  T_INC    T_DEC
  T_BOOLEAN_OR   T_BOOLEAN_AND 
+ /*(* T_SR is (ab)used for types/generics, as in vector<list<int>> *)*/
  T_SL    T_SR
  T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
  T_BOOL_CAST T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST 
@@ -190,7 +189,7 @@ module Ast = Ast_php
 /*(*2 XHP tokens *)*/
 /*(*-----------------------------------------*)*/
 
-/*(* xhp: token for ':frag:foo' for instance; quite similiar to T_IDENT *)*/
+/*(* xhp: token for ':frag:foo'; quite similiar to T_IDENT *)*/
 %token <string list * Ast_php.info> T_XHP_COLONID_DEF
 /*(* xhp: token for '%frag:foo' *)*/
 %token <string list * Ast_php.info> T_XHP_PERCENTID_DEF
@@ -311,23 +310,16 @@ unticked_statement:
  | expr           TSEMICOLON		  { ExprStmt($1,$2) }
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
 
-  /*(* static-php-ext: *)*/
 /*
-(* todo: this is commented because it is not really used
- * and it generates some conflicts now that type_hint
- * is not anymore   type_hint: ident { ... } but 
- * type_hint: class_name_or_selfparent { ... }
+(* todo: this is commented because it is not really used and it generates
+ * some conflicts now that type_hint is not anymore  
+ *   type_hint: ident { ... } but 
+ *   type_hint: class_name_or_selfparent { ... }
  * 
- * | type_hint variable TSEMICOLON          { 
- * if not !Flag_parsing_php.type_hints_extension
- * then raise Parsing.Parse_error;
- * TypedDeclaration ($1, $2, None, $3)
- * }
- * | type_hint variable TEQ expr TSEMICOLON { 
- * if not !Flag_parsing_php.type_hints_extension
- * then raise Parsing.Parse_error;
- * TypedDeclaration ($1, $2, Some ($3, $4), $5)
- * }
+ * | type_hint variable TSEMICOLON          { ... }
+ * | type_hint variable TEQ expr TSEMICOLON { ... }
+ * Right now the only places where we allow types are for parameters
+ * and globals/constants. The rest is inferred.
  *)
 */
 
@@ -513,7 +505,7 @@ use_filename:
 /*(*1 Constant declaration *)*/
 /*(*************************************************************************)*/
 
- /*(* PHP 5.3 *)*/
+/*(* PHP 5.3 *)*/
 constant_declaration_statement:
  | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
      { ($1, Name $2, $3, $4, $5) }
@@ -527,7 +519,6 @@ function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
 unticked_function_declaration_statement:
   T_FUNCTION is_reference ident class_params_opt
   TOPAR parameter_list TCPAR 
-  /*(* static-php-ext: *)*/
   return_type_opt
   TOBRACE inner_statement_list TCBRACE
   { 
@@ -571,53 +562,6 @@ non_empty_parameter_list:
 
  /*(*e: repetitive non_empty_parameter_list *)*/
 /*(*x: GRAMMAR function declaration *)*/
-optional_class_type:
- | /*(*empty*)*/	{ None }
- | type_hint            { Some $1 }
- | type_hint_extensions { None }
-
-return_type_opt:
- | /*(*empty*)*/                   { None }
- | non_empty_return_type           { $1 }
-
-non_empty_return_type:
- | TCOLON type_hint                { Some $2 }
- | TCOLON type_hint_extensions     { None }
-
-type_hint:
- | class_name_or_selfparent type_params { Hint $1 }
- | T_ARRAY		                { HintArray $1 }
-
-/*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
-ext_type_hint:
- | type_hint                            { Some $1 }
- | type_hint_extensions                 { None }
-
-type_hint_extensions:
- | TQUESTION ext_type_hint                      {}
- | TOPAR non_empty_ext_type_hint_list TCPAR     {}
- | TOPAR T_FUNCTION
-     TOPAR ext_type_hint_list TCPAR
-     non_empty_return_type
-   TCPAR                                        {}
-
-ext_type_hint_list:
- | {}
- | non_empty_ext_type_hint_list {}
-
-non_empty_ext_type_hint_list:
- | ext_type_hint                                     {}
- | ext_type_hint TCOMMA non_empty_ext_type_hint_list {}
-
-type_params:
-  | {}
-  | TSMALLER type_arg_list_gt {}
-
-/*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
-type_arg_list_gt:
-  | class_name_or_selfparent TSMALLER non_empty_ext_type_hint_list T_SR {}
-  | type_hint TGREATER {}
-  | type_hint TCOMMA type_arg_list_gt {}
 
 is_reference:
  | /*(*empty*)*/  { None }
@@ -645,7 +589,7 @@ lexical_var_list:
 class_declaration_statement: unticked_class_declaration_statement { $1 }
 
 unticked_class_declaration_statement:
- | class_entry_type class_name 
+ | class_entry_type class_name
      extends_from implements_list
      TOBRACE  class_statement_list TCBRACE 
      { { c_type = $1; c_name = $2;c_extends = $3; 
@@ -662,12 +606,16 @@ unticked_class_declaration_statement:
          c_implements = $3; c_body = $4, $5, $6; } }
 
 trait_declaration_statement:
- | T_TRAIT ident class_params_opt TOBRACE class_statement_list TCBRACE 
+ | T_TRAIT ident class_params_opt 
+    TOBRACE class_statement_list TCBRACE 
      { (* TODO: store $3, right now the info is thrown away! *)
        { c_type = Trait $1; c_name = (Name $2); c_extends = None;
          c_implements = None; c_body = ($4, $5, $6) } }
 
 /*(*x: GRAMMAR class declaration *)*/
+/*(* This is the class name in a 'definition' context. For the use of class
+   * names in a 'use' context, see fully_qualified_class_name.
+   *)*/
 class_name: 
  | ident class_params_opt { Name $1 }
  /*(*s: class_name grammar rule hook *)*/
@@ -675,13 +623,6 @@ class_name:
   | T_XHP_COLONID_DEF class_params_opt { XhpName $1 }
  /*(*e: class_name grammar rule hook *)*/
 
-class_params_opt:
-  | {}
-  | TSMALLER class_param_list TGREATER {}
-
-class_param_list:
-  | ident {}
-  | ident TCOMMA class_param_list {}
 
 class_entry_type:
  | T_CLASS  	      { ClassRegular $1 }
@@ -702,6 +643,16 @@ interface_extends_list:
 implements_list:
  | /*(*empty*)*/               { None }
  | T_IMPLEMENTS interface_list { Some($1, $2) }
+
+interface_list:
+ | fully_qualified_class_name type_params { [Left $1] }
+ | interface_list TCOMMA
+   fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3]}
+
+trait_list:
+ | fully_qualified_class_name type_params		{ [Left $1] }
+ | trait_list TCOMMA fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3] }
+
 /*(*x: GRAMMAR class declaration *)*/
 /*(*----------------------------*)*/
 /*(*2 class statement *)*/
@@ -715,15 +666,12 @@ class_statement:
  | variable_modifiers class_variable_declaration TSEMICOLON 
      { ClassVariables($1, None, $2, $3) }
 
-  /*(* static-php-ext: *)*/
  | variable_modifiers ext_type_hint class_variable_declaration TSEMICOLON 
      { 
-       if not !Flag_parsing_php.facebook_lang_extensions
-       then raise Parsing.Parse_error;
        ClassVariables($1, $2, $3, $4) 
      }
 
- | method_modifiers T_FUNCTION is_reference ident_method  
+ | method_modifiers T_FUNCTION is_reference ident_method
      TOPAR parameter_list TCPAR
      return_type_opt
      method_body 
@@ -939,6 +887,79 @@ trait_alias_rule:
 trait_alias_rule_method:
  | class_namespace_string TCOLCOL T_IDENT { raise Todo }
  | T_IDENT { raise Todo }
+
+/*(*************************************************************************)*/
+/*(*1 Generics declaration *)*/
+/*(*************************************************************************)*/
+class_params_opt:
+  | {}
+  | TSMALLER class_param_list TGREATER {}
+
+class_param_list:
+  | ident {}
+  | ident TCOMMA class_param_list {}
+
+/*(*************************************************************************)*/
+/*(*1 Types *)*/
+/*(*************************************************************************)*/
+
+type_hint:
+ | class_name_or_selfparent type_params { Hint $1 }
+ | T_ARRAY		                { HintArray $1 }
+/*(* TODO inline type_hint_extensions here and remove ext_type_hint *)*/
+
+optional_class_type:
+ | /*(*empty*)*/	{ None }
+ | type_hint            { Some $1 }
+ | type_hint_extensions { None }
+
+/*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
+ext_type_hint:
+ | type_hint                            { Some $1 }
+ | type_hint_extensions                 { None }
+
+type_hint_extensions:
+ | TQUESTION ext_type_hint                      {}
+ | TOPAR non_empty_ext_type_hint_list TCPAR     {}
+ | TOPAR T_FUNCTION
+     TOPAR ext_type_hint_list TCPAR
+     non_empty_return_type
+   TCPAR                                        {}
+
+ext_type_hint_list:
+ | {}
+ | non_empty_ext_type_hint_list {}
+
+non_empty_ext_type_hint_list:
+ | ext_type_hint                                     {}
+ | ext_type_hint TCOMMA non_empty_ext_type_hint_list {}
+
+/*(* Do not confuse class_params and type_params. Class parameters
+   * can only be simple identifiers, as in class Foo<T1, T2> { ... },
+   * and are used in a 'definition' context, whereas type parameters 
+   * can be complex types, as in class X extends Foo<int, vector<float>>,
+   * and are used in a 'use' context.
+   *)*/
+type_params:
+  | {}
+  | TSMALLER type_arg_list_gt {}
+
+/*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
+type_arg_list_gt:
+  | class_name_or_selfparent TSMALLER non_empty_ext_type_hint_list T_SR { }
+  | type_hint TGREATER { }
+  | type_hint TCOMMA type_arg_list_gt { }
+
+
+
+return_type_opt:
+ | /*(*empty*)*/                   { None }
+ | non_empty_return_type           { $1 }
+
+non_empty_return_type:
+ | TCOLON type_hint                { Some $2 }
+ | TCOLON type_hint_extensions     { None }
+
 
 /*(*e: GRAMMAR class declaration *)*/
 /*(*************************************************************************)*/
@@ -1422,7 +1443,6 @@ exit_expr:
 
 ident: 
  | T_IDENT { $1 }
-
 /*(* xhp: it is ok to use XHP keywords in place where regular PHP names
    * are expected as in 'function children($x) { ... }'.
    * 
@@ -1436,10 +1456,9 @@ ident:
  | T_XHP_ATTRIBUTE { Ast.str_of_info $1, $1 }
  | T_XHP_CATEGORY  { Ast.str_of_info $1, $1 }
  | T_XHP_CHILDREN  { Ast.str_of_info $1, $1 }
-
- | T_XHP_ENUM  { Ast.str_of_info $1, $1 }
- | T_XHP_ANY  { Ast.str_of_info $1, $1 }
- | T_XHP_PCDATA  { Ast.str_of_info $1, $1 }
+ | T_XHP_ENUM   { Ast.str_of_info $1, $1 }
+ | T_XHP_ANY    { Ast.str_of_info $1, $1 }
+ | T_XHP_PCDATA { Ast.str_of_info $1, $1 }
 
 /*
 (* todo? Maybe we should allow 'static' here and also any kind of
@@ -1710,15 +1729,6 @@ assignment_list:
 isset_variables:
  | variable 			       { [Left $1] }
  | isset_variables TCOMMA variable     { $1 ++ [Right $2; Left $3] }
-
-interface_list:
- | fully_qualified_class_name type_params { [Left $1] }
- | interface_list TCOMMA
-   fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3]}
-
-trait_list:
- | fully_qualified_class_name type_params		{ [Left $1] }
- | trait_list TCOMMA fully_qualified_class_name type_params { $1 ++ [Right $2; Left $3] }
 
 
 declare_list:
