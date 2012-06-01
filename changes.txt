@@ -2,6 +2,8 @@
 
 * 0.20 (Q2 2012) (?? codegraph?)
 
+** introduce graph_code.ml, another way to represent a full program
+
 ** sgrep:
 
 *** metavariables for XHP attributes
