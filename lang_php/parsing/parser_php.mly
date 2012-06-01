@@ -509,6 +509,8 @@ use_filename:
 constant_declaration_statement:
  | T_CONST T_IDENT TEQ static_scalar TSEMICOLON 
      { ($1, Name $2, $3, $4, $5) }
+ | T_CONST ext_type_hint T_IDENT TEQ static_scalar TSEMICOLON 
+     { ($1, Name $3, $4, $5, $6) }
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
