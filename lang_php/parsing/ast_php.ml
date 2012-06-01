@@ -25,7 +25,7 @@ open Parse_info
 (* 
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
- * as support for XHP.
+ * as support for a few Facebook extensions (XHP and generators).
  * 
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -37,11 +37,11 @@ open Parse_info
  * (see pretty/ast_pp.ml) would make more sense.
  * 
  * NOTE: data from this type are often marshalled in berkeley DB tables
- * which means that if you add new constructor or field in the types below, 
+ * which means that if you add a new constructor or field in the types below, 
  * you must erase the berkeley DB databases otherwise pfff
  * will probably finish with a segfault (OCaml serialization is not
  * type-safe). A hacky solution is to add new constructors only at the end
- * of the type definition.
+ * of a type definition.
  * 
  * COUPLING: some programs in other languages (e.g. Python) may
  * use some of the pfff binding, or JSON/sexp exporters, so if you
@@ -54,6 +54,7 @@ open Parse_info
  *  - add fbstrict types in AST, not just in grammar
  *  - less: add hphp attributes in AST (also add in grammar)
  *  - less: add namespace in AST (also add in grammar)
+ * 
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def? hmmm maybe not
  *  - unify expr and lvalue? hmmm maybe not
@@ -142,9 +143,10 @@ and 'a comma_list_dots =
  (*e: tarzan annotation *)
 (*e: AST name *)
 (* ------------------------------------------------------------------------- *)
-(* Type. This is used in Cast. For type analysis see type_php.ml *)
+(* Types
 (* ------------------------------------------------------------------------- *)
 (*s: AST type *)
+(* This is used in Cast. For type analysis see type_php.ml *)
 type ptype =
   | BoolTy 
   | IntTy 
