@@ -51,6 +51,9 @@ open Parse_info
  * file, or to only add new constructors.
  * 
  * todo: 
+ *  - add fbstrict types in AST, not just in grammar
+ *  - less: add hphp attributes in AST (also add in grammar)
+ *  - less: add namespace in AST (also add in grammar)
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements and stmt_and_def? hmmm maybe not
  *  - unify expr and lvalue? hmmm maybe not
