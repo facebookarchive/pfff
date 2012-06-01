@@ -10,6 +10,8 @@
  * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha
  * 
  * Some modifications by Yoann Padioleau.
+ * 
+ * TODO: support for generics!
  *)
 */
 %{
@@ -227,12 +229,15 @@ name:
  | name DOT identifier  { $3 :: $1 }
 
 class_or_interface_type: name  { List.rev $1 }
+
 class_type: name             { List.rev $1 }
 interface_type: name         { List.rev $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
+
+/*(* TODO: generics *)*/
 
 /* 4.1 */
 type_java:
@@ -762,15 +767,15 @@ type_declaration:
  | SM  { [] }
 
 /*(*----------------------------*)*/
+/*(*2 Class *)*/
+/*(*----------------------------*)*/
 /* 8.1 */
-class_declaration: modifiers_opt CLASS identifier super_opt interfaces_opt class_body
-   { 
-     let class_decl mods name super ifs body =
-       { cl_mods = mods; cl_name = name; cl_super = super;
-         cl_impls = ifs; cl_body = body }
-     in
-     class_decl $1 $3 $4 $5 (myfst $6) 
-   }
+class_declaration: 
+ modifiers_opt CLASS identifier super_opt interfaces_opt class_body
+  { { cl_mods = $1; cl_name = $3; cl_super = $4; 
+      cl_impls = $5; cl_body = (myfst $6) 
+     }
+  }
 
 /* 8.1.3 */
 super: EXTENDS class_type  { $2 }
@@ -782,7 +787,8 @@ interfaces: IMPLEMENTS interface_type_list  { List.rev $2 }
 class_body: LC class_body_declarations_opt RC  { $2, [$1;$3] }
 
 /*(*----------------------------*)*/
-
+/*(*2 Class body *)*/
+/*(*----------------------------*)*/
 class_body_declaration:
  | class_member_declaration  { $1 }
 
@@ -835,13 +841,11 @@ method_declaration: method_header method_body
        method_decl $1 $2 
      }
 
-
 method_header: 
  | modifiers_opt type_java method_declarator throws_opt
      { method_header $1 $2 $3 $4 }
  | modifiers_opt VOID method_declarator throws_opt
      { method_header $1 (void_type $2) $3 $4 }
-
 
 method_declarator:
  | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1,noii), $3 }
@@ -909,6 +913,9 @@ explicit_constructor_invocation:
       { constructor_invocation (List.rev (super_ident $3 :: $1)) $5 }
 
 
+/*(*----------------------------*)*/
+/*(*2 Interface *)*/
+/*(*----------------------------*)*/
 
 /* 9.1 */
 interface_declaration: modifiers_opt INTERFACE identifier
@@ -928,7 +935,9 @@ extends_interfaces:
 /* 9.1.3 */
 interface_body:	LC interface_member_declarations_opt RC  { $2 }
 
-
+/*(*----------------------------*)*/
+/*(*2 Interface body *)*/
+/*(*----------------------------*)*/
 interface_member_declaration:
  | constant_declaration  { $1 }
  | abstract_method_declaration  { [Method $1] }
@@ -941,7 +950,6 @@ interface_member_declaration:
 /*(* note: semicolon is missing in 2nd edition java language specification.*)*/
 constant_declaration: modifiers_opt type_java variable_declarators SM
      { field_decls $1 $2 (List.rev $3) }
-
 
 /* 9.4 */
 abstract_method_declaration:

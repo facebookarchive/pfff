@@ -12,8 +12,11 @@
 open Common
 
 open Parser_java
-
 module PI = Parse_info
+
+(*****************************************************************************)
+(* Constants *)
+(*****************************************************************************)
 
 let score_path = "/home/pad/c-yacfe/tmp"
 let tmpfile = "/tmp/output.java" 
@@ -65,9 +68,6 @@ let test_parse xs  =
        ("score_parsing__" ^str ^ ext ^ ".marshalled"))
   );
   ()
-
-
-
 
 (* ---------------------------------------------------------------------- *)
 let to_string = function
@@ -189,7 +189,6 @@ let test_lexer file =
       exit 0
   done
 
-
 (* ---------------------------------------------------------------------- *)
 
 let test_visitor file = 
@@ -212,10 +211,6 @@ let test_visitor file =
   | Right _ -> pr2 "error parsing"
   *)
   raise Todo
-
-  
-
-
 
 (*****************************************************************************)
 (* Main entry for Arg *)
