@@ -30,6 +30,9 @@ module CairoH = Cairo_helpers3
 (* Painting *)
 (*****************************************************************************)
 
+(* 'Paint' creates the cairo context and adjust the scaling if needed
+ * and then call 'draw' functions.
+ *)
 let paint w =
   pr2 "View_matrix.paint Todo";
   ()

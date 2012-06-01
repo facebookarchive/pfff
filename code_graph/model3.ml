@@ -44,7 +44,7 @@ type world = {
   mutable m: Dependencies_matrix_code.dm;
 
   (* device coordinates *)
-  mutable pm: GDraw.pixmap;
+  mutable base: GDraw.pixmap;
   (* todo: could make pm also a Cairo.surface? *)
   mutable overlay: [ `Any ] Cairo.surface;
 
@@ -79,12 +79,12 @@ let init_world ?(width = 600) ?(height = 600) config model =
       Dependencies_matrix_code.build config model.g 
     )
   in
-  let pm = new_pixmap ~width ~height in
+  let pixmap = new_pixmap ~width ~height in
   {
     model; config;
     m;
     width; height;
-    pm;
-    overlay = Cairo.surface_create_similar (surface_of_gtk_pixmap pm)
+    base = pixmap;
+    overlay = Cairo.surface_create_similar (surface_of_gtk_pixmap pixmap)
       Cairo.CONTENT_COLOR_ALPHA width height;
   }
