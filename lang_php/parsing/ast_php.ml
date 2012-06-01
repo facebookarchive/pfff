@@ -143,7 +143,7 @@ and 'a comma_list_dots =
  (*e: tarzan annotation *)
 (*e: AST name *)
 (* ------------------------------------------------------------------------- *)
-(* Types
+(* Types *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST type *)
 (* This is used in Cast. For type analysis see type_php.ml *)
