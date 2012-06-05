@@ -52,7 +52,7 @@ open Parse_info
  * 
  * todo: 
  *  - add fbstrict types in AST, not just in grammar
- *  - less: add hphp attributes in AST (also add in grammar)
+ *  - add hphp attributes in AST, not just in grammar
  *  - less: add namespace in AST (also add in grammar)
  * 
  *  - introduce QualifierDynamic and factorize things in lvalue type

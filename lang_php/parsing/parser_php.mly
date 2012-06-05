@@ -516,20 +516,30 @@ constant_declaration_statement:
 /*(*1 Function declaration *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR function declaration *)*/
-function_declaration_statement:	unticked_function_declaration_statement	{ $1 }
+function_declaration_statement:	
+ | unticked_function_declaration_statement { $1 }
+ /*(* can not factorize with a 'attributes_opt' rule otherwise get shift/reduce
+    * conflicts. Indeed reading a T_FUNCTION one can not decide between the
+    * start of the definition of a function (hence reducing
+    * the empty attributes_opt rule) or shifting to a state
+    * allowing both the definition of a function or the start
+    * of a closure statement.
+    * TODO: add in AST attributes.
+    *)*/
+ | attributes unticked_function_declaration_statement { $2 }
 
 unticked_function_declaration_statement:
-  T_FUNCTION is_reference ident type_params_opt
-  TOPAR parameter_list TCPAR 
-  return_type_opt
-  TOBRACE inner_statement_list TCBRACE
-  { 
+ | T_FUNCTION is_reference ident type_params_opt
+   TOPAR parameter_list TCPAR 
+   return_type_opt
+   TOBRACE inner_statement_list TCBRACE
+   { 
     let params = ($5, $6, $7) in
     let body = ($9, $10, $11) in
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
        f_return_type = $8;f_body = body;
     })
-  }
+   }
 
 /*(*x: GRAMMAR function declaration *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
@@ -588,7 +598,9 @@ lexical_var_list:
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR class declaration *)*/
-class_declaration_statement: unticked_class_declaration_statement { $1 }
+class_declaration_statement: 
+ | unticked_class_declaration_statement { $1 }
+ | attributes unticked_class_declaration_statement { $2 }
 
 unticked_class_declaration_statement:
  | class_entry_type  class_name  type_params_opt
@@ -609,6 +621,10 @@ unticked_class_declaration_statement:
      }
 
 trait_declaration_statement:
+ | trait_declaration_statement_aux { $1 }
+ | attributes trait_declaration_statement_aux { $2 }
+
+trait_declaration_statement_aux:
  | T_TRAIT class_name type_params_opt
     TOBRACE class_statement_list TCBRACE 
      { (* TODO: store $3, right now the info is thrown away! *)
@@ -671,16 +687,8 @@ class_statement:
        ClassVariables($1, $2, $3, $4) 
      }
 
- | method_modifiers T_FUNCTION is_reference method_name
-     TOPAR parameter_list TCPAR
-     return_type_opt
-     method_body 
-     { 
-       Method {
-         m_modifiers = $1; m_tok = $2; m_ref = $3; m_name = Name $4;
-         m_params = ($5, $6, $7); m_return_type = $8; m_body = $9;
-       }
-     }
+ | method_declaration { $1 }
+ | attributes method_declaration { $2 } 
 
  | T_XHP_ATTRIBUTE xhp_attribute_decls TSEMICOLON 
      { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
@@ -693,6 +701,19 @@ class_statement:
      { UseTrait ($1, $2, Left $3) }
  | T_USE trait_list TOBRACE trait_rules TCBRACE 
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
+
+method_declaration: 
+     method_modifiers T_FUNCTION is_reference method_name
+     TOPAR parameter_list TCPAR
+     return_type_opt
+     method_body 
+     { 
+       Method {
+         m_modifiers = $1; m_tok = $2; m_ref = $3; m_name = Name $4;
+         m_params = ($5, $6, $7); m_return_type = $8; m_body = $9;
+       }
+     }
+
 
 /*(* ugly, php allows method names which should be IMHO reserved keywords *)*/
 method_name: 
@@ -963,6 +984,18 @@ non_empty_return_type:
  | TCOLON type_hint_extensions     { None }
 
 /*(*e: GRAMMAR class declaration *)*/
+
+/*(*************************************************************************)*/
+/*(*1 Attributes *)*/
+/*(*************************************************************************)*/
+ /*(* HPHP extension. *)*/
+attributes: T_SL attribute_list T_SR { }
+
+/*(* HPHP attributes can be complex values but for now we use attributes
+   * only for the __MockClass case, so let's keep the grammar simple
+   *)*/
+attribute: ident { }
+
 /*(*************************************************************************)*/
 /*(*1 Expressions (and variables) *)*/
 /*(*************************************************************************)*/
@@ -1758,6 +1791,10 @@ xhp_enum_list:
 xhp_category_list:
  | xhp_category { [Left $1] }
  | xhp_category_list TCOMMA xhp_category { $1 ++ [Right $2; Left $3] }
+
+attribute_list:
+ | attribute				   { [Left $1] }
+ | attribute_list TCOMMA attribute         { $1 ++ [Right $2; Left $3] }
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:
