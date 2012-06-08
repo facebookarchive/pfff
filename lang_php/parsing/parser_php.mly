@@ -529,7 +529,7 @@ function_declaration_statement:
  | attributes unticked_function_declaration_statement { $2 }
 
 unticked_function_declaration_statement:
- | T_FUNCTION is_reference ident type_params_opt
+ T_FUNCTION is_reference ident type_params_opt
    TOPAR parameter_list TCPAR 
    return_type_opt
    TOBRACE inner_statement_list TCBRACE
