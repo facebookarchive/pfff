@@ -43,13 +43,14 @@ module View_overlays = View_overlays3
 (* Final view rendering *)
 (*****************************************************************************)
 
-(* Composing the "layers". See cairo/tests/knockout.ml example.
- * Each move of the cursor will call assemble_layers which does all
- * those pixels copying from one layer to the other (but this is fast enough).
+(* Composing the "layers". Each move of the cursor will call
+ * assemble_layers which does all those pixels copying from one
+ * layer to the other (but this is fast enough).
+ * (see also cairo/tests/knockout.ml example).
  * 
  * The final target is the actual gtk window which is represented by cr_final.
- * We copy the pixels from the pixmap dw.base on the window. Then
- * we copy the pixels from the pixmap dw.overlay on the windown
+ * We copy the pixels from the pixmap dw.base on the window. 
+ * Then we copy the pixels from the pixmap dw.overlay on the window
  * getting the final result.
  *)
 let assemble_layers cr_final w =
@@ -234,7 +235,7 @@ let mk_gui w =
     da#event#connect#motion_notify  
       (View_overlays.motion_notify da w) +> ignore; 
 
-    Controller._refresh_da := (fun () ->
+    Controller._refresh_drawing_area := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
     );
 
