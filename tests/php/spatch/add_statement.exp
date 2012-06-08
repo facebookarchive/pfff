@@ -1,0 +1,10 @@
+<?php
+
+$x = foo(1);
+bar($x);
+
+function t1() {
+  $y = foo(1);
+bar($y);
+
+}

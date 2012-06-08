@@ -203,7 +203,12 @@ let spatch_unittest = [
         let phpfile = prefix ^ variant ^ ".php" in
         
         let pattern = Spatch_php.parse spatchfile in
-        let resopt = Spatch_php.spatch pattern phpfile in
+        let resopt = 
+          try Spatch_php.spatch pattern phpfile 
+          with Failure s ->
+            assert_failure (spf "spatch on %s have resulted in exn = %s"
+                               phpfile s)
+        in
         
         let file_res = 
           match resopt with
