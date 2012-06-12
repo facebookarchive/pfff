@@ -703,14 +703,14 @@ class_statement:
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
 
 method_declaration: 
-     method_modifiers T_FUNCTION is_reference method_name
+     method_modifiers T_FUNCTION is_reference method_name type_params_opt
      TOPAR parameter_list TCPAR
      return_type_opt
      method_body 
      { 
        Method {
          m_modifiers = $1; m_tok = $2; m_ref = $3; m_name = Name $4;
-         m_params = ($5, $6, $7); m_return_type = $8; m_body = $9;
+         m_params = ($6, $7, $8); m_return_type = $9; m_body = $10;
        }
      }
 

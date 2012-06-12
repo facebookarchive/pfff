@@ -166,6 +166,7 @@ let unittest =
       t "class A { const ?A<T1, T2> X = 0; }";
       t "$x = function(): ?int { return null; };";
       t "function foo(A<A<int>> $x): ?int { return null; };";
+      t "class A { public static function foo<T>(): ?int { } }";
     );
 
     (*-----------------------------------------------------------------------*)
