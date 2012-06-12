@@ -910,6 +910,7 @@ rule st_in_scripting = parse
 (*s: rule initial *)
 and initial = parse
 
+  | "<?hh" ([' ''\t']|NEWLINE)
   | "<?php" ([' ''\t']|NEWLINE)
       { 
         (* I now do a yyless to not eat the newline which is more
