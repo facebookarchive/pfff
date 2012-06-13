@@ -17,9 +17,8 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
- * This module is inspired by bill's flib-map based autofixer in checkModule
+ * This module is inspired by bill's flib-map based autofixer in checkModule.
  *)
 
 (*****************************************************************************)

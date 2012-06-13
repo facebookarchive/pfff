@@ -18,25 +18,24 @@ module Ast = Ast_php
 let unittest =
  "checkers_php" >::: [
   "basic checkers" >:: (fun () ->
+  let p path = Filename.concat Config.path path in
+
   let test_files = [
-    "tests/php/scheck/includes.php";
-    "tests/php/scheck/variables.php";
-    "tests/php/scheck/variables_fp.php";
-    "tests/php/scheck/functions.php";
-    "tests/php/scheck/static_methods.php";
-    "tests/php/scheck/methods.php";
-    "tests/php/scheck/classes.php";
-    "tests/php/scheck/traits.php";
-    "tests/php/scheck/cfg.php";
-    "tests/php/scheck/references.php";
-    "tests/php/scheck/endpoint.php";
-    "tests/php/scheck/misc.php";
+    p "tests/php/scheck/includes.php";
+    p "tests/php/scheck/variables.php";
+    p "tests/php/scheck/variables_fp.php";
+    p "tests/php/scheck/functions.php";
+    p "tests/php/scheck/static_methods.php";
+    p "tests/php/scheck/methods.php";
+    p "tests/php/scheck/classes.php";
+    p "tests/php/scheck/traits.php";
+    p "tests/php/scheck/cfg.php";
+    p "tests/php/scheck/references.php";
+    p "tests/php/scheck/endpoint.php";
+    p "tests/php/scheck/misc.php";
   ] 
   in
-  let test_files = 
-    test_files +> List.map (fun s -> Filename.concat Config.path s) in
-  let php_stdlib =
-    Filename.concat Config.path "/data/php_stdlib" in
+  let php_stdlib = p "/data/php_stdlib" in
   
   let (expected_errors :(Common.filename * int (* line *)) list) =
     test_files +> List.map (fun file ->
