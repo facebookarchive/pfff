@@ -108,11 +108,11 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
 (* Build database intermediate steps *)
 (*****************************************************************************)
 
-(* step1:  
+(* step1:
  * - store toplevel asts
  * - store file to toplevel ids mapping
  *)
-let index_db1_2 db files = 
+let index_db1_2 db files =
 
   let parsing_stat_list = ref [] in
 
