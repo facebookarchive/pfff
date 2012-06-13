@@ -35,7 +35,6 @@ let unittest =
     p "tests/php/scheck/misc.php";
   ] 
   in
-  let php_stdlib = p "/data/php_stdlib" in
   
   let (expected_errors :(Common.filename * int (* line *)) list) =
     test_files +> List.map (fun file ->
@@ -53,7 +52,7 @@ let unittest =
     ) +> List.flatten
   in
   let builtin_files =
-    Lib_parsing_php.find_php_files_of_dir_or_files [php_stdlib]
+    Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
   in
 
   Error_php._errors := [];
@@ -71,8 +70,7 @@ let unittest =
     Check_all_php.check_file ~verbose ~find_entity env file
   );
   if verbose then begin
-    !Error_php._errors +> List.iter (fun e -> 
-      pr (Error_php.string_of_error e));
+    !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e))
   end;
   
   let (actual_errors: (Common.filename * int (* line *)) list) = 
