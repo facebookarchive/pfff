@@ -46,7 +46,7 @@ module M = Map_php
 (* I also return the original token of self/parent so the caller can decide
  * to do a rewrap on it. This is better than subsituting
  * the name by the referenced class because ii_of_any and range_of_ii
- * could get confused by having some ASTs that contains outside ii.
+ * could get confused by having some ASTs that contains "foreign" ii.
  *)
 let resolve_class_name qu in_class =
   match qu, in_class with
