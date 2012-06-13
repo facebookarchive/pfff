@@ -28,14 +28,13 @@ module V = Visitor_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * As opposed to OCaml or C++ or Java or most programming languages, 
  * there is no source code files where PHP builtin functions
  * and their types are declared. They are only defined in the PHP manual 
  * and somewhere in the source code of Zend.
- * In OCaml most library functions are written in OCaml itself or are specified
- * via an 'external' declaration as in:
+ * In OCaml most library functions are written in OCaml itself or are
+ * specified via an 'external' declaration as in:
  * 
  *   external (=) : 'a -> 'a -> bool = "%equal"
  * 
@@ -44,17 +43,18 @@ module V = Visitor_php
  * the type inference  because builtin functions are not special anymore. 
  * 
  * Unfortunately, this is not the case for PHP. Fortunately the
- * good guys from HPHP have spent some time specifying in a IDL form 
+ * good guys from HPHP have spent some time specifying in a IDL form
  * the interface of many of those builtin PHP functions (including the 
  * one in some popular PHP extensions). They've used those interfaces to 
  * generate C++ header files, but we can abuse them to instead generate
  * PHP "header" files that our tool can understand.
+ * See hphp/src/idl/.
+ * See also now /var/hphpi-releases/*/systemlib.php
  * 
  * Note that the PHP manual is stored in XML files and so can also
  * be automatically processed to extract the names and types
  * of the builtin functions, classes, and constants.
  *)
-
 
 (*****************************************************************************)
 (* HPHP IDL *)
