@@ -111,7 +111,7 @@ let unsugar_self_parent_any2 any =
     M.kclass_name_or_kwd = (fun (k, bigf) qu ->
       match qu with
       | LateStatic tok -> LateStatic tok
-      | _ ->
+      | ClassName _ | Self _ | Parent _ ->
           let (unsugar_name, tok_orig) = 
             resolve_class_name qu !in_class in
           let name' = 
@@ -143,7 +143,8 @@ let unsugar_self_parent_program ast =
  *)
 let unsugar_self_parent_toplevel x =
   match x with
-  | StmtList _ | FuncDef _ | ConstantDef _
+  | StmtList _ 
+  | FuncDef _ | ConstantDef _
   | NotParsedCorrectly _ | FinalDef _ 
       -> x
 
