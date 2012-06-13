@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,20 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
 
 module Ast = Ast_php
-
 module V = Visitor_php
 module M = Map_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * There are a few constructions in the PHP AST such as self:: and parent::
  * that makes certain analysis more tedious to write. The goal of this
@@ -139,8 +136,8 @@ let unsugar_self_parent_program ast =
   unsugar_self_parent_any (Program ast) +> 
     (function Program x -> x | _ -> raise Impossible)
 
-(* this is used in database_php_build. It's quite expensive to do a map
- * because of all the reallocation and because in most cases there is
+(* This is used in database_php_build. It's quite expensive to do a map
+ * because of all the reallocation. Because in most cases there is
  * no self/parent in the code, we can optimize things and doing the
  * map only when we really needs it.
  *)
