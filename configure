@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-
 use strict;
 
 use Getopt::Long;
@@ -11,15 +10,16 @@ use Pod::Usage;
 
 # Yes I know about autoconf ... and autoconf sux.
 
-# assume standard: binutils, gcc, as, ld, gnu toolchain
-# assume standard: make, sh?, perl?
-# assume standard: diffutils, fileutils, findutils, grep, patchutils, sh-utils
-## assume standard: diff, patch
-
-## realpath ?? 
-## findutils ?? need good gnu find, not macos find
-##  which adds some extra '//' in paths which bother pfff
-# sharutils, for obrowser/ocsigen  use of uuencode
+# We do not check for the following programs; we assume they are standard:
+# - binutils, gcc, as, ld, the GNU toolchain
+# - make, sh?, perl?
+# - diffutils, fileutils, findutils, grep, patchutils, sh-utils
+# - diff?, patch?
+# 
+# - TODO realpath?? only for facebook stuff
+# - TODO findutils ?? need good gnu find, not macos find
+#   which adds some extra '//' in paths which bother pfff
+# - STILL? sharutils, for obrowser/ocsigen  use of uuencode
 
 my $project = 
     "pfff";
@@ -53,13 +53,14 @@ my $facebook=0;
 
 #my $opt=".opt"; # also set in env.sh
 
+
 my $man = 0;
 my $help = 0;
 
-# see http://perldoc.perl.org/Getopt/Long.html
+# See http://perldoc.perl.org/Getopt/Long.html
 # coupling: if add options here, add an explanation at the bottom of this file
-# too. Later may also add something in the documentation latex file 
-# (or use LP)
+#  too. Later you may also add something in the documentation latex file
+#  (or use LP).
 GetOptions (
     "prefix=s" => \$prefix,
 
@@ -100,7 +101,7 @@ pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 my $src="$prefix/share/$project";
 
-# dependencies
+# Dependencies:
 if ($visual) { $gui = 1; }
 #if ($bdb) { $pcre = 1; }
 if ($facebook) { $mysql = 1; }
@@ -137,6 +138,44 @@ sub check_config { my ($command, $expect, $msggood, $msgbad) = @_;
     else { pr2 $msggood }
     return $error;
 }
+
+sub show_error_msg_and_exit_if_error {
+    my ($error) = @_;
+    if($error) {
+        pr2 "
+----------------------------------------------------------------------
+!!!! There seems to have a problem, we have found a missing program.
+Have a look at install.txt and the install_xxx.txt corresponding to your
+OS.!!!!
+----------------------------------------------------------------------
+";
+        exit 1;
+    }
+#plural($error) . ".
+#" .
+#" . (($error > 1) ? "Some of those packages" : "This package") . 
+#    " may be installed by picking " . ($error > 1 ? "them" : "it") . 
+#    " in $project-dependencies.tgz available
+#on the $project website. !!!!
+}
+
+sub show_missing_package_error_msg {
+    my ($error2) = @_;
+    pr2 "
+----------------------------------------------------------------------
+!!!! You can try to compile and test $project, 
+but some features or plugins may be missing. !!!!\n
+We have found $error2 missing package" . plural($error2) . ". " . 
+#(($error2 > 1) ? "Some of those packages" : "This package") . 
+#" may be installed 
+#by picking " . ($error2 > 1 ? "them" : "it") . 
+#" in $project-dependencies.tgz available on the $project website.
+#";
+"
+Have a look at the install_xxx.txt corresponding to your OS. 
+";
+}
+
 ######################################################################
 # Let's go
 ######################################################################
@@ -151,14 +190,15 @@ my $arch = `uname`;
 #---------------------------------------------------------------------
 # Compilers and runtimes
 #---------------------------------------------------------------------
-# needs 3.12 because use the forall 'a. new typing feature and the _ pattern
-# in records.
+# We need 3.12 because I use the forall 'a. new typing feature 
+# as well as the '_' pattern in records (in my code but also in lib-sexp/)
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
                  "Objective(.*) 3.12",
                  "OCaml (the wonderful language) is present.",
                  "The program ocaml is missing or is not a good version. We need at least 3.12",
                  );
+show_error_msg_and_exit_if_error($error);
 
 #not really used for now:
 #$error2 += check_config("glimpse 2>&1 |",
@@ -185,7 +225,7 @@ $error += check_config(
   "The program gnu make is missing or is not a good version.
 We need  3.XX",
 );
-
+show_error_msg_and_exit_if_error($error);
 
 #---------------------------------------------------------------------
 # More developers tools
@@ -310,44 +350,14 @@ if(1) {
 ######################################################################
 
 if($error2) { 
-    pr2 "
-----------------------------------------------------------------------
-!!!! You can try to compile and test $project, 
-but some features or plugins may be missing. !!!!\n
-We have found $error2 missing package" . plural($error2) . ". " . 
-#(($error2 > 1) ? "Some of those packages" : "This package") . 
-#" may be installed 
-#by picking " . ($error2 > 1 ? "them" : "it") . 
-#" in $project-dependencies.tgz available on the $project website.
-#";
-"
-Have a look at the install_xxx.txt corresponding to your OS. 
-";
-
+    show_missing_package_error_msg($error2);
 } else {
     pr2 "
 All seems fine for $project.
-"
-    ;
+";
 }
 
-
-if($error) { 
-    pr2 "
-----------------------------------------------------------------------
-!!!! There seems to have problem, we have found $error missing package" . 
-plural($error) . ".
-#" . (($error > 1) ? "Some of those packages" : "This package") . 
-#    " may be installed by picking " . ($error > 1 ? "them" : "it") . 
-#    " in $project-dependencies.tgz available
-#on the $project website. !!!!
-"Have a look at install.txt and the install_xxx.txt corresponding to your
-OS.
-----------------------------------------------------------------------
-";
-} else { 
-
-    pr2 "
+pr2 "
 ----------------------------------------------------------------------
 To compile $project type:
   \$ $MAKE_PROGRAM depend
@@ -360,8 +370,6 @@ If you want to use the analysis framework and code visualization tool
 see install.txt or type ./configure --help
 ----------------------------------------------------------------------
 ";
-
-}
 
 ######################################################################
 # Generating the configuration
@@ -460,7 +468,7 @@ if($facebook) {
 
 `touch test.ml`;
 
-if($error2) { 
+if($error || $error2) { 
     pr2 "!!Problems during ./configure!!";
 }
 
