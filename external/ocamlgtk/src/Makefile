@@ -310,7 +310,7 @@ ifeq ($(HAS_NATIVE_DYNLINK),yes)
 lablgtkopt::  $(MLLIBS:.cma=.cmxs)
 endif
 
-LABLGLADECCOBJS = gutf8.cmo xml_lexer.cmo lablgladecc.cmo
+LABLGLADECCOBJS = gutf8.cmo xml2_lexer.cmo lablgladecc.cmo
 
 lablgladecc$(XE): $(LABLGLADECCOBJS)
 	$(LINKER) -o $@ $(LABLGLADECCOBJS)
@@ -437,9 +437,9 @@ gtkThread.cmi: gtkThread.mli
 gtkThread.cmx: gtkThread.ml
 	$(COMPOPT) $(THFLAGS) gtkThread.ml
 
-xml_lexer.ml: xml_lexer.mll
-	$(CAMLLEX) xml_lexer.mll
-xml_lexer.cmo xml_lexer.cmx : xml_lexer.cmi
+xml2_lexer.ml: xml2_lexer.mll
+	$(CAMLLEX) xml2_lexer.mll
+xml2_lexer.cmo xml2_lexer.cmx : xml2_lexer.cmi
 
 varcc$(XE): varcc.cmo
 	$(LINKER) -o $@ $<
@@ -453,7 +453,7 @@ check_externals$(XE): check_externals.cmo
 
 clean:
 	rm -f *.cm* *.o *.a *.so *.exe *.obj *.lib *.dll *_tags.[ch] *.gch \
-	  $(TARGETS) varcc.ml gtkSignal.ml xml_lexer.ml \
+	  $(TARGETS) varcc.ml gtkSignal.ml xml2_lexer.ml \
 	  propcc$(XE) check_externals$(XE) check_externals.ml propcc.ml \
 	  *Enums.ml *Props.ml
 	rm -f \#*\# *~
@@ -473,7 +473,7 @@ DOCFILES = gPango.ml gDraw.mli gObj.mli gMain.mli gData.mli \
         gtkFile.ml gtkMain.ml \
         $(GTKPROPS:%.props=%Props.ml)
 ifdef USE_GLADE
-DOCFILES += glade.mli xml_lexer.mli
+DOCFILES += glade.mli xml2_lexer.mli
 endif
 ifdef USE_GL
 DOCFILES += glGtk.mli

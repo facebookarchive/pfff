@@ -145,7 +145,7 @@ let classes = ref [
   "GtkComboBoxEntry", ("GtkEdit.ComboBoxEntry", "GEdit.combo_box_entry");
 ] 
 
-open Xml_lexer
+open Xml2_lexer
 
 let parse_header lexbuf =
   match token lexbuf with 
