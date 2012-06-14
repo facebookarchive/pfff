@@ -28,3 +28,5 @@ function hphp_get_timers($get_as_float = true) { }
 function hphp_output_global_state($serialize = true) { }
 function hphp_instruction_counter() { }
 function hphp_get_hardware_counters() { }
+function hphp_set_hardware_events($events = null) { }
+function hphp_clear_hardware_events() { }
