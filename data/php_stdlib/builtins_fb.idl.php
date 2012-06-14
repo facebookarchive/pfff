@@ -29,6 +29,9 @@ function fb_rpc_intercept_handler($name, $obj, $params, $data, &$done) { }
 function fb_renamed_functions($names) { }
 function fb_rename_function($orig_func_name, $new_func_name) { }
 function fb_utf8ize(&$input) { }
+function fb_utf8_strlen_deprecated($input) { }
+function fb_utf8_strlen($input) { }
+function fb_utf8_substr($str, $start, $length = INT_MAX) { }
 function fb_call_user_func_safe($function) { func_get_args();}
 function fb_call_user_func_safe_return($function, $def) { func_get_args();}
 function fb_call_user_func_array_safe($function, $params) { }
@@ -57,3 +60,6 @@ function fb_output_compression($new_value) { }
 function fb_set_exit_callback($function) { }
 function fb_get_flush_stat() { }
 function fb_get_last_flush_size() { }
+function fb_lazy_stat($filename) { }
+function fb_lazy_lstat($filename) { }
+function fb_lazy_realpath($filename) { }
