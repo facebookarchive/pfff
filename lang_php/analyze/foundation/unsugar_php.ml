@@ -37,6 +37,9 @@ module M = Map_php
  * note that even if people use self::foo(), the foo() method may
  * actually not be in self but possibly in its parents; so we need
  * a lookup ancestor anyway ...
+ * 
+ * todo: have a unsugar_traits() that do the inlining of the mixins.
+ * This requires an entity_finder.
  *)
 
 (*****************************************************************************)
@@ -103,9 +106,19 @@ let unsugar_self_parent_any2 any =
         | None -> None
         | Some (tok, classname) -> Some classname
       in
-      Common.save_excursion in_class (Some (classname, parent_opt)) (fun () ->
-        k def
-      )
+
+      match def.c_type with
+      (* Some traits contain reference to parent:: which we can not
+       * unsugar at the defition location. We can do such thing
+       * only at the 'use' location. So let's skip the transformation
+       * of the trait definition here and not call the continuation k.
+       *)
+      | Trait _ -> 
+          def
+      | _ ->
+         Common.save_excursion in_class (Some (classname, parent_opt)) (fun ()->
+           k def
+         )
     );
 
     M.kclass_name_or_kwd = (fun (k, bigf) qu ->

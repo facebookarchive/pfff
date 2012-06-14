@@ -221,7 +221,13 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ -> ()
               )
           | (Self _ | Parent _), _ ->
-              failwith "check_var_help: call unsugar_self_parent()"
+              (* The code of traits can contain reference to Parent:: that
+               * we cannot unsugar.
+               * todo: check that in_trait here? or avoid calling
+               * this function when inside traits?
+               *)
+              (* failwith "check_var_help: call unsugar_self_parent()"*)
+              ()
           | LateStatic _, _ ->
               (* not much we can do :( *)
               ()
@@ -282,7 +288,8 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               | _ -> raise Impossible
               )
           | ClassNameRefStatic (Self _ | Parent _) ->
-              failwith "check_functions_php: call unsugar_self_parent()"
+              (* failwith "check_var_help: call unsugar_self_parent()" *)
+              ()
           (* can't do much *)
           | ClassNameRefDynamic _  | ClassNameRefStatic (LateStatic _) -> ()
           )

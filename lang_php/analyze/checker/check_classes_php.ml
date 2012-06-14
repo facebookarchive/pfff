@@ -150,15 +150,16 @@ let visit_and_check  find_entity prog =
    * unsugaring there too?
    *)
   let in_class = ref (None: (string * bool) option) in
+  let in_trait = ref false in
 
   let visitor = V.mk_visitor { Visitor_php.default_visitor with
 
     V.kclass_def = (fun (k, _) def ->
       let is_abstract = 
-        match def.c_type with
-        | ClassAbstract _ -> true
-        | _ -> false
-      in
+        match def.c_type with ClassAbstract _ -> true | _ -> false in
+      let is_trait =
+        match def.c_type with Trait _ -> true | _ -> false in
+
       def.c_extends +> Common.do_option (fun (tok, parent) ->
         E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, parent)
           (fun _ ->
@@ -166,10 +167,12 @@ let visit_and_check  find_entity prog =
         )
       );
 
-      Common.save_excursion in_class (Some (Ast.name def.c_name, is_abstract)) 
-        (fun () ->
+      Common.save_excursion in_class (Some (Ast.name def.c_name, is_abstract))
+      (fun () ->
+      Common.save_excursion in_trait is_trait
+      (fun () ->
           k def
-        )
+        ))
     );
     V.klvalue = (fun (k,vx) x ->
       match x with
@@ -182,7 +185,12 @@ let visit_and_check  find_entity prog =
                 (aclass, amethod) (name, args) find_entity
 
           | (Self _ | Parent _) ->
-              failwith "check_functions_php: call unsugar_self_parent()"
+              if !in_trait
+              (* checking for right method name should be done at use time, it
+               * can't be done here, so let's accept any method call here.
+               *)
+              then ()
+              else failwith "check_classes_php: call unsugar_self_parent()"
           (* not much we can do? *)
           | LateStatic _ -> ()
           );
@@ -252,7 +260,7 @@ let visit_and_check  find_entity prog =
           k x
 
       | New (tok, (ClassNameRefStatic (Self _ | Parent _)), args) ->
-          failwith "check_functions_php: call unsugar_self_parent()"
+          failwith "check_classes_php: call unsugar_self_parent()"
       | New (tok, (ClassNameRefDynamic (class_name, _)), args) ->
           (* can't do much *)
           k x
