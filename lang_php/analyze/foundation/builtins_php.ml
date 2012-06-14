@@ -283,7 +283,7 @@ let actions () = [
   "-generate_php_stdlib", " <src_idl> <src_phpmanual> <dest>",
   Common.mk_action_3_arg (fun src phpmanual_dir dest ->
     generate_php_stdlib ~src ~phpmanual_dir ~dest);
-  "-builtin_of_idl", " <idl>",
+  "-builtins_of_idl", " <idl>",
   Common.mk_action_1_arg (fun idlfile ->
     let cmd = spf " php -f %s/scripts/gen_builtins_php.php %s"
       (Sys.getenv "PFFF_HOME") idlfile in
