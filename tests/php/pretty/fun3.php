@@ -2,7 +2,7 @@
 
 
 function remove_affiliation_link(
-  $userid,
-  $network_key,
-  $is_deactivate = 123345) {
+    $userid,
+    $network_key,
+    $is_deactivate = 123345) {
 }

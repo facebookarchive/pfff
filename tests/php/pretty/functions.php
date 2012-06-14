@@ -41,9 +41,9 @@ function deactivate_affiliations($userid) {
  *              network assocs, they will get disabled on their own
  */
 function remove_affiliation_link(
-  $userid,
-  $network_key,
-  $is_deactivate = false) {
+    $userid,
+    $network_key,
+    $is_deactivate = false) {
   // 1. remove it from the user's db
   $conn_id_w = id_get_conn($userid, 'w');
   $conn_network_w = network_get_conn($network_key, 'w');
