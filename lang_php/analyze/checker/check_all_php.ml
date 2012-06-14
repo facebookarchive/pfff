@@ -40,6 +40,9 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
    * before Check_functions_php) because check_and_annotate_program
    * needs to tag if something is passed by reference, which requires
    * now to lookup static methods, which requires the self/parent unsugaring
+   * 
+   * todo: unsugar traits by inlining/mixing their code in the class
+   * using them.
    *)
   let ast = Parse_php.parse_program file 
     +> Unsugar_php.unsugar_self_parent_program
