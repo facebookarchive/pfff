@@ -220,14 +220,12 @@ and toplevel env = function
   | x :: rl -> stmt env x; toplevel env rl
 
 and stmt_block env stl =
-  Pp.nest_block env (
-    fun env ->
+  Pp.nest_block env (fun env ->
       stmts env stl;
   )
 
 and stmt_block_nl env stl =
-  Pp.nest_block env (
-    fun env ->
+  Pp.nest_block env (fun env ->
       stmts env stl;
   );
   Pp.newline env
@@ -348,8 +346,7 @@ and stmt_ env = function
           if env.Pp.line <> line then Pp.fail();
        ) (fun env ->
           Pp.newline env;
-          Pp.nest env (
-          fun env ->
+          Pp.nest env (fun env ->
             Pp.spaces env;
             expr env e2
          ))
@@ -362,8 +359,7 @@ and stmt_ env = function
                             )
          ) (fun env ->
             Pp.newline env;
-            Pp.nest env (
-            fun env ->
+            Pp.nest env (fun env ->
               Pp.spaces env;
               expr env e2;
            )
@@ -385,8 +381,7 @@ and stmt_ env = function
       Pp.newline env
   | Break _ | Continue _ | Throw _
   | Return _ as e ->
-      Pp.nest env (
-        fun env ->
+      Pp.nest env (fun env ->
           stmt_simple env e;
           Pp.print env ";";
           Pp.newline env
@@ -412,16 +407,14 @@ and case env = function
       expr env e;
       Pp.print env ":";
       Pp.newline env;
-      Pp.nest env (
-        fun env ->
+      Pp.nest env (fun env ->
           stmts env stl;
       );
   | Default stl ->
       Pp.spaces env;
       Pp.print env "default:";
       Pp.newline env;
-      Pp.nest env (
-        fun env ->
+      Pp.nest env (fun env ->
           stmts env stl;
       );
 
@@ -591,8 +584,7 @@ and expr_ env = function
       Pp.print env "&";
       expr env e
   | Xhp x ->
-      Pp.nestc env (
-        fun env ->
+      Pp.nestc env (fun env ->
           xml env x;
       )
   | ConsArray ((_ :: _ :: _) as avl) when A.is_string_key avl ->
@@ -623,8 +615,7 @@ and expr_ env = function
           expr env e3
       ) (
         fun env ->
-          Pp.nestc env (
-            fun env ->
+          Pp.nestc env (fun env ->
               expr env e1;
               Pp.print env " ?";
               Pp.newline env;
@@ -959,9 +950,8 @@ and func_def env f =
   );
   (* TODO f_return_type *)
   Pp.newline env;
-  Pp.nest env (
-    fun env ->
-      List.iter (stmt env) f.f_body;
+  Pp.nest env (fun env ->
+    List.iter (stmt env) f.f_body;
   );
   Pp.spaces env;
   Pp.print env "}";
@@ -1019,8 +1009,7 @@ and xml_nest env x =
     fun env ->
       open_tag "" env x;
       Pp.newline env;
-      Pp.nest env (
-        fun env ->
+      Pp.nest env (fun env ->
           List.iter (fun x -> Pp.spaces env; xhp env x; Pp.newline env) body;
       );
       Pp.spaces env;
