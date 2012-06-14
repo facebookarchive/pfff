@@ -6,14 +6,3 @@ function remove_affiliation_link(
   $network_key,
   $is_deactivate = 123345) {
 }
-
-
-
-
-
-
-
-
-
-
-
