@@ -21,6 +21,7 @@ let unittest =
   let p path = Filename.concat Config.path path in
 
   let test_files = [
+    p "tests/php/scheck/common.php";
     p "tests/php/scheck/includes.php";
     p "tests/php/scheck/variables.php";
     p "tests/php/scheck/variables_fp.php";
