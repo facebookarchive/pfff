@@ -25,6 +25,8 @@ module Pp = Pp2
 (*
  * A pretty printer for PHP. The goal is to replace many of bill/jfrank's
  * code reviews by a script :)
+ * The current conventions are documented here:
+ *  https://tools.facebook.com/dex/core-php/php-style-reference
  *
  * The general idea of the algorihm is to use backtracking.
  * You try to print something and if it fails you try a different strategy.
@@ -647,11 +649,11 @@ and expr_ env = function
       Pp.nest env (fun env ->
         Pp.choice_left env (fun env ->
           Pp.print env "(";
-          parameters_ false env def.l_params;
+          parameters_ ~nl:false env def.l_params;
           Pp.print env ")";
         ) (fun env ->
           Pp.print env "(";
-          parameters_ true env def.l_params;
+          parameters_ ~nl:true env def.l_params;
           Pp.print env ")";
         )
       );
@@ -661,11 +663,11 @@ and expr_ env = function
           Pp.nest env (fun env ->
             Pp.choice_left env (fun env ->
               Pp.print env " use(";
-              parameters_ false env def.l_use;
+              parameters_ ~nl:false env def.l_use;
               Pp.print env ")";
             ) (fun env ->
               Pp.print env " use(";
-              parameters_ true env def.l_use;
+              parameters_ ~nl:true env def.l_use;
               Pp.print env ")";
             )
           );
@@ -867,12 +869,11 @@ and method_def env m =
   if m.m_ref
   then Pp.print env "&";
   Pp.print env m.m_name;
-  Pp.nest env (
-  fun env ->
+  Pp.nest env (fun env ->
     Pp.choice_left env (
     fun env ->
       Pp.print env "(";
-      parameters_ false env m.m_params;
+      parameters_ ~nl:false env m.m_params;
       Pp.print env ")";
       if m.m_body = []
       then Pp.print env ";"
@@ -880,7 +881,10 @@ and method_def env m =
    ) (
     fun env ->
       Pp.print env "(";
-      parameters_ true env m.m_params;
+      (* 4 spaces for parameters *)
+      Pp.nest env (fun env ->
+        parameters_ ~nl:true env m.m_params;
+      );
       Pp.print env ")";
       if m.m_body = []
       then Pp.print env ";"
@@ -893,7 +897,7 @@ and method_def env m =
   then ()
   else (Pp.spaces env; Pp.print env "}"; Pp.newline env)
 
-and parameters_ nl env = function
+and parameters_ ~nl env = function
   | [] -> ()
   | [x] ->
       if nl then (Pp.newline env; Pp.spaces env);
@@ -939,12 +943,17 @@ and func_def env f =
     Pp.choice_left env (
     fun env ->
       Pp.print env "(";
-      parameters_ false env f.f_params;
+      parameters_ ~nl:false env f.f_params;
       Pp.print env ") {";
    ) (
     fun env ->
       Pp.print env "(";
-      parameters_ true env f.f_params;
+      (* We actually want 4 spaces for parameters, so we add another
+       * nest() here in addition to the one above.
+       *)
+      Pp.nest env (fun env ->
+        parameters_ ~nl:true env f.f_params;
+      );
       Pp.print env ") {";
    )
   );
