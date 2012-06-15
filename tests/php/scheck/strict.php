@@ -6,11 +6,11 @@ function test_strict_var() {
 
   $vars = array();
   foreach($vars as $var) {
-    vars_bar($var);
+    misc1($var);
     //ERROR: unused variable, should be declared outide because it's used later
     $nested_var = 1;
   }
   //ERROR: use of undefined variable
-  vars_bar($nested_var);
+  misc1($nested_var);
 
 }

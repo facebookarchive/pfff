@@ -4,7 +4,7 @@
 // Auxillary functions
 //*************************************************************************
 
-function vars_bar($key) {
+function misc1($key) {
   echo $key;
 }
 

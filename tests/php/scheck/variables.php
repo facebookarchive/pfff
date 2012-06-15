@@ -8,7 +8,7 @@
 function test_undefined_and_unused_variables($a) {
 
   $ok = 1;
-  vars_bar($ok);
+  misc1($ok);
 
   //ERROR: unused variable
   $c = 1;
@@ -17,7 +17,7 @@ function test_undefined_and_unused_variables($a) {
   echo $b;
 
   //ERROR: use of undefined variable
-  vars_bar($d);
+  misc1($d);
 
   //ERROR: unused variable. Yes it's used by unset but this should not count
   $memory = 1;
@@ -35,7 +35,7 @@ function test_undefined_and_unused_variables($a) {
 class vars_A {
   public function foo($a) {
     //ERROR: unused variable, because of the typo below
-    $im_service = vars_bar($a);
+    $im_service = misc1($a);
     //ERROR: typo
     if ($im_servce === false) {
       return 1;
@@ -154,7 +154,7 @@ function vars_ok_keyword_arguments() {
   // no error for now even if $key appeared as unused. PHP has no
   // keyword arguments so people use such assignation as a kind of
   // comment
-  vars_bar($key = 1);
+  misc1($key = 1);
 }
 
 function vars_ok1() {
@@ -178,7 +178,7 @@ function vars_ok2() {
 
 // keyword arguments should be considered even when deeply nested ... hmmm
 function vars_ok3() {
-  vars_bar(vars_bar($key = 1));
+  misc1(misc1($key = 1));
 }
 
 //*************************************************************************
