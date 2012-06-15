@@ -1,47 +1,82 @@
 <?php
 
-// sometimes a variable appaears as undeclared but it's because it's
+//*************************************************************************
+// Undefined variables and reference parameters
+//*************************************************************************
+
+// Sometimes a variable appears as undeclared but it's because it's
 // passed by reference. That means the UseOfUndeclaredVar can't be a
-// simple local analysis; it needs to know about the prototype of the
-// functions/methods used.
+// simple local analysis; it needs to know about the prototype of all the
+// functions/methods used :( So to be precise we need to pass an
+// entity_finder in scheck variable annotater and checker.
 
 function foo_ref($x, &$y) {
   $y = $x;
   echo $y;
 }
 
-function test_fp_undeclared() {
+function test_ok_undeclared_when_ref_parameter() {
   $x = 1;
-  // this is ok ... I would rather have people declare $y but it's
-  // a lost battle so let's accept that and focus on real bugs
+  // this is ok to use $y ... I would rather have people declare $y but
+  // it's a lost battle so let's accept that and focus on real bugs
   foo_ref($x, $y);
   echo $y;
 }
 
 class Foo {
-  public static function foo_ref2($x, &$y) {
-    $y = $x;
-  }
-  public static function foo_ref3($x, &$y) {
+  public static function static_method($x, &$y) {
     $y = $x;
   }
 }
 
-function test_fp_undeclared2() {
+function test_ok_undeclared_when_ref_parameter_static_method() {
   $x = 1;
-  Foo::foo_ref2($x, $y);
+  Foo::static_method($x, $y);
   echo $y;
 }
 
-function test_fp_undeclared3() {
-  sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
-  echo $_PHP_MAJOR_VERSION;
+class Foo2 {
+  public function method($x, &$y) {
+    $y = $x;
+  }
+
+  public function test_ok_undeclared_when_ref_paramter_method() {
+    $x = 1;
+    $this->method($x, $y);
+    echo $y;
+  }
+}
+
+function test_ok_undeclared_when_ref_paramter_method() {
+  //$o = new Foo2();
+  //$x = 1;
+  //SKIP: this requires some dataflow analysis ...
+  //$o->method($x, $y);
+  //SKIP: same
+  //echo $y;
+}
+
+//*************************************************************************
+// Bailout constructs
+//*************************************************************************
+
+function test_bailout_compact() {
+
+  // this should not generate a warning for now. At some point
+  // we want to remove all those ugly compact() but before that, no error.
+
+  //ERROR: todo actually should not generate error
+  $foo = 1;
+  // this function is horrible. it's the opposite of extract()
+  $arr = compact('foo');
+
+  return $arr;
 }
 
 function ugly() {
   return array('x1' => 2);
 }
-function test_bailout3() {
+function test_bailout_extract() {
   extract(ugly());
 
   // this is ok ...
@@ -51,25 +86,13 @@ function test_bailout3() {
   echo $x2;
 }
 
-class Foo2 {
-  public function method($x, &$y) {
-    $y = $x;
-  }
+//*************************************************************************
+// Misc
+//*************************************************************************
 
-  public function test_fb_undeclared4() {
-    $x = 1;
-    $this->method($x, $y);
-    echo $y;
-  }
-}
-
-function test_fb_undeclared5() {
-  //$o = new Foo2();
-  //$x = 1;
-  //SKIP: this requires some dataflow analysis ...
-  //$o->method($x, $y);
-  //SKIP: same
-  //echo $y;
+function test_ok_undeclared_sscanf() {
+  sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
+  echo $_PHP_MAJOR_VERSION;
 }
 
 function test_isset() {

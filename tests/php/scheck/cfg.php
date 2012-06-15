@@ -1,7 +1,6 @@
 <?php
 
 function test_dead_after_return() {
-  
   $a = 1;
   echo $a;
   return 1;

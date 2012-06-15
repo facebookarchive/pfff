@@ -1,11 +1,11 @@
 <?php
 
 //*************************************************************************
-// Basic variable related bugs
+// Use of undefined variables and unused variables
 //*************************************************************************
 
-//ERROR: unused param
-function test_undefined_and_unused_variables($a) {
+//ERROR: unused parameter
+function test_undefined_and_unused_variables_basic($a) {
 
   $ok = 1;
   misc1($ok);
@@ -18,25 +18,27 @@ function test_undefined_and_unused_variables($a) {
 
   //ERROR: use of undefined variable
   misc1($d);
+  // such calls would be arguably ok if misc1() was taking its arguments
+  // by reference (see also variables_fp.php)
 
-  //ERROR: unused variable. Yes it's used by unset but this should not count
+  //ERROR: unused variable. Yes it's used by unset but this should not count.
   $memory = 1;
   unset($memory);
 
   //ERROR: unused variable
   $match = array();
-  // note that this error shows the need for more than just counting token
+  // note that this error shows also the need for more than just counting token
   $matches = array();
   foreach($matches as $match) {
     echo $match;
   }
 }
 
-class vars_A {
+class TestUndefinedUnusedInMethod {
   public function foo($a) {
-    //ERROR: unused variable, because of the typo below
+    //ERROR: unused variable, because of the typo in the line below
     $im_service = misc1($a);
-    //ERROR: typo
+    //ERROR: use of undefined variable, typo
     if ($im_servce === false) {
       return 1;
     }
@@ -51,11 +53,7 @@ class vars_A {
   }
 }
 
-//*************************************************************************
-// Handling Lambda
-//*************************************************************************
-
-function test_lambda($a) {
+function test_undefined_in_lambda($a) {
 
   //ERROR: unused variable
   $c = "foo";
@@ -86,6 +84,42 @@ class TestLambda {
 }
 
 //*************************************************************************
+// False positives fix (see also variables_fp.php)
+//*************************************************************************
+// My analysis used to have a few false positives because my code was buggy.
+
+function test_unused_var_ok_when_keyword_arguments() {
+  // no error for now even if $key appeared as unused. PHP has no
+  // keyword arguments so people use such assignation as a kind of
+  // comment
+  misc1($key = 1);
+}
+
+// keyword arguments should be considered even when deeply nested ... hmmm
+function test_unused_var_ok_when_keyword_arguments_bis() {
+  misc1(misc1($key = 1));
+}
+
+function test_not_sure_what() {
+  $a = 1;
+  if (isset($a)) {
+    return $a;
+  }
+  return 2;
+}
+
+class TestClassVariable {
+  public static $dbGetters;
+}
+function test_class_variables() {
+  $db_scb_key = 1;
+  if (!isset(TestClassVariable::$dbGetters[$db_scb_key])) {
+    return 2;
+  }
+}
+
+
+//*************************************************************************
 // Algorithm cleverness
 //*************************************************************************
 
@@ -109,11 +143,11 @@ function analysis1() {
 // definition for instance.
 
 function analysis2() {
-  //ERROR: even if $ok was mentionned before, it's no ok anymore
+  //ERROR: even if $ok was mentionned before, it's not ok anymore
   $ok = 1;
 }
 
-interface X {
+interface TestUnusedParameterOkInInterface {
   // this is ok, $p is not an unused parameter
   function analysis2bis($p);
 }
@@ -145,55 +179,3 @@ function analysis4bis2() {
   echo $a;
 }
 
-//*************************************************************************
-// False positives fix
-//*************************************************************************
-// My analysis used to have a few false positives because my code was buggy.
-
-function vars_ok_keyword_arguments() {
-  // no error for now even if $key appeared as unused. PHP has no
-  // keyword arguments so people use such assignation as a kind of
-  // comment
-  misc1($key = 1);
-}
-
-function vars_ok1() {
-  $a = 1;
-  if (isset($a)) {
-    return $a;
-  }
-  return 2;
-}
-
-class VA {
-  public static $dbGetters;
-}
-function vars_ok2() {
-  $db_scb_key = 1;
-  if (!isset(VA::$dbGetters[$db_scb_key])) {
-    return 2;
-  }
-}
-
-
-// keyword arguments should be considered even when deeply nested ... hmmm
-function vars_ok3() {
-  misc1(misc1($key = 1));
-}
-
-//*************************************************************************
-// TODO
-//*************************************************************************
-
-function vars_bad_compact() {
-
-  // this should not generate a warning for now. At some point
-  // we want to remove all those ugly compact() but before that, no error.
-
-  //ERROR: todo actually should not generate error
-  $foo = 1;
-  // this function is horrible. it's the opposite of extract()
-  $arr = compact('foo');
-
-  return $arr;
-}
