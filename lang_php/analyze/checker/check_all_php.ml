@@ -32,7 +32,7 @@ open Common
 (* Main entry points *)
 (*****************************************************************************)
 
-(* coupling: if modify this, also modify lint_php.ml in pfff/facebook/... *)
+(* coupling: if you modify this, modify also lint_php.ml in .../check_module/*)
 let check_file ?(verbose=true) ?(find_entity=None) env file =
 
  Common.save_excursion Flag_analyze_php.verbose_checking verbose (fun() ->

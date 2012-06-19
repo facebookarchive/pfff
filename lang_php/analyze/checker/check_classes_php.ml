@@ -27,7 +27,8 @@ module Flag = Flag_analyze_php
 (* 
  * Checking the use of method calls, member fields, 
  * TODO class variables, TODO class constants, SEMI and class names.
- * TODO check interface, traits.
+ * TODO check interface
+ * TODO check traits
  *)
 
 (*****************************************************************************)

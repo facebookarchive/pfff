@@ -24,6 +24,8 @@ module E = Error_php
 (* Prelude *)
 (*****************************************************************************)
 (*
+ * Most of the hard work is done by Control_flow_build_php.ml.
+ * 
  * TODO: check dead statements for toplevel blocks ?
  *)
 

@@ -65,6 +65,7 @@ exception Error of error
 (* ugly global, but sometimes they are practical *)
 val _errors: error list ref
 
+(* modifies _errors by side effect *)
 val fatal: Ast_php.info -> error_kind -> unit
 val warning: Ast_php.info -> error_kind -> unit
 
@@ -76,10 +77,10 @@ val rank_errors: error list -> error list
 val show_10_most_recurring_unused_variable_names: unit -> unit
 
 (* Small helper function generating Undefined (or MultiDefined) error 
- * if the entity was not found (or multiply defined). 
+ * if the entity was not found (or defined multiple times). 
  *
  * Note that it memoizes the MultiDefined error so the second time
- * it actually returns the right definition
+ * it actually returns one of the definition.
  *)
 val find_entity_and_warn: 
   Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->

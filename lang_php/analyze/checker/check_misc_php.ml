@@ -40,6 +40,9 @@ let check ast =
               cases +> List.iter (function
               | Case (_, _, case_separator, _)
               | Default (_, case_separator, _) ->
+                  (* this is more something that should be fixed by a proper
+                   * grammar
+                   *)
                   let str = Ast.str_of_info case_separator in
                   (match str with
                   | ":" -> ()

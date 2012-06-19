@@ -80,11 +80,11 @@ type error = {
   (* call sites *)
   | TooManyArguments   of string (* name *) (* def *)
   | NotEnoughArguments of string (* name *) (* def *)
-  | WrongKeywordArgument of 
+  | WrongKeywordArgument of (* erling's idea *)
       string (* dname *) * string (* parameter *) * severity2
   | CallingStaticMethodWithoutQualifier of string
   | CallingMethodWithQualifier of string
-  | PassingUnexpectedRef
+  | PassingUnexpectedRef (* alok's idea *)
 
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *) * suggest option
