@@ -197,7 +197,7 @@ let do_in_new_scope_and_check f =
     if !aref = 0 
     then 
       let s = Ast.dname dname in
-      if Env_check_php.unused_ok s 
+      if Env.unused_ok s 
       then ()
       else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (s, scope))
   );
@@ -206,7 +206,7 @@ let do_in_new_scope_and_check f =
 let do_in_new_scope_and_check_if_strict f =
   if !E.strict 
   then do_in_new_scope_and_check f
-  (* use same scope *)
+  (* otherwise use same scope *)
   else f ()
   
 (*****************************************************************************)
