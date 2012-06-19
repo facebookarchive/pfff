@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -75,7 +74,7 @@ let rec lookup_env2 s env =
   | [] -> raise Not_found
   | []::zs -> lookup_env2 s zs
   | ((a,b)::xs)::zs -> 
-      if Ast_php.dname a = s 
+      if Ast_php.dname a =$= s 
       then b 
       else lookup_env2 s (xs::zs)
 let lookup_env a b = 
@@ -94,7 +93,7 @@ let rec lookup_env2_for_class s env =
   | [] -> raise Not_found
   | []::zs -> lookup_env2_for_class s zs
   | ((a,b)::xs)::zs -> 
-      if Ast_php.dname a = s && fst b = S.Class
+      if Ast_php.dname a =$= s && fst b =*= S.Class
       then b 
       else lookup_env2_for_class s (xs::zs)
 
@@ -102,9 +101,8 @@ let lookup_env_opt_for_class a b =
   Common.optionise (fun () -> lookup_env2_for_class a b)
 
 let collect_all_vars env =
-  env +> List.map (fun xs -> 
-    xs +> List.map fst)
-  +> List.flatten
+  env +> List.map (fun xs -> xs +> List.map fst)
+      +> List.flatten
 
 (*****************************************************************************)
 (* (Semi) Globals, Julia's style *)
@@ -112,7 +110,7 @@ let collect_all_vars env =
 
 (* use a ref because we may want to modify it *)
 let (initial_env: environment ref) = ref [
-  Env_php.globals_builtins |> List.map (fun s ->
+  Env_php.globals_builtins +> List.map (fun s ->
     fake_dname s, (S.Global, ref 1)
   )
 ]
