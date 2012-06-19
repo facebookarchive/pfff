@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -23,7 +22,6 @@ module V = Visitor_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* In PHP many globals are defined in php.ini that can be accessed in 
  * the program, e.g. PHP_ROOT. It is useful for some static analysis
  * to work to know the value of those globals, hence this file.
