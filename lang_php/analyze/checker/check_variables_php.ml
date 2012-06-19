@@ -18,12 +18,9 @@ open Ast_php
 
 module Ast = Ast_php
 module V = Visitor_php
-
 module E = Error_php
-
 module S = Scope_code
 module Ent = Entity_php
-
 module Env = Env_check_php
 
 open Env_check_php
@@ -37,7 +34,7 @@ open Check_variables_helpers_php
  * tests/php/scheck/variables.php for examples of bugs currently
  * detected by this checker. This module checks but also annotates
  * the AST with scoping information as a side effect. This is useful
- * in Codemap to display differently references to paramaters, local vars,
+ * in Codemap to display differently references to parameters, local vars,
  * global vars, etc.
  * 
  * This file mostly deals with scoping issues. Scoping is different
@@ -58,7 +55,7 @@ open Check_variables_helpers_php
  * the first assgignement "declares" the variable. On the other side
  * the PHP language forces people to explicitly declared
  * the use of global variables (via the 'global' statement) which
- * makes other things easier.
+ * makes certain things easier.
  * 
  * One important issue is the handling of variables passed by reference
  * which can look like UseOfUndefinedVariable bugs but which
@@ -196,7 +193,7 @@ let do_in_new_scope_and_check f =
   let top = top_scope () in
   del_scope();
 
-  top |> List.rev |> List.iter (fun (dname, (scope, aref)) ->
+  top +> List.rev +> List.iter (fun (dname, (scope, aref)) ->
     if !aref = 0 
     then 
       let s = Ast.dname dname in
@@ -306,7 +303,7 @@ let visit_prog find_entity prog =
     V.kstmt = (fun (k, vx) x ->
       match x with
       | Globals (_, vars_list, _) ->
-          vars_list |> Ast.uncomma |> List.iter (fun var ->
+          vars_list +> Ast.uncomma +> List.iter (fun var ->
             match var with
             | GlobalVar dname -> 
                 add_binding dname (S.Global, ref 0)
@@ -366,7 +363,7 @@ let visit_prog find_entity prog =
           k x
 
       | StaticVars (_, vars_list, _) ->
-          vars_list |> Ast.uncomma |> List.iter (fun (varname, affect_opt) ->
+          vars_list +> Ast.uncomma +> List.iter (fun (varname, affect_opt) ->
             add_binding varname (S.Static, ref 0);
             (* TODO recurse on the affect *)
           )
@@ -496,16 +493,16 @@ let visit_prog find_entity prog =
        * should be used at a statement level!
        *)
       | AssignList (_, xs, _, e) ->
-          let assigned = xs |> Ast.unparen |> Ast.uncomma in
+          let assigned = xs +> Ast.unparen +> Ast.uncomma in
 
           (* Use the same trick than for LocalIterator, make them 
            * share the same ref
            *)
           let shared_ref = ref 0 in
 
-          assigned |> List.iter (fun list_assign ->
+          assigned +> List.iter (fun list_assign ->
             let vars = vars_used_in_any (ListAssign list_assign) in
-            vars |> List.iter (fun v ->
+            vars +> List.iter (fun v ->
               (* if the variable was already existing, then 
                * better not to add a new binding cos this will mask
                * a previous one which will never get its ref 
@@ -569,7 +566,7 @@ let visit_prog find_entity prog =
 
         (* todo: enough ? if do $x = $x + 1 then got problems ? *)
         let used' = 
-          used |> Common.exclude (fun v -> 
+          used +> Common.exclude (fun v -> 
             List.mem v assigned || List.mem v passed_by_refs 
              (* actually passing a var by def can also mean it's used
               * as the variable can be a 'inout', but this special
@@ -578,14 +575,14 @@ let visit_prog find_entity prog =
           )
         in
         let assigned' = 
-          assigned |> Common.exclude (fun v -> List.mem v keyword_args) in
+          assigned +> Common.exclude (fun v -> List.mem v keyword_args) in
 
-        used' |> List.iter (fun v -> 
+        used' +> List.iter (fun v -> 
           check_use_against_env 
             ~in_lambda:!in_lambda ~has_extract:!has_extract
             v !_scoped_env);
 
-        assigned' |> List.iter (fun v -> 
+        assigned' +> List.iter (fun v -> 
 
           (* Maybe a new local var. add in which scope ?
            * I would argue to add it only in the current nested
@@ -607,7 +604,7 @@ let visit_prog find_entity prog =
               ()
           )
         );
-        passed_by_refs |> List.iter (fun v -> 
+        passed_by_refs +> List.iter (fun v -> 
           (* Maybe a new local var *)
           let s = Ast.dname v in
           (match lookup_env_opt s !_scoped_env with
@@ -644,7 +641,7 @@ let visit_prog find_entity prog =
 let check_and_annotate_program2 find_entity prog =
 
   (* globals (re)initialialisation *) 
-  _scoped_env := !initial_env;
+  Env._scoped_env := !Env.initial_env;
 
   visit_prog find_entity prog
 
