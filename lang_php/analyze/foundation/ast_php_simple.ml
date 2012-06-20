@@ -230,6 +230,9 @@ and class_def = {
   c_traits: string wrap list;
   c_implements: string list;
 
+  (* todo: What about XHP class attributes? right now they
+   * are skipped at parsing time 
+   *)
   c_constants: (string * expr) list;
   c_variables: class_var list;
   c_methods: method_def list;
