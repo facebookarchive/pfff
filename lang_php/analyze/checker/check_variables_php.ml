@@ -32,7 +32,7 @@ open Check_variables_helpers_php
 (* 
  * This module helps find stupid PHP mistakes related to variables. See
  * tests/php/scheck/variables.php for examples of bugs currently
- * detected by this checker. This module checks but also annotates
+ * detected by this checker. This module not only checks but also annotates
  * the AST with scoping information as a side effect. This is useful
  * in Codemap to display differently references to parameters, local vars,
  * global vars, etc.
@@ -166,7 +166,7 @@ open Check_variables_helpers_php
 (* Checks *)
 (*****************************************************************************)
 
-let check_use_against_env ~in_lambda ~has_extract var env = 
+let check_undefined_variable ~in_lambda ~has_extract var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
   | None ->
@@ -186,7 +186,7 @@ let check_use_against_env ~in_lambda ~has_extract var env =
         )
   | Some (scope, aref) -> incr aref
 
-let do_in_new_scope_and_check f = 
+let do_in_new_scope_and_check_unused f = 
   new_scope();
   let res = f() in
 
@@ -203,9 +203,9 @@ let do_in_new_scope_and_check f =
   );
   res
 
-let do_in_new_scope_and_check_if_strict f =
+let do_in_new_scope_and_check_unused_if_strict f =
   if !E.strict 
-  then do_in_new_scope_and_check f
+  then do_in_new_scope_and_check_unused f
   (* otherwise use same scope *)
   else f ()
   
@@ -224,16 +224,19 @@ let visit_prog find_entity prog =
    * the visitor interface which is imperative. But threading an 
    * environment is also tedious so maybe not too ugly.
    *)
-  let is_top_expr = ref true in 
   let in_lambda = ref false in
   let in_class = ref None in
   let has_extract = ref false in
   let scope = ref Ent.TopStmts in
 
+  let is_top_expr = ref true in 
+
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
-    (* scoping management.
-     * 
+    (* -------------------------------------------------------------------- *)
+    (* scoping management. *)
+    (* -------------------------------------------------------------------- *)
+    (* 
      * if, while, and other blocks should introduce a new scope. 
      * the default function-only scope of PHP is a bad idea. 
      * Jslint thinks the same.
@@ -247,14 +250,14 @@ let visit_prog find_entity prog =
      * want to check.
      *)
     V.kstmt_and_def_list_scope = (fun (k, _) x ->
-      do_in_new_scope_and_check_if_strict (fun () -> k x)
+      do_in_new_scope_and_check_unused_if_strict (fun () -> k x)
     );
 
     (* regular function scope check at least *)
     V.kfunc_def = (fun (k, _) x ->
       Common.save_excursion has_extract false (fun () ->
       Common.save_excursion scope Ent.Function (fun () ->
-        do_in_new_scope_and_check (fun () -> k x);
+        do_in_new_scope_and_check_unused (fun () -> k x);
       ))
     );
     V.kmethod_def = (fun (k, _) x ->
@@ -265,10 +268,10 @@ let visit_prog find_entity prog =
            *)
           ()
       | MethodBody _ ->
-      (* todo: diff between Method and StaticMethod? *)
+      (* less: diff between Method and StaticMethod? *)
       Common.save_excursion has_extract false (fun () ->
       Common.save_excursion scope (Ent.Method Ent.RegularMethod) (fun () ->
-        do_in_new_scope_and_check (fun () -> 
+        do_in_new_scope_and_check_unused (fun () -> 
           if not (Class_php.is_static_method x)
           then begin
             (* we put 1 as use_count because we are not interested
@@ -284,7 +287,7 @@ let visit_prog find_entity prog =
     );
     V.kclass_def = (fun (k, _) x ->
       Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->
-        do_in_new_scope_and_check (fun () -> 
+        do_in_new_scope_and_check_unused (fun () -> 
           k x
         )
       );
@@ -298,7 +301,24 @@ let visit_prog find_entity prog =
      * not really, and should not be statements)
      *)
 
+    (* -------------------------------------------------------------------- *)
     (* adding defs of dname in environment *)
+    (* -------------------------------------------------------------------- *)
+
+    V.kparameter = (fun (k,vx) x ->
+      let cnt = 
+        match !scope with
+        (* Don't report UnusedParameter for parameters of methods.
+         * people sometimes override a method and don't use all
+         * the parameters
+         *)
+        | Ent.Method _ -> 1
+        | Ent.Function -> 0
+        | _ -> 0
+      in
+      add_binding x.p_name (S.Param, ref cnt);
+      k x
+    );
 
     V.kstmt = (fun (k, vx) x ->
       match x with
@@ -386,7 +406,7 @@ let visit_prog find_entity prog =
           in
           (match lval with
           | Var (dname, scope_ref) ->
-              do_in_new_scope_and_check_if_strict (fun () ->
+              do_in_new_scope_and_check_unused_if_strict (fun () ->
                 (* People often use only one of the iterator when
                  * they do foreach like   foreach(... as $k => $v).
                  * We want to make sure that at least one of 
@@ -421,7 +441,7 @@ let visit_prog find_entity prog =
        * C-s "lvalue" in Ast_php to be sure all Ast elements
        * containing lvalue are appropriatly considered.
        * 
-       * In the send I still decided to not consider it because
+       * In the end I still decided to not consider it because
        * a mention of a variable in a $unset should not be really
        * considered as a use of variable. There should be another
        * statement in the function that actually use the variable.
@@ -431,36 +451,23 @@ let visit_prog find_entity prog =
       | _ -> k x
     );
 
-    V.kparameter = (fun (k,vx) x ->
-      let cnt = 
-        match !scope with
-        (* Don't report UnusedParameter for parameters of methods.
-         * people sometimes override a method and don't use all
-         * the parameters
-         *)
-        | Ent.Method _ -> 1
-        | Ent.Function -> 0
-        | _ -> 0
-      in
-      add_binding x.p_name (S.Param, ref cnt);
-      k x
-    );
-
     V.kcatch = (fun (k,vx) x ->
       let (_t, (_, (classname, dname), _), stmts) = x in
       (* The scope of catch is actually also at the function level in PHP ...
        * but for this one it is so ugly that I introduce a new scope
-       * even outside strict mode. It's just too ugly
+       * even outside strict mode. It's just too ugly.
        * 
-       * todo?could use local ? could have a UnusedExceptionParameter ? 
+       * todo? could use local ? could have a UnusedExceptionParameter ? 
        *)
-      do_in_new_scope_and_check (fun () -> 
+      do_in_new_scope_and_check_unused (fun () -> 
         add_binding dname (S.LocalExn, ref 0);
         k x;
       );
     );
 
-    (* uses *)
+    (* -------------------------------------------------------------------- *)
+    (* checking uses *)
+    (* -------------------------------------------------------------------- *)
 
     V.klvalue = (fun (k,vx) x ->
       match x with
@@ -529,7 +536,7 @@ let visit_prog find_entity prog =
           Common.save_excursion in_lambda true (fun () ->
           Common.save_excursion has_extract false (fun () ->
           Common.save_excursion is_top_expr true (fun () ->
-            do_in_new_scope_and_check (fun () ->
+            do_in_new_scope_and_check_unused (fun () ->
 
               def.l_use +> Common.do_option (fun (_tok, vars) ->
                 vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
@@ -578,7 +585,7 @@ let visit_prog find_entity prog =
           assigned +> Common.exclude (fun v -> List.mem v keyword_args) in
 
         used' +> List.iter (fun v -> 
-          check_use_against_env 
+          check_undefined_variable
             ~in_lambda:!in_lambda ~has_extract:!has_extract
             v !_scoped_env);
 
@@ -630,7 +637,7 @@ let visit_prog find_entity prog =
    * context or the param_post/param_get variables, hence the 
    * do_in_new_scope_and_check below.
    *)
-  do_in_new_scope_and_check (fun () -> 
+  do_in_new_scope_and_check_unused (fun () -> 
     visitor (Program prog)
   )
 

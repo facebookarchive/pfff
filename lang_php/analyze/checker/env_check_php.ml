@@ -100,6 +100,7 @@ let rec lookup_env2_for_class s env =
 let lookup_env_opt_for_class a b = 
   Common.optionise (fun () -> lookup_env2_for_class a b)
 
+(* for the suggestion fix, to compute edit distance with all variables *)
 let collect_all_vars env =
   env +> List.map (fun xs -> xs +> List.map fst)
       +> List.flatten
