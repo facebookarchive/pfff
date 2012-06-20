@@ -212,7 +212,7 @@ let do_in_new_scope_and_check_unused_if_strict f =
 (* Scoped visitor *)
 (*****************************************************************************)
 
-(* For each introduced binding (param, exception, foreach, etc), 
+(* For each introduced variable (parameter, foreach variable, exception, etc), 
  * we add the binding in the environment with a counter, a la checkModule.
  * We then check at use time if something was declared before. We then
  * finally check when we exit a scope that all variables were actually used.
@@ -236,23 +236,22 @@ let visit_prog find_entity prog =
     (* scoping management. *)
     (* -------------------------------------------------------------------- *)
     (* 
-     * if, while, and other blocks should introduce a new scope. 
-     * the default function-only scope of PHP is a bad idea. 
-     * Jslint thinks the same.
+     * 'if', 'while', and other blocks should introduce a new scope.
+     * The default function-only scope of PHP is a bad idea. 
+     * Jslint thinks the same. Even if PHP has no good scoping rules, 
+     * I want to force programmers like in Javascript to write code
+     * that assumes good scoping rules.
      * 
-     * Even if PHP has no good scoping rules, I want to force programmers
-     * like in Javascript to write code that assumes good scoping rules
-     * 
-     * Note that this is will just create a scope and check for the
-     * body of functions. You also need a do_in_new_scope_and_check
-     * for the function itself which can have parameter that we
-     * want to check.
+     * Note that this will just create a scope and check for the
+     * blocks in a a function. You also need a do_in_new_scope_and_check()
+     * for the function itself which can have parameters that we
+     * want to add in the environment and check for unused.
      *)
     V.kstmt_and_def_list_scope = (fun (k, _) x ->
       do_in_new_scope_and_check_unused_if_strict (fun () -> k x)
     );
 
-    (* regular function scope check at least *)
+    (* function scope checking *)
     V.kfunc_def = (fun (k, _) x ->
       Common.save_excursion has_extract false (fun () ->
       Common.save_excursion scope Ent.Function (fun () ->
@@ -262,9 +261,8 @@ let visit_prog find_entity prog =
     V.kmethod_def = (fun (k, _) x ->
       match x.m_body with
       | AbstractMethod _ -> 
-          (* we don't want to parameters in method interface to be counted
-           * as unused Parameter
-           *)
+          (* we don't want parameters in method interface to be counted
+           * as unused Parameter *)
           ()
       | MethodBody _ ->
       (* less: diff between Method and StaticMethod? *)
@@ -273,9 +271,9 @@ let visit_prog find_entity prog =
         do_in_new_scope_and_check_unused (fun () -> 
           if not (Class_php.is_static_method x)
           then begin
-            (* we put 1 as use_count because we are not interested
+            (* we put 1 as 'use_count' below because we are not interested
              * in error message related to $this.
-             * it's legitimate to not use $this in a method
+             * It's legitimate to not use $this in a method.
              *)
             let dname = Ast.DName ("this", Ast.fakeInfo "this") in
             add_binding dname (S.Class, ref 1);
@@ -292,7 +290,7 @@ let visit_prog find_entity prog =
       );
     );
 
-    (* Introduce a new scope for StmtList ? this would forbid user to 
+    (* Introduce a new scope for StmtList ? This would forbid user to 
      * have some statements, a func, and then more statements
      * that share the same variable. Toplevel statements
      * should not be mixed with function definitions (excepts
@@ -305,15 +303,12 @@ let visit_prog find_entity prog =
     (* -------------------------------------------------------------------- *)
 
     V.kparameter = (fun (k,vx) x ->
+      (* Don't report UnusedParameter for parameters of methods.
+       * People sometimes override a method and don't use all
+       * the parameters.
+       *)
       let cnt = 
-        match !scope with
-        (* Don't report UnusedParameter for parameters of methods.
-         * people sometimes override a method and don't use all
-         * the parameters
-         *)
-        | Ent.Method _ -> 1
-        | Ent.Function -> 0
-        | _ -> 0
+        match !scope with | Ent.Method _ -> 1 | Ent.Function -> 0 | _ -> 0
       in
       add_binding x.p_name (S.Param, ref cnt);
       k x
@@ -386,12 +381,6 @@ let visit_prog find_entity prog =
             add_binding varname (S.Static, ref 0);
             (* TODO recurse on the affect *)
           )
-
-      | TypedDeclaration (_, _, _, _) ->
-          (* was a PHP extension I made with dougli and asuhan during a
-           * hackathon but it's not there anymore
-           *)
-          ()
 
       | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
           vx (Expr e);
