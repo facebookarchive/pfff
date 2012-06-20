@@ -166,14 +166,14 @@ open Check_variables_helpers_php
 (* Checks *)
 (*****************************************************************************)
 
-let check_undefined_variable ~in_lambda ~has_extract var env = 
+let check_undefined_variable ~in_lambda ~bailout var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
   | None ->
       (* todo? could still issue an error but with the information that
-       * there was an extract around?
+       * there was an extract/eval/... around?
        *)
-      if has_extract
+      if bailout
       then ()
       else 
        E.fatal (Ast.info_of_dname var) 
@@ -225,7 +225,7 @@ let visit_prog find_entity prog =
    *)
   let in_lambda = ref false in
   let in_class = ref None in
-  let has_extract = ref false in
+  let bailout = ref false in
   let scope = ref Ent.TopStmts in
 
   let is_top_expr = ref true in 
@@ -235,25 +235,10 @@ let visit_prog find_entity prog =
     (* -------------------------------------------------------------------- *)
     (* scoping management. *)
     (* -------------------------------------------------------------------- *)
-    (* 
-     * 'if', 'while', and other blocks should introduce a new scope.
-     * The default function-only scope of PHP is a bad idea. 
-     * Jslint thinks the same. Even if PHP has no good scoping rules, 
-     * I want to force programmers like in Javascript to write code
-     * that assumes good scoping rules.
-     * 
-     * Note that this will just create a scope and check for the
-     * blocks in a a function. You also need a do_in_new_scope_and_check()
-     * for the function itself which can have parameters that we
-     * want to add in the environment and check for unused.
-     *)
-    V.kstmt_and_def_list_scope = (fun (k, _) x ->
-      do_in_new_scope_and_check_unused_if_strict (fun () -> k x)
-    );
 
     (* function scope checking *)
     V.kfunc_def = (fun (k, _) x ->
-      Common.save_excursion has_extract false (fun () ->
+      Common.save_excursion bailout false (fun () ->
       Common.save_excursion scope Ent.Function (fun () ->
         do_in_new_scope_and_check_unused (fun () -> k x);
       ))
@@ -266,7 +251,7 @@ let visit_prog find_entity prog =
           ()
       | MethodBody _ ->
       (* less: diff between Method and StaticMethod? *)
-      Common.save_excursion has_extract false (fun () ->
+      Common.save_excursion bailout false (fun () ->
       Common.save_excursion scope (Ent.Method Ent.RegularMethod) (fun () ->
         do_in_new_scope_and_check_unused (fun () -> 
           if not (Class_php.is_static_method x)
@@ -288,6 +273,22 @@ let visit_prog find_entity prog =
           k x
         )
       );
+    );
+
+    (* 
+     * 'if', 'while', and other blocks should introduce a new scope.
+     * The default function-only scope of PHP is a bad idea. 
+     * Jslint thinks the same. Even if PHP has no good scoping rules, 
+     * I want to force programmers like in Javascript to write code
+     * that assumes good scoping rules.
+     * 
+     * Note that this will just create a scope and check for the
+     * blocks in a a function. You also need a do_in_new_scope_and_check()
+     * for the function itself which can have parameters that we
+     * want to add in the environment and check for unused.
+     *)
+    V.kstmt_and_def_list_scope = (fun (k, _) x ->
+      do_in_new_scope_and_check_unused_if_strict (fun () -> k x)
     );
 
     (* Introduce a new scope for StmtList ? This would forbid user to 
@@ -323,6 +324,51 @@ let visit_prog find_entity prog =
                 add_binding dname (S.Global, ref 0)
             | GlobalDollar (tok, _)  | GlobalDollarExpr (tok, _) ->
                 E.warning tok E.UglyGlobalDynamic
+          )
+
+      | StaticVars (_, vars_list, _) ->
+          vars_list +> Ast.uncomma +> List.iter (fun (varname, affect_opt) ->
+            add_binding varname (S.Static, ref 0);
+            (* TODO recurse on the affect *)
+          )
+
+      | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
+          vx (Expr e);
+
+          let lval = 
+            match var_either with
+            | Left (is_ref, var) -> 
+                var
+            | Right lval ->
+                lval
+          in
+          (match lval with
+          | Var (dname, scope_ref) ->
+              do_in_new_scope_and_check_unused_if_strict (fun () ->
+                (* People often use only one of the iterator when
+                 * they do foreach like   foreach(... as $k => $v).
+                 * We want to make sure that at least one of 
+                 * the iterator is used, hence this trick to
+                 * make them share the same ref.
+                 *)
+                let shared_ref = ref 0 in
+                add_binding dname (S.LocalIterator, shared_ref);
+                scope_ref := S.LocalIterator;
+                (match arrow_opt with
+                | None -> ()
+                | Some (_t, (is_ref, var)) -> 
+                    (match var with
+                    | Var (dname, scope_ref) ->
+                        add_binding dname (S.LocalIterator, shared_ref);
+                        scope_ref := S.LocalIterator;
+                    | _ ->
+                        E.warning tok E.WeirdForeachNoIteratorVar
+                    );
+                );
+                vx (ColonStmt2 colon_stmt);
+              );
+          | _ -> 
+              E.warning tok E.WeirdForeachNoIteratorVar
           )
 
       (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php 
@@ -376,50 +422,6 @@ let visit_prog find_entity prog =
           end;
           k x
 
-      | StaticVars (_, vars_list, _) ->
-          vars_list +> Ast.uncomma +> List.iter (fun (varname, affect_opt) ->
-            add_binding varname (S.Static, ref 0);
-            (* TODO recurse on the affect *)
-          )
-
-      | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
-          vx (Expr e);
-
-          let lval = 
-            match var_either with
-            | Left (is_ref, var) -> 
-                var
-            | Right lval ->
-                lval
-          in
-          (match lval with
-          | Var (dname, scope_ref) ->
-              do_in_new_scope_and_check_unused_if_strict (fun () ->
-                (* People often use only one of the iterator when
-                 * they do foreach like   foreach(... as $k => $v).
-                 * We want to make sure that at least one of 
-                 * the iterator is used, hence this trick to
-                 * make them share the same ref.
-                 *)
-                let shared_ref = ref 0 in
-                add_binding dname (S.LocalIterator, shared_ref);
-                scope_ref := S.LocalIterator;
-                (match arrow_opt with
-                | None -> ()
-                | Some (_t, (is_ref, var)) -> 
-                    (match var with
-                    | Var (dname, scope_ref) ->
-                        add_binding dname (S.LocalIterator, shared_ref);
-                        scope_ref := S.LocalIterator;
-                    | _ ->
-                        E.warning tok E.WeirdForeachNoIteratorVar
-                    );
-                );
-                vx (ColonStmt2 colon_stmt);
-              );
-          | _ -> 
-              E.warning tok E.WeirdForeachNoIteratorVar
-          )
       (* note: I was not handling Unset which takes a lvalue (not
        * an expression) as an argument. Because of that the kexpr
        * hook below that compute the set of vars_used_in_expr
@@ -457,28 +459,6 @@ let visit_prog find_entity prog =
     (* checking uses *)
     (* -------------------------------------------------------------------- *)
 
-    V.klvalue = (fun (k,vx) x ->
-      match x with
-      (* the checking is done upward, in kexpr, and only for topexpr *)
-      | Var (dname, scope_ref) ->
-          (* assert scope_ref = S.Unknown ? *)
-          let s = Ast.dname dname in
-    
-          (match lookup_env_opt s !_scoped_env with
-          | None -> 
-              scope_ref := S.Local;
-          | Some (scope, _) ->
-              scope_ref := scope;
-          )
-
-      | FunCallSimple (Name ("extract", _), _args) ->
-          has_extract := true;
-          k x
-
-      | _ -> 
-          k x
-    );
-
     V.kexpr = (fun (k, vx) x ->
       match x with
       (* todo? if the ConsList is not at the toplevel, then 
@@ -489,10 +469,7 @@ let visit_prog find_entity prog =
        *)
       | AssignList (_, xs, _, e) ->
           let assigned = xs +> Ast.unparen +> Ast.uncomma in
-
-          (* Use the same trick than for LocalIterator, make them 
-           * share the same ref
-           *)
+          (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
 
           assigned +> List.iter (fun list_assign ->
@@ -513,16 +490,15 @@ let visit_prog find_entity prog =
           );
           vx (Expr e)
 
-      | Eval _ -> 
-          pr2_once "Eval: TODO";
-          k x
-
+      | Eval _ ->
+          Common.save_excursion bailout true (fun () ->
+            k x
+          )
       | Lambda def ->
-
           (* reset completely the environment *)
           Common.save_excursion _scoped_env !initial_env (fun () ->
           Common.save_excursion in_lambda true (fun () ->
-          Common.save_excursion has_extract false (fun () ->
+          Common.save_excursion bailout false (fun () ->
           Common.save_excursion is_top_expr true (fun () ->
             do_in_new_scope_and_check_unused (fun () ->
 
@@ -555,11 +531,10 @@ let visit_prog find_entity prog =
           | Some finder ->
               vars_passed_by_ref_in_any ~in_class:!in_class finder (Expr x)
         in
-
-        (* keyword arguments should be ignored and treated as comment *)
+        (* keyword arguments should be ignored and treated as comments *)
         let keyword_args = keyword_arguments_vars_in_any (Expr x) in
 
-        (* todo: enough ? if do $x = $x + 1 then got problems ? *)
+        (* todo: enough? if do $x = $x + 1 then have problems? *)
         let used' = 
           used +> Common.exclude (fun v -> 
             List.mem v assigned || List.mem v passed_by_refs 
@@ -570,16 +545,17 @@ let visit_prog find_entity prog =
           )
         in
         let assigned' = 
-          assigned +> Common.exclude (fun v -> List.mem v keyword_args) in
+          assigned +> Common.exclude (fun v -> 
+            List.mem v keyword_args) 
+        in
 
         used' +> List.iter (fun v -> 
-          check_undefined_variable
-            ~in_lambda:!in_lambda ~has_extract:!has_extract
-            v !_scoped_env);
+          check_undefined_variable ~in_lambda:!in_lambda ~bailout:!bailout
+            v !_scoped_env
+        );
 
         assigned' +> List.iter (fun v -> 
-
-          (* Maybe a new local var. add in which scope ?
+          (* Maybe a new local var. Add in which scope?
            * I would argue to add it only in the current nested
            * scope. If someone wants to use a var outside the block,
            * he should have initialized the var in the outer context.
@@ -590,11 +566,10 @@ let visit_prog find_entity prog =
           | None -> 
               add_binding v (S.Local, ref 0);
           | Some _ ->
-              (* Does an assignation counts as a use ? if you only 
-               * assign and never use a variable, what is the point ? 
+              (* Does an assignation counts as a use? If you only 
+               * assign and never use a variable what is the point? 
                * This should be legal only for parameters (note that here
-               * I talk about parameters, not arguments)
-               * passed by reference.
+               * I talk about parameters, not arguments) passed by reference.
                *)
               ()
           )
@@ -618,6 +593,27 @@ let visit_prog find_entity prog =
        else
          (* still recurse when not in top expr *)
          k x
+    );
+
+    V.klvalue = (fun (k,vx) x ->
+      match x with
+      (* the checking is done upward, in kexpr, and only for topexpr *)
+      | Var (dname, scope_ref) ->
+          (* assert scope_ref = S.Unknown ? *)
+          let s = Ast.dname dname in
+    
+          (match lookup_env_opt s !_scoped_env with
+          | None -> 
+              scope_ref := S.Local;
+          | Some (scope, _) ->
+              scope_ref := scope;
+          )
+
+      | FunCallSimple (Name ("extract", _), _args) ->
+          bailout := true;
+          k x
+      | _ -> 
+          k x
     );
   }
   in
