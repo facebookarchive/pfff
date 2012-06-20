@@ -189,7 +189,6 @@ let check_undefined_variable ~in_lambda ~has_extract var env =
 let do_in_new_scope_and_check_unused f = 
   new_scope();
   let res = f() in
-
   let top = top_scope () in
   del_scope();
 

@@ -176,7 +176,7 @@ let tokens_with_categ_of_file_helper ~parse ~highlight_visit
 let tokens_with_categ_of_file file hentities = 
   let ftype = FT.file_type_of_file file in
   let prefs = Highlight_code.default_highlighter_preferences in
-
+  
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
       tokens_with_categ_of_file_helper 
@@ -185,10 +185,10 @@ let tokens_with_categ_of_file file hentities =
           Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
             let (ast2, stat) = Parse_php.parse file in
             let ast = Parse_php.program_of_program2 ast2 in
+            (* todo: use database_light if given? *)
             let find_entity = None in
             (* work by side effect on ast2 too *)
             Check_variables_php.check_and_annotate_program
-              (* todo: use database_light if given? *)
               find_entity
               ast;
             Php ast2
