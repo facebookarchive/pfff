@@ -233,7 +233,7 @@ let visit_prog find_entity prog =
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
     (* -------------------------------------------------------------------- *)
-    (* scoping management. *)
+    (* scoping management *)
     (* -------------------------------------------------------------------- *)
 
     (* function scope checking *)

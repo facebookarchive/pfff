@@ -47,7 +47,7 @@ class Foo2 {
   }
 }
 
-function test_ok_undeclared_when_ref_paramter_method() {
+function test_ok_undeclared_when_ref_parameter_method() {
   //$o = new Foo2();
   //$x = 1;
   //SKIP: this requires some dataflow analysis ...
@@ -59,19 +59,6 @@ function test_ok_undeclared_when_ref_paramter_method() {
 //*************************************************************************
 // Bailout constructs
 //*************************************************************************
-
-function test_bailout_compact() {
-
-  // this should not generate a warning for now. At some point
-  // we want to remove all those ugly compact() but before that, no error.
-
-  //ERROR: todo actually should not generate error
-  $foo = 1;
-  // this function is horrible. it's the opposite of extract()
-  $arr = compact('foo');
-
-  return $arr;
-}
 
 function ugly() {
   return array('x1' => 2);
@@ -86,9 +73,27 @@ function test_bailout_extract() {
   echo $x2;
 }
 
+function test_bailout_compact() {
+  // this should not generate a warning for now. At some point
+  // we want to remove all those ugly compact() but before that, no error.
+
+  //ERROR: todo actually should not generate error
+  $foo = 1;
+  // this function is horrible. it's the opposite of extract()
+  $arr = compact('foo');
+
+  return $arr;
+}
+
 //*************************************************************************
 // Misc
 //*************************************************************************
+
+function test_declared_in_middle_of_expr() {
+  if (($v = misc1('')) && misc1($v)) {
+    echo $v;
+  }
+}
 
 function test_ok_undeclared_sscanf() {
   sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
