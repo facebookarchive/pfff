@@ -20,26 +20,25 @@ module HC = Highlight_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * This module provides a generic "database" of semantic information
  * on a codebase (a la CIA [1]). The goal is to give access to
  * information computed by a set of global static or dynamic analysis
- * such as what are the number of callers to a certain function, what
- * is the test coverage of a file, etc. This is mainly used by codemap
+ * such as 'what are the number of callers to a certain function', 'what
+ * is the test coverage of a file', etc. This is mainly used by codemap
  * to give semantic visual feedback on the code.
  * 
  * 
- * update: database_code.pl and Prolog may be the prefered way now to
+ * update: database_code.pl and Prolog may now be the prefered way to
  * represent a code database, but for codemap it's still good to use
  * this database.
  * 
  * Each programming language analysis library usually provides
  * a more powerful database (e.g. analyze_php/database/database_php.mli)
  * with more information. Such a database is usually also efficiently stored
- * on disk via BerkeleyDB. Nevertheless generic tools like the
- * code visualizer can benefit from a shorter and generic version of this
- * database. Moreover when we have codebase with multiple langages
+ * on disk via BerkeleyDB. Nevertheless generic tools like
+ * codemap can benefit from a shorter and generic version of this
+ * database. Moreover, when we have codebase with multiple langages
  * (e.g. PHP and javascript), having a common type can help for some
  * analysis or visualization.
  * 
@@ -449,14 +448,14 @@ let database_of_json json =
 (* Load/Save *)
 (*****************************************************************************)
 
-(* Those functions are mostly obsolete. It's more efficient to use Marshall
- * to store big database. This function is used only when
- * one wants to have a readable database.
- *)
 let load_database2 file =
   pr2 (spf "loading database: %s" file);
   if File_type.is_json_filename file
   then
+    (* This code is mostly obsolete. It's more efficient to use Marshall
+     * to store big database. This should be used only when
+     * one wants to have a readable database.
+     *)
     let json = 
       Common.profile_code2 "Json_in.load_json" (fun () ->
         Json_in.load_json file
@@ -467,8 +466,7 @@ let load_database2 file =
 let load_database file =
   Common.profile_code2 "Db.load_db" (fun () -> load_database2 file)
 
-(* 
- * We allow to save in JSON format because it may be useful to let
+(* We allow to save in JSON format because it may be useful to let
  * the user edit read the generated data.
  * 
  * less: could use the more efficient json pretty printer, but really
@@ -488,7 +486,6 @@ let save_database database file =
 (*****************************************************************************)
 
 let entity_kind_of_highlight_category_def categ = 
-  (* TODO: constant *)
   match categ with
   | HC.Function (HC.Def2 _) -> Function
   | HC.FunctionDecl _ -> Function
@@ -496,6 +493,7 @@ let entity_kind_of_highlight_category_def categ =
   (* todo? interface? traits?*)
   | HC.Class (HC.Def2 _) -> Class RegularClass
   | HC.Method (HC.Def2 _) -> Method RegularMethod
+  (* TODO: constant *)
 
   | HC.Field (HC.Def2 _) -> Field
   | HC.StaticMethod (HC.Def2 _) -> Method StaticMethod
@@ -507,8 +505,8 @@ let entity_kind_of_highlight_category_def categ =
   | _ -> 
       failwith "this category has no Database_code counterpart"
 
+(* TODO? merge with other function? *)
 let entity_kind_of_highlight_category_use categ = 
-  (* TODO: constant *)
   match categ with
   | HC.Function (HC.Use2 _) -> Function
   | HC.FunctionDecl _ -> Function
@@ -529,7 +527,7 @@ let entity_kind_of_highlight_category_use categ =
       failwith "this category has no Database_code counterpart"
 
 
-(* In database_light_xxx we sometimes need given a use to increment
+(* In database_light_xxx we sometimes need, given a 'use', to increment
  * the e_number_external_users counter of an entity. Nevertheless
  * multiple entities may have the same name in which case looking
  * for an entity in the environment will return multiple
@@ -566,9 +564,7 @@ let alldirs_and_parent_dirs_of_relative_dirs dirs =
 
 
 let merge_databases db1 db2 =
-  (* assert same root ?
-   * then can just additionner the fields
-   *)
+  (* assert same root ?then can just add the fields *)
   if db1.root <> db2.root
   then begin
     pr2 (spf "merge_database: the root differs, %s != %s"
