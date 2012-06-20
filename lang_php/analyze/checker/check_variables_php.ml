@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -21,8 +21,8 @@ module V = Visitor_php
 module E = Error_php
 module S = Scope_code
 module Ent = Entity_php
-module Env = Env_check_php
 
+module Env = Env_check_php
 open Env_check_php
 open Check_variables_helpers_php
 
@@ -89,12 +89,12 @@ open Check_variables_helpers_php
  * 
  * "These things declare variables in a function":
  * - DONE Explicit parameters
- * - DONE Assignment via list()
  * - DONE Static, Global
  * - DONE foreach()
  * - DONE catch
  * - DONE Builtins ($this)
  * - DONE Lexical vars, in php 5.3 lambda expressions
+ * - DONE Assignment via list()
  * - SEMI Assignment
  *   (pad: variable mentionned for the first time)
  * 
@@ -117,19 +117,14 @@ open Check_variables_helpers_php
  *     - know about functions taking parameters by refs, which removes
  *       some false positives
  * 
- * todo? create generic function extracting set of defs
- *  and set of uses regarding variable ? and make connection ?
- *  If connection empty => unused var
- *  If no binding => undefined variable
- * 
  * todo? maybe should use the PIL here; it would be 
  * less tedious to write such analysis. There is too
  * many kinds of statements and expressions. Can probably factorize
  * more the code. For instance list($a, $b) = array is sugar 
- * for some assignations. But at the same time we may want to do special error 
- * reports for the use of list, for instance it's ok to not use
- * every var mentionned in a list(), but it's not to not use 
- * a regular assigned variable. So maybe not a good idea to have PIL.
+ * for some assignations. But at the same time we may want to do special 
+ * error reports for the use of list. For instance it's ok to not use
+ * every var mentionned in a list(), but it's not ok to not use
+ * a regular assigned variable. So maybe it's not a good idea to use PIL here.
  * 
  * quite some copy paste with check_functions_php.ml :(
  * 
@@ -138,7 +133,7 @@ open Check_variables_helpers_php
  *    of variables in a program, at the token level. If only 1, then
  *    probably a typo. But sometimes variable names are mentionned in
  *    interface signature in which case they occur only once. So you need
- *    some basic analysis, the token level is not enough. You may not
+ *    some basic analysis; the token level is not enough. You may not
  *    need the CFG but at least you need the AST to differentiate the 
  *    different kinds of unused variables. 
  * 
@@ -207,6 +202,21 @@ let do_in_new_scope_and_check_unused_if_strict f =
   then do_in_new_scope_and_check_unused f
   (* otherwise use same scope *)
   else f ()
+
+(*****************************************************************************)
+(* Check expression/lvalue *)
+(*****************************************************************************)
+
+(*
+let check_expression e =
+  
+  let rec expr e =
+    raise Todo
+  and lvalue l =
+    raise Todo
+  in
+  raise Todo
+*)     
   
 (*****************************************************************************)
 (* Scoped visitor *)
@@ -223,10 +233,10 @@ let visit_prog find_entity prog =
    * the visitor interface which is imperative. But threading an 
    * environment is also tedious so maybe not too ugly.
    *)
+  let scope = ref Ent.TopStmts in
+  let bailout = ref false in
   let in_lambda = ref false in
   let in_class = ref None in
-  let bailout = ref false in
-  let scope = ref Ent.TopStmts in
 
   let is_top_expr = ref true in 
 
@@ -238,8 +248,8 @@ let visit_prog find_entity prog =
 
     (* function scope checking *)
     V.kfunc_def = (fun (k, _) x ->
-      Common.save_excursion bailout false (fun () ->
       Common.save_excursion scope Ent.Function (fun () ->
+      Common.save_excursion bailout false (fun () ->
         do_in_new_scope_and_check_unused (fun () -> k x);
       ))
     );
@@ -251,8 +261,8 @@ let visit_prog find_entity prog =
           ()
       | MethodBody _ ->
       (* less: diff between Method and StaticMethod? *)
-      Common.save_excursion bailout false (fun () ->
-      Common.save_excursion scope (Ent.Method Ent.RegularMethod) (fun () ->
+       Common.save_excursion scope (Ent.Method Ent.RegularMethod) (fun () ->
+       Common.save_excursion bailout false (fun () ->
         do_in_new_scope_and_check_unused (fun () -> 
           if not (Class_php.is_static_method x)
           then begin
@@ -271,12 +281,10 @@ let visit_prog find_entity prog =
       Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->
         do_in_new_scope_and_check_unused (fun () -> 
           k x
-        )
-      );
+        ));
     );
 
-    (* 
-     * 'if', 'while', and other blocks should introduce a new scope.
+    (* 'if', 'while', and other blocks should introduce a new scope.
      * The default function-only scope of PHP is a bad idea. 
      * Jslint thinks the same. Even if PHP has no good scoping rules, 
      * I want to force programmers like in Javascript to write code
@@ -307,6 +315,8 @@ let visit_prog find_entity prog =
       (* Don't report UnusedParameter for parameters of methods.
        * People sometimes override a method and don't use all
        * the parameters.
+       * less: one day we will have an @override annotation in which
+       * case we can reconsider the above design decision.
        *)
       let cnt = 
         match !scope with | Ent.Method _ -> 1 | Ent.Function -> 0 | _ -> 0

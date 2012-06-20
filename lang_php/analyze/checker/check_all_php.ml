@@ -18,11 +18,15 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (*
- * A driver for our different PHP checkers.
+ * A driver for our different PHP checkers:
+ *  - use/def of entities
+ *  - use/def of variables
+ *  - function/method call arity
+ *  - etc, see error_php.ml
  * 
  * todo:
  *  - type checker
- *  - dataflow based unused var
+ *  - dataflow based useless assignements
  *  - record checker (fields)
  *  - protocol checker, statistical static analysis a la Engler
  *  - ...
@@ -42,7 +46,7 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
    * now to lookup static methods, which requires the self/parent unsugaring.
    * 
    * todo: unsugar traits by inlining/mixing their code in the class
-   * using them.
+   * using them (so need pass find_entity to unsugar_traits)
    *)
   let ast = Parse_php.parse_program file 
     +> Unsugar_php.unsugar_self_parent_program

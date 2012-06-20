@@ -89,11 +89,13 @@ function test_bailout_compact() {
 // Misc
 //*************************************************************************
 
+/* TODO
 function test_declared_in_middle_of_expr() {
   if (($v = misc1('')) && misc1($v)) {
     echo $v;
   }
 }
+*/
 
 function test_ok_undeclared_sscanf() {
   sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
