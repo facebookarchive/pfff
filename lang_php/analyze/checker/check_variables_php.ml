@@ -249,7 +249,7 @@ let visit_prog find_entity prog =
       | FuncDef _ -> k x
       (* see kclass_def and kmethod_def *)
       | ClassDef _ -> k x
-      (* see kstmt *)
+      (* see kstmt and the do_in_new_scope_and_check_unused on (Program prog) *)
       | StmtList _ -> k x
       (* see kexpr *)
       | ConstantDef _ -> k x
@@ -313,7 +313,11 @@ let visit_prog find_entity prog =
       do_in_new_scope_and_check_unused_if_strict (fun () -> k x)
     );
 
-    (* Introduce a new scope for StmtList ? This would forbid user to 
+    (* 
+     * See do_in_new_scope_and_check_unused on (Program prog) at
+     * the bottom at least.
+     * 
+     * Introduce a new scope for StmtList ? This would forbid user to 
      * have some statements, a func, and then more statements
      * that share the same variable. Toplevel statements
      * should not be mixed with function definitions (excepts
