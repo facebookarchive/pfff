@@ -242,6 +242,20 @@ let visit_prog find_entity prog =
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
+    (* does nothing, but put here to get a sense of the "coverage" *)
+    V.ktop = (fun (k, _) x ->
+      match x with
+      (* see kfunc_def *)
+      | FuncDef _ -> k x
+      (* see kclass_def and kmethod_def *)
+      | ClassDef _ -> k x
+      (* see kstmt *)
+      | StmtList _ -> k x
+      (* see kexpr *)
+      | ConstantDef _ -> k x
+      | FinalDef _ | NotParsedCorrectly _ -> k x
+    );
+
     (* -------------------------------------------------------------------- *)
     (* scoping management *)
     (* -------------------------------------------------------------------- *)
@@ -339,7 +353,7 @@ let visit_prog find_entity prog =
       | StaticVars (_, vars_list, _) ->
           vars_list +> Ast.uncomma +> List.iter (fun (varname, affect_opt) ->
             add_binding varname (S.Static, ref 0);
-            (* TODO recurse on the affect *)
+            (* TODO recurse on the affect ? *)
           )
 
       | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
@@ -354,6 +368,7 @@ let visit_prog find_entity prog =
           in
           (match lval with
           | Var (dname, scope_ref) ->
+              scope_ref := S.LocalIterator;
               do_in_new_scope_and_check_unused_if_strict (fun () ->
                 (* People often use only one of the iterator when
                  * they do foreach like   foreach(... as $k => $v).
@@ -363,7 +378,6 @@ let visit_prog find_entity prog =
                  *)
                 let shared_ref = ref 0 in
                 add_binding dname (S.LocalIterator, shared_ref);
-                scope_ref := S.LocalIterator;
                 (match arrow_opt with
                 | None -> ()
                 | Some (_t, (is_ref, var)) -> 
@@ -380,6 +394,8 @@ let visit_prog find_entity prog =
           | _ -> 
               E.warning tok E.WeirdForeachNoIteratorVar
           )
+      (* see kcatch below *)
+      | Try _ -> k x
 
       (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php 
        * facebook specific? should be a hook instead to visit_prog?
@@ -448,7 +464,17 @@ let visit_prog find_entity prog =
        *)
       | Unset (t1, lvals_list, t2) ->
           k x
-      | _ -> k x
+
+      | (TypedDeclaration (_, _, _, _)
+        |Declare (_, _, _)|Use (_, _, _)
+        |InlineHtml _
+        |Echo (_, _, _)
+        |Throw (_, _, _)|Return (_, _, _)
+        |Continue (_, _, _)|Break (_, _, _)|Switch (_, _, _)
+        |For (_, _, _, _, _, _, _, _, _)|Do (_, _, _, _, _)|While (_, _, _)
+        |If (_, _, _, _, _)|IfColon (_, _, _, _, _, _, _, _)
+        |Block _|EmptyStmt _|ExprStmt _
+        ) -> k x
     );
 
     V.kcatch = (fun (k,vx) x ->
