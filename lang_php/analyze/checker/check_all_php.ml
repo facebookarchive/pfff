@@ -19,17 +19,20 @@ open Common
 (*****************************************************************************)
 (*
  * A driver for our different PHP checkers:
- *  - use/def of entities
+ *  - use/def of entities (functions, constants, classes)
  *  - use/def of variables
  *  - function/method call arity
  *  - etc, see error_php.ml
  * 
  * todo:
- *  - type checker
  *  - dataflow based useless assignements
+ *  - type checker (e.g. wrong type of argumemt, if expr is not a bool,
+ *    use of array instead of scalar, etc)
  *  - record checker (fields)
  *  - protocol checker, statistical static analysis a la Engler
  *  - ...
+ *  - look at ast_php.ml (or ast_php_simple.ml) and find 
+ *    bug/checker opportunities
  *)
 
 (*****************************************************************************)
