@@ -43,14 +43,15 @@
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
+ *    (update: now static_scalar = expr also in ast_php.ml)
  * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
  *    of lots of duplication in many constructors
  *  - a simpler name; identifiers, xhp names, variables are unified
- *    (not a good idea retrospectively, cos it forces in many places
- *     anyway to do some s =~ "$.*")
+ *    (maybe not a good idea retrospectively, cos it forces in many places
+ *     to do some s =~ "$.*")
  *  - there is no include/require, they are transformed in call
- *    to __builtin__require (not sure it's a good idea)
+ *    to __builtin__require (again, maybe not a good idea)
  *  - ...
  *
  * todo: factorize more? string vs Guil vs xhp?
@@ -61,7 +62,7 @@
 (*****************************************************************************)
 
 (* The wrap is to get position information for certain elements in the AST.
- * Can be None when we want to optimize things and have a very
+ * It can be None when we want to optimize things and have a very
  * small marshalled AST. See Ast_php_simple.build.store_position flag.
  * Right now with None the marshalled AST for www is 190MB instead of 
  * 380MB.
