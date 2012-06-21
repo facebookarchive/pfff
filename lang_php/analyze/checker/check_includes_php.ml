@@ -12,12 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_php
 module IR = Include_require_php
-
 module E = Error_php
 
 (*****************************************************************************)
@@ -48,7 +46,8 @@ let check env file ast =
           if not (Sys.file_exists path)
           then E.fatal tok (E.FileNotFound path)
             
-      | None -> 
+      | None ->
+          (* todo: E.warning UglyDynamicInclude? *)
           pr2 (spf "(not a static include/require %s)"(Ast.string_of_info tok))
     ) 
     with 
