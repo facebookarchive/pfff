@@ -58,23 +58,21 @@ let property_of_cyclo n =
 (* Main entry point *)
 (*****************************************************************************)
 
-let gen_layer dir ~output =
+let gen_layer ?(verbose=false) dir ~output =
   let dir = Common.realpath dir in
 
   (*  a layer needs readable paths, hence the www root computation *)
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files [dir] in
 
-  let errors = ref [] in
-
   let layer = { Layer_code.
    title = "Cyclomatic complexity";
    description = "See http://en.wikipedia.org/wiki/Cyclomatic_complexity";
-   files = files +> Common.index_list_and_total +> 
-    List.map (fun (file, i, total) ->
+   files = files +> Common_extra.progress ~show:verbose (fun k ->
+    List.map (fun file ->
+      k ();
       let ii_with_cyclo =
         try 
-          pr2 (spf "processing: %s (%d/%d)" file i total);
           let ast = Parse_php.parse_program file in
         
           let (funcs, methods, topstatements) =
@@ -90,8 +88,7 @@ let gen_layer dir ~output =
           ))
 
         with exn ->
-          Common.push2 (spf "PB with %s, exn = %s" file 
-                           (Common.string_of_exn exn)) errors;
+          pr2 (spf "PB with %s, exn = %s" file (Common.string_of_exn exn));
           []
       in
       let readable_file = Common.filename_without_leading_path dir file in
@@ -110,7 +107,7 @@ let gen_layer dir ~output =
               [property_of_cyclo max, 1.]
         ;
       }
-    );
+    ));
     kinds = properties;
   }
   in

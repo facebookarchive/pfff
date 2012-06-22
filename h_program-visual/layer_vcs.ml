@@ -109,7 +109,7 @@ let filter_files xs =
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-let gen_nbauthors_layer ~skip_revs dir ~output =
+let gen_nbauthors_layer ?(verbose=false) ~skip_revs dir ~output =
   let dir = Common.realpath dir in
   let hskip_revs = Common.hashset_of_list skip_revs in
 
@@ -119,10 +119,9 @@ let gen_nbauthors_layer ~skip_revs dir ~output =
   let layer = { Layer_code.
      title = "Number of authors";
      description = "Use information from git blame";           
-     files = files +> Common.index_list_and_total +> 
-      List.map (fun (file, i, total) ->
-        pr2 (spf "processing: %s (%d/%d)" file i total);
-
+     files = files +> Common_extra.progress ~show:verbose (fun k ->
+      List.map (fun file ->
+        k();
         let readable_file = Common.filename_without_leading_path dir file in
         
         let annots = Git.annotate 
@@ -153,7 +152,7 @@ let gen_nbauthors_layer ~skip_revs dir ~output =
 
           macro_level = [property, 1.];
         }
-      );
+      ));
       kinds = properties_nb_authors;
   }
   in
@@ -161,7 +160,7 @@ let gen_nbauthors_layer ~skip_revs dir ~output =
   Layer_code.save_layer layer output
 
 
-let gen_age_layer ~line_granularity ~skip_revs dir ~output =
+let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
   let dir = Common.realpath dir in
   let hskip_revs = Common.hashset_of_list skip_revs in
 
@@ -172,10 +171,9 @@ let gen_age_layer ~line_granularity ~skip_revs dir ~output =
   let layer = { Layer_code.
      title = "Age of code";
      description = "Use information from git blame";
-     files = files +> Common.index_list_and_total +> 
-      List.map (fun (file, i, total) ->
-        pr2 (spf "processing: %s (%d/%d)" file i total);
-
+     files = files +> Common_extra.progress ~show:verbose (fun k ->
+      List.map (fun file ->
+        k();
         let readable_file = Common.filename_without_leading_path dir file in
         
         let annots = Git.annotate 
@@ -233,7 +231,7 @@ let gen_age_layer ~line_granularity ~skip_revs dir ~output =
 
           macro_level = [max_age, 1.];
         }
-      );
+      ));
       kinds = properties_age;
   }
   in
