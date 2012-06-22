@@ -43,6 +43,9 @@ module Model = Model2
  *  - saw talk at CC about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
  *    visual feedback
+ * 
+ * related work:
+ *  - TODO http://www.kickstarter.com/projects/296054304/zeta-code
  *)
 
 (*****************************************************************************)
