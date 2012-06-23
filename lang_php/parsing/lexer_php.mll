@@ -358,7 +358,11 @@ let push_token tok =
 (*e: lexer state trick helpers *)
 
 (* xhp: the function below is used to disambiguate the use 
- * of ":" and "%" as either a naming (unary) operator or binary operator. 
+ * of ":" and "%" as either a way to start an XHP identifier or as
+ * a binary operator. Note that we use a whitelist approach
+ * for detecting ':' as a binary operator whereas HPHP and
+ * XHPAST use a whitelist approach for detecting ':' as the
+ * start of an XHP identifier.
  * 
  * How to know the following lists of tokens is correct ? 
  * We should compute FOLLOW(tok) for  all tokens and check 
