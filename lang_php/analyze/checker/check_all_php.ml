@@ -49,7 +49,7 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
    * now to lookup static methods, which requires the self/parent unsugaring.
    * 
    * todo: unsugar traits by inlining/mixing their code in the class
-   * using them (so need pass find_entity to unsugar_traits)
+   * using them (so need pass find_entity to unsugar_traits).
    *)
   let ast = Parse_php.parse_program file 
     +> Unsugar_php.unsugar_self_parent_program
