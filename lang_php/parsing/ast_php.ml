@@ -588,6 +588,7 @@ and stmt =
 (*s: AST function definition *)
 and func_def = {
   f_tok: tok; (* function *)
+  (* todo? f_type: function_type; *)
   f_ref: is_ref;
   f_name: name;
   f_params: parameter comma_list_dots paren;
