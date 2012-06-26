@@ -590,6 +590,7 @@ and func_def = {
   f_tok: tok; (* function *)
   (* todo? f_type: function_type; *)
   f_ref: is_ref;
+  (* can be a Name("__lambda", fakeInfo()) when used for lambdas *)
   f_name: name;
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
