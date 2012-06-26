@@ -15,6 +15,7 @@ SRC= flag_analyze_php.ml \
      lib_analyze_php.ml \
 # used to be in ast_simple/
 SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml
+SRC+= pil.ml
 #note: tools/phpmanual_xml.ml is related to builtins_php.ml
 SRC+= defs_uses_php.ml \
       builtins_php.ml \
