@@ -552,17 +552,10 @@ and func_def = {
   (*e: AST function definition rest *)
 (*e: AST function definition *)
 (*s: AST lambda definition *)
-and lambda_def = {
- l_tok: tok; (* function *)
- l_ref: is_ref;
- (* no l_name, anonymous *)
- l_params: parameter comma_list_dots paren;
- l_use:  lexical_vars option;
- l_body: stmt_and_def list brace;
-}
+(* the f_name in func_def should be a fake name *)
+and lambda_def = (lexical_vars option * func_def)
   and lexical_vars = tok (* use *) * lexical_var comma_list paren 
-  and lexical_var = 
-    | LexicalVar of is_ref * dname
+  and lexical_var = LexicalVar of is_ref * dname
 
 (* ------------------------------------------------------------------------- *)
 (* Constant definition *)
