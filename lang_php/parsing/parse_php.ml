@@ -101,6 +101,10 @@ let rec distribute_info_items_toplevel2 xs toks filename =
   | ast::xs ->
       
       let ii = Lib_parsing_php.ii_of_any (Ast.Toplevel ast) in
+      (* ugly: I use a fakeInfo for lambda f_name, so I have
+       * have to filter the abstract info here
+       *)
+      let ii = List.filter Parse_info.is_origintok ii in
       let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
 
       let toks_before_max, toks_after = 

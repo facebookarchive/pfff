@@ -345,8 +345,8 @@ let (add_this_to_closed_var_in_body:
   )
 
 
-let closed_vars l = 
-  match l.l_use with
+let closed_vars (l_use, l) = 
+  match l_use with
   | None -> []
   | Some (_use, vars) -> 
       Ast.unparen vars +> Ast.uncomma +> List.map (function
@@ -381,7 +381,7 @@ let (mk_anon_class:
    * in
    *)
   let params_eval_closure = 
-    Ast.unparen l.l_params
+    Ast.unparen (snd l).f_params
   in
 
   let privates = 
@@ -442,11 +442,11 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
    let hook = { Map_php.default_visitor with
      Map_php.kexpr = (fun (k, _) v ->
        match v with
-       | Lambda ldef -> 
-           let info = ldef.l_tok in
+       | Lambda (l_use, ldef) -> 
+           let info = ldef.f_tok in
            
            let anon_str = gensym info in
-           let closed_vars = closed_vars ldef in
+           let closed_vars = closed_vars (l_use, ldef) in
 
            let res = 
              mk_new_anon_class_call anon_str
@@ -454,7 +454,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
                closed_vars
            in
 
-           let body_closure = Ast.unbrace ldef.l_body in
+           let body_closure = Ast.unbrace ldef.f_body in
            
            (* this will not do the subst inside the possible nested
             * lambdas 
@@ -474,7 +474,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
            in
            
            let anon_class = 
-             mk_anon_class anon_str ldef body''
+             mk_anon_class anon_str (l_use, ldef) body''
            in
            Common.push2 anon_class all_classes;
 
