@@ -223,6 +223,7 @@ module Ast = Ast_php
 /*(* must be at the top so that it has the lowest priority *)*/
 %nonassoc SHIFTHERE
 
+/*(* http://www.php.net/manual/en/language.operators.precedence.php *)*/
 %left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
 %left      TCOMMA
 %left      T_LOGICAL_OR
