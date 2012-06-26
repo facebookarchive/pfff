@@ -2,7 +2,7 @@
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
  * Released under the GNU General Public License 
  * 
- * Yoann Padioleau: 2010, port to pfff infrastructure 
+ * Yoann Padioleau: 2010, port to the pfff infrastructure.
  *)
 
 module PI = Parse_info
@@ -18,6 +18,7 @@ module PI = Parse_info
  *  - support enums
  *  - etc.
  *)
+
 (*****************************************************************************)
 (* The AST java related types *)
 (*****************************************************************************)
@@ -46,7 +47,7 @@ and names = name list
 
 and typ = typbis wrap
  and typbis = 
-  | TypeName of name (* include the 'void', 'int', and other primitive type *)
+  | TypeName of name (* include 'void', 'int', and other primitive types *)
   | ArrayType of typ
 
 (* ------------------------------------------------------------------------- *)
@@ -67,7 +68,7 @@ and expr = exprbis wrap
   | NewArray of typ * exprs * int * init option
 
   | Dot of expr * ident
-  (* todo: split in MethodCallSimple and so on *)
+  (* less: split in MethodCallSimple and so on? hmmm maybe not. *)
   | Call of expr * exprs
   | ArrayAccess of expr * expr
 
