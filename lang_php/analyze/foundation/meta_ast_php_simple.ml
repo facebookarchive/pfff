@@ -101,7 +101,7 @@ and vof_expr =
   | This name -> 
       let v1 = vof_wrapped_string name in
       Ocaml.VSum (("This", [ v1 ]))
-  | Array_get ((v1, v2)) ->
+  | Array_get ((_, v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
       in Ocaml.VSum (("Array_get", [ v1; v2 ]))
@@ -141,7 +141,7 @@ and vof_expr =
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Ref v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ v1 ]))
   | Xhp v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xhp", [ v1 ]))
-  | ConsArray v1 ->
+  | ConsArray (_, v1) ->
       let v1 = Ocaml.vof_list vof_array_value v1
       in Ocaml.VSum (("ConsArray", [ v1 ]))
   | List v1 ->

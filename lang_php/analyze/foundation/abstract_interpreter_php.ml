@@ -574,7 +574,8 @@ and expr_ env heap x =
       let n = ref 0 in
       let heap =
         List.fold_left (fun heap x ->
-          let v = Array_get (e, Some (Int (string_of_int !n))) in
+          let v = Array_get (None, e, Some (Int (string_of_int !n))) in (*TODO:
+            Fix line number!*)
           let heap, _ = expr env heap (Assign (None, x, v)) in
           incr n;
           heap
@@ -602,9 +603,9 @@ and expr_ env heap x =
       (* pad: why vnull? *)
       heap, Vsum [Vnull; Vabstr Tbool]
 
-  | ConsArray [] ->
+  | ConsArray (_, []) ->
       heap, Varray []
-  | ConsArray avl ->
+  | ConsArray (_, avl) ->
       let id = Id (w "*array*") in
       let heap = List.fold_left (array_value env id) heap avl in
       let heap, _, v = Var.get env heap "*array*" in
@@ -743,10 +744,10 @@ and lvalue env heap x =
       *)
       lvalue env heap (Id (name))
 
-  | Array_get (e, k) ->
+  | Array_get (_, e, k) ->
       array_get env heap e k
 
-  | ConsArray l as e ->
+  | ConsArray (_, l) as e ->
       let heap, a = expr env heap e in
       let heap, v = Ptr.new_ heap in
       let heap, _ = assign env heap true v a in
@@ -1052,7 +1053,8 @@ and array_value env id heap x =
           let heap, _ = assign env heap true v e in
           heap
       | _ ->
-          let heap, _ = expr env heap (Assign (None, Array_get (id, None), e)) 
+          let heap, _ = expr env heap (Assign (None, Array_get (None, id, None), e))
+          (*TODO: Fix line number!*) 
           in
           heap
       )
@@ -1074,7 +1076,8 @@ and array_value env id heap x =
           heap
       | _ ->
           let heap, _ = 
-            expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
+            expr env heap (Assign (None, Array_get (None, id, Some e1), e2)) in
+          (*TODO: Fix line number!*)
           heap
       )
 

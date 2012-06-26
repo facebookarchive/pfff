@@ -124,6 +124,13 @@ type env = {
      *)
     globals: t SMap.t ref;
 
+    (* The array environment. Contains all typing information for all arrays*)
+    aenv: arr_info list SMap.t ref;
+
+    (* The current function being typed, for the purpose of array
+     * identification*)
+    mutable aenv_fun: string; 
+
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
     (* The current substitution (for type variables). This will
@@ -162,6 +169,17 @@ type env = {
     (* The cumulated garbage collection time *)
     cumul: float ref;
   }
+
+and arr_info = int option * arr_access
+
+and arr_access = 
+  | NoIndex of t list (*t1, t2, v*)
+  | VarOrInt of t list (*t1, t2, v, k*)
+  | Const of t (*v*)
+  | ConstantString of t list (*t1, t2, v*)
+  | Three of t list (*t1, t2, v*) (* TODO: Figure out what the hell at3 corresponds to*)
+  | Disguised (**)
+  | Declaration of t list
 
 (* This is used for the autocompletion and interactive type inference
  * in Emacs (Tab and C-c C-t).
@@ -214,6 +232,8 @@ let make_env () = {
 
   vars     = ref SMap.empty;
   globals    = ref SMap.empty;
+  aenv    = ref SMap.empty;
+  aenv_fun= "";
 
   tenv    = ref IMap.empty;
   subst   = ref IMap.empty;

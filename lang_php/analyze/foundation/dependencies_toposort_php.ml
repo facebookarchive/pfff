@@ -93,7 +93,7 @@ module Dependencies = struct
     | Int _ | Double _ | String _ -> acc
     | Guil el -> encapsl acc el
     | This _ -> acc
-    | Array_get (e1, e2) -> expr (expr_opt acc e2) e1
+    | Array_get (_, e1, e2) -> expr (expr_opt acc e2) e1
     | Obj_get (e1, e2)
     | Binop (_, e1, e2)
     | Class_get (e1, e2)
@@ -109,7 +109,7 @@ module Dependencies = struct
         let acc = xml acc x in
         let name = Ast.string_of_xhp_tag x.xml_tag in
         SSet.add name acc
-    | ConsArray avl -> array_valuel acc avl
+    | ConsArray (_, avl) -> array_valuel acc avl
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->

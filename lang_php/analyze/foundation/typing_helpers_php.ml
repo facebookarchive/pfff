@@ -162,6 +162,8 @@ module Env = struct
   let unset env x = env.vars := SMap.remove x !(env.vars)
   let mem env x = SMap.mem x !(env.vars)
 
+  let iter env f = SMap.iter f !(env.env)
+
   let get env x =
     try SMap.find x !(env.vars) 
     with Not_found ->
@@ -176,6 +178,22 @@ module TEnv = struct
     with Not_found -> Tsum []
   let set env x y = env.tenv := IMap.add x y !(env.tenv)
   let mem env x = IMap.mem x !(env.tenv)
+end
+
+(*ciara*)
+module AEnv = struct
+  let set env x a = (*note must be cleaner way to do this*)
+    if SMap.mem x !(env.aenv) then
+      (*Key already in map, make new list of existing list appended with a *)
+      let l = SMap.find x !(env.aenv) in 
+      let l = l @ [a] in
+      env.aenv := SMap.add x l !(env.aenv)
+    else
+      let l = [a] in
+      env.aenv := SMap.add x l !(env.aenv)
+  let iter env f = SMap.iter f !(env.aenv)
+  let set_fun env x = env.aenv_fun <- x
+  let get_fun env = env.aenv_fun
 end
 
 module Subst = struct
@@ -271,6 +289,94 @@ module FindCommonAncestor = struct
     ) cands;
     None
     with Found c -> Some c
+
+end
+
+module Array_typer = struct
+
+  type container = 
+    | Vector
+    | Tuple
+    | Map
+
+  type cont_evi = container * int list
+
+  type t = {
+    types: cont_evi list SMap.t ref;
+    file: string
+  }
+
+  let make_array_typer f = {
+    types = ref SMap.empty;
+    file = f;
+  }
+
+  (*Super naive, super incorrect*)
+  let container_of_array_info = function
+    | (_, NoIndex _) -> Vector
+    | (_, Const _)
+    | (_, ConstantString _) -> Tuple
+    | _ -> Map
+
+  let line_of_array_info = function
+    | (None, _) -> (-1)
+    | (Some (k), _) -> k
+
+  let rec add_evidence l c ln = 
+    match l with
+    | [] -> [(c, [ln])]
+    | (k, x)::t when k = c -> (k, (ln::x))::t
+    | h::t -> h::(add_evidence t c ln)
+
+  (* x is the id, l is the list of arr_info (int option * arr_access )*)
+  let tyl at id ail = 
+    List.iter (fun ai ->
+      let c = container_of_array_info ai in
+      let ln = line_of_array_info ai in
+(*check to see if the id is already in at.type
+     * if is, update existing exidence list.
+     * if not, add with ai as evidence*)
+      if SMap.mem id !(at.types)
+      then 
+        let l = SMap.find id !(at.types) in
+        let l = add_evidence l c ln in
+        at.types := SMap.add id l !(at.types);
+      else 
+        let l = add_evidence [] c ln in
+        at.types := SMap.add id l !(at.types) 
+    ) ail
+
+  let tym env at= 
+    AEnv.iter env (
+      fun x l -> tyl at x l;
+    )
+
+  let string_of_container = function
+    | Vector -> "vector"
+    | Tuple -> "tuple"
+    | Map -> "map"
+
+  let rec pp_evidence e = 
+    List.iter (fun x ->
+      Printf.printf "    %d\n" x; 
+      )
+    e
+
+  let pp_cont_evi x =
+    match x with
+    | (c, e) -> begin Printf.printf "  %s\n" (string_of_container c);
+    pp_evidence e; end
+
+
+  let pp at =
+    SMap.iter (fun id l -> 
+      Printf.printf "%s\n" id;
+      List.iter (fun x -> 
+        pp_cont_evi x
+      ) 
+      l
+    ) 
+    !(at.types)
 
 end
 
@@ -373,6 +479,52 @@ module Print2 = struct
   let penv env =
     genv env
 
+
+  let ln = function 
+    | None -> "Line unavailable"
+    | Some(k) -> string_of_int k
+  
+  let access a = 
+    let penv = Pp.empty print_string in
+    match a with
+    | (l, NoIndex _ ) -> Pp.print penv ("  No Index access at "^(ln l))
+    | (l, VarOrInt _) -> Pp.print penv ("  Var or int access at "^(ln l))
+    | (l, Disguised) -> Pp.print penv ("  Disguised array access
+    at"^(ln l))
+    | (l, Three _) -> Pp.print penv ("  THREE at "^(ln l))
+    | (l, Const _ ) -> Pp.print penv ("  Const access at "^(ln l))
+    | (l, ConstantString _) -> Pp.print penv ("  Constant string access at "^(ln l))
+    | (l, Declaration _) -> Pp.print penv ("  Array declaration at "^(ln l))
+
+    (*ciara: added, pretty prints the list of the arr accesses*)
+  let arr_access a = 
+    let penv = Pp.empty print_string in
+    List.iter (
+      fun x ->
+        access x;
+      Pp.newline penv;
+    ) a
+
+    (*ciara: added*)
+  let print_arr_info env =
+    let penv = Pp.empty print_string in
+    AEnv.iter env (
+      fun x a -> 
+        Pp.print penv x; Pp.print penv " = ";
+        Pp.newline penv;
+        arr_access a;
+    )
+
+  (*ciara: Added, Prints all locals*)
+  let aenv env = 
+    let penv = Pp.empty print_string in
+    Env.iter env (
+      fun x t ->
+          Pp.print penv x; Pp.print penv " = ";
+          ty env penv ISet.empty 0 t;
+          Pp.newline penv;
+    )
+
   let args o env t =
     match Fun.get_args env ISet.empty t with
     | [] -> ()
@@ -454,6 +606,51 @@ module Print2 = struct
   let get_fields vim_mode env t =
     let acc = get_fields vim_mode env ISet.empty SSet.empty t in
     acc
+
+  let arr_access_type env penv ait = 
+    Pp.print penv "      ";
+    ty env penv ISet.empty 0 ait;
+    Pp.newline penv
+
+
+  let array_access env ai =
+    let penv = Pp.empty print_string in
+    match ai with 
+    | (_, NoIndex aal) -> Pp.print penv "No index";
+      Pp.newline penv;
+      List.iter (fun x -> ignore(arr_access_type env penv x)) aal
+    | (_, VarOrInt aal) -> Pp.print penv "Variable or integer";
+      Pp.newline penv;
+      List.iter (fun x -> ignore(arr_access_type env penv x)) aal
+    | (_, Const e) -> Pp.print penv "Const";
+      Pp.newline penv;
+      ignore(arr_access_type env penv e)
+    | (_, ConstantString aal) -> Pp.print penv "Constant string";
+      Pp.newline penv;
+      List.iter (fun x -> ignore(arr_access_type env penv x)) aal
+    | (_, Three aal) -> Pp.print penv "Three";
+      Pp.newline penv;
+      List.iter (fun x -> ignore(arr_access_type env penv x)) aal
+    | (_, Disguised) -> Pp.print penv "Disguised array access";
+      Pp.newline penv
+    | (_, Declaration _) ->Pp.print penv "Declaration";
+      Pp.newline penv
+
+
+
+  let ail env li = 
+    List.iter (fun ai ->
+        let l = Array_typer.line_of_array_info ai in
+        Printf.printf "  %d: " l; 
+        ignore(array_access env ai)
+    ) 
+    li
+
+  let arr_structure env = 
+    AEnv.iter env (
+      fun x l -> Printf.printf "%s\n" x;
+      ail env l;
+    )
 
 end
 
@@ -698,3 +895,4 @@ module Normalize = struct
   let normalize = normalize ISet.empty
 
 end
+

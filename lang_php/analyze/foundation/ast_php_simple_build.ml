@@ -214,10 +214,12 @@ and expr env = function
       let la = List.fold_right (list_assign env) la [] in
       let e = expr env e in
       A.Assign (None, A.List la, e)
-  | ArrayLong (_, (_, apl, _)) | ArrayShort (_, apl, _) ->
+  | ArrayLong (_, (tok, apl, _))
+  | ArrayShort (tok, apl, _) ->
+      let l =  PI.line_of_info tok in
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
-      A.ConsArray apl
+      A.ConsArray (l, apl)
   | New (_, cn, args) ->
       let args =
         match args with
@@ -377,17 +379,20 @@ and class_name_reference env = function
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
   | This tok -> A.This ("$this", wrap tok)
-  | VArrayAccess (lv, (_, e, _)) ->
+  | VArrayAccess (lv, (tok, e, _)) ->
+      let l = PI.line_of_info tok in
       let lv = lvalue env lv in
       let e = opt expr env e in
-      A.Array_get (lv, e)
+      A.Array_get (Some(l), lv, e)
   (* one can use $o[xxx] or $o{xxx} apparently *)
-  | VBraceAccess (lv, (_, e, _)) ->
-      A.Array_get (lvalue env lv, Some (expr env e))
-  | VArrayAccessXhp (e1, (_, e2, _)) ->
+  | VBraceAccess (lv, (tok, e, _)) ->
+      let l = PI.line_of_info tok in
+      A.Array_get (Some(l), lvalue env lv, Some (expr env e))
+  | VArrayAccessXhp (e1, (tok, e2, _)) ->
+      let l = PI.line_of_info tok in
       let e1 = expr env e1 in
       let e2 = opt expr env e2 in
-      A.Array_get (e1, e2)
+      A.Array_get (Some(l), e1, e2)
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | Indirect (e, (Dollar tok)) ->
@@ -462,15 +467,17 @@ and obj_dim env obj = function
   | OBrace (_, e, _) ->
       A.Obj_get (obj, expr env e)
   (* again, one can use the [] or {} syntax *)
-  | OArrayAccess (x, (_, e, _)) ->
+  | OArrayAccess (x, (tok, e, _)) ->
       let e = opt expr env e in
       let x = obj_dim env obj x in
-      A.Array_get (x, e)
+      let l = PI.line_of_info tok in
+      A.Array_get (Some(l), x, e)
   (* this is almost never used in our codebase, just in some third-party code.*)
-  | OBraceAccess (x, (_, e, _)) -> 
+  | OBraceAccess (x, (tok, e, _)) -> 
       let e = expr env e in
       let x = obj_dim env obj x in
-      A.Array_get(x, Some e)
+      let l = PI.line_of_info tok in
+      A.Array_get(Some(l), x, Some e)
 
 and argument env = function
   | Arg e -> expr env e

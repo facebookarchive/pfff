@@ -16,6 +16,7 @@ open Common
 
 open Ast_php_simple
 module A = Ast_php_simple
+module PI = Parse_info
 
 open Env_typing_php
 open Typing_helpers_php
@@ -232,7 +233,7 @@ let rec infer_type_definition env str =
 and stmtl env l =
   List.iter (stmt env) l
 
-and stmt env = function
+and stmt env= function
   | Expr e -> iexpr env e
   | Block stl -> stmtl env stl
   | If (e, st1, st2) ->
@@ -322,6 +323,15 @@ and iexpr env e = ignore (expr env e)
 and expr env e =
   expr_ env false e
 
+and var_name e = 
+  match e with 
+  | Id(n, _) ->n;
+  | _ -> "NONAME";
+
+and ln = function
+  | None -> "line unavailable"
+  | Some (k) -> string_of_int k
+
 and expr_ env lv = function
 
   | Id (("true" | "false"),_) -> bool
@@ -399,48 +409,66 @@ and expr_ env lv = function
       )
   | This name -> expr env (Id (name))
 
-  | Array_get (e, None) ->
+  (*Array_get returns the type of the values of the array*)
+  (* Array access without a key *)
+  | Array_get (l, e, None) ->
+      let n = (AEnv.get_fun env)^":"^(var_name e) in
       let t1 = expr env e in
       let v = Tvar (fresh()) in
       let t2 = array (int, v) in
+      let ti = (l, Env_typing_php.NoIndex (t1::t2::[v])) in 
       let _ = Unify.unify env t1 t2 in
+      let _ = AEnv.set env n ti in
       v
   (* ??? *)
-  | Array_get (e, Some (Id (s,tok))) when s.[0] <> '$' ->
+  | Array_get (l, e, Some (Id (s,tok))) when s.[0] <> '$' ->
       expr env (Array_get (e, Some (String (s, tok))))
-  | Array_get (Id (s,_), Some (String (x, _)))
+  | Array_get (l, Id (s,_), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
-
+      
+      let n = (AEnv.get_fun env)^":"^s in  
       let marked = env.auto_complete && has_marker env x in
       let t1 = GEnv.get_global env s in
       if marked then (env.show := Sauto_complete (x, t1); any) else
       let v = Tvar (fresh()) in
       let t2 = srecord (x, v) in
       let _ = Unify.unify env t1 t2 in
-      Instantiate.approx env ISet.empty v
+      let v = Instantiate.approx env ISet.empty v in 
+      let ti = (l, Env_typing_php.Three (t1::t2::[v])) in
+      let _ = AEnv.set env n ti in
+      v
 
-  | Array_get (e, Some (String (s, _)))->
+  | Array_get (l, e, Some (String (s, _)))->
       let marked = env.auto_complete && has_marker env s in
+      let n = (AEnv.get_fun env)^":"^(var_name e) in
       let t1 = expr env e in
       if marked then (env.show := Sauto_complete (s, t1); any) else
       let v = Tvar (fresh()) in
       let t2 = srecord (s, v) in
+      let ti = (l, Env_typing_php.ConstantString (t1::t2::[v])) in
       let _ = Unify.unify env t1 t2 in
+      let _ = AEnv.set env n ti in
       v
 
   (* disguised array access *)
+      (*I have no idea what is going on here*)
   | Call (Id (("idx" | "edx" | "adx" | "sdx"),_), (e :: k :: r)) ->
-      let e = expr env (Array_get (e, Some k)) in
+      Printf.printf "Disguised array access \n";
+      let e = expr env (Array_get (None, e, Some k)) in 
       (match r with
       | [] -> e
       | x :: _ -> Unify.unify env (expr env x) e
       )
-  | Array_get (e, Some k) ->
+  (* Array access with variable or constant integer *)
+  | Array_get (l, e, Some k) ->
+      let n = (AEnv.get_fun env)^":"^(var_name e) in
       let t1 = expr env e in
       let k = expr env k in
       let v = Tvar (fresh()) in
       let t2 = array (k, v) in
+      let ti = (l, Env_typing_php.VarOrInt(t1::t2::v::[k])) in
       let _ = Unify.unify env t1 t2 in
+      let _ = AEnv.set env n ti in
       v
 
   (* ?? why this special case? the code handling Id() should do the
@@ -465,17 +493,29 @@ and expr_ env lv = function
   | Class_get _ | Obj_get _ -> 
       any
 
+  | Assign (None, e1, ConsArray(l, y))  ->
+      let e2 = ConsArray(l, y) in 
+      let n = (AEnv.get_fun env)^":"^(var_name e1) in
+      let t1 = expr env e1 in
+      let t2 = expr env e2 in
+      let t = Unify.unify env t1 t2 in
+      let ti = (Some(l), Env_typing_php.Declaration(t1::t2::[t])) in
+      let _ = AEnv.set env n ti in 
+      t
+
   | Assign (None, e1, e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       t
+  
   | Assign (Some bop, e1, e2) ->
       expr env (Assign (None, e1, Binop (bop, e1, e2)))
 
-  | ConsArray avl ->
+  | ConsArray (l, avl) ->
       let t = Tvar (fresh()) in
       let t = List.fold_left (array_value env) t avl in
+      (* TODO get array name to point to array declaration *)
       t
 
   | List el ->
@@ -611,6 +651,8 @@ and func_def env fd =
   let return = Tvar ret in
   let f = Tsum [Tfun (pl, return)] in
   GEnv.set_fun env (A.unwrap fd.f_name) f;
+  (*Set the function name in aenv_fun for the purpose of guessing arrays*)
+  ignore(AEnv.set_fun env (A.unwrap fd.f_name));
   (* todo? do we need that? if the toplogical sort has been done
    * correctly we should not need that no?
    * We can have some cycles, so the topological sort is not
@@ -639,7 +681,7 @@ and parameter env p =
         with Not_found ->
           expr env (New (Id (x, tok), [])))
     | Some (HintArray) ->
-        expr env (ConsArray [])
+        expr env (ConsArray ((-1), [])) (*TODO: This line number is incorrect!*)
   in
   (match p.p_default with
   | None -> ()

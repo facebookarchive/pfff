@@ -1278,7 +1278,8 @@ module Header =
                    (match Stream.peek __strm with
                     | Some (Atom last) ->
                         (Stream.junk __strm;
-                         Some (Int64.of_string first, Int64.of_string last))
+                         Some ((Int64.of_string first),
+                           (Int64.of_string last)))
                     | _ -> raise (Stream.Error "")))
               | _ -> raise (Stream.Error "")))
         | _ -> raise Stream.Failure
@@ -1942,7 +1943,7 @@ module Header =
       in mh#update_field "Cookie" s
       
     (* CHECK
-       let nv_re = Pcre.regexp "^([a-zA-Z0-9_.]+)(=( . * ) )?$"
+       let nv_re = Pcre.regexp "^([a-zA-Z0-9_.]+)(=(.*))?$"
      *)
     let nv_re = Pcre.regexp "^([^=;]+)(=(.*))?$"
       
