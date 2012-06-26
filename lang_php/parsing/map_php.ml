@@ -816,26 +816,10 @@ and map_hint_type =
   | Hint v1 -> let v1 = map_class_name_or_selfparent v1 in Hint ((v1))
   | HintArray v1 -> let v1 = map_tok v1 in HintArray ((v1))
 and map_is_ref v = map_of_option map_tok v
-and
-  map_lambda_def {
-                   l_tok = v_l_tok;
-                   l_ref = v_l_ref;
-                   l_params = v_l_params;
-                   l_use = v_l_use;
-                   l_body = v_l_body
-                 } =
-  let v_l_body = map_brace (map_of_list map_stmt_and_def) v_l_body in
-  let v_l_use = map_of_option map_lexical_vars v_l_use in
-  let v_l_params = map_paren (map_comma_list_dots map_parameter) v_l_params in
-  let v_l_ref = map_is_ref v_l_ref in
-  let v_l_tok = map_tok v_l_tok in 
-  {
-    l_tok = v_l_tok;
-    l_ref = v_l_ref;
-    l_params = v_l_params;
-    l_use = v_l_use;
-    l_body = v_l_body
-  }
+and map_lambda_def (v1, v2) =
+  let v1 = map_of_option map_lexical_vars v1
+  and v2 = map_func_def v2
+  in (v1, v2)
 
 and map_lexical_vars (v1, v2) =
   let v1 = map_tok v1

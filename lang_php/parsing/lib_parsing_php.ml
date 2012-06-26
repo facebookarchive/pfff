@@ -332,8 +332,8 @@ let get_vars_any any =
     V.kexpr = (fun (k, vx) x ->
       match x with
       (* todo? sure ?? *)
-      | Lambda def ->
-          def.l_use +> Common.do_option (fun (_tok, xs) ->
+      | Lambda (l_use, def) ->
+          l_use +> Common.do_option (fun (_tok, xs) ->
             xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
             | LexicalVar (is_ref, dname) ->
                 Common.push2 dname aref

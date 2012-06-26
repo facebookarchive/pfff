@@ -477,14 +477,14 @@ and expr env = function
   | SgrepExprDots _ -> raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
 
-and lambda_def env ld =
-  let _, params, _ = ld.l_params in
+and lambda_def env (l_use, ld) =
+  let _, params, _ = ld.f_params in
   let params = comma_list_dots params in
-  let _, body, _ = ld.l_body in
-  { A.l_ref = ld.l_ref <> None;
+  let _, body, _ = ld.f_body in
+  { A.l_ref = ld.f_ref <> None;
     A.l_params = List.map (parameter env) params;
     A.l_use =
-      (match ld.l_use with
+      (match l_use with
       | None -> []
       | Some (_tokuse, (_, lexical_vars, _)) ->
           let lexical_vars = comma_list lexical_vars in

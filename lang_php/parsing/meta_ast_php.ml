@@ -838,28 +838,10 @@ and vof_lexical_var =
       and v2 = vof_dname v2
       in Ocaml.VSum (("LexicalVar", [ v1; v2 ]))
 
-and  vof_lambda_def {
-                   l_tok = v_l_tok;
-                   l_ref = v_l_ref;
-                   l_params = v_l_params;
-                   l_use = v_l_use;
-                   l_body = v_l_body
-                 } =
-  let bnds = [] in
-  let arg = vof_brace (Ocaml.vof_list vof_stmt_and_def) v_l_body in
-  let bnd = ("l_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_lexical_vars v_l_use in
-  let bnd = ("l_use", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_paren (vof_comma_list_dots vof_parameter) v_l_params in
-  let bnd = ("l_params", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_is_ref v_l_ref in
-  let bnd = ("l_ref", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_tok v_l_tok in
-  let bnd = ("l_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_lambda_def (v1, v2) =
+  let v1 = Ocaml.vof_option vof_lexical_vars v1
+  and v2 = vof_func_def v2
+  in Ocaml.VTuple [ v1; v2 ]
 
 and
   vof_class_def {

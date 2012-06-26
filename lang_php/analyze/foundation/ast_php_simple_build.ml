@@ -277,11 +277,11 @@ and expr env = function
   | ParenExpr (_, e, _) -> expr env e
 
 (* TODO: uses ??? *)
-and lambda_def env ld =
-  let _, params, _ = ld.l_params in
+and lambda_def env (l_use, ld) =
+  let _, params, _ = ld.f_params in
   let params = comma_list_dots params in
-  let _, body, _ = ld.l_body in
-  { A.f_ref = ld.l_ref <> None;
+  let _, body, _ = ld.f_body in
+  { A.f_ref = ld.f_ref <> None;
     A.f_name = (A.special "_lambda", wrap (Ast_php.fakeInfo "_lambda"));
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;

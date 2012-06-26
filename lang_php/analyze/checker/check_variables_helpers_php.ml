@@ -35,15 +35,14 @@ let vars_used_in_any any =
   any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k, vx) x ->
       match x with
-      | Lambda def -> 
+      | Lambda (l_use, def) -> 
           (* stop here, do not recurse in but count the use(...) as vars used *)
-          def.l_use +> Common.do_option (fun (_tok, vars) ->
+          l_use +> Common.do_option (fun (_tok, vars) ->
             vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
             | LexicalVar (_is_ref, dname) ->
                 Common.push2 dname aref
             );
           )
-
       (* Do not recurse there, isset() does not count as a use.
        * Hardcoded the special case of isset($x). If do
        * isset($arr[...]) then we may want to recurse and count as

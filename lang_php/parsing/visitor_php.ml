@@ -323,20 +323,8 @@ and v_expr (x: expr) =
 
   in
   vin.kexpr (k, all_functions) x 
-and
-  v_lambda_def {
-                 l_tok = v_l_tok;
-                 l_ref = v_l_ref;
-                 l_params = v_l_params;
-                 l_use = v_l_use;
-                 l_body = v_l_body
-               } =
-  let arg = v_tok v_l_tok in 
-  let arg = v_is_ref v_l_ref in 
-  let arg = v_parameters v_l_params in
-  let arg = v_option v_lexical_vars v_l_use in
-  let arg = v_body v_l_body in
-  ()
+and v_lambda_def (v1, v2) =
+  let v1 = v_option v_lexical_vars v1 and v2 = v_func_def v2 in ()
 and v_parameters x = 
     v_paren (v_comma_list_dots v_parameter) x
 

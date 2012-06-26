@@ -1175,15 +1175,15 @@ expr_without_variable_bis:
 
  | TBACKQUOTE encaps_list TBACKQUOTE   { BackQuote($1,$2,$3) }
  /*(* PHP 5.3 *)*/
- | T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt lexical_vars 
+ | T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt
+   lexical_vars 
    TOBRACE inner_statement_list TCBRACE 
      { let params = ($3, $4, $5) in
        let body = ($8, $9, $10) in
-       let ldef = {
-         l_tok = $1; l_ref = $2; l_params = params; l_use = $7; l_body = body;
-       }
-       in
-       Lambda ldef
+       Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
+                     f_name = Name("__lambda__", Ast.fakeInfo "");
+                     f_return_type = None;
+       })
      }
  /*(* php-facebook-ext: todo? in hphp.y yield are at the statement level
     * and are restricted to a few forms *)*/
