@@ -595,6 +595,7 @@ and func_def = {
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: hint_type option;
+  (* the opening/closing brace can be (fakeInfo(), ';') for abstract methods *)
   f_body: stmt_and_def list brace;
   (*s: f_type mutable field *)
   (*e: f_type mutable field *)
@@ -705,25 +706,17 @@ and class_def = {
           | NoModifiers of tok (* 'var' *)
           | VModifiers of modifier wrap list
     (*x: class_stmt types *)
-        (* a few special names: __construct, __call, __callStatic *)
-        and method_def = {
-          m_modifiers: modifier wrap list;
-          m_tok: tok; (* function *)
-          m_ref: is_ref;
-          m_name: name;
-          m_params: parameter comma_list_dots paren;
-         (* static-php-ext: *)
-          m_return_type: hint_type option;
-          m_body: method_body;
-        }
+        (* a few special names: __construct, __call, __callStatic
+         * ugly: f_body is an empty stmt_and_def for abstract method
+         * and the ';' is put for the info of the closing brace
+         * (and the opening brace is a fakeInfo).
+         *)
+        and method_def = (modifier wrap list * func_def)
     (*x: class_stmt types *)
           and modifier = 
             | Public  | Private | Protected
             | Static  | Abstract | Final
     (*x: class_stmt types *)
-          and method_body = 
-            | AbstractMethod of tok
-            | MethodBody of stmt_and_def list brace
     (*e: class_stmt types *)
  and xhp_decl = 
     | XhpAttributesDecl of 
