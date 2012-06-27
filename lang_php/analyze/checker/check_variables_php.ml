@@ -34,12 +34,11 @@ open Check_variables_helpers_php
  * tests/php/scheck/variables.php for examples of bugs currently
  * detected by this checker. This module not only checks but also annotates
  * the AST with scoping information as a side effect. This is useful
- * in Codemap to display differently references to parameters, local vars,
+ * in codemap to display differently references to parameters, local vars,
  * global vars, etc.
  * 
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are two orthogonal programming language concepts.
- * Some similar checks are done by JSlint.
  * 
  * This file is concerned with variables, that is Ast_php.dname
  * entities, so for completness C-s for dname in ast_php.ml and
@@ -49,43 +48,51 @@ open Check_variables_helpers_php
  * The errors detected here are mostly:
  *  - UseOfUndefinedVariable
  *  - UnusedVariable
+ * Some similar checks are done by JSlint.
  * 
- * Detecting such mistakes is made slightly more complicated
- * by PHP because of the lack of declaration in the language;
- * the first assgignement "declares" the variable. On the other side
- * the PHP language forces people to explicitly declared
- * the use of global variables (via the 'global' statement) which
- * makes certain things easier.
+ * Some issues:
+ *  - detecting variable-related mistakes is made slightly more complicated
+ *    by PHP because of the lack of declaration in the language;
+ *    the first assgignement "declares" the variable (on the other side
+ *    the PHP language forces people to explicitly declared
+ *    the use of global variables (via the 'global' statement) which
+ *    makes certain things easier).
  * 
- * One important issue is the handling of variables passed by reference
- * which can look like UseOfUndefinedVariable bugs but which
- * are not. One way to fix it is to do a global analysis that
- * remembers what are all the functions taking arguments by reference
- * and whitelist them here. But it has a cost.
- * Another way is to force programmers to actually declare such variables
- * before those kinds of function calls.
+ *  - variables passed by reference can look like UseOfUndefinedVariable
+ *    bugs but they are not. One way to fix it is to do a global analysis that
+ *    remembers what are all the functions taking arguments by reference
+ *    and whitelist them here. But it has a cost. One can optimize a little
+ *    this by using an entity_finder computed semi lazily a la cmf mutli
+ *    level approach (recursive a la cpp, flib-map, git-grep, git head).
+ *    Another way is to force programmers to actually declare such variables
+ *    before those kinds of function calls (this is what evan advocated).
  * 
- * Another issue is functions like extract(), param_get(), param_post()
- * or variable variables like $$x. Regarding the param_get/param_post(),
- * one way to fix it is to just not analyse toplevel code.
- * Another solution is to hardcode a few analysis that recognizes
- * the arguments of those functions.
- * For the extract() and $$x one can just bailout of such code or
- * as evan did remember the first line where such code happen and
- * don't do any analysis pass this point.
+ *  - people abuse assignements in function call to emulate "keyword arguments"
+ *    as in 'foo($color = "red", $width = 10)'. Such assignements looks
+ *    like UnusedVariable but they are not. One can fix that by detecting
+ *    such uses.
  * 
- * Another issue is that the analysis below will probably flag lots of 
- * warnings on an existing PHP codebase. Some programmers may find
- * legitimate certain things, for instance having variables declared in
- * a foreach to escape its foreach scope. This would then hinder
- * the whole analysis because people would just not run the analysis.
- * You need the approval of the PHP developers on such analysis first
- * and get them ok to change their coding styles rules.
+ *  - functions like extract(), param_get(), param_post()
+ *    or variable variables like $$x introduce some false positives.
+ *    Regarding the param_get/param_post(), one way to fix it is to just
+ *    not analyse toplevel code. Another solution is to hardcode a few
+ *    analysis that recognizes the arguments of those functions. Finally
+ *    for the extract() and $$x one can just bailout of such code or
+ *    as evan did remember the first line where such code happen and
+ *    don't do any analysis pass this point.
  * 
- * Another issue is the implicitly-declared-when-used-the-first-time
- * ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
+ *  - any analysis will probably flag lots of warnings on an existing PHP
+ *    codebase. Some programmers may find legitimate certain things, 
+ *    for instance having variables declared in a foreach to escape its
+ *    foreach scope. This would then hinder the whole analysis because
+ *    people would just not run the analysis. You need the approval of
+ *    the PHP developers on such analysis first and get them ok to change
+ *    their coding styles rules.
  * 
- * Here are some notes by Evan in his own variable linter:
+ *  -  Another issue is the implicitly-declared-when-used-the-first-time
+ *     ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
+ * 
+ * Here are some extra notes by Evan in his own variable linter:
  * 
  * "These things declare variables in a function":
  * - DONE Explicit parameters
@@ -238,6 +245,7 @@ let visit_prog find_entity prog =
   let in_lambda = ref false in
   let in_class = ref None in
 
+  (* todo: toremove, ugly *)
   let is_top_expr = ref true in 
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
@@ -247,12 +255,13 @@ let visit_prog find_entity prog =
       match x with
       (* see kfunc_def *)
       | FuncDef _ -> k x
-      (* see kclass_def and kmethod_def *)
+      (* see kclass_def and kfunc_def for the methods *)
       | ClassDef _ -> k x
       (* see kstmt and the do_in_new_scope_and_check_unused on (Program prog) *)
       | StmtList _ -> k x
       (* see kexpr *)
       | ConstantDef _ -> k x
+
       | FinalDef _ | NotParsedCorrectly _ -> k x
     );
 
