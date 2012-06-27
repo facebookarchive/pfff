@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_php
@@ -20,7 +19,6 @@ module Ast = Ast_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * In different structures such as the callgraph we need to refer to a
  * certain PHP entity, like a specific function. Usually those specific
