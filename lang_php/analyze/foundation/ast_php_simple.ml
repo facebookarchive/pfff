@@ -100,7 +100,6 @@ and stmt =
   (* only at toplevel *)
   | ConstantDef of constant_def
 
-  (* pad: ?? *)
   | StaticVars of (string wrap * expr option) list
   | Global of expr list
 
@@ -241,9 +240,7 @@ and class_def = {
 }
 
   and class_type =
-    | ClassRegular
-    | ClassFinal
-    | ClassAbstract
+    | ClassRegular | ClassFinal | ClassAbstract
     | Interface
     | Trait
 
@@ -256,7 +253,7 @@ and class_def = {
     cv_visibility: visibility;
   }
 
-  (* factorize with function_def ? after all methods are
+  (* todo: could factorize with function_def. After all methods are
    * transformed into functions in the abstract interpreter.
    *)
   and method_def = {
