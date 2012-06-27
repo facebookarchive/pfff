@@ -675,7 +675,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 10
+     (case 0
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
