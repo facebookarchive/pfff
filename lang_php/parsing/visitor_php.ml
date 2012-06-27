@@ -799,6 +799,7 @@ and
   let rec k x = 
     match x with {
                f_tok = v_f_tok;
+               f_type = v_f_type;
                f_ref = v_f_ref;
                f_name = v_f_name;
                f_params = v_f_params;
@@ -806,6 +807,7 @@ and
                f_return_type = v_f_return_type;
              } ->
   let arg = v_tok v_f_tok in 
+  let arg = v_function_type v_f_type in
   let arg = v_is_ref v_f_ref in 
   let arg = v_name v_f_name in
   let arg = v_parameters v_f_params in
@@ -814,6 +816,12 @@ and
   ()
   in
   vin.kfunc_def (k, all_functions) x
+and v_function_type =
+  function
+  | FunctionRegular -> ()
+  | FunctionLambda -> ()
+  | MethodRegular -> ()
+  | MethodAbstract -> ()
 
 and v_parameter x = 
   let rec k x =

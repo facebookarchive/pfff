@@ -777,6 +777,7 @@ and vof_new_else (v1, v2, v3) =
 and
   vof_func_def {
                  f_tok = v_f_tok;
+                 f_type = v_f_type;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
                  f_params = v_f_params;
@@ -799,8 +800,19 @@ and
   let arg = vof_is_ref v_f_ref in
   let bnd = ("f_ref", arg) in
   let bnds = bnd :: bnds in
+  let arg = vof_function_type v_f_type in
+  let bnd = ("f_type", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_tok v_f_tok in
-  let bnd = ("f_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("f_tok", arg) in 
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+and vof_function_type =
+  function
+  | FunctionRegular -> Ocaml.VSum (("FunctionRegular", []))
+  | FunctionLambda -> Ocaml.VSum (("FunctionLambda", []))
+  | MethodRegular -> Ocaml.VSum (("MethodRegular", []))
+  | MethodAbstract -> Ocaml.VSum (("MethodAbstract", []))
 and
   vof_parameter {
                   p_type = v_p_type;

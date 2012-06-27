@@ -539,6 +539,7 @@ unticked_function_declaration_statement:
     let body = ($9, $10, $11) in
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
        f_return_type = $8;f_body = body;
+       f_type = FunctionRegular;
     })
    }
 
@@ -1182,7 +1183,7 @@ expr_without_variable_bis:
        let body = ($8, $9, $10) in
        Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
                      f_name = Name("__lambda__", Ast.fakeInfo "");
-                     f_return_type = None;
+                     f_return_type = None; f_type = FunctionLambda;
        })
      }
  /*(* php-facebook-ext: todo? in hphp.y yield are at the statement level

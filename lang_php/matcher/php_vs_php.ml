@@ -2533,6 +2533,7 @@ and m_func_def a b =
   f_params = a4;
   f_return_type = a5;
   f_body = a6;
+  f_type = a7;
   },
   { B. 
   f_tok = b1;
@@ -2541,6 +2542,7 @@ and m_func_def a b =
   f_params = b4;
   f_return_type = b5;
   f_body = b6;
+  f_type = b7;
   } -> 
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_is_ref a2 b2 >>= (fun (a2, b2) -> 
@@ -2549,6 +2551,7 @@ and m_func_def a b =
     (m_paren (m_comma_list_dots m_parameter)) a4 b4 >>= (fun (a4, b4) -> 
     (m_option m_hint_type) a5 b5 >>= (fun (a5, b5) -> 
     (m_brace (m_list m_stmt_and_def)) a6 b6 >>= (fun (a6, b6) -> 
+    m_function_type a7 b7 >>= (fun (a7, b7) ->
     return (
       { A. 
       f_tok = a1;
@@ -2557,6 +2560,7 @@ and m_func_def a b =
       f_params = a4;
       f_return_type = a5;
       f_body = a6;
+      f_type = a7;
       },
       { B.
       f_tok = b1;
@@ -2565,9 +2569,13 @@ and m_func_def a b =
       f_params = b4;
       f_return_type = b5;
       f_body = b6;
+      f_type = b7;
       } 
     )
-  ))))))
+  )))))))
+
+(* todo? *)
+and m_function_type a b = return (a, b)
 
 and m_type a b = return (a, b)
 

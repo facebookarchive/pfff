@@ -773,6 +773,7 @@ and map_new_else (v1, v2, v3) =
 and
   map_func_def {
                  f_tok = v_f_tok;
+                 f_type = v_f_type;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
                  f_params = v_f_params;
@@ -783,16 +784,24 @@ and
   let v_f_params = map_paren (map_comma_list_dots map_parameter) v_f_params in
   let v_f_name = map_name v_f_name in
   let v_f_ref = map_is_ref v_f_ref in
+  let v_f_type = map_function_type v_f_type in
   let v_f_tok = map_tok v_f_tok in
   let v_f_return_type = map_of_option map_hint_type v_f_return_type in
   {
     f_tok = v_f_tok;
+    f_type = v_f_type;
     f_ref = v_f_ref;
     f_name = v_f_name;
     f_params = v_f_params;
     f_return_type = v_f_return_type;
     f_body = v_f_body;
   }
+and map_function_type =
+  function
+  | FunctionRegular -> FunctionRegular
+  | FunctionLambda -> FunctionLambda
+  | MethodRegular -> MethodRegular
+  | MethodAbstract -> MethodAbstract
 and
   map_parameter {
                   p_type = v_p_type;
