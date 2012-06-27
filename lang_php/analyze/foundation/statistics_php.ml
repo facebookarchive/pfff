@@ -137,7 +137,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Function s) (fun() ->
             k x
           )
-
       | ConstantDef (_, name, _, _, _) -> 
           inc "constant";
           hooks.entity (E.Constant, Ast.str_of_name name);
@@ -176,7 +175,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Function s) (fun() ->
             k x
           )
-
       | ClassDefNested def -> 
           let str = Class_php.string_of_class_type def.c_type in
           inc str; 
@@ -185,7 +183,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
-
       | Stmt _ -> 
           k x
       );
