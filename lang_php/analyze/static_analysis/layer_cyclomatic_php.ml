@@ -78,7 +78,7 @@ let gen_layer ?(verbose=false) dir ~output =
           let (funcs, methods, topstatements) =
             Lib_parsing_php.functions_methods_or_topstms_of_program ast
           in
-          (funcs ++ (methods +> List.map snd)) +> List.map (fun def ->
+          (funcs ++ methods) +> List.map (fun def ->
             let iis = Lib_parsing_php.ii_of_any (Toplevel (FuncDef def)) in
             List.hd iis, Cyclomatic_php.cyclomatic_complexity_func def
           )

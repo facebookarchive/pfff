@@ -278,7 +278,7 @@ let is_phpunit_derived_class_heuristics def =
       s =~ ".*TestCase" ||
       (Ast.unbrace def.c_body +> List.exists (fun class_stmt ->
         match class_stmt with
-        | Method (_, def) -> 
+        | Method def -> 
             let s = Ast.name def.f_name in 
             s =~ "^test[A-Za-z_]+"
         | ClassConstants _  | ClassVariables _ -> false

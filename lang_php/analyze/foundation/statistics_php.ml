@@ -27,11 +27,10 @@ module CG = Callgraph_php2
  * Compute different statistics on PHP code.
  * 
  * history:
- *  - used it to infer if a php file was a script, endpoint, or library
+ *  - used it to infer if a PHP file was a script, endpoint, or library
  *    file
  *  - used it to try to evaluate the coverage of the abstract interpreter
- *    and its callgraph computation, how many method calls are not "resolved"?
- * 
+ *    and its callgraph computation; how many method calls are not "resolved"?
  *)
 
 (*****************************************************************************)
@@ -138,6 +137,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Function s) (fun() ->
             k x
           )
+
       | ConstantDef (_, name, _, _, _) -> 
           inc "constant";
           hooks.entity (E.Constant, Ast.str_of_name name);
@@ -159,14 +159,14 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
     );
-    V.kmethod_def = (fun (k, _) (ms, def) ->
-      match !current_node with
+    V.kmethod_def = (fun (k, _) def ->
+      (match !current_node with
       | CG.Method (classname, _) ->
           let s = Ast.str_of_name def.f_name in
-          Common.save_excursion current_node (CG.Method (classname, s))(fun()->
-            k (ms, def)
-          )
+          Common.save_excursion current_node (CG.Method (classname, s))
+            (fun()-> k def)
       | _ -> raise Impossible
+      )
     );
     V.kstmt_and_def = (fun (k,_) x ->
       (match x with

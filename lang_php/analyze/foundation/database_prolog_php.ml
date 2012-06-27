@@ -341,10 +341,10 @@ let add_uses_and_properties id kind ast pr db =
       | _ -> ()
       );
             
-  | E.Method _, MethodE (modifiers, def) -> 
+  | E.Method _, MethodE def -> 
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
-      modifiers +> List.iter (fun (m, _) -> 
+      def.f_modifiers +> List.iter (fun (m, _) -> 
         pr (spf "%s(%s)." (string_of_modifier m) (name_id id db));
       );
       add_uses id ast pr db;

@@ -115,7 +115,7 @@ let gensym info =
 
 
 let mk_method s params body =
-  Method ([], {
+  Method ({
     f_tok = fkt "function";
     f_ref = None;
     f_name = Name (s, fkt s);
@@ -123,6 +123,7 @@ let mk_method s params body =
     f_body = (fkt "{", body, fkt "}");
     f_return_type = None;
     f_type = MethodRegular;
+    f_modifiers = [];
   })
 
 let mk_param s = { 

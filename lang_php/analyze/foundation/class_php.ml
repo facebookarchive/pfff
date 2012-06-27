@@ -23,7 +23,6 @@ module E = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * todo: differentiate Interface/Trait in lookup?
  *)
@@ -34,12 +33,11 @@ module E = Database_code
 
 (* PHP let people intercept a "UndefinedMethod" error, a la Perl ... *)
 exception Use__Call
-
 exception UndefinedClassWhileLookup of string
 
 (* Actually sometimes it can also be the name of the class (especially in
- * third party code)
- *)
+ * third party code). 
+*)
 let constructor_name = "__construct"
 
 (*****************************************************************************)
@@ -88,21 +86,20 @@ let resolve_class_name qu =
 (* Ast Helpers *)
 (*****************************************************************************)
 
-let is_static_method (modifiers, def) =
-  let modifiers = modifiers +> List.map Ast.unwrap in
+let is_static_method def =
+  let modifiers = def.f_modifiers +> List.map Ast.unwrap in
   List.mem Ast.Static modifiers
 
-(* TODO: it could also be one which has the same name than the class.
- *  print a warning to tell to use __construct instead ?
+(* less: it could also be one which has the same name than the class.
+ * print a warning to tell to use __construct instead ?
  *)
 let get_constructor def =
   def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
     match class_stmt with
-    | Method (ms, def) when Ast.name def.f_name =$= constructor_name ->
-        Some (ms, def)
+    | Method def when Ast.name def.f_name =$= constructor_name ->
+        Some def
     | _ -> None
   )
-
 
 (* This is used in check_variables_php.ml to allow inherited
  * visible variables to be used in scope
@@ -234,10 +231,10 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
   let eq = equal ~case_insensitive in
   lookup_gen aclass find_entity 
     (function
-    | Method (ms, def) when eq (Ast.name def.f_name) amethod -> Some (ms, def)
-    | Method (_, def) when (Ast.name def.f_name) =$= "__call" ->
+    | Method def when eq (Ast.name def.f_name) amethod -> Some def
+    | Method def when (Ast.name def.f_name) =$= "__call" ->
         raise Use__Call
-    | Method (_, def) when (Ast.name def.f_name) =$= "__callStatic" ->
+    | Method def when (Ast.name def.f_name) =$= "__callStatic" ->
         raise Use__Call
     | _ -> None
     )

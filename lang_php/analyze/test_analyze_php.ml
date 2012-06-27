@@ -93,7 +93,7 @@ let test_cyclomatic_php file =
       let class_stmts = Ast_php.unbrace def.Ast_php.c_body in
       let class_name = Ast_php.name def.Ast_php.c_name in
       class_stmts +> List.iter (function
-      | Ast_php.Method (_, def) ->
+      | Ast_php.Method def ->
           let name = Ast_php.name def.Ast_php.f_name in
           let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
           pr2 (spf "cyclomatic complexity for method %s::%s is %d"

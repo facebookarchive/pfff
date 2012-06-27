@@ -778,6 +778,7 @@ and
   vof_func_def {
                  f_tok = v_f_tok;
                  f_type = v_f_type;
+                 f_modifiers = v_f_modifiers;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
                  f_params = v_f_params;
@@ -799,6 +800,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_is_ref v_f_ref in
   let bnd = ("f_ref", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list (vof_wrap vof_modifier) v_f_modifiers in
+  let bnd = ("f_modifiers", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_function_type v_f_type in
   let bnd = ("f_type", arg) in
@@ -946,10 +950,7 @@ and vof_class_var_modifier =
   | VModifiers v1 ->
       let v1 = vof_list (vof_wrap vof_modifier) v1
       in Ocaml.VSum (("VModifiers", [ v1 ]))
-and vof_method_def (v1, v2) =
-  let v1 = Ocaml.vof_list (vof_wrap vof_modifier) v1
-  and v2 = vof_func_def v2
-  in Ocaml.VTuple [ v1; v2 ]
+and vof_method_def x = vof_func_def x
 and vof_modifier =
   function
   | Public -> Ocaml.VSum (("Public", []))

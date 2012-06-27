@@ -357,14 +357,14 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kclass_stmt = (fun (k, bigf) x ->
       match x with
-      | Ast.Method (modifiers, def) ->
+      | Ast.Method def ->
           tag def.f_tok KeywordObject;
 
           let name = def.f_name in
           let info = Ast.info_of_name name in
 
           let kind = 
-            if modifiers |> List.exists (fun (modifier, ii) -> 
+            if def.f_modifiers +> List.exists (fun (modifier, ii) -> 
               modifier = Ast.Static
             )
             then (StaticMethod (Def2 fake_no_def2))

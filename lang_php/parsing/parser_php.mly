@@ -539,7 +539,7 @@ unticked_function_declaration_statement:
     let body = ($9, $10, $11) in
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
        f_return_type = $8;f_body = body;
-       f_type = FunctionRegular;
+       f_type = FunctionRegular; f_modifiers = [];
     })
    }
 
@@ -709,14 +709,12 @@ method_declaration:
      TOPAR parameter_list TCPAR
      return_type_opt
      method_body 
-     { 
-       let body, function_type = $10 in
-       Method ($1, { f_tok = $2; f_ref = $3; f_name = Name $4;
-                     f_params = ($6, $7, $8); f_return_type = $9; 
-                     f_body = body; f_type = function_type;
-       })
+     { let body, function_type = $10 in
+       Method ({ f_tok = $2; f_ref = $3; f_name = Name $4;
+                 f_params = ($6, $7, $8); f_return_type = $9;
+                 f_body = body; f_type = function_type; f_modifiers = $1;
+               })
      }
-
 
 /*(* ugly, php allows method names which should be IMHO reserved keywords *)*/
 method_name: 
@@ -1185,6 +1183,7 @@ expr_without_variable_bis:
        Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
                      f_name = Name("__lambda__", Ast.fakeInfo "");
                      f_return_type = None; f_type = FunctionLambda;
+                     f_modifiers = [];
        })
      }
  /*(* php-facebook-ext: todo? in hphp.y yield are at the statement level

@@ -800,6 +800,7 @@ and
     match x with {
                f_tok = v_f_tok;
                f_type = v_f_type;
+               f_modifiers = v_f_modifiers;
                f_ref = v_f_ref;
                f_name = v_f_name;
                f_params = v_f_params;
@@ -808,6 +809,7 @@ and
              } ->
   let arg = v_tok v_f_tok in 
   let arg = v_function_type v_f_type in
+  let arg = v_list (v_wrap v_modifier) v_f_modifiers in
   let arg = v_is_ref v_f_ref in 
   let arg = v_name v_f_name in
   let arg = v_parameters v_f_params in
@@ -930,12 +932,7 @@ and v_class_var_modifier =
 and v_class_variable (v1, v2) =
   let v1 = v_dname v1 and v2 = v_option v_static_scalar_affect v2 in ()
 and v_method_def x  =
-  let k x =
-    let (v1, v2) = x in
-    let v1 = v_list (v_wrap v_modifier) v1 
-    and v2 = v_func_def v2 in 
-    ()
-  in
+  let k x = v_func_def x in
   vin.kmethod_def (k, all_functions) x
 
 and v_modifier =

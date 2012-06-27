@@ -207,7 +207,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
               (try 
-                let (_,def) = Class_php.lookup_method ~case_insensitive:true
+                let def = Class_php.lookup_method ~case_insensitive:true
                   (aclass, amethod) find_entity 
                 in
                 params_vs_args def.f_params (Some args)
@@ -247,7 +247,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               | Some aclass ->
                 let amethod = Ast.name name in
                 (try 
-                  let (_, def) = Class_php.lookup_method ~case_insensitive:true
+                  let def = Class_php.lookup_method ~case_insensitive:true
                     (aclass, amethod) find_entity 
                   in
                   params_vs_args def.f_params (Some args)
@@ -279,7 +279,7 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               (function Ast_php.ClassE def ->
                 (try 
                     (* TODO: use lookup_method there too ! *)
-                    let (_, ctor_def) = Class_php.get_constructor def in
+                    let ctor_def = Class_php.get_constructor def in
                     params_vs_args ctor_def.f_params args
                   (* not our business *)
                   with Not_found -> ()

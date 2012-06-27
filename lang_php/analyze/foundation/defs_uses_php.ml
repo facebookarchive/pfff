@@ -79,8 +79,17 @@ let defs_of_any any =
       | FunctionRegular -> 
           Common.push2 (Db.Function, def.f_name, None) aref
       | MethodRegular | MethodAbstract ->
-          (* handled in kmethod_def *)
-          ()
+          let classname =
+            match !current_class with
+            | Some c -> c
+            | None -> failwith "impossible: no current_class in defs_use_php.ml"
+          in
+          let kind =
+            if Class_php.is_static_method def
+            then Db.StaticMethod
+            else Db.RegularMethod
+          in
+          Common.push2 (Db.Method kind, def.f_name, Some classname) aref
       | FunctionLambda ->
           (* the f_name is meaningless *)
           ()
@@ -101,21 +110,6 @@ let defs_of_any any =
       Common.save_excursion current_class (Some def.c_name) (fun () ->
           k def;
       );
-    );
-
-    V.kmethod_def = (fun (k, _) (modifiers, def) ->
-      let classname =
-        match !current_class with
-        | Some c -> c
-        | None -> failwith "impossible: no current_class in defs_use_php.ml"
-      in
-      let kind =
-        if Class_php.is_static_method (modifiers, def)
-        then Db.StaticMethod
-        else Db.RegularMethod
-      in
-      Common.push2 (Db.Method kind, def.f_name, Some classname) aref;
-      k (modifiers, def)
     );
     V.ktop = (fun (k, _) x ->
       match x with
@@ -146,7 +140,6 @@ let defs_of_any any =
           )
       | _ -> k x
     );
-
     (* todo: globals? fields? class constants? *)
 
   }) any

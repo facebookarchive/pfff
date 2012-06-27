@@ -543,10 +543,10 @@ and class_body env st acc =
       acc
   | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) -> acc
 
-and method_def env (modifiers, m) =
+and method_def env m =
   let _, params, _ = m.f_params in
   let params = comma_list_dots params in
-  let mds = List.map (fun (x, _) -> x) modifiers in
+  let mds = List.map (fun (x, _) -> x) m.f_modifiers in
   { A.m_visibility = visibility env mds;
     A.m_static = static env mds;
     A.m_final = final env mds;
