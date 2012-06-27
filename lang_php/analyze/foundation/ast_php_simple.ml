@@ -16,7 +16,6 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree
  * as in ast_php.ml
  *
@@ -44,9 +43,11 @@
  *  - a simpler stmt type; no extra toplevel, stmt_and_def types
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
  *    (update: now static_scalar = expr also in ast_php.ml)
+ *    also no scalar.
  * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
- *    of lots of duplication in many constructors
+ *    of lots of duplication in many constructors (e.g. no ClassConstant
+ *    in a scalar type).
  *  - a simpler name; identifiers, xhp names, variables are unified
  *    (maybe not a good idea retrospectively, cos it forces in many places
  *     to do some s =~ "$.*")
