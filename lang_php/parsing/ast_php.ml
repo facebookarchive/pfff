@@ -588,7 +588,7 @@ and stmt =
 (*s: AST function definition *)
 and func_def = {
   f_tok: tok; (* function *)
-  (* todo? f_type: function_type; *)
+  f_type: function_type;
   f_ref: is_ref;
   (* can be a Name("__lambda", fakeInfo()) when used for lambdas *)
   f_name: name;
@@ -599,6 +599,12 @@ and func_def = {
   (*s: f_type mutable field *)
   (*e: f_type mutable field *)
 }
+    and function_type = 
+      | FunctionRegular
+      | FunctionLambda
+      | MethodRegular
+      | MethodAbstract
+
   (*s: AST function definition rest *)
     and parameter = {
       p_type: hint_type option;

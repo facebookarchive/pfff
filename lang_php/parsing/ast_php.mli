@@ -527,6 +527,7 @@ and stmt =
 (*s: AST function definition *)
 and func_def = {
   f_tok: tok; (* function *)
+  f_type: function_type;
   f_ref: is_ref;
   f_name: name;
   f_params: parameter comma_list_dots paren;
@@ -536,6 +537,11 @@ and func_def = {
   (*s: f_type mutable field *)
   (*e: f_type mutable field *)
 }
+    and function_type = 
+      | FunctionRegular
+      | FunctionLambda
+      | MethodRegular
+      | MethodAbstract
   (*s: AST function definition rest *)
     and parameter = {
       p_type: hint_type option;
