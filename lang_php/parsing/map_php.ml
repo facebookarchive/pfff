@@ -988,33 +988,10 @@ and map_class_var_modifier =
   | NoModifiers v1 -> let v1 = map_tok v1 in NoModifiers ((v1))
   | VModifiers v1 ->
       let v1 = map_of_list (map_wrap map_modifier) v1 in VModifiers ((v1))
-and
-  map_method_def {
-                   m_modifiers = v_m_modifiers;
-                   m_tok = v_m_tok;
-                   m_ref = v_m_ref;
-                   m_name = v_m_name;
-                   m_params = v_m_params;
-                   m_return_type = v_m_return_type;
-                   m_body = v_m_body
-                 } =
-  let v_m_body = map_method_body v_m_body in
-  let v_m_params = map_paren (map_comma_list_dots map_parameter) v_m_params in
-  let v_m_name = map_name v_m_name in
-  let v_m_ref = map_is_ref v_m_ref in
-  let v_m_tok = map_tok v_m_tok in
-  let v_m_modifiers = map_of_list (map_wrap map_modifier) v_m_modifiers in
-  let v_m_return_type = map_of_option map_hint_type v_m_return_type in
-
-  {
-    m_modifiers = v_m_modifiers;
-    m_tok = v_m_tok;
-    m_ref = v_m_ref;
-    m_name = v_m_name;
-    m_params = v_m_params;
-    m_body = v_m_body;
-    m_return_type = v_m_return_type;
-  }
+and map_method_def (v1, v2) =
+  let v1 = map_of_list (map_wrap map_modifier) v1
+  and v2 = map_func_def v2
+  in (v1, v2)
 
 and map_modifier =
   function
@@ -1024,12 +1001,7 @@ and map_modifier =
   | Static -> Static
   | Abstract -> Abstract
   | Final -> Final
-and map_method_body =
-  function
-  | AbstractMethod v1 -> let v1 = map_tok v1 in AbstractMethod ((v1))
-  | MethodBody v1 ->
-      let v1 = map_brace (map_of_list map_stmt_and_def) v1
-      in MethodBody ((v1))
+
 and map_global_var =
   function
   | GlobalVar v1 -> let v1 = map_dname v1 in GlobalVar ((v1))

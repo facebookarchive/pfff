@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -25,7 +24,6 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * There are many places where we need to get access to the list of
  * entities defined in a file or used in a file (e.g. for tags).
@@ -77,7 +75,16 @@ let defs_of_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
     V.kfunc_def = (fun (k, _) def ->
-      Common.push2 (Db.Function, def.f_name, None) aref;
+      (match def.f_type with
+      | FunctionRegular -> 
+          Common.push2 (Db.Function, def.f_name, None) aref
+      | MethodRegular | MethodAbstract ->
+          (* handled in kmethod_def *)
+          ()
+      | FunctionLambda ->
+          (* the f_name is meaningless *)
+          ()
+      );
       (* could decide to not recurse, but could have nested function ?
        * hmm they are usually under some toplevel ifs, not inside functions.
        *)
@@ -96,19 +103,19 @@ let defs_of_any any =
       );
     );
 
-    V.kmethod_def = (fun (k, _) def ->
+    V.kmethod_def = (fun (k, _) (modifiers, def) ->
       let classname =
         match !current_class with
         | Some c -> c
         | None -> failwith "impossible: no current_class in defs_use_php.ml"
       in
       let kind =
-        if Class_php.is_static_method def
+        if Class_php.is_static_method (modifiers, def)
         then Db.StaticMethod
         else Db.RegularMethod
       in
-      Common.push2 (Db.Method kind, def.m_name, Some classname) aref;
-      k def
+      Common.push2 (Db.Method kind, def.f_name, Some classname) aref;
+      k (modifiers, def)
     );
     V.ktop = (fun (k, _) x ->
       match x with

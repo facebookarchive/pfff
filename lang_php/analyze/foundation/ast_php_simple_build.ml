@@ -543,25 +543,23 @@ and class_body env st acc =
       acc
   | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) -> acc
 
-and method_def env m =
-  let _, params, _ = m.m_params in
+and method_def env (modifiers, m) =
+  let _, params, _ = m.f_params in
   let params = comma_list_dots params in
-  let mds = List.map (fun (x, _) -> x) m.m_modifiers in
-    { A.m_visibility = visibility env mds;
-      A.m_static = static env mds;
-      A.m_final = final env mds;
-      A.m_abstract = abstract env mds;
-      A.m_ref = (match m.m_ref with None -> false | Some _ -> true);
-      A.m_name = name env m.m_name;
-      A.m_params = List.map (parameter env) params ;
-      A.m_return_type = opt hint_type env m.m_return_type;
-      A.m_body = method_body env m.m_body;
-    }
+  let mds = List.map (fun (x, _) -> x) modifiers in
+  { A.m_visibility = visibility env mds;
+    A.m_static = static env mds;
+    A.m_final = final env mds;
+    A.m_abstract = abstract env mds;
+    A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
+    A.m_name = name env m.f_name;
+    A.m_params = List.map (parameter env) params ;
+    A.m_return_type = opt hint_type env m.f_return_type;
+    A.m_body = method_body env m.f_body;
+  }
 
-and method_body env = function
-  | AbstractMethod _ -> []
-  | MethodBody (_, stl, _) ->
-      List.fold_right (stmt_and_def env) stl []
+and method_body env (_, stl, _) =
+  List.fold_right (stmt_and_def env) stl []
 
 and parameter env p =
   { A.p_type = opt hint_type env p.p_type;

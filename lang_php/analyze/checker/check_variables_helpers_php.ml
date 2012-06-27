@@ -207,10 +207,10 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               let aclass = Ast.name classname in
               let amethod = Ast.name name in
               (try 
-                let def = Class_php.lookup_method ~case_insensitive:true
+                let (_,def) = Class_php.lookup_method ~case_insensitive:true
                   (aclass, amethod) find_entity 
                 in
-                params_vs_args def.m_params (Some args)
+                params_vs_args def.f_params (Some args)
              (* could not find the method, this is bad, but
               * it's not our business here; this error will
               * be reported anyway in check_functions_php.ml anyway
@@ -247,10 +247,10 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               | Some aclass ->
                 let amethod = Ast.name name in
                 (try 
-                  let def = Class_php.lookup_method ~case_insensitive:true
+                  let (_, def) = Class_php.lookup_method ~case_insensitive:true
                     (aclass, amethod) find_entity 
                   in
-                  params_vs_args def.m_params (Some args)
+                  params_vs_args def.f_params (Some args)
                 with 
                 | Not_found | Multi_found
                 | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->()
@@ -279,8 +279,8 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               (function Ast_php.ClassE def ->
                 (try 
                     (* TODO: use lookup_method there too ! *)
-                    let constructor_def = Class_php.get_constructor def in
-                    params_vs_args constructor_def.m_params args
+                    let (_, ctor_def) = Class_php.get_constructor def in
+                    params_vs_args ctor_def.f_params args
                   (* not our business *)
                   with Not_found -> ()
                 );

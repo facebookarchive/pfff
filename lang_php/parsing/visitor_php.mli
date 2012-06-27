@@ -31,7 +31,8 @@ type visitor_in = {
     (xhp_children_decl -> unit) * visitor_out -> xhp_children_decl -> unit;
 
   (* Helps abstracting away whether a function/class... is defined in
-   * nested way or at the toplevel (e.g. FuncDefNested vs FuncDef)
+   * nested way or at the toplevel (e.g. FuncDefNested vs FuncDef).
+   * Note that kfunc_def is also run for method now!!
    *)
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;

@@ -69,7 +69,6 @@ type error = error_kind * Ast_php.info
   | DeadCode of Controlflow_php.node_kind
   | NoEnclosingLoop
   | ColonSyntax
-  | NoMethodBody
   | DynamicBreak
 (*e: type Controlflow_build_php.error *)
 
@@ -682,14 +681,6 @@ let (cfg_of_func: func_def -> F.flow) = fun def ->
   (* todo? could create a node with function name ? *)
   control_flow_graph_of_stmts stmts
 
-let (cfg_of_method: method_def -> F.flow) = fun def ->
-  match def.m_body with
-  | AbstractMethod _ ->
-      raise (Error (NoMethodBody, def.m_tok))
-  | MethodBody body ->
-      let stmts = stmts_of_stmt_or_defs (Ast.unbrace body) in
-      (* todo? could create a node with method name ? *)
-      control_flow_graph_of_stmts stmts
 (*x: controlflow builders *)
 (* alias *)
 let cfg_of_stmts = control_flow_graph_of_stmts
@@ -732,8 +723,6 @@ let string_of_error_kind error_kind =
         (F.short_string_of_node_kind node_kind)
   | NoEnclosingLoop ->
       "No enclosing loop found for break or continue"
-  | NoMethodBody ->
-      "Can't compute CFG of an abstract method"
   | DynamicBreak ->
       "Dynamic break/continue are not supported"
 

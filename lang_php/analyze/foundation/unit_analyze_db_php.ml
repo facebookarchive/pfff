@@ -235,11 +235,11 @@ let lookup_unittest =
 class A { static function a() { return CST; } }
 " in
       let find_entity = entity_finder_from_string file in
-      let def = Class_php.lookup_method ("A","a") find_entity in
+      let (_modifiers, def) = Class_php.lookup_method ("A","a") find_entity in
       match def with
-      | { m_body = MethodBody (_, 
+      | { f_body = (_, 
          [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
-                              _); _ }
+                   _); _ }
           -> ()
       | _ ->assert_failure "it should find simple static method"
     );
@@ -250,11 +250,11 @@ class A { static function a() { return CST; } }
 class B extends A { }
 " in
       let find_entity = entity_finder_from_string file in
-      let def = Class_php.lookup_method ("B","a") find_entity in
+      let (_ms, def) = Class_php.lookup_method ("B","a") find_entity in
       match def with
-      | { m_body = MethodBody (_, 
+      | { f_body = (_,
          [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
-                              _); _ }
+                   _); _ }
           -> ()
       | _ ->assert_failure "it should find static method in parent class"
     );
@@ -266,11 +266,11 @@ class A { use T; }
 class B extends A { }
 " in
       let find_entity = entity_finder_from_string file in
-      let def = Class_php.lookup_method ("B","t") find_entity in
+      let (_, def) = Class_php.lookup_method ("B","t") find_entity in
       match def with
-      | { m_body = MethodBody (_, 
+      | { f_body = (_, 
          [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
-                              _); _ }
+                   _); _ }
           -> ()
       | _ ->assert_failure "it should find static method in mixin trait"
     );

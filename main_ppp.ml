@@ -115,15 +115,15 @@ let gensym info =
 
 
 let mk_method s params body =
-  Method {
-    m_modifiers = [];
-    m_tok = fkt "function";
-    m_ref = None;
-    m_name = Name (s, fkt s);
-    m_params = (fkt "(", params, fkt ")");
-    m_body = MethodBody (fkt "{", body, fkt "}");
-    m_return_type = None;
-  }
+  Method ([], {
+    f_tok = fkt "function";
+    f_ref = None;
+    f_name = Name (s, fkt s);
+    f_params = (fkt "(", params, fkt ")");
+    f_body = (fkt "{", body, fkt "}");
+    f_return_type = None;
+    f_type = MethodRegular;
+  })
 
 let mk_param s = { 
   p_type = None;

@@ -288,19 +288,19 @@ let index_db2_2 db =
       );
       V.kclass_stmt = (fun (k, bigf) x ->
         match x with
-        | Method def ->
+        | Method (ms, def) ->
             let newid = add_nested_id_and_ast  ~enclosing_id:!enclosing_id
-              (Ast_php.MethodE def) db in
-            let s = Ast_php.name def.m_name in
+              (Ast_php.MethodE (ms, def)) db in
+            let s = Ast_php.name def.f_name in
             let kind =
-              if Class_php.is_static_method def
+              if Class_php.is_static_method (ms, def)
               then E.StaticMethod
               else E.RegularMethod
             in
             (* todo? should we put just the method name, or also add
              * the class name for the StaticMethod case ? 
              *)
-            add_def (s, E.Method kind, newid, Some def.m_name) db;
+            add_def (s, E.Method kind, newid, Some def.f_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
 
         (* we generate one id per constant. Note that they can not have the 

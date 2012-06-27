@@ -15,13 +15,11 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * References:
  *  - A Complexity Measure, by  Thomas J. McCabe, IEEE Transactions on
@@ -80,10 +78,5 @@ let cyclomatic_complexity_flow ?(verbose=false) flow =
 let cyclomatic_complexity_func ?verbose func =
   let flow = Controlflow_build_php.cfg_of_func func in
   cyclomatic_complexity_flow flow
-
-let cyclomatic_complexity_method ?verbose meth =
-  let flow = Controlflow_build_php.cfg_of_method meth in
-  cyclomatic_complexity_flow flow
-
 
 (*e: cyclomatic_php.ml *)

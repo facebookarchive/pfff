@@ -88,8 +88,8 @@ let resolve_class_name qu =
 (* Ast Helpers *)
 (*****************************************************************************)
 
-let is_static_method def =
-  let modifiers = def.m_modifiers +> List.map Ast.unwrap in
+let is_static_method (modifiers, def) =
+  let modifiers = modifiers +> List.map Ast.unwrap in
   List.mem Ast.Static modifiers
 
 (* TODO: it could also be one which has the same name than the class.
@@ -98,8 +98,8 @@ let is_static_method def =
 let get_constructor def =
   def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
     match class_stmt with
-    | Method def when Ast.name def.m_name = constructor_name ->
-        Some def
+    | Method (ms, def) when Ast.name def.f_name =$= constructor_name ->
+        Some (ms, def)
     | _ -> None
   )
 
@@ -234,10 +234,10 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
   let eq = equal ~case_insensitive in
   lookup_gen aclass find_entity 
     (function
-    | Method def when eq (Ast.name def.m_name) amethod -> Some def
-    | Method def when (Ast.name def.m_name) =$= "__call" ->
+    | Method (ms, def) when eq (Ast.name def.f_name) amethod -> Some (ms, def)
+    | Method (_, def) when (Ast.name def.f_name) =$= "__call" ->
         raise Use__Call
-    | Method def when (Ast.name def.m_name) =$= "__callStatic" ->
+    | Method (_, def) when (Ast.name def.f_name) =$= "__callStatic" ->
         raise Use__Call
     | _ -> None
     )

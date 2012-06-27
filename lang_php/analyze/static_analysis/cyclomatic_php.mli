@@ -3,10 +3,6 @@ val cyclomatic_complexity_func:
   ?verbose:bool ->
   Ast_php.func_def -> int
 
-val cyclomatic_complexity_method: 
-  ?verbose:bool ->
-  Ast_php.method_def -> int
-
 (* internal *)
 val cyclomatic_complexity_flow: 
   ?verbose:bool ->

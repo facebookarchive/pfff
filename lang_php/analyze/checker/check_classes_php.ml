@@ -55,16 +55,17 @@ type context_access =
 let check_method_call context (aclass, amethod) (name, args) find_entity =
   let loc = Ast.info_of_name name in
   try
-    let def =
+    let (mods, def) =
       Class_php.lookup_method 
         (* todo: remove at some point, but too many errors for now *)
         ~case_insensitive:true
         (aclass, amethod) find_entity in
-    if Check_functions_php.contain_func_name_args_like (ClassStmt (Method def))
+    if Check_functions_php.contain_func_name_args_like 
+      (Toplevel (FuncDef (def)))
     then pr2_once ("not checking calls to code using func_num_args()-like")
     else begin
       (* check if used in the right way ... *)
-      (match context, Class_php.is_static_method def with
+      (match context, Class_php.is_static_method (mods, def) with
       | StaticCall, true -> ()
       | MethodCall _, false -> ()
       | StaticCall, false ->
@@ -76,7 +77,7 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
       );
       Check_functions_php.check_args_vs_params 
         (name, args +> Ast.unparen +> Ast.uncomma)
-        (def.m_name, def.m_params+>Ast.unparen+>Ast.uncomma_dots)
+        (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma_dots)
     end
   with
   (* not much we can do then, let's bailout? *)

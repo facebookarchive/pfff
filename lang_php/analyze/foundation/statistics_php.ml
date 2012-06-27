@@ -159,12 +159,12 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | FinalDef _|NotParsedCorrectly _ -> ()
       );
     );
-    V.kmethod_def = (fun (k, _) def ->
+    V.kmethod_def = (fun (k, _) (ms, def) ->
       match !current_node with
       | CG.Method (classname, _) ->
-          let s = Ast.str_of_name def.m_name in
+          let s = Ast.str_of_name def.f_name in
           Common.save_excursion current_node (CG.Method (classname, s))(fun()->
-            k def
+            k (ms, def)
           )
       | _ -> raise Impossible
     );

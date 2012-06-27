@@ -69,14 +69,6 @@ let cyclomatic_complexity_file file =
       let flow = Controlflow_build_php.cfg_of_func def in
       let cyclo = Cyclomatic_php.cyclomatic_complexity_flow flow in
       Common.push2  (def.f_name, cyclo) res;
-
-       );
-       V.kmethod_def = (fun (k, _) def ->
-         (* the method can have nested funcs *)
-         k def;
-         let flow = Controlflow_build_php.cfg_of_method def in
-         let cyclo = Cyclomatic_php.cyclomatic_complexity_flow flow in
-         Common.push2  (def.m_name, cyclo) res;
        );
      }
   in

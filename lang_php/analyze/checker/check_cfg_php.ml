@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -37,24 +36,11 @@ let check_program2 prog =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kfunc_def = (fun (k, _) def ->
       try
-          let flow = Controlflow_build_php.cfg_of_func def in
-          Controlflow_build_php.deadcode_detection flow;
-          ()
-       with Controlflow_build_php.Error (err, loc) ->
-         E.fatal loc (E.CfgError err);
-    );
-    V.kmethod_def = (fun (k, _) def ->
-      match def.m_body with
-      (* do not go in abstract method, because cfg_of_method generate an
-       * exn in such case
-       *)
-      | AbstractMethod _ -> ()
-      | MethodBody _ ->
-          try
-            let flow = Controlflow_build_php.cfg_of_method def in
-            Controlflow_build_php.deadcode_detection flow;
-          with Controlflow_build_php.Error (err, loc) ->
-            E.fatal loc (E.CfgError err);
+        let flow = Controlflow_build_php.cfg_of_func def in
+        Controlflow_build_php.deadcode_detection flow;
+        ()
+      with Controlflow_build_php.Error (err, loc) ->
+        E.fatal loc (E.CfgError err);
     );
   }
   in

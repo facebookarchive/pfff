@@ -929,28 +929,15 @@ and v_class_var_modifier =
   | VModifiers v1 -> let v1 = v_list (v_wrap v_modifier) v1 in ()
 and v_class_variable (v1, v2) =
   let v1 = v_dname v1 and v2 = v_option v_static_scalar_affect v2 in ()
-and
-  v_method_def x =
-  let rec k x =
-    match x with {
-                 m_modifiers = v_m_modifiers;
-                 m_tok = v_m_tok;
-                 m_ref = v_m_ref;
-                 m_name = v_m_name;
-                 m_params = v_m_params;
-                 m_body = v_m_body;
-                 m_return_type = v_m_return_type;
-               } ->
-  let arg = v_list (v_wrap v_modifier) v_m_modifiers in 
-  let arg = v_tok v_m_tok in
-  let arg = v_is_ref v_m_ref in
-  let arg = v_name v_m_name in
-  let arg = v_parameters v_m_params in
-  let arg = v_method_body v_m_body in
-  let arg = v_option v_hint_type v_m_return_type in
-  ()
+and v_method_def x  =
+  let k x =
+    let (v1, v2) = x in
+    let v1 = v_list (v_wrap v_modifier) v1 
+    and v2 = v_func_def v2 in 
+    ()
   in
   vin.kmethod_def (k, all_functions) x
+
 and v_modifier =
   function
   | Public -> ()
@@ -959,10 +946,6 @@ and v_modifier =
   | Static -> ()
   | Abstract -> ()
   | Final -> ()
-and v_method_body =
-  function
-  | AbstractMethod v1 -> let v1 = v_tok v1 in ()
-  | MethodBody v1 -> let v1 = v_body v1 in ()
 and v_xhp_attribute_decl x =
   let rec k x = match x with
   | XhpAttrInherit v1 -> let v1 = v_xhp_tag_wrap v1 in ()

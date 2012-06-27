@@ -706,13 +706,11 @@ and final env = function
 
 and class_body env st acc =
   match st with
-  | Method md ->
-      let x = match md.m_body with
-      | AbstractMethod x -> x
-      | MethodBody (_, _, x) -> x in
+  | Method (modifiers, md) ->
+      let x = match md.f_body with (_, _, x) -> x in
       let line = line_of_info x in
       let acc  = add_ce_comments env acc line in
-      let acc  = A.CEmethod (method_def env md) :: acc in
+      let acc  = A.CEmethod (method_def env (modifiers, md)) :: acc in
       acc
   | ClassVariables (m, ht, cvl, x) ->
       let line = line_of_info x in
@@ -754,31 +752,29 @@ and class_body env st acc =
   | XhpDecl _ -> acc (* TODO xhp decl *)
   | UseTrait _ -> raise (TodoConstruct "UseTrait")
 
-and method_def env m =
+and method_def env (modifiers, m) =
   let acc = [] in
-  let body = m.m_body in
-  let acc = method_body env body acc in
-  let line = line_of_info (info_of_name m.m_name) in
+  let body = m.f_body in
+  let acc = method_body env m.f_type body acc in
+  let line = line_of_info (info_of_name m.f_name) in
   let acc = add_stmt_comments env acc line in
-  let _, params, _ = m.m_params in
+  let _, params, _ = m.f_params in
   let params = comma_list_dots params in
-  let mds = List.map (fun (x, _) -> x) m.m_modifiers in
-    { A.m_visibility = visibility env mds;
-      A.m_static = static env mds;
-      A.m_final = final env mds;
-      A.m_abstract = abstract env mds;
-      A.m_ref = (match m.m_ref with None -> false | Some _ -> true);
-      A.m_name = name env m.m_name;
-      A.m_params = List.map (parameter env) params ;
-      A.m_return_type = opt hint_type env m.m_return_type;
-      A.m_body = acc;
-    }
+  let mds = List.map (fun (x, _) -> x) modifiers in
+  { A.m_visibility = visibility env mds;
+    A.m_static = static env mds;
+    A.m_final = final env mds;
+    A.m_abstract = abstract env mds;
+    A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
+    A.m_name = name env m.f_name;
+    A.m_params = List.map (parameter env) params ;
+    A.m_return_type = opt hint_type env m.f_return_type;
+    A.m_body = acc;
+  }
 
-and method_body env x acc =
-  match x with
-  | AbstractMethod _ -> acc
-  | MethodBody (_, stl, _) ->
-      List.fold_right (stmt_and_def env) stl acc
+and method_body env ftype x acc =
+  let (_, stl, _) = x in
+  List.fold_right (stmt_and_def env) stl acc
 
 and parameter env p =
   { A.p_type = opt hint_type env p.p_type;

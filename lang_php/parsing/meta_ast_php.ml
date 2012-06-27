@@ -946,38 +946,10 @@ and vof_class_var_modifier =
   | VModifiers v1 ->
       let v1 = vof_list (vof_wrap vof_modifier) v1
       in Ocaml.VSum (("VModifiers", [ v1 ]))
-and
-  vof_method_def {
-                   m_modifiers = v_m_modifiers;
-                   m_tok = v_m_tok;
-                   m_ref = v_m_ref;
-                   m_name = v_m_name;
-                   m_params = v_m_params;
-                   m_return_type = v_m_return_type;
-                   m_body = v_m_body
-                 } =
-  let bnds = [] in
-  let arg = vof_method_body v_m_body in
-  let bnd = ("m_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_hint_type v_m_return_type in
-  let bnd = ("m_return_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_paren (vof_comma_list_dots vof_parameter) v_m_params in
-  let bnd = ("m_params", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_name v_m_name in
-  let bnd = ("m_name", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_is_ref v_m_ref in
-  let bnd = ("m_ref", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_tok v_m_tok in
-  let bnd = ("m_tok", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_list (vof_wrap vof_modifier) v_m_modifiers in
-  let bnd = ("m_modifiers", arg) in
-  let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_method_def (v1, v2) =
+  let v1 = Ocaml.vof_list (vof_wrap vof_modifier) v1
+  and v2 = vof_func_def v2
+  in Ocaml.VTuple [ v1; v2 ]
 and vof_modifier =
   function
   | Public -> Ocaml.VSum (("Public", []))
@@ -986,13 +958,6 @@ and vof_modifier =
   | Static -> Ocaml.VSum (("Static", []))
   | Abstract -> Ocaml.VSum (("Abstract", []))
   | Final -> Ocaml.VSum (("Final", []))
-and vof_method_body =
-  function
-  | AbstractMethod v1 ->
-      let v1 = vof_tok v1 in Ocaml.VSum (("AbstractMethod", [ v1 ]))
-  | MethodBody v1 ->
-      let v1 = vof_brace (vof_list vof_stmt_and_def) v1
-      in Ocaml.VSum (("MethodBody", [ v1 ]))
 and vof_xhp_decl =
   function
   | XhpAttributesDecl ((v1, v2, v3)) ->

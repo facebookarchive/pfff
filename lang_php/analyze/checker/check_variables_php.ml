@@ -262,23 +262,28 @@ let visit_prog find_entity prog =
 
     (* function scope checking *)
     V.kfunc_def = (fun (k, _) x ->
-      Common.save_excursion scope Ent.Function (fun () ->
+      let kind = 
+        match x.f_type with
+        | FunctionRegular | FunctionLambda -> Ent.Function
+        | MethodRegular | MethodAbstract -> Ent.Method Ent.RegularMethod
+      in
+      Common.save_excursion scope kind (fun () ->
       Common.save_excursion bailout false (fun () ->
         do_in_new_scope_and_check_unused (fun () -> k x);
       ))
     );
-    V.kmethod_def = (fun (k, _) x ->
-      match x.m_body with
-      | AbstractMethod _ -> 
+    V.kmethod_def = (fun (k, _) (ms, x) ->
+      match x.f_type with
+      | MethodAbstract _ -> 
           (* we don't want parameters in method interface to be counted
            * as unused Parameter *)
           ()
-      | MethodBody _ ->
+      | MethodRegular ->
       (* less: diff between Method and StaticMethod? *)
        Common.save_excursion scope (Ent.Method Ent.RegularMethod) (fun () ->
        Common.save_excursion bailout false (fun () ->
         do_in_new_scope_and_check_unused (fun () -> 
-          if not (Class_php.is_static_method x)
+          if not (Class_php.is_static_method (ms, x))
           then begin
             (* we put 1 as 'use_count' below because we are not interested
              * in error message related to $this.
@@ -287,9 +292,10 @@ let visit_prog find_entity prog =
             let dname = Ast.DName ("this", Ast.fakeInfo "this") in
             add_binding dname (S.Class, ref 1);
           end;
-          k x
+          k (ms, x)
         );
       ))
+      | FunctionRegular | FunctionLambda -> raise Impossible
     );
     V.kclass_def = (fun (k, _) x ->
       Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->

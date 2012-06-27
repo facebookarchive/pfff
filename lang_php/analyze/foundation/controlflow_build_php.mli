@@ -2,12 +2,10 @@
 
 (*s: controlflow builders signatures *)
 val control_flow_graph_of_stmts: Ast_php.stmt list -> Controlflow_php.flow
-
 (* alias *)
 val cfg_of_stmts: Ast_php.stmt list -> Controlflow_php.flow
 
 val cfg_of_func:   Ast_php.func_def   -> Controlflow_php.flow
-val cfg_of_method: Ast_php.method_def -> Controlflow_php.flow
 (*e: controlflow builders signatures *)
 
 (*s: controlflow checkers signatures *)
@@ -20,7 +18,6 @@ type error = error_kind * Ast_php.info
   | DeadCode of Controlflow_php.node_kind
   | NoEnclosingLoop
   | ColonSyntax
-  | NoMethodBody
   | DynamicBreak
 (*e: type Controlflow_build_php.error *)
 

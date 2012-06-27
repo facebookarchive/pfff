@@ -710,10 +710,11 @@ method_declaration:
      return_type_opt
      method_body 
      { 
-       Method {
-         m_modifiers = $1; m_tok = $2; m_ref = $3; m_name = Name $4;
-         m_params = ($6, $7, $8); m_return_type = $9; m_body = $10;
-       }
+       let body, function_type = $10 in
+       Method ($1, { f_tok = $2; f_ref = $3; f_name = Name $4;
+                     f_params = ($6, $7, $8); f_return_type = $9; 
+                     f_body = body; f_type = function_type;
+       })
      }
 
 
@@ -755,8 +756,8 @@ member_modifier:
  | T_ABSTRACT { Abstract,($1) } | T_FINAL{ Final,($1) }
 
 method_body:
- | TSEMICOLON                   	{ AbstractMethod $1 }
- | TOBRACE inner_statement_list TCBRACE	{ MethodBody ($1, $2, $3) }
+ | TOBRACE inner_statement_list TCBRACE	{ ($1, $2, $3), MethodRegular }
+ | TSEMICOLON { (* ugly: *) (Ast.fakeInfo"", [], $1), MethodAbstract }
 
 /*(*----------------------------*)*/
 /*(*2 XHP attributes *)*/

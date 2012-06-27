@@ -357,14 +357,14 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kclass_stmt = (fun (k, bigf) x ->
       match x with
-      | Ast.Method def ->
-          tag def.m_tok KeywordObject;
+      | Ast.Method (modifiers, def) ->
+          tag def.f_tok KeywordObject;
 
-          let name = def.m_name in
+          let name = def.f_name in
           let info = Ast.info_of_name name in
 
           let kind = 
-            if def.m_modifiers |> List.exists (fun (modifier, ii) -> 
+            if modifiers |> List.exists (fun (modifier, ii) -> 
               modifier = Ast.Static
             )
             then (StaticMethod (Def2 fake_no_def2))
@@ -374,14 +374,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info kind;
 
           (* see scoping_php.ml *)
-          let params = def.m_params +> Ast.unparen +> Ast.uncomma_dots in
+          let params = def.f_params +> Ast.unparen +> Ast.uncomma_dots in
           params +> List.iter (fun param ->
             let info = Ast.info_of_dname param.p_name in
             tag info (Parameter Def);
-
           );
-
           k x
+
       | Ast.XhpDecl d -> 
           (match d with
           | XhpAttributesDecl _ -> k x
