@@ -92,7 +92,13 @@ and 'a comma_list_dots =
 (* ------------------------------------------------------------------------- *)
 (*s: AST name *)
  (*s: type name *)
- (* T_STRING, which are really just LABEL, see the lexer. *)
+ (* Was called T_STRING in Zend, which are really just LABEL, see the lexer.
+  * Why not factorize Name and XhpName together? Because I was not
+  * sure originally some analysis should also be applied on Xhp
+  * classes. Moreover there is two syntax for xhp: :x:base for 'defs'
+  * and <x:base for 'uses', so having this xhp_tag allow us to easily do
+  * comparison between xhp names.
+  *)
  type name = 
     | Name of string wrap 
     (*s: type name hook *)
@@ -583,12 +589,14 @@ and stmt =
   (*e: AST statement rest *)
 (*e: AST statement *)
 (* ------------------------------------------------------------------------- *)
-(* Function definition *)
+(* Function (and method) definition *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST function definition *)
 and func_def = {
   f_tok: tok; (* function *)
   f_type: function_type;
+  (* only valid for methods *)
+  f_modifiers: modifier wrap list;
   f_ref: is_ref;
   (* can be a Name("__lambda", fakeInfo()) when used for lambdas *)
   f_name: name;
@@ -635,7 +643,7 @@ and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
 (*e: AST lambda definition *)
 (* ------------------------------------------------------------------------- *)
-(* Class definition *)
+(* Class (and interface/trait) definition *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST class definition *)
 (* I used to have a class_def and interface_def because interface_def
@@ -711,7 +719,7 @@ and class_def = {
          * and the ';' is put for the info of the closing brace
          * (and the opening brace is a fakeInfo).
          *)
-        and method_def = (modifier wrap list * func_def)
+        and method_def = func_def
     (*x: class_stmt types *)
           and modifier = 
             | Public  | Private | Protected
