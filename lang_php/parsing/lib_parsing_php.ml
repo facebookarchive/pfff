@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common
 
 (*s: basic pfff module open and aliases *)
@@ -385,14 +384,14 @@ let functions_methods_or_topstms_of_program prog =
 
   let visitor = V.mk_visitor { V.default_visitor with
     V.kfunc_def = (fun (k, _) def -> 
-      Common.push2 def funcs
-    );
-    V.kmethod_def = (fun (k, _) def -> 
-      Common.push2 def methods
+      match def.f_type with
+      | FunctionRegular -> Common.push2 def funcs
+      | MethodRegular | MethodAbstract -> Common.push2 def methods
+      | FunctionLambda -> ()
     );
     V.ktop = (fun (k, _) top ->
       match top with
-      | StmtList xs -> 
+      | StmtList xs ->
           Common.push2 xs toplevels
       | _ ->
           k top

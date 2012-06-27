@@ -269,27 +269,26 @@ let visit_prog find_entity prog =
       in
       Common.save_excursion scope kind (fun () ->
       Common.save_excursion bailout false (fun () ->
-        do_in_new_scope_and_check_unused (fun () -> k x);
+
+        match x.f_type with
+        | MethodAbstract _ -> 
+            (* we don't want parameters in method interface to be counted
+             * as unused Parameter *)
+            ()
+        | MethodRegular ->
+            if not (Class_php.is_static_method x)
+            then begin
+              (* we put 1 as 'use_count' below because we are not interested
+               * in error message related to $this.
+               * It's legitimate to not use $this in a method.
+               *)
+              let dname = Ast.DName ("this", Ast.fakeInfo "this") in
+              add_binding dname (S.Class, ref 1);
+            end;
+            do_in_new_scope_and_check_unused (fun () -> k x);
+      | FunctionRegular | FunctionLambda -> 
+          do_in_new_scope_and_check_unused (fun () -> k x);
       ))
-    );
-    V.kmethod_def = (fun (k, _) def ->
-      match def.f_type with
-      | MethodAbstract _ -> 
-          (* we don't want parameters in method interface to be counted
-           * as unused Parameter *)
-          ()
-      | MethodRegular ->
-          if not (Class_php.is_static_method def)
-          then begin
-            (* we put 1 as 'use_count' below because we are not interested
-             * in error message related to $this.
-             * It's legitimate to not use $this in a method.
-             *)
-            let dname = Ast.DName ("this", Ast.fakeInfo "this") in
-            add_binding dname (S.Class, ref 1);
-          end;
-          k def
-      | FunctionRegular | FunctionLambda -> raise Impossible
     );
     V.kclass_def = (fun (k, _) x ->
       Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->
