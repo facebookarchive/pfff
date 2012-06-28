@@ -266,11 +266,10 @@ and class_def = {
     m_static: bool; m_final: bool;m_abstract: bool;
     m_visibility: visibility;
   }
-
    and visibility =
      | Novis
-     | Public  | Private
-     | Protected | Abstract
+     | Public  | Private | Protected 
+     | Abstract
 
  (* with tarzan *)
 
