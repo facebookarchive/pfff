@@ -154,6 +154,9 @@ and stmt env st acc =
    (* this is not yet used in our codebase *)
   | TypedDeclaration _ -> raise Common.Impossible
   | IfColon _ -> raise ObsoleteConstruct
+  | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
+  | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
+
 
 
 and use_filename env = function
@@ -173,11 +176,7 @@ and if_else env = function
       | l -> assert false)
   | Some (_, st) -> A.Block (stmt env st [])
 
-and stmt_and_def env st acc =
-  match st with
-  | Stmt st -> stmt env st acc
-  | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
-  | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
+and stmt_and_def env st acc = stmt env st acc
 
 and expr env = function
   | Sc sc -> scalar env sc

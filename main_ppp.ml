@@ -220,7 +220,7 @@ let mk_private_affect s =
         ))
     )
   in
-  Stmt (ExprStmt (expr, fkt ";"))
+  (ExprStmt (expr, fkt ";"))
 
 let mk_call_user_func_call var args_paren =
   let (op, args, cp) = args_paren in
@@ -232,7 +232,7 @@ let mk_call_user_func_call var args_paren =
 
 
 let mk_aliasing_for_member_in_body () = 
-[Stmt (Foreach
+[(Foreach
       (fkt "foreach",
       fkt "(",
       (Lv
@@ -266,7 +266,7 @@ let mk_aliasing_for_member_in_body () =
       SingleStmt
        (Block
          (fkt "{",
-          [Stmt
+          [
             (ExprStmt
               ((AssignRef
                  ((Indirect
@@ -518,9 +518,8 @@ let main_action file =
      * to transform them
      *)
     Map_php.kstmt = (fun (k,_) stmt ->
-      let res = transfo [] [Stmt stmt] in
-      match res with
-      | [Stmt stmt'] -> stmt'
+      match transfo [] [stmt] with
+      | [stmt'] -> stmt'
       | _ -> raise Impossible
     );
   }

@@ -274,6 +274,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.ktop = (fun (k, vx) x -> 
       match x with
+      (* todo: use kfunc_def ? *)
       | Ast_php.FuncDef def ->
 
           tag def.f_tok Keyword;
@@ -283,7 +284,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Function (Def2 NoUse));
 
           k x
-      (* todo more ? *)
+      (* todo more ? use kclass_def? *)
       | Ast_php.ClassDef def ->
           let name = def.c_name in
           let info = Ast.info_of_name name in
@@ -342,16 +343,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag tok (TypeMisc);
       );
 
-    );
-
-    (* -------------------------------------------------------------------- *)
-    V.kstmt_and_def = (fun (k, bigf) x ->
-      match x with
-      | FuncDefNested def ->
-          bigf (Toplevel (FuncDef def))
-      | ClassDefNested def ->
-          bigf (Toplevel (Ast.ClassDef def))
-      | Stmt _ -> k x
     );
 
     (* -------------------------------------------------------------------- *)
@@ -432,6 +423,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
             tag info (Local Def);
           );
           ()
+
+      (* todo: do that because didn't use kfunc_def and kclass_def, fix that *)
+      | FuncDefNested def ->
+          bigf (Toplevel (FuncDef def))
+      | ClassDefNested def ->
+          bigf (Toplevel (Ast.ClassDef def))
+
       | _ -> ()
 
     );

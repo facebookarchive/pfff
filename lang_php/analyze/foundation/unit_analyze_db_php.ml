@@ -238,8 +238,7 @@ class A { static function a() { return CST; } }
       let def = Class_php.lookup_method ("A","a") find_entity in
       match def with
       | { f_body = (_, 
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
-                   _); _ }
+         [(Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))], _); _ }
           -> ()
       | _ ->assert_failure "it should find simple static method"
     );
@@ -253,8 +252,7 @@ class B extends A { }
       let def = Class_php.lookup_method ("B","a") find_entity in
       match def with
       | { f_body = (_,
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
-                   _); _ }
+         [(Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))], _); _ }
           -> ()
       | _ ->assert_failure "it should find static method in parent class"
     );
@@ -269,8 +267,7 @@ class B extends A { }
       let def = Class_php.lookup_method ("B","t") find_entity in
       match def with
       | { f_body = (_, 
-         [Stmt (Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))],
-                   _); _ }
+         [(Return (_, (Some (Sc (C (CName (Name ("CST",_)))))), _))], _); _ }
           -> ()
       | _ ->assert_failure "it should find static method in mixin trait"
     );

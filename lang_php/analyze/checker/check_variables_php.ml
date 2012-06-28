@@ -487,6 +487,8 @@ let visit_prog find_entity prog =
         |If (_, _, _, _, _)|IfColon (_, _, _, _, _, _, _, _)
         |Block _|EmptyStmt _|ExprStmt _
         ) -> k x
+      | FuncDefNested _ | ClassDefNested _ ->
+         k x
     );
 
     V.kcatch = (fun (k,vx) x ->

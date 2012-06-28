@@ -267,10 +267,8 @@ let index_db2_2 db =
       );
 
       (* todo?  could factorize more ... *)
-      V.kstmt_and_def = (fun (k, bigf) x ->
+      V.kstmt = (fun (k, bigf) x ->
         match x with
-        | Stmt _ -> ()
-
         | FuncDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.FunctionE def) db in
@@ -285,6 +283,7 @@ let index_db2_2 db =
             let kind = Class_php.class_type_of_ctype def.c_type in
             add_def (s, E.Class kind, newid, Some def.c_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
+        | _ -> k x
       );
       V.kclass_stmt = (fun (k, bigf) x ->
         match x with

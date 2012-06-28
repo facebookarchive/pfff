@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common 
 
 open Ast_php
@@ -80,12 +79,12 @@ exception Error of error
 
 (*s: controlflow_php helpers *)
 let stmts_of_stmt_or_defs xs = 
-  xs |> Common.map_filter (fun stmt_or_def ->
+  xs +> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
-    | Stmt st -> Some st
     | FuncDefNested _ | ClassDefNested _ ->
         pr2_once ("ignoring nested func/class/interface in CFG");
         None
+    | st -> Some st
   )
 
 let stmts_of_colon_stmt colon = 
@@ -97,7 +96,7 @@ let add_arc (starti, nodei) g =
   g#add_arc ((starti, nodei), F.Direct)
  
 let add_arc_opt (starti_opt, nodei) g = 
-  starti_opt |> Common.do_option (fun starti -> 
+  starti_opt +> Common.do_option (fun starti -> 
     g#add_arc ((starti, nodei), F.Direct)
   )
 
@@ -169,7 +168,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | ExprStmt (e, tok) ->
        let simple_stmt = F.ExprStmt (e, tok) in
        let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
        Some newi
 
    | EmptyStmt _
@@ -178,7 +177,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       ->
        let simple_stmt = F.TodoSimpleStmt in
        let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
        Some newi
 
    | Block xs ->
@@ -203,12 +202,12 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        in
 
        let newi = state.g#add_node { F.n = node; i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
 
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
-       state.g |> add_arc (newi, newfakethen);
-       state.g |> add_arc (newi, newfakeelse);
+       state.g +> add_arc (newi, newfakethen);
+       state.g +> add_arc (newi, newfakeelse);
 
        let state = { state with
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
@@ -217,7 +216,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let finalthen = 
          cfg_colon_stmt state (Some newfakethen) colon_stmt
        in
-       state.g |> add_arc_opt (finalthen, newi);
+       state.g +> add_arc_opt (finalthen, newi);
        Some newfakeelse
 
   (* This time, may return None, for instance if return in body of dowhile
@@ -229,14 +228,14 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       *             |--------- newfakethen ---------------|  |---> newfakelse
       *)
        let doi = state.g#add_node { F.n = F.DoHeader;i=i() } in
-       state.g |> add_arc_opt (previ, doi);
+       state.g +> add_arc_opt (previ, doi);
        let taili = state.g#add_node { F.n = F.DoWhileTail;i=None } in
 
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
-       state.g |> add_arc (taili, newfakethen);
-       state.g |> add_arc (taili, newfakeelse);
-       state.g |> add_arc (newfakethen, doi);
+       state.g +> add_arc (taili, newfakethen);
+       state.g +> add_arc (taili, newfakeelse);
+       state.g +> add_arc (newfakethen, doi);
 
        let state = { state with
          ctx = LoopCtx (taili, newfakeelse)::state.ctx;
@@ -250,7 +249,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            (* weird, probably wrong code *)
            None
        | Some finalthen ->
-           state.g |> add_arc (finalthen, taili);
+           state.g +> add_arc (finalthen, taili);
            Some newfakeelse
        )
 
@@ -268,12 +267,12 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       * is what I do for now.
       *)
        let newi = state.g#add_node { F.n = F.IfHeader;i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
        
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
-       state.g |> add_arc (newi, newfakethen);
-       state.g |> add_arc (newi, newfakeelse);
+       state.g +> add_arc (newi, newfakethen);
+       state.g +> add_arc (newi, newfakeelse);
 
        let finalthen = cfg_stmt state (Some newfakethen) st_then in
 
@@ -298,15 +297,15 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            Some nodei
        | Some n1, Some n2 ->
            let lasti = state.g#add_node { F.n = F.Join;i=None } in
-           state.g |> add_arc (n1, lasti);
-           state.g |> add_arc (n2, lasti);
+           state.g +> add_arc (n1, lasti);
+           state.g +> add_arc (n2, lasti);
            Some lasti
        )
         
    | Return (t1, eopt, t2) ->
        let newi = state.g#add_node { F.n = F.Return;i=i() } in
-       state.g |> add_arc_opt (previ, newi);
-       state.g |> add_arc (newi, state.exiti);
+       state.g +> add_arc_opt (previ, newi);
+       state.g +> add_arc (newi, state.exiti);
 
        (* the next statement if there is one will not be linked to
         * this new node *)
@@ -333,7 +332,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        in
 
        let newi = state.g#add_node { F.n = node;i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
 
        let nodei_to_jump_to = 
          state.ctx +> lookup_some_ctx
@@ -355,7 +354,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        in
        (match nodei_to_jump_to with
        | Some nodei ->
-           state.g |> add_arc (newi, nodei);
+           state.g +> add_arc (newi, nodei);
        | None ->
            raise (Error (NoEnclosingLoop, t1))
        );
@@ -365,7 +364,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        (match cases with
        | CaseList (_obrace, _colon_opt, cases, _cbrace) ->
            let newi = state.g#add_node { F.n = F.SwitchHeader;i=i() } in
-           state.g |> add_arc_opt (previ, newi);
+           state.g +> add_arc_opt (previ, newi);
 
            (* note that if all cases have return, then we will remove
             * this endswitch node later.
@@ -378,13 +377,13 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            if (not (cases +> List.exists 
                        (function Ast.Default _ -> true | _ -> false)))
            then begin
-             state.g |> add_arc (newi, endi);
+             state.g +> add_arc (newi, endi);
            end;
            (* let's process all cases *)
            let last_stmt_opt = 
              cfg_cases (newi, endi) state (None) cases
            in
-           state.g |> add_arc_opt (last_stmt_opt, endi);
+           state.g +> add_arc_opt (last_stmt_opt, endi);
            
            (* remove endi if for instance all branches contained a return *)
            if (state.g#predecessors endi)#null then begin
@@ -451,7 +450,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | Try(t1, body, catch, other_catches) ->
        let newi = state.g#add_node { F.n = F.TryHeader;i=i() } in
        let catchi = state.g#add_node { F.n = F.CatchStart;i=None } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
 
        (* may have to delete it later if nobody connected to it *)
        let endi = state.g#add_node { F.n = F.TryEnd;i=None } in
@@ -465,7 +464,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
         * the catch nodes to have at least one parent. So I am 
         * kind of conservative.
         *)
-       state.g |> add_arc (newi, catchi);
+       state.g +> add_arc (newi, catchi);
        
        let state' = { state with
          ctx = TryCtx (catchi)::state.ctx;
@@ -474,7 +473,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        
        let stmts = stmts_of_stmt_or_defs (Ast.unbrace body) in
        let last_stmt_opt = cfg_stmt_list state' (Some newi) stmts in
-       state.g |> add_arc_opt (last_stmt_opt, endi);
+       state.g +> add_arc_opt (last_stmt_opt, endi);
 
       (* note that we use state, not state' here, as we want the possible 
        * throws inside catches to be themselves link to a possible surrounding 
@@ -495,9 +494,9 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        in
        (match nodei_to_jump_to with
        | Some nextcatchi ->
-           state.g |> add_arc (last_false_node, nextcatchi)
+           state.g +> add_arc (last_false_node, nextcatchi)
        | None ->
-           state.g |> add_arc (last_false_node, state.exiti)
+           state.g +> add_arc (last_false_node, state.exiti)
        );
 
        (* if nobody connected to endi erase the node. For instance
@@ -524,7 +523,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     *)
    | Throw (t1, e, t2) ->
        let newi = state.g#add_node { F.n = F.Throw; i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
 
        let nodei_to_jump_to = 
          state.ctx +> lookup_some_ctx 
@@ -537,10 +536,10 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        in
        (match nodei_to_jump_to with
        | Some catchi ->
-           state.g |> add_arc (newi, catchi)
+           state.g +> add_arc (newi, catchi)
        | None ->
            (* no enclosing handler, branch to exit node of the function *)
-           state.g |> add_arc (newi, state.exiti)
+           state.g +> add_arc (newi, state.exiti)
        );
        None
 
@@ -553,8 +552,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        ->
        let simple_stmt = F.TodoSimpleStmt in
        let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt;i=i() } in
-       state.g |> add_arc_opt (previ, newi);
+       state.g +> add_arc_opt (previ, newi);
        Some newi
+   (* should be filtered *)
+   | FuncDefNested _ | ClassDefNested _ ->
+       raise Impossible
      
 
 and cfg_stmt_list state previ xs =
@@ -602,9 +604,9 @@ and (cfg_cases:
      let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Case2 case))) in
      
      let newi = state.g#add_node { F.n = node; i=i() } in
-     state.g |> add_arc_opt (previ, newi);
+     state.g +> add_arc_opt (previ, newi);
      (* connect SwitchHeader to Case node *)
-     state.g |> add_arc (switchi, newi);
+     state.g +> add_arc (switchi, newi);
      
      let stmts = stmts_of_stmt_or_defs stmt_or_defs in
      (* the stmts can contain 'break' that will be linked to the endswitch *)
@@ -631,15 +633,15 @@ and (cfg_catches: state -> nodei -> nodei -> Ast_php.catch list -> nodei) =
      let newi = state.g#add_node { F.n = F.Catch; i=Some t } in
      let truei = state.g#add_node { F.n = F.TrueNode;i=None } in
      let falsei = state.g#add_node { F.n = F.FalseNode;i=None } in
-     state.g |> add_arc (previ, newi);
-     state.g |> add_arc (newi, truei);
-     state.g |> add_arc (newi, falsei);
+     state.g +> add_arc (previ, newi);
+     state.g +> add_arc (newi, truei);
+     state.g +> add_arc (newi, falsei);
      
      let stmts = stmts_of_stmt_or_defs (Ast.unbrace stmt_or_defs) in
      (* the stmts can contain 'throw' that will be linked to an upper try or 
       * exit node *)
      let last_stmt_opt = cfg_stmt_list state (Some truei) stmts in
-     state.g |> add_arc_opt (last_stmt_opt, tryendi);
+     state.g +> add_arc_opt (last_stmt_opt, tryendi);
 
      (* we chain the catches together, like elseifs *)
      falsei
@@ -672,7 +674,7 @@ let (control_flow_graph_of_stmts: stmt list -> F.flow) = fun xs ->
   (* maybe the body does not contain a single 'return', so by default
    * connect last stmt to the exit node
    *)
-  g |> add_arc_opt (last_node_opt, exiti);
+  g +> add_arc_opt (last_node_opt, exiti);
   g
 
 (*x: controlflow builders *)

@@ -301,7 +301,7 @@ sgrep_spatch_pattern:
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR statement *)*/
 inner_statement:
- | statement                            { Stmt $1 }
+ | statement                            { $1 }
  | function_declaration_statement	{ FuncDefNested $1 }
  | class_declaration_statement		{ ClassDefNested $1 }
 

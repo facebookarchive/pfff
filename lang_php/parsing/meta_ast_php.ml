@@ -696,6 +696,11 @@ and vof_stmt =
       and v4 = vof_tok v4
       in Ocaml.VSum (("TypedDeclaration", [ v1; v2; v3; v4 ]))
 
+  | FuncDefNested v1 ->
+      let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDefNested", [ v1 ]))
+  | ClassDefNested v1 ->
+      let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDefNested", [ v1 ]))
+
 and vof_switch_case_list =
   function
   | CaseList ((v1, v2, v3, v4)) ->
@@ -1057,13 +1062,7 @@ and vof_static_scalar_affect (v1, v2) =
   let v1 = vof_tok v1
   and v2 = vof_static_scalar v2
   in Ocaml.VTuple [ v1; v2 ]
-and vof_stmt_and_def =
-  function
-  | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
-  | FuncDefNested v1 ->
-      let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDefNested", [ v1 ]))
-  | ClassDefNested v1 ->
-      let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDefNested", [ v1 ]))
+and vof_stmt_and_def x = vof_stmt x
 and vof_constant_def (v1, v2, v3, v4, v5) =
   let v1 = vof_tok v1
   and v2 = vof_name v2

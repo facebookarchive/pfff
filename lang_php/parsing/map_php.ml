@@ -695,6 +695,8 @@ and map_stmt x =
           v3
       and v4 = map_tok v4
       in TypedDeclaration ((v1, v2, v3, v4))
+  | FuncDefNested v1 -> let v1 = map_func_def v1 in FuncDefNested ((v1))
+  | ClassDefNested v1 -> let v1 = map_class_def v1 in ClassDefNested ((v1))
 
   in
   vin.kstmt (k, all_functions) x
@@ -1020,12 +1022,8 @@ and map_static_var (v1, v2) =
 and map_static_scalar x = map_expr x
 and map_static_scalar_affect (v1, v2) =
   let v1 = map_tok v1 and v2 = map_static_scalar v2 in (v1, v2)
-and map_stmt_and_def def =
-  let rec k x = match x with
-  | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
-  | FuncDefNested v1 -> let v1 = map_func_def v1 in FuncDefNested ((v1))
-  | ClassDefNested v1 -> let v1 = map_class_def v1 in ClassDefNested ((v1))
-  in
+and map_stmt_and_def def = 
+  let rec k x = map_stmt x in
   vin.kstmt_and_def (k, all_functions) def
 and map_constant_def (v1, v2, v3, v4, v5) =
       let v1 = map_tok v1 

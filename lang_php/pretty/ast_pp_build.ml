@@ -147,6 +147,8 @@ let rec last_info_of_stmt = function
   | Use (_, _, x)
   | Unset (_, _, x)
   | TypedDeclaration (_, _, _, x)
+  | FuncDefNested { f_body = (_, _, x); _ }
+  | ClassDefNested { c_body = (_, _, x); _ }
    -> x
 
 let last_line_of_stmt x = line_of_info (last_info_of_stmt x)
@@ -158,10 +160,7 @@ let rec last_line_of_stmtl = function
 
 let rec last_line_of_stmt_and_defl = function
   | [] -> assert false
-  | [Stmt st] -> last_line_of_stmt st
-  | [FuncDefNested { f_body = (_, _, x); _ } |
-    ClassDefNested { c_body = (_, _, x); _ }
-   ] -> line_of_info x
+  | [st] -> last_line_of_stmt st
   | _ :: rl -> last_line_of_stmt_and_defl rl
 
 
@@ -356,6 +355,10 @@ and stmt_ env st acc =
   | Declare _ -> raise (TodoConstruct "Declare")
   | TypedDeclaration _ -> raise (ObsoleteConstruct "TypedDeclaration")
   | IfColon _ -> raise (ObsoleteConstruct "IfColo is old crazy stuff")
+  | FuncDefNested fd ->
+      A.FuncDef (func_def env fd) :: acc
+  | ClassDefNested cd ->
+      A.ClassDef (class_def env cd) :: acc
 
 
 and use_filename env = function
@@ -380,13 +383,7 @@ and if_else env = function
       let acc = stmt env st acc in
       A.Block acc
 
-and stmt_and_def env st acc =
-  match st with
-  | Stmt st -> stmt env st acc
-  | FuncDefNested fd ->
-      A.FuncDef (func_def env fd) :: acc
-  | ClassDefNested cd ->
-      A.ClassDef (class_def env cd) :: acc
+and stmt_and_def env st acc = stmt env st acc
 
 and expr env = function
   | Sc sc -> scalar env sc

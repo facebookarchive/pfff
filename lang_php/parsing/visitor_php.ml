@@ -717,6 +717,8 @@ and v_stmt xxx =
           v3
       and v4 = v_tok v4
       in ()
+  | FuncDefNested v1 -> let v1 = v_func_def v1 in ()
+  | ClassDefNested v1 -> let v1 = v_class_def v1 in ()
   in
   vin.kstmt (k,all_functions) xxx
 
@@ -1003,10 +1005,7 @@ and v_global_var =
 and v_static_var (v1, v2) =
   let v1 = v_dname v1 and v2 = v_option v_static_scalar_affect v2 in ()
 and v_topstatement x =
-  let k x = match x with
-  | Stmt v1 -> let v1 = v_stmt v1 in ()
-  | FuncDefNested v1 -> let v1 = v_func_def v1 in ()
-  | ClassDefNested v1 -> let v1 = v_class_def v1 in ()
+  let k x = v_stmt x
   in
   vin.kstmt_and_def (k, all_functions) x
 and v_body x = v_brace (v_stmt_and_def_list_scope) x

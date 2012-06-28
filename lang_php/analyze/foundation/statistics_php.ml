@@ -167,7 +167,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | _ -> raise Impossible
       )
     );
-    V.kstmt_and_def = (fun (k,_) x ->
+    V.kstmt = (fun (k,_) x ->
       (match x with
       | FuncDefNested def -> 
           let s = Ast.str_of_name def.f_name in
@@ -183,7 +183,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
-      | Stmt _ -> 
+      | _ ->
           k x
       );
     );
