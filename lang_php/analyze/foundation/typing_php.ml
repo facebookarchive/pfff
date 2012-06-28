@@ -688,7 +688,7 @@ and class_def env c =
 
   (* Adding traits *)
   let traits =
-    List.map (fun (x, _) -> get_object (get_class env x)) c.c_traits in
+    List.map (fun (x, _) -> get_object (get_class env x)) c.c_uses in
   let obj_parent = List.fold_right (SMap.fold SMap.add) traits obj_parent in
 
   (* Declarations *)

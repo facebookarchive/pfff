@@ -257,7 +257,7 @@ and
                   c_type = v_c_type;
                   c_name = v_c_name;
                   c_extends = v_c_extends;
-                  c_traits = v_c_traits;
+                  c_uses = v_c_traits;
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
                   c_variables = v_c_variables;

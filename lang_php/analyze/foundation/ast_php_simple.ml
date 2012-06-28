@@ -228,7 +228,7 @@ and class_def = {
   (* for XHP classes it's x:frag (and not :x:frag), see string_of_xhp_tag *)
   c_name: string wrap;
   c_extends: string list; (* pad: ?? string option no? *)
-  c_traits: string wrap list;
+  c_uses: string wrap list; (* traits *)
   c_implements: string list;
 
   (* todo: What about XHP class attributes? right now they

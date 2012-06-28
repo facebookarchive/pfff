@@ -448,7 +448,7 @@ and class_def env c =
     (match c.c_extends with
     | None -> []
     | Some (_, x) -> [fst (name env x)]);
-    A.c_traits =
+    A.c_uses =
       List.fold_right (class_traits env) body [];
     A.c_implements =
     (match c.c_implements with None -> []
