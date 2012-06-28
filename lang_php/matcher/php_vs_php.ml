@@ -2988,13 +2988,6 @@ let m_any a b =
        B.Stmt2(b1)
     )
     )
-  | A.StmtAndDef(a1), B.StmtAndDef(b1) ->
-    m_stmt_and_def a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.StmtAndDef(a1),
-       B.StmtAndDef(b1)
-    )
-    )
   | A.StmtAndDefs(a1), B.StmtAndDefs(b1) ->
     (m_list m_stmt_and_def) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -3138,7 +3131,6 @@ let m_any a b =
   | A.Lvalue _, _
   | A.Expr _, _
   | A.Stmt2 _, _
-  | A.StmtAndDef _, _
   | A.StmtAndDefs _, _
   | A.Toplevel _, _
   | A.Program _, _

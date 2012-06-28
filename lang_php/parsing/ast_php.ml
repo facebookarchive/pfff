@@ -235,10 +235,8 @@ type expr =
   | BackQuote of tok * encaps list * tok
   (*x: exprbis other constructors *)
   (* should be at toplevel *)
-  | Include     of tok * expr
-  | IncludeOnce of tok * expr
-  | Require     of tok * expr
-  | RequireOnce of tok * expr
+  | Include     of tok * expr | IncludeOnce of tok * expr
+  | Require     of tok * expr | RequireOnce of tok * expr
   (*x: exprbis other constructors *)
   | Empty of tok * lvalue paren
   | Isset of tok * lvalue comma_list paren
@@ -880,7 +878,6 @@ type any =
   | Lvalue of lvalue
   | Expr of expr
   | Stmt2 of stmt
-  | StmtAndDef of stmt_and_def
   | StmtAndDefs of stmt_and_def list
   | Toplevel of toplevel
   | Program of program

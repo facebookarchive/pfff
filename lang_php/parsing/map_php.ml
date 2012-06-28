@@ -1064,7 +1064,6 @@ and map_any =
   | Lvalue v1 -> let v1 = map_variable v1 in Lvalue ((v1))
   | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
   | Stmt2 v1 -> let v1 = map_stmt v1 in Stmt2 ((v1))
-  | StmtAndDef v1 -> let v1 = map_stmt_and_def v1 in StmtAndDef ((v1))
   | Toplevel v1 -> let v1 = map_toplevel v1 in Toplevel ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
   | Entity v1 -> let v1 = map_entity v1 in Entity ((v1))

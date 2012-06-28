@@ -1119,8 +1119,6 @@ and vof_any =
   | Lvalue v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt2 v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt2", [ v1 ]))
-  | StmtAndDef v1 ->
-      let v1 = vof_stmt_and_def v1 in Ocaml.VSum (("StmtAndDef", [ v1 ]))
   | Toplevel v1 ->
       let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))

@@ -1055,7 +1055,6 @@ and v_any = function
   | Lvalue v1 -> let v1 = v_variable v1 in ()
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt2 v1 -> let v1 = v_stmt v1 in ()
-  | StmtAndDef v1 -> let v1 = v_topstatement v1 in ()
   | Toplevel v1 -> let v1 = v_toplevel v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
   | Entity v1 -> let v1 = v_entity v1 in ()
