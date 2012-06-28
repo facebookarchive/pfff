@@ -55,7 +55,7 @@ open Parse_info
  *  - less: add namespace in AST (also add in grammar)
  * 
  *  - introduce QualifierDynamic and factorize things in lvalue type
- *  - unify toplevel statement vs statements and stmt_and_def? hmmm maybe not
+ *  - unify toplevel statement vs statements? hmmm maybe not
  *  - unify expr and lvalue? hmmm maybe not
  *)
 
@@ -552,6 +552,10 @@ and stmt =
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
 
+    (* was in stmt_and_def before *)
+    | FuncDefNested of func_def
+    | ClassDefNested of class_def
+
   (*s: AST statement rest *)
     and switch_case_list = 
       | CaseList      of 
@@ -803,22 +807,12 @@ and static_var = dname * static_scalar_affect option
    and static_scalar_affect = tok (* = *) * static_scalar
 (*x: AST other declaration *)
 (*e: AST other declaration *)
-(* ------------------------------------------------------------------------- *)
-(* Stmt bis *)
-(* ------------------------------------------------------------------------- *)
 (*s: AST statement bis *)
-(* Was originally called toplevel, but for parsing reasons and estet I think
- * it's better to differentiate nested func and top func. Also better to
- * group the toplevel statements together (StmtList below), so that
- * in the database later they share the same id.
- * 
- * Note that nested functions are usually under a if(defined(...)) at
- * the toplevel. There is no ifdef in PHP so they reuse if.
+(* stmt_and_def used to be a special type allowing Stmt or nested functions
+ * or classes but it was introducing yet another, not so useful, intermediate
+ * type.
  *)
-and stmt_and_def = 
-  | Stmt of stmt
-  | FuncDefNested of func_def
-  | ClassDefNested of class_def
+and stmt_and_def = stmt
 (*e: AST statement bis *)
 (* ------------------------------------------------------------------------- *)
 (* phpext: *)
@@ -828,6 +822,14 @@ and stmt_and_def =
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
+(* For parsing reasons and estet I think it's better to differentiate
+ * nested function and toplevel functions. Also it's better to
+ * group the toplevel statements together (StmtList below), so that
+ * in the database later they share the same id.
+ * 
+ * Note that nested functions are usually under a if(defined(...)) at
+ * the toplevel. There is no ifdef in PHP so they reuse if.
+ *)
 (*s: AST toplevel *)
 and toplevel = 
   (*s: toplevel constructors *)
