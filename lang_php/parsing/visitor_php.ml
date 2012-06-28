@@ -64,7 +64,6 @@ type visitor_in = {
   klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
-  kstmt_and_def: (stmt_and_def -> unit) * visitor_out -> stmt_and_def  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
   kclass_stmt: (class_stmt -> unit) * visitor_out -> class_stmt -> unit;
   kparameter: (parameter -> unit) * visitor_out -> parameter -> unit;
@@ -118,7 +117,6 @@ let default_visitor =
     klvalue    = (fun (k,_) x -> k x);
     kconstant    = (fun (k,_) x -> k x);
     kscalar    = (fun (k,_) x -> k x);
-    kstmt_and_def    = (fun (k,_) x -> k x);
     kencaps = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
     kclass_stmt = (fun (k,_) x -> k x);
@@ -1004,10 +1002,7 @@ and v_global_var =
       let v1 = v_tok v1 and v2 = v_brace v_expr v2 in ()
 and v_static_var (v1, v2) =
   let v1 = v_dname v1 and v2 = v_option v_static_scalar_affect v2 in ()
-and v_topstatement x =
-  let k x = v_stmt x
-  in
-  vin.kstmt_and_def (k, all_functions) x
+and v_topstatement x = v_stmt x
 and v_body x = v_brace (v_stmt_and_def_list_scope) x
 
 and v_stmt_and_def_list_scope x = 
