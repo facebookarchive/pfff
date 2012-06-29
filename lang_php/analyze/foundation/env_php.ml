@@ -22,9 +22,10 @@ module V = Visitor_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* In PHP many globals are defined in php.ini that can be accessed in 
+(* 
+ * In PHP many globals are defined in a php.ini file and can be accessed in 
  * the program, e.g. PHP_ROOT. It is useful for some static analysis
- * to work to know the value of those globals, hence this file.
+ * to know the value of those globals, hence this file.
  * 
  * related: builtins_php.ml that take care of not global variables but
  * builtin functions (and extensions)
