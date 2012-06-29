@@ -411,19 +411,23 @@ and expr_ env lv = function
 
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
-  | Array_get (l, e, None) ->
+  | Array_get (pos, e, None) ->
       let n = (AEnv.get_fun env)^":"^(var_name e) in
       let t1 = expr env e in
       let v = Tvar (fresh()) in
       let t2 = array (int, v) in
-      let ti = (l, Env_typing_php.NoIndex (t1::t2::[v])) in 
+      let ti = (pos, Env_typing_php.NoIndex (t1, t2, v)) in 
       let _ = Unify.unify env t1 t2 in
       let _ = AEnv.set env n ti in
       v
   (* ??? *)
-  | Array_get (l, e, Some (Id (s,tok))) when s.[0] <> '$' ->
-      expr env (Array_get (e, Some (String (s, tok))))
-  | Array_get (l, Id (s,_), Some (String (x, _)))
+  | Array_get (pos, e, Some (Id (s,tok))) when s.[0] <> '$' ->
+      let v = expr env (Array_get (pos, e, Some (String s,tok))) in 
+      let n = (AEnv.get_fun env)^":"^(var_name e) in
+      let ti = (pos, Env_typing_php.Const v) in 
+      let _ = AEnv.set env n ti in
+      v
+  | Array_get (pos, Id (s,_), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
       
       let n = (AEnv.get_fun env)^":"^s in  
@@ -434,18 +438,18 @@ and expr_ env lv = function
       let t2 = srecord (x, v) in
       let _ = Unify.unify env t1 t2 in
       let v = Instantiate.approx env ISet.empty v in 
-      let ti = (l, Env_typing_php.Three (t1::t2::[v])) in
+      let ti = (pos, Env_typing_php.Three (t1, t2, v)) in
       let _ = AEnv.set env n ti in
       v
 
-  | Array_get (l, e, Some (String (s, _)))->
+  | Array_get (pos, e, Some (String (s, _)))->
       let marked = env.auto_complete && has_marker env s in
       let n = (AEnv.get_fun env)^":"^(var_name e) in
       let t1 = expr env e in
       if marked then (env.show := Sauto_complete (s, t1); any) else
       let v = Tvar (fresh()) in
       let t2 = srecord (s, v) in
-      let ti = (l, Env_typing_php.ConstantString (t1::t2::[v])) in
+      let ti = (pos, Env_typing_php.ConstantString (t1, t2, v)) in
       let _ = Unify.unify env t1 t2 in
       let _ = AEnv.set env n ti in
       v
@@ -460,13 +464,13 @@ and expr_ env lv = function
       | x :: _ -> Unify.unify env (expr env x) e
       )
   (* Array access with variable or constant integer *)
-  | Array_get (l, e, Some k) ->
+  | Array_get (pos, e, Some k) ->
       let n = (AEnv.get_fun env)^":"^(var_name e) in
       let t1 = expr env e in
       let k = expr env k in
       let v = Tvar (fresh()) in
       let t2 = array (k, v) in
-      let ti = (l, Env_typing_php.VarOrInt(t1::t2::v::[k])) in
+      let ti = (pos, Env_typing_php.VarOrInt(t1, t2, v, k)) in
       let _ = Unify.unify env t1 t2 in
       let _ = AEnv.set env n ti in
       v
@@ -493,13 +497,25 @@ and expr_ env lv = function
   | Class_get _ | Obj_get _ -> 
       any
 
-  | Assign (None, e1, ConsArray(l, y))  ->
-      let e2 = ConsArray(l, y) in 
+
+  | Assign (None, Array_get(pos, e, a), e2) ->
+    let e1 = Array_get(pos, e, a) in
+    let n = (AEnv.get_fun env)^":"^(var_name e) in
+    let t1 = expr env e1 in
+    let t2 = expr env e2 in
+    let ti = (pos, Env_typing_php.Value(t2)) in 
+    let _ = AEnv.set env n ti in
+    let t = Unify.unify env t1 t2 in 
+    t
+
+
+  | Assign (None, e1, ConsArray(pos, y))  ->
+      let e2 = ConsArray(pos, y) in 
       let n = (AEnv.get_fun env)^":"^(var_name e1) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
-      let ti = (Some(l), Env_typing_php.Declaration(t1::t2::[t])) in
+      let ti = (pos, Env_typing_php.Declaration(t1, t2, t)) in
       let _ = AEnv.set env n ti in 
       t
 
@@ -681,7 +697,7 @@ and parameter env p =
         with Not_found ->
           expr env (New (Id (x, tok), [])))
     | Some (HintArray) ->
-        expr env (ConsArray ((-1), [])) (*TODO: This line number is incorrect!*)
+        expr env (ConsArray (None, []))
   in
   (match p.p_default with
   | None -> ()

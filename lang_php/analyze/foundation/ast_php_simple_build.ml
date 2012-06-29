@@ -216,10 +216,9 @@ and expr env = function
       A.Assign (None, A.List la, e)
   | ArrayLong (_, (tok, apl, _))
   | ArrayShort (tok, apl, _) ->
-      let l =  PI.line_of_info tok in
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
-      A.ConsArray (l, apl)
+      A.ConsArray (Some(tok), apl)
   | New (_, cn, args) ->
       let args =
         match args with
@@ -380,19 +379,16 @@ and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
   | This tok -> A.This ("$this", wrap tok)
   | VArrayAccess (lv, (tok, e, _)) ->
-      let l = PI.line_of_info tok in
       let lv = lvalue env lv in
       let e = opt expr env e in
-      A.Array_get (Some(l), lv, e)
+      A.Array_get (Some(tok), lv, e)
   (* one can use $o[xxx] or $o{xxx} apparently *)
   | VBraceAccess (lv, (tok, e, _)) ->
-      let l = PI.line_of_info tok in
-      A.Array_get (Some(l), lvalue env lv, Some (expr env e))
+      A.Array_get (Some(tok), lvalue env lv, Some (expr env e))
   | VArrayAccessXhp (e1, (tok, e2, _)) ->
-      let l = PI.line_of_info tok in
       let e1 = expr env e1 in
       let e2 = opt expr env e2 in
-      A.Array_get (Some(l), e1, e2)
+      A.Array_get (Some(tok), e1, e2)
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | Indirect (e, (Dollar tok)) ->
@@ -470,14 +466,12 @@ and obj_dim env obj = function
   | OArrayAccess (x, (tok, e, _)) ->
       let e = opt expr env e in
       let x = obj_dim env obj x in
-      let l = PI.line_of_info tok in
-      A.Array_get (Some(l), x, e)
+      A.Array_get (Some(tok), x, e)
   (* this is almost never used in our codebase, just in some third-party code.*)
   | OBraceAccess (x, (tok, e, _)) -> 
       let e = expr env e in
       let x = obj_dim env obj x in
-      let l = PI.line_of_info tok in
-      A.Array_get(Some(l), x, Some e)
+      A.Array_get(Some(tok), x, Some e)
 
 and argument env = function
   | Arg e -> expr env e

@@ -170,16 +170,17 @@ type env = {
     cumul: float ref;
   }
 
-and arr_info = int option * arr_access
+and arr_info = Parse_info.info option * arr_access
 
 and arr_access = 
-  | NoIndex of t list (*t1, t2, v*)
-  | VarOrInt of t list (*t1, t2, v, k*)
+  | NoIndex of t * t * t (*t1, t2, v*)
+  | VarOrInt of t * t * t * t (*t1, t2, v, k*)
   | Const of t (*v*)
-  | ConstantString of t list (*t1, t2, v*)
-  | Three of t list (*t1, t2, v*) (* TODO: Figure out what the hell at3 corresponds to*)
+  | ConstantString of t * t * t (*t1, t2, v*)
+  | Three of t * t * t (*t1, t2, v*) (* TODO: Figure out what the hell at3 corresponds to*)
   | Disguised (**)
-  | Declaration of t list
+  | Declaration of t * t * t
+  | Value of t
 
 (* This is used for the autocompletion and interactive type inference
  * in Emacs (Tab and C-c C-t).
@@ -232,7 +233,10 @@ let make_env () = {
 
   vars     = ref SMap.empty;
   globals    = ref SMap.empty;
+  (*Contains typing information regarding all array declarations and accesses*)
   aenv    = ref SMap.empty;
+  (*Current function name for the purpose of differentiating arrays in different
+   * functions*)
   aenv_fun= "";
 
   tenv    = ref IMap.empty;

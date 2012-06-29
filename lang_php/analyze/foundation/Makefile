@@ -41,7 +41,7 @@ SRC+= tags_php.ml normalize_php.ml \
      statistics_php.ml \
      unit_foundation_php.ml unit_analyze_db_php.ml \
      unit_static_analysis_php.ml   unit_typeinfer_php.ml \
-     unit_prolog_php.ml  
+     unit_prolog_php.ml unit_array_inference_php.ml 
 
 #old: pil is now subsumed by ast_simple and the abstract interpreter
 # pil.ml pretty_print_pil.ml controlflow_pil.ml \
