@@ -290,7 +290,7 @@ and fake_root env heap =
       List.iter (fun m ->
         let params = make_fake_params m.m_params in
         let e = 
-          if m.m_static
+          if is_static m.m_modifiers
           then (Call (Class_get (Id c.c_name, Id m.m_name), params))
           else (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
         in
@@ -1345,7 +1345,7 @@ and cconstants env (heap, m) (s, e) =
 
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
-  match static, cv.cv_static with
+  match static, is_static cv.cv_modifiers with
   | Static, true 
   | NonStatic, false -> 
       (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)

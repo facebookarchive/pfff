@@ -499,10 +499,6 @@ and class_variables env st acc =
         | NoModifiers _ -> []
         | VModifiers l -> List.map (fun (x, _) -> x) l
       in
-      let vis = visibility env m in
-      let static = static env m in
-      let abstract = abstract env m in
-      let final = final env m in
       let ht = opt hint_type env ht in
       List.map (
         fun (n, ss) ->
@@ -511,24 +507,12 @@ and class_variables env st acc =
           {
             A.cv_name = name;
             A.cv_value = value;
-            A.cv_final = final; A.cv_static = static; A.cv_abstract = abstract;
-            A.cv_visibility = vis;
+            A.cv_modifiers = m;
             A.cv_type = ht;
           }
        ) cvl @ acc
   | _ -> acc
 
-and visibility env = function
-  (* juju: TODO CHECK, pad: ??? *)
-  | [] -> A.Novis
-  | Public :: _ -> A.Public
-  | Private :: _ -> A.Private
-  | Protected :: _ -> A.Protected
-  | (Static | Abstract | Final) :: rl -> visibility env rl
-
-and static env xs = List.mem Static xs
-and abstract env xs = List.mem Abstract xs
-and final env xs = List.mem Final xs
 
 and class_body env st acc =
   match st with
@@ -546,10 +530,7 @@ and method_def env m =
   let _, params, _ = m.f_params in
   let params = comma_list_dots params in
   let mds = List.map (fun (x, _) -> x) m.f_modifiers in
-  { A.m_visibility = visibility env mds;
-    A.m_static = static env mds;
-    A.m_final = final env mds;
-    A.m_abstract = abstract env mds;
+  { A.m_modifiers = mds;
     A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.m_name = name env m.f_name;
     A.m_params = List.map (parameter env) params ;

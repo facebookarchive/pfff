@@ -304,23 +304,11 @@ and
                   cv_name = v_cv_name;
                   cv_type = v_cv_type;
                   cv_value = v_cv_value;
-                  cv_final = v_cv_final;
-                  cv_static = v_cv_static;
-                  cv_abstract = v_cv_abstract;
-                  cv_visibility = v_cv_visibility
+                  cv_modifiers = v_cv_modifiers
                 } =
   let bnds = [] in
-  let arg = vof_visibility v_cv_visibility in
-  let bnd = ("cv_visibility", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_cv_abstract in
-  let bnd = ("cv_abstract", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_cv_static in
-  let bnd = ("cv_static", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_cv_final in
-  let bnd = ("cv_final", arg) in
+  let arg = Ocaml.vof_list vof_modifier v_cv_modifiers in
+  let bnd = ("cv_modifiers", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_expr v_cv_value in
   let bnd = ("cv_value", arg) in
@@ -329,21 +317,21 @@ and
   let bnd = ("cv_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_string v_cv_name in
-  let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in
-   Ocaml.VDict bnds
+  let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_modifier x = Ast_php.vof_modifier x
 and
   vof_method_def {
-                   m_visibility = v_m_visibility;
-                   m_static = v_m_static;
-                   m_final = v_m_final;
-                   m_abstract = v_m_abstract;
-                   m_ref = v_m_ref;
                    m_name = v_m_name;
+                   m_ref = v_m_ref;
                    m_params = v_m_params;
                    m_return_type = v_m_return_type;
-                   m_body = v_m_body
+                   m_body = v_m_body;
+                   m_modifiers = v_m_modifiers
                  } =
   let bnds = [] in
+  let arg = Ocaml.vof_list vof_modifier v_m_modifiers in
+  let bnd = ("m_modifiers", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_stmt v_m_body in
   let bnd = ("m_body", arg) in
   let bnds = bnd :: bnds in
@@ -356,27 +344,8 @@ and
   let arg = Ocaml.vof_bool v_m_ref in
   let bnd = ("m_ref", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_m_abstract in
-  let bnd = ("m_abstract", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_m_final in
-  let bnd = ("m_final", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_m_static in
-  let bnd = ("m_static", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_visibility v_m_visibility in
-  let bnd = ("m_visibility", arg) in
-  let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_m_name in
-  let bnd = ("m_name", arg) in
-  let bnds = bnd :: bnds in
-  Ocaml.VDict bnds
-and vof_visibility =
-  function
-  | Novis -> Ocaml.VSum (("Novis", []))
-  | Public -> Ocaml.VSum (("Public", []))
-  | Private -> Ocaml.VSum (("Private", []))
-  | Protected -> Ocaml.VSum (("Protected", []))
-  | Abstract -> Ocaml.VSum (("Abstract", []))
+  let bnd = ("m_name", arg) in let bnds = bnd :: bnds in 
+ Ocaml.VDict bnds
+
 

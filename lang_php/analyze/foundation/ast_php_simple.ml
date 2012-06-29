@@ -249,8 +249,7 @@ and class_def = {
     cv_type: hint_type option;
     (* todo: could have a cv_name, cv_val and inline the list *)
     cv_value: expr option;
-    cv_final: bool; cv_static: bool; cv_abstract: bool;
-    cv_visibility: visibility;
+    cv_modifiers: modifier list;
   }
 
   (* todo: could factorize with function_def. After all methods are
@@ -262,15 +261,9 @@ and class_def = {
     m_params: parameter list;
     m_return_type: hint_type option;
     m_body: stmt list;
-    (* factorize with class_vars? *)
-    m_static: bool; m_final: bool;m_abstract: bool;
-    m_visibility: visibility;
+    m_modifiers: modifier list;
   }
-   and visibility =
-     | Novis
-     | Public  | Private | Protected 
-     | Abstract
-
+   and modifier = Ast_php.modifier
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -285,10 +278,7 @@ let builtin x = "__builtin__" ^ x
 (* for self, parent, static, lambdas *)
 let special x = "__special__" ^ x
 
-let has_modifier cv =
-  cv.cv_final ||
-  cv.cv_static ||
-  cv.cv_abstract ||
-  cv.cv_visibility <> Novis
+let has_modifier cv = List.length cv.cv_modifiers > 0
+let is_static modifiers = List.mem Ast_php.Static modifiers
 
 let string_of_xhp_tag xs = Common.join ":" xs

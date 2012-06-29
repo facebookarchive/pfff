@@ -735,12 +735,12 @@ and class_def env c =
   end
 
 and private_vars privates cv =
-  if cv.cv_visibility = Private
+  if List.mem Ast_php.Private cv.cv_modifiers
   then SSet.add cv.cv_name privates
   else privates
 
 and private_methods privates m =
-  if m.m_visibility = Private
+  if List.mem Ast_php.Private m.m_modifiers
   then SSet.add (A.unwrap m.m_name) privates
   else privates
 
@@ -764,8 +764,9 @@ and constant is_enum env ien sen acc (x, e) =
   | _ -> SMap.add x (expr env e) acc
 
 and class_vars static env acc c =
-  if static && not c.cv_static then acc else
-  if not static && c.cv_static then acc else
+  let cv_static = is_static c.cv_modifiers in
+  if static && not cv_static then acc else
+  if not static && cv_static then acc else
   (cv_var static env) acc (c.cv_name, c.cv_value)
 
 and cv_var static env acc (s, e) =
@@ -774,16 +775,18 @@ and cv_var static env acc (s, e) =
   SMap.add s t acc
 
 and method_decl static env acc m =
-  if m.m_static && not static then acc else
-  if not m.m_static && static then acc else
+  let m_static = is_static m.m_modifiers in
+  if m_static && not static then acc else
+  if not m_static && static then acc else
   let pl = List.map (parameter env) m.m_params in
   let ret = fresh() in
   let f = afun pl (Tvar ret) in
   SMap.add (A.unwrap m.m_name) f acc
 
 and method_def static env acc m =
-  if m.m_static && not static then acc else
-  if not m.m_static && static then acc else
+  let m_static = is_static m.m_modifiers in
+  if m_static && not static then acc else
+  if not m_static && static then acc else
   let env_cpy = !(env.env) in
   let pl = List.map (parameter env) m.m_params in
   let ret = fresh() in
