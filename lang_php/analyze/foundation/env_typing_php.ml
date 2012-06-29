@@ -1,6 +1,6 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,8 +22,8 @@ module SMap = Map.Make(String)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* Main types and data structures used by the PHP type inference:
+(* 
+ * Main types and data structures used by the PHP type inference:
  * The PHP types representation 't' and the 'environment'.
  *)
 
