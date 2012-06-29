@@ -210,9 +210,17 @@ and vof_func_def {
                  f_name = v_f_name;
                  f_params = v_f_params;
                  f_return_type = v_f_return_type;
-                 f_body = v_f_body
+                 f_body = v_f_body;
+                 f_type = v_f_type;
+                 f_modifiers = v_f_modifiers
                } =
   let bnds = [] in
+  let arg = Ocaml.vof_list vof_modifier v_f_modifiers in
+  let bnd = ("f_modifiers", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_function_type v_f_type in
+  let bnd = ("f_type", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_stmt v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
@@ -229,6 +237,10 @@ and vof_func_def {
   let bnd = ("f_name", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
+and vof_function_type =
+  function
+  | Function -> Ocaml.VSum (("Function", []))
+  | Method -> Ocaml.VSum (("Method", []))
 and
   vof_parameter {
                   p_type = v_p_type;
@@ -319,33 +331,6 @@ and
   let arg = Ocaml.vof_string v_cv_name in
   let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_modifier x = Ast_php.vof_modifier x
-and
-  vof_method_def {
-                   m_name = v_m_name;
-                   m_ref = v_m_ref;
-                   m_params = v_m_params;
-                   m_return_type = v_m_return_type;
-                   m_body = v_m_body;
-                   m_modifiers = v_m_modifiers
-                 } =
-  let bnds = [] in
-  let arg = Ocaml.vof_list vof_modifier v_m_modifiers in
-  let bnd = ("m_modifiers", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_stmt v_m_body in
-  let bnd = ("m_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_hint_type v_m_return_type in
-  let bnd = ("m_return_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_parameter v_m_params in
-  let bnd = ("m_params", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_m_ref in
-  let bnd = ("m_ref", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_wrapped_string v_m_name in
-  let bnd = ("m_name", arg) in let bnds = bnd :: bnds in 
- Ocaml.VDict bnds
+and vof_method_def x = vof_func_def x
 
 

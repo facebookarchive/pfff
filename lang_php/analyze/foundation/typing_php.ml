@@ -735,13 +735,13 @@ and class_def env c =
   end
 
 and private_vars privates cv =
-  if List.mem Ast_php.Private cv.cv_modifiers
+  if is_private cv.cv_modifiers
   then SSet.add cv.cv_name privates
   else privates
 
 and private_methods privates m =
-  if List.mem Ast_php.Private m.m_modifiers
-  then SSet.add (A.unwrap m.m_name) privates
+  if is_private m.f_modifiers
+  then SSet.add (A.unwrap m.f_name) privates
   else privates
 
 and filter_privates privates obj =
@@ -775,29 +775,29 @@ and cv_var static env acc (s, e) =
   SMap.add s t acc
 
 and method_decl static env acc m =
-  let m_static = is_static m.m_modifiers in
+  let m_static = is_static m.f_modifiers in
   if m_static && not static then acc else
   if not m_static && static then acc else
-  let pl = List.map (parameter env) m.m_params in
+  let pl = List.map (parameter env) m.f_params in
   let ret = fresh() in
   let f = afun pl (Tvar ret) in
-  SMap.add (A.unwrap m.m_name) f acc
+  SMap.add (A.unwrap m.f_name) f acc
 
 and method_def static env acc m =
-  let m_static = is_static m.m_modifiers in
+  let m_static = is_static m.f_modifiers in
   if m_static && not static then acc else
   if not m_static && static then acc else
   let env_cpy = !(env.env) in
-  let pl = List.map (parameter env) m.m_params in
+  let pl = List.map (parameter env) m.f_params in
   let ret = fresh() in
   let return = Tvar ret in
   Env.set env "$;return" return;
-  stmtl env m.m_body;
+  stmtl env m.f_body;
   make_return env ret;
   let f = afun pl (Env.get env "$;return") in
-  let _ = Unify.unify env (SMap.find (A.unwrap m.m_name) acc) f in
+  let _ = Unify.unify env (SMap.find (A.unwrap m.f_name) acc) f in
   env.env := env_cpy;
-  SMap.add (A.unwrap m.m_name) f acc
+  SMap.add (A.unwrap m.f_name) f acc
 
 (* 
  * When we have:

@@ -285,6 +285,8 @@ and lambda_def env (l_use, ld) =
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
+    A.f_type = A.Function;
+    A.f_modifiers = [];
   }
 
 and scalar env = function
@@ -530,12 +532,13 @@ and method_def env m =
   let _, params, _ = m.f_params in
   let params = comma_list_dots params in
   let mds = List.map (fun (x, _) -> x) m.f_modifiers in
-  { A.m_modifiers = mds;
-    A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
-    A.m_name = name env m.f_name;
-    A.m_params = List.map (parameter env) params ;
-    A.m_return_type = opt hint_type env m.f_return_type;
-    A.m_body = method_body env m.f_body;
+  { A.f_modifiers = mds;
+    A.f_ref = (match m.f_ref with None -> false | Some _ -> true);
+    A.f_name = name env m.f_name;
+    A.f_params = List.map (parameter env) params ;
+    A.f_return_type = opt hint_type env m.f_return_type;
+    A.f_body = method_body env m.f_body;
+    A.f_type = A.Method;
   }
 
 and method_body env (_, stl, _) =
@@ -557,6 +560,8 @@ and func_def env f =
     A.f_params = List.map (parameter env) params;
     A.f_return_type = opt hint_type env f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
+    A.f_type = A.Function;
+    A.f_modifiers = [];
   }
 
 and xhp_html env = function

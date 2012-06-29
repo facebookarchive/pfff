@@ -178,9 +178,9 @@ module Dependencies = struct
     acc
 
   and method_def acc m =
-    let acc = parameterl acc m.m_params in
-    let acc = hint_type acc m.m_return_type in
-    let acc = stmtl acc m.m_body in
+    let acc = parameterl acc m.f_params in
+    let acc = hint_type acc m.f_return_type in
+    let acc = stmtl acc m.f_body in
     acc
 end
 
