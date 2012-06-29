@@ -783,6 +783,7 @@ and method_decl static env acc m =
   let f = afun pl (Tvar ret) in
   SMap.add (A.unwrap m.f_name) f acc
 
+(* TODO: factorize with func_def ? *)
 and method_def static env acc m =
   let m_static = is_static m.f_modifiers in
   if m_static && not static then acc else

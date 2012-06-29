@@ -1368,7 +1368,7 @@ and class_var env static (heap, m) (s, e) =
       let heap, _ = assign env heap true v1 v2 in
       heap, SMap.add s v1 m
 
-(* TODO clean *)
+(* todo: factorize with func_def? *)
 and method_def env cname parent self this (heap, acc) def =
   let fdef = {
     f_ref = false;
