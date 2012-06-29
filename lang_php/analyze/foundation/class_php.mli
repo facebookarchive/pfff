@@ -11,6 +11,12 @@ val get_constructor: Ast_php.class_def -> Ast_php.method_def
 val get_public_or_protected_vars_of_class:
   Ast_php.class_def -> Ast_php.dname list
 
+val is_static_method:
+  Ast_php.method_def -> bool
+val has_visiblity_modifier:
+  Ast_php.modifier Ast_php.wrap list -> bool
+val is_interface:
+  Ast_php.class_def -> bool
 
 exception Use__Call
 exception UndefinedClassWhileLookup of string
@@ -42,9 +48,6 @@ val collect_members:
 
 val class_variables_reorder_first:
   Ast_php.class_def -> Ast_php.class_def
-
-val is_static_method:
-  Ast_php.method_def -> bool
 
 val class_type_of_ctype:
   Ast_php.class_type -> Database_code.class_type

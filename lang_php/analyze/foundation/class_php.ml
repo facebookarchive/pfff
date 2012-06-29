@@ -87,8 +87,18 @@ let resolve_class_name qu =
 (*****************************************************************************)
 
 let is_static_method def =
-  let modifiers = def.f_modifiers +> List.map Ast.unwrap in
-  List.mem Ast.Static modifiers
+  def.f_modifiers +> List.map Ast.unwrap +> List.mem Ast.Static
+
+let has_visiblity_modifier xs =
+  xs +> List.map Ast.unwrap +> List.exists (function
+  | Public  | Private | Protected -> true
+  | _ -> false
+  )
+
+let is_interface def =
+  match def.c_type with
+  | Interface _ -> true
+  | _ -> false
 
 (* less: it could also be one which has the same name than the class.
  * print a warning to tell to use __construct instead ?
@@ -173,8 +183,6 @@ let traits c =
   | (XhpDecl _|Method _|ClassVariables (_, _, _, _)|ClassConstants (_, _, _))
       -> None
   ) +> List.flatten
-
-
 
 (*****************************************************************************)
 (* Lookup *)
