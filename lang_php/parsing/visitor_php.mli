@@ -31,7 +31,8 @@ type visitor_in = {
 
   (* Helps abstracting away whether a function/class... is defined in
    * nested way or at the toplevel (e.g. FuncDefNested vs FuncDef).
-   * Note that kfunc_def is also run for method now!!
+   * Note that kfunc_def is also run for methods now!! look in
+   * def.f_type to decide what to do if you want to filter methods.
    *)
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;
