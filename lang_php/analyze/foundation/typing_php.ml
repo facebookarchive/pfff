@@ -76,6 +76,9 @@ module Unify = Typing_unify_php
  *    The traditional algorithms have a strong equality model, not a
  *    set model, which is required for union types.
  * 
+ *  - pad did some type inference by cheating, by abusing xdebug to
+ *    extract type information from traces
+ * 
  *  - julien wanted first to (ab)use the (top-down) abstract interpreter to
  *    also do type inference, but the interpreter is kinda hacky already
  *    and full of heuristics. Pad had the idea of trying 
@@ -83,6 +86,8 @@ module Unify = Typing_unify_php
  *    compose_subst with union types that grows. Julien did it.
  * 
  *  - algo unification and managing subsitution a la ?? coq?
+ * 
+ * todo: each time we use 'any' below, it's probably a todo
  *)
 
 (*****************************************************************************)
@@ -680,7 +685,9 @@ and class_def env c =
     | _ -> Tvar (fresh()), "" in
   if env.verbose then begin
     incr env.count;
-    Printf.printf "Typing class(%d/%d)[%d]: %s\n" !(env.count) !(env.total) env.depth (A.unwrap c.c_name); flush stdout;
+    Printf.printf "Typing class(%d/%d)[%d]: %s\n" 
+      !(env.count) !(env.total) env.depth (A.unwrap c.c_name); 
+    flush stdout;
   end;
   let env = { env with vars = ref SMap.empty } in
   let class_ = match parent with Tsum [Tobject o] -> o | _ -> SMap.empty in
@@ -775,30 +782,32 @@ and cv_var static env acc (s, e) =
   SMap.add s t acc
 
 and method_decl static env acc m =
-  let m_static = is_static m.f_modifiers in
-  if m_static && not static then acc else
-  if not m_static && static then acc else
-  let pl = List.map (parameter env) m.f_params in
-  let ret = fresh() in
-  let f = afun pl (Tvar ret) in
-  SMap.add (A.unwrap m.f_name) f acc
+  match is_static m.f_modifiers, static with
+  | true, false -> acc
+  | false, true -> acc
+  | _ ->
+      let pl = List.map (parameter env) m.f_params in
+      let ret = fresh() in
+      let f = afun pl (Tvar ret) in
+      SMap.add (A.unwrap m.f_name) f acc
 
 (* TODO: factorize with func_def ? *)
 and method_def static env acc m =
-  let m_static = is_static m.f_modifiers in
-  if m_static && not static then acc else
-  if not m_static && static then acc else
-  let env_cpy = !(env.vars) in
-  let pl = List.map (parameter env) m.f_params in
-  let ret = fresh() in
-  let return = Tvar ret in
-  Env.set env "$;return" return;
-  stmtl env m.f_body;
-  make_return env ret;
-  let f = afun pl (Env.get env "$;return") in
-  let _ = Unify.unify env (SMap.find (A.unwrap m.f_name) acc) f in
-  env.vars := env_cpy;
-  SMap.add (A.unwrap m.f_name) f acc
+  match is_static m.f_modifiers, static with
+  | true, false -> acc
+  | false, true -> acc
+  | _ ->
+      let env_cpy = !(env.vars) in
+      let pl = List.map (parameter env) m.f_params in
+      let ret = fresh() in
+      let return = Tvar ret in
+      Env.set env "$;return" return;
+      stmtl env m.f_body;
+      make_return env ret;
+      let f = afun pl (Env.get env "$;return") in
+      let _ = Unify.unify env (SMap.find (A.unwrap m.f_name) acc) f in
+      env.vars := env_cpy;
+      SMap.add (A.unwrap m.f_name) f acc
 
 (* 
  * When we have:
