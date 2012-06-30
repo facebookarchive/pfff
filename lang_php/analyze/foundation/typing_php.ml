@@ -770,11 +770,13 @@ and constant is_enum env ien sen acc (x, e) =
   | String _ when is_enum -> SMap.add x (Tsum [Tsenum sen]) acc
   | _ -> SMap.add x (expr env e) acc
 
+
 and class_vars static env acc c =
-  let cv_static = is_static c.cv_modifiers in
-  if static && not cv_static then acc else
-  if not static && cv_static then acc else
-  (cv_var static env) acc (c.cv_name, c.cv_value)
+  match static, is_static c.cv_modifiers with
+  | true, false -> acc
+  | false, true -> acc
+  | _ ->
+      (cv_var static env) acc (c.cv_name, c.cv_value)
 
 and cv_var static env acc (s, e) =
   let t = match e with None -> Tvar (fresh()) | Some x -> expr env x in
