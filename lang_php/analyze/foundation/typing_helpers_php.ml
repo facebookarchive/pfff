@@ -118,21 +118,21 @@ module GEnv: sig
 end = struct
 
   let get env str =
-    try SMap.find str !(env.genv)
+    try SMap.find str !(env.globals)
     with Not_found ->
       (* todo: error when in strict mode? *)
       Tvar (fresh())
 
-  let set env x t = env.genv := SMap.add x t !(env.genv)
-  let unset env x = env.genv := SMap.remove x !(env.genv)
-  let mem env x = SMap.mem x !(env.genv)
+  let set env x t = env.globals := SMap.add x t !(env.globals)
+  let unset env x = env.globals := SMap.remove x !(env.globals)
+  let mem env x = SMap.mem x !(env.globals)
 
   let get_class env x = get env ("^Class:"^x)
   let get_fun env x = get env ("^Fun:"^x)
 
   let get_global env x =
     let x = "^Global:"^x in
-    if SMap.mem x !(env.genv)
+    if SMap.mem x !(env.globals)
     then get env x
     else
       let v = Tvar (fresh()) in
@@ -148,7 +148,7 @@ end = struct
   let mem_class env x = mem env ("^Class:"^x)
   let mem_fun env x = mem env ("^Fun:"^x)
 
-  let iter env f = SMap.iter f !(env.genv)
+  let iter env f = SMap.iter f !(env.globals)
 
   let save env oc =
     Marshal.to_channel oc env []
@@ -158,12 +158,12 @@ end
 
 (* local variables *)
 module Env = struct
-  let set env x t = env.env := SMap.add x t !(env.env)
-  let unset env x = env.env := SMap.remove x !(env.env)
-  let mem env x = SMap.mem x !(env.env)
+  let set env x t = env.vars := SMap.add x t !(env.vars)
+  let unset env x = env.vars := SMap.remove x !(env.vars)
+  let mem env x = SMap.mem x !(env.vars)
 
   let get env x =
-    try SMap.find x !(env.env) 
+    try SMap.find x !(env.vars) 
     with Not_found ->
       let n = Tvar (fresh()) in
       set env x n;
@@ -540,7 +540,7 @@ module Print = struct
           print print_string env IMap.empty t;
           print_string "\n";
         end
-     ) !(env.env);
+     ) !(env.vars);
     flush stdout
 
   let show_type env o t =

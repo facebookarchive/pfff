@@ -23,7 +23,7 @@ module SMap = Map.Make(String)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Main types and data structures used by the PHP type inference:
+ * Main types and data structures used by the PHP type inference engine:
  * The PHP types representation 't' and the 'environment'.
  *)
 
@@ -114,7 +114,7 @@ type env = {
     builtins: SSet.t ref;
 
     (* The local variables environment *)
-    env: t SMap.t ref;
+    vars: t SMap.t ref;
 
     (* The global variable environment. This also contains typing
      * information for functions and classes. The "^Class:", "^Function:"
@@ -122,7 +122,7 @@ type env = {
      * strings again).
      * Builtins constants such as 'null' are stored here as functions.
      *)
-    genv: t SMap.t ref;
+    globals: t SMap.t ref;
 
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
@@ -209,8 +209,8 @@ let make_env () = {
   builtins = ref SSet.empty;
   graph = Graph.empty();
 
-  env     = ref SMap.empty;
-  genv    = ref SMap.empty;
+  vars     = ref SMap.empty;
+  globals    = ref SMap.empty;
 
   tenv    = ref IMap.empty;
   subst   = ref IMap.empty;

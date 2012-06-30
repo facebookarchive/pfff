@@ -182,12 +182,12 @@ module Collect = struct
     let tenv = ref IMap.empty in
     let ty = ty (ref 0) in
     let mem = { tys = Hashtbl.create 1024; prims = Hashtbl.create 1024 } in
-    let lenv = SMap.map (ty env subst tenv mem) !(env.env) in
-    let genv = SMap.map (ty env subst tenv mem) !(env.genv) in
+    let lenv = SMap.map (ty env subst tenv mem) !(env.vars) in
+    let genv = SMap.map (ty env subst tenv mem) !(env.globals) in
     env.tenv := !tenv;
     env.subst := !subst;
-    env.genv := genv;
-    env.env := lenv;
+    env.globals := genv;
+    env.vars := lenv;
     Printf.printf "Compacting: "; flush stdout;
     Gc.compact();
     Printf.printf "DONE\n"; flush stdout;
@@ -368,7 +368,7 @@ and expr_ env lv = function
           if s.[0] = '$'
           then
             let locals = 
-              SMap.fold (fun x _ acc -> SSet.add x acc) !(env.env) SSet.empty 
+              SMap.fold (fun x _ acc -> SSet.add x acc) !(env.vars) SSet.empty 
             in
             env.show := Slocal (get_marked_id env s, locals)
           else env.show := Sglobal (get_marked_id env s);
@@ -601,7 +601,7 @@ and func_def env fd =
            !(env.count) !(env.total) env.depth (A.unwrap fd.f_name)); 
   end;
   Collect.collect env;
-  let env = { env with env = ref SMap.empty } in
+  let env = { env with vars = ref SMap.empty } in
   let pl = List.map (parameter env) fd.f_params in
   let ret = fresh() in
   let return = Tvar ret in
@@ -682,7 +682,7 @@ and class_def env c =
     incr env.count;
     Printf.printf "Typing class(%d/%d)[%d]: %s\n" !(env.count) !(env.total) env.depth (A.unwrap c.c_name); flush stdout;
   end;
-  let env = { env with env = ref SMap.empty } in
+  let env = { env with vars = ref SMap.empty } in
   let class_ = match parent with Tsum [Tobject o] -> o | _ -> SMap.empty in
   let obj_parent = get_object parent in
 
@@ -788,7 +788,7 @@ and method_def static env acc m =
   let m_static = is_static m.f_modifiers in
   if m_static && not static then acc else
   if not m_static && static then acc else
-  let env_cpy = !(env.env) in
+  let env_cpy = !(env.vars) in
   let pl = List.map (parameter env) m.f_params in
   let ret = fresh() in
   let return = Tvar ret in
@@ -797,7 +797,7 @@ and method_def static env acc m =
   make_return env ret;
   let f = afun pl (Env.get env "$;return") in
   let _ = Unify.unify env (SMap.find (A.unwrap m.f_name) acc) f in
-  env.env := env_cpy;
+  env.vars := env_cpy;
   SMap.add (A.unwrap m.f_name) f acc
 
 (* 
