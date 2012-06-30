@@ -288,11 +288,11 @@ and fake_root env heap =
       let heap = force_class env heap (unw c.c_name) in
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
-        let params = make_fake_params m.m_params in
+        let params = make_fake_params m.f_params in
         let e = 
-          if m.m_static
-          then (Call (Class_get (Id c.c_name, Id m.m_name), params))
-          else (Call (Obj_get (New (Id c.c_name, []), Id m.m_name), params))
+          if is_static m.f_modifiers
+          then (Call (Class_get (Id c.c_name, Id m.f_name), params))
+          else (Call (Obj_get (New (Id c.c_name, []), Id m.f_name), params))
         in
         ignore(expr env heap e)
       ) c.c_methods
@@ -1345,7 +1345,7 @@ and cconstants env (heap, m) (s, e) =
 
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
-  match static, cv.cv_static with
+  match static, is_static cv.cv_modifiers with
   | Static, true 
   | NonStatic, false -> 
       (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
@@ -1368,6 +1368,7 @@ and class_var env static (heap, m) (s, e) =
       let heap, _ = assign env heap true v1 v2 in
       heap, SMap.add s v1 m
 
+(* todo: factorize with func_def? *)
 and method_def env cname parent self this (heap, acc) def =
   let fdef = {
     f_ref = false;
@@ -1376,16 +1377,17 @@ and method_def env cname parent self this (heap, acc) def =
      * There is a (ugly) corresponding call to node_of_string in
      * call_fun().
      *)
-    f_name = w (CG.string_of_node (CG.Method (unw cname, unw def.m_name)));
-    f_params = def.m_params;
-    f_return_type = def.m_return_type;
-    f_body = def.m_body;
+    f_name = w (CG.string_of_node (CG.Method (unw cname, unw def.f_name)));
+    f_params = def.f_params;
+    f_return_type = def.f_return_type;
+    f_body = def.f_body;
+    f_type = Function; f_modifiers = [];
   } in
-  let cls = make_method def.m_name parent self this fdef in
+  let cls = make_method def.f_name parent self this fdef in
   let mid = Utils.fresh() in
   let v = match this with None -> Vnull | Some v -> v in
   let v = Vmethod (v, IMap.add mid cls IMap.empty) in
-  heap, SMap.add (unw def.m_name) v acc
+  heap, SMap.add (unw def.f_name) v acc
 
 (* we use OCaml closures to deal with self/parent scoping issues *)
 and make_method mname parent self this fdef =

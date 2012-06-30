@@ -59,22 +59,18 @@ module SMap = Map.Make (String)
  * and at the second var_dump: $x = &2{&REF 1{2}}, $y = &4{&REF 1{2}}
  * See the code of assign in the interpreter for more information.
  * 
- * 
  * Retrospecively, was it good to try to manage references correctly?
  * After all, many other things are not that well handled in the interpreter
  * or imprecise or passed-over silently, e.g. many functions/classes not
  * found, traits not handled, lambda not handled, choosing
  * arbitrarily one object in a Vsum when there could actually be many
  * different classes, not really doing a fixpoint on loops, etc.
- * 
- * juju: yes, maybe it was not a good idea to focus so much on references.
- * Moreover it slows down things a lot.
- * 
- * One advantage though of managing references correctly is that it forces
- * to really understand how Zend PHP internally works (zvalues).
- * Note that HPHP may do certain optimizations so those pointers of
- * pointers may actually not exist for many local variables when
- * we statically know they are never "referenced".
+ * Maybe it was not a good idea to focus so much on references. Moreover it
+ * slows down things a lot. One advantage though of managing references
+ * correctly is that it forces to really understand how Zend PHP internally
+ * works (zvalues). Note that HPHP may do certain optimizations so those
+ * pointers of pointers may actually not exist for many local variables
+ * when we statically know they are never "referenced".
  *)
 
 (*****************************************************************************)
@@ -93,7 +89,7 @@ type code_database = {
   constants: string -> Ast.constant_def;
 }
 
-(* The abstract interpreter manipulate "values" *)
+(* The abstract interpreter manipulates "values" *)
 type value =
   (* Precise values. Especially useful for Vstring for interprocedural
    * analysis as people use strings to represent functions or classnames
@@ -120,8 +116,7 @@ type value =
   | Varray  of value list
   | Vmap of value * value
 
-  (* 
-   * The first 'value' below is for '$this' which will be a pointer to
+  (* The first 'value' below is for '$this' which will be a pointer to
    * the object. The only place where it's used is in Unify.value.
    * Note that $this, as well as self/parent, are also handled
    * via closures in make_method().
@@ -151,7 +146,7 @@ type value =
    *)
 
   (* Objects are represented as a set of members where a member can be
-   * a constant, a field, a static variable, or a method. With:
+   * a constant, a field, a static variable, or a method. for instance with:
    * 
    *    class A {
    *      public $fld = 1;

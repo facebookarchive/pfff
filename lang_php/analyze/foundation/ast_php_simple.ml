@@ -1,6 +1,6 @@
 (* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -23,12 +23,8 @@
  * PHP syntax tree (ast_php.ml) is good for code refactoring or
  * code visualization; the type used is very precise, However, for
  * other algorithms, the nature of the AST makes the code a bit
- * redundant. Say I want to write a typechecker, I need to write a
- * specific version for static expressions, when really, the checker
- * should do the same thing. The same is true for a pretty-printer,
- * topological sort etc ... Hence the idea of a SimpleAST which is the
- * original AST where the specialised constructions have been factored
- * back together.
+ * redundant. Hence the idea of a SimpleAST which is the
+ * original AST where the specialised constructions have been factorized.
  *
  * Here is a partial list of the simplications/factorizations:
  *  - no tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
@@ -38,9 +34,9 @@
  *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
  *    no HereDoc, no EncapsXxx
- *  - some builtins, for instance echo are transformed in "__builtin__echo".
+ *  - some builtins, for instance 'echo' are transformed in "__builtin__echo".
  *    See builtin() and special() below
- *  - a simpler stmt type; no extra toplevel, stmt_and_def types
+ *  - a simpler stmt type; no extra toplevel and stmt_and_def types
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
  *    (update: now static_scalar = expr also in ast_php.ml)
  *    also no scalar.
@@ -193,17 +189,26 @@ and expr =
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: no 'uses' field for lambda? because we will use OCaml closures
- * for representing closures :) During abstract interpretation for
- * instance the environment will be closed?
+(* This type is used both for functions and methods.
+ *  
+ * todo? no 'uses' field for lambda? because we will use OCaml closures
+ * for representing closures? During abstract interpretation
+ * the environment will be closed?
  *)
 and func_def = {
   f_ref: bool;
-  f_name: string wrap; (* _lambda when used for lambda *)
+ (* "_lambda" when used for lambda *)
+  f_name: string wrap; 
   f_params: parameter list;
   f_return_type: hint_type option;
   f_body: stmt list;
+  f_type: function_type;
+  (* only for methods, always empty for functions *)
+  f_modifiers: modifier list;
 }
+   and function_type = 
+     | Function 
+     | Method
 
    and parameter = {
      p_type: hint_type option;
@@ -249,28 +254,10 @@ and class_def = {
     cv_type: hint_type option;
     (* todo: could have a cv_name, cv_val and inline the list *)
     cv_value: expr option;
-    cv_final: bool; cv_static: bool; cv_abstract: bool;
-    cv_visibility: visibility;
+    cv_modifiers: modifier list;
   }
-
-  (* todo: could factorize with function_def. After all methods are
-   * transformed into functions in the abstract interpreter.
-   *)
-  and method_def = {
-    m_name: string wrap;
-    m_ref: bool;
-    m_params: parameter list;
-    m_return_type: hint_type option;
-    m_body: stmt list;
-    (* factorize with class_vars? *)
-    m_static: bool; m_final: bool;m_abstract: bool;
-    m_visibility: visibility;
-  }
-   and visibility =
-     | Novis
-     | Public  | Private | Protected 
-     | Abstract
-
+  and method_def = func_def
+  and modifier = Ast_php.modifier
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -285,10 +272,8 @@ let builtin x = "__builtin__" ^ x
 (* for self, parent, static, lambdas *)
 let special x = "__special__" ^ x
 
-let has_modifier cv =
-  cv.cv_final ||
-  cv.cv_static ||
-  cv.cv_abstract ||
-  cv.cv_visibility <> Novis
+let has_modifier cv = List.length cv.cv_modifiers > 0
+let is_static modifiers  = List.mem Ast_php.Static  modifiers
+let is_private modifiers = List.mem Ast_php.Private modifiers
 
 let string_of_xhp_tag xs = Common.join ":" xs
