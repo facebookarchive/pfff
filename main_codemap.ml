@@ -66,6 +66,17 @@ let test_mode = ref (None: string option)
 
 let filter = ref Treemap_pl.ex_filter_file
 
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
+
+(* action mode *)
+let action = ref ""
+
+(*****************************************************************************)
+(* Shortcuts *)
+(*****************************************************************************)
+
 let filters = [
   "ocaml", Treemap_pl.ocaml_filter_file;
   "mli", Treemap_pl.ocaml_mli_filter_file;
@@ -99,13 +110,6 @@ let filters = [
     | _ -> false
   );
 ]
-
-(* todo? config file ? 
- * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
- *)
-
-(* action mode *)
-let action = ref ""
 
 (*****************************************************************************)
 (* Helpers *)

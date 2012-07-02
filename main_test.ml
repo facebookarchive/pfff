@@ -165,31 +165,26 @@ let all_actions () =
  Builtins_php.actions()++
   []
 
-let options () = 
-  [
-    "-verbose", Arg.Set verbose, 
-    " ";
+let options () = [
+  "-verbose", Arg.Set verbose, 
+  " ";
   ] ++
-
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_other () ++
-
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff (test) version: %s" Config.version);
       exit 0;
     ), 
     "  guess what";
-
     (* this can not be factorized in Common *)
     "-date",   Arg.Unit (fun () -> 
       pr2 "version: $Date: 2008/10/26 00:44:57 $";
       raise (Common.UnixExit 0)
     ), 
     "   guess what";
-  ] ++
-  []
+  ]
 
 (*****************************************************************************)
 (* Main entry point *)

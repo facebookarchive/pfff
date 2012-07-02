@@ -83,10 +83,9 @@ let all_actions () =
   Test_analyze_php.actions () ++
   []
 
-let options () = 
-  [
-    "-verbose", Arg.Set verbose, 
-    " ";
+let options () = [
+  "-verbose", Arg.Set verbose, 
+  " ";
   ] ++
   Flag_parsing_php.cmdline_flags_verbose () ++
   Flag_parsing_cpp.cmdline_flags_verbose () ++
