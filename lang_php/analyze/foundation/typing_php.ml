@@ -662,13 +662,16 @@ and get_hard_object env c =
   let class_ = match class_ with Tsum [Tobject o] -> o | _ -> raise Not_found in
   SMap.find "__obj" class_
 
-(* the type of an object is always in the field __obj of the class
- * all the other fields are static methods/vars
+(* The type of an object is always in the field __obj of the class;
+ * all the other fields are static methods/vars.
  *)
 and get_object = function
   | Tsum [Tobject o] when SMap.mem "__obj" o ->
       (match SMap.find "__obj" o with Tsum [Tobject o] -> o
       | _ -> SMap.empty)
+  | _ -> SMap.empty
+and get_class_bis = function
+  | Tsum [Tobject o] -> o
   | _ -> SMap.empty
 
 and get_class env x =
@@ -690,7 +693,7 @@ and class_def env c =
     flush stdout;
   end;
   let env = { env with vars = ref SMap.empty } in
-  let class_ = match parent with Tsum [Tobject o] -> o | _ -> SMap.empty in
+  let class_ = get_class_bis parent in
   let obj_parent = get_object parent in
 
   (* Adding traits *)
@@ -772,44 +775,42 @@ and constant is_enum env ien sen acc (x, e) =
 
 
 and class_vars static env acc c =
-  match static, is_static c.cv_modifiers with
-  | true, false -> acc
-  | false, true -> acc
-  | _ ->
-      (cv_var static env) acc (c.cv_name, c.cv_value)
-
-and cv_var static env acc (s, e) =
-  let t = match e with None -> Tvar (fresh()) | Some x -> expr env x in
-  let s = if static then s else String.sub s 1 (String.length s - 1) in
-  SMap.add s t acc
+  if static <> is_static c.cv_modifiers
+  then acc
+  else 
+    let (s, e) = (c.cv_name, c.cv_value) in
+    let t = match e with 
+      | None -> Tvar (fresh()) 
+      | Some x -> expr env x 
+    in
+    let s = if static then s else String.sub s 1 (String.length s - 1) in
+    SMap.add s t acc
 
 and method_decl static env acc m =
-  match is_static m.f_modifiers, static with
-  | true, false -> acc
-  | false, true -> acc
-  | _ ->
-      let pl = List.map (parameter env) m.f_params in
-      let ret = fresh() in
-      let f = afun pl (Tvar ret) in
-      SMap.add (A.unwrap m.f_name) f acc
+  if static <> is_static m.f_modifiers
+  then acc
+  else 
+    let pl = List.map (parameter env) m.f_params in
+    let ret = fresh() in
+    let f = afun pl (Tvar ret) in
+    SMap.add (A.unwrap m.f_name) f acc
 
 (* TODO: factorize with func_def ? *)
 and method_def static env acc m =
-  match is_static m.f_modifiers, static with
-  | true, false -> acc
-  | false, true -> acc
-  | _ ->
-      let env_cpy = !(env.vars) in
-      let pl = List.map (parameter env) m.f_params in
-      let ret = fresh() in
-      let return = Tvar ret in
-      Env.set env "$;return" return;
-      stmtl env m.f_body;
-      make_return env ret;
-      let f = afun pl (Env.get env "$;return") in
-      let _ = Unify.unify env (SMap.find (A.unwrap m.f_name) acc) f in
-      env.vars := env_cpy;
-      SMap.add (A.unwrap m.f_name) f acc
+  if static <> is_static m.f_modifiers
+  then acc
+  else
+    let env_cpy = !(env.vars) in
+    let pl = List.map (parameter env) m.f_params in
+    let ret = fresh() in
+    let return = Tvar ret in
+    Env.set env "$;return" return;
+    stmtl env m.f_body;
+    make_return env ret;
+    let f = afun pl (Env.get env "$;return") in
+    let _ = Unify.unify env (SMap.find (A.unwrap m.f_name) acc) f in
+    env.vars := env_cpy;
+    SMap.add (A.unwrap m.f_name) f acc
 
 (* 
  * When we have:

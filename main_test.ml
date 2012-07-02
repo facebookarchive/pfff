@@ -2,7 +2,6 @@
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
  *)
-
 open Common
 
 (*****************************************************************************)
