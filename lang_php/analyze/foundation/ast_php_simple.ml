@@ -21,7 +21,7 @@
  *
  * This file contains a simplified PHP abstract syntax tree. The original
  * PHP syntax tree (ast_php.ml) is good for code refactoring or
- * code visualization; the type used is very precise, However, for
+ * code visualization; the type used is very precise. However, for
  * other algorithms, the nature of the AST makes the code a bit
  * redundant. Hence the idea of a SimpleAST which is the
  * original AST where the specialised constructions have been factorized.
@@ -38,7 +38,7 @@
  *    See builtin() and special() below
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
- *    (update: now static_scalar = expr also in ast_php.ml)
+ *    (update: now static_scalar = expr also in ast_php.ml),
  *    also no scalar.
  * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
@@ -141,7 +141,9 @@ and expr =
   | New of expr * expr list
   | InstanceOf of expr * expr
 
-  (* pad: could perhaps be at the statement level? *)
+  (* pad: could perhaps be at the statement level? The left expr
+   * must be an lvalue (e.g. a variable).
+   *)
   | Assign of Ast_php.binaryOp option * expr * expr
   (* really a destructuring tuple let; always used in an Assign *)
   | List of expr list
@@ -155,7 +157,9 @@ and expr =
   | Unop of Ast_php.unaryOp * expr
   | Guil of expr list
 
-  (* $y =& $x is transformed into an Assign(Id "$y", Ref (Id "$x")) *)
+  (* $y =& $x is transformed into an Assign(Id "$y", Ref (Id "$x")). In
+   * PHP refs are always used in an assign context.
+   *)
   | Ref of expr
 
   | ConsArray of array_value list
@@ -197,7 +201,7 @@ and expr =
  *)
 and func_def = {
   f_ref: bool;
- (* "_lambda" when used for lambda *)
+  (* "_lambda" when used for lambda *)
   f_name: string wrap; 
   f_params: parameter list;
   f_return_type: hint_type option;
