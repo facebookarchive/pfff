@@ -5,7 +5,7 @@ open Ast_php
 module Ast = Ast_php
 
 (*****************************************************************************)
-(* Subsystem testing *)
+(* Lexing/Parsing *)
 (*****************************************************************************)
 (*s: test_tokens_php *)
 let test_tokens_php file = 
@@ -69,6 +69,10 @@ let test_parse_php xs  =
     ()
   (*e: print regression testing results *)
 (*e: test_parse_php *)
+(*****************************************************************************)
+(* Export *)
+(*****************************************************************************)
+
 (*s: test_sexp_php *)
 let test_sexp_php file = 
   let (ast2,_stat) = Parse_php.parse file in
@@ -112,6 +116,9 @@ let test_dump_php file =
   let s = Export_ast_php.ml_pattern_string_of_program ast in
   pr s
 
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 (*s: test_visit_php *)
 let test_visit_php file = 
   let (ast2,_stat) = Parse_php.parse file in
