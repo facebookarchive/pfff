@@ -14,7 +14,6 @@
  *)
 open Ast_php
 
-module Int = struct type t = int let compare = (-) end
 module ISet = Set.Make(Int)
 module IMap = Map.Make(Int)
 
@@ -35,8 +34,8 @@ module PI = Parse_info
 (* not used for now *)
 type env = unit
 
-exception ObsoleteConstruct
-exception TodoConstruct of string
+exception ObsoleteConstruct of Ast_php.info
+exception TodoConstruct of string * Ast_php.info
 
 let store_position = ref false
 
@@ -150,10 +149,10 @@ and stmt env st acc =
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", wrap tok), lp)) :: acc
-  | Declare _ -> raise (TodoConstruct "Declare")
+  | Declare (tok, _, _) -> raise (TodoConstruct ("Declare", tok))
    (* this is not yet used in our codebase *)
   | TypedDeclaration _ -> raise Common.Impossible
-  | IfColon _ -> raise ObsoleteConstruct
+  | IfColon (tok, _, _, _, _, _, _, _) -> raise (ObsoleteConstruct tok)
   | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
 
@@ -222,12 +221,12 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  | AssignNew _ ->
-      raise (TodoConstruct "expr AssignNew")
+  | AssignNew (_, tok, _, _, _, _) ->
+      raise (TodoConstruct ("expr AssignNew", tok))
   | Cast ((c, _), e) ->
       A.Cast (c, expr env e)
-  | CastUnset _ ->
-      raise (TodoConstruct "expr CastUnset")
+  | CastUnset (tok, _) ->
+      raise (TodoConstruct ("expr CastUnset", tok))
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
       let cn = class_name_reference env cn in
@@ -344,7 +343,8 @@ and class_name_or_selfparent env = function
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
-   | ClassNameRefDynamic _ -> raise (TodoConstruct "ClassNameRefDynamic")
+   | ClassNameRefDynamic (lv, (tok, _)::xs) -> 
+       raise (TodoConstruct ("ClassNameRefDynamic", tok))
 
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
@@ -396,7 +396,8 @@ and lvalue env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar _ -> raise (TodoConstruct "StaticObjCallVar")
+  | StaticObjCallVar (lv, tok, lv2, args) -> 
+      raise (TodoConstruct ("StaticObjCallVar", tok))
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
   | ObjAccess (lv, oa) ->
@@ -431,10 +432,10 @@ and obj_dim env obj = function
       let e = opt expr env e in
       let x = obj_dim env obj x in
       A.Array_get (x, e)
-  | OBraceAccess _ -> raise (TodoConstruct "brace access")
+  | OBraceAccess (_, (lb, e, rb)) -> raise (TodoConstruct ("brace access", lb))
 
 and indirect env = function
-  | Dollar _ -> raise (TodoConstruct "expr Dollar")
+  | Dollar tok -> raise (TodoConstruct ("expr Dollar", tok))
 
 and argument env = function
   | Arg e -> expr env e
@@ -624,7 +625,7 @@ and colon_stmt env = function
 
 and switch_case_list env = function
   | CaseList (_, _, cl, _) -> List.map (case env) cl
-  | CaseColonList _ -> raise ObsoleteConstruct
+  | CaseColonList (tok, _, _, _, _) -> raise (ObsoleteConstruct tok)
 
 and case env = function
   | Case (_, e, _, stl) ->
@@ -668,8 +669,8 @@ and assignOp env = function
 
 and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
-  | GlobalDollar _ -> raise (TodoConstruct "GlobalDollar")
-  | GlobalDollarExpr _ -> raise (TodoConstruct "GlobalDollarExpr")
+  | GlobalDollar (tok, _) -> raise (TodoConstruct ("GlobalDollar", tok))
+  | GlobalDollarExpr (tok, _) -> raise (TodoConstruct ("GlobalDollarExpr", tok))
 
 (*****************************************************************************)
 (* For cmf *)

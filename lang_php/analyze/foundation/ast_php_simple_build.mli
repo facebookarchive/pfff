@@ -1,6 +1,6 @@
 
-exception ObsoleteConstruct
-exception TodoConstruct of string
+exception ObsoleteConstruct of Ast_php.info
+exception TodoConstruct of string * Ast_php.info
 
 val store_position: bool ref
 
