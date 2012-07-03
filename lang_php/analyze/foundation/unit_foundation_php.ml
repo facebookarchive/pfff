@@ -14,6 +14,25 @@ module Db = Database_code
 (*****************************************************************************)
 
 (*---------------------------------------------------------------------------*)
+(* Ast simple *)
+(*---------------------------------------------------------------------------*)
+
+let ast_simple_unittest =
+  "ast_simple regression files" >:: (fun () ->
+    let dir = Filename.concat Config.path "/tests/php/parsing" in
+    let files = Common.glob (spf "%s/*.php" dir) in
+    files +> List.iter (fun file ->
+      try
+        let cst = Parse_php.parse_program file in
+        let _ast = Ast_php_simple_build.program cst in
+        ()
+      with exn ->
+        assert_failure (spf "it should correctly parse %s, exn = %s" 
+                           file (Common.exn_to_s exn))
+      )
+    )
+
+(*---------------------------------------------------------------------------*)
 (* Defs/uses *)
 (*---------------------------------------------------------------------------*)
 
@@ -261,6 +280,7 @@ let include_unittest =
 
 let unittest =
   "foundation_php" >::: [
+    ast_simple_unittest;
     defs_uses_unittest;
     tags_unittest;
     annotation_unittest;
