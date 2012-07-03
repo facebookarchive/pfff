@@ -271,9 +271,9 @@ and class_def = {
 let unwrap x = fst x
 let wrap s = s, Some (Ast_php.fakeInfo s)
 
-(* for echo, eval, print, unset, isset, etc *)
+(* for echo, eval, print, unset, isset *)
 let builtin x = "__builtin__" ^ x
-(* for self, parent, static, lambdas *)
+(* for self/parent, static, lambdas *)
 let special x = "__special__" ^ x
 
 let has_modifier cv = List.length cv.cv_modifiers > 0
