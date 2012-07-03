@@ -43,8 +43,8 @@
  * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
  *    of lots of duplication in many constructors (e.g. no ClassConstant
- *    in a scalar type).
- *  - a simpler name; identifiers, xhp names, variables are unified
+ *    in a separate scalar type).
+ *  - a simpler 'name': identifiers, xhp names, and variables are unified
  *    (maybe not a good idea retrospectively, cos it forces in many places
  *     to do some s =~ "$.*")
  *  - there is no include/require, they are transformed in call
@@ -256,7 +256,6 @@ and class_def = {
   and class_var = {
     cv_name: string;
     cv_type: hint_type option;
-    (* todo: could have a cv_name, cv_val and inline the list *)
     cv_value: expr option;
     cv_modifiers: modifier list;
   }
@@ -271,11 +270,14 @@ and class_def = {
 let unwrap x = fst x
 let wrap s = s, Some (Ast_php.fakeInfo s)
 
-(* for echo, eval, print, unset, isset *)
+(* For 'echo', 'eval', 'print', 'unset', 'isset'.
+ * See also pfff/data/php_stdlib/pfff.php which declares those functions.
+ *)
 let builtin x = "__builtin__" ^ x
-(* for self/parent, static, lambdas *)
+(* for 'self'/'parent', 'static', 'lambda' *)
 let special x = "__special__" ^ x
 
+(* AST helpers *)
 let has_modifier cv = List.length cv.cv_modifiers > 0
 let is_static modifiers  = List.mem Ast_php.Static  modifiers
 let is_private modifiers = List.mem Ast_php.Private modifiers
