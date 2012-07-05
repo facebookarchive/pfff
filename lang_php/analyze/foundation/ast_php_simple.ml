@@ -194,6 +194,8 @@ and expr =
 (* ------------------------------------------------------------------------- *)
 
 (* This type is used both for functions and methods.
+ *
+ * For methods, a few names are specials: __construct, __call, __callStatic.
  *  
  * todo? no 'uses' field for lambda? because we will use OCaml closures
  * for representing closures? During abstract interpretation
