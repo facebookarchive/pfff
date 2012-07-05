@@ -23,7 +23,8 @@ module E = Error_php
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Misc checks
+ * Misc checks (use of ';' instead of ':', wront case sensitivity for
+ * 'instanceOf' for now).
  *)
 
 (*****************************************************************************)
