@@ -22,8 +22,10 @@ module Ast = Ast_php
 (*****************************************************************************)
 
 (* 
+ * Helpers around code annotations in comments, e.g. @author.
+ * 
  * Should I put this file in parsing_php/ ? On one hand it is some information
- * that are in comment and so that could be considered as parsing related.
+ * that are in comments and so that could be considered as parsing related.
  * But adding this info on the AST then requires to load the AST to 
  * access the information. Like for function types, it is useful
  * to have faster acess to high level information about functions.
@@ -37,8 +39,7 @@ module Ast = Ast_php
  * 
  * Most of this file is quite facebook specific, but other projects
  * may find it useful. 
- * 
- * less: should I move it inside facebook/ ?
+ * less: should I extract facebook specific stuff and put it in facebook/ ?
  * 
  * less: could also extra the message associated with the annotation, such
  * as the reason for the @not-dead-code
@@ -49,7 +50,7 @@ module Ast = Ast_php
 (*****************************************************************************)
 
 type email = string
- (* with tarzan *)
+
 let is_email s = 
   s =~ ".*@.*"
 
