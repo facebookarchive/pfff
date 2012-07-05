@@ -200,15 +200,17 @@ and expr =
  * the environment will be closed?
  *)
 and func_def = {
-  f_ref: bool;
   (* "_lambda" when used for lambda *)
   f_name: string wrap; 
+  f_type: function_type;
   f_params: parameter list;
   f_return_type: hint_type option;
-  f_body: stmt list;
-  f_type: function_type;
+  (* functions returning a ref are rare *)
+  f_ref: bool;
   (* only for methods, always empty for functions *)
   f_modifiers: modifier list;
+
+  f_body: stmt list;
 }
    and function_type = 
      | Function 
