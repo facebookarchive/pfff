@@ -1,6 +1,6 @@
-(* Julien Verlaguet
+(* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -24,7 +24,7 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Ast_php to Ast_php_simple
+ * Ast_php to Ast_php_simple.
  *)
 
 (*****************************************************************************)
@@ -34,17 +34,22 @@ module PI = Parse_info
 (* not used for now *)
 type env = unit
 
+let empty_env () = ()
+
 exception ObsoleteConstruct of Ast_php.info
 exception TodoConstruct of string * Ast_php.info
 
+(* Whether or not we want to store position information in the Ast_simple
+ * build here.
+ *)
 let store_position = ref false
+
+let wrap tok =
+  if !store_position then Some tok else None
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let wrap tok =
-  if !store_position then Some tok else None
 
 let opt f env x =
   match x with
@@ -62,8 +67,6 @@ let rec comma_list_dots = function
   | (Common.Middle3 _ | Common.Right3 _) :: rl -> comma_list_dots rl
 
 let brace (_, x, _) = x
-
-let empty_env () = ()
 
 let noop = A.Block []
 
@@ -86,8 +89,7 @@ and toplevel env st acc =
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and constant_def env (_, cst_name, _, e, _) =
-  {
-    A.cst_name = name env cst_name;
+  { A.cst_name = name env cst_name;
     A.cst_body = expr env e;
   }
 
