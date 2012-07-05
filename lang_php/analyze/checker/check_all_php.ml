@@ -26,13 +26,13 @@ open Common
  * 
  * todo:
  *  - dataflow based useless assignements
- *  - type checker (e.g. wrong type of argumemt, if expr is not a bool,
+ *  - type checker (e.g. wrong type of argument, expr is not a bool,
  *    use of array instead of scalar, etc)
  *  - record checker (fields)
- *  - protocol checker, statistical static analysis a la Engler
+ *  - protocol checker, statistical analysis a la Engler
  *  - ...
- *  - look at ast_php.ml (or ast_php_simple.ml) and find 
- *    bug/checker opportunities
+ * Look at ast_php.ml (or ast_php_simple.ml) and find bugs/checker
+ * opportunities.
  *)
 
 (*****************************************************************************)
