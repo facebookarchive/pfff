@@ -158,7 +158,7 @@ and expr =
   | Guil of expr list
 
   (* $y =& $x is transformed into an Assign(Id "$y", Ref (Id "$x")). In
-   * PHP refs are always used in an assign context.
+   * PHP refs are always used in an Assign context.
    *)
   | Ref of expr
 
@@ -270,8 +270,9 @@ and class_def = {
 let unwrap x = fst x
 let wrap s = s, Some (Ast_php.fakeInfo s)
 
-(* For 'echo', 'eval', 'print', 'unset', 'isset'.
- * See also pfff/data/php_stdlib/pfff.php which declares those functions.
+(* For 'eval', 'unset', 'isset', 'echo', 'print'.
+ * See also pfff/data/php_stdlib/pfff.php which declares 
+ * those functions.
  *)
 let builtin x = "__builtin__" ^ x
 (* for 'self'/'parent', 'static', 'lambda' *)
