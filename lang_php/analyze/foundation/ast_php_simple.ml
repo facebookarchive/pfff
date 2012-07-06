@@ -28,9 +28,9 @@
  * or even removed.
  *
  * Here is a partial list of the simplications/factorizations:
- *  - no tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
- *    The only token information kept is for identifiers (see wrap below)
- *    for error reporting.
+ *  - no purely syntactical tokens in the AST like parenthesis, brackets, etc.
+ *    No ParenExpr. The only token information kept is for identifiers 
+ *    for error reporting. See wrap() below.
  *  - support for old syntax is removed such as IfColon
  *  - support for features we don't really use in our code is removed
  *    e.g. 'use' for namespaces (we accept it for traits and closures though)
@@ -61,6 +61,7 @@
  *
  * todo: 
  *  - XHP class declaration? e.g. children, @required, etc?
+ *  - support for generics of sphp
  *  - factorize more? string vs Guil vs xhp?
  *)
 
@@ -75,6 +76,12 @@
  * 380MB.
  *)
 type 'a wrap = 'a * Ast_php.tok option
+
+type name = string wrap
+
+(* ------------------------------------------------------------------------- *)
+(* Program *)
+(* ------------------------------------------------------------------------- *)
 
 type program = stmt list
 
@@ -106,10 +113,9 @@ and stmt =
   (* only at toplevel *)
   | ConstantDef of constant_def
 
-  (* note that there is no LocalVars. Variables in PHP are declared
-   * when they are first assigned.
-   *)
-  | StaticVars of (string wrap * expr option) list
+  (* Note that there is no LocalVars constructor. Variables in PHP are
+   * declared when they are first assigned. *)
+  | StaticVars of (name * expr option) list
   | Global of expr list
 
   and case =
@@ -137,7 +143,7 @@ and expr =
    * todo? Introduce a Var of string wrap? can be good to differentiate
    * them no? At the same time OCaml does not ...
    *)
-  | Id of string wrap
+  | Id of name
 
   (* when None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option
@@ -195,7 +201,7 @@ and expr =
     | XhpExpr of expr
     | XhpXml of xml
 
-    (* todo: use some string wrap *)
+    (* todo: use 'name' *)
     and xml = {
       xml_tag: string list;
       xml_attrs: (string * xhp_attr) list;
@@ -219,13 +225,13 @@ and expr =
  *)
 and func_def = {
   (* "_lambda" when used for lambda *)
-  f_name: string wrap; 
+  f_name: name; 
   f_kind: function_kind;
   f_params: parameter list;
   f_return_type: hint_type option;
   (* functions returning a ref are rare *)
   f_ref: bool;
-  (* only for methods, always empty for functions *)
+  (* only for methods; always empty for functions *)
   f_modifiers: modifier list;
 
   f_body: stmt list;
@@ -237,7 +243,7 @@ and func_def = {
    and parameter = {
      p_type: hint_type option;
      p_ref: bool;
-     p_name: string wrap;
+     p_name: name;
      p_default: expr option;
    }
 
@@ -247,19 +253,19 @@ and func_def = {
      | HintArray
 
 and constant_def = {
-  cst_name: string wrap;
+  cst_name: name;
   (* normally a static scalar *)
   cst_body: expr;
 }
 
 and class_def = {
   (* for XHP classes it's x:frag (and not :x:frag), see string_of_xhp_tag *)
-  c_name: string wrap;
+  c_name: name;
   c_kind: class_kind;
 
   c_extends: string list; (* pad: ?? string option no? *)
   c_implements: string list;
-  c_uses: string wrap list; (* traits *)
+  c_uses: name list; (* traits *)
 
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time 
@@ -275,7 +281,7 @@ and class_def = {
     | Trait
 
   and class_var = {
-    cv_name: string;
+    cv_name: string; (* todo: name *)
     cv_type: hint_type option;
     cv_value: expr option;
     cv_modifiers: modifier list;
