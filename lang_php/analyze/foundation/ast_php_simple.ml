@@ -17,25 +17,30 @@
 (* Prelude *)
 (*****************************************************************************)
 (* A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree
- * as in ast_php.ml
+ * as in ast_php.ml.
  *
  * This file contains a simplified PHP abstract syntax tree. The original
  * PHP syntax tree (ast_php.ml) is good for code refactoring or
- * code visualization; the type used is very precise. However, for
- * other algorithms, the nature of the AST makes the code a bit
+ * code visualization; the type used matches exactly the source. However,
+ * for other algorithms, the nature of the AST makes the code a bit
  * redundant. Hence the idea of a SimpleAST which is the
- * original AST where the specialised constructions have been factorized.
+ * original AST where certain constructions have been factorized
+ * or even removed.
  *
  * Here is a partial list of the simplications/factorizations:
  *  - no tokens in the AST like parenthesis, brackets, etc. No ParenExpr.
  *    The only token information kept is for identifiers (see wrap below)
  *    for error reporting.
  *  - support for old syntax is removed such as IfColon
+ *  - support for features we don't really use in our code is removed
+ *    e.g. 'use' for namespaces (we accept it for traits and closures though)
  *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
  *    no HereDoc, no EncapsXxx
- *  - some builtins, for instance 'echo' are transformed in "__builtin__echo".
- *    See builtin() and special() below
+ *  - some builtins, for instance 'echo', are transformed in "__builtin__echo".
+ *    See builtin() below.
+ *  - some special keywords, for instance 'self', are transformed in 
+ *    "__special__self". See special() below.
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
  *    (update: now static_scalar = expr also in ast_php.ml),
@@ -49,9 +54,14 @@
  *     to do some s =~ "$.*")
  *  - there is no include/require, they are transformed in call
  *    to __builtin__require (again, maybe not a good idea)
+ *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
+ *    are skipped because they don't have a useful semantic for
+ *    the abstract interpreter or the type inference engine.
  *  - ...
  *
- * todo: factorize more? string vs Guil vs xhp?
+ * todo: 
+ *  - XHP class declaration? e.g. children, @required, etc?
+ *  - factorize more? string vs Guil vs xhp?
  *)
 
 (*****************************************************************************)
@@ -96,6 +106,9 @@ and stmt =
   (* only at toplevel *)
   | ConstantDef of constant_def
 
+  (* note that there is no LocalVars. Variables in PHP are declared
+   * when they are first assigned.
+   *)
   | StaticVars of (string wrap * expr option) list
   | Global of expr list
 
@@ -119,6 +132,7 @@ and expr =
   (* Id is valid for "entities" (functions, classes, constants) and variables.
    * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
+   * See builtin() and special() below.
    *
    * todo? Introduce a Var of string wrap? can be good to differentiate
    * them no? At the same time OCaml does not ...
@@ -193,9 +207,11 @@ and expr =
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 
-(* This type is used both for functions and methods.
+(* The func_def type below is actually used both for functions and methods.
  *
- * For methods, a few names are specials: __construct, __call, __callStatic.
+ * For methods, a few names are specials: 
+ *  - __construct
+ *  - __call, __callStatic
  *  
  * todo? no 'uses' field for lambda? because we will use OCaml closures
  * for representing closures? During abstract interpretation
@@ -204,7 +220,7 @@ and expr =
 and func_def = {
   (* "_lambda" when used for lambda *)
   f_name: string wrap; 
-  f_type: function_type;
+  f_kind: function_kind;
   f_params: parameter list;
   f_return_type: hint_type option;
   (* functions returning a ref are rare *)
@@ -214,7 +230,7 @@ and func_def = {
 
   f_body: stmt list;
 }
-   and function_type = 
+   and function_kind = 
      | Function 
      | Method
 
@@ -237,12 +253,13 @@ and constant_def = {
 }
 
 and class_def = {
-  c_type: class_type;
   (* for XHP classes it's x:frag (and not :x:frag), see string_of_xhp_tag *)
   c_name: string wrap;
+  c_kind: class_kind;
+
   c_extends: string list; (* pad: ?? string option no? *)
-  c_uses: string wrap list; (* traits *)
   c_implements: string list;
+  c_uses: string wrap list; (* traits *)
 
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time 
@@ -252,7 +269,7 @@ and class_def = {
   c_methods: method_def list;
 }
 
-  and class_type =
+  and class_kind =
     | ClassRegular | ClassFinal | ClassAbstract
     | Interface
     | Trait
@@ -274,9 +291,18 @@ and class_def = {
 let unwrap x = fst x
 let wrap s = s, Some (Ast_php.fakeInfo s)
 
-(* For 'eval', 'unset', 'isset', 'echo', 'print'.
- * See also pfff/data/php_stdlib/pfff.php which declares 
- * those functions.
+(* builtin() is used for:
+ *  - 'eval', "eval_var" (e.g. for $x = 'foo'; $foo = 1; echo $$x)
+ *  - 'clone', 
+ *  - 'exit', 'yield', 'yield_break'
+ *  - 'unset', 'isset', 'empty'
+ *  - 'echo', 'print', 
+ *  - '@', '`', 
+ *  - 'include', 'require', 'include_once', 'require_once'.
+ *  -  __LINE__/__FILE/__DIR/__CLASS/__TRAIT/__FUNCTION/__METHOD/
+ * 
+ * See also pfff/data/php_stdlib/pfff.php which declares those builtins.
+ * See also tests/php/semantic/ for example of uses of those builtins.
  *)
 let builtin x = "__builtin__" ^ x
 (* for 'self'/'parent', 'static', 'lambda' *)

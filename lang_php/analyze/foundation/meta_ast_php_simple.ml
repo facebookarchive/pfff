@@ -211,7 +211,7 @@ and vof_func_def {
                  f_params = v_f_params;
                  f_return_type = v_f_return_type;
                  f_body = v_f_body;
-                 f_type = v_f_type;
+                 f_kind = v_f_type;
                  f_modifiers = v_f_modifiers
                } =
   let bnds = [] in
@@ -219,7 +219,7 @@ and vof_func_def {
   let bnd = ("f_modifiers", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_function_type v_f_type in
-  let bnd = ("f_type", arg) in
+  let bnd = ("f_kind", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_stmt v_f_body in
   let bnd = ("f_body", arg) in
@@ -266,7 +266,7 @@ and vof_hint_type =
   | HintArray -> Ocaml.VSum (("HintArray", []))
 and
   vof_class_def {
-                  c_type = v_c_type;
+                  c_kind = v_c_type;
                   c_name = v_c_name;
                   c_extends = v_c_extends;
                   c_uses = v_c_traits;
@@ -298,7 +298,7 @@ and
   let bnd = ("c_extends", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_type v_c_type in
-  let bnd = ("c_type", arg) in
+  let bnd = ("c_kind", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_c_name in
   let bnd = ("c_name", arg) in

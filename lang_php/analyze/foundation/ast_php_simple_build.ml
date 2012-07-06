@@ -98,6 +98,7 @@ and stmt env st acc =
   | ExprStmt (e, _) ->
       let e = expr env e in
       A.Expr e :: acc
+  (* Why not just acc? because we abuse noop in the abstract interpreter? *)
   | EmptyStmt _ -> noop :: acc
   | Block (_, stdl, _) -> List.fold_right (stmt_and_def env) stdl acc
   | If (_, (_, e, _), st, il, io) ->
@@ -145,24 +146,34 @@ and stmt env st acc =
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      [A.String s])) :: acc
   | Use (tok, fn, _) ->
-      A.Expr (A.Call (A.Id (A.builtin "use", wrap tok),
-                     [A.String (use_filename env fn)])) :: acc
+      raise (TodoConstruct ("use", tok))
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", wrap tok), lp)) :: acc
-  | Declare (tok, _, _) -> raise (TodoConstruct ("Declare", tok))
-   (* this is not yet used in our codebase *)
-  | TypedDeclaration _ -> raise Common.Impossible
-  | IfColon (tok, _, _, _, _, _, _, _) -> raise (ObsoleteConstruct tok)
+  (* http://php.net/manual/en/control-structures.declare.php *)
+  | Declare (tok, args, stmt) -> 
+      (match args, stmt with
+      (* declare(strict=1); (or 0) can be skipped,
+       * See 'i wiki/index.php/Pfff/Declare_strict' *)
+      | (_,[Common.Left((Name(("strict",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
+      SingleStmt(EmptyStmt(_)) 
+      (* declare(ticks=1); can be skipped too.
+       * http://www.php.net/manual/en/control-structures.declare.php#control-structures.declare.ticks
+       *)
+      | (_,[Common.Left((Name(("ticks",_)), (_,Sc(C(Int((("1"),_)))))))],_),
+      SingleStmt(EmptyStmt(_)) 
+      ->
+        acc
+      |  _ -> raise (TodoConstruct ("Declare", tok))
+      )
+
   | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
 
-
-
-and use_filename env = function
-  | UseDirect (s, _) -> s
-  | UseParen (_, (s, _), _) -> s
+   (* this is not yet used in our codebase *)
+  | TypedDeclaration _ -> raise Common.Impossible
+  | IfColon (tok, _, _, _, _, _, _, _) -> raise (ObsoleteConstruct tok)
 
 and if_elseif env (_, (_, e, _), st) acc =
   let e = expr env e in
@@ -286,7 +297,7 @@ and lambda_def env (l_use, ld) =
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
-    A.f_type = A.Function;
+    A.f_kind = A.Function;
     A.f_modifiers = [];
   }
 
@@ -443,21 +454,24 @@ and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)
 
-(* todo: use_traits! *)
+(* todo: xhp class declaration ?*)
 and class_def env c =
   let _, body, _ = c.c_body in
   {
-    A.c_type = class_type env c.c_type ;
+    A.c_kind = class_type env c.c_type ;
     A.c_name = name env c.c_name;
     A.c_extends =
-    (match c.c_extends with
-    | None -> []
-    | Some (_, x) -> [fst (name env x)]);
+      (match c.c_extends with
+      | None -> []
+      | Some (_, x) -> [fst (name env x)]
+      );
     A.c_uses =
       List.fold_right (class_traits env) body [];
     A.c_implements =
-    (match c.c_implements with None -> []
-    | Some x -> interfaces env x);
+      (match c.c_implements with 
+      | None -> []
+      | Some x -> interfaces env x
+      );
     A.c_constants =
       List.fold_right (class_constants env) body [];
     A.c_variables =
@@ -541,7 +555,7 @@ and method_def env m =
     A.f_params = List.map (parameter env) params ;
     A.f_return_type = opt hint_type env m.f_return_type;
     A.f_body = method_body env m.f_body;
-    A.f_type = A.Method;
+    A.f_kind = A.Method;
   }
 
 and method_body env (_, stl, _) =
@@ -563,7 +577,7 @@ and func_def env f =
     A.f_params = List.map (parameter env) params;
     A.f_return_type = opt hint_type env f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
-    A.f_type = A.Function;
+    A.f_kind = A.Function;
     A.f_modifiers = [];
   }
 
