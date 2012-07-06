@@ -27,7 +27,7 @@
  * original AST where certain constructions have been factorized
  * or even removed.
  *
- * Here is a partial list of the simplications/factorizations:
+ * Here is a list of the simplications/factorizations:
  *  - no purely syntactical tokens in the AST like parenthesis, brackets, etc.
  *    No ParenExpr. The only token information kept is for identifiers 
  *    for error reporting. See wrap() below.
