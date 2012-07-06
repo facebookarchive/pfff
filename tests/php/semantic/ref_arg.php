@@ -8,7 +8,7 @@ function foo($x) {
 $y = 5;
 foo($y);
 //will print 5
-var_dump($y)
+var_dump($y);
 
 
 $y = 5;
