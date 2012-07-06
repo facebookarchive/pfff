@@ -356,6 +356,9 @@ and class_name_or_selfparent env = function
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
+   | ClassNameRefDynamic (lv, [tok, obj_prop]) -> 
+       let obj = lvalue env lv in
+       obj_property env obj obj_prop
    | ClassNameRefDynamic (lv, (tok, _)::xs) -> 
        raise (TodoConstruct ("ClassNameRefDynamic", tok))
 

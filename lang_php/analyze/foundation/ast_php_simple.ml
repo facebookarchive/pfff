@@ -33,7 +33,8 @@
  *    for error reporting. See wrap() below.
  *  - support for old syntax is removed such as IfColon
  *  - support for features we don't really use in our code is removed
- *    e.g. 'use' for namespaces (we accept it for traits and closures though)
+ *    e.g. 'use' for namespaces (we accept it for traits and closures though),
+ *    unset cast, etc.
  *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
  *    no HereDoc, no EncapsXxx
@@ -140,7 +141,7 @@ and expr =
    * Can also be "true", "false", "null" and many other builtin constants.
    * See builtin() and special() below.
    *
-   * todo? Introduce a Var of string wrap? can be good to differentiate
+   * todo? Introduce a Var of name? can be good to differentiate
    * them no? At the same time OCaml does not ...
    *)
   | Id of name
@@ -150,7 +151,7 @@ and expr =
 
   (* often transformed in Id "$this" in the analysis *)
   | This
-  (* Unified method call access.
+  (* Unified method/field access.
    * ex: $o->foo ==> Obj_get(Id "$o", Id "foo")
    * ex: A::foo  ==> Class_get(Id "A", Id "foo")
    * note that Id can be "self", "parent", "static".
