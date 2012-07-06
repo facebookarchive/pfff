@@ -125,7 +125,6 @@ and stmt =
     | Default of stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  (* todo: use wrap *)
   and catch = hint_type  * name * stmt list
 
 (* ------------------------------------------------------------------------- *)
@@ -203,9 +202,8 @@ and expr =
     | XhpExpr of expr
     | XhpXml of xml
 
-    (* todo: use 'name' *)
     and xml = {
-      xml_tag: string list;
+      xml_tag: string list; (* todo? name? *)
       xml_attrs: (name * xhp_attr) list;
       xml_body: xhp list;
     }
