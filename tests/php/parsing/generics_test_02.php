@@ -27,8 +27,9 @@ class Foo<X> implements Face<X> {
 
 $blork = pair('c', '-');
 
-function right_shift_hack(Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo>,Foo>>,Foo>>>,Foo>>>> $bonk, (function(Foo,Bar):C) $d) {
-}
+//TODO
+//function right_shift_hack(Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo<Foo>,Foo>>,Foo>>>,Foo>>>> $bonk, (function(Foo,Bar):C) $d) {
+//}
 
 $a = vector('a','aa','aaa');
 $d = (function():UNICORNS{return 'd';});
