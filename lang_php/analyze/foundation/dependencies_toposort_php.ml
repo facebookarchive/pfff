@@ -172,7 +172,7 @@ module Dependencies = struct
     | Some (x, _) -> SSet.add x acc
 
   and cconstants acc l = List.fold_left cconstant acc l
-  and cconstant acc (_, e) = expr acc e
+  and cconstant acc cst = expr acc cst.cst_body
   and cvariables acc cvl = List.fold_left class_var acc cvl
   and method_defl acc l = List.fold_left method_def acc l
 

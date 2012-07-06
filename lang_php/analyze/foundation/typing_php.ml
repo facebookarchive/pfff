@@ -761,13 +761,17 @@ and filter_privates privates obj =
     else SMap.add x t acc
  ) obj SMap.empty
 
-and constant_enum is_enum cname (ien, sen) ((x, tok), e) =
+and constant_enum is_enum cname (ien, sen) cst =
+  let x = A.unwrap cst.cst_name in
+  let e = cst.cst_body in
   match e with
   | Int _ -> SSet.add (A.unwrap cname^"::"^x) ien, sen
   | String _ -> ien, SSet.add (A.unwrap cname^"::"^x) sen
   | _ -> ien, sen
 
-and constant is_enum env ien sen acc ((x, tok), e) =
+and constant is_enum env ien sen acc cst =
+  let x = A.unwrap cst.cst_name in
+  let e = cst.cst_body in
   match e with
   | Int _ when is_enum -> SMap.add x (Tsum [Tienum ien]) acc
   | String _ when is_enum -> SMap.add x (Tsum [Tsenum sen]) acc

@@ -505,7 +505,7 @@ and class_constants env st acc =
   | ClassConstants (_, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
-        ((name env n), static_scalar_affect env ss) :: acc
+        ({A.cst_name = name env n; cst_body= static_scalar_affect env ss})::acc
      ) (comma_list cl) acc
   | _ -> acc
 

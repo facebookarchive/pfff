@@ -284,13 +284,7 @@ and
   let arg = Ocaml.vof_list vof_class_var v_c_variables in
   let bnd = ("c_variables", arg) in
   let bnds = bnd :: bnds in
-  let arg =
-    Ocaml.vof_list
-      (fun (v1, v2) ->
-         let v1 = vof_name v1
-         and v2 = vof_expr v2
-         in Ocaml.VTuple [ v1; v2 ])
-      v_c_constants in
+  let arg = Ocaml.vof_list vof_constant_def v_c_constants in
   let bnd = ("c_constants", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_name v_c_implements in

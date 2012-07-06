@@ -270,7 +270,7 @@ and class_def = {
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time 
    *)
-  c_constants: (name * expr) list;
+  c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
 }
@@ -280,6 +280,8 @@ and class_def = {
     | Interface
     | Trait
 
+  and modifier = Ast_php.modifier
+
   and class_var = {
     cv_name: name;
     cv_type: hint_type option;
@@ -287,7 +289,6 @@ and class_def = {
     cv_modifiers: modifier list;
   }
   and method_def = func_def
-  and modifier = Ast_php.modifier
  (* with tarzan *)
 
 (*****************************************************************************)

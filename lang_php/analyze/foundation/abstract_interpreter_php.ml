@@ -1339,9 +1339,9 @@ and build_new_ env heap pname parent self c m =
   heap, ptr
 
 
-and cconstants env (heap, m) ((s, tok), e) =
-  let heap, v = expr env heap e in
-  heap, SMap.add s v m
+and cconstants env (heap, m) cst =
+  let heap, v = expr env heap cst.cst_body in
+  heap, SMap.add (A.unwrap cst.cst_name) v m
 
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
