@@ -19,8 +19,11 @@ module Db = Database_code
 
 let ast_simple_unittest =
   "ast_simple regression files" >:: (fun () ->
-    let dir = Filename.concat Config.path "/tests/php/parsing" in
-    let files = Common.glob (spf "%s/*.php" dir) in
+    let dir1 = Filename.concat Config.path "/tests/php/parsing" in
+    let dir2 = Filename.concat Config.path "/tests/php/semantic" in
+    let files = 
+      Common.glob (spf "%s/*.php" dir1) ++ Common.glob (spf "%s/*.php" dir2)
+    in
     files +> List.iter (fun file ->
       try
         let cst = Parse_php.parse_program file in
