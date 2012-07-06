@@ -97,9 +97,9 @@ let lang_ext_or_t_ident ii fii =
  *
  * coupling: if you add a new keyword, don't forget to also modify
  * the xhp_attr_name_atom grammar rule in parser_php.mly
- * 
+ *
  * http://php.net/manual/en/reserved.keywords.php
- * 
+ *
  * todo: callable, goto
  *)
 let keyword_table = Common.hash_of_list [
@@ -558,7 +558,7 @@ rule st_in_scripting = parse
 
     | ":" { TCOLON(tokinfo lexbuf) }
     | "?" { TQUESTION(tokinfo lexbuf) }
-    (* semantic grep or vargs extension *)
+    (* semantic grep or varg args extension *)
     | "..." { TDOTS(tokinfo lexbuf) }
 
   (*x: symbol rules *)
