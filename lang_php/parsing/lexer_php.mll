@@ -558,7 +558,7 @@ rule st_in_scripting = parse
 
     | ":" { TCOLON(tokinfo lexbuf) }
     | "?" { TQUESTION(tokinfo lexbuf) }
-    (* semantic grep or varg args extension *)
+    (* semantic grep or var args extension *)
     | "..." { TDOTS(tokinfo lexbuf) }
 
   (*x: symbol rules *)
