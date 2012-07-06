@@ -12,11 +12,21 @@ module V = Visitor_php
 (* Simple AST *)
 (*****************************************************************************)
 let test_dump_simple file =
-  let ast = Parse_php.parse_program file in
-  let ast = Ast_php_simple_build.program ast in
-  let v = Meta_ast_php_simple.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
+  try 
+    let ast = Parse_php.parse_program file in
+    let ast = Ast_php_simple_build.program ast in
+    let v = Meta_ast_php_simple.vof_program ast in
+    let s = Ocaml.string_of_v v in
+    pr s
+  with exn ->
+    (match exn with
+    | Ast_php_simple_build.TodoConstruct (_, tok)
+    | Ast_php_simple_build.ObsoleteConstruct tok
+      ->
+        pr2 (Parse_info.error_message_info tok);
+        raise exn
+    | _ -> raise exn
+    )
 
 (*****************************************************************************)
 (* Scope annotations *)
