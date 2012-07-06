@@ -48,12 +48,13 @@
  *    also no scalar.
  * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
- *    of lots of duplication in many constructors (e.g. no ClassConstant
- *    in a separate scalar type).
+ *    of lots of duplication in many constructors, e.g. no ClassConstant
+ *    in a separate scalar type, no retarded obj_prop_access/obj_dim types,
+ *    no OName, CName, ObjProp, no ObjAccessSimple vs ObjAccess, etc.
  *  - a simpler 'name': identifiers, xhp names, and variables are unified
  *    (maybe not a good idea retrospectively, cos it forces in many places
  *     to do some s =~ "$.*")
- *  - there is no include/require, they are transformed in call
+ *  - no include/require, they are transformed in call
  *    to __builtin__require (again, maybe not a good idea)
  *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
  *    are skipped because they don't have a useful semantic for
