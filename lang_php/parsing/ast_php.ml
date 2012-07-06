@@ -49,8 +49,9 @@ open Parse_info
  * dependent programs !!!! An easier solution is to not change this
  * file, or to only add new constructors.
  * 
- * todo: 
+ * todo:
  *  - add fbstrict types in AST, not just in grammar
+ *  - support for '...' fbstrict extension in parameters
  *  - add hphp attributes in AST, not just in grammar
  *  - less: add namespace in AST (also add in grammar)
  * 
