@@ -1001,7 +1001,7 @@ attribute: ident { }
 /*(*1 Expressions (and variables) *)*/
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR expression *)*/
-/*(* a little coupling with non_empty_function_call_parameter_list *)*/
+/*(* a little coupling with non_empty_function_call_argument_list *)*/
 expr:
  | r_variable				{ mk_e (Lv $1) }
  | expr_without_variable		{ $1 }
@@ -1370,7 +1370,7 @@ rw_variable: variable { $1 }
 /*(*----------------------------*)*/
 /*(*2 function call *)*/
 /*(*----------------------------*)*/
-function_call: function_head TOPAR function_call_parameter_list TCPAR
+function_call: function_head TOPAR function_call_argument_list TCPAR
   { FunCall ($1, ($2, $3, $4)) }
 
  /*(*s: function_call grammar rule hook *)*/
@@ -1389,17 +1389,17 @@ function_head:
 
 /*(*x: GRAMMAR variable *)*/
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
-non_empty_function_call_parameter_list:
+non_empty_function_call_argument_list:
  | variable			{ [Left (Arg (mk_e (Lv $1)))] }
  | expr_without_variable	{ [Left (Arg ($1))] }
  | TAND w_variable 		{ [Left (ArgRef($1,$2))] }
 
  /*(*s: repetitive non_empty_function_call_parameter_list *)*/
-  | non_empty_function_call_parameter_list TCOMMA    variable
+  | non_empty_function_call_argument_list TCOMMA    variable
       { $1 ++ [Right $2; Left (Arg (mk_e (Lv $3)))] }
-  | non_empty_function_call_parameter_list TCOMMA    expr_without_variable
+  | non_empty_function_call_argument_list TCOMMA    expr_without_variable
       { $1 ++ [Right $2; Left (Arg ($3))] }
-  | non_empty_function_call_parameter_list TCOMMA    TAND w_variable
+  | non_empty_function_call_argument_list TCOMMA    TAND w_variable
       { $1 ++ [Right $2; Left (ArgRef($3,$4))] }
  /*(*e: repetitive non_empty_function_call_parameter_list *)*/
 
@@ -1552,11 +1552,11 @@ dynamic_class_name_reference:
 base_variable_bis: base_variable { basevar_to_variable $1 }
 
 method_or_not:
-  | TOPAR function_call_parameter_list TCPAR    { Some ($1, $2, $3) }
+  | TOPAR function_call_argument_list TCPAR    { Some ($1, $2, $3) }
   | /*(*empty*)*/ { None }
 
 ctor_arguments:
-  | TOPAR function_call_parameter_list TCPAR	{ Some ($1, $2, $3) }
+  | TOPAR function_call_argument_list TCPAR	{ Some ($1, $2, $3) }
   | /*(*empty*)*/ { None }
 /*(*x: GRAMMAR class bis *)*/
 /*(*----------------------------*)*/
@@ -1747,8 +1747,8 @@ parameter_list:
  | non_empty_parameter_list   { $1 }
  | /*(*empty*)*/              { [] }
 
-function_call_parameter_list:
- | non_empty_function_call_parameter_list      { $1 }
+function_call_argument_list:
+ | non_empty_function_call_argument_list      { $1 }
  | /*(*empty*)*/			       { [] }
 /*(*e: repetitive xxx and non_empty_xxx *)*/
 
