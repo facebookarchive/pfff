@@ -1,21 +1,24 @@
+To build pfff, you will require several developpement packages usually
+not shipped in a default install.
+
 Install pcre-devel, gtk2-devel, atk-devel, pango-devel, and cairo-devel,
-swi-prolog.
+swi-prolog, binutils-gold.
 
 For instance:
-for redhat: sudo yum install pcre-devel
-for ubuntu: sudo apt-get install pcre-devel
-for gentoo: sudo emerge pcre
-for arch: I don't remember
+for RedHat: sudo yum install pcre-devel
+for Gentoo: sudo emerge pcre
+for Arch: I don't remember
 
-then
+For Ubuntu/Debian, packages are named differently, usually with a 'lib'
+prefix, you will want to install:
+libpcre3-dev, libgtk2.0-dev, libcairo2-dev, libpango1.0-dev and finally
+the binutils-goldl package.
+
+On Fedora you may need to install the camlp4 packages too: 
+ ocaml-camlp4 ocaml-camlp4-devel
+
+Then:
   $ ./configure
   $ make depend
   $ make
   $ make opt
-
-For Ubuntu/Debian you want to install libpcre3-dev,
-libgtk2.0-dev, libcairo2-dev and libpango1.0-dev. These are the
-correct package names (pcre-devel does not exist, and so on).
-
-On Fedora you may need to install the camlp4 packages too: 
- ocaml-camlp4 ocaml-camlp4-devel
