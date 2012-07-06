@@ -6,6 +6,8 @@ module Ast_php = Meta_ast_php
 let rec vof_program v = Ocaml.vof_list vof_stmt v
 and vof_wrapped_string (s, tok) =
   Ocaml.VString s
+and vof_name x = vof_wrapped_string x
+
 and vof_stmt =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
@@ -81,8 +83,8 @@ and vof_case =
   | Default v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Default", [ v1 ]))
 and vof_catch (v1, v2, v3) =
-  let v1 = Ocaml.vof_string v1
-  and v2 = Ocaml.vof_string v2
+  let v1 = vof_hint_type v1
+  and v2 = vof_name v2
   and v3 = Ocaml.vof_list vof_stmt v3
   in Ocaml.VTuple [ v1; v2; v3 ]
 and vof_expr =
@@ -187,7 +189,7 @@ and
   let arg =
     Ocaml.vof_list
       (fun (v1, v2) ->
-         let v1 = Ocaml.vof_string v1
+         let v1 = vof_name v1
          and v2 = vof_xhp_attr v2
          in Ocaml.VTuple [ v1; v2 ])
       v_xml_attrs in
@@ -262,7 +264,7 @@ and
   let bnd = ("p_type", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_hint_type =
   function
-  | Hint v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Hint", [ v1 ]))
+  | Hint v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Hint", [ v1 ]))
   | HintArray -> Ocaml.VSum (("HintArray", []))
 and
   vof_class_def {
@@ -285,16 +287,16 @@ and
   let arg =
     Ocaml.vof_list
       (fun (v1, v2) ->
-         let v1 = Ocaml.vof_string v1
+         let v1 = vof_name v1
          and v2 = vof_expr v2
          in Ocaml.VTuple [ v1; v2 ])
       v_c_constants in
   let bnd = ("c_constants", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list Ocaml.vof_string v_c_implements in
+  let arg = Ocaml.vof_list vof_name v_c_implements in
   let bnd = ("c_implements", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list Ocaml.vof_string v_c_extends in
+  let arg = Ocaml.vof_option vof_name v_c_extends in
   let bnd = ("c_extends", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_type v_c_type in
@@ -328,7 +330,7 @@ and
   let arg = Ocaml.vof_option vof_hint_type v_cv_type in
   let bnd = ("cv_type", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_string v_cv_name in
+  let arg = vof_name v_cv_name in
   let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_modifier x = Ast_php.vof_modifier x
 and vof_method_def x = vof_func_def x

@@ -217,7 +217,7 @@ let save_path env target =
 and make_fake_params l =
   List.map (fun p ->
     match p.p_type with
-    | Some (Hint s) -> New (Id (w s), [])
+    | Some (Hint name) -> New (Id (name), [])
     | None | Some (HintArray) -> Id (w "null")
   ) l
 
@@ -1250,12 +1250,12 @@ and class_def env heap (c: Ast.class_def) =
   let heap, self = Ptr.new_ heap in
   let heap, pname, parent =
     match c.c_extends with
-    | [p] ->
+    | Some (p, _tok) ->
         let heap = lazy_class env heap p in
         let heap, _, ptr = Var.get_global env heap p in
         heap, p, ptr
     (* no parents *)
-    | _ ->
+    | None ->
         let heap, ptr = Ptr.new_ heap in
         (* todo: return a None *)
         heap, "", ptr
@@ -1339,7 +1339,7 @@ and build_new_ env heap pname parent self c m =
   heap, ptr
 
 
-and cconstants env (heap, m) (s, e) =
+and cconstants env (heap, m) ((s, tok), e) =
   let heap, v = expr env heap e in
   heap, SMap.add s v m
 
@@ -1351,7 +1351,7 @@ and class_vars env static (heap, m) cv =
       (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
   | _ -> heap, m
 
-and class_var env static (heap, m) (s, e) =
+and class_var env static (heap, m) ((s, tok), e) =
   (* static variables keep their $, regular fields don't *)
   let s = 
     match static with

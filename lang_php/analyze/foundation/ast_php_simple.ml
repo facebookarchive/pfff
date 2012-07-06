@@ -126,7 +126,7 @@ and stmt =
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
   (* todo: use wrap *)
-  and catch = string  * string * stmt list
+  and catch = hint_type  * name * stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -206,7 +206,7 @@ and expr =
     (* todo: use 'name' *)
     and xml = {
       xml_tag: string list;
-      xml_attrs: (string * xhp_attr) list;
+      xml_attrs: (name * xhp_attr) list;
       xml_body: xhp list;
     }
      and xhp_attr = expr
@@ -251,7 +251,7 @@ and func_def = {
 
    (* todo: add the generics of sphp? *)
    and hint_type =
-     | Hint of string
+     | Hint of name
      | HintArray
 
 and constant_def = {
@@ -265,14 +265,14 @@ and class_def = {
   c_name: name;
   c_kind: class_kind;
 
-  c_extends: string list; (* pad: ?? string option no? *)
-  c_implements: string list;
+  c_extends: name option;
+  c_implements: name list;
   c_uses: name list; (* traits *)
 
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time 
    *)
-  c_constants: (string * expr) list;
+  c_constants: (name * expr) list;
   c_variables: class_var list;
   c_methods: method_def list;
 }
@@ -283,7 +283,7 @@ and class_def = {
     | Trait
 
   and class_var = {
-    cv_name: string; (* todo: name *)
+    cv_name: name;
     cv_type: hint_type option;
     cv_value: expr option;
     cv_modifiers: modifier list;

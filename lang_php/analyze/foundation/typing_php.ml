@@ -635,10 +635,10 @@ and parameter env p =
   let pval =
     match p.p_type with
     | None -> Tvar (fresh())
-    | Some (Hint x) ->
+    | Some (Hint (x, tok)) ->
         (try get_hard_object env x
         with Not_found ->
-          expr env (New (Id (wrap x), [])))
+          expr env (New (Id (x, tok), [])))
     | Some (HintArray) ->
         expr env (ConsArray [])
   in
@@ -684,8 +684,8 @@ and class_def env c =
   Collect.collect env;
   let parent, parent_name =
     match c.c_extends with
-    | [x] -> get_class env x, x
-    | _ -> Tvar (fresh()), "" in
+    | Some (x, _) -> get_class env x, x
+    | None -> Tvar (fresh()), "" in
   if env.verbose then begin
     incr env.count;
     Printf.printf "Typing class(%d/%d)[%d]: %s\n" 
@@ -746,7 +746,7 @@ and class_def env c =
 
 and private_vars privates cv =
   if is_private cv.cv_modifiers
-  then SSet.add cv.cv_name privates
+  then SSet.add (A.unwrap cv.cv_name) privates
   else privates
 
 and private_methods privates m =
@@ -761,13 +761,13 @@ and filter_privates privates obj =
     else SMap.add x t acc
  ) obj SMap.empty
 
-and constant_enum is_enum cname (ien, sen) (x, e) =
+and constant_enum is_enum cname (ien, sen) ((x, tok), e) =
   match e with
   | Int _ -> SSet.add (A.unwrap cname^"::"^x) ien, sen
   | String _ -> ien, SSet.add (A.unwrap cname^"::"^x) sen
   | _ -> ien, sen
 
-and constant is_enum env ien sen acc (x, e) =
+and constant is_enum env ien sen acc ((x, tok), e) =
   match e with
   | Int _ when is_enum -> SMap.add x (Tsum [Tienum ien]) acc
   | String _ when is_enum -> SMap.add x (Tsum [Tsenum sen]) acc
@@ -778,7 +778,7 @@ and class_vars static env acc c =
   if static <> is_static c.cv_modifiers
   then acc
   else 
-    let (s, e) = (c.cv_name, c.cv_value) in
+    let ((s, _tok), e) = (c.cv_name, c.cv_value) in
     let t = match e with 
       | None -> Tvar (fresh()) 
       | Some x -> expr env x 

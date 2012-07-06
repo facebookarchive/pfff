@@ -155,7 +155,7 @@ module Dependencies = struct
   and hint_type acc = function None -> acc | Some x -> hint_type_ acc x
   and hint_type_ acc = function
     (* not sure a type hints counts as a dependency *)
-    | Hint s -> SSet.add s acc
+    | Hint (s, _) -> SSet.add s acc
     | HintArray -> acc
 
   and class_def acc c =
@@ -166,7 +166,11 @@ module Dependencies = struct
     let acc = method_defl acc c.c_methods in
     acc
 
-  and extends acc l = List.fold_right SSet.add l acc
+  and extends acc l = 
+    match l with
+    | None -> acc
+    | Some (x, _) -> SSet.add x acc
+
   and cconstants acc l = List.fold_left cconstant acc l
   and cconstant acc (_, e) = expr acc e
   and cvariables acc cvl = List.fold_left class_var acc cvl

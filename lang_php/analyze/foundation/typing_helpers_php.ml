@@ -247,24 +247,28 @@ module FindCommonAncestor = struct
     Classes.mem env id &&
     let c = Classes.get env id in
     match c.c_extends with
-    | [] -> false
-    | l when List.mem cand l -> true
-    | l -> List.fold_left (class_match env cand) acc l
+    | None -> false
+    | Some (s, _) when s = cand -> true
+    | Some (s, _) -> class_match env cand acc s
 
   let rec get_candidates env acc id =
     let acc = SSet.add id acc in
-    if not (Classes.mem env id) then acc else
-    let c = Classes.get env id in
-    List.fold_left (get_candidates env) acc c.c_extends
+    if not (Classes.mem env id) 
+    then acc
+    else
+      let c = Classes.get env id in
+      (match c.c_extends with 
+      | None -> acc
+      | Some (s, _) -> get_candidates env acc s
+      )
 
   let go env ss =
     let l = SSet.fold (fun x y -> x :: y) ss [] in
     let cands = List.fold_left (get_candidates env) SSet.empty l in
-    try SSet.iter (
-    fun cand ->
+    try SSet.iter (fun cand ->
       let all_match = List.fold_left (class_match env cand) false l in
       if all_match then raise (Found cand)
-   ) cands;
+    ) cands;
     None
     with Found c -> Some c
 

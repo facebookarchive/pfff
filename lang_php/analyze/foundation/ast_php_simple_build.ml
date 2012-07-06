@@ -342,7 +342,7 @@ and dname = function
       ("$"^s, wrap tok)
 
 and hint_type env = function
-  | Hint q -> A.Hint (fst (class_name_or_selfparent env q))
+  | Hint q -> A.Hint (class_name_or_selfparent env q)
   | HintArray _ -> A.HintArray
 
 and qualifier env (cn, _) = class_name_or_selfparent env cn
@@ -465,8 +465,8 @@ and class_def env c =
     A.c_name = name env c.c_name;
     A.c_extends =
       (match c.c_extends with
-      | None -> []
-      | Some (_, x) -> [fst (name env x)]
+      | None -> None
+      | Some (_, x) -> Some (name env x)
       );
     A.c_uses =
       List.fold_right (class_traits env) body [];
@@ -492,7 +492,7 @@ and class_type env = function
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in
-  List.map (fun x -> fst (name env x)) intfs
+  List.map (fun x -> (name env x)) intfs
 
 and class_traits env x acc =
   match x with
@@ -505,7 +505,7 @@ and class_constants env st acc =
   | ClassConstants (_, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
-        (fst (name env n), static_scalar_affect env ss) :: acc
+        ((name env n), static_scalar_affect env ss) :: acc
      ) (comma_list cl) acc
   | _ -> acc
 
@@ -522,9 +522,8 @@ and class_variables env st acc =
         | VModifiers l -> List.map (fun (x, _) -> x) l
       in
       let ht = opt hint_type env ht in
-      List.map (
-        fun (n, ss) ->
-          let name = fst (dname n) in
+      List.map (fun (n, ss) ->
+          let name = dname n in
           let value = opt static_scalar_affect env ss in
           {
             A.cv_name = name;
@@ -600,8 +599,8 @@ and xhp_html env = function
         A.xml_body = [];
       }
 
-and xhp_attribute env ((n, _), _, v) =
-  n, xhp_attr_value env v
+and xhp_attribute env ((n, tok), _, v) =
+  (n, wrap tok), xhp_attr_value env v
 
 and xhp_attr_value env = function
   | XhpAttrString (_, l, _) ->
@@ -668,7 +667,7 @@ and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
   let fq = name env fq in
   let dn = dname dn in
-  fst fq, fst dn, stdl
+  A.Hint fq, dn, stdl
 
 and static_var env (x, e) =
   dname x, opt static_scalar_affect env e
