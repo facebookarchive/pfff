@@ -299,7 +299,9 @@ let unwrap x = fst x
 let wrap s = s, Some (Ast_php.fakeInfo s)
 
 (* builtin() is used for:
- *  - 'eval', "eval_var" (e.g. for $x = 'foo'; $foo = 1; echo $$x)
+ *  - 'eval', and implicitly generated eval/reflection like functions:
+ *     "eval_var" (e.g. for echo $$x, echo ${"x"."y"}),
+ *     "eval_obj_field" (e.g. for echo $o->$fld)
  *  - 'clone', 
  *  - 'exit', 'yield', 'yield_break'
  *  - 'unset', 'isset', 'empty'
