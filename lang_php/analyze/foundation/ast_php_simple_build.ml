@@ -234,8 +234,7 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  (* This is almost never used in our codebase, just in some third party code.
-   *)
+  (* this is almost never used in our codebase, just in some third party code *)
   | AssignNew (e1, _, _, new_tok, class_ref, args) ->
       let e1 = lvalue env e1 in
       let e2 = expr env (New (new_tok, class_ref, args)) in
@@ -379,6 +378,7 @@ and lvalue env = function
       A.Array_get (e1, e2)
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
+  (* one can use $o[xxx] or $o{xxx} apparently *)
   | VBraceAccess (lv, (_, e, _)) ->
       A.Array_get (lvalue env lv, Some (expr env e))
   | Indirect (e, (Dollar tok)) ->
@@ -448,11 +448,16 @@ and obj_dim env obj = function
   | OName n -> A.Obj_get (obj, A.Id(name env n))
   | OBrace (_, e, _) ->
       A.Obj_get (obj, expr env e)
+  (* again, one can use the [] or {} syntax *)
   | OArrayAccess (x, (_, e, _)) ->
       let e = opt expr env e in
       let x = obj_dim env obj x in
       A.Array_get (x, e)
-  | OBraceAccess (_, (lb, e, rb)) -> raise (TodoConstruct ("brace access", lb))
+  (* this is almost never used in our codebase, just in some third-party code.*)
+  | OBraceAccess (x, (_, e, _)) -> 
+      let e = expr env e in
+      let x = obj_dim env obj x in
+      A.Array_get(x, Some e)
 
 and indirect env = function
   | Dollar tok -> raise (TodoConstruct ("expr Dollar", tok))
