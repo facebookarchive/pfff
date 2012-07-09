@@ -687,7 +687,9 @@ and assignOp env = function
 
 and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
-  | GlobalDollar (tok, _) -> raise (TodoConstruct ("GlobalDollar", tok))
+  (* this is used only once in our codebase, and it should not ... *)
+  | GlobalDollar (tok, lv) -> 
+      A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
   | GlobalDollarExpr (tok, _) -> raise (TodoConstruct ("GlobalDollarExpr", tok))
 
 (*****************************************************************************)
