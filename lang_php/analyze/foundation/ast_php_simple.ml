@@ -45,7 +45,9 @@
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
  *    (update: now static_scalar = expr also in ast_php.ml),
- *    also no scalar.
+ *    also no scalar. 
+ *  - some constructs were transformed into calls to eval_var, 
+ *    e.g. no GlobalDollar, no VBrace.
  * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
  *    of lots of duplication in many constructors, e.g. no ClassConstant
