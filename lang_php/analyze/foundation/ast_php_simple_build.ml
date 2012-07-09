@@ -234,9 +234,7 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  (* This is almost never used in our codebase, just in some third party code
-   * and I don't really know why there is such a special construction
-   * in PHP.
+  (* This is almost never used in our codebase, just in some third party code.
    *)
   | AssignNew (e1, _, _, new_tok, class_ref, args) ->
       let e1 = lvalue env e1 in
