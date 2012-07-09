@@ -234,8 +234,14 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  | AssignNew (_, tok, _, _, _, _) ->
-      raise (TodoConstruct ("expr AssignNew", tok))
+  (* This is almost never used in our codebase, just in some third party code
+   * and I don't really know why there is such a special construction
+   * in PHP.
+   *)
+  | AssignNew (e1, _, _, new_tok, class_ref, args) ->
+      let e1 = lvalue env e1 in
+      let e2 = expr env (New (new_tok, class_ref, args)) in
+      A.Assign (None, e1, A.Ref e2)
   | Cast ((c, _), e) ->
       A.Cast (c, expr env e)
   | CastUnset (tok, _) ->

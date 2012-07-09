@@ -48,7 +48,9 @@
  *    also no scalar. 
  *  - some constructs were transformed into calls to eval_var, 
  *    e.g. no GlobalDollar, no VBrace.
- * -  no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
+ *  - some special constructs like AssignNew were transformed into
+ *    composite calls to New and Ref.
+ *  - no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
  *  - unified class and object access via Class_get and Obj_get instead
  *    of lots of duplication in many constructors, e.g. no ClassConstant
  *    in a separate scalar type, no retarded obj_prop_access/obj_dim types,
