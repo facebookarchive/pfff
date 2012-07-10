@@ -139,7 +139,8 @@ and stmt env st acc =
   | Echo (tok, el, _) ->
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      (List.map (expr env) (comma_list el)))) :: acc
-  | Globals (_, gvl, _) -> A.Global (List.map (global_var env) (comma_list gvl)) :: acc
+  | Globals (_, gvl, _) -> 
+      A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
@@ -274,14 +275,17 @@ and expr env = function
       A.Call (A.Id (A.builtin "require", wrap tok), [expr env e])
   | RequireOnce (tok, e) ->
       A.Call (A.Id (A.builtin "require_once", wrap tok), [expr env e])
+
   | Empty (tok, (_, lv, _)) ->
       A.Call (A.Id (A.builtin "empty", wrap tok), [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
       A.Call (A.Id (A.builtin "isset", wrap tok),
              List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
+
   | Yield (tok, e) ->
       A.Call (A.Id (A.builtin "yield", wrap tok), [expr env e])
+  (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
       A.Call (A.Id (A.builtin "yield", wrap tok),
              [A.Id (A.builtin "yield_break", wrap tok2)])
@@ -339,7 +343,7 @@ and dname = function
       if s.[0] = '$'
       then failwith "dname: the string has a dollar, weird";
       (* We abuse Id to represent both variables and functions/classes
-       * identifiers in ast_ph_simple, so to avoid collision
+       * identifiers in ast_php_simple, so to avoid collision
        * we prepend a $ (the $ was removed in ast_php.ml and parse_php.ml)
        *)
       ("$"^s, wrap tok)
@@ -372,15 +376,15 @@ and lvalue env = function
       let lv = lvalue env lv in
       let e = opt expr env e in
       A.Array_get (lv, e)
+  (* one can use $o[xxx] or $o{xxx} apparently *)
+  | VBraceAccess (lv, (_, e, _)) ->
+      A.Array_get (lvalue env lv, Some (expr env e))
   | VArrayAccessXhp (e1, (_, e2, _)) ->
       let e1 = expr env e1 in
       let e2 = opt expr env e2 in
       A.Array_get (e1, e2)
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
-  (* one can use $o[xxx] or $o{xxx} apparently *)
-  | VBraceAccess (lv, (_, e, _)) ->
-      A.Array_get (lvalue env lv, Some (expr env e))
   | Indirect (e, (Dollar tok)) ->
       A.Call (A.Id (A.builtin "eval_var", wrap tok), [lvalue env e])
   | VQualifier (q, v)  ->
@@ -388,7 +392,8 @@ and lvalue env = function
                   A.Call (A.Id (A.builtin "eval_var",
                                wrap (Ast_php.fakeInfo (A.builtin "eval_var"))),
                                [lvalue env v]))
-  | ClassVar (q, dn) -> A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
+  | ClassVar (q, dn) -> 
+      A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
   | FunCallSimple (f, (_, args, _)) ->
       let f = name env f in
       let args = comma_list args in
@@ -398,7 +403,10 @@ and lvalue env = function
       let argl = comma_list argl in
       let argl = List.map (argument env) argl in
       let lv = lvalue env lv in
-      let lv = match q with None -> lv | Some q -> A.Class_get (A.Id (qualifier env q), lv) in
+      let lv = match q with 
+        | None -> lv
+        | Some q -> A.Class_get (A.Id (qualifier env q), lv) 
+      in
       A.Call (lv, argl)
   | StaticMethodCallSimple (q, n, (_, args, _)) ->
       let f = A.Class_get (A.Id (qualifier env q), A.Id (name env n)) in
@@ -458,9 +466,6 @@ and obj_dim env obj = function
       let e = expr env e in
       let x = obj_dim env obj x in
       A.Array_get(x, Some e)
-
-and indirect env = function
-  | Dollar tok -> raise (TodoConstruct ("expr Dollar", tok))
 
 and argument env = function
   | Arg e -> expr env e
@@ -548,13 +553,10 @@ and class_body env st acc =
   match st with
   | Method md ->
       method_def env md :: acc
+  (* TODO? or we don't care and it's ok? *)
   | XhpDecl _ ->
-      (* TODO? or we don't care and it's ok? *)
       acc
-  | UseTrait _ ->
-      (* TODO!! *)
-      acc
-  | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)) -> acc
+  | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)|UseTrait _) -> acc
 
 and method_def env m =
   let _, params, _ = m.f_params in
@@ -699,7 +701,8 @@ and global_var env = function
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) -> 
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
-  | GlobalDollarExpr (tok, _) -> raise (TodoConstruct ("GlobalDollarExpr", tok))
+  | GlobalDollarExpr (tok, _) -> 
+      raise (TodoConstruct ("GlobalDollarExpr", tok))
 
 (*****************************************************************************)
 (* For cmf *)

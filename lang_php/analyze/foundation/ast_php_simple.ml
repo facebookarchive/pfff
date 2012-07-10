@@ -28,41 +28,69 @@
  * or even removed.
  *
  * Here is a list of the simplications/factorizations:
- *  - no purely syntactical tokens in the AST like parenthesis, brackets, etc.
- *    No ParenExpr. The only token information kept is for identifiers 
+ *  - no purely syntactical tokens in the AST like parenthesis, brackets, 
+ *    braces, commas, semicolons, etc. No ParenExpr. No FinalDef. No
+ *    NotParsedCorrectly.
+ *    The only token information kept is for identifiers
  *    for error reporting. See wrap() below.
- *  - support for old syntax is removed such as IfColon
+
+ *  - support for old syntax is removed. No IfColon, ColonStmt,
+ *    CaseColonList.
+ *  - support for extra tools is removed such as Xdebug or Sgrep
  *  - support for features we don't really use in our code is removed
  *    e.g. 'use' for namespaces (we accept it for traits and closures though),
- *    unset cast, etc.
- *  - support for extra tools is removed such as Xdebug or Sgrep
+ *    unset cast, etc. No Use, UseDirect, UseParen. No CastUnset.
+ *    Also no StaticObjCallVar.
+ *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
+ *    are skipped because they don't have a useful semantic for
+ *    the abstract interpreter or the type inference engine. No Declare.
+ * 
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
- *    no HereDoc, no EncapsXxx
+ *    no HereDoc, no EncapsXxx. No Xhp vs XhpSingleton. 
  *  - some builtins, for instance 'echo', are transformed in "__builtin__echo".
  *    See builtin() below.
+ *  - no include/require, they are transformed in call
+ *    to __builtin__require (again, maybe not a good idea)
  *  - some special keywords, for instance 'self', are transformed in 
  *    "__special__self". See special() below.
- *  - a simpler stmt type; no extra toplevel and stmt_and_def types
+ * 
+ *  - a simpler stmt type; no extra toplevel and stmt_and_def types,
+ *    no FuncDefNested, no ClassDefNested. No StmtList.
  *  - a simpler expr type; no lvalue vs expr vs static_scalar
- *    (update: now static_scalar = expr also in ast_php.ml),
- *    also no scalar. 
- *  - some constructs were transformed into calls to eval_var, 
- *    e.g. no GlobalDollar, no VBrace.
- *  - some special constructs like AssignNew were transformed into
- *    composite calls to New and Ref.
- *  - no FunCallSimple vs FunCallVar, VarrayAccess vs VarrayAccessXhp,
- *  - unified class and object access via Class_get and Obj_get instead
- *    of lots of duplication in many constructors, e.g. no ClassConstant
- *    in a separate scalar type, no retarded obj_prop_access/obj_dim types,
- *    no OName, CName, ObjProp, no ObjAccessSimple vs ObjAccess, etc.
+ *    (update: now static_scalar = expr also in ast_php.ml).
+ *    Also no scalar. No Sc, no C. No Lv. Pattern matching constants
+ *    is simpler:  | Sc (C (String ...)) -> ... becomes just | String -> ....
+ *    Also no arg type. No Arg, ArgRef. Also no xhp_attr_value type.
+ *    No XhpAttrString, XhpAttrExpr.
+ *  - no EmptyStmt, it is transformed in an empty Block
+ *  - a simpler If, elseif are transformed in nested If, and empty else
+ *    in empty Block.
+ *  - a simpler Foreach, foreach_var_either and foreach_arrow are transformed
+ *    into expressions (maybe not good idea)
+
+ *  - some special constructs like AssignRef were transformed into
+ *    composite calls to Assign and Ref. Same for AssignList, AssignNew.
+ *    Same for arguments passed by reference, no Arg, ArgRef.
+ *    Same for refs in arrays, no ArrayRef, ArrayArrowRef. No ListVar,
+ *    ListList, ListEmpty.
+ *    More orthogonal.
+ *  - a unified Call. No FunCallSimple, FunCallVar, MethodCallSimple,
+ *    StaticMethodCallSimple, StaticMethodCallVar.
+ *  - a unified Array_get. No VArrayAccess, VArrayAccessXhp,
+ *    VBraceAccess, OArrayAccess, OBraceAccess
+ *  - unified Class_get and Obj_get instead of lots of duplication in
+ *    many constructors, e.g. no ClassConstant in a separate scalar type, 
+ *    no retarded obj_prop_access/obj_dim types,
+ *    no OName, CName, ObjProp, ObjPropVar, ObjAccessSimple vs ObjAccess, 
+ *    no ClassNameRefDynamic, no VQualifier, ClassVar, DynamicClassVar,
+ *    etc.
+ *  - unified eval_var, some constructs were transformed into calls to
+ *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
+ *  -
+ * 
  *  - a simpler 'name': identifiers, xhp names, and variables are unified
  *    (maybe not a good idea retrospectively, cos it forces in many places
  *     to do some s =~ "$.*")
- *  - no include/require, they are transformed in call
- *    to __builtin__require (again, maybe not a good idea)
- *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
- *    are skipped because they don't have a useful semantic for
- *    the abstract interpreter or the type inference engine.
  *  - ...
  *
  * todo: 
