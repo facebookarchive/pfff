@@ -30,10 +30,9 @@
  * Here is a list of the simplications/factorizations:
  *  - no purely syntactical tokens in the AST like parenthesis, brackets, 
  *    braces, commas, semicolons, etc. No ParenExpr. No FinalDef. No
- *    NotParsedCorrectly.
- *    The only token information kept is for identifiers
+ *    NotParsedCorrectly. The only token information kept is for identifiers
  *    for error reporting. See wrap() below.
-
+ * 
  *  - support for old syntax is removed. No IfColon, ColonStmt,
  *    CaseColonList.
  *  - support for extra tools is removed such as Xdebug or Sgrep
@@ -46,7 +45,7 @@
  *    the abstract interpreter or the type inference engine. No Declare.
  * 
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
- *    no HereDoc, no EncapsXxx. No Xhp vs XhpSingleton. 
+ *    no HereDoc, no EncapsXxx, no Xhp vs XhpSingleton. 
  *  - some builtins, for instance 'echo', are transformed in "__builtin__echo".
  *    See builtin() below.
  *  - no include/require, they are transformed in call
