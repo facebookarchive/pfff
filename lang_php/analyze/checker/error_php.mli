@@ -83,5 +83,8 @@ val show_10_most_recurring_unused_variable_names: unit -> unit
  * it actually returns one of the definition.
  *)
 val find_entity_and_warn: 
-  Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->
-  (Ast_php.entity -> unit) -> unit
+  Entity_php.entity_finder ->
+  (Entity_php.id_kind * Ast_php.name) ->
+   (* callback, will be passed the found entity *)
+   (Ast_php.entity -> unit) ->
+   unit
