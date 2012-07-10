@@ -214,11 +214,11 @@ and vof_func_def {
                  f_return_type = v_f_return_type;
                  f_body = v_f_body;
                  f_kind = v_f_type;
-                 f_modifiers = v_f_modifiers
+                 m_modifiers = v_f_modifiers
                } =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_modifier v_f_modifiers in
-  let bnd = ("f_modifiers", arg) in
+  let bnd = ("m_modifiers", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_function_type v_f_type in
   let bnd = ("f_kind", arg) in

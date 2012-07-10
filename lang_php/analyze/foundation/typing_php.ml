@@ -750,7 +750,7 @@ and private_vars privates cv =
   else privates
 
 and private_methods privates m =
-  if is_private m.f_modifiers
+  if is_private m.m_modifiers
   then SSet.add (A.unwrap m.f_name) privates
   else privates
 
@@ -791,7 +791,7 @@ and class_vars static env acc c =
     SMap.add s t acc
 
 and method_decl static env acc m =
-  if static <> is_static m.f_modifiers
+  if static <> is_static m.m_modifiers
   then acc
   else 
     let pl = List.map (parameter env) m.f_params in
@@ -801,7 +801,7 @@ and method_decl static env acc m =
 
 (* TODO: factorize with func_def ? *)
 and method_def static env acc m =
-  if static <> is_static m.f_modifiers
+  if static <> is_static m.m_modifiers
   then acc
   else
     let env_cpy = !(env.vars) in

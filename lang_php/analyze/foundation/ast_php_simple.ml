@@ -66,6 +66,7 @@
  *  - ...
  *
  * todo: 
+ *  - uses and lexical vars are not in the AST
  *  - XHP class declaration? e.g. children, @required, etc?
  *  - support for generics of sphp
  *  - factorize more? string vs Guil vs xhp?
@@ -236,7 +237,8 @@ and func_def = {
   (* functions returning a ref are rare *)
   f_ref: bool;
   (* only for methods; always empty for functions *)
-  f_modifiers: modifier list;
+  m_modifiers: modifier list;
+  (* todo: l_uses; *)
 
   f_body: stmt list;
 }

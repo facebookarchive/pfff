@@ -290,7 +290,7 @@ and fake_root env heap =
       List.iter (fun m ->
         let params = make_fake_params m.f_params in
         let e = 
-          if is_static m.f_modifiers
+          if is_static m.m_modifiers
           then (Call (Class_get (Id c.c_name, Id m.f_name), params))
           else (Call (Obj_get (New (Id c.c_name, []), Id m.f_name), params))
         in
@@ -1381,7 +1381,7 @@ and method_def env cname parent self this (heap, acc) def =
     f_params = def.f_params;
     f_return_type = def.f_return_type;
     f_body = def.f_body;
-    f_kind = Function; f_modifiers = [];
+    f_kind = Function; m_modifiers = [];
   } in
   let cls = make_method def.f_name parent self this fdef in
   let mid = Utils.fresh() in
