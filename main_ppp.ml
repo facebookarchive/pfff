@@ -548,9 +548,10 @@ let unparse_without_type_hints file =
    *  - parse with enabling the type hints grammar extension
    *  - visit ast and annotate type hints tokens with Remove
    *  - unparse ast using the tokens annotations
+   * 
+   * old:  Flag_parsing_php.type_hints_extension := true;
+   * 
    *)
-
-  Flag_parsing_php.type_hints_extension := true;
 
   let (ast2, _stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in

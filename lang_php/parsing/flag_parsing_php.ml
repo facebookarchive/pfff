@@ -31,8 +31,6 @@ let case_sensitive = ref true
 (* e.g. yield *)
 let facebook_lang_extensions = ref true
 
-let type_hints_extension = ref false
-
 (* in facebook context, we want xhp support by default *)
 let xhp_builtin = ref true
 
