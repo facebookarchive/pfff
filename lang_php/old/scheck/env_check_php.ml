@@ -1,7 +1,3 @@
-(*****************************************************************************)
-(* Environment *)
-(*****************************************************************************)
-
 (* Looking up a variable in the environment. 
  *  
  * Do we need to also return the env at this place ??? xs::zs  below ?

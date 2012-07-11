@@ -1,13 +1,3 @@
-open Ast_php
-module Ast = Ast_php
-module E = Error_php
-module V = Visitor_php
-module Ent = Database_code
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
 (* returns only local vars, not class vars like self::$x; for class vars
  * see check_classes_php.ml.
  *)

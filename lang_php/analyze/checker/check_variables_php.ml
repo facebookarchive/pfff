@@ -146,7 +146,6 @@ module SMap = Map.Make(String)
 type env = {
   (* todo? use a list of SMap.t to represent nested scopes?
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
-   * todo: have a globals:?
    * 
    * The ref in the tuple is to record the number of uses of the variable,
    * for the UnusedVariable check.
@@ -154,6 +153,8 @@ type env = {
    * any stmt/expression can introduce new variables.
    *)
   vars: (Ast_php.tok * Scope_code.scope * int ref) SMap.t ref;
+
+  (* todo: have a globals:? *)
 
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
@@ -167,20 +168,19 @@ type env = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let unused_ok_when_no_strict s = 
-  if not!E.strict 
-  then
-    List.mem s 
-      ["res"; "retval"; "success"; "is_error"; "rs"; "ret";
-       "e"; "ex"; "exn"; (* exception *)
-      ]
-  else false
 
 let unused_ok s =     
   s =~ "_.*" ||
   s =~ "ignore.*" ||
   List.mem s ["unused";"dummy";"guard"] ||
-  unused_ok_when_no_strict s
+  (if !E.strict
+   then false
+   else
+    List.mem s [
+      "res"; "retval"; "success"; "is_error"; "rs"; "ret";
+      "e"; "ex"; "exn"; (* exception *)
+    ]
+  )
 
 let fake_var s = 
   (s, None)
@@ -217,7 +217,6 @@ let rec program env prog =
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
 
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -226,9 +225,9 @@ let check_and_annotate_program2 find_entity prog =
   let env = {
     vars = ref SMap.empty;
     (* todo?
-      [Env_php.globals_builtins +> List.map (fun s ->
-      fake_var s, (S.Global, ref 1)
-    )];
+       [Env_php.globals_builtins +> List.map (fun s ->
+       fake_var s, (S.Global, ref 1)
+       )];
     *)
     db = find_entity;
     (* todo: extract all vars and their scope_ref and keep that in a 
