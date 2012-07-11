@@ -39,7 +39,7 @@ module SMap = Map.Make (String)
  * 
  * References:
  *  - on zval: http://blog.golemon.com/2007/01/youre-being-lied-to.html
- *  - todo: there was a doc about zvalues
+ *  - todo: there was another doc about zvalues that bmathews once talked about
  *  - todo: POPL paper on PHP copy-on-write semantic?
  *
  * Why this model? Why not having variables contain directly values,
@@ -129,7 +129,7 @@ type value =
    * It's essentially a (closures Set.t) but because we can't compare
    * for equality closures in OCaml we need this method id intermediate
    * and IMap. See sum_call() in the interpreter and call_methods().
-   
+   * 
    * make_method() builds the method closure with self/parent/this
    * correctly bind to the right class and object pointers.
    * 
@@ -215,8 +215,8 @@ type value =
   | Vany
 
   and type_ =
-    | Tint
     | Tbool
+    | Tint
     | Tfloat
     | Tstring
     (* useful for tainting analysis again *)
@@ -405,12 +405,11 @@ let rec value ptrs o x =
 
 and type_ o x =
   match x with
-  | Tint -> o "int"
   | Tbool -> o "bool"
+  | Tint -> o "int"
   | Tfloat -> o "float"
   | Tstring -> o "string"
   | Txhp -> o "xhp"
-
 
 (*****************************************************************************)
 (* Debugging *)
