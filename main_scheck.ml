@@ -222,8 +222,9 @@ let main_action xs =
     | (Timeout | UnixExit _) as exn -> raise exn
 (*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
-      Common.push2 (spf "PB with %s, exn = %s" file 
-                       (Common.string_of_exn exn)) errors;
+        Common.push2 (spf "PB with %s, exn = %s" file 
+                         (Common.string_of_exn exn)) errors;
+        if !Common.debugger then raise exn
   ));
 
   let errs = !Error_php._errors +> List.rev in

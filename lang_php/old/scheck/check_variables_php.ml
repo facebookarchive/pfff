@@ -126,17 +126,7 @@ let visit_prog find_entity prog =
     (* -------------------------------------------------------------------- *)
 
     V.kparameter = (fun (k,vx) x ->
-      (* Don't report UnusedParameter for parameters of methods.
-       * People sometimes override a method and don't use all
-       * the parameters.
-       * less: one day we will have an @override annotation in which
-       * case we can reconsider the above design decision.
-       *)
-      let cnt = 
-        match !scope with | Ent.Method _ -> 1 | Ent.Function -> 0 | _ -> 0
-      in
-      add_binding x.p_name (S.Param, ref cnt);
-      k x
+
     );
 
     V.kstmt = (fun (k, vx) x ->
