@@ -191,6 +191,9 @@ let rec proj = function
   | Tsstring _ -> Hashtbl.hash "string"
   | Tienum _ -> proj (Tabstr "int")
   | Tsenum _ -> proj (Tabstr "string")
+  (* pad: how do we know those values can not match any of the preceding
+   * Hashtbl.hash values?
+   *)
   | Trecord _ -> 2
   | Tarray  _ -> 2
   | Tfun    _ -> 3

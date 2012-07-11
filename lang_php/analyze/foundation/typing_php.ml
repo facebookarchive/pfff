@@ -41,7 +41,7 @@ module Unify = Typing_unify_php
  *       to make mistake. One has to "thread" the subsitution carefully
  *       while visiting the AST.
  *     * use_ref_a_la_prolog: may not handle cyclic types (necessary for
- *       objects)
+ *       objects according to julien)
  *     * constraints: complex solver
  *     * leroy levels: ??
  * 
