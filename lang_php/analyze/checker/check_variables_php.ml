@@ -141,11 +141,13 @@ module Ent = Entity_php
 (* Types, constants *)
 (*****************************************************************************)
 type env = {
-  (* We use a list of list to represent nested scopes (globals,
-   * methods/functions, nested blocks).
+  (* We could use a list of list to represent nested scopes?
+   * (methods/functions, nested blocks).
+   * todo: use list list when in strict/block mode?
+   * todo: have a globals: for globals?
    * The ref is for the number of uses.
    *)
-  vars: (A.name * (Scope_code.scope * int ref)) list list;
+  vars: (A.name * (Scope_code.scope * int ref)) list;
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
    * like a UseOfUndefinedVariable is actually not (but it would be
@@ -198,11 +200,16 @@ let rec program env prog =
 
 let check_and_annotate_program2 find_entity prog =
   let env = {
-    vars = [Env_php.globals_builtins +> List.map (fun s ->
+    vars = [];
+    (* todo?
+      [Env_php.globals_builtins +> List.map (fun s ->
       fake_var s, (S.Global, ref 1)
     )];
+    *)
     db = find_entity;
-    (* todo: extract all vars and their scope_ref *)
+    (* todo: extract all vars and their scope_ref and keep that in a 
+     * symbol table so one can find them back.
+     *)
   }
   in
   let ast = Ast_php_simple_build.program prog in
