@@ -14,10 +14,13 @@
  *)
 open Common
 
+open Ast_php_simple
 module A = Ast_php_simple
 module E = Error_php
 module S = Scope_code
 module Ent = Entity_php
+
+module SMap = Map.Make(String)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -141,13 +144,17 @@ module Ent = Entity_php
 (* Types, constants *)
 (*****************************************************************************)
 type env = {
-  (* We could use a list of list to represent nested scopes?
-   * (methods/functions, nested blocks).
-   * todo: use list list when in strict/block mode?
-   * todo: have a globals: for globals?
-   * The ref is for the number of uses.
+  (* todo? use a list of SMap.t to represent nested scopes?
+   * (globals, methods/functions, nested blocks)? when in strict/block mode?
+   * todo: have a globals:?
+   * 
+   * The ref in the tuple is to record the number of uses of the variable,
+   * for the UnusedVariable check.
+   * The ref for the SMap is to avoid threading the env, because
+   * any stmt/expression can introduce new variables.
    *)
-  vars: (A.name * (Scope_code.scope * int ref)) list;
+  vars: (Ast_php.tok * Scope_code.scope * int ref) SMap.t ref;
+
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
    * like a UseOfUndefinedVariable is actually not (but it would be
@@ -194,13 +201,30 @@ let fake_var s =
 let rec program env prog = 
   ()
 
+(* ---------------------------------------------------------------------- *)
+(* Functions *)
+(* ---------------------------------------------------------------------- *)
+
+(* ---------------------------------------------------------------------- *)
+(* Stmt *)
+(* ---------------------------------------------------------------------- *)
+
+(* ---------------------------------------------------------------------- *)
+(* Expr *)
+(* ---------------------------------------------------------------------- *)
+
+(* ---------------------------------------------------------------------- *)
+(* Misc *)
+(* ---------------------------------------------------------------------- *)
+
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let check_and_annotate_program2 find_entity prog =
   let env = {
-    vars = [];
+    vars = ref SMap.empty;
     (* todo?
       [Env_php.globals_builtins +> List.map (fun s ->
       fake_var s, (S.Global, ref 1)
