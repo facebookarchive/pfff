@@ -1921,6 +1921,7 @@ let map_option = fmap
 let do_option f = function
   | None -> ()
   | Some x -> f x
+let opt = do_option
 
 let optionise f =
   try Some (f ()) with Not_found -> None

@@ -812,6 +812,7 @@ val fmap :       ('a -> 'b) -> 'a option -> 'b option
 val map_option : ('a -> 'b) -> 'a option -> 'b option (* alias *)
 
 val do_option : ('a -> unit) -> 'a option -> unit
+val opt: ('a -> unit) -> 'a option -> unit
 
 val optionise : (unit -> 'a) -> 'a option
 
