@@ -1,55 +1,3 @@
-(* Yoann Padioleau
- *
- * Copyright (C) 2010 Facebook
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * version 2.1 as published by the Free Software Foundation, with the
- * special exception on linking described in file license.txt.
- * 
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
- * license.txt for more details.
- *)
-open Common
-
-open Ast_php
-module Ast = Ast_php
-module E = Error_php
-module S = Scope_code
-module Flag = Flag_analyze_php
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Types, constants *)
-(*****************************************************************************)
-
-(* the ref is for the number of uses *)
-type environment = 
-  (dname * (Scope_code.scope * int ref)) list list 
-
-let unused_ok_when_no_strict s = 
-  if not!E.strict 
-  then
-    List.mem s 
-      ["res"; "retval"; "success"; "is_error"; "rs"; "ret";
-       "e"; "ex"; "exn"; (* exception *)
-      ]
-  else false
-
-let unused_ok s =     
-  s =~ "_.*" ||
-  s =~ "ignore.*" ||
-  List.mem s ["unused";"dummy";"guard"] ||
-  unused_ok_when_no_strict s
-
-let fake_dname s = 
-  DName (s, Ast.fakeInfo s)
-
 (*****************************************************************************)
 (* Environment *)
 (*****************************************************************************)
@@ -106,12 +54,6 @@ let collect_all_vars env =
 (*****************************************************************************)
 (* (Semi) Globals, Julia's style *)
 (*****************************************************************************)
-
-(* use a ref because we may want to modify it *)
-let (initial_env: environment ref) = ref [
-  Env_php.globals_builtins +> List.map (fun s ->
-    fake_dname s, (S.Global, ref 1)
-  )]
 
 (* opti: cache ? use hash ? *)
 let _scoped_env = ref !initial_env
