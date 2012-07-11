@@ -1,5 +1,3 @@
-
-
 let check_undefined_variable ~in_lambda ~bailout var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
@@ -19,7 +17,6 @@ let check_undefined_variable ~in_lambda ~bailout var env =
             (E.UseOfUndefinedVariable (s, suggest))
         )
   | Some (scope, aref) -> incr aref
-
 
 let do_in_new_scope_and_check_unused_if_strict f =
   if !E.strict 
@@ -54,8 +51,6 @@ let visit_prog find_entity prog =
       | StmtList _ -> k x
       (* see kexpr *)
       | ConstantDef _ -> k x
-
-      | FinalDef _ | NotParsedCorrectly _ -> k x
     );
 
     (* -------------------------------------------------------------------- *)

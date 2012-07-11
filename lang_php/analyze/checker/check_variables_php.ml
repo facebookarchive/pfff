@@ -49,7 +49,7 @@ module SMap = Map.Make(String)
  * Some issues:
  *  - detecting variable-related mistakes is made slightly more complicated
  *    by PHP because of the lack of declaration in the language;
- *    the first assgignement "declares" the variable (on the other side
+ *    the first assignment "declares" the variable (on the other side
  *    the PHP language forces people to explicitly declared
  *    the use of global variables (via the 'global' statement) which
  *    makes certain things easier).
@@ -58,13 +58,13 @@ module SMap = Map.Make(String)
  *    bugs but they are not. One way to fix it is to do a global analysis that
  *    remembers what are all the functions taking arguments by reference
  *    and whitelist them here. But it has a cost. One can optimize a little
- *    this by using an entity_finder computed semi lazily a la cmf mutli
+ *    this by using an entity_finder computed semi lazily a la cmf multi
  *    level approach (recursive a la cpp, flib-map, git-grep, git head).
  *    Another way is to force programmers to actually declare such variables
- *    before those kinds of function calls (this is what evan advocated).
+ *    before those kinds of function calls (this is what Evan advocated).
  * 
- *  - people abuse assignements in function call to emulate "keyword arguments"
- *    as in 'foo($color = "red", $width = 10)'. Such assignements looks
+ *  - people abuse assignements in function calls to emulate "keyword arguments"
+ *    as in 'foo($color = "red", $width = 10)'. Such assignments looks
  *    like UnusedVariable but they are not. One can fix that by detecting
  *    such uses.
  * 
@@ -74,7 +74,7 @@ module SMap = Map.Make(String)
  *    not analyse toplevel code. Another solution is to hardcode a few
  *    analysis that recognizes the arguments of those functions. Finally
  *    for the extract() and $$x one can just bailout of such code or
- *    as evan did remember the first line where such code happen and
+ *    as Evan did remember the first line where such code happen and
  *    don't do any analysis pass this point.
  * 
  *  - any analysis will probably flag lots of warnings on an existing PHP
@@ -83,7 +83,7 @@ module SMap = Map.Make(String)
  *    foreach scope. This would then hinder the whole analysis because
  *    people would just not run the analysis. You need the approval of
  *    the PHP developers on such analysis first and get them ok to change
- *    their coding styles rules.
+ *    their coding styles rules. A good alternative is to rank errors.
  * 
  *  -  Another issue is the implicitly-declared-when-used-the-first-time
  *     ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
@@ -123,18 +123,18 @@ module SMap = Map.Make(String)
  *  - sgrimm had the simple idea of just counting the number of occurences
  *    of variables in a program, at the token level. If only 1, then
  *    probably a typo. But sometimes variable names are mentionned in
- *    interface signature in which case they occur only once. So you need
+ *    interface signatures in which case they occur only once. So you need
  *    some basic analysis; the token level is not enough. You may not
  *    need the CFG but at least you need the AST to differentiate the 
  *    different kinds of unused variables. 
  *  - Some of the scoping logic was previously in another file, scoping_php.ml
- *    But we were kind of duplicating the logic that is in scoping_php.ml 
- *    PHP has bad scoping rule allowing variable declared through a foreach
- *    to be used outside the foreach, which is probably wrong. 
+ *    But we were kind of duplicating the logic that is in scoping_php.ml.
+ *    PHP has bad scoping rule allowing variables declared through a foreach
+ *    to be used outside the foreach, which is probably wrong.
  *    Unfortunately, knowing from scoping_php.ml just the status of a
  *    variable (local, global, or param) is not good enough to find bugs 
  *    related to those weird scoping rules. So I've put all variable scope
- *    related stuff in this file and removed the duplication in scoping_php.ml
+ *    related stuff in this file and removed the duplication in scoping_php.ml.
  *  - I was using ast_php.ml but then I rewrote it to use ast_php_simple
  *    because the code was getting ugly and was containing false
  *    positives that were hard to fix.
@@ -142,8 +142,31 @@ module SMap = Map.Make(String)
  * todo:
  *  - simple parameters and check use
  *  - simple local var assign, and use
- *  - list assign
+ *  - unused variable
+
+ * "These things declare variables in a function":
+ * - Explicit parameters
+ * - Static, Global
+ * - foreach()
+ * - catch
+ * - Builtins ($this)
+ * - Lexical vars, in php 5.3 lambda expressions
+ * - Assignment via list()
+ * - Assignment
+ *    (pad: variable mentionned for the first time)
  * 
+ * "These things make lexical scope unknowable":
+ * - Use of extract()
+ * - Assignment or Global with variable variables ($$x)
+ *   (pad: I actually bail out on such code)
+ * 
+ * These things don't count as "using" a variable:
+ * - isset() (pad: this should be forbidden, it's a bad way to program)
+ * - empty()
+ * - Static class variables
+ * 
+ *  - param_post, param_get
+ *  - list assign
  *  - bailout eval, extract, etc
  *  - keyword arguments
  *  - lambda special, handle use too
@@ -207,10 +230,16 @@ let unused_ok s =
 let fake_var s = 
   (s, None)
 
+let todo = ()
+
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
 
+let check_undefined name env =
+  raise Todo
+
+(* less: if env.bailout? *)
 let check_unused vars =
   vars +> SMap.iter (fun s (tok, scope, aref) ->
     if !aref = 0
@@ -234,7 +263,7 @@ let rec program env prog =
   (* todo: check env.globals instead? *)
 
   (* we must check if people used the variables declared at the toplevel
-   * context or the param_post/param_get magic variables.
+   * context or via the param_post/param_get calls.
    *)
   check_unused !(env.vars)
 
@@ -246,14 +275,17 @@ let rec program env prog =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
+  | 
   | Expr e -> expr env e
-  | _ -> raise Todo
+  | _ -> 
+      todo
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env = function
-  | _ -> raise Todo
+  | _ -> 
+      todo
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)

@@ -93,7 +93,8 @@ let unittest =
     pr2 (spf "this one error was not expected: %s:%d" src l);
   );
   assert_bool
-    ~msg:"it should find all reported errors and no more"
+    ~msg:(spf "it should find all reported errors and no more (%d errors)"
+             (List.length (only_in_actual ++ only_in_expected)))
     (null only_in_expected && null only_in_actual);
   )
   ]
