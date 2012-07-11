@@ -256,7 +256,7 @@ and expr =
  *)
 and func_def = {
   (* "_lambda" when used for lambda *)
-  f_name: name; 
+  f_name: name;
   f_kind: function_kind;
   f_params: parameter list;
   f_return_type: hint_type option;
@@ -355,3 +355,9 @@ let is_static modifiers  = List.mem Ast_php.Static  modifiers
 let is_private modifiers = List.mem Ast_php.Private modifiers
 
 let string_of_xhp_tag xs = Common.join ":" xs
+
+let str_of_name (s, _) = s
+let tok_of_name (s, x) =
+  match x with
+  | None -> failwith (Common.spf "no token information for %s" s)
+  | Some tok -> tok
