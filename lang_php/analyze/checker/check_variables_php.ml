@@ -20,8 +20,6 @@ module E = Error_php
 module S = Scope_code
 module Ent = Entity_php
 
-module SMap = Map.Make(String)
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -197,7 +195,7 @@ type env = {
    * The ref for the SMap is to avoid threading the env, because
    * any stmt/expression can introduce new variables.
    *)
-  vars: (Ast_php.tok * Scope_code.scope * int ref) SMap.t ref;
+  vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
 
   (* todo: have a globals:? *)
 
@@ -230,8 +228,6 @@ let unused_ok s =
 let fake_var s = 
   (s, None)
 
-let todo = ()
-
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
@@ -241,7 +237,7 @@ let check_undefined name env =
 
 (* less: if env.bailout? *)
 let check_unused vars =
-  vars +> SMap.iter (fun s (tok, scope, aref) ->
+  vars +> Map_poly.iter (fun s (tok, scope, aref) ->
     if !aref = 0
     then
       if unused_ok s
@@ -270,22 +266,52 @@ let rec program env prog =
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
 (* ---------------------------------------------------------------------- *)
+and func_def env def =
+
+  def.f_params +> List.iter (fun p -> Common.opt (expr env) p.p_default);
+  
+  let access_cnt = 
+    match def.f_kind with
+    | Function -> 0
+    (* Don't report UnusedParameter for parameters of methods;
+     * people sometimes override a method and don't use all
+     * the parameters, hence the cnt below.
+     * less: one day we will have an @override annotation in which
+     * case we can reconsider the above design decision.
+     *)
+    | Method _ -> 1 
+  in
+
+  let env = { env with
+    vars = ref 
+      (def.f_params +> List.map (fun p ->
+        A.str_of_name p.p_name,
+        (A.tok_of_name p.p_name, S.Param, ref access_cnt)
+      ) +> Map_poly.of_list)
+  }
+  in
+  (* todo: if lambda, then add also l_uses and increment use count?
+   * or just reuse the same aref?
+   *)
+
+  List.iter (stmt env) def.f_body;
+  check_unused !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
-  | 
+  | FuncDef def -> func_def env def
   | Expr e -> expr env e
   | _ -> 
-      todo
+      raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env = function
   | _ -> 
-      todo
+      raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
@@ -297,7 +323,7 @@ and expr env = function
 
 let check_and_annotate_program2 find_entity prog =
   let env = {
-    vars = ref SMap.empty;
+    vars = ref Map_poly.empty;
     (* todo?
        [Env_php.globals_builtins +> List.map (fun s ->
        fake_var s, (S.Global, ref 1)
@@ -309,7 +335,7 @@ let check_and_annotate_program2 find_entity prog =
      *)
   }
   in
-  let ast = Ast_php_simple_build.program prog in
+  let ast = Ast_php_simple_build.program_with_position_information prog in
   let _env = program env ast in
   ()
 
