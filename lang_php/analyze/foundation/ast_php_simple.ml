@@ -35,7 +35,7 @@
  * 
  *  - support for old syntax is removed. No IfColon, ColonStmt,
  *    CaseColonList.
- *  - support for extra tools is removed such as Xdebug or Sgrep
+ *  - support for extra tools is removed. No XdebugXxx, SgrepXxx.
  *  - support for features we don't really use in our code is removed
  *    e.g. 'use' for namespaces (we accept it for traits and closures though),
  *    unset cast, etc. No Use, UseDirect, UseParen. No CastUnset.
@@ -45,11 +45,11 @@
  *    the abstract interpreter or the type inference engine. No Declare.
  * 
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
- *    no HereDoc, no EncapsXxx, no Xhp vs XhpSingleton. 
+ *    no HereDoc, no EncapsXxx, no XhpSingleton (but kept Xhp).
  *  - some builtins, for instance 'echo', are transformed in "__builtin__echo".
  *    See builtin() below.
  *  - no include/require, they are transformed in call
- *    to __builtin__require (again, maybe not a good idea)
+ *    to __builtin__require (maybe not a good idea)
  *  - some special keywords, for instance 'self', are transformed in 
  *    "__special__self". See special() below.
  * 
@@ -62,17 +62,16 @@
  *    Also no arg type. No Arg, ArgRef. Also no xhp_attr_value type.
  *    No XhpAttrString, XhpAttrExpr.
  *  - no EmptyStmt, it is transformed in an empty Block
- *  - a simpler If, elseif are transformed in nested If, and empty else
- *    in empty Block.
+ *  - a simpler If. 'elseif' are transformed in nested If, and empty 'else'
+ *    in an empty Block.
  *  - a simpler Foreach, foreach_var_either and foreach_arrow are transformed
  *    into expressions (maybe not good idea)
 
  *  - some special constructs like AssignRef were transformed into
  *    composite calls to Assign and Ref. Same for AssignList, AssignNew.
  *    Same for arguments passed by reference, no Arg, ArgRef.
- *    Same for refs in arrays, no ArrayRef, ArrayArrowRef. No ListVar,
- *    ListList, ListEmpty.
- *    More orthogonal.
+ *    Same for refs in arrays, no ArrayRef, ArrayArrowRef. Also no ListVar,
+ *    ListList, ListEmpty. More orthogonal.
  *  - a unified Call. No FunCallSimple, FunCallVar, MethodCallSimple,
  *    StaticMethodCallSimple, StaticMethodCallVar.
  *  - a unified Array_get. No VArrayAccess, VArrayAccessXhp,
@@ -85,7 +84,6 @@
  *    etc.
  *  - unified eval_var, some constructs were transformed into calls to
  *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
- *  -
  * 
  *  - a simpler 'name': identifiers, xhp names, and variables are unified
  *    (maybe not a good idea retrospectively, cos it forces in many places
@@ -93,7 +91,7 @@
  *  - ...
  *
  * todo: 
- *  - uses and lexical vars are not in the AST
+ *  - uses and lexical vars of closures are not in the AST
  *  - XHP class declaration? e.g. children, @required, etc?
  *  - support for generics of sphp
  *  - factorize more? string vs Guil vs xhp?
@@ -150,6 +148,7 @@ and stmt =
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)
   | StaticVars of (name * expr option) list
+  (* expr is most of the time a simple variable name *)
   | Global of expr list
 
   and case =
