@@ -1,4 +1,5 @@
 
+
 let check_undefined_variable ~in_lambda ~bailout var env = 
   let s = Ast.dname var in
   match lookup_env_opt s env with
@@ -19,44 +20,19 @@ let check_undefined_variable ~in_lambda ~bailout var env =
         )
   | Some (scope, aref) -> incr aref
 
-let do_in_new_scope_and_check_unused f = 
-  new_scope();
-  let res = f() in
-  let top = top_scope () in
-  del_scope();
-
-  top +> List.rev +> List.iter (fun (dname, (scope, aref)) ->
-    if !aref = 0 
-    then 
-      let s = Ast.dname dname in
-      if Env.unused_ok s 
-      then ()
-      else E.fatal (Ast.info_of_dname dname) (E.UnusedVariable (s, scope))
-  );
-  res
 
 let do_in_new_scope_and_check_unused_if_strict f =
   if !E.strict 
   then do_in_new_scope_and_check_unused f
   (* otherwise use same scope *)
   else f ()
-
  
 (*****************************************************************************)
 (* Scoped visitor *)
 (*****************************************************************************)
 
-(* For each introduced variable (parameter, foreach variable, exception, etc), 
- * we add the binding in the environment with a counter, a la checkModule.
- * We then check at use time if something was declared before. We then
- * finally check when we exit a scope that all variables were actually used.
- *)
 let visit_prog find_entity prog = 
 
-  (* ugly: have to use all those save_excursion below because of 
-   * the visitor interface which is imperative. But threading an 
-   * environment is also tedious so maybe not too ugly.
-   *)
   let scope = ref Ent.TopStmts in
   let bailout = ref false in
   let in_lambda = ref false in
@@ -483,11 +459,3 @@ let visit_prog find_entity prog =
           k x
     );
   }
-  in
-  (* we must check if people used the variables declared in the toplevel
-   * context or the param_post/param_get variables, hence the 
-   * do_in_new_scope_and_check below.
-   *)
-  do_in_new_scope_and_check_unused (fun () -> 
-    visitor (Program prog)
-  )

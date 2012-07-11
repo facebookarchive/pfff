@@ -138,6 +138,28 @@ module SMap = Map.Make(String)
  *  - I was using ast_php.ml but then I rewrote it to use ast_php_simple
  *    because the code was getting ugly and was containing false
  *    positives that were hard to fix.
+ * 
+ * todo:
+ *  - simple parameters and check use
+ *  - simple local var assign, and use
+ *  - list assign
+ * 
+ *  - bailout eval, extract, etc
+ *  - keyword arguments
+ *  - lambda special, handle use too
+ *  - passed by ref
+ *  - isset, unset
+ *  - this
+ *  - globals
+ * 
+ *  - nested assign in if, should work now? no more FPs?
+ *  - bhiller check on array field access and unset array field
+ * 
+ *  - the old checker was handling correctly globals? was it looking up
+ *    in the top scope? add some unit tests.
+ *  - put back strict block scope
+ *  - annotate Var in Ast_php
+ * 
  *)
 
 (*****************************************************************************)
@@ -189,8 +211,17 @@ let fake_var s =
 (* Checks *)
 (*****************************************************************************)
 
+let check_unused vars =
+  vars +> SMap.iter (fun s (tok, scope, aref) ->
+    if !aref = 0
+    then
+      if unused_ok s
+      then ()
+      else E.fatal tok (E.UnusedVariable (s, scope))
+  )
+
 (*****************************************************************************)
-(* Main entry point *)
+(* main entry point *)
 (*****************************************************************************)
 
 (* For each introduced variable (parameter, foreach variable, exception, etc), 
@@ -198,8 +229,14 @@ let fake_var s =
  * We then check at use time if something was declared before. We then
  * finally check when we exit a scope that all variables were actually used.
  *)
-let rec program env prog = 
-  ()
+let rec program env prog =
+  List.iter (stmt env) prog;
+  (* todo: check env.globals instead? *)
+
+  (* we must check if people used the variables declared at the toplevel
+   * context or the param_post/param_get magic variables.
+   *)
+  check_unused !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
@@ -208,10 +245,15 @@ let rec program env prog =
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
+and stmt env = function
+  | Expr e -> expr env e
+  | _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+and expr env = function
+  | _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
