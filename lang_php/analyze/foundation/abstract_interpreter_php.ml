@@ -74,7 +74,6 @@ module Trace = Tracing_php
  * 'var_dump($x)' in the PHP file to see the abstract
  * value of a variable at a certain point in the program.
  *
- *
  * pad's notes: 
  *  - strings are sometimes (ab)used to not only represent
  *    variables and entities but also special variables:
