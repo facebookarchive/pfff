@@ -38,6 +38,7 @@ module SMap = Map.Make (String)
  * manages values and variables at runtime (the "zval").
  * 
  * References:
+ *  - on zval: http://blog.golemon.com/2007/01/youre-being-lied-to.html
  *  - todo: there was a doc about zvalues
  *  - todo: POPL paper on PHP copy-on-write semantic?
  *
