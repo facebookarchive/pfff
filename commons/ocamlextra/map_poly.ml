@@ -143,3 +143,7 @@
         Empty -> accu
       | Node(l, v, d, r, _) ->
           fold f l (f v d (fold f r accu))
+
+(* addons pad *)
+let of_list xs =
+  List.fold_left (fun acc (k, v) -> add k v acc) empty xs
