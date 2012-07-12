@@ -249,6 +249,7 @@ let visit_prog find_entity prog =
 
     V.kexpr = (fun (k, vx) x ->
       match x with
+
       (* todo? if the ConsList is not at the toplevel, then 
        * the code below will be executed first, which means
        * vars_used_in_expr will wrongly think vars in list() expr
@@ -256,6 +257,7 @@ let visit_prog find_entity prog =
        * should be used at a statement level!
        *)
       | AssignList (_, xs, _, e) ->
+
           let assigned = xs +> Ast.unparen +> Ast.uncomma in
           (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
@@ -337,8 +339,7 @@ let visit_prog find_entity prog =
           )
         in
         let assigned' = 
-          assigned +> Common.exclude (fun v -> 
-            List.mem v keyword_args) 
+          assigned +> Common.exclude (fun v ->  List.mem v keyword_args) 
         in
 
         used' +> List.iter (fun v -> 
@@ -346,26 +347,6 @@ let visit_prog find_entity prog =
             v !_scoped_env
         );
 
-        assigned' +> List.iter (fun v -> 
-          (* Maybe a new local var. Add in which scope?
-           * I would argue to add it only in the current nested
-           * scope. If someone wants to use a var outside the block,
-           * he should have initialized the var in the outer context.
-           * Jslint does the same.
-           *)
-          let s = Ast.dname v in
-          (match lookup_env_opt s !_scoped_env with
-          | None -> 
-              add_binding v (S.Local, ref 0);
-          | Some _ ->
-              (* Does an assignation counts as a use? If you only 
-               * assign and never use a variable what is the point? 
-               * This should be legal only for parameters (note that here
-               * I talk about parameters, not arguments) passed by reference.
-               *)
-              ()
-          )
-        );
         passed_by_refs +> List.iter (fun v -> 
           (* Maybe a new local var *)
           let s = Ast.dname v in
@@ -387,19 +368,21 @@ let visit_prog find_entity prog =
          k x
     );
 
+
     V.klvalue = (fun (k,vx) x ->
       match x with
+
       (* the checking is done upward, in kexpr, and only for topexpr *)
       | Var (dname, scope_ref) ->
+
           (* assert scope_ref = S.Unknown ? *)
           let s = Ast.dname dname in
     
           (match lookup_env_opt s !_scoped_env with
-          | None -> 
-              scope_ref := S.Local;
-          | Some (scope, _) ->
-              scope_ref := scope;
+          | None -> scope_ref := S.Local;
+          | Some (scope, _) -> scope_ref := scope;
           )
+
       | FunCallSimple (Name ("extract", _), _args) ->
           bailout := true;
           k x

@@ -90,14 +90,13 @@ module Ent = Entity_php
  * 
  * "These things declare variables in a function":
  * - DONE Explicit parameters
+ * - DONE Assignment (pad: variable mentionned for the first time)
+ * - DONE Assignment via list()
  * - DONE Static, Global
  * - DONE foreach()
  * - DONE catch
  * - DONE Builtins ($this)
  * - DONE Lexical vars, in php 5.3 lambda expressions
- * - DONE Assignment via list()
- * - SEMI Assignment
- *   (pad: variable mentionned for the first time)
  * 
  * "These things make lexical scope unknowable":
  * - DONE Use of extract()
@@ -137,9 +136,7 @@ module Ent = Entity_php
  *    because the code was getting ugly and was containing false
  *    positives that were hard to fix.
  * 
- * todo latest:
- *  - simple local var assign, and use, and unused
- * 
+ * TODO LATEST:
  * "These things declare variables in a function":
  * - Static, Global
  * - foreach()
@@ -147,8 +144,6 @@ module Ent = Entity_php
  * - Builtins ($this)
  * - Lexical vars, in php 5.3 lambda expressions
  * - Assignment via list()
- * - Assignment
- *    (pad: variable mentionned for the first time)
  * 
  * "These things make lexical scope unknowable":
  * - Use of extract()
@@ -320,6 +315,7 @@ and stmt env = function
 (* ---------------------------------------------------------------------- *)
 and expr env = function
   | Int _ | Double _ | String _ -> ()
+
   | Id name when A.is_variable name ->
       (* todo: also adjust the correspoding scope_ref of name in ast_php.
        * do that in check_undefined?
@@ -327,7 +323,45 @@ and expr env = function
       check_undefined name env
   | Id name -> ()
 
-  (* todo: keyword arguments false positives fix
+  | Assign (None, e1, e2) ->
+      (match e1 with
+      | Id name ->
+          assert (A.is_variable name);
+          (* skeleton similar to check_undefined() *)
+          let s = str_of_name name in
+          let tok = tok_of_name name in
+          (match lookup_opt s !(env.vars) with
+          (* new local variable implicit declaration.
+           * todo: add in which nested scope? I would argue to add it
+           * only in the current nested scope. If someone wants to use a
+           * var outside the block, he should have initialized the var
+           * in the outer context. Jslint does the same.
+           *)
+          | None ->
+              env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars)
+          | Some (_tok, scope, access_count) ->
+              (* Does an assignation counts as a use? If you only 
+               * assign and never use a variable what is the point? 
+               * This should be legal only for parameters (note that here
+               * I talk about parameters, not arguments) passed by reference.
+               *)
+              ()
+          )
+      (* todo: extract all vars *)
+      | List xs ->
+          ()
+      (* todo: for bhiller *)
+      | Array_get (e_arr, e_opt) ->
+          ()
+      | _ -> raise Todo
+      );
+      expr env e2
+
+  | Assign (Some _, e1, e2) ->
+      exprl env [e1;e2]
+
+  (* todo: keyword arguments false positives fix, intercept the Assign
+   *  that is above.
    * todo: args passed by ref false positives fix
    *)
   | Call (e, es) ->
@@ -336,6 +370,8 @@ and expr env = function
 
   | _ -> 
       ()
+
+and exprl env xs = List.iter (expr env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
