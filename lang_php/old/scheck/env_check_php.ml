@@ -19,12 +19,6 @@ let rec lookup_env2 s env =
       if Ast_php.dname a =$= s 
       then b 
       else lookup_env2 s (xs::zs)
-let lookup_env a b = 
-  Common.profile_code "CheckVar.lookup_env" (fun () -> lookup_env2  a b)
-
-
-let lookup_env_opt a b = 
-  Common.optionise (fun () -> lookup_env a b)
 
 (* This is ugly. Perhaps we should transform the environment to have
  * either a dname or a name so that those 2 types of entities

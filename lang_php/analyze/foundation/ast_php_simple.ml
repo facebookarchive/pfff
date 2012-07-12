@@ -361,3 +361,7 @@ let tok_of_name (s, x) =
   match x with
   | None -> failwith (Common.spf "no token information for %s" s)
   | Some tok -> tok
+
+let is_variable (s, _) =
+  s.[0] = '$'
+

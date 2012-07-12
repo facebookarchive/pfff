@@ -137,13 +137,10 @@ module Ent = Entity_php
  *    because the code was getting ugly and was containing false
  *    positives that were hard to fix.
  * 
- * todo:
- *  - simple parameters and check use
- *  - simple local var assign, and use
- *  - unused variable
-
+ * todo latest:
+ *  - simple local var assign, and use, and unused
+ * 
  * "These things declare variables in a function":
- * - Explicit parameters
  * - Static, Global
  * - foreach()
  * - catch
@@ -228,12 +225,21 @@ let unused_ok s =
 let fake_var s = 
   (s, None)
 
+let lookup_opt s vars =
+  Common.optionise (fun () -> Map_poly.find s vars)
+
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
 
 let check_undefined name env =
-  raise Todo
+  let s = A.str_of_name name in
+  match lookup_opt s !(env.vars) with
+  | None ->
+      (* todo: bailout, lambda, suggest *)
+      E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
+  | Some (_tok, scope, access_count) ->
+      incr access_count
 
 (* less: if env.bailout? *)
 let check_unused vars =
@@ -283,11 +289,14 @@ and func_def env def =
   in
 
   let env = { env with
-    vars = ref 
-      (def.f_params +> List.map (fun p ->
+    vars = ref (
+      def.f_params +> List.map (fun p ->
         A.str_of_name p.p_name,
         (A.tok_of_name p.p_name, S.Param, ref access_cnt)
-      ) +> Map_poly.of_list)
+      )
+      (* todo: add $this if not method non-static *) 
+      +> Map_poly.of_list
+    )
   }
   in
   (* todo: if lambda, then add also l_uses and increment use count?
@@ -304,14 +313,29 @@ and stmt env = function
   | FuncDef def -> func_def env def
   | Expr e -> expr env e
   | _ -> 
-      raise Todo
+      ()
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env = function
+  | Int _ | Double _ | String _ -> ()
+  | Id name when A.is_variable name ->
+      (* todo: also adjust the correspoding scope_ref of name in ast_php.
+       * do that in check_undefined?
+       *)
+      check_undefined name env
+  | Id name -> ()
+
+  (* todo: keyword arguments false positives fix
+   * todo: args passed by ref false positives fix
+   *)
+  | Call (e, es) ->
+      expr env e;
+      List.iter (expr env) es
+
   | _ -> 
-      raise Todo
+      ()
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)

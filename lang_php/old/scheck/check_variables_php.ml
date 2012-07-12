@@ -1,22 +1,16 @@
 let check_undefined_variable ~in_lambda ~bailout var env = 
-  let s = Ast.dname var in
-  match lookup_env_opt s env with
-  | None ->
       (* todo? could still issue an error but with the information that
        * there was an extract/eval/... around?
        *)
       if bailout
       then ()
       else 
-       E.fatal (Ast.info_of_dname var) 
         (if in_lambda 
         then (E.UseOfUndefinedVariableInLambda s)
         else 
             let allvars = Env.collect_all_vars env +> List.map Ast.dname in
             let suggest = Suggest_fix_php.suggest s allvars in
             (E.UseOfUndefinedVariable (s, suggest))
-        )
-  | Some (scope, aref) -> incr aref
 
 let do_in_new_scope_and_check_unused_if_strict f =
   if !E.strict 
@@ -39,19 +33,6 @@ let visit_prog find_entity prog =
   let is_top_expr = ref true in 
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
-
-    (* does nothing, but put here to get a sense of the "coverage" *)
-    V.ktop = (fun (k, _) x ->
-      match x with
-      (* see kfunc_def *)
-      | FuncDef _ -> k x
-      (* see kclass_def and kfunc_def for the methods *)
-      | ClassDef _ -> k x
-      (* see kstmt and the do_in_new_scope_and_check_unused on (Program prog) *)
-      | StmtList _ -> k x
-      (* see kexpr *)
-      | ConstantDef _ -> k x
-    );
 
     (* -------------------------------------------------------------------- *)
     (* scoping management *)
@@ -110,9 +91,6 @@ let visit_prog find_entity prog =
     );
 
     (* 
-     * See do_in_new_scope_and_check_unused on (Program prog) at
-     * the bottom at least.
-     * 
      * Introduce a new scope for StmtList ? This would forbid user to 
      * have some statements, a func, and then more statements
      * that share the same variable. Toplevel statements
@@ -124,10 +102,6 @@ let visit_prog find_entity prog =
     (* -------------------------------------------------------------------- *)
     (* adding defs of dname in environment *)
     (* -------------------------------------------------------------------- *)
-
-    V.kparameter = (fun (k,vx) x ->
-
-    );
 
     V.kstmt = (fun (k, vx) x ->
       match x with
@@ -184,8 +158,6 @@ let visit_prog find_entity prog =
           | _ -> 
               E.warning tok E.WeirdForeachNoIteratorVar
           )
-      (* see kcatch below *)
-      | Try _ -> k x
 
       (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php 
        * facebook specific? should be a hook instead to visit_prog?
@@ -255,18 +227,6 @@ let visit_prog find_entity prog =
       | Unset (t1, lvals_list, t2) ->
           k x
 
-      | (TypedDeclaration (_, _, _, _)
-        |Declare (_, _, _)|Use (_, _, _)
-        |InlineHtml _
-        |Echo (_, _, _)
-        |Throw (_, _, _)|Return (_, _, _)
-        |Continue (_, _, _)|Break (_, _, _)|Switch (_, _, _)
-        |For (_, _, _, _, _, _, _, _, _)|Do (_, _, _, _, _)|While (_, _, _)
-        |If (_, _, _, _, _)|IfColon (_, _, _, _, _, _, _, _)
-        |Block _|EmptyStmt _|ExprStmt _
-        ) -> k x
-      | FuncDefNested _ | ClassDefNested _ ->
-         k x
     );
 
     V.kcatch = (fun (k,vx) x ->
@@ -352,6 +312,7 @@ let visit_prog find_entity prog =
           vars_used_in_any (Expr x) in
         let assigned = 
           vars_assigned_in_any (Expr x) in
+
         let passed_by_refs =
           match find_entity with
           (* can't do much :( *)
@@ -359,8 +320,11 @@ let visit_prog find_entity prog =
           | Some finder ->
               vars_passed_by_ref_in_any ~in_class:!in_class finder (Expr x)
         in
+
         (* keyword arguments should be ignored and treated as comments *)
         let keyword_args = keyword_arguments_vars_in_any (Expr x) in
+
+
 
         (* todo: enough? if do $x = $x + 1 then have problems? *)
         let used' = 
@@ -436,7 +400,6 @@ let visit_prog find_entity prog =
           | Some (scope, _) ->
               scope_ref := scope;
           )
-
       | FunCallSimple (Name ("extract", _), _args) ->
           bailout := true;
           k x

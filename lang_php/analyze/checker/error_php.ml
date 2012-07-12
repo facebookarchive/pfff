@@ -177,7 +177,7 @@ let string_of_error_kind error_kind =
       "passing a reference to a function not expecting one"
 
   | UseOfUndefinedVariable (dname, x) ->
-      spf "Use of undeclared variable $%s%s. " dname (string_of_suggest_opt x)
+      spf "Use of undeclared variable %s%s. " dname (string_of_suggest_opt x)
 (*
 "Declare variables prior to use (even if you are passing them as reference
     parameters). You may have misspelled this variable name.
@@ -185,11 +185,11 @@ let string_of_error_kind error_kind =
 *)
 
   | UseOfUndefinedVariableInLambda (dname) ->
-      spf "Use of undeclared variable $%s in lambda. " dname ^
+      spf "Use of undeclared variable %s in lambda. " dname ^
 "See http://php.net/manual/en/functions.anonymous.php and the 'use' keyword."
 
   | UnusedVariable (dname, scope) ->
-      spf "Unused %s variable $%s" (Scope_php.s_of_phpscope scope) dname
+      spf "Unused %s variable %s" (Scope_php.s_of_phpscope scope) dname
 
   | UseOfUndefinedMember (name, x) ->
       spf "Use of undefined member $%s%s" name (string_of_suggest_opt x)
