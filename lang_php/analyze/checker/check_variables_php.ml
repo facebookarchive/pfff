@@ -188,6 +188,9 @@ type env = {
   vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
 
   (* todo: have a globals:? *)
+  
+  (* todo: bailout: bool ref; *)
+  (* todo: in_lambda: bool; *)
 
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
@@ -307,6 +310,7 @@ and stmt env = function
   | ConstantDef def -> constant_def env def
 
   | Expr e -> expr env e
+  (* todo: block scope checking when in strict mode? *)
   | Block xs -> stmtl env xs
 
   | If (e, st1, st2) ->
@@ -353,6 +357,7 @@ and stmt env = function
         ()
       )
 
+(* less: add a nested scope? *)
 and catch env x =
   raise Todo
 
@@ -377,6 +382,10 @@ and expr env = function
 
   | Id name -> ()
 
+  (* lvalue.
+   * todo: factorize code with vars/array-field when passed by ref,
+   * have a lvalue function?
+   *)
   | Assign (None, e1, e2) ->
       (match e1 with
       | Id name ->
@@ -401,7 +410,8 @@ and expr env = function
                *)
               ()
           )
-      (* todo: extract all vars *)
+
+      (* todo: extract all vars, and share the same reference *)
       | List xs ->
           ()
       (* todo: for bhiller *)
@@ -409,6 +419,7 @@ and expr env = function
           expr env e_arr;
           Common.opt (expr env) e_opt
 
+      (* todo: Obj_get, Class_get *)
       | _ -> raise Todo
       );
       expr env e2
@@ -416,7 +427,7 @@ and expr env = function
   | Assign (Some _, e1, e2) ->
       exprl env [e1;e2]
   | List xs ->
-      failwith "should be used only in an Assign context"
+      failwith "list(...) should be used only in an Assign context"
 
   (* todo: keyword arguments false positives fix, intercept the Assign
    *  that is above.
@@ -429,12 +440,14 @@ and expr env = function
   (* could check that inside a method, but this should be done in check_class*)
   | This -> ()
 
+  (* array used as an rvalue; the lvalue case should be handled in Assign. *)
   | Array_get (e, eopt) ->
       expr env e;
       Common.opt (expr env) eopt
 
   | Obj_get (e1, e2) | Class_get (e1, e2) -> 
       exprl env [e1;e2]
+
   | New (e, es) -> exprl env (e::es)
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 

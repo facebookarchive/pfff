@@ -197,7 +197,7 @@ and expr =
    * must be an lvalue (e.g. a variable).
    *)
   | Assign of Ast_php.binaryOp option * expr * expr
-  (* really a destructuring tuple let; always used in an Assign *)
+  (* really a destructuring tuple let; always used as part of an Assign *)
   | List of expr list
 
   | Call of expr * expr list
