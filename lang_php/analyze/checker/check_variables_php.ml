@@ -255,15 +255,15 @@ let check_unused vars =
  *)
 let rec program env prog =
   List.iter (stmt env) prog;
-  (* todo: check env.globals instead? *)
 
   (* we must check if people used the variables declared at the toplevel
    * context or via the param_post/param_get calls.
+   * todo: check env.globals instead?
    *)
   check_unused !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
-(* Functions *)
+(* Functions/Methods *)
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
 
@@ -295,7 +295,6 @@ and func_def env def =
   (* todo: if lambda, then add also l_uses and increment use count?
    * or just reuse the same aref?
    *)
-
   List.iter (stmt env) def.f_body;
   check_unused !(env.vars)
 
@@ -304,9 +303,65 @@ and func_def env def =
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
   | FuncDef def -> func_def env def
+  | ClassDef def -> class_def env def
+  | ConstantDef def -> constant_def env def
+
   | Expr e -> expr env e
-  | _ -> 
-      ()
+  | Block xs -> stmtl env xs
+
+  | If (e, st1, st2) ->
+      expr env e;
+      stmtl env [st1;st2]
+
+  | Switch (e, xs) ->
+      expr env e;
+      casel env xs
+
+  | While (e, xs) -> 
+      expr env e;
+      stmtl env xs
+  | Do (xs, e) ->
+      stmtl env xs;
+      expr env e
+  | For (es1, es2, es3, xs) ->
+      exprl env (es1 ++ es2 ++ es3);
+      stmtl env xs
+ 
+  (* todo: introduce var? *)
+  | Foreach (e1, e2, e3opt, xs) ->
+      expr env e1;
+      expr env e2;
+      Common.opt (expr env) e3opt;
+      stmtl env xs
+
+  | Return eopt   | Break eopt | Continue eopt ->
+      Common.opt (expr env) eopt
+
+  | Throw e -> expr env e
+  | Try (xs, c1, cs) ->
+      stmtl env xs;
+      catches env (c1::cs)
+
+  | StaticVars xs ->
+      xs +> List.iter (fun (name, eopt) ->
+        Common.opt (expr env) eopt;
+        (* todo: add in vars *)
+      )
+  | Global xs ->
+      xs +> List.iter (fun e ->
+        (* todo: should be a Id most of the time *)
+        ()
+      )
+
+and catch env x =
+  raise Todo
+
+and case x =
+  raise Todo
+
+and stmtl env xs = List.iter (stmt env) xs
+and casel env xs = List.iter (case env) xs
+and catches env xs = List.iter (catch env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -319,6 +374,7 @@ and expr env = function
        * do that in check_undefined?
        *)
       check_undefined name env
+
   | Id name -> ()
 
   | Assign (None, e1, e2) ->
@@ -359,6 +415,8 @@ and expr env = function
 
   | Assign (Some _, e1, e2) ->
       exprl env [e1;e2]
+  | List xs ->
+      failwith "should be used only in an Assign context"
 
   (* todo: keyword arguments false positives fix, intercept the Assign
    *  that is above.
@@ -368,14 +426,52 @@ and expr env = function
       expr env e;
       List.iter (expr env) es
 
-  | _ -> 
-      ()
+  (* could check that inside a method, but this should be done in check_class*)
+  | This -> ()
+
+  | Array_get (e, eopt) ->
+      expr env e;
+      Common.opt (expr env) eopt
+
+  | Obj_get (e1, e2) | Class_get (e1, e2) -> 
+      exprl env [e1;e2]
+  | New (e, es) -> exprl env (e::es)
+  | InstanceOf (e1, e2) -> exprl env [e1;e2]
+
+  | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
+  | Binop (_, e1, e2) -> exprl env [e1; e2]
+  | Guil xs -> exprl env xs
+
+  | Ref e -> expr env e
+
+  | ConsArray xs -> array_valuel env xs
+  | Xhp x -> xml env x
+
+  | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
+  | Cast (_, e) -> expr env e
+
+  | Lambda def ->
+      (* todo: in_lambda ? l_users *)
+
+      func_def env def
+
+and array_value env x =
+  raise Todo
+
+and xml env x =
+  raise Todo
 
 and exprl env xs = List.iter (expr env) xs
+and array_valuel env xs = List.iter (array_value env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
+and class_def env def =
+  raise Todo
+
+and constant_def env def =
+  raise Todo
 
 (*****************************************************************************)
 (* Main entry point *)
