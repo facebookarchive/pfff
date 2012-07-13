@@ -364,4 +364,3 @@ let tok_of_name (s, x) =
 
 let is_variable (s, _) =
   s.[0] = '$'
-
