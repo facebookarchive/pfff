@@ -18,7 +18,6 @@ open Ast_php_simple
 module A = Ast_php_simple
 module E = Error_php
 module S = Scope_code
-module Ent = Entity_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -33,7 +32,6 @@ module Ent = Entity_php
  * 
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are two orthogonal programming language concepts.
- * 
  * This file is concerned with variables, that is Ast_php.dname
  * entities, so for completness C-s for dname in ast_php.ml and
  * see if all uses of it are covered. Other files are more concerned
@@ -139,8 +137,8 @@ module Ent = Entity_php
  * TODO LATEST:
  * "These things declare variables in a function":
  * - Static, Global
- * - foreach()
  * - catch
+ * - foreach()
  * - Builtins ($this)
  * - Lexical vars, in php 5.3 lambda expressions
  * - Assignment via list()
