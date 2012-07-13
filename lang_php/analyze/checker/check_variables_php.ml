@@ -352,7 +352,9 @@ and expr env = function
           ()
       (* todo: for bhiller *)
       | Array_get (e_arr, e_opt) ->
-          ()
+          expr env e_arr;
+          Common.opt (expr env) e_opt
+
       | _ -> raise Todo
       );
       expr env e2
