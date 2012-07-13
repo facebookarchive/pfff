@@ -419,7 +419,10 @@ and expr env = function
           expr env e_arr;
           Common.opt (expr env) e_opt
 
-      (* todo: Obj_get, Class_get *)
+      (* checks for use of undefined member should be in check_classes *)
+      | Obj_get (e1, e2) | Class_get (e1, e2) -> 
+          exprl env [e1;e2]
+
       | _ -> raise Todo
       );
       expr env e2
@@ -468,8 +471,9 @@ and expr env = function
 
       func_def env def
 
-and array_value env x =
-  raise Todo
+and array_value env = function
+  | Aval e -> expr env e
+  | Akval (e1, e2) -> exprl env [e1; e2]  
 
 and xml env x =
   raise Todo
@@ -480,11 +484,24 @@ and array_valuel env xs = List.iter (array_value env) xs
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
+
+(* checks for use of undefined members should be in check_classes, but
+ * it's hard to do locally.
+ * 
+ * todo: inline the code of traits?
+ *)
 and class_def env def =
-  raise Todo
+  List.iter (constant_def env) def.c_constants;
+  List.iter (class_var env) def.c_variables;
+  List.iter (method_def env) def.c_methods
 
 and constant_def env def =
   raise Todo
+
+and class_var env v =
+  Common.opt (expr env) v.cv_value
+
+and method_def env x = func_def env x
 
 (*****************************************************************************)
 (* Main entry point *)
