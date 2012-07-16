@@ -229,20 +229,6 @@ let visit_prog find_entity prog =
 
     );
 
-    V.kcatch = (fun (k,vx) x ->
-      let (_t, (_, (classname, dname), _), stmts) = x in
-      (* The scope of catch is actually also at the function level in PHP ...
-       * but for this one it is so ugly that I introduce a new scope
-       * even outside strict mode. It's just too ugly.
-       * 
-       * todo? could use local ? could have a UnusedExceptionParameter ? 
-       *)
-      do_in_new_scope_and_check_unused (fun () -> 
-        add_binding dname (S.LocalExn, ref 0);
-        k x;
-      );
-    );
-
     (* -------------------------------------------------------------------- *)
     (* checking uses *)
     (* -------------------------------------------------------------------- *)

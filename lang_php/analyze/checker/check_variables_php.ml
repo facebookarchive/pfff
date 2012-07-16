@@ -137,7 +137,6 @@ module S = Scope_code
  * TODO LATEST:
  * "These things declare variables in a function":
  * - Static, Global
- * - catch
  * - foreach()
  * - Builtins ($this)
  * - Lexical vars, in php 5.3 lambda expressions
@@ -224,6 +223,10 @@ let fake_var s =
 let lookup_opt s vars =
   Common.optionise (fun () -> Map_poly.find s vars)
 
+let s_tok_of_name name =
+  A.str_of_name name,
+  A.tok_of_name name
+
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
@@ -287,8 +290,8 @@ and func_def env def =
   let env = { env with
     vars = ref (
       def.f_params +> List.map (fun p ->
-        A.str_of_name p.p_name,
-        (A.tok_of_name p.p_name, S.Param, ref access_cnt)
+        let (s, tok) = s_tok_of_name p.p_name in
+        s, (tok, S.Param, ref access_cnt)
       )
       (* todo: add $this if not method non-static *) 
       +> Map_poly.of_list
@@ -357,12 +360,24 @@ and stmt env = function
         ()
       )
 
-(* less: add a nested scope? *)
-and catch env x =
-  raise Todo
+(* The scope of catch is actually also at the function level in PHP ...
+ *
+ * todo: but for this one it is so ugly that I introduce a new scope
+ * even outside strict mode. It's just too ugly.
+ * todo: check unused
+ * todo? could use local ? could have a UnusedExceptionParameter ? 
+ *)
+and catch env (hint_type, name, xs) =
+  let (s, tok) = s_tok_of_name name in
+  env.vars := Map_poly.add s (tok, S.LocalExn, ref 0) !(env.vars);
+  stmtl env xs
 
-and case x =
-  raise Todo
+and case env = function
+  | Case (e, xs) ->
+      expr env e;
+      stmtl env xs
+  | Default xs ->
+      stmtl env xs
 
 and stmtl env xs = List.iter (stmt env) xs
 and casel env xs = List.iter (case env) xs
@@ -391,8 +406,7 @@ and expr env = function
       | Id name ->
           assert (A.is_variable name);
           (* skeleton similar to check_undefined() *)
-          let s = str_of_name name in
-          let tok = tok_of_name name in
+          let (s, tok) = s_tok_of_name name in
           (match lookup_opt s !(env.vars) with
           (* new local variable implicit declaration.
            * todo: add in which nested scope? I would argue to add it
@@ -468,7 +482,6 @@ and expr env = function
 
   | Lambda def ->
       (* todo: in_lambda ? l_users *)
-
       func_def env def
 
 and array_value env = function
@@ -495,8 +508,12 @@ and class_def env def =
   List.iter (class_var env) def.c_variables;
   List.iter (method_def env) def.c_methods
 
+(* cst_body should be a static scalar so there should not be any
+ * variable in it so in theory we don't need to check it ... doesn't
+ * hurt though, one day maybe this will change.
+ *)
 and constant_def env def =
-  raise Todo
+  expr env def.cst_body
 
 and class_var env v =
   Common.opt (expr env) v.cv_value
