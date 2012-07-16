@@ -503,12 +503,12 @@ and expr_ env heap x =
   | Int s     -> heap, Vint   (int_of_string s)
   | Double s  -> heap, Vfloat (float_of_string s)
 
-  | String s  -> heap, Vstring s
+  | String (s, _)  -> heap, Vstring s
   (* pad: ugly special case.
    * todo: fix Taint.fold_slist to not return a
    * a 'Vabstr Tstring' but instead a precise 'Vstring xxx'
    *)
-  | Guil [String s] -> heap, Vstring s
+  | Guil [String (s,_)] -> heap, Vstring s
   | Guil el ->
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in

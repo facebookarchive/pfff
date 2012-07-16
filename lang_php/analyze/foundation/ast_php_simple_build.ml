@@ -145,7 +145,7 @@ and stmt env st acc =
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
-                     [A.String s])) :: acc
+                     [A.String (s, wrap tok)])) :: acc
   | Use (tok, fn, _) ->
       raise (TodoConstruct ("use", tok))
   | Unset (tok, (_, lp, _), e) ->
@@ -318,7 +318,7 @@ and scalar env = function
 and constant env = function
   | Int (n, _) -> A.Int n
   | Double (n, _) -> A.Double n
-  | String (s, _) -> A.String s
+  | String (s, tok) -> A.String (s, wrap tok)
   | CName n -> A.Id (name env n)
   | PreProcess (cpp, tok) -> cpp_directive env tok cpp
   (* no reason to use the abstract interpreter on xdebug traces *)
@@ -632,7 +632,7 @@ and xhp_body env = function
 (*****************************************************************************)
 
 and encaps env = function
-  | EncapsString (s, _) -> A.String s
+  | EncapsString (s, tok) -> A.String (s, wrap tok)
   | EncapsVar v -> lvalue env v
   | EncapsCurly (_, lv, _) ->  lvalue env lv
   | EncapsDollarCurly (_, lv, _) -> lvalue env lv

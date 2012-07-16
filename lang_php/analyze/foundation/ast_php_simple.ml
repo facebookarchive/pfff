@@ -168,7 +168,12 @@ and expr =
   (* booleans are really just Int in PHP :( *)
   | Int of string
   | Double of string
-  | String of string
+  (* PHP has no first-class functions so entities are sometimes passed
+   * as strings so the string wrap below can actually be a Id name
+   * sometimes. Some magic functions like param_post() also introduce
+   * entities (variables) via strings.
+   *)
+  | String of string wrap
 
   (* Id is valid for "entities" (functions, classes, constants) and variables.
    * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
@@ -367,3 +372,7 @@ let tok_of_name (s, x) =
 
 let is_variable (s, _) =
   s.[0] = '$'
+
+(* we sometimes need to remove the '$' prefix *)
+let remove_first_char s =
+  String.sub s 1 (String.length s - 1)

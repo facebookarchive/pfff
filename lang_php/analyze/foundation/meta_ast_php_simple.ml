@@ -93,7 +93,7 @@ and vof_expr =
   | Double v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Double", [ v1 ]))
   | String v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("String", [ v1 ]))
+      let v1 = vof_name v1 in Ocaml.VSum (("String", [ v1 ]))
   | Guil v1 ->
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
   | Id v1 ->

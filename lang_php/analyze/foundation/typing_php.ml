@@ -282,8 +282,8 @@ and stmt env = function
   | Global el ->
       List.iter (function
         | Id (x, tok) ->
-            let gid = String.sub x 1 (String.length x -1) in
-            let gl = Array_get (Id (wrap "$GLOBALS"), Some (String gid)) in
+            let gid = A.remove_first_char x in
+            let gl = Array_get (Id (wrap "$GLOBALS"), Some (String (gid,tok)))in
             let assign = Assign (None, Id (x, tok), gl) in
             iexpr env assign
         | e -> iexpr env e
@@ -327,7 +327,7 @@ and expr_ env lv = function
   | Id (("true" | "false"),_) -> bool
   | Int _ -> int
   | Double _ -> float
-  | String s ->
+  | String (s, _) ->
       (match () with
       | _ when env.auto_complete && has_marker env s ->
           let t = Tvar (fresh()) in
@@ -407,9 +407,9 @@ and expr_ env lv = function
       let _ = Unify.unify env t1 t2 in
       v
   (* ??? *)
-  | Array_get (e, Some (Id (s,_))) when s.[0] <> '$' ->
-      expr env (Array_get (e, Some (String s)))
-  | Array_get (Id (s,_), Some (String x))
+  | Array_get (e, Some (Id (s,tok))) when s.[0] <> '$' ->
+      expr env (Array_get (e, Some (String (s, tok))))
+  | Array_get (Id (s,_), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
 
       let marked = env.auto_complete && has_marker env x in
@@ -420,7 +420,7 @@ and expr_ env lv = function
       let _ = Unify.unify env t1 t2 in
       Instantiate.approx env ISet.empty v
 
-  | Array_get (e, Some (String s))->
+  | Array_get (e, Some (String (s, _)))->
       let marked = env.auto_complete && has_marker env s in
       let t1 = expr env e in
       if marked then (env.show := Sauto_complete (s, t1); any) else
@@ -533,7 +533,7 @@ and array_value env t = function
   | Aval e ->
       let t' = array (int, expr env e) in
       Unify.unify env t t'
-  | Akval (String s, e) ->
+  | Akval (String (s,_), e) ->
       let t' = srecord (s, (expr env e)) in
       Unify.unify env t t'
   | Akval (e1, e2) ->
@@ -787,7 +787,7 @@ and class_vars static env acc c =
       | None -> Tvar (fresh()) 
       | Some x -> expr env x 
     in
-    let s = if static then s else String.sub s 1 (String.length s - 1) in
+    let s = if static then s else A.remove_first_char s in
     SMap.add s t acc
 
 and method_decl static env acc m =
