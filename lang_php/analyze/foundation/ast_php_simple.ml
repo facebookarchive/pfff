@@ -131,6 +131,9 @@ and stmt =
   | While of expr * stmt list
   | Do of stmt list * expr
   | For of expr list * expr list * expr list * stmt list
+  (* 'foreach ($xs as $k)' or 'foreach ($xs as $k => $v)'
+   * so the second and third expr are almost always a Var
+   *)
   | Foreach of expr * expr * expr option * stmt list
 
   | Return of expr option
