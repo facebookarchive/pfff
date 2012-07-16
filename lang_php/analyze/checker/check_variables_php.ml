@@ -152,7 +152,6 @@ module S = Scope_code
  * - empty()
  * - Static class variables
  * 
- *  - param_post, param_get
  *  - list assign
  *  - bailout eval, extract, etc
  *  - keyword arguments
@@ -451,6 +450,46 @@ and expr env = function
    * todo: args passed by ref false positives fix
    *)
   | Call (e, es) ->
+
+      (* facebook specific? should be a hook instead to visit_prog? *)
+      (match e, es with
+      | Id ("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
+        (ConsArray array_args)::rest_param_xxx_args ->
+
+          (* have passed a 'prefix' arg, or nothing *)
+          if List.length rest_param_xxx_args <= 1
+          then begin
+            let prefix_opt =
+              match rest_param_xxx_args with
+              | [String(str_prefix, _tok_prefix)] -> 
+                  Some str_prefix
+              | [] ->
+                  (match kind with
+                  | "param_post" -> Some "post_"
+                  | "param_get" -> Some "get_"
+                  | "param_request" -> Some "req_"
+                  | "param_cookie" -> Some "cookie_"
+                  | _ -> raise Impossible
+                  )
+              | _ -> 
+                  (* less: display an error? weird argument to param_xxx func?*)
+                  None
+            in
+            prefix_opt +> Common.do_option (fun prefix ->
+              array_args +> List.iter (function
+              | Akval(String(param_string, tok_param), _typ_param) ->
+                let s = "$" ^ prefix ^ param_string in
+                let tok = A.tok_of_name (param_string, tok_param) in
+                env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
+              (* less: display an error? weird argument to param_xxx func? *)
+              | _ -> ()
+              )
+            )
+          end
+          (* todo? else display an error? weird argument to param_xxx func? *)
+
+      | _ -> ()
+      );
       expr env e;
       List.iter (expr env) es
 

@@ -9,17 +9,17 @@ class Param {
 
 param_post(array('post1'  => Param::STRING,
                  //ERROR: unused variable
-                 'post2'        => Param::STRING
+                 'unused_post2'        => Param::STRING
                 ));
 
 param_get(array('get1'  => Param::STRING,
                  //ERROR: unused variable
-                 'get2'        => Param::STRING
+                 'unused_get2'        => Param::STRING
                 ));
 
 param_request(array('req1'  => Param::STRING,
                  //ERROR: unused variable
-                 'req2'        => Param::STRING
+                 'unused_req2'        => Param::STRING
                    ), 'param_');
 
 echo $post_post1;

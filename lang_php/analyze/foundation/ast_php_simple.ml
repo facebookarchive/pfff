@@ -169,9 +169,9 @@ and expr =
   | Int of string
   | Double of string
   (* PHP has no first-class functions so entities are sometimes passed
-   * as strings so the string wrap below can actually be a Id name
-   * sometimes. Some magic functions like param_post() also introduce
-   * entities (variables) via strings.
+   * as strings so the string wrap below can actually correspond to a
+   * 'Id name' sometimes. Some magic functions like param_post() also
+   * introduce entities (variables) via strings.
    *)
   | String of string wrap
 

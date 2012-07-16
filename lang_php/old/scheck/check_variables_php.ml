@@ -159,51 +159,7 @@ let visit_prog find_entity prog =
               E.warning tok E.WeirdForeachNoIteratorVar
           )
 
-      (* mostly copy paste of ./pfff -dump_php tests/php/scheck/endpoint.php 
-       * facebook specific? should be a hook instead to visit_prog?
-       *)
-      | ExprStmt(
-         (Lv(
-          (FunCallSimple(Name((
-            ("param_post" | "param_get" | "param_request" | "param_cookie")
-              as kind, i_1)),
-            (i_2,
-             (Left(
-                Arg(
-                  (ArrayLong(i_3, (i_4, array_args, i_20))
-                   ))))::rest_param_xxx_args,
-             i_22))
-          ))), i_25) ->
 
-          let array_args = Ast.uncomma array_args in
-          let rest_param_xxx_args = Ast.uncomma rest_param_xxx_args in
-
-          (* have passed a 'prefix' arg, or nothing *)
-          if List.length rest_param_xxx_args <= 1
-          then begin
-              let prefix_opt =
-                match rest_param_xxx_args with
-                | [Arg (Sc(C(String(str_prefix, tok_prefix))))] -> 
-                    Some str_prefix
-                | [] ->
-                    (match kind with
-                    | "param_post" -> Some "post_"
-                    | "param_get" -> Some "get_"
-                    | "param_request" -> Some "req_"
-                    | "param_cookie" -> Some "cookie_"
-                    | _ -> raise Impossible
-                    )
-                | _ -> 
-                    (* display an error? weird argument to param_xxx func? *)
-                    None
-              in
-              prefix_opt +> Common.do_option (fun prefix ->
-               array_args +> List.iter (function
-               | ArrayArrowExpr((Sc(C(String((param_string, tok_param))))),
-                               i_7,
-                               _typ_param) ->
-                   let dname = DName (prefix ^ param_string, tok_param) in
-                   add_binding dname (S.Local, ref 0);
                | _ -> ()
                );
               )
@@ -228,6 +184,7 @@ let visit_prog find_entity prog =
           k x
 
     );
+
 
     (* -------------------------------------------------------------------- *)
     (* checking uses *)
