@@ -137,7 +137,6 @@ module S = Scope_code
  * TODO LATEST:
  * "These things declare variables in a function":
  * - Static, Global
- * - foreach()
  * - Builtins ($this)
  * - Lexical vars, in php 5.3 lambda expressions
  * - Assignment via list()
