@@ -460,7 +460,7 @@ and expr env = function
    *)
   | Call (Id ("__builtin__unset", tok), args) ->
       (match args with
-      (* less: The use of 'unset' on a variable is still not clear to me *)
+      (* less: The use of 'unset' on a variable is still not clear to me. *)
       | [Id name] ->
           assert (A.is_variable name);
           check_undefined env name

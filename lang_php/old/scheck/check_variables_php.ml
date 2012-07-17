@@ -29,9 +29,6 @@ let visit_prog find_entity prog =
   let in_lambda = ref false in
   let in_class = ref None in
 
-  (* todo: toremove, ugly *)
-  let is_top_expr = ref true in 
-
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
     (* -------------------------------------------------------------------- *)
@@ -159,21 +156,6 @@ let visit_prog find_entity prog =
               E.warning tok E.WeirdForeachNoIteratorVar
           )
 
-
-               | _ -> ()
-               );
-              )
-          end;
-          k x
-
-       * In the end I still decided to not consider it because
-       *)
-      | Unset (t1, lvals_list, t2) ->
-          k x
-
-    );
-
-
     (* -------------------------------------------------------------------- *)
     (* checking uses *)
     (* -------------------------------------------------------------------- *)
@@ -232,7 +214,6 @@ let visit_prog find_entity prog =
               k x
             ))))
           )
-      (* Include | ... ? *)
           
       | _ ->
 
@@ -256,7 +237,6 @@ let visit_prog find_entity prog =
 
         (* keyword arguments should be ignored and treated as comments *)
         let keyword_args = keyword_arguments_vars_in_any (Expr x) in
-
 
 
         (* todo: enough? if do $x = $x + 1 then have problems? *)
