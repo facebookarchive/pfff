@@ -561,7 +561,14 @@ and expr env = function
       Common.opt (expr env) eopt
 
   | Obj_get (e1, e2) | Class_get (e1, e2) -> 
-      exprl env [e1;e2]
+      expr env e1;
+      (match e2 with
+      (* with 'echo A::$v' we should not issue a UseOfUndefinedVariable,
+       * check_classes will handle this case.
+       *)
+      | Id _ -> ()
+      | _ -> expr env e2
+      );
 
   | New (e, es) -> exprl env (e::es)
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
