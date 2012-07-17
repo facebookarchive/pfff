@@ -25,6 +25,10 @@ function test_undefined_and_unused_variables_basic($a) {
   $memory = 1;
   unset($memory);
 
+  //ERROR: use of undefined variable
+  unset($undefined_variable);
+
+
   //ERROR: unused variable
   $match = array();
   // note that this error shows also the need for more than just counting token

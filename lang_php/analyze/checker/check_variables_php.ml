@@ -230,7 +230,7 @@ let s_tok_of_name name =
 (* Checks *)
 (*****************************************************************************)
 
-let check_undefined name env =
+let check_undefined_and_incr_use_count env name =
   let s = A.str_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
@@ -238,6 +238,15 @@ let check_undefined name env =
       E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
   | Some (_tok, scope, access_count) ->
       incr access_count
+
+let check_undefined env name =
+  let s = A.str_of_name name in
+  match lookup_opt s !(env.vars) with
+  | None ->
+      E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
+  | Some (_tok, scope, access_count) ->
+      ()
+
 
 (* less: if env.bailout? *)
 let check_unused vars =
@@ -392,7 +401,7 @@ and expr env = function
       (* todo: also adjust the correspoding scope_ref of name in ast_php.
        * do that in check_undefined?
        *)
-      check_undefined name env
+      check_undefined_and_incr_use_count env name
 
   | Id name -> ()
 
@@ -444,6 +453,16 @@ and expr env = function
       exprl env [e1;e2]
   | List xs ->
       failwith "list(...) should be used only in an Assign context"
+
+  | Call (Id ("__builtin__unset", tok), args) ->
+      (match args with
+      | [Id name] ->
+          assert (A.is_variable name);
+          check_undefined env name
+      | [Array_get (e_arr, e_opt)] ->
+          raise Todo
+      | _ -> raise Todo
+      )
 
   (* todo: keyword arguments false positives fix, intercept the Assign
    *  that is above.
