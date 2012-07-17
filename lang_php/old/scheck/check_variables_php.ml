@@ -166,19 +166,7 @@ let visit_prog find_entity prog =
           end;
           k x
 
-      (* note: I was not handling Unset which takes a lvalue (not
-       * an expression) as an argument. Because of that the kexpr
-       * hook below that compute the set of vars_used_in_expr
-       * was never triggered and every call to unset($avar) was not
-       * considered as a use of $avar.
-       * 
-       * C-s "lvalue" in Ast_php to be sure all Ast elements
-       * containing lvalue are appropriatly considered.
-       * 
        * In the end I still decided to not consider it because
-       * a mention of a variable in a $unset should not be really
-       * considered as a use of variable. There should be another
-       * statement in the function that actually use the variable.
        *)
       | Unset (t1, lvals_list, t2) ->
           k x

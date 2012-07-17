@@ -345,6 +345,7 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
  *  - 'clone', 
  *  - 'exit', 'yield', 'yield_break'
  *  - 'unset', 'isset', 'empty'
+ *     http://php.net/manual/en/function.unset.php
  *  - 'echo', 'print', 
  *  - '@', '`', 
  *  - 'include', 'require', 'include_once', 'require_once'.

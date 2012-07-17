@@ -157,7 +157,7 @@ module S = Scope_code
  *  - keyword arguments
  *  - lambda special, handle use too
  *  - passed by ref
- *  - isset, unset
+ *  - isset
  *  - this
  *  - globals
  * 
@@ -454,11 +454,17 @@ and expr env = function
   | List xs ->
       failwith "list(...) should be used only in an Assign context"
 
+  (* A mention of a variable in a unset() should not be really
+   * considered as a use of variable. There should be another
+   * statement in the function that actually use the variable.
+   *)
   | Call (Id ("__builtin__unset", tok), args) ->
       (match args with
+      (* less: The use of 'unset' on a variable is still not clear to me *)
       | [Id name] ->
           assert (A.is_variable name);
           check_undefined env name
+      (* unsetting a field *)
       | [Array_get (e_arr, e_opt)] ->
           raise Todo
       | _ -> raise Todo
