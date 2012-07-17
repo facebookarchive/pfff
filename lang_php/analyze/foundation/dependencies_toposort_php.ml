@@ -109,7 +109,7 @@ module Dependencies = struct
         let acc = xml acc x in
         let name = Ast.string_of_xhp_tag x.xml_tag in
         SSet.add name acc
-    | ConsArray (_, avl) -> array_valuel acc avl
+    | ConsArray (_, _, avl) -> array_valuel acc avl
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->

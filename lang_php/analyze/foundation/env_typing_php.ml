@@ -63,6 +63,7 @@ type t =
      * Example: $x = array('foo' => 0); $x[] = 12; will translate in
      * Tarray (SSet('foo'), int | string, int)
      *)
+    (* use Tarray to represent a "confused" array classification*)
     | Tarray  of SSet.t * t * t
 
     (* this is also used for methods *)
@@ -97,6 +98,24 @@ type code_database = {
     funcs: Ast_php_simple.func_def Common.cached SMap.t ref;
     (* todo: constants?? *)
 }
+
+(* Module in order to create a map with array identifiers for the key. 
+ * Compare function declares equivalence, but no other ordering. 
+ *)
+module Array_id = 
+struct
+  type t  = Ast_php_simple.expr * string * string
+
+  let compare a b = 
+    match a, b with 
+    | (e1, f1, c1), (e2, f2, c2) when f1 = f2 && c1 = c2 && e1 = e2 ->
+        0
+    | _ -> -1
+end 
+
+(* Map with an array id as the key type *)
+module AMap = Map.Make(Array_id)
+
 type env = {
     db: code_database;
 
@@ -124,12 +143,15 @@ type env = {
      *)
     globals: t SMap.t ref;
 
-    (* The array environment. Contains all typing information for all arrays*)
-    aenv: arr_info list SMap.t ref;
+    (* The array environment. Contains all typing information for all arrays *)
+    aenv: arr_info list AMap.t ref;
 
     (* The current function being typed, for the purpose of array
-     * identification*)
+     * identification *)
     mutable aenv_fun: string; 
+
+    (* The current class being typed, for the purpose of array identificatio*)
+    mutable aenv_class: string; 
 
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
@@ -170,17 +192,22 @@ type env = {
     cumul: float ref;
   }
 
+(* This is used to describe the type of interactions with an array, and the
+ * location of this interaction. *)
 and arr_info = Parse_info.info option * arr_access
 
+(* Type signifying the kind of interactions with arrays seen in the ast *)
 and arr_access = 
-  | NoIndex of t * t * t (*t1, t2, v*)
-  | VarOrInt of t * t * t * t (*t1, t2, v, k*)
+  | NoIndex of t (*v*)
+  | VarOrInt of t * t (*k, v*)
   | Const of t (*v*)
-  | ConstantString of t * t * t (*t1, t2, v*)
-  | Three of t * t * t (*t1, t2, v*) (* TODO: Figure out what the hell at3 corresponds to*)
-  | Disguised (**)
+  | ConstantString of t (*v*)
   | Declaration of t * t * t
   | Value of t
+  | DeclarationKValue of t * t
+  | DeclarationValue of t
+  | UnhandledAccess
+
 
 (* This is used for the autocompletion and interactive type inference
  * in Emacs (Tab and C-c C-t).
@@ -234,10 +261,11 @@ let make_env () = {
   vars     = ref SMap.empty;
   globals    = ref SMap.empty;
   (*Contains typing information regarding all array declarations and accesses*)
-  aenv    = ref SMap.empty;
+  aenv    = ref AMap.empty;
   (*Current function name for the purpose of differentiating arrays in different
    * functions*)
-  aenv_fun= "";
+  aenv_fun = "";
+  aenv_class = "";
 
   tenv    = ref IMap.empty;
   subst   = ref IMap.empty;

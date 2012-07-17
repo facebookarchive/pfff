@@ -141,7 +141,7 @@ and vof_expr =
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Ref v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ v1 ]))
   | Xhp v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xhp", [ v1 ]))
-  | ConsArray (_, v1) ->
+  | ConsArray (_, _, v1) ->
       let v1 = Ocaml.vof_list vof_array_value v1
       in Ocaml.VSum (("ConsArray", [ v1 ]))
   | List v1 ->

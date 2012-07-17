@@ -218,7 +218,7 @@ and expr env = function
   | ArrayShort (tok, apl, _) ->
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
-      A.ConsArray (Some(tok), apl)
+      A.ConsArray (None, Some(tok), apl)
   | New (_, cn, args) ->
       let args =
         match args with

@@ -1,5 +1,5 @@
 open OUnit
-open Typing_helpers_php.Array_typer
+open Typing_infer_array_php.Array_typer
 
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)

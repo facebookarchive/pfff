@@ -137,7 +137,8 @@ and unify_ env (t1: prim_ty) (t2: prim_ty) =
       if s1 == s2 
       then t1 
       else Trecord (unify_map env s1 s2)
-  | Trecord x, t | t, Trecord x ->
+  | Trecord x, t | t, Trecord x -> (*records get changed into arrays! need pi
+  for records too*)
       if SMap.is_empty x
       then t
       else

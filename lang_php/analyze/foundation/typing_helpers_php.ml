@@ -162,7 +162,7 @@ module Env = struct
   let unset env x = env.vars := SMap.remove x !(env.vars)
   let mem env x = SMap.mem x !(env.vars)
 
-  let iter env f = SMap.iter f !(env.env)
+  let iter env f = SMap.iter f !(env.vars)
 
   let get env x =
     try SMap.find x !(env.vars) 
@@ -183,12 +183,14 @@ end
 (*ciara*)
 module AEnv = struct
   let set env x a =
-    let l = try SMap.find x !(env.aenv) with Not_found -> [] in
+    let l = try AMap.find x !(env.aenv) with Not_found -> [] in
     let l = a::l in
-    env.aenv := SMap.add x l !(env.aenv)
-  let iter env f = SMap.iter f !(env.aenv)
+    env.aenv := AMap.add x l !(env.aenv)
+  let iter env f = AMap.iter f !(env.aenv)
   let set_fun env x = env.aenv_fun <- x
   let get_fun env = env.aenv_fun
+  let set_class env x = env.aenv_class <- x
+  let get_class env = env.aenv_class
 end
 
 module Subst = struct
@@ -287,224 +289,6 @@ module FindCommonAncestor = struct
 
 end
 
-module Array_typer = struct
-
-  type container_confidence = 
-    | Supporting
-    | Opposing 
-    | NoData
-
-  type container = 
-    | Vector of container_confidence
-    | Tuple of container_confidence
-    | Map of container_confidence
-
-  type inferred_container = {
-    map: container;
-    tuple: container;
-    vector: container
-  }
-
-  let make_inferred_container = {
-    map = Map(NoData);
-    tuple = Tuple(NoData);
-    vector = Vector(NoData);
-  }
-
-  type cont_evi = container * int list
-
-  type val_evi = Env_typing_php.t * int list
-
-  type ni_evi = bool * int list
-
-  type t = {
-    (*Initial implementation - cotainer with a list if line numbers for evidence*)
-    types: cont_evi list SMap.t ref;
-    (*unused as of yet, potentially unneeded if pass parse_info for line info*)
-    file: string;
-    (*intermediate structure - contains list of value types associated with the
-     * array, and a list of line numbers NOTE: need to change to parse_info*)
-    values: val_evi list SMap.t ref;
-    (*intermediate structure - contains the evidence for array access with no
-     * index*)
-    ni_access: ni_evi SMap.t ref;
-    (*Final inferred type confidences*)
-    inferred: inferred_container SMap.t ref
-  }
-
-  let make_array_typer f = {
-    types = ref SMap.empty;
-    file = f;
-    values = ref SMap.empty;
-    ni_access = ref SMap.empty;
-    inferred = ref SMap.empty;
-  }
-
-  let fun_on_aenv env at f =
-    AEnv.iter env (
-      fun x l -> f at x l;)
-  
-  let make_inferred_container_map env at = 
-    AEnv.iter env (fun id l -> 
-      let ic = make_inferred_container in
-      at.inferred := SMap.add id ic !(at.inferred)
-    )
-  
-  (*Super naive, super incorrect - remove eventually. maybe now*)
-  let container_of_array_info = function
-    | (_, NoIndex _) -> Vector (NoData)
-    | (_, Const _)
-    | (_, ConstantString _) -> Tuple (NoData)
-    | _ -> Map (NoData)
-
-  let line_of_array_info = function
-    | (None, _) -> (-1)
-    | (Some (pi), _) -> Parse_info.line_of_info pi
-
-  let rec add_evidence l c ln = 
-    match l with
-    | [] -> [(c, [ln])]
-    | (k, x)::t when k = c -> (k, (ln::x))::t
-    | h::t -> h::(add_evidence t c ln)
-
-  let update_vt at id ai v = 
-    let ln = line_of_array_info ai in
-    let l = try SMap.find id !(at.values) with Not_found -> [] in
-    let l = add_evidence l v ln in
-    at.values := SMap.add id l !(at.values)
-
-  let avl at id ail = 
-    List.iter (fun ai -> 
-      match ai with 
-      | (_, Value v) -> update_vt at id ai v
-      | _ -> ()
-    ) ail
-
-  let analyze_values env at = 
-    fun_on_aenv env at avl
-
-  let update_ni at id ai = 
-    let ln = line_of_array_info ai in
-    let nie = try SMap.find id !(at.ni_access) with Not_found -> (true, []) in
-    match nie with 
-    | (b, l) -> let l = ln::l in
-        let nie = (b, l) in
-        at.ni_access := SMap.add id nie !(at.ni_access)
-
-  let nial at id ail = 
-    List.iter (fun ai -> 
-      match ai with
-      | (_, NoIndex _) -> update_ni at id ai
-      | _ -> ()
-    ) ail
- 
- let analyze_noindex_access env at =
-    fun_on_aenv env at nial
-  
-  let set_confidence at id c = 
-    let ic = try SMap.find id !(at.inferred) with Not_found ->
-      make_inferred_container in
-    match c with
-    | Map(_) -> let ic = {ic with map = c} in
-      at.inferred := SMap.add id ic !(at.inferred)
-    | Vector(_) -> let ic = {ic with vector = c} in
-      at.inferred := SMap.add id ic !(at.inferred)
-    | Tuple(_) -> let ic = {ic with tuple = c} in
-      at.inferred := SMap.add id ic !(at.inferred)
-
-  let contains_different_values at id = 
-    set_confidence at id (Map(Opposing));
-    set_confidence at id (Vector(Opposing));
-    set_confidence at id (Tuple(Supporting))
-
-  let analyze_different_values at = 
-    SMap.iter (fun id vel ->
-      if (List.length vel) > 1 then contains_different_values at id;
-      ()
-    ) !(at.values)
-
-  let analyze_accesses at = 
-    SMap.iter (fun id ni -> 
-      set_confidence at id (Vector(Supporting))
-    ) !(at.ni_access)
-  
-  let infer_arrays env at = 
-    make_inferred_container_map env at;
-    analyze_values env at;
-    analyze_noindex_access env at;
-    analyze_accesses at;
-    analyze_different_values at
-  
-  let update_ail at id ai = 
-    let c = container_of_array_info ai in
-    let ln = line_of_array_info ai in
-    let l = try SMap.find id !(at.types) with Not_found -> [] in
-    let l = add_evidence l c ln in
-    at.types := SMap.add id l !(at.types)
-
-  (* x is the id, l is the list of arr_info (parse_info option * arr_access )*)
-  let tyl at id ail = 
-    List.iter (fun ai ->
-      update_ail at id ai
-    ) ail
-
-  let tym env at= 
-    AEnv.iter env (
-      fun x l -> tyl at x l;
-    )
-
-  let string_of_container = function
-    | Vector _ -> "vector"
-    | Tuple _ -> "tuple"
-    | Map _ -> "map"
-
-  let rec pp_evidence e = 
-    List.iter (fun x ->
-      Printf.printf "    %d\n" x; 
-      )
-    e
-
-  let pp_cont_evi x =
-    match x with
-    | (c, e) -> begin Printf.printf "  %s\n" (string_of_container c);
-    pp_evidence e; end
-
-
-  let pp at =
-    SMap.iter (fun id l -> 
-      Printf.printf "%s\n" id;
-      List.iter (fun x -> 
-        pp_cont_evi x
-      ) 
-      l
-    ) 
-    !(at.types)
-
-  let string_of_confidence = function
-    | Supporting -> "Likely"
-    | Opposing -> "Unlikely"
-    | NoData -> "No Data"
-
-  let pp_container c = 
-    match c with
-    | Map(con) -> Printf.printf "  Map - %s\n" (string_of_confidence con)
-    | Tuple(con) -> Printf.printf "  Tuple - %s\n" (string_of_confidence con)
-    | Vector(con) -> Printf.printf "  Vector - %s\n" (string_of_confidence con)
-
-  let pp_inferred_container ic = 
-    let {map = map; tuple = tuple; vector = vector} = ic in
-    pp_container map;
-    pp_container tuple;
-    pp_container vector
-    
-
-  let pp_inferred_arrays at = 
-    SMap.iter (fun id ic ->
-      Printf.printf "%s\n" id;
-      pp_inferred_container ic
-    ) !(at.inferred)
-
-end
 
 (*****************************************************************************)
 (* String of *)
@@ -606,7 +390,7 @@ module Print2 = struct
     genv env
 
 
-  let line_of_opt_info = function 
+ (* let line_of_opt_info = function 
     | None -> "Line unavailable"
     | Some(pi) -> string_of_int (Parse_info.line_of_info pi)
   
@@ -617,14 +401,13 @@ module Print2 = struct
     "^(line_of_opt_info l))
     | (l, VarOrInt _) -> Pp.print penv ("  Var or int access at
     "^(line_of_opt_info l))
-    | (l, Disguised) -> Pp.print penv ("  Disguised array access
-    at"^(line_of_opt_info l))
-    | (l, Three _) -> Pp.print penv ("  THREE at "^(line_of_opt_info l))
     | (l, Const _ ) -> Pp.print penv ("  Const access at "^(line_of_opt_info l))
     | (l, ConstantString _) -> Pp.print penv ("  Constant string access at
     "^(line_of_opt_info l))
     | (l, Declaration _) -> Pp.print penv ("  Array declaration at
     "^(line_of_opt_info l))
+    | (_, DeclarationValue _) -> ()
+    | (_, DeclarationKValue _) -> ()
     | (l, Value _) -> Pp.print penv ("  Value at"^(line_of_opt_info l))
 
     (*ciara: added, pretty prints the list of the arr accesses*)
@@ -641,7 +424,7 @@ module Print2 = struct
     let penv = Pp.empty print_string in
     AEnv.iter env (
       fun x a -> 
-        Pp.print penv x; Pp.print penv " = ";
+        Pp.print penv "get rep string 2 \n";(*Pp.print penv x;*) Pp.print penv " = ";
         Pp.newline penv;
         arr_access a;
     )
@@ -655,7 +438,7 @@ module Print2 = struct
           ty env penv ISet.empty 0 t;
           Pp.newline penv;
     )
-
+*)
   let args o env t =
     match Fun.get_args env ISet.empty t with
     | [] -> ()
@@ -747,46 +530,27 @@ module Print2 = struct
   let array_access env ai =
     let penv = Pp.empty print_string in
     match ai with 
-    | (_, NoIndex (t1, t2, t3)) -> Pp.print penv "No index";
+    | (_, NoIndex (v)) -> Pp.print penv "No index";
       Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) (t1::t2::[t3])
-    | (_, VarOrInt (t1, t2, t3, t4)) -> Pp.print penv "Variable or integer";
+      List.iter (fun x -> ignore(arr_access_type env penv x)) [v]
+    | (_, VarOrInt (k, v)) -> Pp.print penv "Variable or integer";
       Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) (t1::t2::t3::[t4])
+      List.iter (fun x -> ignore(arr_access_type env penv x)) (k::[v])
     | (_, Const e) -> Pp.print penv "Const";
       Pp.newline penv;
       ignore(arr_access_type env penv e)
-    | (_, ConstantString (t1, t2, t3)) -> Pp.print penv "Constant string";
+    | (_, ConstantString (v)) -> Pp.print penv "Constant string";
       Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) (t1::t2::[t3])
-    | (_, Three (t1, t2, t3)) -> Pp.print penv "Three";
-      Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) (t1::t2::[t3])
-    | (_, Disguised) -> Pp.print penv "Disguised array access";
-      Pp.newline penv
+      List.iter (fun x -> ignore(arr_access_type env penv x)) [v]
     | (_, Declaration (t1, t2, t3)) ->Pp.print penv "Declaration";
       Pp.newline penv;
       List.iter (fun x -> ignore(arr_access_type env penv x)) (t1::t2::[t3])
+    | (_, DeclarationKValue _) -> ()
+    | (_, DeclarationValue _) -> ()
     | (_, Value t) -> Pp.print penv "Value";
       Pp.newline penv;
       ignore(arr_access_type env penv t)
-
-
-
-  let ail env li = 
-    List.iter (fun ai ->
-        let l = Array_typer.line_of_array_info ai in
-        Printf.printf "  %d: " l; 
-        ignore(array_access env ai)
-    ) 
-    li
-
-  let arr_structure env = 
-    AEnv.iter env (
-      fun x l -> Printf.printf "%s\n" x;
-      ail env l;
-    )
-
+    | (_, UnhandledAccess) -> ()
 end
 
 module Print = struct

@@ -603,9 +603,9 @@ and expr_ env heap x =
       (* pad: why vnull? *)
       heap, Vsum [Vnull; Vabstr Tbool]
 
-  | ConsArray (_, []) ->
+  | ConsArray (_, _, []) ->
       heap, Varray []
-  | ConsArray (_, avl) ->
+  | ConsArray (_, _, avl) ->
       let id = Id (w "*array*") in
       let heap = List.fold_left (array_value env id) heap avl in
       let heap, _, v = Var.get env heap "*array*" in
@@ -747,7 +747,7 @@ and lvalue env heap x =
   | Array_get (_, e, k) ->
       array_get env heap e k
 
-  | ConsArray (_, l) as e ->
+  | ConsArray (_, _, l) as e ->
       let heap, a = expr env heap e in
       let heap, v = Ptr.new_ heap in
       let heap, _ = assign env heap true v a in

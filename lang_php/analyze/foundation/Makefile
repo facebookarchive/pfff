@@ -30,7 +30,7 @@ SRC+= env_interpreter_php.ml \
 SRC+= dependencies_toposort_php.ml \
       env_typing_php.ml typing_helpers_php.ml\
       builtins_typed_php.ml typing_unify_php.ml \
-      typing_php.ml
+      typing_php.ml typing_infer_array_php.ml
 SRC+= database_php.ml database_juju_php.ml
 SRC+=graph_php.ml
 # used to be in analyze/

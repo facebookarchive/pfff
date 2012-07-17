@@ -222,7 +222,7 @@ and expr =
    *)
   | Ref of expr
 
-  | ConsArray of parse_info option * array_value list
+  | ConsArray of expr option * parse_info option * array_value list
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
@@ -382,3 +382,6 @@ let is_variable (s, _) =
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =
   String.sub s 1 (String.length s - 1)
+(*let rec comp_expr e1 e2 = 
+  match e1, e2 with 
+  | Int s1, Int s2 when s1 = s2 ->  *)
