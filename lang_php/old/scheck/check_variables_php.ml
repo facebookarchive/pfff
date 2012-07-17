@@ -117,45 +117,6 @@ let visit_prog find_entity prog =
             (* TODO recurse on the affect ? *)
           )
 
-      | Foreach (tok, _, e, _, var_either, arrow_opt, _, colon_stmt) ->
-          vx (Expr e);
-
-          let lval = 
-            match var_either with
-            | Left (is_ref, var) -> 
-                var
-            | Right lval ->
-                lval
-          in
-          (match lval with
-          | Var (dname, scope_ref) ->
-              scope_ref := S.LocalIterator;
-              do_in_new_scope_and_check_unused_if_strict (fun () ->
-                (* People often use only one of the iterator when
-                 * they do foreach like   foreach(... as $k => $v).
-                 * We want to make sure that at least one of 
-                 * the iterator is used, hence this trick to
-                 * make them share the same ref.
-                 *)
-                let shared_ref = ref 0 in
-                add_binding dname (S.LocalIterator, shared_ref);
-                (match arrow_opt with
-                | None -> ()
-                | Some (_t, (is_ref, var)) -> 
-                    (match var with
-                    | Var (dname, scope_ref) ->
-                        add_binding dname (S.LocalIterator, shared_ref);
-                        scope_ref := S.LocalIterator;
-                    | _ ->
-                        E.warning tok E.WeirdForeachNoIteratorVar
-                    );
-                );
-                vx (ColonStmt2 colon_stmt);
-              );
-          | _ -> 
-              E.warning tok E.WeirdForeachNoIteratorVar
-          )
-
     (* -------------------------------------------------------------------- *)
     (* checking uses *)
     (* -------------------------------------------------------------------- *)
@@ -278,7 +239,6 @@ let visit_prog find_entity prog =
          (* still recurse when not in top expr *)
          k x
     );
-
 
     V.klvalue = (fun (k,vx) x ->
       match x with

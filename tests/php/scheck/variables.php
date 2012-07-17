@@ -28,11 +28,20 @@ function test_undefined_and_unused_variables_basic($a) {
   //ERROR: use of undefined variable
   unset($undefined_variable);
 
-
-  //ERROR: unused variable
-  $match = array();
-  // note that this error shows also the need for more than just counting token
   $matches = array();
+
+  foreach($matches as $k) {
+    echo $k;
+  }
+  // $k2 is not used but it's ok, as long as one of the key/value is used
+  foreach($matches as $k2 => $v) {
+    echo $v;
+  }
+
+  //SKIP: unused variable, if consider block scope for foreach
+  $match = array();
+
+  // note that this error shows also the need for more than just counting token
   foreach($matches as $match) {
     echo $match;
   }
@@ -182,4 +191,3 @@ function analysis4bis2() {
   }
   echo $a;
 }
-

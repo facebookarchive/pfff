@@ -342,12 +342,47 @@ and stmt env = function
       exprl env (es1 ++ es2 ++ es3);
       stmtl env xs
  
-  (* todo: introduce var? *)
   | Foreach (e1, e2, e3opt, xs) ->
       expr env e1;
-      expr env e2;
-      Common.opt (expr env) e3opt;
-      stmtl env xs
+
+      (match e2 with
+      (* todo: could be a Ref (Id ...) too? *)
+      | Id name ->
+          assert (A.is_variable name);
+          let (s, tok) = s_tok_of_name name in
+          (* People often use only one of the iterator when
+           * they do foreach like   foreach(... as $k => $v).
+           * We want to make sure that at least one of 
+           * the iterator variables is used, hence this trick to
+           * make them share the same access count reference.
+           *)
+          let shared_ref = ref 0 in
+
+          (* todo: if already in scope? shadowing? *)
+          (* todo: if strict then introduce new scope here *)
+          (* todo: scope_ref := S.LocalIterator; *)
+
+          env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
+            !(env.vars);
+
+          (match e3opt with
+          | None -> ()
+          | Some e3 ->
+              (match e3 with
+              | Id name ->
+                  assert (A.is_variable name);
+                  let (s, tok) = s_tok_of_name name in
+                  (* todo: scope_ref := S.LocalIterator; *)
+                  env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
+                    !(env.vars);
+              (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
+              | _ -> raise Todo          
+              )
+          );
+          stmtl env xs
+      (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
+      | _ -> raise Todo          
+      );
 
   | Return eopt   | Break eopt | Continue eopt ->
       Common.opt (expr env) eopt
