@@ -165,16 +165,8 @@ let visit_prog find_entity prog =
           Common.save_excursion bailout false (fun () ->
           Common.save_excursion is_top_expr true (fun () ->
             do_in_new_scope_and_check_unused (fun () ->
-
-              l_use +> Common.do_option (fun (_tok, vars) ->
-                vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
-                | LexicalVar (_is_ref, dname) ->
-                    add_binding dname (S.Closed, ref 0)
-                );
-              );
-              k x
-            ))))
-          )
+              ...
+            )
           
       | _ ->
 

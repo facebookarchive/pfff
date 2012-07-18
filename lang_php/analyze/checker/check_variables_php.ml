@@ -136,7 +136,6 @@ module S = Scope_code
  * 
  * TODO LATEST:
  * "These things declare variables in a function":
- * - Lexical vars, in php 5.3 lambda expressions
  * - Assignment via list()
  * - Static, Global
  * - Builtins ($this)
@@ -285,21 +284,26 @@ and func_def env def =
      *)
     | Method _ -> 1 
   in
+  let oldvars = !(env.vars) in
 
   let env = { env with
     (* fresh new scope, PHP has function scope (not block scope) *)
-    vars = ref (
-      def.f_params +> List.map (fun p ->
+    vars = ref (def.f_params +> List.map (fun p ->
         let (s, tok) = s_tok_of_name p.p_name in
         s, (tok, S.Param, ref access_cnt)
-      )
-      +> Map_poly.of_list
+      ) +> Map_poly.of_list
     )
   }
   in
-  (* todo: if lambda, then add also l_uses and increment use count?
-   * or just reuse the same aref?
-   *)
+  def.l_uses +> List.iter (fun (is_ref, name) ->
+    let (s, tok) = s_tok_of_name name in
+    check_undefined_and_incr_use_count { env with vars = ref oldvars} name;
+    (* don't reuse same access count reference; the variable has to be used
+     * again in this new scope.
+     *)
+    env.vars := Map_poly.add s (tok, S.Closed, ref 0) !(env.vars);
+  );
+
   (* todo: add $this if not method non-static *) 
 
   List.iter (stmt env) def.f_body;
@@ -593,7 +597,7 @@ and expr env = function
   | Cast (_, e) -> expr env e
 
   | Lambda def ->
-      (* todo: in_lambda ? l_users *)
+      (* todo: in_lambda ? *)
       func_def env def
 
 and array_value env = function
