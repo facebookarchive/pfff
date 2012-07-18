@@ -116,14 +116,14 @@ module S = Scope_code
  * 
  * history:
  *  - sgrimm had the simple idea of just counting the number of occurences
- *    of variables in a program, at the token level. If only 1, then
+ *    of a variable in a program, at the token level. If only 1, then
  *    probably a typo. But sometimes variable names are mentionned in
  *    interface signatures in which case they occur only once. So you need
  *    some basic analysis; the token level is not enough. You may not
  *    need the CFG but at least you need the AST to differentiate the 
  *    different kinds of unused variables. 
  *  - Some of the scoping logic was previously in another file, scoping_php.ml
- *    But we were kind of duplicating the logic that is in scoping_php.ml.
+ *    but we were kind of duplicating the logic that is in scoping_php.ml.
  *    PHP has bad scoping rule allowing variables declared through a foreach
  *    to be used outside the foreach, which is probably wrong.
  *    Unfortunately, knowing from scoping_php.ml just the status of a
