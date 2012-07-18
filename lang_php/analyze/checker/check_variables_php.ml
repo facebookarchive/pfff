@@ -22,7 +22,7 @@ module S = Scope_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * This module helps find stupid PHP mistakes related to variables. See
  * tests/php/scheck/variables.php for examples of bugs currently
  * detected by this checker. This module not only checks but also annotates
@@ -150,13 +150,8 @@ module S = Scope_code
  * - isset() (pad: this should be forbidden, it's a bad way to program)
  * - empty()
  * 
- *  - list assign
- *  - bailout eval, extract, etc
- *  - lambda special, handle use too
+ * TODO OTHER:
  *  - passed by ref
- *  - isset
- *  - this
- *  - globals
  * 
  *  - nested assign in if, should work now? no more FPs?
  *  - bhiller check on array field access and unset array field
@@ -219,8 +214,7 @@ let lookup_opt s vars =
   Common.optionise (fun () -> Map_poly.find s vars)
 
 let s_tok_of_name name =
-  A.str_of_name name,
-  A.tok_of_name name
+  A.str_of_name name, A.tok_of_name name
 
 (*****************************************************************************)
 (* Checks *)
@@ -255,7 +249,7 @@ let check_unused vars =
   )
 
 (*****************************************************************************)
-(* main entry point *)
+(* Main entry point *)
 (*****************************************************************************)
 
 (* For each introduced variable (parameter, foreach variable, exception, etc), 
@@ -277,6 +271,7 @@ let rec program env prog =
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
 
+  (* should not contain variables anyway, but does not hurt to check *)
   def.f_params +> List.iter (fun p -> Common.opt (expr env) p.p_default);
   
   let access_cnt = 
@@ -284,7 +279,7 @@ and func_def env def =
     | Function -> 0
     (* Don't report UnusedParameter for parameters of methods;
      * people sometimes override a method and don't use all
-     * the parameters, hence the cnt below.
+     * the parameters, hence the 1 value below.
      * less: one day we will have an @override annotation in which
      * case we can reconsider the above design decision.
      *)
@@ -292,12 +287,12 @@ and func_def env def =
   in
 
   let env = { env with
+    (* fresh new scope, PHP has function scope (not block scope) *)
     vars = ref (
       def.f_params +> List.map (fun p ->
         let (s, tok) = s_tok_of_name p.p_name in
         s, (tok, S.Param, ref access_cnt)
       )
-      (* todo: add $this if not method non-static *) 
       +> Map_poly.of_list
     )
   }
@@ -305,6 +300,8 @@ and func_def env def =
   (* todo: if lambda, then add also l_uses and increment use count?
    * or just reuse the same aref?
    *)
+  (* todo: add $this if not method non-static *) 
+
   List.iter (stmt env) def.f_body;
   check_unused !(env.vars)
 
@@ -507,6 +504,21 @@ and expr env = function
   (* todo: args passed by ref false positives fix *)
   | Call (e, es) ->
 
+      expr env e;
+
+      es +> List.iter (fun e ->
+        match e with
+        (* keyword argument; do not consider this variable as unused.
+         * We consider this variable as a pure comment here and just pass over.
+         * todo: could make sure they are not defined in the current
+         * environment in strict mode? and if they are, shout because of
+         * bad practice?
+         *)
+        | Assign (None, Id name, e2) ->
+            expr env e2
+        | _ -> expr env e
+      );
+
       (* facebook specific? should be a hook instead to visit_prog? *)
       (match e, es with
       | Id ("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
@@ -543,22 +555,8 @@ and expr env = function
             )
           end
           (* todo? else display an error? weird argument to param_xxx func? *)
-
       | _ -> ()
-      );
-      expr env e;
-      es +> List.iter (fun e ->
-        match e with
-        (* keyword argument, do not consider this variable as unused.
-         * We consider this variable as a pure comment here and just pass over.
-         * todo: could make sure they are not defined in the current
-         * environment? and if they are shout because of bad practice?
-         *)
-        | Assign (None, Id name, e2) ->
-            expr env e2
-        | _ -> expr env e
-      );
-
+      )
 
   (* could check that inside a method, but this should be done in check_class*)
   | This -> ()

@@ -8,6 +8,7 @@
 function test_undefined_and_unused_variables_basic($a) {
 
   $ok = 1;
+  // misc1() is defined in common.php
   misc1($ok);
 
   //ERROR: unused variable
