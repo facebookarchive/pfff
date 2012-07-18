@@ -153,7 +153,6 @@ module S = Scope_code
  * 
  *  - list assign
  *  - bailout eval, extract, etc
- *  - keyword arguments
  *  - lambda special, handle use too
  *  - passed by ref
  *  - isset
@@ -505,10 +504,7 @@ and expr env = function
       | _ -> raise Todo
       )
 
-  (* todo: keyword arguments false positives fix, intercept the Assign
-   *  that is above.
-   * todo: args passed by ref false positives fix
-   *)
+  (* todo: args passed by ref false positives fix *)
   | Call (e, es) ->
 
       (* facebook specific? should be a hook instead to visit_prog? *)
@@ -551,7 +547,18 @@ and expr env = function
       | _ -> ()
       );
       expr env e;
-      List.iter (expr env) es
+      es +> List.iter (fun e ->
+        match e with
+        (* keyword argument, do not consider this variable as unused.
+         * We consider this variable as a pure comment here and just pass over.
+         * todo: could make sure they are not defined in the current
+         * environment? and if they are shout because of bad practice?
+         *)
+        | Assign (None, Id name, e2) ->
+            expr env e2
+        | _ -> expr env e
+      );
+
 
   (* could check that inside a method, but this should be done in check_class*)
   | This -> ()
@@ -571,6 +578,7 @@ and expr env = function
       | _ -> expr env e2
       );
 
+  (* todo: factorize code with Call for keyword arguments and refs *)
   | New (e, es) -> exprl env (e::es)
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 
