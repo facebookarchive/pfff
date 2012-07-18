@@ -133,8 +133,8 @@ module S = Scope_code
  *  - I was using ast_php.ml and a visitor approach but then I rewrote it
  *    to use ast_php_simple and an "env" approach because the code was
  *    getting ugly and was containing false positives that were hard to fix.
- *    As a side effect of the refactoring, some bugs disappeared (nested
- *    assigns in if, TODO nested list(), undefined access to array), and
+ *    As a side effect of the refactoring, some bugs disappeared (TODO nested
+ *    assigns in if, TODO nested list(), undefined access to an array), and
  *    code regarding lexical variables became more clear because localized
  *    in one place.
  * 

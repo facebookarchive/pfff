@@ -14,23 +14,6 @@ let vars_used_in_any any =
           Common.push2 dname aref
 
     
-(* the lval can be an array expression like 
- * $arr[$v] = 2;  in which case we must consider
- * only $arr in the list of assigned var, not $v.
- * 
- * old: let vars = vars_used_in_lvalue lval in
- * 
- *)
-let rec get_assigned_var_lval_opt lval = 
-  match lval with
-  | Var (dname,  _) ->
-      Some dname
-  | VArrayAccess (lval, e) ->
-      get_assigned_var_lval_opt lval
-  (* TODO *)
-  | _ -> None
-  
-
 (* update: does consider also function calls to function taking parameters via
  * reference. Use global info.
  *)
