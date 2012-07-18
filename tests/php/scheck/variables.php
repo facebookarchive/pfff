@@ -131,7 +131,11 @@ function test_class_variables() {
   $db_scb_key = 1;
   if (!isset(TestClassVariable::$dbGetters[$db_scb_key])) {
     return 2;
-  }
+  } 
+  // checks for use of undefined variable are restricted to local vars
+  // not class variables of object members. See check_classes_php.ml for that.
+  echo TestClassVariable::$dbGetters;
+  TestClassVariable::$dbGetters = array();
 }
 
 

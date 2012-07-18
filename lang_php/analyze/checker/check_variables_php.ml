@@ -104,7 +104,7 @@ module S = Scope_code
  * These things don't count as "using" a variable:
  * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
  * - TODO empty()
- * - SEMI Static class variables
+ * - DONE Static class variables (check done in check_classes instead)
  * 
  * Here are a few additional checks and features of this checker:
  *  - when the strict_scope flag is set, check_variables will
@@ -136,10 +136,10 @@ module S = Scope_code
  * 
  * TODO LATEST:
  * "These things declare variables in a function":
- * - Static, Global
- * - Builtins ($this)
  * - Lexical vars, in php 5.3 lambda expressions
  * - Assignment via list()
+ * - Static, Global
+ * - Builtins ($this)
  * 
  * "These things make lexical scope unknowable":
  * - Use of extract()
@@ -149,7 +149,6 @@ module S = Scope_code
  * These things don't count as "using" a variable:
  * - isset() (pad: this should be forbidden, it's a bad way to program)
  * - empty()
- * - Static class variables
  * 
  *  - list assign
  *  - bailout eval, extract, etc
@@ -166,7 +165,6 @@ module S = Scope_code
  *    in the top scope? add some unit tests.
  *  - put back strict block scope
  *  - annotate Var in Ast_php
- * 
  *)
 
 (*****************************************************************************)
@@ -475,9 +473,11 @@ and expr env = function
           Common.opt (expr env) e_opt
 
       (* checks for use of undefined member should be in check_classes *)
-      | Obj_get (e1, e2) | Class_get (e1, e2) ->
-          (* todo: just recurse on the whole thing *)
-          exprl env [e1;e2]
+      | Obj_get (_, _) | Class_get (_, _) ->
+          (* just recurse on the whole thing so the code for Obj_get/Class_get
+           * below will be triggered
+           *)
+          expr env e1
 
       | _ -> raise Todo
       );
