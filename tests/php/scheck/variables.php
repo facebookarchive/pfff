@@ -85,7 +85,6 @@ function test_undefined_in_lambda($a) {
   return $f;
 }
 
-// not sure why this was working too in the old version of check_variables_php
 function test_lambda_bis() {
   $a = 1;
   $f = (function ($b) use($a) {

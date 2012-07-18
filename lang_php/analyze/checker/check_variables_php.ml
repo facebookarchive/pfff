@@ -130,9 +130,12 @@ module S = Scope_code
  *    variable (local, global, or param) is not good enough to find bugs 
  *    related to those weird scoping rules. So I've put all variable scope
  *    related stuff in this file and removed the duplication in scoping_php.ml.
- *  - I was using ast_php.ml but then I rewrote it to use ast_php_simple
- *    because the code was getting ugly and was containing false
- *    positives that were hard to fix.
+ *  - I was using ast_php.ml and a visitor approach but then I rewrote it
+ *    to use ast_php_simple and an "env" approach because the code was
+ *    getting ugly and was containing false positives that were hard to fix.
+ *    As a side effect of the refactoring, some bugs disappeared (nested
+ *    assigns in if, TODO nested list(), undefined access to array), and
+ *    code regarding lexical variables became more clear.
  * 
  * TODO LATEST:
  * "These things declare variables in a function":
@@ -236,7 +239,6 @@ let check_undefined env name =
   | Some (_tok, scope, access_count) ->
       ()
 
-
 (* less: if env.bailout? *)
 let check_unused vars =
   vars +> Map_poly.iter (fun s (tok, scope, aref) ->
@@ -253,7 +255,7 @@ let check_unused vars =
 
 (* For each introduced variable (parameter, foreach variable, exception, etc), 
  * we add the binding in the environment with a counter, a la checkModule.
- * We then check at use time if something was declared before. We then
+ * We then check at use-time if something was declared before. We then
  * finally check when we exit a scope that all variables were actually used.
  *)
 let rec program env prog =
@@ -303,7 +305,6 @@ and func_def env def =
      *)
     env.vars := Map_poly.add s (tok, S.Closed, ref 0) !(env.vars);
   );
-
   (* todo: add $this if not method non-static *) 
 
   List.iter (stmt env) def.f_body;
@@ -381,7 +382,8 @@ and stmt env = function
       | _ -> raise Todo          
       );
 
-  | Return eopt   | Break eopt | Continue eopt ->
+  | Return eopt   
+  | Break eopt | Continue eopt ->
       Common.opt (expr env) eopt
 
   | Throw e -> expr env e
@@ -507,9 +509,7 @@ and expr env = function
 
   (* todo: args passed by ref false positives fix *)
   | Call (e, es) ->
-
       expr env e;
-
       es +> List.iter (fun e ->
         match e with
         (* keyword argument; do not consider this variable as unused.
@@ -570,7 +570,7 @@ and expr env = function
       expr env e;
       Common.opt (expr env) eopt
 
-  | Obj_get (e1, e2) | Class_get (e1, e2) -> 
+  | Obj_get (e1, e2) | Class_get (e1, e2) ->
       expr env e1;
       (match e2 with
       (* with 'echo A::$v' we should not issue a UseOfUndefinedVariable,
@@ -578,7 +578,7 @@ and expr env = function
        *)
       | Id _ -> ()
       | _ -> expr env e2
-      );
+      )
 
   (* todo: factorize code with Call for keyword arguments and refs *)
   | New (e, es) -> exprl env (e::es)
@@ -597,7 +597,7 @@ and expr env = function
   | Cast (_, e) -> expr env e
 
   | Lambda def ->
-      (* todo: in_lambda ? *)
+      (* todo: in_lambda for better error message ? *)
       func_def env def
 
 and array_value env = function
