@@ -476,7 +476,8 @@ and expr env = function
           Common.opt (expr env) e_opt
 
       (* checks for use of undefined member should be in check_classes *)
-      | Obj_get (e1, e2) | Class_get (e1, e2) -> 
+      | Obj_get (e1, e2) | Class_get (e1, e2) ->
+          (* todo: just recurse on the whole thing *)
           exprl env [e1;e2]
 
       | _ -> raise Todo
