@@ -11,23 +11,27 @@ function test_undefined_and_unused_variables_basic($a) {
   misc1($ok);
 
   //ERROR: unused variable
-  $c = 1;
+  $unused = 1;
 
   //ERROR: use of undefined variable
-  echo $b;
+  echo $undefined;
 
   //ERROR: use of undefined variable
-  misc1($d);
+  misc1($undefined_bis);
   // such calls would be arguably ok if misc1() was taking its arguments
   // by reference (see also variables_fp.php)
+}
 
+function test_unset() {
   //ERROR: unused variable. Yes it's used by unset but this should not count.
   $memory = 1;
   unset($memory);
 
   //ERROR: use of undefined variable
-  unset($undefined_variable);
+  unset($undefined_bis2);
+}
 
+function test_undefined_foreach() {
   $matches = array();
 
   foreach($matches as $k) {
@@ -40,7 +44,6 @@ function test_undefined_and_unused_variables_basic($a) {
 
   //SKIP: unused variable, if consider block scope for foreach
   $match = array();
-
   // note that this error shows also the need for more than just counting token
   foreach($matches as $match) {
     echo $match;
@@ -81,7 +84,7 @@ function test_undefined_in_lambda($a) {
   return $f;
 }
 
-class TestLambda {
+class TestLambdaUseThis {
   public function test_lambda($a) {
 
     $f = (function ($b) use($a, $this) {
@@ -151,19 +154,22 @@ function analysis1() {
 // If one unused variable in a function happened to be also defined and used
 // in another function, then the token-based solution will not detect it.
 // You need at least a parser and a basic AST to catch such bugs.
-// Moreover it's also ok sometimes to have one variable mentioned
-// only once in a file, if it's a parameter of a method in an interface
-// definition for instance.
-
 function analysis2() {
   //ERROR: even if $ok was mentionned before, it's not ok anymore
   $ok = 1;
 }
 
+// Moreover it's also ok sometimes to have one variable mentioned
+// only once in a file, if it's a parameter of a method in an interface
+// definition for instance.
 interface TestUnusedParameterOkInInterface {
   // this is ok, $p is not an unused parameter
   function analysis2bis($p);
 }
+
+//*************************************************************************
+// TODO
+//*************************************************************************
 
 // TODO cfg-based algorithm ??
 
