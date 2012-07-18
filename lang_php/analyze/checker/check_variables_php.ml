@@ -135,7 +135,8 @@ module S = Scope_code
  *    getting ugly and was containing false positives that were hard to fix.
  *    As a side effect of the refactoring, some bugs disappeared (nested
  *    assigns in if, TODO nested list(), undefined access to array), and
- *    code regarding lexical variables became more clear.
+ *    code regarding lexical variables became more clear because localized
+ *    in one place.
  * 
  * TODO LATEST:
  * "These things declare variables in a function":
@@ -574,7 +575,7 @@ and expr env = function
       expr env e1;
       (match e2 with
       (* with 'echo A::$v' we should not issue a UseOfUndefinedVariable,
-       * check_classes will handle this case.
+       * check_classes_php.ml will handle this case.
        *)
       | Id _ -> ()
       | _ -> expr env e2

@@ -1,18 +1,4 @@
-(* returns only local vars, not class vars like self::$x; for class vars
- * see check_classes_php.ml.
- *)
 let vars_used_in_any any =
-  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kexpr = (fun (k, vx) x ->
-      match x with
-      | Lambda (l_use, def) -> 
-          (* stop here, do not recurse in but count the use(...) as vars used *)
-          l_use +> Common.do_option (fun (_tok, vars) ->
-            vars +> Ast.unparen +> Ast.uncomma +> List.iter (function
-            | LexicalVar (_is_ref, dname) ->
-                Common.push2 dname aref
-            );
-          )
       (* Do not recurse there, isset() does not count as a use.
        * Hardcoded the special case of isset($x). If do
        * isset($arr[...]) then we may want to recurse and count as
@@ -20,36 +6,14 @@ let vars_used_in_any any =
        *)
       | Isset (_, (i_2, [Left((Var(_, _)))], i_4)) ->
           ()
-      | _ -> k x
-    );
 
     V.klvalue = (fun (k,vx) x ->
-      match x with
-      | Var (dname, _scope) ->
-          Common.push2 dname aref
-
       (* transform This into a Var *)
       | This (tok) ->
           let dname = Ast.DName("this", tok) in
           Common.push2 dname aref
 
-      (* Used to have a bad representation for A::$a[e]
-       * It was parsed asa VQualifier(VArrayAccesS($a, e))
-       * but 'e' could contain variables too !! so should actually
-       * visit the lval. But we also don't want to visit certain
-       * parts of lval. Introducing ClassVar fixed the problem.
-       * The qualifier should be with Var, just like what I do for name.
-       * 
-       * old: | VQualifier (qu, lval) -> ()
-       *)
-
-      | _ -> 
-          k x
-    );
-  })
     
-(* TODO: qualified_vars_in !!! *)
-
 (* the lval can be an array expression like 
  * $arr[$v] = 2;  in which case we must consider
  * only $arr in the list of assigned var, not $v.
