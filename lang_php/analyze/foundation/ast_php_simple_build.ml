@@ -13,6 +13,7 @@
  * license.txt for more details.
  *)
 open Ast_php
+open Common.Infix
 
 module ISet = Set.Make(Int)
 module IMap = Map.Make(Int)
@@ -294,7 +295,6 @@ and expr env = function
       raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
 
-(* TODO: uses ??? *)
 and lambda_def env (l_use, ld) =
   let _, params, _ = ld.f_params in
   let params = comma_list_dots params in
@@ -306,6 +306,15 @@ and lambda_def env (l_use, ld) =
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
     A.m_modifiers = [];
+    A.l_uses = 
+      (match l_use with
+      | None -> []
+      | Some (_, (_lp, xs, _rp)) ->
+          comma_list xs +> List.map (function
+          | LexicalVar (is_ref, name) -> is_ref <> None, dname name
+          )
+      );
+
   }
 
 and scalar env = function
@@ -569,6 +578,7 @@ and method_def env m =
     A.f_return_type = opt hint_type env m.f_return_type;
     A.f_body = method_body env m.f_body;
     A.f_kind = A.Method;
+    A.l_uses = [];
   }
 
 and method_body env (_, stl, _) =
@@ -592,6 +602,7 @@ and func_def env f =
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
     A.m_modifiers = [];
+    A.l_uses = [];
   }
 
 and xhp_html env = function

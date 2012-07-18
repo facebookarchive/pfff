@@ -1381,6 +1381,7 @@ and method_def env cname parent self this (heap, acc) def =
     f_return_type = def.f_return_type;
     f_body = def.f_body;
     f_kind = Function; m_modifiers = [];
+    l_uses = [];
   } in
   let cls = make_method def.f_name parent self this fdef in
   let mid = Utils.fresh() in

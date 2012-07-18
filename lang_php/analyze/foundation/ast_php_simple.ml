@@ -91,10 +91,9 @@
  *  - ...
  *
  * todo: 
- *  - uses and lexical vars of closures are not in the AST
- *  - XHP class declaration? e.g. children, @required, etc?
  *  - support for generics of sphp
- *  - factorize more? string vs Guil vs xhp?
+ *  - XHP class declaration? e.g. children, @required, etc?
+ *  - less: factorize more? string vs Guil vs xhp?
  *)
 
 (*****************************************************************************)
@@ -257,22 +256,20 @@ and expr =
  * For methods, a few names are specials: 
  *  - __construct
  *  - __call, __callStatic
- *  
- * todo? no 'uses' field for lambda? because we will use OCaml closures
- * for representing closures? During abstract interpretation
- * the environment will be closed?
  *)
 and func_def = {
   (* "_lambda" when used for lambda *)
   f_name: name;
   f_kind: function_kind;
+
   f_params: parameter list;
   f_return_type: hint_type option;
   (* functions returning a ref are rare *)
   f_ref: bool;
   (* only for methods; always empty for functions *)
   m_modifiers: modifier list;
-  (* todo: l_uses; *)
+  (* only for lambdas (could also abuse parameter) *)
+  l_uses: (bool (* is_ref *) * name) list;
 
   f_body: stmt list;
 }
