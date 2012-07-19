@@ -532,7 +532,7 @@ module IsLvalue = struct
   let rec expr e =
     match e with
     | Id _ -> true
-    | This -> true
+    | This _ -> true
     | Infix _
     | Postfix _
     | Array_get _ -> true

@@ -92,7 +92,7 @@ module Dependencies = struct
 
     | Int _ | Double _ | String _ -> acc
     | Guil el -> encapsl acc el
-    | This -> acc
+    | This _ -> acc
     | Array_get (e1, e2) -> expr (expr_opt acc e2) e1
     | Obj_get (e1, e2)
     | Binop (_, e1, e2)

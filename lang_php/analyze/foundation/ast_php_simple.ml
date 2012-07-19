@@ -188,7 +188,7 @@ and expr =
   | Array_get of expr * expr option
 
   (* often transformed in Id "$this" in the analysis *)
-  | This
+  | This of string wrap
   (* Unified method/field access.
    * ex: $o->foo ==> Obj_get(Id "$o", Id "foo")
    * ex: A::foo  ==> Class_get(Id "A", Id "foo")

@@ -98,7 +98,9 @@ and vof_expr =
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
   | Id v1 ->
       let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Id", [ v1 ]))
-  | This -> Ocaml.VSum (("This", []))
+  | This name -> 
+      let v1 = vof_wrapped_string name in
+      Ocaml.VSum (("This", [ v1 ]))
   | Array_get ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2

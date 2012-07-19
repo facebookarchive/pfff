@@ -397,8 +397,7 @@ and expr_ env lv = function
           then raise (UnknownEntity s);
           any
       )
-  | This -> expr env (Id (wrap "$this"))
-
+  | This name -> expr env (Id (name))
 
   | Array_get (e, None) ->
       let t1 = expr env e in

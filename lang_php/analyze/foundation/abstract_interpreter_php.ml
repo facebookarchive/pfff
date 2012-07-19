@@ -658,7 +658,7 @@ and expr_ env heap x =
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
 
-  | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This as lv ->
+  | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This _ as lv ->
       (* The lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
        * so someone can modify it. See also assign() below.
        * But in an expr context, we actually want the value, hence
@@ -736,12 +736,12 @@ and lvalue env heap x =
        *)
       Var.get env heap s
 
-  | This -> 
+  | This name -> 
       (* $this is present in env.globals (see make_method())
        * todo: so with this actually look for the value of $this in
        * env.globals??
       *)
-      lvalue env heap (Id (w "$this"))
+      lvalue env heap (Id (name))
 
   | Array_get (e, k) ->
       array_get env heap e k

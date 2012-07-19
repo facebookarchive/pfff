@@ -380,7 +380,7 @@ and class_name_reference env = function
 
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
-  | This _ -> A.This
+  | This tok -> A.This ("$this", wrap tok)
   | VArrayAccess (lv, (_, e, _)) ->
       let lv = lvalue env lv in
       let e = opt expr env e in
