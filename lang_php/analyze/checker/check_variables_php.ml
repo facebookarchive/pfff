@@ -306,7 +306,15 @@ and func_def env def =
      *)
     env.vars := Map_poly.add s (tok, S.Closed, ref 0) !(env.vars);
   );
-  (* todo: add $this if not method non-static *) 
+  (* We put 1 as 'use_count' below because we are not interested
+   * in error message related to $this. It's ok to not use $this
+   * in a method.
+   *)
+  if def.f_kind = Method && not (A.is_static def.m_modifiers)
+  then begin
+     let tok = (Ast_php.fakeInfo "$this") in
+     env.vars := Map_poly.add "$this" (tok, S.Class, ref 1) !(env.vars);
+  end;
 
   List.iter (stmt env) def.f_body;
   check_unused !(env.vars)
@@ -563,8 +571,11 @@ and expr env = function
       | _ -> ()
       )
 
-  (* could check that inside a method, but this should be done in check_class*)
-  | This -> ()
+  | This name ->
+      (* when we do use($this) in closures, we create a fresh $this variable
+       * with a refcount of 0, so we need to increment it here.
+       *)
+      check_undefined_and_incr_use_count env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
   | Array_get (e, eopt) ->

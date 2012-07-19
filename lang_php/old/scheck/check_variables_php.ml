@@ -50,9 +50,8 @@ let visit_prog find_entity prog =
             (* we don't want parameters in method interface to be counted
              * as unused Parameter *)
             ()
+
         | MethodRegular ->
-            if not (Class_php.is_static_method x)
-            then begin
               (* we put 1 as 'use_count' below because we are not interested
                * in error message related to $this.
                * It's legitimate to not use $this in a method.
