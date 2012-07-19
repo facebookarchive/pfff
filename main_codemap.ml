@@ -53,7 +53,10 @@ module Model = Model2
 (*****************************************************************************)
 
 (*s: main flags *)
-let screen_size = ref 2
+(* on Macos lion, X11 resizes the window to a smaller size so
+ * no point in starting with a big screen_size :(
+ *)
+let screen_size = ref 1
 let legend = ref true
 
 let db_file    = ref (None: Common.filename option)

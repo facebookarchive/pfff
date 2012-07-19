@@ -971,9 +971,8 @@ type_arguments:
 /*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
 type_arg_list_gt:
   | fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR { }
-  | type_hint TGREATER { }
-  | type_hint TCOMMA type_arg_list_gt { }
-
+  | ext_type_hint TGREATER { }
+  | ext_type_hint TCOMMA type_arg_list_gt { }
 
 
 return_type_opt:
