@@ -142,7 +142,6 @@ module S = Scope_code
  * "These things declare variables in a function":
  * - Assignment via list()
  * - Static, Global
- * - Builtins ($this)
  * 
  * "These things make lexical scope unknowable":
  * - Use of extract()
