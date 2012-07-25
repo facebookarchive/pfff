@@ -363,7 +363,7 @@ and stmt env heap x =
       heap
   | Block stl ->
       stmtl env heap stl
-  | Return e ->
+  | Return (_, e) ->
       let e = 
         match e with 
         | None -> Id (w "null")

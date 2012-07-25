@@ -8,11 +8,6 @@ module ETP = Env_typing_php
 let unittest = 
   "array_inference_php" >::: [
    
-    "make typer" >:: (fun () ->
-      let at = make_array_typer "filename" in
-      assert_equal at.file "filename";
-    );
-
     "make container evidence" >:: (fun() ->
       let ce = make_container_evidence in
       let {supporting = s; opposing = o} = ce in
@@ -50,7 +45,8 @@ let unittest =
       let empty_ce = make_container_evidence in
       let ic = make_inferred_container in
       let {map = m; tuple = t; vector = ve; guess = g; confused = c;
-      mixed_val_ty = mt; key_t = k; value_t = va; declaration = d} = ic in
+      mixed_val_ty = mt; key_t = k; value_t = va; declaration = d; parameter =
+        p; _} = ic in
       assert_equal m empty_ce;
       assert_equal t empty_ce;
       assert_equal ve empty_ce;
@@ -60,18 +56,20 @@ let unittest =
       assert_equal k None;
       assert_equal va None;
       assert_equal d NoDec;
+      assert_equal p false;
     );
 
     "compose ic" >:: (fun() ->
       let empty_ce = make_container_evidence in
-      let ic = compose_ic empty_ce empty_ce empty_ce Map true false
-        (Some(ETP.Tsum[ETP.Tabstr "int"])) None DValue in
+      let ic = compose_ic empty_ce empty_ce empty_ce NoData true false
+        (Some(ETP.Tsum[ETP.Tabstr "int"])) None DValue false None false None in
       let {map = m; tuple = t; vector = ve; guess = g; confused = c;
-      mixed_val_ty = mt; key_t = k; value_t = va; declaration = d} = ic in
+      mixed_val_ty = mt; key_t = k; value_t = va; declaration = d; parameter =
+        p; _} = ic in
       assert_equal m empty_ce;
       assert_equal t empty_ce;
       assert_equal ve empty_ce;
-      assert_equal g Map;
+      assert_equal g NoData;
       assert_equal c true;
       assert_equal mt false;
       assert_equal k (Some(ETP.Tsum[ETP.Tabstr "int"]));

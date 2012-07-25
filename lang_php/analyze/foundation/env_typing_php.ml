@@ -153,6 +153,11 @@ type env = {
     (* The current class being typed, for the purpose of array identificatio*)
     mutable aenv_class: string; 
 
+    (* List of parameters for the current function being typed. Note that all
+     * parameters need not be arrays, but that this list must be crossed with
+     * aenv to determine the arrays which are parameters *)
+    mutable aenv_params: Array_id.t list;
+    
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
     (* The current substitution (for type variables). This will
@@ -207,6 +212,8 @@ and arr_access =
   | DeclarationKValue of t * t
   | DeclarationValue of t
   | UnhandledAccess
+  | Parameter
+  | ReturnValue
 
 
 (* This is used for the autocompletion and interactive type inference
@@ -266,6 +273,7 @@ let make_env () = {
    * functions*)
   aenv_fun = "";
   aenv_class = "";
+  aenv_params = [];
 
   tenv    = ref IMap.empty;
   subst   = ref IMap.empty;

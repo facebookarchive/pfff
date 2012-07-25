@@ -126,7 +126,7 @@ and stmt env st acc =
       A.Foreach (e, fve, fao, cst) :: acc
   | Break (_, e, _) -> A.Break (opt expr env e) :: acc
   | Continue (_, eopt, _) -> A.Continue (opt expr env eopt) :: acc
-  | Return (_, eopt, _) -> A.Return (opt expr env eopt) :: acc
+  | Return (pi, eopt, _) -> A.Return (Some(pi), opt expr env eopt) :: acc
   | Throw (_, e, _) -> A.Throw (expr env e) :: acc
   | Try (_, (_, stl, _), c, cl) ->
       let stl = List.fold_right (stmt_and_def env) stl [] in
@@ -712,6 +712,49 @@ and global_var env = function
   | GlobalDollarExpr (tok, _) -> 
       raise (TodoConstruct ("GlobalDollarExpr", tok))
 
+
+let rec expr_equal e1 e2 =
+  match e1, e2 with 
+  | A.Int i1, A.Int i2 when i1 = i2 -> true
+  | A.Double d1, A.Double d2 when d1 = d2 -> true
+  | A.String s1, A.String s2 when fst s1 = fst s2 -> true
+  | A.Id n1, A.Id n2 when n1 = n2 -> true
+  | A.Array_get (_, ie1, None), A.Array_get (_, ie2, None) when expr_equal ie1 ie2 -> true
+  | A.Array_get (_, ie1, Some (oe1)), A.Array_get (_, ie2, Some(oe2)) when
+    (expr_equal ie1 ie2) && (expr_equal oe1 oe2) -> true
+  | A.This s1, A.This s2 when (fst s1) = (fst s2)  -> true
+  | A.Obj_get (e11, e12), A.Obj_get (e21, e22) when (expr_equal e11 e21) &&
+    (expr_equal e12 e22) -> true
+  | A.Class_get (e11, e12), A.Class_get (e21, e22) when (expr_equal e11 e21) &&
+    (expr_equal e12 e22) -> true
+  | A.New (e1, el1), A.New (e2, el2) when (expr_equal e1 e2) && (List.for_all2 
+    expr_equal el1 el2) -> true
+  | A.InstanceOf (e11, e12), A.InstanceOf (e21, e22) when (expr_equal e11 e21) &&
+    (expr_equal e12 e22) -> true
+  | A.Assign (None, e11, e12), A.Assign (None, e21, e22) when (expr_equal e11 e21)
+    && (expr_equal e12 e22) -> true
+  | A.Assign (Some(o1), e11, e12), A.Assign (Some(o2), e21, e22) when (expr_equal e11 e21)
+    && (expr_equal e12 e22) && (o1 = o2) -> true
+  | A.List el1, A.List el2 when List.for_all2 expr_equal el1 el2 -> true
+  | A.Call (e1, el1), A.Call (e2, el2) when (expr_equal e1 e2) && (List.for_all2 
+    expr_equal el1 el2) -> true
+  | A.Infix (o1, e1), A.Infix (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
+  | A.Postfix (o1, e1), A.Postfix (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
+  | A.Unop (o1, e1), A.Unop (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
+  | A.Binop (o1, e11, e12), A.Binop (o2, e21, e22) when (o1 = o2) && 
+    (expr_equal e11 e21) && (expr_equal e12 e22) -> true
+  | A.Guil el1, A.Guil el2 when List.for_all2 expr_equal el1 el2 -> true
+  | A.Ref e1, A.Ref e2 when expr_equal e1 e2 -> true
+  | A.ConsArray (None, _, avl1), A.ConsArray (None, _, avl2) when avl1 = avl2  -> true
+  | A.ConsArray (Some(e1), _, avl1), A.ConsArray (Some(e2), _, avl2) when (avl1 =
+      avl2) && (expr_equal e1 e2) -> true
+  | A.Xhp x1, A.Xhp x2 when x1 = x2  -> true
+  | A.CondExpr (e11, e12, e13), A.CondExpr (e21, e22, e23) when (expr_equal e11 e21)
+    && (expr_equal e12 e22) && (expr_equal e13 e23) -> true
+  | A.Cast (pt1, e1), A.Cast (pt2, e2) when (pt1 = pt2) && (expr_equal e1 e2) -> true
+  | A.Lambda fd1, A.Lambda fd2 when fd1 = fd2 -> 
+      true
+  | _, _ -> false
 (*****************************************************************************)
 (* Shortcuts *)
 (*****************************************************************************)

@@ -62,7 +62,7 @@ module Dependencies = struct
         let acc = expr acc e2 in
         let acc = expr_opt acc e3 in
         stmtl acc stl
-    | Return e | Break e | Continue e -> expr_opt acc e
+    | Return (_, e) | Break e | Continue e -> expr_opt acc e
     | Try (stl, c, cl) ->
         let acc = stmtl acc stl in
         let acc = catch acc c in

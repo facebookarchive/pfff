@@ -42,7 +42,7 @@ and vof_stmt =
       and v3 = Ocaml.vof_option vof_expr v3
       and v4 = Ocaml.vof_list vof_stmt v4
       in Ocaml.VSum (("Foreach", [ v1; v2; v3; v4 ]))
-  | Return v1 ->
+  | Return (_, v1) ->
       let v1 = Ocaml.vof_option vof_expr v1
       in Ocaml.VSum (("Return", [ v1 ]))
   | Break v1 ->

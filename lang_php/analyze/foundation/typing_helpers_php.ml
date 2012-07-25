@@ -182,6 +182,15 @@ end
 
 (*ciara*)
 module AEnv = struct
+  let print_id id = 
+    match id with 
+    | (e, f, c) -> 
+        Printf.printf "In %s %s, " c f;
+        let stmt = Ast_php_simple.Expr(e) in
+        let v = Meta_ast_php_simple.vof_program [stmt] in
+        let s = Ocaml.string_of_v v in
+        Common.pr s
+
   let set env x a =
     let l = try AMap.find x !(env.aenv) with Not_found -> [] in
     let l = a::l in
@@ -191,6 +200,16 @@ module AEnv = struct
   let get_fun env = env.aenv_fun
   let set_class env x = env.aenv_class <- x
   let get_class env = env.aenv_class
+  let set_params env p = env.aenv_params <- p
+  let get_params env = env.aenv_params
+  let clear_params env = env.aenv_params <- []
+  let create_ai_params env pl = 
+    Printf.printf "%d params in list\n" (List.length pl);
+    List.iter (fun x ->
+      let id = (Id(x.p_name), get_fun env, get_class env) in
+      env.aenv_params <- id::(env.aenv_params);
+    ) pl;
+    Printf.printf "%d params added" (List.length env.aenv_params)
 end
 
 module Subst = struct
@@ -551,6 +570,8 @@ module Print2 = struct
       Pp.newline penv;
       ignore(arr_access_type env penv t)
     | (_, UnhandledAccess) -> ()
+    | (_, Parameter) -> ()
+    | (_, ReturnValue) -> ()
 end
 
 module Print = struct
@@ -646,6 +667,90 @@ module Print = struct
   let show_type env o t =
     Print2.ty env (Pp.empty o) ISet.empty 0 t;
     o "\n"
+end
+
+module Type_string = struct
+
+  
+  let rec ty env stack depth x = 
+    match x with 
+    | Tvar n -> 
+        let n = Subst.get env n in 
+        let t = TEnv.get env n in 
+        if ISet.mem n stack then
+          (string_of_int n)^"&"
+        else begin
+          let stack = ISet.add n stack in
+          ty env stack depth t
+        end
+    | Tsum[] -> "_"
+    | Tsum [x] -> prim_ty env stack depth x
+    | Tsum l -> tsum_list env stack depth l
+
+  and prim_ty env stack depth = function
+    | Tabstr s -> s
+    | Tsstring s -> "string"
+    | Tienum _ 
+    | Tsenum _ -> "enum"
+    | Trecord m -> 
+        let depth = depth + 1 in 
+        let str = "array" in
+        if depth >= 2 
+        then str^"(...)" 
+        else 
+          let l = SMap.fold (fun x y l -> (x,y)::l) m [] in
+          record_list env stack depth l
+    | Tarray (_, t1, t2) -> 
+        let str = "array(" in
+        let str = str^(ty env stack depth t1) in
+        let str = str^" => " in
+        let str = str^(ty env stack depth t2) in
+        str^")"
+    | Tfun (tl, t) -> 
+        let str = "fun " in
+        let str = str^(fun_list env stack depth tl) in
+        str^" -> "^(ty env stack depth t)
+    | Tobject m -> 
+        let depth = depth + 1 in
+        let str = "object" in
+        if depth >= 3 then 
+          str^"(...)"
+        else 
+          let l = SMap.fold (fun x y l -> (x, y) :: l) m [] in
+          str^(object_list env stack depth l)
+    | Tclosed (s, _) -> 
+        if SSet.cardinal s = 1 then SSet.choose s else
+        (match FindCommonAncestor.go env s with
+        | None -> 
+            let l = SSet.fold (fun x acc -> x :: acc) s [] in
+            closed_list l
+        | Some s -> s)
+            
+    and tsum_list env stack depth l = 
+      let tys = List.map (fun t -> prim_ty env stack depth t) l in
+      let str_of_ty_list = List.fold_left (fun a b -> a^b^" |" ) "(" tys in
+      (Str.string_before str_of_ty_list ((String.length str_of_ty_list) - 2))^")"
+
+    and record_list env stack depth l =
+      let tys = List.map (fun x -> match x with 
+        | (s, t) -> s^" => "^(ty env stack depth t)) l in
+      let str_of = List.fold_left (fun a b -> a^b^";" ) "(" tys in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+
+    and fun_list env stack depth l = 
+      let tys = List.map (fun (s, x) -> (ty env stack depth x)^" "^s ) l in
+      let str_of = List.fold_left (fun a b -> a^b^", ") "(" tys in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+  
+    and object_list env stack depth l =
+      let tys = List.map (fun x -> match x with 
+        | (s, t) -> s^": "^(ty env stack depth t)) l in
+      let str_of = List.fold_left (fun a b -> a^b^";" ) "(" tys in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+
+    and closed_list l =
+      let str_of = List.fold_left (fun a b -> a^b^"|" ) "(" l in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
 end
 
 (*****************************************************************************)

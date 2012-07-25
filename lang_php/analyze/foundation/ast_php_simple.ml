@@ -136,7 +136,7 @@ and stmt =
    *)
   | Foreach of expr * expr * expr option * stmt list
 
-  | Return of expr option
+  | Return of parse_info option * expr option
   | Break of expr option | Continue of expr option
 
   | Throw of expr
@@ -382,6 +382,46 @@ let is_variable (s, _) =
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =
   String.sub s 1 (String.length s - 1)
-(*let rec comp_expr e1 e2 = 
+
+let rec expr_equal e1 e2 =
   match e1, e2 with 
-  | Int s1, Int s2 when s1 = s2 ->  *)
+  | Int i1, Int i2 when i1 = i2 -> true
+  | Double d1, Double d2 when d1 = d2 -> true
+  | String s1, String s2 when fst s1 = fst s2 -> true
+  | Id n1, Id n2 when n1 = n2 -> true
+  | Array_get (_, ie1, None), Array_get (_, ie2, None) when expr_equal ie1 ie2 -> true
+  | Array_get (_, ie1, Some (oe1)), Array_get (_, ie2, Some(oe2)) when
+    (expr_equal ie1 ie2) && (expr_equal oe1 oe2) -> true
+  | This s1, This s2 when (fst s1) = (fst s2)  -> true
+  | Obj_get (e11, e12), Obj_get (e21, e22) when (expr_equal e11 e21) &&
+    (expr_equal e12 e22) -> true
+  | Class_get (e11, e12), Class_get (e21, e22) when (expr_equal e11 e21) &&
+    (expr_equal e12 e22) -> true
+  | New (e1, el1), New (e2, el2) when (expr_equal e1 e2) && (List.for_all2 
+    expr_equal el1 el2) -> true
+  | InstanceOf (e11, e12), InstanceOf (e21, e22) when (expr_equal e11 e21) &&
+    (expr_equal e12 e22) -> true
+  | Assign (None, e11, e12), Assign (None, e21, e22) when (expr_equal e11 e21)
+    && (expr_equal e12 e22) -> true
+  | Assign (Some(o1), e11, e12), Assign (Some(o2), e21, e22) when (expr_equal e11 e21)
+    && (expr_equal e12 e22) && (o1 = o2) -> true
+  | List el1, List el2 when List.for_all2 expr_equal el1 el2 -> true
+  | Call (e1, el1), Call (e2, el2) when (expr_equal e1 e2) && (List.for_all2 
+    expr_equal el1 el2) -> true
+  | Infix (o1, e1), Infix (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
+  | Postfix (o1, e1), Postfix (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
+  | Unop (o1, e1), Unop (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
+  | Binop (o1, e11, e12), Binop (o2, e21, e22) when (o1 = o2) && 
+    (expr_equal e11 e21) && (expr_equal e12 e22) -> true
+  | Guil el1, Guil el2 when List.for_all2 expr_equal el1 el2 -> true
+  | Ref e1, Ref e2 when expr_equal e1 e2 -> true
+  | ConsArray (None, _, avl1), ConsArray (None, _, avl2) when avl1 = avl2  -> true
+  | ConsArray (Some(e1), _, avl1), ConsArray (Some(e2), _, avl2) when (avl1 =
+      avl2) && (expr_equal e1 e2) -> true
+  | Xhp x1, Xhp x2 when x1 = x2  -> true
+  | CondExpr (e11, e12, e13), CondExpr (e21, e22, e23) when (expr_equal e11 e21)
+    && (expr_equal e12 e22) && (expr_equal e13 e23) -> true
+  | Cast (pt1, e1), Cast (pt2, e2) when (pt1 = pt2) && (expr_equal e1 e2) -> true
+  | Lambda fd1, Lambda fd2 when fd1 = fd2 -> 
+      true
+  | _, _ -> false

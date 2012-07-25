@@ -264,8 +264,16 @@ and stmt env= function
       in
       let _ = Unify.unify env a a' in
       stmtl env stl
-  | Return None -> ()
-  | Return (Some e) ->
+  | Return (_, None) -> ()
+  | Return (None, Some e) ->
+      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+      let ti = (None, Env_typing_php.ReturnValue) in
+      let _ = AEnv.set env id ti in
+      iexpr env (Assign (None, Id (wrap "$;return"), e))
+  | Return (Some pi, Some e) ->
+      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+      let ti = (Some(pi), Env_typing_php.ReturnValue) in
+      let _ = AEnv.set env id ti in
       iexpr env (Assign (None, Id (wrap "$;return"), e))
   | Break eopt | Continue eopt -> expr_opt env eopt
   | Throw e -> iexpr env e
@@ -284,7 +292,7 @@ and stmt env= function
       List.iter (function
         | Id (x, tok) ->
             let gid = A.remove_first_char x in
-            let gl = Array_get (Id (wrap "$GLOBALS"), Some (String (gid,tok)))in
+            let gl = Array_get (None, Id (wrap "$GLOBALS"), Some (String (gid,tok)))in
             let assign = Assign (None, Id (x, tok), gl) in
             iexpr env assign
         | e -> iexpr env e
@@ -423,12 +431,12 @@ and expr_ env lv = function
   (* Array access with const as key *)
   | Array_get (pi, e, Some (Id (s,tok))) when s.[0] <> '$' ->
       let id = (e, AEnv.get_fun env, AEnv.get_class env) in
-      let v = expr env (Array_get (pi, e, Some (String s,tok))) in 
+      let v = expr env (Array_get (pi, e, Some (String (s,tok)))) in 
       let ti = (pi, Env_typing_php.Const v) in 
       let _ = AEnv.set env id ti in
       v
 
-  | Array_get (pi, Id (s,_), Some (String (x, _)))
+  | Array_get (pi, Id (s,y), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
       
       let id = (Id(s,y), AEnv.get_fun env, AEnv.get_class env) in
@@ -680,8 +688,11 @@ and func_def env fd =
   let return = Tvar ret in
   let f = Tsum [Tfun (pl, return)] in
   GEnv.set_fun env (A.unwrap fd.f_name) f;
-  (*Set the function name in aenv_fun for the purpose of guessing arrays*)
+  (* Set the function name in aenv_fun for the purpose of guessing arrays *)
   ignore(AEnv.set_fun env (A.unwrap fd.f_name));
+  ignore(AEnv.clear_params env);
+  ignore(AEnv.create_ai_params env (fd.f_params));
+  (*  *)
   (* todo? do we need that? if the toplogical sort has been done
    * correctly we should not need that no?
    * We can have some cycles, so the topological sort is not
