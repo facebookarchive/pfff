@@ -555,6 +555,7 @@ and expr_ env lv = function
       env.show := Sargs (expr env e);
       any
   | Call (e, el) ->
+      (*let fid = (AEnv.get_fun env, AEnv.get_class env, pi) in*)
       let f = expr env e in
       let f = Instantiate.ty env ISet.empty f in
       let v = Tvar (fresh()) in
@@ -690,9 +691,8 @@ and func_def env fd =
   GEnv.set_fun env (A.unwrap fd.f_name) f;
   (* Set the function name in aenv_fun for the purpose of guessing arrays *)
   ignore(AEnv.set_fun env (A.unwrap fd.f_name));
-  ignore(AEnv.clear_params env);
   ignore(AEnv.create_ai_params env (fd.f_params));
-  (*  *)
+  ignore(AEnv.set_funs env ((AEnv.get_fun env), (AEnv.get_class env), fd.f_loc));
   (* todo? do we need that? if the toplogical sort has been done
    * correctly we should not need that no?
    * We can have some cycles, so the topological sort is not

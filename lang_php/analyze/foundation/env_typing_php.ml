@@ -148,7 +148,7 @@ type env = {
 
     (* The current function being typed, for the purpose of array
      * identification *)
-    mutable aenv_fun: string; 
+    mutable aenv_fun: string;
 
     (* The current class being typed, for the purpose of array identificatio*)
     mutable aenv_class: string; 
@@ -156,7 +156,9 @@ type env = {
     (* List of parameters for the current function being typed. Note that all
      * parameters need not be arrays, but that this list must be crossed with
      * aenv to determine the arrays which are parameters *)
-    mutable aenv_params: Array_id.t list;
+    aenv_params: Array_id.t list ref;
+
+    aenv_funs: (string * string * Parse_info.info) list ref; (*function, class, file*)
     
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
@@ -272,8 +274,9 @@ let make_env () = {
   (*Current function name for the purpose of differentiating arrays in different
    * functions*)
   aenv_fun = "";
+  aenv_funs = ref [];
   aenv_class = "";
-  aenv_params = [];
+  aenv_params = ref [];
 
   tenv    = ref IMap.empty;
   subst   = ref IMap.empty;

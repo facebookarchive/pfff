@@ -134,6 +134,7 @@ and stmt env st acc =
       let cl = List.map (catch env) cl in
       A.Try (stl, c, cl) :: acc
   | Echo (tok, el, _) ->
+      Printf.printf "echo\n";
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      (List.map (expr env) (comma_list el)))) :: acc
   | Globals (_, gvl, _) -> 
@@ -141,6 +142,7 @@ and stmt env st acc =
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
+      Printf.printf "echo\n";
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      [A.String (s, wrap tok)])) :: acc
   | Use (tok, fn, _) ->
@@ -148,6 +150,7 @@ and stmt env st acc =
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
+      Printf.printf "echo\n";
       A.Expr (A.Call (A.Id (A.builtin "unset", wrap tok), lp)) :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
   | Declare (tok, args, stmt) -> 
@@ -228,6 +231,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.New (cn, args)
   | Clone (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "clone", wrap tok), [expr env e])
   | AssignRef (e1, _, _, e2) ->
       let e1 = lvalue env e1 in
@@ -247,6 +251,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.InstanceOf (e, cn)
   | Eval (tok, (_, e, _)) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "eval", wrap tok), [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
@@ -257,34 +262,45 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [expr env e]
       in
+      Printf.printf "exit\n";
       A.Call (A.Id (A.builtin "exit", wrap tok), arg)
   | At (tok, e) ->
       A.Id (A.builtin "@", wrap tok)
   | Print (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "print", wrap tok), [expr env e])
   | BackQuote (tok, el, _) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "exec", wrap tok (* not really an exec token *)),
              [A.Guil (List.map (encaps env) el)])
   | Include (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "include", wrap tok), [expr env e])
   | IncludeOnce (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "include_once", wrap tok), [expr env e])
   | Require (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "require", wrap tok), [expr env e])
   | RequireOnce (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "require_once", wrap tok), [expr env e])
 
   | Empty (tok, (_, lv, _)) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "empty", wrap tok), [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "isset", wrap tok),
              List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
 
   | Yield (tok, e) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "yield", wrap tok), [expr env e])
   (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
+      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "yield", wrap tok),
              [A.Id (A.builtin "yield_break", wrap tok2)])
   | SgrepExprDots _ ->
@@ -302,6 +318,7 @@ and lambda_def env (l_use, ld) =
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
+    A.f_loc = ld.f_tok;
     A.m_modifiers = [];
     A.l_uses = 
       (match l_use with
@@ -400,12 +417,14 @@ and lvalue env = function
                                [lvalue env v]))
   | ClassVar (q, dn) -> 
       A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
-  | FunCallSimple (f, (_, args, _)) ->
+  | FunCallSimple (f, (tok, args, _)) -> 
+      Printf.printf "FunCallSimple\n";
       let f = name env f in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (A.Id f, args)
-  | FunCallVar (q, lv, (_, argl, _)) ->
+  | FunCallVar (q, lv, (tok, argl, _)) ->
+      Printf.printf "FunCallVar\n";
       let argl = comma_list argl in
       let argl = List.map (argument env) argl in
       let lv = lvalue env lv in
@@ -414,18 +433,21 @@ and lvalue env = function
         | Some q -> A.Class_get (A.Id (qualifier env q), lv) 
       in
       A.Call (lv, argl)
-  | StaticMethodCallSimple (q, n, (_, args, _)) ->
+  | StaticMethodCallSimple (q, n, (tok, args, _)) ->
+      Printf.printf "StaticMethodCallSimple\n";
       let f = A.Class_get (A.Id (qualifier env q), A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | MethodCallSimple (e, _, n, (_, args, _)) ->
+  | MethodCallSimple (e, _, n, (tok, args, _)) ->
+      Printf.printf "MethodCallSimple\n";
       let f = lvalue env e in
       let f = A.Obj_get (f, A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticMethodCallVar (lv, _, n, (_, args, _)) ->
+  | StaticMethodCallVar (lv, _, n, (tok, args, _)) ->
+      Printf.printf "StaticMethodCallVar\n";
       let f = A.Class_get (lvalue env lv, A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
@@ -445,15 +467,17 @@ and obj_access env obj (_, objp, args) =
   let e = obj_property env obj objp in
   match args with
   | None -> e
-  | Some (_, args, _) ->
+  | Some (tok, args, _) ->
       let args = comma_list args in
       let args = List.map (argument env) args in
       (* TODO CHECK THIS *)
+      Printf.printf "objaccess\n";
       A.Call (e, args)
 
 and obj_property env obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
+      Printf.printf "obj property\n";
       A.Call (A.Id (A.builtin "eval_var_field",
                    wrap (Ast_php.fakeInfo (A.builtin "eval_var_field"))),
              [lvalue env lv])
@@ -576,6 +600,7 @@ and method_def env m =
     A.f_body = method_body env m.f_body;
     A.f_kind = A.Method;
     A.l_uses = [];
+    A.f_loc = m.f_tok;
   }
 
 and method_body env (_, stl, _) =
@@ -600,6 +625,7 @@ and func_def env f =
     A.f_kind = A.Function;
     A.m_modifiers = [];
     A.l_uses = [];
+    A.f_loc = f.f_tok;
   }
 
 and xhp_html env = function
@@ -708,53 +734,12 @@ and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) -> 
+      Printf.printf "global dollar\n";
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
   | GlobalDollarExpr (tok, _) -> 
       raise (TodoConstruct ("GlobalDollarExpr", tok))
 
 
-let rec expr_equal e1 e2 =
-  match e1, e2 with 
-  | A.Int i1, A.Int i2 when i1 = i2 -> true
-  | A.Double d1, A.Double d2 when d1 = d2 -> true
-  | A.String s1, A.String s2 when fst s1 = fst s2 -> true
-  | A.Id n1, A.Id n2 when n1 = n2 -> true
-  | A.Array_get (_, ie1, None), A.Array_get (_, ie2, None) when expr_equal ie1 ie2 -> true
-  | A.Array_get (_, ie1, Some (oe1)), A.Array_get (_, ie2, Some(oe2)) when
-    (expr_equal ie1 ie2) && (expr_equal oe1 oe2) -> true
-  | A.This s1, A.This s2 when (fst s1) = (fst s2)  -> true
-  | A.Obj_get (e11, e12), A.Obj_get (e21, e22) when (expr_equal e11 e21) &&
-    (expr_equal e12 e22) -> true
-  | A.Class_get (e11, e12), A.Class_get (e21, e22) when (expr_equal e11 e21) &&
-    (expr_equal e12 e22) -> true
-  | A.New (e1, el1), A.New (e2, el2) when (expr_equal e1 e2) && (List.for_all2 
-    expr_equal el1 el2) -> true
-  | A.InstanceOf (e11, e12), A.InstanceOf (e21, e22) when (expr_equal e11 e21) &&
-    (expr_equal e12 e22) -> true
-  | A.Assign (None, e11, e12), A.Assign (None, e21, e22) when (expr_equal e11 e21)
-    && (expr_equal e12 e22) -> true
-  | A.Assign (Some(o1), e11, e12), A.Assign (Some(o2), e21, e22) when (expr_equal e11 e21)
-    && (expr_equal e12 e22) && (o1 = o2) -> true
-  | A.List el1, A.List el2 when List.for_all2 expr_equal el1 el2 -> true
-  | A.Call (e1, el1), A.Call (e2, el2) when (expr_equal e1 e2) && (List.for_all2 
-    expr_equal el1 el2) -> true
-  | A.Infix (o1, e1), A.Infix (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
-  | A.Postfix (o1, e1), A.Postfix (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
-  | A.Unop (o1, e1), A.Unop (o2, e2) when (o1 = o2) && (expr_equal e1 e2) -> true
-  | A.Binop (o1, e11, e12), A.Binop (o2, e21, e22) when (o1 = o2) && 
-    (expr_equal e11 e21) && (expr_equal e12 e22) -> true
-  | A.Guil el1, A.Guil el2 when List.for_all2 expr_equal el1 el2 -> true
-  | A.Ref e1, A.Ref e2 when expr_equal e1 e2 -> true
-  | A.ConsArray (None, _, avl1), A.ConsArray (None, _, avl2) when avl1 = avl2  -> true
-  | A.ConsArray (Some(e1), _, avl1), A.ConsArray (Some(e2), _, avl2) when (avl1 =
-      avl2) && (expr_equal e1 e2) -> true
-  | A.Xhp x1, A.Xhp x2 when x1 = x2  -> true
-  | A.CondExpr (e11, e12, e13), A.CondExpr (e21, e22, e23) when (expr_equal e11 e21)
-    && (expr_equal e12 e22) && (expr_equal e13 e23) -> true
-  | A.Cast (pt1, e1), A.Cast (pt2, e2) when (pt1 = pt2) && (expr_equal e1 e2) -> true
-  | A.Lambda fd1, A.Lambda fd2 when fd1 = fd2 -> 
-      true
-  | _, _ -> false
 (*****************************************************************************)
 (* Shortcuts *)
 (*****************************************************************************)

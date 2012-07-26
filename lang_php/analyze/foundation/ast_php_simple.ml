@@ -277,6 +277,8 @@ and func_def = {
   l_uses: (bool (* is_ref *) * name) list;
 
   f_body: stmt list;
+
+  f_loc: Parse_info.info;
 }
    and function_kind = 
      | Function 

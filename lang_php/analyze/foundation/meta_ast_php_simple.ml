@@ -218,6 +218,7 @@ and vof_func_def {
                  f_kind = v_f_type;
                  m_modifiers = v_f_modifiers;
                  l_uses = v_l_uses;
+                 f_loc = v_f_tok;
                } =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_stmt v_f_body in

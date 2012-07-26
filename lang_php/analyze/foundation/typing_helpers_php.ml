@@ -200,16 +200,19 @@ module AEnv = struct
   let get_fun env = env.aenv_fun
   let set_class env x = env.aenv_class <- x
   let get_class env = env.aenv_class
-  let set_params env p = env.aenv_params <- p
+ 
+  let set_funs env x = 
+    env.aenv_funs := x::!(env.aenv_funs)
+  let get_funs env = !(env.aenv_funs)
+
+  let set_params env p = env.aenv_params := p
   let get_params env = env.aenv_params
-  let clear_params env = env.aenv_params <- []
+  (*let clear_params env = env.aenv_params <- []*)
   let create_ai_params env pl = 
-    Printf.printf "%d params in list\n" (List.length pl);
     List.iter (fun x ->
       let id = (Id(x.p_name), get_fun env, get_class env) in
-      env.aenv_params <- id::(env.aenv_params);
+      env.aenv_params := id::!(env.aenv_params);
     ) pl;
-    Printf.printf "%d params added" (List.length env.aenv_params)
 end
 
 module Subst = struct
