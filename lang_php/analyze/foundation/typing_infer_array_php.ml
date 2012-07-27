@@ -7,6 +7,10 @@ module Array_typer = struct
 
 exception Fun_def_error
 
+(*****************************************************************************)
+(* Datastructure *)
+(*****************************************************************************)
+
   type evidence = 
     | SingleLine of PI.info option(*When a single line of evidence is enough,
     ex a no index access indicating a vector*)
@@ -48,6 +52,20 @@ exception Fun_def_error
     fdef_loc: PI.info option
   }
 
+  type val_evi = Env_typing_php.t * evidence
+
+  type patch = int * string (* line number * new line text *)
+
+  type t = {
+    (* intermediate structure - contains list of value types associated with the
+     * array, and a list of line numbers *)
+    values: val_evi list AMap.t ref;
+    (* Final inferred type confidences*)
+    inferred: inferred_container AMap.t ref;
+    (* Map to store patches for the file associated with the key *)
+    patches: patch list SMap.t ref
+  }
+  
   type evidence_type = 
     | Supporting
     | Opposing
@@ -86,70 +104,17 @@ exception Fun_def_error
     fdef_loc = None
   }
 
-  (* TODO: refactor to remove this fcn *)
-  let compose_ic m t v g c mt k va d p dl r fd = {
-    map = m;
-    tuple = t;
-    vector = v;
-    guess = g;
-    confused = c;
-    mixed_val_ty = mt;
-    key_t = k;
-    value_t = va;
-    declaration = d;
-    parameter = p;
-    dec_loc = dl;
-    return_val = r;
-    fdef_loc = fd
-  }
-
-  type cont_evi = container * int list
-
-  type val_evi = Env_typing_php.t * evidence
-
-  type patch = int * string (* line number * new line text *)
-
-  type t = {
-    (* intermediate structure - contains list of value types associated with the
-     * array, and a list of line numbers *)
-    values: val_evi list AMap.t ref;
-    (* Final inferred type confidences*)
-    inferred: inferred_container AMap.t ref;
-    (* Map to store patches for the file associated with the key *)
-    patches: patch list SMap.t ref
-  }
-
-  let rec is_in_patch_list ln l = 
-    match l with 
-    | [] -> false
-    | (ln_t, _)::xs when ln_t = ln -> true
-    | x::xs -> is_in_patch_list ln xs
-
-  let is_line_patched ln file at = 
-    let file_patches = try SMap.find file !(at.patches) with Not_found -> [] in
-    is_in_patch_list ln file_patches
-
-  let rec get_patch_from_list ln l = 
-    match l with 
-    | [] -> ""
-    | (ln_t, pline)::xs when ln_t = ln -> pline
-    | x::xs -> get_patch_from_list ln xs
-
-  let get_patched_line at file ln = 
-    let file_patches = try SMap.find file !(at.patches) with Not_found -> [] in
-    get_patch_from_list ln file_patches
-
-  let add_patch_to_patch_list at file ln line = 
-    let file_patches = try SMap.find file !(at.patches) with Not_found -> [] in
-    let file_patches = (ln, line)::file_patches in
-    at.patches := SMap.add file file_patches !(at.patches)
-
   let make_array_typer f = {
     values = ref AMap.empty;
     inferred = ref AMap.empty;
     patches = ref SMap.empty;
   }
 
+  let pi_of_evidence evi = 
+    match evi with 
+    | SingleLine(pi) -> pi
+    | DoubleLine(pi, _, _, _) -> pi
+  
   let fun_on_aenv env at f =
     THP.AEnv.iter env (
       fun x l -> f at x l;)
@@ -164,10 +129,6 @@ exception Fun_def_error
         Common.pr s;)
     )
 
-  let line_of_array_info = function
-    | (None, _) -> (-1)
-    | (Some (pi), _) -> PI.line_of_info pi
-
   let pp_arr_id id = 
     match id with 
     | (e, f, c) -> 
@@ -176,6 +137,10 @@ exception Fun_def_error
         let v = Meta_ast_php_simple.vof_program [stmt] in
         let s = Ocaml.string_of_v v in
         Common.pr s
+
+(*****************************************************************************)
+(* Array Inference Helpers *)
+(*****************************************************************************)
 
   let rec check_id_in_list id l = 
     match id with 
@@ -224,6 +189,28 @@ exception Fun_def_error
     | Tsum _ -> x
     | Tvar v -> THP.TEnv.get env v
 
+  let rec contains_type t l = 
+    match l with 
+    | [] -> None
+    | (y, pi)::xs when (y <> t && not (string_equ y t))-> Some(y, pi)
+    | x::xs -> contains_type t xs
+
+  let prev_conflicting_val at id v pi =
+    let e = SingleLine(pi) in
+    let ve = try AMap.find id !(at.values) with Not_found -> [] in
+    let ct = contains_type v ve in
+    if (List.length ve = 0) || (List.length ve = 1 && ct = None) 
+    then (let ve = (v, e)::ve in 
+      at.values := AMap.add id ve !(at.values);
+      None) 
+    else (let ve = (v, e)::ve in 
+      at.values := AMap.add id ve !(at.values);
+      ct)
+
+(*****************************************************************************)
+(* Array Inference Analysis *)
+(*****************************************************************************)
+
   let analyze_noindex env at id pi v =
     let v = apply_subst env v in
     let ic = try AMap.find id !(at.inferred) with Not_found ->
@@ -258,30 +245,6 @@ exception Fun_def_error
       let ic = {ic with guess = (Vector(v)); vector = ve; key_t = key; value_t = va} in
       at.inferred := AMap.add id ic !(at.inferred)
     
-
-  let rec contains_type t l = 
-    match l with 
-    | [] -> None
-    | (y, pi)::xs when (y <> t && not (string_equ y t))-> Some(y, pi)
-    | x::xs -> contains_type t xs
-
-  let prev_conflicting_val at id v pi =
-    let e = SingleLine(pi) in
-    let ve = try AMap.find id !(at.values) with Not_found -> [] in
-    let ct = contains_type v ve in
-    if (List.length ve = 0) || (List.length ve = 1 && ct = None) 
-    then (let ve = (v, e)::ve in 
-      at.values := AMap.add id ve !(at.values);
-      None) 
-    else (let ve = (v, e)::ve in 
-      at.values := AMap.add id ve !(at.values);
-      ct)
-
-  let pi_of_evidence evi = 
-    match evi with 
-    | SingleLine(pi) -> pi
-    | DoubleLine(pi, _, _, _) -> pi
-
   let analyze_value env at id pi v =
     let v = apply_subst env v in
     match prev_conflicting_val at id v pi with
@@ -299,16 +262,6 @@ exception Fun_def_error
       = true} in
       at.inferred := AMap.add id ic !(at.inferred)
 
-  let print_val_types env va_t v = 
-    let penv = Pp2.empty print_string in
-    THP.Print2.ty env penv ISet.empty 0 va_t;
-    THP.Print2.ty env penv ISet.empty 0 v;
-    match va_t, v with 
-    | Tsum _, Tsum _  -> Printf.printf "Tsums\n"
-    | Tvar v1, Tvar v2 -> Printf.printf "Tvars %d and %d\n" v1 v2
-    | Tsum _, Tvar _  -> Printf.printf "v is a var\n"
-    | Tvar _, Tsum _ -> Printf.printf "va_t is a var\n"
-
   let analyze_declaration_value env at id pi v = 
     let v = apply_subst env v in
     let ic = try AMap.find id !(at.inferred) with Not_found ->
@@ -318,8 +271,7 @@ exception Fun_def_error
     = d; _} = ic in
     let e = SingleLine(pi) in
     let p = is_parameter env id in
-    let dl = pi in
-    let ic = {ic with parameter = p; dec_loc = dl} in
+    let ic = {ic with parameter = p; dec_loc = pi} in
     let k = Tsum[Tabstr "int"] in
       match d with 
       | DKeyValue ->
@@ -501,12 +453,8 @@ exception Fun_def_error
     let ic = try AMap.find id !(at.inferred) with Not_found ->
       make_inferred_container in
     let ic = set_fdef env id pi ic in
-    let {fdef_loc = pi2; _} = ic in
     let ic = {ic with dec_loc = pi} in
-    at.inferred := AMap.add id ic !(at.inferred);
-    match pi2 with 
-    | None -> Printf.printf "fdef_loc is none\n"
-    | Some (p) -> Printf.printf "fdef loc is %d\n"(PI.line_of_info p)
+    at.inferred := AMap.add id ic !(at.inferred)
 
   let initialize_inferred_container at id = 
     if not (AMap.mem id !(at.inferred)) then 
@@ -545,7 +493,10 @@ exception Fun_def_error
     Printf.printf "Inferring arrays ...\n";
     analyze_accesses_values env at
   
-  (* x is the id, l is the list of arr_info (parse_info option * arr_access )*)
+(*****************************************************************************)
+(* Pretty Printing *)
+(*****************************************************************************)
+
   let string_of_container = function
     | Vector _ -> "vector"
     | Tuple -> "tuple"
@@ -637,6 +588,10 @@ exception Fun_def_error
       if p then (Printf.printf "Guess of param is %s: "(string_of_container g); pp_arr_id id)
       ) !(at.inferred)
 
+(*****************************************************************************)
+(* Patching *)
+(*****************************************************************************)
+
   let file_lines f = 
     let lines = ref [] in
     let in_ch = open_in f in
@@ -647,12 +602,18 @@ exception Fun_def_error
       close_in in_ch;
       List.rev !lines
 
+  let add_patch_to_patch_list at file ln line = 
+    let file_patches = try SMap.find file !(at.patches) with Not_found -> [] in
+    let file_patches = (ln, line)::file_patches in
+    at.patches := SMap.add file file_patches !(at.patches)
+
   let get_line_to_patch at pi lines = 
     let ln = PI.line_of_info pi in
     let file = PI.file_of_info pi in
-    if is_line_patched ln file at then 
-      get_patched_line at file ln
-    else List.nth lines (ln - 1)
+    let file_patches = try SMap.find file !(at.patches) with Not_found -> [] in
+    let l = try List.assoc ln file_patches with Not_found -> List.nth lines (ln
+    -1 ) in 
+    l
 
   let write_patch f lines = 
     let f = f^"-p" in
@@ -668,20 +629,20 @@ exception Fun_def_error
     | x::xs -> x:: (insert_patched_line_to_list ln newl xs (c+1))
     
 
+  let prompt_evidence ic = 
+    Printf.printf "Would you like to see evidence supporting this? (y/n)\n";
+    let e = read_line () in
+    if e = "y" || e = "yes" then 
+      pp_reasoning ic
+
+
   let rec prompt_patched_line at file old_line line line_n ic = 
-    Printf.printf "%s\n" old_line;
-    Printf.printf "%s\n" line;
-    Printf.printf "Would you like to apply this patch? (yes/no/evidence)\n";
+    Printf.printf "  Suggested patch: \n    %s\n" line;
+    Printf.printf "    Would you like to apply this patch? (y/n)\n";
     let patch = read_line () in 
     if patch = "y" then
       (
-        Printf.printf "Patch selected\n";
         add_patch_to_patch_list at file line_n line
-      )
-    else if patch = "evidence" || patch = "e" then 
-      (
-        pp_reasoning ic; 
-        prompt_patched_line at file old_line line line_n ic
       )
     else Printf.printf "Patch not selected\n"
 
@@ -713,8 +674,6 @@ exception Fun_def_error
         prompt_patched_line at file line_to_patch patched_line ln ic
     | _ -> Printf.printf "Sorry, no patch can be applied\n"
 
-
-
   let patch_parameter env at id ic = 
     let name = get_param_name id in
     let {confused = c; guess = g; fdef_loc = fd; _} = ic in
@@ -722,20 +681,20 @@ exception Fun_def_error
     | None -> ()
     | Some(pi) -> 
       let lines = file_lines (PI.file_of_info pi) in 
+      Printf.printf "Parameter %s is an array in the following function in %s on
+      %d: \n" name (PI.file_of_info pi) (PI.line_of_info pi);
+      Printf.printf "%s\n" (get_line_to_patch at pi lines);
       if (not c && not (g = NoData)) then (
-      Printf.printf "%s in %s on line %d may be a %s\n"
-        name (PI.file_of_info pi) (PI.line_of_info pi) (string_of_container g);
-      pp_reasoning ic;
-      suggest_patch_parameter env at g pi lines ic name
-      )
+        Printf.printf "    This array may be a %s. " (string_of_container g);
+        prompt_evidence ic;
+        suggest_patch_parameter env at g pi lines ic name
+        )
       else if c then (
-      Printf.printf "Confused about an array passed in as a parameter on %d due
-      to the following:\n" (PI.line_of_info pi);
-      pp_confused_reasoning ic
+        Printf.printf "    Confused about the array due to the following:\n";
+        pp_confused_reasoning ic
       )
       else (* No data *)
-        Printf.printf "No data about the array passed in as a parameter on %d"
-        (PI.line_of_info pi)
+        Printf.printf "    No data about this array is available.\n"
   
   let suggest_patch_declaration at g pi lines ic = 
     let ln = (PI.line_of_info pi) - 1 in
@@ -757,34 +716,30 @@ exception Fun_def_error
         let patched_line = Str.replace_first arr_regex "IntMap" line_to_patch in
         prompt_patched_line at file line_to_patch patched_line ln ic
     | _ -> 
-        Printf.printf "Sorry, no patch can be applied to \n";
-        Printf.printf "%s\n" line_to_patch
+        Printf.printf "Sorry, no patch can be applied  \n"
 
     let patch_declaration env at id ic =
       let {dec_loc = dl; confused = c; guess = g; parameter = p; _} = ic in
       if p then patch_parameter env at id ic else (
       match dl with
-      | None -> Printf.printf "No dec loc\n"; ()
+      | None -> ()
       | Some(pi) ->
+        Printf.printf "An array is declared in %s on line %d at position %d:\n"
+          (PI.file_of_info pi) (PI.line_of_info pi) (PI.col_of_info pi);
         let lines = file_lines (PI.file_of_info pi) in
+        Printf.printf "%s\n" (get_line_to_patch at pi lines); (*todo, maybe
+        strip whitespace from leading?*)
         if (not c && not (g = NoData)) then(
-          Printf.printf "Declared at in %s line %d position %d\n"
-            (PI.file_of_info pi) (PI.line_of_info pi) (PI.col_of_info pi);
-          Printf.printf "This array may be a %s due to the following evidence: \n"
-            (string_of_container g);
-          (*pp_reasoning ic;*)
+          Printf.printf "    This array may be a %s. " (string_of_container g);
+          prompt_evidence ic;
           suggest_patch_declaration at g pi lines ic 
           )
         else if c then 
-          ( Printf.printf "Confused about the array declared on %d at %d due to the following: \n"
-          (PI.line_of_info pi) (PI.col_of_info pi);
-          pp_confused_reasoning ic ) (* todo, prompt for evidence *)
+          (Printf.printf "    Confused about the array due to the following:\n";
+          pp_confused_reasoning ic )
         else (* No data *)
-          Printf.printf "No data about the array declared on %d at %d \n"
-          (PI.line_of_info pi) (PI.col_of_info pi)
+          Printf.printf "    No data about this array is available.\n"
       )
-    (*let patch_return_val_line *)
-
 
     let insert_return_value line_to_patch return_type_str = 
       let spl_line = Str.split (Str.regexp ")") line_to_patch in
@@ -803,7 +758,7 @@ exception Fun_def_error
           let patched_line = insert_return_value line_to_patch t_string in
           prompt_patched_line at file line_to_patch patched_line ln ic
       | Tuple _ -> 
-          let t_string = "): Tuple " in
+          let t_string = "): Tuple " in (*TODO change to tuple of types*)
           let patched_line = insert_return_value line_to_patch t_string in
           prompt_patched_line at file line_to_patch patched_line ln ic
       | Map (Tsum[Tsstring _], _) 
@@ -822,17 +777,16 @@ exception Fun_def_error
     let patch_return_value env at ic =
       let {fdef_loc = fd; confused = c; guess = g; _} = ic in
       match fd with 
-      | None -> Printf.printf "FD IS NONE\n"
+      | None -> () 
       | Some(pi) ->
         let lines = file_lines (PI.file_of_info pi) in
         if (not c && not (g = NoData)) then (
-        Printf.printf "An array is returned from the function defined in %s at
-        line %d\n" (PI.file_of_info pi) (PI.line_of_info pi);
-        Printf.printf "%s\n" (List.nth lines ((PI.line_of_info pi) -1));
-        Printf.printf "The returned array may be a %s due to the following
-        evidence: \n" (string_of_container g);
-        (*pp_reasoning ic;*)
-        suggest_patch_return_val env at g pi lines ic
+          Printf.printf "An array is returned by the following function in %s on line %d: \n" 
+          (PI.file_of_info pi) (PI.line_of_info pi);
+          Printf.printf "%s\n" (get_line_to_patch at pi lines);
+          Printf.printf "  This array may be a %s. " (string_of_container g);
+          prompt_evidence ic; 
+          suggest_patch_return_val env at g pi lines ic
         )
 
     let rec write_lines pl lines out_ch ln = 
@@ -869,19 +823,15 @@ exception Fun_def_error
     let patch_suggestion env at = 
     Printf.printf "Preparing to patch files \n";
     AMap.iter (fun id ic ->
-      pp_arr_id id;
       let {dec_loc = dl; parameter = p; confused = c; guess = g; return_val = r;
       fdef_loc = fd; _} = ic in
       if not (g = NotArray) && r then (
         patch_declaration env at id ic;
         patch_return_value env at ic
       )
-      
       else if not (g = NotArray) then(
         patch_declaration env at id ic;
-        Printf.printf "Patching declaration hit \n"
       )
-      else Printf.printf "Container is: %s\n" (string_of_container g)
     ) !(at.inferred);
     pp_param_arrays at;
     apply_all_patches at

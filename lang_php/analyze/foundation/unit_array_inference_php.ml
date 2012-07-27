@@ -59,24 +59,6 @@ let unittest =
       assert_equal p false;
     );
 
-    "compose ic" >:: (fun() ->
-      let empty_ce = make_container_evidence in
-      let ic = compose_ic empty_ce empty_ce empty_ce NoData true false
-        (Some(ETP.Tsum[ETP.Tabstr "int"])) None DValue false None false None in
-      let {map = m; tuple = t; vector = ve; guess = g; confused = c;
-      mixed_val_ty = mt; key_t = k; value_t = va; declaration = d; parameter =
-        p; _} = ic in
-      assert_equal m empty_ce;
-      assert_equal t empty_ce;
-      assert_equal ve empty_ce;
-      assert_equal g NoData;
-      assert_equal c true;
-      assert_equal mt false;
-      assert_equal k (Some(ETP.Tsum[ETP.Tabstr "int"]));
-      assert_equal va None;
-      assert_equal d DValue;
-    );
-
     "string type equivalences" >:: (fun() -> 
       let tabstr = ETP.Tsum[ETP.Tabstr "string"] in
       let strset1 = SSet.empty in
