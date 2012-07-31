@@ -209,7 +209,7 @@ and arr_access =
   | VarOrInt of t * t (*k, v*)
   | Const of t (*v*)
   | ConstantString of t (*v*)
-  | Declaration of t * t * t
+  | Declaration of t list
   | Value of t
   | DeclarationKValue of t * t
   | DeclarationValue of t

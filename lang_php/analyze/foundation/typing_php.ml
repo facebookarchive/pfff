@@ -522,7 +522,8 @@ and expr_ env lv = function
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
-      let ti = (pi, Env_typing_php.Declaration(t1, t2, t)) in
+      let tl = List.map (array_declaration env id pi) y in
+      let ti = (pi, Env_typing_php.Declaration(tl)) in
       let _ = AEnv.set env id ti in 
       t
 
@@ -539,10 +540,21 @@ and expr_ env lv = function
       let t = Tvar (fresh()) in
       let t = List.fold_left (array_value env) t avl in
       (match id with
-      | None -> t
+      | None ->(
+	match pi with 
+	| Some(p) -> 
+	  let e = Ast_php_simple.Id((string_of_int (PI.line_of_info p)), None) in
+          let id = (e, AEnv.get_fun env, AEnv.get_class env) in 
+          let tl  = List.map (array_declaration env id pi) avl in
+	  let ti = (pi, Env_typing_php.Declaration(tl)) in
+          let _ = AEnv.set env id ti in
+          t
+	| None -> t )
       | Some(e) -> 
         let id = (e, AEnv.get_fun env, AEnv.get_class env) in 
-        let _ = List.map (array_declaration env id pi) avl in
+        let tl  = List.map (array_declaration env id pi) avl in
+	let ti = (pi, Env_typing_php.Declaration(tl)) in
+        let _ = AEnv.set env id ti in
         t)
 
   | List el -> 
@@ -611,12 +623,14 @@ and array_declaration env id pi = function
   | Aval e -> 
       let t = expr env e in
       let aa = (pi, DeclarationValue (t)) in
-      AEnv.set env id aa
+      AEnv.set env id aa;
+      t
   | Akval (e1, e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let aa = (pi, DeclarationKValue(t1, t2)) in
-      AEnv.set env id aa
+      AEnv.set env id aa; 
+      t2
 
 and ptype env = function
   | Ast_php.BoolTy -> bool

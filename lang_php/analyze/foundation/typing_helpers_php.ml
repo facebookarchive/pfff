@@ -543,38 +543,6 @@ module Print2 = struct
     let acc = get_fields vim_mode env ISet.empty SSet.empty t in
     acc
 
-  let arr_access_type env penv ait = 
-    Pp.print penv "      ";
-    ty env penv ISet.empty 0 ait;
-    Pp.newline penv
-
-
-  let array_access env ai =
-    let penv = Pp.empty print_string in
-    match ai with 
-    | (_, NoIndex (v)) -> Pp.print penv "No index";
-      Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) [v]
-    | (_, VarOrInt (k, v)) -> Pp.print penv "Variable or integer";
-      Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) (k::[v])
-    | (_, Const e) -> Pp.print penv "Const";
-      Pp.newline penv;
-      ignore(arr_access_type env penv e)
-    | (_, ConstantString (v)) -> Pp.print penv "Constant string";
-      Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) [v]
-    | (_, Declaration (t1, t2, t3)) ->Pp.print penv "Declaration";
-      Pp.newline penv;
-      List.iter (fun x -> ignore(arr_access_type env penv x)) (t1::t2::[t3])
-    | (_, DeclarationKValue _) -> ()
-    | (_, DeclarationValue _) -> ()
-    | (_, Value t) -> Pp.print penv "Value";
-      Pp.newline penv;
-      ignore(arr_access_type env penv t)
-    | (_, UnhandledAccess) -> ()
-    | (_, Parameter) -> ()
-    | (_, ReturnValue) -> ()
 end
 
 module Print = struct
