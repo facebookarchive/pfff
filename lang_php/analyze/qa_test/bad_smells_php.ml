@@ -19,6 +19,7 @@ open Ast_php
 
 module Ast = Ast_php
 module V = Visitor_php
+module J = Json_type
 
 (*****************************************************************************)
 (* Prelude *)
@@ -140,6 +141,24 @@ let actions () = [
       in
       pr2_gen cyclos;
   ));
+
+  "-print_cyclomatic_json", " <files_or_dirs>",
+  Common.mk_action_n_arg (fun xs ->
+    let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+    let jsonify_cyclo (ident, comp) =
+      J.Object [
+        "func", J.String (str_of_name ident);
+        "comp", J.Int (comp);
+        "line", J.Int (line_of_info (info_of_name ident))]
+      in
+
+    let jsonify file =
+      let cyclos = cyclomatic_complexity_file file in
+      file, J.Array (List.map jsonify_cyclo cyclos) in
+
+    let jfiles = J.Object (List.map jsonify files) in
+    pr (Json_io.string_of_json jfiles)
+  );
 
   (* see http://www.r-project.org *)
   "-print_cyclomatic_R", " <files_or_dirs>",
