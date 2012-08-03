@@ -160,7 +160,7 @@ let index_db1_2 db files =
       db.flush_db();
     ))
     with 
-    (Out_of_memory  (*| Stack_overflow*) | Timeout
+    (Out_of_memory  | Stack_overflow | Timeout
     | Parse_php.Parse_error _) as exn
     -> 
       pr2 (spf "PB with %s, exn = %s, undoing addition" 
