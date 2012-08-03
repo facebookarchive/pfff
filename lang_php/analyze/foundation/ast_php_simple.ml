@@ -127,6 +127,7 @@ and stmt =
   | If of expr * stmt * stmt
   | Switch of expr * case list
 
+  (* pad: not sure why we use stml list instead of just stmt like for If *)
   | While of expr * stmt list
   | Do of stmt list * expr
   | For of expr list * expr list * expr list * stmt list
@@ -190,8 +191,8 @@ and expr =
   (* often transformed in Id "$this" in the analysis *)
   | This of string wrap
   (* Unified method/field access.
-   * ex: $o->foo ==> Obj_get(Id "$o", Id "foo")
-   * ex: A::foo  ==> Class_get(Id "A", Id "foo")
+   * ex: $o->foo() ==> Call(Obj_get(Id "$o", Id "foo"), [])
+   * ex: A::foo()  ==> Call(Class_get(Id "A", Id "foo"), [])
    * note that Id can be "self", "parent", "static".
    *)
   | Obj_get of expr * expr
