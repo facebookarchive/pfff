@@ -25,7 +25,7 @@ open Common
  *  - etc, see error_php.ml
  * 
  * todo:
- *  - dataflow based useless assignements
+ *  - dataflow based useless assignments
  *  - type checker (e.g. wrong type of argument, expr is not a bool,
  *    use of array instead of scalar, etc)
  *  - record checker (fields)

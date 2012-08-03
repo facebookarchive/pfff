@@ -351,6 +351,9 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
  * 
  * See also pfff/data/php_stdlib/pfff.php which declares those builtins.
  * See also tests/php/semantic/ for example of uses of those builtins.
+ * 
+ * coupling: if modify the string, git grep it because it's probably
+ *  used in patterns too.
  *)
 let builtin x = "__builtin__" ^ x
 (* for 'self'/'parent', 'static', 'lambda' *)

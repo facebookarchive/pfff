@@ -34,6 +34,7 @@ module E = Error_php
 
 let check_program2 prog =
   let visitor = V.mk_visitor { V.default_visitor with
+    (* also valid for methods *)
     V.kfunc_def = (fun (k, _) def ->
       try
         let flow = Controlflow_build_php.cfg_of_func def in
