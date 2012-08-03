@@ -12,14 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ast_php
 open Common.Infix
 
-module ISet = Set.Make(Int)
-module IMap = Map.Make(Int)
-
+open Ast_php
 module A = Ast_php_simple
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -41,7 +37,7 @@ exception ObsoleteConstruct of Ast_php.info
 exception TodoConstruct of string * Ast_php.info
 
 (* Whether or not we want to store position information in the Ast_simple
- * build here.
+ * built here.
  *)
 let store_position = ref false
 
