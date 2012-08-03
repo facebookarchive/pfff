@@ -1,19 +1,3 @@
-let vars_used_in_any any =
-      (* Do not recurse there, isset() does not count as a use.
-       * Hardcoded the special case of isset($x). If do
-       * isset($arr[...]) then we may want to recurse and count as
-       * a use the things inside [...].
-       *)
-      | Isset (_, (i_2, [Left((Var(_, _)))], i_4)) ->
-          ()
-
-    V.klvalue = (fun (k,vx) x ->
-      (* transform This into a Var *)
-      | This (tok) ->
-          let dname = Ast.DName("this", tok) in
-          Common.push2 dname aref
-
-    
 (* update: does consider also function calls to function taking parameters via
  * reference. Use global info.
  *)
@@ -33,18 +17,6 @@ let vars_assigned_in_any any =
           k x
     );
     })
-
-let keyword_arguments_vars_in_any any = 
-  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kargument = (fun (k, vx) x ->
-      (match x with
-      | Arg (Assign((Var(dname, _scope)), i_5, _e)) ->
-          Common.push2 dname aref;
-      | _ -> ()
-      );
-      k x
-    );
-  })
 
 (*****************************************************************************)
 (* Vars passed by ref *)

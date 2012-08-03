@@ -187,10 +187,6 @@ let visit_prog find_entity prog =
               vars_passed_by_ref_in_any ~in_class:!in_class finder (Expr x)
         in
 
-        (* keyword arguments should be ignored and treated as comments *)
-        let keyword_args = keyword_arguments_vars_in_any (Expr x) in
-
-
         (* todo: enough? if do $x = $x + 1 then have problems? *)
         let used' = 
           used +> Common.exclude (fun v -> 
@@ -200,9 +196,6 @@ let visit_prog find_entity prog =
               * case is handled specifically for passed_by_refs
               *)
           )
-        in
-        let assigned' = 
-          assigned +> Common.exclude (fun v ->  List.mem v keyword_args) 
         in
 
         used' +> List.iter (fun v -> 
