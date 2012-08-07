@@ -134,7 +134,6 @@ and stmt env st acc =
       let cl = List.map (catch env) cl in
       A.Try (stl, c, cl) :: acc
   | Echo (tok, el, _) ->
-      Printf.printf "echo\n";
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      (List.map (expr env) (comma_list el)))) :: acc
   | Globals (_, gvl, _) -> 
@@ -142,7 +141,6 @@ and stmt env st acc =
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
-      Printf.printf "echo\n";
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      [A.String (s, wrap tok)])) :: acc
   | Use (tok, fn, _) ->
@@ -150,7 +148,6 @@ and stmt env st acc =
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
-      Printf.printf "echo\n";
       A.Expr (A.Call (A.Id (A.builtin "unset", wrap tok), lp)) :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
   | Declare (tok, args, stmt) -> 
@@ -231,7 +228,6 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.New (cn, args)
   | Clone (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "clone", wrap tok), [expr env e])
   | AssignRef (e1, _, _, e2) ->
       let e1 = lvalue env e1 in
@@ -251,7 +247,6 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.InstanceOf (e, cn)
   | Eval (tok, (_, e, _)) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "eval", wrap tok), [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
@@ -262,45 +257,34 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [expr env e]
       in
-      Printf.printf "exit\n";
       A.Call (A.Id (A.builtin "exit", wrap tok), arg)
   | At (tok, e) ->
       A.Id (A.builtin "@", wrap tok)
   | Print (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "print", wrap tok), [expr env e])
   | BackQuote (tok, el, _) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "exec", wrap tok (* not really an exec token *)),
              [A.Guil (List.map (encaps env) el)])
   | Include (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "include", wrap tok), [expr env e])
   | IncludeOnce (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "include_once", wrap tok), [expr env e])
   | Require (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "require", wrap tok), [expr env e])
   | RequireOnce (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "require_once", wrap tok), [expr env e])
 
   | Empty (tok, (_, lv, _)) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "empty", wrap tok), [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "isset", wrap tok),
              List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
 
   | Yield (tok, e) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "yield", wrap tok), [expr env e])
   (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
-      Printf.printf "echo\n";
       A.Call (A.Id (A.builtin "yield", wrap tok),
              [A.Id (A.builtin "yield_break", wrap tok2)])
   | SgrepExprDots _ ->
@@ -418,13 +402,11 @@ and lvalue env = function
   | ClassVar (q, dn) -> 
       A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
   | FunCallSimple (f, (tok, args, _)) -> 
-      Printf.printf "FunCallSimple\n";
       let f = name env f in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (A.Id f, args)
   | FunCallVar (q, lv, (tok, argl, _)) ->
-      Printf.printf "FunCallVar\n";
       let argl = comma_list argl in
       let argl = List.map (argument env) argl in
       let lv = lvalue env lv in
@@ -434,20 +416,17 @@ and lvalue env = function
       in
       A.Call (lv, argl)
   | StaticMethodCallSimple (q, n, (tok, args, _)) ->
-      Printf.printf "StaticMethodCallSimple\n";
       let f = A.Class_get (A.Id (qualifier env q), A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
   | MethodCallSimple (e, _, n, (tok, args, _)) ->
-      Printf.printf "MethodCallSimple\n";
       let f = lvalue env e in
       let f = A.Obj_get (f, A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
   | StaticMethodCallVar (lv, _, n, (tok, args, _)) ->
-      Printf.printf "StaticMethodCallVar\n";
       let f = A.Class_get (lvalue env lv, A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
@@ -471,13 +450,11 @@ and obj_access env obj (_, objp, args) =
       let args = comma_list args in
       let args = List.map (argument env) args in
       (* TODO CHECK THIS *)
-      Printf.printf "objaccess\n";
       A.Call (e, args)
 
 and obj_property env obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      Printf.printf "obj property\n";
       A.Call (A.Id (A.builtin "eval_var_field",
                    wrap (Ast_php.fakeInfo (A.builtin "eval_var_field"))),
              [lvalue env lv])
@@ -734,7 +711,6 @@ and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) -> 
-      Printf.printf "global dollar\n";
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
   | GlobalDollarExpr (tok, _) -> 
       raise (TodoConstruct ("GlobalDollarExpr", tok))

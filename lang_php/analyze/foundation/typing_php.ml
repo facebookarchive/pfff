@@ -265,14 +265,15 @@ and stmt env= function
       let _ = Unify.unify env a a' in
       stmtl env stl
   | Return (_, None) -> ()
-  | Return (None, Some e) ->
-      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
-      let ti = (None, Env_typing_php.ReturnValue) in
+  | Return (pi, Some (ConsArray (id, p, avl))) ->
+      let e = ConsArray(id, p, avl) in
+      let id = AEnv.create_ai env e in
+      let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
       iexpr env (Assign (None, Id (wrap "$;return"), e))
-  | Return (Some pi, Some e) ->
-      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
-      let ti = (Some(pi), Env_typing_php.ReturnValue) in
+  | Return (pi, Some e) -> 
+      let id = AEnv.create_ai env e in
+      let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
       iexpr env (Assign (None, Id (wrap "$;return"), e))
   | Break eopt | Continue eopt -> expr_opt env eopt
@@ -420,7 +421,7 @@ and expr_ env lv = function
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
   | Array_get (pi, e, None) ->
-      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+      let id = AEnv.create_ai env e in
       let t1 = expr env e in
       let v = Tvar (fresh()) in 
       let t2 = array (int, v) in
@@ -430,7 +431,7 @@ and expr_ env lv = function
       v
   (* Array access with const as key *)
   | Array_get (pi, e, Some (Id (s,tok))) when s.[0] <> '$' ->
-      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+      let id = AEnv.create_ai env e in
       let v = expr env (Array_get (pi, e, Some (String (s,tok)))) in 
       let ti = (pi, Env_typing_php.Const v) in 
       let _ = AEnv.set env id ti in
@@ -439,7 +440,7 @@ and expr_ env lv = function
   | Array_get (pi, Id (s,y), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
       
-      let id = (Id(s,y), AEnv.get_fun env, AEnv.get_class env) in
+      let id = AEnv.create_ai env (Id(s, y)) in
       let ti = (pi, Env_typing_php.UnhandledAccess) in
       let _ = AEnv.set env id ti in
       let marked = env.auto_complete && has_marker env x in
@@ -452,7 +453,7 @@ and expr_ env lv = function
       v
 
   | Array_get (pi, e, Some (String (s, _)))->
-      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+      let id = AEnv.create_ai env e in
       let marked = env.auto_complete && has_marker env s in
       let t1 = expr env e in
       if marked then (env.show := Sauto_complete (s, t1); any) else
@@ -472,7 +473,7 @@ and expr_ env lv = function
       )
   (* Array access with variable or constant integer *)
   | Array_get (pi, e, Some k) ->
-      let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+      let id = AEnv.create_ai env e in
       let t1 = expr env e in
       let k = expr env k in
       let v = Tvar (fresh()) in
@@ -507,7 +508,7 @@ and expr_ env lv = function
 
   | Assign (None, Array_get(pi, e, a), e2) ->
     let e1 = Array_get(pi, e, a) in
-    let id = (e, AEnv.get_fun env, AEnv.get_class env) in
+    let id = AEnv.create_ai env e in
     let t1 = expr env e1 in
     let t2 = expr env e2 in
     let ti = (pi, Env_typing_php.Value(t2)) in 
@@ -515,16 +516,28 @@ and expr_ env lv = function
     let t = Unify.unify env t1 t2 in 
     t
 
-
-  | Assign (None, e1, ConsArray(_, pi, y))  ->
-      let e2 = ConsArray(Some(e1), pi, y) in 
-      let id = (e1, AEnv.get_fun env, AEnv.get_class env) in
+  | Assign (None, Id("$;return", tok), ConsArray(i, pi, avl))  -> (
+    let e1 = Id("$;return", tok) in
+    let e2 = ConsArray(Some(e1), pi, avl) in 
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
-      let tl = List.map (array_declaration env id pi) y in
-      let ti = (pi, Env_typing_php.Declaration(tl)) in
-      let _ = AEnv.set env id ti in 
+      match pi with 
+      | Some(p) -> 
+          let e = ConsArray(i, pi, avl) in 
+          let id = AEnv.create_ai env e in
+          let tl = List.map (array_declaration env id pi) avl in 
+          let ti = (pi, Env_typing_php.Declaration(tl)) in 
+          let _ = AEnv.set env id ti in 
+          t
+      | None -> t
+  )
+
+  | Assign (None, e1, ConsArray(_, pi, avl)) -> 
+      let e2 = ConsArray (Some(e1), pi, avl) in
+      let t1 = expr env e1 in
+      let t2 = expr env e2 in
+      let t = Unify.unify env t1 t2 in
       t
 
   | Assign (None, e1, e2) ->
@@ -543,15 +556,16 @@ and expr_ env lv = function
       | None ->(
 	match pi with 
 	| Some(p) -> 
-	  let e = Ast_php_simple.Id((string_of_int (PI.line_of_info p)), None) in
-          let id = (e, AEnv.get_fun env, AEnv.get_class env) in 
+          let e = ConsArray(id, pi, avl) in
+          let id = AEnv.create_ai env e in
           let tl  = List.map (array_declaration env id pi) avl in
 	  let ti = (pi, Env_typing_php.Declaration(tl)) in
           let _ = AEnv.set env id ti in
           t
 	| None -> t )
+      | Some(Id("$;return", _)) -> t
       | Some(e) -> 
-        let id = (e, AEnv.get_fun env, AEnv.get_class env) in 
+        let id = AEnv.create_ai env e in
         let tl  = List.map (array_declaration env id pi) avl in
 	let ti = (pi, Env_typing_php.Declaration(tl)) in
         let _ = AEnv.set env id ti in
@@ -567,7 +581,6 @@ and expr_ env lv = function
       env.show := Sargs (expr env e);
       any
   | Call (e, el) ->
-      (*let fid = (AEnv.get_fun env, AEnv.get_class env, pi) in*)
       let f = expr env e in
       let f = Instantiate.ty env ISet.empty f in
       let v = Tvar (fresh()) in
@@ -739,6 +752,10 @@ and parameter env p =
   in
   (match p.p_default with
   | None -> ()
+  | Some (ConsArray(id, pi, avl)) -> 
+      let id = Some(Id(p.p_name)) in
+      let e = ConsArray(id, pi, avl) in
+      ignore (Unify.unify env pval (expr env e))
   | Some e -> ignore (Unify.unify env pval (expr env e))
   );
   Env.set env (A.unwrap p.p_name) pval;
@@ -799,6 +816,7 @@ and class_def env c =
   let obj_parent = List.fold_right (SMap.fold SMap.add) traits obj_parent in
 
   (* Declarations *)
+  ignore(AEnv.set_fun env "");
   let is_enum = c.c_variables = [] && c.c_methods = [] in
   let ien, sen = List.fold_left (constant_enum is_enum c.c_name) (SSet.empty, SSet.empty) c.c_constants in
   let class_ = List.fold_left (constant is_enum env ien sen) class_ c.c_constants in
@@ -882,6 +900,9 @@ and class_vars static env acc c =
     let ((s, _tok), e) = (c.cv_name, c.cv_value) in
     let t = match e with 
       | None -> Tvar (fresh()) 
+      | Some (ConsArray(_, pi, avl)) -> 
+          let ex = Id((s), _tok) in
+          expr env (ConsArray(Some(ex), pi, avl))
       | Some x -> expr env x 
     in
     let s = if static then s else A.remove_first_char s in

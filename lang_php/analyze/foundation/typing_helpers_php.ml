@@ -207,12 +207,17 @@ module AEnv = struct
 
   let set_params env p = env.aenv_params := p
   let get_params env = env.aenv_params
-  (*let clear_params env = env.aenv_params <- []*)
   let create_ai_params env pl = 
     List.iter (fun x ->
       let id = (Id(x.p_name), get_fun env, get_class env) in
       env.aenv_params := id::!(env.aenv_params);
-    ) pl;
+    ) pl
+
+  let create_ai env e = 
+    match e with 
+    | Obj_get(This("$this", _), Id(s, tok)) -> (Id(("$"^s), tok), "", get_class env)
+    | _ -> (e, get_fun env, get_class env)
+
 end
 
 module Subst = struct
