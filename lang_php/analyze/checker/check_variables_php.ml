@@ -219,6 +219,20 @@ let s_tok_of_name name =
   A.str_of_name name, A.tok_of_name name
 
 (*****************************************************************************)
+(* Vars passed by ref *)
+(*****************************************************************************)
+(* 
+ * Detecting variables passed by reference is complicated in PHP because
+ * one does not have to use &$var at the call site ... This is ugly ... 
+ * So to detect variables passed by reference, we need to look at
+ * the definition of the function or method called, hence the 
+ * find_entity argument
+ *)
+
+let funcdef_of_call_or_new_opt entity_finder_opt e =
+  None
+
+(*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
 
@@ -518,17 +532,27 @@ and expr env = function
   (* todo: args passed by ref false positives fix *)
   | Call (e, es) ->
       expr env e;
-      es +> List.iter (fun e ->
-        match e with
+      
+      let def_opt = funcdef_of_call_or_new_opt env.db (Call (e, es)) in
+      let es_with_parameters =
+        match def_opt with
+        | None -> 
+            es +> List.map (fun e -> e, None)
+        | Some def ->
+            Common.zip_safe es (List.map (fun p -> Some p) def.f_params)
+      in
+
+      es_with_parameters +> List.iter (fun (arg, param_opt) ->
+        match arg, param_opt with
         (* keyword argument; do not consider this variable as unused.
          * We consider this variable as a pure comment here and just pass over.
          * todo: could make sure they are not defined in the current
          * environment in strict mode? and if they are, shout because of
          * bad practice?
          *)
-        | Assign (None, Id name, e2) ->
+        | Assign (None, Id name, e2), _ ->
             expr env e2
-        | _ -> expr env e
+        | _ -> expr env arg
       );
 
       (* facebook specific? should be a hook instead to visit_prog? *)

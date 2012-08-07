@@ -18,16 +18,7 @@ let vars_assigned_in_any any =
     );
     })
 
-(*****************************************************************************)
-(* Vars passed by ref *)
-(*****************************************************************************)
 (* 
- * Detecting variables passed by reference is complicated in PHP because
- * one does not have to use &$var at the call site ... This is ugly ... 
- * So to detect variables passed by reference, we need to look at
- * the definition of the function or method called, hence the 
- * find_entity argument.
- * 
  * less: maybe could be merged with vars_assigned_in but maybe we want
  * the caller to differentiate between regular assignements
  * and possibly assigned by being passed by ref
