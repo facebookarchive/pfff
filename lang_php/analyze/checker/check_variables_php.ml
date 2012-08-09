@@ -18,6 +18,7 @@ open Ast_php_simple
 module A = Ast_php_simple
 module E = Error_php
 module S = Scope_code
+module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -223,33 +224,50 @@ let s_tok_of_name name =
 (*****************************************************************************)
 (* Vars passed by ref *)
 (*****************************************************************************)
+
 (* 
  * Detecting variables passed by reference is complicated in PHP because
- * one does not have to use &$var at the call site (one can too). This is
+ * one does not have to use &$var at the call site (one can though). This is
  * ugly. So to detect variables passed by reference, we need to look at
- * the definition of the function/method called, hence the
- * find_entity argument
+ * the definition of the function/method called, hence this
+ * find_entity_opt helper and the need for env.db.
  *)
+let (find_entity_opt: 
+   env -> (Ent.entity_kind * A.name) -> (Ast_php.entity -> 'a) -> 'a option) =
+ fun env (kind, name) callback ->
+   raise Todo
+  
 
-let funcdef_of_call_or_new_opt entity_finder_opt e =
+(* note that it currently returns a Ast_php.func_def, not 
+ * Ast_php_simple.func_def because the database currently stores
+ * concrete ASTs, not simple ASTs.
+ *)
+let funcdef_of_call_or_new_opt env e =
   match e with
   | Call (e, es) ->
-      (match e with
-      | Id name ->
-          if A.is_variable name
-          then None
-          else begin
-            pr2_gen name;
-            raise Todo
-          end
-            
-      | _ -> raise Todo
-      )
+    (match e with
+    (* simple function call *)
+    | Id name ->
+        (* dynamic function call *)
+        if A.is_variable name
+        then None
+        else 
+          find_entity_opt env (Ent.Function, name) 
+            (function Ast_php.FunctionE def ->
+              pr2_gen def;
+              raise Todo
+            | _ -> raise Impossible
+            )
+    (* static method call *)
+    (* simple object call *)
+    | _ -> raise Todo
+    )
   | New (e, es) ->
       raise Todo
+
   (* should be called only with Call or New *)
   | _ -> raise Impossible
-
+      
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
@@ -551,7 +569,7 @@ and expr env = function
       expr env e;
       
       (* getting the def for args passed by ref false positives fix *)
-      let def_opt = funcdef_of_call_or_new_opt env.db (Call (e, es)) in
+      let def_opt = funcdef_of_call_or_new_opt env (Call (e, es)) in
       let es_with_parameters =
         match def_opt with
         | None -> 
