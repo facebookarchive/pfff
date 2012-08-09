@@ -32,10 +32,10 @@ module S = Scope_code
  * 
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are two orthogonal programming language concepts.
- * This file is concerned with variables, that is Ast_php.dname
- * entities, so for completness C-s for dname in ast_php.ml and
- * see if all uses of it are covered. Other files are more concerned
- * about checks related to entities, that is Ast_php.name.
+ * old: This file is concerned with variables, that is Ast_php.dname
+ *  entities, so for completness C-s for dname in ast_php.ml and
+ *  see if all uses of it are covered. Other files are more concerned
+ *  about checks related to entities, that is Ast_php.name.
  * 
  * The errors detected here are mostly:
  *  - UseOfUndefinedVariable
@@ -79,7 +79,9 @@ module S = Scope_code
  *    foreach scope. This would then hinder the whole analysis because
  *    people would just not run the analysis. You need the approval of
  *    the PHP developers on such analysis first and get them ok to change
- *    their coding styles rules. A good alternative is to rank errors.
+ *    their coding styles rules. One way to fix this problem is to have
+ *    a strict mode where only certain checks are enabled. A good
+ *    alternative is also to rank errors.
  * 
  *  -  Another issue is the implicitly-declared-when-used-the-first-time
  *     ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
@@ -110,9 +112,9 @@ module S = Scope_code
  *  - when the strict_scope flag is set, check_variables will
  *    emulate a block-scoped language as in JSLint and flags
  *    variables used outside their "block".
- *  - when passed the find_entity hook, check_variables will:
- *     - know about functions taking parameters by refs, which removes
- *       some false positives
+ *  - when passed the find_entity hook, check_variables will
+ *    know about functions taking parameters by refs, which removes
+ *    some false positives
  * 
  * history:
  *  - sgrimm had the simple idea of just counting the number of occurences
@@ -168,12 +170,12 @@ module S = Scope_code
 (* Types, constants *)
 (*****************************************************************************)
 type env = {
-  (* todo? use a list of SMap.t to represent nested scopes?
+  (* todo? use a list of Map.t to represent nested scopes?
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
    * 
    * The ref in the tuple is to record the number of uses of the variable,
    * for the UnusedVariable check.
-   * The ref for the SMap is to avoid threading the env, because
+   * The ref for the Map.t is to avoid threading the env, because
    * any stmt/expression can introduce new variables.
    *)
   vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
@@ -187,7 +189,7 @@ type env = {
    * if an argument was passed by reference, in which case what looks
    * like a UseOfUndefinedVariable is actually not (but it would be
    * better for them to fix the code to introduce/declare this variable 
-   * before).
+   * before ...).
    *)
   db: Entity_php.entity_finder option;
 }
@@ -223,20 +225,36 @@ let s_tok_of_name name =
 (*****************************************************************************)
 (* 
  * Detecting variables passed by reference is complicated in PHP because
- * one does not have to use &$var at the call site ... This is ugly ... 
- * So to detect variables passed by reference, we need to look at
- * the definition of the function or method called, hence the 
+ * one does not have to use &$var at the call site (one can too). This is
+ * ugly. So to detect variables passed by reference, we need to look at
+ * the definition of the function/method called, hence the
  * find_entity argument
  *)
 
 let funcdef_of_call_or_new_opt entity_finder_opt e =
-  None
+  match e with
+  | Call (e, es) ->
+      (match e with
+      | Id name ->
+          if A.is_variable name
+          then None
+          else begin
+            pr2_gen name;
+            raise Todo
+          end
+            
+      | _ -> raise Todo
+      )
+  | New (e, es) ->
+      raise Todo
+  (* should be called only with Call or New *)
+  | _ -> raise Impossible
 
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
 
-let check_undefined_and_incr_use_count env name =
+let check_defined_and_incr_use_count env name =
   let s = A.str_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
@@ -245,7 +263,7 @@ let check_undefined_and_incr_use_count env name =
   | Some (_tok, scope, access_count) ->
       incr access_count
 
-let check_undefined env name =
+let check_defined env name =
   let s = A.str_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
@@ -254,7 +272,7 @@ let check_undefined env name =
       ()
 
 (* less: if env.bailout? *)
-let check_unused vars =
+let check_used vars =
   vars +> Map_poly.iter (fun s (tok, scope, aref) ->
     if !aref = 0
     then
@@ -279,7 +297,7 @@ let rec program env prog =
    * context or via the param_post/param_get calls.
    * todo: check env.globals instead?
    *)
-  check_unused !(env.vars)
+  check_used !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Functions/Methods *)
@@ -313,7 +331,7 @@ and func_def env def =
   in
   def.l_uses +> List.iter (fun (is_ref, name) ->
     let (s, tok) = s_tok_of_name name in
-    check_undefined_and_incr_use_count { env with vars = ref oldvars} name;
+    check_defined_and_incr_use_count { env with vars = ref oldvars} name;
     (* don't reuse same access count reference; the variable has to be used
      * again in this new scope.
      *)
@@ -330,7 +348,7 @@ and func_def env def =
   end;
 
   List.iter (stmt env) def.f_body;
-  check_unused !(env.vars)
+  check_used !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -457,7 +475,7 @@ and expr env = function
       (* todo: also adjust the correspoding scope_ref of name in ast_php.
        * do that in check_undefined?
        *)
-      check_undefined_and_incr_use_count env name
+      check_defined_and_incr_use_count env name
 
   | Id name -> ()
 
@@ -522,17 +540,17 @@ and expr env = function
       (* less: The use of 'unset' on a variable is still not clear to me. *)
       | [Id name] ->
           assert (A.is_variable name);
-          check_undefined env name
+          check_defined env name
       (* unsetting a field *)
       | [Array_get (e_arr, e_opt)] ->
           raise Todo
       | _ -> raise Todo
       )
 
-  (* todo: args passed by ref false positives fix *)
   | Call (e, es) ->
       expr env e;
       
+      (* getting the def for args passed by ref false positives fix *)
       let def_opt = funcdef_of_call_or_new_opt env.db (Call (e, es)) in
       let es_with_parameters =
         match def_opt with
@@ -598,7 +616,7 @@ and expr env = function
       (* when we do use($this) in closures, we create a fresh $this variable
        * with a refcount of 0, so we need to increment it here.
        *)
-      check_undefined_and_incr_use_count env name
+      check_defined_and_incr_use_count env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
   | Array_get (e, eopt) ->
