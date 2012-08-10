@@ -191,7 +191,11 @@ type env = {
   (* when analyze $this->method_call(), we need to know the enclosing class *)
   in_class: name option;
   
-  (* todo: bailout: bool ref; *)
+  (* when the body of a function contains eval/extract/... we bailout
+   * because we don't want to report false positives
+   *)
+  bailout: bool ref;
+
   (* todo: in_lambda: bool; *)
 
 }
@@ -307,8 +311,14 @@ let check_defined env name ~incr_count =
   let s = A.str_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
-      (* todo: bailout, lambda, suggest *)
-      E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
+      (* todo? could still issue an error but with the information that
+       * there was an extract/eval/... around?
+       *)
+      if !(env.bailout)
+      then ()
+      else
+        (* todo: lambda, suggest *)
+        E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
   | Some (_tok, scope, access_count) ->
       if incr_count then incr access_count
 
@@ -383,7 +393,9 @@ and func_def env def =
         let (s, tok) = s_tok_of_name p.p_name in
         s, (tok, S.Param, ref access_cnt)
       ) +> Map_poly.of_list
-    )
+    );
+    (* reinitialize bailout for each function/method *)
+    bailout = ref false;
   }
   in
   def.l_uses +> List.iter (fun (is_ref, name) ->
@@ -664,6 +676,8 @@ and expr env = function
               )
             )
           end
+      | Id ("extract", _), _ ->
+          env.bailout := true;
           (* todo? else display an error? weird argument to param_xxx func? *)
       | _ -> ()
       )
@@ -763,6 +777,7 @@ let check_and_annotate_program2 find_entity prog =
      * symbol table so one can find them back.
      *)
     in_class = None;
+    bailout = ref false;
   }
   in
   let ast = Ast_php_simple_build.program_with_position_information prog in

@@ -1,10 +1,4 @@
-let check_undefined_variable ~in_lambda ~bailout var env = 
-      (* todo? could still issue an error but with the information that
-       * there was an extract/eval/... around?
-       *)
-      if bailout
-      then ()
-      else 
+let check_undefined_variable ~in_lambda var env = 
         (if in_lambda 
         then (E.UseOfUndefinedVariableInLambda s)
         else 
@@ -25,7 +19,6 @@ let do_in_new_scope_and_check_unused_if_strict f =
 let visit_prog find_entity prog = 
 
   let scope = ref Ent.TopStmts in
-  let bailout = ref false in
   let in_lambda = ref false in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
@@ -42,7 +35,6 @@ let visit_prog find_entity prog =
         | MethodRegular | MethodAbstract -> Ent.Method Ent.RegularMethod
       in
       Common.save_excursion scope kind (fun () ->
-      Common.save_excursion bailout false (fun () ->
 
         match x.f_type with
         | MethodAbstract _ -> 
@@ -154,7 +146,6 @@ let visit_prog find_entity prog =
           (* reset completely the environment *)
           Common.save_excursion _scoped_env !initial_env (fun () ->
           Common.save_excursion in_lambda true (fun () ->
-          Common.save_excursion bailout false (fun () ->
           Common.save_excursion is_top_expr true (fun () ->
             do_in_new_scope_and_check_unused (fun () ->
               ...
@@ -209,7 +200,3 @@ let visit_prog find_entity prog =
           | None -> scope_ref := S.Local;
           | Some (scope, _) -> scope_ref := scope;
           )
-
-      | FunCallSimple (Name ("extract", _), _args) ->
-          bailout := true;
-          k x
