@@ -188,6 +188,8 @@ type env = {
    * before ...).
    *)
   db: Entity_php.entity_finder option;
+  (* when analyze $this->method_call(), we need to know the enclosing class *)
+  in_class: name option;
   
   (* todo: bailout: bool ref; *)
   (* todo: in_lambda: bool; *)
@@ -237,17 +239,17 @@ let funcdef_of_call_or_new_opt env e =
   | Some find_entity ->
       (match e with
       | Id name ->
-          (* dynamic function call *)
-          if A.is_variable name
-          then None
-          else 
-            (* simple function call *)
+          (* simple function call *)
+          if not (A.is_variable name)
+          then
             let s = A.str_of_name name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
                 (* nothing or multi, not our problem here *)
             | _ -> None
             )
+          (* dynamic function call *)
+          else None
               
       (* static method call *)
       | Class_get (Id name1, Id name2) 
@@ -267,7 +269,30 @@ let funcdef_of_call_or_new_opt env e =
             | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
                 None
           )
-      (* simple object call *)
+      (* simple object call. If 'this->...()' then we can use lookup_method.
+       * Being complete and handling any method calls like $o->...()
+       * requires to know what is the type of $o which is quite
+       * complicated ... so let's skip that for now.
+       * 
+       * todo: special case also id(new ...)-> ?
+       *)
+      | Obj_get (This _, Id name2)
+          when not (A.is_variable name2) ->
+          (match env.in_class with
+          | Some name1 ->
+              let aclass = A.str_of_name name1 in
+              let amethod = A.str_of_name name2 in
+              (try 
+                Some (Class_php.lookup_method ~case_insensitive:true
+                    (aclass, amethod) find_entity)
+               with 
+               | Not_found | Multi_found
+               | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
+                   None
+              )
+          (* wtf? use of $this outside a class? *)
+          | None -> None
+          )
 
       (* dynamic call, not much we can do *)
       | _ -> None
@@ -594,7 +619,11 @@ and expr env = function
             expr env e2
         (* a variable passed by reference, this can considered a new decl *)
         | Id name, Some {Ast_php.p_ref = Some _;_} when A.is_variable name ->
-            (* less: should increase only if inout parameter? *)
+
+            (* if was already assigned and passed by refs, 
+             * increment its use counter then.
+             * less: or should we increase only if inout param?
+             *)
             create_new_local_if_necessary ~incr_count:true env name
 
         | _ -> expr env arg
@@ -700,6 +729,7 @@ and array_valuel env xs = List.iter (array_value env) xs
  * todo: inline the code of traits?
  *)
 and class_def env def =
+  let env = { env with in_class = Some def.c_name } in
   List.iter (constant_def env) def.c_constants;
   List.iter (class_var env) def.c_variables;
   List.iter (method_def env) def.c_methods
@@ -732,6 +762,7 @@ let check_and_annotate_program2 find_entity prog =
     (* todo: extract all vars and their scope_ref and keep that in a 
      * symbol table so one can find them back.
      *)
+    in_class = None;
   }
   in
   let ast = Ast_php_simple_build.program_with_position_information prog in

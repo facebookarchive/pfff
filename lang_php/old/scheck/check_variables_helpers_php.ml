@@ -1,27 +1,5 @@
-(* update: does consider also function calls to function taking parameters via
- * reference. Use global info.
- *)
-let vars_assigned_in_any any =
-  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kexpr = (fun (k,vx) x ->
-      match x with
-      | Assign (lval, _, _) 
-      | AssignOp (lval, _, _) 
-      | AssignRef (lval, _, _, _) 
-      | AssignNew (lval, _, _, _, _,  _) ->
-          let vopt = get_assigned_var_lval_opt lval in
-          vopt |> Common.do_option (fun v -> Common.push2 v aref);
-          (* recurse, can have $x = $y = 1 *)
-          k x
-      | _ -> 
-          k x
-    );
-    })
-
 let vars_passed_by_ref_in_any ~in_class find_entity = 
-
       | FunCallSimple (name, args) ->
-
           (match s with
           (* special case, ugly but hard to do otherwise *)
           | "sscanf" -> 
@@ -59,36 +37,6 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           );
           k x
 
-      | MethodCallSimple (lval, _tok, name, args) ->
-          (match lval with
-          (* if this-> then can use lookup_method.
-           * Being complete and handling any method calls like $o->foo()
-           * requires to know what is the type of $o which is quite
-           * complicated ... so let's skip that for now.
-           * 
-           * todo: special case also id(new ...)-> ?
-           *)
-          | This _ ->
-              (match in_class with
-              | Some aclass ->
-                let amethod = Ast.name name in
-                (try 
-                  let def = Class_php.lookup_method ~case_insensitive:true
-                    (aclass, amethod) find_entity 
-                  in
-                  params_vs_args def.f_params (Some args)
-                with 
-                | Not_found | Multi_found
-                | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->()
-                )
-              | None ->
-                  (* wtf? use of $this outside a class? *)
-                  ()
-              )
-          | _ -> ()
-          );
-          k x 
-    );
     V.kexpr = (fun (k, vx) x ->
       (match x with
       | New (tok, class_name_ref, args) ->
@@ -112,9 +60,3 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           (* can't do much *)
           | ClassNameRefDynamic _  | ClassNameRefStatic (LateStatic _) -> ()
           )
-      | _ -> ()
-      );
-      k x
-    );
-    }
-  )

@@ -27,7 +27,6 @@ let visit_prog find_entity prog =
   let scope = ref Ent.TopStmts in
   let bailout = ref false in
   let in_lambda = ref false in
-  let in_class = ref None in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
 
@@ -63,12 +62,6 @@ let visit_prog find_entity prog =
       | FunctionRegular | FunctionLambda -> 
           do_in_new_scope_and_check_unused (fun () -> k x);
       ))
-    );
-    V.kclass_def = (fun (k, _) x ->
-      Common.save_excursion in_class (Some (Ast.name x.c_name)) (fun () ->
-        do_in_new_scope_and_check_unused (fun () -> 
-          k x
-        ));
     );
 
     (* 'if', 'while', and other blocks should introduce a new scope.
@@ -179,14 +172,6 @@ let visit_prog find_entity prog =
         let assigned = 
           vars_assigned_in_any (Expr x) in
 
-        let passed_by_refs =
-          match find_entity with
-          (* can't do much :( *)
-          | None -> []
-          | Some finder ->
-              vars_passed_by_ref_in_any ~in_class:!in_class finder (Expr x)
-        in
-
         (* todo: enough? if do $x = $x + 1 then have problems? *)
         let used' = 
           used +> Common.exclude (fun v -> 
@@ -203,19 +188,6 @@ let visit_prog find_entity prog =
             v !_scoped_env
         );
 
-        passed_by_refs +> List.iter (fun v -> 
-          (* Maybe a new local var *)
-          let s = Ast.dname v in
-          (match lookup_env_opt s !_scoped_env with
-          | None -> 
-              add_binding v (S.Local, ref 0);
-          | Some (scope, aref) ->
-              (* was already assigned and passed by refs, 
-               * increment its use counter then
-               *)
-              incr aref;
-          )
-        );
         k x;
         is_top_expr := true;
       end
@@ -241,7 +213,3 @@ let visit_prog find_entity prog =
       | FunCallSimple (Name ("extract", _), _args) ->
           bailout := true;
           k x
-      | _ -> 
-          k x
-    );
-  }
