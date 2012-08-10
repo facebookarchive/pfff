@@ -127,7 +127,7 @@ and stmt =
   | If of expr * stmt * stmt
   | Switch of expr * case list
 
-  (* pad: not sure why we use stml list instead of just stmt like for If *)
+  (* pad: not sure why we use stmt list instead of just stmt like for If *)
   | While of expr * stmt list
   | Do of stmt list * expr
   | For of expr list * expr list * expr list * stmt list
@@ -181,7 +181,8 @@ and expr =
    * See builtin() and special() below.
    *
    * todo? Introduce a Var of name? can be good to differentiate
-   * them no? At the same time OCaml does not ...
+   * them no? We do lots of ... when Ast.is_variable name.
+   * (at the same time OCaml does not differentiate Id from Var).
    *)
   | Id of name
 
