@@ -82,10 +82,8 @@ module Ent = Database_code
  *    the PHP developers on such analysis first and get them ok to change
  *    their coding styles rules. One way to fix this problem is to have
  *    a strict mode where only certain checks are enabled. A good
- *    alternative is also to rank errors.
- * 
- *  -  Another issue is the implicitly-declared-when-used-the-first-time
- *     ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
+ *    alternative is also to rank errors. A final trick is to report
+ *    only new errors.
  * 
  * Here are some extra notes by Evan in his own variable linter:
  * 
@@ -102,12 +100,12 @@ module Ent = Database_code
  * "These things make lexical scope unknowable":
  * - DONE Use of extract()
  * - SEMI Assignment or Global with variable variables ($$x)
- *   (pad: I actually bail out on such code)
+ *   (pad: so just bailout on such code)
  * 
  * These things don't count as "using" a variable:
  * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
  * - TODO empty()
- * - DONE Static class variables (check done in check_classes instead)
+ * - DONE Static class variables (pad: check done in check_classes instead)
  * 
  * Here are a few additional checks and features of this checker:
  *  - when the strict_scope flag is set, check_variables will
@@ -147,7 +145,6 @@ module Ent = Database_code
  * - Static, Global
  * 
  * "These things make lexical scope unknowable":
- * - Use of extract()
  * - Assignment or Global with variable variables ($$x)
  *   (pad: I actually bail out on such code)
  * 
@@ -197,7 +194,6 @@ type env = {
   bailout: bool ref;
 
   (* todo: in_lambda: bool; *)
-
 }
 
 (*****************************************************************************)
@@ -298,7 +294,7 @@ let funcdef_of_call_or_new_opt env e =
           | None -> None
           )
 
-      (* dynamic call, not much we can do *)
+      (* dynamic call, not much we can do ... *)
       | _ -> None
       )
       
@@ -319,10 +315,10 @@ let check_defined env name ~incr_count =
       else
         (* todo: lambda, suggest *)
         E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
+
   | Some (_tok, scope, access_count) ->
       if incr_count then incr access_count
 
-(* less: if env.bailout? *)
 let check_used env vars =
   vars +> Map_poly.iter (fun s (tok, scope, aref) ->
     if !aref = 0
@@ -331,7 +327,7 @@ let check_used env vars =
       then ()
       else 
         (* if you use compact(), some variables may look unused but
-         * they were actually used
+         * they can actually be used. See variables_fp.php.
          *)
         if !(env.bailout)
         then ()
