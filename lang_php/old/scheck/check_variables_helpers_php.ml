@@ -18,53 +18,10 @@ let vars_assigned_in_any any =
     );
     })
 
-(*****************************************************************************)
-(* Vars passed by ref *)
-(*****************************************************************************)
-(* 
- * Detecting variables passed by reference is complicated in PHP because
- * one does not have to use &$var at the call site ... This is ugly ... 
- * So to detect variables passed by reference, we need to look at
- * the definition of the function or method called, hence the 
- * find_entity argument.
- * 
- * less: maybe could be merged with vars_assigned_in but maybe we want
- * the caller to differentiate between regular assignements
- * and possibly assigned by being passed by ref
- * 
- * todo: factorize code, at least for the methods and new calls.
- *)
 let vars_passed_by_ref_in_any ~in_class find_entity = 
-  V.do_visit_with_ref (fun aref -> 
-    let params_vs_args params args = 
-
-      let params = params +> Ast.unparen +> Ast.uncomma_dots in
-      let args = 
-        match args with
-        | None -> []
-        | Some args -> args +> Ast.unparen +> Ast.uncomma 
-      in
-
-      (* maybe the #args does not match #params, but this is not our
-       * business here; this will be detected anyway by check_functions or
-       * check_class
-       *)
-      Common.zip_safe params args +> List.iter (fun (param, arg) ->
-        match arg with
-        | Arg (Lv((Var(dname, _scope)))) ->
-            if param.p_ref <> None
-            then Common.push2 dname aref
-        | _ -> ()
-      );
-    in
-    
-  { V.default_visitor with
-    V.klvalue = (fun (k, vx) x ->
-      match x with
-      (* quite similar to code in check_functions_php.ml *)
 
       | FunCallSimple (name, args) ->
-          let s = Ast.name name in
+
           (match s with
           (* special case, ugly but hard to do otherwise *)
           | "sscanf" -> 
@@ -82,32 +39,12 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
                *)
               | _ -> ()
               )
-          | s -> 
-           E.find_entity_and_warn find_entity (Ent.Function, name) 
-             (function Ast_php.FunctionE def ->
-                params_vs_args def.f_params (Some args)
-             | _ -> raise Impossible
-           )
           );
           k x
+
       | StaticMethodCallSimple (qu, name, args) ->
           (match qu with
-          | ClassName (classname), _ ->
-              let aclass = Ast.name classname in
-              let amethod = Ast.name name in
-              (try 
-                let def = Class_php.lookup_method ~case_insensitive:true
-                  (aclass, amethod) find_entity 
-                in
-                params_vs_args def.f_params (Some args)
-             (* could not find the method, this is bad, but
-              * it's not our business here; this error will
-              * be reported anyway in check_functions_php.ml anyway
-              *)
-              with 
-              | Not_found | Multi_found 
-              | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ -> ()
-              )
+
           | (Self _ | Parent _), _ ->
               (* The code of traits can contain reference to Parent:: that
                * we cannot unsugar.
@@ -151,12 +88,6 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           | _ -> ()
           );
           k x 
-
-      | FunCallVar _ -> 
-          (* can't do much *)
-          k x
-      | _ -> 
-          k x
     );
     V.kexpr = (fun (k, vx) x ->
       (match x with

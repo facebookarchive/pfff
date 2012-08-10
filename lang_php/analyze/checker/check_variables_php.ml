@@ -18,6 +18,7 @@ open Ast_php_simple
 module A = Ast_php_simple
 module E = Error_php
 module S = Scope_code
+module Ent = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -32,10 +33,10 @@ module S = Scope_code
  * 
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are two orthogonal programming language concepts.
- * This file is concerned with variables, that is Ast_php.dname
- * entities, so for completness C-s for dname in ast_php.ml and
- * see if all uses of it are covered. Other files are more concerned
- * about checks related to entities, that is Ast_php.name.
+ * old: This file is concerned with variables, that is Ast_php.dname
+ *  entities, so for completness C-s for dname in ast_php.ml and
+ *  see if all uses of it are covered. Other files are more concerned
+ *  about checks related to entities, that is Ast_php.name.
  * 
  * The errors detected here are mostly:
  *  - UseOfUndefinedVariable
@@ -79,7 +80,9 @@ module S = Scope_code
  *    foreach scope. This would then hinder the whole analysis because
  *    people would just not run the analysis. You need the approval of
  *    the PHP developers on such analysis first and get them ok to change
- *    their coding styles rules. A good alternative is to rank errors.
+ *    their coding styles rules. One way to fix this problem is to have
+ *    a strict mode where only certain checks are enabled. A good
+ *    alternative is also to rank errors.
  * 
  *  -  Another issue is the implicitly-declared-when-used-the-first-time
  *     ugly semantic of PHP. it's ok to do  if(!($a = foo())) { foo($a) }
@@ -110,9 +113,9 @@ module S = Scope_code
  *  - when the strict_scope flag is set, check_variables will
  *    emulate a block-scoped language as in JSLint and flags
  *    variables used outside their "block".
- *  - when passed the find_entity hook, check_variables will:
- *     - know about functions taking parameters by refs, which removes
- *       some false positives
+ *  - when passed the find_entity hook, check_variables will
+ *    know about functions taking parameters by refs, which removes
+ *    some false positives
  * 
  * history:
  *  - sgrimm had the simple idea of just counting the number of occurences
@@ -153,8 +156,6 @@ module S = Scope_code
  * - empty()
  * 
  * TODO OTHER:
- *  - passed by ref
- * 
  *  - nested assign in if, should work now? no more FPs?
  *  - bhiller check on array field access and unset array field
  * 
@@ -168,28 +169,29 @@ module S = Scope_code
 (* Types, constants *)
 (*****************************************************************************)
 type env = {
-  (* todo? use a list of SMap.t to represent nested scopes?
-   * (globals, methods/functions, nested blocks)? when in strict/block mode?
-   * 
-   * The ref in the tuple is to record the number of uses of the variable,
+  (* The ref in the tuple is to remember the number of uses of the variable,
    * for the UnusedVariable check.
-   * The ref for the SMap is to avoid threading the env, because
+   * The ref for the Map.t is to avoid threading the env, because
    * any stmt/expression can introduce new variables.
+   * 
+   * todo? use a list of Map.t to represent nested scopes?
+   * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
   vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
 
   (* todo: have a globals:? *)
-  
-  (* todo: bailout: bool ref; *)
-  (* todo: in_lambda: bool; *)
 
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
    * like a UseOfUndefinedVariable is actually not (but it would be
    * better for them to fix the code to introduce/declare this variable 
-   * before).
+   * before ...).
    *)
   db: Entity_php.entity_finder option;
+  
+  (* todo: bailout: bool ref; *)
+  (* todo: in_lambda: bool; *)
+
 }
 
 (*****************************************************************************)
@@ -209,9 +211,6 @@ let unused_ok s =
     ]
   )
 
-let fake_var s = 
-  (s, None)
-
 let lookup_opt s vars =
   Common.optionise (fun () -> Map_poly.find s vars)
 
@@ -219,28 +218,77 @@ let s_tok_of_name name =
   A.str_of_name name, A.tok_of_name name
 
 (*****************************************************************************)
+(* Vars passed by ref *)
+(*****************************************************************************)
+(* 
+ * Detecting variables passed by reference is complicated in PHP because
+ * one does not have to use &$var at the call site (one can though). This is
+ * ugly. So to detect variables passed by reference, we need to look at
+ * the definition of the function/method called, hence the need for a
+ * entity_finder in env.db.
+ * 
+ * note that it currently returns a Ast_php.func_def, not 
+ * Ast_php_simple.func_def because the database currently
+ * stores concrete ASTs, not simple ASTs.
+ *)
+let funcdef_of_call_or_new_opt env e =
+  match env.db with
+  | None -> None
+  | Some find_entity ->
+      (match e with
+      | Id name ->
+          (* dynamic function call *)
+          if A.is_variable name
+          then None
+          else 
+            (* simple function call *)
+            let s = A.str_of_name name in
+            (match find_entity (Ent.Function, s) with
+            | [Ast_php.FunctionE def] -> Some def
+                (* nothing or multi, not our problem here *)
+            | _ -> None
+            )
+              
+      (* static method call *)
+      | Class_get (Id name1, Id name2) 
+          when not (A.is_variable name1) && not (A.is_variable name2) ->
+          (* todo: name1 can be self/parent in traits, or static: *)
+          let aclass = A.str_of_name name1 in
+          let amethod = A.str_of_name name2 in
+          (try
+              Some (Class_php.lookup_method ~case_insensitive:true
+                       (aclass, amethod) find_entity)
+              (* could not find the method, this is bad, but
+               * it's not our business here; this error will
+               * be reported anyway in check_functions_php.ml anyway
+               *)
+            with 
+            | Not_found | Multi_found 
+            | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
+                None
+          )
+      (* simple object call *)
+
+      (* dynamic call, not much we can do *)
+      | _ -> None
+      )
+      
+(*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
 
-let check_undefined_and_incr_use_count env name =
+(* todo: also adjust the correspoding scope_ref of name in ast_php *)
+let check_defined env name ~incr_count =
   let s = A.str_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
       (* todo: bailout, lambda, suggest *)
       E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
   | Some (_tok, scope, access_count) ->
-      incr access_count
-
-let check_undefined env name =
-  let s = A.str_of_name name in
-  match lookup_opt s !(env.vars) with
-  | None ->
-      E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
-  | Some (_tok, scope, access_count) ->
-      ()
+      if incr_count then incr access_count
 
 (* less: if env.bailout? *)
-let check_unused vars =
+let check_used vars =
   vars +> Map_poly.iter (fun s (tok, scope, aref) ->
     if !aref = 0
     then
@@ -248,6 +296,22 @@ let check_unused vars =
       then ()
       else E.fatal tok (E.UnusedVariable (s, scope))
   )
+
+let create_new_local_if_necessary ~incr_count env name =
+  assert (A.is_variable name);
+  let (s, tok) = s_tok_of_name name in
+  match lookup_opt s !(env.vars) with
+  (* new local variable implicit declaration.
+   * todo: add in which nested scope? I would argue to add it
+   * only in the current nested scope. If someone wants to use a
+   * var outside the block, he should have initialized the var
+   * in the outer context. Jslint does the same.
+   *)
+  | None ->
+      env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars)
+  | Some (_tok, scope, access_count) ->
+      if incr_count then incr access_count
+  
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -265,7 +329,7 @@ let rec program env prog =
    * context or via the param_post/param_get calls.
    * todo: check env.globals instead?
    *)
-  check_unused !(env.vars)
+  check_used !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Functions/Methods *)
@@ -299,7 +363,7 @@ and func_def env def =
   in
   def.l_uses +> List.iter (fun (is_ref, name) ->
     let (s, tok) = s_tok_of_name name in
-    check_undefined_and_incr_use_count { env with vars = ref oldvars} name;
+    check_defined ~incr_count:true { env with vars = ref oldvars} name;
     (* don't reuse same access count reference; the variable has to be used
      * again in this new scope.
      *)
@@ -316,7 +380,7 @@ and func_def env def =
   end;
 
   List.iter (stmt env) def.f_body;
-  check_unused !(env.vars)
+  check_used !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -440,10 +504,7 @@ and expr env = function
   | Int _ | Double _ | String _ -> ()
 
   | Id name when A.is_variable name ->
-      (* todo: also adjust the correspoding scope_ref of name in ast_php.
-       * do that in check_undefined?
-       *)
-      check_undefined_and_incr_use_count env name
+      check_defined ~incr_count:true env name
 
   | Id name -> ()
 
@@ -454,26 +515,12 @@ and expr env = function
   | Assign (None, e1, e2) ->
       (match e1 with
       | Id name ->
-          assert (A.is_variable name);
-          (* skeleton similar to check_undefined() *)
-          let (s, tok) = s_tok_of_name name in
-          (match lookup_opt s !(env.vars) with
-          (* new local variable implicit declaration.
-           * todo: add in which nested scope? I would argue to add it
-           * only in the current nested scope. If someone wants to use a
-           * var outside the block, he should have initialized the var
-           * in the outer context. Jslint does the same.
+          (* Does an assignation counts as a use? If you only 
+           * assign and never use a variable what is the point? 
+           * This should be legal only for parameters (note that here
+           * I talk about parameters, not arguments) passed by reference.
            *)
-          | None ->
-              env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars)
-          | Some (_tok, scope, access_count) ->
-              (* Does an assignation counts as a use? If you only 
-               * assign and never use a variable what is the point? 
-               * This should be legal only for parameters (note that here
-               * I talk about parameters, not arguments) passed by reference.
-               *)
-              ()
-          )
+          create_new_local_if_necessary ~incr_count:false env name;
 
       (* todo: extract all vars, and share the same reference *)
       | List xs ->
@@ -508,27 +555,49 @@ and expr env = function
       (* less: The use of 'unset' on a variable is still not clear to me. *)
       | [Id name] ->
           assert (A.is_variable name);
-          check_undefined env name
+          check_defined ~incr_count:false env name
       (* unsetting a field *)
       | [Array_get (_, e_arr, e_opt)] ->
           raise Todo
       | _ -> raise Todo
       )
 
-  (* todo: args passed by ref false positives fix *)
   | Call (e, es) ->
       expr env e;
-      es +> List.iter (fun e ->
-        match e with
+      
+      (* getting the def for args passed by ref false positives fix *)
+      let def_opt = funcdef_of_call_or_new_opt env e in
+      let es_with_parameters =
+        match def_opt with
+        | None -> 
+            es +> List.map (fun e -> e, None)
+        | Some def ->
+            let params = 
+              def.Ast_php.f_params +> Ast_php.unparen +> Ast_php.uncomma_dots
+            in
+            (* maybe the #args does not match #params, but this is not our
+             * business here; this will be detected anyway in check_functions
+             * or check_classes.
+             *)
+            Common.zip_safe es (List.map (fun p -> Some p) params)
+      in
+
+      es_with_parameters +> List.iter (fun (arg, param_opt) ->
+        match arg, param_opt with
         (* keyword argument; do not consider this variable as unused.
          * We consider this variable as a pure comment here and just pass over.
          * todo: could make sure they are not defined in the current
          * environment in strict mode? and if they are, shout because of
          * bad practice?
          *)
-        | Assign (None, Id name, e2) ->
+        | Assign (None, Id name, e2), _ ->
             expr env e2
-        | _ -> expr env e
+        (* a variable passed by reference, this can considered a new decl *)
+        | Id name, Some {Ast_php.p_ref = Some _;_} when A.is_variable name ->
+            (* less: should increase only if inout parameter? *)
+            create_new_local_if_necessary ~incr_count:true env name
+
+        | _ -> expr env arg
       );
 
       (* facebook specific? should be a hook instead to visit_prog? *)
@@ -574,7 +643,7 @@ and expr env = function
       (* when we do use($this) in closures, we create a fresh $this variable
        * with a refcount of 0, so we need to increment it here.
        *)
-      check_undefined_and_incr_use_count env name
+      check_defined ~incr_count:true env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
   | Array_get (_, e, eopt) ->
@@ -591,7 +660,7 @@ and expr env = function
       | _ -> expr env e2
       )
 
-  (* todo: factorize code with Call for keyword arguments and refs *)
+  (* todo: transform in code with Call to factorize code *)
   | New (e, es) -> exprl env (e::es)
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 

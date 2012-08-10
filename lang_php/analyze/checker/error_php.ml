@@ -269,13 +269,14 @@ let rank_errors errs =
         )
     | CfgError _ -> 11
     | UseOfUndefinedMember _ -> 5
+    (* todo: *)
     | _ -> 0
   ) +> Common.sort_by_val_highfirst +> Common.map fst
 
 
 let show_10_most_recurring_unused_variable_names () =
 
-  (* most recurring probably false positif *)
+  (* most recurring, probably false positives *)
   let hcount_str = Common.hash_with_default (fun() -> 0) in
 
   !_errors +> List.iter (fun err ->
