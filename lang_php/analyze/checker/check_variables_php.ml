@@ -156,8 +156,6 @@ module Ent = Database_code
  * - empty()
  * 
  * TODO OTHER:
- *  - passed by ref
- * 
  *  - nested assign in if, should work now? no more FPs?
  *  - bhiller check on array field access and unset array field
  * 
@@ -171,20 +169,17 @@ module Ent = Database_code
 (* Types, constants *)
 (*****************************************************************************)
 type env = {
-  (* todo? use a list of Map.t to represent nested scopes?
-   * (globals, methods/functions, nested blocks)? when in strict/block mode?
-   * 
-   * The ref in the tuple is to record the number of uses of the variable,
+  (* The ref in the tuple is to remember the number of uses of the variable,
    * for the UnusedVariable check.
    * The ref for the Map.t is to avoid threading the env, because
    * any stmt/expression can introduce new variables.
+   * 
+   * todo? use a list of Map.t to represent nested scopes?
+   * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
   vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
 
   (* todo: have a globals:? *)
-  
-  (* todo: bailout: bool ref; *)
-  (* todo: in_lambda: bool; *)
 
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
@@ -193,6 +188,10 @@ type env = {
    * before ...).
    *)
   db: Entity_php.entity_finder option;
+  
+  (* todo: bailout: bool ref; *)
+  (* todo: in_lambda: bool; *)
+
 }
 
 (*****************************************************************************)
@@ -226,7 +225,7 @@ let s_tok_of_name name =
  * one does not have to use &$var at the call site (one can though). This is
  * ugly. So to detect variables passed by reference, we need to look at
  * the definition of the function/method called, hence the need for a
- * find_entity in env.db.
+ * entity_finder in env.db.
  * 
  * note that it currently returns a Ast_php.func_def, not 
  * Ast_php_simple.func_def because the database currently
@@ -237,12 +236,12 @@ let funcdef_of_call_or_new_opt env e =
   | None -> None
   | Some find_entity ->
       (match e with
-      (* simple function call *)
       | Id name ->
           (* dynamic function call *)
           if A.is_variable name
           then None
           else 
+            (* simple function call *)
             let s = A.str_of_name name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
@@ -268,8 +267,9 @@ let funcdef_of_call_or_new_opt env e =
             | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
                 None
           )
-            (* simple object call *)
-            (* TODO *)
+      (* simple object call *)
+
+      (* dynamic call, not much we can do *)
       | _ -> None
       )
       

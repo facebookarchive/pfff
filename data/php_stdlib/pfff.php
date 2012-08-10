@@ -14,3 +14,5 @@ function __builtin__include_once($f) { }
 
 function __builtin__isset($x) {
 }
+function __builtin__unset($x) {
+}

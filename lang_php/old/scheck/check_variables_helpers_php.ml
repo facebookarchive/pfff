@@ -18,20 +18,10 @@ let vars_assigned_in_any any =
     );
     })
 
-(* 
- * less: maybe could be merged with vars_assigned_in but maybe we want
- * the caller to differentiate between regular assignements
- * and possibly assigned by being passed by ref
- * 
- * todo: factorize code, at least for the methods and new calls.
- *)
 let vars_passed_by_ref_in_any ~in_class find_entity = 
-  V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.klvalue = (fun (k, vx) x ->
-      match x with
 
       | FunCallSimple (name, args) ->
-          let s = Ast.name name in
+
           (match s with
           (* special case, ugly but hard to do otherwise *)
           | "sscanf" -> 
@@ -51,12 +41,10 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
               )
           );
           k x
+
       | StaticMethodCallSimple (qu, name, args) ->
           (match qu with
-          | ClassName (classname), _ ->
-              (try 
 
-              )
           | (Self _ | Parent _), _ ->
               (* The code of traits can contain reference to Parent:: that
                * we cannot unsugar.
@@ -100,12 +88,6 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           | _ -> ()
           );
           k x 
-
-      | FunCallVar _ -> 
-          (* can't do much *)
-          k x
-      | _ -> 
-          k x
     );
     V.kexpr = (fun (k, vx) x ->
       (match x with
