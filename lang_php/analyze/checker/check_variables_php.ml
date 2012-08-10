@@ -212,46 +212,23 @@ let unused_ok s =
     ]
   )
 
-let fake_var s = 
-  (s, None)
-
 let lookup_opt s vars =
   Common.optionise (fun () -> Map_poly.find s vars)
 
 let s_tok_of_name name =
   A.str_of_name name, A.tok_of_name name
 
-let (name_of_name: A.name -> Ast_php.name) = fun name ->
-  let (s, tok) = s_tok_of_name name in
-  if s =~ ":.*"
-  then Ast_php.XhpName (Common.split ":" s, tok)
-  else Ast_php.Name (s, tok)
-
 (*****************************************************************************)
 (* Vars passed by ref *)
 (*****************************************************************************)
-
 (* 
  * Detecting variables passed by reference is complicated in PHP because
  * one does not have to use &$var at the call site (one can though). This is
  * ugly. So to detect variables passed by reference, we need to look at
- * the definition of the function/method called, hence this
- * find_entity_opt helper and the need for env.db.
- *)
-let (find_entity_opt: 
-   env -> (Ent.entity_kind * A.name) -> (Ast_php.entity -> 'a) -> 'a option) =
- fun env (kind, name) callback ->
-   let name' = name_of_name name in
-   match env.db with
-   | None -> None
-   | Some find_entity ->
-       let res = ref None in
-       E.find_entity_and_warn find_entity (kind, name') (fun entity ->
-         res := Some (callback entity);
-       );
-       !res
-
-(* note that it currently returns a Ast_php.func_def, not 
+ * the definition of the function/method called, hence the need for a
+ * find_entity in env.db.
+ * 
+ * note that it currently returns a Ast_php.func_def, not 
  * Ast_php_simple.func_def because the database currently
  * stores concrete ASTs, not simple ASTs.
  *)
@@ -268,10 +245,13 @@ let funcdef_of_call_or_new_opt env e =
               if A.is_variable name
               then None
               else 
-                find_entity_opt env (Ent.Function, name) 
-                  (function Ast_php.FunctionE def -> def
-                  | _ -> raise Impossible
-                  )
+                let s = A.str_of_name name in
+                (match find_entity (Ent.Function, s) with
+                | [Ast_php.FunctionE def] -> Some def
+                (* nothing or multi, not our problem here *)
+                | _ -> None
+                )
+                   
          (* static method call *)
           | Class_get (Id name1, Id name2) 
               when not (A.is_variable name1) && not (A.is_variable name2) ->
