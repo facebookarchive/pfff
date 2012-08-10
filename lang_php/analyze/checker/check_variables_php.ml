@@ -221,6 +221,12 @@ let lookup_opt s vars =
 let s_tok_of_name name =
   A.str_of_name name, A.tok_of_name name
 
+let (name_of_name: A.name -> Ast_php.name) = fun name ->
+  let (s, tok) = s_tok_of_name name in
+  if s =~ ":.*"
+  then Ast_php.XhpName (Common.split ":" s, tok)
+  else Ast_php.Name (s, tok)
+
 (*****************************************************************************)
 (* Vars passed by ref *)
 (*****************************************************************************)
@@ -235,12 +241,19 @@ let s_tok_of_name name =
 let (find_entity_opt: 
    env -> (Ent.entity_kind * A.name) -> (Ast_php.entity -> 'a) -> 'a option) =
  fun env (kind, name) callback ->
-   raise Todo
-  
+   let name' = name_of_name name in
+   match env.db with
+   | None -> None
+   | Some find_entity ->
+       let res = ref None in
+       E.find_entity_and_warn find_entity (kind, name') (fun entity ->
+         res := Some (callback entity);
+       );
+       !res
 
 (* note that it currently returns a Ast_php.func_def, not 
- * Ast_php_simple.func_def because the database currently stores
- * concrete ASTs, not simple ASTs.
+ * Ast_php_simple.func_def because the database currently
+ * stores concrete ASTs, not simple ASTs.
  *)
 let funcdef_of_call_or_new_opt env e =
   match e with
@@ -253,17 +266,17 @@ let funcdef_of_call_or_new_opt env e =
         then None
         else 
           find_entity_opt env (Ent.Function, name) 
-            (function Ast_php.FunctionE def ->
-              pr2_gen def;
-              raise Todo
+            (function Ast_php.FunctionE def -> def
             | _ -> raise Impossible
             )
     (* static method call *)
     (* simple object call *)
-    | _ -> raise Todo
+      (* TODO *)
+    | _ -> None
     )
   | New (e, es) ->
-      raise Todo
+      (* TODO *)
+      None
 
   (* should be called only with Call or New *)
   | _ -> raise Impossible
@@ -272,22 +285,15 @@ let funcdef_of_call_or_new_opt env e =
 (* Checks *)
 (*****************************************************************************)
 
-let check_defined_and_incr_use_count env name =
+(* todo: also adjust the correspoding scope_ref of name in ast_php *)
+let check_defined env name ~incr_count =
   let s = A.str_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
       (* todo: bailout, lambda, suggest *)
       E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
   | Some (_tok, scope, access_count) ->
-      incr access_count
-
-let check_defined env name =
-  let s = A.str_of_name name in
-  match lookup_opt s !(env.vars) with
-  | None ->
-      E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
-  | Some (_tok, scope, access_count) ->
-      ()
+      if incr_count then incr access_count
 
 (* less: if env.bailout? *)
 let check_used vars =
@@ -298,6 +304,22 @@ let check_used vars =
       then ()
       else E.fatal tok (E.UnusedVariable (s, scope))
   )
+
+let create_new_local_if_necessary ~incr_count env name =
+  assert (A.is_variable name);
+  let (s, tok) = s_tok_of_name name in
+  match lookup_opt s !(env.vars) with
+  (* new local variable implicit declaration.
+   * todo: add in which nested scope? I would argue to add it
+   * only in the current nested scope. If someone wants to use a
+   * var outside the block, he should have initialized the var
+   * in the outer context. Jslint does the same.
+   *)
+  | None ->
+      env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars)
+  | Some (_tok, scope, access_count) ->
+      if incr_count then incr access_count
+  
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -349,7 +371,7 @@ and func_def env def =
   in
   def.l_uses +> List.iter (fun (is_ref, name) ->
     let (s, tok) = s_tok_of_name name in
-    check_defined_and_incr_use_count { env with vars = ref oldvars} name;
+    check_defined ~incr_count:true { env with vars = ref oldvars} name;
     (* don't reuse same access count reference; the variable has to be used
      * again in this new scope.
      *)
@@ -490,10 +512,7 @@ and expr env = function
   | Int _ | Double _ | String _ -> ()
 
   | Id name when A.is_variable name ->
-      (* todo: also adjust the correspoding scope_ref of name in ast_php.
-       * do that in check_undefined?
-       *)
-      check_defined_and_incr_use_count env name
+      check_defined ~incr_count:true env name
 
   | Id name -> ()
 
@@ -504,26 +523,12 @@ and expr env = function
   | Assign (None, e1, e2) ->
       (match e1 with
       | Id name ->
-          assert (A.is_variable name);
-          (* skeleton similar to check_undefined() *)
-          let (s, tok) = s_tok_of_name name in
-          (match lookup_opt s !(env.vars) with
-          (* new local variable implicit declaration.
-           * todo: add in which nested scope? I would argue to add it
-           * only in the current nested scope. If someone wants to use a
-           * var outside the block, he should have initialized the var
-           * in the outer context. Jslint does the same.
+          (* Does an assignation counts as a use? If you only 
+           * assign and never use a variable what is the point? 
+           * This should be legal only for parameters (note that here
+           * I talk about parameters, not arguments) passed by reference.
            *)
-          | None ->
-              env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars)
-          | Some (_tok, scope, access_count) ->
-              (* Does an assignation counts as a use? If you only 
-               * assign and never use a variable what is the point? 
-               * This should be legal only for parameters (note that here
-               * I talk about parameters, not arguments) passed by reference.
-               *)
-              ()
-          )
+          create_new_local_if_necessary ~incr_count:false env name;
 
       (* todo: extract all vars, and share the same reference *)
       | List xs ->
@@ -558,7 +563,7 @@ and expr env = function
       (* less: The use of 'unset' on a variable is still not clear to me. *)
       | [Id name] ->
           assert (A.is_variable name);
-          check_defined env name
+          check_defined ~incr_count:false env name
       (* unsetting a field *)
       | [Array_get (e_arr, e_opt)] ->
           raise Todo
@@ -575,7 +580,10 @@ and expr env = function
         | None -> 
             es +> List.map (fun e -> e, None)
         | Some def ->
-            Common.zip_safe es (List.map (fun p -> Some p) def.f_params)
+            let params = 
+              def.Ast_php.f_params +> Ast_php.unparen +> Ast_php.uncomma_dots
+            in
+            Common.zip_safe es (List.map (fun p -> Some p) params)
       in
 
       es_with_parameters +> List.iter (fun (arg, param_opt) ->
@@ -588,6 +596,11 @@ and expr env = function
          *)
         | Assign (None, Id name, e2), _ ->
             expr env e2
+        (* a variable passed by reference, this can considered a new decl *)
+        | Id name, Some {Ast_php.p_ref = Some _;_} when A.is_variable name ->
+            (* less: should increase only if inout parameter? *)
+            create_new_local_if_necessary ~incr_count:true env name
+
         | _ -> expr env arg
       );
 
@@ -634,7 +647,7 @@ and expr env = function
       (* when we do use($this) in closures, we create a fresh $this variable
        * with a refcount of 0, so we need to increment it here.
        *)
-      check_defined_and_incr_use_count env name
+      check_defined ~incr_count:true env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
   | Array_get (e, eopt) ->

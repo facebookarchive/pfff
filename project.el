@@ -269,7 +269,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 3
 
        (0 "-test")
        (1 "-test_pil /home/pad/pfff/tests/php/pil/qualifier.php")
