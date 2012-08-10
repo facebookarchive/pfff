@@ -323,13 +323,19 @@ let check_defined env name ~incr_count =
       if incr_count then incr access_count
 
 (* less: if env.bailout? *)
-let check_used vars =
+let check_used env vars =
   vars +> Map_poly.iter (fun s (tok, scope, aref) ->
     if !aref = 0
     then
       if unused_ok s
       then ()
-      else E.fatal tok (E.UnusedVariable (s, scope))
+      else 
+        (* if you use compact(), some variables may look unused but
+         * they were actually used
+         *)
+        if !(env.bailout)
+        then ()
+        else E.fatal tok (E.UnusedVariable (s, scope))
   )
 
 let create_new_local_if_necessary ~incr_count env name =
@@ -364,7 +370,7 @@ let rec program env prog =
    * context or via the param_post/param_get calls.
    * todo: check env.globals instead?
    *)
-  check_used !(env.vars)
+  check_used env !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Functions/Methods *)
@@ -417,7 +423,7 @@ and func_def env def =
   end;
 
   List.iter (stmt env) def.f_body;
-  check_used !(env.vars)
+  check_used env !(env.vars)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -676,7 +682,7 @@ and expr env = function
               )
             )
           end
-      | Id ("extract", _), _ ->
+      | Id (("extract" | "compact"), _), _ ->
           env.bailout := true;
           (* todo? else display an error? weird argument to param_xxx func? *)
       | _ -> ()

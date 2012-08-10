@@ -77,7 +77,7 @@ function test_bailout_compact() {
   // this should not generate a warning for now. At some point
   // we want to remove all those ugly compact() but before that, no error.
 
-  //ERROR: todo actually should not generate error
+  //should not generate error
   $compacted = 1;
   // this function is horrible. it's the opposite of extract()
   $arr = compact('compacted');
