@@ -237,48 +237,40 @@ let funcdef_of_call_or_new_opt env e =
   | None -> None
   | Some find_entity ->
       (match e with
-      | Call (e, es) ->
-          (match e with
-          (* simple function call *)
-          | Id name ->
-              (* dynamic function call *)
-              if A.is_variable name
-              then None
-              else 
-                let s = A.str_of_name name in
-                (match find_entity (Ent.Function, s) with
-                | [Ast_php.FunctionE def] -> Some def
+      (* simple function call *)
+      | Id name ->
+          (* dynamic function call *)
+          if A.is_variable name
+          then None
+          else 
+            let s = A.str_of_name name in
+            (match find_entity (Ent.Function, s) with
+            | [Ast_php.FunctionE def] -> Some def
                 (* nothing or multi, not our problem here *)
-                | _ -> None
-                )
-                   
-         (* static method call *)
-          | Class_get (Id name1, Id name2) 
-              when not (A.is_variable name1) && not (A.is_variable name2) ->
-              (* todo: name1 can be self/parent in traits, or static: *)
-              let aclass = A.str_of_name name1 in
-              let amethod = A.str_of_name name2 in
-              (try
-                  Some (Class_php.lookup_method ~case_insensitive:true
-                           (aclass, amethod) find_entity)
+            | _ -> None
+            )
+              
+      (* static method call *)
+      | Class_get (Id name1, Id name2) 
+          when not (A.is_variable name1) && not (A.is_variable name2) ->
+          (* todo: name1 can be self/parent in traits, or static: *)
+          let aclass = A.str_of_name name1 in
+          let amethod = A.str_of_name name2 in
+          (try
+              Some (Class_php.lookup_method ~case_insensitive:true
+                       (aclass, amethod) find_entity)
               (* could not find the method, this is bad, but
                * it's not our business here; this error will
                * be reported anyway in check_functions_php.ml anyway
                *)
-               with 
-               | Not_found | Multi_found 
-               | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
-                   None
-              )
-           (* simple object call *)
-                (* TODO *)
-          | _ -> None
+            with 
+            | Not_found | Multi_found 
+            | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
+                None
           )
-      | New (e, es) ->
-          (* TODO *)
-          None
-      (* should be called only with Call or New *)
-      | _ -> raise Impossible
+            (* simple object call *)
+            (* TODO *)
+      | _ -> None
       )
       
 (*****************************************************************************)
@@ -574,7 +566,7 @@ and expr env = function
       expr env e;
       
       (* getting the def for args passed by ref false positives fix *)
-      let def_opt = funcdef_of_call_or_new_opt env (Call (e, es)) in
+      let def_opt = funcdef_of_call_or_new_opt env e in
       let es_with_parameters =
         match def_opt with
         | None -> 
@@ -668,7 +660,7 @@ and expr env = function
       | _ -> expr env e2
       )
 
-  (* todo: factorize code with Call for keyword arguments and refs *)
+  (* todo: transform in code with Call to factorize code *)
   | New (e, es) -> exprl env (e::es)
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 
