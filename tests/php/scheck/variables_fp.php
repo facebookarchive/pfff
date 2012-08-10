@@ -19,8 +19,8 @@ function test_ok_undeclared_when_ref_parameter() {
   $x = 1;
   // this is ok to use $y ... I would rather have people declare $y but
   // it's a lost battle so let's accept that and focus on real bugs
-  foo_ref($x, $y);
-  echo $y;
+  foo_ref($x, $passed_by_ref_to_funcall);
+  echo $passed_by_ref_to_funcall;
 }
 
 class Foo {
@@ -31,8 +31,8 @@ class Foo {
 
 function test_ok_undeclared_when_ref_parameter_static_method() {
   $x = 1;
-  Foo::static_method($x, $y);
-  echo $y;
+  Foo::static_method($x, $passed_by_ref_to_static_method_call);
+  echo $passed_by_ref_to_static_method_call;
 }
 
 class Foo2 {
@@ -42,8 +42,8 @@ class Foo2 {
 
   public function test_ok_undeclared_when_ref_paramter_method() {
     $x = 1;
-    $this->method($x, $y);
-    echo $y;
+    $this->method($x, $passed_by_ref_to_this_method_call);
+    echo $passed_by_ref_to_this_method_call;
   }
 }
 
@@ -61,16 +61,16 @@ function test_ok_undeclared_when_ref_parameter_method() {
 //*************************************************************************
 
 function ugly() {
-  return array('x1' => 2);
+  return array('extracted_field' => 2);
 }
 function test_bailout_extract() {
   extract(ugly());
 
   // this is ok ...
-  echo $x1;
+  echo $extracted_field;
 
   //SKIP: this is not ok but hard to detect statically in the general case
-  echo $x2;
+  echo $wrong_extracted_field_but_skipped;
 }
 
 function test_bailout_compact() {
@@ -78,9 +78,9 @@ function test_bailout_compact() {
   // we want to remove all those ugly compact() but before that, no error.
 
   //ERROR: todo actually should not generate error
-  $foo = 1;
+  $compacted = 1;
   // this function is horrible. it's the opposite of extract()
-  $arr = compact('foo');
+  $arr = compact('compacted');
 
   return $arr;
 }
@@ -103,8 +103,8 @@ function test_ok_undeclared_sscanf() {
 }
 
 function test_isset() {
-  if(!isset($foo)) {
-    $foo = 1;
-    echo $foo;
+  if(!isset($isset_var)) {
+    $isset_var = 1;
+    echo $isset_var;
   }
 }
