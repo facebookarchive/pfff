@@ -18,7 +18,6 @@ let do_in_new_scope_and_check_unused_if_strict f =
 
 let visit_prog find_entity prog = 
 
-  let scope = ref Ent.TopStmts in
   let in_lambda = ref false in
 
   let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
@@ -29,13 +28,6 @@ let visit_prog find_entity prog =
 
     (* function scope checking *)
     V.kfunc_def = (fun (k, _) x ->
-      let kind = 
-        match x.f_type with
-        | FunctionRegular | FunctionLambda -> Ent.Function
-        | MethodRegular | MethodAbstract -> Ent.Method Ent.RegularMethod
-      in
-      Common.save_excursion scope kind (fun () ->
-
         match x.f_type with
         | MethodAbstract _ -> 
             (* we don't want parameters in method interface to be counted
