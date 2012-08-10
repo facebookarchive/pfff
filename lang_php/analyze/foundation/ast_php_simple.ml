@@ -136,7 +136,7 @@ and stmt =
    *)
   | Foreach of expr * expr * expr option * stmt list
 
-  | Return of expr option
+  | Return of parse_info option * expr option
   | Break of expr option | Continue of expr option
 
   | Throw of expr
@@ -187,7 +187,7 @@ and expr =
   | Id of name
 
   (* when None it means add to the end when used in lvalue position *)
-  | Array_get of expr * expr option
+  | Array_get of parse_info option * expr * expr option
 
   (* often transformed in Id "$this" in the analysis *)
   | This of string wrap
@@ -223,7 +223,7 @@ and expr =
    *)
   | Ref of expr
 
-  | ConsArray of array_value list
+  | ConsArray of expr option * parse_info option * array_value list
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
@@ -232,7 +232,11 @@ and expr =
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
 
-  and array_value =
+  and parse_info = Parse_info.info
+
+  and line = int
+
+  and array_value = (*TODO: Add line number information *)
     | Aval of expr
     | Akval of expr * expr
 
@@ -274,6 +278,8 @@ and func_def = {
   l_uses: (bool (* is_ref *) * name) list;
 
   f_body: stmt list;
+
+  f_loc: Parse_info.info;
 }
    and function_kind = 
      | Function 
@@ -379,3 +385,4 @@ let is_variable (s, _) =
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =
   String.sub s 1 (String.length s - 1)
+

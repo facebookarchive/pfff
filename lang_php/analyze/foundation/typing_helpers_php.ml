@@ -162,6 +162,8 @@ module Env = struct
   let unset env x = env.vars := SMap.remove x !(env.vars)
   let mem env x = SMap.mem x !(env.vars)
 
+  let iter env f = SMap.iter f !(env.vars)
+
   let get env x =
     try SMap.find x !(env.vars) 
     with Not_found ->
@@ -176,6 +178,46 @@ module TEnv = struct
     with Not_found -> Tsum []
   let set env x y = env.tenv := IMap.add x y !(env.tenv)
   let mem env x = IMap.mem x !(env.tenv)
+end
+
+(*ciara*)
+module AEnv = struct
+  let print_id id = 
+    match id with 
+    | (e, f, c) -> 
+        Printf.printf "In %s %s, " c f;
+        let stmt = Ast_php_simple.Expr(e) in
+        let v = Meta_ast_php_simple.vof_program [stmt] in
+        let s = Ocaml.string_of_v v in
+        Common.pr s
+
+  let set env x a =
+    let l = try AMap.find x !(env.aenv) with Not_found -> [] in
+    let l = a::l in
+    env.aenv := AMap.add x l !(env.aenv)
+  let iter env f = AMap.iter f !(env.aenv)
+  let set_fun env x = env.aenv_fun <- x
+  let get_fun env = env.aenv_fun
+  let set_class env x = env.aenv_class <- x
+  let get_class env = env.aenv_class
+ 
+  let set_funs env x = 
+    env.aenv_funs := x::!(env.aenv_funs)
+  let get_funs env = !(env.aenv_funs)
+
+  let set_params env p = env.aenv_params := p
+  let get_params env = env.aenv_params
+  let create_ai_params env pl = 
+    List.iter (fun x ->
+      let id = (Id(x.p_name), get_fun env, get_class env) in
+      env.aenv_params := id::!(env.aenv_params);
+    ) pl
+
+  let create_ai env e = 
+    match e with 
+    | Obj_get(This("$this", _), Id(s, tok)) -> (Id(("$"^s), tok), "", get_class env)
+    | _ -> (e, get_fun env, get_class env)
+
 end
 
 module Subst = struct
@@ -273,6 +315,7 @@ module FindCommonAncestor = struct
     with Found c -> Some c
 
 end
+
 
 (*****************************************************************************)
 (* String of *)
@@ -373,6 +416,56 @@ module Print2 = struct
   let penv env =
     genv env
 
+
+ (* let line_of_opt_info = function 
+    | None -> "Line unavailable"
+    | Some(pi) -> string_of_int (Parse_info.line_of_info pi)
+  
+  let access a = 
+    let penv = Pp.empty print_string in
+    match a with
+    | (l, NoIndex _ ) -> Pp.print penv ("  No Index access at
+    "^(line_of_opt_info l))
+    | (l, VarOrInt _) -> Pp.print penv ("  Var or int access at
+    "^(line_of_opt_info l))
+    | (l, Const _ ) -> Pp.print penv ("  Const access at "^(line_of_opt_info l))
+    | (l, ConstantString _) -> Pp.print penv ("  Constant string access at
+    "^(line_of_opt_info l))
+    | (l, Declaration _) -> Pp.print penv ("  Array declaration at
+    "^(line_of_opt_info l))
+    | (_, DeclarationValue _) -> ()
+    | (_, DeclarationKValue _) -> ()
+    | (l, Value _) -> Pp.print penv ("  Value at"^(line_of_opt_info l))
+
+    (*ciara: added, pretty prints the list of the arr accesses*)
+  let arr_access a = 
+    let penv = Pp.empty print_string in
+    List.iter (
+      fun x ->
+        access x;
+        Pp.newline penv;
+    ) a
+
+    (*ciara: added*)
+  let print_arr_info env =
+    let penv = Pp.empty print_string in
+    AEnv.iter env (
+      fun x a -> 
+        Pp.print penv "get rep string 2 \n";(*Pp.print penv x;*) Pp.print penv " = ";
+        Pp.newline penv;
+        arr_access a;
+    )
+
+  (*ciara: Added, Prints all locals*)
+  let aenv env = 
+    let penv = Pp.empty print_string in
+    Env.iter env (
+      fun x t ->
+          Pp.print penv x; Pp.print penv " = ";
+          ty env penv ISet.empty 0 t;
+          Pp.newline penv;
+    )
+*)
   let args o env t =
     match Fun.get_args env ISet.empty t with
     | [] -> ()
@@ -552,6 +645,90 @@ module Print = struct
     o "\n"
 end
 
+module Type_string = struct
+
+  
+  let rec ty env stack depth x = 
+    match x with 
+    | Tvar n -> 
+        let n = Subst.get env n in 
+        let t = TEnv.get env n in 
+        if ISet.mem n stack then
+          (string_of_int n)^"&"
+        else begin
+          let stack = ISet.add n stack in
+          ty env stack depth t
+        end
+    | Tsum[] -> "_"
+    | Tsum [x] -> prim_ty env stack depth x
+    | Tsum l -> tsum_list env stack depth l
+
+  and prim_ty env stack depth = function
+    | Tabstr s -> s
+    | Tsstring s -> "string"
+    | Tienum _ 
+    | Tsenum _ -> "enum"
+    | Trecord m -> 
+        let depth = depth + 1 in 
+        let str = "array" in
+        if depth >= 2 
+        then str^"(...)" 
+        else 
+          let l = SMap.fold (fun x y l -> (x,y)::l) m [] in
+          record_list env stack depth l
+    | Tarray (_, t1, t2) -> 
+        let str = "array(" in
+        let str = str^(ty env stack depth t1) in
+        let str = str^" => " in
+        let str = str^(ty env stack depth t2) in
+        str^")"
+    | Tfun (tl, t) -> 
+        let str = "fun " in
+        let str = str^(fun_list env stack depth tl) in
+        str^" -> "^(ty env stack depth t)
+    | Tobject m -> 
+        let depth = depth + 1 in
+        let str = "object" in
+        if depth >= 3 then 
+          str^"(...)"
+        else 
+          let l = SMap.fold (fun x y l -> (x, y) :: l) m [] in
+          str^(object_list env stack depth l)
+    | Tclosed (s, _) -> 
+        if SSet.cardinal s = 1 then SSet.choose s else
+        (match FindCommonAncestor.go env s with
+        | None -> 
+            let l = SSet.fold (fun x acc -> x :: acc) s [] in
+            closed_list l
+        | Some s -> s)
+            
+    and tsum_list env stack depth l = 
+      let tys = List.map (fun t -> prim_ty env stack depth t) l in
+      let str_of_ty_list = List.fold_left (fun a b -> a^b^" |" ) "(" tys in
+      (Str.string_before str_of_ty_list ((String.length str_of_ty_list) - 2))^")"
+
+    and record_list env stack depth l =
+      let tys = List.map (fun x -> match x with 
+        | (s, t) -> s^" => "^(ty env stack depth t)) l in
+      let str_of = List.fold_left (fun a b -> a^b^";" ) "(" tys in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+
+    and fun_list env stack depth l = 
+      let tys = List.map (fun (s, x) -> (ty env stack depth x)^" "^s ) l in
+      let str_of = List.fold_left (fun a b -> a^b^", ") "(" tys in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+  
+    and object_list env stack depth l =
+      let tys = List.map (fun x -> match x with 
+        | (s, t) -> s^": "^(ty env stack depth t)) l in
+      let str_of = List.fold_left (fun a b -> a^b^";" ) "(" tys in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+
+    and closed_list l =
+      let str_of = List.fold_left (fun a b -> a^b^"|" ) "(" l in
+      (Str.string_before str_of ((String.length str_of) - 2))^")"
+end
+
 (*****************************************************************************)
 (* Instantiate/Generalize/Normalize *)
 (*****************************************************************************)
@@ -698,3 +875,4 @@ module Normalize = struct
   let normalize = normalize ISet.empty
 
 end
+

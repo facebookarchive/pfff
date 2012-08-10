@@ -126,7 +126,7 @@ and stmt env st acc =
       A.Foreach (e, fve, fao, cst) :: acc
   | Break (_, e, _) -> A.Break (opt expr env e) :: acc
   | Continue (_, eopt, _) -> A.Continue (opt expr env eopt) :: acc
-  | Return (_, eopt, _) -> A.Return (opt expr env eopt) :: acc
+  | Return (pi, eopt, _) -> A.Return (Some(pi), opt expr env eopt) :: acc
   | Throw (_, e, _) -> A.Throw (expr env e) :: acc
   | Try (_, (_, stl, _), c, cl) ->
       let stl = List.fold_right (stmt_and_def env) stl [] in
@@ -214,10 +214,11 @@ and expr env = function
       let la = List.fold_right (list_assign env) la [] in
       let e = expr env e in
       A.Assign (None, A.List la, e)
-  | ArrayLong (_, (_, apl, _)) | ArrayShort (_, apl, _) ->
+  | ArrayLong (_, (tok, apl, _))
+  | ArrayShort (tok, apl, _) ->
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
-      A.ConsArray apl
+      A.ConsArray (None, Some(tok), apl)
   | New (_, cn, args) ->
       let args =
         match args with
@@ -301,6 +302,7 @@ and lambda_def env (l_use, ld) =
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
+    A.f_loc = ld.f_tok;
     A.m_modifiers = [];
     A.l_uses = 
       (match l_use with
@@ -377,17 +379,17 @@ and class_name_reference env = function
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
   | This tok -> A.This ("$this", wrap tok)
-  | VArrayAccess (lv, (_, e, _)) ->
+  | VArrayAccess (lv, (tok, e, _)) ->
       let lv = lvalue env lv in
       let e = opt expr env e in
-      A.Array_get (lv, e)
+      A.Array_get (Some(tok), lv, e)
   (* one can use $o[xxx] or $o{xxx} apparently *)
-  | VBraceAccess (lv, (_, e, _)) ->
-      A.Array_get (lvalue env lv, Some (expr env e))
-  | VArrayAccessXhp (e1, (_, e2, _)) ->
+  | VBraceAccess (lv, (tok, e, _)) ->
+      A.Array_get (Some(tok), lvalue env lv, Some (expr env e))
+  | VArrayAccessXhp (e1, (tok, e2, _)) ->
       let e1 = expr env e1 in
       let e2 = opt expr env e2 in
-      A.Array_get (e1, e2)
+      A.Array_get (Some(tok), e1, e2)
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | Indirect (e, (Dollar tok)) ->
@@ -399,12 +401,12 @@ and lvalue env = function
                                [lvalue env v]))
   | ClassVar (q, dn) -> 
       A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
-  | FunCallSimple (f, (_, args, _)) ->
+  | FunCallSimple (f, (tok, args, _)) -> 
       let f = name env f in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (A.Id f, args)
-  | FunCallVar (q, lv, (_, argl, _)) ->
+  | FunCallVar (q, lv, (tok, argl, _)) ->
       let argl = comma_list argl in
       let argl = List.map (argument env) argl in
       let lv = lvalue env lv in
@@ -413,18 +415,18 @@ and lvalue env = function
         | Some q -> A.Class_get (A.Id (qualifier env q), lv) 
       in
       A.Call (lv, argl)
-  | StaticMethodCallSimple (q, n, (_, args, _)) ->
+  | StaticMethodCallSimple (q, n, (tok, args, _)) ->
       let f = A.Class_get (A.Id (qualifier env q), A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | MethodCallSimple (e, _, n, (_, args, _)) ->
+  | MethodCallSimple (e, _, n, (tok, args, _)) ->
       let f = lvalue env e in
       let f = A.Obj_get (f, A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticMethodCallVar (lv, _, n, (_, args, _)) ->
+  | StaticMethodCallVar (lv, _, n, (tok, args, _)) ->
       let f = A.Class_get (lvalue env lv, A.Id (name env n)) in
       let args = comma_list args in
       let args = List.map (argument env) args in
@@ -444,7 +446,7 @@ and obj_access env obj (_, objp, args) =
   let e = obj_property env obj objp in
   match args with
   | None -> e
-  | Some (_, args, _) ->
+  | Some (tok, args, _) ->
       let args = comma_list args in
       let args = List.map (argument env) args in
       (* TODO CHECK THIS *)
@@ -462,15 +464,15 @@ and obj_dim env obj = function
   | OBrace (_, e, _) ->
       A.Obj_get (obj, expr env e)
   (* again, one can use the [] or {} syntax *)
-  | OArrayAccess (x, (_, e, _)) ->
+  | OArrayAccess (x, (tok, e, _)) ->
       let e = opt expr env e in
       let x = obj_dim env obj x in
-      A.Array_get (x, e)
+      A.Array_get (Some(tok), x, e)
   (* this is almost never used in our codebase, just in some third-party code.*)
-  | OBraceAccess (x, (_, e, _)) -> 
+  | OBraceAccess (x, (tok, e, _)) -> 
       let e = expr env e in
       let x = obj_dim env obj x in
-      A.Array_get(x, Some e)
+      A.Array_get(Some(tok), x, Some e)
 
 and argument env = function
   | Arg e -> expr env e
@@ -575,6 +577,7 @@ and method_def env m =
     A.f_body = method_body env m.f_body;
     A.f_kind = A.Method;
     A.l_uses = [];
+    A.f_loc = m.f_tok;
   }
 
 and method_body env (_, stl, _) =
@@ -599,6 +602,7 @@ and func_def env f =
     A.f_kind = A.Function;
     A.m_modifiers = [];
     A.l_uses = [];
+    A.f_loc = f.f_tok;
   }
 
 and xhp_html env = function
@@ -710,6 +714,7 @@ and global_var env = function
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
   | GlobalDollarExpr (tok, _) -> 
       raise (TodoConstruct ("GlobalDollarExpr", tok))
+
 
 (*****************************************************************************)
 (* Shortcuts *)

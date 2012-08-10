@@ -491,7 +491,7 @@ and stmt env = function
       | _ -> raise Todo          
       );
 
-  | Return eopt   
+  | Return (_, eopt)   
   | Break eopt | Continue eopt ->
       Common.opt (expr env) eopt
 
@@ -563,7 +563,7 @@ and expr env = function
       | List xs ->
           ()
       (* todo: for bhiller *)
-      | Array_get (e_arr, e_opt) ->
+      | Array_get (_, e_arr, e_opt) ->
           expr env e_arr;
           Common.opt (expr env) e_opt
 
@@ -594,7 +594,7 @@ and expr env = function
           assert (A.is_variable name);
           check_defined ~incr_count:false env name
       (* unsetting a field *)
-      | [Array_get (e_arr, e_opt)] ->
+      | [Array_get (_, e_arr, e_opt)] ->
           raise Todo
       | _ -> raise Todo
       )
@@ -644,7 +644,7 @@ and expr env = function
       (* facebook specific? should be a hook instead to visit_prog? *)
       (match e, es with
       | Id ("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
-        (ConsArray array_args)::rest_param_xxx_args ->
+        (ConsArray (_, _, array_args))::rest_param_xxx_args ->
 
           (* have passed a 'prefix' arg, or nothing *)
           if List.length rest_param_xxx_args <= 1
@@ -689,7 +689,7 @@ and expr env = function
       check_defined ~incr_count:true env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
-  | Array_get (e, eopt) ->
+  | Array_get (_, e, eopt) ->
       expr env e;
       Common.opt (expr env) eopt
 
@@ -713,7 +713,7 @@ and expr env = function
 
   | Ref e -> expr env e
 
-  | ConsArray xs -> array_valuel env xs
+  | ConsArray (_, _, xs) -> array_valuel env xs
   | Xhp x -> xml env x
 
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
