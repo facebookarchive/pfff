@@ -256,30 +256,50 @@ let (find_entity_opt:
  * stores concrete ASTs, not simple ASTs.
  *)
 let funcdef_of_call_or_new_opt env e =
-  match e with
-  | Call (e, es) ->
-    (match e with
-    (* simple function call *)
-    | Id name ->
-        (* dynamic function call *)
-        if A.is_variable name
-        then None
-        else 
-          find_entity_opt env (Ent.Function, name) 
-            (function Ast_php.FunctionE def -> def
-            | _ -> raise Impossible
-            )
-    (* static method call *)
-    (* simple object call *)
-      (* TODO *)
-    | _ -> None
-    )
-  | New (e, es) ->
-      (* TODO *)
-      None
-
-  (* should be called only with Call or New *)
-  | _ -> raise Impossible
+  match env.db with
+  | None -> None
+  | Some find_entity ->
+      (match e with
+      | Call (e, es) ->
+          (match e with
+          (* simple function call *)
+          | Id name ->
+              (* dynamic function call *)
+              if A.is_variable name
+              then None
+              else 
+                find_entity_opt env (Ent.Function, name) 
+                  (function Ast_php.FunctionE def -> def
+                  | _ -> raise Impossible
+                  )
+         (* static method call *)
+          | Class_get (Id name1, Id name2) 
+              when not (A.is_variable name1) && not (A.is_variable name2) ->
+              (* todo: name1 can be self/parent in traits, or static: *)
+              let aclass = A.str_of_name name1 in
+              let amethod = A.str_of_name name2 in
+              (try
+                  Some (Class_php.lookup_method ~case_insensitive:true
+                           (aclass, amethod) find_entity)
+              (* could not find the method, this is bad, but
+               * it's not our business here; this error will
+               * be reported anyway in check_functions_php.ml anyway
+               *)
+               with 
+               | Not_found | Multi_found 
+               | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
+                   None
+              )
+           (* simple object call *)
+                (* TODO *)
+          | _ -> None
+          )
+      | New (e, es) ->
+          (* TODO *)
+          None
+      (* should be called only with Call or New *)
+      | _ -> raise Impossible
+      )
       
 (*****************************************************************************)
 (* Checks *)
@@ -583,6 +603,10 @@ and expr env = function
             let params = 
               def.Ast_php.f_params +> Ast_php.unparen +> Ast_php.uncomma_dots
             in
+            (* maybe the #args does not match #params, but this is not our
+             * business here; this will be detected anyway in check_functions
+             * or check_classes.
+             *)
             Common.zip_safe es (List.map (fun p -> Some p) params)
       in
 
