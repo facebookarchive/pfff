@@ -149,7 +149,6 @@ module Ent = Database_code
  *   (pad: I actually bail out on such code)
  * 
  * These things don't count as "using" a variable:
- * - isset() (pad: this should be forbidden, it's a bad way to program)
  * - empty()
  * 
  * TODO OTHER:
@@ -611,6 +610,10 @@ and expr env = function
       (* less: wrong, it should be a variable? *)
       | e -> expr env e
       )
+
+  (* the right fix is to forbid people to use isset ... *)
+  | Call (Id ("__builtin__isset", tok), [Id (name)]) when A.is_variable name ->
+      ()
 
   | Call (Id (("extract" | "compact"), _), _args) ->
       env.bailout := true;

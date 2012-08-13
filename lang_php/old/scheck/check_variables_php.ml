@@ -20,8 +20,6 @@ let visit_prog find_entity prog =
 
   let in_lambda = ref false in
 
-  let visitor = Visitor_php.mk_visitor { Visitor_php.default_visitor with
-
     (* -------------------------------------------------------------------- *)
     (* scoping management *)
     (* -------------------------------------------------------------------- *)

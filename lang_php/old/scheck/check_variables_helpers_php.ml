@@ -1,7 +1,6 @@
 let vars_passed_by_ref_in_any ~in_class find_entity = 
       | StaticMethodCallSimple (qu, name, args) ->
           (match qu with
-
           | (Self _ | Parent _), _ ->
               (* The code of traits can contain reference to Parent:: that
                * we cannot unsugar.
