@@ -615,7 +615,9 @@ and expr env = function
   | Call (Id ("__builtin__isset", tok), [Id (name)]) when A.is_variable name ->
       ()
 
-  | Call (Id (("extract" | "compact"), _), _args) ->
+  | Call (Id (("__builtin__eval" | "__builtin__eval_var" | 
+               "extract" | "compact"
+       ), _), _args) ->
       env.bailout := true;
       (* todo? else display an error? weird argument to param_xxx func? *)
 

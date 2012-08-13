@@ -24,8 +24,12 @@ function test1($x, $unused_parameter) {
   foreach($matches as $k2 => $v) {
     echo $v;
   }
-
 }
+
+$used_var_in_eval_field = 42;
+$x = 'used_var_in_eval_field';
+echo $$x;
+
 
 
 /* TODO

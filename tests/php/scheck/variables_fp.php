@@ -71,6 +71,17 @@ function test_ok_undeclared_when_ref_parameter_method() {
 // Bailout constructs
 //*************************************************************************
 
+function test_eval_bailout() {
+  $used_var_in_eval = 42;
+  eval('echo $used_var_in_eval;');
+}
+
+function test_eval_var_bailout() {
+  $used_var_in_eval_field = 42;
+  $x = 'used_var_in_eval_field';
+  echo $$x;
+}
+
 function ugly() {
   return array('extracted_field' => 2);
 }

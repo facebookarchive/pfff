@@ -1,4 +1,4 @@
-let check_undefined_variable ~in_lambda var env = 
+let check_undefined_variable ~in_lambda var env =
         (if in_lambda 
         then (E.UseOfUndefinedVariableInLambda s)
         else 
@@ -128,10 +128,6 @@ let visit_prog find_entity prog =
           );
           vx (Expr e)
 
-      | Eval _ ->
-          Common.save_excursion bailout true (fun () ->
-            k x
-          )
       | Lambda (l_use, def) ->
           (* reset completely the environment *)
           Common.save_excursion _scoped_env !initial_env (fun () ->
@@ -168,7 +164,6 @@ let visit_prog find_entity prog =
           check_undefined_variable ~in_lambda:!in_lambda ~bailout:!bailout
             v !_scoped_env
         );
-
         k x;
         is_top_expr := true;
       end
@@ -176,16 +171,12 @@ let visit_prog find_entity prog =
          (* still recurse when not in top expr *)
          k x
     );
-
     V.klvalue = (fun (k,vx) x ->
       match x with
-
       (* the checking is done upward, in kexpr, and only for topexpr *)
       | Var (dname, scope_ref) ->
-
           (* assert scope_ref = S.Unknown ? *)
           let s = Ast.dname dname in
-    
           (match lookup_env_opt s !_scoped_env with
           | None -> scope_ref := S.Local;
           | Some (scope, _) -> scope_ref := scope;
