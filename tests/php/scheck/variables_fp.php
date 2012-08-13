@@ -23,7 +23,7 @@ function test_ok_undeclared_when_ref_parameter() {
   echo $passed_by_ref_to_funcall;
 }
 
-class Foo {
+class RefInStaticMethod {
   public static function static_method($x, &$y) {
     $y = $x;
   }
@@ -31,20 +31,31 @@ class Foo {
 
 function test_ok_undeclared_when_ref_parameter_static_method() {
   $x = 1;
-  Foo::static_method($x, $passed_by_ref_to_static_method_call);
+  RefInStaticMethod::static_method($x, $passed_by_ref_to_static_method_call);
   echo $passed_by_ref_to_static_method_call;
 }
 
-class Foo2 {
+class RefInMethod {
   public function method($x, &$y) {
     $y = $x;
   }
 
-  public function test_ok_undeclared_when_ref_paramter_method() {
+  public function test_ok_undeclared_when_ref_parameter_method() {
     $x = 1;
     $this->method($x, $passed_by_ref_to_this_method_call);
     echo $passed_by_ref_to_this_method_call;
   }
+}
+
+class TestRefInConstructor {
+  public function __construct($x, &$y) {
+  }
+}
+
+function test_ok_undeclared_when_ref_parameter_new() {
+  $o = new TestRefInConstructor(1, $passed_by_ref_to_new);
+  echo $o;
+  echo $passed_by_ref_to_new;
 }
 
 function test_ok_undeclared_when_ref_parameter_method() {
