@@ -791,7 +791,7 @@ and get_class env x =
   GEnv.get_class env x
 
 and class_def env c =
-  Printf.printf "Class: %s\n" (A.unwrap c.c_name);
+  (* Printf.printf "Class: %s\n" (A.unwrap c.c_name);*)
   if GEnv.mem_class env (A.unwrap c.c_name) then () else begin
   GEnv.set_class env (A.unwrap c.c_name) any;
   ignore(AEnv.set_class env (A.unwrap c.c_name));
