@@ -718,8 +718,10 @@ and expr env = function
       | _ -> expr env e2
       )
 
-  (* todo: transform in code with Call to factorize code *)
-  | New (e, es) -> exprl env (e::es)
+  (* transform in code with Call to factorize code *)
+  | New (e, es) ->
+      expr env (Call (Class_get(e, Id ("__construct", None)), es))
+
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e

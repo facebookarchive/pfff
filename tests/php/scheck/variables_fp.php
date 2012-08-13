@@ -54,8 +54,8 @@ class TestRefInConstructor {
 
 function test_ok_undeclared_when_ref_parameter_new() {
   $o = new TestRefInConstructor(1, $passed_by_ref_to_new);
-  echo $o;
   echo $passed_by_ref_to_new;
+  echo $o;
 }
 
 function test_ok_undeclared_when_ref_parameter_method() {
