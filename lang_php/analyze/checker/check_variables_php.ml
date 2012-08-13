@@ -186,13 +186,14 @@ type env = {
   db: Entity_php.entity_finder option;
   (* when analyze $this->method_call(), we need to know the enclosing class *)
   in_class: name option;
+
+  (* for better error message when the variable was inside a lambda *)
+  in_lambda: bool;
   
   (* when the body of a function contains eval/extract/... we bailout
    * because we don't want to report false positives
    *)
   bailout: bool ref;
-
-  (* todo: in_lambda: bool; *)
 }
 
 (*****************************************************************************)
@@ -312,8 +313,13 @@ let check_defined env name ~incr_count =
       if !(env.bailout)
       then ()
       else
-        (* todo: lambda, suggest *)
-        E.fatal (A.tok_of_name name) (E.UseOfUndefinedVariable (s, None))
+        let err = 
+          if env.in_lambda
+          then E.UseOfUndefinedVariableInLambda s
+          (* todo: suggest *)
+          else E.UseOfUndefinedVariable (s, None)
+        in
+        E.fatal (A.tok_of_name name) err
 
   | Some (_tok, scope, access_count) ->
       if incr_count then incr access_count
@@ -739,8 +745,7 @@ and expr env = function
   | Cast (_, e) -> expr env e
 
   | Lambda def ->
-      (* todo: in_lambda for better error message ? *)
-      func_def env def
+      func_def { env with in_lambda = true } def
 
 and array_value env = function
   | Aval e -> expr env e
@@ -796,6 +801,7 @@ let check_and_annotate_program2 find_entity prog =
      * symbol table so one can find them back.
      *)
     in_class = None;
+    in_lambda = false;
     bailout = ref false;
   }
   in

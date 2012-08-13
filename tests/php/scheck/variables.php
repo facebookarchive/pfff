@@ -25,8 +25,8 @@ function test_undefined_and_unused_variables_basic($a) {
 
 function test_unset() {
   //ERROR: unused variable. Yes it's used by unset but this should not count.
-  $memory = 1;
-  unset($memory);
+  $unset_variable = 1;
+  unset($unset_variable);
 
   //ERROR: use of undefined variable
   unset($undefined_bis2);
@@ -54,9 +54,9 @@ function test_undefined_foreach() {
 class TestUndefinedUnusedInMethod {
   public function foo($a) {
     //ERROR: unused variable, because of the typo in the line below
-    $im_service = misc1($a);
+    $typo_variable = misc1($a);
     //ERROR: use of undefined variable, typo
-    if ($im_servce === false) {
+    if ($typo_varable === false) {
       return 1;
     }
     return 2;
@@ -73,13 +73,13 @@ class TestUndefinedUnusedInMethod {
 function test_undefined_in_lambda($a) {
 
   //ERROR: unused variable
-  $c = "foo";
+  $unused_variable_forgot_pass_to_lambda = "foo";
 
   $f = (function ($b) use($a) {
     return $a +
            $b +
            //ERROR: use of undeclared variable
-           $c;
+           $unused_variable_forgot_pass_to_lambda;
     ;
     });
   return $f;
@@ -101,7 +101,7 @@ class TestLambdaUseThis {
         return $a +
                $b +
                //ERROR: use of undeclared variable
-               $c;
+               $use_of_undeclared_variable_in_lambda;
         ;
       });
     return $f;

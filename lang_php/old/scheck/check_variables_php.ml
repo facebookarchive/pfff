@@ -1,10 +1,7 @@
 let check_undefined_variable ~in_lambda var env =
-        (if in_lambda 
-        then (E.UseOfUndefinedVariableInLambda s)
-        else 
-            let allvars = Env.collect_all_vars env +> List.map Ast.dname in
-            let suggest = Suggest_fix_php.suggest s allvars in
-            (E.UseOfUndefinedVariable (s, suggest))
+  let allvars = Env.collect_all_vars env +> List.map Ast.dname in
+  let suggest = Suggest_fix_php.suggest s allvars in
+  (E.UseOfUndefinedVariable (s, suggest))
 
 let do_in_new_scope_and_check_unused_if_strict f =
   if !E.strict 
@@ -17,9 +14,6 @@ let do_in_new_scope_and_check_unused_if_strict f =
 (*****************************************************************************)
 
 let visit_prog find_entity prog = 
-
-  let in_lambda = ref false in
-
     (* -------------------------------------------------------------------- *)
     (* scoping management *)
     (* -------------------------------------------------------------------- *)
@@ -128,15 +122,6 @@ let visit_prog find_entity prog =
           );
           vx (Expr e)
 
-      | Lambda (l_use, def) ->
-          (* reset completely the environment *)
-          Common.save_excursion _scoped_env !initial_env (fun () ->
-          Common.save_excursion in_lambda true (fun () ->
-          Common.save_excursion is_top_expr true (fun () ->
-            do_in_new_scope_and_check_unused (fun () ->
-              ...
-            )
-          
       | _ ->
 
        (* do the checking and environment update only for the top expressions *)
