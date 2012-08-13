@@ -1,25 +1,4 @@
 let vars_passed_by_ref_in_any ~in_class find_entity = 
-      | FunCallSimple (name, args) ->
-          (match s with
-          (* special case, ugly but hard to do otherwise *)
-          | "sscanf" -> 
-              (match args +> Ast.unparen +> Ast.uncomma with
-              | x::y::vars ->
-                  vars +> List.iter (fun arg ->
-                    match arg with
-                    | Arg (Lv((Var(dname, _scope)))) ->
-                        Common.push2 dname aref
-                    (* todo? wrong, it should be a variable *)
-                    | _ -> ()
-                  )
-              (* wrong number of arguments, not our business, it will
-               * be detected by another checker anyway
-               *)
-              | _ -> ()
-              )
-          );
-          k x
-
       | StaticMethodCallSimple (qu, name, args) ->
           (match qu with
 

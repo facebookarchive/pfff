@@ -600,6 +600,56 @@ and expr env = function
           raise Todo
       | _ -> raise Todo
       )
+  (* special case, could factorize maybe with pass_var_by_ref *)
+  | Call (Id ("sscanf", tok), x::y::vars) ->
+      (* what if no x and y? wrong number of arguments, not our business here*)
+      expr env x;
+      expr env y;
+      vars +> List.iter (function
+      | Id name when A.is_variable name ->
+          create_new_local_if_necessary ~incr_count:true env name
+      (* less: wrong, it should be a variable? *)
+      | e -> expr env e
+      )
+
+  | Call (Id (("extract" | "compact"), _), _args) ->
+      env.bailout := true;
+      (* todo? else display an error? weird argument to param_xxx func? *)
+
+      (* facebook specific? should be a hook instead to visit_prog? *)
+  | Call(Id("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
+        (ConsArray (_, _, array_args))::rest_param_xxx_args) ->
+
+      (* have passed a 'prefix' arg, or nothing *)
+      if List.length rest_param_xxx_args <= 1
+      then begin
+        let prefix_opt =
+          match rest_param_xxx_args with
+          | [String(str_prefix, _tok_prefix)] -> 
+              Some str_prefix
+          | [] ->
+              (match kind with
+              | "param_post" -> Some "post_"
+              | "param_get" -> Some "get_"
+              | "param_request" -> Some "req_"
+              | "param_cookie" -> Some "cookie_"
+              | _ -> raise Impossible
+              )
+          | _ -> 
+              (* less: display an error? weird argument to param_xxx func?*)
+              None
+        in
+        prefix_opt +> Common.do_option (fun prefix ->
+          array_args +> List.iter (function
+          | Akval(String(param_string, tok_param), _typ_param) ->
+              let s = "$" ^ prefix ^ param_string in
+              let tok = A.tok_of_name (param_string, tok_param) in
+              env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
+              (* less: display an error? weird argument to param_xxx func? *)
+          | _ -> ()
+          )
+        )
+      end
 
   | Call (e, es) ->
       expr env e;
@@ -641,48 +691,8 @@ and expr env = function
             create_new_local_if_necessary ~incr_count:true env name
 
         | _ -> expr env arg
-      );
-
-      (* facebook specific? should be a hook instead to visit_prog? *)
-      (match e, es with
-      | Id ("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
-        (ConsArray (_, _, array_args))::rest_param_xxx_args ->
-
-          (* have passed a 'prefix' arg, or nothing *)
-          if List.length rest_param_xxx_args <= 1
-          then begin
-            let prefix_opt =
-              match rest_param_xxx_args with
-              | [String(str_prefix, _tok_prefix)] -> 
-                  Some str_prefix
-              | [] ->
-                  (match kind with
-                  | "param_post" -> Some "post_"
-                  | "param_get" -> Some "get_"
-                  | "param_request" -> Some "req_"
-                  | "param_cookie" -> Some "cookie_"
-                  | _ -> raise Impossible
-                  )
-              | _ -> 
-                  (* less: display an error? weird argument to param_xxx func?*)
-                  None
-            in
-            prefix_opt +> Common.do_option (fun prefix ->
-              array_args +> List.iter (function
-              | Akval(String(param_string, tok_param), _typ_param) ->
-                let s = "$" ^ prefix ^ param_string in
-                let tok = A.tok_of_name (param_string, tok_param) in
-                env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
-              (* less: display an error? weird argument to param_xxx func? *)
-              | _ -> ()
-              )
-            )
-          end
-      | Id (("extract" | "compact"), _), _ ->
-          env.bailout := true;
-          (* todo? else display an error? weird argument to param_xxx func? *)
-      | _ -> ()
       )
+
 
   | This name ->
       (* when we do use($this) in closures, we create a fresh $this variable
