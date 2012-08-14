@@ -772,7 +772,13 @@ and array_value env = function
   | Akval (e1, e2) -> exprl env [e1; e2]  
 
 and xml env x =
-  raise Todo
+  x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
+  x.xml_body +> List.iter (xhp env)
+
+and xhp env = function
+  | XhpText s -> ()
+  | XhpExpr e -> expr env e
+  | XhpXml x -> xml env x
 
 and exprl env xs = List.iter (expr env) xs
 and array_valuel env xs = List.iter (array_value env) xs

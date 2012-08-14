@@ -129,6 +129,10 @@ class TestLambdaUseThis {
   }
 }
 
+function test_undefined_xhp() {
+  return <x:frag>$undefined</x:frag>;
+}
+
 //*************************************************************************
 // False positives fix (see also variables_fp.php)
 //*************************************************************************
