@@ -27,9 +27,6 @@ function test_unset() {
   //ERROR: unused variable. Yes it's used by unset but this should not count.
   $unset_variable = 1;
   unset($unset_variable);
-
-  //ERROR: use of undefined variable
-  unset($undefined_bis2);
 }
 
 function test_undefined_foreach() {
