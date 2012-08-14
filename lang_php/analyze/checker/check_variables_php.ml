@@ -398,11 +398,15 @@ and func_def env def =
 
   let env = { env with
     (* fresh new scope, PHP has function scope (not block scope) *)
-    vars = ref (def.f_params +> List.map (fun p ->
+    vars = ref ((
+      (def.f_params +> List.map (fun p ->
         let (s, tok) = s_tok_of_name p.p_name in
         s, (tok, S.Param, ref access_cnt)
-      ) +> Map_poly.of_list
-    );
+      )) ++
+      (Env_php.globals_builtins +> List.map (fun s ->
+       "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
+      ))
+      ) +> Map_poly.of_list);
     (* reinitialize bailout for each function/method *)
     bailout = ref false;
   }
@@ -816,12 +820,10 @@ and method_def env x = func_def env x
 
 let check_and_annotate_program2 find_entity prog =
   let env = {
-    vars = ref Map_poly.empty;
-    (* todo?
-       [Env_php.globals_builtins +> List.map (fun s ->
-       fake_var s, (S.Global, ref 1)
-       )];
-    *)
+    (* less: should be a in globals field instead? *)
+    vars = ref (Env_php.globals_builtins +> List.map (fun s ->
+       "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
+       ) +> Map_poly.of_list);
     db = find_entity;
     (* todo: extract all vars and their scope_ref and keep that in a 
      * symbol table so one can find them back.

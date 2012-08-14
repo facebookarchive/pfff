@@ -133,6 +133,19 @@ function test_undefined_xhp() {
   return <x:frag>$undefined</x:frag>;
 }
 
+//Test super globals
+$x = $_GET['foo'];
+echo $x;
+
+//ERROR: not a superglobal
+$x = $NOTSUPERGLOBAL['foo'];
+echo $x;
+
+function test_super_globals() {
+  //ok
+  $GLOBALS++;
+}
+
 //*************************************************************************
 // False positives fix (see also variables_fp.php)
 //*************************************************************************
