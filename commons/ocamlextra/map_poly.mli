@@ -120,3 +120,4 @@ module Make (Ord : OrderedType) : S with type key = Ord.t
 
 (* addons pad *)
       val of_list: ('key * 'a) list -> ('key, 'a) t
+      val to_list: ('key, 'a) t -> ('key * 'a) list

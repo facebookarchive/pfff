@@ -147,3 +147,6 @@
 (* addons pad *)
 let of_list xs =
   List.fold_left (fun acc (k, v) -> add k v acc) empty xs
+
+let to_list t =
+  fold (fun k v acc -> (k,v)::acc) t []
