@@ -66,15 +66,21 @@ function test_undefined_list() {
   echo $overriden_by_list;
 */
 
+function test_suggest_fix() {
+  //ERROR: unused variable, because of the typo in the line below
+  $typo_variable = misc1($a);
+  //ERROR: error message should suggest and say "do you mean $typo_variable?"
+  if ($typo_varable === false) {
+    return 1;
+  }
+  return 2;
+}
+
 class TestUndefinedUnusedInMethod {
   public function foo($a) {
-    //ERROR: unused variable, because of the typo in the line below
-    $typo_variable = misc1($a);
-    //ERROR: use of undefined variable, typo
-    if ($typo_varable === false) {
-      return 1;
-    }
-    return 2;
+    echo $a;
+    //ERROR: use of undeclared variable
+    echo $undefined;
   }
 
   public function test_this() {

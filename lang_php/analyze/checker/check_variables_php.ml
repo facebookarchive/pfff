@@ -312,8 +312,11 @@ let check_defined env name ~incr_count =
         let err = 
           if env.in_lambda
           then E.UseOfUndefinedVariableInLambda s
-          (* todo: suggest *)
-          else E.UseOfUndefinedVariable (s, None)
+          else 
+            let allvars = 
+              !(env.vars) +> Map_poly.to_list +> List.map fst in
+            let suggest = Suggest_fix_php.suggest s allvars in
+            E.UseOfUndefinedVariable (s, suggest)
         in
         E.fatal (A.tok_of_name name) err
 

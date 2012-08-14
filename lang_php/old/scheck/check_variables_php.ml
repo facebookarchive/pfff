@@ -15,11 +15,6 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           );
           k x
 
-let check_undefined_variable ~in_lambda var env =
-  let allvars = Env.collect_all_vars env +> List.map Ast.dname in
-  let suggest = Suggest_fix_php.suggest s allvars in
-  (E.UseOfUndefinedVariable (s, suggest))
-
 let do_in_new_scope_and_check_unused_if_strict f =
   if !E.strict 
   then do_in_new_scope_and_check_unused f
