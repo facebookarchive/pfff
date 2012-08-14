@@ -96,11 +96,13 @@ module Ent = Database_code
  * - DONE catch
  * - DONE Builtins ($this)
  * - DONE Lexical vars, in php 5.3 lambda expressions
+ * pad: forgot pass by reference variables
  * 
  * "These things make lexical scope unknowable":
  * - DONE Use of extract()
- * - SEMI Assignment or Global with variable variables ($$x)
+ * - DONE Assignment or Global with variable variables ($$x)
  *   (pad: so just bailout on such code)
+ * pad: forgot eval()
  * 
  * These things don't count as "using" a variable:
  * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
@@ -135,19 +137,13 @@ module Ent = Database_code
  *    to use ast_php_simple and an "env" approach because the code was
  *    getting ugly and was containing false positives that were hard to fix.
  *    As a side effect of the refactoring, some bugs disappeared (TODO nested
- *    assigns in if, TODO nested list(), undefined access to an array), and
+ *    assigns in if, nested list(), undefined access to an array), and
  *    code regarding lexical variables became more clear because localized
  *    in one place.
  * 
  * TODO LATEST:
  * "These things declare variables in a function":
- * - Assignment via list()
  * - Static, Global
- * 
- * "These things make lexical scope unknowable":
- * - Assignment or Global with variable variables ($$x)
- *   (pad: I actually bail out on such code)
- * 
  * These things don't count as "using" a variable:
  * - empty()
  * 
@@ -576,8 +572,14 @@ and expr env = function
             | _ -> raise Todo
           )
           in
+          (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
-          (* todo: use create_new_local_if_necessary *)
+          (* todo: use create_new_local_if_necessary 
+           * if the variable was already existing, then 
+           * better not to add a new binding cos this will mask
+           * a previous one which will never get its ref 
+           * incremented.
+           *)
           all_vars +> List.iter (fun name ->
             let (s, tok) = s_tok_of_name name in
             env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref) 

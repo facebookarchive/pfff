@@ -95,28 +95,6 @@ let visit_prog find_entity prog =
        *)
       | AssignList (_, xs, _, e) ->
 
-          let assigned = xs +> Ast.unparen +> Ast.uncomma in
-          (* Use the same trick than for LocalIterator *)
-          let shared_ref = ref 0 in
-
-          assigned +> List.iter (fun list_assign ->
-            let vars = vars_used_in_any (ListAssign list_assign) in
-            vars +> List.iter (fun v ->
-              (* if the variable was already existing, then 
-               * better not to add a new binding cos this will mask
-               * a previous one which will never get its ref 
-               * incremented.
-               *)
-              let s = Ast.dname v in
-              match lookup_env_opt s !_scoped_env with
-              | None ->
-                  add_binding v (S.ListBinded, shared_ref)
-              | Some _ ->
-                  ()
-            );
-          );
-          vx (Expr e)
-
       | _ ->
 
        (* do the checking and environment update only for the top expressions *)
