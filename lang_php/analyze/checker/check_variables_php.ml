@@ -387,8 +387,11 @@ and func_def env def =
     (* Don't report UnusedParameter for parameters of methods;
      * people sometimes override a method and don't use all
      * the parameters, hence the 1 value below.
+     * 
+     * less: we we don't want parameters just in method interface
+     *  to not be counted as unused Parameter 
      * less: one day we will have an @override annotation in which
-     * case we can reconsider the above design decision.
+     *  case we can reconsider the above design decision.
      *)
     | Method _ -> 1 
   in

@@ -1,3 +1,22 @@
+let vars_passed_by_ref_in_any ~in_class find_entity = 
+      | StaticMethodCallSimple (qu, name, args) ->
+          (match qu with
+          | (Self _ | Parent _), _ ->
+              (* The code of traits can contain reference to Parent:: that
+               * we cannot unsugar.
+               * todo: check that in_trait here? or avoid calling
+               * this function when inside traits?
+               *)
+              (* failwith "check_var_help: call unsugar_self_parent()"*)
+              ()
+          | LateStatic _, _ ->
+              (* not much we can do :( *)
+              ()
+          );
+          k x
+
+
+
 let check_undefined_variable ~in_lambda var env =
   let allvars = Env.collect_all_vars env +> List.map Ast.dname in
   let suggest = Suggest_fix_php.suggest s allvars in
@@ -17,28 +36,6 @@ let visit_prog find_entity prog =
     (* -------------------------------------------------------------------- *)
     (* scoping management *)
     (* -------------------------------------------------------------------- *)
-
-    (* function scope checking *)
-    V.kfunc_def = (fun (k, _) x ->
-        match x.f_type with
-        | MethodAbstract _ -> 
-            (* we don't want parameters in method interface to be counted
-             * as unused Parameter *)
-            ()
-
-        | MethodRegular ->
-              (* we put 1 as 'use_count' below because we are not interested
-               * in error message related to $this.
-               * It's legitimate to not use $this in a method.
-               *)
-              let dname = Ast.DName ("this", Ast.fakeInfo "this") in
-              add_binding dname (S.Class, ref 1);
-            end;
-            do_in_new_scope_and_check_unused (fun () -> k x);
-      | FunctionRegular | FunctionLambda -> 
-          do_in_new_scope_and_check_unused (fun () -> k x);
-      ))
-    );
 
     (* 'if', 'while', and other blocks should introduce a new scope.
      * The default function-only scope of PHP is a bad idea. 
