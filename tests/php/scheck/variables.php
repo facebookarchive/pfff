@@ -51,6 +51,24 @@ function test_undefined_foreach() {
   }
 }
 
+function test_undefined_list() {
+  list($ok, $ok2) = misc1(1);
+  echo $ok;
+  echo $ok2;
+
+  //ERROR: unused variable
+  list($unused, $unused_too) = misc1(1);
+
+  // this is ok, at least of the variable is used
+  list($used, $unused_but_ok) = misc1(1);
+  echo $used;
+}
+/* TODO
+  $overriden_by_list = 1;
+  list($ok, $overriden_by_list) = misc1();
+  echo $overriden_by_list;
+*/
+
 class TestUndefinedUnusedInMethod {
   public function foo($a) {
     //ERROR: unused variable, because of the typo in the line below

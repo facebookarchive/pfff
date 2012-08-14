@@ -569,9 +569,21 @@ and expr env = function
            *)
           create_new_local_if_necessary ~incr_count:false env name;
 
-      (* todo: extract all vars, and share the same reference *)
+      (* extract all vars, and share the same reference *)
       | List xs ->
-          ()
+          let all_vars = xs +> List.map (function
+            | Id name when A.is_variable name -> name
+            | _ -> raise Todo
+          )
+          in
+          let shared_ref = ref 0 in
+          (* todo: use create_new_local_if_necessary *)
+          all_vars +> List.iter (fun name ->
+            let (s, tok) = s_tok_of_name name in
+            env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref) 
+              !(env.vars);
+          )
+
       (* todo: for bhiller *)
       | Array_get (_, e_arr, e_opt) ->
           expr env e_arr;
@@ -615,7 +627,7 @@ and expr env = function
       expr env y;
       vars +> List.iter (function
       | Id name when A.is_variable name ->
-          create_new_local_if_necessary ~incr_count:true env name
+          create_new_local_if_necessary ~incr_count:false env name
       (* less: wrong, it should be a variable? *)
       | e -> expr env e
       )

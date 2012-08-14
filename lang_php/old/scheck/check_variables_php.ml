@@ -15,8 +15,6 @@ let vars_passed_by_ref_in_any ~in_class find_entity =
           );
           k x
 
-
-
 let check_undefined_variable ~in_lambda var env =
   let allvars = Env.collect_all_vars env +> List.map Ast.dname in
   let suggest = Suggest_fix_php.suggest s allvars in
