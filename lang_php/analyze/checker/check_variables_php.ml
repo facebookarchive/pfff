@@ -526,7 +526,10 @@ and stmt env = function
   | StaticVars xs ->
       xs +> List.iter (fun (name, eopt) ->
         Common.opt (expr env) eopt;
-        (* todo: add in vars *)
+        let (s, tok) = s_tok_of_name name in
+        (* less: check if shadow something? *)
+        env.vars := Map_poly.add s (tok, S.Static, ref 0)
+          !(env.vars);
       )
   | Global xs ->
       xs +> List.iter (fun e ->

@@ -69,12 +69,6 @@ let visit_prog find_entity prog =
                 E.warning tok E.UglyGlobalDynamic
           )
 
-      | StaticVars (_, vars_list, _) ->
-          vars_list +> Ast.uncomma +> List.iter (fun (varname, affect_opt) ->
-            add_binding varname (S.Static, ref 0);
-            (* TODO recurse on the affect ? *)
-          )
-
     (* -------------------------------------------------------------------- *)
     (* checking uses *)
     (* -------------------------------------------------------------------- *)

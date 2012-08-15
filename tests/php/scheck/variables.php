@@ -5,11 +5,13 @@
 //*************************************************************************
 
 //ERROR: unused parameter
-function test_undefined_and_unused_variables_basic($unused_parameter) {
+function test_undefined_and_unused_variables_basic($param, $unused_parameter) {
 
   $ok = 1;
   // misc1() is defined in common.php
   misc1($ok);
+
+  misc1($param);
 
   //ERROR: unused variable
   $unused = 1;
@@ -158,6 +160,12 @@ echo $x;
 function test_super_globals() {
   //ok
   $GLOBALS++;
+}
+
+function test_static() {
+  static $local_static = 1;
+  // ok
+  echo $local_static;
 }
 
 //*************************************************************************
