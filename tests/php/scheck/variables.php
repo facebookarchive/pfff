@@ -63,12 +63,16 @@ function test_undefined_list() {
   // this is ok, at least of the variable is used
   list($used, $unused_but_ok) = misc1(1);
   echo $used;
-}
-/* TODO
+
+  $array = array();
+  // this is ok
+  list($array['fld1'], $array['fld2']) = misc1(1);
+
+  // this is ok too
   $overriden_by_list = 1;
-  list($ok, $overriden_by_list) = misc1();
+  list($ok, $overriden_by_list) = misc1(1);
   echo $overriden_by_list;
-*/
+}
 
 function test_suggest_fix() {
   //ERROR: unused variable, because of the typo in the line below

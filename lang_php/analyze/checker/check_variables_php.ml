@@ -151,6 +151,7 @@ module Ent = Database_code
  *  - nested assign in if, should work now? no more FPs?
  *  - bhiller check on array field access and unset array field
  * 
+ *  - factorize code for the shared_ref thing and create_new_local_if_necessary
  *  - the old checker was handling correctly globals? was it looking up
  *    in the top scope? add some unit tests.
  *  - put back strict block scope
@@ -571,26 +572,24 @@ and expr env = function
            * I talk about parameters, not arguments) passed by reference.
            *)
           create_new_local_if_necessary ~incr_count:false env name;
-
+          
       (* extract all vars, and share the same reference *)
       | List xs ->
-          let all_vars = xs +> List.map (function
-            | Id name when A.is_variable name -> name
-            | _ -> raise Todo
-          )
-          in
           (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
-          (* todo: use create_new_local_if_necessary 
-           * if the variable was already existing, then 
-           * better not to add a new binding cos this will mask
-           * a previous one which will never get its ref 
-           * incremented.
-           *)
-          all_vars +> List.iter (fun name ->
-            let (s, tok) = s_tok_of_name name in
-            env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref) 
-              !(env.vars);
+          xs +> List.iter (function
+            | Id name when A.is_variable name -> 
+                let (s, tok) = s_tok_of_name name in
+                (match lookup_opt s !(env.vars) with
+                | None ->
+                    env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref)
+                      !(env.vars);
+                | Some (_tok, scope, access_cnt) ->
+                    ()
+                )
+            | Array_get (x, e_arr, e_opt) ->
+                expr env (Array_get (x, e_arr, e_opt))
+            | _ -> raise Todo
           )
 
       (* todo: for bhiller *)
