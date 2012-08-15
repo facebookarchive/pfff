@@ -264,7 +264,7 @@ and expr =
 (* The func_def type below is actually used both for functions and methods.
  *
  * For methods, a few names are specials: 
- *  - __construct
+ *  - __construct, __destruct
  *  - __call, __callStatic
  *)
 and func_def = {
