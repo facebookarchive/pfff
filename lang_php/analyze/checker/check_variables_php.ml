@@ -615,7 +615,7 @@ and expr env = function
 
   (* A mention of a variable in a unset() should not be really
    * considered as a use of variable. There should be another
-   * statement in the function that actually use the variable.
+   * statement in the function that actually uses the variable.
    *)
   | Call (Id ("__builtin__unset", tok), args) ->
       (match args with
@@ -749,7 +749,6 @@ and expr env = function
       | _ -> expr env e2
       )
 
-  (* transform in code with Call to factorize code *)
   | New (e, es) ->
       expr env (Call (Class_get(e, Id ("__construct", None)), es))
 
