@@ -625,8 +625,8 @@ and expr env = function
           assert (A.is_variable name);
           check_defined ~incr_count:false env name
       (* unsetting a field *)
-      | [Array_get (_, e_arr, e_opt)] ->
-          raise Todo
+      | [Array_get (x, e_arr, e_opt)] ->
+          expr env (Array_get (x, e_arr, e_opt))
       | _ -> raise Todo
       )
   (* special case, could factorize maybe with pass_var_by_ref *)

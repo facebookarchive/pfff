@@ -27,6 +27,10 @@ function test_unset() {
   //ERROR: unused variable. Yes it's used by unset but this should not count.
   $unset_variable = 1;
   unset($unset_variable);
+
+  $arr = array();
+  $arr['field'] = 1;
+  unset($arr['field']);
 }
 
 function test_undefined_foreach() {
