@@ -60,6 +60,8 @@ function test_undefined_foreach() {
 
   foreach($matches as &$k) {
     $k = 42;
+    //TODO: one should not need to echo $k, the assignment just before
+    // should actually count as a use of $k.
     echo $k;
   }
 }
@@ -84,6 +86,10 @@ function test_undefined_list() {
   $overriden_by_list = 1;
   list($ok, $overriden_by_list) = misc1(1);
   echo $overriden_by_list;
+
+  // this is ok too
+  list($ok1, $ok2, list($ok3, $ok4)) = misc1(1);
+  echo $ok1;
 }
 
 function test_suggest_fix() {

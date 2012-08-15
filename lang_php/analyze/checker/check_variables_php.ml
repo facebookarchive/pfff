@@ -527,9 +527,8 @@ and stmt env = function
       xs +> List.iter (fun (name, eopt) ->
         Common.opt (expr env) eopt;
         let (s, tok) = s_tok_of_name name in
-        (* less: check if shadow something? *)
-        env.vars := Map_poly.add s (tok, S.Static, ref 0)
-          !(env.vars);
+        (* less: check if shadows something? *)
+        env.vars := Map_poly.add s (tok, S.Static, ref 0) !(env.vars);
       )
   | Global xs ->
       xs +> List.iter (fun e ->
@@ -571,17 +570,17 @@ and expr env = function
 
   | Id name -> ()
 
-  (* lvalue *)
   | Assign (None, e1, e2) ->
+      (* e1 should be an lvalue *)
       (match e1 with
       | Id name ->
           (* Does an assignation counts as a use? If you only 
            * assign and never use a variable what is the point? 
-           * This should be legal only for parameters (note that here
-           * I talk about parameters, not arguments) passed by reference.
+           * This should be legal only for parameters passed by reference.
+           * (note that here I talk about parameters, not arguments) 
            * 
            * TODO: hmm if you take a reference to something, then
-           *  assigning something to id should be considered as a use.
+           *  assigning something to it should be considered as a use too.
            *)
           create_new_local_if_necessary ~incr_count:false env name;
           
@@ -589,8 +588,9 @@ and expr env = function
       | List xs ->
           (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
-          xs +> List.iter (function
-            (* should be lvalue again *)
+
+          let rec aux = function
+            (* should be an lvalue again *)
             | Id name when A.is_variable name -> 
                 let (s, tok) = s_tok_of_name name in
                 (match lookup_opt s !(env.vars) with
@@ -602,10 +602,12 @@ and expr env = function
                 )
             | ((Array_get _ | Obj_get _ | Class_get _) as e) ->
                 expr env e
+            | List xs -> List.iter aux xs
             | _ -> 
                 pr2 (str_of_any (Expr2 (List xs)));
                 raise Todo
-          )
+          in
+          List.iter aux xs
 
       (* todo: for bhiller *)
       | Array_get (_, e_arr, e_opt) ->
