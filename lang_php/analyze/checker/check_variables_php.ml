@@ -502,7 +502,9 @@ and stmt env = function
                   env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
                     !(env.vars);
               (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-              | _ -> raise Todo
+              | _ -> 
+                  pr2 (str_of_any (Expr2 e3));
+                  raise Todo
               )
           );
           stmtl env xs
@@ -566,10 +568,7 @@ and expr env = function
 
   | Id name -> ()
 
-  (* lvalue.
-   * todo: factorize code with vars/array-field when passed by ref,
-   * have a lvalue function?
-   *)
+  (* lvalue *)
   | Assign (None, e1, e2) ->
       (match e1 with
       | Id name ->
@@ -588,6 +587,7 @@ and expr env = function
           (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
           xs +> List.iter (function
+            (* should be lvalue again *)
             | Id name when A.is_variable name -> 
                 let (s, tok) = s_tok_of_name name in
                 (match lookup_opt s !(env.vars) with
@@ -597,7 +597,7 @@ and expr env = function
                 | Some (_tok, scope, access_cnt) ->
                     ()
                 )
-            | ((Array_get (_, _, _) | Obj_get _ | Class_get _) as e) ->
+            | ((Array_get _ | Obj_get _ | Class_get _) as e) ->
                 expr env e
             | _ -> raise Todo
           )
