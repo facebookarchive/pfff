@@ -473,8 +473,7 @@ and stmt env = function
       expr env e1;
 
       (match e2 with
-      (* todo: could be a Ref (Id ...) too? *)
-      | Id name ->
+      | Id name | Ref (Id name) ->
           assert (A.is_variable name);
           let (s, tok) = s_tok_of_name name in
           (* People often use only one of the iterator when
@@ -496,7 +495,7 @@ and stmt env = function
           | None -> ()
           | Some e3 ->
               (match e3 with
-              | Id name ->
+              | Id name | Ref (Id name) ->
                   assert (A.is_variable name);
                   let (s, tok) = s_tok_of_name name in
                   (* todo: scope_ref := S.LocalIterator; *)
@@ -578,6 +577,9 @@ and expr env = function
            * assign and never use a variable what is the point? 
            * This should be legal only for parameters (note that here
            * I talk about parameters, not arguments) passed by reference.
+           * 
+           * TODO: hmm if you take a reference to something, then
+           *  assigning something to id should be considered as a use.
            *)
           create_new_local_if_necessary ~incr_count:false env name;
           

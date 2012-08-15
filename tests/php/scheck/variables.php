@@ -53,6 +53,11 @@ function test_undefined_foreach() {
   foreach($matches as $match) {
     echo $match;
   }
+
+  foreach($matches as &$k) {
+    $k = 42;
+    echo $k;
+  }
 }
 
 function test_undefined_list() {
@@ -213,6 +218,7 @@ function test_class_variables() {
   TestClassVariable::$dbGetters = array();
 }
 
+//TODO: test_unused_var_ok_when_assign_ref() { }
 
 //*************************************************************************
 // Algorithm cleverness
