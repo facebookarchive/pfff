@@ -508,7 +508,9 @@ and stmt env = function
           );
           stmtl env xs
       (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-      | _ -> raise Todo          
+      | _ -> 
+          pr2 (str_of_any (Expr2 e2));
+          raise Todo          
       );
 
   | Return (_, eopt)   

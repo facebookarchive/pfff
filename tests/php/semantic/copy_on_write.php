@@ -5,7 +5,7 @@ $y = $x;
 $x = 2;
 // this will print 1, cos PHP '=' is kinda like a deep_copy operator
 // except that for performance reasons they do it lazily (when someone
-// write into it, as in an OS with fork copy-on-write)
+// writes into it, as in an OS with fork's copy-on-write)
 var_dump($y);
 
 $x2 = 1;
