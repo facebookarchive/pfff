@@ -336,6 +336,16 @@ and class_def = {
   and method_def = func_def
  (* with tarzan *)
 
+(* ------------------------------------------------------------------------- *)
+(* Any *)
+(* ------------------------------------------------------------------------- *)
+type any =
+  | Program of program
+  | Stmt of stmt
+  | Expr2 of expr
+  | Param of parameter
+ (* with tarzan *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -346,13 +356,13 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
 (* builtin() is used for:
  *  - 'eval', and implicitly generated eval/reflection like functions:
  *     "eval_var" (e.g. for echo $$x, echo ${"x"."y"}),
- *     "eval_obj_field" (e.g. for echo $o->$fld)
- *  - 'clone', 
+ *     "eval_var_field" (e.g. for echo $o->$fld)
+ *  - 'clone',
  *  - 'exit', 'yield', 'yield_break'
  *  - 'unset', 'isset', 'empty'
  *     http://php.net/manual/en/function.unset.php
- *  - 'echo', 'print', 
- *  - '@', '`', 
+ *  - 'echo', 'print',
+ *  - '@', '`',
  *  - 'include', 'require', 'include_once', 'require_once'.
  *  -  __LINE__/__FILE/__DIR/__CLASS/__TRAIT/__FUNCTION/__METHOD/
  * 

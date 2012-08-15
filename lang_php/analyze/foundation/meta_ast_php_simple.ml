@@ -338,4 +338,9 @@ and
 and vof_modifier x = Ast_php.vof_modifier x
 and vof_method_def x = vof_func_def x
 
-
+let vof_any =
+  function
+  | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
+  | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
+  | Expr2 v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr2", [ v1 ]))
+  | Param v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Param", [ v1 ]))

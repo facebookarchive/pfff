@@ -216,6 +216,12 @@ let lookup_opt s vars =
 let s_tok_of_name name =
   A.str_of_name name, A.tok_of_name name
 
+(* to help debug *)
+let str_of_any any =
+  let v = Meta_ast_php_simple.vof_any any in
+  Ocaml.string_of_v v
+
+
 (*****************************************************************************)
 (* Vars passed by ref *)
 (*****************************************************************************)
@@ -605,10 +611,8 @@ and expr env = function
           expr env e1
 
       (* can we have another kind of lvalue? *)
-      | e -> 
-          let v = Meta_ast_php_simple.vof_expr e in
-          let s = Ocaml.string_of_v v in
-          pr s;
+      | e ->
+          pr2 (str_of_any (Expr2 e));
           raise Todo
       );
       expr env e2
