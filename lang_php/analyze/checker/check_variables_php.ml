@@ -587,8 +587,8 @@ and expr env = function
                 | Some (_tok, scope, access_cnt) ->
                     ()
                 )
-            | Array_get (x, e_arr, e_opt) ->
-                expr env (Array_get (x, e_arr, e_opt))
+            | ((Array_get (_, _, _) | Obj_get _ | Class_get _) as e) ->
+                expr env e
             | _ -> raise Todo
           )
 
@@ -604,7 +604,12 @@ and expr env = function
            *)
           expr env e1
 
-      | _ -> raise Todo
+      (* can we have another kind of lvalue? *)
+      | e -> 
+          let v = Meta_ast_php_simple.vof_expr e in
+          let s = Ocaml.string_of_v v in
+          pr s;
+          raise Todo
       );
       expr env e2
 
@@ -623,10 +628,15 @@ and expr env = function
       | [Id name] ->
           assert (A.is_variable name);
           check_defined ~incr_count:false env name
-      (* unsetting a field *)
-      | [Array_get (x, e_arr, e_opt)] ->
-          expr env (Array_get (x, e_arr, e_opt))
-      | _ -> raise Todo
+      (* unsetting a field, seems like a valid use *)
+      | [Array_get (_, _, _)]
+      (* unsetting a prop, not clear why you want that *)
+      | [Obj_get _]
+      (* unsetting a class var, not clear why you want that either *)
+      | [Class_get _]
+        ->
+          exprl env args
+      | _ -> failwith "unset() case not handled"
       )
   (* special case, could factorize maybe with pass_var_by_ref *)
   | Call (Id ("sscanf", tok), x::y::vars) ->
@@ -644,7 +654,7 @@ and expr env = function
   | Call (Id ("__builtin__isset", tok), [Id (name)]) when A.is_variable name ->
       ()
 
-  | Call (Id (("__builtin__eval" | "__builtin__eval_var" | 
+  | Call (Id (("__builtin__eval" | "__builtin__eval_var" |
                "extract" | "compact"
        ), _), _args) ->
       env.bailout := true;
