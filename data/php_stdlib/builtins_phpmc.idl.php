@@ -4,6 +4,8 @@ class CacheClientCore {
 const INTERNAL_ROUTER = 0;
 const EXTERNAL_ROUTER = 0;
  function getFeatures() { }
+ function setLogFile($file) { }
+ function setLogLevel($level) { }
  function __construct($params) { }
  function __destruct() { }
  function send(&$msgs) { }
@@ -13,10 +15,12 @@ const EXTERNAL_ROUTER = 0;
  function setTimeout($seconds, $microseconds) { }
  function setKeepalive($keepcnt, $keepidle, $keepintvl) { }
  function setTcpRtoMin($tcpRtoMin) { }
+ function getConfigOptions() { }
  function router_stats_age($name) { }
  function router_stats($name, $clear = 0) { }
  function reset() { }
  function stats($clear = 0) { }
+ function checkPrerequisites($param, &$err) { }
 const mc_client_ok = 0;
 const mc_client_invalid_handle = 0;
 const mc_client_invalid_state = 0;
@@ -73,7 +77,6 @@ const mc_res_stalestored = 0;
 const mc_res_ok = 0;
 const mc_res_stored = 0;
 const mc_res_exists = 0;
-const mc_res_suppressed = 0;
 const mc_res_ooo = 0;
 const mc_res_timeout = 0;
 const mc_res_connect_timeout = 0;
