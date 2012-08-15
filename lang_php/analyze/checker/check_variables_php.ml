@@ -497,7 +497,7 @@ and stmt env = function
                   env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
                     !(env.vars);
               (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-              | _ -> raise Todo          
+              | _ -> raise Todo
               )
           );
           stmtl env xs
