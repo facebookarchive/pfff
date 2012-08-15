@@ -34,6 +34,8 @@ function test_unset() {
 
   // you can also unset the field of an object, or even a class variable
   // but I am not sure why you want that ...
+
+  unset($arr[0], $arr[1]);
 }
 
 function test_undefined_foreach() {

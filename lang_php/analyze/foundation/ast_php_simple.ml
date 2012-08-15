@@ -164,6 +164,10 @@ and stmt =
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
+
+(* lvalue and expr has been mixed in this AST, but an lvalue should be
+ * an expr restricted to: Id $var, Array_get, Obj_get, Class_get, List.
+ *)
 and expr =
   (* booleans are really just Int in PHP :( *)
   | Int of string

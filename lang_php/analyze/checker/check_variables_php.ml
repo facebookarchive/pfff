@@ -599,7 +599,9 @@ and expr env = function
                 )
             | ((Array_get _ | Obj_get _ | Class_get _) as e) ->
                 expr env e
-            | _ -> raise Todo
+            | _ -> 
+                pr2 (str_of_any (Expr2 (List xs)));
+                raise Todo
           )
 
       (* todo: for bhiller *)
@@ -631,20 +633,20 @@ and expr env = function
    * statement in the function that actually uses the variable.
    *)
   | Call (Id ("__builtin__unset", tok), args) ->
-      (match args with
-      (* less: The use of 'unset' on a variable is still not clear to me. *)
-      | [Id name] ->
-          assert (A.is_variable name);
-          check_defined ~incr_count:false env name
-      (* unsetting a field, seems like a valid use *)
-      | [Array_get (_, _, _)]
-      (* unsetting a prop, not clear why you want that *)
-      | [Obj_get _]
-      (* unsetting a class var, not clear why you want that either *)
-      | [Class_get _]
-        ->
-          exprl env args
-      | _ -> failwith "unset() case not handled"
+      args +> List.iter (function
+        (* should be an lvalue again *)
+        (* less: The use of 'unset' on a variable is still not clear to me. *)
+        | Id name ->
+            assert (A.is_variable name);
+            check_defined ~incr_count:false env name
+        (* Unsetting a field, seems like a valid use.
+         * Unsetting a prop, not clear why you want that.
+         * Unsetting a class var, not clear why you want that either 
+         *)
+        | (Array_get (_, _, _) | Obj_get _ | Class_get _) as e -> expr env e
+        | e -> 
+            pr2 (str_of_any (Expr2 e));
+            raise Todo
       )
   (* special case, could factorize maybe with pass_var_by_ref *)
   | Call (Id ("sscanf", tok), x::y::vars) ->
