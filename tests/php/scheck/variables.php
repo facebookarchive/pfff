@@ -5,7 +5,7 @@
 //*************************************************************************
 
 //ERROR: unused parameter
-function test_undefined_and_unused_variables_basic($a) {
+function test_undefined_and_unused_variables_basic($unused_parameter) {
 
   $ok = 1;
   // misc1() is defined in common.php
@@ -139,10 +139,6 @@ class TestLambdaUseThis {
   }
 }
 
-function test_undefined_xhp() {
-  return <x:frag>$undefined</x:frag>;
-}
-
 //Test super globals
 $x = $_GET['foo'];
 echo $x;
@@ -169,6 +165,12 @@ function test_eval_var_field() {
   $x = 'fld';
   $o->$x = 1;
   echo $o;
+}
+
+// must visit everything
+function test_undefined_xhp() {
+  //ERROR: use of undefined variable
+  return <x:frag>{$undefined}</x:frag>;
 }
 
 //*************************************************************************
