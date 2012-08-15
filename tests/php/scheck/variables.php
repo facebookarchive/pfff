@@ -157,6 +157,21 @@ function test_super_globals() {
 }
 
 //*************************************************************************
+// Misc regressions
+//*************************************************************************
+
+class TestDynProp {
+  public $fld;
+}
+// I was originally not generating the right Ast for dynamic prop access
+function test_eval_var_field() {
+  $o = new TestDynProp;
+  $x = 'fld';
+  $o->$x = 1;
+  echo $o;
+}
+
+//*************************************************************************
 // False positives fix (see also variables_fp.php)
 //*************************************************************************
 // My analysis used to have a few false positives because my code was buggy.

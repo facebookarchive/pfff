@@ -455,9 +455,10 @@ and obj_access env obj (_, objp, args) =
 and obj_property env obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      A.Call (A.Id (A.builtin "eval_var_field",
-                   wrap (Ast_php.fakeInfo (A.builtin "eval_var_field"))),
-             [lvalue env lv])
+      A.Obj_get (obj,
+                A.Call (A.Id (A.builtin "eval_var_field",
+                             wrap(Ast_php.fakeInfo(A.builtin"eval_var_field"))),
+                       [lvalue env lv]))
 
 and obj_dim env obj = function
   | OName n -> A.Obj_get (obj, A.Id(name env n))
