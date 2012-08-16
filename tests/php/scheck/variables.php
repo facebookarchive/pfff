@@ -64,6 +64,8 @@ function test_undefined_foreach() {
     // should actually count as a use of $k.
     echo $k;
   }
+
+  // you can also do things like foreach($arr as $arr2[0]) but it's wierd
 }
 
 function test_undefined_list() {

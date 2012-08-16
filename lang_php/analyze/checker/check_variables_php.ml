@@ -144,7 +144,7 @@ module Ent = Database_code
  * 
  * TODO LATEST:
  * "These things declare variables in a function":
- * - Static, Global
+ * - Global
  * These things don't count as "using" a variable:
  * - empty()
  * 
@@ -473,47 +473,51 @@ and stmt env = function
   | Foreach (e1, e2, e3opt, xs) ->
       expr env e1;
 
+      (* People often use only one of the iterator when
+       * they do foreach like   foreach(... as $k => $v).
+       * We want to make sure that at least one of 
+       * the iterator variables is used, hence this trick to
+       * make them share the same access count reference.
+       *)
+      let shared_ref = ref 0 in
+
       (match e2 with
       | Id name | Ref (Id name) ->
           assert (A.is_variable name);
           let (s, tok) = s_tok_of_name name in
-          (* People often use only one of the iterator when
-           * they do foreach like   foreach(... as $k => $v).
-           * We want to make sure that at least one of 
-           * the iterator variables is used, hence this trick to
-           * make them share the same access count reference.
-           *)
-          let shared_ref = ref 0 in
-
           (* todo: if already in scope? shadowing? *)
           (* todo: if strict then introduce new scope here *)
           (* todo: scope_ref := S.LocalIterator; *)
-
           env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
             !(env.vars);
+      (* other kinds of lvalue are permitted too, but it's a little bit wierd
+       * and very rarely used in www
+       *)
+      | Array_get _ -> expr env e2
 
-          (match e3opt with
-          | None -> ()
-          | Some e3 ->
-              (match e3 with
-              | Id name | Ref (Id name) ->
-                  assert (A.is_variable name);
-                  let (s, tok) = s_tok_of_name name in
-                  (* todo: scope_ref := S.LocalIterator; *)
-                  env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
-                    !(env.vars);
-              (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-              | _ -> 
-                  pr2 (str_of_any (Expr2 e3));
-                  raise Todo
-              )
-          );
-          stmtl env xs
       (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
       | _ -> 
           pr2 (str_of_any (Expr2 e2));
           raise Todo          
       );
+
+      (match e3opt with
+      | None -> ()
+      | Some e3 ->
+          (match e3 with
+          | Id name | Ref (Id name) ->
+              assert (A.is_variable name);
+              let (s, tok) = s_tok_of_name name in
+              (* todo: scope_ref := S.LocalIterator; *)
+              env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
+                !(env.vars);
+              (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
+          | _ -> 
+              pr2 (str_of_any (Expr2 e3));
+              raise Todo
+          )
+      );
+      stmtl env xs
 
   | Return (_, eopt)   
   | Break eopt | Continue eopt ->
