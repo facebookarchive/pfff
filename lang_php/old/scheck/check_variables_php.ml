@@ -75,17 +75,7 @@ let visit_prog find_entity prog =
 
     V.kexpr = (fun (k, vx) x ->
       match x with
-
-      (* todo? if the ConsList is not at the toplevel, then 
-       * the code below will be executed first, which means
-       * vars_used_in_expr will wrongly think vars in list() expr
-       * are unused var. But this should be rare because list()
-       * should be used at a statement level!
-       *)
-      | AssignList (_, xs, _, e) ->
-
       | _ ->
-
        (* do the checking and environment update only for the top expressions *)
        if !is_top_expr
        then begin
