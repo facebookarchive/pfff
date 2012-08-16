@@ -14,7 +14,7 @@ function test_undefined_and_unused_variables_basic($param, $unused_parameter) {
   misc1($param);
 
   //ERROR: unused variable
-  $unused = 1;
+  $unused_var = 1;
 
   //ERROR: use of undefined variable
   echo $undefined;
@@ -256,6 +256,13 @@ function test_class_variables() {
 }
 
 //TODO: test_unused_var_ok_when_assign_ref() { }
+
+function test_unused_var_ok_in_catch() {
+  try {
+  // this is ok if the variable name has a known name like $unused, $exn, etc
+  } catch (Exception $exn) {
+  }
+}
 
 //*************************************************************************
 // Algorithm cleverness

@@ -199,15 +199,15 @@ type env = {
 (*****************************************************************************)
 
 let unused_ok s =     
-  s =~ "_.*" ||
-  s =~ "ignore.*" ||
-  List.mem s ["unused";"dummy";"guard"] ||
+  s =~ "\\$_.*" ||
+  s =~ "\\$ignore.*" ||
+  List.mem s ["$unused";"$dummy";"$guard"] ||
   (if !E.strict
    then false
    else
     List.mem s [
-      "res"; "retval"; "success"; "is_error"; "rs"; "ret";
-      "e"; "ex"; "exn"; (* exception *)
+      "$res"; "$retval"; "$success"; "$is_error"; "$rs"; "$ret";
+      "$e"; "$ex"; "$exn"; (* exception *)
     ]
   )
 
@@ -556,6 +556,7 @@ and stmt env = function
  * even outside strict mode. It's just too ugly.
  * todo: check unused
  * todo? could use local ? could have a UnusedExceptionParameter ? 
+ * less: could use ref 1, the exception is often not used
  *)
 and catch env (hint_type, name, xs) =
   let (s, tok) = s_tok_of_name name in
