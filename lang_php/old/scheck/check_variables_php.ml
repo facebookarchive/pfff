@@ -55,21 +55,6 @@ let visit_prog find_entity prog =
      *)
 
     (* -------------------------------------------------------------------- *)
-    (* adding defs of dname in environment *)
-    (* -------------------------------------------------------------------- *)
-
-    V.kstmt = (fun (k, vx) x ->
-      match x with
-      | Globals (_, vars_list, _) ->
-          vars_list +> Ast.uncomma +> List.iter (fun var ->
-            match var with
-            | GlobalVar dname -> 
-                add_binding dname (S.Global, ref 0)
-            | GlobalDollar (tok, _)  | GlobalDollarExpr (tok, _) ->
-                E.warning tok E.UglyGlobalDynamic
-          )
-
-    (* -------------------------------------------------------------------- *)
     (* checking uses *)
     (* -------------------------------------------------------------------- *)
 

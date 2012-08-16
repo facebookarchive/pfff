@@ -176,6 +176,25 @@ function test_static() {
   echo $local_static;
 }
 
+$aglobal = 1;
+//TODO: globals should have an access count initialized to 1, it's ok
+// if they are not used in the current file as long as someone else
+// somewhere uses it
+echo $aglobal;
+$another_global = 1;
+echo $another_global;
+
+function test_global() {
+  global $aglobal;
+
+  //SKIP: this requires a global analysis
+  global $undefined_global;
+  // ok
+  echo $aglobal;
+  //SKIP:
+  echo $undefined_global;
+}
+
 //*************************************************************************
 // Misc regressions
 //*************************************************************************

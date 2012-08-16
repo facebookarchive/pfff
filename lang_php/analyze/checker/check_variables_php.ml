@@ -537,8 +537,17 @@ and stmt env = function
       )
   | Global xs ->
       xs +> List.iter (fun e ->
-        (* todo: should be a Id most of the time *)
-        ()
+        (* should be an Id most of the time.
+         * todo: should check in .globals that this variable actually exists
+         *)
+        match e with
+        | Id name when A.is_variable name ->
+            let (s, tok) = s_tok_of_name name in
+            env.vars := Map_poly.add s (tok, S.Global, ref 0) !(env.vars);
+        (* todo: E.warning tok E.UglyGlobalDynamic *)
+        | _ ->                      
+            pr2 (str_of_any (Expr2 e));
+            raise Todo          
       )
 
 (* The scope of catch is actually also at the function level in PHP ...
