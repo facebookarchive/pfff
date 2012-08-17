@@ -68,7 +68,9 @@ function test_call_multiply_defined_function() {
   //ERROR: multiply defined entity
   func_dup(1);
 
-  // reported only once
+  //TODO should be reported only once, but now we check for undefined entity
+  // not only in error_php.ml but also check_variables_php.ml
+  //ERROR: multiply defined entity
   func_dup(1);
 
   //ERROR: too many args
