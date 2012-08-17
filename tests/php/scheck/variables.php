@@ -3,9 +3,11 @@
 //*************************************************************************
 // Use of undefined variables and unused variables
 //*************************************************************************
-
-//ERROR: unused parameter
-function test_undefined_and_unused_variables_basic($param, $unused_parameter) {
+ 
+function test_undefined_and_unused_variables_basic(
+  $param, 
+  //ERROR: unused parameter
+  $unused_parameter) {
 
   $ok = 1;
   // misc1() is defined in common.php
@@ -233,12 +235,22 @@ function test_unused_var_ok_when_keyword_arguments_bis() {
   misc1(misc1($key = 1));
 }
 
-function test_not_sure_what() {
-  $a = 1;
+function test_undefined_ok_if_isset() {
   if (isset($a)) {
-    return $a;
+    return 1;
   }
   return 2;
+}
+
+function test_isset_implicit_declaration() {
+  if(isset($a)) {
+    // TODO: should allow that, we should analyze guards
+    //return $a;
+  }
+  if(!isset($isset_var)) {
+    $isset_var = 1;
+    echo $isset_var;
+  }
 }
 
 class TestClassVariable {

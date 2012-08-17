@@ -123,10 +123,3 @@ function test_ok_undeclared_sscanf() {
   sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
   echo $_PHP_MAJOR_VERSION;
 }
-
-function test_isset() {
-  if(!isset($isset_var)) {
-    $isset_var = 1;
-    echo $isset_var;
-  }
-}

@@ -680,7 +680,10 @@ and expr env = function
       | e -> expr env e
       )
 
-  (* the right fix is to forbid people to use isset ... *)
+  (* The right fix is to forbid people to use isset ...
+   * todo: could have if(isset($x)) { ... code using $x}.
+   *  maybe we should have a bailout_vars and skip further errors on $x.
+   *)
   | Call (Id ("__builtin__isset", tok), [Id (name)]) when A.is_variable name ->
       ()
 
