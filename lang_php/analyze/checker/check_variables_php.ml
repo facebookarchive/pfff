@@ -680,12 +680,19 @@ and expr env = function
       | e -> expr env e
       )
 
-  (* The right fix is to forbid people to use isset ...
+  (* The right fix is to forbid people to use isset/empty or unset on var.
    * todo: could have if(isset($x)) { ... code using $x}.
    *  maybe we should have a bailout_vars and skip further errors on $x.
+   * todo: could have isset(Array_get(...) there too no?
    *)
   | Call (Id ("__builtin__isset", tok), [Id (name)]) when A.is_variable name ->
       ()
+  (* http://php.net/manual/en/function.empty.php
+   * "empty() does not generate a warning if the variable does not exist."
+   *)
+  | Call (Id ("__builtin__empty", tok), [Id (name)]) when A.is_variable name ->
+      ()
+
 
   | Call (Id (("__builtin__eval" | "__builtin__eval_var" |
                "extract" | "compact"

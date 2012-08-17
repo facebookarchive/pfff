@@ -253,6 +253,12 @@ function test_isset_implicit_declaration() {
   }
 }
 
+function test_undefined_ok_if_empty() {
+  if (empty($undefined_variable_but_arg_to_empty_so_ok)) {
+    return 1;
+  }
+}
+
 class TestClassVariable {
   public static $dbGetters;
 }

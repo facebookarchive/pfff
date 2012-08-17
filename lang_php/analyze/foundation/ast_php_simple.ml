@@ -365,6 +365,7 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
  *  - 'exit', 'yield', 'yield_break'
  *  - 'unset', 'isset', 'empty'
  *     http://php.net/manual/en/function.unset.php
+ *     http://php.net/manual/en/function.empty.php
  *  - 'echo', 'print',
  *  - '@', '`',
  *  - 'include', 'require', 'include_once', 'require_once'.
