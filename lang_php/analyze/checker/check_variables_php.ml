@@ -630,6 +630,9 @@ and expr env = function
            *)
           expr env e1
 
+      | Call (Id("__builtin__eval_var", _), args) ->
+          env.bailout := true;
+
       (* can we have another kind of lvalue? *)
       | e ->
           pr2 (str_of_any (Expr2 e));
