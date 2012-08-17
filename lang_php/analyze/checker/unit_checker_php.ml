@@ -27,6 +27,7 @@ let unittest =
     p "tests/php/scheck/variables_fp.php";
     p "tests/php/scheck/arrays.php";
     p "tests/php/scheck/functions.php";
+    p "tests/php/scheck/builtins.php";
     p "tests/php/scheck/static_methods.php";
     p "tests/php/scheck/methods.php";
     p "tests/php/scheck/classes.php";
