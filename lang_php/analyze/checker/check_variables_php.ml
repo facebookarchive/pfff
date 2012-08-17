@@ -106,7 +106,7 @@ module Ent = Database_code
  * 
  * These things don't count as "using" a variable:
  * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
- * - TODO empty()
+ * - DONE empty()
  * - DONE Static class variables (pad: check done in check_classes instead)
  * 
  * Here are a few additional checks and features of this checker:
@@ -141,12 +141,6 @@ module Ent = Database_code
  *    access to an array), and
  *    code regarding lexical variables became more clear because localized
  *    in one place.
- * 
- * TODO LATEST:
- * "These things declare variables in a function":
- * - Global
- * These things don't count as "using" a variable:
- * - empty()
  * 
  * TODO OTHER:
  *  - nested assign in if, should work now? no more FPs?
@@ -873,14 +867,15 @@ let check_and_annotate_program2 find_entity prog =
        "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
        ) +> Map_poly.of_list);
     db = find_entity;
-    (* todo: extract all vars and their scope_ref and keep that in a 
-     * symbol table so one can find them back.
-     *)
     in_class = None;
     in_lambda = false;
     bailout = ref false;
   }
   in
+  (* todo: extract all vars and their scope_ref and keep that in a 
+   * symbol table so one can find them back.
+   *)
+
   let ast = Ast_php_simple_build.program_with_position_information prog in
   let _env = program env ast in
   ()
