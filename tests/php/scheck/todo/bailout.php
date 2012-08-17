@@ -9,10 +9,10 @@ function foo_bailout() {
 
 $glob = 1;
 
-function foo2_bailout() {
-  $s = "glob";
-  global $$s;
-
-  echo $$s;
-}
+//function foo2_bailout() {
+//  $s = "glob";
+//  global $$s;
+//
+//  echo $$s;
+//}
 

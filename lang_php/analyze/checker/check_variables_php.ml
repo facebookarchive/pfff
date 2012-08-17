@@ -541,7 +541,7 @@ and stmt env = function
         (* todo: E.warning tok E.UglyGlobalDynamic *)
         | _ ->                      
             pr2 (str_of_any (Expr2 e));
-            raise Todo          
+            raise Todo
       )
 
 (* The scope of catch is actually also at the function level in PHP ...
