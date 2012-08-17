@@ -282,7 +282,7 @@ and func_def = {
   l_uses: (bool (* is_ref *) * name) list;
 
   f_body: stmt list;
-
+  (* pad: todo: remove, was chiara? same info is in f_name *)
   f_loc: Parse_info.info;
 }
    and function_kind = 

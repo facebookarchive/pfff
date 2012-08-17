@@ -297,7 +297,7 @@ and lambda_def env (l_use, ld) =
   let params = comma_list_dots params in
   let _, body, _ = ld.f_body in
   { A.f_ref = ld.f_ref <> None;
-    A.f_name = (A.special "_lambda", wrap (Ast_php.fakeInfo "_lambda"));
+    A.f_name = (A.special "_lambda", wrap ld.f_tok);
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
@@ -372,7 +372,7 @@ and class_name_reference env = function
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
    | ClassNameRefDynamic (lv, [tok, obj_prop]) -> 
        let obj = lvalue env lv in
-       obj_property env obj obj_prop
+       obj_property env tok obj obj_prop
    | ClassNameRefDynamic (lv, (tok, _)::xs) -> 
        raise (TodoConstruct ("ClassNameRefDynamic", tok))
 
@@ -395,10 +395,9 @@ and lvalue env = function
   | Indirect (e, (Dollar tok)) ->
       A.Call (A.Id (A.builtin "eval_var", wrap tok), [lvalue env e])
   | VQualifier (q, v)  ->
+      let (_, tok) = q in
       A.Class_get (A.Id (qualifier env q),
-                  A.Call (A.Id (A.builtin "eval_var",
-                               wrap (Ast_php.fakeInfo (A.builtin "eval_var"))),
-                               [lvalue env v]))
+                  A.Call (A.Id (A.builtin "eval_var", wrap tok),[lvalue env v]))
   | ClassVar (q, dn) -> 
       A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
   | FunCallSimple (f, (tok, args, _)) -> 
@@ -442,8 +441,8 @@ and lvalue env = function
       A.Class_get (lvalue env lv, lvalue env lv2)
 
 
-and obj_access env obj (_, objp, args) =
-  let e = obj_property env obj objp in
+and obj_access env obj (tok, objp, args) =
+  let e = obj_property env tok obj objp in
   match args with
   | None -> e
   | Some (tok, args, _) ->
@@ -452,13 +451,11 @@ and obj_access env obj (_, objp, args) =
       (* TODO CHECK THIS *)
       A.Call (e, args)
 
-and obj_property env obj = function
+and obj_property env tok obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      A.Obj_get (obj,
-                A.Call (A.Id (A.builtin "eval_var_field",
-                             wrap(Ast_php.fakeInfo(A.builtin"eval_var_field"))),
-                       [lvalue env lv]))
+      A.Obj_get (obj, A.Call (A.Id (A.builtin "eval_var_field", wrap tok), 
+                             [lvalue env lv]))
 
 and obj_dim env obj = function
   | OName n -> A.Obj_get (obj, A.Id(name env n))
@@ -731,4 +728,3 @@ let program_with_position_information prog =
 let func_def x = func_def (empty_env()) x
 let class_def x = class_def (empty_env()) x
 let constant_def x = constant_def (empty_env()) x
-
