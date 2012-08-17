@@ -227,8 +227,8 @@ let str_of_any any =
  * the definition of the function/method called, hence the need for a
  * entity_finder in env.db.
  * 
- * note that it currently returns a Ast_php.func_def, not 
- * Ast_php_simple.func_def because the database currently
+ * note that it currently returns an Ast_php.func_def, not 
+ * an Ast_php_simple.func_def because the database currently
  * stores concrete ASTs, not simple ASTs.
  *)
 let funcdef_of_call_or_new_opt env e =
