@@ -179,11 +179,13 @@ function test_bailout_compact() {
 // Misc
 //*************************************************************************
 
-// this used to raise a false positive when I was using the old visitor-based
+// this used to raise false positives when I was using the old visitor-based
 // variable checker. Switching to Ast_php_simple and an env-based recursive
-// approach solved the problem.
+// approach solved the problem for free.
 function test_declared_in_middle_of_expr() {
+  // it's ok to use the variable in the right of &&.
   if (($v = misc1('')) && misc1($v)) {
+    // it's also ok to use it here
     echo $v;
   }
 
