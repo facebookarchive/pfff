@@ -53,6 +53,9 @@ function test_class_variables() {
   // checks for use of undefined variable are restricted to local vars
   // not class variables of object members. See check_classes_php.ml for that.
   echo TestClassVariable::$dbGetters;
+  $dyn = 'TestClassVariable';
+  echo $dyn::$dbGetters;
+
   TestClassVariable::$dbGetters = array();
 }
 
