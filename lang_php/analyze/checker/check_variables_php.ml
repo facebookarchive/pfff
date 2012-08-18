@@ -136,14 +136,13 @@ module Ent = Database_code
  *  - I was using ast_php.ml and a visitor approach but then I rewrote it
  *    to use ast_php_simple and an "env" approach because the code was
  *    getting ugly and was containing false positives that were hard to fix.
- *    As a side effect of the refactoring, some bugs disappeared (TODO nested
+ *    As a side effect of the refactoring, some bugs disappeared (nested
  *    assigns in if, nested list(), list() not at the toplevel, undefined
  *    access to an array), and
  *    code regarding lexical variables became more clear because localized
  *    in one place.
  * 
  * TODO OTHER:
- *  - nested assign in if, should work now? no more FPs?
  *  - bhiller check on array field access and unset array field
  * 
  *  - factorize code for the shared_ref thing and create_new_local_if_necessary

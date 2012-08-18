@@ -111,13 +111,14 @@ function test_bailout_compact() {
 // Misc
 //*************************************************************************
 
-/* TODO
+// this used to raise a false positive when I was using the old visitor-based
+// variable checker. Switching to Ast_php_simple and an env-based recursive
+// approach solved the problem.
 function test_declared_in_middle_of_expr() {
   if (($v = misc1('')) && misc1($v)) {
     echo $v;
   }
 }
-*/
 
 function test_ok_undeclared_sscanf() {
   sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
