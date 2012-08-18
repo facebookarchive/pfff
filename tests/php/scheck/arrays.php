@@ -9,5 +9,9 @@ function test_undeclared_array($array_parameter) {
   echo $array_parameter;
   //ERROR: use of undefined array
   echo $undefined_array;
+  
+  // What about $array[] = 1; Is it more ok? but people can just
+  // do $array = array(1); and if it's inside a foreach they really should
+  // declare the array before anyway.
 }
 
