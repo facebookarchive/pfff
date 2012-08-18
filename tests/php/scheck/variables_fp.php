@@ -1,6 +1,71 @@
 <?php
 
 //*************************************************************************
+// Misc false positives
+//*************************************************************************
+
+// My analysis used to have a few false positives because my code was buggy.
+
+function test_unused_var_ok_when_keyword_arguments() {
+  // no error for now even if $key appeared as unused. PHP has no
+  // keyword arguments so people use such assignation as a kind of
+  // comment
+  misc1($key = 1);
+}
+
+// keyword arguments should be considered even when deeply nested ... hmmm
+function test_unused_var_ok_when_keyword_arguments_bis() {
+  misc1(misc1($key = 1));
+}
+
+function test_undefined_ok_if_isset() {
+  if (isset($a)) {
+    return 1;
+  }
+  return 2;
+}
+
+function test_isset_implicit_declaration() {
+  if(isset($a)) {
+    // TODO: should allow that, we should analyze guards
+    //return $a;
+  }
+  if(!isset($isset_var)) {
+    $isset_var = 1;
+    echo $isset_var;
+  }
+}
+
+function test_undefined_ok_if_empty() {
+  if (empty($undefined_variable_but_arg_to_empty_so_ok)) {
+    return 1;
+  }
+}
+
+class TestClassVariable {
+  public static $dbGetters;
+}
+function test_class_variables() {
+  $db_scb_key = 1;
+  if (!isset(TestClassVariable::$dbGetters[$db_scb_key])) {
+    return 2;
+  } 
+  // checks for use of undefined variable are restricted to local vars
+  // not class variables of object members. See check_classes_php.ml for that.
+  echo TestClassVariable::$dbGetters;
+  TestClassVariable::$dbGetters = array();
+}
+
+//TODO: test_unused_var_ok_when_assign_ref() { }
+
+function test_unused_var_ok_in_catch() {
+  try {
+  // this is ok if the variable name has a known name like $unused, $exn, etc
+  } catch (Exception $exn) {
+  }
+}
+
+//*************************************************************************
 // Undefined variables and reference parameters
 //*************************************************************************
 

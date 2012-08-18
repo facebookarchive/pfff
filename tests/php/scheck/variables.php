@@ -12,7 +12,6 @@ function test_undefined_and_unused_variables_basic(
   $ok = 1;
   // misc1() is defined in common.php
   misc1($ok);
-
   misc1($param);
 
   //ERROR: unused variable
@@ -21,13 +20,13 @@ function test_undefined_and_unused_variables_basic(
   //ERROR: use of undefined variable
   echo $undefined;
 
+  //such calls would be arguably ok if misc1() was taking its arguments
+  //by reference (see also variables_fp.php).
   //ERROR: use of undefined variable
   misc1($undefined_bis);
-  // such calls would be arguably ok if misc1() was taking its arguments
-  // by reference (see also variables_fp.php)
 }
 
-function test_unset() {
+function test_unused_unset() {
   //ERROR: unused variable. Yes it's used by unset but this should not count.
   $unset_variable = 1;
   unset($unset_variable);
@@ -42,14 +41,19 @@ function test_unset() {
   unset($arr[0], $arr[1]);
 }
 
-function test_undefined_foreach() {
+function test_unused_foreach() {
   $matches = array();
 
   foreach($matches as $k) {
     echo $k;
   }
+
+  //ERROR: unused variable
+  foreach($matches as $unused_key_in_foreach) {
+  }
+
   // $k2 is not used but it's ok, as long as one of the key/value is used
-  foreach($matches as $k2 => $v) {
+  foreach($matches as $unused_but_ok => $v) {
     echo $v;
   }
 
@@ -70,7 +74,7 @@ function test_undefined_foreach() {
   // you can also do things like foreach($arr as $arr2[0]) but it's wierd
 }
 
-function test_undefined_list() {
+function test_unused_list() {
   list($ok, $ok2) = misc1(1);
   echo $ok;
   echo $ok2;
@@ -216,70 +220,6 @@ function test_eval_var_field() {
 function test_undefined_xhp() {
   //ERROR: use of undefined variable
   return <x:frag>{$undefined}</x:frag>;
-}
-
-//*************************************************************************
-// False positives fix (see also variables_fp.php)
-//*************************************************************************
-// My analysis used to have a few false positives because my code was buggy.
-
-function test_unused_var_ok_when_keyword_arguments() {
-  // no error for now even if $key appeared as unused. PHP has no
-  // keyword arguments so people use such assignation as a kind of
-  // comment
-  misc1($key = 1);
-}
-
-// keyword arguments should be considered even when deeply nested ... hmmm
-function test_unused_var_ok_when_keyword_arguments_bis() {
-  misc1(misc1($key = 1));
-}
-
-function test_undefined_ok_if_isset() {
-  if (isset($a)) {
-    return 1;
-  }
-  return 2;
-}
-
-function test_isset_implicit_declaration() {
-  if(isset($a)) {
-    // TODO: should allow that, we should analyze guards
-    //return $a;
-  }
-  if(!isset($isset_var)) {
-    $isset_var = 1;
-    echo $isset_var;
-  }
-}
-
-function test_undefined_ok_if_empty() {
-  if (empty($undefined_variable_but_arg_to_empty_so_ok)) {
-    return 1;
-  }
-}
-
-class TestClassVariable {
-  public static $dbGetters;
-}
-function test_class_variables() {
-  $db_scb_key = 1;
-  if (!isset(TestClassVariable::$dbGetters[$db_scb_key])) {
-    return 2;
-  } 
-  // checks for use of undefined variable are restricted to local vars
-  // not class variables of object members. See check_classes_php.ml for that.
-  echo TestClassVariable::$dbGetters;
-  TestClassVariable::$dbGetters = array();
-}
-
-//TODO: test_unused_var_ok_when_assign_ref() { }
-
-function test_unused_var_ok_in_catch() {
-  try {
-  // this is ok if the variable name has a known name like $unused, $exn, etc
-  } catch (Exception $exn) {
-  }
 }
 
 //*************************************************************************
