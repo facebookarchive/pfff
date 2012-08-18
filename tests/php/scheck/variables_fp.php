@@ -118,6 +118,13 @@ function test_declared_in_middle_of_expr() {
   if (($v = misc1('')) && misc1($v)) {
     echo $v;
   }
+
+  //TODO: this should at least generate an error to force people to use extra
+  // () around the assignement
+  if ($v = misc1('')) {
+    echo $v;
+  }
+
 }
 
 function test_ok_undeclared_sscanf() {
