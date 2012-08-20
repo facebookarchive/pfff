@@ -37,8 +37,10 @@ function test_unused_unset() {
 
   // you can also unset the field of an object, or even a class variable
   // but I am not sure why you want that ...
-
   unset($arr[0], $arr[1]);
+
+  //ERROR: it's not ok to unset a field of an array not declared
+  unset($arr2[0]);
 }
 
 function test_unused_foreach() {

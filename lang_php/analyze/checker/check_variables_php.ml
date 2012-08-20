@@ -143,8 +143,6 @@ module Ent = Database_code
  *    in one place.
  * 
  * TODO OTHER:
- *  - bhiller check on array field access and unset array field
- * 
  *  - factorize code for the shared_ref thing and create_new_local_if_necessary
  *  - the old checker was handling correctly globals? was it looking up
  *    in the top scope? add some unit tests.
@@ -628,8 +626,8 @@ and expr env = function
           in
           List.iter aux xs
 
-      (* todo: for bhiller *)
       | Array_get (_, e_arr, e_opt) ->
+          (* make sure the array is declared *)
           expr env e_arr;
           Common.opt (expr env) e_opt
 
@@ -670,7 +668,9 @@ and expr env = function
          * Unsetting a prop, not clear why you want that.
          * Unsetting a class var, not clear why you want that either 
          *)
-        | (Array_get (_, _, _) | Obj_get _ | Class_get _) as e -> expr env e
+        | (Array_get (_, _, _) | Obj_get _ | Class_get _) as e -> 
+            (* make sure that the array used is actually defined *)
+            expr env e
         | e -> 
             pr2 (str_of_any (Expr2 e));
             raise Todo
