@@ -68,6 +68,37 @@ function test_unused_var_ok_in_catch() {
   }
 }
 
+// this used to raise false positives when I was using the old visitor-based
+// variable checker. Switching to Ast_php_simple and an env-based recursive
+// approach solved the problem for free.
+function test_declared_in_middle_of_expr() {
+  // it's ok to use the variable in the right of &&.
+  if (($v = misc1('')) && misc1($v)) {
+    // it's also ok to use it here
+    echo $v;
+  }
+
+  //TODO: this should at least generate an error to force people to use extra
+  // () around the assignement
+  if ($v = misc1('')) {
+    echo $v;
+  }
+}
+
+// this used to raise a 'use of undefined variable $a' error
+// because the list() construct was pattern matched only when at
+// the toplevel of an expression. The env-based approach instead
+// of visitor-based approach to check_variables_php.ml solved this for free
+function test_list_in_middle_of_expr() {
+  list($a, $b) = misc1(1) or misc1(2);
+  echo $a;
+}
+
+function test_ok_undeclared_sscanf() {
+  sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
+  echo $_PHP_MAJOR_VERSION;
+}
+
 //*************************************************************************
 // Undefined variables and reference parameters
 //*************************************************************************
@@ -175,29 +206,3 @@ function test_bailout_compact() {
   return $arr;
 }
 
-//*************************************************************************
-// Misc
-//*************************************************************************
-
-// this used to raise false positives when I was using the old visitor-based
-// variable checker. Switching to Ast_php_simple and an env-based recursive
-// approach solved the problem for free.
-function test_declared_in_middle_of_expr() {
-  // it's ok to use the variable in the right of &&.
-  if (($v = misc1('')) && misc1($v)) {
-    // it's also ok to use it here
-    echo $v;
-  }
-
-  //TODO: this should at least generate an error to force people to use extra
-  // () around the assignement
-  if ($v = misc1('')) {
-    echo $v;
-  }
-
-}
-
-function test_ok_undeclared_sscanf() {
-  sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
-  echo $_PHP_MAJOR_VERSION;
-}
