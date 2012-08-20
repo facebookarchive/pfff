@@ -259,7 +259,8 @@ and expr env = function
       in
       A.Call (A.Id (A.builtin "exit", wrap tok), arg)
   | At (tok, e) ->
-      A.Id (A.builtin "@", wrap tok)
+      let arg = expr env e in
+      A.Call (A.Id (A.builtin "at", wrap tok), [arg])
   | Print (tok, e) ->
       A.Call (A.Id (A.builtin "print", wrap tok), [expr env e])
   | BackQuote (tok, el, _) ->

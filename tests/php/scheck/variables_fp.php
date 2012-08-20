@@ -94,6 +94,11 @@ function test_list_in_middle_of_expr() {
   echo $a;
 }
 
+function test_list_and_at() {
+  @(list($ok1, $ok2) = misc1(1));
+  echo $ok1;
+}
+
 function test_ok_undeclared_sscanf() {
   sscanf(PHP_VERSION, '%d', $_PHP_MAJOR_VERSION);
   echo $_PHP_MAJOR_VERSION;

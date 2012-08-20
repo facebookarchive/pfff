@@ -6,6 +6,7 @@
 
 function __builtin__echo($xs/*...*/) { }
 function __builtin__print($expr) { }
+function __builtin__at($expr) { }
 
 // we don't process include/require so the body of this function is empty
 function __builtin__require($f) { }
