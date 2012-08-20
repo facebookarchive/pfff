@@ -1,5 +1,11 @@
 <?php
 
+function test_list_and_at() {
+  @(list($ok1, $ok2) = misc(1));
+  echo $ok1;
+}
+
+/*
 function test1($x, $unused_parameter) {
   echo $x;
 
@@ -29,12 +35,6 @@ function test1($x, $unused_parameter) {
 $used_var_in_eval_field = 42;
 $x = 'used_var_in_eval_field';
 echo $$x;
-
-
-
-/* TODO
-
-<?php
 
 function test_list_var() {
   // this is parsed as (list(...) = false) or true; which
