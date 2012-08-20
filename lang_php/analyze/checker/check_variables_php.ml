@@ -240,10 +240,21 @@ let funcdef_of_call_or_new_opt env e =
           if not (A.is_variable name)
           then
             let s = A.str_of_name name in
+            let tok = A.tok_of_name name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
-                (* nothing or multi, not our problem here *)
-            | _ -> None
+            (* normally those errors should be triggered in 
+             * check_functions_php.ml, but right now this file uses
+             * ast_php.ml and not ast_php_simple.ml, so there are some
+             * differences in the logic so we double check things here.
+             *)
+            | [] -> 
+                E.fatal tok (E.UndefinedEntity (Ent.Function, s));
+                None
+            | _x::_y::_xs ->
+                E.fatal tok (E.MultiDefinedEntity (Ent.Function, s, ("","")));
+                None
+            | _ -> raise Impossible
             )
           (* dynamic function call *)
           else None
@@ -259,7 +270,7 @@ let funcdef_of_call_or_new_opt env e =
                        (aclass, amethod) find_entity)
               (* could not find the method, this is bad, but
                * it's not our business here; this error will
-               * be reported anyway in check_functions_php.ml anyway
+               * be reported anyway in check_classes_php.ml anyway
                *)
             with 
             | Not_found | Multi_found 
