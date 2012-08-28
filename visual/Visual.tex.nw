@@ -349,7 +349,10 @@ Dependencies diagram and Tabular.
 \section{Main}
 
 <<main flags>>=
-let screen_size = ref 2
+(* on Macos lion, X11 resizes the window to a smaller size so
+ * no point in starting with a big screen_size :(
+ *)
+let screen_size = ref 1
 let legend = ref true
 
 let db_file    = ref (None: Common.filename option)
@@ -4137,7 +4140,7 @@ let tokens_with_categ_of_file_helper ~parse ~highlight_visit
 let tokens_with_categ_of_file file hentities = 
   let ftype = FT.file_type_of_file file in
   let prefs = Highlight_code.default_highlighter_preferences in
-
+  
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
       tokens_with_categ_of_file_helper 
@@ -4146,10 +4149,10 @@ let tokens_with_categ_of_file file hentities =
           Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
             let (ast2, stat) = Parse_php.parse file in
             let ast = Parse_php.program_of_program2 ast2 in
+            (* todo: use database_light if given? *)
             let find_entity = None in
             (* work by side effect on ast2 too *)
             Check_variables_php.check_and_annotate_program
-              (* todo: use database_light if given? *)
               find_entity
               ast;
             Php ast2
@@ -4968,6 +4971,9 @@ module Model = Model2
  *  - saw talk at CC about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
  *    visual feedback
+ * 
+ * related work:
+ *  - TODO http://www.kickstarter.com/projects/296054304/zeta-code
  *)
 
 (*****************************************************************************)
@@ -4977,6 +4983,17 @@ module Model = Model2
 <<main flags>>
 
 let filter = ref Treemap_pl.ex_filter_file
+
+(* todo? config file ? 
+ * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+ *)
+
+(* action mode *)
+let action = ref ""
+
+(*****************************************************************************)
+(* Shortcuts *)
+(*****************************************************************************)
 
 let filters = [
   "ocaml", Treemap_pl.ocaml_filter_file;
@@ -5011,13 +5028,6 @@ let filters = [
     | _ -> false
   );
 ]
-
-(* todo? config file ? 
- * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
- *)
-
-(* action mode *)
-let action = ref ""
 
 (*****************************************************************************)
 (* Helpers *)
