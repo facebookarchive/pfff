@@ -4,6 +4,7 @@ function test_variable_parameter($param1) {
   echo $param1;
   $local1 = 1;
   echo $local1;
+  echo $undefined_variable;
 }
 
 class TestClass {

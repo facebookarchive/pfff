@@ -147,7 +147,8 @@ module Ent = Database_code
  *  - the old checker was handling correctly globals? was it looking up
  *    in the top scope? add some unit tests.
  *  - put back strict block scope
- *  - annotate Var in Ast_php
+ *  - factorize in add_var() that adds in env.vars and
+ *    update env.scoped_vars_used too. Removed refs to scope_ref in this file
  *)
 
 (*****************************************************************************)
@@ -163,6 +164,9 @@ type env = {
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
   vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
+
+  (* to remember how to annotate Var in ast_php.ml *)
+  scope_vars_used: (Ast_php.tok, Scope_code.scope) Hashtbl.t;
 
   (* todo: have a globals:? *)
 
@@ -183,6 +187,7 @@ type env = {
    * because we don't want to report false positives
    *)
   bailout: bool ref;
+
 }
 
 (*****************************************************************************)
@@ -308,9 +313,8 @@ let funcdef_of_call_or_new_opt env e =
 (* Checks *)
 (*****************************************************************************)
 
-(* todo: also adjust the correspoding scope_ref of name in ast_php *)
 let check_defined env name ~incr_count =
-  let s = A.str_of_name name in
+  let (s, tok) = s_tok_of_name name in
   match lookup_opt s !(env.vars) with
   | None ->
       (* todo? could still issue an error but with the information that
@@ -331,6 +335,7 @@ let check_defined env name ~incr_count =
         E.fatal (A.tok_of_name name) err
 
   | Some (_tok, scope, access_count) ->
+      Hashtbl.add env.scope_vars_used tok scope;
       if incr_count then incr access_count
 
 let check_used env vars =
@@ -359,10 +364,12 @@ let create_new_local_if_necessary ~incr_count env name =
    * in the outer context. Jslint does the same.
    *)
   | None ->
-      env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars)
+      env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
+      Hashtbl.add env.scope_vars_used tok S.Local;
+
   | Some (_tok, scope, access_count) ->
+      Hashtbl.add env.scope_vars_used tok scope;
       if incr_count then incr access_count
-  
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -883,14 +890,27 @@ let check_and_annotate_program2 find_entity prog =
     in_class = None;
     in_lambda = false;
     bailout = ref false;
+    scope_vars_used = Hashtbl.create 101;
   }
   in
-  (* todo: extract all vars and their scope_ref and keep that in a 
-   * symbol table so one can find them back.
-   *)
-
   let ast = Ast_php_simple_build.program_with_position_information prog in
-  let _env = program env ast in
+  program env ast;
+
+  (* annotating the scope of Var *)
+  (Ast_php.Program prog) +> 
+    Visitor_php.mk_visitor { Visitor_php.default_visitor with
+    Visitor_php.klvalue = (fun (k, _) x ->
+      match x with
+      | Ast_php.Var (dname, aref) ->
+          let tok = Ast_php.info_of_dname dname in
+          (try
+            aref := Hashtbl.find env.scope_vars_used tok
+          (* keep NoScope *)
+          with Not_found -> ()
+          )
+      | _ -> k x
+    );
+  };
   ()
 
 let check_and_annotate_program a b = 
