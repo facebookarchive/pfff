@@ -272,7 +272,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
   (* less: some of the logic duplicates what is in check_variables_php.ml
    * where we differentiate the diffent variables uses (parameters, static,
-   * global, local, etc).
+   * global, local, etc). See the pattern for Static, Global, parameter,
+   * catch.
    *)
   let hooks = { V.default_visitor with
 
