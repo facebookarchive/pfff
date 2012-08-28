@@ -21,6 +21,7 @@ module FT = File_type
 module PI = Parse_info
 module HC = Highlight_code
 module Db = Database_code
+module Flag = Flag_visual
 
 open Highlight_code
 
@@ -146,7 +147,10 @@ let tokens_with_categ_of_file_helper ~parse ~highlight_visit
   ~info_of_tok ~str_of_tok file prefs hentities =
   
   let h = Hashtbl.create 101 in
+  if !Flag.verbose_visual then pr2 (spf "Parsing: %s" file);
   let ast2 = parse file in
+
+  if !Flag.verbose_visual then pr2 (spf "Highlighting: %s" file);
   ast2 +> List.map (fun (ast, (_str, toks)) ->
 
     (* computing the token attributes *)
@@ -180,12 +184,15 @@ let tokens_with_categ_of_file file hentities =
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
-        (fun file ->
+        ~parse:(parse_cache (fun file ->
           Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
             let (ast2, stat) = Parse_php.parse file in
             let ast = Parse_php.program_of_program2 ast2 in
-            (* todo: use database_light if given? *)
+            (* todo: use database_light if given? we could so that
+             * variables are better annotated.
+             * note that database_light will be passed in
+             * rewrite_categ_using_entities() at least.
+             *)
             let find_entity = None in
             (* work by side effect on ast2 too *)
             Check_variables_php.check_and_annotate_program
@@ -202,8 +209,7 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.ML _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
-         (fun file -> 
+        ~parse:(parse_cache (fun file -> 
            Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
              ML (Parse_ml.parse file +> fst))
          )

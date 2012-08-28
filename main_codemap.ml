@@ -265,15 +265,11 @@ let main_action xs =
    *)
   );
 
-  Common.finalize (fun () -> 
-    View2.mk_gui 
-      ~screen_size:!screen_size
-      ~legend:!legend
-      !test_mode
-      (root, model, dw, db_file)
-  ) (fun() -> 
-    ()
-  )
+  View2.mk_gui 
+    ~screen_size:!screen_size
+    ~legend:!legend
+    !test_mode
+    (root, model, dw, db_file)
 (*e: main_action() *)
   
 (*****************************************************************************)
@@ -345,27 +341,27 @@ let options () = [
     "-with_layers", Arg.String (fun s -> layer_dir := Some s),
     " <layer_dir>";
 
-    "-test" , Arg.String (fun s -> test_mode := Some s),
-    " <str> execute an internal script";
-
     "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
      spf " filter certain files (available = %s)" 
       (filters +> List.map fst +> Common.join ", ");
 
     "-extra_filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
+
+  (*-------------------------------------------------------------------------*)
+  (* debugging helpers *)
+  (*-------------------------------------------------------------------------*)
+
+    "-test" , Arg.String (fun s -> test_mode := Some s),
+    " <str> execute an internal script";
+
     "-verbose" , Arg.Set Flag.verbose_visual,
     " ";
     "-debug_gc", Arg.Set Flag.debug_gc,
     " ";
     "-debug_handlers", Arg.Set Gui.synchronous_actions,
     " ";
-    (*
-    "-disable_ancient", Arg.Clear Flag.use_ancient,
-    " ";
-    "-enable_ancient", Arg.Set Flag.use_ancient,
-    " ";
-    *)
+    (* "-disable_ancient", Arg.Clear Flag.use_ancient, " "; *)
     "-disable_fonts", Arg.Set Flag.disable_fonts,
     " ";
   (*e: options *)

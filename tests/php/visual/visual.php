@@ -1,12 +1,27 @@
 <?php
 
-function string_use() {
+function test_variable_parameter($param1) {
+  echo $param1;
+  $local1 = 1;
+  echo $local1;
+}
+
+function test_closure() {
+  $f = (function($a) {
+      return 1 + $a;
+    });
+  
+}
+
+
+function test_string_use() {
   $a = "<html> is bad in string </html>";
   $xhp = <this-is-good>$a</this-is-good>;
   $url = $_SERVER['PHPROOT'] . "/path/to/url.php";
 }
 
-function dynamic_calls($b) {
+
+function test_dynamic_calls($b) {
   a_foo();
   $a = 'a_foo';
   $a();
@@ -15,16 +30,18 @@ function dynamic_calls($b) {
   call_user_func($a, array());
 }
 
-function call_a_dynamic_caller() {
+function test_call_a_dynamic_caller() {
   $b = 'b_foo';
   a_foo();
   dynamic_calls($b);
 }
 
-function take_arg2_by_ref($a, &$argref, $c) {
+
+
+function test_take_arg2_by_ref($a, &$argref, $c) {
 }
 
-function byref_calls() {
+function test_byref_calls() {
   $a = 1;
   $b = 2;
   $c = 3;

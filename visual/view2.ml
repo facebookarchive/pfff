@@ -621,7 +621,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     (* old: before 3.11: Features.Backtrace.print(); *)
     let s = Printexc.get_backtrace () in
     pr2 s;
-    let pb = "pb: " ^ string_of_exn exn in
+    let pb = "pb: " ^ string_of_exn exn ^ "\n" ^ s in
     G.dialog_text ~text:pb ~title:"pb";
     raise exn
   );

@@ -12,29 +12,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 module V = Visitor_php
 
 open Highlight_code
-
 module S = Scope_code
-
 module Db = Database_code
-module DbPHP = Database_php
 
+module DbPHP = Database_php
 module T = Parser_php
 
 (*****************************************************************************)
 (* Prelude *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Globals *)
 (*****************************************************************************)
 
 (*****************************************************************************)
@@ -101,6 +93,10 @@ let use_arity_ident_function_or_macro s db =
  *)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (* strings are more than just strings in PHP and webapps in general *)
 let tag_string ~tag s ii =
@@ -230,7 +226,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   )
   in
 
-  (* toks phase 1 *)
+  (* -------------------------------------------------------------------- *)
+  (* toks phase 1 *) 
+  (* -------------------------------------------------------------------- *)
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
@@ -268,53 +266,54 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   aux_toks toks;
 
 
+  (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
+  (* -------------------------------------------------------------------- *)
   let hooks = { V.default_visitor with
 
     (* -------------------------------------------------------------------- *)
-    V.ktop = (fun (k, vx) x -> 
-      match x with
-      (* todo: use kfunc_def ? *)
-      | Ast_php.FuncDef def ->
+    V.kfunc_def = (fun (k, vx) def -> 
 
-          tag def.f_tok Keyword;
+      let name = def.f_name in
+      let info = Ast.info_of_name name in
 
-          let name = def.f_name in
-          let info = Ast.info_of_name name in
-          tag info (Function (Def2 NoUse));
+      let kind = 
+        match def.f_type with
+        | FunctionRegular | FunctionLambda ->
+            tag def.f_tok Keyword;
+            (Function (Def2 NoUse))
 
-          k x
-      (* todo more ? use kclass_def? *)
-      | Ast_php.ClassDef def ->
-          let name = def.c_name in
-          let info = Ast.info_of_name name in
-          tag info (Class (Def2 fake_no_def2));
+        | MethodRegular | MethodAbstract ->
+            tag def.f_tok KeywordObject;
+            if Class_php.is_static_method def
+            then (StaticMethod (Def2 fake_no_def2))
+            else (Method (Def2 fake_no_def2))
+      in
+      tag info kind;
+      k def
 
-          def.c_extends +> Common.do_option (fun (tok, name) ->
-            let info = Ast.info_of_name name in
-            tag info (Class (Use2 fake_no_use2));
-          );
-
-          def.c_implements +> Common.do_option (fun (tok, xs) ->
-            xs +> Ast.uncomma +> List.iter (fun name ->
-              let info = Ast.info_of_name name in
-              tag info (Class (Use2 fake_no_use2));
-            );
-          );
-
-          k x
-      | Ast_php.ConstantDef def ->
-          (* todo? *)
-          k x
-
-      | StmtList _ ->
-          k x
-      | NotParsedCorrectly _ -> 
-          (* handled later *)
-          ()
-      | FinalDef _ -> 
-          ()
     );
+    V.kclass_def = (fun (k, vx) def ->
+
+      let name = def.c_name in
+      let info = Ast.info_of_name name in
+      tag info (Class (Def2 fake_no_def2));
+      
+      def.c_extends +> Common.do_option (fun (tok, name) ->
+        let info = Ast.info_of_name name in
+        tag info (Class (Use2 fake_no_use2));
+      );
+      def.c_implements +> Common.do_option (fun (tok, xs) ->
+        xs +> Ast.uncomma +> List.iter (fun name ->
+          let info = Ast.info_of_name name in
+          tag info (Class (Use2 fake_no_use2));
+        );
+      );
+      
+      k def
+    );
+   (* less: constant_def? *)
+
     (* -------------------------------------------------------------------- *)
     V.kparameter = (fun (k, _) param ->
 
@@ -348,28 +347,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kclass_stmt = (fun (k, bigf) x ->
       match x with
-      | Ast.Method def ->
-          tag def.f_tok KeywordObject;
-
-          let name = def.f_name in
-          let info = Ast.info_of_name name in
-
-          let kind = 
-            if def.f_modifiers +> List.exists (fun (modifier, ii) -> 
-              modifier = Ast.Static
-            )
-            then (StaticMethod (Def2 fake_no_def2))
-            else (Method (Def2 fake_no_def2))
-          in
-
-          tag info kind;
-
-          (* see scoping_php.ml *)
-          let params = def.f_params +> Ast.unparen +> Ast.uncomma_dots in
-          params +> List.iter (fun param ->
-            let info = Ast.info_of_dname param.p_name in
-            tag info (Parameter Def);
-          );
+      | Ast.Method def -> 
+          (* done in kfunc_def *)
           k x
 
       | Ast.XhpDecl d -> 
@@ -415,7 +394,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
             | GlobalDollar _ -> ()
             | GlobalDollarExpr _ ->  ()
           );
-
       | StaticVars ((v1, v2, v3)) ->
           v2 +> Ast.uncomma +> List.iter (fun svar ->
             let (dname, affect_opt) = svar in
@@ -423,13 +401,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
             tag info (Local Def);
           );
           ()
-
-      (* todo: do that because didn't use kfunc_def and kclass_def, fix that *)
-      | FuncDefNested def ->
-          bigf (Toplevel (FuncDef def))
-      | ClassDefNested def ->
-          bigf (Toplevel (Ast.ClassDef def))
-
       | _ -> ()
 
     );
@@ -739,6 +710,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
+  (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok -> 
     (* all the name and varname should have been tagged by now. *)
      
@@ -954,8 +926,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_STATIC ii -> tag ii Keyword
       | T.T_CONST ii -> tag ii Keyword
 
-      (* could be for func or method so tagged via ast *)
-      | T.T_FUNCTION ii -> ()
+      (* could be for func or method or lambda so tagged via ast *)
+      | T.T_FUNCTION ii -> 
+          if not (Hashtbl.mem already_tagged ii)
+          then tag ii Keyword
 
       | T.T_AS ii -> tag ii Keyword
       | T.T_GLOBAL ii -> tag ii Keyword
@@ -1014,6 +988,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 2 *)  
+  (* -------------------------------------------------------------------- *)
   (match toplevel with
   | NotParsedCorrectly iis -> 
       (*
