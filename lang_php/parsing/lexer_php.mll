@@ -140,6 +140,10 @@ let keyword_table = Common.hash_of_list [
   "exit",       (fun ii -> T_EXIT ii); "die",        (fun ii -> T_EXIT ii);
 
   "array",      (fun ii -> T_ARRAY ii); "list",       (fun ii -> T_LIST ii);
+  (* php-facebook-ext: fbstrict extensions *)
+  "strmap", (fun ii -> lang_ext_or_t_ident ii (fun ii -> T_ARRAY ii));
+  "intmap", (fun ii -> lang_ext_or_t_ident ii (fun ii -> T_ARRAY ii));
+
   (* used for traits too *)
   "as",         (fun ii -> T_AS ii);
 
@@ -162,9 +166,9 @@ let keyword_table = Common.hash_of_list [
 
   "abstract", (fun ii -> T_ABSTRACT ii); "final", (fun ii -> T_FINAL ii);
 
-  "private",         (fun ii -> T_PRIVATE ii);
-  "protected",       (fun ii -> T_PROTECTED ii);
   "public",          (fun ii -> T_PUBLIC ii);
+  "protected",       (fun ii -> T_PROTECTED ii);
+  "private",         (fun ii -> T_PRIVATE ii);
 
   "echo",            (fun ii -> T_ECHO ii); "print", (fun ii -> T_PRINT ii);
 
@@ -918,8 +922,9 @@ rule st_in_scripting = parse
 (*s: rule initial *)
 and initial = parse
 
-  | "<?hh" ([' ''\t']|NEWLINE)
   | "<?php" ([' ''\t']|NEWLINE)
+  (* php-facebook-ext: fbstrict extensions *)
+  | "<?hh" ([' ''\t']|NEWLINE)
       {
         (* I now do a yyless to not eat the newline which is more
          * consistent with how I treat newlines elsewhere
