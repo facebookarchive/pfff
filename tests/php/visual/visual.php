@@ -6,11 +6,15 @@ function test_variable_parameter($param1) {
   echo $local1;
 }
 
+class TestClass {
+  public function amethod() {
+  }
+}
+
 function test_closure() {
   $f = (function($a) {
       return 1 + $a;
     });
-  
 }
 
 
