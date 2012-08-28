@@ -269,14 +269,17 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
   (* -------------------------------------------------------------------- *)
+
+  (* less: some of the logic duplicates what is in check_variables_php.ml
+   * where we differentiate the diffent variables uses (parameters, static,
+   * global, local, etc).
+   *)
   let hooks = { V.default_visitor with
 
     (* -------------------------------------------------------------------- *)
     V.kfunc_def = (fun (k, vx) def -> 
-
       let name = def.f_name in
       let info = Ast.info_of_name name in
-
       let kind = 
         match def.f_type with
         | FunctionRegular | FunctionLambda ->
@@ -291,14 +294,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       in
       tag info kind;
       k def
-
     );
-    V.kclass_def = (fun (k, vx) def ->
 
+    V.kclass_def = (fun (k, vx) def ->
       let name = def.c_name in
       let info = Ast.info_of_name name in
       tag info (Class (Def2 fake_no_def2));
-      
       def.c_extends +> Common.do_option (fun (tok, name) ->
         let info = Ast.info_of_name name in
         tag info (Class (Use2 fake_no_use2));
@@ -309,7 +310,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Class (Use2 fake_no_use2));
         );
       );
-      
       k def
     );
    (* less: constant_def? *)
@@ -323,10 +323,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       if not (Hashtbl.mem already_tagged info)
       then begin
         (if param.p_ref = None
-        then
-          tag info (Parameter Def)
-          else
-            tag info ParameterRef
+        then tag info (Parameter Def)
+        else tag info ParameterRef
         );
       end;
 
@@ -341,7 +339,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | HintArray tok ->
           tag tok (TypeMisc);
       );
-
     );
 
     (* -------------------------------------------------------------------- *)
@@ -383,7 +380,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       k stmt;
       match stmt with
       | Globals ((v1, v2, v3)) ->
-          (* see scoping_php.ml *)
           v2 +> Ast.uncomma +> List.iter (fun x ->
             match x  with
             | GlobalVar dname ->
@@ -413,38 +409,19 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       let info_dname = Ast.info_of_dname dname in
       tag info_dname (Local Use);
       k c
-        
     );
 
     (* -------------------------------------------------------------------- *)
     V.kexpr = (fun (k,bigf) expr -> 
-      (* old: k expr; *)
-      k expr; (* still ? *)
-      
-      (* changer order ? color if notype after the expr visit ? *)
-      (*
-      (match Ast.get_onlytype_expr expr with
-      | None -> 
-          let ii = Ast.get_local_ii_of_expr_inlining_ii_of_name expr in
-          if prefs.show_type_error then
-            tag ii NoType;
-      | Some _ -> ()
-        );
-      *)
-      match expr with
+      k expr;
+      (match expr with
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc
       | _ ->
           ()
+      )
     );
     (* -------------------------------------------------------------------- *)
-    V.kxhp_html = (fun (k, _) x ->
-      match x with
-      | Xhp ((_tag, iitag), attrs, tok_close1, body, (tag_opt, iitag_close)) ->
-          k x
-      | XhpSingleton ((_tag, iitag), attrs, iitag_close) ->
-          k x
-    );
     V.kxhp_attribute = (fun (k, _) x ->
       let ((attr_name, ii_attr_name), tok_eq, attr_val) = x in
 
@@ -466,10 +443,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           | XhpAttrExpr e -> ()
           | SgrepXhpAttrValueMvar _ -> ()
           )
-     
       | _ -> ()
       );
-      
       k x
     );
 
@@ -489,15 +464,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           );
           tag iiname (Field (Use2 fake_no_use2));
           k x
-              
-
     );
 
     (* -------------------------------------------------------------------- *)
     V.klvalue = (fun (k,vx) x ->
       match x with
       | Var (dname, aref) ->
-          (* see scoping_php.ml *)
+          (* see check_variables_php.ml *)
 
           let info = Ast.info_of_dname dname in
           (match !aref with
@@ -513,20 +486,19 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               (* TODO, need global_used table *)
               tag info (Global (Use2 fake_no_use2));
 
-          | S.ListBinded ->
-              tag info (Local Use)
+          | S.Static ->
+              (* less: could invent a Static in highlight_code ? *)
+              tag info (Global (Use2 fake_no_use2))
 
+          | S.ListBinded
           | S.LocalIterator
           | S.LocalExn ->
               tag info (Local Use)
 
           | S.NoScope ->
               tag info (NoType)
-
-          | S.Static ->
-              (* todo? could invent a Static in highlight_code ? *)
-              tag info (Global (Use2 fake_no_use2))
           )
+
       | ClassVar (qu, dname) ->
           let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
@@ -566,7 +538,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
           highlight_funcall_simple ~tag ~hentities f args info;
           k x
-          
 
       | MethodCallSimple (lval, tok, name, args) ->
           let info = Ast.info_of_name name in
@@ -609,17 +580,14 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let info = Ast.info_of_name name in
           tag info (Field (Use2 fake_no_use2))
       | _ -> k x
-
-
     );
 
     (* -------------------------------------------------------------------- *)
     V.kconstant = (fun (k, vx) e ->
       match e with
-      | Int v1 -> 
+      | Int v1 | Double v1 -> 
           tag (snd v1) Number
-      | Double v1 -> 
-          tag (snd v1) Number
+
       | Ast.String (s, ii) -> 
           (* this can be sometimes tagged as url, or field access in array *)
           if not (Hashtbl.mem already_tagged ii)
@@ -645,10 +613,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | PreProcess v1 -> 
           tag (snd v1) Builtin
-            
-      | XdebugClass (_, _) -> 
-          ()
-      | XdebugResource ->
+      | XdebugClass (_, _) | XdebugResource ->
           ()
     );
     (* -------------------------------------------------------------------- *)
@@ -701,8 +666,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | LateStatic tok ->
           tag tok BadSmell
     );
-    (* -------------------------------------------------------------------- *)
-
   } 
   in
   let visitor = V.mk_visitor hooks in
@@ -793,7 +756,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
         *)
 
         ()
-
 
       | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
       | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
@@ -981,10 +943,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       (* should been handled in Constant *)
       | T.T_DNUMBER ii -> ()
       | T.T_LNUMBER ii -> ()
-
   );
-
-
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 2 *)  
@@ -997,7 +956,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
         let i2 = iterline_of_info bufinfo max in
       *)
       iis +> List.iter (fun ii -> tag ii NotParsed)
-
   | _ -> ()
   );
   ()
