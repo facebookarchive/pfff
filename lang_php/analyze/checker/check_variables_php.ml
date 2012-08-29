@@ -63,7 +63,7 @@ module Ent = Database_code
  *  - people abuse assignements in function calls to emulate "keyword arguments"
  *    as in 'foo($color = "red", $width = 10)'. Such assignments looks
  *    like UnusedVariable but they are not. One can fix that by detecting
- *    such uses.
+ *    such code patterns.
  * 
  *  - functions like extract(), param_get(), param_post()
  *    or variable variables like $$x introduce some false positives.
@@ -102,7 +102,7 @@ module Ent = Database_code
  * - DONE Use of extract()
  * - DONE Assignment or Global with variable variables ($$x)
  *   (pad: so just bailout on such code)
- * pad: forgot eval()
+ * pad: forgot eval()? but eval can introduce new variables in scope?
  * 
  * These things don't count as "using" a variable:
  * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
@@ -137,10 +137,9 @@ module Ent = Database_code
  *    to use ast_php_simple and an "env" approach because the code was
  *    getting ugly and was containing false positives that were hard to fix.
  *    As a side effect of the refactoring, some bugs disappeared (nested
- *    assigns in if, nested list(), list() not at the toplevel, undefined
- *    access to an array), and
- *    code regarding lexical variables became more clear because localized
- *    in one place.
+ *    assigns in if, list() not at the toplevel of an expression, undefined
+ *    access to an array), and code regarding lexical variables became
+ *    more clear because localized in one place.
  * 
  * TODO OTHER:
  *  - factorize code for the shared_ref thing and create_new_local_if_necessary
@@ -187,7 +186,6 @@ type env = {
    * because we don't want to report false positives
    *)
   bailout: bool ref;
-
 }
 
 (*****************************************************************************)
@@ -218,7 +216,6 @@ let str_of_any any =
   let v = Meta_ast_php_simple.vof_any any in
   Ocaml.string_of_v v
 
-
 (*****************************************************************************)
 (* Vars passed by ref *)
 (*****************************************************************************)
@@ -242,8 +239,7 @@ let funcdef_of_call_or_new_opt env e =
           (* simple function call *)
           if not (A.is_variable name)
           then
-            let s = A.str_of_name name in
-            let tok = A.tok_of_name name in
+            let (s, tok) = s_tok_of_name name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
             (* normally those errors should be triggered in 
