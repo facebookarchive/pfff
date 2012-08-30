@@ -249,10 +249,17 @@ function foo(A $o) {
 function foo2(A $o) {
   $o->bar = 1;
 }
+function foo3(A $o) {
+  echo $o->array_fld['x'];
+}
 " in
     let xs = prolog_query ~file "use(X, 'bar', field, write), writeln(X)" in
     assert_equal ~msg:"it should find write accesses to an object field"
       ["foo2"] (xs);
+
+    let xs = prolog_query ~file "use(X, 'array_fld', field, read),writeln(X)" in
+    assert_equal ~msg:"it should find accesses to an array field"
+      ["foo3"] (xs);
     );
 
     (*-----------------------------------------------------------------------*)

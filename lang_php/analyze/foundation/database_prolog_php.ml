@@ -44,7 +44,7 @@ module CG = Callgraph_php2
  *    previously pathup/pathdown)
  * 
  * todo:
- *  - get rid of berkeley db prerequiste
+ *  - get rid of berkeley db prerequiste, use ast_php_simple
  *  - precise datagraph
  *  - types, refs
  *  - ??
@@ -205,6 +205,7 @@ let add_uses id ast pr db =
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
+
       | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))))), _)) ->
           let str = escape_quote_array_field fld in
           (* use a different namespace than func? *)
@@ -290,7 +291,20 @@ let add_uses id ast pr db =
       | _ -> ()
       );
       k x
-         
+    );
+    V.kobj_dim = (fun (k, _) x ->
+      match x with
+      (* copy paste of ObjAccessSimple *)
+      | OName name ->
+          let str = Ast_php.name name in
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "use(%s, '%s', field, %s)." 
+                   (name_id id db) str (read_write !in_lvalue_pos))
+          end;
+          k x
+      | _ -> k x
     );
   }
   in
