@@ -132,6 +132,10 @@ let cyclomatic_complexity_file file =
   );
   !res
 
+(*****************************************************************************)
+(* Finding bad code *)
+(*****************************************************************************)
+
 let (code_with_bad_cyclomatic: selection -> Common.filename list -> unit) =
  fun selection files ->
    
