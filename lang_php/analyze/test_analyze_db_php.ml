@@ -18,7 +18,7 @@ module V = Visitor_php
 
 let test_dependencies_php metapath =
   Database_php.with_db ~metapath (fun db ->
-    Dependencies_php.dir_to_dir_dependencies db
+    Graph_php.dir_to_dir_dependencies db
   )
 
 let test_function_pointer_analysis metapath =

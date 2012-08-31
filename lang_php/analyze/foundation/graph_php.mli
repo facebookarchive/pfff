@@ -18,4 +18,8 @@ val build_entities_graph:
   successors: (Entity_php.id -> Entity_php.id list) ->
   id_graph
 
+(* old one *)
+val dir_to_dir_dependencies: 
+  Database_php.database -> unit
+
 (*e: graph_php.mli *)

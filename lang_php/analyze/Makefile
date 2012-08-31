@@ -14,7 +14,6 @@ endif
 SRC= \
      highlight_php.ml \
      htmlize_php.ml \
-     dependencies_php.ml \
      database_php_storage.ml \
      test_analyze_php.ml \
      test_analyze_db_php.ml \
