@@ -6,7 +6,6 @@ TARGET=lib
 
 SRC= \
   rank_test_php.ml \
-  bad_smells_php.ml \
   coverage_tests_php.ml \
   unit_coverage_php.ml \
 

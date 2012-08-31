@@ -17,6 +17,10 @@
 (*e: Facebook copyright *)
 open Common
 
+open Ast_php
+module Ast = Ast_php
+module V = Visitor_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -59,7 +63,16 @@ open Common
  *)
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Types *)
+(*****************************************************************************)
+
+type selection = 
+  | Threshold of int
+  | Topn of int
+
+
+(*****************************************************************************)
+(* Main algorithm *)
 (*****************************************************************************)
 
 let cyclomatic_complexity_flow ?(verbose=false) flow = 
@@ -75,8 +88,82 @@ let cyclomatic_complexity_flow ?(verbose=false) flow =
 
   m
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let string_of_bad_cyclo name cyclo = 
+  let info = Ast.info_of_name name in
+  spf "cyclo for %s at %s:%d = %d" 
+    (Ast.name name) 
+    (Ast.file_of_info info)
+    (Ast.line_of_info info)
+    cyclo
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
 let cyclomatic_complexity_func ?verbose func =
   let flow = Controlflow_build_php.cfg_of_func func in
   cyclomatic_complexity_flow flow
+
+let cyclomatic_complexity_file file = 
+  let (ast2, _stat) = Parse_php.parse file in
+  let ast = Parse_php.program_of_program2 ast2 in
+
+  let res = ref [] in
+
+  let hooks = { V.default_visitor with
+    V.kfunc_def = (fun (k, _) def ->
+      (* the function can have nested funcs *)
+      k def;
+      let flow = Controlflow_build_php.cfg_of_func def in
+      let cyclo = cyclomatic_complexity_flow flow in
+      Common.push2  (def.f_name, cyclo) res;
+       );
+     }
+  in
+  (try 
+      (V.mk_visitor hooks) (Program ast);
+    with
+    Controlflow_build_php.Error err ->
+      Controlflow_build_php.report_error err
+  );
+  !res
+
+let (code_with_bad_cyclomatic: selection -> Common.filename list -> unit) =
+ fun selection files ->
+   
+   let hscore = Hashtbl.create 101 in
+
+   (* populating hscore *)
+   Flag_parsing_php.show_parsing_error := true;
+   files +> List.iter (fun file ->
+     pr2 (spf "processing: %s" file);
+
+     let cyclos = cyclomatic_complexity_file file in
+     cyclos +> List.iter (fun (name, cyclo) ->
+       Hashtbl.add hscore name cyclo;
+       pr2 (string_of_bad_cyclo name cyclo);
+     );
+   );
+
+   (* rank *)
+   let xs = Common.hash_to_list hscore in
+   let bad = 
+     match selection with
+     | Threshold n ->
+         xs +> List.filter (fun (name, score) -> 
+           score >= n
+         ) +> Common.sort_by_val_highfirst
+     | Topn n -> 
+         xs +> Common.sort_by_val_highfirst +> 
+           Common.take_safe n
+   in
+   pr2_xxxxxxxxxxxxxxxxx ();
+   bad +> List.iter (fun (name, score) -> 
+     pr2 (string_of_bad_cyclo name score)
+   )
 
 (*e: cyclomatic_php.ml *)
