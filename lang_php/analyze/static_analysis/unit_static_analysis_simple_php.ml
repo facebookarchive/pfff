@@ -47,6 +47,11 @@ let callees id db =
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
+
+(*---------------------------------------------------------------------------*)
+(* Dead code *)
+(*---------------------------------------------------------------------------*)
+
 (* 
  * The deadcode analysis in pfff we do for facebook does not only find
  * dead code; It also:
@@ -221,9 +226,62 @@ let deadcode_unittest =
     ])
 
 (*---------------------------------------------------------------------------*)
+(* Cyclomatic complexity *)
+(*---------------------------------------------------------------------------*)
+let cyclomatic_unittest =
+  "cyclomatic_php" >::: [
+
+    "metric simple function" >:: (fun () ->
+      let file_content = "
+function foo() { if(true) { return false; } }
+function bar() { return true; }
+" in
+      let tmpfile = Parse_php.tmp_php_file_from_string file_content in
+      let xs = Cyclomatic_php.cyclomatic_complexity_file tmpfile in
+      let xs = xs +> List.map (fun (name, int) -> 
+        Ast_php.str_of_name name, int) +> List.rev  in
+      assert_equal
+        ~msg:"it should get the right cyclomatic complexity of simple code"
+        [("foo", 2);
+         ("bar", 1);
+        ]
+        xs
+    );
+
+    "metric code with lambda" >:: (fun () ->
+      let file_content = "
+function foo() { 
+  $f = function($a) {
+    return $a;
+  };
+}
+" in
+      let tmpfile = Parse_php.tmp_php_file_from_string file_content in
+      let xs = Cyclomatic_php.cyclomatic_complexity_file tmpfile in
+      let xs = xs +> List.map (fun (name, int) ->
+        let info = Ast_php.info_of_name name in
+        (* this was generating a Fatal at some point when we used to
+         * return also the cyclomatic complexity of Lambda, which
+         * had a fakeInfo attached to their name.
+         *)
+        let _line = Ast_php.line_of_info info in
+        Ast_php.str_of_name name, int
+      ) +> List.rev  in
+      assert_equal
+        ~msg:"it should not got inside lambdas"
+        [("foo", 1);
+        ]
+        xs
+        
+    );
+
+  ]
+
+(*---------------------------------------------------------------------------*)
 (* Final suite *)
 (*---------------------------------------------------------------------------*)
 let unittest =
   "static_analyze_php" >::: [
     deadcode_unittest;
+    cyclomatic_unittest;
   ]

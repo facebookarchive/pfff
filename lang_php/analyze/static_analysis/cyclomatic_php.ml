@@ -122,7 +122,14 @@ let cyclomatic_complexity_file file =
       let cyclo = cyclomatic_complexity_flow flow in
       Common.push2  (def.f_name, cyclo) res;
        );
-     }
+    V.kexpr = (fun (k, _) x ->
+      match x with
+      (* don't go inside lambdas *)
+      | Lambda _ ->
+          ()
+      | _ -> k x
+    );
+  }
   in
   (try 
       (V.mk_visitor hooks) (Program ast);
