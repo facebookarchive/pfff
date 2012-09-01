@@ -12,7 +12,7 @@ for Arch: I don't remember
 For Ubuntu/Debian, packages are named differently, usually with a 'lib'
 prefix, so you will want to install:
 libpcre3-dev, libgtk2.0-dev, libcairo2-dev, libpango1.0-dev and finally
-the binutils-goldl package.
+the binutils-gold package.
 
 On Fedora you may need to install the camlp4 packages too: 
  ocaml-camlp4 ocaml-camlp4-devel
