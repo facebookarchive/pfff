@@ -104,6 +104,18 @@ function test_ok_undeclared_sscanf() {
   echo $_PHP_MAJOR_VERSION;
 }
 
+function take_variable_number_of_args() {
+  misc1(func_get_args());
+}
+
+// this used to raise a "unused variable" because we were not
+// visiting all the arguments when the definition of the corresponding
+// function didn't have any parameter
+function test_unused_and_varargs_function() {
+  $avar = 1;
+  take_variable_number_of_args($avar);
+}
+
 //*************************************************************************
 // Undefined variables and reference parameters
 //*************************************************************************

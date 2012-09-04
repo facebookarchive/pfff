@@ -758,11 +758,16 @@ and expr env = function
             let params = 
               def.Ast_php.f_params +> Ast_php.unparen +> Ast_php.uncomma_dots
             in
-            (* maybe the #args does not match #params, but this is not our
-             * business here; this will be detected anyway in check_functions
-             * or check_classes.
-             *)
-            Common.zip_safe es (List.map (fun p -> Some p) params)
+            let rec zip args params =
+              match args, params with
+              | [], [] -> []
+              (* more params than arguments, maybe because default parameters *)
+              | [], y::ys -> []
+              (* more arguments than params, maybe because func_get_args() *)
+              | x::xs, [] -> (x, None)::zip xs []
+              | x::xs, y::ys -> (x, Some y)::zip xs ys
+            in
+            zip es params
       in
 
       es_with_parameters +> List.iter (fun (arg, param_opt) ->
