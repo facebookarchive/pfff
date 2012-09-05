@@ -52,7 +52,7 @@ module Ast = Ast_ml
  *       -> Dir -> File  # no intermediate Module node when there is a dupe
  *                       # on a module name (e.g. for main.ml)
  * 
- *       -> Dir -> Dir -> ...
+ *       -> Dir -> SubDir -> Module -> ...
  *)
 
 (*****************************************************************************)
@@ -97,7 +97,7 @@ let parse file =
       []
   ))
 
-(* Adjust the set of files, to exclude noisy modules (e.g. tests in external/)
+(* Adjust the set of files: exclude noisy modules (e.g. tests in external/)
  * or modules that would introduce false positive when we do the
  * modulename->file lookup (e.g. applications of external packages)
  *)
@@ -184,42 +184,38 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
 
   g +> G.add_node (readable, E.File);
 
-  if List.mem m (Common.keys duplicate_modules)
-  then begin
-    g +> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
-    (match m with
-    (* we could attach to two parents when we are almost sure that
-     * nobody will reference this module (e.g. because it's an 
-     * entry point), but then all the uses in those files would
-     * propagate to two parents, so when we have a dupe, we
-     * don't create the intermediate Module node. If it's referenced
-     * somewhere then it will generate a lookup failure.
-     *)
-    | s when s =~ "Main.*" || s =~ "Demo.*" ||
-             s =~ "Test.*" || s =~ "Foo.*"
-        -> ()
-    | _ when file =~ ".*external/" -> ()
-    | _ ->
-        pr2 (spf "PB: module %s is already present (%s)"
-                m (Common.dump (List.assoc m duplicate_modules)));
-        g +> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
-    )
-  end
-  else
-    if G.has_node (m, E.Module) g
-    then
-      match G.parents (m, E.Module) g with
+  match () with
+  | _ when List.mem m (Common.keys duplicate_modules) ->
+      (* we could attach to two parents when we are almost sure that
+       * nobody will reference this module (e.g. because it's an 
+       * entry point), but then all the uses in those files would
+       * propagate to two parents, so when we have a dupe, we
+       * don't create the intermediate Module node. If it's referenced
+       * somewhere then it will generate a lookup failure.
+       * So just Dir -> File here, no Dir -> Module -> File.
+       *)
+      g +> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
+      (match m with
+      | s when s =~ "Main.*" || s =~ "Demo.*" ||
+          s =~ "Test.*" || s =~ "Foo.*"
+          -> ()
+      | _ when file =~ ".*external/" -> ()
+      | _ ->
+          pr2 (spf "PB: module %s is already present (%s)"
+                  m (Common.dump (List.assoc m duplicate_modules)));
+      )
+  | _ when G.has_node (m, E.Module) g ->
+      (match G.parents (m, E.Module) g with
       (* probably because processed .mli or .ml before which created the node *)
       | [p] when p =*= (dir, E.Dir) -> 
           g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
       | _ -> raise Impossible
-    else begin 
+      )
+  | _ ->
+      (* Dir -> Module -> File *)
       g +> G.add_node (m, E.Module);
       g +> G.add_edge ((dir, E.Dir), (m, E.Module))  G.Has;
       g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
-    end
-  ;
-  ()
 
 (*****************************************************************************)
 (* Uses *)

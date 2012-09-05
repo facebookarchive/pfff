@@ -22,7 +22,7 @@ open Common
  * different graph algorithms:
  * 
  *  - OCamlGraph, by Filliatre, Signoles, et al. It has transitive closure,
- *    kruskal, floyd, topological sort, CFC, etc. Probably the best. But it is
+ *    Kruskal, Floyd, topological sort, CFC, etc. Probably the best. But it is
  *    heavily functorized. I thought it was too complicated because of all
  *    those functors but they also provide an easy interface without functor
  *    in pack.mli and sig_pack.mli which makes it almost usable
@@ -61,7 +61,7 @@ open Common
  * forcing the user to have this intermediate 'nodei'. The people 
  * from ocamlgraph have well realized that and made it possible
  * to have different graph interface (imperative/pure, directed/undirected,
- * with/witout nodes, paramemtrized vertex or not, ...) and reuse
+ * with/witout nodes, parametrized vertex or not, ...) and reuse
  * lots of code for the algorithm. Unfortunately, just like for the C++
  * STL, it comes at a price: lots of functors. The sig_pack.mli and pack.ml
  * tries to solve this pb, but they made some choices about what should
@@ -71,8 +71,8 @@ open Common
  * of the nodes, and not just integers. 
  * 
  * 
- * So This module is a small modification of ocamlgraph, to have 
- * more polymorphic graph with some defaults that makes sense most
+ * So This module is a small wrapper around ocamlgraph, to have 
+ * more polymorphic graphs with some defaults that makes sense most
  * of the time (Directed graph, Imperative, vertex ints with mapping
  * to node information), and which can use algorithms defined in 
  * other libraries by making some small converters from one representation
@@ -150,9 +150,9 @@ module OG :
     val is_directed : bool
     val create : ?size:int -> unit -> t
     val copy : t -> t
-    val add_vertex : t -> V.t -> unit
+DONE    val add_vertex : t -> V.t -> unit
     val remove_vertex : t -> V.t -> unit
-    val add_edge : t -> V.t -> V.t -> unit
+DONE    val add_edge : t -> V.t -> V.t -> unit
     val add_edge_e : t -> E.t -> unit
     val remove_edge : t -> V.t -> V.t -> unit
     val remove_edge_e : t -> E.t -> unit
@@ -168,14 +168,14 @@ module OG :
     val is_empty : t -> bool
     val nb_vertex : t -> int
     val nb_edges : t -> int
-    val out_degree : t -> V.t -> int
-    val in_degree : t -> V.t -> int
+DONE    val out_degree : t -> V.t -> int
+DONE    val in_degree : t -> V.t -> int
     val mem_vertex : t -> V.t -> bool
     val mem_edge : t -> V.t -> V.t -> bool
     val mem_edge_e : t -> E.t -> bool
     val find_edge : t -> V.t -> V.t -> E.t
-    val succ : t -> V.t -> V.t list
-    val pred : t -> V.t -> V.t list
+DONE    val succ : t -> V.t -> V.t list
+DONE    val pred : t -> V.t -> V.t list
     val succ_e : t -> V.t -> E.t list
     val pred_e : t -> V.t -> E.t list
     val iter_vertex : (V.t -> unit) -> t -> unit
@@ -303,10 +303,16 @@ let add_edge k1 k2 g =
   OG.add_edge g.og vx vy;
   ()
 
+(* graphviz allows to specify graph easily where one can just
+ * put the edges without even declararing the nodes, so here
+ * we can provide a similar convenient API.
+ *)
 let add_edge_and_nodes_if_not_present k1 k2 g = 
   add_vertex_if_not_present k1 g;
   add_vertex_if_not_present k2 g;
   add_edge k1 k2 g
+
+(* less: could have a let (-->) k1 k2 ? *)
 
 (*****************************************************************************)
 (* Graph visit *)
@@ -360,7 +366,7 @@ let remove_vertex k g =
 
 (* todo? make the graph more functional ? it's very imperative right now
  * which force the caller to write in an imperative way and use functions
- * like this 'copy()'. Look at launchary haskell paper ?
+ * like this 'copy()'. Look at launchbary haskell paper ?
  *)
 let copy oldg = 
 (* 
@@ -399,11 +405,13 @@ let shortest_path k1 k2 g =
   let vertexes = 
     vx::(edges +> List.map (fun edge -> OG.E.dst edge))
   in
-  vertexes |> List.map (fun v -> key_of_vertex v g)
+  vertexes +> List.map (fun v -> key_of_vertex v g)
+
 
 let transitive_closure g = 
   let og' = OG.transitive_closure ~reflexive:false g.og in
   { g with og = og' }
+
 
 (* http://en.wikipedia.org/wiki/Strongly_connected_component *)
 let strongly_connected_components g =
@@ -441,7 +449,7 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
     pr extra_string;
     pr "\n";
 
-    g.og |> OG.iter_vertex (fun v -> 
+    g.og +> OG.iter_vertex (fun v -> 
       let k = key_of_vertex v g in
       (* todo? could also use the str_of_key to represent the node *)
       pr (spf "%d [label=\"%s\"];\n" 
@@ -449,9 +457,9 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
              (str_of_key k));
     );
 
-    g.og |> OG.iter_vertex (fun v -> 
+    g.og +> OG.iter_vertex (fun v -> 
       let succ = OG.succ g.og v in
-      succ |> List.iter (fun v2 ->
+      succ +> List.iter (fun v2 ->
         pr (spf "%d -> %d;\n" (OG.V.label v) (OG.V.label v2));
       )
     );

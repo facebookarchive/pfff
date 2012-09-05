@@ -82,7 +82,7 @@ type edge =
   | Use
 
 (* 
- * We use an imperative, directed, with no intermediate node-index, graph.
+ * We use an imperative, directed, without intermediate node-index, graph.
  * 
  * We use two different graphs because we need an efficient way to
  * go up in the hierarchy to increment cells in the dependency matrix
@@ -92,14 +92,15 @@ type edge =
  * nodes.
  *)
 type graph = {
-  (* Actually should really be a tree, but we need convenient
+  (* Actually the has graph should really be a tree, but we need convenient
    * access to the children or parent of a node, which are provided
    * by the graph API so let's reuse that.
    *)
   has: node G.graph;
   (* The source and target should be enough information to understand
    * the kind of use. For instance a class referencing another class
-   * is an 'extends'. A class referencing an Interface is an 'implements'.
+   * has to be an 'extends'. A class referencing an Interface has to
+   * be an 'implements'.
    *)
   use: node G.graph;
 }

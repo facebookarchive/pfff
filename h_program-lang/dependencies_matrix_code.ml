@@ -32,7 +32,7 @@ module G = Graph_code
 (*****************************************************************************)
 
 (* Dependency Structure Matrix.
- * The relation between nodes is not stored here. you
+ * The relation between nodes is not stored here; you
  * can get such information in the code graph instead.
  *)
 type dm = {
@@ -77,13 +77,17 @@ let build config g =
       Common.index_list_0 nodes +> List.map Common.swap +> Common.hash_of_list;
   }
   in
-  (* todo: profile this? optimize? *)
   let hmemo = Hashtbl.create 101 in
+  (* get the parent node of the node under consideration that is
+   * displayed in the matrix.
+   *)
   let rec projection n =
+  (* todo: profile this? optimize? *)
     Common.memoized hmemo n (fun () ->
       if Hashtbl.mem dm.name_to_i n
       then Hashtbl.find dm.name_to_i n
       else
+        (* can raise exn *)
         projection (G.parent n g)
     )
   in
