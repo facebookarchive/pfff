@@ -86,9 +86,16 @@ let draw_matrix cr w =
         };
     done
   done;
-
-  (* TODO draw left rows *)
-
+  (* draw left rows *)
+  for j = 0 to nb_elts -.. 1 do
+    let x = 0. in
+    let y = (float_of_int j) * height_cell + y_start_matrix_up in
+    CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat"
+        { p = { x = x; y = y; };
+          q = { x = x_start_matrix_left; y = y + height_cell };
+        };
+  done;
+    
   (* TODO draw up columns *)
   
   ()
