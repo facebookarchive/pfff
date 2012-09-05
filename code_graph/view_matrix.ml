@@ -20,6 +20,7 @@ open Model3
 open Figures
 module CairoH = Cairo_helpers3
 module Ctl = Controller3
+module DM = Dependencies_matrix_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -50,6 +51,7 @@ let scale_coordinate_system cr w =
 
 let x_start_matrix_left = 0.3
 let y_start_matrix_up = 0.2
+let x_end_matrix_right = 1.6
   
 (*****************************************************************************)
 (* Drawing *)
@@ -64,10 +66,26 @@ let draw_matrix cr w =
   (* draw matrix englobing rectangle *)
   CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"wheat"
     { p = { x = x_start_matrix_left; y = y_start_matrix_up };
-      q = { x = xy_ratio; y = 1.0 };
+      q = { x = x_end_matrix_right; y = 1.0 };
     };
+  (* draw cells *)
+  let nb_elts = Array.length w.m.DM.matrix in
+  let width_cell = 
+    (x_end_matrix_right - x_start_matrix_left) / (float_of_int nb_elts) in
+  let height_cell = 
+    (1.0 - y_start_matrix_up) / (float_of_int nb_elts) in
 
-  (* TODO draw cells *)
+  for i = 0 to nb_elts -.. 1 do
+    for j = 0 to nb_elts -.. 1 do
+      let x = (float_of_int i) * width_cell + x_start_matrix_left in
+      let y = (float_of_int j) * height_cell + y_start_matrix_up in
+
+      CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat"
+        { p = { x = x; y = y; };
+          q = { x = x + width_cell; y = y + height_cell };
+        };
+    done
+  done;
 
   (* TODO draw left rows *)
 

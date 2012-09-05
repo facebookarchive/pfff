@@ -57,9 +57,9 @@ let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () =
   Cairo.fill cr;
   ()
 
-let draw_rectangle ~cr ~color ~line_width r =
+let draw_rectangle ?(alpha=1.) ~cr ~color ~line_width r =
   (let (r,g,b) = color +> Color.rgbf_of_string in
-   Cairo.set_source_rgb cr r g b;
+   Cairo.set_source_rgba cr r g b alpha;
   );
   Cairo.set_line_width cr line_width;
 
