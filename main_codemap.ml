@@ -220,10 +220,9 @@ let main_action xs =
 
   let dw = Model.init_drawing treemap_generator model layers_with_index xs in
 
-  (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
   let db_file = 
-    (* todo: do as for layers, put this logic of marshall vs json elsewhere *)
+    (* todo: do as for layers, put this logic of marshall vs json elsewhere? *)
     match !db_file, xs with
     | None, [dir] ->
         let db = Filename.concat dir Database_code.default_db_name in
@@ -265,6 +264,7 @@ let main_action xs =
    *)
   );
 
+  (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   View2.mk_gui 
     ~screen_size:!screen_size
     ~legend:!legend

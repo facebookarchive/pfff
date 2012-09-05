@@ -36,8 +36,40 @@ module Color = Simple_color
 let origin = { Cairo. x = 0.; y = 0. }
 
 (*****************************************************************************)
-(* Surface *)
+(* Drawing *)
 (*****************************************************************************)
+let clear cr =
+  Cairo.set_source_rgba cr 1. 1. 1.   1.;
+  Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
+  Cairo.paint cr;
+  Cairo.set_operator cr Cairo.OPERATOR_OVER;
+  ()
+
+let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
+  (let (r,g,b) = color +> Color.rgbf_of_string in
+  Cairo.set_source_rgba cr r g b alpha;
+  );
+  
+  Cairo.move_to cr x y;
+  Cairo.line_to cr (x+w) y;
+  Cairo.line_to cr (x+w) (y+h);
+  Cairo.line_to cr x (y+h);
+  Cairo.fill cr;
+  ()
+
+let draw_rectangle ~cr ~color ~line_width r =
+  (let (r,g,b) = color +> Color.rgbf_of_string in
+   Cairo.set_source_rgb cr r g b;
+  );
+  Cairo.set_line_width cr line_width;
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.line_to cr r.p.x r.p.y;
+  Cairo.stroke cr;
+  ()
 
 (*****************************************************************************)
 (* Misc *)

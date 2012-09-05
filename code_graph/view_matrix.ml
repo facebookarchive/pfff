@@ -17,7 +17,9 @@ open Common
 open Common.ArithFloatInfix
 
 open Model3
+open Figures
 module CairoH = Cairo_helpers3
+module Ctl = Controller3
 
 (*****************************************************************************)
 (* Prelude *)
@@ -36,9 +38,42 @@ module CairoH = Cairo_helpers3
  *)
 let xy_ratio = 1.71
 
+let scale_coordinate_system cr w =
+  Cairo.scale cr
+    (float_of_int w.width / xy_ratio)
+    (float_of_int w.height);
+  ()
+
+(*****************************************************************************)
+(* Layout *)
+(*****************************************************************************)
+
+let x_start_matrix_left = 0.3
+let y_start_matrix_up = 0.2
+  
 (*****************************************************************************)
 (* Drawing *)
 (*****************************************************************************)
+
+(* assumes cr is setup with uniform coordinate system *)
+let draw_matrix cr w =
+  (* clear the screen *)
+  CairoH.fill_rectangle ~cr ~x:0.0 ~y:0.0 ~w:xy_ratio ~h:1.0 
+    ~color:"DarkSlateGray" ();
+
+  (* draw matrix englobing rectangle *)
+  CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"wheat"
+    { p = { x = x_start_matrix_left; y = y_start_matrix_up };
+      q = { x = xy_ratio; y = 1.0 };
+    };
+
+  (* TODO draw cells *)
+
+  (* TODO draw left rows *)
+
+  (* TODO draw up columns *)
+  
+  ()
 
 (*****************************************************************************)
 (* Painting entry point *)
@@ -48,8 +83,10 @@ let xy_ratio = 1.71
  * and then call 'draw' functions.
  *)
 let paint w =
-  pr2 "View_matrix.paint Todo";
-  let _cr = Cairo.create w.base in
+  let cr = Cairo.create w.base in
+  scale_coordinate_system cr w;
+  draw_matrix cr w;
+  !Ctl._refresh_drawing_area ();
   ()
 
 (*****************************************************************************)
