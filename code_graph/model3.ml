@@ -43,9 +43,7 @@ type world = {
   (* cache of Dependencies_matrix_code.build config g *)
   mutable m: Dependencies_matrix_code.dm;
 
-  (* device coordinates *)
-  mutable base: GDraw.pixmap;
-  (* todo: could make pm also a Cairo.surface? *)
+  mutable base: [ `Any ] Cairo.surface;
   mutable overlay: [ `Any ] Cairo.surface;
 
   (* viewport, device coordinates *)
@@ -57,16 +55,18 @@ type world = {
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo: factorize with model2.ml *)
-let new_pixmap ~width ~height =
-  let drawable = GDraw.pixmap ~width ~height () in
+let new_surface ~alpha ~width ~height =
+  let drawable = GDraw.pixmap ~width:1 ~height:1 () in
   drawable#set_foreground `WHITE;
-  drawable#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
-  drawable
+  drawable#rectangle ~x:0 ~y:0 ~width:1 ~height:1 ~filled:true ();
 
-let surface_of_gtk_pixmap pm =
-  let cr = Cairo_lablgtk.create pm#pixmap in
-  Cairo.get_target cr
+  let cr = Cairo_lablgtk.create drawable#pixmap in
+  let surface = Cairo.get_target cr in
+  Cairo.surface_create_similar surface
+    (if alpha 
+    then Cairo.CONTENT_COLOR_ALPHA
+    else Cairo.CONTENT_COLOR
+    ) width height
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -79,12 +79,10 @@ let init_world ?(width = 600) ?(height = 600) config model =
       Dependencies_matrix_code.build config model.g 
     )
   in
-  let pixmap = new_pixmap ~width ~height in
   {
     model; config;
     m;
     width; height;
-    base = pixmap;
-    overlay = Cairo.surface_create_similar (surface_of_gtk_pixmap pixmap)
-      Cairo.CONTENT_COLOR_ALPHA width height;
+    base = new_surface ~alpha:false ~width ~height;
+    overlay = new_surface ~alpha:false ~width ~height;
   }

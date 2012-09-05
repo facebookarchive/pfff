@@ -16,6 +16,7 @@ open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
 
+open Model3
 module CairoH = Cairo_helpers3
 
 (*****************************************************************************)
@@ -26,8 +27,21 @@ module CairoH = Cairo_helpers3
 (* Coordinate system *)
 (*****************************************************************************)
 
+(* On my 30' monitor, when I run codegraph and expand it to take the
+ * whole screen, then the Grab utility tells me that the drawing area
+ * is 2560 x 1490 (on my laptop it's 1220 x 660).
+ * So if we want a uniform coordinate system that is
+ * still aware of the proportion (like I did in Treemap.xy_ratio),
+ * then 1.71 x 1 is a good choice.
+ *)
+let xy_ratio = 1.71
+
 (*****************************************************************************)
-(* Painting *)
+(* Drawing *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Painting entry point *)
 (*****************************************************************************)
 
 (* 'Paint' creates the cairo context and adjust the scaling if needed
@@ -35,6 +49,7 @@ module CairoH = Cairo_helpers3
  *)
 let paint w =
   pr2 "View_matrix.paint Todo";
+  let _cr = Cairo.create w.base in
   ()
 
 (*****************************************************************************)

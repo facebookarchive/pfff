@@ -332,6 +332,8 @@ let extra_actions () = [
 
 let all_actions () = 
   extra_actions () ++
+  Test_program_lang.actions() ++
+  Test_analyze_ml.actions () ++
   []
 
 let options () = [

@@ -54,10 +54,8 @@ module View_overlays = View_overlays3
  * getting the final result.
  *)
 let assemble_layers cr_final w =
-  let surface_src = Model.surface_of_gtk_pixmap w.base in
-
   Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
-  Cairo.set_source_surface cr_final surface_src 0. 0.;
+  Cairo.set_source_surface cr_final w.base 0. 0.;
   Cairo.paint cr_final;
 
   Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
@@ -78,10 +76,8 @@ let configure da w ev =
   (* quite similar to Model.init_world *)
   w.width <- width;
   w.height <- height;
-  w.base <- Model.new_pixmap w.width w.height;
-  w.overlay <- 
-    Cairo.surface_create_similar (Model.surface_of_gtk_pixmap w.base)
-     Cairo.CONTENT_COLOR_ALPHA width height;
+  w.base <- Model.new_surface ~alpha:false ~width:w.width ~height:w.height;
+  w.overlay <- Model.new_surface ~alpha:true ~width:w.width ~height:w.height;
   View_matrix.paint w;
   true
 
@@ -250,7 +246,6 @@ let mk_gui w =
 
   GtkSignal.user_handler := (fun exn -> 
     pr2 "fucking callback";
-    (* old: before 3.11: Features.Backtrace.print(); *)
     let s = Printexc.get_backtrace () in
     pr2 s;
     let pb = "pb: " ^ string_of_exn exn in
