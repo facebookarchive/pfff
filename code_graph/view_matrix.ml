@@ -16,10 +16,12 @@ open Common
 (* floats are the norm in graphics *)
 open Common.ArithFloatInfix
 
-open Model3
 open Figures
 module CairoH = Cairo_helpers3
+
+open Model3
 module Ctl = Controller3
+
 module DM = Dependencies_matrix_code
 
 (*****************************************************************************)
@@ -49,6 +51,7 @@ let scale_coordinate_system cr w =
 (* Layout *)
 (*****************************************************************************)
 
+(* this assumes a xy_ratio of 1.71 *)
 let x_start_matrix_left = 0.2
 let y_start_matrix_up = 0.15
 let x_end_matrix_right = 1.55
@@ -63,7 +66,7 @@ let draw_matrix cr w =
   CairoH.fill_rectangle ~cr ~x:0.0 ~y:0.0 ~w:xy_ratio ~h:1.0 
     ~color:"DarkSlateGray" ();
 
-  (* draw matrix englobing rectangle *)
+  (* draw matrix enclosing rectangle *)
   CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"wheat"
     { p = { x = x_start_matrix_left; y = y_start_matrix_up };
       q = { x = x_end_matrix_right; y = 1.0 };
@@ -83,6 +86,7 @@ let draw_matrix cr w =
       let x = (float_of_int i) * width_cell + x_start_matrix_left in
       let y = (float_of_int j) * height_cell + y_start_matrix_up in
 
+      (* less: could also display intra dependencies *)
       if i = j then
         CairoH.fill_rectangle ~cr ~x ~y ~w:width_cell ~h:height_cell
           ~color:"wheat" ()
@@ -118,6 +122,13 @@ let draw_matrix cr w =
   done;
 
   (* draw left rows *)
+  let font_size = x_start_matrix_left / 20. in
+  CairoH.set_font_size cr font_size;
+  (* peh because it exercises the spectrum of high letters *)
+  let extent = CairoH.text_extents cr "peh" in
+  let _base_tw = extent.Cairo.text_width / 3. in
+  let th = extent.Cairo.text_height in
+
   for j = 0 to nb_elts -.. 1 do
     let x = 0. in
     let y = (float_of_int j) * height_cell + y_start_matrix_up in
@@ -125,6 +136,11 @@ let draw_matrix cr w =
         { p = { x = x; y = y; };
           q = { x = x_start_matrix_left; y = y + height_cell };
         };
+    (* align on the left *)
+    Cairo.move_to cr (x + 0.02) (y + (height_cell /2.) + (th / 2.0));
+    let node = Hashtbl.find w.m.DM.i_to_name j in
+    let (txt, _kind) = node in
+    CairoH.show_text cr txt;
   done;
     
   (* draw up columns *)
@@ -134,8 +150,22 @@ let draw_matrix cr w =
 
     CairoH.set_source_color ~cr ~color:"wheat" ();
     Cairo.move_to cr x y;
-    Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 4.)))  0.;
+    (* because of the xy_ratio, this actually does not do a 45 deg line.
+     * old: Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 4.)))  0.; 
+     *)
+    Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 2.8)))  0.; 
     Cairo.stroke cr;
+
+    if i < nb_elts then begin
+      let node = Hashtbl.find w.m.DM.i_to_name i in
+      let (txt, _kind) = node in
+      
+      Cairo.move_to cr (x + (width_cell / 2.0) + (th / 2.0)) (y - 0.001);
+      let angle = -. (pi / 4.) in
+      Cairo.rotate cr ~angle:angle;
+      CairoH.show_text cr txt;
+      Cairo.rotate cr ~angle:(-. angle);
+    end;
   done;
   
   ()
@@ -159,4 +189,5 @@ let paint w =
 (*****************************************************************************)
 
 let button_action da w ev =
-  raise Todo
+  pr2 "View_matrix.Button_action";
+  true
