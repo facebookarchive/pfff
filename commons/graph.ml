@@ -145,13 +145,13 @@ module OG :
         val label : t -> label
         type vertex = V.t
       end
-
     type edge = E.t
+
     val is_directed : bool
-    val create : ?size:int -> unit -> t
+DONE    val create : ?size:int -> unit -> t
     val copy : t -> t
 DONE    val add_vertex : t -> V.t -> unit
-    val remove_vertex : t -> V.t -> unit
+DONE    val remove_vertex : t -> V.t -> unit
 DONE    val add_edge : t -> V.t -> V.t -> unit
     val add_edge_e : t -> E.t -> unit
     val remove_edge : t -> V.t -> V.t -> unit
@@ -214,13 +214,13 @@ DONE    val pred : t -> V.t -> V.t list
         val postfix_component : (V.t -> unit) -> t -> V.t -> unit
         val has_cycle : t -> bool
       end
-
     module Bfs :
       sig
         val iter : (V.t -> unit) -> t -> unit
         val iter_component : (V.t -> unit) -> t -> V.t -> unit
       end
     module Marking : sig val dfs : t -> unit val has_cycle : t -> bool end
+
     module Classic :
       sig
         val divisors : int -> t
