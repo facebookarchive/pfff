@@ -151,6 +151,5 @@ let motion_notify da w ev =
 
       )
   );
-
   !Ctl._refresh_drawing_area ();
   false
