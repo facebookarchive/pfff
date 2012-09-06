@@ -126,7 +126,7 @@ let draw_matrix cr w =
   done;
 
   (* draw left rows *)
-  let font_size = x_start_matrix_left / 20. in
+  let font_size = height_cell / 1.5 in
   CairoH.set_font_size cr font_size;
   (* peh because it exercises the spectrum of high letters *)
   let extent = CairoH.text_extents cr "peh" in
