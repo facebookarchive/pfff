@@ -13,8 +13,11 @@
  * license.txt for more details.
  *)
 open Common
+(* floats are the norm in graphics *)
+open Common.ArithFloatInfix
 
 module CairoH = Cairo_helpers3
+module DM = Dependencies_matrix_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -42,6 +45,10 @@ type world = {
   mutable config: Dependencies_matrix_code.config;
   (* cache of Dependencies_matrix_code.build config g *)
   mutable m: Dependencies_matrix_code.dm;
+  (* set each time in View_matrix.draw_matrix.
+   * opti: use a quad tree?
+   *)
+  mutable interactive_regions: (region * Figures.rectangle) list;
 
   mutable base: [ `Any ] Cairo.surface;
   mutable overlay: [ `Any ] Cairo.surface;
@@ -50,6 +57,10 @@ type world = {
   mutable width: int;
   mutable height: int;
 }
+  and region =
+    | Cell of int * int (* i, j *)
+    | Row of int (* i *)
+    | Column of int (* j *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -80,9 +91,71 @@ let init_world ?(width = 600) ?(height = 600) config model =
     )
   in
   {
-    model; config;
+    model; 
+    config;
+    interactive_regions = [];
     m;
     width; height;
     base = new_surface ~alpha:false ~width ~height;
     overlay = new_surface ~alpha:false ~width ~height;
+  }
+
+(*****************************************************************************)
+(* Coordinate system *)
+(*****************************************************************************)
+
+(* On my 30' monitor, when I run codegraph and expand it to take the
+ * whole screen, then the Grab utility tells me that the drawing area
+ * is 2560 x 1490 (on my laptop it's 1220 x 660).
+ * So if we want a uniform coordinate system that is
+ * still aware of the proportion (like I did in Treemap.xy_ratio),
+ * then 1.71 x 1 is a good choice.
+ *)
+let xy_ratio = 1.71
+
+let scale_coordinate_system cr w =
+  Cairo.scale cr
+    (float_of_int w.width / xy_ratio)
+    (float_of_int w.height);
+  ()
+
+(*****************************************************************************)
+(* Layout *)
+(*****************************************************************************)
+
+(* todo: can put some of it as mutable? as we expand things we may want
+ * to reserve more space to certain things?
+ *)
+type layout = {
+(* this assumes a xy_ratio of 1.71 *)
+  x_start_matrix_left: float;
+  x_end_matrix_right: float;
+  y_start_matrix_up: float;
+  _y_end_matrix_down: float;
+
+  nb_elts: int;
+  width_cell: float;
+  height_cell: float;
+}
+
+let layout_of_w w = 
+  let x_start_matrix_left = 0.2 in
+  let x_end_matrix_right = 1.55 in
+  (* this will be with 45 degrees so it can be less than x_start_matrix_left *)
+  let y_start_matrix_up = 0.1 in
+  let _y_end_matrix_down = 1.0 in
+
+  let nb_elts = Array.length w.m.DM.matrix in
+  let width_cell = 
+    (x_end_matrix_right - x_start_matrix_left) / (float_of_int nb_elts) in
+  let height_cell = 
+    (1.0 - y_start_matrix_up) / (float_of_int nb_elts) in
+  {
+    x_start_matrix_left;
+    x_end_matrix_right;
+    y_start_matrix_up;
+    _y_end_matrix_down;
+    nb_elts;
+    width_cell;
+    height_cell;
   }
