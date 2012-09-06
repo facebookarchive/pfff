@@ -50,11 +50,29 @@ let find_region_at_user_point w ~x ~y =
 (* The overlays *)
 (*****************************************************************************)
 
-let draw_yellow_row_column ~cr w i =
-  raise Todo
+let draw_row_column ~cr ~color w i =
+  let l = M.layout_of_w w in
 
-let draw_green_row_column ~cr w j =
-  raise Todo
+  (* draw row *)
+  let x = 0. in
+  let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
+  let rect = { 
+    p = { x = x; y = y; };
+    q = { x = l.x_end_matrix_right; y = y + l.height_cell };
+  } in
+  CairoH.fill_rectangle ~cr ~color ~alpha:0.3 rect;
+
+  (* draw column *)
+  let x = (float_of_int i) * l.width_cell + l.x_start_matrix_left in
+  let y = l.y_start_matrix_up in
+
+  let rect = { 
+    p = { x = x; y = y; };
+    q = { x = x + l.width_cell; y = 1.0 };
+  } in
+  CairoH.fill_rectangle ~cr ~color ~alpha:0.3 rect;
+  ()
+ 
 
 
 let draw_green_yellow_dependent_rows ~cr w i =
@@ -121,11 +139,15 @@ let motion_notify da w ev =
   | Some x ->
       (match x with
       | Row i -> 
-          draw_green_yellow_dependent_rows ~cr w i
+          draw_green_yellow_dependent_rows ~cr w i;
+          draw_row_column ~color:"yellow" ~cr w i;
       | Cell (i, j) ->
-          draw_green_yellow_dependent_rows ~cr w i
+          draw_green_yellow_dependent_rows ~cr w i;
+          draw_row_column ~color:"yellow" ~cr w i;
+          draw_row_column ~color:"green" ~cr w j;
       | Column j ->
-          ()
+          draw_row_column ~color:"green" ~cr w j;
+
       )
   );
 
