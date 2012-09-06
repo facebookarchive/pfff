@@ -68,6 +68,8 @@ let draw_matrix cr w =
     { p = { x = x_start_matrix_left; y = y_start_matrix_up };
       q = { x = x_end_matrix_right; y = 1.0 };
     };
+  Cairo.select_font_face cr "serif"
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
 
   (* draw cells *)
   let nb_elts = Array.length w.m.DM.matrix in
@@ -81,13 +83,36 @@ let draw_matrix cr w =
       let x = (float_of_int i) * width_cell + x_start_matrix_left in
       let y = (float_of_int j) * height_cell + y_start_matrix_up in
 
+      (* todo: if i = j then fill_rectangle wheat? *)
+
       CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat"
         { p = { x = x; y = y; };
           q = { x = x + width_cell; y = y + height_cell };
         };
-      
+      let n = w.m.DM.matrix.(i).(j) in
+      if n > 0 then begin
+        let txt = string_of_int n in
+        let font_size = 
+          match n with
+          | _ when n <= 10 -> 
+              width_cell / 2.
+          | _ ->
+              width_cell / (float_of_int (String.length txt))
+        in
+        CairoH.set_font_size cr font_size;
+        (* todo: optimize? *)
+        let extent = CairoH.text_extents cr txt in
+        let tw = extent.Cairo.text_width in
+        let th = extent.Cairo.text_height in
+        
+        let x = x + (width_cell / 2.) - (tw / 2.0) in
+        let y = y + (height_cell / 2.) + (th / 2.0) in
+        Cairo.move_to cr x y;
+        CairoH.show_text cr txt;
+      end;
     done
   done;
+
   (* draw left rows *)
   for j = 0 to nb_elts -.. 1 do
     let x = 0. in

@@ -30,6 +30,57 @@ module Color = Simple_color
 (* Text related *)
 (*****************************************************************************)
 
+(* May have to move this in commons/ at some point *)
+
+let re_space = Str.regexp "^[ ]+$"
+
+(*s: cairo helpers functions *)
+(* !does side effect on the (mutable) string! *)
+let prepare_string s = 
+  if s ==~ re_space
+  then 
+    s ^ s (* double it *)
+  else begin
+    for i = 0 to String.length s -.. 1 do
+      let c = String.get s i in
+      if int_of_char c >= 128
+      then String.set s i 'Z'
+      else 
+        if c = '\t'
+        then String.set s i ' '
+      else ()
+    done;
+    s
+  end
+
+
+let show_text2 cr s =
+  (* this 'if' is only for compatibility with old versions of cairo
+   * that returns some out_of_memory error when applied to empty strings
+   *)
+  if s = "" then () else 
+  try 
+    let s' = prepare_string s in
+    Cairo.show_text cr s'
+  with exn ->
+    let status = Cairo.status cr in
+    let s2 = Cairo.string_of_status status in
+    failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
+
+let show_text a b = 
+  Common.profile_code "View.cairo_show_text" (fun () -> show_text2 a b)
+
+let text_extents cr s = 
+  Common.profile_code "CairoH.cairo_text_extent" (fun () -> 
+    (*if s = ""  then fake_text_extents else *)
+    Cairo.text_extents cr s
+  )
+
+let set_font_size cr font_size =
+  Common.profile_code "CairoH.set_font_size" (fun () ->
+    Cairo.set_font_size cr font_size
+  )
+
 (*****************************************************************************)
 (* Distance conversion *)
 (*****************************************************************************)
