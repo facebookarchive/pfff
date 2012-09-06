@@ -146,6 +146,7 @@ let motion_notify da w ev =
           draw_row_column ~color:"yellow" ~cr w i;
           draw_row_column ~color:"green" ~cr w j;
       | Column j ->
+          draw_green_yellow_dependent_rows ~cr w j;
           draw_row_column ~color:"green" ~cr w j;
 
       )
