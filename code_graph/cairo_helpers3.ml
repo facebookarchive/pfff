@@ -90,7 +90,7 @@ let origin = { Cairo. x = 0.; y = 0. }
 (* Drawing *)
 (*****************************************************************************)
 let clear cr =
-  Cairo.set_source_rgba cr 1. 1. 1.   1.;
+  Cairo.set_source_rgba cr 0. 0. 0.   0.;
   Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
   Cairo.paint cr;
   Cairo.set_operator cr Cairo.OPERATOR_OVER;
@@ -101,7 +101,7 @@ let set_source_color ?(alpha=1.) ~cr ~color () =
   Cairo.set_source_rgba cr r g b alpha;
   )
 
-let fill_rectangle ?alpha ~cr ~x ~y ~w ~h ~color () = 
+let fill_rectangle_xywh ?alpha ~cr ~x ~y ~w ~h ~color () = 
   set_source_color ?alpha ~cr ~color ();
   
   Cairo.move_to cr x y;
@@ -110,6 +110,17 @@ let fill_rectangle ?alpha ~cr ~x ~y ~w ~h ~color () =
   Cairo.line_to cr x (y+h);
   Cairo.fill cr;
   ()
+
+let fill_rectangle ?alpha ~cr ~color r = 
+  set_source_color ?alpha ~cr ~color ();
+
+  Cairo.move_to cr r.p.x r.p.y;
+  Cairo.line_to cr r.q.x r.p.y;
+  Cairo.line_to cr r.q.x r.q.y;
+  Cairo.line_to cr r.p.x r.q.y;
+  Cairo.line_to cr r.p.x r.p.y;
+  Cairo.fill cr;
+    ()
 
 let draw_rectangle ?alpha ~cr ~color ~line_width r =
   set_source_color ?alpha ~cr ~color ();
