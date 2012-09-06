@@ -49,9 +49,9 @@ let scale_coordinate_system cr w =
 (* Layout *)
 (*****************************************************************************)
 
-let x_start_matrix_left = 0.3
-let y_start_matrix_up = 0.2
-let x_end_matrix_right = 1.6
+let x_start_matrix_left = 0.2
+let y_start_matrix_up = 0.15
+let x_end_matrix_right = 1.55
   
 (*****************************************************************************)
 (* Drawing *)
