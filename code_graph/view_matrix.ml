@@ -20,6 +20,7 @@ open Figures
 module CairoH = Cairo_helpers3
 
 open Model3
+module M = Model3
 module Ctl = Controller3
 
 module DM = Dependencies_matrix_code
@@ -28,87 +29,44 @@ module DM = Dependencies_matrix_code
 (* Prelude *)
 (*****************************************************************************)
 
-(*****************************************************************************)
-(* Coordinate system *)
-(*****************************************************************************)
-
-(* On my 30' monitor, when I run codegraph and expand it to take the
- * whole screen, then the Grab utility tells me that the drawing area
- * is 2560 x 1490 (on my laptop it's 1220 x 660).
- * So if we want a uniform coordinate system that is
- * still aware of the proportion (like I did in Treemap.xy_ratio),
- * then 1.71 x 1 is a good choice.
- *)
-let xy_ratio = 1.71
-
-let scale_coordinate_system cr w =
-  Cairo.scale cr
-    (float_of_int w.width / xy_ratio)
-    (float_of_int w.height);
-  ()
-
-(*****************************************************************************)
-(* Layout *)
-(*****************************************************************************)
-
-(* this assumes a xy_ratio of 1.71 *)
-let x_start_matrix_left = 0.2
-let y_start_matrix_up = 0.15
-let x_end_matrix_right = 1.55
-  
+ 
 (*****************************************************************************)
 (* Drawing *)
 (*****************************************************************************)
 
-(* assumes cr is setup with uniform coordinate system *)
-let draw_matrix cr w =
-  (* clear the screen *)
-  CairoH.fill_rectangle ~cr ~x:0.0 ~y:0.0 ~w:xy_ratio ~h:1.0 
-    ~color:"DarkSlateGray" ();
+let draw_cells cr w ~interactive_regions =
+  let l = M.layout_of_w w in
 
-  (* draw matrix enclosing rectangle *)
-  CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"wheat"
-    { p = { x = x_start_matrix_left; y = y_start_matrix_up };
-      q = { x = x_end_matrix_right; y = 1.0 };
-    };
-  Cairo.select_font_face cr "serif"
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
-
-  (* draw cells *)
-  let nb_elts = Array.length w.m.DM.matrix in
-  let width_cell = 
-    (x_end_matrix_right - x_start_matrix_left) / (float_of_int nb_elts) in
-  let height_cell = 
-    (1.0 - y_start_matrix_up) / (float_of_int nb_elts) in
-
-  for i = 0 to nb_elts -.. 1 do
-    for j = 0 to nb_elts -.. 1 do
+  for i = 0 to l.nb_elts -.. 1 do
+    for j = 0 to l.nb_elts -.. 1 do
       (* the matrix is accessed as matrix.(row).(col), but here y corresponds
        * to the row, and x to the column, hence the association of j to x
        * and i to y.
        *)
-      let x = (float_of_int j) * width_cell + x_start_matrix_left in
-      let y = (float_of_int i) * height_cell + y_start_matrix_up in
+      let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
+      let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
 
+      let rect = { 
+        p = { x = x; y = y; };
+        q = { x = x + l.width_cell; y = y + l.height_cell };
+      } in
+      Common.push2 (Cell (i, j), rect) interactive_regions;
+      
       (* less: could also display intra dependencies *)
       if i = j then
-        CairoH.fill_rectangle ~cr ~x ~y ~w:width_cell ~h:height_cell
+        CairoH.fill_rectangle_xywh ~cr ~x ~y ~w:l.width_cell ~h:l.height_cell
           ~color:"wheat" ()
       else begin
-
-        CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat"
-          { p = { x = x; y = y; };
-            q = { x = x + width_cell; y = y + height_cell };
-          };
+        CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat" rect;
         let n = w.m.DM.matrix.(i).(j) in
         if n > 0 then begin
           let txt = string_of_int n in
           let font_size = 
             match n with
             | _ when n <= 10 -> 
-                width_cell / 2.
+                l.width_cell / 2.
             | _ ->
-                width_cell / (float_of_int (String.length txt))
+                l.width_cell / (float_of_int (String.length txt))
           in
           CairoH.set_font_size cr font_size;
           (* todo: optimize? *)
@@ -116,61 +74,108 @@ let draw_matrix cr w =
           let tw = extent.Cairo.text_width in
           let th = extent.Cairo.text_height in
           
-          let x = x + (width_cell / 2.) - (tw / 2.0) in
-          let y = y + (height_cell / 2.) + (th / 2.0) in
+          let x = x + (l.width_cell / 2.) - (tw / 2.0) in
+          let y = y + (l.height_cell / 2.) + (th / 2.0) in
           Cairo.move_to cr x y;
           CairoH.show_text cr txt;
         end;
       end
     done
   done;
+  ()
 
-  (* draw left rows *)
-  let font_size = height_cell / 1.5 in
+let draw_left_rows cr w ~interactive_regions =
+  let l = M.layout_of_w w in
+  let font_size = l.height_cell / 1.5 in
   CairoH.set_font_size cr font_size;
   (* peh because it exercises the spectrum of high letters *)
   let extent = CairoH.text_extents cr "peh" in
   let _base_tw = extent.Cairo.text_width / 3. in
   let th = extent.Cairo.text_height in
 
-  for j = 0 to nb_elts -.. 1 do
+  for i = 0 to l.nb_elts -.. 1 do
     let x = 0. in
-    let y = (float_of_int j) * height_cell + y_start_matrix_up in
-    CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat"
-        { p = { x = x; y = y; };
-          q = { x = x_start_matrix_left; y = y + height_cell };
-        };
+    let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
+    let rect = { 
+      p = { x = x; y = y; };
+      q = { x = l.x_start_matrix_left; y = y + l.height_cell };
+    } in
+    Common.push2 (Row i, rect) interactive_regions;
+    CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat" rect;
     (* align on the left *)
-    Cairo.move_to cr (x + 0.02) (y + (height_cell /2.) + (th / 2.0));
-    let node = Hashtbl.find w.m.DM.i_to_name j in
+    Cairo.move_to cr (x + 0.02) (y + (l.height_cell /2.) + (th / 2.0));
+    let node = Hashtbl.find w.m.DM.i_to_name i in
     let (txt, _kind) = node in
     CairoH.show_text cr txt;
   done;
-    
-  (* draw up columns *)
-  for i = 0 to nb_elts (* not -.. 1, cos we draw lines here, not rectangles *)do
-    let x = (float_of_int i) * width_cell + x_start_matrix_left in
-    let y = y_start_matrix_up in
+  ()
+
+let draw_up_columns cr w ~interactive_regions =
+  let l = M.layout_of_w w in
+
+  (* peh because it exercises the spectrum of high letters *)
+  let extent = CairoH.text_extents cr "peh" in
+  let _base_tw = extent.Cairo.text_width / 3. in
+  let th = extent.Cairo.text_height in
+
+  (* not -.. 1, cos we draw lines here, not rectangles *)
+  for j = 0 to l.nb_elts do
+    let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
+    let y = l.y_start_matrix_up in
+    let rect = {
+      (* fake rectangle *)
+      p = { x = x; y = 0. };
+      q = { x = x + l.width_cell; y = l.y_start_matrix_up };
+    } in
+    Common.push2 (Column j, rect) interactive_regions;
 
     CairoH.set_source_color ~cr ~color:"wheat" ();
     Cairo.move_to cr x y;
     (* because of the xy_ratio, this actually does not do a 45 deg line.
      * old: Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 4.)))  0.; 
      *)
-    Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 2.8)))  0.; 
+    Cairo.line_to cr (x + (l.y_start_matrix_up / atan (pi / 2.8)))  0.; 
     Cairo.stroke cr;
 
-    if i < nb_elts then begin
-      let node = Hashtbl.find w.m.DM.i_to_name i in
+    if j < l.nb_elts then begin
+      let node = Hashtbl.find w.m.DM.i_to_name j in
       let (txt, _kind) = node in
+
       
-      Cairo.move_to cr (x + (width_cell / 2.0) + (th / 2.0)) (y - 0.001);
+      Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
       let angle = -. (pi / 4.) in
       Cairo.rotate cr ~angle:angle;
       CairoH.show_text cr txt;
       Cairo.rotate cr ~angle:(-. angle);
     end;
   done;
+  ()
+
+
+(* assumes cr is setup with uniform coordinate system *)
+let draw_matrix cr w =
+  (* clear the screen *)
+  CairoH.fill_rectangle_xywh ~cr ~x:0.0 ~y:0.0 ~w:xy_ratio ~h:1.0 
+    ~color:"DarkSlateGray" ();
+
+  let l = M.layout_of_w w in
+
+  (* draw matrix enclosing rectangle *)
+  CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"wheat"
+    { p = { x = l.x_start_matrix_left; y = l.y_start_matrix_up };
+      q = { x = l.x_end_matrix_right; y = 1.0 };
+    };
+  Cairo.select_font_face cr "serif"
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+
+  let interactive_regions = ref [] in
+
+
+  draw_cells      cr w ~interactive_regions;
+  draw_left_rows  cr w ~interactive_regions;
+  draw_up_columns cr w ~interactive_regions;
+
+  w.interactive_regions <- !interactive_regions;
   
   ()
 
