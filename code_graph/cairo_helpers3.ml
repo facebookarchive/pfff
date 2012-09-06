@@ -45,10 +45,13 @@ let clear cr =
   Cairo.set_operator cr Cairo.OPERATOR_OVER;
   ()
 
-let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
+let set_source_color ?(alpha=1.) ~cr ~color () = 
   (let (r,g,b) = color +> Color.rgbf_of_string in
   Cairo.set_source_rgba cr r g b alpha;
-  );
+  )
+
+let fill_rectangle ?alpha ~cr ~x ~y ~w ~h ~color () = 
+  set_source_color ?alpha ~cr ~color ();
   
   Cairo.move_to cr x y;
   Cairo.line_to cr (x+w) y;
@@ -57,10 +60,8 @@ let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () =
   Cairo.fill cr;
   ()
 
-let draw_rectangle ?(alpha=1.) ~cr ~color ~line_width r =
-  (let (r,g,b) = color +> Color.rgbf_of_string in
-   Cairo.set_source_rgba cr r g b alpha;
-  );
+let draw_rectangle ?alpha ~cr ~color ~line_width r =
+  set_source_color ?alpha ~cr ~color ();
   Cairo.set_line_width cr line_width;
 
   Cairo.move_to cr r.p.x r.p.y;

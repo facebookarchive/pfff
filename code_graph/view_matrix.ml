@@ -68,6 +68,7 @@ let draw_matrix cr w =
     { p = { x = x_start_matrix_left; y = y_start_matrix_up };
       q = { x = x_end_matrix_right; y = 1.0 };
     };
+
   (* draw cells *)
   let nb_elts = Array.length w.m.DM.matrix in
   let width_cell = 
@@ -84,6 +85,7 @@ let draw_matrix cr w =
         { p = { x = x; y = y; };
           q = { x = x + width_cell; y = y + height_cell };
         };
+      
     done
   done;
   (* draw left rows *)
@@ -96,7 +98,16 @@ let draw_matrix cr w =
         };
   done;
     
-  (* TODO draw up columns *)
+  (* draw up columns *)
+  for i = 0 to nb_elts (* not -.. 1, cos we draw lines here, not rectangles *)do
+    let x = (float_of_int i) * width_cell + x_start_matrix_left in
+    let y = y_start_matrix_up in
+
+    CairoH.set_source_color ~cr ~color:"wheat" ();
+    Cairo.move_to cr x y;
+    Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 4.)))  0.;
+    Cairo.stroke cr;
+  done;
   
   ()
 
