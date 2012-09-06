@@ -83,8 +83,12 @@ let draw_matrix cr w =
 
   for i = 0 to nb_elts -.. 1 do
     for j = 0 to nb_elts -.. 1 do
-      let x = (float_of_int i) * width_cell + x_start_matrix_left in
-      let y = (float_of_int j) * height_cell + y_start_matrix_up in
+      (* the matrix is accessed as matrix.(row).(col), but here y corresponds
+       * to the row, and x to the column, hence the association of j to x
+       * and i to y.
+       *)
+      let x = (float_of_int j) * width_cell + x_start_matrix_left in
+      let y = (float_of_int i) * height_cell + y_start_matrix_up in
 
       (* less: could also display intra dependencies *)
       if i = j then

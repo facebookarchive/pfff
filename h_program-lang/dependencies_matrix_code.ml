@@ -61,12 +61,7 @@ let display dm =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build config g =
-  
-  let top_nodes = G.succ G.root G.Has g in
-
-  (* todo: iterate while in config *)
-  let nodes = top_nodes in
+let build_with_nodes_order nodes g =
   let n = List.length nodes in
 
   let dm = {
@@ -98,6 +93,11 @@ let build config g =
      * but may make sense to create a line for it which corresponds to
      * the difference with the children so for all edges that link
      * directly to this one?
+     * 
+     * note that if A depends on B, e.g. visual/ depends on commons/,
+     * then we will increment 'row of visual' x 'column of commons',
+     * that way one can easily see all the modules that visual/ depends
+     * on by looking at the 'row of visual'.
      *)
     if n1 <> G.root then begin
       let i = projection n1 in
@@ -106,3 +106,47 @@ let build config g =
     end
   );
   dm
+
+
+
+let build config g =
+  
+  let top_nodes = G.succ G.root G.Has g in
+
+  (* todo: iterate while in config *)
+  let nodes = top_nodes in
+
+  (* first draft *)
+  let dm = build_with_nodes_order nodes g in
+
+  (* Now we need to reorder to minimize the number of dependencies in the
+   * top right corner of the matrix.
+   * 
+   * todo: optimize? we redo some computations ... should memoize
+   * more? or just invert rows/columns in the original matrix?
+   * 
+   * note: sorting by the number of cells which you depend on is not
+   * enough. For instance let's say X depends on 3 cells, A, B, Y and Y 
+   * depends on 4: A, B, C, D. One could consider to put X
+   * upper in the matrix, but because X depends on Y, it's better to put
+   * Y upper.
+   * 
+   *)
+  let nodes_with_scrore =
+    nodes +> List.map (fun n ->
+      let i = Hashtbl.find dm.name_to_i n in
+      (* pr2_gen (n, i, dm.matrix.(i)); *)
+      let cnt = ref 0 in
+      
+      dm.matrix.(i) +> Array.iteri (fun j e ->
+        if e > 0 && j <> i  then begin 
+          (* incr e ? *)
+          incr cnt;
+          end
+      );
+      n, !cnt
+    ) +> Common.sort_by_val_lowfirst
+  in
+  pr2_gen nodes_with_scrore;
+  build_with_nodes_order (nodes_with_scrore +> List.map fst) g
+
