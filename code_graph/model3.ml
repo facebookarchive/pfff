@@ -159,3 +159,19 @@ let layout_of_w w =
     width_cell;
     height_cell;
   }
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let find_region_at_user_point w ~x ~y =
+  let regions = w.interactive_regions in
+  let pt = { Figures. x = x; y = y } in
+  
+  try 
+    let (kind, rect) = regions +> List.find (fun (kind, rect) ->
+      Figures.point_is_in_rectangle pt rect
+    )
+    in
+    Some kind
+  with Not_found -> None

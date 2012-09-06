@@ -34,17 +34,6 @@ module Ctl = Controller3
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let find_region_at_user_point w ~x ~y =
-  let regions = w.interactive_regions in
-  let pt = { Figures. x = x; y = y } in
-  
-  try 
-    let (kind, rect) = regions +> List.find (fun (kind, rect) ->
-      Figures.point_is_in_rectangle pt rect
-    )
-    in
-    Some kind
-  with Not_found -> None
 
 (*****************************************************************************)
 (* The overlays *)
@@ -134,7 +123,7 @@ let motion_notify da w ev =
   pr2 (spf "motion user coord: %f, %f" x y);
 
   (* less: update status bar? *)
-  (match find_region_at_user_point w ~x ~y with
+  (match M.find_region_at_user_point w ~x ~y with
   | None -> ()
   | Some x ->
       (match x with
