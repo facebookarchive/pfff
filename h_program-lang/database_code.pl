@@ -5,7 +5,7 @@
 %---------------------------------------------------------------------------
 
 % This file is the basis of an interactive tool a la SQL to query
-% information about the structure of a codebase (the inheritance tree, 
+% information about the structure of a codebase (the inheritance tree,
 % the call graph, the data graph), for instance "What are all the
 % children of class Foo?". The data is the code. The query language is
 % Prolog (http://en.wikipedia.org/wiki/Prolog), a logic-based
@@ -31,7 +31,7 @@
 % of functions/classes/etc.
 % Here are the predicates that should be defined in facts.pl:
 %
-%  - entities: kind/2, with the 
+%  - entities: kind/2, with the
 %    function/method, constant, class/interface/trait, class_constant/field/...
 %    atoms.
 %      ex: kind('array_map', function).
@@ -48,7 +48,7 @@
 %  - callgraph: docall/3 with the function/method/class atoms to differentiate
 %    regular function calls, method calls, and class instantiations via new,
 %    or the calls/2 infix operator.
-%      ex: docall('foo', 'bar', function). 
+%      ex: docall('foo', 'bar', function).
 %      ex: docall(('A', 'foo'), 'toInt', method).
 %      ex: docall('foo', ':x:frag', class).
 %    Note that for method calls we actually don't resolve to which class
@@ -69,26 +69,27 @@
 %     ex: use(('A','foo'), 'name', array, write).
 %
 %  - function/method arity (number of parameters): arity/2
-%      ex: arity('foobar', 3). 
+%      ex: arity('foobar', 3).
 %      ex: arity(('Preparable', 'gen'), 0).
 %
-%  - TODO: parameter information (types, ref)
+%  - function/method parameters: parameter/4
+%      ex: parameter('halpclass', 0, '$first_param_name', 'int')
 %
 %  - class/method properties: static/1, abstract/1, final/1
-%      ex: static(('Filesystem', 'readFile')). 
+%      ex: static(('Filesystem', 'readFile')).
 %      ex: abstract('AbstractTestCase').
 %
 %  - class members visibility: is_public/1, is_private/1, is_protected/1,
 %      ex: is_public(('Preparable', 'gen')).
 %    We use 'is_public' and not 'public' because public is a reserved name
 %    in Prolog.
-% 
+%
 %  - inheritance: extends/2, implements/2, mixins/2
-%      ex: extends('EntPhoto', 'Ent'). 
+%      ex: extends('EntPhoto', 'Ent').
 %      ex: implements('MyTest', 'NeedSqlShim').
 %      ex: mixins('MyTest', 'TraitHaveFeedback').
 %    See also the children/2, parent/2, related/2, isa/2, inherits/2,
-%    reuses/2, predicates defined below, where isa and inherits are 
+%    reuses/2, predicates defined below, where isa and inherits are
 %    infix operators.
 %
 %  - include/require: include/2, require_module/2
@@ -143,9 +144,9 @@
 % Inheritance
 %---------------------------------------------------------------------------
 
-extends_or_implements(Child, Parent) :- 
+extends_or_implements(Child, Parent) :-
         extends(Child, Parent).
-extends_or_implements(Child, Parent) :- 
+extends_or_implements(Child, Parent) :-
         implements(Child, Parent).
 
 extends_or_mixins(Child, Parent) :-
@@ -197,9 +198,9 @@ related(X, Y) :-
 %---------------------------------------------------------------------------
 
 % one can use the same predicate in many ways in Prolog :)
-method_in_class(X, Method) :- 
+method_in_class(X, Method) :-
         kind((X, Method), method).
-class_defining_method(Method, X) :- 
+class_defining_method(Method, X) :-
         kind((X, Method), method).
 
 % get all methods/fields accessible from a class
@@ -208,7 +209,7 @@ class_defining_method(Method, X) :-
 method(Class, (Class, Method)) :-
         kind((Class, Method), method).
 method(Class, (Class2, Method)) :-
-        extends_or_mixins(Class, Parent), 
+        extends_or_mixins(Class, Parent),
         method(Parent, (Class2, Method)),
         % ensure we don't count parent implementations of overridden functions
         \+ kind((Class, Method), method),
@@ -216,7 +217,7 @@ method(Class, (Class2, Method)) :-
 
 field(Class, (Class, Field)) :-
         kind((Class, Field), field).
-field(Class, (Class2, Field)) :- 
+field(Class, (Class2, Field)) :-
         extends_or_mixins(Class, Parent),
         field(Parent, (Class2, Field)),
         public_or_protected((Class2, Field)).
@@ -226,7 +227,7 @@ all_fields(Class) :- findall(X, field(Class, X), XS), writeln(XS).
 
 % for aran
 at_method((Class, Method), File, Line) :-
-        method(Class, (Class2, Method)), 
+        method(Class, (Class2, Method)),
         at((Class2, Method), File, Line).
 
 % aran's override (shadowed methods) bad smell detector. People should use
@@ -252,7 +253,7 @@ overrides_trait(ChildClass, Method) :-
 % Exception
 %---------------------------------------------------------------------------
 
-% todo: could try to find uncaught exception by using docall, throw, and 
+% todo: could try to find uncaught exception by using docall, throw, and
 % catch predicates? would require a precise callgraph though.
 
 %---------------------------------------------------------------------------
@@ -296,13 +297,13 @@ same_method_in_unrelated_classes(Method, Class1, Class2) :-
         kind((Class2, Method), method),
         Method \= '__construct',
         Class1 \= Class2,
-        \+ related(Class1, Class2). 
+        \+ related(Class1, Class2).
 
 %classes with more than 10 public methods: http://en.wikipedia.org/wiki/.QL
 too_many_public_methods(X) :-
-        kind(X, class), 
-        findall(M, (kind((X, M), method), public((X,M))), Res), 
-        length(Res, N), 
+        kind(X, class),
+        findall(M, (kind((X, M), method), public((X,M))), Res),
+        length(Res, N),
         N > 10.
 
 %---------------------------------------------------------------------------
@@ -331,7 +332,7 @@ could_be_final(Class, Method) :-
 
 % for paul
 could_remove_delegate_method(Class, Method) :-
-        docall((Class, Method), 'delegateToYield', method), 
+        docall((Class, Method), 'delegateToYield', method),
         not((children(Class, Parent), kind((Parent, Method), _Kind))).
 
 %---------------------------------------------------------------------------
@@ -346,7 +347,7 @@ check_exception_inheritance(X) :-
         kind(X, class).
 
 check_duplicated_entity(X, File1, File2, Kind) :-
-        kind(X, Kind), 
+        kind(X, Kind),
         at(X, File1, _),
         at(X, File2, _),
         File1 \= File2.
@@ -355,7 +356,7 @@ check_duplicated_field(Class, Class2, Var) :-
         kind((Class,Var), field),
         public_or_protected((Class, Var)),
         Class \= 'Exception',
-        children(Class2, Class), 
+        children(Class2, Class),
         kind((Class2, Var), field).
 
 check_call_unexisting_method_anywhere(Caller, Method) :-
@@ -364,6 +365,6 @@ check_call_unexisting_method_anywhere(Caller, Method) :-
 
 % for paul
 wrong_public_genRender(X) :-
-        kind((X, 'genRender'), _), 
-        children(X, 'GenXHP'), 
+        kind((X, 'genRender'), _),
+        children(X, 'GenXHP'),
         is_public((X, 'genRender')).
