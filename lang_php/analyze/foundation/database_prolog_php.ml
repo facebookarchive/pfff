@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2011, 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -28,27 +28,27 @@ module CG = Callgraph_php2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * This module makes it possible to ask questions on the structure of
  * a PHP codebase, for instance: "What are all the children of class Foo?".
  * It is inspired by a similar tool for java called JQuery
  * (http://jquery.cs.ubc.ca/).
- * 
+ *
  * history:
- *  - basic defs (kinds, at) 
+ *  - basic defs (kinds, at)
  *  - inheritance tree
  *  - basic callgraph
  *  - basic datagraph
  *  - include/require (and possibly desugared wrappers like require_module())
  *  - precise callgraph, using julien's abstract interpreter (was called
  *    previously pathup/pathdown)
- * 
+ *
  * todo:
  *  - get rid of berkeley db prerequiste, use ast_php_simple
  *  - precise datagraph
  *  - types, refs
  *  - ??
- * 
+ *
  * For more information look at h_program-lang/database_code.pl
  * and its many predicates.
  *)
@@ -59,16 +59,16 @@ module CG = Callgraph_php2
 
 (* quite similar to Database_php.complete_name_of_id *)
 let name_id id db =
-  try 
+  try
     let s = db.Db.defs.Db.id_name#assoc id in
     let id_kind = db.Db.defs.Db.id_kind#assoc id in
 
     (match id_kind with
-    | E.Class _ | E.Function | E.Constant -> 
+    | E.Class _ | E.Function | E.Constant ->
         spf "'%s'" s
     | E.Method _ | E.ClassConstant | E.Field ->
         (match Db.class_or_interface_id_of_nested_id_opt id db with
-        | Some id_class -> 
+        | Some id_class ->
             let sclass = Db.name_of_id id_class db in
             (match id_kind with
             (* todo? xhp decl ? *)
@@ -94,7 +94,7 @@ let name_id id db =
         (* not in db for now *)
         raise Impossible
     )
-  with Not_found -> 
+  with Not_found ->
     failwith (spf "could not find name for id %s" (Db.str_of_id id db))
 
 let name_of_node = function
@@ -102,12 +102,12 @@ let name_of_node = function
   | CG.Function s -> spf "'%s'" s
   | CG.Method (s1, s2) -> spf "('%s','%s')" s1 s2
   | CG.FakeRoot -> "'__FAKE_ROOT__'"
-      
+
 (* quite similar to database_code.string_of_id_kind *)
 let string_of_id_kind = function
   | E.Function -> "function"
   | E.Constant -> "constant"
-  | E.Class x -> 
+  | E.Class x ->
       (match x with
       | E.RegularClass -> "class"
       | E.Interface -> "interface"
@@ -128,14 +128,24 @@ let string_of_id_kind = function
       raise Impossible
 
 let string_of_modifier = function
-  | Public    -> "is_public"  
-  | Private   -> "is_private" 
+  | Public    -> "is_public"
+  | Private   -> "is_private"
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
+let string_of_hint_type (h : hint_type option) : string = match h with
+  | Some x -> (match x with
+                 | Hint c -> (match c with
+                                | ClassName c -> Ast.name c
+                                | Self _ -> "self"
+                                | Parent _ -> "parent"
+                                | LateStatic _ -> "")
+                 | HintArray _ -> "array")
+  | None -> ""
+
 let read_write in_lvalue =
   if in_lvalue then "write" else "read"
-    
+
 let escape_quote_array_field s =
   Str.global_replace (Str.regexp "[']") "__" s
 
@@ -154,7 +164,7 @@ let add_uses id ast pr db =
   let h = Hashtbl.create 101 in
 
   let in_lvalue_pos = ref false in
-  
+
   let visitor = V.mk_visitor { V.default_visitor with
 
     V.klvalue = (fun (k,vx) x ->
@@ -192,7 +202,7 @@ let add_uses id ast pr db =
             (* todo: imprecise, need julien's precise callgraph *)
             pr (spf "docall(%s, '%s', method)." (name_id id db) str)
           end;
-          
+
           k x
 
       | ObjAccessSimple (lval, tok, name) ->
@@ -201,7 +211,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', field, %s)." 
+            pr (spf "use(%s, '%s', field, %s)."
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
@@ -212,25 +222,25 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', array, %s)." 
+            pr (spf "use(%s, '%s', array, %s)."
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
-          
-          
+
+
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
       match x with
       (* todo: enough? need to handle pass by ref too here *)
       | Assign (lval, _, e)
-      | AssignOp(lval, _, e) 
+      | AssignOp(lval, _, e)
         ->
           Common.save_excursion in_lvalue_pos true (fun () ->
             vx (Lvalue lval)
           );
           vx (Expr e);
-          
+
 
       | New (_, classref, args)
       | AssignNew (_, _, _, _, classref, args) ->
@@ -244,10 +254,10 @@ let add_uses id ast pr db =
                   if not (Hashtbl.mem h str)
                   then begin
                     Hashtbl.replace h str true;
-                    pr (spf "docall(%s, '%s', class)." 
+                    pr (spf "docall(%s, '%s', class)."
                            (name_id id db) str)
                   end;
-                          
+
               (* todo: do something here *)
               | Self _
               | Parent _
@@ -265,15 +275,15 @@ let add_uses id ast pr db =
     );
     V.kxhp_html = (fun (k, _) x ->
       match x with
-      | Xhp (xhp_tag, _attrs, _tok, _, _) 
-      | XhpSingleton (xhp_tag, _attrs, _tok) 
+      | Xhp (xhp_tag, _attrs, _tok, _, _)
+      | XhpSingleton (xhp_tag, _attrs, _tok)
         ->
           let str = Ast_php.name (Ast_php.XhpName xhp_tag) in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', class)." 
+            pr (spf "docall(%s, '%s', class)."
                    (name_id id db) str)
           end;
           k x
@@ -300,7 +310,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', field, %s)." 
+            pr (spf "use(%s, '%s', field, %s)."
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
@@ -311,12 +321,26 @@ let add_uses id ast pr db =
   visitor (Entity ast);
   ()
 
+let add_function_params (id : Db.id)
+                        (def : 'a)
+                        (pr : string -> unit)
+                        (db : Db.database) : unit=
+
+  def.f_params +> Ast.unparen +> Ast.uncomma_dots +> Common.index_list_0 +>
+    List.iter (fun (param, i) ->
+                pr (spf "parameter(%s, %d, '$%s', '%s')."
+                        (name_id id db)
+                        i
+                        (Ast.str_of_dname param.p_name)
+                        (string_of_hint_type param.p_type)
+                   ))
 
 let add_uses_and_properties id kind ast pr db =
   match kind, ast with
   | E.Function, FunctionE def ->
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
+      add_function_params id def pr db;
       add_uses id ast pr db;
   | E.Constant, ConstantE def ->
       add_uses id ast pr db
@@ -327,7 +351,7 @@ let add_uses_and_properties id kind ast pr db =
       | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
       | ClassRegular _ -> ()
       (* the kind/2 will cover those different cases *)
-      | Interface _ 
+      | Interface _
       | Trait _ -> ()
       );
       def.c_extends +> Common.do_option (fun (tok, x) ->
@@ -354,17 +378,18 @@ let add_uses_and_properties id kind ast pr db =
           )
       | _ -> ()
       );
-            
-  | E.Method _, MethodE def -> 
+
+  | E.Method _, MethodE def ->
       pr (spf "arity(%s, %d)." (name_id id db)
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
-      def.f_modifiers +> List.iter (fun (m, _) -> 
+      def.f_modifiers +> List.iter (fun (m, _) ->
         pr (spf "%s(%s)." (string_of_modifier m) (name_id id db));
       );
+      add_function_params id def pr db;
       add_uses id ast pr db;
 
   | E.Field, ClassVariableE (var, ms) ->
-      ms +> List.iter (fun (m) -> 
+      ms +> List.iter (fun (m) ->
         pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
       )
 
@@ -373,10 +398,10 @@ let add_uses_and_properties id kind ast pr db =
       ()
 
   | E.ClassConstant, _ -> ()
-            
+
   | (E.TopStmts | E.Other _), _ ->
       add_uses id ast pr db;
-      
+
   | _ -> raise Impossible
 
 
@@ -390,12 +415,13 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    let pr s = pr (s ^ "\n") in
    pr ("%% -*- prolog -*-");
    pr (spf "%% facts about %s" (Db.path_of_project_in_database db));
-   
+
    pr (":- discontiguous kind/2, at/3.");
    pr (":- discontiguous static/1, abstract/1, final/1.");
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
    pr (":- discontiguous extends/2, implements/2, mixins/2.");
    pr (":- discontiguous arity/2.");
+   pr (":- discontiguous parameter/4.");
    pr (":- discontiguous docall/3, use/4.");
    pr (":- discontiguous docall2/3.");
    pr (":- discontiguous include/2, require_module/2.");
@@ -418,14 +444,14 @@ let gen_prolog_db2 ?(show_progress=true) db file =
     List.iter (fun (id, kind) ->
         k();
         pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
-        pr (spf "at(%s, '%s', %d)." 
-               (name_id id db) 
+        pr (spf "at(%s, '%s', %d)."
+               (name_id id db)
                (Db.readable_filename_of_id id db)
                (Db.line_of_id id db)
         );
         (* note: variables can also be static but for prolog we are
          * interetested in a coarser grain level.
-         * 
+         *
          * todo: refs, types for params?
          *)
         let ast = Db.ast_of_id id db in
@@ -435,20 +461,20 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
      let file1 = Db.absolute_to_readable_filename file1 db in
      xs +> List.iter (fun file2 ->
-       let file2 = 
-         try Db.absolute_to_readable_filename file2 db 
+       let file2 =
+         try Db.absolute_to_readable_filename file2 db
          with Failure _ -> file2
        in
        pr (spf "include('%s', '%s')." file1 file2)
      );
    );
   )
-let gen_prolog_db ?show_progress a b = 
-  Common.profile_code "Prolog_php.gen" (fun () -> 
+let gen_prolog_db ?show_progress a b =
+  Common.profile_code "Prolog_php.gen" (fun () ->
     gen_prolog_db2 ?show_progress a b)
 
-(* todo: 
- * - could also improve precision of use/4 
+(* todo:
+ * - could also improve precision of use/4
  * - detect higher order functions so that function calls through
  *   generic higher order functions are present in the callgraph
  *)
@@ -459,11 +485,11 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
    * todo: check/compare with the basic callgraph I do in add_uses?
    * it should be a superset.
    *  - should find more functions when can resolve statically dynamic funcall
-   *  - 
+   *  -
    *)
   let h_oldcallgraph = Hashtbl.create 101 in
   file +> Common.cat +> List.iter (fun s ->
-    if s =~ "^docall(.*" 
+    if s =~ "^docall(.*"
     then Hashtbl.add h_oldcallgraph s true
   );
 
@@ -487,9 +513,9 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
         | CG.File _, _ -> ()
         | _, CG.Function s when s =~ "__builtin" -> ()
         | _ ->
-            let s1 =(spf "docall(%s, %s, %s)." 
+            let s1 =(spf "docall(%s, %s, %s)."
                        (name_of_node src) (name_of_node target) kind) in
-            let s =(spf "docall2(%s, %s, %s)." 
+            let s =(spf "docall2(%s, %s, %s)."
                        (name_of_node src) (name_of_node target) kind) in
             if Hashtbl.mem h_oldcallgraph s1
             then ()
@@ -498,10 +524,10 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
       )
     )
   )
-let append_callgraph_to_prolog_db ?show_progress a b = 
-  Common.profile_code "Prolog_php.callgraph" (fun () -> 
+let append_callgraph_to_prolog_db ?show_progress a b =
+  Common.profile_code "Prolog_php.callgraph" (fun () ->
     append_callgraph_to_prolog_db2 ?show_progress a b)
-  
+
 
 (*****************************************************************************)
 (* Query helpers *)
@@ -517,25 +543,25 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
 
-  (* todo: at some point avoid using database_php_build and 
+  (* todo: at some point avoid using database_php_build and
    * generate the prolog db directly from the sources.
    *)
-  let db = 
+  let db =
     Database_php_build.db_of_files_or_dirs ~show_progress [source_file] in
 
   gen_prolog_db ~show_progress db facts_pl_file;
 
-  let jujudb = 
+  let jujudb =
     Database_juju_php.juju_db_of_files ~show_progress [source_file] in
-  let codedb = 
+  let codedb =
     Database_juju_php.code_database_of_juju_db jujudb in
-  let cg = 
+  let cg =
     Callgraph_php_build.create_graph ~show_progress [source_file] codedb in
 
-  append_callgraph_to_prolog_db 
+  append_callgraph_to_prolog_db
     ~show_progress cg facts_pl_file;
   if verbose then Common.cat facts_pl_file +> List.iter pr2;
-  let cmd = 
+  let cmd =
     spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
       facts_pl_file helpers_pl_file query
   in
