@@ -44,13 +44,16 @@ module View = View3
  * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
  * related work: 
- * - lattix.com, the startup where the original paper on DSM
- *   at OOPSLA'05 comes from.
+ * - lattix.com, the startup where the original paper on DSM at OOPSLA'05
+ *   comes from.
  * - ndepend.com, 
  *   http://www.ndepend.com/Doc_VS_Arch.aspx
  *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * - structure101
  *   http://www.headwaysoftware.com/products/index.php#page-top
+ * - dsm tool inside intellij idea
+ * http://blogs.jetbrains.com/idea/2008/01/intellij-idea-dependency-analysis-with-dsm/
+ *   http://www.jetbrains.com/idea/features/dependency_analysis.html
  * 
  * - http://depfind.sourceforge.net/, a dependency extraction tool for
  *   Java
