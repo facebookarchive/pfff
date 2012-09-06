@@ -279,10 +279,10 @@ let motion_refresher ev dw () =
   let x = GdkEvent.Motion.x ev in
   let y = GdkEvent.Motion.y ev in
 
-  let pt = { Cairo. x = GdkEvent.Motion.x ev; y = GdkEvent.Motion.y ev;} in
+  let pt = { Cairo. x = x; y = y } in
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
 
-  let r_opt = find_rectangle_at_user_point dw user in
+  let r_opt = M.find_rectangle_at_user_point dw user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let txt = r.T.tr_label in
     !Controller._statusbar_addtext txt;
