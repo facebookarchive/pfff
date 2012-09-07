@@ -1,6 +1,11 @@
 -*- org -*-
 
-* 0.20 (Q2 2012) (?? codegraph?)
+* 0.21 (Q3 2012) (codegraph)
+
+** introduce codegraph, a hierarchical dependency structure matrix visualizer
+
+
+* 0.20 (Q2 2012) 
 
 ** introduce graph_code.ml, another way to represent a full program
 
