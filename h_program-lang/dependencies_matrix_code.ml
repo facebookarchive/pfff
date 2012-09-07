@@ -48,6 +48,21 @@ type config = Graph_code.node list
 (* Helpers *)
 (*****************************************************************************)
 
+(* get the parent node of the node under consideration that is
+ * displayed in the matrix.
+ * opti: share a global hmemo?
+ *)
+let rec projection hmemo n dm g =
+  (* todo: profile this? optimize? *)
+  Common.memoized hmemo n (fun () ->
+    if Hashtbl.mem dm.name_to_i n
+    then Hashtbl.find dm.name_to_i n
+    else
+      (* can raise exn *)
+      projection hmemo (G.parent n g) dm g
+  )
+
+
 (*****************************************************************************)
 (* Display *)
 (*****************************************************************************)
@@ -58,7 +73,7 @@ let display dm =
   ()
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Building the matrix *)
 (*****************************************************************************)
 
 let build_with_nodes_order nodes g =
@@ -73,19 +88,6 @@ let build_with_nodes_order nodes g =
   }
   in
   let hmemo = Hashtbl.create 101 in
-  (* get the parent node of the node under consideration that is
-   * displayed in the matrix.
-   *)
-  let rec projection n =
-  (* todo: profile this? optimize? *)
-    Common.memoized hmemo n (fun () ->
-      if Hashtbl.mem dm.name_to_i n
-      then Hashtbl.find dm.name_to_i n
-      else
-        (* can raise exn *)
-        projection (G.parent n g)
-    )
-  in
   
   g +> G.iter_use_edges (fun n1 n2 ->
     (* todo? if expand do we create a line for the expanded? if no
@@ -100,8 +102,8 @@ let build_with_nodes_order nodes g =
      * on by looking at the 'row of visual'.
      *)
     if n1 <> G.root then begin
-      let i = projection n1 in
-      let j = projection n2 in
+      let i = projection hmemo n1 dm g in
+      let j = projection hmemo n2 dm g in
       dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1;
     end
   );
@@ -210,4 +212,23 @@ let build config g =
    *)
   let nodes_reordered = partition_matrix nodes dm in
   build_with_nodes_order nodes_reordered g
+
+(*****************************************************************************)
+(* Explain the matrix *)
+(*****************************************************************************)
+(* opti: there is probably a more efficient way to do that ... *)
+let explain_cell_list_use_edges (i, j) dm g =
+  let res = ref [] in
+  let hmemo = Hashtbl.create 101 in
+
+  g +> G.iter_use_edges (fun n1 n2 ->
+    if n1 <> G.root then begin
+
+      let i2 = projection hmemo n1 dm g in
+      let j2 = projection hmemo n2 dm g in
+      if i2 = i && j2 = j 
+      then Common.push2 (n1, n2) res
+    end
+  );
+  !res
 

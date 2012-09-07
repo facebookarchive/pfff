@@ -28,6 +28,7 @@ val iter_use_edges: (node -> node -> unit) -> graph -> unit
 (* algorithms *)
 
 (* debugging support *)
+val string_of_node: node -> string
 val display_with_gv: graph -> unit
 
 (* internals *)

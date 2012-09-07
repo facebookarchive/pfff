@@ -177,6 +177,10 @@ let iter_use_edges f g =
 (* Debugging *)
 (*****************************************************************************)
 
+let string_of_node (s, kind) =
+  E.string_of_entity_kind kind ^ ":" ^ s
+  
+
 let display_with_gv g =
   (* TODO? use different colors for the different kind of edges? *)
   G.display_with_gv g.has

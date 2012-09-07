@@ -239,14 +239,37 @@ let button_action da w ev =
                     false
                 )
 
-            | `BUTTON_RELEASE ->
+            | `BUTTON_RELEASE | `TWO_BUTTON_PRESS | _ ->
                 false
-            | `TWO_BUTTON_PRESS ->
-                false
-            | _ -> false
             )
       | Cell (i, j) -> 
-          false
+            (match GdkEvent.get_type ev with
+            | `BUTTON_PRESS ->
+                let button = GdkEvent.Button.button ev in
+                pr2 (spf "button %d pressed" button);
+                (match button with
+                | 1 -> 
+                    pr2 (spf "clicking on cell (%d, %d)" i j);
+                    let deps = 
+                      DM.explain_cell_list_use_edges (i, j) w.m w.model.g in
+                    let str = 
+                      deps +> List.map (fun (n1, n2) ->
+                        spf "%s --> %s"
+                              (Graph_code.string_of_node n1)  
+                              (Graph_code.string_of_node n2)
+                        )
+                       +> Common.join "\n"
+                    in
+                    Gui.dialog_text ~text:str ~title:"Cell explaination";
+                    true
+                | 2 | 3 | _ -> 
+                    false
+                )
+
+            | `BUTTON_RELEASE | `TWO_BUTTON_PRESS | _ ->
+                false
+            )
+
       | Column j ->
           false
       )
