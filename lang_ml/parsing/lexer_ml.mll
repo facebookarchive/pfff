@@ -265,6 +265,8 @@ rule token = parse
 
   | prefix_symbol { TPrefixOperator (tok lexbuf, tokinfo lexbuf) }
   | infix_symbol { TInfixOperator (tok lexbuf, tokinfo lexbuf) }
+  (* pad: used in js_of_ocaml, not sure why not part of infix_symbol *)
+  | "##" { TInfixOperator (tok lexbuf, tokinfo lexbuf) }
 
   (* camlp4 reserved: 
    * parser    <<    <:    >>    $     $$    $:
