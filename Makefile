@@ -9,7 +9,7 @@
 ##############################################################################
 TOP=$(shell pwd)
 
-SRC=test.ml main.ml 
+SRC=main.ml 
 
 TARGET=pfff
 
