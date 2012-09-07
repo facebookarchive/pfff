@@ -197,6 +197,58 @@ let paint w =
 (* Events *)
 (*****************************************************************************)
 
+let recompute_matrix w =
+  let m = 
+    Common.profile_code2 "Model.building matrix" (fun () -> 
+      Dependencies_matrix_code.build w.config w.model.g 
+    )
+  in
+  w.m <- m;
+  paint w;
+  ()
+
 let button_action da w ev =
-  pr2 "View_matrix.Button_action";
-  true
+  let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
+  let pt = { Cairo. x = x; y = y } in
+  pr2 (spf "button action device coord: %f, %f" x y);
+
+  let cr = Cairo.create w.overlay in
+  M.scale_coordinate_system cr w;
+
+  let pt2 = Cairo.device_to_user cr pt in
+  let (x, y) = (pt2.Cairo.x, pt2.Cairo.y) in
+  pr2 (spf "button action user coord: %f, %f" x y);
+
+  (match M.find_region_at_user_point w ~x ~y with
+  | None -> false
+  | Some x ->
+      (match x with
+      | Row i -> 
+            (match GdkEvent.get_type ev with
+            | `BUTTON_PRESS ->
+                let button = GdkEvent.Button.button ev in
+                pr2 (spf "button %d pressed" button);
+                (match button with
+                | 1 -> 
+                    pr2 (spf "clicking on row i");
+                    let node = Hashtbl.find w.m.DM.i_to_name i in
+                    w.config <- node :: w.config;
+                    recompute_matrix w;
+                    true
+                | 2 | 3 | _ -> 
+                    false
+                )
+
+            | `BUTTON_RELEASE ->
+                false
+            | `TWO_BUTTON_PRESS ->
+                false
+            | _ -> false
+            )
+      | Cell (i, j) -> 
+          false
+      | Column j ->
+          false
+      )
+  )
+

@@ -187,8 +187,20 @@ let build config g =
   
   let top_nodes = G.succ G.root G.Has g in
 
-  (* todo: iterate while in config *)
-  let nodes = top_nodes in
+  (* iterate while in config *)
+  let nodes = 
+    let rec aux xs =
+      match xs with
+      | [] -> []
+      | x::xs ->
+          if List.mem x config
+          then
+            let children = G.succ x G.Has g in
+            aux children ++ aux xs
+          else x :: aux xs
+    in
+    aux top_nodes
+  in
 
   (* first draft *)
   let dm = build_with_nodes_order nodes g in
