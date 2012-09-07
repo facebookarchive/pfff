@@ -95,8 +95,9 @@ let filters = [
       -> 
         (* todo: should be done in file_type_of_file *)
         not (FT.is_syncweb_obj_file file)
-        && not (file =~ ".*commons/" || 
-                file =~ ".*external/" || 
+        && not ( 
+                (* file =~ ".*commons/" || *)
+                (* file =~ ".*external/" || *)
                 file =~ ".*_build/")
     | _ -> false
   );
