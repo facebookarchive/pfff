@@ -31,7 +31,7 @@ module Ast = Ast_php_simple
 (* Helpers *)
 (*****************************************************************************)
 
-module Dependencies = struct
+module Deps = struct
   open Ast_php_simple
 
   let rec program acc stl =
@@ -196,11 +196,11 @@ module Graph = struct
 
   let func_def acc fd =
     let x = Ast.unwrap fd.Ast.f_name in
-    acc := SMap.add x (Dependencies.func_def SSet.empty fd) !acc
+    acc := SMap.add x (Deps.func_def SSet.empty fd) !acc
 
   let class_def acc cd =
     let x = Ast.unwrap cd.Ast.c_name in
-    acc := SMap.add x (Dependencies.class_def SSet.empty cd) !acc
+    acc := SMap.add x (Deps.class_def SSet.empty cd) !acc
 
 
   let get_deps g x =
