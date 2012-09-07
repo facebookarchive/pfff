@@ -141,7 +141,7 @@ ifeq ($(FEATURE_GRAPHICS), 1)
 endif
 
 ifeq ($(FEATURE_VISUAL),1)
-VISUALDIRS=visual code_graph
+VISUALDIRS=code_map code_graph
 endif
 
 ifeq ($(FEATURE_FACEBOOK),1)
@@ -520,7 +520,7 @@ SYSLIBS3= \
  external/ocamlcairo/src/cairo.cma \
  external/ocamlcairo/src/cairo_lablgtk.cma \
 
-OBJS3=visual/lib.cma
+OBJS3=code_map/lib.cma
 
 GTKLOOP=gtkThread.cmo gtkInit.cmo
 
@@ -638,7 +638,7 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags db layers   visual    tests test
+.PHONY:: tags db layers   tests test
 
 
 tags:
