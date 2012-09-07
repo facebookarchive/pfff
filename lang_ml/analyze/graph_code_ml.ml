@@ -209,7 +209,10 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
       (* probably because processed .mli or .ml before which created the node *)
       | [p] when p =*= (dir, E.Dir) -> 
           g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
-      | _ -> raise Impossible
+      | x -> 
+          pr2 "multiple parents or no parents";
+          pr2_gen x;
+          raise Impossible
       )
   | _ ->
       (* Dir -> Module -> File *)
