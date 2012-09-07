@@ -93,7 +93,7 @@ let parse file =
     try 
       Parse_ml.parse_program file 
     with Parse_ml.Parse_error _ ->
-      (* pr2 ("PARSING problem in: " ^ file); *)
+      pr2 ("PARSING problem in: " ^ file);
       []
   ))
 
