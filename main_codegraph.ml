@@ -186,10 +186,11 @@ let build_model root =
 (* Find root of project with a dependencies.marshall file
  * and display slice of the dependency hieararchical matrix 
  * using arguments in xs.
- * todo? use -with_extern ?
+ * No need of -with_extern anymore, external stuff will be collapsed.
+ * No need of package_depth, can expand on demand after.
  * 
  * todo: How load graph? Build on demand? easier to test things that way ... 
- * maybe can just cache and look if need to recompute the code graph?
+ * maybe can just cache and look if we need to recompute the code graph?
  *)
 let main_action xs =
   Logger.log Config.logger "codegraph" None;

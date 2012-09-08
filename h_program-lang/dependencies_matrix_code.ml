@@ -47,6 +47,11 @@ type dm = {
 let basic_config g = 
   Node (G.root, G.succ G.root G.Has g +> List.map (fun n -> Node (n, [])))
 
+type deps_style = 
+  | DepsIn
+  | DepsOut
+  | DepsInOut
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -285,3 +290,25 @@ let expand_node n tree g =
         else Node (n2, xs +> List.map aux)
   in
   aux tree
+
+let focus_on_node n deps_style tree dm =
+  let deps = ref [] in
+  let i = Hashtbl.find dm.name_to_i n in
+  let nb_elts = Array.length dm.matrix in
+  for j = 0 to nb_elts - 1 do
+    let to_include =
+      match deps_style with
+      | DepsOut -> dm.matrix.(i).(j) > 0
+      | DepsIn -> dm.matrix.(j).(i) > 0
+      | DepsInOut -> dm.matrix.(i).(j) > 0 || dm.matrix.(j).(i) > 0
+    in
+   (* we do || i = j because we want the node under focus in too, in the 
+    * right order
+    *)
+    if to_include || i = j
+    then Common.push2 j deps
+  done;
+  Node (G.root, !deps +> List.rev +> List.map (fun i ->
+    Node (Hashtbl.find dm.i_to_name i, []))
+  )
+  

@@ -31,7 +31,7 @@ module DM = Dependencies_matrix_code
 
  
 (*****************************************************************************)
-(* Drawing *)
+(* Drawing helpers *)
 (*****************************************************************************)
 
 let draw_cells cr w ~interactive_regions =
@@ -152,6 +152,10 @@ let draw_up_columns cr w ~interactive_regions =
   ()
 
 
+(*****************************************************************************)
+(* Drawing entry point *)
+(*****************************************************************************)
+
 (* assumes cr is setup with uniform coordinate system *)
 let draw_matrix cr w =
   (* clear the screen *)
@@ -224,54 +228,69 @@ let button_action da w ev =
   | Some x ->
       (match x with
       | Row i -> 
-            (match GdkEvent.get_type ev with
-            | `BUTTON_PRESS ->
-                let button = GdkEvent.Button.button ev in
-                pr2 (spf "button %d pressed" button);
-                (match button with
-                | 1 -> 
-                    pr2 (spf "clicking on row i");
-                    let node = Hashtbl.find w.m.DM.i_to_name i in
-                    w.config <- DM.expand_node node w.config w.model.g;
-                    recompute_matrix w;
-                    true
-                | 2 | 3 | _ -> 
-                    false
-                )
+            (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
+            | `TWO_BUTTON_PRESS, 1 ->
+                pr2 (spf "double clicking on row i");
+                let node = Hashtbl.find w.m.DM.i_to_name i in
+                w.config <- DM.expand_node node w.config w.model.g;
+                recompute_matrix w;
+                true
+            | `BUTTON_PRESS, 3 ->
+                pr2 (spf "right clicking on row i");
+                let node = Hashtbl.find w.m.DM.i_to_name i in
+                w.config <- 
+                  DM.focus_on_node node DM.DepsOut w.config w.m;
+                recompute_matrix w;
+                true
 
-            | `BUTTON_RELEASE | `TWO_BUTTON_PRESS | _ ->
+            | `BUTTON_RELEASE, _ |  _ ->
                 false
             )
       | Cell (i, j) -> 
-            (match GdkEvent.get_type ev with
-            | `BUTTON_PRESS ->
-                let button = GdkEvent.Button.button ev in
-                pr2 (spf "button %d pressed" button);
-                (match button with
-                | 1 -> 
-                    pr2 (spf "clicking on cell (%d, %d)" i j);
-                    let deps = 
-                      DM.explain_cell_list_use_edges (i, j) w.m w.model.g in
-                    let str = 
-                      deps +> List.map (fun (n1, n2) ->
-                        spf "%s --> %s"
-                              (Graph_code.string_of_node n1)  
-                              (Graph_code.string_of_node n2)
-                        )
-                       +> Common.join "\n"
-                    in
-                    Gui.dialog_text ~text:str ~title:"Cell explaination";
-                    true
-                | 2 | 3 | _ -> 
-                    false
-                )
+            (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
+            | `BUTTON_PRESS, 1 ->
+                pr2 (spf "clicking on cell (%d, %d)" i j);
+                let deps = 
+                  DM.explain_cell_list_use_edges (i, j) w.m w.model.g in
+                let str = 
+                  deps +> List.map (fun (n1, n2) ->
+                    spf "%s --> %s"
+                      (Graph_code.string_of_node n1)  
+                      (Graph_code.string_of_node n2)
+                  )
+                  +> Common.join "\n"
+                in
+                Gui.dialog_text ~text:str ~title:"Cell explaination";
+                true
 
-            | `BUTTON_RELEASE | `TWO_BUTTON_PRESS | _ ->
+            | `BUTTON_PRESS, 3 ->
+                pr2 (spf "right clicking on cell (%d, %d)" i j);
+                if i = j
+                then begin
+                  let node = Hashtbl.find w.m.DM.i_to_name j in
+                  w.config <- 
+                    DM.focus_on_node node DM.DepsInOut w.config w.m;
+                  recompute_matrix w;
+                  true
+                end else
+                  false
+
+            | `BUTTON_RELEASE, _ | `TWO_BUTTON_PRESS, _ | _ ->
                 false
             )
 
       | Column j ->
-          false
+            (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
+            | `BUTTON_PRESS, 3 ->
+                pr2 (spf "right clicking on column j");
+                let node = Hashtbl.find w.m.DM.i_to_name j in
+                w.config <- 
+                  DM.focus_on_node node DM.DepsIn w.config w.m;
+                recompute_matrix w;
+                true
+
+            | _ -> false
+            )
       )
   )
 

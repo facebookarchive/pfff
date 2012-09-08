@@ -20,8 +20,16 @@ val explain_cell_list_use_edges:
   (int * int) -> dm -> Graph_code.graph ->
   (Graph_code.node * Graph_code.node) list
 
+type deps_style = 
+  | DepsIn
+  | DepsOut
+  | DepsInOut
+
 (* tree config manipulation *)
-val expand_node: Graph_code.node -> tree -> Graph_code.graph -> tree
+val expand_node: 
+  Graph_code.node -> tree -> Graph_code.graph -> tree
+val focus_on_node:
+  Graph_code.node -> deps_style -> tree -> dm -> tree
 
 (* poor's man DSM visualizer (use codegraph for real visualization) *)
 val display:
