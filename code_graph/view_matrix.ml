@@ -232,7 +232,7 @@ let button_action da w ev =
                 | 1 -> 
                     pr2 (spf "clicking on row i");
                     let node = Hashtbl.find w.m.DM.i_to_name i in
-                    w.config <- node :: w.config;
+                    w.config <- DM.expand_node node w.config w.model.g;
                     recompute_matrix w;
                     true
                 | 2 | 3 | _ -> 

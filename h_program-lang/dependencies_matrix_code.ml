@@ -31,18 +31,21 @@ module G = Graph_code
 (* Types *)
 (*****************************************************************************)
 
-(* Dependency Structure Matrix.
- * The relation between nodes is not stored here; you
- * can get such information in the code graph instead.
- *)
+(* Dependency Structure Matrix *)
 type dm = {
   matrix: int array array;
   name_to_i: (Graph_code.node, int) Hashtbl.t;
   i_to_name: (int, Graph_code.node) Hashtbl.t;
+  (* which nodes are currently expanded *)
+  config: config;
 }
+  (* could reuse Common.tree2 *)
+  and tree =
+    | Node of Graph_code.node * tree list
+  and config = tree
 
-(* list of nodes to expand *)
-type config = Graph_code.node list
+let basic_config g = 
+  Node (G.root, G.succ G.root G.Has g +> List.map (fun n -> Node (n, [])))
 
 (*****************************************************************************)
 (* Helpers *)
@@ -55,13 +58,22 @@ type config = Graph_code.node list
 let rec projection hmemo n dm g =
   (* todo: profile this? optimize? *)
   Common.memoized hmemo n (fun () ->
-    if Hashtbl.mem dm.name_to_i n
-    then Hashtbl.find dm.name_to_i n
-    else
-      (* can raise exn *)
-      projection hmemo (G.parent n g) dm g
+    match () with
+    | _ when Hashtbl.mem dm.name_to_i n -> Some (Hashtbl.find dm.name_to_i n)
+    (* it's possible we operate on a slice of the original dsm in which case
+     * the projection of an edge can not project on anything
+     * in the current name_to_i hash
+     *)
+    | _ when n = G.root -> None
+    | _ -> projection hmemo (G.parent n g) dm g
   )
 
+let rec final_nodes_of_tree tree =
+  match tree with
+  | Node (n, xs) ->
+      if null xs 
+      then [n]
+      else List.map final_nodes_of_tree xs +> List.flatten
 
 (*****************************************************************************)
 (* Display *)
@@ -76,7 +88,20 @@ let display dm =
 (* Building the matrix *)
 (*****************************************************************************)
 
-let build_with_nodes_order nodes g =
+let build_with_tree tree g =
+
+  (* todo? if expand do we create a line for the expanded? if no
+   * then it will have no projection so the test below is not enough.
+   * but may make sense to create a line for it which corresponds to
+   * the difference with the children so for all edges that link
+   * directly to this one?
+   * 
+   * note that if A depends on B, e.g. visual/ depends on commons/,
+   * then we will increment 'row of visual' x 'column of commons',
+   * that way one can easily see all the modules that visual/ depends
+   * on by looking at the 'row of visual'.
+   *)
+  let nodes = final_nodes_of_tree tree in
   let n = List.length nodes in
 
   let dm = {
@@ -85,26 +110,20 @@ let build_with_nodes_order nodes g =
       Common.index_list_0 nodes +> Common.hash_of_list;
     i_to_name = 
       Common.index_list_0 nodes +> List.map Common.swap +> Common.hash_of_list;
+    config = tree;
   }
   in
   let hmemo = Hashtbl.create 101 in
   
   g +> G.iter_use_edges (fun n1 n2 ->
-    (* todo? if expand do we create a line for the expanded? if no
-     * then it will have no projection so this test below is not enough.
-     * but may make sense to create a line for it which corresponds to
-     * the difference with the children so for all edges that link
-     * directly to this one?
-     * 
-     * note that if A depends on B, e.g. visual/ depends on commons/,
-     * then we will increment 'row of visual' x 'column of commons',
-     * that way one can easily see all the modules that visual/ depends
-     * on by looking at the 'row of visual'.
-     *)
     if n1 <> G.root then begin
       let i = projection hmemo n1 dm g in
       let j = projection hmemo n2 dm g in
-      dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1;
+      (match i, j with
+      | Some i, Some j ->
+          dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1
+      | _ -> ()
+      )
     end
   );
   dm
@@ -184,34 +203,49 @@ let partition_matrix nodes dm =
   done_nodes_step1
   
 
+(* opti: we redo many times the iteration on all edges ... for
+ * different configuration. Can factorize work ?
+ *)
+let build tree g =
 
-let build config g =
-  
-  let top_nodes = G.succ G.root G.Has g in
-
-  (* iterate while in config *)
-  let nodes = 
-    let rec aux xs =
-      match xs with
-      | [] -> []
-      | x::xs ->
-          if List.mem x config
-          then
-            let children = G.succ x G.Has g in
-            aux children ++ aux xs
-          else x :: aux xs
-    in
-    aux top_nodes
+  (* let's compute a better reordered tree *)  
+  let rec aux tree =
+    match tree with
+    | Node (n, xs) ->
+        if null xs 
+        then Node (n, [])
+        else begin
+          let children_nodes = 
+            xs +> List.map (function (Node (n2, _)) -> n2) 
+          in
+          let h_children_of_children_nodes = 
+            xs +> List.map (function (Node (n2, xs)) -> n2, xs) +> 
+              Common.hash_of_list
+          in
+          
+          let config_depth1 = 
+            Node (n,xs +> List.map (function (Node (n2, _)) -> (Node (n2, []))))
+          in
+        
+          (* first draft *)
+          let dm = build_with_tree config_depth1 g in
+          
+          (* Now we need to reorder to minimize the number of dependencies in
+           * the top right corner of the matrix.
+           *)
+          let nodes_reordered = partition_matrix children_nodes dm in
+          Node (n,
+               nodes_reordered +> List.map (fun n2 ->
+                 let xs = Hashtbl.find h_children_of_children_nodes n2 in
+                 (* recurse *)
+                 aux (Node (n2, xs))
+               )
+          )
+        end
   in
-
-  (* first draft *)
-  let dm = build_with_nodes_order nodes g in
-
-  (* Now we need to reorder to minimize the number of dependencies in the
-   * top right corner of the matrix.
-   *)
-  let nodes_reordered = partition_matrix nodes dm in
-  build_with_nodes_order nodes_reordered g
+  
+  let ordered_config = aux tree in
+  build_with_tree ordered_config g
 
 (*****************************************************************************)
 (* Explain the matrix *)
@@ -226,9 +260,28 @@ let explain_cell_list_use_edges (i, j) dm g =
 
       let i2 = projection hmemo n1 dm g in
       let j2 = projection hmemo n2 dm g in
-      if i2 = i && j2 = j 
-      then Common.push2 (n1, n2) res
+      (match i2, j2 with
+      | Some i2, Some j2 ->
+          if i2 = i && j2 = j 
+          then Common.push2 (n1, n2) res
+      | _ -> ()
+      )
     end
   );
   !res
 
+(*****************************************************************************)
+(* tree config manipulation *)
+(*****************************************************************************)
+let expand_node n tree g =
+  let rec aux tree =
+    match tree with
+    | Node (n2, xs) ->
+        if n = n2
+        then 
+          (* less: assert null xs? *)
+          let succ = G.succ n G.Has g in
+          Node (n2, succ +> List.map (fun n -> Node (n, [])))
+        else Node (n2, xs +> List.map aux)
+  in
+  aux tree

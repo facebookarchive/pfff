@@ -199,7 +199,7 @@ let main_action xs =
   
   let model = build_model root in
   (* todo: take command line argument to propose a specific slice of the graph*)
-  let config = [] in
+  let config = Dependencies_matrix_code.basic_config model.Model.g in
 
   let w = Model.init_world config model in
   View.mk_gui w
