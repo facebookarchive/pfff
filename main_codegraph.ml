@@ -188,14 +188,15 @@ let build_model root =
 let build_graph_code lang root =
   match lang with
   | "ml" ->
-      raise Todo
+      let g = Graph_code_ml.build ~verbose:!verbose root in
+      Graph_code.save g (dep_file root)
   | "php" ->
       raise Todo
 
   | "web" ->
       raise Todo
 
-  | _ -> failwith "language not supported: " ^ lang
+  | _ -> failwith ("language not supported: " ^ lang)
 
 (*****************************************************************************)
 (* Main action, viewing the graph *)
@@ -203,7 +204,7 @@ let build_graph_code lang root =
 
 (* algo: 
  *  - find root of project with a dependencies.marshall file
- *  - display slice of the dependency hieararchical matrix 
+ *  - display slice if needed of the dependency hieararchical matrix 
  *    using arguments in xs.
  * No need of -with_extern anymore, external stuff will be collapsed.
  * No need of package_depth, can expand on demand after.
@@ -229,7 +230,7 @@ let main_action xs =
     else begin
       (* Propose a specific slice of the graph.
        * If run cg from a/b/c, then expand_node a, expand node a/b,
-       * then focus_on_node a/b/c, and finally expand_node a/b/c.
+       * then focus_on_node a/b/c, and optionally expand_node a/b/c.
        *)
       let readable_subdir =
         let xs = Common.split "/" root in
