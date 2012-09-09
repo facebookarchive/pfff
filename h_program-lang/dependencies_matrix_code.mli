@@ -20,6 +20,7 @@ val explain_cell_list_use_edges:
   (int * int) -> dm -> Graph_code.graph ->
   (Graph_code.node * Graph_code.node) list
 
+(* todo: * transitive *)
 type deps_style = 
   | DepsIn
   | DepsOut
