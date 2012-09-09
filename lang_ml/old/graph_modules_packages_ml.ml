@@ -18,6 +18,48 @@ open Ast_ml
 module V = Visitor_ml
 module G = Graph
 
+(*
+(* ---------------------------------------------------------------------- *)
+(* ML *)
+(* ---------------------------------------------------------------------- *)
+
+(* old *)
+let with_extern = ref false
+let package_depth = ref 0
+
+
+  (* old *)
+  "-with_extern", Arg.Set with_extern,
+  " includes external references";
+  "-package_mode", Arg.Set_int package_depth,
+  " <n> project at depth n";
+
+let rec dependencies_of_files_or_dirs lang xs =
+  let verbose = !verbose in
+  match lang, xs with
+  | "ml", [dir] ->
+      Graph_modules_packages_ml.dependencies
+        ~verbose
+        ~with_extern:!with_extern
+        ~package_depth:!package_depth
+        dir
+  | _ -> failwith ("language not supported: " ^ lang)
+
+let test_gdf xs =
+  let _g = dependencies_of_files_or_dirs !lang xs in
+  pr2 (spf "Writing data in %s" !output_file);
+  raise Todo
+  (*
+  g +> Graph_guess.to_gdf        ~str_of_node:(fun s -> s) ~output:!output_file
+  g +> Graph_gephi.graph_to_gefx ~str_of_node:(fun s -> s) ~output:!output_file
+      ~tree:None~weight_edges:None
+  *)
+
+  "-test_gdf", " <dirs>",
+  Common.mk_action_n_arg test_gdf;
+
+*)
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
