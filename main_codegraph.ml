@@ -182,12 +182,29 @@ let build_model root =
   { Model.g = g; root = root; }
 
 (*****************************************************************************)
-(* Main action *)
+(* Language specific, building the graph *)
 (*****************************************************************************)
 
-(* Find root of project with a dependencies.marshall file
- * and display slice of the dependency hieararchical matrix 
- * using arguments in xs.
+let build_graph_code lang root =
+  match lang with
+  | "ml" ->
+      raise Todo
+  | "php" ->
+      raise Todo
+
+  | "web" ->
+      raise Todo
+
+  | _ -> failwith "language not supported: " ^ lang
+
+(*****************************************************************************)
+(* Main action, viewing the graph *)
+(*****************************************************************************)
+
+(* algo: 
+ *  - find root of project with a dependencies.marshall file
+ *  - display slice of the dependency hieararchical matrix 
+ *    using arguments in xs.
  * No need of -with_extern anymore, external stuff will be collapsed.
  * No need of package_depth, can expand on demand after.
  * 
@@ -251,10 +268,6 @@ let main_action xs =
 
   let w = Model.init_world config model in
   View.mk_gui w
-
-(*****************************************************************************)
-(* Building Actions *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Extra Actions *)
@@ -351,6 +364,8 @@ let test_phylomel geno_file =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
+
+
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
 ]
