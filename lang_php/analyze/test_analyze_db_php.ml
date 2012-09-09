@@ -16,11 +16,6 @@ module V = Visitor_php
 (* Subsystem testing that requires a db *)
 (*****************************************************************************)
 
-let test_dependencies_php metapath =
-  Database_php.with_db ~metapath (fun db ->
-    Graph_php.dir_to_dir_dependencies db
-  )
-
 let test_function_pointer_analysis metapath =
   raise Todo
 (*
@@ -104,22 +99,6 @@ let test_callgraph_php files_or_dirs =
   ()
 
 
-(* topological sort of strongly connected components *)
-let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
-
-  let db = Database_php_build.db_of_files_or_dirs files_or_dirs in
-  let str_of_key id = Db.complete_name_of_id id db in
-
-  (* converting the callgraph stored as two assocs in the db
-   * into something algorithms in ocamlgraph/ can work on
-   *)
-  let g = Graph_php.build_simple_callgraph db in
-  Graph_php.display_with_gv g db;
-
-  let scc, hscc = Graph.strongly_connected_components g in
-  Graph.display_strongly_connected_components ~str_of_key hscc g;
-
-  ()
 
 
 let test_track_function_result function_name file =
@@ -222,8 +201,6 @@ let actions () = [
   "-callgraph_php", " <files_or_dirs>",
   Common.mk_action_n_arg test_callgraph_php;
 
-  "-callgraph_topo_scc_php", " <files_or_dirs>",
-  Common.mk_action_n_arg test_topo_sorted_strongly_connected_callgraph_php;
 
 
   "-test_track_function_result", " <function> <db>",
@@ -235,8 +212,6 @@ let actions () = [
   Common.mk_action_1_arg (test_code_rank);
 
 
-  "-dependencies_php", " <metapath>",
-  Common.mk_action_1_arg test_dependencies_php;
 
   "-function_pointer_analysis", "<db>",
   Common.mk_action_1_arg (test_function_pointer_analysis);
