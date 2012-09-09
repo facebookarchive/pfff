@@ -23,6 +23,37 @@ module G = Graph
 module Db = Database_php
 module Cg = Callgraph_php
 
+(*
+
+let test_dependencies_php metapath =
+  Database_php.with_db ~metapath (fun db ->
+    Graph_php.dir_to_dir_dependencies db
+  )
+
+(* topological sort of strongly connected components *)
+let test_topo_sorted_strongly_connected_callgraph_php files_or_dirs =
+
+  let db = Database_php_build.db_of_files_or_dirs files_or_dirs in
+  let str_of_key id = Db.complete_name_of_id id db in
+
+  (* converting the callgraph stored as two assocs in the db
+   * into something algorithms in ocamlgraph/ can work on
+   *)
+  let g = Graph_php.build_simple_callgraph db in
+  Graph_php.display_with_gv g db;
+
+  let scc, hscc = Graph.strongly_connected_components g in
+  Graph.display_strongly_connected_components ~str_of_key hscc g;
+
+  ()
+
+  "-callgraph_topo_scc_php", " <files_or_dirs>",
+  Common.mk_action_n_arg test_topo_sorted_strongly_connected_callgraph_php;
+
+  "-dependencies_php", " <metapath>",
+  Common.mk_action_1_arg test_dependencies_php;
+
+*)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
