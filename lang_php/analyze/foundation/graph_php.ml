@@ -28,6 +28,8 @@ module Cg = Callgraph_php
 (*****************************************************************************)
 
 (* 
+ * Note: obsolete code, see graph_code_php.ml!
+ * 
  * An adapter over Database_php.database caller/callees assoc tables
  * using Common.graph (itself an adapter over ocamlgraph/) to have
  * access to complex graph algorithms (e.g. strongly-connected-components).
@@ -43,17 +45,17 @@ module Cg = Callgraph_php
  * where I was generating the dot instead of generating a graph 
  * that then will generically call a function to generate a dot file.
  * 
- * todo: see also facebook/flib_dependencies/ and 
+ * See also facebook/flib_dependencies/ and
  * facebook/check_module/graph_module.ml
- * 
- * todo: use graph_code.ml
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* first graph *)
+(* first graph 
+ * note: not as good as the hypergraph in Graph_code.ml though.
+ *)
 type id_graph = Entity_php.id G.graph
 
 
@@ -86,7 +88,7 @@ let build_simple_callgraph db =
   let successors id =
     try
       let callsites = Db.callees_of_id id db in
-      callsites |> Common.map_filter (fun (Cg.CallSite (id2, kind_call)) ->
+      callsites +> Common.map_filter (fun (Cg.CallSite (id2, kind_call)) ->
         (* for now consider only regular function call *)
         match kind_call with
         | Cg.Direct _ -> Some id2
@@ -106,6 +108,7 @@ let build_simple_callgraph db =
 (* Helpers *)
 (*****************************************************************************)
 
+(* projection *)
 let dir_of_id id db = 
   let file = Database_php.readable_filename_of_id id db in
   let str = Filename.dirname file in
