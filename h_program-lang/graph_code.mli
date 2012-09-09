@@ -2,6 +2,7 @@
 type node = string * Database_code.entity_kind
 type edge = Has | Use
 
+(* really an hypergraph actually *)
 type graph
 
 val save: graph -> Common.filename -> unit
