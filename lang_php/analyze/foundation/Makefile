@@ -32,7 +32,7 @@ SRC+= dependencies_toposort_php.ml \
       builtins_typed_php.ml typing_unify_php.ml \
       typing_php.ml
 SRC+= database_php.ml database_juju_php.ml
-SRC+=graph_php.ml
+SRC+=graph_code_php.ml
 # used to be in analyze/
 SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \
