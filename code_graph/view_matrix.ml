@@ -86,7 +86,9 @@ let draw_cells cr w ~interactive_regions =
 
 let draw_left_rows cr w ~interactive_regions =
   let l = M.layout_of_w w in
-  let font_size = l.height_cell / 1.5 in
+  let font_size = 
+    min (l.height_cell / 1.5) (l.x_start_matrix_left / 10. )
+  in
   CairoH.set_font_size cr font_size;
   (* peh because it exercises the spectrum of high letters *)
   let extent = CairoH.text_extents cr "peh" in
