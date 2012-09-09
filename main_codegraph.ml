@@ -1,11 +1,14 @@
 (*
- * Please imagine a long and boring gnu-style copyright notice 
+ * Please imagine a long and boring gnu-style copyright notice
  * appearing just here.
  *)
 open Common
 
 module Model = Model3
 module View = View3
+
+module GC = Graph_code
+module DM = Dependencies_matrix_code
 
 (*****************************************************************************)
 (* Purpose *)
@@ -155,6 +158,8 @@ module View = View3
 
 let verbose = ref false
 
+let deps_style = ref DM.DepsInOut
+
 (* old *)
 let with_extern = ref false
 let package_depth = ref 0
@@ -174,8 +179,11 @@ let action = ref ""
 (* Model Helpers *)
 (*****************************************************************************)
 
+let dep_file dir = 
+  Filename.concat dir "dependencies.marshall"
+
 let build_model root =
-  let file = Filename.concat root "dependencies.marshall" in
+  let file = dep_file root in
   let g = Graph_code.load file in
   { Model.g = g; root = root; }
 
@@ -191,16 +199,59 @@ let build_model root =
  * 
  * todo: How load graph? Build on demand? easier to test things that way ... 
  * maybe can just cache and look if we need to recompute the code graph?
+ * same for the dependency matrix that we can cache too.
  *)
 let main_action xs =
   Logger.log Config.logger "codegraph" None;
 
-  let root = Common.common_prefix_of_files_or_dirs xs in
+  let dir = Common.common_prefix_of_files_or_dirs xs +> Common.realpath in
+  let inits = Common.inits_of_absolute_dir dir in
+  let root =
+    inits +> List.rev +> List.find (fun path -> Sys.file_exists (dep_file path))
+  in
   pr2 (spf "Using root = %s" root);
-  
   let model = build_model root in
-  (* todo: take command line argument to propose a specific slice of the graph*)
-  let config = Dependencies_matrix_code.basic_config model.Model.g in
+
+  let config =
+    if root =*= dir
+    then DM.basic_config model.Model.g 
+    else begin
+      (* Propose a specific slice of the graph.
+       * If run cg from a/b/c, then expand_node a, expand node a/b,
+       * then focus_on_node a/b/c, and finally expand_node a/b/c.
+       *)
+      let readable_subdir =
+        let xs = Common.split "/" root in
+        let ys = Common.split "/" dir in
+        let (a, b) = Common.splitAt (List.length xs) ys in
+        assert (xs =*= a);
+        b
+      in
+      pr2 (spf "focusing on on Dir %s" (Common.join "/" readable_subdir));
+      let initial_config = DM.basic_config model.Model.g in
+      let rec aux before current_config xs =
+        match xs with
+        | [] -> raise Impossible
+        | [x] ->
+            let dir = List.rev (x::before) +> Common.join "/" in
+            let node = dir, Database_code.Dir in
+            let dm = 
+              DM.build current_config model.Model.g in
+            let config = 
+              DM.focus_on_node node !deps_style current_config dm in
+            let config = 
+              DM.expand_node node config model.Model.g in
+            config
+        | x::xs ->
+            let dir = List.rev (x::before) +> Common.join "/" in
+            let node = dir, Database_code.Dir in
+            let config = 
+              DM.expand_node node current_config model.Model.g in
+            aux (x::before) config xs
+      in
+      aux [] initial_config readable_subdir
+    end
+  in
 
   let w = Model.init_world config model in
   View.mk_gui w
@@ -346,6 +397,16 @@ let options () = [
   "-o", Arg.Set_string output_file, 
   (spf " <file> default = %s" !output_file);
 
+  "-deps_in", Arg.Unit (fun () -> deps_style := DM.DepsIn), 
+  " ";
+  "-deps_out", Arg.Unit (fun () -> deps_style := DM.DepsOut), 
+  " ";
+  "-deps_inout", Arg.Unit (fun () -> deps_style := DM.DepsInOut), 
+  " ";
+
+  
+
+  (* old *)
   "-with_extern", Arg.Set with_extern,
   " includes external references";
   "-package_mode", Arg.Set_int package_depth,
