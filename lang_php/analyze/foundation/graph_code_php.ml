@@ -19,6 +19,8 @@ open Common
 (*****************************************************************************)
 
 (*
- * See also graph_php.ml, facebook/flib_dependencies/ and
+ * Yet another code database for PHP ...
+ * 
+ * See also old/graph_php.ml, facebook/flib_dependencies/,
  * facebook/check_module/graph_module.ml
  *)
