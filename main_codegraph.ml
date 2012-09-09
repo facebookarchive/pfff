@@ -366,6 +366,8 @@ let test_phylomel geno_file =
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
 
+  "-build", " <dir>",
+  Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
 
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
@@ -411,7 +413,7 @@ let options () = [
 let main () = 
   (* Common_extra.set_link(); *)
   let usage_msg = 
-    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+    spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
       (Common.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codegraph"
   in
