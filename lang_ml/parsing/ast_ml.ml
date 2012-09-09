@@ -178,7 +178,7 @@ and seq_expr = expr semicolon_list
    | RecordNormal of            field_and_expr semicolon_list
    | RecordWith of expr * tok * field_and_expr semicolon_list
    and field_and_expr = 
-     | FieldExpr of long_name * tok * expr
+     | FieldExpr of long_name * tok (* = *) * expr
      (* new 3.12 feature *)
      | FieldImplicitExpr of long_name
 
@@ -193,16 +193,19 @@ and seq_expr = expr semicolon_list
    | ArgImplicitQuestionExpr of tok * name
 
 
- and match_action =
-   | Action of tok (* -> *) * seq_expr
-   | WhenAction of tok (* when *) * seq_expr * tok (* -> *) * seq_expr
-
  and match_case =
   pattern * match_action
+
+  and match_action =
+    | Action of tok (* -> *) * seq_expr
+    | WhenAction of tok (* when *) * seq_expr * tok (* -> *) * seq_expr
+
 
  and for_direction =
   | To of tok
   | Downto of tok
+
+ and rec_opt = tok option
 
 (* ------------------------------------------------------------------------- *)
 (* Patterns *)
@@ -297,8 +300,6 @@ and item =
 and sig_item = item
 and struct_item = item
 
-  and rec_opt = tok option
-
 (* ------------------------------------------------------------------------- *)
 (* Toplevel phrases *)
 (* ------------------------------------------------------------------------- *)
@@ -323,6 +324,10 @@ and toplevel =
  and program = toplevel list
 
  (* with tarzan *)
+
+(*****************************************************************************)
+(* Any *)
+(*****************************************************************************)
 
 type any =
   | Ty of ty
@@ -361,16 +366,15 @@ let pos_of_info x = Parse_info.pos_of_info x
 let str_of_name (Name (s,_)) = s
 let info_of_name (Name (_,info)) = info
 
-let name_of_long_name (_, name) = name
-let module_of_long_name (qu, _) = 
-  qu +> List.map fst +> List.map str_of_name +> Common.join "."
-
-let module_infos_of_long_name (qu, _) = 
-  qu +> List.map fst +> List.map info_of_name
-
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right info -> None
   ) xs
-
 let unpipe xs = uncomma xs
+
+let name_of_long_name (_, name) = name
+let module_of_long_name (qu, _) = 
+  qu +> List.map fst +> List.map str_of_name +> Common.join "."
+let module_infos_of_long_name (qu, _) = 
+  qu +> List.map fst +> List.map info_of_name
+
