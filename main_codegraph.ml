@@ -239,8 +239,10 @@ let main_action xs =
               DM.build current_config model.Model.g in
             let config = 
               DM.focus_on_node node !deps_style current_config dm in
+            (*
             let config = 
               DM.expand_node node config model.Model.g in
+            *)
             config
         | x::xs ->
             let dir = List.rev (x::before) +> Common.join "/" in
