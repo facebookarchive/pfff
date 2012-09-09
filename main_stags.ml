@@ -7,8 +7,8 @@ open Common
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
-(* A more precise etags/ctags. 
+(* 
+ * A more precise etags/ctags. 
  *
  * Both etags and ctags are working at a lexical level
  * and so have lots of false positives for the definitions. For instance
@@ -32,8 +32,7 @@ open Common
 (*****************************************************************************)
 
 (* In addition to flags that can be tweaked via -xxx options (cf the
- * full list of options in the "the options" section below), this 
- * program also depends on external files ?
+ * full list of options in the "the options" section below).
  *)
 let verbose = ref false
 
@@ -51,7 +50,7 @@ type format = Vim | Emacs
 let format = ref Emacs
 
 (*****************************************************************************)
-(* Some  debugging functions *)
+(* Some debugging functions *)
 (*****************************************************************************)
 
 (*****************************************************************************)
