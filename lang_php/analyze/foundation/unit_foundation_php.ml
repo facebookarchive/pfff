@@ -21,7 +21,7 @@ let ast_simple_unittest =
   "ast_simple regression files" >:: (fun () ->
     let dir1 = Filename.concat Config.path "/tests/php/parsing" in
     let dir2 = Filename.concat Config.path "/tests/php/semantic" in
-    let files = 
+    let files =
       Common.glob (spf "%s/*.php" dir1) ++ Common.glob (spf "%s/*.php" dir2)
     in
     files +> List.iter (fun file ->
@@ -30,7 +30,7 @@ let ast_simple_unittest =
         let _ast = Ast_php_simple_build.program cst in
         ()
       with exn ->
-        assert_failure (spf "it should correctly parse %s, exn = %s" 
+        assert_failure (spf "it should correctly parse %s, exn = %s"
                            file (Common.exn_to_s exn))
       )
     )
@@ -47,9 +47,9 @@ foo1();
 " in
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
-      let uses_strings = 
+      let uses_strings =
         uses +> List.map (fun (kind, name) -> Ast.name name) in
-      assert_equal 
+      assert_equal
         (sort ["foo1"])
         (sort uses_strings);
     );
@@ -79,14 +79,14 @@ $x = <x:xhp2/>;
         | Ast.XhpName (xhp_tag, _) ->
             Common.join ":" xhp_tag
       in
-      let uses_strings = 
+      let uses_strings =
         uses +> List.map (fun (kind, name) -> str_of_name name) in
 
-      let classes = 
+      let classes =
         (Common.enum 1 10) +> List.map (fun i -> spf "Foo%d" i) in
-      let xhp_classes = 
+      let xhp_classes =
         (Common.enum 1 2) +> List.map (fun i -> spf "x:xhp%d" i) in
-      assert_equal 
+      assert_equal
         (sort (classes ++ xhp_classes))
         (sort uses_strings);
     );
@@ -109,12 +109,12 @@ let tags_unittest =
         "
         in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
-        let tags = 
+        let tags =
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            let xs = tags_in_file +> List.map (fun x -> 
+            let xs = tags_in_file +> List.map (fun x ->
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             assert_equal ~msg:"it should contain the right 6 entries" [
@@ -144,12 +144,12 @@ let tags_unittest =
            function ambiguous_with_function() { }
         " in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
-        let tags = 
+        let tags =
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            let xs = tags_in_file +> List.map (fun x -> 
+            let xs = tags_in_file +> List.map (fun x ->
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             (* we now generate two tags per method, one for 'a_method',
@@ -175,19 +175,60 @@ let tags_unittest =
         )
       );
 
+      "magic tags" >:: (fun () ->
+        let file_content = "
+           class A {
+              function yieldSomething() { }
+              function prepareSomethingElse() { }
+           }
+        " in
+        let tmpfile = Parse_php.tmp_php_file_from_string file_content in
+        let tags =
+          Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
+        (match tags with
+        | [file, tags_in_file] ->
+            assert_equal tmpfile file;
+            let xs = tags_in_file +> List.map (fun x ->
+              x.Tags_file.tagname, x.Tags_file.kind
+            ) in
+            let desired = [
+              "A", Db.Class Db.RegularClass;
+              "A::yieldSomething", Db.Method Db.RegularMethod;
+              "yieldSomething", Db.Method Db.RegularMethod;
+              "A::genSomething", Db.Method Db.RegularMethod;
+              "genSomething", Db.Method Db.RegularMethod;
+              "A::prepareSomething", Db.Method Db.RegularMethod;
+              "prepareSomething", Db.Method Db.RegularMethod;
+              "A::getSomething", Db.Method Db.RegularMethod;
+              "getSomething", Db.Method Db.RegularMethod;
+              "A::prepareSomethingElse", Db.Method Db.RegularMethod;
+              "prepareSomethingElse", Db.Method Db.RegularMethod;
+              "A::genSomethingElse", Db.Method Db.RegularMethod;
+              "genSomethingElse", Db.Method Db.RegularMethod;
+            ]
+            in
+            assert_equal ~msg:"Tags should contain entries for the right magic methods"
+              desired
+              xs
+
+        | _ ->
+            assert_failure "The tags should contain only one entry for one file"
+        )
+      );
+
       "xhp tags" >:: (fun () ->
         let file_content = "class :x:foo { }" in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
-        let tags = 
+        let tags =
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         let all_tags = tags +> List.map snd +> List.flatten in
         assert_bool
           ~msg:"it should contain an entry for the :x:... classname form"
-          (all_tags +> List.exists (fun t -> 
+          (all_tags +> List.exists (fun t ->
             t.Tags_file.tagname =$= ":x:foo"));
         assert_bool
           ~msg:"it should contain an entry for the x:... classname form"
-          (all_tags +> List.exists (fun t -> 
+          (all_tags +> List.exists (fun t ->
             t.Tags_file.tagname =$= "x:foo"));
       );
     ]
@@ -219,7 +260,7 @@ let annotation_unittest =
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let (ast_with_comments, _stat) = Parse_php.parse tmpfile in
-      let annots = 
+      let annots =
         Annotation_php.annotations_of_program_with_comments ast_with_comments
           +> List.map fst
       in
