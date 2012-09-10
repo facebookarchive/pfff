@@ -186,17 +186,15 @@ let build_model root =
 (*****************************************************************************)
 
 let build_graph_code lang root =
-  match lang with
-  | "ml" ->
-      let g = Graph_code_ml.build ~verbose:!verbose root in
-      Graph_code.save g (dep_file root)
-  | "php" ->
-      raise Todo
-
-  | "web" ->
-      raise Todo
-
-  | _ -> failwith ("language not supported: " ^ lang)
+  let g =
+    match lang with
+    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root
+    | "php" -> Graph_code_php.build ~verbose:!verbose root
+    | "web" ->
+        raise Todo
+    | _ -> failwith ("language not supported: " ^ lang)
+  in
+  Graph_code.save g (dep_file root)
 
 (*****************************************************************************)
 (* Main action, viewing the graph *)
