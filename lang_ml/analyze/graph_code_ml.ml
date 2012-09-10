@@ -210,8 +210,8 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
       | [p] when p =*= (dir, E.Dir) -> 
           g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
       | x -> 
-          pr2 "multiple parents or no parents";
-          pr2_gen x;
+          pr2 "multiple parents or no parents or wrong dir";
+          pr2_gen (x, dir, m);
           raise Impossible
       )
   | _ ->
