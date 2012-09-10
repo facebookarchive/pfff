@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -24,11 +24,11 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * Making a better TAGS file. M-x idx => it finds it!
  * It does not go to $idx in a file. Works for XHP. Works with
  * completion. Essentially a thin adapter over defs_uses_php.ml.
- * 
+ *
  * Bench: time to process ~/www ? 7min the first time, which
  * is quite longer than ctags. But what is the price of correctness ?
  * Moreover one can easily put this into a cron and even shares
@@ -39,7 +39,7 @@ module Db = Database_code
 (* Helpers *)
 (*****************************************************************************)
 
-let tag_of_name filelines name kind = 
+let tag_of_name filelines name kind =
   let info = Ast.info_of_name name in
   Tags.tag_of_info filelines info kind
 
@@ -47,9 +47,9 @@ let tag_of_name filelines name kind =
 (* Main function *)
 (*****************************************************************************)
 
-let tags_of_ast ast filelines = 
+let tags_of_ast ast filelines =
   let defs = Defs_uses_php.defs_of_any (Program ast) in
-    
+
   defs +> List.map (fun (kind, name, enclosing_name_opt) ->
     match kind with
     | Db.Class _ ->
@@ -68,24 +68,43 @@ let tags_of_ast ast filelines =
             ]
         )
     | Db.Function | Db.Constant ->
-        [tag_of_name filelines name kind]
+        [ tag_of_name filelines name kind]
     | Db.Method _ ->
         (match enclosing_name_opt with
         | None -> raise Impossible
         | Some class_name ->
-            (* Generate a 'class::method tag. Can then have
+            (* Generate a 'class::method' tag. Can then have
              * a nice completion and know all the methods available
              * in a class (the short Eiffel-like profile).
              *)
             let info = Ast.info_of_name name in
-            let info' = Ast.rewrap_str 
+            let info' = Ast.rewrap_str
               (Ast.name class_name  ^ "::" ^ Ast.name name) info in
-            [Tags.tag_of_info filelines info' kind]
+
+            let yieldmagic =
+              if (Ast.name name) =~ "^yield" then
+                let tail = (Ast.name name) <!!> (5,-1) in
+                [ "gen"; "prepare"; "get"] |>
+                List.map (fun w ->
+                  let info = Ast.rewrap_str
+                    (Ast.name class_name ^ "::" ^ w ^ tail) info in
+                  Tags.tag_of_info filelines info kind)
+              else [] in
+
+            let prepmagic =
+              if (Ast.name name) =~ "^prepare" then
+                let tail = (Ast.name name) <!!> (7, -1) in
+                let info = Ast.rewrap_str
+                  (Ast.name class_name ^ "::gen" ^ tail) info in
+                [ Tags.tag_of_info filelines info kind ]
+              else [] in
+
+            [Tags.tag_of_info filelines info' kind] @ yieldmagic @ prepmagic
         )
     | (   Db.Field | Db.ClassConstant | Db.Other _
         | Db.Type | Db.Module | Db.Package | Db.TopStmts | Db.Macro | Db.Global
         | Db.MultiDirs | Db.Dir | Db.File
-      ) -> 
+      ) ->
         (* see defs_of_any *)
         raise Impossible
   ) +> List.flatten
@@ -119,18 +138,18 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
   files +> Common_extra.progress ~show:verbose (fun k ->
    List.map (fun file ->
     k ();
-    let (ast) = 
+    let (ast) =
       try  Parse_php.parse_program file
       with Parse_php.Parse_error err ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         []
     in
     let filelines = Common.cat_array file in
-    let defs = 
+    let defs =
       try tags_of_ast ast filelines
-      with 
+      with
       | Timeout -> raise Timeout
-      | exn -> 
+      | exn ->
           pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
           []
     in
