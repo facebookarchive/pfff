@@ -466,7 +466,7 @@ if($facebook) {
 
 `perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config.ml`;
 
-`touch test.ml`;
+#`touch test.ml`;
 
 if($error || $error2) { 
     pr2 "!!Problems during ./configure!!";
