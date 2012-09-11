@@ -60,7 +60,7 @@ type deps_style =
  * displayed in the matrix.
  * opti: share a global hmemo?
  *)
-let rec projection hmemo n dm g =
+let rec projection2 hmemo n dm g =
   (* todo: profile this? optimize? *)
   Common.memoized hmemo n (fun () ->
     match () with
@@ -70,8 +70,10 @@ let rec projection hmemo n dm g =
      * in the current name_to_i hash
      *)
     | _ when n = G.root -> None
-    | _ -> projection hmemo (G.parent n g) dm g
+    | _ -> projection2 hmemo (G.parent n g) dm g
   )
+let projection a b c d =
+  Common.profile_code "DM.projection" (fun () -> projection2 a b c d)
 
 let rec final_nodes_of_tree tree =
   match tree with
@@ -93,7 +95,7 @@ let display dm =
 (* Building the matrix *)
 (*****************************************************************************)
 
-let build_with_tree tree g =
+let build_with_tree2 tree full_matrix_opt g =
 
   (* todo? if expand do we create a line for the expanded? if no
    * then it will have no projection so the test below is not enough.
@@ -118,21 +120,37 @@ let build_with_tree tree g =
     config = tree;
   }
   in
-  let hmemo = Hashtbl.create 101 in
+  (match full_matrix_opt with
+  | None ->
+      let hmemo = Hashtbl.create 101 in
   
-  g +> G.iter_use_edges (fun n1 n2 ->
-    if n1 <> G.root then begin
-      let i = projection hmemo n1 dm g in
-      let j = projection hmemo n2 dm g in
-      (match i, j with
-      | Some i, Some j ->
-          dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1
-      | _ -> ()
-      )
-    end
+      g +> G.iter_use_edges (fun n1 n2 ->
+        if n1 <> G.root then begin
+          let i = projection hmemo n1 dm g in
+          let j = projection hmemo n2 dm g in
+          (match i, j with
+          | Some i, Some j ->
+              dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1
+          | _ -> ()
+          )
+        end
+      );
+  | Some fulldm ->
+      for i = 0 to n - 1 do
+        for j = 0 to n - 1 do
+          let n1 = Hashtbl.find dm.i_to_name i in
+          let n2 = Hashtbl.find dm.i_to_name j in
+
+          let i' = Hashtbl.find fulldm.name_to_i n1 in
+          let j' = Hashtbl.find fulldm.name_to_i n2 in
+          dm.matrix.(i).(j) <- fulldm.matrix.(i').(j')
+        done
+      done
   );
   dm
 
+let build_with_tree a b c = 
+  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c)
 
 (* 
  * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
@@ -211,7 +229,7 @@ let partition_matrix nodes dm =
 (* opti: we redo many times the iteration on all edges ... for
  * different configuration. Can factorize work ?
  *)
-let build tree g =
+let build tree full_matrix_opt g =
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -233,7 +251,7 @@ let build tree g =
           in
         
           (* first draft *)
-          let dm = build_with_tree config_depth1 g in
+          let dm = build_with_tree config_depth1 full_matrix_opt g in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
@@ -250,7 +268,64 @@ let build tree g =
   in
   
   let ordered_config = aux tree in
-  build_with_tree ordered_config g
+  build_with_tree ordered_config full_matrix_opt g
+
+(*****************************************************************************)
+(* Building optimized matrix *)
+(*****************************************************************************)
+(* return the list of parents indexes (not nodes) *)
+let rec parents2 hmemo n g dm =
+  Common.memoized hmemo n (fun () ->
+    if n = G.root 
+    then []
+    else
+      let parent = G.parent n g in
+      let i = Hashtbl.find dm.name_to_i n in
+      i::parents2 hmemo parent g dm
+  )
+
+let parents a b c d =
+  Common.profile_code "DM.parents" (fun () -> parents2 a b c d)
+
+let update_matrix2 xs ys dm =
+  xs +> List.iter (fun i ->
+    ys +> List.iter (fun j ->
+      dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1;
+    )
+  )
+
+let update_matrix a b c =
+  Common.profile_code "DM.update_matrix" (fun () -> update_matrix2 a b c)
+
+let build_full_matrix2 g =
+  let n = G.nb_nodes g in
+  pr2 (spf "Building full matrix, n = %d" n);
+  let name_to_i = Hashtbl.create (n / 2) in
+  let i_to_name = Hashtbl.create (n / 2) in
+  let i = ref 0 in
+  g +> G.iter_nodes (fun node ->
+    Hashtbl.add name_to_i node !i;
+    Hashtbl.add i_to_name !i node;
+    incr i;
+  );
+  let dm = {
+    matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
+    name_to_i;
+    i_to_name;
+    config = Node (G.root, []);
+  }
+  in
+  let hmemo_parents = Hashtbl.create (n / 2) in
+  g +> G.iter_use_edges (fun n1 n2 ->
+    let parents_n1 = parents hmemo_parents n1 g dm in
+    let parents_n2 = parents hmemo_parents n2 g dm in
+    (* cross product *)
+    update_matrix parents_n1 parents_n2 dm;
+  );
+  dm
+
+let build_full_matrix a = 
+  Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix2 a)
 
 (*****************************************************************************)
 (* Explain the matrix *)
