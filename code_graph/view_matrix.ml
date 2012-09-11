@@ -86,10 +86,10 @@ let draw_cells cr w ~interactive_regions =
 
 let draw_left_rows cr w ~interactive_regions =
   let l = M.layout_of_w w in
-  let font_size = 
+  let font_size_default =
     min (l.height_cell / 1.5) (l.x_start_matrix_left / 10. )
   in
-  CairoH.set_font_size cr font_size;
+  CairoH.set_font_size cr font_size_default;
   (* peh because it exercises the spectrum of high letters *)
   let extent = CairoH.text_extents cr "peh" in
   let _base_tw = extent.Cairo.text_width / 3. in
@@ -105,9 +105,19 @@ let draw_left_rows cr w ~interactive_regions =
     Common.push2 (Row i, rect) interactive_regions;
     CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat" rect;
     (* align on the left *)
-    Cairo.move_to cr (x + 0.02) (y + (l.height_cell /2.) + (th / 2.0));
+    Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
     let node = Hashtbl.find w.m.DM.i_to_name i in
     let (txt, _kind) = node in
+    CairoH.set_font_size cr font_size_default;
+    let extent = CairoH.text_extents cr txt in
+    let w = extent.Cairo.text_width in
+    (* todo: could try different settings until it works? like in codemap? *)
+    let font_size_final =
+      if w > l.x_start_matrix_left 
+      then (font_size_default / (w / l.x_start_matrix_left))
+      else font_size_default
+    in
+    CairoH.set_font_size cr font_size_final;
     CairoH.show_text cr txt;
   done;
   ()
@@ -262,6 +272,7 @@ let button_action da w ev =
                   )
                   +> Common.join "\n"
                 in
+                pr2 str;
                 Gui.dialog_text ~text:str ~title:"Cell explaination";
                 true
 
