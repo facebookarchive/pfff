@@ -131,9 +131,9 @@ let extract_defs ~g ~dupes ~ast ~readable =
        
 
   (* could add entity for that? *)
-   | Global _ -> ()
+  | Global _ -> ()
 
-  | StaticVars _
+  | StaticVars _ -> ()
 
   | Expr _ | Block _
   | If _ | Switch _
@@ -309,9 +309,40 @@ and expr env = function
   | New (e, es) ->
       expr env (Call (Class_get(e, Id ("__construct", None)), es))
 
-  | _ -> ()
+  (* boilerplate *)
+  | List xs -> exprl env xs
+  | Assign (_, e1, e2) -> exprl env [e1;e2]
+  (* todo? *)
+  | InstanceOf (e1, e2) -> exprl env [e1;e2]
+  | This _ -> ()
+  | Array_get (_, e, eopt) ->
+      expr env e;
+      Common.opt (expr env) eopt
+  | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
+  | Binop (_, e1, e2) -> exprl env [e1; e2]
+  | Guil xs -> exprl env xs
+  | Ref e -> expr env e
+  | ConsArray (_, _, xs) -> array_valuel env xs
+  | Xhp x -> xml env x
+  | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
+  | Cast (_, e) -> expr env e
+  | Lambda def -> func_def env def
+
+and array_value env = function
+  | Aval e -> expr env e
+  | Akval (e1, e2) -> exprl env [e1; e2]  
+
+and xml env x =
+  x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
+  x.xml_body +> List.iter (xhp env)
+
+and xhp env = function
+  | XhpText s -> ()
+  | XhpExpr e -> expr env e
+  | XhpXml x -> xml env x
 
 and exprl env xs = List.iter (expr env) xs
+and array_valuel env xs = List.iter (array_value env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
