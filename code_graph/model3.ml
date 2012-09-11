@@ -139,8 +139,8 @@ type layout = {
 }
 
 let layout_of_w w = 
-  let x_start_matrix_left = 0.2 in
-  let x_end_matrix_right = 1.55 in
+  let x_start_matrix_left = 0.3 in
+  let x_end_matrix_right = 1.71 in
   (* this will be with 45 degrees so it can be less than x_start_matrix_left *)
   let y_start_matrix_up = 0.1 in
   let _y_end_matrix_down = 1.0 in
