@@ -135,6 +135,10 @@ let build_with_tree2 tree full_matrix_opt g =
           )
         end
       );
+  (* todo: the full matrix contains actually only the top k nodes,
+   * so the name_to_i may fail below. Need to compute ...
+   * go through all the edges under and reproject.
+   *)
   | Some fulldm ->
       for i = 0 to n - 1 do
         for j = 0 to n - 1 do
@@ -276,6 +280,9 @@ let build tree full_matrix_opt g =
 
 let threshold_nodes_full_matrix = 100000
 
+(* todo: intelligent split of the tree? to avoid outliers? 
+ * have a quota per subtree?
+ *)
 let top_nodes_of_graph_until_threshold g =
 
   let res = ref [] in
