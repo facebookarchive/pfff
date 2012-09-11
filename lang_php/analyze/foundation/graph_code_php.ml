@@ -44,6 +44,8 @@ module Ast = Ast_php_simple
 type env = {
   current: Graph_code.node;
   g: Graph_code.graph;
+
+  (* error reporting *)
   dupes: (Graph_code.node) Common.hashset;
   lookup_fails: (Graph_code.node, int) Common.hash_with_default;
   (* todo: dynamic_fails stats *)
@@ -62,19 +64,23 @@ let parse file =
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
 
-let add_use_edge env n2 =
-  let n1 = env.current in
+let add_use_edge env (name, kind) =
+  let src = env.current in
+  let dst = (Ast.str_of_name name, kind) in
   (match () with
   (* maybe nested function, in which case we dont have the def *)
-  | _ when not (G.has_node n1 env.g) ->
-      (* todo: pr2 ... *)
+  | _ when not (G.has_node src env.g) ->
+      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist (nested func?)"
+              (G.string_of_node src) (G.string_of_node dst));
       ()
   (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes n1 || Hashtbl.mem env.dupes n2 -> ()
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> ()
   (* todo: if n2 is a Class, then try Interface and Trait if fails? *)
-  | _ when G.has_node n2 env.g -> 
-      G.add_edge (n1, n2) G.Use env.g
-  | _ -> env.lookup_fails#update n2 Common.add1
+  | _ when G.has_node dst env.g -> 
+      G.add_edge (src, dst) G.Use env.g
+  | _ -> 
+      (* todo: debug, display edge? *)
+      env.lookup_fails#update dst Common.add1
   )
 
 (*****************************************************************************)
@@ -160,10 +166,22 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails =
 (* Functions/Methods *)
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
+  def.f_params +> List.iter (fun p ->
+    (* todo: add deps to type hint? *)
+    Common.opt (expr env) p.p_default;
+  );
   stmtl env def.f_body
 
 and class_def env def =
-  (* todo: add edges for extends, implements, use *)
+  def.c_extends +> Common.do_option (fun c2 ->
+    add_use_edge env (c2, E.Class E.RegularClass);
+  );
+  def.c_implements +> List.iter (fun c2 ->
+    add_use_edge env (c2, E.Class E.Interface);
+  );
+  def.c_uses +> List.iter (fun c2 ->
+    add_use_edge env (c2, E.Class E.Trait);
+  );
 
   def.c_constants +> List.iter (fun def ->
     expr env def.cst_body;
@@ -247,7 +265,10 @@ and catches env xs = List.iter (catch env) xs
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env = function
-  | Int _ | Double _ | String _ -> ()
+  | Int _ | Double _  -> ()
+
+  (* todo: this can hide actually name of functions or classes ... *)
+  | String _ -> ()
 
   (* Note that you should go here only when it's a constant. You should
    * catch the use of Id in other contexts before. For instance you
@@ -258,20 +279,20 @@ and expr env = function
   | Id name -> 
       if Ast.is_variable name 
       then ()
-      else add_use_edge env (Ast.str_of_name name, E.Constant)
+      else add_use_edge env (name, E.Constant)
 
   | Call (e, es) ->
       (match e with
       (* simple function call *)
       | Id name when not (Ast.is_variable name) ->
-          add_use_edge env (Ast.str_of_name name, E.Function)
+          add_use_edge env (name, E.Function)
 
       (* static method call *)
       | Class_get (Id name1, Id name2) 
           when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
-          let aclass = Ast.str_of_name name1 in
+          let _aclass = Ast.str_of_name name1 in
           let _amethod = Ast.str_of_name name2 in
-          add_use_edge env (aclass, E.Class E.RegularClass)
+          add_use_edge env (name1, E.Class E.RegularClass)
 
       (* object call *)
       | Obj_get (e1, Id name2) 
@@ -290,7 +311,7 @@ and expr env = function
       (match e1, e2 with
       | Id name1, Id name2
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
-          add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass)
+          add_use_edge env (name1, E.Class E.RegularClass)
       | e1, Id name2 when not (Ast.is_variable name2) ->
           expr env e1;
 
@@ -325,6 +346,7 @@ and expr env = function
   | ConsArray (_, _, xs) -> array_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
+  (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
   | Lambda def -> func_def env def
 
