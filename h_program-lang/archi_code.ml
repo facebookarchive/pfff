@@ -12,19 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Categorizing a source file according to recurring architecture "aspects"
  * (really a directory structure) of a project. We often have some tests/,
- * some commons/ library, some include/, etc. 
+ * some commons/ library, some include/, etc.
  * 
- * A file may belong to multiple categories at once. 
+ * A file may belong to multiple categories at once.
  * 
  * Right now the "aspects" are slightly modeled according to my
  * own code and facebook flib code.
