@@ -16,6 +16,8 @@ val root: node
 val create: unit -> graph
 val add_node: node -> graph -> unit
 val add_edge: (node * node) -> edge -> graph -> unit
+val create_intermediate_directories_if_not_present: 
+  graph -> Common.dirname -> unit
 
 (* graph access *)
 val has_node: node -> graph -> bool

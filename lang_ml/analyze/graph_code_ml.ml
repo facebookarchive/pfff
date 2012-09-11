@@ -62,26 +62,6 @@ module Ast = Ast_ml
 (*****************************************************************************)
 (* Helpers graph_code *)
 (*****************************************************************************)
-(* todo: put in graph_code.ml at some point, this is generic code *)
-
-let create_intermediate_directories_if_not_present g dir =
-  let dirs = Common.inits_of_relative_dir dir in
-
-  let rec aux current xs =
-    match xs with
-    | [] -> ()
-    | x::xs ->
-        let entity = x, E.Dir in
-        if G.has_node entity g
-        then aux entity xs
-        else begin
-          g +> G.add_node entity;
-          g +> G.add_edge (current, entity) G.Has;
-          aux entity xs
-        end
-  in
-  aux G.root dirs
-
 
 (*****************************************************************************)
 (* Helpers *)
@@ -179,7 +159,7 @@ let lookup_module_name h_module_aliases s =
  *)
 let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   let dir = Common.dirname readable in
-  create_intermediate_directories_if_not_present g dir;
+  G.create_intermediate_directories_if_not_present g dir;
   let m = Module_ml.module_name_of_filename file in
 
   g +> G.add_node (readable, E.File);

@@ -133,6 +133,7 @@ let add_edge (n1, n2) e g =
   | Has -> G.add_edge n1 n2 g.has
   | Use -> G.add_edge n1 n2 g.use
 
+
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
@@ -172,6 +173,29 @@ let parents n g =
 (*****************************************************************************)
 let iter_use_edges f g =
   G.iter_edges f g.use
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let create_intermediate_directories_if_not_present g dir =
+  let dirs = Common.inits_of_relative_dir dir in
+
+  let rec aux current xs =
+    match xs with
+    | [] -> ()
+    | x::xs ->
+        let entity = x, E.Dir in
+        if has_node entity g
+        then aux entity xs
+        else begin
+          g +> add_node entity;
+          g +> add_edge (current, entity) Has;
+          aux entity xs
+        end
+  in
+  aux root dirs
+
 
 (*****************************************************************************)
 (* Debugging *)
