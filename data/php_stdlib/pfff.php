@@ -29,3 +29,6 @@ function __builtin__yield_break($expr) { }
 
 function __builtin__exec($cmd) { }
 
+
+const __builtin____FILE__ = 1;
+const __builtin____LINE__ = 1;
