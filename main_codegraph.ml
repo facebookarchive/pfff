@@ -176,6 +176,9 @@ let action = ref ""
 let dep_file dir = 
   Filename.concat dir "dependencies.marshall"
 
+let skip_file dir = 
+  Filename.concat dir "skip_list.txt"
+
 let build_model root =
   let file = dep_file root in
   let g = Graph_code.load file in
@@ -186,10 +189,15 @@ let build_model root =
 (*****************************************************************************)
 
 let build_graph_code lang root =
+  let skip_list =
+    if Sys.file_exists (skip_file root)
+    then Skip_code.load (skip_file root)
+    else []
+  in
   let g =
     match lang with
-    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root
-    | "php" -> Graph_code_php.build ~verbose:!verbose root
+    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list
+    | "php" -> Graph_code_php.build ~verbose:!verbose root skip_list
     | "web" ->
         raise Todo
     | _ -> failwith ("language not supported: " ^ lang)
@@ -222,6 +230,10 @@ let main_action xs =
   pr2 (spf "Using root = %s" root);
   let model = build_model root in
 
+  (* todo: have a path, Expand x; Expand y; Focus InOut z; Expand z
+   * so then can have a menu that reapply a focus even after
+   * an Expand.
+   *)
   let config =
     if root =*= dir
     then DM.basic_config model.Model.g 
@@ -249,10 +261,8 @@ let main_action xs =
               DM.build current_config model.Model.g in
             let config = 
               DM.focus_on_node node !deps_style current_config dm in
-            (*
             let config = 
               DM.expand_node node config model.Model.g in
-            *)
             config
         | x::xs ->
             let dir = List.rev (x::before) +> Common.join "/" in

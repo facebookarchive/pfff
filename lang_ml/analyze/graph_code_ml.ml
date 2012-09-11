@@ -257,11 +257,13 @@ let extract_uses ~g ~ast ~readable =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir =
+let build ?(verbose=true) dir skip_list_TODO =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
 
-  (* step0: filter noisy modules/files *)
+  (* step0: filter noisy modules/files 
+   * todo: use skip_list_TODO instead
+   *)
   let files = filter_ml_files all_files in
   
   (* less: print what was skipped *)

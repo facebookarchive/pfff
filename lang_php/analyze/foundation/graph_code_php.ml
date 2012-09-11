@@ -45,6 +45,9 @@ type env = {
   current: Graph_code.node;
   g: Graph_code.graph;
 
+  (* we use the Hashtbl.find_all property *)
+  skip_edges: (string, string) Hashtbl.t;
+
   (* error reporting *)
   dupes: (Graph_code.node) Common.hashset;
   lookup_fails: (Graph_code.node, int) Common.hash_with_default;
@@ -77,7 +80,12 @@ let add_use_edge env (name, kind) =
   | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> ()
   (* todo: if n2 is a Class, then try Interface and Trait if fails? *)
   | _ when G.has_node dst env.g -> 
-      G.add_edge (src, dst) G.Use env.g
+      let (s1, _) = src in
+      let (s2, _) = dst in
+      if Hashtbl.mem env.skip_edges s1 &&
+         List.mem s2 (Hashtbl.find_all env.skip_edges s1)
+      then pr2 (spf "SKIPPING: %s --> %s" s1 s2)
+      else G.add_edge (src, dst) G.Use env.g
   | _ -> 
       (* todo: debug, display edge? *)
       env.lookup_fails#update dst Common.add1
@@ -153,11 +161,12 @@ let extract_defs ~g ~dupes ~ast ~readable =
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
-let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails =
+let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
   let env = {
     current = (readable, E.File);
     g;
     dupes; lookup_fails;
+    skip_edges;
   } 
   in
   stmtl env ast;
@@ -374,12 +383,12 @@ and array_valuel env xs = List.iter (array_value env) xs
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir =
+let build ?(verbose=true) dir skip_list =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
 
-  (* step0?: filter noisy modules/files *)
-  let files = all_files in
+  (* step0: filter noisy modules/files *)
+  let files = Skip_code.filter_files ~verbose skip_list root all_files in
 
   let g = G.create () in
   g +> G.add_node G.root;
@@ -402,14 +411,19 @@ let build ?(verbose=true) dir =
 
   (* step2: creating the 'Use' edges, the uses *)
   let lookup_fails = Common.hash_with_default (fun () -> 0) in
-
+  let skip_edges = skip_list +> Common.map_filter (function
+    | Skip_code.Edge (s1, s2) -> Some (s1, s2)
+    | _ -> None
+  ) +> Common.hash_of_list 
+  in
+  
   if verbose then pr2 "\nstep2: extract uses";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
-     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails;
+     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails ~skip_edges;
    ));
 
   lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10 

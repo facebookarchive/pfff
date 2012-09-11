@@ -8,6 +8,7 @@ SRC= programming_language.ml \
      parse_info.ml ast_generic.ml meta_ast_generic.ml visitor_code.ml \
      scope_code.ml \
      archi_code.ml highlight_code.ml archi_code_lexer.ml archi_code_parse.ml \
+     skip_code.ml \
      layer_code.ml database_code.ml \
      graph_code.ml dependencies_matrix_code.ml \
      tags_file.ml \
