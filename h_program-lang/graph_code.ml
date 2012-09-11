@@ -168,11 +168,20 @@ let parent n g =
 let parents n g =
   G.pred n g.has
 
+let nb_nodes g = 
+  G.nb_nodes g.has
+let nb_use_edges g =
+  G.nb_edges g.use
+
 (*****************************************************************************)
 (* Iteration *)
 (*****************************************************************************)
 let iter_use_edges f g =
   G.iter_edges f g.use
+
+let iter_nodes f g =
+  G.iter_nodes f g.has
+
 
 (*****************************************************************************)
 (* Helpers *)

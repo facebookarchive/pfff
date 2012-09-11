@@ -26,7 +26,12 @@ val pred: node -> edge -> graph -> node list
 (* can raise exception *)
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
+
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
+val iter_nodes: (node -> unit) -> graph -> unit
+
+val nb_nodes: graph -> int
+val nb_use_edges: graph -> int
 
 (* algorithms *)
 

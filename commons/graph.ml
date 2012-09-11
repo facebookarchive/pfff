@@ -166,8 +166,8 @@ DONE    val add_edge : t -> V.t -> V.t -> unit
       end
 
     val is_empty : t -> bool
-    val nb_vertex : t -> int
-    val nb_edges : t -> int
+DONE    val nb_vertex : t -> int
+DONE    val nb_edges : t -> int
 DONE    val out_degree : t -> V.t -> int
 DONE    val in_degree : t -> V.t -> int
     val mem_vertex : t -> V.t -> bool
@@ -178,7 +178,7 @@ DONE    val succ : t -> V.t -> V.t list
 DONE    val pred : t -> V.t -> V.t list
     val succ_e : t -> V.t -> E.t list
     val pred_e : t -> V.t -> E.t list
-    val iter_vertex : (V.t -> unit) -> t -> unit
+DONE    val iter_vertex : (V.t -> unit) -> t -> unit
     val iter_edges : (V.t -> V.t -> unit) -> t -> unit
     val fold_vertex : (V.t -> 'a -> 'a) -> t -> 'a -> 'a
     val fold_edges : (V.t -> V.t -> 'a -> 'a) -> t -> 'a -> 'a
@@ -324,6 +324,9 @@ let nodes g =
 let out_degree k g = OG.out_degree g.og (g +> vertex_of_key k)
 let in_degree k g  = OG.in_degree  g.og (g +> vertex_of_key k)
 
+let nb_nodes g = OG.nb_vertex g.og
+let nb_edges g = OG.nb_edges g.og
+
 let succ k g = OG.succ g.og (g +> vertex_of_key k) 
   +> List.map (fun k -> key_of_vertex k g)
 let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
@@ -349,6 +352,11 @@ let iter_edges f g =
     f k1 k2
   )
 
+let iter_nodes f g =
+  g.og +> OG.iter_vertex (fun v ->
+    let k = key_of_vertex v g in
+    f k
+  )
 (*****************************************************************************)
 (* Graph deconstruction *)
 (*****************************************************************************)
