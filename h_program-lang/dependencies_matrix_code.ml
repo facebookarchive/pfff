@@ -273,6 +273,30 @@ let build tree full_matrix_opt g =
 (*****************************************************************************)
 (* Building optimized matrix *)
 (*****************************************************************************)
+
+let threshold_nodes_full_matrix = 100000
+
+let top_nodes_of_graph_until_threshold g =
+
+  let res = ref [] in
+  let remaining = ref threshold_nodes_full_matrix in
+  (* bfs like *)
+  let rec aux xs =
+    if null xs 
+    then ()
+    else 
+      if List.length xs > !remaining
+      then ()
+      else begin
+        remaining := !remaining - (List.length xs);
+        xs +> List.iter (fun x -> Common.push2 x res);
+        aux (xs +> List.map (fun n -> G.succ n G.Has g) +> List.flatten)
+      end
+  in
+  aux [G.root];
+  (* old: g +> G.iter_nodes (fun n -> Common.push2 n res); *)
+  !res
+
 (* return the list of parents indexes (not nodes) *)
 let rec parents2 hmemo n g dm =
   Common.memoized hmemo n (fun () ->
@@ -298,12 +322,17 @@ let update_matrix a b c =
   Common.profile_code "DM.update_matrix" (fun () -> update_matrix2 a b c)
 
 let build_full_matrix2 g =
-  let n = G.nb_nodes g in
-  pr2 (spf "Building full matrix, n = %d" n);
+  let nodes = top_nodes_of_graph_until_threshold g in
+
+  let n = List.length nodes in
+  let n_all = G.nb_nodes g in
+  pr2 (spf "Building full matrix, n = %d (%d)" n n_all);
+
   let name_to_i = Hashtbl.create (n / 2) in
   let i_to_name = Hashtbl.create (n / 2) in
   let i = ref 0 in
-  g +> G.iter_nodes (fun node ->
+  pr2 (spf "Building nodes hashes");
+  nodes +> List.iter (fun node ->
     Hashtbl.add name_to_i node !i;
     Hashtbl.add i_to_name !i node;
     incr i;
@@ -316,12 +345,26 @@ let build_full_matrix2 g =
   }
   in
   let hmemo_parents = Hashtbl.create (n / 2) in
-  g +> G.iter_use_edges (fun n1 n2 ->
-    let parents_n1 = parents hmemo_parents n1 g dm in
-    let parents_n2 = parents hmemo_parents n2 g dm in
-    (* cross product *)
-    update_matrix parents_n1 parents_n2 dm;
-  );
+  let hmemo_proj = Hashtbl.create (n / 2) in
+
+  let n = G.nb_use_edges g in
+  pr2 (spf "iterating %d edges" n);
+  Common_extra.execute_and_show_progress2 n (fun k ->
+   g +> G.iter_use_edges (fun n1 n2 ->
+    k();
+    let n1 = projection hmemo_proj n1 dm g in
+    let n2 = projection hmemo_proj n2 dm g in
+    (match n1, n2 with
+    | Some n1, Some n2 ->
+        let n1 = Hashtbl.find dm.i_to_name n1 in
+        let n2 = Hashtbl.find dm.i_to_name n2 in
+        let parents_n1 = parents hmemo_parents n1 g dm in
+        let parents_n2 = parents hmemo_parents n2 g dm in
+        (* cross product *)
+        update_matrix parents_n1 parents_n2 dm;
+    | _ -> ()
+    )
+  ));
   dm
 
 let build_full_matrix a = 
