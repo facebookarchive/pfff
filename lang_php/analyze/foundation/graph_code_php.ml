@@ -14,7 +14,11 @@
  *)
 open Common
 
+module E = Database_code
 module G = Graph_code
+
+open Ast_php_simple
+module Ast = Ast_php_simple
 
 (*****************************************************************************)
 (* Prelude *)
@@ -36,9 +40,14 @@ module G = Graph_code
 (* Types *)
 (*****************************************************************************)
 
-(*****************************************************************************)
-(* Helpers graph_code *)
-(*****************************************************************************)
+(* for the extract_uses visitor *)
+type env = {
+  current: Graph_code.node;
+  g: Graph_code.graph;
+  dupes: (Graph_code.node) Common.hashset;
+  lookup_fails: (Graph_code.node, int) Common.hash_with_default;
+  (* todo: dynamic_fails stats *)
+}
 
 (*****************************************************************************)
 (* Helpers *)
@@ -50,16 +59,263 @@ let parse file =
     let ast = Ast_php_simple_build.program cst in
     ast
   with exn ->
-    pr2 (spf "PROBLEM with %s, exn = %s" file (Common.exn_to_s exn));
+    pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
+
+let add_use_edge env n2 =
+  let n1 = env.current in
+  (match () with
+  (* maybe nested function, in which case we dont have the def *)
+  | _ when not (G.has_node n1 env.g) ->
+      (* todo: pr2 ... *)
+      ()
+  (* we skip reference to dupes *)
+  | _ when Hashtbl.mem env.dupes n1 || Hashtbl.mem env.dupes n2 -> ()
+  (* todo: if n2 is a Class, then try Interface and Trait if fails? *)
+  | _ when G.has_node n2 env.g -> 
+      G.add_edge (n1, n2) G.Use env.g
+  | _ -> env.lookup_fails#update n2 Common.add1
+  )
 
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
 
+let extract_defs ~g ~dupes ~ast ~readable =
+  let dir = Common.dirname readable in
+  G.create_intermediate_directories_if_not_present g dir;
+  g +> G.add_node (readable, E.File);
+  g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
+
+  (* less? what about nested classes/functions/defines? *)
+  ast +> List.iter (function
+
+  | FuncDef def ->
+      let node = (Ast.str_of_name def.f_name, E.Function) in
+      if G.has_node node g then Hashtbl.add dupes node true
+      else begin
+        g +> G.add_node node;
+        g +> G.add_edge ((readable, E.File), node) G.Has;
+      end
+
+  | ConstantDef def ->
+      let node = (Ast.str_of_name def.cst_name, E.Constant) in
+      if G.has_node node g then Hashtbl.replace dupes node true
+      else begin
+        g +> G.add_node node;
+        g +> G.add_edge ((readable, E.File), node) G.Has;
+      end
+  (* old style constant definition, before PHP 5.4 *)
+  | Expr(Call(Id("define", _), [String((s,_)); v])) ->
+      let node = (s, E.Constant) in
+      if G.has_node node g then Hashtbl.replace dupes node true
+      else begin
+        g +> G.add_node node;
+        g +> G.add_edge ((readable, E.File), node) G.Has;
+      end
+
+  | ClassDef def ->
+      let kind = 
+        match def.c_kind with
+        | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
+        | Interface -> E.Interface
+        | Trait -> E.Trait
+      in
+      let node = (Ast.str_of_name def.c_name, E.Class kind) in
+      if G.has_node node g then Hashtbl.replace dupes node true
+      else begin
+        g +> G.add_node node;
+        g +> G.add_edge ((readable, E.File), node) G.Has;
+        (* todo: visit methods/fields *)
+      end;
+       
+
+  (* could add entity for that? *)
+   | Global _ -> ()
+
+  | StaticVars _
+
+  | Expr _ | Block _
+  | If _ | Switch _
+  | While _ | Do _ | For _ | Foreach _
+  | Return _ | Break _ | Continue _
+  | Throw _ | Try _
+    -> ()
+  );
+  ()
+
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
+let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails =
+  let env = {
+    current = (readable, E.File);
+    g;
+    dupes; lookup_fails;
+  } 
+  in
+  stmtl env ast;
+
+(* ---------------------------------------------------------------------- *)
+(* Functions/Methods *)
+(* ---------------------------------------------------------------------- *)
+and func_def env def =
+  stmtl env def.f_body
+
+and class_def env def =
+  (* todo: add edges for extends, implements, use *)
+
+  def.c_constants +> List.iter (fun def ->
+    expr env def.cst_body;
+  );
+  def.c_variables +> List.iter (fun def ->
+    Common.opt (expr env) def.cv_value
+  );
+  def.c_methods +> List.iter (fun def ->
+    stmtl env def.f_body
+  )
+
+and constant_def env def =
+  expr env def.cst_body
+
+(* ---------------------------------------------------------------------- *)
+(* Stmt *)
+(* ---------------------------------------------------------------------- *)
+and stmt env = function
+  (* boilerplate *)
+  | FuncDef def -> 
+      let n = (Ast.str_of_name def.f_name, E.Function) in
+      func_def { env with current = n} def
+  | ClassDef def -> 
+      let kind = 
+        match def.c_kind with
+        | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
+        | Interface -> E.Interface
+        | Trait -> E.Trait
+      in
+      let n = (Ast.str_of_name def.c_name, E.Class kind) in
+      class_def { env with current = n} def
+  | ConstantDef def -> 
+      let n = (Ast.str_of_name def.cst_name, E.Constant) in
+      constant_def { env with current = n} def
+
+  | Expr e -> expr env e
+  | Block xs -> stmtl env xs
+  | If (e, st1, st2) ->
+      expr env e;
+      stmtl env [st1;st2]
+  | Switch (e, xs) ->
+      expr env e;
+      casel env xs
+  | While (e, xs) | Do (xs, e) ->
+      expr env e;
+      stmtl env xs
+  | For (es1, es2, es3, xs) ->
+      exprl env (es1 ++ es2 ++ es3);
+      stmtl env xs
+  | Foreach (e1, e2, e3opt, xs) ->
+      exprl env [e1;e2];
+      Common.opt (expr env) e3opt;
+      stmtl env xs;
+  | Return (_, eopt)  | Break eopt | Continue eopt ->
+      Common.opt (expr env) eopt
+  | Throw e -> expr env e
+  | Try (xs, c1, cs) ->
+      stmtl env xs;
+      catches env (c1::cs)
+
+  | StaticVars xs ->
+      xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
+  | Global xs -> exprl env xs
+
+(* todo: deps to class name? *)
+and catch env (_hint_type, _name, xs) =
+  stmtl env xs
+
+and case env = function
+  | Case (e, xs) ->
+      expr env e;
+      stmtl env xs
+  | Default xs ->
+      stmtl env xs
+
+and stmtl env xs = List.iter (stmt env) xs
+and casel env xs = List.iter (case env) xs
+and catches env xs = List.iter (catch env) xs
+
+(* ---------------------------------------------------------------------- *)
+(* Expr *)
+(* ---------------------------------------------------------------------- *)
+and expr env = function
+  | Int _ | Double _ | String _ -> ()
+
+  (* Note that you should go here only when it's a constant. You should
+   * catch the use of Id in other contexts before. For instance you
+   * should match on Id in Call, Class_get, etc so that this code
+   * is executed really as a last resort, which usually means when
+   * there is the use of a constant.
+   *)
+  | Id name -> 
+      if Ast.is_variable name 
+      then ()
+      else add_use_edge env (Ast.str_of_name name, E.Constant)
+
+  | Call (e, es) ->
+      (match e with
+      (* simple function call *)
+      | Id name when not (Ast.is_variable name) ->
+          add_use_edge env (Ast.str_of_name name, E.Function)
+
+      (* static method call *)
+      | Class_get (Id name1, Id name2) 
+          when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
+          let aclass = Ast.str_of_name name1 in
+          let _amethod = Ast.str_of_name name2 in
+          add_use_edge env (aclass, E.Class E.RegularClass)
+
+      (* object call *)
+      | Obj_get (e1, Id name2) 
+          when not (Ast.is_variable name2) ->
+          expr env e1
+
+      (* todo: increment dynamic_fails stats *)
+      | _ -> expr env e
+      );
+      exprl env es
+
+  (* This should be executed only for field access. Calls should have
+   * been catched in the Call pattern above.
+   *)
+  | Class_get (e1, e2) ->
+      (match e1, e2 with
+      | Id name1, Id name2
+        when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
+          add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass)
+      | e1, Id name2 when not (Ast.is_variable name2) ->
+          expr env e1;
+
+      | _ -> 
+          exprl env [e1; e2]
+      );
+  (* Same, should be executed only for field access *)
+  | Obj_get (e1, e2) ->
+      (match e1, e2 with
+      | _, Id name2 when (Ast.is_variable name2) ->
+          expr env e1;
+      | _ ->
+          exprl env [e1; e2]
+      );
+
+  | New (e, es) ->
+      expr env (Call (Class_get(e, Id ("__construct", None)), es))
+
+  | _ -> ()
+
+and exprl env xs = List.iter (expr env) xs
+
+(* ---------------------------------------------------------------------- *)
+(* Misc *)
+(* ---------------------------------------------------------------------- *)
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -76,22 +332,36 @@ let build ?(verbose=true) dir =
   g +> G.add_node G.root;
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
+  let dupes = Hashtbl.create 101 in
 
   if verbose then pr2 "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
-   List.iter (fun file ->
-     k();
-     let _ast = parse file in
-     ()
+    List.iter (fun file ->
+      k();
+      let readable = Common.filename_without_leading_path root file in
+      let ast = parse file in
+      extract_defs ~g ~dupes ~ast ~readable;
+      ()
    ));
+  dupes +> Common.hashset_to_list +> List.iter (fun n ->
+    pr2 (spf "DUPE: %s" (G.string_of_node n));
+  );
 
   (* step2: creating the 'Use' edges, the uses *)
+  let lookup_fails = Common.hash_with_default (fun () -> 0) in
+
   if verbose then pr2 "\nstep2: extract uses";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
+     let readable = Common.filename_without_leading_path root file in
+     let ast = parse file in
+     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails;
    ));
 
+  lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10 
+  +> List.iter (fun (n, cnt) ->
+    pr2 (spf "LOOKUP FAIL: %s (%d)" (G.string_of_node n) cnt)
+  );
+  
   g
-
-
