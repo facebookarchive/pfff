@@ -216,7 +216,8 @@ let paint w =
 let recompute_matrix w =
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
-      Dependencies_matrix_code.build w.config w.model.g 
+      Dependencies_matrix_code.build w.config 
+        (Some w.model.full_matrix) w.model.g 
     )
   in
   w.m <- m;

@@ -174,7 +174,10 @@ let action = ref ""
 (*****************************************************************************)
 
 let dep_file dir = 
-  Filename.concat dir "dependencies.marshall"
+  Filename.concat dir "graph_code.marshall"
+
+let full_matrix dir = 
+  dep_file dir ^ ".matrix"
 
 let skip_file dir = 
   Filename.concat dir "skip_list.txt"
@@ -182,7 +185,11 @@ let skip_file dir =
 let build_model root =
   let file = dep_file root in
   let g = Graph_code.load file in
-  { Model.g = g; root = root; }
+  let full_matrix =
+    Common.cache_computation ~verbose:!verbose file ".matrix"
+      (fun () -> DM.build_full_matrix g)
+  in
+  { Model.g = g; root; full_matrix }
 
 (*****************************************************************************)
 (* Language specific, building the graph *)
@@ -258,7 +265,8 @@ let main_action xs =
             let dir = List.rev (x::before) +> Common.join "/" in
             let node = dir, Database_code.Dir in
             let dm = 
-              DM.build current_config model.Model.g in
+              DM.build current_config 
+                (Some model.Model.full_matrix) model.Model.g in
             let config = 
               DM.focus_on_node node !deps_style current_config dm in
             let config = 
@@ -406,6 +414,7 @@ let options () = [
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
+  Common.cmdline_flags_verbose () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "CodeGraph version: %s" Config.version);

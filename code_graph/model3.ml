@@ -28,8 +28,9 @@ module DM = Dependencies_matrix_code
 (*****************************************************************************)
 
 type model = {
-  g: Graph_code.graph;
   root: Common.dirname;
+  g: Graph_code.graph;
+  full_matrix: Dependencies_matrix_code.dm;
 }
 
 (*****************************************************************************)
@@ -87,7 +88,7 @@ let new_surface ~alpha ~width ~height =
 let init_world ?(width = 600) ?(height = 600) config model =
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
-      Dependencies_matrix_code.build config model.g 
+      Dependencies_matrix_code.build config (Some model.full_matrix) model.g 
     )
   in
   {
