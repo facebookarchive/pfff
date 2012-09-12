@@ -329,9 +329,14 @@ and expr env = function
       | Id name1, Id name2
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
           add_use_edge env (name1, E.Class E.RegularClass)
+
+      | Id name1, e2 when not (Ast.is_variable name1) ->
+          add_use_edge env (name1, E.Class E.RegularClass);
+          expr env e2;
+
+      (* todo: update dynamic stats *)
       | e1, Id name2 when not (Ast.is_variable name2) ->
           expr env e1;
-
       | _ -> 
           exprl env [e1; e2]
       );
