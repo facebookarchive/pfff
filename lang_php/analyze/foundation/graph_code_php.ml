@@ -443,7 +443,7 @@ let build ?(verbose=true) dir skip_list =
      extract_uses ~g ~dupes ~ast ~readable ~lookup_fails ~skip_edges;
    ));
 
-  lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10 
+  lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20
   +> List.iter (fun (n, cnt) ->
     pr2 (spf "LOOKUP FAIL: %s (%d)" (G.string_of_node n) cnt)
   );
