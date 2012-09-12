@@ -408,6 +408,10 @@ let options () = [
   " ";
   "-deps_inout", Arg.Unit (fun () -> deps_style := DM.DepsInOut), 
   " ";
+
+  "-symlinks", Arg.Unit (fun () -> 
+      Common.follow_symlinks := true;
+    ), " ";
  
   "-verbose", Arg.Unit (fun () ->
     verbose := true;
