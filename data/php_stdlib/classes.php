@@ -51,6 +51,12 @@ class OutOfBoundsException extends Exception { }
 //http://us3.php.net/UnexpectedValueException
 class UnexpectedValueException extends Exception { }
 
+//http://www.php.net/manual/en/class.badfunctioncallexception.php
+class  BadFunctionCallException extends LogicException { }
+
+//http://php.net/manual/en/class.badmethodcallexception.php
+class BadMethodCallException extends  BadFunctionCallException { }
+
 // ***************************************************************************
 // Reflection
 // ***************************************************************************
@@ -64,6 +70,8 @@ class ReflectionMethod { }
 //http://php.net/manual/en/class.reflectionobject.php
 class ReflectionObject  { }
 
+//http://php.net/manual/en/class.reflectionproperty.php
+class ReflectionProperty { }
 
 // ***************************************************************************
 // Iterators
