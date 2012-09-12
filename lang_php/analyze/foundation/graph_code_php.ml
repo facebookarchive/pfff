@@ -67,7 +67,10 @@ let parse file =
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
 
-let add_use_edge env (name, kind) =
+(* todo: add some point this will need to do some lookup when kind
+ * is a Field or Method.
+ *)
+let rec add_use_edge env (name, kind) =
   let src = env.current in
   let dst = (Ast.str_of_name name, kind) in
   (match () with
@@ -78,7 +81,6 @@ let add_use_edge env (name, kind) =
       ()
   (* we skip reference to dupes *)
   | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> ()
-  (* todo: if n2 is a Class, then try Interface and Trait if fails? *)
   | _ when G.has_node dst env.g -> 
       let (s1, _) = src in
       let (s2, _) = dst in
@@ -87,8 +89,14 @@ let add_use_edge env (name, kind) =
       then pr2 (spf "SKIPPING: %s --> %s" s1 s2)
       else G.add_edge (src, dst) G.Use env.g
   | _ -> 
-      (* todo: debug, display edge? *)
-      env.lookup_fails#update dst Common.add1
+      (* todo: if dst is a Class, then try Interface? *)
+      (match kind with
+      | E.Class E.RegularClass -> 
+          add_use_edge env (name, E.Class E.Interface)
+      | _ ->
+          (* todo: debug, display edge? *)
+          env.lookup_fails#update dst Common.add1
+      )
   )
 
 (*****************************************************************************)
