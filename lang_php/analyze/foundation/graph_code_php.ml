@@ -338,7 +338,7 @@ and expr env = function
   (* Same, should be executed only for field access *)
   | Obj_get (e1, e2) ->
       (match e1, e2 with
-      | _, Id name2 when (Ast.is_variable name2) ->
+      | _, Id name2 when not (Ast.is_variable name2) ->
           expr env e1;
       | _ ->
           exprl env [e1; e2]
