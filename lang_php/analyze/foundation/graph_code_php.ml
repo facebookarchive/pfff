@@ -350,8 +350,17 @@ and expr env = function
   (* boilerplate *)
   | List xs -> exprl env xs
   | Assign (_, e1, e2) -> exprl env [e1;e2]
-  (* todo? *)
-  | InstanceOf (e1, e2) -> exprl env [e1;e2]
+  | InstanceOf (e1, e2) -> 
+      expr env e1;
+      (match e2 with
+      (* todo? add deps? *)
+      | Id name when not (Ast.is_variable name) -> 
+          ()
+      | _ -> 
+          (* todo: update dynamic *)
+          expr env e2
+      )
+          
   | This _ -> ()
   | Array_get (_, e, eopt) ->
       expr env e;
