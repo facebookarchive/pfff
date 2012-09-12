@@ -3525,6 +3525,8 @@ let dirs_of_dir dir =
 (* TODO: do a files_of_dir_or_files ?no_vcs ?filter:Ext|Reg|Filter
 *)
 
+let follow_symlinks = ref false
+
 (* update: have added the -type f, so normally need less the sanity_check_xxx
  * function below *)
 let files_of_dir_or_files ext xs =
@@ -3539,13 +3541,18 @@ let grep_dash_v_str =
  "| grep -v /.hg/ |grep -v /CVS/ | grep -v /.git/ |grep -v /_darcs/" ^
  "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
 
+let arg_symlink () = 
+  if !follow_symlinks
+  then " -L "
+  else ""
+
 
 let files_of_dir_or_files_no_vcs ext xs =
   xs +> List.map (fun x ->
     if is_directory x
     then
       cmd_to_list
-        ("find " ^ x  ^" -noleaf -type f -name \"*." ^ext^"\"" ^
+        ("find "^arg_symlink()^x^ " -noleaf -type f -name \"*." ^ext^"\"" ^
          grep_dash_v_str
         )
     else [x]
@@ -3557,7 +3564,7 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
     if is_directory x
     then
       cmd_to_list_and_status
-        ("find " ^ x  ^" -noleaf -type f " ^
+        ("find "^arg_symlink()^x^" -noleaf -type f " ^
             grep_dash_v_str
         ) +> fst
     else [x]
@@ -3569,7 +3576,7 @@ let files_of_dir_or_files_no_vcs_post_filter regex xs =
     if is_directory x
     then
       cmd_to_list
-        ("find " ^ x  ^
+        ("find "^arg_symlink()^x^
          " -noleaf -type f " ^ grep_dash_v_str
         )
         +> List.filter (fun s -> s =~ regex)

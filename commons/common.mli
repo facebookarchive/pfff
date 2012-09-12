@@ -1216,6 +1216,8 @@ val readdir_to_dir_size_list : string -> (string * int) list
 
 val unixname: unit -> string
 
+val follow_symlinks: bool ref
+
 val glob : string -> filename list
 val files_of_dir_or_files : 
   string (* ext *) -> string list -> filename list
