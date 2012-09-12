@@ -53,6 +53,11 @@ type deps_style =
   | DepsInOut
 
 (*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+let verbose = ref false
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -356,7 +361,7 @@ let build_full_matrix2 g =
 
   let n = G.nb_use_edges g in
   pr2 (spf "iterating %d edges" n);
-  Common_extra.execute_and_show_progress2 n (fun k ->
+  Common_extra.execute_and_show_progress2 ~show:!verbose n (fun k ->
    g +> G.iter_use_edges (fun n1 n2 ->
     k();
     let n1 = projection hmemo_proj n1 dm g in

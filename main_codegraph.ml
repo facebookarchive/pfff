@@ -409,8 +409,10 @@ let options () = [
   "-deps_inout", Arg.Unit (fun () -> deps_style := DM.DepsInOut), 
   " ";
  
-  "-verbose", Arg.Set verbose, 
-  " ";
+  "-verbose", Arg.Unit (fun () ->
+    verbose := true;
+    DM.verbose := true;
+  ), " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++

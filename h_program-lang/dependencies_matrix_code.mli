@@ -10,6 +10,8 @@ type dm = {
     | Node of Graph_code.node * tree list
   and config = tree
 
+val verbose: bool ref
+
 (* just the expanded root *)
 val basic_config: Graph_code.graph -> config
 
