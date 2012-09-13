@@ -283,7 +283,7 @@ let build tree full_matrix_opt g =
 (* Building optimized matrix *)
 (*****************************************************************************)
 
-let threshold_nodes_full_matrix = 100000
+let threshold_nodes_full_matrix = 20000
 
 (* todo: intelligent split of the tree? to avoid outliers? 
  * have a quota per subtree?
