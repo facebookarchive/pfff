@@ -31,5 +31,8 @@ function __builtin__exec($cmd) { }
 
 
 const __builtin____FILE__ = 1;
+const __builtin____DIR__ = 1;
 const __builtin____LINE__ = 1;
 const __builtin____CLASS__ = 1;
+const __builtin____FUNCTION__ = 1;
+const __builtin____METHOD__ = 1;
