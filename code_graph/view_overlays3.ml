@@ -36,6 +36,12 @@ module Ctl = Controller3
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+let color_using = "green"
+let color_used_by = "chocolate"
+
+(*****************************************************************************)
 (* The overlays *)
 (*****************************************************************************)
 
@@ -87,7 +93,7 @@ let draw_green_yellow_dependent_rows ~cr w i =
       p = { x = x; y = y; };
       q = { x = l.x_start_matrix_left; y = y + l.height_cell };
     } in
-    CairoH.fill_rectangle ~cr ~color:"green" ~alpha:0.3 rect;
+    CairoH.fill_rectangle ~cr ~color:color_using ~alpha:0.3 rect;
   );
 
   !i_used_by +> List.iter (fun i ->
@@ -97,7 +103,7 @@ let draw_green_yellow_dependent_rows ~cr w i =
       p = { x = x; y = y; };
       q = { x = l.x_start_matrix_left; y = y + l.height_cell };
     } in
-    CairoH.fill_rectangle ~cr ~color:"yellow" ~alpha:0.3 rect;
+    CairoH.fill_rectangle ~cr ~color:color_used_by ~alpha:0.3 rect;
   );
   ()
 
@@ -129,14 +135,14 @@ let motion_notify da w ev =
       (match x with
       | Row i -> 
           draw_green_yellow_dependent_rows ~cr w i;
-          draw_row_column ~color:"yellow" ~cr w i;
+          draw_row_column ~color:color_used_by ~cr w i;
       | Cell (i, j) ->
           draw_green_yellow_dependent_rows ~cr w i;
-          draw_row_column ~color:"yellow" ~cr w i;
-          draw_row_column ~color:"green" ~cr w j;
+          draw_row_column ~color:color_used_by ~cr w i;
+          draw_row_column ~color:color_using ~cr w j;
       | Column j ->
           draw_green_yellow_dependent_rows ~cr w j;
-          draw_row_column ~color:"green" ~cr w j;
+          draw_row_column ~color:color_using ~cr w j;
 
       )
   );
