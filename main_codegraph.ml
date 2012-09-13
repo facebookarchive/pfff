@@ -229,7 +229,16 @@ let build_graph_code lang root =
 let main_action xs =
   Logger.log Config.logger "codegraph" None;
 
-  let dir = Common.common_prefix_of_files_or_dirs xs +> Common.realpath in
+  let dir = 
+    match xs with 
+    | [x] -> 
+        if x = "." 
+        (* getcwd() display a realpath *)
+        then List.hd (Common.cmd_to_list "pwd")
+        else failwith "go the directory you want"
+    | _ -> failwith "give just one directory" 
+  in
+  pr2_gen dir;
   let inits = Common.inits_of_absolute_dir dir in
   let root =
     inits +> List.rev +> List.find (fun path -> Sys.file_exists (dep_file path))
