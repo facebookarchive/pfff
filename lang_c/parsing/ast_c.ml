@@ -5,3 +5,5 @@
  * an ast_cpp.ml tree.
  * 
  *)
+
+type program = Ast_cpp.program
