@@ -3,6 +3,10 @@
 * 0.21 (Q3 2012) (codegraph)
 
 ** introduce codegraph, a hierarchical dependency structure matrix visualizer
+with support for PHP, OCaml, C
+
+** introduce lang_c
+a simplified version of lang_cpp/ just focused on C.
 
 * 0.20 (Q2 2012) 
 
