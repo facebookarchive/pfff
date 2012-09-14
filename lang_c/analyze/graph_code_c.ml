@@ -73,6 +73,9 @@ let parse file =
     []
 *)
 
+let todo() =
+  ()
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
@@ -88,10 +91,11 @@ let extract_defs ~g ~dupes ~ast ~readable =
       match e with
       | Define (name, expr) ->
           Some (Ast.str_of_name name, E.Constant)
-      | FuncDef def -> raise Todo
-      | StructDef def -> raise Todo
-      | TypeDef _ -> raise Todo
-      | Global _ -> raise Todo
+      | Macro _ -> todo (); None
+      | FuncDef def -> todo (); None
+      | StructDef def -> todo(); None
+      | TypeDef _ -> todo(); None
+      | Global _ -> todo(); None
       | Include _ -> None
     in
     node_opt +> Common.do_option (fun node ->
@@ -126,16 +130,17 @@ and toplevel env = function
   | Define (name, e) ->
       let n = (Ast.str_of_name name, E.Constant) in
       expr { env with current = n } e
-  | FuncDef def -> raise Todo
-  | StructDef def -> raise Todo
+  | Macro _ -> todo()
+  | FuncDef def -> todo()
+  | StructDef def -> todo()
 
   (* todo: should analyze if s has the form "..." and not <> and
    * build appropriate link?
    *)
   | Include _ -> ()
 
-  | TypeDef _ -> raise Todo
-  | Global _ -> raise Todo
+  | TypeDef _ -> todo()
+  | Global _ -> todo()
 
 
 and toplevels env xs = List.iter (toplevel env) xs
@@ -152,8 +157,8 @@ and toplevels env xs = List.iter (toplevel env) xs
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env = function
-  | Int _ | Float _ -> ()
-  | String _ -> ()
+  | Int _ | Float _ | Char _ -> ()
+  | String _  -> ()
  
   (* Note that you should go here only when it's a constant. You should
    * catch the use of Id in other contexts before. For instance you
@@ -162,9 +167,13 @@ and expr env = function
    * there is the use of a constant.
    *)
   | Id name ->
-      raise Todo
+      todo()
 
-  | Call (e, es) -> raise Todo
+  | Call (e, es) -> todo()
+
+  | (Sequence (_, _)|CondExpr (_, _, _)|Binary (_, _, _)|Unary (_, _)|
+        Infix (_, _)|Postfix (_, _)|Cast (_, _)|RecordAccess (_, _)|
+            ArrayAccess (_, _)|Assign (_, _, _)) -> todo()
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
