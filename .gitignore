@@ -343,3 +343,4 @@ external/ocamlbdb/libcamlbdb.a
 /lang_opa/parsing/parser_opa.mli
 /codegraph
 /graph_code.marshall.matrix
+/tests/c/codegraph/graph_code.marshall.matrix
