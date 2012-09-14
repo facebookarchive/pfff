@@ -236,8 +236,8 @@ and expr =
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
 
+  (* pad: todo: remove, was chiara *)
   and parse_info = Parse_info.info
-
   and line = int
 
   and array_value = (*TODO: Add line number information *)
