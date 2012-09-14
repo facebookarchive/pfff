@@ -34,7 +34,19 @@ module Flag = Flag_parsing_cpp
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+(* for the extract_uses visitor *)
+type env = {
+  current: Graph_code.node;
+  g: Graph_code.graph;
 
+  (* we use the Hashtbl.find_all property *)
+  skip_edges: (string, string) Hashtbl.t;
+
+  (* error reporting *)
+  dupes: (Graph_code.node) Common.hashset;
+  lookup_fails: (Graph_code.node, int) Common.hash_with_default;
+  (* todo: dynamic_fails stats *)
+}
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -55,9 +67,11 @@ let parse file =
     )))
   with 
   | Timeout -> raise Timeout
+(*
   | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
+*)
 
 (*****************************************************************************)
 (* Defs *)
@@ -69,14 +83,62 @@ let extract_defs ~g ~dupes ~ast ~readable =
   g +> G.add_node (readable, E.File);
   g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
 
-  raise Todo
+  ast +> List.iter (fun e ->
+    let node_opt = 
+      match e with
+      | Define (name, expr) ->
+          Some (Ast.str_of_name name, E.Constant)
+      | FuncDef def -> raise Todo
+      | StructDef def -> raise Todo
+      | TypeDef _ -> raise Todo
+      | Global _ -> raise Todo
+      | Include _ -> None
+    in
+    node_opt +> Common.do_option (fun node ->
+      if G.has_node node g 
+      then Hashtbl.replace dupes node true
+      else begin
+        g +> G.add_node node;
+        g +> G.add_edge ((readable, E.File), node) G.Has;
+      end
+    )
+  )
 
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
 
 let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
-  raise Todo
+  let env = {
+    current = (readable, E.File);
+    g;
+    dupes; lookup_fails;
+    skip_edges;
+  }
+  in
+  toplevels env ast
+
+(* ---------------------------------------------------------------------- *)
+(* Toplevels *)
+(* ---------------------------------------------------------------------- *)
+(* less: could factorize with extract_defs things *)
+and toplevel env = function
+  | Define (name, e) ->
+      let n = (Ast.str_of_name name, E.Constant) in
+      expr { env with current = n } e
+  | FuncDef def -> raise Todo
+  | StructDef def -> raise Todo
+
+  (* todo: should analyze if s has the form "..." and not <> and
+   * build appropriate link?
+   *)
+  | Include _ -> ()
+
+  | TypeDef _ -> raise Todo
+  | Global _ -> raise Todo
+
+
+and toplevels env xs = List.iter (toplevel env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
@@ -89,6 +151,20 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+and expr env = function
+  | Int _ | Float _ -> ()
+  | String _ -> ()
+ 
+  (* Note that you should go here only when it's a constant. You should
+   * catch the use of Id in other contexts before. For instance you
+   * should match on Id in Call, etc so that this code
+   * is executed really as a last resort, which usually means when
+   * there is the use of a constant.
+   *)
+  | Id name ->
+      raise Todo
+
+  | Call (e, es) -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
