@@ -24,10 +24,17 @@ module A = Ast_c_simple
  * Ast_cpp to Ast_c_simple.
  *)
 
-
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
+exception ObsoleteConstruct of string * Ast_cpp.info
+exception TodoConstruct of string * Ast_cpp.info
+
+(* not used for now *)
+type env = unit
+
+let empty_env () = ()
 
 (*****************************************************************************)
 (* Helpers *)
