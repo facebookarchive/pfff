@@ -168,8 +168,32 @@ and stmt env x =
   let (st, _) = x in
   match st with
   | Compound x -> A.Block (compound env x)
-  | (NestedFunc _|Try (_, _, _)|DeclStmt _|Jump _|Iteration _|Selection _|
-Labeled _|ExprStatement _|StmtTodo|MacroStmt) ->
+  | Selection s ->
+      (match s with
+      | If (_, (_, e, _), st1, _, st2) ->
+          A.If (expr env e, stmt env st1, stmt env st2)
+      | Switch (_, (_, e, _), st) ->
+          A.Switch (expr env e, cases env st)
+        )
+  | Iteration i ->
+      (match i with
+      | While (_, (_, e, _), st) ->
+          A.While (expr env e, stmt env st)
+      | DoWhile (_, st, _, (_, e, _), _) ->
+          A.DoWhile (stmt env st, expr env e)
+      | For (_, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
+          raise Todo
+      | MacroIteration _ ->
+          raise Todo
+      )
+  | ExprStatement eopt ->
+      (match eopt with
+      | None -> A.Block []
+      | Some e -> A.Expr (expr env e)
+      )
+
+  | (NestedFunc _|Try (_, _, _)|DeclStmt _|Jump _|
+Labeled _|StmtTodo|MacroStmt) ->
       debug (Stmt x); raise Todo
 
 and compound env (_, x, _) =
@@ -180,6 +204,9 @@ and statement_sequencable env x =
   | StmtElem st -> stmt env st
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
   | IfdefStmt _ -> raise Todo
+
+and cases env st =
+  raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
