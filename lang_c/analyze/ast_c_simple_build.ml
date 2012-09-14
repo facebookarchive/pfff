@@ -63,7 +63,7 @@ and toplevel env = function
   | Func (func_or_else) as x ->
       (match func_or_else with
       | FunctionOrMethod def ->
-          [func_def env def]
+          [A.FuncDef (func_def env def)]
       | Constructor _ | Destructor _ ->
           debug (Toplevel x); raise CplusplusConstruct
       )
@@ -90,8 +90,51 @@ and toplevel env = function
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
 (* ---------------------------------------------------------------------- *)
-and func_def env def =
-  raise Todo
+and func_def env def = 
+  { A.
+    f_name = name env def.f_name;
+    f_type = function_type env def.f_type;
+    (* f_storage *)
+    f_body = compound env def.f_body;
+  }
+
+and function_type env x = 
+  match x with
+  { ft_ret = ret;
+    ft_params = params;
+    ft_dots = dots; (* todo *)
+    ft_const = const;
+    ft_throw = throw;
+  } ->
+    (match const, throw with
+    | None, None -> ()
+    | _ -> raise CplusplusConstruct
+    );
+    
+    (full_type env ret,
+   List.map (parameter env) (params +> unparen +> uncomma)
+  )
+
+and parameter env x =
+  match x with
+  { p_name = n;
+    p_type = t;
+    p_register = reg;
+    p_val = v;
+  } ->
+    (match v with
+    | None -> ()
+    | Some _ -> debug (Parameter x); raise CplusplusConstruct
+    );
+    { A.
+      p_name = 
+        (match n with
+        (* probably a prototype where didn't specify the name *)
+        | None -> None
+        | Some (name) -> Some name
+        );
+      p_type = full_type env t;
+    }
 
 (* ---------------------------------------------------------------------- *)
 (* Cpp *)
@@ -122,7 +165,21 @@ and cpp_directive env = function
 (* ---------------------------------------------------------------------- *)
 
 and stmt env x =
-  raise Todo
+  let (st, _) = x in
+  match st with
+  | Compound x -> A.Block (compound env x)
+  | (NestedFunc _|Try (_, _, _)|DeclStmt _|Jump _|Iteration _|Selection _|
+Labeled _|ExprStatement _|StmtTodo|MacroStmt) ->
+      debug (Stmt x); raise Todo
+
+and compound env (_, x, _) =
+  List.map (statement_sequencable env) x
+
+and statement_sequencable env x =
+  match x with
+  | StmtElem st -> stmt env st
+  | CppDirectiveStmt x -> debug (Cpp x); raise Todo
+  | IfdefStmt _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -158,8 +215,60 @@ and constant env toks x =
       debug (Constant x); raise Impossible
 
 (* ---------------------------------------------------------------------- *)
+(* Type *)
+(* ---------------------------------------------------------------------- *)
+and full_type env x =
+  let (_qu, (t, ii)) = x in
+  match t with
+  | Pointer t -> A.TPointer (full_type env t)
+  | BaseType t ->
+      let s = 
+        (match t with
+        | Void -> "void"
+        | FloatType ft ->
+            (match ft with
+            | CFloat -> "float" 
+            | CDouble -> "double" 
+            | CLongDouble -> "long_double"
+            )
+        | IntType it ->
+            (match it with
+            | CChar -> "char"
+            | Si (si, base) ->
+                (match si with
+                | Signed -> ""
+                | UnSigned -> "unsigned_"
+                ) ^
+                (match base with
+                | CChar2 -> raise Todo
+                | CShort -> "short"
+                | CInt -> "int"
+                | CLong -> "long"
+                (* gccext: *)
+                | CLongLong -> "long_long" 
+                )
+            | CBool | WChar_t ->
+                debug (Type x); raise CplusplusConstruct
+            )
+        )
+      in
+      A.TBase (s, List.hd ii)
+
+  | (TypeOfType (_, _)|TypeOfExpr (_, _)|
+TypeName (_, _)|StructUnionName (_, _)|EnumName (_, _)|StructUnion _|
+Enum (_, _, _)|FunctionType _|Array (_, _)|Reference _) 
+    -> debug (Type x); raise Todo
+
+  | TypenameKwd (_, _) ->
+      debug (Type x); raise CplusplusConstruct
+
+  | ParenType (_, t, _) -> full_type env t
+
+(* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
 
-
-
+and name env x =
+  match x with
+  | (None, [], IdIdent (name)) -> name
+  | _ -> debug (Name x); raise CplusplusConstruct

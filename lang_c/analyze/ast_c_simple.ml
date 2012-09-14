@@ -75,7 +75,8 @@ type type_ =
 
   and parameter = {
     p_type: type_;
-    p_name: name;
+    (* when part of a prototype, the name is not mentionned *)
+    p_name: name option;
   }
 
 (* ------------------------------------------------------------------------- *)
