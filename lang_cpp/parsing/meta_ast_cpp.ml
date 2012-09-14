@@ -1158,3 +1158,8 @@ let vof_program precision x =
     vof_program x
   )
 
+let vof_any precision x = 
+  Common.save_excursion _current_precision precision (fun () ->
+    vof_any x
+  )
+

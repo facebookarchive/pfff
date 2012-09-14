@@ -75,3 +75,6 @@ let string_of_v precision v =
 
 let ml_pattern_string_of_program ?(precision=no_info) ast = 
   Meta_ast_cpp.vof_program precision ast +> string_of_v precision
+
+let ml_pattern_string_of_any ?(precision=no_info) ast = 
+  Meta_ast_cpp.vof_any precision ast +> string_of_v precision
