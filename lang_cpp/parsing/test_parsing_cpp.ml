@@ -114,7 +114,7 @@ let test_view_cpp file =
 
 let actions () = [
     "-parse_cpp", "   <file or dir>", 
-    Common.mk_action_n_arg (fun xs -> test_parse_cpp xs);
+    Common.mk_action_n_arg test_parse_cpp;
     "-tokens_cpp", "   <file>", 
     Common.mk_action_1_arg test_tokens_cpp;
     "-dump_cpp", "   <file>", 
@@ -125,8 +125,5 @@ let actions () = [
     Common.mk_action_1_arg test_view_cpp;
     "-dump_cpp_full", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_full;
-
-    "-parse_c", "   <file or dir>", 
-    Common.mk_action_n_arg (fun xs -> test_parse_cpp ~c:true xs);
 
 ]
