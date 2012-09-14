@@ -96,7 +96,12 @@ let extract_defs ~g ~dupes ~ast ~readable =
       | StructDef def -> todo(); None
       | TypeDef _ -> todo(); None
       | Global _ -> todo(); None
+      (* todo: maybe letter, but need to find the real File
+       * corresponding to the string, so may need some -I
+       *)
       | Include _ -> None
+      (* do we want them? *)
+      | Prototype _ -> None
     in
     node_opt +> Common.do_option (fun node ->
       if G.has_node node g 
@@ -141,6 +146,9 @@ and toplevel env = function
 
   | TypeDef _ -> todo()
   | Global _ -> todo()
+ 
+  (* do we want them? *)
+  | Prototype def -> ()
 
 
 and toplevels env xs = List.iter (toplevel env) xs
