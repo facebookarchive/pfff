@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2012 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,45 +14,18 @@
  *)
 open Common
 
-open Ast_cpp
-
-module Ast = Ast_cpp
-module Flag = Flag_parsing_cpp
-
-module V = Visitor_cpp
-
 module FT = File_type
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Filemames *)
 (*****************************************************************************)
 
-let find_cpp_files_of_dir_or_files xs = 
+let find_source_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | FT.PL (FT.C ("l" | "y")) -> false
-    | FT.PL (FT.C _ | FT.Cplusplus _) ->
-        true
+    | FT.PL (FT.C _) -> true
     | _ -> false
-
   ) +> Common.sort
-
-(*****************************************************************************)
-(* ii_of_any *)
-(*****************************************************************************)
-
-let ii_of_any any =
-  let globals = ref [] in
-  let visitor = V.mk_visitor { V.default_visitor with
-    V.kinfo = (fun (k,_) i -> Common.push2 i globals)
-  }
-  in
-  visitor any;
-  List.rev !globals
-
 

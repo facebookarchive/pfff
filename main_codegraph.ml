@@ -205,8 +205,8 @@ let build_graph_code lang root =
     match lang with
     | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list
     | "php" -> Graph_code_php.build ~verbose:!verbose root skip_list
-    | "web" ->
-        raise Todo
+    | "web" -> raise Todo
+    | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list
     | _ -> failwith ("language not supported: " ^ lang)
   in
   Graph_code.save g (dep_file root)
