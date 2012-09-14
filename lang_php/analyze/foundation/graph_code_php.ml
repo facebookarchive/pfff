@@ -32,7 +32,10 @@ module Ast = Ast_php_simple
  * facebook/check_module/graph_module.ml
  * 
  * schema:
- *  Root -> Dir -> File (.php) -> # TODO more fine grained dependencies
+ *  Root -> Dir -> File (.php) -> Class (interface or traits too)
+ *                                 #TODO methods, fields, etc
+ *                             -> Function
+ *                             -> Constant
  *       -> Dir -> SubDir -> Module? -> ...
  *)
 
