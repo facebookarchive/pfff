@@ -163,13 +163,23 @@ and onedecl env d =
           | Some (EqInit (_, ini)) -> Some (initialiser env ini)
           | Some (ObjInit _) -> raise CplusplusConstruct
         in
-        { A.
+        Some { A.
           v_name = name env n;
           v_type = full_type env ft;
           v_storage = ();
           v_init = init_opt;
         }
-    | _ -> raise Todo
+    | None, NoSto ->
+        (match Ast_cpp.unwrap_typeC ft with
+        (* it's ok to not have any var decl as long as a type
+         * was defined. struct_defs_toadd should not be empty then.
+         *)
+        | StructUnion _ -> 
+            let _ = full_type env ft in
+            None
+        | _ -> debug (OneDecl d); raise Todo
+        )
+    | _ -> debug (OneDecl d); raise Todo
     )        
 
 and initialiser env x =
@@ -316,7 +326,7 @@ and block_declaration env block_decl =
   match block_decl with
   | DeclList (xs, _) ->
       let xs = uncomma xs in
-      (List.map (onedecl env) xs)
+      Common.map_filter (onedecl env) xs
         
   | MacroDecl _ | Asm _ -> raise Todo
       
@@ -467,17 +477,16 @@ and full_type env x =
         let def' = { A.
           s_name = name;
           s_kind = struct_kind env kind;
-          s_flds = List.map (class_member_sequencable env) xs;
+          s_flds = Common.map (class_member_sequencable env) xs +> List.flatten;
         }
         in
         env.struct_defs_toadd <- def' :: env.struct_defs_toadd;
         A.TStructName (struct_kind env kind, name)
       )
 
-  | ( TypeOfType (_, _)|TypeOfExpr (_, _)
-    | EnumName (_, _)|Enum (_, _, _)
+  | ( TypeOfType (_, _) | TypeOfExpr (_, _)
+    | EnumName (_, _) | Enum (_, _, _)
     )
-
     -> debug (Type x); raise Todo
 
   | TypenameKwd (_, _) | Reference _ ->
@@ -491,10 +500,13 @@ and full_type env x =
 and class_member env x =
   match x with
   | MemberField (fldkind, _) ->
+      let _xs = uncomma fldkind in
       debug (ClassMember x); raise Todo
-  | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _|
-        QualifiedIdInClass (_, _)|MemberDecl _|MemberFunc _|Access (_, _)) ->
+  | ( UsingDeclInClass _| TemplateDeclInClass _
+    | QualifiedIdInClass (_, _)| MemberDecl _| MemberFunc _| Access (_, _)
+    ) ->
       debug (ClassMember x); raise Todo
+  | EmptyField _ -> []
 
 and class_member_sequencable env x =
   match x with
