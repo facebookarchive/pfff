@@ -95,7 +95,7 @@ let extract_defs ~g ~dupes ~ast ~readable =
       | FuncDef def -> todo (); None
       | StructDef def -> todo(); None
       | TypeDef _ -> todo(); None
-      | Global _ -> todo(); None
+      | Globals _ -> todo(); None
       (* todo: maybe letter, but need to find the real File
        * corresponding to the string, so may need some -I
        *)
@@ -145,7 +145,7 @@ and toplevel env = function
   | Include _ -> ()
 
   | TypeDef _ -> todo()
-  | Global _ -> todo()
+  | Globals _ -> todo()
  
   (* do we want them? *)
   | Prototype def -> ()
