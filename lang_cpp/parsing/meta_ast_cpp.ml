@@ -1152,6 +1152,9 @@ and vof_any =
   | ClassMember v1 ->
       let v1 = vof_class_member v1 in
       Ocaml.VSum (("ClassMember", [v1]))
+  | OneDecl v1 ->
+      let v1 = vof_onedecl v1 in
+      Ocaml.VSum (("OneDecl", [v1]))
   
   
 (* end auto generation *)

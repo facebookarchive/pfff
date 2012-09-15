@@ -736,6 +736,7 @@ and any =
 
   | ClassMember of class_member
   | Body of compound
+  | OneDecl of onedecl
 
   | Info of info
   | InfoList of info list

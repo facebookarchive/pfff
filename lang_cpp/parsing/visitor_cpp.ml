@@ -857,6 +857,7 @@ and v_any =
   | Info v1 -> let v1 = v_info v1 in ()
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ClassMember v1 -> let v1 = v_class_member v1 in ()
+  | OneDecl v1 -> let v1 = v_onedecl v1 in ()
   
 (* end of auto generation *)
 
