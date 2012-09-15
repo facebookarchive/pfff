@@ -856,6 +856,7 @@ and v_any =
   | Body v1 -> let v1 = v_compound v1 in ()
   | Info v1 -> let v1 = v_info v1 in ()
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
+  | ClassMember v1 -> let v1 = v_class_member v1 in ()
   
 (* end of auto generation *)
 

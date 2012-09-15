@@ -734,6 +734,7 @@ and any =
   | Argument of argument
   | Parameter of parameter
 
+  | ClassMember of class_member
   | Body of compound
 
   | Info of info

@@ -1149,6 +1149,9 @@ and vof_any =
   | InfoList v1 ->
       let v1 = Ocaml.vof_list vof_info v1
       in Ocaml.VSum (("InfoList", [ v1 ]))
+  | ClassMember v1 ->
+      let v1 = vof_class_member v1 in
+      Ocaml.VSum (("ClassMember", [v1]))
   
   
 (* end auto generation *)
