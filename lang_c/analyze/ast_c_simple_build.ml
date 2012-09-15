@@ -33,9 +33,16 @@ exception CplusplusConstruct
 exception TodoConstruct of string * Ast_cpp.info
 
 (* not used for now *)
-type env = unit
+type env = { 
+  mutable struct_defs_toadd: A.struct_def list;
+  (* for anon struct *)
+  mutable cnt: int;
+}
 
-let empty_env () = ()
+let empty_env () = {
+  struct_defs_toadd = [];
+  cnt = 0;
+}
 
 (*****************************************************************************)
 (* Helpers *)
@@ -58,7 +65,7 @@ let rec program x =
 (* ---------------------------------------------------------------------- *)
 
 and toplevel env = function
-  | CppTop x -> cpp_directive env x
+  | CppTop x -> [cpp_directive env x]
 
   | Func (func_or_else) as x ->
       (match func_or_else with
@@ -76,8 +83,11 @@ and toplevel env = function
   | TemplateDecl _
       as x ->
       debug (Toplevel x); raise CplusplusConstruct
+
+  | BlockDecl bd ->
+      [A.Globals (block_declaration env bd)]
       
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)|IfdefTop _|BlockDecl _|DeclTodo) 
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)|IfdefTop _|DeclTodo) 
       as x ->
       debug (Toplevel x);
       raise Todo
@@ -137,6 +147,39 @@ and parameter env x =
     }
 
 (* ---------------------------------------------------------------------- *)
+(* Variables *)
+(* ---------------------------------------------------------------------- *)
+and onedecl env d = 
+  match d with
+  { v_namei = ni;
+    v_type = ft;
+    v_storage = ((sto, inline_or_not), _);
+  } ->
+    (match ni, sto with
+    | Some (n, iopt), (NoSto | Sto _)  ->
+        let init_opt =
+          match iopt with
+          | None -> None
+          | Some (EqInit (_, ini)) -> Some (initialiser env ini)
+          | Some (ObjInit _) -> raise CplusplusConstruct
+        in
+        { A.
+          v_name = name env n;
+          v_type = full_type env ft;
+          v_storage = ();
+          v_init = init_opt;
+        }
+    | _ -> raise Todo
+    )        
+
+and initialiser env x =
+  match x with
+  | InitExpr e -> expr env e
+  | InitList _ -> raise Todo
+  | InitDesignators _ -> raise Todo
+  | InitIndexOld _ | InitFieldOld _ -> raise Todo
+  
+(* ---------------------------------------------------------------------- *)
 (* Cpp *)
 (* ---------------------------------------------------------------------- *)
   
@@ -144,7 +187,7 @@ and cpp_directive env = function
   | Define (tok, name, def_kind, def_val) as x ->
       (match def_kind, def_val with
       | DefineVar, DefineExpr e ->
-          [A.Define (name, expr env e)]
+          A.Define (name, expr env e)
       | _ -> debug (Cpp x); raise Todo
       )
   | Include (tok, inc_file) as x ->
@@ -156,7 +199,7 @@ and cpp_directive env = function
             debug (Cpp x); raise Todo
         )
       in
-      [A.Include (s, tok)]
+      A.Include (s, tok)
   | (PragmaAndCo _|Undef _) as x ->
       debug (Cpp x); raise Todo
 
@@ -165,7 +208,7 @@ and cpp_directive env = function
 (* ---------------------------------------------------------------------- *)
 
 and stmt env x =
-  let (st, _) = x in
+  let (st, ii) = x in
   match st with
   | Compound x -> A.Block (compound env x)
   | Selection s ->
@@ -182,18 +225,45 @@ and stmt env x =
       | DoWhile (_, st, _, (_, e, _), _) ->
           A.DoWhile (stmt env st, expr env e)
       | For (_, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
-          raise Todo
+          A.For (
+            Common.fmap (expr env) est1,
+            Common.fmap (expr env) est2,
+            Common.fmap (expr env) est3,
+            stmt env st
+          )
+
       | MacroIteration _ ->
-          raise Todo
+          debug (Stmt x); raise Todo
       )
   | ExprStatement eopt ->
       (match eopt with
       | None -> A.Block []
       | Some e -> A.Expr (expr env e)
       )
+  | DeclStmt block_decl ->
+      A.Locals (block_declaration env block_decl)
 
-  | (NestedFunc _|Try (_, _, _)|DeclStmt _|Jump _|
-Labeled _|StmtTodo|MacroStmt) ->
+  | Labeled lbl ->
+      (match lbl with
+      | Label (s, st) ->
+          A.Label ((s, List.hd ii), stmt env st)
+      | Case _ | CaseRange _ | Default _ ->
+          failwith "should be present only in Switch"
+      )
+  | Jump j ->
+      (match j with
+      | Goto s -> A.Goto ((s, List.hd ii))
+      | Return -> A.Return None;
+      | ReturnExpr e -> A.Return (Some (expr env e))
+      | Continue -> A.Continue
+      | Break -> A.Break
+      | GotoComputed _ -> raise Todo
+      )
+
+  | Try (_, _, _) ->
+      debug (Stmt x); raise CplusplusConstruct
+
+  | (NestedFunc _ | StmtTodo | MacroStmt ) ->
       debug (Stmt x); raise Todo
 
 and compound env (_, x, _) =
@@ -205,8 +275,54 @@ and statement_sequencable env x =
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
   | IfdefStmt _ -> raise Todo
 
-and cases env st =
-  raise Todo
+and cases env x =
+  let (st, ii) = x in
+  match st with
+  | Compound (l, xs, r) ->
+      let rec aux xs =
+        match xs with
+        | [] -> []
+        | x::xs ->
+            (match x with
+            | StmtElem ((Labeled (Case (_, st))), _)
+            | StmtElem ((Labeled (Default st)), _)
+              ->
+                let xs', rest =
+                  (StmtElem st::xs) +> Common.span (function
+                  | StmtElem ((Labeled (Case (_, st))), _)
+                  | StmtElem ((Labeled (Default st)), _) -> false
+                  | _ -> true
+                  )
+                in
+                let stmts = List.map (function
+                  | StmtElem st -> stmt env st
+                  | _ -> raise Todo
+                ) xs' in
+                (match x with
+                | StmtElem ((Labeled (Case (e, _))), _) ->
+                    A.Case (expr env e, stmts)
+                | StmtElem ((Labeled (Default st)), _) ->
+                    A.Default (stmts)
+                | _ -> raise Impossible
+                )::aux rest
+            | x -> debug (Body (l, [x], r)); raise Todo
+            )
+      in
+      aux xs
+  | _ -> 
+      debug (Stmt x); raise Todo
+
+and block_declaration env block_decl =
+  match block_decl with
+  | DeclList (xs, _) ->
+      let xs = uncomma xs in
+      (List.map (onedecl env) xs)
+        
+  | MacroDecl _ | Asm _ -> raise Todo
+      
+  | UsingDecl _ | UsingDirective _ | NameSpaceAlias _ -> 
+      raise CplusplusConstruct
+
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -216,30 +332,75 @@ and expr env e =
   let (e', toks) = e in
   match e' with
   | C cst -> constant env toks cst
+
+  | Ident (n, _) -> A.Id (name env n)
+
+  | RecordAccess (e, n) ->
+      A.RecordAccess (expr env e, name env n)
+  | RecordPtAccess (e, n) ->
+      A.RecordAccess (A.Unary (expr env e, DeRef), name env n)
+
+  | Cast ((_, ft, _), e) -> 
+      A.Cast (full_type env ft, expr env e)
+
+  | ArrayAccess (e1, (_, e2, _)) ->
+      A.ArrayAccess (expr env e1, expr env e2)
+  | Binary (e1, op, e2) -> A.Binary (expr env e1, op, expr env e2)
+  | Unary (e, op) -> A.Unary (expr env e, op)
+  | Infix  (e, op) -> A.Infix (expr env e, op)
+  | Postfix (e, op) -> A.Postfix (expr env e, op) 
+
+  | Assignment (e1, op, e2) -> 
+      A.Assign (op, expr env e1, expr env e2)
+  | Sequence (e1, e2) -> 
+      A.Sequence (expr env e1, expr env e2)
+  | CondExpr (e1, e2opt, e3) ->
+      A.CondExpr (expr env e1, 
+                 (match e2opt with
+                 | Some e2 -> expr env e2
+                 | None -> raise Todo
+                 ), 
+                 expr env e3)
+  | FunCallSimple (n, args) ->
+      A.Call (A.Id (name env n),
+              List.map (argument env) (args +> unparen +> uncomma))
+  | FunCallExpr (e, args) ->
+      A.Call (expr env e,
+             List.map (argument env) (args +> unparen +> uncomma))
+
+  | SizeOfExpr (tok, e) ->
+      A.Call (A.Id (A.builtin "sizeof", tok), [expr env e])
+
   | (TypeIdOfType (_, _)|TypeIdOfExpr (_, _)|GccConstructor (_, _)
-  | StatementExpr _|
-Cast (_, _)|SizeOfType (_, _)|SizeOfExpr (_, _)|RecordPtStarAccess (_, _)|
-RecordStarAccess (_, _)|RecordPtAccess (_, _)|RecordAccess (_, _)|
-ArrayAccess (_, _)|Binary (_, _, _)|Unary (_, _)|Infix (_, _)|Postfix (_, _)|
-Assignment (_, _, _)|Sequence (_, _)|CondExpr (_, _, _)|FunCallExpr (_, _)|
-FunCallSimple (_, _)|Ident (_, _)|ExprTodo) ->
+  | StatementExpr _
+  | SizeOfType (_, _)
+  | ExprTodo
+  ) ->
       debug (Expr e); raise Todo
 
   | Throw _|DeleteArray (_, _)|Delete (_, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | ConstructedObject (_, _) | This _
+  | RecordPtStarAccess (_, _)|RecordStarAccess (_, _)
       ->
       debug (Expr e); raise CplusplusConstruct
 
   | ParenExpr (_, e, _) -> expr env e
 
 and constant env toks x = 
-  match x, toks with
-  | Int s, [x] -> A.Int (s,x)
-  | (Bool _|Float _|Char _|String _|MultiString), _ -> 
-      debug (Constant x); raise Todo
-  | _, _ -> 
-      debug (Constant x); raise Impossible
+  match x with
+  | Int s -> A.Int (s, List.hd toks)
+  | Float (s, _) -> A.Float (s, List.hd toks)
+  | Char (s, _) -> A.Char (s, List.hd toks)
+  | String (s, _) -> A.String (s, List.hd toks)
+
+  | Bool _ -> raise CplusplusConstruct
+  | MultiString _ -> raise Todo
+
+and argument env x =
+  match x with
+  | Left e -> expr env e
+  | Right w -> debug (Argument x); raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Type *)
@@ -280,16 +441,68 @@ and full_type env x =
         )
       in
       A.TBase (s, List.hd ii)
+  | TypeName (n, _) -> A.TTypeName (name env n)
+  | StructUnionName ((kind, _), name) ->
+      A.TStructName (struct_kind env kind, name)
 
-  | (TypeOfType (_, _)|TypeOfExpr (_, _)|
-TypeName (_, _)|StructUnionName (_, _)|EnumName (_, _)|StructUnion _|
-Enum (_, _, _)|FunctionType _|Array (_, _)|Reference _) 
+  | FunctionType ft -> A.TFunction (function_type env ft)
+  | Array (_less_e, ft) -> A.TArray (full_type env ft)
+
+
+  | StructUnion def ->
+      (match def with
+      { c_kind = (kind, tok);
+        c_name = name_opt;
+        c_inherit = inh;
+        c_members = (_, xs, _);
+      } ->
+        let name =
+          match name_opt with
+          | None ->
+              env.cnt <- env.cnt + 1;
+              let s = spf "__anon_struct_%d" env.cnt in
+              (s, tok)
+          | Some n -> name env n
+        in
+        let def' = { A.
+          s_name = name;
+          s_kind = struct_kind env kind;
+          s_flds = List.map (class_member_sequencable env) xs;
+        }
+        in
+        env.struct_defs_toadd <- def' :: env.struct_defs_toadd;
+        A.TStructName (struct_kind env kind, name)
+      )
+
+  | ( TypeOfType (_, _)|TypeOfExpr (_, _)
+    | EnumName (_, _)|Enum (_, _, _)
+    )
+
     -> debug (Type x); raise Todo
 
-  | TypenameKwd (_, _) ->
+  | TypenameKwd (_, _) | Reference _ ->
       debug (Type x); raise CplusplusConstruct
 
   | ParenType (_, t, _) -> full_type env t
+
+(* ---------------------------------------------------------------------- *)
+(* structure *)
+(* ---------------------------------------------------------------------- *)
+and class_member env x =
+  match x with
+  | MemberField (fldkind, _) ->
+      debug (ClassMember x); raise Todo
+  | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _|
+        QualifiedIdInClass (_, _)|MemberDecl _|MemberFunc _|Access (_, _)) ->
+      debug (ClassMember x); raise Todo
+
+and class_member_sequencable env x =
+  match x with
+  | ClassElem x -> class_member env x
+  | CppDirectiveStruct dir ->
+      debug (Cpp dir); raise Todo
+  | IfdefStruct _ -> raise Todo
+
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
@@ -299,3 +512,8 @@ and name env x =
   match x with
   | (None, [], IdIdent (name)) -> name
   | _ -> debug (Name x); raise CplusplusConstruct
+
+and struct_kind env = function
+  | Struct -> A.Struct
+  | Union -> A.Union
+  | Class -> raise Todo
