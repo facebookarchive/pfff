@@ -39,6 +39,7 @@ open Common.Infix
  *  - ...
  *  - no nested struct, they are lifted to the toplevel
  *  - no mix of typedef with decl
+ *  - no DeclList but a single Decl
  *  - sugar is removed, no RecordAccess vs RecordPtAccess, ...
  * 
  *
@@ -68,7 +69,7 @@ type type_ =
   | TPointer of type_
   | TArray of type_
   | TFunction of function_type
-  | TStructName of name
+  | TStructName of struct_kind * name
   | TTypeName of name
 
  and function_type = (type_ * parameter list)
@@ -78,6 +79,8 @@ type type_ =
     (* when part of a prototype, the name is not mentionned *)
     p_name: name option;
   }
+
+ and struct_kind = Struct | Union
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -93,7 +96,7 @@ type expr =
 
   | Call of expr * expr list
 
-  | Assign of Ast_cpp.assignOp option * expr * expr
+  | Assign of Ast_cpp.assignOp * expr * expr
 
   | ArrayAccess of expr * expr
   | RecordAccess of expr * name
@@ -103,6 +106,7 @@ type expr =
   (* todo? transform into Call (builtin ...) ? *)
   | Postfix of expr * Ast_cpp.fixOp
   | Infix of expr * Ast_cpp.fixOp
+  (* contains GetRef and Deref!! todo: lift up? *)
   | Unary of expr * Ast_cpp.unaryOp
   | Binary of expr * Ast_cpp.binaryOp * expr
 
@@ -130,7 +134,7 @@ type stmt =
   | Label of name * stmt
   | Goto of name
 
-  | Decl of var_decl
+  | Locals of var_decl list
 
   and case =
     | Case of expr * stmt list
@@ -159,7 +163,6 @@ type struct_def = {
   s_kind: struct_kind;
   s_flds: field_def list;
 }
-  and struct_kind = Struct | Union
 
   (* todo? merge with var_decl? *)
   and field_def = { 
@@ -184,7 +187,7 @@ type toplevel =
   | TypeDef of name * type_
 
   | FuncDef of func_def
-  | Global of var_decl
+  | Globals of var_decl list
   | Prototype of func_def (* empty body *)
 
 
@@ -197,6 +200,11 @@ type program = toplevel list
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* builtin() is used for:
+ *  - sizeof
+ *)
+let builtin x = "__builtin__" ^ x
 
 let str_of_name (s, _) = s
 
