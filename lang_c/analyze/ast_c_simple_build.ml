@@ -161,7 +161,9 @@ and onedecl env d =
           match iopt with
           | None -> None
           | Some (EqInit (_, ini)) -> Some (initialiser env ini)
-          | Some (ObjInit _) -> raise CplusplusConstruct
+          | Some (ObjInit _) -> 
+              debug (OneDecl d);
+              raise CplusplusConstruct
         in
         Some { A.
           v_name = name env n;
@@ -198,6 +200,12 @@ and cpp_directive env = function
       (match def_kind, def_val with
       | DefineVar, DefineExpr e ->
           A.Define (name, expr env e)
+      | DefineFunc(args), DefineExpr e ->
+          A.Macro(name, 
+                 args +> unparen +> uncomma +> List.map (fun (s, ii) ->
+                   (s, List.hd ii)
+                 ),
+                 expr env e)
       | _ -> debug (Cpp x); raise Todo
       )
   | Include (tok, inc_file) as x ->
@@ -500,8 +508,8 @@ and full_type env x =
 and class_member env x =
   match x with
   | MemberField (fldkind, _) ->
-      let _xs = uncomma fldkind in
-      debug (ClassMember x); raise Todo
+      let xs = uncomma fldkind in
+      xs +> List.map (fieldkind env)
   | ( UsingDeclInClass _| TemplateDeclInClass _
     | QualifiedIdInClass (_, _)| MemberDecl _| MemberFunc _| Access (_, _)
     ) ->
@@ -515,6 +523,24 @@ and class_member_sequencable env x =
       debug (Cpp dir); raise Todo
   | IfdefStruct _ -> raise Todo
 
+and fieldkind env x =
+  match x with
+  | FieldDecl decl ->
+      (match decl with
+      { v_namei = ni;
+        v_type = ft;
+        v_storage = ((sto, inline_or_not), _);
+      } ->
+        (match ni, sto with
+        | Some (n, None), NoSto ->
+            { A.
+              fld_name = name env n;
+              fld_type = full_type env ft;
+            }
+        | _ -> debug (OneDecl decl); raise Todo
+        )
+      )
+  | BitField _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
