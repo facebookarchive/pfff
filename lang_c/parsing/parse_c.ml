@@ -25,7 +25,14 @@ open Common
 (* Main entry point *)
 (*****************************************************************************)
 
+let _done_init = ref false
+
 let parse file =
+  if not !_done_init
+  then begin 
+    Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
+    _done_init := true
+  end;
   Parse_cpp.parse ~c:true file
 
 
