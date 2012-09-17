@@ -112,8 +112,14 @@ let nodes_of_toplevel x =
         (Ast.str_of_name name, E.Constant)
       ))
 
-  (* todo: but need storage to see if extern or not? *)
-  | Globals _ -> []
+  | Global v ->
+      (* skip extern decl *)
+      (match v.v_storage with
+      | Extern -> []
+      | Static | DefaultStorage ->
+          [(Ast.str_of_name v.v_name, E.Global)]
+      )
+
    (* todo: maybe letter, but need to find the real File
     * corresponding to the string, so may need some -I
     *)
@@ -129,9 +135,11 @@ let rec add_use_edge env (name, kind) =
   | _ when not (G.has_node src env.g) ->
       pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
               (G.string_of_node src) (G.string_of_node dst));
-      ()
+      env.lookup_fails#update src Common.add1
+
   (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> ()
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> 
+      env.lookup_fails#update dst Common.add1
 
   | _ when G.has_node dst env.g -> 
       G.add_edge (src, dst) G.Use env.g
@@ -229,8 +237,8 @@ and toplevel env x =
   | TypeDef (name, t) -> type_ env t
 
   (* todo: *)
-  | Globals xs -> 
-      xs +> List.iter (fun 
+  | Global x -> 
+      (match x with
         { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
           env.params_locals <- (Ast.str_of_name n)::env.params_locals;
           type_ env t;
@@ -316,10 +324,13 @@ and expr env = function
    *)
   | Id name ->
       let s = Ast.str_of_name name in
-      if List.mem s env.params_locals then ()
-      else begin
-        add_use_edge env (name, E.Constant)
-      end 
+      (match () with
+      | _ when List.mem s env.params_locals -> ()
+      | _ when looks_like_macro name ->
+          add_use_edge env (name, E.Constant)
+      | _ ->
+          add_use_edge env (name, E.Global)  
+      )
 
   | Call (e, es) -> 
       (match e with

@@ -2,6 +2,7 @@
 
 #define FOOBAR(a,b) a+b
 
+int buf;
 
 int foo(int a, int b) {
   return a+b;
@@ -16,3 +17,7 @@ enum X {
   X_FOO1,
   X_FOO2,
 };
+
+
+int xopen() {
+}

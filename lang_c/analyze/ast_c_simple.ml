@@ -126,7 +126,6 @@ type expr =
   (* gccext: *)
   | GccConstructor  of type_ * expr (* always an InitList *)
 
-
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
@@ -155,15 +154,20 @@ type stmt =
     | Case of expr * stmt list
     | Default of stmt list
 
+(* ------------------------------------------------------------------------- *)
+(* Variables *)
+(* ------------------------------------------------------------------------- *)
+
 and var_decl = {
   v_name: name;
   v_type: type_;
   (* todo *)
-  v_storage: unit;
+  v_storage: storage;
   v_init: initialiser option;
 }
 
  and initialiser = expr
+ and storage = Extern | Static | DefaultStorage
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -175,12 +179,12 @@ type func_def = {
   f_body: stmt list;
 }
 
+
 type struct_def = {
   s_name: name;
   s_kind: struct_kind;
   s_flds: field_def list;
 }
-
   (* less: could merge with var_decl, but field have no storage normally.
    * todo: bitfield annotation
    *)
@@ -215,7 +219,7 @@ type toplevel =
   | EnumDef of enum_def
 
   | FuncDef of func_def
-  | Globals of var_decl list
+  | Global of var_decl
   | Prototype of func_def (* empty body *)
 
 type program = toplevel list

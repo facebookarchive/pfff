@@ -25,6 +25,12 @@ module A = Ast_c_simple
  *)
 
 (*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+(* for anon struct *)
+let cnt = ref 0
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
@@ -37,15 +43,12 @@ type env = {
   mutable struct_defs_toadd: A.struct_def list;
   mutable enum_defs_toadd: A.enum_def list;
   mutable typedefs_toadd: A.type_def list;
-  (* for anon struct *)
-  mutable cnt: int;
 }
 
 let empty_env () = {
   struct_defs_toadd = [];
   enum_defs_toadd = [];
   typedefs_toadd = [];
-  cnt = 0;
 }
 
 (*****************************************************************************)
@@ -60,9 +63,11 @@ let rec debug any =
 (* Main entry point *)
 (*****************************************************************************)
 
-let rec program x =
+let rec program xs =
   let env = empty_env () in
-  List.map (toplevel env) x +> List.flatten
+
+  
+  List.map (toplevel env) xs +> List.flatten
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
@@ -79,6 +84,33 @@ and toplevel env = function
           debug (Toplevel x); raise CplusplusConstruct
       )
 
+  | BlockDecl bd ->
+      (match block_declaration env bd with
+      | A.Vars xs -> 
+          let structs = env.struct_defs_toadd in
+          let enums = env.enum_defs_toadd in
+          let typedefs = env.typedefs_toadd in
+          env.struct_defs_toadd <- [];
+          env.enum_defs_toadd <- [];
+          env.typedefs_toadd <- [];
+          (structs +> List.map (fun x -> A.StructDef x)) ++
+          (enums +> List.map (fun x -> A.EnumDef x)) ++
+          (typedefs +> List.map (fun x -> A.TypeDef x)) ++
+          (xs +> List.map (fun x ->
+            (* could skip extern declaration? *)
+            match x with
+            | { A.v_type = A.TFunction ft; v_storage = A.DefaultStorage; _ } ->
+                A.Prototype { A.
+                  f_name = x.A.v_name;
+                  f_type = ft;
+
+                  f_body = [];
+                }
+            | _ -> A.Global x
+          ))
+      | _ -> raise Todo
+      )
+
   | EmptyDef _ -> []
   | FinalDef _ -> []
 
@@ -88,11 +120,6 @@ and toplevel env = function
       as x ->
       debug (Toplevel x); raise CplusplusConstruct
 
-  | BlockDecl bd ->
-      (match block_declaration env bd with
-      | A.Vars xs -> [A.Globals xs]
-      | _ -> raise Todo
-      )
       
   | (MacroVarTop (_, _)|MacroTop (_, _, _)|IfdefTop _|DeclTodo) 
       as x ->
@@ -163,7 +190,7 @@ and onedecl env d =
     v_storage = ((sto, inline_or_not), _);
   } ->
     (match ni, sto with
-    | Some (n, iopt), (NoSto | Sto _)  ->
+    | Some (n, iopt), ((NoSto | Sto _) as sto)  ->
         let init_opt =
           match iopt with
           | None -> None
@@ -175,7 +202,7 @@ and onedecl env d =
         Some { A.
           v_name = name env n;
           v_type = full_type env ft;
-          v_storage = ();
+          v_storage = storage env sto;
           v_init = init_opt;
         }
     | Some (n, None), StoTypedef _ ->
@@ -206,7 +233,18 @@ and initialiser env x =
       A.InitList (List.map (initialiser env) (xs +> unbrace +> uncomma))
   | InitDesignators _ -> raise Todo
   | InitIndexOld _ | InitFieldOld _ -> raise Todo
-  
+
+and storage env x =
+  match x with
+  | NoSto -> A.DefaultStorage
+  | StoTypedef -> raise Impossible
+  | Sto y ->
+      (match y with
+      | Static -> A.Static
+      | Extern -> A.Extern
+      | Auto | Register -> A.DefaultStorage
+      )
+
 (* ---------------------------------------------------------------------- *)
 (* Cpp *)
 (* ---------------------------------------------------------------------- *)
@@ -515,8 +553,8 @@ and full_type env x =
         let name =
           match name_opt with
           | None ->
-              env.cnt <- env.cnt + 1;
-              let s = spf "__anon_struct_%d" env.cnt in
+              incr cnt;
+              let s = spf "__anon_struct_%d" !cnt in
               (s, tok)
           | Some n -> name env n
         in
@@ -535,8 +573,8 @@ and full_type env x =
       let name =
         match name_opt with
         | None ->
-            env.cnt <- env.cnt + 1;
-            let s = spf "__anon_enum_%d" env.cnt in
+            incr cnt;
+            let s = spf "__anon_enum_%d" !cnt in
             (s, tok)
         | Some n -> n
       in
@@ -604,8 +642,8 @@ and fieldkind env x =
       let name =
         match name_opt with
         | None ->
-            env.cnt <- env.cnt + 1;
-            let s = spf "__anon_bitfield_%d" env.cnt in
+            incr cnt;
+            let s = spf "__anon_bitfield_%d" !cnt in
             s, tok
         | Some name -> name
       in
