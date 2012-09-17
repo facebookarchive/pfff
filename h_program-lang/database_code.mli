@@ -15,7 +15,7 @@ type entity_kind =
   | Other of string
 
   | File | Dir | MultiDirs
-  and class_type = RegularClass | Interface | Trait
+  and class_type = RegularClass (* or Struct *) | Interface | Trait
   and method_type = RegularMethod | StaticMethod
 
 val string_of_entity_kind: entity_kind -> string
