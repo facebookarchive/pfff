@@ -138,7 +138,9 @@ let rec add_use_edge env (name, kind) =
       env.lookup_fails#update src Common.add1
 
   (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> 
+  | _ when Hashtbl.mem env.dupes src ->
+        env.lookup_fails#update src Common.add1
+  | _ when Hashtbl.mem env.dupes dst -> 
       env.lookup_fails#update dst Common.add1
 
   | _ when G.has_node dst env.g -> 
@@ -146,6 +148,10 @@ let rec add_use_edge env (name, kind) =
 
   | _ -> 
       (match kind with
+      (* sometimes people don't use uppercase for macros *)
+      | E.Global ->
+          add_use_edge env (name, E.Constant)
+
       | _ ->
           (* todo: debug, display edge? *)
           env.lookup_fails#update dst Common.add1
@@ -203,9 +209,18 @@ and toplevel env x =
   let env = 
     match xs with
     | [] -> env
-    | [x] -> { env with current = x }
+    | [x]  
     (* can happen for EnumDef *)
-    | x::xs -> { env with current = x }
+    | x::_
+      -> 
+        (* can happen for main() which will be dupes in which case
+         * it's better to keep current as the current File so
+         * at least we will avoid some fail lookup.
+         *)
+        if Hashtbl.mem env.dupes x
+        then env
+        else { env with current = x }
+        
   in
   match x with
   | Define (name, v) ->
@@ -441,6 +456,7 @@ let build ?(verbose=true) dir skip_list =
 
   lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20
   +> List.iter (fun (n, cnt) ->
-    pr2 (spf "LOOKUP FAIL: %s (%d)" (G.string_of_node n) cnt)
+    pr2 (spf "LOOKUP FAIL: %s (%d)%s" (G.string_of_node n) cnt
+            (if Hashtbl.mem dupes n then "(DUPE)" else ""))
   );
   g

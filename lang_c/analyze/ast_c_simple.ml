@@ -221,6 +221,7 @@ type toplevel =
   | FuncDef of func_def
   | Global of var_decl
   | Prototype of func_def (* empty body *)
+  (* todo: ForwardStructDecl of name ? *)
 
 type program = toplevel list
 
