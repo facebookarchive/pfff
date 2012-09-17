@@ -21,6 +21,7 @@ open Ast_c_simple
 module Ast = Ast_c_simple
 
 module Flag = Flag_parsing_cpp
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -28,7 +29,23 @@ module Flag = Flag_parsing_cpp
  * Graph of dependencies for C. See graph_code.ml and main_codegraph.ml
  * for more information.
  * 
- * todo? reuse code with the other graph_code_xxx ?
+ * todo: there is different namespace in C: 
+ *  - functions/locals,
+ *  - tags (struct name, enum name)
+ *  - ???
+ * see ast_c.ml notes in coccinelle
+ * 
+ *  
+ * less: reuse code with the other graph_code_xxx ?
+ * 
+ * schema:
+ *  Root -> Dir -> File (.c|.h) -> Struct 
+ *                                 #TODO fields, etc
+ *                              -> Function
+ *                              -> Constant
+ *                              -> Macro
+ *                              -> Type (for Typedef)
+ *       -> Dir -> SubDir -> ...
  *)
 
 (*****************************************************************************)
@@ -74,6 +91,36 @@ let parse file =
 let todo() =
   ()
 
+let nodes_of_toplevel x =
+  match x with
+  | Define (name, _val) ->
+      [(Ast.str_of_name name, E.Constant)]
+  | Macro (name, _args, _body) -> 
+      [(Ast.str_of_name name, E.Macro)]
+  | FuncDef def -> 
+      [(Ast.str_of_name def.f_name, E.Function)]
+  | StructDef def -> 
+      [(Ast.str_of_name def.s_name, E.Class E.RegularClass)]
+  | TypeDef (name, _t) ->
+      [(Ast.str_of_name name, E.Type)]
+  | EnumDef def ->
+
+      let (name, xs) = def in
+      (* todo? add a __enum prefix? *)
+      [(Ast.str_of_name name, E.Type)] ++
+      (xs +> List.map (fun (name, eopt) ->
+        (Ast.str_of_name name, E.Constant)
+      ))
+
+  (* todo: but need storage to see if extern or not? *)
+  | Globals _ -> []
+   (* todo: maybe letter, but need to find the real File
+    * corresponding to the string, so may need some -I
+    *)
+  | Include _ -> []
+  (* do we want them? *)
+  | Prototype _ -> []
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
@@ -85,24 +132,8 @@ let extract_defs ~g ~dupes ~ast ~readable =
   g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
 
   ast +> List.iter (fun e ->
-    let node_opt = 
-      match e with
-      | Define (name, _val) ->
-          Some (Ast.str_of_name name, E.Constant)
-      | Macro _ -> todo (); None
-      | FuncDef def -> todo (); None
-      | StructDef def -> todo(); None
-      | EnumDef def -> todo(); None
-      | TypeDef _ -> todo(); None
-      | Globals _ -> todo(); None
-      (* todo: maybe letter, but need to find the real File
-       * corresponding to the string, so may need some -I
-       *)
-      | Include _ -> None
-      (* do we want them? *)
-      | Prototype _ -> None
-    in
-    node_opt +> Common.do_option (fun node ->
+    let nodes = nodes_of_toplevel e in
+    nodes +> List.iter (fun node ->
       if G.has_node node g 
       then Hashtbl.replace dupes node true
       else begin
@@ -129,8 +160,9 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
-(* less: could factorize with extract_defs things *)
-and toplevel env = function
+
+and toplevel env x =
+  match x with
   | Define (name, v) ->
       let n = (Ast.str_of_name name, E.Constant) in
       let env = { env with current = n } in
@@ -154,7 +186,6 @@ and toplevel env = function
  
   (* do we want them? *)
   | Prototype def -> ()
-
 
 and toplevels env xs = List.iter (toplevel env) xs
 
