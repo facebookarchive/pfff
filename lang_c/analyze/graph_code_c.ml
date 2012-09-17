@@ -78,8 +78,8 @@ let parse file =
   try 
     (* less: make this parameters of parse_program? *) 
     Common.save_excursion Flag.error_recovery true (fun () ->
-    Common.save_excursion Flag.show_parsing_error false (fun () ->
-    Common.save_excursion Flag.verbose_parsing false (fun () ->
+    Common.save_excursion Flag.show_parsing_error true (fun () ->
+    Common.save_excursion Flag.verbose_parsing true (fun () ->
     let cst = Parse_c.parse_program file in
     let ast = Ast_c_simple_build.program cst in
     ast
@@ -251,22 +251,20 @@ and toplevel env x =
 
   | TypeDef (name, t) -> type_ env t
 
-  (* todo: *)
   | Global x -> 
       (match x with
         { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
-          env.params_locals <- (Ast.str_of_name n)::env.params_locals;
+          (* env.params_locals <- (Ast.str_of_name n)::env.params_locals; *)
           type_ env t;
           Common.opt (expr env) eopt
       )
 
-  (* todo: should analyze if s has the form "..." and not <> and
+  (* less: should analyze if s has the form "..." and not <> and
    * build appropriate link?
    *)
   | Include _ -> ()
-
  
-  (* do we want them? *)
+  (* less: do we want them? *)
   | Prototype def -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
