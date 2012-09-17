@@ -151,6 +151,8 @@ let rec add_use_edge env (name, kind) =
       (* sometimes people don't use uppercase for macros *)
       | E.Global ->
           add_use_edge env (name, E.Constant)
+      | E.Function ->
+          add_use_edge env (name, E.Macro)
 
       | _ ->
           (* todo: debug, display edge? *)
