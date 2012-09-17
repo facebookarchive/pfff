@@ -81,9 +81,11 @@ let rec add_use_edge env (name, kind) =
   | _ when not (G.has_node src env.g) ->
       pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist (nested func?)"
               (G.string_of_node src) (G.string_of_node dst));
-      ()
+      env.lookup_fails#update src Common.add1;
+
   (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> ()
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
+      env.lookup_fails#update dst Common.add1
   | _ when G.has_node dst env.g -> 
       let (s1, _) = src in
       let (s2, _) = dst in
