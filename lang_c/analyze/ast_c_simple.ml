@@ -22,7 +22,7 @@ open Common.Infix
  * as in ast_cpp.ml.
  * 
  * This file contains a simplified C abstract syntax tree. The original
- * C++ syntax tree (ast_cpp.ml) is good for code refactoring or
+ * C/C++ syntax tree (ast_cpp.ml) is good for code refactoring or
  * code visualization; the type used matches exactly the source. However,
  * for other algorithms, the nature of the AST makes the code a bit
  * redundant. Moreover many analysis are far simpler to write on
@@ -39,8 +39,9 @@ open Common.Infix
  *  - ...
  *  - no nested struct, they are lifted to the toplevel
  *  - no mix of typedef with decl
- *  - no DeclList but a single Decl
  *  - sugar is removed, no RecordAccess vs RecordPtAccess, ...
+ *  - no init vs expr
+ *  - no Case/Default in statement but instead a focused 'case' type
  * 
  *
  * related: 
@@ -63,13 +64,15 @@ type name = string wrap
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo: qualifier *)
+(* less: qualifier *)
 type type_ =
   | TBase of name
   | TPointer of type_
   | TArray of type_
   | TFunction of function_type
   | TStructName of struct_kind * name
+  (* hmmm but in C it's really like an int no? *)
+  | TEnumName of name
   | TTypeName of name
 
  and function_type = (type_ * parameter list)
@@ -91,7 +94,9 @@ type expr =
   | String of string wrap
   | Char of string wrap
 
-  (* can be a cpp constant XXX, or a variable, or a function *)
+  (* can be a cpp or enum constant (e.g. FOO), or a local/global variable, 
+   * or a function.
+   *)
   | Id of name
 
   | Call of expr * expr list
@@ -114,6 +119,14 @@ type expr =
   (* should be a statement *)
   | Sequence of expr * expr
 
+  | SizeOf of (expr, type_) Common.either
+
+  (* should appear only as part of a variable initializer *)
+  | InitList of expr list
+  (* gccext: *)
+  | GccConstructor  of type_ * expr (* always an InitList *)
+
+
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
@@ -134,7 +147,9 @@ type stmt =
   | Label of name * stmt
   | Goto of name
 
-  | Locals of var_decl list
+  | Vars of var_decl list
+  (* todo: it's actually a special kind of format, not just an expr *)
+  | Asm of expr list
 
   and case =
     | Case of expr * stmt list
@@ -145,8 +160,10 @@ and var_decl = {
   v_type: type_;
   (* todo *)
   v_storage: unit;
-  v_init: expr option;
+  v_init: initialiser option;
 }
+
+ and initialiser = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -154,8 +171,8 @@ and var_decl = {
 
 type func_def = {
   f_name: name;
-  f_body: stmt list;
   f_type: function_type;
+  f_body: stmt list;
 }
 
 type struct_def = {
@@ -164,32 +181,42 @@ type struct_def = {
   s_flds: field_def list;
 }
 
-  (* todo? merge with var_decl? *)
+  (* less: could merge with var_decl, but field have no storage normally.
+   * todo: bitfield annotation
+   *)
   and field_def = { 
     fld_name: name;
     fld_type: type_;
   }
 
+and enum_def = name * (name * expr option) list
+
+and type_def = name * type_
+
 (* ------------------------------------------------------------------------- *)
 (* Cpp *)
 (* ------------------------------------------------------------------------- *)
-type define_body = expr
+
+(* should be a statically computable expr *)
+type define_body = 
+  | CppExpr of expr
+  | CppStmt of stmt
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
 (* ------------------------------------------------------------------------- *)
 type toplevel =
-  | Define of name * define_body (* should be a statically computable expr *)
+  | Define of name * define_body 
   | Include of string wrap (* path *)
   | Macro of name * (name list) * define_body
 
   | StructDef of struct_def
-  | TypeDef of name * type_
+  | TypeDef of type_def
+  | EnumDef of enum_def
 
   | FuncDef of func_def
   | Globals of var_decl list
   | Prototype of func_def (* empty body *)
-
 
 type program = toplevel list
 
@@ -202,7 +229,6 @@ type program = toplevel list
 (*****************************************************************************)
 
 (* builtin() is used for:
- *  - sizeof
  *)
 let builtin x = "__builtin__" ^ x
 
