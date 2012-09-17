@@ -67,11 +67,9 @@ let parse file =
     )))
   with 
   | Timeout -> raise Timeout
-(*
   | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-    []
-*)
+    raise exn
 
 let todo() =
   ()
@@ -89,11 +87,12 @@ let extract_defs ~g ~dupes ~ast ~readable =
   ast +> List.iter (fun e ->
     let node_opt = 
       match e with
-      | Define (name, expr) ->
+      | Define (name, _val) ->
           Some (Ast.str_of_name name, E.Constant)
       | Macro _ -> todo (); None
       | FuncDef def -> todo (); None
       | StructDef def -> todo(); None
+      | EnumDef def -> todo(); None
       | TypeDef _ -> todo(); None
       | Globals _ -> todo(); None
       (* todo: maybe letter, but need to find the real File
@@ -132,12 +131,18 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
 (* ---------------------------------------------------------------------- *)
 (* less: could factorize with extract_defs things *)
 and toplevel env = function
-  | Define (name, e) ->
+  | Define (name, v) ->
       let n = (Ast.str_of_name name, E.Constant) in
-      expr { env with current = n } e
+      let env = { env with current = n } in
+      (match v with
+      | CppExpr e -> expr env e
+      | CppStmt st -> stmt env st
+      )
+
   | Macro _ -> todo()
   | FuncDef def -> todo()
   | StructDef def -> todo()
+  | EnumDef def -> todo()
 
   (* todo: should analyze if s has the form "..." and not <> and
    * build appropriate link?
@@ -160,7 +165,14 @@ and toplevels env xs = List.iter (toplevel env) xs
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
+and stmt env = function
+  | Expr e -> expr env e
 
+  | Asm e -> exprs env e
+
+  | (Vars _|Goto _|Label (_, _)|Return _|For (_, _, _, _)|DoWhile (_, _)|
+While (_, _)|Switch (_, _)|If (_, _, _)|Block _|Break|Continue) ->
+      todo()
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
@@ -179,9 +191,30 @@ and expr env = function
 
   | Call (e, es) -> todo()
 
-  | (Sequence (_, _)|CondExpr (_, _, _)|Binary (_, _, _)|Unary (_, _)|
-        Infix (_, _)|Postfix (_, _)|Cast (_, _)|RecordAccess (_, _)|
-            ArrayAccess (_, _)|Assign (_, _, _)) -> todo()
+  | InitList xs -> exprs env xs
+
+  | SizeOf x ->
+      (match x with
+      | Left e -> expr env e
+      | Right t -> type_ env t
+      )
+  | GccConstructor (t, e) ->
+      type_ env t;
+      expr env e
+
+  | (Sequence (_, _)|CondExpr (_, _, _)
+  | Binary (_, _, _)|Unary (_, _)|Infix (_, _)|Postfix (_, _)
+  | Cast (_, _)|RecordAccess (_, _)
+  | ArrayAccess (_, _)|Assign (_, _, _)
+    ) -> todo()
+
+and exprs env xs = List.iter (expr env) xs
+
+(* ---------------------------------------------------------------------- *)
+(* Types *)
+(* ---------------------------------------------------------------------- *)
+and type_ env x =
+  raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
