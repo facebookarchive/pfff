@@ -59,6 +59,8 @@ type env = {
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
 
+  mutable params_locals: string list;
+
   (* error reporting *)
   dupes: (Graph_code.node) Common.hashset;
   lookup_fails: (Graph_code.node, int) Common.hash_with_default;
@@ -88,8 +90,6 @@ let parse file =
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     raise exn
 
-let todo() =
-  ()
 
 let nodes_of_toplevel x =
   match x with
@@ -121,6 +121,29 @@ let nodes_of_toplevel x =
   (* do we want them? *)
   | Prototype _ -> []
 
+let rec add_use_edge env (name, kind) =
+  let src = env.current in
+  let dst = (Ast.str_of_name name, kind) in
+
+  (match () with
+  | _ when not (G.has_node src env.g) ->
+      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
+              (G.string_of_node src) (G.string_of_node dst));
+      ()
+  (* we skip reference to dupes *)
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst -> ()
+
+  | _ when G.has_node dst env.g -> 
+      G.add_edge (src, dst) G.Use env.g
+
+  | _ -> 
+      (match kind with
+      | _ ->
+          (* todo: debug, display edge? *)
+          env.lookup_fails#update dst Common.add1
+      )
+  )
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
@@ -133,7 +156,12 @@ let extract_defs ~g ~dupes ~ast ~readable =
 
   ast +> List.iter (fun e ->
     let nodes = nodes_of_toplevel e in
+
     nodes +> List.iter (fun node ->
+
+      (* todo: if StructDef or EnumDef then
+       * can have nested Has link to add
+       *)
       if G.has_node node g 
       then Hashtbl.replace dupes node true
       else begin
@@ -153,6 +181,7 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
     g;
     dupes; lookup_fails;
     skip_edges;
+    params_locals = [];
   }
   in
   toplevels env ast
@@ -162,48 +191,116 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
 (* ---------------------------------------------------------------------- *)
 
 and toplevel env x =
+  let xs = nodes_of_toplevel x in
+  let env = 
+    match xs with
+    | [] -> env
+    | [x] -> { env with current = x }
+    (* can happen for EnumDef *)
+    | x::xs -> { env with current = x }
+  in
   match x with
   | Define (name, v) ->
-      let n = (Ast.str_of_name name, E.Constant) in
-      let env = { env with current = n } in
-      (match v with
-      | CppExpr e -> expr env e
-      | CppStmt st -> stmt env st
+      define_body env v
+  | Macro (name, params, body) -> 
+      let xs =  params +> List.map Ast.str_of_name in
+      let env = { env with params_locals = xs } in
+      define_body env body
+  | FuncDef def -> 
+      let (ret, params) = def.f_type in
+      type_ env ret;
+      parameters env params;
+      let xs = params +> Common.map_filter (fun x -> 
+        (match x.p_name with None -> None  | Some x -> Some (Ast.str_of_name x))
+      ) in
+      let env = { env with params_locals = xs } in
+      stmts env def.f_body
+
+  | StructDef { s_name = n; s_kind = _kind; s_flds = flds } -> 
+      flds +> List.iter (fun { fld_name = n; fld_type = t; } ->
+        type_ env t
+      )
+        
+  | EnumDef (name, xs) ->
+      xs +> List.iter (fun (name, eopt) ->
+        Common.opt (expr env) eopt
       )
 
-  | Macro _ -> todo()
-  | FuncDef def -> todo()
-  | StructDef def -> todo()
-  | EnumDef def -> todo()
+  | TypeDef (name, t) -> type_ env t
+
+  (* todo: *)
+  | Globals xs -> 
+      xs +> List.iter (fun 
+        { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
+          env.params_locals <- (Ast.str_of_name n)::env.params_locals;
+          type_ env t;
+          Common.opt (expr env) eopt
+      )
 
   (* todo: should analyze if s has the form "..." and not <> and
    * build appropriate link?
    *)
   | Include _ -> ()
 
-  | TypeDef _ -> todo()
-  | Globals _ -> todo()
  
   (* do we want them? *)
   | Prototype def -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-(* ---------------------------------------------------------------------- *)
-(* Functions *)
-(* ---------------------------------------------------------------------- *)
+and define_body env v =
+  match v with
+  | CppExpr e -> expr env e
+  | CppStmt st -> stmt env st
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
   | Expr e -> expr env e
-
+  | Block xs -> stmts env xs
   | Asm e -> exprs env e
+  | If (e, st1, st2) ->
+      expr env e;
+      stmts env [st1; st2]
+  | Switch (e, xs) ->
+      expr env e;
+      cases env xs
+  | While (e, st) | DoWhile (st, e) -> 
+      expr env e;
+      stmt env st
+  | For (e1, e2, e3, st) ->
+      Common.opt (expr env) e1;
+      Common.opt (expr env) e2;
+      Common.opt (expr env) e3;
+      stmt env st
+  | Return eopt ->
+      Common.opt (expr env) eopt;
+  | Continue | Break -> ()
+  | Label (_name, st) ->
+      stmt env st
+  | Goto name ->
+      ()
 
-  | (Vars _|Goto _|Label (_, _)|Return _|For (_, _, _, _)|DoWhile (_, _)|
-While (_, _)|Switch (_, _)|If (_, _, _)|Block _|Break|Continue) ->
-      todo()
+  | Vars xs ->
+      xs +> List.iter (fun 
+        { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
+          env.params_locals <- (Ast.str_of_name n)::env.params_locals;
+          type_ env t;
+          Common.opt (expr env) eopt
+      )
+
+ and case env = function
+   | Case (e, xs) -> 
+       expr env e;
+       stmts env xs
+   | Default xs ->
+       stmts env xs
+
+and stmts env xs = List.iter (stmt env) xs
+
+and cases env xs = List.iter (case env) xs
+
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
@@ -218,9 +315,36 @@ and expr env = function
    * there is the use of a constant.
    *)
   | Id name ->
-      todo()
+      let s = Ast.str_of_name name in
+      if List.mem s env.params_locals then ()
+      else begin
+        add_use_edge env (name, E.Constant)
+      end 
 
-  | Call (e, es) -> todo()
+  | Call (e, es) -> 
+      (match e with
+      | Id name ->
+          if looks_like_macro name
+          then add_use_edge env (name, E.Macro)
+          else add_use_edge env (name, E.Function)
+      | _ -> expr env e
+      );
+      exprs env es
+  | Assign (_, e1, e2) -> exprs env [e1; e2]
+  | ArrayAccess (e1, e2) -> exprs env [e1; e2]
+  (* todo: determine type of e and make appropriate use link *)
+  | RecordAccess (e, name) -> expr env e
+
+  | Cast (t, e) -> 
+      type_ env t;
+      expr env e
+
+  | Postfix (e, _op) | Infix (e, _op) -> expr env e
+  | Unary (e, op) -> expr env e
+  | Binary (e1, op, e2) -> exprs env [e1;e2]
+
+  | CondExpr (e1, e2, e3) -> exprs env [e1;e2;e3]
+  | Sequence (e1, e2) -> exprs env [e1;e2]
 
   | InitList xs -> exprs env xs
 
@@ -233,11 +357,6 @@ and expr env = function
       type_ env t;
       expr env e
 
-  | (Sequence (_, _)|CondExpr (_, _, _)
-  | Binary (_, _, _)|Unary (_, _)|Infix (_, _)|Postfix (_, _)
-  | Cast (_, _)|RecordAccess (_, _)
-  | ArrayAccess (_, _)|Assign (_, _, _)
-    ) -> todo()
 
 and exprs env xs = List.iter (expr env) xs
 
@@ -245,11 +364,25 @@ and exprs env xs = List.iter (expr env) xs
 (* Types *)
 (* ---------------------------------------------------------------------- *)
 and type_ env x =
-  raise Todo
+  match x with
+  | TBase _ -> ()
+  | TPointer t | TArray t -> type_ env t
+  | TFunction (tret, xs) ->
+      type_ env tret;
+      parameters env xs
+  | TStructName (_kind, name) ->
+      add_use_edge env (name, E.Class E.RegularClass)
+  | TEnumName (name) | TTypeName name ->
+      add_use_edge env (name, E.Type)
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
+
+and parameter env { p_type = t; p_name = _} =
+  type_ env t
+and parameters env xs = 
+  List.iter (parameter env) xs
 
 (*****************************************************************************)
 (* Main entry point *)
