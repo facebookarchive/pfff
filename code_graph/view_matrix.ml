@@ -23,13 +23,43 @@ open Model3
 module M = Model3
 module Ctl = Controller3
 
+module E = Database_code
 module DM = Dependencies_matrix_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
- 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+(* have a draw_labels.ml ? *) 
+
+(* similar to highlight_code.ml *)
+let color_of_node_kind kind =
+  match kind with
+  | E.Function -> "gold"
+  | E.Class _ -> "coral"
+  | E.Module -> "chocolate"
+  | E.Package -> "chocolate"
+  | E.Type -> "YellowGreen"
+  | E.Constant -> "pink"
+  | E.Global -> "cyan"
+  | E.Macro -> "pink1"
+  | E.TopStmts -> raise Todo
+
+  | E.Method _ -> raise Todo
+  | E.Field -> raise Todo
+  | E.ClassConstant -> raise Todo
+
+  | E.Other s -> raise Todo
+
+  | E.Dir | E.MultiDirs -> "SteelBlue2"
+  | E.File -> "wheat"
+
+(* todo: style/font_of_node_kind? so put in bold directories *)
+
 (*****************************************************************************)
 (* Drawing helpers *)
 (*****************************************************************************)
@@ -107,8 +137,10 @@ let draw_left_rows cr w ~interactive_regions =
     (* align on the left *)
     Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
     let node = Hashtbl.find w.m.DM.i_to_name i in
-    let (txt, _kind) = node in
+    let (txt, kind) = node in
     CairoH.set_font_size cr font_size_default;
+    let color = color_of_node_kind kind in
+    CairoH.set_source_color cr color ();
     let extent = CairoH.text_extents cr txt in
     let w = extent.Cairo.text_width in
     (* todo: could try different settings until it works? like in codemap? *)
@@ -151,12 +183,13 @@ let draw_up_columns cr w ~interactive_regions =
 
     if j < l.nb_elts then begin
       let node = Hashtbl.find w.m.DM.i_to_name j in
-      let (txt, _kind) = node in
+      let (txt, kind) = node in
 
-      
       Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
       let angle = -. (pi / 4.) in
       Cairo.rotate cr ~angle:angle;
+      let color = color_of_node_kind kind in
+      CairoH.set_source_color cr color ();
       CairoH.show_text cr txt;
       Cairo.rotate cr ~angle:(-. angle);
     end;
