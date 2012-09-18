@@ -140,7 +140,7 @@ let sort_by_count_rows_low_first xs m dm =
      +> Common.sort_by_val_lowfirst
      +> List.map fst
 
-let sort_by_count_columns_hight_first xs m dm =
+let sort_by_count_columns_high_first xs m dm =
   xs +> List.map (fun n -> n, count_column n m dm)
      +> Common.sort_by_val_highfirst
      +> List.map fst
@@ -197,7 +197,7 @@ let partition_matrix nodes dm =
      *)
     let elts_with_empty_lines, rest = 
       nodes +> List.partition (fun node -> is_empty_row node m dm) in
-    let xs = sort_by_count_columns_hight_first elts_with_empty_lines m dm in
+    let xs = sort_by_count_columns_high_first elts_with_empty_lines m dm in
     xs+> List.iter (empty_all_cells_relevant_to_node m dm);
     pr2 (spf "step2: %s" (Common.dump xs));
     left := !left ++ xs;
@@ -212,7 +212,8 @@ let partition_matrix nodes dm =
   else begin 
     pr2 "CYCLE";
     pr2_gen rest;
-    let rest = sort_by_count_columns_hight_first rest m dm in
+    (* todo: mix of high columns and low rows *)
+    let rest = sort_by_count_columns_high_first rest m dm in
     (* TODO merge and iterate *)
     !left ++ rest ++ !right
   end
