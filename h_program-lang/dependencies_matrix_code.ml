@@ -213,7 +213,7 @@ let partition_matrix nodes dm =
     pr2 "CYCLE";
     pr2_gen rest;
     (* todo: mix of high columns and low rows *)
-    let rest = sort_by_count_columns_high_first rest m dm in
+    let rest = sort_by_count_rows_low_first rest m dm in
     (* TODO merge and iterate *)
     !left ++ rest ++ !right
   end
