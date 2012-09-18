@@ -101,13 +101,17 @@ let display dm =
 (* Ordering the rows/columns, "layering" *)
 (*****************************************************************************)
 
+let formula x =
+  1 + (int_of_float (log10 (float_of_int x)))
+
 let count_column n m dm =
   let j = Hashtbl.find dm.name_to_i n in
   let n = Array.length m in
   let cnt = ref 0 in
   for i = 0 to n - 1 do
     if m.(i).(j) > 0 
-    then (* incr cnt *) cnt := !cnt + m.(i).(j)
+    then (* incr cnt *) 
+      cnt := !cnt + formula (m.(i).(j))
   done;
   !cnt
 
