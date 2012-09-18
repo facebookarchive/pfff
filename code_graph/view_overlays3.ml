@@ -31,6 +31,7 @@ module Ctl = Controller3
  * w.overlay which refreshes the screen.
  *)
 
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -45,6 +46,7 @@ let color_used_by = "chocolate"
 (* The overlays *)
 (*****************************************************************************)
 
+(* inspired by the DSM in jetbrains IDEA *)
 let draw_row_column ~cr ~color w i =
   let l = M.layout_of_w w in
 
@@ -69,7 +71,7 @@ let draw_row_column ~cr ~color w i =
   ()
  
 
-
+(* inspired by the DSM in jetbrains IDEA *)
 let draw_green_yellow_dependent_rows ~cr w i =
   let i_uses = ref [] in
   let i_used_by = ref [] in

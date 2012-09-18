@@ -28,7 +28,9 @@ module DM = Dependencies_matrix_code
 (*****************************************************************************)
 
 type model = {
+  (* unused for now *)
   root: Common.dirname;
+
   g: Graph_code.graph;
   full_matrix: Dependencies_matrix_code.dm;
 }
