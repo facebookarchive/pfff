@@ -37,6 +37,14 @@ module Ast = Ast_php_simple
  *                             -> Function
  *                             -> Constant
  *       -> Dir -> SubDir -> Module? -> ...
+ * 
+ * todo: 
+ *  - reuse env, most of of build() and put it in graph_code.ml
+ *    and just pass the PHP specificities.
+ *  - have a node_opt_of_stmt, so factorize some of the code,
+ *    and when many main(), just make the dependency to File, like
+ *    in graph_code_c.ml
+ *  - add tests
  *)
 
 (*****************************************************************************)
@@ -84,8 +92,12 @@ let rec add_use_edge env (name, kind) =
       env.lookup_fails#update src Common.add1;
 
   (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
+  | _ when Hashtbl.mem env.dupes src ->
+        env.lookup_fails#update src Common.add1
+  | _ when Hashtbl.mem env.dupes dst -> 
       env.lookup_fails#update dst Common.add1
+
+
   | _ when G.has_node dst env.g -> 
       let (s1, _) = src in
       let (s2, _) = dst in
@@ -455,7 +467,8 @@ let build ?(verbose=true) dir skip_list =
 
   lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20
   +> List.iter (fun (n, cnt) ->
-    pr2 (spf "LOOKUP FAIL: %s (%d)" (G.string_of_node n) cnt)
+    pr2 (spf "LOOKUP FAIL: %s (%d)%s" (G.string_of_node n) cnt
+            (if Hashtbl.mem dupes n then "(DUPE)" else ""))
   );
   
   g
