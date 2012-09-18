@@ -96,6 +96,127 @@ let display dm =
   pr2_gen dm;
   ()
 
+
+(*****************************************************************************)
+(* Ordering the rows/columns, "layering" *)
+(*****************************************************************************)
+
+let count_column n m dm =
+  let j = Hashtbl.find dm.name_to_i n in
+  let n = Array.length m in
+  let cnt = ref 0 in
+  for i = 0 to n - 1 do
+    if m.(i).(j) > 0 
+    then (* incr cnt *) cnt := !cnt + m.(i).(j)
+  done;
+  !cnt
+
+let is_empty_column n m dm =
+  count_column n m dm = 0
+
+let count_row n m dm =
+  let i = Hashtbl.find dm.name_to_i n in
+  let n = Array.length m in
+  let cnt = ref 0 in
+  for j = 0 to n - 1 do
+    if m.(i).(j) > 0 
+    then (* incr cnt *) cnt := !cnt + m.(i).(j)
+  done;
+  !cnt
+
+let is_empty_row n m dm = 
+  count_row n m dm = 0
+
+let empty_all_cells_relevant_to_node m dm n =
+  let i = Hashtbl.find dm.name_to_i n in
+  let n = Array.length m in
+  for x = 0 to n - 1 do
+    m.(i).(x) <- 0;
+    m.(x).(i) <- 0;
+  done
+
+let sort_by_count_rows_low_first xs m dm =
+  xs +> List.map (fun n -> n, count_row n m dm)
+     +> Common.sort_by_val_lowfirst
+     +> List.map fst
+
+let sort_by_count_columns_hight_first xs m dm =
+  xs +> List.map (fun n -> n, count_column n m dm)
+     +> Common.sort_by_val_highfirst
+     +> List.map fst
+
+(* 
+ * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
+ * 
+ * note: sorting by the number of cells which you depend on is not
+ * enough. For instance let's say X depends on 3 cells, A, B, Y and Y 
+ * depends on 4: A, B, C, D. One could consider to put X
+ * upper in the matrix, but because X depends on Y, it's better to put
+ * Y upper.
+ * 
+ * todo: optimize? we redo some computations ... should memoize
+ * more? or just invert rows/columns in the original matrix?
+ *)
+let partition_matrix nodes dm =
+
+  let m = dm.matrix +> Array.map Array.copy in
+  let n = Array.length m in
+  for i = 0 to n - 1 do
+    m.(i).(i) <- 0
+  done;
+
+  let left = ref [] in
+  let right = ref [] in
+
+  let rec step1 nodes = 
+    (* "1. Identify system elements (or tasks) that can be determined (or
+     * executed) without input from the rest of the elements in the matrix.
+     * Those elements can easily be identified by observing an empty column
+     * in the DSM. Place those elements to the left of the DSM. Once an
+     * element is rearranged, it is removed from the DSM (with all its
+     * corresponding marks) and step 1 is repeated on the remaining
+     * elements."
+     *)
+    let elts_with_empty_columns, rest = 
+      nodes +> List.partition (fun node -> is_empty_column node m dm) in
+    let xs = sort_by_count_rows_low_first elts_with_empty_columns m dm in
+    xs +> List.iter (empty_all_cells_relevant_to_node m dm);
+    right := xs ++ !right;
+    pr2 (spf "step1: %s" (Common.dump xs));
+    if null xs
+    then rest
+    else step1 rest
+
+  and step2 nodes =
+    (* "2.Identify system elements (or tasks) that deliver no
+     * information to other elements in the matrix. Those elements can
+     * easily be identified by observing an empty row in the DSM. Place
+     * those elements to the right of the DSM. Once an element is
+     * rearranged, it is removed from the DSM (with all its corresponding
+     * marks) and step 2 is repeated on the remaining elements."
+     *)
+    let elts_with_empty_lines, rest = 
+      nodes +> List.partition (fun node -> is_empty_row node m dm) in
+    let xs = sort_by_count_columns_hight_first elts_with_empty_lines m dm in
+    xs+> List.iter (empty_all_cells_relevant_to_node m dm);
+    pr2 (spf "step2: %s" (Common.dump xs));
+    left := !left ++ xs;
+    if null xs
+    then step1 rest
+    else step2 rest
+  in
+  
+  let rest = step2 nodes in
+  if null rest
+  then !left ++ !right
+  else begin 
+    pr2 "CYCLE";
+    pr2_gen rest;
+    let rest = sort_by_count_columns_hight_first rest m dm in
+    (* TODO merge and iterate *)
+    !left ++ rest ++ !right
+  end
+
 (*****************************************************************************)
 (* Building the matrix *)
 (*****************************************************************************)
@@ -161,79 +282,6 @@ let build_with_tree2 tree full_matrix_opt g =
 let build_with_tree a b c = 
   Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c)
 
-(* 
- * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
- * 
- * note: sorting by the number of cells which you depend on is not
- * enough. For instance let's say X depends on 3 cells, A, B, Y and Y 
- * depends on 4: A, B, C, D. One could consider to put X
- * upper in the matrix, but because X depends on Y, it's better to put
- * Y upper.
- * 
- * todo: optimize? we redo some computations ... should memoize
- * more? or just invert rows/columns in the original matrix?
- * 
-
- *)
-let partition_matrix nodes dm =
-
-  let m = dm.matrix +> Array.map Array.copy in
-  let n = Array.length m in
-  for i = 0 to n - 1 do
-    m.(i).(i) <- 0
-  done;
-
-  (* "1. Identify system elements (or tasks) that can be determined (or
-   * executed) without input from the rest of the elements in the matrix.
-   * Those elements can easily be identified by observing an empty column
-   * in the DSM. Place those elements to the left of the DSM. Once an
-   * element is rearranged, it is removed from the DSM (with all its
-   * corresponding marks) and step 1 is repeated on the remaining
-   * elements."
-   *)
-
-  (* "2.Identify system elements (or tasks) that deliver no
-   * information to other elements in the matrix. Those elements can
-   * easily be identified by observing an empty row in the DSM. Place
-   * those elements to the right of the DSM. Once an element is
-   * rearranged, it is removed from the DSM (with all its corresponding
-   * marks) and step 2 is repeated on the remaining elements."
-   *)
-  let rec step2 todo_nodes =
-    match todo_nodes with
-    | [] -> []
-    | x::xs ->
-        let elts_with_empty_row, rest =
-          todo_nodes +> List.partition (fun node ->
-            let i = Hashtbl.find dm.name_to_i node in
-            let cnt = ref 0 in
-            for j = 0 to n - 1 do
-              if m.(i).(j) > 0 then incr cnt
-            done;
-            !cnt = 0
-          )
-        in
-        pr2_gen elts_with_empty_row;
-        (match elts_with_empty_row with
-        (* cycle? not a layered system ... stop for now *)
-        | [] -> 
-            pr2 "CYCLE";
-            pr2_gen todo_nodes;
-            todo_nodes
-        | x::xs ->
-            elts_with_empty_row +> List.iter (fun node ->
-              let j = Hashtbl.find dm.name_to_i node in
-              (* set to 0 the corresponding cells in the matrix *)
-              for i = 0 to n - 1 do
-                m.(i).(j) <- 0
-              done;
-            );
-            elts_with_empty_row ++ step2 rest
-        )
-  in
-  let done_nodes_step1 = step2 nodes in
-  done_nodes_step1
-  
 
 (* opti: we redo many times the iteration on all edges ... for
  * different configuration. Can factorize work ?
