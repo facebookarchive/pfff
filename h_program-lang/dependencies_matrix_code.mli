@@ -10,6 +10,8 @@ type dm = {
   and tree =
     | Node of Graph_code.node * tree list
 
+type projection_cache = (Graph_code.node, int option) Hashtbl.t
+
 val verbose: bool ref
 
 (* just the expanded root *)
@@ -22,6 +24,7 @@ val build_full_matrix:
   Graph_code.graph -> dm
 
 val explain_cell_list_use_edges: 
+  projection_cache ->
   (int * int) -> dm -> Graph_code.graph ->
   (Graph_code.node * Graph_code.node) list
 

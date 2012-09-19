@@ -44,6 +44,7 @@ type dm = {
     | Node of Graph_code.node * tree list
   and config = tree
 
+
 let basic_config g = 
   Node (G.root, G.succ G.root G.Has g +> List.map (fun n -> Node (n, [])))
 
@@ -51,6 +52,9 @@ type deps_style =
   | DepsIn
   | DepsOut
   | DepsInOut
+
+(* optimization *)
+type projection_cache = (Graph_code.node, int option) Hashtbl.t
 
 (*****************************************************************************)
 (* Globals *)
@@ -441,25 +445,34 @@ let build_full_matrix a =
 (*****************************************************************************)
 (* Explain the matrix *)
 (*****************************************************************************)
-(* opti: there is probably a more efficient way to do that ... *)
-let explain_cell_list_use_edges (i, j) dm g =
+
+let explain_cell_list_use_edges2 hmemo (i, j) dm g =
   let res = ref [] in
-  let hmemo = Hashtbl.create 101 in
 
-  g +> G.iter_use_edges (fun n1 n2 ->
-    if n1 <> G.root then begin
+  (* old: g +> G.iter_use_edges (fun n1 n2 -> *)
+  let src = Hashtbl.find dm.i_to_name i in
+  let children = G.all_children src g in
+  children +> List.iter (fun n1 ->
+    let uses = G.succ n1 G.Use g in
+    uses +> List.iter (fun n2 ->
 
-      let i2 = projection hmemo n1 dm g in
-      let j2 = projection hmemo n2 dm g in
-      (match i2, j2 with
-      | Some i2, Some j2 ->
-          if i2 = i && j2 = j 
-          then Common.push2 (n1, n2) res
-      | _ -> ()
-      )
-    end
+      if n1 <> G.root then begin
+        let i2 = projection hmemo n1 dm g in
+        let j2 = projection hmemo n2 dm g in
+        (match i2, j2 with
+        | Some i2, Some j2 ->
+            if i2 = i && j2 = j 
+            then Common.push2 (n1, n2) res
+        | _ -> ()
+        )
+      end
+    );
   );
   !res
+
+let explain_cell_list_use_edges a b c d =
+  Common.profile_code "DM.explain_cell" (fun () -> 
+    explain_cell_list_use_edges2 a b c d)
 
 (*****************************************************************************)
 (* tree config manipulation *)
