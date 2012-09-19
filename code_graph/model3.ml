@@ -136,6 +136,8 @@ type layout = {
   y_start_matrix_up: float;
   _y_end_matrix_down: float;
 
+  width_vertical_label: float;
+
   nb_elts: int;
   width_cell: float;
   height_cell: float;
@@ -158,6 +160,9 @@ let layout_of_w w =
     x_end_matrix_right;
     y_start_matrix_up;
     _y_end_matrix_down;
+
+    width_vertical_label = 0.025;
+
     nb_elts;
     width_cell;
     height_cell;
