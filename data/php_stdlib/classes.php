@@ -51,6 +51,8 @@ class OutOfBoundsException extends Exception { }
 //http://us3.php.net/UnexpectedValueException
 class UnexpectedValueException extends Exception { }
 
+class InvalidOperationException extends RuntimeException { }
+
 //http://www.php.net/manual/en/class.badfunctioncallexception.php
 class  BadFunctionCallException extends LogicException { }
 
