@@ -48,6 +48,9 @@ type world = {
   mutable config: Dependencies_matrix_code.config;
   (* cache of Dependencies_matrix_code.build config g *)
   mutable m: Dependencies_matrix_code.dm;
+  (* to memoize DM.projection on this particular matrix *)
+  mutable projection_cache: Dependencies_matrix_code.projection_cache;
+  
   (* set each time in View_matrix.draw_matrix.
    * opti: use a quad tree?
    *)
@@ -86,7 +89,9 @@ let new_surface ~alpha ~width ~height =
 (* Main entry point *)
 (*****************************************************************************)
 
-(* width/height are a first guess. The first configure ev will force a resize*)
+(* width/height are a first guess. The first configure ev will force a resize
+ * coupling: with View_matrix.recompute_matrix
+ *)
 let init_world ?(width = 600) ?(height = 600) config model =
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
@@ -96,6 +101,7 @@ let init_world ?(width = 600) ?(height = 600) config model =
   {
     model; 
     config;
+    projection_cache = Hashtbl.create 101;
     interactive_regions = [];
     m;
     width; height;

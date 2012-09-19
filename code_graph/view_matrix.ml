@@ -350,6 +350,7 @@ let recompute_matrix w =
     )
   in
   w.m <- m;
+  w.projection_cache <- Hashtbl.create 101;
   paint w;
   ()
 
@@ -393,7 +394,8 @@ let button_action da w ev =
             | `BUTTON_PRESS, 1 ->
                 pr2 (spf "clicking on cell (%d, %d)" i j);
                 let deps = 
-                  DM.explain_cell_list_use_edges (i, j) w.m w.model.g in
+                  DM.explain_cell_list_use_edges 
+                    w.projection_cache (i, j) w.m w.model.g in
                 let str = 
                   deps +> List.map (fun (n1, n2) ->
                     spf "%s --> %s"
