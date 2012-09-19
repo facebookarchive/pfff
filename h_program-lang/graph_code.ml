@@ -168,6 +168,16 @@ let parent n g =
 let parents n g =
   G.pred n g.has
 
+let children n g =
+  G.succ n g.has
+
+let rec all_children n g =
+  let xs = G.succ n g.has in
+  if null xs 
+  then [n]
+  else 
+    n::(xs +> List.map (fun n -> all_children n g) +> List.flatten)
+
 let nb_nodes g = 
   G.nb_nodes g.has
 let nb_use_edges g =
