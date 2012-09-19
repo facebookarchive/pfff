@@ -31,8 +31,13 @@ interface Iterator extends Traversable {
 
 // http://php.net/manual/en/class.iteratoraggregate.php
 interface IteratorAggregate {
+  public function getIterator();
+}
+
+interface Iterable extends IteratorAggregate {
 }
 
 // http://php.net/manual/en/class.arrayaccess.php
 interface ArrayAccess {
 }
+
