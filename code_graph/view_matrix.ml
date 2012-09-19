@@ -116,34 +116,24 @@ let draw_cells cr w ~interactive_regions =
 
 let draw_left_rows cr w ~interactive_regions =
   let l = M.layout_of_w w in
-  let font_size_default =
-    min (l.height_cell / 1.5) (l.x_start_matrix_left / 10. )
-  in
+  let font_size_default = min (l.height_cell/1.5) (l.x_start_matrix_left/10.) in
   CairoH.set_font_size cr font_size_default;
 
-  (* peh because it exercises the spectrum of high letters *)
-  let extent = CairoH.text_extents cr "peh" in
-  let _base_tw = extent.Cairo.text_width / 3. in
-  let th = extent.Cairo.text_height in
 
   let i = ref 0 in
   let rec aux depth tree =
     match tree with
     (* a leaf *)
     | DM.Node (node, []) ->
-        pr2_gen depth;
         let x = float_of_int depth * l.width_vertical_label in
         let y = (float_of_int !i) * l.height_cell + l.y_start_matrix_up in
         let rect = { 
           p = { x = x; y = y; };
           q = { x = l.x_start_matrix_left; y = y + l.height_cell };
         } in
-        let width_for_label = l.x_start_matrix_left - x in
         CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat" rect;
-        Common.push2 (Row !i, rect) interactive_regions;
 
-        (* align on the left *)
-        Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
+        Common.push2 (Row !i, rect) interactive_regions;
 
         (* old: let node = Hashtbl.find w.m.DM.i_to_name i in *)
         let (txt, kind) = node in
@@ -152,6 +142,7 @@ let draw_left_rows cr w ~interactive_regions =
         CairoH.set_font_size cr font_size_default;
         let extent = CairoH.text_extents cr txt in
         let w = extent.Cairo.text_width in
+        let width_for_label = l.x_start_matrix_left - x in
         (* todo: could try different settings until it works? like in cm? *)
         let font_size_final =
           if w > width_for_label 
@@ -159,10 +150,57 @@ let draw_left_rows cr w ~interactive_regions =
           else font_size_default
         in
         CairoH.set_font_size cr font_size_final;
+
+        (* align text on the left *)
+        let extent = CairoH.text_extents cr txt in
+        let th = extent.Cairo.text_height in
+        Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
         CairoH.show_text cr txt;
         incr i
+
     (* a node, draw the label vertically *)
     | DM.Node (node, xs) ->
+        let x = float_of_int depth * l.width_vertical_label in
+        let y = (float_of_int !i) * l.height_cell + l.y_start_matrix_up in
+        let n = float_of_int (List.length (DM.final_nodes_of_tree tree)) in
+        let rect = {
+          p = { x; y; };
+          q = { x = x + l.width_vertical_label; y = y + n * l.height_cell};
+        } in
+        CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"SteelBlue2" rect;
+        (* todo? push2 ?? interactive_regions *)
+
+        let (txt, kind) = node in
+        let color = color_of_node_kind kind in
+        CairoH.set_source_color cr color ();
+        let font_size_default = 
+          min (l.width_vertical_label/1.5) ((n * l.height_cell) /10.) in
+
+        CairoH.set_font_size cr font_size_default;
+        let extent = CairoH.text_extents cr txt in
+        let w = extent.Cairo.text_width in
+
+        let width_for_label = n * l.height_cell in
+        (* todo: could try different settings until it works? like in cm? *)
+        let font_size_final =
+          if w > width_for_label 
+          then (font_size_default / (w / width_for_label))
+          else font_size_default
+        in
+        CairoH.set_font_size cr font_size_final;
+
+        (* center the text *)
+        let extent = CairoH.text_extents cr txt in
+        let th = extent.Cairo.text_height in
+        let tw = extent.Cairo.text_width in
+        let angle = -. (pi / 2.) in
+        Cairo.move_to cr 
+          ((x + l.width_vertical_label / 2.) + (th / 2.0))
+          (y + ((n * l.height_cell) /2.) + (tw / 2.0));
+        Cairo.rotate cr ~angle;
+        CairoH.show_text cr txt;
+        Cairo.rotate cr ~angle:(-. angle);
+        
         xs +> List.iter (aux (depth +.. 1))
   in
   (* use dm.config, not w.config which is not necessaraly ordered *)

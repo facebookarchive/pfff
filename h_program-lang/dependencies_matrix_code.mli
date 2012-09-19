@@ -6,9 +6,9 @@ type dm = {
   i_to_name: (int, Graph_code.node) Hashtbl.t;
   config: config;
 }
+  and config = tree
   and tree =
     | Node of Graph_code.node * tree list
-  and config = tree
 
 val verbose: bool ref
 
@@ -36,6 +36,9 @@ val expand_node:
   Graph_code.node -> tree -> Graph_code.graph -> tree
 val focus_on_node:
   Graph_code.node -> deps_style -> tree -> dm -> tree
+
+(* APIs useful for other to use *)
+val final_nodes_of_tree: tree -> Graph_code.node list
 
 (* poor's man DSM visualizer (use codegraph for real visualization) *)
 val display:
