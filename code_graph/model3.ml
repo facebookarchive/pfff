@@ -134,7 +134,7 @@ type layout = {
   x_start_matrix_left: float;
   x_end_matrix_right: float;
   y_start_matrix_up: float;
-  _y_end_matrix_down: float;
+  y_end_matrix_down: float;
 
   width_vertical_label: float;
 
@@ -148,7 +148,7 @@ let layout_of_w w =
   let x_end_matrix_right = 1.71 in
   (* this will be with 45 degrees so it can be less than x_start_matrix_left *)
   let y_start_matrix_up = 0.1 in
-  let _y_end_matrix_down = 1.0 in
+  let y_end_matrix_down = 1.0 in
 
   let nb_elts = Array.length w.m.DM.matrix in
   let width_cell = 
@@ -159,7 +159,7 @@ let layout_of_w w =
     x_start_matrix_left;
     x_end_matrix_right;
     y_start_matrix_up;
-    _y_end_matrix_down;
+    y_end_matrix_down;
 
     width_vertical_label = 0.025;
 

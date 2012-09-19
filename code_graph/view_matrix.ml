@@ -60,6 +60,22 @@ let color_of_node_kind kind =
 
 (* todo: style/font_of_node_kind? so put in bold directories *)
 
+let line_width_of_depth l d =
+  let h = l.height_cell in
+  match d with
+  | 0 -> h / 8.
+  | 1 -> h / 20.
+  | 2 -> h / 40.
+  | _ -> h / 80.
+
+let line_color_of_depth d =
+  match d with
+  | 0 -> "wheat"
+  | 1 -> "grey80"
+  | 2 -> "grey65"
+  | 3 -> "grey50"
+  | _ -> "grey30"
+
 (*****************************************************************************)
 (* Drawing helpers *)
 (*****************************************************************************)
@@ -84,10 +100,14 @@ let draw_cells cr w ~interactive_regions =
       
       (* less: could also display intra dependencies *)
       if i = j then
+        (* todo: heatmap? *)
         CairoH.fill_rectangle_xywh ~cr ~x ~y ~w:l.width_cell ~h:l.height_cell
           ~color:"wheat" ()
       else begin
-        CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat" rect;
+        (* old: this is now done in draw_left_rows
+         *  let _line_width = line_width_of_depth l depth in
+         *  CairoH.draw_rectangle ~cr ~line_width ~color:"wheat" rect; 
+         *)
         let n = w.m.DM.matrix.(i).(j) in
         if n > 0 then begin
           let txt = string_of_int n in
@@ -125,15 +145,34 @@ let draw_left_rows cr w ~interactive_regions =
     match tree with
     (* a leaf *)
     | DM.Node (node, []) ->
+        (* draw box around label *)
         let x = float_of_int depth * l.width_vertical_label in
         let y = (float_of_int !i) * l.height_cell + l.y_start_matrix_up in
         let rect = { 
           p = { x = x; y = y; };
           q = { x = l.x_start_matrix_left; y = y + l.height_cell };
         } in
-        CairoH.draw_rectangle ~cr ~line_width:0.0005 ~color:"wheat" rect;
+        let line_width = line_width_of_depth l depth in
+        let color = line_color_of_depth depth in
+        CairoH.draw_rectangle ~cr ~line_width ~color rect;
 
         Common.push2 (Row !i, rect) interactive_regions;
+
+        (* draw horizontal lines around cells *)
+        let rect2 = {
+          p = { x = l.x_start_matrix_left; y = y; };
+          q = { x = l.x_end_matrix_right; y = y + l.height_cell };
+        } in
+        CairoH.draw_rectangle ~cr ~line_width ~color rect2;
+       
+        (* draw vertical lines around cells *)
+        let x' = (float_of_int !i) * l.width_cell + l.x_start_matrix_left in
+        let y'  = l.y_start_matrix_up in
+        let rect3 = {
+          p = { x = x'; y = y'; };
+          q = { x = x' + l.width_cell; y = l.y_end_matrix_down};
+        } in
+        CairoH.draw_rectangle ~cr ~line_width ~color rect3;
 
         (* old: let node = Hashtbl.find w.m.DM.i_to_name i in *)
         let (txt, kind) = node in
@@ -167,7 +206,9 @@ let draw_left_rows cr w ~interactive_regions =
           p = { x; y; };
           q = { x = x + l.width_vertical_label; y = y + n * l.height_cell};
         } in
-        CairoH.draw_rectangle ~cr ~line_width:0.001 ~color:"SteelBlue2" rect;
+
+        let line_width = line_width_of_depth l depth in
+        CairoH.draw_rectangle ~cr ~line_width ~color:"SteelBlue2" rect;
         (* todo? push2 ?? interactive_regions *)
 
         let (txt, kind) = node in
