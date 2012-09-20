@@ -30,7 +30,6 @@ let test_parse xs  =
 
   fullxs +> List.iter (fun file -> 
 
-    pr2 "";
     pr2 ("PARSING: " ^ file);
 
     let (xs, stat) = 
