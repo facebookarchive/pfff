@@ -803,17 +803,11 @@ package_declaration: PACKAGE name SM  { List.rev $2, [$1;$3] }
 
 /* 7.5 */
 import_declaration:
- | single_type_import_declaration   { $1 }
- | type_import_on_demand_declaration { $1 }
-
-/* 7.5.1 */
-single_type_import_declaration: IMPORT name SM  { List.rev $2 }
-
-/* 7.5.2 */
-type_import_on_demand_declaration: IMPORT name DOT TIMES SM  
+ | IMPORT static_opt name SM  { List.rev $3 }
+ | IMPORT static_opt name DOT TIMES SM  
      { 
-       let star_ident = synth_id ("*", $4) in
-       List.rev (star_ident :: $2) 
+       let star_ident = synth_id ("*", $5) in
+       List.rev (star_ident :: $3) 
      }
 
 /*(*************************************************************************)*/
@@ -1105,6 +1099,10 @@ formal_parameter_list_opt:
 final_opt:
  | /*(*empty*)*/  { [] }
  | FINAL  { [Final, [$1]] }
+
+static_opt:
+ | /*(*empty*)*/  { None }
+ | STATIC  { Some $1 }
 
 throws_opt:
  | /*(*empty*)*/  { [] }
