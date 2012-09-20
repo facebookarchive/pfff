@@ -85,6 +85,7 @@ let info_of_tok = function
   | SRS (ii) -> ii
   | URS (ii) -> ii
 
+  | AT (ii) -> ii
 
   | ABSTRACT (ii) -> ii
   | BOOLEAN (ii) -> ii
@@ -199,6 +200,7 @@ let visitor_info_of_tok f = function
   | SRS (ii) -> SRS (f ii)
   | URS (ii) -> URS (f ii)
 
+  | AT (ii) -> AT (f ii)
 
   | ABSTRACT (ii) -> ABSTRACT (f ii)
   | BOOLEAN (ii) -> BOOLEAN (f ii)

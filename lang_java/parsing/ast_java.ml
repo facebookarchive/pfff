@@ -152,6 +152,8 @@ and modifier = modifierbis wrap (* could do wrap3 instead *)
   | Synchronized
   | Native
 
+  | Annotation
+
 and modifiers = modifier list
 
 and vars = var list

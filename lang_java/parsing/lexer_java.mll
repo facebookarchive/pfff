@@ -309,6 +309,9 @@ rule token = parse
 | "<<"  { LS(tokinfo lexbuf) } | ">>"  { SRS(tokinfo lexbuf) }
 | ">>>"  { URS(tokinfo lexbuf) }
 
+(* ext: annotations *)
+| "@" { AT(tokinfo lexbuf) }
+
 | AssignmentOperator  { 
     let info = tokinfo lexbuf in
     let s = tok lexbuf in

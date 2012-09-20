@@ -10,10 +10,10 @@
  * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha
  * 
  * Some modifications by Yoann Padioleau.
+ *  - support annotations (partial)
  * 
  * TODO: 
  *  - support for generics
- *  - support annotations
  *  - support enums
  *  - etc.
  *)
@@ -147,6 +147,8 @@ let constructor_invocation name args =
 %token <Ast_java.info> LS		/* << */
 %token <Ast_java.info> SRS		/* >> */
 %token <Ast_java.info> URS		/* >>> */
+
+%token <Ast_java.info> AT		/* @ */
 
 %token <(string * Ast_java.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
@@ -730,14 +732,51 @@ modifier:
  | PUBLIC       { Public, [$1] }
  | PROTECTED    { Protected, [$1] }
  | PRIVATE      { Private, [$1] }
+
  | ABSTRACT     { Abstract, [$1] }
  | STATIC       { Static, [$1] }
  | FINAL        { Final, [$1] }
+
  | STRICTFP     { StrictFP, [$1] }
  | TRANSIENT    { Transient, [$1] }
  | VOLATILE     { Volatile, [$1] }
  | SYNCHRONIZED { Synchronized, [$1] }
  | NATIVE       { Native, [$1] }
+
+ | annotation { Annotation, [] }
+
+/*(*************************************************************************)*/
+/*(*1 Annotation *)*/
+/*(*************************************************************************)*/
+
+annotation: 
+ | AT name { }
+ | AT name LP annotation_element_opt RP { }
+
+annotation_element:
+ | element_value { }
+ | element_value_pairs { }
+
+element_value:
+ | expr1 { }
+ | annotation { }
+ /* todo: EmentValueArraInitializer 
+*/
+
+element_value_pair:
+ identifier EQ element_value { }
+
+
+element_value_pairs: 
+ | element_value_pair { [$1] }
+ | element_value_pairs CM element_value_pair { $1 ++ [$3] }
+
+annotation_element_opt:
+ | /*(*empty*)*/ { None }
+ | annotation_element { Some $1 }
+
+/*(* can not contain identifier, otherwise shift/reduce conflict *)*/
+expr1: literal { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Package, Import *)*/

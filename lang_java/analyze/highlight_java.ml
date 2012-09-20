@@ -297,6 +297,9 @@ let visit_toplevel
     | T.ASSERT ii
         -> tag ii Keyword
 
+    | T.AT ii ->
+        tag ii Punctuation
+
     (* symbols *)
 
     | T.LP ii | T.RP ii
