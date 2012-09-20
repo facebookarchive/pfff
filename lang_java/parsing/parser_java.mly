@@ -264,6 +264,17 @@ array_type:
  | name           LB RB { ArrayType (TypeName (List.rev $1),noii), [$2;$3] }
  | array_type     LB RB { ArrayType $1, [$2;$3] }
 
+/*(*----------------------------*)*/
+/*(*2 Generics arguments *)*/
+/*(*----------------------------*)*/
+
+/*(*----------------------------*)*/
+/*(*2 Generics parameters *)*/
+/*(*----------------------------*)*/
+type_parameter: 
+ | identifier { }
+/*(* todo: identifier EXTENDS bound ?? *)*/
+
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
@@ -815,9 +826,10 @@ type_declaration:
 /*(*----------------------------*)*/
 /* 8.1 */
 class_declaration: 
- modifiers_opt CLASS identifier super_opt interfaces_opt class_body
-  { { cl_mods = $1; cl_name = $3; cl_super = $4; 
-      cl_impls = $5; cl_body = (myfst $6) 
+ modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
+ class_body
+  { { cl_mods = $1; cl_name = $3; cl_super = $5; 
+      cl_impls = $6; cl_body = (myfst $7) 
      }
   }
 
@@ -1025,6 +1037,13 @@ type_declarations_opt:
  | type_declarations  { $1 }
 
 
+type_parameters:
+ | type_parameter  { [$1] }
+ | type_parameters CM type_parameter  { $1 ++ [$3] }
+
+type_parameters_opt:
+ | /*(*empty*)*/  { [] }
+ | LT type_parameters GT  { $2 }
 
 package_declaration_opt:
  | /*(*empty*)*/  { None }

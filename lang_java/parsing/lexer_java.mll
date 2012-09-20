@@ -291,6 +291,7 @@ rule token = parse
 
 (* 3.12 Operators *)
 | "="  { EQ(tokinfo lexbuf) }
+(* relational operator also now used for generics *)
 | "<"  { LT(tokinfo lexbuf) } | ">"  { GT(tokinfo lexbuf) }
 | "!"  { NOT(tokinfo lexbuf) }
 | "~"  { COMPL(tokinfo lexbuf) }
