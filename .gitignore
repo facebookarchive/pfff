@@ -10,6 +10,7 @@
 *.so
 *.o
 *.exe
+*.class
 
 # ocamldoc
 *.out
