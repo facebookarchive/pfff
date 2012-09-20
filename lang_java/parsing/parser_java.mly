@@ -150,6 +150,7 @@ let constructor_invocation name args =
 
 %token <Ast_java.info> AT		/* @ */
 
+
 %token <(string * Ast_java.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
@@ -233,8 +234,11 @@ identifier: IDENTIFIER  { fst $1, [snd $1] }
 
 /* 6.5 */
 name:
- | identifier           { [$1] }
- | name DOT identifier  { $3 :: $1 }
+ | identifier_           { [$1] }
+ | name DOT identifier_  { $3 :: $1 }
+
+identifier_:
+ | identifier { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
