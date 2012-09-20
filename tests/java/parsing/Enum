@@ -1,0 +1,14 @@
+BAD:!!!!!   public enum AddShortcutResult {
+bad:     /**
+bad:      * A shortcut with the same intent already exist on one of the home screens and duplicated
+bad:      * shortcuts are not allowed
+bad:      */
+bad:     DUPLICATED,
+bad: 
+bad:     NO_ROOM,
+bad: 
+bad:     /**
+bad:      * a shortcut was added to a home screen
+bad:      */
+bad:     SUCCESS
+bad:   }
