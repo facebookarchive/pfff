@@ -132,10 +132,9 @@ and case = casebis wrap
  and casebis = 
   | Case of expr
   | Default
+and cases = case list
 
 and catch = var * stmt
-
-and cases = case list
 and catches = catch list
 
 (* ------------------------------------------------------------------------- *)
