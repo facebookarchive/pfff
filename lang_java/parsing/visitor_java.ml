@@ -125,7 +125,7 @@ and class_decl = fun bigf cd ->
 
   let mods' = List.map (modifier bigf) cd.cl_mods in
   let name' = ident bigf cd.cl_name in
-  let supers' = Common.fmap (name bigf) cd.cl_super in
+  let supers' = Common.fmap (typ bigf) cd.cl_super in
   let impls' = List.map (name bigf) cd.cl_impls in
   let decls' = List.map (decl bigf) cd.cl_body in 
   

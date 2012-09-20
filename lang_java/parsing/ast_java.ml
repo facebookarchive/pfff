@@ -2,7 +2,9 @@
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
  * Released under the GNU General Public License 
  * 
- * Yoann Padioleau: 2010, port to the pfff infrastructure.
+ * Yoann Padioleau: 
+ * 2010, port to the pfff infrastructure.
+ * 2012, support annotation and generics
  *)
 
 module PI = Parse_info
@@ -13,8 +15,8 @@ module PI = Parse_info
  * A simple AST for Java.
  * 
  * TODO: 
- *  - support for generics
  *  - support annotations
+ *  - support for generics
  *  - support enums
  *  - etc.
  *)
@@ -192,7 +194,7 @@ and field = {
 and class_decl = { 
   cl_mods: modifiers;
   cl_name: ident;
-  cl_super: name option;
+  cl_super: typ option;
   cl_impls: names;
   cl_body: decls 
 }

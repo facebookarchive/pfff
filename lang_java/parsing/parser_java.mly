@@ -11,9 +11,9 @@
  * 
  * Some modifications by Yoann Padioleau.
  *  - support annotations (partial)
+ *  - support for generics (partial)
  * 
  * TODO: 
- *  - support for generics
  *  - support enums
  *  - etc.
  *)
@@ -178,6 +178,7 @@ let constructor_invocation name args =
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
 
+
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
@@ -235,11 +236,6 @@ name:
  | identifier           { [$1] }
  | name DOT identifier  { $3 :: $1 }
 
-class_or_interface_type: name  { List.rev $1 }
-
-class_type: name             { List.rev $1 }
-interface_type: name         { List.rev $1 }
-
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
@@ -256,8 +252,13 @@ primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
 /* 4.3 */
 reference_type:
- | class_or_interface_type  { TypeName $1, noii }
+ | name       { TypeName $1, noii }
  | array_type             { $1 }
+
+class_or_interface_type: name  { List.rev $1 }
+
+class_type: name             { List.rev $1 }
+interface_type: name         { List.rev $1 }
 
 array_type:
  | primitive_type LB RB { ArrayType $1, [$2;$3] }
@@ -834,7 +835,7 @@ class_declaration:
   }
 
 /* 8.1.3 */
-super: EXTENDS class_type  { $2 }
+super: EXTENDS type_java  { $2 }
 
 /* 8.1.4 */
 interfaces: IMPLEMENTS interface_type_list  { List.rev $2 }
