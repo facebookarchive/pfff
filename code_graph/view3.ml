@@ -81,7 +81,6 @@ let configure da w ev =
   View_matrix.paint w;
   true
 
-
 (*****************************************************************************)
 (* The main UI *)
 (*****************************************************************************)
@@ -200,8 +199,8 @@ let mk_gui w =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_BACK) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          raise Todo
-          (* !Controller._go_back dw;*)
+          w.path <- Common.list_init w.path;
+          View_matrix.recompute_matrix w;
         )
       ));
     ));
