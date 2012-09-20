@@ -356,6 +356,7 @@ let recompute_matrix w =
   paint w;
   ()
 
+(* todo: unless you are a children of the node that was expanded *)
 let put_expand_just_before_last_focus n xs =
   let rec aux xs =
     match xs with
