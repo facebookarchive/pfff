@@ -343,16 +343,36 @@ let paint w =
 (*****************************************************************************)
 
 let recompute_matrix w =
+  let config = M.config_of_path w.path w.model in
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
-      Dependencies_matrix_code.build w.config 
+      Dependencies_matrix_code.build config 
         (Some w.model.full_matrix) w.model.g 
     )
   in
+  !Ctl._set_title (DM.string_of_config_path w.path);
   w.m <- m;
   w.projection_cache <- Hashtbl.create 101;
   paint w;
   ()
+
+let put_expand_just_before_last_focus n xs =
+  let rec aux xs =
+    match xs with
+    | [] -> [DM.Expand n]
+    | x::xs ->
+        (match x with
+        | DM.Expand _ -> x::aux xs
+        | DM.Focus _ -> (DM.Expand n)::x::xs
+        )
+  in
+  aux xs
+
+let add_path x path =
+  match x with
+  | DM.Focus _ -> path ++ [x]
+  | DM.Expand (n) ->
+      put_expand_just_before_last_focus n path
 
 let button_action da w ev =
   let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
@@ -375,14 +395,13 @@ let button_action da w ev =
             | `TWO_BUTTON_PRESS, 1 ->
                 pr2 (spf "double clicking on row i");
                 let node = Hashtbl.find w.m.DM.i_to_name i in
-                w.config <- DM.expand_node node w.config w.model.g;
+                w.path <- add_path (DM.Expand node) w.path;
                 recompute_matrix w;
                 true
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on row i");
                 let node = Hashtbl.find w.m.DM.i_to_name i in
-                w.config <- 
-                  DM.focus_on_node node DM.DepsOut w.config w.m;
+                w.path <- add_path (DM.Focus (node, DM.DepsOut)) w.path;
                 recompute_matrix w;
                 true
 
@@ -413,8 +432,7 @@ let button_action da w ev =
                 if i = j
                 then begin
                   let node = Hashtbl.find w.m.DM.i_to_name j in
-                  w.config <- 
-                    DM.focus_on_node node DM.DepsInOut w.config w.m;
+                  w.path <- add_path (DM.Focus (node, DM.DepsInOut)) w.path;
                   recompute_matrix w;
                   true
                 end else
@@ -429,8 +447,7 @@ let button_action da w ev =
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on column j");
                 let node = Hashtbl.find w.m.DM.i_to_name j in
-                w.config <- 
-                  DM.focus_on_node node DM.DepsIn w.config w.m;
+                w.path <- add_path (DM.Focus (node, DM.DepsIn)) w.path;
                 recompute_matrix w;
                 true
 

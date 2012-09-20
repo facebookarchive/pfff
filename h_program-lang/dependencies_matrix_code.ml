@@ -48,10 +48,14 @@ type dm = {
 let basic_config g = 
   Node (G.root, G.succ G.root G.Has g +> List.map (fun n -> Node (n, [])))
 
-type deps_style = 
+type config_path_elem = 
+  | Expand of Graph_code.node
+  | Focus of Graph_code.node * deps_style
+ and deps_style = 
   | DepsIn
   | DepsOut
   | DepsInOut
+type config_path = config_path_elem list
 
 (* optimization *)
 type projection_cache = (Graph_code.node, int option) Hashtbl.t
@@ -492,7 +496,13 @@ let expand_node n tree g =
 
 let focus_on_node n deps_style tree dm =
   let deps = ref [] in
-  let i = Hashtbl.find dm.name_to_i n in
+  let i = 
+    try Hashtbl.find dm.name_to_i n 
+    with Not_found ->
+      pr2_gen (n);
+      pr2_gen dm;
+      raise Not_found
+  in
   let nb_elts = Array.length dm.matrix in
   for j = 0 to nb_elts - 1 do
     let to_include =
@@ -511,3 +521,22 @@ let focus_on_node n deps_style tree dm =
     Node (Hashtbl.find dm.i_to_name i, []))
   )
   
+
+(*****************************************************************************)
+(* Config path *)
+(*****************************************************************************)
+
+let string_of_config_path_elem = function
+  | Expand n -> 
+      spf "Expand(%s)" (G.string_of_node n)
+  | Focus (n, style) -> 
+      spf "Focus%s(%s)" 
+        (match style with
+        | DepsIn -> "<-"
+        | DepsOut -> "->"
+        | DepsInOut -> "<->"
+        )
+        (G.string_of_node n)
+
+let string_of_config_path xs = 
+  xs +> List.map string_of_config_path_elem +> Common.join "/"

@@ -220,7 +220,7 @@ let build_graph_code lang root =
  *  - display slice if needed of the dependency hieararchical matrix 
  *    using arguments in xs.
  * No need of -with_extern anymore, external stuff will be collapsed.
- * No need of package_depth, can expand on demand after.
+ * No need of -package_depth, can expand on demand after.
  * 
  * todo: How load graph? Build on demand? easier to test things that way ... 
  * maybe can just cache and look if we need to recompute the code graph?
@@ -238,7 +238,6 @@ let main_action xs =
         else failwith "go the directory you want"
     | _ -> failwith "give just one directory" 
   in
-  pr2_gen dir;
   let inits = Common.inits_of_absolute_dir dir in
   let root =
     inits +> List.rev +> List.find (fun path -> Sys.file_exists (dep_file path))
@@ -246,17 +245,13 @@ let main_action xs =
   pr2 (spf "Using root = %s" root);
   let model = build_model root in
 
-  (* todo: have a path, Expand x; Expand y; Focus InOut z; Expand z
-   * so then can have a menu that reapply a focus even after
-   * an Expand.
-   *)
-  let config =
+  let path =
     if root =*= dir
-    then DM.basic_config model.Model.g 
+    then []
     else begin
       (* Propose a specific slice of the graph.
-       * If run cg from a/b/c, then expand_node a, expand node a/b,
-       * then focus_on_node a/b/c, and optionally expand_node a/b/c.
+       * If run cg from a/b/c, then Expand a, Expand a/b,
+       * then Focus a/b/c, and optionally Expand a/b/c.
        *)
       let readable_subdir =
         let xs = Common.split "/" root in
@@ -266,33 +261,24 @@ let main_action xs =
         b
       in
       pr2 (spf "focusing on on Dir %s" (Common.join "/" readable_subdir));
-      let initial_config = DM.basic_config model.Model.g in
-      let rec aux before current_config xs =
+      
+      let rec aux before xs =
         match xs with
         | [] -> raise Impossible
         | [x] ->
             let dir = List.rev (x::before) +> Common.join "/" in
             let node = dir, Database_code.Dir in
-            let dm = 
-              DM.build current_config 
-                (Some model.Model.full_matrix) model.Model.g in
-            let config = 
-              DM.focus_on_node node !deps_style current_config dm in
-            let config = 
-              DM.expand_node node config model.Model.g in
-            config
+            [DM.Focus (node, !deps_style); DM.Expand node;]
         | x::xs ->
             let dir = List.rev (x::before) +> Common.join "/" in
             let node = dir, Database_code.Dir in
-            let config = 
-              DM.expand_node node current_config model.Model.g in
-            aux (x::before) config xs
+            (DM.Expand node)::aux (x::before) xs
       in
-      aux [] initial_config readable_subdir
+      (aux [] readable_subdir)
     end
   in
 
-  let w = Model.init_world config model in
+  let w = Model.init_world path model in
   View.mk_gui w
 
 (*****************************************************************************)

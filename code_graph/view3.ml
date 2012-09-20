@@ -102,6 +102,9 @@ let mk_gui w =
   Controller._set_title := (fun s -> win#set_title s);
   Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
 
+  !Controller._set_title 
+    (Dependencies_matrix_code.string_of_config_path w.path);
+
   let accel_group = GtkData.AccelGroup.create () in
   win#misc#set_name "main window";
 

@@ -10,8 +10,6 @@ type dm = {
   and tree =
     | Node of Graph_code.node * tree list
 
-type projection_cache = (Graph_code.node, int option) Hashtbl.t
-
 val verbose: bool ref
 
 (* just the expanded root *)
@@ -23,16 +21,23 @@ val build:
 val build_full_matrix:
   Graph_code.graph -> dm
 
+type projection_cache = (Graph_code.node, int option) Hashtbl.t
+
 val explain_cell_list_use_edges: 
   projection_cache ->
   (int * int) -> dm -> Graph_code.graph ->
   (Graph_code.node * Graph_code.node) list
 
-(* todo: * transitive *)
-type deps_style = 
+type config_path_elem = 
+  | Expand of Graph_code.node
+  | Focus of Graph_code.node * deps_style
+ and deps_style = 
   | DepsIn
   | DepsOut
   | DepsInOut
+type config_path = config_path_elem list
+
+val string_of_config_path: config_path -> string
 
 (* tree config manipulation *)
 val expand_node: 

@@ -45,10 +45,10 @@ type model = {
 type world = {
   model: model;
 
-  mutable config: Dependencies_matrix_code.config;
-  (* cache of Dependencies_matrix_code.build config g *)
+  mutable path: Dependencies_matrix_code.config_path;
+  (* cache of Dependencies_matrix_code.build (config_of_path path) g *)
   mutable m: Dependencies_matrix_code.dm;
-  (* to memoize DM.projection on this particular matrix *)
+  (* to memoize DM.projection on this particular matrix/path *)
   mutable projection_cache: Dependencies_matrix_code.projection_cache;
   
   (* set each time in View_matrix.draw_matrix.
@@ -89,10 +89,24 @@ let new_surface ~alpha ~width ~height =
 (* Main entry point *)
 (*****************************************************************************)
 
+let config_of_path (path: DM.config_path) m =
+  let initial_config = DM.basic_config m.g in
+  pr2_gen path;
+  path +> List.fold_left (fun config e ->
+    match e with
+    | DM.Expand node ->
+        DM.expand_node node config m.g
+    | DM.Focus (node, kind) ->
+        let dm = DM.build config (Some m.full_matrix) m.g in
+        DM.focus_on_node node kind config dm
+  ) initial_config
+
+
 (* width/height are a first guess. The first configure ev will force a resize
  * coupling: with View_matrix.recompute_matrix
  *)
-let init_world ?(width = 600) ?(height = 600) config model =
+let init_world ?(width = 600) ?(height = 600) path model =
+  let config = config_of_path path model in
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config (Some model.full_matrix) model.g 
@@ -100,8 +114,8 @@ let init_world ?(width = 600) ?(height = 600) config model =
   in
   {
     model; 
-    config;
     projection_cache = Hashtbl.create 101;
+    path;
     interactive_regions = [];
     m;
     width; height;
