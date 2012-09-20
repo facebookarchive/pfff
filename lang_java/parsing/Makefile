@@ -7,7 +7,6 @@ TARGET=lib
 SRC= flag_parsing_java.ml \
      ast_java.ml \
      visitor_java.ml lib_parsing_java.ml \
-     lexer_helper.ml \
      parser_java.ml lexer_java.ml \
      token_helpers_java.ml \
      parse_java.ml \

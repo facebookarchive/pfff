@@ -12,10 +12,8 @@
  * 
  * James Gosling, Bill Joy, Guy Steele, Gilad Bracha 
  *)
-
 open Common 
 
-open Lexer_helper
 open Parser_java
 
 (*****************************************************************************)
@@ -293,7 +291,7 @@ rule token = parse
 
 (* 3.12 Operators *)
 | "="  { EQ(tokinfo lexbuf) }
-| ">"  { GT(tokinfo lexbuf) } | "<"  { LT(tokinfo lexbuf) }
+| "<"  { LT(tokinfo lexbuf) } | ">"  { GT(tokinfo lexbuf) }
 | "!"  { NOT(tokinfo lexbuf) }
 | "~"  { COMPL(tokinfo lexbuf) }
 | "?"  { COND(tokinfo lexbuf) }
