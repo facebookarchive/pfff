@@ -102,8 +102,15 @@ let main_action x =
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+type x = Foo of int
+
 let action1 () = 
-  raise Todo
+  let x = Foo 1 in
+  pr2_gen x;
+  let x = 1 in
+  pr2_gen x;
+  ()
+
 
 
 let test_json_pretty_printer file =
@@ -151,6 +158,7 @@ let pfff_extra_actions () = [
       Overlay_code.adapt_database db (Overlay_code.load_overlay overlay) in
     Database_code.save_database db' output
   );
+  "-action1", "", Common.mk_action_0_arg action1;
 ]
 
 (*****************************************************************************)
