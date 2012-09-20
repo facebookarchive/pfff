@@ -20,6 +20,7 @@ LIBS= $(TOP)/commons/commons.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
   $(TOP)/h_program-lang \
+  $(TOP)/globals \
 
 
 ##############################################################################

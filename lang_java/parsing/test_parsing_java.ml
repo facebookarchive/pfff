@@ -15,13 +15,6 @@ open Parser_java
 module PI = Parse_info
 
 (*****************************************************************************)
-(* Constants *)
-(*****************************************************************************)
-
-let score_path = "/home/pad/c-yacfe/tmp"
-let tmpfile = "/tmp/output.java" 
-
-(*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
 
@@ -58,6 +51,7 @@ let test_parse xs  =
     | [x] when is_directory x -> Some x
     | _ -> None
   in
+  let score_path = Filename.concat Config.path "tmp" in
   dirname_opt +> Common.do_option (fun dirname -> 
     pr2 "--------------------------------";
     pr2 "regression testing  information";
