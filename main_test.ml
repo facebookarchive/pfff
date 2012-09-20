@@ -74,6 +74,7 @@ let test regexp =
       Unit_parsing_html.unittest;
       Unit_parsing_opa.unittest;
       Unit_parsing_cpp.unittest;
+      Unit_parsing_java.unittest;
 
       Unit_version_control.unittest;
     ]

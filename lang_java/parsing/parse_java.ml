@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_java
@@ -179,6 +178,8 @@ let rec lexer_function tr = fun lexbuf ->
 (* Main entry point *)
 (*****************************************************************************)
 
+exception Parse_error of Parse_info.info
+
 let parse2 filename = 
 
   let stat = Parse_info.default_stat filename in
@@ -224,6 +225,9 @@ let parse2 filename =
        stat
   | Right (info_of_bads, line_error, cur, exn) ->
 
+      if not !Flag.error_recovery
+      then raise (Parse_error (TH.info_of_tok cur));
+
       (match exn with
       | Lexer_java.Lexical _ 
       | Parsing.Parse_error 
@@ -258,7 +262,6 @@ let parse2 filename =
       in 
       [Ast.NotParsedCorrectly info_of_bads, info_item], 
       stat
-
 
 let parse a = 
   Common.profile_code "Parse_java.parse" (fun () -> parse2 a)

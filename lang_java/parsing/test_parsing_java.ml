@@ -33,7 +33,11 @@ let test_parse xs  =
     pr2 "";
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_java.parse file in
+    let (xs, stat) = 
+      Common.save_excursion Flag_parsing_java.error_recovery true (fun () ->
+        Parse_java.parse file 
+      )
+    in
 
     Common.push2 stat stat_list;
     let s = sprintf "bad = %d" stat.PI.bad in

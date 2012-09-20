@@ -11,7 +11,7 @@ SRC= flag_parsing_java.ml \
      parser_java.ml lexer_java.ml \
      token_helpers_java.ml \
      parse_java.ml \
-     test_parsing_java.ml
+     test_parsing_java.ml unit_parsing_java.ml
 
 SYSLIBS= str.cma unix.cma 
 
