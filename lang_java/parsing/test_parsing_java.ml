@@ -125,6 +125,7 @@ let to_string = function
   | OPERATOR_EQ (op,ii) -> op
 
   | AT ii -> "@"
+  | DOTS ii -> "..."
 
   | ABSTRACT ii -> "abstract"
   | BOOLEAN ii -> "boolean"

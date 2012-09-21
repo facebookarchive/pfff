@@ -1,2 +1,0 @@
-BAD:!!!!!         protected LocaleConfiguration doInBackground(Void... unused) {
-BAD:!!!!!     public void addPendingHttpResponse(int statusCode, String responseBody, Header... headers) {

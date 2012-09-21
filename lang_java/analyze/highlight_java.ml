@@ -297,10 +297,15 @@ let visit_toplevel
     | T.ASSERT ii
         -> tag ii Keyword
 
+    (* java ext *)
+
     | T.ENUM ii
         -> tag ii Keyword
 
     | T.AT ii ->
+        tag ii Punctuation
+
+    | T.DOTS ii ->
         tag ii Punctuation
 
     (* symbols *)

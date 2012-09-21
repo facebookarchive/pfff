@@ -293,6 +293,7 @@ rule token = parse
 | ','  { CM(tokinfo lexbuf) }
 | '.'  { DOT(tokinfo lexbuf) }
 
+
 (* 3.12 Operators *)
 | "="  { EQ(tokinfo lexbuf) }
 (* relational operator also now used for generics *)
@@ -316,6 +317,8 @@ rule token = parse
 
 (* ext: annotations *)
 | "@" { AT(tokinfo lexbuf) }
+(* ext: ?? *)
+| "..."  { DOTS(tokinfo lexbuf) }
 
 | AssignmentOperator  { 
     let info = tokinfo lexbuf in

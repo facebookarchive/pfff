@@ -146,6 +146,7 @@ let constructor_invocation name args =
 %token <Ast_java.info> URS		/* >>> */
 
 %token <Ast_java.info> AT		/* @ */
+%token <Ast_java.info> DOTS		/* ... */
 
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
 %token <Ast_java.info> LT2		/* < */
@@ -226,6 +227,30 @@ compilation_unit:
   import_declarations_opt 
   type_declarations_opt
   { { package = $1; imports = $2; decls = $3; } }
+
+
+/*(*************************************************************************)*/
+/*(*1 Package, Import, Type *)*/
+/*(*************************************************************************)*/
+
+/* 7.4.1 */
+package_declaration: PACKAGE name SM  { List.rev $2, [$1;$3] }
+
+/* 7.5 */
+import_declaration:
+ | IMPORT static_opt name SM  { List.rev $3 }
+ | IMPORT static_opt name DOT TIMES SM  
+     { 
+       let star_ident = synth_id ("*", $5) in
+       List.rev (star_ident :: $3) 
+     }
+
+/* 7.6 */
+type_declaration:
+ | class_declaration  { [Class $1] }
+ | interface_declaration  { [Interface $1] }
+ | enum_declaration { ast_todo }
+ | SM  { [] }
 
 /*(*************************************************************************)*/
 /*(*1 Ident, namespace  *)*/
@@ -380,6 +405,16 @@ field_access:
  | name DOT SUPER DOT identifier
 	{ Name (List.rev ($5 :: super_ident $3 :: $1)), todoii }
 
+/* 15.13 */
+array_access:
+ | name LB expression RB  { ArrayAccess ((Name (List.rev $1),todoii), $3),[$2;$4] }
+ | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3),[$2;$4] }
+
+
+/*(*----------------------------*)*/
+/*(*2 Method call *)*/
+/*(*----------------------------*)*/
+
 /* 15.12 */
 method_invocation:
  | name LP argument_list_opt RP  
@@ -390,12 +425,6 @@ method_invocation:
 	{ Call ((Name [super_ident $1; $3],todoii), $5), [$4;$6] }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
 	{ Call ((Name (List.rev ($5 :: super_ident $3 :: $1)),todoii), $7),[$6;$8] }
-
-
-/* 15.13 */
-array_access:
- | name LB expression RB  { ArrayAccess ((Name (List.rev $1),todoii), $3),[$2;$4] }
- | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3),[$2;$4] }
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -840,31 +869,9 @@ annotation_element_opt:
 expr1: literal { $1 }
 
 /*(*************************************************************************)*/
-/*(*1 Package, Import *)*/
-/*(*************************************************************************)*/
-
-/* 7.4.1 */
-package_declaration: PACKAGE name SM  { List.rev $2, [$1;$3] }
-
-/* 7.5 */
-import_declaration:
- | IMPORT static_opt name SM  { List.rev $3 }
- | IMPORT static_opt name DOT TIMES SM  
-     { 
-       let star_ident = synth_id ("*", $5) in
-       List.rev (star_ident :: $3) 
-     }
-
-/*(*************************************************************************)*/
 /*(*1 Class/Interface *)*/
 /*(*************************************************************************)*/
 
-/* 7.6 */
-type_declaration:
- | class_declaration  { [Class $1] }
- | interface_declaration  { [Interface $1] }
- | enum_declaration { ast_todo }
- | SM  { [] }
 
 /*(*----------------------------*)*/
 /*(*2 Class *)*/
@@ -953,18 +960,6 @@ method_declarator:
  | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1,noii), $3 }
  | method_declarator LB RB                   { (ArrayDecl (fst $1),todoii), snd $1 }
 
-/* 8.4.1 */
-formal_parameter: variable_modifier_opt type_java variable_declarator_id  
-  { 
-    let formal_decl mods t v = canon_var mods t v in
-    (* todo: use $1 *)
-    formal_decl [] $2 $3 
-  }
-
-variable_modifier:
- | FINAL { }
- | annotation { }
-
 /* 8.4.4 */
 throws: THROWS class_type_list  { List.rev $2 }
 
@@ -1019,6 +1014,25 @@ explicit_constructor_invocation:
  | name DOT SUPER LP argument_list_opt RP SM
       { constructor_invocation (List.rev (super_ident $3 :: $1)) $5 }
 
+/*(*----------------------------*)*/
+/*(*2 Method parameter *)*/
+/*(*----------------------------*)*/
+
+/* 8.4.1 */
+formal_parameter: variable_modifier_opt type_java variable_declarator_id_bis
+  { 
+    let formal_decl mods t v = canon_var mods t v in
+    (* todo: use $1 *)
+    formal_decl [] $2 $3 
+  }
+
+variable_declarator_id_bis:
+ | variable_declarator_id { $1 }
+ | DOTS variable_declarator_id { $2 (* todo_ast *) }
+
+variable_modifier:
+ | FINAL { }
+ | annotation { }
 
 /*(*----------------------------*)*/
 /*(*2 Interface *)*/
