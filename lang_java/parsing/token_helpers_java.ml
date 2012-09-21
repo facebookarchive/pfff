@@ -138,6 +138,7 @@ let info_of_tok = function
   | WHILE (ii) -> ii
 
   | ASSERT (ii) -> ii
+  | ENUM (ii) -> ii
 
   | EOF (ii) -> ii
 
@@ -254,6 +255,7 @@ let visitor_info_of_tok f = function
   | WHILE (ii) -> WHILE (f ii)
 
   | ASSERT (ii) -> ASSERT (f ii)
+  | ENUM (ii) -> ENUM (f ii)
 
   | EOF (ii) -> EOF (f ii)
 

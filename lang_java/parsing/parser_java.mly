@@ -169,6 +169,7 @@ let constructor_invocation name args =
  THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE 
  /*(* javaext: *)*/
  ASSERT
+ ENUM
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
@@ -844,6 +845,7 @@ import_declaration:
 type_declaration:
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
+ | enum_declaration { ast_todo }
  | SM  { [] }
 
 /*(*----------------------------*)*/
@@ -882,6 +884,7 @@ class_member_declaration:
  | method_declaration  { [Method $1] }
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
+ | enum_declaration { ast_todo }
 
  | SM  { [] }
 
@@ -1004,8 +1007,9 @@ explicit_constructor_invocation:
 /*(*----------------------------*)*/
 
 /* 9.1 */
-interface_declaration: modifiers_opt INTERFACE identifier
-		        extends_interfaces_opt interface_body
+interface_declaration: 
+ modifiers_opt INTERFACE identifier  extends_interfaces_opt 
+ interface_body
   { 
     let interface_decl mods name extends body =
       { if_mods = mods; if_name = name; if_exts = extends; if_body = body }
@@ -1043,6 +1047,20 @@ abstract_method_declaration:
 	{ method_header $1 $2 $3 $4 }
  | modifiers_opt VOID method_declarator throws_opt SM
 	{ method_header $1 (void_type $2) $3 $4 }
+
+/*(*----------------------------*)*/
+/*(*2 Enum *)*/
+/*(*----------------------------*)*/
+enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body 
+ { }
+
+enum_body: 
+ | LC enum_constants_opt enum_body_declarations_opt RC { }
+
+enum_constant:
+ | identifier { }
+
+enum_body_declarations: SM { }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
@@ -1235,3 +1253,16 @@ dim_exprs:
 dims_opt:
  | /*(*empty*)*/  { 0 }
  | dims  { $1 }
+
+enum_constants_opt:
+ | /*(*empty*)*/  {  }
+ | enum_constants  { }
+
+enum_constants:
+ | enum_constant { }
+ | enum_constants CM enum_constant { }
+
+enum_body_declarations_opt: 
+ | /*(*empty*)*/  {  }
+ | enum_body_declarations  { }
+

@@ -103,6 +103,10 @@ let keyword_table = Common.hash_of_list [
 
   (* javaext: 1.4 *)
   "assert", (fun ii -> ASSERT ii);
+
+  (* javaext: 1.? *)
+  "enum", (fun ii -> ENUM ii);
+
 ]
 }
 (*****************************************************************************)

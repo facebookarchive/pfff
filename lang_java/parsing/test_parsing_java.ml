@@ -176,6 +176,7 @@ let to_string = function
   | WHILE ii -> "while"
 
   | ASSERT ii -> "assert"
+  | ENUM ii -> "enum"
 
   | EOF ii -> "EOF"
 
