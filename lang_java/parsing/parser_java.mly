@@ -278,6 +278,7 @@ array_type:
 /*(*----------------------------*)*/
 type_argument:
  | reference_type { }
+ | COND { }
 
 type_arguments:
  | type_argument  { [$1] }
