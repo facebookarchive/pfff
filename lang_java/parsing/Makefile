@@ -9,6 +9,7 @@ SRC= flag_parsing_java.ml \
      visitor_java.ml lib_parsing_java.ml \
      parser_java.ml lexer_java.ml \
      token_helpers_java.ml \
+     parsing_hacks_java.ml \
      parse_java.ml \
      test_parsing_java.ml unit_parsing_java.ml
 

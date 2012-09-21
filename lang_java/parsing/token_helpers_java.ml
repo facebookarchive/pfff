@@ -61,6 +61,7 @@ let info_of_tok = function
   | EQ (ii) -> ii
   | GT (ii) -> ii
   | LT (ii) -> ii
+  | LT2 (ii) -> ii
   | NOT (ii) -> ii
   | COMPL (ii) -> ii
   | COND (ii) -> ii
@@ -176,6 +177,7 @@ let visitor_info_of_tok f = function
   | EQ (ii) -> EQ (f ii)
   | GT (ii) -> GT (f ii)
   | LT (ii) -> LT (f ii)
+  | LT2 (ii) -> LT2 (f ii)
   | NOT (ii) -> NOT (f ii)
   | COMPL (ii) -> COMPL (f ii)
   | COND (ii) -> COND (f ii)

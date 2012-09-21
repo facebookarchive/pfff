@@ -310,7 +310,11 @@ let visit_toplevel
     | T.CM ii
     | T.DOT ii
 
-    | T.EQ ii  | T.GT ii | T.LT ii
+    | T.EQ ii  
+
+    | T.LT ii | T.LT2 ii
+    | T.GT ii 
+
     | T.NOT ii  | T.COMPL ii
 
     | T.COND ii

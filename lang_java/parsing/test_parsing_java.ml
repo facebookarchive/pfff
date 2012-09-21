@@ -98,7 +98,7 @@ let to_string = function
   (* 3.12 Operators *)
   | EQ ii -> "="
   | GT ii -> ">"
-  | LT ii -> "<"
+  | LT ii | LT2 ii -> "<"
   | NOT ii -> "!"
   | COMPL ii -> "~"
   | COND ii -> "?"

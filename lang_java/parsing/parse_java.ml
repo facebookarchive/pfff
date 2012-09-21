@@ -186,6 +186,7 @@ let parse2 filename =
   let filelines = Common.cat_array filename in
 
   let toks = tokens filename in
+  let toks = Parsing_hacks_java.fix_tokens toks in
 
   let tr = Parse_info.mk_tokens_state toks in
 

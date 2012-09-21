@@ -150,6 +150,9 @@ let constructor_invocation name args =
 
 %token <Ast_java.info> AT		/* @ */
 
+/*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
+%token <Ast_java.info> LT2		/* < */
+
 
 %token <(string * Ast_java.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
@@ -239,6 +242,7 @@ name:
 
 identifier_:
  | identifier { $1 }
+ | identifier LT2 type_arguments GT { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -272,6 +276,12 @@ array_type:
 /*(*----------------------------*)*/
 /*(*2 Generics arguments *)*/
 /*(*----------------------------*)*/
+type_argument:
+ | reference_type { }
+
+type_arguments:
+ | type_argument  { [$1] }
+ | type_arguments CM type_argument  { $1 ++ [$3] }
 
 /*(*----------------------------*)*/
 /*(*2 Generics parameters *)*/
@@ -279,6 +289,15 @@ array_type:
 type_parameter: 
  | identifier { }
 /*(* todo: identifier EXTENDS bound ?? *)*/
+
+type_parameters_opt:
+ | /*(*empty*)*/  { [] }
+ | lt type_parameters GT  { $2 }
+
+lt: 
+ | LT { }
+ | LT2 { }
+
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -1039,10 +1058,6 @@ type_declarations_opt:
 type_parameters:
  | type_parameter  { [$1] }
  | type_parameters CM type_parameter  { $1 ++ [$3] }
-
-type_parameters_opt:
- | /*(*empty*)*/  { [] }
- | LT type_parameters GT  { $2 }
 
 package_declaration_opt:
  | /*(*empty*)*/  { None }
