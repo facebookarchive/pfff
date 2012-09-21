@@ -899,12 +899,13 @@ super: EXTENDS type_java  { $2 }
 /* 8.1.4 */
 interfaces: IMPLEMENTS interface_type_list  { List.rev $2 }
 
-/* 8.1.5 */
-class_body: LC class_body_declarations_opt RC  { $2, [$1;$3] }
 
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
 /*(*----------------------------*)*/
+/* 8.1.5 */
+class_body: LC class_body_declarations_opt RC  { $2, [$1;$3] }
+
 class_body_declaration:
  | class_member_declaration  { $1 }
 
@@ -1062,17 +1063,18 @@ extends_interfaces:
  | EXTENDS interface_type  { [$2] }
  | extends_interfaces CM interface_type  { $3 :: $1 }
 
-/* 9.1.3 */
-interface_body:	LC interface_member_declarations_opt RC  { $2 }
-
 /*(*----------------------------*)*/
 /*(*2 Interface body *)*/
 /*(*----------------------------*)*/
+/* 9.1.3 */
+interface_body:	LC interface_member_declarations_opt RC  { $2 }
+
 interface_member_declaration:
  | constant_declaration  { $1 }
  | abstract_method_declaration  { [Method $1] }
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
+ | enum_declaration  { [] }
  | SM  { [] }
 
 /* 9.3 */
