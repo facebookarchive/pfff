@@ -1,1 +1,2 @@
 BAD:!!!!!   public void start(String operationType, @Nullable Bundle param) {
+BAD:!!!!!   public View renderView(Context context, @Nullable View view) {

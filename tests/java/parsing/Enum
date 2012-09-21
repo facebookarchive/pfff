@@ -12,3 +12,13 @@ bad:      * a shortcut was added to a home screen
 bad:      */
 bad:     SUCCESS
 bad:   }
+
+bad: public class SlideTransitionDrawable extends LayerDrawable implements Drawable.Callback {
+bad: 
+BAD:!!!!!   protected static enum TransitionState {
+bad:     STARTING,
+bad:     PAUSED,
+bad:     RUNNING,
+bad:     None
+bad:   }
+
