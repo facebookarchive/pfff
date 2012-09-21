@@ -850,8 +850,7 @@ annotation_element:
 element_value:
  | expr1 { }
  | annotation { }
- /* todo: EmentValueArraInitializer 
-*/
+ | element_value_array_initializer { }
 
 element_value_pair:
  identifier EQ element_value { }
@@ -865,8 +864,17 @@ annotation_element_opt:
  | /*(*empty*)*/ { None }
  | annotation_element { Some $1 }
 
+element_value_array_initializer:
+ | LC RC { }
+ | LC element_values RC { }
+ | LC element_values CM RC { }
+
+element_values:
+ | element_value { }
+ | element_values CM element_value { }
+
 /*(* can not contain identifier, otherwise shift/reduce conflict *)*/
-expr1: literal { $1 }
+expr1: primary_no_new_array { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Class/Interface *)*/
