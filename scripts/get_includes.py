@@ -19,10 +19,14 @@ import os
 import sys
 
 def checkargs():
-    usage = "Usage: get_includes.py [root dir]"
-    if len(sys.argv) <> 2:
+    usage = "Usage: get_includes.py debug|toplevel root_dir\n"
+    if len(sys.argv) <> 3:
         print usage
-        exit(-1);
+        exit(-1)
+
+    if sys.argv[1] not in [ "debug", "toplevel" ]:
+        print usage
+        exit(-1)
 
 def removenothrow(l, item):
     """Remove a specified item from a list; don't do anything
@@ -46,6 +50,10 @@ def getdirs(rootdir):
 
 if __name__ == "__main__":
     checkargs()
-    rootdir = sys.argv[1]
-    print "".join(["directory %s\n" % (d,) for d in getdirs(rootdir)])
+    mode = sys.argv[1]
+    rootdir = sys.argv[2]
+    if mode == "debug":
+        print "".join(["directory %s\n" % (d,) for d in getdirs(rootdir)])
+    else:
+        print "".join(["#directory \"%s\";;\n" % (d,) for d in getdirs(rootdir)])
 
