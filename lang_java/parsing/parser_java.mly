@@ -291,7 +291,11 @@ type_arguments:
 /*(*----------------------------*)*/
 type_parameter: 
  | identifier { }
-/*(* todo: identifier EXTENDS bound ?? *)*/
+ | identifier EXTENDS bound { }
+
+bound:
+ reference_type { }
+/*(* todo: { & reference_type } *)*/
 
 type_parameters_opt:
  | /*(*empty*)*/  { [] }
