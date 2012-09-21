@@ -933,11 +933,16 @@ method_declarator:
  | method_declarator LB RB                   { (ArrayDecl (fst $1),todoii), snd $1 }
 
 /* 8.4.1 */
-formal_parameter: final_opt type_java variable_declarator_id  
+formal_parameter: variable_modifier_opt type_java variable_declarator_id  
   { 
     let formal_decl mods t v = canon_var mods t v in
-    formal_decl $1 $2 $3 
+    (* todo: use $1 *)
+    formal_decl [] $2 $3 
   }
+
+variable_modifier:
+ | FINAL { }
+ | annotation { }
 
 /* 8.4.4 */
 throws: THROWS class_type_list  { List.rev $2 }
@@ -1118,9 +1123,9 @@ formal_parameter_list_opt:
  | formal_parameter_list  { List.rev $1 }
 
 
-final_opt:
- | /*(*empty*)*/  { [] }
- | FINAL  { [Final, [$1]] }
+variable_modifier_opt:
+ | /*(*empty*)*/  { None }
+ | variable_modifier  { Some $1 }
 
 static_opt:
  | /*(*empty*)*/  { None }

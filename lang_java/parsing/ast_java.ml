@@ -199,6 +199,7 @@ and class_decl = {
   cl_body: decls 
 }
 
+(* less: merge with class_decl? *)
 and interface = { 
   if_mods: modifiers;
   if_name: ident;
