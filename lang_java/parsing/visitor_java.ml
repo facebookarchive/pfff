@@ -244,12 +244,9 @@ and stmt = fun bigf stm ->
           let e' = expr bigf e in
           Do (st', e')
           
-      | For (sts1, eopt, sts2, st) -> 
-          let sts1' = List.map statf sts1 in
-          let eopt' = Common.fmap (expr bigf) eopt in
-          let sts2' = List.map statf sts2 in
+      | For (for_ctrl_todo, st) -> 
           let st' = statf st in
-          For (sts1', eopt', sts2', st')
+          For (for_ctrl_todo, st')
 
       | Break idopt -> Break idopt
       | Continue idopt -> Continue  idopt

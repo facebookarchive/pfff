@@ -12,10 +12,7 @@
  * Some modifications by Yoann Padioleau.
  *  - support annotations (partial)
  *  - support for generics (partial)
- * 
- * TODO: 
- *  - support enums
- *  - etc.
+ *  - enums, foreach, ...
  *)
 */
 %{
@@ -620,6 +617,8 @@ statement_no_short_if:
  | while_statement_no_short_if  { $1 }
  | for_statement_no_short_if  { $1 }
 
+
+
 /* 14.2 */
 block: LC block_statements_opt RC  { Block $2, [$1;$3] }
 
@@ -666,6 +665,7 @@ statement_expression:
  | class_instance_creation_expression  { $1 }
 
 
+
 /* 14.9 */
 if_then_statement: IF LP expression RP statement
    { If ($3, $5, None), [$1;$2;$4] }
@@ -708,20 +708,38 @@ do_statement: DO statement WHILE LP expression RP SM
       { Do ($2, $5), [$1;$3;$4;$6;$7] }
 
 
+/*(*----------------------------*)*/
+/*(*2 For *)*/
+/*(*----------------------------*)*/
+
 /* 14.13 */
 for_statement: 
-  FOR LP for_init_opt SM expression_opt SM for_update_opt RP statement
-	{ For ($3, $5, $7, $9), [$1;$2;$4;$6;$8] }
+  FOR LP for_control RP statement
+	{ For (ast_todo2, $5), [$1;$2;$4] }
 
 for_statement_no_short_if: 
-  FOR LP for_init_opt SM expression_opt SM for_update_opt RP statement_no_short_if
-	{ For ($3, $5, $7, $9), [$1;$2;$4;$6;$8] }
+  FOR LP for_control RP statement_no_short_if
+	{ For (ast_todo2, $5), [$1;$2;$4] }
+
+for_control:
+ | for_init_opt SM expression_opt SM for_update_opt { }
+ | for_var_control { }
 
 for_init: 
 | statement_expression_list  { List.rev $1 }
 | local_variable_declaration  { $1 }
 
 for_update: statement_expression_list  { List.rev $1 }
+
+for_var_control:
+ type_java variable_declarator_id for_var_control_rest { }
+
+for_var_control_rest:
+ | COLON expression { }
+
+/*(*----------------------------*)*/
+/*(*2 Other *)*/
+/*(*----------------------------*)*/
 
 /* 14.14 */
 break_statement:	BREAK identifier_opt SM  { Break $2, [$1;$3] }

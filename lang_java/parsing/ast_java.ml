@@ -108,7 +108,7 @@ and stmt = stmtbis wrap
 
   | While of expr * stmt
   | Do of stmt * expr
-  | For of stmts * expr option * stmts * stmt
+  | For of for_control * stmt
 
   | Break of ident option
   | Continue of ident option
@@ -135,6 +135,8 @@ and case = casebis wrap
   | Case of expr
   | Default
 and cases = case list
+
+and for_control = unit
 
 and catch = var * stmt
 and catches = catch list
@@ -280,6 +282,7 @@ let compare_pos = PI.compare_pos
 let todoii = []
 let noii = []
 let ast_todo = []
+let ast_todo2 = ()
 
 (*****************************************************************************)
 (* Some constructors *)
