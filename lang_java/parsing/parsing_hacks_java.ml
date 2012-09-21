@@ -36,6 +36,10 @@ open Parser_java
 let rec fix_tokens xs =
   match xs with
   | [] -> []
+
+  (* less: allow also a small space, but usually we should fix
+   * this code.
+   *)
   | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
       IDENTIFIER (s, ii1)::LT2 ii2::fix_tokens xs
       

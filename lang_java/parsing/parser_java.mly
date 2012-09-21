@@ -279,6 +279,8 @@ array_type:
 type_argument:
  | reference_type { }
  | COND { }
+ | COND EXTENDS reference_type { }
+ | COND SUPER reference_type { }
 
 type_arguments:
  | type_argument  { [$1] }

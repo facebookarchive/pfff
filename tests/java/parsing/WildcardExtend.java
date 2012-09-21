@@ -1,2 +1,6 @@
-//BAD:!!!!!   public void setApps(List<? extends IndexListItem> list);
-//BAD:!!!!!     private Class<? extends View> viewClass;
+
+class WildCardExtend {
+  public void setApps(List<? extends IndexListItem> list) {
+  }
+  private Class<? extends View> viewClass;
+}
