@@ -660,15 +660,14 @@ block_statement:
 local_variable_declaration_statement: local_variable_declaration SM  
  { $1 (* TODO *) }
 
+/*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
  | type_java variable_declarators  
      { let xs = var_decls [] $1 (List.rev $2) in
        xs +> List.map (fun x -> x, todoii)
      }
- | FINAL type_java variable_declarators  
-     { let xs = var_decls [Final, [$1]] $2 (List.rev $3) in
-       xs +> List.map (fun x -> x, todoii)
-     }
+ | variable_modifier type_java variable_declarators  
+   { [] }
 
 /* 14.6 */
 empty_statement:	SM  { Empty, [$1] }
