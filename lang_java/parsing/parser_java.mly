@@ -1102,8 +1102,11 @@ abstract_method_declaration:
 enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body 
  { }
 
+/*(* cant factorize in enum_constants_opt comma_opt .... *)*/
 enum_body: 
- | LC enum_constants_opt enum_body_declarations_opt RC { }
+ | LC                   enum_body_declarations_opt RC { }
+ | LC enum_constants    enum_body_declarations_opt RC { }
+ | LC enum_constants CM enum_body_declarations_opt RC { }
 
 enum_constant:
  | identifier { }
@@ -1314,9 +1317,6 @@ dims_opt:
  | /*(*empty*)*/  { 0 }
  | dims  { $1 }
 
-enum_constants_opt:
- | /*(*empty*)*/  {  }
- | enum_constants  { }
 
 enum_constants:
  | enum_constant { }
