@@ -1107,6 +1107,7 @@ enum_body:
 
 enum_constant:
  | identifier { }
+ | identifier LP argument_list_opt RP  { }
 
 enum_body_declarations: SM { }
 
