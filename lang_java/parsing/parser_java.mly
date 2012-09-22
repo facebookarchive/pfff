@@ -877,7 +877,9 @@ element_values:
  | element_values CM element_value { }
 
 /*(* can not contain identifier, otherwise shift/reduce conflict *)*/
-expr1: primary_no_new_array { $1 }
+expr1: 
+ | primary_no_new_array { }
+ | identifier { } 
 
 /*(*************************************************************************)*/
 /*(*1 Class/Interface *)*/
