@@ -33,14 +33,27 @@ open Parser_java
 (* Fix tokens *)
 (*****************************************************************************)
 
-let rec fix_tokens xs =
-  match xs with
-  | [] -> []
+let fix_tokens xs =
 
-  (* less: allow also a small space, but usually we should fix
-   * this code.
-   *)
-  | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
-      IDENTIFIER (s, ii1)::LT2 ii2::fix_tokens xs
+  let rec aux env xs = 
+    let depth_angle = env in
+    match xs with
+    | [] -> []
+        
+    (* less: allow also a small space, but usually we should fix
+     * this code.
+     *)
+    | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
+        IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
+    | GT ii::xs ->
+        GT ii::aux (depth_angle - 1) xs
+
+    (* transform >> into two > > *)
+    | SRS ii::xs when depth_angle > 0 ->
+        (* todo: split ii *)
+        GT ii::GT ii::aux (depth_angle - 2) xs
       
-  | x::xs -> x::fix_tokens xs
+  | x::xs -> x::aux env xs
+  in
+  aux 0 xs
+
