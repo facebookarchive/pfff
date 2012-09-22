@@ -1107,9 +1107,9 @@ enum_body:
 
 enum_constant:
  | identifier { }
- | identifier LP argument_list_opt RP  { }
+ | identifier LP argument_list_opt RP { }
 
-enum_body_declarations: SM { }
+enum_body_declarations: SM class_body_declarations { }
 
 /*(*----------------------------*)*/
 /*(*2 Annotation type decl *)*/
