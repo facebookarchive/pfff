@@ -54,6 +54,11 @@ let fix_tokens xs =
     | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
         IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
 
+    | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::xs 
+       when s =~ "^[A-Z]" ->
+        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
+          aux (depth_angle + 1) xs
+
     | GT ii::xs when depth_angle > 0 ->
         GT ii::aux (depth_angle - 1) xs
 
