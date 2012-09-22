@@ -250,6 +250,7 @@ type_declaration:
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
  | enum_declaration { ast_todo }
+ | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
 /*(*************************************************************************)*/
@@ -1108,6 +1109,17 @@ enum_constant:
  | identifier { }
 
 enum_body_declarations: SM { }
+
+/*(*----------------------------*)*/
+/*(*2 Annotation type decl *)*/
+/*(*----------------------------*)*/
+
+/*(* cant factorize modifiers_opt *)*/
+annotation_type_declaration: 
+ | modifiers AT INTERFACE identifier annotation_type_body { }
+ |           AT INTERFACE identifier annotation_type_body { }
+
+annotation_type_body: LC RC { }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
