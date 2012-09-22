@@ -1049,13 +1049,13 @@ variable_modifier:
 
 /* 9.1 */
 interface_declaration: 
- modifiers_opt INTERFACE identifier  extends_interfaces_opt 
+ modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt 
  interface_body
   { 
     let interface_decl mods name extends body =
       { if_mods = mods; if_name = name; if_exts = extends; if_body = body }
     in
-    interface_decl $1 $3 $4 $5 
+    interface_decl $1 $3 $5 $6 
   }
 
 /* 9.1.2 */
