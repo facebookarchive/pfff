@@ -760,7 +760,11 @@ for_init:
 for_update: statement_expression_list  { List.rev $1 }
 
 for_var_control:
- type_java variable_declarator_id for_var_control_rest { }
+ | type_java variable_declarator_id for_var_control_rest { }
+/*(* actually only FINAL is valid here, but cant because get shift/reduce
+   * conflict otherwise because for_init can be a local_variable_decl
+   *)*/
+ | variable_modifier type_java variable_declarator_id for_var_control_rest { }
 
 for_var_control_rest:
  | COLON expression { }
