@@ -1109,7 +1109,7 @@ enum_constant:
  | identifier { }
  | identifier LP argument_list_opt RP { }
 
-enum_body_declarations: SM class_body_declarations { }
+enum_body_declarations: SM class_body_declarations_opt { }
 
 /*(*----------------------------*)*/
 /*(*2 Annotation type decl *)*/
