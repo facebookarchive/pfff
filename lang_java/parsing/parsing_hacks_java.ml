@@ -37,6 +37,14 @@ let fix_tokens xs =
 
   let rec aux env xs = 
     let depth_angle = env in
+    if depth_angle < 0 
+    then begin 
+      pr2_gen (List.hd xs);
+      (* failwith "depth < 0" *)
+      aux 0 xs
+    end
+    else 
+
     match xs with
     | [] -> []
         
@@ -45,7 +53,8 @@ let fix_tokens xs =
      *)
     | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
         IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
-    | GT ii::xs ->
+
+    | GT ii::xs when depth_angle > 0 ->
         GT ii::aux (depth_angle - 1) xs
 
     (* transform >> into two > > *)
