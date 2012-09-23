@@ -916,10 +916,10 @@ class_body: LC class_body_declarations_opt RC  { $2, [$1;$3] }
 
 class_body_declaration:
  | class_member_declaration  { $1 }
+ | constructor_declaration  { [$1] }
 
  | instance_initializer  { [$1] }
  | static_initializer  { [$1] }
- | constructor_declaration  { [$1] }
 
 class_member_declaration:
  | field_declaration  { $1 }
@@ -1092,6 +1092,8 @@ interface_body:	LC interface_member_declarations_opt RC  { $2 }
 interface_member_declaration:
  | constant_declaration  { $1 }
  | abstract_method_declaration  { [Method $1] }
+ | interface_generic_method_decl { [] }
+
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
  | enum_declaration  { [] }
@@ -1109,6 +1111,15 @@ abstract_method_declaration:
 	{ method_header $1 $2 $3 $4 }
  | modifiers_opt VOID method_declarator throws_opt SM
 	{ method_header $1 (void_type $2) $3 $4 }
+
+interface_generic_method_decl:
+ | modifiers_opt type_parameters type_java identifier interface_method_declator_rest 
+    { }
+ | modifiers_opt type_parameters VOID identifier interface_method_declator_rest 
+    { }
+
+interface_method_declator_rest:
+ | formal_parameters throws_opt SM { }
 
 /*(*----------------------------*)*/
 /*(*2 Enum *)*/
