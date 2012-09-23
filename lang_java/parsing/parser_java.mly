@@ -263,6 +263,7 @@ identifier: IDENTIFIER  { fst $1, [snd $1] }
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $3 :: $1 }
+ | name DOT LT type_arguments GT identifier_  { $6 :: $1 }
 
 identifier_:
  | identifier { $1 }
@@ -669,7 +670,8 @@ local_variable_declaration:
      { let xs = var_decls [] $1 (List.rev $2) in
        xs +> List.map (fun x -> x, todoii)
      }
- | variable_modifier type_java variable_declarators  
+/*(* actually should be variable_modifiers but conflict *)*/
+ | modifiers type_java variable_declarators  
    { [] }
 
 /* 14.6 */
@@ -767,7 +769,7 @@ for_var_control:
 /*(* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)*/
- | variable_modifier type_java variable_declarator_id for_var_control_rest { }
+ | modifiers type_java variable_declarator_id for_var_control_rest { }
 
 for_var_control_rest:
  | COLON expression { }

@@ -11,9 +11,11 @@ hence an ambiguity which requires some lookahead or semantic information
 to know what is 'i' (is it a type name?).
 
 solutions?
- - use a GLR parser
- - c/c++ parser trick to tag differently <
- - parser trick to tag differently typedef and idents
+ - (1) use a GLR parser
+ - (2) c/c++ parser trick to tag differently <
+ - (3) parser trick to tag differently typedef and idents
+
+I currently use #3.
 
 * when add generic methods
 
