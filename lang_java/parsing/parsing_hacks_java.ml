@@ -54,8 +54,19 @@ let fix_tokens xs =
     | CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::xs ->
         CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::
           aux (depth_angle + 1) xs
+    | CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::TCommentSpace iisp::
+        LT ii4::xs ->
+        CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::TCommentSpace iisp
+        ::LT ii4::
+          aux (depth_angle + 1) xs
+
     | INTERFACE ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::xs ->
         INTERFACE ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::
+          aux (depth_angle + 1) xs
+    | INTERFACE ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::TCommentSpace iisp::
+        LT ii4::xs ->
+        INTERFACE ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::TCommentSpace iisp
+        ::LT ii4::
           aux (depth_angle + 1) xs
 
     (* less: allow also a small space, but usually we should fix
