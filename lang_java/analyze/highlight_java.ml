@@ -341,10 +341,5 @@ let visit_toplevel
     | T.SRS ii
     | T.URS ii
         -> tag ii Punctuation
-
   );
-
-  (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
-
   ()
