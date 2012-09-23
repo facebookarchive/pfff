@@ -100,6 +100,12 @@ let fix_tokens xs =
     | SRS ii::xs when depth_angle > 0 ->
         (* todo: split ii *)
         GT ii::GT ii::aux (depth_angle - 2) xs
+
+    | URS ii::xs when depth_angle > 0 ->
+        (* todo: split ii *)
+        GT ii::GT ii::GT ii::aux (depth_angle - 3) xs
+
+    (* transform >>> into three > > > *)
       
   | x::xs -> x::aux env xs
   in
