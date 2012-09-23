@@ -322,13 +322,15 @@ bound:
 /*(* todo: { & reference_type } *)*/
 
 type_parameters_opt:
- | /*(*empty*)*/  { [] }
- | lt type_parameters GT  { $2 }
+ | /*(*empty*)*/   { [] }
+ | type_parameters { $1 }
 
-lt: 
- | LT { }
- | LT2 { }
+type_parameters:
+ | LT type_parameters_bis GT { $2 }
 
+type_parameters_bis: 
+ | type_parameter  { [$1] }
+ | type_parameters_bis CM type_parameter  { $1 ++ [$3] }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -922,6 +924,8 @@ class_body_declaration:
 class_member_declaration:
  | field_declaration  { $1 }
  | method_declaration  { [Method $1] }
+ | generic_method_or_constructor_decl { [] }
+
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
  | enum_declaration { ast_todo }
@@ -958,12 +962,9 @@ array_initializer:
 
 /* 8.4 */
 method_declaration: method_header method_body  
-     { 
-       let method_decl hdr body =
-         { hdr with m_body = body }
-       in
-       method_decl $1 $2 
-     }
+  { let method_decl hdr body = { hdr with m_body = body } in
+     method_decl $1 $2 
+   }
 
 method_header: 
  | modifiers_opt type_java method_declarator throws_opt
@@ -974,6 +975,19 @@ method_header:
 method_declarator:
  | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1,noii), $3 }
  | method_declarator LB RB                   { (ArrayDecl (fst $1),todoii), snd $1 }
+
+
+generic_method_or_constructor_decl:
+ | modifiers_opt type_parameters generic_method_or_constructor_rest  { }
+
+generic_method_or_constructor_rest:
+ | type_java identifier method_declarator_rest { }
+ | VOID identifier method_declarator_rest { }
+
+method_declarator_rest:
+ | formal_parameters throws_opt method_body { }
+
+formal_parameters: LP formal_parameter_list_opt RP { }
 
 /* 8.4.4 */
 throws: THROWS class_type_list  { List.rev $2 }
@@ -1148,9 +1162,6 @@ type_declarations_opt:
  | type_declarations  { $1 }
 
 
-type_parameters:
- | type_parameter  { [$1] }
- | type_parameters CM type_parameter  { $1 ++ [$3] }
 
 package_declaration_opt:
  | /*(*empty*)*/  { None }

@@ -14,3 +14,6 @@ solutions?
  - use a GLR parser
  - c/c++ parser trick to tag differently <
  - parser trick to tag differently typedef and idents
+
+* when add generic methods
+
