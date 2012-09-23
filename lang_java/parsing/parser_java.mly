@@ -248,8 +248,8 @@ import_declaration:
 /* 7.6 */
 type_declaration:
  | class_declaration  { [Class $1] }
- | interface_declaration  { [Interface $1] }
  | enum_declaration { ast_todo }
+ | interface_declaration  { [Interface $1] }
  | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
@@ -928,8 +928,9 @@ class_member_declaration:
  | generic_method_or_constructor_decl { [] }
 
  | class_declaration  { [Class $1] }
- | interface_declaration  { [Interface $1] }
  | enum_declaration { ast_todo }
+ | interface_declaration  { [Interface $1] }
+ | annotation_type_declaration { ast_todo }
 
  | SM  { [] }
 
@@ -1097,6 +1098,7 @@ interface_member_declaration:
 
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Interface $1] }
+ | annotation_type_declaration { ast_todo }
  | enum_declaration  { [] }
  | SM  { [] }
 
@@ -1158,8 +1160,10 @@ annotation_type_element_rest:
  | modifiers_opt type_java identifier annotation_method_or_constant_rest SM { }
 
  | class_declaration { }
- | interface_declaration { }
  | enum_declaration { }
+ | interface_declaration { }
+ | annotation_type_declaration {  }
+
 
 annotation_method_or_constant_rest:
  | LP RP { }
