@@ -54,10 +54,17 @@ let fix_tokens xs =
     | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
         IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
 
+(* too many FPs
     | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::xs 
        when s =~ "^[A-Z]" ->
         IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
           aux (depth_angle + 1) xs
+*)
+    | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::
+      IDENTIFIER (s3, ii3)::xs
+       when s =~ "^[A-Z]" && s3 =~ "^[A-Z]" ->
+        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
+        aux (depth_angle + 1) (IDENTIFIER (s3, ii3)::xs)
 
     | GT ii::xs when depth_angle > 0 ->
         GT ii::aux (depth_angle - 1) xs
