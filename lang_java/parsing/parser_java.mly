@@ -859,7 +859,7 @@ element_value:
  | element_value_array_initializer { }
 
 element_value_pair:
- identifier EQ element_value { }
+ | identifier EQ element_value { }
 
 
 element_value_pairs: 
@@ -879,10 +879,9 @@ element_values:
  | element_value { }
  | element_values CM element_value { }
 
-/*(* can not contain identifier, otherwise shift/reduce conflict *)*/
 expr1: 
  | primary_no_new_array { }
- | identifier { } 
+ | name { } 
 
 /*(*************************************************************************)*/
 /*(*1 Class/Interface *)*/
