@@ -1149,7 +1149,30 @@ annotation_type_declaration:
  | modifiers AT INTERFACE identifier annotation_type_body { }
  |           AT INTERFACE identifier annotation_type_body { }
 
-annotation_type_body: LC RC { }
+annotation_type_body: LC annotation_type_element_declarations_opt RC { }
+
+annotation_type_element_declaration:
+ annotation_type_element_rest { }
+
+annotation_type_element_rest:
+ | modifiers_opt type_java identifier annotation_method_or_constant_rest SM { }
+
+ | class_declaration { }
+ | interface_declaration { }
+ | enum_declaration { }
+
+annotation_method_or_constant_rest:
+ | LP RP { }
+ | LP RP DEFAULT element_value { }
+
+annotation_type_element_declarations_opt:
+ | { }
+ | annotation_type_element_declarations { }
+
+annotation_type_element_declarations:
+ | annotation_type_element_declaration { }
+ | annotation_type_element_declarations annotation_type_element_declaration { }
+
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
