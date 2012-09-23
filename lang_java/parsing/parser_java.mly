@@ -883,6 +883,7 @@ element_values:
 
 expr1: 
  | primary_no_new_array { }
+ | primary_no_new_array PLUS primary_no_new_array { }
  | name { } 
 
 /*(*************************************************************************)*/
