@@ -1048,7 +1048,7 @@ explicit_constructor_invocation:
 /*(*----------------------------*)*/
 
 /* 8.4.1 */
-formal_parameter: variable_modifier_opt type_java variable_declarator_id_bis
+formal_parameter: variable_modifiers_opt type_java variable_declarator_id_bis
   { 
     let formal_decl mods t v = canon_var mods t v in
     (* todo: use $1 *)
@@ -1215,9 +1215,13 @@ formal_parameter_list_opt:
  | formal_parameter_list  { List.rev $1 }
 
 
-variable_modifier_opt:
+variable_modifiers_opt:
  | /*(*empty*)*/  { None }
- | variable_modifier  { Some $1 }
+ | variable_modifiers  { Some $1 }
+
+variable_modifiers:
+ | variable_modifier { }
+ | variable_modifiers variable_modifier { }
 
 static_opt:
  | /*(*empty*)*/  { None }
