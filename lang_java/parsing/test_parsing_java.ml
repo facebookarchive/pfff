@@ -51,7 +51,7 @@ let test_parse xs  =
 
   let dirname_opt = 
     match xs with
-    | [x] when is_directory x -> Some x
+    | [x] when is_directory x -> Some (Common.realpath x)
     | _ -> None
   in
   let score_path = Filename.concat Config.path "tmp" in
