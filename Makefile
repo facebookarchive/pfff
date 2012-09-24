@@ -649,6 +649,7 @@ website:
 tags:
 	./stags -verbose -lang ml .
 db:
+	./codegraph.opt -lang ml -build .
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
