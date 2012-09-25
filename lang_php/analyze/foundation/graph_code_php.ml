@@ -95,7 +95,7 @@ let rec add_use_edge env (name, kind) =
       then pr2 (spf "SKIPPING: %s --> %s" s1 s2)
       else G.add_edge (src, dst) G.Use env.g
   | _ -> 
-      (* todo: if dst is a Class, then try Interface? *)
+      (* if dst is a Class, then try Interface *)
       (match kind with
       | E.Class E.RegularClass -> 
           add_use_edge env (name, E.Class E.Interface)
@@ -239,8 +239,23 @@ and stmt env x =
       xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
   | Global xs -> exprl env xs
 
+(* todo: deps to class name? *)
+and catch env (_hint_type, _name, xs) =
+  stmtl env xs
+
+and case env = function
+  | Case (e, xs) ->
+      expr env e;
+      stmtl env xs
+  | Default xs ->
+      stmtl env xs
+
+and stmtl env xs = List.iter (stmt env) xs
+and casel env xs = List.iter (case env) xs
+and catches env xs = List.iter (catch env) xs
+
 (* ---------------------------------------------------------------------- *)
-(* Functions/Methods *)
+(* Defs *)
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
   def.f_params +> List.iter (fun p ->
@@ -272,22 +287,6 @@ and class_def env def =
 
 and constant_def env def =
   expr env def.cst_body
-
-
-(* todo: deps to class name? *)
-and catch env (_hint_type, _name, xs) =
-  stmtl env xs
-
-and case env = function
-  | Case (e, xs) ->
-      expr env e;
-      stmtl env xs
-  | Default xs ->
-      stmtl env xs
-
-and stmtl env xs = List.iter (stmt env) xs
-and casel env xs = List.iter (case env) xs
-and catches env xs = List.iter (catch env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -407,10 +406,6 @@ and xhp env = function
 
 and exprl env xs = List.iter (expr env) xs
 and array_valuel env xs = List.iter (array_value env) xs
-
-(* ---------------------------------------------------------------------- *)
-(* Misc *)
-(* ---------------------------------------------------------------------- *)
 
 (*****************************************************************************)
 (* Main entry point *)
