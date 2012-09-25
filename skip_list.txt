@@ -28,7 +28,12 @@ file: external/ocamlgraph/src/util.mli
 dir: lang_ml/old
 dir: lang_cpp/parsing/old
 dir: lang_php/old
+dir: h_program-visual/graphics/old
 dir: facebook/old
+dir: facebook/check_module/old
+dir: facebook/fb_db/old
+dir: facebook/qa_code/old
+dir: old
 
 # todo: factorize in a 'dir_element: _build' ?
 dir: facebook/external/archimedes/_build
@@ -42,3 +47,4 @@ dir: tests/opa/parsing/todo/_build
 
 # normal
 dir: tests/ml/parsing_errors
+dir: tests/ml/db/parsing_errors
