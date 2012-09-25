@@ -47,8 +47,7 @@ and names = name list
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
-and typ = typbis wrap
- and typbis = 
+and typ =
   | TypeName of name (* include 'void', 'int', and other primitive types *)
   | ArrayType of typ
 
