@@ -173,6 +173,9 @@ let rec add_use_edge env (name, kind) =
             then raise Impossible
             else G.not_found
           in
+          pr2 (spf "PB: lookup fail on %s (in %s)" 
+                       (G.string_of_node dst) (G.string_of_node src));
+
           env.g +> G.add_edge (parent_target, dst) G.Has;
           env.g +> G.add_edge (src, dst) G.Use;
           env.lookup_fails#update dst Common.add1
