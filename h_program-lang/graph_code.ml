@@ -136,6 +136,11 @@ let add_edge (n1, n2) e g =
   | Has -> G.add_edge n1 n2 g.has
   | Use -> G.add_edge n1 n2 g.use
 
+let remove_edge (n1, n2) e g =
+  match e with
+  | Has -> G.remove_edge n1 n2 g.has
+  | Use -> G.remove_edge n1 n2 g.use
+
 
 (*****************************************************************************)
 (* IO *)
