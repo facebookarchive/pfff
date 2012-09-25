@@ -14,6 +14,11 @@ module PI = Parse_info
 (*
  * A simple AST for Java.
  * 
+ * For Java we directly do a simple AST (as opposed to CST for Concrete
+ * Syntax Tree as in lang_php/) which should be enough for higlight_java.ml
+ * I think. We just need the full list of tokens + the AST with position
+ * for the identifiers.
+ * 
  * TODO: 
  *  - support annotations
  *  - support for generics
@@ -231,12 +236,7 @@ and compilation_unit = {
   decls: decls;
 }
 
-and toplevel =
-  | Unit of compilation_unit
-  | NotParsedCorrectly of info list
-  | FinalDef of info
-
-and program = toplevel list
+and program = compilation_unit
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -254,8 +254,6 @@ type any =
   | Class2 of class_decl
   | Interface2 of interface
   | Decl of decl
-  | CompUnit of compilation_unit
-  | Toplevel of toplevel
   | Program of program
 
 (*****************************************************************************)

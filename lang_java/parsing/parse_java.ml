@@ -32,14 +32,10 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_java.token list)
+(* the token list contains also the comment-tokens *)
+type program2 = Ast_java.program option * Parser_java.token list
 
-let program_of_program2 xs = 
-  xs +> List.map fst
+let program_of_program2 x = Common.some (fst x)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -51,53 +47,6 @@ let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 (*****************************************************************************)
 let lexbuf_to_strpos lexbuf     = 
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
-
-(*****************************************************************************)
-(* Tokens/Ast association  *)
-(*****************************************************************************)
-
-(* on very huge file, this function was previously segmentation fault
- * in native mode because span was not tail call
- *)
-let rec distribute_info_items_toplevel2 xs toks filename = 
-  match xs with
-  | [] -> raise Impossible
-  | [Ast_java.FinalDef e] -> 
-      (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = Parse_info.mk_info_item 
-        ~info_of_tok:TH.info_of_tok toks 
-      in
-      [Ast_java.FinalDef e, info_item]
-  | ast::xs ->
-
-      (* TODO 
-      let ii = Lib_parsing_java.ii_of_toplevel ast in
-      let (min, max) = Lib_parsing_java.min_max_ii_by_pos ii in
-          
-      let toks_before_max, toks_after = 
-        Common.profile_code "spanning tokens" (fun () ->
-          toks +> Common.span_tail_call (fun tok ->
-            match Parse_info.compare_pos (TH.info_of_tok tok) max with
-            | -1 | 0 -> true
-            | 1 -> false
-            | _ -> raise Impossible
-          ))
-      in
-      *)
-      let toks_before_max = Common.list_init toks in
-      let toks_after = [Common.list_last toks] in
-
-      let info_item = Parse_info.mk_info_item 
-        ~info_of_tok:TH.info_of_tok
-        toks_before_max 
-      in
-      (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
-
-
-let distribute_info_items_toplevel a b c = 
-  Common.profile_code "distribute_info_items" (fun () -> 
-    distribute_info_items_toplevel2 a b c
-  )
 
 (*****************************************************************************)
 (* Error diagnostic *)
@@ -221,9 +170,8 @@ let parse2 filename =
   match elems with
   | Left xs ->
       stat.PI.correct <- (Common.cat filename +> List.length);
+      (Some xs,toks), stat
 
-      distribute_info_items_toplevel xs toks filename, 
-       stat
   | Right (info_of_bads, line_error, cur, exn) ->
 
       if not !Flag.error_recovery
@@ -254,15 +202,8 @@ let parse2 filename =
 
       if !Flag.show_parsing_error
       then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
-
       stat.PI.bad     <- Common.cat filename +> List.length;
-
-      let info_item = 
-        Parse_info.mk_info_item ~info_of_tok:TH.info_of_tok 
-          (List.rev tr.PI.passed) 
-      in 
-      [Ast.NotParsedCorrectly info_of_bads, info_item], 
-      stat
+      (None, toks), stat
 
 let parse a = 
   Common.profile_code "Parse_java.parse" (fun () -> parse2 a)

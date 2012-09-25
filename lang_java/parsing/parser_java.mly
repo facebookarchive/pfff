@@ -213,7 +213,7 @@ let constructor_invocation name args =
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-goal: compilation_unit EOF  { [Unit $1; FinalDef $2] }
+goal: compilation_unit EOF  { $1 }
 
 /* 7.3 */
 compilation_unit: 
