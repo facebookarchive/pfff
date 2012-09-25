@@ -718,8 +718,8 @@ switch_block:
 
 switch_block_statement_group: switch_labels block_statements  { List.rev $1, $2 }
 switch_label:
- | CASE constant_expression COLON  { Case $2, [$1;$3] }
- | DEFAULT COLON  { Default, [$1;$2] }
+ | CASE constant_expression COLON  { Case $2 }
+ | DEFAULT COLON  { Default }
 
 
 /* 14.11 */
@@ -946,15 +946,15 @@ variable_declarator_id:
 
 
 variable_initializer:
- | expression        { ExprInit $1, noii }
+ | expression        { ExprInit $1 }
  | array_initializer  { $1 }
 
 /* 10.6 */
 array_initializer:
  | LC comma_opt RC  
-     { ArrayInit [], [$1;$3] (*TODO COMMA *) }
+     { ArrayInit [] }
  | LC variable_initializers comma_opt RC  
-     { ArrayInit (List.rev $2), [$1;$4] }
+     { ArrayInit (List.rev $2) }
 
 
 /* 8.4 */

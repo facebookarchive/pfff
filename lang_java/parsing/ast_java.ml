@@ -67,15 +67,15 @@ and expr =
   | NewQualifiedClass of expr * ident * exprs * decls option
   | NewArray of typ * exprs * int * init option
 
-  | Dot of expr * ident
-  (* less: split in MethodCallSimple and so on? hmmm maybe not. *)
   | Call of expr * exprs
+  | Dot of expr * ident
   | ArrayAccess of expr * expr
 
   | Postfix of expr * op
   | Prefix of op * expr
-  | Cast of typ * expr
   | Infix of expr * op * expr
+
+  | Cast of typ * expr
 
   | InstanceOf of expr * typ
 
@@ -127,8 +127,7 @@ and stmt =
 
 and stmts = stmt list
 
-and case = casebis wrap
- and casebis = 
+and case =
   | Case of expr
   | Default
 and cases = case list
@@ -165,8 +164,7 @@ and var = {
   v_name: ident 
 }
 
-and init = initbis wrap
-  and initbis =
+and init =
   | ExprInit of expr
   | ArrayInit of init list
 
