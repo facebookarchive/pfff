@@ -72,7 +72,15 @@ let filter_files ?(verbose=false) skip_list root xs =
     | _ -> None
     ) +> Common.hashset_of_list
   in
-  xs +> List.filter (fun file ->
+  let skip_dirs =
+    skip_list +> Common.map_filter (function
+    | Dir s -> Some s
+    | _ -> None
+    ) 
+  in
+
+  xs +> Common.exclude (fun file ->
     let readable = Common.filename_without_leading_path root file in
-    not (Hashtbl.mem skip_files readable)
+    (Hashtbl.mem skip_files readable) ||
+    (skip_dirs +> List.exists (fun dir -> readable =~ (dir ^ ".*")))
   )
