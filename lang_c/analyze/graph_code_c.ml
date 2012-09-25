@@ -422,7 +422,7 @@ let build ?(verbose=true) dir skip_list =
   let files = Skip_code.filter_files ~verbose skip_list root all_files in
 
   let g = G.create () in
-  g +> G.add_node G.root;
+  G.create_initial_hierarchy g;
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";

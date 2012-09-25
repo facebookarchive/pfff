@@ -138,7 +138,7 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
-let extract_uses ~g ~ast ~readable =
+let extract_uses ~g ~ast ~readable ~dupes =
   let src = (readable, E.File) in
 
   (* when do module A = Foo, A.foo is actually a reference to Foo.foo *)
@@ -152,7 +152,12 @@ let extract_uses ~g ~ast ~readable =
     then g +> G.add_edge (src, target) G.Use
     else begin
       g +> G.add_node target;
-      g +> G.add_edge (G.not_found, target) G.Has;
+      let parent_target = 
+        if List.mem s dupes
+        then G.dupe
+        else G.not_found
+      in
+      g +> G.add_edge (parent_target, target) G.Has;
       g +> G.add_edge (src, target) G.Use;
       pr2_once (spf "PB: lookup fail on module %s in %s" 
                    (fst target) readable)
@@ -203,9 +208,7 @@ let build ?(verbose=true) dir skip_list =
   let files = Skip_code.filter_files ~verbose skip_list root all_files in
   
   let g = G.create () in
-  g +> G.add_node G.root;
-  g +> G.add_node G.not_found;
-  g +> G.add_edge (G.root, G.not_found) G.Has;
+  G.create_initial_hierarchy g;
 
   let duplicate_modules =
     files 
@@ -234,7 +237,7 @@ let build ?(verbose=true) dir skip_list =
      if readable =~ ".*external/" || readable =~ "web/.*" then ()
      else begin
        let ast = parse file in
-       extract_uses ~g ~ast ~readable;
+       extract_uses ~g ~ast ~readable ~dupes:(List.map fst duplicate_modules);
      end
   ));
 

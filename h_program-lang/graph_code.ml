@@ -109,7 +109,9 @@ type graph = {
 (* Globals *)
 (*****************************************************************************)
 let root = ".", E.Dir
+let pb = "PB", E.Dir
 let not_found = "NOT_FOUND", E.Dir
+let dupe = "DUPE", E.Dir
 
 (*****************************************************************************)
 (* Graph construction *)
@@ -216,6 +218,15 @@ let create_intermediate_directories_if_not_present g dir =
   in
   aux root dirs
 
+let create_initial_hierarchy g =
+  g +> add_node root;
+  g +> add_node pb;
+  g +> add_node not_found;
+  g +> add_node dupe;
+  g +> add_edge (root, pb) Has;
+  g +> add_edge (pb, dupe) Has;
+  g +> add_edge (pb, not_found) Has;
+  ()
 
 (*****************************************************************************)
 (* Debugging *)
