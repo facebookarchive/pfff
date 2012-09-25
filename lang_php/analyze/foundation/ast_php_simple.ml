@@ -94,6 +94,7 @@
  *  - support for generics of sphp
  *  - XHP class declaration? e.g. children, @required, etc?
  *  - less: factorize more? string vs Guil vs xhp?
+ *  - less: split Id in Id and Var
  *)
 
 (*****************************************************************************)
@@ -301,6 +302,9 @@ and func_def = {
      | Hint of name
      | HintArray
 
+  (* for methods, and below for fields too *)
+  and modifier = Ast_php.modifier
+
 and constant_def = {
   cst_name: name;
   (* normally a static scalar *)
@@ -325,11 +329,10 @@ and class_def = {
 }
 
   and class_kind =
+    (* todo: put Final, Abstract as modifier list in class_def *)
     | ClassRegular | ClassFinal | ClassAbstract
     | Interface
     | Trait
-
-  and modifier = Ast_php.modifier
 
   and class_var = {
     cv_name: name;
@@ -394,6 +397,7 @@ let tok_of_name (s, x) =
   | None -> failwith (Common.spf "no token information for %s" s)
   | Some tok -> tok
 
+(* todo: probably better to have different Id and Var constructors *)
 let is_variable (s, _) =
   s.[0] = '$'
 
