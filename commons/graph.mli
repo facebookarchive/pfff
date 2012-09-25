@@ -12,6 +12,8 @@ val add_edge :
 (* this will also remove its associated edges *)
 val remove_vertex:
   'a -> 'a graph -> unit
+val remove_edge : 
+  'a -> 'a -> 'a graph -> unit
 (* many algorithms works by side effect on the graph so need a copy function *)
 val copy: 
   'a graph -> 'a graph

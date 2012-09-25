@@ -154,7 +154,7 @@ DONE    val add_vertex : t -> V.t -> unit
 DONE    val remove_vertex : t -> V.t -> unit
 DONE    val add_edge : t -> V.t -> V.t -> unit
     val add_edge_e : t -> E.t -> unit
-    val remove_edge : t -> V.t -> V.t -> unit
+DONE    val remove_edge : t -> V.t -> V.t -> unit
     val remove_edge_e : t -> E.t -> unit
     module Mark :
       sig
@@ -366,6 +366,12 @@ let remove_vertex k g =
   OG.remove_vertex g.og vk;
   Hashtbl.remove g.vertex_of_key k;
   Hashtbl.remove g.key_of_vertex vk;
+  ()
+
+let remove_edge k1 k2 g =
+  let vx = g +> vertex_of_key k1 in
+  let vy = g +> vertex_of_key k2 in
+  OG.remove_edge g.og vx vy;
   ()
 
 (*****************************************************************************)
