@@ -69,7 +69,7 @@ let field_decls = decls (fun x -> Field x)
 let var_decls   = decls (fun x -> LocalVar x)
 
 let constructor_invocation name args =
-  Expr (Call ((Name name, todoii), args), todoii), todoii
+  Expr (Call ((Name name), args)), todoii
 
 %}
 
@@ -346,9 +346,9 @@ primary:
 primary_no_new_array:
  | literal             { $1 }
  | class_literal       { $1 }
- | THIS                { Name [this_ident $1], todoii }
- | name DOT THIS       { Name (List.rev (this_ident $3 :: $1)), todoii }
- | LP expression RP    { $2(*TODO*) }
+ | THIS                { Name [this_ident $1] }
+ | name DOT THIS       { Name (List.rev (this_ident $3 :: $1)) }
+ | LP expression RP    { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
  | method_invocation                  { $1 }
@@ -356,40 +356,40 @@ primary_no_new_array:
 
 /* 3.10 */
 literal: 
- | LITERAL { Literal (fst $1), [snd $1] }
+ | LITERAL { Literal (fst $1) }
 
- | TInt { Literal (fst $1), [snd $1] }
- | TFloat { Literal (fst $1), [snd $1] }
- | TChar { Literal (fst $1), [snd $1] }
- | TString { Literal (fst $1), [snd $1] }
+ | TInt { Literal (fst $1) }
+ | TFloat { Literal (fst $1) }
+ | TChar { Literal (fst $1) }
+ | TString { Literal (fst $1) }
 
 /* 15.8.2 */
 class_literal:
- | primitive_type DOT CLASS  { ClassLiteral $1, [$2;$3] }
- | name           DOT CLASS  { ClassLiteral (TypeName (List.rev $1),noii), [$2;$3] }
- | array_type     DOT CLASS  { ClassLiteral $1, [$2;$3] }
- | VOID           DOT CLASS  { ClassLiteral (void_type $1), [$2;$3] }
+ | primitive_type DOT CLASS  { ClassLiteral $1 }
+ | name           DOT CLASS  { ClassLiteral (TypeName (List.rev $1),noii) }
+ | array_type     DOT CLASS  { ClassLiteral $1 }
+ | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
 /* 15.9 */
 class_instance_creation_expression:
  | NEW class_or_interface_type LP argument_list_opt RP class_body_opt
-       { NewClass ((TypeName $2,noii), $4, $6), [$1;$3;$5] }
+       { NewClass ((TypeName $2,noii), $4, $6) }
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ($1, $4, $6, $8), [$2;$3;$5;$7] }
+       { NewQualifiedClass ($1, $4, $6, $8) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ((Name (List.rev $1),todoii), $4, $6, $8), [$2;$3;$5;$7] }
+       { NewQualifiedClass ((Name (List.rev $1)), $4, $6, $8) }
 
 /* 15.10 */
 array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
-       { NewArray ($2, List.rev $3, $4, None), [$1] }
+       { NewArray ($2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
-       { NewArray ((TypeName (List.rev $2),todoii), List.rev $3, $4, None), [$1] }
+       { NewArray ((TypeName (List.rev $2),todoii), List.rev $3, $4, None) }
  | NEW primitive_type dims array_initializer
-       { NewArray ($2, [], $3, Some $4), [$1] }
+       { NewArray ($2, [], $3, Some $4) }
  | NEW name dims array_initializer
-       { NewArray ((TypeName (List.rev $2),todoii), [], $3, Some $4), [$1] }
+       { NewArray ((TypeName (List.rev $2),todoii), [], $3, Some $4) }
 
 
 dim_expr: LB expression RB  { $2 (*TODO*) }
@@ -403,16 +403,16 @@ dims:
 /* 15.11 */
 field_access:
  | primary DOT identifier
-	{ Dot ($1, $3), [$2] }
+	{ Dot ($1, $3) }
  | SUPER DOT identifier
-	{ Name [super_ident $1; $3], todoii }
+	{ Name [super_ident $1; $3] }
  | name DOT SUPER DOT identifier
-	{ Name (List.rev ($5 :: super_ident $3 :: $1)), todoii }
+	{ Name (List.rev ($5 :: super_ident $3 :: $1)) }
 
 /* 15.13 */
 array_access:
- | name LB expression RB  { ArrayAccess ((Name (List.rev $1),todoii), $3),[$2;$4] }
- | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3),[$2;$4] }
+ | name LB expression RB  { ArrayAccess ((Name (List.rev $1)), $3) }
+ | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3) }
 
 
 /*(*----------------------------*)*/
@@ -422,13 +422,13 @@ array_access:
 /* 15.12 */
 method_invocation:
  | name LP argument_list_opt RP  
-        { Call ((Name (List.rev $1),todoii), $3), [$2;$4] }
+        { Call ((Name (List.rev $1)), $3) }
  | primary DOT identifier LP argument_list_opt RP
-	{ Call ((Dot ($1, $3),[$2]), $5), [$4;$6] }
+	{ Call ((Dot ($1, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name [super_ident $1; $3],todoii), $5), [$4;$6] }
+	{ Call ((Name [super_ident $1; $3]), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name (List.rev ($5 :: super_ident $3 :: $1)),todoii), $7),[$6;$8] }
+	{ Call ((Name (List.rev ($5 :: super_ident $3 :: $1))), $7)}
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -437,33 +437,33 @@ method_invocation:
 /* 15.14 */
 postfix_expression:
  | primary  { $1 }
- | name     { Name (List.rev $1), todoii }
+ | name     { Name (List.rev $1) }
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
  
 
 /* 15.14.1 */
-post_increment_expression: postfix_expression INCR  { Postfix ($1, "++"),[$2] }
+post_increment_expression: postfix_expression INCR  { Postfix ($1, "++") }
 
 /* 15.14.2 */
-post_decrement_expression: postfix_expression DECR  { Postfix ($1, "--"),[$2] }
+post_decrement_expression: postfix_expression DECR  { Postfix ($1, "--") }
 
 /* 15.15 */
 unary_expression:
  | pre_increment_expression  { $1 }
  | pre_decrement_expression  { $1 }
- | PLUS unary_expression  { Prefix ("+", $2),[$1] }
- | MINUS unary_expression  { Prefix ("-", $2),[$1] }
+ | PLUS unary_expression  { Prefix ("+", $2) }
+ | MINUS unary_expression  { Prefix ("-", $2) }
  | unary_expression_not_plus_minus  { $1 }
 
-pre_increment_expression: INCR unary_expression  { Prefix ("++", $2),[$1] }
+pre_increment_expression: INCR unary_expression  { Prefix ("++", $2) }
 
-pre_decrement_expression: DECR unary_expression  { Prefix ("--", $2),[$1] }
+pre_decrement_expression: DECR unary_expression  { Prefix ("--", $2) }
 
 unary_expression_not_plus_minus:
  | postfix_expression  { $1 }
- | COMPL unary_expression  { Prefix ("~", $2), [$1] }
- | NOT unary_expression  { Prefix ("!", $2), [$1] }
+ | COMPL unary_expression  { Prefix ("~", $2) }
+ | NOT unary_expression  { Prefix ("!", $2) }
  | cast_expression  { $1 }
 
 /* 15.16 */
@@ -482,27 +482,27 @@ unary_expression_not_plus_minus:
  * semantic action must ensure that '( expression )' is really '( name )'
  *)*/
 cast_expression:
- | LP primitive_type RP unary_expression  { Cast ($2, $4), [$1;$3] }
+ | LP primitive_type RP unary_expression  { Cast ($2, $4) }
  | LP expression RP unary_expression_not_plus_minus
 	{ 
           let typname = 
             match $2 with
-            | Name name,ii -> TypeName name, ii
+            | Name name -> TypeName name, todoii
             | _ -> raise Parsing.Parse_error
           in
-          Cast (typname, $4), [$1;$3] 
+          Cast (typname, $4)
         }
- | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4),[$1;$3] }
+ | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4) }
 
 /* 15.17 */
 multiplicative_expression:
  | unary_expression  { $1 }
  | multiplicative_expression TIMES unary_expression
-		{ Infix ($1, "*", $3), [$2] }
+		{ Infix ($1, "*", $3) }
  | multiplicative_expression DIV unary_expression
-		{ Infix ($1, "/", $3), [$2] }
+		{ Infix ($1, "/", $3) }
  | multiplicative_expression MOD unary_expression
-		{ Infix ($1, "%", $3), [$2] }
+		{ Infix ($1, "%", $3) }
 
 
 /* 15.18 */
@@ -510,27 +510,27 @@ additive_expression:
  | multiplicative_expression  
         { $1 }
  | additive_expression PLUS multiplicative_expression
-	{ Infix ($1, "+", $3), [$2] }
+	{ Infix ($1, "+", $3) }
  | additive_expression MINUS multiplicative_expression
-	{ Infix ($1, "-", $3), [$2] }
+	{ Infix ($1, "-", $3) }
 
 
 /* 15.19 */
 shift_expression:
  | additive_expression  { $1 }
- | shift_expression LS additive_expression  { Infix ($1, "<<", $3), [$2] }
- | shift_expression SRS additive_expression  { Infix ($1, ">>", $3), [$2] }
- | shift_expression URS additive_expression  { Infix ($1, ">>>", $3), [$2] }
+ | shift_expression LS additive_expression  { Infix ($1, "<<", $3) }
+ | shift_expression SRS additive_expression  { Infix ($1, ">>", $3) }
+ | shift_expression URS additive_expression  { Infix ($1, ">>>", $3) }
 
 
 /* 15.20 */
 relational_expression:
  | shift_expression  { $1 }
- | relational_expression LT shift_expression  { Infix ($1, "<", $3), [$2] }
- | relational_expression GT shift_expression  { Infix ($1, ">", $3), [$2] }
- | relational_expression LE shift_expression  { Infix ($1, "<=", $3), [$2] }
- | relational_expression GE shift_expression  { Infix ($1, ">=", $3), [$2] }
- | relational_expression INSTANCEOF reference_type  { InstanceOf ($1, $3), [$2] }
+ | relational_expression LT shift_expression  { Infix ($1, "<", $3) }
+ | relational_expression GT shift_expression  { Infix ($1, ">", $3) }
+ | relational_expression LE shift_expression  { Infix ($1, "<=", $3) }
+ | relational_expression GE shift_expression  { Infix ($1, ">=", $3) }
+ | relational_expression INSTANCEOF reference_type  { InstanceOf ($1, $3) }
 
 
 /* 15.21 */
@@ -538,37 +538,37 @@ equality_expression:
  | relational_expression  
         { $1 }
  | equality_expression EQ_EQ relational_expression
-	{ Infix ($1, "==", $3), [$2] }
+	{ Infix ($1, "==", $3) }
  | equality_expression NOT_EQ relational_expression
-	{ Infix ($1, "!=", $3), [$2] }
+	{ Infix ($1, "!=", $3) }
 
 
 /* 15.22 */
 and_expression:
  | equality_expression  { $1 }
- | and_expression AND equality_expression  { Infix ($1, "&", $3), [$2] }
+ | and_expression AND equality_expression  { Infix ($1, "&", $3) }
 
 exclusive_or_expression:
  | and_expression  { $1 }
- | exclusive_or_expression XOR and_expression  { Infix ($1, "^", $3), [$2] }
+ | exclusive_or_expression XOR and_expression  { Infix ($1, "^", $3) }
 
 
 inclusive_or_expression:
  | exclusive_or_expression  { $1 }
- | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, "|", $3), [$2] }
+ | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, "|", $3) }
 
 /* 15.23 */
 conditional_and_expression:
  | inclusive_or_expression  { $1 }
  | conditional_and_expression AND_AND inclusive_or_expression
-       { Infix ($1, "&&", $3), [$2] }
+       { Infix ($1, "&&", $3) }
 
 
 /* 15.24 */
 conditional_or_expression:
  | conditional_and_expression  { $1 }
  | conditional_or_expression OR_OR conditional_and_expression
-	{ Infix ($1, "||", $3), [$2] }
+	{ Infix ($1, "||", $3) }
 
 /*(*----------------------------*)*/
 /*(*2 Ternary *)*/
@@ -578,7 +578,7 @@ conditional_or_expression:
 conditional_expression:
  | conditional_or_expression  { $1 }
  | conditional_or_expression COND expression COLON conditional_expression
-	{ Conditional ($1, $3, $5), [$2;$4] }
+	{ Conditional ($1, $3, $5) }
 
 /*(*----------------------------*)*/
 /*(*2 Assign *)*/
@@ -590,11 +590,11 @@ assignment_expression:
  | assignment  { $1 }
 
 assignment: left_hand_side assignment_operator assignment_expression
-	{ Assignment ($1, fst $2, $3), [snd $2] }
+	{ Assignment ($1, fst $2, $3) }
 
 
 left_hand_side:
- | name  { Name (List.rev $1),todoii }
+ | name  { Name (List.rev $1) }
  | field_access  { $1 }
  | array_access  { $1 }
 
@@ -1040,7 +1040,7 @@ explicit_constructor_invocation:
       { constructor_invocation [super_ident $1] $3 }
  | primary DOT SUPER LP argument_list_opt RP SM
       { 
-        Expr (Call ((Dot ($1, super_ident $3),todoii), $5), todoii), todoii
+        Expr (Call ((Dot ($1, super_ident $3)), $5)), todoii
       }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM

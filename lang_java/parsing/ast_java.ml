@@ -56,8 +56,7 @@ and typ = typbis wrap
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
-and expr = exprbis wrap
-  and exprbis = 
+and expr =
   | Name of name (* include 'this' and 'super' special names *)
 
   (* todo: split in constant type with Int | Float | String | Char | Bool *)

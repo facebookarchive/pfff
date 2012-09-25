@@ -79,6 +79,8 @@ let test_lexer file =
 (* ---------------------------------------------------------------------- *)
 
 let test_visitor file = 
+(*
+
   let _bigf = { Visitor_java.default_visitor_s with
     Visitor_java.kexpr_s = (fun (k, bigf) e -> 
       match Ast_java.unwrap e with
@@ -91,6 +93,7 @@ let test_visitor file =
       | _ -> k e
     );
   } in
+*)
   (*
   let ((xs,info_item), stat) = Parse_java.parse file in
   match xs with
