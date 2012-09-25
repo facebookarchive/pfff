@@ -189,8 +189,8 @@ and field = {
 (* ------------------------------------------------------------------------- *)
 
 and class_decl = { 
-  cl_mods: modifiers;
   cl_name: ident;
+  cl_mods: modifiers;
   cl_super: typ option;
   cl_impls: names;
   cl_body: decls 
@@ -198,8 +198,8 @@ and class_decl = {
 
 (* less: merge with class_decl? *)
 and interface = { 
-  if_mods: modifiers;
   if_name: ident;
+  if_mods: modifiers;
   if_exts: names;
   if_body: decls 
 }
