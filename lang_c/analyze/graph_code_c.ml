@@ -63,6 +63,7 @@ type env = {
 
   (* error reporting *)
   dupes: (Graph_code.node) Common.hashset;
+  (* less: less useful now with G.not_found *)
   lookup_fails: (Graph_code.node, int) Common.hash_with_default;
   (* todo: dynamic_fails stats *)
 }
