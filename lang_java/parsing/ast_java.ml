@@ -272,7 +272,6 @@ let rewrap_str =  PI.rewrap_str
 
 let compare_pos = PI.compare_pos
 
-let todoii = []
 let noii = []
 let ast_todo = []
 let ast_todo2 = ()

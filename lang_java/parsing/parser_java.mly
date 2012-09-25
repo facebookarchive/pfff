@@ -33,8 +33,7 @@ let named_type (str, ii) = TypeName [synth_id (str,ii)]
 let void_type ii = named_type ("void", ii)
 
 
-type var_decl_id = var_decl_idbis wrap
-  and var_decl_idbis = 
+type var_decl_id =
   | IdentDecl of ident
   | ArrayDecl of var_decl_id
 (* and mdeclarator = var_decl_id * vars *)
@@ -43,7 +42,7 @@ type var_decl_id = var_decl_idbis wrap
 
 (* Move array dimensions from variable name to type. *)
 let rec canon_var mods t v =
-  match unwrap v with
+  match v with
   | IdentDecl str -> { v_mods = mods; v_type = t; v_name = str }
   | ArrayDecl v' -> canon_var mods (ArrayType t) v'
 
@@ -941,8 +940,8 @@ variable_declarator:
 
 
 variable_declarator_id:
- | identifier                  { IdentDecl $1, noii }
- | variable_declarator_id LB RB  { ArrayDecl $1, [$2;$3] }
+ | identifier                  { IdentDecl $1 }
+ | variable_declarator_id LB RB  { ArrayDecl $1 }
 
 
 variable_initializer:
@@ -970,8 +969,8 @@ method_header:
      { method_header $1 (void_type $2) $3 $4 }
 
 method_declarator:
- | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1,noii), $3 }
- | method_declarator LB RB                   { (ArrayDecl (fst $1),todoii), snd $1 }
+ | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1), $3 }
+ | method_declarator LB RB                   { (ArrayDecl (fst $1)), snd $1 }
 
 
 generic_method_or_constructor_decl:
