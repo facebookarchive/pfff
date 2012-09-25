@@ -33,6 +33,7 @@ module Flag = Flag_parsing_cpp
  *  - functions/locals,
  *  - tags (struct name, enum name)
  *  - ???
+ *  - internals: remove lookup_fails, like in graph_code_php.ml
  * see ast_c.ml notes in coccinelle
  * 
  *  
@@ -199,7 +200,7 @@ let extract_defs ~g ~dupes ~ast ~readable =
     nodes +> List.iter (fun node ->
 
       (* todo: if StructDef or EnumDef then
-       * can have nested Has link to add
+       * can have nested Has links to add
        *)
       if G.has_node node g 
       then Hashtbl.replace dupes node true
