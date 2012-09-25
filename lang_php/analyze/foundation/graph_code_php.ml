@@ -40,9 +40,6 @@ module Ast = Ast_php_simple
  * todo: 
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
- *  - have a node_opt_of_stmt, so factorize some of the code,
- *    and when many main(), just make the dependency to File, like
- *    in graph_code_c.ml
  *  - add tests
  *)
 
