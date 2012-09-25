@@ -74,12 +74,12 @@ type env = {
  * statistics
  *)
 
-let parse file =
+let parse ~show_parse_error file =
   try 
     (* less: make this parameters of parse_program? *) 
     Common.save_excursion Flag.error_recovery true (fun () ->
-    Common.save_excursion Flag.show_parsing_error true (fun () ->
-    Common.save_excursion Flag.verbose_parsing true (fun () ->
+    Common.save_excursion Flag.show_parsing_error show_parse_error (fun () ->
+    Common.save_excursion Flag.verbose_parsing show_parse_error (fun () ->
     let cst = Parse_c.parse_program file in
     let ast = Ast_c_simple_build.program cst in
     ast
@@ -137,10 +137,11 @@ let rec add_use_edge env (name, kind) =
               (G.string_of_node src) (G.string_of_node dst));
       env.lookup_fails#update src Common.add1
 
-  (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes src ->
-        env.lookup_fails#update src Common.add1
   (* now handled via G.dupe nodes
+   * we skip reference to dupes
+   * | _ when Hashtbl.mem env.dupes src ->
+   *      env.lookup_fails#update src Common.add1
+   * 
    * | _ when Hashtbl.mem env.dupes dst -> 
    * env.lookup_fails#update dst Common.add1
    *)
@@ -157,6 +158,15 @@ let rec add_use_edge env (name, kind) =
           add_use_edge env (name, E.Macro)
 
       | _ ->
+          (* recorrect dst, put back Global and Function *)
+          let kind_original =
+            match kind with
+            | E.Constant when not (looks_like_macro name) -> E.Global
+            | E.Macro when not (looks_like_macro name) -> E.Function
+            | _ -> kind
+          in
+          let dst = (Ast.str_of_name name, kind_original) in
+            
           G.add_node dst env.g;
           let parent_target = 
             if Hashtbl.mem env.dupes dst
@@ -440,7 +450,7 @@ let build ?(verbose=true) dir skip_list =
     List.iter (fun file ->
       k();
       let readable = Common.filename_without_leading_path root file in
-      let ast = parse file in
+      let ast = parse ~show_parse_error:true file in
       extract_defs ~g ~dupes ~ast ~readable;
     ));
   dupes +> Common.hashset_to_list +> List.iter (fun n ->
@@ -461,13 +471,14 @@ let build ?(verbose=true) dir skip_list =
    List.iter (fun file ->
      k();
      let readable = Common.filename_without_leading_path root file in
-     let ast = parse file in
+     let ast = parse ~show_parse_error:false file in
      extract_uses ~g ~dupes ~ast ~readable ~lookup_fails ~skip_edges;
    ));
-
+(* make less sense now that have G.not_found
   lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20
   +> List.iter (fun (n, cnt) ->
     pr2 (spf "LOOKUP FAIL: %s (%d)%s" (G.string_of_node n) cnt
             (if Hashtbl.mem dupes n then "(DUPE)" else ""))
   );
+*)
   g
