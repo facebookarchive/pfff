@@ -55,7 +55,7 @@ let rec canon_var mods t v =
 
 let method_header mods mtype (v, formals) throws =
   { m_var = canon_var mods mtype v; m_formals = formals;
-    m_throws = throws; m_body = Empty, todoii }
+    m_throws = throws; m_body = Empty }
 
 (* Return a list of field declarations in canonical form. *)
 
@@ -69,7 +69,7 @@ let field_decls = decls (fun x -> Field x)
 let var_decls   = decls (fun x -> LocalVar x)
 
 let constructor_invocation name args =
-  Expr (Call ((Name name), args)), todoii
+  Expr (Call ((Name name), args))
 
 %}
 
@@ -640,8 +640,8 @@ statement_without_trailing_substatement:
  | throw_statement  { $1 }
  | try_statement  { $1 }
  /*(* javaext:  *)*/
- | ASSERT expression SM { Assert ($2, None), [$1;$3] }
- | ASSERT expression COLON expression SM { Assert ($2, Some $4), [$1;$3;$5] }
+ | ASSERT expression SM { Assert ($2, None) }
+ | ASSERT expression COLON expression SM { Assert ($2, Some $4) }
 
 statement_no_short_if:
  | statement_without_trailing_substatement  { $1 }
@@ -653,11 +653,11 @@ statement_no_short_if:
 
 
 /* 14.2 */
-block: LC block_statements_opt RC  { Block $2, [$1;$3] }
+block: LC block_statements_opt RC  { Block $2 }
 
 block_statement:
  | local_variable_declaration_statement  { $1 }
- | class_declaration  { [LocalClass $1, noii] }
+ | class_declaration  { [LocalClass $1] }
  | statement  { [$1] }
 
 /* 14.4 */
@@ -668,24 +668,24 @@ local_variable_declaration_statement: local_variable_declaration SM
 local_variable_declaration:
  | type_java variable_declarators  
      { let xs = var_decls [] $1 (List.rev $2) in
-       xs +> List.map (fun x -> x, todoii)
+       xs +> List.map (fun x -> x)
      }
 /*(* actually should be variable_modifiers but conflict *)*/
  | modifiers type_java variable_declarators  
    { [] }
 
 /* 14.6 */
-empty_statement:	SM  { Empty, [$1] }
+empty_statement:	SM  { Empty }
 
 /* 14.7 */
 labeled_statement: identifier COLON statement  
-   { Label ($1, $3), [$2] }
+   { Label ($1, $3) }
 
 labeled_statement_no_short_if: identifier COLON statement_no_short_if  
-   { Label ($1, $3), [$2] }
+   { Label ($1, $3) }
 
 /* 14.8 */
-expression_statement: statement_expression SM  { Expr $1, [$2] }
+expression_statement: statement_expression SM  { Expr $1 }
 
 /*(* pad: good *)*/
 statement_expression:
@@ -701,19 +701,19 @@ statement_expression:
 
 /* 14.9 */
 if_then_statement: IF LP expression RP statement
-   { If ($3, $5, None), [$1;$2;$4] }
+   { If ($3, $5, None) }
 
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
-   { If ($3, $5, Some $7), [$1;$2;$4;$6] }
+   { If ($3, $5, Some $7) }
 
 if_then_else_statement_no_short_if: 
  IF LP expression RP statement_no_short_if ELSE statement_no_short_if
-   { If ($3, $5, Some $7), [$1;$2;$4;$6] }
+   { If ($3, $5, Some $7) }
 
 
 /* 14.10 */
 switch_statement: SWITCH LP expression RP switch_block
-    { Switch ($3, $5), [$1;$2;$4] }
+    { Switch ($3, $5) }
 
 switch_block:
  | LC RC  { [] (* TODO *) }
@@ -730,15 +730,15 @@ switch_label:
 
 /* 14.11 */
 while_statement:	WHILE LP expression RP statement
-     { While ($3, $5), [$1;$2;$4] }
+     { While ($3, $5) }
 
 while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
-     { While ($3, $5), [$1;$2;$4] }
+     { While ($3, $5) }
 
 
 /* 14.12 */
 do_statement: DO statement WHILE LP expression RP SM
-      { Do ($2, $5), [$1;$3;$4;$6;$7] }
+      { Do ($2, $5) }
 
 
 /*(*----------------------------*)*/
@@ -748,11 +748,11 @@ do_statement: DO statement WHILE LP expression RP SM
 /* 14.13 */
 for_statement: 
   FOR LP for_control RP statement
-	{ For (ast_todo2, $5), [$1;$2;$4] }
+	{ For (ast_todo2, $5) }
 
 for_statement_no_short_if: 
   FOR LP for_control RP statement_no_short_if
-	{ For (ast_todo2, $5), [$1;$2;$4] }
+	{ For (ast_todo2, $5) }
 
 for_control:
  | for_init_opt SM expression_opt SM for_update_opt { }
@@ -779,27 +779,27 @@ for_var_control_rest:
 /*(*----------------------------*)*/
 
 /* 14.14 */
-break_statement:	BREAK identifier_opt SM  { Break $2, [$1;$3] }
+break_statement:	BREAK identifier_opt SM  { Break $2 }
 
 /* 14.15 */
-continue_statement: CONTINUE identifier_opt SM  { Continue $2, [$1;$3] }
+continue_statement: CONTINUE identifier_opt SM  { Continue $2 }
 
 /* 14.16 */
-return_statement: RETURN expression_opt SM  { Return $2, [$1;$3] }
+return_statement: RETURN expression_opt SM  { Return $2 }
 
 
 /* 14.18 */
 synchronized_statement: SYNCHRONIZED LP expression RP block  
-  { Sync ($3, $5), [$1;$2;$4] }
+  { Sync ($3, $5) }
 
 
 /* 14.17 */
-throw_statement:	THROW expression SM  { Throw $2, [$1;$3] }
+throw_statement:	THROW expression SM  { Throw $2 }
 
 /* 14.19 */
 try_statement:
- | TRY block catches             { Try ($2, List.rev $3, None), [$1] }
- | TRY block catches_opt finally  { Try ($2, $3, Some $4), [$1] }
+ | TRY block catches             { Try ($2, List.rev $3, None) }
+ | TRY block catches_opt finally  { Try ($2, $3, Some $4) }
 
 catch_clause:
  | CATCH LP formal_parameter RP block  { $3, $5 (* TODO*) }
@@ -998,7 +998,7 @@ throws: THROWS class_type_list  { List.rev $2 }
 /* 8.4.5 */
 method_body:
  | block  { $1 }
- | SM  { Empty, [$1] }
+ | SM  { Empty }
 
 
 /* 8.6 */
@@ -1027,9 +1027,9 @@ constructor_declarator:	identifier LP formal_parameter_list_opt RP  { $1, $3 }
 /* 8.8.5 */
 constructor_body:
  | LC block_statements_opt RC  
-     { Block $2, [$1;$3] }
+     { Block $2 }
  | LC explicit_constructor_invocation block_statements_opt RC
-     { Block ($2 :: $3), [$1;$4] }
+     { Block ($2 :: $3) }
 
 
 /* 8.8.5.1 */
@@ -1040,7 +1040,7 @@ explicit_constructor_invocation:
       { constructor_invocation [super_ident $1] $3 }
  | primary DOT SUPER LP argument_list_opt RP SM
       { 
-        Expr (Call ((Dot ($1, super_ident $3)), $5)), todoii
+        Expr (Call ((Dot ($1, super_ident $3)), $5))
       }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM
@@ -1332,9 +1332,9 @@ for_update_opt:
  | for_update  { $1 }
 
 statement_expression_list:
- | statement_expression  { [Expr $1, todoii] }
+ | statement_expression  { [Expr $1] }
  | statement_expression_list CM statement_expression  
-     { (Expr $3,todoii) :: $1 }
+     { (Expr $3) :: $1 }
 
 
 identifier_opt:

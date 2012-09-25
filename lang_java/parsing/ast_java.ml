@@ -91,8 +91,7 @@ and op = string
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
 
-and stmt = stmtbis wrap
- and stmtbis =
+and stmt =
   | Empty
 
   | Block of stmts
