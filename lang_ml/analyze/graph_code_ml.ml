@@ -159,7 +159,7 @@ let extract_uses ~g ~ast ~readable ~dupes =
       in
       g +> G.add_edge (parent_target, target) G.Has;
       g +> G.add_edge (src, target) G.Use;
-      pr2_once (spf "PB: lookup fail on module %s in %s" 
+      pr2 (spf "PB: lookup fail on module %s in %s" 
                    (fst target) readable)
     end
   in
