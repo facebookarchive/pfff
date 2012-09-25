@@ -151,8 +151,13 @@ let extract_uses ~g ~ast ~readable =
     if G.has_node target g
     then g +> G.add_edge (src, target) G.Use
     else begin
+      g +> G.add_node target;
+      g +> G.add_edge (G.not_found, target) G.Has;
+      g +> G.add_edge (src, target) G.Use;
+      (* 
       pr2_once (spf "PB: lookup fail on module %s in %s" 
                    (fst target) readable)
+      *)
     end
   in
     
@@ -201,6 +206,8 @@ let build ?(verbose=true) dir skip_list =
   
   let g = G.create () in
   g +> G.add_node G.root;
+  g +> G.add_node G.not_found;
+  g +> G.add_edge (G.root, G.not_found) G.Has;
 
   let duplicate_modules =
     files 

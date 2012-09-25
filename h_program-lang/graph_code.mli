@@ -9,6 +9,7 @@ val save: graph -> Common.filename -> unit
 val load: Common.filename -> graph
 
 val root: node
+val not_found: node
 
 (* similar API to graph.ml *)
 
