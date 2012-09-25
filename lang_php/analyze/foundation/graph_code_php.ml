@@ -23,7 +23,6 @@ module Ast = Ast_php_simple
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Graph of dependencies for PHP. See graph_code.ml and main_codegraph.ml
  * for more information. Yet another code database for PHP ...
@@ -58,11 +57,12 @@ type env = {
 
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
-
-  (* error reporting *)
-  dupes: (Graph_code.node) Common.hashset;
-  lookup_fails: (Graph_code.node, int) Common.hash_with_default;
   (* todo: dynamic_fails stats *)
+
+  (* right now used in extract_uses phase to transform a src like main()
+   * into its File.
+   *)
+  dupes: (Graph_code.node) Common.hashset;
 }
 
 (*****************************************************************************)
@@ -89,14 +89,6 @@ let rec add_use_edge env (name, kind) =
   | _ when not (G.has_node src env.g) ->
       pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist (nested func?)"
               (G.string_of_node src) (G.string_of_node dst));
-      env.lookup_fails#update src Common.add1;
-
-  (* we skip reference to dupes *)
-  | _ when Hashtbl.mem env.dupes src ->
-        env.lookup_fails#update src Common.add1
-  | _ when Hashtbl.mem env.dupes dst -> 
-      env.lookup_fails#update dst Common.add1
-
 
   | _ when G.has_node dst env.g -> 
       let (s1, _) = src in
@@ -111,10 +103,50 @@ let rec add_use_edge env (name, kind) =
       | E.Class E.RegularClass -> 
           add_use_edge env (name, E.Class E.Interface)
       | _ ->
-          (* todo: debug, display edge? *)
-          env.lookup_fails#update dst Common.add1
+          let kind_original = kind in
+          let dst = (Ast.str_of_name name, kind_original) in
+
+          G.add_node dst env.g;
+          let parent_target = G.not_found in
+          pr2 (spf "PB: lookup fail on %s (in %s)" 
+                       (G.string_of_node dst) (G.string_of_node src));
+          
+          env.g +> G.add_edge (parent_target, dst) G.Has;
+          env.g +> G.add_edge (src, dst) G.Use;
       )
   )
+
+let node_of_toplevel_opt x =
+  match x with
+  | FuncDef def ->
+      Some (Ast.str_of_name def.f_name, E.Function)
+  | ConstantDef def ->
+      Some (Ast.str_of_name def.cst_name, E.Constant)
+  (* old style constant definition, before PHP 5.4 *)
+  | Expr(Call(Id("define", _), [String((s,_)); v])) ->
+      Some (s, E.Constant)
+
+  | ClassDef def ->
+      let kind = 
+        match def.c_kind with
+        | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
+        | Interface -> E.Interface
+        | Trait -> E.Trait
+      in
+      Some (Ast.str_of_name def.c_name, E.Class kind)
+
+  (* could add entity for that? *)
+  | Global _ -> None
+
+  | StaticVars _ -> None
+
+  | Expr _ | Block _
+  | If _ | Switch _
+  | While _ | Do _ | For _ | Foreach _
+  | Return _ | Break _ | Continue _
+  | Throw _ | Try _
+    -> None
+
 
 (*****************************************************************************)
 (* Defs *)
@@ -127,74 +159,88 @@ let extract_defs ~g ~dupes ~ast ~readable =
   g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
 
   (* less? what about nested classes/functions/defines? *)
-  ast +> List.iter (function
+  ast +> List.iter (fun x ->
+    let node_opt = node_of_toplevel_opt x in
+    node_opt +> Common.do_option (fun node ->
+      (* for ClassDef can have nested Has links to add *)
 
-  | FuncDef def ->
-      let node = (Ast.str_of_name def.f_name, E.Function) in
-      if G.has_node node g then Hashtbl.add dupes node true
-      else begin
-        g +> G.add_node node;
-        g +> G.add_edge ((readable, E.File), node) G.Has;
-      end
-
-  | ConstantDef def ->
-      let node = (Ast.str_of_name def.cst_name, E.Constant) in
       if G.has_node node g then Hashtbl.replace dupes node true
       else begin
         g +> G.add_node node;
         g +> G.add_edge ((readable, E.File), node) G.Has;
       end
-  (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id("define", _), [String((s,_)); v])) ->
-      let node = (s, E.Constant) in
-      if G.has_node node g then Hashtbl.replace dupes node true
-      else begin
-        g +> G.add_node node;
-        g +> G.add_edge ((readable, E.File), node) G.Has;
-      end
-
-  | ClassDef def ->
-      let kind = 
-        match def.c_kind with
-        | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
-        | Interface -> E.Interface
-        | Trait -> E.Trait
-      in
-      let node = (Ast.str_of_name def.c_name, E.Class kind) in
-      if G.has_node node g then Hashtbl.replace dupes node true
-      else begin
-        g +> G.add_node node;
-        g +> G.add_edge ((readable, E.File), node) G.Has;
-        (* todo: visit methods/fields *)
-      end;
-       
-
-  (* could add entity for that? *)
-  | Global _ -> ()
-
-  | StaticVars _ -> ()
-
-  | Expr _ | Block _
-  | If _ | Switch _
-  | While _ | Do _ | For _ | Foreach _
-  | Return _ | Break _ | Continue _
-  | Throw _ | Try _
-    -> ()
+    )
   );
   ()
 
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
-let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
+let rec extract_uses ~g ~ast ~dupes ~readable ~skip_edges =
   let env = {
     current = (readable, E.File);
     g;
-    dupes; lookup_fails;
+    dupes;
     skip_edges;
   } 
   in
   stmtl env ast;
+
+(* ---------------------------------------------------------------------- *)
+(* Stmt/toplevel *)
+(* ---------------------------------------------------------------------- *)
+and stmt env x =
+
+  let node_opt = node_of_toplevel_opt x in
+  let env = 
+    match node_opt with
+    | None -> env
+    | Some n ->
+        (* can happen for main() which will be dupes in which case
+         * it's better to keep current as the current File so
+         * at least we will avoid some fail lookup.
+         *)
+        if Hashtbl.mem env.dupes n
+        then env
+        else { env with current = n }
+  in
+  match x with
+  (* boilerplate *)
+  | FuncDef def -> 
+      func_def env def
+  | ClassDef def -> 
+      class_def env def
+  | ConstantDef def -> 
+      constant_def env def
+
+  | Expr e -> expr env e
+  | Block xs -> stmtl env xs
+  | If (e, st1, st2) ->
+      expr env e;
+      stmtl env [st1;st2]
+  | Switch (e, xs) ->
+      expr env e;
+      casel env xs
+  | While (e, xs) | Do (xs, e) ->
+      expr env e;
+      stmtl env xs
+  | For (es1, es2, es3, xs) ->
+      exprl env (es1 ++ es2 ++ es3);
+      stmtl env xs
+  | Foreach (e1, e2, e3opt, xs) ->
+      exprl env [e1;e2];
+      Common.opt (expr env) e3opt;
+      stmtl env xs;
+  | Return (_, eopt)  | Break eopt | Continue eopt ->
+      Common.opt (expr env) eopt
+  | Throw e -> expr env e
+  | Try (xs, c1, cs) ->
+      stmtl env xs;
+      catches env (c1::cs)
+
+  | StaticVars xs ->
+      xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
+  | Global xs -> exprl env xs
 
 (* ---------------------------------------------------------------------- *)
 (* Functions/Methods *)
@@ -230,55 +276,6 @@ and class_def env def =
 and constant_def env def =
   expr env def.cst_body
 
-(* ---------------------------------------------------------------------- *)
-(* Stmt *)
-(* ---------------------------------------------------------------------- *)
-and stmt env = function
-  (* boilerplate *)
-  | FuncDef def -> 
-      let n = (Ast.str_of_name def.f_name, E.Function) in
-      func_def { env with current = n} def
-  | ClassDef def -> 
-      let kind = 
-        match def.c_kind with
-        | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
-        | Interface -> E.Interface
-        | Trait -> E.Trait
-      in
-      let n = (Ast.str_of_name def.c_name, E.Class kind) in
-      class_def { env with current = n} def
-  | ConstantDef def -> 
-      let n = (Ast.str_of_name def.cst_name, E.Constant) in
-      constant_def { env with current = n} def
-
-  | Expr e -> expr env e
-  | Block xs -> stmtl env xs
-  | If (e, st1, st2) ->
-      expr env e;
-      stmtl env [st1;st2]
-  | Switch (e, xs) ->
-      expr env e;
-      casel env xs
-  | While (e, xs) | Do (xs, e) ->
-      expr env e;
-      stmtl env xs
-  | For (es1, es2, es3, xs) ->
-      exprl env (es1 ++ es2 ++ es3);
-      stmtl env xs
-  | Foreach (e1, e2, e3opt, xs) ->
-      exprl env [e1;e2];
-      Common.opt (expr env) e3opt;
-      stmtl env xs;
-  | Return (_, eopt)  | Break eopt | Continue eopt ->
-      Common.opt (expr env) eopt
-  | Throw e -> expr env e
-  | Try (xs, c1, cs) ->
-      stmtl env xs;
-      catches env (c1::cs)
-
-  | StaticVars xs ->
-      xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
-  | Global xs -> exprl env xs
 
 (* todo: deps to class name? *)
 and catch env (_hint_type, _name, xs) =
@@ -430,7 +427,7 @@ let build ?(verbose=true) dir skip_list =
   let files = Skip_code.filter_files ~verbose skip_list root all_files in
 
   let g = G.create () in
-  g +> G.add_node G.root;
+  G.create_initial_hierarchy g;
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   let dupes = Hashtbl.create 101 in
@@ -446,10 +443,11 @@ let build ?(verbose=true) dir skip_list =
    ));
   dupes +> Common.hashset_to_list +> List.iter (fun n ->
     pr2 (spf "DUPE: %s" (G.string_of_node n));
+    g +> G.remove_edge (G.parent n g, n) G.Has;
+    g +> G.add_edge (G.dupe, n) G.Has;
   );
 
   (* step2: creating the 'Use' edges, the uses *)
-  let lookup_fails = Common.hash_with_default (fun () -> 0) in
   let skip_edges = skip_list +> Common.map_filter (function
     | Skip_code.Edge (s1, s2) -> Some (s1, s2)
     | _ -> None
@@ -462,13 +460,7 @@ let build ?(verbose=true) dir skip_list =
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
-     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails ~skip_edges;
+     extract_uses ~g ~dupes ~ast ~readable ~skip_edges;
    ));
-
-  lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20
-  +> List.iter (fun (n, cnt) ->
-    pr2 (spf "LOOKUP FAIL: %s (%d)%s" (G.string_of_node n) cnt
-            (if Hashtbl.mem dupes n then "(DUPE)" else ""))
-  );
   
   g
