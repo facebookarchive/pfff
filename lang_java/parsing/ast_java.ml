@@ -31,15 +31,15 @@ module PI = Parse_info
 (* forunparser: *)
 type info = Parse_info.info
 
-(* todo:  = 'a * info *)
 and 'a wrap  = 'a * info list
+and 'a wrap2  = 'a * info
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
-and ident = string wrap (* could do a wrap3 where wrap3 = just 1 info *)
+and ident = string wrap
 
-and name = ident (*wrap2 '.' *) list
+and name = ident list
 
 and names = name list
 
@@ -63,8 +63,8 @@ and expr =
 
   | ClassLiteral of typ
 
-  | NewClass of typ * exprs * decls wrap (* { } *) option
-  | NewQualifiedClass of expr * ident * exprs * decls wrap (* { } *) option
+  | NewClass of typ * exprs * decls option
+  | NewQualifiedClass of expr * ident * exprs * decls option
   | NewArray of typ * exprs * int * init option
 
   | Dot of expr * ident

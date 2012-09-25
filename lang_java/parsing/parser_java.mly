@@ -19,12 +19,6 @@
 open Common
 open Ast_java
 
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let myfst = fst  
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -899,7 +893,7 @@ class_declaration:
  modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
  class_body
   { { cl_mods = $1; cl_name = $3; cl_super = $5; 
-      cl_impls = $6; cl_body = (myfst $7) 
+      cl_impls = $6; cl_body = $7
      }
   }
 
@@ -914,7 +908,7 @@ interfaces: IMPLEMENTS interface_type_list  { List.rev $2 }
 /*(*2 Class body *)*/
 /*(*----------------------------*)*/
 /* 8.1.5 */
-class_body: LC class_body_declarations_opt RC  { $2, [$1;$3] }
+class_body: LC class_body_declarations_opt RC  { $2 }
 
 class_body_declaration:
  | class_member_declaration  { $1 }
