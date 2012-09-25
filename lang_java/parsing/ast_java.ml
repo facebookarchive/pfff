@@ -161,14 +161,10 @@ and modifiers = modifier wrap list
 and vars = var list
 
 and var = { 
+  v_name: ident;
   v_mods: modifiers;
   v_type: typ;
-  v_name: ident 
 }
-
-and init =
-  | ExprInit of expr
-  | ArrayInit of init list
 
 (* ------------------------------------------------------------------------- *)
 (* Method, field *)
@@ -185,6 +181,10 @@ and field = {
   f_var: var;
   f_init: init option 
 }
+
+and init =
+  | ExprInit of expr
+  | ArrayInit of init list
 
 (* ------------------------------------------------------------------------- *)
 (* Class/Interface *)
@@ -269,7 +269,6 @@ let rewrap_str =  PI.rewrap_str
 
 let compare_pos = PI.compare_pos
 
-let noii = []
 let ast_todo = []
 let ast_todo2 = ()
 
