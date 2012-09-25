@@ -33,7 +33,6 @@ module PI = Parse_info
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-(* forunparser: *)
 type info = Parse_info.info
 and 'a wrap  = 'a * info
 
@@ -62,7 +61,7 @@ and expr =
   | Name of name (* include 'this' and 'super' special names *)
 
   (* todo: split in constant type with Int | Float | String | Char | Bool *)
-  | Literal of string
+  | Literal of string wrap
 
   | ClassLiteral of typ
 
@@ -135,6 +134,7 @@ and case =
   | Default
 and cases = case list
 
+(* TODO *)
 and for_control = unit
 
 and catch = var * stmt
@@ -144,8 +144,7 @@ and catches = catch list
 (* Variable declaration *)
 (* ------------------------------------------------------------------------- *)
 
-and modifier = modifierbis wrap (* could do wrap3 instead *)
- and modifierbis =
+and modifier =
   | Public   | Protected   | Private
   | Abstract
   | Static 
@@ -157,7 +156,7 @@ and modifier = modifierbis wrap (* could do wrap3 instead *)
 
   | Annotation
 
-and modifiers = modifier list
+and modifiers = modifier wrap list
 
 and vars = var list
 

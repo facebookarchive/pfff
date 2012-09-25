@@ -250,7 +250,7 @@ type_declaration:
 /*(*1 Ident, namespace  *)*/
 /*(*************************************************************************)*/
 /* 3.8 */
-identifier: IDENTIFIER  { fst $1, snd $1 }
+identifier: IDENTIFIER  { $1 }
 
 /* 6.5 */
 name:
@@ -349,12 +349,12 @@ primary_no_new_array:
 
 /* 3.10 */
 literal: 
- | LITERAL { Literal (fst $1) }
+ | LITERAL { Literal ($1) }
 
- | TInt { Literal (fst $1) }
- | TFloat { Literal (fst $1) }
- | TChar { Literal (fst $1) }
- | TString { Literal (fst $1) }
+ | TInt { Literal ($1) }
+ | TFloat { Literal ($1) }
+ | TChar { Literal ($1) }
+ | TString { Literal ($1) }
 
 /* 15.8.2 */
 class_literal:
