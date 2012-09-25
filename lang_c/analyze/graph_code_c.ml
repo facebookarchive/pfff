@@ -140,8 +140,10 @@ let rec add_use_edge env (name, kind) =
   (* we skip reference to dupes *)
   | _ when Hashtbl.mem env.dupes src ->
         env.lookup_fails#update src Common.add1
-  | _ when Hashtbl.mem env.dupes dst -> 
-      env.lookup_fails#update dst Common.add1
+  (* now handled via G.dupe nodes
+   * | _ when Hashtbl.mem env.dupes dst -> 
+   * env.lookup_fails#update dst Common.add1
+   *)
 
   | _ when G.has_node dst env.g -> 
       G.add_edge (src, dst) G.Use env.g
@@ -155,7 +157,14 @@ let rec add_use_edge env (name, kind) =
           add_use_edge env (name, E.Macro)
 
       | _ ->
-          (* todo: debug, display edge? *)
+          G.add_node dst env.g;
+          let parent_target = 
+            if Hashtbl.mem env.dupes dst
+            then raise Impossible
+            else G.not_found
+          in
+          env.g +> G.add_edge (parent_target, dst) G.Has;
+          env.g +> G.add_edge (src, dst) G.Use;
           env.lookup_fails#update dst Common.add1
       )
   )
@@ -436,6 +445,8 @@ let build ?(verbose=true) dir skip_list =
     ));
   dupes +> Common.hashset_to_list +> List.iter (fun n ->
     pr2 (spf "DUPE: %s" (G.string_of_node n));
+    g +> G.remove_edge (G.parent n g, n) G.Has;
+    g +> G.add_edge (G.dupe, n) G.Has;
   );
 
   (* step2: creating the 'Use' edges, the uses *)
