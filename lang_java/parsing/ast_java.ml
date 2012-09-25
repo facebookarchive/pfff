@@ -35,9 +35,7 @@ module PI = Parse_info
 (* ------------------------------------------------------------------------- *)
 (* forunparser: *)
 type info = Parse_info.info
-
-and 'a wrap  = 'a * info list
-and 'a wrap2  = 'a * info
+and 'a wrap  = 'a * info
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
@@ -231,7 +229,7 @@ and decls = decl list
 (* ------------------------------------------------------------------------- *)
 
 and compilation_unit = { 
-  package: name wrap option;
+  package: name option;
   imports: names;
   decls: decls;
 }

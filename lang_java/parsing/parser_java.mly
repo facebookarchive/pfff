@@ -23,7 +23,7 @@ open Ast_java
 (* Helpers *)
 (*****************************************************************************)
 
-let synth_id (s,ii) = (s,[ii])
+let synth_id (s,ii) = (s, ii)
 
 let this_ident ii = synth_id ("this", ii)
 let super_ident ii = synth_id ("super", ii)
@@ -227,7 +227,7 @@ compilation_unit:
 /*(*************************************************************************)*/
 
 /* 7.4.1 */
-package_declaration: PACKAGE name SM  { List.rev $2, [$1;$3] }
+package_declaration: PACKAGE name SM  { List.rev $2 }
 
 /* 7.5 */
 import_declaration:
@@ -250,7 +250,7 @@ type_declaration:
 /*(*1 Ident, namespace  *)*/
 /*(*************************************************************************)*/
 /* 3.8 */
-identifier: IDENTIFIER  { fst $1, [snd $1] }
+identifier: IDENTIFIER  { fst $1, snd $1 }
 
 /* 6.5 */
 name:
@@ -820,29 +820,29 @@ finally: FINALLY block  { $2 (* TODO*) }
  *)*/
 
 modifier:
- | PUBLIC       { Public, [$1] }
- | PROTECTED    { Protected, [$1] }
- | PRIVATE      { Private, [$1] }
+ | PUBLIC       { Public, $1 }
+ | PROTECTED    { Protected, $1 }
+ | PRIVATE      { Private, $1 }
 
- | ABSTRACT     { Abstract, [$1] }
- | STATIC       { Static, [$1] }
- | FINAL        { Final, [$1] }
+ | ABSTRACT     { Abstract, $1 }
+ | STATIC       { Static, $1 }
+ | FINAL        { Final, $1 }
 
- | STRICTFP     { StrictFP, [$1] }
- | TRANSIENT    { Transient, [$1] }
- | VOLATILE     { Volatile, [$1] }
- | SYNCHRONIZED { Synchronized, [$1] }
- | NATIVE       { Native, [$1] }
+ | STRICTFP     { StrictFP, $1 }
+ | TRANSIENT    { Transient, $1 }
+ | VOLATILE     { Volatile, $1 }
+ | SYNCHRONIZED { Synchronized, $1 }
+ | NATIVE       { Native, $1 }
 
- | annotation { Annotation, [] }
+ | annotation { Annotation, $1  }
 
 /*(*************************************************************************)*/
 /*(*1 Annotation *)*/
 /*(*************************************************************************)*/
 
 annotation: 
- | AT name { }
- | AT name LP annotation_element_opt RP { }
+ | AT name { $1 }
+ | AT name LP annotation_element_opt RP { $1 }
 
 annotation_element:
  | element_value { }
