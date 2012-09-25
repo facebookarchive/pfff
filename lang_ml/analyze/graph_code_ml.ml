@@ -154,10 +154,8 @@ let extract_uses ~g ~ast ~readable =
       g +> G.add_node target;
       g +> G.add_edge (G.not_found, target) G.Has;
       g +> G.add_edge (src, target) G.Use;
-      (* 
       pr2_once (spf "PB: lookup fail on module %s in %s" 
                    (fst target) readable)
-      *)
     end
   in
     
