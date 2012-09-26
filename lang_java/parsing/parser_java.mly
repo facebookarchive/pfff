@@ -303,8 +303,6 @@ primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 reference_type:
  | name         { reference_type $1 }
 
-class_or_interface_type: name  { List.rev $1 }
-
 array_type:
  | primitive_type LB RB { ArrayType $1 }
  | name           LB RB { ArrayType (TRef (reference_type ($1))) }
@@ -369,7 +367,7 @@ class_literal:
 
 /* 15.9 */
 class_instance_creation_expression:
- | NEW class_or_interface_type LP argument_list_opt RP class_body_opt
+ | NEW name LP argument_list_opt RP class_body_opt
        { NewClass (TRef (reference_type $2), $4, $6) }
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ($1, $4, $6, $8) }
