@@ -47,7 +47,6 @@ type ident = string wrap
 type qualified_ident = ident list
 
 type name = ident list
-type names = name list
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
