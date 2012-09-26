@@ -43,13 +43,25 @@ type name_or_ref_type = identifier_ list
  * identifier followed by some type arguments.
  *)
 let (reference_type: name_or_ref_type -> ref_type) = fun xs ->
-  raise Todo
+  xs +> List.map (function 
+  | Id x -> x, []
+  | Id_then_TypeArgs (x, xs) -> x, xs
+  | TypeArgs_then_Id _ -> raise Parsing.Parse_error
+  )
 
 let (name: name_or_ref_type -> name) = fun xs ->
-  raise Todo
+  xs +> List.map (function
+  | Id x -> x
+  | Id_then_TypeArgs _ -> raise Parsing.Parse_error
+  | TypeArgs_then_Id _ -> raise Parsing.Parse_error
+  )
 
 let (qualified_ident: name_or_ref_type -> qualified_ident) = fun xs ->
-  raise Todo
+  xs +> List.map (function
+  | Id x -> x
+  | Id_then_TypeArgs _ -> raise Parsing.Parse_error
+  | TypeArgs_then_Id _ -> raise Parsing.Parse_error
+  )
 
 type var_decl_id =
   | IdentDecl of ident
@@ -471,9 +483,10 @@ cast_expression:
 	{ 
           let typname = 
             match $2 with
-            | Name name -> 
-                raise Todo
-                (* TRef (reference_type name)*)
+            | Name name ->
+                TRef (name +> List.map (fun id ->
+                  id, []
+                ))
             | _ -> raise Parsing.Parse_error
           in
           Cast (typname, $4)
