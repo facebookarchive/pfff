@@ -345,3 +345,4 @@ external/ocamlbdb/libcamlbdb.a
 /codegraph
 /graph_code.marshall.matrix
 /tests/c/codegraph/graph_code.marshall.matrix
+/tests/java/codegraph/graph_code.marshall.matrix
