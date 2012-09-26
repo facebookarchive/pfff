@@ -24,7 +24,6 @@ val default_visitor_s : visitor_s
 val compilation_unit : visitor_s -> compilation_unit -> compilation_unit
 val decl             : visitor_s -> decl             -> decl            
 val class_decl       : visitor_s -> class_decl       -> class_decl      
-val interface        : visitor_s -> interface        -> interface  
 val method_decl      : visitor_s -> method_decl      -> method_decl     
 val init             : visitor_s -> init             -> init            
 val stmt             : visitor_s -> stmt             -> stmt            

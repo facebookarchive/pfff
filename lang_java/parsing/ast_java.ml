@@ -196,6 +196,7 @@ and method_decl = {
   m_var: var;
   m_formals: vars;
   m_throws: qualified_ident list;
+  (* empty for methods in interfaces *)
   m_body: stmt 
 }
 
@@ -215,19 +216,16 @@ and init =
 
 and class_decl = { 
   cl_name: ident;
+  cl_kind: class_kind;
   cl_mods: modifiers;
+  (* always at None for interface *)
   cl_super: typ option;
+  (* for interface this is actually the extends *)
   cl_impls: names;
+  (* the methods body are always empty for interface *)
   cl_body: decls 
 }
-
-(* less: merge with class_decl? *)
-and interface = { 
-  if_name: ident;
-  if_mods: modifiers;
-  if_exts: names;
-  if_body: decls 
-}
+  and class_kind = ClassRegular | Interface
 
 (* ------------------------------------------------------------------------- *)
 (* Decls *)
@@ -235,7 +233,6 @@ and interface = {
 
 and decl =
   | Class of class_decl
-  | Interface of interface
 
   | Field of field
   | Method of method_decl
@@ -274,7 +271,6 @@ type any =
   | Method2 of method_decl
   | Field2 of field
   | Class2 of class_decl
-  | Interface2 of interface
   | Decl of decl
   | Program of program
 

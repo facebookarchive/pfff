@@ -239,7 +239,7 @@ import_declaration:
 type_declaration:
  | class_declaration  { [Class $1] }
  | enum_declaration { ast_todo }
- | interface_declaration  { [Interface $1] }
+ | interface_declaration  { [Class $1] }
  | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
@@ -858,7 +858,8 @@ class_declaration:
  modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
  class_body
   { { cl_mods = $1; cl_name = $3; cl_super = $5; 
-      cl_impls = $6; cl_body = $7
+      cl_impls = $6; cl_body = $7;
+      cl_kind = ClassRegular;
      }
   }
 
@@ -889,7 +890,7 @@ class_member_declaration:
 
  | class_declaration  { [Class $1] }
  | enum_declaration { ast_todo }
- | interface_declaration  { [Interface $1] }
+ | interface_declaration  { [Class $1] }
  | annotation_type_declaration { ast_todo }
 
  | SM  { [] }
@@ -1033,11 +1034,10 @@ variable_modifier:
 interface_declaration: 
  modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt 
  interface_body
-  { 
-    let interface_decl mods name extends body =
-      { if_mods = mods; if_name = name; if_exts = extends; if_body = body }
-    in
-    interface_decl $1 $3 $5 $6 
+  { { cl_mods = $1; cl_name = $3; cl_super = None;
+      cl_impls = $5; cl_body = $6;
+      cl_kind = Interface;
+    } 
   }
 
 /* 9.1.2 */
@@ -1057,7 +1057,7 @@ interface_member_declaration:
  | interface_generic_method_decl { [] }
 
  | class_declaration  { [Class $1] }
- | interface_declaration  { [Interface $1] }
+ | interface_declaration  { [Class $1] }
  | annotation_type_declaration { ast_todo }
  | enum_declaration  { [] }
  | SM  { [] }
