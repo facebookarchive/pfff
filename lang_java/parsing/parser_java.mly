@@ -9,10 +9,10 @@
  * The Java Language Specification, Second Edition
  * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha
  * 
- * Some modifications by Yoann Padioleau.
- *  - support annotations (partial)
- *  - support for generics (partial)
+ * Some modifications by Yoann Padioleau. Support for:
+ *  - generics
  *  - enums, foreach, ...
+ *  - annotations (partial)
  *)
  */
 %{
@@ -31,6 +31,13 @@ let super_identifier ii = ("super", ii)
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
 
+type name_or_ref_type = identifier_ list
+ and identifier_ = 
+   | Id of ident
+   | Id_then_TypeArgs of ident * type_argument list
+   | TypeArgs_then_Id of type_argument list * identifier_
+  
+
 (* we have to use a 'name' to specify reference types in the grammar
  * because of some ambiguity but what we really wanted was a 
  * identifier followed by some type arguments.
@@ -39,6 +46,9 @@ let reference_type = fun xs ->
   raise Todo
 
 let name = fun xs ->
+  raise Todo
+
+let qualified_ident = fun xs ->
   raise Todo
 
 type var_decl_id =
@@ -227,16 +237,16 @@ compilation_unit:
 /*(*************************************************************************)*/
 
 /* 7.4.1 */
-package_declaration: PACKAGE name SM  { List.rev $2 }
+package_declaration: PACKAGE name SM  { qualified_ident $2 }
 
 /* 7.5 */
 import_declaration:
- | IMPORT static_opt name SM  { $2, List.rev $3 }
+ | IMPORT static_opt name SM  { $2, qualified_ident $3 }
  | IMPORT static_opt name DOT TIMES SM  
      { 
        (* todo: use special? *)
        let star_ident = ("*", $5) in
-       $2, List.rev (star_ident :: $3) 
+       $2, (star_ident::qualified_ident $3)
      }
 
 /* 7.6 */
@@ -256,12 +266,13 @@ identifier: IDENTIFIER  { $1 }
 /* 6.5 */
 name:
  | identifier_           { [$1] }
- | name DOT identifier_  { $3 :: $1 }
- | name DOT LT type_arguments GT identifier_  { $6 :: $1 }
+ | name DOT identifier_  { $1 ++ [$3] }
+ | name DOT LT type_arguments GT identifier_  
+     { $1 ++ [ TypeArgs_then_Id ($4, $6)] }
 
 identifier_:
- | identifier { $1 }
- | identifier LT2 type_arguments GT { $1 }
+ | identifier { Id $1 }
+ | identifier LT2 type_arguments GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -271,7 +282,7 @@ identifier_:
 type_java:
  | primitive_type  { $1 }
  | reference_type  { TRef $1 }
- | array_type   { $1 }
+ | array_type      { $1 }
 
 /* 4.2 */
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
@@ -282,11 +293,9 @@ reference_type:
 
 class_or_interface_type: name  { List.rev $1 }
 
-class_type: name             { List.rev $1 }
-
 array_type:
  | primitive_type LB RB { ArrayType $1 }
- | name           LB RB { ArrayType (TRef (reference_type (List.rev $1))) }
+ | name           LB RB { ArrayType (TRef (reference_type ($1))) }
  | array_type     LB RB { ArrayType $1 }
 
 /*(*----------------------------*)*/
@@ -294,16 +303,16 @@ array_type:
 /*(*----------------------------*)*/
 
 type_argument:
- | reference_type { }
- | COND { }
- | COND EXTENDS reference_type { }
- | COND SUPER reference_type { }
+ | reference_type { TArgument $1 }
+ | COND           { TQuestion None }
+ | COND EXTENDS reference_type { TQuestion (Some (false, $3)) }
+ | COND SUPER   reference_type { TQuestion (Some (true, $3))}
 
 /*(*----------------------------*)*/
 /*(*2 Generics parameters *)*/
 /*(*----------------------------*)*/
 type_parameter: 
- | identifier { TParam ($1, []) }
+ | identifier               { TParam ($1, []) }
  | identifier EXTENDS bound { TParam ($1, $3) }
 
 bound:
@@ -342,7 +351,7 @@ literal:
 /* 15.8.2 */
 class_literal:
  | primitive_type DOT CLASS  { ClassLiteral $1 }
- | name           DOT CLASS  { ClassLiteral (TRef (reference_type (List.rev $1))) }
+ | name           DOT CLASS  { ClassLiteral (TRef (reference_type ($1))) }
  | array_type     DOT CLASS  { ClassLiteral $1 }
  | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
@@ -361,11 +370,11 @@ array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
-       { NewArray (TRef (reference_type (List.rev $2)), List.rev $3, $4, None) }
+       { NewArray (TRef (reference_type ($2)), List.rev $3, $4, None) }
  | NEW primitive_type dims array_initializer
        { NewArray ($2, [], $3, Some $4) }
  | NEW name dims array_initializer
-       { NewArray (TRef (reference_type (List.rev $2)), [], $3, Some $4) }
+       { NewArray (TRef (reference_type ($2)), [], $3, Some $4) }
 
 
 dim_expr: LB expression RB  { $2 (*TODO*) }
@@ -870,7 +879,7 @@ class_declaration:
 /* 8.1.3 */
 super: EXTENDS type_java  { $2 }
 /* 8.1.4 */
-interfaces: IMPLEMENTS ref_type_list  { List.rev $2 }
+interfaces: IMPLEMENTS ref_type_list  { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
@@ -955,7 +964,7 @@ method_declarator_rest:
 formal_parameters: LP formal_parameter_list_opt RP { }
 
 /* 8.4.4 */
-throws: THROWS class_type_list  { List.rev $2 }
+throws: THROWS qualified_ident_list  { $2 }
 
 /* 8.4.5 */
 method_body:
@@ -1038,7 +1047,7 @@ interface_declaration:
 /* 9.1.2 */
 extends_interfaces:
  | EXTENDS reference_type  { [$2] }
- | extends_interfaces CM reference_type  { $3 :: $1 }
+ | extends_interfaces CM reference_type  { $1 ++ [$3] }
 
 /*(*----------------------------*)*/
 /*(*2 Interface body *)*/
@@ -1095,7 +1104,7 @@ enum_constant:
  | identifier { }
  | identifier LP argument_list_opt RP { }
 
-enum_body_declarations: SM class_body_declarations_opt { }
+enum_body_declarations: SM class_body_declarations_opt { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Annotation type decl *)*/
@@ -1138,17 +1147,16 @@ annotation_type_element_declarations:
 
 import_declarations:
  | import_declaration  { [$1] }
- | import_declarations import_declaration  { $2 :: $1 }
+ | import_declarations import_declaration  { $1 ++ [$2] }
 
 import_declarations_opt:
  | /*(*empty*)*/  { [] }
- | import_declarations  { List.rev $1 }
-
+ | import_declarations  { $1 }
 
 
 type_declarations:
  | type_declaration  { $1 }
- | type_declarations type_declaration  { $1 @ $2 }
+ | type_declarations type_declaration  { $1 ++ $2 }
 
 type_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1182,12 +1190,12 @@ interfaces_opt:
 
 ref_type_list:
  | reference_type  { [$1] }
- | ref_type_list CM reference_type  { $3 :: $1 }
+ | ref_type_list CM reference_type  { $1 ++ [$3] }
 
 
 class_body_declarations:
  | class_body_declaration  { $1 }
- | class_body_declarations class_body_declaration  { $1 @ $2 }
+ | class_body_declarations class_body_declaration  { $1 ++ $2 }
 
 class_body_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1213,8 +1221,8 @@ variable_modifiers_opt:
  | variable_modifiers  { Some $1 }
 
 variable_modifiers:
- | variable_modifier { }
- | variable_modifiers variable_modifier { }
+ | variable_modifier { [$1] }
+ | variable_modifiers variable_modifier { $1 ++ [$2] }
 
 static_opt:
  | /*(*empty*)*/  { false }
@@ -1224,19 +1232,18 @@ throws_opt:
  | /*(*empty*)*/  { [] }
  | throws  { $1 }
 
-class_type_list:
- | class_type  { [$1] }
- | class_type_list CM class_type  { $3 :: $1 }
-
+qualified_ident_list:
+ | name                          { [qualified_ident $1] }
+ | qualified_ident_list CM name  { $1 ++ [qualified_ident $3] }
 
 extends_interfaces_opt:
  | /*(*empty*)*/  { [] }
- | extends_interfaces  { List.rev $1 }
+ | extends_interfaces  { $1 }
 
 
 interface_member_declarations:
  | interface_member_declaration  { $1 }
- | interface_member_declarations interface_member_declaration  { $1 @ $2 }
+ | interface_member_declarations interface_member_declaration  { $1 ++ $2 }
 
 interface_member_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1254,10 +1261,10 @@ comma_opt:
 
 block_statements:
  | block_statement  { $1 }
- | block_statements block_statement  { $1 @ $2 }
+ | block_statements block_statement  { $1 ++ $2 }
 
 block_statements_opt:
- | /*(*empty*)*/  { [] }
+ | /*(*empty*)*/      { [] }
  | block_statements  { $1 }
 
 
@@ -1277,18 +1284,16 @@ for_init_opt:
 
 expression_opt:
  | /*(*empty*)*/  { None }
- | expression  { Some $1 }
+ | expression     { Some $1 }
 
 
 for_update_opt:
  | /*(*empty*)*/  { [] }
- | for_update  { $1 }
+ | for_update     { $1 }
 
 statement_expression_list:
- | statement_expression  { [Expr $1] }
- | statement_expression_list CM statement_expression  
-     { (Expr $3) :: $1 }
-
+ | statement_expression                               { [Expr $1] }
+ | statement_expression_list CM statement_expression  { (Expr $3) :: $1 }
 
 identifier_opt:
  | /*(*empty*)*/  { None }
@@ -1315,7 +1320,7 @@ argument_list_opt:
 
 class_body_opt:
  | /*(*empty*)*/  { None }
- | class_body  { Some $1 }
+ | class_body     { Some $1 }
 
 dim_exprs:
  | dim_expr  { [$1] }
@@ -1327,12 +1332,12 @@ dims_opt:
 
 
 enum_constants:
- | enum_constant { }
- | enum_constants CM enum_constant { }
+ | enum_constant { [$1] }
+ | enum_constants CM enum_constant { $1 ++ [$3] }
 
 enum_body_declarations_opt: 
- | /*(*empty*)*/  {  }
- | enum_body_declarations  { }
+ | /*(*empty*)*/           { [] }
+ | enum_body_declarations  { $1 }
 
 type_parameters_opt:
  | /*(*empty*)*/   { [] }
@@ -1342,12 +1347,11 @@ type_parameters:
  | LT type_parameters_bis GT { $2 }
 
 type_parameters_bis: 
- | type_parameter  { [$1] }
+ | type_parameter                         { [$1] }
  | type_parameters_bis CM type_parameter  { $1 ++ [$3] }
 
-
 type_arguments:
- | type_argument  { [$1] }
+ | type_argument                    { [$1] }
  | type_arguments CM type_argument  { $1 ++ [$3] }
 
 element_value_pairs: 
@@ -1355,11 +1359,11 @@ element_value_pairs:
  | element_value_pairs CM element_value_pair { $1 ++ [$3] }
 
 annotation_element_opt:
- | /*(*empty*)*/ { None }
+ | /*(*empty*)*/      { None }
  | annotation_element { Some $1 }
 
 
 element_values:
- | element_value { }
- | element_values CM element_value { }
+ | element_value { [$1] }
+ | element_values CM element_value { $1 ++ [$3] }
 
