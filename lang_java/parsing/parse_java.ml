@@ -52,9 +52,6 @@ let lexbuf_to_strpos lexbuf     =
 (* Error diagnostic *)
 (*****************************************************************************)
 
-let token_to_strpos tok = 
-  (TH.str_of_tok tok, TH.pos_of_tok tok)
-
 let error_msg_tok tok = 
   Parse_info.error_message_info (TH.info_of_tok tok)
 
@@ -99,10 +96,6 @@ let tokens2 file =
 
 let tokens a = 
   Common.profile_code "Java parsing.tokens" (fun () -> tokens2 a)
-
-(*****************************************************************************)
-(* Lexer tricks *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Helper for main entry point *)
@@ -170,7 +163,7 @@ let parse2 filename =
   match elems with
   | Left xs ->
       stat.PI.correct <- (Common.cat filename +> List.length);
-      (Some xs,toks), stat
+      (Some xs, toks), stat
 
   | Right (info_of_bads, line_error, cur, exn) ->
 
@@ -178,9 +171,7 @@ let parse2 filename =
       then raise (Parse_error (TH.info_of_tok cur));
 
       (match exn with
-      | Lexer_java.Lexical _ 
-      | Parsing.Parse_error 
-          (*| Semantic_c.Semantic _  *)
+      | Lexer_java.Lexical _ | Parsing.Parse_error (*|Semantic_c.Semantic _  *)
         -> ()
       | e -> raise e
       );
@@ -193,9 +184,6 @@ let parse2 filename =
             pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
         | Parsing.Parse_error -> 
             pr2 ("parse error \n = " ^ error_msg_tok cur)
-              (* | Semantic_java.Semantic (s, i) -> 
-                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
-          *)
         | e -> raise Impossible
         );
       let checkpoint2 = Common.cat filename +> List.length in

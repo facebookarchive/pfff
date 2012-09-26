@@ -8,6 +8,7 @@ exception Parse_error of Parse_info.info
 val parse : 
   Common.filename (*javafile*) -> (program2 * Parse_info.parsing_stat)
 
+(* may return "just:pb" exn when program2 was a None *)
 val parse_program:
   Common.filename -> Ast_java.program
 
