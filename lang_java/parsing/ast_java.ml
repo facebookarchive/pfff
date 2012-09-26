@@ -8,6 +8,7 @@
  *)
 
 module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -39,7 +40,7 @@ type 'a wrap  = 'a * info
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
-(* for class/interface/enum name, method/field name, type parameter, ... *)
+(* for class/interface/enum names, method/field names, type parameter, ... *)
 type ident = string wrap
 
 (* for package, import, throw specification *)
@@ -63,7 +64,7 @@ type typ =
    (ident * type_argument list) list1
   and type_argument =
     | TArgRef of ref_type
-    | TQuestion
+    | TQuestion (* todo extends|super of ref_type *)
   and 'a list1 = 'a list (* really should be 'a * 'a list *)
 
 (* ------------------------------------------------------------------------- *)
