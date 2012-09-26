@@ -279,7 +279,6 @@ reference_type:
 class_or_interface_type: name  { List.rev $1 }
 
 class_type: name             { List.rev $1 }
-interface_type: name         { List.rev $1 }
 
 array_type:
  | primitive_type LB RB { ArrayType $1 }
@@ -859,7 +858,7 @@ class_declaration:
  class_body
   { { cl_name = $3; cl_kind = ClassRegular;
       cl_mods = $1; cl_tparams = $4;
-      cl_super = $5;  cl_impls = $6; 
+      cl_extends = $5;  cl_impls = $6; 
       cl_body = $7;
      }
   }
@@ -867,7 +866,7 @@ class_declaration:
 /* 8.1.3 */
 super: EXTENDS type_java  { $2 }
 /* 8.1.4 */
-interfaces: IMPLEMENTS interface_type_list  { List.rev $2 }
+interfaces: IMPLEMENTS ref_type_list  { List.rev $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
@@ -1030,15 +1029,15 @@ interface_declaration:
  interface_body
   { { cl_name = $3; cl_kind = Interface;
       cl_mods = $1; cl_tparams = $4;
-      cl_super = None; cl_impls = $5; 
+      cl_extends = None; cl_impls = $5; 
       cl_body = $6;
     } 
   }
 
 /* 9.1.2 */
 extends_interfaces:
- | EXTENDS interface_type  { [$2] }
- | extends_interfaces CM interface_type  { $3 :: $1 }
+ | EXTENDS reference_type  { [$2] }
+ | extends_interfaces CM reference_type  { $3 :: $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Interface body *)*/
@@ -1180,9 +1179,9 @@ interfaces_opt:
  | interfaces  { $1 }
 
 
-interface_type_list:
- | interface_type  { [$1] }
- | interface_type_list CM interface_type  { $3 :: $1 }
+ref_type_list:
+ | reference_type  { [$1] }
+ | ref_type_list CM reference_type  { $3 :: $1 }
 
 
 class_body_declarations:

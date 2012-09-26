@@ -227,9 +227,9 @@ and class_decl = {
   cl_mods: modifiers;
 
   (* always at None for interface *)
-  cl_super: typ option;
+  cl_extends: typ option;
   (* for interface this is actually the extends *)
-  cl_impls: names;
+  cl_impls: ref_type list;
 
   (* the methods body are always empty for interface *)
   cl_body: decls 
