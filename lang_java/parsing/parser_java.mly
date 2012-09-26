@@ -23,22 +23,17 @@ open Ast_java
 (* Helpers *)
 (*****************************************************************************)
 
-let synth_id (s,ii) = (s, ii)
+(* todo? use a Ast.special? *)
+let this_ident ii = ("this", ii)
+let super_ident ii = ("super", ii)
 
-let this_ident ii = synth_id ("this", ii)
-let super_ident ii = synth_id ("super", ii)
-
-let named_type (str, ii) = TypeName [synth_id (str,ii)]
-
+let named_type (str, ii) = TypeName [(str,ii)]
 let void_type ii = named_type ("void", ii)
 
 
 type var_decl_id =
   | IdentDecl of ident
   | ArrayDecl of var_decl_id
-(* and mdeclarator = var_decl_id * vars *)
-(* and var_decls = (var_decl_id * init option) list *)
-
 
 (* Move array dimensions from variable name to type. *)
 let rec canon_var mods t v =
@@ -75,7 +70,7 @@ let constructor_invocation name args =
 /*(*-----------------------------------------*)*/
 /*(* pad: those tokens are not even used in this file because they are
    * filtered in some intermediate phases. But they still must be declared
-   * because ocamllex may generate them, or some intermediate phase may also
+   * because ocamllex may generate them, or some intermediate phases may also
    * generate them (like some functions in parsing_hacks.ml)
    *)*/
 %token <Ast_java.info> TComment TCommentNewline TCommentSpace 
@@ -144,7 +139,6 @@ let constructor_invocation name args =
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
 %token <Ast_java.info> LT2		/* < */
 
-
 %token <(string * Ast_java.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
@@ -173,7 +167,6 @@ let constructor_invocation name args =
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
-
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
@@ -204,8 +197,8 @@ let constructor_invocation name args =
  *  expr
  *  statement
  *  declaration
- *  class
- *  toplevel
+ *  anotation
+ *  class/interfaces
  *)
 */
 /*(*************************************************************************)*/
@@ -216,11 +209,8 @@ goal: compilation_unit EOF  { $1 }
 
 /* 7.3 */
 compilation_unit: 
-  package_declaration_opt 
-  import_declarations_opt 
-  type_declarations_opt
+  package_declaration_opt import_declarations_opt type_declarations_opt
   { { package = $1; imports = $2; decls = $3; } }
-
 
 /*(*************************************************************************)*/
 /*(*1 Package, Import, Type *)*/
@@ -231,11 +221,12 @@ package_declaration: PACKAGE name SM  { List.rev $2 }
 
 /* 7.5 */
 import_declaration:
- | IMPORT static_opt name SM  { List.rev $3 }
+ | IMPORT static_opt name SM  { $2, List.rev $3 }
  | IMPORT static_opt name DOT TIMES SM  
      { 
-       let star_ident = synth_id ("*", $5) in
-       List.rev (star_ident :: $3) 
+       (* todo: use special? *)
+       let star_ident = ("*", $5) in
+       $2, List.rev (star_ident :: $3) 
      }
 
 /* 7.6 */
@@ -266,8 +257,6 @@ identifier_:
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
 
-/*(* TODO: generics *)*/
-
 /* 4.1 */
 type_java:
  | primitive_type  { $1 }
@@ -278,8 +267,8 @@ primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
 /* 4.3 */
 reference_type:
- | name       { TypeName $1 }
- | array_type             { $1 }
+ | name         { TypeName $1 }
+ | array_type   { $1 }
 
 class_or_interface_type: name  { List.rev $1 }
 
@@ -294,15 +283,12 @@ array_type:
 /*(*----------------------------*)*/
 /*(*2 Generics arguments *)*/
 /*(*----------------------------*)*/
+
 type_argument:
  | reference_type { }
  | COND { }
  | COND EXTENDS reference_type { }
  | COND SUPER reference_type { }
-
-type_arguments:
- | type_argument  { [$1] }
- | type_arguments CM type_argument  { $1 ++ [$3] }
 
 /*(*----------------------------*)*/
 /*(*2 Generics parameters *)*/
@@ -315,17 +301,6 @@ bound:
  reference_type { }
 /*(* todo: { & reference_type } *)*/
 
-type_parameters_opt:
- | /*(*empty*)*/   { [] }
- | type_parameters { $1 }
-
-type_parameters:
- | LT type_parameters_bis GT { $2 }
-
-type_parameters_bis: 
- | type_parameter  { [$1] }
- | type_parameters_bis CM type_parameter  { $1 ++ [$3] }
-
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
@@ -334,7 +309,6 @@ type_parameters_bis:
 primary:
  | primary_no_new_array  { $1 }
  | array_creation_expression  { $1 }
-
 
 primary_no_new_array:
  | literal             { $1 }
@@ -390,7 +364,6 @@ dim_expr: LB expression RB  { $2 (*TODO*) }
 dims:
  | LB RB  { 1 (*TODO*) }
  | dims LB RB  { $1 + 1 (*TODO*) }
-
 
 
 /* 15.11 */
@@ -583,7 +556,7 @@ assignment_expression:
  | assignment  { $1 }
 
 assignment: left_hand_side assignment_operator assignment_expression
-	{ Assignment ($1, fst $2, $3) }
+    { Assignment ($1, fst $2, $3) }
 
 
 left_hand_side:
@@ -668,7 +641,7 @@ local_variable_declaration:
    { [] }
 
 /* 14.6 */
-empty_statement:	SM  { Empty }
+empty_statement: SM { Empty }
 
 /* 14.7 */
 labeled_statement: identifier COLON statement  
@@ -857,22 +830,10 @@ element_value_pair:
  | identifier EQ element_value { }
 
 
-element_value_pairs: 
- | element_value_pair { [$1] }
- | element_value_pairs CM element_value_pair { $1 ++ [$3] }
-
-annotation_element_opt:
- | /*(*empty*)*/ { None }
- | annotation_element { Some $1 }
-
 element_value_array_initializer:
  | LC RC { }
  | LC element_values RC { }
  | LC element_values CM RC { }
-
-element_values:
- | element_value { }
- | element_values CM element_value { }
 
 expr1: 
  | primary_no_new_array { }
@@ -882,7 +843,6 @@ expr1:
 /*(*************************************************************************)*/
 /*(*1 Class/Interface *)*/
 /*(*************************************************************************)*/
-
 
 /*(*----------------------------*)*/
 /*(*2 Class *)*/
@@ -1171,7 +1131,6 @@ annotation_type_element_declarations:
  | annotation_type_element_declaration { }
  | annotation_type_element_declarations annotation_type_element_declaration { }
 
-
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
@@ -1257,8 +1216,8 @@ variable_modifiers:
  | variable_modifiers variable_modifier { }
 
 static_opt:
- | /*(*empty*)*/  { None }
- | STATIC  { Some $1 }
+ | /*(*empty*)*/  { false }
+ | STATIC  { true }
 
 throws_opt:
  | /*(*empty*)*/  { [] }
@@ -1373,4 +1332,33 @@ enum_constants:
 enum_body_declarations_opt: 
  | /*(*empty*)*/  {  }
  | enum_body_declarations  { }
+
+type_parameters_opt:
+ | /*(*empty*)*/   { [] }
+ | type_parameters { $1 }
+
+type_parameters:
+ | LT type_parameters_bis GT { $2 }
+
+type_parameters_bis: 
+ | type_parameter  { [$1] }
+ | type_parameters_bis CM type_parameter  { $1 ++ [$3] }
+
+
+type_arguments:
+ | type_argument  { [$1] }
+ | type_arguments CM type_argument  { $1 ++ [$3] }
+
+element_value_pairs: 
+ | element_value_pair { [$1] }
+ | element_value_pairs CM element_value_pair { $1 ++ [$3] }
+
+annotation_element_opt:
+ | /*(*empty*)*/ { None }
+ | annotation_element { Some $1 }
+
+
+element_values:
+ | element_value { }
+ | element_values CM element_value { }
 

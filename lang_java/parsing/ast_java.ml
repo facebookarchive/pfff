@@ -34,22 +34,26 @@ module PI = Parse_info
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type info = Parse_info.info
-and 'a wrap  = 'a * info
+type 'a wrap  = 'a * info
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
-and ident = string wrap
+(* for class/interface/enum name, method/field name, type parameter, ... *)
+type ident = string wrap
 
-and name = ident list
+(* for package, import, throw specification *)
+type qualified_ident = ident list
 
-and names = name list
+type name = ident list
+
+type names = name list
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
-and typ =
+type typ =
   | TypeName of name (* include 'void', 'int', and other primitive types *)
   | ArrayType of typ
 
@@ -57,12 +61,17 @@ and typ =
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
-and expr =
-  | Name of name (* include 'this' and 'super' special names *)
+(* Can have nested anon class (=~ closures) in expressions hence
+ * the use of type ... and ... below
+ *)
+type expr =
+  (* include 'this' and 'super' special names *)
+  | Name of name 
 
   (* todo: split in constant type with Int | Float | String | Char | Bool *)
   | Literal of string wrap
 
+  (* ?? *)
   | ClassLiteral of typ
 
   | NewClass of typ * exprs * decls option
@@ -141,8 +150,14 @@ and catch = var * stmt
 and catches = catch list
 
 (* ------------------------------------------------------------------------- *)
-(* Variable declaration *)
+(* variable (local var, parameter) declaration *)
 (* ------------------------------------------------------------------------- *)
+
+and var = { 
+  v_name: ident;
+  v_mods: modifiers;
+  v_type: typ;
+}
 
 and modifier =
   | Public   | Protected   | Private
@@ -154,26 +169,22 @@ and modifier =
   | Synchronized
   | Native
 
+  (* TODO *)
   | Annotation
 
-and modifiers = modifier wrap list
+ and modifiers = modifier wrap list
 
 and vars = var list
-
-and var = { 
-  v_name: ident;
-  v_mods: modifiers;
-  v_type: typ;
-}
 
 (* ------------------------------------------------------------------------- *)
 (* Method, field *)
 (* ------------------------------------------------------------------------- *)
 
+(* method or constructor *)
 and method_decl = { 
   m_var: var;
   m_formals: vars;
-  m_throws: names;
+  m_throws: qualified_ident list;
   m_body: stmt 
 }
 
@@ -182,6 +193,7 @@ and field = {
   f_init: init option 
 }
 
+(* less: could merge with expr *)
 and init =
   | ExprInit of expr
   | ArrayInit of init list
@@ -227,14 +239,16 @@ and decls = decl list
 (* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
 
-and compilation_unit = { 
-  package: name option;
-  imports: names;
+type compilation_unit = { 
+  package: qualified_ident option;
+  (* The qualified ident can also contain "*" at the very end.
+   * The bool is for static import (javaext:)
+   *)
+  imports: (bool * qualified_ident) list;
   decls: decls;
 }
 
-and program = compilation_unit
- (* with tarzan *)
+type program = compilation_unit
 
 (*****************************************************************************)
 (* Any *)
