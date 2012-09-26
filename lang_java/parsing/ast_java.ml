@@ -73,10 +73,10 @@ type type_parameter =
 (* ------------------------------------------------------------------------- *)
 
 (* when do we need to have a name using type arguments?
- * for certain calls like List.<Int>of(), which is rare
- * which may need a special NameGeneric ?
+ * for certain calls like List.<Int>of(), which is rare.
+ * Do a NameGeneric instead ?
  *)
-type name = (ident (* * type_argument list *)) list1
+type name = (type_argument list * ident) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below

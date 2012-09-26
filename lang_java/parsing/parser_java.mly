@@ -24,8 +24,8 @@ open Ast_java
 (*****************************************************************************)
 
 (* todo? use a Ast.special? *)
-let this_ident ii = ("this", ii)
-let super_ident ii = ("super", ii)
+let this_ident ii = [], ("this", ii)
+let super_ident ii = [], ("super", ii)
 let super_identifier ii = ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
@@ -51,9 +51,16 @@ let (reference_type: name_or_ref_type -> ref_type) = fun xs ->
 
 let (name: name_or_ref_type -> name) = fun xs ->
   xs +> List.map (function
-  | Id x -> x
-  | Id_then_TypeArgs _ -> raise Parsing.Parse_error
-  | TypeArgs_then_Id _ -> raise Parsing.Parse_error
+  | Id x -> [], x
+  | Id_then_TypeArgs (x, xs) -> 
+      (* this is ok because of the ugly trick we do for Cast
+       * where transform a Name into a ref_type
+       *)
+      xs, x
+  | TypeArgs_then_Id (xs, Id x) -> 
+      xs, x
+  | TypeArgs_then_Id (xs, _) -> 
+      raise Parsing.Parse_error
   )
 
 let (qualified_ident: name_or_ref_type -> qualified_ident) = fun xs ->
@@ -420,9 +427,9 @@ method_invocation:
  | primary DOT identifier LP argument_list_opt RP
 	{ Call ((Dot ($1, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name [super_ident $1; $3  ]), $5) }
+	{ Call ((Name [super_ident $1; [], $3  ]), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name (name $1 ++ [super_ident $3; $5])), $7)}
+	{ Call ((Name (name $1 ++ [super_ident $3; [], $5])), $7)}
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -461,19 +468,15 @@ unary_expression_not_plus_minus:
  | cast_expression  { $1 }
 
 /* 15.16 */
-
 /*
 (*
- *  original rule:
- * cast_expression:
- *	LP primitive_type dims_opt RP unary_expression
- * |	LP reference_type RP unary_expression_not_plus_minus
- *)
-*/
-/*
-(*
- * modified (overly liberal) rule for LALR(1) grammar.
- * semantic action must ensure that '( expression )' is really '( name )'
+ * original rule:
+ * | LP primitive_type dims_opt RP unary_expression
+ * | LP reference_type RP unary_expression_not_plus_minus
+ * Semantic action must ensure that '( expression )' is really '( name )'.
+ * Conflict with regular paren expr; when see ')' dont know if
+ * can reduce to expr or shift name, so have to use
+ * expr in both cases.
  *)*/
 cast_expression:
  | LP primitive_type RP unary_expression  { Cast ($2, $4) }
@@ -482,8 +485,8 @@ cast_expression:
           let typname = 
             match $2 with
             | Name name ->
-                TRef (name +> List.map (fun id ->
-                  id, []
+                TRef (name +> List.map (fun (xs, id) ->
+                  id, xs
                 ))
             | _ -> raise Parsing.Parse_error
           in
