@@ -23,8 +23,8 @@ module DM = Dependencies_matrix_code
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
  * 
  * It seems there are a few commercial projects using DSM (Ndepend,
- * Structure101), so this looks like a viable direction to pursue to
- * visualize a software architecture.
+ * Structure101, Intellij), so this looks like a viable direction to pursue
+ * to visualize a software architecture.
  * 
  * requirements:
  *  - different granularities for x-to-x relationships
@@ -207,6 +207,7 @@ let build_graph_code lang root =
     | "php" -> Graph_code_php.build ~verbose:!verbose root skip_list
     | "web" -> raise Todo
     | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list
+    | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list
     | _ -> failwith ("language not supported: " ^ lang)
   in
   Graph_code.save g (dep_file root)
