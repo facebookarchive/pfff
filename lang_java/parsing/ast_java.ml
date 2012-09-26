@@ -244,8 +244,7 @@ and decl =
   | Field of field
   | Method of method_decl
 
-  | InstanceInit of stmt
-  | StaticInit of stmt
+  | Init of bool (* static *) * stmt
 
 and decls = decl list
 
@@ -273,7 +272,7 @@ type any =
   | Stmt of stmt
   | Typ of typ
   | Var of var
-  | Init of init
+  | Init2 of init
   | Method2 of method_decl
   | Field2 of field
   | Class2 of class_decl

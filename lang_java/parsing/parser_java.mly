@@ -962,24 +962,19 @@ method_body:
 
 
 /* 8.6 */
-instance_initializer: block  { InstanceInit $1 }
-
+instance_initializer: block  { Init (false, $1) }
 /* 8.7 */
-static_initializer: STATIC block  { StaticInit $2 }
+static_initializer: STATIC block  { Init (true, $2) }
 
 /* 8.8 */
 constructor_declaration:	
  modifiers_opt constructor_declarator throws_opt constructor_body
   { 
     let no_type = TBasic ("void", fakeInfo "void") in
-
-    let constructor mods (id, formals) throws body =
-      let var = { v_mods = mods; v_type = no_type; v_name = id } in
-      Constructor { m_var = var; m_formals = formals; m_throws = throws;
-		    m_body = body }
-    in
-    
-    constructor $1 $2 $3 $4 
+    let (id, formals) = $2 in
+    let var = { v_mods = $1; v_type = no_type; v_name = id } in
+    Method { m_var = var; m_formals = formals; m_throws = $3;
+	     m_body = $4 }
   }
 
 constructor_declarator:	identifier LP formal_parameter_list_opt RP  { $1, $3 }
