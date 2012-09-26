@@ -42,13 +42,13 @@ type name_or_ref_type = identifier_ list
  * because of some ambiguity but what we really wanted was a 
  * identifier followed by some type arguments.
  *)
-let reference_type = fun xs ->
+let (reference_type: name_or_ref_type -> ref_type) = fun xs ->
   raise Todo
 
-let name = fun xs ->
+let (name: name_or_ref_type -> name) = fun xs ->
   raise Todo
 
-let qualified_ident = fun xs ->
+let (qualified_ident: name_or_ref_type -> qualified_ident) = fun xs ->
   raise Todo
 
 type var_decl_id =
@@ -471,7 +471,9 @@ cast_expression:
 	{ 
           let typname = 
             match $2 with
-            | Name name -> TRef (reference_type name)
+            | Name name -> 
+                raise Todo
+                (* TRef (reference_type name)*)
             | _ -> raise Parsing.Parse_error
           in
           Cast (typname, $4)
