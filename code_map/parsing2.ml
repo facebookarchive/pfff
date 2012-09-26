@@ -279,7 +279,9 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache 
          (fun file -> Java (Parse_java.parse file +> fst))
-         (function Java x -> x | _ -> raise Impossible))
+          (function 
+          | Java (ast, toks) -> [Common.some ast, ("", toks)] 
+          | _ -> raise Impossible))
         ~highlight_visit:Highlight_java.visit_toplevel
         ~info_of_tok:Token_helpers_java.info_of_tok
         ~str_of_tok:Token_helpers_java.str_of_tok

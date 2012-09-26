@@ -18,7 +18,7 @@ open Common
 open Ast_java
 
 module Ast = Ast_java
-module V = Visitor_java
+(* module V = Visitor_java *)
 
 open Highlight_code
 
@@ -68,7 +68,7 @@ let visit_toplevel
     (* should have only one normally *)
     ii +> List.iter (fun ii -> tag ii categ);
   in
-  let tag_name name categ = 
+  let _tag_name name categ = 
     match name with
     | [] -> pr2 "tag_name: noii"
     | _ -> 
@@ -79,7 +79,7 @@ let visit_toplevel
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
-
+(* TODO
   (* tagging the idents of the AST *)
   let hook = { V.default_visitor_s with
 
@@ -135,6 +135,7 @@ let visit_toplevel
   }
   in
   V.toplevel hook toplevel +> ignore;
+*)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
