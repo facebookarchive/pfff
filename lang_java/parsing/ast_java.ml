@@ -46,8 +46,6 @@ type ident = string wrap
 (* for package, import, throw specification *)
 type qualified_ident = ident list
 
-type name = ident list
-
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
@@ -73,6 +71,8 @@ type type_parameter =
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
+
+type name = (ident * type_argument list) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below

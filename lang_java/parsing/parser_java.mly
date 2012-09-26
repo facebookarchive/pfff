@@ -24,8 +24,9 @@ open Ast_java
 (*****************************************************************************)
 
 (* todo? use a Ast.special? *)
-let this_ident ii = ("this", ii)
-let super_ident ii = ("super", ii)
+let this_ident ii = ("this", ii), []
+let super_ident ii = ("super", ii), []
+let super_identifier ii = ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
@@ -34,7 +35,10 @@ let void_type ii = named_type ("void", ii)
  * because of some ambiguity but what we really wanted was a 
  * identifier followed by some type arguments.
  *)
-let (reference_type: name -> ref_type) = fun name ->
+let reference_type = fun xs ->
+  raise Todo
+
+let name = fun xs ->
   raise Todo
 
 type var_decl_id =
@@ -319,7 +323,7 @@ primary_no_new_array:
  | literal             { $1 }
  | class_literal       { $1 }
  | THIS                { Name [this_ident $1] }
- | name DOT THIS       { Name (List.rev (this_ident $3 :: $1)) }
+ | name DOT THIS       { Name (name $1 ++ [this_ident $3]) }
  | LP expression RP    { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
@@ -350,7 +354,7 @@ class_instance_creation_expression:
        { NewQualifiedClass ($1, $4, $6, $8) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ((Name (List.rev $1)), $4, $6, $8) }
+       { NewQualifiedClass ((Name (name $1)), $4, $6, $8) }
 
 /* 15.10 */
 array_creation_expression:
@@ -376,13 +380,13 @@ field_access:
  | primary DOT identifier
 	{ Dot ($1, $3) }
  | SUPER DOT identifier
-	{ Name [super_ident $1; $3] }
+	{ Dot (Name [super_ident $1], $3) }
  | name DOT SUPER DOT identifier
-	{ Name (List.rev ($5 :: super_ident $3 :: $1)) }
+	{ Dot (Name (name $1 ++ [super_ident $3]), $5) }
 
 /* 15.13 */
 array_access:
- | name LB expression RB  { ArrayAccess ((Name (List.rev $1)), $3) }
+ | name LB expression RB  { ArrayAccess ((Name (name $1)), $3) }
  | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3) }
 
 
@@ -393,13 +397,13 @@ array_access:
 /* 15.12 */
 method_invocation:
  | name LP argument_list_opt RP  
-        { Call ((Name (List.rev $1)), $3) }
+        { Call ((Name (name $1)), $3) }
  | primary DOT identifier LP argument_list_opt RP
 	{ Call ((Dot ($1, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name [super_ident $1; $3]), $5) }
+	{ Call ((Name [super_ident $1; $3, []  ]), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name (List.rev ($5 :: super_ident $3 :: $1))), $7)}
+	{ Call ((Name (name $1 ++ [super_ident $3; $5, []])), $7)}
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -408,7 +412,7 @@ method_invocation:
 /* 15.14 */
 postfix_expression:
  | primary  { $1 }
- | name     { Name (List.rev $1) }
+ | name     { Name (name $1) }
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
  
@@ -565,7 +569,7 @@ assignment: left_hand_side assignment_operator assignment_expression
 
 
 left_hand_side:
- | name  { Name (List.rev $1) }
+ | name  { Name (name $1) }
  | field_access  { $1 }
  | array_access  { $1 }
 
@@ -992,12 +996,10 @@ explicit_constructor_invocation:
  | SUPER LP argument_list_opt RP SM
       { constructor_invocation [super_ident $1] $3 }
  | primary DOT SUPER LP argument_list_opt RP SM
-      { 
-        Expr (Call ((Dot ($1, super_ident $3)), $5))
-      }
+      { Expr (Call ((Dot ($1, super_identifier $3)), $5)) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM
-      { constructor_invocation (List.rev (super_ident $3 :: $1)) $5 }
+      { constructor_invocation (name $1 ++ [super_ident $3]) $5 }
 
 /*(*----------------------------*)*/
 /*(*2 Method parameter *)*/
@@ -1005,8 +1007,7 @@ explicit_constructor_invocation:
 
 /* 8.4.1 */
 formal_parameter: variable_modifiers_opt type_java variable_declarator_id_bis
-  { 
-    let formal_decl mods t v = canon_var mods t v in
+  { let formal_decl mods t v = canon_var mods t v in
     (* todo: use $1 *)
     formal_decl [] $2 $3 
   }
