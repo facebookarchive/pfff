@@ -14,7 +14,7 @@
  *  - support for generics (partial)
  *  - enums, foreach, ...
  *)
-*/
+ */
 %{
 open Common
 open Ast_java

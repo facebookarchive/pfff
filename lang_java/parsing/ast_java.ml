@@ -4,7 +4,7 @@
  * 
  * Yoann Padioleau: 
  * 2010, port to the pfff infrastructure.
- * 2012, support annotation and generics
+ * 2012, support annotation and generics, enum, foreach, etc
  *)
 
 module PI = Parse_info
@@ -15,8 +15,8 @@ module PI = Parse_info
 (*
  * A simple AST for Java.
  * 
- * For Java we directly do a simple AST (as opposed to CST for Concrete
- * Syntax Tree as in lang_php/) which should be enough for higlight_java.ml
+ * For Java we directly do a simple AST, as opposed to a CST (Concrete
+ * Syntax Tree) as in lang_php/, which should be enough for higlight_java.ml
  * I think. We just need the full list of tokens + the AST with position
  * for the identifiers.
  * 
@@ -47,7 +47,6 @@ type ident = string wrap
 type qualified_ident = ident list
 
 type name = ident list
-
 type names = name list
 
 (* ------------------------------------------------------------------------- *)
@@ -57,15 +56,20 @@ type names = name list
 type typ =
   (* 'void', 'int', and other primitive types *)
   | TBasic of string wrap
-  | ArrayType of typ
+  (* not sure why they call that a reference type *)
   | TRef of ref_type
+  (* less: seems to have been removed in recent java grammar *)
+  | ArrayType of typ
 
  and ref_type = 
    (ident * type_argument list) list1
   and type_argument =
-    | TArgRef of ref_type
-    | TQuestion (* todo extends|super of ref_type *)
+    | TArgument of ref_type
+    | TQuestion of (bool (* extends|super, true = super *) * ref_type) option 
   and 'a list1 = 'a list (* really should be 'a * 'a list *)
+
+type type_parameter =
+  | TParam of ident * ref_type list (* extends *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -217,11 +221,14 @@ and init =
 and class_decl = { 
   cl_name: ident;
   cl_kind: class_kind;
+
   cl_mods: modifiers;
+
   (* always at None for interface *)
   cl_super: typ option;
   (* for interface this is actually the extends *)
   cl_impls: names;
+
   (* the methods body are always empty for interface *)
   cl_body: decls 
 }
@@ -236,7 +243,6 @@ and decl =
 
   | Field of field
   | Method of method_decl
-  | Constructor of method_decl (* the m_var.m_type should be empty *)
 
   | InstanceInit of stmt
   | StaticInit of stmt
