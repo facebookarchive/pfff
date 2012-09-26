@@ -39,7 +39,7 @@ type name_or_ref_type = identifier_ list
   
 
 (* we have to use a 'name' to specify reference types in the grammar
- * because of some ambiguity but what we really wanted was a 
+ * because of some ambiguity but what we really wanted was an
  * identifier followed by some type arguments.
  *)
 let (reference_type: name_or_ref_type -> ref_type) = fun xs ->
@@ -54,7 +54,7 @@ let (name: name_or_ref_type -> name) = fun xs ->
   | Id x -> [], x
   | Id_then_TypeArgs (x, xs) -> 
       (* this is ok because of the ugly trick we do for Cast
-       * where transform a Name into a ref_type
+       * where we transform a Name into a ref_type
        *)
       xs, x
   | TypeArgs_then_Id (xs, Id x) -> 
@@ -107,10 +107,11 @@ let constructor_invocation name args =
 /*(*-----------------------------------------*)*/
 /*(*2 The comment tokens *)*/
 /*(*-----------------------------------------*)*/
-/*(* pad: those tokens are not even used in this file because they are
-   * filtered in some intermediate phases. But they still must be declared
+/*(* Those tokens are not even used in this file because they are
+   * filtered in some intermediate phases (in Parse_java.lexer_function
+   * by using TH.is_comment(). But they still must be declared
    * because ocamllex may generate them, or some intermediate phases may also
-   * generate them (like some functions in parsing_hacks.ml)
+   * generate them (like some functions in parsing_hacks.ml).
    *)*/
 %token <Ast_java.info> TComment TCommentNewline TCommentSpace 
 
@@ -219,10 +220,6 @@ let constructor_invocation name args =
 %start goal
 %type <Ast_java.program> goal
 
-%type <Ast_java.typ> type_java
-%type <Ast_java.stmt> statement
-%type <Ast_java.expr> expression
-
 %%
 
 /*(*************************************************************************)*/
@@ -261,13 +258,13 @@ package_declaration: PACKAGE name SM  { qualified_ident $2 }
 /* 7.5 */
 import_declaration:
  | IMPORT static_opt name SM            { $2, qualified_ident $3 }
- | IMPORT static_opt name DOT TIMES SM  { $2, (("*", $5)::qualified_ident $3) }
+ | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 ++["*", $5])}
 
 /* 7.6 */
 type_declaration:
- | class_declaration  { [Class $1] }
+ | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
- | enum_declaration { ast_todo }
+ | enum_declaration            { ast_todo }
  | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
@@ -335,7 +332,7 @@ bound:
 
 /* 15.8 */
 primary:
- | primary_no_new_array  { $1 }
+ | primary_no_new_array       { $1 }
  | array_creation_expression  { $1 }
 
 primary_no_new_array:
@@ -389,17 +386,14 @@ array_creation_expression:
 dim_expr: LB expression RB  { $2 }
 
 dims:
- | LB RB  { 1 }
+ | LB RB       { 1 }
  | dims LB RB  { $1 + 1 }
 
 /* 15.11 */
 field_access:
- | primary DOT identifier
-	{ Dot ($1, $3) }
- | SUPER DOT identifier
-	{ Dot (Name [super_ident $1], $3) }
- | name DOT SUPER DOT identifier
-	{ Dot (Name (name $1 ++ [super_ident $3]), $5) }
+ | primary DOT identifier        { Dot ($1, $3) }
+ | SUPER   DOT identifier        { Dot (Name [super_ident $1], $3) }
+ | name DOT SUPER DOT identifier { Dot (Name (name $1++[super_ident $3]), $5) }
 
 /* 15.13 */
 array_access:
@@ -452,7 +446,7 @@ pre_decrement_expression: DECR unary_expression  { Prefix ("--", $2) }
 unary_expression_not_plus_minus:
  | postfix_expression  { $1 }
  | COMPL unary_expression  { Prefix ("~", $2) }
- | NOT unary_expression  { Prefix ("!", $2) }
+ | NOT unary_expression    { Prefix ("!", $2) }
  | cast_expression  { $1 }
 
 /* 15.16 */
@@ -485,22 +479,16 @@ cast_expression:
 /* 15.17 */
 multiplicative_expression:
  | unary_expression  { $1 }
- | multiplicative_expression TIMES unary_expression
-		{ Infix ($1, "*", $3) }
- | multiplicative_expression DIV unary_expression
-		{ Infix ($1, "/", $3) }
- | multiplicative_expression MOD unary_expression
-		{ Infix ($1, "%", $3) }
+ | multiplicative_expression TIMES unary_expression { Infix ($1, "*", $3) }
+ | multiplicative_expression DIV unary_expression   { Infix ($1, "/", $3) }
+ | multiplicative_expression MOD unary_expression   { Infix ($1, "%", $3) }
 
 
 /* 15.18 */
 additive_expression:
- | multiplicative_expression  
-        { $1 }
- | additive_expression PLUS multiplicative_expression
-	{ Infix ($1, "+", $3) }
- | additive_expression MINUS multiplicative_expression
-	{ Infix ($1, "-", $3) }
+ | multiplicative_expression  { $1 }
+ | additive_expression PLUS multiplicative_expression { Infix ($1, "+", $3) }
+ | additive_expression MINUS multiplicative_expression { Infix ($1, "-", $3) }
 
 
 /* 15.19 */
@@ -523,12 +511,9 @@ relational_expression:
 
 /* 15.21 */
 equality_expression:
- | relational_expression  
-        { $1 }
- | equality_expression EQ_EQ relational_expression
-	{ Infix ($1, "==", $3) }
- | equality_expression NOT_EQ relational_expression
-	{ Infix ($1, "!=", $3) }
+ | relational_expression  { $1 }
+ | equality_expression EQ_EQ relational_expression  { Infix ($1, "==", $3) }
+ | equality_expression NOT_EQ relational_expression { Infix ($1, "!=", $3) }
 
 
 /* 15.22 */
@@ -548,15 +533,15 @@ inclusive_or_expression:
 /* 15.23 */
 conditional_and_expression:
  | inclusive_or_expression  { $1 }
- | conditional_and_expression AND_AND inclusive_or_expression
-       { Infix ($1, "&&", $3) }
+ | conditional_and_expression AND_AND inclusive_or_expression 
+     { Infix($1,"&&",$3) }
 
 
 /* 15.24 */
 conditional_or_expression:
  | conditional_and_expression  { $1 }
  | conditional_or_expression OR_OR conditional_and_expression
-	{ Infix ($1, "||", $3) }
+     { Infix ($1, "||", $3) }
 
 /*(*----------------------------*)*/
 /*(*2 Ternary *)*/
@@ -655,12 +640,10 @@ local_variable_declaration_statement: local_variable_declaration SM
 /*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
  | type_java variable_declarators  
-     { let xs = var_decls [] $1 (List.rev $2) in
-       xs +> List.map (fun x -> x)
-     }
+     { var_decls [] $1 (List.rev $2) }
  /*(* actually should be variable_modifiers but conflict *)*/
  | modifiers type_java variable_declarators  
-   { ast_todo }
+     { var_decls $1 $2 (List.rev $3) }
 
 /* 14.6 */
 empty_statement: SM { Empty }
@@ -727,7 +710,7 @@ while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
 
 /* 14.12 */
 do_statement: DO statement WHILE LP expression RP SM
-      { Do ($2, $5) }
+     { Do ($2, $5) }
 
 /*(*----------------------------*)*/
 /*(*2 For *)*/
@@ -747,7 +730,7 @@ for_control:
  | for_var_control { ast_todo }
 
 for_init: 
-| statement_expression_list  { List.rev $1 }
+| statement_expression_list   { List.rev $1 }
 | local_variable_declaration  { $1 }
 
 for_update: statement_expression_list  { List.rev $1 }
@@ -773,8 +756,7 @@ continue_statement: CONTINUE identifier_opt SM  { Continue $2 }
 return_statement: RETURN expression_opt SM  { Return $2 }
 
 /* 14.18 */
-synchronized_statement: SYNCHRONIZED LP expression RP block  
-  { Sync ($3, $5) }
+synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 
 /* 14.17 */
 throw_statement: THROW expression SM  { Throw $2 }
@@ -927,10 +909,8 @@ variable_initializer:
 
 /* 10.6 */
 array_initializer:
- | LC comma_opt RC  
-     { ArrayInit [] }
- | LC variable_initializers comma_opt RC  
-     { ArrayInit (List.rev $2) }
+ | LC comma_opt RC                        { ArrayInit [] }
+ | LC variable_initializers comma_opt RC  { ArrayInit (List.rev $2) }
 
 
 /* 8.4 */
@@ -957,7 +937,7 @@ generic_method_or_constructor_rest:
 method_declarator_rest:
  | formal_parameters throws_opt method_body { }
 
-formal_parameters: LP formal_parameter_list_opt RP { }
+formal_parameters: LP formal_parameter_list_opt RP { $2 }
 
 /* 8.4.4 */
 throws: THROWS qualified_ident_list  { $2 }
