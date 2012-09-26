@@ -34,7 +34,7 @@ let void_type ii = named_type ("void", ii)
  * because of some ambiguity but what we really wanted was a 
  * identifier followed by some type arguments.
  *)
-let reference_type name =
+let (reference_type: name -> ref_type) = fun name ->
   raise Todo
 
 type var_decl_id =
@@ -266,7 +266,7 @@ identifier_:
 /* 4.1 */
 type_java:
  | primitive_type  { $1 }
- | reference_type  { $1 }
+ | reference_type  { TRef $1 }
  | array_type   { $1 }
 
 /* 4.2 */
@@ -283,7 +283,7 @@ interface_type: name         { List.rev $1 }
 
 array_type:
  | primitive_type LB RB { ArrayType $1 }
- | name           LB RB { ArrayType (reference_type (List.rev $1)) }
+ | name           LB RB { ArrayType (TRef (reference_type (List.rev $1))) }
  | array_type     LB RB { ArrayType $1 }
 
 /*(*----------------------------*)*/
@@ -300,11 +300,11 @@ type_argument:
 /*(*2 Generics parameters *)*/
 /*(*----------------------------*)*/
 type_parameter: 
- | identifier { }
- | identifier EXTENDS bound { }
+ | identifier { TParam ($1, []) }
+ | identifier EXTENDS bound { TParam ($1, $3) }
 
 bound:
- reference_type { }
+ reference_type { [$1] }
 /*(* todo: { & reference_type } *)*/
 
 /*(*************************************************************************)*/
@@ -339,14 +339,14 @@ literal:
 /* 15.8.2 */
 class_literal:
  | primitive_type DOT CLASS  { ClassLiteral $1 }
- | name           DOT CLASS  { ClassLiteral (reference_type (List.rev $1)) }
+ | name           DOT CLASS  { ClassLiteral (TRef (reference_type (List.rev $1))) }
  | array_type     DOT CLASS  { ClassLiteral $1 }
  | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
 /* 15.9 */
 class_instance_creation_expression:
  | NEW class_or_interface_type LP argument_list_opt RP class_body_opt
-       { NewClass ((reference_type $2), $4, $6) }
+       { NewClass (TRef (reference_type $2), $4, $6) }
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ($1, $4, $6, $8) }
  /*(* not in 2nd edition java language specification. *)*/
@@ -358,11 +358,11 @@ array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
-       { NewArray ((reference_type (List.rev $2)), List.rev $3, $4, None) }
+       { NewArray (TRef (reference_type (List.rev $2)), List.rev $3, $4, None) }
  | NEW primitive_type dims array_initializer
        { NewArray ($2, [], $3, Some $4) }
  | NEW name dims array_initializer
-       { NewArray ((reference_type (List.rev $2)), [], $3, Some $4) }
+       { NewArray (TRef (reference_type (List.rev $2)), [], $3, Some $4) }
 
 
 dim_expr: LB expression RB  { $2 (*TODO*) }
@@ -459,7 +459,7 @@ cast_expression:
 	{ 
           let typname = 
             match $2 with
-            | Name name -> reference_type name
+            | Name name -> TRef (reference_type name)
             | _ -> raise Parsing.Parse_error
           in
           Cast (typname, $4)
@@ -857,18 +857,17 @@ expr1:
 class_declaration: 
  modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
  class_body
-  { { cl_mods = $1; cl_name = $3; cl_super = $5; 
-      cl_impls = $6; cl_body = $7;
-      cl_kind = ClassRegular;
+  { { cl_name = $3; cl_kind = ClassRegular;
+      cl_mods = $1; cl_tparams = $4;
+      cl_super = $5;  cl_impls = $6; 
+      cl_body = $7;
      }
   }
 
 /* 8.1.3 */
 super: EXTENDS type_java  { $2 }
-
 /* 8.1.4 */
 interfaces: IMPLEMENTS interface_type_list  { List.rev $2 }
-
 
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
@@ -1029,9 +1028,10 @@ variable_modifier:
 interface_declaration: 
  modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt 
  interface_body
-  { { cl_mods = $1; cl_name = $3; cl_super = None;
-      cl_impls = $5; cl_body = $6;
-      cl_kind = Interface;
+  { { cl_name = $3; cl_kind = Interface;
+      cl_mods = $1; cl_tparams = $4;
+      cl_super = None; cl_impls = $5; 
+      cl_body = $6;
     } 
   }
 

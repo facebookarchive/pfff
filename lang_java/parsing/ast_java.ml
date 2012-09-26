@@ -1,10 +1,10 @@
-(* Joust: a Java lexer, parser, and pretty-printer written in OCaml
+(* Joust: a Java lexer, parser, and pretty-printer written in OCaml.
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
  * Released under the GNU General Public License 
  * 
  * Yoann Padioleau: 
  * 2010, port to the pfff infrastructure.
- * 2012, support annotation and generics, enum, foreach, etc
+ * 2012, support annotations, generics, enum, foreach, etc
  *)
 
 module PI = Parse_info
@@ -102,7 +102,7 @@ type expr =
 
   | Cast of typ * expr
 
-  | InstanceOf of expr * typ
+  | InstanceOf of expr * ref_type
 
   | Conditional of expr * expr * expr
   (* ugly java, as C, assignement is an expression not a statement :( *)
@@ -221,6 +221,8 @@ and init =
 and class_decl = { 
   cl_name: ident;
   cl_kind: class_kind;
+
+  cl_tparams: type_parameter list;
 
   cl_mods: modifiers;
 
