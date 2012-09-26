@@ -54,8 +54,17 @@ type names = name list
 (* ------------------------------------------------------------------------- *)
 
 type typ =
-  | TypeName of name (* include 'void', 'int', and other primitive types *)
+  (* 'void', 'int', and other primitive types *)
+  | TBasic of string wrap
   | ArrayType of typ
+  | TRef of ref_type
+
+ and ref_type = 
+   (ident * type_argument list) list1
+  and type_argument =
+    | TArgRef of ref_type
+    | TQuestion
+  and 'a list1 = 'a list (* really should be 'a * 'a list *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -182,6 +191,7 @@ and vars = var list
 
 (* method or constructor *)
 and method_decl = { 
+  (* v_typ is a TBasic void for a constructor *)
   m_var: var;
   m_formals: vars;
   m_throws: qualified_ident list;
@@ -282,6 +292,12 @@ let file_of_info = PI.file_of_info
 let rewrap_str =  PI.rewrap_str
 
 let compare_pos = PI.compare_pos
+
+let fakeInfo ?(next_to=None) str = { PI.
+  token = PI.FakeTokStr (str, next_to);
+  comments = ();
+  transfo = PI.NoTransfo;
+}
 
 let ast_todo = []
 let ast_todo2 = ()

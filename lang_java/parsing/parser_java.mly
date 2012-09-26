@@ -27,9 +27,15 @@ open Ast_java
 let this_ident ii = ("this", ii)
 let super_ident ii = ("super", ii)
 
-let named_type (str, ii) = TypeName [(str,ii)]
+let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
 
+(* we have to use a 'name' in the grammar because of some ambiguity
+ * but what we really wanted was a identifier followed by 
+ * some type arguments.
+ *)
+let reference_type name =
+  raise Todo
 
 type var_decl_id =
   | IdentDecl of ident
@@ -261,14 +267,14 @@ identifier_:
 type_java:
  | primitive_type  { $1 }
  | reference_type  { $1 }
+ | array_type   { $1 }
 
 /* 4.2 */
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
 /* 4.3 */
 reference_type:
- | name         { TypeName $1 }
- | array_type   { $1 }
+ | name         { reference_type $1 }
 
 class_or_interface_type: name  { List.rev $1 }
 
@@ -277,7 +283,7 @@ interface_type: name         { List.rev $1 }
 
 array_type:
  | primitive_type LB RB { ArrayType $1 }
- | name           LB RB { ArrayType (TypeName (List.rev $1)) }
+ | name           LB RB { ArrayType (reference_type (List.rev $1)) }
  | array_type     LB RB { ArrayType $1 }
 
 /*(*----------------------------*)*/
@@ -333,14 +339,14 @@ literal:
 /* 15.8.2 */
 class_literal:
  | primitive_type DOT CLASS  { ClassLiteral $1 }
- | name           DOT CLASS  { ClassLiteral (TypeName (List.rev $1)) }
+ | name           DOT CLASS  { ClassLiteral (reference_type (List.rev $1)) }
  | array_type     DOT CLASS  { ClassLiteral $1 }
  | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
 /* 15.9 */
 class_instance_creation_expression:
  | NEW class_or_interface_type LP argument_list_opt RP class_body_opt
-       { NewClass ((TypeName $2), $4, $6) }
+       { NewClass ((reference_type $2), $4, $6) }
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ($1, $4, $6, $8) }
  /*(* not in 2nd edition java language specification. *)*/
@@ -352,11 +358,11 @@ array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
-       { NewArray ((TypeName (List.rev $2)), List.rev $3, $4, None) }
+       { NewArray ((reference_type (List.rev $2)), List.rev $3, $4, None) }
  | NEW primitive_type dims array_initializer
        { NewArray ($2, [], $3, Some $4) }
  | NEW name dims array_initializer
-       { NewArray ((TypeName (List.rev $2)), [], $3, Some $4) }
+       { NewArray ((reference_type (List.rev $2)), [], $3, Some $4) }
 
 
 dim_expr: LB expression RB  { $2 (*TODO*) }
@@ -453,7 +459,7 @@ cast_expression:
 	{ 
           let typname = 
             match $2 with
-            | Name name -> TypeName name
+            | Name name -> reference_type name
             | _ -> raise Parsing.Parse_error
           in
           Cast (typname, $4)
@@ -964,7 +970,7 @@ static_initializer: STATIC block  { StaticInit $2 }
 constructor_declaration:	
  modifiers_opt constructor_declarator throws_opt constructor_body
   { 
-    let no_type = TypeName [] in
+    let no_type = TBasic ("void", fakeInfo "void") in
 
     let constructor mods (id, formals) throws body =
       let var = { v_mods = mods; v_type = no_type; v_name = id } in
