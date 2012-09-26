@@ -19,9 +19,8 @@ module PI = Parse_info
 (*****************************************************************************)
 
 let test_parse xs  =
+  let fullxs = Lib_parsing_java.find_source_files_of_dir_or_files xs in
   let ext = "java" in
-
-  let fullxs = Common.files_of_dir_or_files_no_vcs ext xs in
 
   let stat_list = ref [] in
   let newscore  = Common.empty_score () in
@@ -29,15 +28,12 @@ let test_parse xs  =
   Common.check_stack_nbfiles (List.length fullxs);
 
   fullxs +> List.iter (fun file -> 
-
     pr2 ("PARSING: " ^ file);
-
     let (xs, stat) = 
       Common.save_excursion Flag_parsing_java.error_recovery true (fun () ->
         Parse_java.parse file 
       )
     in
-
     Common.push2 stat stat_list;
     let s = sprintf "bad = %d" stat.PI.bad in
     if stat.PI.bad = 0
