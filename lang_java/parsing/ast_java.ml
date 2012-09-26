@@ -72,7 +72,11 @@ type type_parameter =
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
-type name = (ident * type_argument list) list1
+(* when do we need to have a name using type arguments?
+ * for certain calls like List.<Int>of(), which is rare
+ * which may need a special NameGeneric ?
+ *)
+type name = (ident (* * type_argument list *)) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
@@ -88,6 +92,7 @@ type expr =
   | ClassLiteral of typ
 
   | NewClass of typ * exprs * decls option
+  (* ?? *)
   | NewQualifiedClass of expr * ident * exprs * decls option
   | NewArray of typ * exprs * int * init option
 

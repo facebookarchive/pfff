@@ -24,8 +24,8 @@ open Ast_java
 (*****************************************************************************)
 
 (* todo? use a Ast.special? *)
-let this_ident ii = ("this", ii), []
-let super_ident ii = ("super", ii), []
+let this_ident ii = ("this", ii)
+let super_ident ii = ("super", ii)
 let super_identifier ii = ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
@@ -401,9 +401,9 @@ method_invocation:
  | primary DOT identifier LP argument_list_opt RP
 	{ Call ((Dot ($1, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name [super_ident $1; $3, []  ]), $5) }
+	{ Call ((Name [super_ident $1; $3  ]), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name (name $1 ++ [super_ident $3; $5, []])), $7)}
+	{ Call ((Name (name $1 ++ [super_ident $3; $5])), $7)}
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
