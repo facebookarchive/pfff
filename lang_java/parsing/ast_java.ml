@@ -202,7 +202,10 @@ and method_decl = {
   (* the v_mod can only be Final or Annotation *)
   m_formals: vars;
   m_throws: qualified_ident list;
-  (* empty for methods in interfaces *)
+  (* Empty for methods in interfaces. 
+   * For constructor the first stmts can contain 
+   * explicit_constructor_invocations.
+   *)
   m_body: stmt 
 }
 
