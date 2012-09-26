@@ -242,10 +242,8 @@ and class_decl = {
 
 and decl =
   | Class of class_decl
-
   | Field of field
   | Method of method_decl
-
   | Init of bool (* static *) * stmt
 
 and decls = decl list
