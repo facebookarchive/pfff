@@ -74,7 +74,8 @@ type type_parameter =
 
 (* when do we need to have a name using type arguments?
  * for certain calls like List.<Int>of(), which is rare.
- * Do a NameGeneric instead ?
+ * Do a NameGeneric instead ? the type_argument can be
+ * only at the end?
  *)
 type name = (type_argument list * ident) list1
 
@@ -122,15 +123,11 @@ and op = string
 
 and stmt =
   | Empty
-
   | Block of stmts
-
-  (* expr but in grammar restricted to side-effect expr, so good *)
   | Expr of expr
 
   | If of expr * stmt * stmt option
   | Switch of expr * (cases * stmts) list
-
 
   | While of expr * stmt
   | Do of stmt * expr
@@ -247,8 +244,8 @@ and class_decl = {
 
 and decl =
   | Class of class_decl
-  | Field of field
   | Method of method_decl
+  | Field of field
   | Init of bool (* static *) * stmt
 
 and decls = decl list
@@ -263,6 +260,7 @@ type compilation_unit = {
    * The bool is for static import (javaext:)
    *)
   imports: (bool * qualified_ident) list;
+  (* todo? necessarily a Class first? *)
   decls: decls;
 }
 
