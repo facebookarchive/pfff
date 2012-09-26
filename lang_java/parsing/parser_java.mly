@@ -30,9 +30,9 @@ let super_ident ii = ("super", ii)
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
 
-(* we have to use a 'name' in the grammar because of some ambiguity
- * but what we really wanted was a identifier followed by 
- * some type arguments.
+(* we have to use a 'name' to specify reference types in the grammar
+ * because of some ambiguity but what we really wanted was a 
+ * identifier followed by some type arguments.
  *)
 let reference_type name =
   raise Todo
