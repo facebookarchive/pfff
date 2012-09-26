@@ -88,7 +88,7 @@ type expr =
   (* todo: split in constant type with Int | Float | String | Char | Bool *)
   | Literal of string wrap
 
-  (* ?? *)
+  (* Xxx.class *)
   | ClassLiteral of typ
 
   | NewClass of typ * exprs * decls option
@@ -200,8 +200,9 @@ and vars = var list
 
 (* method or constructor *)
 and method_decl = { 
-  (* v_typ is a TBasic void for a constructor *)
+  (* v_typ is a (TBasic void) for a constructor *)
   m_var: var;
+  (* the v_mod can only be Final or Annotation *)
   m_formals: vars;
   m_throws: qualified_ident list;
   (* empty for methods in interfaces *)

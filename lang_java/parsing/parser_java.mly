@@ -260,19 +260,14 @@ package_declaration: PACKAGE name SM  { qualified_ident $2 }
 
 /* 7.5 */
 import_declaration:
- | IMPORT static_opt name SM  { $2, qualified_ident $3 }
- | IMPORT static_opt name DOT TIMES SM  
-     { 
-       (* todo: use special? *)
-       let star_ident = ("*", $5) in
-       $2, (star_ident::qualified_ident $3)
-     }
+ | IMPORT static_opt name SM            { $2, qualified_ident $3 }
+ | IMPORT static_opt name DOT TIMES SM  { $2, (("*", $5)::qualified_ident $3) }
 
 /* 7.6 */
 type_declaration:
  | class_declaration  { [Class $1] }
- | enum_declaration { ast_todo }
  | interface_declaration  { [Class $1] }
+ | enum_declaration { ast_todo }
  | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
@@ -286,11 +281,10 @@ identifier: IDENTIFIER  { $1 }
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $1 ++ [$3] }
- | name DOT LT type_arguments GT identifier_  
-     { $1 ++ [ TypeArgs_then_Id ($4, $6)] }
+ | name DOT LT type_arguments GT identifier_  { $1++[TypeArgs_then_Id($4, $6)] }
 
 identifier_:
- | identifier { Id $1 }
+ | identifier                       { Id $1 }
  | identifier LT2 type_arguments GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
@@ -307,8 +301,7 @@ type_java:
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
 /* 4.3 */
-reference_type:
- | name         { reference_type $1 }
+reference_type: name   { reference_type $1 }
 
 array_type:
  | primitive_type LB RB { ArrayType $1 }
@@ -360,9 +353,9 @@ primary_no_new_array:
 literal: 
  | LITERAL { Literal ($1) }
 
- | TInt { Literal ($1) }
- | TFloat { Literal ($1) }
- | TChar { Literal ($1) }
+ | TInt    { Literal ($1) }
+ | TFloat  { Literal ($1) }
+ | TChar   { Literal ($1) }
  | TString { Literal ($1) }
 
 /* 15.8.2 */
@@ -393,13 +386,11 @@ array_creation_expression:
  | NEW name dims array_initializer
        { NewArray (TRef (reference_type ($2)), [], $3, Some $4) }
 
-
-dim_expr: LB expression RB  { $2 (*TODO*) }
+dim_expr: LB expression RB  { $2 }
 
 dims:
- | LB RB  { 1 (*TODO*) }
- | dims LB RB  { $1 + 1 (*TODO*) }
-
+ | LB RB  { 1 }
+ | dims LB RB  { $1 + 1 }
 
 /* 15.11 */
 field_access:
@@ -412,9 +403,8 @@ field_access:
 
 /* 15.13 */
 array_access:
- | name LB expression RB  { ArrayAccess ((Name (name $1)), $3) }
+ | name LB expression RB                  { ArrayAccess ((Name (name $1)), $3)}
  | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3) }
-
 
 /*(*----------------------------*)*/
 /*(*2 Method call *)*/
@@ -442,10 +432,8 @@ postfix_expression:
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
  
-
 /* 15.14.1 */
 post_increment_expression: postfix_expression INCR  { Postfix ($1, "++") }
-
 /* 15.14.2 */
 post_decrement_expression: postfix_expression DECR  { Postfix ($1, "--") }
 
@@ -576,9 +564,10 @@ conditional_or_expression:
 
 /* 15.25 */
 conditional_expression:
- | conditional_or_expression  { $1 }
+ | conditional_or_expression  
+     { $1 }
  | conditional_or_expression COND expression COLON conditional_expression
-	{ Conditional ($1, $3, $5) }
+     { Conditional ($1, $3, $5) }
 
 /*(*----------------------------*)*/
 /*(*2 Assign *)*/
@@ -587,14 +576,14 @@ conditional_expression:
 /* 15.26 */
 assignment_expression:
  | conditional_expression  { $1 }
- | assignment  { $1 }
+ | assignment              { $1 }
 
 assignment: left_hand_side assignment_operator assignment_expression
     { Assignment ($1, fst $2, $3) }
 
 
 left_hand_side:
- | name  { Name (name $1) }
+ | name          { Name (name $1) }
  | field_access  { $1 }
  | array_access  { $1 }
 
@@ -640,7 +629,7 @@ statement_without_trailing_substatement:
  | throw_statement  { $1 }
  | try_statement  { $1 }
  /*(* javaext:  *)*/
- | ASSERT expression SM { Assert ($2, None) }
+ | ASSERT expression SM                  { Assert ($2, None) }
  | ASSERT expression COLON expression SM { Assert ($2, Some $4) }
 
 statement_no_short_if:
@@ -651,18 +640,17 @@ statement_no_short_if:
  | for_statement_no_short_if  { $1 }
 
 
-
 /* 14.2 */
 block: LC block_statements_opt RC  { Block $2 }
 
 block_statement:
  | local_variable_declaration_statement  { $1 }
  | class_declaration  { [LocalClass $1] }
- | statement  { [$1] }
+ | statement          { [$1] }
 
 /* 14.4 */
 local_variable_declaration_statement: local_variable_declaration SM  
- { $1 (* TODO *) }
+ { $1 }
 
 /*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
@@ -670,9 +658,9 @@ local_variable_declaration:
      { let xs = var_decls [] $1 (List.rev $2) in
        xs +> List.map (fun x -> x)
      }
-/*(* actually should be variable_modifiers but conflict *)*/
+ /*(* actually should be variable_modifiers but conflict *)*/
  | modifiers type_java variable_declarators  
-   { [] }
+   { ast_todo }
 
 /* 14.6 */
 empty_statement: SM { Empty }
@@ -716,20 +704,21 @@ switch_statement: SWITCH LP expression RP switch_block
     { Switch ($3, $5) }
 
 switch_block:
- | LC RC  { [] (* TODO *) }
+ | LC RC  { [] }
  | LC switch_labels RC  { [$2, []] }
  | LC switch_block_statement_groups RC  { List.rev $2 }
  | LC switch_block_statement_groups switch_labels RC
      { List.rev ((List.rev $3, []) :: $2) }
 
-switch_block_statement_group: switch_labels block_statements  { List.rev $1, $2 }
+switch_block_statement_group: switch_labels block_statements  {List.rev $1, $2}
+
 switch_label:
  | CASE constant_expression COLON  { Case $2 }
- | DEFAULT COLON  { Default }
+ | DEFAULT COLON                   { Default }
 
 
 /* 14.11 */
-while_statement:	WHILE LP expression RP statement
+while_statement: WHILE LP expression RP statement
      { While ($3, $5) }
 
 while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
@@ -739,7 +728,6 @@ while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
 /* 14.12 */
 do_statement: DO statement WHILE LP expression RP SM
       { Do ($2, $5) }
-
 
 /*(*----------------------------*)*/
 /*(*2 For *)*/
@@ -755,8 +743,8 @@ for_statement_no_short_if:
 	{ For (ast_todo2, $5) }
 
 for_control:
- | for_init_opt SM expression_opt SM for_update_opt { }
- | for_var_control { }
+ | for_init_opt SM expression_opt SM for_update_opt { ast_todo }
+ | for_var_control { ast_todo }
 
 for_init: 
 | statement_expression_list  { List.rev $1 }
@@ -765,48 +753,43 @@ for_init:
 for_update: statement_expression_list  { List.rev $1 }
 
 for_var_control:
- | type_java variable_declarator_id for_var_control_rest { }
+ | type_java variable_declarator_id for_var_control_rest { ast_todo }
 /*(* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)*/
- | modifiers type_java variable_declarator_id for_var_control_rest { }
+ | modifiers type_java variable_declarator_id for_var_control_rest { ast_todo }
 
-for_var_control_rest:
- | COLON expression { }
+for_var_control_rest: COLON expression { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Other *)*/
 /*(*----------------------------*)*/
 
 /* 14.14 */
-break_statement:	BREAK identifier_opt SM  { Break $2 }
-
+break_statement: BREAK identifier_opt SM  { Break $2 }
 /* 14.15 */
 continue_statement: CONTINUE identifier_opt SM  { Continue $2 }
-
 /* 14.16 */
 return_statement: RETURN expression_opt SM  { Return $2 }
-
 
 /* 14.18 */
 synchronized_statement: SYNCHRONIZED LP expression RP block  
   { Sync ($3, $5) }
 
-
 /* 14.17 */
-throw_statement:	THROW expression SM  { Throw $2 }
+throw_statement: THROW expression SM  { Throw $2 }
 
 /* 14.19 */
 try_statement:
- | TRY block catches             { Try ($2, List.rev $3, None) }
+ | TRY block catches              { Try ($2, List.rev $3, None) }
  | TRY block catches_opt finally  { Try ($2, $3, Some $4) }
 
 catch_clause:
- | CATCH LP formal_parameter RP block  { $3, $5 (* TODO*) }
+ | CATCH LP formal_parameter RP block  { $3, $5 }
  /*(* not in 2nd edition java language specification.*) */
- | CATCH LP formal_parameter RP empty_statement  { $3, $5 (* TODO*) }
+ | CATCH LP formal_parameter RP empty_statement  { $3, $5 }
 
-finally: FINALLY block  { $2 (* TODO*) }
+finally: FINALLY block  { $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Declaration *)*/
@@ -852,8 +835,8 @@ annotation:
  | AT name LP annotation_element_opt RP { $1 }
 
 annotation_element:
- | element_value { }
- | element_value_pairs { }
+ | element_value { ast_todo }
+ | element_value_pairs { ast_todo }
 
 element_value:
  | expr1 { }
@@ -913,11 +896,11 @@ class_body_declaration:
 class_member_declaration:
  | field_declaration  { $1 }
  | method_declaration  { [Method $1] }
- | generic_method_or_constructor_decl { [] }
+ | generic_method_or_constructor_decl { ast_todo }
 
  | class_declaration  { [Class $1] }
- | enum_declaration { ast_todo }
  | interface_declaration  { [Class $1] }
+ | enum_declaration { ast_todo }
  | annotation_type_declaration { ast_todo }
 
  | SM  { [] }
@@ -934,12 +917,12 @@ variable_declarator:
 
 
 variable_declarator_id:
- | identifier                  { IdentDecl $1 }
+ | identifier                    { IdentDecl $1 }
  | variable_declarator_id LB RB  { ArrayDecl $1 }
 
 
 variable_initializer:
- | expression        { ExprInit $1 }
+ | expression         { ExprInit $1 }
  | array_initializer  { $1 }
 
 /* 10.6 */
@@ -951,10 +934,7 @@ array_initializer:
 
 
 /* 8.4 */
-method_declaration: method_header method_body  
-  { let method_decl hdr body = { hdr with m_body = body } in
-     method_decl $1 $2 
-   }
+method_declaration: method_header method_body  { { $1 with m_body = $2 } }
 
 method_header: 
  | modifiers_opt type_java method_declarator throws_opt
@@ -964,11 +944,11 @@ method_header:
 
 method_declarator:
  | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1), $3 }
- | method_declarator LB RB                   { (ArrayDecl (fst $1)), snd $1 }
+ | method_declarator LB RB                     { (ArrayDecl (fst $1)), snd $1 }
 
 
 generic_method_or_constructor_decl:
- | modifiers_opt type_parameters generic_method_or_constructor_rest  { }
+  modifiers_opt type_parameters generic_method_or_constructor_rest  { }
 
 generic_method_or_constructor_rest:
  | type_java identifier method_declarator_rest { }
@@ -985,11 +965,10 @@ throws: THROWS qualified_ident_list  { $2 }
 /* 8.4.5 */
 method_body:
  | block  { $1 }
- | SM  { Empty }
-
+ | SM     { Empty }
 
 /* 8.6 */
-instance_initializer: block  { Init (false, $1) }
+instance_initializer: block       { Init (false, $1) }
 /* 8.7 */
 static_initializer: STATIC block  { Init (true, $2) }
 
@@ -1008,10 +987,8 @@ constructor_declarator:	identifier LP formal_parameter_list_opt RP  { $1, $3 }
 
 /* 8.8.5 */
 constructor_body:
- | LC block_statements_opt RC  
-     { Block $2 }
- | LC explicit_constructor_invocation block_statements_opt RC
-     { Block ($2 :: $3) }
+ | LC block_statements_opt RC                                 { Block $2 }
+ | LC explicit_constructor_invocation block_statements_opt RC { Block ($2::$3) }
 
 
 /* 8.8.5.1 */
@@ -1032,18 +1009,15 @@ explicit_constructor_invocation:
 
 /* 8.4.1 */
 formal_parameter: variable_modifiers_opt type_java variable_declarator_id_bis
-  { let formal_decl mods t v = canon_var mods t v in
-    (* todo: use $1 *)
-    formal_decl [] $2 $3 
-  }
+  { canon_var $1 $2 $3 }
 
 variable_declarator_id_bis:
- | variable_declarator_id { $1 }
+ | variable_declarator_id      { $1 }
  | DOTS variable_declarator_id { $2 (* todo_ast *) }
 
 variable_modifier:
- | FINAL { }
- | annotation { }
+ | FINAL      { Final, $1 }
+ | annotation { Annotation, $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Interface *)*/
@@ -1062,7 +1036,7 @@ interface_declaration:
 
 /* 9.1.2 */
 extends_interfaces:
- | EXTENDS reference_type  { [$2] }
+ | EXTENDS reference_type                { [$2] }
  | extends_interfaces CM reference_type  { $1 ++ [$3] }
 
 /*(*----------------------------*)*/
@@ -1074,12 +1048,12 @@ interface_body:	LC interface_member_declarations_opt RC  { $2 }
 interface_member_declaration:
  | constant_declaration  { $1 }
  | abstract_method_declaration  { [Method $1] }
- | interface_generic_method_decl { [] }
+ | interface_generic_method_decl { ast_todo }
 
- | class_declaration  { [Class $1] }
+ | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
  | annotation_type_declaration { ast_todo }
- | enum_declaration  { [] }
+ | enum_declaration  { ast_todo }
  | SM  { [] }
 
 /* 9.3 */
@@ -1097,9 +1071,9 @@ abstract_method_declaration:
 
 interface_generic_method_decl:
  | modifiers_opt type_parameters type_java identifier interface_method_declator_rest 
-    { }
+    { ast_todo }
  | modifiers_opt type_parameters VOID identifier interface_method_declator_rest 
-    { }
+    { ast_todo }
 
 interface_method_declator_rest:
  | formal_parameters throws_opt SM { }
@@ -1108,7 +1082,7 @@ interface_method_declator_rest:
 /*(*2 Enum *)*/
 /*(*----------------------------*)*/
 enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body 
- { }
+ { ast_todo }
 
 /*(* cant factorize in enum_constants_opt comma_opt .... *)*/
 enum_body: 
@@ -1128,8 +1102,8 @@ enum_body_declarations: SM class_body_declarations_opt { $2 }
 
 /*(* cant factorize modifiers_opt *)*/
 annotation_type_declaration: 
- | modifiers AT INTERFACE identifier annotation_type_body { }
- |           AT INTERFACE identifier annotation_type_body { }
+ | modifiers AT INTERFACE identifier annotation_type_body { ast_todo }
+ |           AT INTERFACE identifier annotation_type_body { ast_todo }
 
 annotation_type_body: LC annotation_type_element_declarations_opt RC { }
 
@@ -1233,8 +1207,8 @@ formal_parameter_list_opt:
 
 
 variable_modifiers_opt:
- | /*(*empty*)*/  { None }
- | variable_modifiers  { Some $1 }
+ | /*(*empty*)*/  { [] }
+ | variable_modifiers  { $1 }
 
 variable_modifiers:
  | variable_modifier { [$1] }
