@@ -17,9 +17,11 @@ let sgrep_unittest = [
   "sgrep features" >:: (fun () ->
     (* spec: pattern string, code string (statement), should_match boolean *)
     let triples = [
+      (* basic string match of course *)
+      "foo(1,2);", "foo(1,2);", true;
+      "foo(1,3);", "foo(1,2);", false;
       (* matches even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
-      "foo(1,3);", "foo(1,2);", false;
 
       (* expression metavariable *)
       "foo(X);",  "foo(1);", true;
