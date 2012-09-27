@@ -1124,6 +1124,9 @@ and vof_any =
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
   | Argument v1 ->
       let v1 = vof_argument v1 in Ocaml.VSum (("Argument", [ v1 ]))
+  | Arguments v1 ->
+      let v1 = (vof_comma_list vof_argument) v1
+      in Ocaml.VSum (("Arguments", [ v1 ]))
   | Parameter v1 ->
       let v1 = vof_parameter v1 in Ocaml.VSum (("Parameter", [ v1 ]))
   | Parameters v1 ->

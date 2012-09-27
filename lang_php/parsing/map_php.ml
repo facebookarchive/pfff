@@ -1068,6 +1068,9 @@ and map_any =
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
   | Entity v1 -> let v1 = map_entity v1 in Entity ((v1))
   | Argument v1 -> let v1 = map_argument v1 in Argument ((v1))
+  | Arguments v1 ->
+      let v1 = (map_comma_list map_argument) v1
+      in Arguments ((v1))
   | Parameter v1 -> let v1 = map_parameter v1 in Parameter ((v1))
   | Parameters v1 ->
       let v1 = map_paren (map_comma_list_dots map_parameter) v1

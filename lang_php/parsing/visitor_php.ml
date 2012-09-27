@@ -1054,6 +1054,7 @@ and v_any = function
   | Program v1 -> let v1 = v_program v1 in ()
   | Entity v1 -> let v1 = v_entity v1 in ()
   | Argument v1 -> let v1 = v_argument v1 in ()
+  | Arguments v1 -> let v1 = (v_comma_list v_argument) v1 in ()
   | Parameter v1 -> let v1 = v_parameter v1 in ()
   | Parameters v1 -> let v1 = v_paren (v_comma_list_dots v_parameter) v1 in ()
   | ClassStmt v1 -> let v1 = v_class_stmt v1 in ()

@@ -82,7 +82,7 @@ and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots =
-  ('a, tok (* ... for sgrep *), tok (* the comma *)) Common.either3 list
+  ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
 (*x: AST info *)
  (*s: tarzan annotation *)
   (* with tarzan *)
@@ -879,15 +879,16 @@ type entity =
 (*e: AST entity *)
 (*s: AST any *)
 type any =
-  | Lvalue of lvalue
   | Expr of expr
   | Stmt2 of stmt
+  | Lvalue of lvalue
   | StmtAndDefs of stmt_and_def list
   | Toplevel of toplevel
   | Program of program
   | Entity of entity
 
   | Argument of argument
+  | Arguments of argument comma_list
   | Parameter of parameter
   | Parameters of parameter comma_list_dots paren
   | Body of stmt_and_def list brace
