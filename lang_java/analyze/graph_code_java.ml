@@ -32,6 +32,8 @@ module Ast = Ast_java
  *  - dir-based schema
  * 
  * schema:
+ *   Package -> Package.SubPackage -> ...
+ *   PB -> Not_Found -> Package -> Package.SubPackage -> ...
  *)
 
 
@@ -103,26 +105,62 @@ let rec add_use_edge env (name, kind) =
           let kind_original = kind in
           let dst = (name, kind_original) in
           let parent_target = G.not_found in
-          pr2 (spf "PB: lookup fail on %s (in %s)" 
-                       (G.string_of_node dst) (G.string_of_node src));
-
           (match kind_original with 
           | E.Package ->
-              let xs = 
-                (Common.split "\\." name) +> List.map (fun x -> x, ()) 
-              in
-              create_intermediate_packages_if_not_present env.g parent_target 
-                xs;
-              pr2_gen xs;
+              let fake_package = 
+                (Common.split "\\." name) +> List.map (fun s -> s^"2") in
+              let dst = (Common.join "." fake_package, kind_original) in
+              if not (G.has_node dst env.g)
+              then begin 
+                create_intermediate_packages_if_not_present 
+                  env.g parent_target 
+                  (fake_package +> List.map (fun s -> s,()));
+                pr2 (spf "PB: lookup fail on %s (in %s)" 
+                        (G.string_of_node dst) (G.string_of_node src));
+              end;
               env.g +> G.add_edge (src, dst) G.Use;
               ()
           | _ ->
+              pr2 (spf "PB: lookup fail on %s (in %s)" 
+                      (G.string_of_node dst) (G.string_of_node src));
               G.add_node dst env.g;
               env.g +> G.add_edge (parent_target, dst) G.Has;
               env.g +> G.add_edge (src, dst) G.Use;
           )
       )
   )
+
+
+let looks_like_package_name_part s =
+  s =~ "[a-z]"
+
+let looks_like_class_name s =
+  s =~ "[A-Z]"
+
+(* todo: use env to lookup for package *)
+let rec package_of_long_ident env (is_static, long_ident) =
+
+  let starting_point = 
+  match List.rev long_ident, is_static with
+  (* import can have a trailing '*' *)
+  | ("*",_)::xs,        false -> xs
+  (* import static method means we need to skip the method and class *)
+  | (s, _)::(s2,_)::xs, true 
+      when looks_like_class_name s2 -> 
+      xs
+  (* sometimes people import nested classes, so have to skip two names *)
+  | (s, _)::(s2, _)::xs, false 
+      when looks_like_class_name s && looks_like_class_name s2 ->
+      xs
+  (* usual case *)
+  | (s, _)::xs, false 
+      when looks_like_class_name s ->
+      xs
+  | _, _ -> raise Impossible
+  in
+  starting_point +> Common.drop_while (fun (s, _) -> looks_like_class_name s)
+  +> List.rev
+
 
 
 (*****************************************************************************)
@@ -160,21 +198,9 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
   }
   in
 
-  ast.imports +> List.iter (fun (_is_static, long_ident) ->
-    let package = 
-      (match List.rev long_ident with
-      | ("*",_)::xs -> xs
-      | (s, _)::xs ->
-          if s =~ "[A-Z].*" 
-          then xs
-          else begin
-            pr2 (spf "PB: weird import: %s" (Common.dump long_ident));
-            xs
-          end
-      | [] -> raise Impossible
-      )
-    in
-    let str = str_of_qualified_ident (List.rev package) in
+  ast.imports +> List.iter (fun (is_static, long_ident) ->
+    let package = package_of_long_ident env (is_static, long_ident) in
+    let str = str_of_qualified_ident package in
     add_use_edge env (str, E.Package);
   );
 
