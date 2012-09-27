@@ -3023,6 +3023,13 @@ let m_any a b =
        B.Argument(b1)
     )
     )
+  | A.Arguments(a1), B.Arguments(b1) ->
+    ((m_comma_list m_argument)) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Arguments(a1),
+       B.Arguments(b1)
+    )
+    )
   | A.Parameter(a1), B.Parameter(b1) ->
     m_parameter a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -3136,6 +3143,7 @@ let m_any a b =
   | A.Program _, _
   | A.Entity _, _
   | A.Argument _, _
+  | A.Arguments _, _
   | A.Parameter _, _
   | A.Parameters _, _
   | A.Body _, _
