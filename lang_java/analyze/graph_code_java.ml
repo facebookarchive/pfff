@@ -156,7 +156,11 @@ let rec package_of_long_ident env (is_static, long_ident) =
   | (s, _)::xs, false 
       when looks_like_class_name s ->
       xs
-  | _, _ -> raise Impossible
+  (* some exceptions ... TODO put in skip_list instead? *)
+  | ("drawable", _)::xs, false -> xs
+  | _, _ -> 
+      pr2_gen long_ident;
+      raise Impossible
   in
   starting_point +> Common.drop_while (fun (s, _) -> looks_like_class_name s)
   +> List.rev
