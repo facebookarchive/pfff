@@ -23,6 +23,9 @@ function fb_thrift_serialize($thing) { }
 function fb_thrift_unserialize($thing, &$success, &$errcode = null_variant) { }
 function fb_serialize($thing) { }
 function fb_unserialize($thing, &$success, &$errcode = null_variant) { }
+function fb_compact_serialize($thing) { }
+function fb_compact_unserialize($thing, &$success, &$errcode = null_variant) { }
+function fb_could_include($file) { }
 function fb_intercept($name, $handler, $data = null_variant) { }
 function fb_stubout_intercept_handler($name, $obj, $params, $data, &$done) { }
 function fb_rpc_intercept_handler($name, $obj, $params, $data, &$done) { }
@@ -63,3 +66,6 @@ function fb_get_last_flush_size() { }
 function fb_lazy_stat($filename) { }
 function fb_lazy_lstat($filename) { }
 function fb_lazy_realpath($filename) { }
+function fb_setprofile($callback) { }
+function fb_gc_collect_cycles() { }
+function fb_gc_detect_cycles($filename) { }
