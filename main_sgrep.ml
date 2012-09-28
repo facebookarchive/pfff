@@ -63,17 +63,27 @@ let print_match mvars mvar_binding tokens_matched_code =
   (match mvars with
   | [] ->
       Lib_parsing_php.print_match ~format:!match_format tokens_matched_code
+  | xs ->
+      (* similar to the code of Lib_parsing_php.print_match, maybe could
+       * factorize code a bit.
+       *)
+      let (mini, maxi) = 
+        Lib_parsing_php.min_max_ii_by_pos tokens_matched_code in
+      let (file, line) = 
+        Ast.file_of_info mini, Ast.line_of_info mini in
 
-  | [x] ->
-      (match Common.assoc_option x mvar_binding with
-      | Some any ->
-          let ii = Lib_parsing_php.ii_of_any any in
-          Lib_parsing_php.print_match  ~format:Lib_parsing_php.OneLine ii
-      | None ->
-          failwith (spf "the metavariable '%s' was not binded" x)
-      )
-  | x::y::xs ->
-      failwith "multiple metavariables not yet handled. mailto:pad@facebook.com"
+      let strings_metavars =
+        xs +> List.map (fun x ->
+          match Common.assoc_option x mvar_binding with
+          | Some any ->
+              Lib_parsing_php.ii_of_any any
+              +> List.map Ast.str_of_info 
+              +> Lib_parsing_php.join_with_space_if_needed
+          | None ->
+              failwith (spf "the metavariable '%s' was not binded" x)
+          )
+      in
+      pr (spf "%s:%d: %s" file line (Common.join ":" strings_metavars));
   );
   tokens_matched_code +> List.iter (fun x -> Common.push2 x _matching_tokens)
 
@@ -204,7 +214,7 @@ let options () =
     " print matches on one line, in normalized form";
 
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
-    " <metavar> print the metavariable, not the matched code";
+    " <metavars> print the metavariables, not the matched code";
 
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in a pfff layer file";

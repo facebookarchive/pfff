@@ -32,6 +32,7 @@ type match_format =
   | OneLine
 
 val print_match: ?format:match_format -> Ast_php.tok list -> unit
+val join_with_space_if_needed: string list -> string
 
 (*x: lib_parsing_php.mli *)
 val get_funcalls_any         : Ast_php.any -> string list
