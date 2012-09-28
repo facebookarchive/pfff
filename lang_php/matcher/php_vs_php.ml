@@ -2039,6 +2039,18 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         xsa,
         xsb
       )
+  | [Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))], bbs
+    when MV.is_metavar_manyargs_name name ->
+
+      X.envf (name, info_name) (B.Arguments (bbs)) >>= (function
+      | ((name, info_name), B.Arguments (bbs))  ->
+        return (
+          [Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))],
+          bbs
+        )
+      | _ -> raise Impossible
+      )
+
 
   (* bugfix: we can have some Replace or AddAfter in the token of
    * the comma. We need to apply it to the code.
@@ -2060,6 +2072,16 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       return (
         xsa,
         xsb
+      )
+  | [Right _;Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))],[]
+    when MV.is_metavar_manyargs_name name ->
+      X.envf (name, info_name) (B.Arguments ([])) >>= (function
+      | ((name, info_name), B.Arguments ([]))  ->
+        return (
+          xsa,
+          xsb
+        )
+      | _ -> raise Impossible
       )
       
 

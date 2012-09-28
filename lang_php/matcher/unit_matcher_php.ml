@@ -63,6 +63,14 @@ let sgrep_unittest = [
       (* '...' in strings *)
       "foo(\"...\");", "foo(\"a string\");", true;
 
+      (* many arguments metavariables *)
+      "foo(MANYARGS);", "foo(1,2,3);", true;
+      "foo(MANYARGS2);", "foo(1,2,3);", true;
+      "foo(MANYARGS);", "foo();", true;
+      "foo(X, MANYARGS);", "foo(1,2,3);", true;
+      (* ... also match when there is no additional arguments *)
+      "foo(X, MANYARGS);", "foo(1);", true;
+
       (* metavariables on function name *)
       "X(1,2);", "foo(1,2);", true;
       (* metavariables on class name *)

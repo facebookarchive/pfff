@@ -39,6 +39,10 @@ let empty_environment = []
 let metavar_regexp_string = 
   "\\b\\([A-Z][0-9]?\\(_[A-Z0-9]*\\)?\\)\\b"
 
+(* example: MANY_ARGS1 *)
+let metavar_manyargs_regexp_string = 
+  "\\b\\(MANYARGS[0-9]?\\([_A-Z0-9]*\\)?\\)\\b"
+
 (* examples: $X *)
 let metavar_variable_regexp_string = 
   "\\(\\$[A-Z]\\)\\b"
@@ -48,7 +52,7 @@ let metavar_lvalue_regexp_string =
 
 (* 
  * Hacks abusing existing PHP constructs to encode extra constructions.
- * One day we will have a pattern_php_ast.ml that mimic mostly
+ * One day we will have a pattern_php_ast.ml that mimics mostly
  * ast_php.ml and extends it with sgrep special constructs.
  *)
 let is_metavar_name s = 
@@ -60,3 +64,6 @@ let is_metavar_lvalue_name s =
 
 let is_metavar_variable_name s = 
   s =~ metavar_variable_regexp_string
+
+let is_metavar_manyargs_name s = 
+  s =~ metavar_manyargs_regexp_string
