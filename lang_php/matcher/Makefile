@@ -5,6 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= flag_matcher_php.ml   \
+     refactoring_code_php.ml \
      metavars_php.ml \
      php_vs_php.ml \
      matching_php.ml \
