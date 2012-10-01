@@ -54,7 +54,18 @@ let refactor refactorings ast_with_tokens =
               k def
             );
           }
-      | R.AddTypeHintParameter _
+      | R.AddTypeHintParameter str ->
+          { V.default_visitor with
+            V.kparameter = (fun (k, _) p ->
+              let tok = Ast.info_of_dname p.p_name in
+              if tok_pos_equal_refactor_pos tok r then begin
+                tok.PI.transfo <- 
+                  PI.AddBefore (PI.AddStr (str ^ " "));
+              end;
+              k p
+            );
+          }
+
       | R.AddTypeMember _ 
           -> raise Todo
     in

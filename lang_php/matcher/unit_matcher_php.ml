@@ -261,7 +261,21 @@ let refactoring_unittest = [
     let (ast2, _stat) = Parse_php.parse file in
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nfunction foo(): int { }";
+  );
+  "refactoring php adding parameter type" >:: (fun () ->
+    let file_content = "function foo($x) { }" in
+    let refactoring = { Refactoring_code.
+          file = "";
+          line = 2; col = 13;
+          action = Refactoring_code.AddTypeHintParameter "int";
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nfunction foo(int $x) { }";
   )
+
 ]
 
 (*****************************************************************************)
