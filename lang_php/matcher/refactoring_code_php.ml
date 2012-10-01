@@ -66,8 +66,31 @@ let refactor refactorings ast_with_tokens =
             );
           }
 
-      | R.AddTypeMember _ 
-          -> raise Todo
+      | R.AddTypeMember str ->
+          { V.default_visitor with
+            V.kclass_stmt = (fun (k, _) x ->
+              match x with
+              | ClassVariables (_cmodif, _typ_opt, xs, _tok) ->
+                  (match xs with
+                  | [Left (dname, affect_opt)] ->
+                      let tok = Ast.info_of_dname dname in
+                      if tok_pos_equal_refactor_pos tok r then begin
+                        tok.PI.transfo <- 
+                          PI.AddBefore (PI.AddStr (str ^ " "));
+                      end;
+                      k x
+                  | xs ->
+                      xs +> Ast.uncomma +> List.iter (fun (dname, _) ->
+                      let tok = Ast.info_of_dname dname in
+                      if tok_pos_equal_refactor_pos tok r then begin
+                        failwith "TODO: need to split the members"
+                      end;
+                      );
+                      k x
+                  )
+              | _ -> k x
+            );
+          }
     in
     let ast = Parse_php.program_of_program2 ast_with_tokens in
     (V.mk_visitor visitor) (Program ast)
