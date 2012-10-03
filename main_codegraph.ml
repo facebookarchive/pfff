@@ -169,6 +169,12 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
+(* todo: constraints_of_info_txts *)
+let constraints_of_info_txt info_txt =
+  let h = Hashtbl.create 101 in
+  Hashtbl.add h "." (info_txt +> List.map fst);
+  h
+
 (*****************************************************************************)
 (* Model Helpers *)
 (*****************************************************************************)
@@ -189,7 +195,15 @@ let build_model root =
     Common.cache_computation ~verbose:!verbose file ".matrix"
       (fun () -> DM.build_full_matrix g)
   in
-  { Model.g = g; root; full_matrix }
+  (* todo: find -name "info.txt" *)
+  let constraints =
+    if Sys.file_exists (Filename.concat root "info.txt")
+    then 
+      let info_txt = Info_code.load (Filename.concat root "info.txt") in
+      constraints_of_info_txt info_txt
+    else Hashtbl.create 0
+  in
+  { Model.g = g; root; full_matrix; constraints }
 
 (*****************************************************************************)
 (* Language specific, building the graph *)
