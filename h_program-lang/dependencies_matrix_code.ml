@@ -39,7 +39,12 @@ type dm = {
   (* which nodes are currently expanded *)
   config: config;
 }
-  (* could reuse Common.tree2 *)
+  (* It's actually more a 'tree set' than a 'tree list' below 
+   * when we pass the config to build(). Indeed it's build() which
+   * will order this set according to some partitionning algorithm
+   * that tries to "layer" the code.
+   * less: could reuse Common.tree2. 
+   *)
   and tree =
     | Node of Graph_code.node * tree list
   and config = tree
@@ -57,6 +62,18 @@ type config_path_elem =
   | DepsInOut
 type config_path = config_path_elem list
 
+(* We sometimes want to manually order certain entries in the matrix,
+ * especially when the code is a mess with cycles everywhere in
+ * which case the default partitionning algorithm does not help.
+ * The hashtbl maps string nodes to the ordered list of children
+ * we want. We use a hash and not a tree because at some point
+ * we may want to specify the order only for certain deeply
+ * nested directories in which case we will do a find -name "info.txt"
+ * to build all the partial constraints.
+ *)
+type partition_constraints = 
+  (string, string list) Hashtbl.t
+
 (* optimization *)
 type projection_cache = (Graph_code.node, int option) Hashtbl.t
 
@@ -70,8 +87,9 @@ let verbose = ref false
 (*****************************************************************************)
 
 (* get the parent node of the node under consideration that is
- * displayed in the matrix.
- * opti: share a global hmemo?
+ * displayed in the matrix. The 'hmemo' passed should be related
+ * to the 'dm' because two different matrices should lead to different
+ * projections.
  *)
 let rec projection2 hmemo n dm g =
   (* todo: profile this? optimize? *)
@@ -103,7 +121,6 @@ let rec final_nodes_of_tree tree =
 let display dm =
   pr2_gen dm;
   ()
-
 
 (*****************************************************************************)
 (* Ordering the rows/columns, "layering" *)
@@ -234,6 +251,34 @@ let partition_matrix nodes dm =
   end
 
 (*****************************************************************************)
+(* Manual ordering *)
+(*****************************************************************************)
+
+let optional_manual_reordering (s, node_kind) nodes constraints_opt =
+  match constraints_opt with
+  | None -> nodes
+  | Some h ->
+      if Hashtbl.mem h s
+      then begin
+        let xs = Hashtbl.find h s in
+        let horder = xs +> Common.index_list_1 +> Common.hash_of_list in
+        let current = ref 0 in
+        let nodes_with_order = 
+          nodes +> List.map (fun (s, node_kind) ->
+            match Common.hfind_option s horder with
+            | None ->
+                pr2 (spf "INFO_TXT: could not find %s in constraint set" s);
+                (s, node_kind), !current
+            | Some n ->
+                current := n;
+                (s, node_kind), n
+          )
+        in
+        Common.sort_by_val_lowfirst nodes_with_order +> List.map fst
+      end
+      else nodes
+
+(*****************************************************************************)
 (* Building the matrix *)
 (*****************************************************************************)
 
@@ -302,7 +347,7 @@ let build_with_tree a b c =
 (* opti: we redo many times the iteration on all edges ... for
  * different configuration. Can factorize work ?
  *)
-let build tree full_matrix_opt g =
+let build tree constraints_opt full_matrix_opt g =
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -329,7 +374,10 @@ let build tree full_matrix_opt g =
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
            *)
-          let nodes_reordered = partition_matrix children_nodes dm in
+          let nodes_reordered = 
+            partition_matrix children_nodes dm in
+          let nodes_reordered = 
+            optional_manual_reordering n nodes_reordered constraints_opt in
           Node (n,
                nodes_reordered +> List.map (fun n2 ->
                  let xs = Hashtbl.find h_children_of_children_nodes n2 in

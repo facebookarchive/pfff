@@ -10,13 +10,17 @@ type dm = {
   and tree =
     | Node of Graph_code.node * tree list
 
+type partition_constraints = 
+  (string, string list) Hashtbl.t
+
 val verbose: bool ref
 
 (* just the expanded root *)
 val basic_config: Graph_code.graph -> config
 
 val build:
-  config -> dm option (* full matrix *) -> Graph_code.graph -> dm
+  config -> partition_constraints option -> dm option (* full matrix *) -> 
+  Graph_code.graph -> dm
 
 val build_full_matrix:
   Graph_code.graph -> dm
