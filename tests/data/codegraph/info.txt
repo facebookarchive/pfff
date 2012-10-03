@@ -1,0 +1,25 @@
+# -*- org -*-
+
+* info.txt
+This file.
+ 
+* basic.c
+
+* basic.h
+
+* builtins.c
+
+* forward.c
+
+* algo
+
+* use.c
+
+* other.h
+
+* main1.c
+
+* main2.c
+
+
+
