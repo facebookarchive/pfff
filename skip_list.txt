@@ -13,6 +13,9 @@ dir: external/ocamlgtk/applications
 # use symlinks to existing file, bad technique
 dir: facebook/fbstrict/src/jscompiler
 
+# contain dupes with symbol_service
+dir: facebook/typelog
+
 #someone use parmap?
 dir: facebook/external/parmap/tests/
 
