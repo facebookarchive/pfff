@@ -245,8 +245,9 @@ let spatch_unittest = [
 (*****************************************************************************)
 (* Generic refactorings *)
 (*****************************************************************************)
-let refactoring_unittest = [
-  "refactoring php adding return type" >:: (fun () ->
+let refactoring_unittest = 
+  "refactoring php" >::: [
+    " adding return type" >:: (fun () ->
     let file_content = "function foo() { }" in
     let refactoring = { Refactoring_code.
           file = "";
@@ -262,7 +263,7 @@ let refactoring_unittest = [
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nfunction foo(): int { }";
   );
-  "refactoring php adding parameter type" >:: (fun () ->
+  "adding parameter type" >:: (fun () ->
     let file_content = "function foo($x) { }" in
     let refactoring = { Refactoring_code.
           file = ""; line = 2; col = 13;
@@ -274,7 +275,7 @@ let refactoring_unittest = [
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nfunction foo(int $x) { }";
   );
-  "refactoring php adding member type" >:: (fun () ->
+  "adding member type" >:: (fun () ->
     let file_content = "class X { private $x; }" in
     let refactoring = { Refactoring_code.
           file = ""; line = 2; col = 18;
@@ -286,8 +287,6 @@ let refactoring_unittest = [
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nclass X { private int $x; }";
   )
-
-
 ]
 
 (*****************************************************************************)
@@ -296,5 +295,5 @@ let refactoring_unittest = [
 
 let unittest =
   "matcher_php" >::: (
-    sgrep_unittest ++ spatch_unittest ++ refactoring_unittest
+    sgrep_unittest ++ spatch_unittest ++ [refactoring_unittest]
   )
