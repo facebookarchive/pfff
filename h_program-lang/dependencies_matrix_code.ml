@@ -533,7 +533,7 @@ let expand_node n tree g =
   let rec aux tree =
     match tree with
     | Node (n2, xs) ->
-        if n = n2
+        if n =*= n2
         then 
           (* less: assert null xs? *)
           let succ = G.succ n G.Has g in
@@ -543,7 +543,6 @@ let expand_node n tree g =
   aux tree
 
 let focus_on_node n deps_style tree dm =
-  let deps = ref [] in
   let i = 
     try Hashtbl.find dm.name_to_i n 
     with Not_found ->
@@ -551,6 +550,7 @@ let focus_on_node n deps_style tree dm =
       pr2_gen dm;
       raise Not_found
   in
+  let (deps: int list ref) = ref [] in
   let nb_elts = Array.length dm.matrix in
   for j = 0 to nb_elts - 1 do
     let to_include =
@@ -565,9 +565,26 @@ let focus_on_node n deps_style tree dm =
     if to_include || i = j
     then Common.push2 j deps
   done;
-  Node (G.root, !deps +> List.rev +> List.map (fun i ->
-    Node (Hashtbl.find dm.i_to_name i, []))
-  )
+  (* old: this was not keeping the hierarchy (which can be a feature)
+   *  Node (G.root, !deps +> List.rev +> List.map (fun i ->
+   *    Node (Hashtbl.find dm.i_to_name i, []))
+   *  )
+   *)
+  let rec aux tree = 
+    match tree with
+    | Node (n2, []) ->
+        let j = Hashtbl.find dm.name_to_i n2 in
+        if i = j || List.mem j !deps
+        then Some (Node (n2, []))
+        else None
+    | Node (n2, xs) ->
+        let xs = xs +> Common.map_filter aux in
+        if null xs 
+        then None
+        else Some (Node (n2, xs))
+  in
+  (* should be a Some cos at least we have 'n' in the tree *)
+  Common.some (aux tree)
   
 
 (*****************************************************************************)
