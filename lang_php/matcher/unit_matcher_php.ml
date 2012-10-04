@@ -241,11 +241,72 @@ let spatch_unittest = [
     )
   )
 ]
+
+(*****************************************************************************)
+(* Generic refactorings *)
+(*****************************************************************************)
+let refactoring_unittest = 
+  "refactoring php" >::: [
+    " adding return type" >:: (fun () ->
+    let file_content = "function foo() { }" in
+    let refactoring = { Refactoring_code.
+          file = "";
+          (* line 2 because tmp_php_file_from_string below add a leading
+           * <php\n
+           *)
+          line = 2; col = 9;
+          action = Refactoring_code.AddReturnType "int";
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nfunction foo(): int { }";
+  );
+  "adding parameter type" >:: (fun () ->
+    let file_content = "function foo($x) { }" in
+    let refactoring = { Refactoring_code.
+          file = ""; line = 2; col = 13;
+          action = Refactoring_code.AddTypeHintParameter "int";
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nfunction foo(int $x) { }";
+  );
+  "adding member type" >:: (fun () ->
+    let file_content = "class X { private $x; }" in
+    let refactoring = { Refactoring_code.
+          file = ""; line = 2; col = 18;
+          action = Refactoring_code.AddTypeMember "int";
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nclass X { private int $x; }";
+  );
+  "optinize type" >:: (fun () ->
+    let file_content = "function foo(int $x) { }" in
+    let refactoring = { Refactoring_code.
+          file = ""; line = 2; col = 13;
+          action = Refactoring_code.OptionizeTypeParameter;
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nfunction foo(?int $x) { }";
+  )
+
+]
+
 (*****************************************************************************)
 (* Final suite *)
 (*****************************************************************************)
 
 let unittest =
   "matcher_php" >::: (
-    sgrep_unittest ++ spatch_unittest
+    sgrep_unittest ++ spatch_unittest ++ [refactoring_unittest]
   )

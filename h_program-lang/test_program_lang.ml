@@ -57,6 +57,11 @@ let layer_stat file =
     pr (spf " %s = %d" k v)
   )
 
+let test_refactoring file =
+  let xs = Refactoring_code.load file in
+  xs +> List.iter pr2_gen;
+  ()
+
 (* ---------------------------------------------------------------------- *)
 (* Code graph *)
 (* ---------------------------------------------------------------------- *)
@@ -96,6 +101,8 @@ let actions () = [
   Common.mk_action_1_arg test_big_grep;
   "-test_layer", " <file>",
   Common.mk_action_1_arg test_layer;
+  "-test_refactoring", " <file>",
+  Common.mk_action_1_arg test_refactoring;
   "-test_graph_code", " <>",
   Common.mk_action_0_arg test_graph_code;
   "-test_dsm", " <file>",

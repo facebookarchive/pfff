@@ -393,6 +393,39 @@ let test_pp file =
   xs +> List.iter pr2
 
 (*---------------------------------------------------------------------------*)
+(* juju refactorings *)
+(*---------------------------------------------------------------------------*)
+
+let juju_refactoring spec_file =
+  let xs = Refactoring_code.load spec_file in
+
+  (* Group by file because we need to do all the transfo on a file
+   * before unparsing as the refactoring spec use line/col position
+   * that refers to the original file
+   *)
+  let xxs = 
+    xs +> List.map (fun x -> x.Refactoring_code.file, x)
+      +> Common.group_assoc_bykey_eff
+  in
+  xxs +> List.iter (fun (file, refactorings) ->
+    let (ast2, _stat) = Parse_php.parse file in
+    let s = Refactoring_code_php.refactor refactorings ast2 in
+
+    let tmpfile = Common.new_temp_file "trans" ".php" in
+    Common.write_file ~file:tmpfile s;
+
+    if !pretty_printer
+    then Unparse_pretty_print_mix.pretty_print_when_needit
+      ~oldfile:file ~newfile:tmpfile;
+      
+    let diff = Common.unix_diff file tmpfile in
+    diff +> List.iter pr;
+    if !apply_patch 
+    then Common.write_file ~file:file (Common.read_file tmpfile);
+  );
+  ()
+
+(*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
 open OUnit
@@ -413,6 +446,9 @@ let spatch_extra_actions () = [
   Common.mk_action_n_arg (apply_transfo remove_border_attribute_transfo);
   "-add_action_ui_form", " <files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo add_action_ui_form_transfo);
+
+  "-juju_refactoring", " <file>",
+  Common.mk_action_1_arg juju_refactoring;
 
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
