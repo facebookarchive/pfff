@@ -37,7 +37,7 @@ module DM = Dependencies_matrix_code
 (* have a draw_labels.ml ? *) 
 
 (* similar to highlight_code.ml *)
-let color_of_node_kind kind =
+let color_of_node (_, kind) =
   match kind with
   | E.Function -> "gold"
   | E.Class _ -> "coral"
@@ -57,6 +57,11 @@ let color_of_node_kind kind =
 
   | E.Dir | E.MultiDirs -> "SteelBlue2"
   | E.File -> "wheat"
+
+let txt_of_node (s, kind) = 
+  match kind with
+  | E.Dir | E.File -> Common.basename s
+  | _ -> s
 
 (* todo: style/font_of_node_kind? so put in bold directories *)
 
@@ -175,8 +180,8 @@ let draw_left_rows cr w ~interactive_regions =
         CairoH.draw_rectangle ~cr ~line_width ~color rect3;
 
         (* old: let node = Hashtbl.find w.m.DM.i_to_name i in *)
-        let (txt, kind) = node in
-        let color = color_of_node_kind kind in
+        let color = color_of_node node in
+        let txt = txt_of_node node in
         CairoH.set_source_color cr color ();
         CairoH.set_font_size cr font_size_default;
         let extent = CairoH.text_extents cr txt in
@@ -211,8 +216,8 @@ let draw_left_rows cr w ~interactive_regions =
         CairoH.draw_rectangle ~cr ~line_width ~color:"SteelBlue2" rect;
         (* todo? push2 ?? interactive_regions *)
 
-        let (txt, kind) = node in
-        let color = color_of_node_kind kind in
+        let color = color_of_node node in
+        let txt = txt_of_node node in
         CairoH.set_source_color cr color ();
         let font_size_default = 
           min (l.width_vertical_label/1.5) ((n * l.height_cell) /10.) in
@@ -279,12 +284,11 @@ let draw_up_columns cr w ~interactive_regions =
 
     if j < l.nb_elts then begin
       let node = Hashtbl.find w.m.DM.i_to_name j in
-      let (txt, kind) = node in
-
       Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
       let angle = -. (pi / 4.) in
       Cairo.rotate cr ~angle:angle;
-      let color = color_of_node_kind kind in
+      let color = color_of_node node in
+      let txt = txt_of_node node in
       CairoH.set_source_color cr color ();
       CairoH.show_text cr txt;
       Cairo.rotate cr ~angle:(-. angle);
