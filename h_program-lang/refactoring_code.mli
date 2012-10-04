@@ -9,5 +9,6 @@ type refactoring = {
     | AddReturnType of string
     | AddTypeHintParameter of string
     | AddTypeMember of string
+    | OptionizeTypeParameter
 
 val load: Common.filename -> refactoring list

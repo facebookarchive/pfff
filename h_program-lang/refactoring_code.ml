@@ -32,7 +32,7 @@ type refactoring = {
     | AddReturnType of string
     | AddTypeHintParameter of string
     | AddTypeMember of string
-
+    | OptionizeTypeParameter
 
 (*****************************************************************************)
 (* IO *)
@@ -45,7 +45,7 @@ let load file =
     match xs with
     | [file;action;line;col;value] when
           line =~ "[0-9]+" && col =~ "[0-9]+" && 
-          (List.mem action ["RETURN";"PARAM";"MEMBER"]) ->
+          (List.mem action ["RETURN";"PARAM";"MEMBER"; "MAKE_OPTION_TYPE"]) ->
         { file;
           line = int_of_string line;
           col = int_of_string col;
@@ -54,6 +54,7 @@ let load file =
             | "RETURN" -> AddReturnType value
             | "PARAM" -> AddTypeHintParameter value
             | "MEMBER" -> AddTypeMember value
+            | "MAKE_OPTION_TYPE" -> OptionizeTypeParameter
             | _ -> raise Impossible
             )
         }

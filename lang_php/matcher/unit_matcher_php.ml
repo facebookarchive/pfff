@@ -286,7 +286,20 @@ let refactoring_unittest =
     let (ast2, _stat) = Parse_php.parse file in
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nclass X { private int $x; }";
+  );
+  "optinize type" >:: (fun () ->
+    let file_content = "function foo(int $x) { }" in
+    let refactoring = { Refactoring_code.
+          file = ""; line = 2; col = 13;
+          action = Refactoring_code.OptionizeTypeParameter;
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nfunction foo(?int $x) { }";
   )
+
 ]
 
 (*****************************************************************************)

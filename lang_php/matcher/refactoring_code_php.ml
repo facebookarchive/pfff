@@ -65,6 +65,27 @@ let refactor refactorings ast_with_tokens =
               k p
             );
           }
+      | R.OptionizeTypeParameter ->
+          { V.default_visitor with
+            V.kparameter = (fun (k, _) p ->
+              (match p.p_type with
+              | None -> ()
+              | Some x ->
+                  let tok = 
+                    match x with
+                    | HintArray tok -> tok
+                    | Hint (ClassName name) -> Ast.info_of_name name
+                    | Hint (LateStatic _ | Parent _ | Self _) ->
+                        failwith "impossible to have such name as type hints"
+                  in
+                  if tok_pos_equal_refactor_pos tok r then begin
+                    tok.PI.transfo <- 
+                      PI.AddBefore (PI.AddStr ("?"))
+                  end
+              );
+              k p
+            );
+          }
 
       | R.AddTypeMember str ->
           { V.default_visitor with
