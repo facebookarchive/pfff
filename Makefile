@@ -645,12 +645,12 @@ website:
 
 .PHONY:: tags db layers   tests test
 
-
 tags:
 	./stags -verbose -lang ml .
 db:
-	./codegraph.opt -lang ml -build .
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
+graph:
+	./codegraph.opt -lang ml -build .
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall
@@ -663,6 +663,8 @@ visual:
 visual2:
 	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . .
+visualhead:
+	./codemap -ss 1 -ft 0.5 -commitid HEAD
 
 tests:
 	./pfff_test -verbose all
@@ -677,6 +679,8 @@ pull:
 
 #refactoring:
 # git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
+
+# TODO: replace with graphviz plugin to codegraph
 
 DSRC=$(SRC)
 DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
@@ -694,10 +698,6 @@ archi:
 	mv dot.ps Fig_graph_ml.ps
 	ps2pdf Fig_graph_ml.ps
 	rm -f Fig_graph_ml.ps
-
-visualhead:
-	./codemap -ss 1 -ft 0.5 -commitid HEAD
-
 
 ##############################################################################
 # Pad specific rules
