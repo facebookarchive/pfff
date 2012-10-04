@@ -39,6 +39,7 @@ type error = {
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
+  | DynamicCode
 
   | CfgError of Controlflow_build_php.error_kind
 

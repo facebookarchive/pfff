@@ -100,6 +100,7 @@ type error = {
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
+  | DynamicCode
 
   (* cfg, mostly DeadCode statements *)
   | CfgError of Controlflow_build_php.error_kind
@@ -198,6 +199,9 @@ let string_of_error_kind error_kind =
       "Ugly dynamic global declaration"
   | WeirdForeachNoIteratorVar ->
       "Weird, foreach with not a var as iterator"
+  | DynamicCode ->
+      "This code uses dynamic features of PHP which makes the code very hard
+to statically analyze. Please avoid using those features."
 
   | CfgError err ->
       Controlflow_build_php.string_of_error_kind err

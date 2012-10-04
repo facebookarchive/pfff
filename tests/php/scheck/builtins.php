@@ -10,13 +10,14 @@ function test_builtins() {
   //ERROR: undefined function
   undefined_function(1);
 
+  //ERROR: please avoid dynamic function
   eval(1);
   $x = 'foo';
-  // eval_var
+  //ERROR: please avoid dynamic code, eval_var()
   $$x = 1;
   $o = new TestDynField();
   $fld = 'afield';
-  // eval_var_field
+  // eval_var_field()
   $o->$fld = 1;
 
   clone 1;

@@ -137,6 +137,7 @@ let info_of_error_and_kind err =
 
   | UseOfUndefinedMember _ ->"eUseOfUndefinedMember"
   | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
+  | DynamicCode _ -> "eUglyGlobalDynamic"
   | WeirdForeachNoIteratorVar _ -> "eWeirdForeachNoIteratorVar"
 
   | CfgError (Controlflow_build_php.DeadCode node_kind) ->
