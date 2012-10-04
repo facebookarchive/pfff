@@ -38,6 +38,7 @@ let tok_pos_equal_refactor_pos tok refactoring =
 
 let refactor refactorings ast_with_tokens =
   refactorings +> List.iter (fun r ->
+    let was_modifed = ref false in
     let visitor = 
       match r.R.action with
       | R.AddReturnType str ->
@@ -50,6 +51,7 @@ let refactor refactorings ast_with_tokens =
                 in
                 tok_close_paren.PI.transfo <- 
                   PI.AddAfter (PI.AddStr (": " ^ str));
+                was_modifed := true;
               end;
               k def
             );
@@ -61,6 +63,7 @@ let refactor refactorings ast_with_tokens =
               if tok_pos_equal_refactor_pos tok r then begin
                 tok.PI.transfo <- 
                   PI.AddBefore (PI.AddStr (str ^ " "));
+                was_modifed := true;
               end;
               k p
             );
@@ -80,7 +83,8 @@ let refactor refactorings ast_with_tokens =
                   in
                   if tok_pos_equal_refactor_pos tok r then begin
                     tok.PI.transfo <- 
-                      PI.AddBefore (PI.AddStr ("?"))
+                      PI.AddBefore (PI.AddStr ("?"));
+                    was_modifed := true;
                   end
               );
               k p
@@ -98,6 +102,7 @@ let refactor refactorings ast_with_tokens =
                       if tok_pos_equal_refactor_pos tok r then begin
                         tok.PI.transfo <- 
                           PI.AddBefore (PI.AddStr (str ^ " "));
+                        was_modifed := true;
                       end;
                       k x
                   | xs ->
@@ -114,6 +119,11 @@ let refactor refactorings ast_with_tokens =
           }
     in
     let ast = Parse_php.program_of_program2 ast_with_tokens in
-    (V.mk_visitor visitor) (Program ast)
+    (V.mk_visitor visitor) (Program ast);
+    if not !was_modifed 
+    then begin 
+      pr2_gen r;
+      failwith ("refactoring didn't apply");
+    end
   );
   Unparse_php.string_of_program2_using_transfo ast_with_tokens
