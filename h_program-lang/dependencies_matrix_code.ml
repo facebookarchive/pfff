@@ -96,9 +96,10 @@ let rec projection2 hmemo n dm g =
   Common.memoized hmemo n (fun () ->
     match () with
     | _ when Hashtbl.mem dm.name_to_i n -> Some (Hashtbl.find dm.name_to_i n)
-    (* it's possible we operate on a slice of the original dsm in which case
+    (* It's possible we operate on a slice of the original dsm, for instance
+     * when we focus on a node, in which case
      * the projection of an edge can not project on anything
-     * in the current name_to_i hash
+     * in the current name_to_i hash.
      *)
     | _ when n = G.root -> None
     | _ -> projection2 hmemo (G.parent n g) dm g
@@ -322,19 +323,55 @@ let build_with_tree2 tree full_matrix_opt g =
           )
         end
       );
-  (* todo: the full matrix contains actually only the top k nodes,
-   * so the name_to_i may fail below. Need to compute ...
-   * go through all the edges under and reproject.
-   *)
   | Some fulldm ->
+      let hmemo = Hashtbl.create 101 in
+      let hdone = Hashtbl.create 101 in
       for i = 0 to n - 1 do
         for j = 0 to n - 1 do
           let n1 = Hashtbl.find dm.i_to_name i in
           let n2 = Hashtbl.find dm.i_to_name j in
 
-          let i' = Hashtbl.find fulldm.name_to_i n1 in
-          let j' = Hashtbl.find fulldm.name_to_i n2 in
-          dm.matrix.(i).(j) <- fulldm.matrix.(i').(j')
+          try 
+            let i' = Hashtbl.find fulldm.name_to_i n1 in
+            let j' = Hashtbl.find fulldm.name_to_i n2 in
+            dm.matrix.(i).(j) <- fulldm.matrix.(i').(j')
+          (* the full matrix contains only the top k nodes,
+           * so the name_to_i may fail ablove. In that case we
+           * need to compute and go through all the edges under
+           * and reproject.
+           *)
+          with Not_found ->
+            if Hashtbl.mem hdone (i, j) then ()
+            else begin
+              (* let's compute the whole line for n1 *)
+              if not (Hashtbl.mem fulldm.name_to_i n1) then begin
+                (* similar to the opti we do in explain_cell *)
+                pr2 ("computing row without full matrix help");
+                let children = G.all_children n1 g in
+                children +> List.iter (fun n1 ->
+                  let uses = G.succ n1 G.Use g in
+                  uses +> List.iter (fun n2 ->
+                    let j2 = projection hmemo n2 dm g in
+                    match j2 with
+                    | Some j2 ->
+                        if not (Hashtbl.mem hdone (i, j2)) then 
+                          dm.matrix.(i).(j2) <- dm.matrix.(i).(j2) + 1;
+                    | None -> 
+                        (* if in Focus mode, the edge might not project
+                         * on anything.
+                         *)
+                        ()
+                  )
+                );
+                for j = 0 to n-1 do
+                  Hashtbl.add hdone (i, j) true;
+                done
+              end;
+              (* let's compute the whole row for n2 *)
+              if not (Hashtbl.mem fulldm.name_to_i n2) then begin
+                (* pr2 ("computing column without full matrix help");*)
+              end;
+            end
         done
       done
   );
@@ -395,7 +432,7 @@ let build tree constraints_opt full_matrix_opt g =
 (* Building optimized matrix *)
 (*****************************************************************************)
 
-let threshold_nodes_full_matrix = 20000
+let threshold_nodes_full_matrix = 100
 
 (* todo: intelligent split of the tree? to avoid outliers? 
  * have a quota per subtree?
