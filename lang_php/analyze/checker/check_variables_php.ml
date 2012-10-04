@@ -641,8 +641,9 @@ and expr env = function
            *)
           expr env e1
 
-      | Call (Id("__builtin__eval_var", _), args) ->
+      | Call (Id(("__builtin__eval_var", _) as name), args) ->
           env.bailout := true;
+          E.warning (tok_of_name name) E.DynamicCode
 
       (* can we have another kind of lvalue? *)
       | e ->
@@ -704,11 +705,11 @@ and expr env = function
       ()
 
 
-  | Call (Id (("__builtin__eval" | "__builtin__eval_var" |
+  | Call (Id ((("__builtin__eval" | "__builtin__eval_var" |
                "extract" | "compact"
-       ), _), _args) ->
+       ), _) as name), _args) ->
       env.bailout := true;
-      (* todo? else display an error? weird argument to param_xxx func? *)
+      E.warning (tok_of_name name) E.DynamicCode
 
       (* facebook specific? should be a hook instead to visit_prog? *)
   | Call(Id("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),

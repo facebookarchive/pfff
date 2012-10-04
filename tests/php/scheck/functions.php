@@ -49,9 +49,9 @@ function func_foo_call_var_args() {
   func_var_args(1,2);
 
   // same for builtins
-  compact();
-  compact(1);
-  compact(1,2);
+  printf();
+  printf("%d", 1);
+  printf("%d%d", 1,2);
 }
 
 

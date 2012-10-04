@@ -188,13 +188,16 @@ function test_ok_undeclared_when_ref_parameter_method() {
 //*************************************************************************
 
 function test_eval_bailout() {
+  //this should not generate an "unused variable" error
   $used_var_in_eval = 42;
+  //ERROR: please avoid dynamic code
   eval('echo $used_var_in_eval;');
 }
 
 function test_eval_var_bailout() {
   $used_var_in_eval_field = 42;
   $x = 'used_var_in_eval_field';
+  //ERROR: please avoid dynamic code
   echo $$x;
 }
 
@@ -202,6 +205,7 @@ function ugly() {
   return array('extracted_field' => 2);
 }
 function test_bailout_extract() {
+  //ERROR: please avoid dynamic code
   extract(ugly());
 
   // this is ok ...
@@ -218,6 +222,7 @@ function test_bailout_compact() {
   //should not generate error
   $compacted = 1;
   // this function is horrible. it's the opposite of extract()
+  //ERROR: please avoid dynamic code
   $arr = compact('compacted');
 
   return $arr;
