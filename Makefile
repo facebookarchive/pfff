@@ -135,17 +135,12 @@ PHYLOMELDIR=external/phylomel/src
 PHYLOMELINCLUDE=external/phylomel/src
 PHYLOMELCMA=external/phylomel/src/lib.cma
 
-
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
 endif
 
 ifeq ($(FEATURE_VISUAL),1)
 VISUALDIRS=code_map code_graph
-endif
-
-ifeq ($(FEATURE_FACEBOOK),1)
-FACEBOOKDIR=facebook
 endif
 
 #------------------------------------------------------------------------------
@@ -285,8 +280,7 @@ MAKESUBDIRS=commons \
   lang_css/parsing \
   lang_web/parsing \
   lang_text \
-  $(VISUALDIRS) \
-  $(FACEBOOKDIR)
+  $(VISUALDIRS)
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
@@ -667,6 +661,7 @@ visualhead:
 	./codemap -ss 1 -ft 0.5 -commitid HEAD
 
 tests:
+	$(MAKE) rec && $(MAKE) pfff_test
 	./pfff_test -verbose all
 test: 
 	make tests
@@ -676,6 +671,13 @@ push:
 pull:
 	git pull
 	cd facebook; git pull
+
+fb:
+	$(MAKE)
+	$(MAKE) -C facebook
+fb.opt:
+	$(MAKE) opt
+	$(MAKE) opt -C facebook
 
 #refactoring:
 # git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
