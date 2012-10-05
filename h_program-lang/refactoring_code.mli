@@ -6,6 +6,7 @@ type refactoring = {
   action: refactoring_kind;
 }
   and refactoring_kind =
+    | SplitMembers
     | AddReturnType of string
     | AddTypeHintParameter of string
     | AddTypeMember of string

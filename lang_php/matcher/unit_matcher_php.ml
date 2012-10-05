@@ -315,6 +315,27 @@ let refactoring_unittest =
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nfunction foo(): int { $x = function() { }; }";
   );
+  "split members" >:: (fun () ->
+    let file_content = "
+class X {
+  private $x, $y, $z = 1;
+}" in
+    let refactoring = { Refactoring_code.
+          file = ""; line = 4; col = 10;
+          action = Refactoring_code.SplitMembers;
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php
+
+class X {
+  private $x;
+  private $y;
+  private $z = 1;
+}"
+  );
 
 
 ]

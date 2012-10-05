@@ -32,6 +32,13 @@ let tok_pos_equal_refactor_pos tok refactoring =
   Ast.line_of_info tok = refactoring.R.line &&
   Ast.col_of_info tok = refactoring.R.col
 
+let string_of_class_var_modifier modifiers =
+  match modifiers with
+  | NoModifiers _ -> "var"
+  | VModifiers xs -> xs +> List.map (fun (modifier, tok) -> 
+      Ast.str_of_info tok) +> Common.join " "
+                      
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -117,7 +124,7 @@ let refactor refactorings ast_with_tokens =
                       xs +> Ast.uncomma +> List.iter (fun (dname, _) ->
                       let tok = Ast.info_of_dname dname in
                       if tok_pos_equal_refactor_pos tok r then begin
-                        failwith "TODO: need to split the members"
+                        failwith "Do a SPLIT_MEMBERS refactoring first"
                       end;
                       );
                       k x
@@ -125,6 +132,46 @@ let refactor refactorings ast_with_tokens =
               | _ -> k x
             );
           }
+      | R.SplitMembers ->
+          { V.default_visitor with
+            V.kclass_stmt = (fun (k, _) x ->
+              match x with
+              (* private $x, $y; *)
+              | ClassVariables (modifiers, _typ_opt, xs, semicolon) ->
+                  (match xs with
+                  (* $x *)
+                  | Left (dname, affect_opt)::rest ->
+                      let tok = Ast.info_of_dname dname in
+                      if tok_pos_equal_refactor_pos tok r then begin
+
+                        let rec aux rest =
+                          match rest with
+                          (* , $y -> ;\n private $y *)
+                          | Right comma::Left (dname, affect_opt)::rest ->
+                              (* todo: look at col of modifiers? *)
+                              let indent = "  " in
+                              let str_modifiers =
+                                ";\n" ^ indent ^
+                                string_of_class_var_modifier modifiers ^ " "
+                              in
+                              comma.PI.transfo <-
+                                PI.Replace (PI.AddStr str_modifiers);
+                              aux rest
+                          | [] -> ()
+                          | _ -> raise Impossible
+                        in
+                        aux rest;
+                        was_modifed := true;
+                      end;
+                      k x
+                  | _ -> raise Impossible
+                  )
+              | (UseTrait (_, _, _)|XhpDecl _|Method _
+                |ClassConstants (_, _, _)
+                ) -> k x
+            );
+          }
+
     in
     let ast = Parse_php.program_of_program2 ast_with_tokens in
     (V.mk_visitor visitor) (Program ast);
