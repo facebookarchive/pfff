@@ -25,7 +25,7 @@ val build:
 val build_full_matrix:
   Graph_code.graph -> dm
 
-type projection_cache = (Graph_code.node, int option) Hashtbl.t
+type projection_cache = (Graph_code.node, Graph_code.node option) Hashtbl.t
 
 val explain_cell_list_use_edges: 
   projection_cache ->

@@ -75,7 +75,7 @@ type partition_constraints =
   (string, string list) Hashtbl.t
 
 (* optimization *)
-type projection_cache = (Graph_code.node, int option) Hashtbl.t
+type projection_cache = (Graph_code.node, Graph_code.node option) Hashtbl.t
 
 (*****************************************************************************)
 (* Globals *)
@@ -95,7 +95,7 @@ let rec projection2 hmemo n dm g =
   (* todo: profile this? optimize? *)
   Common.memoized hmemo n (fun () ->
     match () with
-    | _ when Hashtbl.mem dm.name_to_i n -> Some (Hashtbl.find dm.name_to_i n)
+    | _ when Hashtbl.mem dm.name_to_i n -> Some n
     (* It's possible we operate on a slice of the original dsm, for instance
      * when we focus on a node, in which case
      * the projection of an edge can not project on anything
@@ -106,6 +106,9 @@ let rec projection2 hmemo n dm g =
   )
 let projection a b c d =
   Common.profile_code "DM.projection" (fun () -> projection2 a b c d)
+
+let projection_index a b dm d = 
+  projection a b dm d +> Common.fmap (fun n -> Hashtbl.find dm.name_to_i n)
 
 let rec final_nodes_of_tree tree =
   match tree with
@@ -283,7 +286,7 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
 (* Building the matrix *)
 (*****************************************************************************)
 
-let build_with_tree2 tree full_matrix_opt g =
+let build_with_tree2 tree hmemo full_matrix_opt g =
 
   (* todo? if expand do we create a line for the expanded? if no
    * then it will have no projection so the test below is not enough.
@@ -310,12 +313,10 @@ let build_with_tree2 tree full_matrix_opt g =
   in
   (match full_matrix_opt with
   | None ->
-      let hmemo = Hashtbl.create 101 in
-  
       g +> G.iter_use_edges (fun n1 n2 ->
         if n1 <> G.root then begin
-          let i = projection hmemo n1 dm g in
-          let j = projection hmemo n2 dm g in
+          let i = projection_index hmemo n1 dm g in
+          let j = projection_index hmemo n2 dm g in
           (match i, j with
           | Some i, Some j ->
               dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1
@@ -324,7 +325,6 @@ let build_with_tree2 tree full_matrix_opt g =
         end
       );
   | Some fulldm ->
-      let hmemo = Hashtbl.create 101 in
       let hdone = Hashtbl.create 101 in
       for i = 0 to n - 1 do
         for j = 0 to n - 1 do
@@ -351,7 +351,7 @@ let build_with_tree2 tree full_matrix_opt g =
                 children +> List.iter (fun n1 ->
                   let uses = G.succ n1 G.Use g in
                   uses +> List.iter (fun n2 ->
-                    let j2 = projection hmemo n2 dm g in
+                    let j2 = projection_index hmemo n2 dm g in
                     match j2 with
                     | Some j2 ->
                         if not (Hashtbl.mem hdone (i, j2)) then 
@@ -377,14 +377,17 @@ let build_with_tree2 tree full_matrix_opt g =
   );
   dm
 
-let build_with_tree a b c = 
-  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c)
+let build_with_tree a b c d = 
+  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c d)
 
 
-(* opti: we redo many times the iteration on all edges ... for
- * different configuration. Can factorize work ?
- *)
 let build tree constraints_opt full_matrix_opt g =
+
+  (* we call build_with_tree two times, with different order of nodes,
+   * which does some redundant computation, but the projection at
+   * least can be factorized by using the same projection_cache
+   *)
+  let (hmemo: projection_cache) = Hashtbl.create 101 in
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -406,7 +409,7 @@ let build tree constraints_opt full_matrix_opt g =
           in
         
           (* first draft *)
-          let dm = build_with_tree config_depth1 full_matrix_opt g in
+          let dm = build_with_tree config_depth1 hmemo full_matrix_opt g in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
@@ -426,7 +429,7 @@ let build tree constraints_opt full_matrix_opt g =
   in
   
   let ordered_config = aux tree in
-  build_with_tree ordered_config full_matrix_opt g
+  build_with_tree ordered_config hmemo full_matrix_opt g
 
 (*****************************************************************************)
 (* Building optimized matrix *)
@@ -513,8 +516,8 @@ let build_full_matrix2 g =
   Common_extra.execute_and_show_progress2 ~show:!verbose n (fun k ->
    g +> G.iter_use_edges (fun n1 n2 ->
     k();
-    let n1 = projection hmemo_proj n1 dm g in
-    let n2 = projection hmemo_proj n2 dm g in
+    let n1 = projection_index hmemo_proj n1 dm g in
+    let n2 = projection_index hmemo_proj n2 dm g in
     (match n1, n2 with
     | Some n1, Some n2 ->
         let n1 = Hashtbl.find dm.i_to_name n1 in
@@ -546,8 +549,8 @@ let explain_cell_list_use_edges2 hmemo (i, j) dm g =
     uses +> List.iter (fun n2 ->
 
       if n1 <> G.root then begin
-        let i2 = projection hmemo n1 dm g in
-        let j2 = projection hmemo n2 dm g in
+        let i2 = projection_index hmemo n1 dm g in
+        let j2 = projection_index hmemo n2 dm g in
         (match i2, j2 with
         | Some i2, Some j2 ->
             if i2 = i && j2 = j 
