@@ -247,7 +247,7 @@ let spatch_unittest = [
 (*****************************************************************************)
 let refactoring_unittest = 
   "refactoring php" >::: [
-    " adding return type" >:: (fun () ->
+    "adding return type" >:: (fun () ->
     let file_content = "function foo() { }" in
     let refactoring = { Refactoring_code.
           file = "";
@@ -287,7 +287,7 @@ let refactoring_unittest =
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nclass X { private int $x; }";
   );
-  "optinize type" >:: (fun () ->
+  "optionize type" >:: (fun () ->
     let file_content = "function foo(int $x) { }" in
     let refactoring = { Refactoring_code.
           file = ""; line = 2; col = 13;
@@ -298,7 +298,24 @@ let refactoring_unittest =
     let (ast2, _stat) = Parse_php.parse file in
     let res = Refactoring_code_php.refactor [refactoring] ast2 in
     assert_equal res "<?php\nfunction foo(?int $x) { }";
-  )
+  );
+
+  (* this used to raise a NoOriginTok exn because the name of the lambda
+   * is a fakeInfo and it was used in a line/col comparison
+   *)
+  "adding return type and closure" >:: (fun () ->
+    let file_content = "function foo() { $x = function() { }; }" in
+    let refactoring = { Refactoring_code.
+          file = ""; line = 2; col = 9;
+          action = Refactoring_code.AddReturnType "int";
+    }
+    in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast2, _stat) = Parse_php.parse file in
+    let res = Refactoring_code_php.refactor [refactoring] ast2 in
+    assert_equal res "<?php\nfunction foo(): int { }";
+  );
+
 
 ]
 

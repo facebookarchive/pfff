@@ -44,16 +44,24 @@ let refactor refactorings ast_with_tokens =
       | R.AddReturnType str ->
           { V.default_visitor with
             V.kfunc_def = (fun (k, _) def ->
-              let tok = Ast.info_of_name def.f_name in
-              if tok_pos_equal_refactor_pos tok r then begin
-                let tok_close_paren = 
-                  let (a,b,c) = def.f_params in c
-                in
-                tok_close_paren.PI.transfo <- 
-                  PI.AddAfter (PI.AddStr (": " ^ str));
-                was_modifed := true;
-              end;
-              k def
+              (match def.f_type with
+              | FunctionRegular | MethodRegular | MethodAbstract ->
+                  let tok = Ast.info_of_name def.f_name in
+                  if tok_pos_equal_refactor_pos tok r then begin
+                    let tok_close_paren = 
+                      let (a,b,c) = def.f_params in c
+                    in
+                    tok_close_paren.PI.transfo <- 
+                      PI.AddAfter (PI.AddStr (": " ^ str));
+                    was_modifed := true;
+                  end;
+                  k def
+              (* lambda f_name are an abstract token and so don't have
+               * any line/col position information for now
+               *)
+              | FunctionLambda _ ->
+                  k def
+              )
             );
           }
       | R.AddTypeHintParameter str ->
