@@ -53,11 +53,15 @@ module Ast = Ast_java
 type env = {
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
+
   imported: (bool * qualified_ident) list;
   params_locals: string list;
   type_params_local: string list;
+
   phase: phase;
   g: Graph_code.graph;
+
+  (* skip_edges *)
 }
 
 (* todo: put in graph_code.ml? *)
@@ -147,6 +151,10 @@ let rec add_use_edge env (name, kind) =
       )
   )
 
+(*****************************************************************************)
+(* Package lookup heuristic (deprecated) *)
+(*****************************************************************************)
+
 let looks_like_package_name_part s =
   s =~ "[a-z]"
 
@@ -187,14 +195,20 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
 (* Class/Package Lookup *)
 (*****************************************************************************)
 
-let lookup env long_ident =
+(* Look for entity (package/class/static-method) in list of imported
+ * packages or in global scope. Return fully qualified entity.
+ *)
+let (lookup: env -> Ast.qualified_ident -> 
+      (Ast.qualified_ident * Graph_code.node) option) =
   raise Todo
 
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-
-let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
+(* Note that there is no ~dupe, Java code use packages and fully qualified
+ * entity so there is very rarely name conflicts.
+ *)
+let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 
   let env = {
     current =
@@ -472,7 +486,6 @@ let build ?(verbose=true) dir skip_list =
     | _ -> None
   ) +> Common.hash_of_list 
   in
-  let dupes = Hashtbl.create 101 in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
@@ -481,14 +494,9 @@ let build ?(verbose=true) dir skip_list =
       k();
       let readable = Common.filename_without_leading_path root file in
       let ast = parse ~show_parse_error:true file in
-     extract_defs_uses ~phase:Defs ~g ~dupes ~ast ~readable 
+     extract_defs_uses ~phase:Defs ~g ~ast ~readable 
        ~lookup_fails ~skip_edges;
     ));
-  dupes +> Common.hashset_to_list +> List.iter (fun n ->
-    pr2 (spf "DUPE: %s" (G.string_of_node n));
-    g +> G.remove_edge (G.parent n g, n) G.Has;
-    g +> G.add_edge (G.dupe, n) G.Has;
-  );
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
@@ -497,7 +505,7 @@ let build ?(verbose=true) dir skip_list =
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse ~show_parse_error:false file in
-     extract_defs_uses ~phase:Uses ~g ~dupes ~ast ~readable
+     extract_defs_uses ~phase:Uses ~g ~ast ~readable
        ~lookup_fails ~skip_edges;
    ));
   g
