@@ -49,8 +49,8 @@ let color_of_node (_, kind) =
   | E.Macro -> "pink1"
   | E.TopStmts -> raise Todo
 
-  | E.Method _ -> raise Todo
-  | E.Field -> raise Todo
+  | E.Method _ -> "gold3"
+  | E.Field -> "MediumPurple1"
   | E.ClassConstant -> raise Todo
 
   | E.Other s -> raise Todo
@@ -61,6 +61,9 @@ let color_of_node (_, kind) =
 let txt_of_node (s, kind) = 
   match kind with
   | E.Dir | E.File -> Common.basename s
+  | E.Method _ | E.Field | E.Package | E.Class _ ->
+      let xs = Common.split "[.]" s in
+      Common.list_last xs
   | _ -> s
 
 (* todo: style/font_of_node_kind? so put in bold directories *)
