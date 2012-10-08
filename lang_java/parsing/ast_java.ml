@@ -126,7 +126,7 @@ and stmt =
   | Block of stmts
   | Expr of expr
 
-  | If of expr * stmt * stmt option
+  | If of expr * stmt * stmt
   | Switch of expr * (cases * stmts) list
 
   | While of expr * stmt

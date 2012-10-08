@@ -672,14 +672,14 @@ statement_expression:
 
 /* 14.9 */
 if_then_statement: IF LP expression RP statement
-   { If ($3, $5, None) }
+   { If ($3, $5, Empty) }
 
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
-   { If ($3, $5, Some $7) }
+   { If ($3, $5, $7) }
 
 if_then_else_statement_no_short_if: 
  IF LP expression RP statement_no_short_if ELSE statement_no_short_if
-   { If ($3, $5, Some $7) }
+   { If ($3, $5, $7) }
 
 
 /* 14.10 */
