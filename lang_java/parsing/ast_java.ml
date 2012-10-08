@@ -263,7 +263,7 @@ type compilation_unit = {
    * The bool is for static import (javaext:)
    *)
   imports: (bool * qualified_ident) list;
-  (* todo? necessarily a Class first? *)
+  (* todo? necessarily a (unique) class first? *)
   decls: decls;
 }
 

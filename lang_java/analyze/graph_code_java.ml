@@ -205,7 +205,12 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~lookup_fails ~skip_ed
       | Some long_ident -> long_ident
       );
     params_locals = [];
-    imported = ast.imports;
+    imported = (ast.imports ++
+      (* we also automatically import the current package *)
+      (match ast.package with
+      | None -> []
+      | Some long_ident -> [false, long_ident ++ ["*", Ast.fakeInfo "*"]]
+      ));
     g;
   }
   in
