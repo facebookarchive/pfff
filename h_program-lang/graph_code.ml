@@ -123,9 +123,15 @@ let create () =
 
 let add_node n g =
   if G.has_node n g.has
-  then failwith "node already present";
+  then begin 
+    pr2_gen n;
+    failwith "node already present";
+  end;
   if G.has_node n g.use
-  then failwith "node already present";
+  then begin 
+    pr2_gen n;
+    failwith "node already present";
+  end;
 
   G.add_vertex_if_not_present n g.has;
   G.add_vertex_if_not_present n g.use;
