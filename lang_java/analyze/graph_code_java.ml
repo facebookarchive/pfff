@@ -30,13 +30,15 @@ module Ast = Ast_java
  * choices:
  *  - package-based or dir-based schema? Seems simpler to have
  *    to use packages.
- * 
+ *  - merge overloaded methods? yes, alternative is to mangle the
+ *    name of the method with the type (a la C++ linker)
  * 
  * schema:
  *   Package -> SubPackage -> Class -> Method
  *                                  -> Field
  *                                  -> Constant (static final)
  *                                  -> SubClass -> ...
+ *                                  TODO enum
  *   (when have no package)
  *   Dir -> Subdir -> File 
  * 
@@ -61,7 +63,7 @@ type env = {
   phase: phase;
   g: Graph_code.graph;
 
-  (* skip_edges *)
+  (* less: skip_edges *)
 }
 
 (* todo: put in graph_code.ml? *)
@@ -268,7 +270,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
   (* imports is not the only way to use external packages, one can
    * also just qualify the classname or static method so we need
    * to visit the AST and lookup classnames (possibly using information
-   * from the import to know where to look for first.
+   * from the import to know where to look for first).
    *)
   decls env ast.decls
 
@@ -356,7 +358,7 @@ and field_decl env def =
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
-(* mostly boilerplate *)
+(* mostly boilerplate, control constructs don't introduce entities *)
 and stmt env = function
   | Empty -> ()
   | Block xs -> stmts env xs
@@ -409,7 +411,7 @@ and stmts env xs =
           | LocalVar fld -> 
               let str = Ast.unwrap fld.f_var.v_name in
               { env with params_locals = str::env.params_locals }
-          (* todo: LocalClass => also add? *)
+          (* also add LocalClass case? no, 'lookup env ...' handles that *)
           | _ -> env
         in
         aux env xs
@@ -436,6 +438,7 @@ and catch env (v, st) =
 and expr env = function
   (* main dependency source! *)
   | Name n -> ()
+
   | _ -> ()
 
 and exprs env xs = List.iter (expr env) xs
