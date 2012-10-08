@@ -253,8 +253,7 @@ and decl env = function
   | Class def -> class_decl env def
   | Method def -> method_decl env def
   | Field def -> field_decl env def
-  | Init (_is_static, st) ->
-      stmt env st
+  | Init (_is_static, st) -> stmt env st
 
 and decls env xs = List.iter (decl env) xs
 
@@ -294,9 +293,12 @@ and stmt env = function
   | For (x, st) ->
       for_control env x;
       stmt env st;
+  (* could have an entity and dependency ... but it's intra procedural
+   * so not that useful
+   *)
+  | Label (_id, st) -> stmt env st
   | Break _idopt | Continue _idopt -> ()
   | Return eopt -> exprs env (Common.option_to_list eopt)
-  | Label (_id, st) -> stmt env st
   | Sync (e, st) ->
       expr env e;
       stmt env st;
@@ -345,6 +347,7 @@ and catch env (v, st) =
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env = function
+  (* main dependency source! *)
   | Name n -> ()
   | _ -> ()
 
@@ -367,7 +370,7 @@ and typ env x =
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
-and var env v = 
+and var env v =
   typ env v.v_type;
   ()
 
