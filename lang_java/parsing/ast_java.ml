@@ -310,6 +310,10 @@ let fakeInfo ?(next_to=None) str = { PI.
 let ast_todo = []
 let ast_todo2 = ()
 
+let is_final_static xs =
+  let xs = List.map fst xs in
+  List.mem Final xs && List.mem Static xs
+
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
