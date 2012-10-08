@@ -201,7 +201,7 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
  * packages or in global scope. Return fully qualified entity.
  *)
 let (lookup: env -> Ast.qualified_ident -> 
-      (Ast.qualified_ident * Graph_code.node) option) =
+      (Ast.qualified_ident * Graph_code.node) option) = fun env xs ->
   raise Todo
 
 (*****************************************************************************)
