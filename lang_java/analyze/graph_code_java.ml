@@ -48,17 +48,19 @@ module Ast = Ast_java
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* for the extract_uses visitor *)
+(* for the extract_defs_uses visitor *)
 type env = {
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
   imported: (bool * qualified_ident) list;
   params_locals: string list;
+  type_params_local: string list;
+  phase: phase;
   g: Graph_code.graph;
 }
 
 (* todo: put in graph_code.ml? *)
-type phase = Defs | Uses
+and phase = Defs | Uses
 
 (*****************************************************************************)
 (* Helpers *)
@@ -201,10 +203,11 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~lookup_fails ~skip_ed
       );
     current_qualifier =
       (match ast.package with
-      | None -> []
+      | None -> [let s = "__" ^ readable ^ "__" in s, Ast.fakeInfo s]
       | Some long_ident -> long_ident
       );
     params_locals = [];
+    type_params_local = [];
     imported = (ast.imports ++
       (* we also automatically import the current package *)
       (match ast.package with
@@ -212,6 +215,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~lookup_fails ~skip_ed
       | Some long_ident -> [false, long_ident ++ ["*", Ast.fakeInfo "*"]]
       ));
     g;
+    phase;
   }
   in
 
@@ -226,9 +230,11 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~lookup_fails ~skip_ed
 
     | Some long_ident ->
         create_intermediate_packages_if_not_present g G.root long_ident;
+        (* old:
         let str = str_of_qualified_ident long_ident in
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((str, E.Package), (readable, E.File)) G.Has;
+        *)
   end;
 
   if phase = Uses then begin
@@ -263,13 +269,74 @@ and decl env = function
 and decls env xs = List.iter (decl env) xs
 
 and class_decl env def =
-  raise Todo
+  let full_ident = env.current_qualifier ++ [def.cl_name] in
+  let full_str = str_of_qualified_ident full_ident in
+  if env.phase = Defs then begin
+    (* less: def.c_type? *)
+    env.g +> G.add_node (full_str, E.Class E.RegularClass);
+    env.g +> G.add_edge (env.current, (full_str, E.Class E.RegularClass)) G.Has;
+  end;
+  let env = { env with
+    current = (full_str, E.Class E.RegularClass);
+    current_qualifier = full_ident;
+    params_locals = [];
+    (* TODO *)
+    type_params_local = [];
+  } 
+  in
+  (* todo: cl_extends, cl_implements Use *)
+  decls env def.cl_body
 
+(* Java allow some forms of overloading, so the same method name can be
+ * used multiple times.
+ *)
 and method_decl env def =
-  raise Todo
+
+  let full_ident = env.current_qualifier ++ [def.m_var.v_name] in
+  let full_str = str_of_qualified_ident full_ident in
+  if env.phase = Defs then begin
+    (* less: static? *)
+    (* todo: for now we just collapse all methods with same name together *)
+    if G.has_node (full_str, E.Method E.RegularMethod) env.g
+    then ()
+    else begin
+      env.g +> G.add_node (full_str, E.Method E.RegularMethod);
+      env.g +> G.add_edge (env.current, (full_str, E.Method E.RegularMethod)) G.Has;
+    end
+  end;
+  let env = { env with
+    current = (full_str, E.Method E.RegularMethod);
+    current_qualifier = full_ident;
+    (* TODO *)
+    params_locals = [];
+    type_params_local = [];
+  } 
+  in
+  var env def.m_var;
+  List.iter (var env) def.m_formals;
+  (* todo: m_throws *)
+  stmt env def.m_body
+
 
 and field_decl env def =
-  raise Todo
+  let full_ident = env.current_qualifier ++ [def.f_var.v_name] in
+  let full_str = str_of_qualified_ident full_ident in
+  let kind = 
+    if Ast.is_final_static def.f_var.v_mods
+    then E.Constant
+    else E.Field
+  in
+  if env.phase = Defs then begin
+    (* less: static? *)
+    env.g +> G.add_node (full_str, kind);
+    env.g +> G.add_edge (env.current, (full_str, kind)) G.Has;
+  end;
+  let env = { env with
+    current = (full_str, kind);
+    current_qualifier = full_ident;
+  } 
+  in
+  field env def
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
