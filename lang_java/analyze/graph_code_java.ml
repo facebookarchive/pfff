@@ -33,13 +33,14 @@ module Ast = Ast_java
  * 
  * 
  * schema:
- *   Package -> Package.SubPackage -> Class -> Subclass -> Method
- *                                                      -> Field
- *                                                      -> ...
+ *   Package -> SubPackage -> Class -> Method
+ *                                  -> Field
+ *                                  -> Constant (static final)
+ *                                  -> SubClass -> ...
  *   (when have no package)
  *   Dir -> Subdir -> File 
  * 
- *   PB -> Not_Found -> Package -> Package.SubPackage -> ...
+ *   PB -> Not_Found -> Package -> SubPackage -> ...
  * 
  * todo: 
  *  - adjust graph to remove intermediate singleton? com.xxx?
@@ -499,5 +500,4 @@ let build ?(verbose=true) dir skip_list =
      extract_defs_uses ~phase:Uses ~g ~dupes ~ast ~readable
        ~lookup_fails ~skip_edges;
    ));
-
   g
