@@ -88,7 +88,10 @@ type name = (type_argument list * ident) list1
  * the use of type ... and ... below
  *)
 type expr =
-  (* include 'this' and 'super' special names *)
+  (* Include 'this' and 'super' special names. Name refers to statically
+   * computable entities such as Package1.subpackage.Class.
+   * Field or method access are using Dot, see below.
+   *)
   | Name of name 
 
   (* todo: split in constant type with Int | Float | String | Char | Bool *)
@@ -98,14 +101,15 @@ type expr =
   | ClassLiteral of typ
 
   | NewClass of typ * exprs * decls option
+  | NewArray of typ * exprs * int * init option
   (* ?? *)
   | NewQualifiedClass of expr * ident * exprs * decls option
-  | NewArray of typ * exprs * int * init option
 
   | Call of expr * exprs
-  (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y) ?
-   * If it's used as a field access, then it's a Dot (Name [X], y)
-   * but if it's used as a method call it will be Name [X;y]
+  (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y)?
+   * The static part is a Name and the more dynamic part a Dot.
+   * So variable.field or variable.method will be parsed as
+   * Dot (Name [variable], field|method).
    *)
   | Dot of expr * ident
   | ArrayAccess of expr * expr
