@@ -321,6 +321,42 @@ and vof_decl =
       let v1 = Ocaml.vof_bool v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Init", [ v1; v2 ]))
+  | Enum v1 -> let v1 = vof_enum_decl v1 in Ocaml.VSum (("Enum", [ v1 ]))
+      
+
+and  vof_enum_decl {
+                  en_name = v_en_name;
+                  en_mods = v_en_mods;
+                  en_impls = v_en_impls;
+                  en_body = v_en_body
+                } =
+  let bnds = [] in
+  let arg =
+    match v_en_body with
+    | (v1, v2) ->
+        let v1 = Ocaml.vof_list vof_enum_constant v1
+        and v2 = vof_decls v2
+        in Ocaml.VTuple [ v1; v2 ] in
+  let bnd = ("en_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_ref_type v_en_impls in
+  let bnd = ("en_impls", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_modifiers v_en_mods in
+  let bnd = ("en_mods", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_en_name in
+  let bnd = ("en_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_enum_constant =
+  function
+  | EnumSimple v1 ->
+      let v1 = vof_ident v1 in Ocaml.VSum (("EnumSimple", [ v1 ]))
+  | EnumComplex ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_exprs v2
+      in Ocaml.VSum (("EnumComplex", [ v1; v2 ]))
+
+
 and vof_decls v = Ocaml.vof_list vof_decl v
   
 let vof_compilation_unit {

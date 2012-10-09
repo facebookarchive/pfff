@@ -22,5 +22,3 @@ class Enum {
      None
    }
 }
-
-

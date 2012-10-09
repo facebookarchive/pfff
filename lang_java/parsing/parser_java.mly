@@ -263,7 +263,7 @@ import_declaration:
 type_declaration:
  | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
- | enum_declaration            { ast_todo }
+ | enum_declaration            { [Enum $1] }
  | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
@@ -912,7 +912,7 @@ class_member_declaration:
 
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Class $1] }
- | enum_declaration { ast_todo }
+ | enum_declaration { [Enum $1] }
  | annotation_type_declaration { ast_todo }
 
  | SM  { [] }
@@ -1062,8 +1062,8 @@ interface_member_declaration:
 
  | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
+ | enum_declaration       { [Enum $1] }
  | annotation_type_declaration { ast_todo }
- | enum_declaration  { ast_todo }
  | SM  { [] }
 
 /* 9.3 */
@@ -1092,17 +1092,17 @@ interface_method_declator_rest:
 /*(*2 Enum *)*/
 /*(*----------------------------*)*/
 enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body 
- { ast_todo }
+   { { en_name = $3; en_mods = $1; en_impls = $4; en_body = $5; } }
 
 /*(* cant factorize in enum_constants_opt comma_opt .... *)*/
 enum_body: 
- | LC                   enum_body_declarations_opt RC { }
- | LC enum_constants    enum_body_declarations_opt RC { }
- | LC enum_constants CM enum_body_declarations_opt RC { }
+ | LC                   enum_body_declarations_opt RC { [], $2 }
+ | LC enum_constants    enum_body_declarations_opt RC { $2, $3 }
+ | LC enum_constants CM enum_body_declarations_opt RC { $2, $4 }
 
 enum_constant:
- | identifier { }
- | identifier LP argument_list_opt RP { }
+ | identifier                         { EnumSimple $1 }
+ | identifier LP argument_list_opt RP { EnumComplex ($1, $3) }
 
 enum_body_declarations: SM class_body_declarations_opt { $2 }
 

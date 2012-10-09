@@ -23,7 +23,6 @@ module PI = Parse_info
  * 
  * TODO: 
  *  - support annotations
- *  - support enums
  *  - etc.
  *)
 
@@ -73,6 +72,25 @@ type type_parameter =
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
+(* Modifiers *)
+(* ------------------------------------------------------------------------- *)
+
+type modifier =
+  | Public   | Protected   | Private
+  | Abstract
+  | Static 
+  | Final
+  | StrictFP
+  | Transient   | Volatile
+  | Synchronized
+  | Native
+
+  (* TODO *)
+  | Annotation
+
+ and modifiers = modifier wrap list
+
+(* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
@@ -104,12 +122,13 @@ type expr =
   (* Xxx.class *)
   | ClassLiteral of typ
 
-  | NewClass of typ * exprs * decls option
-  | NewArray of typ * exprs * int * init option
+  (* the decls option is for anon classes *)
+  | NewClass of typ * arguments * decls option
+  | NewArray of typ * arguments * int * init option
   (* ?? *)
-  | NewQualifiedClass of expr * ident * exprs * decls option
+  | NewQualifiedClass of expr * ident * arguments * decls option
 
-  | Call of expr * exprs
+  | Call of expr * arguments
   (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y)?
    * The static part is a Name and the more dynamic part a Dot.
    * So variable.field or variable.method will be parsed as
@@ -127,10 +146,10 @@ type expr =
   | InstanceOf of expr * ref_type
 
   | Conditional of expr * expr * expr
-  (* ugly java, as C, assignement is an expression not a statement :( *)
+  (* ugly java, like in C assignement is an expression not a statement :( *)
   | Assignment of expr * op * expr
 
-and exprs = expr list
+and arguments = expr list
 
 and op = string
 
@@ -196,25 +215,10 @@ and var = {
   v_type: typ;
 }
 
-and modifier =
-  | Public   | Protected   | Private
-  | Abstract
-  | Static 
-  | Final
-  | StrictFP
-  | Transient   | Volatile
-  | Synchronized
-  | Native
-
-  (* TODO *)
-  | Annotation
-
- and modifiers = modifier wrap list
-
 and vars = var list
 
 (* ------------------------------------------------------------------------- *)
-(* Method, field *)
+(* Methods, fields, enums *)
 (* ------------------------------------------------------------------------- *)
 
 (* method or constructor *)
@@ -236,10 +240,20 @@ and field = {
   f_init: init option 
 }
 
-(* less: could merge with expr *)
-and init =
-  | ExprInit of expr
-  | ArrayInit of init list
+  (* less: could merge with expr *)
+  and init =
+    | ExprInit of expr
+    | ArrayInit of init list
+
+and enum_decl = {
+  en_name: ident;
+  en_mods: modifiers;
+  en_impls: ref_type list;
+  en_body: enum_constant list * decls;
+}
+ and enum_constant = 
+   | EnumSimple of ident
+   | EnumComplex of ident * arguments
 
 (* ------------------------------------------------------------------------- *)
 (* Class/Interface *)

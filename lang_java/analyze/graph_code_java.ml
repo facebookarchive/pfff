@@ -387,6 +387,8 @@ and decl env = function
       } 
       in
       stmt env st
+  | Enum def ->
+      raise Todo
 
 and decls env xs = List.iter (decl env) xs
 
