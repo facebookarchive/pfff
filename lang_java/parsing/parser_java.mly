@@ -407,13 +407,20 @@ array_access:
 /* 15.12 */
 method_invocation:
  | name LP argument_list_opt RP  
-        { Call ((Name (name $1)), $3) }
+        { 
+          match List.rev $1 with
+          | (Id x)::xs ->
+              Call (Dot (Name (name (List.rev xs)), x), $3)
+          | _ -> 
+              pr2_gen $1;
+              raise Impossible
+        }
  | primary DOT identifier LP argument_list_opt RP
 	{ Call ((Dot ($1, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name [super_ident $1; [], $3  ]), $5) }
+	{ Call ((Dot (Name [super_ident $1], $3)), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Name (name $1 ++ [super_ident $3; [], $5])), $7)}
+	{ Call (Dot (Name (name $1 ++ [super_ident $3]), $5), $7)}
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
