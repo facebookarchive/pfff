@@ -172,8 +172,13 @@ and case =
   | Default
 and cases = case list
 
-(* TODO *)
-and for_control = unit
+and for_control =
+  | ForClassic of for_init * expr list * expr list
+  (* TODO *)
+  | Foreach of unit
+  and for_init =
+    | ForInitVars of field list
+    | ForInitExprs of expr list
 
 and catch = var * stmt
 and catches = catch list

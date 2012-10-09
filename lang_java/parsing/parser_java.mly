@@ -92,7 +92,6 @@ let decls f = fun mods vtype vars ->
   in
   List.map dcl vars
 
-let field_decls = decls (fun x -> Field x)
 let var_decls   = decls (fun x -> LocalVar x)
 
 let constructor_invocation name args =
@@ -619,7 +618,6 @@ statement:
  | while_statement  { $1 }
  | for_statement  { $1 }
 
-
 statement_without_trailing_substatement:
  | block  { $1 }
  | empty_statement  { $1 }
@@ -636,14 +634,6 @@ statement_without_trailing_substatement:
  | ASSERT expression SM                  { Assert ($2, None) }
  | ASSERT expression COLON expression SM { Assert ($2, Some $4) }
 
-statement_no_short_if:
- | statement_without_trailing_substatement  { $1 }
- | labeled_statement_no_short_if  { $1 }
- | if_then_else_statement_no_short_if  { $1 }
- | while_statement_no_short_if  { $1 }
- | for_statement_no_short_if  { $1 }
-
-
 /* 14.2 */
 block: LC block_statements_opt RC  { Block $2 }
 
@@ -654,24 +644,21 @@ block_statement:
 
 /* 14.4 */
 local_variable_declaration_statement: local_variable_declaration SM  
- { $1 }
+ { List.map (fun x -> LocalVar x) $1 }
 
 /*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
  | type_java variable_declarators  
-     { var_decls [] $1 (List.rev $2) }
+     { decls (fun x -> x) [] $1 (List.rev $2) }
  /*(* actually should be variable_modifiers but conflict *)*/
  | modifiers type_java variable_declarators  
-     { var_decls $1 $2 (List.rev $3) }
+     { decls (fun x -> x) $1 $2 (List.rev $3) }
 
 /* 14.6 */
 empty_statement: SM { Empty }
 
 /* 14.7 */
 labeled_statement: identifier COLON statement  
-   { Label ($1, $3) }
-
-labeled_statement_no_short_if: identifier COLON statement_no_short_if  
    { Label ($1, $3) }
 
 /* 14.8 */
@@ -696,11 +683,6 @@ if_then_statement: IF LP expression RP statement
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
    { If ($3, $5, $7) }
 
-if_then_else_statement_no_short_if: 
- IF LP expression RP statement_no_short_if ELSE statement_no_short_if
-   { If ($3, $5, $7) }
-
-
 /* 14.10 */
 switch_statement: SWITCH LP expression RP switch_block
     { Switch ($3, $5) }
@@ -723,10 +705,6 @@ switch_label:
 while_statement: WHILE LP expression RP statement
      { While ($3, $5) }
 
-while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
-     { While ($3, $5) }
-
-
 /* 14.12 */
 do_statement: DO statement WHILE LP expression RP SM
      { Do ($2, $5) }
@@ -738,21 +716,22 @@ do_statement: DO statement WHILE LP expression RP SM
 /* 14.13 */
 for_statement: 
   FOR LP for_control RP statement
-	{ For (ast_todo2, $5) }
-
-for_statement_no_short_if: 
-  FOR LP for_control RP statement_no_short_if
-	{ For (ast_todo2, $5) }
+	{ For ($3, $5) }
 
 for_control:
- | for_init_opt SM expression_opt SM for_update_opt { ast_todo }
- | for_var_control { ast_todo }
+ | for_init_opt SM expression_opt SM for_update_opt 
+     { ForClassic ($1, Common.option_to_list $3, $5) } 
+ | for_var_control { Foreach ast_todo2 }
+
+for_init_opt:
+ | /*(*empty*)*/  { ForInitExprs [] }
+ | for_init       { $1 }
 
 for_init: 
-| statement_expression_list   { List.rev $1 }
-| local_variable_declaration  { $1 }
+| statement_expression_list   { ForInitExprs $1 }
+| local_variable_declaration  { ForInitVars $1 }
 
-for_update: statement_expression_list  { List.rev $1 }
+for_update: statement_expression_list  { $1 }
 
 for_var_control:
  | type_java variable_declarator_id for_var_control_rest { ast_todo }
@@ -791,6 +770,31 @@ catch_clause:
  | CATCH LP formal_parameter RP empty_statement  { $3, $5 }
 
 finally: FINALLY block  { $2 }
+
+/*(*----------------------------*)*/
+/*(*2 No short if *)*/
+/*(*----------------------------*)*/
+
+statement_no_short_if:
+ | statement_without_trailing_substatement  { $1 }
+ | labeled_statement_no_short_if  { $1 }
+ | if_then_else_statement_no_short_if  { $1 }
+ | while_statement_no_short_if  { $1 }
+ | for_statement_no_short_if  { $1 }
+
+labeled_statement_no_short_if: identifier COLON statement_no_short_if  
+   { Label ($1, $3) }
+
+if_then_else_statement_no_short_if: 
+ IF LP expression RP statement_no_short_if ELSE statement_no_short_if
+   { If ($3, $5, $7) }
+
+while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
+     { While ($3, $5) }
+
+for_statement_no_short_if: 
+  FOR LP for_control RP statement_no_short_if
+	{ For ($3, $5) }
 
 /*(*************************************************************************)*/
 /*(*1 Declaration *)*/
@@ -909,7 +913,7 @@ class_member_declaration:
 
 /* 8.3 */
 field_declaration: modifiers_opt type_java variable_declarators SM  
-   { field_decls $1 $2 (List.rev $3) }
+   { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
 
 variable_declarator:
@@ -1059,7 +1063,7 @@ interface_member_declaration:
 
 /*(* note: semicolon is missing in 2nd edition java language specification.*)*/
 constant_declaration: modifiers_opt type_java variable_declarators SM
-     { field_decls $1 $2 (List.rev $3) }
+     { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
 /* 9.4 */
 abstract_method_declaration:
@@ -1266,9 +1270,6 @@ switch_labels:
  | switch_label  { [$1] }
  | switch_labels switch_label  { $2 :: $1 }
 
-for_init_opt:
- | /*(*empty*)*/  { [] }
- | for_init  { $1 }
 
 
 expression_opt:
@@ -1281,8 +1282,8 @@ for_update_opt:
  | for_update     { $1 }
 
 statement_expression_list:
- | statement_expression                               { [Expr $1] }
- | statement_expression_list CM statement_expression  { (Expr $3) :: $1 }
+ | statement_expression                               { [$1] }
+ | statement_expression_list CM statement_expression  { $1 ++ [$3] }
 
 identifier_opt:
  | /*(*empty*)*/  { None }

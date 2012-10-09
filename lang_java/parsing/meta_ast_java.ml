@@ -198,7 +198,23 @@ and vof_case =
   | Case v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Case", [ v1 ]))
   | Default -> Ocaml.VSum (("Default", []))
 and vof_cases v = Ocaml.vof_list vof_case v
-and vof_for_control v = Ocaml.vof_unit v
+and vof_for_control =
+  function
+  | ForClassic ((v1, v2, v3)) ->
+      let v1 = vof_for_init v1
+      and v2 = Ocaml.vof_list vof_expr v2
+      and v3 = Ocaml.vof_list vof_expr v3
+      in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
+  | Foreach v1 ->
+      let v1 = Ocaml.vof_unit v1 in Ocaml.VSum (("Foreach", [ v1 ]))
+and vof_for_init =
+  function
+  | ForInitVars v1 ->
+      let v1 = Ocaml.vof_list vof_field v1
+      in Ocaml.VSum (("ForInitVars", [ v1 ]))
+  | ForInitExprs v1 ->
+      let v1 = Ocaml.vof_list vof_expr v1
+      in Ocaml.VSum (("ForInitExprs", [ v1 ]))
 and vof_catch (v1, v2) =
   let v1 = vof_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_catches v = Ocaml.vof_list vof_catch v

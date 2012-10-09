@@ -474,8 +474,28 @@ and stmt env = function
       expr env e;
       stmt env st;
   | For (x, st) ->
-      for_control env x;
+      let env = 
+        match x with
+        | Foreach () -> env
+        | ForClassic (init, es1, es2) ->
+            (match init with
+            | ForInitExprs es0 ->
+                exprs env (es0 ++ es1 ++ es2);
+                env
+            | ForInitVars xs ->
+                List.iter (field env) xs;
+                let env = { env with
+                  params_locals = xs +> List.map (fun fld ->
+                    Ast.unwrap fld.f_var.v_name
+                  ) ++ env.params_locals;
+                } 
+                in
+                exprs env (es1 ++ es2);
+                env
+            )
+      in
       stmt env st;
+
   (* could have an entity and dependency ... but it's intra procedural
    * so not that useful
    *)
@@ -516,8 +536,6 @@ and cases env xs = List.iter (case env) xs
 and case env = function
   | Case e -> expr env e
   | Default -> ()
-
-and for_control env () = ()
 
 and catches env xs = List.iter (catch env) xs
 and catch env (v, st) =
