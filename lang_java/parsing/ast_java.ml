@@ -91,6 +91,7 @@ type expr =
   (* Include 'this' and 'super' special names. Name refers to statically
    * computable entities such as Package1.subpackage.Class.
    * Field or method access are using Dot, see below.
+   * Name is also used for local variable.
    *)
   | Name of name 
 
