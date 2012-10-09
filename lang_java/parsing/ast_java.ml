@@ -4,7 +4,8 @@
  * 
  * Yoann Padioleau: 
  * 2010, port to the pfff infrastructure.
- * 2012, support annotations, generics, enum, foreach, etc
+ * 2012, heavily modified to support annotations, generics, enum, 
+ *       foreach, etc
  *)
 
 module PI = Parse_info
@@ -16,13 +17,12 @@ module PI = Parse_info
  * A simple AST for Java.
  * 
  * For Java we directly do a simple AST, as opposed to a CST (Concrete
- * Syntax Tree) as in lang_php/, which should be enough for higlight_java.ml
- * I think. We just need the full list of tokens + the AST with position
- * for the identifiers.
+ * Syntax Tree) as in lang_php/. This should be enough for higlight_java.ml
+ * I think (we just need the full list of tokens + the AST with position
+ * for the identifiers).
  * 
  * TODO: 
  *  - support annotations
- *  - support for generics
  *  - support enums
  *  - etc.
  *)
@@ -271,6 +271,7 @@ and decl =
   | Class of class_decl
   | Method of method_decl
   | Field of field
+  | Enum of enum_decl
   | Init of bool (* static *) * stmt
 
 and decls = decl list
