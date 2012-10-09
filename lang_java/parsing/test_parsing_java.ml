@@ -73,6 +73,13 @@ let test_lexer file =
   done
 
 (* ---------------------------------------------------------------------- *)
+let test_dump file =
+  let ast = Parse_java.parse_program file in
+  let v = Meta_ast_java.vof_any (Ast_java.Program ast) in
+  let str = Ocaml.string_of_v v in
+  pr str
+
+(* ---------------------------------------------------------------------- *)
 
 let test_visitor file = 
 (*
@@ -107,6 +114,9 @@ let actions () = [
   Common.mk_action_1_arg test_lexer;
   "-parse_java", "   <file or dir>", 
   Common.mk_action_n_arg test_parse;
+  "-dump_java", "   <file>", 
+  Common.mk_action_1_arg test_dump;
+
   "-visitor_java", "   <file>", 
   Common.mk_action_1_arg test_visitor;
 ]

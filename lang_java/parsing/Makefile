@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= flag_parsing_java.ml \
-     ast_java.ml \
+     ast_java.ml meta_ast_java.ml \
      lib_parsing_java.ml \
      parser_java.ml lexer_java.ml \
      token_helpers_java.ml \
