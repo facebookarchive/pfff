@@ -429,7 +429,19 @@ method_invocation:
 /* 15.14 */
 postfix_expression:
  | primary  { $1 }
- | name     { Name (name $1) }
+ | name     { 
+     (* can be a field access ... or a qualified name ...
+      * Ambiguity. Note that index.field is not parsed as a
+      * Dot because the rule for Dot is  primary DOT identifier.
+      * The last dot has to be a Dot and not a Name?
+      *)
+     match List.rev $1 with
+     | (Id id)::x::xs ->
+         Dot (Name (name (List.rev (x::xs))), id)
+     | _ -> 
+         Name (name $1)
+         }
+
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
  
