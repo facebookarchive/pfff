@@ -88,10 +88,13 @@ type name = (type_argument list * ident) list1
  * the use of type ... and ... below
  *)
 type expr =
-  (* Include 'this' and 'super' special names. Name refers to statically
-   * computable entities such as Package1.subpackage.Class.
-   * Field or method access are using Dot, see below.
-   * Name is also used for local variable.
+  (* Name is used for local variable, 'this' and 'super' special names,
+   * and statically computable entities such as Package1.subpackage.Class.
+   * Field or method accesses should use Dot (see below). Unfortunately
+   * the Java grammar is ambiguous and without contextual information,
+   * there is no way to know whether x.y.z is an access to the field z
+   * of field y of local variable x or the static field z of class y
+   * in package x.
    *)
   | Name of name 
 

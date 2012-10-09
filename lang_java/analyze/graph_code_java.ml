@@ -34,7 +34,7 @@ module Ast = Ast_java
  *    name of the method with the type (a la C++ linker)
  * 
  * schema:
- *   Package -> SubPackage -> Class -> Method
+ *   Package -> SubPackage -> File -> Class -> Method
  *                                  -> Field
  *                                  -> Constant (static final)
  *                                  -> SubClass -> ...
@@ -217,6 +217,14 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
     | [] -> Some current
     | x::xs ->
         let children = G.children current env.g in
+        (* because have File intermediate nodes *)
+        let children = children +> List.map (fun child ->
+          match child with
+          | (_, E.File) -> G.children child env.g
+          | _ -> [child]
+        ) +> List.flatten
+        in
+
         let str =
           match current with
           | ".", E.Dir -> x
@@ -291,7 +299,9 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
     current =
       (match ast.package with
       | None -> (readable, E.File)
-      | Some long_ident -> (str_of_qualified_ident long_ident, E.Package)
+      | Some long_ident -> 
+          (readable, E.File)
+            (* (str_of_qualified_ident long_ident, E.Package) *)
       );
     current_qualifier =
       (match ast.package with
@@ -324,11 +334,13 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 
     | Some long_ident ->
         create_intermediate_packages_if_not_present g G.root long_ident;
-        (* old:
         let str = str_of_qualified_ident long_ident in
+        (* we keep a File node because it allows from an entity
+         * to know where it's defined by going up the chain of parents
+         * until a File is found
+         *)
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((str, E.Package), (readable, E.File)) G.Has;
-        *)
   end;
 
   if phase = Uses then begin
@@ -394,7 +406,11 @@ and class_decl env def =
     type_params_local = [];
   } 
   in
-  (* todo: cl_extends, cl_implements Use *)
+  let parents = 
+    Common.option_to_list def.cl_extends ++
+    (def.cl_impls +> List.map (fun x -> TRef x))
+  in
+  List.iter (typ env) parents;
   decls env def.cl_body
 
 (* Java allow some forms of overloading, so the same method name can be
@@ -552,10 +568,11 @@ and expr env = function
   | Name n ->
       if env.phase = Uses then begin
         let str = str_of_name n in
-        (match str with
-        | _ when List.mem str env.params_locals -> ()
+        (match str, n with
+        (* TODO: look at the type and continue lookup *)
+        | _, (_,(s,_))::rest when List.mem s env.params_locals -> ()
         (* TODO *)
-        | "super" | "this" -> 
+        | "super", _ | "this", _ -> 
             ()
         | _ -> 
             (match lookup env (long_ident_of_name n) with
