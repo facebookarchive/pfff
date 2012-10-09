@@ -95,6 +95,8 @@ let str_of_name xs =
 
 (* TODO *)
 let long_ident_of_name xs = List.map snd xs
+(* TODO *)
+let long_ident_of_ref_type xs = List.map fst xs
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
@@ -175,6 +177,7 @@ let looks_like_class_name s =
 (* todo: use env to lookup for package, which will remove some
  * false positives and failures.
  *)
+(*
 let rec package_of_long_ident_heuristics env (is_static, long_ident) =
 
   let starting_point = 
@@ -201,6 +204,7 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
   in
   starting_point +> Common.drop_while (fun (s, _) -> looks_like_class_name s)
   +> List.rev
+*)
 
 (*****************************************************************************)
 (* Class/Package Lookup *)
@@ -334,10 +338,13 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
        * add classname -> fully_qualified in env.
        * when .* ? need put all children of package.
        *)
+      (*
       let package = 
         package_of_long_ident_heuristics env (is_static, long_ident) in
       let str = str_of_qualified_ident package in
       add_use_edge env (str, E.Package);
+      *)
+      ()
     );
   end;
   (* imports is not the only way to use external packages, one can
@@ -539,7 +546,9 @@ and expr env = function
                 add_use_edge env n2
             | None ->
                 (match n with
-                | [] -> raise Impossible
+                | [] -> 
+                    pr2_gen (env.current, n);
+                    raise Impossible
                 | [x] -> 
                     if looks_like_class_name str
                     then add_use_edge env (str, E.Package)
@@ -576,8 +585,12 @@ and expr env = function
   | Call (e, es) ->
       expr env e;
       exprs env es
-  | Dot (e, id) ->
-      (* todo: match e, and try lookup method/field *)
+  | Dot (e, idTODO) ->
+      (* todo: match e, and try lookup method/field
+       * if e is a Name, lookup it, and if a class then
+       * lookup children. If local ... then need get its type
+       * lookup its node, and then lookup children.
+       *)
       expr env e;
 
   | ArrayAccess (e1, e2) -> exprs env [e1;e2]
@@ -609,9 +622,33 @@ and init_opt env opt =
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-(* TODO, class names in it *)
-and typ env x = 
-  ()
+and typ env = function
+  | TBasic _ -> ()
+  | ArrayType t -> typ env t
+  | TRef reft ->
+      (* todo: let's forget generic arguments for now *)
+      let xs = long_ident_of_ref_type reft in
+      let str = str_of_qualified_ident xs in
+      if env.phase = Uses then begin
+        (match lookup env xs with
+        | Some n2 -> 
+            (* pr2 ("FOUND: " ^ Common.dump n); *)
+            add_use_edge env n2
+        | None ->
+            (match xs with
+            | [] -> raise Impossible
+            | [x] -> 
+                if looks_like_class_name str
+                then add_use_edge env (str, E.Package)
+                else 
+                  pr2 ("PB: " ^ Common.dump reft);
+            | x::y::xs ->
+                (* unknown package probably *)
+                add_use_edge env (str, E.Package)
+            )
+        )
+      end
+      
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
