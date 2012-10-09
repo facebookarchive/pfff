@@ -205,7 +205,7 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
 (*****************************************************************************)
 
 let (lookup_fully_qualified: 
-  env -> Ast.qualified_ident -> Graph_code.node option) = 
+  env -> string list -> Graph_code.node option) = 
  fun env xs ->
   let rec aux current xs =
     match xs with
@@ -214,8 +214,8 @@ let (lookup_fully_qualified:
         let children = G.children current env.g in
         let str =
           match current with
-          | ".", E.Dir -> (Ast.unwrap x)
-          | s, _ -> s ^ "." ^ (Ast.unwrap x)
+          | ".", E.Dir -> x
+          | s, _ -> s ^ "." ^ x
         in
         let new_current = 
           children +> Common.find_some_opt (fun (s2, kind) ->
@@ -238,10 +238,11 @@ let (lookup_fully_qualified:
 let (lookup: env -> Ast.qualified_ident -> 
       Graph_code.node option) = fun env xs ->
 
-  let full_xs = env.current_qualifier ++ xs in
+  let full_xs = env.current_qualifier ++ xs +> List.map Ast.unwrap in
   
   match xs with
-  | [] -> raise Impossible
+  (* can happen with static method call in the same class *)
+  | [] -> lookup_fully_qualified env full_xs
   | [x] ->
       let s = Ast.unwrap x in
       (match s with
@@ -496,7 +497,7 @@ and expr env = function
         | _ -> 
             (match lookup env (long_ident_of_name n) with
             | Some n2 -> 
-                pr2 ("FOUND: " ^ Common.dump n);
+                (* pr2 ("FOUND: " ^ Common.dump n); *)
                 add_use_edge env n2
             | None ->
                 pr2 ("PB: " ^ Common.dump n);
