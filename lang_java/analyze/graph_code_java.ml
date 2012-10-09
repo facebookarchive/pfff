@@ -538,8 +538,17 @@ and expr env = function
                 (* pr2 ("FOUND: " ^ Common.dump n); *)
                 add_use_edge env n2
             | None ->
-                pr2 ("PB: " ^ Common.dump n);
-                ()
+                (match n with
+                | [] -> raise Impossible
+                | [x] -> 
+                    if looks_like_class_name str
+                    then add_use_edge env (str, E.Package)
+                    else 
+                      pr2 ("PB: " ^ Common.dump n);
+                | x::y::xs ->
+                    (* unknown package probably *)
+                    add_use_edge env (str, E.Package)
+                )
             )
         )
       end
