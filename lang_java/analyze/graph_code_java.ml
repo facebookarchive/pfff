@@ -204,8 +204,7 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
 (* Class/Package Lookup *)
 (*****************************************************************************)
 
-let (lookup_fully_qualified: 
-  env -> string list -> Graph_code.node option) = 
+let (lookup_fully_qualified: env -> string list -> Graph_code.node option) = 
  fun env xs ->
   let rec aux current xs =
     match xs with
@@ -230,27 +229,48 @@ let (lookup_fully_qualified:
   in
   aux G.root xs
 
+(* Java allows programmer to use fields without qualifying them
+ * with a this.xxx or class.xxx so we need to unsugar this
+ * by prepending the full current classname.
+ *)
+let with_current_class_qualifier env xs =
+  [(env.current_qualifier ++ xs) +> List.map Ast.unwrap]
+
+(* Jave allows to import package in which case we unsugar
+ * by preprending the package.
+ *)
+let with_package_qualifier env xs =
+  env.imported +> List.map (fun (is_static, qualified_ident) ->
+    let rev = List.rev qualified_ident in
+    let prefix = 
+      (match rev with
+      | ("*", _)::rest ->
+          List.rev rest
+      (* todo: if head match the head of xs, then can accelerate things *)
+      | xs -> List.rev xs
+      )
+    in
+    (prefix ++ xs) +> List.map Ast.unwrap
+  )
+
 (* Look for entity (package/class/method/field) in list of imported
  * packages or in global scope. Return fully qualified entity.
  * 
  * Note that the code graph store nodes in fully qualified form.
  *)
-let (lookup: env -> Ast.qualified_ident -> 
-      Graph_code.node option) = fun env xs ->
+let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) = 
+ fun env xs ->
 
-  let full_xs = env.current_qualifier ++ xs +> List.map Ast.unwrap in
-  
-  match xs with
-  (* can happen with static method call in the same class *)
-  | [] -> lookup_fully_qualified env full_xs
-  | [x] ->
-      let s = Ast.unwrap x in
-      (match s with
-      | "super" | "this" -> None
-      | s ->
-          lookup_fully_qualified env full_xs
-      )
-  | _ -> None
+  (* todo: get until root? *)
+  let candidates =
+    with_current_class_qualifier env xs ++
+    with_package_qualifier env xs ++
+    []
+  in
+  (* pr2_gen candidates; *)
+  candidates +> Common.find_some_opt (fun full_qualifier ->
+    lookup_fully_qualified env full_qualifier
+  )
 
 
 (*****************************************************************************)
