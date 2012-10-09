@@ -98,6 +98,10 @@ type expr =
   | NewArray of typ * exprs * int * init option
 
   | Call of expr * exprs
+  (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y) ?
+   * If it's used as a field access, then it's a Dot (Name [X], y)
+   * but if it's used as a method call it will be Name [X;y]
+   *)
   | Dot of expr * ident
   | ArrayAccess of expr * expr
 
