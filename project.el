@@ -39,6 +39,8 @@
      lang_sql/parsing
      lang_html/parsing
      lang_cpp/parsing
+     lang_java/parsing
+      lang_java/analyze
      visual
      codegraph
      facebook
@@ -282,18 +284,17 @@
    )
 
   ; --------------------------------------------------------------------------
-  ; pm_depend
+  ; codegraph
   ; --------------------------------------------------------------------------
   (setq
-   pad-ocaml-project-prog     "pm_depend"
+   pad-ocaml-project-prog     "codegraph"
    pad-ocaml-project-args 
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 0
 
-       (0 "-test_phylomel /home/pad/pfff/external/phylomel/tests/geno0 ")
-       (1 "-test_phylomel /home/pad/pfff/external/phylomel/tests/geno_simple")
+       (0 "-lang java -build /home/pad/pfff/tests/java/codegraph")
        )
      )
     )
