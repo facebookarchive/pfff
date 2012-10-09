@@ -45,7 +45,9 @@ module Ast = Ast_java
  *   PB -> Not_Found -> Package -> SubPackage -> ...
  * 
  * todo: 
+ *  - handle generics
  *  - adjust graph to remove intermediate singleton? com.xxx?
+ * 
  *)
 
 (*****************************************************************************)
@@ -352,7 +354,20 @@ and decl env = function
   | Class def -> class_decl env def
   | Method def -> method_decl env def
   | Field def -> field_decl env def
-  | Init (_is_static, st) -> stmt env st
+  | Init (_is_static, st) ->
+      let name = "__init__" in
+      let full_ident = env.current_qualifier ++ [name, fakeInfo name] in
+      let full_str = str_of_qualified_ident full_ident in
+      if env.phase = Defs then begin
+        env.g +> G.add_node (full_str, E.TopStmts);
+        env.g +> G.add_edge (env.current, (full_str, E.TopStmts)) G.Has;
+      end;
+      let env = { env with
+        current = (full_str, E.TopStmts);
+        current_qualifier = full_ident;
+      } 
+      in
+      stmt env st
 
 and decls env xs = List.iter (decl env) xs
 
@@ -512,8 +527,11 @@ and expr env = function
   | Name n ->
       if env.phase = Uses then begin
         let str = str_of_name n in
-        (match () with
+        (match str with
         | _ when List.mem str env.params_locals -> ()
+        (* TODO *)
+        | "super" | "this" -> 
+            ()
         | _ -> 
             (match lookup env (long_ident_of_name n) with
             | Some n2 -> 
