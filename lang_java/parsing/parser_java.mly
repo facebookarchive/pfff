@@ -411,6 +411,7 @@ method_invocation:
           | (Id x)::xs ->
               let (xs: identifier_ list) = 
                 (match xs with
+                (* should be a "this" or "self" *)
                 | [] -> [Id ("this", fakeInfo "this")]
                 | _ -> List.rev xs
                 )
