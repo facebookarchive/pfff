@@ -7,5 +7,6 @@ class X {
 
     // illlegal java?
     x = x.field1;
+    bar();
   }
 }

@@ -409,7 +409,13 @@ method_invocation:
         { 
           match List.rev $1 with
           | (Id x)::xs ->
-              Call (Dot (Name (name (List.rev xs)), x), $3)
+              let (xs: identifier_ list) = 
+                (match xs with
+                | [] -> [Id ("this", fakeInfo "this")]
+                | _ -> List.rev xs
+                )
+              in
+              Call (Dot (Name (name (xs)), x), $3)
           | _ -> 
               pr2_gen $1;
               raise Impossible
