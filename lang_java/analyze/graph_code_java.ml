@@ -87,6 +87,13 @@ let parse ~show_parse_error file =
 let str_of_qualified_ident xs =
   xs +> List.map Ast.unwrap +> Common.join "."
 
+let str_of_name xs = 
+  xs +> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) +> 
+    Common.join "."
+
+(* TODO *)
+let long_ident_of_name xs = List.map snd xs
+
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
   let dirs = Common.inits xs +> List.map str_of_qualified_ident in
@@ -197,12 +204,53 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
 (* Class/Package Lookup *)
 (*****************************************************************************)
 
-(* Look for entity (package/class/static-method) in list of imported
+let (lookup_fully_qualified: 
+  env -> Ast.qualified_ident -> Graph_code.node option) = 
+ fun env xs ->
+  let rec aux current xs =
+    match xs with
+    | [] -> Some current
+    | x::xs ->
+        let children = G.children current env.g in
+        let str =
+          match current with
+          | ".", E.Dir -> (Ast.unwrap x)
+          | s, _ -> s ^ "." ^ (Ast.unwrap x)
+        in
+        let new_current = 
+          children +> Common.find_some_opt (fun (s2, kind) ->
+            if str =$= s2
+            then Some (s2, kind)
+            else None
+          ) in
+        (match new_current with
+        | None -> None
+        | Some current -> aux current xs
+        )
+  in
+  aux G.root xs
+
+(* Look for entity (package/class/method/field) in list of imported
  * packages or in global scope. Return fully qualified entity.
+ * 
+ * Note that the code graph store nodes in fully qualified form.
  *)
 let (lookup: env -> Ast.qualified_ident -> 
-      (Ast.qualified_ident * Graph_code.node) option) = fun env xs ->
-  raise Todo
+      Graph_code.node option) = fun env xs ->
+
+  let full_xs = env.current_qualifier ++ xs in
+  
+  match xs with
+  | [] -> raise Impossible
+  | [x] ->
+      let s = Ast.unwrap x in
+      (match s with
+      | "super" | "this" -> None
+      | s ->
+          lookup_fully_qualified env full_xs
+      )
+  | _ -> None
+
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -220,7 +268,9 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
       );
     current_qualifier =
       (match ast.package with
-      | None -> [let s = "__" ^ readable ^ "__" in s, Ast.fakeInfo s]
+      | None -> 
+          (* old: let s = "__" ^ readable ^ "__" in s, Ast.fakeInfo s *)
+          []
       | Some long_ident -> long_ident
       );
     params_locals = [];
@@ -323,9 +373,10 @@ and method_decl env def =
   end;
   let env = { env with
     current = (full_str, E.Method E.RegularMethod);
-    current_qualifier = full_ident;
+    (* no change to the qualifier, methods are not a namespace *)
+    current_qualifier = env.current_qualifier;
+    params_locals = def.m_formals +> List.map (fun v -> Ast.unwrap v.v_name);
     (* TODO *)
-    params_locals = [];
     type_params_local = [];
   } 
   in
@@ -350,7 +401,7 @@ and field_decl env def =
   end;
   let env = { env with
     current = (full_str, kind);
-    current_qualifier = full_ident;
+    current_qualifier = env.current_qualifier
   } 
   in
   field env def
@@ -437,9 +488,66 @@ and catch env (v, st) =
 (* ---------------------------------------------------------------------- *)
 and expr env = function
   (* main dependency source! *)
-  | Name n -> ()
+  | Name n ->
+      if env.phase = Uses then begin
+        let str = str_of_name n in
+        (match () with
+        | _ when List.mem str env.params_locals -> ()
+        | _ -> 
+            (match lookup env (long_ident_of_name n) with
+            | Some n2 -> 
+                pr2 ("FOUND: " ^ Common.dump n);
+                add_use_edge env n2
+            | None ->
+                pr2 ("PB: " ^ Common.dump n);
+                ()
+            )
+        )
+      end
 
-  | _ -> ()
+  | Literal _ -> ()
+
+  | ClassLiteral t -> typ env t
+  | NewClass (t, args, decls_opt) ->
+      typ env t;
+      exprs env args;
+      (match decls_opt with
+      | None -> ()
+      | Some xs ->
+          (* todo: let env = ??? gen anon class number? *)
+          decls env xs
+      )
+  | NewQualifiedClass (e, id, args, decls_opt) ->
+      pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
+      raise Todo
+  | NewArray (t, args, i, ini_opt) ->
+      typ env t;
+      exprs env args;
+      init_opt env ini_opt
+
+  | Call (e, es) ->
+      expr env e;
+      exprs env es
+  | Dot (e, id) ->
+      (* todo: match e, and try lookup method/field *)
+      expr env e;
+
+  | ArrayAccess (e1, e2) -> exprs env [e1;e2]
+  | Postfix (e, op) | Prefix (op, e) -> expr env e
+  | Infix (e1, op, e2) -> exprs env [e1;e2]
+  | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
+  | Assignment (e1, op, e2) -> exprs env [e1;e2]
+
+  | Cast (t, e) -> 
+      typ env t;
+      expr env e
+  | InstanceOf (e, tref) ->
+      expr env e;
+      typ env (TRef tref);
+      
+      
+      
+
 
 and exprs env xs = List.iter (expr env) xs
 and init env = function
@@ -453,7 +561,7 @@ and init_opt env opt =
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-(* TODO *)
+(* TODO, class names in it *)
 and typ env x = 
   ()
 
