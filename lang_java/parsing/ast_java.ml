@@ -42,9 +42,11 @@ type 'a wrap  = 'a * info
 (* ------------------------------------------------------------------------- *)
 (* for class/interface/enum names, method/field names, type parameter, ... *)
 type ident = string wrap
+ (* with tarzan *)
 
 (* for package, import, throw specification *)
 type qualified_ident = ident list
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -64,9 +66,11 @@ type typ =
     | TArgument of ref_type
     | TQuestion of (bool (* extends|super, true = super *) * ref_type) option 
   and 'a list1 = 'a list (* really should be 'a * 'a list *)
+ (* with tarzan *)
 
 type type_parameter =
   | TParam of ident * ref_type list (* extends *)
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -78,6 +82,7 @@ type type_parameter =
  * only at the end?
  *)
 type name = (type_argument list * ident) list1
+ (* with tarzan *)
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
@@ -257,6 +262,8 @@ and decl =
 
 and decls = decl list
 
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
@@ -270,8 +277,10 @@ type compilation_unit = {
   (* todo? necessarily a (unique) class first? *)
   decls: decls;
 }
+ (* with tarzan *)
 
 type program = compilation_unit
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -288,6 +297,8 @@ type any =
   | Class2 of class_decl
   | Decl of decl
   | Program of program
+
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)
