@@ -132,7 +132,10 @@ type expr =
   (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y)?
    * The static part is a Name and the more dynamic part a Dot.
    * So variable.field or variable.method will be parsed as
-   * Dot (Name [variable], field|method).
+   * Dot (Name [variable], field|method). Unfortunately
+   * variable.field1.field2 is currently parsed as 
+   * Dot (Name [variable;field1], field2). You need semantic information
+   * about variable to disambiguate.
    *)
   | Dot of expr * ident
   | ArrayAccess of expr * expr
