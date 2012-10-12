@@ -241,10 +241,13 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
         in
         (* sanity check *)
         Common.group_assoc_bykey_eff children +> List.iter (fun (k, xs) ->
-          if List.length xs > 1
+          if List.length xs > 1 && k =$= x
           then begin
+            (* todo: this will be a problem when go from class-level
+             * to method/field level dependencies
+             *)
             pr2_gen (k, xs);
-            failwith "ambiguity in namespace, multiple entities with same name"
+            pr2 "WARNING: multiple entities with same name";
           end
         );
         
@@ -596,6 +599,7 @@ and stmt env = function
   | Throw e -> expr env e
   | Assert (e, eopt) ->
       exprs env (e::Common.option_to_list eopt)
+  (* The modification of env.params_locals is done in decls() *)
   | LocalVar f -> field env f
   | LocalClass def -> class_decl env def
 
