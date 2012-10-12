@@ -1,3 +1,5 @@
+package X;
+
 class AnonClass {
   void main() {
     int x = new AnonClass() {
