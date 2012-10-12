@@ -4,6 +4,7 @@ package X;
 //import bar.toto.AClass.NestedClass;
 
 class Foo {
+
   static public int field1 = 0;
 
   public static void main(String[] args) {

@@ -239,7 +239,15 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
           | _ -> [child]
         ) +> List.flatten
         in
-
+        (* sanity check *)
+        Common.group_assoc_bykey_eff children +> List.iter (fun (k, xs) ->
+          if List.length xs > 1
+          then begin
+            pr2_gen (k, xs);
+            failwith "ambiguity in namespace, multiple entities with same name"
+          end
+        );
+        
         let str =
           match current with
           | ".", E.Dir -> x

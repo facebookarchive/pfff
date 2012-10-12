@@ -1,4 +1,4 @@
-class X {
+class NestedClass {
   class nestedA {
     nestedB x;
   }

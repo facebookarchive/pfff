@@ -1,20 +1,20 @@
-class Anon {
+class AnonClass {
   void main() {
-    int x = new Anon() {
+    int x = new AnonClass() {
         int x;
       };
 
-    int y = new Anon() {
+    int y = new AnonClass() {
         int x;
       };
   }
 
   void bar() {
-    int x = new Anon() {
+    int x = new AnonClass() {
         int x;
       };
 
-    int y = new Anon() {
+    int y = new AnonClass() {
         int x;
       };
   }

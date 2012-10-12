@@ -1,4 +1,4 @@
-class EnumTest {
+class Enum {
 
   public enum AnEnum { 
       A_CONSTANT,
