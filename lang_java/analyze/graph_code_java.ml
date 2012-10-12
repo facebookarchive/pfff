@@ -34,11 +34,13 @@ module Ast = Ast_java
  *    name of the method with the type (a la C++ linker)
  * 
  * schema:
- *   Package -> SubPackage -> File -> Class -> Method
- *                                  -> Field
- *                                  -> Constant (static final)
- *                                  -> SubClass -> ...
- *                                  TODO enum
+ *   Package -> SubPackage -> File -> Class|Interface 
+ *                                    -> Method
+ *                                    -> Field
+ *                                    -> Constant (static final)
+ *                                    -> Constant (enum, inlined in parent)
+ *                                    -> SubClass -> ...
+ *                                    -> EnumSubClass (nothing)
  *   (when have no package)
  *   Dir -> Subdir -> File 
  * 
@@ -60,6 +62,7 @@ type env = {
 
   imported: (bool * qualified_ident) list;
   params_locals: string list;
+  (* todo *)
   type_params_local: string list;
 
   phase: phase;
@@ -217,7 +220,7 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
     | [] -> Some current
     | x::xs ->
         let children = G.children current env.g in
-        (* because have File intermediate nodes *)
+        (* because have File intermediate (noisy) nodes *)
         let children = children +> List.map (fun child ->
           match child with
           | (_, E.File) -> G.children child env.g
@@ -250,8 +253,8 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
 let with_current_class_qualifier env xs =
   [(env.current_qualifier ++ xs) +> List.map Ast.unwrap]
 
-(* Jave allows to import package in which case we unsugar
- * by preprending the package.
+(* Java allows to import packages in which case we unsugar
+ * by preprending the package name.
  *)
 let with_package_qualifier env xs =
   env.imported +> List.map (fun (is_static, qualified_ident) ->
@@ -275,7 +278,6 @@ let with_package_qualifier env xs =
 let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) = 
  fun env xs ->
 
-  (* todo: get until root? *)
   let candidates =
     with_current_class_qualifier env xs ++
     with_package_qualifier env xs ++
@@ -290,30 +292,27 @@ let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) =
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-(* Note that there is no ~dupe, Java code use packages and fully qualified
- * entity so there is very rarely name conflicts.
+(* Note that there is no ~dupe argument. Java code uses packages and 
+ * fully qualified entities so there should be no name conflicts.
  *)
 let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 
   let env = {
-    current =
-      (match ast.package with
-      | None -> (readable, E.File)
-      | Some long_ident -> 
-          (readable, E.File)
-            (* (str_of_qualified_ident long_ident, E.Package) *)
-      );
+    (* old: (str_of_qualified_ident long_ident, E.Package).
+     * We want a File node because it allows to easily find to which
+     * file an entity corresponds too and open this file in emacs/codemap
+     * when one click somewhere in codegraph.
+     *)
+    current = readable, E.File;
     current_qualifier =
       (match ast.package with
-      | None -> 
-          (* old: let s = "__" ^ readable ^ "__" in s, Ast.fakeInfo s *)
-          []
+      | None -> []
       | Some long_ident -> long_ident
       );
     params_locals = [];
     type_params_local = [];
     imported = (ast.imports ++
-      (* we also automatically import the current package *)
+      (* we also automatically import the current.package.* *)
       (match ast.package with
       | None -> []
       | Some long_ident -> [false, long_ident ++ ["*", Ast.fakeInfo "*"]]
@@ -325,7 +324,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 
   if phase = Defs then begin
     match ast.package with
-    (* usually scripts, tests, or entry points *)
+    (* have None usually for scripts, tests, or entry points *)
     | None ->
         let dir = Common.dirname readable in
         G.create_intermediate_directories_if_not_present g dir;
@@ -367,12 +366,13 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
   decls env ast.decls
 
 (* ---------------------------------------------------------------------- *)
-(* Toplevels *)
+(* Declarations (classes, fields, etc) *)
 (* ---------------------------------------------------------------------- *)
 and decl env = function
   | Class def -> class_decl env def
   | Method def -> method_decl env def
   | Field def -> field_decl env def
+  | Enum def -> enum_decl env def
   | Init (_is_static, st) ->
       let name = "__init__" in
       let full_ident = env.current_qualifier ++ [name, fakeInfo name] in
@@ -387,7 +387,6 @@ and decl env = function
       } 
       in
       stmt env st
-  | Enum def -> enum_decl env def
 
 and decls env xs = List.iter (decl env) xs
 
@@ -706,12 +705,14 @@ and init_opt env opt =
 and typ env = function
   | TBasic _ -> ()
   | ArrayType t -> typ env t
+  (* other big dependency source! *)
   | TRef reft ->
       (* todo: let's forget generic arguments for now *)
       let xs = long_ident_of_ref_type reft in
       let str = str_of_qualified_ident xs in
       if env.phase = Uses then begin
         (match lookup env xs with
+        (* TODO: look in type_params_local ! *)
         | Some n2 -> 
             (* pr2 ("FOUND: " ^ Common.dump n); *)
             add_use_edge env n2
