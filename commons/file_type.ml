@@ -232,6 +232,9 @@ let file_type_of_file2 file =
   (* pad specific, cached git blame info *)
   | "git_annot" ->
       Obj e 
+  (* pad specific, codegraph cached data *)
+  | "marshall" | "matrix" ->
+      Obj e 
 
   | "byte" | "top" -> Binary e
 
