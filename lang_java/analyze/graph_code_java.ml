@@ -269,15 +269,8 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
   in
   aux G.root xs
 
-(* Java allows programmer to use fields without qualifying them
- * with a this.xxx or class.xxx so we need to unsugar this
- * by prepending the full current classname.
- *)
-let with_current_class_qualifier env xs =
-  [(env.current_qualifier ++ xs) +> List.map Ast.unwrap]
-
-(* Java allows to import packages in which case we unsugar
- * by preprending the package name.
+(* Java allows to open namespaces by for instance importing packages
+ * in which case we unsugar by preprending the package name.
  *)
 let with_package_qualifier env xs =
   env.imported +> List.map (fun (is_static, qualified_ident) ->
@@ -301,11 +294,7 @@ let with_package_qualifier env xs =
 let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) = 
  fun env xs ->
 
-  let candidates =
-    with_current_class_qualifier env xs ++
-    with_package_qualifier env xs ++
-    []
-  in
+  let candidates = with_package_qualifier env xs in
   (* pr2_gen candidates; *)
   candidates +> Common.find_some_opt (fun full_qualifier ->
     lookup_fully_qualified env full_qualifier
@@ -427,6 +416,13 @@ and class_decl env def =
     params_locals = [];
     (* TODO *)
     type_params_local = [];
+    (* Java allows programmer to use fields without qualifying them
+     * (without a class.xxx, or this.xxx) so we need to unsugar this
+     * by prepending the full current classname. We can just
+     * generate a fake import package.classname.*. This will also
+     * allow nested classes to access siblings.
+     *)
+    imported = (false, full_ident ++ ["*", Ast.fakeInfo "*"])::env.imported;
   } 
   in
   let parents = 
