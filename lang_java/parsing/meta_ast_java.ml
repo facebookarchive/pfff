@@ -22,7 +22,7 @@ let rec vof_typ =
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("TBasic", [ v1 ]))
   | TRef v1 -> let v1 = vof_ref_type v1 in Ocaml.VSum (("TRef", [ v1 ]))
-  | ArrayType v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("ArrayType", [ v1 ]))
+  | TArray v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("TArray", [ v1 ]))
 and vof_ref_type v =
   vof_list1
     (fun (v1, v2) ->

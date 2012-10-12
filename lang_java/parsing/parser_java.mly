@@ -78,7 +78,7 @@ type var_decl_id =
 let rec canon_var mods t v =
   match v with
   | IdentDecl str -> { v_mods = mods; v_type = t; v_name = str }
-  | ArrayDecl v' -> canon_var mods (ArrayType t) v'
+  | ArrayDecl v' -> canon_var mods (TArray t) v'
 
 let method_header mods mtype (v, formals) throws =
   { m_var = canon_var mods mtype v; m_formals = formals;
@@ -300,9 +300,9 @@ primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 reference_type: name   { reference_type $1 }
 
 array_type:
- | primitive_type LB RB { ArrayType $1 }
- | name           LB RB { ArrayType (TRef (reference_type ($1))) }
- | array_type     LB RB { ArrayType $1 }
+ | primitive_type LB RB { TArray $1 }
+ | name           LB RB { TArray (TRef (reference_type ($1))) }
+ | array_type     LB RB { TArray $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Generics arguments *)*/

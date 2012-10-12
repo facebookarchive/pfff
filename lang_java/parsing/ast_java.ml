@@ -57,7 +57,7 @@ type typ =
   (* not sure why they call that a reference type *)
   | TRef of ref_type
   (* less: seems to have been removed in recent java grammar *)
-  | ArrayType of typ
+  | TArray of typ
 
  and ref_type = 
    (ident * type_argument list) list1
