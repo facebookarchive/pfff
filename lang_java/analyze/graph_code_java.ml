@@ -387,8 +387,7 @@ and decl env = function
       } 
       in
       stmt env st
-  | Enum def ->
-      raise Todo
+  | Enum def -> enum_decl env def
 
 and decls env xs = List.iter (decl env) xs
 
@@ -466,6 +465,51 @@ and field_decl env def =
   } 
   in
   field env def
+
+and enum_decl env def =
+  let full_ident = env.current_qualifier ++ [def.en_name] in
+  let full_str = str_of_qualified_ident full_ident in
+  if env.phase = Defs then begin
+    (* less: make it a class? or a Type? *)
+    env.g +> G.add_node (full_str, E.Class E.RegularClass);
+    env.g +> G.add_edge (env.current, (full_str, E.Class E.RegularClass)) G.Has;
+  end;
+  let env2 = { env with
+    current = (full_str, E.Class E.RegularClass);
+    current_qualifier = full_ident;
+    params_locals = [];
+    type_params_local = [];
+  } 
+  in
+  let parents = (def.en_impls +> List.map (fun x -> TRef x)) in
+  List.iter (typ env2) parents;
+  let env = { env with
+    (* we want the constants to be children of the enclosing class
+     * because that's how the lookup for enum constant works.
+     *)
+    current = env.current;
+    current_qualifier = env.current_qualifier;
+    params_locals = [];
+    type_params_local = [];
+  } 
+  in
+  let (csts, decls) = def.en_body in
+  (match decls with 
+  | [] ->()
+  | _ -> pr2_gen decls; raise Todo
+  );
+  csts +> List.iter (function
+  | EnumSimple ident ->
+      let full_ident = env.current_qualifier ++ [ident] in
+      let full_str = str_of_qualified_ident full_ident in
+      if env.phase = Defs then begin
+        env.g +> G.add_node (full_str, E.Constant);
+        env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
+      end;
+  | EnumComplex (ident, args) -> raise Todo
+  )
+
+
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
