@@ -101,6 +101,9 @@ let long_ident_of_name xs = List.map snd xs
 (* TODO *)
 let long_ident_of_ref_type xs = List.map fst xs
 
+let looks_like_class_name s =
+  s =~ "[A-Z]"
+
 let rec classname_and_info_of_typ t =
   match t with
   | TBasic x -> x
@@ -178,48 +181,6 @@ let rec add_use_edge env (name, kind) =
           )
       )
   )
-
-(*****************************************************************************)
-(* Package lookup heuristic (deprecated) *)
-(*****************************************************************************)
-
-let looks_like_package_name_part s =
-  s =~ "[a-z]"
-
-let looks_like_class_name s =
-  s =~ "[A-Z]"
-
-(* old: now use env to lookup for package, which remove some
- * false positives and failures.
- *)
-(*
-let rec package_of_long_ident_heuristics env (is_static, long_ident) =
-
-  let starting_point = 
-  match List.rev long_ident, is_static with
-  (* import can have a trailing '*' *)
-  | ("*",_)::xs,        false -> xs
-  (* import static method means we need to skip the method and class *)
-  | (s, _)::(s2,_)::xs, true 
-      when looks_like_class_name s2 -> 
-      xs
-  (* sometimes people import nested classes, so have to skip two names *)
-  | (s, _)::(s2, _)::xs, false 
-      when looks_like_class_name s && looks_like_class_name s2 ->
-      xs
-  (* usual case *)
-  | (s, _)::xs, false 
-      when looks_like_class_name s ->
-      xs
-  (* some exceptions ... put in skip_list instead? *)
-  | ("drawable", _)::xs, false -> xs
-  | _, _ -> 
-      pr2_gen long_ident;
-      raise Impossible
-  in
-  starting_point +> Common.drop_while (fun (s, _) -> looks_like_class_name s)
-  +> List.rev
-*)
 
 (*****************************************************************************)
 (* Class/Package Lookup *)
@@ -354,22 +315,6 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
         g +> G.add_edge ((str, E.Package), (readable, E.File)) G.Has;
   end;
 
-  if phase = Uses then begin
-    ast.imports +> List.iter (fun (is_static, long_ident) ->
-      (* need resolve and add in env that certain unqualified names
-       * are ok.
-       * add classname -> fully_qualified in env.
-       * when .* ? need put all children of package.
-       *)
-      (*
-      let package = 
-        package_of_long_ident_heuristics env (is_static, long_ident) in
-      let str = str_of_qualified_ident package in
-      add_use_edge env (str, E.Package);
-      *)
-      ()
-    );
-  end;
   (* imports is not the only way to use external packages, one can
    * also just qualify the classname or static method so we need
    * to visit the AST and lookup classnames (possibly using information
