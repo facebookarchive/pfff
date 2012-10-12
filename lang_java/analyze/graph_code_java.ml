@@ -71,7 +71,7 @@ type env = {
   (* less: skip_edges *)
 }
 
-(* todo: put in graph_code.ml? *)
+(* less: put in graph_code.ml? *)
 and phase = Defs | Uses
 
 (*****************************************************************************)
@@ -100,6 +100,18 @@ let str_of_name xs =
 let long_ident_of_name xs = List.map snd xs
 (* TODO *)
 let long_ident_of_ref_type xs = List.map fst xs
+
+let rec classname_and_info_of_typ t =
+  match t with
+  | TBasic x -> x
+  | TArray t -> classname_and_info_of_typ t
+  | TRef xs ->
+      let x = Common.list_last xs in
+      let (ident, _args) = x in
+      ident
+let classname_and_charpos_of_typ t = 
+  let (s, info) = classname_and_info_of_typ t in
+  s, Ast.pos_of_info info
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
@@ -177,7 +189,7 @@ let looks_like_package_name_part s =
 let looks_like_class_name s =
   s =~ "[A-Z]"
 
-(* todo: use env to lookup for package, which will remove some
+(* old: now use env to lookup for package, which remove some
  * false positives and failures.
  *)
 (*
@@ -199,7 +211,7 @@ let rec package_of_long_ident_heuristics env (is_static, long_ident) =
   | (s, _)::xs, false 
       when looks_like_class_name s ->
       xs
-  (* some exceptions ... TODO put in skip_list instead? *)
+  (* some exceptions ... put in skip_list instead? *)
   | ("drawable", _)::xs, false -> xs
   | _, _ -> 
       pr2_gen long_ident;
@@ -263,7 +275,7 @@ let with_package_qualifier env xs =
       (match rev with
       | ("*", _)::rest ->
           List.rev rest
-      (* todo: if head match the head of xs, then can accelerate things *)
+      (* opti: if head match the head of xs, then can accelerate things *)
       | xs -> List.rev xs
       )
     in
@@ -344,7 +356,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 
   if phase = Uses then begin
     ast.imports +> List.iter (fun (is_static, long_ident) ->
-      (* TODO: need resolve and add in env that certain unqualified names
+      (* need resolve and add in env that certain unqualified names
        * are ok.
        * add classname -> fully_qualified in env.
        * when .* ? need put all children of package.
@@ -422,7 +434,7 @@ and method_decl env def =
   let full_str = str_of_qualified_ident full_ident in
   if env.phase = Defs then begin
     (* less: static? *)
-    (* todo: for now we just collapse all methods with same name together *)
+    (* less: for now we just collapse all methods with same name together *)
     if G.has_node (full_str, E.Method E.RegularMethod) env.g
     then ()
     else begin
@@ -432,7 +444,10 @@ and method_decl env def =
   end;
   let env = { env with
     current = (full_str, E.Method E.RegularMethod);
-    (* no change to the qualifier, methods are not a namespace *)
+    (* No change to the qualifier, methods are not a namespace.
+     * But take care when have anonymous classes that they
+     * do not use the same node names.
+    *)
     current_qualifier = env.current_qualifier;
     params_locals = def.m_formals +> List.map (fun v -> Ast.unwrap v.v_name);
     (* TODO *)
@@ -651,7 +666,20 @@ and expr env = function
       (match decls_opt with
       | None -> ()
       | Some xs ->
-          (* todo: let env = ??? gen anon class number? *)
+          let classname, charpos = classname_and_charpos_of_typ t in
+          let anon_class = spf "__anon__%s__%d" classname charpos in
+          let full_ident = env.current_qualifier ++ [anon_class, fakeInfo ""] in
+          let full_str = str_of_qualified_ident full_ident in
+          if env.phase = Defs then begin
+            env.g +> G.add_node (full_str, E.Class E.RegularClass);
+            env.g +> G.add_edge (env.current,(full_str,E.Class E.RegularClass))
+              G.Has;
+          end;
+          let env = { env with
+            current = (full_str, E.Class E.RegularClass);
+            current_qualifier = full_ident;
+          }
+          in
           decls env xs
       )
   | NewQualifiedClass (e, id, args, decls_opt) ->
@@ -704,7 +732,7 @@ and init_opt env opt =
 (* ---------------------------------------------------------------------- *)
 and typ env = function
   | TBasic _ -> ()
-  | ArrayType t -> typ env t
+  | TArray t -> typ env t
   (* other big dependency source! *)
   | TRef reft ->
       (* todo: let's forget generic arguments for now *)
