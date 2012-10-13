@@ -6,11 +6,11 @@ open OUnit
 (* Prelude *)
 (*****************************************************************************)
 (*
- * What to put here? Should we duplicate things from unit_static_analysis_php
- * as many results from static analysis are now translated into Prolog
- * facts? No, no need to duplicate, just copy here the basic
- * versions of some tests, e.g. for the callgraph just the basic
- * function and method calls for instance.
+ * What to put here? Should we duplicate things from Unit_static_analysis_php
+ * as many results from static analysis are now translated into Prolog facts?
+ * No, no need to duplicate! Just copy here the basic versions
+ * of some tests, e.g. for the callgraph just the basic function and
+ * method calls for instance.
  * 
  * todo: port most of unit_analyze_db_php.ml here using also the abstract
  * interpreter for more "demanding" callgraph/datagraph unit tests.
@@ -29,13 +29,12 @@ let prolog_query ~file query =
 (*****************************************************************************)
 
 let unittest =
-  "prolog" >::: (
-    [
+ "prolog" >::: ([
 
-    (*-----------------------------------------------------------------------*)
-    (* Entities *)
-    (*-----------------------------------------------------------------------*)
-    "kinds" >:: (fun () ->
+(*****************************************************************************)
+(* Entities *)
+(*****************************************************************************)
+   "kinds" >:: (fun () ->
       let file = "
 function foo() { }
 const BAR = 1;
@@ -59,13 +58,16 @@ trait T { }
       assert_equal 
         ["field"]     (prolog_query ~file "kind(('A','fld'), X), writeln(X)");
       assert_equal 
-        ["class_constant"]
-          (prolog_query ~file "kind(('A','CST'), X), writeln(X)");
+        ["constant"]  (prolog_query ~file "kind(('A','CST'), X), writeln(X)");
       assert_equal 
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
       assert_equal 
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
     );
+
+(*****************************************************************************)
+(* Class/Traits *)
+(*****************************************************************************)
 
     (*-----------------------------------------------------------------------*)
     (* Inheritance *)
@@ -146,10 +148,15 @@ class B extends A { public function foo() { } }
 
     );
 
-    (*-----------------------------------------------------------------------*)
-    (* Callgraph *)
-    (*-----------------------------------------------------------------------*)
-    "callgraph" >:: (fun () ->
+(*****************************************************************************)
+(* Callgraph *)
+(*****************************************************************************)
+
+  (*-------------------------------------------------------------------------*)
+  (* Callgraph and functions *)
+  (*-------------------------------------------------------------------------*)
+
+    "basic callgraph for functions" >:: (fun () ->
       let file = "
 function foo() { }
 function bar() { foo(); }
@@ -159,7 +166,29 @@ function bar() { foo(); }
       assert_equal ~msg:"it should find basic callers to a function"
         ["bar"]
         (sort xs);
+    );
 
+  (*-------------------------------------------------------------------------*)
+  (* Callgraph and methods *)
+  (*-------------------------------------------------------------------------*)
+    "basic (imprecise) callgraph for methods" >:: (fun () ->
+      (* cannot resolve the class of a method calls, but at least can index
+       * that there was a method call with a specific name 
+       *)
+      let file ="
+class A { }
+function bar() {
+  $o = new A();
+  $y = $o->foo();
+} " in
+      let xs = prolog_query ~file 
+        "docall('bar', X, method), writeln(X), fail" in
+      assert_equal ~msg:"it should find basic callers to a function"
+        ["foo"]
+        (sort xs);
+    );
+
+    "advanced callgraph analysis for methods" >:: (fun () ->
       (* this one requires more sophisticated analysis, with
        * append_callgraph_to_prolog_db 
        *)
@@ -175,13 +204,11 @@ function bar() {
       assert_equal ~msg:"it should find basic callers to a function"
         ["A,foo"]
         (sort xs);
-      
-
     );
 
-    (*-----------------------------------------------------------------------*)
-    (* Exceptions *)
-    (*-----------------------------------------------------------------------*)
+(*****************************************************************************)
+(* Exceptions *)
+(*****************************************************************************)
     "exceptions" >:: (fun () ->
       let file = "
 class Exception { }
@@ -218,9 +245,9 @@ function bad() {
         xs;
     );
 
-    (*-----------------------------------------------------------------------*)
-    (* Data graph *)
-    (*-----------------------------------------------------------------------*)
+(*****************************************************************************)
+(* Data graph *)
+(*****************************************************************************)
     "arrays used as records" >:: (fun () ->
       let file = "
 function foo($x) {
@@ -262,9 +289,9 @@ function foo3(A $o) {
       ["foo3"] (xs);
     );
 
-    (*-----------------------------------------------------------------------*)
-    (* XHP *)
-    (*-----------------------------------------------------------------------*)
+(*****************************************************************************)
+(* XHP *)
+(*****************************************************************************)
     "xhp" >:: (fun () ->
       let file = "
 class :x:frag {
@@ -276,8 +303,6 @@ class :x:frag {
         (["template"])
         xs
     );
-
     (* todo: handle also children, inherit, etc *)
-
   ]
   )

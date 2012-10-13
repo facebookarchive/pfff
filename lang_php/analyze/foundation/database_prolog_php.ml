@@ -119,7 +119,7 @@ let string_of_id_kind = function
   (* could also put 'constant' here as the pair of (class,cst) will already
    * differentiate it from regular constants.
    *)
-  | E.ClassConstant -> "class_constant"
+  | E.ClassConstant -> "constant"
   | E.Field -> "field"
 
   | E.TopStmts  -> "stmtlist"

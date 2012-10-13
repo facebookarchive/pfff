@@ -32,12 +32,13 @@
 % Here are the predicates that should be defined in facts.pl:
 %
 %  - entities: kind/2, with the
-%    function/method, constant, class/interface/trait, class_constant/field/...
+%    function/method, constant, class/interface/trait, field
 %    atoms.
 %      ex: kind('array_map', function).
 %      ex: kind('Preparable', class).
 %      ex: kind(('Preparable', 'gen'), method).
 %      ex: kind((Preparable', '__count'), field).
+%      ex: kind((Preparable', 'OK'), constant).
 %    The identifier for a function is its name in a string and for
 %    class members a pair with the name of the class and then the member name,
 %    both in a string. We don't differentiate methods from static methods;
