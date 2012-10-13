@@ -92,8 +92,6 @@ let decls f = fun mods vtype vars ->
   in
   List.map dcl vars
 
-let var_decls   = decls (fun x -> LocalVar x)
-
 let constructor_invocation name args =
   Expr (Call ((Name name), args))
 
@@ -271,7 +269,7 @@ type_declaration:
 /*(*1 Ident, namespace  *)*/
 /*(*************************************************************************)*/
 /* 3.8 */
-identifier: IDENTIFIER  { $1 }
+identifier: IDENTIFIER { $1 }
 
 /* 6.5 */
 name:
