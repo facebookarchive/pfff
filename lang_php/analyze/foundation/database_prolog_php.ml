@@ -133,14 +133,18 @@ let string_of_modifier = function
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
-let string_of_hint_type (h : hint_type option) : string = match h with
-  | Some x -> (match x with
-                 | Hint c -> (match c with
-                                | ClassName c -> Ast.name c
-                                | Self _ -> "self"
-                                | Parent _ -> "parent"
-                                | LateStatic _ -> "")
-                 | HintArray _ -> "array")
+let string_of_hint_type h = 
+  match h with
+  | Some x -> 
+      (match x with
+      | Hint c -> 
+          (match c with
+          | ClassName c -> Ast.name c
+          | Self _ -> "self"
+          | Parent _ -> "parent"
+          | LateStatic _ -> "")
+      | HintArray _ -> "array"
+      )
   | None -> ""
 
 let read_write in_lvalue =
@@ -324,7 +328,7 @@ let add_uses id ast pr db =
 let add_function_params (id : Db.id)
                         (def : 'a)
                         (pr : string -> unit)
-                        (db : Db.database) : unit=
+                        (db : Db.database) =
 
   def.f_params +> Ast.unparen +> Ast.uncomma_dots +> Common.index_list_0 +>
     List.iter (fun (param, i) ->
