@@ -214,6 +214,21 @@ function bar() {
         (sort xs);
     );
 
+    "callgraph for higher order functions" >:: (fun () ->
+      let file ="
+function newv($string) { return new $string(); }
+class A { }
+function bar() {
+  $o = newv('A');
+}
+" in
+      let xs = prolog_query ~file 
+        "docall('bar', X, special), writeln(X), fail" in
+      assert_equal ~msg:"it should index classnames passed as strings"
+        ["newv,A"]
+        (sort xs);
+    );
+
     "advanced callgraph analysis for methods" >:: (fun () ->
       (* this one requires more sophisticated analysis, with
        * append_callgraph_to_prolog_db 

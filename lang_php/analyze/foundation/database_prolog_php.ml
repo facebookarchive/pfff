@@ -180,10 +180,24 @@ let add_uses id ast pr db =
           let str = Ast_php.name callname in
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match str, args with
-          (* a little bit facebook specific ... *)
+          (* Many entities (functions, classes) in PHP are passed as
+           * string parameters to some higher-order functions. We normally
+           * don't index in the Prolog database the arguments to functions, but
+           * certain function calls are really disguised calls
+           * to new, hence the special cases below.
+           * 
+           * todo: we should automatically extract the list of all
+           * higher-order functions.
+           *) 
+          | ("newv" | "DT"), Arg ((Sc (C (String (str2,_)))))::rest ->
+              pr (spf "docall(%s, ('%s','%s'), special)."
+                     (name_id id db) str str2)
+
+          (* could be encoded as a docall(...,special) too *)
           | "require_module", [Arg ((Sc (C (String (str,_)))))] ->
               pr (spf "require_module('%s', '%s')."
                      (Db.readable_filename_of_id id db) str)
+              
           | _ -> ()
           );
 
@@ -446,6 +460,12 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous yield/1.");
    pr (":- discontiguous throw/2, catch/2.");
    pr (":- discontiguous problem/2.");
+
+
+   (* see the comment on newv in add_uses() above *)
+   pr (":- discontiguous special/1.");
+   pr ("special('newv').");
+   pr ("special('DT').");
 
    db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
      let file = Db.absolute_to_readable_filename file db in
