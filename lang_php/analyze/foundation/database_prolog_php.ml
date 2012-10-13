@@ -325,19 +325,15 @@ let add_uses id ast pr db =
   visitor (Entity ast);
   ()
 
-let add_function_params (id : Db.id)
-                        (def : 'a)
-                        (pr : string -> unit)
-                        (db : Db.database) =
-
+let add_function_params id def pr db =
   def.f_params +> Ast.unparen +> Ast.uncomma_dots +> Common.index_list_0 +>
     List.iter (fun (param, i) ->
-                pr (spf "parameter(%s, %d, '$%s', '%s')."
-                        (name_id id db)
-                        i
-                        (Ast.str_of_dname param.p_name)
-                        (string_of_hint_type param.p_type)
-                   ))
+      pr (spf "parameter(%s, %d, '$%s', '%s')."
+             (name_id id db)
+             i
+             (Ast.str_of_dname param.p_name)
+             (string_of_hint_type param.p_type)
+      ))
 
 let add_uses_and_properties id kind ast pr db =
   match kind, ast with
