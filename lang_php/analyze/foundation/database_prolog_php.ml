@@ -206,6 +206,24 @@ let add_uses id ast pr db =
             (* todo: imprecise, need julien's precise callgraph *)
             pr (spf "docall(%s, '%s', method)." (name_id id db) str)
           end;
+          (match x with
+          | StaticMethodCallSimple ((qu,_tok), name, args) ->
+              (match qu with
+              | ClassName name2 ->
+                  pr (spf "docall(%s, ('%s','%s'), method)."
+                           (name_id id db) (Ast_php.name name2) str)
+              (* this should have been desugared while building the
+               * code database, except for traits code ...
+               *)
+              | Self _| Parent _
+              (* can't do much ... *)
+              | LateStatic _ -> ()
+              )
+          | MethodCallSimple _ 
+          | StaticMethodCallVar _ 
+              -> ()
+          | _ -> raise Impossible
+          );              
 
           k x
 
