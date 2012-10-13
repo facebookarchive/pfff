@@ -103,6 +103,8 @@ let long_ident_of_ref_type xs = List.map fst xs
 
 let looks_like_class_name s =
   s =~ "[A-Z]"
+let looks_like_enum_constant s =
+  s =~ "^[A-Z_0-9]+$"
 
 let rec classname_and_info_of_typ t =
   match t with
@@ -444,6 +446,7 @@ and enum_decl env def =
     current = (full_str, E.Class E.RegularClass);
     current_qualifier = full_ident;
     params_locals = [];
+    (* TODO *)
     type_params_local = [];
   } 
   in
@@ -459,11 +462,10 @@ and enum_decl env def =
     type_params_local = [];
   } 
   in
-  let (csts, decls) = def.en_body in
-  (match decls with 
-  | [] ->()
-  | _ -> pr2_gen decls; raise Todo
-  );
+  let (csts, xs) = def.en_body in
+  (* todo?? special env? *)
+  decls env2 xs;
+
   csts +> List.iter (function
   | EnumSimple ident ->
       let full_ident = env.current_qualifier ++ [ident] in
@@ -472,7 +474,14 @@ and enum_decl env def =
         env.g +> G.add_node (full_str, E.Constant);
         env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
       end;
-  | EnumComplex (ident, args) -> raise Todo
+  | EnumComplex (ident, _args) -> 
+      (* TODO *)
+      let full_ident = env.current_qualifier ++ [ident] in
+      let full_str = str_of_qualified_ident full_ident in
+      if env.phase = Defs then begin
+        env.g +> G.add_node (full_str, E.Constant);
+        env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
+      end;
   )
 
 
@@ -597,11 +606,12 @@ and expr env = function
                 | [] -> 
                     pr2_gen (env.current, n);
                     raise Impossible
+                | [x] when looks_like_enum_constant str -> 
+                    pr2 ("PB: " ^ Common.dump n);
+                | [x] when looks_like_class_name str ->
+                    add_use_edge env (str, E.Package)
                 | [x] -> 
-                    if looks_like_class_name str
-                    then add_use_edge env (str, E.Package)
-                    else 
-                      pr2 ("PB: " ^ Common.dump n);
+                    pr2 ("PB: " ^ Common.dump n);
                 | x::y::xs ->
                     (* unknown package probably *)
                     add_use_edge env (str, E.Package)
