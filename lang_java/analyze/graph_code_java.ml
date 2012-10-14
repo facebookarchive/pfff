@@ -28,56 +28,59 @@ module Ast = Ast_java
  * for more information.
  * 
  * choices:
- *  - package-based or dir-based schema? Seems simpler to have
- *    to use packages.
+ *  - package-based or dir-based schema? Seems simpler to use packages.
  *  - merge overloaded methods? yes, alternative is to mangle the
  *    name of the method with the type (a la C++ linker)
  * 
  * schema:
- *   Package -> SubPackage -> File -> Class|Interface 
+ *   Package -> SubPackage -> File -> Class (TODO | Interface )
  *                                    -> Method
  *                                    -> Field
  *                                    -> Constant (static final)
  *                                    -> Constant (enum, inlined in parent)
- *                                    -> SubClass -> ...
- *                                    -> EnumSubClass (nothing)
+ *                            File -> Class -> SubClass -> ...
+ *                                          -> EnumSubClass (nothing)
  *   (when have no package)
  *   Dir -> Subdir -> File 
  * 
- *   PB -> Not_Found -> Package -> SubPackage -> ...
+ *   PB -> Not_Found -> Package2 -> SubPackage2 -> ...
  * 
  * todo: 
  *  - handle generics
  *  - adjust graph to remove intermediate singleton? com.xxx?
- * 
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* for the extract_defs_uses visitor *)
 type env = {
+  g: Graph_code.graph;
+
+  phase: phase;
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
 
-  imported_namespace: string list list;
-  params_locals: string list;
-  (* todo *)
-  type_params_local: string list;
+  imported_namespace: (string list) list;
 
-  phase: phase;
-  g: Graph_code.graph;
+  (* This field is to avoid looking up parameters or locals in the graph.
+   * We could also store them in the code graph so that the lookup
+   * would work, but really fine-grained intra-method dependencies 
+   * are not that useful.
+   *)
+  params_locals: string list;
+  (* todo, to avoid looking up typenames *)
+  type_params_local: string list;
 
   (* less: skip_edges *)
 }
 
-(* We need 3 phases, one to get all the definitions, one to
- * get the inheritance information, and one to get all the Uses.
- * The inheritance is a kind of use, but certain uses like using
- * a field needs to full inheritance tree to already be computed
- * as we need to lookup entities in the inheritance tree.
- *)
-and phase = Defs | Inheritance | Uses
+  (* We need 3 phases, one to get all the definitions, one to
+   * get the inheritance information, and one to get all the Uses.
+   * The inheritance is a kind of use, but certain uses like using
+   * a field needs the full inheritance tree to already be computed
+   * as we may need to lookup entities up in the parents.
+   *)
+  and phase = Defs | Inheritance | Uses
 
 (*****************************************************************************)
 (* Helpers *)
@@ -94,6 +97,7 @@ let parse ~show_parse_error file =
                         (Common.exn_to_s exn));
       { package = None; imports = []; decls = [] }
 
+
 let str_of_qualified_ident xs =
   xs +> List.map Ast.unwrap +> Common.join "."
 
@@ -105,6 +109,8 @@ let str_of_name xs =
 let long_ident_of_name xs = List.map snd xs
 (* TODO *)
 let long_ident_of_ref_type xs = List.map fst xs
+
+
 
 let looks_like_class_name s =
   s =~ "[A-Z]"
@@ -204,12 +210,21 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
         let children = children +> List.map (fun child ->
           match child with
           | (_, E.File) -> G.children child env.g
+          (* we prefer Package to Dir when we lookup, we don't want
+           * The "multiple entities" warning when have both
+           * a "net" package and "net" directory.
+           *)
+          | (_, E.Dir) -> []
           | _ -> [child]
         ) +> List.flatten
         in
         (* sanity check *)
         Common.group_assoc_bykey_eff children +> List.iter (fun (k, xs) ->
-          if List.length xs > 1 && k =$= x
+          if List.length xs > 1 
+             (* issue warnings lazily, only when the ambiguity concerns
+              * something we are actually looking for 
+              *) 
+             && k =$= x
           then begin
             (* todo: this will be a problem when go from class-level
              * to method/field level dependencies
@@ -231,6 +246,7 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
             else None
           ) in
         (match new_current with
+        (* less: could return at least what we were able to resolve *)
         | None -> None
         | Some current -> aux current xs
         )
@@ -239,17 +255,18 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
 
 (* Java allows to open namespaces by for instance importing packages
  * in which case we unsugar by preprending the package name.
+ * Note that extending a class also imports its namespace (and
+ * of all its parents too).
  *)
-let with_package_qualifier env xs =
+let with_full_qualifier env xs =
   env.imported_namespace +> List.map (fun (qualified_ident) ->
     let rev = List.rev qualified_ident in
     let prefix = 
-      (match rev with
+      match rev with
       | ("*")::rest ->
           List.rev rest
-      (* opti: if head match the head of xs, then can accelerate things *)
+      (* todo opti: if head match the head of xs, then can accelerate things? *)
       | xs -> List.rev xs
-      )
     in
     prefix ++ (xs +> List.map Ast.unwrap)
   )
@@ -261,13 +278,15 @@ let with_package_qualifier env xs =
  *)
 let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) = 
  fun env xs ->
-
-  let candidates = with_package_qualifier env xs in
+  let candidates = with_full_qualifier env xs in
   (* pr2_gen candidates; *)
   candidates +> Common.find_some_opt (fun full_qualifier ->
     lookup_fully_qualified env full_qualifier
   )
 
+(* pre: the Inheritance phase must have been done already
+ * otherwise parents_inheritance can be empty or incomplete.
+ *)
 let rec import_of_inherited_classes env n =
   (* A class should Use only entities its extends or implements.
    * less: could filter out interface but needs them to store
@@ -292,6 +311,8 @@ let rec import_of_inherited_classes env n =
 let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 
   let env = {
+    g; phase;
+
     (* old: (str_of_qualified_ident long_ident, E.Package).
      * We want a File node because it allows to easily find to which
      * file an entity corresponds too and open this file in emacs/codemap
@@ -306,16 +327,14 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
     params_locals = [];
     type_params_local = [];
     imported_namespace = 
-      (* we automatically import the current.package.* *)
       (match ast.package with
-      | None -> []
+      (* we automatically import the current.package.* *)
       | Some long_ident -> [List.map Ast.unwrap long_ident ++ ["*"]]
+      | None -> []
       ) ++ 
      (ast.imports +> List.map (fun (is_static, qualified_ident) ->
        List.map Ast.unwrap qualified_ident
      ));
-    g;
-    phase;
   }
   in
 
@@ -338,6 +357,10 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((str, E.Package), (readable, E.File)) G.Has;
   end;
+  (* TODO: if phase is Uses then can double check if can find
+   * some of the imports? especially useful when have a better
+   * java_stdlib/ to report third-party not yet handled packages.
+   *)
 
   (* imports is not the only way to use external packages, one can
    * also just qualify the classname or static method so we need
