@@ -60,7 +60,7 @@ type env = {
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
 
-  imported: (bool * qualified_ident) list;
+  imported_namespace: string list list;
   params_locals: string list;
   (* todo *)
   type_params_local: string list;
@@ -71,8 +71,13 @@ type env = {
   (* less: skip_edges *)
 }
 
-(* less: put in graph_code.ml? *)
-and phase = Defs | Uses
+(* We need 3 phases, one to get all the definitions, one to
+ * get the inheritance information, and one to get all the Uses.
+ * The inheritance is a kind of use, but certain uses like using
+ * a field needs to full inheritance tree to already be computed
+ * as we need to lookup entities in the inheritance tree.
+ *)
+and phase = Defs | Inheritance | Uses
 
 (*****************************************************************************)
 (* Helpers *)
@@ -236,17 +241,17 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
  * in which case we unsugar by preprending the package name.
  *)
 let with_package_qualifier env xs =
-  env.imported +> List.map (fun (is_static, qualified_ident) ->
+  env.imported_namespace +> List.map (fun (qualified_ident) ->
     let rev = List.rev qualified_ident in
     let prefix = 
       (match rev with
-      | ("*", _)::rest ->
+      | ("*")::rest ->
           List.rev rest
       (* opti: if head match the head of xs, then can accelerate things *)
       | xs -> List.rev xs
       )
     in
-    (prefix ++ xs) +> List.map Ast.unwrap
+    prefix ++ (xs +> List.map Ast.unwrap)
   )
 
 (* Look for entity (package/class/method/field) in list of imported
@@ -263,6 +268,20 @@ let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) =
     lookup_fully_qualified env full_qualifier
   )
 
+let rec import_of_inherited_classes env n =
+  (* A class should Use only entities its extends or implements.
+   * less: could filter out interface but needs them to store
+   * then as E.Class E.Interface
+   *)
+  let parents_inheritance = G.succ n G.Use env.g in
+  parents_inheritance +> Common.map_filter (fun (str, kind) ->
+    match kind with
+    | E.Class _ ->
+        let xs = (Common.split "\\." str) ++ ["*"] in
+        let res = import_of_inherited_classes env (str, kind) in
+        Some (xs::res)
+    | _ -> None
+  ) +> List.flatten
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -286,12 +305,15 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
       );
     params_locals = [];
     type_params_local = [];
-    imported = (ast.imports ++
-      (* we also automatically import the current.package.* *)
+    imported_namespace = 
+      (* we automatically import the current.package.* *)
       (match ast.package with
       | None -> []
-      | Some long_ident -> [false, long_ident ++ ["*", Ast.fakeInfo "*"]]
-      ));
+      | Some long_ident -> [List.map Ast.unwrap long_ident ++ ["*"]]
+      ) ++ 
+     (ast.imports +> List.map (fun (is_static, qualified_ident) ->
+       List.map Ast.unwrap qualified_ident
+     ));
     g;
     phase;
   }
@@ -363,21 +385,28 @@ and class_decl env def =
     params_locals = [];
     (* TODO *)
     type_params_local = [];
-    (* Java allows programmer to use fields without qualifying them
-     * (without a class.xxx, or this.xxx) so we need to unsugar this
-     * by prepending the full current classname. We can just
-     * generate a fake import package.classname.*. This will also
-     * allow nested classes to access siblings.
-     *)
-    imported = (false, full_ident ++ ["*", Ast.fakeInfo "*"])::env.imported;
-  } 
+  }
   in
   let parents = 
     Common.option_to_list def.cl_extends ++
     (def.cl_impls +> List.map (fun x -> TRef x))
   in
   List.iter (typ env) parents;
-  decls env def.cl_body
+
+  let imports = 
+    if env.phase = Defs then []
+    else 
+    (* Java allows programmer to use fields without qualifying them
+     * (without a class.xxx, or this.xxx) so we need to unsugar this
+     * by prepending the full current classname. We can just
+     * generate a fake import package.classname.*. This will also
+     * allow nested classes to access siblings.
+     *)
+     (List.map Ast.unwrap full_ident ++ ["*"]) ::
+    import_of_inherited_classes env (full_str, E.Class E.RegularClass)
+  in
+  decls {env with imported_namespace = imports ++ env.imported_namespace } 
+    def.cl_body
 
 (* Java allow some forms of overloading, so the same method name can be
  * used multiple times.
@@ -611,6 +640,7 @@ and expr env = function
                 | [x] when looks_like_class_name str ->
                     add_use_edge env (str, E.Package)
                 | [x] -> 
+                    env.imported_namespace +> List.iter pr2_gen;
                     pr2 ("PB: " ^ Common.dump n);
                 | x::y::xs ->
                     (* unknown package probably *)
@@ -701,7 +731,7 @@ and typ env = function
       (* todo: let's forget generic arguments for now *)
       let xs = long_ident_of_ref_type reft in
       let str = str_of_qualified_ident xs in
-      if env.phase = Uses then begin
+      if env.phase = Uses || env.phase = Inheritance then begin
         (match lookup env xs with
         (* TODO: look in type_params_local ! *)
         | Some n2 -> 
@@ -767,8 +797,19 @@ let build ?(verbose=true) dir skip_list =
        ~lookup_fails ~skip_edges;
     ));
 
-  (* step2: creating the 'Use' edges, the uses *)
-  if verbose then pr2 "\nstep2: extract uses";
+  (* step2: creating the 'Use' edges just for inheritance *)
+  if verbose then pr2 "\nstep2: extract inheritance information";
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
+     k();
+     let readable = Common.filename_without_leading_path root file in
+     let ast = parse ~show_parse_error:false file in
+     extract_defs_uses ~phase:Inheritance ~g ~ast ~readable
+       ~lookup_fails ~skip_edges;
+   ));
+
+  (* step3: creating the 'Use' edges that can rely on recursive inheritance *)
+  if verbose then pr2 "\nstep3: extract uses";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
