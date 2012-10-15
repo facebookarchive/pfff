@@ -373,12 +373,12 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
 (* Declarations (classes, fields, etc) *)
 (* ---------------------------------------------------------------------- *)
 and decl env = function
-  | Class def -> class_decl env def
-  | Method def -> method_decl env def
-  | Field def -> field_decl env def
-  | Enum def -> enum_decl env def
-  | Init (_is_static, st) ->
-      let name = "__init__" in
+  | Class def, _ -> class_decl env def
+  | Method def, _ -> method_decl env def
+  | Field def, _ -> field_decl env def
+  | Enum def, _ -> enum_decl env def
+  | Init (_is_static, st), n ->
+      let name = spf "__init__%d" n in
       let full_ident = env.current_qualifier ++ [name, fakeInfo name] in
       let full_str = str_of_qualified_ident full_ident in
       if env.phase = Defs then begin
@@ -392,7 +392,7 @@ and decl env = function
       in
       stmt env st
 
-and decls env xs = List.iter (decl env) xs
+and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
 
 and class_decl env def =
   let full_ident = env.current_qualifier ++ [def.cl_name] in
@@ -494,7 +494,7 @@ and enum_decl env def =
     env.g +> G.add_node (full_str, E.Class E.RegularClass);
     env.g +> G.add_edge (env.current, (full_str, E.Class E.RegularClass)) G.Has;
   end;
-  let env2 = { env with
+  let env = { env with
     current = (full_str, E.Class E.RegularClass);
     current_qualifier = full_ident;
     params_locals = [];
@@ -503,20 +503,9 @@ and enum_decl env def =
   } 
   in
   let parents = (def.en_impls +> List.map (fun x -> TRef x)) in
-  List.iter (typ env2) parents;
-  let env = { env with
-    (* we want the constants to be children of the enclosing class
-     * because that's how the lookup for enum constant works.
-     *)
-    current = env.current;
-    current_qualifier = env.current_qualifier;
-    params_locals = [];
-    type_params_local = [];
-  } 
-  in
+  List.iter (typ env) parents;
   let (csts, xs) = def.en_body in
-  (* todo?? special env? *)
-  decls env2 xs;
+  decls env xs;
 
   csts +> List.iter (function
   | EnumSimple ident ->
