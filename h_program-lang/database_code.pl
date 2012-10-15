@@ -46,17 +46,24 @@
 %    Note that for fields the name of the field does not contain the $ because
 %    when used, as in '$this->field, there is no $.
 %
-%  - callgraph: docall/3 with the function/method/class atoms to differentiate
-%    regular function calls, method calls, and class instantiations via new,
-%    or the calls/2 infix operator.
+%  - callgraph: docall/3, special/1 with the function/method/class atoms
+%    to differentiate regular function calls, method calls, and class
+%    instantiations via new (see also the calls/2 infix operator).
 %      ex: docall('foo', 'bar', function).
 %      ex: docall(('A', 'foo'), 'toInt', method).
 %      ex: docall('foo', ':x:frag', class).
 %    Note that for method calls we actually don't resolve to which class
 %    the method belongs to (that would require to leverage results from
-%    an interprocedural static analysis).
+%    an interprocedural static analysis) unless it's a static method call.
 %    Note that we use 'docall' and not 'call' because call is a
 %    reserved predicate in Prolog.
+%    A new atom 'special' can be used to indicate calls to special functions
+%    taking entities as parameters. For instance a wrapper to 'new' in
+%    a dynamic language like PHP.
+%      ex: docall('foo', ('new_wrapper','A'), special).
+%    and a special/1 predicate is used to remember all those special functions.
+%      ex: special('new_wrapper').
+%
 %
 %  - exception graph: throw/2, catch/2.
 %     ex: throw('foo', 'ViolationException').

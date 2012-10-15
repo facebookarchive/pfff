@@ -183,8 +183,49 @@ function bar() {
 } " in
       let xs = prolog_query ~file 
         "docall('bar', X, method), writeln(X), fail" in
-      assert_equal ~msg:"it should find basic callers to a function"
+      assert_equal ~msg:"it should find basic callers to a method name"
         ["foo"]
+        (sort xs);
+    );
+
+    "callgraph for static methods" >:: (fun () ->
+      let file ="
+class A { 
+  static function foo() { } 
+  static function foobar() { } 
+  static public function a() {
+    self::foobar();
+  }
+}
+function bar() {
+  $y = A::foo();
+}
+" in
+      let xs = prolog_query ~file 
+        "docall('bar', X, method), writeln(X), fail" in
+      assert_equal ~msg:"it should find basic callers to a static method"
+        ["A,foo"; "foo"]
+        (sort xs);
+
+      let xs = prolog_query ~file 
+        "docall(('A','a'), X, method), writeln(X), fail" in
+      assert_equal ~msg:"it should unsugar self"
+        ["A,foobar"; "foobar"]
+        (sort xs);
+    );
+
+    "callgraph for higher order functions" >:: (fun () ->
+      let file ="
+function newv($string) { return new $string(); }
+class A { }
+function bar() {
+  $o = newv('A');
+}
+" in
+      let xs = prolog_query ~file 
+        "docall('bar', X, special), writeln(X), fail" in
+      assert_equal ~msg:"it should index classnames passed as strings"
+        ["newv,A"]
         (sort xs);
     );
 
