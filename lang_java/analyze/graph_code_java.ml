@@ -199,7 +199,7 @@ let rec add_use_edge env (name, kind) =
 (* Class/Package Lookup *)
 (*****************************************************************************)
 
-let (lookup_fully_qualified: env -> string list -> Graph_code.node option) = 
+let (lookup_fully_qualified2: env -> string list -> Graph_code.node option) = 
  fun env xs ->
   let rec aux current xs =
     match xs with
@@ -253,6 +253,10 @@ let (lookup_fully_qualified: env -> string list -> Graph_code.node option) =
   in
   aux G.root xs
 
+let lookup_fully_qualified a b = 
+  Common.profile_code "Graph_java.lookup_qualified" (fun () ->
+    lookup_fully_qualified2 a b)
+
 (* Java allows to open namespaces by for instance importing packages
  * in which case we unsugar by preprending the package name.
  * Note that extending a class also imports its namespace (and
@@ -276,13 +280,16 @@ let with_full_qualifier env xs =
  * 
  * Note that the code graph store nodes in fully qualified form.
  *)
-let (lookup: env -> Ast.qualified_ident -> Graph_code.node option) = 
+let (lookup2: env -> Ast.qualified_ident -> Graph_code.node option) = 
  fun env xs ->
   let candidates = with_full_qualifier env xs in
   (* pr2_gen candidates; *)
   candidates +> Common.find_some_opt (fun full_qualifier ->
     lookup_fully_qualified env full_qualifier
   )
+
+let lookup a b = 
+  Common.profile_code "Graph_java.lookup" (fun () -> lookup2 a b)
 
 (* pre: the Inheritance phase must have been done already
  * otherwise parents_inheritance can be empty or incomplete.
