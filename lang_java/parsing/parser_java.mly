@@ -309,9 +309,9 @@ reference_type:
  | array_type { $1 }
 
 array_type:
- | primitive_type LB_RB          { TArray $1 }
+ | primitive_type          LB_RB { TArray $1 }
  | class_or_interface_type LB_RB { TArray $1 }
- | array_type     LB_RB          { TArray $1 }
+ | array_type              LB_RB { TArray $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Generics arguments *)*/
@@ -456,7 +456,7 @@ postfix_expression:
          Dot (Name (name (List.rev (x::xs))), id)
      | _ -> 
          Name (name $1)
-         }
+   }
 
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
@@ -502,10 +502,13 @@ cast_expression:
           let typname = 
             match $2 with
             | Name name ->
-                TClass (name +> List.map (fun (xs, id) ->
-                  id, xs
-                ))
-            | _ -> raise Parsing.Parse_error
+                TClass (name +> List.map (fun (xs, id) -> id, xs))
+            (* ugly, undo what was done in postfix_expression *)
+            | Dot (Name name, id) ->
+                TClass ((name ++ [[], id]) +> List.map (fun (xs, id) -> id, xs))
+            | _ -> 
+                pr2_gen $2;
+                raise Todo
           in
           Cast (typname, $4)
         }
