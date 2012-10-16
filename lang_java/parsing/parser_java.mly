@@ -330,9 +330,7 @@ type_parameter:
  | identifier               { TParam ($1, []) }
  | identifier EXTENDS bound { TParam ($1, $3) }
 
-bound:
- reference_type { [$1] }
-/*(* todo: { & reference_type } *)*/
+bound: ref_type_and_list { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -1204,6 +1202,10 @@ interfaces_opt:
 ref_type_list:
  | reference_type  { [$1] }
  | ref_type_list CM reference_type  { $1 ++ [$3] }
+
+ref_type_and_list:
+ | reference_type  { [$1] }
+ | ref_type_and_list AND reference_type  { $1 ++ [$3] }
 
 
 class_body_declarations:
