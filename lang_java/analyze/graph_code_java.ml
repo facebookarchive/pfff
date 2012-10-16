@@ -517,22 +517,30 @@ and enum_decl env def =
   let (csts, xs) = def.en_body in
   decls env xs;
 
-  csts +> List.iter (function
-  | EnumSimple ident ->
-      let full_ident = env.current_qualifier ++ [ident] in
-      let full_str = str_of_qualified_ident full_ident in
-      if env.phase = Defs then begin
-        env.g +> G.add_node (full_str, E.Constant);
-        env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
-      end;
-  | EnumComplex (ident, _args) -> 
-      (* TODO *)
-      let full_ident = env.current_qualifier ++ [ident] in
-      let full_str = str_of_qualified_ident full_ident in
-      if env.phase = Defs then begin
-        env.g +> G.add_node (full_str, E.Constant);
-        env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
-      end;
+  csts +> List.iter (fun enum_constant ->
+
+    let ident = 
+      match enum_constant with
+      | EnumSimple id | EnumConstructor (id, _) | EnumWithMethods (id, _) -> id
+    in
+    let full_ident = env.current_qualifier ++ [ident] in
+    let full_str = str_of_qualified_ident full_ident in
+    if env.phase = Defs then begin
+      env.g +> G.add_node (full_str, E.Constant);
+      env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
+    end;
+    let env = { env with
+      current = (full_str, E.Constant);
+      current_qualifier = full_ident;
+    }
+    in
+    (match enum_constant with
+    | EnumSimple ident -> ()
+    | EnumConstructor (ident, args) -> 
+        exprs env args
+    | EnumWithMethods (ident, xs) -> 
+        decls env (xs +> List.map (fun x -> Method x))
+    )
   )
 
 

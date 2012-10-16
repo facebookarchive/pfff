@@ -352,11 +352,16 @@ and vof_enum_constant =
   function
   | EnumSimple v1 ->
       let v1 = vof_ident v1 in Ocaml.VSum (("EnumSimple", [ v1 ]))
-  | EnumComplex ((v1, v2)) ->
+  | EnumConstructor ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = vof_exprs v2
-      in Ocaml.VSum (("EnumComplex", [ v1; v2 ]))
+      in Ocaml.VSum (("EnumConstructor", [ v1; v2 ]))
+  | EnumWithMethods ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_method_decls v2
+      in Ocaml.VSum (("EnumWithMethods", [ v1; v2 ]))
 
+and vof_method_decls x = Ocaml.vof_list vof_method_decl x
 
 and vof_decls v = Ocaml.vof_list vof_decl v
   

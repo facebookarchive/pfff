@@ -52,22 +52,27 @@ type qualified_ident = ident list
 (* ------------------------------------------------------------------------- *)
 
 type typ =
-  (* 'void', 'int', and other primitive types *)
+  (* 'void', 'int', and other primitive types; could be merged with TClass *)
   | TBasic of string wrap
-  (* class or interface or enum type actually *)
   | TClass of class_type
   | TArray of typ
 
+  (* class or interface or enum type actually *)
  and class_type = 
    (ident * type_argument list) list1
+
   and type_argument =
     | TArgument of ref_type
     | TQuestion of (bool (* extends|super, true = super *) * ref_type) option 
-  and 'a list1 = 'a list (* really should be 'a * 'a list *)
 
-(* A ref type should be a class type or an array of whatever *)
- and ref_type = typ
- (* with tarzan *)
+   and 'a list1 = 'a list (* really should be 'a * 'a list *)
+
+   (* A ref type should be a class type or an array of whatever, but not a
+    * primitive type. We don't enforce this invariant in the AST to simplify
+    * things.
+    *)
+    and ref_type = typ
+    (* with tarzan *)
 
 type type_parameter =
   | TParam of ident * ref_type list (* extends *)
@@ -96,9 +101,9 @@ type modifier =
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
-(* when do we need to have a name using type arguments?
- * for certain calls like List.<Int>of(), which is rare.
- * Do a NameGeneric instead ? the type_argument can be
+(* When do we need to have a name using type arguments?
+ * For certain calls like List.<Int>of(), which is rare.
+ * Do a NameGeneric instead? the type_argument could then be
  * only at the end?
  *)
 type name = (type_argument list * ident) list1
@@ -118,7 +123,7 @@ type expr =
    *)
   | Name of name 
 
-  (* todo: split in constant type with Int | Float | String | Char | Bool *)
+  (* less: split in constant type with Int | Float | String | Char | Bool *)
   | Literal of string wrap
 
   (* Xxx.class *)
@@ -185,7 +190,7 @@ and stmt =
   | Throw of expr
 
   (* decl as statement *)
-  | LocalVar of field
+  | LocalVar of var_with_init
 
   | LocalClass of class_decl
 
@@ -204,7 +209,7 @@ and for_control =
   (* TODO *)
   | Foreach of unit
   and for_init =
-    | ForInitVars of field list
+    | ForInitVars of var_with_init list
     | ForInitExprs of expr list
 
 and catch = var * stmt
@@ -221,6 +226,16 @@ and var = {
 }
 
 and vars = var list
+
+and var_with_init = { 
+  f_var: var;
+  f_init: init option 
+}
+
+  (* less: could merge with expr *)
+  and init =
+    | ExprInit of expr
+    | ArrayInit of init list
 
 (* ------------------------------------------------------------------------- *)
 (* Methods, fields, enums *)
@@ -240,15 +255,7 @@ and method_decl = {
   m_body: stmt 
 }
 
-and field = { 
-  f_var: var;
-  f_init: init option 
-}
-
-  (* less: could merge with expr *)
-  and init =
-    | ExprInit of expr
-    | ArrayInit of init list
+and field = var_with_init
 
 and enum_decl = {
   en_name: ident;
@@ -258,7 +265,9 @@ and enum_decl = {
 }
  and enum_constant = 
    | EnumSimple of ident
-   | EnumComplex of ident * arguments
+   (* http://docs.oracle.com/javase/1.5.0/docs/guide/language/enums.html *)
+   | EnumConstructor of ident * arguments
+   | EnumWithMethods of ident * method_decl list
 
 (* ------------------------------------------------------------------------- *)
 (* Class/Interface *)

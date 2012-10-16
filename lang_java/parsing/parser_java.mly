@@ -1113,7 +1113,8 @@ enum_body:
 
 enum_constant:
  | identifier                         { EnumSimple $1 }
- | identifier LP argument_list_opt RP { EnumComplex ($1, $3) }
+ | identifier LP argument_list_opt RP { EnumConstructor ($1, $3) }
+ | identifier LC method_declarations_opt RC  { EnumWithMethods ($1, $3) }
 
 enum_body_declarations: SM class_body_declarations_opt { $2 }
 
@@ -1329,6 +1330,13 @@ argument_list_opt:
  | /*(*empty*)*/  { [] }
  | argument_list  { List.rev $1 }
 
+method_declarations_opt:
+ | /*(*empty*)*/  { [] }
+ | method_declarations  { List.rev $1 }
+
+method_declarations:
+ | method_declaration { [$1] }
+ | method_declarations method_declaration { $2 :: $1 }
 
 class_body_opt:
  | /*(*empty*)*/  { None }
