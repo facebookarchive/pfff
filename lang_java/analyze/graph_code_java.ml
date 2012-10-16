@@ -341,7 +341,10 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
       ) ++ 
      (ast.imports +> List.map (fun (is_static, qualified_ident) ->
        List.map Ast.unwrap qualified_ident
-     ));
+     ) ++
+      (* we automatically import java.lang.* *)
+       [["java";"lang";"*"]]
+     );
   }
   in
 
