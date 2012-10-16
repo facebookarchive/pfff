@@ -108,7 +108,7 @@ let str_of_name xs =
 (* TODO *)
 let long_ident_of_name xs = List.map snd xs
 (* TODO *)
-let long_ident_of_ref_type xs = List.map fst xs
+let long_ident_of_class_type xs = List.map fst xs
 
 
 
@@ -121,7 +121,7 @@ let rec classname_and_info_of_typ t =
   match t with
   | TBasic x -> x
   | TArray t -> classname_and_info_of_typ t
-  | TRef xs ->
+  | TClass xs ->
       let x = Common.list_last xs in
       let (ident, _args) = x in
       ident
@@ -419,7 +419,7 @@ and class_decl env def =
   in
   let parents = 
     Common.option_to_list def.cl_extends ++
-    (def.cl_impls +> List.map (fun x -> TRef x))
+    (def.cl_impls)
   in
   List.iter (typ env) parents;
 
@@ -509,7 +509,7 @@ and enum_decl env def =
     type_params_local = [];
   } 
   in
-  let parents = (def.en_impls +> List.map (fun x -> TRef x)) in
+  let parents = (def.en_impls) in
   List.iter (typ env) parents;
   let (csts, xs) = def.en_body in
   decls env xs;
@@ -724,7 +724,7 @@ and expr env = function
       expr env e
   | InstanceOf (e, tref) ->
       expr env e;
-      typ env (TRef tref);
+      typ env (tref);
       
       
       
@@ -746,9 +746,9 @@ and typ env = function
   | TBasic _ -> ()
   | TArray t -> typ env t
   (* other big dependency source! *)
-  | TRef reft ->
+  | TClass reft ->
       (* todo: let's forget generic arguments for now *)
-      let xs = long_ident_of_ref_type reft in
+      let xs = long_ident_of_class_type reft in
       let str = str_of_qualified_ident xs in
       if env.phase = Uses || env.phase = Inheritance then begin
         (match lookup env xs with

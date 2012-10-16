@@ -9,7 +9,11 @@
  * The Java Language Specification, Second Edition
  * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha
  * 
- * Some modifications by Yoann Padioleau. Support for:
+ * Many modifications by Yoann Padioleau. Attempts to conform to:
+ * The Java Language Specification, Third Edition, with some fixes from
+ * http://www.cmis.brighton.ac.uk/staff/rnb/bosware/javaSyntax/syntaxV2.html
+ * 
+ * Support for:
  *  - generics
  *  - enums, foreach, ...
  *  - annotations (partial)
@@ -31,7 +35,7 @@ let super_identifier ii = ("super", ii)
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
 
-type name_or_ref_type = identifier_ list
+type name_or_class_type = identifier_ list
  and identifier_ = 
    | Id of ident
    | Id_then_TypeArgs of ident * type_argument list
@@ -42,14 +46,14 @@ type name_or_ref_type = identifier_ list
  * because of some ambiguity but what we really wanted was an
  * identifier followed by some type arguments.
  *)
-let (reference_type: name_or_ref_type -> ref_type) = fun xs ->
+let (class_type: name_or_class_type -> class_type) = fun xs ->
   xs +> List.map (function 
   | Id x -> x, []
   | Id_then_TypeArgs (x, xs) -> x, xs
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
   )
 
-let (name: name_or_ref_type -> name) = fun xs ->
+let (name: name_or_class_type -> name) = fun xs ->
   xs +> List.map (function
   | Id x -> [], x
   | Id_then_TypeArgs (x, xs) -> 
@@ -63,7 +67,7 @@ let (name: name_or_ref_type -> name) = fun xs ->
       raise Parsing.Parse_error
   )
 
-let (qualified_ident: name_or_ref_type -> qualified_ident) = fun xs ->
+let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
   xs +> List.map (function
   | Id x -> x
   | Id_then_TypeArgs _ -> raise Parsing.Parse_error
@@ -172,6 +176,9 @@ let constructor_invocation name args =
 
 %token <Ast_java.info> AT		/* @ */
 %token <Ast_java.info> DOTS		/* ... */
+
+/*(* to avoid some conflicts *)*/
+%token <Ast_java.info> LB_RB
 
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
 %token <Ast_java.info> LT2		/* < */
@@ -287,20 +294,24 @@ identifier_:
 
 /* 4.1 */
 type_java:
- | primitive_type  { $1 }
- | reference_type  { TRef $1 }
- | array_type      { $1 }
+ | primitive_type           { $1 }
+ | class_or_interface_type  { $1 }
+ | array_type               { $1 }
 
 /* 4.2 */
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
+class_or_interface_type: name { TClass (class_type $1) }
+
 /* 4.3 */
-reference_type: name   { reference_type $1 }
+reference_type: 
+ | class_or_interface_type { $1 } 
+ | array_type { $1 }
 
 array_type:
- | primitive_type LB RB { TArray $1 }
- | name           LB RB { TArray (TRef (reference_type ($1))) }
- | array_type     LB RB { TArray $1 }
+ | primitive_type LB_RB          { TArray $1 }
+ | class_or_interface_type LB_RB { TArray $1 }
+ | array_type     LB_RB          { TArray $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Generics arguments *)*/
@@ -355,14 +366,14 @@ literal:
 /* 15.8.2 */
 class_literal:
  | primitive_type DOT CLASS  { ClassLiteral $1 }
- | name           DOT CLASS  { ClassLiteral (TRef (reference_type ($1))) }
+ | name           DOT CLASS  { ClassLiteral (TClass (class_type ($1))) }
  | array_type     DOT CLASS  { ClassLiteral $1 }
  | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
 /* 15.9 */
 class_instance_creation_expression:
  | NEW name LP argument_list_opt RP class_body_opt
-       { NewClass (TRef (reference_type $2), $4, $6) }
+       { NewClass (TClass (class_type $2), $4, $6) }
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ($1, $4, $6, $8) }
  /*(* not in 2nd edition java language specification. *)*/
@@ -374,17 +385,17 @@ array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
-       { NewArray (TRef (reference_type ($2)), List.rev $3, $4, None) }
+       { NewArray (TClass (class_type ($2)), List.rev $3, $4, None) }
  | NEW primitive_type dims array_initializer
        { NewArray ($2, [], $3, Some $4) }
  | NEW name dims array_initializer
-       { NewArray (TRef (reference_type ($2)), [], $3, Some $4) }
+       { NewArray (TClass (class_type ($2)), [], $3, Some $4) }
 
 dim_expr: LB expression RB  { $2 }
 
 dims:
- | LB RB       { 1 }
- | dims LB RB  { $1 + 1 }
+ | LB_RB       { 1 }
+ | dims LB_RB  { $1 + 1 }
 
 /* 15.11 */
 field_access:
@@ -406,7 +417,8 @@ method_invocation:
  | name LP argument_list_opt RP  
         { 
           match List.rev $1 with
-          | (Id x)::xs ->
+          (* TODO: lose information of TypeArgs_then_Id *)
+          | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
               let (xs: identifier_ list) = 
                 (match xs with
                 (* should be a "this" or "self" *)
@@ -490,7 +502,7 @@ cast_expression:
           let typname = 
             match $2 with
             | Name name ->
-                TRef (name +> List.map (fun (xs, id) ->
+                TClass (name +> List.map (fun (xs, id) ->
                   id, xs
                 ))
             | _ -> raise Parsing.Parse_error
@@ -928,7 +940,7 @@ variable_declarator:
 
 variable_declarator_id:
  | identifier                    { IdentDecl $1 }
- | variable_declarator_id LB RB  { ArrayDecl $1 }
+ | variable_declarator_id LB_RB  { ArrayDecl $1 }
 
 
 variable_initializer:
@@ -952,7 +964,7 @@ method_header:
 
 method_declarator:
  | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1), $3 }
- | method_declarator LB RB                     { (ArrayDecl (fst $1)), snd $1 }
+ | method_declarator LB_RB                     { (ArrayDecl (fst $1)), snd $1 }
 
 
 generic_method_or_constructor_decl:

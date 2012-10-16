@@ -57,6 +57,8 @@ let info_of_tok = function
   | CM (ii) -> ii
   | DOT (ii) -> ii
 
+  | LB_RB (ii) -> ii
+
   (* 3.12 Operators *)
   | EQ (ii) -> ii
   | GT (ii) -> ii
@@ -170,6 +172,7 @@ let visitor_info_of_tok f = function
   | LC (ii) -> LC (f ii)
   | RC (ii) -> RC (f ii)
   | LB (ii) -> LB (f ii)
+  | LB_RB (ii) -> LB_RB (f ii)
   | RB (ii) -> RB (f ii)
   | SM (ii) -> SM (f ii)
   | CM (ii) -> CM (f ii)

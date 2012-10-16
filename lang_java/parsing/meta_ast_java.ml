@@ -21,15 +21,16 @@ let rec vof_typ =
   | TBasic v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("TBasic", [ v1 ]))
-  | TRef v1 -> let v1 = vof_ref_type v1 in Ocaml.VSum (("TRef", [ v1 ]))
+  | TClass v1 -> let v1 = vof_class_type v1 in Ocaml.VSum (("TClass", [ v1 ]))
   | TArray v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("TArray", [ v1 ]))
-and vof_ref_type v =
+and vof_class_type v =
   vof_list1
     (fun (v1, v2) ->
        let v1 = vof_ident v1
        and v2 = Ocaml.vof_list vof_type_argument v2
        in Ocaml.VTuple [ v1; v2 ])
     v
+and vof_ref_type x = vof_typ x
 and vof_type_argument =
   function
   | TArgument v1 ->

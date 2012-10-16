@@ -54,17 +54,19 @@ type qualified_ident = ident list
 type typ =
   (* 'void', 'int', and other primitive types *)
   | TBasic of string wrap
-  (* not sure why they call that a reference type *)
-  | TRef of ref_type
-  (* less: seems to have been removed in recent java grammar *)
+  (* class or interface or enum type actually *)
+  | TClass of class_type
   | TArray of typ
 
- and ref_type = 
+ and class_type = 
    (ident * type_argument list) list1
   and type_argument =
     | TArgument of ref_type
     | TQuestion of (bool (* extends|super, true = super *) * ref_type) option 
   and 'a list1 = 'a list (* really should be 'a * 'a list *)
+
+(* A ref type should be a class type or an array of whatever *)
+ and ref_type = typ
  (* with tarzan *)
 
 type type_parameter =

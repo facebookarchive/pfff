@@ -293,6 +293,8 @@ rule token = parse
 | ','  { CM(tokinfo lexbuf) }
 | '.'  { DOT(tokinfo lexbuf) }
 
+(* pad: to avoid some conflicts *)
+| "[]"  { LB_RB(tokinfo lexbuf) }
 
 (* 3.12 Operators *)
 | "="  { EQ(tokinfo lexbuf) }

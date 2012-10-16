@@ -315,6 +315,8 @@ let visit_toplevel
     | T.LC ii | T.RC ii
     | T.LB ii  | T.RB ii
 
+    | T.LB_RB ii
+
     | T.SM ii
     | T.CM ii
     | T.DOT ii
