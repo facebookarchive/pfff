@@ -725,8 +725,10 @@ and expr env = function
           decls env xs
       )
   | NewQualifiedClass (e, id, args, decls_opt) ->
+      (*
       pr2 "NewQualifiedClass";
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
+      *)
       (* todo: need to resolve the type of 'e' *)
       expr env (NewClass (TClass ([id, []]), args, decls_opt))
 
