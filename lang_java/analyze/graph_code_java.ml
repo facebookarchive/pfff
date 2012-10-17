@@ -199,17 +199,18 @@ let rec add_use_edge env (name, kind) =
 (* Class/Package Lookup *)
 (*****************************************************************************)
 
-let (lookup_fully_qualified2: env -> string list -> Graph_code.node option) = 
- fun env xs ->
+let (lookup_fully_qualified2: 
+  Graph_code.graph -> string list -> Graph_code.node option) = 
+ fun g xs ->
   let rec aux current xs =
     match xs with
     | [] -> Some current
     | x::xs ->
-        let children = G.children current env.g in
+        let children = G.children current g in
         (* because have File intermediate (noisy) nodes *)
         let children = children +> List.map (fun child ->
           match child with
-          | (_, E.File) -> G.children child env.g
+          | (_, E.File) -> G.children child g
           (* we prefer Package to Dir when we lookup, we don't want
            * The "multiple entities" warning when have both
            * a "net" package and "net" directory.
@@ -253,9 +254,17 @@ let (lookup_fully_qualified2: env -> string list -> Graph_code.node option) =
   in
   aux G.root xs
 
-let lookup_fully_qualified a b = 
+let _hmemo = Hashtbl.create 101 
+
+let lookup_fully_qualified_memoized env x = 
   Common.profile_code "Graph_java.lookup_qualified" (fun () ->
-    lookup_fully_qualified2 a b)
+    if env.phase = Uses || env.phase = Inheritance
+    then 
+      Common.memoized _hmemo x (fun () ->
+        lookup_fully_qualified2 env.g x
+      )
+    else lookup_fully_qualified2 env.g x
+  )
 
 (* Java allows to open namespaces by for instance importing packages
  * in which case we unsugar by preprending the package name.
@@ -285,7 +294,7 @@ let (lookup2: env -> Ast.qualified_ident -> Graph_code.node option) =
   let candidates = with_full_qualifier env xs in
   (* pr2_gen candidates; *)
   candidates +> Common.find_some_opt (fun full_qualifier ->
-    lookup_fully_qualified env full_qualifier
+    lookup_fully_qualified_memoized env full_qualifier
   )
 
 let lookup a b = 
