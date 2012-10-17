@@ -60,7 +60,10 @@ type env = {
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
 
+  (* import x.y.* => [["x";"y"]; ...] *)
   imported_namespace: (string list) list;
+  (* import x.y.z => [("z", (false, ["x";"y";"z"])); ...] *)
+  imported_qualified: (string * (bool * Ast_java.qualified_ident)) list;
 
   (* This field is to avoid looking up parameters or locals in the graph.
    * We could also store them in the code graph so that the lookup
@@ -219,7 +222,7 @@ let (lookup_fully_qualified2:
           | _ -> [child]
         ) +> List.flatten
         in
-        (* sanity check *)
+        (* sanity check, quite expansive according to -profile *)
         Common.group_assoc_bykey_eff children +> List.iter (fun (k, xs) ->
           if List.length xs > 1 
              (* issue warnings lazily, only when the ambiguity concerns
@@ -269,12 +272,13 @@ let lookup_fully_qualified_memoized env x =
 (* Java allows to open namespaces by for instance importing packages
  * in which case we unsugar by preprending the package name.
  * Note that extending a class also imports its namespace (and
- * of all its parents too).
+ * of all its parents too), hence import_of_inherited_classes below.
  *)
 let with_full_qualifier env xs =
   env.imported_namespace +> List.map (fun (qualified_ident) ->
     let rev = List.rev qualified_ident in
     let prefix = 
+      (* todo: simplify now that have imported_qualified? *)
       match rev with
       | ("*")::rest ->
           List.rev rest
@@ -357,6 +361,12 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
        ["*"]
      ]
      );
+    imported_qualified = ast.imports +> Common.map_filter (fun (is_static, xs)->
+      match List.rev xs with
+      | [] -> raise Impossible
+      | ["*", _] -> None
+      | (s, _)::rest -> Some (s, (is_static, xs))
+    );
   }
   in
 
@@ -676,7 +686,6 @@ and expr env = function
         | _ -> 
             (match lookup env (long_ident_of_name n) with
             | Some n2 -> 
-                (* pr2 ("FOUND: " ^ Common.dump n); *)
                 add_use_edge env n2
             | None ->
                 (match n with
@@ -684,6 +693,12 @@ and expr env = function
                     pr2 "Name is empty??";
                     pr2_gen (env.current, n);
                     raise Impossible
+                | (_, (s,_))::_ when List.mem_assoc s env.imported_qualified ->
+                    let (is_static, full_ident) = 
+                      List.assoc s env.imported_qualified in
+                    let str = str_of_qualified_ident full_ident in
+                    add_use_edge env (str, E.Package)
+
                 | [x] when looks_like_enum_constant str -> 
                     pr2 ("PB: " ^ Common.dump n);
                 | [x] when looks_like_class_name str ->
@@ -794,6 +809,12 @@ and typ env = function
         | None ->
             (match xs with
             | [] -> raise Impossible
+            | ((s,_))::_ when List.mem_assoc s env.imported_qualified ->
+                let (is_static, full_ident) = 
+                  List.assoc s env.imported_qualified in
+                let str = str_of_qualified_ident full_ident in
+                add_use_edge env (str, E.Package)
+
             | [x] -> 
                 if looks_like_class_name str
                 then add_use_edge env (str, E.Package)
