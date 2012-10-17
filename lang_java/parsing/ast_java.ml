@@ -206,8 +206,7 @@ and cases = case list
 
 and for_control =
   | ForClassic of for_init * expr list * expr list
-  (* TODO *)
-  | Foreach of unit
+  | Foreach of var * expr
   and for_init =
     | ForInitVars of var_with_init list
     | ForInitExprs of expr list

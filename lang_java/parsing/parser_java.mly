@@ -741,7 +741,8 @@ for_statement:
 for_control:
  | for_init_opt SM expression_opt SM for_update_opt 
      { ForClassic ($1, Common.option_to_list $3, $5) } 
- | for_var_control { Foreach ast_todo2 }
+ | for_var_control 
+     { let (a, b) = $1 in Foreach (a, b) }
 
 for_init_opt:
  | /*(*empty*)*/  { ForInitExprs [] }
@@ -754,11 +755,13 @@ for_init:
 for_update: statement_expression_list  { $1 }
 
 for_var_control:
- | type_java variable_declarator_id for_var_control_rest { ast_todo }
+ |           type_java variable_declarator_id for_var_control_rest 
+     {  canon_var [] $1 $2, $3 }
 /*(* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)*/
- | modifiers type_java variable_declarator_id for_var_control_rest { ast_todo }
+ | modifiers type_java variable_declarator_id for_var_control_rest 
+     { canon_var $1 $2 $3, $4 }
 
 for_var_control_rest: COLON expression { $2 }
 

@@ -572,7 +572,13 @@ and stmt env = function
   | For (x, st) ->
       let env = 
         match x with
-        | Foreach () -> env
+        | Foreach (v, e) -> 
+            var env v;
+            expr env e;
+            { env with
+              params_locals = (Ast.unwrap v.v_name):: env.params_locals;
+            } 
+            
         | ForClassic (init, es1, es2) ->
             (match init with
             | ForInitExprs es0 ->

@@ -206,8 +206,10 @@ and vof_for_control =
       and v2 = Ocaml.vof_list vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
-  | Foreach v1 ->
-      let v1 = Ocaml.vof_unit v1 in Ocaml.VSum (("Foreach", [ v1 ]))
+  | Foreach (v1, v2) ->
+      let v1 = vof_var v1 in 
+      let v2 = vof_expr v2 in 
+      Ocaml.VSum (("Foreach", [ v1; v2]))
 and vof_for_init =
   function
   | ForInitVars v1 ->
