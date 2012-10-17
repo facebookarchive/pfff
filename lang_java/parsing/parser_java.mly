@@ -426,6 +426,7 @@ method_invocation:
               in
               Call (Dot (Name (name (xs)), x), $3)
           | _ -> 
+              pr2 "method_invocation pb";
               pr2_gen $1;
               raise Impossible
         }
@@ -505,6 +506,7 @@ cast_expression:
             | Dot (Name name, id) ->
                 TClass ((name ++ [[], id]) +> List.map (fun (xs, id) -> id, xs))
             | _ -> 
+                pr2 "cast_expression pb";
                 pr2_gen $2;
                 raise Todo
           in

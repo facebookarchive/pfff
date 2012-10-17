@@ -229,8 +229,8 @@ let (lookup_fully_qualified2: env -> string list -> Graph_code.node option) =
             (* todo: this will be a problem when go from class-level
              * to method/field level dependencies
              *)
-            pr2_gen (k, xs);
             pr2 "WARNING: multiple entities with same name";
+            pr2_gen (k, xs);
           end
         );
         
@@ -270,7 +270,7 @@ let with_full_qualifier env xs =
       | ("*")::rest ->
           List.rev rest
       (* todo opti: if head match the head of xs, then can accelerate things? *)
-      | xs -> List.rev xs
+      | _ -> List.rev (List.tl rev)
     in
     prefix ++ (xs +> List.map Ast.unwrap)
   )
@@ -663,6 +663,7 @@ and expr env = function
             | None ->
                 (match n with
                 | [] -> 
+                    pr2 "Name is empty??";
                     pr2_gen (env.current, n);
                     raise Impossible
                 | [x] when looks_like_enum_constant str -> 
@@ -670,8 +671,8 @@ and expr env = function
                 | [x] when looks_like_class_name str ->
                     add_use_edge env (str, E.Package)
                 | [x] -> 
-                    env.imported_namespace +> List.iter pr2_gen;
                     pr2 ("PB: " ^ Common.dump n);
+                    env.imported_namespace +> List.iter pr2_gen;
                 | x::y::xs ->
                     (* unknown package probably *)
                     add_use_edge env (str, E.Package)
@@ -706,8 +707,11 @@ and expr env = function
           decls env xs
       )
   | NewQualifiedClass (e, id, args, decls_opt) ->
+      pr2 "NewQualifiedClass";
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
-      raise Todo
+      (* todo: need to resolve the type of 'e' *)
+      expr env (NewClass (TClass ([id, []]), args, decls_opt))
+
   | NewArray (t, args, i, ini_opt) ->
       typ env t;
       exprs env args;
