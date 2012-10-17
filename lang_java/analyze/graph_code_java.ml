@@ -472,11 +472,11 @@ and method_decl env def =
   end;
   let env = { env with
     current = (full_str, E.Method E.RegularMethod);
-    (* No change to the qualifier, methods are not a namespace.
-     * But take care when have anonymous classes that they
-     * do not use the same node names.
+    (* No change to the qualifier? methods are not a namespace?
+     * Hmm but can have nested classes inside a methods that
+     * share the same name so yes need full_ident as a qualifier.
     *)
-    current_qualifier = env.current_qualifier;
+    current_qualifier = full_ident;
     params_locals = def.m_formals +> List.map (fun v -> Ast.unwrap v.v_name);
     (* TODO *)
     type_params_local = [];
