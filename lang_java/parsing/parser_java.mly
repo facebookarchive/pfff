@@ -445,10 +445,11 @@ method_invocation:
 postfix_expression:
  | primary  { $1 }
  | name     { 
-     (* can be a field access ... or a qualified name ...
-      * Ambiguity. Note that index.field is not parsed as a
-      * Dot because the rule for Dot is  primary DOT identifier.
-      * The last dot has to be a Dot and not a Name?
+     (* Ambiguity. It could be a field access (Dot) or a qualified 
+      * name (Name). See ast_java.ml note on the Dot constructor for
+      * more information.
+      * The last dot has to be a Dot and not a Name at least,
+      * but more elements of Name could be a Dot too.
       *)
      match List.rev $1 with
      | (Id id)::x::xs ->

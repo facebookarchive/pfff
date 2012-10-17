@@ -119,7 +119,7 @@ type expr =
    * the Java grammar is ambiguous and without contextual information,
    * there is no way to know whether x.y.z is an access to the field z
    * of field y of local variable x or the static field z of class y
-   * in package x.
+   * in package x. See the note on Dot below.
    *)
   | Name of name 
 
@@ -137,12 +137,21 @@ type expr =
 
   | Call of expr * arguments
   (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y)?
-   * The static part is a Name and the more dynamic part a Dot.
-   * So variable.field or variable.method will be parsed as
+   * The static part should be a Name and the more dynamic part a Dot.
+   * So variable.field and variable.method should be parsed as
    * Dot (Name [variable], field|method). Unfortunately
    * variable.field1.field2 is currently parsed as 
    * Dot (Name [variable;field1], field2). You need semantic information
    * about variable to disambiguate.
+   * 
+   * Why the ambiguity? Names and packages are not
+   * first class citizens, so one cant pass a class/package name as an
+   * argument to a function, so when have X.Y.z in an expression, the 
+   * last element has to be a field or a method (if it's a class,
+   * people should use X.Y.class), so it's safe to transform such
+   * a Name at parsing time in a Dot.
+   * The problem is that more things in x.y.z can be a Dot, but to know
+   * that requires semantic information about the type of x and y.
    *)
   | Dot of expr * ident
   | ArrayAccess of expr * expr
