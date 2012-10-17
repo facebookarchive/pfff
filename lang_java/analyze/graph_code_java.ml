@@ -341,9 +341,12 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
       ) ++ 
      (ast.imports +> List.map (fun (is_static, qualified_ident) ->
        List.map Ast.unwrap qualified_ident
-     ) ++
-      (* we automatically import java.lang.* *)
-       [["java";"lang";"*"]]
+     ) ++ [
+       (* we automatically import java.lang.* *)
+       ["java";"lang";"*"];
+       (* we automatically import top packages *)
+       ["*"]
+     ]
      );
   }
   in
@@ -678,7 +681,7 @@ and expr env = function
                     add_use_edge env (str, E.Package)
                 | [x] -> 
                     pr2 ("PB: " ^ Common.dump n);
-                    env.imported_namespace +> List.iter pr2_gen;
+                    (* env.imported_namespace +> List.iter pr2_gen; *)
                 | x::y::xs ->
                     (* unknown package probably *)
                     add_use_edge env (str, E.Package)
