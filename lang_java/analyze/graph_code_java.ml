@@ -70,9 +70,9 @@ type env = {
    * would work, but really fine-grained intra-method dependencies 
    * are not that useful.
    *)
-  params_locals: string list;
-  (* todo, to avoid looking up typenames *)
-  type_params_local: string list;
+  params_or_locals: string list;
+  (* To avoid looking up type parameters in the graph. *)
+  type_parameters: string list;
 
   (* less: skip_edges *)
 }
@@ -344,8 +344,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
       | None -> []
       | Some long_ident -> long_ident
       );
-    params_locals = [];
-    type_params_local = [];
+    params_or_locals = [];
+    type_parameters = [];
     imported_namespace = 
       (match ast.package with
       (* we automatically import the current.package.* *)
@@ -437,9 +437,10 @@ and class_decl env def =
   let env = { env with
     current = (full_str, E.Class E.RegularClass);
     current_qualifier = full_ident;
-    params_locals = [];
-    (* TODO *)
-    type_params_local = [];
+    params_or_locals = [];
+    type_parameters = def.cl_tparams +> List.map (function
+    | TParam ((str,_tok), _constraints) -> str
+    );
   }
   in
   let parents = 
@@ -487,9 +488,9 @@ and method_decl env def =
      * share the same name so yes need full_ident as a qualifier.
     *)
     current_qualifier = full_ident;
-    params_locals = def.m_formals +> List.map (fun v -> Ast.unwrap v.v_name);
-    (* TODO *)
-    type_params_local = [];
+    params_or_locals = def.m_formals +> List.map (fun v -> Ast.unwrap v.v_name);
+    (* TODO use m_tparams *) 
+    type_parameters = [];
   } 
   in
   var env def.m_var;
@@ -529,9 +530,9 @@ and enum_decl env def =
   let env = { env with
     current = (full_str, E.Class E.RegularClass);
     current_qualifier = full_ident;
-    params_locals = [];
+    params_or_locals = [];
     (* TODO *)
-    type_params_local = [];
+    type_parameters = [];
   } 
   in
   let parents = (def.en_impls) in
@@ -598,7 +599,7 @@ and stmt env = function
             var env v;
             expr env e;
             { env with
-              params_locals = (Ast.unwrap v.v_name):: env.params_locals;
+              params_or_locals = (Ast.unwrap v.v_name):: env.params_or_locals;
             } 
             
         | ForClassic (init, es1, es2) ->
@@ -609,9 +610,9 @@ and stmt env = function
             | ForInitVars xs ->
                 List.iter (field env) xs;
                 let env = { env with
-                  params_locals = xs +> List.map (fun fld ->
+                  params_or_locals = xs +> List.map (fun fld ->
                     Ast.unwrap fld.f_var.v_name
-                  ) ++ env.params_locals;
+                  ) ++ env.params_or_locals;
                 } 
                 in
                 exprs env (es1 ++ es2);
@@ -649,7 +650,7 @@ and stmts env xs =
           match x with
           | LocalVar fld -> 
               let str = Ast.unwrap fld.f_var.v_name in
-              { env with params_locals = str::env.params_locals }
+              { env with params_or_locals = str::env.params_or_locals }
           (* also add LocalClass case? no, 'lookup env ...' handles that *)
           | _ -> env
         in
@@ -666,7 +667,7 @@ and catches env xs = List.iter (catch env) xs
 and catch env (v, st) =
   var env v;
   let str = Ast.unwrap v.v_name in
-  let env = { env with params_locals = str::env.params_locals } in
+  let env = { env with params_or_locals = str::env.params_or_locals } in
   stmt env st
 
 (* ---------------------------------------------------------------------- *)
@@ -679,7 +680,7 @@ and expr env = function
         let str = str_of_name n in
         (match str, n with
         (* TODO: look at the type and continue lookup *)
-        | _, (_,(s,_))::rest when List.mem s env.params_locals -> ()
+        | _, (_,(s,_))::rest when List.mem s env.params_or_locals -> ()
         (* TODO *)
         | "super", _ | "this", _ -> 
             ()
@@ -801,28 +802,33 @@ and typ env = function
       let xs = long_ident_of_class_type reft in
       let str = str_of_qualified_ident xs in
       if env.phase = Uses || env.phase = Inheritance then begin
-        (match lookup env xs with
-        (* TODO: look in type_params_local ! *)
-        | Some n2 -> 
-            (* pr2 ("FOUND: " ^ Common.dump n); *)
-            add_use_edge env n2
-        | None ->
-            (match xs with
-            | [] -> raise Impossible
-            | ((s,_))::_ when List.mem_assoc s env.imported_qualified ->
-                let (is_static, full_ident) = 
-                  List.assoc s env.imported_qualified in
-                let str = str_of_qualified_ident full_ident in
-                add_use_edge env (str, E.Package)
-
-            | [x] -> 
-                if looks_like_class_name str
-                then add_use_edge env (str, E.Package)
-                else 
-                  pr2 ("PB: " ^ Common.dump reft);
-            | x::y::xs ->
-                (* unknown package probably *)
-                add_use_edge env (str, E.Package)
+        (match str, reft with
+        (* TODO: look at the type and continue lookup *)
+        | _, (((s,_),_))::rest when List.mem s env.type_parameters -> ()
+        | _ ->
+            (match lookup env xs with
+            (* TODO: look in type_params_local ! *)
+            | Some n2 -> 
+                (* pr2 ("FOUND: " ^ Common.dump n); *)
+                add_use_edge env n2
+            | None ->
+                (match xs with
+                | [] -> raise Impossible
+                | ((s,_))::_ when List.mem_assoc s env.imported_qualified ->
+                    let (is_static, full_ident) = 
+                      List.assoc s env.imported_qualified in
+                    let str = str_of_qualified_ident full_ident in
+                    add_use_edge env (str, E.Package)
+                      
+                | [x] -> 
+                    if looks_like_class_name str
+                    then add_use_edge env (str, E.Package)
+                    else 
+                      pr2 ("PB: " ^ Common.dump reft);
+                | x::y::xs ->
+                    (* unknown package probably *)
+                    add_use_edge env (str, E.Package)
+                )
             )
         )
       end

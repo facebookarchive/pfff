@@ -23,6 +23,7 @@ module PI = Parse_info
  * 
  * TODO: 
  *  - support annotations
+ *  - support generic methods
  *  - etc.
  *)
 
@@ -256,6 +257,9 @@ and method_decl = {
   (* the v_mod can only be Final or Annotation *)
   m_formals: vars;
   m_throws: qualified_ident list;
+
+  (* todo: m_tparams *)
+
   (* Empty for methods in interfaces. 
    * For constructor the first stmts can contain 
    * explicit_constructor_invocations.
