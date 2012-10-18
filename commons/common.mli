@@ -1138,6 +1138,7 @@ val words_of_string_with_newlines: string -> string list
 (* e.g. on "ab\n\nc" it will return [Left "ab"; Right (); Right (); Left "c"] *)
 val lines_with_nl_either: string -> (string, unit) either  list
 
+val n_space: int -> string
 (* reindent a string *)
 val indent_string: int -> string -> string
 

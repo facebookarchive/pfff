@@ -3064,11 +3064,12 @@ let (unwords: string list -> string) = fun s ->
 let (split_space: string -> string list)   = fun s ->
   Str.split (Str.regexp "[ \t\n]+") s
 
+let n_space n = repeat " " n +> join ""
+
 let indent_string n s =
-  let n_space = repeat " " n +> join "" in
   let xs = lines s in
   xs
-  +> List.map (fun s -> n_space ^ s)
+  +> List.map (fun s -> n_space n ^ s)
   +> unlines
 
 
