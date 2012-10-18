@@ -198,18 +198,28 @@ let to_item xs =
 /*(*************************************************************************)*/
 /*
 (*
- * the value constructions:
- *  - constants
- *  - constructors
- *  - lists
- *  - records
- *  - tuples 
- *  - arrays
- *  - name tags (`Foo)
- * have at the same time some rules to express:
- *  - the type
- *  - the expression
- *  - the pattern
+ * - toplevel
+ * - signature
+ * - structure
+ * - names
+ * 
+ * - expression
+ * - type
+ * - pattern
+ * with for the last 3 sections subsections around values:
+ *    - constants
+ *    - constructors
+ *    - lists
+ *    - records
+ *    - tuples 
+ *    - arrays
+ *    - name tags (`Foo)
+ * 
+ * - let/fun
+ * - classes (not in AST)
+ * - modules
+ * - xxx_opt, xxx_list
+ * 
  *)*/
 /*(*************************************************************************)*/
 /*(*1 Toplevel, compilation units *)*/
@@ -1069,6 +1079,8 @@ let_binding:
 
 fun_binding:
  | strict_binding { $1 }
+ /*(* let x arg1 arg2 : t = e *)*/
+ | type_constraint TEq seq_expr { [], ($2, $3) (* TODO return triple with $1*)}
 
 strict_binding:
  /*(* simple values, e.g. 'let x = 1' *)*/
