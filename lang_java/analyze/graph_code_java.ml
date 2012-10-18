@@ -850,7 +850,7 @@ and field env f =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir skip_list =
+let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_java.find_source_files_of_dir_or_files [root] in
 
@@ -877,6 +877,7 @@ let build ?(verbose=true) dir skip_list =
      extract_defs_uses ~phase:Defs ~g ~ast ~readable 
        ~lookup_fails ~skip_edges;
     ));
+  if not only_defs then begin
 
   (* step2: creating the 'Use' edges just for inheritance *)
   if verbose then pr2 "\nstep2: extract inheritance information";
@@ -899,4 +900,5 @@ let build ?(verbose=true) dir skip_list =
      extract_defs_uses ~phase:Uses ~g ~ast ~readable
        ~lookup_fails ~skip_edges;
    ));
+  end;
   g

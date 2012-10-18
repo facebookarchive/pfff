@@ -8,6 +8,7 @@ SRC= \
      highlight_java.ml \
      ast_java_simple.ml \
      graph_code_java.ml \
+     builtins_java.ml \
      test_analyze_java.ml
 
 -include $(TOP)/Makefile.config

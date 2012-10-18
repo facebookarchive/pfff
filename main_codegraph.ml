@@ -227,6 +227,21 @@ let build_graph_code lang root =
   Graph_code.save g (dep_file root)
 
 (*****************************************************************************)
+(* Language specific, building stdlib *)
+(*****************************************************************************)
+let build_stdlib lang root dst =
+  let skip_list =
+    if Sys.file_exists (skip_file root)
+    then Skip_code.load (skip_file root)
+    else []
+  in
+  match lang with
+  | "java" ->
+      Builtins_java.extract_from_sources ~skip_list ~src:root ~dst
+  | _ -> failwith ("language not supported: " ^ lang)
+  
+
+(*****************************************************************************)
 (* Main action, viewing the graph *)
 (*****************************************************************************)
 
@@ -394,6 +409,8 @@ let extra_actions () = [
 
   "-build", " <dir>",
   Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
+  "-build_stdlib", " <src> <dst>",
+  Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
 
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
