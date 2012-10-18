@@ -1338,9 +1338,11 @@ private_flag:
 
 module_binding:
  | TEq module_expr
-      { Some ($1, $2) }
+     { Some ($1, $2) }
  | TOParen TUpperIdent TColon module_type TCParen module_binding
      { None }
+ | TColon module_type TEq module_expr
+     { (* TODO $1 *) Some ($3, $4) }
 
 module_declaration:
  | TColon module_type
