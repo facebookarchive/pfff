@@ -1,0 +1,56 @@
+package gnu.classpath.tools.java2xhtml;
+class Java2xhtml {
+  class State {
+    int LINE_COMMENT;
+    int TRADITIONAL_COMMENT;
+    int SINGLE_QUOTE;
+    int DOUBLE_QUOTE;
+    int PACKAGE_NAME;
+    int JAVADOC;
+    int PARAM_VARIABLE;
+    int IMPORT_NAME;
+    int TEXT;
+  }
+  int externalStyleSheetName;
+  int hasExternalStyleSheet;
+  int hasInternalStyleSheet;
+  int hasAllBoldSourceCode;
+  int hasTitle;
+  int isXHTML_1_1;
+  int isCodeSnippet;
+  int hasFooterDate;
+  int hasFooterIcons;
+  int hasFooter;
+  int hasLineModulusCodeBlocks;
+  int hasLineModulusDrawnLines;
+  int hasLineNumbers;
+  int hasLegend;
+  int lineModulus;
+  int tabSize;
+  int extraIndentation;
+  int javadocTagCollection;
+  int primitiveLiteralCollection;
+  int primitiveTypeCollection;
+  int keywordCollection;
+  int iconStyle;
+  int primitiveLiteralStyle;
+  int numericLiteralStyle;
+  int singleQuoteStyle;
+  int doubleQuoteStyle;
+  int constantStyle;
+  int constructorStyle;
+  int nonPrimitiveTypeStyle;
+  int primitiveTypeStyle;
+  int packageNameStyle;
+  int importNameStyle;
+  int javadocTagStyle;
+  int javadocCommentStyle;
+  int traditionalCommentStyle;
+  int singleLineCommentStyle;
+  int variableStyle;
+  int methodStyle;
+  int keywordStyle;
+  int modulusLineNumberStyle;
+  int lineNumberStyle;
+  int sourceCodeStyle;
+}
