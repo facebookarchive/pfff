@@ -475,6 +475,7 @@ expr:
 
  | Tlet rec_flag let_bindings Tin seq_expr
      { LetIn ($1, $2, $3, $4, $5) }
+
  | Tfun labeled_simple_pattern fun_def
      { let (params, action) = $3 in
        Fun ($1, $2::params, action)
@@ -573,6 +574,9 @@ expr:
  | simple_expr TDot TOBrace expr TCBrace TAssignMutable expr
      { ExprTodo }
      
+
+ | Tlet Topen mod_longident Tin seq_expr
+      { ExprTodo }
 
  | Tassert simple_expr %prec below_SHARP
      { ExprTodo }
