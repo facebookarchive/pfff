@@ -127,8 +127,6 @@ and expr =
   | Tuple of expr comma_list
   | List of expr semicolon_list bracket
 
-  | ParenExpr of expr paren
-
   (* can be empty; can not be singular as we use instead ParenExpr *) 
   | Sequence of seq_expr paren (* can also be 'begin'/'end' *)
 
@@ -146,8 +144,8 @@ and expr =
   | FieldAssign of expr * tok (* . *) * long_name * tok (* <- *) * expr
   | Record of record_expr brace
 
-  | ObjAccess of expr * tok (* # *) * name
   | New of tok * long_name (* class_longident *)
+  | ObjAccess of expr * tok (* # *) * name
   
 
   | LetIn of tok * rec_opt * let_binding and_list * tok (* in *) * seq_expr
@@ -164,6 +162,8 @@ and expr =
   | For of tok * name * tok * seq_expr * for_direction * seq_expr * 
            tok * seq_expr * tok
 
+  | ParenExpr of expr paren
+  (* todo: LetOpenIn *)
   | ExprTodo
 
 and seq_expr = expr semicolon_list
@@ -255,6 +255,7 @@ and let_binding =
    l_args: parameter list; (* can be empty *)
    l_tok: tok; (* = *)
    l_body: seq_expr;
+   (* todo: l_type: ty option *)
  }
 
 (* ------------------------------------------------------------------------- *)
@@ -308,8 +309,8 @@ and toplevel =
   | Item of item
 
   (* should both be removed *)
-  | ScSc of info (* ;; *)
   | TopSeqExpr of seq_expr
+  | ScSc of info (* ;; *)
 
   (* some ml files contain some #! or even #load directives *)
   | TopDirective of info
