@@ -12,8 +12,9 @@
 /* Yoann Padioleau */
 %{
 (* 
- * src: slightly adapted from the official source of OCaml in its
- *  parsing/ subdirectory.
+ * src: adapted from the official source of OCaml in its
+ * parsing/ subdirectory. All semantic actions are new. Only the
+ * grammar structure was copied.
  * 
  * was: $Id: parser.mly 10536 2010-06-07 15:32:32Z doligez $
  *
@@ -22,9 +23,9 @@
  *  (note that it unfortunately contains conflicts when translated into yacc).
  * - http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
  *   itself derived from the official ocaml reference manual
- *   (note that it also contains conflicts when translated into yacc).
+ *   (also contains conflicts when translated into yacc).
  * - http://www.mpi-sws.org/~rossberg/sml.html
- *   (note that it also contains conflicts when translated into yacc).
+ *   (also contains conflicts when translated into yacc).
  * - http://www.mpi-sws.org/~rossberg/hamlet/
  *   solves ambiguities
  * - linear-ML parser
