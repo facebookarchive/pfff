@@ -34,6 +34,7 @@ PROGS+=pfff_test
 ifeq ($(FEATURE_BDB), 1)
 PROGS+=pfff_db_heavy
 PROGS+=scheck_heavy
+PROGS+=codequery
 endif
 
 ifeq ($(FEATURE_VISUAL), 1)
@@ -451,6 +452,19 @@ scheck_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main
 
 clean:: 
 	rm -f scheck_heavy
+
+#------------------------------------------------------------------------------
+# codequery targets
+#------------------------------------------------------------------------------
+
+codequery: $(LIBS) main_codequery.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+
+codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_codequery.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
+
+clean:: 
+	rm -f codequery
 
 #------------------------------------------------------------------------------
 # OBSOLETE: ppp targets (obsolete now that have closures in hphp)
