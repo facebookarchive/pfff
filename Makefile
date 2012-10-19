@@ -679,6 +679,10 @@ fb.opt:
 	$(MAKE) opt
 	$(MAKE) opt -C facebook
 
+fbdepend:
+	$(MAKE) depend
+	$(MAKE) depend -C facebook
+
 #refactoring:
 # git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
 
