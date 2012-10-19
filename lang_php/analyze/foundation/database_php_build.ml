@@ -74,6 +74,12 @@ module DbH = Database_php_build_helpers
  *)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
+let pr2_err, pr2_err_once = Common.mk_pr2_wrappers Flag.show_errors
+
+(*****************************************************************************)
 (* Build_entity_finder *)
 (*****************************************************************************)
 (* See entity_php.mli for the rational behind having both a database
@@ -99,7 +105,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
    ) with 
    | Timeout -> raise Timeout
    | exn ->
-       pr2 (spf "Entity_finder: pb with '%s', exn = %s" 
+       pr2_err (spf "Entity_finder: pb with '%s', exn = %s" 
                    s (Common.exn_to_s exn));
       raise exn
   )
@@ -163,7 +169,7 @@ let index_db1_2 db files =
     (Out_of_memory  | Stack_overflow | Timeout
     | Parse_php.Parse_error _) as exn
     -> 
-      pr2 (spf "PB with %s, exn = %s, undoing addition" 
+      pr2_err (spf "PB with %s, exn = %s, undoing addition" 
               file (Common.exn_to_s exn));
       db.file_to_topids#add2 (file, []);
       !all_ids +> List.iter (fun id -> 
@@ -575,7 +581,7 @@ let index_db4_2 ~annotate_variables_program db =
       let comment_tags = 
         try Annotation_php.extract_annotations str 
         with exn ->
-          pr2 (spf "PB: EXTRACT ANNOTATION: %s on %s" 
+          pr2_err (spf "PB: EXTRACT ANNOTATION: %s on %s" 
                   (Common.exn_to_s exn) file);
           []
       in

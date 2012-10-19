@@ -37,6 +37,7 @@ module E = Database_code
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
+let pr2_err, pr2_err_once = Common.mk_pr2_wrappers Flag.show_errors
 
 (*****************************************************************************)
 (* Iter Helpers *)
@@ -58,8 +59,8 @@ let iter_files db f =
       k ();
       try f (file, ids)
       with exn -> 
-        pr2 (Common.exn_to_s_with_backtrace exn);
-        pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+        pr2_err (Common.exn_to_s_with_backtrace exn);
+        pr2_err (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
     ));
   ()
 
@@ -170,7 +171,7 @@ let add_toplevel2 file (top, info_item) db =
     try 
       fpos_of_toplevel top 
     with NoII -> 
-      pr2 ("PB: pb NoII with:" ^ file);
+      pr2_err ("PB: pb NoII with:" ^ file);
       (*
       toput before: let cnt = ref 0 
 
@@ -267,7 +268,7 @@ let (add_def:
           +> Common.option_to_list +> List.flatten 
         in
         if before +> List.exists (fun id -> db.defs.id_kind#find id =*= idkind)
-        then pr2 (spf "PB: duplicate entity %s" idstr);
+        then pr2_err (spf "PB: duplicate entity %s" idstr);
     | _ -> ()
     );
 
@@ -402,7 +403,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
          in
          let s = N.nameS name in
          if null candidates
-         then pr2 (spf "PB: no candidate for function call: %s" s);
+         then pr2_err (spf "PB: no candidate for function call: %s" s);
 
          name, name_ii_list +> List.map snd, candidates
        ) 
