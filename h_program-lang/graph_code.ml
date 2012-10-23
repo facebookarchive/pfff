@@ -81,6 +81,13 @@ type edge =
   (* todo? refine by having different cases? Use of `Call|`Extend|...? *)
   | Use
 
+type nodeinfo = { 
+  (* todo: position *)
+  props: property list;
+}
+ and property =
+   | IsEnum
+
 (* 
  * We use an imperative, directed, without intermediate node-index, graph.
  * 
@@ -103,6 +110,8 @@ type graph = {
    * be an 'implements'.
    *)
   use: node G.graph;
+
+  info: (node, nodeinfo) Hashtbl.t;
 }
 
 (*****************************************************************************)
@@ -119,6 +128,7 @@ let dupe = "DUPE", E.Dir
 let create () =
   { has = G.create ();
     use = G.create ();
+    info = Hashtbl.create 101;
   }
 
 let add_node n g =
@@ -146,6 +156,12 @@ let remove_edge (n1, n2) e g =
   match e with
   | Has -> G.remove_edge n1 n2 g.has
   | Use -> G.remove_edge n1 n2 g.use
+
+let add_nodeinfo n info g =
+  if not (G.has_node n g.has)
+  then failwith "unknown node";
+
+  Hashtbl.replace g.info n info
 
 
 (*****************************************************************************)
@@ -196,6 +212,9 @@ let nb_nodes g =
   G.nb_nodes g.has
 let nb_use_edges g =
   G.nb_edges g.use
+
+let nodeinfo n g =
+  Hashtbl.find g.info n
 
 (*****************************************************************************)
 (* Iteration *)

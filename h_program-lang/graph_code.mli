@@ -1,6 +1,11 @@
 
 type node = string * Database_code.entity_kind
 type edge = Has | Use
+type nodeinfo = {
+  props: property list;
+}
+ and property =
+   | IsEnum
 
 (* really an hypergraph actually *)
 type graph
@@ -20,6 +25,7 @@ val create_initial_hierarchy: graph -> unit
 (* graph construction *)
 val create: unit -> graph
 val add_node: node -> graph -> unit
+val add_nodeinfo: node -> nodeinfo -> graph -> unit
 val add_edge: (node * node) -> edge -> graph -> unit
 val create_intermediate_directories_if_not_present: 
   graph -> Common.dirname -> unit
@@ -33,6 +39,7 @@ val pred: node -> edge -> graph -> node list
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
 val children: node -> graph -> node list
+val nodeinfo: node -> graph -> nodeinfo
 
 val all_children: node -> graph -> node list
 
