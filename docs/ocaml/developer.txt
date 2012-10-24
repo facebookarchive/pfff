@@ -2,7 +2,85 @@
 
 Have C-c C-t working to get type information under cursor! It's really useful.
 
-** style: 
+* Code organization
+
+Prefer simple Makefiles to ocamlbuild.
+
+Avoid very generic filenames like server.ml. It makes it hard
+(without -pack) to include your code with other projects
+as you may have linking issues. Also it is annoying
+for ocaml tools like stags, codemap, codegraph, etc.
+
+* Style
+
+** bad example of style
+
+huge files
+no mli
+no comment on general idea of the algorithm or module
+no comment at all
+
+put old code in comment to test stuff, or some && false for
+ debugging instead of using command line flags like -verbose
+
+no unit tests, no tests, no examples
+
+many dead functions
+
+** bad example of style: ocamlnet/netstring/nethtml.ml.
+
+bad nested functions,
+
+bad indentation, too many newlines
+
+bad use of open variants
+
+overuse of intermediate functions like extract
+
+old: nested func
+  let model_of element_name =
+    if element_name = "" then
+      (`Everywhere, `Any)
+    else
+      let extract =
+	function
+	    (eclass, `Sub_exclusions(_,m)) -> eclass, m
+	  | m -> m
+      in
+      try
+	extract(Hashtbl.find dtd_hash element_name)
+      with
+	  Not_found -> (`Everywhere, `Any)
+  in
+
+better:
+let model_of ~dtd_hash element_name =
+  if element_name = "" 
+  then (Everywhere, Any)
+  else
+    try 
+      (match Hashtbl.find dtd_hash element_name with 
+      | (eclass, Sub_exclusions(_,m)) -> eclass, m
+      | m -> m
+      )
+    with Not_found -> (Everywhere, Any)
+
+** bad example of style: ccss/
+
+bad use of open variants instead of plan variants
+
+use of _t to suffix type definition (no need, different namespace)
+
+unindented mutually recursive types. When have lots of type definitions,
+ as it's the case usually with AST of languages, indent the types
+ to convey grouping information.
+
+use more than 80 columns!
+
+don't use TABS, use space, and indent 2 space, not 4 (and especially not 8!)
+
+
+* Style
 
 *** prefer 'match () with | _ ... when ->' over nested elsif
 
@@ -47,68 +125,4 @@ dont do:
 
 *** use Common.profile_code(), not printf and manual Sys.time()
 
-*** bad example of style: julien's original code
 
-huge files
-no mli
-no comment on general idea of the algorithm or module
-no comment at all
-
-put old code in comment to test stuff, or some && false for
- debugging instead of using command line flags like -verbose
-
-no unit tests, no tests, no examples
-
-many dead functions
-
-*** bad example of style: ocamlnet/netstring/nethtml.ml.
-
-bad nested functions,
-
-bad indentation, too many newlines
-
-bad use of open variants
-
-overuse of intermediate functions like extract
-
-old: nested func
-  let model_of element_name =
-    if element_name = "" then
-      (`Everywhere, `Any)
-    else
-      let extract =
-	function
-	    (eclass, `Sub_exclusions(_,m)) -> eclass, m
-	  | m -> m
-      in
-      try
-	extract(Hashtbl.find dtd_hash element_name)
-      with
-	  Not_found -> (`Everywhere, `Any)
-  in
-
-better:
-let model_of ~dtd_hash element_name =
-  if element_name = "" 
-  then (Everywhere, Any)
-  else
-    try 
-      (match Hashtbl.find dtd_hash element_name with 
-      | (eclass, Sub_exclusions(_,m)) -> eclass, m
-      | m -> m
-      )
-    with Not_found -> (Everywhere, Any)
-
-*** bad example of style: ccss/
-
-bad use of open variants instead of plan variants
-
-use of _t to suffix type definition (no need, different namespace)
-
-unindented mutually recursive types. When have lots of type definitions,
- as it's the case usually with AST of languages, indent the types
- to convey grouping information.
-
-use more than 80 columns!
-
-don't use TABS, use space, and indent 2 space, not 4 (and especially not 8!)
