@@ -193,8 +193,12 @@ let EscapeSequence =
 
 (* 3.10.4 Character Literals *)
 
+(* ugly: hardcoded stuff for fbandroid, error in SoundexTest.java *)
+let UnicodeX = "�"
+
 let SingleCharacter = [^ '\'' '\\' '\n' '\r']
-let CharacterLiteral = '\'' (SingleCharacter | EscapeSequence) '\''
+let CharacterLiteral = '\'' (SingleCharacter | EscapeSequence | UnicodeX ) '\''
+
 
 (* 3.10.5 String Literals *)
 
