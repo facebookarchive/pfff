@@ -48,7 +48,8 @@ let fix_tokens xs =
     | [] -> []
 
     (* dont transform the < of type parameters in LT2. Transforms
-     * only for type arguments.
+     * only for type arguments (but increment depth_angle because
+     * we may need to transform some >> into > >.
      *)
     | CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::xs ->
         CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::
@@ -100,7 +101,13 @@ let fix_tokens xs =
     | DOT ii1::LT ii2::xs ->
       DOT ii1::LT2 ii2::aux (depth_angle + 1) xs
 
-
+    (* <T extends ...> bar().
+     * could also check for public|static|... just before the <
+     * which is also the sign of generic method.
+     *)
+    | LT ii1::IDENTIFIER (s, ii2)::TCommentSpace iispace::EXTENDS ii3::xs ->
+      LT ii1::IDENTIFIER (s, ii2)::TCommentSpace iispace::EXTENDS ii3::
+        aux (depth_angle + 1) xs
 
     | GT ii::xs when depth_angle > 0 ->
         GT ii::aux (depth_angle - 1) xs
