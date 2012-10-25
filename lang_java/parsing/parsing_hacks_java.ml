@@ -37,6 +37,7 @@ let fix_tokens xs =
     let depth_angle = env in
     if depth_angle < 0 
     then begin 
+      pr2 (spf "depth_angle < 0, %d" depth_angle);
       pr2_gen (List.hd xs);
       (* failwith "depth < 0" *)
       aux 0 xs
@@ -67,18 +68,19 @@ let fix_tokens xs =
         ::LT ii4::
           aux (depth_angle + 1) xs
 
-    (* less: allow also a small space, but usually we should fix
-     * this code.
-     *)
-    | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
-        IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
-
 (* too many FPs
     | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::xs 
        when s =~ "^[A-Z]" ->
         IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
           aux (depth_angle + 1) xs
 *)
+
+    (* less: allow also a small space, but usually we should fix
+     * this code. But pb, see previous comment.
+     *)
+    | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
+        IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
+
     | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::
       IDENTIFIER (s3, ii3)::xs
        when s =~ "^[A-Z]" && s3 =~ "^[A-Z]" ->
@@ -90,6 +92,15 @@ let fix_tokens xs =
        when s =~ "^[A-Z]" ->
         IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
         aux (depth_angle + 1) (COND ii3::xs)
+
+    (* xxx.<type>of(...), actually don't have to transform in a LT2
+     * but it's a type context so we need to augment depth_angle
+     * so at least the >> get transformed into > >.
+     *)
+    | DOT ii1::LT ii2::xs ->
+      DOT ii1::LT2 ii2::aux (depth_angle + 1) xs
+
+
 
     | GT ii::xs when depth_angle > 0 ->
         GT ii::aux (depth_angle - 1) xs

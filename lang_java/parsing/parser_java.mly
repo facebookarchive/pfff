@@ -282,7 +282,7 @@ identifier: IDENTIFIER { $1 }
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $1 ++ [$3] }
- | name DOT LT type_arguments GT identifier_  { $1++[TypeArgs_then_Id($4, $6)] }
+ | name DOT LT2 type_arguments GT identifier_ { $1++[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
  | identifier                       { Id $1 }
@@ -541,6 +541,7 @@ shift_expression:
 /* 15.20 */
 relational_expression:
  | shift_expression  { $1 }
+ /*(* possible many conflicts if don't use a LT2 *)*/
  | relational_expression LT shift_expression  { Infix ($1, "<", $3) }
  | relational_expression GT shift_expression  { Infix ($1, ">", $3) }
  | relational_expression LE shift_expression  { Infix ($1, "<=", $3) }
