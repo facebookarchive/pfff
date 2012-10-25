@@ -49,7 +49,7 @@ let fix_tokens xs =
 
     (* dont transform the < of type parameters in LT2. Transforms
      * only for type arguments (but increment depth_angle because
-     * we may need to transform some >> into > >.
+     * we may still need to transform some >> into > >).
      *)
     | CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::xs ->
         CLASS ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::
@@ -67,6 +67,16 @@ let fix_tokens xs =
         LT ii4::xs ->
         INTERFACE ii::TCommentSpace ii2::IDENTIFIER(s3, ii3)::TCommentSpace iisp
         ::LT ii4::
+          aux (depth_angle + 1) xs
+
+    (* UGLY HARDCODE, proper way is to have a phase where filter all
+     * TCommentSpace and Newline
+     *)
+
+    | CLASS ii::TCommentNewline iinewline::
+        TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::xs ->
+        CLASS ii::TCommentNewline iinewline::
+        TCommentSpace ii2::IDENTIFIER(s3, ii3)::LT ii4::
           aux (depth_angle + 1) xs
 
 (* too many FPs
