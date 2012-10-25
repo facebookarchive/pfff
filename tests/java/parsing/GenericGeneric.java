@@ -3,4 +3,3 @@ class FetchOperationData<paramClass extends FetchTickerExtra.Params,
                         resultClass extends FetchTickerExtra.Result<paramClass, extraClass>> 
 {
 }
-
