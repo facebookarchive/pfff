@@ -413,12 +413,13 @@ and decl env = function
       let name = spf "__init__%d" n in
       let full_ident = env.current_qualifier ++ [name, fakeInfo name] in
       let full_str = str_of_qualified_ident full_ident in
+      let node = (full_str, E.TopStmts) in
       if env.phase = Defs then begin
-        env.g +> G.add_node (full_str, E.TopStmts);
-        env.g +> G.add_edge (env.current, (full_str, E.TopStmts)) G.Has;
+        env.g +> G.add_node node;
+        env.g +> G.add_edge (env.current, node) G.Has;
       end;
       let env = { env with
-        current = (full_str, E.TopStmts);
+        current = node;
         current_qualifier = full_ident;
       } 
       in
@@ -429,13 +430,14 @@ and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
 and class_decl env def =
   let full_ident = env.current_qualifier ++ [def.cl_name] in
   let full_str = str_of_qualified_ident full_ident in
+  let node = (full_str, E.Class E.RegularClass) in
   if env.phase = Defs then begin
     (* less: def.c_type? *)
-    env.g +> G.add_node (full_str, E.Class E.RegularClass);
-    env.g +> G.add_edge (env.current, (full_str, E.Class E.RegularClass)) G.Has;
+    env.g +> G.add_node node;
+    env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
-    current = (full_str, E.Class E.RegularClass);
+    current = node;
     current_qualifier = full_ident;
     params_or_locals = [];
     type_parameters = def.cl_tparams +> List.map (function
@@ -471,18 +473,19 @@ and method_decl env def =
 
   let full_ident = env.current_qualifier ++ [def.m_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
+  let node = (full_str, E.Method E.RegularMethod) in
   if env.phase = Defs then begin
     (* less: static? *)
     (* less: for now we just collapse all methods with same name together *)
     if G.has_node (full_str, E.Method E.RegularMethod) env.g
     then ()
     else begin
-      env.g +> G.add_node (full_str, E.Method E.RegularMethod);
-      env.g +> G.add_edge (env.current, (full_str, E.Method E.RegularMethod)) G.Has;
+      env.g +> G.add_node node ;
+      env.g +> G.add_edge (env.current, node) G.Has;
     end
   end;
   let env = { env with
-    current = (full_str, E.Method E.RegularMethod);
+    current = node;
     (* No change to the qualifier? methods are not a namespace?
      * Hmm but can have nested classes inside a methods that
      * share the same name so yes need full_ident as a qualifier.
@@ -507,13 +510,14 @@ and field_decl env def =
     then E.Constant
     else E.Field
   in
+  let node = (full_str, kind) in
   if env.phase = Defs then begin
     (* less: static? *)
-    env.g +> G.add_node (full_str, kind);
-    env.g +> G.add_edge (env.current, (full_str, kind)) G.Has;
+    env.g +> G.add_node node;
+    env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
-    current = (full_str, kind);
+    current = node;
     current_qualifier = env.current_qualifier
   } 
   in
@@ -522,13 +526,14 @@ and field_decl env def =
 and enum_decl env def =
   let full_ident = env.current_qualifier ++ [def.en_name] in
   let full_str = str_of_qualified_ident full_ident in
-  if env.phase = Defs then begin
     (* less: make it a class? or a Type? *)
-    env.g +> G.add_node (full_str, E.Class E.RegularClass);
-    env.g +> G.add_edge (env.current, (full_str, E.Class E.RegularClass)) G.Has;
+  let node = (full_str, E.Class E.RegularClass) in
+  if env.phase = Defs then begin
+    env.g +> G.add_node node;
+    env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
-    current = (full_str, E.Class E.RegularClass);
+    current = node;
     current_qualifier = full_ident;
     params_or_locals = [];
     (* TODO *)
@@ -548,12 +553,13 @@ and enum_decl env def =
     in
     let full_ident = env.current_qualifier ++ [ident] in
     let full_str = str_of_qualified_ident full_ident in
+    let node = (full_str, E.Constant) in
     if env.phase = Defs then begin
-      env.g +> G.add_node (full_str, E.Constant);
-      env.g +> G.add_edge (env.current, (full_str, E.Constant)) G.Has;
+      env.g +> G.add_node node;
+      env.g +> G.add_edge (env.current, node) G.Has;
     end;
     let env = { env with
-      current = (full_str, E.Constant);
+      current = node;
       current_qualifier = full_ident;
     }
     in
@@ -728,13 +734,13 @@ and expr env = function
           let anon_class = spf "__anon__%s__%d" classname charpos in
           let full_ident = env.current_qualifier ++ [anon_class, fakeInfo ""] in
           let full_str = str_of_qualified_ident full_ident in
+          let node = (full_str, E.Class E.RegularClass) in
           if env.phase = Defs then begin
-            env.g +> G.add_node (full_str, E.Class E.RegularClass);
-            env.g +> G.add_edge (env.current,(full_str,E.Class E.RegularClass))
-              G.Has;
+            env.g +> G.add_node node;
+            env.g +> G.add_edge (env.current, node) G.Has;
           end;
           let env = { env with
-            current = (full_str, E.Class E.RegularClass);
+            current = node;
             current_qualifier = full_ident;
           }
           in
