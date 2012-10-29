@@ -82,9 +82,10 @@ type edge =
   | Use
 
 type nodeinfo = { 
-  (* todo: position *)
+  pos: Parse_info.parse_info;
   props: property list;
 }
+ (* related: Database_code.property type *)
  and property =
    | IsEnum
 

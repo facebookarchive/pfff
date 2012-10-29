@@ -2,6 +2,7 @@
 type node = string * Database_code.entity_kind
 type edge = Has | Use
 type nodeinfo = {
+  pos: Parse_info.parse_info;
   props: property list;
 }
  and property =
