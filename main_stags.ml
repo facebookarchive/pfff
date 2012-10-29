@@ -21,7 +21,7 @@ open Common
  * correctly parse the file. Nevertheless many files using camlp4 are
  * causing otags to fatal. One option is to help otags by passing it
  * the correct -pp flags. Another option is to at least default to
- * a lexical-level tag generator which is what I do here.
+ * a lexical-level tag generator which is what I do for OCaml.
  * 
  * usage: 
  *  $ stags -lang web -o TAGS *
@@ -76,6 +76,11 @@ let rec defs_of_files_or_dirs lang xs =
       let tag1 = defs_of_files_or_dirs "php" xs in
       let tag2 = defs_of_files_or_dirs "js" xs in
       tag1 ++ tag2
+  | "java" ->
+      (match xs with
+      | [dir] -> Tags_java.defs_of_dir ~verbose dir
+      | _ -> failwith "the java option accept only a single dir"
+      )
 
   | _ -> failwith ("language not supported: " ^ lang)
       
@@ -131,7 +136,6 @@ let options () =
     " generates some extra tags with semantic prefix: F_, C_, M_";
 
   ] ++
-
   Common.options_of_actions action (all_actions()) ++
   Common.cmdline_flags_devel () ++
   Common.cmdline_flags_other () ++
