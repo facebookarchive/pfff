@@ -10,7 +10,7 @@ SRC= \
      package_java.ml graph_code_java.ml \
      builtins_java.ml \
      tags_java.ml \
-     test_analyze_java.ml
+     unit_analyze_java.ml test_analyze_java.ml
 
 -include $(TOP)/Makefile.config
 

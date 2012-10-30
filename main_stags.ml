@@ -57,6 +57,9 @@ let format = ref Emacs
 (* Helpers *)
 (*****************************************************************************)
 
+let skip_file dir = 
+  Filename.concat dir "skip_list.txt"
+
 (*****************************************************************************)
 (* Language specific *)
 (*****************************************************************************)
@@ -64,6 +67,13 @@ let format = ref Emacs
 let rec defs_of_files_or_dirs lang xs = 
   let verbose = !verbose in
   let _heavy_tagging = !heavy_tagging in
+  let skip_list =
+    match xs with
+    | [root] when Sys.file_exists (skip_file root) -> 
+      Skip_code.load (skip_file root)
+    | _ -> []
+  in
+
   match lang with
   | "php" ->
       Tags_php.php_defs_of_files_or_dirs ~verbose (*~heavy_tagging*) xs 
@@ -78,8 +88,8 @@ let rec defs_of_files_or_dirs lang xs =
       tag1 ++ tag2
   | "java" ->
       (match xs with
-      | [dir] -> Tags_java.defs_of_dir ~verbose dir
-      | _ -> failwith "the java option accept only a single dir"
+      | [x] -> Tags_java.defs_of_dir_or_file ~verbose x skip_list
+      | _ -> failwith "the java option accept only a single dir or file"
       )
 
   | _ -> failwith ("language not supported: " ^ lang)

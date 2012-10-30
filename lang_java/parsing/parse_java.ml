@@ -199,3 +199,9 @@ let parse a =
 let parse_program file = 
   let (ast2, _stat) = parse file in
   program_of_program2 ast2
+
+(* use program_of_string when you can *)
+let tmp_file_from_string s =
+  let tmp_file = Common.new_temp_file "test" ".java" in
+  Common.write_file ~file:tmp_file (s);
+  tmp_file

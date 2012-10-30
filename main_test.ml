@@ -69,12 +69,14 @@ let test regexp =
       Unit_parsing_ml.unittest;
       Unit_analyze_ml.unittest;
 
+      Unit_parsing_java.unittest;
+      Unit_analyze_java.unittest;
+
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
       Unit_parsing_html.unittest;
       Unit_parsing_opa.unittest;
       Unit_parsing_cpp.unittest;
-      Unit_parsing_java.unittest;
 
       Unit_version_control.unittest;
     ]

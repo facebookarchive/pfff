@@ -113,6 +113,10 @@ let long_ident_of_name xs = List.map snd xs
 (* TODO *)
 let long_ident_of_class_type xs = List.map fst xs
 
+let nodeinfo ident =
+  { G.pos = Parse_info.parse_info_of_info (Ast.info_of_ident ident); 
+    G.props = [] 
+  }
 
 
 let looks_like_class_name s =
@@ -128,9 +132,6 @@ let rec classname_and_info_of_typ t =
       let x = Common.list_last xs in
       let (ident, _args) = x in
       ident
-let classname_and_charpos_of_typ t = 
-  let (s, info) = classname_and_info_of_typ t in
-  s, Ast.pos_of_info info
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
@@ -380,6 +381,7 @@ and class_decl env def =
   if env.phase = Defs then begin
     (* less: def.c_type? *)
     env.g +> G.add_node node;
+    env.g +> G.add_nodeinfo node (nodeinfo def.cl_name);
     env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
@@ -426,7 +428,8 @@ and method_decl env def =
     if G.has_node (full_str, E.Method E.RegularMethod) env.g
     then ()
     else begin
-      env.g +> G.add_node node ;
+      env.g +> G.add_node node;
+      env.g +> G.add_nodeinfo node (nodeinfo def.m_var.v_name);
       env.g +> G.add_edge (env.current, node) G.Has;
     end
   end;
@@ -460,6 +463,7 @@ and field_decl env def =
   if env.phase = Defs then begin
     (* less: static? *)
     env.g +> G.add_node node;
+    env.g +> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
     env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
@@ -476,6 +480,7 @@ and enum_decl env def =
   let node = (full_str, E.Class E.RegularClass) in
   if env.phase = Defs then begin
     env.g +> G.add_node node;
+    env.g +> G.add_nodeinfo node (nodeinfo def.en_name);
     env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
@@ -502,6 +507,7 @@ and enum_decl env def =
     let node = (full_str, E.Constant) in
     if env.phase = Defs then begin
       env.g +> G.add_node node;
+      env.g +> G.add_nodeinfo node (nodeinfo ident);
       env.g +> G.add_edge (env.current, node) G.Has;
     end;
     let env = { env with
@@ -676,13 +682,15 @@ and expr env = function
       (match decls_opt with
       | None -> ()
       | Some xs ->
-          let classname, charpos = classname_and_charpos_of_typ t in
+          let classname, info  = classname_and_info_of_typ t in
+          let charpos = Ast.pos_of_info info in
           let anon_class = spf "__anon__%s__%d" classname charpos in
-          let full_ident = env.current_qualifier ++ [anon_class, fakeInfo ""] in
+          let full_ident = env.current_qualifier ++ [anon_class, info] in
           let full_str = str_of_qualified_ident full_ident in
           let node = (full_str, E.Class E.RegularClass) in
           if env.phase = Defs then begin
             env.g +> G.add_node node;
+            env.g +> G.add_nodeinfo node (nodeinfo (anon_class, info));
             env.g +> G.add_edge (env.current, node) G.Has;
           end;
           let env = { env with
@@ -802,8 +810,8 @@ and field env f =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) ?(only_defs=false) dir skip_list =
-  let root = Common.realpath dir in
+let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
+  let root = Common.realpath dir_or_file in
   let all_files = Lib_parsing_java.find_source_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)

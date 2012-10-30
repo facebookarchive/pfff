@@ -383,6 +383,8 @@ let is_final_static xs =
   let xs = List.map fst xs in
   List.mem Final xs && List.mem Static xs
 
+let info_of_ident ident = snd ident
+
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)

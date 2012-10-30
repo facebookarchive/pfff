@@ -21,6 +21,12 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Small wrapper around Graph_code_java to extract tags information.
+ * 
+ * Normally you should really use Intellij or Eclipse to navigate
+ * a Java codebase, but a few things can be faster to do with Emacs.
+ *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -30,11 +36,11 @@ module PI = Parse_info
 (* Main entry point *)
 (*****************************************************************************)
 
-let defs_of_dir ?(verbose=false) dir =
-  let skip_list = [] in
-  let g = Graph_code_java.build ~verbose ~only_defs:true dir skip_list in
+let defs_of_dir_or_file ?(verbose=false) dir_or_file skip_list =
+  let g = Graph_code_java.build ~verbose ~only_defs:true dir_or_file skip_list
+  in
 
-  (* use the multi val for same key propery of Hashtbl.add *)
+  (* use the multi-val-for-same-key propery of Hashtbl.add *)
   let h = Hashtbl.create 101 in
   let hmemo = Hashtbl.create 101 in
 
@@ -48,6 +54,9 @@ let defs_of_dir ?(verbose=false) dir =
        transfo = PI.NoTransfo;
     }
     in
+    (* wants the fully qualified tag, foo.Bar, not just Bar *)
+    let info = PI.rewrap_str str info in
+
     let file = PI.file_of_info info in
     let filelines = 
       Common.memoized hmemo file (fun () ->
@@ -59,7 +68,7 @@ let defs_of_dir ?(verbose=false) dir =
     Hashtbl.add h file tag
     with Not_found ->
       (match kind with
-      | E.Package | E.File | E.TopStmts -> ()
+      | E.Package | E.File | E.Dir | E.TopStmts -> ()
       | _ -> pr2 (spf "PB, nodeinfo not found for %s" str);
       )
   );

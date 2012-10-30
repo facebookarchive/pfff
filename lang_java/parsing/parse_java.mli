@@ -12,5 +12,8 @@ val parse :
 val parse_program:
   Common.filename -> Ast_java.program
 
+
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list
+(* useful for unit testing, mock *)
+val tmp_file_from_string: string -> Common.filename
