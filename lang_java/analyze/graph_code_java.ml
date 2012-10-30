@@ -705,23 +705,22 @@ and expr env = function
       (match decls_opt with
       | None -> ()
       | Some xs ->
+        (* less: quite similar to class_decl, factorize code? *)
           let classname, info  = classname_and_info_of_typ t in
           let charpos = PI.pos_of_info info in
           let anon_class = spf "__anon__%s__%d" classname charpos in
-          let full_ident = env.current_qualifier ++ [anon_class, info] in
-          let full_str = str_of_qualified_ident full_ident in
-          let node = (full_str, E.Class E.RegularClass) in
-          if env.phase = Defs then begin
-            env.g +> G.add_node node;
-            env.g +> G.add_nodeinfo node (nodeinfo (anon_class, info));
-            env.g +> G.add_edge (env.current, node) G.Has;
-          end;
-          let env = { env with
-            current = node;
-            current_qualifier = full_ident;
+          let cdecl = {
+            cl_name = (anon_class, info);
+            cl_extends = Some t;
+            cl_impls = [];
+            cl_kind = ClassRegular;
+            cl_body = xs;
+            (* ?? *)
+            cl_tparams = [];
+            cl_mods = [];
           }
           in
-          decls env xs
+          class_decl env cdecl
       )
   | NewQualifiedClass (e, id, args, decls_opt) ->
       (*
