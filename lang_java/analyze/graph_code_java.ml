@@ -345,6 +345,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
       let qualified_ident_bis = 
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
+        (* less: just lookup the class for now *)
+        | x::xs when is_static -> List.rev xs
         | _ -> qualified_ident
       in
       let entity = List.map Ast.unwrap qualified_ident_bis in
@@ -356,8 +358,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
          *)
          ()
       | None ->
-        pr2 (spf "PB: wrong import: %s in %s" 
-                (str_of_qualified_ident qualified_ident_bis) readable)
+        pr2_once (spf "PB: wrong import: %s"
+                    (str_of_qualified_ident qualified_ident_bis))
       )
     );
   end;
