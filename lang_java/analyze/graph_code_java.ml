@@ -683,7 +683,7 @@ and expr env = function
       | None -> ()
       | Some xs ->
           let classname, info  = classname_and_info_of_typ t in
-          let charpos = Ast.pos_of_info info in
+          let charpos = PI.pos_of_info info in
           let anon_class = spf "__anon__%s__%d" classname charpos in
           let full_ident = env.current_qualifier ++ [anon_class, info] in
           let full_str = str_of_qualified_ident full_ident in

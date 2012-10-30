@@ -247,7 +247,7 @@ and var_with_init = {
     | ArrayInit of init list
 
 (* ------------------------------------------------------------------------- *)
-(* Methods, fields, enums *)
+(* Methods, fields *)
 (* ------------------------------------------------------------------------- *)
 
 (* method or constructor *)
@@ -268,6 +268,10 @@ and method_decl = {
 }
 
 and field = var_with_init
+
+(* ------------------------------------------------------------------------- *)
+(* Enum *)
+(* ------------------------------------------------------------------------- *)
 
 and enum_decl = {
   en_name: ident;
@@ -355,20 +359,9 @@ type any =
  (* with tarzan *)
 
 (*****************************************************************************)
-(* Wrappers *)
+(* Helpers *)
 (*****************************************************************************)
 let unwrap = fst
-
-let str_of_info  = PI.str_of_info
-let line_of_info = PI.line_of_info
-let col_of_info  = PI.col_of_info
-let pos_of_info  = PI.pos_of_info
-
-let file_of_info = PI.file_of_info
-
-let rewrap_str =  PI.rewrap_str
-
-let compare_pos = PI.compare_pos
 
 let fakeInfo ?(next_to=None) str = { PI.
   token = PI.FakeTokStr (str, next_to);
@@ -379,12 +372,8 @@ let fakeInfo ?(next_to=None) str = { PI.
 let ast_todo = []
 let ast_todo2 = ()
 
+let info_of_ident ident = snd ident
+
 let is_final_static xs =
   let xs = List.map fst xs in
   List.mem Final xs && List.mem Static xs
-
-let info_of_ident ident = snd ident
-
-(*****************************************************************************)
-(* Some constructors *)
-(*****************************************************************************)

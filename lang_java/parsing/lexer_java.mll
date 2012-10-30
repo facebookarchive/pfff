@@ -332,7 +332,7 @@ rule token = parse
     OPERATOR_EQ (s, info) 
   }
 
-| SUB? eof { EOF (tokinfo lexbuf +> Ast_java.rewrap_str "") }
+| SUB? eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
 
 | _ 
       { 

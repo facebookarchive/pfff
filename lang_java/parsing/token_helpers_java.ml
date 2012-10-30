@@ -2,6 +2,7 @@
 
 open Common
 
+module PI = Parse_info
 open Parser_java
 
 (*****************************************************************************)
@@ -274,11 +275,11 @@ let visitor_info_of_tok f = function
 
 let linecol_of_tok tok =
   let info = info_of_tok tok in
-  Ast_java.line_of_info info, Ast_java.col_of_info info
+  PI.line_of_info info, PI.col_of_info info
 
 let col_of_tok x = snd (linecol_of_tok x)
 let line_of_tok x = fst (linecol_of_tok x)
 
-let str_of_tok x =  Ast_java.str_of_info (info_of_tok x)
-let file_of_tok x =  Ast_java.file_of_info (info_of_tok x)
-let pos_of_tok x =  Ast_java.pos_of_info (info_of_tok x)
+let str_of_tok x =  PI.str_of_info (info_of_tok x)
+let file_of_tok x =  PI.file_of_info (info_of_tok x)
+let pos_of_tok x =  PI.pos_of_info (info_of_tok x)
