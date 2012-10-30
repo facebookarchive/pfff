@@ -336,10 +336,31 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((str, E.Package), (readable, E.File)) G.Has;
   end;
-  (* TODO: if phase is Uses then can double check if can find
-   * some of the imports? especially useful when have a better
-   * java_stdlib/ to report third-party not yet handled packages.
+  (* double check if we can find some of the imports 
+   * (especially useful when have a better java_stdlib/ to report
+   * third-party packages not-yet handled).
    *)
+  if phase = Inheritance then begin
+    ast.imports +> List.iter (fun (is_static, qualified_ident) ->
+      let qualified_ident_bis = 
+        match List.rev qualified_ident with
+        | ("*",_)::rest -> List.rev rest
+        | _ -> qualified_ident
+      in
+      let entity = List.map Ast.unwrap qualified_ident_bis in
+      (match lookup_fully_qualified_memoized env entity with
+      | Some _ -> 
+        (* no need add_use_edge here, it will be done later when
+         * one use the entity
+         * less: could be used to detect useless import
+         *)
+         ()
+      | None ->
+        pr2 (spf "PB: wrong import: %s in %s" 
+                (str_of_qualified_ident qualified_ident_bis) readable)
+      )
+    );
+  end;
 
   (* imports is not the only way to use external packages, one can
    * also just qualify the classname or static method so we need
