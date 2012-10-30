@@ -7,7 +7,6 @@ const EXTERNAL_ROUTER = 0;
  function setLogFile($file) { }
  function setLogLevel($level) { }
  function __construct($params) { }
- function __destruct() { }
  function send(&$msgs) { }
  function loopOnce($timeout) { }
  function flushSends() { }
@@ -93,4 +92,42 @@ const mc_res_remote_error = 0;
 const mc_res_waiting = 0;
 const mc_nres = 0;
 const mc_msg_flag_nzlib_compressed = 0;
+}
+class CacheRequestHandle2 {
+ function __construct($id, $pending_keys_count) { }
+ function getID() { }
+ function isFinished() { }
+ function getResults() { }
+}
+class CacheClient2 {
+ function __construct($params) { }
+ function multiGet($kv_pairs) { }
+ function multiGetSync($kv_pairs) { }
+ function multiLeaseGet($kv_pairs) { }
+ function multiLeaseGetSync($kv_pairs) { }
+ function multiSet($kv_pairs) { }
+ function multiLeaseSet($kv_pairs) { }
+ function multiAdd($kv_pairs) { }
+ function multiReplace($kv_pairs) { }
+ function multiDelete($kv_pairs) { }
+ function multiIncr($kv_pairs) { }
+ function multiDecr($kv_pairs) { }
+ function getNextFinishedHandle($timeout) { }
+ function getFeatures() { }
+ function setLogFile($file) { }
+ function setLogLevel($level) { }
+ function getConfigOptions() { }
+ function reset() { }
+ function clear() { }
+ function stats($clear = 0) { }
+ function checkPrerequisites($param, &$err) { }
+ function setCompressionMode($mode) { }
+ function setSerializationMode($mode) { }
+const COMPRESSION_NO = 0;
+const COMPRESSION_NZLIB = 0;
+const COMPRESSION_QUICKLZ = 0;
+const COMPRESSION_SNAPPY = 0;
+const SERIALIZATION_NO = 0;
+const SERIALIZATION_FB = 0;
+const SERIALIZATION_FBCOMPACT = 0;
 }
