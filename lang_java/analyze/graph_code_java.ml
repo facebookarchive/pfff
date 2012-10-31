@@ -45,9 +45,9 @@ module Ast = Ast_java
  * 
  *   PB -> Not_Found -> Package2 -> SubPackage2 -> ...
  * 
- * todo: 
- *  - handle generics
- *  - adjust graph to remove intermediate singleton? com.xxx?
+ * Adjust graph to remove intermediate singleton? com.xxx? Hmm better
+ * to do that lazily in codegraph itself.
+ * 
  *)
 
 (*****************************************************************************)
@@ -69,8 +69,11 @@ type env = {
    * We could also store them in the code graph so that the lookup
    * would work, but really fine-grained intra-method dependencies 
    * are not that useful.
+   * 
+   * The boolean final is because such locals/parameters should be
+   * passed to anonymouse classes.
    *)
-  params_or_locals: string list;
+  params_or_locals: (string * bool (* is_final *)) list;
   (* To avoid looking up type parameters in the graph. *)
   type_parameters: string list;
 
@@ -107,6 +110,10 @@ let str_of_qualified_ident xs =
 let str_of_name xs = 
   xs +> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) +> 
     Common.join "."
+
+(* helper to build entries in env.params_or_locals *)
+let p_or_l v = 
+  Ast.unwrap v.v_name, Ast.is_final v.v_mods
 
 (* TODO *)
 let long_ident_of_name xs = List.map snd xs
@@ -410,7 +417,8 @@ and class_decl env def =
   let env = { env with
     current = node;
     current_qualifier = full_ident;
-    params_or_locals = [];
+    (* with anon classes we need to lookup enclosing final parameters/locals *)
+    params_or_locals = env.params_or_locals +> List.filter (fun (x,b) -> b);
     type_parameters = def.cl_tparams +> List.map (function
     | TParam ((str,_tok), _constraints) -> str
     );
@@ -463,7 +471,13 @@ and method_decl env def =
      * share the same name so yes need full_ident as a qualifier.
     *)
     current_qualifier = full_ident;
-    params_or_locals = def.m_formals +> List.map (fun v -> Ast.unwrap v.v_name);
+    params_or_locals = (def.m_formals +> List.map p_or_l)
+      ++ 
+     (* with methods of anon classes we need to lookup enclosing
+      * final parameters/locals 
+      *) 
+     (env.params_or_locals +> List.filter (fun (x,b) -> b));
+
     (* TODO use m_tparams *) 
     type_parameters = [];
   } 
@@ -580,7 +594,7 @@ and stmt env = function
             var env v;
             expr env e;
             { env with
-              params_or_locals = (Ast.unwrap v.v_name):: env.params_or_locals;
+              params_or_locals = p_or_l v :: env.params_or_locals;
             } 
             
         | ForClassic (init, es1, es2) ->
@@ -591,9 +605,9 @@ and stmt env = function
             | ForInitVars xs ->
                 List.iter (field env) xs;
                 let env = { env with
-                  params_or_locals = xs +> List.map (fun fld ->
-                    Ast.unwrap fld.f_var.v_name
-                  ) ++ env.params_or_locals;
+                  params_or_locals = 
+                    (xs +> List.map (fun fld -> p_or_l fld.f_var)
+                    ) ++ env.params_or_locals;
                 } 
                 in
                 exprs env (es1 ++ es2);
@@ -630,8 +644,8 @@ and stmts env xs =
         let env = 
           match x with
           | LocalVar fld -> 
-              let str = Ast.unwrap fld.f_var.v_name in
-              { env with params_or_locals = str::env.params_or_locals }
+              { env with 
+                params_or_locals = p_or_l fld.f_var :: env.params_or_locals }
           (* also add LocalClass case? no, 'lookup env ...' handles that *)
           | _ -> env
         in
@@ -647,8 +661,7 @@ and case env = function
 and catches env xs = List.iter (catch env) xs
 and catch env (v, st) =
   var env v;
-  let str = Ast.unwrap v.v_name in
-  let env = { env with params_or_locals = str::env.params_or_locals } in
+  let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
   stmt env st
 
 (* ---------------------------------------------------------------------- *)
@@ -661,7 +674,7 @@ and expr env = function
         let str = str_of_name n in
         (match str, n with
         (* TODO: look at the type and continue lookup *)
-        | _, (_,(s,_))::rest when List.mem s env.params_or_locals -> ()
+        | _, (_,(s,_))::rest when List.mem_assoc s env.params_or_locals -> ()
         (* TODO *)
         | "super", _ | "this", _ -> 
             ()
