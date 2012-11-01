@@ -24,6 +24,18 @@ let test_tokens_php file =
 let test_parse_php xs  =
   let fullxs = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 
+  let dirname_opt, fullxs = 
+    match xs with
+    | [x] when is_directory x -> 
+      let skip_list =
+        if Sys.file_exists (x ^ "/skip_list.txt")
+        then Skip_code.load (x ^ "/skip_list.txt")
+        else []
+      in
+      Some x,  Skip_code.filter_files ~verbose:true skip_list x fullxs
+    | _ -> None, fullxs
+  in
+
   let stat_list = ref [] in
   (*s: initialize -parse_php regression testing hash *)
   let newscore  = Common.empty_score () in
@@ -51,11 +63,6 @@ let test_parse_php xs  =
 
   Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
-    let dirname_opt = 
-      match xs with
-      | [x] when is_directory x -> Some x
-      | _ -> None
-    in
     let score_path = Filename.concat Config.path "tmp" in
     dirname_opt +> Common.do_option (fun dirname -> 
       pr2 "--------------------------------";
