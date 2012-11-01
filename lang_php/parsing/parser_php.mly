@@ -26,6 +26,7 @@
  *  - added support for yield (facebook extension).
  *  - added support for a few PHP 5.4 extensions (e.g. traits, short array).
  *  - added support for generics (another facebook extensions).
+ *  - added support for attributes (a.k.a annotations)
  *
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+
@@ -312,7 +313,7 @@ unticked_statement:
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
 
 /*
-(* todo: this is commented because it is not really used and it generates
+(* less: this is commented because it is not really used and it generates
  * some conflicts now that type_hint is not anymore
  *   type_hint: ident { ... } but
  *   type_hint: class_name_or_selfparent { ... }
