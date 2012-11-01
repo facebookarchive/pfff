@@ -20,7 +20,7 @@
 %{
 (* src: ocamlyaccified from zend_language_parser.y in Zend PHP source code.
  * updates:
- *  - extended to deal with XHP based on XHP bison grammar.
+ *  - extended to deal with XHP based on the XHP bison grammar.
  *  - added support for a few PHP 5.3 extensions (e.g. lambda, const), but
  *    not namespace.
  *  - added support for yield (facebook extension).
@@ -178,7 +178,7 @@ module Ast = Ast_php
 /*(*x: GRAMMAR tokens hook *)*/
 
 /*(*x: GRAMMAR tokens hook *)*/
-%token <Ast_php.info> T_CLASS_XDEBUG T_RESOURCE_XDEBUG
+%token <Ast_php.info> T_CLASS_XDEBUG  T_RESOURCE_XDEBUG
 /*(*e: GRAMMAR tokens hook *)*/
 
 /*(*-----------------------------------------*)*/
@@ -311,19 +311,6 @@ statement: unticked_statement { $1 }
 unticked_statement:
  | expr           TSEMICOLON		  { ExprStmt($1,$2) }
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
-
-/*
-(* less: this is commented because it is not really used and it generates
- * some conflicts now that type_hint is not anymore
- *   type_hint: ident { ... } but
- *   type_hint: class_name_or_selfparent { ... }
- *
- * | type_hint variable TSEMICOLON          { ... }
- * | type_hint variable TEQ expr TSEMICOLON { ... }
- * Right now the only places where we allow types are for parameters
- * and globals/constants. The rest is inferred.
- *)
-*/
 
  | TOBRACE inner_statement_list TCBRACE   { Block($1,$2,$3) }
 
@@ -520,14 +507,7 @@ constant_declaration_statement:
 /*(*s: GRAMMAR function declaration *)*/
 function_declaration_statement:
  | unticked_function_declaration_statement { $1 }
- /*(* can not factorize with a 'attributes_opt' rule otherwise get shift/reduce
-    * conflicts. Indeed reading a T_FUNCTION one can not decide between the
-    * start of the definition of a function (hence reducing
-    * the empty attributes_opt rule) or shifting to a state
-    * allowing both the definition of a function or the start
-    * of a closure statement.
-    * TODO: add in AST attributes.
-    *)*/
+ /*(* can not factorize with a 'attributes_opt', see conflict.txt *)*/
  | attributes unticked_function_declaration_statement { $2 }
 
 unticked_function_declaration_statement:

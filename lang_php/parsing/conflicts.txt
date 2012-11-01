@@ -22,4 +22,41 @@ directive next to R2.
 
 * attributes
 
+One of the rule concerning attributes is:
+
+function_declaration_statement:
+ |            unticked_function_declaration_statement { $1 }
+ | attributes unticked_function_declaration_statement { $2 }
+
+we can not factorize rules by using a attributes_opt as in:
+
+function_declaration_statement: attributes_opt unticked...
+
+attributes_opt:
+ | /* empty */ (R1)
+ | attributes  (R2)                
+
+Indeed reading from the start a T_FUNCTION one can not decide between the
+start of the definition of a function hence reducing an hypotetical
+empty attributes_opt rule R1, or shifting to a state
+allowing both the definition of a function or the start
+of a closure statement.
+
+So as a classic trick we have to "unfold/inline" attributes_opt
+and duplicate rules to avoid early reduce and keep shifting.
+
+* variable declaration (not used anymore)
+
+/*
+(* less: this is commented because it is not really used and it generates
+ * some conflicts now that type_hint is not anymore
+ *   type_hint: ident { ... } but
+ *   type_hint: class_name_or_selfparent { ... }
+ *
+ * | type_hint variable TSEMICOLON          { ... }
+ * | type_hint variable TEQ expr TSEMICOLON { ... }
+ * Right now the only places where we allow types are for parameters
+ * and globals/constants. The rest is inferred.
+ *)
+*/
 
