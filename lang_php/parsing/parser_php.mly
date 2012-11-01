@@ -988,7 +988,7 @@ expr:
 
 expr_without_variable:
  | expr_without_variable_bis { mk_e $1 }
- /*(* generate 4 conflicts, TODO, see conflicts.txt*)*/
+ /*(* ugly: generate 4 conflicts, see conflicts.txt *)*/
  | expr TOBRA dim_offset TCBRA
    {
      match $1 with
@@ -1177,6 +1177,21 @@ internal_functions_in_yacc:
  | T_EMPTY TOPAR variable TCPAR	       { Empty($1,($2,$3,$4)) }
 
  | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
+
+/*(* ugly: this should really by 'isset_variable: variable { ... }', but
+   * because one can write 'isset(f()[0])' and that currently
+   * the xhp sugared array access is allowed in expr context
+   * we must accept expr.
+   * The right fix would be to rewrite variable, base_variable, and
+   * related rules and move the xhp sugared access inside variable
+   *)*/
+isset_variable:
+ | expr { 
+   match $1 with
+   | Lv v -> v
+   | _ -> raise Parsing.Parse_error
+   }
+
 /*(*x: GRAMMAR expression *)*/
 /*(*----------------------------*)*/
 /*(*2 scalar *)*/
@@ -1732,8 +1747,8 @@ assignment_list:
  | assignment_list TCOMMA assignment_list_element { $1 ++ [Right $2; Left $3] }
 
 isset_variables:
- | variable 			       { [Left $1] }
- | isset_variables TCOMMA variable     { $1 ++ [Right $2; Left $3] }
+ | isset_variable 			       { [Left $1] }
+ | isset_variables TCOMMA isset_variable       { $1 ++ [Right $2; Left $3] }
 
 
 declare_list:
