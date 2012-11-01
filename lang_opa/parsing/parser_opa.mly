@@ -125,7 +125,7 @@ open Ast_opa
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc SHIFTHERE
+%nonassoc LOW_PRIORITY_RULE
 
 %nonassoc Telse
 
@@ -197,7 +197,7 @@ expr:
 
 cond_expr:
  | Tif comp_expr Tthen cond_expr Telse cond_expr      { }
- | Tif comp_expr Tthen cond_expr %prec SHIFTHERE { }
+ | Tif comp_expr Tthen cond_expr %prec LOW_PRIORITY_RULE { }
  | comp_expr { }
 
 comp_expr:
