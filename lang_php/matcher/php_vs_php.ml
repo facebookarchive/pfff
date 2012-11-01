@@ -1560,6 +1560,9 @@ and iso_m_list_m_xhp_body a b =
   (* iso-by-absence: it's ok to have an empty body in the pattern *)
   | [] -> 
       return (a, b)
+  | [A.XhpText ("\n", _)]
+  | [A.XhpText ("\n\n", _)] 
+    -> return (a, b)
   | _ -> 
       (m_list m_xhp_body) a b
 
