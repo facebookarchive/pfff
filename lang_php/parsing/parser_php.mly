@@ -988,27 +988,8 @@ expr:
 
 expr_without_variable:
  | expr_without_variable_bis { mk_e $1 }
-
- /*(* xhp: This extension fix a deficiency in the original PHP grammar
-    * which does not allow to do things like foo()[2]. Array accesses
-    * in PHP were allowed only for variables.
-    *
-    * The rule below generates 3 s/r conflicts.
-    *
-    * I thought I could remove some conflicts by putting the rule
-    * closer to the funcall_call rule, which does not
-    * generate any conflict, but it then can not handle
-    * code like $o->foo()['foo'].
-    *
-    * I then thought I could put it closer to variable2,
-    * but it must be 'variable' not 'variable2' otherwise
-    * it can not process code like foo()['fld1']['fld2'].
-    *
-    * In fact it can not be put close to 'variable' either because
-    * then it can not parse code like ($this->getAssocData($user))[0];
-    * So the right place is here, in expr_without_variable.
-    *)*/
-  | expr TOBRA dim_offset TCBRA
+ /*(* generate 4 conflicts, TODO, see conflicts.txt*)*/
+ | expr TOBRA dim_offset TCBRA
    {
      match $1 with
      (* Lv corresponds to Lvalue which includes function calls so
