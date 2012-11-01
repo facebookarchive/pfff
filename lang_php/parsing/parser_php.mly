@@ -221,7 +221,7 @@ module Ast = Ast_php
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc SHIFTHERE
+%nonassoc LOW_PRIORITY_RULE
 
 /*(* http://www.php.net/manual/en/language.operators.precedence.php *)*/
 %left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
@@ -456,10 +456,10 @@ new_elseif_list:
  | new_elseif_list    T_ELSEIF TOPAR expr TCPAR TCOLON inner_statement_list
      { $1 ++ [$2,($3,$4,$5),$6,$7] }
 
-
+/*(* classic dangling else ambiguity resolved by a %prec. See conflicts.txt*)*/
 else_single:
- | /*(*empty*)*/    { None }
- | T_ELSE statement { Some($1,$2) }
+ | T_ELSE statement                        { Some($1,$2) }
+ | /*(*empty*)*/  %prec LOW_PRIORITY_RULE  { None }
 
 new_else_single:
  | /*(*empty*)*/                      { None }

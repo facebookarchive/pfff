@@ -1,0 +1,25 @@
+-*- org -*-
+
+* dangling else
+
+See http://plus.kaist.ac.kr/~shoh/ocaml/ocamllex-ocamlyacc/ocamlyacc-tutorial/sec-context-dependent-precedence.html
+
+The rules are essentially:
+
+stmt: if e then stmt else stmt (R1)
+    | if e then stmt           (R2)
+
+When we have 'if then if then else' we want to group that
+as 'if then (if then else)' and not 'if then (if then) else'
+so we want that once we have seen 'if then if then' and
+that we are looking at a 'else' to shift and not reduce.
+
+So we want the priority of the reduce rule R2 to be lower
+than the priority of shifting in R1 hence the %prec LOW_PRIORITY_RULE
+directive next to R2.
+
+* xhp
+
+* attributes
+
+
