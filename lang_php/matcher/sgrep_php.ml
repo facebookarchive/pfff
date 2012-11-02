@@ -80,7 +80,9 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
   in
   let ast = Parse_php.program_of_program2 ast2 in
 
-  (* coupling: copy paste with lang_php/matcher/spatch_php.ml *)
+  (* coupling: copy paste with lang_php/matcher/spatch_php.ml 
+   * coupling: copy paste with sgrep_lint
+   *)
   let hook = 
     match pattern with
     (* bugfix: if we have an ExprVar, then a pattern such as 
