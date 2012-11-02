@@ -175,6 +175,8 @@ and v_brace: 'a. ('a -> unit) -> 'a brace -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+and v_angle: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
+  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma x = 
   let k info = v_tok info
   in
@@ -800,6 +802,7 @@ and
     match x with {
                f_tok = v_f_tok;
                f_type = v_f_type;
+               f_attrs = v_f_attrs;
                f_modifiers = v_f_modifiers;
                f_ref = v_f_ref;
                f_name = v_f_name;
@@ -808,6 +811,7 @@ and
                f_return_type = v_f_return_type;
              } ->
   let arg = v_tok v_f_tok in 
+  let arg = v_option v_attributes v_f_attrs in
   let arg = v_function_type v_f_type in
   let arg = v_list (v_wrap v_modifier) v_f_modifiers in
   let arg = v_is_ref v_f_ref in 
@@ -856,13 +860,15 @@ and
                 c_name = v_c_name;
                 c_extends = v_c_extends;
                 c_implements = v_c_implements;
-                c_body = v_c_body
+                c_body = v_c_body;
+                c_attrs = v_c_attrs;
               } =
   let arg = v_class_type v_c_type in
   let arg = v_name v_c_name in 
   let arg = v_option v_extend v_c_extends in
   let arg = v_option v_interface v_c_implements in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
+  let arg = v_option v_attributes v_c_attrs in
   ()
   in
   vin.kclass_def (k, all_functions) x
@@ -1018,6 +1024,15 @@ and v_constant_def (v1, v2, v3, v4, v5) =
   and v4 = v_static_scalar v4
   and v5 = v_tok v5
   in ()
+
+and v_attribute =
+  function
+  | Attribute v1 -> let v1 = v_wrap v_string v1 in ()
+  | AttributeWithArgs ((v1, v2)) ->
+      let v1 = v_wrap v_string v1
+      and v2 = v_paren (v_comma_list v_static_scalar) v2
+      in ()
+and v_attributes v = v_angle (v_comma_list v_attribute) v
 
 and v_toplevel x =
   let k x = match x with

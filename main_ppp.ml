@@ -124,6 +124,7 @@ let mk_method s params body =
     f_return_type = None;
     f_type = MethodRegular;
     f_modifiers = [];
+    f_attrs = None;
   })
 
 let mk_param s = { 
@@ -425,6 +426,7 @@ let (mk_anon_class:
     c_implements = None;
     c_body = 
       fkt "{", body, fkt "}";
+    c_attrs = None;
   }
   in
   aclass
