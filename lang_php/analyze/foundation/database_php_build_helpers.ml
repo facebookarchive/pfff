@@ -268,7 +268,14 @@ let (add_def:
           +> Common.option_to_list +> List.flatten 
         in
         if before +> List.exists (fun id -> db.defs.id_kind#find id =*= idkind)
-        then pr2_err (spf "PB: duplicate entity %s" idstr);
+        then
+          (match idstr with
+          (* whitelist for tests, see tests/php/scheck/ *)
+          | "function_dupe" -> ()
+          | "ClassDupe" -> ()
+          | _ -> 
+            pr2_err (spf "PB: duplicate entity %s" idstr);
+          )
     | _ -> ()
     );
 

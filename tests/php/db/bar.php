@@ -1,4 +1,4 @@
 <?php
 
-interface I {
+interface I2 {
 }

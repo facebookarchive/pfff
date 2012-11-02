@@ -2,7 +2,7 @@
 
 function test_call_undefined_function() {
   //ERROR: undefined entity
-  unknown_foo3();
+  undefined_function();
 }
 
 function func_foo2($i) {
@@ -55,26 +55,26 @@ function func_foo_call_var_args() {
 }
 
 
-function func_dup($a) {
+function function_dupe($a) {
   echo $a;
 }
 
 //SKIP: not detected at def time :(
-function func_dup($a) {
+function function_dupe($a) {
   echo $a;
 }
 
 function test_call_multiply_defined_function() {
   //ERROR: multiply defined entity
-  func_dup(1);
+  function_dupe(1);
 
   //TODO should be reported only once, but now we check for undefined entity
   // not only in error_php.ml but also check_variables_php.ml
   //ERROR: multiply defined entity
-  func_dup(1);
+  function_dupe(1);
 
   //ERROR: too many args
-  func_dup(1,2);
+  function_dupe(1,2);
 }
 
 function func_keywords($x, $a = 1, $b = 2) {

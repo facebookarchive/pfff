@@ -88,9 +88,11 @@ function foo() {
   undefined();
 }" in
       try 
+      Common.save_excursion Flag_analyze_php.show_errors false (fun () ->
         let _ = get_signature file in
         assert_failure 
           "it should raise exns in strict mode on undefined entities"
+      )
       with Infer.UnknownEntity ("undefined") -> ()
     );
   ])

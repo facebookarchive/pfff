@@ -8,11 +8,11 @@ class CA {
 class CB extends CA {
 }
 
-class CDUP {
+class ClassDupe {
 }
 
 //should return an error there too.
-class CDUP {
+class ClassDupe {
 }
 
 // TODO: check with new self, new parent, etc
@@ -25,10 +25,10 @@ function test_new_unknown_class() {
   $o = new CUnknwown();
 
   //ERROR: multi defined
-  $o = new CDUP();
+  $o = new ClassDupe();
 
   // we generate an error message just for the first one
-  $o = new CDUP();
+  $o = new ClassDupe();
 }
 
 function test_unknown_class_constant() {
