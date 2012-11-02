@@ -217,12 +217,16 @@ and vof_func_def {
                  f_body = v_f_body;
                  f_kind = v_f_type;
                  m_modifiers = v_f_modifiers;
+                 f_attrs = v_f_attrs;
                  l_uses = v_l_uses;
                  f_loc = v_f_tok;
                } =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_stmt v_f_body in
   let bnd = ("f_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_attribute v_f_attrs in
+  let bnd = ("f_attrs", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_lexical_var v_l_uses in
   let bnd = ("l_uses", arg) in
@@ -280,6 +284,7 @@ and
                   c_kind = v_c_type;
                   c_name = v_c_name;
                   c_extends = v_c_extends;
+                  c_attrs = v_c_attrs;
                   c_uses = v_c_traits;
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
@@ -295,6 +300,9 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_constant_def v_c_constants in
   let bnd = ("c_constants", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_attribute v_c_attrs in
+  let bnd = ("c_attrs", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_name v_c_implements in
   let bnd = ("c_implements", arg) in
@@ -336,6 +344,7 @@ and
   let arg = vof_name v_cv_name in
   let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_modifier x = Ast_php.vof_modifier x
+and vof_attribute v = vof_expr v
 and vof_method_def x = vof_func_def x
 
 let vof_any =

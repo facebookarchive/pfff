@@ -29,7 +29,7 @@
  *
  * Here is a list of the simplications/factorizations:
  *  - no purely syntactical tokens in the AST like parenthesis, brackets, 
- *    braces, commas, semicolons, etc. No ParenExpr. No FinalDef. No
+ *    braces, angles, commas, semicolons, etc. No ParenExpr. No FinalDef. No
  *    NotParsedCorrectly. The only token information kept is for identifiers
  *    for error reporting. See wrap() below.
  * 
@@ -55,7 +55,7 @@
  * 
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types,
  *    no FuncDefNested, no ClassDefNested. No StmtList.
- *  - a simpler expr type; no lvalue vs expr vs static_scalar
+ *  - a simpler expr type; no lvalue vs expr vs static_scalar vs attribute
  *    (update: now static_scalar = expr also in ast_php.ml).
  *    Also no scalar. No Sc, no C. No Lv. Pattern matching constants
  *    is simpler:  | Sc (C (String ...)) -> ... becomes just | String -> ....
@@ -281,6 +281,7 @@ and func_def = {
   m_modifiers: modifier list;
   (* only for lambdas (could also abuse parameter) *)
   l_uses: (bool (* is_ref *) * name) list;
+  f_attrs: attribute list;
 
   f_body: stmt list;
   (* pad: todo: remove, was chiara? same info is in f_name *)
@@ -305,6 +306,9 @@ and func_def = {
   (* for methods, and below for fields too *)
   and modifier = Ast_php.modifier
 
+  (* normally either an Id or Call with only static arguments *)
+  and attribute = expr
+
 and constant_def = {
   cst_name: name;
   (* normally a static scalar *)
@@ -319,6 +323,8 @@ and class_def = {
   c_extends: name option;
   c_implements: name list;
   c_uses: name list; (* traits *)
+
+  c_attrs: attribute list;
 
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time 
