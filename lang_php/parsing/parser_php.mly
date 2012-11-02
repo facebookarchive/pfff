@@ -972,10 +972,16 @@ non_empty_return_type:
  /*(* HPHP extension. *)*/
 attributes: T_SL attribute_list T_SR { }
 
-/*(* HPHP attributes can be complex values but for now we use attributes
-   * only for the __MockClass case, so let's keep the grammar simple
-   *)*/
-attribute: ident { }
+attribute: 
+ | ident { }
+ | ident TOPAR attribute_argument_list TCPAR { }
+
+attribute_argument_list:
+ | /*(*empty*)*/ { }
+ | attribute_argument { }
+ | attribute_argument_list TCOMMA attribute_argument { }
+
+attribute_argument: static_scalar { }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions (and variables) *)*/

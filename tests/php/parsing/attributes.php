@@ -15,8 +15,8 @@ function foo() { }
 // the angle brackets, separated by commas. An attribute is a name followed
 // optionally by a list of scalar values
 
-//<< Foo, Bar(), Baz('hello',array(1,2)) >>
-//function f() { /* .. */ }
+<< Foo, Bar(), Baz('hello',array(1,2)) >>
+function f() { /* .. */ }
 
 // Multiple attributes with the same name are not allowed. The scalar values
 // in attribute expressions are not allowed to contain user defined constants.
