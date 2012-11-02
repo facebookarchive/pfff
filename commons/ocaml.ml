@@ -836,7 +836,7 @@ let string_of_v v =
           ppf "{@[";
           xs +> List.iter (fun (s, v) ->
             (* less: could open a box there too? *)
-            ppf "%s=@ " s;
+            ppf "@,%s=" s;
             aux v;
             ppf ";@ ";
           );
