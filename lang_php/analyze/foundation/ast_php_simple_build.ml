@@ -305,6 +305,7 @@ and lambda_def env (l_use, ld) =
     A.f_kind = A.Function;
     A.f_loc = ld.f_tok;
     A.m_modifiers = [];
+    A.f_attrs = attributes env ld.f_attrs;
     A.l_uses = 
       (match l_use with
       | None -> []
@@ -483,6 +484,7 @@ and class_def env c =
   {
     A.c_kind = class_type env c.c_type ;
     A.c_name = name env c.c_name;
+    A.c_attrs = attributes env c.c_attrs;
     A.c_extends =
       (match c.c_extends with
       | None -> None
@@ -571,6 +573,7 @@ and method_def env m =
   { A.m_modifiers = mds;
     A.f_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.f_name = name env m.f_name;
+    A.f_attrs = attributes env m.f_attrs;
     A.f_params = List.map (parameter env) params ;
     A.f_return_type = opt hint_type env m.f_return_type;
     A.f_body = method_body env m.f_body;
@@ -595,6 +598,7 @@ and func_def env f =
   let _, body, _ = f.f_body in
   { A.f_ref = f.f_ref <> None;
     A.f_name = name env f.f_name;
+    A.f_attrs = attributes env f.f_attrs;
     A.f_params = List.map (parameter env) params;
     A.f_return_type = opt hint_type env f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
@@ -714,6 +718,15 @@ and global_var env = function
   | GlobalDollarExpr (tok, _) -> 
       raise (TodoConstruct ("GlobalDollarExpr", tok))
 
+and attributes env = function
+  | None -> []
+  | Some (_, xs, _) ->
+    let xs = comma_list xs in
+    xs +> List.map (function
+    | Attribute (s, tok) -> A.Id (s, wrap tok)
+    | AttributeWithArgs ((s, tok), (_, xs, _)) ->
+      A.Call (A.Id (s, wrap tok), List.map (static_scalar env) (comma_list xs))
+    )
 
 (*****************************************************************************)
 (* Shortcuts *)

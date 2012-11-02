@@ -506,9 +506,10 @@ constant_declaration_statement:
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR function declaration *)*/
 function_declaration_statement:
- | unticked_function_declaration_statement { $1 }
+ |            unticked_function_declaration_statement { $1 }
  /*(* can not factorize with a 'attributes_opt', see conflict.txt *)*/
- | attributes unticked_function_declaration_statement { $2 }
+ | attributes unticked_function_declaration_statement 
+     { { $2 with f_attrs = Some $1 } }
 
 unticked_function_declaration_statement:
  T_FUNCTION is_reference ident type_params_opt
@@ -520,6 +521,7 @@ unticked_function_declaration_statement:
     let body = ($9, $10, $11) in
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
        f_return_type = $8;f_body = body;
+       f_attrs = None;
        f_type = FunctionRegular; f_modifiers = [];
     })
    }
@@ -582,15 +584,17 @@ lexical_var_list:
 /*(*************************************************************************)*/
 /*(*s: GRAMMAR class declaration *)*/
 class_declaration_statement:
- | unticked_class_declaration_statement { $1 }
- | attributes unticked_class_declaration_statement { $2 }
+ |            unticked_class_declaration_statement { $1 }
+ | attributes unticked_class_declaration_statement 
+     { { $2 with c_attrs = Some $1 } }
 
 unticked_class_declaration_statement:
  | class_entry_type  class_name  type_params_opt
      extends_from   implements_list
      TOBRACE class_statement_list TCBRACE
-     { { c_type = $1; c_name = $2;c_extends = $4;
+     { { c_type = $1; c_name = $2; c_extends = $4;
          c_implements = $5; c_body = $6, $7, $8;
+         c_attrs = None;
        }
      }
  | interface_entry class_name type_params_opt
@@ -600,19 +604,23 @@ unticked_class_declaration_statement:
          (* we use c_implements for interface extension because
           * it can be a list. ugly?
           *)
-         c_implements = $4; c_body = $5, $6, $7; }
-     }
+         c_implements = $4; c_body = $5, $6, $7;
+         c_attrs = None;
+     } }
 
 trait_declaration_statement:
- | trait_declaration_statement_aux { $1 }
- | attributes trait_declaration_statement_aux { $2 }
+ |            trait_declaration_statement_aux { $1 }
+ | attributes trait_declaration_statement_aux { { $2 with c_attrs = Some $1 } }
 
 trait_declaration_statement_aux:
  | T_TRAIT class_name type_params_opt
     TOBRACE class_statement_list TCBRACE
      { (* TODO: store $3, right now the info is thrown away! *)
        { c_type = Trait $1; c_name = $2; c_extends = None;
-         c_implements = None; c_body = ($4, $5, $6) } }
+         c_implements = None; c_body = ($4, $5, $6);
+         c_attrs = None;
+       } 
+     }
 
 /*(*x: GRAMMAR class declaration *)*/
 class_name:
@@ -670,8 +678,9 @@ class_statement:
        ClassVariables($1, $2, $3, $4)
      }
 
- | method_declaration { $1 }
- | attributes method_declaration { $2 }
+ |            method_declaration { Method $1 }
+ | attributes method_declaration { Method { $2 with f_attrs = Some $1 } }
+
 
  | T_XHP_ATTRIBUTE xhp_attribute_decls TSEMICOLON
      { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
@@ -691,10 +700,11 @@ method_declaration:
      return_type_opt
      method_body
      { let body, function_type = $10 in
-       Method ({ f_tok = $2; f_ref = $3; f_name = Name $4;
-                 f_params = ($6, $7, $8); f_return_type = $9;
-                 f_body = body; f_type = function_type; f_modifiers = $1;
-               })
+       ({ f_tok = $2; f_ref = $3; f_name = Name $4;
+          f_params = ($6, $7, $8); f_return_type = $9;
+          f_body = body; f_type = function_type; f_modifiers = $1;
+          f_attrs = None;
+        })
      }
 
 /*(* ugly, php allows method names which should be IMHO reserved keywords *)*/
@@ -970,12 +980,15 @@ non_empty_return_type:
 /*(*1 Attributes *)*/
 /*(*************************************************************************)*/
  /*(* HPHP extension. *)*/
-attributes: T_SL attribute_list T_SR { }
+attributes: T_SL attribute_list T_SR { ($1, $2, $3) }
 
-/*(* HPHP attributes can be complex values but for now we use attributes
-   * only for the __MockClass case, so let's keep the grammar simple
-   *)*/
-attribute: ident { }
+attribute: 
+ | ident 
+     { Attribute $1 }
+ | ident TOPAR attribute_argument_list TCPAR 
+     { AttributeWithArgs ($1, ($2, $3, $4)) }
+
+attribute_argument: static_scalar { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions (and variables) *)*/
@@ -1146,6 +1159,7 @@ expr_without_variable_bis:
                      f_name = Name("__lambda__", Ast.fakeInfo "");
                      f_return_type = None; f_type = FunctionLambda;
                      f_modifiers = [];
+                     f_attrs = None;
        })
      }
  /*(* php-facebook-ext: todo? in hphp.y yield are at the statement level
@@ -1774,6 +1788,12 @@ xhp_category_list:
 attribute_list:
  | attribute				   { [Left $1] }
  | attribute_list TCOMMA attribute         { $1 ++ [Right $2; Left $3] }
+
+attribute_argument_list:
+ | /*(*empty*)*/ { [] }
+ | attribute_argument { [Left $1] }
+ | attribute_argument_list TCOMMA attribute_argument { $1++[Right $2; Left $3]}
+
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:

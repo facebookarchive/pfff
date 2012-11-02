@@ -46,6 +46,11 @@ and vof_bracket _of_a (v1, v2, v3) =
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
+and vof_angle _of_a (v1, v2, v3) =
+  let v1 = vof_tok v1
+  and v2 = _of_a v2
+  and v3 = vof_tok v3
+  in Ocaml.VTuple [ v1; v2; v3 ]
 
 and vof_comma_list _of_a xs = 
   Ocaml.vof_list (fun x -> Ocaml.vof_either _of_a vof_info x) xs
@@ -783,6 +788,7 @@ and
   vof_func_def {
                  f_tok = v_f_tok;
                  f_type = v_f_type;
+                 f_attrs = v_f_attrs;
                  f_modifiers = v_f_modifiers;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
@@ -808,6 +814,9 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list (vof_wrap vof_modifier) v_f_modifiers in
   let bnd = ("f_modifiers", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_option vof_attributes v_f_attrs in
+  let bnd = ("f_attrs", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_function_type v_f_type in
   let bnd = ("f_type", arg) in
@@ -870,11 +879,15 @@ and
                   c_name = v_c_name;
                   c_extends = v_c_extends;
                   c_implements = v_c_implements;
-                  c_body = v_c_body
+                  c_body = v_c_body;
+                  c_attrs = v_c_attrs;
                 } =
   let bnds = [] in
   let arg = vof_brace (vof_list vof_class_stmt) v_c_body in
   let bnd = ("c_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_option vof_attributes v_c_attrs in
+  let bnd = ("c_attrs", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_option vof_interface v_c_implements in
   let bnd = ("c_implements", arg) in
@@ -1070,6 +1083,16 @@ and vof_constant_def (v1, v2, v3, v4, v5) =
   and v4 = vof_static_scalar v4
   and v5 = vof_tok v5
   in Ocaml.VTuple [ v1; v2; v3; v4; v5 ]
+and vof_attribute =
+  function
+  | Attribute v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("Attribute", [ v1 ]))
+  | AttributeWithArgs ((v1, v2)) ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      and v2 = vof_paren (vof_comma_list vof_static_scalar) v2
+      in Ocaml.VSum (("AttributeWithArgs", [ v1; v2 ]))
+and vof_attributes v = vof_angle (vof_comma_list vof_attribute) v
 
 and vof_toplevel =
   function

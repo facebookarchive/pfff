@@ -93,6 +93,9 @@ and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3)->
 and map_bracket: 'a. ('a -> 'a) -> 'a bracket -> 'a bracket = 
  fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
+and map_angle: 'a. ('a -> 'a) -> 'a angle -> 'a angle = 
+ fun _of_a (v1, v2, v3)->
+  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_comma_list_dots _of_a xs = 
   map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
 and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list = 
@@ -776,6 +779,7 @@ and
   map_func_def {
                  f_tok = v_f_tok;
                  f_type = v_f_type;
+                 f_attrs = v_f_attrs;
                  f_modifiers = v_f_modifiers;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
@@ -788,12 +792,14 @@ and
   let v_f_name = map_name v_f_name in
   let v_f_ref = map_is_ref v_f_ref in
   let v_f_modifiers = map_of_list (map_wrap map_modifier) v_f_modifiers in
+  let v_f_attrs = map_of_option map_attributes v_f_attrs in
   let v_f_type = map_function_type v_f_type in
   let v_f_tok = map_tok v_f_tok in
   let v_f_return_type = map_of_option map_hint_type v_f_return_type in
   {
     f_tok = v_f_tok;
     f_type = v_f_type;
+    f_attrs = v_f_attrs;
     f_modifiers = v_f_modifiers;
     f_ref = v_f_ref;
     f_name = v_f_name;
@@ -850,11 +856,13 @@ and
                   c_name = v_c_name;
                   c_extends = v_c_extends;
                   c_implements = v_c_implements;
-                  c_body = v_c_body
+                  c_body = v_c_body;
+                  c_attrs = v_c_attrs;
                 } =
   let v_c_body = map_brace (map_of_list map_class_stmt) v_c_body in
   let v_c_implements = map_of_option map_interface v_c_implements in
   let v_c_extends = map_of_option map_extend v_c_extends in
+  let v_c_attrs = map_of_option map_attributes v_c_attrs in
   let v_c_name = map_name v_c_name in
   let v_c_type = map_class_type v_c_type in
   {
@@ -862,7 +870,8 @@ and
     c_name = v_c_name;
     c_extends = v_c_extends;
     c_implements = v_c_implements;
-    c_body = v_c_body
+    c_body = v_c_body;
+    c_attrs = v_c_attrs;
   }
  in 
   vin.kclass_def (k, all_functions) x
@@ -1032,6 +1041,14 @@ and map_constant_def (v1, v2, v3, v4, v5) =
       and v4 = map_static_scalar v4
       and v5 = map_tok v5
       in (v1, v2, v3, v4, v5)
+and map_attribute =
+  function
+  | Attribute v1 -> let v1 = map_wrap map_of_string v1 in Attribute ((v1))
+  | AttributeWithArgs ((v1, v2)) ->
+      let v1 = map_wrap map_of_string v1
+      and v2 = map_paren (map_comma_list map_static_scalar) v2
+      in AttributeWithArgs ((v1, v2))
+and map_attributes v = map_angle (map_comma_list map_attribute) v
 and map_toplevel =
   function
   | StmtList v1 -> let v1 = map_of_list map_stmt v1 in StmtList ((v1))

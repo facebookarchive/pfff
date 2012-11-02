@@ -21,6 +21,7 @@ and 'a wrap = 'a * tok
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
+and 'a angle = tok * 'a * tok
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots = 
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
@@ -528,6 +529,7 @@ and stmt =
 (* ------------------------------------------------------------------------- *)
 (*s: AST function definition *)
 and func_def = {
+  f_attrs: attributes option;
   f_tok: tok; (* function *)
   f_type: function_type;
   (* only valid for methods *)
@@ -585,6 +587,7 @@ and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
  * are not that different. Interfaces are really just abstract traits.
  *)
 and class_def = {
+  c_attrs: attributes option;
   c_type: class_type;
   c_name: name;
   (* PHP uses single inheritance. Interfaces can also use 'extends'
@@ -746,6 +749,12 @@ and stmt_and_def = stmt
 (* phpext: *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST phpext *)
+(* HPHP extension similar to http://en.wikipedia.org/wiki/Java_annotation *)
+and attribute = 
+  | Attribute of string wrap
+  | AttributeWithArgs of string wrap * static_scalar comma_list paren
+
+and attributes = attribute comma_list angle
 (*e: AST phpext *)
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)

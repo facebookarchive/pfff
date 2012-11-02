@@ -2552,6 +2552,7 @@ and m_func_def a b =
   f_body = a6;
   f_type = a7;
   f_modifiers = a8;
+  f_attrs = a9;
   },
   { B. 
   f_tok = b1;
@@ -2562,7 +2563,9 @@ and m_func_def a b =
   f_body = b6;
   f_type = b7;
   f_modifiers = b8;
+  f_attrs = b9;
   } -> 
+    (* TODO: sgrep/spatch for attributes? *)
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     m_is_ref a2 b2 >>= (fun (a2, b2) -> 
     (* iso on function name *)
@@ -2582,6 +2585,7 @@ and m_func_def a b =
       f_body = a6;
       f_type = a7;
       f_modifiers = a8;
+      f_attrs = a9;
       },
       { B.
       f_tok = b1;
@@ -2592,6 +2596,7 @@ and m_func_def a b =
       f_body = b6;
       f_type = b7;
       f_modifiers= b8;
+      f_attrs = b9;
       } 
     )
   ))))))))
