@@ -20,6 +20,9 @@ directive next to R2.
 
 * xhp
 
+'<' is overloaded in PHP. Can be the start of an xhp element
+or comparison.
+
 * attributes
 
 One of the rule concerning attributes is:
@@ -28,7 +31,7 @@ function_declaration_statement:
  |            unticked_function_declaration_statement { $1 }
  | attributes unticked_function_declaration_statement { $2 }
 
-we can not factorize rules by using a attributes_opt as in:
+but we can not factorize by using a attributes_opt as in:
 
 function_declaration_statement: attributes_opt unticked...
 
@@ -36,8 +39,8 @@ attributes_opt:
  | /* empty */ (R1)
  | attributes  (R2)                
 
-Indeed reading from the start a T_FUNCTION one can not decide between the
-start of the definition of a function hence reducing an hypotetical
+Indeed reading from the start a T_FUNCTION, one can not decide between the
+start of the definition of a function, hence reducing an hypotetical
 empty attributes_opt rule R1, or shifting to a state
 allowing both the definition of a function or the start
 of a closure statement.
@@ -81,5 +84,5 @@ and duplicate rules to avoid early reduce and keep shifting.
  * Right now the only places where we allow types are for parameters
  * and globals/constants. The rest is inferred.
  *)
-*/
+ */
 
