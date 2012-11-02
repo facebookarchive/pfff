@@ -43,7 +43,9 @@ open Common.Infix
  *  - no init vs expr
  *  - no Case/Default in statement but instead a focused 'case' type
  * 
- *
+ * todo: ast_c_simple_build.ml is probably very incomplete (but for now
+ *  good enough for codegraph purposes).
+ * 
  * related: 
  *  - CIL
  *)
