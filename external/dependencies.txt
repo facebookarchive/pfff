@@ -1,15 +1,15 @@
 core:
 
-ocamlcairo: used by codemap/codegraph, core graphics library, layers, etc
-ocamlgtk: used by codemap/codegraph, mostly for interactive menus and basic
- chrome
+ocamlcairo: used by codemap/codegraph, core graphics library.
+ocamlgtk:   used by codemap/codegraph, mostly for interactive menus and basic
+ UI chrome.
 
-ocamlgraph: used by commons/graph.ml and so graph_code, also a bit lang_html/?
- TODO don't show under codegraph!!
+ocamlgraph: used by commons/graph.ml and so graph_code, also a bit by 
+ lang_html/? TODO why dependencies to codegraph is now shown in cg?
 
 ocamlbdb: used by lang_php/analyze but could be removed, I now prefer prolog db
 ocamlmpi: not used, quite fragile in general and I now prefer to use cores
+ocamlthrift: used by facebook/, could be removed, quite fragile too
 ocamlnet: used by lang_html/, but mostly to double check, could be removed
 ocamlpcre: used by lang_php/ but could be replaced by just Str
-ocamlthrift: used by facebook/, could be removed, quite fragile too
 phylomel: used a bit by codegraph but could be removed, I prefer graphviz or cg
