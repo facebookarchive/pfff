@@ -1,3 +1,8 @@
 taken from http://code.google.com/p/ocaml-extlib/, version 1.5.3
 
 Renamed uppercase files like README, INSTALL, COPYRIGHT etc.
+Renamed install.ml -> install_ml
+
+The 'make' and 'make opt' targets don't recompile each time. Even if it's
+fast it's stupid. Just state the dependencies for make.
+
