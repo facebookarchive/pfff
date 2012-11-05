@@ -31,3 +31,5 @@ uninstall:
 
 clean:
 	rm -f *.cmo *.cmx *.o *.obj *.cmi *.cma *.cmxa *.cmxs *.a *.lib doc/*.html
+
+depend:
