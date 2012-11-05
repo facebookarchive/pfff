@@ -8,9 +8,8 @@ ocamlgraph: used by commons/graph.ml and so graph_code, also a bit lang_html/?
  TODO don't show under codegraph!!
 
 ocamlbdb: used by lang_php/analyze but could be removed, I now prefer prolog db
-
 ocamlmpi: not used, quite fragile in general and I now prefer to use cores
 ocamlnet: used by lang_html/, but mostly to double check, could be removed
 ocamlpcre: used by lang_php/ but could be replaced by just Str
-ocamlthrift: used by facebook/, could be removed
-phylomel: used a bit by codegraph but could be removed
+ocamlthrift: used by facebook/, could be removed, quite fragile too
+phylomel: used a bit by codegraph but could be removed, I prefer graphviz or cg
