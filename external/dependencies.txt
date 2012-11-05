@@ -7,6 +7,8 @@ ocamlgtk:   used by codemap/codegraph, mostly for interactive menus and basic
 ocamlgraph: used by commons/graph.ml and so graph_code, also a bit by 
  lang_html/? TODO why dependencies to codegraph is now shown in cg?
 
+ocamlzip: used by lang_bytecode/
+
 ocamlbdb: used by lang_php/analyze but could be removed, I now prefer prolog db
 ocamlmpi: not used, quite fragile in general and I now prefer to use cores
 ocamlthrift: used by facebook/, could be removed, quite fragile too

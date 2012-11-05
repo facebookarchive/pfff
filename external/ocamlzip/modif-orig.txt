@@ -1,3 +1,5 @@
-rename uppercase README, INSTALL, COPYRIGHT etc.
+taken from: http://forge.ocamlcore.org/projects/camlzip/, version 1.05
 
-make clean also clean .so
+Renamed uppercase files like README, INSTALL, COPYRIGHT etc.
+The 'make clean' now also cleans .so files.
+
