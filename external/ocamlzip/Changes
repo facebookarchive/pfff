@@ -1,0 +1,23 @@
+Release 1.05:
+- Added support for findlib (Contributed by E. Friendly)
+
+Release 1.04:
+- Added function Zip.add_entry_generator.  (Contributed by A. Frisch.)
+- The "level" optional argument was sometimes not honored; fixed.
+- Relicensed under LGPL 2.1 or above, with Caml's special exception
+  for static linking.
+
+Release 1.03:
+- Fixed bug in Zlib.uncompress that could cause it to loop infinitely.
+- Documentation comments in .mli files converted to ocamldoc format.
+
+Release 1.02:
+- 64-bit incompatibility fixed.
+- Better support for large ZIP files (> 2 Gb).
+- Added Caml's special exception for static linking to the license.
+
+Release 1.01:
+- Use ocamlmklib to create library and possibly DLL (for OCaml 3.04 and up).
+
+Release 1.00:
+- First public release
