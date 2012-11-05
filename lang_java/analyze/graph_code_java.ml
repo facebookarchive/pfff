@@ -45,8 +45,20 @@ module Ast = Ast_java
  * 
  *   PB -> Not_Found -> Package2 -> SubPackage2 -> ...
  * 
- * Adjust graph to remove intermediate singleton? com.xxx? Hmm better
+ * note: adjust graph to remove intermediate singleton? com.xxx? Hmm better
  * to do that lazily in codegraph itself.
+ * 
+ * note: doing codegraph for Java helps evaluate the number of lookup failures
+ * in projects, and which code one needs to include to fully analyze the code.
+ * If I go in the abstract interpreter path that julien took where he analyzed
+ * code but had so many Not_found, Todo, exn, then I'll have no confidence
+ * at all. So:
+ * - DONE lookup package correctly
+ * - SEMI lookup classes correctly
+ * - lookup field/methods correctly
+ * It also helps to find bug in the parser and better understand
+ * Java and the AST :) e.g. Name -> Dot ambiguities.
+ * It also helps to see which code is needed to fully analyze our code.
  * 
  *)
 
