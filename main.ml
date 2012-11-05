@@ -72,6 +72,7 @@ let all_actions () =
   Test_parsing_hs.actions()++
   Test_parsing_python.actions()++
   Test_parsing_csharp.actions()++
+  Test_parsing_bytecode.actions()++
   Test_parsing_java.actions()++
   Test_parsing_erlang.actions()++
   Test_parsing_text.actions()++
