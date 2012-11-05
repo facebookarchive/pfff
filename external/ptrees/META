@@ -1,0 +1,5 @@
+# -*-conf-*-
+version = "1.3" #If need to modifiy, then also modify in configure.sh
+description = "Maps and Sets of integers based on Patricia trees (efficient implementation)"
+archive(native) = "ptrees.cmxa"
+archive(byte) = "ptrees.cma"
