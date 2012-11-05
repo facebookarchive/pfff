@@ -1,0 +1,12 @@
+*.cmi
+*.cmo
+*.cma
+*.cmx
+doc
+dochtml
+ext-lib.odoc
+extLib.lib
+extLib.cmxa
+extlib.dsw
+extlib.dsp
+INSTALL.bat

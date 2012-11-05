@@ -1,0 +1,7 @@
+version="1.5.3"
+description="Extended standard library"
+archive(byte)="extLib.cma"
+archive(native)="extLib.cmxa"
+archive(byte, plugin) = "extLib.cma"
+archive(native, plugin) = "extLib.cmxs"
+exists_if = "extLib.cma"
