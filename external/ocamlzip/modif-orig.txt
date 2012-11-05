@@ -1,0 +1,3 @@
+rename uppercase README, INSTALL, COPYRIGHT etc.
+
+make clean also clean .so
