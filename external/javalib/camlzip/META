@@ -1,5 +1,0 @@
-# -*-conf-*-
-version = "1.04" #If need to modifiy, then also modify in configure.sh
-description = "Reading and writing ZIP, JAR and GZIP files"
-archive(native) = "zip.cmxa"
-archive(byte) = "zip.cma"

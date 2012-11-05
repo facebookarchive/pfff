@@ -1,4 +1,0 @@
-version="1.5.1" #If need to modifiy, then also modify in configure.sh
-description = "Extended Standard Library for Objective Caml"
-archive(byte)="extLib.cma"
-archive(native)="extLib.cmxa"
