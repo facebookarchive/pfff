@@ -53,6 +53,7 @@ libcamlzip.a: $(C_OBJS)
 clean:
 	rm -f *.cm*
 	rm -f *.o *.a
+	rm -f *.so
 
 install:
 	mkdir -p $(INSTALLDIR)
